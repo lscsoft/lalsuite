@@ -171,7 +171,7 @@ Initialisation arguments:\n\
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
 	/* (try to) get random seed from command line: */
-	ppt = LALInferenceGetProcParamVal(commandLine, "--seed");
+	ppt = LALInferenceGetProcParamVal(commandLine, "--randomseed");
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	else { /* otherwise generate "random" random seed: */
