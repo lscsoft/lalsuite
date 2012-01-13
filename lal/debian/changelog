@@ -3,9 +3,10 @@ lal (6.6.1-1) unstable; urgency=low
   * LAL 6.6.1
   * update to automake-1.11.2
   * support leap second at end of June 2012
+  * ensure "science" definition of calibration DQ vector follows definition
   * packaging updates
 
- -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 09:25:27 -0600
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 13 Jan 2012 15:42:13 -0600
 
 lal (6.6.0-1) unstable; urgency=low
 
