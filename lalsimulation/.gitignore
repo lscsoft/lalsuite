@@ -26,6 +26,7 @@ src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
 src/lalsim-ligo-noise
 src/lalsim-sgwb
+src/lalsim-unicorn
 src/lalsimulation-user-env.csh
 src/lalsimulation-user-env.sh
 src/lalsimulation-user-env.shell
