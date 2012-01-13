@@ -33,5 +33,7 @@ src/lalsimulation-user-env.shell
 src/stamp-h2
 test/GenerateSimulation
 test/ST4-dynamics.dat
+test/TestEOBNRv2
 test/TestSpinTaylorT4Dynamics
+test/eobHPlusCross.dat
 test/simulation.dat
