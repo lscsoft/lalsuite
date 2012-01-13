@@ -1396,7 +1396,7 @@ static void printVector(REAL8 *pt, size_t dim, FILE *stream) {
 void LALInferencePrintCell(LALInferenceKDCell *cell, size_t dim, FILE *stream);
 void LALInferencePrintCell(LALInferenceKDCell *cell, size_t dim, FILE *stream) {
   if (cell != NULL) {
-    fprintf(stream, "  Cell: %p, npts = %ld\n    Left = %p, right = %p\n", cell, cell->npts, cell->left, cell->right);
+    fprintf(stream, "  Cell: %p, npts = %zd\n    Left = %p, right = %p\n", cell, cell->npts, cell->left, cell->right);
 
     fprintf(stream,   "    Left bounds: ");
     printVector(cell->lowerLeft, dim, stream);
@@ -1418,7 +1418,7 @@ void LALInferencePrintKDTree(LALInferenceKDTree *tree, FILE *stream);
 void LALInferencePrintKDTree(LALInferenceKDTree *tree, FILE *stream) {
   fprintf(stream, "KDTree: %p\n", tree);
   if (tree != NULL) {
-    fprintf(stream, "  npts = %ld\n  ndim = %ld\n", tree->npts, tree->ndim);
+    fprintf(stream, "  npts = %zd\n  ndim = %zd\n", tree->npts, tree->ndim);
     size_t i;
     for (i = 0; i < tree->npts; i++) {
       fprintf(stream, "    pt: ");
