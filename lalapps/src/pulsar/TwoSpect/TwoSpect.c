@@ -440,11 +440,11 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Starting TwoSpect analysis...\n");
    
    
-   //Antenna normalization (determined from injections on H1 at ra=0, dec=0)
+   //Antenna normalization (determined from injections on H1 at ra=0, dec=0, with circular polarization)
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
    if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
    else {
-      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
+      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -486,7 +486,8 @@ int main(int argc, char *argv[])
       if (args_info.antennaOff_given) {
          for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0;
       } else {
-         CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det[0]);
+         if (args_info.linPolAngle_given) CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 1, args_info.linPolAngle_arg, inputParams->det[0]);
+         else CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, inputParams->det[0]);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);

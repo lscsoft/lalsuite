@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2012 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL
 
 
 
-void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det)
+void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
 {
    
    INT4 ii;
@@ -51,13 +51,14 @@ void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      XLALComputeDetAMResponse(&fplus, &fcross, det.response, ra, dec, 0.0, gmst);
+      XLALComputeDetAMResponse(&fplus, &fcross, det.response, ra, dec, polAngle, gmst);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: XLALComputeDetAMResponse() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      output->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
+      if (!linPolOn) output->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
+      else output->data[ii] = (REAL4)(fplus*fplus);
       
    } /* for ii < numffts */
 
