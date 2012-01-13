@@ -35,4 +35,5 @@ test/MakeFrames
 test/Read40mData
 test/ReadGEOData
 test/ReadLHOData
+test/TestLowLatencyData*
 test/catalog*
