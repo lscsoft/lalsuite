@@ -1850,9 +1850,18 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	
 	INT4 errnum=0;
 
+  REAL8 lambda1 = 0.;
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda1");
+  REAL8 lambda2 = 0.;
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda2")) lambda2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda2");
+  LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "interactionFlags")) interactionFlags = *(LALSimInspiralInteraction*) LALInferenceGetVariable(IFOdata->modelParams, "interactionFlags");
+
+
   XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
                                              spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, 
-                                             inclination, amporder, order, approximant), errnum);
+                                             inclination, lambda1, lambda2, interactionFlags, 
+                                             amporder, order, approximant), errnum);
   
   if (ret == XLAL_FAILURE)
   {

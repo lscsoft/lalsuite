@@ -4,7 +4,7 @@ Section: python
 Priority: optional
 Build-Depends: debhelper (>= 7), python-support (>= 0.8.4)
 Standards-Version: 3.8.4
-XS-Python-Version: current
+XS-Python-Version: all
 
 Package: python-ligo-lvalert
 Architecture: all

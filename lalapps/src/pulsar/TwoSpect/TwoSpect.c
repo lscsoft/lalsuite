@@ -440,11 +440,11 @@ int main(int argc, char *argv[])
    fprintf(stderr, "Starting TwoSpect analysis...\n");
    
    
-   //Antenna normalization (determined from injections on H1 at ra=0, dec=0)
+   //Antenna normalization (determined from injections on H1 at ra=0, dec=0, with circular polarization)
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
    if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
    else {
-      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
+      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -486,7 +486,8 @@ int main(int argc, char *argv[])
       if (args_info.antennaOff_given) {
          for (ii=0; ii<(INT4)antweights->length; ii++) antweights->data[ii] = 1.0;
       } else {
-         CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, inputParams->det[0]);
+         if (args_info.linPolAngle_given) CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 1, args_info.linPolAngle_arg, inputParams->det[0]);
+         else CompAntennaPatternWeights(antweights, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, inputParams->det[0]);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
@@ -563,6 +564,11 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      /* tfWeight(background_slided, background_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      } */
       XLALDestroyREAL4Vector(TFdata_slided);
       XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(antweights);
@@ -582,7 +588,7 @@ int main(int argc, char *argv[])
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_slided->data[jj*ffdata->numfbins + ii];
+         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
       //REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
@@ -591,7 +597,7 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
-      //XLALDestroyREAL4Vector(TFdata_slided);
+      //XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(TSofPowers);
       
       
@@ -1742,8 +1748,6 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    
    INT4 ii, jj;
    
-   //INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
-   //INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);     //Number of frequency bins
    INT4 numffts = (INT4)antPatternWeights->length;
    INT4 numfbins = (INT4)(tfdata->length)/numffts;
    
@@ -2046,7 +2050,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    REAL8 sumofweights = 0.0;
    
    numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1); //Number of FFTs
+   numffts = (INT4)antweights->length; //Number of FFTs
    numfprbins = (INT4)floor(numffts*0.5)+1;     //number of 2nd fft frequency bins
    
    //Initialize the random number generator
@@ -2090,7 +2094,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
       if (backgrnd->data[ii*numfbins]!=0.0) {
          memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
          //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
-         aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
+         aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
+         //aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
          if (XLAL_IS_REAL4_FAIL_NAN(aveNoiseInTime->data[ii])) {
             fprintf(stderr,"%s: calcMean() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);

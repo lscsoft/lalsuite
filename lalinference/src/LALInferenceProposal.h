@@ -180,5 +180,12 @@ void LALInferenceDistanceQuasiGibbsProposal(LALInferenceRunState *runState, LALI
     effectively a Gibbs sampler for the phase coordinate. */
 void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Uses a kD tree containing the previously-output points to propose
+    the next sample.  The proposal chooses a stored point at random,
+    finds the kD cell that contains this point and about 64 others,
+    and then chooses the proposed point uniformly within the bounding
+    box of the points contained in this sell. */
+void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 #endif
 

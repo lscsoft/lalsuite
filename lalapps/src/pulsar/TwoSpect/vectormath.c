@@ -669,7 +669,8 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
       __m128d d1 = _mm_add_pd(d0, onehalf);
       __m128i i0 = _mm_cvttpd_epi32(d1);
       __m128d i0d = _mm_cvtepi32_pd(i0);
-      __m128i *i_0 = &i0;
+      //__m128i *i_0 = &i0;
+      __m128i i0copy = i0;
       
       //d and d2
       __m128d d_0 = _mm_mul_pd(oolutres, i0d);
@@ -678,7 +679,9 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
       __m128d d2 = _mm_mul_pd(d, d);
       d2 = _mm_mul_pd(d2, onehalf);
       
-      I0 = (INT4*)i_0;
+      //I0 = (INT4*)i_0;
+      I0[0] = _mm_cvtsi128_si32(_mm_srli_si128(i0copy, 0));
+      I0[1] = _mm_cvtsi128_si32(_mm_srli_si128(i0copy, 4));
       __m128d ts = _mm_setr_pd(sinVal[I0[0]], sinVal[I0[1]]);
       __m128d tc = _mm_setr_pd(cosVal[I0[0]], cosVal[I0[1]]);
       
@@ -723,7 +726,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
 
 
 //Compute from a look up table, the sin and cos of a vector of x values using SSE
-//Can't use this for x values less than 0 or greater than 2.147483648e9
+//Can't use this for x values less than 0 or greater than 2.147483647e9
 INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *cos2pix_vector, REAL4Vector *x)
 {
    
@@ -732,14 +735,14 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    INT4 ii;
    
    static BOOLEAN firstCall = TRUE;
-   static REAL8 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
+   static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
    
    /* the first time we get called, we set up the lookup-table */
    if ( firstCall ) {
       UINT4 k;
       for (k=0; k <= LUT_RES; k++) {
-         sinVal[k] = (REAL4)sin( LAL_TWOPI * k * OO_LUT_RES );
-         cosVal[k] = (REAL4)cos( LAL_TWOPI * k * OO_LUT_RES );
+         sinVal[k] = (REAL4)sinf( (REAL4)(LAL_TWOPI * k * OO_LUT_RES) );
+         cosVal[k] = (REAL4)cosf( (REAL4)(LAL_TWOPI * k * OO_LUT_RES) );
       }
       firstCall = FALSE;
    }
@@ -797,9 +800,10 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       XLAL_ERROR(XLAL_ENOMEM);
    }
    INT4 *I0 = (void*)(((UINT8)I+15) & ~15);
+   memset(I0, 0, sizeof(INT4)*4);
    
    __m128 lutresf = _mm_set1_ps((REAL4)LUT_RES_F);
-   __m128 onehalf = _mm_set1_ps(0.5);
+   __m128 onehalf = _mm_set1_ps(0.5f);
    __m128 oolutres = _mm_set1_ps((REAL4)OO_LUT_RES);
    __m128 twopi = _mm_set1_ps((REAL4)LAL_TWOPI);
    
@@ -815,7 +819,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       __m128 d1 = _mm_add_ps(d0, onehalf);
       __m128i i0 = _mm_cvttps_epi32(d1);
       __m128 i0s = _mm_cvtepi32_ps(i0);
-      __m128i *i_0 = &i0;
+      __m128i i0copy = i0;
       
       //d and d2
       __m128 d_0 = _mm_mul_ps(oolutres, i0s);
@@ -824,7 +828,11 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       __m128 d2 = _mm_mul_ps(d, d);
       d2 = _mm_mul_ps(d2, onehalf);
       
-      I0 = (INT4*)i_0;
+      //I0 = (INT4*)i_0;
+      I0[0] = _mm_cvtsi128_si32(_mm_srli_si128(i0copy, 0));
+      I0[1] = _mm_cvtsi128_si32(_mm_srli_si128(i0copy, 4));
+      I0[2] = _mm_cvtsi128_si32(_mm_srli_si128(i0copy, 8));
+      I0[3] = _mm_cvtsi128_si32(_mm_srli_si128(i0copy, 12));
       __m128 ts = _mm_setr_ps(sinVal[I0[0]], sinVal[I0[1]], sinVal[I0[2]], sinVal[I0[3]]);
       __m128 tc = _mm_setr_ps(cosVal[I0[0]], cosVal[I0[1]], cosVal[I0[2]], cosVal[I0[3]]);
       

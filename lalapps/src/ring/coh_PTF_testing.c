@@ -974,7 +974,7 @@ int main(int argc, char **argv)
             // This function calculates the cohSNR time series and all of the
             // signal based vetoes as appropriate
             coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
-                              timeOffsets, Fplus, Fcross, Fplustrig, Fcrosstrig,
+                              timeOffsets, Fplus, Fcross,
                               j, pValues, gammaBeta, snrComps, nullSNR,
                               traceSNR, bankVeto, autoVeto,
                               chiSquare, subBankSize, bankOverlaps, 
@@ -1193,8 +1193,6 @@ void coh_PTF_statistic(
     REAL8                   *timeOffsets,
     REAL8                   *Fplus,
     REAL8                   *Fcross,
-    REAL8                   *Fplustrig,
-    REAL8                   *Fcrosstrig,
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
@@ -1339,8 +1337,6 @@ void coh_PTF_statistic(
   {
     a[i] = Fplus[i];
     b[i] = Fcross[i];
-    atrig[i] = Fplustrig[i];
-    btrig[i] = Fcrosstrig[i];
   }
 
   // This function takes the (Q_i|Q_j) matrices, combines it across the ifos

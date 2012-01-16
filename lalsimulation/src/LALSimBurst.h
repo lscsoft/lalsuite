@@ -92,6 +92,32 @@ int XLALSimBurstSineGaussian(
 );
 
 
+int XLALSimBurstImg(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross, 
+	REAL8Array *image,
+	double dt,
+	double df,
+	double fstart,
+	double hrss,
+	double deltaT,
+	gsl_rng *rng
+);
+
+
+int XLALSimUnicorn(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	double f_min,
+	double f_max,
+	double V,
+	double hrss,
+	double deltaT,
+	gsl_rng *rng
+);
+
+
+
 REAL8 XLALMeasureHPeak(const REAL8TimeSeries *);
 REAL8 XLALMeasureIntS1S2DT(const REAL8TimeSeries *, const REAL8TimeSeries *);
 REAL8 XLALMeasureHrss(const REAL8TimeSeries *, const REAL8TimeSeries *);

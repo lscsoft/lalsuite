@@ -104,6 +104,9 @@ static void print_usage(char *program)
       "                                (m1_and_m2|psi0_and_psi3|no_test)\n"\
       "  --data-type DATA_TYPE         specify the data type, must be one of\n"\
       "                                (playground_only|exclude_play|all_data)\n"\
+      "  --coherent-run    coherentRun      run in coherent stage\n"\
+      "  --coherent-buffer coherentBuffer   time-buffer (sec) for vetoing triggers\n"\
+      "                                     in corrupted data\n"\
       "\n"\
       "[LIGOLW XML input files] list of the input trigger files.\n"\
       "\n", program);
@@ -121,6 +124,12 @@ int main( int argc, char *argv[] )
   LIGOTimeGPS startTimeGPS = {0,0};
   INT4  endTime = -1;
   LIGOTimeGPS endTimeGPS = {0,0};
+  INT4  startChunkTime = -1;
+  LIGOTimeGPS startChunkTimeGPS = {0,0};
+  INT4  endChunkTime = -1;
+  LIGOTimeGPS endChunkTimeGPS = {0,0};
+  int   coherentRun = 0;
+  INT4  coherentBuffer = 64;
   CHAR  inputIFO[LIGOMETA_IFO_MAX];
   CHAR  outputIFO[LIGOMETA_IFO_MAX];
   CHAR  comment[LIGOMETA_COMMENT_MAX];
@@ -164,10 +173,12 @@ int main( int argc, char *argv[] )
     {"gps-start-time",         required_argument,     0,                 'q'},
     {"gps-end-time",           required_argument,     0,                 'r'},
     {"comment",                required_argument,     0,                 's'},
+    {"coherent-run",           no_argument,           &coherentRun,       1 },
+    {"coherent-buffer",        required_argument,     &coherentBuffer,   't'},
     {"user-tag",               required_argument,     0,                 'Z'},
     {"userTag",                required_argument,     0,                 'Z'},
     {"ifo-tag",                required_argument,     0,                 'I'},
-    {"help",                   no_argument,           0,                 'h'}, 
+    {"help",                   no_argument,           0,                 'h'},
     {"debug-level",            required_argument,     0,                 'z'},
     {"version",                no_argument,           0,                 'V'},
     {0, 0, 0, 0}
@@ -206,8 +217,8 @@ int main( int argc, char *argv[] )
     long int gpstime;
     size_t optarg_len;
 
-    c = getopt_long_only( argc, argv, 
-        "a:b:hq:r:s:z:A:I:VZ:", long_options, 
+    c = getopt_long_only( argc, argv,
+        "a:b:hq:r:s:t:z:A:I:VZ:", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -349,6 +360,19 @@ int main( int argc, char *argv[] )
         {
           snprintf( comment, LIGOMETA_COMMENT_MAX, "%s", optarg);
         }
+        break;
+
+      case 't':
+        coherentBuffer = (INT4) atoi( optarg );
+        if ( coherentBuffer < 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "coherent-buffer duration (sec) must be positive or zero: "
+              "(%d specified)\n",
+              long_options[option_index].name, coherentBuffer );
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", coherentBuffer );
         break;
 
       case 'h':
@@ -532,8 +556,18 @@ int main( int argc, char *argv[] )
   /* keep only triggers within the requested interval */
   if ( vrbflg ) fprintf( stdout, 
       "Discarding triggers outside requested interval\n" );
-  LAL_CALL( LALTimeCutSingleInspiral( &status, &inspiralEventList,
-        &startTimeGPS, &endTimeGPS), &status );
+  if ( coherentRun ) {
+    startChunkTime = startTimeGPS.gpsSeconds + coherentBuffer;
+    startChunkTimeGPS.gpsSeconds = startChunkTime;
+    endChunkTime = endTimeGPS.gpsSeconds - coherentBuffer;
+    endChunkTimeGPS.gpsSeconds = endChunkTime;
+    LAL_CALL( LALTimeCutSingleInspiral( &status, &inspiralEventList,
+         &startChunkTimeGPS, &endChunkTimeGPS), &status );
+  }
+  else {
+    LAL_CALL( LALTimeCutSingleInspiral( &status, &inspiralEventList,
+         &startTimeGPS, &endTimeGPS), &status );
+  }
 
   /* keep play/non-play/all triggers */
   if ( dataType == playground_only && vrbflg ) fprintf( stdout, 

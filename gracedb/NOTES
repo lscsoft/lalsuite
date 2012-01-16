@@ -69,3 +69,16 @@ He suggests:
 
 But really... WHY?  Why is the SRPM wrong?
 
+SOLN:
+    python setup.py bdist_rpm --spec-only
+    vi dist/FooBar-1.0.spec
+    python setup.py bdist_rpm --spec-file=dist/FooBar-1.0.spec
+
+    Oh.  But this does not work. --spec-file option is not recognized.  Nice.
+
+    The docs (the same ones with the bad --spec-file advice) suggest a "better"
+    way to do this is "to override the standard bdist_rpm command with one that
+    writes whatever else you want to the .spec file"
+
+    http://docs.python.org/release/2.0/dist/creating-rpms.html
+

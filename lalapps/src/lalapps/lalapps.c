@@ -44,6 +44,11 @@
 #include <lal/LALXMLVCSInfo.h>
 #endif
 
+#ifdef HAVE_LIBLALSIMULATION
+#include <lal/LALSimulationConfig.h>
+#include <lal/LALSimulationVCSInfo.h>
+#endif
+
 #ifdef HAVE_LIBLALBURST
 #include <lal/LALBurstConfig.h>
 #include <lal/LALBurstVCSInfo.h>
@@ -235,6 +240,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALXML
   char lalxml_info[1024];
 #endif
+#ifdef HAVE_LIBLALSIMULATION
+  char lalsimulation_info[1024];
+#endif
 #ifdef HAVE_LIBLALBURST
   char lalburst_info[1024];
 #endif
@@ -276,6 +284,15 @@ XLALGetVersionString( int level )
   {
     /* check lalmetaio version consistency */
     if (version_compare(__func__, &lalMetaIOHeaderVCSInfo, &lalMetaIOVCSInfo))
+      exit(1);
+  }
+#endif
+
+#ifdef HAVE_LIBLALSIMULATION
+  if ((LALSIMULATION_VERSION_DEVEL != 0) || (LALSIMULATION_VERSION_DEVEL != 0))
+  {
+    /* check lalsimulaton version consistency */
+    if (version_compare(__func__, &lalSimulationHeaderVCSInfo, &lalSimulationVCSInfo))
       exit(1);
   }
 #endif
@@ -365,6 +382,14 @@ XLALGetVersionString( int level )
       snprintf(lalxml_info, sizeof(lalxml_info),
           "%%%% LALXML: %s (%s %s)\n", lalXMLVCSInfo.version, \
           strsep(&tree_status, delim), lalXMLVCSInfo.vcsId);
+#endif
+
+#ifdef HAVE_LIBLALSIMULATION
+      /* get lalsimulation info */
+      tree_status = strdup(lalSimulationVCSInfo.vcsStatus);
+      snprintf(lalsimulation_info, sizeof(lalsimulation_info),
+          "%%%% LALSimulation: %s (%s %s)\n", lalSimulationVCSInfo.version, \
+          strsep(&tree_status, delim), lalSimulationVCSInfo.vcsId);
 #endif
 
 #ifdef HAVE_LIBLALBURST
@@ -496,6 +521,27 @@ XLALGetVersionString( int level )
           lalXMLVCSInfo.vcsStatus,
           LALXML_CONFIGURE_DATE ,
           LALXML_CONFIGURE_ARGS );
+#endif
+
+#ifdef HAVE_LIBLALSIMULATION
+      /* get lalsimulation info */
+      snprintf( lalsimulation_info, sizeof(lalsimulation_info),
+          "%%%% LALSimulation-Version: %s\n"
+          "%%%% LALSimulation-Id: %s\n"
+          "%%%% LALSimulation-Date: %s\n"
+          "%%%% LALSimulation-Branch: %s\n"
+          "%%%% LALSimulation-Tag: %s\n"
+          "%%%% LALSimulation-Status: %s\n"
+          "%%%% LALSimulation-Configure Date: %s\n"
+          "%%%% LALSimulation-Configure Arguments: %s\n",
+          lalSimulationVCSInfo.version,
+          lalSimulationVCSInfo.vcsId,
+          lalSimulationVCSInfo.vcsDate,
+          lalSimulationVCSInfo.vcsBranch,
+          lalSimulationVCSInfo.vcsTag,
+          lalSimulationVCSInfo.vcsStatus,
+          LALSIMULATION_CONFIGURE_DATE ,
+          LALSIMULATION_CONFIGURE_ARGS );
 #endif
 
 #ifdef HAVE_LIBLALBURST
@@ -635,6 +681,9 @@ XLALGetVersionString( int level )
 #ifdef HAVE_LIBLALXML
   len += strlen(lalxml_info);
 #endif
+#ifdef HAVE_LIBLALSIMULATION
+  len += strlen(lalsimulation_info);
+#endif
 #ifdef HAVE_LIBLALBURST
   len += strlen(lalburst_info);
 #endif
@@ -664,6 +713,9 @@ XLALGetVersionString( int level )
 #endif
 #ifdef HAVE_LIBLALXML
   strcat ( ret, lalxml_info );
+#endif
+#ifdef HAVE_LIBLALSIMULATION
+  strcat ( ret, lalsimulation_info );
 #endif
 #ifdef HAVE_LIBLALBURST
   strcat ( ret, lalburst_info );

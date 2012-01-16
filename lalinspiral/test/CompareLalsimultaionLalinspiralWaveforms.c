@@ -95,6 +95,13 @@ int main(int argc , char **argv)
 	int i,length;
 	REAL8 dt;
 	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
+	/* The two tidal lambda's and the interaction flag below can't be 
+	 * set from the command line. However, they aren't used in the old
+	 * code, so to sanity check old vs new code, this is OK.
+	 * We just set the lambda's to zero and turn on all interactions.
+	 */  
+	REAL8 lambda1 = 0., lambda2 = 0.;
+	LALSimInspiralInteraction interaction = LAL_SIM_INSPIRAL_INTERACTION_ALL;
 
 	memset( &mystatus, 0, sizeof(LALStatus) );
 	memset( &params, 0, sizeof(InspiralTemplate) );
@@ -174,10 +181,10 @@ int main(int argc , char **argv)
 	switch (params.approximant)
 	{
 		case EOBNRv2HM:
-			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, otherIn.order, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, lambda1, lambda2, interaction, otherIn.order, otherIn.order, params.approximant);
 			break;
 		default:
-			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, otherIn.order, params.approximant);
+			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, lambda1, lambda2, interaction, otherIn.order, params.approximant);
 	}
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;

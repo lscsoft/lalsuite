@@ -1,5 +1,5 @@
 # DAG Class definitions for Odds Pipeline
-# (C) 2010 John Veitch, Kiersten Ruisard
+# (C) 2011 John Veitch, Kiersten Ruisard, Kan Wang
 
 import glue
 from glue import pipeline
@@ -50,12 +50,16 @@ class LALInferenceNode(pipeline.CondorDAGNode):
     """
     def __init__(self,li_job):
         pipeline.CondorDAGNode.__init__(self,li_job)
-    def add_ifo_data(self,data_tuples,ifos=None):
+    def set_seed(self,seed):
+        self.add_var_opt('randomseed',seed)
+    def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
         data_tuples is a dictionary of available (cache,channel) tuples
         ifos is an optional list of IFOs to include. If not specified analyse all available
         """
+        if shift_time_dict is not None:
+            raise Exception('ERROR: Time slides not supported by lalinference yet')
         cp = self.job().get_cp()
         allifos=data_tuples.keys()
         if ifos is None:
@@ -127,7 +131,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
         Set the end time of the signal for the centre of the prior in time
         """
         self.__trigtime=float(time)
-        self.add_var_opt('--trigtime',str(time))
+        self.add_var_opt('trigtime',str(time))
 
     def set_event_number(self,event):
 
@@ -148,7 +152,9 @@ class InspNestNode(pipeline.CondorDAGNode):
     """
     def __init__(self,inspnest_job):
         pipeline.CondorDAGNode.__init__(self,inspnest_job)
-    def add_ifo_data(self,data_tuples,ifos=None):
+    def set_seed(self,seed):
+        self.add_var_opt('seed',seed)
+    def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
         data_tuples is a dictionary of available (cache,channel) tuples
@@ -183,13 +189,28 @@ class InspNestNode(pipeline.CondorDAGNode):
         # is not exceeded.
         trig_time=self.get_trig_time()
         maxLength=float(cp.get('analysis','analysis-chunk-length'))
-        if(length > maxLength):
-            while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
-                    self.__GPSstart+=maxLength/2.0
-        self.add_var_opt('GPSstart',str(self.__GPSstart))
-        length=self.__GPSend-self.__GPSstart
-        if(length>maxLength):
-            length=maxLength
+       # modified:
+        if shift_time_dict:
+        	# Make sure that all trig times are in our time interval.
+        	# shift_times is a list of all time shifts.
+        	shift_times = shift_time_dict.values()
+        	# mid_shift_time is the middle of shift times.
+        	max_trig_time=max(shift_times)+trig_time
+        	min_trig_time=min(shift_times)+trig_time
+        	length=min(length,maxLength)
+        	self.__GPSstart=max(self.__GPSstart,(min_trig_time+max_trig_time-length)/2) 
+        	self.add_var_opt('GPSstart',str(self.__GPSstart))
+        	for ifo in shift_time_dict:
+        		self.add_var_arg('--'+ifo+'GPSshift '+str(shift_time_dict[ifo]))
+        	
+        else:
+        	if(length > maxLength):
+            		while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
+                	    self.__GPSstart+=maxLength/2.0
+        	self.add_var_opt('GPSstart',str(self.__GPSstart))
+        	length=self.__GPSend-self.__GPSstart
+        	if(length>maxLength):
+            		length=maxLength
 
         self.add_var_opt('length',str(int(length)))
         self.add_var_opt('Nsegs',str(int(length/float(self.job().get_cp().get('analysis','psd-chunk-length')))))
@@ -323,7 +344,7 @@ class ResultsPageNode(pipeline.CondorDAGNode):
             self.add_var_arg('--eventnum '+str(event))
 # Function definitions for setting up groups of nodes
 
-def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None,nodeclass=InspNestNode):
+def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None,nodeclass=InspNestNode,timeslides=None):
     """
     Setup nodes for analysing a single time
     cp - configparser object
@@ -336,13 +357,13 @@ def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None,nodecl
     nest_node=nodeclass(nest_job)
     nest_node.set_trig_time(end_time)
     nest_node.set_event_number(event)
-    nest_node.add_ifo_data(data,ifos)
+    nest_node.add_ifo_data(data,ifos,shift_time_dict=timeslides)
     outfile_name=os.path.join(path,'outfile_%f_%s.dat'%(end_time,nest_node.get_ifos()))
     nest_node.set_output(outfile_name)
     return nest_node
 
 
-def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event=None,nodeclass=InspNestNode):
+def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event=None,nodeclass=InspNestNode,timeslides=None):
     """
     Setup nodes for analysing a single time using
     parallel runs
@@ -353,6 +374,7 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
     data - dictionary of (seg,science_segment) tuple for ifos
     ifos - optional list of IFOs to analyse. If not specified analyse all available.
     nodeclass - custom class to use, must implement the InspNestNode above
+    timeslides - dictionary of {ifo: shift} to specify time slides
     """
     nparallel=int(cp.get('analysis','nparallel'))
     merge_node=MergeNode(merge_job)
@@ -362,10 +384,10 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
         nest_node=nodeclass(nest_job)
         nest_node.set_trig_time(end_time)
         nest_nodes.append(nest_node)
-        nest_node.add_ifo_data(data,ifos)
+        nest_node.add_ifo_data(data,ifos,shift_time_dict=timeslides)
         nest_node.set_event_number(event)
         p_outfile_name=os.path.join(path,'outfile_%f_%i_%s.dat'%(end_time,i,nest_node.get_ifos()))
-        nest_node.add_var_opt('seed',str(i+100))
+        nest_node.set_seed(str(i+100))
         merge_node.add_parent(nest_node)
         merge_node.add_file_arg(p_outfile_name)
         nest_node.set_output(p_outfile_name)

@@ -148,8 +148,6 @@ tagFrameHNode
 }
 FrameHNode;
 
-
-
 /*
  *
  * variables that control program behaviour
@@ -415,8 +413,10 @@ int main( int argc, char *argv[] )
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
   UINT4 i, j, k;
-  INT4  UNUSED cDataForFrame = 0;
   CHAR  fname[FILENAME_MAX];
+  INT4  CDataAdded = 0;
+  CDataNode  *cdataStrCat = NULL;
+  CDataNode  *thisCDataStr = NULL;
   CHAR  cdataStr[LALNameLength];
   REAL8 inputLengthNS;
   UINT4 numInputPoints;
@@ -643,7 +643,7 @@ int main( int argc, char *argv[] )
                        trigEndTimeNS );
     }
 
-    if( writeCData ) 
+    if( writeCData )
     {
       goto cleanexit;
     }
@@ -1451,17 +1451,17 @@ int main( int argc, char *argv[] )
           {
             tempChan->data->data[j] = (REAL8) ( chan.data->data[j] );
           }
-       
+
         /* loop over injections */
         for ( thisInj = injections; thisInj; thisInj = thisInj->next )
           {
             tempStrain = XLALNRInjectionStrain(ifo, thisInj);
-            
+
             for ( j = 0 ; j < tempStrain->data->length ; ++j )
               {
                 tempStrain->data->data[j] *= dynRange;
               }
-            
+
             XLALSimAddInjectionREAL8TimeSeries( tempChan, tempStrain, NULL);
             XLALDestroyREAL8TimeSeries(tempStrain);
           } /* loop over injections */
@@ -2530,143 +2530,6 @@ int main( int argc, char *argv[] )
                   fcFilterParams->rhosqVec, "none", snrsqStr );
             }
 
-
-            if ( writeCData && ! strcmp(ifo, bankCurrent->ifo) )
-            {
-              /* Discard 64s of analysis segment at both ends */
-              REAL8 buffer = 64.0;
-              trigTime = bankCurrent->end_time.gpsSeconds + 1e-9 *
-                bankCurrent->end_time.gpsNanoSeconds;
-
-              lowerBound = rint(fcSegStartTimeNS/1000000000L) + buffer;
-              upperBound = rint(fcSegEndTimeNS/1000000000L) - buffer;
-
-              if ( vrbflg ) fprintf(stdout,
-                 "GPS end time of bankCurrent in s and ns are %d and %d; trigtime in (s) is %12.3f; lower and upper bounds in (s) is %12.3f, %12.3f\n",
-                 bankCurrent->end_time.gpsSeconds,bankCurrent->end_time.gpsNanoSeconds, trigTime, lowerBound, upperBound);
-
-
-              if ( trigTime >= lowerBound && trigTime <= upperBound )
-                {
-                  REAL8 sigmasq = 0.0;
-                  REAL4 chisq=0.0;
-
-                  if ( vrbflg ) fprintf(stdout,
-                                        "The bankCurrent event id is %" LAL_UINT8_FORMAT "\n",
-                                        bankCurrent->event_id->id);
-
-                  if ( ! eventList ) {
-                    chisq = 1.0;
-                    if ( vrbflg ) fprintf(stdout,
-                       "No eventlist found! chisq is set to %e\n",chisq);
-                  }
-                  else {
-                    chisq = eventList->chisq;
-                    if ( vrbflg ) fprintf(stdout,
-                       "Eventlist found; chisq read is %e\n",chisq);
-                  }
-
-                  tempTmplt = (SnglInspiralTable *)
-                    LALCalloc(1, sizeof(SnglInspiralTable) );
-                  tempTmplt->event_id = (EventIDColumn *)
-                    LALCalloc(1, sizeof(EventIDColumn) );
-                  tempTmplt->mass1 = bankCurrent->mass1;
-                  tempTmplt->end_time.gpsSeconds =
-                    bankCurrent->end_time.gpsSeconds;
-                  tempTmplt->end_time.gpsNanoSeconds =
-                    bankCurrent->end_time.gpsNanoSeconds;
-                  if (bankCurrent->event_id)
-                    tempTmplt->event_id->id = bankCurrent->event_id->id;
-                  else tempTmplt->event_id->id = 0;
-
-                  if ( ! eventList ) {
-                    UINT4 kmax;
-                    REAL8 deltaF=0.0;
-
-                    /* Compute sigmasq for coherent statistic */
-                    deltaF = 1.0 / ( (REAL4) fcFilterParams->deltaT *
-                                     (REAL4) fcFilterParams->qVec->length );
-
-                    kmax = fcFilterInput->fcTmplt->tmplt.fFinal / deltaF <
-                      fcFilterParams->qVec->length/2 ?
-                      fcFilterInput->fcTmplt->tmplt.fFinal / deltaF :
-                      fcFilterParams->qVec->length/2;
-
-                    sigmasq = fcFilterInput->segment->segNorm->data[kmax] *
-                      fcFilterInput->segment->segNorm->data[kmax] *
-                      fcFilterInput->fcTmplt->tmpltNorm *
-                      fcFilterInput->fcTmplt->norm;
-
-                    /* If sigmasq is still zero */
-                    if (sigmasq == 0.0)
-                      {
-                        REAL4 totalMass = bankCurrent->mass1 + bankCurrent->mass2;
-                        REAL4 mu = bankCurrent->mass1 * bankCurrent->mass2 / totalMass;
-
-                        sigmasq = candle.sigmasq * pow( totalMass /
-                                                        (REAL4) candle.tmplt.totalMass,2.0/3.0);
-                        sigmasq *= mu / candle.tmplt.mu;
-                      }
-                    tempTmplt->sigmasq = sigmasq;
-                  }
-                  else {
-                    tempTmplt->sigmasq = eventList->sigmasq;
-                  }
-
-                  tempTmplt->chisq = chisq;
-
-                  LAL_CALL( LALFindChirpCreateCoherentInput( &status,
-                        &coherentInputData, fcFilterParams->cVec,
-                        tempTmplt, CDataLength/2,
-                        (INT4) rint(CDataLength/(2*fcFilterParams->deltaT))), &status );
-                  if ( vrbflg ) fprintf(stdout,
-                                        "coherentInputData Name string is %s\n",
-                                        coherentInputData->name);
-
-                  if ( coherentInputData )
-                    {
-                      cDataForFrame = 1;
-                      snprintf( cdataStr, LALNameLength*sizeof(CHAR),
-                                "%" LAL_UINT8_FORMAT, tempTmplt->event_id->id );
-                      snprintf( coherentInputData->name,
-                                LALNameLength*sizeof(CHAR),
-                                "%s:CBC-CData", ifo );
-                      if ( ! coherentFrames )
-                        {
-                          thisCoherentFrame = coherentFrames = (FrameHNode *)
-                            LALCalloc( 1, sizeof(FrameHNode) );
-                        }
-                      else
-                        {
-                          thisCoherentFrame = thisCoherentFrame->next =
-                            (FrameHNode *) LALCalloc( 1, sizeof(FrameHNode) );
-                        }
-                      thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries(
-                                                                                   outFrame, coherentInputData, "none", cdataStr );
-
-                      if ( vrbflg ) fprintf(stdout,
-                         "GPS end time in s and ns are: %d and %d\n",
-                         coherentInputData->epoch.gpsSeconds, coherentInputData->epoch.gpsNanoSeconds);
-                      if ( vrbflg ) fprintf(stdout,
-                         "Event ID used for C Data is %" LAL_UINT8_FORMAT "\n",
-                         tempTmplt->event_id->id);
-                      if ( vrbflg ) fprintf(stdout,
-                         "C Data string is %s\n",
-                        cdataStr);
-                      if ( vrbflg ) fprintf(stdout,
-                         "coherentInputData Name string is %s\n",
-                         coherentInputData->name);
-
-                      LAL_CALL( LALCDestroyVector( &status,
-                                 &(coherentInputData->data) ), &status );
-                      LALFree( coherentInputData );
-                      coherentInputData = NULL;
-                    }
-                  LALFree( tempTmplt->event_id );
-                  LALFree( tempTmplt );
-                }
-            }
-
             if ( vrbflg )
               fprintf( stdout, "epoch = %d\n",
                   fcFilterInput->segment->data->epoch.gpsSeconds );
@@ -2719,11 +2582,11 @@ int main( int argc, char *argv[] )
         /* If doing bank veto compute CC Matrix */
         if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
         {
-	  
+
           if (vrbflg) fprintf(stderr, "doing ccmat\n");
-          XLALBankVetoCCMat( &bankVetoData, 
+          XLALBankVetoCCMat( &bankVetoData,
 			     fcDataParams->ampVec,
-			     subBankCurrent->subBankSize, 
+			     subBankCurrent->subBankSize,
 			     dynRange, fLow, spec.deltaF,chan.deltaT);
 
 	  ccFlag = 0;
@@ -2769,8 +2632,8 @@ int main( int argc, char *argv[] )
               case FindChirpSP:
                 /* find any events in the time series of snr and chisq */
                 LAL_CALL( LALFindChirpClusterEvents( &status,
-                      &eventList, fcFilterInput, fcFilterParams,
-                      &bankVetoData, subBankIndex, writeCData ), &status );
+                      &eventList, fcFilterInput, fcFilterParams, &bankVetoData,
+		      subBankIndex, writeCData, bankCurrent ), &status );
 
                 if ( writeChisq )
                 {
@@ -2796,6 +2659,141 @@ int main( int argc, char *argv[] )
               default:
                 break;
             }
+
+	    /* CData writing starts here */
+            if ( eventList ) {
+              if ( writeCData && ! strcmp(ifo, eventList->ifo) )
+                {
+                  /* Discard 64s of analysis segment at both ends */
+                  REAL8 buffer = 64.0;
+
+                  trigTime = bankCurrent->end_time.gpsSeconds + 1e-9 *
+                    bankCurrent->end_time.gpsNanoSeconds;
+
+                  lowerBound = rint(fcSegStartTimeNS/1000000000L) + buffer;
+                  upperBound = rint(fcSegEndTimeNS/1000000000L) - buffer;
+
+                  if ( vrbflg ) fprintf(stdout,
+                      "GPS end time of bankCurrent in s and ns are %d and %d; trigtime in (s) is %12.3f; lower and upper bounds in (s) is %12.3f, %12.3f\n",
+                      bankCurrent->end_time.gpsSeconds,bankCurrent->end_time.gpsNanoSeconds, trigTime, lowerBound, upperBound);
+
+                  if ( vrbflg ) fprintf(stdout,
+                      "GPS end time of trigger in s and ns are %d and %d; trigtime in (s) is %12.3f; lower and upper bounds in (s) is %12.3f, %12.3f\n",
+                      eventList->end_time.gpsSeconds,eventList->end_time.gpsNanoSeconds, trigTime, lowerBound, upperBound);
+
+
+                  if ( trigTime >= lowerBound && trigTime <= upperBound )
+                  {
+                    int temp_mass1 = 0;
+                    int temp_mass2 = 0;
+
+                    if ( vrbflg ) fprintf(stdout,
+                                        "The event id is %" LAL_UINT8_FORMAT "\n",
+                                        eventList->event_id->id);
+
+                    tempTmplt = (SnglInspiralTable *)
+                      LALCalloc(1, sizeof(SnglInspiralTable) );
+                    tempTmplt->event_id = (EventIDColumn *)
+                      LALCalloc(1, sizeof(EventIDColumn) );
+                    tempTmplt->end_time.gpsSeconds =
+                      eventList->end_time.gpsSeconds;
+                    tempTmplt->end_time.gpsNanoSeconds =
+                      eventList->end_time.gpsNanoSeconds;
+                    if (eventList->event_id->id)
+                      tempTmplt->event_id->id = eventList->event_id->id;
+                    else tempTmplt->event_id->id = 0;
+
+                    if ( vrbflg ) {
+                      fprintf(stdout, "eventList->mass1 is %2.8f\n", eventList->mass1);
+                      fprintf(stdout, "eventList->mass2 is %1.8f\n", eventList->mass2);
+                    }
+                    temp_mass1 = floor( eventList->mass1 * 10000.0 );
+                    temp_mass2 = floor( eventList->mass2 * 10000.0 );
+                    if ( vrbflg ) {
+                      fprintf(stdout, "temp_mass1 is %d\n", temp_mass1);
+                      fprintf(stdout, "temp_mass2 is %d\n", temp_mass2);
+                    }
+
+		    snprintf( cdataStr, LALNameLength*sizeof(CHAR),
+                         "%d_%d_%d_%d", tempTmplt->end_time.gpsSeconds,
+                         (tempTmplt->end_time.gpsNanoSeconds - (tempTmplt->end_time.gpsNanoSeconds % 1000000))/1000000,
+                         temp_mass1, temp_mass2 );
+
+		    /* Add frame if cdataStr NOT present in cdataStrCat */
+		    if ( !cdataStrCat ) {
+		      LAL_CALL( LALFindChirpCreateCoherentInput( &status,
+                        &coherentInputData, fcFilterParams->cVec,
+                        tempTmplt, CDataLength/2,
+                        (INT4) rint(CDataLength/(2*fcFilterParams->deltaT))), &status );
+
+		      thisCDataStr = cdataStrCat = (CDataNode *) LALCalloc( 1, sizeof(CDataNode) );
+		      strcpy( thisCDataStr->cdataStrNode , cdataStr );
+		      if ( vrbflg )  fprintf(stdout, "tempcdataStrNode is %s\n", thisCDataStr->cdataStrNode);
+		      CDataAdded = 1;
+		    }
+		    else {
+		      CDataAdded = 0;
+		      if ( vrbflg ) fprintf(stdout,
+                                        "The event id in ELSE is %" LAL_UINT8_FORMAT "\n",
+                                        bankCurrent->event_id->id);
+		      CDataAdded = XLALAddSnglInspiralCData( &cdataStrCat, cdataStr );
+		      if ( CDataAdded ) {
+			LAL_CALL( LALFindChirpCreateCoherentInput( &status,
+                          &coherentInputData, fcFilterParams->cVec,
+                          tempTmplt, CDataLength/2,
+                          (INT4) rint(CDataLength/(2*fcFilterParams->deltaT))), &status );
+		      }
+
+		    }
+
+		    if ( CDataAdded && coherentInputData )
+		    {
+		      if ( vrbflg ) fprintf(stdout,
+				        "coherentInputData Name string is %s\n",
+                                        coherentInputData->name);
+
+		      snprintf( coherentInputData->name,
+                                LALNameLength*sizeof(CHAR),
+                                "%s:CBC-CData", ifo );
+
+		      if ( ! coherentFrames )
+		      {
+			thisCoherentFrame = coherentFrames = (FrameHNode *)
+                              LALCalloc( 1, sizeof(FrameHNode) );
+		      }
+		      else
+		      {
+			thisCoherentFrame = thisCoherentFrame->next =
+			    (FrameHNode *) LALCalloc( 1, sizeof(FrameHNode) );
+		      }
+
+		      thisCoherentFrame->frHeader = fr_add_proc_COMPLEX8TimeSeries(
+			  outFrame, coherentInputData, "none", cdataStr );
+
+		      if ( vrbflg ) fprintf(stdout,
+			    "GPS end time in s and ns are: %d and %d\n",
+                            coherentInputData->epoch.gpsSeconds, coherentInputData->epoch.gpsNanoSeconds);
+		      if ( vrbflg ) fprintf(stdout,
+                            "Event ID used for C Data is %" LAL_UINT8_FORMAT "\n",
+                            tempTmplt->event_id->id);
+		      if ( vrbflg ) fprintf(stdout,
+                            "C Data string is %s\n",
+			    cdataStr);
+		      if ( vrbflg ) fprintf(stdout,
+                            "coherentInputData Name string is %s\n",
+			    coherentInputData->name);
+
+		      LAL_CALL( LALCDestroyVector( &status,
+                                 &(coherentInputData->data) ), &status );
+		      LALFree( coherentInputData );
+		      coherentInputData = NULL;
+		    }
+
+		    LALFree( tempTmplt->event_id );
+		    LALFree( tempTmplt );
+                  }
+                }
+            }/* CData writing ends here */
 
             /*  test if filter returned any events */
             if ( eventList )
@@ -3056,7 +3054,7 @@ int main( int argc, char *argv[] )
 
   cleanexit:
 
-  if ( writeCohTrigs || writeCData ) 
+  if ( writeCohTrigs || writeCData )
   {
     char *cdata_cwd = NULL;
     int cdata_rc = 0;
@@ -3064,12 +3062,12 @@ int main( int argc, char *argv[] )
     char full_cdata_path[MAXPATHLEN];
     hostnameTmp[1023] = '\0';
     hostname[1023] = '\0';
-  
+
     if (outputPath[0]) {
 
-      if ( username == NULL ) 
+      if ( username == NULL )
       {
-        fprintf( stderr, 
+        fprintf( stderr,
             "error: must specify username for cdata when using output-path" );
         exit( 1 );
       }
@@ -3077,8 +3075,8 @@ int main( int argc, char *argv[] )
       {
         if ( vrbflg ) fprintf( stdout, "username is %s\n", username );
       }
-   
-    }/*closes if outputpath */   
+
+    }/*closes if outputpath */
 
     if ( (cdata_rc = gethostname(hostnameTmp, 1023)) )
     {
@@ -3111,7 +3109,7 @@ int main( int argc, char *argv[] )
       strcat( full_cdata_path, "/" );
       strcat( full_cdata_path, username );
       strcat( full_cdata_path, "/" );
-      if ( outputDir[0] ) 
+      if ( outputDir[0] )
       {
         strcat( full_cdata_path, outputDir );
         strcat( full_cdata_path, "/" );
@@ -3121,13 +3119,13 @@ int main( int argc, char *argv[] )
       {
         if ( errno == EEXIST )
         {
-          if ( vrbflg ) fprintf( stdout, "The c-data directory %s exists.\n", 
+          if ( vrbflg ) fprintf( stdout, "The c-data directory %s exists.\n",
                                     full_cdata_path);
         }
         else
         {
           perror( "Error creating c-data directory on compute-node.");
-          if ( vrbflg ) fprintf( stderr, "Error creating c-data directory = %s\n", 
+          if ( vrbflg ) fprintf( stderr, "Error creating c-data directory = %s\n",
                                     full_cdata_path );
           exit( 1 );
         }
@@ -3146,11 +3144,11 @@ int main( int argc, char *argv[] )
   {
     if ( outputPath[0] )
     {
-      if ( writeCData && outputDir[0] && username[0] ) {
+      if ( writeCData && outputDir[0] ) {
         snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s/%s.gwf",
                   outputPath, hostname, username, outputDir, fileName );
       }
-      else if ( writeCData && !outputDir[0] && username[0] ) {
+      else if ( writeCData && !outputDir[0] ) {
         snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s.gwf",
                   outputPath, hostname, username, fileName );
       }
@@ -3187,7 +3185,7 @@ int main( int argc, char *argv[] )
     FrFileOEnd( frOutFile );
     if ( vrbflg ) fprintf( stdout, "done\n" );
 
-    if ( writeCData && outputPath[0] ) 
+    if ( writeCData && outputPath[0] )
     {
       int cdata_rc = 0;
 
@@ -3210,18 +3208,15 @@ int main( int argc, char *argv[] )
         if ( vrbflg ) fprintf( stdout, "removed old symlink... " );
       }
 
+      if ( vrbflg ) fprintf( stdout, "Creating symlink for %s...\n", runpath );
+
       /* create a new symbolic link */
-      if ( username[0] )
-      {
-        if ( vrbflg ) fprintf( stdout, "Creating symlink for %s...\n", runpath );
-  
-        if ( (cdata_rc = symlink( fname, runpath ))  )
+      if ( (cdata_rc = symlink( fname, runpath ))  )
         {
-            perror( "Error creating symlink for output cdata frame" );
-            exit( 1 );
-          }
-      }  
-      
+	  perror( "Error creating symlink for output cdata frame" );
+	  exit( 1 );
+	}
+
     }
   }
 
@@ -3338,7 +3333,7 @@ int main( int argc, char *argv[] )
   memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( outputPath[0] )
   {
-    if ( (writeCohTrigs || writeCData) && outputDir[0] && username[0] ) {
+    if ( (writeCohTrigs || writeCData) && outputDir[0] ) {
       if ( outCompress )
       {
         snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s/%s.xml.gz",
@@ -3350,7 +3345,7 @@ int main( int argc, char *argv[] )
                   outputPath, hostname, username, outputDir, fileName );
       }
     }
-    else if ( (writeCohTrigs || writeCData) && !outputDir[0] && username[0] ) {
+    else if ( (writeCohTrigs || writeCData) && !outputDir[0] ) {
       if ( outCompress )
       {
         snprintf( fname, FILENAME_MAX, "%s/%s/%s/%s.xml.gz",
@@ -3402,7 +3397,7 @@ int main( int argc, char *argv[] )
     printf("%s\n", runpath);
     remove(runpath);
     unlink(runpath);
-    if ( outputPath[0] && username[0] ) {
+    if ( outputPath[0] ) {
       int cdata_rc = 0;
       if ( (cdata_rc = symlink(fname,runpath)) )
       {

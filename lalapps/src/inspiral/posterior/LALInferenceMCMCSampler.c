@@ -68,6 +68,27 @@ accumulateDifferentialEvolutionSample(LALInferenceRunState *runState) {
   runState->differentialPointsLength += 1;
 }
 
+static void
+accumulateKDTreeSample(LALInferenceRunState *runState) {
+  LALInferenceVariables *proposalParams = runState->proposalArgs;
+
+  if (!LALInferenceCheckVariable(proposalParams, "kDTree") || !LALInferenceCheckVariable(proposalParams, "kDTreeVariableTemplate")) {
+    /* Improper setup---bail! */
+    return;
+  }
+
+  LALInferenceKDTree *tree = *(LALInferenceKDTree **)LALInferenceGetVariable(proposalParams, "kDTree");
+  LALInferenceVariables *template = *(LALInferenceVariables **)LALInferenceGetVariable(proposalParams, "kDTreeVariableTemplate");
+  size_t ndim = LALInferenceGetVariableDimensionNonFixed(template);
+  REAL8 *pt = XLALMalloc(ndim*sizeof(REAL8));
+
+  LALInferenceKDVariablesToREAL8(runState->currentParams, pt, template);
+
+  LALInferenceKDAddPoint(tree, pt);
+
+  XLALFree(pt);
+}
+
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
   int i,t,p,lowerRank,upperRank,x; //indexes for for() loops
@@ -322,6 +343,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if ((i % Nskip) == 0) {
       if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
         accumulateDifferentialEvolutionSample(runState);
+      }
+
+      if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree")) {
+        accumulateKDTreeSample(runState);
       }
 
       fseek(chainoutput, 0L, SEEK_END);

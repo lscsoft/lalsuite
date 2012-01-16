@@ -442,5 +442,86 @@ void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
 /** Convert from Mc, q space to m1, m2 space (q = m2/m1, with m1 > m2). */
 void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
 
-#endif
+/** A kD tree cell contains some points (npts), a bounding box
+    enclosing the cell (lowerLeft to upperRight), a bounding box
+    tightly enclosing all the points currently in the cell
+    (pointsLowerLeft to pointsUpperRight), and two sub-cells, left and
+    right, which split the bounding box in half along one coordinate
+    dimension (in N dimensions, the coordinate dimension that splits
+    is given by the level of the cell in the tree mod N). */
+typedef struct tagLALInferenceKDCell {
+  size_t npts; /** Stores the number of tree points that lie in the cell. */
+  REAL8 *lowerLeft; /** Lower left (i.e. coordinate minimum) bound;
+                         length is ndim from LALInferenceKDTree. */
+  REAL8 *upperRight; /** Upper right (i.e. coordinate maximum) bound. */
+  REAL8 *pointsLowerLeft; /** Lower left for the contained points. */
+  REAL8 *pointsUpperRight; /** Upper right for contained points. */
+  struct tagLALInferenceKDCell *left; /** Left (i.e. lower-coordinate)
+                                          sub-tree, may be NULL if
+                                          empty.*/
+  struct tagLALInferenceKDCell *right; /** Right
+                                           (i.e. upper-coordinate)
+                                           sub-tree, may be NULL if
+                                           empty. */
+} LALInferenceKDCell;
 
+/** The kD trees used in LALInference are not quite the standard kD
+    trees.  Our kD trees split the domain exactly in half along
+    successive dimensions (at level i, in N dimensions, the dimension
+    that is split is i%N), producing left- and right-sub-cells until
+    each cell contains either zero or one point.  The advantage of
+    this structure over the standard kD tree that splits the domain
+    along the median coordinate of the points at each level is that
+    this structure can be updated incrementally by the
+    LALInferenceKDAddPoint() function. 
+
+    To produce a kD tree from a set of points, add them one-at-a-time
+    using LALInferenceKDAddPoint() and starting with an empty tree
+    produced by LALInferenceKDEmpty().*/
+typedef struct {
+  size_t npts; /** The number of points. */
+  size_t ndim; /** Each point is ndim long. */
+  REAL8 **pts; /** Array of points. */
+  LALInferenceKDCell *topCell; /** The top-level cell in the tree. */
+} LALInferenceKDTree;
+
+/** Delete a kD-tree.  Also deletes all contained cells, and points. */
+void LALInferenceKDTreeDelete(LALInferenceKDTree *tree);
+
+/** Constructs a fresh, empty kD tree.  The top-level cell will get
+    the given bounds, which should enclose every point added by
+    LALInferenceKDAddPoint(). */
+LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim);
+
+/** Adds a point to the kD-tree, returns 0 on successful exit. */
+int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
+
+/** Returns the first cell that contains the given point that also
+    contains fewer than Npts points, if possible.  If no cell
+    containing the given point has fewer than Npts points, then
+    returns the cell containing the fewest number of points and the
+    given point.  Non-positive Npts will give the fewest-point cell in
+    the tree containing the given point.  Returns NULL on error. */
+LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
+
+/** Returns the volume of the given cell, which is part of the given
+    tree. */
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell);
+
+/** Returns the volume of a box that tightly encloses the points in
+    the given cell, which is part of the given tree. */
+double LALInferenceKDLogPointsVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell);
+
+/** Fills in the given REAL8 array with the parameter values from
+    params; the ordering of the variables is taken from the order of
+    the non-fixed variables in template.  It is an error if pt does
+    not point to enough storage to store all the non-fixed parameters
+    from template and params. */
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+
+/** Fills in the non-fixed variables in params from the given REAL8
+    array.  The ordering of variables is given by the order of the
+    non-fixed variables in template. */
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+
+#endif

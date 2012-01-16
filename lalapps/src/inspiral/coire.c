@@ -112,7 +112,7 @@ static void print_usage(char *program)
       "                                (used in clustering)\n"\
       " [--sort-triggers]              time sort the coincident triggers\n"\
       " [--coinc-stat]        stat     use coinc statistic for cluster/cut\n"\
-      "                     [ snrsq | effective_snrsq | s3_snr_chi_stat | bitten_l]\n"\
+      "                     [ snrsq | effective_snrsq | s3_snr_chi_stat | bitten_l | new_snrsq]\n"\
       " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
       " [--rsq-threshold] rsq_thresh   discard all triggers whose rsqveto_duration\n"\
       "                                exceeds rsq_thresh\n"\
@@ -123,6 +123,7 @@ static void print_usage(char *program)
       " [--rsq-power]     rsq_power    apply rsq on triggers with snr > rsq_max_snr\n"\
       "                                exceeds rsq_coeff * snr ^ rsq_power\n"\
       " [--eff-snr-denom-fac] number   parameter for clustering effective snr denominator (traditionally 250) \n"\
+      " [--chisq-index]       number   parameter for clustering in new-snrsq (traditionally 6) \n"\
       " [--h1-bittenl-a]      bitten   paramater a for clustering\n"\
       " [--h1-bittenl-b]      bitten   paramater b for clustering\n"\
       " [--h2-bittenl-a]      bitten   paramater a for clustering\n"\
@@ -250,6 +251,7 @@ int main( int argc, char *argv[] )
   memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
   /* default value from traditional effective snr formula */
   bittenLParams.eff_snr_denom_fac = 250.0; 
+  bittenLParams.chisq_index = 6.0;
 
   /*
    *
@@ -288,6 +290,7 @@ int main( int argc, char *argv[] )
       {"injection-file",          required_argument,      0,              'I'},
       {"injection-window",        required_argument,      0,              'T'},
       {"eff-snr-denom-fac",    required_argument,      0,              'A'},
+      {"chisq-index",             required_argument,      0,              's'},
       {"h1-bittenl-a",            required_argument,      0,              'a'},
       {"h1-bittenl-b",            required_argument,      0,              'b'},
       {"h2-bittenl-a",            required_argument,      0,              'j'},
@@ -309,7 +312,7 @@ int main( int argc, char *argv[] )
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only ( argc, argv, "A:a:b:c:d:hj:k:l:m:n:o:p:q:r:t:x:z:"
+    c = getopt_long_only ( argc, argv, "A:a:b:c:d:hj:k:l:m:n:o:p:q:r:s:t:x:z:"
                                        "C:D:E:I:M:N:P:Q:R:S:T:U:VZ", 
                                        long_options, 
                                        &option_index );
@@ -367,6 +370,11 @@ int main( int argc, char *argv[] )
       case 'p':
         bittenLParams.param_b[LAL_IFO_L1] = atof(optarg);
       ADD_PROCESS_PARAM( "float", "%s", optarg);
+        break;
+
+      case 's':
+        bittenLParams.chisq_index = atof(optarg);
+        ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
       case 'h':
@@ -509,12 +517,16 @@ int main( int argc, char *argv[] )
           {
             coincstat = effective_snrsq;
           }
+          else if ( ! strcmp( "new_snrsq", optarg) )
+          {
+            coincstat = new_snrsq;
+          }
           else
           {
             fprintf( stderr, "invalid argument to  --%s:\n"
                 "unknown coinc statistic:\n "
                 "%s (must be one of:\n"
-                "snrsq, effective_snrsq, bitten_l, s3_snr_chi_stat)\n",
+                "snrsq, effective_snrsq, bitten_l, s3_snr_chi_stat, new_snrsq)\n",
                 long_options[option_index].name, optarg);
             exit( 1 );
           }
