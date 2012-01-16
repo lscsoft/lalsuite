@@ -150,8 +150,8 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   static const double aa=0., bb=0.;
 
   /* Calibrated coefficient in the 4.5PN spin mapping */
-  static const REAL8 d1 = -69.;
-  static const REAL8 dheffSS = 3.;
+  static const REAL8 d1 = -69.5;
+  static const REAL8 dheffSS = 2.75;
 
   //printf( "In Hamiltonian:\n" );
   //printf( "x = %.16e\t%.16e\t%.16e\n", x->data[0], x->data[1], x->data[2] );
@@ -392,6 +392,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   H += dheffSS * eta * (sKerr_x*sStar_x + sKerr_y*sStar_y + sKerr_z*sStar_z) / (r*r*r*r);
 
   //printf( "Hns = %.16e, Hs = %.16e, Hss = %.16e, other = %.16e\n", Hns, Hs, Hss, dheffSS * eta * (sKerr_x*sStar_x + sKerr_y*sStar_y + sKerr_z*sStar_z) / (r*r*r*r) );
+  //printf( "H = %.16e\n", H );
      
   Hreal = sqrt(1. + 2.*eta *(H - 1.));
 
