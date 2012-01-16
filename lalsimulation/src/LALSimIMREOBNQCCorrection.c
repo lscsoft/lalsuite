@@ -725,11 +725,11 @@ UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaT( INT4 l,    /**<< Mo
         case 2:
           if ( a <= 0.0 )
           {
-            return - 2.5;
+            return -2.5;
           }
           else
           {
-            return - (2.5 + (4.27 - 2.5)/(0.43655/2.) * a);
+            return -(2.5 + 1.77/(0.43655*0.43655*0.43655*0.43655/16.) * a*a*a*a);
           }
           break;
         default:
@@ -749,26 +749,28 @@ UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaT( INT4 l,    /**<< Mo
 
 UNUSED static inline REAL8 GetNRSpinPeakAmplitude( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )
 {
-  /* This is (obviously) a very preliminary fit! */
-  return 0.396111;
+  /* Fit for HOMs missing */
+  return 1.3547468629743946*eta + 0.9187885481024214*eta*eta;
 }
 
 UNUSED static inline REAL8 GetNRSpinPeakADDot( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )
 {
-  /* This is (obviously) a very preliminary fit! */
-  return (1.08291*a - 1.00733)/1000.;
+  /* Fit for HOMs missing */
+  return eta*(-0.0024971911410897156 + (-0.006128515435641139 + 0.01732656*a)*eta);
 }
 
 UNUSED static inline REAL8 GetNRSpinPeakOmega( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a )
 {
-  /* This is (obviously) a very preliminary fit! */
-  return 0.11177*a*a + 0.16483*a + 0.36044;
+  /* Fit for HOMs missing */
+  return 0.27581190323955274 + 0.19347381066059993*eta - 0.08898338208573725*log(1. - a)
+       + eta*eta*(1.78832*(0.2690779744133912 + a)*(1.2056469070395925 + a) + 1.423734113371796*log(1. - a));
 }
 
 UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )
 {
-  /* This is (obviouslu) a very preliminary fit! */
-  return 0.011132;
+  /* Fit for HOMs missing */
+  return 0.006075014646800278 + 0.012040017219351778*eta + (0.0007353536801336875 + 0.0015592659912461832*a)*log(1. - a)
+       + eta*eta*(0.03575969677378844 + (-0.011765658882139 - 0.02494825585993893*a)*log(1. - a));
 }
 
 UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict coeffs, 
@@ -777,29 +779,117 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
                                     REAL8 eta, 
                                     REAL8 a )
 {
-
+  REAL8 etap1 = 0.25;
+  REAL8 etap2 = 10./121.;
+  REAL8 etap3 = 20./441.;
   REAL8 eta2 = eta*eta;
-  REAL8 a2 = a*a;
-  REAL8 a3 = a2*a;
-  REAL8 a4 = a2*a2;
-  REAL8 a5 = a4*a;
-  REAL8 a6 = a4*a2;
+  REAL8 a3sq1, a3sq10, a3sq20;
+  REAL8 a4sq1, a4sq10, a4sq20;
+  REAL8 a5sq1, a5sq10, a5sq20;
 
   memset( coeffs, 0, sizeof( *coeffs ) );
 
-  coeffs->a1  = -12.825378865103936 + 76.16196098487634*eta - 108.27842504982539*eta2;
-  coeffs->a2  = 102.94020248242984 - 766.3670147361063*eta + 1497.0635723918479*eta2;
-  coeffs->a3  = -109.44961960038499 + 869.0919588373972*eta - 1805.6202217626042*eta2;
-  coeffs->a3S = 4.692608382075692 + 478.7503341812344*a + 3229.9675034195425*a2 
-      + 1786.962819148972*a3 - 35845.21316169044*a4 - 112794.98519782277*a5 - 100785.56636140092*a6;
-  coeffs->a4  = -11.551210957787909 - 1349.9352592988032*a - 9777.061208379722*a2 
-      - 4040.0574271981955*a3 + 124454.80570133466*a4 + 390193.711669018*a5 + 350312.12327505887*a6;
-  coeffs->a5  = 6.871645680145164 + 959.0110889308494*a + 7424.472112038326*a2 
-      + 2061.2430202735068*a3 - 106359.26665139542*a4 - 332807.315166836*a5 - 300043.66844879446*a6;
+  const double alistq1[19] = {-1., -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65};
+  const double a3slistq1[19] = {58.68532163446057, 49.55879586941457, 38.96859137125088, 27.34667461300703, 14.90593562710915,
+  2.574347638902496, -9.100158967414277, -15.15689317221503, -18.23765656057034, -10.43487756797647, 0.,
+  28.64225047483616, 52.85025943662195, 82.87283316068358, 121.6690475515416, 184.8371077453084, 242.7131929263538,
+  349.5858204855281, 573.964402028233};
+  const double a4slistq1[19] = {-216.1423631616688, -184.6508002958967, -148.1966726639886, -108.5725305431534, -66.32430505800025,
+  -25.04165933587504, 13.59473105492496, 34.99230429165542, 47.3941356433856, 27.85684411598417, 0., -78.9492732782613,
+  -140.4593668007498, -210.1824360384644, -288.3810317382483, -406.891227028902, -528.0421625843486, -789.1807718418322,
+  -1415.686288121717};
+  const double a5slistq1[19] = {189.7236933548747, 163.1987007799873, 132.4489445305476, 99.26806905879204, 63.98267137712187,
+  29.98763963100855, -1.435655737202815, -19.58160817704562, -30.85589303305039, -18.66717165997227, 0.,
+  54.71289909453592, 93.17391460212183, 130.8975241448977, 161.3660740779782, 196.0770241706157, 245.5768655062068,
+  392.8648029097516, 820.948713060581};
+ 
+  const double alistq10[19] = {-1., -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65};
+  const double a3slistq10[19] = {345.4860580241738, 323.2606270808042, 284.1289898957011, 249.6350998848866, 214.2755780758422,
+  179.367767637501, 140.9720669125728, 101.7081522232974, 61.72560800764116, 19.18951427178469, 0., -75.14903033718822,
+  -135.9207068445877, -230.2662696829727, -418.4725316669399, -905.6865822738202, -1474.936283562066,
+  -2557.141698487298, -4572.723290622203};
+  const double a4slistq10[19] = {-1198.511498970822, -1115.288705062673, -968.3741122174478, -841.8346124426564, -714.5034237114306,
+  -591.449876775142, -458.5507236007604, -325.961696649921, -194.6261314034937, -58.88113994709072, 0.,
+  226.1984912879038, 400.8665782839246, 670.52594889953, 1216.242137722519, 2666.556293347996, 4402.347626318399,
+  7772.404979971348, 14210.74831002059};
+  const double a5slistq10[19] = {1048.623033954588, 970.1727094119548, 831.6182570471235, 714.8987576988959, 599.5646640646174,
+  490.3942061336389, 374.628137937308, 261.9332173794811, 153.3430176798377, 44.35942599490343, 0., -171.926179620222,
+  -297.4378549949899, -490.2961252245015, -887.0480700681262, -1970.539960115051, -3298.46429619608,
+  -5929.780553192135, -11081.76173389683};
+ 
+  const double alistq20[19] = {-1., -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65};
+  const double a3slistq20[19] = {594.0352117202438, 524.1429747153942, 464.4721975326526, 407.5227221809762, 361.2735553448471,
+  278.8364122182026, 212.791255469907, 146.7695613576271, 78.72060680310787, 10.25500162616037, 0., -137.7460872648889,
+  -231.9307745465377, -375.3052991148932, -658.581381328827, -1361.13206997476, -2115.386517845838, -3495.600530305557,
+  -6172.982238683988};
+  const double a4slistq20[19] = {-2172.113473437247, -1892.919003859715, -1658.742605356499, -1440.547178088327, -1267.814788628345,
+  -959.9857321796204, -721.8431128737885, -490.1653894864508, -258.0787740635892, -32.35962503697181, 0.,
+  428.7516067405067, 708.6439026502602, 1131.818494568869, 1978.424167920352, 4115.483822940341, 6439.554543046161,
+  10741.77090905001, 19213.0487874703};
+  const double a5slistq20[19] = {2000.783562900875, 1721.041828468746, 1490.241813574294, 1280.159552821019, 1117.723303887601,
+  828.9494754352233, 612.9748288620754, 408.4481455225803, 209.3415940341951, 22.25210971891358, 0., -338.1736030619657,
+  -546.1892472149781, -858.8306130539984, -1493.346343703871, -3124.278393582808, -4920.374570111398,
+  -8282.603737746509, -14999.80693374944};
+ 
+  /* Stuff for interpolating the data */
+  gsl_spline *spline = NULL;
+  gsl_interp_accel *acc = NULL;
+ 
+  spline = gsl_spline_alloc( gsl_interp_cspline, 19 );
+  acc = gsl_interp_accel_alloc();
+  gsl_spline_init( spline, alistq1, a3slistq1, 19 );
+  gsl_interp_accel_reset( acc );
+  a3sq1 = gsl_spline_eval( spline, 2.0*a, acc );
+  gsl_spline_init( spline, alistq1, a4slistq1, 19 );
+  gsl_interp_accel_reset( acc );
+  a4sq1 = gsl_spline_eval( spline, 2.0*a, acc );
+  gsl_spline_init( spline, alistq1, a5slistq1, 19 );
+  gsl_interp_accel_reset( acc );
+  a5sq1 = gsl_spline_eval( spline, 2.0*a, acc );
+ 
+  spline = gsl_spline_alloc( gsl_interp_cspline, 19 );
+  acc = gsl_interp_accel_alloc();
+  gsl_spline_init( spline, alistq10, a3slistq10, 19 );
+  gsl_interp_accel_reset( acc );
+  a3sq10 = gsl_spline_eval( spline, 2.0*a, acc );
+  gsl_spline_init( spline, alistq10, a4slistq10, 19 );
+  gsl_interp_accel_reset( acc );
+  a4sq10 = gsl_spline_eval( spline, 2.0*a, acc );
+  gsl_spline_init( spline, alistq10, a5slistq10, 19 );
+  gsl_interp_accel_reset( acc );
+  a5sq10 = gsl_spline_eval( spline, 2.0*a, acc );
+ 
+  spline = gsl_spline_alloc( gsl_interp_cspline, 19 );
+  acc = gsl_interp_accel_alloc();
+  gsl_spline_init( spline, alistq20, a3slistq20, 19 );
+  gsl_interp_accel_reset( acc );
+  a3sq20 = gsl_spline_eval( spline, 2.0*a, acc );
+  gsl_spline_init( spline, alistq20, a4slistq20, 19 );
+  gsl_interp_accel_reset( acc );
+  a4sq20 = gsl_spline_eval( spline, 2.0*a, acc );
+  gsl_spline_init( spline, alistq20, a5slistq20, 19 );
+  gsl_interp_accel_reset( acc );
+  a5sq20 = gsl_spline_eval( spline, 2.0*a, acc );
+ 
+  coeffs->a1 = -12.67955358602124 + 75.41927959573084 * eta - 106.15933052937714 * eta2;
+  coeffs->a2 = 101.45522216901628 - 757.3158549733314 * eta + 1473.314771676588 * eta2;
+  coeffs->a3 = -107.6647834845902 + 857.6219519536213 * eta - 1776.2776804623143 * eta2;
+  coeffs->a3S =-(a3sq1 *(eta-etap2)*(eta-etap3)*(etap2-etap3)
+  + a3sq10*(eta-etap3)*(eta-etap1)*(etap3-etap1)
+  + a3sq20*(eta-etap1)*(eta-etap2)*(etap1-etap2))
+  / (etap1-etap2) / (etap2-etap3) / (etap3-etap1);
+  coeffs->a4 =-(a4sq1 *(eta-etap2)*(eta-etap3)*(etap2-etap3)
+  + a4sq10*(eta-etap3)*(eta-etap1)*(etap3-etap1)
+  + a4sq20*(eta-etap1)*(eta-etap2)*(etap1-etap2))
+  / (etap1-etap2) / (etap2-etap3) / (etap3-etap1);
+  coeffs->a5 =-(a5sq1 *(eta-etap2)*(eta-etap3)*(etap2-etap3)
+  + a5sq10*(eta-etap3)*(eta-etap1)*(etap3-etap1)
+  + a5sq20*(eta-etap1)*(eta-etap2)*(etap1-etap2))
+  / (etap1-etap2) / (etap2-etap3) / (etap3-etap1);
 
   /* Andrea and I have different sign conventions, so I need to put a minus sign in front */
-  coeffs->b1 = - ( -1.4234562096432941 + 12.458819431037652*eta - 59.68767345142511*eta2);
-  coeffs->b2 = - (7.251674983497549 - 83.16658603653394*eta + 349.3311312949691*eta2);
+  coeffs->b1 = - (-1.464129495621165 + 12.81732978488213 * eta - 60.09957767247623 * eta2);
+  coeffs->b2 = - ( 7.477426352542122 - 85.26122117590637 * eta + 353.3251639728075 * eta2);
   
   return XLAL_SUCCESS;
 
@@ -1157,10 +1247,10 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   coeffs->b4  = gsl_vector_get( bCoeff, 1 );
 
   printf( "NQC coefficients:\n" );
-  printf( "a1 = %e, a2 = %e, a3 = %e, a3s = %e, a4 = %e, a5 = %e\n",
+  printf( "a1 = %.16e, a2 = %.16e, a3 = %.16e, a3s = %.16e, a4 = %.16e, a5 = %.16e\n",
     coeffs->a1, coeffs->a2, coeffs->a3, coeffs->a3S, coeffs->a4, coeffs->a5 );
 
-  printf( "b1 = %e, b2 = %e, b3 = %e, b4 = %e\n",
+  printf( "b1 = %.16e, b2 = %.16e, b3 = %.16e, b4 = %.16e\n",
     coeffs->b1, coeffs->b2, coeffs->b3, coeffs->b4 );
 
   /* Free memory and exit */
