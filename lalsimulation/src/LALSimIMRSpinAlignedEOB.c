@@ -213,7 +213,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Of course, we only want to do this if the required SR > current SR... */
   /* The form chosen for the resampleEstimate will essentially set */
   /* deltaT = M / 20. ( or less taking into account the power of 2 stuff */
-  resampEstimate = 20. * deltaT / mTScaled;
+  resampEstimate = 50. * deltaT / mTScaled;
   resampFac = 1;
 
   if ( resampEstimate > 1. )
@@ -537,7 +537,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
     if ( omega <= omegaOld && !peakIdx )
     {
-      printf( "Have we got the peak? omegaOld = %e, omega = %e\n", omegaOld, omega );
+      printf( "Have we got the peak? omegaOld = %.16e, omega = %.16e\n", omegaOld, omega );
       peakIdx = i;
     }
     omegaOld = omega;
@@ -642,19 +642,25 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   {
     printf("YP::warning: could not locate mode peak.\n");
   }
+  /* Failed to locate mode peak, use calibrated timeshiftPeak instead */
+  timewavePeak = XLALGetNRSpinPeakDeltaT(2, 2, eta,  a);
+  timewavePeak = timePeak - timewavePeak;
+  out = fopen( "saInspWaveHi.dat", "w" );
+  for ( i = 0; i < retLen; i++ )
+  {
+    fprintf( out, "%.16e %.16e %.16e\n", timeHi.data[i], sigReHi->data[i], sigImHi->data[i] );
+  }
+  fclose( out );
+  
 
   /* Attach the ringdown */
   /* XXX For now just hard-code the comb size, etc. We can drop it in properly XXX */
   /* XXX once we get the information from Andrea's calibration.                XXX */
-  REAL8 combSize = 9.;
-  REAL8 timeshiftPeak = 2.5;
-  if (a > 0.)
-  {
-    timeshiftPeak += (4.27 - 2.5)/(0.43655/2.)*a;
-  }
+  REAL8 combSize = 7.5;
+  REAL8 timeshiftPeak;
   timeshiftPeak = timePeak - timewavePeak;
- 
-  printf("YP::timePeak and timeshiftPeak: %.16e and %.16e\n",timePeak,timeshiftPeak);
+
+  printf("YP::timePeak and timewavePeak: %.16e and %.16e\n",timePeak,timewavePeak);
  
   REAL8Vector *rdMatchPoint = XLALCreateREAL8Vector( 3 );
   if ( !rdMatchPoint )
@@ -667,7 +673,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLALPrintError( "The comb size looks to be too big!!!\n" );
   }
 
-  /* This 6.85 comes from calibration of Andrea */
   rdMatchPoint->data[0] = combSize < timePeak - timeshiftPeak ? timePeak - timeshiftPeak - combSize : 0;
   rdMatchPoint->data[1] = timePeak - timeshiftPeak;
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
@@ -727,6 +732,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     sigImVec->data[i] = amp0 * hLM.im;
   }
 
+  /* Attach the ringdown part to the inspiral */
   for ( i = 0; i < (INT4)(sigReHi->length / resampFac); i++ )
   {
     sigReVec->data[i+hiSRndx] = sigReHi->data[i*resampFac];
