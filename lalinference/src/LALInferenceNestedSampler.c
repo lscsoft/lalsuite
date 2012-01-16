@@ -296,8 +296,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
         displayprogress=1;
 
-#ifdef HAVE_LIBLALXML	
-	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+#ifdef HAVE_LIBLALXML
+	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outxml");
+	if(!ppt){
+		ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outXML");
+	}
 	if(!ppt){
 		fprintf(stderr,"Can specify --outXML <filename.dat> for VOTable output\n");
 	}

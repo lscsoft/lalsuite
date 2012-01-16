@@ -340,12 +340,17 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
 
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covariancematrix");
+  if(!ppt){
+ 	ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
+ 	if(ppt) XLALPrintWarning("WARNING: Deprecated --covarianceMatrix option will be removed, please change to --covariancematrix");
+  }
   if (ppt) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
   }
 
-  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
+  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")
+      && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);
@@ -353,7 +358,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
   } 
 
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree")) {
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) {
     LALInferenceAddProposalToCycle(runState, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
@@ -514,7 +519,7 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
     }
   }	//printf("%s\n",param->name);
 		
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--zeroLogLike")) {
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--zeroLogLike") || LALInferenceGetProcParamVal(runState->commandLine,"--zerologlike")) {
     if (!strcmp(param->name, "massratio")) {
       sigma = 0.02;
     } else if (!strcmp(param->name, "asym_massratio")) {
