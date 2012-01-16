@@ -593,7 +593,7 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
 
   totalMass = mass1 + mass2;
 
- /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
+  /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
   if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
@@ -616,7 +616,6 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
     modefreqs->data[i].re *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
     modefreqs->data[i].im *= 1./ finalMass / (totalMass * LAL_MTSUN_SI);
   }
-
   /* Free memory and exit */
   gsl_spline_free( spline );
   gsl_interp_accel_free( acc );
@@ -739,12 +738,11 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       REAL8Vector		*ddinspwave;
       REAL8VectorSequence	*inspwaves1;
       REAL8VectorSequence	*inspwaves2;
+      REAL8 eta, a, NRPeakOmega22; /* To generate pQNM frequency */
       REAL8 mTot; /* In geometric units */
 
       mTot  = (mass1 + mass2) * LAL_MTSUN_SI;
-
-      // UNUSED!!: REAL8 tmatch = matchrange->data[1];
-      // UNUSED!!: REAL8 c1 = 1./(LAL_PI*mTot);
+      eta       = mass1 * mass2 / ( (mass1 + mass2) * (mass1 + mass2) );
 
       /* Create memory for the QNM frequencies */
       nmodes = 8;
@@ -758,6 +756,19 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       {
         XLALDestroyCOMPLEX16Vector( modefreqs );
         XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      /* Replace the last QNM with pQNM */
+      /* We assume aligned/antialigned spins here */
+      a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * sqrt(1.0 - 4.0 * eta);
+      NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
+      printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
+             mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);
+      modefreqs->data[7].re = (NRPeakOmega22 + modefreqs->data[0].re) / 2.;
+      modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
+      for (j = 0; j < nmodes; j++)
+      {
+        printf("QNM frequencies: %d %e %e\n",j,modefreqs->data[j].re*mTot,1./modefreqs->data[j].im/mTot);
       }
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
