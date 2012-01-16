@@ -210,7 +210,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	LALStatus status;
 	INT4 dataseed=0;
 	memset(&status,0,sizeof(status));
-	ProcessParamsTable *procparam=NULL;
+	ProcessParamsTable *procparam=NULL,*ppt=NULL;
 	LALInferenceIFOData *headIFO=NULL,*IFOdata=NULL;
 	REAL8 SampleRate=4096.0,SegmentLength=0;
 	if(LALInferenceGetProcParamVal(commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--srate")->value);
@@ -246,7 +246,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
   struct fvec *interp;
   int interpFlag=0;
 	if(!LALInferenceGetProcParamVal(commandLine,"--cache")||!(LALInferenceGetProcParamVal(commandLine,"--IFO")||LALInferenceGetProcParamVal(commandLine,"--ifo"))  ||
-	   !(LALInferenceGetProcParamVal(commandLine,"--PSDstart")||(LALInferenceGetProcParamVal(commandLine,"--psdstart")) ||
+	   !(LALInferenceGetProcParamVal(commandLine,"--PSDstart")||LALInferenceGetProcParamVal(commandLine,"--psdstart")) ||
 	   !(LALInferenceGetProcParamVal(commandLine,"--PSDlength")||LALInferenceGetProcParamVal(commandLine,"--psdlength")) ||!LALInferenceGetProcParamVal(commandLine,"--seglen"))
 	{fprintf(stderr,USAGE); return(NULL);}
 	
@@ -352,9 +352,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
         }
 	}
 	if(status.statusCode) REPORTSTATUS(&status);
-	ppt=(LALInferenceGetProcParamVal(commandLine,"--psdlength");
-	if(!ppt) ppt=(LALInferenceGetProcParamVal(commandLine,"--PSDlength");
-	PSDdatalength=atof(LALInferenceGetProcParamVal(ppt->value);
+	ppt=LALInferenceGetProcParamVal(commandLine,"--psdlength");
+	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--PSDlength");
+	PSDdatalength=atof(ppt->value);
 	SegmentLength=atof(LALInferenceGetProcParamVal(commandLine,"--seglen")->value);
 	seglen=(size_t)(SegmentLength*SampleRate);
 	nSegs=(int)floor(PSDdatalength/SegmentLength);
