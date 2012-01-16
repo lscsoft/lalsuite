@@ -73,22 +73,22 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
                                 SpinEOBParams        * restrict params
                                 )
 {
-        /* Status of function calls */
-        INT4 status;
-        INT4 i;
+    /* Status of function calls */
+    INT4 status;
+    INT4 i;
 
-        REAL8 eta;	
+    REAL8 eta;	
 	REAL8 r, pr, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs;
 	REAL8 Slm, deltalm, rholm, rholmPwrl;
 	COMPLEX16 Tlm;
-        COMPLEX16 hNewton;
+    COMPLEX16 hNewton;
 	gsl_sf_result lnr1, arg1, z2;
 
-        /* Non-Keplerian velocity */
-        REAL8 vPhi, vPhi2;
+    /* Non-Keplerian velocity */
+    REAL8 vPhi, vPhi2;
 
-        /* Pre-computed coefficients */
-        FacWaveformCoeffs *hCoeffs = params->eobParams->hCoeffs;
+    /* Pre-computed coefficients */
+    FacWaveformCoeffs *hCoeffs = params->eobParams->hCoeffs;
 
 	if ( abs(m) > (INT4) l )
 	{
@@ -188,8 +188,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 	    {
 	      case 2:
 	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6 
-                + vh*vh*(0.*hCoeffs->delta22vh8 + 0.*hCoeffs->delta22vh9*vh))) 
-                + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22vh8 *v2*v2*v2*v2 + hCoeffs->delta22vh9 *v2*v2*v2*v2*v;
+                    + vh*vh*(0.*hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh)))
+                    + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22vh8 *v2*v2*v2*v2;
             rholm	= 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
                 + v*(hCoeffs->rho22v4
                 + v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6 
