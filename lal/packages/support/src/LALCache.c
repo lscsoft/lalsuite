@@ -56,19 +56,18 @@ NRCSID( LALCACHEC, "$Id$" );
 
 static int XLALCacheFileReadRow( char *s, size_t len, LALFILE *fp, int *line )
 {
-	static const char *func = "XLALCacheFileReadRow";
 	while ( 1 ) {
 		if ( ! XLALFileGets( s, len, fp ) )
 			return 0; /* finished code */
 		++(*line);
 		if ( ! strchr( s, '\n' ) ) {
 			if ( XLALFileEOF( fp ) ) { /* missing final newline */
-				XLALPrintWarning( "XLAL Warning - %s: Missing newline on line %d\n", func, *line );
+				XLALPrintWarning( "XLAL Warning - %s: Missing newline on line %d\n", __func__, *line );
 				return 0;
 			}
 			/* line is too long */
-			XLALPrintError( "XLAL Error - %s: Line %d too long\n", func, *line );
-			XLAL_ERROR( func, XLAL_EIO );
+			XLALPrintError( "XLAL Error - %s: Line %d too long\n", __func__, *line );
+			XLAL_ERROR( XLAL_EIO );
 		}
 		if ( *s != '#' )
 			break;
@@ -114,7 +113,6 @@ static char *XLALCacheFileNextField( char **ps )
 /* NOTE: perfectly happy if there is too many rows! */
 static int XLALCacheFileParseEntry( struct tagLALCacheEntry *entry, char *s )
 {
-	static const char *func = "XLALCacheFileParseEntry";
 	char *f1, *f2, *f3, *f4, *f5;
 	if ( (f1 = XLALCacheFileNextField(&s)) && (f2 = XLALCacheFileNextField(&s)) && (f3 = XLALCacheFileNextField(&s)) && (f4 = XLALCacheFileNextField(&s)) && (f5 = XLALCacheFileNextField(&s)) ) {
 		entry->src = strcmp(f1,"-") ? XLALStringDuplicate(f1) : NULL;
@@ -122,8 +120,8 @@ static int XLALCacheFileParseEntry( struct tagLALCacheEntry *entry, char *s )
 		entry->url = strcmp(f5,"-") ? XLALStringDuplicate(f5) : NULL;
 		if ( strcmp(f3, "-") ) {
 			if ( strspn(f3, "0123456789") != strlen(f3) ) {
-				XLALPrintError( "XLAL Error - %s: Invalid content in field 3 \"%s\"\n", func, f3 );
-				XLAL_ERROR( func, XLAL_EIO );
+				XLALPrintError( "XLAL Error - %s: Invalid content in field 3 \"%s\"\n", __func__, f3 );
+				XLAL_ERROR( XLAL_EIO );
 			}
 			entry->t0  = atoi(f3);
 		}
@@ -131,8 +129,8 @@ static int XLALCacheFileParseEntry( struct tagLALCacheEntry *entry, char *s )
 			entry->t0 = 0;
 		if ( strcmp(f4, "-") ) {
 			if ( strspn(f4, "0123456789") != strlen(f4) ) {
-				XLALPrintError( "XLAL Error - %s: Invalid content in field 4 \"%s\"\n", func, f4 );
-				XLAL_ERROR( func, XLAL_EIO );
+				XLALPrintError( "XLAL Error - %s: Invalid content in field 4 \"%s\"\n", __func__, f4 );
+				XLAL_ERROR( XLAL_EIO );
 			}
 			entry->dt = atoi(f4);
 		}
@@ -140,15 +138,14 @@ static int XLALCacheFileParseEntry( struct tagLALCacheEntry *entry, char *s )
 			entry->dt = 0;
 		return 0;
 	}
-	XLALPrintError( "XLAL Error - %s: Wrong number of fields\n", func );
-	XLAL_ERROR( func, XLAL_EIO ); /* wrong field count */
+	XLALPrintError( "XLAL Error - %s: Wrong number of fields\n", __func__ );
+	XLAL_ERROR( XLAL_EIO ); /* wrong field count */
 }
 
 static int XLALCacheEntryCopy( LALCacheEntry *dst, const LALCacheEntry *src )
 {
-	static const char *func = "XLALCacheEntryCopy";
 	if ( ! src || ! dst )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	dst->src = XLALStringDuplicate( src->src );
 	dst->dsc = XLALStringDuplicate( src->dsc );
 	dst->url = XLALStringDuplicate( src->url );
@@ -159,19 +156,18 @@ static int XLALCacheEntryCopy( LALCacheEntry *dst, const LALCacheEntry *src )
 
 LALCache * XLALCreateCache( UINT4 length )
 {
-	static const char *func = "XLALCreateCache";
 	LALCache *cache;
 	cache = XLALCalloc(1, sizeof(*cache));
 	if ( ! cache )
-		XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+		XLAL_ERROR_NULL( XLAL_ENOMEM );
 	if ( length ) {
 		cache->list = XLALCalloc(length, sizeof(*cache->list));
 		if ( ! cache->list ) {
 			XLALFree( cache );
-			XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+			XLAL_ERROR_NULL( XLAL_ENOMEM );
 		}
 	} else
-		XLALPrintWarning( "XLAL Warning - %s: Creating a zero-length cache\n", func );
+		XLALPrintWarning( "XLAL Warning - %s: Creating a zero-length cache\n", __func__ );
 	cache->length = length;
 	return cache;
 }
@@ -193,13 +189,12 @@ void XLALDestroyCache( LALCache *cache )
 
 LALCache * XLALCacheDuplicate( LALCache *cache )
 {
-	static const char *func = "XLALCacheDuplicate";
 	LALCache *duplicate = NULL;
 	if ( cache ) {
 		UINT4 i;
 		duplicate = XLALCreateCache( cache->length );
 		if ( ! duplicate )
-			XLAL_ERROR_NULL( func, XLAL_EFUNC );
+			XLAL_ERROR_NULL( XLAL_EFUNC );
 		for ( i = 0; i < cache->length; ++i )
 			XLALCacheEntryCopy(duplicate->list+i, cache->list+i);
 	}
@@ -208,7 +203,6 @@ LALCache * XLALCacheDuplicate( LALCache *cache )
 
 LALCache * XLALCacheMerge( LALCache *cache1, LALCache *cache2 )
 {
-	static const char *func = "XLALAppendCache";
 	LALCache *cache = NULL;
 	LALCacheEntry *entry;
 	UINT4 length;
@@ -220,7 +214,7 @@ LALCache * XLALCacheMerge( LALCache *cache1, LALCache *cache2 )
 	length = cache1->length + cache2->length;
 	cache = XLALCreateCache( length );
 	if ( ! cache )
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
+		XLAL_ERROR_NULL( XLAL_EFUNC );
 	entry = cache->list;
 	for ( i = 0; i < cache1->length; ++i )
 		XLALCacheEntryCopy(entry++, cache1->list + i);
@@ -233,26 +227,25 @@ LALCache * XLALCacheMerge( LALCache *cache1, LALCache *cache2 )
 
 LALCache * XLALCacheFileRead( LALFILE *fp )
 {
-	static const char *func = "XLALCacheFileRead";
 	LALCache *cache;
 	char s[2*FILENAME_MAX];
 	int line = 0;
 	int n;
 	int i;
 	if ( ! fp )
-		XLAL_ERROR_NULL( func, XLAL_EFAULT );
+		XLAL_ERROR_NULL( XLAL_EFAULT );
 	n = XLALCacheFileCountRows(fp);
 	if ( n < 0 )
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
+		XLAL_ERROR_NULL( XLAL_EFUNC );
 	XLALFileRewind(fp);
 	cache = XLALCreateCache(n);
 	if ( ! cache )
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
+		XLAL_ERROR_NULL( XLAL_EFUNC );
 	for (i = 0; i < n; ++i)
 		if ( XLALCacheFileReadRow( s, sizeof(s), fp, &line ) != 1 || XLALCacheFileParseEntry( &cache->list[i], s ) < 0 ) {
 			XLALPrintError( "XLAL Error - %s: Error reading row %s on line %s\n", i+1, line );
 			XLALDestroyCache( cache );
-			XLAL_ERROR_NULL( func, XLAL_EFUNC );
+			XLAL_ERROR_NULL( XLAL_EFUNC );
 		}
 	XLALCacheSort( cache );
 	return cache;
@@ -261,7 +254,6 @@ LALCache * XLALCacheFileRead( LALFILE *fp )
 #ifdef HAVE_GLOB_H /* only use this if globbing is supported */
 static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 {
-	static const char *func = "XLALCacheFilenameParseEntry";
 	char src[FILENAME_MAX];
 	char dsc[FILENAME_MAX];
 	const char *base;
@@ -276,7 +268,7 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 	/* construct url */
 	entry->url = XLALStringDuplicate( "file://localhost" );
 	if ( ! entry->url )
-		XLAL_ERROR( func, XLAL_EFUNC );
+		XLAL_ERROR( XLAL_EFUNC );
 	if ( *path == '/' ) { /* absolute path */
 		entry->url = XLALStringAppend( entry->url, path );
 	} else { /* relative path */
@@ -290,7 +282,7 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 		entry->url = XLALStringAppend( entry->url, cwd );
 	}
 	if ( ! entry->url )
-		XLAL_ERROR( func, XLAL_EFUNC );
+		XLAL_ERROR( XLAL_EFUNC );
 
 	/* extract src, dsc, t0, and dt from file name */
 	c = sscanf( base, "%[a-zA-Z0-9_+#]-%[a-zA-Z0-9_+#]-%d-%d", src, dsc, &t0, &dt );
@@ -303,7 +295,7 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 			XLALFree( entry->src );
 			XLALFree( entry->dsc );
 			XLALFree( entry->url );
-			XLAL_ERROR( func, XLAL_EFUNC );
+			XLAL_ERROR( XLAL_EFUNC );
 		}
 	}
 
@@ -313,7 +305,6 @@ static int XLALCacheFilenameParseEntry( LALCacheEntry *entry, const char *path )
 
 LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 {
-	static const char *func = "XLALCacheGlob";
 #	ifdef HAVE_GLOB_H
 	LALCache *cache;
 	int globflags = 0;
@@ -342,14 +333,14 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 	}
 
 	if ( ! g.gl_pathc ) {
-		XLALPrintError( "XLAL Error - %s: No matching files found in %s\n", func, fnptrn );
-		XLAL_ERROR_NULL( func, XLAL_EIO );
+		XLALPrintError( "XLAL Error - %s: No matching files found in %s\n", __func__, fnptrn );
+		XLAL_ERROR_NULL( XLAL_EIO );
 	}
 
 	cache = XLALCreateCache( g.gl_pathc );
 	if ( ! cache ) {
 		globfree( &g );
-		XLAL_ERROR_NULL( func, XLAL_EFUNC );
+		XLAL_ERROR_NULL( XLAL_EFUNC );
 	}
 
 	/* copy file names */
@@ -358,7 +349,7 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 		if ( 0 > XLALCacheFilenameParseEntry( entry, g.gl_pathv[i] ) ) {
 			globfree( &g );
 			XLALDestroyCache( cache );
-			XLAL_ERROR_NULL( func, XLAL_EFUNC );
+			XLAL_ERROR_NULL( XLAL_EFUNC );
 		}
 	}
 
@@ -368,17 +359,16 @@ LALCache * XLALCacheGlob( const char *dirstr, const char *fnptrn )
 #	else /* no globbing: unsupported */
 	fnptrn = NULL;
 	dirstr = NULL;
-	XLALPrintError( "XLAL Error - %s: Glob is unsupported on non-posix system.\n", func );
-	XLAL_ERROR_NULL( func, XLAL_EFAILED );
+	XLALPrintError( "XLAL Error - %s: Glob is unsupported on non-posix system.\n", __func__ );
+	XLAL_ERROR_NULL( XLAL_EFAILED );
 #	endif
 }
 
 int XLALCacheFileWrite( LALFILE *fp, LALCache *cache )
 {
-	static const char *func = "XLALCacheFileWrite";
 	UINT4 i;
 	if ( ! fp || ! cache )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	for ( i = 0; i < cache->length; ++i ) {
 		XLALFilePrintf( fp, "%s\t", cache->list[i].src ? cache->list[i].src : "-" );
 		XLALFilePrintf( fp, "%s\t", cache->list[i].dsc ? cache->list[i].dsc : "-" );
@@ -456,20 +446,18 @@ static int XLALCacheCompareEntryMetadata( void *p, const void *p1, const void *p
 
 int XLALCacheSort( LALCache *cache )
 {
-	static const char *func = "XLALCacheSort";
 	if ( ! cache )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	return XLALHeapSort( cache->list, cache->length, sizeof(*cache->list), NULL, XLALCacheCompareEntries );
 }
 
 int XLALCacheUniq( LALCache *cache )
 {
-	static const char *func = "XLALCacheUniq";
 	LALCacheEntry *list;
 	UINT4 i, j;
 
 	if ( ! cache )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 	list = cache->list;
 	i = 0;
 	for ( j = 0; j < cache->length; ++j ) {
@@ -489,7 +477,7 @@ int XLALCacheUniq( LALCache *cache )
 		cache->length = i;
 		cache->list = XLALRealloc(cache->list, i*sizeof(*cache->list));
 		if ( ! cache->list )
-			XLAL_ERROR( func, XLAL_EFUNC );
+			XLAL_ERROR( XLAL_EFUNC );
 	}
 
 	return 0;
@@ -527,7 +515,6 @@ static int XLALCacheEntryMatchTime( LALCacheEntry *entry, INT4 t0, INT4 t1 )
 
 int XLALCacheSieve( LALCache *cache, INT4 t0, INT4 t1, const char *srcregex, const char *dscregex, const char *urlregex )
 {
-	static const char *func = "XLALCacheSieve";
 	UINT4 n = 0;
 	UINT4 i;
 #	ifdef HAVE_REGEX_H
@@ -537,13 +524,13 @@ int XLALCacheSieve( LALCache *cache, INT4 t0, INT4 t1, const char *srcregex, con
 #	else /* HAVE_REGEX_H undefined */
 	/* can only attempt to match time range */
 	if ( srcregex || dscregex || urlregex ) {
-		XLALPrintError( "XLAL Error - %s: Regular expression matching is not supported", func );
-		XLAL_ERROR( func, XLAL_EFAILED );
+		XLALPrintError( "XLAL Error - %s: Regular expression matching is not supported", __func__ );
+		XLAL_ERROR( XLAL_EFAILED );
 	}
 #	endif
 
 	if ( ! cache )
-		XLAL_ERROR( func, XLAL_EFAULT );
+		XLAL_ERROR( XLAL_EFAULT );
 
 #	ifdef HAVE_REGEX_H
 	if ( srcregex )
@@ -582,43 +569,42 @@ int XLALCacheSieve( LALCache *cache, INT4 t0, INT4 t1, const char *srcregex, con
 	if ( cache->length != n ) {
 		cache->list = XLALRealloc( cache->list, n*sizeof(*cache->list) );
 		if ( n && ! cache->list )
-			XLAL_ERROR( func, XLAL_EFUNC );
+			XLAL_ERROR( XLAL_EFUNC );
 		cache->length = n;
 		if ( ! n )
-			XLALPrintWarning( "XLAL Warning - %s: No matching entries - zero-length cache\n", func );
+			XLALPrintWarning( "XLAL Warning - %s: No matching entries - zero-length cache\n", __func__ );
 	}
 	return 0;
 }
 
 LALFILE * XLALCacheEntryOpen( LALCacheEntry *entry )
 {
-	static const char *func = "XLALCacheEntryOpen";
 	char *nextslash;
 	char *nextcolon;
 	char *filename;
 	LALFILE *fp;
 	if ( ! entry )
-		XLAL_ERROR_NULL( func, XLAL_EFAULT );
+		XLAL_ERROR_NULL( XLAL_EFAULT );
 	filename  = entry->url;
 	nextslash = strchr( filename, '/' );
 	nextcolon = strchr( filename, ':' );
 	if ( nextslash && nextcolon && nextcolon < nextslash && 0 == strncmp(nextcolon, "://", 3) ) {
 		if ( strncmp( filename, "file", nextcolon - filename ) ) {
-			XLALPrintError( "XLAL Error - %s: Unsupported protocol in URL %s (only file supported)\n", func, entry->url );
-			XLAL_ERROR_NULL( func, XLAL_EIO );
+			XLALPrintError( "XLAL Error - %s: Unsupported protocol in URL %s (only file supported)\n", __func__, entry->url );
+			XLAL_ERROR_NULL( XLAL_EIO );
 		}
 		filename = nextcolon + 3;
 		nextslash = strchr( filename, '/' );
 		if ( nextslash != filename && strncmp( filename, "localhost", nextslash - filename ) ) {
-			XLALPrintError( "XLAL Error - %s: Unsupported protocol in URL %s (only localhost supported)\n", func, entry->url );
-			XLAL_ERROR_NULL( func, XLAL_EIO );
+			XLALPrintError( "XLAL Error - %s: Unsupported protocol in URL %s (only localhost supported)\n", __func__, entry->url );
+			XLAL_ERROR_NULL( XLAL_EIO );
 		}
 		filename = nextslash;
 	}
 	fp = XLALFileOpen( filename, "r" );
 	if ( ! fp ) {
-		XLALPrintError( "XLAL Error - %s: Could not open file %s for output\n", func, filename );
-		XLAL_ERROR_NULL( func, XLAL_EIO );
+		XLALPrintError( "XLAL Error - %s: Could not open file %s for output\n", __func__, filename );
+		XLAL_ERROR_NULL( XLAL_EIO );
 	}
 	return fp;
 }

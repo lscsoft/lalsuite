@@ -65,8 +65,8 @@ void NestInit2PN(LALMCMCParameter *parameter, void *iT){
 	XLALMCMCAddParam(parameter, "time",		(gsl_rng_uniform(RNG)-0.5)*timewindow + trg_time ,trg_time-0.5*timewindow,trg_time+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter, "phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter, "distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
-	XLALMCMCAddParam(parameter,"long",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"lat",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI*0.5,LAL_PI*0.5,0);
+	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
+	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI*0.5,LAL_PI*0.5,0);
 	XLALMCMCAddParam(parameter,"psi",0.5*LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI*0.5,0);
 	XLALMCMCAddParam(parameter,"iota",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,0);
 	
@@ -205,7 +205,9 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 	
 	if(MCMCinput->injectionTable!=NULL) MCMCinput->funcInit(temp,(void *)MCMCinput->injectionTable);
 	else MCMCinput->funcInit(temp,(void *)MCMCinput->inspiralTable);
-	
+	if(!PriorIsSane(temp))
+		{fprintf(stderr,"ERROR: Prior is not sane, check ranges specified\n"); exit(1);}
+
 	/* Likelihood of the noise model */
 	logZnoise=0.0;
 	for (j=0;j<MCMCinput->numberDataStreams;j++){
@@ -223,6 +225,8 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 			else MCMCinput->funcInit(Live[i],(void *)MCMCinput->inspiralTable);
 			MCMCinput->dim=Live[i]->dimension;
 			MCMCinput->funcPrior(MCMCinput,Live[i]);
+			if(!PriorIsSane(Live[i]))
+				{fprintf(stderr,"ERROR: Prior is not sane, check ranges specified\n"); exit(1);}
 			if(Live[i]->logPrior==-DBL_MAX) XLALMCMCFreePara(Live[i]);
 		} while(Live[i]->logPrior==-DBL_MAX);
 		MCMCinput->funcLikelihood(MCMCinput,Live[i]);
@@ -259,6 +263,7 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
     {
         fprintf(fpout,"%s\t",param_ptr->core->name);
     }
+    fprintf(fpout,"logl");
     fclose(fpout);
 
 	/* open outfile */
@@ -389,7 +394,7 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 	while (i<N || (nreflect==a_cnt && nreflect>0 && nreflect%2==0)){
 		i++;
 		jump_select = gsl_rng_uniform(RNG);
-		if(jump_select<0.1 && MCMCInput->numberDataStreams>1 && XLALMCMCCheckWrapping(sample,"long")!=-1 && XLALMCMCCheckWrapping(sample,"lat")!=-1){
+		if(jump_select<0.1 && MCMCInput->numberDataStreams>1 && XLALMCMCCheckWrapping(sample,"ra")!=-1 && XLALMCMCCheckWrapping(sample,"dec")!=-1){
 			if(MCMCInput->numberDataStreams>1) jump_select = gsl_rng_uniform(RNG);
 			else jump_select=0;
 			if(jump_select>0.5) {
@@ -406,9 +411,13 @@ REAL4 MCMCSampleLimitedPrior(LALMCMCParameter *sample, LALMCMCParameter *temp, L
 		else 
 		{
 			if( (jump_select=gsl_rng_uniform(RNG))<0.2/*0.2*/) XLALMCMCDifferentialEvolution(MCMCInput,temp);
-			/*else {	if(jump_select<0.3) XLALMCMCJumpSingle(MCMCInput,temp,covM);*/
-			else XLALMCMCJump(MCMCInput,temp,covM);
-			/*}*/
+			else {
+			  /* Check for higher harmonics present */
+			  if((jump_select=gsl_rng_uniform(RNG))<0.1 && MCMCInput->ampOrder!=0)
+			    XLALMCMCJumpHarmonic(MCMCInput,temp);
+			  else /* Otherwise just perform a regular jump */
+			    XLALMCMCJump(MCMCInput,temp,covM);
+			}
 		}
 		/* Evoluate the MH ratio */		
 		MCMCInput->funcPrior(MCMCInput,temp);

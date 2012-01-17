@@ -1,25 +1,58 @@
-SUBDIRS = SPINspiral
+SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if LALINSPIRAL
 if LALFRAME
+
 if LALMETAIO
-metaio_progs = lalapps_inspnest
-lalapps_inspnest_SOURCES = lalnest.c LALInspiralMCMC.c LALInspiralMCMCUser.c nest_calc.c nest_calc.h LALInspiralMCMC.h LALInspiralMCMCUser.h
+metaio_progs = \
+	lalapps_inspnest
+lalapps_inspnest_SOURCES = \
+	lalnest.c \
+	LALInspiralMCMC.c \
+	LALInspiralMCMCUser.c \
+	nest_calc.c \
+	nest_calc.h \
+	LALInspiralMCMC.h \
+	LALInspiralMCMCUser.h
 endif
-frame_progs = lalapps_followupMcmc
-lalapps_followupMcmc_SOURCES = followupMcmc.c
+
+if LALPULSAR
+if LALINFERENCE
+pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
+ChiSquare_test_SOURCES = ChiSquare_test.c
+lalinference_nest_SOURCES = LALInferenceNest.c
+
+endif
+
+endif
+
+frame_progs = \
+	lalapps_followupMcmc
+lalapps_followupMcmc_SOURCES = \
+	followupMcmc.c
+
 endif
 endif
 
-bin_PROGRAMS = $(metaio_progs) $(frame_progs)
+
+bin_PROGRAMS = $(metaio_progs) $(frame_progs) $(pulsar_progs) $(mpi_progs)
+
+noinst_PROGRAMS = $(td_test_progs)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_combine_evidence lalapps_coherence_test lalapps_merge_nested_sampling_runs lalapps_nest_pipe
-pkgpython_DATA = nest_utils.py combine_evidence.py
+bin_SCRIPTS = \
+	lalapps_combine_evidence \
+	lalapps_coherence_test \
+	lalapps_merge_nested_sampling_runs \
+	lalapps_nest_pipe \
+	lalapps_vo_nest2pos
+pkgpython_DATA = \
+	nest_utils.py \
+	combine_evidence.py
 endif
 
 EXTRA_DIST = \
@@ -28,7 +61,8 @@ EXTRA_DIST = \
 	merge_nested_sampling_runs.in \
 	nest_pipe.in \
 	nest_utils.py \
-	combine_evidence.py
+	combine_evidence.py \
+    lalapps_vo_nest2pos.in
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
@@ -51,7 +85,15 @@ lalapps_nest_pipe: $(srcdir)/nest_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
 	chmod a+x lalapps_nest_pipe
 
-CLEANFILES = $(bin_SCRIPTS) python_config.sed
+lalapps_vo_nest2pos: $(srcdir)/lalapps_vo_nest2pos.in python_config.sed
+	sed -f python_config.sed $(srcdir)/lalapps_vo_nest2pos.in >lalapps_vo_nest2pos
+	chmod a+x lalapps_vo_nest2pos
+
+
+CLEANFILES = \
+	$(bin_SCRIPTS) \
+	python_config.sed
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
+

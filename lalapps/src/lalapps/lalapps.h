@@ -24,9 +24,10 @@
 #include <stdio.h>
 #include <lal/LALDatatypes.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( LALAPPSH, "$Id$" );
@@ -77,8 +78,9 @@ extern int XLALOutputVersionString ( FILE *fp, int level );
 #define PRINT_VERSION( program ) \
   fprintf(stderr,PACKAGE " %s version " VERSION "\n%s\n",program,rcsid)
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

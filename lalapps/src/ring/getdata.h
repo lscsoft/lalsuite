@@ -31,6 +31,12 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/FrameStream.h>
+#include <stdio.h>
+#include <gsl/gsl_rng.h>
+#include <lal/LALStdlib.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALSimNoise.h>
 
 /* create simulated data */
 REAL4TimeSeries * get_simulated_data(
@@ -42,6 +48,18 @@ REAL4TimeSeries * get_simulated_data(
     UINT4        simSeed,
     REAL4        simScale
     );
+
+/* create simulated data using LALSimNoise */
+
+REAL4TimeSeries * get_simulated_data_new(
+    const char  *channelName,
+    LIGOTimeGPS *epoch,
+    REAL8        duration,
+    REAL8        sampleRate,
+    UINT4        simSeed,
+    REAL8FrequencySeries  *psd
+    );
+
 
 REAL4TimeSeries * get_zero_data(
     const char  *channelName,

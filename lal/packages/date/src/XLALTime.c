@@ -22,15 +22,8 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-
-#define XLAL_BILLION_INT8 LAL_INT8_C( 1000000000 )
-#define XLAL_BILLION_REAL8 1e9
-
-
-/*
- * mostly internal functions
- */
-
+/** \ingroup Date_h */
+/*@{*/
 
 /** Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch )
@@ -62,11 +55,11 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
   INT4 gpsnan = floor((t - gpssec) * XLAL_BILLION_REAL8 + 0.5);
   if(isnan(t)) {
     XLALPrintError("%s(): NaN", __func__);
-    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
+    XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
   if(fabs(t) > 0x7fffffff) {
     XLALPrintError("%s(): overflow %g", __func__, t);
-    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
+    XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
   /* use XLALGPSSet() to normalize the nanoseconds */
   return XLALGPSSet(epoch, gpssec, gpsnan);
@@ -97,7 +90,7 @@ LIGOTimeGPS * XLALGPSAdd( LIGOTimeGPS *epoch, REAL8 dt )
 {
   LIGOTimeGPS dt_gps;
   if(!XLALGPSSetREAL8(&dt_gps, dt))
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
   return XLALGPSAddGPS(epoch, &dt_gps);
 }
 
@@ -165,7 +158,7 @@ LIGOTimeGPS *XLALGPSMultiply( LIGOTimeGPS *gps, REAL8 x )
 
   if(isnan(x) || isinf(x)) {
     XLALPrintError("%s(): invalid multiplicand %g", __func__, x);
-    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
+    XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
 
   split_double(x, &xhi, &xlo);
@@ -215,11 +208,11 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 
   if(isnan(x)) {
     XLALPrintError("%s(): NaN", __func__);
-    XLAL_ERROR_NULL(__func__, XLAL_EFPINVAL);
+    XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
   if(x == 0) {
     XLALPrintError("%s(): divide by zero", __func__);
-    XLAL_ERROR_NULL(__func__, XLAL_EFPDIV0);
+    XLAL_ERROR_NULL(XLAL_EFPDIV0);
   }
 
   /* initial guess */
@@ -238,3 +231,5 @@ LIGOTimeGPS *XLALGPSDivide( LIGOTimeGPS *gps, REAL8 x )
 
   return gps;
 }
+
+/*@}*/

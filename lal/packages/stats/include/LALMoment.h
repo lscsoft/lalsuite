@@ -17,33 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALMomentHV">
-
-Author: Tibbits, M. M.
-$Id$
-
-</lalVerbatim> */
-
-/* <lalLaTeX>
-
-\section{Header \texttt{LALMoment.h}}
-\label{s:LALMoment.h}
-
-\begin{verbatim}
-The LALDMoment() and LALSMoment() associated header file.
-(S - single precision )
-(D - double precision )
-\end{verbatim}
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LALMoment.h>
-\end{verbatim}
-
-\noindent This header provides the prototype for the LALDMoment() and LALSMoment() function.
-
- </lalLaTeX> */
-
 /* Double Include Protection */
 #ifndef _LALMOMENT_H
 #define _LALMOMENT_H
@@ -57,44 +30,48 @@ The LALDMoment() and LALSMoment() associated header file.
 extern "C" {
 #endif
 
-
 NRCSID( LALMOMENTH, "$Id$");
 
+/**
+\author Tibbits, M. M.
+\addtogroup LALMoment_h
 
-/*  <lalLaTeX>
+\brief This header provides the prototype for the LALDMoment() and LALSMoment() function.
 
-\subsection*{Error codes}
-\input{LALMomentHE}
+\code
+(S - single precision )
+(D - double precision )
+\endcode
 
-\vfill{\footnotesize\input{LALMomentHV}}
-</lalLaTeX>  */
+\heading{Synopsis}
+\code
+#include <lal/LALMoment.h>
+\endcode
 
-/* <lalErrTable file="LALMomentHE"> */
+*/
+/** @{ */
+/**\name Error Codes */ /*@{*/
+#define LALMOMENTH_ENULL 1	/**< NULL pointer */
+#define	LALMOMENTH_ENNUL 2	/**< Non-NULL pointer */
+#define LALMOMENTH_ELNTH 3	/**< Must have more than one data point */
+#define LALMOMENTH_ESEGZ 4	/**< Invalid number of segments */
+#define LALMOMENTH_ENUMZ 5	/**< Invalid number of points in segment */
+#define LALMOMENTH_EALOC 6	/**< Memory Allocation Error */
+/*@}*/
 
-#define LALMOMENTH_ENULL 1
-#define	LALMOMENTH_ENNUL 2
-#define LALMOMENTH_ELNTH 3
-#define LALMOMENTH_ESEGZ 4
-#define LALMOMENTH_ENUMZ 5
-#define LALMOMENTH_EALOC 6
-
+/** \cond DONT_DOXYGEN */
 #define LALMOMENTH_MSGENULL "NULL pointer."
 #define	LALMOMENTH_MSGENNUL "Non-NULL pointer."
 #define LALMOMENTH_MSGELNTH "Must have more than one data point."
 #define LALMOMENTH_MSGESEGZ "Invalid number of segments"
 #define LALMOMENTH_MSGENUMZ "Invalid number of points in segment"
 #define LALMOMENTH_MSGEALOC "Memory Allocation Error"
-
-/* </lalErrTable> */
-
+/** \endcond */
 
 /* Function prototypes */
 
-
-/*  <lalLaTeX>
-\newpage\input{LALMomentC}
-</lalLaTeX>  */
-
+/** Determine specific moment of a set of REAL4 data.
+ */
 void LALSMoment
 (
 	LALStatus		*status,
@@ -104,6 +81,8 @@ void LALSMoment
 );
 
 
+/** Determine specific moment of a set of REAL8 data.
+ */
 void LALDMoment
 (
 	LALStatus		*status,
@@ -112,9 +91,9 @@ void LALDMoment
 	INT4			whichMoment
 );
 
-/*  <lalLaTeX>
-\newpage\input{LALMomentTestC}
-</lalLaTeX>  */
+/** @} */
+
+
 
 #ifdef  __cplusplus
 }

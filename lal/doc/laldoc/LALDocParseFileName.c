@@ -59,7 +59,7 @@ FindNameOfOutPutFile( char *line , LALEnvironment *Env )
      if ( ptrPHILE==NULL || (ptrPHILE > ptrCloser)  ) {
              mark = shift ;
              /* check for no extraneous junk on the line */
-             while(  (*(mark) == ' ')  ) mark =mark + sizech ;
+             while(  *(mark) == ' '  ) mark =mark + sizech ;
              if ( mark != ptrCloser ){
                  LALDocErr("Bad syntax in source. Extraneous junk on the line.",
                            Env->sourceFile, __LINE__ , __FILE__ , 1);

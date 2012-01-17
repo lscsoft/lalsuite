@@ -26,17 +26,72 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LIGOLwXMLReadCV">
-Author: Brown, D. A. and Fairhurst, S.
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Brown, D. A. and Fairhurst, S.
+\file
+\ingroup lalmetaio
+
+\brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
+
+\heading{Description}
+
+  The routine \c LALSnglInspiralTableFromLIGOLw reads in a
+  \c sngl_inspiral table from the LIGOLwXML file specified in \c fileName.
+  It returns the number of triggers read in and \c eventHead provides a
+  pointer to the head of a linked list of \c SnglInspiralTables containing the
+  events.  It will return all events between the \c startEvent and
+  \c stopEvent; if these are set to 0 and -1 respectively, all events are
+  returned.
+
+  The routine \c InspiralTmpltBankFromLIGOLw reads in a \c sngl_inspiral
+  table from the LIGOLwXML file specified in \c fileName. It returns the
+  number of templates read in and \c bankHead provides a pointer to the head
+  of a linked list of \c InspiralTemplates containing the templates read in.
+  It will return all events between the \c startTmplt and \c stopTmplt; if
+  these are set to 0 and -1 respectively, all events are returned.  Although a
+  \c sngl_inspiral table is read in, only those entries relevant for an
+  InspiralTemplate are read in and stored.
+
+  The routine \c SimInspiralTableFromLIGOLw reads in a \c sim_inspiral
+  table from the LIGOLwXML file specified in \c fileName.  It returns the
+  number of rows read in and \c SimHead provides a pointer to the head of a
+  linked list of \c SimInspiralTables containing the events.  Additionally, a
+  \c startTime and \c endTime are specified.  Only simulated events
+  occuring between these times are returned.  If the \c endTime is set to
+  zero, then all events are returned.
+
+  The routine \c XLALSearchSummaryTableFromLIGOLw reads in a
+  \c search_summary table from the LIGOLwXML file specified in
+  \c fileName.  It returns a pointer to the head of a linked list of
+  \c SearchSummaryTables.
+
+  The routine \c SummValueTableFromLIGOLw reads in a \c summ_value
+  table from the LIGOLwXML file specified in \c fileName.  It returns the
+  number of rows read in and \c sumHead provides a pointer to the head of a
+  linked list of \c SummValueTables.
+
+  \heading{Algorithm}
+
+  None.
+
+  \heading{Uses}
+  Functions in the Metaio library:
+  <ul>
+  <li> \c MetaioFindColumn
+  </li><li> \c MetaioGetRow
+  </li><li> \c MetaioOpenTable
+  </li><li> \c MetaioClose
+  </li></ul>
+  \heading{Notes}
+
+  %% Any relevant notes.
+
+*/
+
 
 #include <string.h>
 #include <lal/LALStdio.h>
@@ -49,78 +104,6 @@ $Id$
 
 NRCSID( LIGOLWXMLREADC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LIGOLwXMLRead.c}}
-
-Routines to write LIGO metadata database structures to LIGO lightweight XML
-files.
-
-\subsubsection*{Prototypes}
-\input{LIGOLwXMLReadCP}
-\idx{LALSnglInspiralTableFromLIGOLw()}
-\idx{InspiralTmpltBankFromLIGOLw()}
-\idx{SimInspiralTableFromLIGOLw()}
-\idx{XLALSearchSummaryTableFromLIGOLw()}
-\idx{SummValueTableFromLIGOLw()}
-
-\subsubsection*{Description}
-
-  The routine \verb+LALSnglInspiralTableFromLIGOLw+ reads in a
-  \verb+sngl_inspiral+ table from the LIGOLwXML file specified in \verb+fileName+.
-  It returns the number of triggers read in and \verb+eventHead+ provides a
-  pointer to the head of a linked list of \verb+SnglInspiralTable+s containing the
-  events.  It will return all events between the \verb+startEvent+ and
-  \verb+stopEvent+; if these are set to 0 and -1 respectively, all events are
-  returned.
-
-  The routine \verb+InspiralTmpltBankFromLIGOLw+ reads in a \verb+sngl_inspiral+
-  table from the LIGOLwXML file specified in \verb+fileName+. It returns the
-  number of templates read in and \verb+bankHead+ provides a pointer to the head
-  of a linked list of \verb+InspiralTemplate+s containing the templates read in.
-  It will return all events between the \verb+startTmplt+ and \verb+stopTmplt+; if
-  these are set to 0 and -1 respectively, all events are returned.  Although a
-  \verb+sngl_inspiral+ table is read in, only those entries relevant for an
-  InspiralTemplate are read in and stored.
-
-  The routine \verb+SimInspiralTableFromLIGOLw+ reads in a \verb+sim_inspiral+
-  table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-  number of rows read in and \verb+SimHead+ provides a pointer to the head of a
-  linked list of \verb+SimInspiralTable+s containing the events.  Additionally, a
-  \verb+startTime+ and \verb+endTime+ are specified.  Only simulated events
-  occuring between these times are returned.  If the \verb+endTime+ is set to
-  zero, then all events are returned.
-
-  The routine \verb+XLALSearchSummaryTableFromLIGOLw+ reads in a
-  \verb+search_summary+ table from the LIGOLwXML file specified in
-  \verb+fileName+.  It returns a pointer to the head of a linked list of
-  \verb+SearchSummaryTable+s.
-
-  The routine \verb+SummValueTableFromLIGOLw+ reads in a \verb+summ_value+
-  table from the LIGOLwXML file specified in \verb+fileName+.  It returns the
-  number of rows read in and \verb+sumHead+ provides a pointer to the head of a
-  linked list of \verb+SummValueTable+s.
-
-  \subsubsection*{Algorithm}
-
-  None.
-
-  \subsubsection*{Uses}
-  Functions in the Metaio library:
-  \begin{itemize}
-  \item \verb+MetaioFindColumn+
-  \item \verb+MetaioGetRow+
-  \item \verb+MetaioOpenTable+
-  \item \verb+MetaioClose+
-  \end{itemize}
-  \subsubsection*{Notes}
-
-  %% Any relevant notes.
-
-  \vfill{\footnotesize\input{LIGOLwXMLReadCV}}
-
-  </lalLaTeX>
-#endif
 
 
 /**
@@ -142,8 +125,6 @@ files.
  *   every possible table one-by-one and loading the ones that are found.
  *   Put the time into writing a proper XML I/O layer!!
  */
-
-
 int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 {
 	struct MetaioParseEnvironment env;
@@ -155,7 +136,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	}
 
 	/*
@@ -176,7 +157,7 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 
 	if(MetaioClose(&env)) {
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR(__func__, XLAL_EIO);
+		XLAL_ERROR(XLAL_EIO);
 	}
 
 	/*
@@ -198,8 +179,6 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
  * requested type.  Passing METAIO_TYPE_UNKNOWN disables the column type
  * test.
  */
-
-
 int XLALLIGOLwFindColumn(
 	struct MetaioParseEnvironment *env,
 	const char *name,
@@ -212,12 +191,12 @@ int XLALLIGOLwFindColumn(
 		/* column was found, check type */
 		if(type != METAIO_TYPE_UNKNOWN && env->ligo_lw.table.col[pos].data_type != type) {
 			XLALPrintError("%s(): column \"%s\" has wrong type\n", __func__, name);
-			XLAL_ERROR(__func__, XLAL_EDATA);
+			XLAL_ERROR(XLAL_EDATA);
 		}
 	} else if(required) {
 		/* required column is missing */
 		XLALPrintError("%s(): missing required column \"%s\"\n", __func__, name);
-		XLAL_ERROR(__func__, XLAL_EDATA);
+		XLAL_ERROR(XLAL_EDATA);
 	}
 	return pos;
 }
@@ -250,14 +229,14 @@ long long XLALLIGOLwParseIlwdChar(
 
 	fmt = malloc(strlen(ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]") + strlen(ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]") + 8);
 	if(!fmt)
-		XLAL_ERROR(__func__, XLAL_ENOMEM);
+		XLAL_ERROR(XLAL_ENOMEM);
 
 	sprintf(fmt, "%s:%s:%%lld", ilwd_char_table_name ? ilwd_char_table_name : "%*[^:]", ilwd_char_column_name ? ilwd_char_column_name : "%*[^:]");
 
 	if(sscanf(ilwd_char, fmt, &id) < 1) {
 		free(fmt);
 		XLALPrintError("%s(): invalid %s \"%s\" for %s\n", __func__, ilwd_char_column_name ? ilwd_char_column_name : "ID", ilwd_char, ilwd_char_table_name ? ilwd_char_table_name : "table");
-		XLAL_ERROR(__func__, XLAL_EDATA);
+		XLAL_ERROR(XLAL_EDATA);
 	}
 
 	free(fmt);
@@ -270,8 +249,6 @@ long long XLALLIGOLwParseIlwdChar(
  * Read the process table from a LIGO Light Weight XML file into a linked
  * list of ProcessTable structures.
  */
-
-
 ProcessTable *XLALProcessTableFromLIGOLw(
 	const char *filename
 )
@@ -303,12 +280,12 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -335,7 +312,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -348,7 +325,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 		if(!row) {
 			XLALDestroyProcessTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -375,14 +352,14 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroyProcessTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 	}
 	if(miostatus < 0) {
 		XLALDestroyProcessTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -390,7 +367,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	if(MetaioClose(&env)) {
 		XLALDestroyProcessTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */
@@ -403,8 +380,6 @@ ProcessTable *XLALProcessTableFromLIGOLw(
  * Read the process_params table from a LIGO Light Weight XML file into a
  * linked list of ProcessParamsTable structures.
  */
-
-
 ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	const char *filename
 )
@@ -426,12 +401,12 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -448,7 +423,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -461,7 +436,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		if(!row) {
 			XLALDestroyProcessParamsTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -475,7 +450,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroyProcessParamsTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		strncpy(row->param, env.ligo_lw.table.elt[column_pos.param].data.lstring.data, sizeof(row->param) - 1);
 		strncpy(row->type, env.ligo_lw.table.elt[column_pos.type].data.lstring.data, sizeof(row->type) - 1);
@@ -485,7 +460,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		XLALDestroyProcessParamsTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -493,7 +468,111 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 	if(MetaioClose(&env)) {
 		XLALDestroyProcessParamsTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
+	}
+
+	/* done */
+
+	return head;
+}
+
+
+/**
+ * Read the time_slide table from a LIGO Light Weight XML file into a
+ * linked list of TimeSlide structures.
+ */
+
+TimeSlide *
+XLALTimeSlideTableFromLIGOLw (
+    const char *filename
+)
+{
+	static const char table_name[] = "time_slide";
+	int miostatus;
+	TimeSlide *head = NULL;
+	TimeSlide **next = &head;
+	struct MetaioParseEnvironment env;
+	struct {
+		int process_id;
+		int time_slide_id;
+		int instrument;
+		int offset;
+	} column_pos;
+
+	/* open the file and find table */
+
+	if(MetaioOpenFile(&env, filename)) {
+		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(XLAL_EIO);
+	}
+	if(MetaioOpenTableOnly(&env, table_name)) {
+		MetaioAbort(&env);
+		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(XLAL_EIO);
+	}
+
+	/* find columns */
+
+	XLALClearErrno();
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.instrument = XLALLIGOLwFindColumn(&env, "instrument", METAIO_TYPE_LSTRING, 1);
+	column_pos.offset = XLALLIGOLwFindColumn(&env, "offset", METAIO_TYPE_REAL_8, 1);
+
+	/* check for failure (== a required column is missing) */
+
+	if(XLALGetBaseErrno()) {
+		MetaioAbort(&env);
+		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	}
+
+	/* loop over the rows in the file */
+
+	while((miostatus = MetaioGetRow(&env)) > 0) {
+		/* create a new row */
+
+		TimeSlide *row = XLALCreateTimeSlide();
+
+		if(!row) {
+			XLALDestroyTimeSlideTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+
+		/* append to linked list */
+
+		*next = row;
+		next = &(*next)->next;
+
+		/* populate the columns */
+
+		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
+			XLALDestroyTimeSlideTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
+			XLALDestroyTimeSlideTable(head);
+			MetaioAbort(&env);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+		}
+		strncpy(row->instrument, env.ligo_lw.table.elt[column_pos.instrument].data.lstring.data, sizeof(row->instrument) - 1);
+		row->offset = env.ligo_lw.table.elt[column_pos.offset].data.real_8;
+	}
+	if(miostatus < 0) {
+		XLALDestroyTimeSlideTable(head);
+		MetaioAbort(&env);
+		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(XLAL_EIO);
+	}
+
+	/* close file */
+
+	if(MetaioClose(&env)) {
+		XLALDestroyTimeSlideTable(head);
+		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */
@@ -506,8 +585,6 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
  * Read the search_summary table from a LIGO Light Weight XML file into a
  * linked list of SearchSummaryTable structures.
  */
-
-
 SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	const char *filename
 )
@@ -540,12 +617,12 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 	if(MetaioOpenFile(&env, filename)) {
 		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 	if(MetaioOpenTableOnly(&env, table_name)) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* find columns */
@@ -573,7 +650,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(XLALGetBaseErrno()) {
 		MetaioAbort(&env);
 		XLALPrintError("%s(): failure reading %s table\n", __func__, table_name);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* loop over the rows in the file */
@@ -586,7 +663,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if(!row) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* append to linked list */
@@ -599,7 +676,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
 			XLALDestroySearchSummaryTable(head);
 			MetaioAbort(&env);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 		/* FIXME:  structure definition does not include elements
 		 * for these columns */
@@ -619,7 +696,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 		XLALDestroySearchSummaryTable(head);
 		MetaioAbort(&env);
 		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* close file */
@@ -627,7 +704,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	if(MetaioClose(&env)) {
 		XLALDestroySearchSummaryTable(head);
 		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(__func__, XLAL_EIO);
+		XLAL_ERROR_NULL(XLAL_EIO);
 	}
 
 	/* done */

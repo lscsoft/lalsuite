@@ -23,29 +23,22 @@ ver 3.1   2005/3/21 H.Tagoshi
 ver6.5 2006/2/23  NR functions was replaced with GSL functions H. Takahashi
 */
 
-/* <lalVerbatim file="LALInspiralBCVSpinBankHV">
+/**
+\author Tagoshi, H., T. Hirotaka, Van Den Broeck, C., Jones, G., B.S. Sathyaprakash
+\file
+\ingroup LALInspiralBank_h
 
-Author: Tagoshi, H., T. Hirotaka, Van Den Broeck, C., Jones, G., B.S. Sathyaprakash
-$Id$
+\brief %Header file for the template placement codes.
 
-</lalVerbatim> */
-
-/* <lalLaTeX>
-
-\section{Header \texttt{LALInspiralBCVSpinBank.h}}
-\label{s:LALInspiralBCVSpinBank.h}
-
-Header file for the template placement codes.
-
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LALInspiralBCVSpinBank.h>
-\end{verbatim}
+\endcode
 
-\noindent This header file covers routines that are used in template placement
+This header file covers routines that are used in template placement
 for spinning black hole binaries using phenomenological BCV templates.
 
-</lalLaTeX> */
+*/
 
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALConstants.h>

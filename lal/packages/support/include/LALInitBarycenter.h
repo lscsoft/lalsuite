@@ -53,26 +53,3 @@ void LALInitBarycenter(LALStatus *, EphemerisData *);
 #endif      /* Close C++ protection */
 
 #endif      /* Close double-include protection */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

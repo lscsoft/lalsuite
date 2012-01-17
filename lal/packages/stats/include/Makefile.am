@@ -1,8 +1,11 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = LALMoment.h LALCorrelation.h
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
+CLEANFILES =
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 all-local: include-link
-dvi-local: .dvi-dep
+
 @INCLUDEMKFILE@
-@DVIMKFILE@
+
+swig_headers = $(pkginclude_HEADERS)
+include $(top_srcdir)/swig/swig-header.am

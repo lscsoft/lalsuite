@@ -23,22 +23,16 @@
  *
  * Author: Brown, D. A. and Fazi, D.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpPTFFilterCV">
-Author: Brown, D. A. and Fazi, D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\input{FindChirpPTFFilterCDoc}
+\author Brown, D. A. and Fazi, D.
+\file
+\ingroup FindChirpPTF_h
 
-\vfill{\footnotesize\input{FindChirpPTFFilterCV}}
-#endif
+*/
 
 #include <config.h>
 #include <stdlib.h>
@@ -56,7 +50,7 @@ $Id$
 
 NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
 
-/* <lalVerbatim file="FindChirpPTFFilterCP"> */
+
 
 void
 LALFindChirpPTFFilterSegment (
@@ -65,7 +59,7 @@ LALFindChirpPTFFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4                 i, j, k, l, kmax, kmin;
   UINT4                 numPoints;
@@ -340,7 +334,7 @@ LALFindChirpPTFFilterSegment (
   input->fcTmplt->norm = 1.0;
 
   LALFindChirpClusterEvents( status->statusPtr, eventList,
-      input, params, &clusterInput, 0 , 0);
+      input, params, &clusterInput, 0 , 0, NULL);
   CHECKSTATUSPTR( status );
 
   params->qVec = NULL;

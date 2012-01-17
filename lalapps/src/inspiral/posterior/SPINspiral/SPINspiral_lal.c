@@ -144,8 +144,8 @@ void templateLAL12(struct parSet *par, struct interferometer *ifo[], int ifonr, 
   
   // Compute the detector response
   //double delay = LALFpFc(&thewaveform, wave, &lengthLAL, length, par, ifonr);
-  double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
-  delay = delay; //MvdS: remove 'declared but never referenced' warnings
+  /* double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); */ //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x) - JOHN: Commented out as never used.
+  /* delay = delay; */ //MvdS: remove 'declared but never referenced' warnings
   
   // printf("LALdelay = %10.10f\n", delay);
   
@@ -542,8 +542,9 @@ void templateLAL15old(struct parSet *par, struct interferometer *ifo[], int ifon
   
   // Compute the detector response
   //double delay = LALFpFc(&thewaveform, wave, &lengthLAL, length, par, ifonr);
-  double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
-  delay = delay; //MvdS: remove 'declared but never referenced' warnings
+  /* double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); */
+  //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
+  /* delay = delay; */ //MvdS: remove 'declared but never referenced' warnings
   
   // printf("LALdelay = %10.10f\n", delay);
   
@@ -935,8 +936,8 @@ void templateLAL15(struct parSet *par, struct interferometer *ifo[], int ifonr, 
   
   
   // Compute the detector response:
-  double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
-  delay = delay; //MvdS: remove 'declared but never referenced' warnings
+  /* double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); */ //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
+  /* delay = delay; */ //MvdS: remove 'declared but never referenced' warnings
   
   
   for (i=0; i<length; ++i) ifo[ifonr]->FTin[i] = wave[i];
@@ -1545,8 +1546,8 @@ void templateLALnonSpinning(struct parSet *par, struct interferometer *ifo[], in
   
   
   // Compute the detector response  -  Is this done by LALGenerateInspiral for the non-spinning case?
-  double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
-  delay = delay; //MvdS: remove 'declared but never referenced' warnings
+  /* double delay = LALFpFc(&status, &waveform, &injParams, &ppnParams, wave, length, par, ifo[ifonr], ifonr); */ //Vivien: lentghLAL is set in LALinteface.c But is is also availble in the structure thewaveform (which holds h+,x) and the structure wave (which holds F+,x)
+  /* delay = delay; */ //MvdS: remove 'declared but never referenced' warnings
   
   
   
@@ -1672,9 +1673,18 @@ double LALFpFc(LALStatus *status, CoherentGW *waveform, SimInspiralTable *injPar
   
   XLALINT8NSToGPS(&(waveform->a->epoch), waveformStartTime );
   
-  memcpy( &(waveform->f->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
-  memcpy( &(waveform->phi->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
+  //memcpy( &(waveform->f->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
+  //memcpy( &(waveform->phi->epoch), &(waveform->a->epoch), sizeof(LIGOTimeGPS) );
 
+  waveform->f->epoch = waveform->a->epoch;
+  waveform->phi->epoch = waveform->a->epoch;
+
+  if ( waveform->shift )
+    {
+      waveform->shift->epoch = waveform->a->epoch;
+    }
+  
+  
 	/* set the start time of the signal vector to the start time of ifo[ifonr]->FTstart */
   
   

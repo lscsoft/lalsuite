@@ -7,9 +7,9 @@ check_PROGRAMS = \
 	BasicInjectTest \
 	CoarseTest \
 	CoarseTest2 \
+	CompareLalsimultaionLalinspiralWaveforms \
 	FindChirpBCVSpinTest \
 	FindChirpBankVetoTest \
-	FindChirpTDTest \
 	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \
 	GeneratePPNInspiralTest \
@@ -19,6 +19,9 @@ check_PROGRAMS = \
 	InspiralSpinBankTest \
 	LALInspiralSpinningBHBinariesTest \
 	LALInspiralTest \
+	LALInspiralTaylorT2Test \
+	LALInspiralTaylorT3Test \
+	LALInspiralTaylorT4Test \
 	LALSTPNWaveformTest \
 	MetricTest \
 	MetricTestBCV \
@@ -26,7 +29,7 @@ check_PROGRAMS = \
 	PNTemplates \
 	RandomInspiralSignalTest
 TESTS = $(check_PROGRAMS)
-FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
+#FindChirpTDTest_SOURCES = FindChirpTDTest.c FindChirpTDTest.h
 endif
 
 # non-building test
@@ -46,6 +49,7 @@ endif
 # LALHybridTest
 # NRWaveIOTest
 # SpaceCovering
+# FindChirpTDTest
 
 # requires lalstochastic
 # CoherentInspiralFilterTest

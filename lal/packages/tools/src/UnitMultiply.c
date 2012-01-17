@@ -17,48 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="UnitMultiplyCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{UnitMultiply.c}}
-\label{tools:ss:UnitMultiply.c}
-
-Multiplies two \texttt{LALUnit} structures.
-
-\subsubsection*{Prototypes}
-\input{UnitMultiplyCP}
-\idx{LALUnitMultiply()}
-
-This function multiplies together the \texttt{LALUnit} structures
-\texttt{*(input->unitOne)} and \texttt{*(input->unitTwo)}, thus allowing a
-module to \textit{e.g.}, multiply two \texttt{REAL8TimeSeries} and
-give the resulting \texttt{REAL8TimeSeries} the correct units.
-
-\subsubsection*{Algorithm}
-
-The function first adds together the overall powers of ten in the two
-input unit structures, then adds each of the corresponding rational
-powers in \texttt{*(input->unitOne)} and \texttt{*(input->unitTwo)} by na\"{\i}ve
-addition of rational numbers
-$$
-\frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
-\frac{N_1 (1+D_2) +  N_2(1+D_1)}{1 + (1+D_1)(1+D_2)-1}
-$$
-and then calls \texttt{LALUnitNormalize()} to bring the result into
-standard form.
-
-\subsubsection*{Uses}
-
-\texttt{LALUnitNormalize()}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{UnitMultiplyCV}}
-
-******************************************************* </lalLaTeX> */
 #define TRUE 1
 #define FALSE 0
 
@@ -67,20 +25,58 @@ standard form.
 
 NRCSID( UNITMULTIPLYC, "$Id$" );
 
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\addtogroup UnitMultiply_c
+
+\brief Multiplies two \c LALUnit structures.
+
+This function multiplies together the \c LALUnit structures
+<tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt>, thus allowing a
+module to <em>e.g.</em>, multiply two \c REAL8TimeSeries and
+give the resulting \c REAL8TimeSeries the correct units.
+
+\heading{Algorithm}
+
+The function first adds together the overall powers of ten in the two
+input unit structures, then adds each of the corresponding rational
+powers in <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt> by naïve
+addition of rational numbers
+\f[
+\frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
+\frac{N_1 (1+D_2) +  N_2(1+D_1)}{1 + (1+D_1)(1+D_2)-1}
+\f]
+and then calls <tt>LALUnitNormalize()</tt> to bring the result into
+standard form.
+
+\heading{Uses}
+
+<tt>LALUnitNormalize()</tt>
+
+*/
+
+/** This function multiplies together the \c LALUnit structures
+ * <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt>, thus allowing a
+ * module to eg, multiply two \c REAL8TimeSeries and
+ * give the resulting \c REAL8TimeSeries the correct units.
+ *
+ * \heading{Uses}
+ * <tt>XLALUnitNormalize()</tt>
+ *
+ */
 LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char *func = "XLALUnitMultiply";
   LALUnit     unReduced;
   UINT2        i;
   INT4         numer;
   UINT4        denom, denom1, denom2;
 
   if ( ! output || ! unit1 || ! unit2 )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   numer = unit1->powerOfTen + unit2->powerOfTen;
   if ( numer >= 32767L || numer <= -32768L )
-    XLAL_ERROR_NULL( func, XLAL_ERANGE );
+    XLAL_ERROR_NULL( XLAL_ERANGE );
 
   unReduced.powerOfTen = numer;
   for (i=0; i<LALNumUnits; ++i) {
@@ -89,7 +85,7 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
     denom = denom1 * denom2;
 
     if ( denom >= 65535L )
-      XLAL_ERROR_NULL( func, XLAL_ERANGE );
+      XLAL_ERROR_NULL( XLAL_ERANGE );
 
     /* One could use the gcd function to find the common factors of
        denom1 and denom2, but we have to reduce the fractions after
@@ -99,14 +95,14 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
       + ((INT4) denom1) * unit2->unitNumerator[i];
 
     if ( numer >= 32767L || numer <= -32768L )
-      XLAL_ERROR_NULL( func, XLAL_ERANGE );
+      XLAL_ERROR_NULL( XLAL_ERANGE );
 
     unReduced.unitNumerator[i] = numer;
   } /* for i */
 
   *output = unReduced;
   if ( XLALUnitNormalize( output ) == XLAL_FAILURE )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   return output;
 }
@@ -114,21 +110,21 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
 
 LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char *func = "XLALUnitDivide";
   LALUnit scratch;
   /* invert unit2 and then multiply by unit1 */
   if ( ! XLALUnitInvert( &scratch, unit2 ) )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   if ( ! XLALUnitMultiply( output, unit1, &scratch ) )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return output;
 }
 
-
-/* <lalVerbatim file="UnitMultiplyCP"> */
+/** \ingroup UnitMultiply_c
+ * \deprecated Use XLALUnitMultiply() instead.
+ */
 void
 LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALUnitMultiply", UNITMULTIPLYC );
 

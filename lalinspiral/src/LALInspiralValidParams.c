@@ -17,124 +17,117 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALInspiralValidParamsCV">
-Author: Churches, D. K. and Sathyaprakash, B.S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Churches, D. K. and Sathyaprakash, B.S.
+\file
+\ingroup LALInspiralBank_h
 
-
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralValidParams.c}}
-Module which checks whether or not a pair of parameter
+\brief Module which checks whether or not a pair of parameter
 values are consistent with the search space.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralValidParamsCP}
-\idx{LALInspiralValidParams()}
-\begin{itemize}
-   \item \texttt{valid,} Output, 0 means invalid template, 1 means valid
-   \item \texttt{bankParams,} Input
-   \item \texttt{coarseIn,} Input
-\end{itemize}
+\heading{Prototypes}
+
+<tt>LALInspiralValidParams()</tt>
+<ul>
+   <li> <tt>valid,</tt> Output, 0 means invalid template, 1 means valid
+   </li><li> <tt>bankParams,</tt> Input
+   </li><li> <tt>coarseIn,</tt> Input</li>
+</ul>
 
 Module which checks whether or not a pair of parameter
-values $\tau_{0}$ and $\tau_{2(3)}$ correspond to
-a user specified range of component masses \texttt{(mMin,mMax)} OR to a
-minimum value of the component masses \texttt{mMin} and maximum total
-mass \texttt{MMax.} In the first case chirptimes satisfying the
-constraint \texttt{mMin}~$\le m_1, m_2 \le$~\texttt{mMax} are accepted
+values \f$\tau_{0}\f$ and \f$\tau_{2(3)}\f$ correspond to
+a user specified range of component masses <tt>(mMin,mMax)</tt> OR to a
+minimum value of the component masses \c mMin and maximum total
+mass <tt>MMax.</tt> In the first case chirptimes satisfying the
+constraint \c mMin\f$\le m_1, m_2 \le\f$\c mMax are accepted
 as valid systems. In the second cases chirptimes satisfying the
-constraint \texttt{mMin}~$\le m_1, m_2,$ and \texttt{MMax}$\le m=m_1+m_2$
+constraint \c mMin\f$\le m_1, m_2,\f$ and \c MMax\f$\le m=m_1+m_2\f$
 are treated as valid.
 
-\subsubsection*{Description}
+\heading{Description}
 
-We start with the definition of the chirp times $\tau_{0}$ and $\tau_{3}$,
-\begin{equation}
+We start with the definition of the chirp times \f$\tau_{0}\f$ and \f$\tau_{3}\f$,
+\f{equation}{
 \tau_{0} = \frac{5}{256 (\pi f_{a} )^{8/3} m^{5/3} \eta}
-\end{equation}
+\f}
 and
-\begin{equation}
+\f{equation}{
 \tau_{3} = \frac{1}{8 (\pi^{2} f_{a}^{5} )^{1/3} m^{2/3} \eta}
-\end{equation}
+\f}
  These equations may be inverted to yield
-\begin{equation}
+\f{equation}{
 m = \frac{5}{32 \pi^{2} f_{a}} \frac{\tau_{3}}{\tau_{0}}
-\end{equation}
+\f}
 and
-\begin{equation}
+\f{equation}{
 \eta = \left( \frac{2 \pi^{2}}{25 f_{a}^{3}} \frac{\tau_{0}^{2}}{\tau_{3}^{1/3}}
-\right)^{5}\end{equation}
+\right)^{5}\f}
 
 The individual masses may be calculated as follows.  We have
-\begin{equation}
+\anchor eq_mass \f{equation}{
 m = m_{1} + m_{2}
-\label{mass}
-\end{equation}
+\label{eq_mass}
+\f}
 and
-\begin{equation}
+\anchor eq_eta \f{equation}{
 \eta = \frac{m_{1} m_{2}}{(m_{1} + m_{2})^{2}}
-\label{eta}
-\end{equation}
-From Eq.(\ref{mass}) we may eliminate either $m_{1}$ or $m_{2}$,
-\begin{equation}
+\label{eq_eta}
+\f}
+From Eq.\eqref{eq_mass} we may eliminate either \f$m_{1}\f$ or \f$m_{2}\f$,
+\f{equation}{
 m_{1} = m - m_{2}
-\end{equation}
-This may be substituted into Eq.(\ref{eta}) to give
-\begin{equation}
+\f}
+This may be substituted into Eq.\eqref{eq_eta} to give
+\f{equation}{
 \eta = \frac{(m - m_{2}) m_{2}}{\left[ (m - m_{2}) + m_{2} \right]^{2}}
      = \frac{(m - m_{2}) m_{2}}{m^{2}}
-\end{equation}
+\f}
 which may be re--arranged to give
-\begin{equation}
+\f{equation}{
 m_{2}^{2} - m m_{2} + \eta m^{2} = 0,
-\end{equation}
-i.e.\
-\begin{equation}
+\f}
+i.e.
+\f{equation}{
 m_{2} = \frac{ m \pm \sqrt{m^{2}(1 - 4 \eta) }}{2}
-\end{equation}
-Therefore, since we know that $\eta \leq 1/4$, real roots are guaranteed.
-If we had eliminated $m_{2}$ rather than $m_{1}$ then we would have arrived at an identical
+\f}
+Therefore, since we know that \f$\eta \leq 1/4\f$, real roots are guaranteed.
+If we had eliminated \f$m_{2}\f$ rather than \f$m_{1}\f$ then we would have arrived at an identical
 expression for
-$m_{1}$, and so of one object has mass
-\begin{equation}
+\f$m_{1}\f$, and so of one object has mass
+\f{equation}{
 m_{1} = \frac{m + \sqrt{m^{2}(1-4 \eta)}}{2}
-\end{equation}
+\f}
 then the other object must have mass
-\begin{equation}
+\f{equation}{
 m_{2} = \frac{m - \sqrt{m^{2}(1-4 \eta)}}{2}
-\end{equation}
-This function is also given \texttt{mMin} and \texttt{MMax} as inputs, which it may
-use to calculate the minimum value of $\eta$ which is possible with those inputs,
-\begin{equation}
+\f}
+This function is also given \c mMin and \c MMax as inputs, which it may
+use to calculate the minimum value of \f$\eta\f$ which is possible with those inputs,
+\f{equation}{
 \eta_{min} = \mathtt{ \frac{mMin(MMax - mMin)}{MMax^{2}} }
-\end{equation}
+\f}
 
-To recap, the function calculates $m$, $\eta$, $\eta_{min}$ and $m_{1,2}$.
+To recap, the function calculates \f$m\f$, \f$\eta\f$, \f$\eta_{min}\f$ and \f$m_{1,2}\f$.
 It then checks that
-\begin{equation}
+\f{equation}{
 \eta_{min} \leq \eta \leq 1/4
-\end{equation}
+\f}
 and that
-\begin{equation}
+\f{equation}{
 m_{1} \geq \mathtt{mMin}
-\end{equation}
+\f}
 and
-\begin{equation}
+\f{equation}{
 m_{2} \geq \mathtt{mMin}
-\end{equation}
+\f}
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralValidParamsCV}}
-
-</lalLaTeX>  */
+*/
 
 
 #include <lal/LALInspiralBank.h>
@@ -142,7 +135,7 @@ m_{2} \geq \mathtt{mMin}
 
 NRCSID (LALINSPIRALVALIDPARAMSC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralValidParamsCP">  */
+
 
 void LALInspiralValidParams(
     LALStatus            *status,
@@ -150,7 +143,7 @@ void LALInspiralValidParams(
     InspiralBankParams   bankParams,
     InspiralCoarseBankIn coarseIn
     )
-/* </lalVerbatim> */
+
 {
 
   InspiralTemplate *Pars=NULL;

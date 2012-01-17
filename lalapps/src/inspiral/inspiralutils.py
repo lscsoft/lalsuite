@@ -588,9 +588,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "inspiral", "veto-inspiral", "g1-inspiral", "h1-inspiral", \
         "h2-inspiral", "l1-inspiral", "v1-inspiral", "ligolw_add", \
         "ligolw_cafe", "thinca", "thinca-2", "thinca-slide", "coire", \
-        "coire-1", "coire-2", "coire-inj", "sire", "sire-inj", "cohbank", \
-        "trigbank-coherent", "chia", "inspiral-coherent", "cohinspbank", \
-        "chia-inj", "cohire", "cohire-inj", "condor-max-jobs"]
+        "coire-1", "coire-2", "coire-inj", "sire", "sire-inj", "condor-max-jobs"]
+    if vetoCat == 4:
+      hipeSections.extend(["h1-inspiral-coherent","h2-inspiral-coherent",
+        "l1-inspiral-coherent","v1-inspiral-coherent","cohbank","trigbank-coherent",
+        "inspiral-coherent", "chia", "cohinspbank", "chia-inj", "cohire", "cohire-inj"])
   else:
     hipeSections = ["condor", "pipeline", "input", "data", "datafind",\
         "ligo-data", "virgo-data", "geo-data", "calibration", "tmpltbank", \
@@ -600,9 +602,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "ligolw_add", \
         "ligolw_cafe", "thinca", "thinca-1", "thinca-2", "thinca-slide", \
         "trigbank", "sire", "sire-inj", "coire", "coire-1", "coire-2", \
-        "coire-inj", "cohbank", "trigbank-coherent", "chia", \
-        "inspiral-coherent", "cohinspbank", "chia-inj", "cohire", \
-        "cohire-inj", "condor-max-jobs"]
+        "coire-inj", "condor-max-jobs"]
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
@@ -655,6 +655,11 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       for ifo in ifos:
         hipecp.set("thinca-2", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
       hipecp.set("thinca-2", "do-veto", "")
+    elif config.has_option("hipe-arguments","ringdown"):
+      # add the veto files in the thinca section
+      for ifo in ifos:
+        hipecp.set("thinca", ifo.lower() + "-veto-file", vetoFiles[ifo][vetoCat])
+      hipecp.set("thinca", "do-veto", "")
     else:
       # add a vetoes section
       hipecp.add_section("vetoes")
@@ -738,17 +743,24 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
       hipe_args = ["coincidence", "ringdown","coire-coincidence",
         "summary-first-coinc-triggers","write-script"]
     elif config.has_option("hipe-arguments","second-coinc"):
-      hipe_args = ["second-coinc", "coire-second-coinc", 
-        "summary-coinc-triggers", "sire-second-coinc", 
-        "summary-single-ifo-triggers","write-script",
-        "coherent-bank","coherent-inspiral","cohire",
-        "summary-coherent-inspiral-triggers"]
+      hipe_args = ["second-coinc", "coire-second-coinc",
+        "summary-coinc-triggers", "sire-second-coinc",
+        "summary-single-ifo-triggers","write-script"]
+      if vetoCat == 4 and config.has_option("hipe-arguments","coherent-bank"):
+        hipe_args.extend(["coherent-bank","coherent-inspiral","cohire",
+          "summary-coherent-inspiral-triggers"])
+    elif vetoCat == 4 and config.has_option("hipe-arguments","coherent-bank"):
+      hipe_args = ["coherent-bank","coherent-inspiral","cohire",
+        "summary-coherent-inspiral-triggers","write-script"]
     else:
       hipe_args = ["coincidence","write-script"]
     for hipe_arg in hipe_args:
       hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   else:
     omit = ["datafind", "template-bank", "disable-dag-categories", "disable-dag-priorities"]
+    if config.has_option("hipe-arguments","coherent-bank"):
+      omit.extend(["coherent-bank","coherent-inspiral","cohire",
+        "summary-coherent-inspiral-triggers"])
     for (opt, arg) in config.items("hipe-arguments"):
       if opt not in omit:
         hipeCommand += "--" + opt + " " + arg 
@@ -780,6 +792,13 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   hipeJob = pipeline.CondorDAGManJob(hipeDag, hipeDir, hipeDax)
   hipeNode = pipeline.CondorDAGManNode(hipeJob)
+
+  # grab the tmpltbank from hipecp file if provided in input section
+  if hipecp.has_section("input") and \
+      hipecp.has_option("input", "fixed-bank"):
+    tmpltbankfile = hipecp.get("input", "fixed-bank")
+    hipeJob.add_pfn_cache(os.path.join( os.getcwd(), hipe_pfn_list_cache(
+      'tmpltbanks.cache', [tmpltbankfile] )))
 
   # add the maxjob categories to the dagman node class
   # FIXME pegasus should handle this in the dax schema itself

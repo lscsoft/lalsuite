@@ -31,17 +31,18 @@ if __name__=='__main__':
     data=args
 
     if opts.headers is None:
-        headerstr='mchirp\t eta\t time\t phi0\t dist\t RA\t dec\t psi\t iota\t logL'
+        headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
     else:
         headerfile=open(opts.headers,'r')
         headerstr=headerfile.readline()
         headerfile.close()
 
+    logLcolumn=headerstr.lower().split().index('logl')
     if not opts.outsamp and not opts.outpos and not opts.bayesfactor:
         print 'No output specified, nothing to do'
         sys.exit(0)
 
-    pos,d_all,totalBayes,ZnoiseTotal=combine_evidence(data,opts.xflag,opts.Nlive)
+    pos,d_all,totalBayes,ZnoiseTotal=combine_evidence(data,opts.xflag,opts.Nlive,logLcolumn=logLcolumn)
 
     if opts.outpos is not None:
         posfilename=opts.outpos
@@ -60,11 +61,11 @@ if __name__=='__main__':
         for row in d_all:
             for i in row:
                 outfilenew.write('%f\t' %(i))
-                outfilenew.write('\n')
+            outfilenew.write('\n')
         outfilenew.close()
         outfileB=open(outfilename+'_B.txt','w')
         # Write out B Zsig Znoise maxL
-        print >>outfileB,"%f %f %f %f\n"%(totalBayes, totalBayes+ZnoiseTotal, ZnoiseTotal, pos[-1,-1]-ZnoiseTotal)
+        print >>outfileB,"%f %f %f %f\n"%(totalBayes, totalBayes+ZnoiseTotal, ZnoiseTotal, pos[-1,logLcolumn]-ZnoiseTotal)
         outfileB.close()
 
     if opts.bayesfactor is not None:

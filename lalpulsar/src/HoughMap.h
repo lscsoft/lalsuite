@@ -30,6 +30,11 @@
 #ifndef _HOUGHMAP_H
 #define _HOUGHMAP_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
 /*
  * 5. Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -146,6 +151,7 @@ NRCSID (HOUGHMAPH, "$Id$");
 
 /** This structure stores the Hough map derivative */
 typedef struct tagHOUGHMapDeriv{
+  SWIGLAL_STRUCT(HOUGHMapDeriv);
   UINT2     xSide;  /**< number of physical pixels in the x direction */
   UINT2     ySide;  /**< number of physical pixels in the y direction */
   HoughDT   *map ;  /**< the pixel count derivatives;
@@ -155,6 +161,7 @@ typedef struct tagHOUGHMapDeriv{
 
 /**  This structure stores the Hough map */
 typedef struct tagHOUGHMapTotal{
+  SWIGLAL_STRUCT(HOUGHMapTotal);
   INT8               f0Bin;      /**< frequency bin for which it has been constructed */
   REAL8              deltaF;     /**< frequency resolution */
   UINT4              mObsCoh;    /**< ratio of observation time and coherent timescale */

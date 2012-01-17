@@ -10,7 +10,6 @@ pkginclude_HEADERS = \
 	LALBarycenter.h \
 	LALCalibration.h \
 	LALDetectors.h \
-	LALTrigScanCluster.h \
 	ResampleTimeSeries.h \
 	Segments.h \
 	Sequence.h \
@@ -18,32 +17,13 @@ pkginclude_HEADERS = \
 	TimeSeries.h \
 	Units.h
 
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-MAINTAINERCLEANFILES = \
-	FrequencySeries.h \
-	Sequence.h \
-	TimeSeries.h
+CLEANFILES =
 
-EXTRA_DIST = \
-	FrequencySeries.m4 \
-	FrequencySeriesH.m4 \
-	Sequence.m4 \
-	SequenceH.m4 \
-	TimeSeries.m4 \
-	TimeSeriesH.m4
+MAINTAINERCLEANFILES =
 
 all-local: include-link
-dvi-local: .dvi-dep
-
-FrequencySeries.h : FrequencySeries.m4 FrequencySeriesH.m4
-	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.h
-
-Sequence.h : Sequence.m4 SequenceH.m4
-	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.h
-
-TimeSeries.h : TimeSeries.m4 TimeSeriesH.m4
-	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.h
 
 @INCLUDEMKFILE@
-@DVIMKFILE@
+
+swig_headers = $(pkginclude_HEADERS)
+include $(top_srcdir)/swig/swig-header.am

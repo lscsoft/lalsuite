@@ -17,34 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALNoiseModelsHV">
-
-Author: Sathyaprakash, B.S.
-$Id$
-
-</lalVerbatim> */
-
-/* <lalLaTeX>
-
-   \section{Header \texttt{LALNoiseModels.h}}
-   \label{s:LALNoiseModels.h}
-
-   Header file for model noise generation codes.
-
-   \subsection*{Synopsis}
-   \begin{verbatim}
-#include <lal/LALNoiseModels.h>
-\end{verbatim}
-
-\noindent This header file covers routines that are used in
-synthetic background noise  expected in various
-detectors and signals with random parameters in background noise.
-
-
-</lalLaTeX> */
-
 #ifndef _LALNOISEMODELS_H
 #define _LALNOISEMODELS_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
 
 #include <math.h>
 #include <stdio.h>
@@ -57,36 +36,41 @@ detectors and signals with random parameters in background noise.
 extern "C" {
 #endif
 
-    NRCSID( LALNOISEMODELSH, "$Id$" );
+  NRCSID( LALNOISEMODELSH, "$Id$" );
 
-    /* <lalLaTeX>
+/**
 
-       \subsection*{Error codes}
+\addtogroup LALNoiseModels_h
+\author Sathyaprakash, B.S.
 
-       </lalLaTeX>  */
+\brief Header file for model noise generation codes.
 
-    /* <lalErrTable> */
+\heading{Synopsis}
+\code
+#include <lal/LALNoiseModels.h>
+\endcode
 
-#define LALNOISEMODELSH_ENULL 1
-#define LALNOISEMODELSH_EMEM 2
-#define LALNOISEMODELSH_ECHOICE 4
-#define LALNOISEMODELSH_EDIV0 8
-#define LALNOISEMODELSH_ESIZE 16
+This header file covers routines that are used in
+synthetic background noise  expected in various
+detectors and signals with random parameters in background noise.
+
+*/
+/* @{ */
+/**\name Error Codes */ /*@{*/
+#define LALNOISEMODELSH_ENULL 	1	/**< Arguments contained an unexpected null pointer */
+#define LALNOISEMODELSH_EMEM 	2	/**< Memory allocation error */
+#define LALNOISEMODELSH_ECHOICE 4	/**< Invalid choice for an input parameter */
+#define LALNOISEMODELSH_EDIV0 	8	/**< Division by zero */
+#define LALNOISEMODELSH_ESIZE 	16	/**< Invalid input size */
+/*@} */
+
+/** \cond DONT_DOXYGEN */
 #define LALNOISEMODELSH_MSGENULL "Arguments contained an unexpected null pointer"
 #define LALNOISEMODELSH_MSGEMEM "Memory allocation error"
 #define LALNOISEMODELSH_MSGECHOICE "Invalid choice for an input parameter"
 #define LALNOISEMODELSH_MSGEDIV0 "Division by zero"
 #define LALNOISEMODELSH_MSGESIZE "Invalid input size"
-
-    /* </lalErrTable> */
-
-    /* <lalLaTeX>
-
-       \section*{Structures}
-       \input{LALNoiseModelsHS}
-       </lalLaTeX>  */
-
-    /*  <lalVerbatim file="LALNoiseModelsHS"> */
+/** \endcond */
 
     typedef enum
     {
@@ -97,33 +81,22 @@ extern "C" {
     }
     Detector;
 
-    /*  </lalVerbatim>  */
-
-    /*  <lalLaTeX>
-        \idx[Type]{Detector}
-        </lalLaTeX>  */
-
-    /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
             tagAddVectorsIn
             {
+                SWIGLAL_STRUCT(AddVectorsIn);
                 REAL4Vector *v1;
                 REAL4Vector *v2;
                 REAL8       a1;
                 REAL8       a2;
             }
     AddVectorsIn;
-    /*  </lalVerbatim>  */
-
-    /*  <lalLaTeX>
-        \idx[Type]{AddVectorsIn}
-        </lalLaTeX>  */
 
 
-    /*  <lalVerbatim file="LALNoiseModelsHS"> */
     typedef struct
             tagStatsREAL4VectorOut
             {
+                SWIGLAL_STRUCT(StatsREAL4VectorOut);
                 REAL8 mean;
                 REAL8 var;
                 REAL8 stddev;
@@ -131,17 +104,10 @@ extern "C" {
                 REAL8 max;
             }
     StatsREAL4VectorOut;
-    /*  </lalVerbatim>  */
 
-    /*  <lalLaTeX>
-        \vfill{\footnotesize\input{LALNoiseModelsHV}}
-        </lalLaTeX>  */
+
 
     /* Function prototypes */
-
-    /* <lalLaTeX>
-       \newpage\input{LALNoiseSpectralDensityC}
-       </lalLaTeX>  */
 
     void
             LALNoiseSpectralDensity
@@ -152,10 +118,6 @@ extern "C" {
              REAL8       f
             );
 
-    /* <lalLaTeX>
-       \newpage\input{LALEGOPsdC}
-       </lalLaTeX>  */
-
     void
             LALEGOPsd
             (
@@ -165,10 +127,6 @@ extern "C" {
             );
 
 
-    /* <lalLaTeX>
-       \newpage\input{LALGEOPsdC}
-       </lalLaTeX>  */
-
     void
             LALGEOPsd
             (
@@ -176,10 +134,6 @@ extern "C" {
              REAL8     *shf,
              REAL8     x
             );
-
-    /* <lalLaTeX>
-       \newpage\input{LALAdvLIGOPsdC}
-       </lalLaTeX>  */
 
     void
             LALAdvLIGOPsd
@@ -203,10 +157,6 @@ extern "C" {
              REAL8     x
             );
 
-    /* <lalLaTeX>
-       \newpage\input{LALTAMAPsdC}
-       </lalLaTeX>  */
-
     void
             LALTAMAPsd
             (
@@ -214,10 +164,6 @@ extern "C" {
              REAL8     *shf,
              REAL8     x
             );
-
-    /* <lalLaTeX>
-       \newpage\input{LALVIRGOPsdC}
-       </lalLaTeX>  */
 
     void
             LALVIRGOPsd
@@ -228,10 +174,6 @@ extern "C" {
             );
 
 
-    /* <lalLaTeX>
-       \newpage\input{LALColoredNoiseC}
-       </lalLaTeX>  */
-
     void
             LALColoredNoise
             (
@@ -240,10 +182,6 @@ extern "C" {
              REAL8Vector psd
             );
 
-    /* <lalLaTeX>
-       \newpage\input{LALAddVectorsC}
-       </lalLaTeX>  */
-
     void
             LALAddVectors
             (
@@ -251,9 +189,6 @@ extern "C" {
              REAL4Vector *vector,
              AddVectorsIn in);
 
-    /* <lalLaTeX>
-       \newpage\input{LALStatsREAL4VectorC}
-       </lalLaTeX>  */
 
     void
             LALStatsREAL4Vector
@@ -264,11 +199,9 @@ extern "C" {
             );
 
 
-    /* <lalLaTeX>
-       \newpage\input{NoisePSDTestC}
-       </lalLaTeX> */
-
     REAL8 XLALETBPsd( REAL8 f );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

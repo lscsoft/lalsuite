@@ -4,7 +4,5 @@ libdate_la_SOURCES = TimeDelay.c GPSTimeNow.c Playground.c StrToGPS.c \
                      XLALTime.c XLALCivilTime.c XLALSiderealTime.c \
                      XLALLeapSeconds.h
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =

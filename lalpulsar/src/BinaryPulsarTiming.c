@@ -24,77 +24,54 @@
  * \ingroup pulsarTODO
  * \brief Functions to calculate binary system time delays and read TEMPO pulsar parameter files
  *
- */
-
-/* LAL functions to calculate the timing differences needed to
-   take into account binary pulsar orbits
-   Models are taken from Taylor and Weisberg (1989) and use the
-   naming conventions therein and used by TEMPO */
-
-/*   Also contains function to read TEMPO .par files to obtain parameters
-  and errors on parameters (if available) */
-
-/* <lalVerbatim file="BinaryPulsarTimingCV">
-   Author: Pitkin, M. D.
-   $Id$
-   </lalVerbatim>
-
-   <lalLaTeX>
-   \subsection{Module \texttt{BinaryPulsarTiming.c}}
-   \label{ss:BinaryPulsarTiming.c}
-
    Functions for calculating the timing delay to a signal from a pulsar in a
-   binary system and reading pulsar parameters from TEMPO \cite{TEMPO} .par
+   binary system and reading pulsar parameters from TEMPO .par
    files.
+   Models are taken from Taylor and Weisberg (1989) and use the
+   naming conventions therein and used by TEMPO .
 
-   \subsubsection*{Prototypes}
-   \vspace{0.1in}
-   \input{BinaryPulsarTimingCP}
-   \idx{LALBinaryPulsarDeltaT()}
-   \idx{LALReadTEMPOParFile()}
-   \idx{LALdegsToRads()}
+   \heading{Prototypes}
 
-   \subsubsection*{Description}
+
+
+   \heading{Description}
 
    The main function computes the time delay of a signal from a pulsar in a
    binary system due to doppler shifts and relativistic delays,
-   \begin{equation}
-   \Delta{}t = t_{\rm Roemer} + t_{\rm Shapiro} + t_{\rm Einstein} + t_{\rm
+   \f{equation}{
+   \Delta{}t = t_\textrm{Roemer} + t_\textrm{Shapiro} + t_\textrm{Einstein} + t_\textrm{
    Abberation},
-   \end{equation}
-   where $t_{\rm Roemer}$ is the light travel time, $t_{\rm Shapiro}$ is the
-   General relativistic time delay, $t_{\rm Einstein}$ is the special
-   relativistic time delay, and $t_{\rm Abberation}$ is the delay caused by the
+   \f}
+   where \f$t_\textrm{Roemer}\f$ is the light travel time, \f$t_\textrm{Shapiro}\f$ is the
+   General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
+   relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
    pulsars' rotation. There are several models of the binary systems, described
-   in \cite{TaylorWeisberg:1989}, of which the four most common are so far
+   in [\ref TaylorWeisberg1989], of which the four most common are so far
    implemented. The four models are the Blandford-Teukolsky model (BT)
-   \cite{BlandfordTeukolsky:1976}, the low ellipticity model (ELL1)
-   \cite{ChLangeetal:2001}, Damour-Deruelle model (DD) \cite{DamourDeruelle:1985},
-   and the main sequence system model (MSS) \cite{Wex:1998}.
+   [\ref BlandfordTeukolsky1976], the low ellipticity model (ELL1)
+   [\ref ChLangeetal2001], Damour-Deruelle model (DD) [\ref DamourDeruelle1985],
+   and the main sequence system model (MSS) [\ref Wex1998].
    These four models all use the five main binary parameters: the longitude of
-   periastron $\omega_0$, the eccentricity of the orbit $e$, the orbital period
-   $P$, the time of periastron/or the time of ascension of the first node
-   $T_0$/$T_{{\rm asc}}$, and the projected semi-major axis $a\sin{}i$. The are
+   periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
+   \f$P\f$, the time of periastron/or the time of ascension of the first node
+   \f$T_0\f$/\f$T_{\textrm{asc}}\f$, and the projected semi-major axis \f$a\sin{}i\f$. The are
    also many other model dependent parameters. These routines closely follow
-   those used in the radio astronomy package TEMPO \cite{TEMPO}.
+   those used in the radio astronomy package TEMPO.
 
    Radio astronomers fit pulsar parameters using TEMPO which will output
-   the parameters in a \verb+.par+ file. The values allowed in this file can be
+   the parameters in a <tt>.par</tt> file. The values allowed in this file can be
    found in the TEMPO documentation. A function is included to extract these
-   parameters from the \verb+.par+ files and put them into a
-   \verb+BinaryPulsarParams+ structure, it will set any unused parameters to
-   zero or \texttt{NULL}. All parameters are in the units used by TEMPO with any
+   parameters from the <tt>.par</tt> files and put them into a
+   \c BinaryPulsarParams structure, it will set any unused parameters to
+   zero or \c NULL. All parameters are in the units used by TEMPO with any
    conversion to SI units occuring within the binary timing routines. A function
    is also included which converts a string containing the right ascension or
-   declination in the format \texttt{ddd/hh:mm:ss.s} or \texttt{ddd/hhmmss.s}
-   (as is given in the \texttt{.par} file) into a \texttt{REAL8} value in
+   declination in the format <tt>ddd/hh:mm:ss.s</tt> or <tt>ddd/hhmmss.s</tt>
+   (as is given in the <tt>.par</tt> file) into a \c REAL8 value in
    radians.
 
-   \subsubsection*{Notes}
+   \heading{Notes}
 
-   \vfill{\footnotesize\input{BinaryPulsarTimingCV}}
-
-   </lalLaTeX>
 */
 
 /* Matt Pitkin 29/04/04 */
@@ -163,8 +140,6 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params )
 {
-  const CHAR *fn = "XLALBinaryPulsarDeltaT()";
-
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
   REAL8 w=0;  /* longitude of periastron */
@@ -189,15 +164,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   /* Check input arguments */
   if( input == (BinaryPulsarInput *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLINPUT );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLINPUT );
   }
 
   if( output == (BinaryPulsarOutput *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLOUTPUT );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLOUTPUT );
   }
 
   if( params == (BinaryPulsarParams *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLPARAMS );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
   if((!strcmp(params->model, "BT")) &&
@@ -207,7 +182,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
      (!strcmp(params->model, "ELL1")) &&
      (!strcmp(params->model, "DD")) &&
      (!strcmp(params->model, "MSS"))){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLBINARYMODEL );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
   /* convert certain params to SI units */
@@ -592,7 +567,7 @@ this isn't defined for either of the two pulsars currently using this model */
 
   /* check that the returned value is not a NaN */
   if( isnan(output->deltaT) ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENAN );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENAN );
   }
 }
 
@@ -618,8 +593,6 @@ void
 XLALReadTEMPOParFile( BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
-  const CHAR *fn = "XLALReadTEMPOParFile()";
-
   FILE *fp=NULL;
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
@@ -627,7 +600,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   int UNUSED c;
 
   if( output == (BinaryPulsarParams *)NULL ){
-    XLAL_ERROR_VOID( fn, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
   }
 
   output->model = NULL; /* set binary model to null - incase not a binary */
@@ -775,6 +748,9 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi0=0.;
   output->Aplus=0.;
   output->Across=0.;
+  output->h1=0.;
+  output->lambda=0.;
+  output->theta=0.;
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
@@ -782,9 +758,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->phi0Err=0.;
   output->AplusErr=0.;
   output->AcrossErr=0.;
+  output->h1Err=0.;
+  output->lambdaErr=0.;
+  output->thetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
-    XLAL_ERROR_VOID( fn, XLAL_EIO );
+    XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
+    XLAL_ERROR_VOID( XLAL_EIO );
   }
 
   /* read all the pulsar data into the string array */
@@ -1718,6 +1698,33 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
+    else if( !strcmp(val[i],"h1") || !strcmp(val[i],"H1") ) {
+      output->h1 = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->h1Err = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"lambda") || !strcmp(val[i],"LAMBDA") ) {
+      output->lambda = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->lambdaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
+    else if( !strcmp(val[i],"theta") || !strcmp(val[i],"THETA") ) {
+      output->theta = atof(val[i+1]);
+      j++;
+
+      if(atoi(val[i+2])==1 && i+2<k){
+        output->thetaErr = atof(val[i+3]);
+        j+=2;
+      }
+    }
 
     if(j==i){
       i++;
@@ -1792,6 +1799,116 @@ params.gammaErr);*/
 
   }
 }
+
+LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
+/*void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params, 
+                           CHAR *corfile )*/{
+  FILE *fp = NULL;
+  CHAR *firstline = XLALStringDuplicate( "" );
+  CHAR onechar[2];
+  INT4 i = 0, numPars = 0, c = 1, sl = 0;
+  LALStringVector *tmpparams = NULL; /* temporary parameter names */
+  LALStringVector *params = NULL;
+  UINT4Vector *dims = NULL;
+  
+  /* check the file exists */
+  if( access(corfile, F_OK) != 0 ){
+    XLALPrintError("Error... correlation matrix file does not exist!\n");
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+  }
+  
+  /* open file */
+  if( (fp = fopen(corfile, "r")) == NULL ){
+    XLALPrintError("Error... cannot open correlation matrix file!\n");
+    XLAL_ERROR_NULL(XLAL_EIO);
+  }
+  
+  /* read in first line of the file */
+  while( !strchr( fgets(onechar, 2, fp), '\n' ) )
+    firstline = XLALStringAppend( firstline, onechar );
+
+  sl = strlen(firstline);
+  
+  /* count the number of parameters */
+  for ( i = 0; i < sl; i++ ){
+    /* use isspace as delimiters could be unknown generic whitespace */
+    if ( !isspace(firstline[i]) ){
+      if ( c ){
+        numPars++;
+        c = 0;
+      }
+    }else
+      c = 1;
+  }
+  
+  /* parse the line and put into the params vector */
+  rewind(fp); /* rewind to start of the file */
+  for ( i = 0; i < numPars; i++ ){
+    CHAR tmpStr[128];
+    
+    if( fscanf(fp, "%s", tmpStr) == EOF ){
+      XLALPrintError("Error... Problem reading first line of correlation\
+ matrix!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
+    
+    /* convert some parameter names to a more common convention */
+    if ( !strcasecmp(tmpStr, "RAJ") ) /* convert RAJ to ra */
+      params = XLALAppendString2Vector( params, "ra" );
+    else if ( !strcasecmp(tmpStr, "DECJ") ) /* convert DECJ to dec */
+      params = XLALAppendString2Vector( params, "dec" );
+    else
+      params = XLALAppendString2Vector( params, tmpStr );
+  }
+  
+  dims = XLALCreateUINT4Vector( 2 );
+  dims->data[0] = numPars;
+  dims->data[1] = numPars;
+  
+  /* set the correlation matrix to the correct size */
+  cormat = XLALResizeREAL8Array( cormat, dims );
+  
+  /* read through covariance values */
+  for ( i = 0; i < numPars; i++ ){
+    CHAR tmpStr[128];
+    INT4 j = 0;
+    
+    if( fscanf(fp, "%s", tmpStr) == EOF ){
+      XLALPrintError("Error... problem reading in correlation matrix!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    if ( strcmp(tmpStr, tmpparams->data[i]) ){
+      XLALPrintError("Error... problem reading in correlation matrix. \
+Parameters not in consistent order!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    for( j = 0; j < i+1; j++ ){
+      REAL8 tmpval = 0.;
+      
+      if( fscanf(fp, "%lf", &tmpval) == EOF ){
+        XLALPrintError("Error... problem reading in correlation matrix!\n");
+        XLAL_ERROR_NULL(XLAL_EIO);
+      }
+      
+      /* if off diagonal values are +/-1 set to +/- 0.99999 */
+      if ( j != i && abs(tmpval) == 1. )
+        tmpval *= 0.99999;
+      
+      cormat->data[i*numPars + j] = tmpval;
+      
+      /* set opposite elements */
+      if( j != i )
+        cormat->data[j*numPars + i] = tmpval;
+    }
+  }
+  
+  return params;
+}
+
 
 /* function converts dec or ra from format dd/hh:mm:ss.sss or format
    dd/hhmmss.ss to radians */

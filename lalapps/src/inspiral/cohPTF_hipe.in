@@ -119,7 +119,64 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
    
   return segment_list
 
-    
+##############################################################################
+def setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
+                       runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,usertag):
+
+  # make one single inspiral job for the master chunk
+  insp = inspiral.PTFInspiralNode(insp_job)
+  if not opts.disable_dag_categories:
+    insp.set_category('inspiral1')
+    insp.set_priority(2)
+  insp.set_user_tag(usertag) 
+  if runSpinChecker:
+    insp.set_spin_bank(scSpinBank[bank])
+    insp.set_no_spin_bank(scNoSpinBank[bank])
+    insp.add_parent(scNodes[bank])
+  else:
+    insp.set_no_spin_bank(sbOutBanks[bank])
+    if runSplitBank:
+      insp.add_parent(sb_node)
+  insp.set_seed(bank)
+  insp.set_start(chunk.start())
+  insp.set_end(chunk.end())
+  insp.set_trig_start(chunk.trig_start())
+  insp.set_trig_end(chunk.trig_end())
+  insp.set_ifo(ifo_char)
+  if runSplitBank:
+    insp.set_ifo_tag("FIRST_" + str(bank))
+  else:
+    insp.set_ifo_tag("FIRST")
+  insp.set_output()
+  insp.set_vds_group(ifo_name[0] + str(chunk.start()))
+  if not calibrated: insp.calibration()
+  output = insp.get_output()
+  if opts.inspiral: dag.add_node(insp)
+
+  return insp
+##############################################################################
+#function to build the timeslides vector
+def setup_timeslides(ifo_analyze, num_slides):
+  
+  slide = {}
+  slide_offset = {}
+  range_offset = {}
+  
+  #doing timeslides here
+  for ifo_name in ifo_analyze: 
+    slide[ifo_name] = cp.get('input','%s-slide' % (ifo_name))
+    slide_offset[ifo_name] = cp.get('input','%s-slide-offset' % (ifo_name))
+    range_offset[ifo_name] = [i*int(slide[ifo_name]) + int(slide_offset[ifo_name]) for i in range(0, int(num_slides))]
+  ifo_keys = range_offset.keys()
+  slide_vector = []
+  for elements in range(len(range_offset.values()[0])):
+    newDict={}
+    for detectors in range (len(range_offset.keys())):
+      newDict[ifo_keys[detectors]] = range_offset[ ifo_keys[detectors] ][elements]
+    slide_vector.append(newDict)
+  
+  return slide_vector
+
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
@@ -149,6 +206,7 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
   type = {}
   channel = {}
   ifo_char = ''
+
   for ifo_name in ifo_list:
     ifo_char += ifo_name
     if ifo_name == 'G1':
@@ -198,6 +256,20 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
 
           # make sure we only filter the master chunk once
           done_this_chunk = True
+
+          if not sbBankFile:
+            # Determine template bank file name
+            ifo_name = cp.get('templatebank-meta','bank-ifo')
+            tb_node = inspiral.TmpltBankNode(tmplt_job)
+            tb_node.set_start(chunk.start())
+            tb_node.set_end(chunk.end())
+            tb_node.set_ifo(ifo_name)
+            tb_node.set_vds_group(ifo_name[0] + str(chunk.start()))
+            tb_node.set_user_tag((usertag.split('_')[0])+'_DATAFIND')
+            os.symlink("../datafind/" + tb_node.get_output(),tb_node.get_output())
+            sbBankFile=tb_node.get_output()           
+
+          # Set up the bank splitting
           if runSplitBank:
             sb_node = inspiral.SplitBankNode(sb_job)            
             sb_node.set_bank(sbBankFile)
@@ -231,52 +303,37 @@ def analyze_coh(ifo_list,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
               sc_node.set_nospin_output(scNoSpinBank[bank])
               dag.add_node(sc_node)
 
-          for inj in range(exttrigInjections[0], exttrigInjections[1]+1):
-            if inj>0: 
-              # set the appropriate user-tag and the injection filename
+
+          if doExtTrig:
+            for inj in range(exttrigInjections[0], exttrigInjections[1]+1): 
+              #XXX: ensure output is added to list of output files
               exttrigUserTag = usertag + "_" + str(inj)
               injectionFile = injectionFileTemplate % exttrigUserTag
-
-            for bank in range(sbNumBanks):
-              # make an inspiral job for the master chunk
-              insp = inspiral.PTFInspiralNode(insp_job)
-              if not opts.disable_dag_categories:
-                insp.set_category('inspiral1')
-              if not opts.disable_dag_priorities:
-                insp.set_priority(2)
-              if inj>0:
+              for bank in range(sbNumBanks):
+                insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
+                                          runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,exttrigUserTag)
                 insp.set_injections(injectionFile)
-                insp.set_user_tag(exttrigUserTag)
-              if runSpinChecker:
-                insp.set_spin_bank(scSpinBank[bank])
-                insp.set_no_spin_bank(scNoSpinBank[bank])
-                insp.add_parent(scNodes[bank])
-              else:
-                insp.set_no_spin_bank(sbOutBanks[bank])
-                if runSplitBank:
-                  insp.add_parent(sb_node)
-              insp.set_seed(bank)
-              insp.set_start(chunk.start())
-              insp.set_end(chunk.end())
-              insp.set_trig_start(chunk.trig_start())
-              insp.set_trig_end(chunk.trig_end())
-              insp.set_ifo(ifo_char)
-              if runSplitBank:
-                insp.set_ifo_tag("FIRST_" + str(bank))
-              else:
-                insp.set_ifo_tag("FIRST")
-              insp.set_output()
-              insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-              if not calibrated: insp.calibration()
-              # XXX: ensure output is added to list of output files
-              output = insp.get_output()
-              if opts.inspiral: dag.add_node(insp)
-   
-          # store this chunk in the list of filtered data
+          elif doSlides:
+            num_slides = cp.get('input','num-slides')
+            slide_vector = setup_timeslides(ifo_analyze, num_slides)
+            for slide in range(int(num_slides)):
+              vector = slide_vector[slide]
+              slidesUserTag = usertag + "_" + "slide" + "_" + str('_'.join(map(str,[str(key) + "_" + str(vector[key]) for key in vector.keys()]))) 
+              for bank in range(sbNumBanks):
+                insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
+                                          runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,slidesUserTag)
+                for key in vector.keys():
+                  insp.add_var_opt(key.lower()+'-slide', vector[key])
+          else:
+            for bank in range(sbNumBanks):
+              insp = setup_coh_inspiral(ifo_name,ifo_char,insp_job,runSplitBank,calibrated,\
+                                        runSpinChecker,chunk,dag,bank,scSpinBank,scNoSpinBank,sbOutBanks,scNodes,sb_node,usertag)
+
+          # store this chunk in the list of filtered data 
           for ifo_name in ifo_list:
             chunks_analyzed[ifo_name] = []
-            chunks_analyzed[ifo_name].append(AnalyzedIFOData(chunk,insp,0))         
-
+            chunks_analyzed[ifo_name].append(AnalyzedIFOData(chunk,insp,0))
+  
   return chunks_analyzed
 
 ##############################################################################
@@ -598,8 +655,13 @@ if doExtTrig:
 else:
   exttrigInjections=[0,0]
 
-# spinchecker
+doSlides = cp.has_option('input','num-slides') and cp.get('input','num-slides') != ''
+if doSlides:
+  num_slides = cp.get('input','num-slides')
 
+tmplt_job = inspiral.TmpltBankJob(cp,opts.dax)
+
+# spinchecker
 spincheck_job = inspiral.PTFSpinCheckerJob(cp,opts.dax)
 
 # inspiral:
@@ -626,16 +688,34 @@ for ifo1 in ifo_list:
       spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
       insp_jobs.add_opt(ifo1.lower()+'-channel-name',ifo1.upper()+':' + cp.get('input','virgo-channel'))
       insp_jobs.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0] + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+
+for ifo1 in ifo_list:
+  if do[ifo1]:
+    ifo1 = ifo1.upper()
+    spincheck_job.add_opt(ifo1.lower() + '-data','')
+    duration = int(cp.get('input','gps-end-time')) - int(cp.get('input','gps-start-time'))
+    gps_times = cp.get('input','gps-start-time') + '-' + str(duration)
+    if ifo1 == 'H1' or ifo1 == 'H2' or ifo1 == 'L1':
+      spincheck_job.add_opt(ifo1.lower()+'-channel-name',ifo1.upper()+':' + cp.get('input','ligo-channel'))
+      spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0] + '-' + ifo1 + '_' + cp.get('input','ligo-type') + '_CACHE-' + gps_times + '.lcf')
+
+    elif ifo1 == 'V1':
+      spincheck_job.add_opt(ifo1.lower()+'-channel-name',ifo1.upper()+':' + cp.get('input','virgo-channel'))
+      spincheck_job.add_opt(ifo1.lower()+'-frame-cache','cache/' + ifo1[0]  + '-' + cp.get('input','virgo-type') + '_CACHE-' + gps_times + '.lcf')
+
   #splitbank
   split_job = inspiral.SplitBankJob(cp,opts.dax)
   if opts.splitbank:
-    splitBankFile = cp.get('splitbank-meta','bank-file')
+    if cp.has_option('splitbank-meta','bank-file'):
+      splitBankFile = cp.get('splitbank-meta','bank-file')
+    else:
+      splitBankFile = None
     splitNumBanks = int(cp.get('splitbank-meta','num-banks'))
   else:
     splitBankFile = None
     splitNumBanks = None
 
-all_jobs = [insp_jobs,split_job]
+all_jobs = [insp_jobs, split_job]
 
 ##############################################################################
 # set the usertag in the jobs
@@ -686,8 +766,14 @@ else:
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
 pad = int(cp.get('data', 'pad-data'))
-length = int(cp.get('data','block-duration'))
-overlap = int(cp.get('data','segment-duration'))/2
+#length = int(cp.get('data','block-duration'))
+#overlap = int(cp.get('data','segment-duration'))/2
+n = int(cp.get('data', 'segment-length'))
+s = int(cp.get('data', 'number-of-segments'))
+r = int(cp.get('data', 'sample-rate'))
+o = int(cp.get('inspiral', 'segment-overlap'))
+length = ( n * s - ( s - 1 ) * o ) / r
+overlap = o / r
 
 ##############################################################################
 #  The meat of the DAG generation comes below
@@ -878,7 +964,7 @@ print ifo_analyze
 sys.stdout.flush()
 
 chunks_analyzed = analyze_coh(ifo_analyze,data,data_to_do,  
-    None,insp_jobs,None,None,dag,exttrigInjections,
+    tmplt_job,insp_jobs,None,None,dag,exttrigInjections,
     usertag,None,runSplitBank=opts.splitbank,sb_job = split_job,
     sbBankFile=splitBankFile,sbNumBanks = splitNumBanks,
     runSpinChecker=opts.spin_checker,sc_job=spincheck_job)

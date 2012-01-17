@@ -39,7 +39,7 @@ INT4 randnStartPad = 0;
 INT4 ascii2xml=0;
 
 int
-main (INT4 argc, CHAR **argv ) 
+main (INT4 argc, CHAR **argv )
 {
 
   /* checkpointing */
@@ -49,22 +49,22 @@ main (INT4 argc, CHAR **argv )
   /* --- Variables ---*/
   INT4          ntrials = 0;
   INT4 	        i, thisTemplateIndex;
-  Approximant   tempOrder; 
+  Approximant   tempOrder;
 
   /* --- input --- */
   UserParametersIn 	userParam;
 
   /* --- signal related --- */
   REAL4Vector                   signal;
-  RandomInspiralSignalIn 	randIn;		
+  RandomInspiralSignalIn 	randIn;
 
-  /* --- template bank related --- */  
+  /* --- template bank related --- */
   InspiralTemplate      	insptmplt, randtmplt;
 
   InspiralCoarseBankIn      	coarseBankIn;
   INT4  	                sizeBank = 0;
   INT4                          filter_processed = 0;
-   
+
   /* --- variables needed for the random bank */
   UINT4 randI, randN=1418;
   REAL8 randM1, randM2;
@@ -84,8 +84,8 @@ main (INT4 argc, CHAR **argv )
   REAL4Vector    FilterBCV2;
   BEPowerVector  powerVector;
   BEMoments      moments;
-  InspiralWaveOverlapIn 	overlapin;		
-  InspiralWaveOverlapOut     	overlapout; 
+  InspiralWaveOverlapIn 	overlapin;
+  InspiralWaveOverlapOut     	overlapout;
 
   /* --- results and datamining --- */
   ResultIn              result;
@@ -102,12 +102,12 @@ main (INT4 argc, CHAR **argv )
   FILE                  *Foutput;
 
   /* --- START main code --- */
-  
+
   /* --- init some histogram structure --- */
-  gsl_histogram * histogramNoise = gsl_histogram_alloc (200);  
+  gsl_histogram * histogramNoise = gsl_histogram_alloc (200);
   gsl_histogram_set_ranges_uniform (histogramNoise, 0.,20.);
-    
-  /* --- Some initialization --- */ 
+
+  /* --- Some initialization --- */
 
   lal_errhandler = LAL_ERR_EXIT;
   lalDebugLevel = 0;
@@ -115,7 +115,7 @@ main (INT4 argc, CHAR **argv )
   templateBank.snglInspiralTable = NULL;
 
   /* --- Initialization of structure --- */
-  ParametersInitialization(&coarseBankIn, 
+  ParametersInitialization(&coarseBankIn,
 		  	   &randIn,
 			   &userParam);
 
@@ -130,7 +130,7 @@ main (INT4 argc, CHAR **argv )
   UpdateParams(&coarseBankIn,
 	       &randIn,
 	       &userParam);
-   
+
   if (ascii2xml==1)
     {
       BEAscii2Xml();
@@ -141,25 +141,25 @@ main (INT4 argc, CHAR **argv )
   memset( ckptPath, 0, FILENAME_MAX * sizeof(CHAR) );
   memset( outputPath, 0, FILENAME_MAX * sizeof(CHAR) );
   snprintf( outputPath, FILENAME_MAX, "bankefficiency.ckpt");
-        
+
 
   /* init a random structure using possibly the seed from user input*/
-  LAL_CALL(LALCreateRandomParams(&status, &randParams, randIn.useed ), 
+  LAL_CALL(LALCreateRandomParams(&status, &randParams, randIn.useed ),
 	   &status);
 
 
-  /* 
+  /*
      This is used if one want to use condor script to keep track of the
-     input parameters. It creates a prototype to be read by BEAscii2xml. 
+     input parameters. It creates a prototype to be read by BEAscii2xml.
      Useful with condor. See BankEfficiency documentation.
   */
   if (userParam.printPrototype){
-    BEPrintProtoXml(coarseBankIn, randIn, userParam);   
+    BEPrintProtoXml(coarseBankIn, randIn, userParam);
     exit(0);
   }
-  
+
   /* --- Estimate the size of the signal --- */
-  LAL_CALL(BEGetMaximumSize(&status, randIn, coarseBankIn, &(signal.length)), 
+  LAL_CALL(BEGetMaximumSize(&status, randIn, coarseBankIn, &(signal.length)),
 	   &status);
   /* if --num-seconds is provided, we want a specified length of data.
    * Otherwise, we stick to a minimal size given by twice the length of the
@@ -169,7 +169,7 @@ main (INT4 argc, CHAR **argv )
     signal.length = userParam.numSeconds * randIn.param.tSampling;
   }
   else if (userParam.numSeconds != -1) {
-    fprintf(stderr, "you asked a length of %d seconds but a (%f %f) system  might be longer than that length...quitting \n", 
+    fprintf(stderr, "you asked a length of %d seconds but a (%f %f) system  might be longer than that length...quitting \n",
 	    userParam.numSeconds, randIn.mMin, randIn.mMin);
     exit(0);
   }
@@ -186,24 +186,24 @@ main (INT4 argc, CHAR **argv )
   FilterBCVSpin2.length     = signal.length;
   FilterBCVSpin3.length     = signal.length;
 
-  randIn.psd.length 	= signal.length/2 + 1; 
+  randIn.psd.length 	= signal.length/2 + 1;
   correlation.length 	= signal.length;
 
   signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
   correlation.data 	= (REAL4*) LALCalloc(1, sizeof(REAL4) * correlation.length);
-  randIn.psd.data 	= (REAL8*) LALCalloc(1, sizeof(REAL8) * randIn.psd.length); 
+  randIn.psd.data 	= (REAL8*) LALCalloc(1, sizeof(REAL8) * randIn.psd.length);
   FilterBCV1.data       = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCV1.length);
   FilterBCV2.data       = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCV2.length);
   FilterBCVSpin1.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin1.length);
   FilterBCVSpin2.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin2.length);
   FilterBCVSpin3.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * FilterBCVSpin3.length);
-   
+
 
   /* --- create the PSd noise --- */
   if (vrbflg){
     fprintf(stdout, "generating PSD ...");
   }
-  LAL_CALL(BECreatePsd(&status, &coarseBankIn, &randIn, userParam), 
+  LAL_CALL(BECreatePsd(&status, &coarseBankIn, &randIn, userParam),
 	   &status);
   if (vrbflg){
     fprintf(stdout, " ... done \n");
@@ -246,7 +246,7 @@ main (INT4 argc, CHAR **argv )
 	   randtmplt.mass1 = randM1;
 	   randtmplt.mass2 = randM2;
 	   LALInspiralParameterCalc( &status, &randtmplt);
-      
+
 	   bank = bank->next = (SnglInspiralTable *) LALCalloc( 1, sizeof( SnglInspiralTable ) );
 	   /*
 	   if (bank == NULL)
@@ -269,10 +269,10 @@ main (INT4 argc, CHAR **argv )
 	   bank->f_final = randtmplt.fFinal;
 	   bank->eta = randtmplt.eta;
 	   bank->beta = randtmplt.beta;
-      
+
 	   /*
 	   memcpy (bank->Gamma, coarseList[cnt].metric.Gamma, 10*sizeof(REAL4));
-	   */ 
+	   */
 	   fprintf(stderr, "%e %e %e %e\n", bank->mass1, bank->mass2, bank->tau0, bank->tau3);
    }
    bank = tmpltHead->next;
@@ -281,7 +281,7 @@ main (INT4 argc, CHAR **argv )
 	   /*
    exit(0);
 	   */
-   
+
 
    if ( sizeBank )
      {
@@ -292,7 +292,7 @@ main (INT4 argc, CHAR **argv )
      LALBankPrintXML(templateBank, coarseBankIn, randIn, userParam);
      LALBankPrintAscii(templateBank, sizeBank, coarseBankIn);
    }
-   
+
    if ( vrbflg )
      {
        fprintf( stdout, "done. Got %d templates\n", sizeBank );
@@ -302,14 +302,14 @@ main (INT4 argc, CHAR **argv )
 
 
 
- 
+
 
   /* --- Estimate the fft's plans --- */
-  LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0), 
+  LAL_CALL(LALCreateForwardRealFFTPlan(&status, &fwdp, signal.length, 0),
 	   &status);
-  LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0), 
+  LAL_CALL(LALCreateReverseRealFFTPlan(&status, &revp, signal.length, 0),
 	   &status);
-  
+
   /* --- The overlap structure --- */
   overlapin.nBegin 	= 0;
   overlapin.nEnd 	= 0;
@@ -319,13 +319,13 @@ main (INT4 argc, CHAR **argv )
   overlapin.ifExtOutput = 0;  /* new option from anand WaveOverlap */
 
   /* --- Create Matrix for BCV Maximization once for all --- */
-  LAL_CALL( BECreatePowerVector(&status, &powerVector, randIn, signal.length), 
+  LAL_CALL( BECreatePowerVector(&status, &powerVector, randIn, signal.length),
 	    &status);
-  LALCreateBCVMomentVector(&moments, &coarseBankIn.shf,  randIn.param.tSampling, 
+  LALCreateBCVMomentVector(&moments, &coarseBankIn.shf,  randIn.param.tSampling,
 			randIn.param.fLower, signal.length);
-  
+
   /*
-   * Main loop is here. We creae random signal and filter 
+   * Main loop is here. We creae random signal and filter
    * it with the template bank.
    */
   /* while we want to perform one simulation */
@@ -333,22 +333,22 @@ main (INT4 argc, CHAR **argv )
     PrintParameters(coarseBankIn, randIn, userParam);
   }
 
-  while (++ntrials <= userParam.ntrials) 
-    {     
+  while (++ntrials <= userParam.ntrials)
+    {
       UINT4 currentTemplate = 0;
 
       if (vrbflg){
 	fprintf(stdout,"Simulation number %d/%d\n", ntrials, userParam.ntrials);
       }
-      
+
       /* do some initialisation for the output storage of the best temlpate */
       BEInitOverlapOutputIn(&OverlapOutputBestTemplate);
 
       if (vrbflg){
 	fprintf(stdout,"Init ... done\n");
       }
-      
-      randIn.param.fCutoff = userParam.signalfFinal; 
+
+      randIn.param.fCutoff = userParam.signalfFinal;
       if (vrbflg){
         fprintf(stdout, "Upper frequency cut-off on signal: %e\n", randIn.param.fCutoff);
 	fprintf(stdout,"Signal Generation ... ");
@@ -360,8 +360,8 @@ main (INT4 argc, CHAR **argv )
       if (userParam.realNoise && userParam.noiseModel == REALPSD) {
         for (i=0; i<(INT4)signal.length/2; i++){
 	  INT4 k = signal.length-i;
-	    signal.data[i] = strainSegment->data[i].re; 
-	    signal.data[k] = strainSegment->data[i].im; 
+	    signal.data[i] = strainSegment->data[i].re;
+	    signal.data[k] = strainSegment->data[i].im;
         }
       }
       else
@@ -377,34 +377,34 @@ main (INT4 argc, CHAR **argv )
 	}
 
       overlapin.signal 	= signal;
-       
+
       if (vrbflg){
 	fprintf(stdout,"... done\n");
 	Foutput=  fopen("BE_signal.dat","w");
 	for (i=0; i<(INT4)signal.length; i++)
 	  fprintf(Foutput, "%e %e\n", (float)i/randIn.param.tSampling,signal.data[i]);
 	fclose(Foutput);
-	
+
 
       }
 
       /* --- we can process the data through the bank now ---        */
-      /* -- first we populate the insptmplt with the random parameter*/      
-      insptmplt = randIn.param;      
+      /* -- first we populate the insptmplt with the random parameter*/
+      insptmplt = randIn.param;
       filter_processed = sizeBank;
 
       /* -- and enter in the bank */
       for (tmpltCurrent  = tmpltHead, thisTemplateIndex=0;
 	   tmpltCurrent && thisTemplateIndex < sizeBank;
 	   tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
-	{ 
+	{
 		fprintf(stderr, "%d\n", thisTemplateIndex);
 	  /* populate InspiralTemplateList with tmplt */
 
-	  if (vrbflg){	    
+	  if (vrbflg){
 	    fprintf(stdout,".");
 	    fflush(stdout);
-	  }	
+	  }
 	  /* Set dummy values in the future output */
 	  BEInitOverlapOutputIn(&OverlapOutputThisTemplate);
 
@@ -421,54 +421,54 @@ main (INT4 argc, CHAR **argv )
 		insptmplt = randIn.param;
 		overlapin.param              = randIn.param;
 		overlapin.param.approximant  = userParam.template;
-		sizeBank                     = 1;  /* we dont need the whole bank for checking */ 
+		sizeBank                     = 1;  /* we dont need the whole bank for checking */
 	      }
-	      
-	      LAL_CALL(LALInspiralOverlapBCVSpin(&status, 
+
+	      LAL_CALL(LALInspiralOverlapBCVSpin(&status,
 						 &insptmplt,
 						 &powerVector,
 						 &userParam,
-						 &randIn, 
+						 &randIn,
 						 &FilterBCVSpin1,
-						 &FilterBCVSpin2, 
-						 &FilterBCVSpin3, 
+						 &FilterBCVSpin2,
+						 &FilterBCVSpin3,
 						 &overlapin,
 						 &OverlapOutputThisTemplate,
-						 &correlation, &moments), 
+						 &correlation, &moments),
 		       &status);
-	      
+
 	      OverlapOutputThisTemplate.freq              =  overlapin.param.fFinal;
 	      OverlapOutputThisTemplate.templateNumber    = thisTemplateIndex;
 	      break;
 
-	    case BCV:	   
+	    case BCV:
 	      CreateListfromTmplt(&insptmplt, tmpltCurrent);
 	      insptmplt.massChoice = psi0Andpsi3;
 	      LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
-	      
+
 	      if (userParam.faithfulness){
 		insptmplt = randIn.param;
 		overlapin.param              = randIn.param;
 		overlapin.param.approximant  = userParam.template;
-		sizeBank                     = 1;  /* we dont need the whole bank for checking */ 
+		sizeBank                     = 1;  /* we dont need the whole bank for checking */
 	      }
-	 
-	      LAL_CALL(LALInspiralOverlapBCV(&status, 
+
+	      LAL_CALL(LALInspiralOverlapBCV(&status,
 					     &insptmplt,
 					     &powerVector,
 					     &userParam,
-					     &randIn, 
+					     &randIn,
 					     &FilterBCV1,
-					     &FilterBCV2, 
+					     &FilterBCV2,
 					     &overlapin,
 					     &OverlapOutputThisTemplate,
-					     &correlation, &moments), 
+					     &correlation, &moments),
 		       &status);
 
 	      OverlapOutputThisTemplate.freq              =  overlapin.param.fFinal;
 	      OverlapOutputThisTemplate.templateNumber    = thisTemplateIndex;
 
-	      
+
 	      break;
 	    case TaylorT1:
 	    case TaylorT2:
@@ -482,7 +482,7 @@ main (INT4 argc, CHAR **argv )
 	      CreateListfromTmplt(&insptmplt, tmpltCurrent);
 	      insptmplt.massChoice=t03;
 	      LAL_CALL(LALInspiralParameterCalc( &status,  &(insptmplt) ), &status);
-	      
+
               overlapin.param 	= insptmplt	   ;
               LAL_CALL(LALInspiralParameterCalc( &status,  &(overlapin.param) ), &status);
               overlapout.max    = -1.; /* let us be sure that is has a value */
@@ -490,7 +490,7 @@ main (INT4 argc, CHAR **argv )
               overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 
 
-              
+
               if (userParam.faithfulness){ /* same parameters but different templates */
                /* randIn.param.fCutoff = coarseBankIn.fUpper;*/
 		tempOrder = insptmplt.order;
@@ -501,9 +501,9 @@ main (INT4 argc, CHAR **argv )
                 overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		overlapin.param.approximant        = userParam.template;
 		overlapin.param.order              = tempOrder;
-		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
+		sizeBank                           = 1;  /* we dont need the whole bank for checking */
 	      }
-	        
+
               if (userParam.template_m1 != -1){
                 /* same parameters but given by the user instead of the bank */
 		tempOrder = insptmplt.order;
@@ -517,18 +517,18 @@ main (INT4 argc, CHAR **argv )
                 overlapin.param.fFinal = randIn.param.tSampling/2. - 1;
 		overlapin.param.approximant        = userParam.template;
 		overlapin.param.order              = tempOrder;
-		sizeBank                           = 1;  /* we dont need the whole bank for checking */ 
+		sizeBank                           = 1;  /* we dont need the whole bank for checking */
 	      }
 
 	      /* if we want to cut integration before the fFinal
 		 overlapin.param.fCutoff = 512;
-	      */ 
+	      */
 	      if (
 		  (userParam.fastSimulation == 1 ) &&
 		  		  ((fabs(randIn.param.t0 - insptmplt.t0)> .3) ||
 		    (fabs(randIn.param.t3 - insptmplt.t3)> .15) )
 		  )
-		{		  
+		{
 		  filter_processed--;
 		}
 	      else
@@ -545,13 +545,13 @@ main (INT4 argc, CHAR **argv )
 		  OverlapOutputThisTemplate.freq     = overlapin.param.fFinal;
 		  OverlapOutputThisTemplate.templateNumber    = thisTemplateIndex;
 		  insptmplt.fFinal = overlapin.param.fFinal;
-		  OverlapOutputThisTemplate.snrAtCoaTime 
+		  OverlapOutputThisTemplate.snrAtCoaTime
 		    =  correlation.data[randIn.param.nStartPad];
-	  
+
 		}
 	      break;
 	    }
-	  
+
 	  /* fill histogram of the correlation output. Useful to get a flavour
            * of the output distribution in presence of noise only for
            * instance. */
@@ -563,23 +563,23 @@ main (INT4 argc, CHAR **argv )
 	      if (correlation.data[i]!=-1){
                 gsl_histogram_increment(histogramNoise, correlation.data[i]);
               }
-	    }		    
-	  }	
+	    }
+	  }
 
-		  
-	  /* for the final results using only one event (loudest one) throughtout the bank.*/ 
-	  KeepHighestValues(OverlapOutputThisTemplate, 
+
+	  /* for the final results using only one event (loudest one) throughtout the bank.*/
+	  KeepHighestValues(OverlapOutputThisTemplate,
 			    &OverlapOutputBestTemplate);
 	  /* We can also keep the best trigger in each template. */
 
 
-	  
+
 	}/*end of  bank process*/
 
-      
-      
-      
-      /* Then print the maximum overlap over the whole bank and the corresponding 
+
+
+
+      /* Then print the maximum overlap over the whole bank and the corresponding
        * parameter of the templates, injected signal and so on. This is the main results
        * We'll print one line for each simulation (ntrials parameter)*/
       thisTemplateIndex = 0;
@@ -587,67 +587,67 @@ main (INT4 argc, CHAR **argv )
 	   tmpltCurrent && thisTemplateIndex<OverlapOutputBestTemplate.templateNumber;
 	   tmpltCurrent = tmpltCurrent->next, thisTemplateIndex++)
 	{
-	  /*nothing to do, we just want to come back to template 
+	  /*nothing to do, we just want to come back to template
 	    in list which gave the best SNR */
 	}
 
       CreateListfromTmplt(&insptmplt, tmpltCurrent);
-      GetResult(	   &status, 
+      GetResult(	   &status,
 			   &insptmplt,
-			   randIn.param, 
-			   OverlapOutputBestTemplate, 
-			   &result, 
+			   randIn.param,
+			   OverlapOutputBestTemplate,
+			   &result,
 			   userParam);
       /* keep track of the number of templates actually used.*/
       result.nfast  = filter_processed;
       result.ntrial = ntrials;
 
 
-      PrintResults(result, randIn);  
+      PrintResults(result, randIn);
       if (userParam.printResultXml) {
-	  BEPrintResultsXml(coarseBankIn,randIn,userParam,result);	 
+	  BEPrintResultsXml(coarseBankIn,randIn,userParam,result);
 	}
-      
-      
+
+
       /*Now we might want given the best template, to reproduce results and keep overlp, wavefom of the signal , template ...*/
       /* save signal */
       /* overlap     */
       /* save template and correlation */
-      
+
       if (userParam.template == BCV) {
 	if (userParam.printBestOverlap || userParam.printBestTemplate) {
 	  userParam.extraFinalPrinting = 1;
-	  LAL_CALL(LALInspiralOverlapBCV(&status, 
+	  LAL_CALL(LALInspiralOverlapBCV(&status,
 					 &insptmplt,
 					 &powerVector,
 					 &userParam,
-					 &randIn, 
+					 &randIn,
 					 &FilterBCV1,
-					 &FilterBCV2, 
+					 &FilterBCV2,
 					 &overlapin,
 					 &OverlapOutputThisTemplate,
-					 &correlation, &moments), 
-		   &status);	
+					 &correlation, &moments),
+		   &status);
 	}
       }
 
       if (userParam.template == EOB) {
 	if (userParam.printBestOverlap ) {
 	  Foutput=  fopen("BE_correlation.dat","w");
-	  
+
 	  for (i=0; i<(INT4)correlation.length; i++)
 	    {
 
 	      fprintf(Foutput, "%e %e\n", (float)i/randIn.param.tSampling,correlation.data[i]);
-	      
-	      
+
+
 	    }
 	  fclose(Foutput);
-	  
+
 	}
       }
     }  /*end while(trial)*/
-  
+
 
 
   if (userParam.printSNRHisto) {
@@ -657,7 +657,7 @@ main (INT4 argc, CHAR **argv )
   }
 
 
-  
+
   /* --- destroy the plans, correlation and signal --- */
 
   while ( templateBank.snglInspiralTable )
@@ -668,7 +668,7 @@ main (INT4 argc, CHAR **argv )
   }
 
   LALDestroyRandomParams(&status, &randParams );
-  
+
   LALFree(powerVector.fm5_3.data);
   LALFree(powerVector.fm2_3.data);
   LALFree(powerVector.fm1_2.data);
@@ -677,40 +677,40 @@ main (INT4 argc, CHAR **argv )
   LALFree(moments.a11.data);
   LALFree(moments.a21.data);
   LALFree(moments.a22.data);
-   
+
   LALFree(FilterBCV2.data);
   LALFree(FilterBCV1.data);
-  
+
   LALFree(randIn.psd.data);
   LALDDestroyVector( &status, &(coarseBankIn.shf.data) );
- 
+
   LALFree(signal.data);
   LALFree(correlation.data);
 
-  
+
   LALDestroyRealFFTPlan(&status,&fwdp);
   LALDestroyRealFFTPlan(&status,&revp);
-  
+
   gsl_histogram_free(histogramNoise);
-   
-  LALCheckMemoryLeaks();    
-   
-   
+
+  LALCheckMemoryLeaks();
+
+
   return 0;
 }
 
 
 
-		      
+
 /* ****************************************************************************
  * Some output Results
  * ************************************************************************** */
 void
-KeepHighestValues(OverlapOutputIn resultThisTemplate,   
+KeepHighestValues(OverlapOutputIn resultThisTemplate,
 		  OverlapOutputIn *resultBestTemplate
 		  )
 {
-  if (resultThisTemplate.rhoMax > resultBestTemplate->rhoMax){    
+  if (resultThisTemplate.rhoMax > resultBestTemplate->rhoMax){
     resultBestTemplate->rhoMax   = resultThisTemplate.rhoMax;
     resultBestTemplate->phase    = resultThisTemplate.phase;
     resultBestTemplate->alpha    = resultThisTemplate.alpha;
@@ -719,9 +719,9 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
     resultBestTemplate->templateNumber = resultThisTemplate.templateNumber;
     resultBestTemplate->snrAtCoaTime   = resultThisTemplate.snrAtCoaTime;
   }
-  
-  
-  
+
+
+
 }
 
 
@@ -729,22 +729,22 @@ KeepHighestValues(OverlapOutputIn resultThisTemplate,
  * Some output Results
  * ************************************************************************** */
 
-void 
+void
 GetResult(
-	  LALStatus                  *status, 
+	  LALStatus                  *status,
 	  InspiralTemplate           *list,
 	  InspiralTemplate           injected,
-	  OverlapOutputIn 	     bestOverlap, 
+	  OverlapOutputIn 	     bestOverlap,
 	  ResultIn                   *result,
 	  UserParametersIn           userParam )
 {
   INT4 templateNumber;
   InspiralTemplate trigger;
 
-  
+
   INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
-     
+
   templateNumber = bestOverlap.templateNumber;
 
   trigger = *list;
@@ -752,32 +752,32 @@ GetResult(
   if (userParam.template == BCV || userParam.template == BCVSpin){
 
     /*    LALInspiralParameterCalc( status->statusPtr,  &trigger );
-    CHECKSTATUSPTR(status);							
+    CHECKSTATUSPTR(status);
     */
     result->psi0_inject  = injected.psi0;
-    result->psi3_inject  = injected.psi3;     
-    result->beta_inject  = injected.beta;     
+    result->psi3_inject  = injected.psi3;
+    result->beta_inject  = injected.beta;
     result->psi0_trigger  = trigger.psi0;
-    result->psi3_trigger  = trigger.psi3;     
-    result->beta_trigger  = trigger.beta;     
+    result->psi3_trigger  = trigger.psi3;
+    result->beta_trigger  = trigger.beta;
     result->tau0_trigger = 0.;
     result->tau3_trigger = 0.;
     result->tau0_inject  = 0.;
-    result->tau3_inject  = 0.; 
+    result->tau3_inject  = 0.;
   }
   else{
     LALInspiralParameterCalc( status->statusPtr,  &trigger );
-    CHECKSTATUSPTR(status);							
+    CHECKSTATUSPTR(status);
     result->psi0_inject   = 0.;
-    result->psi3_inject   = 0.;     
+    result->psi3_inject   = 0.;
     result->beta_inject  = 0.;
     result->psi0_trigger  = 0.;
-    result->psi3_trigger  = 0.;     
+    result->psi3_trigger  = 0.;
     result->beta_trigger  = 0.;
     result->tau0_trigger = trigger.t0;
     result->tau3_trigger = trigger.t3;
     result->tau0_inject  = injected.t0;
-    result->tau3_inject  = injected.t3; 
+    result->tau3_inject  = injected.t3;
   }
 
   result->mass1_inject      = injected.mass1;
@@ -792,8 +792,8 @@ GetResult(
   result->layer       = bestOverlap.layer;
   result->phase       = bestOverlap.phase;
   result->snrAtCoaTime = bestOverlap.snrAtCoaTime;
-  
-    
+
+
   DETATCHSTATUSPTR(status);
   RETURN (status);
 
@@ -801,27 +801,27 @@ GetResult(
 
 
 void
-PrintResults(   ResultIn result, 
+PrintResults(   ResultIn result,
                 RandomInspiralSignalIn randIn)
 {
 
-  fprintf(stdout, "%e %e %e %e ", 
-	  result.tau0_trigger, 
+  fprintf(stdout, "%e %e %e %e ",
+	  result.tau0_trigger,
 	  result.tau3_trigger,
 	  randIn.param.t0,
 	  randIn.param.t3);
-  
-  fprintf(stdout, "%7.2f %7.2f   %e %e ", 
-	  result.fend_trigger, 
+
+  fprintf(stdout, "%7.2f %7.2f   %e %e ",
+	  result.fend_trigger,
 	  randIn.param.fFinal,
 	  randIn.param.mass1,
 	  randIn.param.mass2);
 
-  
+
   fprintf(stdout, " %e %d %d \n",
-	  result.rho_final, 
-	  result.bin, 
-	  randIn.param.nStartPad); 
+	  result.rho_final,
+	  result.bin,
+	  randIn.param.nStartPad);
 
   fflush(stdout);
 }
@@ -831,7 +831,7 @@ PrintResults(   ResultIn result,
 
 
 /* ****************************************************************************
- * Functio to generate and stored the moments in  REAL4vectors. 
+ * Functio to generate and stored the moments in  REAL4vectors.
  * ************************************************************************* */
 void LALCreateBCVMomentVector(BEMoments             *moments,
 			      REAL8FrequencySeries  *psd,
@@ -840,7 +840,7 @@ void LALCreateBCVMomentVector(BEMoments             *moments,
 			      INT4                  length)
 {
   REAL8 		m7 = 0.;							/* the moments */
-  REAL8 		m5 = 0.;	
+  REAL8 		m5 = 0.;
   REAL8 		m3 = 0.;
   REAL8 		f;
   UINT4			kMin;
@@ -866,7 +866,7 @@ void LALCreateBCVMomentVector(BEMoments             *moments,
   /* The minimum and maximum frequency */
   kMin = (UINT8) floor( (in.xmin - psd->f0) / psd->deltaF );
   kMax = (UINT8) floor( (in.xmax - psd->f0) / psd->deltaF );
-  
+
   /* Skip frequency less than fLower.*/
   for (k = 0; k < kMin ; k++)
     {
@@ -894,14 +894,14 @@ void LALCreateBCVMomentVector(BEMoments             *moments,
 /* ****************************************************************************
  * Create an orthogonal filter. by taking its complex conjuguate
  * ************************************************************************** */
-void 
+void
 LALGetOrthogonalFilter(REAL4Vector *filter)
 {
   UINT4   i;
   UINT4	  n 	 = filter->length;
   UINT4   nby2   = filter->length / 2;
   REAL4	  temp;
-  
+
   for (i = 1; i < nby2; i++)
     {
       temp 		=  filter->data[i];
@@ -910,12 +910,12 @@ LALGetOrthogonalFilter(REAL4Vector *filter)
     }
 }
 
-  
+
 
 /* *****************************************************************************
- * Create a vector f^{a/b} 
+ * Create a vector f^{a/b}
  * ************************************************************************** */
-void 
+void
 LALCreateVectorFreqPower(REAL4Vector 		*vector,
 			 InspiralTemplate 	params,
 			 INT4 			a,
@@ -924,7 +924,7 @@ LALCreateVectorFreqPower(REAL4Vector 		*vector,
 
   INT4 	        i;
   INT4		n = vector->length;			/* Length of the vector to create 	*/
-	  
+
   REAL8		power = (REAL8)a / (REAL8)b;		/* the frequency power			*/
   REAL8 	f;					/* La frequence				*/
   REAL8		df = params.tSampling/(REAL8)n/2.;	/* sampling frequency			*/
@@ -933,8 +933,8 @@ LALCreateVectorFreqPower(REAL4Vector 		*vector,
   vector->data[0] = 0.;
   for( i = 1; i < n; i++)
     {
-      f = i * df; 
-      /* Probably not efficient but this function is 
+      f = i * df;
+      /* Probably not efficient but this function is
        * just called once at the beginning */
       vector->data[i] = pow(f, power);
     }
@@ -942,9 +942,9 @@ LALCreateVectorFreqPower(REAL4Vector 		*vector,
 
 
 /* *****************************************************************************
- * Create the filters for BCV correlation 					
+ * Create the filters for BCV correlation
  * ************************************************************************** */
-void 
+void
 LALCreateBCVFilters(REAL4Vector         *FilterBCV1,
 		    REAL4Vector 	*FilterBCV2,
 		    BEPowerVector       *powerVector,
@@ -957,7 +957,7 @@ LALCreateBCVFilters(REAL4Vector         *FilterBCV1,
   UINT4			i;
   UINT4  		n = FilterBCV1->length;
   UINT4	  		nby2 = FilterBCV1->length / 2;
-	  
+
   REAL8 		amplitude, phase;
   REAL8	  		cos_phase;
   REAL8	  		sin_phase;
@@ -968,7 +968,7 @@ LALCreateBCVFilters(REAL4Vector         *FilterBCV1,
   a22 = moments->a22.data[kMax];
   a21 = moments->a21.data[kMax];
 
-  /* Create the templates */	       
+  /* Create the templates */
   for (i = 0; i< kMin-1; i++)
     {
       FilterBCV1->data[i] = 0;
@@ -980,25 +980,25 @@ LALCreateBCVFilters(REAL4Vector         *FilterBCV1,
     {
       phase  =   psi0 * powerVector->fm5_3.data[i]	/* The same for the two filters 	*/
 	+ psi3 * powerVector->fm2_3.data[i];
-      
+
       cos_phase  = cos(phase);	/* The same for the two filters		*/
       sin_phase  = sin(phase);
       /* Fill the first filter here */
       amplitude  = a11 * powerVector->fm7_6.data[i];
-      
-      FilterBCV1->data[i]   =  amplitude * cos_phase;      
+
+      FilterBCV1->data[i]   =  amplitude * cos_phase;
       FilterBCV1->data[n-i] = -amplitude * sin_phase;
 
       /* Fill the second one here */
-      amplitude =  a21 * powerVector->fm7_6.data[i] + 
+      amplitude =  a21 * powerVector->fm7_6.data[i] +
 	a22 * powerVector->fm1_2.data[i];
-      
-      FilterBCV2->data[i]   =  amplitude * cos_phase;      
+
+      FilterBCV2->data[i]   =  amplitude * cos_phase;
       FilterBCV2->data[n-i] = -amplitude * sin_phase;
-    }  
+    }
 }
 
-void 
+void
 LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
 			REAL4Vector 	    *FilterBCVSpin2,
 			REAL4Vector 	    *FilterBCVSpin3,
@@ -1012,8 +1012,8 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
   UINT4			i;
   UINT4  		n = FilterBCVSpin1->length;
   UINT4	  		nby2 = FilterBCVSpin1->length / 2;
-  
-  REAL4 a11,a21,a22; 
+
+  REAL4 a11,a21,a22;
   REAL8 phase, c_phase, s_phase, c_phase_beta, s_phase_beta;
   REAL8 I=0., J=0., K=0., L=0., M=0., temp;
   REAL4 deltaTto2by3, deltaF;
@@ -1033,14 +1033,14 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
   a11 = moments->a11.data[kMax];
   a22 = moments->a22.data[kMax];
   a21 = moments->a21.data[kMax];
-  
-  /* 
-     we must move that loop outside. It is independant of the 
+
+  /*
+     we must move that loop outside. It is independant of the
      psi0/psi3 ... but not beta...hum difficult. But bea dmension
-     is much less than psi0/psi3. We might have a 2 dimensional 
+     is much less than psi0/psi3. We might have a 2 dimensional
      set of vector having i as first dimension and beta as second.
-  */  
-  
+  */
+
 
 
 
@@ -1051,7 +1051,7 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
 	exit(0);
       }
       temp =  powerVector->fm7_6.data[i] * powerVector->fm7_6.data[i] /overlapin->psd.data[i];
-      
+
 
       I += temp;
       J += temp *
@@ -1060,7 +1060,7 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
 	sin(beta * powerVector->fm2_3.data[i] * deltaTto2by3);
       L += temp *
 	sin(2 * beta * powerVector->fm2_3.data[i] * deltaTto2by3);
-      M += temp * 
+      M += temp *
 	cos(2 * beta * powerVector->fm2_3.data[i] * deltaTto2by3);
 
     }
@@ -1071,7 +1071,7 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
   L *= 2*deltaF/sampling/sampling;
   M *= 2*deltaF/sampling/sampling;
 
-  /* Create the templates */	       
+  /* Create the templates */
   for (i = 0; i< kMin-1; i++)
     {
       FilterBCVSpin1->data[i] = 0;
@@ -1084,20 +1084,20 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
     {
       REAL4 rootI;
       rootI = sqrt(I);
-      for (i = kMin; i< kMax; i++)  
+      for (i = kMin; i< kMax; i++)
 	{
-	  phase  =   psi0 * powerVector->fm5_3.data[i]	
+	  phase  =   psi0 * powerVector->fm5_3.data[i]
 	    + psi3 * powerVector->fm2_3.data[i];
 	  c_phase = cos(phase)  ;
 	  s_phase = sin(phase) ;
-	  
 
-	  FilterBCVSpin1->data[i]   =  powerVector->fm7_6.data[i] * c_phase / rootI;      
+
+	  FilterBCVSpin1->data[i]   =  powerVector->fm7_6.data[i] * c_phase / rootI;
 	  FilterBCVSpin1->data[n-i] =  powerVector->fm7_6.data[n-i] * s_phase / rootI;
 	  FilterBCVSpin2->data[i]   = 0.;
-	  FilterBCVSpin2->data[n-i] = 0.;	  
+	  FilterBCVSpin2->data[n-i] = 0.;
 	  FilterBCVSpin3->data[i]   = 0.;
-	  FilterBCVSpin3->data[n-i] = 0.;	  
+	  FilterBCVSpin3->data[n-i] = 0.;
 	}
     }
   else
@@ -1111,16 +1111,16 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
           -  (pow(numerator1,2)/denominator) );
 
 
-      for (i = kMin; i< kMax; i++)  
+      for (i = kMin; i< kMax; i++)
 	{
 	  phase  =   psi0 * powerVector->fm5_3.data[i]	/* The same for the two filters 	*/
 	    + psi3 * powerVector->fm2_3.data[i];
 	  c_phase = cos(phase);
 	  s_phase = sin(phase);
 
-	  FilterBCVSpin1->data[i]   =  powerVector->fm7_6.data[i] * c_phase / rootI;      
+	  FilterBCVSpin1->data[i]   =  powerVector->fm7_6.data[i] * c_phase / rootI;
 	  FilterBCVSpin1->data[n-i] =  powerVector->fm7_6.data[n-i] * s_phase / rootI;
-	  
+
 	  c_phase_beta = cos( beta * powerVector->fm2_3.data[i] * deltaTto2by3);
 	  s_phase_beta = sin( beta * powerVector->fm2_3.data[i] * deltaTto2by3);
 
@@ -1129,27 +1129,27 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
 	  FilterBCVSpin2->data[n-i]   =  powerVector->fm7_6.data[i]
 	    *( c_phase_beta - J/I) *rootI *s_phase / rootDenominator;
 
-	  FilterBCVSpin3->data[i]   =  powerVector->fm7_6.data[i]/denominator1  
+	  FilterBCVSpin3->data[i]   =  powerVector->fm7_6.data[i]/denominator1
 	    *(
-	      s_phase_beta - (K/I)  - ( numerator1 /denominator * 
+	      s_phase_beta - (K/I)  - ( numerator1 /denominator *
 					( c_phase_beta - (J/I)))
-	      ) * rootI * c_phase;   
-	
-	  FilterBCVSpin3->data[n-i]   =  powerVector->fm7_6.data[i]/denominator1  
+	      ) * rootI * c_phase;
+
+	  FilterBCVSpin3->data[n-i]   =  powerVector->fm7_6.data[i]/denominator1
 	    *(
-	      s_phase_beta - (K/I)  - ( numerator1 /denominator * 
+	      s_phase_beta - (K/I)  - ( numerator1 /denominator *
 					( c_phase_beta - (J/I)))
-	      ) * rootI * s_phase;   
+	      ) * rootI * s_phase;
 	}
     }
   /*
  {
-   REAL8 A1A1=0, A2A2=0, A3A3=0, A1A2=0, A1A3=0,A2A3=0;;   
+   REAL8 A1A1=0, A2A2=0, A3A3=0, A1A2=0, A1A3=0,A2A3=0;;
    fprintf (stdout, "Checking orthonormalisation of amplitude vectors \n");
-   
+
    for (i=kMin; i < kMax; i++)
      {
-       
+
        A1A1 += FilterBCVSpin1->data[i] * FilterBCVSpin1->data[i] /overlapin->psd.data[i]; ;
        A2A2 += FilterBCVSpin2->data[i] * FilterBCVSpin2->data[i]  /overlapin->psd.data[i];;
        A3A3 += FilterBCVSpin3->data[i] * FilterBCVSpin3->data[i]  /overlapin->psd.data[i];;
@@ -1157,14 +1157,14 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
        A1A3 += FilterBCVSpin1->data[i] * FilterBCVSpin3->data[i] /overlapin->psd.data[i]; ;
        A2A3 += FilterBCVSpin2->data[i] * FilterBCVSpin3->data[i]  /overlapin->psd.data[i];;
      }
-   
+
    A1A1 *= 4 * deltaF;
    A2A2 *= 4 * deltaF;
    A3A3 *= 4 * deltaF;
    A1A2 *= 4 * deltaF;
    A1A3 *= 4 * deltaF;
    A2A3 *= 4 * deltaF;
-   
+
    fprintf (stdout, "A1hat cross A1hat %e\n", A1A1);
    fprintf (stdout, "A2hat cross A2hat %e\n", A2A2);
    fprintf (stdout, "A3hat cross A3hat %e\n", A3A3);
@@ -1173,13 +1173,13 @@ LALCreateBCVSpinFilters(REAL4Vector         *FilterBCVSpin1,
    fprintf (stdout, "A2hat cross A3hat %e\n\n", A2A3);
  }
   */
-  
+
 }
 
 
 
 /*  ****************************************************************************
- *  The Overlap function for BCV templates 
+ *  The Overlap function for BCV templates
  *  ***************************************************************************/
 void
 LALWaveOverlapBCV(	     LALStatus               *status,
@@ -1188,12 +1188,12 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 			     REAL4Vector             *FilterBCV1,
 			     REAL4Vector             *FilterBCV2,
 			     UserParametersIn         userParam ,
-			     OverlapOutputIn          *OverlapOutput, 
+			     OverlapOutputIn          *OverlapOutput,
 			     BEMoments *moments
 		  	     )
-     /*  </lalVerbatim>  */
+
 {
- 
+
   REAL4   rhoMaxConstraint=0   ,   alphaConstraint=0,   phaseConstraint=0;
   REAL4   rhoMaxUnconstraint=0;
   INT4    rhoBinUnconstraint=0, rhoBinConstraint=0;
@@ -1202,38 +1202,38 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
   REAL4 df;
 
-  
-  REAL4   BestPhase=0,thetab,thetav=0, alphaMax, a11,a22,a21, 
+
+  REAL4   BestPhase=0,thetab,thetav=0, alphaMax, a11,a22,a21,
 	  x1_2, x2_2, x3_2, x4_2, 		/* some temporary data 	      		*/
 	  V0, V1, V2, 				/* idem 				*/
 	  rho		= 0,			/* the SNR 				*/
            alpha, alphaFU, fm23, fp23;
-  
-  REAL4Vector 
-    template, 
+
+  REAL4Vector
+    template,
     x1, x2, x3, x4,
     phaseV,
-    rho1, rho2, rho3, 
+    rho1, rho2, rho3,
     v0, v1, v2;					/* output of the correlations 		*/
 
   InspiralWaveCorrelateIn	  corrin;/* the correlation input structure 	*/
   UINT4 k,
-	  i, 									
+	  i,
 	  nBegin, 				/* beginning of valid correlation 	*/
 	  nEnd, 				/* end of valid correlation 		*/
 	  n = correlation->length; 		/* length of the vectors		*/
   REAL4 phi, phase, cphase, sphase, cphi, sphi;
   FILE *Foutput;
 
-	  
+
   INITSTATUS (status, "LALWaveOverlapBCV", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
-  
+
   /* size affectation*/
-  x1.length = x2.length = x3.length = x4.length = 
+  x1.length = x2.length = x3.length = x4.length =
   v1.length = v2.length = v0.length =
     phaseV.length =  rho1.length= rho2.length = rho3.length  =template.length= n;
-  
+
   /* memory allocation*/
   x1.data = (REAL4*) LALMalloc(sizeof(REAL4) * x1.length);
   x2.data = (REAL4*) LALMalloc(sizeof(REAL4) * x2.length);
@@ -1253,36 +1253,36 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   /**/
   overlapin->param.nStartPad 	= 0;
   overlapin->param.startPhase 	= 0;
-  
-  /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation  
-   *  process; let's get the input data namely x and the spectrum namely psd 
+
+  /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation
+   *  process; let's get the input data namely x and the spectrum namely psd
    *  */
   corrin.fCutoff        = overlapin->param.fFinal;				/* the integral's cutoff frequency 	*/
   corrin.samplingRate   = overlapin->param.tSampling;				/* the sampling 			*/
-  corrin.df             = overlapin->param.tSampling / 
+  corrin.df             = overlapin->param.tSampling /
 	  		(REAL8) overlapin->signal.length;			/* the resolution in frequency 		*/
   corrin.psd            = overlapin->psd;					/* the spectrum 			*/
   corrin.signal1        = overlapin->signal;					/* the signal x				*/
   corrin.revp           = overlapin->revp;					/* fourier transform flag		*/
-  
-  /* Filter h1 and its orthonormal h1* */  
+
+  /* Filter h1 and its orthonormal h1* */
   corrin.signal2        = *FilterBCV1;						/* The first template 			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x1, corrin);			/* the correlation			*/
-  CHECKSTATUSPTR(status);							
+  CHECKSTATUSPTR(status);
   LALGetOrthogonalFilter(FilterBCV1);					/* get the orthonormalized template     */
   corrin.signal2        = *FilterBCV1;						/* the second template 		*/
   LALInspiralWaveCorrelate(status->statusPtr, &x3, corrin);			/* the correlation 			*/
   CHECKSTATUSPTR(status);
-  
+
   /* Filter h2 and its orthornormal filter */
   corrin.signal2        = *FilterBCV2;						/* The first template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x2, corrin);			/* the correlation 			*/
-  CHECKSTATUSPTR(status);		
+  CHECKSTATUSPTR(status);
   LALGetOrthogonalFilter( FilterBCV2);					/* get the orthonormailzed templates 	*/
   corrin.signal2        = *FilterBCV2;						/* the second template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x4, corrin);			/* the correlation 			*/
-  
-  /* nbegin and end for the correlation processus 
+
+  /* nbegin and end for the correlation processus
    * as well as overlapout affectation */
   nBegin                = overlapin->nBegin;					/* starting bin 			*/
   nEnd              	= FilterBCV1->length - overlapin->nEnd;			/* ending valid bin 			*/
@@ -1294,23 +1294,23 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       Foutput = fopen( "BE_Filter.dat", "w");
       for (i=0; i< x1.length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x1.data[i]));
-      fprintf(Foutput,"&\n");	       
-      
+      fprintf(Foutput,"&\n");
+
       for (i=1; i< FilterBCV1->length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x2.data[i]));
-      fprintf(Foutput,"&\n");	       
-      
+      fprintf(Foutput,"&\n");
+
       for (i=0; i< FilterBCV1->length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x3.data[i]));
-      fprintf(Foutput,"&\n");	       
-      
+      fprintf(Foutput,"&\n");
+
       for (i=0; i< FilterBCV1->length-1; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate ,fabs(x4.data[i]));
-      fprintf(Foutput,"&\n");	 
-      fclose(Foutput);      
+      fprintf(Foutput,"&\n");
+      fclose(Foutput);
     }
 
-  df 	= overlapin->param.tSampling / (REAL8)(n/2.) / 2.;      
+  df 	= overlapin->param.tSampling / (REAL8)(n/2.) / 2.;
   k = floor(overlapin->param.fFinal / df);
 
   a11 = moments->a11.data[k];
@@ -1326,7 +1326,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   thetab = (-(a11 * alphaMax)/(a22+a21*alphaMax));
   thetab = atan(thetab);
   rho    = 0.;
-  
+
   if(userParam.printBestOverlap && userParam.extraFinalPrinting){
   fprintf(stderr,"theta_b = %e a11=%e a21=%e a22=%e alphaMax = %e fCutoff=%e\n",
 	  thetab,  a11, a21, a22, alphaMax, corrin.fCutoff);
@@ -1339,23 +1339,23 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
   /* Once we have the 4 correlations, we can search for the
    * maximum of correlation and compute the final SNR */
-  for (i = nBegin; i < nEnd; i++) 
+  for (i = nBegin; i < nEnd; i++)
     {
       x1_2 = x1.data[i] * x1.data[i];
       x2_2 = x2.data[i] * x2.data[i];
       x3_2 = x3.data[i] * x3.data[i];
-      x4_2 = x4.data[i] * x4.data[i];      
-      
+      x4_2 = x4.data[i] * x4.data[i];
+
       V0 = x1_2 + x2_2 + x3_2 + x4_2;
       V1 = x1_2 + x3_2 - x2_2 - x4_2;
       V2 = 2*(x1.data[i]*x2.data[i] + x3.data[i]*x4.data[i]);
-      
+
       rhoUnconstraint = sqrt((V0 + sqrt(V1*V1+V2*V2))/2.);
 
       /* get thetav first in order to constraint alpha_F*/
 
       thetav =   atan2(V2,V1);
-	
+
       if(userParam.printBestOverlap && userParam.extraFinalPrinting){
 	rho1.data[i] = rhoUnconstraint;
 	rho2.data[i] = sqrt((V0 + V1)/2.);
@@ -1365,14 +1365,14 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	v2.data[i]   = V2;
         phaseV.data[i] = .5*thetav; /*used to compute alpha*/
       }
-             
+
 
       if (thetab >= 0){
-	if ( 0  <= thetav && thetav <= 2 * thetab){	  
+	if ( 0  <= thetav && thetav <= 2 * thetab){
 	  rhoConstraint = rhoUnconstraint;
 	}
 	else if (thetab-LAL_PI <= thetav && thetav < 0) {
-	  rhoConstraint = sqrt((V0 + V1)/2.);	  
+	  rhoConstraint = sqrt((V0 + V1)/2.);
 	}
 	else if( (2*thetab  < thetav && thetav<=LAL_PI+1e-4 )
 		 || (-LAL_PI-1e-4<=thetav && thetav < -LAL_PI+thetab)){
@@ -1386,70 +1386,70 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 	  }
       }
       else{
-	if ( 2*thetab  <= thetav && thetav <= 0){	  
+	if ( 2*thetab  <= thetav && thetav <= 0){
 	  rhoConstraint = rhoUnconstraint;
 	}
 	else if (0 < thetav &&  thetav  <= LAL_PI + thetab ) {
-	  rhoConstraint = sqrt((V0 + V1)/2.);	  
+	  rhoConstraint = sqrt((V0 + V1)/2.);
 	}
-	else if( (-LAL_PI-1e-4  <= thetav && thetav < 2*thetab ) || 
+	else if( (-LAL_PI-1e-4  <= thetav && thetav < 2*thetab ) ||
 		 (LAL_PI +thetab <= thetav && thetav <= LAL_PI+1e-4))
         {
 	  rhoConstraint =sqrt((V0+V1*cos(2*thetab)+V2*sin(2*thetab))/2.);;
 	}
-	else 
+	else
 	  {
 	    fprintf(stderr,"must not enter herethetav = %e thetab=%e %e %e %d\n ",
                 thetav , thetab, V1, V2, i);
 	    exit(0);
 	  }
       }
-    
-  
+
+
       if (userParam.alphaFConstraint == ALPHAFConstraint){
-  
+
 	if(userParam.printBestOverlap || userParam.printSNRHisto) {
 	  correlation->data[i] = rhoConstraint;
 	}
       }
-      else 
+      else
 	{
 	  if(userParam.printBestOverlap || userParam.printSNRHisto) {
-                alphaFU =   -(a22 * tan(.5*thetav)) 				
+                alphaFU =   -(a22 * tan(.5*thetav))
         	    / (a11 + a21* tan(.5*thetav)) *fp23;
 	        if (alphaFU <=1 )
                   correlation->data[i] = rhoUnconstraint;
-                else 
-                  correlation->data[i] = -1;                  
+                else
+                  correlation->data[i] = -1;
 	  }
 	}
-      
 
-      if ( rhoConstraint > rhoMaxConstraint)			
+
+      if ( rhoConstraint > rhoMaxConstraint)
 	/* Keep the position of the max only	*/
 	{
 	  rhoMaxConstraint 	  = rhoConstraint;
 	  rhoBinConstraint 	  = i;
 	  phaseConstraint   =    .5*thetav;
-	  alphaConstraint = -(a22 * tan(phaseConstraint)) 				
+	  alphaConstraint = -(a22 * tan(phaseConstraint))
 	    / (a11 + a21* tan(phaseConstraint));
 	}
 
-      alphaFU =   -(a22 * tan(.5*thetav)) 				
+      alphaFU =   -(a22 * tan(.5*thetav))
 	    / (a11 + a21* tan(.5*thetav)) *fp23;
 
 
-      if ( rhoUnconstraint > rhoMaxUnconstraint && alphaFU<=1)			
+      if ( rhoUnconstraint > rhoMaxUnconstraint && alphaFU<=1)
 	/* Keep the position of the max only	*/
 	{
 	  rhoMaxUnconstraint 	= rhoUnconstraint  ;
 	  rhoBinUnconstraint 	= i;
-	  phaseUnconstraint   = .5*thetav ; 
-	  alphaUnconstraint = -(a22 * tan(phaseUnconstraint)) 				
+	  phaseUnconstraint   = .5*thetav ;
+	  alphaUnconstraint = -(a22 * tan(phaseUnconstraint))
 	    / (a11 + a21* tan(phaseUnconstraint));
 	}
     }
-  /* Finally get the alpha value corresponding to the best rho */ 
+  /* Finally get the alpha value corresponding to the best rho */
   OverlapOutput->rhoMax     = rhoMaxConstraint;
   OverlapOutput->rhoBin     = rhoBinConstraint;
   OverlapOutput->alpha      = alphaConstraint;
@@ -1465,27 +1465,27 @@ LALWaveOverlapBCV(	     LALStatus               *status,
       fprintf(Foutput, "%e\n",  atan2(v2.data[i],v1.data[i]));
     }
     fclose(Foutput);
-    
+
     Foutput=fopen("BE_rho1.dat","w");
     for (i=0; i< phaseV.length; i++){
       fprintf(Foutput, "%e\n", rho1.data[i]);
     }
     fclose(Foutput);
-    
+
 
   Foutput=fopen("BE_rho2.dat","w");
     for (i=0; i< phaseV.length; i++){
       fprintf(Foutput, "%e\n", rho2.data[i]);
     }
     fclose(Foutput);
-    
+
 
     Foutput=fopen("BE_rho3.dat","w");
     for (i=0; i< phaseV.length; i++){
       fprintf(Foutput, "%e\n",rho3.data[i]);
     }
     fclose(Foutput);
-     
+
     Foutput=fopen("BE_v0.dat","w");
     for (i=0; i< phaseV.length; i++){
       fprintf(Foutput, "%e\n",v0.data[i]);
@@ -1496,14 +1496,14 @@ LALWaveOverlapBCV(	     LALStatus               *status,
     for (i=0; i< phaseV.length; i++){
       fprintf(Foutput, "%e\n", v1.data[i]);
     }
-    fclose(Foutput); 
+    fclose(Foutput);
 
     Foutput=fopen("BE_v2.dat","w");
     for (i=0; i< phaseV.length; i++){
       fprintf(Foutput, "%e\n", v2.data[i]);
     }
     fclose(Foutput);
-    
+
     Foutput=fopen("BE_alpha.dat","w");
     for (i=0; i< correlation->length; i++){
       alpha = -(a22 * tan(phaseV.data[i])) 				/* Compute the final alpha parameter 	*/
@@ -1523,21 +1523,21 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
     if (userParam.extraFinalPrinting && userParam.printBestOverlap){
     /* print the final template given phase, alpha ans so on*/
-    
+
     phase 		= BestPhase;
     phi   		= overlapin->param.startPhase; /*how to get it ohterwise ? */
-   
-    for (i=0; i<(UINT4)correlation->length; i++) 
+
+    for (i=0; i<(UINT4)correlation->length; i++)
     {
       cphase = cos(phase);
       cphi   = cos(phi);
       sphase = sqrt(1-cphase*cphase);
       sphi   = sqrt(1-cphi*cphi);
-      
+
       correlation->data[i] = x1.data[i] * cphase * cphi
 	+ x2.data[i] * sphase * cphi
 	+ x3.data[i] * cphase * sphi
-	+ x4.data[i] * sphase * sphi;	
+	+ x4.data[i] * sphase * sphi;
     }
 
     Foutput=fopen("BE_Correlation.dat", "w");
@@ -1550,33 +1550,33 @@ LALWaveOverlapBCV(	     LALStatus               *status,
     LALGetOrthogonalFilter(FilterBCV1);						/* get the orthonormalized template     */
     corrin.signal2        = *FilterBCV1;
 
-    for (i=0; i<(UINT4)correlation->length; i++) 
-    { 
+    for (i=0; i<(UINT4)correlation->length; i++)
+    {
       cphase = cos(phaseV.data[i]);
       cphi   = cos(phi);
       sphase = sqrt(1-cphase*cphase);
       sphi   = sqrt(1-cphi*cphi);
-      
-      template.data[i]=FilterBCV1->data[i]*cphase*cphi; 
-      template.data[i]+=corrin.signal2.data[i] * sphase*cphi; 
 
-	
+      template.data[i]=FilterBCV1->data[i]*cphase*cphi;
+      template.data[i]+=corrin.signal2.data[i] * sphase*cphi;
+
+
     }
 
     LALGetOrthogonalFilter(FilterBCV2);						/* get the orthonormalized template     */
     corrin.signal2        = *FilterBCV2;
 
-    for (i=0; i<(UINT4)correlation->length; i++) 
-    { 
+    for (i=0; i<(UINT4)correlation->length; i++)
+    {
       cphase = cos(phaseV.data[i]);
       cphi   = cos(phi);
       sphase = sqrt(1-cphase*cphase);
       sphi   = sqrt(1-cphi*cphi);
-      
-      template.data[i]=FilterBCV2->data[i]*sphase*cphi; 
-      template.data[i]+=corrin.signal2.data[i]*sphase*sphi; 
 
-	
+      template.data[i]=FilterBCV2->data[i]*sphase*cphi;
+      template.data[i]+=corrin.signal2.data[i]*sphase*sphi;
+
+
     }
 
     Foutput=fopen("BE_BestTemplate.dat", "w");
@@ -1613,7 +1613,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
 
 
 /*  ****************************************************************************
- *  The Overlap function for BCV templates 
+ *  The Overlap function for BCV templates
  *  ***************************************************************************/
 void
 LALWaveOverlapBCVSpin(	     LALStatus               *status,
@@ -1623,43 +1623,43 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 			     REAL4Vector             *FilterBCVSpin2,
 			     REAL4Vector             *FilterBCVSpin3,
 			     UserParametersIn         userParam ,
-			     OverlapOutputIn          *OverlapOutput 
+			     OverlapOutputIn          *OverlapOutput
 		  	     )
-     /*  </lalVerbatim>  */
+
 {
- 
+
   REAL4   rhoMax=0 ;
   INT4    rhoBin=0;
   REAL4   rho=0;
 
   REAL4   df;
 
-  
+
   REAL4
-    a11,a22,a21, 
+    a11,a22,a21,
     x5_2,x6_2,x1_2, x2_2, x3_2, x4_2, 		/* some temporary data 	      		*/
     alpha, fm23, fp23, phase;
-  
-  REAL4Vector 
-    template, 
+
+  REAL4Vector
+    template,
     x1, x2, x3, x4,x5,x6;
 
   InspiralWaveCorrelateIn	  corrin;/* the correlation input structure 	*/
   UINT4 k,
-	  i, 									
+	  i,
 	  nBegin, 				/* beginning of valid correlation 	*/
 	  nEnd, 				/* end of valid correlation 		*/
 	  n = correlation->length; 		/* length of the vectors		*/
   FILE *Foutput;
 
-	  
+
   INITSTATUS (status, "LALWaveOverlapBCV", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
-  
+
   /* size affectation*/
-  x1.length = x2.length = x3.length = x4.length = 
+  x1.length = x2.length = x3.length = x4.length =
   x5.length = x6.length =  template.length= n;
-  
+
   /* memory allocation*/
   x1.data = (REAL4*) LALMalloc(sizeof(REAL4) * x1.length);
   x2.data = (REAL4*) LALMalloc(sizeof(REAL4) * x2.length);
@@ -1672,44 +1672,44 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
   /**/
   overlapin->param.nStartPad 	= 0;
   overlapin->param.startPhase 	= 0;
-  
-  /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation  
-   *  process; let's get the input data namely x and the spectrum namely psd 
+
+  /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation
+   *  process; let's get the input data namely x and the spectrum namely psd
    *  */
   corrin.fCutoff        = overlapin->param.fFinal;				/* the integral's cutoff frequency 	*/
   corrin.samplingRate   = overlapin->param.tSampling;				/* the sampling 			*/
-  corrin.df             = overlapin->param.tSampling / 
+  corrin.df             = overlapin->param.tSampling /
 	  		(REAL8) overlapin->signal.length;			/* the resolution in frequency 		*/
   corrin.psd            = overlapin->psd;					/* the spectrum 			*/
   corrin.signal1        = overlapin->signal;					/* the signal x				*/
   corrin.revp           = overlapin->revp;					/* fourier transform flag		*/
-  
-  /* Filter h1 and its orthonormal h1* */  
+
+  /* Filter h1 and its orthonormal h1* */
   corrin.signal2        = *FilterBCVSpin1;						/* The first template 			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x1, corrin);			/* the correlation			*/
-  CHECKSTATUSPTR(status);							
+  CHECKSTATUSPTR(status);
   LALGetOrthogonalFilter(FilterBCVSpin1);					/* get the orthonormalized template     */
   corrin.signal2        = *FilterBCVSpin1;						/* the second template 		*/
   LALInspiralWaveCorrelate(status->statusPtr, &x2, corrin);			/* the correlation 			*/
   CHECKSTATUSPTR(status);
-  
+
   /* Filter h2 and its orthornormal filter */
   corrin.signal2        = *FilterBCVSpin2;						/* The first template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x3, corrin);			/* the correlation 			*/
-  CHECKSTATUSPTR(status);		
+  CHECKSTATUSPTR(status);
   LALGetOrthogonalFilter( FilterBCVSpin2);					/* get the orthonormailzed templates 	*/
   corrin.signal2        = *FilterBCVSpin2;						/* the second template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x4, corrin);			/* the correlation 			*/
-  
+
   /* Filter h3 and its orthornormal filter */
   corrin.signal2        = *FilterBCVSpin3;						/* The first template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x5, corrin);			/* the correlation 			*/
-  CHECKSTATUSPTR(status);		
+  CHECKSTATUSPTR(status);
   LALGetOrthogonalFilter( FilterBCVSpin3);					/* get the orthonormailzed templates 	*/
   corrin.signal2        = *FilterBCVSpin3;						/* the second template			*/
   LALInspiralWaveCorrelate(status->statusPtr, &x6, corrin);			/* the correlation 			*/
 
-  /* nbegin and end for the correlation processus 
+  /* nbegin and end for the correlation processus
    * as well as overlapout affectation */
   nBegin                = overlapin->nBegin;					/* starting bin 			*/
   nEnd              	= FilterBCVSpin1->length - overlapin->nEnd;			/* ending valid bin 			*/
@@ -1721,52 +1721,52 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
       Foutput = fopen( "BE_Filter.dat", "w");
       for (i=0; i< x1.length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x1.data[i]));
-      fprintf(Foutput,"&\n");	       
-      
+      fprintf(Foutput,"&\n");
+
       for (i=1; i< FilterBCVSpin1->length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x2.data[i]));
-      fprintf(Foutput,"&\n");	       
-      
+      fprintf(Foutput,"&\n");
+
       for (i=0; i< FilterBCVSpin1->length; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate,fabs(x3.data[i]));
-      fprintf(Foutput,"&\n");	       
-      
+      fprintf(Foutput,"&\n");
+
       for (i=0; i< FilterBCVSpin1->length-1; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate ,fabs(x4.data[i]));
       fprintf(Foutput,"&\n");
 
       for (i=0; i< FilterBCVSpin1->length-1; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate ,fabs(x5.data[i]));
-      fprintf(Foutput,"&\n");	 
-      
+      fprintf(Foutput,"&\n");
+
       for (i=0; i< FilterBCVSpin1->length-1; i++)
 	fprintf(Foutput, "%e %e\n", i/corrin.samplingRate ,fabs(x6.data[i]));
-      fprintf(Foutput,"&\n");	 
+      fprintf(Foutput,"&\n");
 
 
 
     }
 
-  df 	= overlapin->param.tSampling / (REAL8)(n/2.) / 2.;      
+  df 	= overlapin->param.tSampling / (REAL8)(n/2.) / 2.;
   k = floor(overlapin->param.fFinal / df);
 
 
   /* Once we have the 4 correlations, we can search for the
    * maximum of correlation and compute the final SNR */
-  for (i = nBegin; i < nEnd; i++) 
+  for (i = nBegin; i < nEnd; i++)
     {
       x1_2 = x1.data[i] * x1.data[i];
       x2_2 = x2.data[i] * x2.data[i];
       x3_2 = x3.data[i] * x3.data[i];
-      x4_2 = x4.data[i] * x4.data[i];      
-      x5_2 = x5.data[i] * x5.data[i];      
-      x6_2 = x6.data[i] * x6.data[i];      
+      x4_2 = x4.data[i] * x4.data[i];
+      x5_2 = x5.data[i] * x5.data[i];
+      x6_2 = x6.data[i] * x6.data[i];
 
       rho = sqrt(x1_2+x2_2+x3_2+x4_2+x5_2+x6_2);
       fprintf(Foutput, "%e %e\n", i/corrin.samplingRate ,rho);
 
  /*      fprintf(stderr, "%e %e %e\n", (float)i/overlapin->param.tSampling, rho, x1_2/rho/rho+x2_2/rho/rho+x3_2/rho/rho+x4_2/rho/rho+x5_2/rho/rho+x6_2/rho/rho );*/
-      if ( rho > rhoMax)			
+      if ( rho > rhoMax)
 	/* Keep the position of the max only	*/
 	{
 	  rhoMax 	  = rho;
@@ -1774,10 +1774,10 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 	}
 
 
-    }      
-  fclose(Foutput);      
+    }
+  fclose(Foutput);
 
-  /* Finally get the alpha value corresponding to the best rho */ 
+  /* Finally get the alpha value corresponding to the best rho */
   OverlapOutput->rhoMax     = rhoMax;
   OverlapOutput->rhoBin     = rhoBin;
   OverlapOutput->alpha      = alpha;
@@ -1797,13 +1797,13 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
 }
 
 /* *****************************************************************************
- *  A draft function to finalized later ; purpose: print the bank 
+ *  A draft function to finalized later ; purpose: print the bank
  *  ****************************************************************************/
 void
 BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
 		InspiralTemplateList **list,
       		UINT4 sizeBank
-		) 
+		)
 {
   UINT4 	i;
   FILE 		*output;
@@ -1813,10 +1813,10 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
   fprintf(output,"#Number of Coarse Bank Templates=%d\n",sizeBank);
   if (coarseBankIn.approximant == BCV)
     {
-      fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+      fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
 	      coarseBankIn.psi0Min, coarseBankIn.psi0Max, coarseBankIn.psi3Min, coarseBankIn.psi3Max);
       fprintf(output, "#psi0 psi3  totalMass fFinal\n");
-      
+
     }
   else
     {
@@ -1827,21 +1827,21 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
   for ( i = 0; i < sizeBank; i++)
     {
       if (coarseBankIn.approximant == BCV)
-	{      		   
-      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.psi0, 
+	{
+      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.psi0,
 				  			(*list)[i].params.psi3,
 							(*list)[i].params.totalMass,
 						       	(*list)[i].params.fFinal);
-	} 
+	}
       else
 	{
 
-      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.t0, 
-				  			(*list)[i].params.t3, 
-							(*list)[i].params.mass1, 
+      		fprintf(output, "%e %e %e %e\n", 	(*list)[i].params.t0,
+				  			(*list)[i].params.t3,
+							(*list)[i].params.mass1,
 							(*list)[i].params.mass2);
 	}
-    }	   
+    }
   fprintf(output,"&\n");
   fclose(output);
 }
@@ -1868,7 +1868,7 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
       tmplt->psi0    = (REAL4) coarseList[0].params.psi0;
       tmplt->psi3    = (REAL4) coarseList[0].params.psi3;
       tmplt->f_final = (REAL4) coarseList[0].params.fFinal;
-      
+
       /* --- then the others --- */
       for ( i = 1; i < numCoarse; ++i )
 	{
@@ -1891,12 +1891,12 @@ BEPrintBank(	InspiralCoarseBankIn coarseBankIn,
 	  tmplt->f_final = (REAL4) coarseList[i].params.fFinal;
 	}
     }
-  
+
 #endif
 
 
 
-void 
+void
 BEFillProc(
 	       ProcessParamsTable     *this_proc_param,
 	       InspiralCoarseBankIn   coarseBankIn,
@@ -1922,7 +1922,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   snprintf( this_proc_param->type,    LIGOMETA_TYPE_MAX,    "%-10s",   pptype ); \
   snprintf( this_proc_param->value,   LIGOMETA_VALUE_MAX,   format, ppvalue1, ppvalue2 );
 
-  ADD_PROCESS_PARAM("float","%f","--bank-alpha",           
+  ADD_PROCESS_PARAM("float","%f","--bank-alpha",
       coarseBankIn.alpha);
   ADD_2PROCESS_PARAM("float","%f %f","--bank-fcut-range",
       coarseBankIn.LowGM, coarseBankIn.HighGM);
@@ -1939,34 +1939,34 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   ADD_PROCESS_PARAM("string","%s","--bank-grid-spacing",
       GetStringFromGridType(coarseBankIn.gridSpacing));
   ADD_PROCESS_PARAM("string", "%s","--channel",
-      userParam.chanName);    
+      userParam.chanName);
   ADD_PROCESS_PARAM("string", "%s","--detector",
       GetStringFromDetector(userParam.detector));
-  ADD_PROCESS_PARAM("float","%f","--fl",	
+  ADD_PROCESS_PARAM("float","%f","--fl",
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("string", "%d","--gps-start-time",
-      userParam.startTime);     
-  ADD_PROCESS_PARAM("float","%f","--fl-template", 
+      userParam.startTime);
+  ADD_PROCESS_PARAM("float","%f","--fl-template",
       coarseBankIn.fLower);
   ADD_PROCESS_PARAM("float","%f","--max-total-mass",
       userParam.maxTotalMass);
-  ADD_PROCESS_PARAM("float","%f","--m1",	
+  ADD_PROCESS_PARAM("float","%f","--m1",
       userParam.m1);
-  ADD_PROCESS_PARAM("float","%f","--m2",	
+  ADD_PROCESS_PARAM("float","%f","--m2",
       userParam.m2);
-  ADD_PROCESS_PARAM("float","%f","--mm",	
+  ADD_PROCESS_PARAM("float","%f","--mm",
       coarseBankIn.mmCoarse);
-  ADD_PROCESS_PARAM("int","%d","--ntrial",	
+  ADD_PROCESS_PARAM("int","%d","--ntrial",
       userParam.ntrials);
   ADD_PROCESS_PARAM("float","%f","--noise-amplitude",
       randIn.NoiseAmp);
   ADD_PROCESS_PARAM("string", "%s","--noise-model",
       GetStringFromNoiseModel(userParam.noiseModel));
-  ADD_PROCESS_PARAM("int","%d","--bank-number-fcut",	        
+  ADD_PROCESS_PARAM("int","%d","--bank-number-fcut",
       coarseBankIn.numFcutTemplates);
   ADD_PROCESS_PARAM("int","%d","--num-seconds",
       userParam.numSeconds);
-  ADD_PROCESS_PARAM("float","%f","--psi0",	
+  ADD_PROCESS_PARAM("float","%f","--psi0",
       userParam.psi0);
   ADD_PROCESS_PARAM("float","%f","--psi3",
       userParam.psi3);
@@ -1992,17 +1992,17 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
       randIn.psi3Min, randIn.psi3Max);
   ADD_PROCESS_PARAM("int","%d","--seed",
       userParam.useed);
-  ADD_PROCESS_PARAM("string","%s","--signal",	
+  ADD_PROCESS_PARAM("string","%s","--signal",
       GetStringFromTemplate(userParam.signal));
   ADD_PROCESS_PARAM("int","%d","--signal-order",
       randIn.param.order);
-  ADD_PROCESS_PARAM("string","%s","--template",	
+  ADD_PROCESS_PARAM("string","%s","--template",
       GetStringFromTemplate(userParam.template));
   ADD_PROCESS_PARAM("int","%d","--template-order",
       coarseBankIn.order);
-  ADD_PROCESS_PARAM("float","%e","--tau0",	
+  ADD_PROCESS_PARAM("float","%e","--tau0",
       userParam.tau0);
-  ADD_PROCESS_PARAM("float","%e","--tau3",	
+  ADD_PROCESS_PARAM("float","%e","--tau3",
       userParam.tau3);
 
   if (userParam.printResultXml){
@@ -2013,7 +2013,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
   }
   if (!userParam.alphaFConstraint ){
     ADD_PROCESS_PARAM("float", "%s", "--alpha-constraint"," ");
-  } 
+  }
   else{
     ADD_PROCESS_PARAM("float", "%s", "--no-alpha-constraint"," ");
   }
@@ -2027,7 +2027,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
     ADD_PROCESS_PARAM("float", "%s", "--verbose", " ");
   }
 
-  	  
+
 #undef ADD_PROCESS_PARAM
 #undef ADD_2PROCESS_PARAM
 }
@@ -2112,36 +2112,36 @@ CHAR* GetStringFromNoiseModel(INT4 input)
   case GEO:
     return "GEO";
     break;
-  case TAMA:    
-    return "TAMA"; 
+  case TAMA:
+    return "TAMA";
     break;
-  case UNITY:    
+  case UNITY:
     return "UNITY";
     break;
   case REALPSD:
     return "REALPSD";
     break;
-  } 
+  }
   return NULL;
  }
 
 CHAR* GetStringFromDetector(INT4 input)
  {
-   
+
   switch (input){
-  case L1: 
+  case L1:
     return "L1";
     break;
-  case H1: 
+  case H1:
     return "H1";
     break;
-  case H2: 
+  case H2:
     return "H2";
     break;
-  case V1: 
+  case V1:
     return "V1";
     break;
-  case G1: 
+  case G1:
     return "G1";
     break;
   }
@@ -2152,13 +2152,13 @@ CHAR* GetStringFromDetector(INT4 input)
 CHAR* GetStringFromScientificRun(INT4 input)
  {
   switch (input){
-     case S2: 
+     case S2:
        return "S2";
        break;
-     case S3: 
+     case S3:
        return "S3";
        break;
-     case S1: 
+     case S1:
        return "S1";
        break;
      case S4:
@@ -2173,7 +2173,7 @@ CHAR* GetStringFromScientificRun(INT4 input)
 
 
 /* xml file for the standalone code */
-void 
+void
 BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 		   RandomInspiralSignalIn       randIn,
 		   UserParametersIn             userParam,
@@ -2195,7 +2195,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
   MetadataTable         processParamsTable;
   ProcessParamsTable   *this_proc_param = NULL;
 
-  snprintf( fname, sizeof(fname), 
+  snprintf( fname, sizeof(fname),
 	       BANKEFFICIENCY_PRINTRESULT_FILEXML ,
 	       userParam.detector,
 	       gpsStartTime.gpsSeconds,
@@ -2206,61 +2206,61 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
     memset( ifo, 0, sizeof(ifo) );
     memcpy( ifo, "MC", sizeof(ifo) - 1 );
-    
+
     /* -- we start to fill the xml file here --- */
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname), &status );
-    
+
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow(&(templateBank.processTable->start_time));
-    LAL_CALL( populate_process_table( &status, 
-				      templateBank.processTable, 
-				      PROGRAM_NAME, 
+    LAL_CALL( populate_process_table( &status,
+				      templateBank.processTable,
+				      PROGRAM_NAME,
 				      CVS_REVISION,
 				      CVS_SOURCE,
 				      CVS_DATE ), &status );
-    this_proc_param = processParamsTable.processParamsTable = 
+    this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
-    
+
     BEFillProc(this_proc_param, coarseBankIn, randIn, userParam);
-    
+
     memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
-    
+
     /* write process table */
-    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
 		 ifoName[0], ifoName[1] );
     XLALGPSTimeNow(&(templateBank.processTable->end_time));
 
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
 	      &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank,
 				      process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-    
+
     /* write process params table */
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
 				      process_params_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable,
 				      process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-    
+
     /* finally write sngl inspiral table */
-    
+
     PRINT_LIGOLW_XML_BANKEFFICIENCY(xmlStream.fp);
-    
+
     fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
 	    trigger.psi0_trigger,
 	    trigger.psi3_trigger,
 	    trigger.beta_trigger,
-	    randIn.param.psi0, 
-	    randIn.param.psi3, 
-	    randIn.param.beta, 
+	    randIn.param.psi0,
+	    randIn.param.psi3,
+	    randIn.param.beta,
 	    trigger.tau0_trigger,
 	    trigger.tau3_trigger,
-	    randIn.param.t0, 
-	    randIn.param.t3, 
-	    trigger.fend_trigger, 
+	    randIn.param.t0,
+	    randIn.param.t3,
+	    trigger.fend_trigger,
 	    trigger.fend_inject,
 	    trigger.mass1_inject,
 	    trigger.mass2_inject,
@@ -2268,12 +2268,12 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	    trigger.rho_final,
 	    trigger.snrAtCoaTime,
 	    trigger.phase,
-	    trigger.alphaF, 
+	    trigger.alphaF,
 	    trigger.bin,
 	    randIn.param.nStartPad,
 	    trigger.nfast
 	    );
-	    
+
      if (trigger.ntrial == (UINT4)userParam.ntrials){
        PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp);
        PRINT_LIGOLW_XML_FOOTER(xmlStream.fp);
@@ -2285,33 +2285,33 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
      fclose( xmlStream.fp );
      xmlStream.fp = NULL;
   }
-  else 
+  else
     {
       xmlStream.fp = fopen(fname,"a+");
-      
+
       fprintf(xmlStream.fp,BANKEFFICIENCY_PARAMS_ROW,
 	      trigger.psi0_trigger,
 	      trigger.psi3_trigger,
 	      trigger.beta_trigger,
-	      randIn.param.psi0, 
-	      randIn.param.psi3, 
-	      randIn.param.beta, 
+	      randIn.param.psi0,
+	      randIn.param.psi3,
+	      randIn.param.beta,
 	      trigger.tau0_trigger,
 	      trigger.tau3_trigger,
-	      randIn.param.t0, 
-	      randIn.param.t3, 
-	      trigger.fend_trigger, 
+	      randIn.param.t0,
+	      randIn.param.t3,
+	      trigger.fend_trigger,
 	      trigger.fend_inject,
 	      trigger.mass1_inject,
 	      trigger.mass2_inject,
 	      randIn.param.startPhase,
 	      trigger.rho_final,
-	      trigger.snrAtCoaTime, 
+	      trigger.snrAtCoaTime,
 	      trigger.phase,
-	      trigger.alphaF, 
+	      trigger.alphaF,
 	      trigger.bin,
 	      randIn.param.nStartPad,
-	      trigger.nfast);	
+	      trigger.nfast);
 
       if (trigger.ntrial == (UINT4)userParam.ntrials){
 	PRINT_LIGOLW_XML_TABLE_FOOTER(xmlStream.fp );
@@ -2321,11 +2321,11 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 	{
 	  fprintf(xmlStream.fp, ",\n");
 	}
-      
-      
+
+
       fclose( xmlStream.fp );
       xmlStream.fp = NULL;
-    }  
+    }
 
   /* close the output xml file */
 
@@ -2333,7 +2333,7 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
 
 
 /* print prototype for condor code (option --print-result-prototype)*/
-void 
+void
 BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
 		RandomInspiralSignalIn randIn,
 		UserParametersIn           userParam
@@ -2365,52 +2365,52 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     strncpy( ifoName[1], "ne", LIGOMETA_IFO_MAX );
     memset( ifo, 0, sizeof(ifo) );
     memcpy( ifo, "MC", sizeof(ifo) - 1 );
-    
-    
-    
+
+
+
     /* -- we start to fill the xml file here --- */
     memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
     LAL_CALL( LALOpenLIGOLwXMLFile( &status, &xmlStream, fname), &status );
-    
-    
+
+
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow(&(templateBank.processTable->start_time));
-    LAL_CALL( populate_process_table( &status, templateBank.processTable, 
+    LAL_CALL( populate_process_table( &status, templateBank.processTable,
 				      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
-    this_proc_param = processParamsTable.processParamsTable = 
+    this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
-    
+
     BEFillProc(this_proc_param, coarseBankIn, randIn, userParam);
-    
+
     memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
-    
-    
-    
+
+
+
     /* write process table */
-    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+    snprintf( templateBank.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
 		 ifoName[0], ifoName[1] );
     XLALGPSTimeNow(&(templateBank.processTable->end_time));
 
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
 	      &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank,
 				      process_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-    
+
     /* write process params table */
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
 				      process_params_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable,
 				      process_params_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-    
+
     /* finally write sngl inspiral table */
-    
-     
+
+
       fclose( xmlStream.fp );
       xmlStream.fp = NULL;
-#undef MAXIFO 
+#undef MAXIFO
 
 
 }
@@ -2431,9 +2431,9 @@ BEInitOverlapOutputIn(OverlapOutputIn *this){
 
 
 /* Estimate the size of the longest template */
-void BEGetMaximumSize(LALStatus  *status, 		      
+void BEGetMaximumSize(LALStatus  *status,
 		      RandomInspiralSignalIn  randIn,
-		      InspiralCoarseBankIn coarseBankIn, 
+		      InspiralCoarseBankIn coarseBankIn,
 		      UINT4 *length)
 {
   /* Use these for the longest template from the bank */
@@ -2442,14 +2442,14 @@ void BEGetMaximumSize(LALStatus  *status,
 
   INITSTATUS( status, "BEGetMaximumSize", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
-  
+
   randIn.param.massChoice 	= m1Andm2;
   randIn.param.approximant 	= EOB;
   *length = 0;
- 
-  LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, randIn.param), 
+
+  LAL_CALL(LALInspiralWaveLength(status->statusPtr, length, randIn.param),
 	   status->statusPtr);
-  
+
   params = randIn.param;
   params.mass1 = params.mass2 = coarseBankIn.mMin;
 
@@ -2461,20 +2461,20 @@ void BEGetMaximumSize(LALStatus  *status,
     *length = maxTmpltLength;
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 
 }
 
 
 
-void BECreatePsd(LALStatus                *status, 
-		   InspiralCoarseBankIn   *coarseBankIn, 
+void BECreatePsd(LALStatus                *status,
+		   InspiralCoarseBankIn   *coarseBankIn,
 		   RandomInspiralSignalIn *randIn,
 		   UserParametersIn           userParam)
 {
   UINT4 i=0;
   REAL4 df;
-  REAL4 dummy; 
+  REAL4 dummy;
   FILE  *Foutput;
   FILE  *Finput;
 
@@ -2486,13 +2486,13 @@ void BECreatePsd(LALStatus                *status,
   coarseBankIn->shf.f0 	= 0;
   LAL_CALL(LALDCreateVector( status->statusPtr, &(coarseBankIn->shf.data), randIn->psd.length ),
 	   status->statusPtr);
-  
-  coarseBankIn->shf.deltaF 	= randIn->param.tSampling / ((randIn->psd.length-1)*2);
-  
-  /* --- Compute Noise Spectral Density --- */
-  df = randIn->param.tSampling/(float) ((randIn->psd.length-1)*2);	 
 
-  switch (userParam.noiseModel)						
+  coarseBankIn->shf.deltaF 	= randIn->param.tSampling / ((randIn->psd.length-1)*2);
+
+  /* --- Compute Noise Spectral Density --- */
+  df = randIn->param.tSampling/(float) ((randIn->psd.length-1)*2);
+
+  switch (userParam.noiseModel)
     {
     case UNITY:
       LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALLIGOIPsd, df),
@@ -2500,29 +2500,29 @@ void BECreatePsd(LALStatus                *status,
       for (i = 0; i < coarseBankIn->shf.data->length; i++)
 	coarseBankIn->shf.data->data[i] = 1;
       break;
-    case LIGOI:  
-      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALLIGOIPsd, df), 
+    case LIGOI:
+      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALLIGOIPsd, df),
 	       status->statusPtr);
       break;
-    case LIGOA:  
+    case LIGOA:
       LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALAdvLIGOPsd, df),
 	       status->statusPtr);
       break;
-    case VIRGO: 
+    case VIRGO:
       LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALVIRGOPsd, df),
 	       status->statusPtr);;
       break;
     case GEO:
-      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALGEOPsd, df), 
+      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALGEOPsd, df),
 	       status->statusPtr);
       break;
     case TAMA:
-      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALTAMAPsd, df), 
+      LAL_CALL(LALNoiseSpectralDensity (status->statusPtr, coarseBankIn->shf.data, &LALTAMAPsd, df),
 	       status->statusPtr);
       break;
-    case REALPSD:	
+    case REALPSD:
       /* Read psd dans le fichier InputPSD.dat */
-      LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, *randIn , userParam), 
+      LAL_CALL(LALCreateRealPsd (status->statusPtr, coarseBankIn, *randIn , userParam),
 	       status->statusPtr);
       break;
     case READPSD:
@@ -2530,7 +2530,7 @@ void BECreatePsd(LALStatus                *status,
      if ((Finput= fopen(userParam.inputPSD,"r")) == NULL)
        BEPrintError("userParam.inputPSD does not exists\n");
      else
-     while(fscanf(Finput, "%f %le\n",&dummy, &coarseBankIn->shf.data->data[i+1]) == 2)  
+     while(fscanf(Finput, "%f %le\n",&dummy, &coarseBankIn->shf.data->data[i+1]) == 2)
          i++;
 
      if ((i+1) != coarseBankIn->shf.data->length){
@@ -2539,9 +2539,9 @@ void BECreatePsd(LALStatus                *status,
        exit(0);
      }
 
-     
+
      fclose(Finput);
-      
+
      }
 
   /* --- save the psd in the file psd.dat if requested --- */
@@ -2549,7 +2549,7 @@ void BECreatePsd(LALStatus                *status,
    {
      Foutput= fopen(BANKEFFICIENCY_PRINTPSD_FILE,"w");
      for (i = 1; i < coarseBankIn->shf.data->length; i++)
-       fprintf(Foutput, "%f %e\n",(float)i*df, coarseBankIn->shf.data->data[i]);  
+       fprintf(Foutput, "%f %e\n",(float)i*df, coarseBankIn->shf.data->data[i]);
      fclose(Foutput);
    }
 
@@ -2560,10 +2560,10 @@ void BECreatePsd(LALStatus                *status,
   }
 
 
-  
+
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 
 
@@ -2579,13 +2579,13 @@ void BEGenerateInputData(LALStatus *status,
 
   INITSTATUS( status, "BEGenerateInputData", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
-  
+
   trial =0 ;
   success =0 ;
-  
+
   /* we might force to compute a non random waveform giving the two
-     input parameters m1 and m2 */      
-  randIn->param.approximant = userParam.signal; 
+     input parameters m1 and m2 */
+  randIn->param.approximant = userParam.signal;
   if (userParam.startPhase == 1){
     LALUniformDeviate( status->statusPtr, &u, randParams);
     CHECKSTATUSPTR(status);
@@ -2596,7 +2596,7 @@ void BEGenerateInputData(LALStatus *status,
   }
 
 
-  
+
   if (randIn->type != 1){
     if (userParam.signal == BCV ||userParam.signal == BCVSpin )
       {
@@ -2613,47 +2613,47 @@ void BEGenerateInputData(LALStatus *status,
 	    randIn->param.massChoice = fixedPsi;
 	    {
 	      int valid = 0 ;
-	      
+
 	      while (!valid)
 		{
 		  REAL8 epsilon1 = (float) rand()/(float)RAND_MAX;
 		  REAL8 epsilon2 = (float) rand()/(float)RAND_MAX;
 		  REAL8 fend = 10000000.;
-		  int trial = 0; 
-		  
+		  int trial = 0;
+
 		  randIn->param.psi0 = randIn->psi0Min + epsilon1 * (randIn->psi0Max - randIn->psi0Min);
 		  randIn->param.psi3 = randIn->psi3Min + epsilon2 * (randIn->psi3Max - randIn->psi3Min);
-		  
-		  
+
+
 		  while (((fend > randIn->param.tSampling/2.) || ( fend < randIn->param.fLower)) && (trial < 10))
-		    { 	     
-		      
+		    {
+
 		      REAL8 fLR, fLSO;
-		      REAL8 epsilon3 ;	
+		      REAL8 epsilon3 ;
 		      epsilon3 = (float) rand()/(float)RAND_MAX;
-		      
+
 		      randIn->param.totalMass = -randIn->param.psi3/(16.L*LAL_PI * LAL_PI * randIn->param.psi0);
 		      randIn->param.totalMass *= 2 / LAL_MTSUN_SI;
-		      
-		      
-		      fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI); 
-		      fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);		
-		      
+
+
+		      fLR = 1.L/(LAL_PI * pow (3.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
+		      fLSO = 1.L/(LAL_PI * pow (6.L,1.5) * randIn->param.totalMass * LAL_MTSUN_SI);
+
 		      fend = fLSO + (fLR - fLSO) * epsilon3;
 		      fend = fLSO + (fLR - fLSO) * epsilon3;
-		      
-		      randIn->param.fFinal = fend;		  
-		      randIn->param.fCutoff = fend;		  
-		      
+
+		      randIn->param.fFinal = fend;
+		      randIn->param.fCutoff = fend;
+
 		      trial++;
 		    }
 		  if (trial == 10 ) valid = 0;
 		  else valid = 1;
 		}
 	    }
-	    
+
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-	    CHECKSTATUSPTR(status);	    	    	    
+	    CHECKSTATUSPTR(status);
 	}
       }
     else /* EOB , T1 and so on*/
@@ -2662,9 +2662,9 @@ void BEGenerateInputData(LALStatus *status,
 	  {
 	    randIn->param.massChoice = fixedMasses;
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
-	    CHECKSTATUSPTR(status);	  
+	    CHECKSTATUSPTR(status);
 	  }
-	else if (userParam.tau0!=-1 && userParam.tau3!=-1) 
+	else if (userParam.tau0!=-1 && userParam.tau3!=-1)
 	  {
 	    randIn->param.massChoice = fixedTau;
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
@@ -2685,33 +2685,33 @@ void BEGenerateInputData(LALStatus *status,
         else
 	  {
 	    randIn->param.massChoice = m1Andm2;
-	    randIn->param.massChoice = totalMassUAndEta;	    
+	    randIn->param.massChoice = totalMassUAndEta;
 	    LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	    CHECKSTATUSPTR(status);
-	    
-	}    
+
+	}
     }
   }
 
 
     if (randIn->type == 1)
       {
-	randIn->param.massChoice = m1Andm2;	
+	randIn->param.massChoice = m1Andm2;
 	LALRandomInspiralSignal(status->statusPtr, signal, randIn);
 	CHECKSTATUSPTR(status);
-      }    
-    
+      }
 
-     
+
+
   DETATCHSTATUSPTR(status);
   RETURN (status);
 
 }
 
-void 
-LALCreateRealPsd(LALStatus *status, 
+void
+LALCreateRealPsd(LALStatus *status,
 		 InspiralCoarseBankIn *bankIn,
-		 RandomInspiralSignalIn randIn, 
+		 RandomInspiralSignalIn randIn,
 		 UserParametersIn userParam)
 {
 
@@ -2743,7 +2743,7 @@ LALCreateRealPsd(LALStatus *status,
   COMPLEX8FrequencySeries      *injRespPtr;
   LIGOTimeGPS slideData   = {0,0};        /* slide data for time shifting */
 
-  INT8  durationNS = 0;  
+  INT8  durationNS = 0;
   INT8  gpsEndTimeNS     = 0;             /* input data GPS end time ns   */
   INT8  gpsStartTimeNS   = 0;             /* input data GPS start time ns */
 
@@ -2777,20 +2777,20 @@ LALCreateRealPsd(LALStatus *status,
   REAL4  dynRangeExponent = 40;            /*onent of dynamic range    */
   REAL4 geoHighPassFreq = -1;             /* GEO high pass frequency      */
   INT4  geoHighPassOrder = -1;            /* GEO high pass filter order   */
-  REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */  
+  REAL4 geoHighPassAtten = -1;            /* GEO high pass attenuation    */
   /* raw iut data storage */
   REAL4TimeSeries               chan;
   REAL8TimeSeries               geoChan;
   REAL4FrequencySeries          spec;
-  
+
   /* structures for preconditioning */
   ResampleTSParams              resampleParams;
-    
-  
+
+
   /* counters and other variables */
   UINT4 cut,  j, k;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-  
+
   LALUnitPair pair;
   REAL8 respRe, respIm;
   REAL8 shf;
@@ -2811,7 +2811,7 @@ LALCreateRealPsd(LALStatus *status,
   INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
 
-  
+
   /*  SetInspiralPipelineParams(&inspiralPipelineIn, randIn);*/
 
 
@@ -2822,17 +2822,17 @@ LALCreateRealPsd(LALStatus *status,
   memset( ifo, 0, sizeof(ifo));
 
   switch (userParam.detector){
-  case L1: 
+  case L1:
     memcpy( ifo, "L1", sizeof(ifo) - 1 );
     break;
-  case H1: 
+  case H1:
     memcpy( ifo, "H1", sizeof(ifo) - 1 );
     break;
-  case H2: 
+  case H2:
     memcpy( ifo, "H2", sizeof(ifo) - 1 );
     break;
-  case V1: 
-  case G1: 
+  case V1:
+  case G1:
     break;
   }
 
@@ -2852,9 +2852,9 @@ LALCreateRealPsd(LALStatus *status,
 
 
 
-  /** Add on Thomas BEGIN */ 
-  
-  
+  /** Add on Thomas BEGIN */
+
+
 
   /* S3 */
   /*gpsStartTimeNS += (INT8) (752578908) * 1000000000LL;*/
@@ -2865,23 +2865,23 @@ LALCreateRealPsd(LALStatus *status,
   */
 
   gpsStartTimeNS += (INT8) (userParam.startTime) *  1000000000LL;
-  fqChanName    = userParam.chanName; 
+  fqChanName    = userParam.chanName;
   calCacheName  = userParam.calCacheName;
   frInCacheName = userParam.frInCacheName;
 
   inputDataLength = numPoints   * ( numSegments + 1) / 2 ;
 
 
-  
-  
+
+
   gpsEndTimeNS = gpsStartTimeNS;
-  gpsEndTimeNS += (INT8) ((UINT8)inputDataLength /(UINT8)sampleRate) 
+  gpsEndTimeNS += (INT8) ((UINT8)inputDataLength /(UINT8)sampleRate)
     * 1000000000LL;
   gpsEndTimeNS += (INT8) (0);
- 
-  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsStartTime), &(gpsStartTimeNS) ), 
-	    status->statusPtr ); 
-  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsEndTime), &(gpsEndTimeNS) ), 
+
+  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsStartTime), &(gpsStartTimeNS) ),
+	    status->statusPtr );
+  LAL_CALL( LALINT8toGPS( status->statusPtr, &(gpsEndTime), &(gpsEndTimeNS) ),
 	    status->statusPtr );
   /** End Thomas */
 
@@ -2890,32 +2890,32 @@ LALCreateRealPsd(LALStatus *status,
    * read in the input data channel
    *
    */
- 
+
 
   /* set the time series parameters of the input data and resample params */
   memset( &resampleParams, 0, sizeof(ResampleTSParams) );
   resampleParams.deltaT = 1.0 / (REAL8) sampleRate;
-  
+
   /* set the params of the input data time series */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
   memset( &geoChan, 0, sizeof(REAL8TimeSeries) );
   chan.epoch = gpsStartTime;
   chan.epoch.gpsSeconds -= padData; /* subtract pad seconds from start */
   /* subtract slide from start */
-  chan.epoch.gpsSeconds -= slideData.gpsSeconds; 
+  chan.epoch.gpsSeconds -= slideData.gpsSeconds;
   chan.epoch.gpsNanoSeconds -= slideData.gpsNanoSeconds;
   /* copy the start time into the GEO time series */
   geoChan.epoch = chan.epoch;
 
 
-  
-  if ( vrbflg ) 
+
+  if ( vrbflg )
     fprintf( stdout,  "reading frame file locations from cache file: %s\n", frInCacheName );
 
   /* read a frame cache from the specified file */
-  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache, 
+  LAL_CALL( LALFrCacheImport( status->statusPtr, &frInCache,
 			      frInCacheName), status->statusPtr );
-  
+
 
   /* open the input data frame stream from the frame cache */
   LAL_CALL( LALFrCacheOpen( status->statusPtr, &frStream,frInCache ), status->statusPtr );
@@ -2975,20 +2975,20 @@ LALCreateRealPsd(LALStatus *status,
   }
 
   /* determine the number of points to get and create storage for the data */
-  inputLengthNS = 
+  inputLengthNS =
     (REAL8) ( gpsEndTimeNS - gpsStartTimeNS + 2000000000LL * padData );
   numInputPoints = (UINT4) floor( inputLengthNS / (chan.deltaT * 1.0e9) + 0.5 );
   if ( calData == real_8 )
     {
     /* create storage for the GEO input data */
-      LAL_CALL( LALDCreateVector( status->statusPtr, &(geoChan.data), numInputPoints ), 
+      LAL_CALL( LALDCreateVector( status->statusPtr, &(geoChan.data), numInputPoints ),
 		status->statusPtr );
     }
-  LAL_CALL( LALSCreateVector( status->statusPtr, &(chan.data), numInputPoints ), 
+  LAL_CALL( LALSCreateVector( status->statusPtr, &(chan.data), numInputPoints ),
 	    status->statusPtr );
 
   if ( vrbflg ) fprintf( stdout, "input channel %s has sample interval "
-      "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName, 
+      "(deltaT) = %e\nreading %d points from frame stream\n", fqChanName,
       chan.deltaT, numInputPoints );
 
   if ( calData == real_8 )
@@ -3012,12 +3012,12 @@ LALCreateRealPsd(LALStatus *status,
     geoHighpassParam.a1 = -1.0;
     geoHighpassParam.a2 = (REAL8)(1.0 - geoHighPassAtten);
     if ( vrbflg ) fprintf( stdout, "applying %d order high pass to GEO data: "
-        "%3.2f of signal passes at %4.2f Hz\n", 
-			   geoHighpassParam.nMax, 
+        "%3.2f of signal passes at %4.2f Hz\n",
+			   geoHighpassParam.nMax,
 			   geoHighpassParam.a2,
 			   geoHighpassParam.f2 );
 
-    LAL_CALL( LALButterworthREAL8TimeSeries( status->statusPtr, &geoChan, 
+    LAL_CALL( LALButterworthREAL8TimeSeries( status->statusPtr, &geoChan,
           &geoHighpassParam ), status->statusPtr );
 
     /* cast the GEO data to REAL4 in the chan time series       */
@@ -3043,18 +3043,18 @@ LALCreateRealPsd(LALStatus *status,
       /* read the data channel time series from frames */
       LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
 		status->statusPtr );
-      
+
       /* multiply the input data by dynRange */
       for ( j = 0 ; j < numInputPoints ; ++j )
 	{
-	  chan.data->data[j] *= dynRange;           
+	  chan.data->data[j] *= dynRange;
 	}
     }
   else
     {
       /* read the data channel time series from frames */
       LAL_CALL( LALFrGetREAL4TimeSeries( status->statusPtr, &chan, &frChan, frStream ),
-		status->statusPtr );	
+		status->statusPtr );
     }
 
 
@@ -3070,8 +3070,8 @@ LALCreateRealPsd(LALStatus *status,
 
 
   if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
-      "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
-      chan.name, chan.data->length, chan.deltaT, 
+      "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n",
+      chan.name, chan.data->length, chan.deltaT,
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
 
@@ -3085,13 +3085,13 @@ LALCreateRealPsd(LALStatus *status,
 
   if ( randSeedType != unset )
     {
-      
+
     if ( randSeedType == urandom )
     {
       FILE   *fpRand = NULL;
       INT4    randByte;
 
-      if ( vrbflg ) 
+      if ( vrbflg )
         fprintf( stdout, "obtaining random seed from /dev/urandom: " );
 
       randomSeed = 0;
@@ -3113,7 +3113,7 @@ LALCreateRealPsd(LALStatus *status,
     }
     else if ( randSeedType == user )
     {
-      if ( vrbflg ) 
+      if ( vrbflg )
         fprintf( stdout, "using user specified random seed: " );
     }
     else
@@ -3133,10 +3133,10 @@ LALCreateRealPsd(LALStatus *status,
   /* replace the input data with gaussian noise if necessary */
   if ( gaussianNoise )
   {
-    if ( vrbflg ) fprintf( stdout, 
+    if ( vrbflg ) fprintf( stdout,
         "setting input data to gaussian noise with variance %e... ", gaussVar );
     memset( chan.data->data, 0, chan.data->length * sizeof(REAL4) );
-    LAL_CALL( LALNormalDeviates(status->statusPtr, chan.data, randParams ), 
+    LAL_CALL( LALNormalDeviates(status->statusPtr, chan.data, randParams ),
 	      status->statusPtr );
     for ( j = 0; j < chan.data->length; ++j )
     {
@@ -3147,18 +3147,18 @@ LALCreateRealPsd(LALStatus *status,
   }
 
 
-  
+
 
   /*
    *
    * generate the response function for the requested time
    *
    */
-  
+
   memset( &resp, 0, sizeof(COMPLEX8FrequencySeries) );
-  LAL_CALL( LALCCreateVector( status->statusPtr, &(resp.data), numPoints / 2 + 1 ), 
+  LAL_CALL( LALCCreateVector( status->statusPtr, &(resp.data), numPoints / 2 + 1 ),
       status->statusPtr );
-  
+
   /* set the parameters of the response to match the data */
   resp.epoch.gpsSeconds = chan.epoch.gpsSeconds + padData;
   resp.epoch.gpsNanoSeconds = chan.epoch.gpsNanoSeconds;
@@ -3169,7 +3169,7 @@ LALCreateRealPsd(LALStatus *status,
   /* generate the response function for the current time */
   if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n",
 			 resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds );
-  
+
   /* initialize the calfacts */
   memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
   calfacts.ifo = ifo;
@@ -3183,11 +3183,11 @@ LALCreateRealPsd(LALStatus *status,
   else
     {
      durationNS = gpsEndTimeNS - gpsStartTimeNS;
-      LAL_CALL( LALINT8toGPS( status->statusPtr, &(calfacts.duration), 
+      LAL_CALL( LALINT8toGPS( status->statusPtr, &(calfacts.duration),
 			      &durationNS ), status->statusPtr );
     }
 
-  
+
   if ( calData )
   {
     /* if we are using calibrated data set the response to unity */
@@ -3200,22 +3200,22 @@ LALCreateRealPsd(LALStatus *status,
   }
   else
   {
-    calGlobPattern = NULL;        
-    if ( vrbflg ) fprintf( stdout, 
+    calGlobPattern = NULL;
+    if ( vrbflg ) fprintf( stdout,
           "reading calibration data from cache: %s ....", calCacheName );
-    LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
+    LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName,
           NULL, calGlobPattern ), status->statusPtr );
-  
-    
+
+
     if ( calGlobPattern ) LALFree( calGlobPattern );
 
 
     /* get the response from the frame data */
-    LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache, 
+    LAL_CALL( LALExtractFrameResponse( status->statusPtr, &resp, calCache,
 				       &calfacts), status->statusPtr );
-    
+
     LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
-    if ( vrbflg ) fprintf( stdout, 
+    if ( vrbflg ) fprintf( stdout,
 			   "for calibration of data, alpha = %f and alphabeta = %f\n",
 			   (REAL4) calfacts.alpha.re, (REAL4) calfacts.alphabeta.re);
   }
@@ -3232,12 +3232,12 @@ LALCreateRealPsd(LALStatus *status,
 	  resp.data->data[k].im = 0;
 	}
       if ( vrbflg ) fprintf( stdout, "done\n" );
-      
-  
+
+
     }
-  
+
         injectionFile = NULL;
-    
+
 
 
   if ( injectionFile )
@@ -3253,7 +3253,7 @@ LALCreateRealPsd(LALStatus *status,
 
     /* read in the injection data from XML */
     numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-        gpsStartTime.gpsSeconds - injSafety, 
+        gpsStartTime.gpsSeconds - injSafety,
         gpsEndTime.gpsSeconds + injSafety );
 
     if ( numInjections < 0 )
@@ -3267,7 +3267,7 @@ LALCreateRealPsd(LALStatus *status,
       fprintf(stderr, "resample injection\n");
 
       /* see if we need a higher resolution response to do the injections */
-      if ( resampleChan )	
+      if ( resampleChan )
       {
 
 
@@ -3279,18 +3279,18 @@ LALCreateRealPsd(LALStatus *status,
             "chan.deltaT = %e\n", rateRatio, rawNumPoints, chan.deltaT );
 
         memset( &injResp, 0, sizeof(COMPLEX8FrequencySeries) );
-        LAL_CALL( LALCCreateVector( status->statusPtr, &(injResp.data), 
+        LAL_CALL( LALCCreateVector( status->statusPtr, &(injResp.data),
               rawNumPoints / 2 + 1 ), status->statusPtr );
         injResp.epoch = resp.epoch;
         injResp.deltaF = 1.0 / ( rawNumPoints * chan.deltaT );
         injResp.sampleUnits = strainPerCount;
         strcpy( injResp.name, chan.name );
 
-	
+
         if ( calData )
         {
           /* if we are using calibrated data set the response to unity */
-          if ( vrbflg ) fprintf( stdout, 
+          if ( vrbflg ) fprintf( stdout,
               "setting injection response to inverse dynRange... " );
 	  dynRange = (REAL8) pow( 2.0, 40);
           for ( k = 0; k < injResp.data->length; ++k )
@@ -3303,7 +3303,7 @@ LALCreateRealPsd(LALStatus *status,
         else
         {
           /* generate the response function for the current time */
-          if ( vrbflg ) fprintf( stdout, 
+          if ( vrbflg ) fprintf( stdout,
               "generating high resolution response at time %d sec %d ns\n"
               "length = %d points, deltaF = %e Hz\n",
               resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
@@ -3313,28 +3313,28 @@ LALCreateRealPsd(LALStatus *status,
           memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
           inj_calfacts.ifo = ifo;
 
-	  LAL_CALL( LALINT8toGPS( status->statusPtr, &(inj_calfacts.duration), 
+	  LAL_CALL( LALINT8toGPS( status->statusPtr, &(inj_calfacts.duration),
 				  &durationNS ), status->statusPtr );
-	  
+
           /* create the lal calibration frame cache */
 	  calGlobPattern = NULL;
-	  if ( vrbflg ) fprintf( stdout, 
+	  if ( vrbflg ) fprintf( stdout,
 				 "reading calibration data from cache: %s\n", calCacheName );
-	  
-	  LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName, 
+
+	  LAL_CALL( LALCreateCalibFrCache( status->statusPtr, &calCache, calCacheName,
                 NULL, calGlobPattern ), status->statusPtr );
           if ( calGlobPattern ) LALFree( calGlobPattern );
 
 
 	  /* extract the calibration from frames */
-          LAL_CALL( LALExtractFrameResponse( status->statusPtr, &injResp, calCache, 
+          LAL_CALL( LALExtractFrameResponse( status->statusPtr, &injResp, calCache,
                 &inj_calfacts ), status->statusPtr );
 
-	  
-	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
-	  
 
-          injRespPtr = &injResp;	  
+	  LAL_CALL( LALDestroyFrCache( status->statusPtr, &calCache), status->statusPtr );
+
+
+          injRespPtr = &injResp;
 	}
 	if ( gaussianNoise )
 	  {
@@ -3347,7 +3347,7 @@ LALCreateRealPsd(LALStatus *status,
 		injResp.data->data[k].im = 0;
 	      }
 	    if ( vrbflg ) fprintf( stdout, "done\n" );
-	    
+
         }
 
       }
@@ -3361,20 +3361,20 @@ LALCreateRealPsd(LALStatus *status,
       /* inject the signals, preserving the channel name (Tev mangles it) */
 
 
-      /* if injectOverhead option, then set chan.name to "ZENITH".  
+      /* if injectOverhead option, then set chan.name to "ZENITH".
        * This causes no detector site to be found in the injection code so
-       * that the injection is done directly overhead (i.e. with a response 
+       * that the injection is done directly overhead (i.e. with a response
        * function of F+ = 1; Fx = 0) */
       snprintf( tmpChName, LALNameLength, "%s", chan.name );
-      
+
       snprintf( chan.name, LALNameLength, "ZENITH" );
 
 
-      LAL_CALL( LALFindChirpInjectSignals( status->statusPtr, &chan, injections, 
+      LAL_CALL( LALFindChirpInjectSignals( status->statusPtr, &chan, injections,
             injRespPtr ), status->statusPtr );
       snprintf( chan.name,  LALNameLength, "%s", tmpChName );
 
-      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
+      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n",
           numInjections, injectionFile, chan.name );
 
       while ( injections )
@@ -3406,18 +3406,18 @@ LALCreateRealPsd(LALStatus *status,
         status->statusPtr );
 
     if ( vrbflg ) fprintf( stdout, "channel %s resampled:\n"
-        "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
-        chan.name, chan.data->length, chan.deltaT, 
+        "%d points with deltaT %e\nstarting at GPS time %d sec %d ns\n",
+        chan.name, chan.data->length, chan.deltaT,
         chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
   }
 
 
-  /* 
+  /*
    *
    * high pass the data, removed pad from time series and check length of data
    *
    */
-  
+
   /* iir filter to remove low frequencies from data channel */
   if ( highPass )
   {
@@ -3429,7 +3429,7 @@ LALCreateRealPsd(LALStatus *status,
     highpassParam.a2 = (REAL8)(1.0 - highPassAtten); /* a2 is not attenuation */
 
     if ( vrbflg ) fprintf( stdout, "applying %d order high pass: "
-        "%3.2f of signal passes at %4.2f Hz\n", 
+        "%3.2f of signal passes at %4.2f Hz\n",
         highpassParam.nMax, highpassParam.a2, highpassParam.f2 );
 
     LAL_CALL( LALButterworthREAL4TimeSeries( status->statusPtr, &chan, &highpassParam ),
@@ -3437,17 +3437,17 @@ LALCreateRealPsd(LALStatus *status,
   }
 
   /* remove pad from requested data from start and end of time series */
-  memmove( chan.data->data, chan.data->data + padData * sampleRate, 
+  memmove( chan.data->data, chan.data->data + padData * sampleRate,
       (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
-  LALRealloc( chan.data->data, 
+  LALRealloc( chan.data->data,
       (chan.data->length - 2 * padData * sampleRate) * sizeof(REAL4) );
   chan.data->length -= 2 * padData * sampleRate;
   chan.epoch.gpsSeconds += padData;
 
   if ( vrbflg ) fprintf( stdout, "after removal of %d second padding at "
       "start and end:\ndata channel sample interval (deltaT) = %e\n"
-      "data channel length = %d\nstarting at %d sec %d ns\n", 
-      padData , chan.deltaT , chan.data->length, 
+      "data channel length = %d\nstarting at %d sec %d ns\n",
+      padData , chan.deltaT , chan.data->length,
       chan.epoch.gpsSeconds, chan.epoch.gpsNanoSeconds );
 
 
@@ -3460,7 +3460,7 @@ LALCreateRealPsd(LALStatus *status,
 
   /* create storage for the power spectral estimate */
   memset( &spec, 0, sizeof(REAL4FrequencySeries) );
-  LAL_CALL( LALSCreateVector( status->statusPtr, &(spec.data), numPoints / 2 + 1 ), 
+  LAL_CALL( LALSCreateVector( status->statusPtr, &(spec.data), numPoints / 2 + 1 ),
       status->statusPtr );
 
 
@@ -3470,9 +3470,9 @@ LALCreateRealPsd(LALStatus *status,
   windowSpectrumParam.specType =  specType ;
 
 
-  LAL_CALL( LALComputeWindowSpectrum( status->statusPtr, 
+  LAL_CALL( LALComputeWindowSpectrum( status->statusPtr,
 				      &windowSpectrumParam,
-				      &spec, 
+				      &spec,
 				      &chan ),
 	    status->statusPtr );
 
@@ -3483,23 +3483,23 @@ LALCreateRealPsd(LALStatus *status,
   cut = fLow / spec.deltaF > 1 ?  fLow / spec.deltaF : 1;
 
   /* compute a calibrated strain power spectrum */
-  
+
   bankIn->shf.epoch = spec.epoch;
   memcpy( bankIn->shf.name, spec.name, LALNameLength * sizeof(CHAR) );
   bankIn->shf.deltaF = spec.deltaF;
   bankIn->shf.f0 = spec.f0;
   bankIn->shf.data = NULL;
-  
+
   pair.unitOne = &(spec.sampleUnits);
   pair.unitTwo = &(resp.sampleUnits);
-  LAL_CALL( LALUnitMultiply( status->statusPtr, &(bankIn->shf.sampleUnits), &pair ), 
+  LAL_CALL( LALUnitMultiply( status->statusPtr, &(bankIn->shf.sampleUnits), &pair ),
       status->statusPtr );
   LAL_CALL( LALDCreateVector( status->statusPtr, &(bankIn->shf.data), spec.data->length ),
       status->statusPtr );
-  memset( bankIn->shf.data->data, 0, 
-      bankIn->shf.data->length * sizeof(COMPLEX8) ); 
-  
-  shf = spec.data->data[cut] * 
+  memset( bankIn->shf.data->data, 0,
+      bankIn->shf.data->length * sizeof(COMPLEX8) );
+
+  shf = spec.data->data[cut] *
     ( resp.data->data[cut].re * resp.data->data[cut].re +
       resp.data->data[cut].im * resp.data->data[cut].im );
 
@@ -3515,40 +3515,40 @@ LALCreateRealPsd(LALStatus *status,
     bankIn->shf.data->data[k] = (REAL8) spec.data->data[k] *
       ( respRe * respRe + respIm * respIm );
 
-    
+
   }
-  
+
 
 /*  Foutput= fopen("spec.dat","w");
 
   for (i = 1; i < (int)bankIn->shf.data->length; i++)
-    fprintf(Foutput, "%15.10e\n", bankIn->shf.data->data[i]);  
+    fprintf(Foutput, "%15.10e\n", bankIn->shf.data->data[i]);
   fclose(Foutput);*/
 
-   LALDPrintFrequencySeries( &(bankIn->shf), "spec.dat" );  
+   LALDPrintFrequencySeries( &(bankIn->shf), "spec.dat" );
   /*
    Foutput= fopen("uncalibratedpsd.dat","w");
 
   for (i = 1; i < spec.data->length; i++)
-    fprintf(Foutput, "%15.10e\n",spec.data->data[i]);  
-  fclose(Foutput); 
+    fprintf(Foutput, "%15.10e\n",spec.data->data[i]);
+  fclose(Foutput);
 
 
   Foutput= fopen("respre.dat","w");
 
   for (i = 0; i < spec.data->length; i++){
     respRe = (REAL8) resp.data->data[i].re;
-    fprintf(Foutput, "%e\n",respRe);  
+    fprintf(Foutput, "%e\n",respRe);
   }
-  fclose(Foutput); 
-  
+  fclose(Foutput);
+
   Foutput= fopen("respim.dat","w");
 
   for (i = 1; i < spec.data->length; i++){
     respIm = (REAL8) resp.data->data[i].im;
-    fprintf(Foutput, "%e\n",respIm);  
+    fprintf(Foutput, "%e\n",respIm);
   }
-  fclose(Foutput); 
+  fclose(Foutput);
 
   */
 
@@ -3559,7 +3559,7 @@ LALCreateRealPsd(LALStatus *status,
     RealFFTPlan                  *fwdPlan = NULL;
 
 
-    REAL4Vector    *rawSegment = NULL ; 
+    REAL4Vector    *rawSegment = NULL ;
 
 
     INT4 length;
@@ -3570,29 +3570,29 @@ LALCreateRealPsd(LALStatus *status,
     LALCreateVector( status->statusPtr, &rawSegment,
 		     numPoints);
     CHECKSTATUSPTR( status );
-    
-    LALCCreateVector( status->statusPtr, &strainSegment,
-		      numPoints/2+1);    
-    CHECKSTATUSPTR( status );
- 
 
-     
+    LALCCreateVector( status->statusPtr, &strainSegment,
+		      numPoints/2+1);
+    CHECKSTATUSPTR( status );
+
+
+
     dataPtr = chan.data->data;
     rawSegment->data = dataPtr;
-   
-    
-    LALCreateForwardRealFFTPlan( status->statusPtr, &fwdPlan, 
+
+
+    LALCreateForwardRealFFTPlan( status->statusPtr, &fwdPlan,
 				 numPoints, 0);
     CHECKSTATUSPTR( status );
 
     /*     Foutput= fopen("raw0.dat","w");
     for (i = 1; i < rawSegment->length; i++)
-      fprintf(Foutput, "%e\n", rawSegment->data[i]);  
-    fclose(Foutput); 
+      fprintf(Foutput, "%e\n", rawSegment->data[i]);
+    fclose(Foutput);
     */
-   
-    
-    
+
+
+
     LALForwardRealFFT( status->statusPtr, strainSegment,
 		       rawSegment, fwdPlan );
     CHECKSTATUSPTR( status );
@@ -3600,56 +3600,56 @@ LALCreateRealPsd(LALStatus *status,
 
 
     dynRange = (REAL8) pow( 2.0, 0);
-    
-    
+
+
     for ( k = 0; k < strainSegment->length; ++k )
       {
-	
+
 	REAL4 p = strainSegment->data[k].re;
 	REAL4 q = strainSegment->data[k].im;
 	REAL4 x = resp.data->data[k].re * dynRange;
 	REAL4 y = resp.data->data[k].im * dynRange;
-	
+
 	strainSegment->data[k].re =  p*x - q*y;
 	strainSegment->data[k].im =  p*y + q*x;
       }
-    
+
     LALDestroyRealFFTPlan(status->statusPtr,&fwdPlan);
-       
+
 
     for ( k = 0; k < cut; ++k )
       {
 	strainSegment->data[k].re = 0.0;
 	strainSegment->data[k].im = 0.0;
       }
-      
+
     dynRange = (REAL8) pow( 2.0, 40);/* pour avoir meme resultat que LAL avant filtrage*/
     /*
     Foutput= fopen("finalstrainre.dat","w");
-    
+
     for (i = 0; i < strainSegment->length; i++)
-      fprintf(Foutput, "%15.10e\n", strainSegment->data[i].re*dynRange );  
-    fclose(Foutput); 
-      
+      fprintf(Foutput, "%15.10e\n", strainSegment->data[i].re*dynRange );
+    fclose(Foutput);
+
       Foutput= fopen("finalstrainim.dat","w");
-      
+
       for (i = 0; i < strainSegment->length; i++)
-	fprintf(Foutput, "%15.10e\n", strainSegment->data[i].im*dynRange );  
-	
-	fclose(Foutput); 
+	fprintf(Foutput, "%15.10e\n", strainSegment->data[i].im*dynRange );
+
+	fclose(Foutput);
     */
-    
-  
+
+
   }
-  /* END ADD on Thomas*/                                                                                                                        
+  /* END ADD on Thomas*/
 
 
-  /* spec, uncalibrated spec, and raw0.dat identical to 
+  /* spec, uncalibrated spec, and raw0.dat identical to
      inspiral in FindChipSPData. */
 
   /*if one want to inject BCV directly in the bcv injection*/
 #if 0
- { 
+ {
    REAL4Vector            signal;
    RandomInspiralSignalIn randIn;
    UINT4 n,k;
@@ -3661,8 +3661,8 @@ LALCreateRealPsd(LALStatus *status,
    signal.data 		= (REAL4*) LALCalloc(1, sizeof(REAL4) * signal.length);
 
    LALCreateForwardRealFFTPlan(status->statusPtr, &fwdp, signal.length, 0);
-   randIn.mMin = 3; 
-   randIn.mMax =5; 
+   randIn.mMin = 3;
+   randIn.mMax =5;
    randIn.MMax = 10;
 
    randIn.param.tSampling  = sampleRate;
@@ -3673,9 +3673,9 @@ LALCreateRealPsd(LALStatus *status,
    randIn.param.alpha = .99;
    randIn.param.approximant = BCV;
    randIn.param.massChoice = fixedPsi;
-   randIn.param.fLower  = 40 ; 
+   randIn.param.fLower  = 40 ;
    randIn.psd.length 	= strainSegment->length;
-   randIn.psd.data 	= (REAL8*) LALMalloc(sizeof(REAL8) * randIn.psd.length); 
+   randIn.psd.data 	= (REAL8*) LALMalloc(sizeof(REAL8) * randIn.psd.length);
    randIn.type = 0;
    randIn.param.order = twoPN;
    randIn.fwdp = fwdp;
@@ -3686,62 +3686,62 @@ LALCreateRealPsd(LALStatus *status,
 
    fprintf(stderr, "%d %d %d\n",n,bankIn->shf.data->length, strainSegment->length);
    for ( k = 1; k < bankIn->shf.data->length; ++k )
-     {    
+     {
        randIn.psd.data[k] =  bankIn->shf.data->data[k];
      }
-      
 
-      
+
+
    LALRandomInspiralSignal(status->statusPtr, &signal, &randIn);
    CHECKSTATUSPTR(status);
-   
-   
+
+
    for ( k = 0; k < n/2; ++k )
      {
-       
+
        strainSegment->data[k].re += signal.data[k] *10;
        strainSegment->data[k].im += signal.data[n - k] *10;
-     
+
        }
-      
+
  }
 #endif
 
 
 
-  LALCheckMemoryLeaks();    
+  LALCheckMemoryLeaks();
 
 
 
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 
 
 
-void LALComputeWindowSpectrum(LALStatus *status, 
+void LALComputeWindowSpectrum(LALStatus *status,
 			      WindowSpectrumIn *param,
 			      REAL4FrequencySeries  *spec,
 			      REAL4TimeSeries *chan)
 {
-  
+
   AverageSpectrumParams         avgSpecParams;
   INT4 k;
-  
+
   INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
   ATTATCHSTATUSPTR( status );
-  
+
   /* compute the windowed power spectrum for the data channel */
   avgSpecParams.window = NULL;
-  avgSpecParams.plan   = NULL; 
-  
-  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr, 
-					 &(avgSpecParams.plan), 
+  avgSpecParams.plan   = NULL;
+
+  LAL_CALL( LALCreateForwardRealFFTPlan( status->statusPtr,
+					 &(avgSpecParams.plan),
 					 param->numPoints, 0 ),
 	    status->statusPtr );
-  
-  
+
+
   switch ( param->specType )
     {
     case 0:
@@ -3757,10 +3757,10 @@ void LALComputeWindowSpectrum(LALStatus *status,
       if ( vrbflg ) fprintf( stdout, "simulation gaussian noise psd" );
       break;
     }
-  
-  
+
+
   avgSpecParams.overlap = param->numPoints / 2;
-  if ( vrbflg ) 
+  if ( vrbflg )
     fprintf( stdout, " with overlap %d\n", avgSpecParams.overlap );
 
   avgSpecParams.window = XLALXLALCreateHannREAL4Window(param->numPoints);
@@ -3785,13 +3785,13 @@ void LALComputeWindowSpectrum(LALStatus *status,
       spec->data->data[k] *= 2.0 * gaussVarSq * (REAL4) chan->deltaT;
     }
 
-    if ( vrbflg ) 
+    if ( vrbflg )
       fprintf( stdout, "set psd to constant value = %e\n", spec->data->data[0] );
   }
 
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 
 }
 
@@ -3804,7 +3804,7 @@ void SetInspiralPipelineParam(InspiralPipelineIn *param,
   /*  param->gpsStartTime = {0,0};
     param->gpsEndTime = 0;
   */
-  param->padData = 8;                
+  param->padData = 8;
   param->fqChanName       = NULL;
 
 
@@ -3813,24 +3813,24 @@ void SetInspiralPipelineParam(InspiralPipelineIn *param,
 
   param->numPoints         = (randIn.psd.length-1)*2;           /* points in a segment          */
   param->numSegments       = 15;           /* number of segments           */
-  
 
-  param->inputDataLength =  -1;            
-  param->resampFiltType   = 0;           
-  param->sampleRate       = randIn.param.tSampling;    
-  param->highPass         = 1;           
-  param->highPassFreq     = randIn.param.fLower;            
-  param->highPassOrder    = 8;           
-  param->highPassAtten    = 0.1;         
+
+  param->inputDataLength =  -1;
+  param->resampFiltType   = 0;
+  param->sampleRate       = randIn.param.tSampling;
+  param->highPass         = 1;
+  param->highPassFreq     = randIn.param.fLower;
+  param->highPassOrder    = 8;
+  param->highPassAtten    = 0.1;
   param->fLow             = randIn.param.fLower;
-  param->specType         = 1;           
+  param->specType         = 1;
 
   param->calCacheName     = NULL;
-  param->pointCal         = 0;            
-  param->dynRangeExponent = 40;            
-  param->geoHighPassFreq = -1;     
-  param->geoHighPassOrder = -1;    
-  param->geoHighPassAtten = -1;    
+  param->pointCal         = 0;
+  param->dynRangeExponent = 40;
+  param->geoHighPassFreq = -1;
+  param->geoHighPassOrder = -1;
+  param->geoHighPassAtten = -1;
 }
 
 
@@ -3838,9 +3838,9 @@ void SetInspiralPipelineParam(InspiralPipelineIn *param,
 
 
 
-void BECreatePowerVector(LALStatus              *status, 
+void BECreatePowerVector(LALStatus              *status,
 			 BEPowerVector          *powerVector,
-			 RandomInspiralSignalIn  randIn, 
+			 RandomInspiralSignalIn  randIn,
 			 INT4                    length)
 {
 
@@ -3849,27 +3849,27 @@ void BECreatePowerVector(LALStatus              *status,
   ATTATCHSTATUSPTR(status);
 
   powerVector->fm2_3.length = length / 2 ;
-  powerVector->fm5_3.length = length / 2;       
+  powerVector->fm5_3.length = length / 2;
   powerVector->fm7_6.length = length / 2 ;
-  powerVector->fm1_2.length = length / 2;       
+  powerVector->fm1_2.length = length / 2;
 
   powerVector->fm2_3.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * powerVector->fm2_3.length);
   powerVector->fm5_3.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * powerVector->fm5_3.length);
   powerVector->fm7_6.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * powerVector->fm7_6.length);
   powerVector->fm1_2.data   = (REAL4*) LALCalloc(1, sizeof(REAL4) * powerVector->fm1_2.length);
-  
+
   /* --- Create useful vector once for all --- */
-  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm5_3, randIn.param, -5, 3), 
+  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm5_3, randIn.param, -5, 3),
 	   status->statusPtr);
-  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm2_3, randIn.param, -2, 3), 
+  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm2_3, randIn.param, -2, 3),
 	   status->statusPtr);
-  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm7_6, randIn.param, -7, 6), 
+  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm7_6, randIn.param, -7, 6),
 	   status->statusPtr);
-  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm1_2, randIn.param, -1, 2), 
+  LAL_CALL(LALCreateVectorFreqPower(&powerVector->fm1_2, randIn.param, -1, 2),
 	   status->statusPtr);
 
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 }
 
 
@@ -3877,7 +3877,7 @@ void BECreatePowerVector(LALStatus              *status,
 void LALInspiralOverlapBCV(LALStatus *status,
 			   InspiralTemplate   *list,
 			   BEPowerVector          *powerVector,
-			   UserParametersIn           *userParam, 
+			   UserParametersIn           *userParam,
 			   RandomInspiralSignalIn *randIn,
 			   REAL4Vector            *FilterBCV1,
 			   REAL4Vector            *FilterBCV2,
@@ -3885,74 +3885,74 @@ void LALInspiralOverlapBCV(LALStatus *status,
 			   OverlapOutputIn        *overlapout,
 			   REAL4Vector            *correlation,
 			   BEMoments              *moments)
-			   
+
 
 {
   REAL4 fendBCV ;
   REAL4 df;
-  INT4 n, kMin, kMax; 
+  INT4 n, kMin, kMax;
 
   INITSTATUS (status, "LALInspiralOverlapBCV", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
 
   n    = FilterBCV1->length;
-  df = randIn->param.tSampling / (REAL8)(n/2) / 2.;      
+  df = randIn->param.tSampling / (REAL8)(n/2) / 2.;
 
   kMin  = floor(randIn->param.fLower /df );
   fendBCV = list->fFinal;
 
 
-  /* if we want to test the BCV metric by injectd BCV signal, we 
+  /* if we want to test the BCV metric by injectd BCV signal, we
    * have to get the same final frequnecy for both template and signal */
-  if (userParam->signal == BCV) 
-    fendBCV = list->fFinal =  randIn->param.fFinal; 
-  
-		  
+  if (userParam->signal == BCV)
+    fendBCV = list->fFinal =  randIn->param.fFinal;
+
+
   overlapin->ifExtOutput = 0;
   overlapin->param.fFinal   =  fendBCV;
-  overlapin->param.fCutoff  =  fendBCV;               
-  overlapin->param 	= *list;	   
- 
+  overlapin->param.fCutoff  =  fendBCV;
+  overlapin->param 	= *list;
+
   overlapout->rhoMax  = -1;
   kMax = floor(fendBCV / df);
-  
+
   /* Extract some values a11,a21,a22 parameter for template creation*/
 
-  
+
   /* Template creation */
   LAL_CALL(LALCreateBCVFilters(FilterBCV1,
 			    FilterBCV2,
 			    powerVector,
 			    moments,
-			    kMin,kMax,     
+			    kMin,kMax,
 			    list->psi0,
 			    list->psi3
 			    ), status->statusPtr);
-  
-  
+
+
   /* The overlap given two filters and the input signal*/
   /*BEInitOverlapOutputIn(&OverlapOutputThisTemplate); */
   /*be sure rhomax = 0 and so on*/
-  LAL_CALL(LALWaveOverlapBCV(status->statusPtr, 
+  LAL_CALL(LALWaveOverlapBCV(status->statusPtr,
 			     correlation,
 			     overlapin,
-			     FilterBCV1, 
-			     FilterBCV2, 
-			     *userParam, 
-			     overlapout, 
-			     moments), 
+			     FilterBCV1,
+			     FilterBCV2,
+			     *userParam,
+			     overlapout,
+			     moments),
 	   status->statusPtr);
-  
-  
+
+
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 
 }
 
 void LALInspiralOverlapBCVSpin(LALStatus *status,
 			       InspiralTemplate       *list,
 			       BEPowerVector          *powerVector,
-			       UserParametersIn       *userParam, 
+			       UserParametersIn       *userParam,
 			       RandomInspiralSignalIn *randIn,
 			       REAL4Vector            *FilterBCVSpin1,
 			       REAL4Vector            *FilterBCVSpin2,
@@ -3961,40 +3961,40 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
 			       OverlapOutputIn        *overlapout,
 			       REAL4Vector            *correlation,
 			       BEMoments              *moments)
-  
-  
+
+
 {
   REAL4 fendBCV ;
   REAL4 df;
-  INT4 n, kMin, kMax; 
+  INT4 n, kMin, kMax;
 
   INITSTATUS (status, "LALInspiralOverlapBCV", BANKEFFICIENCYC);
   ATTATCHSTATUSPTR(status);
 
   n    = FilterBCVSpin1->length;
-  df = randIn->param.tSampling / (REAL8)(n/2) / 2.;      
+  df = randIn->param.tSampling / (REAL8)(n/2) / 2.;
 
   kMin  = floor(randIn->param.fLower /df );
   fendBCV = list->fFinal;
 
 
-  /* if we want to test the BCV metric by injectd BCV signal, we 
+  /* if we want to test the BCV metric by injectd BCV signal, we
    * have to get the same final frequnecy for both template and signal */
-  if (userParam->signal == BCVSpin) 
-    fendBCV = list->fFinal =  randIn->param.fFinal; 
-  
-		  
+  if (userParam->signal == BCVSpin)
+    fendBCV = list->fFinal =  randIn->param.fFinal;
+
+
   overlapin->ifExtOutput = 0;
   overlapin->param.fFinal   =  fendBCV;
-  overlapin->param.fCutoff  =  fendBCV;               
-  overlapin->param 	= *list;	   
- 
+  overlapin->param.fCutoff  =  fendBCV;
+  overlapin->param 	= *list;
+
   overlapout->rhoMax  = -1;
   kMax = floor(fendBCV / df);
-  
+
   /* Extract some values a11,a21,a22 parameter for template creation*/
 
-  
+
   /* Template creation */
   LAL_CALL(LALCreateBCVSpinFilters(FilterBCVSpin1,
 				   FilterBCVSpin2,
@@ -4002,26 +4002,26 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
 				   overlapin,
 				   powerVector,
 				   moments,
-				   kMin,kMax     
+				   kMin,kMax
 				   ), status->statusPtr);
-  
-  
+
+
   /* The overlap given two filters and the input signal*/
   /*BEInitOverlapOutputIn(&OverlapOutputThisTemplate); */
   /*be sure rhomax = 0 and so on*/
-  LAL_CALL(LALWaveOverlapBCVSpin(status->statusPtr, 
+  LAL_CALL(LALWaveOverlapBCVSpin(status->statusPtr,
 				 correlation,
 				 overlapin,
-				 FilterBCVSpin1, 
-				 FilterBCVSpin2, 
+				 FilterBCVSpin1,
+				 FilterBCVSpin2,
 				 FilterBCVSpin3,
-				 *userParam, 
+				 *userParam,
 				 overlapout),
 	   status->statusPtr);
-  
-  
+
+
   DETATCHSTATUSPTR( status );
-  RETURN( status );  
+  RETURN( status );
 
 }
 
@@ -4042,50 +4042,50 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  "fUpper\t\t=\t%f\n"
 	  "tSampling\t=\t%f\n"
 	  "space\t\t=\t%d\n"
-	  "mmCoarse\t=\t%f\n" 
-	  "mmFine\t\t=\t%f\n" 
-	  "iflso\t\t=\t%d\n" 
-	  "mMin\t\t=\t%f\n" 
-	  "mMax\t\t=\t%f\n" 
-	  "MMax\t\t=\t%f\n" 
-	  "massRange\t=\t%d\n" 
-	  "etamin\t\t=\t%f\n" 
-	  "psi0Min\t\t=\t%f\n" 
-	  "psi0Max\t\t=\t%f\n" 
-	  "psi3Min\t\t=\t%f\n" 
-	  "psi3Max\t\t=\t%f\n" 
-	  "alpha\t\t=\t%f\n" 
-	  "numFcut\t\t=\t%d\n" 
-	  "approximant\t=\t%d\n" 
-	  "order\t\t=\t%d\n" 
-	  "LowGM\t\t=\t%f\n" 
-	  "HighGM\t\t=\t%f\n" 
+	  "mmCoarse\t=\t%f\n"
+	  "mmFine\t\t=\t%f\n"
+	  "iflso\t\t=\t%d\n"
+	  "mMin\t\t=\t%f\n"
+	  "mMax\t\t=\t%f\n"
+	  "MMax\t\t=\t%f\n"
+	  "massRange\t=\t%d\n"
+	  "etamin\t\t=\t%f\n"
+	  "psi0Min\t\t=\t%f\n"
+	  "psi0Max\t\t=\t%f\n"
+	  "psi3Min\t\t=\t%f\n"
+	  "psi3Max\t\t=\t%f\n"
+	  "alpha\t\t=\t%f\n"
+	  "numFcut\t\t=\t%d\n"
+	  "approximant\t=\t%d\n"
+	  "order\t\t=\t%d\n"
+	  "LowGM\t\t=\t%f\n"
+	  "HighGM\t\t=\t%f\n"
 	  "gridType\t=\t%d\n",
-	  coarse.fLower,    	
-	  coarse.fUpper,    	
-	  coarse.tSampling, 	
-	  (INT4)(coarse.space),     	
+	  coarse.fLower,
+	  coarse.fUpper,
+	  coarse.tSampling,
+	  (INT4)(coarse.space),
 	  coarse.mmCoarse,
 	  coarse.mmFine,
-	  coarse.iflso,           
-	  coarse.mMin,      	
-	  coarse.mMax,      	
-	  coarse.MMax,      	
-	  coarse.massRange,       
-	  coarse.etamin, 	        
-	  coarse.psi0Min,   	
-	  coarse.psi0Max,   	
-	  coarse.psi3Min,   	
-	  coarse.psi3Max,   	
-	  coarse.alpha,     	
-	  coarse.numFcutTemplates, 
-	  coarse.approximant,     
-	  coarse.order,           
-	  (REAL8)coarse.LowGM,     	
-	  (REAL8)coarse.HighGM,    	
+	  coarse.iflso,
+	  coarse.mMin,
+	  coarse.mMax,
+	  coarse.MMax,
+	  coarse.massRange,
+	  coarse.etamin,
+	  coarse.psi0Min,
+	  coarse.psi0Max,
+	  coarse.psi3Min,
+	  coarse.psi3Max,
+	  coarse.alpha,
+	  coarse.numFcutTemplates,
+	  coarse.approximant,
+	  coarse.order,
+	  (REAL8)coarse.LowGM,
+	  (REAL8)coarse.HighGM,
 	  (INT4)coarse.gridSpacing);
 
-  
+
   fprintf(stdout, "bankIn parameters\n"
 	  "------------------------\n");
 
@@ -4146,11 +4146,11 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  rand.param.nEndPad,
 	  rand.NoiseAmp);
 
-  
+
 
   fprintf(stdout, "userParam parameters\n"
 	  "------------------------\n");
-  
+
    fprintf(stdout,
 	  "alphaFConstraint\t%d\t\n"
 	  "extraFinalPrinting\t%d\t\n"
@@ -4164,40 +4164,40 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  "psi0\t\t%f\t\n"
 	  "psi3\t\t%f\t\n"
 	  "tau0\t\t%f\t\n"
-	  "tau3\t\t%f\t\n" 
-	  "printBestOverlap\t%d\t\n"	
-	  "printBestTemplate\t%d\t\n" 	
-	  "printSNRHisto\t\t%d\t\n"        
-	  "printPsd\t\t%d\t\n"             
-	  "printBank\t\t%d\t\n"    	
-	  "printResultXml\t\t%d\t\n"    	
-	  "printPrototype\t\t%d\t\n"    	
-	  "faithfulness\t\t%d\t\n"        	
-	  "ntrials\t\t%d\t\n" 	     	
-	  "fastSimulation\t\t%d\t\n"       
-	  "noiseModel\t\t%d\t\n"           
-	  "binaryInjection\t\t%d\t\n"      
-	  "maxTotalMass\t\t%f\t\n"         
-	  "detector\t\t%d\t\n" 
-	  "run\t\t%d\t\n"      
-	  "chanName\t\t%s\t\n" 
-	  "calCacheName\t\t%s\t\n" 
-	  "startTime\t\t%d\t\n"  
-	  "numSeconds\t\t%d\t\n" 
-	  "L1.chanName\t\t%s\t\n"             
-	  "H1.chanName\t\t%s\t\n"             
-	  "H2.chanName\t\t%s\t\n"               
-	  "L1.dataFile.S3.calCacheName\t%s\t\n"         
-	  "L1.dataFile.S3.frInCacheName\t%s\t\n"        
-	  "H1.dataFile.S3.calCacheName\t%s\t\n"         
-	  "H1.dataFile.S3.frInCacheName\t%s\t\n"        
-	  "H2.dataFile.S3.calCacheName\t%s\t\n"         
-	  "H2.dataFile.S3.frInCacheName\t%s\t\n"        
-	  "L1.dataFile.S2.calCacheName\t%s\t\n"         
-	  "L1.dataFile.S2.frInCacheName\t%s\t\n"        
-	  "H1.dataFile.S2.calCacheName\t%s\t\n"         
-	  "H1.dataFile.S2.frInCacheName\t%s\t\n"        
-	  "H2.dataFile.S2.calCacheName\t%s\t\n"         
+	  "tau3\t\t%f\t\n"
+	  "printBestOverlap\t%d\t\n"
+	  "printBestTemplate\t%d\t\n"
+	  "printSNRHisto\t\t%d\t\n"
+	  "printPsd\t\t%d\t\n"
+	  "printBank\t\t%d\t\n"
+	  "printResultXml\t\t%d\t\n"
+	  "printPrototype\t\t%d\t\n"
+	  "faithfulness\t\t%d\t\n"
+	  "ntrials\t\t%d\t\n"
+	  "fastSimulation\t\t%d\t\n"
+	  "noiseModel\t\t%d\t\n"
+	  "binaryInjection\t\t%d\t\n"
+	  "maxTotalMass\t\t%f\t\n"
+	  "detector\t\t%d\t\n"
+	  "run\t\t%d\t\n"
+	  "chanName\t\t%s\t\n"
+	  "calCacheName\t\t%s\t\n"
+	  "startTime\t\t%d\t\n"
+	  "numSeconds\t\t%d\t\n"
+	  "L1.chanName\t\t%s\t\n"
+	  "H1.chanName\t\t%s\t\n"
+	  "H2.chanName\t\t%s\t\n"
+	  "L1.dataFile.S3.calCacheName\t%s\t\n"
+	  "L1.dataFile.S3.frInCacheName\t%s\t\n"
+	  "H1.dataFile.S3.calCacheName\t%s\t\n"
+	  "H1.dataFile.S3.frInCacheName\t%s\t\n"
+	  "H2.dataFile.S3.calCacheName\t%s\t\n"
+	  "H2.dataFile.S3.frInCacheName\t%s\t\n"
+	  "L1.dataFile.S2.calCacheName\t%s\t\n"
+	  "L1.dataFile.S2.frInCacheName\t%s\t\n"
+	  "H1.dataFile.S2.calCacheName\t%s\t\n"
+	  "H1.dataFile.S2.frInCacheName\t%s\t\n"
+	  "H2.dataFile.S2.calCacheName\t%s\t\n"
 	  "H2.dataFile.S2.frInCacheName\t%s\t\n",
 	  other.alphaFConstraint,
 	  other.extraFinalPrinting,
@@ -4211,40 +4211,40 @@ PrintParameters(InspiralCoarseBankIn 	coarse,
 	  other.psi0,
 	  other.psi3,
 	  other.tau0,
-	  other.tau3, 
-	  other.printBestOverlap,	
-	  other.printBestTemplate, 	
-	  other.printSNRHisto,        
-	  other.printPsd,             
-	  other.printBank,    	
-	  other.printResultXml,    	
-	  other.printPrototype,    	
-	  other.faithfulness,        	
-	  other.ntrials, 	     	
-	  other.fastSimulation,       
-	  other.noiseModel,           
-	  other.binaryInjection,      
-	  other.maxTotalMass,         
-	  other.detector, 
-	  other.run,      
-	  other.chanName, 
-	  other.calCacheName, 
-	  other.startTime,  
-	  other.numSeconds, 
-	  other.L1.chanName,             
-	  other.H1.chanName,             
-	  other.H2.chanName,               
-	  other.L1.dataFile.S3.calCacheName,         
-	  other.L1.dataFile.S3.frInCacheName,        
-	  other.H1.dataFile.S3.calCacheName,         
-	  other.H1.dataFile.S3.frInCacheName,        
-	  other.H2.dataFile.S3.calCacheName,         
-	  other.H2.dataFile.S3.frInCacheName,        
-	  other.L1.dataFile.S2.calCacheName,         
-	  other.L1.dataFile.S2.frInCacheName,        
-	  other.H1.dataFile.S2.calCacheName,         
-	  other.H1.dataFile.S2.frInCacheName,        
-	  other.H2.dataFile.S2.calCacheName,         
+	  other.tau3,
+	  other.printBestOverlap,
+	  other.printBestTemplate,
+	  other.printSNRHisto,
+	  other.printPsd,
+	  other.printBank,
+	  other.printResultXml,
+	  other.printPrototype,
+	  other.faithfulness,
+	  other.ntrials,
+	  other.fastSimulation,
+	  other.noiseModel,
+	  other.binaryInjection,
+	  other.maxTotalMass,
+	  other.detector,
+	  other.run,
+	  other.chanName,
+	  other.calCacheName,
+	  other.startTime,
+	  other.numSeconds,
+	  other.L1.chanName,
+	  other.H1.chanName,
+	  other.H2.chanName,
+	  other.L1.dataFile.S3.calCacheName,
+	  other.L1.dataFile.S3.frInCacheName,
+	  other.H1.dataFile.S3.calCacheName,
+	  other.H1.dataFile.S3.frInCacheName,
+	  other.H2.dataFile.S3.calCacheName,
+	  other.H2.dataFile.S3.frInCacheName,
+	  other.L1.dataFile.S2.calCacheName,
+	  other.L1.dataFile.S2.frInCacheName,
+	  other.H1.dataFile.S2.calCacheName,
+	  other.H1.dataFile.S2.frInCacheName,
+	  other.H2.dataFile.S2.calCacheName,
 	  other.H2.dataFile.S2.frInCacheName);
 }
 
@@ -4263,10 +4263,10 @@ void LALBankPrintAscii(MetadataTable          templateBank ,
   fprintf(output,"#Number of Coarse Bank Templates=%d\n",numCoarse);
   if (coarseBankIn.approximant == BCV)
     {
-      fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n", 
+      fprintf(output, "#psi0Min=%e, psi0Max=%e, psi3Min=%e, psi3Max=%e\n",
 	      coarseBankIn.psi0Min, coarseBankIn.psi0Max, coarseBankIn.psi3Min, coarseBankIn.psi3Max);
       fprintf(output, "#psi0 psi3  totalMass fFinal\n");
-      
+
     }
   else
     {
@@ -4278,35 +4278,35 @@ void LALBankPrintAscii(MetadataTable          templateBank ,
        tmpltCurrent ;
        tmpltCurrent = tmpltCurrent->next)
     {
-      
+
       if (coarseBankIn.approximant == BCV)
-	{      		   
+	{
 	  fprintf(output, "%e %e %e \n",
-		  tmpltCurrent->psi0, 
+		  tmpltCurrent->psi0,
 		  tmpltCurrent->psi3,
 		  tmpltCurrent->f_final);
-	} 
+	}
       else if (coarseBankIn.approximant == BCVSpin )
-	{	  
-	  fprintf(output, "%e %e %e %e\n", 	
-		  tmpltCurrent->psi0, 
+	{
+	  fprintf(output, "%e %e %e %e\n",
+		  tmpltCurrent->psi0,
 		  tmpltCurrent->psi3,
 		  tmpltCurrent->beta,
 		  tmpltCurrent->f_final);
 	}
-      else 
-	{	  
-	  fprintf(output, "%e %e %e %e\n", 	
-		  tmpltCurrent->tau0, 
-		  tmpltCurrent->tau3, 
-		  tmpltCurrent->mass1, 
+      else
+	{
+	  fprintf(output, "%e %e %e %e\n",
+		  tmpltCurrent->tau0,
+		  tmpltCurrent->tau3,
+		  tmpltCurrent->mass1,
 		  tmpltCurrent->mass2);
 	}
-    	   
+
     }
   fprintf(output,"&\n");
   fclose(output);
-    
+
 }
 
 
@@ -4342,7 +4342,7 @@ void LALBankPrintXML(MetadataTable templateBank ,
   snprintf( fname, sizeof(fname), "TMPLTBANK.xml" ,
 	       ifo, gpsStartTime.gpsSeconds,
 	       gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
-  
+
   /* -- we start to fill the xml file here --- */
   memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
 
@@ -4353,9 +4353,9 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  LAL_CALL( populate_process_table( &status, proctable.processTable, 
+  LAL_CALL( populate_process_table( &status, proctable.processTable,
 				    PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
-  this_proc_param = processParamsTable.processParamsTable = 
+  this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
   BEFillProc(this_proc_param, coarseBankIn, randIn, userParam);
@@ -4365,33 +4365,33 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 
   /* write process table */
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s", 
+  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s%s",
 	       ifoName[0], ifoName[1] );
   XLALGPSTimeNow(&(proctable.processTable->end_time));
 
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ),
 	    &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable,
 				    process_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-  
+
   /* write process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream,
 				    process_params_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable, 
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, processParamsTable,
 				    process_params_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-  
+
   /* finally write sngl inspiral table */
   if ( templateBank.snglInspiralTable )
     {
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table ), 
+      LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table ),
 		&status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank, 
+      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, templateBank,
 					sngl_inspiral_table ), &status );
       LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
     }
-  
+
   /* close the output xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream ), &status );
 
@@ -4403,14 +4403,14 @@ void LALBankPrintXML(MetadataTable templateBank ,
 }
 
 void
- CreateListfromTmplt(InspiralTemplate  *params, 
+ CreateListfromTmplt(InspiralTemplate  *params,
 		     SnglInspiralTable *tmplt)
 {
-  /* Right now only t03 and psi0psi3 bank exists so we 
+  /* Right now only t03 and psi0psi3 bank exists so we
      only need those information in principle and nothing else*/
-  params->mass1 = tmplt->mass1; 
-  params->mass2 = tmplt->mass2; 
-  params->fFinal = tmplt->f_final; 
+  params->mass1 = tmplt->mass1;
+  params->mass2 = tmplt->mass2;
+  params->fFinal = tmplt->f_final;
   params->t0 = tmplt->tau0;
   params->t3 = tmplt->tau3;
   params->psi0 = tmplt->psi0;
@@ -4424,25 +4424,25 @@ void
       tmplt->tau5    = (REAL4) coarseList[0].params.t5;
       tmplt->ttotal  = (REAL4) coarseList[0].params.tC;
 
-  */  
+  */
 
 
 }
 
 
 /* ****************************************************************************
- * Initialization of the parameters fromn random signal, bank and others 
+ * Initialization of the parameters fromn random signal, bank and others
  * structures
  * ***************************************************************************/
-void ParametersInitialization(	InspiralCoarseBankIn 	*coarseBankIn, 
-				RandomInspiralSignalIn	*randIn, 
+void ParametersInitialization(	InspiralCoarseBankIn 	*coarseBankIn,
+				RandomInspiralSignalIn	*randIn,
 				UserParametersIn	*userParam)
 {
-  
+
   InitInspiralCoarseBankIn(coarseBankIn);
   InitRandomInspiralSignalIn(randIn);
   InitUserParametersIn(userParam);
-  
+
 }
 
 
@@ -4462,8 +4462,8 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
   coarseBankIn->mMin      	= BANKEFFICIENCY_MMIN;
   coarseBankIn->mMax      	= BANKEFFICIENCY_MMAX;
   coarseBankIn->MMax      	= BANKEFFICIENCY_MMAX * 2;
-  coarseBankIn->massRange       = MinMaxComponentMass; 
-  coarseBankIn->etamin 	        = coarseBankIn->mMin * coarseBankIn->mMax  
+  coarseBankIn->massRange       = MinMaxComponentMass;
+  coarseBankIn->etamin 	        = coarseBankIn->mMin * coarseBankIn->mMax
 			        / pow(coarseBankIn->MMax, 2.);
 
   coarseBankIn->psi0Min   	= BANKEFFICIENCY_PSI0MIN;
@@ -4473,8 +4473,8 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
   coarseBankIn->alpha     	= BANKEFFICIENCY_ALPHABANK;
   /*unsigned variable ... */
   coarseBankIn->numFcutTemplates = BANKEFFICIENCY_NFCUT;
-  coarseBankIn->approximant     = BANKEFFICIENCY_TEMPLATE;  
-  coarseBankIn->order           = BANKEFFICIENCY_ORDER_TEMPLATE;  
+  coarseBankIn->approximant     = BANKEFFICIENCY_TEMPLATE;
+  coarseBankIn->order           = BANKEFFICIENCY_ORDER_TEMPLATE;
   coarseBankIn->LowGM     	= BANKEFFICIENCY_LOWGM;
   coarseBankIn->insidePolygon  	= BANKEFFICIENCY_INSIDEPOLYGON;
   coarseBankIn->HighGM    	= BANKEFFICIENCY_HIGHGM;
@@ -4483,17 +4483,17 @@ void InitInspiralCoarseBankIn(InspiralCoarseBankIn *coarseBankIn)
 
 
 /* ****************************************************************************
- * Random initialization 
+ * Random initialization
  * ****************************************************************************/
 void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
 {
-  randIn->useed         	= BANKEFFICIENCY_USEED;				/* seed for random MC simulation 	*/ 
+  randIn->useed         	= BANKEFFICIENCY_USEED;				/* seed for random MC simulation 	*/
   randIn->type          	= BANKEFFICIENCY_TYPE;				/* type of simulation 			*/
   randIn->SignalAmp     	= BANKEFFICIENCY_SIGNALAMPLITUDE;		/* if x = n +h 				*/
   randIn->param.order   	= BANKEFFICIENCY_ORDER_SIGNAL;   		/* and its order			*/
   randIn->param.alpha		= BANKEFFICIENCY_ALPHASIGNAL; 			/* alpha value of BCV 			*/
   randIn->param.ieta    	= BANKEFFICIENCY_IETA; 				/*					*/
-  randIn->param.mass1 		= BANKEFFICIENCY_MMIN;				/* To aalocate memory			*/ 
+  randIn->param.mass1 		= BANKEFFICIENCY_MMIN;				/* To aalocate memory			*/
   randIn->param.mass2  		= BANKEFFICIENCY_MMIN; 				/* idem 				*/
   randIn->param.fLower  	= BANKEFFICIENCY_FLOWER;			/* Lower cutoff freq. of the template	*/
   randIn->param.OmegaS		= 0.;						/* EOB parameter 			*/
@@ -4506,17 +4506,17 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
   randIn->t0Min                 = 0.;                                           /* min tau3 to inject                   */
   randIn->t0Max                 = 0.;                                           /* max tau3 to inject                   */
   randIn->etaMin                = BANKEFFICIENCY_MMIN
-    * (BANKEFFICIENCY_MMAX - BANKEFFICIENCY_MMIN) 
+    * (BANKEFFICIENCY_MMAX - BANKEFFICIENCY_MMIN)
     / (BANKEFFICIENCY_MMAX * 2) / (BANKEFFICIENCY_MMAX * 2);
   randIn->psi0Min  		= BANKEFFICIENCY_PSI0MIN;			/* psi0 range 				*/
-  randIn->psi0Max  		= BANKEFFICIENCY_PSI0MAX;	
-  randIn->psi3Min  		= BANKEFFICIENCY_PSI3MIN;	
-  randIn->psi3Max  		= BANKEFFICIENCY_PSI3MAX;	
+  randIn->psi0Max  		= BANKEFFICIENCY_PSI0MAX;
+  randIn->psi3Min  		= BANKEFFICIENCY_PSI3MIN;
+  randIn->psi3Max  		= BANKEFFICIENCY_PSI3MAX;
   randIn->param.approximant 	= BANKEFFICIENCY_SIGNAL;			/* approximant of h, the signal		*/
   randIn->param.tSampling 	= BANKEFFICIENCY_TSAMPLING;			/* sampling 				*/
   randIn->param.fCutoff		= BANKEFFICIENCY_TSAMPLING/2.-1;		/* sampling 				*/
-  randIn->param.startTime       = BANKEFFICIENCY_STARTTIME; 
-  randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE; 
+  randIn->param.startTime       = BANKEFFICIENCY_STARTTIME;
+  randIn->param.startPhase      = BANKEFFICIENCY_STARTPHASE;
   randIn->param.nStartPad       = BANKEFFICIENCY_NSTARTPAD;
   randIn->param.signalAmplitude = BANKEFFICIENCY_SIGNALAMPLITUDE;
   randIn->param.nEndPad         = BANKEFFICIENCY_NENDPAD;
@@ -4525,12 +4525,12 @@ void InitRandomInspiralSignalIn(RandomInspiralSignalIn *randIn)
 
 
 /* ****************************************************************************
- * Other Param initialization							
+ * Other Param initialization
  * ***************************************************************************/
 void InitUserParametersIn(UserParametersIn *userParam)
 {
   userParam->alphaFConstraint   = ALPHAFConstraint;
-  userParam->extraFinalPrinting = 0; 
+  userParam->extraFinalPrinting = 0;
   userParam->template		= BANKEFFICIENCY_TEMPLATE;
   userParam->signalfFinal       =  BANKEFFICIENCY_TSAMPLING/2.-1;
   userParam->signal       	= BANKEFFICIENCY_SIGNAL;
@@ -4554,7 +4554,7 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->ntrials 	     	= BANKEFFICIENCY_NTRIALS;
   userParam->fastSimulation       = BANKEFFICIENCY_FASTSIMULATION;
   userParam->noiseModel           = LIGOI;
-  userParam->binaryInjection      = NoUserChoice; 
+  userParam->binaryInjection      = NoUserChoice;
   userParam->maxTotalMass         = -1;
   userParam->startPhase           = 1;
 
@@ -4567,41 +4567,41 @@ void InitUserParametersIn(UserParametersIn *userParam)
   userParam->numSeconds   = -1;
   userParam->realNoise    = 0;
   userParam->inputPSD     = NULL;
-  
+
   userParam->L1.chanName             = "L1:LSC-AS_Q";
   userParam->H1.chanName             = "H1:LSC-AS_Q";
   userParam->H2.chanName             = "H2:LSC-AS_Q";
-  
+
   userParam->L1.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/L1-CAL-V03-793126813-796025053.cache";
-  userParam->L1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/L-RDS_R_L3-793131485-795679161.cache";     
+  userParam->L1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/L-RDS_R_L3-793131485-795679161.cache";
   userParam->H1.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/H1-CAL-V03-793126813-796025053.cache";
-  userParam->H1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";     
+  userParam->H1.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";
   userParam->H2.dataFile.S4.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/H2-CAL-V03-793126813-796025053.cache";
   userParam->H2.dataFile.S4.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/H-RDS_R_L3-793139225-795679221.cache";
 
   userParam->L1.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/L1-CAL-V02-729273600-734367600.cache";
-  userParam->L1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";     
+  userParam->L1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_L_S3_RDS_R_L3.txt";
   userParam->H1.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/H1-CAL-V02-751651244-757699245.cache";
-  userParam->H1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
+  userParam->H1.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";
   userParam->H2.dataFile.S3.calCacheName         =  "/home/spxcar/cache_files/H2-CAL-V02-751651244-757699245.cache";
-  userParam->H2.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";     
+  userParam->H2.dataFile.S3.frInCacheName        =  "/home/spxcar/cachefiles/inspiralRuns/cacheFiles/CacheFile_H_S3_RDS_R_L3.txt";
 
   userParam->L1.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibrationcache_files/L1-CAL-V03-729273600-734367600.cache";
-  userParam->L1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";     
+  userParam->L1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns//cacheFiles/CacheFile_L_S2_RDS_R_L3.txt";
   userParam->H1.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibrationcache_files/H1-CAL-V03-729273600-734367600.cache";
-  userParam->H1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";     
+  userParam->H1.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";
   userParam->H2.dataFile.S2.calCacheName         =  "/home/spxcar/inspiralRuns/Calibration/cache_files/H2-CAL-V03-731849076-734367576.cache";
-  userParam->H2.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";      
+  userParam->H2.dataFile.S2.frInCacheName        =  "/home/spxcar/inspiralRuns/cacheFiles/CacheFile_H_S2_RDS_R_L3.txt";
   userParam->dataCheckPoint                      = 0;
 }
 
 
 
 /* ***************************************************************************
- *  Function to parse user parameters 
+ *  Function to parse user parameters
  *  ************************************************************************ */
-void 
-ParseParameters(	INT4 			*argc, 
+void
+ParseParameters(	INT4 			*argc,
 			CHAR 			**argv,
 			InspiralCoarseBankIn 	*coarseBankIn,
 			RandomInspiralSignalIn 	*randIn,
@@ -4609,24 +4609,24 @@ ParseParameters(	INT4 			*argc,
 {
   INT4  i = 1;
   REAL8 tmp1, tmp2;
-  
+
   while(i < *argc)
     {
       if (!strcmp(argv[i],	"--bank-alpha")) {
-        BEParseGetDouble(argv,  &i, &(coarseBankIn->alpha)); 
+        BEParseGetDouble(argv,  &i, &(coarseBankIn->alpha));
       }
       else if (!strcmp(argv[i],"--bank-fcut-range")) {
 	{
 	  BEParseGetDouble2(argv,  &i, &tmp1, &tmp2);
-	  coarseBankIn->LowGM  = (REAL4)tmp1; 
+	  coarseBankIn->LowGM  = (REAL4)tmp1;
 	  coarseBankIn->HighGM = (REAL4)tmp2;
 	}
       }
       else if (!strcmp(argv[i],	"--bank-ffinal")) {
-        BEParseGetDouble(argv,  &i, &(coarseBankIn->fUpper)); 
-      }    
+        BEParseGetDouble(argv,  &i, &(coarseBankIn->fUpper));
+      }
       else if (!strcmp(argv[i],	"--bank-inside-polygon")) {
-        BEParseGetInt(argv,  &i, (INT4*)&(coarseBankIn->insidePolygon)); 
+        BEParseGetInt(argv,  &i, (INT4*)&(coarseBankIn->insidePolygon));
       }
 
       else if (!strcmp(argv[i], "--bank-grid-spacing")) {
@@ -4634,7 +4634,7 @@ ParseParameters(	INT4 			*argc,
 	if (!strcmp(argv[i],"Square")) {
 	  coarseBankIn->gridSpacing = Square;
 	}
-	else if (!strcmp(argv[i], "Hexagonal")) { 
+	else if (!strcmp(argv[i], "Hexagonal")) {
 	  coarseBankIn->gridSpacing = Hexagonal;
 	}
 	else if (!strcmp(argv[i], "HexagonalNotOriented")) {
@@ -4644,11 +4644,11 @@ ParseParameters(	INT4 			*argc,
 	  coarseBankIn->gridSpacing = SquareNotOriented;
 	}
 	else {
-	  coarseBankIn->gridSpacing = None;        	  	
+	  coarseBankIn->gridSpacing = None;
 	}
-      }        
+      }
       else if (!strcmp(argv[i],	"--bank-number-fcut")) {
-        BEParseGetInt(argv,  &i, (INT4*)&(coarseBankIn->numFcutTemplates)); 
+        BEParseGetInt(argv,  &i, (INT4*)&(coarseBankIn->numFcutTemplates));
       }
       else if (!strcmp(argv[i],"--bank-mass-range")) {
 	BEParseGetDouble2(argv,  &i, &(coarseBankIn->mMin), &(coarseBankIn->mMax));
@@ -4664,10 +4664,10 @@ ParseParameters(	INT4 			*argc,
 	  userParam->chanName = argv[i];
 	}
       else if (!strcmp(argv[i],"--debug")) {
-        BEParseGetInt(argv,  &i, &(lalDebugLevel)); 
+        BEParseGetInt(argv,  &i, &(lalDebugLevel));
       }
       else if (!strcmp(argv[i], "dataCheckPoint")) {
-	userParam->dataCheckPoint = 1;	
+	userParam->dataCheckPoint = 1;
       }
       else if (!strcmp(argv[i], "--detector")) {
 	BEParseGetString(argv, &i);
@@ -4693,7 +4693,7 @@ ParseParameters(	INT4 			*argc,
       else if  (!strcmp(argv[i],"--fl")) {
         BEParseGetDouble(argv,  &i, &(coarseBankIn->fLower));
 	randIn->param.fLower = coarseBankIn->fLower;
-      }  
+      }
       else if (!strcmp(argv[i], "--gps-start-time")) {
 	BEParseGetInt(argv, &i , &(userParam->startTime));
       }
@@ -4701,12 +4701,12 @@ ParseParameters(	INT4 			*argc,
 	Help();
       }
       else if (!strcmp(argv[i],"--max-total-mass")) {
-	
+
 	BEParseGetDouble(argv,  &i, &tmp1);
-	userParam->maxTotalMass = (REAL4)tmp1;	
+	userParam->maxTotalMass = (REAL4)tmp1;
       }
-      else if (!strcmp(argv[i],"--ascii2xml")) {       
-	ascii2xml = 1;	
+      else if (!strcmp(argv[i],"--ascii2xml")) {
+	ascii2xml = 1;
       }
       else if (!strcmp(argv[i], "--m1")){
         BEParseGetDouble(argv,  &i, &(userParam->m1));
@@ -4721,15 +4721,15 @@ ParseParameters(	INT4 			*argc,
         BEParseGetDouble(argv,  &i, &(userParam->template_m2));
       }
       else if (!strcmp(argv[i],	"--mm")){
-        BEParseGetDouble(argv,  &i, &(coarseBankIn->mmCoarse)); 
+        BEParseGetDouble(argv,  &i, &(coarseBankIn->mmCoarse));
       }
       else if (!strcmp(argv[i],	"--n") || !strcmp(argv[i], "--ntrial")){
         BEParseGetInt(argv,  &i, &(userParam->ntrials));
       }
       else if (!strcmp(argv[i],	"--noise-amplitude")) {
-        BEParseGetDouble(argv,  &i, &(randIn->NoiseAmp)); 
+        BEParseGetDouble(argv,  &i, &(randIn->NoiseAmp));
       }
-      else if (!strcmp(argv[i],	"--noise-model")){	
+      else if (!strcmp(argv[i],	"--noise-model")){
 	BEParseGetString(argv, &i);
 	if (!strcmp(argv[i], "LIGOI")) {
 	  userParam->noiseModel = LIGOI;
@@ -4752,12 +4752,12 @@ ParseParameters(	INT4 			*argc,
 	else if (!strcmp(argv[i], "REALPSD")) {
 	  userParam->noiseModel = REALPSD;
 	}
-	else if (!strcmp(argv[i], "READPSD")) { 
+	else if (!strcmp(argv[i], "READPSD")) {
 	  userParam->noiseModel = READPSD;
 	  userParam->inputPSD = argv[++i];
 	}
 	else {
-	  userParam->noiseModel = None;	  
+	  userParam->noiseModel = None;
 	}
       }
       else if (!strcmp(argv[i], "--num-seconds")) {
@@ -4773,30 +4773,30 @@ ParseParameters(	INT4 			*argc,
 	userParam->realNoise = 1;
       }
       else if (!strcmp(argv[i], "--run")) {
-	BEParseGetString(argv, &i);	 
+	BEParseGetString(argv, &i);
 	if (!strcmp(argv[i],  "S2")) {
 	  userParam->run = S2;
 	}
 	else if (!strcmp(argv[i],"S3")){
-	    userParam->run = S3;	  
+	    userParam->run = S3;
 	}
 	else if (!strcmp(argv[i],"S4")){
-	    userParam->run = S4;	  
+	    userParam->run = S4;
 	}
 	else {
 	    userParam->run = None;
 	}
-      } 
+      }
       else if (!strcmp(argv[i],"--sampling")) {
         BEParseGetDouble(argv,  &i, &(coarseBankIn->tSampling));
         randIn->param.tSampling = coarseBankIn->tSampling;
-      }   
+      }
       else if (!strcmp(argv[i],"--seed")){
         BEParseGetInt(argv,  &i, &(randIn->useed));
       }
       else if (!strcmp(argv[i], "--signal")) {
 	BEParseGetString(argv, &i);
-	
+
 	if (strcmp(argv[i],	  "TaylorT1")	==0) 		userParam->signal = TaylorT1;
 	else if (strcmp(argv[i],"TaylorT2")	==0)		userParam->signal = TaylorT2;
 	else if (strcmp(argv[i],"TaylorT3")	==0)	    	userParam->signal = TaylorT3;
@@ -4809,18 +4809,18 @@ ParseParameters(	INT4 			*argc,
 	else if (strcmp(argv[i],"BCVSpin")	==0)            userParam->signal = BCVSpin;
 	else if (strcmp(argv[i],"SpinTaylorT3")==0)	    	userParam->signal = SpinTaylorT3;
 	else  BEPrintError("wrong approximant\n");
-	randIn->param.approximant = userParam->signal;		  
+	randIn->param.approximant = userParam->signal;
       }
-      else if (!strcmp(argv[i],	"--signal-alpha")){	     
+      else if (!strcmp(argv[i],	"--signal-alpha")){
 	BEParseGetDouble(argv,  &i, &(randIn->param.alpha));
-      } 
-      else if (!strcmp(argv[i],	"--signal-alpha1")){	     
+      }
+      else if (!strcmp(argv[i],	"--signal-alpha1")){
 	BEParseGetDouble(argv,  &i, &(randIn->param.alpha1));
       }
-      else if (!strcmp(argv[i],	"--signal-alpha2")){	     
+      else if (!strcmp(argv[i],	"--signal-alpha2")){
 	BEParseGetDouble(argv,  &i, &(randIn->param.alpha2));
       }
-      else if (!strcmp(argv[i],	"--signal-beta")){	     
+      else if (!strcmp(argv[i],	"--signal-beta")){
 	BEParseGetDouble(argv,  &i, &(randIn->param.beta));
       }
       else if (!strcmp(argv[i],	"--signal-amplitude")) {
@@ -4830,10 +4830,10 @@ ParseParameters(	INT4 			*argc,
 	BEParseGetDouble(argv,  &i, &(randIn->param.fCutoff));
 	userParam->signalfFinal = randIn->param.fCutoff ;
       }
-      else if (!strcmp(argv[i],	"--signal-mass-range")){	
+      else if (!strcmp(argv[i],	"--signal-mass-range")){
         BEParseGetDouble2(argv,  &i, &(randIn->mMin), &(randIn->mMax));
 	randIn->param.mass1 = randIn->param.mass2 = randIn->mMin; /*default values for injection*/
-      }   
+      }
       else if (!strcmp(argv[i], "--signal-tau0-range")){
         BEParseGetDouble2(argv,  &i, &(randIn->t0Min), &(randIn->t0Max));
       }
@@ -4851,13 +4851,13 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],	"--signal-psi3-range")){
         BEParseGetDouble2(argv,  &i, &(randIn->psi3Min), &(randIn->psi3Max));
-      }  
+      }
       else if (!strcmp(argv[i],	"--signal-random-nstartpad")) {
 	randnStartPad = 1;
       }
       else if (!strcmp(argv[i],	"--simulation-type")) {
 	BEParseGetString(argv, &i);
-	if (!strcmp(argv[i],"NoiseOnly"))	
+	if (!strcmp(argv[i],"NoiseOnly"))
 	  randIn->type = 1;
 	else if (!strcmp(argv[i],"SignalOnly"))
 	  randIn->type = 0;
@@ -4876,7 +4876,7 @@ ParseParameters(	INT4 			*argc,
       }
       else if (!strcmp(argv[i],"--template")) {
 	BEParseGetString(argv, &i);
-	
+
 	if (!strcmp(argv[i],	"TaylorT1")	)	userParam->template = TaylorT1;
 	else if (!strcmp(argv[i],	"TaylorT2")	)	userParam->template = TaylorT2;
 	else if (!strcmp(argv[i],	"TaylorT3")	)	userParam->template = TaylorT3;
@@ -4894,18 +4894,18 @@ ParseParameters(	INT4 			*argc,
 	  }
 	else if (!strcmp(argv[i],	"SpinTaylorT3")	)	userParam->template = SpinTaylorT3;
 	else BEPrintError("wrong approximant\n");
-	
+
 	coarseBankIn->approximant = userParam->template;
-	if ( coarseBankIn->approximant == BCV || coarseBankIn->approximant == BCVSpin) 	
-	  coarseBankIn->space = Psi0Psi3; 
-	else 
+	if ( coarseBankIn->approximant == BCV || coarseBankIn->approximant == BCVSpin)
+	  coarseBankIn->space = Psi0Psi3;
+	else
 	  coarseBankIn->space = Tau0Tau3;
       }
       else if (!strcmp(argv[i],	"--template-order")) {
         BEParseGetInt(argv,  &i, (INT4*)(&(coarseBankIn->order)));
       }
-      
-      /* no user parameters requeste, only flags below*/               
+
+      /* no user parameters requeste, only flags below*/
       else if (!strcmp(argv[i],"--alpha-constraint")) {
         userParam->alphaFConstraint       = ALPHAFConstraint;
       }
@@ -4958,14 +4958,14 @@ ParseParameters(	INT4 			*argc,
         userParam->printPrototype        = 1;
       }
       else if (!strcmp(argv[i],"--fast-simulation")) {
-        userParam->fastSimulation        = 1;           
-      }	   	    
+        userParam->fastSimulation        = 1;
+      }
       else {
         fprintf(stderr, "%s option does not exist. Type --help for options\n", argv[i]);
 	exit(0);
-      }      
-      i++;       
-    }   
+      }
+      i++;
+    }
 }
 
 
@@ -4974,10 +4974,10 @@ ParseParameters(	INT4 			*argc,
 
 
 void
-BEParseGetInt(  CHAR    **argv, 
+BEParseGetInt(  CHAR    **argv,
                 INT4    *index,
                 INT4    *data)
-{  
+{
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp1;
@@ -4994,7 +4994,7 @@ BEParseGetInt(  CHAR    **argv,
 	  BEPrintError(msg);
 	}
     }
-  else  
+  else
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
 	      argv[*index],
@@ -5005,11 +5005,11 @@ BEParseGetInt(  CHAR    **argv,
 }
 
 void
-BEParseGetString(  CHAR    **argv, 
-		   INT4    *index)		  
-{  
+BEParseGetString(  CHAR    **argv,
+		   INT4    *index)
+{
   CHAR msg[2048];
-  
+
   if (argv[*index+1]==NULL)
     {
       sprintf(msg, "Expect a string after %s\n ",
@@ -5021,10 +5021,10 @@ BEParseGetString(  CHAR    **argv,
 
 
 void
-BEParseGetDouble(CHAR    **argv, 
+BEParseGetDouble(CHAR    **argv,
                 INT4    *index,
                 REAL8   *data)
-{  
+{
   CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp2 ;
@@ -5041,7 +5041,7 @@ BEParseGetDouble(CHAR    **argv,
 	  BEPrintError(msg);
 	}
     }
-  else  
+  else
     {
       sprintf(msg, "Expect a float after option %s (got %s)\n ",
 	      argv[*index],
@@ -5053,12 +5053,12 @@ BEParseGetDouble(CHAR    **argv,
 
 
 void
-BEParseGetDouble2(CHAR    **argv, 
+BEParseGetDouble2(CHAR    **argv,
 		  INT4    *index,
 		  REAL8   *data1,
 		  REAL8   *data2)
-{  
-  CHAR *tmp; 
+{
+  CHAR *tmp;
   CHAR msg[2048];
   CHAR *tmp2 , *tmp1;
 
@@ -5074,24 +5074,24 @@ BEParseGetDouble2(CHAR    **argv,
       *data2 = strtod(argv[*index+2], &tmp  );
       if ((!(*data1) && tmp1[0]!='0')
 	||  (!(*data2) && tmp2[0]!='0'))
-	{   
+	{
 	  sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
 		  argv[*index],
 		  argv[*index+1],argv[*index+2]);
 	  BEPrintError(msg);
 	}
     }
-  else  
+  else
     {
       sprintf(msg, "Expect 2 floats after option %s (got %s and %s)\n ",
 	      argv[*index],
 	      argv[*index+1],argv[*index+2]);
       BEPrintError(msg);
     }
-  *index = *index +2 ;  
-}  
-  
-    
+  *index = *index +2 ;
+}
+
+
     /* --- Function to check validity of some parsed parameters (TODO)--- */
 void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 		  RandomInspiralSignalIn *randIn,
@@ -5107,41 +5107,41 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
   if (coarseBankIn->fUpper == -1 ){
     coarseBankIn->fUpper = coarseBankIn->tSampling/2. -1.;
   }
-  
+
   if (coarseBankIn->fUpper >=coarseBankIn->tSampling/2. -1.){
     coarseBankIn->fUpper = coarseBankIn->tSampling/2 -1.;
   }
- 
+
   randIn->param.fCutoff = coarseBankIn->fUpper;
- 
+
   if (randIn->param.fCutoff >=coarseBankIn->tSampling/2. -1.){
       randIn->param.fCutoff = coarseBankIn->tSampling/2 -1.;
   }
-  
+
   if (coarseBankIn->alpha < 0 ){
     sprintf(msg, "--bank-alpha (%f) parameter must be positive in the range [0,1] \n",
 	    coarseBankIn->alpha);
     BEPrintError(msg);
     }
 
-  if (coarseBankIn->fUpper <= coarseBankIn->fLower 
+  if (coarseBankIn->fUpper <= coarseBankIn->fLower
       || coarseBankIn->fUpper >= coarseBankIn->tSampling/2){
     sprintf(msg, "--bank-ffinal (%f) paramter must be greater than  bank-fl (%f) and less than sampling/2 %f\n",
 	    coarseBankIn->fUpper,
 	    coarseBankIn->fLower ,
-	    coarseBankIn->tSampling/2); 
+	    coarseBankIn->tSampling/2);
     BEPrintError(msg);
   }
-  
+
 
   if (coarseBankIn->gridSpacing == None  ){
     sprintf(msg, "--bank-grid-spacing (%d) parameter must be < square, hexagonal, hexagonalOriented, squareOriented> \n",
 	    coarseBankIn->gridSpacing);
-    
+
     BEPrintError(msg);
   }
 
-  
+
   if  ((coarseBankIn->mMin >= coarseBankIn->mMax ) || (coarseBankIn->mMin <=0)){
     sprintf(msg, "--bank-mass-range (%f %f) paramter must be sorted and > 0 \n",
 	    coarseBankIn->mMin, coarseBankIn->mMax);
@@ -5154,8 +5154,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	  if (userParam->maxTotalMass >= (2 * coarseBankIn->mMax))
 	    {
 	      /*coarseBankIn->MMax =  2 * userParam->maxTotalMass;*/
-	      coarseBankIn->etamin = coarseBankIn->mMin * coarseBankIn->mMax 
-		/ (coarseBankIn->mMin + coarseBankIn->mMax) 
+	      coarseBankIn->etamin = coarseBankIn->mMin * coarseBankIn->mMax
+		/ (coarseBankIn->mMin + coarseBankIn->mMax)
 		/ (coarseBankIn->mMin + coarseBankIn->mMax);
 	    }
 	  else
@@ -5174,12 +5174,12 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	    / (coarseBankIn->MMax );
 	}
     }
-  
+
   if (coarseBankIn->psi0Min <=0 || coarseBankIn->psi0Min > coarseBankIn->psi0Max) {
     sprintf(msg, "--bank-psi0-range (%f %f) paramter must be sorted and > 0 \n",
 	    coarseBankIn->psi0Min, coarseBankIn->psi0Max);
     BEPrintError(msg);
-  } 
+  }
 
   if (coarseBankIn->psi3Min >=0 || coarseBankIn->psi3Min > coarseBankIn->psi3Max) {
     sprintf(msg, "--bank-psi0-range (%f %f) paramter must be sorted and >= 0 \n",
@@ -5201,7 +5201,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	      coarseBankIn->LowGM , coarseBankIn->HighGM);
       BEPrintError(msg);
     }
- 
+
   if (coarseBankIn->fLower <10 || randIn->param.fLower < 10)
     {
       sprintf(msg, "--fl or --fl-signal or --fl-template must be >=10 Hz (%f %f)",
@@ -5218,8 +5218,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 
   if (userParam->maxTotalMass != -1)
     {
-      if (userParam->maxTotalMass < 2*randIn->mMin) 
-	{	
+      if (userParam->maxTotalMass < 2*randIn->mMin)
+	{
 	  sprintf(msg, "--max-total-mass (%f) must be > twice the minimla mass (%f) ",
 	      userParam->maxTotalMass , randIn->mMin );
 	  BEPrintError(msg);
@@ -5235,13 +5235,13 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	{
 	  sprintf(msg, "if --template-m1 and template-m2 are used, you must set --m1 and --m2 \n");
 	  BEPrintError(msg);
-	}       
+	}
     }
 
 
   if ((userParam->m1 != -1) && (userParam->m2 != -1)){
 
-    randIn->param.massChoice = fixedMasses; 
+    randIn->param.massChoice = fixedMasses;
     randIn->param.mass1 = userParam->m1;
     randIn->param.mass2 = userParam->m2;
     randIn->param.fCutoff = userParam->signalfFinal;
@@ -5249,7 +5249,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     if (userParam->m1  > userParam->m2){
       randIn->mMin = userParam->m2;
       randIn->mMax = userParam->m1+1e-2;
-      
+
     }
     else{
       randIn->mMin = userParam->m1;
@@ -5258,11 +5258,11 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     if (userParam->psi0 != -1 ||userParam->psi3 != -1 || userParam->tau0 != -1 || userParam->tau3 != -1){
       sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
       BEPrintError(msg);
-    } 
+    }
   }
-     
+
   if (userParam->psi0 != -1 && userParam->psi3 != -1){
-   randIn->param.massChoice = fixedPsi; 
+   randIn->param.massChoice = fixedPsi;
    randIn->param.psi0 = userParam->psi0;
    randIn->param.psi3 = userParam->psi3;
    randIn->param.fCutoff = userParam->signalfFinal;
@@ -5270,45 +5270,45 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
    if (userParam->m1 != -1 ||userParam->m2 != -1 || userParam->tau0 != -1 || userParam->tau3 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
      BEPrintError(msg);
-   } 
-  } 
-  
+   }
+  }
+
  if (userParam->tau0 != -1 && userParam->tau3 != -1){
-   randIn->param.massChoice = fixedTau; 
+   randIn->param.massChoice = fixedTau;
    randIn->param.t0 = userParam->tau0;
    randIn->param.t3 = userParam->tau3;
    randIn->param.fCutoff = userParam->signalfFinal;
    if (userParam->psi0 != -1 ||userParam->psi3 != -1 || userParam->m1 != -1 || userParam->m2 != -1){
      sprintf(msg, "--m1 --m2 --psi0 --psi3 --tau0 --tau3 error. If particular injection is requested,  you must choose either (--m1,--m2) options or (--psi0,--psi3) or (--tau0,--tau3)\n");
-     BEPrintError(msg);  
-   } 
-  } 
+     BEPrintError(msg);
+   }
+  }
 
- if  (userParam->binaryInjection == BHNS){	 
+ if  (userParam->binaryInjection == BHNS){
    randIn->param.massChoice = bhns;
  }
 
  /*massChoice setting (end)*/
- 
+
  if (coarseBankIn->mmCoarse <=0 || coarseBankIn->mmCoarse>=1){
-   sprintf(msg, "--mm (%f) must be in the range ]0 1[\n", 
+   sprintf(msg, "--mm (%f) must be in the range ]0 1[\n",
 	   coarseBankIn->mmCoarse);
-     BEPrintError(msg);  
- } 
+     BEPrintError(msg);
+ }
  if (userParam->noiseModel == None){
    sprintf(msg, "--noise-model must be <LIGOI, LIGOA, VIRGO, GEO, TAMA, REALPSD>\n");
-   BEPrintError(msg);  
- } 
-  
+   BEPrintError(msg);
+ }
+
  if (coarseBankIn->numFcutTemplates <= 0){
    sprintf(msg, "--bank-number-fcut (%d) must be > 0>\n", coarseBankIn->numFcutTemplates);
-   BEPrintError(msg);  
- } 
- 
+   BEPrintError(msg);
+ }
+
  if (userParam->run == None){
    sprintf(msg, "--run must be <S2 or S3>\n");
-   BEPrintError(msg);  
- } 
+   BEPrintError(msg);
+ }
 
  if  ((randIn->mMin >= randIn->mMax ) || (randIn->mMin <=0)){
     sprintf(msg, "--signal-mass-range (%f %f) paramter must be sorted and > 0 \n",
@@ -5318,11 +5318,11 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
  else /* if valid parameters */
    {
      if (userParam->maxTotalMass != -1)
-       {  
+       {
 	 if (userParam->maxTotalMass >= (2 * randIn->mMax))
 	   {
 	  randIn->MMax = 2* randIn->mMax;
-	  randIn->etaMin = randIn->mMin * randIn->mMax 
+	  randIn->etaMin = randIn->mMin * randIn->mMax
 	    / (randIn->mMin + randIn->mMax)
 	    / (randIn->mMin + randIn->mMax);
 	   }
@@ -5333,8 +5333,8 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	       / (randIn->MMax )
 	       / (randIn->MMax );
 	   }
-       }          
-     else 
+       }
+     else
        {
 	 randIn->MMax = 2 * randIn->mMax;
 	 randIn->etaMin = randIn->mMin * (randIn->MMax  - randIn->mMin)
@@ -5344,14 +5344,14 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
      randIn->param.fCutoff = userParam->signalfFinal;
    }
 
-  if ((randIn->t0Min != 0 || randIn->t0Max != 0) && 
+  if ((randIn->t0Min != 0 || randIn->t0Max != 0) &&
         ((randIn->t0Min >= randIn->t0Max ) || (randIn->t0Min <=0))){
     sprintf(msg, "--signal-tau0-range (%f %f) paramter must be sorted and > 0 \n",
             randIn->t0Min, randIn->t0Max);
     BEPrintError(msg);
   }
 
-  if ((randIn->tnMin != 0 || randIn->tnMax != 0) && 
+  if ((randIn->tnMin != 0 || randIn->tnMax != 0) &&
         ((randIn->tnMin >= randIn->tnMax ) || (randIn->tnMin <=0))){
     sprintf(msg, "--signal-tau3-range (%f %f) paramter must be sorted and > 0 \n",
             randIn->tnMin, randIn->tnMax);
@@ -5365,7 +5365,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	{
 	case S2:
 	  userParam->calCacheName   = userParam->L1.dataFile.S2.calCacheName  ;
-	  userParam->frInCacheName  = userParam->L1.dataFile.S2.frInCacheName ;       
+	  userParam->frInCacheName  = userParam->L1.dataFile.S2.frInCacheName ;
 	  if (!userParam->chanName)
 	    userParam->chanName  =  userParam->L1.chanName;
 
@@ -5403,7 +5403,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	  userParam->calCacheName   = userParam->H1.dataFile.S2.calCacheName  ;
 	  userParam->frInCacheName  = userParam->H1.dataFile.S2.frInCacheName ;
 	 if (!userParam->chanName)  userParam->chanName  =  userParam->H1.chanName;
-		  
+
 	  break;
 	case S3:
 	  userParam->calCacheName   = userParam->H1.dataFile.S3.calCacheName  ;
@@ -5412,7 +5412,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	  break;
 	}
       break;
-     
+
     case H2:
       switch (userParam->run)
 	{
@@ -5437,9 +5437,9 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
 	  break;
 	}
       break;
-      
+
     case V1:break;
-      
+
     case G1:break;
     }
   if (userParam->faithfulness ==1 && randIn->type == 1)
@@ -5455,7 +5455,7 @@ void UpdateParams(InspiralCoarseBankIn *coarseBankIn,
     if (randIn->mMin >3 || randIn->mMax < 3 ){
       BEPrintError("if you want to inject BHNS systems then adjust the mass-range so that the minimum is less than 3 solar mass and the maximum  is greater than 3 solar mass !! \n");
     }
-  }      
+  }
 }
 
 
@@ -5491,7 +5491,7 @@ void Help()
 	  "\t are handled but it is straightforwad to implement the GEO case. \n\n");
   fprintf(stderr, msg);
   sprintf(msg,
-	  "\t The injections which can be performed uses the inspiral packages and therefore \n"  
+	  "\t The injections which can be performed uses the inspiral packages and therefore \n"
 	  "\t allows the following approximant [TaylorT1, TaylorT2, TaylorT3, EOB, PadeT1 \n"
 	  "\t and SpinTaylorT3. \n\n\tThe bank and filtering uses the noisemodels packages for time- \n"
 	  "\t domain approximant and BankEfficiency functions to perform BCV filtering method.\n"
@@ -5508,7 +5508,7 @@ void Help()
 	  "\t SEE lalapps documenation for further descrption and examples.\n");
   fprintf(stderr, "%s\n",msg);
 
-  
+
   fprintf(stderr, "[SYNOPSIS]\n");
   fprintf(stderr, "\t[--help]\n");
   fprintf(stderr, "\t[--verbose] \t\t\t gives some extra information on screen \n" );
@@ -5519,8 +5519,8 @@ void Help()
   fprintf(stderr, "\t[--bank-fcut-range<float float>] set the range of BCV fcut (in units of GM) \n");
   fprintf(stderr, "\t[--bank-ffinal<float>]\t\t set the final frequency to be used in the BCV moments computation\n");
   fprintf(stderr, "\t[--bank-grid-spacing <gridSpacing>]\t set the grid type of the BCV bank (Square, SquareNotOriented, Hexagonal, HexagonalNotOriented\t\n");
-  
-  
+
+
   fprintf(stderr, "\t[--bank-number-fcut<integer>]\t set the number of BCV fcut \n");
   fprintf(stderr, "\t[--bank-mass-range<float float>] set the range of mass to be covered by the SPA bank\n");
   fprintf(stderr, "\t[--bank-psi0-range<float float>] set the range of psi0 to be covered by the BCV bank\n");
@@ -5578,7 +5578,7 @@ void Help()
 }
 
 
-void 
+void
 BEAscii2Xml()
 {
   UINT4 line=0;
@@ -5587,7 +5587,7 @@ BEAscii2Xml()
   ResultIn trigger;
   REAL4 tau0, tau3, tau0I, tau3I, psi0, psi3, phaseI, beta;
   FILE *input1, *input2, *bank;
-  FILE *output;      
+  FILE *output;
   SnglInspiralTable     *inputData = NULL;
   INT4 numFileTriggers = 0, nStartPad;
 
@@ -5597,14 +5597,14 @@ BEAscii2Xml()
 
 
   char sbuf[512];
-  
+
   /*  if (argc>1) {
     if (strcmp(argv[1], "--help")==0) {
       BEAscii2XmlHelp();
-    }  
-    if (strcmp(argv[1], "-h")==0) { 
+    }
+    if (strcmp(argv[1], "-h")==0) {
       BEAscii2XmlHelp();
-    }  
+    }
     }*/
   /* Main program starts here */
   /* First we open the file containing the ascii results */
@@ -5627,7 +5627,7 @@ BEAscii2Xml()
       PRINT_LIGOLW_XML_HEADER(output);
       fprintf(stderr,"creating the header file -- done\n");
     }
-  else 
+  else
     {
       /* read prototype and save in outputfile */
       fprintf(stderr,"parsing the prototype  -- ");
@@ -5635,9 +5635,9 @@ BEAscii2Xml()
 	fputs(sbuf, output);
       fprintf(stderr," done\n");
 
-      
+
     }
-  
+
 
   /* insert the template bank here */
   if  ( (bank  = fopen(BEASCII2XML_BANK,"r"))==NULL)
@@ -5645,20 +5645,20 @@ BEAscii2Xml()
       fprintf(stderr,"error while opening input file %s\n",BEASCII2XML_BANK);
       fprintf(stderr,"the xml file will not contains the bank table\n");
     }
-  else 
+  else
     {
       /* read prototype and save in outputfile */
       fprintf(stderr,"parsing the bank  -- ");
       fprintf( stdout, "reading triggers from file: %s\n", BEASCII2XML_BANK );
-      numFileTriggers = 
+      numFileTriggers =
         LALSnglInspiralTableFromLIGOLw( &inputData,BEASCII2XML_BANK , 0, -1 );
-      fprintf(stderr," done %d\n", numFileTriggers);      
+      fprintf(stderr," done %d\n", numFileTriggers);
        myfprintf(output, LIGOLW_XML_SNGL_INSPIRAL );
        while(inputData)
 	{
 	  /*	  id = inputData->event_id->id;*/
-	  
-	  fprintf(output, SNGL_INSPIRAL_ROW, 
+
+	  fprintf(output, SNGL_INSPIRAL_ROW,
 		  inputData->ifo,
 		  inputData->search,
 		  inputData->channel,
@@ -5714,36 +5714,36 @@ BEAscii2Xml()
   fprintf(stderr,"done\n");
   /* read ascii input and save in xml format */
   fprintf(stderr,"reading the ascii file -- and saving xml file");
-  do  
+  do
     {
       fscanf(input1,BANKEFFICIENCY_PARAMS_ROW_SPACE,
 	     &trigger.psi0_trigger,
 	     &trigger.psi3_trigger,
 	     &trigger.beta_trigger,
-	     &psi0, 
+	     &psi0,
 	     &psi3,
-             &beta,   
-	     &tau0, 
-	     &tau3, 
-	     &tau0I, 
+             &beta,
+	     &tau0,
+	     &tau3,
+	     &tau0I,
 	     &tau3I,
-	     &trigger.fend_trigger, 
+	     &trigger.fend_trigger,
 	     &trigger.fend_inject,
 	     &trigger.mass1_inject,
 	     &trigger.mass2_inject,
 	     &phaseI,
 	     &trigger.rho_final,
-	     &trigger.snrAtCoaTime, 
+	     &trigger.snrAtCoaTime,
 	     &trigger.phase,
-	     &trigger.alphaF, 
-	     &trigger.bin, 
-	     &nStartPad, 
-	     &trigger.nfast); 
+	     &trigger.alphaF,
+	     &trigger.bin,
+	     &nStartPad,
+	     &trigger.nfast);
 
      if (start==0){
 	      start+=1;
       }
-      else 
+      else
       {
 	      fprintf(output,",\n");
       }
@@ -5751,25 +5751,25 @@ BEAscii2Xml()
 	     trigger.psi0_trigger,
 	     trigger.psi3_trigger,
 	     trigger.beta_trigger,
-	     psi0, 
+	     psi0,
 	     psi3,
-             beta,   
-	     tau0, 
-	     tau3, 
-	     tau0I, 
+             beta,
+	     tau0,
+	     tau3,
+	     tau0I,
 	     tau3I,
-	     trigger.fend_trigger, 
+	     trigger.fend_trigger,
 	     trigger.fend_inject,
 	     trigger.mass1_inject,
 	     trigger.mass2_inject,
 	     phaseI,
 	     trigger.rho_final,
-	     trigger.snrAtCoaTime, 
+	     trigger.snrAtCoaTime,
 	     trigger.phase,
-	     trigger.alphaF, 
-	     trigger.bin, 
-	     nStartPad, 
-	     trigger.nfast); 
+	     trigger.alphaF,
+	     trigger.bin,
+	     nStartPad,
+	     trigger.nfast);
              line++;
     }
    while(!feof(input1));
@@ -5789,21 +5789,21 @@ void BEAscii2XmlHelp(void)
 {
   fprintf(stderr, "BEAscii2Xml help:\n");
   fprintf(stderr, "=================\n");
-  /*  fprintf(stderr, "[PURPOSE]\n\t%s\n \t%s\n \t%s\n \t%s\n", 
+  /*  fprintf(stderr, "[PURPOSE]\n\t%s\n \t%s\n \t%s\n \t%s\n",
 		  "That code reads a file in ascii format generated by BankEfficiency",
 		  "code and generate the appropriate xml files. It is used if one forget",
 		  "to use the appropriate option within BankEfficiency code (--print-result-xml)",
 		  "or when the bankEfficiency code has been used within the condor ",
 		  "submit file. In that case indeed several ascii files have been ",
 		  "generated but no xml files.\n");
-  
-  fprintf(stderr, "[INPUT/OUTPUT]\n\t%s\n \t%s\n \t%s\n \t%s %s %s %s\n", 
+
+  fprintf(stderr, "[INPUT/OUTPUT]\n\t%s\n \t%s\n \t%s\n \t%s %s %s %s\n",
 		  "That code do not need any input argument but needs an input file",
 		  "in ascii format (the user has to be sure it is in the appropriate",
-		  "format) and then it writes an xml file into an output file \n", 
+		  "format) and then it writes an xml file into an output file \n",
 		  "the input and output file name are ", BEASCII2XML_INPUT1, "and", BEASCII2XML_OUTPUT);
   */
   exit(1);
-  
+
 
 }

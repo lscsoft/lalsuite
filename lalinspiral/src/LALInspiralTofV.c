@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,44 +17,26 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralTofVCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralTofV.c}}
+\brief NONE
 
 This module outputs
-\begin{equation}
-{\tt tofv} = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
-\end{equation}
-where the constants $t,$ $t_0,$ $v_0,$ and functions in the integrand
-$E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
+\f{equation}{
+\c tofv = t - t_0 + m \int_{v_0}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv\,.
+\f}
+where the constants \f$t,\f$ \f$t_0,\f$ \f$v_0,\f$ and functions in the integrand
+\f$E'(v)\f$ and \f${\cal F}(v)\f$ are defined in the \c void structure <tt>params.</tt>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralTofVCP}
-\index{\verb&LALInspiralTofV()&}
+\heading{Uses}
+\code
+LALDRombergIntegrate()
+\endcode
 
-\subsubsection*{Description}
-
-
-\subsubsection*{Algorithm}
-
-
-\subsubsection*{Uses}
-
-\texttt{LALDRombergIntegrate}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralTofVCV}}
-
-</lalLaTeX>  */
-
-
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -63,7 +45,7 @@ $E'(v)$ and ${\cal F}(v)$ are defined in the {\tt void} structure {\tt params.}
 
 NRCSID (LALINSPIRALTOFVC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralTofVCP"> */
+
 void
 LALInspiralTofV (
    LALStatus *status,
@@ -71,7 +53,7 @@ LALInspiralTofV (
    REAL8 v,
    void *params
    )
-{ /* </lalVerbatim>  */
+{
 
    void *funcParams;
    DIntegrateIn intinp;
@@ -87,7 +69,7 @@ LALInspiralTofV (
    ASSERT (tofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
    ASSERT(v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(v < 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT(v <= 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
    sign = 1.0;
 
@@ -127,5 +109,66 @@ LALInspiralTofV (
 
    DETATCHSTATUSPTR(status);
    RETURN (status);
+}
+
+
+
+REAL8
+XLALInspiralTofV (
+   REAL8 v,
+   void *params
+   )
+{
+   void *funcParams;
+   REAL8 (*funcToIntegrate)(REAL8, void *);
+   REAL8 xmin, xmax;
+   IntegralType type;
+   TofVIntegrandIn in2;
+   TofVIn *in1;
+   REAL8 answer;
+   REAL8 sign;
+
+
+   if (params == NULL)
+      XLAL_ERROR_REAL8(XLAL_EFAULT);
+   if (v <= 0.)
+      XLAL_ERROR_REAL8(XLAL_EDOM);
+   if (v >= 1.)
+      XLAL_ERROR_REAL8(XLAL_EDOM);
+
+   sign = 1.0;
+
+
+   in1 = (TofVIn *) params;
+
+   funcToIntegrate = XLALInspiralTofVIntegrand;
+   xmin = in1->v0;
+   xmax = v;
+   type = ClosedInterval;
+
+
+   in2.dEnergy = in1->dEnergy;
+   in2.flux = in1->flux;
+   in2.coeffs = in1->coeffs;
+
+   funcParams = (void *) &in2;
+
+   if (v==in1->v0)
+   {
+     return in1->t - in1->t0;
+   }
+
+   if(in1->v0 > v)
+   {
+      xmin = v;
+      xmax = in1->v0;
+      sign = -1.0;
+   }
+
+   answer = XLALREAL8RombergIntegrate (funcToIntegrate, funcParams, xmin, xmax, type);
+   if (XLAL_IS_REAL8_FAIL_NAN(answer))
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
+
+   return in1->t - in1->t0 + in1->totalmass*answer*sign;
 }
 

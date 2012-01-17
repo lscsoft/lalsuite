@@ -48,6 +48,8 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataBurstUtils.h>
@@ -108,6 +110,8 @@ struct options {
 	double q;
 	unsigned long seed;
 	double time_step;
+	double jitter;
+	char *time_slide_file;
 	char *user_tag;
 };
 
@@ -137,6 +141,8 @@ static struct options options_defaults(void)
 	defaults.q = XLAL_REAL8_FAIL_NAN;
 	defaults.seed = 0;
 	defaults.time_step = 210.0 / LAL_PI;
+	defaults.jitter = 0.0;
+	defaults.time_slide_file = NULL;
 	defaults.user_tag = NULL;
 
 	return defaults;
@@ -219,6 +225,17 @@ static void print_usage(void)
 "--time-step value\n" \
 "	Set the time betwen injections in seconds (default = 210 / pi).\n" \
 "\n" \
+"--jitter value\n" \
+"	Give the injection time a random offset within a centered window with a\n" \
+"	length specified by this parameter. Value is in seconds, default is 0.\n" \
+"\n" \
+"--time-slide-file filename\n" \
+"	Set the name of the LIGO Light-Weight XML file from which to load\n" \
+"	the time slide table.  The document must contain exactly 1 time\n" \
+"	slide vector, and only the contents of the process, process_params,\n" \
+"	search_summary (optional), sim_burst (optional), and time_slide tables\n" \
+"	will be copied into " PROGRAM_NAME "'s output.\n" \
+"\n" \
 "--user-tag string\n" \
 "	Set the user tag in the process and search summary tables to this.\n"
 	);
@@ -233,7 +250,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param, c
 	snprintf((*proc_param)->param, sizeof((*proc_param)->param), "--%s", param);
 	snprintf((*proc_param)->value, sizeof((*proc_param)->value), "%s", value);
 
-	return(&(*proc_param)->next);
+	return &(*proc_param)->next;
 }
 
 	
@@ -268,6 +285,8 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		{"ra-dec", required_argument, NULL, 'U'},
 		{"seed", required_argument, NULL, 'P'},
 		{"time-step", required_argument, NULL, 'Q'},
+		{"time-slide-file", required_argument, NULL, 'W'},
+		{"jitter", required_argument, NULL, 'X'},
 		{"user-tag", required_argument, NULL, 'R'},
 		{NULL, 0, NULL, 0}
 	};
@@ -426,6 +445,16 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		options.output = optarg;
 		break;
 
+	case 'W':
+		options.time_slide_file = optarg;
+		ADD_PROCESS_PARAM(process, "lstring");
+		break;
+
+	case 'X':
+		options.jitter = atof(optarg);
+		ADD_PROCESS_PARAM(process, "lstring");
+		break;
+
 	case 0:
 		/* option sets a flag */
 		break;
@@ -475,6 +504,10 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		fprintf(stderr, "error: --gps-end-time < --gps-start-time\n");
 		exit(1);
 	}
+	if(!options.time_slide_file) {
+		fprintf(stderr, "--time-slide-file is required\n");
+		exit(1);
+	}
 
 	switch(options.population) {
 	case POPULATION_TARGETED:
@@ -498,6 +531,144 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 	}
 
 	return options;
+}
+
+
+/* 
+ * ============================================================================
+ *
+ *                                XML Handling
+ *
+ * ============================================================================
+ */
+
+
+#define DEFINELIGOLWTABLEAPPEND(funcroot, rowtype) \
+static rowtype *XLAL ## funcroot ## Append(rowtype *head, rowtype *row) \
+{ \
+	rowtype *tail; \
+	if(!head) \
+		return row; \
+	for(tail = head; tail->next; tail = tail->next); \
+	tail->next = row; \
+	return head; \
+}
+
+
+DEFINELIGOLWTABLEAPPEND(ProcessTable, ProcessTable)
+DEFINELIGOLWTABLEAPPEND(ProcessParamsTable, ProcessParamsTable)
+DEFINELIGOLWTABLEAPPEND(TimeSlideTable, TimeSlide)
+DEFINELIGOLWTABLEAPPEND(SearchSummaryTable, SearchSummaryTable)
+DEFINELIGOLWTABLEAPPEND(SimBurstTable, SimBurst)
+
+
+static int load_tisl_file_and_merge(const char *filename, ProcessTable **process_table_head, ProcessParamsTable **process_params_table_head, TimeSlide **time_slide_table_head, SearchSummaryTable **search_summary_table_head, SimBurst **sim_burst_table_head)
+{
+	ProcessTable *tisl_process_table_head, *process_row;
+	ProcessParamsTable *tisl_process_params_table_head, *process_params_row;
+	SearchSummaryTable *tisl_search_summary_table_head;
+	TimeSlide *tisl_time_slide_table_head, *time_slide_row;
+	SearchSummaryTable *search_summary_row;
+	SimBurst *tisl_sim_burst_table_head, *sim_burst_row;
+	long process_id;
+
+	/* load the tables from the time slide document */
+
+	tisl_process_table_head = XLALProcessTableFromLIGOLw(filename);
+	if(!tisl_process_table_head)
+		return -1;
+	tisl_process_params_table_head = XLALProcessParamsTableFromLIGOLw(filename);
+	if(!tisl_process_params_table_head)
+		return -1;
+	tisl_time_slide_table_head = XLALTimeSlideTableFromLIGOLw(filename);
+	if(!tisl_time_slide_table_head)
+		return -1;
+	if(XLALLIGOLwHasTable(filename, "search_summary")) {
+		tisl_search_summary_table_head = XLALSearchSummaryTableFromLIGOLw(filename);
+		if(!tisl_search_summary_table_head)
+			return -1;
+	} else
+		tisl_search_summary_table_head = NULL;
+	if(XLALLIGOLwHasTable(filename, "sim_burst")) {
+		tisl_sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename, NULL, NULL);
+		if(!tisl_sim_burst_table_head)
+			return -1;
+	}
+		tisl_sim_burst_table_head = NULL;
+
+	/* check for more than one time slide in the document */
+
+	for(time_slide_row = tisl_time_slide_table_head->next; time_slide_row; time_slide_row = time_slide_row->next)
+		if(time_slide_row->time_slide_id != tisl_time_slide_table_head->time_slide_id) {
+			fprintf(stderr, "error: time slide file \"%s\" contains more than 1 offset vector", filename);
+			return -1;
+		}
+
+	/* find the next available process ID and reassign binj's rows to
+	 * avoid collisions */
+
+	process_id = XLALProcessTableGetNextID(tisl_process_table_head);
+	for(process_row = *process_table_head; process_row; process_row = process_row->next)
+		process_row->process_id = process_id;
+	for(process_params_row = *process_params_table_head; process_params_row; process_params_row = process_params_row->next)
+		process_params_row->process_id = process_id;
+	for(search_summary_row = *search_summary_table_head; search_summary_row; search_summary_row = search_summary_row->next)
+		search_summary_row->process_id = process_id;
+	for(sim_burst_row = *sim_burst_table_head; sim_burst_row; sim_burst_row = sim_burst_row->next)
+		sim_burst_row->process_id = process_id;
+
+	/* append our rows to the process and process params tables */
+
+	*process_table_head = XLALProcessTableAppend(tisl_process_table_head, *process_table_head);
+	*process_params_table_head = XLALProcessParamsTableAppend(tisl_process_params_table_head, *process_params_table_head);
+	*time_slide_table_head = XLALTimeSlideTableAppend(tisl_time_slide_table_head, *time_slide_table_head);
+	*search_summary_table_head = XLALSearchSummaryTableAppend(tisl_search_summary_table_head, *search_summary_table_head);
+	*sim_burst_table_head = XLALSimBurstTableAppend(tisl_sim_burst_table_head, *sim_burst_table_head);
+
+	/* done */
+
+	return 0;
+}
+
+
+static int qsort_strcmp(char **a, char **b)
+{
+	return strcmp(*a, *b);
+}
+
+
+static int set_instruments(ProcessTable *process, TimeSlide *time_slide_table_head)
+{
+	char *ifos = process->ifos;
+	char **time_slide_instruments;
+	int n_instruments, n;
+	TimeSlide *time_slide;
+
+	/* count the rows in the time_slide table */
+	for(n_instruments = 0, time_slide = time_slide_table_head; time_slide; n_instruments++, time_slide = time_slide->next);
+
+	/* allocate an array of pointers to the instrument values and sort
+	 * in alphabetical order */
+	time_slide_instruments = malloc(n_instruments * sizeof(*time_slide_instruments));
+	if(!time_slide_instruments)
+		return -1;
+	for(n = 0, time_slide = time_slide_table_head; time_slide; n++, time_slide = time_slide->next)
+		time_slide_instruments[n] = time_slide->instrument;
+	qsort(time_slide_instruments, n_instruments, sizeof(*time_slide_instruments), (int (*)(const void *, const void *)) qsort_strcmp);
+
+	/* merge into a comma-delimited string */
+	for(n = 0; n < n_instruments; n++) {
+		int copied;
+		copied = snprintf(ifos, sizeof(process->ifos) - (ifos - process->ifos), "%s%s", time_slide_instruments[n], n < n_instruments - 1 ? "," : "");
+		if(copied < 2 + (n < n_instruments - 1 ? 1 : 0)) {
+			fprintf(stderr, "error:  too many instruments for process table's ifos column\n");
+			free(time_slide_instruments);
+			return -1;
+		}
+		ifos += copied;
+	}
+	free(time_slide_instruments);
+	return 0;
 }
 
 
@@ -738,8 +909,7 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 	sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
 
 	/* duration and bandwidth.  keep picking until a valid pair is
-	 * obtained (i.e. their product is >= 2 / \pi) */
-
+ 	 * obtained (i.e. their product is >= 2 / \pi) */
 	do {
 		sim_burst->duration = ran_flat_log(rng, mindur, maxdur);
 		sim_burst->bandwidth = ran_flat_log(rng, minband, maxband);
@@ -829,7 +999,11 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
 	/* q and centre frequency.  three steps between minf and maxf */
 
 	sim_burst->q = q;
-	sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
+	if( minf == maxf ){
+		sim_burst->frequency = maxf;
+	} else {
+		sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
+	}
 
 	/* hrss */
 
@@ -858,7 +1032,7 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
  */
 
 
-static void write_xml(const char *filename, const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *search_summary_head, const SimBurst *sim_burst)
+static void write_xml(const char *filename, const ProcessTable *process_table_head, const ProcessParamsTable *process_params_table_head, const SearchSummaryTable *search_summary_table_head, const TimeSlide *time_slide_table_head, const SimBurst *sim_burst)
 {
 	LIGOLwXMLStream *xml;
 
@@ -877,7 +1051,13 @@ static void write_xml(const char *filename, const ProcessTable *process_table_he
 	}
 
 	/* search summary table */
-	if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, search_summary_head)) {
+	if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, search_summary_table_head)) {
+		/* error occured.  ?? do anything else ?? */
+		exit(1);
+	}
+
+	/* time slide table */
+	if(XLALWriteLIGOLwXMLTimeSlideTable(xml, time_slide_table_head)) {
 		/* error occured.  ?? do anything else ?? */
 		exit(1);
 	}
@@ -904,11 +1084,12 @@ static void write_xml(const char *filename, const ProcessTable *process_table_he
 int main(int argc, char *argv[])
 {
 	struct options options;
-	INT8 tinj;
+	INT8 tinj, jitter;
 	gsl_rng *rng;
-	ProcessTable *process_table_head;
+	ProcessTable *process_table_head = NULL, *process;
 	ProcessParamsTable *process_params_table_head = NULL;
-	SearchSummaryTable *search_summary_head;
+	SearchSummaryTable *search_summary_table_head = NULL, *search_summary;
+	TimeSlide *time_slide_table_head = NULL;
 	SimBurst *sim_burst_table_head = NULL;
 	SimBurst **sim_burst = &sim_burst_table_head;
 
@@ -927,12 +1108,10 @@ int main(int argc, char *argv[])
 	 */
 
 
-	process_table_head = XLALCreateProcessTableRow();
-	if(XLALPopulateProcessTable(process_table_head, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
+	process_table_head = process = XLALCreateProcessTableRow();
+	if(XLALPopulateProcessTable(process, PROGRAM_NAME, LALAPPS_VCS_IDENT_ID, LALAPPS_VCS_IDENT_STATUS, LALAPPS_VCS_IDENT_DATE, 0))
 		exit(1);
-
-	XLALGPSTimeNow(&process_table_head->start_time);
-	snprintf(process_table_head->ifos, sizeof(process_table_head->ifos), "H1,H2,L1");
+	XLALGPSTimeNow(&process->start_time);
 
 
 	/*
@@ -940,9 +1119,9 @@ int main(int argc, char *argv[])
 	 */
 
 
-	options = parse_command_line(&argc, &argv, process_table_head, &process_params_table_head);
+	options = parse_command_line(&argc, &argv, process, &process_params_table_head);
 	if(options.user_tag)
-		snprintf(process_table_head->comment, sizeof(process_table_head->comment), "%s", options.user_tag);
+		snprintf(process->comment, sizeof(process->comment), "%s", options.user_tag);
 
 
 	/*
@@ -950,13 +1129,12 @@ int main(int argc, char *argv[])
 	 */
 
 
-	search_summary_head = XLALCreateSearchSummaryTableRow(process_table_head);
+	search_summary_table_head = search_summary = XLALCreateSearchSummaryTableRow(process);
 	if(options.user_tag)
-		snprintf(search_summary_head->comment, sizeof(search_summary_head->comment), "%s", options.user_tag);
-	search_summary_head->nnodes = 1;
-	search_summary_head->out_start_time = *XLALINT8NSToGPS(&search_summary_head->in_start_time, options.gps_start_time);
-	search_summary_head->out_end_time = *XLALINT8NSToGPS(&search_summary_head->in_end_time, options.gps_end_time);
-	snprintf(search_summary_head->ifos, sizeof(search_summary_head->ifos), "%s", process_table_head->ifos);
+		snprintf(search_summary->comment, sizeof(search_summary->comment), "%s", options.user_tag);
+	search_summary->nnodes = 1;
+	search_summary->out_start_time = *XLALINT8NSToGPS(&search_summary->in_start_time, options.gps_start_time);
+	search_summary->out_end_time = *XLALINT8NSToGPS(&search_summary->in_end_time, options.gps_end_time);
 
 
 	/*
@@ -1020,7 +1198,14 @@ int main(int argc, char *argv[])
 		 * Peak time at geocentre in GPS seconds
 		 */
 
-		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj);
+		/* Add "jitter" to the injection if user requests it */
+		if(options.jitter > 0) {
+			jitter = gsl_ran_flat(rng, -options.jitter/2, options.jitter/2)*1e9;
+		} else {
+			jitter = 0;
+		}
+
+		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj + jitter);
 
 		/*
 		 * Peak time at geocentre in GMST radians
@@ -1039,18 +1224,27 @@ int main(int argc, char *argv[])
 	XLALPrintProgressBar(1.0);
 	XLALPrintInfo(" complete\n");
 
+	/* load time slide document and merge our table rows with its */
+
+	if(load_tisl_file_and_merge(options.time_slide_file, &process_table_head, &process_params_table_head, &time_slide_table_head, &search_summary_table_head, &sim_burst_table_head))
+		exit(1);
+	if(set_instruments(process, time_slide_table_head))
+		exit(1);
+	snprintf(search_summary->ifos, sizeof(search_summary->ifos), "%s", process->ifos);
+
 	/* output */
 
-	XLALGPSTimeNow(&process_table_head->end_time);
-	search_summary_head->nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process_table_head->process_id, 0);
-	write_xml(options.output, process_table_head, process_params_table_head, search_summary_head, sim_burst_table_head);
+	XLALGPSTimeNow(&process->end_time);
+	search_summary->nevents = XLALSimBurstAssignIDs(sim_burst_table_head, process->process_id, time_slide_table_head->time_slide_id, 0);
+	write_xml(options.output, process_table_head, process_params_table_head, search_summary_table_head, time_slide_table_head, sim_burst_table_head);
 
 	/* done */
 
 	gsl_rng_free(rng);
 	XLALDestroyProcessTable(process_table_head);
 	XLALDestroyProcessParamsTable(process_params_table_head);
-	XLALDestroySearchSummaryTable(search_summary_head);
+	XLALDestroyTimeSlideTable(time_slide_table_head);
+	XLALDestroySearchSummaryTable(search_summary_table_head);
 	XLALDestroySimBurstTable(sim_burst_table_head);
 	exit(0);
 }

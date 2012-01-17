@@ -1,0 +1,84 @@
+
+==================================================================
+python setup.py install --install-layout=deb
+
+    Will put things into dist-packages.  Jeeze.
+
+==================================================================
+Following instructions at: http://wiki.debian.org/Python/Packaging
+
+Make a tarball with "setup.py sdist"
+py2dsc -m 'Brian Moe <brian.moe@ligo.org>' ligo-gracedb-1.0.tar.gz 
+mv stuff in deb_dist/.../debian to debian/
+    careful preserving existing changelog
+    copy over copyright file
+    check Standards-version in control file. should be (at least) 3.8.4
+    check Depends in control file.  misc:Depends and python-m2crypto might be missing
+        Depends: ${misc:Depends}, ${python:Depends}, python-m2crypto
+modify changelog
+bump GIT_TAG
+check-in
+tag
+build pkgs
+push (and remember to push tags)
+
+    debuild -i -us -uc -b
+
+    Change the "-b" to "-S" to build only a source package.
+
+==================================================================
+
+Problems with SRPMS.  When Xavier tries to build.
+
+    got these errors while building:
+     
+    gracedb:
+    ---------
+    Checking for unpackaged file(s): /usr/lib/rpm/check-files /root/rpmbuild/BUILDROOT/ligo-gracedb-1.0-3.x86_64
+    error: Installed (but unpackaged) file(s) found:
+       /usr/lib/python2.6/site-packages/ligo/gracedb/__init__.pyo
+       /usr/lib/python2.6/site-packages/ligo/gracedb/utils.pyo
+     
+     
+    RPM build errors:
+        Installed (but unpackaged) file(s) found:
+       /usr/lib/python2.6/site-packages/ligo/gracedb/__init__.pyo
+       /usr/lib/python2.6/site-packages/ligo/gracedb/utils.pyo
+    env died with exit status 1
+     
+    Wed Dec 14 11:04:23 2011
+
+He suggests:
+
+    to solve this, please add to your copy of the spec files [also in your GIT
+    repos, if any], the following  line:
+  
+    gracedb:
+    ----------
+    %files -f INSTALLED_FILES
+    %defattr(-,root,root)
+    %exclude %{python_sitelib}/ligo/gracedb/*pyo        <-- this
+
+
+    lvalert:
+    ------------
+    %files -f INSTALLED_FILES
+    %defattr(-,root,root)
+    %exclude %{python_sitelib}/ligo/lvalert/*pyo       <-- this
+
+
+But really... WHY?  Why is the SRPM wrong?
+
+SOLN:
+    python setup.py bdist_rpm --spec-only
+    vi dist/FooBar-1.0.spec
+    python setup.py bdist_rpm --spec-file=dist/FooBar-1.0.spec
+
+    Oh.  But this does not work. --spec-file option is not recognized.  Nice.
+
+    The docs (the same ones with the bad --spec-file advice) suggest a "better"
+    way to do this is "to override the standard bdist_rpm command with one that
+    writes whatever else you want to the .spec file"
+
+    http://docs.python.org/release/2.0/dist/creating-rpms.html
+

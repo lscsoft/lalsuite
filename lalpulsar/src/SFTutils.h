@@ -36,6 +36,17 @@
 #ifndef _SFTUTILS_H  /* Double-include protection. */
 #define _SFTUTILS_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+#if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_1DARRAY)
+#define SWIGLAL_DYNAMIC_1DARRAY(...)
+#endif
+#if !defined(SWIG) && !defined(SWIGLAL_DYNAMIC_2DARRAY)
+#define SWIGLAL_DYNAMIC_2DARRAY(...)
+#endif
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -74,19 +85,25 @@ NRCSID( SFTUTILSH, "$Id$" );
 /*---------- exported types ----------*/
 
 /** A vector of COMPLEX8FrequencySeries */
-typedef struct {
+typedef struct tagCOMPLEX8FrequencySeriesVector {
+  SWIGLAL_STRUCT(COMPLEX8FrequencySeriesVector);
+  SWIGLAL_DYNAMIC_1DARRAY(COMPLEX8FrequencySeries, data, UINT4, length);
   UINT4 			length;		/**< number of SFTs */
   COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
 } COMPLEX8FrequencySeriesVector;
 
 /** A vector of REAL8FrequencySeries */
-typedef struct {
+typedef struct tagREAL8FrequencySeriesVector {
+  SWIGLAL_STRUCT(REAL8FrequencySeriesVector);
+  SWIGLAL_DYNAMIC_1DARRAY(REAL8FrequencySeries, data, UINT4, length);
   UINT4                  length;
   REAL8FrequencySeries   *data;
 } REAL8FrequencySeriesVector;
 
 /** A vector of REAL4FrequencySeries */
-typedef struct {
+typedef struct tagREAL4FrequencySeriesVector {
+  SWIGLAL_STRUCT(REAL4FrequencySeriesVector);
+  SWIGLAL_DYNAMIC_1DARRAY(REAL4FrequencySeries, data, UINT4, length);
   UINT4                  length;
   REAL4FrequencySeries   *data;
 } REAL4FrequencySeriesVector;
@@ -104,39 +121,51 @@ typedef REAL8FrequencySeriesVector PSDVector;
 
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
+  SWIGLAL_STRUCT(MultiSFTVector);
+  SWIGLAL_DYNAMIC_1DARRAY(SFTVector*, data, UINT4, length);
   UINT4      length;  	/**< number of ifos */
   SFTVector  **data; 	/**< sftvector for each ifo */
 } MultiSFTVector;
 
 
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
-typedef struct {
+typedef struct tagMultiPSDVector {
+  SWIGLAL_STRUCT(MultiPSDVector);
+  SWIGLAL_DYNAMIC_1DARRAY(PSDVector*, data, UINT4, length);
   UINT4      length;  	/**< number of ifos */
   PSDVector  **data; 	/**< sftvector for each ifo */
 } MultiPSDVector;
 
 /** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
-typedef struct {
+typedef struct tagMultiNoiseWeights {
+  SWIGLAL_STRUCT(MultiNoiseWeights);
+  SWIGLAL_DYNAMIC_1DARRAY(REAL8Vector*, data, UINT4, length);
   UINT4 length;		/**< number of ifos */
   REAL8Vector **data;	/**< weights-vector for each SFTs */
   REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
 } MultiNoiseWeights;
 
 /** A collection of (multi-IFO) time-series */
-typedef struct {
+typedef struct tagMultiREAL4TimeSeries {
+  SWIGLAL_STRUCT(MultiREAL4TimeSeries);
+  SWIGLAL_DYNAMIC_1DARRAY(REAL4TimeSeries*, data, UINT4, length);
   UINT4 length;			/**< number of ifos */
   REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
 } MultiREAL4TimeSeries;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct {
+typedef struct tagLIGOTimeGPSVector {
+  SWIGLAL_STRUCT(LIGOTimeGPSVector);
+  SWIGLAL_DYNAMIC_1DARRAY(LIGOTimeGPS, data, UINT4, length);
   UINT4 	length;		/**< number of timestamps */
   LIGOTimeGPS 	*data;		/**< array of timestamps */
   REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
 } LIGOTimeGPSVector;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
-typedef struct {
+typedef struct tagMultiLIGOTimeGPSVector {
+  SWIGLAL_STRUCT(MultiLIGOTimeGPSVector);
+  SWIGLAL_DYNAMIC_1DARRAY(LIGOTimeGPSVector*, data, UINT4, length);
   UINT4 	        length;	   /**< number of timestamps vectors or ifos */
   LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
 } MultiLIGOTimeGPSVector;

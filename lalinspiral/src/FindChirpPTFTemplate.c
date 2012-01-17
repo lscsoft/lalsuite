@@ -23,49 +23,38 @@
  *
  * Author: Brown, D. A., and Fazi, D.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpPTFTemplateCV">
-Author: Brown, D. A., and Fazi, D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpPTFTemplate.c}}
-\label{ss:FindChirpPTFTemplate.c}
+\author Brown, D. A., and Fazi, D.
+\file
+\ingroup FindChirpPTF_h
 
-Provides functions to create physical template family templates in a
-form that can be used by the \texttt{FindChirpPTFFilter()} function.
+\brief Provides functions to create physical template family templates in a
+form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpPTFTemplateCP}
-\idx{LALFindChirpPTFTemplate()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpPTFTemplate()} creates a physical template
+The function <tt>LALFindChirpPTFTemplate()</tt> creates a physical template
 family template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpPTFTemplateCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -76,7 +65,7 @@ LALDestroyVector()
 
 NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id$");
 
-/* <lalVerbatim file="FindChirpPTFTemplateCP"> */
+
 void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,
@@ -84,7 +73,7 @@ LALFindChirpPTFTemplate (
     InspiralTemplate           *InspTmplt,
     FindChirpTmpltParams       *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4 errcode;
   /* local variables */
@@ -118,16 +107,16 @@ LALFindChirpPTFTemplate (
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
   ASSERT( fcTmplt->PTFQtilde->data, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-
-  /* check that the parameter structure exists */
   ASSERT( params, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->PTFQ, status,
+  ASSERT( fcTmplt->PTFQ, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->PTFQ->length == 5, status,
+  ASSERT( fcTmplt->PTFQ->length == 5, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
-  ASSERT( params->PTFQ->data, status,
+  ASSERT( fcTmplt->PTFQ->data, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
+
+  /* check that the parameter structure exists */
 
   ASSERT( params->fwdPlan, status,
       FINDCHIRPH_ENULL, FINDCHIRPH_MSGENULL );
@@ -157,7 +146,7 @@ LALFindChirpPTFTemplate (
   InspTmplt->fLower = fcTmplt->tmplt.fLower = params->fLow;
 
   /* Zero out the Q and Qtilde vectors */
-  memset( params->PTFQ->data, 0, 5 * N * sizeof(REAL4) );
+  memset( fcTmplt->PTFQ->data, 0, 5 * N * sizeof(REAL4) );
   memset( fcTmplt->PTFQtilde->data, 0, 5 * (N /2 + 1) * sizeof(COMPLEX8) );
 
  /* Point the dummy variables Q and Qtilde to the actual output structures */
@@ -165,7 +154,7 @@ LALFindChirpPTFTemplate (
   {
     Q[i].length      = N;
     Qtilde[i].length = N / 2 + 1;
-    Q[i].data        = params->PTFQ->data + (i * N);
+    Q[i].data        = fcTmplt->PTFQ->data + (i * N);
     Qtilde[i].data   = fcTmplt->PTFQtilde->data + (i * (N / 2 + 1)) ;
   }
 
@@ -226,7 +215,7 @@ LALFindChirpPTFTemplate (
 }
 
 
-/* <lalVerbatim file="FindChirpPTFTemplateCP"> */
+
 void
 LALFindChirpPTFNormalize(
     LALStatus                  *status,
@@ -234,7 +223,7 @@ LALFindChirpPTFNormalize(
     FindChirpSegment           *fcSeg,
     FindChirpDataParams        *params
     )
-/* </lalVerbatim> */
+
 {
   UINT4         i, j, k, kmin, len, kmax;
   REAL4         f_min, deltaT, deltaF, fFinal;

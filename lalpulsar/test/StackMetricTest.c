@@ -53,7 +53,7 @@ declination \c dec (in radians), its frequency \c f0 (in Hz),
 and zero or more spindown parameters \c f\f$k\f$ (in \f$\mathrm{Hz}^k\f$),
 all evaluated at the start time of the search \c t0.  If any (or
 all) of the command-line arguments are missing, they will be set from
-<tt>#define</tt>d defaults.
+<tt>\#define</tt>d defaults.
 
 \heading{Algorithm}
 

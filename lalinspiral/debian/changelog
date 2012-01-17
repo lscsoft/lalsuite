@@ -1,3 +1,29 @@
+lalinspiral (1.2.1-1) unstable; urgency=low
+
+  * bug fixes to LALPhenomWaveform
+  * update to automake-1.11.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 28 Dec 2011 09:59:32 -0600
+
+lalinspiral (1.2.0-1) unstable; urgency=low
+
+  * LALInspiral 1.2.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:03:44 -0600
+
+lalinspiral (1.2.0~rc2-1) unstable; urgency=low
+
+  * LALInspiral 1.2.0 Release Candidate 2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:34:02 -0600
+
+lalinspiral (1.2.0~rc1-1) unstable; urgency=low
+
+  * LALInspiral 1.2.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:08:46 -0600
+
 lalinspiral (1.1.0-1lscsoft1) unstable; urgency=low
 
   * LALInspiral 1.1.0

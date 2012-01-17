@@ -17,46 +17,37 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralLongestTemplateInBankCV">
-Author: Sathyaprakash, B.S.
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B.S.
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
+\brief To find the longest template in a template bank.
 
-\subsection{Module \texttt{LALInspiralLongestTemplateInBank.c}}
-To find the longest template in a template bank.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralLongestTemplateInBankCP}
-\idx{LALInspiralLongestTemplateInBank()}
-
-\subsubsection*{Description}
+\heading{Description}
 Given the parameters of a template bank find the longest template
 in the bank. This is done by looking at the duration for which
 a signal corresponding to smallest masses lasts. One simply calls
-the {\tt LALInspiralWaveLength} code for a system consisting
-of two stars each of mass {\tt mMin.}
+the \c LALInspiralWaveLength code for a system consisting
+of two stars each of mass <tt>mMin.</tt>
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALInspiralParameterCalc
 LALInspiralWaveLength
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralLongestTemplateInBankCV}}
-
-</lalLaTeX>  */
+*/
 
 #include <lal/LALInspiralBank.h>
 
 NRCSID (INSPIRALSEARCHC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralLongestTemplateInBankCP"> */
+
 void
 LALInspiralLongestTemplateInBank
    (
@@ -64,7 +55,7 @@ LALInspiralLongestTemplateInBank
    UINT4                *templateLength,
    InspiralCoarseBankIn *coarseIn
    )
-{  /*  </lalVerbatim>  */
+{
 
    InspiralTemplate param;
    INITSTATUS (status, "LALInspiralLongestTemplateInBank", INSPIRALSEARCHC);

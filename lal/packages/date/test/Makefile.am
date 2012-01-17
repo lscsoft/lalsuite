@@ -33,7 +33,5 @@ INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include -I$(srcdir)/../src
 TESTS = TestJulianDay TestLMST TestDelay TestGPStoUTC \
         TestUTCtoGPS TestLeapSecs TestGPStoFloat TestIncrementGPS TestStrToGPS
 TESTS_ENVIRONMENT = 1>/dev/null
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =

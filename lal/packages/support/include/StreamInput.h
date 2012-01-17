@@ -17,59 +17,56 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="StreamInputHV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\file
 
-/********************************************************** <lalLaTeX>
-
-\section{Header \texttt{StreamInput.h}}
-\label{s:StreamInput.h}
+\heading{Header \ref StreamInput.h}
+\latexonly\label{s_StreamInput_h}\endlatexonly
 
 Provides routines to read data from an open stream and store it in LAL
 data structures.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include "StreamInput.h"
-\end{verbatim}
+\endcode
 
-\noindent This header provides prototypes for routines that construct
+This header provides prototypes for routines that construct
 LAL data structures using the data from a file (or other I/O) stream.
 The routines do not provide a system-level interface to create files
 and open or close file streams; they simply assume that they have been
 passed an open, readable stream.  Nonetheless, because they involve
 I/O stream manipulation, these routines are placed in the
-\verb@lalsupport@ library rather than in \verb@lal@ proper.
+\c lalsupport library rather than in \c lal proper.
 
-The routines in \verb@StreamVectorInput.c@ and
-\verb@StreamVectorSequenceInput.c@ are compartmentalized in such a way
+The routines in \ref StreamVectorInput.c and
+\ref StreamVectorSequenceInput.c are compartmentalized in such a way
 that they can easily be converted if the LAL specification later
 changes the way in which I/O streams are handled.  In partucular, the
-only file I/O commands used are \verb@fgets()@ and \verb@feof()@.
+only file I/O commands used are <tt>fgets()</tt> and <tt>feof()</tt>.
 Thus the upgrade would involve only the following global changes:
-\begin{enumerate}
-\item Replace all occurrences of \verb@FILE *@ with the name of the
-LAL I/O stream pointer type.
-\item Replace all occurrences of \verb@fgets()@ and \verb@feof()@ with
-equivalent LAL functions.
-\end{enumerate}
+<ol>
+<li> Replace all occurrences of <tt>FILE *</tt> with the name of the
+LAL I/O stream pointer type.</li>
+<li> Replace all occurrences of <tt>fgets()</tt> and <tt>feof()</tt> with
+equivalent LAL functions.</li>
+</ol>
 In particular, there is no need to translate routines such as
-\verb@fscanf()@; one should simply read data into a LAL
-\verb@CHARVector@ and then use \verb@sscanf()@ to format the input.
+<tt>fscanf()</tt>; one should simply read data into a LAL
+\c CHARVector and then use <tt>sscanf()</tt> to format the input.
 This is the approach used in the numerical input routines in
-\verb@StreamVectorInput.c@ and \verb@StreamVectorSequenceInput.c@.
+\ref StreamVectorInput.c and \ref StreamVectorSequenceInput.c.
 
-The routines in \verb@StreamSequenceInput.c@ are less robust but much
-more efficient: they use \verb@fscanf()@ to parse the input stream
+The routines in \ref StreamSequenceInput.c are less robust but much
+more efficient: they use <tt>fscanf()</tt> to parse the input stream
 directly.  They are intended primarily for test programs that may need
 to read large datafiles of undetermined length.  The routines in
-\verb@StreamSeriesInput.c@ and \verb@StreamGridInput.c@ also parse the
-input stream directly using \verb@fscanf()@, to avoid potentially
+\ref StreamSeriesInput.c and \ref StreamGridInput.c also parse the
+input stream directly using <tt>fscanf()</tt>, to avoid potentially
 crippling computational overhead.
 
-******************************************************* </lalLaTeX> */
+*/
 
 #ifndef _STREAMINPUT_H
 #define _STREAMINPUT_H
@@ -83,9 +80,9 @@ extern "C" {
 
 NRCSID(STREAMINPUTH,"$Id$");
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
+/**
+\heading{Error conditions}
+ \name Error Codes */ /*@{*/
 #define STREAMINPUTH_ENUL  1
 #define STREAMINPUTH_EOUT  2
 #define STREAMINPUTH_EMEM  3
@@ -107,21 +104,21 @@ NRCSID(STREAMINPUTH,"$Id$");
 #define STREAMINPUTH_MSGEDIM  "Inconsistent or non-positive arrayDim value"
 #define STREAMINPUTH_MSGEFMT  "Badly formatted number"
 #define STREAMINPUTH_MSGEBUF  "BUFFSIZE not a multiple of largest complex type size"
-/******************************************** </lalErrTable><lalLaTeX>
+/*@}*//**
 
-\subsection*{Types}
+\heading{Types}
 
-******************************************************* </lalLaTeX> */
+*/
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{StreamInputHV}}
-</lalLaTeX> */
+
+
+
 
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{StreamVectorInputC}
-</lalLaTeX> */
+
+
+
 void
 LALCHARReadVector( LALStatus  *status, CHARVector **vector, FILE *stream );
 
@@ -149,9 +146,9 @@ LALSReadVector( LALStatus  *status, REAL4Vector **vector, FILE *stream, BOOLEAN 
 void
 LALDReadVector( LALStatus  *status, REAL8Vector **vector, FILE *stream, BOOLEAN strict );
 
-/* <lalLaTeX>
-\newpage\input{StreamVectorSequenceInputC}
-</lalLaTeX> */
+
+
+
 void
 LALCHARReadVectorSequence( LALStatus  *status, CHARVectorSequence **sequence, FILE *stream );
 
@@ -179,9 +176,9 @@ LALSReadVectorSequence( LALStatus  *status, REAL4VectorSequence **sequence, FILE
 void
 LALDReadVectorSequence( LALStatus  *status, REAL8VectorSequence **sequence, FILE *stream );
 
-/* <lalLaTeX>
-\newpage\input{StreamSequenceInputC}
-</lalLaTeX> */
+
+
+
 void
 LALCHARReadSequence( LALStatus *status, CHARSequence **sequence, FILE *stream );
 
@@ -215,9 +212,9 @@ LALCReadSequence( LALStatus *status, COMPLEX8Sequence **sequence, FILE *stream )
 void
 LALZReadSequence( LALStatus *status, COMPLEX16Sequence **sequence, FILE *stream );
 
-/* <lalLaTeX>
-\newpage\input{StreamSeriesInputC}
-</lalLaTeX> */
+
+
+
 void
 LALI2ReadTSeries( LALStatus *status, INT2TimeSeries *series, FILE *stream );
 void
@@ -302,9 +299,9 @@ LALCReadFSeries( LALStatus *status, COMPLEX8FrequencySeries *series, FILE *strea
 void
 LALZReadFSeries( LALStatus *status, COMPLEX16FrequencySeries *series, FILE *stream );
 
-/* <lalLaTeX>
-\newpage\input{StreamGridInputC}
-</lalLaTeX> */
+
+
+
 void
 LALI2ReadGrid( LALStatus *status, INT2Grid **grid, FILE *stream );
 void
@@ -326,10 +323,10 @@ LALCReadGrid( LALStatus *status, COMPLEX8Grid **grid, FILE *stream );
 void
 LALZReadGrid( LALStatus *status, COMPLEX16Grid **grid, FILE *stream );
 
-/* <lalLaTeX>
-\newpage\input{StreamInputTestC}
-\newpage\input{StreamSeriesInputTestC}
-</lalLaTeX> */
+
+
+
+
 
 #ifdef __cplusplus
 }

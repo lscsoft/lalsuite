@@ -17,35 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralHexagonalBankCV">
-Author: Cokelaer Thomas
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer Thomas
+\file
+\brief NONE
 
-/*  <lalLaTeX>
+\heading{Description}
 
-\subsection{Module \texttt{LALInspiralHexagonalBank.c}}
+\heading{Algorithm}
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralHexagonalBankCP}
-\idx{LALInspiralHexagonalBank()}
-
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALInspiralParameterCalc()
 LALInspiralComputeMetric()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vspace{0.1in}
-\vfill{\footnotesize\input{LALInspiralHexagonalBankCV}}
-</lalLaTeX>  */
+*/
 
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
@@ -81,7 +70,7 @@ LALInspiralCreatePNCoarseBankHexa(
   InspiralBankParams    bankPars;
   InspiralTemplate      *tempPars;
   InspiralMomentsEtc    moments;
-  InspiralCell          *cells;
+  InspiralCell          *cells=NULL;
   HexaGridParam         gridParam;
   CellEvolution         cellEvolution;
   CellList 		*cellList = NULL;
@@ -689,7 +678,7 @@ LALInitHexagonalBank(
       if ( (*cell)[id].RectPosition[i] == Above) above++;
     }
     if (below==2 && above == 2){
-      (*cell)[id].status = Edge;
+      (*cell)[id].position = Edge;
       (cellEvolution->fertile)=cellEvolution->fertile-1;
       LALListDelete(cellList, id);
 

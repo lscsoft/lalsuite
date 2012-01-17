@@ -17,45 +17,37 @@
 *  MA  02111-1307  USA
 */
 
-#if 0
-<lalVerbatim file="LALInspiralGetApproximantStringCV">
-Author: Craig Robinson
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{LALInspiralGetApproximantString.c}}
+\author Craig Robinson
+\file
 
-Function for creating the approximant string which gets written to output
+\brief Function for creating the approximant string which gets written to output
 files for a given approximant and PN order of the phasing.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{XLALInspiralGetApproximantStringCP}
-\idx{XLALXLALInspiralGetApproximantString()}
-\begin{itemize}
-   \item \texttt{output,} Output, Pointer to the string in which to place the output
-   \item \texttt{length,} Input, the length of the output string
-   \item \texttt{approx,} Input, enumeration of the waveform approximant
-   \item \texttt{order,} Input, post-Newtonian order of the phasing.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>XLALXLALInspiralGetApproximantString()</tt>:
+<ul>
+   <li> <tt>output,</tt> Output, Pointer to the string in which to place the output
+   </li><li> <tt>length,</tt> Input, the length of the output string
+   </li><li> <tt>approx,</tt> Input, enumeration of the waveform approximant
+   </li><li> <tt>order,</tt> Input, post-Newtonian order of the phasing.</li>
+</ul>
 
-\subsubsection*{Algorithm}
+\heading{Description}
 
-\subsubsection*{Uses}
+\heading{Algorithm}
 
-\begin{verbatim}
+\heading{Uses}
+
+\code
 snprintf
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralRingdownWaveCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
@@ -70,18 +62,15 @@ int XLALInspiralGetApproximantString( CHAR        *output,
                                       LALPNOrder  order
                                     )
 {
-
-  static const char *func = "XLALInspiralGetApproximantString";
-
   CHAR approxString[LIGOMETA_SEARCH_MAX];
   CHAR orderString[LIGOMETA_SEARCH_MAX];
 
 #ifndef LAL_NDEBUG
   if (!output)
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if (length < 1)
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 #endif
 
   /* Set the approximant string */
@@ -143,9 +132,19 @@ int XLALInspiralGetApproximantString( CHAR        *output,
           "SpinTaylorT3" );
       break;
 
+    case SpinTaylorFrameless:
+      snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          "SpinTaylorFrameless" );
+      break;
+
     case SpinTaylor:
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "SpinTaylor" );
+      break;
+
+    case SpinQuadTaylor:
+      snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+               "SpinQuadTaylor" );
       break;
 
     case FindChirpSP:
@@ -203,7 +202,7 @@ int XLALInspiralGetApproximantString( CHAR        *output,
 
     default:
       XLALPrintError("Unknown or unsupported approximant.\n");
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
   }
 
@@ -258,7 +257,7 @@ int XLALInspiralGetApproximantString( CHAR        *output,
 
     default:
       XLALPrintError( "Unknown or unsupported order.\n" );
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
   }
 

@@ -16,20 +16,23 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-
-/** \file
- * \ingroup std
- * \author Creighton, J., and Cannon, K.
- * \brief XLAL routines for computing the sidereal time.
- */
-
-
 #include <math.h>
 #include <lal/Date.h>
 
+/** \defgroup SideralTime SideralTime
+ * \ingroup date
+ * \author Creighton, J., and Cannon, K.
+ * \brief XLAL routines for computing the sidereal time.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/Date.h>
+ * \endcode
+ */
 
-/**
- * Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
+/*@{*/
+
+/** Returns the Greenwich Sidereal Time IN RADIANS corresponding to a
  * specified GPS time.  Aparent sidereal time is computed by providing the
  * equation of equinoxes in units of seconds.  For mean sidereal time, set
  * this parameter to 0.
@@ -73,7 +76,7 @@ REAL8 XLALGreenwichSiderealTime(
 	 */
 
 	if(!XLALGPSToUTC(&utc, gpstime->gpsSeconds))
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 
 	/*
 	 * And now to Julian day number.  Again, only accurate to integer
@@ -82,7 +85,7 @@ REAL8 XLALGreenwichSiderealTime(
 
 	julian_day = XLALJulianDay(&utc);
 	if(XLAL_IS_REAL8_FAIL_NAN(julian_day))
-		XLAL_ERROR_REAL8(__func__, XLAL_EFUNC);
+		XLAL_ERROR_REAL8(XLAL_EFUNC);
 
 	/*
 	 * Convert Julian day number to the number of centuries since the
@@ -162,7 +165,7 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 			return gps;
 		XLALGPSAdd(gps, error * gps_seconds_per_sidereal_radian);
 	} while(--iterations);
-	XLAL_ERROR_NULL(__func__, XLAL_EMAXITER);
+	XLAL_ERROR_NULL(XLAL_EMAXITER);
 }
 
 
@@ -180,3 +183,5 @@ LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 {
 	return XLALGreenwichMeanSiderealTimeToGPS(gmst - equation_of_equinoxes, gps);
 }
+
+/*@}*/

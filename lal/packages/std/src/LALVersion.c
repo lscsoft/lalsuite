@@ -58,13 +58,13 @@ is also provided if the verbose flag is set.
 
 NRCSID( LALVERSIONC, "$Id$" );
 
-const char *lalVersion       = LAL_VERSION;
-const int   lalVersionMajor  = LAL_VERSION_MAJOR;
-const int   lalVersionMinor  = LAL_VERSION_MINOR;
-const int   lalVersionMicro  = LAL_VERSION_MICRO;
-const int   lalVersionDevel  = LAL_VERSION_DEVEL;
-const char *lalConfigureArgs = LAL_CONFIGURE_ARGS;
-const char *lalConfigureDate = LAL_CONFIGURE_DATE;
+const char *const lalVersion       = LAL_VERSION;
+const int         lalVersionMajor  = LAL_VERSION_MAJOR;
+const int         lalVersionMinor  = LAL_VERSION_MINOR;
+const int         lalVersionMicro  = LAL_VERSION_MICRO;
+const int         lalVersionDevel  = LAL_VERSION_DEVEL;
+const char *const lalConfigureArgs = LAL_CONFIGURE_ARGS;
+const char *const lalConfigureDate = LAL_CONFIGURE_DATE;
 
 /* <lalVerbatim file="LALVersionCP"> */
 void

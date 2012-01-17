@@ -444,15 +444,6 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, gpstime );
           exit( 1 );
         }
-        if ( gpstime > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
-              long_options[option_index].name, gpstime );
-          exit( 1 );
-        }
         startCoincidence = (INT4) gpstime;
         ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startCoincidence );
         break;
@@ -466,15 +457,6 @@ int main( int argc, char *argv[] )
               "GPS start time is prior to " 
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
-              long_options[option_index].name, gpstime );
-          exit( 1 );
-        }
-        if ( gpstime > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
               long_options[option_index].name, gpstime );
           exit( 1 );
         }

@@ -17,78 +17,67 @@
 *  MA  02111-1307  USA
 */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <getopt.h>
-
 #include "coh_PTF.h"
 
-#include "lalapps.h"
-#include "errutil.h"
-#include "gpstime.h"
-#include "injsgnl.h"
-#include "processtable.h"
-
 RCSID( "$Id$" );
-
-extern int vrbflg;
-static int coh_PTF_usage( const char *program );
-static int coh_PTF_default_params( struct coh_PTF_params *params );
-
 
 /* parse command line arguments using getopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {
+
+  CHAR                         ifo[LIGOMETA_IFO_MAX];
+  UINT4                        ifoNumber;
   static struct coh_PTF_params localparams;
   memset( &localparams.haveTrig, 0, LAL_NUM_IFO * sizeof(int) );
-  struct option long_options[] =
+  struct option                long_options[] =
   {
-    { "verbose", no_argument, &vrbflg, 1 },
-    { "strain-data", no_argument, &localparams.strainData, 1 },
-    { "simulated-data", no_argument, &localparams.simData, 1 },
-    { "zero-data", no_argument, &localparams.zeroData, 1 },
-    { "white-spectrum", no_argument, &localparams.whiteSpectrum, 1 },
+    { "verbose",            no_argument, &vrbflg, 1 },
+    { "strain-data",        no_argument, &localparams.strainData, 1 },
+    { "zero-data",          no_argument, &localparams.zeroData, 1 },
+    { "theoretical-spectrum",     no_argument, &localparams.whiteSpectrum, 1 },
     { "write-raw-data",     no_argument, &localparams.writeRawData, 1 },
     { "write-data",         no_argument, &localparams.writeProcessedData, 1 },
     { "write-inv-spectrum", no_argument, &localparams.writeInvSpectrum, 1 },
     { "write-segment",      no_argument, &localparams.writeSegment, 1 },
     { "write-filter-output",no_argument, &localparams.writeFilterOutput, 1 },
-    { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1},
-    { "do-null-stream"     ,no_argument, &localparams.doNullStream,1},
-    { "do-trace-snr"       ,no_argument, &localparams.doTraceSNR,1},
-    { "do-bank-veto"       ,no_argument, &localparams.doBankVeto,1},
-    { "do-auto-veto"       ,no_argument, &localparams.doAutoVeto,1},
-    { "do-chi-square"      ,no_argument, &localparams.doChiSquare,1},
-/*    {"g1-data",         no_argument,   &(haveTrig[LAL_IFO_G1]),   1 },*/
-    {"h1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_H1]),   1 },
-    {"h2-data",         no_argument,&(localparams.haveTrig[LAL_IFO_H2]),   1 },
-    {"l1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_L1]),   1 },
-/*    {"t1-data",         no_argument,   &(haveTrig[LAL_IFO_T1]),   1 },*/
-    {"v1-data",      no_argument,   &(localparams.haveTrig[LAL_IFO_V1]),   1 },
-    { "help",                    no_argument,       0, 'h' },
-    { "version",                 no_argument,       0, 'V' },
+    { "analyze-inj-segs-only",no_argument, &localparams.analyzeInjSegsOnly, 1 },
+    { "do-null-stream",     no_argument, &localparams.doNullStream, 1 },
+    { "do-trace-snr",       no_argument, &localparams.doTraceSNR, 1 },
+    { "do-bank-veto",       no_argument, &localparams.doBankVeto, 1 },
+    { "do-auto-veto",       no_argument, &localparams.doAutoVeto, 1 },
+    { "do-chi-square",      no_argument, &localparams.doChiSquare, 1 },
+    { "do-sngl-chi-tests",  no_argument, &localparams.doSnglChiSquared, 1},
+/*    {"g1-data",             no_argument, &(haveTrig[LAL_IFO_G1]), 1 },*/
+    {"h1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_H1]),1},
+    {"h2-data",             no_argument, &(localparams.haveTrig[LAL_IFO_H2]),1},
+    {"l1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_L1]),1},
+/*    {"t1-data",             no_argument, &(haveTrig[LAL_IFO_T1]), 1 },*/
+    {"v1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_V1]),1},
+    { "help",               no_argument, 0, 'h' },
+    { "version",            no_argument, 0, 'V' },
+    { "simulated-data",          required_argument, 0, '6' },
     { "gps-start-time",          required_argument, 0, 'a' },
     { "gps-start-time-ns",       required_argument, 0, 'A' },
     { "gps-end-time",            required_argument, 0, 'b' },
     { "gps-end-time-ns",         required_argument, 0, 'B' },
     { "trigger-time",            required_argument, 0, '<' },
     { "trigger-time-ns",         required_argument, 0, '>' },
-    { "h1-channel-name",            required_argument, 0, 'c' },
-    { "h1-frame-cache",             required_argument, 0, 'D' },
-    { "h2-channel-name",            required_argument, 0, 'x' },
-    { "h2-frame-cache",             required_argument, 0, 'X' },
-    { "l1-channel-name",            required_argument, 0, 'y' },
-    { "l1-frame-cache",             required_argument, 0, 'Y' },
-    { "v1-channel-name",            required_argument, 0, 'z' },
-    { "v1-frame-cache",             required_argument, 0, 'Z' },
+    { "h1-channel-name",         required_argument, 0, 'c' },
+    { "h1-frame-cache",          required_argument, 0, 'D' },
+    { "h2-channel-name",         required_argument, 0, 'x' },
+    { "h2-frame-cache",          required_argument, 0, 'X' },
+    { "l1-channel-name",         required_argument, 0, 'y' },
+    { "l1-frame-cache",          required_argument, 0, 'Y' },
+    { "v1-channel-name",         required_argument, 0, 'z' },
+    { "v1-frame-cache",          required_argument, 0, 'Z' },
     { "debug-level",             required_argument, 0, 'd' },
-    { "cutoff-frequency",        required_argument, 0, 'e' },
+    { "low-template-freq",       required_argument, 0, 'e' },
+    { "low-filter-freq",         required_argument, 0, 'H' },
+    { "high-filter-freq",        required_argument, 0, 'I' },
     { "highpass-frequency",      required_argument, 0, 'E' },
     { "injection-file",          required_argument, 0, 'i' },
     { "snr-threshold",           required_argument, 0, 'j' },
+    { "sngl-snr-threshold",      required_argument, 0, '1' },
     { "trig-time-window",        required_argument, 0, 'J' },
     { "user-tag",                required_argument, 0, 'k' },
     { "ifo-tag",                 required_argument, 0, 'K' },
@@ -116,9 +105,19 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "pad-data",                required_argument, 0, 'W' },
     { "right-ascension",         required_argument, 0, 'f' },
     { "declination",             required_argument, 0, 'F' },
+    { "sky-error",               required_argument, 0, 'g' },
+    { "timing-accuracy",         required_argument, 0, 'G' },
+    { "approximant",             required_argument, 0, 'C' },
+    { "order",                   required_argument, 0, 'v' },
+    { "h1-slide-segment",        required_argument, 0, '!' }, 
+    { "h2-slide-segment",        required_argument, 0, '&' },
+    { "l1-slide-segment",        required_argument, 0, '(' },
+    { "v1-slide-segment",        required_argument, 0, ')' },
+    { "sky-positions-file",      required_argument, 0, '#' },
+    { "fft-level",               required_argument, 0, '|' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:d:D:e:E:f:F:h:i:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:V:w:W:x:X:y:Y:z:Z";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:6:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -186,17 +185,136 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'd': /* debug-level */
         set_debug_level( optarg );
         break;
-      case 'e': /* cutoff-frequency */
-        localparams.lowCutoffFrequency = atof( optarg );
+      case 'e': /* start frequency of template generation */
+        localparams.lowTemplateFrequency = atof( optarg );
+        break;
+      case 'H': /* start frequency of matched filter */
+        localparams.lowFilterFrequency = atof( optarg );
+        break;
+      case 'I': /* End frequency of matched filter */
+        localparams.highFilterFrequency = atof( optarg );
         break;
       case 'E': /* highpass-frequency */
         localparams.highpassFrequency = atof( optarg );
+        break;
+      case 'C': /* waveform approximant */
+        if ( ! strcmp( "FindChirpSP", optarg ) )
+        {
+          localparams.approximant = FindChirpSP;
+        }
+        else if ( ! strcmp( "FindChirpPTF", optarg ) )
+        {
+          localparams.approximant = FindChirpPTF;
+        }
+        else if ( ! strcmp( "TaylorT1", optarg) )
+        {
+          localparams.approximant = TaylorT1;
+        }
+        else if ( ! strcmp( "TaylorT2", optarg) )
+        {
+          localparams.approximant = TaylorT2;
+        }
+        else if ( ! strcmp( "TaylorT3", optarg) )
+        {
+          localparams.approximant = TaylorT3;
+        }
+        else if ( ! strcmp( "TaylorT4", optarg) )
+        {
+          localparams.approximant = TaylorT4;
+        }
+        else if ( ! strcmp( "GeneratePPN", optarg) )
+        {
+          localparams.approximant = GeneratePPN;
+        }
+        else if ( ! strcmp( "PadeT1", optarg) )
+        {
+          localparams.approximant = PadeT1;
+        }
+        else if ( ! strcmp( "EOB", optarg) )
+        {
+          localparams.approximant = EOB;
+        }
+        else if ( ! strcmp( "EOBNR", optarg) )
+        {
+          localparams.approximant = EOBNR;
+        }
+        else if ( ! strcmp( "IMRPhenomB", optarg) )
+        {
+          localparams.approximant = IMRPhenomB;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be either FindChirpSP, FindChirpPTF or TaylorT4)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        break;
+      case '6': /* Simulated data option */
+        localparams.simData = 1;
+        if ( ! strcmp( "WhiteNoise",optarg))
+        {
+          localparams.simDataType = WHITE_PSD;
+        }
+        else if ( ! strcmp( "ILIGONoise",optarg))
+        {
+          localparams.simDataType = ILIGO_PSD;
+        }
+        else if ( ! strcmp( "ALIGONoise",optarg))
+        {
+          localparams.simDataType = ALIGO_PSD;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown data type specified:"
+              "%s valid options are WhiteNoise, ILIGONoise or ALIGONoise",
+              long_options[option_index].name, optarg );
+          exit(1);
+        }
+        break;
+      case 'v': /* PN order of waveform */        
+        if ( ! strcmp( "twoPN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_TWO;
+        }
+        else if ( ! strcmp( "twoPointFivePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_TWO_POINT_FIVE;
+        }
+        else if ( ! strcmp( "threePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_THREE;
+        }
+        else if ( ! strcmp( "threePointFivePN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_THREE_POINT_FIVE;
+        }
+        else if ( ! strcmp( "pseudoFourPN", optarg ) )
+        {
+          localparams.order = LAL_PNORDER_PSEUDO_FOUR;
+        }
+        else
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "unknown order specified: "
+              "%s (must be one of twoPN, twoPointFivePN, threePN, threePointFivePN, pseudoFourPN)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
         break;
       case 'f': /* right-ascension */
         localparams.rightAscension = atof( optarg ) * LAL_PI_180;
         break;
       case 'F': /* Declination */
         localparams.declination = atof( optarg ) * LAL_PI_180;
+        break;
+      case 'g': /* Error in declination */
+        localparams.skyError = atof( optarg ) * LAL_PI_180;
+        break;
+      case 'G': /* timing accuracy of network */
+        localparams.timingAccuracy = atof( optarg );
         break;
       case 'h': /* help */
         coh_PTF_usage( program );
@@ -206,6 +324,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case 'j':
         localparams.threshold = atof(optarg); 
+        break;
+      case '1':
+        localparams.snglSNRThreshold = atof(optarg);
         break;
       case 'J':
         localparams.timeWindow = atof(optarg);
@@ -282,12 +403,30 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case 'W': /* pad-data */
         localparams.padData = atof( optarg );
         break;
+      case '!': /* h1-slide-segment */
+        localparams.slideSegments[LAL_IFO_H1] = atoi( optarg );
+        break;
+      case '&': /* h2-slide-segments */
+        localparams.slideSegments[LAL_IFO_H2] = atoi( optarg );
+        break;
+      case '(': /* l1-slide-segments */
+        localparams.slideSegments[LAL_IFO_L1] = atoi( optarg );
+        break;
+      case ')': /* v1-slide-segments */
+        localparams.slideSegments[LAL_IFO_V1] = atoi( optarg );
+        break;
       case 'V': /* version */
-        PRINT_VERSION( "ring" );
+        XLALOutputVersionString(stderr, 0);
         exit( 0 );
-      case '?':
+     case '#': /* sky grid file */
+        localparams.skyPositionsFile = optarg;
+        break;
+     case '|': /* FFT-level for plans */
+        localparams.fftLevel = atoi( optarg );
+        break;
+     case '?':
         error( "unknown error while parsing options\n" );
-      default:
+     default:
         error( "unknown error while parsing options\n" );
     }
   }
@@ -300,26 +439,60 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     exit( 1 );
   }
 
+  /* set number of ifos */
+  localparams.numIFO = 0;
+
+  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  {
+    if ( localparams.haveTrig[ifoNumber] )
+    {
+      XLALReturnIFO(ifo,ifoNumber);
+      snprintf( localparams.ifoName[localparams.numIFO], LIGOMETA_IFO_MAX,\
+                "%s", ifo );
+      localparams.numIFO++;
+    }
+  }
+  
+  /* check for H1H2 */
+  if (localparams.numIFO == 2)
+  {
+    char ifos[4];
+    snprintf(ifos, LIGOMETA_IFOS_MAX, "%s%s",
+             localparams.ifoName[0], localparams.ifoName[1]);
+    if (! strcmp(ifos,"H1H2"))
+      localparams.singlePolFlag = 1;
+  }
+
   *params = localparams;
 
   return 0;
 }
 
 /* sets default values for parameters */
-static int coh_PTF_default_params( struct coh_PTF_params *params )
+int coh_PTF_default_params( struct coh_PTF_params *params )
 {
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
 
-  /* Right Ascension and declination must be provided */
+  /* FFT plan defaults to 1 */
+  params->fftLevel = 1;
+
+  /* set default sky location params */
   params->rightAscension = -1000.;
   params->declination = -1000.;
+  params->skyError = 0.;
+  params->timingAccuracy = 0.0005;
+  params->skyPositionsFile = NULL;
+  params->skyLooping = ALL_SKY;
 
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
 
-  /* negative value means use the "default" values */
-  params->highpassFrequency     = -1.0; /* use low-frequency cutoff */
+  /* Various frequencies must be set */
+  params->highpassFrequency     = -1.0; 
+  params->lowTemplateFrequency = -1.0;
+  params->lowFilterFrequency = -1.0;
+  params->highFilterFrequency = -1.0;
 
   /* segments and templates to do: all of them */
   params->segmentsToDoList  = "^-$";
@@ -331,7 +504,7 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   params->getSpectrum = 1;
   params->doFilter    = 1;
 
-  /* Some thresholding stuff, this should be command line options */
+  /* FIXME: Some thresholding stuff, this should be command line options */
   params->bankVeton = 3.;
   params->bankVetoq = 4.;
   params->autoVeton = 3.;
@@ -340,24 +513,23 @@ static int coh_PTF_default_params( struct coh_PTF_params *params )
   params->nullStatGradOn = 30.;
   params->nullStatGradient = 50./700.;
 
+  params->approximant = NumApproximants;
+  params->order = LAL_PNORDER_NUM_ORDER;
+
   return 0;
 }
-
-/* macro for testing validity of a condition that prints an error if invalid */
-#define sanity_check( condition ) \
-  ( condition ? 0 : ( fputs( #condition " not satisfied\n", stderr ), error( "sanity check failed\n" ) ) ) 
 
 /* check sanity of parameters and sets appropriate values of unset parameters */
 int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
 {
-  UINT4 recordLength = 0;
-  UINT4 segmentLength = 0;
-  UINT4 segmentStride = 0;
+  UINT4 recordLength   = 0;
+  UINT4 segmentLength  = 0;
+  UINT4 segmentStride  = 0;
   UINT4 truncateLength = 0;
   UINT4 ifoNumber;
-  INT8 startTime;
-  INT8 endTime;
-
+  INT8  startTime;
+  INT8  endTime;
+//  UINT4 slideSegments; Currently unused FIXME
 
   if ( params->getSpectrum ) /* need data and response if not strain data */
     sanity_check( params->getData && (params->strainData) );
@@ -409,8 +581,59 @@ int coh_PTF_params_sanity_check( struct coh_PTF_params *params )
     /*sanity_check( params->channel );*/
     sanity_check( params->dynRangeFac > 0.0 );
   }
-  sanity_check( params->rightAscension >= 0. && params->rightAscension <= 2.*LAL_PI);
-  sanity_check( params->declination >= -LAL_PI/2. && params->declination <= LAL_PI/2.);
+
+  /* sky localisation params */
+  if ( params->rightAscension != -1000. && params->declination != -1000. )
+  {
+
+    sanity_check( params->rightAscension >= 0.\
+                  && params->rightAscension <= 2.*LAL_PI);
+    sanity_check( params->declination >= -LAL_PI/2.\
+                  && params->declination <= LAL_PI/2.);
+
+    if ( params->skyError>0. )
+    {
+
+      sanity_check( params->skyError >= -LAL_PI/2.\
+                    && params->skyError <=LAL_PI/2. );
+      sanity_check( params->timingAccuracy > 0. );
+
+      if ( params->numIFO == 2 )
+        params->skyLooping = TWO_DET_SKY_PATCH;
+      else
+        params->skyLooping = SKY_PATCH;
+    }
+    else
+    {
+      params->skyLooping = SINGLE_SKY_POINT;
+    }
+  }
+  else if (params->skyPositionsFile)
+  {
+    params->skyLooping = SKY_PATCH;
+  }
+
+  else
+  {
+    if ( params->numIFO == 2 )
+      params->skyLooping = TWO_DET_ALL_SKY;
+    else
+      params->skyLooping = ALL_SKY;
+  }
+
+  if ( params->skyLooping != SINGLE_SKY_POINT && params->doNullStream )
+  {
+    error( "--do-null-stream and --sky-error are incompatbile. Null stream on more than one sky point is a bad idea.\n" );
+  }
+
+  /* Check that filter frequencies have been given */
+  sanity_check( params->highpassFrequency > 0);
+  sanity_check( params->lowTemplateFrequency > 0);
+  sanity_check( params->lowFilterFrequency > 0 && params->lowFilterFrequency >= params->lowTemplateFrequency);
+  sanity_check( params->highFilterFrequency > params->lowFilterFrequency);
+
+  sanity_check( params->approximant != NumApproximants);
+  sanity_check( params->order != LAL_PNORDER_NUM_ORDER);
 
 // This needs fixing. Need a check on whether segmentsToDoList and 
 // analyzeInjSegsOnly have been given.
@@ -475,7 +698,7 @@ int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params )
 
 
 /* prints a help message */
-static int coh_PTF_usage( const char *program )
+int coh_PTF_usage( const char *program )
 {
   fprintf( stderr, "usage: %s options\n", program );
   fprintf( stderr, "\ngeneral options:\n" );
@@ -502,7 +725,7 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--gps-end-time=tstop       GPS stop time of data to analyze (sec)\n" );
   fprintf( stderr, "--gps-end-time-ns=tstopns  nanosecond residual of stop time\n" );
   fprintf( stderr, "\nsimulated data options:\n" );
-  fprintf( stderr, "--simulated-data           create simulated white Gaussian noise\n" );
+  fprintf( stderr, "--simulated-data=dataType  create simulated Gaussian noise. Can be WhiteNoise,ILIGONoise or ALIGONoise. \n" );
   fprintf( stderr, "--random-seed=seed         random number seed for simulated data\n" );
   fprintf( stderr, "--sample-rate=srate        sampling rate of simulated data (Hz)\n" );
   fprintf( stderr, "--zero-data                create a time series of zeros\n" );
@@ -514,15 +737,22 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "\ncalibration options:\n" );
   fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
   fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
+  fprintf( stderr, "--fft-level=PLAN Set the fft plan to use level=PLAN\n" );
 
   fprintf( stderr, "\ndata segmentation options:\n" );
   fprintf( stderr, "--segment-duration=duration  duration of a data segment (sec)\n" );
   fprintf( stderr, "--block-duration=duration    duration of an analysis block (sec)\n" );
   fprintf( stderr, "--pad-data=duration          input data padding (sec)\n" );
+  fprintf( stderr, "--h1-slide-segment=amount    amount to be slid H1\n" );
+  fprintf( stderr, "--h2-slide-segment=amount    amount to be slid H2\n" );
+  fprintf( stderr, "--l1-slide-segment=amount    amount to be slid L1\n" );
+  fprintf( stderr, "--v1-slide-segment=amount    amount to be slid V1\n" );
 
   fprintf( stderr, "\npower spectrum options:\n" );
-  fprintf( stderr, "--white-spectrum           use uniform white power spectrum\n" );
-  fprintf( stderr, "--cutoff-frequency=fcut    low frequency spectral cutoff (Hz)\n" );
+  fprintf( stderr, "--theoretical-spectrum      take the PSD as the PSD used to generate the simulated data\n" );
+  fprintf( stderr, "--low-template-freq=fmin    low frequency cutoff for generation of templates (Hz)\n" );
+  fprintf( stderr, "--low-filter-freq=f_low    low frequency cutoff for matched filtering (Hz)\n" );
+  fprintf( stderr, "--high-filter-freq=f_max    high frequency cutoff for matched filtering (Hz)\n" );
   fprintf( stderr, "--inverse-spec-length=t    set length of inverse spectrum to t seconds\n" );
   fprintf( stderr, "\nbank generation options:\n" );
   fprintf( stderr, "--bank-file=name           Location of tmpltbank xml file\n" );
@@ -532,12 +762,20 @@ static int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
-  fprintf( stderr, "--right-ascension=ra right ascension of external trigger in degrees\n" );
-  fprintf( stderr, "--declination=dec declination of external trigger in degrees\n" );
+
+  fprintf( stderr, "\nsky location options:\n" );
+  fprintf( stderr, "--right-ascension=ra       right ascension of external trigger in degrees\n" );
+  fprintf( stderr, "--declination=dec          declination of external trigger in degrees\n" );
+  fprintf( stderr, "--sky-error=err            1-sigma error radius in sky location of external trigger in degrees\n" );
+  fprintf( stderr, "--timing-accuracy=t_acc    Accuracy ( in seconds ) of timing information\n" );
+  fprintf( stderr, "--sky-positions-file=name  Location of sky locations file for IPN\n" );
+
+  fprintf( stderr, "\ninjection options:\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );
+  fprintf( stderr, "--sngl-snr-threshold Only keep triggers if at least one ifo has snr above value\n" );
   fprintf( stderr, "--non-spin-snr2-threshold=value SNR squared value over which a non spin trigger is considered found for spin checker program\n" );
   fprintf( stderr, "--spin-snr2-threshold=value SNR squared value over which a spin trigger is considered found for spin checker program\n" );
   fprintf( stderr, "--trig-time-window=window Keep loudest trigger within window seconds\n" );

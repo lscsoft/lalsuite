@@ -23,65 +23,50 @@
  *
  * Author: Anderson, W. G., and Brown, D. A., BCV-Modifications: Messaritaki E.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpChisqInitCV">
-Author: Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpChisqInit.c}}
-\label{ss:FindChirpChisqInit.c}
+\author Anderson, W. G., and Brown D. A., BCV-Modifications: Messaritaki E.
+\file
+\ingroup FindChirpChisq_h
 
-Module to initialize the $\chi^2$ veto for the various templates (SP, BCV,
-etc.)
+\brief Module to initialize the \f$\chi^2\f$ veto for the various templates (SP, BCV,etc.)
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpChisqInitCP}
-\idx{LALFindChirpChisqVetoInit()}
-\idx{LALFindChirpChisqVetoFinalize()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-The function \texttt{LALFindChirpChisqVetoInit()} takes as input the number of
-bins required to contruct the $\chi^2$ veto and the number of points a data
-segment as a parameter. The pointer \texttt{*params} must contain the
-address of a structure of type \texttt{FindChirpChisqParams} for which storage
+The function <tt>LALFindChirpChisqVetoInit()</tt> takes as input the number of
+bins required to contruct the \f$\chi^2\f$ veto and the number of points a data
+segment as a parameter. The pointer <tt>*params</tt> must contain the
+address of a structure of type \c FindChirpChisqParams for which storage
 has already been allocated.  On exit this structure will be populated with the
-correct values for execution of the function \texttt{LALFindChirpChisqVeto()}.
+correct values for execution of the function <tt>LALFindChirpChisqVeto()</tt>.
 The workspace arrays and the inverse FFTW plan used by the veto will be
 created.
 
-The function \texttt{LALFindChirpChisqVetoFinalize()} takes the address of a
-structure of type \texttt{FindChirpChisqParams} which has been populated by
-\texttt{LALFindChirpChisqVetoInit()} as input. It takes the number of bins
-required to contruct the $\chi^2$ veto and as a parameter. On exit all memory
-allocated by the \texttt{LALFindChirpChisqVetoInit()} will be freed.
+The function <tt>LALFindChirpChisqVetoFinalize()</tt> takes the address of a
+structure of type \c FindChirpChisqParams which has been populated by
+<tt>LALFindChirpChisqVetoInit()</tt> as input. It takes the number of bins
+required to contruct the \f$\chi^2\f$ veto and as a parameter. On exit all memory
+allocated by the <tt>LALFindChirpChisqVetoInit()</tt> will be freed.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 chisq algorithm here
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCreateReverseComplexFFTPlan()
 LALDestroyComplexFFTPlan()
 LALCCreateVector()
 LALCDestroyVector()
 LALCOMPLEX8VectorFFT()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpChisqInitCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -93,7 +78,7 @@ LALCOMPLEX8VectorFFT()
 
 NRCSID (FINDCHIRPCHISQINITC, "$Id$");
 
-/* <lalVerbatim file="FindChirpChisqInitCP"> */
+
 void
 LALFindChirpChisqVetoInit (
     LALStatus                  *status,
@@ -101,7 +86,7 @@ LALFindChirpChisqVetoInit (
     UINT4                       numChisqBins,
     UINT4                       numPoints
     )
-/* </lalVerbatim> */
+
 {
   UINT4                         l, m;
 
@@ -136,6 +121,7 @@ LALFindChirpChisqVetoInit (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case EOBNRv2:
     case BCV:
     case BCVSpin:
     case AmpCorPPN:
@@ -170,7 +156,7 @@ LALFindChirpChisqVetoInit (
 
   /* create plan for chisq filter */
   LALCreateReverseComplexFFTPlan( status->statusPtr,
-      &(params->plan), numPoints, 0 );
+      &(params->plan), numPoints, 1 );
   CHECKSTATUSPTR( status );
 
   /* create one vector for the fourier domain data */
@@ -299,14 +285,14 @@ LALFindChirpChisqVetoInit (
 
 
 
-/* <lalVerbatim file="FindChirpChisqInitCP"> */
+
 void
 LALFindChirpChisqVetoFinalize (
     LALStatus                  *status,
     FindChirpChisqParams       *params,
     UINT4                       numChisqBins
     )
-/* </lalVerbatim> */
+
 {
   UINT4                         l;
 
@@ -326,6 +312,7 @@ LALFindChirpChisqVetoFinalize (
     case PadeT1:
     case EOB:
     case EOBNR:
+    case EOBNRv2:
     case BCV:
     case BCVSpin:
     case AmpCorPPN:

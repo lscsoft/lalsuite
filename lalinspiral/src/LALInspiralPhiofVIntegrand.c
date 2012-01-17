@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -17,51 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralPhiofVIntegrandCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
+\brief The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
 
-\subsection{Module \texttt{LALInspiralPhiofVIntegrand.c}}
+\heading{Prototypes}
 
-The function \texttt{LALInspiralPhiofVIntegrandIn} calculates the quantity $v^{3} E^{\prime}(v)/\mathcal{F}(v)$.
+<tt>LALInspiralPhiofVIntegrand()</tt>
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralPhiofVIntegrandCP}
-\index{\verb&LALInspiralPhiofVIntegrand()&}
+\heading{Description}
 
-\subsubsection*{Description}
+The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
 
-The function \texttt{LALInspiralPhiofVIntegrandIn} calculates the quantity $v^{3} E^{\prime}(v)/\mathcal{F}(v)$.
+\heading{Uses}
 
-\subsubsection*{Algorithm}
+This function calls \c dEnergy and \c flux functions that are defined in the
+\c expnFunc structure  and represent \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$, respectively,
+and pointed to the appropriate PN functions with a call to <tt>XLALInspiralChooseModel().</tt>
 
-
-\subsubsection*{Uses}
-
-This function calls {\tt dEnergy} and {\tt flux} functions that are defined in the
-{\tt expnFunc} structure  and represent $E^{\prime}(v)$ and $\mathcal{F}(v)$, respectively,
-and pointed to the appropriate PN functions with a call to \texttt{LALInspiralChooseModel.}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALInspiralPhiofVIntegrandCV}}
-
-</lalLaTeX>  */
+\heading{Notes}
 
 
 
-
-
-
-
-
-
-
-
+*/
 
 #include <math.h>
 #include <lal/LALStdlib.h>
@@ -69,7 +50,7 @@ and pointed to the appropriate PN functions with a call to \texttt{LALInspiralCh
 
 NRCSID (LALINSPIRALPHIOFVINTEGRANDC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralPhiofVIntegrandCP"> */
+
 void
 LALInspiralPhiofVIntegrand (
    LALStatus  *status,
@@ -77,21 +58,17 @@ LALInspiralPhiofVIntegrand (
    REAL8       v,
    void       *params
    )
-{ /* </lalVerbatim>  */
-
-  PhiofVIntegrandIn *in;
+{
+  XLALPrintDeprecationWarning("LALInspiralPhiofVIntegrand", "XLALInspiralPhiofVIntegrand");
 
   INITSTATUS (status, "LALInspiralPhiofVIntegrand", LALINSPIRALPHIOFVINTEGRANDC);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (v>0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (v<1, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  in = (PhiofVIntegrandIn *) params;
-
-  *integrand = pow (v, 3.) * in->dEnergy(v,in->coeffs)/in->flux(v,in->coeffs);
+  *integrand = XLALInspiralPhiofVIntegrand(v, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*integrand))
+    ABORTXLAL(status);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
@@ -99,3 +76,25 @@ LALInspiralPhiofVIntegrand (
 
 }
 
+REAL8
+XLALInspiralPhiofVIntegrand (
+   REAL8       v,
+   void       *params
+   )
+{
+  REAL8 integrand;
+  PhiofVIntegrandIn *in;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (v <= 0.)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
+  if (v >= 1.)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
+
+  in = (PhiofVIntegrandIn *) params;
+
+  integrand = pow (v, 3.) * in->dEnergy(v,in->coeffs)/in->flux(v,in->coeffs);
+
+  return integrand;
+}

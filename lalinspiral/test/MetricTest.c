@@ -17,37 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="MetricTestCV">
-Author: B.S. Sathyaprakash
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author B.S. Sathyaprakash
+\file
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{MetricTest.c}}
-\label{ss:MetricTest.c}
-
-Creates a template mesh for BCV (or, alternatively, for SPA but
+\brief Creates a template mesh for BCV (or, alternatively, for SPA but
 assuing a constant metric) using the mismatch metric.
 
-\subsubsection*{Usage}
+\heading{Usage}
 
-\subsubsection*{Description}
+\heading{Description}
 
-\subsubsection*{Exit codes}
+\heading{Algorithm}
 
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{MetricTestCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <stdlib.h>

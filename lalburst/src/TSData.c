@@ -252,6 +252,11 @@ LALTracksearchFindLambdaMedian(
   if (searchParams->verbosity >= verbose)
     {
       fprintf(stdout,"Auto lambda invoked\n");
+      fprintf(stdout,"Freq Row Cuts offs %i and %i. Row count %i, BinRow Per Hz %f\n",
+	      lowerFRow,
+	      upperFRow,
+	      map.fRow/2+1,
+	      binPerHz);
       fprintf(stdout,"Lh %e \t Ll %e \n 2nd D Gauss %f \n Median h: %10.20e \n Pixel Count: %i \n",searchParams->StartThresh,
 	      searchParams->LinePThresh,
 	      myGaussian,
@@ -640,7 +645,8 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
    * to the fSeries otherwise throw error.
    * I.E.  Run if fSeries.deltaF>=PSD.deltaF matching as needed!
    */
-  ASSERT(level > 0, status,TSDATA_EINVA,TSDATA_MSGEINVA);
+  if ( level == 0 )
+    ABORT ( status,TSDATA_EINVA,TSDATA_MSGEINVA );
 
   for (i=0;i<fSeries->data->length;i++)
     {
@@ -671,8 +677,6 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 		  &(fSeries->sampleUnits),
 		  &tmpUnitPair);
   CHECKSTATUSPTR (status);
-
-  level = 0;
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

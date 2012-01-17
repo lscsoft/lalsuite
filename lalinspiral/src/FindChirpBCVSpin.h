@@ -23,34 +23,32 @@
  *
  * Author: Brown, D. A. and Jones, G.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpBCVSpinHV">
-Author: Brown, D. A. and Jones, G
-$Id$
-</lalVerbatim>
+/**
+ * \defgroup FindChirpBCVSpin_h FindChirpBCVSpin_h
+ * \ingroup CBC_findchirp
+ *
+ */
 
-<lalLaTeX>
-\section{Header \texttt{FindChirpBCVSpin.h}}
-\label{s:FindChirpBCVSpin.h}
+/**
 
-Provides structures and functions to condition interferometer data
+\author Brown, D. A. and Jones, G
+\file
+\ingroup FindChirpBCVSpin_h
+
+\brief Provides structures and functions to condition interferometer data
 and generate binary inspiral chirps using the spinning BCV detection
 template family.
 
-\subsection*{Synopsis}
+\heading{Synopsis}
 
-\begin{verbatim}
+\code
 #include <lal/FindChirpBCVSpin.h>
-\end{verbatim}
+\endcode
 
-\input{FindChirpBCVSpinHDoc}
-</lalLaTeX>
-#endif
+*/
 
 
 #ifndef _FINDCHIRPBCVSPINH_H
@@ -62,20 +60,16 @@ template family.
 #include <lal/FindChirp.h>
 #include <lal/FindChirpChisq.h>
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 
 NRCSID (FINDCHIRPBCVSPINH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define FINDCHIRPBCVSPINH_ENULL 1
 #define FINDCHIRPBCVSPINH_ENNUL 2
 #define FINDCHIRPBCVSPINH_EALOC 3
@@ -105,28 +99,7 @@ NRCSID (FINDCHIRPBCVSPINH, "$Id$");
 #define FINDCHIRPBCVSPINH_MSGEUAPX "Unknown approximant"
 #define FINDCHIRPBCVSPINH_MSGECLUW "Unacceptable max-over-chirp clustering method for BCVSpin"
 
-/* </lalErrTable> */
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-
-None.
-</lalLaTeX>
-#endif
-
-
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpBCVSpinHV}}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpBCVSpinDataC}
-</lalLaTeX>
-#endif
+/*@}*/
 
 void
 LALFindChirpBCVSpinData (
@@ -136,11 +109,11 @@ LALFindChirpBCVSpinData (
     FindChirpDataParams        *params
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpBCVSpinTemplateC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 void
 LALFindChirpBCVSpinTemplate (
@@ -151,11 +124,11 @@ LALFindChirpBCVSpinTemplate (
     FindChirpDataParams        *fcDataParams
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpBCVSpinFilterC}
-</lalLaTeX>
-#endif
+
+
+
+
+
 
 void
 LALFindChirpBCVSpinFilterSegment (
@@ -166,8 +139,9 @@ LALFindChirpBCVSpinFilterSegment (
     FindChirpDataParams        *fcDataParams
   );
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

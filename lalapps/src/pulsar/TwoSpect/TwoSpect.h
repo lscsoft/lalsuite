@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -22,38 +22,46 @@
 
 #include <lal/RealFFT.h>
 
-#include <gsl/gsl_rng.h>
 #include "cmdline.h"
 #include "TwoSpectTypes.h"
 
-
-inputParamsStruct * new_inputParams(void);
+inputParamsStruct * new_inputParams(INT4 numofIFOs);
 void free_inputParams(inputParamsStruct *input);
 
 ffdataStruct * new_ffdata(inputParamsStruct *input);
 void free_ffdata(ffdataStruct *data);
 
 REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization);
-REAL4Vector * SSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
+REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh, REAL8 Tobs, REAL8 SFToverlap, REAL8 fminimum, REAL8 fmaximum, REAL8 sqrtSh);
+
+REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normalization);
+INT4VectorSequence * markBadMultiSFTs(REAL4VectorSequence *multiTFdata, inputParamsStruct *params);
+void removeBadMultiSFTs(REAL4VectorSequence *multiTFdata, INT4VectorSequence *badsfts);
+void multiTFRngMeans(REAL4VectorSequence *output, REAL4VectorSequence *multiTFdata, INT4 numffts, INT4 numfbins, INT4 blksize);
+INT4VectorSequence * existingMultiSFTs(REAL4VectorSequence *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts);
+INT4Vector * combineExistingMultiSFTs(INT4VectorSequence *input);
+REAL4Vector * combineMultiTFrngMeans(REAL4VectorSequence *input, INT4 numffts, INT4 numfbins);
+
+INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params);
+INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts);
+void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts);
+
+INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params);
+REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params);
 
 void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfdata, INT4Vector *binshifts);
+void tfMeanSubtract(REAL4Vector *tfdata, REAL4Vector *rngMeans, INT4 numffts, INT4 numfbins);
+//void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
+void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, INT4Vector *indexValuesOfExistingSFTs, inputParamsStruct *input);
 void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, REAL4Vector *antPatternWeights, inputParamsStruct *input);
 void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize);
 void makeSecondFFT(ffdataStruct *ffdata, REAL4Vector *tfdata, REAL4FFTPlan *plan);
-void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL8 *normalization);
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization);
 
-REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
-REAL8 maxModDepth(REAL8 period, REAL8 cohtime);
-REAL8 minPeriod(REAL8 moddepth, REAL8 cohtime);
-REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise, REAL4Vector *fbinaveratios);
-REAL8 calcMeanD(REAL8Vector *vector);
-REAL8 calcStddevD(REAL8Vector *vector);
+REAL8 determineSumOfWeights(REAL4Vector *antweightssq, REAL4Vector *rngMeanssq);
 
 REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
 REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 binmin, INT4 binmax);
-REAL4 calcMean(REAL4Vector *vector);
-REAL4 calcStddev(REAL4Vector *vector);
-REAL4 calcRms(REAL4Vector *vector);
 
 INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_info args_info);
 

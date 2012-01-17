@@ -42,38 +42,19 @@
  * frames (given as a modified Julian Date - MJD) into a GPS time.
  */
 
-/* LAL code to take into account binary pulsar motion */
-/*  for definitions of different models see Taylor and Weisberg (1989)
-    and TEMPO software documentation
-
-    Also contains function to read TEMPO .par files to obtain parameters
-    and errors on parameters (if available) */
-/* <lalVerbatim file="BinaryPulsarTimingHV">
-   Author: Pitkin, M. D.
-   $Id$
-*/
-/* Matt Pitkin 29/04/04 */
-
-/* <lalLaTeX>
-   \section{Header \texttt{BinaryPulsarTiming.h}}
-   label{ss:BinaryPulsarTiming.h}
-
-   Calculates time delay to a signal from a pulsar in a binary system.
-
-   \subsection*{Synopsis}
-   \begin{verbatim}
-   #include <lal/BinaryPulsarTiming.h>
-   \end{verbatim}
-
-   \noindent This header covers routines for calculating the time delay to a
-   signal from a pulsar in a binary system. The are also routines for reading
-   pulsar data from TEMPO .par file formats.
-   </lalLaTeX> */
-
 #ifndef _BINARYPULSARTIMING_H
 #define _BINARYPULSARTIMING_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
+#include <ctype.h>
+#include <unistd.h>
+
 #include <lal/LALStdlib.h>
+#include <lal/StringVector.h>
 
 NRCSID (BINARYPULSARTIMINGH,"$Id$");
 
@@ -81,11 +62,7 @@ NRCSID (BINARYPULSARTIMINGH,"$Id$");
 extern "C" {
 #endif
 
-/* <lalLaTeX>
-   \subsection*{Error conditions}
-   </lalLaTeX> */
-
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define BINARYPULSARTIMINGH_ENULLINPUT 1
 #define BINARYPULSARTIMINGH_ENULLOUTPUT 2
 #define BINARYPULSARTIMINGH_ENULLPARAMS 3
@@ -107,42 +84,16 @@ not be in the binary timing routine"
 #define BINARYPULSARTIMINGH_MSGENAN "Output is NaN!"
 #define BINARYPULSARTIMINGH_MSGEPARFAIL "Failed to read in .par file"
 
-/* </lalErrTable> */
+/*@}*/
 
-/* <lalLaTeX>
-   \subsection*{Structures}
-   \idx[Type]{BinaryPulsarParams}
-   \idx[Type]{BinaryPulsarInput}
-   \idx[Type]{BinaryPulsarOutput}
-
-   \begin{verbatim}
-   typedef struct tagBinaryPulsarParams BinaryPulsarParams;
-   \end{verbatim}
-
-   This structure contains all the pulsars parameters. The structure does not
-   have to be used for a binary pulsar, but can just contain the parameters for
+/** A structure to contain all pulsar parameters and associated errors.
+    The structure does not have to be used for a binary pulsar, but can just contain the parameters for
    an isolated pulsar. All parameters are in the same units as given by TEMPO.
-
-   \begin{verbatim}
-   typedef struct tagBinaryPulsarInput BinaryPulsarInput;
-   \end{verbatim}
-
-   This structure contains the input time at which the binary correction needs
-   to be calculated.
-
-   \begin{verbatim}
-   typedef struct tagBinaryPulsarOutput BinaryPulsarOutput;
-   \end{verbatim}
-
-   This structure contains the binary time delay for the input time.
-
-   </lalLaTeX> */
-
-/**** DEFINE STRUCTURES ****/
-/** A structure to contain all pulsar parameters and associated errors */
+ */
 typedef struct
 tagBinaryPulsarParams
 {
+  SWIGLAL_STRUCT(BinaryPulsarParams);
   CHAR *name;   /**< pulsar name */
 
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
@@ -232,7 +183,11 @@ tagBinaryPulsarParams
   REAL8 phi0;   /**> initial phase */
   REAL8 Aplus;  /**> 0.5*h0*(1+cos^2iota) */
   REAL8 Across; /**> h0*cosiota */
-
+  /*pinned superfluid gw parameters*/
+  REAL8 h1;     /**> determines relative strength of 2 vs 2f emission */
+  REAL8 lambda;/**> this is a longitude like angle between pinning axis and line of sight */
+  REAL8 theta;    /**> angle between rotation axis and pinning axis */
+  
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
   REAL8 f1Err;
@@ -294,12 +249,16 @@ tagBinaryPulsarParams
   REAL8 phi0Err;
   REAL8 AplusErr;
   REAL8 AcrossErr;
+  REAL8 h1Err;
+  REAL8 lambdaErr;
+  REAL8 thetaErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */
 typedef struct
 tagBinaryPulsarInput
 {
+  SWIGLAL_STRUCT(BinaryPulsarInput);
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
 }BinaryPulsarInput;
 
@@ -307,12 +266,13 @@ tagBinaryPulsarInput
 typedef struct
 tagBinaryPulsarOutput
 {
+  SWIGLAL_STRUCT(BinaryPulsarOutput);
   REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 
-/* <lalLaTeX>
-   \newpage\input{BinaryPulsarTimingC}
-   </lalLaTeX> */
+
+
+
 
 /**** DEFINE FUNCTIONS ****/
 /** function to calculate the binary system delay
@@ -338,6 +298,33 @@ void
 LALReadTEMPOParFile( LALStatus              *status,
                      BinaryPulsarParams    *output,
                      CHAR                  *pulsarAndPath );
+
+/** \brief This function will read in a TEMPO-style parameter correlation matrix
+ * 
+ * This function will read in a TEMPO-style parameter correlation matrix file,
+ * which contains the correlations between parameters as fit by TEMPO. An
+ * example the format would be:
+\verbatim
+     RA     DEC    F0
+RA   1.000  
+DEC  0.954  1.000
+F0   -0.007 0.124  1.000
+\endverbatim
+ * 
+ * In the output all parameter names will sometimes be
+ * converted to a more convenient naming convention. If non-diagonal parameter
+ * correlation values are +/-1 then they will be converted to be +/-0.99999 to
+ * avoid some problems of the matrix becoming singular. The output matrix will
+ * have both the upper and lower triangle completed.
+ * 
+ * \param cormat [out] A REAL8 array into which the correlation matrix will be
+ * output
+ * \param params [out] A vector of strings containing the parameter names of
+ * those within the correlation matrix in the order that they are present
+ * \param corfile [in] A string containing the path and filename of the
+ * TEMPO-style correlation matrix file
+ */ 
+LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
 /** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the

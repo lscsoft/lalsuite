@@ -28,26 +28,22 @@
 
 #include <lal/CoincInspiralEllipsoid.h>
 
-#if 0
-<lalVerbatim file="TrigScanEThincaCommonHV">
-Author: Robinson, C. A. K.
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{TrigScanEThincaCommon.h}}
-\label{s:TrigScanEThincaCommon.h}
+/**
 
-Provides helper functions common to TrigScan and E-thinca.
+\author Robinson, C. A. K.
+\file
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\brief Provides helper functions common to TrigScan and E-thinca.
+
+\heading{Synopsis}
+\code
 #include <lal/TrigScanEThincaCommon.h>
-\end{verbatim}
+\endcode
 
-\noindent This header provides functions used for creating and destroying the
+This header provides functions used for creating and destroying the
 linked lists used in TrigScan and E-thinca.
 
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _TRIGSCANETHINCACOMMON_H
 #define _TRIGSCANETHINCACOMMON_H

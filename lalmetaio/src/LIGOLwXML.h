@@ -23,30 +23,22 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="LIGOLwXMLHV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{LIGOLwXML.h}}
-\label{s:LIGOLwXML.h}
+/**
 
-Provides functions for writing the LIGO metdata database table structres to
-LIGO light weight XML files.
+\author Brown, D. A.
+\file
+\ingroup lalmetaio
+\brief Provides functions for writing the LIGO metdata database table structres to LIGO light weight XML files.
 
-\subsection*{Synopsis}
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/LIGOLwXML.h>
-\end{verbatim}
+\endcode
 
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _LIGOLWXML_H
 #define _LIGOLWXML_H
@@ -58,17 +50,13 @@ LIGO light weight XML files.
 
 NRCSID( LIGOLWXMLH, "$Id$" );
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
-#if 0
-<lalLaTeX>
-\subsection*{Error conditions}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define LIGOLWXMLH_ENULL 1
 #define LIGOLWXMLH_ENNUL 2
 #define LIGOLWXMLH_EALOC 3
@@ -91,18 +79,19 @@ extern "C" {
 #define LIGOLWXMLH_MSGEENDT "Ending a table without an beginning a table"
 #define LIGOLWXMLH_MSGETMSM "Table type mismatch"
 #define LIGOLWXMLH_MSGETNOP "Table not begun for writing"
-/* </lalErrTable> */
+/*@}*/
 
-#if 0
-<lalLaTeX>
-\subsection*{Structures}
+/** This structure contains the file stream and current table type for
+writing to LIGO lightweight XML files. It should not be manipulated
+directly, but passed to the \c LIGOLwXML functions for their use.
+<dl>
+<dt>fp</dt><dd> The file stream pointer of the XML file.</dd>
+<dt>first</dt><dd> Is this the first entry in the table.</dd>
+<dt>rowCount</dt><dd> Counter for the number of rows in the current table.</dd>
+<dt>table</dt><dd> The database table currently open.</dd>
+</dl>
 
-\subsubsection*{Type \texttt{tagLIGOLwXMLStream}}
-\idx[Type]{tagLIGOLwXMLStream}
-
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+*/
 typedef struct
 tagLIGOLwXMLStream
 {
@@ -112,20 +101,7 @@ tagLIGOLwXMLStream
   MetadataTableType     table;
 }
 LIGOLwXMLStream;
-/* </lalVerbatim> */
-#if 0
-<lalLaTeX>
-This structure contains the file stream and current table type for
-writing to LIGO lightweight XML files. It should not be manipulated
-directly, but passed to the \verb+LIGOLwXML+ functions for their use.
-\begin{description}
-\item[\texttt{fp}] The file stream pointer of the XML file.
-\item[\texttt{first}] Is this the first entry in the table.
-\item[\texttt{rowCount}] Counter for the number of rows in the current table.
-\item[\texttt{table}] The database table currently open.
-\end{description}
-</lalLaTeX>
-#endif
+
 
 LIGOLwXMLStream *
 XLALOpenLIGOLwXMLFile (
@@ -201,6 +177,11 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *
 );
 
+int XLALWriteLIGOLwXMLTimeSlideTable(
+	LIGOLwXMLStream *,
+	const TimeSlide *
+);
+
 int XLALCreateLIGODataFileName(
         char* filename,
         size_t size,
@@ -212,15 +193,16 @@ int XLALCreateLIGODataFileName(
 );
 
 
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{LIGOLwXMLHV}}
-\newpage\input{LIGOLwXMLC}
-</lalLaTeX> */
-#endif
+/**
 
-#ifdef  __cplusplus
-#pragma {
+
+
+ *\/
+*/
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

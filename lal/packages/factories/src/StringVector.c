@@ -17,17 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- *
- * \author Reinhard Prix
- * \ingroup factories
- * \brief  Creation/destruction/manipulation functions for 'LALStringVector' type objects.
- *
- * Revision: $Id$
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <string.h>
 #include <stdlib.h>
@@ -45,10 +34,14 @@ static CHAR *deblank_string ( const CHAR *start, UINT4 len );
 const LALStringVector empty_LALStringVector;
 
 /*---------- Global variables ----------*/
-NRCSID( STRINGVECTORC, "$Id$");
-
 /*---------- internal prototypes ----------*/
 
+
+/**
+ * \author Reinhard Prix
+ * \addtogroup StringVector
+ *
+ * @{ */
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -63,30 +56,36 @@ XLALAppendString2Vector (LALStringVector *vect,		/**< input string-vector to app
 			 const CHAR *string		/**< string to append */
 			 )
 {
-  const CHAR *fn = "XLALAppendString2Vector()";
   UINT4 oldlen;
   LALStringVector *ret;
 
   if ( !string ) {
-    XLALPrintError ("\n%s: NULL string passed to append\n\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("\n%s: NULL 'string' passed to append\n\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   if ( ! vect )
-    ret = XLALCreateStringVector ( string, NULL );	/* special case: NULL string-vector to append to */
+    { /* special case: NULL string-vector to append to */
+      if ( (ret = XLALCreateStringVector ( string, NULL )) == NULL) {
+        XLALPrintError ("%s: XLALCreateStringVector() failed!\n", __func__ );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
+    }
   else
     {
       ret = vect;
       oldlen = ret->length;
 
-      if ( (ret->data = LALRealloc ( ret->data, (oldlen + 1)*sizeof( *ret->data ) )) == NULL ) {
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      if ( (ret->data = XLALRealloc ( ret->data, (oldlen + 1)*sizeof( *ret->data ) )) == NULL ) {
+        XLALPrintError ("%s: XLALRealloc(%d) failed!\n", __func__, oldlen + 1 );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       ret->length ++;
 
-      if ( (ret->data[oldlen] = LALCalloc(1, strlen(string) + 1 )) == NULL ) {
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+      if ( (ret->data[oldlen] = XLALCalloc(1, strlen(string) + 1 )) == NULL ) {
+        XLALPrintError ("%s: XLALCalloc(%d) failed!\n", __func__, strlen(string) + 1 );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       strcpy ( ret->data[oldlen], string );
@@ -107,28 +106,30 @@ XLALAppendString2Vector (LALStringVector *vect,		/**< input string-vector to app
 LALStringVector *
 XLALCreateStringVector ( const CHAR *str1, ... )
 {
-  const CHAR *fn = "XLALCreateStringVector()";
   LALStringVector *ret;
   const CHAR *next;
   va_list ap;
 
   if ( !str1 ) {
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input string 'str1'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
+  size_t len;
+
   /* set up return vector of strings, and handle first argument */
-  if ( (ret = LALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  if ( (ret->data = LALCalloc ( 1, sizeof(ret->data[0]) )) == NULL) {
-    LALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
-  if ( (ret->data[0] = LALCalloc ( strlen(str1)+1, sizeof(CHAR) )) == NULL ) {
-    LALFree ( ret->data );
-    LALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
-  }
+  len = sizeof(*ret);
+  if ( (ret = XLALCalloc ( 1, len )) == NULL )
+    goto failed;
+
+  len = sizeof(ret->data[0]);
+  if ( (ret->data = XLALCalloc ( 1, len )) == NULL)
+    goto failed;
+
+  len = strlen(str1)+1;
+  if ( (ret->data[0] = XLALCalloc ( len, sizeof(CHAR) )) == NULL )
+    goto failed;
+
   strcpy ( ret->data[0], str1 );
   ret->length ++;
 
@@ -138,9 +139,13 @@ XLALCreateStringVector ( const CHAR *str1, ... )
   while ( (next = va_arg(ap, const CHAR *)) != NULL )
     {
       ret->length ++;
-      if ( (ret->data = LALRealloc ( ret->data, ret->length * sizeof(ret->data[0]))) == NULL )
+
+      len = ret->length * sizeof(ret->data[0]);
+      if ( (ret->data = XLALRealloc ( ret->data, len)) == NULL )
 	goto failed;
-      if ( (ret->data[ret->length-1] = LALCalloc( strlen(next)+1, sizeof(CHAR) )) == NULL )
+
+      len = strlen(next)+1;
+      if ( (ret->data[ret->length-1] = XLALCalloc( len, sizeof(CHAR) )) == NULL )
 	goto failed;
 
       strcpy ( ret->data[ret->length-1], next );
@@ -153,8 +158,9 @@ XLALCreateStringVector ( const CHAR *str1, ... )
 
  failed:
   va_end(ap);
+  XLALPrintError ("%s: failed to allocate '%d' bytes\n", __func__, len );
   XLALDestroyStringVector ( ret );
-  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
 } /* XLALCreateStringVector() */
 
@@ -173,13 +179,13 @@ XLALDestroyStringVector ( LALStringVector *vect )
       for ( i=0; i < vect->length; i++ )
 	{
 	  if ( vect->data[i] )
-	    LALFree ( vect->data[i] );
+	    XLALFree ( vect->data[i] );
 	}
 
-      LALFree ( vect->data );
+      XLALFree ( vect->data );
     }
 
-  LALFree ( vect );
+  XLALFree ( vect );
 
   return;
 
@@ -200,9 +206,9 @@ static int StringCompare (const void *p1, const void *p2)
 int
 XLALSortStringVector (LALStringVector *strings)
 {
-  const CHAR *fn = "XLALSortStringVector()";
   if ( !strings || strings->length == 0 ) {
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid empty or zero-length input 'strings'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   qsort ( (void*)(strings->data), (size_t)(strings->length), sizeof(CHAR*), StringCompare );
@@ -219,7 +225,6 @@ XLALSortStringVector (LALStringVector *strings)
 LALStringVector *
 XLALParseCSV2StringVector ( const CHAR *CSVlist )
 {
-  const CHAR *fn = "XLALParseCSV2StringVector";
   UINT4 counter;
   const CHAR *start, *tmp;
   CHAR **data = NULL;
@@ -228,18 +233,20 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
   if ( !CSVlist )
     return NULL;
 
+  size_t len;
   /* prepare return string-vector */
-  if ( ( ret = LALCalloc ( 1, sizeof( *ret )) ) == NULL )
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  len = sizeof( *ret );
+  if ( ( ret = XLALCalloc ( 1, len ) ) == NULL )
+    goto failed;
 
   start = CSVlist;
   counter = 0;
   do
     {
-      UINT4 len;
 
       /* extend string-array */
-      if ( ( data = LALRealloc ( data, (counter+1) * sizeof(CHAR*) )) == NULL )
+      len = (counter+1) * sizeof(CHAR*);
+      if ( ( data = XLALRealloc ( data, len )) == NULL )
 	goto failed;
 
       /* determine string-length of next value */
@@ -249,9 +256,10 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
 	len = strlen ( start );
 
       /* allocate space for that value in string-array */
-      if ( (data[counter] = deblank_string ( start, len ) ) == NULL )
-	goto failed;
-
+      if ( (data[counter] = deblank_string ( start, len ) ) == NULL ) {
+        XLALDestroyStringVector ( ret );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+      }
       counter ++;
 
     } while ( tmp && (start = tmp + 1) );
@@ -263,8 +271,9 @@ XLALParseCSV2StringVector ( const CHAR *CSVlist )
   return ( ret );
 
  failed:
+  XLALPrintError ("%s: failed to allocate %d bytes\n", __func__, len );
   XLALDestroyStringVector ( ret );
-  XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+  XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
 } /* XLALParseCSV2StringVector() */
 
@@ -280,8 +289,10 @@ deblank_string ( const CHAR *start, UINT4 len )
   UINT4 newlen;
   CHAR *ret;
 
-  if ( !start || !len )
-    return NULL;
+  if ( !start || !len ) {
+    XLALPrintError ("%s: invalid NULL input 'start' or len=0\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  }
 
   /* clip from beginning */
   pos0 = start;
@@ -294,11 +305,15 @@ deblank_string ( const CHAR *start, UINT4 len )
     pos1 --;
 
   newlen = pos1 - pos0 + 1;
-  if ( !newlen )
-    return NULL;
+  if ( !newlen ) {
+    XLALPrintError ("%s: something went wrong here .. probably a coding mistake.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EFAILED );
+  }
 
-  if ( (ret = LALCalloc(1, newlen + 1)) == NULL )
-    return NULL;
+  if ( (ret = XLALCalloc(1, newlen + 1)) == NULL ) {
+    XLALPrintError ("%s: failed to XLALCalloc(1, %d )\n", __func__, newlen + 1 );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  }
 
   strncpy ( ret, pos0, newlen );
   ret[ newlen ] = 0;
@@ -307,3 +322,31 @@ deblank_string ( const CHAR *start, UINT4 len )
 
 } /* deblank_string() */
 
+/** Search for string 'needle' in string-vector 'haystack', return index to
+ * first matching vector element if found, -1 outherwise.
+ *
+ * Note: function allows haystack=NULL input, in which case -1 (=not found) will be returned.
+ *
+ */
+INT4
+XLALFindStringInVector ( const char *needle, const LALStringVector *haystack )
+{
+  if ( !needle ) {
+    XLALPrintError ("%s: invalid NULL input 'needle'!\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+
+  if ( !haystack || (haystack->length == 0) )	// no vector to search => not found
+    return -1;
+
+  UINT4 i;
+  for ( i=0; i < haystack->length; i ++ )
+    if ( !strcmp ( needle, haystack->data[i] ) )	// found it!
+      return i;
+
+  return -1;	// didn't find matching entry
+
+} /* XLALFindStringInVector() */
+
+
+/** @}*/

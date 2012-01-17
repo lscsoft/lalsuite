@@ -23,17 +23,42 @@
  *
  * Author: Brown, D. A., and Brady, P. R.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="CreateMetaTableDirCV">
-Author: Brown, D. A., and Brady, P. R.
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Brown, D. A., and Brady, P. R.
+\file
+\ingroup lalmetaio
+\brief Construct a \c MetaTableDirectory for a given LIGOLwXML table.
+
+\heading{Description}
+
+The routine \c LALCreateMetaTableDir constructs a
+\c MetaTableDirectory for a given LIGOLwXML table.  It determines the
+location of each column expected to be present in the XML table and
+populates the \c pos field with this information.  This then allows
+other routines to parse the contents of an XML file and correctly interpret
+the entries.  When reading these tables, a call is made to
+\c LALCreateMetaTableDir.  For all other tables, the directory is
+constructed internally by the reading code.
+
+\heading{Algorithm}
+
+None.
+
+\heading{Uses}
+Functions in the Metaio library:
+<ul>
+<li> \c MetaioFindColumn()</li>
+<li> \c MetaioGetRow()</li>
+<li> \c MetaioOpenTable()</li>
+<li> \c MetaioClose()</li>
+</ul>
+\heading{Notes}
+
+*/
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -49,55 +74,13 @@ $Id$
 
 NRCSID( CREATEMETATABLEDIRC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{CreateMetaTableDir.c}}
 
-Routines to create a directory of a LIGO LW XML file.
-
-\subsubsection*{Prototypes}
-\input{CreateMetaTableDirCP}
-\idx{XLALCreateMetaTableDir()}
-\idx{LALCreateMetaTableDir()}
-
-\subsubsection*{Description}
-
-The routine \verb+LALCreateMetaTableDir+ constructs a
-\verb+MetaTableDirectory+ for a given LIGOLwXML table.  It determines the
-location of each column expected to be present in the XML table and
-populates the \verb+pos+ field with this information.  This then allows
-other routines to parse the contents of an XML file and correctly interpret
-the entries.  When reading these tables, a call is made to
-\verb+LALCreateMetaTableDir+.  For all other tables, the directory is
-constructed internally by the reading code.
-
-\subsubsection*{Algorithm}
-
-None.
-
-\subsubsection*{Uses}
-Functions in the Metaio library:
-\begin{itemize}
-\item \verb+MetaioFindColumn+
-\item \verb+MetaioGetRow+
-\item \verb+MetaioOpenTable+
-\item \verb+MetaioClose+
-\end{itemize}
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{CreateMetaTableDirCV}}
-
-</lalLaTeX>
-#endif
-
-/* <lalVerbatim file="CreateMetaTableDirCP"> */
 MetaTableDirectory* XLALCreateMetaTableDir(
     const MetaioParseEnv    env,
     MetadataTableType       table
     )
-/* </lalVerbatim> */
+
 {
-  static const char   *func = "XLALCreateMetaTableDir";
   MetaTableDirectory  *tableDir;
   INT4 i;
 
@@ -105,7 +88,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
   {
     case no_table:
       XLALPrintError( "XLALError - unable to index type no_table\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
       break;
     case process_table:
       {
@@ -133,7 +116,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {
             XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( XLAL_EFAILED );
           }
         }
 
@@ -159,7 +142,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {
             XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( XLAL_EFAILED );
           }
         }
 
@@ -171,17 +154,17 @@ MetaTableDirectory* XLALCreateMetaTableDir(
     case search_summary_table:
       XLALPrintError( "XLALError - "
           "unable to index type search_summary_table\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
       break;
     case search_summvars_table:
       XLALPrintError( "XLALError - "
           "unable to index type search_summvars_table\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
       break;
     case sngl_inspiral_table:
       XLALPrintError( "XLALError - "
           "unable to index type sngl_inspiral_table\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
       break;
     case sngl_ringdown_table:
       {
@@ -216,7 +199,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {
             XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( XLAL_EFAILED );
           }
         }
 
@@ -274,7 +257,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {
             XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( XLAL_EFAILED );
           }
         }
 
@@ -286,7 +269,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
     case sim_inspiral_table:
       XLALPrintError( "XLALError - "
           "unable to index type sim_inspiral_table\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
       break;
     case sim_ringdown_table:
       {
@@ -331,7 +314,7 @@ MetaTableDirectory* XLALCreateMetaTableDir(
           {
             XLALPrintError( "XLALError - unable to find column %s\n",
                 tmpTableDir[i].name );
-            XLAL_ERROR_NULL( func, XLAL_EFAILED );
+            XLAL_ERROR_NULL( XLAL_EFAILED );
           }
         }
 
@@ -343,18 +326,18 @@ MetaTableDirectory* XLALCreateMetaTableDir(
     case summ_value_table:
       XLALPrintError( "XLALError - "
           "unable to index type summ_value_table\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
       break;
     default:
       XLALPrintError( "XLALError - "
           "unable to index table due to unknown table type error\n" );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( XLAL_EFAILED );
   }
 
   return tableDir;
 }
 
-/* <lalVerbatim file="CreateMetaTableDirCP"> */
+
 void
 LALCreateMetaTableDir(
     LALStatus              *status,
@@ -362,7 +345,7 @@ LALCreateMetaTableDir(
     const MetaioParseEnv    UNUSED env,
     MetadataTableType       table
     )
-/* </lalVerbatim> */
+
 {
   INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
   ATTATCHSTATUSPTR (status);

@@ -17,47 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="UnitCompareCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Module \texttt{UnitCompare.c}}
-\label{tools:ss:UnitCompare.c}
-
-Compares two \texttt{LALUnit} structures, returning true if they are
-equivalent, false otherwise.
-
-\subsubsection*{Prototypes}
-\input{UnitCompareCP}
-\idx{LALUnitCompare()}
-
-\subsubsection*{Description}
-
-This function determines whether the units represented by
-\texttt{*(input->unitOne)} and \texttt{*(input->unitTwo)} are the same (both
-dimensionally and in the power-of-ten prefactor).  In this way,
-programs and programmers can verify that quantities have the expected
-units.
-
-\subsubsection*{Algorithm}
-
-The function first uses \texttt{LALUnitNormalize()} to bring both unit
-structures into standard form, then compares the powers of ten and the
-numerator and denominator of each exponent of a fundamental unit in
-turn.
-
-\subsubsection*{Uses}
-
-\texttt{LALUnitNormalize()}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{UnitCompareCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include <string.h>
 
@@ -67,14 +26,21 @@ turn.
 
 NRCSID( UNITCOMPAREC, "$Id$" );
 
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\addtogroup UnitCompare_c
 
-/* Return 1 if a unit is dimensionless, 0 otherwise */
+\brief Function to compare two \c LALUnit structures.
+
+*/
+
+/** Return 1 if a unit is dimensionless, 0 otherwise */
 int XLALUnitIsDimensionless(const LALUnit *unit)
 {
   int i;
 
   if(!unit)
-    XLAL_ERROR("XLALUnitIsDimensionless", XLAL_EFAULT);
+    XLAL_ERROR(XLAL_EFAULT);
 
   for(i = 0; i < LALNumUnits; i++)
     if(unit->unitNumerator[i] != unit->unitDenominatorMinusOne[i])
@@ -83,11 +49,11 @@ int XLALUnitIsDimensionless(const LALUnit *unit)
 }
 
 
-/* Return the unit's prefactor */
+/** Return the unit's prefactor */
 REAL8 XLALUnitPrefactor(const LALUnit *unit)
 {
   if(!unit)
-    XLAL_ERROR_REAL8("XLALUnitPrefactor", XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   return pow(10.0, unit->powerOfTen);
 }
 
@@ -95,49 +61,49 @@ REAL8 XLALUnitPrefactor(const LALUnit *unit)
 /**
  * Return the ratio unit1 / unit2
  */
-
 REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
 {
-  static const char func[] = "XLALUnitRatio";
   LALUnit tmp;
 
   if(!unit1 || !unit2)
-    XLAL_ERROR_REAL8(func, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   XLALUnitDivide(&tmp, unit1, unit2);
   if(XLALUnitIsDimensionless(&tmp))
     return XLALUnitPrefactor(&tmp);
-  XLAL_ERROR_REAL8(func, XLAL_EDIMS);
+  XLAL_ERROR_REAL8(XLAL_EDIMS);
 }
 
 
+
 /**
- * Returns 0 if units are the same (after normalization), or > 0 if they
- * are different.  Returns < 0 on error.
+ * Returns 0 if the the normal form of the two unit
+ * structures are the same or > 0 if they are different.  It returns
+ * \c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
+ * one of the input pointers is \c NULL.
  *
  * Example:
- *
+ * \code
  * if(XLALUnitCompare(&unit1, &unit2)) {
  * 	units_are_not_equal();
  * }
+ * \endcode
  */
-
 int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
 {
-  static const char func[] = "XLALUnitCompare";
   LALUnit  unitOne, unitTwo;
 
   if ( ! unit1 || ! unit2 )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   unitOne = *unit1;
   unitTwo = *unit2;
 
   /* normalize the units */
   if ( XLALUnitNormalize( &unitOne ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( XLALUnitNormalize( &unitTwo ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* factors of 10 disagree? */
   if ( unitOne.powerOfTen != unitTwo.powerOfTen )
@@ -154,11 +120,29 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
 }
 
 
-/* <lalVerbatim file="UnitCompareCP"> */
+/** \ingroup UnitCompare_c
+ * Compare two units structures, returning true if they are equivalent, false otherwise.
+ * This function determines whether the units represented by
+ * <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt> are the same (both
+ * dimensionally and in the power-of-ten prefactor).  In this way,
+ * programs and programmers can verify that quantities have the expected
+ * units.
+ *
+ * \heading{Algorithm}
+ *
+ * The function first uses <tt>LALUnitNormalize()</tt> to bring both unit
+ * structures into standard form, then compares the powers of ten and the
+ * numerator and denominator of each exponent of a fundamental unit in
+ * turn.
+ * \heading{Uses}
+ *
+ * <tt>LALUnitNormalize()</tt>
+ *
+ * \deprecated Use XLALUnitCompare() instead.
+ *
+ */
 void
 LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
-/* </lalVerbatim> */
-     /* Compare two units structures, returning 0 if they differ */
 {
   int code;
 

@@ -1,4 +1,3 @@
-opt/lscsoft/lalinspiral/include/lal*
-opt/lscsoft/lalinspiral/lib/*a
-opt/lscsoft/lalinspiral/lib/pkgconfig
-#opt/lscsoft/lalinspiral/share/lal
+usr/lib/*.a
+usr/lib/pkgconfig
+usr/include/lal*

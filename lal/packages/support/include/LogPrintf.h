@@ -38,6 +38,7 @@
 extern "C" {
 #endif
 
+#include <lal/LALDatatypes.h>
 #include <lal/LALRCSID.h>
 NRCSID( LOGPRINTFH, "$Id$" );
 
@@ -71,6 +72,8 @@ void LogPrintfVerbatim (LogLevel_t, const char* format, ...);
 int XLALfprintfGSLmatrix ( FILE *fp, const char *fmt, const gsl_matrix *gij );
 int XLALfprintfGSLvector ( FILE *fp, const char *fmt, const gsl_vector *vect );
 int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *vect );
+
+REAL8 XLALGetTimeOfDay(void);
 
 char * XLALClearLinebreaks ( const char *str );
 

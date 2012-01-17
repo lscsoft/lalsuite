@@ -1,3 +1,35 @@
+lalapps (6.6.1-1) unstable; urgency=low
+
+  * updates to lalapps_binj for ER1 data generation
+  * update to automake-1.11.2 
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 28 Dec 2011 11:13:02 -0600
+
+lalapps (6.6.0-1) unstable; urgency=low
+
+  * LALApps 6.6.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:08:55 -0600
+
+lalapps (6.6.0~rc2-1) unstable; urgency=low
+
+  * LALApps 6.6.0 Release Candidate 2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:42:48 -0600
+
+lalapps (6.6.0~rc1-1) unstable; urgency=low
+
+  * LALApps 6.6.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:13:24 -0600
+
+lalapps (6.5.0-1lscsoft3) unstable; urgency=low
+
+  * LALApps 6.5.0, rewritten rules to use pyversions
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Thu, 17 Feb 2011 12:05:00 +0100
+
 lalapps (6.5.0-1lscsoft1) unstable; urgency=low
 
   * LALApps 6.5.0

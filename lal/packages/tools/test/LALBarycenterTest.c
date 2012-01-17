@@ -73,12 +73,10 @@ int compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
 /*
   int lalDebugLevel=0;
 */
-  INT4 lalDebugLevel=7;
+  INT4 lalDebugLevel=1;
 
 BarycenterInput baryinput;
-EmissionTime  emit;
 LIGOTimeGPS tGPS;
-EarthState earth;
 
 INT4 t2000 = 630720013; /* gps time at Jan 1, 2000 00:00:00 UTC */
 INT4 t1998 = 630720013-730*86400-1;/* gps at Jan 1,1998 00:00:00 UTC*/
@@ -119,6 +117,11 @@ main( void )
       printf( "Got error code %d and message '%s', but expected error code %d\n",
           stat.statusCode, stat.statusDescription, LALINITBARYCENTERH_EOPEN);
       return LALBARYCENTERTESTC_EOPEN;
+    }
+  else
+    {
+      XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
+      xlalErrno = 0;
     }
 
 /* Checking response if data files somehow corrupted --to be fixed!
@@ -195,6 +198,11 @@ main( void )
   baryinput.site.location[2]=cachedDetector.location[2]/LAL_C_SI;
   }
 
+  EarthState earth;
+  EarthState earth_xlal;
+  EmissionTime  emit;
+  EmissionTime  emit_xlal;
+
 #if (DEBUG)
 /* Checking error messages when the timestamp is not within the
    1-yr ephemeris files
@@ -202,15 +210,15 @@ main( void )
     tGPS.gpsSeconds = t1998+5.e7;
     tGPS.gpsNanoSeconds = 0;
     LALBarycenterEarth(&stat, &earth, &tGPS, edat);
-      if ( stat.statusCode != LALBARYCENTERH_EOUTOFRANGEE
-        || strcmp(stat.statusDescription, LALBARYCENTERH_MSGEOUTOFRANGEE) )
-    {
-      printf( "Got error code %d and message %s\n",
-          stat.statusCode, stat.statusDescription );
-      printf( "Expected error code %d and message %s\n",
-           LALBARYCENTERH_EOUTOFRANGEE, LALBARYCENTERH_MSGEOUTOFRANGEE);
+    if ( stat.statusCode == 0 ) {
+      printf( "LALBarycenterEarth() succeeded but expected to get error\n");
       return LALBARYCENTERTESTC_EOUTOFRANGEE;
     }
+    else
+      {
+        XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
+        xlalErrno = 0;
+      }
 
 /* next try calling for bad choice of RA,DEC (e.g., something
 sensible in degrees, but radians)*/
@@ -226,15 +234,16 @@ sensible in degrees, but radians)*/
     baryinput.dInv=0.e0;
 
     LALBarycenter(&stat, &emit, &baryinput, &earth);
-      if ( stat.statusCode != LALBARYCENTERH_EBADSOURCEPOS
-        || strcmp(stat.statusDescription,LALBARYCENTERH_MSGEBADSOURCEPOS) )
+    if ( stat.statusCode == 0 )
     {
-      printf( "Got error code %d and message %s\n",
-          stat.statusCode, stat.statusDescription );
-      printf( "Expected error code %d and message %s\n",
-           LALBARYCENTERH_EBADSOURCEPOS, LALBARYCENTERH_MSGEBADSOURCEPOS);
+      printf( "LALBarycenter() succeeded but expected to get error\n");
       return LALBARYCENTERTESTC_EBADSOURCEPOS;
     }
+    else
+      {
+        XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
+        xlalErrno = 0;
+      }
 
 #endif
 /* Now running program w/o errors, to illustrate proper use. */
@@ -256,6 +265,11 @@ sensible in degrees, but radians)*/
       return XLAL_EFAILED;
     }
 
+    XLALBarycenterEarth ( &earth_xlal, &tGPS, edat);
+    if ( xlalErrno ) {
+      XLALPrintError ("%s: XLALBarycenterEarth() failed with xlalErrno = %d\n", __func__, xlalErrno );
+      return XLAL_EFAILED;
+    }
 
 /*Next: inner loop over different sky positions, for each arrival time;
      LALBarycenter called ONCE per sky position (or ONCE per detector) */
@@ -280,6 +294,11 @@ sensible in degrees, but radians)*/
         return XLAL_EFAILED;
       }
 
+      if ( XLALBarycenter ( &emit_xlal, &baryinput, &earth_xlal ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: XLALBarycenter() failed with xlalErrno = %d\n", __func__, xlalErrno );
+        return XLAL_EFAILED;
+      }
+
 #if 0
       printf("%d %d %d %25.17e %25.17e\n", k,
 	     tGPS.gpsSeconds,  tGPS.gpsNanoSeconds,
@@ -296,14 +315,21 @@ sensible in degrees, but radians)*/
 	     emit.vDetector[0],emit.vDetector[1],emit.vDetector[2]);
 #endif
 
-    }
-  }
+    } /* for k = 0..2 */
+
+  } /* for i = 0..9 */
+
   LALFree(edat->ephemE);
   LALFree(edat->ephemS);
   LALFree(edat);
+
   LALCheckMemoryLeaks();
+
+  XLALPrintError ("==> OK. All tests successful!\n\n");
+
   return 0;
-}
+
+} /* main() */
 
 
 /** Function to test equivalence between two loaded ephemeris-data structs.
@@ -312,34 +338,32 @@ sensible in degrees, but radians)*/
 int
 compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
 {
-  const char *fn = __func__;
-
   if ( !edat1 || !edat2 ) {
-    XLALPrintError ("%s: invalid NULL input edat1=%p, edat2=%p\n", fn, edat1, edat2 );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input edat1=%p, edat2=%p\n", __func__, edat1, edat2 );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   if ( edat1->nentriesE != edat2->nentriesE ) {
-    XLALPrintError ("%s: different nentriesE (%d != %d)\n", fn, edat1->nentriesE, edat2->nentriesE );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different nentriesE (%d != %d)\n", __func__, edat1->nentriesE, edat2->nentriesE );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( edat1->nentriesS != edat2->nentriesS ) {
-    XLALPrintError ("%s: different nentriesS (%d != %d)\n", fn, edat1->nentriesS, edat2->nentriesS );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different nentriesS (%d != %d)\n", __func__, edat1->nentriesS, edat2->nentriesS );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( edat1->dtEtable != edat2->dtEtable ) {
-    XLALPrintError ("%s: different dtEtable (%g != %g)\n", fn, edat1->dtEtable, edat2->dtEtable );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different dtEtable (%g != %g)\n", __func__, edat1->dtEtable, edat2->dtEtable );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
   if ( edat1->dtStable != edat2->dtStable ) {
-    XLALPrintError ("%s: different dtStable (%g != %g)\n", fn, edat1->dtStable, edat2->dtStable );
-    XLAL_ERROR ( fn, XLAL_EFAILED );
+    XLALPrintError ("%s: different dtStable (%g != %g)\n", __func__, edat1->dtStable, edat2->dtStable );
+    XLAL_ERROR ( XLAL_EFAILED );
   }
 
   /* compare earth ephemeris data */
   if ( !edat1->ephemE || !edat2->ephemE ) {
-    XLALPrintError ("%s: invalid NULL ephemE pointer edat1 (%p), edat2 (%p)\n", fn, edat1->ephemE, edat2->ephemE );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL ephemE pointer edat1 (%p), edat2 (%p)\n", __func__, edat1->ephemE, edat2->ephemE );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   INT4 i;
   for ( i=0; i < edat1->nentriesE; i ++ )
@@ -359,7 +383,7 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
            edat1->ephemE[i].acc[2] != edat2->ephemE[i].acc[2]
            )
         {
-          XLALPrintError ("%s: Inconsistent earth-entry %d:\n", fn, i );
+          XLALPrintError ("%s: Inconsistent earth-entry %d:\n", __func__, i );
           XLALPrintError ("    edat1 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
                           edat1->ephemE[i].gps,
                           edat1->ephemE[i].pos[0], edat1->ephemE[i].pos[1], edat1->ephemE[i].pos[2],
@@ -372,15 +396,15 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
                           edat2->ephemE[i].vel[0], edat2->ephemE[i].vel[1], edat2->ephemE[i].vel[2],
                           edat2->ephemE[i].acc[0], edat2->ephemE[i].acc[1], edat2->ephemE[i].acc[2]
                           );
-          XLAL_ERROR ( fn, XLAL_EFAILED );
+          XLAL_ERROR ( XLAL_EFAILED );
         } /* if difference in data-set i */
 
     } /* for i < nentriesE */
 
   /* compare sun ephemeris data */
   if ( !edat1->ephemS || !edat2->ephemS ) {
-    XLALPrintError ("%s: invalid NULL ephemS pointer edat1 (%p), edat2 (%p)\n", fn, edat1->ephemS, edat2->ephemS );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL ephemS pointer edat1 (%p), edat2 (%p)\n", __func__, edat1->ephemS, edat2->ephemS );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
   for ( i=0; i < edat1->nentriesS; i ++ )
     {
@@ -399,7 +423,7 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
            edat1->ephemS[i].acc[2] != edat2->ephemS[i].acc[2]
            )
         {
-          XLALPrintError ("%s: Inconsistent sun-entry %d:\n", fn, i );
+          XLALPrintError ("%s: Inconsistent sun-entry %d:\n", __func__, i );
           XLALPrintError ("    edat1 = %g, (%g, %g, %g), (%g, %g, %g), (%g, %g, %g)\n",
                           edat1->ephemS[i].gps,
                           edat1->ephemS[i].pos[0], edat1->ephemS[i].pos[1], edat1->ephemS[i].pos[2],
@@ -412,7 +436,7 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
                           edat2->ephemS[i].vel[0], edat2->ephemS[i].vel[1], edat2->ephemS[i].vel[2],
                           edat2->ephemS[i].acc[0], edat2->ephemS[i].acc[1], edat2->ephemS[i].acc[2]
                           );
-          XLAL_ERROR ( fn, XLAL_EFAILED );
+          XLAL_ERROR ( XLAL_EFAILED );
         } /* if difference in data-set i */
 
     } /* for i < nentriesE */

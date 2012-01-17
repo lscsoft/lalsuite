@@ -1,9 +1,5 @@
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
-EXTRA_TEXSOURCES = \
-	ResampleTimeSeriesTest.c \
-	ComputeCalibrationFactorsTest.c
-
 check_PROGRAMS = \
 	CoherentEstimationTest \
 	ComputeTransferTest \
@@ -103,7 +99,6 @@ TESTS = \
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 MOSTLYCLEANFILES = \
-	.dvi-dep \
 	PrintVector.* \
 	ff_diff_cros.txt \
 	ff_diff_plus.txt \
@@ -114,8 +109,3 @@ MOSTLYCLEANFILES = \
 	ff_rms_diff_cros_vs_fudge.txt \
 	ff_rms_diff_plus_vs_fudge.txt \
 	transfer.out
-DISTCLEANFILES = *.tex
-
-dvi-local: .dvi-dep
-
-@DVIMKFILE@

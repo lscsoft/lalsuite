@@ -17,46 +17,30 @@
 *  MA  02111-1307  USA
 */
 
-#if 0  /* autodoc block */
+/**
+\file
+\brief Functions for reading frame data.
 
-<lalVerbatim file="FrameDataCV">
-$Id$
-</lalVerbatim>
+\heading{Description}
 
-<lalLaTeX>
-\subsection{Module \texttt{FrameData.c}}
-\label{ss:FrameData.c}
-
-Functions for reading frame data.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FrameDataCP}
-\idx{LALInitializeFrameData()}
-\idx{LALFinalizeFrameData()}
-\idx{LALGetFrameData()}
-\idx{LALGetFrameDataResponse()}
-
-\subsubsection*{Description}
-
-The routine \texttt{LALInitializeFrameData()} searches for frame files in a
+The routine <tt>LALInitializeFrameData()</tt> searches for frame files in a
 specified directory and performs the necessary preparation for reading these
 files.  When the user is finished reading frame data from the path, the
-routine \texttt{LALFinalizeFrameData()} should be called.
+routine <tt>LALFinalizeFrameData()</tt> should be called.
 
-The routine \texttt{LALGetFrameData()} gets the next frame IFO\_DMRO data while
-the routine \texttt{LALGetFrameDataResponse()} gets the current response
-function.  The routine \texttt{LALGetFrameDataResponse()} does a spline-fit to
+The routine <tt>LALGetFrameData()</tt> gets the next frame IFO_DMRO data while
+the routine <tt>LALGetFrameDataResponse()</tt> gets the current response
+function.  The routine <tt>LALGetFrameDataResponse()</tt> does a spline-fit to
 the sweptsine response of the instrument in order to get the response
 function.
 
-If the output time series has a \texttt{NULL} data field, then
-\texttt{LALGetFrameData()} enters seek mode in which no data is returned but
+If the output time series has a \c NULL data field, then
+<tt>LALGetFrameData()</tt> enters seek mode in which no data is returned but
 the frame data is advanced the required amount.
 
-\subsubsection*{Operating Instructions}
+\heading{Operating Instructions}
 
-\begin{verbatim}
+\code
 const  UINT4                    numPoints = 1024;
 const  CHAR                    *framePath = "/data/frames";
 static Status                   status;
@@ -68,69 +52,65 @@ LALI2CreateVector( &status, &dmro.data, numPoints );
 LALCCreateVector( &status, &resp.data, numPoints/2 + 1 );
 LALInitializeFrameData( &status, &frameData, framePath );
 
-/* infinite loop reading frame data */
+/\* infinite loop reading frame data *\/
 while ( 1 )
 {
   LALGetFrameData( &status, &dmro, frameData );
 
-  /* break out of loop if end of data */
+  /\* break out of loop if end of data *\/
   if ( frameData->endOfData )
   {
     break;
   }
 
-  /* get response function if new calibration info */
+  /\* get response function if new calibration info *\/
   if ( frameData->newCalibration )
   {
     LALGetFrameDataResponse( &status, &resp, frameData );
   }
 
-  /* seek 3 minutes into each new locked section */
+  /\* seek 3 minutes into each new locked section *\/
   if ( frameData->newLock )
   {
     INT2TimeSeries seek;
     INT2Vector     svec;
 
-    svec.length = 180/dmro.deltaT; /* 3 minutes */
-    svec.data   = NULL;            /* seek mode */
+    svec.length = 180/dmro.deltaT; /\* 3 minutes *\/
+    svec.data   = NULL;            /\* seek mode *\/
     seek.data   = &svec;
     LALGetFrameData( &status, &seek, frameData );
 
-    /* break out of loop if end of data */
+    /\* break out of loop if end of data *\/
     if ( frameData->endOfData )
     {
       break;
     }
 
-    /* get response function if new calibration info */
+    /\* get response function if new calibration info *\/
     if ( frameData->newCalibration )
     {
       LALGetFrameDataResponse( &status, &resp, frameData );
     }
 
-    /* go back to the beginning of the infinite loop */
+    /\* go back to the beginning of the infinite loop *\/
     continue;
   }
 
-  /* do something with the data here */
+  /\* do something with the data here *\/
 
 }
 
 LALFinalizeFrameData( &status, &frameData );
 LALCDestroyVector( &status, &resp.data );
 LALI2DestroyVector( &status, &dmro.data );
-\end{verbatim}
+\endcode
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-\subsubsection*{Uses}
+\heading{Uses}
 
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{FrameDataCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
+\heading{Notes}
+*/
 
 
 #include <stdio.h>
@@ -144,16 +124,14 @@ LALI2DestroyVector( &status, &dmro.data );
 
 NRCSID (FRAMEDATAC, "$Id$");
 
-/* <lalVerbatim file="FrameDataCP"> */
+
 void
 LALInitializeFrameData (
     LALStatus  *status,
     FrameData **frameData,
     CHAR       *framePath
     )
-{ /* </lalVerbatim> */
-  const CHAR *headNames[]       = {"C1-*.F", "H-*.F", "H-*.T", "L-*.F",
-                                   "L-*.T", "C1-*[0-9]"};
+{
   const INT4  numHeadNames      = 6;
   const INT4  maxNumFiles       = 2048;
   const INT4  maxFileNameLength = 256;
@@ -166,7 +144,8 @@ LALInitializeFrameData (
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
-  ASSERT (framePath, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+  if ( framePath == NULL ) ABORT(status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
+
   ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
   ASSERT (!(*frameData), status, FRAMEDATAH_ENNUL, FRAMEDATAH_MSGENNUL);
 
@@ -197,15 +176,18 @@ LALInitializeFrameData (
   for (nameType = 0; nameType < numHeadNames; ++nameType)
   {
     FILE *fp;
-    INT4  nbytes;
     INT4  numFiles;
 
     /* command to list frame files of current name type */
+#ifndef LAL_NDEBUG
+    INT4  nbytes;
+    const CHAR *headNames[]       = {"C1-*.F", "H-*.F", "H-*.T", "L-*.F", "L-*.T", "C1-*[0-9]"};
     nbytes = sprintf (command, "ls %s/%s 2>/dev/null",
                       framePath, headNames[nameType]);
     ASSERT (nbytes > 0, status, FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
     ASSERT (nbytes < (INT4)sizeof(command), status,
             FRAMEDATAH_EREAD, FRAMEDATAH_MSGEREAD);
+#endif
 
     /* fp is a stream containing the filenames */
     fp = popen (command, "r");
@@ -238,13 +220,13 @@ LALInitializeFrameData (
 }
 
 
-/* <lalVerbatim file="FrameDataCP"> */
+
 void
 LALFinalizeFrameData (
     LALStatus  *status,
     FrameData **frameData
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS (status, "LALFinalizeFrameData", FRAMEDATAC);
   ATTATCHSTATUSPTR (status);
 
@@ -406,14 +388,14 @@ GetNewFrame (
 }
 
 
-/* <lalVerbatim file="FrameDataCP"> */
+
 void
 LALGetFrameData (
     LALStatus      *status,
     INT2TimeSeries *data,
     FrameData      *frameData
     )
-{ /* </lalVerbatim> */
+{ 
   INT4 seek       = 0;
   INT4 brokenLock = 0;
   INT4 numPoints;
@@ -702,14 +684,14 @@ SplineFit (
 }
 
 
-/* <lalVerbatim file="FrameDataCP"> */
+
 void
 LALGetFrameDataResponse (
     LALStatus               *status,
     COMPLEX8FrequencySeries *response,
     FrameData               *frameData
     )
-{ /* </lalVerbatim> */
+{ 
   REAL4Vector *re = NULL;
   REAL4Vector *im = NULL;
   REAL4Vector  x;

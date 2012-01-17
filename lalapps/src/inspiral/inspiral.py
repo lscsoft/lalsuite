@@ -488,6 +488,25 @@ class CohBankJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
 
 
+class InspiralCoherentJob(InspiralAnalysisJob):
+  """
+  A lalapps_inspiral job used by the inspiral pipeline. The static options
+  are read from the sections [data] and [inspiral] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The job
+  runs in the universe specfied in the ini file. The path to the executable
+  is determined from the ini file.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'inspiral'
+    sections = ['data']
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+
+
 class CohInspBankJob(InspiralAnalysisJob):
   """
   A lalapps_coherent_inspiral job used by the inspiral pipeline. The static
@@ -898,6 +917,7 @@ class PTFInspiralNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
+    self.set_zip_output(True)
 
   def set_spin_bank(self,bank):
     self.add_var_opt('spin-bank', bank)
@@ -1738,6 +1758,13 @@ class CohBankNode(InspiralAnalysisNode):
   def get_ifos(self):
     return self.__ifos
 
+  def set_num_slides(self, num_slides):
+    """
+    Set number of time slides to undertake
+    """
+    self.add_var_opt('num-slides',num_slides)
+    self.__num_slides = num_slides
+
   def get_output(self):
     """
     Returns the file name of output from the coherent bank. 
@@ -1788,6 +1815,13 @@ class CohInspBankNode(InspiralAnalysisNode):
 
   def get_ifos(self):
     return self.__ifos
+
+  def set_num_slides(self, num_slides):
+    """
+    Set number of time slides to undertake
+    """
+    self.add_var_opt('num-slides',num_slides)
+    self.__num_slides = num_slides
 
   def get_output(self):
     """
@@ -3332,8 +3366,9 @@ def overlap_test(interval1, interval2, slide_sec=0):
 class SearchVolumeJob(pipeline.SqliteJob):
   """
   A search volume job. Computes the observed physical volume
-  above a specified FAR (if FAR is not specified, computes the
-  volume above the loudest event).
+  above a specified FAR; if FAR is not specified, computes the
+  volume above the loudest event (open box) or FAR=1/livetime 
+  (closed box).
   """
   def __init__(self, cp, dax = False):
     """
@@ -3347,30 +3382,26 @@ class SearchVolumeNode(pipeline.SqliteNode):
   """
   A search volume node.
   """
-  def __init__(self, job, database, output_cache = None, output_tag = "SEARCH_VOLUME", bootstrap_iterations=10000, veto_segments_name="vetoes", use_expected_loudest_event = False, bintype = "TOTAL_MASS"):
+  def __init__(self, job):
     """
-    @database: the pipedown database containing the injection triggers
-    @ouptut_cache: name prefix for cache file to be written out by program
-    @output_tag: a string label for the output files
-    @use_expected_loudest_event: disables the use of loudest event FAR, use 1./livetime instead
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.add_var_arg(database)
 
-    self.add_var_opt("bootstrap-iterations",bootstrap_iterations)
-    self.add_var_opt("veto-segments-name",veto_segments_name)
-    if output_cache:
-      self.add_var_opt("output-cache",output_cache)
-    if output_tag:
-      self.add_var_opt("output-name-tag",output_tag)
-    if use_expected_loudest_event:
-      self.add_var_arg("--use-expected-loudest-event")
-    if bintype == "TOTAL_MASS":
-      self.add_var_arg("--bin-by-total-mass")
-    if bintype == "CHIRP_MASS":
-      self.add_var_arg("--bin-by-chirp-mass")
-    if bintype == "MASS1_MASS2":
-      self.add_var_arg("--bin-by-m1m2")
+  def add_database(self, db):
+    self.add_var_arg(db)
+
+  def set_output_cache(self, file):
+    self.add_var_opt("output-cache", file)
+
+  def set_output_tag(self, tag):
+    self.add_var_opt("output-tag",tag)
+
+  def set_veto_segments_name(self, name):
+    self.add_var_opt("veto-segments-name", name)
+
+  def set_open_box(self):
+    self.add_var_arg("--open-box")
+
 
 class SearchUpperLimitJob(pipeline.SqliteJob):
   """
@@ -3383,20 +3414,22 @@ class SearchUpperLimitJob(pipeline.SqliteJob):
     @sections: list of sections for cp to read from
     """
     exec_name = 'search_upper_limit'
-    pipeline.SqliteJob.__init__(self, cp, [], exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, ['upper-limit'], exec_name, dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 class SearchUpperLimitNode(pipeline.SqliteNode):
   """
   A search upper limit node.
   """
-  def __init__(self, job, input_cache):
+  def __init__(self, job):
     """
     @job: a SearchUpperLimitJob
     """
     pipeline.SqliteNode.__init__(self, job)
-    self.add_var_opt("input-cache", input_cache)
     self.open_box = False
+
+  def add_input_cache(self, input_cache):
+    self.add_var_arg(input_cache)
 
   def set_open_box(self):
     '''

@@ -22,60 +22,32 @@
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
  * \file SFTClean.h
  * \brief Header file for cleaning routines
- */
+\ingroup pulsarTODO
 
+\heading{Header \ref SFTClean.h}
+\latexonly\label{s_SFTClean_h}\endlatexonly
 
+Routines for cleaning SFT files using known spectral disturbances.
 
-/* *********************************** <lalVerbatim file="SFTbinHV">
-Author: Krishnan, B
-$Id$
-************************************* </lalVerbatim> */
+\heading{Synopsis}
+
+\code
+#include <lal/SFTClean.h>
+\endcode
+
+Format for list of known spectral disturbances and using
+them to clean SFT data
+
+\heading{Error conditions}
+
+ Test program. %%
+
+*/
+
 
 /* REVISIONS: */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for CleanCOMPLEX8SFT. Thus only need to */
 /*               initialze RandomParams *randPar once and avoid repeatly opening /dev/urandom.  */
-
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{SFTClean.h}}
-\label{s:SFTClean.h}
-
-Routines for cleaning SFT files using known spectral disturbances.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
-
-\begin{verbatim}
-#include <lal/SFTClean.h>
-\end{verbatim}
-
-\noindent Format for list of known spectral disturbances and using
-them to clean SFT data
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-\input{SFTCleanHErrorTable}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{SFTCleanHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{SFTCleanC}
-%%%%%%%%%% Test program. %%
-\newpage\input{SFTCleanTestC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
-
-
-/**
- * Routines for cleaning SFT files using known spectral disturbances.
- *
- * Also contains format for list of known spectral disturbances
- *
- **/
 
 /*
  * 4.  Protection against double inclusion (include-loop protection)
@@ -84,6 +56,11 @@ them to clean SFT data
 
 #ifndef _SFTCLEAN_H
 #define _SFTCLEAN_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -133,7 +110,7 @@ NRCSID (SFTCLEANH, "$Id$");
  *    inclusion in the documentation.
  */
 
-/* <lalErrTable file="SFTbinHErrorTable"> */
+/**\name Error Codes */ /*@{*/
 
 #define SFTCLEANH_ENULL 1
 #define SFTCLEANH_EFILE 2
@@ -156,7 +133,7 @@ NRCSID (SFTCLEANH, "$Id$");
 #define SFTCLEANH_MSGEWRITE "fwrite failed"
 
 
-/* </lalErrTable>  */
+/*@}*/
 
 
 /* ******************************************************
@@ -177,6 +154,7 @@ NRCSID (SFTCLEANH, "$Id$");
 
 /** structure for storing list of spectral lines -- constructed by expanding list of harmonics*/
   typedef struct tagLineNoiseInfo{
+    SWIGLAL_STRUCT(LineNoiseInfo);
     INT4         nLines;     /**< number of lines */
     REAL8        *lineFreq;  /**< central frequency of the line in Hz */
     REAL8        *leftWing;  /**< width to the left from central frequency in Hz */
@@ -186,6 +164,7 @@ NRCSID (SFTCLEANH, "$Id$");
   /** structure for storing the contents of the input list of known
       spectral disturbances */
   typedef struct tagLineHarmonicsInfo{
+    SWIGLAL_STRUCT(LineHarmonicsInfo);
     INT4         nHarmonicSets; /**< number of sets of harmonics */
     REAL8        *startFreq;    /**< starting frequency of set in Hz */
     REAL8        *gapFreq;      /**< frequency difference between adjacent harmonics in Hz */

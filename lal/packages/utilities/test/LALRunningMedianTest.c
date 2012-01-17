@@ -377,8 +377,8 @@ int main( int argc, char **argv )
 {
   LALStatus stat;
   UINT4 blocksize = 512, length = 1024;
-  REAL4Sequence *input4=NULL, *medians4=NULL;
-  REAL8Sequence *input8=NULL, *medians8=NULL;
+  REAL4Sequence *input4=NULL;
+  REAL8Sequence *input8=NULL;
   LALRunningMedianPar param;
   UINT4 i;
   BOOLEAN verbose = 0;
@@ -429,6 +429,9 @@ int main( int argc, char **argv )
   /* test error conditions */
 
 #ifndef LAL_NDEBUG
+  REAL4Sequence *medians4=NULL;
+  REAL8Sequence *medians8=NULL;
+
     if ( ! lalNoDebug )
         {
 
@@ -503,9 +506,6 @@ int main( int argc, char **argv )
   }
 
         } /* if ( ! lalNoDebug ) */
-#else
-    medians4 = NULL;
-    medians8 = NULL;
 #endif /* LAL_NDEBUG */
 
 

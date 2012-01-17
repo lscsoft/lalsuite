@@ -26,55 +26,35 @@
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="TrigScanEThincaCommonCV">
-Author: Robinson, C. A. K.
-</lalVerbatim>
-#endif
-
 #include <lal/TrigScanEThincaCommon.h>
 
 NRCSID( TRIGSCANETHINCACOMMONC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{TrigScanEThincaCommon.c}}
+/**
+\author Robinson, C. A. K.
+\file
 
-Provides helper functions used in TrigScan and E-thinca.
+\brief Provides helper functions used in TrigScan and E-thinca.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{TrigScanEThincaCommonCP}
-\idx{XLALCreateTriggerErrorList()}
-\idx{XLALDestroyTriggerErrorList()}
-
-\subsubsection*{Description}
-The function \texttt{XLALCreateTriggerErrorList()} creates a linked list of
+\heading{Description}
+The function <tt>XLALCreateTriggerErrorList()</tt> creates a linked list of
 structures pointing to the trigger and their associated position vector and
 shape matrix. If required, the maximum difference in tC associated with the
-triggers in the list of \texttt{SnglInspiralTable}s will be passed back in
-\texttt{tcMax}.
+triggers in the list of \c ::SnglInspiralTable's will be passed back in
+\c tcMax.
 
-The function \texttt{XLALDestroyTriggerErrorList()} frees all memory associated
-with the \texttt{TriggerErrorList}, with the exception of the wrapped
-\texttt{SnglInspiralTable}s, which will normally still be required after
+The function <tt>XLALDestroyTriggerErrorList()</tt> frees all memory associated
+with the \c ::TriggerErrorList, with the exception of the wrapped
+::SnglInspiralTable's, which will normally still be required after
 TrigScan and E-thinca have completed.
 
-\vfill{\footnotesize\input{SnglInspiralUtilsCV}}
+*/
 
-</lalLaTeX>
-#endif
-
-
-/* <lalVerbatim file="TrigScanEThincaCommonCP"> */
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,
                                                REAL8             *tcMax )
-/* </lalVerbatim> */
+
 {
-
-  static const char *func = "XLALCreateTriggerErrorList";
-
   REAL8 timeError = 0.0;
 
   TriggerErrorList *errorListHead = NULL;
@@ -84,10 +64,10 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
 
 #ifndef LAL_NDEBUG
   if ( !tableHead )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   if ( scaleFactor <= 0 )
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 #endif
 
   /* Loop through triggers and assign each of them an error ellipsoid */
@@ -109,7 +89,7 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
     if ( !thisErrorList )
     {
       XLALDestroyTriggerErrorList( errorListHead );
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
 
     thisErrorList->trigger    = currentTrigger;
@@ -118,14 +98,14 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
     if ( !thisErrorList->err_matrix )
     {
       XLALDestroyTriggerErrorList( errorListHead );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
 
     thisErrorList->position   = XLALGetPositionFromSnglInspiral( currentTrigger );
     if ( !thisErrorList->position )
     {
       XLALDestroyTriggerErrorList( errorListHead );
-      XLAL_ERROR_NULL( func, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
     thisTimeError = XLALSnglInspiralTimeError(currentTrigger, scaleFactor );
     if (thisTimeError > timeError)
@@ -139,9 +119,9 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
   return errorListHead;
 }
 
-/* <lalVerbatim file="TrigScanEThincaCommonCP"> */
+
 void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead )
-/* </lalVerbatim> */
+
 {
 
   TriggerErrorList *thisErrorList;
@@ -170,7 +150,6 @@ void XLALDestroyTriggerErrorList( TriggerErrorList *errorListHead )
 
 REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch)
 {
-  static const char func[] = "XLALSnglInspiralTimeError";
   REAL8 a11 = table->Gamma[0] / eMatch;
   REAL8 a12 = table->Gamma[1] / eMatch;
   REAL8 a13 = table->Gamma[2] / eMatch;
@@ -185,9 +164,9 @@ REAL8 XLALSnglInspiralTimeError(const SnglInspiralTable *table, REAL8 eMatch)
               - (a23*a23 - a22*a33) * (a12*a12 - a22*a11);
 
   if (denom == 0)
-    XLAL_ERROR_REAL8(func, XLAL_EFPDIV0);
+    XLAL_ERROR_REAL8(XLAL_EFPDIV0);
   if ((x < 0) ^ (denom < 0))
-    XLAL_ERROR_REAL8(func, XLAL_EFPINVAL);
+    XLAL_ERROR_REAL8(XLAL_EFPINVAL);
 
   return sqrt( x / denom );
 }

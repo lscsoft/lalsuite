@@ -1,6 +1,2 @@
-#opt/lscsoft/lalframe/bin
-opt/lscsoft/lalframe/include
-opt/lscsoft/lalframe/lib/pkgconfig
-#opt/lscsoft/lalframe/share/lal
-#opt/lscsoft/lalframe/share/man/man1
-#opt/lscsoft/lalframe/share/man/man3
+usr/lib/pkgconfig
+usr/include

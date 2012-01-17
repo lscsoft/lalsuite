@@ -23,17 +23,8 @@
  *
  * Author: Brown, D. A., and Goggin, L. M.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
-
-#if 0
-<lalVerbatim file="LIGOLwXMLRingdownReadCV">
-Author: Brown, D. A. and Goggin, L. M.
-$Id$
-</lalVerbatim>
-#endif
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -50,39 +41,29 @@ NRCSID( LIGOLWXMLRINGDOWNREADC, "$Id$" );
 #define UNUSED
 #endif
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{LIGOLwXMLRingdownRead.c}}
+/**
+\author Brown, D. A. and Goggin, L. M.
+\file
 
-Routines to read the various ringdown search XML data into LAL structures.
+\brief Routines to read the various ringdown search XML data into LAL structures.
 
-\subsubsection*{Prototypes}
-\input{LIGOLwXMLRingdownReadCP}
-\idx{XLALSnglRingdownTableFromLIGOLw()}
-\idx{XLALSimRingdownTableFromLIGOLw()}
+\heading{Description}
 
-\subsubsection*{Description}
-
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 None.
 
-\subsubsection*{Uses}
+\heading{Uses}
 Functions in the Metaio library:
-\begin{itemize}
-\item \verb+MetaioFindColumn+
-\item \verb+MetaioGetRow+
-\item \verb+MetaioOpenTable+
-\item \verb+MetaioClose+
-\end{itemize}
-\subsubsection*{Notes}
+<ul>
+<li>MetaioFindColumn()</li>
+<li>MetaioGetRow()</li>
+<li>MetaioOpenTable()</li>
+<li>MetaioClose()</li>
+</ul>
+\heading{Notes}
 
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{LIGOLwXMLRingdownReadCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 
 #define XLAL_CLOBBER_EVENTS \
@@ -94,13 +75,12 @@ Functions in the Metaio library:
   thisEvent = NULL; \
 }
 
-/* <lalVerbatim file="LIGOLwXMLRingdownReadCP"> */
+
 SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
     CHAR               *fileName
     )
-/* </lalVerbatim> */
+
 {
-  static const char *func = "XLALSnglRingdownTableFromLIGOLw";
   int                            i, j;
   int                            mioStatus = 0;
   INT4                           i4colData;
@@ -119,7 +99,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
   {
     XLALPrintError( "XLAL Error - unable to open sngl_ringdown table: "
         "metaio error code %d\n", mioStatus );
-    XLAL_ERROR_NULL( func, XLAL_EDATA );
+    XLAL_ERROR_NULL( XLAL_EDATA );
    /* return 0;*/
   }
 
@@ -129,7 +109,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
   {
     XLALPrintError( "XLAL Error - "
         "unable to create sngl_ringdown table directory\n" );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   /* loop over the rows in the file */
@@ -155,7 +135,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       XLALPrintError( "XLAL Error - could not allocate sngl_ringdown table\n" );
       XLAL_CLOBBER_EVENTS;
       MetaioClose( env );
-      XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
 
     /* parse the contents of the row into the SnglRingdownTable structure */
@@ -165,7 +145,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
       {
         XLALPrintError( "XLAL Error - bad table directory for element %d\n", j );
         XLAL_CLOBBER_EVENTS;
-        XLAL_ERROR_NULL( func, XLAL_EIO );
+        XLAL_ERROR_NULL( XLAL_EIO );
       }
 
       /* dereference the data stored in the table */
@@ -264,7 +244,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
         XLALPrintError( "XLAL Error - "
             "table directory index %d out of bounds\n", j );
         XLAL_CLOBBER_EVENTS;
-        XLAL_ERROR_NULL( func, XLAL_EIO );
+        XLAL_ERROR_NULL( XLAL_EIO );
       }
     }
   }
@@ -274,7 +254,7 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
     XLALPrintError( "XLAL Error - error parsing after row %d\n", i );
     XLAL_CLOBBER_EVENTS;
     MetaioClose( env );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   /* Normal exit */
@@ -285,15 +265,14 @@ SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
 }
 
 
-/* <lalVerbatim file="LIGOLwXMLRingdownReadCP"> */
+
 SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     CHAR               *fileName,
     INT4                startTime,
     INT4                stopTime
     )
-/* </lalVerbatim> */
+
 {
-  static const char *func = "XLALSimRingdownTableFromLIGOLw";
   int                            i, j;
   int                            mioStatus = 0;
   INT4                           i4colData;
@@ -312,7 +291,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
   {
     XLALPrintError( "XLAL Error - unable to open sim_ringdown table: "
         "metaio error code %d\n", mioStatus );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   /* create table directory to find columns in file */
@@ -321,7 +300,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
   {
     XLALPrintError( "XLAL Error - "
         "unable to create sim_ringdown table directory\n" );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   /* loop over the rows in the file */
@@ -336,7 +315,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     {
       XLALPrintError( "XLAL Error - bad table directory for element %d\n", i );
       XLAL_CLOBBER_EVENTS;
-      XLAL_ERROR_NULL( func, XLAL_EIO );
+      XLAL_ERROR_NULL( XLAL_EIO );
     }
 
     i4colData = env->ligo_lw.table.elt[tableDir[2].pos].data.int_4s;
@@ -359,7 +338,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
         XLALPrintError( "XLAL Error - could not allocate sim_ringdown table\n" );
         XLAL_CLOBBER_EVENTS;
         MetaioClose( env );
-        XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
       }
 
       /* parse the contents of the row into the SimRingdownTable structure */
@@ -369,7 +348,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
         {
           XLALPrintError( "XLAL Error - bad table directory for element %d\n", j );
           XLAL_CLOBBER_EVENTS;
-          XLAL_ERROR_NULL( func, XLAL_EIO );
+          XLAL_ERROR_NULL( XLAL_EIO );
         }
 
         /* dereference the data stored in the table */
@@ -506,7 +485,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
           XLALPrintError( "XLAL Error - "
               "table directory index %d out of bounds\n", j );
           XLAL_CLOBBER_EVENTS;
-          XLAL_ERROR_NULL( func, XLAL_EIO );
+          XLAL_ERROR_NULL( XLAL_EIO );
         }
       }
     }
@@ -517,7 +496,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     XLALPrintError( "XLAL Error - error parsing after row %d\n", i );
     XLAL_CLOBBER_EVENTS;
     MetaioClose( env );
-    XLAL_ERROR_NULL( func, XLAL_EIO);
+    XLAL_ERROR_NULL( XLAL_EIO);
   }
 
   /* Normal exit */
@@ -529,7 +508,7 @@ SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
 
 #undef XLAL_CLOBBER_EVENTS
 
-/* <lalVerbatim file="LIGOLwXMLRingdownReadCP"> */
+
 INT4 XLALReadRingdownTriggerFile (
     SnglRingdownTable    **ringdownEventList,
     SnglRingdownTable    **lastTrigger,
@@ -537,9 +516,8 @@ INT4 XLALReadRingdownTriggerFile (
     SearchSummvarsTable  **inputFileList,
     CHAR                  *fileName
     )
-/* </lalVerbatim> */
+
 {
-  const char *func = "XLALReadRingdownTriggerFile";
   INT4                 numFileTriggers = 0;
   int 		       errnum;
   SnglRingdownTable   *inputData = NULL;
@@ -567,7 +545,7 @@ INT4 XLALReadRingdownTriggerFile (
   if ( ! thisInputFile )
   {
     XLALPrintError( "XLAL Error - could not allocate search_summvars table\n" );
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   snprintf( thisInputFile->name, LIGOMETA_NAME_MAX, "input_file" );
@@ -583,7 +561,7 @@ INT4 XLALReadRingdownTriggerFile (
     LALFree( thisInputFile );
     XLALPrintError( "XLAL Error - error reading search_summary table from %s\n",
         fileName );
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   }
   else
   {
@@ -612,7 +590,7 @@ INT4 XLALReadRingdownTriggerFile (
         break;
       default:
         XLALSetErrno( errnum );
-        XLAL_ERROR( func, XLAL_EFUNC );
+        XLAL_ERROR( XLAL_EFUNC );
   }
   else
   {

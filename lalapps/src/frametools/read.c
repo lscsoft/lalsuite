@@ -99,7 +99,10 @@ static int writeFrVectData( FILE *fp, double x0, double dx, void *data,
       for ( i = 0; i < nobj; ++i )
       {
         char *val = data;
-        fprintf( fp, "%e\t%hd\n", x0 + i * dx, val[i] );
+        /* NOTE: the line below will produce a compiler warning with
+         * clang in Xcode-4.2, this is a compiler bug; the code is
+         * correct */
+        fprintf( fp, "%e\t%hhd\n", x0 + i * dx, val[i] );
       }
       break;
     case FR_VECT_2S:

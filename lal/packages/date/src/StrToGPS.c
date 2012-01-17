@@ -236,7 +236,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 	digits[radixpos] = radix;
 
 	/* parse the integer part */
-	XLALINT8NSToGPS(t, sign * strtol(digits, NULL, base) * exppart * 1000000000ll);
+	XLALINT8NSToGPS(t, sign * strtol(digits, NULL, base) * exppart * XLAL_BILLION_INT8);
 
 	/* parse the fractional part */
 	if(errno != ERANGE) {
@@ -258,7 +258,7 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 	/* check for failures and restore errno if there weren't any */
 	if(errno == ERANGE)
-		XLAL_ERROR(__func__, XLAL_ERANGE);
+		XLAL_ERROR(XLAL_ERANGE);
 	errno = olderrno;
 
 	/* success */
@@ -278,7 +278,6 @@ int XLALStrToGPS(LIGOTimeGPS *t, const char *nptr, char **endptr)
 
 char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 {
-	const long billion = 1000000000;
 	/* so we can play with it */
 	LIGOTimeGPS copy = *t;
 
@@ -290,18 +289,18 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 		 * decimal point plus an optional sign + a null */
 		s = XLALMalloc(21 * sizeof(*s));
 		if(!s)
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/* normalize the fractional part */
 
-	while(labs(copy.gpsNanoSeconds) > billion) {
+	while(labs(copy.gpsNanoSeconds) > XLAL_BILLION_INT4) {
 		if(copy.gpsNanoSeconds < 0) {
 			copy.gpsSeconds -= 1;
-			copy.gpsNanoSeconds += billion;
+			copy.gpsNanoSeconds += XLAL_BILLION_INT4;
 		} else {
 			copy.gpsSeconds += 1;
-			copy.gpsNanoSeconds -= billion;
+			copy.gpsNanoSeconds -= XLAL_BILLION_INT4;
 		}
 	}
 
@@ -310,10 +309,10 @@ char *XLALGPSToStr(char *s, const LIGOTimeGPS *t)
 
 	if(copy.gpsSeconds > 0 && copy.gpsNanoSeconds < 0) {
 		copy.gpsSeconds -= 1;
-		copy.gpsNanoSeconds += billion;
+		copy.gpsNanoSeconds += XLAL_BILLION_INT4;
 	} else if(copy.gpsSeconds < 0 && copy.gpsNanoSeconds > 0) {
 		copy.gpsSeconds += 1;
-		copy.gpsNanoSeconds -= billion;
+		copy.gpsNanoSeconds -= XLAL_BILLION_INT4;
 	}
 
 	/* print */

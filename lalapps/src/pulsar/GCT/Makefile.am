@@ -17,7 +17,8 @@ HSGCTSources = HierarchSearchGCT.c HierarchSearchGCT.h \
                           GCTtoplist.c GCTtoplist.h \
                           $(CFSsrc)/HeapToplist.c $(CFSsrc)/HeapToplist.h \
                           $(CFSsrc)/ComputeFStatistic.h $(CFSsrc)/Fstat_v3.c \
-			  ComputeFstat_RS.c ComputeFstat_RS.h
+			  ComputeFstat_RS.c ComputeFstat_RS.h \
+			  LineVeto.c LineVeto.h
 
 lalapps_HierarchSearchGCT_SOURCES = $(HSGCTSources)
 
@@ -64,9 +65,21 @@ eah_HierarchSearchGCT_manual: eah_HierarchSearchGCT-HierarchSearchGCT.o \
     eah_HierarchSearchGCT-HeapToplist.o \
     eah_HierarchSearchGCT-Fstat_v3.o \
     eah_HierarchSearchGCT-ComputeFstat_RS.o \
+    eah_HierarchSearchGCT-LineVeto.o \
     eah_HierarchSearchGCT-hs_boinc_extras.o \
     eah_HierarchSearchGCT-hs_boinc_options.o \
     eah_HierarchSearchGCT-win_lib.o \
     eah_HierarchSearchGCT-LocalComputeFstat.o \
     libstdc++.a
 	$(CXX) $(CPPFLAGS) $(AC_CPPFLAGS) -o $@ $^ $(LDFLAGS) $(AC_LDFLAGS) $(LDADD) $(AC_LDADD) $(LIBS) $(AC_LIBS) libstdc++.a
+
+
+EXTRA_DIST = testHS.sh testGCTLV.sh
+
+TESTS = testHS.sh testGCTLV.sh
+
+TESTS_ENVIRONMENT = \
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+
+CLEANFILES =

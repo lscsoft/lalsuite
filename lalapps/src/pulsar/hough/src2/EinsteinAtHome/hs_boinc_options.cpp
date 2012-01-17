@@ -58,7 +58,7 @@ static void update_shmem(void) {
 
   memset(shmem, 0, EAH_SHMEM_SIZE);
 
-  snprintf(shmem, EAH_SHMEM_SIZE,
+  int len = snprintf(shmem, EAH_SHMEM_SIZE,
 	   "<graphics_info>\n"
 	   "  <skypos_rac>%.3f</skypos_rac>\n"
 	   "  <skypos_dec>%.3f</skypos_dec>\n"
@@ -103,6 +103,9 @@ static void update_shmem(void) {
 	   boincstat.abort_request,
 	   boincstat.working_set_size,
 	   boincstat.max_working_set_size);
+
+  if (len >= EAH_SHMEM_SIZE)
+    fprintf(stderr, "WARNING: shmem XML hits max size (%d,%u)\n", len, EAH_SHMEM_SIZE);
 }
 
 int setup_shmem(void) {

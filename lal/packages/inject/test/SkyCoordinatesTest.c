@@ -17,91 +17,70 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="SkyCoordinatesTestCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
+/**
+\author Creighton, T. D.
+\ingroup SkyCoordinates_h
+\file
+\brief Transforms coordinates among various systems.
 
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{SkyCoordinatesTest.c}}
-\label{ss:SkyCoordinatesTest.c}
-
-Transforms coordinates among various systems.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 SkyCoordinatesTest [-i system lat lon] [-o system] [-z lat lon]
                    [-a altitude] [-c lat lon rad] [-t sec nsec] [-d debuglevel]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program converts between any two celestial coordinate systems, or
 between geocentric and geodetic terrestrial coordinates, using the
-routines in \verb@SkyCoordinates.h@.  The following option flags are
+routines in \ref SkyCoordinates_h.  The following option flags are
 accepted:
-\begin{itemize}
-\item[\texttt{-i}] Sets the input coordinate system and coordinate
-values for a celestial coordinate trasformation: \verb@system@ may be
-one of \verb@horizon@, \verb@geographic@, \verb@equatorial@,
-\verb@ecliptic@, or \verb@galactic@; \verb@lat@ and \verb@lon@ are the
+<ul>
+<li><tt>-i</tt> Sets the input coordinate system and coordinate
+values for a celestial coordinate trasformation: \c system may be
+one of \c horizon, \c geographic, \c equatorial,
+\c ecliptic, or \c galactic; \c lat and \c lon are the
 latitude and longitude coordinates in that system (in degrees).  If
-the \verb@-i@ option is not given, then no celestial coordinate
+the <tt>-i</tt> option is not given, then no celestial coordinate
 transformation will be performed (although a terrestrial coordinate
-transformation may still occur; see below).
-\item[\texttt{-o}] Sets the output coordinate system for a cellestial
-coodinate transformation: \verb@system@ may be any of the above.  If the
-\verb@-o@ option is not given, then no celestial coordinate
+transformation may still occur; see below).</li>
+<li><tt>-o</tt> Sets the output coordinate system for a cellestial
+coodinate transformation: \c system may be any of the above.  If the
+<tt>-o</tt> option is not given, then no celestial coordinate
 transformation will be performed (although a terrestrial coordinate
-transformation may still occur; see below).
-\item[\texttt{-z}] Sets the \emph{geodetic} latitude and longitude of
-the observer to \verb@lat@ and \verb@lon@, respectively (in degrees).
-Either this or the \verb@-c@ option (below) is required for a
-celestial coordinate transformation involving the horizon system.
-\item[\texttt{-a}] Sets the elevation of the observer above the
-Earth's reference ellipsoid to \verb@altitude@ (in metres).  If given
-along with the \verb@-z@ option, above, the program will compute and
-print out the geocentric coordinates of the observer as well.
-\item[\texttt{-c}] Sets the \emph{geocentric} latitude and longitude
-of the observer to \verb@lat@ and \verb@lon@, respectively (in
-degrees), and the distance from the geocentre to \verb@rad@ (in
+transformation may still occur; see below).</li>
+<li><tt>-z</tt> Sets the \e geodetic latitude and longitude of
+the observer to \c lat and \c lon, respectively (in degrees).
+Either this or the <tt>-c</tt> option (below) is required for a
+celestial coordinate transformation involving the horizon system.</li>
+<li><tt>-a</tt> Sets the elevation of the observer above the
+Earth's reference ellipsoid to \c altitude (in metres).  If given
+along with the <tt>-z</tt> option, above, the program will compute and
+print out the geocentric coordinates of the observer as well.</li>
+<li><tt>-c</tt> Sets the \e geocentric latitude and longitude
+of the observer to \c lat and \c lon, respectively (in
+degrees), and the distance from the geocentre to \c rad (in
 metres).  The program will convert and print out the geodetic
-coordinates of the observer.  Either this or the \verb@-z@ option
+coordinates of the observer.  Either this or the <tt>-z</tt> option
 (below) is required for a celestial coordinate transformation
 involving the horizon system; if both are given, this option is
-ignored.
-\item[\texttt{-t}] Sets the GPS time of the conversion to \verb@sec@
-seconds plus \verb@nsec@ nanoseconds.  The time will be printed in
+ignored.</li>
+<li><tt>-t</tt> Sets the GPS time of the conversion to \c sec
+seconds plus \c nsec nanoseconds.  The time will be printed in
 various other formats.  This option is required for any transformation
-between Earth-fixed and sky-fixed coordinate systems.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If not
-specified, level 0 is assumed.
-\end{itemize}
+between Earth-fixed and sky-fixed coordinate systems.</li>
+<li><tt>-d</tt> Sets the debug level to \c debuglevel.  If not
+specified, level 0 is assumed.</li>
+</ul>
 If no option flags are specified at all, then the routine will
 randomly generate a sky position in Galactic coordinates, convert it
 to ecliptic coordinates and back again, and return an error if the
 result disagrees by more than a milliradian.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define SKYCOORDINATESTESTC_ENORM 0
-#define SKYCOORDINATESTESTC_ESUB  1
-#define SKYCOORDINATESTESTC_EARG  2
-#define SKYCOORDINATESTESTC_EMEM  3
-#define SKYCOORDINATESTESTC_ETEST 4
+\heading{Algorithm}
 
-#define SKYCOORDINATESTESTC_MSGENORM "Normal exit"
-#define SKYCOORDINATESTESTC_MSGESUB  "Subroutine failed"
-#define SKYCOORDINATESTESTC_MSGEARG  "Error parsing arguments"
-#define SKYCOORDINATESTESTC_MSGEMEM  "Out of memory"
-#define SKYCOORDINATESTESTC_MSGETEST "Test case failed"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALPrintError()                 LALCheckMemoryLeaks()
 LALMalloc()                     LALFree()
@@ -111,13 +90,24 @@ LALCHARCreateVector()           LALCHARDestroyVector()
 LALCreateRandomParams()         LALDestroyRandomParams()
 LALUniformDeviate()             LALConvertSkyCoordinates()
 LALNormalizeSkyPosition()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{SkyCoordinatesTestCV}}
+\name Error Codes */ /**@{*/
+#define SKYCOORDINATESTESTC_ENORM 0	/**< Normal exit */
+#define SKYCOORDINATESTESTC_ESUB  1	/**< Subroutine failed */
+#define SKYCOORDINATESTESTC_EARG  2	/**< Error parsing arguments */
+#define SKYCOORDINATESTESTC_EMEM  3	/**< Out of memory */
+#define SKYCOORDINATESTESTC_ETEST 4	/**< Test case failed */
+/*@}*/
 
-******************************************************* </lalLaTeX> */
+/** \cond DONT_DOXYGEN */
+#define SKYCOORDINATESTESTC_MSGENORM "Normal exit"
+#define SKYCOORDINATESTESTC_MSGESUB  "Subroutine failed"
+#define SKYCOORDINATESTESTC_MSGEARG  "Error parsing arguments"
+#define SKYCOORDINATESTESTC_MSGEMEM  "Out of memory"
+#define SKYCOORDINATESTESTC_MSGETEST "Test case failed"
 
 #include <math.h>
 #include <time.h>
@@ -603,3 +593,4 @@ main( int argc, char **argv )
   INFO( SKYCOORDINATESTESTC_MSGENORM );
   return SKYCOORDINATESTESTC_ENORM;
 }
+/** \endcond */

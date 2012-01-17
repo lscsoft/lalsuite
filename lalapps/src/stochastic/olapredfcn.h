@@ -17,14 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------------------------------------------- 
- * 
+/*-----------------------------------------------------------------------
+ *
  * File Name: olapredfcn.h
  *
  * Author: John T. Whelan
- * 
+ *
  * Revision: $Id$
- * 
+ *
  *-----------------------------------------------------------------------
  */
 
@@ -46,28 +46,28 @@
 #define OLAPREDFCNH_FALSE    0
 #define OLAPREDFCNH_OOR    1e+5
 
-/***************************** <lalErrTable file="olapredfcnHE"> */
+/**\name Error Codes */ /*@{*/
 #define OLAPREDFCNH_ENOM 0
 #define OLAPREDFCNH_EARG 1
 #define OLAPREDFCNH_ESUB 2
 #define OLAPREDFCNH_MSGENOM "Nominal exit"
 #define OLAPREDFCNH_MSGEARG "Invalid command-line arguments"
 #define OLAPREDFCNH_MSGECHK "LAL Subroutine Returned Error"
-/***************************** </lalErrTable> */
+/*@}*/
 
 void
 olapredfcn_usage (
-    const char *program, 
+    const char *program,
     int         exitcode
     );
 
 void
 olapredfcn_parse_options (
-    int         argc, 
+    int         argc,
     char       *argv[]
     );
 
 void
-olapredfcn_print_options ( 
-    void 
+olapredfcn_print_options (
+    void
     );

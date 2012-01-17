@@ -1,3 +1,22 @@
+lalmetaio (1.0.2-1) unstable; urgency=low
+
+  * LALMetaIO 1.0.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 12:43:58 -0600
+
+lalmetaio (1.0.2~rc2-1) unstable; urgency=low
+
+  * LALMetaIO 1.0.2 Release Candidate 2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:17:45 -0600
+
+lalmetaio (1.0.2~rc1-1) unstable; urgency=low
+
+  * LALMetaIO 1.0.2 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:01:08 -0600
+
 lalmetaio (1.0.1-1lscsoft1) unstable; urgency=low
 
   * LALMetaIO 1.0.1

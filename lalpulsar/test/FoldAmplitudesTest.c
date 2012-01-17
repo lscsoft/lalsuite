@@ -17,38 +17,37 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="FoldAmplitudesTestCV">
-Author: Mendell, Greg A.
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author Mendell, Greg A.
+\file
+\ingroup pulsarTODO
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{FoldAmplitudesTest.c}}
+\heading{Program \ref FoldAmplitudesTest.c}
 
 %[One-line description of test program]
 
 The test program test each of the error conditions, and then test the output
 of known input with the expected output.
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 FoldAmplitudesTest
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-\subsubsection*{Exit codes}
-\input{FoldAmplitudesTestCE}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
-\begin{verbatim}
+
+\heading{Uses}
+\code
 LALFoldAmplitudes()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FoldAmplitudesTestCV}}
-******************************************************* </lalLaTeX> */
+
+*/
 
 /******* INCLUDE STANDARD LIBRARY HEADERS; ************/
 /* note LALStdLib.h already includes stdio.h and stdarg.h */
@@ -68,7 +67,7 @@ NRCSID( FOLDAMPLITUDESTESTC, "$Id$" );
 
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 
-/***************************** <lalErrTable file="FoldAmplitudesTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define FOLDAMPLITUDESTESTC_ENOM 0
 #define FOLDAMPLITUDESTESTC_ECHK 1
 #define FOLDAMPLITUDESTESTC_EFLS 2
@@ -76,7 +75,7 @@ NRCSID( FOLDAMPLITUDESTESTC, "$Id$" );
 #define FOLDAMPLITUDESTESTC_MSGENOM "Nominal exit"
 #define FOLDAMPLITUDESTESTC_MSGECHK "Error checking failed to catch bad data"
 #define FOLDAMPLITUDESTESTC_MSGEFLS "Incorrect answer for valid data"
-/***************************** </lalErrTable> */
+/*@}*/
 
 /* Define parameters and expected results for test cases here. */
 #define FOLDAMPLITUDESTESTC_TOL    		1.0e-3

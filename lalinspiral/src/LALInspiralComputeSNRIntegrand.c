@@ -17,35 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralComputeSNRIntegrandCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\brief <tt>LALInspiralComputeSNRIntegrand()</tt>
 
-/* <lalLaTeX>
-\subsection{Module \texttt{LALInspiralComputeSNRIntegrand.c}}
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralComputeSNRIntegrandCP}
-\index{\verb&LALInspiralComputeSNRIntegrand()&}
-
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Description}
+\heading{Algorithm}
+\heading{Uses}
+\code
 LALREAL4VectorFFT
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{LALInspiralComputeSNRIntegrandCV}}
-</lalLaTeX>  */
+*/
 
 #include <lal/LALNoiseModelsInspiral.h>
 
 NRCSID (LALINSPIRALWAVECORRELATEC, "$Id$");
 
-/*  <lalVerbatim file="LALInspiralComputeSNRIntegrandCP"> */
+
 void
 LALInspiralComputeSNRIntegrand
    (
@@ -54,7 +46,7 @@ LALInspiralComputeSNRIntegrand
    InspiralWaveCorrelateIn  corrin,
    InspiralSNRIntegrandParams *params
    )
-{  /*  </lalVerbatim>  */
+{
   INT4 n, nby2, i, k;
   REAL8 psd, r1, r2, i1, i2, twoPiLagByN, cr, ci;
   REAL8 rShift, iShift;

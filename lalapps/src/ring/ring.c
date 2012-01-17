@@ -222,7 +222,7 @@ static REAL4FFTPlan *ring_get_fft_fwdplan( struct ring_params *params )
   {
     UINT4 segmentLength;
     segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, 0 );
+    plan = XLALCreateForwardREAL4FFTPlan( segmentLength, 1 );
   }
   return plan;
 }
@@ -236,7 +236,7 @@ static REAL4FFTPlan *ring_get_fft_revplan( struct ring_params *params )
   {
     UINT4 segmentLength;
     segmentLength = floor( params->segmentDuration * params->sampleRate + 0.5 );
-    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, 0 );
+    plan = XLALCreateReverseREAL4FFTPlan( segmentLength, 1 );
   }
   return plan;
 }
@@ -254,14 +254,22 @@ static REAL4TimeSeries *ring_get_data( struct ring_params *params )
   XLALGPSAdd( &params->frameDataStartTime, -1.0 * params->padData );
   params->frameDataDuration = params->duration + 2.0 * params->padData;
 
+  /* Needed for simulate data */
+  REAL8FrequencySeries *spectrum = NULL;
+
   if ( params->getData )
   {
     switch ( params->dataType )
     {
       case LALRINGDOWN_DATATYPE_SIM:
-        channel = get_simulated_data( params->channel, &params->startTime,
-          params->duration, params->dataType, params->sampleRate,
-          params->randomSeed, 1.0 );
+        /* Value of 1E-20 is used for white spectrum. It sets the PSD scale
+           to give SNRs that are kind of comparable to iLIGO PSD */
+        spectrum = generate_theoretical_psd(1./params->sampleRate,
+            params->duration,params->simDataType, 1E-20);
+        channel = get_simulated_data_new( params->channel, &params->startTime,
+            params->duration, params->sampleRate,
+            params->randomSeed, spectrum );
+        XLALDestroyREAL8FrequencySeries(spectrum);
       break;
       case LALRINGDOWN_DATATYPE_ZERO:
         channel = get_zero_data( params->channel, &params->startTime,
@@ -351,9 +359,35 @@ static REAL4FrequencySeries *ring_get_invspec(
   REAL4FrequencySeries *invspec = NULL;
   if ( params->getSpectrum )
   {
-    /* compute raw average spectrum; store spectrum in invspec for now */
-    invspec = compute_average_spectrum( channel, params->spectrumType,params->segmentDuration,
-        params->strideDuration, fwdplan, params->whiteSpectrum );
+    if ( ! params->whiteSpectrum )
+    {
+      /* compute raw average spectrum; store spectrum in invspec for now */
+      invspec = compute_average_spectrum( channel, params->spectrumType,
+          params->segmentDuration, params->strideDuration,
+          fwdplan, params->whiteSpectrum );
+    }
+    else
+    {
+      UINT4 k;
+      REAL8FrequencySeries *spectrum;
+      spectrum = generate_theoretical_psd(1./params->sampleRate,
+          params->segmentDuration,params->simDataType, 1E-20);
+      
+      /* Need to convert to a REAL4 FrequencySeries */
+      UINT4 segmentLength = floor( params->segmentDuration/channel->deltaT\
+                                    + 0.5 );
+      invspec = XLALCreateREAL4FrequencySeries("TEMP",&(channel->epoch),0,
+          1.0/params->segmentDuration,&lalDimensionlessUnit,
+          segmentLength/2 + 1);
+      snprintf( invspec->name, sizeof( invspec->name),
+          "%s_SPEC", channel->name);
+      for ( k = 0; k < spectrum->data->length; ++k )
+      {
+        invspec->data->data[k] = (REAL4)(spectrum->data->data[k]*params->dynRangeFac*params->dynRangeFac);
+      }
+      XLALDestroyREAL8FrequencySeries(spectrum);
+    }
+
     if ( params->writeSpectrum ) /* write raw spectrum */
       write_REAL4FrequencySeries( invspec );
 

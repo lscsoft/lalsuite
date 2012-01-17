@@ -29,8 +29,6 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
-#include <lal/ExtrapolatePulsarSpins.h>
-
 /* GSL includes */
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
@@ -39,10 +37,12 @@
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_linalg.h>
 
-
+/* LAL includes */
+#include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/AVFactories.h>
-#include <lal/LISAspecifics.h>
 #include <lal/ComplexAM.h>
+#include <lal/LISAspecifics.h>
+#include <lal/ComputeFstat.h>
 
 NRCSID( COMPLEXAMC, "$Id$");
 
@@ -294,14 +294,14 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
   UINT4 alpha;
 
   if ( !multiAMcoef )
-    XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   numDetectors = multiAMcoef->length;
 
   if ( multiWeights && ( multiWeights->length != numDetectors ) )
     {
       XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-      XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
     }
 
   /* noise-weight Antenna-patterns and compute A,B,C,E */
@@ -318,7 +318,7 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 	  if ( weightsX->length != numSteps )
 	    {
 	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-	      XLAL_ERROR( "XLALWeighMultiCmplxAMCoeffs", XLAL_EINVAL );
+	      XLAL_ERROR( XLAL_EINVAL );
 	    }
 
 	  for(alpha = 0; alpha < numSteps; alpha++)

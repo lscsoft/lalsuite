@@ -141,7 +141,7 @@ SnglBurst **XLALSortSnglBurst(
 	length = XLALSnglBurstTableLength(*head);
 	array = XLALCalloc(length, sizeof(*array));
 	if(!array)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	for(i = 0, event = *head; event; event = event->next)
 		array[i++] = event;
 
@@ -363,7 +363,7 @@ SnglBurst *XLALCreateSnglBurst(void)
 	SnglBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	new->next = NULL;
 	new->process_id = new->event_id = -1;
@@ -395,10 +395,10 @@ SimBurst *XLALCreateSimBurst(void)
 	SimBurst *new = XLALMalloc(sizeof(*new));
 
 	if(!new)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	new->next = NULL;
-	new->process_id = new->simulation_id = -1;
+	new->process_id = new->time_slide_id = new->simulation_id = -1;
 	memset(new->waveform, 0, sizeof(new->waveform));
 	new->ra = XLAL_REAL8_FAIL_NAN;
 	new->dec = XLAL_REAL8_FAIL_NAN;
@@ -510,7 +510,7 @@ SimBurst **XLALSortSimBurst(
 	length = XLALSimBurstTableLength(*head);
 	array = XLALCalloc(length, sizeof(*array));
 	if(!array)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	for(i = 0, event = *head; event; event = event->next)
 		array[i++] = event;
 
@@ -543,10 +543,12 @@ SimBurst **XLALSortSimBurst(
 long XLALSimBurstAssignIDs(
 	SimBurst *sim_burst,
 	long process_id,
+	long time_slide_id,
 	long simulation_id)
 {
 	for(; sim_burst; sim_burst = sim_burst->next) {
 		sim_burst->process_id = process_id;
+		sim_burst->time_slide_id = time_slide_id;
 		sim_burst->simulation_id = simulation_id++;
 	}
 	return simulation_id;

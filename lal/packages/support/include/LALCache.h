@@ -28,6 +28,11 @@
 #ifndef _LALCACHE_H_
 #define _LALCACHE_H_
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -40,15 +45,20 @@ NRCSID( LALCACHEH, "$Id$" );
 
 /** An entry in a LAL cache */
 typedef struct tagLALCacheEntry {
-       	CHAR *src; /**< File source field */
-       	CHAR *dsc; /**< File description field */
-       	INT4 t0;   /**< GPS time (seconds) of beginning of data in file */
-       	INT4 dt;   /**< Duration (seconds) of data in file */
-       	CHAR *url; /**< URL of file */
+        SWIGLAL_STRUCT(LALCacheEntry);
+        CHAR *src; /**< File source field */
+        CHAR *dsc; /**< File description field */
+        INT4 t0;   /**< GPS time (seconds) of beginning of data in file */
+        INT4 dt;   /**< Duration (seconds) of data in file */
+        CHAR *url; /**< URL of file */
 } LALCacheEntry;
 
 /** The LALCache structure is an array of entries */
-typedef struct tagLALCache { UINT4 length; LALCacheEntry *list; } LALCache;
+typedef struct tagLALCache {
+        SWIGLAL_STRUCT(LALCache);
+        UINT4 length;
+        LALCacheEntry *list;
+} LALCache;
 
 /** Creates a LALCache structure */
 LALCache * XLALCreateCache( UINT4 length );
@@ -67,9 +77,9 @@ LALCache * XLALCacheFileRead( LALFILE *fp );
 
 /** Globs a directory and construct LALCache from matching entries */
 LALCache * XLALCacheGlob(
-	       	const char *dirstr, /**< colon-delimited list of directories */
-	       	const char *fnptrn  /**< glob pattern for matching files */
-	       	);
+                const char *dirstr, /**< colon-delimited list of directories */
+                const char *fnptrn  /**< glob pattern for matching files */
+                );
 
 /** Writes a LALCache structure to an output LAL cache file */
 int XLALCacheFileWrite( LALFILE *fp, LALCache *cache );
@@ -85,13 +95,13 @@ int XLALCacheUniq( LALCache *cache );
 /** Selects only matching entries in a LALCache structure -- other entries
  * are deleted from the LALCache structure */
 int XLALCacheSieve(
-	       	LALCache *cache, /**< The LALCache structure - modified */
-	       	INT4 t0, /**< Remove entries ending before t0 (0 to disable) */
-	       	INT4 t1, /**< Remove entries ending after t1 (0 to disable) */
-	       	const char *srcregex, /**< Regular expression to match src field (NULL to disable) */
-	       	const char *dscregex, /**< Regular expression to match dsc field (NULL to disable) */
-	       	const char *urlregex /**< Regular expression to match url field (NULL to disable) */
-	       	);
+                LALCache *cache, /**< The LALCache structure - modified */
+                INT4 t0, /**< Remove entries ending before t0 (0 to disable) */
+                INT4 t1, /**< Remove entries ending after t1 (0 to disable) */
+                const char *srcregex, /**< Regular expression to match src field (NULL to disable) */
+                const char *dscregex, /**< Regular expression to match dsc field (NULL to disable) */
+                const char *urlregex /**< Regular expression to match url field (NULL to disable) */
+                );
 
 /** Open a file identified by an entry in a LALCache structure */
 LALFILE * XLALCacheEntryOpen( LALCacheEntry *entry );

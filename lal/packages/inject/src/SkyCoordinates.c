@@ -17,162 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- * \ingroup SkyCoordinates
- * \author Creighton, T. D.
- * \date $Date$
- * \brief Automatically converts among sky coordinate systems.
- *
- * $Id$
- *
-
-\par Description
-
-The function LALConvertSkyCoordinates() transforms the contents
-of \a *input to the system
-specified in \a *params, storing the result in \a *output
-(which may point to the same object as \a *input for an in-place
-transformation).  The routine makes calls to the functions in
-CelestialCoordinates.c and TerrestrialCoordinates.c as
-required; the \a *params object must store any data fields
-required by these functions, or an error will occur.
-
-
-The function LALNormalizeSkyPosition() ``normalizes'' any given
-(spherical) sky-position (in radians), which means it projects the
-angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
-
-
-\par Algorithm
-
-LALConvertSkyCoordinates() is structured as a simple loop over
-transformations, each of which moves the output sky position one step
-closer to the desired final coordinates system.  The usual ``flow'' of
-the algorithm is:
-\image html inject_ConvFlow.png
-\latexonly
-\begin{center}
-horizon
-\makebox[0pt][l]{\raisebox{0.4ex}{$\rightarrow$}}%
-\makebox[0pt][l]{\raisebox{-0.2ex}{$\leftarrow$}}
-\quad geographic
-\makebox[0pt][l]{\raisebox{0.4ex}{$\rightarrow$}}%
-\makebox[0pt][l]{\raisebox{-0.2ex}{$\leftarrow$}}
-\quad equatorial
-\makebox[0pt][l]{\raisebox{2.2ex}{$\nearrow$}}%
-\makebox[0pt][l]{\raisebox{1.8ex}{$\,\swarrow$}}%
-\makebox[0pt][l]{\raisebox{-1.8ex}{$\,\searrow$}}%
-\makebox[0pt][l]{\raisebox{-2.2ex}{$\nwarrow$}}
-\quad
-\makebox[0pt][l]{\raisebox{4ex}{ecliptic}}%
-\makebox[0pt][l]{\raisebox{-4ex}{Galactic}}
-\end{center}
-\endlatexonly
-although one can also convert directly between equatorial and horizon
-coordinate systems if \a params->zenith is given in equatorial
-coordinates (i.e.\ if its longitudinal coordinate is the local mean
-sidereal time rather than the geographic longitude of the observer).
-This leads to the only error checking done within this function: when
-transforming to horizon coordinates, it checks that
-\a params->zenith is either in sky-fixed equatorial or Earth-fixed
-geographic coordinates.  Other than this, error checking is left to
-the secondary function call; if a parameter is absent or poorly
-formatted, the called function will return an error.
-
-\par Uses
-\code
-LALHorizonToSystem()            LALSystemToHorizon()
-LALGeographicToEquatorial()     LALEquatorialToGeographic()
-LALEquatorialToEcliptic()       LALEclipticToEquatorial()
-LALEquatorialToGalactic()       LALGalacticToEquatorial()
-\endcode
-
-*/
-
-/*---------- laldoc-version of documentation follows ---------- */
-
-/******************************* <lalVerbatim file="SkyCoordinatesCV">
-Author: Creighton, T. D.
-$Id$
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{SkyCoordinates.c}}
-\label{ss:SkyCoordinates.c}
-
-Automatically converts among sky coordinate systems.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{SkyCoordinatesCP}
-\idx{LALConvertSkyCoordinates()}
-\idx{LALNormalizeSkyPosition()}
-
-\subsubsection*{Description}
-
-The function \verb+LALConvertSkyCoordinates()+ transforms the contents
-of <tt>*input</tt> to the system
-specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
-(which may point to the same object as <tt>*input</tt> for an in-place
-transformation).  The routine makes calls to the functions in
-<tt>CelestialCoordinates.c</tt> and <tt>TerrestrialCoordinates.c</tt> as
-required; the <tt>*params</tt> object must store any data fields
-required by these functions, or an error will occur.
-
-
-The function \verb+LALNormalizeSkyPosition()+ ``normalizes'' any given
-(spherical) sky-position (in radians), which means it projects the
-angles into $[0, 2\pi) \times [-\pi/2, \pi/2]$ if they lie outside.
-
-
-\subsubsection*{Algorithm}
-
-\verb+LALConvertSkyCoordinates()+ is structured as a simple loop over
-transformations, each
-of which moves the output sky position one step closer to the desired
-final coordinates system.  The usual ``flow'' of the algorithm is:
-\begin{center}
-horizon
-\makebox[0pt][l]{\raisebox{0.4ex}{$\rightarrow$}}%
-\makebox[0pt][l]{\raisebox{-0.2ex}{$\leftarrow$}}
-\quad geographic
-\makebox[0pt][l]{\raisebox{0.4ex}{$\rightarrow$}}%
-\makebox[0pt][l]{\raisebox{-0.2ex}{$\leftarrow$}}
-\quad equatorial
-\makebox[0pt][l]{\raisebox{2.2ex}{$\nearrow$}}%
-\makebox[0pt][l]{\raisebox{1.8ex}{$\,\swarrow$}}%
-\makebox[0pt][l]{\raisebox{-1.8ex}{$\,\searrow$}}%
-\makebox[0pt][l]{\raisebox{-2.2ex}{$\nwarrow$}}
-\quad
-\makebox[0pt][l]{\raisebox{4ex}{ecliptic}}%
-\makebox[0pt][l]{\raisebox{-4ex}{Galactic}}
-\end{center}
-although one can also convert directly between equatorial and horizon
-coordinate systems if <tt>params->zenith</tt> is given in equatorial
-coordinates (i.e.\ if its longitudinal coordinate is the local mean
-sidereal time rather than the geographic longitude of the observer).
-This leads to the only error checking done within this function: when
-transforming to horizon coordinates, it checks that
-<tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
-geographic coordinates.  Other than this, error checking is left to
-the secondary function call; if a parameter is absent or poorly
-formatted, the called function will return an error.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHorizonToSystem()            LALSystemToHorizon()
-LALGeographicToEquatorial()     LALEquatorialToGeographic()
-LALEquatorialToEcliptic()       LALEclipticToEquatorial()
-LALEquatorialToGalactic()       LALGalacticToEquatorial()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SkyCoordinatesCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -184,13 +28,64 @@ LALEquatorialToGalactic()       LALGalacticToEquatorial()
 
 NRCSID( SKYCOORDINATESC, "$Id$" );
 
-/* <lalVerbatim file="SkyCoordinatesCP"> */
+/**
+   \author Creighton, T. D.
+   \addtogroup SkyCoordinates_c
+   \brief Automatically converts among sky coordinate systems.
+
+The function <tt>LALConvertSkyCoordinates()</tt> transforms the contents
+of <tt>*input</tt> to the system
+specified in <tt>*params</tt>, storing the result in <tt>*output</tt>
+(which may point to the same object as <tt>*input</tt> for an in-place
+transformation).  The routine makes calls to the functions in
+\ref CelestialCoordinates.c and \ref TerrestrialCoordinates.c as
+required; the <tt>*params</tt> object must store any data fields
+required by these functions, or an error will occur.
+
+
+The function <tt>LALNormalizeSkyPosition()</tt> "normalizes" any given
+(spherical) sky-position (in radians), which means it projects the
+angles into \f$[0, 2\pi) \times [-\pi/2, \pi/2]\f$ if they lie outside.
+
+\heading{Algorithm}
+
+<tt>LALConvertSkyCoordinates()</tt> is structured as a simple loop over
+transformations, each
+of which moves the output sky position one step closer to the desired
+final coordinates system.  The usual "flow" of the algorithm is:
+
+\image html  SkyCoordinates_conversions.png
+\image latex SkyCoordinates_conversions.eps
+
+although one can also convert directly between equatorial and horizon
+coordinate systems if <tt>params->zenith</tt> is given in equatorial
+coordinates (i.e.\ if its longitudinal coordinate is the local mean
+sidereal time rather than the geographic longitude of the observer).
+This leads to the only error checking done within this function: when
+transforming to horizon coordinates, it checks that
+<tt>params->zenith</tt> is either in sky-fixed equatorial or Earth-fixed
+geographic coordinates.  Other than this, error checking is left to
+the secondary function call; if a parameter is absent or poorly
+formatted, the called function will return an error.
+
+\heading{Uses}
+\code
+LALHorizonToSystem()            LALSystemToHorizon()
+LALGeographicToEquatorial()     LALEquatorialToGeographic()
+LALEquatorialToEcliptic()       LALEclipticToEquatorial()
+LALEquatorialToGalactic()       LALGalacticToEquatorial()
+\endcode
+
+*/
+/** @{ */
+
+/** See documentation in \ref SkyCoordinates_c */
 void
 LALConvertSkyCoordinates( LALStatus        *stat,
 			  SkyPosition      *output,
 			  SkyPosition      *input,
 			  ConvertSkyParams *params )
-{ /* </lalVerbatim> */
+{
   SkyPosition temp; /* temporary sky position (duh) */
 
   INITSTATUS( stat, "LALConvertSkyCoordinates", SKYCOORDINATESC );
@@ -275,7 +170,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 
 
 
-/** LAL interface to XLALNormalizeSkyPosition()
+/** \deprecated Use XLALNormalizeSkyPosition() instead.
  */
 void
 LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure */
@@ -363,3 +258,4 @@ XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to
   return 0;
 
 } /* XLALNormalizeSkyPosition() */
+/** @} */

@@ -107,7 +107,7 @@ NRCSID (HETERODYNECRABPULSARH, "$Id$");
 	 \endcode
 
 	 This structure contains vectors of the values of time of arrival, \f$f_0\f$ (Hz)
-	 and \f$\dot{f_0}\f$ (\f$10^{-10}\f$\,\textrm{Hz}^2) extracted from the Crab ephemeris
+	 and \f$\dot{f_0} (10^{-10}\,\mathrm{Hz}^2)\f$ extracted from the Crab ephemeris
 	 file.
 
 	 \code
@@ -115,7 +115,7 @@ NRCSID (HETERODYNECRABPULSARH, "$Id$");
 	 \endcode
 
 	 This structure contains vectors of the values of time of arrival, \f$f_0\f$ (Hz)
-	 and \f$\dot{f_0}\f$ (\f$\textrm{Hz}^2\f$) from the ephemeris file and values
+	 and \f$\dot{f_0} (\mathrm{Hz}^2)\f$ from the ephemeris file and values
 	 of \f$f\f$ time derivatives up to fourth order interpolated from the ephemeris
 	 values.
 

@@ -183,7 +183,7 @@ void pout(const char *fmt, ...){
 FILE* tryopen(char *name, const char *mode){
   int count=0;
   FILE *fp;
-  
+
   while (!(fp=fopen(name, mode))){
     pout("Unable to open file %s in mode %s.  Will retry...\n", name, mode);
     if (count++<10)
@@ -196,7 +196,7 @@ FILE* tryopen(char *name, const char *mode){
 
 int getenvval(const char *valuename){
   int retval;
-  
+
   char *value=getenv(valuename);
   if (value)
     retval=atoi(value);
@@ -220,7 +220,7 @@ int getenvval(const char *valuename){
 int deltatime(const char *instrument, int gpstime, int *valid){
   int (*data)[4];
   int i;
-  
+
   /* corrections for Livingston L1 during S1.  It would probably make
      sense to discard the first few hours for which there IS no timing
      data, but since the first SFT that we make starts at time
@@ -232,7 +232,7 @@ int deltatime(const char *instrument, int gpstime, int *valid){
     /* value to use if time range not found */
     {0,         INT_MAX,           -121,  0},
   };
-  
+
   /* corrections for Hanford H1 during S1.  Again, it would probably
      make sense to discard the early times for which we have no timing
      data (about the first fifty hours of the run). In fact the first
@@ -244,7 +244,7 @@ int deltatime(const char *instrument, int gpstime, int *valid){
     /* value to use if time range not found */
     {0,         INT_MAX,     -95,  0},
   };
-  
+
   /* corrections for Hanford H2 during S1.  Here the pattern of timing
      is SO irregular that we discard any segments for which we have no
      data. */
@@ -285,7 +285,7 @@ int deltatime(const char *instrument, int gpstime, int *valid){
 	 instrument);
     exit(1);
   }
-  
+
   /* search along list to see if we find the correct time range */
   for (i=0; data[i][0]>=0; i++)
     if (data[i][0]<=gpstime && gpstime<=data[i][1]){
@@ -307,7 +307,7 @@ int deltatime(const char *instrument, int gpstime, int *valid){
 
 /* check a number of bounary values of the timing correction */
 void checktimingcorrections(void){
-  
+
 
   /* L1 checks */
   checkone(10, "L1");
@@ -322,20 +322,20 @@ void checktimingcorrections(void){
   printf("\n");
 
   /* H2 checks */
-  checkone(0, "H2");    
-  checkone(10, "H2"); 
-  checkone(10000, "H2"); 
+  checkone(0, "H2");
+  checkone(10, "H2");
+  checkone(10000, "H2");
   checkone(714256919, "H2");
   checkone(714256920, "H2");
   checkone(714256921, "H2");
-  checkone(714407159, "H2"); 
+  checkone(714407159, "H2");
   checkone(714407160, "H2");
   checkone(715594139, "H2");
-  checkone(715594140, "H2"); 
+  checkone(715594140, "H2");
   checkone(715594141, "H2");
-  checkone(715618799, "H2"); 
-  checkone(715618800, "H2"); 
-  checkone(715618801, "H2"); 
+  checkone(715618799, "H2");
+  checkone(715618800, "H2");
+  checkone(715618801, "H2");
 }
 
 /* Utility function for cyclically shifting an array "in place".
@@ -348,7 +348,7 @@ void checktimingcorrections(void){
                data[length-1-shift+2] -> data[1]
                ...
    shift < 0 :
-               replace shift by length+shift and follow 
+               replace shift by length+shift and follow
 	       the rules above.               ...
  */
 void shifter(float *data, int length, int shift){
@@ -366,21 +366,20 @@ void shifter(float *data, int length, int shift){
 	 shift, length);
     exit(1);
   }
-  
+
   /* allocate memory */
   if (!(temp=(float *)LALMalloc(sizeof(float)*length))){
-    pout("Unable to allocate %lu bytes of memory in shifter\n",
-	 sizeof(float)*length);
+    pout("Unable to allocate %zu bytes of memory in shifter\n", sizeof(float)*length);
     exit(1);
   }
-  
+
   /* copy data */
   memcpy(temp, data, sizeof(float)*length);
 
-  /* now do shift */  
+  /* now do shift */
   for (i=0; i<length; i++)
     data[(delta+i) % length]=temp[i];
-  
+
   /* free memory and return */
   LALFree(temp);
   return;
@@ -441,7 +440,7 @@ int main(int argc,char *argv[]){
   INT4 jobnum;
   INT4 starts[MAXSTART],nstarts=0,count=0;
   UINT4 i,len2=0;
-  char chname[256]; 
+  char chname[256];
   INT4 tbase=INT_MAX,firstbin;
   PassBandParamStruc filterpar;
   REAL8 window[WINLEN];
@@ -461,7 +460,7 @@ int main(int argc,char *argv[]){
   /* FrameL frame file */
   FrFile *frfile;
   /* vector holding the frame data */
-  FrVect *frvect;        
+  FrVect *frvect;
 
   /* install signal handlers */
   if (signal(SIGSEGV, sighandler)==SIG_IGN)
@@ -480,22 +479,22 @@ int main(int argc,char *argv[]){
   /* check the shifter code */
   {
     float fun[30];
-    
+
     for (i=0; i<30; i++)
       fun[i]=(float) i;
-    
+
     shifter(fun, 30, -2);
-    
+
     for (i=0;i<30;i++)
       printf("%2d: %f\n", i, fun[i]);
-    
+
   }
   exit(0);
 #endif
 
   printf("%%Normal startup\n");
   fflush(stdout);
-  
+
   /* check command syntax */
   if (argc !=5 || (jobnum=atoi(argv[1]))<0 || jobnum>99999){
     int a;
@@ -509,7 +508,7 @@ int main(int argc,char *argv[]){
       pout("arg=%d: %s\n",a,argv[a]);
     return 2;
   }
-  
+
   /* construct channel name */
 
 #if USETDCALDATA
@@ -522,11 +521,11 @@ int main(int argc,char *argv[]){
     char timelist[256];
     INT4 tbasei;
     FILE *stfp=NULL;
-    
+
     /* construct name of file containing segment start times */
     sprintf(timelist,"%s/jobtimes.%05d",argv[2],jobnum);
     stfp=tryopen(timelist,"r");
-    
+
     /* read file into an array */
     while (2==fscanf(stfp,"%d %d",starts+nstarts,&tbasei)){
       if (nstarts==0)
@@ -535,10 +534,10 @@ int main(int argc,char *argv[]){
 	pout("File %s contains inconsistent SFT time baselines %d != %d\n",timelist,tbasei,tbase);
 	return 3;
       }
-      
+
       /* increment counter of lines read */
       nstarts++;
-      
+
       /* and make sure that we are not yet maxed out */
       if (nstarts>=MAXSTART){
 	pout("More than MAXSTART=%d lines in file: %s.  Increase MAXSTART and recompile\n",
@@ -546,7 +545,7 @@ int main(int argc,char *argv[]){
 	return 3;
       }
     }
-    
+
     /* check that file contained at least some valid data */
     if (!nstarts){
       pout("File %s didn't contain any valid lines!\n",timelist);
@@ -554,16 +553,16 @@ int main(int argc,char *argv[]){
     }
     fclose(stfp);
   }
-  
+
   /* Compute things that require the time baseline */
   firstbin=(INT4)(FMIN*tbase);
   npts = SRATE*tbase;
   len2=npts/2+1;
-  
+
   /* init window function */
   for(i=0; i<WINLEN; i++)
     window[i]=WINFUN(i);
-  
+
   /* set filtering parameters */
   filterpar.name = butterworth_string;
   filterpar.nMax  = 5;
@@ -573,11 +572,11 @@ int main(int argc,char *argv[]){
   filterpar.f2 = 40.0;
 #endif
   filterpar.a2 = 0.5;
- 
+
 /* values that are 'not given' = out of range */
   filterpar.f1 = -1.0;
   filterpar.a1 = -1.0;
-  
+
   /* Initialize frame library with correct file list */
   sprintf(framelist,"%s/jobdata.%05d.ffl",argv[2],jobnum);
   opencount=0;
@@ -594,7 +593,7 @@ int main(int argc,char *argv[]){
     else
       return(3);
   }
-  
+
 #if TRACKMEMUSE
     printf("[After FFL]  Memory usage at iteration %d is:\n", count);
     printmemuse();
@@ -619,25 +618,25 @@ int main(int argc,char *argv[]){
     /* time of correct start */
     epoch.gpsSeconds=starts[count];
     epoch.gpsNanoSeconds=0;
-    
+
 #if TIMESHIFT
     /* compute timeshift needed */
     microsec=deltatime(argv[4], epoch.gpsSeconds, &valid);
-    
+
     /* if there is no valid timeshift info, skip SFT */
     if (!valid) {
       printf("SFT at time %d not made.  No valid timing data\n", epoch.gpsSeconds);
       continue;
     }
 #endif
-    
+
     /* to check that an existing file has the correct size */
     if (doubledata)
       filesize *= 2*sizeof(double);
     else
       filesize *= 2*sizeof(float);
     filesize+=sizeof(header);
-    
+
     /* construct SFT name.  If file exists, and has correct size, just continue */
     sprintf(sftname,"%s/SFT_%s.%d",argv[3],argv[4],epoch.gpsSeconds);
     if (!stat(sftname, &buff) && buff.st_size==filesize){
@@ -645,13 +644,13 @@ int main(int argc,char *argv[]){
       fflush(stdout);
       continue;
     }
-    
+
     /* read in correct data */
     errno=0;
 
 #if USETDCALDATA
     frvect = FrFileIGetVProc(frfile, chname, epoch.gpsSeconds, tbase, 0);
-#else 
+#else
     frvect = FrFileIGetVAdc(frfile, chname, epoch.gpsSeconds, tbase, 0);
 #endif
 
@@ -659,7 +658,7 @@ int main(int argc,char *argv[]){
     printf("[After Fr]   Memory usage at iteration %d is:\n", count);
     printmemuse();
 #endif
-   
+
     /* This block will detect permission denied and other access errors */
     if (errno || frvect==NULL || frvect->next){
       int saveerrno=errno;
@@ -679,7 +678,7 @@ int main(int argc,char *argv[]){
       if (saveerrno)
 	return 3;
     }
-    
+
     /* This block detects the case where the frame file list did not contain all data */
     if (frvect==NULL) {
       pout( "%s data missing between times %d and %d\n",argv[4], epoch.gpsSeconds,epoch.gpsSeconds+tbase);
@@ -694,7 +693,7 @@ int main(int argc,char *argv[]){
       }
       continue;
     }
-    
+
     /* Check that data type is correct */
 
 #if USETDCALDATA
@@ -717,12 +716,12 @@ int main(int argc,char *argv[]){
       frvect=NULL;
       continue;
     }
-    
+
     {
       /* We found all needed data -- output an SFT! */
       FILE *fpsft;
-      int k;  
-      
+      int k;
+
 #if PRINT50
 #if USETDCALDATA
       print50double(frvect->dataD, "DOUBLE_PRECISION_FRAMEDATA");
@@ -730,7 +729,7 @@ int main(int argc,char *argv[]){
       print50(frvect->dataF, "FRAMEDATA");
 #endif
 #endif
-      
+
       /* create structure to store channel data  */
       /* NOTE: if we are using time-domain calibrated data, then we
 	 are going to convert a double-precision quantity to a
@@ -739,7 +738,7 @@ int main(int argc,char *argv[]){
       chan.data = NULL;
       LALSCreateVector(&status, &chan.data, npts);
       TESTSTATUS(&status);
-      
+
 #if TRACKMEMUSE
       printf("[After SVEC] Memory usage at iteration %d is:\n", count);
       printmemuse();
@@ -750,7 +749,7 @@ int main(int argc,char *argv[]){
       chan.epoch = epoch;
       chan.data->length = npts;
 
-/* copy data */            
+/* copy data */
 #if USETDCALDATA
       for (i=0;i<npts;i++){
         chan.data->data[i]=frvect->dataD[i];
@@ -770,14 +769,14 @@ int main(int argc,char *argv[]){
 	    float f;
 	    unsigned int i;
 	  } maskfloat;
-	  
+
 	  /* zero LSB for testing quantization noise */
 	  maskfloat.f=chan.data->data[i];
 	  maskfloat.i &= mask;
 	  chan.data->data[i]=maskfloat.f;
 	}
 #endif
-	
+
 #if NEWNORM
 	/* Normalize data according to the GEO SFT specifications */
 	chan.data->data[i]*=(((double)DF)/(0.5*(double)SRATE));
@@ -794,14 +793,14 @@ int main(int argc,char *argv[]){
 #endif
 
       /* free framevec -- no longer needed */
-      FrVectFree(frvect); 
+      FrVectFree(frvect);
       frvect=NULL;
 
 #if PRINTTEV
       for (i=0; i<npts; i++)
 	fprintf(stderr, "%f\n", chan.data->data[i]);
       exit(0);
-#endif 
+#endif
 
 #if TDDOUBLE
       /* create structure to store channel data */
@@ -822,11 +821,11 @@ int main(int argc,char *argv[]){
       /* put into doubles */
       for (i=0; i<npts; i++)
 	chand.data->data[i]=chan.data->data[i];
-      
+
       /* filter */
       LALButterworthREAL8TimeSeries(&status, &chand, &filterpar);
       TESTSTATUS(&status);
-      
+
       /* and copy back */
       for (i=0; i<npts; i++)
 	chan.data->data[i]=chand.data->data[i];
@@ -885,7 +884,7 @@ int main(int argc,char *argv[]){
 	 there are a number of approximations built in to either way
 	 of doing it, all of which boil down to: it works if the
 	 timing errors are very small compared to the SFT time.
-	 
+
 	 A positive value of deltatime() means that the correct time
 	 stamp for the first datum recorded in the frame is LATER than
 	 the frame time stamp.  A negative value of deltatime() means
@@ -895,12 +894,12 @@ int main(int argc,char *argv[]){
       if (microsec){
 	int nshift;
 	double fshift=1.e-6*microsec*SRATE;
-	
+
 	if (fshift>=0.0)
 	  nshift=(int)(fshift+0.5);
 	else
 	  nshift=(int)(fshift-0.5);
-	
+
 	if (nshift){
 	  shifter(chan.data->data, npts, nshift);
 	  printf("Shifting %s data sample at time %d forward %d samples\n",
@@ -908,10 +907,10 @@ int main(int argc,char *argv[]){
 	}
       }
 #endif
-      
+
       /* open SFT file for writing */
       fpsft=tryopen(sftname,"w");
-      
+
       /* write header */
       header.endian=1.0;
       header.gps_sec=epoch.gpsSeconds;
@@ -923,7 +922,7 @@ int main(int argc,char *argv[]){
 	pout("Error in writing header into file %s!\n",sftname);
 	return 7;
       }
-      
+
 #if PRINT50
       print50(chan.data->data, "SHIFTED");
 #endif
@@ -937,7 +936,7 @@ int main(int argc,char *argv[]){
     printf("[After FVEC] Memory usage at iteration %d is:\n", count);
     printmemuse();
 #endif
- 
+
       /* Compute measured plan for FFTW.  To save memory, do only when needed */
       LALCreateForwardRealFFTPlan(&status, &pfwd, (UINT4)npts, 0);
       TESTSTATUS(&status);
@@ -950,7 +949,7 @@ int main(int argc,char *argv[]){
       /* take forward FFT */
       LALForwardRealFFT(&status, fvec, chan.data, pfwd);
       TESTSTATUS(&status);
-      
+
       /* to save memory, destroy plan */
       LALDestroyRealFFTPlan(&status, &pfwd);
       TESTSTATUS( &status );
@@ -969,8 +968,8 @@ int main(int argc,char *argv[]){
 	/* for debugging -- print freq series */
 	LALCPrintVector(fvec);
 	exit(0);
-      }   
-      
+      }
+
       /* Write SFT */
       for (k=0; k<header.nsamples; k++){
 	int errorcode1,errorcode2;
@@ -979,7 +978,7 @@ int main(int argc,char *argv[]){
 	  REAL8 rpw=fvec->data[k+firstbin].re;
 	  REAL8 ipw=fvec->data[k+firstbin].im;
 	  errorcode1=fwrite((void*)&rpw, sizeof(REAL8),1,fpsft);
-	  errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);  
+	  errorcode2=fwrite((void*)&ipw, sizeof(REAL8),1,fpsft);
 	}
 	else {
 	  REAL4 rpw=fvec->data[k+firstbin].re;
@@ -1002,15 +1001,15 @@ int main(int argc,char *argv[]){
       fvec=NULL;
     }
   }
-  
+
 
   /* Clean up and exit */
   FrFileIEnd(frfile);
-    
+
   LALCheckMemoryLeaks();
-  
+
   printf("%%Normal exit\n");
   fflush(stdout);
- 
+
   return 0;
 }

@@ -4,11 +4,21 @@ AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 if LALFRAME
-bin_PROGRAMS = \
+frame_progs = \
 	lalapps_heterodyne_pulsar \
 	lalapps_pulsar_parameter_estimation
+
 TESTS = test_heterodyne_pulsar.sh
+
+if LALINFERENCE
+if LALXML
+inference_progs = \
+	lalapps_pulsar_parameter_estimation_nested
+
 endif
+endif
+endif
+bin_PROGRAMS = $(frame_progs) $(inference_progs)
 
 lalapps_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
@@ -17,6 +27,16 @@ lalapps_heterodyne_pulsar_SOURCES = \
 lalapps_pulsar_parameter_estimation_SOURCES = \
 	pulsar_parameter_estimation.c \
 	pulsar_parameter_estimation.h
+
+lalapps_pulsar_parameter_estimation_nested_SOURCES = \
+	pulsar_parameter_estimation_nested.c \
+	pulsar_parameter_estimation_nested.h \
+	ppe_models.c \
+	ppe_models.h \
+	ppe_likelihood.c \
+	ppe_likelihood.h \
+	ppe_testing.c \
+	ppe_testing.h
 
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \

@@ -341,7 +341,6 @@ ComputeConvolutions (LALStatus *status,
   REAL4 **convolvedMatrix=0;  /* A pointer used to point at one of the 5 smoothed derivative images k[i]*/
   INT4 derivType;           /* Is one of the 5 possible 1st and 2nd directional derivatives
 			       along the row and column directions*/
-  REAL4 check;              /* a variable used to check if the Gaussian mask arrays have been Allocated */
   INT4 heightTemp, widthTemp;/* variables used for reflecting images at its edges*/
 
   /* Initialize status structure   */
@@ -354,8 +353,12 @@ ComputeConvolutions (LALStatus *status,
   ASSERT(store->gaussMask[0],status,TS_NULL_POINTER, TS_MSG_NULL_POINTER);
 
   /* check whether the Gaussian mask arrays have been set */
+#ifndef LAL_NDEBUG
+  REAL4 check;              /* a variable used to check if the Gaussian mask arrays have been Allocated */
   check = (*(store->gaussMask[0] + (INT4)(MASK_SIZE*params->sigma)));
   ASSERT(check, status,TS_UNITIALIZED_MASKS, TS_MSG_UNINITIALIZED_MASKS);
+#endif
+
   /*
    *  Computing Derivatives
    *  store->k[0] 1st derivative along column direction          (dI/df)
@@ -600,7 +603,6 @@ ConnectLinePoints(LALStatus *status,
   INT4  curveLength=0; /* the length of the current curve segment */
   REAL4 curvePower=0; /* the total energy of the current curve segment */
   REAL4 *curveDepth=NULL; /*tmp pointer for array of depth values to sum */
-  INT4 maxCurveLen; /* the maximum curve lenght allowed */
   INT4 direction; /* the 2 opposite directions to traverse to obtain the complete line */
   INT4 reject[2],check[3],which;/* the list of surrounding points to reject and select */
   REAL4 *eigenVec; /* a pointer defined for convenience; points to a particular element of an array */
@@ -611,8 +613,6 @@ ConnectLinePoints(LALStatus *status,
   REAL4 powerHalfContourB; /* The resulting power of half the contour from tfMap*/
   REAL4 *meanProfile=NULL; /* Pointer to array of REAL4s */
   REAL4 mySNR=0; /*current estimate of SNR for particular curve*/
-
-  maxCurveLen=MAX_CURVE_LENGTH;
 
   /* Initialize status structure   */
   INITSTATUS(status,"ConnectLinePoints",TRACKSEARCHC);
@@ -850,7 +850,11 @@ ConnectLinePoints(LALStatus *status,
 	contour[direction].col[curveLength]=nextCol;
 	curveLength++;
 	/* check if the maximum curve length is reached */
+#ifndef LAL_NDEBUG
+        INT4 maxCurveLen; /* the maximum curve lenght allowed */
+        maxCurveLen=MAX_CURVE_LENGTH;
 	ASSERT(curveLength<=maxCurveLen,status,TS_ARRAY_OVERFLOW,MSG_TS_ARRAY_OVERFLOW);
+#endif
 	/* if the line point is also a line start point mark it is processed */
 	if(linePoints[nextIndex].pValue==2)
 	  linePoints[nextIndex].flag=0;
@@ -952,6 +956,11 @@ ConnectLinePoints(LALStatus *status,
 /*
  * Estimates from the TFR the internal mean Frequency profile
  * This allows us to estimate an SNR to individual curves
+ *
+ * This should smooth the profile with a running median smoothing
+ * call to allow even monochromatic triggers to have some measure
+ * of SNR. Fri-Jul-03-2009:200907031845  (Idea sprang from tracing
+ * very long duration TCS lines)
  */
 static void estimateProfile(REAL4 *myProfile,
 			    TimeFreqRep Map)
@@ -1221,7 +1230,7 @@ void LALTrackSearchInsertMarkers(
 	  output->curves[i].fBinHz[j]=
 	    (output->curves[i].col[j]*
 	     ((1/(2*input->dataDeltaT))/(input->mapFreqBins))
-	     );
+	     )+input->f0;
 	  currentRelativeFloatTime=output->curves[i].row[j]*deltaT;
 	  tmpGPS = input->mapStartGPS;
 	  XLALGPSAdd(&tmpGPS, currentRelativeFloatTime);

@@ -1,4 +1,3 @@
-opt/lscsoft/lalmetaio/include/lal*
-opt/lscsoft/lalmetaio/lib/*a
-opt/lscsoft/lalmetaio/lib/pkgconfig
-#opt/lscsoft/lalmetaio/share/lal
+usr/lib/*.a
+usr/lib/pkgconfig
+usr/include/lal*

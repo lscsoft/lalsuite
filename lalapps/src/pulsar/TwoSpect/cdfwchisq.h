@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Evan Goetz
+*  Copyright (C) 2010, 2011 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ typedef struct
    INT4 lim;         //Limit to number of integration terms
    INT4 ndtsrt;      //Not Done The SoRT (terrible coding)
    INT4 fail;        //Fail flag if integration failes
+   INT4 useSSE;      //Flag to specify use SSE integration function
    INT4Vector *dofs;     //Array to hold values of the d.o.f. for each chi-squared variable
    INT4Vector *sorting;      //Array to hold the sorted element values for weights*noise
    REAL8Vector *weights;         //Array of weights in front of each chi-squared variable to sum (in my case, weight*noise/2.0)
@@ -43,18 +44,31 @@ typedef struct
 } qfvars;
 
 REAL8 cdfwchisq(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault);
+REAL8 cdfwchisq_twospect(qfvars *vars, REAL8 sigma, REAL8 acc, INT4 *ifault);
 
 void order(qfvars *vars);
 void findu(qfvars *vars, REAL8* utx, REAL8 accx);
+void findu_twospect(qfvars *vars, REAL8* utx, REAL8 accx);
 void integrate(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
+void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
+void integrate_twospect(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
+void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
+void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx);
 void counter(qfvars *vars);
 
 REAL8 exp1(REAL8 x);
-REAL8 log1(REAL8 x, INT4 first);
+REAL8 twospect_log_1plusx(REAL8 x);
+REAL8 twospect_log_1plusx_mx(REAL8 x);
 REAL8 errbound(qfvars *vars, REAL8 u, REAL8* cx);
+REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx);
 REAL8 cutoff(qfvars *vars, REAL8 accx, REAL8* upn);
+REAL8 cutoff_twospect(qfvars *vars, REAL8 accx, REAL8* upn);
 REAL8 truncation(qfvars *vars, REAL8 u, REAL8 tausq);
+REAL8 truncation_twospect(qfvars *vars, REAL8 u, REAL8 tausq);
 REAL8 coeff(qfvars *vars, REAL8 x);
+REAL8 coeff_twospect(qfvars *vars, REAL8 x);
+
+int compar(void *p, const void *a, const void *b);
 
 int compar(void *p, const void *a, const void *b);
 

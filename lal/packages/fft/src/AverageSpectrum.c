@@ -34,7 +34,8 @@
 #include <lal/LALRCSID.h>
 NRCSID (AVERAGESPECTRUMC,"$Id$");
 
-
+/** \ingroup TimeFreqFFT_h */
+/*@{*/
 
 
 /**
@@ -50,20 +51,19 @@ int XLALREAL4ModifiedPeriodogram(
     const REAL4FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL4ModifiedPeriodogram";
   REAL4Sequence *work;
   REAL4 normfac;
   UINT4 k;
   int result;
 
   if ( ! periodogram || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! periodogram->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( periodogram->data->length != tseries->data->length/2 + 1 )
-      XLAL_ERROR( func, XLAL_EBADLEN );
+      XLAL_ERROR( XLAL_EBADLEN );
 
   /* if the window has been specified, apply it to data */
   if ( window )
@@ -71,13 +71,13 @@ int XLALREAL4ModifiedPeriodogram(
     /* make a working copy */
     work = XLALCutREAL4Sequence( tseries->data, 0, tseries->data->length );
     if ( ! work )
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
 
     /* apply windowing to data */
     if ( ! XLALUnitaryWindowREAL4Sequence( work, window ) )
     {
       XLALDestroyREAL4Sequence( work );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
   else
@@ -92,7 +92,7 @@ int XLALREAL4ModifiedPeriodogram(
     XLALDestroyREAL4Sequence( work );
   /* check for errors from the PowerSpectrum call */
   if ( result == XLAL_FAILURE )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* normalize power spectrum to give correct units */
   /* CHECKME: is this the right factor? */
@@ -107,10 +107,10 @@ int XLALREAL4ModifiedPeriodogram(
 
   /* compute units */
   if ( ! XLALUnitSquare( &periodogram->sampleUnits, &tseries->sampleUnits ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( ! XLALUnitMultiply( &periodogram->sampleUnits,
                            &periodogram->sampleUnits, &lalSecondUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   return 0;
 }
@@ -128,20 +128,19 @@ int XLALREAL8ModifiedPeriodogram(
     const REAL8FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL8ModifiedPeriodogram";
   REAL8Sequence *work;
   REAL8 normfac;
   UINT4 k;
   int result;
 
   if ( ! periodogram || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! periodogram->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( periodogram->data->length != tseries->data->length/2 + 1 )
-      XLAL_ERROR( func, XLAL_EBADLEN );
+      XLAL_ERROR( XLAL_EBADLEN );
 
   /* if the window has been specified, apply it to data */
   if ( window )
@@ -149,13 +148,13 @@ int XLALREAL8ModifiedPeriodogram(
     /* make a working copy */
     work = XLALCutREAL8Sequence( tseries->data, 0, tseries->data->length );
     if ( ! work )
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
 
     /* apply windowing to data */
     if ( ! XLALUnitaryWindowREAL8Sequence( work, window ) )
     {
       XLALDestroyREAL8Sequence( work );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
   else
@@ -170,7 +169,7 @@ int XLALREAL8ModifiedPeriodogram(
     XLALDestroyREAL8Sequence( work );
   /* check for errors from the PowerSpectrum call */
   if ( result == XLAL_FAILURE )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   /* normalize power spectrum to give correct units */
   /* CHECKME: is this the right factor? */
@@ -185,10 +184,10 @@ int XLALREAL8ModifiedPeriodogram(
 
   /* compute units */
   if ( ! XLALUnitSquare( &periodogram->sampleUnits, &tseries->sampleUnits ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
   if ( ! XLALUnitMultiply( &periodogram->sampleUnits,
                            &periodogram->sampleUnits, &lalSecondUnit ) )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   return 0;
 }
@@ -213,7 +212,6 @@ int XLALREAL4AverageSpectrumWelch(
     const REAL4FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL4AverageSpectrumWelch";
   REAL4FrequencySeries *work; /* workspace */
   REAL4Sequence sequence; /* working copy of input time series data */
   REAL4TimeSeries tseriescopy; /* working copy of input time series */
@@ -222,11 +220,11 @@ int XLALREAL4AverageSpectrumWelch(
   UINT4 k;
 
   if ( ! spectrum || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
 
   /* construct local copy of time series */
   sequence = *tseries->data;
@@ -239,9 +237,9 @@ int XLALREAL4AverageSpectrumWelch(
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
   if ( (numseg - 1)*stride + seglen != tseries->data->length )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* clear spectrum data */
   memset( spectrum->data->data, 0,
@@ -250,7 +248,7 @@ int XLALREAL4AverageSpectrumWelch(
   /* create frequency series data workspace */
   work = XLALCutREAL4FrequencySeries( spectrum, 0, spectrum->data->length );
   if( ! work )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   for ( seg = 0; seg < numseg; seg++, tseriescopy.data->data += stride )
   {
@@ -258,7 +256,7 @@ int XLALREAL4AverageSpectrumWelch(
     if ( XLALREAL4ModifiedPeriodogram( work, &tseriescopy, window, plan ) == XLAL_FAILURE )
     {
       XLALDestroyREAL4FrequencySeries( work );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* add the periodogram to the running sum */
@@ -301,7 +299,6 @@ int XLALREAL8AverageSpectrumWelch(
     const REAL8FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL8AverageSpectrumWelch";
   REAL8FrequencySeries *work; /* workspace */
   REAL8Sequence sequence; /* working copy of input time series data */
   REAL8TimeSeries tseriescopy; /* working copy of input time series */
@@ -310,11 +307,11 @@ int XLALREAL8AverageSpectrumWelch(
   UINT4 k;
 
   if ( ! spectrum || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
 
   /* construct local copy of time series */
   sequence = *tseries->data;
@@ -327,9 +324,9 @@ int XLALREAL8AverageSpectrumWelch(
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
   if ( (numseg - 1)*stride + seglen != tseries->data->length )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* clear spectrum data */
   memset( spectrum->data->data, 0,
@@ -338,7 +335,7 @@ int XLALREAL8AverageSpectrumWelch(
   /* create frequency series data workspace */
   work = XLALCutREAL8FrequencySeries( spectrum, 0, spectrum->data->length );
   if( ! work )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   for ( seg = 0; seg < numseg; seg++, tseriescopy.data->data += stride )
   {
@@ -346,7 +343,7 @@ int XLALREAL8AverageSpectrumWelch(
     if ( XLALREAL8ModifiedPeriodogram( work, &tseriescopy, window, plan ) == XLAL_FAILURE )
     {
       XLALDestroyREAL8FrequencySeries( work );
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* add the periodogram to the running sum */
@@ -454,7 +451,6 @@ int XLALREAL4AverageSpectrumMedian(
     const REAL4FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL4AverageSpectrumMedian";
   REAL4FrequencySeries *work; /* array of frequency series */
   REAL4 *bin; /* array of bin values */
   REAL4 biasfac; /* median bias factor */
@@ -465,11 +461,11 @@ int XLALREAL4AverageSpectrumMedian(
   UINT4 k;
 
   if ( ! spectrum || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
 
   reclen = tseries->data->length;
   numseg = 1 + (reclen - seglen)/stride;
@@ -477,21 +473,21 @@ int XLALREAL4AverageSpectrumMedian(
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
   if ( (numseg - 1)*stride + seglen != reclen )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* create frequency series data workspaces */
   work = XLALCalloc( numseg, sizeof( *work ) );
   if ( ! work )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   for ( seg = 0; seg < numseg; ++seg )
   {
     work[seg].data = XLALCreateREAL4Vector( spectrum->data->length );
     if ( ! work[seg].data )
     {
       median_cleanup_REAL4( work, numseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -517,7 +513,7 @@ int XLALREAL4AverageSpectrumMedian(
     if ( code == XLAL_FAILURE )
     {
       median_cleanup_REAL4( work, numseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -526,7 +522,7 @@ int XLALREAL4AverageSpectrumMedian(
   if ( ! bin )
   {
     median_cleanup_REAL4( work, numseg ); /* cleanup */
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* compute median bias factor */
@@ -584,7 +580,6 @@ int XLALREAL8AverageSpectrumMedian(
     const REAL8FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL8AverageSpectrumMedian";
   REAL8FrequencySeries *work; /* array of frequency series */
   REAL8 *bin; /* array of bin values */
   REAL8 biasfac; /* median bias factor */
@@ -595,11 +590,11 @@ int XLALREAL8AverageSpectrumMedian(
   UINT4 k;
 
   if ( ! spectrum || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
 
   reclen = tseries->data->length;
   numseg = 1 + (reclen - seglen)/stride;
@@ -607,21 +602,21 @@ int XLALREAL8AverageSpectrumMedian(
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
   if ( (numseg - 1)*stride + seglen != reclen )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* create frequency series data workspaces */
   work = XLALCalloc( numseg, sizeof( *work ) );
   if ( ! work )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   for ( seg = 0; seg < numseg; ++seg )
   {
     work[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
     if ( ! work[seg].data )
     {
       median_cleanup_REAL8( work, numseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -647,7 +642,7 @@ int XLALREAL8AverageSpectrumMedian(
     if ( code == XLAL_FAILURE )
     {
       median_cleanup_REAL8( work, numseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -656,7 +651,7 @@ int XLALREAL8AverageSpectrumMedian(
   if ( ! bin )
   {
     median_cleanup_REAL8( work, numseg ); /* cleanup */
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* compute median bias factor */
@@ -755,7 +750,6 @@ int XLALREAL4AverageSpectrumMedianMean(
     const REAL4FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL4AverageSpectrumMedianMean";
   REAL4FrequencySeries *even; /* array of even frequency series */
   REAL4FrequencySeries *odd;  /* array of odd frequency series */
   REAL4 *bin; /* array of bin values */
@@ -768,11 +762,11 @@ int XLALREAL4AverageSpectrumMedianMean(
   UINT4 k;
 
   if ( ! spectrum || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
 
   reclen = tseries->data->length;
   numseg = 1 + (reclen - seglen)/stride;
@@ -780,23 +774,23 @@ int XLALREAL4AverageSpectrumMedianMean(
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
   if ( (numseg - 1)*stride + seglen != reclen )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* for median-mean to work, the number of segments must be even and
    * the stride must be greater-than or equal-to half of the seglen */
   halfnumseg = numseg/2;
   if ( numseg%2 || stride < seglen/2 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* create frequency series data workspaces */
   even = XLALCalloc( halfnumseg, sizeof( *even ) );
   if ( ! even )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   odd = XLALCalloc( halfnumseg, sizeof( *odd ) );
   if ( ! odd )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   for ( seg = 0; seg < halfnumseg; ++seg )
   {
     even[seg].data = XLALCreateREAL4Vector( spectrum->data->length );
@@ -804,7 +798,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     if ( ! even[seg].data || ! odd[seg].data )
     {
       median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -828,7 +822,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     {
       *tseries->data = savevec;
       median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* set the data vector to be appropriate for the odd segment */
@@ -842,7 +836,7 @@ int XLALREAL4AverageSpectrumMedianMean(
     {
       *tseries->data = savevec;
       median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* restore the time series data vector to its original state */
@@ -854,7 +848,7 @@ int XLALREAL4AverageSpectrumMedianMean(
   if ( ! bin )
   {
     median_mean_cleanup_REAL4( even, odd, halfnumseg ); /* cleanup */
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* compute median bias factor */
@@ -926,7 +920,6 @@ int XLALREAL8AverageSpectrumMedianMean(
     const REAL8FFTPlan          *plan
     )
 {
-  static const char *func = "XLALREAL8AverageSpectrumMedianMean";
   REAL8FrequencySeries *even; /* array of even frequency series */
   REAL8FrequencySeries *odd;  /* array of odd frequency series */
   REAL8 *bin; /* array of bin values */
@@ -939,11 +932,11 @@ int XLALREAL8AverageSpectrumMedianMean(
   UINT4 k;
 
   if ( ! spectrum || ! tseries || ! plan )
-      XLAL_ERROR( func, XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data || ! tseries->data )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
   if ( tseries->deltaT <= 0.0 )
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
 
   reclen = tseries->data->length;
   numseg = 1 + (reclen - seglen)/stride;
@@ -951,23 +944,23 @@ int XLALREAL8AverageSpectrumMedianMean(
   /* consistency check for lengths: make sure that the segments cover the
    * data record completely */
   if ( (numseg - 1)*stride + seglen != reclen )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* for median-mean to work, the number of segments must be even and
    * the stride must be greater-than or equal-to half of the seglen */
   halfnumseg = numseg/2;
   if ( numseg%2 || stride < seglen/2 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* create frequency series data workspaces */
   even = XLALCalloc( halfnumseg, sizeof( *even ) );
   if ( ! even )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   odd = XLALCalloc( halfnumseg, sizeof( *odd ) );
   if ( ! odd )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   for ( seg = 0; seg < halfnumseg; ++seg )
   {
     even[seg].data = XLALCreateREAL8Vector( spectrum->data->length );
@@ -975,7 +968,7 @@ int XLALREAL8AverageSpectrumMedianMean(
     if ( ! even[seg].data || ! odd[seg].data )
     {
       median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
@@ -999,7 +992,7 @@ int XLALREAL8AverageSpectrumMedianMean(
     {
       *tseries->data = savevec;
       median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* set the data vector to be appropriate for the odd segment */
@@ -1013,7 +1006,7 @@ int XLALREAL8AverageSpectrumMedianMean(
     {
       *tseries->data = savevec;
       median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* restore the time series data vector to its original state */
@@ -1025,7 +1018,7 @@ int XLALREAL8AverageSpectrumMedianMean(
   if ( ! bin )
   {
     median_mean_cleanup_REAL8( even, odd, halfnumseg ); /* cleanup */
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* compute median bias factor */
@@ -1090,22 +1083,21 @@ int XLALREAL4SpectrumInvertTruncate(
     REAL4FFTPlan                *revplan
     )
 {
-  static const char *func = "XLALREAL4SpectrumInvertTruncate";
   UINT4 cut;
   UINT4 k;
 
   if ( ! spectrum )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( spectrum->deltaF <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( lowfreq < 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! seglen || spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( trunclen && ! revplan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   cut = lowfreq / spectrum->deltaF;
   if ( cut < 1 ) /* need to get rid of DC at least */
@@ -1194,22 +1186,21 @@ int XLALREAL8SpectrumInvertTruncate(
     REAL8FFTPlan                *revplan
     )
 {
-  static const char *func = "XLALREAL8SpectrumInvertTruncate";
   UINT4 cut;
   UINT4 k;
 
   if ( ! spectrum )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   if ( ! spectrum->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( spectrum->deltaF <= 0.0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( lowfreq < 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! seglen || spectrum->data->length != seglen/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( trunclen && ! revplan )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   cut = lowfreq / spectrum->deltaF;
   if ( cut < 1 ) /* need to get rid of DC at least */
@@ -1319,7 +1310,6 @@ int XLALREAL8SpectrumInvertTruncate(
 
 COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
 {
-  static const char func[] = "XLALWhitenCOMPLEX8FrequencySeries";
   COMPLEX8 *fdata = fseries->data->data;
   REAL4 *pdata = psd->data->data;
   double norm = 2 * psd->deltaF;
@@ -1330,15 +1320,15 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
   if((psd->deltaF != fseries->deltaF) ||
      (fseries->f0 < psd->f0))
     /* resolution mismatch, or PSD does not span fseries at low end */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
 
   j = (fseries->f0 - psd->f0) / psd->deltaF;
   if(j * psd->deltaF + psd->f0 != fseries->f0)
     /* fseries does not start on an integer PSD sample */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   if(j + fseries->data->length > psd->data->length)
     /* PSD does not span fseries at high end */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
 
   for(i = 0; i < fseries->data->length; i++, j++)
   {
@@ -1372,7 +1362,6 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 
 COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd)
 {
-  static const char func[] = "XLALWhitenCOMPLEX16FrequencySeries";
   COMPLEX16 *fdata = fseries->data->data;
   REAL8 *pdata = psd->data->data;
   double norm = 2 * psd->deltaF;
@@ -1383,15 +1372,15 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   if((psd->deltaF != fseries->deltaF) ||
      (fseries->f0 < psd->f0))
     /* resolution mismatch, or PSD does not span fseries at low end */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
 
   j = (fseries->f0 - psd->f0) / psd->deltaF;
   if(j * psd->deltaF + psd->f0 != fseries->f0)
     /* fseries does not start on an integer PSD sample */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
   if(j + fseries->data->length > psd->data->length)
     /* PSD does not span fseries at high end */
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
 
   for(i = 0; i < fseries->data->length; i++, j++)
   {
@@ -1433,7 +1422,6 @@ REAL8 XLALLogMedianBiasGeometric( UINT4 nn )
 
 LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_samples)
 {
-  static const char func[] = "XLALPSDRegressorNew";
   LALPSDRegressor *new;
   REAL8Sequence **history;
 
@@ -1441,7 +1429,7 @@ LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_s
    * snapshots used for the median to both be positive, and the number of
    * snapshots used for the median to be odd */
   if(average_samples < 1 || median_samples < 1 || !(median_samples & 1))
-    XLAL_ERROR_NULL(func, XLAL_EINVAL);
+    XLAL_ERROR_NULL(XLAL_EINVAL);
 
   new = XLALMalloc(sizeof(*new));
   history = XLALCalloc(median_samples, sizeof(*history));
@@ -1449,7 +1437,7 @@ LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_s
   {
     XLALFree(new);
     XLALFree(history);
-    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
   }
 
   new->average_samples = average_samples;
@@ -1494,10 +1482,9 @@ void XLALPSDRegressorFree(LALPSDRegressor *r)
 
 int XLALPSDRegressorSetAverageSamples(LALPSDRegressor *r, unsigned average_samples)
 {
-  static const char func[] = "XLALPSDRegressorSetAverageSamples";
   /* require the number of samples used for the average to be positive */
   if(average_samples < 1)
-    XLAL_ERROR(func, XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
   r->average_samples = average_samples;
   return 0;
 }
@@ -1511,13 +1498,12 @@ unsigned XLALPSDRegressorGetAverageSamples(const LALPSDRegressor *r)
 
 int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples)
 {
-  static const char func[] = "XLALPSDRegressorSetMedianSamples";
   unsigned i;
   REAL8Sequence **history;
 
   /* require the number of samples used for median to be positive and odd */
   if(median_samples < 1 || !(median_samples & 1))
-    XLAL_ERROR(func, XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL);
 
   /* if the history buffer is being shrunk, delete discarded samples before
    * resize */
@@ -1530,7 +1516,7 @@ int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples
   /* resize history buffer */
   history = XLALRealloc(r->history, median_samples * sizeof(*history));
   if(!history)
-    XLAL_ERROR(func, XLAL_EFUNC);
+    XLAL_ERROR(XLAL_EFUNC);
   r->history = history;
 
   /* if there is already at least one sample in the buffer, and the history
@@ -1542,7 +1528,7 @@ int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples
     {
       r->history[i] = XLALCopyREAL8Sequence(r->history[r->median_samples - 1]);
       if(!r->history[i])
-        XLAL_ERROR(func, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
   }
 
@@ -1560,7 +1546,6 @@ unsigned XLALPSDRegressorGetMedianSamples(const LALPSDRegressor *r)
 
 int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
 {
-  static const char func[] = "XLALPSDRegressorAdd";
   double *bin_history;
   unsigned history_length;
   double median_bias;
@@ -1575,7 +1560,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
     XLALDestroyREAL8FrequencySeries(r->mean_square);
     r->mean_square = XLALCreateREAL8FrequencySeries(sample->name, &sample->epoch, sample->f0, sample->deltaF, &sample->sampleUnits, sample->data->length);
     if(!r->mean_square)
-      XLAL_ERROR(func, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     /* create space for median history samples */
 
@@ -1592,7 +1577,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
         }
         XLALDestroyREAL8FrequencySeries(r->mean_square);
         r->mean_square = NULL;
-        XLAL_ERROR(func, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       }
     }
 
@@ -1615,8 +1600,8 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   /* FIXME:  also check units */
   if((sample->f0 != r->mean_square->f0) || (sample->deltaF != r->mean_square->deltaF) || (sample->data->length != r->mean_square->data->length))
   {
-    XLALPrintError("%s(): input parameter mismatch", func);
-    XLAL_ERROR(func, XLAL_EDATA);
+    XLALPrintError("%s(): input parameter mismatch", __func__);
+    XLAL_ERROR(XLAL_EDATA);
   }
 
   /* if we get here, the regressor has already been initialized and the
@@ -1649,7 +1634,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   history_length = r->n_samples < r->median_samples ? r->n_samples : r->median_samples;
   bin_history = XLALMalloc(history_length * sizeof(*bin_history));
   if(!bin_history)
-    XLAL_ERROR(func, XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
 
   /* compute the logarithm of the median bias factor */
 
@@ -1693,7 +1678,6 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
 
 REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
 {
-  static const char func[] = "XLALPSDRegressorGetPSD";
   REAL8FrequencySeries *psd;
   REAL8 *pdata;
   /* arbitrary constant to make result comply with LAL definition of PSD */
@@ -1703,8 +1687,8 @@ REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
   /* initialized yet? */
 
   if(!r->n_samples) {
-    XLALPrintError("%s: not initialized", func);
-    XLAL_ERROR_NULL(func, XLAL_EDATA);
+    XLALPrintError("%s: not initialized", __func__);
+    XLAL_ERROR_NULL(XLAL_EDATA);
   }
 
   /* start with a copy of the mean square */
@@ -1712,7 +1696,7 @@ REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
   /* FIXME: adjust the name */
   psd = XLALCutREAL8FrequencySeries(r->mean_square, 0, r->mean_square->data->length);
   if(!psd)
-    XLAL_ERROR_NULL(func, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
   pdata = psd->data->data;
 
   /*
@@ -1745,7 +1729,6 @@ REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
 
 int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, unsigned weight)
 {
-  static const char func[] = "XLALPSDRegressorSetPSD";
   /* arbitrary constant to remove from LAL definition of PSD */
   double lal_normalization_constant = 2 * psd->deltaF;
   unsigned i;
@@ -1756,7 +1739,7 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
     XLALDestroyREAL8FrequencySeries(r->mean_square);
     r->mean_square = XLALCutREAL8FrequencySeries(psd, 0, psd->data->length);
     if(!r->mean_square)
-      XLAL_ERROR(func, XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC);
 
     /* normalization constant to be removed has units of Hz */
     XLALUnitDivide(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits, &lalHertzUnit);
@@ -1778,15 +1761,15 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
         }
         XLALDestroyREAL8FrequencySeries(r->mean_square);
         r->mean_square = NULL;
-        XLAL_ERROR(func, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
       }
     }
   }
   /* FIXME:  also check units */
   else if((psd->f0 != r->mean_square->f0) || (psd->deltaF != r->mean_square->deltaF) || (psd->data->length != r->mean_square->data->length))
   {
-    XLALPrintError("%s(): input parameter mismatch", func);
-    XLAL_ERROR(func, XLAL_EDATA);
+    XLALPrintError("%s(): input parameter mismatch", __func__);
+    XLAL_ERROR(XLAL_EDATA);
   }
   else
   {
@@ -1812,3 +1795,5 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
 
   return 0;
 }
+
+/*@}*/

@@ -1,4 +1,3 @@
-opt/lscsoft/lalstochastic/include/lal*
-opt/lscsoft/lalstochastic/lib/*a
-opt/lscsoft/lalstochastic/lib/pkgconfig
-#opt/lscsoft/lalstochastic/share/lal
+usr/lib/*.a
+usr/lib/pkgconfig
+usr/include/lal*

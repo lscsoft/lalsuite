@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#include <lal/Units.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/RealFFT.h>
@@ -71,6 +72,7 @@ struct ring_params {
   char         outputFile[256];
   char         userTag[256];
   char         ifoTag[256];
+  UINT4        simDataType;
   /* flags */
   int          whiteSpectrum;
   int          bankOnly;

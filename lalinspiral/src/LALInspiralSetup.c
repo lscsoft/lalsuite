@@ -17,45 +17,39 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInspiralSetupCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
+/**
+\author Sathyaprakash, B. S.
+\file
+\ingroup LALInspiral_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInspiralSetup.c}}
-
-Module to generate all the Taylor and Pade coefficients needed in
+\brief Module to generate all the Taylor and Pade coefficients needed in
 waveform generation.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInspiralSetupCP}
-\idx{LALInspiralSetup()}
-\begin{itemize}
-\item {\tt ak:} Output containing PN expansion coefficients of various physical
-quantities such as energy, flux, frequency, phase and timing.
-\item {\tt params:} Input containing binary chirp parameters.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description}
+<tt>XLALInspiralSetup()</tt>
+<ul>
+<li> \c ak: Output containing PN expansion coefficients of various physical
+quantities such as energy, flux, frequency, phase and timing.</li>
+<li> \c params: Input containing binary chirp parameters.</li>
+</ul>
+
+\heading{Description}
 
 Module to generate all the coefficiants needed in the Taylor and Pade expressions
-for the energy and flux functions $E^{\prime}(v)$ and $\mathcal{F}(v)$.
+for the energy and flux functions \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$.
 These are used to solve the gravitational wave phasing formula.
-The coefficients are used by the function \texttt{LALInspiralChooseModel} to define
-the energy and flux functions by accessing the structure {\tt ak} and are tabulated
-in the two Tables \ref{table:energy} and \ref{table:flux}.
+The coefficients are used by the function \c LALInspiralChooseModel to define
+the energy and flux functions by accessing the structure \c ak and are tabulated
+in the two Tables\tableref{table_energy} and\tableref{table_flux}.
 
+\heading{Algorithm}
+None.
+\heading{Uses}
+None.
+\heading{Notes}
 
-\subsubsection*{Algorithm}
-None.
-\subsubsection*{Uses}
-None.
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{LALInspiralSetupCV}}
-</lalLaTeX>  */
+*/
 
 
 
@@ -69,36 +63,61 @@ None.
 NRCSID (LALINSPIRALSETUPC, "$Id$");
 
 
-/*  <lalVerbatim file="LALInspiralSetupCP"> */
+
 void
 LALInspiralSetup (
    LALStatus        *status,
    expnCoeffs       *ak,
    InspiralTemplate *params
    )
-{  /* </lalVerbatim>  */
-
-   INT4 ieta;
-   /*INT4  pnorder=7;
-    * */
-   REAL8 lso, eta, vpole;
-   REAL8 a1, a2, a3, a4, a5, a6, a7, a8;
-   REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
-   REAL8 a12, a22, a32, a42, a52, a62, a72, a23, a33, a43, a53, a34, a44;
-   REAL8 oneby6=1.0/6.0;
+{
+   XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
 
    INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
    ATTATCHSTATUSPTR(status);
 
-   ASSERT (ak,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params->mass1 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->mass2 > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->fLower > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->fCutoff > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   /*   ASSERT (params->fCutoff > params->fLower, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);*/
-   ASSERT (params->tSampling > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT (params->tSampling > 2*params->fCutoff, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   if ( XLALInspiralSetup(ak, params) == XLAL_FAILURE )
+   {
+      ABORTXLAL(status);
+   }
+   DETATCHSTATUSPTR(status);
+   RETURN (status);
+}
+
+int
+XLALInspiralSetup (
+   expnCoeffs       *ak,
+   InspiralTemplate *params
+   )
+{
+   INT4 ieta;
+   /*INT4  pnorder=7;
+    * */
+   REAL8 lso, eta, vpole, vlso;
+   REAL8 a1, a2, a3, a4, a5, a6, a7, a8;
+   REAL8 c1, c2, c3, c4, c5, c6, c7, c8;
+   REAL8 a12, a22, a32, a42, a52, a62, a72, a23, a33, a43, a53, a34, a44;
+   REAL8 oneby6=1.0/6.0;
+   REAL8 beta = 0.L;
+   REAL8 sigma = 0.L;
+   REAL8 chi1, chi2;
+
+   if (ak == NULL)
+      XLAL_ERROR(XLAL_EFAULT);
+   if (params == NULL)
+      XLAL_ERROR(XLAL_EFAULT);
+   if (params->mass1 <= 0)
+      XLAL_ERROR(XLAL_EDOM);
+   if (params->mass2 <= 0)
+      XLAL_ERROR(XLAL_EDOM);
+   if (params->fLower <= 0)
+      XLAL_ERROR(XLAL_EDOM);
+   if (params->fCutoff <= 0)
+      XLAL_ERROR(XLAL_EDOM);
+   if (params->tSampling <= 0)
+      XLAL_ERROR(XLAL_EDOM);
+   if (params->tSampling <= 2*params->fCutoff)
+      XLAL_ERROR(XLAL_EDOM);
 
    vpole = 0.0;
    ak->omegaS = params->OmegaS;
@@ -128,6 +147,22 @@ LALInspiralSetup (
    ak->eta = (ak->m1*ak->m2) / (ak->totalmass*ak->totalmass);
    eta = ak->eta;
    ak->totalmass = ak->totalmass * LAL_MTSUN_SI;
+
+
+/* Aligned spin corrections (Poisson and Will PRD 52 848 (1995))
+   Use the z components of the spins */
+  chi1 = params->spin1[2];
+  chi2 = params->spin2[2];
+  if (eta <= 0.25L)
+  {
+    /* Chi1 is spin on larger mass
+       m1 = mtot * (1 + sqrt(1 - 4 eta)) / 2
+       m2 = mtot * (1 - sqrt(1 - 4 eta)) / 2 */
+    beta = ((113.L - 76.L * ieta * eta) * (chi1 + chi2) / 24.L)
+         + (113.L * sqrt(1.L - 4.L * ieta * eta) * (chi1 - chi2) / 24.L);
+    sigma = 474.L * ieta * eta * chi1 * chi2 / 48.L;
+  }
+
 
 /* Set initial velocity according to initial frequency */
 
@@ -187,6 +222,10 @@ LALInspiralSetup (
               *(-2.*c3 - 2.*c2 - 2.*sqrt(-c2*c1)));
 /* The 3PN pole doesn't exist for eta=1/4. So decided to use 2PN pole always */
    ak->vpoleP6 = ak->vpoleP4;
+
+/* For the EOBPP model, vpole and vlso are tuned to NR */
+   ak->vpolePP = 0.85;
+   ak->vlsoPP  = 1.0;
 /*
    a = c1*c3;
    b = c1+c2+c3;
@@ -303,9 +342,9 @@ LALInspiralSetup (
 
    ak->pfaN = 3.L/(128.L * eta);
    ak->pfa2 = 5.L*(743.L/84.L + 11.L * ieta*eta)/9.L;
-   ak->pfa3 = -16.L*LAL_PI;
+   ak->pfa3 = -16.L*LAL_PI + 4.L*beta;
    ak->pfa4 = 5.L*(3058.673L/7.056L + 5429.L/7.L * ieta*eta
-		   + 617.L * ieta*eta*eta)/72.L;
+		   + 617.L * ieta*eta*eta)/72.L - 10.L*sigma;
    ak->pfa5 = 5.L/9.L * (7729.L/84.L - 13.L * ieta*eta) * LAL_PI;
    ak->pfl5 = 5.L/3.L * (7729.L/84.L - 13.L * ieta*eta) * LAL_PI;
 
@@ -334,14 +373,32 @@ LALInspiralSetup (
          break;
       case LAL_PNORDER_THREE:
       case LAL_PNORDER_THREE_POINT_FIVE:
-            vpole = ak->vpoleP6;
+         vpole = ak->vpoleP6;
          break;
       case LAL_PNORDER_PSEUDO_FOUR:
-            vpole = ak->vpoleP6;
+         if ( params->approximant == EOBNRv2 || params->approximant == EOBNRv2HM )
+         {
+           vpole = ak->vpolePP;
+         }
+         else
+         {
+           vpole = ak->vpoleP6;
+         }
          break;
       default:
-         ABORT( status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER );
+         XLALPrintError("XLAL Error - %s: Unknown PN order in switch\n", __func__);
+         XLAL_ERROR(XLAL_EINVAL);
          break;
+   }
+
+   /* We need a different vlso for the PP model */
+   if ( params->approximant == EOBNRv2  || params->approximant == EOBNRv2HM )
+   {
+     vlso = ak->vlsoPP;
+   }
+   else
+   {
+     vlso = ak->vlsoP4;
    }
 
    ak->fTa1 = ak->FTa1 - 1./vpole;
@@ -349,9 +406,9 @@ LALInspiralSetup (
    ak->fTa3 = ak->FTa3 - ak->FTa2/vpole;
    ak->fTa4 = ak->FTa4 - ak->FTa3/vpole;
    ak->fTa5 = ak->FTa5 - ak->FTa4/vpole;
-   ak->fTa6 = ak->FTa6 - ak->FTa5/vpole + ak->FTl6*log(ak->vlsoP4);
-   ak->fTa7 = ak->FTa7 - ( ak->FTa6 + ak->FTl6*log(ak->vlsoP4))/vpole;
-   ak->fTa8 = ak->FTa8 - ak->FTa7/vpole + ak->FTl8*log(ak->vlsoP4);
+   ak->fTa6 = ak->FTa6 - ak->FTa5/vpole + ak->FTl6*log(vlso);
+   ak->fTa7 = ak->FTa7 - ( ak->FTa6 + ak->FTl6*log(vlso))/vpole;
+   ak->fTa8 = ak->FTa8 - ak->FTa7/vpole + ak->FTl8*log(vlso);
 /*
    Pade coefficients of f(v);  assumes that a0=1 => c0=1
 */
@@ -497,8 +554,7 @@ LALInspiralSetup (
    padecoeffs[3], padecoeffs[4], padecoeffs[5], padecoeffs[6], padecoeffs[7]);
 
 */
-   DETATCHSTATUSPTR(status);
-   RETURN (status);
+  return XLAL_SUCCESS;
 
 }
 

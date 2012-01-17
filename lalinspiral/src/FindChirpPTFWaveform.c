@@ -4,50 +4,39 @@
  *
  * Author: Brown, D. A., and Fazi, D.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpPTFWaveformCV">
-Author: Brown, D. A., and Fazi, D.
-$Id$
-</lalVerbatim>
+/**
 
-<lalLaTeX>
-\subsection{Module \texttt{FindChirpPTFWaveform.c}}
-\label{ss:FindChirpPTFDerviatives.c}
+\author Brown, D. A., and Fazi, D.
+\file
+\ingroup FindChirpPTF_h
 
-Provides functions to create physical template family templates in a
-form that can be used by the \texttt{FindChirpPTFFilter()} function.
+\brief Provides functions to create physical template family templates in a
+form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindChirpPTFTemplateCP}
-\idx{LALFindChirpPTFWaveform()}
+\heading{Prototypes}
 
-The function \texttt{LALFindChirpPTFWaveform()} creates vectors containing the
+The function <tt>LALFindChirpPTFWaveform()</tt> creates vectors containing the
 evolution of the dynamical variables needed by the physical template family
 template as described by the algorithm below.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
 Blah.
 
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCalloc()
 LALFree()
 LALCreateVector()
 LALDestroyVector()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{FindChirpPTFWaveformCV}}
-</lalLaTeX>
-#endif
+*/
 
 #include <math.h>
 #include <gsl/gsl_errno.h>
@@ -97,7 +86,6 @@ INT4 XLALPTFWaveformDerivatives(
    * magnitude given by |S1| = chi1 * m1^2 with 0 \le chi1 \le 1
    */
 
-  /*static const char* func = "XLALPTFWaveformDerivatives";*/
   /* post newtonian coeffients which are independent of time */
   ptf_evolution_params_t* pn_params = (ptf_evolution_params_t*) params;
 
@@ -210,7 +198,6 @@ INT4 XLALPTFWaveformDerivatives(
 REAL4Vector*
 XLALPTFOmegaPNCoeffsOrbital( REAL4 m1, REAL4 m2 )
 {
-  static const char* func = "XLALPTFOmegaPNCoeffsOrbital";
   REAL4 m_total = m1 + m2;
   REAL4 eta = (m1 * m2) / (m_total * m_total);
   const UINT4 max_pn_order = 9;
@@ -218,7 +205,7 @@ XLALPTFOmegaPNCoeffsOrbital( REAL4 m1, REAL4 m2 )
   REAL4* c;
 
   if ( ! c_vec )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   else
     c = c_vec->data;
 
@@ -267,7 +254,6 @@ XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2,
     REAL4 chi1, REAL4 chi2,
     REAL4 Q1, REAL4 Q2 )
 {
-  static const char* func = "XLALPTFOmegaPNCoeffsSpin";
   const REAL4 m_total = m1 + m2;
   const REAL4 m1_5 = m1 * m1 * m1 * m1 * m1;
   const REAL4 m2_5 = m2 * m2 * m2 * m2 * m2;
@@ -276,7 +262,7 @@ XLALPTFOmegaPNCoeffsSpin( REAL4 m1, REAL4 m2,
   REAL4* c;
 
   if ( ! c_vec )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   else
     c = c_vec->data;
 
@@ -317,7 +303,6 @@ XLALPTFOmegaPNCoeffsEnergy( REAL4 m1, REAL4 m2,
 {
   /* These coefficients are derived from Eqs. (11) and (12) and (13) of */
   /* Buonanno, Chen and Vallisneri, Phys. Rev. D 67, 104025 (BCV2)      */
-  static const char* func = "XLALPTFOmegaPNCoeffsEnergy";
   const REAL4 m_total = m1 + m2;
   const REAL4 mu = m1 * m2 / m_total;
   const REAL4 eta = mu / m_total;
@@ -328,7 +313,7 @@ XLALPTFOmegaPNCoeffsEnergy( REAL4 m1, REAL4 m2,
   REAL4* c;
 
   if ( ! c_vec )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
   else
     c = c_vec->data;
 
@@ -449,7 +434,7 @@ static REAL4 stpn_orbital_energy( REAL8 omega,
 
 /* Function for the evaluation of the time evolution of the phase, the */
 /* frequency and the e_i basis vectors in the precessing convention    */
-/* <lalVerbatim file="FindChirpPTFWaveformCP"> */
+
 INT4
 XLALFindChirpPTFWaveform(
     REAL4Vector         *PTFphi,
@@ -459,9 +444,8 @@ XLALFindChirpPTFWaveform(
     InspiralTemplate    *InspTmplt,
     REAL8                deltaT
     )
-/* </lalVerbatim> */
+
 {
-  static const char* func = "XLALFindChirpPTFWaveform";
   UINT4 i, len;
   UINT4 N = PTFphi->length;
   INT4  errcode = 0;
@@ -693,7 +677,7 @@ XLALFindChirpPTFWaveform(
   if ( errcode == GSL_SUCCESS )
     errcode = XLAL_SUCCESS;
   else
-    XLAL_ERROR( func, errcode );
+    XLAL_ERROR(errcode);
 
   return errcode;
 }

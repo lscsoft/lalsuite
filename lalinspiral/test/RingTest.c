@@ -17,31 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="RingTestCV">
- * Author: Jolien Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{RingTest.c}}
+/**
+ * \author Jolien Creighton
+ * \file
+ * \ingroup RingUtils_h
  *
- * Calls the various routines in \verb+RingUtils.h+.
+ * \brief Calls the various routines in \ref RingUtils_h.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * RingTest
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * The program creates a ring template, which is output to the file
- * \verb+ring.out+, and a black hole ring waveform, which is output to the
- * file \verb+bhring.out+.  The program then generates a template bank,
- * which is written to the file \verb+bank.out+.
+ * <tt>ring.out</tt>, and a black hole ring waveform, which is output to the
+ * file <tt>bhring.out</tt>.  The program then generates a template bank,
+ * which is written to the file <tt>bank.out</tt>.
  *
- * \vfill{\footnotesize\input{RingTestCV}}
- **** </lalLaTeX> */
+ *
+*/
 
 #include <stdio.h>
 #include <stdlib.h>

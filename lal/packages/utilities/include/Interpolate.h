@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -43,6 +43,11 @@ Generates random numbers.
 
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
 
 #include <lal/LALDatatypes.h>
 
@@ -140,6 +145,7 @@ corresponding values \verb+y[0]+\ldots\verb+y[n-1]+.  The fields are:
 typedef struct
 tagSInterpolateOut
 {
+  SWIGLAL_STRUCT(SInterpolateOut);
   REAL4  y;
   REAL4 dy;
 }
@@ -148,6 +154,7 @@ SInterpolateOut;
 typedef struct
 tagDInterpolateOut
 {
+  SWIGLAL_STRUCT(DInterpolateOut);
   REAL8  y;
   REAL8 dy;
 }
@@ -156,6 +163,7 @@ DInterpolateOut;
 typedef struct
 tagSInterpolatePar
 {
+  SWIGLAL_STRUCT(SInterpolatePar);
   UINT4  n;
   REAL4 *x;
   REAL4 *y;
@@ -165,6 +173,7 @@ SInterpolatePar;
 typedef struct
 tagDInterpolatePar
 {
+  SWIGLAL_STRUCT(DInterpolatePar);
   UINT4  n;
   REAL8 *x;
   REAL8 *y;
@@ -193,6 +202,15 @@ LALDPolynomialInterpolation (
     DInterpolateOut *output,
     REAL8            target,
     DInterpolatePar *params
+    );
+
+REAL8
+XLALREAL8PolynomialInterpolation (
+    REAL8 *yout,
+    REAL8  xtarget,
+    REAL8 *y,
+    REAL8 *x,
+    UINT4  n
     );
 
 #if 0 /* autodoc block */

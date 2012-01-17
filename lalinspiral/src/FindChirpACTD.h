@@ -5,82 +5,49 @@
  *
  * Author: McKechan, D. J. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
-#if 0
-<lalVerbatim file="FindChirpACTDHV">
-Author: McKechan, D. J. A.
-$Id$
-</lalVerbatim>
+/**
+ * \defgroup FindChirpACTD_h FindChirpACTD_h
+ * \ingroup CBC_findchirp
+ */
 
-<lalLaTeX>
-\section{Header \texttt{FindChirpACTD.h}}
-\label{s:FindChirpACTD.h}
+/**
+\author McKechan, D. J. A.
+\file
+\ingroup FindChirpACTD_h
 
-Provides structures and functions for amplitude corrected time domain
+\brief Provides structures and functions for amplitude corrected time domain
 templates using AmpCorPPN.
 
-\subsection*{Synopsis}
-
-\begin{verbatim}
+\heading{Synopsis}
+\code
 #include <lal/FindChirpACTD.h>
-\end{verbatim}
+\endcode
 
-</lalLaTeX>
-#endif
+*/
 
 
 #ifndef _FINDCHIRPACTDH_H
 #define _FINDCHIRPACTDH_H
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 
 NRCSID (FINDCHIRPACTDH, "$Id$");
 
-#if 0
-<lalLaTeX>
-\subsection*{Error codes}
-</lalLaTeX>
-#endif
-/* <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define FINDCHIRPACTDH_EQMAS 1
 #define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"
-/* </lalErrTable> */
+/*@}*/
 
-#if 0
-<lalLaTeX>
-Define number of vectors, 6 for 0.5PN.
-</lalLaTeX>
-#endif
+/** Define number of vectors, 6 for 0.5PN. */
 #define NACTDVECS (3)
-
-#if 0
-<lalLaTeX>
-\subsection*{Types}
-
-None.
-</lalLaTeX>
-#endif
-
-
-#if 0
-<lalLaTeX>
-\vfill{\footnotesize\input{FindChirpACTDHV}}
-</lalLaTeX>
-#endif
-
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpACTDTemplateC}
-</lalLaTeX>
-#endif
 
 void
 LALFindChirpACTDTemplate (
@@ -90,12 +57,6 @@ LALFindChirpACTDTemplate (
     FindChirpTmpltParams       *params
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpACTDNormalizeC}
-</lalLaTeX>
-#endif
-
 void
 LALFindChirpACTDNormalize(
     LALStatus                  *status,
@@ -104,12 +65,6 @@ LALFindChirpACTDNormalize(
     FindChirpDataParams        *params
     );
 
-#if 0
-<lalLaTeX>
-\newpage\input{FindChirpACTDFilterSegmentC}
-</lalLaTeX>
-#endif
-
 void
 LALFindChirpACTDFilterSegment (
     LALStatus                  *status,
@@ -117,12 +72,6 @@ LALFindChirpACTDFilterSegment (
     FindChirpFilterInput       *input,
     FindChirpFilterParams      *params
     );
-
-#if 0
-<lalLaTeX>
-\newpage\input{XLALFindChirpACTDInnerProductC}
-</lalLaTeX>
-#endif
 
 REAL4  XLALFindChirpACTDInnerProduct(
     COMPLEX8Vector *a,
@@ -134,8 +83,9 @@ REAL4  XLALFindChirpACTDInnerProduct(
     );
 
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

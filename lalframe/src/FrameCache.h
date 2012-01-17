@@ -17,47 +17,45 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameCacheHV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author Jolien D. E. Creighton
+ * \file
  *
- * \section{Header \texttt{FrameCache.h}}
+ * \heading{Header \ref FrameCache.h}
  *
  * Routines for manipulating a cache of available frame files.
  *
- * \subsection*{Synopsis}
- * \begin{verbatim}
+ * \heading{Synopsis}
+ * \code
  * #include <lal/FrameCache.h>
- * \end{verbatim}
+ * \endcode
  *
  * Frame file catalogues contain URLs for available frame files along with
  * various pieces of metadata.  These routines allow frame catalogues to be
  * imported, exported, or generated, and stored in a frame cache structure,
  * which can be manipulated.
  *
- **** </lalLaTeX> */
+*/
 
 #ifndef _FRAMECACHE_H
 #define _FRAMECACHE_H
 
-#ifdef __cplusplus
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #include <lal/LALDatatypes.h>
 
 NRCSID( FRAMECACHEH, "$Id$" );
 
-/**** <lalLaTeX>
- *
- * \subsection*{Error conditions}
- *
- **** </lalLaTeX> */
-/**** <lalErrTable> */
+/**\name Error Codes */ /*@{*/
 #define FRAMECACHEH_ENULL  1
 #define FRAMECACHEH_ENNUL  2
 #define FRAMECACHEH_EALOC  4
@@ -73,18 +71,12 @@ NRCSID( FRAMECACHEH, "$Id$" );
 #define FRAMECACHEH_MSGELINE "Input line too long"
 #define FRAMECACHEH_MSGEPATH "Unable to glob frame files to build cache"
 #define FRAMECACHEH_MSGENFRM "No frame files"
-/**** </lalErrTable> */
+/*@}*/
 
-/**** <lalLaTeX>
- *
- * \subsection*{Structures}
- * \idx[Type]{FrStat}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
 typedef struct
 tagFrStat
 {
+  SWIGLAL_STRUCT(FrStat);
   CHAR *source;
   CHAR *description;
   INT4  startTime;
@@ -92,46 +84,53 @@ tagFrStat
   CHAR *url;
 }
 FrStat;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure contains a frame file status.  The fields are:
- * \begin{description}
- * \item[\texttt{source}] the source detector(s) of the data in the frame
+ * <dl>
+ * <dt>source</dt><dd> the source detector(s) of the data in the frame
  *     file, or other identifier.
- * \item[\texttt{description}] the description of the type of data contained
+ * </dd><dt>description</dt><dd> the description of the type of data contained
  *     in the frame file, or other identifier.
- * \item[\texttt{startTime}] the GPS time of the second equal to
+ * </dd><dt>startTime</dt><dd> the GPS time of the second equal to
  *     (or just before) the start of the data contained in the frame file.
- * \item[\texttt{duration}] the number of seconds between \texttt{startTime}
+ * </dd><dt>duration</dt><dd> the number of seconds between \c startTime
  *     and the GPS time of the second equal to (or just after) the end of the
  *     data contained in the frame file.
- * \item[\texttt{url}] the URL of the frame file.
- * \end{description}
+ * </dd><dt>url</dt><dd> the URL of the frame file.
+ * </dd></dl>
  *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+*/
+
 typedef struct
 tagFrCache
 {
+  SWIGLAL_STRUCT(FrCache);
   UINT4   numFrameFiles;
   FrStat *frameFiles;
 }
 FrCache;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure contains a list of all frame files available.  The fields are:
- * \begin{description}
- * \item[\texttt{numFrameFiles}] the total number of frame files in the list.
- * \item[\texttt{frameFiles}] array of frame file status descriptors.
- * \end{description}
+ * <dl>
+ * <dt>numFrameFiles</dt><dd> the total number of frame files in the list.
+ * </dd><dt>frameFiles</dt><dd> array of frame file status descriptors.
+ * </dd></dl>
  *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+*/
+
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::srcRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::dscRegEx;
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagFrCacheSieve::urlRegEx;
+#endif /* SWIG */
 typedef struct
 tagFrCacheSieve
 {
+  SWIGLAL_STRUCT(FrCacheSieve);
   const CHAR *srcRegEx;
   const CHAR *dscRegEx;
   const CHAR *urlRegEx;
@@ -139,29 +138,29 @@ tagFrCacheSieve
   INT4 latestTime;
 }
 FrCacheSieve;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
+
+/**
  *
  * This structure contains parameters to use to extract those frame files
  * of interest from a cache.  The parameters include regular expressions and
  * time ranges.  The fields are:
- * \begin{description}
- * \item[\texttt{srcRegEx}] regular expression to use in selecting frame files
- *     with a specified source identifier.  (Not used if \texttt{NULL}.)
- * \item[\texttt{dscRegEx}] regular expression to use in selecting frame files
- *     with a specified description identifier.  (Not used if \texttt{NULL}.)
- * \item[\texttt{urlRegEx}] regular expression to use in selecting frame files
- *     with a specified URL.  (Not used if \texttt{NULL}.)
- * \item[\texttt{earliestTime}] earliest time (GPS seconds) of frame files of
- *     interest.  (Not used if zero or less.)
- * \item[\texttt{latestTime}] latest time (GPS seconds) of frame files of
- *     interest.  (Not used if zero or less.)
- * \end{description}
+ * <dl>
+ * <dt>srcRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified source identifier.  (Not used if \c NULL.) </dd>
+ * <dt>dscRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified description identifier.  (Not used if \c NULL.)</dd>
+ * <dt>urlRegEx</dt><dd> regular expression to use in selecting frame files
+ *     with a specified URL.  (Not used if \c NULL.)</dd>
+ * <dt>earliestTime</dt><dd> earliest time (GPS seconds) of frame files of
+ *     interest.  (Not used if zero or less.)</dd>
+ * <dt>latestTime</dt><dd> latest time (GPS seconds) of frame files of
+ *     interest.  (Not used if zero or less.)</dd>
+ * </dl>
  *
- * \vfill{\footnotesize\input{FrameCacheHV}}
- * \newpage\input{FrameCacheC}
  *
- **** </lalLaTeX> */
+ *
+ *
+*/
 
 FrCache * XLALFrImportCache( const char *fname );
 FrCache * XLALFrSieveCache( FrCache *input, FrCacheSieve *params );
@@ -202,8 +201,9 @@ LALFrCacheGenerate(
     const CHAR  *fnptrn
     );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

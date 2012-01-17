@@ -43,7 +43,7 @@ from glue import pipeline
 from glue.lal import CacheEntry
 from pylal import ligolw_cafe
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-from pylal import burstsearch
+from pylal import excesspower
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -125,7 +125,7 @@ def get_files_per_binjfind(config_parser):
 def get_timing_parameters(config_parser):
 	# initialize data structure
 	resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
-	params = burstsearch.XLALEPGetTimingParameters(
+	params = excesspower.XLALEPGetTimingParameters(
 		window_length = config_parser.getint("lalapps_power", "window-length"),
 		max_tile_length = int(config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate),
 		tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction"),
@@ -311,18 +311,24 @@ class BurstInjNode(pipeline.AnalysisNode):
 			raise AttributeError, "cannot change attributes after computing output cache"
 		return self.__usertag
 
+	def set_time_slide_file(self, filename):
+		self.add_var_opt("time-slide-file", filename)
+
+	def get_time_slide_file(self):
+		return self.get_opts().get("macrotimeslidefile", None)
+
 	def set_start(self, start):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
 		self.add_var_opt("gps-start-time", start)
 
+	def get_start(self):
+		return self.get_opts().get("macrogpsstarttime", None)
+
 	def set_end(self, end):
 		if self.output_cache:
 			raise AttributeError, "cannot change attributes after computing output cache"
 		self.add_var_opt("gps-end-time", end)
-
-	def get_start(self):
-		return self.get_opts().get("macrogpsstarttime", None)
 
 	def get_end(self):
 		return self.get_opts().get("macrogpsendtime", None)
@@ -1083,11 +1089,12 @@ def make_power_fragment(dag, parents, instrument, seg, tag, framecache, injargs 
 	return set([node])
 
 
-def make_binj_fragment(dag, seg, tag, offset, flow = None, fhigh = None):
+def make_binj_fragment(dag, seg, time_slides_cache_entry, tag, offset, flow = None, fhigh = None):
 	# adjust start time to be commensurate with injection period
 	start = seg[0] - seg[0] % binjjob.time_step + binjjob.time_step * offset
 
 	node = BurstInjNode(binjjob)
+	node.set_time_slide_file(time_slides_cache_entry.path())
 	node.set_start(start)
 	node.set_end(seg[1])
 	if flow is not None:
@@ -1305,23 +1312,6 @@ def make_datafind_stage(dag, seglists, verbose = False):
 		#	node.set_post_script(datafindjob.get_config_file().get("condor", "LSCdataFindcheck") + " --dagman-return $RETURN --stat --gps-segment-list %s %s" % (required_segs_string, node.get_output()))
 
 	return nodes
-
-
-#
-# =============================================================================
-#
-#         DAG Fragment Combining Multiple lalapps_binj With ligolw_add
-#
-# =============================================================================
-#
-
-
-def make_multibinj_fragment(dag, seg, tag):
-	flow = float(powerjob.get_opts()["low-freq-cutoff"])
-	fhigh = flow + float(powerjob.get_opts()["bandwidth"])
-
-	nodes = make_binj_fragment(dag, seg, tag, 0.0, flow, fhigh)
-	return make_lladd_fragment(dag, nodes, tag, remove_input = True)
 
 
 #

@@ -99,6 +99,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define HIERARCHICALSEARCH_EMEM 11
 #define HIERARCHICALSEARCH_ESFT 12
 #define HIERARCHICALSEARCH_ECG 13
+#define HIERARCHICALSEARCH_EXLAL 14
 
 #define HIERARCHICALSEARCH_MSGENORM    "Normal exit"
 #define HIERARCHICALSEARCH_MSGESUB     "Subroutine failed"
@@ -111,30 +112,24 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define HIERARCHICALSEARCH_MSGECHECKPT "Could not resume from checkpoint"
 #define HIERARCHICALSEARCH_MSGEMEM     "Out of memory"
 #define HIERARCHICALSEARCH_MSGESFT     "SFT validity check failed"
+#define HIERARCHICALSEARCH_MSGEXLAL    "XLAL function call failed"
 
 
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
 
+  /** type describing one coherent segment of data: ( start-time + duration ) */
+  typedef struct {
+    UINT4 startTime;	/**< gps start-time of segment, in seconds */
+    UINT4 duration;	/**< duration of segment in seconds */
+  } Segment_t;
 
-  /** sequence of MultiSFT vectors -- for each stack */
-  typedef struct tagMultiSFTVectorSequence {
-    UINT4 length;     /**< number of stacks */
-    MultiSFTVector **data; /**< the SFT vectors */
-  } MultiSFTVectorSequence;
-
-  /** sequence of Multi-noise weights vectors -- for each stack */
-  typedef struct tagMultiNoiseWeightsSequence {
-    UINT4 length;     /**< number of stacks */
-    MultiNoiseWeights **data; /**< the noise weights */
-  } MultiNoiseWeightsSequence;
-
-  /** sequence of Multi-detector state vectors -- for each stack */
-  typedef struct tagMultiDetectorStateSeriesSequence {
-    UINT4 length;     /**< number of stacks */
-    MultiDetectorStateSeries **data; /**< the detector state series */
-  } MultiDetectorStateSeriesSequence;
+  /** a standard vector of data-segments */
+  typedef struct {
+    UINT4 length;	/**< number of segments */
+    Segment_t *data;	/**< array of segments */
+  } SegmentVector_t;
 
   /* sequence of SFT catalogs -- for each stack */
   typedef struct tagSFTCatalogSequence {
@@ -158,13 +153,13 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 
   /* ------------------------------------------------------------------------- */
 
-  /** one fine-grid point */
-  typedef struct tagFineGridPoint {
-    UINT4 nc;           /**< number count */
-    REAL4 sumTwoF;      /**< sum of 2F-values */
-  } FineGridPoint;  
 
   /** structure for storing fine-grid points */
+#ifdef GC_SSE2_OPT
+#define FINEGRID_NC_T UCHAR
+#else
+#define FINEGRID_NC_T UINT4
+#endif
   typedef struct tagFineGrid {
     REAL8 freqmin_fg;       /**< fine-grid start in frequency */
     REAL8 f1dotmin_fg;      /**< fine-grid start in 1st spindown */
@@ -176,21 +171,25 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     UINT4 length;           /**< maximum allowed length of vectors */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
     UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
-    FineGridPoint *list;    /**> list of finegrid points */
+    REAL4 * sumTwoF;        /**< sum of 2F-values */
+    FINEGRID_NC_T * nc;     /**< number count */
   } FineGrid;
-  
+
+
   /** one coarse-grid point */
   typedef struct tagCoarseGridPoint {
     UINT4 Uindex;      /**< U index */
     REAL4 TwoF;       /**< 2F-value */
   } CoarseGridPoint;  
-  
+
+
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
     UINT4 length;             /**< maximum allowed length of vectors */
-    CoarseGridPoint *list;    /**> list of finegrid points */
+    UINT4 * Uindex;      /**< U index */
+    REAL4 * TwoF;       /**< 2F-value */
   } CoarseGrid;
-  
+
  /* ------------------------------------------------------------------------- */
 
  /* function prototypes */
@@ -205,7 +204,6 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 			 INT4 *loopindex, 
 			 const CHAR *fnameChkPoint);
 
-  
 #ifdef  __cplusplus
 }                /* Close C++ protection */
 #endif

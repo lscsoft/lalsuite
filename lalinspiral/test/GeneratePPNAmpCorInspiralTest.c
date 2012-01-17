@@ -17,24 +17,21 @@
 *  MA  02111-1307  USA
 */
 
-/********************** <lalVerbatim file="COMPLETEGeneratePPNAmpCorInspiralTestCV">
-**************************************************** </lalVerbatim> */
+/**
+\file
 
-/********************************************************** <lalLaTeX>
+\brief Generates a parametrized post-Newtonian inspiral waveform.
+\ingroup GeneratePPNInspiral_h
 
-\subsection{Program \texttt{GeneratePPNAmpCorInspiralTest.c}}
-\label{ss:GeneratePPNAmpCorInspiralTest.c}
-
-Generates a parametrized post-Newtonian inspiral waveform.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f_max]
                         [-t dt] [-p order amp] [-d debuglevel] [-o outfile] [-g FF FFTfile]
                         [-s taper]
-\end{verbatim}
+\endcode
+*/
 
-****************************************** </lalLaTeX><lalErrTable> */
+/** \name Error Codes */ /*@{*/
 #define GENERATEPPNINSPIRALTESTC_ENORM  0
 #define GENERATEPPNINSPIRALTESTC_ESUB   1
 #define GENERATEPPNINSPIRALTESTC_EARG   2

@@ -28,19 +28,18 @@
  *-----------------------------------------------------------------------
  */
 
-/******************************** <lalVerbatim file="LALXMGRInterfaceCV">
-Author: Brady, P. R., Brown, D. A., and Owen, B. J.
-$Id$
-</lalVerbatim>
+/**
+\author Brady, P. R., Brown, D. A., and Owen, B. J.
+\file
+\ingroup pulsarTODO
 
-<lalLaTeX>
-\subsection{Module \texttt{LALXMGRInterface.c}}
-\label{ss:LALXMGRInterface.c}
+\heading{Module \ref LALXMGRInterface.c}
+\latexonly\label{ss_LALXMGRInterface_c}\endlatexonly
 
 Functions for creating XMGR graphs from LAL structures and functions.
 
-\vfill{\footnotesize\input{LALXMGRInterfaceCV}}
-</lalLaTeX> ************************************************************/
+
+*/
 
 #include <math.h>
 #include <time.h>

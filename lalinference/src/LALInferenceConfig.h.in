@@ -1,0 +1,30 @@
+/* only include this file if LALInference's config.h has not been included */
+
+#ifndef _LALINFERENCECONFIG_H
+#define _LALINFERENCECONFIG_H
+
+/* LALInference Version */
+#undef LALINFERENCE_VERSION
+
+/* LALInference Version Major Number  */
+#undef LALINFERENCE_VERSION_MAJOR
+
+/* LALInference Version Minor Number  */
+#undef LALINFERENCE_VERSION_MINOR
+
+/* LALInference Version Micro Number  */
+#undef LALINFERENCE_VERSION_MICRO
+
+/* LALInference Version Devel Number  */
+#undef LALINFERENCE_VERSION_DEVEL
+
+/* LALInference Configure Arguments */
+#undef LALINFERENCE_CONFIGURE_ARGS
+
+/* LALInference Configure Date */
+#undef LALINFERENCE_CONFIGURE_DATE
+
+/* Define to 1 if you have the LALXML library */
+#undef HAVE_LIBLALXML
+
+#endif /* _LALINFERENCECONFIG_H */

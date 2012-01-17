@@ -17,40 +17,34 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALInsidePolygonCV">
-Author: Cokelaer. T
-$Id$
-</lalVerbatim>  */
+/**
+\author Cokelaer. T
+\file
+\ingroup LALInspiralBank_h
 
-/*  <lalLaTeX>
-
-\subsection{Module \texttt{LALInsidePolygon.c}}
-
-Module to check whether a point with coordinates (x,y) is inside
+\brief Module to check whether a point with coordinates (x,y) is inside
 a polygon defined by the vectors (vx, vy), which size (n) must be
 provided. The functions returns 1 if the point is inside or 0 otherwise.
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALInsidePolygonCP}
-\idx{LALInsidePolygon()}
-\begin{itemize}
-   \item \texttt{vx, vy} Input, two arrays of floats defining the polygon.
-   \item \texttt{n} Input, the size of the vectors.
-   \item \texttt{x, y} Input, the coordinate of the point.
-   \item \texttt{valid} Output, 0 if outside and 1 if inside.
-\end{itemize}
+\heading{Prototypes}
 
-\subsubsection*{Description/Algorithm}
+
+<tt>LALInsidePolygon()</tt>:
+<ul>
+   <li> <tt>vx, vy</tt> Input, two arrays of floats defining the polygon.
+   </li><li> \c n Input, the size of the vectors.
+   </li><li> <tt>x, y</tt> Input, the coordinate of the point.
+   </li><li> \c valid Output, 0 if outside and 1 if inside.</li>
+</ul>
+
+\heading{Description/Algorithm}
 None
-\subsubsection*{Uses}
+\heading{Uses}
 None.
-\subsubsection*{Notes}
+\heading{Notes}
 Tested in matlab codes and some BCV tests within lal/lalapps.
 
-\vfill{\footnotesize\input{LALInsidePolygonCV}}
-
-</lalLaTeX>  */
+*/
 
 
 
@@ -58,7 +52,7 @@ Tested in matlab codes and some BCV tests within lal/lalapps.
 
 NRCSID (LALINSIDEPOLYGONC, "Id: $");
 
-/*  <lalVerbatim file="LALInsidePolygonCP"> */
+
 void LALInsidePolygon(  LALStatus          *status,
                         REAL4              *inputx,
                         REAL4              *inputy,
@@ -68,7 +62,7 @@ void LALInsidePolygon(  LALStatus          *status,
                         INT4               *valid)
 
 
-{  /*  </lalVerbatim>  */
+{
 
 
    INITSTATUS (status, "LALInsidePolygon", LALINSIDEPOLYGONC);

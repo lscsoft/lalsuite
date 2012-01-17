@@ -2738,7 +2738,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
 
     for (i=0; i < tl->elems; i++){
     
-	readTopList = *((FstatOutputEntry*)(tl->heap[i]));    
+	readTopList = *((FstatOutputEntry*)(void*)(tl->heap[i]));
 
         /* Copy template parameters from the TopList */
 	pulsarTemplate.f0= readTopList.Freq  ;

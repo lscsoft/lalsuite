@@ -23,70 +23,65 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
- *
  *-----------------------------------------------------------------------
  */
 
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 
-#if 0
-<lalVerbatim file="LIGOLwXMLHeadersHV">
-Author: Brown, D. A.
-$Id$
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{LIGOLwXMLHeaders.h}}
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LIGOLwXMLHeaders.h>
-\end{verbatim}
+/**
+\author Brown, D. A.
+\file
+\ingroup lalmetaio
 
-This header provides provides \verb|#define|s for the common elements of LIGO
-light weight XML files.  It provides the XML header and footer, as well as table
-definitions for the various metadata tables.  It will need to be kept up to date
-with changes in the LIGO database table definitions.  The quantities which are
+\brief This header provides provides <tt>\#define</tt>s for the common elements of LIGO light weight XML files.
+
+\heading{Synopsis}
+\code
+#include <lal/LIGOLwXMLHeaders.h>
+\endcode
+
+It provides the XML header and footer, as well as table definitions for the various metadata tables.
+It will need to be kept up to date with changes in the LIGO database table definitions.  The quantities which are
 defined in this file are
 
-\begin{itemize}
-\item LIGOLW\_XML\_HEADER
-\item LIGOLW\_XML\_FOOTER
-\item LIGOLW\_XML\_TABLE\_FOOTER
-\item LIGOLW\_XML\_PROCESS
-\item PROCESS\_ROW
-\item LIGOLW\_XML\_PROCESS\_PARAMS
-\item PROCESS\_PARAMS\_ROW
-\item LIGOLW\_XML\_SEARCH\_SUMMARY
-\item SEARCH\_SUMMARY\_ROW
-\item LIGOLW\_XML\_SEARCH\_SUMMVARS
-\item SEARCH\_SUMMVARS\_ROW
-\item LIGOLW\_XML\_SIM\_RINGDOWN
-\item SIM\_RINGDOWN\_ROW
-\item LIGOLW\_XML\_SUMM\_VALUE
-\item SUMM\_VALUE\_ROW
-\item LIGOLW\_XML\_SIM\_INST\_PARAMS
-\item SIM\_INST\_PARAMS\_ROW
-\item LIGOLW\_XML\_STOCHASTIC
-\item STOCHASTIC\_ROW
-\item LIGOLW\_XML\_STOCH\_SUMM
-\item STOCH\_SUMM\_ROW
-\item LIGOLW\_XML\_EXT\_TRIGGERS
-\item EXT\_TRIGGERS\_ROW
-\end{itemize}
+<ul>
+<li> LIGOLW_XML_HEADER</li>
+<li> LIGOLW_XML_FOOTER</li>
+<li> LIGOLW_XML_TABLE_FOOTER</li>
+<li> LIGOLW_XML_PROCESS</li>
+<li> PROCESS_ROW</li>
+<li> LIGOLW_XML_PROCESS_PARAMS</li>
+<li> PROCESS_PARAMS_ROW</li>
+<li> LIGOLW_XML_SEARCH_SUMMARY</li>
+<li> SEARCH_SUMMARY_ROW</li>
+<li> LIGOLW_XML_SEARCH_SUMMVARS</li>
+<li> SEARCH_SUMMVARS_ROW</li>
+<li> LIGOLW_XML_SIM_RINGDOWN</li>
+<li> SIM_RINGDOWN_ROW</li>
+<li> LIGOLW_XML_SUMM_VALUE</li>
+<li> SUMM_VALUE_ROW</li>
+<li> LIGOLW_XML_SIM_INST_PARAMS</li>
+<li> SIM_INST_PARAMS_ROW</li>
+<li> LIGOLW_XML_STOCHASTIC</li>
+<li> STOCHASTIC_ROW</li>
+<li> LIGOLW_XML_STOCH_SUMM</li>
+<li> STOCH_SUMM_ROW</li>
+<li> LIGOLW_XML_EXT_TRIGGERS</li>
+<li> EXT_TRIGGERS_ROW</li>
+</ul>
 
-\vfill{\footnotesize\input{LIGOLwXMLHeadersHV}}
-</lalLaTeX>
-#endif
+*/
 
 #ifndef _LIGOLWXMLHEADERS_H
 #define _LIGOLWXMLHEADERS_H
 
 NRCSID( LIFOLWXMLHEADERSH, "$Id$" );
 
-#ifdef  __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 #define PRINT_LIGOLW_XML_HEADER(fp) ( \
@@ -369,8 +364,9 @@ fputs( "      <Stream Name=\"filtergroup:filter:table\" Type=\"Local\" Delimiter
 #define FILTER_ROW \
 "         \"process:process_id:0\",\"%s\",%d,\"%s\",\"%s\",\"filter:filter_id:%" LAL_UINT8_FORMAT "\""
 
-#ifdef  __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

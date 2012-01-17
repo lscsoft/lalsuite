@@ -123,6 +123,19 @@ static void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
+static REAL8 xff1 (REAL8 x, void *p)
+{
+  REAL8  y;
+  REAL8  x2 = x*x;
+  REAL8  x4 = x2*x2;
+  INT4  *n;
+  if (p == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  ++(*(n = (INT4 *)p));
+  y = x4*log(x + sqrt(x2 + 1));
+  return y;
+}
+
 static void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
@@ -141,6 +154,17 @@ static void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   ++(*(n = (INT4 *)p));
   *y = 1/(x*x*x);
   RETURN (s);
+}
+
+static REAL8 xff2 (REAL8 x, void *p)
+{
+  REAL8  y;
+  INT4  *n;
+  if (p == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  ++(*(n = (INT4 *)p));
+  y = 1/(x*x*x);
+  return y;
 }
 
 static void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
@@ -163,6 +187,17 @@ static void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
+static REAL8 xff3 (REAL8 x, void *p)
+{
+  REAL8  y;
+  INT4  *n;
+  if (p == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  ++(*(n = (INT4 *)p));
+  y = exp(-x*x/2);
+  return y;
+}
+
 static void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
@@ -183,6 +218,17 @@ static void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   RETURN (s);
 }
 
+static REAL8 xff4 (REAL8 x, void *p)
+{
+  REAL8  y;
+  INT4  *n;
+  if (p == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  ++(*(n = (INT4 *)p));
+  y = 1/sqrt(x);
+  return y;
+}
+
 static void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
@@ -201,6 +247,17 @@ static void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   ++(*(n = (INT4 *)p));
   *y = x + 1/sqrt(5 - x);
   RETURN (s);
+}
+
+static REAL8 xff5 (REAL8 x, void *p)
+{
+  REAL8  y;
+  INT4  *n;
+  if (p == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  ++(*(n = (INT4 *)p));
+  y = x + 1/sqrt(5 - x);
+  return y;
 }
 
 static void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
@@ -228,7 +285,8 @@ static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
   SIntegrateIn intinp;
   INITSTATUS (s, "h", MAIN);
   ATTATCHSTATUSPTR (s);
-  ASSERT (!p, s, 2, "Non-null pointer");
+  if ( p )
+    ABORT ( s, 2, "Non-null pointer");
   p = NULL;
   intinp.function = g;
   intinp.xmin     = 0;
@@ -245,7 +303,8 @@ static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
   DIntegrateIn intinp;
   INITSTATUS (s, "hh", MAIN);
   ATTATCHSTATUSPTR (s);
-  ASSERT (!p, s, 2, "Non-null pointer");
+  if ( p )
+    ABORT ( s, 2, "Non-null pointer");
   p = NULL;
   intinp.function = gg;
   intinp.xmin     = 0;
@@ -276,6 +335,11 @@ static void bad (LALStatus UNUSED *s, REAL4 *y, REAL4 UNUSED x, void *p)
 static void bbad (LALStatus UNUSED *s, REAL8 *y, REAL8 UNUSED x, void *p)
 {
   *y = (REAL8)(++(*(INT4 *)p));
+}
+
+static REAL8 xbbad (REAL8 UNUSED x, void *p)
+{
+  return (REAL8)(++(*(INT4 *)p));
 }
 #endif
 
@@ -350,9 +414,29 @@ int main (int argc, char *argv[])
       fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
+
   count = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  {
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
+  count = 0;
+  dresult = XLALREAL8RombergIntegrate (&xff1, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  if (xlalErrno)
+    abort();
+  else if (verbose)
+    printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
     printf ("number of function calls: %d\n", count);
   if ( verbose )
@@ -419,6 +503,25 @@ int main (int argc, char *argv[])
     return 1;
   }
 
+  count = 0;
+  dresult = XLALREAL8RombergIntegrate (&xff2, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  if (xlalErrno)
+    abort();
+  else if (verbose)
+    printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  {
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
 
   /*
    *
@@ -459,6 +562,25 @@ int main (int argc, char *argv[])
   count = 0;
   LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
   TestStatus (&status, CODES(0), 1);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  {
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
+  count = 0;
+  dresult = XLALREAL8RombergIntegrate (&xff3, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  if (xlalErrno)
+    abort();
+  else if (verbose)
+    printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
     printf ("number of function calls: %d\n", count);
   if ( verbose )
@@ -525,6 +647,25 @@ int main (int argc, char *argv[])
     return 1;
   }
 
+  count = 0;
+  dresult = XLALREAL8RombergIntegrate (&xff4, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  if (xlalErrno)
+    abort();
+  else if (verbose)
+    printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  {
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
 
   /*
    *
@@ -577,6 +718,25 @@ int main (int argc, char *argv[])
   {
     if ( verbose )
     fprintf (stderr, "Integration did not achieve desired accuracy!\n");
+    return 1;
+  }
+
+  count = 0;
+  dresult = XLALREAL8RombergIntegrate (&xff5, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+  if (xlalErrno)
+    abort();
+  else if (verbose)
+    printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
+  if ( verbose )
+    printf ("number of function calls: %d\n", count);
+  if ( verbose )
+    printf ("result: %.15f\n", dresult);
+  if ( verbose )
+    printf ("expect: %.15Lf\n", expect);
+  if (fabs(dresult - expect) > depsilon*fabs(expect))
+  {
+    if ( verbose )
+      fprintf (stderr, "Integration did not achieve desired accuracy!\n");
     return 1;
   }
 
@@ -672,6 +832,11 @@ int main (int argc, char *argv[])
     TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
     LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
     TestStatus (&status, CODES(INTEGRATEH_ENULL), 1);
+    dresult = XLALREAL8RombergIntegrate (NULL, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+    if (xlalErrno == XLAL_EFAULT)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Null pointer check passed.\n");
 
@@ -689,6 +854,11 @@ int main (int argc, char *argv[])
     TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
     LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
     TestStatus (&status, CODES(INTEGRATEH_EIDOM), 1);
+    dresult = XLALREAL8RombergIntegrate (&xff1, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+    if (xlalErrno == XLAL_EDOM)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Invalid domain check passed.\n");
 
@@ -706,6 +876,11 @@ int main (int argc, char *argv[])
     TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
     LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
     TestStatus (&status, CODES(INTEGRATEH_ETYPE), 1);
+    dresult = XLALREAL8RombergIntegrate (&xff1, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+    if (xlalErrno == XLAL_EINVAL)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Unknown integral type check passed.\n");
 
@@ -725,6 +900,11 @@ int main (int argc, char *argv[])
     count = 1;
     LALDRombergIntegrate (&status, &dresult, &dintinp, &count);
     TestStatus (&status, CODES(INTEGRATEH_EMXIT), 1);
+    dresult = XLALREAL8RombergIntegrate (&xbbad, &count, dintinp.xmin, dintinp.xmax, dintinp.type);
+    if (xlalErrno == XLAL_EMAXITER)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Maximum iterations exceeded check passed.\n");
 
@@ -743,6 +923,11 @@ int main (int argc, char *argv[])
     ClearStatus (&status);
     LALDRombergIntegrate (&status, &dresult, &dintinp, NULL);
     TestStatus (&status, CODES(-1), 1);
+    dresult = XLALREAL8RombergIntegrate (&xff1, NULL, dintinp.xmin, dintinp.xmax, dintinp.type);
+    if (xlalErrno == XLAL_EFUNC + XLAL_EFAULT)
+      xlalErrno = 0;
+    else
+      abort();
     if ( verbose )
       printf ("Recursive error check passed.\n");
     ClearStatus (&status);

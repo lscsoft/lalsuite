@@ -554,9 +554,9 @@ void LALSetSiteParameters(LALStatus *status,
   /* temporarily, populate the fields for the */
   /* GEO, TAMA and VIRGO times                */
   
-  memset( &(this_inj->g_end_time), 0,sizeof(&(this_inj->l_end_time)) ); 
-  memset( &(this_inj->t_end_time), 0,sizeof(&(this_inj->l_end_time)) );
-  memset( &(this_inj->v_end_time), 0,sizeof(&(this_inj->l_end_time)) );
+  memset( &(this_inj->g_end_time), 0,sizeof((this_inj->l_end_time)) );
+  memset( &(this_inj->t_end_time), 0,sizeof((this_inj->l_end_time)) );
+  memset( &(this_inj->v_end_time), 0,sizeof((this_inj->l_end_time)) );
   
   /*
    * compute the effective distance of the inspiral
@@ -597,9 +597,9 @@ void LALSetSiteParameters(LALStatus *status,
   /* GEO, TAMA and VIRGO effective distances  */
 
   
-  memset( &(this_inj->eff_dist_g), 0, sizeof(&(this_inj->eff_dist_g)) );
-  memset( &(this_inj->eff_dist_t), 0, sizeof(&(this_inj->eff_dist_g)) );
-  memset( &(this_inj->eff_dist_v), 0, sizeof(&(this_inj->eff_dist_g)) );
+  memset( &(this_inj->eff_dist_g), 0, sizeof((this_inj->eff_dist_g)) );
+  memset( &(this_inj->eff_dist_t), 0, sizeof((this_inj->eff_dist_g)) );
+  memset( &(this_inj->eff_dist_v), 0, sizeof((this_inj->eff_dist_g)) );
   
   
 
@@ -1000,25 +1000,7 @@ void XLALCheckInspiralInjectionParameters(InspiralInjectionParameters params)
                "gps-start-time", params.gpsStartTime.gpsSeconds );
       exit( 1 );
     } 
-  if ( params.gpsStartTime.gpsSeconds  > 999999999 )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-               "GPS start time is after " 
-               "Sep 14, 2011  01:46:26 UTC:\n"
-               "(%d specified)\n", 
-               "gps-start-time",  params.gpsStartTime.gpsSeconds);
-      exit( 1 );
-    }
   /* check that the start time is before the end time */
-  if ( params.gpsEndTime.gpsSeconds > 999999999 )
-    {
-      fprintf( stderr, "invalid argument to --%s:\n"
-               "GPS End time is after " 
-               "Sep 14, 2011  01:46:26 UTC:\n"
-               "(%d specified)\n", 
-               "gps-end-time", params.gpsEndTime.gpsSeconds );
-      exit( 1 );
-    } 
   if ( params.meanTimeStep <= 0 )
     {
       fprintf( stderr, "invalid argument to --%s:\n"

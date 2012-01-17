@@ -30,6 +30,11 @@
 #ifndef _DOPPLERFULLSCAN_H  /* Double-include protection. */
 #define _DOPPLERFULLSCAN_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -59,7 +64,11 @@ NRCSID( DOPPLERFULLSCANH, "$Id$" );
  */
 
 /** initialization struct for full InitDopplerScan() [UNDER CONSTRUCTION] */
-typedef struct {
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagDopplerFullScanInit::gridFile;
+#endif /* SWIG */
+typedef struct tagDopplerFullScanInit {
+  SWIGLAL_STRUCT(DopplerFullScanInit);
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   DopplerGridType gridType;		/**< which type of grid to generate */
   LALPulsarMetricType metricType; 	/**< which metric to use if GRID_METRIC */

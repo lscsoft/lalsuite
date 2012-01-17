@@ -25,13 +25,6 @@
  *
  *---------------------------------------------------------------------------*/
 
-#if 0
-<lalVerbatim file="GetErrorMatrixFromSnglInspiralCV">
-Author: Craig Robinson
-</lalVerbatim>
-#endif
-
-
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALGSL.h>
@@ -44,61 +37,40 @@ Author: Craig Robinson
 
 NRCSID( ERRORMATRIXFROMSNGLINSPIRALC, "$Id$" );
 
-#if 0
-<lalLaTeX>
-\subsection{Module \texttt{GetErrorMatrixFromSnglInspiral.c}}
+/**
 
-\noindent Blah.
+\author Craig Robinson
+\file
+\ingroup CoincInspiralEllipsoid_h
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{GetErrorMatrixFromSnglInspiralCP}
-\idx{XLALGetErrorMatrixFromSnglInspiral()}
-\idx{XLALGetPositionFromSnglInspiral()}
-\idx{XLALSetTimeInPositionVector()}
+\brief Blah.
 
-\subsubsection*{Description}
+\heading{Description}
 
-\texttt{XLALGetErrorMatrixFromSnglInspiral()} takes in a
-\texttt{SnglInspiralTable}, and a value for the e-thinca parameter. It returns
-a \texttt{gsl\_matrix} containing the the metric scaled appropriately for the
+<tt>XLALGetErrorMatrixFromSnglInspiral()</tt> takes in a
+\c SnglInspiralTable, and a value for the e-thinca parameter. It returns
+a \c gsl_matrix containing the the metric scaled appropriately for the
 given e-thinca parameter.
 
-\texttt{XLALGetPositionFromSnglInspiral()} takes in a
-\texttt{SnglInspiralTable}, and returns the position vector associated with
-the trigger in $(t_C, \tau_0, \tau_3)$ space.
+<tt>XLALGetPositionFromSnglInspiral()</tt> takes in a
+\c SnglInspiralTable, and returns the position vector associated with
+the trigger in \f$(t_C, \tau_0, \tau_3)\f$ space.
 
-\texttt{XLALSetTimeInPositionVector()} sets the time co-ordinate in the given
-position vector to \texttt{time}. It returns zero upon successful completion.
+<tt>XLALSetTimeInPositionVector()</tt> sets the time co-ordinate in the given
+position vector to \c time. It returns zero upon successful completion.
 
-\subsubsection*{Algorithm}
-
-\noindent None.
-
-\subsubsection*{Uses}
-
-\noindent
-
-\subsubsection*{Notes}
-%% Any relevant notes.
-
-\vfill{\footnotesize\input{CoincInspiralEllipsoidCV}}
-
-</lalLaTeX>
-#endif
+*/
 
 
 /* Function for getting the error matrix from the metric in
  * (tc, tau0, tau3) space.
  */
-/* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
+
 gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
                                                 REAL8              eMatch
                                                )
-/* </lalVerbatim> */
-{
-  static const char *func = "XLALGetErrorMatrixFromSnglInspiral";
 
+{
   gsl_matrix *shape = NULL;
 
   int xlalStatus;
@@ -106,7 +78,7 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
 #ifndef LAL_NDEBUG
   if (!event)
   {
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
   }
 #endif
 
@@ -114,14 +86,14 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
   XLAL_CALLGSL( shape  = gsl_matrix_alloc( 3, 3 ) );
 
   if ( !shape )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   /* Fill in the elements of the shape matrix */
   xlalStatus = XLALSetErrorMatrixFromSnglInspiral( shape, event, eMatch );
   if (xlalStatus != XLAL_SUCCESS )
   {
     gsl_matrix_free( shape );
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   return shape;
@@ -136,9 +108,6 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
                                        )
 
 {
-
-  static const char *func = "XLALSetErrorMatrixFromSnglInspiral";
-
   gsl_matrix *fisher = NULL;
   gsl_permutation *p = NULL;
 
@@ -152,23 +121,23 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
 
 #ifndef LAL_NDEBUG
   if ( !event )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !shape )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( shape->size1 != 3 || shape->size1 != shape->size2 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 #endif
 
   if ( !event->Gamma[0] )
   {
     XLALPrintError( "Metric components are not set.\n" );
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   if ( eMatch < 0 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
 
   XLAL_CALLGSL( fisher = gsl_matrix_alloc( 3, 3 ) );
   XLAL_CALLGSL( p      = gsl_permutation_alloc( 3 ) );
@@ -177,7 +146,7 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
   {
     if ( fisher ) gsl_matrix_free( fisher );
     if ( p ) gsl_permutation_free( p );
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   mtotal = (event->mtotal)*LAL_MTSUN_SI;
@@ -202,7 +171,7 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
   {
      gsl_matrix_free( fisher );
      gsl_permutation_free( p );
-     XLAL_ERROR( func, XLAL_EFUNC );
+     XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* Now invert to get the matrix we need */
@@ -216,18 +185,17 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
   gsl_permutation_free( p );
 
   if ( gslStatus != GSL_SUCCESS )
-    XLAL_ERROR( func, XLAL_EFUNC );
+    XLAL_ERROR( XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 }
 
 
 /* Returns the position vector in (tc, tau0, tau3) space */
-/* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
+
 gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
-/* </lalVerbatim> */
+
 {
-  static const char *func = "XLALGetPositionFromSnglInspiral";
   gsl_vector *position = NULL;
   REAL8 endTime;
 
@@ -238,12 +206,12 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
 
 #ifndef LAL_NDEBUG
   if ( !table )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 #endif
 
   XLAL_CALLGSL( position = gsl_vector_alloc( 3 ) );
   if ( !position )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   endTime = (REAL8) table->end_time.gpsSeconds +
         (REAL8) table->end_time.gpsNanoSeconds * 1.0e-9;
@@ -263,14 +231,14 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
 
 
 /* Sets the time in the position vector to the given value */
-/* <lalVerbatim file="GetErrorMatrixFromSnglInspiralCP"> */
+
 int XLALSetTimeInPositionVector( gsl_vector *position,
                                  REAL8 timeShift)
-/* </lalVerbatim> */
+
 {
 #ifndef LAL_NDEBUG
     if ( !position )
-      XLAL_ERROR( "XLALSetTimeInPositionVector", XLAL_EFAULT );
+      XLAL_ERROR( XLAL_EFAULT );
 #endif
 
     gsl_vector_set( position, 0, timeShift );

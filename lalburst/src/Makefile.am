@@ -7,7 +7,6 @@ lalburstinclude_HEADERS = \
 	GenerateBurst.h \
 	LALBurstConfig.h \
 	LALBurstVCSInfo.h \
-	LALSimBurst.h \
 	LIGOLwXMLBurstRead.h \
 	LIGOMetadataBurstUtils.h \
 	TFTransform.h \
@@ -33,7 +32,6 @@ liblalburst_la_SOURCES = \
 	GenerateBurst.c \
 	HarmonicFinder.c \
 	LALBurstVCSInfo.c \
-	LALSimBurst.c \
 	LIGOLwXMLBurstRead.c \
 	RefInterference.c \
 	SnglBurstUtils.c \
@@ -44,12 +42,12 @@ liblalburst_la_SOURCES = \
 	TfrWv.c \
 	Thresholds.c \
 	TrackSearch.c \
-	cs_lambda_cosmo.c \
-	check_series_macros.h
+	cs_lambda_cosmo.c
 
 liblalburst_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	lalburst-user-env.shell \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
 
@@ -63,47 +61,23 @@ BUILT_SOURCES = \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
 
-lalburst-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Burst" >$@ ;\
-	echo "LALBURST_PREFIX=\"$(prefix)\"" >>$@ ;\
-	echo "export LALBURST_PREFIX" >>$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+lalburst-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "set LALBURST_PREFIX $(prefix)" >>$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
+	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
-lalburst-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Burst" >$@ ;\
-	echo "setenv LALBURST_PREFIX \"$(prefix)\"" >>$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
-	echo "endif" >>$@
+lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
 	LALBurstVCSInfo.h.in \
+	generate_user_env.awk \
 	generate_vcs_info.py
 
 LALBurstVCSInfo.h: ._vcsinfo

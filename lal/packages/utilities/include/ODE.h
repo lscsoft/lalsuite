@@ -44,11 +44,17 @@
 #ifndef _ODE_H
 #define _ODE_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID( ODEH, "$Id$" );
@@ -82,6 +88,7 @@ NRCSID( ODEH, "$Id$" );
 typedef struct
 tagREAL4ODEIndep
 {
+  SWIGLAL_STRUCT(REAL4ODEIndep);
   REAL4  t;
   void  *aux;
 }
@@ -102,6 +109,7 @@ REAL4ODEIndep;
 typedef struct
 tagREAL4ODEParams
 {
+  SWIGLAL_STRUCT(REAL4ODEParams);
   void ( *ode )( LALStatus *, REAL4Vector *, REAL4Vector *, REAL4ODEIndep * );
   REAL4ODEIndep       *indep;
   REAL4                tstep;
@@ -154,8 +162,9 @@ void LALSRungeKutta5Adapt(
     REAL4ODEParams *params
     );
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

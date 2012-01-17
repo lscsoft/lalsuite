@@ -17,17 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="SimulatePopcornTestCV">
-Author: Tania Regimbau $Id$
-</lalVerbatim> */
-
-/*<lalLaTeX>
-\subsection{Program \texttt{SimulatePopcornTest.c}}
-\label{inject:ss:SimulatePopcornTest.c}
-
-A program to test \texttt{LALSimPopcornTimeSeries()}
-
-</lalLaTeX> */
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -54,10 +43,10 @@ A program to test \texttt{LALSimPopcornTimeSeries()}
 NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
 
 
-/************************************************************************/
+/* ***********************************************************************/
 
 
-/**   define parameters here   **/
+/* *   define parameters here   **/
 
 /* detectors */
 
@@ -281,9 +270,3 @@ int main ( void )
 
 
  }
-
-
-
-
-
-

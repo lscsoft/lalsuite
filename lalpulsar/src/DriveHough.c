@@ -58,7 +58,6 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to 
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* present minimum frequency bin */
   UINT8    fBin;      /* present frequency bin */
-  REAL8    deltaF;    /* frequency resolution */
 
 
   /* --------------------------------------------- */
@@ -95,8 +94,9 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
   fBinMin = phmdVS->fBinMin;
-  deltaF =  phmdVS->deltaF = lutV->lut[0].deltaF;
-
+#ifndef LAL_NDEBUG
+  REAL8 deltaF =  phmdVS->deltaF = lutV->lut[0].deltaF;   /* frequency resolution */
+#endif
 
   for ( k=0; k<length; ++k ){
 
@@ -134,7 +134,6 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
   UINT4    length;    /* number of elements for each frequency */
   UINT8    fBinMin;   /* minimum frequency bin */
   UINT8    fBin;      /* present frequency bin */
-  REAL8    deltaF;    /* frequency resolution */
 
 
   /* --------------------------------------------- */
@@ -168,7 +167,9 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
-  deltaF =  phmdVS->deltaF;
+#ifndef LAL_NDEBUG
+  REAL8 deltaF =  phmdVS->deltaF;
+#endif
 
   breakLine = phmdVS->breakLine; /* old Break Line */
   fBinMin = phmdVS->fBinMin; /* initial frequency value  */
@@ -219,8 +220,6 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
   UINT4    length;    /* number of elements for each frequency */
 
   UINT8    fBin;      /* present frequency bin */
-  REAL8    deltaF;    /* frequency resolution */
-
 
   /* --------------------------------------------- */
   INITSTATUS (status, "LALHOUGHupdateSpacePHMDdn", DRIVEHOUGHC);
@@ -252,7 +251,9 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
-  deltaF =  phmdVS->deltaF;
+#ifndef LAL_NDEBUG
+  REAL8 deltaF =  phmdVS->deltaF;
+#endif
 
   breakLine = phmdVS->breakLine; /* old Break Line */
 

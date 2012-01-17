@@ -26,34 +26,12 @@ libtools_la_SOURCES = \
 	UnitNormalize.c \
 	UnitRaise.c
 
-MAINTAINERCLEANFILES = \
-	FrequencySeries.c \
-	Sequence.c \
-	TimeSeries.c
-DISTCLEANFILES = *.tex
+noinst_HEADERS = \
+	FrequencySeriesComplex_source.c \
+	FrequencySeries_source.c \
+	SequenceComplex_source.c \
+	Sequence_source.c \
+	TimeSeries_source.c
 
 EXTRA_DIST = \
-	FrequencySeries.m4 \
-	Sequence.m4 \
-	TimeSeries.m4 \
-	MakeTemplateBank.c \
-	FrequencySeriesC.m4 \
-	SequenceC.m4 \
-	TimeSeriesC.m4
-
-EXTRA_TEXSOURCES = MakeTemplateBank.c
-
-MOSTLYCLEANFILES = .dvi-dep
-
-dvi-local: .dvi-dep
-
-FrequencySeries.c : FrequencySeries.m4 FrequencySeriesC.m4
-	cd $(srcdir) && @M4@ FrequencySeries.m4 > FrequencySeries.c
-
-Sequence.c : Sequence.m4 SequenceC.m4
-	cd $(srcdir) && @M4@ Sequence.m4 > Sequence.c
-
-TimeSeries.c : TimeSeries.m4 TimeSeriesC.m4
-	cd $(srcdir) && @M4@ TimeSeries.m4 > TimeSeries.c
-
-@DVIMKFILE@
+	MakeTemplateBank.c

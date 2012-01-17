@@ -106,12 +106,18 @@ routines never actually use this coefficient.
 #ifndef _IIRFILTER_H
 #define _IIRFILTER_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/ZPGFilter.h>
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
-#pragma }
+#elif 0
+} /* so that editors will match preceding brace */
 #endif
 
 NRCSID(IIRFILTERH,"$Id$");
@@ -159,7 +165,11 @@ gives the order of the filter.  The fields are:
 
 ******************************************************* </lalLaTeX> */
 
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagREAL4IIRFilter::name;
+#endif /* SWIG */
 typedef struct tagREAL4IIRFilter{
+  SWIGLAL_STRUCT(REAL4IIRFilter);
   const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
   REAL4Vector *directCoef; /* The direct filter coefficients. */
@@ -167,7 +177,11 @@ typedef struct tagREAL4IIRFilter{
   REAL4Vector *history;    /* The previous values of w. */
 } REAL4IIRFilter;
 
+#ifdef SWIG /* SWIG interface directives */
+%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagREAL8IIRFilter::name;
+#endif /* SWIG */
 typedef struct tagREAL8IIRFilter{
+  SWIGLAL_STRUCT(REAL8IIRFilter);
   const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
   REAL8Vector *directCoef; /* The direct filter coefficients. */
@@ -281,8 +295,9 @@ LALDIIRFilterREAL4VectorR( LALStatus      *status,
 \newpage\input{IIRFilterTestC}
 </lalLaTeX> */
 
-#ifdef __cplusplus
-#pragma {
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

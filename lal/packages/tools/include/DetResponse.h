@@ -17,36 +17,13 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="DetResponseHV">
-
-Author: David Chin <dwchin@umich.edu> +1-734-709-9119
-$Id$
-
-</lalVerbatim>*/
-
-/*
-<lalLaTeX>
-
-\section{Header \texttt{DetResponse.h}}
-\label{sec:DetResponse.h}
-
-Provides routines to compute gravitational wave detector response to
-polarized planar gravitational wave originating from a given source,
-detected at a given time.
-
-
-\subsection{Synopsis}
-\label{ss:Synopsis}
-
-\begin{verbatim}
-#include <lal/DetResponse.h>
-\end{verbatim}
-
-</lalLaTeX>
-*/
-
 #ifndef _DETRESPONSE_H
 #define _DETRESPONSE_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -62,214 +39,149 @@ extern "C"
 
 NRCSID( DETRESPONSEH, "$Id$" );
 
-/*
-<lalLaTeX>
-\subsection*{Error conditions}
-</lalLaTeX>
+/**
+\author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
+\addtogroup DetResponse_h
+
+\brief Provides routines to compute gravitational wave detector response to
+polarized planar gravitational wave originating from a given source,
+detected at a given time.
+
+\heading{Synopsis}
+
+\code
+#include <lal/DetResponse.h>
+\endcode
+
+\heading{Description}
+
+These routines compute the antenna beam pattern for all supported detector
+types.  <tt>XLALComputeDetAMResponse()</tt> computes the response at one
+instance in time, and <tt>XLALComputeDetAMResponseSeries()</tt> computes a
+vector of response for some length of time.
+
+\heading{Algorithm}
+
+This code is a translation of the algorithm in the Maple worksheet by
+Anderson, <em>et al.</em> [\ref Anderson_2000].  We compute the \f$h\f$-tensors for
+\f$+\f$- and \f$\times\f$-polarized in the Earth-fixed frame, and then contract
+them (take the scalar product) with the detector response tensors as
+described in the \ref LALDetectors_h section of the \c tools package.
+
+\ref LALDetectors_h in the \c tools package  provides predefined
+\c LALDetector structures representing most current detectors,
+including LIGO (Hanford and Livingston), and GEO.
+
+\heading{Uses}
+LALGPStoGMST1()
+
+\heading{Notes}
+
+For examples of usage, please see the test programs in the \c test
+directory.
+
 */
 
-/*
-<lalErrTable>
-*/
-#define DETRESPONSEH_ENULLINPUT  1
-#define DETRESPONSEH_ENULLOUTPUT 2
-#define DETRESPONSEH_ESRCNOTEQUATORIAL 3
+/** @{ */
 
+/** \name Error Codes */
+/*@{*/
+#define DETRESPONSEH_ENULLINPUT  1		/**< Input is NULL */
+#define DETRESPONSEH_ENULLOUTPUT 2		/**< Output is NULL */
+#define DETRESPONSEH_ESRCNOTEQUATORIAL 3	/**< Source coordinates not in Equatorial system */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define DETRESPONSEH_MSGENULLINPUT "Input is NULL"
 #define DETRESPONSEH_MSGENULLOUTPUT "Output is NULL"
 #define DETRESPONSEH_MSGESRCNOTEQUATORIAL "Source coordinates not in Equatorial system"
+/** \endcond */
 
-/*
-</lalErrTable>
-*/
 
-/*
-<lalLaTeX>
-\subsection*{Types and Structures}
-</lalLaTeX>
-*/
-
-/* <lalLaTeX>
-
-\vfill{\footnotesize\input{DetResponseHV}}
-
-</lalLaTeX> */
-
-/* <lalLaTeX>
-\subsubsection*{Structure \texttt{LALSource}}
-\idx[Type]{LALSource}
-
-This structure contains gravitational wave source position (in Equatorial
-co\"{o}rdinates), and orientation angle.  The orientation is measured
-counter-clockwise with respect to the ``line of ascending nodes'',
-\textit{i.e.} counter-clockwise with respect to a line perpendicular to the
-source's meridian and extending westwards.  For a source in the Northern
-celestial hemisphere, and an observer in the Northern hemisphere standing
-such that they are facing South, this angle is measured counter-clockwise
-from a 3 o'clock position (pointing West) at the source.  The polarization
-convention is chosen such that if the source orientation were zero, the
-source would be a pure $+$-polarized source.
-
-The fields are:
-\begin{description}
-\item[\texttt{CHAR *name}]  Name of source
-\item[\texttt{SkyPosition equatorialCoords}] Equatorial co\"{o}rdinates of
-  source
-\item[\texttt{REAL8 orientation}] Orientation angle ($\psi$) of source:
-  counter-clockwise angle $x$-axis makes with a line perpendicular to
-  meridian of source in Westward direction (\textit{i.e.} North of West),
-  in decimal radians.
-\end{description}
-
-</lalLaTeX> */
-
+/** This structure contains gravitational wave source position (in Equatorial
+ * coördinates), and orientation angle.
+ * The orientation is measured counter-clockwise with respect to the "line of ascending nodes",
+ * i.e. counter-clockwise with respect to a line perpendicular to the
+ * source's meridian and extending westwards.  For a source in the Northern
+ * celestial hemisphere, and an observer in the Northern hemisphere standing
+ * such that they are facing South, this angle is measured counter-clockwise
+ * from a 3 o'clock position (pointing West) at the source.  The polarization
+ * convention is chosen such that if the source orientation were zero, the
+ * source would be a pure \f$+\f$-polarized source.
+ */
 typedef struct
 tagLALSource
 {
-  CHAR         name[LALNameLength];  /* name of source, e.g. catalog number */
-  SkyPosition  equatorialCoords;     /* equatorial coordinates of source,
-                                        in decimal RADIANS */
-  REAL8        orientation;          /* counter-clockwise angle x-axis makes
-                                        with a line perpendicular to meridian
-                                        of object in Westward direction, in
-                                        decimal RADIANS (i.e. North of West) */
+  SWIGLAL_STRUCT(LALSource);
+  CHAR         name[LALNameLength];  /**< name of source, eg catalog number */
+  SkyPosition  equatorialCoords;     /**< equatorial coordinates of source, in decimal RADIANS */
+  REAL8        orientation;          /**< Orientation angle (\f$\psi\f$) of source:
+                                      * counter-clockwise angle \f$x\f$-axis makes with a line perpendicular to
+                                      * meridian of source in Westward direction (i.e. North of West),
+                                      * in decimal radians.
+                                      */
 }
 LALSource;
 
-/* <lalLaTeX>
-\subsubsection*{Structure \texttt{LALDetAndSource}}
-\idx[Type]{LALDetAndSource}
-
-This structure aggregates a pointer to a \texttt{LALDetector} and a
-\texttt{LALSource}.  Its sole function is to allow the user to pass
-detector and source parameters to the functions
-\texttt{LALComputeDetAMResponse()} and
-\texttt{LALComputeDetAMResponseSeries()}.
-
-The fields are:
-\begin{description}
-\item[\texttt{LALDetector *pDetector}] Pointer to \texttt{LALDetector}
-  object containing information about the detector
-\item[\texttt{LALSource *pSource}] Pointer to \texttt{LALSource} object
-  containing information about the source
-\end{description}
-</lalLaTeX> */
-
+/** This structure aggregates a pointer to a \c LALDetector and a
+ * \c LALSource.  Its sole function is to allow the user to pass
+ * detector and source parameters to the functions
+ * LALComputeDetAMResponse() and
+ * LALComputeDetAMResponseSeries().
+ */
 typedef struct
 tagLALDetAndSource
 {
-  LALDetector  *pDetector;
-  LALSource    *pSource;
+  SWIGLAL_STRUCT(LALDetAndSource);
+  LALDetector  *pDetector;	/**< Pointer to ::LALDetector object containing information about the detector */
+  LALSource    *pSource;	/**< Pointer to ::LALSource object containing information about the source */
 }
 LALDetAndSource;
 
-/* <lalLaTeX>
-\subsubsection{Structure \texttt{LALDetAMResponse}}
-\idx[Type]{LALDetAMResponse}
-
-This structure encapsulates the detector AM (beam pattern) coefficients for
-one source at one instance in time. The fields are:
-
-\begin{description}
-\item[\texttt{REAL4 plus}] Detector response to $+$-polarized gravitational
-  radiation
-\item[\texttt{REAL4 cross}] Detector response to $\times$-polarized
-  gravitational radiation
-\item[\texttt{REAL4 scalar}] Detector response to scalar gravitational
-  radiation (NB: ignored at present -- scalar response computation is not
-  yet implemented)
-\end{description}
-
-</lalLaTeX> */
-
+/** This structure encapsulates the detector AM (beam pattern) coefficients for
+ * one source at one instance in time.
+ */
 typedef struct
 tagLALDetAMResponse
 {
-  REAL4 plus;
-  REAL4 cross;
-  REAL4 scalar;
+  SWIGLAL_STRUCT(LALDetAMResponse);
+  REAL4 plus;	/**< Detector response to \f$+\f$-polarized gravitational radiation  */
+  REAL4 cross;	/**< Detector response to \f$\times\f$-polarized gravitational radiation */
+  REAL4 scalar;	/**< Detector response to scalar gravitational radiation (NB: ignored at present -- scalar response computation not yet implemented) */
 }
 LALDetAMResponse;
 
-/* <lalLaTeX>
-\subsubsection{Structure \texttt{LALDetAMResponseSeries}}
-\idx[Type]{LALDetAMResponseSeries}
-
-This structure aggregates together three \texttt{REAL4Vector}s containing
-time series of detector AM response.  Since these quantities are
-dimensionless, they cannot be accurately stored in a \texttt{TimeSeries}
-structure.  However, \texttt{REAL4Vector}s may be conveniently converted to
-\texttt{TimeSeries} format.
-
-\begin{description}
-\item[\texttt{REAL4TimeSeries *pPlus}] Pointer to a \texttt{REAL4TimeSeries}
-  containing detector response to $+$-polarized gravitational radiation
-  over a span of time
-\item[\texttt{REAL4TimeSeries *pCross}] Pointer to a \texttt{REAL4TimeSeries}
-  containing detector response to $\times$-polarized gravitational radiation
-  over a span of time
-\item[\texttt{REAL4TimeSeries *pScalar}] Pointer to a \texttt{REAL4TimeSeries}
-  containing detector response to scalar gravitational radiation
-  over a span of time. (NB: This is unused for the moment. Response to
-  scalar gravitational radiation is not yet implemented.)
-\end{description}
-</lalLaTeX> */
-
+/** This structure aggregates together three ::REAL4TimeSeries objects containing
+ * time series of detector AM response.
+ */
 typedef struct
 tagLALDetAMResponseSeries
 {
-  REAL4TimeSeries *pPlus;
-  REAL4TimeSeries *pCross;
-  REAL4TimeSeries *pScalar;
+  SWIGLAL_STRUCT(LALDetAMResponseSeries);
+  REAL4TimeSeries *pPlus;	/**< timeseries of detector response to \f$+\f$-polarized gravitational radiation */
+  REAL4TimeSeries *pCross;	/**< timeseries of detector response to \f$\times\f$-polarized gravitational radiation */
+  REAL4TimeSeries *pScalar;	/**< timeseries of detector response to scalar gravitational radiation (NB: not yet implemented.) */
 }
 LALDetAMResponseSeries;
 
 
-/* <lalLaTeX>
-\subsubsection*{Structure \texttt{LALTimeIntervalAndNSample}}
-\idx[Type]{LALTimeIntervalAndNSample}
-
-This structure encapsulates time and sampling information for computing a
-\texttt{LALDetAMResponseSeries}. Its fields correspond to some fields of the
-\texttt{TimeSeries} structures for easy conversion.
-
-\begin{description}
-\item[\texttt{LIGOTimeGPS epoch}] The start time $t_0$ of the time series
-\item[\texttt{REAL8 deltaT}] The sampling interval $\Delta t$, in seconds
-\item[\texttt{UINT4 nSample}] The total number of samples to be computed
-\item[\texttt{LALLeapSecAccuracy accuracy}] The required accuracy for handling leap seconds
-\end{description}
-
-</lalLaTeX> */
-
+/** This structure encapsulates time and sampling information for computing a
+ * ::LALDetAMResponseSeries. Its fields correspond to some fields of the
+ * TimeSeries structures for easy conversion.
+ */
 typedef struct
 tagLALTimeIntervalAndNSample
 {
-  LIGOTimeGPS     epoch;
-  REAL8           deltaT;    /* sampling interval */
-  UINT4           nSample;   /* number of samples */
+  SWIGLAL_STRUCT(LALTimeIntervalAndNSample);
+  LIGOTimeGPS     epoch;	/**< The start time \f$t_0\f$ of the time series */
+  REAL8           deltaT;	/**< The sampling interval \f$\Delta t\f$, in seconds */
+  UINT4           nSample;	/**< The total number of samples to be computed */
 }
 LALTimeIntervalAndNSample;
-
-
-
-/*
-<lalLaTeX>
-\vfill{\footnotesize\input{DetResponseHV}}
-</lalLaTeX>
-*/
 
 /*
  * Function prototypes
  */
-
-
-/*
-<lalLaTeX>
-\newpage\input{DetResponseC}
-</lalLaTeX>
-*/
-
 
 void
 LALComputeDetAMResponse( LALStatus             *status,
@@ -309,6 +221,7 @@ int XLALComputeDetAMResponseSeries(
 	const int n
 );
 
+/** @} */
 
 #ifdef __cplusplus
 }

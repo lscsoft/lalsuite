@@ -14,6 +14,16 @@ LALMETAIOSRCS = \
 	processtable.h
 endif
 
+if FFTW
+lalapps_fftwf_wisdom_SOURCES = \
+	fftwf_wisdom.c
+lalapps_fftw_wisdom_SOURCES = \
+	fftw_wisdom.c
+FFTWPROGS = \
+	lalapps_fftwf_wisdom \
+	lalapps_fftw_wisdom
+endif
+
 noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = \
 	lalapps.c \
@@ -29,7 +39,8 @@ liblalapps_la_SOURCES = \
 bin_PROGRAMS = \
 	lalapps_version \
 	lalapps_tconvert \
-	lalapps_cache
+	lalapps_cache \
+	$(FFTWPROGS)
 
 lalapps_version_SOURCES = \
 	version.c \
@@ -47,8 +58,7 @@ INCLUDES = -I$(top_srcdir)/src
 
 if HAVE_PYTHON
 pkgpython_DATA = \
-	__init__.py \
-	defaults.py
+	__init__.py
 endif
 
 EXTRA_DIST = \
@@ -56,7 +66,8 @@ EXTRA_DIST = \
 	series.h \
 	getdate.y \
 	__init__.py \
-	defaults.py \
+	fftw_wisdom.c \
+	fftwf_wisdom.c \
 	lalappsfrutils.c \
 	lalappsfrutils.h \
 	processtable.c \

@@ -23,8 +23,6 @@
  * \file
  * \brief Header for CW cross-correlation search
  *
- * $Id: pulsar_crosscorr.h,v 1.7 2009/03/13 00:43:04 cchung Exp $
- *
  */
  
 /*
@@ -82,7 +80,7 @@ extern "C" {
  *  Assignment of Id string using NRCSID()
  */
 
-NRCSID (PULSAR_CROSSCORRH, "$Id: pulsar_crosscorr.h,v 1.7 2009/03/13 00:43:04 cchung Exp $");
+NRCSID (PULSAR_CROSSCORRH, "$Id$");
 
 /******************************************************
  *  Error codes and messages.

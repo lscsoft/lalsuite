@@ -1,10 +1,4 @@
-/**
-*
-* @file
-*
-* @author Craig Robinson
-*
-*  Copyright (C) 2010 Craig Robinson
+/*
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -21,17 +15,17 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 *
-* @section DESCRIPTION
-*
-* Function to calculate the noise power spectral density of the projected
-* ET-B detector.
-*
-* Fit taken from a Matlab script by T. Dent which can be found at:
-* https://workarea.et-gw.eu/et/WG4-Astrophysics/base-sensitivity/
 */
 
 #include <lal/LALNoiseModels.h>
 
+/** \author Craig Robinson
+ * \ingroup LALNoiseModels_h
+ * \brief Function to calculate the noise power spectral density of the projected ET-B detector.
+ *
+ * Fit taken from a Matlab script by T. Dent which can be found at:
+ * https://workarea.et-gw.eu/et/WG4-Astrophysics/base-sensitivity/
+ */
 REAL8 XLALETBPsd( REAL8 f )
 {
 
@@ -51,7 +45,7 @@ REAL8 XLALETBPsd( REAL8 f )
 
 #ifndef LAL_NDEBUG
   if ( f <= 0 )
-    XLAL_ERROR_REAL8( __func__, XLAL_EINVAL );
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
 #endif
 
   xt = f / 100.;

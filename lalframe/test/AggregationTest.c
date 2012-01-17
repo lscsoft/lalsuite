@@ -210,40 +210,28 @@ INT4 main(INT4 argc, CHAR *argv[])
   /* determine gps time of latest frame file written */
   latest = XLALAggregationLatestGPS(ifo);
   if (latest == NULL)
-  {
-    static const char *func = "XLALAggregationLatestGPS";
-    XLAL_ERROR(func, XLAL_EIO);
-  }
+    XLAL_ERROR(XLAL_EIO);
 
   /* determine frame start time */
   start = XLALAggregationFrameStart(&gps);
   if (start == NULL)
-  {
-    static const char *func = "XLALAggregationFrameStart";
-    XLAL_ERROR(func, XLAL_EINVAL);
-  }
+    XLAL_ERROR(XLAL_EINVAL);
+
   /* check for correct value */
   if (start->gpsSeconds != 918073008)
-  {
-    static const char *func = "XLALAggregationFrameStart";
-    XLAL_ERROR(func, XLAL_ETIME);
-  }
+    XLAL_ERROR(XLAL_ETIME);
+
   /* clear memory */
   XLALFree(start);
 
   /* determine frame type */
   type = XLALAggregationFrameType(ifo);
   if (type == NULL)
-  {
-    static const char *func = "XLALAggregationFrameType";
-    XLAL_ERROR(func, XLAL_EINVAL);
-  }
+    XLAL_ERROR(XLAL_EINVAL);
+
   /* check for correct value */
   if (strncmp(type, "H1_DMT_C00_L2", LAL_AGGREGATION_TYPE_MAX) != 0)
-  {
-    static const char *func = "XLALAggregationFrameType";
-    XLAL_ERROR(func, XLAL_ENAME);
-  }
+    XLAL_ERROR(XLAL_ENAME);
 
   /* get strain data time series */
   series = XLALAggregationStrainData(ifo, &gps, duration);

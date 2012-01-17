@@ -1,4 +1,10 @@
 INCLUDES = -I$(top_builddir)/include
+LDADD = liblalframe.la
+
+bin_PROGRAMS = \
+	lalframe_lld
+
+lalframe_lld_SOURCES = lld.c
 
 lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
@@ -10,7 +16,8 @@ lalframeinclude_HEADERS = \
 	LALFrameConfig.h \
 	LALFrameIO.h \
 	LALFrameL.h \
-	LALFrameVCSInfo.h
+	LALFrameVCSInfo.h \
+	LowLatencyData.h
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
@@ -21,11 +28,17 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	LALFrameIO.c \
-	LALFrameVCSInfo.c
+	LALFrameVCSInfo.c \
+	LowLatencyData.c
+
+noinst_HEADERS = \
+	FrameSeriesRead_source.c \
+	FrameSeriesWrite_source.c
 
 liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	lalframe-user-env.shell \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
 
@@ -39,56 +52,25 @@ BUILT_SOURCES = \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
 
-lalframe-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Frame" >$@ ;\
-	echo "LALFRAME_PREFIX=\"$(prefix)\"" >>$@ ;\
-	echo "export LALFRAME_PREFIX" >>$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+lalframe-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "set LALFRAME_PREFIX $(prefix)" >>$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
+	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@echo "$(SWIG_USER_ENV)" | $(SED) 's|~E~O~L~|\n|g' >>$@
 
-lalframe-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Frame" >$@ ;\
-	echo "setenv LALFRAME_PREFIX \"$(prefix)\"" >>$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
-	echo "endif" >>$@
+lalframe-user-env.csh lalframe-user-env.sh: lalframe-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
 
 EXTRA_DIST = \
+	generate_user_env.awk \
 	generate_vcs_info.py \
-	FrameSeries.m4 \
-	FrameSeriesRead.m4 \
-	FrameSeriesWrite.m4 \
 	LALFrameConfig.h.in \
 	LALFrameVCSInfo.h.in
-
-MAINTAINERCLEANFILES = FrameSeries.c
-
-FrameSeries.c: FrameSeries.m4 FrameSeriesRead.m4 FrameSeriesWrite.m4
-	cd $(srcdir) && m4 FrameSeries.m4 > FrameSeries.c
 
 LALFrameVCSInfo.h: ._vcsinfo
 
@@ -97,3 +79,6 @@ LALFrameVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALFrame $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
+
+swig_headers = $(lalframeinclude_HEADERS)
+include $(top_srcdir)/swig/swig-header.am

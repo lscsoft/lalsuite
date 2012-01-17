@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton
+*  Copyright (C) 2007 Jolien Creighton, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -44,6 +44,11 @@ Integrates a function.
 
 #ifndef _INTEGRATE_H
 #define _INTEGRATE_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
 
 #include <lal/LALDatatypes.h>
 
@@ -175,6 +180,7 @@ IntegralType;
 typedef struct
 tagSIntegrateIn
 {
+  SWIGLAL_STRUCT(SIntegrateIn);
   void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);
   REAL4         xmax;
   REAL4         xmin;
@@ -186,6 +192,7 @@ SIntegrateIn;
 typedef struct
 tagDIntegrateIn
 {
+  SWIGLAL_STRUCT(DIntegrateIn);
   void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);
   REAL8         xmax;
   REAL8         xmin;
@@ -216,6 +223,16 @@ LALDRombergIntegrate (
     REAL8        *result,
     DIntegrateIn *input,
     void         *params
+    );
+
+
+REAL8
+XLALREAL8RombergIntegrate (
+    REAL8 (*f)(REAL8 x, void *params),
+    void *params,
+    REAL8 xmin,
+    REAL8 xmax,
+    IntegralType type
     );
 
 #if 0 /* autodoc block */

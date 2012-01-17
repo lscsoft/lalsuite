@@ -55,7 +55,7 @@ gsl_vector *XLALGSLVectorFromVAList(
   va_list va;
 
   /* Allocate memory */
-  ALLOC_GSL_VECTOR(result, nargs, XLAL_ERROR_NULL);
+  ALLOC_GSL_VECTOR(result, nargs, NULL);
 
   /* Initialise vector */
   gsl_vector_set(result, 0, first);
@@ -82,13 +82,13 @@ gsl_vector *XLALGSLVectorFromLALStringVector(
   double x = 0.0;
 
   /* Allocate memory */
-  ALLOC_GSL_VECTOR(result, args->length, XLAL_ERROR_NULL);
+  ALLOC_GSL_VECTOR(result, args->length, NULL);
 
   /* Initialise vector */
   for (i = 0; i < (INT4)args->length; ++i) {
     if (sscanf(args->data[i], "%le", &x) != 1) {
       XLALPrintError("'%s' is not numeric\n", args->data[i]);
-      XLAL_ERROR_NULL("An element of 'args' is not numeric", XLAL_EINVAL);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
     }
     gsl_vector_set(result, i, x);
   }
@@ -111,7 +111,7 @@ gsl_matrix *XLALResizeGSLMatrix(
   gsl_matrix *n = NULL;
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(n, size1, size2, XLAL_ERROR_NULL);
+  ALLOC_GSL_MATRIX(n, size1, size2, NULL);
   gsl_matrix_set_all(n, value);
 
   /* Copy contents if any */
@@ -139,7 +139,7 @@ gsl_vector *XLALResizeGSLVector(
   gsl_vector *v = NULL;
 
   /* Allocate memory */
-  ALLOC_GSL_VECTOR(v, size, XLAL_ERROR_NULL);
+  ALLOC_GSL_VECTOR(v, size, NULL);
   gsl_vector_set_all(v, value);
 
   /* Copy contents if any */
@@ -167,7 +167,7 @@ gsl_vector_int *XLALResizeGSLVectorInt(
   gsl_vector_int *v = NULL;
 
   /* Allocate memory */
-  ALLOC_GSL_VECTOR_INT(v, size, XLAL_ERROR_NULL);
+  ALLOC_GSL_VECTOR_INT(v, size, NULL);
   gsl_vector_int_set_all(v, value);
 
   /* Copy contents if any */

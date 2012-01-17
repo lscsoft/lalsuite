@@ -1,6 +1,6 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 5
+# serial 6
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -15,7 +15,7 @@ AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 
 AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
 [
-  lal_gcc_flags="-g3 -O4 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
+  lal_gcc_flags="-g3 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
 
   # don't use -Werror in LALApps
   case ${PACKAGE} in

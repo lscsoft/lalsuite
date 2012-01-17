@@ -21,7 +21,7 @@
  */
 #include "tracksearch.h"
 #include "tracksearchToolbox.h"
-#include "unistd.h"
+#include <unistd.h>
 
 /* Code Identifying information */
 NRCSID( TRACKSEARCHC, "tracksearch $Id$");
@@ -80,16 +80,12 @@ LALappsTSACropMap(
   XLALGPSAdd(&tmpMarkingParams.mapStopGPS, -tmpMarkingParams.deltaT*binsToCrop);
   */
   startTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStartGPS);
+  startTime = startTime+(tmpMarkingParams.deltaT*binsToCrop);
+  XLALGPSSetREAL8(&(tmpMarkingParams.mapStartGPS),startTime);
 
-  startTime=startTime+(tmpMarkingParams.deltaT*binsToCrop);
-
-  XLALGPSSetREAL8(&tmpMarkingParams.mapStartGPS, startTime);
-
-  stopTime = XLALGPSGetREAL8(&tmpMarkingParams.mapStopGPS);
-
+  stopTime=XLALGPSGetREAL8(&tmpMarkingParams.mapStopGPS);
   stopTime=stopTime-(tmpMarkingParams.deltaT*binsToCrop);
-
-  XLALGPSSetREAL8(&tmpMarkingParams.mapStopGPS, stopTime);
+  XLALGPSSetREAL8(&(tmpMarkingParams.mapStopGPS),stopTime);
 
   LALappsTSACreateMap(status,
 		      &tmpMap,
@@ -429,7 +425,6 @@ LALappsDetermineFilename(
 		  TRACKSEARCHTOOLBOXC_EFAIL,
 		  TRACKSEARCHTOOLBOXC_EMSGFAIL);
   *thisFilename=XLALCreateCHARVector(maxFilenameLength);
-
   sprintf((*thisFilename)->data,
 	  "MAP:Start:%i,%i:Stop:%i,%i:TF:%i,%i:%s",
 	  imageBorders.mapStartGPS.gpsSeconds,
@@ -714,6 +709,7 @@ LALappsTSASortCache(LALStatus   *status,
 	inputCache->mapStartTime[i]=-1;
       else
         inputCache->mapStartTime[i] = XLALGPSGetREAL8(&(tempMap->imageBorders.mapStartGPS));
+
       LALappsTSADestroyMap(status,
 			   &tempMap);
     }
@@ -953,7 +949,9 @@ void print_real4tseries(const REAL4TimeSeries *fseries, const char *file)
   FILE *fp = fopen(file, "w");
   REAL8   timeT;
   size_t i;
+
   timeT = XLALGPSGetREAL8(&(fseries->epoch));
+
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)
@@ -972,7 +970,9 @@ void print_real8tseries(const REAL8TimeSeries *fseries, const char *file)
   FILE *fp = fopen(file, "w");
   REAL8   timeT;
   size_t i;
+
   timeT = XLALGPSGetREAL8(&(fseries->epoch));
+
   if(fp) 
     {
       for(i = 0; i < fseries->data->length; i++)

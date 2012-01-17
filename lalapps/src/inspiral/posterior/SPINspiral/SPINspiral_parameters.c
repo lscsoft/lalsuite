@@ -403,7 +403,7 @@ void parseCharacterOptionString(char *input, char **strings[], int *n)
 void readMainInputfile(struct runPar *run)
 {
   int i=0;
-  char tmpStr[500],*cstatus;
+  char tmpStr[500],*cstatus=NULL;
   FILE *fin;
   char UNUSED *str;
   
@@ -451,8 +451,11 @@ void readMainInputfile(struct runPar *run)
   
   fclose(fin);
 	    }
-  
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+ 
+  if(!cstatus) {
+      printf("Error reading string\n");
+      exit(1);
+  }
 
   
 }  //End of readMainInputfile
@@ -478,7 +481,7 @@ void readMCMCinputfile(struct runPar *run)
 {
   int i=0,istatus=0;
   double tmpdbl=0.0;
-  char tmpStr[500],*cstatus;
+  char tmpStr[500],*cstatus=NULL;
   FILE *fin;
   
 	if((fin = fopen(run->mcmcFilename,"r")) == NULL) {
@@ -603,9 +606,10 @@ void readMCMCinputfile(struct runPar *run)
   fclose(fin);
 	}
   
-  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
-  
+  if(!cstatus || !istatus) {                                                                                                           
+     printf("Error reading string\n");                                                                                   
+     exit(1);                                                                                                             
+  }  
 } //End of void readMCMCinputfile(struct runPar *run)
 // ****************************************************************************************************************************************************  
 
@@ -629,7 +633,7 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
 {
   int i=0,j=0,istatus=0;
   double lati=0.0,longi=0.0,leftArm=0.0,rightArm=0.0;
-  char tmpStr[500],*cstatus, subdir[500];
+  char tmpStr[500],*cstatus=NULL, subdir[500];
   FILE *fin;
   int dump = 0;
   
@@ -855,9 +859,10 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
   fclose(fin);
 	}
   
-  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
-  
+   if(!cstatus||!istatus) {
+       printf("Error reading string\n");
+       exit(1);
+   }  
 }  //End of readDataInputfile
 // ****************************************************************************************************************************************************  
 
@@ -875,7 +880,7 @@ void readDataInputfile(struct runPar *run, struct interferometer ifo[])
 void readInjectionInputfile(struct runPar *run)
 {
   int i=0,istatus=0;
-  char tmpStr[500],*cstatus;
+  char tmpStr[500],*cstatus=NULL;
   FILE *fin;
   
   // Open injection input file:
@@ -1059,8 +1064,10 @@ void readInjectionInputfile(struct runPar *run)
     }
   }
   
-  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+   if(!cstatus||!istatus) {
+       printf("Error reading string\n");
+       exit(1);
+   }  
   
 }  //End of readInjectionInputfile
 // ****************************************************************************************************************************************************  
@@ -1087,7 +1094,7 @@ void readInjectionInputfile(struct runPar *run)
 void readParameterInputfile(struct runPar *run)
 {
   int i=0,iInj=0,istatus=0;
-  char tmpStr[500],*cstatus;
+  char tmpStr[500],*cstatus=NULL;
   FILE *fin;
   int warnings = 0;
   
@@ -1546,8 +1553,10 @@ void readParameterInputfile(struct runPar *run)
     printf("\n");
   }
   
-  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
+   if(!cstatus||!istatus) {
+       printf("Error reading string\n");
+       exit(1);
+   }  
   
 }  //End of readParameterInputfile
 // ****************************************************************************************************************************************************  
@@ -1567,7 +1576,7 @@ void readParameterInputfile(struct runPar *run)
 void readSystemInputfile(struct runPar *run)
 {
   int i=0,istatus=0;
-  char tmpStr[500],*cstatus;
+  char tmpStr[500],*cstatus=NULL;
   FILE *fin;
   
 	if((fin = fopen(run->systemFilename,"r")) == NULL) {
@@ -1588,10 +1597,11 @@ void readSystemInputfile(struct runPar *run)
   fclose(fin);
 	}
   
-  istatus = istatus; // Suppress "variable was set but never used" warnings from icc
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
-
-  
+   if(!cstatus||!istatus) {
+       printf("Error reading string\n");
+       exit(1);
+   } 
+    
 }  //End of readSystemInputfile
 // ****************************************************************************************************************************************************  
 
@@ -1729,7 +1739,7 @@ void readCachefile(struct runPar *run, int ifonr)
 {
   int i;
   int line=0;
-  char tmpStr[2048],*cstatus;
+  char tmpStr[2048],*cstatus=NULL;
   FILE *fin;
   
   if((fin = fopen(run->cacheFilename[ifonr],"r")) == NULL) {
@@ -1774,8 +1784,11 @@ void readCachefile(struct runPar *run, int ifonr)
   
   fclose(fin);
   
-  cstatus = cstatus; // Suppress "variable was set but never used" warnings from icc
-  
+   if(!cstatus) {
+       printf("Error reading string\n");
+       exit(1);
+   } 
+    
 }  //End of readCachefile
 // ****************************************************************************************************************************************************  
 

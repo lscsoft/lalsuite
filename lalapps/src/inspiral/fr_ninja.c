@@ -145,12 +145,18 @@ INT4 main(INT4 argc, CHAR **argv)
   REAL4TimeSeries *hplus[MAX_L+1][(2*MAX_L) + 1];
   REAL4TimeSeries *hcross[MAX_L+1][(2*MAX_L) + 1];
 
+  REAL8TimeVectorSeries *waveformsREAL8[MAX_L][(2*MAX_L) + 1];
+  REAL8TimeSeries *hplusREAL8[MAX_L+1][(2*MAX_L) + 1];
+  REAL8TimeSeries *hcrossREAL8[MAX_L+1][(2*MAX_L) + 1];
+
   /* frame variables */
   FrameH *frame;
   CHAR *frame_name = NULL;
   LIGOTimeGPS epoch;
   INT4 duration;
   INT4 detector_flags;
+
+  INT4 generatingREAL8 = 0;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -162,6 +168,7 @@ INT4 main(INT4 argc, CHAR **argv)
     {"nr-meta-file", required_argument, 0, 'm'},
     {"nr-data-dir", required_argument, 0, 'd'},
     {"output", required_argument, 0, 'o'},
+    {"double-precision", no_argument, 0, 'p'},
     {"debug-level", required_argument, 0, 'D'},
     {"help", no_argument, 0, 'h'},
     {"version", no_argument, 0, 'V'},
@@ -179,7 +186,7 @@ INT4 main(INT4 argc, CHAR **argv)
     int option_index = 0;
     size_t optarg_len;
 
-    c = getopt_long_only(argc, argv, "f:m:d:o:D:hV", long_options, &option_index);
+    c = getopt_long_only(argc, argv, "f:m:d:o:D:phV", long_options, &option_index);
 
     /* detect the end of the options */
     if (c == -1)
@@ -237,6 +244,11 @@ INT4 main(INT4 argc, CHAR **argv)
         optarg_len = strlen(optarg) + 1;
         frame_name = (CHAR *)calloc(optarg_len, sizeof(CHAR));
         memcpy(frame_name, optarg, optarg_len);
+        break;
+
+      case 'p':
+        /* We're generating a double-precision frame */
+        generatingREAL8 = 1;
         break;
 
       case 'D':
@@ -460,19 +472,33 @@ INT4 main(INT4 argc, CHAR **argv)
     {
       /* ensure pointers are NULL */
       wf_name[l][m] = NULL;
-      waveforms[l][m] = NULL;
       plus_channel[l][m] = NULL;
       cross_channel[l][m] = NULL;
-      hplus[l][m] = NULL;
-      hcross[l][m] = NULL;
 
       /* generate channel names */
       plus_channel[l][m] = XLALGetNinjaChannelName("plus", l, m - MAX_L);
       cross_channel[l][m] = XLALGetNinjaChannelName("cross", l, m - MAX_L);
 
-      /* initilise waveform time series */
-      hplus[l][m] = XLALCreateREAL4TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
-      hcross[l][m] = XLALCreateREAL4TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
+      if (generatingREAL8)
+      {
+        hplusREAL8[l][m] = NULL;
+        hcrossREAL8[l][m] = NULL;
+        waveformsREAL8[l][m] = NULL;
+        
+        /* initilise waveform time series */
+        hplusREAL8[l][m] = XLALCreateREAL8TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
+        hcrossREAL8[l][m] = XLALCreateREAL8TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
+      }
+      else
+      {
+        hplus[l][m] = NULL;
+        hcross[l][m] = NULL;
+        waveforms[l][m] = NULL;
+      
+        /* initilise waveform time series */
+        hplus[l][m] = XLALCreateREAL4TimeSeries(plus_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
+        hcross[l][m] = XLALCreateREAL4TimeSeries(cross_channel[l][m], &epoch, 0, 0, &lalDimensionlessUnit, 0);
+      }
 
       /* read ht-data section of metadata file */
       snprintf(field, HISTORY_COMMENT, "%d,%d", l, m - MAX_L);
@@ -488,38 +514,80 @@ INT4 main(INT4 argc, CHAR **argv)
           fprintf(stdout, "reading waveform: %s\n", file_path);
 
         /* read waveforms */
-        LAL_CALL(LALReadNRWave_raw(&status, &waveforms[l][m], file_path), &status);
+        if (generatingREAL8)
+        {
+          LAL_CALL(LALReadNRWave_raw_real8(&status, &waveformsREAL8[l][m], file_path), &status);
+        }
+        else
+        {
+          LAL_CALL(LALReadNRWave_raw(&status, &waveforms[l][m], file_path), &status);
+        }
       }
 
       /* generate waveform time series from vector series */
       /* TODO: should use pointer arithmetic here and update the data
        * pointer in the REAL4TimeSeries to point to the appropriate
        * location within the REAL4TimeVector Series */
-      if (waveforms[l][m])
+      if (generatingREAL8) {
+        if (waveformsREAL8[l][m])
+        {
+          /* get length of waveform */
+          wf_length = waveformsREAL8[l][m]->data->vectorLength;
+
+          /* allocate memory for waveform */
+          XLALResizeREAL8TimeSeries(hplusREAL8[l][m], 0, wf_length);
+          XLALResizeREAL8TimeSeries(hcrossREAL8[l][m], 0, wf_length);
+
+          /* set time spacing */
+          hplusREAL8[l][m]->deltaT = waveformsREAL8[l][m]->deltaT;
+          hcrossREAL8[l][m]->deltaT = waveformsREAL8[l][m]->deltaT;
+
+          /* copy waveforms into appropriate series */
+          for (i = 0; i < wf_length; i ++) {
+            hplusREAL8[l][m]->data->data[i] = waveformsREAL8[l][m]->data->data[i];
+            hcrossREAL8[l][m]->data->data[i] = waveformsREAL8[l][m]->data->data[wf_length + i];
+          }
+        }
+      }
+      else /* REAL4 */
       {
-        /* get length of waveform */
-        wf_length = waveforms[l][m]->data->vectorLength;
+        if (waveforms[l][m])
+        {
+          /* get length of waveform */
+          wf_length = waveforms[l][m]->data->vectorLength;
 
-        /* allocate memory for waveform */
-        XLALResizeREAL4TimeSeries(hplus[l][m], 0, wf_length);
-        XLALResizeREAL4TimeSeries(hcross[l][m], 0, wf_length);
+          /* allocate memory for waveform */
+          XLALResizeREAL4TimeSeries(hplus[l][m], 0, wf_length);
+          XLALResizeREAL4TimeSeries(hcross[l][m], 0, wf_length);
 
-        /* set time spacing */
-        hplus[l][m]->deltaT = waveforms[l][m]->deltaT;
-        hcross[l][m]->deltaT = waveforms[l][m]->deltaT;
+          /* set time spacing */
+          hplus[l][m]->deltaT = waveforms[l][m]->deltaT;
+          hcross[l][m]->deltaT = waveforms[l][m]->deltaT;
 
-        /* copy waveforms into appropriate series */
-        for (i = 0; i < wf_length; i ++) {
-          hplus[l][m]->data->data[i] = waveforms[l][m]->data->data[i];
-          hcross[l][m]->data->data[i] = waveforms[l][m]->data->data[wf_length + i];
+          /* copy waveforms into appropriate series */
+          for (i = 0; i < wf_length; i ++) {
+            hplus[l][m]->data->data[i] = waveforms[l][m]->data->data[i];
+            hcross[l][m]->data->data[i] = waveforms[l][m]->data->data[wf_length + i];
+          }
         }
       }
 
       /* add channels to frame */
-      if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
+      if (generatingREAL8)
       {
-        XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[l][m]);
-        XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[l][m]);
+        if ((hplusREAL8[l][m]->data->length) && (hcrossREAL8[l][m]->data->length))
+        {
+          XLALFrameAddREAL8TimeSeriesSimData(frame, hplusREAL8[l][m]);
+          XLALFrameAddREAL8TimeSeriesSimData(frame, hcrossREAL8[l][m]);
+        }
+      }
+      else
+      {
+        if ((hplus[l][m]->data->length) && (hcross[l][m]->data->length))
+        {
+          XLALFrameAddREAL4TimeSeriesSimData(frame, hplus[l][m]);
+          XLALFrameAddREAL4TimeSeriesSimData(frame, hcross[l][m]);
+        }
       }
     }
   }
@@ -577,34 +645,70 @@ INT4 main(INT4 argc, CHAR **argv)
   LALFree(meta_file);
 
   /* waveforms */
-  for (l = MIN_L; l <= MAX_L; l++)
+  if (generatingREAL8)
   {
-    for (m = (MAX_L - l); m <= MAX_L + l; m++)
+    for (l = MIN_L; l <= MAX_L; l++)
     {
-      /* channel names */
-      if (plus_channel[l][m])
-        LALFree(plus_channel[l][m]);
+      for (m = (MAX_L - l); m <= MAX_L + l; m++)
+      {
+        /* channel names */
+        if (plus_channel[l][m])
+          LALFree(plus_channel[l][m]);
 
-      if (cross_channel[l][m])
-        LALFree(cross_channel[l][m]);
+        if (cross_channel[l][m])
+          LALFree(cross_channel[l][m]);
 
-      if (wf_name[l][m])
-        LALFree(wf_name[l][m]);
+        if (wf_name[l][m])
+          LALFree(wf_name[l][m]);
 
-      /* raw waveforms */
-      if (waveforms[l][m]) {
-        LALFree(waveforms[l][m]->data->data);
-        LALFree(waveforms[l][m]->data);
-        LALFree(waveforms[l][m]);
+        /* raw waveforms */
+        if (waveformsREAL8[l][m]) {
+          LALFree(waveformsREAL8[l][m]->data->data);
+          LALFree(waveformsREAL8[l][m]->data);
+          LALFree(waveformsREAL8[l][m]);
+        }
+
+        /* hplus */
+        if (hplusREAL8[l][m])
+          XLALDestroyREAL8TimeSeries(hplusREAL8[l][m]);
+
+        /* hcross */
+        if (hcrossREAL8[l][m])
+          XLALDestroyREAL8TimeSeries(hcrossREAL8[l][m]);
       }
+    }
+  }
+  else
+  {
+    for (l = MIN_L; l <= MAX_L; l++)
+    {
+      for (m = (MAX_L - l); m <= MAX_L + l; m++)
+      {
+        /* channel names */
+        if (plus_channel[l][m])
+          LALFree(plus_channel[l][m]);
 
-      /* hplus */
-      if (hplus[l][m])
-        XLALDestroyREAL4TimeSeries(hplus[l][m]);
+        if (cross_channel[l][m])
+          LALFree(cross_channel[l][m]);
 
-      /* hcross */
-      if (hcross[l][m])
-        XLALDestroyREAL4TimeSeries(hcross[l][m]);
+        if (wf_name[l][m])
+          LALFree(wf_name[l][m]);
+
+        /* raw waveforms */
+        if (waveforms[l][m]) {
+          LALFree(waveforms[l][m]->data->data);
+          LALFree(waveforms[l][m]->data);
+          LALFree(waveforms[l][m]);
+        }
+
+        /* hplus */
+        if (hplus[l][m])
+          XLALDestroyREAL4TimeSeries(hplus[l][m]);
+
+        /* hcross */
+        if (hcross[l][m])
+          XLALDestroyREAL4TimeSeries(hcross[l][m]);
+      }
     }
   }
 

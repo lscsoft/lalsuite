@@ -1,4 +1,3 @@
-
 /*
  *  Copyright (C) 2007 Anand Sengupta
  *
@@ -24,16 +23,14 @@
  *
  * Author: Anand Sengupta
  *
- * $Id$
- *
  *---------------------------------------------------------------------------*/
 
-#if 0
-<lalVerbatim file="BandPassInspiralTemplateCV">
-Author: Anand Sengupta
-$Id$
-</lalVerbatim>
-#endif
+/**
+
+\author Anand Sengupta
+\file
+
+*/
 
 
 #include <lal/LALStdio.h>
@@ -55,9 +52,6 @@ int XLALBandPassInspiralTemplate(
         REAL4          fSampling
         )
 {
-
-    static const char *func = "XLALBandPassInspiralTemplate";
-
     REAL4TimeSeries   *signalvec = NULL;
     PassBandParamStruc signalHighpassParam;
     PassBandParamStruc signalLowpassParam;
@@ -65,7 +59,7 @@ int XLALBandPassInspiralTemplate(
     /* Check that the input makes sense */
     if ( !sequence || sequence->length <= 0 || !sequence->data ||
             fLow > fHigh || fLow <= 0.0 || fHigh >= fSampling/2.0 )
-          XLAL_ERROR( func, XLAL_EFAULT );
+          XLAL_ERROR( XLAL_EFAULT );
 
     /* Initialize signal */
     signalvec = (REAL4TimeSeries *)
@@ -86,7 +80,7 @@ int XLALBandPassInspiralTemplate(
                 signalvec, &signalHighpassParam ) != XLAL_SUCCESS )
     {
         if (signalvec) LALFree( signalvec );
-        XLAL_ERROR(func, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* Now first low pass the time series below fFinal */
@@ -101,7 +95,7 @@ int XLALBandPassInspiralTemplate(
                 signalvec, &signalLowpassParam ) != XLAL_SUCCESS)
     {
         if (signalvec) LALFree( signalvec );
-        XLAL_ERROR(func, XLAL_EFUNC);
+        XLAL_ERROR(XLAL_EFUNC);
     }
 
     /* That's it - we are done and can now free the signal */

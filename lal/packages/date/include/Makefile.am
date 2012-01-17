@@ -1,8 +1,13 @@
 ## Process this file with automake to produce Makefile.in
 pkginclude_HEADERS = Date.h TimeDelay.h
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
+if SWIG_BUILD
+pkginclude_HEADERS += swig-lal-date.i
+endif
+CLEANFILES =
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 all-local: include-link
-dvi-local: .dvi-dep
 @INCLUDEMKFILE@
-@DVIMKFILE@
+
+swig_headers = $(pkginclude_HEADERS)
+include $(top_srcdir)/swig/swig-header.am

@@ -28,6 +28,7 @@
  */
 
 
+#include <complex.h>
 #include <math.h>
 
 
@@ -48,6 +49,10 @@
 
 #include <lal/LALRCSID.h>
 NRCSID(CREATETFPLANEC, "$Id$");
+
+
+static double min(double a, double b) { return a < b ? a : b; }
+static double max(double a, double b) { return a > b ? a : b; }
 
 
 /*
@@ -80,11 +85,11 @@ INT4 XLALOverlappedSegmentsCommensurate(
 
 	if(segment_length < 1) {
 		XLALPrintError("segment_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(segment_shift < 1) {
 		XLALPrintError("segment_shift < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/*
@@ -178,23 +183,23 @@ INT4 XLALEPGetTimingParameters(
 
 	if(window_length % 4 != 0) {
 		XLALPrintError("window_length is not a multiple of 4");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(max_tile_length < 1) {
 		XLALPrintError("max_tile_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(fractional_tile_shift <= 0) {
 		XLALPrintError("fractional_tile_shift <= 0");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(fmod(fractional_tile_shift * max_tile_length, 1) != 0) {
 		XLALPrintError("fractional_tile_shift * max_tile_length not an integer");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(max_tile_shift < 1) {
 		XLALPrintError("fractional_tile_shift * max_tile_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/*
@@ -225,7 +230,7 @@ INT4 XLALEPGetTimingParameters(
 	tlength = XLALOverlappedSegmentsCommensurate(tlength, max_tile_length, max_tile_shift);
 	if(tlength < 1) {
 		XLALPrintError("tiling_length < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(tiling_length)
 		*tiling_length = tlength;
@@ -237,7 +242,7 @@ INT4 XLALEPGetTimingParameters(
 	wpad = (window_length - tlength) / 2;
 	if(tlength + 2 * wpad != window_length) {
 		XLALPrintError("cannot find window parameters consistent with tiling parameters");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(window_pad)
 		*window_pad = wpad;
@@ -250,7 +255,7 @@ INT4 XLALEPGetTimingParameters(
 	wshift = tlength - (max_tile_length - max_tile_shift);
 	if(wshift < 1) {
 		XLALPrintError("window_shift < 1");
-		XLAL_ERROR(__func__, XLAL_EINVAL);
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 	if(window_shift)
 		*window_shift = wshift;
@@ -262,20 +267,20 @@ INT4 XLALEPGetTimingParameters(
 	if(psd_length) {
 		*psd_length = XLALOverlappedSegmentsCommensurate(*psd_length, window_length, wshift);
 		if(*psd_length < 0)
-			XLAL_ERROR(__func__, XLAL_EFUNC);
+			XLAL_ERROR(XLAL_EFUNC);
 
 		if(psd_shift) {
 			*psd_shift = *psd_length - (window_length - wshift);
 			if(*psd_shift < 1) {
 				XLALPrintError("psd_shift < 1");
-				XLAL_ERROR(__func__, XLAL_EINVAL);
+				XLAL_ERROR(XLAL_EINVAL);
 			}
 		}
 	} else if(psd_shift) {
 		/* for safety */
 		*psd_shift = -1;
 		/* can't compute psd_shift without psd_length input */
-		XLAL_ERROR(__func__, XLAL_EFAULT);
+		XLAL_ERROR(XLAL_EFAULT);
 	}
 
 	return 0;
@@ -321,8 +326,8 @@ INT4 XLALEPGetTimingParameters(
 
 
 REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
-	const REAL8Window *window,
-	const REAL8FFTPlan *plan
+	const REAL8Window *window,	/*< window function used to prevent leakage when measuring PSD.  see XLALCreateHannREAL8Window() and friends. */
+	const REAL8FFTPlan *plan	/*< forward FFT plan.  see XLALCreateREAL8FFTPlan(). */
 )
 {
 	REAL8Sequence *wsquared;
@@ -331,7 +336,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	unsigned i;
 
 	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EDOM);
+		XLAL_ERROR_NULL(XLAL_EDOM);
 
 	/*
 	 * Create a sequence to hold the normalized square of the window
@@ -343,7 +348,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	if(!wsquared || !tilde_wsquared) {
 		XLALDestroyREAL8Sequence(wsquared);
 		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -360,7 +365,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	if(XLALREAL8ForwardFFT(tilde_wsquared, wsquared, plan)) {
 		XLALDestroyREAL8Sequence(wsquared);
 		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	XLALDestroyREAL8Sequence(wsquared);
 
@@ -371,7 +376,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	correlation = XLALCreateREAL8Sequence(tilde_wsquared->length);
 	if(!correlation) {
 		XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -437,22 +442,22 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 * total number of channels
 	 */
 
-	const int channels = floor(bandwidth / deltaF + 0.5);
+	const int channels = round(bandwidth / deltaF);
 
 	/*
 	 * stride
 	 */
 
-	const unsigned inv_fractional_stride = floor(1.0 / tiling_fractional_stride + 0.5);
+	const unsigned inv_fractional_stride = round(1.0 / tiling_fractional_stride);
 
 	/*
 	 * tile size limits
 	 */
 
-	const unsigned min_length = floor((1 / max_tile_bandwidth) / tseries_deltaT + 0.5);
-	const unsigned max_length = floor(max_tile_duration / tseries_deltaT + 0.5);
+	const unsigned min_length = round((1 / max_tile_bandwidth) / tseries_deltaT);
+	const unsigned max_length = round(max_tile_duration / tseries_deltaT);
 	const unsigned min_channels = inv_fractional_stride;
-	const unsigned max_channels = floor(max_tile_bandwidth / deltaF + 0.5);
+	const unsigned max_channels = round(max_tile_bandwidth / deltaF);
 
 	/*
 	 * sample on which tiling starts
@@ -477,7 +482,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	 */
 
 	if(XLALEPGetTimingParameters(tseries_length, max_tile_duration / tseries_deltaT, tiling_fractional_stride, NULL, NULL, &window_shift, &tiling_start, &tiling_length) < 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/*
 	 * Make sure that input parameters are reasonable, and that a
@@ -508,7 +513,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 	   (tiling_length % max_length != 0) ||
 	   (channels % max_channels != 0)) {
 		XLALPrintError("unable to construct time-frequency tiling from input parameters\n");
-		XLAL_ERROR_NULL(__func__, XLAL_EINVAL);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
 	}
 
 	/*
@@ -533,7 +538,7 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 		XLALDestroyREAL8Sequence(unwhitened_channel_buffer);
 		XLALDestroyREAL8Window(tukey);
 		XLALDestroyREAL8Sequence(correlation);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -599,136 +604,138 @@ void XLALDestroyTFPlane(
  */
 
 
-/*
+/**
  * Compute the magnitude of the inner product of two arbitrary channel
  * filters.  Note that the sums are done over only the positive frequency
  * components, so this function multiplies by the required factor of 2.
  * The result is the *full* inner product, not the half inner product.  It
- * is safe to pass the same filter as both arguments.
+ * is safe to pass the same filter as both arguments.  If the PSD is set to
+ * NULL then no PSD weighting is applied.  PSD weighting is only used in
+ * reconstructing h_rss.
  *
- * The second version computes the PSD-weighted inner product.  This is
- * used in reconstructing h_rss.
- *
- * NOTE:  checks are not done to ensure that the delta fs are all equal,
- * and that the PSD spans the frequency range of the two filters.   these
- * things are implicit in the code that calls these functions so it would
- * just burn CPU time to do them, but be aware of these requirements if
- * this code is copied and used somewhere else!
+ * The return value is NaN if the input frequency series have incompatible
+ * parameters.  Note that the two-point spectral correlation function does
+ * not carry enough metadata to determine if it is compatible with the
+ * filters or PSD, for example it does not carry a deltaF parameter.  It is
+ * left as an excercise for the calling code to ensure the two-point
+ * spectral correlation is appropriate.
  */
 
 
-static REAL8 filter_inner_product(
-	const COMPLEX16FrequencySeries *filter1,
-	const COMPLEX16FrequencySeries *filter2,
-	const REAL8Sequence *correlation
+double XLALExcessPowerFilterInnerProduct(
+	const COMPLEX16FrequencySeries *filter1,	/*< frequency-domain filter */
+	const COMPLEX16FrequencySeries *filter2,	/*< frequency-domain filter */
+	const REAL8Sequence *correlation,	/*< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
+	const REAL8FrequencySeries *psd	/*< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
 )
 {
-	const int k10 = floor(filter1->f0 / filter1->deltaF + 0.5);
-	const int k20 = floor(filter2->f0 / filter2->deltaF + 0.5);
+	const int k10 = round(filter1->f0 / filter1->deltaF);
+	const int k20 = round(filter2->f0 / filter2->deltaF);
+	const double complex *f1data = (const double complex *) filter1->data->data;
+	const double complex *f2data = (const double complex *) filter2->data->data;
+	const double *pdata = psd ? psd->data->data - (int) round(psd->f0 / psd->deltaF) : NULL;
 	int k1, k2;
-	COMPLEX16 sum = {0, 0};
+	double complex sum = 0;
 
-	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
-		const COMPLEX16 *f1data = &filter1->data->data[k1];
-		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
-			const COMPLEX16 *f2data = &filter2->data->data[k2];
-			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
-			const double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
+	/*
+	 * check that filters have same frequency resolution, and if a PSD
+	 * is provided that it also has the same frequency resolution and
+	 * spans the frequencies spanned by the fitlers
+	 */
 
-			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);
-			sum.im += sksk * (f1data->im * f2data->re - f1data->re * f2data->im);
-		}
+	if(filter1->deltaF != filter2->deltaF || (psd &&
+		(psd->deltaF != filter1->deltaF || psd->f0 > min(filter1->f0, filter2->f0) || max(filter1->f0 + filter1->data->length * filter1->deltaF, filter2->f0 + filter2->data->length * filter2->deltaF) > psd->f0 + psd->data->length * psd->deltaF)
+	)) {
+		XLALPrintError("%s(): filters are incompatible or PSD does not span filters' frequencies", __func__);
+		XLAL_ERROR_REAL8(XLAL_EINVAL);
 	}
 
-	return 2 * sqrt(sum.re * sum.re + sum.im * sum.im);
-}
-
-
-static REAL8 psd_weighted_filter_inner_product(
-	const COMPLEX16FrequencySeries *filter1,
-	const COMPLEX16FrequencySeries *filter2,
-	const REAL8Sequence *correlation,
-	const REAL8FrequencySeries *psd
-)
-{
-	const int k10 = floor(filter1->f0 / filter1->deltaF + 0.5);
-	const int k20 = floor(filter2->f0 / filter2->deltaF + 0.5);
-	const REAL8 *pdata = psd->data->data - (int) (psd->f0 / psd->deltaF);
-	int k1, k2;
-	COMPLEX16 sum = {0, 0};
+	/*
+	 * compute and return inner product
+	 */
 
 	for(k1 = 0; k1 < (int) filter1->data->length; k1++) {
-		const COMPLEX16 *f1data = &filter1->data->data[k1];
 		for(k2 = 0; k2 < (int) filter2->data->length; k2++) {
-			const COMPLEX16 *f2data = &filter2->data->data[k2];
 			const unsigned delta_k = abs(k10 + k1 - k20 - k2);
 			double sksk = (delta_k & 1 ? -1 : +1) * (delta_k < correlation->length ? correlation->data[delta_k] : 0);
 
-			sksk *= sqrt(pdata[k10 + k1] * pdata[k20 + k2]);
+			if(pdata)
+				sksk *= sqrt(pdata[k10 + k1] * pdata[k20 + k2]);
 
-			sum.re += sksk * (f1data->re * f2data->re + f1data->im * f2data->im);
-			sum.im += sksk * (f1data->im * f2data->re - f1data->re * f2data->im);
+			sum += sksk * f1data[k1] * conj(f2data[k2]);
 		}
 	}
 
-	return 2 * sqrt(sum.re * sum.re + sum.im * sum.im);
+	return 2 * cabs(sum);
 }
 
 
-/*
- * Generate the frequency domain channel filter function.  The filter is
- * nominally a Hann window twice the channel's width, centred on the
- * channel's centre frequency.  The filter is normalized so that its
- * "magnitude" as defined by the inner product function above is N.  Then
- * the filter is divided by the square root of the PSD frequency series
- * prior to normalilization.  This has the effect of de-emphasizing
- * frequency bins with high noise content, and is called "over whitening".
+/**
+ * Generate the frequency domain channel filter function.  The filter
+ * corresponds to a frequency band [channel_flow, channel_flow +
+ * channel_width].  The filter is nominally a Hann window twice the
+ * channel's width, centred on the channel's centre frequency.  This makes
+ * a sum across channels equivalent to constructing a Tukey window spanning
+ * the same frequency band.  This trick is one of the ingredients that
+ * allows us to accomplish a multi-resolution tiling using a single
+ * frequency channel projection (*).
+ *
+ * The filter is normalized so that its "magnitude" as defined by the inner
+ * product function XLALExcessPowerFilterInnerProduct() is N.  Then the
+ * filter is divided by the square root of the PSD frequency series prior
+ * to normalilization.  This has the effect of de-emphasizing frequency
+ * bins with high noise content, and is called "over whitening".
+ *
+ * Note:  the number of samples in the window is odd, being one more than
+ * the number of frequency bins in twice the channel width.  This gets the
+ * Hann windows to super-impose to form a Tukey window.  (you'll have to
+ * draw yourself a picture).
+ *
+ * (*) Really, there's no need for the "effective window" resulting from
+ * summing across channels to be something that has a name, any channel
+ * filter at all would do, but this way the code's behaviour is more easily
+ * understood --- it's easy to say "the channel filter is a Tukey window of
+ * variable central width".
  */
 
 
-static COMPLEX16FrequencySeries *generate_filter(
-	REAL8 channel_flow,
-	REAL8 channel_width,
-	const REAL8FrequencySeries *psd,
-	const REAL8Sequence *correlation
+COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
+	REAL8 channel_flow,	/*< Hz */
+	REAL8 channel_width,	/*< Hz */
+	const REAL8FrequencySeries *psd,	/*< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
+	const REAL8Sequence *correlation	/*< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
 )
 {
 	char filter_name[100];
 	REAL8Window *hann;
 	COMPLEX16FrequencySeries *filter;
-	REAL8 *pdata;
+	const REAL8 *pdata;
 	unsigned i;
 	REAL8 norm;
 
-	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
-
 	/*
-	 * Channel filter is a Hann window twice the channel's width,
-	 * centred on the channel's centre frequency.  This makes a sum
-	 * across channels equivalent to constructing a Tukey window
-	 * spanning the same frequency band.  This trick is one of the
-	 * ingredients that allows us to accomplish a multi-resolution
-	 * tiling using a single frequency channel projection.  Really,
-	 * there's no need for the "effective window" resulting from
-	 * summing across channels to be something that has a name, any
-	 * channel filter at all would do, but this way the code's
-	 * behaviour is more easily understood --- it's easy to say "the
-	 * channel filter is a Tukey window of variable central width".
-	 *
-	 * Note:  the number of samples in the window is odd, being one
-	 * more than the number of frequency bins in twice the channel
-	 * width.  This gets the Hann windows to super-impose to form a
-	 * Tukey window.  (you'll have to draw yourself a picture).
+	 * create frequency series for filter
 	 */
 
+	sprintf(filter_name, "channel %g +/- %g Hz", channel_flow + channel_width / 2, channel_width / 2);
 	filter = XLALCreateCOMPLEX16FrequencySeries(filter_name, &psd->epoch, channel_flow - channel_width / 2, psd->deltaF, &lalDimensionlessUnit, 2 * channel_width / psd->deltaF + 1);
-	/* FIXME:  decide what to do about this */
+	if(!filter)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	if(filter->f0 < 0.0) {
+		XLALPrintError("%s(): channel_flow - channel_width / 2 >= 0.0 failed", __func__);
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+
+	/*
+	 * build real-valued Hann window and copy into filter
+	 */
+
 	hann = XLALCreateHannREAL8Window(filter->data->length);
-	/*hann = XLALCreateTukeyREAL8Window(filter->data->length, 2 / ((channel_width / 2.0) + 1));*/
-	if(!filter || !hann) {
+	if(!hann) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
 		XLALDestroyREAL8Window(hann);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re = hann->data->data[i];
@@ -737,10 +744,15 @@ static COMPLEX16FrequencySeries *generate_filter(
 	XLALDestroyREAL8Window(hann);
 
 	/*
-	 * divide by square root of PSD to "overwhiten".
+	 * divide by square root of PSD to whiten
 	 */
 
-	pdata = psd->data->data + (int) floor((filter->f0 - psd->f0) / psd->deltaF + 0.5);
+	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length * psd->deltaF) {
+		XLALPrintError("%s(): psd does not span filter's frequency range", __func__);
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	pdata = psd->data->data + (int) round((filter->f0 - psd->f0) / psd->deltaF);
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re /= sqrt(pdata[i]);
 		filter->data->data[i].im /= sqrt(pdata[i]);
@@ -752,7 +764,12 @@ static COMPLEX16FrequencySeries *generate_filter(
 	 * of the filter in bins.
 	 */
 
-	norm = sqrt((channel_width / filter->deltaF) / filter_inner_product(filter, filter, correlation));
+	norm = XLALExcessPowerFilterInnerProduct(filter, filter, correlation, NULL);
+	if(XLAL_IS_REAL8_FAIL_NAN(norm)) {
+		XLALDestroyCOMPLEX16FrequencySeries(filter);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	}
+	norm = sqrt(channel_width / filter->deltaF / norm);
 	for(i = 0; i < filter->data->length; i++) {
 		filter->data->data[i].re *= norm;
 		filter->data->data[i].im *= norm;
@@ -796,7 +813,7 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 		free(basis_filters);
 		XLALDestroyREAL8Sequence(twice_channel_overlap);
 		XLALDestroyREAL8Sequence(unwhitened_cross);
-		XLAL_ERROR_NULL(__func__, XLAL_ENOMEM);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	}
 
 	new->n_filters = n_channels;
@@ -805,25 +822,25 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 	new->unwhitened_cross = unwhitened_cross;
 
 	for(i = 0; i < n_channels; i++) {
-		basis_filters[i].fseries = generate_filter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
+		basis_filters[i].fseries = XLALCreateExcessPowerFilter(flow + i * channel_bandwidth, channel_bandwidth, psd, two_point_spectral_correlation);
 		if(!basis_filters[i].fseries) {
 			while(i--)
 				XLALDestroyCOMPLEX16FrequencySeries(basis_filters[i].fseries);
 			free(new);
 			XLALDestroyREAL8Sequence(twice_channel_overlap);
 			XLALDestroyREAL8Sequence(unwhitened_cross);
-			XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+			XLAL_ERROR_NULL(XLAL_EFUNC);
 		}
 
 		/* compute the unwhitened root mean square for this channel */
-		basis_filters[i].unwhitened_rms = sqrt(psd_weighted_filter_inner_product(basis_filters[i].fseries, basis_filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
+		basis_filters[i].unwhitened_rms = sqrt(XLALExcessPowerFilterInnerProduct(basis_filters[i].fseries, basis_filters[i].fseries, two_point_spectral_correlation, psd) * filter_deltaF / 2);
 	}
 
 	/* compute the cross terms for the channel normalizations and
 	 * unwhitened mean squares */
 	for(i = 0; i < new->n_filters - 1; i++) {
-		twice_channel_overlap->data[i] = 2 * filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation);
-		unwhitened_cross->data[i] = psd_weighted_filter_inner_product(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
+		twice_channel_overlap->data[i] = 2 * XLALExcessPowerFilterInnerProduct(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, NULL);
+		unwhitened_cross->data[i] = XLALExcessPowerFilterInnerProduct(basis_filters[i].fseries, basis_filters[i + 1].fseries, two_point_spectral_correlation, psd) * psd->deltaF;
 	}
 
 	return new;

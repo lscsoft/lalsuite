@@ -1,0 +1,1 @@
+../../gnuscripts/lalsuite_swig.m4

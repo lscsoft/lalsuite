@@ -17,102 +17,82 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameStreamCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \author Jolien D. E. Creighton
+ * \file
  *
- * \subsection{Module \texttt{FrameStream.c}}
+ * \heading{Module \ref FrameStream.c}
  *
  * These are the low-level functions for manupulating a frame stream.
  *
- * \subsubsection*{Prototypes}
- * \input{FrameStreamCP}
- * \idx{LALFrOpen}
- * \idx{LALFrCacheOpen}
- * \idx{LALFrClose}
- * \idx{LALFrEnd}
- * \idx{LALFrNext}
- * \idx{LALFrRewind}
- * \idx{LALFrSeek}
- * \idx{LALFrTell}
- * \idx{LALFrGetPos}
- * \idx{LALFrSetPos}
- *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
  * Many of these routines perform functions that are similar to standard C
  * file stream manipulation routines.  The names have been chosen to also be
  * similar to the standard C routines.
  *
- * The routines \texttt{LALFrOpen()} and \texttt{LALFrClose()} are used to open
- * and close a frame stream.  The stream is created by \texttt{LALFrOpen()},
- * and must be a pointer to \texttt{NULL} before it is opened.  It must have
- * been created prior to calling \texttt{LALFrClose()}, and after this call,
- * the stream will be a pointer to \texttt{NULL}.  The routine
- * \texttt{LALFrOpen()} requires the user to specify the directory name of the
- * frame files and the head names.  If the directory is \texttt{NULL}, the
- * routine uses the current director (\texttt{.}).  The head names specifies
+ * The routines <tt>LALFrOpen()</tt> and <tt>LALFrClose()</tt> are used to open
+ * and close a frame stream.  The stream is created by <tt>LALFrOpen()</tt>,
+ * and must be a pointer to \c NULL before it is opened.  It must have
+ * been created prior to calling <tt>LALFrClose()</tt>, and after this call,
+ * the stream will be a pointer to \c NULL.  The routine
+ * <tt>LALFrOpen()</tt> requires the user to specify the directory name of the
+ * frame files and the head names.  If the directory is \c NULL, the
+ * routine uses the current director (<tt>.</tt>).  The head names specifies
  * which files are the wanted files in the specified directory.  Wildcards are
  * allowed.  For example, to get LLO frames only, the head names could be set
- * to \texttt{L-*.gwf}.  If the head name is \texttt{NULL}, the default value
- * \texttt{*.gwf} is used.  The routine \texttt{LALFrCacheOpen()} is like
- * \texttt{LALFrOpen()} except that the list of frame files is taken from a
- * frame file cache.  [In fact, \texttt{LALFrOpen()} simply uses
- * \texttt{LALFrCacheGenerate()} and \texttt{LALFrCacheOpen()} to create the
+ * to <tt>L-*.gwf</tt>.  If the head name is \c NULL, the default value
+ * <tt>*.gwf</tt> is used.  The routine <tt>LALFrCacheOpen()</tt> is like
+ * <tt>LALFrOpen()</tt> except that the list of frame files is taken from a
+ * frame file cache.  [In fact, <tt>LALFrOpen()</tt> simply uses
+ * <tt>LALFrCacheGenerate()</tt> and <tt>LALFrCacheOpen()</tt> to create the
  * stream.]
  *
- * The routine \texttt{LALFrSetMode()} is used to change the operating mode
+ * The routine <tt>LALFrSetMode()</tt> is used to change the operating mode
  * of a frame stream, which determines how the routines try to accomodate
  * gaps in data and requests for times when there is no data (e.g., before
  * the beginning of the data, after the end of the data, or in some missing
  * data).  The default mode, which is given the value
- * \verb+LAL_FR_DEFAULT_MODE+, prints warnings if a time requested
+ * \c LAL_FR_DEFAULT_MODE, prints warnings if a time requested
  * corresponds to a time when there is no data (but then skips to the first
  * avaliable data) and prints an info message when a gap in the data occurs
  * (but then skips beyond the gap).  This default mode is equal to the
  * combination
- * \verb+LAL_FR_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE+
- * where \verb+LAL_FR_VERBOSE_MODE+ is equal to the combination
- * \verb+LAL_FR_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE+.  Use
- * \verb+LAL_FR_VERBOSE_MODE+ to print out warnings when requesting times
+ * <tt>LAL_FR_VERBOSE_MODE | LAL_FR_IGNOREGAP_MODE | LAL_FR_IGNORETIME_MODE</tt>
+ * where \c LAL_FR_VERBOSE_MODE is equal to the combination
+ * <tt>LAL_FR_TIMEWARN_MODE | LAL_FR_GAPINFO_MODE</tt>.  Use
+ * \c LAL_FR_VERBOSE_MODE to print out warnings when requesting times
  * with no data and print out an info message when a gap in the data is
  * encountered.  Unless the mode is supplemented with
- * \verb+LAL_FR_IGNOREGAP_MODE+, gaps encountered in the data will cause
+ * \c LAL_FR_IGNOREGAP_MODE, gaps encountered in the data will cause
  * a routine to exit with a non-zero status code; similarly,
- * \verb+LAL_FR_IGNORETIME_MODE+ prevents routines from failing if a time
+ * \c LAL_FR_IGNORETIME_MODE prevents routines from failing if a time
  * when there is not data is requested.  Set the mode to
- * \verb+LAL_FR_SILENT_MODE+ to suppress the warning and info messages but
+ * \c LAL_FR_SILENT_MODE to suppress the warning and info messages but
  * still cause routines to fail when data is not available.
- * Note: the default value \verb+LAL_FR_DEFAULT_MODE+ is assumed initially,
+ * Note: the default value \c LAL_FR_DEFAULT_MODE is assumed initially,
  * but this is not necessarily the recommended mode --- it is adopted for
  * compatibility reasons.
  *
- * The routine \texttt{LALFrEnd()} determines if the end-of-frame-data flag for
+ * The routine <tt>LALFrEnd()</tt> determines if the end-of-frame-data flag for
  * the data stream has been set.
  *
- * The routine \texttt{LALFrNext()} advances the frame stream to the
+ * The routine <tt>LALFrNext()</tt> advances the frame stream to the
  * beginning of the next frame.
  *
- * The routine \texttt{LALFrRewind()} rewinds the frame stream to the first
+ * The routine <tt>LALFrRewind()</tt> rewinds the frame stream to the first
  * frame.
  *
- * The routine \texttt{LALFrSeek()} sets the frame stream to a specified time,
+ * The routine <tt>LALFrSeek()</tt> sets the frame stream to a specified time,
  * or the earliest time after the specified time if that time is not available
  * (e.g., if it is before the beginning of the frame stream or if it is in a
- * gap in the frame data).  The routine \texttt{LALFrTell()} returns the
+ * gap in the frame data).  The routine <tt>LALFrTell()</tt> returns the
  * current time within the frame stream.
  *
- * The routine \texttt{LALFrGetPos()} returns a structure containing the
+ * The routine <tt>LALFrGetPos()</tt> returns a structure containing the
  * current frame stream position.  The frame stream can later be restored to
- * this position using \texttt{LALFrSetPos()}.
- *
- *
- * \vfill{\footnotesize\input{FrameStreamCV}}
- *
- **** </lalLaTeX> */
+ * this position using <tt>LALFrSetPos()</tt>.
+ */
 
 #include <config.h>
 #include <unistd.h>
@@ -173,7 +153,7 @@ static struct FrFile *URLFrFileINew( FrFileInfo *file, int dochecksum )
         break;
       default: /* unhandled case */
         FrFileIEnd( frfile );
-        XLAL_ERROR_NULL( "URLFrFileINew", XLAL_EERR );
+        XLAL_ERROR_NULL( XLAL_EERR );
     }
   }
   return frfile;
@@ -363,22 +343,21 @@ static UINT4 create_flist( FrFileInfo **plist, FrCache *cache )
 
 FrStream * XLALFrCacheOpen( FrCache *cache )
 {
-  static const char func[] = "XLALFrCacheOpen";
   FrStream *stream;
 
   if ( ! cache )
-    XLAL_ERROR_NULL( func, XLAL_EFAULT );
+    XLAL_ERROR_NULL( XLAL_EFAULT );
 
   stream = LALCalloc( 1, sizeof( *stream ) );
   if ( ! stream )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
 
   stream->mode = LAL_FR_DEFAULT_MODE;
   stream->nfile = create_flist( &stream->flist, cache );
   if ( ! stream->flist )
   {
     LALFree( stream );
-    XLAL_ERROR_NULL( func, XLAL_EIO ); /* assume it was an I/O error */
+    XLAL_ERROR_NULL( XLAL_EIO ); /* assume it was an I/O error */
   }
 
   stream->file = URLFrFileINew( stream->flist, 0 );
@@ -386,17 +365,17 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
   {
     free_flist( stream->flist );
     LALFree( stream );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   if ( FrTOCReadFull( stream->file ) == NULL )
   {
     XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
-        func, stream->flist->url );
+        __func__, stream->flist->url );
     FrFileIEnd( stream->file );
     free_flist( stream->flist );
     LALFree( stream );
-    XLAL_ERROR_NULL( func, XLAL_EIO );
+    XLAL_ERROR_NULL( XLAL_EIO );
   }
 
   stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
@@ -408,17 +387,16 @@ FrStream * XLALFrCacheOpen( FrCache *cache )
 
 FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 {
-  static const char func[] = "XLALFrOpen";
   FrStream *stream;
   FrCache *cache;
 
   cache = XLALFrGenerateCache( dirname, pattern );
   if ( ! cache )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   stream = XLALFrCacheOpen( cache );
   if ( ! stream )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
 
   XLALFrDestroyCache( cache );
   return stream;
@@ -427,9 +405,8 @@ FrStream * XLALFrOpen( const char *dirname, const char *pattern )
 
 int XLALFrClose( FrStream *stream )
 {
-  static const char func[] = "XLALFrClose";
   if ( ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   FrFileIEnd( stream->file );
   free_flist( stream->flist );
   LALFree( stream );
@@ -439,9 +416,8 @@ int XLALFrClose( FrStream *stream )
 
 int XLALFrSetMode( FrStream *stream, int mode )
 {
-  static const char func[] = "XLALFrSetMode";
   if ( ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   stream->mode = mode;
   /* if checksum mode is turned on, do checksum on current file */
   if ( (mode & LAL_FR_CHECKSUM_MODE) && (stream->file) )
@@ -452,18 +428,16 @@ int XLALFrSetMode( FrStream *stream, int mode )
 
 int XLALFrState( FrStream *stream )
 {
-  static const char func[] = "XLALFrState";
   if ( ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   return stream->state;
 }
 
 
 int XLALFrClearErr( FrStream *stream )
 {
-  static const char func[] = "XLALFrClearErr";
   if ( ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   stream->state = LAL_FR_OK;
   return 0;
 }
@@ -471,9 +445,8 @@ int XLALFrClearErr( FrStream *stream )
 
 int XLALFrRewind( FrStream *stream )
 {
-  static const char func[] = "XLALFrRewind";
   if ( ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( stream->file )
   {
@@ -487,16 +460,16 @@ int XLALFrRewind( FrStream *stream )
   if ( ! stream->file )
   {
     stream->state |= LAL_FR_ERR | LAL_FR_URL;
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   }
   if ( FrTOCReadFull( stream->file ) == NULL )
   {
     XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
-        func, stream->flist->url );
+        __func__, stream->flist->url );
     FrFileIEnd( stream->file );
     stream->file   = NULL;
     stream->state |= LAL_FR_ERR | LAL_FR_TOC;
-    XLAL_ERROR( func, XLAL_EIO );
+    XLAL_ERROR( XLAL_EIO );
   }
   stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
   stream->epoch.gpsNanoSeconds = stream->file->toc->GTimeN[0];
@@ -506,8 +479,6 @@ int XLALFrRewind( FrStream *stream )
 
 int XLALFrNext( FrStream *stream )
 {
-  static const char func[] = "XLALFrNext";
-
   /* timing accuracy: tenth of a sample interval for a 16kHz fast channel */
   const INT8 tacc = (INT8)floor( 0.1 * 1e9 / 16384.0 );
   const char *url1;
@@ -519,7 +490,7 @@ int XLALFrNext( FrStream *stream )
   INT8 tact;
 
   if ( ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( stream->state & LAL_FR_END )
     return 1; /* end code */
@@ -565,7 +536,7 @@ int XLALFrNext( FrStream *stream )
     if ( ! stream->file )
     {
       stream->state |= LAL_FR_ERR | LAL_FR_URL;
-      XLAL_ERROR( func, XLAL_EIO );
+      XLAL_ERROR( XLAL_EIO );
     }
     pos2 = stream->pos;
   }
@@ -576,11 +547,11 @@ int XLALFrNext( FrStream *stream )
     if ( FrTOCReadFull( stream->file ) == NULL )
     {
       XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
-          func, stream->flist[stream->fnum].url );
+          __func__, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
       stream->state |= LAL_FR_ERR | LAL_FR_TOC;
-      XLAL_ERROR( func, XLAL_EIO );
+      XLAL_ERROR( XLAL_EIO );
     }
   }
 
@@ -596,16 +567,16 @@ int XLALFrNext( FrStream *stream )
     if ( stream->mode & LAL_FR_GAPINFO_MODE )
     {
       XLALPrintInfo( "XLAL Info - %s: gap in frame data between times "
-          "%.6f and %.6f\n", func, 1e-9 * texp, 1e-9 * tact );
+          "%.6f and %.6f\n", __func__, 1e-9 * texp, 1e-9 * tact );
     }
     if ( ! ( stream->mode & LAL_FR_IGNOREGAP_MODE ) )
     {
-      XLALPrintError( "XLAL Error - %s: gap in frame data\n", func );
+      XLALPrintError( "XLAL Error - %s: gap in frame data\n", __func__ );
       XLALPrintError( "XLAL Error - %s: time %.6f "
-          "is end of frame %d of file URL %s\n", func, 1e-9*texp, pos1, url1 );
+          "is end of frame %d of file URL %s\n", __func__, 1e-9*texp, pos1, url1 );
       XLALPrintError( "XLAL Error - %s: time %.6f "
-          "is start of frame %d of file URL %s\n", func, 1e-9*tact, pos2, url2);
-      XLAL_ERROR( func, XLAL_ETIME );
+          "is start of frame %d of file URL %s\n", __func__, 1e-9*tact, pos2, url2);
+      XLAL_ERROR( XLAL_ETIME );
     }
     return 2; /* gap code */
   }
@@ -616,7 +587,6 @@ int XLALFrNext( FrStream *stream )
 
 int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
 {
-  static const char func[] = "XLALFrSeek";
   FrFileInfo *fileinfo;
   double twant = XLALGPSGetREAL8( epoch );
 
@@ -644,11 +614,11 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     {
       /* FIXME:  if this is an error, should the stream state say so? */
       /*stream->state |= LAL_FR_ERR;*/
-      XLAL_ERROR( func, XLAL_ETIME );
+      XLAL_ERROR( XLAL_ETIME );
     }
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
-          "requested time %d before first frame\n", func, epoch->gpsSeconds );
+          "requested time %d before first frame\n", __func__, epoch->gpsSeconds );
     return 1; /* before first file code */
   }
 
@@ -674,11 +644,11 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       {
         /* FIXME:  if this is an error, should the stream state say so? */
         /*stream->state |= LAL_FR_ERR;*/
-        XLAL_ERROR( func, XLAL_ETIME );
+        XLAL_ERROR( XLAL_ETIME );
       }
       if ( stream->mode & LAL_FR_TIMEWARN_MODE )
         XLALPrintWarning( "XLAL Warning - %s: "
-            "requested time %d after last frame\n", func, epoch->gpsSeconds );
+            "requested time %d after last frame\n", __func__, epoch->gpsSeconds );
       return 2; /* after last file code */
     }
     if ( epoch->gpsSeconds >= fileinfo->t0
@@ -690,17 +660,17 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       if ( ! stream->file )
       {
         stream->state |= LAL_FR_ERR | LAL_FR_URL;
-        XLAL_ERROR( func, XLAL_EIO );
+        XLAL_ERROR( XLAL_EIO );
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
       {
         XLALPrintError(
             "XLAL Error - %s: could not read frame TOC from URL %s\n",
-            func, fileinfo->url );
+            __func__, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
         stream->state |= LAL_FR_ERR | LAL_FR_TOC;
-        XLAL_ERROR( func, XLAL_EIO );
+        XLAL_ERROR( XLAL_EIO );
       }
       /* loop over frames */
       for ( stream->pos = 0; stream->pos < stream->file->toc->nFrame;
@@ -732,17 +702,17 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       if ( ! stream->file )
       {
         stream->state |= LAL_FR_ERR | LAL_FR_URL;
-        XLAL_ERROR( func, XLAL_EIO );
+        XLAL_ERROR( XLAL_EIO );
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
       {
         XLALPrintError(
             "XLAL Error - %s: could not read frame TOC from URL %s\n",
-            func, fileinfo->url );
+            __func__, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
         stream->state |= LAL_FR_ERR | LAL_FR_TOC;
-        XLAL_ERROR( func, XLAL_EIO );
+        XLAL_ERROR( XLAL_EIO );
       }
       goto found;
     }
@@ -757,9 +727,9 @@ found:
     XLALGPSSet( &stream->epoch, stream->file->toc->GTimeS[stream->pos], stream->file->toc->GTimeN[stream->pos] );
     if ( stream->mode & LAL_FR_TIMEWARN_MODE )
       XLALPrintWarning( "XLAL Warning - %s: "
-          "requested time %.6f in gap in frame data\n", func, twant );
+          "requested time %.6f in gap in frame data\n", __func__, twant );
     if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
-      XLAL_ERROR( func, XLAL_ETIME );
+      XLAL_ERROR( XLAL_ETIME );
     return 3; /* in a gap code */
   }
 
@@ -770,9 +740,8 @@ found:
 
 int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream )
 {
-  static const char func[] = "XLALFrTell";
   if ( ! epoch || ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   *epoch = stream->epoch;
   return 0;
 }
@@ -780,9 +749,8 @@ int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream )
 
 int XLALFrGetpos( FrPos *position, FrStream *stream )
 {
-  static const char func[] = "XLALFrGetpos";
   if ( ! position || ! stream )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   position->epoch = stream->epoch;
   position->fnum  = stream->fnum;
   position->pos   = stream->pos;
@@ -792,9 +760,8 @@ int XLALFrGetpos( FrPos *position, FrStream *stream )
 
 int XLALFrSetpos( FrStream *stream, FrPos *position )
 {
-  static const char func[] = "XLALFrSetpos";
   if ( ! stream || ! position )
-    XLAL_ERROR( func, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
   /* clear EOF or GAP states; preserve ERR state */
   if ( stream->state & LAL_FR_ERR )
     stream->state = LAL_FR_ERR;
@@ -812,14 +779,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
     {
       stream->fnum  = stream->nfile;
       stream->state |= LAL_FR_END;
-      XLAL_ERROR( func, XLAL_EINVAL );
+      XLAL_ERROR( XLAL_EINVAL );
     }
     stream->fnum = position->fnum;
     stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_CHECKSUM_MODE );
     if ( ! stream->file )
     {
       stream->state |= LAL_FR_ERR | LAL_FR_URL;
-      XLAL_ERROR( func, XLAL_EIO );
+      XLAL_ERROR( XLAL_EIO );
     }
   }
   if ( ! stream->file->toc )
@@ -827,18 +794,18 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
     if ( FrTOCReadFull( stream->file ) == NULL )
     {
       XLALPrintError( "XLAL Error - %s: could not read frame TOC from URL %s\n",
-          func, stream->flist[stream->fnum].url );
+          __func__, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
       stream->state |= LAL_FR_ERR | LAL_FR_TOC;
-      XLAL_ERROR( func, XLAL_EIO );
+      XLAL_ERROR( XLAL_EIO );
     }
   }
   stream->pos = position->pos;
   if ( stream->pos > stream->file->toc->nFrame )
   {
     stream->state |= LAL_FR_ERR;
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   }
   return 0;
 }
@@ -854,14 +821,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
 
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrCacheOpen(
     LALStatus  *status,
     FrStream  **output,
     FrCache    *cache
     )
-{ /* </lalVerbatim> */
+{ 
   FrStream *stream;
 
   INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );
@@ -889,7 +856,7 @@ LALFrCacheOpen(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrOpen(
     LALStatus    *status,
@@ -897,7 +864,7 @@ LALFrOpen(
     const CHAR   *dirname,
     const CHAR   *pattern
     )
-{ /* </lalVerbatim> */
+{ 
   FrCache *cache = NULL;
 
   INITSTATUS( status, "LALFrOpen", FRAMESTREAMC );
@@ -929,13 +896,13 @@ LALFrOpen(
 
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrClose(
     LALStatus  *status,
     FrStream  **stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrClose", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -944,14 +911,14 @@ LALFrClose(
   RETURN( status );
 }
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrSetMode(
     LALStatus *status,
     INT4       mode,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrSetMode", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   stream->mode = mode;
@@ -959,14 +926,14 @@ LALFrSetMode(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrEnd(
     LALStatus *status,
     INT4      *end,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrEnd", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -974,13 +941,13 @@ LALFrEnd(
   RETURN( status );
 }
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrRewind(
     LALStatus *status,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrRewind", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( XLALFrRewind( stream ) )
@@ -999,13 +966,13 @@ LALFrRewind(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrNext(
     LALStatus   *status,
     FrStream    *stream
     )
-{ /* </lalVerbatim> */
+{ 
   CHAR frErrMsg[1024];
   int code;
   INITSTATUS( status, "LALFrNext", FRAMESTREAMC );
@@ -1051,14 +1018,14 @@ LALFrNext(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrSeek(
     LALStatus         *status,
     const LIGOTimeGPS *epoch,
     FrStream          *stream
     )
-{ /* </lalVerbatim> */
+{ 
   CHAR frErrMsg[1024];
   int code;
   INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );
@@ -1100,14 +1067,14 @@ LALFrSeek(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrTell(
     LALStatus   *status,
     LIGOTimeGPS *epoch,
     FrStream    *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrTell", FRAMESTREAMC );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -1120,14 +1087,14 @@ LALFrTell(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrGetPos(
     LALStatus *status,
     FrPos     *position,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrGetPos", FRAMESTREAMC );
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
@@ -1140,14 +1107,14 @@ LALFrGetPos(
 }
 
 
-/* <lalVerbatim file="FrameStreamCP"> */
+
 void
 LALFrSetPos(
     LALStatus *status,
     FrPos     *position,
     FrStream  *stream
     )
-{ /* </lalVerbatim> */
+{ 
   INITSTATUS( status, "LALFrSetPos", FRAMESTREAMC );
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );

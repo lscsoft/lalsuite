@@ -1,3 +1,22 @@
+lalpulsar (1.2.0-1) unstable; urgency=low
+
+  * LALPulsar 1.2.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:05:23 -0600
+
+lalpulsar (1.2.0~rc2-1) unstable; urgency=low
+
+  * LALPulsar 1.2.0 Release Candidate 2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:36:49 -0600
+
+lalpulsar (1.2.0~rc1-1) unstable; urgency=low
+
+  * LALPulsar 1.2.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:11:09 -0600
+
 lalpulsar (1.1.0-1lscsoft1) unstable; urgency=low
 
   * LALPulsar 1.1.0

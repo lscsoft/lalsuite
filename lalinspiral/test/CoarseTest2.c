@@ -17,23 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="CoarseTest2CV">
-Author: Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T.
-$Id$
-</lalVerbatim> */
+/**
+\author Churches, D. K. and Sathyaprakash, B. S., Cokelaer, T.
+\file
+\ingroup LALInspiralBank_h
 
-/* <lalLaTeX>
-\subsection{Program \texttt{CoarseTest2.c}}
-\label{ss:CoarseTest2.c}
+\brief Test code for the \c bank modules.
 
-Test code for the \texttt{bank} modules.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 CoarseTest2
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This test code gives an example of how to generate a template bank and
 generates vertices of the ambiguity 'rectangle' around each lattice point
@@ -45,23 +41,16 @@ It can be extended to the BCV case easily by replacing approximant (BCV) and
 parameter space (Psi0andPsi3). The code has to be changed to use psi0/psi3
 inteasd of tau0/tau3 though.
 
-\subsubsection*{Exit codes}
-\input{CoarseTest2CE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 lalDebugLevel
 LALRectangleVertices
 LALInspiralCreateCoarseBank
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{CoarseTest2CV}}
-</lalLaTeX> */
-
-/* <lalErrTable file="CoarseTest2CE"> */
-/* </lalErrTable> */
+*/
 
 #include <stdio.h>
 #include <lal/AVFactories.h>

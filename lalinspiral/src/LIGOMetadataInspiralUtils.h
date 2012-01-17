@@ -15,6 +15,11 @@
 *  MA  02111-1307  USA
 */
 
+/**
+   \file
+   \brief unknown
+*/
+
 #ifndef _LIGOMETADATAINSPIRALUTILS_H
 #define _LIGOMETADATAINSPIRALUTILS_H
 
@@ -32,12 +37,9 @@ extern "C" {
  *
  */
 
-#if 0
-<lalLaTeX>
-\subsubsection*{Type \texttt{SnglInspiralParameterTest}}
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+/** The \c SnglInspiralParameterTest contains an enum type for each of the
+    tests of mass parameters which are used.
+*/
 typedef enum
 {
   unspecified_test,
@@ -49,15 +51,15 @@ typedef enum
   ellipsoid
 }
 SnglInspiralParameterTest;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{SnglInspiralParameterTest} contains an enum type for each of the
-tests of mass parameters which are used.
-\subsubsection*{Type \texttt{SnglInspiralAccuracy}}
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+
+/** The \c SnglInspiralAccuracy structure contains parameters used for
+testing coincidence between two or more single inspiral tables.  These include
+a timing accuracy \c dt, five mass accuracies \c dm (used for
+testing \c mass1 and \c mass2), \c deta, \c dmchirp,
+\c dpsi0 and \c dpsi3.  It also includes the parameters
+\c kappa and \c epsilon which are used for testing consistency of
+effective distance.
+*/
 typedef struct
 tagSnglInspiralAccuracy
 {
@@ -78,20 +80,15 @@ tagSnglInspiralAccuracy
   INT4        exttrig;
 }
 SnglInspiralAccuracy;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{SnglInspiralAccuracy} structure contains parameters used for
-testing coincidence between two or more single inspiral tables.  These include
-a timing accuracy \texttt{dt}, five mass accuracies \texttt{dm} (used for
-testing \texttt{mass1} and \texttt{mass2}), \texttt{deta}, \texttt{dmchirp},
-\texttt{dpsi0} and \texttt{dpsi3}.  It also includes the parameters
-\texttt{kappa} and \texttt{epsilon} which are used for testing consistency of
-effective distance.
-\subsubsection*{Type \texttt{SnglInspiralClusterChoice}}
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+
+/** The \c InspiralAccuracyList structure contains parameter accuracies for
+    each of the six global interferometers.  These are stored in the
+    ::SnglInspiralAccuracy structure.  The accuracies stored should be the
+    accuracy with which each instrument can determine the given parameter.  It also
+    contains a \c match which is set to 1 to signify that coincidence
+    criteria are satisfied and 0 otherwise.  Finally, the
+    ::SnglInspiralParameterTest must be specified.
+*/
 typedef struct
 tagInspiralAccuracyList
 {
@@ -105,39 +102,30 @@ tagInspiralAccuracyList
   INT4                      exttrig;
 }
 InspiralAccuracyList;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{InspiralAccuracyList} structure contains parameter accuracies for
-each of the six global interferometers.  These are stored in the
-\texttt{SnglInspiralAccuracy} structure.  The accuracies stored should be the
-accuracy with which each instrument can determine the given parameter.  It also
-contains a \texttt{match} which is set to 1 to signify that coincidence
-criteria are satisfied and 0 otherwise.  Finally, the
-\texttt{SnglInspiralParameterTest} must be specified.
-\subsubsection*{Type \texttt{SnglInspiralClusterChoice}}
-</lalLaTeX>
-#endif
 
-/* <lalVerbatim> */
+
+/** The \c CoincInspiralStatParams structure contains the bitten L parameter for
+    each of the six global interferometers.  These are stored in the
+    \c param_a and \c param_b structure.
+*/
 typedef struct
 tagCoincInspiralStatParams
 {
   REAL4    param_a[LAL_NUM_IFO];
   REAL4    param_b[LAL_NUM_IFO];
   REAL4    eff_snr_denom_fac;
+  REAL4    chisq_index;
 }
 CoincInspiralStatParams;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{CoincInspiralStatParams} structure contains the bitten L parameter for
-each of the six global interferometers.  These are stored in the
-\texttt{param\_a} and \texttt{param\_b} structure.
-</lalLaTeX>
-#endif
 
-/* <lalVerbatim> */
+
+/** The \c SnglInspiralClusterChoice provides three choices for clustering
+a single inspiral table.  The\c snr clustering returns the trigger
+with the greatest signal to noise ratio; \c snr_and_chisq replaces
+the existing trigger if the new trigger has \e both a greater snr and
+a smaller chi squared value; \c snrsq_over_chisq selects the trigger
+with the largest value of snr squared divided by the chi squared.
+*/
 typedef enum
 {
   none,
@@ -146,43 +134,35 @@ typedef enum
   snr
 }
 SnglInspiralClusterChoice;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{SnglInspiralClusterChoice} provides three choices for clustering
-a single inspiral table.  The\texttt{snr} clustering returns the trigger
-with the greatest signal to noise ratio; \texttt{snr\_and\_chisq} replaces
-the existing trigger if the new trigger has \textit{both} a greater snr and
-a smaller chi squared value; \texttt{snrsq\_over\_chisq} selects the trigger
-with the largest value of snr squared divided by the chi squared.
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+
+
+/** The \c CoincInspiralStatistic provides two choices for clustering
+    a single inspiral table.  The\c snrsq clustering returns the trigger
+    with the greatest summed snr\f$^{2}\f$ from all instruments.  The
+    \c snr_chi_stat replaces selects the trigger
+    with the largest value of the snr and chisq statistic and the \c bitten_l
+    returns the minimum among the summed snr\f$^{2}\f$ from all instruments and the
+    \f$a\times snr_i - b\f$ in each detector. The parameters  \f$a\f$ and \f$b\f$ must be
+    provided by the user.
+*/
 typedef enum
 {
   no_stat,
   snrsq,
   effective_snrsq,
+  new_snrsq,
   s3_snr_chi_stat,
   bitten_l,
   bitten_lsq,
   ifar
 }
 CoincInspiralStatistic;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{CoincInspiralStatistic} provides two choices for clustering
-a single inspiral table.  The\texttt{snrsq} clustering returns the trigger
-with the greatest summed snr$^{2}$ from all instruments.  The
-\texttt{snr\_chi\_stat} replaces selects the trigger
-with the largest value of the snr and chisq statistic and the \texttt{bitten\_l}
-returns the minimum among the summed snr$^{2}$ from all instruments and the
-$a\times snr_i - b$ in each detector. The parameters  $a$ and $b$ must be
-provided by the user.
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+
+/** The \c MultiInspiralClusterChoice provides choices for clustering
+    a multi inspiral table.  The \c cohsnr clustering returns the trigger
+    with the greatest coherent signal to noise ratio; the \c nullstat
+    clustering returns the trigger with the smallest null-statistic value.
+*/
 typedef enum
 {
   no_statistic,
@@ -196,31 +176,24 @@ typedef enum
   crossCorrNullSqByNullstat
 }
 MultiInspiralClusterChoice;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{MultiInspiralClusterChoice} provides choices for clustering
-a multi inspiral table.  The \texttt{cohsnr} clustering returns the trigger
-with the greatest coherent signal to noise ratio; the \texttt{nullstat}
-clustering returns the trigger with the smallest null-statistic value.
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+
+
+/** The \c CohbankRunType provides choices for constructing a
+    multi-detector template bank from either the output of the coincidence
+    analysis (cohbank) or the outputs of multiple single-ifo filtering.
+*/
 typedef enum
 {
   cohbank,
   cohinspbank
 }
 CohbankRunType;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{CohbankRunType} provides choices for constructing a
-multi-detector template bank from either the output of the coincidence
-analysis (cohbank) or the outputs of multiple single-ifo filtering.
-</lalLaTeX>
-#endif
-/* <lalVerbatim> */
+
+/** The \c SnglInspiralBCVCalphafCut provides entries for cutting
+    single IFO triggers generated with the BCVC code. For each LSC IFO
+    there is a field \c lo and \c hi which corresponds to the area
+    allowing triggers.
+*/
 typedef struct
 tagSnglInspiralBCVCalphafCut
 {
@@ -233,13 +206,18 @@ tagSnglInspiralBCVCalphafCut
   REAL4       psi0cut;
 }
 SnglInspiralBCVCalphafCut;
-/*</lalVerbatim> */
-#if 0
-<lalLaTeX>
-The \texttt{SnglInspiralBCVCalphafCut} provides entries for cutting single IFO triggers generated with the BCVC code. For each LSC IFO there is a field \texttt{lo} and \texttt{hi} which corresponds to the area allowing triggers.
-</lalLaTeX>
-#endif
 
+/** The \c CDataNode is a structure that saves the names of the
+    time-series of matched-filter outputs that are written into
+    a frame file by the inspiral code.
+*/
+typedef struct
+tagCDataNode
+{
+  CHAR cdataStrNode[LALNameLength];
+  struct tagCDataNode *next;
+}
+CDataNode;
 
 /*
  *
@@ -500,6 +478,12 @@ XLALCountCoincInspiral(
     CoincInspiralTable *head
     );
 
+int
+XLALAddSnglInspiralCData(
+    CDataNode                 **cdataStrCat,
+    CHAR                       *id
+    );
+
 /* coinc inspiral */
 void
 LALCreateTwoIFOCoincList(
@@ -648,7 +632,14 @@ LALCoincCutSnglInspiral(
 int
 XLALGenerateCoherentBank(
     SnglInspiralTable         **coherentBank,
-    CoincInspiralTable         *coincInput
+    CoincInspiralTable         *coincInput,
+    CohbankRunType              runType,
+    INT8                        ringStartNS,
+    INT8                        ringEndNS,
+    int                         numSlides,
+    REAL8                       slideStep[LAL_NUM_IFO],
+    REAL4                       eff_snrsq_threshold,
+    CHAR                       *ifos
     );
 
 INT8
@@ -1012,6 +1003,7 @@ int XLALClusterInEventID(
 
 int XLALCoincSegCutSnglInspiral(
     INT4                         startTime,
+    INT4                         endTime,
     SnglInspiralTable          **inspiralList
     );
 

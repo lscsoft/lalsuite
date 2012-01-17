@@ -41,6 +41,11 @@
 #ifndef _RANDOM_H
 #define _RANDOM_H
 
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 
@@ -108,6 +113,7 @@ NRCSID (RANDOMH, "$Id$");
 typedef struct
 tagRandomParams
 {
+  SWIGLAL_STRUCT(RandomParams);
   INT4 i;
   INT4 y;
   INT4 v[32];

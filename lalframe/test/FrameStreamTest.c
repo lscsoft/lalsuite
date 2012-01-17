@@ -17,30 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="FrameStreamTestCV">
- * Author: Jolien D. E. Creighton
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- * \subsection{Program \texttt{FrameStreamTest.c}}
+/**
+ * \author Jolien D. E. Creighton
+ * \file
+ *
+ * \heading{Program \ref FrameStreamTest.c}
  *
  * Tests the low-level frame stream routines.
  *
- * \subsubsection*{Usage}
+ * \heading{Usage}
  *
- * \begin{verbatim}
+ * \code
  * FrameStreamTest
- * \end{verbatim}
+ * \endcode
  *
- * \subsubsection*{Description}
+ * \heading{Description}
  *
- * This program reads the channels \verb+H1:LSC-AS_Q+ from all the fake frames
- * \verb+F-TEST-*.gwf+ in the directory set in the environment
- * \verb+LAL_FRAME_PATH+ * (or the current directory if this environment is not
+ * This program reads the channels <tt>H1:LSC-AS_Q</tt> from all the fake frames
+ * <tt>F-TEST-*.gwf</tt> in the directory set in the environment
+ * \c LAL_FRAME_PATH * (or the current directory if this environment is not
  * set) and prints them to files.
  *
- **** </lalLaTeX> */
+*/
 
 #include <stdio.h>
 #include <unistd.h>

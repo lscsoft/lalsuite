@@ -17,27 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/*  <lalVerbatim file="LALNoiseSpectralDensityCV">
-Author: Sathyaprakash, B. S.
-$Id$
-</lalVerbatim>  */
-/* <lalLaTeX>
-\subsection{Module \texttt{LALNoiseSpectralDensity.c}}
-This module generates an array of size specified
-in the vector \texttt{psd}, that is \texttt{psd.length}.
+#include <lal/LALNoiseModels.h>
+
+NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
+
+/**
+\author Sathyaprakash, B. S.
+\ingroup LALNoiseModels_h
+
+\brief This function generates an array of size specified in the vector \c psd, that is <tt>psd.length</tt>.
 The inputs are
-\begin{enumerate}
-\item The lenght of the psd array required: this must be
-given as a non-zero positive integer by setting the \texttt{length}
-of the \texttt{psd} vector to the desired value;
-\item Frequency resolution \texttt{df} in Hz.
-\item Pointer to a function that should be used in generating the
-power spectral density values in units of Hz$^{-1}.$ This function
+<ol>
+<li> The lenght of the psd array required: this must be
+given as a non-zero positive integer by setting the \c length
+of the \c psd vector to the desired value;</li>
+<li> Frequency resolution \c df in Hz.</li>
+<li> Pointer to a function that should be used in generating the
+power spectral density values in units of Hz\f$^{-1}.\f$ This function
 must necessarily be of the type:
-\texttt{ void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f).}
-\end{enumerate}
-Presently, there are four such functions in the \texttt{noisemodels}
-package. These are \texttt{LALGEOPsd, LALLIGOIPsd, LALTAMAPsd, LALVIRGOPsd.}
+<tt> void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f).</tt></li>
+</ol>
+Presently, there are four such functions in the \c noisemodels
+package. These are <tt>LALGEOPsd, LALLIGOIPsd, LALTAMAPsd, LALVIRGOPsd.</tt>
 These four packages return a scaled PSD while this module returns the
 correctly scaled version. It is assumed that new PSD modules return
 unscaled versions. (Note, however, that it might be better to use the
@@ -47,29 +48,7 @@ many moments of the noise PSD and one might encounter round-off errors
 if un-scaled version of PSD is used; I have not checked this to be
 the case but suspect that there might be some problems.)
 
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{LALNoiseSpectralDensityCP}
-\idx{LALNoiseSpectralDensity()}
-
-\subsubsection*{Description}
-\subsubsection*{Algorithm}
-\subsubsection*{Uses}
-Uses a user specified pointer to a function of type
-\begin{verbatim}
-void  (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
-\end{verbatim}
-that returns PSD values in units of Hz$^{-1}.$
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALNoiseSpectralDensityCV}}
-</lalLaTeX>  */
-#include <lal/LALNoiseModels.h>
-
-NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
-
-/*  <lalVerbatim file="LALNoiseSpectralDensityCP"> */
+*/
 void
 LALNoiseSpectralDensity
    (
@@ -78,7 +57,7 @@ LALNoiseSpectralDensity
    void         (*NoisePsd)(LALStatus *status, REAL8 *shf, REAL8 f),
    REAL8        df
    )
-{  /*  </lalVerbatim>  */
+{
 
     REAL8 f, shf, fs, s0;
     INT4 i, n;
@@ -161,4 +140,3 @@ LALNoiseSpectralDensity
    DETATCHSTATUSPTR(status);
    RETURN(status);
 }
-

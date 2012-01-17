@@ -303,7 +303,7 @@ class RunSqliteJob(pipeline.CondorDAGJob):
                 """
                 config_parser = ConfigParser object
                 """
-                pipeline.CondorDAGJob.__init__(self, power.get_universe(config_parser), power.get_executable(config_parser, "lalapps_run_sqlite"))
+                pipeline.CondorDAGJob.__init__(self, "vanilla", power.get_executable(config_parser, "lalapps_run_sqlite"))
                 self.add_ini_opts(config_parser, "lalapps_run_sqlite")
                 self.set_stdout_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).out"))
                 self.set_stderr_file(os.path.join(power.get_out_dir(config_parser), "lalapps_run_sqlite-$(cluster)-$(process).err"))
