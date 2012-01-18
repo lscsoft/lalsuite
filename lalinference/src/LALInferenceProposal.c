@@ -66,6 +66,7 @@ const char *rotateSpinsName = "RotateSpins";
 const char *polarizationPhaseJumpName = "PolarizationPhase";
 const char *distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
 const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
+const char *KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
 static const REAL8 modeHoppingFrac = 0.1;
@@ -393,7 +394,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   }
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) {
-    LALInferenceAddProposalToCycle(runState, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
