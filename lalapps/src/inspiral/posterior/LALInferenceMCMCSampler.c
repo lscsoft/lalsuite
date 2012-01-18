@@ -267,8 +267,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   FILE * chainoutput = NULL;
 
   FILE *stat = NULL;
-  FILE *propstatfile = NULL;
-  FILE *tempfile = NULL;
+  FILE *propstatfile = NULL; FILE *tempfile = NULL;
   char statfilename[256];
   char propstatfilename[256];
   char tempfilename[256];
@@ -282,11 +281,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       sprintf(tempfilename,"PTMCMC.tempswaps.%u",randomseed);
       tempfile = fopen(tempfilename, "a");
     }
+  }
 
-    if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")) {
-      sprintf(propstatfilename,"PTMCMC.propstats.%u",randomseed);
-      propstatfile = fopen(propstatfilename, "a");
-    }
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")) {
+    sprintf(propstatfilename,"PTMCMC.propstats.%u.%2.2d",randomseed,MPIrank);
+    propstatfile = fopen(propstatfilename, "a");
   }
 
   chainoutput = LALInferencePrintPTMCMCHeader(runState);
@@ -346,17 +345,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     runState->evolve(runState); //evolve the chain with the parameters TcurrentParams[t] at temperature tempLadder[t]
     acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
 
-    if (i==1 && MPIrank == 0){
+    if (i==1){
       ppt = LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose");
       if (ppt) {
-        // Make sure numbers are initialized (TODO:FIX)!!!
+        // Make sure numbers are initialized!!!
         LALInferenceProposalStatistics *propStat;
         LALInferenceVariableItem *this;
         this = runState->proposalStats->head;
         while(this){
           propStat = (LALInferenceProposalStatistics *)this->value;
-          propStat->accepted=0;
-          propStat->proposed=0;
+          propStat->accepted = 0;
+          propStat->proposed = 0;
           this = this->next;
         }
         fprintf(propstatfile, "cycle\t");
@@ -412,12 +411,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         }
       }
 
-      if (MPIrank == 0){
-        if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")){
-          fprintf(propstatfile, "%d\t", i);
-          LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
-          fflush(propstatfile);
-        }
+      if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")){
+        fprintf(propstatfile, "%d\t", i);
+        LALInferencePrintProposalStats(propstatfile,runState->proposalStats);
+        fflush(propstatfile);
       }
     }
 
