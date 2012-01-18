@@ -46,6 +46,12 @@ def get_timeslides_pipedown(database_connection):
 	returns a dict of dicts { trigtime: {'H1':0,'L1':5,'V1':10}) , ... }
 	of times and timeslide offsets
 	"""
+	db_segments=[]
+	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
+	db_out = database_connection.cursor().execute(sql_seg_query)
+	for d in db_out:
+		db_segments.append(d)
+	print db_segments
 	db_out_saved=[]
 	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset\
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
