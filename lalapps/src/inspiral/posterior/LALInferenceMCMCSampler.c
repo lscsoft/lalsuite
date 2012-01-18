@@ -267,7 +267,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   FILE * chainoutput = NULL;
 
   FILE *stat = NULL;
-  FILE *propstatfile = NULL; FILE *tempfile = NULL;
+  FILE *propstatfile = NULL;
+  FILE *tempfile = NULL;
   char statfilename[256];
   char propstatfilename[256];
   char tempfilename[256];
