@@ -158,6 +158,7 @@ typedef struct {
   REAL8 tStack;                    /**< duration of stacks */
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
+  BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
 } UsefulStageVariables;
 
 
@@ -337,6 +338,7 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_SignalOnly = FALSE;     /* if Signal-only case (for SFT normalization) */
   BOOLEAN uvar_recalcToplistStats = FALSE; /* Do additional analysis for all toplist candidates, output F, FXvector for postprocessing */
   BOOLEAN uvar_computeLV = FALSE;          /* In Fstat loop, get single-IFO F-stats [and, in future, compute Line Veto stat] */
+  BOOLEAN uvar_LVuseAllTerms = TRUE;       /* Use only leading term or all terms in Line Veto computation */
   CHAR *uvar_outputSingleSegStats = NULL; /* Additionally output single-segment Fstats for each final toplist candidate */
 
   REAL8 uvar_dAlpha = DALPHA;   /* resolution for flat or isotropic grids -- coarse grid*/
@@ -484,6 +486,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount, 2=LV-stat",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "Which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
@@ -559,6 +562,9 @@ int MAIN( int argc, char *argv[]) {
     fprintf(stderr, "Toplist sorting by LV-stat only possible if --computeLV given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
+
+  /* take LV user vars and save them in usefulParams */
+  usefulParams.LVuseAllTerms = uvar_LVuseAllTerms;
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
@@ -2400,8 +2406,7 @@ void UpdateSemiCohToplist(LALStatus *status,
       for (UINT4 X = 0; X < in->numDetectors; X++)
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
-      BOOLEAN useAllTerms = FALSE; /* use only the leading term of the LV denominator sum */
-      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, rhomax, priorX, useAllTerms );
+      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, rhomax, priorX, usefulparams->LVuseAllTerms );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
