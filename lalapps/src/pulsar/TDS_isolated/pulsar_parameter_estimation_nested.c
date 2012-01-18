@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2011 Matt Pitkin, John Veitch, Colin Gill
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 /* functions to create the likelihood for a pulsar search to be used with the
 LALInference tools */
 
@@ -1767,7 +1786,7 @@ set.\n", propfile, tempPar);
   }
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
-     of their range the remove them and add the phi0' and psi' coordinates */
+     of their range then remove them and add the phi0' and psi' coordinates */
   if( phidef && psidef ){
     LALInferenceIFOData *datatemp = data;
     
@@ -1872,8 +1891,11 @@ set.\n", propfile, tempPar);
       memcpy( checkPrior->value, &tempVar, 
               LALInferenceTypeSize[checkPrior->type] );
       
-      mu -= scaleMin;
-      sigma /= scale;
+      /* mu -= scaleMin;
+      sigma /= scale; */
+      /* scaled Gaussian will have zero mean and unit sigma */
+      mu = 0.;
+      sigma = 1.0;
       
       /* remove the Gaussian prior values and reset as scaled values */
       LALInferenceRemoveGaussianPrior( runState->priorArgs, checkPrior->name );
