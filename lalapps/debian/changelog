@@ -1,3 +1,10 @@
+lalapps (6.6.3-1) unstable; urgency=low
+
+  * LALApps 6.6.3
+  * fix buffer overflow in lalapps_inspinj
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 19 Jan 2012 10:28:30 -0600
+
 lalapps (6.6.2-1) unstable; urgency=low
 
   * LALApps 6.6.2
