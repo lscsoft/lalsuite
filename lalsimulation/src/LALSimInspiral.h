@@ -1011,6 +1011,23 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
 
+/**
+ * Computes the stationary phase approximation to the Fourier transform of
+ * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
+ * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$ to the same order as
+ * the phase.
+ */
+int XLALSimInspiralTaylorF2(
+		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+		const REAL8 phic,                /**< coalescence GW phase (rad) */
+		const REAL8 deltaF,              /**< frequency resolution */
+		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
+		const REAL8 fStart,              /**< start GW frequency (Hz) */
+		const REAL8 r,                   /**< distance of source (m) */
+		const UINT4 O                    /**< twice PN phase order */
+		);
+
 
 /**
  * Functions for generic spinning waveforms. 

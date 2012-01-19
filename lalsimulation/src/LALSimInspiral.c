@@ -1344,6 +1344,9 @@ int XLALSimInspiralChooseFDWaveform(
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
+        case TaylorF2:
+            ret = XLALSimInspiralTaylorF2(htilde, phi0, deltaF, m1, m2, f_min, r, phaseO);
+            break;
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
@@ -1419,6 +1422,7 @@ int XLALSimInspiralImplementedFDApproximants(
     {
         case IMRPhenomA:
         case IMRPhenomB:
+        case TaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
             return 1;
