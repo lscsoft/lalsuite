@@ -69,16 +69,22 @@ def get_timeslides_pipedown(database_connection):
 		events=[tup for tup in db_out_saved if tup[0]==ts]
 		d={}
 		for e in events:
-			segfilt=filter(lambda seg:e[3] in seg, seglist)
+			segfilt=filter(lambda seg:e[1] in seg, seglist)
 			if len(segfilt)!=1:
 				print ' ERROR: time %f must appear in only one segment'%(e[3])
 			else:
 				seg=segfilt[0]
-			
-			d[e[2]]=e[3]
-		print events
+			deltat=e[3]
+			while (e[1]+deltat) not in seg:
+				print ' adjusting timeslide for '+str(e[1])+' + '+str(deltat)
+				if deltat<0:
+					deltat=deltat+(seg[1]-seg[0])
+				else:
+					deltat=deltat-(seg[1]-seg[0])
+			d[e[2]]=deltat
 		t=events[0][1]+events[0][3]
 		output[t]=d
+	print output
 	return output
 
 # Read command line options
