@@ -2386,12 +2386,9 @@ int XLALAddSnglInspiralCData( CDataNode **cdataStrCat, CHAR *id )
 {
   int notPresent = 1;
   int addedCData = 0;
-  CDataNode *prevCData = NULL;
-  CDataNode *nextCData = NULL;
   CDataNode *thisCData = NULL;
 
   thisCData = *cdataStrCat;
-  nextCData = (*cdataStrCat)->next;
   *cdataStrCat = NULL;
 
   while ( thisCData ) {
@@ -2406,10 +2403,7 @@ int XLALAddSnglInspiralCData( CDataNode **cdataStrCat, CHAR *id )
       *cdataStrCat = thisCData;
     }
 
-    prevCData = thisCData;
     thisCData = thisCData->next;
-    if ( thisCData )
-      nextCData = thisCData->next;
   }
 
   if ( notPresent ) {
