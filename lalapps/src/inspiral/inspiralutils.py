@@ -1544,7 +1544,6 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 	namer = "frame-cache_"+str(gpsstart)+"-"+ \
 		str(gpsend)
 	gwfname = namer+".pfn" # physical file location file
-	# print namer
 	# Deletes the gwfname file if it exists prior to the execution of this
 	# function.
 	try:
@@ -1560,9 +1559,9 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 			ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
 			" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
 			" --url-type=file >> "+ gwfname
-			print ldfcommand
+			# print ldfcommand
 			retcode = subprocess.call(ldfcommand, shell=True)
-			print retcode
+			# print retcode
 			if retcode < 0:
 				print >>sys.stderr, "ligo_data_find was terminated!", -retcode
 			else:
@@ -1595,7 +1594,6 @@ def create_pegasus_cache_file(framename):
 	rep.close()
 	cac.close()
 	return cachename
-
 
 def get_data_options(cp,ifo_name):
   if ifo_name == 'G1':

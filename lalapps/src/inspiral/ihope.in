@@ -1001,8 +1001,6 @@ ifo_frame_type_dict = {}
 for ifo in ifos:
   ifo_frame_type_dict[ifo] = inspiralutils.get_data_options(cp,ifo)[1]
 
-print ifo_frame_type_dict
-
 pfnfile = inspiralutils.create_frame_pfn_file(ifo_frame_type_dict,opts.gps_start_time,opts.gps_end_time)
 peg_frame_cache = inspiralutils.create_pegasus_cache_file(pfnfile)
 
