@@ -61,8 +61,6 @@ LALFindChirpClusterEvents (
 {
 
   int                   xlalRetCode = 0;
-  INT8                  timeS = 0;
-  INT8                  timeNS = 0;
   INT8                  bvTimeNS = 0;
   UINT4                 numPoints = 0;
   UINT4                 ignoreIndex = 0;
@@ -134,8 +132,6 @@ LALFindChirpClusterEvents (
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
   kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ?
     input->fcTmplt->tmplt.fFinal / deltaF : numPoints/2;
-  timeS = (INT8) (input->segment->data->epoch.gpsSeconds);
-  timeNS = (INT8) (input->segment->data->epoch.gpsNanoSeconds);
 
   /* normalisation */
   norm = input->fcTmplt->norm;
