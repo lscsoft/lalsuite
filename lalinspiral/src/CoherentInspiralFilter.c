@@ -3867,14 +3867,10 @@ REAL4 XLALComputeCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId< (UINT4) numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFac = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints[detId];
-
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-	pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
@@ -3942,14 +3938,10 @@ REAL4 XLALComputeCrossCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId< (UINT4) numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFacSq = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints[detId];
-
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-      pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
@@ -4285,13 +4277,10 @@ REAL4 XLALComputeCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId<numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFac = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints4D[detId];
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-      pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
@@ -4361,14 +4350,10 @@ REAL4 XLALComputeCrossCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId< (UINT4) numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFacSq = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints4D[detId];
-
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-      pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
