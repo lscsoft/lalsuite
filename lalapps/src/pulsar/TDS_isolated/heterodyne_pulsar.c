@@ -422,7 +422,7 @@ heterodyne.\n");  }
           rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
           rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
-          if( feof(fpin) ) break;
+          if( feof(fpin) || rc == 0 ) break;
           
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
@@ -1811,7 +1811,9 @@ Assume calibration coefficients are 1 and use the response function.\n",
       }
       if(strstr(jnkstr, "%")){
         rc = fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
-                                         line */
+                                              line */
+        if( rc == EOF ) continue;
+          
         continue;
       }
       else{
@@ -1943,6 +1945,8 @@ calibfilename);
     rc = fscanf(fp, "%s", jnkstr); /* scan in value and check if == to % */
     if(strstr(jnkstr, "%")){
       rc = fscanf(fp, "%*[^\n]");   /* if == % then skip to the end of the line */
+      
+      if ( rc == EOF ) continue;
       continue;
     }
     else{
