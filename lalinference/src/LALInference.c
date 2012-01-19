@@ -565,7 +565,7 @@ void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
     accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
     proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
     acceptanceRate = accepted/proposed;
-    fprintf(fp, "%9.5f\t", accepted/proposed);
+    fprintf(fp, "%9.5f\t", acceptanceRate);
     ptr=ptr->next;
   }
   fprintf(fp, "\n");
