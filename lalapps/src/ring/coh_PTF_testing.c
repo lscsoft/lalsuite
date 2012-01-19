@@ -1305,7 +1305,7 @@ void coh_PTF_statistic(
   REAL4 dAlpha, dBeta, dCee;
   REAL4 pValsTemp[vecLengthTwo];
   REAL4 betaGammaTemp[2];
-  REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO], atrig[LAL_NUM_IFO], btrig[LAL_NUM_IFO];
+  REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO];
 
   gsl_matrix *BNull  = gsl_matrix_alloc(vecLength, vecLength);
   gsl_matrix *B2Null = gsl_matrix_alloc(vecLength, vecLength);
