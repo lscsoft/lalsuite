@@ -3121,7 +3121,7 @@ int main( int argc, char *argv[] )
    if ( writeSimRing )
    {
        memcpy( simRingTable->waveform, "Ringdown",
-          sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
+          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
        memcpy( simRingTable->coordinates, "EQUATORIAL",
           sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
        simRingTable->geocent_start_time = simTable->geocent_end_time;
