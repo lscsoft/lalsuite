@@ -1480,9 +1480,18 @@ void initVariables(LALInferenceRunState *state)
     fprintf(stdout, "Adapting single-param step sizes.\n");
     if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
       /* We need a sigma vector for adaptable jumps. */
+      char *name = NULL;
       REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
-      for (i = 0; i < N; i++) {
-        sigmas->data[i] = 1e-4;
+      for(i=0;i<N;++i){
+        name = LALInferenceGetVariableName(state->currentParams, (i+1));
+
+        if (!strcmp(name,"massratio") || !strcmp(name,"asym_massratio") || !strcmp(name,"time") || !strcmp(name,"a_spin2") || !strcmp(name,"a_spin1")){
+          sigmas->data[i] = 0.001;
+        } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") || !strcmp(name,"inclination")){
+          sigmas->data[i] = 0.1;
+        } else {
+          sigmas->data[i] = 0.01;
+        }
       }
 
 

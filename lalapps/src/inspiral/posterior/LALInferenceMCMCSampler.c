@@ -527,7 +527,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         logLAtAdaptStart = runState->currentLikelihood;
       }
 
-      s_gamma=10.0*exp(-(1.0/adaptTau)*log((double)i-(double)adaptStart))-1;
+      s_gamma=exp(-(1.0/adaptTau)*log((double)i-(double)adaptStart))-0.1;
 
       LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
     }
@@ -707,6 +707,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
   REAL8 logAcceptanceProbability;
   REAL8 temperature;
+  REAL8 targetAcceptance = 0.234;
   INT4 acceptanceCount;
   INT4 accepted = 0;
   UINT4 tMaxSearch = 0;
@@ -814,9 +815,9 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
       dprior = priorMax - priorMin;
 
       if(accepted == 1){
-        sigma=sigma+s_gamma*(dprior/100.0)*(1.0-0.234);
+        sigma=sigma+s_gamma*(dprior/100.0)*(1.0-targetAcceptance);
       }else{
-        sigma=sigma-s_gamma*(dprior/100.0)*(0.234);
+        sigma=sigma-s_gamma*(dprior/100.0)*(targetAcceptance);
       }
 
       sigma = (sigma > dprior ? dprior : sigma);
