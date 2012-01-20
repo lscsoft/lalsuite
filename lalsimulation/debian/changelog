@@ -1,3 +1,12 @@
+lalsimulation (0.1.1-1) unstable; urgency=low
+
+  * LALSimulation 0.1.1
+  * add support for "unicorn" injections
+  * update to automake-1.11.2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 09:47:29 -0600
+
 lalsimulation (0.1.0-1) unstable; urgency=low
 
   * LALSimulation 0.1.0

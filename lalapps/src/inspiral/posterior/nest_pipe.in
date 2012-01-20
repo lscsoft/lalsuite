@@ -46,6 +46,14 @@ def get_timeslides_pipedown(database_connection):
 	returns a dict of dicts { trigtime: {'H1':0,'L1':5,'V1':10}) , ... }
 	of times and timeslide offsets
 	"""
+	db_segments=[]
+	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
+	db_out = database_connection.cursor().execute(sql_seg_query)
+	for d in db_out:
+		if d not in db_segments:
+			db_segments.append(d)
+	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
+	print seglist
 	db_out_saved=[]
 	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset\
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
@@ -61,10 +69,22 @@ def get_timeslides_pipedown(database_connection):
 		events=[tup for tup in db_out_saved if tup[0]==ts]
 		d={}
 		for e in events:
-			d[e[2]]=e[3]
-		print events
+			segfilt=filter(lambda seg:e[1] in seg, seglist)
+			if len(segfilt)!=1:
+				print ' ERROR: time %f must appear in only one segment'%(e[3])
+			else:
+				seg=segfilt[0]
+			deltat=e[3]
+			while (e[1]+deltat) not in seg:
+				print ' adjusting timeslide for '+str(e[1])+' + '+str(deltat)
+				if deltat<0:
+					deltat=deltat+(seg[1]-seg[0])
+				else:
+					deltat=deltat-(seg[1]-seg[0])
+			d[e[2]]=deltat
 		t=events[0][1]+events[0][3]
 		output[t]=d
+	print output
 	return output
 
 # Read command line options

@@ -1,4 +1,4 @@
-AC_INIT([lalinference],[0.1.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalinference],[0.1.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([src/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])

@@ -1,4 +1,4 @@
-AC_INIT([lalinspiral],[1.2.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalinspiral],[1.2.3.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -35,9 +35,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[2])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBCURRENT],[3])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build

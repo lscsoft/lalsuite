@@ -1,3 +1,11 @@
+lalpulsar (1.2.1-1) unstable; urgency=low
+
+  * LALPulsar 1.2.1
+  * update to automake-1.11.2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 10:04:09 -0600
+
 lalpulsar (1.2.0-1) unstable; urgency=low
 
   * LALPulsar 1.2.0

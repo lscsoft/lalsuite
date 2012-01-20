@@ -182,6 +182,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+  runState->proposalStats=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Set up the appropriate functions for the MCMC algorithm */
   runState->algorithm=&PTMCMCAlgorithm;
@@ -401,6 +402,7 @@ void initVariables(LALInferenceRunState *state)
                (--MTotMax max)                 Maximum total mass (35.0)\n\
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
                (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
+               (--kDTree)                      Use a kDTree proposal\n\
                (--appendOutput fname)          Basename of the file to append outputs to\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation\n\
                (--lambda1)                     Trigger lambda1\n\
@@ -1336,6 +1338,11 @@ void initVariables(LALInferenceRunState *state)
  }
  
   
+
+  /* Initialize variable that will store the name of the last proposal function used */
+  const char *initPropName = "INITNAME";
+  LALInferenceAddVariable(state->proposalArgs, LALInferenceCurrentProposalName, &initPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_LINEAR);
+
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
      (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
   while(state->prior(state, currentParams)<=-DBL_MAX){
