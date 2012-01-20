@@ -128,11 +128,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 adaptationOn = 0;
   INT4 acceptanceRatioOn = 0;
   INT4 adaptTau = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));
-  INT4 adaptationLength = pow(10,adaptTau);
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   //max temperature in the temperature ladder
+  UINT4 adaptationLength = pow(10,adaptTau);
   UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
 
   ProcessParamsTable *ppt;
@@ -178,7 +178,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
 
-  REAL8 s_gamma = 1.0;
 
   tempLadder = malloc(nChain * sizeof(REAL8));                  //array of temperatures for parallel tempering.
   acceptanceCountLadder = (int*) malloc(sizeof(int)*nChain);		//array of acceptance counts to compute the acceptance ratios.
@@ -472,16 +471,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   chainoutput = LALInferencePrintPTMCMCHeader(runState);
 
 
-  if (adaptationOn == 1) {
-    sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
-  }
-  if (acceptanceRatioOn == 1){
-    PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-    PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-  }
+  UINT4 adaptStart = 0;
+  REAL8 s_gamma = 1.0;
+  REAL8 logLAtAdaptStart = runState->currentLikelihood;
 
   if (adaptationOn == 1) {
     LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
+  }
+
+  if (acceptanceRatioOn == 1){
+    PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+    PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
   }
 
   if (MPIrank == 0) {
@@ -513,13 +514,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
-    if (adaptationOn == 1 && i > adaptationLength) {
-      adaptationOn = 0;  //turn adaptation off after 10^6 iterations
+    if (adaptationOn == 1 && (i-adaptStart) > adaptationLength) {
+      fprintf(stdout,"Ending adaptation for temperature %u at iteration %u.\n",MPIrank,i);
+      adaptationOn = 0;  //turn off adaptation
       LALInferenceRemoveVariable(runState->proposalArgs,"s_gamma");
     }
 
     if (adaptationOn == 1) {
-      s_gamma=10.0*exp(-(1.0/adaptTau)*log((double)i))-1;
+      /* if logL has increased by more than nParam/2 since adaptation began, restart it */
+      if (runState->currentLikelihood > logLAtAdaptStart+nPar/2) {
+        adaptStart = i;
+        logLAtAdaptStart = runState->currentLikelihood;
+      }
+
+      s_gamma=10.0*exp(-(1.0/adaptTau)*log((double)i-(double)adaptStart))-1;
+
       LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &(s_gamma));
     }
 
