@@ -279,6 +279,17 @@ int main(int argc,char *argv[])
     }
   }
 
+  /* prepare LV normalization */
+  REAL4 rhoMaxSig;
+  if ( uvar.rhoMaxSig < 0.0 )
+    rhoMaxSig = uvar.rhoMaxLine*exp(0.5)*pow(pow(uvar.rhoMaxLine,4)/70+exp(2.0),-0.25); /* normalization so that LV(2,2,2,rho_max_sig,rho_max_line,0.5,0.5)=0.0 */
+  else
+    rhoMaxSig = uvar.rhoMaxSig;
+  if ( rhoMaxSig < 0 ) {
+    XLALPrintError ("\nError in function %s, line %d : Obtained negative rhoMaxSig=%f.\n\n", __func__, __LINE__, rhoMaxSig);
+    XLAL_ERROR ( XLAL_EFAILED );
+  }
+
   /* ----- main MC loop over numDraws trials ---------- */
   INT4 i;
   for ( i=0; i < uvar.numDraws; i ++ )
@@ -402,11 +413,16 @@ int main(int argc,char *argv[])
 
       if ( uvar.computeLV ) {
         BOOLEAN useAllTerms = TRUE;
-        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, uvar.rhoMaxLine, uvar.rhoMaxSig, linepriorX, useAllTerms );
+        lvstats.LV = XLALComputeLineVeto ( (REAL4)lvstats.TwoF, (REAL4Vector*)lvstats.TwoFX, uvar.rhoMaxLine, linepriorX, useAllTerms );
         if ( xlalErrno != 0 ) {
           XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVeto().\n\n", __func__, __LINE__);
           XLAL_ERROR ( XLAL_EFUNC );
         }
+        /* do normalization */
+        if ( uvar.rhoMaxLine > 0 )
+          lvstats.LV += 4.0*log(uvar.rhoMaxLine);
+        if ( rhoMaxSig > 0 )
+          lvstats.LV -= 4.0*log(rhoMaxSig);
       }
       else {
        lvstats.LV = 0.0;
@@ -507,8 +523,8 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->TAtom = 1800;
 
   uvar->computeLV = 0;
-  uvar->rhoMaxLine = 4.0;
-  uvar->rhoMaxSig = 4.0;
+  uvar->rhoMaxLine = 0.0;
+  uvar->rhoMaxSig = -1.0;
   uvar->useFReg = 0;
 
   uvar->fixedh0Nat = -1;
@@ -552,7 +568,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   /* misc params */
   XLALregBOOLUserStruct ( computeLV,	 0, UVAR_OPTIONAL, "Also compute LineVeto-statistic" );
   XLALregREALUserStruct ( rhoMaxLine,    0, UVAR_OPTIONAL, "prior rho_max_line for LineVeto-statistic");
-  XLALregREALUserStruct ( rhoMaxSig,     0, UVAR_OPTIONAL, "prior rho_max_signal for LineVeto-statistic");
+  XLALregREALUserStruct ( rhoMaxSig,     0, UVAR_OPTIONAL, "prior rho_max_signal for LineVeto-statistic (default -1: compute from rho_max_line for normalization)");
 
   XLALregINTUserStruct  ( numDraws,		'N', UVAR_OPTIONAL,"Number of random 'draws' to simulate");
   XLALregINTUserStruct  ( randSeed,		 0, UVAR_OPTIONAL, "GSL random-number generator seed value to use");
