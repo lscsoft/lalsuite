@@ -346,30 +346,32 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   /* The default, single-parameter updates. */
-  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
+      LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
 
-
-  LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
-  LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
+      LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
+      LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
   UINT4 nDet = numDetectorsUniquePositions(runState);
-  if (nDet == 3) {
+  if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
     LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
   }
-
-  LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
+    LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  if(LALInferenceCheckVariable(proposedParams,"inclination")) {
+  if(LALInferenceCheckVariable(proposedParams,"inclination") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-distiota")) {
     LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
   }
 
-  if(LALInferenceCheckVariable(proposedParams,"phase")) {
+  if(LALInferenceCheckVariable(proposedParams,"phase") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-phasejump")) {
     LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
   }
 
-  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
     LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
 
@@ -383,7 +385,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   }
 
   if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")
-      && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
+      && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-differentialevolution")) {
     LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionAmpName, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);
@@ -397,7 +399,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
 
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal")){
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--nogibbsproposal") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-gibbs")){
     LALInferenceAddProposalToCycle(runState, distanceQuasiGibbsProposalName, &LALInferenceDistanceQuasiGibbsProposal, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, orbitalPhaseQuasiGibbsProposalName, &LALInferenceOrbitalPhaseQuasiGibbsProposal, SMALLWEIGHT);
   }
