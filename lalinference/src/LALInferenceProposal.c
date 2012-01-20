@@ -49,7 +49,7 @@ const char *LALInferenceSigmaJumpName = "sigmaJump";
 const char *LALInferenceCurrentProposalName = "Current Proposal";
 
 /* Proposal Names */
-const char *singleAdaptProposalName = "SingleAdapt";
+const char *singleAdaptProposalName = "Single";
 const char *singleProposalName = "Single";
 const char *orbitalPhaseJumpName = "OrbitalPhase";
 const char *inclinationDistanceName = "InclinationDistance";
