@@ -775,7 +775,7 @@ INT4 main(INT4 argc, CHAR *argv[])
         if (verbose_flag)
          fprintf(stdout, "sum PSDs...\n");
        
-        if((lSeg==midSegment))
+        if(lSeg==midSegment)
 	 { 
           if (verbose_flag)
 	    fprintf(stdout, "skip middle segment...\n");}

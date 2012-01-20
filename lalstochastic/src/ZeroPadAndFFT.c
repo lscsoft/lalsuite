@@ -19,14 +19,11 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
+\addtogroup ZeroPadAndFFT_c
 
 \brief Routines for zero-padding and Fourier transforming a time series.
 
-\heading{Description}
-
-As described in \ref StochasticCrossCorrelation.c, data
+As described in \ref StochasticCrossCorrelation_c, data
 streams to be cross-correlated need to be zero-padded to the same
 length as the optimal filter via
 
@@ -98,7 +95,7 @@ approximation of a continuous Fourier transorm, which makes it \f$\delta
 t\f$ times the discrete Fourier transform.</li>
 
 <li> The Fourier transform of a series of \f$M\f$ points is calculated
-  with the FFTW [\ref Frigo1998] (via the interfaces in
+  with the FFTW [\ref fj_1998] (via the interfaces in
   the \c fft package), which is efficient for products of small
   primes, so \f$M\f$ should be chosen to have this property.  The minimum
   value, \f$2N-1\f$, is odd and can thus be at best a power of 3.
@@ -124,6 +121,7 @@ t\f$ times the discrete Fourier transform.</li>
 </li>
 </ul>
 
+@{
 */
 
 #include <lal/LALStdlib.h>
@@ -146,7 +144,6 @@ LALSZeroPadAndFFT(
 
 {
   UINT4 length, fullLength;
-  REAL8 deltaT;
   REAL4TimeSeries  hBar;
   REAL4 *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
 
@@ -248,10 +245,13 @@ LALSZeroPadAndFFT(
   }
 
   /* check that frequency spacing is positive */
+#ifndef LAL_NDEBUG
+  REAL8 deltaT;
   deltaT = input->deltaT;
   ASSERT(deltaT > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
+#endif
 
   /* EVERYTHING OKAY HERE! -------------------------------------------- */
 
@@ -326,7 +326,6 @@ LALCZeroPadAndFFT(
 
 {
   UINT4 length, fullLength;
-  REAL8 deltaT;
   COMPLEX8TimeSeries  hBar;
   COMPLEX8 *cPtr, *cStopPtr, *hBarPtr;
   REAL4 *windowPtr;
@@ -421,8 +420,7 @@ LALCZeroPadAndFFT(
       STOCHASTICCROSSCORRELATIONH_MSGENULLPTR);
 
   /* check that frequency spacing is positive */
-  deltaT = input->deltaT;
-  ASSERT(deltaT > 0, status, \
+  ASSERT(input->deltaT > 0, status, \
       STOCHASTICCROSSCORRELATIONH_ENONPOSDELTAT, \
       STOCHASTICCROSSCORRELATIONH_MSGENONPOSDELTAT);
 
@@ -490,3 +488,5 @@ LALCZeroPadAndFFT(
   RETURN(status);
 
 } /* CZeroPadAndFFT() */
+
+/** @} */

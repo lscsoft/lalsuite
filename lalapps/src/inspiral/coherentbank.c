@@ -42,6 +42,8 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/Segments.h>
+#include <lal/SegmentsIO.h>
 #include <lalapps.h>
 #include <processtable.h>
 #include <LALAppsVCSInfo.h>
@@ -73,6 +75,7 @@ snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, format, ppvalue );
 
 extern int vrbflg;
 int allIFO = -1;
+int doVeto = 0;
 
 /*
  *
@@ -107,7 +110,21 @@ static void print_usage(char *program)
       "                               inspiral-coherent triggers\n"\
       "                               [ cohbank (default) | cohinspbank ]\n"\
       " [--stat-threshold]    thresh   discard all triggers with stat less than thresh\n"\
-      " [--cluster-time]      time     cluster triggers with time ms window\n"\
+      " [--cluster-time]      time     cluster triggers with time ms window\n" \
+      "  [--g1-slide]      g1_slide    Slide G1 data by multiples of g1_slide\n" \
+      "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"\
+      "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"\
+      "  [--l1-slide]      l1_slide    Slide L1 data by multiples of l1_slide\n"\
+      "  [--t1-slide]      t1_slide    Slide T1 data by multiples of t1_slide\n"\
+      "  [--v1-slide]      v1_slide    Slide V1 data by multiples of v1_slide\n"\
+      "  [--do-veto]                   Perform a veto on single IFO triggers\n"\
+      "                                at the times specified in the veto files below\n"\
+      "  [--g1-veto-file]              Veto file for G1\n"\
+      "  [--h1-veto-file]              Veto file for H1\n"\
+      "  [--h2-veto-file]              Veto file for H2\n"\
+      "  [--l1-veto-file]              Veto file for L1\n"\
+      "  [--t1-veto-file]              Veto file for T1\n"\
+      "  [--v1-veto-file]              Veto file for V1\n"\
       "\n");
 }
 
@@ -119,28 +136,30 @@ int main( int argc, char *argv[] )
   INT4 numTriggers = 0;
   INT4 numCoincs = 0;
   INT4 numTmplts = 0;
-  INT4 UNUSED numCoincSegCutTrigs = 0;
+  INT4 numCoincSegCutTrigs = 0;
   CoincInspiralStatistic coincstat = no_stat;
   SnglInspiralClusterChoice clusterchoice = none;
   CohbankRunType runType = cohbank;
   REAL4 statThreshold = 0;
   INT8 cluster_dt = 0;
   int  numSlides = 0;
-  int  numClusteredEvents = 0;
+  REAL8  slideStep[LAL_NUM_IFO] = {0.0,0.0,0.0,0.0,0.0,0.0};
+  LIGOTimeGPS slideTimes[LAL_NUM_IFO];
   CoincInspiralStatParams    bittenLParams;
   INT4        startTime = -1;
   LIGOTimeGPS startTimeGPS = {0,0};
   INT4        endTime = -1;
   LIGOTimeGPS endTimeGPS = {0,0};
-  INT8        UNUSED startTimeNS = 0;
-  INT8        UNUSED endTimeNS = 0;
+  INT8        startTimeNS = 0;
+  INT8        endTimeNS = 0;
   CHAR  ifos[LIGOMETA_IFOS_MAX];
-
+  CHAR *vetoFileName[LAL_NUM_IFO] = {NULL, NULL, NULL, NULL, NULL, NULL};
   CHAR  comment[LIGOMETA_COMMENT_MAX];
   CHAR *userTag = NULL;
 
   CHAR  fileName[FILENAME_MAX];
-
+  CHAR  ifo[LIGOMETA_IFO_MAX];
+  LALSegList vetoSegs[LAL_NUM_IFO];
   SnglInspiralTable    *inspiralEventList=NULL;
   SnglInspiralTable    *currentTrigger = NULL;
   SnglInspiralTable    *newEventList = NULL;
@@ -161,7 +180,7 @@ int main( int argc, char *argv[] )
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       xmlStream;
   INT4                  outCompress = 0;
-
+  InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
 
   /* getopt arguments */
   struct option long_options[] =
@@ -184,6 +203,19 @@ int main( int argc, char *argv[] )
     {"stat-threshold",         required_argument,     0,                 'E'},
     {"cluster-time",           required_argument,     0,                 'T'},
     {"num-slides",             required_argument,     0,                 'N'},
+    {"g1-slide",               required_argument,     0,                 'g'},
+    {"h1-slide",               required_argument,     0,                 'W'},
+    {"h2-slide",               required_argument,     0,                 'X'},
+    {"l1-slide",               required_argument,     0,                 'Y'},
+    {"t1-slide",               required_argument,     0,                 'U'},
+    {"v1-slide",               required_argument,     0,                 'v'},
+    {"do-veto",                no_argument,     &doVeto,                  1 },
+    {"h1-veto-file",           required_argument,     0,                 '('},
+    {"h2-veto-file",           required_argument,     0,                 ')'},
+    {"g1-veto-file",           required_argument,     0,                 '{'},
+    {"l1-veto-file",           required_argument,     0,                 '}'},
+    {"t1-veto-file",           required_argument,     0,                 '['},
+    {"v1-veto-file",           required_argument,     0,                 ']'},
     {"eff-snr-denom-fac",      required_argument,     0,                 'A'},
     {0, 0, 0, 0}
   };
@@ -210,13 +242,14 @@ int main( int argc, char *argv[] )
   /* initialize variables */
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
   memset( ifos, 0, LIGOMETA_IFOS_MAX * sizeof(CHAR) );
+  memset( &slideTimes, 0, LAL_NUM_IFO * sizeof(LIGOTimeGPS) );
 
   /* create the search summary and zero out the summvars table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
 
   memset( &bittenLParams, 0, sizeof(CoincInspiralStatParams   ) );
-  /* default value from traditional effective snr formula */
+  /* FIXME: hard-wired default value from traditional effective snr formula */
   bittenLParams.eff_snr_denom_fac = 250.0;
 
   /* parse the arguments */
@@ -228,7 +261,7 @@ int main( int argc, char *argv[] )
     long int gpstime;
 
     c = getopt_long_only( argc, argv,
-        "hi:r:s:t:x:z:C:E:T:N:A:VZ:", long_options,
+        "hi:r:s:t:x:z:C:E:T:N:A:W:X:Y:U:v:(:):{:}:[:]:VZ:", long_options,
         &option_index );
 
     /* detect the end of the options */
@@ -271,15 +304,6 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, gpstime );
           exit( 1 );
         }
-        if ( gpstime > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after "
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n",
-              long_options[option_index].name, gpstime );
-          exit( 1 );
-        }
         startTime = (INT4) gpstime;
         startTimeGPS.gpsSeconds = startTime;
         ADD_PROCESS_PARAM( "int", "%" LAL_INT4_FORMAT, startTime );
@@ -293,15 +317,6 @@ int main( int argc, char *argv[] )
           fprintf( stderr, "invalid argument to --%s:\n"
               "GPS start time is prior to "
               "Jan 01, 1994  00:00:00 UTC:\n"
-              "(%ld specified)\n",
-              long_options[option_index].name, gpstime );
-          exit( 1 );
-        }
-        if ( gpstime > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after "
-              "Sep 14, 2011  01:46:26 UTC:\n"
               "(%ld specified)\n",
               long_options[option_index].name, gpstime );
           exit( 1 );
@@ -363,7 +378,11 @@ int main( int argc, char *argv[] )
       case 'S':
         /* choose the single-ifo cluster statistic */
         {
-          if ( ! strcmp( "snr", optarg ) )
+          if ( ! strcmp( "none", optarg ) )
+          {
+            clusterchoice = none;
+          }
+          else if ( ! strcmp( "snr", optarg ) )
           {
             clusterchoice = snr;
           }
@@ -380,7 +399,7 @@ int main( int argc, char *argv[] )
             fprintf( stderr, "invalid argument to  --%s:\n"
                 "unknown coinc statistic:\n "
                 "%s (must be one of:\n"
-		"snr, snr_and_chisq, or snrsq_over_chisq\n",
+		"none, snr, snr_and_chisq, or snrsq_over_chisq\n",
                 long_options[option_index].name, optarg);
             exit( 1 );
           }
@@ -462,6 +481,43 @@ int main( int argc, char *argv[] )
         ADD_PROCESS_PARAM( "float", "%s", optarg);
         break;
 
+      /* Read in time-slide steps for all detectors */
+      /* Read in time-slide step for G1 */
+      case 'g':
+        slideStep[LAL_IFO_G1] = (REAL8) atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_G1] );
+        break;
+
+      /* Read in time-slide step for H1 */
+      case 'W':
+        slideStep[LAL_IFO_H1] = (REAL8) atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_H1]);
+        break;
+
+      /* Read in time-slide step for H2 */
+      case 'X':
+        slideStep[LAL_IFO_H2] = (REAL8) atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_H2]);
+        break;
+
+      /* Read in time-slide step for L1 */
+      case 'Y':
+        slideStep[LAL_IFO_L1] = (REAL8) atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_L1]);
+        break;
+
+      /* Read in time-slide step for T1 */
+      case 'U':
+        slideStep[LAL_IFO_T1] = (REAL8) atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_T1]);
+        break;
+
+      /* Read in time-slide step for V1 */
+      case 'v':
+        slideStep[LAL_IFO_V1] = (REAL8) atof(optarg);
+        ADD_PROCESS_PARAM("float", "%e", slideStep[LAL_IFO_V1]);
+        break;
+
       case 'Z':
         /* create storage for the usertag */
         optarg_len = strlen(optarg) + 1;
@@ -476,6 +532,54 @@ int main( int argc, char *argv[] )
         snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
         snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
             optarg );
+        break;
+
+      case '(':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_H1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case ')':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_H2] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_H2], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '}':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_L1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_L1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '{':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_G1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_G1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case '[':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_T1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_T1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
+        break;
+
+      case ']':
+        /* veto filename */
+        optarg_len = strlen( optarg ) + 1;
+        vetoFileName[LAL_IFO_V1] = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( vetoFileName[LAL_IFO_V1], optarg, optarg_len );
+        ADD_PROCESS_PARAM( "string", "%s", optarg );
         break;
 
       case 'V':
@@ -541,6 +645,19 @@ int main( int argc, char *argv[] )
     exit( 1 );
   }
 
+  /* store the veto option */
+  if ( doVeto )
+  {
+    this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+      calloc( 1, sizeof(ProcessParamsTable) );
+    snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX,
+        "%s", PROGRAM_NAME );
+    snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX,
+        "--do-veto" );
+    snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+    snprintf( this_proc_param->value, LIGOMETA_TYPE_MAX, " " );
+  }
+
   /*
    *
    * check the values of the arguments
@@ -601,10 +718,9 @@ int main( int argc, char *argv[] )
       }
     }
     else {
-      InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
+      InterferometerNumber  ifoNumberTmp = LAL_UNKNOWN_IFO;
       INT4                  numCoincTrigs = 0;
-      for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++) {
-	//SnglInspiralTable    *inspiralEventTmpList=NULL;
+      for ( ifoNumberTmp = 0; ifoNumberTmp< LAL_NUM_IFO; ifoNumberTmp++) {
 	INT4                  numIfoTriggers = 0;
 
 	for( i = optind; i < argc; ++i )
@@ -627,7 +743,7 @@ int main( int argc, char *argv[] )
 	  else
 	  {
 	    fprintf(stdout,"IFOs in input summary table is %s\n",inputSummary->ifos);
-	    if ( (ifoNumber == XLALIFONumber(inputSummary->ifos) ) ) {
+	    if (ifoNumberTmp == XLALIFONumber(inputSummary->ifos)){
 	      fprintf(stdout,"Reading triggers from IFO %s\n",inputSummary->ifos);
 	      numFileTriggers = XLALReadInspiralTriggerFile( &inspiralEventList,
 			&currentTrigger, &searchSummList, &inputFiles, argv[i] );
@@ -648,7 +764,7 @@ int main( int argc, char *argv[] )
 	  {
 	    fprintf( stdout,
 		     "Number of triggers found in ifo number %d is %d\n",
-		     ifoNumber , numIfoTriggers);
+		     ifoNumberTmp , numIfoTriggers);
 	  }
 
         numCoincTrigs += numIfoTriggers;
@@ -658,7 +774,7 @@ int main( int argc, char *argv[] )
                    "Number of unclustered triggers found in all ifos in this coinc-segment is %d\n",
                   numCoincTrigs);
         }
-      }/* Closes for loop over ifoNumber */
+      }/* Closes for loop over ifoNumberTmp */
 
       /* keep only triggers within the requested interval */
       if ( vrbflg ) fprintf( stdout,
@@ -667,11 +783,12 @@ int main( int argc, char *argv[] )
 				  &startTimeGPS, &endTimeGPS), &status );
 
       if ( vrbflg ) fprintf( stdout,
-                             "Removing triggers with event-ids from outside this coinc-segment\n" );
+             "Removing triggers with event-ids from outside this coinc-segment\n" );
       if ( vrbflg ) fprintf( stdout, "GPS start time of this coinc-segment is %d\n",
                    startTime);
 
-      numCoincSegCutTrigs = XLALCoincSegCutSnglInspiral( startTime, &inspiralEventList);
+      numCoincSegCutTrigs = XLALCoincSegCutSnglInspiral( startTime,
+                                        endTime, &inspiralEventList);
 
       if ( vrbflg ) fprintf( stdout,
                              "Sorting triggers within requested interval\n" );
@@ -681,15 +798,19 @@ int main( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout,
                              "Clustering triggers in event-id\n" );
-      numTriggers = XLALClusterInEventID(&inspiralEventList,clusterchoice);
+      if ( ! ( clusterchoice == none ) ) {
+        numTriggers = XLALClusterInEventID(&inspiralEventList,clusterchoice);
+      }
+      else {
+        numTriggers = numCoincSegCutTrigs;
+      }
+
       if( vrbflg )
-	{
-	  fprintf( stdout,
+      {
+	fprintf( stdout,
 		   "Number of CLUSTERED triggers found in coinc-segment is %d\n",
 		   numTriggers);
-	}
-	//numTriggers += numIfoTriggers;
-
+      }
     } /*Closes if runType is not cohinspbank */
   } /* Closes if optind < argc */
   else
@@ -728,11 +849,11 @@ int main( int argc, char *argv[] )
           numTriggers );
     }
 
-  /*
-   *
-   * sort the inspiral events by time
-   *
-   */
+    /*
+     *
+     * sort the inspiral events by time
+     *
+     */
 
 
     if ( coincHead && cluster_dt )
@@ -744,15 +865,9 @@ int main( int argc, char *argv[] )
 
       if ( vrbflg ) fprintf( stdout, "clustering remaining triggers... " );
 
-      if ( !numSlides )
-      {
-        numClusteredEvents = XLALClusterCoincInspiralTable( &coincHead,
-                      cluster_dt, coincstat , &bittenLParams);
-      }
-      else
+      if ( numSlides )
       {
         int slide = 0;
-        int numClusteredSlide = 0;
         CoincInspiralTable *slideCoinc = NULL;
         CoincInspiralTable *slideClust = NULL;
 
@@ -763,13 +878,6 @@ int main( int argc, char *argv[] )
           if ( vrbflg ) fprintf( stdout, "slide number %d; ", slide );
           /* extract the slide */
           slideCoinc = XLALCoincInspiralSlideCut( &coincHead, slide );
-          /* run clustering */
-          numClusteredSlide = XLALClusterCoincInspiralTable( &slideCoinc,
-                       cluster_dt, coincstat, &bittenLParams);
-
-          if ( vrbflg ) fprintf( stdout, "%d clustered events \n",
-                                 numClusteredSlide );
-          numClusteredEvents += numClusteredSlide;
 
           /* add clustered triggers */
           if( slideCoinc )
@@ -801,8 +909,7 @@ int main( int argc, char *argv[] )
       }
 
       if ( vrbflg ) fprintf( stdout, "done\n" );
-      if ( vrbflg ) fprintf( stdout, "%d clustered events \n",
-                             numClusteredEvents );
+
     }
 
     /*
@@ -811,19 +918,57 @@ int main( int argc, char *argv[] )
      *
      */
 
-    numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead );
+    numTmplts = XLALGenerateCoherentBank( &newEventList, coincHead, runType,
+                    startTimeNS, endTimeNS, numSlides, slideStep, statThreshold, ifos);
 
     if ( numTmplts < 0 )
     {
       fprintf(stderr, "Unable to generate coherent bank\n");
       exit( 1 );
     }
-    else if ( vrbflg )
+
+    /* do a veto on the new sngls */
+    for ( ifoNumber = 0; ifoNumber< LAL_NUM_IFO; ifoNumber++)
+    {
+      if (doVeto && vetoFileName[ifoNumber])
+      {
+
+	/* CHECK: if this is required.
+	 * If the veto segment list wasn't initialized, then don't try to slide
+	 * it.  The rest of the code, except possibly the H1H2 consistency test,
+	 * does not try to use vetoSegs if it wasn't loaded / initialized. */
+	/* if ( vetoSegs[ifoNumber].initMagic == SEGMENTSH_INITMAGICVAL )
+	   {
+	   XLALTimeSlideSegList( &vetoSegs[ifoNumber], &startCoinc, &endCoinc,
+	   &slideTimes[ifoNumber] );
+	   }*/
+
+	XLALReturnIFO(ifo,ifoNumber);
+	XLALSegListInit( &(vetoSegs[ifoNumber]) );
+	LAL_CALL( LALSegListRead( &status, &(vetoSegs[ifoNumber]),
+				  vetoFileName[ifoNumber], NULL),&status);
+	XLALSegListCoalesce( &(vetoSegs[ifoNumber]) );
+
+	/* keep only the segments that lie within the data-segment part */
+	XLALSegListKeep(  &(vetoSegs[ifoNumber]), &startTimeGPS, &endTimeGPS );
+
+	if ( vrbflg ) fprintf( stdout,
+            "Applying veto segment (%s) list on ifo  %s \n ",
+            vetoFileName[ifoNumber], ifo );
+	newEventList = XLALVetoSingleInspiral( newEventList,
+					       &(vetoSegs[ifoNumber]), ifo );
+      }
+    }
+
+    /* count remaining singles */
+    numTmplts =  XLALCountSnglInspiral( newEventList );
+    if ( vrbflg )
     {
       fprintf(stdout, "Generated a coherent bank with %d templates\n",
-          numTmplts);
+	      numTmplts);
     }
   }
+
   /*
    *
    * write the output xml file
@@ -836,9 +981,6 @@ int main( int argc, char *argv[] )
   searchsumm.searchSummaryTable->out_start_time = startTimeGPS;
   searchsumm.searchSummaryTable->out_end_time = endTimeGPS;
   searchsumm.searchSummaryTable->nevents = numTmplts;
-
-  startTimeNS = XLALGPSToINT8NS( &startTimeGPS );
-  endTimeNS = XLALGPSToINT8NS( &endTimeGPS );
 
   if ( vrbflg ) fprintf( stdout, "writing output file... " );
 
@@ -972,20 +1114,26 @@ int main( int argc, char *argv[] )
     LALFree( thisSearchSumm );
   }
 
+  /* free the veto segment list. */
+  for (ifoNumber=0; ifoNumber<LAL_NUM_IFO; ifoNumber++)
+  {
+    if ( vetoFileName[ifoNumber] )
+    {
+      free( vetoFileName[ifoNumber] );
+    }
+
+   if (vetoSegs[ifoNumber].initMagic == SEGMENTSH_INITMAGICVAL )
+   {
+        XLALSegListClear( &vetoSegs[ifoNumber] );
+    }
+  }
+
   while ( inspiralEventList )
   {
     currentTrigger = inspiralEventList;
     inspiralEventList = inspiralEventList->next;
     LAL_CALL( LALFreeSnglInspiral( &status, &currentTrigger ), &status );
   }
-
-  /* while ( coincEventList )
-  {
-    thisCoinc = coincEventList;
-    coincEventList = coincEventList->next;
-    LALFree( thisCoinc );
-  }
-  */
 
   while ( newEventList )
   {
@@ -1008,165 +1156,4 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks();
 
   exit( 0 );
-}
-
-
-int XLALCoincSegCutSnglInspiral(
-    INT4                        startTime,
-    SnglInspiralTable         **inspiralList
-    )
-
-{
-  SnglInspiralTable     *thisEvent=NULL;
-  SnglInspiralTable     *prevEvent=NULL;
-  SnglInspiralTable     *nextEvent=NULL;
-
-  int                    numSnglClust = 0;
-  UINT8                  timeExtract = 1000000000;
-  INT4 timeCheck=0;
-  if ( !inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALClusterInEventID: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  if ( ! *inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALClusterInEventID: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  thisEvent = *inspiralList;
-  //nextEvent = (*inspiralList)->next;
-  *inspiralList = NULL;
-
-  while ( thisEvent ) {
-    fprintf(stdout, "This event's END TIME NS is %" LAL_INT4_FORMAT "\n",thisEvent->end_time.gpsNanoSeconds);
-    fprintf(stdout, "This event's id is %" LAL_UINT8_FORMAT "\n",thisEvent->event_id->id);
-    timeCheck = floor(thisEvent->event_id->id/timeExtract);
-    fprintf(stdout, "This event's gps-start time is %" LAL_INT4_FORMAT "\n",
-            timeCheck);
-
-    /* find events in the same coinc-segment */
-    if ( !( timeCheck == startTime) ) {
-      /* displace this event in cluster */
-      nextEvent = thisEvent->next;
-      if( prevEvent )
-      {
-         prevEvent->next = nextEvent;
-      }
-      XLALFreeSnglInspiral( &thisEvent );
-      thisEvent = nextEvent;
-      nextEvent = thisEvent->next;
-    }
-    else {
-      /* otherwise we keep this unique event trigger */
-      if ( ! *inspiralList )
-	{
-	  *inspiralList = thisEvent;
-	}
-      prevEvent = thisEvent;
-      thisEvent = thisEvent->next;
-      if ( !thisEvent )
-        nextEvent = thisEvent->next;
-      ++numSnglClust;
-    }
-  }
-
-  fprintf(stdout, "This last time-check is %" LAL_INT4_FORMAT "\n", timeCheck);
-  /* store the last event */
-  //if ( ! (*inspiralList) )
-   // {
-    //  *inspiralList = thisEvent;
-   // }
-  //++numSnglClust;
-
-  return(numSnglClust);
-}
-
-
-int XLALClusterInEventID(
-    SnglInspiralTable         **inspiralList,
-    SnglInspiralClusterChoice   clusterchoice
-    )
-
-{
-  SnglInspiralTable     *thisEvent=NULL;
-  SnglInspiralTable     *prevEvent=NULL;
-  SnglInspiralTable     *nextEvent=NULL;
-
-  int                    numSnglClust = 0;
-
-  if ( !inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALClusterInEventID: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  if ( ! *inspiralList )
-  {
-    XLALPrintInfo(
-      "XLALClusterInEventID: Empty trigger list passed as input\n" );
-    return( 0 );
-  }
-
-  thisEvent = *inspiralList;
-  nextEvent = (*inspiralList)->next;
-  *inspiralList = NULL;
-
-  while ( nextEvent ) {
-    /* find events with the same eventID in the same IFO */
-    if ( (thisEvent->event_id->id == nextEvent->event_id->id )
-	 && !strcmp(thisEvent->ifo,nextEvent->ifo ) ) {
-      REAL4 thisStat = XLALSnglInspiralStat( thisEvent, clusterchoice );
-      REAL4 nextStat = XLALSnglInspiralStat( nextEvent, clusterchoice );
-
-      fprintf(stdout, "Next event's id is %" LAL_UINT8_FORMAT "\n",nextEvent->event_id->id);
-      fprintf(stdout, "Next-statistic is %e\n",nextStat);
-      fprintf(stdout, "Next IFO is %s\n",nextEvent->ifo);
-
-
-      if ( nextStat > thisStat ) {
-        /* displace previous event in cluster */
-        if( prevEvent )
-	  {
-	    prevEvent->next = nextEvent;
-	  }
-        XLALFreeSnglInspiral( &thisEvent );
-        thisEvent = nextEvent;
-        nextEvent = thisEvent->next;
-      }
-      else
-	{
-	  /* otherwise just dump next event from cluster */
-	  thisEvent->next = nextEvent->next;
-	  XLALFreeSnglInspiral ( &nextEvent );
-	  nextEvent = thisEvent->next;
-	}
-    }
-    else
-      {
-	/* otherwise we keep this unique event trigger */
-	if ( ! *inspiralList )
-	  {
-	    *inspiralList = thisEvent;
-	  }
-	prevEvent = thisEvent;
-	thisEvent = thisEvent->next;
-	nextEvent = thisEvent->next;
-	++numSnglClust;
-      }
-  }
-
-  /* store the last event */
-  if ( ! (*inspiralList) )
-    {
-      *inspiralList = thisEvent;
-  }
-  ++numSnglClust;
-
-  return(numSnglClust);
 }

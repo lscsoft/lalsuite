@@ -67,7 +67,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 	UINT4 i;
 
 	if(!orig)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	new = XLALMalloc(sizeof(*new));
 	data = XLALCreateREAL4Sequence(orig->data->length);
@@ -76,7 +76,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 		XLALDestroyREAL8Window(orig);
 		XLALFree(new);
 		XLALDestroyREAL4Sequence(data);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	for(i = 0; i < data->length; i++)
@@ -102,7 +102,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
  * Output:
  * length < 2 --> return 0.0
  * i == 0 --> return -1.0
- * i == length / 2 --> return 0.0
+ * i == (length - 1) / 2 --> return 0.0
  * i == length - 1 --> return +1.0
  *
  * e.g., length = 5 (odd), then i == 2 --> return 0.0
@@ -219,7 +219,7 @@ REAL8Window *XLALCreateREAL8WindowFromSequence(REAL8Sequence *sequence)
 	new = XLALMalloc(sizeof(*new));
 	if(!new) {
 		XLALDestroyREAL8Sequence(sequence);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	new->data = sequence;
@@ -251,7 +251,7 @@ REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence)
 		XLALDestroyREAL4Sequence(sequence);
 		XLALDestroyREAL8Sequence(workspace);
 		XLALFree(new);
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	for(i = 0; i < workspace->length; i++)
@@ -282,9 +282,9 @@ REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REA
 	double norm = sqrt(window->data->length / window->sumofsquares);
 
 	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EDOM);
+		XLAL_ERROR_NULL(XLAL_EDOM);
 	if(sequence->length != window->data->length)
-		XLAL_ERROR_NULL(__func__, XLAL_EBADLEN);
+		XLAL_ERROR_NULL(XLAL_EBADLEN);
 
 	for(i = 0; i < window->data->length; i++)
 		sequence->data[i] *= window->data->data[i] * norm;
@@ -304,9 +304,9 @@ COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequenc
 	double norm = sqrt(window->data->length / window->sumofsquares);
 
 	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EDOM);
+		XLAL_ERROR_NULL(XLAL_EDOM);
 	if(sequence->length != window->data->length)
-		XLAL_ERROR_NULL(__func__, XLAL_EBADLEN);
+		XLAL_ERROR_NULL(XLAL_EBADLEN);
 
 	for(i = 0; i < window->data->length; i++)
 		sequence->data[i] = XLALCOMPLEX16MulReal(sequence->data[i], window->data->data[i] * norm);
@@ -326,9 +326,9 @@ REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REA
 	float norm = sqrt(window->data->length / window->sumofsquares);
 
 	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EDOM);
+		XLAL_ERROR_NULL(XLAL_EDOM);
 	if(sequence->length != window->data->length)
-		XLAL_ERROR_NULL(__func__, XLAL_EBADLEN);
+		XLAL_ERROR_NULL(XLAL_EBADLEN);
 
 	for(i = 0; i < window->data->length; i++)
 		sequence->data[i] *= window->data->data[i] * norm;
@@ -348,9 +348,9 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
 	double norm = sqrt(window->data->length / window->sumofsquares);
 
 	if(window->sumofsquares <= 0)
-		XLAL_ERROR_NULL(__func__, XLAL_EDOM);
+		XLAL_ERROR_NULL(XLAL_EDOM);
 	if(sequence->length != window->data->length)
-		XLAL_ERROR_NULL(__func__, XLAL_EBADLEN);
+		XLAL_ERROR_NULL(XLAL_EBADLEN);
 
 	for(i = 0; i < window->data->length; i++)
 		sequence->data[i] = XLALCOMPLEX8MulReal(sequence->data[i], window->data->data[i] * norm);
@@ -377,7 +377,7 @@ REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* flat, box-car, top-hat, rectangle, whatever */
 	for(i = 0; i < length; i++)
@@ -396,7 +396,7 @@ REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* cos^2, zero at both end points, 1 in the middle */
 	for(i = 0; i < (length + 1) / 2; i++)
@@ -415,7 +415,7 @@ REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* downward-opening parabola, zero at both end points, 1 in the
 	 * middle */
@@ -435,7 +435,7 @@ REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* downward-opening triangle, zero at both end points (non-zero end
 	 * points is a different window called the "triangle" window), 1 in
@@ -456,7 +456,7 @@ REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 4; i++)
@@ -479,7 +479,7 @@ REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 2; i++) {
@@ -500,7 +500,7 @@ REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* cos^2, like Hann window, but with a bias of 0.08 */
 	for(i = 0; i < (length + 1) / 2; i++)
@@ -519,11 +519,11 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 	UINT4 i;
 
 	if(beta < 0)
-		XLAL_ERROR_NULL(__func__, XLAL_ERANGE);
+		XLAL_ERROR_NULL(XLAL_ERANGE);
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* pre-compute I0(beta) */
 	if(beta < 705)
@@ -604,11 +604,11 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 	UINT4 i;
 
 	if(beta < 0)
-		XLAL_ERROR_NULL(__func__, XLAL_ERANGE);
+		XLAL_ERROR_NULL(XLAL_ERANGE);
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* ?? Copied from LAL Software Description */
 	for(i = 0; i < (length + 1) / 2; i++) {
@@ -641,11 +641,11 @@ REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
 	UINT4 i;
 
 	if(beta < 0 || beta > 1)
-		XLAL_ERROR_NULL(__func__, XLAL_ERANGE);
+		XLAL_ERROR_NULL(XLAL_ERANGE);
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* 1.0 and flat in the middle, cos^2 transition at each end, zero
 	 * at end points, 0.0 <= beta <= 1.0 sets what fraction of the
@@ -668,11 +668,11 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 	UINT4 i;
 
 	if(beta < 0)
-		XLAL_ERROR_NULL(__func__, XLAL_ERANGE);
+		XLAL_ERROR_NULL(XLAL_ERANGE);
 
 	sequence = XLALCreateREAL8Sequence(length);
 	if(!sequence)
-		XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
 	/* pre-compute -1/2 beta^2 */
 	beta = -0.5 * beta * beta;

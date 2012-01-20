@@ -1,4 +1,4 @@
-%define _prefix /opt/lscsoft/lalmetaio
+%define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@
@@ -34,12 +34,12 @@ library.
 %setup -q
 
 %build
-source /opt/lscsoft/lscsoft-user-env.sh
 %configure --disable-gcc-flags
 %{__make} V=1
 
 %install
 %makeinstall
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
 ldconfig
@@ -58,6 +58,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*a
+%{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal

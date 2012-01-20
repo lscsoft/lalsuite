@@ -55,7 +55,8 @@ static const struct leaps_table { REAL8 jd; INT4 gpssec; int taiutc; } leaps[] =
   {2450630.5, 551750411, 31},  /* 1997-Jul-01 */
   {2451179.5, 599184012, 32},  /* 1999-Jan-01 */
   {2453736.5, 820108813, 33},  /* 2006-Jan-01 */
-  {2454832.5, 914803214, 34}   /* 2009-Jan-01 */
+  {2454832.5, 914803214, 34},  /* 2009-Jan-01 */
+  {2456109.5, 1025136015, 35}  /* 2012-Jul-01 */
 };
 static const int numleaps = sizeof( leaps ) / sizeof( *leaps );
 

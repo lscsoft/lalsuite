@@ -480,10 +480,10 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 
 	injections = XLALCreateREAL8TimeSeries(series->name, &series->epoch, series->f0, series->deltaT, &series->sampleUnits, series->data->length);
 	/* FIXME:  new injection code requires double precision respose */
-	if(XLALBurstInjectSignals( injections, sim_burst, time_slide, /*response*/ NULL )) {
-		fprintf( stderr, "error: signal injection failed\n" );
-		exit( 1 );
-	}
+	//if(XLALBurstInjectSignals( injections, sim_burst, time_slide, /*response*/ NULL )) {
+	//	fprintf( stderr, "error: signal injection failed\n" );
+	//	exit( 1 );
+	//}
 	for(i = 0; i < series->data->length; i++)
 		series->data->data[i] += injections->data->data[i];
 	XLALDestroyREAL8TimeSeries(injections);

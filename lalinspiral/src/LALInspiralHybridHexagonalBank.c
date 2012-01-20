@@ -138,7 +138,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
   InspiralBankParams    bankPars;
   InspiralTemplate      *tempPars;
   InspiralMomentsEtc    moments;
-  InspiralCell          *cells;
+  InspiralCell          *cells = 0;
   HexaGridParam         gridParam;
   CellEvolution         cellEvolution;
   CellList 		*cellList = NULL;
@@ -304,7 +304,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     while (i<cellEvolution.nTemplate){
       if (cells[i].position == Edge){
 	edge1 = i;
-	cells[i].status = In;
+	cells[i].position = In;
 	i=cellEvolution.nTemplate;
       }
       i++;
@@ -313,7 +313,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
     while (i<cellEvolution.nTemplate){
       if (cells[i].position == Edge){
 	edge2=i;
-	cells[i].status = In;
+	cells[i].position = In;
 	i=cellEvolution.nTemplate;
       }
       i++;

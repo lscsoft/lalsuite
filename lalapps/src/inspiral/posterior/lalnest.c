@@ -77,7 +77,7 @@ Optional OPTIONS:\n \
 [--V1GPSshift FLOAT\t: Specify timeslide in V1]\n \
 [--timeslide\t:\tTimeslide data]\n[--studentt\t:\tuse student-t likelihood function]\n \
 [--ra FLOAT --dec FLOAT\t:\tSpecify fixed RA and dec to use (DEGREES)]\n \
-[--grb\t:\tuse GRB prior ]\n[--skyloc\t:\tuse trigger masses]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
+[--grb\t:\tuse GRB prior ]\n[--decohere offset\t:\tOffset injection in each IFO]\n \
 [--dt FLOAT (0.01)\t:\ttime window (0.01s)]\n \
 [--injSNR FLOAT\t:\tScale injection to have network SNR of FLOAT]\n \
 [--SNRfac FLOAT\t:\tScale injection SNR by a factor FLOAT]\n \
@@ -89,6 +89,8 @@ Optional OPTIONS:\n \
 [--etamin NUM\t:\tMinimum value of eta]\n\
 [--chimax NUM\t:\tMax value of chi spin parameter]\n\
 [--snrpath PATH\t:\tOutput SNRs to a file in PATH]\n\
+[--skyloc\t:\tUse Sky localisation prior for Larry's injections]\n\
+[--m1m2\t:\tUse m1 and m2 as mass parameters instead of chirp mass and eta]\n\
 \n\n \
 Optional PhenSpinTaylorRD_template OPTIONS:\n \
 [--onespin_flag INT\t:\tSet S2=(0,0,0) in PhenSpinTaylorRD template waveform]\n \
@@ -136,6 +138,7 @@ CHAR *SNRpath = NULL;
 int nChannel=0;
 UINT4 nIFO=0;
 int fakeinj =0;
+int skylocprior=0;
 REAL8 duration=0;
 LIGOTimeGPS datastart;
 INT4 SampleRate=0;
@@ -182,6 +185,7 @@ INT4 ampOrder=0;
 INT4 phaseOrder=4;
 char *pinned_params=NULL;
 UINT4 fLowFlag=0;
+UINT4 m1m2Flag=0;
 
 REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS start, REAL8 length);
 int checkParamInList(const char *list, const char *param);
@@ -288,7 +292,6 @@ void initialise(int argc, char *argv[]){
 		{"ra",required_argument,0,'O'},
 		{"dec",required_argument,0,'a'},
 		{"SNRfac",required_argument,0,14},
-		{"skyloc",no_argument,0,13},
 		{"channel",required_argument,0,'C'},
 		{"highmass",no_argument,0,15},
 		{"decohere",required_argument,0,16},
@@ -329,12 +332,17 @@ void initialise(int argc, char *argv[]){
 		{"chimax",required_argument,0,91},
 		{"mc_flag",no_argument,0,100},
 		{"snrpath",required_argument,0,123},
+		{"skyloc",no_argument,0,13},
+		{"m1m2",no_argument,0,24},
 		{0,0,0,0}};
 
 	if(argc<=1) {fprintf(stderr,USAGE); exit(-1);}
 	while((i=getopt_long(argc,argv,"hi:D:G:T:R:g:m:z:P:C:S:I:N:t:X:O:a:M:o:j:e:Z:A:E:nlFVvb",long_options,&i))!=-1){ switch(i) {
 		case 64:
 			manual_chi_min=atof(optarg);
+			break;
+		case 24:
+			m1m2Flag=1;
 			break;
 		case 91:
 			manual_chi_max=atof(optarg);
@@ -493,7 +501,6 @@ void initialise(int argc, char *argv[]){
 			UserChannelNames[nChannel]=malloc(strlen(optarg)+1);
 			strcpy(UserChannelNames[nChannel++],optarg);
 			break;
-		case 13: SkyLocFlag=1; break;
 		case 'D':
 			dataseed=atoi(optarg);
 			break;
@@ -606,6 +613,9 @@ void initialise(int argc, char *argv[]){
 		case 23:
 			fLow=atof(optarg);
 			fLowFlag=1;
+			break;
+		case 13:
+			skylocprior=1;
 			break;
 		default:
 			fprintf(stdout,USAGE); exit(0);
@@ -1220,11 +1230,17 @@ doneinit:
 	if(studentt) inputMCMC.funcLikelihood = MCMCSTLikelihoodMultiCoherentF;
 	else inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentF;
 	if(inputMCMC.approximant==AmpCorPPN) inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor;
-
+	if(inputMCMC.approximant==EOBNR) {
+		inputMCMC.funcLikelihood = MCMCLikelihoodMultiCoherentAmpCor; /* EOBNR uses CoherentGW the same way */
+		inputMCMC.phaseOrder = LAL_PNORDER_PSEUDO_FOUR;
+	}
+		
 	inputMCMC.funcPrior = NestPrior;
 	if(GRBflag) {inputMCMC.funcPrior = GRBPrior;
 		inputMCMC.funcInit = NestInitGRB;
 	}
+	if(HighMassFlag) inputMCMC.funcPrior = NestPriorHighMass;
+	if(skylocprior) inputMCMC.funcPrior = NestPriorSkyLoc;
 
     if(!strcmp(approx,BBHSpin1)) {
         inputMCMC.funcPrior = NestPriorHighMass;
@@ -1391,7 +1407,7 @@ void NestInitManualPhenSpinRD(LALMCMCParameter *parameter, void *iT)
 
     XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow +manual_end_time,manual_end_time-0.5*timewindow,manual_end_time+0.5*timewindow,0);
     XLALMCMCAddParam(parameter,"phi", LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-    XLALMCMCAddParam(parameter,"distance", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax,0);
+    XLALMCMCAddParam(parameter,"distMpc", (dmax-dmin)*gsl_rng_uniform(RNG)+dmin,dmin,dmax,0);
    
     if ((long_min<=0.)&&(long_max>=2.*LAL_PI))
     XLALMCMCAddParam(parameter,"ra",gsl_rng_uniform(RNG)*2.*LAL_PI,0.,2.*LAL_PI,1);
@@ -1532,13 +1548,22 @@ void NestInitSkyLoc(LALMCMCParameter *parameter, void *iT)
 	deltaEta=etaMax-etaMin;
 	double lmmin=log(inMc-deltaM);
 	double lmmax=log(inMc+deltaM);
-	XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+	double m_comp_min=1.0;
+	double m_comp_max=15.0;
+	
+	if(m1m2Flag){
+		XLALMCMCAddParam(parameter,"m1",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+		XLALMCMCAddParam(parameter,"m2",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+	}
+	else{
+		XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
 
 	/*  XLALMCMCAddParam(parameter,"mchirp",(gsl_rng_uniform(RNG)-0.5)*deltaM + inMc,inMc-0.5*deltaM,inMc+0.5*deltaM,0);*/
-	XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
+		XLALMCMCAddParam(parameter,"eta",(gsl_rng_uniform(RNG))*deltaEta + etaMin,etaMin,etaMax,0);
+	}
 	XLALMCMCAddParam(parameter,"time",(gsl_rng_uniform(RNG)-0.5)*timewindow+inTime,inTime-0.5*timewindow,inTime+0.5*timewindow,0);
 	XLALMCMCAddParam(parameter,"phi",		LAL_TWOPI*gsl_rng_uniform(RNG),0.0,LAL_TWOPI,1);
-	XLALMCMCAddParam(parameter,"distMpc", 99.0*gsl_rng_uniform(RNG)+1.0, 1.0, 100.0, 0);
+	XLALMCMCAddParam(parameter,"logdist", (log(40.0)-log(10.0))*gsl_rng_uniform(RNG)+log(10.0), log(10.0), log(40.0), 0);
 	XLALMCMCAddParam(parameter,"ra",LAL_TWOPI*gsl_rng_uniform(RNG),0,LAL_TWOPI,1);
 	XLALMCMCAddParam(parameter,"dec",LAL_PI*(gsl_rng_uniform(RNG)-0.5),-LAL_PI/2.0,LAL_PI/2.0,0);
 	XLALMCMCAddParam(parameter,"psi",LAL_PI*gsl_rng_uniform(RNG),0,LAL_PI,1);
@@ -1581,8 +1606,8 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=manual_mass_low;
-	mcmax=manual_mass_high;
+	mcmin=manual_mass_low*pow(etamin,3./5.);
+	mcmax=manual_mass_high*pow(0.25,3./5.);
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);
 	double lDmin=log(manual_dist_min);
@@ -1726,9 +1751,9 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	etamin=0.01;
 	double etamax = 0.25;
 	mc=m2mc(injTable->mass1,injTable->mass2);
-	mcmin=manual_mass_low;
-
-	mcmax=manual_mass_high;
+	mcmin=manual_mass_low*pow(etamin,3./5.);
+	REAL8 m_comp_min=1., m_comp_max=15.;
+	mcmax=manual_mass_high*pow(etamax,3./5.);
 
 	lmmin=log(mcmin);
 	lmmax=log(mcmax);
@@ -1736,17 +1761,27 @@ void NestInitInj(LALMCMCParameter *parameter, void *iT){
 	
 	LALMCMCParam *head;
 	
-	if(checkParamInList(pinned_params,"logmc")||checkParamInList(pinned_params,"mchirp"))
-		XLALMCMCAddParam(parameter,"logmc",log(injTable->mchirp),lmmin,lmmax,-1);
-	else
-		XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
-	/*XLALMCMCAddParam(parameter,"mchirp",mcmin+(mcmax-mcmin)*gsl_rng_uniform(RNG),mcmin,mcmax,0);*/
-
-	if(checkParamInList(pinned_params,"eta"))
-		XLALMCMCAddParam(parameter,"eta",injTable->eta,etamin,etamax,-1);
-	else
-		XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
-	
+	if(m1m2Flag){
+		if(checkParamInList(pinned_params,"m1")||checkParamInList(pinned_params,"m2"))
+		{XLALMCMCAddParam(parameter,"m1",injTable->mass1,m_comp_min,m_comp_max,0);
+		XLALMCMCAddParam(parameter,"m2",injTable->mass2,m_comp_min,m_comp_max,0);
+		}
+		else {
+			XLALMCMCAddParam(parameter,"m1",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+			XLALMCMCAddParam(parameter,"m2",m_comp_min+(m_comp_max-m_comp_min)*gsl_rng_uniform(RNG),m_comp_min,m_comp_max,0);
+		}
+	}
+	else{
+		if(checkParamInList(pinned_params,"logmc")||checkParamInList(pinned_params,"mchirp"))
+			XLALMCMCAddParam(parameter,"logmc",log(injTable->mchirp),lmmin,lmmax,-1);
+		else
+			XLALMCMCAddParam(parameter,"logmc",lmmin+(lmmax-lmmin)*gsl_rng_uniform(RNG),lmmin,lmmax,0);
+		if(checkParamInList(pinned_params,"eta"))
+			XLALMCMCAddParam(parameter,"eta",injTable->eta,etamin,etamax,-1);
+		else
+			XLALMCMCAddParam(parameter, "eta", gsl_rng_uniform(RNG)*localetawin+etamin , etamin, etamax, 0);
+		
+	}
 	if(checkParamInList(pinned_params,"time"))
 		XLALMCMCAddParam(parameter,"time",trg_time,trg_time-0.5*timewindow,trg_time+0.5*timewindow,-1);
 	else

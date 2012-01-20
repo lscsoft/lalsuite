@@ -69,18 +69,35 @@ LALInspiralTofVIntegrand (
    )
 {
 
-   TofVIntegrandIn *ak;
-
    INITSTATUS (status, "LALInspiralTofVIntegrand", LALINSPIRALTOFVINTEGRANDC);
-   ATTATCHSTATUSPTR(status);
-   ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(v > 0., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-   ASSERT(v < 1., status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-   ak = (TofVIntegrandIn *) params;
-   *integrand = ak->dEnergy(v, ak->coeffs)/ak->flux(v, ak->coeffs);
+   *integrand = XLALInspiralTofVIntegrand( v, params );
 
-   DETATCHSTATUSPTR(status);
+   if ( XLAL_IS_REAL8_FAIL_NAN( *integrand ) ) 
+   {
+     ABORTXLAL( status );
+   }
+
    RETURN (status);
+}
+
+REAL8
+XLALInspiralTofVIntegrand(
+   REAL8      v,
+   void      *params
+   )
+{
+
+  TofVIntegrandIn *ak = NULL;
+
+#ifndef LAL_NDEBUG
+  if ( !params )
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
+
+  if ( v <= 0.0 || v >= 1.0 )
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
+#endif
+
+  ak = (TofVIntegrandIn *) params;
+  return ak->dEnergy( v, ak->coeffs ) / ak->flux( v, ak->coeffs );
 }

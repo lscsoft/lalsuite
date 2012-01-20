@@ -17,41 +17,31 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="UnitsTestCV">
-Author: J. T. Whelan <john.whelan@ligo.org>
-$Id$
-********************************* </lalVerbatim> */
+/**
+\author J. T. Whelan <john.whelan@ligo.org>
+\file
+\ingroup Units_h
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{UnitsTest.c}}
-\label{tools:ss:UnitsTest.c}
+\brief Test Suite for unit manipulation programs
 
-Test Suite for unit manipulation programs
-
-\subsubsection*{Usage}
-\begin{verbatim}
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 UnitsTest [options]
 Options:
   -h         print help
   -q         quiet: run silently
   -v         verbose: print extra information
   -d level   set lalDebugLevel to level
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program tests the various units-manipulation routines, as well as
-the pre-defined units defined in \texttt{Units.h}.  For each
-successful test, it prints ``PASS'' to standard output.
+the pre-defined units defined in \ref Units.h.  For each
+successful test, it prints "PASS" to standard output.
 
-\subsubsection*{Exit codes}
-\input{UnitsTestCE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
+\heading{Uses}
+\code
 LALCHARCreateVector()
 LALUnitAsString()
 LALParseUnitString()
@@ -60,13 +50,23 @@ LALUnitMultiply()
 LALUnitRaise()
 LALUnitNormalize()
 LALUnitCompare()
-\end{verbatim}
+\endcode
 
-\subsubsection*{Notes}
+\heading{Notes}
 
-\vfill{\footnotesize\input{UnitsTestCV}}
-******************************************************* </lalLaTeX> */
+*/
+/** @{ */
+/**\name Error Codes */ /*@{*/
+#define UNITSTESTC_ENOM 0
+#define UNITSTESTC_ECHK 1
+#define UNITSTESTC_EFLS 2
+#define UNITSTESTC_MSGENOM "Nominal exit"
+#define UNITSTESTC_MSGECHK "Error checking failed to catch bad data"
+#define UNITSTESTC_MSGEFLS "Incorrect answer for valid data"
+/*@}*/
+/** @} */
 
+/** \cond  DONT_DOXYGEN */
 #include <stdlib.h>
 
 #include <lal/LALStdlib.h>
@@ -100,15 +100,6 @@ static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
 NRCSID( UNITSTESTC, "$Id$" );
-
-/***************************** <lalErrTable file="UnitsTestCE"> */
-#define UNITSTESTC_ENOM 0
-#define UNITSTESTC_ECHK 1
-#define UNITSTESTC_EFLS 2
-#define UNITSTESTC_MSGENOM "Nominal exit"
-#define UNITSTESTC_MSGECHK "Error checking failed to catch bad data"
-#define UNITSTESTC_MSGEFLS "Incorrect answer for valid data"
-/***************************** </lalErrTable> */
 
 /* The main function */
 int main( int argc, char *argv[] )
@@ -1002,3 +993,4 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+/** \endcond */

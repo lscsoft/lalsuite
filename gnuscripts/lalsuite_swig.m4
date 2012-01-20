@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 6
+# serial 12
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -55,6 +55,23 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     ]
   )
 
+  # command line option to use specific SWIG binary
+  AC_ARG_WITH(
+    [swig],
+    AC_HELP_STRING(
+      [--with-swig],
+      [specify SWIG binary (default: search \$PATH)]
+    ),[
+      AS_IF([test -f "${withval}"],[
+        SWIG="${withval}"
+      ],[
+        AC_MSG_ERROR([file '${withval}' not found])
+      ])
+    ],[
+      SWIG=
+    ]
+  )
+
   # are we are binding LAL itself, or one of the other LAL libraries?
   AS_IF([test x${PACKAGE_NAME} = xlal],[
     swig_is_lal=true
@@ -68,6 +85,9 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     AC_SUBST(SWIG_HEADERS)
   ])
 
+  # string to add to user environment setup scripts
+  SWIG_USER_ENV=
+
   # configure SWIG target scripting languages
   swig_build=false
   LALSUITE_SWIG_LANGUAGES
@@ -77,10 +97,14 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   AS_IF([test ${swig_build} = true],[
 
     # check for swig binary
-    AC_PATH_PROGS(SWIG,[swig],[])
+    AC_MSG_CHECKING([for swig])
     AS_IF([test "x${SWIG}" = x],[
-      AC_MSG_ERROR([could not find 'swig' in path])
+      AC_PATH_PROGS(SWIG,[swig],[])
+      AS_IF([test "x${SWIG}" = x],[
+        AC_MSG_ERROR([could not find 'swig' in path])
+      ])
     ])
+    AC_MSG_RESULT([${SWIG}])
 
     # check for swig version
     AC_MSG_CHECKING([for swig version])
@@ -101,14 +125,6 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
     AS_IF([test "x${PERL}" = x],[
       AC_MSG_ERROR([could not find 'perl' in path])
     ])
-
-    # common SWIG language build makefile
-    SWIG_COMMON_MK="${srcdir}/../lal/swig/swig-common.mk"
-    AC_SUBST_FILE(SWIG_COMMON_MK)
-
-    # SWIG makefile for generating header lists
-    SWIG_HEADER_MK="${srcdir}/../lal/swig/swig-header.mk"
-    AC_SUBST_FILE(SWIG_HEADER_MK)
 
     # symbols to define when generating SWIG wrapping code
     SWIG_SWIG_DEFINES=
@@ -172,34 +188,46 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
 
     # common SWIG interface headers (with LAL only)
     AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} swiglal-common.i swiglal-gsl.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-common.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-gsl.i"
+      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-test.i"
     ])
 
+    # string to add to user environment setup scripts
+    AC_SUBST(SWIG_USER_ENV)
+
     # path SWIG should look in for header files:
-    # keep any -I options in CPPFLAGS, without the -I prefix
+    #  - keep any -I options in CPPFLAGS, without the -I prefix
     SWIG_INCLPATH=[`for n in ${swig_CPPFLAGS}; do echo $n | ${SED} 's|^-I||p;d'; done`]
     SWIG_INCLPATH=[`echo ${SWIG_INCLPATH}`]   # get rid of newlines
     AC_SUBST(SWIG_INCLPATH)
 
-    # path SWIG should look in for libraries:
-    # keep any -L options in _LIB variables, without the -L prefix
-    # keep any "lib*.la" files, replace filename with $objdir;
-    swig_regex=['s|^-L||p;s|lib[^/][^/]*\.la|'"${objdir}"'|p;d']
-    SWIG_LIBPATH="${LAL_LIBS} ${LALSUPPORT_LIBS} ${swig_LIBS}"
-    SWIG_LIBPATH=[`for n in ${SWIG_LIBPATH}; do echo $n | ${SED} "${swig_regex}"; done`]
+    # path SWIG should look in for (pre-installed) libraries:
+    #  - keep any -L options in _LIB variables, without the -L prefix
+    #  - keep any "lib*.la" files, replace filename with $objdir (pre-install)
+    swig_all_libs="${LAL_LIBS} ${LALSUPPORT_LIBS} ${swig_LIBS}"
+    SWIG_LIBPATH=[`for n in ${swig_all_libs}; do echo $n | ${SED} 's|^-L||p;d'; done`]
     SWIG_LIBPATH=[`echo ${SWIG_LIBPATH}`]   # get rid of newlines
-    # add pre-install locations for lal, lalsupport, and lal* libraries
-    SWIG_LIBPATH="${SWIG_LIBPATH} \$(top_builddir)/lib/${objdir}"
-    SWIG_LIBPATH="${SWIG_LIBPATH} \$(top_builddir)/packages/support/src/${objdir}"
-    SWIG_LIBPATH="${SWIG_LIBPATH} \$(top_builddir)/src/${objdir}"
     AC_SUBST(SWIG_LIBPATH)
+    SWIG_PREINST_LIBPATH=[`for n in ${swig_all_libs}; do echo $n | ${SED} 's|lib[^/][^/]*\.la|'"${objdir}"'|p;d'; done`]
+    SWIG_PREINST_LIBPATH=[`echo ${SWIG_PREINST_LIBPATH}`]   # get rid of newlines
+    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/lib/${objdir}"
+    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/src/${objdir}"
+    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/packages/support/src/${objdir}"
+    AC_SUBST(SWIG_PREINST_LIBPATH)
+
+    # deduce library load path to use when running check scripts prior to installation
+    AS_IF([test ${build_vendor} = apple],[
+      SWIG_LD_LIBPATH_NAME=DYLD_FALLBACK_LIBRARY_PATH
+    ],[
+      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+    ])
+    AC_SUBST(SWIG_LD_LIBPATH_NAME)
 
   ],[
 
     # if no SWIG languages were found
     SWIG_WRAPPINGS="NONE"
-    SWIG_COMMON_MK="/dev/null"
-    SWIG_HEADER_MK="/dev/null"
 
   ])
 
@@ -248,9 +276,10 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
     # set message string to indicate language will be built
     SWIG_]uppercase[_ENABLE_VAL=ENABLED
 
-    # language-specific SWIG interface header (with LAL only)
+    # language-specific SWIG interface headers (with LAL only)
     AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} ]lowercase[/swiglal-]lowercase[.i"
+      SWIG_]uppercase[_HEADERS="\$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
+      AC_SUBST(SWIG_]uppercase[_HEADERS)
     ])
 
     # configure $1
@@ -318,12 +347,15 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
     octave_prefix=[`${OCTAVE_CONFIG} -p PREFIX | ${SED} 's|/*$||'`]
     AC_MSG_CHECKING([for octave .oct installation directory])
     octave_localoctfiledir=[`${OCTAVE_CONFIG} -p LOCALOCTFILEDIR | ${SED} 's|/*$||'`]
-    OCTAVE_OCTFILEDIR=[`echo ${octave_localoctfiledir} | ${SED} "s|^${octave_prefix}/||"`]
-    AS_IF([test -n "`echo ${OCTAVE_OCTFILEDIR} | ${SED} -n '\|^/|p'`"],[
-      AC_MSG_ERROR([could not build relative path from '${OCTAVE_OCTFILEDIR}'])
+    octave_octfiledir=[`echo ${octave_localoctfiledir} | ${SED} "s|^${octave_prefix}/||"`]
+    AS_IF([test -n "`echo ${octave_octfiledir} | ${SED} -n '\|^/|p'`"],[
+      AC_MSG_ERROR([could not build relative path from '${octave_octfiledir}'])
     ])
-    AC_MSG_RESULT([${OCTAVE_OCTFILEDIR}])
-    AC_SUBST(OCTAVE_OCTFILEDIR)
+    AC_MSG_RESULT([\${prefix}/${octave_octfiledir}])
+    AC_SUBST(octfiledir, [${prefix}/${octave_octfiledir}])
+
+    # string to add to user environment setup scripts
+    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octfiledir)~E~O~L~'
 
   ])
 ])
@@ -342,6 +374,9 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_PYTHON],[
       AC_MSG_ERROR([could not import numpy])
     ])
     AC_MSG_RESULT([yes])
+
+    # string to add to user environment setup scripts
+    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend PYTHONPATH $(pyexecdir)~E~O~L~'
 
   ])
 ])

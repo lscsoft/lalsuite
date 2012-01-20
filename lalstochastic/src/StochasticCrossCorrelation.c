@@ -19,15 +19,14 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-\file
-\ingroup stochastic
+\addtogroup StochasticCrossCorrelation_c
 
 \brief Calculates the value of the standard optimally-filtered
 cross-correlation statistic for stochastic background searches.
 
 \heading{Description}
 
-\heading{<tt>LALStochasticCrossCorrelationStatistic()</tt>}
+\heading{LALStochasticCrossCorrelationStatistic()}
 
 The default version of the function, for handling non-heterodyned
 data, calculates the value of the standard optimally-filtered
@@ -143,7 +142,7 @@ the optimal filter is more coarsely sampled (for instance, if it
 varies in frequency too slowly to warrant the finer resolution), the
 data streams will be multiplied in the frequency domain and their
 product coarse-grained
-(cf. \ref CoarseGrainFrequencySeries.c to the
+(cf. \ref CoarseGrainFrequencySeries_h to the
 optimal filter resolution before calculating
 \eqref{stochastic_e_bandlimited}.
 
@@ -254,7 +253,7 @@ LALUnitMultiply()
   complex frequency series because it will in general be applied to
   whitened data include the different complex whitening filters for
   the two streams.
-  (cf. \ref StochasticOptimalFilter.c)</li>
+  (cf. \ref StochasticOptimalFilter_c)</li>
 <li> The coarse-graining technique produces the same
   cross-correlation statistic as fine-graining the optimal filter by
   assuming it is zero outside the coarse-grained frequency range and
@@ -271,6 +270,7 @@ LALUnitMultiply()
   \f}</li>
 </ul>
 
+ @{
 */
 
 #include <lal/LALStdlib.h>
@@ -2550,3 +2550,5 @@ LALStochasticCrossCorrelationSpectrumStrain(
   DETATCHSTATUSPTR(status);
   RETURN(status);
 } /* LALStochasticCrossCorrelationSpectrumStrain() */
+
+/** @} */

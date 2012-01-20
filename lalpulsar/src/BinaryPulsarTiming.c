@@ -140,8 +140,6 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params )
 {
-  const CHAR *fn = "XLALBinaryPulsarDeltaT()";
-
   REAL8 dt=0.; /* binary pulsar deltaT */
   REAL8 x, xdot;	/* x = asini/c */
   REAL8 w=0;  /* longitude of periastron */
@@ -166,15 +164,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   /* Check input arguments */
   if( input == (BinaryPulsarInput *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLINPUT );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLINPUT );
   }
 
   if( output == (BinaryPulsarOutput *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLOUTPUT );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLOUTPUT );
   }
 
   if( params == (BinaryPulsarParams *)NULL ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLPARAMS );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
   if((!strcmp(params->model, "BT")) &&
@@ -184,7 +182,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
      (!strcmp(params->model, "ELL1")) &&
      (!strcmp(params->model, "DD")) &&
      (!strcmp(params->model, "MSS"))){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENULLBINARYMODEL );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
   /* convert certain params to SI units */
@@ -569,7 +567,7 @@ this isn't defined for either of the two pulsars currently using this model */
 
   /* check that the returned value is not a NaN */
   if( isnan(output->deltaT) ){
-    XLAL_ERROR_VOID( fn, BINARYPULSARTIMINGH_ENAN );
+    XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENAN );
   }
 }
 
@@ -595,8 +593,6 @@ void
 XLALReadTEMPOParFile( BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
-  const CHAR *fn = "XLALReadTEMPOParFile()";
-
   FILE *fp=NULL;
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
@@ -604,7 +600,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   int UNUSED c;
 
   if( output == (BinaryPulsarParams *)NULL ){
-    XLAL_ERROR_VOID( fn, XLAL_EFAULT );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
   }
 
   output->model = NULL; /* set binary model to null - incase not a binary */
@@ -767,7 +763,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->thetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
-    XLAL_ERROR_VOID( fn, XLAL_EIO );
+    XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
+    XLAL_ERROR_VOID( XLAL_EIO );
   }
 
   /* read all the pulsar data into the string array */
@@ -1802,6 +1799,116 @@ params.gammaErr);*/
 
   }
 }
+
+LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile )
+/*void XLALReadTEMPOCorFile( REAL8Array *cormat, LALStringVector *params, 
+                           CHAR *corfile )*/{
+  FILE *fp = NULL;
+  CHAR *firstline = XLALStringDuplicate( "" );
+  CHAR onechar[2];
+  INT4 i = 0, numPars = 0, c = 1, sl = 0;
+  LALStringVector *tmpparams = NULL; /* temporary parameter names */
+  LALStringVector *params = NULL;
+  UINT4Vector *dims = NULL;
+  
+  /* check the file exists */
+  if( access(corfile, F_OK) != 0 ){
+    XLALPrintError("Error... correlation matrix file does not exist!\n");
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+  }
+  
+  /* open file */
+  if( (fp = fopen(corfile, "r")) == NULL ){
+    XLALPrintError("Error... cannot open correlation matrix file!\n");
+    XLAL_ERROR_NULL(XLAL_EIO);
+  }
+  
+  /* read in first line of the file */
+  while( !strchr( fgets(onechar, 2, fp), '\n' ) )
+    firstline = XLALStringAppend( firstline, onechar );
+
+  sl = strlen(firstline);
+  
+  /* count the number of parameters */
+  for ( i = 0; i < sl; i++ ){
+    /* use isspace as delimiters could be unknown generic whitespace */
+    if ( !isspace(firstline[i]) ){
+      if ( c ){
+        numPars++;
+        c = 0;
+      }
+    }else
+      c = 1;
+  }
+  
+  /* parse the line and put into the params vector */
+  rewind(fp); /* rewind to start of the file */
+  for ( i = 0; i < numPars; i++ ){
+    CHAR tmpStr[128];
+    
+    if( fscanf(fp, "%s", tmpStr) == EOF ){
+      XLALPrintError("Error... Problem reading first line of correlation\
+ matrix!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    tmpparams = XLALAppendString2Vector( tmpparams, tmpStr );
+    
+    /* convert some parameter names to a more common convention */
+    if ( !strcasecmp(tmpStr, "RAJ") ) /* convert RAJ to ra */
+      params = XLALAppendString2Vector( params, "ra" );
+    else if ( !strcasecmp(tmpStr, "DECJ") ) /* convert DECJ to dec */
+      params = XLALAppendString2Vector( params, "dec" );
+    else
+      params = XLALAppendString2Vector( params, tmpStr );
+  }
+  
+  dims = XLALCreateUINT4Vector( 2 );
+  dims->data[0] = numPars;
+  dims->data[1] = numPars;
+  
+  /* set the correlation matrix to the correct size */
+  cormat = XLALResizeREAL8Array( cormat, dims );
+  
+  /* read through covariance values */
+  for ( i = 0; i < numPars; i++ ){
+    CHAR tmpStr[128];
+    INT4 j = 0;
+    
+    if( fscanf(fp, "%s", tmpStr) == EOF ){
+      XLALPrintError("Error... problem reading in correlation matrix!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    if ( strcmp(tmpStr, tmpparams->data[i]) ){
+      XLALPrintError("Error... problem reading in correlation matrix. \
+Parameters not in consistent order!\n");
+      XLAL_ERROR_NULL(XLAL_EIO);
+    }
+    
+    for( j = 0; j < i+1; j++ ){
+      REAL8 tmpval = 0.;
+      
+      if( fscanf(fp, "%lf", &tmpval) == EOF ){
+        XLALPrintError("Error... problem reading in correlation matrix!\n");
+        XLAL_ERROR_NULL(XLAL_EIO);
+      }
+      
+      /* if off diagonal values are +/-1 set to +/- 0.99999 */
+      if ( j != i && abs(tmpval) == 1. )
+        tmpval *= 0.99999;
+      
+      cormat->data[i*numPars + j] = tmpval;
+      
+      /* set opposite elements */
+      if( j != i )
+        cormat->data[j*numPars + i] = tmpval;
+    }
+  }
+  
+  return params;
+}
+
 
 /* function converts dec or ra from format dd/hh:mm:ss.sss or format
    dd/hhmmss.ss to radians */

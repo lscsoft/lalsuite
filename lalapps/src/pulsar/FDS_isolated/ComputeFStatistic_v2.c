@@ -65,14 +65,14 @@ int finite(double);
 #include <lal/DopplerFullScan.h>
 #include <lal/BinaryPulsarTiming.h>
 
+#include <lal/TransientCW_utils.h>
+
 #include <lalapps.h>
 
 /* local includes */
 #include "HeapToplist.h"
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
-
-#include "../transientCW_utils.h"
 
 RCSID( "$Id$");
 
@@ -140,6 +140,7 @@ typedef struct
 {
   UINT4 NSFTs;			/**< total number of SFTs */
   REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
+  REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (toplist etc) */
 
   /* transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
@@ -350,7 +351,6 @@ REAL8 XLALGetUserCPUTime ( void );
  */
 int main(int argc,char *argv[])
 {
-  static const char *fn = __func__;
   LALStatus status = blank_status;	/* initialize status */
 
   FILE *fpFstat = NULL, *fpTransientStats = NULL;
@@ -460,12 +460,12 @@ int main(int argc,char *argv[])
   FILE *fpTiming = NULL;
   if ( uvar.outputTiming ) {
     if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
-      XLALPrintError ("%s: failed to open timing file '%s' for writing \n", fn, uvar.outputTiming );
+      XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
       return COMPUTEFSTATISTIC_ESYS;
     }
     /* write header comment line */
     if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", fn, uvar.outputTiming );
+      XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
       return COMPUTEFSTATISTIC_EXLAL;
     }
   } /* if outputTiming */
@@ -508,7 +508,7 @@ int main(int argc,char *argv[])
   tickCounter = 0;
   clock0 = time(NULL);
 
-  REAL8 tic, toc;	// high-precision timing counters
+  REAL8 tic0, tic, toc;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
 
   /* skip search if user supplied --countTemplates */
@@ -516,7 +516,7 @@ int main(int argc,char *argv[])
     {
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
 
-      tic = GETTIME();
+      tic0 = tic = GETTIME();
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
@@ -529,7 +529,7 @@ int main(int argc,char *argv[])
 
           XLALDriverFstatREAL4 ( &F, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
           if ( xlalErrno ) {
-            XLALPrintError ("%s: XLALDriverFstatREAL4() failed with errno=%d\n", fn, xlalErrno );
+            XLALPrintError ("%s: XLALDriverFstatREAL4() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
           }
           /* this function only returns F, not Fa, Fb */
@@ -538,7 +538,7 @@ int main(int argc,char *argv[])
 
         } /* if GPUready==true */
       toc = GETTIME();
-      timing.tauFstat = toc - tic;	// Fstat-calculation time
+      timing.tauFstat = toc - tic;	// pure Fstat-calculation time
       timing.NSFTs = GV.NSFTs;
 
       /* Progress meter */
@@ -707,7 +707,7 @@ int main(int argc,char *argv[])
 
 	  if ( (fpFstatAtoms = fopen (fnameAtoms, "wb")) == NULL)
 	    {
-	      XLALPrintError ("\n%s: Error opening file '%s' for writing..\n\n", fn, fnameAtoms );
+	      XLALPrintError ("\n%s: Error opening file '%s' for writing..\n\n", __func__, fnameAtoms );
 	      return COMPUTEFSTATISTIC_ESYS;
 	    }
 	  LALFree ( fnameAtoms );
@@ -716,7 +716,7 @@ int main(int argc,char *argv[])
 	  fprintf (fpFstatAtoms, "%s", GV.logstring );
 
 	  if ( write_MultiFstatAtoms_to_fp ( fpFstatAtoms, Fstat.multiFstatAtoms ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: failed to write atoms to output file. xlalErrno = %d\n", fn, xlalErrno );
+            XLALPrintError ("%s: failed to write atoms to output file. xlalErrno = %d\n", __func__, xlalErrno );
             return COMPUTEFSTATISTIC_ESYS;
           }
 
@@ -732,7 +732,7 @@ int main(int argc,char *argv[])
           /* compute Fstat map F_mn over {t0, tau} */
           tic = GETTIME();
           if ( (transientCand.FstatMap = XLALComputeTransientFstatMap ( Fstat.multiFstatAtoms, GV.transientWindowRange, uvar.transient_useFReg)) == NULL ) {
-            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", fn, xlalErrno );
+            XLALPrintError ("%s: XLALComputeTransientFstatMap() failed with xlalErrno = %d.\n", __func__, xlalErrno );
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = GETTIME();
@@ -743,11 +743,35 @@ int main(int argc,char *argv[])
           transientCand.logBstat = XLALComputeTransientBstat ( GV.transientWindowRange, transientCand.FstatMap );
           UINT4 err = xlalErrno;
           if ( err ) {
-            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", fn, err );
+            XLALPrintError ("%s: XLALComputeTransientBstat() failed with xlalErrno = %d\n", __func__, err );
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = GETTIME();
           timing.tauTransMarg = toc - tic;
+
+          /* ----- compute parameter posteriors for {t0, tau} */
+          pdf1D_t *pdf_t0  = NULL;
+          pdf1D_t *pdf_tau = NULL;
+
+          if ( (pdf_t0 = XLALComputeTransientPosterior_t0 ( GV.transientWindowRange, transientCand.FstatMap )) == NULL ) {
+              XLALPrintError ("%s: failed to compute t0-posterior\n", __func__ );
+              XLAL_ERROR ( xlalErrno );
+          }
+          if ( (pdf_tau = XLALComputeTransientPosterior_tau ( GV.transientWindowRange, transientCand.FstatMap )) == NULL ) {
+              XLALPrintError ("%s: failed to compute tau-posterior\n", __func__ );
+              XLAL_ERROR ( xlalErrno );
+          }
+          /* get maximum-posterior estimate (MP) from the modes of these pdfs */
+          transientCand.t0_MP = XLALFindModeOfPDF1D ( pdf_t0 );
+          if ( xlalErrno ) {
+              XLALPrintError ("%s: mode-estimation failed for pdf_t0. xlalErrno = %d\n", __func__, xlalErrno );
+              XLAL_ERROR ( xlalErrno );
+          }
+          transientCand.tau_MP =  XLALFindModeOfPDF1D ( pdf_tau );
+          if ( xlalErrno ) {
+              XLALPrintError ("%s: mode-estimation failed for pdf_tau. xlalErrno = %d\n", __func__, xlalErrno );
+              XLAL_ERROR ( xlalErrno );
+          }
 
           /* record timing-relevant transient search params */
           timing.tauMin  = GV.transientWindowRange.tau;
@@ -765,12 +789,14 @@ int main(int argc,char *argv[])
 
           /* output everything into stats-file (one line per candidate) */
           if ( write_transientCandidate_to_fp ( fpTransientStats, &transientCand ) != XLAL_SUCCESS ) {
-            XLALPrintError ("%s: write_transientCandidate_to_fp() failed.\n", fn );
+            XLALPrintError ("%s: write_transientCandidate_to_fp() failed.\n", __func__ );
             return COMPUTEFSTATISTIC_EXLAL;
           }
 
           /* free dynamically allocated F-stat map */
           XLALDestroyTransientFstatMap ( transientCand.FstatMap );
+          XLALDestroyPDF1D ( pdf_t0 );
+          XLALDestroyPDF1D ( pdf_tau );
 
         } /* if fpTransientStats */
 
@@ -778,10 +804,14 @@ int main(int argc,char *argv[])
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
       Fstat.multiFstatAtoms = NULL;
 
+      /* now measure total loop time per template */
+      toc = GETTIME();
+      timing.tauTemplate = toc - tic0;
+
       /* if requested: output timings into timing-file */
       if ( fpTiming ) {
         if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
-          XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", fn );
+          XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
           return COMPUTEFSTATISTIC_EXLAL;
         }
       } /* if timing output requested */
@@ -1185,8 +1215,6 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
 void
 InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 {
-  const char *fn = __func__;
-
   REAL8 fCoverMin, fCoverMax;	/* covering frequency-band to read from SFTs */
   SFTCatalog *catalog = NULL;
   SFTConstraints constraints = empty_SFTConstraints;
@@ -1197,7 +1225,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   LIGOTimeGPS startTime, endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
 
-  INITSTATUS (status, fn, rcsid);
+  INITSTATUS (status, __func__, rcsid);
   ATTATCHSTATUSPTR (status);
 
   /* set the current working directory */
@@ -1536,7 +1564,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     cfg->transientWindowRange.type = TRANSIENT_EXPONENTIAL;		/* exponential window starting at t0, charact. time tau */
   else
     {
-      XLALPrintError ("%s: Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", fn, uvar->transient_WindowType);
+      XLALPrintError ("%s: Illegal transient window '%s' specified: valid are 'none', 'rect' or 'exp'\n", __func__, uvar->transient_WindowType);
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
@@ -1544,12 +1572,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if ( cfg->transientWindowRange.type == TRANSIENT_NONE )
     if ( XLALUserVarWasSet ( &uvar->transient_t0Days ) || XLALUserVarWasSet ( &uvar->transient_t0DaysBand ) || XLALUserVarWasSet ( &uvar->transient_dt0 ) ||
          XLALUserVarWasSet ( &uvar->transient_tauDays ) || XLALUserVarWasSet ( &uvar->transient_tauDaysBand ) || XLALUserVarWasSet ( &uvar->transient_dtau ) ) {
-      XLALPrintError ("%s: ERROR: transientWindow->type == NONE, but window-parameters were set! Use a different window-type!\n", fn );
+      XLALPrintError ("%s: ERROR: transientWindow->type == NONE, but window-parameters were set! Use a different window-type!\n", __func__ );
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
     }
 
   if (   uvar->transient_t0DaysBand < 0 || uvar->transient_tauDaysBand < 0 ) {
-    XLALPrintError ("%s: only positive t0/tau bands allowed (%f, %f)\n", fn, uvar->transient_t0DaysBand, uvar->transient_tauDaysBand );
+    XLALPrintError ("%s: only positive t0/tau bands allowed (%f, %f)\n", __func__, uvar->transient_t0DaysBand, uvar->transient_tauDaysBand );
     ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
   }
 
@@ -1738,9 +1766,7 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
 void
 checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 {
-  const char *fn = __func__;
-
-  INITSTATUS (status, fn, rcsid);
+  INITSTATUS (status, __func__, rcsid);
 
   if (uvar->ephemYear == NULL)
     {
@@ -2093,19 +2119,18 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
 scanlineWindow_t *
 XLALCreateScanlineWindow ( UINT4 windowWings ) /**< number of neighbors on each side in scanlineWindow */
 {
-  const CHAR *fn = "XLALCreateScanlineWindow()";
   scanlineWindow_t *ret = NULL;
   UINT4 windowLen = 1 + 2 * windowWings;
 
   if ( ( ret = LALCalloc ( 1, sizeof(*ret)) ) == NULL ) {
-    XLAL_ERROR_NULL( fn, COMPUTEFSTATISTIC_EMEM );
+    XLAL_ERROR_NULL( COMPUTEFSTATISTIC_EMEM );
   }
 
   ret->length = windowLen;
 
   if ( (ret->window = LALCalloc ( windowLen, sizeof( ret->window[0] ) )) == NULL ) {
     LALFree ( ret );
-    XLAL_ERROR_NULL( fn, COMPUTEFSTATISTIC_EMEM );
+    XLAL_ERROR_NULL( COMPUTEFSTATISTIC_EMEM );
   }
 
   ret->center = &(ret->window[ windowWings ]);	/* points to central bin */
@@ -2134,11 +2159,10 @@ XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow )
 int
 XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow )
 {
-  const CHAR *fn = "XLALAdvanceScanlineWindow()";
   UINT4 i;
 
   if ( !nextCand || !scanWindow || !scanWindow->window ) {
-    XLAL_ERROR (fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   for ( i=1; i < scanWindow->length; i ++ )
@@ -2207,24 +2231,22 @@ CHAR *append_string ( CHAR *str1, const CHAR *str2 )
 int
 write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
 {
-  const char *fn = __func__;
-
   /* input sanity */
   if ( !fp ) {
-    XLALPrintError ("%s: invalid NULL input 'fp'\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'fp'\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* if timingInfo == NULL ==> write header comment line */
   if ( ti == NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s]\n");
+      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]\n");
       return XLAL_SUCCESS;
     } /* if ti == NULL */
 
 
-  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg );
+  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e\n",
+            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate );
 
   return XLAL_SUCCESS;
 
@@ -2236,21 +2258,19 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
 REAL8
 XLALGetUserCPUTime ( void )
 {
-  const char *fn = __func__;
-
   struct timespec res;
   struct timespec ut;
   clockid_t clk_id = CLOCK_PROCESS_CPUTIME_ID;
 
   if ( clock_getres ( clk_id, &res ) != 0 ) {
-    XLALPrintError ("%s: failed to call clock_getres(), errno = %d\n", fn, errno );
-    XLAL_ERROR_REAL8 ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: failed to call clock_getres(), errno = %d\n", __func__, errno );
+    XLAL_ERROR_REAL8 ( XLAL_ESYS );
   }
-  XLALPrintError ("%s: Clock-precision: {%ld s, %ld ns}\n", fn, res.tv_sec, res.tv_nsec );
+  XLALPrintError ("%s: Clock-precision: {%ld s, %ld ns}\n", __func__, res.tv_sec, res.tv_nsec );
 
   if ( clock_gettime ( clk_id, &ut) != 0 ) {
-    XLALPrintError ("%s: failed to call clock_gettime(), errno = %d\n", fn, errno );
-    XLAL_ERROR_REAL8 ( fn, XLAL_ESYS );
+    XLALPrintError ("%s: failed to call clock_gettime(), errno = %d\n", __func__, errno );
+    XLAL_ERROR_REAL8 ( XLAL_ESYS );
   }
 
   return ut.tv_sec + (ut.tv_nsec/1.e9);

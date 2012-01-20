@@ -456,46 +456,41 @@ LALFindChirpInjectSignals (
     }
     else
     {
-      INT4 i, dataLength, wfmLength; /*, sampleRate;*/
+      const INT4 wfmLength = waveform.h->data->length;
+      INT4 i = wfmLength;
+      REAL4 *dataPtr = waveform.h->data->data;
+      REAL4 *tmpdata;
+
       /* XXX This code will BREAK if the first element of the frequency XXX *
        * XXX series does not contain dynRange. This is the case for     XXX *
        * XXX calibrated strain data, but will not be the case when      XXX *
        * XXX filtering uncalibrated data.                               XXX */
-
       REAL8 dynRange;
-      float *x1;
-
       LALWarning (status, "Attempting to calculate dynRange: Will break if un-calibrated strain-data is used.");
       dynRange = 1.0/(resp->data->data[0].re);
 
       /* set the start times for injection */
       XLALINT8NSToGPS( &(waveform.h->epoch), waveformStartTime );
 
-      wfmLength = waveform.h->data->length;
-      dataLength = 2*wfmLength;
-      x1 = (float *) LALMalloc(sizeof(x1)*dataLength);
       /*
        * We are using functions from NRWaveInject which do not take a vector
        * with alternating h+ & hx but rather one that stores h+ in the first
-       * half and hx in the second half.
+       * half and hx in the second half. That is, we must transpose h.
        *
        * We also must multiply the strain by the distance to be compatible
        * with NRWaveInject.
-       *
        */
-      for( i = 0; i < dataLength; i++)
-      {
-        x1[i] = waveform.h->data->data[i]*thisEvent->distance;
+      if (waveform.h->data->vectorLength != 2)
+          LALAbort("expected alternating h+ and hx");
+      tmpdata = XLALCalloc(2 * wfmLength, sizeof(*tmpdata));
+      for (;i--;) {
+            tmpdata[i] = dataPtr[2*i] * thisEvent->distance;
+            tmpdata[wfmLength+i] = dataPtr[2*i+1] * thisEvent->distance;
       }
-      for( i = 0; i < wfmLength; i++)
-      {
-            waveform.h->data->data[i] = x1[2*i];
-            waveform.h->data->data[wfmLength+i] = x1[2*i+1];
-      }
-
-      LALFree(x1);
-
+      memcpy(dataPtr, tmpdata, 2 * wfmLength * sizeof(*tmpdata));
+      XLALFree(tmpdata);
       waveform.h->data->vectorLength = wfmLength;
+      waveform.h->data->length = 2;
 
       LALInjectStrainGW( status->statusPtr ,
                                       chan ,
@@ -636,8 +631,6 @@ XLALFindChirpTagTemplateAndSegment (
         )
 
 {
-    static const char *func = "XLALFindChirpTagTemplateAndSegment";
-
     UINT4                s, t;  /* s over segments and t over templates */
     SnglInspiralTable    *thisEvent = NULL;
     InspiralTemplate     *thisTmplt = NULL;
@@ -649,17 +642,17 @@ XLALFindChirpTagTemplateAndSegment (
     /* Sanity checks on input arguments for debugging */
     if (!dataSegVec || !tmpltHead || !events || !(*events) ||
           !ifo || !analyseThisTmplt )
-       XLAL_ERROR( func, XLAL_EFAULT );
+       XLAL_ERROR( XLAL_EFAULT );
 
     if ( tdFast < 0.0 || tdFast > 1.0 )
-       XLAL_ERROR( func, XLAL_EINVAL );
+       XLAL_ERROR( XLAL_EINVAL );
 #endif
 
     /* Do a IFO cut on the coinc list */
     (*events) =  XLALIfoCutSingleInspiral( events, ifo);
 
     if ( XLALClearErrno() ) {
-       XLAL_ERROR( func, XLAL_EFUNC );
+       XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* make sure the sngl inspirals are time ordered */
@@ -1150,7 +1143,6 @@ XLALFindChirpBankSimInjectSignal (
     FindChirpBankSimParams     *simParams
     )
 {
-  static const char    *func = "XLALFindChirpBankSimInjectSignal";
   LALStatus             status;
   SimInspiralTable     *bankInjection;
   CHAR                  tmpChName[LALNameLength];
@@ -1169,7 +1161,7 @@ XLALFindChirpBankSimInjectSignal (
   {
     XLALPrintError(
         "XLAL Error: specify either a sim_inspiral table or sim params\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /* create memory for the bank simulation */
@@ -1186,7 +1178,7 @@ XLALFindChirpBankSimInjectSignal (
     {
       XLALPrintError(
           "XLAL Error: frame name and channel name must be specified\n" );
-      XLAL_ERROR_NULL( func, XLAL_EINVAL );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
     }
 
     fprintf( stderr, "reading data from %s %s\n",
@@ -1242,16 +1234,16 @@ XLALFindChirpBankSimInjectSignal (
     if ( status.statusCode )
     {
       REPORTSTATUS( &status );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
     XLALDestroyREAL4Vector( frameData.data );
 #endif
     XLALPrintError( "XLAL Error: frame reading not implemented\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 #else
     XLALPrintError( "XLAL Error: LAL not compiled with frame support\n" );
-    XLAL_ERROR_NULL( func, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
 #endif
   }
   else
@@ -1327,7 +1319,7 @@ XLALFindChirpBankSimInjectSignal (
       {
         XLALPrintError(
             "error: unknown waveform for bank simulation injection\n" );
-        XLAL_ERROR_NULL( func, XLAL_EINVAL );
+        XLAL_ERROR_NULL( XLAL_EINVAL );
       }
 
       /* set the injection distance to 1 Mpc */
@@ -1345,7 +1337,7 @@ XLALFindChirpBankSimInjectSignal (
     if ( status.statusCode )
     {
       REPORTSTATUS( &status );
-      XLAL_ERROR_NULL( func, XLAL_EFAILED );
+      XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
     /* restore the saved channel name */
@@ -1366,7 +1358,6 @@ XLALFindChirpBankSimSignalNorm(
     )
 {
   /* compute the minimal match normalization */
-  static const char *func = "XLALFindChirpBankSimSignalNorm";
   UINT4 k;
   REAL4 matchNorm = 0;
   REAL4 *tmpltPower = fcDataParams->tmpltPowerVec->data;
@@ -1403,7 +1394,7 @@ XLALFindChirpBankSimSignalNorm(
 
     default:
       XLALPrintError( "Error: unknown approximant\n" );
-      XLAL_ERROR_REAL4( func, XLAL_EINVAL );
+      XLAL_ERROR_REAL4( XLAL_EINVAL );
   }
 
   matchNorm *= ( 4.0 * (REAL4) fcSegVec->data->deltaT ) /
@@ -1478,10 +1469,10 @@ static int FindTimeSeriesStartAndEnd (
 
 #ifndef LAL_NDEBUG
   if ( !signalvec )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 
   if ( !signalvec->data )
-    XLAL_ERROR( __func__, XLAL_EFAULT );
+    XLAL_ERROR( XLAL_EFAULT );
 #endif
 
   length = signalvec->length;

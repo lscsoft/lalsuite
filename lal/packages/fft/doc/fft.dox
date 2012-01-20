@@ -1,0 +1,21 @@
+/**
+\defgroup fft fft
+\ingroup genMath
+
+\brief This package contains various routines for performing FFTs.
+@{
+*/
+
+
+/**
+\defgroup RealFFT_h RealFFT_h
+
+\defgroup ComplexFFT_h ComplexFFT_h
+
+\defgroup TimeFreqFFT_h TimeFreqFFT_h
+
+\defgroup Convolution Convolution
+*/
+
+
+/** @} */

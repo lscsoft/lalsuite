@@ -110,6 +110,7 @@ struct options {
 	double q;
 	unsigned long seed;
 	double time_step;
+	double jitter;
 	char *time_slide_file;
 	char *user_tag;
 };
@@ -140,6 +141,7 @@ static struct options options_defaults(void)
 	defaults.q = XLAL_REAL8_FAIL_NAN;
 	defaults.seed = 0;
 	defaults.time_step = 210.0 / LAL_PI;
+	defaults.jitter = 0.0;
 	defaults.time_slide_file = NULL;
 	defaults.user_tag = NULL;
 
@@ -223,6 +225,10 @@ static void print_usage(void)
 "--time-step value\n" \
 "	Set the time betwen injections in seconds (default = 210 / pi).\n" \
 "\n" \
+"--jitter value\n" \
+"	Give the injection time a random offset within a centered window with a\n" \
+"	length specified by this parameter. Value is in seconds, default is 0.\n" \
+"\n" \
 "--time-slide-file filename\n" \
 "	Set the name of the LIGO Light-Weight XML file from which to load\n" \
 "	the time slide table.  The document must contain exactly 1 time\n" \
@@ -280,6 +286,7 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 		{"seed", required_argument, NULL, 'P'},
 		{"time-step", required_argument, NULL, 'Q'},
 		{"time-slide-file", required_argument, NULL, 'W'},
+		{"jitter", required_argument, NULL, 'X'},
 		{"user-tag", required_argument, NULL, 'R'},
 		{NULL, 0, NULL, 0}
 	};
@@ -440,6 +447,11 @@ static struct options parse_command_line(int *argc, char **argv[], const Process
 
 	case 'W':
 		options.time_slide_file = optarg;
+		ADD_PROCESS_PARAM(process, "lstring");
+		break;
+
+	case 'X':
+		options.jitter = atof(optarg);
 		ADD_PROCESS_PARAM(process, "lstring");
 		break;
 
@@ -897,8 +909,7 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 	sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
 
 	/* duration and bandwidth.  keep picking until a valid pair is
-	 * obtained (i.e. their product is >= 2 / \pi) */
-
+ 	 * obtained (i.e. their product is >= 2 / \pi) */
 	do {
 		sim_burst->duration = ran_flat_log(rng, mindur, maxdur);
 		sim_burst->bandwidth = ran_flat_log(rng, minband, maxband);
@@ -988,7 +999,11 @@ static SimBurst *random_all_sky_sineGaussian(double minf, double maxf, double q,
 	/* q and centre frequency.  three steps between minf and maxf */
 
 	sim_burst->q = q;
-	sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
+	if( minf == maxf ){
+		sim_burst->frequency = maxf;
+	} else {
+		sim_burst->frequency = ran_flat_log_discrete(rng, minf, maxf, pow(maxf / minf, 1.0 / 3.0));
+	}
 
 	/* hrss */
 
@@ -1069,7 +1084,7 @@ static void write_xml(const char *filename, const ProcessTable *process_table_he
 int main(int argc, char *argv[])
 {
 	struct options options;
-	INT8 tinj;
+	INT8 tinj, jitter;
 	gsl_rng *rng;
 	ProcessTable *process_table_head = NULL, *process;
 	ProcessParamsTable *process_params_table_head = NULL;
@@ -1183,7 +1198,14 @@ int main(int argc, char *argv[])
 		 * Peak time at geocentre in GPS seconds
 		 */
 
-		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj);
+		/* Add "jitter" to the injection if user requests it */
+		if(options.jitter > 0) {
+			jitter = gsl_ran_flat(rng, -options.jitter/2, options.jitter/2)*1e9;
+		} else {
+			jitter = 0;
+		}
+
+		XLALINT8NSToGPS(&(*sim_burst)->time_geocent_gps, tinj + jitter);
 
 		/*
 		 * Peak time at geocentre in GMST radians

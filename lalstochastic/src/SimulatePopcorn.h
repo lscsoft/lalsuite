@@ -19,8 +19,8 @@
 
 /**
 \author Tania Regimbau
-\file
-\ingroup stochastic
+\addtogroup SimulatePopcorn_h
+
 \brief Provides prototype for simulating whitened time-domain signals in a pair
 of detectors that arises from low duty cycle astrophysical backgrounds.
 
@@ -29,6 +29,7 @@ of detectors that arises from low duty cycle astrophysical backgrounds.
 #include <lal/SimulatePopcorn.h>
 \endcode
 
+@{
 */
 
 #ifndef _SIMULATEPOPCOR_H
@@ -57,25 +58,28 @@ extern "C" {
 NRCSID (SIMULATEPOPCORNH, "$Id$");
 
 /** \name Error Codes *//*@{*/
-#define SIMULATEPOPCORNH_ENULLP          1
-#define SIMULATEPOPCORNH_ENONNULLFMIN    2
-#define SIMULATEPOPCORNH_EMMDELTA        3
-#define SIMULATEPOPCORNH_EMMLEN          4
-#define SIMULATEPOPCORNH_EBV             5
+#define SIMULATEPOPCORNH_ENULLP          1	/**< Null pointer */
+#define SIMULATEPOPCORNH_ENONNULLFMIN    2	/**< Non zero start frequency */
+#define SIMULATEPOPCORNH_EMMDELTA        3	/**< Mismatch in sequence spacings */
+#define SIMULATEPOPCORNH_EMMLEN          4	/**< Mismatch in sequence lengths */
+#define SIMULATEPOPCORNH_EBV             5	/**< Bad input or parameter */
+/*@}*/
 
-
+/** \cond DONT_DOXYGEN */
 #define SIMULATEPOPCORNH_MSGENULLP         "Null pointer"
 #define SIMULATEPOPCORNH_MSGENONNULLFMIN   "Non zero start frequency"
 #define SIMULATEPOPCORNH_MSGEMMDELTA       "Mismatch in sequence spacings"
 #define SIMULATEPOPCORNH_MSGEMMLEN         "Mismatch in sequence lengths"
 #define SIMULATEPOPCORNH_MSGEBV            "Bad input or parameter"
-/*@}*/
+/** \endcond */
 
-/** These constants define the cosmological model
+/** \name These constants define the cosmological model
+ * @{
 */
 #define SIMULATEPOPCORN_ho 0.7
 #define SIMULATEPOPCORN_OMEGAMATTER 0.3
 #define SIMULATEPOPCORN_OMEGAVACUUM 0.7
+/** @} */
 
 /** These are function pointers to functions that model burst waveforms.
  */
@@ -118,6 +122,9 @@ typedef struct tagSimPopcornOutputStruc {
 void
 LALSimPopcornTimeSeries (LALStatus *status,SimPopcornOutputStruc *output,
     SimPopcornInputStruc *input,SimPopcornParamsStruc *params);
+
+
+/** @} */
 
 #ifdef  __cplusplus
 }

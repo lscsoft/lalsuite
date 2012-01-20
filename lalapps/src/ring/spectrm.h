@@ -29,6 +29,12 @@
  */
 
 #include <lal/LALDatatypes.h>
+#include <stdio.h>
+#include <gsl/gsl_rng.h>
+#include <lal/LALStdlib.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALSimNoise.h>
 
 
 /* routine to compute an average spectrum from time series data */
@@ -39,6 +45,15 @@ REAL4FrequencySeries *compute_average_spectrum(
     REAL8                    strideDuration,
     REAL4FFTPlan            *fwdplan,
     int                      whiteSpectrum
+    );
+
+
+/* Routine to generate a theoretical PSD */
+REAL8FrequencySeries *generate_theoretical_psd(
+    REAL4                    deltaT,
+    REAL8                    segmentDuration,
+    UINT4                    spectrumNumber,
+    REAL8                    simScale
     );
 
 
@@ -61,5 +76,13 @@ int calibrate_spectrum(
     REAL8                    lowCutoffFrequency,
     int                      inverse
     );
+
+typedef enum
+{
+  WHITE_PSD,
+  ILIGO_PSD,
+  ALIGO_PSD
+}
+spectrumType;
 
 #endif /* INVSPEC_H */

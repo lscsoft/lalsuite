@@ -35,7 +35,6 @@ NRCSID( LALSTRINGC, "$Id$" );
 /** Like strcat but dynamically reallocates string with LALRealloc. */
 char * XLALStringAppend( char *s, const char *append )
 {
-  static const char *func = "XLALStringAppend";
   size_t curlen;
   size_t newlen;
   if ( ! append )
@@ -44,7 +43,7 @@ char * XLALStringAppend( char *s, const char *append )
   newlen = curlen + strlen( append );
   s = LALRealloc( s, newlen + 1 );
   if ( ! s )
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   strcpy( s + curlen, append );
   return s;
 }

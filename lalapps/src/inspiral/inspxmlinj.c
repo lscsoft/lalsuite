@@ -218,15 +218,6 @@ int main ( int argc, char *argv[] )
                 long_options[option_index].name, gendsec );
             exit( 1 );
           }
-          if ( gendsec > 999999999 )
-          {
-            fprintf( stderr, "invalid argument to --%s:\n"
-                "GPS start time is after " 
-                "Sep 14, 2011  01:46:26 UTC:\n"
-                "(%ld specified)\n", 
-                long_options[option_index].name, gendsec );
-            exit( 1 );
-          }
           injParams.geocent_end_time.gpsSeconds = (INT4) gendsec;
           this_proc_param = this_proc_param->next = 
             next_process_param( long_options[option_index].name, "int", 

@@ -1,8 +1,8 @@
-%define _prefix /opt/lscsoft/lalapps
+%define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
-%define _pkgpythondir %{_prefix}/lib/python2.4/site-packages/@PACKAGE@
-%define _pkgpyexecdir %{_libdir}/python2.4/site-packages/@PACKAGE@
+%define _pkgpythondir %{_prefix}/lib/python2.6/site-packages/@PACKAGE@
+%define _pkgpyexecdir %{_libdir}/python2.6/site-packages/@PACKAGE@
 
 Name: @PACKAGE@
 Version: @VERSION@
@@ -14,8 +14,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/daswg/projects/lalapps.html
 Packager: Duncan Brown <dbrown@ligo.caltech.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: gsl-devel fftw3-devel libframe-devel libmetaio-devel lal-devel lalframe-devel lalmetaio-devel lalburst-devel lalinspiral-devel lalstochastic-devel lalpulsar-devel
-Requires: gsl fftw3 fftw3-static libframe libmetaio lal lalframe lalmetaio lalburst lalinspiral lalstochastic lalpulsar python
+BuildRequires: gsl-devel fftw3-devel libframe-devel libmetaio-devel lal-devel lalframe-devel lalmetaio-devel lalsimulation-devel lalburst-devel lalinspiral-devel lalstochastic-devel lalpulsar-devel lalinference-devel
+Requires: gsl fftw3 libframe libmetaio lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalstochastic lalpulsar lalinference python
 Prefix: %{_prefix}
 
 %description
@@ -27,7 +27,6 @@ Algorithm Library.
 %setup -q
 
 %build
-source /opt/lscsoft/lscsoft-user-env.sh
 nightly_version=@NIGHTLY_VERSION@
 %configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
 %{__make} V=1

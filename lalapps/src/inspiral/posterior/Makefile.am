@@ -2,14 +2,6 @@ SUBDIRS = SPINspiral mpi
 
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-
-# #Tests for the time-domian code
-# td_test_progs = TDW_test conv_test time_domain_overlap_test
-# TDW_test_SOURCES = TDW_test.c
-# conv_test_SOURCES = conv_test.c
-# time_domain_overlap_test_SOURCES = time_domain_overlap_test.c
-
-
 if LALINSPIRAL
 if LALFRAME
 
@@ -31,12 +23,6 @@ if LALINFERENCE
 pulsar_progs = lalinference_nest ChiSquare_test #lalinference_mcmcmpi
 ChiSquare_test_SOURCES = ChiSquare_test.c
 lalinference_nest_SOURCES = LALInferenceNest.c
-#lalinference_mcmcmpi_SOURCES = LALInference.c LALInferenceReadData.c LALInferenceTemplate.c LALInferenceMCMCMPI.c LALInferenceMCMCMPISampler.c LALInferencePrior.c
-
-if MPI
-mpi_progs = lalinference_test
-lalinference_test_SOURCES = InferenceTest.c
-endif
 
 endif
 
@@ -62,7 +48,8 @@ bin_SCRIPTS = \
 	lalapps_combine_evidence \
 	lalapps_coherence_test \
 	lalapps_merge_nested_sampling_runs \
-	lalapps_nest_pipe
+	lalapps_nest_pipe \
+	lalapps_vo_nest2pos
 pkgpython_DATA = \
 	nest_utils.py \
 	combine_evidence.py
@@ -74,7 +61,8 @@ EXTRA_DIST = \
 	merge_nested_sampling_runs.in \
 	nest_pipe.in \
 	nest_utils.py \
-	combine_evidence.py
+	combine_evidence.py \
+    lalapps_vo_nest2pos.in
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
@@ -96,6 +84,11 @@ lalapps_merge_nested_sampling_runs: $(srcdir)/merge_nested_sampling_runs.in pyth
 lalapps_nest_pipe: $(srcdir)/nest_pipe.in python_config.sed
 	sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
 	chmod a+x lalapps_nest_pipe
+
+lalapps_vo_nest2pos: $(srcdir)/lalapps_vo_nest2pos.in python_config.sed
+	sed -f python_config.sed $(srcdir)/lalapps_vo_nest2pos.in >lalapps_vo_nest2pos
+	chmod a+x lalapps_vo_nest2pos
+
 
 CLEANFILES = \
 	$(bin_SCRIPTS) \

@@ -20,7 +20,7 @@
 /**
 \author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
 \file
-\ingroup stochastic
+\ingroup SimulateSB_h
 
 \brief A program to test <tt>LALSSSimStochBGTimeSeries()</tt>.
 
@@ -53,7 +53,7 @@ calculates the signal from a stochastic background in the outputs of a pair of
 gravitational wave detectors.
 
 It first tests that the correct error codes
-(cf. \ref SimulateSB.h) are generated for the following error conditions:
+(cf. \ref SimulateSB_h) are generated for the following error conditions:
 <ul>
 <li> null pointer to parameter structure</li>
 <li> null pointer to output series</li>
@@ -96,8 +96,24 @@ LALSPrintTimeSeries()
 LALSDestroyVector()
 LALCheckMemoryLeaks()
 \endcode
-
 */
+
+/**\name Error Codes */ /*@{*/
+#define SIMULATESBTESTC_ENOM 0	/**< Nominal exit */
+#define SIMULATESBTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define SIMULATESBTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define SIMULATESBTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define SIMULATESBTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define SIMULATESBTESTC_MSGENOM "Nominal exit"
+#define SIMULATESBTESTC_MSGEARG "Error parsing command-line arguments"
+#define SIMULATESBTESTC_MSGECHK "Error checking failed to catch bad data"
+#define SIMULATESBTESTC_MSGEFLS "Incorrect answer for valid data"
+#define SIMULATESBTESTC_MSGEUSE "Bad user-entered data"
+
+
 
 #include <math.h>
 #include <string.h>
@@ -171,20 +187,6 @@ Usage (const char *program, int exitflag);
 static void
 ParseOptions (int argc, char *argv[]);
 #endif
-
-/**\name Error Codes */ /*@{*/
-#define SIMULATESBTESTC_ENOM 0
-#define SIMULATESBTESTC_EARG 1
-#define SIMULATESBTESTC_ECHK 2
-#define SIMULATESBTESTC_EFLS 3
-#define SIMULATESBTESTC_EUSE 4
-#define SIMULATESBTESTC_MSGENOM "Nominal exit"
-#define SIMULATESBTESTC_MSGEARG "Error parsing command-line arguments"
-#define SIMULATESBTESTC_MSGECHK "Error checking failed to catch bad data"
-#define SIMULATESBTESTC_MSGEFLS "Incorrect answer for valid data"
-#define SIMULATESBTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
-
 
 /* LIGO-1 power spectrum; returns strain/rHz */
 static float s_of_f(float freq) {
@@ -592,3 +594,5 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 #endif
+
+/** \endcond */

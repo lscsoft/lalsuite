@@ -384,7 +384,6 @@ XLALPlaygroundInSearchSummary (
     )
 
 {
-  static const char *func = "PlaygroundInSearchSummary";
   INT8 startNS, endNS, lengthNS, playNS;
 
   startNS = XLALGPSToINT8NS( &(ssTable->in_start_time) );
@@ -393,7 +392,7 @@ XLALPlaygroundInSearchSummary (
   playNS = PlaygroundOverlap( endNS, lengthNS );
   if ( playNS < 0 )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   inPlayTime = XLALINT8NSToGPS( inPlayTime, playNS );
 
@@ -404,7 +403,7 @@ XLALPlaygroundInSearchSummary (
   playNS = PlaygroundOverlap( endNS, lengthNS );
   if ( playNS < 0 )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
   outPlayTime = XLALINT8NSToGPS( outPlayTime, playNS );
 
@@ -523,7 +522,6 @@ XLALTimeSortSearchSummary(
     )
 
 {
-  static const char *func = "TimeSortSearchSummary";
   INT4                  i;
   INT4                  numSumms = 0;
   SearchSummaryTable    *thisSearchSumm = NULL;
@@ -531,7 +529,7 @@ XLALTimeSortSearchSummary(
 
   if ( !summHead )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
 
@@ -604,7 +602,6 @@ XLALIfoScanSearchSummary(
     )
 
 {
-  static const char *func = "IfoScanSearchSummary";
   SearchSummaryTable    *output = NULL;
   SearchSummaryTable    *thisSearchSumm = NULL;
   SearchSummaryTable    *keptSumm = NULL;
@@ -612,7 +609,7 @@ XLALIfoScanSearchSummary(
 
   if ( !input )
   {
-    XLAL_ERROR_NULL(func,XLAL_EIO);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   /* Scan through a linked list of search_summary tables and return a
@@ -643,7 +640,7 @@ XLALIfoScanSearchSummary(
           output = (output)->next;
           LALFree( thisSearchSumm );
         }
-        XLAL_ERROR_NULL(func,XLAL_ENOMEM);
+        XLAL_ERROR_NULL(XLAL_ENOMEM);
       }
       memcpy(keptSumm, thisSearchSumm, sizeof(SearchSummaryTable));
       keptSumm->next = NULL;
@@ -942,7 +939,6 @@ XLALTimeSortSummValue(
     )
 
 {
-  static const char *func = "TimeSortSummValue";
   INT4                  i;
   INT4                  numSumms = 0;
   SummValueTable    *thisSummValue = NULL;
@@ -950,7 +946,7 @@ XLALTimeSortSummValue(
 
   if ( !summHead )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   /* count the number of summs in the linked list */
@@ -969,7 +965,7 @@ XLALTimeSortSummValue(
     LALCalloc( numSumms, sizeof(SummValueTable *) );
   if ( !summHandle )
   {
-    XLAL_ERROR(func,XLAL_ENOMEM);
+    XLAL_ERROR(XLAL_ENOMEM);
   }
 
   for ( i = 0, thisSummValue = *summHead; i < numSumms;
@@ -1029,7 +1025,7 @@ ProcessTable *XLALCreateProcessTableRow(void)
   ProcessTable *new = XLALMalloc(sizeof(*new));
 
   if(!new)
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
 
   new->next = NULL;
   memset(new->program, 0, sizeof(new->program));
@@ -1104,7 +1100,7 @@ ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *process)
   ProcessParamsTable *new = XLALMalloc(sizeof(*new));
 
   if(!new)
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
 
   new->next = NULL;
   memset(new->program, 0, sizeof(new->program));
@@ -1157,7 +1153,7 @@ TimeSlide *XLALCreateTimeSlide(void)
   TimeSlide *new = XLALMalloc(sizeof(*new));
 
   if(!new)
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
 
   new->next = NULL;
   new->process_id = -1;
@@ -1197,6 +1193,31 @@ void XLALDestroyTimeSlideTable(TimeSlide *head)
 
 
 /**
+ * Find and return the address of the first element in the linked list of
+ * TimeSlide objects whose time_slide_id and instrument name equal the
+ * values given.  TimeSlide elements whose instrument pointer is NULL are
+ * skipped.  Returns NULL if no matching row is found.  There are two
+ * versions, one for cost * TimeSlide rows and one for non-const (neither
+ * modifies the TimeSlide rows, the two versions are identical, they are
+ * provided to allow the const'ness to be "passed" through the function).
+ */
+
+
+const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *time_slide, long time_slide_id, const char *instrument)
+{
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	return time_slide;
+}
+
+
+TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *time_slide, long time_slide_id, const char *instrument)
+{
+	for(; time_slide && (time_slide->time_slide_id != time_slide_id || !time_slide->instrument || strcmp(time_slide->instrument, instrument)); time_slide = time_slide->next);
+	return time_slide;
+}
+
+
+/**
  * Create a SearchSummaryTable structure.
  */
 
@@ -1206,7 +1227,7 @@ SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *process)
   SearchSummaryTable *new = XLALMalloc(sizeof(*new));
 
   if(!new)
-    XLAL_ERROR_NULL(__func__, XLAL_EFUNC);
+    XLAL_ERROR_NULL(XLAL_EFUNC);
 
   new->next = NULL;
   if(process)

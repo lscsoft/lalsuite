@@ -1,5 +1,2 @@
-#opt/lscsoft/lalinference/bin/lal-version
-opt/lscsoft/lalinference/etc/*
-#opt/lscsoft/lalinference/etc/*-user-env.*
-opt/lscsoft/lalinference/lib/*.so*
-#opt/lscsoft/lalinference/share/lal
+etc/*
+usr/lib/*.so*

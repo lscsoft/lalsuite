@@ -11,6 +11,13 @@
 /** \defgroup general General Packages */
 
 /** \defgroup genMath General Mathematical and Signal Analysis Packages */
+/** @{
+   \defgroup fft fft
+   \defgroup stats stats
+   \defgroup tdfilter tdfilter
+   \defgroup utilities utilities
+   \defgroup window window
+@} */
 
 /** \defgroup coreDA Core Data Analysis Packages  */
 
@@ -27,6 +34,8 @@
 /** \defgroup lalmetaio LAL Metaio (optional) */
 
 /** \defgroup lalframe LAL Framedata Interface (optional) */
+
+/** \defgroup LALInference LAL Bayesian Inference */
 
 
 /***************************************************************/

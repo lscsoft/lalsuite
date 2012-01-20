@@ -17,32 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/******** <lalVerbatim file="MatrixHV"> ********
-Author: Matthew M. Tibbits
-$Id$
-********* </lalVerbatim> ********/
-
-/* <lalLaTeX>
+/**
+ * \author Matthew M. Tibbits
+ * \addtogroup Matrix_h
  *
- * \section{Header \texttt{Matrix.h}}
+ * \brief Matlab Routines to handle Matrices \& Vectors.
  *
- * Matlab Routines to handle Matrices \& Vectors.
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
+ * \heading{Synopsis}
+ * \code
  * #include <lal/Matrix.h>
- * \end{verbatim}
+ * \endcode
  *
- * \subsection*{Error conditions}
- * \input{MatrixHE}
+ * @{
+ * \defgroup MatrixMultiply_c Module MatrixMultiply.c
+ * \defgroup MatrixDivide_c Module MatrixDivide.c
+ * \defgroup MatrixPower_c Module MatrixPower.c
+ * \defgroup MiscMatlab_c Module MiscMatlab.c
  *
- * \vfill{\footnotesize\input{MatrixHV}}
- * \newpage\input{MatrixMultiplyC}
- * \newpage\input{MatrixDivideC}
- * \newpage\input{MatrixPowerC}
- * \newpage\input{MiscMatlabC}
- *
- * </lalLaTeX> */
+*/
 
 #include <math.h>
 #include <lal/LALRCSID.h>
@@ -58,20 +50,20 @@ $Id$
 extern "C" {
 #endif
 
+/**\name Error Codes */ /*@{*/
+#define	MATLABMATRIXH_EARG 1	/**< Error parsing command-line arguments */
+#define	MATLABMATRIXH_ECHK 2	/**< Error checking failed to catch bad data */
+#define	MATLABMATRIXH_EFLS 3	/**< Incorrect answer for valid data */
+#define	MATLABMATRIXH_EUSE 4	/**< Bad user-entered data */
+#define	MATLABMATRIXH_ENULL 5	/**< Null Pointer */
+#define	MATLABMATRIXH_EALOC 6	/**< Memory Allocation Error */
+#define	MATLABMATRIXH_EFPMS 7	/**< Filter Parameter Structure Error */
+#define MATLABMATRIXH_ENUMZ 8	/**< Incorrect number of command line arguments */
+#define	MATLABMATRIXH_ELNTH 9	/**< Vector/Array of Improper Length */
+#define MATLABMATRIXH_ENNUL 10	/**< Non-Null Pointer that should be NULL */
+   /** @} */
+/** @} */
 
-NRCSID( MATLABMATRIXH, "$Id$");
-
-/**************************** <lalErrTable file="MatrixHE"> */
-#define	MATLABMATRIXH_EARG 1
-#define	MATLABMATRIXH_ECHK 2
-#define	MATLABMATRIXH_EFLS 3
-#define	MATLABMATRIXH_EUSE 4
-#define	MATLABMATRIXH_ENULL 5
-#define	MATLABMATRIXH_EALOC 6
-#define	MATLABMATRIXH_EFPMS 7
-#define MATLABMATRIXH_ENUMZ 8
-#define	MATLABMATRIXH_ELNTH 9
-#define MATLABMATRIXH_ENNUL 10
 #define	MATLABMATRIXH_MSGEARG "Error parsing command-line arguments"
 #define	MATLABMATRIXH_MSGECHK "Error checking failed to catch bad data"
 #define MATLABMATRIXH_MSGEFLS "Incorrect answer for valid data"
@@ -82,10 +74,13 @@ NRCSID( MATLABMATRIXH, "$Id$");
 #define MATLABMATRIXH_MSGENUMZ "Incorrect number of command line arguments"
 #define MATLABMATRIXH_MSGELNTH "Vector/Array of Improper Length"
 #define MATLABMATRIXH_MSGENNUL "Non-Null Pointer that should be NULL"
-/***************************** </lalErrTable> */
+
+NRCSID( MATLABMATRIXH, "$Id$");
 
 /* Multiply */
-
+/** \addtogroup MatrixMultiply_c
+ * @{
+ */
 void LALDDotStarDVector (
         LALStatus		*status,
         REAL8Vector		**result,
@@ -506,7 +501,12 @@ void LALI8ArrayDotStarI8Array (
         INT8Array		*B
 );
 
+/** @} */
+
 /* Matrix Division */
+/** \addtogroup MatrixDivide_c
+ * @{
+ */
 
 void LALDDotSlashDVector (
         LALStatus		*status,
@@ -1138,8 +1138,13 @@ void LALI8ArrayDotSlashI8Array (
         INT8Array		*B
 );
 
-/* Matrix Power */
+  /** @} */
 
+
+/* Matrix Power */
+/** \addtogroup MatrixPower_c
+ * @{
+ */
 void LALDDotPowerDVector (
         LALStatus		*status,
         REAL8Vector		**result,
@@ -1769,9 +1774,13 @@ void LALI8ArrayDotPowerI8Array (
         INT8Array		*A,
         INT8Array		*B
 );
+  /** @} */
+
 
 /* Miscellaneous Routines */
-
+/** \addtogroup MiscMatlab_c
+ * @{
+ */
 void LALDCumSum (
 	LALStatus		*status,
 	REAL8Vector			**result,
@@ -1896,6 +1905,8 @@ void LALI8FlipVector (
         INT8Vector			**result,
         INT8Vector           *data
 );
+
+  /** @} */
 
 #ifdef  __cplusplus
 }

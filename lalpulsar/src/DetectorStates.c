@@ -73,9 +73,7 @@ LALGetDetectorStates (LALStatus *status,			/**< pointer to LALStatus structure *
 		      REAL8 tOffset				/**< compute detector states at timestamps SHIFTED by tOffset */
 		      )
 {
-  const char *fn = __func__;
-
-  INITSTATUS( status, fn, DETECTORSTATESC );
+  INITSTATUS( status, __func__, DETECTORSTATESC );
 
   ASSERT ( DetectorStates != NULL, status,  DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
   ASSERT ( *DetectorStates == NULL, status,  DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
@@ -87,7 +85,7 @@ LALGetDetectorStates (LALStatus *status,			/**< pointer to LALStatus structure *
   /* call XLAL function */
   DetectorStateSeries *ret = NULL;
   if ( ( ret = XLALGetDetectorStates ( timestamps, detector, edat, tOffset )) == NULL ) {
-    XLALPrintError ("%s: XLALGetDetectorStates() failed with code=%d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALGetDetectorStates() failed with code=%d\n", __func__, xlalErrno );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
 
@@ -328,9 +326,7 @@ LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus struc
 			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
 			   const EphemerisData *edat )			/**< ephemeris data */
 {
-  const char *fn = __func__;
-
-  INITSTATUS (status, fn, DETECTORSTATESC );
+  INITSTATUS (status, __func__, DETECTORSTATESC );
 
   ASSERT ( mdetStates, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
   ASSERT ( multiSFTs, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
@@ -342,12 +338,12 @@ LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus struc
    */
   MultiLALDetector *multiIFO;
   if ( ( multiIFO = XLALExtractMultiLALDetectorFromSFTs ( multiSFTs )) == NULL ) {
-    XLALPrintError ("%s: XLALExtractMultiLALDetectorFromSFTs() failed with code %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALExtractMultiLALDetectorFromSFTs() failed with code %d\n", __func__, xlalErrno );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
   MultiLIGOTimeGPSVector *multiTS;
   if ( ( multiTS = XLALExtractMultiTimestampsFromSFTs ( multiSFTs )) == NULL ) {
-    XLALPrintError ("%s: XLALExtractMultiTimestampsFromSFTs() failed with code %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALExtractMultiTimestampsFromSFTs() failed with code %d\n", __func__, xlalErrno );
     XLALDestroyMultiLALDetector ( multiIFO );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
   }
@@ -358,7 +354,7 @@ LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus struc
   REAL8 Tsft = 1.0 / multiSFTs->data[0]->data[0].deltaF;
   REAL8 tOffset = 0.5 * Tsft;
   if ( ( ret = XLALGetMultiDetectorStates( multiTS, multiIFO, edat, tOffset )) == NULL ) {
-    XLALPrintError ("%s: XLALGetMultiDetectorStates() failed with code %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: XLALGetMultiDetectorStates() failed with code %d\n", __func__, xlalErrno );
     XLALDestroyMultiLALDetector ( multiIFO );
     XLALDestroyMultiTimestamps ( multiTS );
     ABORT ( status, DETECTORSTATES_EXLAL, DETECTORSTATES_MSGEXLAL );
@@ -537,19 +533,18 @@ void LALGetMultiDetectorVelTimePos(LALStatus                *status,
 MultiLALDetector *
 XLALCreateMultiLALDetector ( UINT4 numDetectors )
 {
-  const char *fn = __func__;
   MultiLALDetector *ret;
 
   if ( (ret = XLALMalloc ( sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALMalloc(%d) failed.\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->length = numDetectors;
   if ( (ret->data = XLALCalloc ( numDetectors, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", fn, numDetectors, sizeof(*ret->data) );
+    XLALPrintError ("%s: XLALCalloc(%d, %d) failed.\n", __func__, numDetectors, sizeof(*ret->data) );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   return ret;
@@ -580,12 +575,10 @@ XLALDestroyMultiLALDetector ( MultiLALDetector *multiIFO )
 MultiLALDetector *
 XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiSFTs ) {
-    XLALPrintError ("%s: invalid NULL input 'multiSFTs'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'multiSFTs'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   UINT4 numDetectors = multiSFTs->length;
@@ -593,8 +586,8 @@ XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
   /* create output vector */
   MultiLALDetector *multiIFO;
   if ( ( multiIFO = XLALCreateMultiLALDetector ( numDetectors ) ) == NULL ) {
-    XLALPrintError ("%s: XLALCreateMultiLALDetector(%d) failed.\n", fn, numDetectors );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateMultiLALDetector(%d) failed.\n", __func__, numDetectors );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* step through multi-IFO vector and extract detector-info */
@@ -605,9 +598,9 @@ XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
 
       /* get LALDetector struct for this detector */
       if ( (det = XLALGetSiteInfo ( multiSFTs->data[X]->data[0].name )) == NULL ) {
-        XLALPrintError ("%s: call to XLALGetSiteInfo(%s) has failed with code %s.\n", fn, multiSFTs->data[X]->data[0].name, xlalErrno );
+        XLALPrintError ("%s: call to XLALGetSiteInfo(%s) has failed with code %s.\n", __func__, multiSFTs->data[X]->data[0].name, xlalErrno );
         XLALDestroyMultiLALDetector ( multiIFO );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
       multiIFO->data[X] = (*det);
       XLALFree ( det );
@@ -624,19 +617,17 @@ XLALExtractMultiLALDetectorFromSFTs ( const MultiSFTVector *multiSFTs )
 DetectorStateSeries*
 XLALCreateDetectorStateSeries ( UINT4 length )		/**< number of entries */
 {
-  const char *fn = __func__;
-
   DetectorStateSeries *ret = NULL;
 
   if ( (ret = LALCalloc(1, sizeof(DetectorStateSeries) )) == NULL ) {
-    XLALPrintError ("%s: failed to LALCalloc(1, %d)\n", fn, sizeof(DetectorStateSeries) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to LALCalloc(1, %d)\n", __func__, sizeof(DetectorStateSeries) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = LALCalloc (length, sizeof(DetectorState) )) == NULL ) {
     XLALFree (ret);
-    XLALPrintError ("%s: failed to LALCalloc(%d, %d)\n", fn, length, sizeof(DetectorState) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to LALCalloc(%d, %d)\n", __func__, length, sizeof(DetectorState) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   ret->length = length;
@@ -665,24 +656,25 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
                         REAL8 tOffset				/**< compute detector states at timestamps SHIFTED by tOffset */
                         )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !timestamps || !detector || !edat ) {
-    XLALPrintError ("%s: invalid NULL input, timestamps=%p, detector=%p, edat=%p\n", fn, timestamps, detector, edat );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input, timestamps=%p, detector=%p, edat=%p\n", __func__, timestamps, detector, edat );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* prepare return vector */
   UINT4 numSteps = timestamps->length;
   DetectorStateSeries *ret = NULL;
   if ( ( ret = XLALCreateDetectorStateSeries ( numSteps )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateDetectorStateSeries(%d) failed.\n", fn, numSteps );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateDetectorStateSeries(%d) failed.\n", __func__, numSteps );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* enter detector-info into the head of the state-vector */
   ret->detector = (*detector);
+
+  /* set 'time-span' associated with each timestamp */
+  ret->deltaT = timestamps->deltaT;
 
   /* set SSB coordinate system used: EQUATORIAL for Earth-based, ECLIPTIC for LISA */
   if ( detector->frDetector.prefix[0] == 'Z' )	/* LISA */
@@ -707,8 +699,8 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
       /*----- first get earth-state */
       if ( XLALBarycenterEarth ( earth, &tgps, edat ) != XLAL_SUCCESS ) {
         XLALDestroyDetectorStateSeries ( ret );
-        XLALPrintError("%s: XLALBarycenterEarth() failed with xlalErrno=%d\n", fn, xlalErrno );
-        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+        XLALPrintError("%s: XLALBarycenterEarth() failed with xlalErrno=%d\n", __func__, xlalErrno );
+        XLAL_ERROR_NULL ( XLAL_EFAILED );
       }
 
       /*----- then get detector-specific info */
@@ -722,8 +714,8 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
 
       if ( XLALBarycenter ( &emit, &baryinput, earth) != XLAL_SUCCESS ) {
 	XLALDestroyDetectorStateSeries( ret );
-        XLALPrintError("%s: XLALBarycenterEarth() failed with xlalErrno=%d\n", fn, xlalErrno );
-        XLAL_ERROR_NULL ( fn, XLAL_EFAILED );
+        XLALPrintError("%s: XLALBarycenterEarth() failed with xlalErrno=%d\n", __func__, xlalErrno );
+        XLAL_ERROR_NULL ( XLAL_EFAILED );
       }
 
       /*----- extract the output-data from this */
@@ -746,8 +738,8 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
        */
       if ( XLALFillDetectorTensor ( state, detector ) != 0 ) {
 	XLALDestroyDetectorStateSeries(ret);
-	XLALPrintError ( "%s: XLALFillDetectorTensor() failed ... errno = %d\n\n", fn, xlalErrno );
-	XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+	XLALPrintError ( "%s: XLALFillDetectorTensor() failed ... errno = %d\n\n", __func__, xlalErrno );
+	XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
     } /* for i < numSteps */
@@ -771,31 +763,29 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
                             REAL8 tOffset			   /**< [in] shift all timestamps by this amount */
                             )
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiIFO || !multiTS || !edat ) {
-    XLALPrintError ("%s: invalid NULL input (multiIFO=%p, multiTS=%p or edat=%p)\n", fn, multiIFO, multiTS, edat );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input (multiIFO=%p, multiTS=%p or edat=%p)\n", __func__, multiIFO, multiTS, edat );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   UINT4 numDetectors;
   numDetectors = multiIFO->length;
   if ( numDetectors != multiTS->length ) {
-    XLALPrintError ("%s: inconsistent number of IFOs in 'multiIFO' (%d) and 'multiTS' (%d)\n", fn, multiIFO->length, multiTS->length );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: inconsistent number of IFOs in 'multiIFO' (%d) and 'multiTS' (%d)\n", __func__, multiIFO->length, multiTS->length );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   /* prepare return-structure */
   MultiDetectorStateSeries *ret = NULL;
   if ( ( ret = LALCalloc ( 1, sizeof( *ret ) )) == NULL ) {
-    XLALPrintError ("%s: LALCalloc ( 1, sizeof(%d)) failed\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: LALCalloc ( 1, sizeof(%d)) failed\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   if ( ( ret->data = LALCalloc ( numDetectors, sizeof( *(ret->data) ) )) == NULL ) {
     XLALFree ( ret );
-    XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", fn, numDetectors, sizeof(*(ret->data)) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: LALCalloc ( %d, sizeof(%d)) failed\n", __func__, numDetectors, sizeof(*(ret->data)) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = numDetectors;
 
@@ -811,18 +801,18 @@ XLALGetMultiDetectorStates( const MultiLIGOTimeGPSVector *multiTS, /**< [in] mul
       LALDetector *detX = &multiIFO->data[X];
 
       if ( !tsX || !detX ) {
-        XLALPrintError ("%s: invalid NULL data-vector tsX[%d] = %p, detX[%d] = %p\n", fn, X, tsX, X, detX );
-        XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+        XLALPrintError ("%s: invalid NULL data-vector tsX[%d] = %p, detX[%d] = %p\n", __func__, X, tsX, X, detX );
+        XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
       if ( multiTS->data[X]->deltaT != deltaT ) {
-        XLALPrintError ("%s: inconsistent time-base multi-timeseries deltaT[%d]=%f  !=  deltaT[0] = %f\n", fn, X, multiTS->data[X]->deltaT, deltaT );
-        XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+        XLALPrintError ("%s: inconsistent time-base multi-timeseries deltaT[%d]=%f  !=  deltaT[0] = %f\n", __func__, X, multiTS->data[X]->deltaT, deltaT );
+        XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
 
       /* fill in the detector-state series for this detector */
       if ( ( ret->data[X] = XLALGetDetectorStates ( tsX, detX, edat, tOffset )) == NULL ) {
-        XLALPrintError ("%s: XLALGetDetectorStates() failed.\n", fn );
-        XLAL_ERROR_NULL (fn, XLAL_EFUNC );
+        XLALPrintError ("%s: XLALGetDetectorStates() failed.\n", __func__ );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
       /* keep track of earliest/latest timestamp in order to determine total Tspan */

@@ -1,4 +1,3 @@
-opt/lscsoft/lalxml/include/lal*
-opt/lscsoft/lalxml/lib/*a
-opt/lscsoft/lalxml/lib/pkgconfig
-#opt/lscsoft/lalxml/share/lal
+usr/lib/*.a
+usr/lib/pkgconfig
+usr/include/lal*

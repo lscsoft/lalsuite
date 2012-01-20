@@ -17,29 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-
-\author Tibbits, M. M.
-\file
-
-\heading{Header \ref LALMoment.h}
-\latexonly\label{s_LALMoment_h}\endlatexonly
-
-\code
-The LALDMoment() and LALSMoment() associated header file.
-(S - single precision )
-(D - double precision )
-\endcode
-
-\heading{Synopsis}
-\code
-#include <lal/LALMoment.h>
-\endcode
-
-This header provides the prototype for the LALDMoment() and LALSMoment() function.
-
-*/
-
 /* Double Include Protection */
 #ifndef _LALMOMENT_H
 #define _LALMOMENT_H
@@ -53,44 +30,48 @@ This header provides the prototype for the LALDMoment() and LALSMoment() functio
 extern "C" {
 #endif
 
-
 NRCSID( LALMOMENTH, "$Id$");
 
-
 /**
+\author Tibbits, M. M.
+\addtogroup LALMoment_h
 
-\heading{Error codes}
+\brief This header provides the prototype for the LALDMoment() and LALSMoment() function.
 
+\code
+(S - single precision )
+(D - double precision )
+\endcode
 
+\heading{Synopsis}
+\code
+#include <lal/LALMoment.h>
+\endcode
 
 */
-
+/** @{ */
 /**\name Error Codes */ /*@{*/
+#define LALMOMENTH_ENULL 1	/**< NULL pointer */
+#define	LALMOMENTH_ENNUL 2	/**< Non-NULL pointer */
+#define LALMOMENTH_ELNTH 3	/**< Must have more than one data point */
+#define LALMOMENTH_ESEGZ 4	/**< Invalid number of segments */
+#define LALMOMENTH_ENUMZ 5	/**< Invalid number of points in segment */
+#define LALMOMENTH_EALOC 6	/**< Memory Allocation Error */
+/*@}*/
 
-#define LALMOMENTH_ENULL 1
-#define	LALMOMENTH_ENNUL 2
-#define LALMOMENTH_ELNTH 3
-#define LALMOMENTH_ESEGZ 4
-#define LALMOMENTH_ENUMZ 5
-#define LALMOMENTH_EALOC 6
-
+/** \cond DONT_DOXYGEN */
 #define LALMOMENTH_MSGENULL "NULL pointer."
 #define	LALMOMENTH_MSGENNUL "Non-NULL pointer."
 #define LALMOMENTH_MSGELNTH "Must have more than one data point."
 #define LALMOMENTH_MSGESEGZ "Invalid number of segments"
 #define LALMOMENTH_MSGENUMZ "Invalid number of points in segment"
 #define LALMOMENTH_MSGEALOC "Memory Allocation Error"
-
-/*@}*/
-
+/** \endcond */
 
 /* Function prototypes */
 
-
-
-
-
-
+/** Determine specific moment of a set of REAL4 data.
+ */
 void LALSMoment
 (
 	LALStatus		*status,
@@ -100,6 +81,8 @@ void LALSMoment
 );
 
 
+/** Determine specific moment of a set of REAL8 data.
+ */
 void LALDMoment
 (
 	LALStatus		*status,
@@ -108,7 +91,7 @@ void LALDMoment
 	INT4			whichMoment
 );
 
-
+/** @} */
 
 
 

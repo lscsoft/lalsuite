@@ -17,19 +17,14 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="RealFFTTestCV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
+/**
+ * \file
+ * \ingroup RealFFT_h
  *
- * \subsection{Program \texttt{RealFFTTest.c}}
- * \label{ss:RealFFTTest.c}
+ * \brief Tests the routines in \ref RealFFT.h.
  *
- * Tests the routines in \verb+RealFFT.h+.
- *
- * \subsection*{Usage}
- * \begin{verbatim}
+ * \heading{Usage}
+ * \code
  * RealFFTTest [options]
  * Options:
  *   -h         print this message
@@ -38,30 +33,25 @@
  *   -d level   set lalDebugLevel to level
  *   -m trials  set number of random trials
  *   -n size    set size of FFTs
- * \end{verbatim}
+ * \endcode
  *
- * Use the \verb+-n+ option to specify the size of the test transform and
- * the \verb+-m+ option to specify the number of test transforms of that size.
+ * Use the <tt>-n</tt> option to specify the size of the test transform and
+ * the <tt>-m</tt> option to specify the number of test transforms of that size.
  * (Default is to test transforms of size 1 to 128 in unit steps and then
  * powers of two up to 65536.)
  *
- * \subsubsection*{Description}
- * \subsubsection*{Exit codes}
- * \begin{tabular}{|c|l|}
- * \hline
- * Code & Explanation                   \\
- * \hline
- * \tt 0 & Success, normal exit.         \\
- * \tt 1 & Subroutine failed.            \\
- * \hline
- * \end{tabular}
+ * \heading{Exit codes}
+ * <table><tr><th>Code</th><th>Explanation</th></tr>
+ * <tr><td>0</td><td>Success, normal exit.</td></tr>
+ * <tr><td>1</td><td>Subroutine failed.</td></tr>
+ * </table>
  *
- * \subsubsection*{Uses}
- * \subsubsection*{Notes}
+ * \heading{Uses}
+ * \heading{Notes}
  *
- * \vfill{\footnotesize\input{RealFFTTestCV}}
- *
- **** </lalLaTeX> */
+*/
+
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -538,3 +528,4 @@ void LALForwardRealDFT(
   RETURN( status );
 }
 
+/** \endcond */

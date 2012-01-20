@@ -20,30 +20,44 @@
 #include <math.h>
 #include <complex.h>
 
-int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
+int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsilon, double alpha, double beta, double padding, COMPLEX16Vector **a1, COMPLEX16Vector **b0, INT4Vector **delay)
 {  
 	int j = amp->length-1, jstep, k;
-	int nfilters = 0;
+	int nfilters = 0, decimationFactor = 1;
 	double phase_ddot, phase_dot;
 
 	/* FIXME: Add error checking for lengths of amp and phase */
 	if (amp->length != phase->length) 
-	         XLAL_ERROR(__func__, XLAL_EINVAL);
+	         XLAL_ERROR(XLAL_EINVAL);
 
 	*a1 = XLALCreateCOMPLEX16Vector(0);
 	*b0 = XLALCreateCOMPLEX16Vector(0);
 	*delay = XLALCreateINT4Vector(0);
 
-	while (j >= 0 ) {
+	while (j >= 2 ) {
+		//int prej = j;
+		/* Reset j so that the delay will be an integar number of decimated rate */
+		//j = amp->length-1 - (int) floor((amp->length-1-j)/(double) decimationFactor + 0.5)*decimationFactor;
+
+		/* Get error term */
 		phase_ddot = (phase->data[j-2] - 2.0 * phase->data[j-1] + phase->data[j]) / (2.0 * LAL_PI);
 		jstep = (int) floor(sqrt(2.0 * epsilon / phase_ddot)+0.5);
-		k = (int ) floor((double ) j - alpha * ((double ) jstep) + 0.5);
+		k = (int ) floor((double ) j - alpha * (double ) jstep + 0.5);
 
 		if (k <= 2) break;
 		nfilters++;
 
-		phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+		if (k > (int) amp->length-3) {
+			phase_dot = (11.0/6.0*phase->data[k] - 3.0*phase->data[k-1] + 1.5*phase->data[k-2] - 1.0/3.0*phase->data[k-3]);
+		}
+		else {
+			phase_dot = (-phase->data[k+2] + 8 * (phase->data[k+1] - phase->data[k-1]) + phase->data[k-2]) / 12.0; // Five-point stencil first derivative of phase
+		}
+		//fprintf(stderr, "%3.0d, %6.0d, %3.0d, %11.2f, %11.8f\n",nfilters, amp->length-1-j, decimationFactor, ((double) (amp->length-1-j))/((double) decimationFactor), phase_dot/(2.0*LAL_PI)*2048.0);
+		decimationFactor = ((int ) pow(2.0,-ceil(log(2.0*padding*phase_dot/(2.0*LAL_PI))/log(2.0))));
+		if (decimationFactor < 1 ) decimationFactor = 1;
 
+		//fprintf(stderr, "filter = %d, prej = %d, j = %d, k=%d, jstep = %d, decimation rate = %d, nFreq = %e, phase[k] = %e\n", nfilters, prej, j, k, jstep, decimationFactor, phase_dot/(2.0*LAL_PI), phase->data[k]);
 		/* FIXME: Should think about being smarter about allocating memory for these (linked list??) */
 		*a1 = XLALResizeCOMPLEX16Vector(*a1, nfilters);
 		*b0 = XLALResizeCOMPLEX16Vector(*b0, nfilters);
@@ -53,6 +67,8 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 		(*a1)->data[nfilters-1] = XLALCOMPLEX16Polar((double) exp(-beta / ((double) jstep)), -phase_dot);
 		(*b0)->data[nfilters-1] = XLALCOMPLEX16Polar(amp->data[k], phase->data[k] + phase_dot * ((double) (j - k)) );
 		(*delay)->data[nfilters-1] = amp->length - 1 - j;
+
+
 
 		/* Calculate the next data point step */
 		j -= jstep;
@@ -64,34 +80,39 @@ int XLALInspiralGenerateIIRSet(REAL8Vector *amp, REAL8Vector *phase, double epsi
 
 
 int XLALInspiralIIRSetResponse(COMPLEX16Vector *a1, COMPLEX16Vector *b0, INT4Vector *delay, COMPLEX16Vector *response)
-{  
-	unsigned f, j;
-	complex double a1f, y;
-	complex double *a1_data = (complex double *) a1->data;
-	complex double *b0_data = (complex double *) b0->data;
-	complex double *response_data = (complex double *) response->data;
+{
+	int length, numFilters;
+	complex double y;
+	complex double *a1_last;
+	complex double *a1f = (complex double *) a1->data;
+	complex double *b0f = (complex double *) b0->data;
+	int *delayf = delay->data;
 
 	if(a1->length != b0->length || a1->length != delay->length)
-		XLAL_ERROR(__func__, XLAL_EBADLEN);
+		XLAL_ERROR(XLAL_EBADLEN);
 
-	for (j = 0; j < response->length; j++)
-		response_data[j] = 0;
+	memset(response->data, 0, sizeof(complex double) * response->length);
 
-	for (f = 0; f < a1->length; f++)
+	numFilters = a1->length;
+	for (a1_last = a1f + numFilters; a1f < a1_last; a1f++)
 		{
-			a1f = a1_data[f];
-			y = b0_data[f]/a1f;
-			for (j = delay->data[f]; j < response->length; j++ )
+			y = *b0f / *a1f;
+			length = (int) (logf((1e-13)/cabs(*b0f)))/(logf(cabs(*a1f)));// + *delayf;
+			int maxlength = response->length - *delayf;
+			if (length > maxlength)
+				length = maxlength;
+
+			complex double *response_data = (complex double *) &response->data[*delayf];
+			complex double *response_data_last;
+
+			for (response_data_last = response_data + length; response_data < response_data_last; response_data++ )
 				{
-					y *= a1f;
-					response_data[j] += y;
-					if (cabs(y/a1f) < 1e-13)
-						break;
+					y *= *a1f;
+					*response_data += y;
 				}
-			//(*response)->data[j] = XLALCOMPLEX16Add((*response)->data[j], XLALCOMPLEX16Mul(b0f, XLALCOMPLEX16PowReal(a1f, (double ) (j - delayf))));
-
+			b0f++;
+			delayf++;
 		}
-
 	return 0;
 }
 

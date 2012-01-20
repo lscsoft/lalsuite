@@ -342,6 +342,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
     if((dataPath = LALCalloc(strlen(dataPathEnv)+1, 1)) == NULL)
     {
       fprintf(stderr, "Can't allocate memory (%lu)!\n", (long unsigned int)(strlen(dataPathEnv)+1) );
+        LALFree(absolutePath);
         return XLAL_EFAILED;
     }
 
@@ -393,6 +394,7 @@ int findFileInLALDataPath(const char *filename, char **validatedPath)
 
     /* clean up */
     LALFree(dataPath);
+    LALFree(absolutePath);
 
     /* return error */
     fprintf(stderr, "File (%s) not found!\n", filename);

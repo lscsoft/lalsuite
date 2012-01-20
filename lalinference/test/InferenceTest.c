@@ -194,7 +194,8 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 			randomseed = tv.tv_sec + tv.tv_usec;
 		} 
 		else {
-			fread(&randomseed, sizeof(randomseed), 1, devrandom);
+			if(!fread(&randomseed, sizeof(randomseed), 1, devrandom))
+                exit(1);
 			fclose(devrandom);
 		}
 	}
@@ -363,18 +364,18 @@ REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALInferenceVariables
 /****************************************/
 {
   (void) runState; /* avoid warning about unused parameter */
-  REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;	
+  REAL8 eta, iota, phi, ra, dec, psi;
   REAL8 logdensity;
   
-  mc   = *(REAL8*) LALInferenceGetVariable(params, "chirpmass");		/* solar masses*/
+  // UNUSED!!: REAL8 mc   = *(REAL8*) LALInferenceGetVariable(params, "chirpmass");		/* solar masses*/
   eta  = *(REAL8*) LALInferenceGetVariable(params, "massratio");		/* dim-less    */
   iota = *(REAL8*) LALInferenceGetVariable(params, "inclination");		/* radian      */
-  tc   = *(REAL8*) LALInferenceGetVariable(params, "time");			/* GPS seconds */
+  // UNUSED!!: REAL8 tc   = *(REAL8*) LALInferenceGetVariable(params, "time");			/* GPS seconds */
   phi  = *(REAL8*) LALInferenceGetVariable(params, "phase");		/* radian      */
   ra   = *(REAL8*) LALInferenceGetVariable(params, "rightascension");	/* radian      */
   dec  = *(REAL8*) LALInferenceGetVariable(params, "declination");		/* radian      */
   psi  = *(REAL8*) LALInferenceGetVariable(params, "polarisation"); 	/* radian      */
-  dist = *(REAL8*) LALInferenceGetVariable(params, "distance");		/* Mpc         */
+  // UNUSED!!: REAL8  dist = *(REAL8*) LALInferenceGetVariable(params, "distance");		/* Mpc         */
 
   if(eta>0.0 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
      && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI)	
@@ -591,7 +592,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
   REAL8 *val_simplex;   // corresponding function values (likelihood or posterior).
   REAL8 logprior, loglikelihood; // dummy variables.
   REAL8 *centroid, *reflected, *expanded, *contracted; // proposed new vertices...
-  REAL8 val_centroid, val_reflected, val_expanded, val_contracted; // ...and corresponding function values
+  REAL8 val_reflected, val_expanded, val_contracted; // ...and corresponding function values
   int iteration;
   int terminate=0;
   int mini, maxi;
@@ -686,7 +687,7 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
         centroid[i] += (j==mini) ? 0.0 : (1.0/((double)nmDim)) * simplex[j*nmDim+i];
     }
     NelderMeadEval(runState, nameVec, centroid, nmDim, &logprior, &loglikelihood);
-    val_centroid = ML ? loglikelihood : logprior+loglikelihood;
+    // UNUSED!!: REAL8 val_centroid = ML ? loglikelihood : logprior+loglikelihood;
 
     // REFLECT:
     for (i=0; i<nmDim; ++i)
@@ -1118,7 +1119,7 @@ void TemplateDumpTest(void)
 	  LALInferenceAddVariable(&currentParams, "coa_phase",    &coa_phase,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);	  
 	  double PNorder = 3.5;
 	  LALInferenceAddVariable(&currentParams, "PNorder",      &PNorder,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);	  
-	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLALSTPN, "test_TTemplateLALSTPN.csv");
+	  LALInferenceDumptemplateTimeDomain(&currentParams, runstate->data, LALInferenceTemplateLALGenerateInspiral, "test_TTemplateLALSTPN.csv");
 
 	  
     /* These are the LAL templates that (...seem to...) work right now: */

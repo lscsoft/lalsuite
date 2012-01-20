@@ -1,19 +1,17 @@
 /**
 \author Tibbits, M. M.
-\file
+\addtogroup MatrixPower_c
 
-\heading{Module \ref MatrixPower.c}
-\latexonly\label{s_MatrixPower_c}\endlatexonly
-This file is dedicated to reproducing the matlab function " <tt>.^</tt> ".  This file
-has several declarations of the same function taking all forms of available
+\brief This file is dedicated to reproducing the matlab function ".^" .
+
+This file has several declarations of the same function taking all forms of available
 input.  This being said, I have yet to script the complex actions and their
 counterparts.
-
 
 \heading{Description}
 
 This file is to help make the conversion from Matlab to c much earier.
-In this file, we have created all of the versions of <tt>.^</tt> that we plan on
+In this file, we have created all of the versions of .^ that we plan on
 using.
 
 \heading{Algorithms}
@@ -22,34 +20,31 @@ The algorithm is the same as it is in matlab.  The dot in front of an operator
 in matlab signifies that if either or both of the operands are vectors, then
 the operation will be carried out member by member.  For instance
 
+\code
 vector a[25];
 vector b[25];
 vector c[25];
 
-c = a <tt>.^</tt> b;
+c = a .^ b;
 
 The result of this is:
 
-\(c[0] =	a[0] ^{b[0]}\);
-\(c[1] =	a[1] ^{b[1]}\);
+\(c[0] =	a[0]^(b[0]);
+\(c[1] =	a[1]^(b[1]);
 .	.	.
 .	.	.
 .	.	.
 
 etc.
+\endcode
 
 \heading{Uses}
-
-<ul>
-<li> \c LALDCreateVector</li>
-</ul>
+LALDCreateVector()
 
 \heading{Notes}
 
 At the current time none of the operations have been specified for neither the
 complex datatypes nor the unsigned datatypes.
-
-\heading{Prototypes}
 
 */
 

@@ -1,6 +1,2 @@
-#opt/lscsoft/lalmetaio/bin
-opt/lscsoft/lalmetaio/include
-opt/lscsoft/lalmetaio/lib/pkgconfig
-#opt/lscsoft/lalmetaio/share/lal
-#opt/lscsoft/lalmetaio/share/man/man1
-#opt/lscsoft/lalmetaio/share/man/man3
+usr/lib/pkgconfig
+usr/include

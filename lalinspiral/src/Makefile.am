@@ -21,7 +21,7 @@ lalinspiralinclude_HEADERS = \
 	GeneratePPNInspiral.h \
 	GenerateRing.h \
 	InspiralInjectionParams.h \
-	LALAdaptiveRungeKutta4.h \
+	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
 	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
@@ -29,9 +29,8 @@ lalinspiralinclude_HEADERS = \
 	LALInspiralRandomBank.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
-        LALPSpinInspiralRD.h \
+	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
-	LALSimInspiral.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
@@ -104,11 +103,15 @@ liblalinspiral_la_SOURCES = \
 	LALBCVWaveform.c \
 	LALDeterminant3.c \
 	LALDiscoverInspiralEvents.c \
+	LALEOBGetFactorizedWaveform.c \
 	LALEOBWaveform.c \
+	LALEOBNonQCCorrection.c \
+	LALEOBPPWaveform.c \
 	LALEstimateEffectiveDistance.c \
 	LALEtaTau02.c \
 	LALEtaTau04.c \
 	LALEvaluateInspiralChisqTest.c \
+	LALFactorizedFlux.c \
 	LALHexagonVertices.c \
 	LALInsidePolygon.c \
 	LALInspiralAmplitude.c \
@@ -175,6 +178,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralWaveOverlap.c \
 	LALInspiralWaveTaper.c \
 	LALInverse3.c \
+	LALNewtonianMultipole.c \
 	LALMatrixTransform.c \
 	LALPhenomWaveform.c \
 	LALPSpinInspiralRD.c \
@@ -183,15 +187,13 @@ liblalinspiral_la_SOURCES = \
 	LALRandomInspiralSignal.c \
 	LALRectangleVertices.c \
 	LALRungeKutta4.c \
-	LALAdaptiveRungeKutta4.c \
 	LALSTPNWaveform.c \
 	LALSTPNWaveform2.c \
 	LALSTPNWaveformFrameless.c \
 	LALSQTPNIntegrator.c \
 	LALSQTPNWaveform.c \
 	LALSQTPNWaveformInterface.c \
-	LALSimInspiral.c \
-	LALSimInspiralPNMode.c \
+	LALTaylorF2ReducedSpin.c\
 	LALTrigScanCluster.c \
 	LALTruncateInvSpectrum.c \
 	LIGOLwXMLInspiralRead.c \
@@ -206,12 +208,12 @@ liblalinspiral_la_SOURCES = \
 	SimulateInspiral.c \
 	SnglInspiralUtils.c \
 	SnglRingdownUtils.c \
-	TrigScanEThincaCommon.c \
-	check_series_macros.h
+	TrigScanEThincaCommon.c
 
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	lalinspiral-user-env.shell \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
 
@@ -225,47 +227,23 @@ BUILT_SOURCES = \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
 
-lalinspiral-user-env.sh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Inspiral" >$@ ;\
-	echo "LALINSPIRAL_PREFIX=\"$(prefix)\"" >>$@ ;\
-	echo "export LALINSPIRAL_PREFIX" >>$@ ;\
-	echo "PATH=\"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "MANPATH=\"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "LD_LIBRARY_PATH=\"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "DYLD_LIBRARY_PATH=\"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "PKG_CONFIG_PATH=\"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "export PATH MANPATH LD_LIBRARY_PATH DYLD_LIBRARY_PATH PKG_CONFIG_PATH" >>$@
+lalinspiral-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
+	@echo "# generic user environment script" >$@
+	@echo "set LALINSPIRAL_PREFIX $(prefix)" >>$@
+	@echo "prepend PATH $(bindir)" >>$@
+	@echo "prepend MANPATH $(mandir)" >>$@
+	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
+	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
-lalinspiral-user-env.csh: Makefile
-	@echo "creating $@" ;\
-	echo "# Source this file to access LAL Inspiral" >$@ ;\
-	echo "setenv LALINSPIRAL_PREFIX \"$(prefix)\"" >>$@ ;\
-	echo "setenv PATH \"$(bindir):\$${PATH}\"" >>$@ ;\
-	echo "if ( \$$?MANPATH ) then" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir):\$${MANPATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv MANPATH \"$(mandir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?LD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir):\$${LD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv LD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?DYLD_LIBRARY_PATH ) then" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir):\$${DYLD_LIBRARY_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv DYLD_LIBRARY_PATH \"$(libdir)\"" >>$@ ;\
-	echo "endif" >>$@ ;\
-	echo "if ( \$$?PKG_CONFIG_PATH ) then" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig:\$${PKG_CONFIG_PATH}\"" >>$@ ;\
-	echo "else" >>$@ ;\
-	echo "	setenv PKG_CONFIG_PATH \"$(libdir)/pkgconfig\"" >>$@ ;\
-	echo "endif" >>$@
+lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(srcdir)/generate_user_env.awk
+	@echo "creating $@"
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
 
 EXTRA_DIST = \
 	LALInspiralConfig.h.in \
 	LALInspiralVCSInfo.h.in \
+	generate_user_env.awk \
 	generate_vcs_info.py
 
 LALInspiralVCSInfo.h: ._vcsinfo

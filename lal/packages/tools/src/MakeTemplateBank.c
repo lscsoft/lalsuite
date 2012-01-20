@@ -29,56 +29,6 @@
  *________________________________________________________________________
  */
 
-/* ------------------------------- AUTO-DOC --------------------------- */
-/* -------------------------------------------------------------------- */
-
-
-/*<lalVerbatim file="MakeTemplateBankCV">
-  Author: Hanna, C. R.
-  $Id$
-  </lalVerbatim>*/
-
-/*SUBSECTION - MODULE - "MakeTemplateBank.c" --------------- <lalLaTeX>
-  \subsection{Module \texttt{MakeTemplateBank.c}}
-  \label{ss:MakeTemplateBank}
-  </lalLaTeX> */
-
-  /* SUBSUBSECTION - PROTOTYPES - "LALMakeTemplateBank()" ----- <lalLaTeX>
-     \subsubsection{Prototypes}
-     \input{LALMakeTemplateBankCP}
-     \idx{MakeTemplateBank()}
-     </lalLaTeX>
-     END SUBSUBSECTION - PROTOTYPES "LALMakeTemplateBank()" ----------- */
-
-
-  /* SUBSUBSECTION - DESCRIPTION ------------------------------ <lalLaTeX>
-     \subsubsection{Description}
-     </lalLaTeX>
-     END SUBSUBSECTION - DESCRIPTION ---------------------------------- */
-
-
-  /* SUBSUBSECTION - NOTES ------------------------------------ <lalLaTeX>
-     \subsubsection{Notes}
-     \begin{itemize}
-     \item No notes yet.
-     \end{itemize}
-     </lalLaTeX>
-     END SUBSUBSECTION - NOTES ---------------------------------------- */
-
-/*END - SUBSECTION - MODULE - MakeTemplateBank.c" ------------------ */
-
-/*<lalLaTeX>
-\vfill{\footnotesize\input{MakeTemplateBankCV}}
-</lalLaTeX>*/
-
-
-/* ------------------------ END AUTO DOC ------------------------------ */
-/* -------------------------------------------------------------------- */
-
-
-
-
-
 #include<lal/LALStdlib.h>
 #include<lal/LALStatusMacros.h>
 #include<lal/InspiralBankGeneration.h>
@@ -87,13 +37,11 @@
 NRCSID(MAKETEMPLATEBANKC, "$Id$");
 
 void
-/* <lalVerbatim file="LALMakeTemplateBankCP"> */
 LALMakeTemplateBank(
      LALStatus *status,
      TemplateBankType *type,
      MakeTemplateBankInput *input,
      MetadataTable *table)
-/* </lalVerbatim> */
 {
   INITSTATUS(status, "LALMakeTemplateBank", MAKETEMPLATEBANKC);
   ATTATCHSTATUSPTR(status);
@@ -139,8 +87,6 @@ LALMakeTemplateBank(
   RETURN(status);
 
 } /* LALMakeTemplateBank() */
-
-
 
 
 #endif

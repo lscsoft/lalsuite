@@ -83,6 +83,7 @@ int coh_PTF_output_events_xml(
     char               *outputFile,
     MultiInspiralTable  *events,
     ProcessParamsTable *processParamsTable,
+    TimeSlide          *time_slide_head,
     struct coh_PTF_params *params
     )
 {
@@ -124,6 +125,9 @@ int coh_PTF_output_events_xml(
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchSummary, search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+  /* output time slide table */
+  XLALWriteLIGOLwXMLTimeSlideTable( &results, time_slide_head);
 
   /* output the events */
   if ( ringEvents.multiInspiralTable )

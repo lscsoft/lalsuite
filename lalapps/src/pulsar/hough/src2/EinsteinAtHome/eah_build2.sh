@@ -195,6 +195,7 @@ if [ ."$build_win32" = ."true" ] ; then
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32
+    shared_copt="--disable-shared"
     fftw_copts_single="$fftw_copts_single --with-our-malloc16"
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
     ext=".exe"
@@ -335,8 +336,7 @@ fi
 
 if test -n "$build_binutils" -a -n "$rebuild_binutils"; then
     log_and_show "retrieving $binutils"
-#    download http://www.aei.mpg.de/~repr/EaH_packages $binutils.tar.gz
-    download ftp://ftp.fu-berlin.de/unix/gnu/binutils $binutils.tar.gz
+    download http://www.aei.mpg.de/~bema $binutils.tar.gz
     log_and_do rm -rf "$binutils"
     log_and_do tar xzf "$binutils.tar.gz"
 #    log_and_do sh -c "grep -v '^ *SUBDIRS *=' $binutils/bfd/Makefile.am > $binutils/bfd/Makefile.tmp"

@@ -254,31 +254,13 @@ INT4 main( INT4 argc, CHAR *argv[] )
               long_options[option_index].name, gpsStartSec );
           exit( 1 );
         }
-        if ( gpsStartSec > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after "
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%d specified)\n",
-              long_options[option_index].name, gpsStartSec );
-          exit( 1 );
-        }
         gpsStartTime.gpsSeconds = gpsStartSec;
         break;
 
       case 'b':
         /* set gps end seconds */
         gpsEndSec = atoi( optarg );
-        if ( gpsEndSec > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS end time is after "
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%d specified)\n",
-              long_options[option_index].name, gpsEndSec );
-          exit( 1 );
-        }
-        else if ( gpsEndSec < 441417609 )
+        if ( gpsEndSec < 441417609 )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "GPS end time is prior to "

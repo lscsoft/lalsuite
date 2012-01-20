@@ -114,13 +114,13 @@ main( void )
 
   static LALStatus            status;
   REAL4Vector*                poutput = NULL;
-  REAL4Vector                 dummy;
   DirichletParameters         parameters;
 
   lalDebugLevel = LALNDEBUG;
 
 
 #ifndef LAL_NDEBUG
+  REAL4Vector                 dummy;
   if ( ! lalNoDebug )
   {
     parameters.length = 11 ;
@@ -164,9 +164,9 @@ main( void )
 
   /* define valid value for specified length of output vector */
   parameters.length = 11 ;
-  dummy.length = 11;
 
 #ifndef LAL_NDEBUG
+  dummy.length = 11;
   if ( ! lalNoDebug )
   {
     /* test behavior for x spacing <= 0 */
@@ -214,9 +214,9 @@ main( void )
 #endif  /* LAL_NDEBUG */
 
   /* assign valid output vector length */
-  dummy.length = parameters.length;
 
 #ifndef LAL_NDEBUG
+  dummy.length = parameters.length;
   if ( ! lalNoDebug )
   {
     /* test behavior for null pointer to data member of output vector */

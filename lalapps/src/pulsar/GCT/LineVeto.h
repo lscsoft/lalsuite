@@ -49,26 +49,11 @@ extern "C" {
 #include <lalapps.h>
 
 /* additional includes */
-#include "HierarchSearchGCT.h"
+#include "OptimizedCFS/ComputeFstatREAL4.h"
+#include "GCTtoplist.h"
+#include "../hough/src2/HoughFStatToplist.h"
 
 /*---------- exported DEFINES ----------*/
-
-/** \name Error codes */
-/*@{*/
-#define LINEVETOC_ENULL 	1
-#define LINEVETOC_ENONULL 	2
-#define LINEVETOC_EINPUT   	3
-#define LINEVETOC_EMEM   	4
-#define LINEVETOC_EXLAL		5
-#define LINEVETOC_EIEEE		6
-
-#define LINEVETOC_MSGENULL 	"Arguments contained an unexpected null pointer"
-#define LINEVETOC_MSGENONULL 	"Output pointer is non-NULL"
-#define LINEVETOC_MSGEINPUT   	"Invalid input"
-#define LINEVETOC_MSGEMEM   	"Out of memory. Bad."
-#define LINEVETOC_MSGEXLAL	"XLAL function call failed"
-#define LINEVETOC_MSGEIEEE	"Floating point failure"
-/*@}*/
 
 /*---------- exported types ----------*/
 
@@ -86,13 +71,14 @@ extern const LVcomponents empty_LVcomponents;
 /*---------- exported prototypes [API] ----------*/
 int
 XLALComputeExtraStatsForToplist ( toplist_t *list,
+				  const char *listEntryTypeName,
 				  const MultiSFTVectorSequence *multiSFTs,
 				  const MultiNoiseWeightsSequence *multiNoiseWeights,
 				  const MultiDetectorStateSeriesSequence *multiDetStates,
 				  const ComputeFParams *CFparams,
 				  const LIGOTimeGPS refTimeGPS,
-				  const LIGOTimeGPS tMidGPS,
-				  const BOOLEAN SignalOnly );
+				  const BOOLEAN SignalOnly,
+				  const char* outputSingleSegStats );
 
 int
 XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
@@ -102,11 +88,12 @@ XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,
 				    const MultiDetectorStateSeriesSequence *multiDetStates,
 				    const LALStringVector *detectorIDs,
 				    const ComputeFParams *CFparams,
-				    const BOOLEAN SignalOnly);
+				    const BOOLEAN SignalOnly,
+				    FILE *singleSegStatsFile );
 
 REAL8
-XLALComputeFstatFromAtoms ( const Fcomponents *Fstat,
-			    const UINT4 X );
+XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
+			    const INT4 X );
 
 REAL8
 XLALComputeLineVeto ( const REAL8 TwoF,

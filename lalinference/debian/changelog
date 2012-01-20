@@ -1,12 +1,26 @@
-lalinspiral (1.1.0-1lscsoft1) unstable; urgency=low
+lalinference (0.1.1-1) unstable; urgency=low
 
-  * LALInspiral 1.1.0
+  * LALInference 0.1.1
+  * update to automake-1.11.2
+  * packaging updates
 
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 Jan 2011 16:05:38 -0600
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 10:07:10 -0600
 
-lalinspiral (1.0.0-1lscsoft1) unstable; urgency=low
+lalinference (0.1.0-1) unstable; urgency=low
 
-  * LALInspiral 1.0.0
+  * LALInference 0.1.0
 
- -- Adam Mercer <adam.mercer@ligo.org>  Wed, 5 May 2010 09:48:56 -0500
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:07:12 -0600
 
+lalinference (0.1.0~rc2-1) unstable; urgency=low
+
+  * LALInference 0.1.0 Release Candidate 2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:38:10 -0600
+
+lalinference (0.1.0~rc1-1) unstable; urgency=low
+
+  * LALInference 0.1.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:11:57 -0600

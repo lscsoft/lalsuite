@@ -112,7 +112,6 @@ int main( int argc, char *argv[] )
   glob_t globbedFiles;
   int numInFiles = 0;
   char **inFileNameList;
-  static const char *func = "XLALSimRingdownTableFromLIGOLw";
   int j;
   int  errnum;
 
@@ -340,7 +339,7 @@ int main( int argc, char *argv[] )
           break;
         default:
           XLALSetErrno( errnum);
-          XLAL_ERROR( func, XLAL_EFUNC );
+          XLAL_ERROR( XLAL_EFUNC );
       }
       thisEvent = *eventHandle;
       numEvents++;

@@ -1,3 +1,30 @@
+lalburst (1.1.1-1) unstable; urgency=low
+
+  * LALBurst 1.1.1
+  * update to automake-1.11.2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 09:57:29 -0600
+
+lalburst (1.1.0-1) unstable; urgency=low
+
+  * LALBurst 1.1.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 13:02:38 -0600
+
+lalburst (1.1.0~rc2-1) unstable; urgency=low
+
+  * LALBurst 1.1.0 Release Candidate 2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:23:53 -0600
+
+lalburst (1.1.0~rc1-1) unstable; urgency=low
+
+  * LALBurst 1.1.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 15:06:14 -0600
+
 lalburst (1.0.1-1lscsoft1) unstable; urgency=low
 
   * LALBurst 1.0.1

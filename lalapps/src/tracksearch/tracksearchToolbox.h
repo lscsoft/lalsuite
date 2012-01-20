@@ -25,10 +25,11 @@
 #ifndef TRACKSEARCHTOOLBOX_H
 #define TRACKSEARCHTOOLBOX_H
 
-#include "tracksearch.h"
-#include "tracksearchAverager.h"
 #include <unistd.h>
 #include <errno.h>
+
+#include "tracksearch.h"
+#include "tracksearchAverager.h"
 
 #define TSAPERMS 0666
 

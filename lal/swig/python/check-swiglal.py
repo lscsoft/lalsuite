@@ -25,7 +25,7 @@ else:
     LALCheckMemoryLeaks()
     mem1 = LALDetector()
     mem2 = LALStringVector()
-    mem3 = COMPLEX8Vector()
+    mem3 = XLALCreateCOMPLEX8Vector(5)
     mem4 = XLALCreateREAL8Vector(3)
     msg("*** below should be an error message from LALCheckMemoryLeaks() ***")
     try:
@@ -34,8 +34,7 @@ else:
     except:
         pass
     msg("*** above should be an error message from LALCheckMemoryLeaks() ***")
-    del mem1, mem2, mem3
-    XLALDestroyREAL8Vector(mem4)
+    del mem1, mem2, mem3, mem4
     LALCheckMemoryLeaks()
     msg("passed memory allocation")
 
@@ -58,14 +57,29 @@ XLALAppendString2Vector(sv, strs[3])
 assert(sv.length == 4)
 for i in range(0,4):
     assert(sv.data_getel(i) == strs[i])
+    assert(sv.data[i] == strs[i])
 XLALDestroyStringVector(sv)
 msg("passed string conversions")
+
+# check vector/matrix struct type accessors
+if not cvar.swiglal_debug:
+    msg("skipping vector/matrix struct type accessors")
+else:
+    swiglal_test_struct_vector_setel(0, cvar.swiglal_test_struct_const)
+    assert(swiglal_test_struct_vector_getel(0).a == cvar.swiglal_test_struct_const.a)
+    assert(swiglal_test_struct_vector_getel(0).b == cvar.swiglal_test_struct_const.b)
+    assert(swiglal_test_struct_vector_getel(0).c == cvar.swiglal_test_struct_const.c)
+    swiglal_test_struct_matrix_setel(0, 0, cvar.swiglal_test_struct_const)
+    assert(swiglal_test_struct_matrix_getel(0, 0).a == cvar.swiglal_test_struct_const.a)
+    assert(swiglal_test_struct_matrix_getel(0, 0).b == cvar.swiglal_test_struct_const.b)
+    assert(swiglal_test_struct_matrix_getel(0, 0).c == cvar.swiglal_test_struct_const.c)
+    msg("passed vector/matrix struct type accessors")
 
 # check static vector/matrix conversions
 if not cvar.swiglal_debug:
     msg("skipping static vector/matrix conversions")
 else:
-    sts = swiglal_static_test_struct()
+    sts = swiglal_test_static_struct()
     assert(len(sts.vector) == 3)
     assert(len(sts.enum_vector) == 3)
     assert(sts.matrix.shape == (2, 3))
@@ -82,16 +96,24 @@ else:
     for i in range(0,3):
         sts.enum_vector_setel(i, 2*i + 3)
         assert(sts.enum_vector_getel(i) == (2*i + 3))
+        assert(sts.enum_vector[i] == (2*i + 3))
     del sts
-    assert(not cvar.swiglal_static_test_vector.any())
-    assert(not cvar.swiglal_static_test_matrix.any())
-    assert(not cvar.swiglal_static_test_enum_vector.any())
-    assert(not cvar.swiglal_static_test_enum_matrix.any())
-    cvar.swiglal_static_test_vector = cvar.swiglal_static_test_const_vector
-    assert((cvar.swiglal_static_test_vector == [1, 2, 4]).all())
-    assert(swiglal_static_test_const_vector_getel(2) == 4)
+    assert(not cvar.swiglal_test_static_vector.any())
+    assert(not cvar.swiglal_test_static_matrix.any())
+    assert(not cvar.swiglal_test_static_enum_vector.any())
+    assert(not cvar.swiglal_test_static_enum_matrix.any())
+    swiglal_test_static_vector_setel(0, 10)
+    assert(swiglal_test_static_vector_getel(0) == 10)
+    swiglal_test_static_matrix_setel(0, 0, 11)
+    assert(swiglal_test_static_matrix_getel(0, 0) == 11)
+    cvar.swiglal_test_static_vector = cvar.swiglal_test_static_const_vector
+    assert((cvar.swiglal_test_static_vector == [1, 2, 4]).all())
+    assert(swiglal_test_static_const_vector_getel(2) == 4)
+    cvar.swiglal_test_static_matrix = cvar.swiglal_test_static_const_matrix
+    assert((cvar.swiglal_test_static_matrix == [[1, 2, 4], [2, 4, 8]]).all())
+    assert(swiglal_test_static_const_matrix_getel(1, 2) == 8)
     try:
-        swiglal_static_test_const_vector_getel(20)
+        swiglal_test_static_const_vector_getel(20)
         raise error("expected exception")
     except:
         pass
@@ -104,11 +126,17 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     assert((iv.data == [1, 3, 2, 4, 3]).all())
     iv.data_setel(3, 7)
     assert(iv.data_getel(3) == 7)
+    iv.data_setel(3, 0)
+    iv.data[3] = 7
+    assert(iv.data[3] == 7)
     assert(rvl == 5)
     rv.data = [1.2, 3.4, 2.6, 4.8, 3.5]
     assert((rv.data == [1.2, 3.4, 2.6, 4.8, 3.5]).all())
     rv.data_setel(rvl - 1, 7.5)
     assert(rv.data_getel(rvl - 1) == 7.5)
+    rv.data_setel(rvl - 1, 0)
+    rv.data[rvl - 1] = 7.5
+    assert(rv.data[rvl - 1] == 7.5)
     try:
         rv.data_setel(rvl, 99.9)
         raise error("expected exception")
@@ -128,13 +156,28 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
             cm.data_setel(i, j, complex(i / 4.0, j / 2.0))
     assert(cm.data_getel(2, 3) == complex(0.5, 1.5))
     assert(cm.data_getel(3, 2) == complex(0.75, 1.0))
+    for i in range(0,cms1):
+        for j in range(0,cms2):
+            cm.data[i, j] = complex(i / 4.0, j / 2.0)
+    assert(cm.data[2, 3] == complex(0.5, 1.5))
+    assert(cm.data[3, 2] == complex(0.75, 1.0))
     try:
         iv.data_setel(0, cm.data_getel(2, 3))
         raise error("expected exception")
     except:
         pass
     try:
+        iv.data[0] = cm.data[2, 3]
+        raise error("expected exception")
+    except:
+        pass
+    try:
         rv.data_setel(0, cm.data_getel(3, 2))
+        raise error("expected exception")
+    except:
+        pass
+    try:
+        rv.data[0] = cm.data[3, 2]
         raise error("expected exception")
     except:
         pass
@@ -144,20 +187,17 @@ rv = XLALCreateREAL8Vector(5)
 cm = XLALCreateCOMPLEX8VectorSequence(4, 6)
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength)
-XLALDestroyINT4Vector(iv)
-XLALDestroyREAL8Vector(rv)
-XLALDestroyCOMPLEX8VectorSequence(cm)
-LALCheckMemoryLeaks()
+del iv, rv, cm
+if cvar.swiglal_debug:
+    LALCheckMemoryLeaks()
 msg("passed dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
-iv = gsl_vector_int_calloc(5)
-rv = gsl_vector_calloc(5)
-cm = gsl_matrix_complex_float_calloc(4, 6)
+iv = gsl_vector_int(5)
+rv = gsl_vector(5)
+cm = gsl_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
-gsl_vector_int_free(iv)
-gsl_vector_free(rv)
-gsl_matrix_complex_float_free(cm)
+del iv, rv, cm
 msg("passed dynamic vector/matrix conversions (GSL)")
 
 # check 'tm' struct conversions

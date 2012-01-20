@@ -1,12 +1,10 @@
 /**
 \author Tibbits, M. M.
-\file
+\addtogroup MatrixDivide_c
 
-\heading{Module \ref MatrixDivide.c}
-\latexonly\label{s_MatrixDivide_c}\endlatexonly
+\brief This file is dedicated to reproducing the matlab function "./" .
 
-This file is dedicated to reproducing the matlab function " ./ ".  This file
-has several declarations of the same function taking all forms of available
+This file has several declarations of the same function taking all forms of available
 input.  This being said, I have yet to script the complex actions and their
 counterparts.
 
@@ -22,6 +20,7 @@ The algorithm is the same as it is in matlab.  The dot in front of an operator
 in matlab signifies that if either or both of the operands are vectors, then
 the operation will be carried out member by member.  For instance
 
+\code
 vector a[25];
 vector b[25];
 vector c[25];
@@ -37,19 +36,15 @@ c[1] =	a[1] /	b[1];
 .	.	.
 
 etc.
+\endcode
 
 \heading{Uses}
-
-<ul>
-<li> \c LALDCreateVector</li>
-</ul>
+LALDCreateVector()
 
 \heading{Notes}
 
 At the current time none of the operations have been specified for neither the
 complex datatypes nor the unsigned datatypes.
-
-\heading{Prototypes}
 
 */
 

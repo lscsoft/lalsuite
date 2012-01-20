@@ -35,6 +35,7 @@ SNEDSRC		= sned.c
 CORSESRC	= corse.c
 SKYMAPSRC	= skymap.c
 COINJSRC	= coinj.c
+STOCHBANKSRC	= stochasticbank.c
 
 if LALFRAME
 if LALMETAIO
@@ -49,38 +50,39 @@ LALFRAME_LALMETAIO_PROGS = lalapps_inspiral lalapps_tmpltbank \
                lalapps_coherentbank lalapps_coinext \
                lalapps_randombank lalapps_ninja lalapps_fr_ninja \
                lalapps_mdc_ninja lalapps_calcexpsnr lalapps_sned \
-               lalapps_corse lalapps_skymap lalapps_coinj
-lalapps_inspiral_SOURCES 	= $(INSPIRALSRC)
-lalapps_cohire_SOURCES          = $(COHIRESRC)
-lalapps_coherentbank_SOURCES 	= $(COHEREBANK)
-lalapps_tmpltbank_SOURCES 	= $(TMPLTBANKSRC)
-lalapps_inca_SOURCES 		= $(INCASRC)
-lalapps_thinca_SOURCES 		= $(THINCASRC)
-lalapps_sire_SOURCES 		= $(SIRESRC)
-lalapps_coire_SOURCES 		= $(COIRESRC)
-lalapps_siva_SOURCES 		= $(SIVASRC)
-lalapps_inspinj_SOURCES 	= $(INSPINJSRC)
-lalapps_injcut_SOURCES 		= $(INJCUTSRC)
-lalapps_minj_SOURCES 		= $(MINJSRC)
-lalapps_bbhinj_SOURCES 		= $(BBHINJSRC)
-lalapps_blindinj_SOURCES 	= $(BLINDINJSRC)
-lalapps_splitbank_SOURCES 	= $(SPLITBANKSRC)
-lalapps_trigbank_SOURCES 	= $(TRIGBANKSRC)
-lalapps_populate_chisq_SOURCES 	= $(CHISQSRC)
-lalapps_trigscan_SOURCES 	= $(TRIGSCANSRC)
-lalapps_spininj_SOURCES 	= $(SPININJSRC)
-lalapps_inspfrinj_SOURCES 	= $(INSPFRINJSRC)
-lalapps_gwf2xml_SOURCES 	= $(GWF2XMLSRC)
-lalapps_coinext_SOURCES         = $(COINEXTSRC)
-lalapps_randombank_SOURCES 	= $(RANDOMBANKSRC)
-lalapps_ninja_SOURCES		= $(NINJASRC)
-lalapps_fr_ninja_SOURCES	= $(FRNINJASRC)
-lalapps_mdc_ninja_SOURCES	= $(MDCNINJASRC)
-lalapps_calcexpsnr_SOURCES	= $(CALCEXPSNRSRC)
-lalapps_sned_SOURCES		= $(SNEDSRC)
-lalapps_corse_SOURCES		= $(CORSESRC)
-lalapps_skymap_SOURCES		= $(SKYMAPSRC)
-lalapps_coinj_SOURCES		= $(COINJSRC)
+               lalapps_corse lalapps_skymap lalapps_coinj lalapps_cbc_stochasticbank
+lalapps_inspiral_SOURCES 		= $(INSPIRALSRC)
+lalapps_cohire_SOURCES          	= $(COHIRESRC)
+lalapps_coherentbank_SOURCES 		= $(COHEREBANK)
+lalapps_tmpltbank_SOURCES 		= $(TMPLTBANKSRC)
+lalapps_inca_SOURCES 			= $(INCASRC)
+lalapps_thinca_SOURCES 			= $(THINCASRC)
+lalapps_sire_SOURCES 			= $(SIRESRC)
+lalapps_coire_SOURCES 			= $(COIRESRC)
+lalapps_siva_SOURCES 			= $(SIVASRC)
+lalapps_inspinj_SOURCES 		= $(INSPINJSRC)
+lalapps_injcut_SOURCES 			= $(INJCUTSRC)
+lalapps_minj_SOURCES 			= $(MINJSRC)
+lalapps_bbhinj_SOURCES 			= $(BBHINJSRC)
+lalapps_blindinj_SOURCES 		= $(BLINDINJSRC)
+lalapps_splitbank_SOURCES 		= $(SPLITBANKSRC)
+lalapps_trigbank_SOURCES 		= $(TRIGBANKSRC)
+lalapps_populate_chisq_SOURCES 		= $(CHISQSRC)
+lalapps_trigscan_SOURCES 		= $(TRIGSCANSRC)
+lalapps_spininj_SOURCES 		= $(SPININJSRC)
+lalapps_inspfrinj_SOURCES 		= $(INSPFRINJSRC)
+lalapps_gwf2xml_SOURCES 		= $(GWF2XMLSRC)
+lalapps_coinext_SOURCES         	= $(COINEXTSRC)
+lalapps_randombank_SOURCES 		= $(RANDOMBANKSRC)
+lalapps_ninja_SOURCES			= $(NINJASRC)
+lalapps_fr_ninja_SOURCES		= $(FRNINJASRC)
+lalapps_mdc_ninja_SOURCES		= $(MDCNINJASRC)
+lalapps_calcexpsnr_SOURCES		= $(CALCEXPSNRSRC)
+lalapps_sned_SOURCES			= $(SNEDSRC)
+lalapps_corse_SOURCES			= $(CORSESRC)
+lalapps_skymap_SOURCES			= $(SKYMAPSRC)
+lalapps_coinj_SOURCES			= $(COINJSRC)
+lalapps_cbc_stochasticbank_SOURCES	= $(STOCHBANKSRC)
 endif
 endif
 endif
@@ -111,7 +113,7 @@ bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
 	      lalapps_compare_ini lalapps_link_old_ihope \
 	      lalapps_generate_upper_limits lalapps_followup0_page \
 	      lalapps_cbc_pipedown lalapps_glitch_probe \
-              lalapps_cohPTF_hipe
+              lalapps_cohPTF_hipe lalapps_coh_PTF_post_processing
 pkgpython_DATA = inspiral.py inspiralutils.py
 endif
 
@@ -194,6 +196,9 @@ lalapps_followup0_page: $(srcdir)/followup0_page.in python_config.sed
 lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
 	sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
 	chmod +x lalapps_cbc_pipedown
+lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_config.sed
+	sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
+	chmod +x lalapps_coh_PTF_post_processing
 
 
 pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini cbc_pipedown.ini followup0_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css s5_background_H0H1-RDS_R_L1-cbc.txt s5_background_H0H1-RDS_R_L1-seismic-cbc.txt s5_background_H0H2-RDS_R_L1-cbc.txt s5_background_H0H2-RDS_R_L1-seismic-cbc.txt s5_background_H1_hoft_cbc.txt s5_background_H2_hoft_cbc.txt s5_background_L0L1-RDS_R_L1-cbc.txt s5_background_L0L1-RDS_R_L1-seismic-cbc.txt s5_background_L1_hoft_cbc.txt s5_background_V1-raw-cbc.txt s5_background_V1-raw-seismic-cbc.txt s5_background_V1_hoft_cbc.txt s5_foreground_H0H1-RDS_R_L1-cbc.txt s5_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s5_foreground_H0H2-RDS_R_L1-cbc.txt s5_foreground_H0H2-RDS_R_L1-seismic-cbc.txt s5_foreground_H1_hoft_cbc.txt s5_foreground_H2_hoft_cbc.txt s5_foreground_L0L1-RDS_R_L1-cbc.txt s5_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s5_foreground_L1_hoft_cbc.txt s5_foreground_V1-raw-cbc.txt s5_foreground_V1-raw-seismic-cbc.txt s5_foreground_V1_hoft_cbc.txt s6_background_H0H1-RDS_R_L1-cbc.txt s6_background_H0H1-RDS_R_L1-seismic-cbc.txt s6_background_H1_hoft_cbc.txt s6_background_L0L1-RDS_R_L1-cbc.txt s6_background_L0L1-RDS_R_L1-seismic-cbc.txt s6_background_L1_hoft_cbc.txt s6_background_V1-raw-cbc.txt s6_background_V1-raw-seismic-cbc.txt s6_background_V1_hoft_cbc.txt s6_foreground_H0H1-RDS_R_L1-cbc.txt s6_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s6_foreground_H1_hoft_cbc.txt s6_foreground_L0L1-RDS_R_L1-cbc.txt s6_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s6_foreground_L1_hoft_cbc.txt s6_foreground_V1-raw-cbc.txt s6_foreground_V1-raw-seismic-cbc.txt s6_foreground_V1_hoft_cbc.txt ratioTest.pickle remove_h1h2.sql cluster.sql simplify.sql mcmcsummary.R
@@ -210,7 +215,7 @@ EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
 	     write_ihope_page.in compare_ini.in link_old_ihope.in \
 	     generate_upper_limits.in followup0_page.in cbc_pipedown.in \
 	     ihope_daily_page.in check_flag.in flag_triggers.in \
-	     glitch_probe.in $(DATA)
+	     glitch_probe.in coh_PTF_post_processing.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la

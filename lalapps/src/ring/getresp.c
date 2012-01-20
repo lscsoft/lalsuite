@@ -128,7 +128,6 @@ COMPLEX8FrequencySeries * get_frame_response(
   char ifo[3];
   UINT4 npoints;
   UINT4 k;
-  static const char func[] = "generate_response";
   memset(&calfacts, 0, sizeof(calfacts));
 
   /* create frequency series */
@@ -137,7 +136,7 @@ COMPLEX8FrequencySeries * get_frame_response(
 
   if(!response) 
   {
-    XLAL_ERROR_NULL(func, XLAL_ENOMEM);
+    XLAL_ERROR_NULL(XLAL_ENOMEM);
     return NULL;
   }
     

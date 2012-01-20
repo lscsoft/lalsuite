@@ -1,4 +1,4 @@
-%define _prefix /opt/lscsoft/lal
+%define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
 Name: @PACKAGE@
@@ -12,7 +12,7 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python
-Requires: gsl fftw3 libmetaio
+Requires: gsl fftw3
 Prefix: %{_prefix}
 
 %description
@@ -34,13 +34,12 @@ as well as the documentation for the library.
 %setup -q
 
 %build
-source /opt/lscsoft/lscsoft-user-env.sh
-nightly_version=@NIGHTLY_VERSION@
-%configure --enable-nightly=${nightly_version:-no} --disable-gcc-flags --disable-debug
+%configure --disable-gcc-flags --disable-debug
 %{__make} V=1
 
 %install
 %makeinstall
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
 ldconfig
@@ -60,7 +59,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*a
+%{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
 %{_datadir}/*

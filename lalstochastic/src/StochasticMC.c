@@ -20,16 +20,13 @@
 
 /**
 \author Tania Regimbau, Sukanta Bose, Jeff Noel
-\file
-\ingroup stochastic
-
-\brief Routine used by the stochastic DSO to do software injection.
+\addtogroup StochasticMC_h
 
 \heading{Description}
+
 This routine simulates time-domain signal in a pair
 of detectors using Sukanta Bose's code SimulateSB.c, whitened with the adequate response function that can be used in LALwrapper.
 
-\heading{Description}
 In this version, long time-series are constructed by concatenating short segments of simulated data
 whitened with the adequate response function. Segments are sinusoidally spliced into consecutive
 segments using Jeff Noel's function SinusoidalSplice, in order to avoid discontinuities in the final
@@ -382,7 +379,7 @@ void LALStochasticMCDso (LALStatus *status,
 
     /* ERROR CHECKING */
 
- /***** check input/output structures exist *****/
+ /* **** check input/output structures exist *****/
 
  /* output structure */
 
@@ -438,7 +435,7 @@ void LALStochasticMCDso (LALStatus *status,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
 
-  /************* check parameter structures ***********/
+  /* ************ check parameter structures ***********/
 
   /* lengthseg is non-zero */
   ASSERT(MCparams->lengthseg > 0, status,
@@ -453,10 +450,10 @@ void LALStochasticMCDso (LALStatus *status,
          STOCHASTICMCH_ENULLSRATE,STOCHASTICMCH_MSGENULLSRATE);
 
 
-  /************* done with null pointers *****************/
+  /* ************ done with null pointers *****************/
 
 
-  /**** check for legality ****/
+  /* *** check for legality ****/
 
   /* start frequency must not be negative */
   if (MCparams->f0 < 0)
@@ -491,7 +488,7 @@ void LALStochasticMCDso (LALStatus *status,
   caltime = starttime + caliboffset;
 
 
-/** check for mismatches **/
+/* * check for mismatches **/
   /* epoch */
 
   if (calfacts1.epoch.gpsSeconds != caltime)
@@ -722,7 +719,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
 
     /* ERROR CHECKING */
 
- /***** check input/output structures exist *****/
+ /* **** check input/output structures exist *****/
 
  /* output structure */
 
@@ -778,7 +775,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
          status,STOCHASTICMCH_ENULLP,STOCHASTICMCH_MSGENULLP);
 
 
-  /************* check parameter structures ***********/
+  /* ************ check parameter structures ***********/
 
   /* lengthseg is non-zero */
   ASSERT(MCparams->lengthseg > 0, status,
@@ -793,10 +790,10 @@ void LALStochasticMCDsoSplice (LALStatus *status,
          STOCHASTICMCH_ENULLSRATE,STOCHASTICMCH_MSGENULLSRATE);
 
 
-  /************* done with null pointers *****************/
+  /* ************ done with null pointers *****************/
 
 
-  /**** check for legality ****/
+  /* *** check for legality ****/
 
   /* start frequency must not be negative */
   if (MCparams->f0 < 0)
@@ -833,7 +830,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   caltime = starttime + spliceoffset;
 
 
-/** check for mismatches **/
+/* * check for mismatches **/
   /* epoch */
 
   if (calfacts1.epoch.gpsSeconds != caltime)

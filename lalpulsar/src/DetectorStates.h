@@ -33,8 +33,8 @@
 #define _DETECTORSTATES_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -70,9 +70,9 @@ NRCSID( DETECTORSTATESH, "$Id$" );
 
 /** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle.
  */
-typedef struct
+typedef struct tagSymmTensor3
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SymmTensor3);
   REAL4 d11;   REAL4 d12;   REAL4 d13;
                REAL4 d22;   REAL4 d23;
                             REAL4 d33;
@@ -81,9 +81,9 @@ typedef struct
 
 /** A symmetric 3x3 tensor (such as detector-tensors), storing only the upper triangle, using REAL8 precision
  */
-typedef struct
+typedef struct tagSymmTensor3d
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(SymmTensor3d);
   REAL8 d11;   REAL8 d12;   REAL8 d13;
                REAL8 d22;   REAL8 d23;
                             REAL8 d33;
@@ -95,9 +95,9 @@ typedef struct
  * and arm "basis-tensor" n x n. This is used to speed up the
  * computation of LISA detector tensors in the rigid-adiabatic approximation.
  */
-typedef struct
+typedef struct tagDetectorArm
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DetectorArm);
   REAL4 n[3];			/**< unit vector pointing along this arm */
   SymmTensor3 basisT;		/**< arm "basis-tensor" (n x n) */
   REAL4 armlength_c;		/**< armlengths in seconds L / c */
@@ -111,9 +111,9 @@ typedef const DetectorArm constDetector3Arms[4];
 
 /** simple multi-IFO array of detector-information, standard LAL-vector
  */
-typedef struct
+typedef struct tagMultiLALDetector
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MultiLALDetector);
   UINT4 length;		/**< number of IFOs */
   LALDetector *data;	/**< array of LALDetector structs */
 } MultiLALDetector;
@@ -122,9 +122,9 @@ typedef struct
 /** State-info about position, velocity and LMST of a detector together
  * with corresponding EarthState.
  */
-typedef struct
+typedef struct tagDetectorState
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DetectorState);
   LIGOTimeGPS tGPS;		/**< GPS timestamps corresponding to this entry */
   REAL8 rDetector[3];		/**< Cartesian coords of detector position in ICRS J2000. Units=sec */
   REAL8 vDetector[3];		/**< Cart. coords. of detector velocity, in dimensionless units (v/c)*/
@@ -138,19 +138,20 @@ typedef struct
 /** Timeseries of DetectorState's, representing the detector-info at different timestamps.
  * In addition to the standard 'vector'-fields we also store the detector-info in here.
  */
-typedef struct
+typedef struct tagDetectorStateSeries
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(DetectorStateSeries);
   UINT4 length;			/**< total number of entries */
   DetectorState *data;		/**< array of DetectorState entries */
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
   CoordinateSystem system; 	/**< The coordinate system used for detector's position/velocity and detector-tensor */
+  REAL8 deltaT;			/**< timespan centered on each timestamp (e.g. typically Tsft) */
 } DetectorStateSeries;
 
 /** Multi-IFO time-series of DetectorStates */
-typedef struct
+typedef struct tagMultiDetectorStateSeries
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(MultiDetectorStateSeries);
   UINT4 length;			/**< number of detectors */
   DetectorStateSeries **data;	/**< vector of pointers to DetectorStateSeries */
   LIGOTimeGPS startTime;	/**< (earliest) startTime of the observation */

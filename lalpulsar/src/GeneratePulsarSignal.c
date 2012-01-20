@@ -34,6 +34,7 @@
  *
  */
 #include <math.h>
+#include <gsl/gsl_math.h>
 
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -55,7 +56,7 @@ NRCSID( GENERATEPULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
-static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some number is an INT) */
+static REAL8 eps = 1.e-14;	/* maximal REAL8 roundoff-error (used for determining if some REAL8 frequency corresponds to an integer "bin-index" */
 
 /* ----- DEFINES ----- */
 #define GPS2REAL(gps) ((gps).gpsSeconds + 1e-9 * (gps).gpsNanoSeconds )
@@ -469,7 +470,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 	{
 	  COMPLEX8 *data, *noise;
 	  thisNoiseSFT = &(params->noiseSFTs->data[iSFT]);
-	  index0n = (UINT4) ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
+	  index0n = (UINT4) round ((thisSFT->f0 - thisNoiseSFT->f0) / thisSFT->deltaF);
 
 	  data = &(thisSFT->data->data[0]);
 	  noise = &(thisNoiseSFT->data->data[index0n]);
@@ -1071,50 +1072,53 @@ check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIG
 } /* check_timestamp_bounds() */
 
 /*----------------------------------------------------------------------
- * check if frequency-range and resolution of noiseSFTs is consistent with signal
+ * check if frequency-range and resolution of noiseSFTs is consistent with signal-band [f0, f1]
+ * Note: all frequencies f are required to correspond to integer *bins* f/dFreq
  * ABORT if not
  *----------------------------------------------------------------------*/
 void
 checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
 {
-  UINT4 i;
-  SFTtype *thisSFT;
-  REAL8 fn0, fn1, deltaFn, shift;
-  UINT4 nshift;
-  REAL8 relError;
-  volatile REAL8 bin1, bin2;	/* keep compiler from optimizing these away! */
 
-  INITSTATUS( status, "checkNoiseSFTs", GENERATEPULSARSIGNALC);
+  INITSTATUS( status, __func__, GENERATEPULSARSIGNALC);
 
-  for (i=0; i < sfts->length; i++)
+  for (UINT4 i=0; i < sfts->length; i++)
     {
-      thisSFT = &(sfts->data[i]);
-      deltaFn = thisSFT->deltaF;
-      fn0 = thisSFT->f0;
-      fn1 = f0 + thisSFT->data->length * deltaFn;
+      SFTtype *thisSFT = &(sfts->data[i]);
+      REAL8 deltaFn    = thisSFT->deltaF;
+      REAL8 fn0        = thisSFT->f0;
+      REAL8 fn1        = f0 + thisSFT->data->length * deltaFn;
 
-      if (deltaFn != deltaF) {
-	if (lalDebugLevel)
-	  XLALPrintError ("\n\nTime-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
+      if ( gsl_fcmp ( deltaFn, deltaF, eps )  !=  0) {
+        XLALPrintError ("Time-base of noise-SFTs Tsft_n=%f differs from signal-SFTs Tsft=%f\n", 1.0/deltaFn, 1.0/deltaF);
 	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
       if ( (f0 < fn0) || (f1 > fn1) ) {
-	if (lalDebugLevel)
-	  XLALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
+        XLALPrintError ("\n\nSignal frequency-band [%f,%f] is not contained in noise SFTs [%f,%f]\n", f0, f1, fn0, fn1);
 	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBAND, GENERATEPULSARSIGNALH_MSGENOISEBAND);
       }
 
-      bin1 = f0 / deltaF;	/* exact division if f is an integer frequency-bin! */
-      bin2 = fn0 / deltaF;
-      shift = bin1 - bin2;
-      /* frequency bins have to coincide! ==> check that shift is integer!  */
-      nshift = (UINT4)(shift+0.5);
-      relError = fabs( nshift - shift);
-      if ( relError > eps ) {
-	if (lalDebugLevel)
-	  XLALPrintError ("\n\nNoise frequency-bins don't coincide with signal-bins. Relative deviation=%g\n", relError);
-	ABORT (status, GENERATEPULSARSIGNALH_ENOISEBINS, GENERATEPULSARSIGNALH_MSGENOISEBINS);
+      /* all frequencies here must correspond to exact integer frequency-bins (wrt dFreq = 1/TSFT) */
+      REAL8 binReal    = f0 / deltaF;
+      REAL8 binRounded = round ( binReal );
+      if ( gsl_fcmp ( binReal, binRounded, eps ) !=  0) {
+        XLALPrintError ("Signal-band frequency f0/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
+	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
+      }
+
+      binReal = f1 / deltaF;
+      binRounded = round ( binReal );
+      if ( gsl_fcmp ( binReal, binRounded, eps ) !=  0) {
+        XLALPrintError ("Signal-band frequency f1/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
+	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
+      }
+
+      binReal = fn0 / deltaF;
+      binRounded = round ( binReal );
+      if ( gsl_fcmp ( binReal, binRounded, eps ) !=  0) {
+        XLALPrintError ("Noise-SFT start frequency fn0/deltaF = %.16g differs from integer bin by more than %g relative deviation.\n", binReal, eps );
+	ABORT (status,  GENERATEPULSARSIGNALH_ENOISEDELTAF,  GENERATEPULSARSIGNALH_MSGENOISEDELTAF);
       }
 
     } /* for i < numSFTs */

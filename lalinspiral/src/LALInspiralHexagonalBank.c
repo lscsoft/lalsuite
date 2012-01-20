@@ -70,7 +70,7 @@ LALInspiralCreatePNCoarseBankHexa(
   InspiralBankParams    bankPars;
   InspiralTemplate      *tempPars;
   InspiralMomentsEtc    moments;
-  InspiralCell          *cells;
+  InspiralCell          *cells=NULL;
   HexaGridParam         gridParam;
   CellEvolution         cellEvolution;
   CellList 		*cellList = NULL;
@@ -678,7 +678,7 @@ LALInitHexagonalBank(
       if ( (*cell)[id].RectPosition[i] == Above) above++;
     }
     if (below==2 && above == 2){
-      (*cell)[id].status = Edge;
+      (*cell)[id].position = Edge;
       (cellEvolution->fertile)=cellEvolution->fertile-1;
       LALListDelete(cellList, id);
 

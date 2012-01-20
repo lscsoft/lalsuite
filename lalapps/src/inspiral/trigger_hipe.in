@@ -82,7 +82,7 @@ def hash_n_bits(input_string, n_bits, hash_lib=sha):
   return bytes2int(hashed_string[:n_bytes]) >> (8*n_bytes - n_bits)
 
 def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
-  source_file, usertag=None, verbose=False):
+  source_file, ipn_gps=None, usertag=None, verbose=False):
   """
   Creates an master injection file containing all injections for this run.
   Also reads the file and returns its contents
@@ -100,6 +100,7 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   seed = hash_n_bits(hipe_dir, 31)
   numberInjections = injEnd - injStart + 1  # e.g., 1 through 5000 inclusive
 
+      
   # get the jitter parameters
   if cpinj.has_option(injrun, "jitter-skyloc"):
     jitter_sigma_deg = cpinj.getfloat(injrun, "jitter-skyloc")
@@ -138,8 +139,12 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
   argument.append(" --seed %d" % seed )
   argument.append(" --user-tag %s" % usertag)
 
-  # set output file and exttrig-file
-  argument.append(" --exttrig-file %s" % source_file )
+  # set output file as exttrig-file or IPN file with IPN GPS time
+  if ipn_gps:
+    argument.append(" --ipn-gps-time %d" % ipn_gps )
+  else:
+    argument.append(" --exttrig-file %s" % source_file )
+
 
   # execute the command
   executable = cp.get("condor", "inspinj")
@@ -429,7 +434,7 @@ class ptf_run(hipe_run):
       if dont_run is not None:
         allowed_stages -= set(dont_run)
       self._stages = allowed_stages
-
+      
   def write_dag(self):
     """
     Create directory and run lalapps_cohPTF_hipe to create the DAG.
@@ -588,8 +593,12 @@ parser.add_option("", "--skip-datafind", action="store_false", default=True,
   "the file caches in ./GRBxxxxxx/datafind/cache).")
 parser.add_option("", "--skip-onoff", action="store_false", default=True,
   dest="do_onoff", help="skip the onoff DAG")
+parser.add_option("", "--do-slides", action="store_true", default=False,
+  dest="do_slides", help="do time slides")
 parser.add_option("", "--do-coh-PTF", action="store_true", default=False,
   dest="do_coh_PTF", help="Use this flag if doing a coh PTF analysis")
+parser.add_option("", "--ipn", action="store_true", default=False,\
+  dest="ipn", help="Use this flag if analysing a GRB detected by the IPN, default: %default")
 
 ( opts , args ) = parser.parse_args()
 
@@ -628,11 +637,11 @@ if opts.verbose:
 
 if opts.do_coh_PTF:
   for program in ['coh_PTF_inspiral','coh_PTF_spin_checker']:
-    cp.set(program,'right-ascension',ext_trigs[0].event_ra)
-    cp.set(program,'declination',ext_trigs[0].event_dec)
+    if not opts.ipn:
+      cp.set(program,'right-ascension',ext_trigs[0].event_ra)
+      cp.set(program,'declination',ext_trigs[0].event_dec)
     cp.set(program,'trigger-time',ext_trigs[0].start_time)
     cp.set(program,'trigger-time-ns',ext_trigs[0].start_time_ns)
-
 
 ##############################################################################
 # get the pad and chunk lengths from the values in the ini file
@@ -699,7 +708,8 @@ for grb in ext_trigs:
                                      trigger + opts.onsource_right)
 
   # create the source-file which contains data about the position and time
-  # and place it into the corresponding directory
+  # and place it into the corresponding directory, also set the IPN file for the
+  # very same purpose when analysing IPN GRBs
   source_file = idirectory+"/triggerGRB"+str(grb.event_number_grb)+".xml"
   grbsummary.write_rows([grb], lsctables.ExtTriggersTable, source_file)
 
@@ -745,8 +755,9 @@ for grb in ext_trigs:
   # generation script.  In slightly more detail, steps are:
   #
   # 1. datafind
-  # 3. onoff-source analysis
-  # 3. injection runs
+  # 2. onoff-source analysis
+  # 3. time-slide analysis
+  # 4. injection runs
   #    a. generate injections
   #    b. split injections into files so they are safely separated
   #    c. generate DAG
@@ -770,7 +781,7 @@ for grb in ext_trigs:
     datafind_node = None
 
   if opts.do_onoff:
-    if opts.verbose: print "Creating DAG for onoff analysis"
+    if opts.verbose: print "Creating DAG for zero lag analysis"
     if opts.do_coh_PTF:
       onoff_analysis = ptf_run(idirectory + "/onoff", cp, grb_ifolist,
                         opts.log_path, source_file, "zero_lag",
@@ -779,15 +790,32 @@ for grb in ext_trigs:
                         verbose=opts.verbose)
     else:
       onoff_analysis = hipe_run(idirectory + "/onoff", cp, grb_ifolist,
-                        opts.log_path, source_file, "onoff",
+                        opts.log_path, source_file, "zero_lag",
                         offSourceSegment,
-                        usertag=idirectory + "_ONOFF_CATEGORY_1",
+                        usertag=idirectory + "_ZERO_LAG_CATEGORY_1",
                         verbose=opts.verbose,
                         dont_run=["datafind"])
-
+    onoff_analysis.set_numslides(0)
     onoff_node = onoff_analysis.finalize(uberdag=uberdag, parent=datafind_node)
     hipe_caches.append(onoff_analysis.get_cache_name())
 
+  if opts.do_slides:
+    if opts.verbose: print "Creating DAG for time slide analysis"
+    if opts.do_coh_PTF:
+      slide_analysis = ptf_run(idirectory + "/timeslides", cp, grb_ifolist,
+                        opts.log_path, source_file, "slides",
+                        offSourceSegment,
+                        usertag=idirectory + "_TIME_SLIDES_CATEGORY_1",
+                        verbose=opts.verbose)
+    else:
+      slide_analysis = hipe_run(idirectory + "/timeslides", cp, grb_ifolist,
+                        opts.log_path, source_file, "slides",
+                        offSourceSegment,
+                        usertag=idirectory + "_TIME_SLIDES_CATEGORY_1",
+                        verbose=opts.verbose,
+                        dont_run=["datafind"])
+    slide_node = slide_analysis.finalize(uberdag=uberdag, parent=datafind_node)
+    hipe_caches.append(slide_analysis.get_cache_name()) 
   ############################################################################
   # create the config parser object and read in the ini file
   if opts.injection_config:
@@ -812,11 +840,17 @@ for grb in ext_trigs:
           dont_run=["datafind", "sire-inspiral", "sire-inspiral-veto",
                     "coire-coincidence"])
 
-      # create the master injection file and gets its content
+      # create the master injection file and get its content
       if opts.verbose: print "  Creating injections..."
-      sims, injInterval, numberInjections, injFile = createInjectionFile(hipe_dir, cp,
-        cpinj, injrun, offSourceSegment.contract(opts.padding_time),
-        source_file, usertag, opts.verbose)
+      if opts.ipn:
+        ipnstart = ext_trigs[0].start_time
+      else:
+        ipnstart = None
+      sims, injInterval, numberInjections, injFile =\
+          createInjectionFile(hipe_dir, cp, cpinj, injrun,\
+                              offSourceSegment.contract(opts.padding_time),\
+                              source_file, ipnstart, usertag, opts.verbose)
+
       new_injfiles = [injFile]
 
       # XXX: hack since glue is having trouble with empty columns
@@ -834,7 +868,7 @@ for grb in ext_trigs:
           grbsummary.write_rows(sims_chunk, lsctables.SimInspiralTable, inj_file_name)
           new_injfiles.append(inj_file_name)
 
-      # set the needed parameters
+      # fixing the right parameters
       if opts.verbose: print "  Writing DAG..."
       if not opts.do_coh_PTF:
         injection_analysis.set_numslides(0)

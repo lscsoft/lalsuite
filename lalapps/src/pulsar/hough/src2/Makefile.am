@@ -18,7 +18,7 @@ NVCC ?= nvcc
 # allow to specify a different CUDA runtime library (e.g. for Windows when cross-compiling)
 CUDART ?= -lcudart
 
-bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch
+bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch lalapps_RecalcHSCandidates
 
 EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
 		 eah_HierarchicalSearch eah_HierarchicalSearch_cuda
@@ -31,6 +31,7 @@ EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 
 #endif
 
 FDSsrc = ../../FDS_isolated
+LVsrc = ../../GCT
 
 lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c ../src/MCInjectHoughS2.h \
 	                  ../src/SFTbin.h ../src/SFTbin.c \
@@ -50,6 +51,14 @@ HierarchicalSearchSources = HierarchicalSearch.c HierarchicalSearch.h \
 			  $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.h $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.c
 
 lalapps_HierarchicalSearch_SOURCES = $(HierarchicalSearchSources)
+
+lalapps_RecalcHSCandidates_SOURCES = RecalcHSCandidates.c HierarchicalSearch.h \
+				  HoughFStatToplist.c HoughFStatToplist.h \
+				  $(FDSsrc)/HeapToplist.c $(FDSsrc)/HeapToplist.h \
+				  $(FDSsrc)/ComputeFStatistic.h \
+				  $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.h $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4.c \
+				  $(LVsrc)/LineVeto.c $(LVsrc)/LineVeto.h
+
 
 HSLocalSources = $(FDSsrc)/OptimizedCFS/LocalComputeFstat.c EinsteinAtHome/LocalComputeFstatHoughMap.c
 EAHSources = $(HSLocalSources) EinsteinAtHome/hs_boinc_extras.c EinsteinAtHome/hs_boinc_options.cpp EinsteinAtHome/win_lib.cpp
@@ -98,6 +107,13 @@ exchndl.o: EinsteinAtHome/exchndl.c
 
 erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
+TESTS = testRecalcHS.sh
+EXTRA_DIST = testRecalcHS.sh
+
+TESTS_ENVIRONMENT = \
+LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
+LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

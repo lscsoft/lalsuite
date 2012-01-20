@@ -26,17 +26,29 @@
 #include <lal/AVFactories.h>
 
 REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize);
+REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
 
 REAL8 calcMeanD(REAL8Vector *vector);
 REAL8 calcStddevD(REAL8Vector *vector);
 REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator);
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta);
+REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta);
+REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 binodeviance(REAL8 x, REAL8 np);
+REAL8 epsval(REAL8 val);
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta);
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma);
 REAL8 ks_test_exp(REAL4Vector *vector);
+REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu);
+REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu);
+REAL8 unitGaussianSNR(REAL8 value, REAL8 dof);
 
+REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta);
+REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta);
+REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta);
+REAL4 epsval_float(REAL4 val);
 REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);
@@ -47,10 +59,12 @@ void sort_float_smallest(REAL4Vector *output, REAL4Vector *input);
 void sort_double_descend(REAL8Vector *vector);
 void sort_double_ascend(REAL8Vector *vector);
 void sort_float_ascend(REAL4Vector *vector);
-void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT4 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
+void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
+void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out);
 
 INT4 max_index(REAL4Vector *vector);
 INT4 max_index_double(REAL8Vector *vector);
+INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum);
 
 INT4 qsort_REAL4_compar(const void *a, const void *b);
 INT4 qsort_REAL8_compar(const void *a, const void *b);

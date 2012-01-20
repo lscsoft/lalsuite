@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, Duncan Brown, Jolien Creighton, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -22,16 +22,16 @@
 \file
 \ingroup LALInspiral_h
 
-\brief The function \c LALInspiralVelocity() calculates the velocity \f$v\f$ which corresponds to a time \f$t\f$ in
+\brief The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ which corresponds to a time \f$t\f$ in
 the inspiralling binary system.
 
 \heading{Prototypes}
 
-<tt>LALInspiralVelocity()</tt>
+<tt>XLALInspiralVelocity()</tt>
 
 \heading{Description}
 
-The function \c LALInspiralVelocity() calculates the velocity \f$v\f$ corresponding to a time \f$t\f$
+The function \c XLALInspiralVelocity() calculates the velocity \f$v\f$ corresponding to a time \f$t\f$
 in the evolution of an inspiralling binary system.  It does this by iteratively solving
 \anchor tofv \f{equation}{
 t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
@@ -44,7 +44,7 @@ t(v) =  t_{0} - m \int_{v_{0}}^{v} \frac{E'(v)}{{\cal F}(v)} \, dv \,\,.
 
 \heading{Uses}
 
-\c LALDBisectionFindRoot()
+\c XLALDBisectionFindRoot()
 
 \heading{Notes}
 
@@ -65,35 +65,49 @@ LALInspiralVelocity(
    TofVIn    *ak
    )
 {
-
-  DFindRootIn rootIn;
-  void *funcParams;
-
+  XLALPrintDeprecationWarning("LALInspiralVelocity", "XLALInspiralVelocity");
 
   INITSTATUS (status, "LALInspiralVelocity", LALINSPIRALVELOCITYC);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (v, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (ak, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-  rootIn.function = LALInspiralTofV;
-  rootIn.xmax = ak->vlso;
-  rootIn.xmin = ak->v0/2.;
-  rootIn.xacc = 1.0e-8;
+  *v = XLALInspiralVelocity(ak);
+  if (XLAL_IS_REAL8_FAIL_NAN(*v))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralVelocity(
+   TofVIn    *ak
+   )
+{
+  REAL8 v,xmin,xmax,xacc;
+  REAL8 (*rootfunction)(REAL8, void *);
+  void *funcParams;
+
+  if (ak == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+
+  rootfunction = XLALInspiralTofV;
+  xmax = ak->vlso;
+  xmin = ak->v0/2.;
+  xacc = 1.0e-8;
 
   funcParams = (void *) ak;
 
 
   if (ak->t==ak->t0)
   {
-     *v = ak->v0;
-     DETATCHSTATUSPTR(status);
-     RETURN(status);
+     return ak->v0;
   }
 
-  LALDBisectionFindRoot(status->statusPtr, v, &rootIn, funcParams);
-  CHECKSTATUSPTR(status);
+  v = XLALDBisectionFindRoot(rootfunction, xmin, xmax, xacc, funcParams);
+  if (XLAL_IS_REAL8_FAIL_NAN(v))
+    XLAL_ERROR_REAL8(XLAL_EFUNC);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return v;
 }

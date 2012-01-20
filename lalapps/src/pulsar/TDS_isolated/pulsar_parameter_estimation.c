@@ -301,7 +301,7 @@ defined!\n");
       /* exclude values smaller than 1e-28 as most are spurious points caused
          during a the heterodyne stage (e.g. when frame files were missing in
          the original S5 analysis) */
-      if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){
+      /* if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){ */
         data[k].times->data[j] = times;
         data[k].data->data[j] = dataVals;
 
@@ -309,7 +309,7 @@ defined!\n");
         stdh0 += dataVals.re*dataVals.re + dataVals.im*dataVals.im;
 
         j++;
-      }
+      /*}*/
     }
 
     fclose(fp);
@@ -962,17 +962,19 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 
   /* get the sum over the data */
   sum_data(data);
-
+  
   /* calculate likelihood array */
   for( i = 0 ; i < mesh.phiSteps ; i++ ){
     if( verbose )
       fprintf(stderr, "In phi0 loop %d of %d.\n", i+1, mesh.phiSteps);
 
     vars.phi0 = mesh.minVals.phi0 + (REAL8)i*mesh.delta.phi0;
+    
     sin_cos_LUT( &sinphi, &cosphi, vars.phi0 );
 
     for( j = 0 ; j < mesh.ciotaSteps ; j++ ){
       vars.ci = mesh.minVals.ci + (REAL8)j*mesh.delta.ci;
+      
       vars.Xplus = 0.5*(1.+vars.ci*vars.ci);
       vars.Xcross = vars.ci;
       vars.Xpsinphi_2 = 0.5*vars.Xplus*sinphi;
@@ -982,7 +984,7 @@ REAL8 create_likelihood_grid(DataStructure data, REAL8 ****logLike,
 
       for( k = 0 ; k < mesh.psiSteps ; k++ ){
         vars.psi = mesh.minVals.psi + (REAL8)k*mesh.delta.psi;
-
+        
         /* perform final loop over h0 within log_likelihood function */
         noiseEvidence = log_likelihood(logLike[i][j][k], data, vars, mesh,
           NULL);
@@ -1051,7 +1053,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
   REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
-
+  
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
@@ -1111,21 +1113,21 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
         model.re = plus*vars.Xpcosphi_2 + cross*vars.Xcsinphi_2;
         model.im = plus*vars.Xpsinphi_2 - cross*vars.Xccosphi_2;
       }
-
+      
       /* sum over the model */
       sumModel += model.re*model.re + model.im*model.im;
-
+      
       /* sum over that data and model */
       sumDataModel += B.re*model.re + B.im*model.im;
     }
 
     for( k = 0 ; k < mesh.h0Steps ; k++ ){
       vars.h0 = mesh.minVals.h0 + (REAL8)k*mesh.delta.h0;
-
+      
       chiSquare = data.sumData->data[count];
       chiSquare -= 2.*vars.h0*sumDataModel;
       chiSquare += vars.h0*vars.h0*sumModel;
-
+      
       /* log(likelihood)
          logL = (m-1)log(2) + log(m!) - m*log(sum((Bk - yk)^2)) */
 
@@ -1147,7 +1149,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
     first++;
     count++;
   }
-
+  
   return noiseEvidence;
 }
 
@@ -2057,7 +2059,7 @@ paramData ) ) == NULL ){
 
   fprintf(stderr, "Give me a start cos(iota) value for the chain:\n");
   fscanf(stdin, "%lf", &vars.ci); */
-
+  
   vars.Xplus = 0.5*(1.+vars.ci*vars.ci);
   vars.Xcross = vars.ci;
   vars.Xpsinphi_2 = 0.5*vars.Xplus*sin(vars.phi0);
@@ -3349,7 +3351,7 @@ matrix!\n");
 
 
 /* this function takes a matrix that isn't positive definite and converts it
-into a postive definite matrix using the method (number 2) of Rebonato and
+into a positive definite matrix using the method (number 2) of Rebonato and
 Jackel (see their paper at
 http://www.riccardorebonato.co.uk/papers/ValCorMat.pdf) */
 REAL8Array *convert_to_positive_definite( REAL8Array *nonposdef ){

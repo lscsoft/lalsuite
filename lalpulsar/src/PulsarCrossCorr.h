@@ -36,8 +36,8 @@
 #define _PULSARCROSSCORR_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <unistd.h>
@@ -114,7 +114,7 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 
   /** struct holding info about skypoints */
   typedef struct tagSkyPatchesInfo{
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(SkyPatchesInfo);
     UINT4 numSkyPatches;
     REAL8 *alpha;
     REAL8 *delta;
@@ -123,7 +123,7 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
   } SkyPatchesInfo;
 
   typedef struct tagSFTDetectorInfo{
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(SFTDetectorInfo);
     COMPLEX8FrequencySeries *sft;
     REAL8 vDetector[3];
     REAL8 rDetector[3];
@@ -133,38 +133,38 @@ NRCSID (PULSARCROSSCORRH, "$Id$");
 
   /* define structs to hold combinations of F's and A's */
   typedef struct tagCrossCorrAmps {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(CrossCorrAmps);
     REAL8 Aplussq;
     REAL8 Acrosssq;
     REAL8 AplusAcross;
   } CrossCorrAmps;
 
   typedef struct tagCrossCorrBeamFn{
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(CrossCorrBeamFn);
     REAL8 a;
     REAL8 b;
   } CrossCorrBeamFn;
 
   typedef struct tagSFTListElement {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(SFTListElement);
     SFTtype sft;
     struct tagSFTListElement *nextSFT;
   } SFTListElement;
 
   typedef struct tagPSDListElement {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(PSDListElement);
     REAL8FrequencySeries psd;
     struct tagPSDListElement *nextPSD;
   } PSDListElement;
 
   typedef struct tagREAL8ListElement {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(REAL8ListElement);
     REAL8 val;
     struct tagREAL8ListElement *nextVal;
   } REAL8ListElement;
 
   typedef struct tagCrossCorrBeamFnListElement {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(CrossCorrBeamFnListElement);
     CrossCorrBeamFn beamfn;
     struct tagCrossCorrBeamFnListElement *nextBeamfn;
   } CrossCorrBeamFnListElement;

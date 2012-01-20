@@ -21,7 +21,7 @@
 #ifndef _TSDATAGEN_H
 #define _TSDATAGEN_H
 
-#include <tracksearch.h>
+#include "tracksearch.h"
 
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {

@@ -19,8 +19,7 @@
 
 /**
 \author Regimbau Tania
-\file
-\ingroup stochastic
+\addtogroup AstroOmega_h
 
 \brief Compute the energy density spectrum of stochastic backgrounds produced
 by cosmological population of astrophysical sources.
@@ -80,6 +79,7 @@ tagAstroOmegaParams
 AstroOmegaParams;
 \endcode
 
+@{
 */
 
 #ifndef _ASTROOMEGA_H
@@ -145,6 +145,7 @@ LALAstroOmega (
     );
 
 
+/** @} */
 
 #ifdef __cplusplus
 }

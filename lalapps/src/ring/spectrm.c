@@ -106,6 +106,67 @@ REAL4FrequencySeries *compute_average_spectrum(
   return spectrum;
 }
 
+REAL8FrequencySeries *generate_theoretical_psd(
+    REAL4                    deltaT,
+    REAL8                    segmentDuration,
+    UINT4                    spectrumNumber,
+    REAL8                    simScale
+)
+{
+  REAL8FrequencySeries *spectrum;
+  UINT4 segmentLength;
+
+  segmentLength  = floor( segmentDuration/deltaT + 0.5 );
+
+  spectrum       = LALCalloc( 1, sizeof( *spectrum ) );
+  spectrum->data = XLALCreateREAL8Vector( segmentLength/2 + 1 );
+
+  spectrum->deltaF = 1.0/segmentDuration;
+
+  if (spectrumNumber == WHITE_PSD) /* just return a constant spectrum */
+  {
+    UINT4 k;
+    REAL4 spec;
+    spec = 2.0 * deltaT;
+    verbose( "creating white PSD with constant value %g\n", spec * simScale * simScale );
+    for ( k = 1; k < spectrum->data->length - 1; ++k )
+      spectrum->data->data[k] = spec * simScale * simScale;
+    /* DC and Nyquist are set to 0*/
+    spectrum->data->data[0] = 0.0;
+    spectrum->data->data[spectrum->data->length - 1] = 0.0;
+    snprintf( spectrum->name, sizeof( spectrum->name ),
+      "WHITE_NOISE_PSD" );
+  }
+  else if ( spectrumNumber == ILIGO_PSD )
+  {
+    verbose( "Creating initial LIGO PSD. PSD only generated from 30Hz \n" ); 
+    /* FIXME  */
+    REAL4 flow = 30;
+    XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDiLIGOSRD);   
+    snprintf( spectrum->name, sizeof( spectrum->name ),
+      "iLIGO_PSD" );
+  }
+  else if ( spectrumNumber == ALIGO_PSD )
+  {
+    verbose( "Creating advanced LIGO high-power broad-band signal recycling "
+             "PSD. PSD only generated from 10Hz \n ");
+    REAL4 flow = 10;
+    XLALSimNoisePSD(spectrum, flow, XLALSimNoisePSDaLIGOZeroDetHighPower);
+    snprintf( spectrum->name, sizeof( spectrum->name ),
+      "aLIGO_PSD" );
+  }
+  else
+  {
+    fprintf(stderr,"Spectrum number not valid. This message should not be seen."
+            " Have you broken the code?? \n");
+  }
+
+  return spectrum;
+}
+
+
+
+
 
 /* routine to invert and truncate (to have compact time support) a spectrum */
 int invert_spectrum(

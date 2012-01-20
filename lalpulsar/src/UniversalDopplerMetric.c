@@ -162,8 +162,6 @@ UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 double
 XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max )
 {
-  const CHAR *fn = "XLALAverage_am1_am2_Phi_i_Phi_j()";
-
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
   gsl_function integrand;
   double epsrel = 1e-4;
@@ -206,9 +204,9 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
        */
       if ( stat != 0 )
         {
-          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", fn );
+          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", __func__ );
           XLALPrintWarning ("Segment n=%d, neval=%d: Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n", n, neval, res_n, err_n, fabs(err_n/res_n), epsrel);
-          /* XLAL_ERROR_REAL8( fn, XLAL_EFUNC ); */
+          /* XLAL_ERROR_REAL8( XLAL_EFUNC ); */
         }
 
       res += res_n;
@@ -238,7 +236,6 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 double
 CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 {
-  const CHAR *fn = "CW_am1_am2_Phi_i_Phi_j()";
   intparams_t *par = (intparams_t*) params;
 
   REAL8 am1, am2, phi_i, phi_j, ret;
@@ -262,8 +259,8 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
       XLALGPSSetREAL8( &ttGPS, ttSI );
 
       if ( XLALComputeAntennaPatternCoeffs ( &ai, &bi, &skypos, &ttGPS, par->site, par->edat ) ) {
-	XLALPrintError ( "%s: Call to XLALComputeAntennaPatternCoeffs() failed!\n", fn);
-	XLAL_ERROR( fn, XLAL_EFUNC );
+	XLALPrintError ( "%s: Call to XLALComputeAntennaPatternCoeffs() failed!\n", __func__);
+	XLAL_ERROR( XLAL_EFUNC );
       }
 
       /* first antenna-pattern component */
@@ -323,7 +320,6 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
 double
 CWPhaseDeriv_i ( double tt, void *params )
 {
-  const CHAR *fn = "CWPhaseDeriv_i()";
   REAL8 ret = 0;
   intparams_t *par = (intparams_t*) params;
   vect3D_t nn_equ, nn_ecl;	/* skypos unit vector */
@@ -355,8 +351,8 @@ CWPhaseDeriv_i ( double tt, void *params )
   XLALGPSSetREAL8( &ttGPS, ttSI );
 
   if ( XLALDetectorPosVel ( &posvel, &ttGPS, par->site, par->edat, par->detMotionType ) ) {
-    XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", fn);
-    XLAL_ERROR( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", __func__);
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* account for referenceTime != startTime */
@@ -487,8 +483,8 @@ CWPhaseDeriv_i ( double tt, void *params )
       break;
 
     default:
-      XLALPrintError("%s: Unknown phase-derivative type '%d'\n", fn, par->deriv );
-      XLAL_ERROR( fn, XLAL_EINVAL );
+      XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
     } /* switch phderiv */
 
@@ -511,7 +507,6 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
 		     DetectorMotionType special	/**< [in] 'special' flag: 0 = full motion, 1 = pure orbital, 2 = pure spin */
 		     )
 {
-  const CHAR *fn = "XLALDetectorPosition()";
   EarthState earth;
   BarycenterInput baryinput = empty_BarycenterInput;
   LALStatus status = empty_status;
@@ -522,15 +517,15 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
   REAL8 eZ[3];
 
   if ( !posvel || !tGPS || !site || !edat ) {
-    XLALPrintError ( "%s: Illegal NULL pointer passed!\n", fn);
-    XLAL_ERROR( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   /* ----- find ephemeris-based position of Earth wrt to SSB at this moment */
   LALBarycenterEarth( &status, &earth, tGPS, edat );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
-    XLAL_ERROR( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+    XLAL_ERROR( XLAL_EFUNC );
   }
   /* ----- find ephemeris-based position of detector wrt to SSB */
   baryinput.tgps = *tGPS;
@@ -540,8 +535,8 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
   status = empty_status;
   LALBarycenter ( &status, &emit, &baryinput, &earth );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenter() failed!\n\n", fn);
-    XLAL_ERROR( fn, XLAL_EFAILED );
+    XLALPrintError ( "%s: call to LALBarycenter() failed!\n\n", __func__);
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
   /* ----- determine position-vector of detector wrt center of Earth */
@@ -575,8 +570,8 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
   if ( (special == DETMOTION_SPIN_PTOLEORBIT) || (special == DETMOTION_PTOLEORBIT) )
     {
       if ( XLALPtolemaicPosVel ( &PtoleOrbit, tGPS ) ) {
-	XLALPrintError ( "%s: call to XLALPtolemaicPosVel() failed!\n\n", fn);
-	XLAL_ERROR( fn, XLAL_EFUNC );
+	XLALPrintError ( "%s: call to XLALPtolemaicPosVel() failed!\n\n", __func__);
+	XLAL_ERROR( XLAL_EFUNC );
       }
     }
 
@@ -648,8 +643,8 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
       break;
 
     default:
-      XLALPrintError("\n%s: Illegal 'special' value passed: '%d'\n\n", fn, special );
-      XLAL_ERROR( fn, XLAL_EINVAL );
+      XLALPrintError("\n%s: Illegal 'special' value passed: '%d'\n\n", __func__, special );
+      XLAL_ERROR( XLAL_EINVAL );
       break;
     } /* switch(special) */
 
@@ -677,22 +672,21 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 		      const LIGOTimeGPS *tGPS		/**< [in] GPS time */
 		      )
 {
-  const CHAR *fn = "XLALPtolemaicPosVel()";
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
   REAL8 phiOrb;   /* Earth orbital revolution angle, in radians. */
   REAL8 sinOrb, cosOrb;
   LALStatus status = empty_status;
 
   if ( !posvel || !tGPS ) {
-    XLALPrintError ( "%s: Illegal NULL pointer passed!\n", fn);
-    XLAL_ERROR( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
   }
 
   times.epoch = (*tGPS);	/* get tAutumn */
   LALGetEarthTimes ( &status, &times );
   if ( status.statusCode ) {
-    XLALPrintError ( "%s: call to LALGetEarthTimes() failed!\n\n", fn);
-    XLAL_ERROR( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALGetEarthTimes() failed!\n\n", __func__);
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   phiOrb = - LAL_TWOPI * times.tAutumn / LAL_YRSID_SI;
@@ -721,7 +715,6 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 double
 CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 {
-  const CHAR *fn = "CWPhase_cov_Phi_ij()";
   gsl_function integrand;
 
   intparams_t par = (*params);	/* struct-copy, as the 'deriv' field has to be changeable */
@@ -730,8 +723,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 
   /* sanity-check: don't allow any AM-coeffs being turned on here! */
   if ( par.amcomp1 != AMCOMP_NONE || par.amcomp2 != AMCOMP_NONE ) {
-    XLALPrintError ( "%s: Illegal input, amcomp[12] must be set to AMCOMP_NONE!\n", fn );
-    XLAL_ERROR_REAL8( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: Illegal input, amcomp[12] must be set to AMCOMP_NONE!\n", __func__ );
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
   }
 
   integrand.params = (void*)&par;
@@ -772,8 +765,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
       if ( outputIntegrand ) printf ("\n");
       if ( stat != 0 ) {
         XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed! seg=%d, av_ij_n=%g, abserr=%g, neval=%d\n",
-                         fn, n, res_n, abserr, neval);
-        XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
+                         __func__, n, res_n, abserr, neval);
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       av_ij += res_n;
       av_ij_err += SQUARE (abserr);
@@ -785,8 +778,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
       XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
       if ( stat != 0 ) {
         XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i> failed! seg=%d, av_i_n=%g, abserr=%g, neval=%d\n",
-                         fn, n, res_n, abserr, neval);
-        XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
+                         __func__, n, res_n, abserr, neval);
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       av_i += res_n;
       av_i_err += SQUARE (abserr);
@@ -797,8 +790,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
       XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
       if ( stat != 0 ) {
         XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_j> failed! seg=%d, av_j_n=%g, abserr=%g, neval=%d\n",
-                         fn, n, res_n, abserr, neval);
-        XLAL_ERROR_REAL8( fn, XLAL_EFUNC );
+                         __func__, n, res_n, abserr, neval);
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       av_j += res_n;
       av_j_err += SQUARE (abserr);
@@ -840,7 +833,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
                          double *relerr_max				/**< [in] maximal relative error in integration */
 			 )
 {
-  const CHAR *fn = "XLALDopplerPhaseMetric()";
   gsl_matrix *g_ij = NULL;
   intparams_t intparams = empty_intparams;
   UINT4 i, j;
@@ -852,8 +844,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   /* ---------- sanity/consistency checks ---------- */
   if ( !metricParams || !edat ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", fn);
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLALPrintError ("\n%s: Illegal NULL pointer passed.\n\n", __func__);
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   startTime = &(metricParams->startTime);
@@ -864,8 +856,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   /* ---------- prepare output metric ---------- */
   if ( (g_ij = gsl_matrix_calloc ( dim, dim )) == NULL ) {
-    XLALPrintError ("%s: gsl_matrix_calloc(%d, %d) failed.\n\n", fn, dim, dim );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: gsl_matrix_calloc(%d, %d) failed.\n\n", __func__, dim, dim );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   /* always use first dector in list */
@@ -888,8 +880,8 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   /* compute rOrb(t) derivatives at reference time */
   if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
 #if 0
@@ -913,14 +905,14 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 	  gg = CWPhase_cov_Phi_ij ( &intparams, &err );	/* [Phi_i, Phi_j] */
           maxrelerr = MYMAX ( maxrelerr, err );
 	  if ( xlalErrno ) {
-	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", fn, i, j, xlalErrno );
+	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
             xlalErrno = 0;
             BOOLEAN sav = outputIntegrand;
             outputIntegrand = 1;
             gg = CWPhase_cov_Phi_ij ( &intparams, &maxrelerr );	/* [Phi_i, Phi_j] */
             outputIntegrand = sav;
 
-	    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+	    XLAL_ERROR_NULL( XLAL_EFUNC );
 	  }
 	  gsl_matrix_set (g_ij, i, j, gg);
 	  gsl_matrix_set (g_ij, j, i, gg);
@@ -959,7 +951,6 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 			 const EphemerisData *edat			/**< ephemeris data */
 			 )
 {
-  const CHAR *fn = "XLALDopplerFstatMetric()";
   DopplerMetric *metric = NULL;
   REAL8 cosi, psi;
   double relerr;
@@ -967,14 +958,14 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
   /* ---------- sanity/consistency checks ---------- */
   if ( !metricParams || !edat ) {
-    XLALPrintError ("%s: Illegal NULL pointer passed!\n\n", fn);
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: Illegal NULL pointer passed!\n\n", __func__);
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   if ( metricParams->metricType >= METRIC_TYPE_LAST ) {
     XLALPrintError ("%s: Invalid value '%d' for metricType received. Must be within [%d,%d]!\n\n",
-                    fn, metricParams->metricType, 0, METRIC_TYPE_LAST - 1);
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+                    __func__, metricParams->metricType, 0, METRIC_TYPE_LAST - 1);
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   /* if we're asked to compute F-metric only (1) or F-metric + phase-metric (2) */
@@ -984,8 +975,8 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 
       /* ---------- compute Fmetric 'atoms', ie the averaged <a^2>, <a b Phi_i>, <a^2 Phi_i Phi_j>, etc ---------- */
       if ( (atoms = XLALComputeAtomsForFmetric ( metricParams, edat )) == NULL ) {
-        XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", fn, xlalErrno );
-        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+        XLALPrintError ("%s: XLALComputeAtomsForFmetric() failed. errno = %d\n\n", __func__, xlalErrno );
+        XLAL_ERROR_NULL( XLAL_EFUNC );
       }
 
       /* ----- compute the F-metric gF_ij and related matrices ---------- */
@@ -993,9 +984,9 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       psi  = metricParams->signalParams.Amp.psi;
 
       if ( (metric = XLALComputeFmetricFromAtoms ( atoms, cosi, psi)) == NULL ) {
-        XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", fn, xlalErrno );
+        XLALPrintError ("%s: XLALComputeFmetricFromAtoms() failed, errno = %d\n\n", __func__, xlalErrno );
         XLALDestroyFmetricAtoms ( atoms );
-        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL( XLAL_EFUNC );
       }
 
       /* ----- compute the full 4+n dimensional Fisher matrix ---------- */
@@ -1003,7 +994,7 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
         XLALPrintError ("%s: XLALComputeFisherFromAtoms() failed. errno = %d\n\n", xlalErrno );
         XLALDestroyFmetricAtoms ( atoms );
         XLALDestroyDopplerMetric ( metric );
-        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL( XLAL_EFUNC );
       }
 
       XLALDestroyFmetricAtoms ( atoms );
@@ -1015,15 +1006,15 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       if (!metric ) {
         if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
           XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n\n", sizeof(*metric) );
-          XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+          XLAL_ERROR_NULL ( XLAL_ENOMEM );
         }
       }
 
       /* ----- compute the standard phase-metric g_ij ---------- */
       if ( (metric->g_ij = XLALDopplerPhaseMetric ( metricParams, edat, &relerr )) == NULL ) {
-        XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", fn, xlalErrno );
+        XLALPrintError ("%s: XLALDopplerPhaseMetric() failed, errno = %d.\n\n", __func__, xlalErrno );
         XLALDestroyDopplerMetric ( metric );
-        XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL( XLAL_EFUNC );
       }
       metric->maxrelerr_gPh = relerr;
 
@@ -1038,8 +1029,8 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       if ( metric->gF_ij )
         {
           if ( (tmp = XLALProjectMetric ( metric->gF_ij, projCoord )) == NULL ) {
-            XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
-            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to project gF_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
+            XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
           gsl_matrix_free ( metric->gF_ij );
           metric->gF_ij = tmp;
@@ -1049,8 +1040,8 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       if ( metric->gFav_ij )
         {
           if ( (tmp = XLALProjectMetric ( metric->gFav_ij, projCoord )) == NULL ) {
-            XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
-            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to project gFav_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
+            XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
           gsl_matrix_free ( metric->gFav_ij );
           metric->gFav_ij = tmp;
@@ -1060,8 +1051,8 @@ XLALDopplerFstatMetric ( const DopplerMetricParams *metricParams,  	/**< input p
       if ( metric->g_ij )
         {
           if ( (tmp = XLALProjectMetric ( metric->g_ij, projCoord )) == NULL ) {
-            XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", fn, projCoord, xlalErrno );
-            XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+            XLALPrintError ("%s: failed to project g_ij onto coordinate '%d'. errno=%d\n", __func__, projCoord, xlalErrno );
+            XLAL_ERROR_NULL ( XLAL_EFUNC );
           }
           gsl_matrix_free ( metric->g_ij );
           metric->g_ij = tmp;
@@ -1084,8 +1075,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 			     const EphemerisData *edat			/**< ephemeris data */
 			     )
 {
-  const CHAR *fn = "XLALComputeAtomsForFmetric()";
-
   FmetricAtoms_t *ret;		/* return struct */
   intparams_t intparams = empty_intparams;
 
@@ -1100,8 +1089,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* ---------- sanity/consistency checks ---------- */
   if ( !metricParams || !edat ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer passed!\n\n", fn);
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLALPrintError ("\n%s: Illegal NULL pointer passed!\n\n", __func__);
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   startTime = &(metricParams->startTime);
@@ -1113,8 +1102,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* ----- create output structure ---------- */
   if ( (ret = XLALCreateFmetricAtoms ( dim )) == NULL ) {
-    XLALPrintError ("%s: call to XLALCreateFmetricAtoms (%s) failed. errno = %d\n\n", fn, dim, xlalErrno );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: call to XLALCreateFmetricAtoms (%s) failed. errno = %d\n\n", __func__, dim, xlalErrno );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* ---------- set up integration parameters ---------- */
@@ -1130,8 +1119,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 
   /* compute rOrb(t) derivatives at reference time */
   if ( (intparams.rOrb_n = XLALComputeOrbitalDerivatives ( maxorder, &intparams.dopplerPoint->refTime, edat )) == NULL ) {
-    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", fn);
-    XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
@@ -1309,7 +1298,7 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
     {
       XLALPrintError ("Maximal relative F-metric error too high: %.2e > %.2e\n", max_relerr, relerr_thresh );
       XLALDestroyFmetricAtoms ( ret );
-      XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
     }
   else
     XLALPrintInfo ("\nMaximal relative error in F-metric: %.2e\n", max_relerr );
@@ -1319,8 +1308,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
  failed:
   XLALDestroyFmetricAtoms ( ret );
   XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, i = %d : '%s', j = %d : '%s'\n",
-		   fn, xlalErrno, intparams.amcomp1,intparams.amcomp2, i, DopplerCoordinateNames[i], j, DopplerCoordinateNames[j] );
-  XLAL_ERROR_NULL( fn, XLAL_EFUNC );
+		   __func__, xlalErrno, intparams.amcomp1,intparams.amcomp2, i, DopplerCoordinateNames[i], j, DopplerCoordinateNames[j] );
+  XLAL_ERROR_NULL( XLAL_EFUNC );
 
 } /* XLALComputeAtomsForFmetric() */
 
@@ -1348,14 +1337,13 @@ XLALDestroyDopplerMetric ( DopplerMetric *metric )
 
 /** Parse a detector-motion type string into the corresponding enum-number,
  */
-DetectorMotionType
+int
 XLALParseDetectorMotionString ( const CHAR *detMotionString )
 {
-  const CHAR *fn = "XLALParseDetectorMotionString()";
-  UINT4 i;
+  int i;
 
   if ( ! detMotionString ) {
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   for ( i=0; i < DETMOTION_LAST; i ++ )
@@ -1366,7 +1354,7 @@ XLALParseDetectorMotionString ( const CHAR *detMotionString )
     }
 
   XLALPrintError ("\nCould not parse '%s' into a valid detector-motion type!\n\n", detMotionString );
-  XLAL_ERROR ( fn, XLAL_EINVAL );
+  XLAL_ERROR ( XLAL_EINVAL );
 
 } /* XLALParseDetectorMotionString() */
 
@@ -1377,11 +1365,9 @@ XLALParseDetectorMotionString ( const CHAR *detMotionString )
 const CHAR *
 XLALDetectorMotionName ( DetectorMotionType detType )
 {
-  const CHAR *fn = "XLALDetectorMotionName()";
-
   if ( detType >= DETMOTION_LAST ) {
     XLALPrintError ( "%s: detector-motion type '%d' outside valid range [0, %d]\n\n", detType, DETMOTION_LAST - 1 );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   return ( DetectorMotionNames[detType] );
@@ -1392,14 +1378,13 @@ XLALDetectorMotionName ( DetectorMotionType detType )
 
 /** Parse a DopplerCoordinate-name into the corresponding DopplerCoordinateID
  */
-DopplerCoordinateID
+int
 XLALParseDopplerCoordinateString ( const CHAR *coordName )
 {
-  const CHAR *fn = "XLALParseDopplerCoordinateString()";
-  UINT4 i;
+  int i;
 
   if ( !coordName )
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
 
   for ( i=0; i < DOPPLERCOORD_LAST; i ++ )
     {
@@ -1409,7 +1394,7 @@ XLALParseDopplerCoordinateString ( const CHAR *coordName )
     }
 
   XLALPrintError ("\nCould not parse '%s' into a valid coordinate-ID!\n\n", coordName );
-  XLAL_ERROR ( fn, XLAL_EINVAL );
+  XLAL_ERROR ( XLAL_EINVAL );
 
 } /* XLALParseDopplerCoordinateString() */
 
@@ -1421,18 +1406,17 @@ XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys,	/**< [out
 				    const LALStringVector *coordNames 	/**< [in] list of coordinate names */
 				    )
 {
-  const CHAR *fn = "XLALDopplerCoordinateNames2System()";
   UINT4 i;
 
   if ( !coordSys || !coordNames )
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLAL_ERROR ( XLAL_EINVAL );
 
   coordSys->dim = coordNames->length;
   for ( i=0; i < coordNames->length; i++ )
     {
-      coordSys->coordIDs[i] = XLALParseDopplerCoordinateString ( coordNames->data[i] );
+      coordSys->coordIDs[i] = (DopplerCoordinateID)XLALParseDopplerCoordinateString ( coordNames->data[i] );
       if ( xlalErrno )
-	XLAL_ERROR ( fn, XLAL_EFUNC );
+	XLAL_ERROR ( XLAL_EFUNC );
     }
 
   return XLAL_SUCCESS;
@@ -1447,11 +1431,9 @@ XLALDopplerCoordinateNames2System ( DopplerCoordinateSystem *coordSys,	/**< [out
 const CHAR *
 XLALDopplerCoordinateName ( DopplerCoordinateID coordID )
 {
-  const CHAR *fn = "XLALDopplerCoordinateName()";
-
   if ( coordID >= DOPPLERCOORD_LAST ) {
     XLALPrintError ( "%s: coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   return ( DopplerCoordinateNames[coordID] );
@@ -1465,11 +1447,9 @@ XLALDopplerCoordinateName ( DopplerCoordinateID coordID )
 const CHAR *
 XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
 {
-  const CHAR *fn = "XLALDopplerCoordinateHelp()";
-
   if ( coordID >= DOPPLERCOORD_LAST ) {
     XLALPrintError ( "%s: coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   return ( DopplerCoordinateNamesHelp[coordID] );
@@ -1482,7 +1462,6 @@ XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
 CHAR *
 XLALDopplerCoordinateHelpAll ( void )
 {
-  const CHAR *fn = "XLALDopplerCoordinateHelpAll()";
   CHAR *helpstr;
   const CHAR *name;
   const CHAR *help;
@@ -1492,7 +1471,7 @@ XLALDopplerCoordinateHelpAll ( void )
 
 #define HEADER "Doppler-coordinate names and explanations:\n--------------------------------------------------\n"
   if ( (helpstr = XLALCalloc ( strlen(HEADER)+1, sizeof(CHAR) )) == NULL ) {
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   strcpy ( helpstr, HEADER );
   len = strlen(helpstr);
@@ -1501,7 +1480,7 @@ XLALDopplerCoordinateHelpAll ( void )
   for ( i = 0; i < DOPPLERCOORD_LAST; i ++ )
     {
       if ( (name = XLALDopplerCoordinateName ( i )) == NULL ) {
-	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
       maxlen = MYMAX ( maxlen, strlen(name) );
       sprintf ( fmt, "%%-%ds: %%s\n", maxlen + 2 );
@@ -1511,16 +1490,16 @@ XLALDopplerCoordinateHelpAll ( void )
   for ( i = 0; i < DOPPLERCOORD_LAST; i ++ )
     {
       if ( (name = XLALDopplerCoordinateName ( i )) == NULL ) {
-	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
       if ( (help = XLALDopplerCoordinateHelp ( i )) == NULL ) {
-	XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
 
       snprintf ( buf, sizeof(buf) - 1, fmt, name, help );
       len += strlen ( buf ) + 1;
       if ( (helpstr = XLALRealloc ( helpstr, len )) == NULL ) {
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
 
       helpstr = strcat ( helpstr, buf );
@@ -1549,20 +1528,18 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detec
 			     const LALStringVector *detWeights	/**< [in] list of (strings) with detector weights (NULL if all 1) */
 			     )
 {
-  const CHAR *fn = "XLALParseMultiDetectorInfo()";
-
   UINT4 X, numDet;
   REAL8 totalWeight;
 
   if ( !detInfo || !detNames || (detNames->length == 0) ) {
-    XLALPrintError ("\n%s: Illegal NULL pointer input\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("\n%s: Illegal NULL pointer input\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   numDet = detNames->length;
   if ( detWeights && (detWeights->length != numDet ) ) {
-    XLALPrintError ("\n%s: Illegal input: number of noise-weights must agree with number of detectors\n", fn );
-    XLAL_ERROR ( fn, XLAL_EINVAL );
+    XLALPrintError ("\n%s: Illegal input: number of noise-weights must agree with number of detectors\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
 
   /* initialize empty return struct */
@@ -1577,8 +1554,8 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detec
       LALDetector *ifo;
       /* first parse detector name */
       if ( ( ifo = XLALGetSiteInfo ( detNames->data[X] ) ) == NULL ) {
-	XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", fn, detNames->data[X] );
-	XLAL_ERROR ( fn, XLAL_EINVAL );
+	XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, detNames->data[X] );
+	XLAL_ERROR ( XLAL_EINVAL );
       }
       detInfo->sites[X] = (*ifo);
       XLALFree ( ifo );
@@ -1588,8 +1565,8 @@ XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo,	/**< [out] parsed detec
 	{
 	  if ( 1 != sscanf ( detWeights->data[X], "%lf", &(detInfo->detWeights[X]) ) )
 	    {
-	      XLALPrintError ("%s: Failed to parse noise-weight '%s' into float.\n", fn, detWeights->data[X] );
-	      XLAL_ERROR ( fn, XLAL_EINVAL );
+	      XLALPrintError ("%s: Failed to parse noise-weight '%s' into float.\n", __func__, detWeights->data[X] );
+	      XLAL_ERROR ( XLAL_EINVAL );
 	    }
 	} /* if detWeights */
       else
@@ -1637,50 +1614,48 @@ XLALDestroyFmetricAtoms ( FmetricAtoms_t *atoms )
 FmetricAtoms_t*
 XLALCreateFmetricAtoms ( UINT4 dim )
 {
-  const CHAR *fn = "XLALCreateFmetricAtoms()";
-
   FmetricAtoms_t *ret;		/* output structure */
 
   if ( ( ret = XLALCalloc(1,sizeof(*ret))) == NULL ) {
-    XLALPrintError ( "%s: XLALCalloc(1,%s) failed.\n", fn, sizeof(*ret));
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ( "%s: XLALCalloc(1,%s) failed.\n", __func__, sizeof(*ret));
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->a_a_i = gsl_vector_calloc (dim)) == NULL ) {
-    XLALPrintError ( "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", fn, dim );
+    XLALPrintError ( "%s: a_a_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
     XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->a_b_i = gsl_vector_calloc (dim)) == NULL ) {
-    XLALPrintError ( "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", fn, dim );
+    XLALPrintError ( "%s: a_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
     XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->b_b_i = gsl_vector_calloc (dim)) == NULL ) {
-    XLALPrintError ( "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", fn, dim );
+    XLALPrintError ( "%s: b_b_i = gsl_vector_calloc (%d) failed.\n", __func__, dim );
     XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
 
   if ( ( ret->a_a_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLALPrintError ( "%s: a_a_i_j = gsl_matrix_calloc (%d,%d) failed.\n", fn, dim, dim );
+    XLALPrintError ( "%s: a_a_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
     XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->a_b_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLALPrintError ( "%s: a_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", fn, dim, dim );
+    XLALPrintError ( "%s: a_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
     XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( ( ret->b_b_i_j = gsl_matrix_calloc (dim, dim)) == NULL ) {
-    XLALPrintError ( "%s: b_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", fn, dim, dim );
+    XLALPrintError ( "%s: b_b_i_j = gsl_matrix_calloc (%d,%d) failed.\n", __func__, dim, dim );
     XLALDestroyFmetricAtoms ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   return ret;
@@ -1695,8 +1670,6 @@ XLALCreateFmetricAtoms ( UINT4 dim )
 DopplerMetric*
 XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi )
 {
-  const CHAR *fn = "XLALComputeFmetricFromAtoms()";
-
   DopplerMetric *metric;		/* output matrix */
 
   UINT4 dim, i, j;			/* Doppler index counters */
@@ -1704,13 +1677,13 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
   REAL8 alpha1, alpha2, alpha3, eta2, cos2psi, sin2psi;
 
   if ( !atoms ) {
-    XLALPrintError ("%s: illegal NULL input.\n\n", fn );
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL input.\n\n", __func__ );
+    XLAL_ERROR_NULL (  XLAL_EINVAL );
   }
 
   if ( !atoms->a_a_i || !atoms->a_b_i || !atoms->b_b_i || !atoms->a_a_i_j || !atoms->a_b_i_j || !atoms->b_b_i_j ) {
-    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", fn );
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", __func__ );
+    XLAL_ERROR_NULL (  XLAL_EINVAL );
   }
 
   dim = atoms->a_a_i->size;
@@ -1718,7 +1691,7 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
   /* allocate output metric structure */
   if ( (metric = XLALCalloc ( 1, sizeof(*metric) )) == NULL ) {
     XLALPrintError ("%s: XLALCalloc ( 1, %d) failed.\n\n", sizeof(*metric) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   metric->gF_ij = gsl_matrix_calloc ( dim, dim );
   metric->gFav_ij = gsl_matrix_calloc ( dim, dim );
@@ -1727,9 +1700,9 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
   metric->m3_ij = gsl_matrix_calloc ( dim, dim );
 
   if ( !metric->gF_ij || !metric->gFav_ij || !metric->m1_ij || !metric->m2_ij || !metric->m3_ij ) {
-    XLALPrintError ("%s: failed to gsl_matrix_calloc(%d,%d) for gF_ij, gFav_ij, m1_ij, m2_ij, m3_ij\n\n", fn, dim, dim );
+    XLALPrintError ("%s: failed to gsl_matrix_calloc(%d,%d) for gF_ij, gFav_ij, m1_ij, m2_ij, m3_ij\n\n", __func__, dim, dim );
     XLALDestroyDopplerMetric ( metric );
-    XLAL_ERROR_NULL (fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL (  XLAL_ENOMEM );
   }
 
   A = atoms->a_a;
@@ -1838,7 +1811,6 @@ XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi
 gsl_matrix*
 XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp )
 {
-  const CHAR *fn = __func__;
   gsl_matrix *fisher = NULL;	/* output matrix */
 
   UINT4 dimDoppler, dimFull, i, j;
@@ -1846,21 +1818,21 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
 
   /* check input consistency */
   if ( !atoms ) {
-    XLALPrintError ("%s: illegal NULL input.\n\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL input.\n\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   if ( !atoms->a_a_i || !atoms->a_b_i || !atoms->b_b_i || !atoms->a_a_i_j || !atoms->a_b_i_j || !atoms->b_b_i_j ) {
-    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", fn );
-    XLAL_ERROR_NULL (fn, XLAL_EINVAL );
+    XLALPrintError ("%s: input Fmetric-atoms not fully allocated.\n\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   REAL8 A1,A2,A3,A4;
   {
     PulsarAmplitudeVect Amu;
     if ( XLALAmplitudeParams2Vect ( Amu, Amp ) != XLAL_SUCCESS ) {
-      XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", fn, xlalErrno );
-      XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+      XLALPrintError ( "%s: XLALAmplitudeParams2Vect() failed with errno = %d\n\n", __func__, xlalErrno );
+      XLAL_ERROR_NULL ( XLAL_EFUNC );
     }
 
     A1 = Amu[0];
@@ -1873,8 +1845,8 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
   dimFull = 4 + dimDoppler;	/* 4 amplitude params + n Doppler params */
 
   if ( (fisher = gsl_matrix_calloc ( dimFull, dimFull )) == NULL ) {
-    XLALPrintError ("%s: gsl_matric_calloc(%d,%d) failed.\n\n", fn, dimFull, dimFull );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: gsl_matric_calloc(%d,%d) failed.\n\n", __func__, dimFull, dimFull );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   /* ----- set pure Amplitude block 4x4: M_mu_nu ---------- */
@@ -1960,26 +1932,25 @@ XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams 
 gsl_matrix *
 XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
 {
-  const char *fn = __func__;
   UINT4 i,j, dim1, dim2;
   gsl_matrix *ret_ij;
 
   if ( !g_ij ) {
-    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'g_ij'.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   dim1 = g_ij->size1;
   dim2 = g_ij->size2;
 
   if ( dim1 != dim2 ) {
-    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", fn, dim1, dim2 );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ( "%s: input matrix g_ij must be square! (got %d x %d)\n", __func__, dim1, dim2 );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   if ( (ret_ij = gsl_matrix_alloc ( dim1, dim2 )) == NULL ) {
-    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", fn, dim1, dim2 );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to gsl_matrix_alloc(%d, %d)\n", __func__, dim1, dim2 );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   for ( i=0; i < dim1; i++)
@@ -2075,8 +2046,6 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
                                 const EphemerisData *edat	/**< [in] ephemeris data */
                                 )
 {
-  const char *fn = __func__;
-
   EarthState earth;
   LALStatus status;
   LIGOTimeGPS ti;
@@ -2086,17 +2055,17 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* check input consistency */
   if ( maxorder > MAX_SPDNORDER ) {
-    XLALPrintError ("%s: maxorder = %d too large, currently supports only up to maxorder = %d.\n", fn, maxorder, MAX_SPDNORDER );
-    XLAL_ERROR_NULL ( fn, XLAL_EDOM );
+    XLALPrintError ("%s: maxorder = %d too large, currently supports only up to maxorder = %d.\n", __func__, maxorder, MAX_SPDNORDER );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
 
   if ( !tGPS ) {
-    XLALPrintError ("%s: invalid NULL pointer received for 'tGPS'.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL pointer received for 'tGPS'.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   if ( !edat ) {
-    XLALPrintError ("%s: invalid NULL pointer received for 'edat'.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL pointer received for 'edat'.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
 
@@ -2107,8 +2076,8 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   status = empty_status;
   LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0, earth.posNow );
 
@@ -2117,8 +2086,8 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   status = empty_status;
   LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0mh, earth.posNow );
 
@@ -2127,8 +2096,8 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   status = empty_status;
   LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0m2h, earth.posNow );
 
@@ -2137,8 +2106,8 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   status = empty_status;
   LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0_h, earth.posNow );
 
@@ -2147,8 +2116,8 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
   status = empty_status;
   LALBarycenterEarth( &status, &earth, &ti, edat );
   if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", fn);
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0_2h, earth.posNow );
 
@@ -2166,14 +2135,14 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* allocate return list */
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", fn, sizeof(*ret) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc(1,%d)\n", __func__, sizeof(*ret) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = maxorder + 1;
   if ( (ret->data = XLALCalloc ( ret->length, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", fn, ret->length, sizeof(*ret->data) );
+    XLALPrintError ("%s: failed to XLALCalloc(%d,%d)\n", __func__, ret->length, sizeof(*ret->data) );
     XLALFree ( ret );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   UINT4 n;

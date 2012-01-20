@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -67,30 +67,49 @@ LALInspiralTiming2_0PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_0PN", "XLALInspiralTiming2_0PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_0PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_0PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_0PN (
+   REAL8       f,
+   void      *params
+   )
+{
+  InspiralToffInput *toffIn;
+  REAL8 v, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
   v8 = pow(v,8.);
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8;
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }
 
 void
@@ -101,33 +120,51 @@ LALInspiralTiming2_2PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_2PN", "XLALInspiralTiming2_2PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v2, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_2PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_2PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_2PN (
+   REAL8       f,
+   void      *params
+   )
+{
+  InspiralToffInput *toffIn;
+  REAL8 v, v2, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
   v2 = v*v;
   v8 = v2*v2*v2*v2;
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2);
 
-
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }
 
 void
@@ -138,20 +175,40 @@ LALInspiralTiming2_3PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_3PN", "XLALInspiralTiming2_3PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v2, v3, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_3PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_3PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_3PN (
+   REAL8       f,
+   void      *params
+   )
+{
+  InspiralToffInput *toffIn;
+  REAL8 v, v2, v3, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -159,13 +216,12 @@ LALInspiralTiming2_3PN (
   v3 = v2*v;
   v8 = v3*v3*v2;
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }
 
 void
@@ -176,20 +232,40 @@ LALInspiralTiming2_4PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_4PN", "XLALInspiralTiming2_4PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v2, v3, v4, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_4PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_4PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_4PN (
+   REAL8       f,
+   void      *params
+   )
+{
+  InspiralToffInput *toffIn;
+  REAL8 v, v2, v3, v4, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -198,14 +274,13 @@ LALInspiralTiming2_4PN (
   v4 = v3*v;
   v8 = v4*v4;
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
         + toffIn->t4 * v4);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }
 
 void
@@ -216,20 +291,40 @@ LALInspiralTiming2_5PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_5PN", "XLALInspiralTiming2_5PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v2, v3, v4, v5, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_5PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_5PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_5PN (
+   REAL8       f,
+   void      *params
+   )
+{
+  InspiralToffInput *toffIn;
+  REAL8 v, v2, v3, v4, v5, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -239,15 +334,14 @@ LALInspiralTiming2_5PN (
   v5 = v4*v;
   v8 = v4*v4;
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
         + toffIn->t4 * v4
         + toffIn->t5 * v5);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }
 
 void
@@ -258,20 +352,41 @@ LALInspiralTiming2_6PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_6PN", "XLALInspiralTiming2_6PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v2, v3, v4, v5, v6, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_6PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_6PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_6PN (
+   REAL8       f,
+   void      *params
+   )
+{
+
+  InspiralToffInput *toffIn;
+  REAL8 v, v2, v3, v4, v5, v6, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM * f,oneby3);
@@ -282,7 +397,7 @@ LALInspiralTiming2_6PN (
   v6 = v5*v;
   v8 = v6*v2;
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
@@ -290,8 +405,7 @@ LALInspiralTiming2_6PN (
         + toffIn->t5 * v5
         + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }
 
 void
@@ -302,20 +416,40 @@ LALInspiralTiming2_7PN (
    void      *params
    )
 {
+  XLALPrintDeprecationWarning("LALInspiralTiming2_7PN", "XLALInspiralTiming2_7PN");
 
-  InspiralToffInput *toffIn;
-  REAL8 v, v2, v3, v4, v5, v6, v7, v8;
-
-  INITSTATUS (status, "LALInspiralTiming2", LALINSPIRALTIMING2C);
+  INITSTATUS (status, "LALInspiralTiming2_7PN", LALINSPIRALTIMING2C);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT(f > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+
+  *toff = XLALInspiralTiming2_7PN(f, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*toff))
+    ABORTXLAL(status);
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+}
+
+REAL8
+XLALInspiralTiming2_7PN (
+   REAL8       f,
+   void      *params
+   )
+{
+  InspiralToffInput *toffIn;
+  REAL8 v, v2, v3, v4, v5, v6, v7, v8;
+  REAL8 toff;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (f <= 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
   toffIn = (InspiralToffInput *) params;
 
-  ASSERT(toffIn->t >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+  if (toffIn->t < 0)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
 
 
   v = pow(toffIn->piM*f, oneby3);
@@ -327,7 +461,7 @@ LALInspiralTiming2_7PN (
   v7 = v6*v;
   v8 = v7*v;
 
-  *toff = - toffIn->t + toffIn->tc
+  toff = - toffIn->t + toffIn->tc
         + toffIn->tN / v8 * (1.
         + toffIn->t2 * v2
         + toffIn->t3 * v3
@@ -336,6 +470,5 @@ LALInspiralTiming2_7PN (
         + (toffIn->t6 + toffIn->tl6 * log(4*v)) * v6
         + toffIn->t7 * v7);
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  return toff;
 }

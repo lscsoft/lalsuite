@@ -22,8 +22,8 @@
 #define _VELOCITY_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* *************
@@ -89,7 +89,7 @@ velocity  of a detector in a certain time interval.
  * Earth velocity at a given detector location.
  */
 typedef struct tagVelocityPar {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(VelocityPar);
   LALDetector    detector; 	/**< the detector */
   EphemerisData  *edat;  	/**< ephemeris data pointer from LALInitBarycenter() */
   LIGOTimeGPS    startTime; 	/**< start of time interval */

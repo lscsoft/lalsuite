@@ -158,6 +158,7 @@ h_\times(t) & = & A_\times(t)\sin\phi(t) \; .
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/Random.h>
+#include <lal/LALSimInspiral.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -209,12 +210,6 @@ For the sake of LAL namespace conventions, these termination codes are
 #define GENERATEPPNINSPIRALH_MSGEPNFAIL    "Evolution dominated by higher-order PN terms"
 #define GENERATEPPNINSPIRALH_MSGERTOOSMALL "Orbital radius too small for PN approximation"
 /*@}*/
-
-typedef enum {
-  TotalJ,
-  View,
-  OrbitalL,
- } InputAxis;
 
 /** This structure stores the parameters for constructing a restricted
 post-Newtonian waveform.  It is divided into three parts: parameters

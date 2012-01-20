@@ -17,15 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Tania Regimbau
-\file
-\ingroup stochastic
-
-\brief A program to test <tt>LALSimPopcornTimeSeries()</tt>
-
-*/
-
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -52,10 +43,10 @@
 NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
 
 
-/************************************************************************/
+/* ***********************************************************************/
 
 
-/**   define parameters here   **/
+/* *   define parameters here   **/
 
 /* detectors */
 

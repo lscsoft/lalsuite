@@ -42,8 +42,8 @@
 #define _LATTICECOVERING_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 /* C++ protection. */
@@ -97,7 +97,7 @@ typedef enum
 /** doubly linked list of INT4-vectors (lattice-vectors) */
 typedef struct tagINT4VectorList
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(INT4VectorList);
   INT4Vector entry;
   struct tagINT4VectorList *next;
   struct tagINT4VectorList *prev;
@@ -106,7 +106,7 @@ typedef struct tagINT4VectorList
 /** doubly linked list of REAL8-vectors (physical vectors) */
 typedef struct tagREAL8VectorList
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(REAL8VectorList);
   REAL8Vector entry;
   struct tagREAL8VectorList *next;
   struct tagREAL8VectorList *prev;

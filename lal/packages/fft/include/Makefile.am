@@ -4,13 +4,10 @@ if CUDA
 pkginclude_HEADERS += CudaPlan.h
 endif
 CLEANFILES =
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
 all-local: include-link
-dvi-local: .dvi-dep
 @INCLUDEMKFILE@
-@DVIMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-CLEANFILES += $(swig_clean)
-@SWIG_HEADER_MK@
+include $(top_srcdir)/swig/swig-header.am

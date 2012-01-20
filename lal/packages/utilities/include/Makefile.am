@@ -6,12 +6,14 @@ pkginclude_HEADERS = \
 	GSLSupport.h \
 	Integrate.h \
 	Interpolate.h \
+	LALAdaptiveRungeKutta4.h \
 	LALRunningMedian.h \
 	MatrixUtils.h \
 	ODE.h \
 	Random.h \
 	RngMedBias.h \
-	Sort.h
+	Sort.h \
+	SphericalHarmonics.h
 
 CLEANFILES =
 MOSTLYCLEANFILES = .dvi-dep
@@ -25,5 +27,4 @@ dvi-local: .dvi-dep
 @DVIMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-CLEANFILES += $(swig_clean)
-@SWIG_HEADER_MK@
+include $(top_srcdir)/swig/swig-header.am

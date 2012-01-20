@@ -17,10 +17,16 @@ check_PROGRAMS = \
 	FrameDataTest \
 	FrameStreamTest \
 	MakeFrames \
+	TestLowLatencyData1 \
+	TestLowLatencyData2 \
+	TestLowLatencyData3 \
 	Read40mData \
 	ReadGEOData \
 	ReadLHOData
 TESTS = \
+	TestLowLatencyData1 \
+	TestLowLatencyData2 \
+	TestLowLatencyData3 \
 	FrameCacheTest.sh \
 	FrameStreamTest
 else

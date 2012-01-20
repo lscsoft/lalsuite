@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash
+*  Copyright (C) 2007 David Churches, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 \file
 \ingroup LALInspiral_h
 
-\brief The function \c LALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
+\brief The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
 
 \heading{Prototypes}
 
@@ -30,13 +30,13 @@
 
 \heading{Description}
 
-The function \c LALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
+The function \c XLALInspiralPhiofVIntegrand() calculates the quantity \f$v^{3} E^{\prime}(v)/\mathcal{F}(v)\f$.
 
 \heading{Uses}
 
 This function calls \c dEnergy and \c flux functions that are defined in the
 \c expnFunc structure  and represent \f$E^{\prime}(v)\f$ and \f$\mathcal{F}(v)\f$, respectively,
-and pointed to the appropriate PN functions with a call to <tt>LALInspiralChooseModel().</tt>
+and pointed to the appropriate PN functions with a call to <tt>XLALInspiralChooseModel().</tt>
 
 \heading{Notes}
 
@@ -59,23 +59,42 @@ LALInspiralPhiofVIntegrand (
    void       *params
    )
 {
-
-  PhiofVIntegrandIn *in;
+  XLALPrintDeprecationWarning("LALInspiralPhiofVIntegrand", "XLALInspiralPhiofVIntegrand");
 
   INITSTATUS (status, "LALInspiralPhiofVIntegrand", LALINSPIRALPHIOFVINTEGRANDC);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (integrand, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (params, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-  ASSERT (v>0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
-  ASSERT (v<1, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
 
-  in = (PhiofVIntegrandIn *) params;
-
-  *integrand = pow (v, 3.) * in->dEnergy(v,in->coeffs)/in->flux(v,in->coeffs);
+  *integrand = XLALInspiralPhiofVIntegrand(v, params);
+  if (XLAL_IS_REAL8_FAIL_NAN(*integrand))
+    ABORTXLAL(status);
 
   DETATCHSTATUSPTR(status);
   RETURN(status);
 
 
+}
+
+REAL8
+XLALInspiralPhiofVIntegrand (
+   REAL8       v,
+   void       *params
+   )
+{
+  REAL8 integrand;
+  PhiofVIntegrandIn *in;
+
+  if (params == NULL)
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  if (v <= 0.)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
+  if (v >= 1.)
+    XLAL_ERROR_REAL8(XLAL_EDOM);
+
+  in = (PhiofVIntegrandIn *) params;
+
+  integrand = pow (v, 3.) * in->dEnergy(v,in->coeffs)/in->flux(v,in->coeffs);
+
+  return integrand;
 }

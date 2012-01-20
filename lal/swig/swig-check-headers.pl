@@ -15,12 +15,11 @@ sub parse_thru_cpp;
 my $status = 0;
 
 # parse command line
-my ($ifacefile, $headerdir, $verbose);
+my ($ifacefile, $headerdir);
 GetOptions("interface=s" => \$ifacefile,
-           "include=s"   => \$headerdir,
-           "verbose"     => \$verbose);
+           "include=s"   => \$headerdir);
 if (!defined($ifacefile) || !defined($headerdir)) {
-    print "usage: $0 [--verbose] --interface <file.i> --include <dir>\n";
+    print "usage: $0 --interface <file.i> --include <dir>\n";
     exit 1;
 }
 
@@ -31,16 +30,37 @@ die "environment variable 'CPP' is not set" if !defined($ENV{CPP});
 die "'$ifacefile' is not a file: $!" if (! -f $ifacefile);
 die "'$headerdir' is not a directory: $!" if (! -d $headerdir);
 
-# get list of headers being swiglal_included
+# in top-level interface file, look for SWIGLAL_STRUCT_...
+# macros, and headers being swiglal_included
+my %structmacros;
 my @headers;
 open FILE, $ifacefile or die "could not open '$ifacefile': $!";
 while (<FILE>) {
     chomp;
-    push @headers, $1 if /^swiglal_include\((.*?)\)$/;
+    if (/^(SWIGLAL_STRUCT_\w+)\((.*?)\);$/) {
+
+        # save macro and struct name
+        my $macroname = $1;
+        my $structname = $2;
+
+        # print error if there has already been a macro defined
+        if (defined($structmacros{$structname})) {
+            print "$ifacefile: multiple SWIGLAL_STRUCT_...($structname) macros\n";
+            $status = 1;
+        }
+
+        # remember that macro has been defined
+        $structmacros{$structname} = $macroname;
+
+    }
+    if (/^swiglal_include\((.*?)\)$/) {
+
+        # add to list of headers
+        push @headers, $1;
+
+    }
 }
 close FILE;
-
-my ($numlines, $numswiglines, %numswigmacros);
 
 foreach my $headerfile (@headers) {
 
@@ -49,18 +69,10 @@ foreach my $headerfile (@headers) {
     die "'$file' is not a file: $!" if (! -f $file);
 
     # parse the header through the C preprocessor.
-    # do not define SWIG so that all SWIG-related
-    # code should be removed.
+    # do not define SWIG so that all SWIG-related code should be removed.
     my $headernoswig = parse_thru_cpp $file;
 
-    # count lines of header code
-    if ($verbose) {
-        foreach (split $/, $headernoswig) {
-            ++$numlines;
-        }
-    }
-
-    # find any SWIGLAL macros remaining in the header
+    # print error for any SWIGLAL macros remaining in the header
     my %noswigmacros;
     while ($headernoswig =~ /(SWIGLAL_\w+)/sg) {
         $noswigmacros{$1} = 1;
@@ -71,91 +83,70 @@ foreach my $headerfile (@headers) {
     }
 
     # parse the header through the C preprocessor.
-    # define SWIG so that code that is excluded from
-    # the SWIG interface will be removed.
+    # define SWIG so that code that is excluded from the SWIG interface will be removed.
     my $headerswig = parse_thru_cpp $file, '-DSWIG';
-
-    # count lines of header code and number of SWIGLAL macros
-    if ($verbose) {
-        foreach (split $/, $headerswig) {
-            ++$numswiglines;
-            next if /^\s*#/;
-            ++$numswigmacros{$1} if /(SWIGLAL_\w+)\(/;
-        }
-    }
 
     # find all structs in the header
     while ($headerswig =~ /struct\s+(\S*)\s*{(.*?)}\s*(\S*);/sg) {
 
-        # get the struct name (or tagname) and contents
-        my $structname = $3 ? $3 : $1;
+        # get the struct (tag) name, and contents
+        my $structtagname = $1;
         my $structcode = $2;
+        my $structname = $3;
 
-        # print if struct does not have a SWIGLAL_STRUCT_LALALLOC macro
-        if ($structcode !~ /SWIGLAL_STRUCT_(?:NO_)?LALALLOC\(\);/) {
-            print "$file: missing SWIGLAL_STRUCT_LALALLOC in struct $structname\n";
+        # print error if struct has no tag name, or tag name does not
+        # begin with 'tag', or name does not equal 'tag' + tag name
+        if ($structtagname ne '') {
+            if ($structtagname !~ /^tag/) {
+                print "$file: tag name of struct '$structtagname' does not begin with 'tag'\n";
+                $status = 1;
+            }
+            if ($structname ne '') {
+                if ('tag'.$structname ne $structtagname) {
+                    print "$file: tag name of struct '$structtagname' does not equal 'tag' + name '$structname'\n";
+                    $status = 1;
+                }
+            }
+            else {
+                $structname = $structtagname;
+                $structname =~ s/^tag//;
+            }
+        }
+        else {
+            print "$file: struct '$structname' has no tag name\n";
             $status = 1;
         }
 
-        # print if struct contains mismatched SWIGLAL_DYNAMIC_[12]ARRAY macros
-        foreach my $n (qw(1 2)) {
-
-            # name and arguments of last macro
-            my ($lastmacro, $lastargs);
-
-            while ($structcode =~ /SWIGLAL_DYNAMIC_${n}DARRAY_(BEGIN|END)\(([^\)]+?)\);/sg) {
-
-                # name and arguments of current macro
-                my $thismacro = $1;
-                my $thisargs = $2;
-
-                # arguments are equivalent up to whitespace
-                $thisargs =~ s/\s//g;
-
-                my $mismatched = 0;
-                if ($thismacro eq 'BEGIN') {
-
-                    # BEGIN macro is mismatched is the last macro was also a BEGIN
-                    $mismatched = 1 if $lastmacro eq 'BEGIN';
-
-                    # store as last macro
-                    $lastmacro = $thismacro;
-                    $lastargs = $thisargs;
-
-                }
-                else {
-
-                    # END macro is mismatched if last macro is not a BEGIN or arguments do not match
-                    $mismatched = 1 if $lastmacro ne 'BEGIN' || $lastargs ne $thisargs;
-
-                    # erase last macro
-                    $lastmacro = $lastargs = undef;
-
-                }
-
-                if ($mismatched) {
-                    print "$file: mismatched SWIGLAL_DYNAMIC_${n}DARRAY macro in struct $structname\n";
-                    $status = 1;
-                    last;
-                }
-
+        # print error if struct does not have a SWIGLAL_STRUCT macro,
+        # or argument to SWIGLAL_STRUCT does not match struct name
+        if ($structcode =~ /SWIGLAL_STRUCT\((.*?)\);/) {
+            if ($1 ne $structname) {
+                print "$file: struct $structname: SWIGLAL_STRUCT() argument '$1' must equal '$structname'\n";
+                $status = 1;
             }
         }
+        else {
+            print "$file: struct $structname is missing macro SWIGLAL_STRUCT();\n";
+            $status = 1;
+        }
+
+        # print error if struct does not have a SWIGLAL_STRUCT_... macro defined in top-level interface file
+        if (!defined($structmacros{$structname})) {
+            print "$ifacefile: missing macro SWIGLAL_STRUCT_...($structname);\n";
+            $status = 1;
+        }
+
+        # process SWIGLAL_STRUCT_... macro
+        delete $structmacros{$structname};
 
     }
 
 }
 
-# print header file statistics
-if ($verbose) {
-    my $numswigmacros = sum(values %numswigmacros);
-    print  "$ifacefile:\n";
-    printf "% 6i lines of header code\n", $numlines;
-    printf "%+6i lines when processed with -DSWIG (%0.1f%%)\n", $numswiglines - $numlines, 100.0 * ($numswiglines - $numlines) / $numlines;
-    printf "% 6i use(s) of 'SWIGLAL' macros (%0.1f%%)\n", $numswigmacros, 100.0 * $numswigmacros / $numlines;
-    foreach (sort { $a cmp $b } keys %numswigmacros) {
-        printf "% 6i use(s) of '$_' macro\n", $numswigmacros{$_};
-    }
+# print error if SWIGLAL_STRUCT... macros remain in top-level interface file
+foreach (keys %structmacros) {
+    print "$ifacefile: unprocessed $structmacros{$_}($_) macro\n";
+    $status = 1;
 }
 
 exit $status;

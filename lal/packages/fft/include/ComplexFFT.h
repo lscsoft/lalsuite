@@ -17,27 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ComplexFFTHV">
- * $Id$
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- *
- * \section{Header \texttt{ComplexFFT.h}}
- * \label{s:ComplexFFT.h}
- *
- * Performs complex-to-complex FFTs.
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
- * #include <lal/ComplexFFT.h>
- * \end{verbatim}
- *
- * Perform complex-to-complex fast Fourier transforms of vectors using the
- * package FFTW~\cite{fj:1998}.
- *
- **** </lalLaTeX> */
-
 #ifndef _COMPLEXFFT_H
 #define _COMPLEXFFT_H
 
@@ -61,57 +40,57 @@ extern "C" {
 
 NRCSID( COMPLEXFFTH, "$Id$" );
 
-/**** <lalLaTeX>
- * \subsection*{Error conditions}
- **** </lalLaTeX> */
-/**** <lalErrTable> */
+/**
+ * \addtogroup ComplexFFT_h
+ *
+ * \brief Performs complex-to-complex FFTs.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/ComplexFFT.h>
+ * \endcode
+ *
+ * Perform complex-to-complex fast Fourier transforms of vectors using the
+ * package FFTW [\ref fj_1998].
+ *
+*/
+/*@{*/
 
-#define COMPLEXFFTH_ENULL 1
-#define COMPLEXFFTH_ENNUL 2
-#define COMPLEXFFTH_ESIZE 4
-#define COMPLEXFFTH_ESZMM 8
-#define COMPLEXFFTH_ESLEN 16
-#define COMPLEXFFTH_ESAME 32
-#define COMPLEXFFTH_EALOC 64
-#define COMPLEXFFTH_EFFTW 128
-#define COMPLEXFFTH_ESNGL 256
-#define COMPLEXFFTH_EINTL 512
-#define COMPLEXFFTH_ESIGN 1024
+/** \name Error Codes */ /*@{*/
+#define COMPLEXFFTH_ENULL 1	/**< Null pointer */
+#define COMPLEXFFTH_ENNUL 2	/**< Non-null pointer */
+#define COMPLEXFFTH_ESIZE 4	/**< Invalid input size */
+#define COMPLEXFFTH_ESZMM 8	/**< Size mismatch */
+#define COMPLEXFFTH_ESLEN 16	/**< Invalid/mismatched sequence lengths */
+#define COMPLEXFFTH_ESAME 32	/**< Input/Output data vectors are the same */
+#define COMPLEXFFTH_EALOC 64	/**< Memory allocation failed */
+#define COMPLEXFFTH_EFFTW 128	/**< Error in FFTW */
+#define COMPLEXFFTH_ESNGL 256	/**< FFTW library is not single-precision */
+#define COMPLEXFFTH_EINTL 512	/**< Error in Intel FFT library */
+#define COMPLEXFFTH_ESIGN 1024	/**< Unknown sign of transform in plan */
+/*@}*/
 
+
+/** \cond DONT_DOXYGEN */
 #define COMPLEXFFTH_MSGENULL "Null pointer"
 #define COMPLEXFFTH_MSGENNUL "Non-null pointer"
 #define COMPLEXFFTH_MSGESIZE "Invalid input size"
 #define COMPLEXFFTH_MSGESZMM "Size mismatch"
 #define COMPLEXFFTH_MSGESLEN "Invalid/mismatched sequence lengths"
 #define COMPLEXFFTH_MSGESAME "Input/Output data vectors are the same"
-#define COMPLEXFFTH_MSGEFFTW "Error in FFTW"
 #define COMPLEXFFTH_MSGEALOC "Memory allocation failed"
+#define COMPLEXFFTH_MSGEFFTW "Error in FFTW"
 #define COMPLEXFFTH_MSGESNGL "FFTW library is not single-precision"
 #define COMPLEXFFTH_MSGEINTL "Error in Intel FFT library"
 #define COMPLEXFFTH_MSGESIGN "Unknown sign of transform in plan"
+/** \endcond */
 
-/**** </lalErrTable> */
-/**** <lalLaTeX>
- *
- * \subsection*{Structures}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
 /** Plan to perform FFT of COMPLEX8 data */
 typedef struct tagCOMPLEX8FFTPlan COMPLEX8FFTPlan;
 /** Plan to perform FFT of COMPLEX16 data */
 typedef struct tagCOMPLEX16FFTPlan COMPLEX16FFTPlan;
 #define tagComplexFFTPlan tagCOMPLEX8FFTPlan
 #define ComplexFFTPlan COMPLEX8FFTPlan
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * This structure contains the parameters necessary for performing an FFT of a
- * given size and direction.  The contents should not be manually adjusted.
- *
- * \newpage\input{ComplexFFTC}
- * \newpage\input{ComplexFFTTestC}
- **** </lalLaTeX> */
 
 /*
  *
@@ -385,8 +364,7 @@ int XLALCOMPLEX16VectorFFT( COMPLEX16Vector * RESTRICT output, COMPLEX16Vector *
  */
 
 /** \b DEPRECATED
- * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan instead.
- * @see XLALCreateForwardCOMPLEX8FFTPlan
+ * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan() instead.
  */
 void
 LALCreateForwardCOMPLEX8FFTPlan(
@@ -396,14 +374,12 @@ LALCreateForwardCOMPLEX8FFTPlan(
     INT4             measure
     );
 /** \b DEPRECATED
- * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan instead.
- * @see XLALCreateForwardCOMPLEX8FFTPlan
+ * @deprecated Use XLALCreateForwardCOMPLEX8FFTPlan() instead.
  */
 #define LALCreateForwardComplexFFTPlan LALCreateForwardCOMPLEX8FFTPlan
 
 /** \b DEPRECATED
- * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan instead.
- * @see XLALCreateReverseCOMPLEX8FFTPlan
+ * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan() instead.
  */
 void
 LALCreateReverseCOMPLEX8FFTPlan(
@@ -413,14 +389,12 @@ LALCreateReverseCOMPLEX8FFTPlan(
     INT4             measure
     );
 /** \b DEPRECATED
- * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan instead.
- * @see XLALCreateReverseCOMPLEX8FFTPlan
+ * @deprecated Use XLALCreateReverseCOMPLEX8FFTPlan() instead.
  */
 #define LALCreateReverseComplexFFTPlan LALCreateReverseCOMPLEX8FFTPlan
 
 /** \b DEPRECATED
- * @deprecated Use XLALDestroyCOMPLEX8FFTPlan instead.
- * @see XLALDestroyCOMPLEX8FFTPlan
+ * @deprecated Use XLALDestroyCOMPLEX8FFTPlan() instead.
  */
 void
 LALDestroyCOMPLEX8FFTPlan (
@@ -428,14 +402,12 @@ LALDestroyCOMPLEX8FFTPlan (
     COMPLEX8FFTPlan **plan
     );
 /** \b DEPRECATED
- * @deprecated Use XLALDestroyCOMPLEX8FFTPlan instead.
- * @see XLALDestroyCOMPLEX8FFTPlan
+ * @deprecated Use XLALDestroyCOMPLEX8FFTPlan() instead.
  */
 #define LALDestroyComplexFFTPlan LALDestroyCOMPLEX8FFTPlan
 
 /** \b DEPRECATED
- * @deprecated Use XLALCOMPLEX8VectorFFT instead.
- * @see XLALCOMPLEX8VectorFFT
+ * @deprecated Use XLALCOMPLEX8VectorFFT() instead.
  */
 void
 LALCOMPLEX8VectorFFT (
@@ -452,8 +424,7 @@ LALCOMPLEX8VectorFFT (
  */
 
 /** \b DEPRECATED
- * @deprecated Use XLALCreateForwardCOMPLEX16FFTPlan instead.
- * @see XLALCreateForwardCOMPLEX16FFTPlan
+ * @deprecated Use XLALCreateForwardCOMPLEX16FFTPlan() instead.
  */
 void
 LALCreateForwardCOMPLEX16FFTPlan(
@@ -464,8 +435,7 @@ LALCreateForwardCOMPLEX16FFTPlan(
     );
 
 /** \b DEPRECATED
- * @deprecated Use XLALCreateReverseCOMPLEX16FFTPlan instead.
- * @see XLALCreateReverseCOMPLEX16FFTPlan
+ * @deprecated Use XLALCreateReverseCOMPLEX16FFTPlan() instead.
  */
 void
 LALCreateReverseCOMPLEX16FFTPlan(
@@ -476,8 +446,7 @@ LALCreateReverseCOMPLEX16FFTPlan(
     );
 
 /** \b DEPRECATED
- * @deprecated Use XLALDestroyCOMPLEX16FFTPlan instead.
- * @see XLALDestroyCOMPLEX16FFTPlan
+ * @deprecated Use XLALDestroyCOMPLEX16FFTPlan() instead.
  */
 void
 LALDestroyCOMPLEX16FFTPlan (
@@ -486,8 +455,7 @@ LALDestroyCOMPLEX16FFTPlan (
     );
 
 /** \b DEPRECATED
- * @deprecated Use XLALCOMPLEX16VectorFFT instead.
- * @see XLALCOMPLEX16VectorFFT
+ * @deprecated Use XLALCOMPLEX16VectorFFT() instead.
  */
 void
 LALCOMPLEX16VectorFFT (
@@ -498,6 +466,7 @@ LALCOMPLEX16VectorFFT (
     );
 
 
+/*@} */
 #undef RESTRICT
 
 #if 0

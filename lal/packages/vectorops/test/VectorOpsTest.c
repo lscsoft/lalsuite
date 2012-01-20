@@ -17,43 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-/*************** <lalVerbatim file="VectorOpsTestCV"> **************
-$Id$
-**************** </lalVerbatim> ***********************************/
+/**
+   \file
+   \ingroup VectorOps_h
 
-/* <lalLaTeX>
+   \brief Tests the routines in \ref VectorOps.h.  Exercises some of the error
+   conditions and makes sure that they work.
 
-\subsection{Program \texttt{VectorOpsTest.c}}
-\label{ss:VectorOpsTest.c}
+   \heading{Usage}
+   \code
+   VectorOpsTest [options]
+   Options:
+   -h         print help
+   -q         quiet: run silently
+   -v         verbose: print extra information
+   -d level   set lalDebugLevel to level
+   \endcode
 
-Tests the routines in \verb@VectorOps.h@.  Exercises some of the error
-conditions and makes sure that they work.
+   \heading{Exit codes}
+   <table><tr><th>Code</th><th>Explanation</th></tr>
+   <tr><td>0</td><td>Success, normal exit.</td></tr>
+   <tr><td>1</td><td>Subroutine failed.</td></tr>
+   </table>
 
-\subsubsection*{Usage}
-\begin{verbatim}
-VectorOpsTest [options]
-Options:
-  -h         print help
-  -q         quiet: run silently
-  -v         verbose: print extra information
-  -d level   set lalDebugLevel to level
-\end{verbatim}
+*/
 
-\subsubsection*{Description}
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
-
-\vfill{\footnotesize\input{VectorOpsTestCV}}
-
-</lalLaTeX> */
-
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -455,3 +444,4 @@ ParseOptions( int argc, char *argv[] )
 
   return;
 }
+/** \endcond */

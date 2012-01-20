@@ -1,11 +1,9 @@
 /**
 \author Tibbits, M. M.
-\file
+\addtogroup MiscMatlab_c
 
-\heading{Module \ref MiscMatlab.c}
-\latexonly\label{s_MiscMatlab_c}\endlatexonly
+\brief This file reproduces the last few matlab functions that we needed for our purposes.
 
-This file reproduces the last few matlab functions that we needed for our purposes.
 It creates useable forms of cumsum, sum, max, and finally an implemenation of the
 array addressing in matlab.  Matlab has an easy of inverting a vector, (end: -1: 1)
 and the final function, FlipVector returns a result vector that has been flipped in
@@ -23,7 +21,7 @@ that same manner.
 
 The algorithms are the same as in matlab.  Flip vector was discussed above.  Sum
 takes the sum of all of the elements in a vector.  Cum sum takes an input vector:
-
+\code
 vector input[25];
 vector output[25];
 
@@ -32,12 +30,10 @@ output[1] = input[0] + input[1];
 output[2] = input[0] + input[1] + input[2];
 
 etc
+\endcode
 
 \heading{Uses}
-
-<ul>
-<li> \c LALDCreateVector</li>
-</ul>
+LALDCreateVector()
 
 \heading{Notes}
 
@@ -46,8 +42,6 @@ complex datatypes nor the unsigned datatypes.
 
 Also, the prototypes are out of order as I have used m4 to create all of the
 functions from one codebase.
-
-\heading{Prototypes}
 
 */
 

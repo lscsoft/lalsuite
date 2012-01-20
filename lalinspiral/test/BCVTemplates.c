@@ -24,7 +24,7 @@
 \brief Creates a template mesh for BCV (or, alternatively, for SPA but
 assuing a constant metric) using the mismatch metric.
 
-\subsubsection TODOref Usage
+\heading{Usage}
 
 \heading{Description}
 

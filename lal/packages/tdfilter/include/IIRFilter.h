@@ -107,8 +107,8 @@ routines never actually use this coefficient.
 #define _IIRFILTER_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 #include <lal/LALStdlib.h>
@@ -169,7 +169,7 @@ gives the order of the filter.  The fields are:
 %warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagREAL4IIRFilter::name;
 #endif /* SWIG */
 typedef struct tagREAL4IIRFilter{
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(REAL4IIRFilter);
   const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
   REAL4Vector *directCoef; /* The direct filter coefficients. */
@@ -181,7 +181,7 @@ typedef struct tagREAL4IIRFilter{
 %warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagREAL8IIRFilter::name;
 #endif /* SWIG */
 typedef struct tagREAL8IIRFilter{
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(REAL8IIRFilter);
   const CHAR *name;              /* User assigned name. */
   REAL8 deltaT;            /* Sampling time interval. */
   REAL8Vector *directCoef; /* The direct filter coefficients. */

@@ -1,13 +1,15 @@
 # Source this file to access LALApps
-setenv PATH "/opt/lscsoft/lalapps/bin:${PATH}"
+#setenv LALAPPS_PREFIX /opt/lscsoft/lalapps
+setenv LALAPPS_PREFIX /usr
+setenv PATH "${LALAPPS_PREFIX}/bin:${PATH}"
 setenv PYSITE_PATH python`python -V |& cut -d' ' -f2 | cut -d. -f-2`
 if ( $?MANPATH ) then
-  setenv MANPATH "/opt/lscsoft/lalapps/share/man:${MANPATH}"
+  setenv MANPATH "${LALAPPS_PREFIX}/share/man:${MANPATH}"
 else
-  setenv MANPATH "/opt/lscsoft/lalapps/share/man"
+  setenv MANPATH "${LALAPPS_PREFIX}/share/man"
 endif
 if ( $?PYTHONPATH ) then
-  setenv PYTHONPATH "/opt/lscsoft/lalapps/lib/${PYSITE_PATH}/site-packages:${PYTHONPATH}"
+  setenv PYTHONPATH "${LALAPPS_PREFIX}/lib/${PYSITE_PATH}/site-packages:${PYTHONPATH}"
 else
-  setenv PYTHONPATH "/opt/lscsoft/lalapps/lib/${PYSITE_PATH}/site-packages"
+  setenv PYTHONPATH "${LALAPPS_PREFIX}/lib/${PYSITE_PATH}/site-packages"
 endif

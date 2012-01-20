@@ -23,6 +23,7 @@
 #include "HoughFStatToplist.h"
 #include "HeapToplist.h"
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
+#include <lal/AVFactories.h> /* for XLALDestroyREAL4Vector */
 
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
@@ -135,7 +136,19 @@ int create_houghFStat_toplist(toplist_t**tl, UINT8 length) {
 
 /* frees the space occupied by the toplist */
 void free_houghFStat_toplist(toplist_t**l) {
+  /* special handling of sumTwoFX entries, which are REAL4Vectors
+   * and need to be free'ed first if they are non-NULL
+   */
+  UINT4 i;
+  for (i = 0; i < (*l)->elems; i++ )
+    {
+      HoughFStatOutputEntry *elem = toplist_elem ( (*l), i );
+      XLALDestroyREAL4Vector ( elem->sumTwoFX );
+    } /* for cand < numCands */
+
+  /* free the rest of the toplist and the 'container' */
   free_toplist(l);
+
 }
 
 
@@ -293,6 +306,29 @@ int read_houghFStat_toplist_from_fp(toplist_t*l, FILE*fp, UINT4*checksum, UINT4 
 /* Prints a Tooplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, int buflen) {
+  const char *fn = __func__;
+
+  /* add extra output-field containing sumTwoF and per-detector sumTwoFX if non-NULL */
+  char extraFStr[256] = "";	/* defaults to empty */
+  char buf0[256];
+  if ( fline.sumTwoFX )
+    {
+      snprintf ( extraFStr, sizeof(extraFStr), " %.6f", fline.sumTwoF );
+      UINT4 numDet = fline.sumTwoFX->length;
+      UINT4 X;
+      for ( X = 0; X < numDet ; X ++ )
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX->data[X] );
+          UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( extraFStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(extraFStr ));
+            break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+          }
+          strcat ( extraFStr, buf0 );
+        } /* for X < numDet */
+
+    } /* if sumTwoFX */
+
   return(snprintf(buf, buflen,
 		  /* output precision: choose by following (generous!) significant-digit constraints:
 		   * Freq:1e-13 
@@ -300,7 +336,7 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
 		   * f1dot:1e-5
 		   * F:1e-6 
 		   */
-		     "%.13g %.7g %.7g %.5g %.6g %.7g %.7g %.3g %.3g\n",
+		     "%.13g %.7g %.7g %.5g %.6g %.7g %.7g %.3g %.3g%s\n",
 		     fline.Freq,
 		     fline.Alpha,
 		     fline.Delta,
@@ -309,7 +345,8 @@ static int print_houghFStatline_to_str(HoughFStatOutputEntry fline, char* buf, i
 		     fline.AlphaBest,
 		     fline.DeltaBest,
 		     fline.MeanSig,
-		     fline.VarianceSig));
+		     fline.VarianceSig,
+		     extraFStr));
 }
 
 
@@ -367,7 +404,7 @@ int write_houghFStat_toplist_to_fp(toplist_t*tl, FILE*fp, UINT4*checksum) {
    if(checksum)
        *checksum = 0;
    for(i=0;i<tl->elems;i++)
-     if ((r = write_houghFStat_toplist_item_to_fp(*((HoughFStatOutputEntry*)(tl->heap[i])), fp, checksum)) < 0) {
+     if ((r = write_houghFStat_toplist_item_to_fp(*((HoughFStatOutputEntry*)(void*)(tl->heap[i])), fp, checksum)) < 0) {
        LogPrintf (LOG_CRITICAL, "Failed to write toplistitem to output fp: %d: %s\n",
 		  errno,strerror(errno));
 #ifdef _MSC_VER

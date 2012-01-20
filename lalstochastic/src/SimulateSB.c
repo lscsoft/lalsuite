@@ -19,8 +19,7 @@
 
 /**
 \author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
-\file
-\ingroup stochastic
+\addtogroup SimulateSB_h
 
 \brief Simulates whitened time-domain signal in a pair of detectors.
 
@@ -213,7 +212,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
    *
    */
 
-  /***** check input/output structures exist *****/
+  /* **** check input/output structures exist *****/
 
   /* output structure */
   ASSERT(output !=NULL, status,
@@ -277,7 +276,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
          SIMULATESBH_ENULLP,
          SIMULATESBH_MSGENULLP);
 
-  /************* check parameter structures ***********/
+  /* ************ check parameter structures ***********/
 
   /*No. of discrete time samples (length) is non-zero in each detector output*/
   ASSERT(params->length > 0, status,
@@ -289,10 +288,10 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
          SIMULATESBH_ENONPOSLEN,
          SIMULATESBH_MSGENONPOSLEN);
 
-  /************* done with null pointers *****************/
+  /* ************ done with null pointers *****************/
 
 
-  /**** check for legality ****/
+  /* *** check for legality ****/
 
   /* start frequency must not be negative */
   f0 = input->omegaGW->f0;
@@ -304,7 +303,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
     }
 
 
-  /** check for mismatches **/
+  /* * check for mismatches **/
   /* frequency length = length/2 +1  */
   length = params->length;
   freqlen = length/2 +1;
@@ -364,7 +363,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
    */
 
 
-  /******** create fft plans and workspace vectors *****/
+  /* ******* create fft plans and workspace vectors *****/
 
   LALCreateReverseRealFFTPlan(status->statusPtr,&invPlan,length,0);
   CHECKSTATUSPTR( status );
@@ -796,8 +795,8 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   else
     {
 
-      /*****This abort should be replaced with the correct *****/
-      /***** non-zero heterodyne frequency procedure******/
+      /* ****This abort should be replaced with the correct *****/
+      /* **** non-zero heterodyne frequency procedure******/
       ABORT(status, SIMULATESBH_ENOTYETHETERO,
 	    SIMULATESBH_MSGENOTYETHETERO);
     }
@@ -810,7 +809,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 }
 
 
-/****************************************************************************/
+/* ***************************************************************************/
 
 void
 LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
@@ -866,7 +865,7 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
    *
    */
 
-  /***** check input/output structures exist *****/
+  /* **** check input/output structures exist *****/
 
   /* output structure */
   ASSERT(output !=NULL, status,
@@ -901,7 +900,7 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
          SIMULATESBH_MSGENULLP);
 
 
-  /************* check parameter structures ***********/
+  /* ************ check parameter structures ***********/
 
   /*No. of discrete time samples (length) is non-zero in each detector output*/
   ASSERT(params->length1 > 0, status,
@@ -921,10 +920,10 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
          SIMULATESBH_ENONPOSLEN,
          SIMULATESBH_MSGENONPOSLEN);
 
-  /************* done with null pointers *****************/
+  /* ************ done with null pointers *****************/
 
 
-  /**** check for legality ****/
+  /* *** check for legality ****/
 
   /* start frequency must not be negative */
   f0 = input->omegaGW->f0;
@@ -936,7 +935,7 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
     }
 
 
-  /** check for mismatches **/
+  /* * check for mismatches **/
   /* frequency length = length/2 +1  */
   length1 = params->length1;
   length2 = params->length2;
@@ -987,7 +986,7 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
    */
 
 
-  /******** create fft plans and workspace vectors *****/
+  /* ******* create fft plans and workspace vectors *****/
 
   LALCreateReverseRealFFTPlan(status->statusPtr,&invPlan1,length1,0);
   CHECKSTATUSPTR( status );
@@ -1447,8 +1446,8 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
   else
     {
 
-      /*****This abort should be replaced with the correct *****/
-      /***** non-zero heterodyne frequency procedure******/
+      /* ****This abort should be replaced with the correct *****/
+      /* **** non-zero heterodyne frequency procedure******/
       ABORT(status, SIMULATESBH_ENOTYETHETERO,
 	    SIMULATESBH_MSGENOTYETHETERO);
     }

@@ -1,4 +1,3 @@
-opt/lscsoft/lalpulsar/include/lal*
-opt/lscsoft/lalpulsar/lib/*a
-opt/lscsoft/lalpulsar/lib/pkgconfig
-#opt/lscsoft/lalpulsar/share/lal
+usr/lib/*.a
+usr/lib/pkgconfig
+usr/include/lal*

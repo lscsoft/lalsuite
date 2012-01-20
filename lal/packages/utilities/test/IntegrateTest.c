@@ -130,7 +130,7 @@ static REAL8 xff1 (REAL8 x, void *p)
   REAL8  x4 = x2*x2;
   INT4  *n;
   if (p == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   ++(*(n = (INT4 *)p));
   y = x4*log(x + sqrt(x2 + 1));
   return y;
@@ -161,7 +161,7 @@ static REAL8 xff2 (REAL8 x, void *p)
   REAL8  y;
   INT4  *n;
   if (p == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   ++(*(n = (INT4 *)p));
   y = 1/(x*x*x);
   return y;
@@ -192,7 +192,7 @@ static REAL8 xff3 (REAL8 x, void *p)
   REAL8  y;
   INT4  *n;
   if (p == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   ++(*(n = (INT4 *)p));
   y = exp(-x*x/2);
   return y;
@@ -223,7 +223,7 @@ static REAL8 xff4 (REAL8 x, void *p)
   REAL8  y;
   INT4  *n;
   if (p == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   ++(*(n = (INT4 *)p));
   y = 1/sqrt(x);
   return y;
@@ -254,7 +254,7 @@ static REAL8 xff5 (REAL8 x, void *p)
   REAL8  y;
   INT4  *n;
   if (p == NULL)
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
   ++(*(n = (INT4 *)p));
   y = x + 1/sqrt(5 - x);
   return y;
@@ -285,7 +285,8 @@ static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
   SIntegrateIn intinp;
   INITSTATUS (s, "h", MAIN);
   ATTATCHSTATUSPTR (s);
-  ASSERT (!p, s, 2, "Non-null pointer");
+  if ( p )
+    ABORT ( s, 2, "Non-null pointer");
   p = NULL;
   intinp.function = g;
   intinp.xmin     = 0;
@@ -302,7 +303,8 @@ static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
   DIntegrateIn intinp;
   INITSTATUS (s, "hh", MAIN);
   ATTATCHSTATUSPTR (s);
-  ASSERT (!p, s, 2, "Non-null pointer");
+  if ( p )
+    ABORT ( s, 2, "Non-null pointer");
   p = NULL;
   intinp.function = gg;
   intinp.xmin     = 0;

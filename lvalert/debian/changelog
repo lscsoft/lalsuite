@@ -1,0 +1,11 @@
+ligo-lvalert (1.0-3) unstable; urgency=low
+
+  * Fixed version number problems.  Added GIT_TAG info to lib.
+
+ -- Brian Moe <brian.moe@ligo.org>  Tue, 13 Dec 2011 12:33:20 -0600
+
+ligo-lvalert (1.0-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Brian Moe <brian.moe@ligo.org>  Tue, 01 Nov 2011 15:59:47 -0500

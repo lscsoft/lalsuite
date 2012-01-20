@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan\@phys.utb.edu
 \file
-\ingroup stochastic
+\ingroup StochasticInverseNoise_c
 
 \brief Test suite for <tt>LALStochasticInverseNoise()</tt>.
 
@@ -47,7 +47,7 @@ which outputs an uncalibrated and "half-calibrated" inverse noise spectra
 from a uncalibrated data stream and a response function.
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -93,9 +93,6 @@ If the four \c filename arguments are present, it also
 calculates a spectrum based on user-specified data and it prints the
 noise spectra to the files specified by the user.
 
-\heading{Exit codes}
-
-
 \heading{Uses}
 
 \code
@@ -127,9 +124,23 @@ LALCheckMemoryLeaks()
   the user-specified data will be silently ignored.</li>
 </ul>
 
-
-
 */
+
+/**\name Error Codes */ /*@{*/
+#define STOCHASTICINVERSENOISETESTC_ENOM 0	/**< Nominal exit */
+#define STOCHASTICINVERSENOISETESTC_EARG 1	/**< Error parsing command-line arguments */
+#define STOCHASTICINVERSENOISETESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define STOCHASTICINVERSENOISETESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define STOCHASTICINVERSENOISETESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define STOCHASTICINVERSENOISETESTC_MSGENOM "Nominal exit"
+#define STOCHASTICINVERSENOISETESTC_MSGEARG "Error parsing command-line arguments"
+#define STOCHASTICINVERSENOISETESTC_MSGECHK "Error checking failed to catch bad data"
+#define STOCHASTICINVERSENOISETESTC_MSGEFLS "Incorrect answer for valid data"
+#define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
+
 
 #include <lal/LALStdlib.h>
 
@@ -184,20 +195,6 @@ Usage (const char *program, int exitflag);
 static void
 ParseOptions (int argc, char *argv[]);
 
-/**\name Error Codes */ /*@{*/
-#define STOCHASTICINVERSENOISETESTC_ENOM 0
-#define STOCHASTICINVERSENOISETESTC_EARG 1
-#define STOCHASTICINVERSENOISETESTC_ECHK 2
-#define STOCHASTICINVERSENOISETESTC_EFLS 3
-#define STOCHASTICINVERSENOISETESTC_EUSE 4
-
-#define STOCHASTICINVERSENOISETESTC_MSGENOM "Nominal exit"
-#define STOCHASTICINVERSENOISETESTC_MSGEARG "Error parsing command-line arguments"
-#define STOCHASTICINVERSENOISETESTC_MSGECHK "Error checking failed to catch bad data"
-#define STOCHASTICINVERSENOISETESTC_MSGEFLS "Incorrect answer for valid data"
-#define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
-
 int main(int argc, char *argv[])
 {
 
@@ -206,8 +203,6 @@ int main(int argc, char *argv[])
   StochasticInverseNoiseInput        input;
   StochasticInverseNoiseOutput       output;
 
-  REAL4FrequencySeries     realBadData;
-  COMPLEX8FrequencySeries  complexBadData;
   LIGOTimeGPS              epoch = {1234,56789};
 
   REAL4FrequencySeries     wNoise;
@@ -236,16 +231,18 @@ int main(int argc, char *argv[])
   wNoise.epoch  = epoch;
   wNoise.data   = NULL;
   invNoise.data = NULL;
-
-  realBadData = wNoise;
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     realBadData = wNoise;
+#endif
 
   wFilter.f0     = wNoise.f0;
   wFilter.deltaF  = wNoise.deltaF;
   wFilter.epoch   = wNoise.epoch;
   wFilter.data    = NULL;
   hwInvNoise.data = NULL;
-
-  complexBadData  = wFilter;
+#ifndef LAL_NDEBUG
+  COMPLEX8FrequencySeries  complexBadData  = wFilter;
+#endif
 
   /******** Set Testing  Units ********/
   /* response function */
@@ -1231,3 +1228,5 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+
+/** \endcond */

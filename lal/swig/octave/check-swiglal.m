@@ -17,7 +17,7 @@ else
   LALCheckMemoryLeaks();
   mem1 = new_LALDetector();
   mem2 = new_LALStringVector();
-  mem3 = new_COMPLEX8Vector();
+  mem3 = XLALCreateCOMPLEX8Vector(5);
   mem4 = XLALCreateREAL8Vector(3);
   msg("*** below should be an error message from LALCheckMemoryLeaks() ***");
   try
@@ -25,8 +25,7 @@ else
     error("expected exception");
   end_try_catch
   msg("*** above should be an error message from LALCheckMemoryLeaks() ***");
-  clear mem1 mem2 mem3;
-  XLALDestroyREAL8Vector(mem4);
+  clear mem1 mem2 mem3 mem4;
   LALCheckMemoryLeaks();
   msg("passed memory allocation");
 endif
@@ -54,11 +53,26 @@ endfor
 XLALDestroyStringVector(sv);
 msg("passed string conversions");
 
+## check vector/matrix struct type accessors
+if !cvar.swiglal_debug
+  msg("skipping vector/matrix struct type accessors");
+else
+  swiglal_test_struct_vector_setel(0, cvar.swiglal_test_struct_const);
+  assert(swiglal_test_struct_vector_getel(0).a == cvar.swiglal_test_struct_const.a);
+  assert(swiglal_test_struct_vector_getel(0).b == cvar.swiglal_test_struct_const.b);
+  assert(strcmp(swiglal_test_struct_vector_getel(0).c, cvar.swiglal_test_struct_const.c));
+  swiglal_test_struct_matrix_setel(0, 0, cvar.swiglal_test_struct_const);
+  assert(swiglal_test_struct_matrix_getel(0, 0).a == cvar.swiglal_test_struct_const.a);
+  assert(swiglal_test_struct_matrix_getel(0, 0).b == cvar.swiglal_test_struct_const.b);
+  assert(strcmp(swiglal_test_struct_matrix_getel(0, 0).c, cvar.swiglal_test_struct_const.c));
+  msg("passed vector/matrix struct type accessors");
+endif
+
 ## check static vector/matrix conversions
 if !cvar.swiglal_debug
   msg("skipping static vector/matrix conversions");
 else
-  sts = new_swiglal_static_test_struct();
+  sts = new_swiglal_test_static_struct();
   assert(length(sts.vector) == 3);
   assert(length(sts.enum_vector) == 3);
   assert(all(size(sts.matrix) == [2, 3]));
@@ -76,15 +90,22 @@ else
     assert(sts.enum_vector_getel(i-1) == (2*i + 3));
   endfor
   clear sts;
-  assert(!any(cvar.swiglal_static_test_vector));
-  assert(!any(cvar.swiglal_static_test_matrix(:)));
-  assert(!any(cvar.swiglal_static_test_enum_vector));
-  assert(!any(cvar.swiglal_static_test_enum_matrix(:)));
-  cvar.swiglal_static_test_vector = cvar.swiglal_static_test_const_vector;
-  assert(all(cvar.swiglal_static_test_vector == [1, 2, 4]));
-  assert(swiglal_static_test_const_vector_getel(2) == 4);
+  assert(!any(cvar.swiglal_test_static_vector));
+  assert(!any(cvar.swiglal_test_static_matrix(:)));
+  assert(!any(cvar.swiglal_test_static_enum_vector));
+  assert(!any(cvar.swiglal_test_static_enum_matrix(:)));
+  swiglal_test_static_vector_setel(0, 10);
+  assert(swiglal_test_static_vector_getel(0) == 10);
+  swiglal_test_static_matrix_setel(0, 0, 11);
+  assert(swiglal_test_static_matrix_getel(0, 0) == 11);
+  cvar.swiglal_test_static_vector = cvar.swiglal_test_static_const_vector;
+  assert(all(cvar.swiglal_test_static_vector == [1, 2, 4]));
+  assert(swiglal_test_static_const_vector_getel(2) == 4);
+  cvar.swiglal_test_static_matrix = cvar.swiglal_test_static_const_matrix;
+  assert(all(cvar.swiglal_test_static_matrix == [[1, 2, 4]; [2, 4, 8]]));
+  assert(swiglal_test_static_const_matrix_getel(1, 2) == 8);
   try
-    swiglal_static_test_const_vector_getel(20);
+    swiglal_test_static_const_vector_getel(20);
     error("expected exception");
   end_try_catch
   msg("passed static vector/matrix conversions");
@@ -136,20 +157,18 @@ rv = XLALCreateREAL8Vector(5);
 cm = XLALCreateCOMPLEX8VectorSequence(4, 6);
 check_dynamic_vector_matrix(iv, iv.length, rv, rv.length,
                             cm, cm.length, cm.vectorLength);
-XLALDestroyINT4Vector(iv);
-XLALDestroyREAL8Vector(rv);
-XLALDestroyCOMPLEX8VectorSequence(cm);
-LALCheckMemoryLeaks();
+clear iv rv cm;
+if cvar.swiglal_debug
+  LALCheckMemoryLeaks();
+endif
 msg("passed dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
-iv = gsl_vector_int_calloc(5);
-rv = gsl_vector_calloc(5);
-cm = gsl_matrix_complex_float_calloc(4, 6);
+iv = new_gsl_vector_int(5);
+rv = new_gsl_vector(5);
+cm = new_gsl_matrix_complex_float(4, 6);
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2);
-gsl_vector_int_free(iv);
-gsl_vector_free(rv);
-gsl_matrix_complex_float_free(cm);
+clear iv rv cm;
 msg("passed dynamic vector/matrix conversions (GSL)");
 
 ## check 'tm' struct conversions

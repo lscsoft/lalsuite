@@ -288,9 +288,6 @@ XLALSnglInspiralCoincTestEllipsoid(
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
 
-  /*static const char *func = "XLALSnglInspiralCoincTest";*/
-
-
   /* Loop over sngl_inspirals contained in coinc_inspiral */
   for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
@@ -346,9 +343,6 @@ INT2 XLALCompareInspiralsEllipsoid(
       )
 
 {
-
-  static const char *func = "XLALCompareInspiralsEllipsoid";
-
   INT2  isCoinc   = 0;
 
   REAL8 overlap;
@@ -357,7 +351,7 @@ INT2 XLALCompareInspiralsEllipsoid(
   if (!aPtr || !aPtr->trigger || !aPtr->position ||
       !bPtr || !bPtr->trigger || !bPtr->position ||
       !workSpace || !params)
-    XLAL_ERROR( func, XLAL_EFAULT);
+    XLAL_ERROR( XLAL_EFAULT);
 #endif
 
   if (strcmp(aPtr->trigger->ifo, bPtr->trigger->ifo))
@@ -381,7 +375,7 @@ INT2 XLALCompareInspiralsEllipsoid(
     overlap = XLALMinimizeEThincaParameterOverTravelTime( travelTime, &minimizer, params->exttrig );
     if ( XLAL_IS_REAL8_FAIL_NAN( overlap ) )
     {
-      XLAL_ERROR( func, XLAL_EFUNC );
+      XLAL_ERROR( XLAL_EFUNC );
     }
 
     /* test whether we have coincidence */
@@ -404,9 +398,6 @@ REAL8 XLALCalculateEThincaParameter(
              )
 
 {
-
-   static const char *func = "XLALCalculateEThincaParameter";
-
    TriggerErrorList * errorList[2];
 
    REAL8 travelTime;
@@ -419,7 +410,7 @@ REAL8 XLALCalculateEThincaParameter(
 
 #ifndef LAL_NDEBUG
   if ( !table1 || !table2 || !accuracyParams)
-    XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
 #endif
 
   memset( errorList, 0, 2 * sizeof(TriggerErrorList *) );
@@ -427,8 +418,8 @@ REAL8 XLALCalculateEThincaParameter(
   /* Before we do anything, check we have triggers from different ifos */
   if ( !strcmp(table1->ifo, table2->ifo) )
   {
-    XLALPrintError("%s: Triggers provided are from the same ifo!\n", func );
-    XLAL_ERROR_REAL8( func, XLAL_EINVAL );
+    XLALPrintError("%s: Triggers provided are from the same ifo!\n", __func__ );
+    XLAL_ERROR_REAL8( XLAL_EINVAL );
   }
 
   /* Allocate memory */
@@ -441,14 +432,14 @@ REAL8 XLALCalculateEThincaParameter(
   {
     if (errorList[0])
       XLALDestroyTriggerErrorList( errorList[0] );
-    XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+    XLAL_ERROR_REAL8( XLAL_ENOMEM );
   }
 
   workSpace = XLALInitFContactWorkSpace( 3, NULL, NULL, gsl_min_fminimizer_brent, 1.0e-5 );
   if (!workSpace)
   {
     XLALDestroyTriggerErrorList( errorList[0] );
-    XLAL_ERROR_REAL8( func, XLAL_EFUNC | XLALClearErrno() );
+    XLAL_ERROR_REAL8( XLAL_EFUNC | XLALClearErrno() );
   }
 
   /* Set up the trigger lists */
@@ -473,7 +464,7 @@ REAL8 XLALCalculateEThincaParameter(
     {
       XLALDestroyTriggerErrorList( errorList[0] );
       XLALFreeFContactWorkSpace( workSpace );
-      XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+      XLAL_ERROR_REAL8( XLAL_ENOMEM );
     }
   }
 
@@ -490,7 +481,7 @@ REAL8 XLALCalculateEThincaParameter(
   {
     XLALDestroyTriggerErrorList( errorList[0] );
     XLALFreeFContactWorkSpace( workSpace );
-    XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+    XLAL_ERROR_REAL8( XLAL_ENOMEM );
   }
   minimizer->workSpace = workSpace;
   minimizer->aPtr = errorList[0];
@@ -502,7 +493,7 @@ REAL8 XLALCalculateEThincaParameter(
     LALFree( minimizer );
     XLALDestroyTriggerErrorList( errorList[0] );
     XLALFreeFContactWorkSpace( workSpace );
-    XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+    XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
   LALFree ( minimizer );
@@ -522,9 +513,6 @@ REAL8 XLALEThincaParameterForInjection(
                     )
 
 {
-
-  static const char *func = "XLALEThincaParameterForInjection";
-
   /* Trigger parameters */
   REAL8 fLower;
   REAL8 mTotal;
@@ -544,7 +532,7 @@ REAL8 XLALEThincaParameterForInjection(
 
 #ifndef LAL_NDEBUG
   if ( !injection || !trigger )
-    XLAL_ERROR_REAL8( func, XLAL_EFAULT );
+    XLAL_ERROR_REAL8( XLAL_EFAULT );
 #endif
 
   memset( &status, 0, sizeof(LALStatus));
@@ -562,7 +550,7 @@ REAL8 XLALEThincaParameterForInjection(
   fLower = 5.0 / (256.0 * eta * pow(mTotal, 5.0/3.0) * tau0 );
   fLower = pow(fLower, 3.0/8.0) / LAL_PI;
 
-  XLALPrintInfo("%s: fLower found to be %e\n", func, fLower );
+  XLALPrintInfo("%s: fLower found to be %e\n", __func__, fLower );
 
   /* Now populate the inspiral template with relevant parameters */
   injTmplt.mass1      = injection->mass1;
@@ -595,9 +583,6 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
                                                   INT4   exttrig
                                                 )
 {
-
-  static const char func[] = "XLALMinimizeEThincaParameterOverTravelTime";
-
   REAL8 ethinca;
 
 
@@ -607,7 +592,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
     ethinca = minimizeEThincaParameterOverTimeDiff( travelTime, minimizer );
     if ( XLAL_IS_REAL8_FAIL_NAN(ethinca) )
     {
-      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
     return ethinca;
   }
@@ -626,7 +611,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
 
     if ( !s )
     {
-      XLAL_ERROR_REAL8( func, XLAL_ENOMEM );
+      XLAL_ERROR_REAL8( XLAL_ENOMEM );
     }
 
 
@@ -641,7 +626,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
          || XLAL_IS_REAL8_FAIL_NAN(midEThinca) )
     {
       gsl_min_fminimizer_free( s );
-      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
 
     /* Check we have contained a minimum. Otherwise take appropriate action */
@@ -662,7 +647,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
       if ( XLAL_IS_REAL8_FAIL_NAN(midEThinca) )
       {
         gsl_min_fminimizer_free( s );
-        XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+        XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
 
       /* If we still don't have the minimum return the lowest end-point */
@@ -679,7 +664,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
     if ( min_status != GSL_SUCCESS )
     {
       gsl_min_fminimizer_free( s );
-      XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
     }
 
     /* Loop to perform the minimization */
@@ -690,7 +675,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
         if (min_status != GSL_SUCCESS )
         {
             gsl_min_fminimizer_free( s );
-            XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+            XLAL_ERROR_REAL8( XLAL_EFUNC );
         }
 
         m = gsl_min_fminimizer_x_minimum (s);
@@ -701,7 +686,7 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
         if (min_status != GSL_CONTINUE && min_status != GSL_SUCCESS )
         {
           gsl_min_fminimizer_free( s );
-          XLAL_ERROR_REAL8( func, XLAL_EFUNC );
+          XLAL_ERROR_REAL8( XLAL_EFUNC );
         }
     }
     while ( min_status == GSL_CONTINUE && iter < max_iter );
@@ -711,13 +696,13 @@ REAL8 XLALMinimizeEThincaParameterOverTravelTime( REAL8 travelTime,
     if ( iter == max_iter && min_status == GSL_CONTINUE )
     {
       gsl_min_fminimizer_free( s );
-      XLAL_ERROR_REAL8( func, XLAL_EMAXITER );
+      XLAL_ERROR_REAL8( XLAL_EMAXITER );
     }
 
     /* Get the minimum e-thinca param, and free memory for minimizer */
     ethinca = gsl_min_fminimizer_f_minimum( s );
     gsl_min_fminimizer_free( s );
-    XLALPrintInfo( "%s: Number of iterations = %d\n", func, iter);
+    XLALPrintInfo( "%s: Number of iterations = %d\n", __func__, iter);
   }
 
   /* Return the required e-thinca value */
@@ -759,7 +744,7 @@ static REAL8 minimizeEThincaParameterOverTimeDiff( REAL8 timeShift,
      /* Set the times back to their correct values */
      XLALSetTimeInPositionVector( params->aPtr->position, originalTimeA );
      XLALSetTimeInPositionVector( params->bPtr->position, originalTimeB );
-     XLAL_ERROR_REAL8( "minimizeEThincaParameterOverTimeDiff", XLAL_EFUNC );
+     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
   /* Set the times back to their correct values */

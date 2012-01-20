@@ -1,6 +1,2 @@
-#opt/lscsoft/lalinspiral/bin
-opt/lscsoft/lalinspiral/include
-opt/lscsoft/lalinspiral/lib/pkgconfig
-#opt/lscsoft/lalinspiral/share/lal
-#opt/lscsoft/lalinspiral/share/man/man1
-#opt/lscsoft/lalinspiral/share/man/man3
+usr/lib/pkgconfig
+usr/include

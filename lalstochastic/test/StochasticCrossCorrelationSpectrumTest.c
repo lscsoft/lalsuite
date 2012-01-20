@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
 \file
-\ingroup stochastic
+\ingroup StochasticCrossCorrelation_c
 
 \brief A program to test <tt>LALStochasticCrossCorrelationSpectrum()</tt>.
 
@@ -49,7 +49,7 @@ Fourier-transformed data streams and a (frequency domain) optimal
 filter.
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -90,9 +90,6 @@ optimal filter and the two data streams from the specified files and
 use the specified parameters to calculate the cross-correlation
 statistic.  The result is printed to the specified output file.
 
-\heading{Exit codes}
-
-
 \heading{Uses}
 
 \code
@@ -126,9 +123,23 @@ fabs()
     present, the user-specified data will be silently ignored.</li>
 </ul>
 
-
-
 */
+
+/**\name Error Codes */ /*@{*/
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ENOM 0	/**< Nominal exit */
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGENOM "Nominal exit"
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEARG "Error parsing command-line arguments"
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK "Error checking failed to catch bad data"
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEFLS "Incorrect answer for valid data"
+#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE "Bad user-entered data"
+
 
 #include <lal/LALStdlib.h>
 
@@ -188,20 +199,6 @@ Usage (const char *program, int exitflag);
 static void
 ParseOptions (int argc, char *argv[]);
 
-/**\name Error Codes */ /*@{*/
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ENOM 0
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EARG 1
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_ECHK 2
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EFLS 3
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_EUSE 4
-
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGENOM "Nominal exit"
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEARG "Error parsing command-line arguments"
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGECHK "Error checking failed to catch bad data"
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEFLS "Incorrect answer for valid data"
-#define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
-
 int main( int argc, char *argv[] )
 {
   static LALStatus                status;
@@ -212,11 +209,6 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries  goodData2;
   COMPLEX8FrequencySeries  goodFilter;
   COMPLEX8FrequencySeries  goodOutput;
-
-  COMPLEX8FrequencySeries  badData1;
-  COMPLEX8FrequencySeries  badData2;
-  COMPLEX8FrequencySeries  badFilter;
-  COMPLEX8FrequencySeries  badOutput;
 
   LIGOTimeGPS              epoch0 = {0,0};
   LIGOTimeGPS              epoch1 = {630720000,123456789};
@@ -243,9 +235,13 @@ int main( int argc, char *argv[] )
   goodOutput = goodFilter;
 
   goodData1.epoch = epoch1;
-  badFilter = goodFilter;
-  badData2 = badData1 = goodData2 = goodData1;
-  badOutput = goodOutput;
+  goodData2 = goodData1;
+#ifndef LAL_NDEBUG
+  COMPLEX8FrequencySeries  badData1 = goodData2;
+  COMPLEX8FrequencySeries  badData2 = badData1;
+  COMPLEX8FrequencySeries  badFilter = goodFilter;
+  COMPLEX8FrequencySeries  badOutput = goodOutput;
+#endif
 
   LALCCreateVector(&status, &(goodData1.data),
                           STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH);
@@ -978,3 +974,5 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+
+/** \endcond */

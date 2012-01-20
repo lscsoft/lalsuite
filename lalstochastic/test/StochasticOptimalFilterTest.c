@@ -20,7 +20,7 @@
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
 \file
-\ingroup stochastic
+\ingroup StochasticOptimalFilter_c
 
 \brief Test suite for <tt>LALStochasticOptimalFilter()</tt>.
 
@@ -55,7 +55,7 @@ spectral densities \f$\{P^{\mathrm{C}}_i(f),P^{\mathrm{HC}}_i(f)\}\f$ for a
 pair of detectors.
 
 First, it tests that the correct error codes
-(cf. \ref StochasticCrossCorrelation.h)
+(cf. \ref StochasticCrossCorrelation_h)
 are generated for the following error conditions (tests in
 \e italics are not performed if \c LAL_NDEBUG is set, as
 the corresponding checks in the code are made using the ASSERT macro):
@@ -97,7 +97,7 @@ the corresponding checks in the code are made using the ASSERT macro):
 It then verifies that the correct optimal filter is generated
 [calculating the normalization with
 <tt>LALStochasticOptimalFilterNormalization()</tt> as described in
-\ref StochasticOptimalFilterNormalization.c, and
+\ref StochasticOptimalFilterNormalization_c, and
 checking the normalization by verifying that\eqref{stochastic_e_mu}
 is satisfied] for each of the following simple test cases:
 <ol>
@@ -111,9 +111,6 @@ is satisfied] for each of the following simple test cases:
   The expected optimal filter in this case is
   \f$\widetilde{Q}(f)=\textrm{constant}\f$.</li>
 </ol>
-
-\heading{Exit codes}
-
 
 \heading{Uses}
 \code
@@ -150,6 +147,21 @@ fabs()
 </ul>
 
 */
+
+/**\name Error Codes */ /*@{*/
+#define STOCHASTICOPTIMALFILTERTESTC_ENOM 0	/**< Nominal exit */
+#define STOCHASTICOPTIMALFILTERTESTC_EARG 1	/**< Error parsing command-line arguments */
+#define STOCHASTICOPTIMALFILTERTESTC_ECHK 2	/**< Error checking failed to catch bad data */
+#define STOCHASTICOPTIMALFILTERTESTC_EFLS 3	/**< Incorrect answer for valid data */
+#define STOCHASTICOPTIMALFILTERTESTC_EUSE 4	/**< Bad user-entered data */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define STOCHASTICOPTIMALFILTERTESTC_MSGENOM "Nominal exit"
+#define STOCHASTICOPTIMALFILTERTESTC_MSGEARG "Error parsing command-line arguments"
+#define STOCHASTICOPTIMALFILTERTESTC_MSGECHK "Error checking failed to catch bad data"
+#define STOCHASTICOPTIMALFILTERTESTC_MSGEFLS "Incorrect answer for valid data"
+#define STOCHASTICOPTIMALFILTERTESTC_MSGEUSE "Bad user-entered data"
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -210,20 +222,6 @@ static void ParseOptions (int argc, char *argv[]);
 static REAL8 mu(const REAL4FrequencySeries*, const REAL4FrequencySeries*,
                 const COMPLEX8FrequencySeries*);
 
-/**\name Error Codes */ /*@{*/
-#define STOCHASTICOPTIMALFILTERTESTC_ENOM 0
-#define STOCHASTICOPTIMALFILTERTESTC_EARG 1
-#define STOCHASTICOPTIMALFILTERTESTC_ECHK 2
-#define STOCHASTICOPTIMALFILTERTESTC_EFLS 3
-#define STOCHASTICOPTIMALFILTERTESTC_EUSE 4
-
-#define STOCHASTICOPTIMALFILTERTESTC_MSGENOM "Nominal exit"
-#define STOCHASTICOPTIMALFILTERTESTC_MSGEARG "Error parsing command-line arguments"
-#define STOCHASTICOPTIMALFILTERTESTC_MSGECHK "Error checking failed to catch bad data"
-#define STOCHASTICOPTIMALFILTERTESTC_MSGEFLS "Incorrect answer for valid data"
-#define STOCHASTICOPTIMALFILTERTESTC_MSGEUSE "Bad user-entered data"
-/*@}*/
-
 int main(int argc, char *argv[])
 {
 
@@ -235,8 +233,6 @@ int main(int argc, char *argv[])
   StochasticOptimalFilterNormalizationOutput normOut;
   StochasticOptimalFilterNormalizationParameters normParams;
 
-  REAL4FrequencySeries     realBadData;
-  COMPLEX8FrequencySeries  complexBadData;
   LIGOTimeGPS              epoch = {1,0};
 
   REAL4FrequencySeries     overlap;
@@ -273,8 +269,10 @@ int main(int argc, char *argv[])
   overlap.epoch  = epoch;
   overlap.data   = NULL;
   overlap.sampleUnits = lalDimensionlessUnit;
-
-  realBadData = omegaGW = invNoise1 = invNoise2 = overlap;
+  omegaGW = invNoise1 = invNoise2 = overlap;
+#ifndef LAL_NDEBUG
+  REAL4FrequencySeries     realBadData = omegaGW;
+#endif
 
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -2;
   invNoise1.sampleUnits.unitNumerator[LALUnitIndexSecond] = -1;
@@ -293,8 +291,9 @@ int main(int argc, char *argv[])
   hcInvNoise1.epoch  = overlap.epoch;
   hcInvNoise1.data   = NULL;
   hcInvNoise1.sampleUnits = lalDimensionlessUnit;
-
-  complexBadData = optimal = hcInvNoise2 = hcInvNoise1;
+#ifndef LAL_NDEBUG
+  COMPLEX8FrequencySeries  complexBadData = optimal = hcInvNoise2 = hcInvNoise1;
+#endif
 
   hcInvNoise1.sampleUnits.unitNumerator[LALUnitIndexStrain] = -1;
   hcInvNoise1.sampleUnits.unitNumerator[LALUnitIndexADCCount] = -1;
@@ -1687,3 +1686,5 @@ ParseOptions (int argc, char *argv[])
 
   return;
 }
+
+/** \endcond */

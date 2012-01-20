@@ -43,7 +43,7 @@ from glue import pipeline
 from glue.lal import CacheEntry
 from pylal import ligolw_cafe
 from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
-from pylal import burstsearch
+from pylal import excesspower
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"
@@ -125,7 +125,7 @@ def get_files_per_binjfind(config_parser):
 def get_timing_parameters(config_parser):
 	# initialize data structure
 	resample_rate = config_parser.getfloat("lalapps_power", "resample-rate")
-	params = burstsearch.XLALEPGetTimingParameters(
+	params = excesspower.XLALEPGetTimingParameters(
 		window_length = config_parser.getint("lalapps_power", "window-length"),
 		max_tile_length = int(config_parser.getfloat("lalapps_power", "max-tile-duration") * resample_rate),
 		tile_stride_fraction = config_parser.getfloat("lalapps_power", "tile-stride-fraction"),

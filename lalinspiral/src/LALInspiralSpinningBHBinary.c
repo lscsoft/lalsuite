@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer
+*  Copyright (C) 2007 Jolien Creighton, B.S. Sathyaprakash, Craig Robinson, Thomas Cokelaer, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -217,10 +217,12 @@ LALInspiralSpinModulatedWave(
 	tMax = in->tC - dt;                                      /* Maximum duration of the signal */
 	fn = (ak.flso > in->fCutoff) ? ak.flso : in->fCutoff;    /* Frequency cutoff, smaller of user given f or flso */
 
-	func.phasing3(status->statusPtr, &Phi, Theta, &ak);      /* Carrier phase at the initial time */
-	CHECKSTATUSPTR(status);
-	func.frequency3(status->statusPtr, &f, Theta, &ak);      /* Carrier Freqeuncy at the initial time */
-	CHECKSTATUSPTR(status);
+	Phi = func.phasing3(Theta, &ak);                         /* Carrier phase at the initial time */
+	if (XLAL_IS_REAL8_FAIL_NAN(Phi))
+		ABORTXLAL(status);
+	f = func.frequency3(Theta, &ak);                         /* Carrier Freqeuncy at the initial time */
+	if (XLAL_IS_REAL8_FAIL_NAN(f))
+		ABORTXLAL(status);
 
 	/* Constants that appear in the antenna pattern */
 	Fp0 = (1.L + cos(in->sourceTheta)*cos(in->sourceTheta)) * cos(2.L*in->sourcePhi);
@@ -280,11 +282,13 @@ LALInspiralSpinModulatedWave(
 		rk4in.x = t;
 		/* Compute the carrier phase of the signal at the current time */
 		Theta = etaBy5M * (in->tC - t);
-		func.phasing3(status->statusPtr, &Phi, Theta, &ak);
-		CHECKSTATUSPTR(status);
+		Phi = func.phasing3(Theta, &ak);
+		if (XLAL_IS_REAL8_FAIL_NAN(Phi))
+			ABORTXLAL(status);
 		/* Compute the post-Newtonian frequency of the signal and 'velocity' at the current time */
-		func.frequency3(status->statusPtr, &f, Theta, &ak);
-		CHECKSTATUSPTR(status);
+		f = func.frequency3(Theta, &ak);
+		if (XLAL_IS_REAL8_FAIL_NAN(f))
+			ABORTXLAL(status);
 		v = pow(LAL_PI * in->totalMass * LAL_MTSUN_SI * f, 1.L/3.L);
 		/* Integrate the equations one step forward */
 		LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams);
@@ -652,10 +656,12 @@ LALInspiralSpinModulatedWaveForInjection(
     tMax = params->tC - dt;                                      /* Maximum duration of the signal */
     fn = (ak.flso > params->fCutoff) ? ak.flso : params->fCutoff;    /* Frequency cutoff, smaller of user given f or flso */
 
-    func.phasing3(status->statusPtr, &Phi, Theta, &ak);      /* Carrier phase at the initial time */
-    CHECKSTATUSPTR(status);
-    func.frequency3(status->statusPtr, &f, Theta, &ak);      /* Carrier Freqeuncy at the initial time */
-    CHECKSTATUSPTR(status);
+    Phi = func.phasing3(Theta, &ak);                             /* Carrier phase at the initial time */
+    if (XLAL_IS_REAL8_FAIL_NAN(Phi))
+        ABORTXLAL(status);
+    f = func.frequency3(Theta, &ak);                             /* Carrier Freqeuncy at the initial time */
+    if (XLAL_IS_REAL8_FAIL_NAN(f))
+        ABORTXLAL(status);
 
     /* Constants that appear in the antenna pattern */
     Fp0 = (1.L + cos(params->sourceTheta)*cos(params->sourceTheta)) * cos(2.L*params->sourcePhi);
@@ -725,11 +731,13 @@ LALInspiralSpinModulatedWaveForInjection(
 	rk4in.x = t;
 	/* Compute the carrier phase of the signal at the current time */
 	Theta = etaBy5M * (params->tC - t);
-	func.phasing3(status->statusPtr, &Phi, Theta, &ak);
-	CHECKSTATUSPTR(status);
+	Phi = func.phasing3(Theta, &ak);
+	if (XLAL_IS_REAL8_FAIL_NAN(Phi))
+		ABORTXLAL(status);
 	/* Compute the post-Newtonian frequency of the signal and 'velocity' at the current time */
-	func.frequency3(status->statusPtr, &f, Theta, &ak);
-	CHECKSTATUSPTR(status);
+	f = func.frequency3(Theta, &ak);
+	if (XLAL_IS_REAL8_FAIL_NAN(Phi))
+		ABORTXLAL(status);
 	v = pow(LAL_PI * params->totalMass * LAL_MTSUN_SI * f, 1.L/3.L);
 	/* Integrate the equations one step forward */
 	LALRungeKutta4(status->statusPtr, &newvalues, integrator, funcParams);

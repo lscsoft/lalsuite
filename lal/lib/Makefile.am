@@ -34,6 +34,7 @@ bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
 
+CLEANFILES =
 MOSTLYCLEANFILES = LALBuildDate.c
 
 TESTS = lal-version
@@ -55,3 +56,6 @@ include-link: LALVCSInfo.h
 			rm -f $$targetdir/LALVCSInfo.h; \
 			$(LN_S) $$d/LALVCSInfo.h $$targetdir; \
 		fi
+
+swig_headers = $(pkginclude_HEADERS)
+include $(top_srcdir)/swig/swig-header.am

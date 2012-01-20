@@ -84,7 +84,6 @@ const MultiLIGOTimeGPSVector empty_MultiLIGOTimeGPSVector;
 SFTVector *
 XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 {
-  const CHAR *fn = "XLALExtractBandfromSFTs";
   REAL8 dFreq;
   UINT4 iMin, iMax, i0, numSFTs, numBinsIn, numBinsOut, iSFT;
   SFTVector *out;
@@ -92,7 +91,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
   COMPLEX8Vector *sav;
 
   if ( !sfts || !sfts->data || (sfts->length==0) || !sfts->data[0].data ) {
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   dFreq = sfts->data[0].deltaF;
@@ -112,7 +111,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 
   if ( iMax < iMin ) {
     XLALPrintError ("Resulting SFT has no bins iMax (%d) < iMin (%d)!\n", iMax, iMin );
-    XLAL_ERROR_NULL( fn, XLAL_EINVAL );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
   numSFTs = sfts->length;
@@ -120,7 +119,7 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
   numBinsOut = iMax - iMin + 1;
 
   if ( (out = XLALCreateSFTVector ( numSFTs, numBinsOut )) == NULL ) {
-    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /* now copy heads and all requested bins */
@@ -153,20 +152,19 @@ XLALExtractBandfromSFTs ( const SFTVector *sfts, REAL8 fMin, REAL8 fMax )
 SFTtype *
 XLALCreateSFT ( UINT4 numBins )
 {
-  const char *fn = "XLALCreateSFT()";
   SFTtype *sft;
 
   if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc (1, %d) failed.\n", fn, sizeof(*sft) );
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: XLALCalloc (1, %d) failed.\n", __func__, sizeof(*sft) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( numBins )
     {
       if ( (sft->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	XLALPrintError ("%s: XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", fn, numBins, xlalErrno );
+	XLALPrintError ("%s: XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", __func__, numBins, xlalErrno );
 	XLALFree ( sft );
-	XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+	XLAL_ERROR_NULL ( XLAL_ENOMEM );
       }
     }
   else
@@ -267,18 +265,17 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 		     UINT4 numBins	/**< number of frequency-bins per SFT */
 		     )
 {
-  const CHAR *fn = "XLALCreateSFTVector()";
   UINT4 iSFT;
   SFTVector *vect;
 
   if ( (vect = LALCalloc ( 1, sizeof(*vect) )) == NULL ) {
-    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   vect->length = numSFTs;
   if ( (vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
     LALFree (vect);
-    XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   for ( iSFT = 0; iSFT < numSFTs; iSFT ++)
@@ -295,7 +292,7 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 		XLALDestroyCOMPLEX8Vector ( vect->data[j].data );
 	      LALFree (vect->data);
 	      LALFree (vect);
-	      XLAL_ERROR_NULL( fn, XLAL_ENOMEM );
+	      XLAL_ERROR_NULL( XLAL_ENOMEM );
 	    }
 	}
 
@@ -841,13 +838,13 @@ XLALCreateTimestampVector (UINT4 length)
 
   out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
   if (out == NULL)
-    XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
 
   out->length = length;
   out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
   if (out->data == NULL) {
     LALFree (out);
-    XLAL_ERROR_NULL ( "XLALCreateTimestampVector", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   return out;
@@ -981,11 +978,9 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 		     LIGOTimeGPSVector **timestamps,	/**< [out] extracted timestamps */
 		     const SFTVector *sfts )		/**< input SFT-vector  */
 {
-  const char *fn = __func__;
-
   LIGOTimeGPSVector *ret = NULL;
 
-  INITSTATUS (status, fn, SFTUTILSC );
+  INITSTATUS (status, __func__, SFTUTILSC );
 
   ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
@@ -993,7 +988,7 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
   ASSERT ( *timestamps == NULL, status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL );
 
   if ( ( ret = XLALExtractTimestampsFromSFTs ( sfts )) == NULL ) {
-    XLALPrintError ("%s: call to XLALExtractTimestampsFromSFTs() failed with code %d\n", fn, xlalErrno );
+    XLALPrintError ("%s: call to XLALExtractTimestampsFromSFTs() failed with code %d\n", __func__, xlalErrno );
     ABORT (status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC);
   }
 
@@ -1011,20 +1006,18 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 LIGOTimeGPSVector *
 XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vector  */
 {
-  const char *fn = __func__;
-
   /* check input consistency */
   if ( !sfts ) {
-    XLALPrintError ("%s: invalid NULL input 'sfts'\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: invalid NULL input 'sfts'\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
   UINT4 numSFTs = sfts->length;
   /* create output vector */
   LIGOTimeGPSVector *ret = NULL;
   if ( ( ret = XLALCreateTimestampVector ( numSFTs )) == NULL ) {
-    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", fn, numSFTs );
-    XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+    XLALPrintError ("%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSFTs );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   REAL8 Tsft = 1.0 / sfts->data[0].deltaF;
   ret->deltaT = Tsft;
@@ -1045,26 +1038,24 @@ XLALExtractTimestampsFromSFTs ( const SFTVector *sfts )		/**< [in] input SFT-vec
 MultiLIGOTimeGPSVector *
 XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
 {
-  static const char *fn = __func__;
-
   /* check input consistency */
   if ( !multiSFTs || multiSFTs->length == 0 ) {
-    XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", fn );
-    XLAL_ERROR_NULL ( fn, XLAL_EINVAL );
+    XLALPrintError ("%s: illegal NULL or empty input 'multiSFTs'.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
   UINT4 numIFOs = multiSFTs->length;
 
   /* create output vector */
   MultiLIGOTimeGPSVector *ret = NULL;
   if ( (ret = XLALCalloc ( 1, sizeof(*ret) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", fn, sizeof(*ret));
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLALPrintError ("%s: failed to XLALCalloc ( 1, %d ).\n", __func__, sizeof(*ret));
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   if ( (ret->data = XLALCalloc ( numIFOs, sizeof(*ret->data) )) == NULL ) {
-    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", fn, numIFOs, sizeof(ret->data[0]) );
+    XLALPrintError ("%s: failed to XLALCalloc ( %d, %d ).\n", __func__, numIFOs, sizeof(ret->data[0]) );
     XLALFree (ret);
-    XLAL_ERROR_NULL ( fn, XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
   ret->length = numIFOs;
 
@@ -1073,9 +1064,9 @@ XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs )
   for ( X=0; X < numIFOs; X ++ )
     {
       if ( (ret->data[X] = XLALExtractTimestampsFromSFTs ( multiSFTs->data[X] )) == NULL ) {
-        XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", fn, X );
+        XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", __func__, X );
         XLALDestroyMultiTimestamps ( ret );
-        XLAL_ERROR_NULL ( fn, XLAL_EFUNC );
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
       }
 
     } /* for X < numIFOs */
@@ -1119,79 +1110,111 @@ XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
  * it is set to '1', and a warning will be printed if lalDebugLevel > 0.
  *
  * NOTE2: the returned string is allocated here!
+ *
+ * Note3: if more than one valid detector-string is found in the input, an error is returned
+ *
  */
 CHAR *
 XLALGetChannelPrefix ( const CHAR *name )
 {
-  CHAR *channel = LALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
+  CHAR *channel = XLALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
+
+#define CHECK_UNIQUE do { if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name ); } while(0)
 
   if ( !channel ) {
-    XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc(3)!\n" );
   }
   if ( !name ) {
     LALFree ( channel );
-    XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input 'name'" );
   }
 
   /* first handle (currently) unambiguous ones */
-  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") )
+  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "A1");
-  else if ( strstr(name, "NIOBE") || strstr( name, "B1") )
+  }
+  if ( strstr(name, "NIOBE") || strstr( name, "B1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "B1");
-  else if ( strstr(name, "EXPLORER") || strstr( name, "E1") )
+  }
+  if ( strstr(name, "EXPLORER") || strstr( name, "E1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "E1");
-  else if ( strstr(name, "GEO") || strstr(name, "G1") )
+  }
+  if ( strstr(name, "GEO") || strstr(name, "G1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "G1" );
-  else if ( strstr(name, "ACIGA") || strstr (name, "K1") )
+  }
+  if ( strstr(name, "ACIGA") || strstr (name, "K1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "K1" );
-  else if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") )
+  }
+  if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "L1" );
-  else if ( strstr(name, "Nautilus") || strstr(name, "N1") )
+  }
+  if ( strstr(name, "Nautilus") || strstr(name, "N1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "N1" );
-  else if ( strstr(name, "AURIGA") || strstr(name,"O1") )
+  }
+  if ( strstr(name, "AURIGA") || strstr(name,"O1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "O1" );
-  else if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") )
+  }
+  if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "P1" );
-  else if ( strstr(name, "TAMA") || strstr(name, "T1") )
+  }
+  if ( strstr(name, "TAMA") || strstr(name, "T1") ) {
+    CHECK_UNIQUE;
     strcpy (channel, "T1" );
+  }
   /* currently the only real ambiguity arises with H1 vs H2 */
-  else if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") )
-    {
-      if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
-	strcpy ( channel, "H2" );
-      else if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
-	strcpy ( channel, "H1" );
-      else /* otherwise: guess */
-	{
-	  strcpy ( channel, "H1" );
-	  if ( lalDebugLevel )
-	    XLALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
-	}
-    } /* if LHO */
+  if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") ) {
+    if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
+      {
+        CHECK_UNIQUE;
+        strcpy ( channel, "H2" );
+      }
+    if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
+      {
+        CHECK_UNIQUE;
+        strcpy ( channel, "H1" );
+      }
+    /* otherwise: guess */
+    if ( channel[0] == 0 )
+      {
+        strcpy ( channel, "H1" );
+        XLALPrintWarning("Detector-name '%s' ambiguous, guessing '%s'\n", name, channel );
+      }
+  } /* if LHO */
   /* LISA channel names are simply left unchanged */
-  else if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
-	    || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
-	    || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
+  if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
+       || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
+       || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
     {
+      CHECK_UNIQUE;
       strncpy ( channel, name, 2);
       channel[2] = 0;
     }
-  /* try matching VIRGO last, because 'V1','V2' might be used as version-numbers
-   * also in some input-strings */
-  else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
+  if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
     {
-      if ( strstr(name, "Virgo_CITF") || strstr(name, "V1") )
-	strcpy ( channel, "V1" );
-      else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V2") )
-	strcpy ( channel, "V2" );
+      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
+        {
+          CHECK_UNIQUE;
+          strcpy ( channel, "V2" );
+        }
+      if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") )
+        {
+          CHECK_UNIQUE;
+          strcpy ( channel, "V1" );
+        }
     } /* if Virgo */
 
-
+  /* Did we fail to find any matches? */
   if ( channel[0] == 0 )
-    {
-      if ( lalDebugLevel ) XLALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
-      XLAL_ERROR_NULL ( "XLALGetChannelPrefix", XLAL_EINVAL );
-    }
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Unknown detector-name '%s'", name );
   else
     return channel;
 
@@ -1209,11 +1232,11 @@ XLALGetSiteInfo ( const CHAR *name )
 
   /* first turn the free-form 'detector-name' into a well-defined channel-prefix */
   if ( ( channel = XLALGetChannelPrefix ( name ) ) == NULL ) {
-    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   if ( ( site = LALCalloc ( 1, sizeof( *site) )) == NULL ) {
-    XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
   switch ( channel[0] )
@@ -1249,7 +1272,7 @@ XLALGetSiteInfo ( const CHAR *name )
 	  XLALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
 	  LALFree ( site );
 	  LALFree ( channel );
-	  XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EFUNC );
+	  XLAL_ERROR_NULL ( XLAL_EFUNC );
 	}
       break;
 
@@ -1257,7 +1280,7 @@ XLALGetSiteInfo ( const CHAR *name )
       XLALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
       LALFree(site);
       LALFree(channel);
-      XLAL_ERROR_NULL ( "XLALGetSiteInfo()", XLAL_EINVAL );
+      XLAL_ERROR_NULL ( XLAL_EINVAL );
       break;
     } /* switch channel[0] */
 
@@ -1385,11 +1408,9 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   UINT4                 blocksRngMed,
 				   UINT4                 excludePercentile)
 {
-  REAL8 Tsft_Sn=0.0, Tsft_sumSn=0.0;
   UINT4 Y, X, alpha, k, numifos, numsfts, lengthsft, numsftsTot;
   MultiNoiseWeights *weights;
   REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
-  REAL8 Tsft_calS;	/* overall noise-normalization */
 
   INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
   ATTATCHSTATUSPTR (status);
@@ -1413,6 +1434,8 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   }
 
   numsftsTot = 0;
+  REAL8 sumWeights = 0;
+
   for ( X = 0; X < numifos; X++)
     {
       numsfts = rngmed->data[X]->length;
@@ -1433,6 +1456,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  REAL8FrequencySeries *thisrm;
 	  UINT4 halfBlock = blocksRngMed/2;
 	  UINT4 excludeIndex, halfLength, length;
+          REAL8 wXa;
 
 	  thisrm = &(rngmed->data[X]->data[alpha]);
 
@@ -1448,28 +1472,33 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
 	  excludeIndex =  excludePercentile * halfLength ; /* integer arithmetic */
 	  excludeIndex /= 100; /* integer arithmetic */
 
-	  Tsft_Sn = 0.0;
+	  REAL8 Tsft_avgS2 = 0.0;	// 'S2' refers to double-sided PSD
 	  for ( k = halfBlock + excludeIndex; k < lengthsft - halfBlock - excludeIndex; k++)
-	    Tsft_Sn += thisrm->data->data[k];
-	  Tsft_Sn /= lengthsft - 2*halfBlock - 2*excludeIndex;
+	    Tsft_avgS2 += thisrm->data->data[k];
+	  Tsft_avgS2 /= lengthsft - 2*halfBlock - 2*excludeIndex;
 
-	  Tsft_sumSn += Tsft_Sn; /* sumSn is just a normalization factor */
+          wXa = 1.0/Tsft_avgS2;	// unnormalized weight
+	  weights->data[X]->data[alpha] = wXa;
 
-	  weights->data[X]->data[alpha] = 1.0/Tsft_Sn;
+	  sumWeights += wXa;	// sum the weights to normalize this at the end
 	} /* end loop over sfts for each ifo */
 
     } /* end loop over ifos */
 
-  Tsft_calS = Tsft_sumSn/numsftsTot;	/* overall noise-normalization is the average Tsft * <S_{X,\alpha}> */
+  /* overall noise-normalization factor Sinv = 1/Nsft sum_Xa Sinv_Xa,
+   * see Eq.(60) in CFSv2 notes:
+   * https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?docid=1665&version=3
+   */
+  REAL8 TsftS2_inv = sumWeights / numsftsTot;	// this is double-sided PSD 'S2'
 
-  /* make weights of order unity by myltiplying by sumSn/total number of sfts */
+  /* make weights of order unity by normalizing with TsftS2_inv, see Eq.(58) in CFSv2 notes (v3) */
   for ( X = 0; X < numifos; X ++) {
     numsfts = weights->data[X]->length;
     for ( alpha = 0; alpha < numsfts; alpha ++)
-      weights->data[X]->data[alpha] *= Tsft_calS;
+      weights->data[X]->data[alpha] /= TsftS2_inv;
   }
 
-  weights->Sinv_Tsft = 0.5 * Tsft*Tsft / Tsft_calS;		/* 'Sinv * Tsft' normalization factor uses single-sided PSD!! */
+  weights->Sinv_Tsft = 0.5 * Tsft*Tsft * TsftS2_inv;		/* 'Sinv * Tsft' refers to single-sided PSD!! Eq.(60) in CFSv2 notes (v3)*/
 
   *out = weights;
 

@@ -15,8 +15,20 @@ parser=OptionParser()
 parser.add_option('-N','--Nlive',action='store',type='int',dest='Nlive',default=None,help='Number of live points in each chain loaded',metavar='NUM')
 parser.add_option('-o','--out',action='store',type='string',default=None,help='Output file for merged chain',metavar='outfile.dat')
 parser.add_option('-p','--pos',action='store',type='string',default=None,help='Output file for posterior samples if requested',metavar='posterior.dat')
+parser.add_option('-H','--headers',action='store',type='string',default=None,help='Header file explaining columns in data file',metavar='file.dat_params.txt')
+
+logLcol=-1 # default to last column for inspnest
 
 (opts,args)=parser.parse_args()
+
+if opts.headers is None:
+    headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
+else:
+    headerfile=open(opts.headers,'r')
+    headerstr=headerfile.readline()
+    headerfile.close()
+
+logLcol=headerstr.lower().split().index('logl')
 
 if opts.Nlive is None:
 	parser.error('You must specify a number of live points using --Nlive')
@@ -37,14 +49,14 @@ def nestPar(d,Nlive):
     """
     maxes=[]
     for set in d:
-        maxes.append(set[-1,-1]) # Max L point for each chain
+        maxes.append(set[-1,logLcol]) # Max L point for each chain
     maxes=array(maxes)
     maxes.sort()
     N=len(d)
     print 'N chains = '+str(N)
     logw = log(1.0-exp(-1.0/(N*Nlive)))
     H=0
-    alldat=reduce(lambda x,y: hstack([x,y]) , map(lambda x: x[:,-1],d))
+    alldat=reduce(lambda x,y: hstack([x,y]) , map(lambda x: x[:,logLcol],d))
     sidx=argsort(alldat)
     alldat=alldat[sidx]
     logZ=logw + alldat[0]
@@ -91,7 +103,7 @@ def nest2pos_par(samps,weights):
     resample nested sampling samples to get posterior samples
     """
     randoms=rand(size(samps,0))
-    wt=weights+samps[:,-1]
+    wt=weights+samps[:,logLcol]
     maxwt=max(wt)
     posidx=find(wt>maxwt+log(randoms))
     pos=samps[posidx,:]
@@ -106,7 +118,7 @@ noiseZ=Bfiles[0][2]
 
 (logZ,H,d_sorted,weights)=nestPar(data,Nlive)
 
-logLmax=d_sorted[-1,-1]
+logLmax=d_sorted[-1,logLcol]
 
 outfile=open(opts.out,'w')
 for row in d_sorted:

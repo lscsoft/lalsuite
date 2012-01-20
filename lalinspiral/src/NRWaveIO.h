@@ -113,6 +113,8 @@ typedef struct
 
 void LALReadNRWave_raw(LALStatus *status, REAL4TimeVectorSeries **out, const CHAR  *filename);
 
+void LALReadNRWave_raw_real8(LALStatus *status, REAL8TimeVectorSeries **out, const CHAR  *filename);
+
 void LALReadNRWave(LALStatus *status, REAL4TimeVectorSeries **out, const REAL4  mass, const CHAR  *filename);
 
 void LALNRDataFind( LALStatus *status, NRWaveCatalog *out, const CHAR *dir, const CHAR *filename);

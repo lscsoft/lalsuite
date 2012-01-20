@@ -222,18 +222,18 @@ XLALREAL8PolynomialInterpolation (
   UINT4  i;
 
   if ( yout == NULL || y == NULL || x == NULL )
-    XLAL_ERROR_REAL8(__func__, XLAL_EFAULT);
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
 
   if ( n <= 1 )
-    XLAL_ERROR_REAL8(__func__, XLAL_ESIZE);
+    XLAL_ERROR_REAL8(XLAL_ESIZE);
 
   dn = (REAL8 *) LALMalloc (n*sizeof(*dn));
   if ( !dn )
-    XLAL_ERROR_REAL8(__func__, XLAL_ENOMEM);
+    XLAL_ERROR_REAL8(XLAL_ENOMEM);
 
   up = (REAL8 *) LALMalloc (n*sizeof(*up));
   if ( !up )
-    XLAL_ERROR_REAL8(__func__, XLAL_ENOMEM);
+    XLAL_ERROR_REAL8(XLAL_ENOMEM);
 
 
   /*
@@ -274,7 +274,7 @@ XLALREAL8PolynomialInterpolation (
       {
 	LALFree (dn);
 	LALFree (up);
-        XLAL_ERROR_REAL8 (__func__, XLAL_EFPDIV0);
+        XLAL_ERROR_REAL8 (XLAL_EFPDIV0);
       }
       fac   = (dn[i + 1] - up[i])/den;
       dn[i] = fac*(xdn - xtarget);

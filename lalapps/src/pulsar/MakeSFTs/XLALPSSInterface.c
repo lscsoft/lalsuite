@@ -377,7 +377,7 @@ PSSEventParams *XLALPSSComputeExtARMeanAndStdev(PSSEventParams *events, PSSTimes
   float *xamed, *xastd, *tsdata;
 
   if ( !events || !ts || !hp)
-    XLAL_ERROR_NULL( "XLALPSSComputeARMeanAndStdev", XLAL_EFAULT );
+    XLAL_ERROR_NULL( "XLALPSSComputeExtARMeanAndStdev", XLAL_EFAULT );
 
   pre = ceil(events->tau / ts->dx);
   len = ts->n;

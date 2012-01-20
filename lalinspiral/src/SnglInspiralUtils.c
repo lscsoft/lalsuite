@@ -87,6 +87,12 @@ within a time window \c dtimeNS.  The triggers are compared either by
 "loudest" trigger, as determined by the selected algorithm, within each time
 window is returned.
 
+<tt>XLALClusterInEventID</tt> clusters single inspiral triggers with the
+same event ID. The triggers are compared by the clustering choice specified.
+
+<tt>XLALCoincSegCutSnglInspiral</tt> keeps only those single inspiral triggers 
+in the input list that are within the specified time interval.
+
 <tt>LALTimeCutSingleInspiral()</tt> and
 <tt>XLALTimeCutSingleInspiral()</tt>takes in a linked list of single inspiral
 tables and returns only those which occur after the given \c startTime
@@ -163,6 +169,9 @@ triggers using the appropriate \c clusterchioce.  Finally, it tests for
 mass coincidence between the first trigger and the clustered trigger from the
 second instrument.
 
+<tt>XLALAddSnglInspiralCData</tt> determines if the complex time-series of the 
+matched-filter output, or "CData", for a given trigger has been queued for
+writing into a frame-file. 
 
 \heading{Algorithm}
 
@@ -796,7 +805,6 @@ XLALClusterSnglInspiralTable (
     )
 
 {
-  static const char *func = "XLALClusterSnglInspiralTable";
   SnglInspiralTable     *thisEvent=NULL;
   SnglInspiralTable     *prevEvent=NULL;
   SnglInspiralTable     *nextEvent=NULL;
@@ -804,7 +812,7 @@ XLALClusterSnglInspiralTable (
 
   if ( !inspiralList )
   {
-    XLAL_ERROR(func,XLAL_EIO);
+    XLAL_ERROR(XLAL_EIO);
   }
 
   if ( ! *inspiralList )
@@ -874,6 +882,160 @@ XLALClusterSnglInspiralTable (
   return(numSnglClust);
 }
 
+
+int XLALCoincSegCutSnglInspiral(
+    INT4                        startTimeS,
+    INT4                        endTimeS,
+    SnglInspiralTable         **inspiralList
+    )
+
+{
+  SnglInspiralTable     *thisEvent=NULL;
+  SnglInspiralTable     *prevEvent=NULL;
+  SnglInspiralTable     *nextEvent=NULL;
+
+  int                    numSnglClust = 0;
+  UINT8                  timeExtract  = 1000000000L;
+  INT4 timeCheck=0;
+  if ( !inspiralList )
+  {
+    XLALPrintInfo(
+      "XLALCoincSegCutSnglInspiral: Empty trigger list passed as input\n" );
+    return( 0 );
+  }
+
+  if ( ! *inspiralList )
+  {
+    XLALPrintInfo(
+      "XLALCoincSegCutSnglInspiral: Empty trigger list passed as input\n" );
+    return( 0 );
+  }
+
+  thisEvent = *inspiralList;
+  *inspiralList = NULL;
+
+  while ( thisEvent ) {
+    fprintf(stdout, "This event's END TIME NS is %" LAL_INT4_FORMAT "\n",thisEvent->end_time.gpsNanoSeconds);
+    fprintf(stdout, "This event's id is %" LAL_UINT8_FORMAT "\n",thisEvent->event_id->id);
+    timeCheck = floor(thisEvent->event_id->id/timeExtract);
+    fprintf(stdout, "This event's gps-start time is %" LAL_INT4_FORMAT "\n",
+            timeCheck);
+
+    /* find events in the same coinc-segment */
+    if ( !( (timeCheck >= startTimeS) && (timeCheck <= endTimeS) ) ) {
+      /* displace this event in cluster */
+      nextEvent = thisEvent->next;
+      if( prevEvent )
+      {
+         prevEvent->next = nextEvent;
+      }
+      XLALFreeSnglInspiral( &thisEvent );
+      thisEvent = nextEvent;
+      nextEvent = thisEvent->next;
+    }
+    else {
+      /* otherwise we keep this unique event trigger */
+      if ( ! *inspiralList )
+	{
+	  *inspiralList = thisEvent;
+	}
+      prevEvent = thisEvent;
+      thisEvent = thisEvent->next;
+      if ( !thisEvent )
+        nextEvent = thisEvent->next;
+      ++numSnglClust;
+    }
+  }
+
+  fprintf(stdout, "This last time-check is %" LAL_INT4_FORMAT "\n", timeCheck);
+
+  return(numSnglClust);
+}
+
+
+int XLALClusterInEventID(
+    SnglInspiralTable         **inspiralList,
+    SnglInspiralClusterChoice   clusterchoice
+    )
+
+{
+  SnglInspiralTable     *thisEvent=NULL;
+  SnglInspiralTable     *prevEvent=NULL;
+  SnglInspiralTable     *nextEvent=NULL;
+
+  int                    numSnglClust = 0;
+
+  if ( !inspiralList )
+  {
+    XLALPrintInfo(
+      "XLALClusterInEventID: Empty trigger list passed as input\n" );
+    return( 0 );
+  }
+
+  if ( ! *inspiralList )
+  {
+    XLALPrintInfo(
+      "XLALClusterInEventID: Empty trigger list passed as input\n" );
+    return( 0 );
+  }
+
+  thisEvent = *inspiralList;
+  nextEvent = (*inspiralList)->next;
+  *inspiralList = NULL;
+
+  while ( nextEvent ) {
+    /* find events with the same eventID in the same IFO */
+    if ( (thisEvent->event_id->id == nextEvent->event_id->id )
+	 && !strcmp(thisEvent->ifo,nextEvent->ifo ) ) {
+      REAL4 thisStat = XLALSnglInspiralStat( thisEvent, clusterchoice );
+      REAL4 nextStat = XLALSnglInspiralStat( nextEvent, clusterchoice );
+
+      fprintf(stdout, "Next event's id is %" LAL_UINT8_FORMAT "\n",nextEvent->event_id->id);
+      fprintf(stdout, "Next-statistic is %e\n",nextStat);
+      fprintf(stdout, "Next IFO is %s\n",nextEvent->ifo);
+
+
+      if ( nextStat > thisStat ) {
+        /* displace previous event in cluster */
+        if( prevEvent )
+	  {
+	    prevEvent->next = nextEvent;
+	  }
+        XLALFreeSnglInspiral( &thisEvent );
+        thisEvent = nextEvent;
+        nextEvent = thisEvent->next;
+      }
+      else
+	{
+	  /* otherwise just dump next event from cluster */
+	  thisEvent->next = nextEvent->next;
+	  XLALFreeSnglInspiral ( &nextEvent );
+	  nextEvent = thisEvent->next;
+	}
+    }
+    else
+      {
+	/* otherwise we keep this unique event trigger */
+	if ( ! *inspiralList )
+	  {
+	    *inspiralList = thisEvent;
+	  }
+	prevEvent = thisEvent;
+	thisEvent = thisEvent->next;
+	nextEvent = thisEvent->next;
+	++numSnglClust;
+      }
+  }
+
+  /* store the last event */
+  if ( ! (*inspiralList) )
+    {
+      *inspiralList = thisEvent;
+  }
+  ++numSnglClust;
+
+  return(numSnglClust);
+}
 
 
 void
@@ -1282,7 +1444,6 @@ XLALIfoCutSingleInspiral(
     )
 
 {
-  static const char *func = "IfoCutSingleInspiral";
   SnglInspiralTable    *prevEvent   = NULL;
   SnglInspiralTable    *thisEvent   = NULL;
   SnglInspiralTable    *ifoHead     = NULL;
@@ -1291,7 +1452,7 @@ XLALIfoCutSingleInspiral(
   /* check that eventHead is non-null */
   if ( ! eventHead )
   {
-    XLAL_ERROR_NULL(func,XLAL_EIO);
+    XLAL_ERROR_NULL(XLAL_EIO);
   }
 
   /* Scan through a linked list of sngl_inspiral tables and return a
@@ -1407,7 +1568,6 @@ XLALTimeSlideSegList(
        const LIGOTimeGPS *slideTime
 )
 {
-  static const char func[] = "XLALTimeSlideSegList";
   INT8 ringStartNS = 0;	/* initialized to silence warning */
   INT8 ringEndNS = 0;	/* initialized to silence warning */
   INT8 slideNS;
@@ -1417,8 +1577,8 @@ XLALTimeSlideSegList(
 
   /* make sure the segment list has been properly initialized */
   if ( seglist->initMagic != SEGMENTSH_INITMAGICVAL ) {
-    XLALPrintError("%s(): segment list not initialized\n", func);
-    XLAL_ERROR(func, XLAL_EINVAL);
+    XLALPrintError("%s(): segment list not initialized\n", __func__);
+    XLAL_ERROR(XLAL_EINVAL);
   }
 
   /* calculate the slide time in nanoseconds */
@@ -1445,8 +1605,8 @@ XLALTimeSlideSegList(
 
     /* verify segment lies in ring */
     if( ringStartTime && ringEndTime && ( segStartNS < ringStartNS || segEndNS > ringEndNS ) ) {
-      XLALPrintError("%s(): detected segment outside of ring\n", func);
-      XLAL_ERROR(func, XLAL_EINVAL);
+      XLALPrintError("%s(): detected segment outside of ring\n", __func__);
+      XLAL_ERROR(XLAL_EINVAL);
     }
 
     /* slide the segment */
@@ -2219,4 +2379,44 @@ XLALMassCut(
 
   eventHead = inspiralEventList;
   return(eventHead);
+}
+
+
+int XLALAddSnglInspiralCData( CDataNode **cdataStrCat, CHAR *id )
+{
+  int notPresent = 1;
+  int addedCData = 0;
+  CDataNode *prevCData = NULL;
+  CDataNode *nextCData = NULL;
+  CDataNode *thisCData = NULL;
+
+  thisCData = *cdataStrCat;
+  nextCData = (*cdataStrCat)->next;
+  *cdataStrCat = NULL;
+
+  while ( thisCData ) {
+    if ( strcmp(thisCData->cdataStrNode, id ) )  {
+      notPresent *= 1;
+    }
+    else {
+      notPresent *= 0;
+    }
+
+    if ( ! *cdataStrCat ) {
+      *cdataStrCat = thisCData;
+    }
+
+    prevCData = thisCData;
+    thisCData = thisCData->next;
+    if ( thisCData )
+      nextCData = thisCData->next;
+  }
+
+  if ( notPresent ) {
+    (*cdataStrCat)->next = (CDataNode *) LALCalloc( 1, sizeof(CDataNode) );
+    strcpy( (*cdataStrCat)->next->cdataStrNode , id );
+    addedCData = 1;
+  }
+
+  return( addedCData );
 }

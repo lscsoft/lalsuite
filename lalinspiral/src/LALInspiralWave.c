@@ -54,7 +54,7 @@ Either a time- or a frequency-domain signal is returned depending upon the
 The code LALInspiralWave() is the user interface to the inspiral codes. It takes from the user all
 the physical parameters which specify the binary, and calls the relevent wave generation function.
 Currently ten different approximants are fully implemented. These are #TaylorT1, #TaylorT2,
-#TaylorT3, #TaylorF1, #TaylorF2, #PadeT1, #EOB, #BCV, #SpinTaylorT3, #PhenSpinTaylorRD.
+#TaylorT3, #TaylorF1, #TaylorF2, #TaylorF2RedSpin, #PadeT1, #EOB, #BCV, #SpinTaylorT3, #PhenSpinTaylorRD.
 \c Taylor approximants can all be generated at seven different post-Newtonian orders,
 from Newtonian to 3.5 PN order, #PadeT1 exists at order 1.5PN and higher,
 #EOB at orders 2 and higher. #SpinTaylorT3 is implemented only at 2PN order
@@ -92,8 +92,8 @@ Depending on the user inputs one of the following functions is called:
 LALInspiralWave1()
 LALInspiralWave2()
 LALInspiralWave3()
-LALInspiralStationaryPhaseApprox1()
-LALInspiralStationaryPhaseApprox2()
+XLALInspiralStationaryPhaseApprox1()
+XLALInspiralStationaryPhaseApprox2()
 LALEOBWaveform()
 LALBCVWaveform()
 LALInspiralSpinModulatedWave()
@@ -105,7 +105,7 @@ LALInspiralSpinModulatedWave()
     <li> A time-domain waveform is returned when the ::Approximant is one of
     #TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB, #SpinTaylorT3, #PhenSpinTaylorRD, #SpinQuadTaylor
     </li><li> A frequency-domain waveform is returned when the ::Approximant is one of
-         #TaylorF1, #TaylorF2, #BCV.
+         #TaylorF1, #TaylorF2, #TaylorF2RedSpin, #BCV.
          In these cases the code returns the real and imagninary parts of the
          Fourier domain signal in the convention of fftw. For a signal vector
          of length <tt>n=signalvec->length</tt> (\c n even):</li>
@@ -155,32 +155,32 @@ LALInspiralWave(
    {
       case TaylorT1:
       case PadeT1:
-           LALInspiralWave1(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave1(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case TaylorT2:
-           LALInspiralWave2(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave2(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case TaylorT3:
-           LALInspiralWave3(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave3(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case EOB:
       case EOBNR:
-           LALEOBWaveform(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALEOBWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case EOBNRv2:
+      case EOBNRv2HM:
+           if (XLALEOBPPWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case IMRPhenomA:
       case IMRPhenomB:
-           LALBBHPhenWaveTimeDom(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
-       break;
+           if (XLALBBHPhenWaveTimeDom(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case IMRPhenomFA:
+           if (XLALBBHPhenWaveAFreqDom(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case IMRPhenomFB:
-           LALBBHPhenWaveFreqDom(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
-       break;
+           if (XLALBBHPhenWaveBFreqDom(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case BCV:
            LALBCVWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
@@ -190,13 +190,14 @@ LALInspiralWave(
            CHECKSTATUSPTR(status);
 	   break;
       case TaylorF1:
-	   LALInspiralStationaryPhaseApprox1(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+	   if (XLALInspiralStationaryPhaseApprox1(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case TaylorF2:
       case FindChirpSP:
-           LALInspiralStationaryPhaseApprox2(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralStationaryPhaseApprox2(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+	   break;
+      case TaylorF2RedSpin:
+           if (XLALTaylorF2ReducedSpin(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
@@ -213,17 +214,19 @@ LALInspiralWave(
            LALSTPNWaveform(status->statusPtr, signalvec, params);
            CHECKSTATUSPTR(status);
 	   break;
+      case SpinTaylorFrameless:
+           if (XLALSTPNFramelessWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case PhenSpinTaylorRD:
-           LALPSpinInspiralRD(status->statusPtr, signalvec, params);
-           CHECKSTATUSPTR(status);
-	   break;
+           if (XLALPSpinInspiralRD(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case PhenSpinTaylorRDF:
-           LALPSpinInspiralRDFreqDom(status->statusPtr, signalvec, params);
+           if (XLALPSpinInspiralRDFreqDom(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case SpinQuadTaylor:
+           if (XLALSQTPNWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
            CHECKSTATUSPTR(status);
            break;
-	  case SpinQuadTaylor:
-	   		TRY(LALSQTPNWaveform(status->statusPtr, signalvec, params), status);
-			break;
       case AmpCorPPN:
    	   LALInspiralAmplitudeCorrectedWave(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
@@ -233,16 +236,14 @@ LALInspiralWave(
 	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorEt:
-   	   LALTaylorEtWaveform(status->statusPtr, signalvec, params);
-	   CHECKSTATUSPTR(status);
+   	   if (XLALTaylorEtWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
       	   break;
       case TaylorT4:
    	   LALTaylorT4Waveform(status->statusPtr, signalvec, params);
 	   CHECKSTATUSPTR(status);
       	   break;
       case TaylorN:
-   	   LALTaylorNWaveform(status->statusPtr, signalvec, params);
-	   CHECKSTATUSPTR(status);
+   	   if (XLALTaylorNWaveform(signalvec, params) == XLAL_FAILURE) ABORTXLAL(status);
       	   break;
       default:
            ABORT( status, LALINSPIRALH_ESWITCH, LALINSPIRALH_MSGESWITCH );
@@ -286,31 +287,37 @@ LALInspiralWaveTemplates(
    {
       case TaylorT1:
       case PadeT1:
-           LALInspiralWave1Templates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave1Templates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
       	   break;
       case TaylorT2:
-           LALInspiralWave2Templates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
-      break;
+           if (XLALInspiralWave2Templates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case TaylorT3:
-           LALInspiralWave3Templates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALInspiralWave3Templates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+      	   break;
+      case TaylorEt:
+           if (XLALTaylorEtWaveformTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
       	   break;
       case EOB:
       case EOBNR:
-           LALEOBWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALEOBWaveformTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case EOBNRv2:
+      case EOBNRv2HM:
+           if (XLALEOBPPWaveformTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
            break;
       case IMRPhenomA:
       case IMRPhenomB:
-           LALBBHPhenWaveTimeDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALBBHPhenWaveTimeDomTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
            break;
       case IMRPhenomFA:
+           if (XLALBBHPhenWaveAFreqDomTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case IMRPhenomFB:
-           LALBBHPhenWaveFreqDomTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+           if (XLALBBHPhenWaveBFreqDomTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case TaylorF2RedSpin:
+           if (XLALTaylorF2ReducedSpinTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
            break;
       case TaylorF1:
       case TaylorF2:
@@ -318,16 +325,20 @@ LALInspiralWaveTemplates(
       case PadeF1:
       case BCV:
       case BCVSpin:
+           ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
+	   break;
       case SpinTaylor:
            LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            CHECKSTATUSPTR(status);
            break;
+      case SpinTaylorFrameless:
+           if (XLALSTPNFramelessWaveformTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case PhenSpinTaylorRD:
-	   LALPSpinInspiralRDTemplates(status->statusPtr, signalvec1, signalvec2, params);
-           CHECKSTATUSPTR(status);
+	   if (XLALPSpinInspiralRDTemplates(signalvec1, signalvec2, params) == XLAL_FAILURE) ABORTXLAL(status);
 	   break;
       case SpinQuadTaylor:
-           TRY(LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params), status);
+           LALSTPNWaveformTemplates(status->statusPtr, signalvec1, signalvec2, params);
            break;
       case AmpCorPPN:
       	   LALInspiralAmplitudeCorrectedWaveTemplates(status->statusPtr, signalvec1, signalvec2, params);
@@ -367,58 +378,56 @@ LALInspiralWaveForInjection(
 
 
    switch (inspiralParams->approximant)
-     {
-     case TaylorT1:
-     case PadeT1:
-       LALInspiralWave1ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
-       break;
-     case TaylorT2:
-       LALInspiralWave2ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
-       break;
-     case TaylorT3:
-       LALInspiralWave3ForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
-       break;
-     case EOB:
-     case EOBNR:
-       LALEOBWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
-	   break;
-     case IMRPhenomA:
-     case IMRPhenomB:
-       LALBBHPhenWaveTimeDomForInjection (status->statusPtr, waveform, inspiralParams, ppnParams);
-       CHECKSTATUSPTR(status);
-       break;
+   {
+      case TaylorT1:
+      case PadeT1:
+           if (XLALInspiralWave1ForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case TaylorT2:
+           if (XLALInspiralWave2ForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case TaylorT3:
+           if (XLALInspiralWave3ForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case EOB:
+      case EOBNR:
+           if (XLALEOBWaveformForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case EOBNRv2:
+      case EOBNRv2HM:
+           if (XLALEOBPPWaveformForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case IMRPhenomA:
+      case IMRPhenomB:
+           if (XLALBBHPhenWaveTimeDomForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case BCV:
-	/*       LALBCVWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);*/
+           /*LALBCVWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);*/
       case BCVSpin:
       case TaylorF1:
       case TaylorF2:
+      case TaylorF2RedSpin:
       case FindChirpSP:
       case PadeF1:
            ABORT(status, LALINSPIRALH_ECHOICE, LALINSPIRALH_MSGECHOICE);
-	   break;
+           break;
       case SpinTaylorFrameless:
-           LALSTPNWaveformFramelessForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-           CHECKSTATUSPTR(status);
-     break;
+           if (XLALSTPNFramelessWaveformForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case SpinTaylor:
            LALSTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);
-     break;
+           break;
       case PhenSpinTaylorRD:
-	   LALPSpinInspiralRDForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-           CHECKSTATUSPTR(status);
-	   break;
-	  case SpinQuadTaylor:
-		   TRY(LALSQTPNWaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams), status);
-     break;
+           if (XLALPSpinInspiralRDForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
+      case SpinQuadTaylor:
+           if (XLALSQTPNWaveformForInjection(waveform, inspiralParams, ppnParams) == XLAL_FAILURE) ABORTXLAL(status);
+           break;
       case AmpCorPPN:
-	   LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
-	   CHECKSTATUSPTR(status);
-     	   break;
+           LALInspiralAmplitudeCorrectedWaveForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
+           CHECKSTATUSPTR(status);
+           break;
       case TaylorT4:
            LALTaylorT4WaveformForInjection(status->statusPtr, waveform, inspiralParams, ppnParams);
            CHECKSTATUSPTR(status);

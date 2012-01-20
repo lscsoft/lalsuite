@@ -65,7 +65,6 @@ LALPolycoToTimingDifference( LALStatus       *stat,
   REAL8 tDiffStart; /* Start time of data series */
   REAL8 tDiffStop;  /* Stop time of data series */
   REAL8 tPolyStart; /* Start time of polynomial fit */
-  REAL8 tPolyStop;  /* Stop time of polynomial fit */
   REAL8 t;          /* Time index relative to a fit time */
   REAL8 tNext;      /* Value at which t moves to the next fit */
   REAL8 dt;         /* Sampling interval */
@@ -106,9 +105,12 @@ LALPolycoToTimingDifference( LALStatus       *stat,
   tDiffStop=tDiffStart+difference->data->length*difference->deltaT;
   tPolyStart=polyco->start.gpsSeconds
     +(1.0e-9)*polyco->start.gpsNanoSeconds;
+#ifndef LAL_NDEBUG
+  REAL8 tPolyStop;  /* Stop time of polynomial fit */
   tPolyStop=tPolyStart+polyco->tBound->data[polyco->tBound->length-1];
   ASSERT(tDiffStop<tPolyStop,stat,RESAMPLEH_ETIME,
 	 RESAMPLEH_MSGETIME);
+#endif
   ASSERT(tDiffStart>tPolyStart,stat,RESAMPLEH_ETIME,
 	 RESAMPLEH_MSGETIME);
 

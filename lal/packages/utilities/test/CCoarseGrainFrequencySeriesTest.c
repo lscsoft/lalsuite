@@ -253,8 +253,6 @@ main( int argc, char *argv[] )
    UINT4      i;
    REAL8      f;
 
-   COMPLEX8                   *cPtr;
-
    const COMPLEX8  testInputDataData[CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0]
      = {{0.0,0.0}, {1.0,0.0}, {2.0,0.0}, {3.0,0.0},
         {4.0,0.0}, {5.0,0.0}, {6.0,0.0}, {7.0,0.0}};
@@ -277,8 +275,8 @@ main( int argc, char *argv[] )
      = {{41.0, (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0},
         {43.0, (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0}};
 
-   COMPLEX8FrequencySeries             goodInput, badInput;
-   COMPLEX8FrequencySeries     goodOutput, badOutput;
+   COMPLEX8FrequencySeries             goodInput;
+   COMPLEX8FrequencySeries     goodOutput;
 
    BOOLEAN                result;
    LALUnitPair            unitPair;
@@ -314,8 +312,10 @@ main( int argc, char *argv[] )
    params.deltaF               = CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
    params.length               = CCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0;
 
-   badInput = goodInput;
-   badOutput = goodOutput;
+#ifndef LAL_NDEBUG
+   COMPLEX8FrequencySeries badInput = goodInput;
+   COMPLEX8FrequencySeries badOutput = goodOutput;
+#endif
 
    /* allocate input and output vectors */
    LALCCreateVector(&status, &(goodInput.data),
@@ -400,7 +400,7 @@ main( int argc, char *argv[] )
      {
        return code;
      }
-     cPtr = badOutput.data->data;
+     COMPLEX8                   *cPtr = badOutput.data->data;
      badOutput.data->data = NULL;
      LALCCoarseGrainFrequencySeries(&status, &badOutput, &goodInput, &params);
      if ( ( code = CheckStatus(&status, COARSEGRAINFREQUENCYSERIESH_ENULLPTR,
@@ -575,8 +575,6 @@ main( int argc, char *argv[] )
        = CCOARSEGRAINFREQUENCYSERIESTESTC_DELTAF0;
 
    } /* if ( ! lalNoDebug ) */
-#else
-   cPtr = NULL;
 #endif /* LAL_NDEBUG */
 
    LALCDestroyVector(&status, &(goodOutput.data));

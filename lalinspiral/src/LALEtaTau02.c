@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Duncan Brown, Jolien Creighton, B.S. Sathyaprakash
+*  Copyright (C) 2007 Duncan Brown, Jolien Creighton, B.S. Sathyaprakash, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -67,15 +67,36 @@ LALEtaTau02(
    void      *p
    )
 {
-   EtaTau02In *q;
+   XLALPrintDeprecationWarning("LALEtaTau02", "XLALEtaTau02");
 
    INITSTATUS(status, "LALEtaTau02", LALETATAU02C);
    ATTATCHSTATUSPTR(status);
-   ASSERT (p,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
-   ASSERT(eta > 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);
+   ASSERT (x,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
-   q = (EtaTau02In *) p;
-   *x = -q->t2 + q->A2/pow(eta,0.4) * (1. + q->B2*eta);
+   *x = XLALEtaTau02(eta, p);
+   if (XLAL_IS_REAL8_FAIL_NAN(*x))
+      ABORTXLAL(status);
+
    DETATCHSTATUSPTR(status);
    RETURN(status);
+}
+
+REAL8
+XLALEtaTau02(
+   REAL8     eta,
+   void      *p
+   )
+{
+   REAL8 x;
+   EtaTau02In *q;
+
+   if (p == NULL)
+      XLAL_ERROR_REAL8(XLAL_EFAULT);
+   if (eta <= 0)
+      XLAL_ERROR_REAL8(XLAL_EDOM);
+
+   q = (EtaTau02In *) p;
+   x = -q->t2 + q->A2/pow(eta,0.4) * (1. + q->B2*eta);
+
+   return x;
 }

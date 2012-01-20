@@ -304,15 +304,6 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, gpsinput );
           exit( 1 );
         }
-        if ( gpsinput > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
-              long_options[option_index].name, gpsinput );
-          exit( 1 );
-        }
         gpsStartTime.gpsSeconds = gpsinput;
 
         this_proc_param = this_proc_param->next = 
@@ -328,15 +319,6 @@ int main( int argc, char *argv[] )
               "GPS start time is prior to " 
               "Jan 01, 1994  00:00:00 UTC:\n"
               "(%ld specified)\n",
-              long_options[option_index].name, gpsinput );
-          exit( 1 );
-        }
-        if ( gpsinput > 999999999 )
-        {
-          fprintf( stderr, "invalid argument to --%s:\n"
-              "GPS start time is after " 
-              "Sep 14, 2011  01:46:26 UTC:\n"
-              "(%ld specified)\n", 
               long_options[option_index].name, gpsinput );
           exit( 1 );
         }

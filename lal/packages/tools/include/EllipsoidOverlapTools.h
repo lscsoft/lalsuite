@@ -29,18 +29,15 @@
  */
 
 #if 0
-<lalVerbatim file="EllipsoidOverlapToolsHV">
 Author: Robinson, C. A. and Sengupta, A. S.
-$Id$
-</lalVerbatim>
 #endif
 
 #ifndef _ELLIPSOIDOVERLAPTOOLS_H
 #define _ELLIPSOIDOVERLAPTOOLS_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
 
@@ -65,7 +62,7 @@ NRCSID( ELLIPSOIDOVERLAPTOOLSH, "$Id$" );
 
 typedef struct tagfContactWorkSpace
 {
-    SWIGLAL_STRUCT_LALALLOC();
+    SWIGLAL_STRUCT(fContactWorkSpace);
     /* Dimension of the matrices & vectors */
     UINT4             n;
 

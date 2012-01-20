@@ -19,12 +19,10 @@
 
 /**
 \author UTB Relativity Group; contact whelan@phys.utb.edu
-\file
-\ingroup stochastic
+\addtogroup StochasticOmegaGW_c
 
 \brief Generates a frequency series containing a simple power law spectrum.
 
-\heading{Description}
 The strength of a stochastic gravitational wave background is
 defined as
 \f{equation}{
@@ -92,6 +90,7 @@ include "broken" power law spectra
 \f}</li>
 </ul>
 
+@{
 */
 
 #include <lal/LALStdlib.h>
@@ -245,3 +244,5 @@ LALStochasticOmegaGW(
 
   RETURN(status);
 }
+
+/** @} */

@@ -46,11 +46,15 @@
 #define _BINARYPULSARTIMING_H
 
 /* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT_LALALLOC)
-#define SWIGLAL_STRUCT_LALALLOC(...)
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
 #endif
 
+#include <ctype.h>
+#include <unistd.h>
+
 #include <lal/LALStdlib.h>
+#include <lal/StringVector.h>
 
 NRCSID (BINARYPULSARTIMINGH,"$Id$");
 
@@ -89,7 +93,7 @@ not be in the binary timing routine"
 typedef struct
 tagBinaryPulsarParams
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(BinaryPulsarParams);
   CHAR *name;   /**< pulsar name */
 
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
@@ -254,7 +258,7 @@ tagBinaryPulsarParams
 typedef struct
 tagBinaryPulsarInput
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(BinaryPulsarInput);
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
 }BinaryPulsarInput;
 
@@ -262,7 +266,7 @@ tagBinaryPulsarInput
 typedef struct
 tagBinaryPulsarOutput
 {
-  SWIGLAL_STRUCT_LALALLOC();
+  SWIGLAL_STRUCT(BinaryPulsarOutput);
   REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 
@@ -294,6 +298,33 @@ void
 LALReadTEMPOParFile( LALStatus              *status,
                      BinaryPulsarParams    *output,
                      CHAR                  *pulsarAndPath );
+
+/** \brief This function will read in a TEMPO-style parameter correlation matrix
+ * 
+ * This function will read in a TEMPO-style parameter correlation matrix file,
+ * which contains the correlations between parameters as fit by TEMPO. An
+ * example the format would be:
+\verbatim
+     RA     DEC    F0
+RA   1.000  
+DEC  0.954  1.000
+F0   -0.007 0.124  1.000
+\endverbatim
+ * 
+ * In the output all parameter names will sometimes be
+ * converted to a more convenient naming convention. If non-diagonal parameter
+ * correlation values are +/-1 then they will be converted to be +/-0.99999 to
+ * avoid some problems of the matrix becoming singular. The output matrix will
+ * have both the upper and lower triangle completed.
+ * 
+ * \param cormat [out] A REAL8 array into which the correlation matrix will be
+ * output
+ * \param params [out] A vector of strings containing the parameter names of
+ * those within the correlation matrix in the order that they are present
+ * \param corfile [in] A string containing the path and filename of the
+ * TEMPO-style correlation matrix file
+ */ 
+LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
 /** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the
  * number of degrees as a float degs is the string containing the

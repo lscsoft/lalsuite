@@ -1,5 +1,2 @@
-#opt/lscsoft/lalburst/bin/lal-version
-opt/lscsoft/lalburst/etc/*
-#opt/lscsoft/lalburst/etc/*-user-env.*
-opt/lscsoft/lalburst/lib/*.so*
-#opt/lscsoft/lalburst/share/lal
+usr/lib/*.so*
+etc/*

@@ -218,12 +218,6 @@ B.J.\ Owen, Phys.\ Rev.\ D 53, 6749 (1996).
   Performance of maximum-likelihood and cross-correlation statistics",
   unpublished.
 
-\anchor Frigo1998 <b>[Frigo1998]</b>
-  M. Frigo and S. G. Johnson,
-  <em>FFTW User's Manual</em>,
-  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
-  URL: <a href="http://www.fftw.org/doc/">http://www.fftw.org/doc/</a>
-
 \anchor ab1999 <b>[ab1999]</b>
 Warren G. Anderson and R. Balasubramanian, <em>Time-frequency
 detection of gravitational waves</em>, gr-qc/9905023, and references
@@ -238,7 +232,7 @@ N. Arnaud, F. Cavalier, M. Davier, P. Hello, and T. Pradier,
 <em>Triggers for the Detection of Gravitational Wave Bursts</em>,
 gr-qc/9903035.
 
-\anchor abcf2000 <b>[abcf2000]</b>
+\anchor ABCF2001 <b>[ABCF2001]</b>
 Warren G. Anderson, Patrick R. Brady, Jolien D. E. Creighton and É.\ É.\ Flanagan,
 <em>An excess power statistic for detection of burst sources of
 gravitational radiation</em>, PRD 63, 042003 (2001) (gr-qc/0008066).
@@ -255,7 +249,7 @@ Int. J. Modern. Phys. D.
  <em>Removal of interference from gravitational wave spectrum</em>, in
  <em>Proceedings of the 2nd workshop on Gravitational Wave
   Data Analysis</em>.
-  Edts. M. Davier and P. Hello. Editions Fronti\`eres,
+  Edts. M. Davier and P. Hello. Editions Frontières,
   France (1998) pp. 255-260
 
 \anchor Sintes1998c <b>[Sintes1998c]</b>
@@ -300,5 +294,92 @@ Int. J. Modern. Phys. D.
 \anchor iso8601 <b>[iso8601]</b>
   <em>International Standard ISO 8601</em> (International Organization for
   Standardization, Switzerland, 1988, http://www.iso.ch)
+
+\anchor fj_1998 <b>[fj_1998]</b>
+  M. Frigo and S. G. Johnson, <em>FFTW User's Manual</em>,
+  (Massachusetts Institute of Technology, Cambridge, USA, 1998).
+  URL: http://www.fftw.org/doc
+
+\anchor Halliday_2001 <b>[Halliday2001]</b>
+  D. Halliday, R. Resnick, and J. Walker, <em>Fundamentals of Physics</em>.  (Wiley \& Sons, New York, 2001)
+
+\anchor Geddes_1992 <b>[Geddes1992]</b>
+  K. O. Geddes, S. R. Czapor, and G. Labahn, <em>Algorithms for computer algebra</em>.  (Kluwer Academic, Boston, 1992)
+
+\anchor LIGOVIRGO_2000 <b>[LIGOVIRGO_2000]</b>
+  LIGO Data Group and VIRGO Data Acquisition Group, "Specification of a
+  Common Data Frame Format for Interferometric Gravitational Wave Detectors (IGWD)",
+  LIGO Technical Note <a href="http://www.ligo.caltech.edu/docs/T/T970130-D.pdf">LIGO-T970130</a>
+
+\anchor Althouse_1999 <b>[Althouse_1999]</b>
+  William Althouse, Larry Jones, and Albert Lazzarini, "Determination of Global and Local Coordinate Axes for the LIGO Sites",
+  LIGO Technical Note <a href="http://www.ligo.caltech.edu/docs/T/T980044-10.pdf">LIGO-T980044</a>
+
+\anchor Lazzarini_1995 <b>[Lazzarini_1995]</b>
+  Albert Lazzarini, "Derivation of Global and Local Coordinate Axes for the LIGO Sites", LIGO Technical Note LIGO-T950004
+
+\anchor FinnLazzarini_2001 <b>[FinnLazzarini_2001]</b>
+  L. S. Finn and A. Lazzarini, Phys. Rev. D 64, 082002 (2001)
+
+\anchor Allen_1996 <b>[Allen_1996]</b>
+  B. Allen, "Gravitational Wave Detector Sites," gr-qc/9607075 (1996)
+
+\anchor ABCCRW_2001 <b>[ABCCRW_2001]</b>
+  Warren Anderson, Patrick Brady, David Chin, Jolien Creighton, Keith Riles, and John Whelan
+  "Beam Pattern Response Functions and Times of Arrival for Earthbound Interferometer"
+  <a href="http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf">LIGO-T010110-00-Z</a>
+
+\anchor Anderson_2000 <b>[Anderson_2000]</b>
+  W. G. Anderson, J. T. Whelan, P. R. Brady, J. D. E. Creighton,
+  D. Chin, and K. Riles, "Beam Pattern Response Functions and Times
+  of Arrival for Earthbound Interferometers", Maple worksheet,
+  pdf version at <a href="http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/T010110.pdf">T010110.pdf</a>
+
+\anchor Maggiore_2000b <b>[Maggiore_2000b]</b>
+  M. Maggiore, "Gravitational Wave Experiments and Early Universe Cosmology",
+  Phys. Rept. \c 331, 283-367 (2000); <a href="http://www.arXiv.org/abs/gr-qc/9909001">gr-qc/9909001</a>
+
+\anchor Zhou_1995 <b>[Zhou_1995]</b>
+  C. Z. Zhou and P. F. Michelson,
+  "Spherical resonant-mass gravitational wave detectors",
+  Phys. Rev. D. <b>51</b>, 2517-2545 (1995).
+
+\anchor Bianchi_1998 <b>[Bianchi_1998]</b>
+  M. Bianchi, M. Brunetti, E. Coccia, F. Fucito, and J. A. Lobo,
+  "Cross section of a resonant-mass detector for scalar gravitational waves"
+  Phys. Rev. D. \c 57, 4525--4534 (1998); <a href="http://www.arXiv.org/abs/gr-qc/9709045">gr-qc/9709045</a>.
+
+\anchor Maggiore_2000a <b>[Maggiore_2000a]</b>
+  M. Maggiore and A. Nicholis, "Detection strategies for scalar
+  gravitational waves with interferometers and resonant spheres",
+  Phys. Rev. D \c 62, 024004 (2000); <a href="http://www.arXiv.org/abs/gr-qc/9907055">gr-qc/9907055</a>
+
+\anchor DupuisWoan2005 <b>[DupuisWoan2005]</b>
+  R. Dupuis and G. Woan, <i>Bayesian estimation of pulsar parameters from
+  gravitational wave data</i>, <a
+  href="http://adsabs.harvard.edu/abs/2005PhRvD..72j2002D">Phys. Rev. D,
+  <b>72</b>, 102002 (2005)</a>
+
+\anchor Jones2010 <b>Jones2010</b> 
+  D. I. Jones, <i>Gravitational wave emission from rotating superfluid neutron
+  stars</i>, <a href="http://adsabs.harvard.edu/abs/2010MNRAS.402.2503J">MNRAS,
+  <b>402</b>, 4, 2503-2519 (2010)</a>
+
+\anchor VeitchVecchio2010 <b>VeitchVecchio2010</b>
+  J. Veitch and A. Vecchio, <i>Bayesian coherent analysis of in-spiral
+  gravitational wave signals with a detector network</i>, <a
+  href="http://adsabs.harvard.edu/abs/2010PhRvD..81f2003V">Phys. Rev. D, 
+  <b>81</b>, 062003 (2010)</a>
+
+\anchor Skilling2006 <b>Skilling2006</b>
+  J. Skilling, <i>Nested sampling for general Bayesian computation</i>, <a
+href="http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.117.5542&rep=rep1
+&type=pdf">Bayesian Analysis, <b>1</b>, 4, 833-860 (2006)</a>
+
+\anchor Scargle1998 <b>Scargle1998</b>
+  J. D. Scargle, <i>Studies in Astronomical Time Series Analysis. V. Bayesian
+Blocks, a New Method to Analyze Structure in Photon Counting Data</i>, <a
+href="http://adsabs.harvard.edu/abs/1998ApJ...504..405S">Ap. J., <b>504</b>,
+  405 (1998)</a>
 
 */

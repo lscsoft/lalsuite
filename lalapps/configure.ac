@@ -1,4 +1,4 @@
-AC_INIT([lalapps],[6.5.0.3],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalapps],[6.6.3.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
 AC_CONFIG_AUX_DIR([misc])
@@ -11,7 +11,6 @@ AC_CONFIG_FILES([\
   man/Makefile \
   misc/Makefile \
   src/Makefile \
-  src/lalapps/defaults.py \
   src/lalapps/Makefile \
   src/calibration/Makefile \
   src/frametools/Makefile \
@@ -46,6 +45,7 @@ AC_CONFIG_FILES([\
   src/pulsar/SFTReferenceLibrary/Makefile \
   src/tracksearch/Makefile \
   src/online/Makefile \
+  src/hwinjection/Makefile \
 ])
 AM_INIT_AUTOMAKE([foreign])
 AH_TOP([
@@ -58,6 +58,7 @@ AH_BOTTOM([
 AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
+LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
 LALAPPS_WITH_CC
 LALAPPS_WITH_LAL_PREFIX
@@ -75,21 +76,22 @@ LALAPPS_ENABLE_STATIC_BINARIES
 
 LALAPPS_ENABLE_MPI
 
+LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAME
 LALAPPS_ENABLE_METAIO
 LALAPPS_ENABLE_CFITSIO
 LALAPPS_ENABLE_PSS
+LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALXML
+LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALSTOCHASTIC
-
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalapps])
 
 # put version/configure info in config header
 lalapps_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -122,6 +124,9 @@ else
   allstatic="true"
 fi
 
+# workaround broken libtool multilib support on sl6
+LALSUITE_MULTILIB_LIBTOOL_HACK
+
 # check for c compiler
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
@@ -142,6 +147,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
+AC_PROG_AWK
 
 # check for condor_compile
 AC_ENABLE_SHARED
@@ -220,9 +226,33 @@ CPPFLAGS="$CPPFLAGS $GSL_CFLAGS"
 LIBS="$GSL_LIBS $LIBS"
 AC_CHECK_LIB([gslcblas],[main],,[AC_MSG_ERROR([could not find the gsl library])])
 AC_CHECK_LIB([gsl],[gsl_version],,[AC_MSG_ERROR([could not find the gsl library])])
+LALSUITE_ENABLE_FAST_GSL
 
 # check for gsl headers
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
+
+# check for fftw libraries
+if test "${fftw}" = "true"; then
+  PKG_CHECK_MODULES([FFTW3],[fftw3 fftw3f],[true],[false])
+  CPPFLAGS="$CPPFLAGS $FFTW3_CFLAGS"
+  LIBS="$LIBS $FFTW3_LIBS"
+  AC_CHECK_LIB([fftw3f],[fftwf_execute_dft],,[AC_MSG_WARN([could not find the fftw3f library])],[-lm])
+  AC_CHECK_LIB([fftw3],[fftw_execute_dft],,[AC_MSG_WARN([could not find the fftw3 library])],[-lm])
+fi
+
+# check for fftw headers
+if test "${fftw}" = "true"; then
+  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_WARN([could not find the fftw3.h header])])
+fi
+LALSUITE_ENABLE_MODULE([FFTW],[fftw])
+
+# check for GDS system: we check if we can link against libawg which is in GDS
+# GDS is a requirements for building 'online_psinject', which is used for hardware injections
+if test "${gds}" = "true"; then
+  AC_CHECK_LIB([awg],[awgGetChannelNames],,[gds="false"])
+  AC_CHECK_HEADERS([gdstype.h],,[gds="false"])
+fi
+LALSUITE_ENABLE_MODULE([GDS],[gds])
 
 # check for libFrame
 if test "${frame}" = "true"; then
@@ -272,6 +302,27 @@ if test "${metaio}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([METAIO],[metaio])
 
+# check for libxml2
+if test "$lalxml" = "true"; then
+  PKG_CHECK_MODULES([LIBXML2],[libxml-2.0 >= 2.6],[true],[false])
+  lal_pre_libxml2_LIBS="$LIBS"
+  LIBS="$LIBS $LIBXML2_LIBS"
+  AC_SEARCH_LIBS([xmlInitParser],[xml2],,
+                 [AC_MSG_WARN([cannot find the xml2 library])]
+                 [lalxml="false"]
+                 [LIBS="$lal_pre_libxml2_LIBS"])
+fi
+
+# check for libxml2 headers
+if test "$lalxml" = "true"; then
+  lal_pre_libxml2_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $LIBXML2_CFLAGS"
+  AC_CHECK_HEADERS([libxml/tree.h],,
+                   [AC_MSG_WARN([could not the libxml/tree.h header])]
+                   [lalxml="false"]
+                   [CPPFLAGS="$lal_pre_libxml2_CPPFLAGS"])
+fi
+
 # check for libcfitsio
 if test "${cfitsio}" = "true"; then
   PKG_CHECK_MODULES([CFITSIO],[cfitsio],[true],[false])
@@ -311,6 +362,7 @@ if test "${pss}" = "true"; then
                  [LIBS="$lal_pre_pss_LIBS"])
 fi
 
+
 # check for pss headers
 if test "${pss}" = "true"; then
   lal_pre_pss_CPPFLAGS="$CPPFLAGS"
@@ -336,16 +388,17 @@ if test "${boinc}" = "true" ; then
 fi
 
 # check for lal libararies and headers
-LALSUITE_CHECK_LIB([LAL],[6.5.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
-LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.2],[LALFrOpen],[lal/LALFrameL.h])
-LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.0.1],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
-LALSUITE_CHECK_OPT_LIB([LALXML],[1.0.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
-LALSUITE_CHECK_OPT_LIB([LALBurst],[1.0.1],[XLALEPSearch],[lal/EPSearch.h])
-LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.1.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALInference],[0.0.0.1],[LALInferenceAddVariable],[lal/LALInference.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.1.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
-LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.1],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
+LALSUITE_CHECK_LIB([LAL],[6.6.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.6.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[1.0.3],[LALFrOpen],[lal/LALFrameL.h])
+LALSUITE_CHECK_OPT_LIB([LALMetaIO],[1.0.2],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
+LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.1],[XLALXMLFilePrintElements],[lal/LALXML.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[0.1.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+LALSUITE_CHECK_OPT_LIB([LALBurst],[1.1.0],[XLALEPSearch],[lal/EPSearch.h])
+LALSUITE_CHECK_OPT_LIB([LALInspiral],[1.2.0],[LALInspiralParameterCalc],[lal/LALInspiral.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[0.1.0],[LALInferenceAddVariable],[lal/LALInference.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[1.2.0],[XLALComputeFaFb],[lal/ComputeFstat.h])
+LALSUITE_CHECK_OPT_LIB([LALStochastic],[1.1.2],[LALStochasticOptimalFilter],[lal/StochasticCrossCorrelation.h])
 
 # back to c mode
 if test "${boinc}" = "true" ; then
@@ -405,11 +458,13 @@ echo "
 
         LALApps has now been successfully configured:
 
+                FFTW library support is $FFTW_ENABLE_VAL
                 Frame library support is $FRAME_ENABLE_VAL
                 MetaIO library support is $METAIO_ENABLE_VAL
                 LAL Frame library support is $LALFRAME_ENABLE_VAL
                 LAL MetaIO library support is $LALMETAIO_ENABLE_VAL
                 LAL XML library support is $LALXML_ENABLE_VAL
+                LAL Simulation library support is $LALSIMULATION_ENABLE_VAL
                 LAL Burst library support is $LALBURST_ENABLE_VAL
                 LAL Inspiral library support is $LALINSPIRAL_ENABLE_VAL
                 LAL Stochastic library support is $LALSTOCHASTIC_ENABLE_VAL
@@ -420,6 +475,7 @@ echo "
                 Condor support is $CONDOR_ENABLE_VAL
                 BOINC support is $BOINC_ENABLE_VAL
                 MPI support is $MPI_ENABLE_VAL
+                GDS support is $GDS_ENABLE_VAL
 
         Now run 'make' to build LALApps
         and run 'make install' to install LALApps
