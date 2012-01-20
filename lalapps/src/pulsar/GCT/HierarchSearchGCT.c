@@ -481,8 +481,8 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "segmentList",  0, UVAR_OPTIONAL, "ALTERNATIVE: file containing a segment list: lines of form <startGPS endGPS duration[h] NumSFTs>", &uvar_segmentList),  &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "recalcToplistStats", 0, UVAR_OPTIONAL, "Additional analysis for toplist candidates, recalculate 2F, 2FX at finegrid", &uvar_recalcToplistStats), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "computeLV",    0, UVAR_OPTIONAL,  "Compute LineVeto stat for all candidates from single- and multi-IFO F-stats, can be used as main toplist statistic", &uvar_computeLV), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "LVrho",        0, UVAR_OPTIONAL,  "Prior parameter rho_max_line for LineVeto statistic, must be >=0", &uvar_LVrho), &status);
-  LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "Line-to-gauss prior ratios lX for LineVeto statistic, length must be numDetectors and each value >=0. Defaults to lX=1.0 for all X", &uvar_LVlX), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "LVrho",        0, UVAR_OPTIONAL,  "LineVeto: Prior rho_max_line, must be >=0", &uvar_LVrho), &status);
+  LAL_CALL( LALRegisterLISTUserVar(   &status, "LVlX",         0, UVAR_OPTIONAL,  "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..", &uvar_LVlX), &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -492,7 +492,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount, 2=LV-stat",  &uvar_SortToplist), &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "Which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "LineVeto: which terms to include - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputTiming", 0, UVAR_DEVELOPER, "Append timing information into this file", &uvar_outputTiming), &status);
@@ -1014,7 +1014,7 @@ int MAIN( int argc, char *argv[]) {
        return( HIERARCHICALSEARCH_EXLAL );
       }
       for (UINT4 X = 0; X < numDetectors; X++) {
-        if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, (REAL4*)&usefulParams.LVlX->data[X] ) ) {
+        if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVlX->data[X] ) ) {
           fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
           return ( HIERARCHICALSEARCH_EBAD );
         }
@@ -2436,10 +2436,13 @@ void UpdateSemiCohToplist(LALStatus *status,
       for (UINT4 X = 0; X < in->numDetectors; X++)
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
+
+      REAL4 *lX = NULL;
       if ( usefulparams->LVlX )
-        line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, usefulparams->LVlX->data, usefulparams->LVuseAllTerms );
-      else
-        line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, NULL, usefulparams->LVuseAllTerms );
+        lX = usefulparams->LVlX->data;
+
+      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, lX, usefulparams->LVuseAllTerms );
+
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
         ABORT ( status, HIERARCHICALSEARCH_EXLAL, HIERARCHICALSEARCH_MSGEXLAL );
