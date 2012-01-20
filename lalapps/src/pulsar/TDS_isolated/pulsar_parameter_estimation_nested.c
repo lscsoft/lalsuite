@@ -318,6 +318,76 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
   
+  /* set up a k-d tree of the live points */
+  {              
+    /* create new tree out of current live points */
+    LALInferenceKDTree *tree;
+    
+    REAL8 *low, *high; /* upper and lower bounds of tree */
+    size_t ndim = 0;
+    LALInferenceVariableItem *currentItem;
+    INT4 cnt = 0, Nlive;
+    REAL8 *pt;
+    LALInferenceVariables *template =
+      XLALCalloc(1,sizeof(LALInferenceVariables));
+                    
+    low = XLALMalloc(ndim*sizeof(REAL8));
+    high = XLALMalloc(ndim*sizeof(REAL8));
+    pt = XLALMalloc(ndim*sizeof(REAL8));
+                    
+    /* get bounds for each parameter */
+    currentItem = runState.currentParams->head;
+    while ( currentItem != NULL ) {
+      if (currentItem->vary != LALINFERENCE_PARAM_FIXED || 
+          currentItem->vary != LALINFERENCE_PARAM_OUTPUT) {
+        if( LALInferenceCheckMinMaxPrior( runState.priorArgs,
+                                          currentItem->name ) ){
+          LALInferenceGetMinMaxPrior( runState.priorArgs,
+                                      currentItem->name, &(low[cnt]), 
+                                      &(high[cnt]) );
+          fprintf(stderr, "high = %le, low = %le\n", high[cnt], low[cnt]);
+          cnt++;
+        }
+        else if( LALInferenceCheckGaussianPrior( runState.priorArgs,
+                                                 currentItem->name ) ){
+          REAL8 mn, stddiv;
+          
+          LALInferenceGetGaussianPrior( runState.priorArgs,
+                                        currentItem->name, &mn, &stddiv );
+                          
+          /* set limits at the 5 sigma ranges */
+          low[cnt] = mn - 5.*stddiv;
+          high[cnt] = mn + 5*stddiv;
+          cnt++;           
+        }
+      }
+      
+      currentItem = currentItem->next;
+    }
+    
+    ndim = cnt;
+    
+    /* set up tree */
+    tree = LALInferenceKDEmpty( low, high, ndim );
+    LALInferenceCopyVariables( runState.currentParams, template );
+    
+    Nlive = *(INT4*)LALInferenceGetVariable( runState.algorithmParams, 
+                                             "Nlive" );
+    
+    /* add points to tree */
+    for( cnt = 0; cnt < Nlive; cnt++ ){
+      LALInferenceKDVariablesToREAL8( runState.livePoints[cnt], pt, template);
+      LALInferenceKDAddPoint( tree, pt );
+    }
+        
+    LALInferenceAddVariable( runState.proposalArgs, "kDTree", &tree,
+                             LALINFERENCE_void_ptr_t,
+                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( runState.proposalArgs, "kDTreeVariableTemplate",
+                             &template, LALINFERENCE_void_ptr_t,
+                             LALINFERENCE_PARAM_FIXED );                   
+  }  
+  
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
   printf("Done nested sampling algorithm\n");
@@ -1880,7 +1950,7 @@ set.\n", propfile, tempPar);
       
       /* get the mean and standard deviation of the Gaussian prior */
       LALInferenceGetGaussianPrior( runState->priorArgs, checkPrior->name, 
-                                    &mu, (void *)&sigma );
+                                    &mu, &sigma );
       
       /* set the scale factor to be the sigma value */
       scale = sigma;
