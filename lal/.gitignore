@@ -37,6 +37,7 @@ doc/lsd.toc
 include/config.h
 include/config.h.in
 include/lal/*.h
+include/lal/*.i
 include/lal/stamp-h2
 include/stamp-h1
 lal-*.tar.gz

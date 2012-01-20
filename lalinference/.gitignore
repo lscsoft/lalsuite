@@ -14,6 +14,7 @@ configure
 include/config.h
 include/config.h.in
 include/lal/*.h
+include/lal/*.i
 include/stamp-h1
 lalinference-*.tar.gz
 lalinference.pc

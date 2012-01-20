@@ -1,0 +1,10 @@
+swig-iface-header-*.swg
+swig-lal*.i
+octave/.swig-lal*.deps
+octave/swiglal*.cpp
+octave/swiglal*.oct
+python/.swig-lal*.deps
+python/swiglal*.cpp
+python/swiglal*.py
+python/_swiglal*.so
+python/build/
