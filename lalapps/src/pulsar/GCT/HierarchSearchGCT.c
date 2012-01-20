@@ -107,7 +107,7 @@ int global_argc;
 #define F2DOT           0.0       /**< Default value of second spindown */
 #define DF2DOT          0.0       /**< Default range of second spindown parameter */
 #define SKYREGION       "allsky" /**< default sky region to search over -- just a single point*/
-#define DTERMS          16    /**< Default number of dirichlet kernel terms for calculating Fstat */
+#define DTERMS          8    /**< Default number of dirichlet kernel terms for calculating Fstat */
 
 /**< Default number of dirichlet kernel terms for calculating Fstat */
 #define MISMATCH        0.3       /**< Default for metric grid maximal mismatch value */
