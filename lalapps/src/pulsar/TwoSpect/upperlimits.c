@@ -220,7 +220,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n", __func__, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      REAL8 lo = 0.01*initialguess, hi = 5.0*initialguess;
+      REAL8 lo = 0.001*initialguess, hi = 10.0*initialguess;
       pars.val = 2.0*loudestoutlier;
       pars.dof = 2.0*loudestoutliernoise;
       pars.ULpercent = 0.95;

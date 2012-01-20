@@ -591,8 +591,8 @@ int main(int argc, char *argv[])
          //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
-      //REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //Better in case of strong lines (approaches mean value)
+      REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
+      //REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //Better in case of strong lines (approaches mean value)
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
