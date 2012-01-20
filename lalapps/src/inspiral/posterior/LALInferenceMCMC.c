@@ -164,7 +164,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   INT4 verbose=0,tmpi=0;
   unsigned int randomseed=0;
-  REAL8 tempMax = 10.0;
+  REAL8 tempMax = 50.0;
   ProcessParamsTable *commandLine=runState->commandLine;
   ProcessParamsTable *ppt=NULL;
   FILE *devrandom;
@@ -182,7 +182,8 @@ void initializeMCMC(LALInferenceRunState *runState)
   runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
-  runState->proposalStats=XLALCalloc(1,sizeof(LALInferenceVariables));
+  if(LALInferenceGetProcParamVal(commandLine,"--propVerbose"))
+    runState->proposalStats=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Set up the appropriate functions for the MCMC algorithm */
   runState->algorithm=&PTMCMCAlgorithm;
