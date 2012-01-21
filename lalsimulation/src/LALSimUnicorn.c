@@ -148,7 +148,7 @@ int XLALSimUnicorn(
 )
 {
 	REAL8Array *arr;
-	size_t rows, cols;
+	size_t rows;
 	double dt, df, fstart;
 
 	/* check sanity of input parameters */
@@ -163,7 +163,6 @@ int XLALSimUnicorn(
 
 	/* generate waveform from image */
 	rows = arr->dimLength->data[0];
-	cols = arr->dimLength->data[1];
 	df = (f_max - f_min) / rows;
 	dt = V / df;
 	fstart = f_min + 0.5 * df;

@@ -82,7 +82,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	char help[]="\
 Initialisation arguments:\n\
-(--randomseed seed           Random seed for Nested Sampling)\n\n";
+(--seed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
@@ -405,7 +405,7 @@ void initVariables(LALInferenceRunState *state)
 	INT4 aligned_spin=0;
 	char help[]="\
 Parameter arguments:\n\
-(--injXML injections.xml)\tInjection XML file to use\n\
+(--inj injections.xml)\tInjection XML file to use\n\
 (--Mmin mchirp)\tMinimum chirp mass\n\
 (--Mmax mchirp)\tMaximum chirp mass\n\
 (--etamin eta)\tMinimum eta\n\
@@ -433,7 +433,7 @@ Parameter arguments:\n\
 
 	
 	/* Read injection XML file for parameters if specified */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
 	if(ppt){
 		SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
 		if(!injTable){

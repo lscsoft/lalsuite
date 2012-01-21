@@ -63,6 +63,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --dfmax=DOUBLE            Maximum modulation depth to search (Hz)",
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky",
   "      --skyRegionFile=filename  File with the grid points",
+  "      --linPolAngle=DOUBLE      Polarization angle to search using linear \n                                  polarization (when unspecified default is \n                                  circular polarization",
   "\nTwoSpect threshold settings:",
   "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
@@ -156,11 +157,12 @@ init_help_array(void)
   gengetopt_args_info_help[51] = gengetopt_args_info_full_help[51];
   gengetopt_args_info_help[52] = gengetopt_args_info_full_help[52];
   gengetopt_args_info_help[53] = gengetopt_args_info_full_help[53];
-  gengetopt_args_info_help[54] = 0; 
+  gengetopt_args_info_help[54] = gengetopt_args_info_full_help[54];
+  gengetopt_args_info_help[55] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[55];
+const char *gengetopt_args_info_help[56];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -243,6 +245,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->dfmax_given = 0 ;
   args_info->skyRegion_given = 0 ;
   args_info->skyRegionFile_given = 0 ;
+  args_info->linPolAngle_given = 0 ;
   args_info->ihsfactor_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
@@ -320,6 +323,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->skyRegion_orig = NULL;
   args_info->skyRegionFile_arg = NULL;
   args_info->skyRegionFile_orig = NULL;
+  args_info->linPolAngle_orig = NULL;
   args_info->ihsfactor_arg = 5;
   args_info->ihsfactor_orig = NULL;
   args_info->ihsfar_arg = 0.01;
@@ -395,34 +399,35 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->dfmax_help = gengetopt_args_info_full_help[28] ;
   args_info->skyRegion_help = gengetopt_args_info_full_help[29] ;
   args_info->skyRegionFile_help = gengetopt_args_info_full_help[30] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[32] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[33] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[34] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[35] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[36] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[37] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[38] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[40] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[41] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[42] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[43] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[44] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[46] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[47] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[48] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[50] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[51] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[52] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[53] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[55] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[56] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[57] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[58] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[59] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[60] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[61] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[62] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[63] ;
+  args_info->linPolAngle_help = gengetopt_args_info_full_help[31] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[33] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[34] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[35] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[36] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[37] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[38] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[39] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[41] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[42] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[43] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[44] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[45] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[47] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[48] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[49] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[51] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[52] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[53] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[54] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[56] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[57] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[58] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[59] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[60] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[61] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[62] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[63] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[64] ;
   
 }
 
@@ -594,6 +599,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->skyRegion_orig));
   free_string_field (&(args_info->skyRegionFile_arg));
   free_string_field (&(args_info->skyRegionFile_orig));
+  free_string_field (&(args_info->linPolAngle_orig));
   free_string_field (&(args_info->ihsfactor_orig));
   free_string_field (&(args_info->ihsfar_orig));
   free_string_field (&(args_info->ihsfom_orig));
@@ -743,6 +749,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "skyRegion", args_info->skyRegion_orig, 0);
   if (args_info->skyRegionFile_given)
     write_into_file(outfile, "skyRegionFile", args_info->skyRegionFile_orig, 0);
+  if (args_info->linPolAngle_given)
+    write_into_file(outfile, "linPolAngle", args_info->linPolAngle_orig, 0);
   if (args_info->ihsfactor_given)
     write_into_file(outfile, "ihsfactor", args_info->ihsfactor_orig, 0);
   if (args_info->ihsfar_given)
@@ -1399,6 +1407,7 @@ cmdline_parser_internal (
         { "dfmax",	1, NULL, 0 },
         { "skyRegion",	1, NULL, 0 },
         { "skyRegionFile",	1, NULL, 0 },
+        { "linPolAngle",	1, NULL, 0 },
         { "ihsfactor",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
@@ -1795,6 +1804,20 @@ cmdline_parser_internal (
                 &(local_args_info.skyRegionFile_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "skyRegionFile", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Polarization angle to search using linear polarization (when unspecified default is circular polarization.  */
+          else if (strcmp (long_options[option_index].name, "linPolAngle") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->linPolAngle_arg), 
+                 &(args_info->linPolAngle_orig), &(args_info->linPolAngle_given),
+                &(local_args_info.linPolAngle_given), optarg, 0, 0, ARG_DOUBLE,
+                check_ambiguity, override, 0, 0,
+                "linPolAngle", '-',
                 additional_error))
               goto failure;
           

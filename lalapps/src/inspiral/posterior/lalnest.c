@@ -1606,7 +1606,7 @@ void NestInitManual(LALMCMCParameter *parameter, void UNUSED *iT)
 	double mcmin,mcmax;
 	parameter->param=NULL;
 	parameter->dimension = 0;
-	mcmin=manual_mass_low*pow(etamin,-3./5.);
+	mcmin=manual_mass_low*pow(etamin,3./5.);
 	mcmax=manual_mass_high*pow(0.25,3./5.);
 	double lmmin=log(mcmin);
 	double lmmax=log(mcmax);

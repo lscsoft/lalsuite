@@ -1,3 +1,11 @@
+lalframe (1.0.4-1) unstable; urgency=low
+
+  * LALFrame 1.0.4
+  * update to automake-1.11.2
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 09:38:37 -0600
+
 lalframe (1.0.3-1) unstable; urgency=low
 
   * LALFrame 1.0.3

@@ -29,6 +29,7 @@ typedef enum
   unknownDistanceDist,
   distFromSourceFile,
   uniformDistance,
+  uniformDistanceSquared,
   uniformLogDistance,
   uniformVolume,
   sfr

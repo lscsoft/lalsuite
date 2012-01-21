@@ -50,6 +50,8 @@ class LALInferenceNode(pipeline.CondorDAGNode):
     """
     def __init__(self,li_job):
         pipeline.CondorDAGNode.__init__(self,li_job)
+    def set_seed(self,seed):
+        self.add_var_opt('randomseed',seed)
     def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
@@ -150,6 +152,8 @@ class InspNestNode(pipeline.CondorDAGNode):
     """
     def __init__(self,inspnest_job):
         pipeline.CondorDAGNode.__init__(self,inspnest_job)
+    def set_seed(self,seed):
+        self.add_var_opt('seed',seed)
     def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
@@ -383,7 +387,7 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
         nest_node.add_ifo_data(data,ifos,shift_time_dict=timeslides)
         nest_node.set_event_number(event)
         p_outfile_name=os.path.join(path,'outfile_%f_%i_%s.dat'%(end_time,i,nest_node.get_ifos()))
-        nest_node.add_var_opt('seed',str(i+100))
+        nest_node.set_seed(str(i+100))
         merge_node.add_parent(nest_node)
         merge_node.add_file_arg(p_outfile_name)
         nest_node.set_output(p_outfile_name)

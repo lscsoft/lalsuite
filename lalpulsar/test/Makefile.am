@@ -102,6 +102,11 @@ pkgdata_DATA = \
 	earth09-11-DE405.dat \
 	earth09-11.dat \
 	earth09.dat \
+	earth10.dat \
+	earth11.dat \
+	earth12.dat \
+	earth13.dat \
+	earth10-13.dat \
 	earth98.dat \
 	earth99.dat \
 	sun00-04.dat \
@@ -119,6 +124,11 @@ pkgdata_DATA = \
 	sun09-11-DE405.dat \
 	sun09-11.dat \
 	sun09.dat  \
+	sun10.dat \
+	sun11.dat \
+	sun12.dat \
+	sun13.dat \
+	sun10-13.dat \
 	sun98.dat \
 	sun99.dat \
 	testTimestamps.dat

@@ -269,6 +269,18 @@ typedef void (LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data
 typedef void (LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *proposedParams);
 
+/** Jump proposal statistics
+ * Stores the weight given for a proposal function, the number of times
+ * it has been proposed, and the number of times it has been accepted
+ */
+typedef struct
+tagLALInferenceProposalStatistics
+{
+  UINT4   weight;     // Weight of proposal function in cycle
+  UINT4   proposed;   // Number of times proposal has been called
+  UINT4   accepted;   // Number of times a proposal from this function has been accepted
+} LALInferenceProposalStatistics;
+
 /** Type declaration for prior function which returns p(\param params)
   * Can depend on \param runState ->priorArgs
   */
@@ -316,6 +328,7 @@ tagLALInferenceRunState
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */
     *proposalArgs,                                   /** Any special arguments for the proposal function */
+    *proposalStats,                                  /** Set of structs containing statistics for each proposal*/
     *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
@@ -412,6 +425,12 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 
 /** Output only non-fixed parameters */
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
+
+/** Output proposal statistics header to file *fp */
+int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats);
+
+/** Output proposal statistics to file *fp */
+void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats);
 
 /** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the

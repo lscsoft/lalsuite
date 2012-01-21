@@ -85,6 +85,10 @@
     jump widths. */
 extern const char *LALInferenceSigmaJumpName;
 
+/** The name of the variable that will store the name of the current
+    proposal function. */
+extern const char *LALInferenceCurrentProposalName;
+
 /** Adds \a weight copies of the proposal \a prop to the end of the
     proposal cycle. 
 
@@ -92,7 +96,7 @@ extern const char *LALInferenceSigmaJumpName;
     LALInferenceRandomizeProposalCycle() to randomize the order of
     sub-proposal application. */
 void
-LALInferenceAddProposalToCycle(LALInferenceRunState *runState, LALInferenceProposalFunction *prop, UINT4 weight);
+LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propName, LALInferenceProposalFunction *prop, UINT4 weight);
 
 /** Randomizes the order of the proposals in the proposal cycle. */
 void 
@@ -113,6 +117,9 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
 /** Proposal for rapid sky localization.  Used when --rapidSkyLoc
     is specified. */
 void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/** Proposal for finding max temperature for PTMCMC. */
+void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Non-adaptive, sigle-variable update proposal with reasonable
     widths in each dimension. */

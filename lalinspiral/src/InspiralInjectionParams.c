@@ -92,6 +92,16 @@ SimInspiralTable* XLALRandomInspiralDistance(
   else if (dDist == uniformVolume )
   {
     /* uniform volume distribution */
+    REAL4 d3min = distMin * distMin * distMin;
+    REAL4 d3max = distMax * distMax * distMax;
+    REAL4 deltad3 = d3max - d3min ;
+    REAL4 d3;
+    d3 = d3min + deltad3 * XLALUniformDeviate( randParams );
+    inj->distance = cbrt( d3 );
+  }
+  else if (dDist == uniformDistanceSquared)
+  {
+    /* uniform distance^2 distribution */
     REAL4 d2min = distMin * distMin ;
     REAL4 d2max = distMax * distMax ;
     REAL4 deltad2 = d2max - d2min ;
