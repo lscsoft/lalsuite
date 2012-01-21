@@ -15,7 +15,9 @@ mv stuff in deb_dist/.../debian to debian/
     check Standards-version in control file. should be (at least) 3.8.4
     check Depends in control file.  misc:Depends and python-m2crypto might be missing
         Depends: ${misc:Depends}, ${python:Depends}, python-m2crypto
+
 modify changelog
+bump release in setup.cfg -- make it match debian/changelog
 bump GIT_TAG
 check-in
 tag
@@ -25,6 +27,9 @@ push (and remember to push tags)
     debuild -i -us -uc -b
 
     Change the "-b" to "-S" to build only a source package.
+
+forget all the py2dsc, debuild stuff.  Just announce new source.  MANIFEST.in
+will include debian/ so Debian maintainers can deal with the details.
 
 ==================================================================
 
