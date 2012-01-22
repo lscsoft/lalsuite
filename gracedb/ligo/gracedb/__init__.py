@@ -25,7 +25,7 @@ import os, sys
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.0-3'
+GIT_TAG = 'gracedb-1.1-1'
 
 #-----------------------------------------------------------------
 # Util routines
