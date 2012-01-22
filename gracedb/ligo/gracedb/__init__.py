@@ -25,7 +25,7 @@ import os, sys
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.0-4'
+GIT_TAG = 'gracedb-1.0-3'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -472,7 +472,7 @@ Longer strings will be truncated.""" % {
         label = args[2]
         response = client.label(graceid, label, alert=options.alert)
     elif args[0] == 'search':
-        response = client.search(" ".join(args[1:]))
+        response = client.query(" ".join(args[1:]))
     elif len(args) == 3:
         group = args[0]
         type = args[1]
