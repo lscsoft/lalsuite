@@ -340,9 +340,11 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   const UINT4 BIGWEIGHT = 20;
   const UINT4 SMALLWEIGHT = 5;
   const UINT4 TINYWEIGHT = 1;
-
+  const char defaultPropName[]="none";
   ProcessParamsTable *ppt;
-        
+  if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
+      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, &defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   /* The default, single-parameter updates. */
