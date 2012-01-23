@@ -131,7 +131,6 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
 	return count;
 }
 
-
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name)
 {
 	return LALInferenceGetItem(vars,name)->type;
@@ -1484,7 +1483,7 @@ void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LA
   LALInferenceVariableItem *templateItem = template->head;
   size_t i = 0;
   while (templateItem != NULL) {
-    if (templateItem->vary != LALINFERENCE_PARAM_FIXED || 
+    if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
         templateItem->vary != LALINFERENCE_PARAM_OUTPUT ) {
       pt[i] = *(REAL8 *)LALInferenceGetVariable(params, templateItem->name);
       i++;
@@ -1497,7 +1496,7 @@ void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LA
   LALInferenceVariableItem *templateItem = template->head;
   size_t i = 0;
   while (templateItem != NULL) {
-    if (templateItem->vary != LALINFERENCE_PARAM_FIXED || 
+    if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
         templateItem->vary != LALINFERENCE_PARAM_OUTPUT) {
       LALInferenceSetVariable(params, templateItem->name, &(pt[i]));
       i++;

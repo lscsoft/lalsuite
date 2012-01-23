@@ -377,83 +377,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
-	/* if a kd tree exists recreate it from the sprinkled points */
-        fprintf(stderr, "Recreating k-d tree\n");
-        if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
-          /* remove current tree */
-          LALInferenceRemoveVariable( runState->proposalArgs, "kDTree" );
-          
-          /* create new tree out of current live points */
-          LALInferenceKDTree *tree;
-          REAL8 *low, *high; /* upper and lower bounds of tree */
-          size_t ndim = 0;
-          LALInferenceVariableItem *currentItem;
-          UINT4 cnt = 0;
-          REAL8 *pt;
-          LALInferenceVariables *template =
-            XLALCalloc(1,sizeof(LALInferenceVariables));
-                    
-          low = XLALMalloc(ndim*sizeof(REAL8));
-          high = XLALMalloc(ndim*sizeof(REAL8));
-          pt = XLALMalloc(ndim*sizeof(REAL8));
-                    
-          /* get bounds for each parameter */
-          currentItem = runState->currentParams->head;
-          while ( currentItem != NULL ) {
-            if ( currentItem->vary != LALINFERENCE_PARAM_FIXED ||
-                 currentItem->vary != LALINFERENCE_PARAM_OUTPUT ) {
-              if( LALInferenceCheckMinMaxPrior( runState->priorArgs,
-                                                currentItem->name ) ){
-                LALInferenceGetMinMaxPrior( runState->priorArgs,
-                                            currentItem->name, &(low[cnt]), 
-                                            &(high[cnt]) );
-                fprintf(stderr, "high = %le, low = %le\n", high[cnt], low[cnt]);
-                cnt++;
-              }
-              else if( LALInferenceCheckGaussianPrior( runState->priorArgs,
-                                                       currentItem->name ) ){
-                REAL8 mn, stddiv;
-                        
-                LALInferenceGetGaussianPrior( runState->priorArgs,
-                                              currentItem->name, &mn, &stddiv );
-                          
-                /* set limits at the 5 sigma ranges */
-                low[cnt] = mn - 5.*stddiv;
-                high[cnt] = mn + 5*stddiv;
-                cnt++;           
-              }
-            }
-                      
-            currentItem = currentItem->next;
-          }
-          
-          ndim = cnt;
-          
-          /* set up tree */
-          tree = LALInferenceKDEmpty( low, high, ndim );
-          LALInferenceCopyVariables( runState->currentParams, template );
-                    
-          /* add points to tree */
-          for( cnt = 0; cnt < Nlive; cnt++ ){
-            LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt,
-                                            template );
-            
-            for (i=0; i<ndim; i++) fprintf(stderr, "%lf\n", pt[i]);
-            LALInferenceKDAddPoint( tree, pt );
-          }
-                         
-          LALInferenceAddVariable( runState->proposalArgs, "kDTree", &tree,
-                                   LALINFERENCE_void_ptr_t,
-                                   LALINFERENCE_PARAM_FIXED );
-          if ( !LALInferenceCheckVariable( runState->proposalArgs,
-                                           "kDTreeVariableTemplate" ) ){
-            LALInferenceAddVariable( runState->proposalArgs,
-                                     "kDTreeVariableTemplate", &template,
-                                     LALINFERENCE_void_ptr_t,
-                                     LALINFERENCE_PARAM_FIXED );
-          }
-        }
-	fprintf(stderr, "Recreated k-d tree\n");
+	/* setup a k-D tree if required */
+        ProcessParamsTable *pptkd = LALInferenceGetProcParamVal(
+          runState->commandLine, "--kDTree" );
+	if ( pptkd ) LALInferenceSetupkDTreeLivePoints( runState );
         
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
@@ -538,86 +465,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                                         (void *)cvm);
                   }
                   
-                  /* update kd tree */
-                  if ( LALInferenceCheckVariable( runState->proposalArgs,
-                                                  "kDTree" ) ){
-                    /* remove current tree */
-                    LALInferenceRemoveVariable( runState->proposalArgs,
-                                                "kDTree" );
-                    
-                    /* create new tree out of current live points */
-                    LALInferenceKDTree *tree;
-                    REAL8 *low, *high; /* upper and lower bounds of tree */
-                    size_t ndim = 0;
-                    LALInferenceVariableItem *currentItem;
-                    UINT4 cnt = 0;
-                    REAL8 *pt;
-                    LALInferenceVariables *template =
-                      XLALCalloc(1,sizeof(LALInferenceVariables));
-                    
-                    low = XLALMalloc(ndim*sizeof(REAL8));
-                    high = XLALMalloc(ndim*sizeof(REAL8));
-                    pt = XLALMalloc(ndim*sizeof(REAL8));
-                    
-                    /* get bounds for each parameter */
-                    currentItem = runState->currentParams->head;
-                    while ( currentItem != NULL ) {
-                      if (currentItem->vary != LALINFERENCE_PARAM_FIXED ||
-                          currentItem->vary != LALINFERENCE_PARAM_OUTPUT) {
-                        if( LALInferenceCheckMinMaxPrior( runState->priorArgs,
-                                                          currentItem->name ) ){
-                          LALInferenceGetMinMaxPrior( runState->priorArgs,
-                                                      currentItem->name, 
-                                                      &(low[cnt]), 
-                                                      &(high[cnt]) );
-                          cnt++;
-                        }
-                        else if( LALInferenceCheckGaussianPrior(
-                                   runState->priorArgs, currentItem->name ) ){
-                          REAL8 mn, stddiv;
-                        
-                          LALInferenceGetGaussianPrior( runState->priorArgs,
-                                                        currentItem->name, 
-                                                        &mn, &stddiv );
-                          
-                          /* set limits at the 5 sigma ranges */
-                          low[cnt] = mn - 5.*stddiv;
-                          high[cnt] = mn + 5*stddiv;
-                          cnt++;           
-                        }
-                      }
-                      
-                      currentItem = currentItem->next;
-                    }
-                    
-                    ndim = cnt;
-                    
-                    /* set up tree */
-                    tree = LALInferenceKDEmpty( low, high, ndim );
-                    LALInferenceCopyVariables( runState->currentParams,
-                                               template );
-                    
-                    /* add points to tree */
-                    for( cnt = 0; cnt < Nlive; cnt++ ){
-                      LALInferenceKDVariablesToREAL8(runState->livePoints[cnt],
-                                                     pt, template);
-                      LALInferenceKDAddPoint(tree, pt);
-                    }
-                  
-                  
-                    LALInferenceAddVariable( runState->proposalArgs, "kDTree",
-                                             &tree, LALINFERENCE_void_ptr_t,
-                                             LALINFERENCE_PARAM_FIXED );
-                    if ( !LALInferenceCheckVariable( runState->proposalArgs,
-                                                     "kDTreeVariableTemplate" )
-                        ){
-                      LALInferenceAddVariable( runState->proposalArgs,
-                                               "kDTreeVariableTemplate",
-                                               &template,
-                                               LALINFERENCE_void_ptr_t,
-                                               LALINFERENCE_PARAM_FIXED );
-                    }
-                  }   
+                  /* update k-d tree */
+                  if ( pptkd ) LALInferenceSetupkDTreeLivePoints( runState ); 
                 }
 	}
 	while( iter <= Nlive ||  dZ> TOLERANCE ); 
@@ -739,10 +588,6 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 		if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
 		  logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
 		else logProposalRatio=0.0;
-		
-                //fprintf(stderr, "log(prop ratio) = %lf\n", logProposalRatio);
-                //LALInferencePrintVariables(runState->currentParams);
-                //LALInferencePrintVariables(newParams);
                 
 		/* If rejected, continue to next iteration */
 		if(logPriorNew==-DBL_MAX || isnan(logPriorNew)) continue;
@@ -753,9 +598,6 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 		  logLnew=runState->likelihood(newParams,runState->data,runState->template);
 		}
                 if(logLnew > logLmin){
-                        //fprintf(stderr, "logLnew = %le, logLmin = %le\n",
-//logLnew, logLmin);
-  //                      exit(1);
 			Naccepted++;
 			logPriorOld=logPriorNew;
 			LALInferenceCopyVariables(newParams,runState->currentParams);
@@ -787,9 +629,9 @@ void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALInferenceVa
         REAL8 randnum;
         /* REAL8 STUDENTTFRAC=0.8,
               DIFFEVFRAC=0.2; */
-        REAL8 STUDENTTFRAC=0.8,
-              DIFFEVFRAC=0.2,
-              KDTREEFREAC=0.0;
+        REAL8 STUDENTTFRAC=0.2,
+              DIFFEVFRAC=0.0,
+              KDTREEFREAC=0.8;
               
         randnum=gsl_rng_uniform(runState->GSLrandom);
         /* Choose a random type of jump to propose */
@@ -1405,4 +1247,85 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 	
+}
+
+
+void LALInferenceSetupkDTreeLivePoints( LALInferenceRunState *runState ){
+  /* create a k-d tree from the nested sampling live points */
+  LALInferenceKDTree *tree;
+  REAL8 *low = NULL, *high = NULL; /* upper and lower bounds of tree */
+  size_t ndim = 0;
+  LALInferenceVariableItem *currentItem;
+  UINT4 cnt = 0;
+  REAL8 *pt = NULL;
+  LALInferenceVariables *template =
+    XLALCalloc(1,sizeof(LALInferenceVariables));
+  UINT4 Nlive = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
+                                                   "Nlive" );
+    
+  /* if a current tree exists remove it */
+  if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+    LALInferenceRemoveVariable( runState->proposalArgs, "kDTree" );
+                    
+  /* get the upper and lower bounds for each parameter */
+  currentItem = runState->currentParams->head;
+  while ( currentItem != NULL ) {
+    if ( currentItem->vary != LALINFERENCE_PARAM_FIXED &&
+         currentItem->vary != LALINFERENCE_PARAM_OUTPUT ) {
+      if( LALInferenceCheckMinMaxPrior( runState->priorArgs,
+                                        currentItem->name ) ){
+        cnt++;
+         
+        low = XLALRealloc(low, sizeof(REAL8)*cnt);
+        high = XLALRealloc(high, sizeof(REAL8)*cnt);
+        pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
+                
+        LALInferenceGetMinMaxPrior( runState->priorArgs, currentItem->name,
+                                    &(low[cnt-1]), &(high[cnt-1]) );
+      }
+      else if( LALInferenceCheckGaussianPrior( runState->priorArgs,
+                                               currentItem->name ) ){
+        REAL8 mn, stddiv;
+                
+        cnt++;
+         
+        low = XLALRealloc(low, sizeof(REAL8)*cnt);
+        high = XLALRealloc(high, sizeof(REAL8)*cnt);
+        pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
+              
+        LALInferenceGetGaussianPrior( runState->priorArgs, currentItem->name,
+                                      &mn, &stddiv );
+                          
+        /* for Gaussian prior set limits at the 5 sigma ranges */
+        low[cnt-1] = mn - 5.*stddiv;
+        high[cnt-1] = mn + 5*stddiv;        
+      }
+    }
+                      
+    currentItem = currentItem->next;
+  }
+          
+  ndim = cnt;
+          
+  /* set up tree */
+  tree = LALInferenceKDEmpty( low, high, ndim );
+  LALInferenceCopyVariables( runState->currentParams, template );
+                    
+  /* add points to tree */
+  for( cnt = 0; cnt < Nlive; cnt++ ){
+    LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, template );
+    LALInferenceKDAddPoint( tree, pt );
+  }
+                         
+  /* add tree */
+  LALInferenceAddVariable( runState->proposalArgs, "kDTree", &tree,
+                           LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
+  
+  /* if template doesn't exist add it */
+  if ( !LALInferenceCheckVariable( runState->proposalArgs,
+                                   "kDTreeVariableTemplate" ) ){
+    LALInferenceAddVariable( runState->proposalArgs, "kDTreeVariableTemplate",
+                             &template, LALINFERENCE_void_ptr_t,
+                             LALINFERENCE_PARAM_FIXED );
+  }        
 }

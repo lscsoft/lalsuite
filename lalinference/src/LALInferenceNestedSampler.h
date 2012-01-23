@@ -113,6 +113,9 @@ XLALMultiStudentDeviates(REAL4Vector  *vector,
 UINT4 LALInferenceCheckPositiveDefinite(gsl_matrix *matrix, UINT4 dim);
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
 
+/** Setup a k-D tree from the current set of live points for use as a proposal
+    distribution. */
+void LALInferenceSetupkDTreeLivePoints( LALInferenceRunState *runState );
 
 #endif
 
