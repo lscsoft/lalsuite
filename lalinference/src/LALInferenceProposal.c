@@ -865,7 +865,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     scale = 1.0;
   } else {  
     UINT4 N = LALInferenceGetVariableDimensionNonFixed(proposedParams);
-    scale = 2.38 / sqrt(2.0*N);
+    scale = 2.38 * gsl_ran_ugaussian(runState->GSLrandom) / sqrt(2.0*N);
   }
 
   for (i = 0; names[i] != NULL; i++) {
@@ -1624,6 +1624,9 @@ static int inBounds(REAL8 *pt, REAL8 *low, REAL8 *high, size_t N) {
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const size_t NCell = 64;
   LALInferenceVariables *proposalArgs = runState->proposalArgs;
+
+  const char *propName = KDNeighborhoodProposalName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
