@@ -1559,15 +1559,10 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 			ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
 			" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
 			" --url-type=file >> "+ gwfname
-			# print ldfcommand
-			retcode = subprocess.call(ldfcommand, shell=True)
-			# print retcode
-			if retcode < 0:
-				print >>sys.stderr, "ligo_data_find was terminated!", -retcode
-			else:
-				print >>sys.stderr, "ligo_data_find returned", retcode
-		except OSError, e:
-			print >>sys.stderr, "ligo_data_find failed:", e
+			subprocess.check_output(ldfcommand, shell=True)
+		except:
+			print >>sys.stderr, "ligo_data_find failed:"
+			raise
 	return gwfname
 
 
