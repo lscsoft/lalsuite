@@ -66,7 +66,7 @@ def nestPar(d,Nlive):
     j=0
     numsamp=size(alldat,0)
     for samp in alldat[1:]:
-        if samp[logLcol]>maxes[0]:
+        if samp>maxes[0]:
             maxes=maxes[1:]
             N-=1                
             print str(N)+' Parallel chains left at %d/%d'%(j,numsamp)
