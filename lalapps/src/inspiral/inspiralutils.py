@@ -1555,14 +1555,11 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 	# cache file in the function create_pegasus_cache_file.
 	for v in ifos.values():
 		# Calls a system command to create the file.
-		try:
-			ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
-			" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
-			" --url-type=file >> "+ gwfname
-			subprocess.check_output(ldfcommand, shell=True)
-		except:
-			print >>sys.stderr, "ligo_data_find failed:"
-			raise
+		ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
+		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
+		" --url-type=file >> "+ gwfname
+		make_external_call(ldfcommand)
+
 	return gwfname
 
 
