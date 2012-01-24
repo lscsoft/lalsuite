@@ -332,6 +332,12 @@ tagLALMCMCInput
   REAL4Vector* Fwfc;
   REAL4FFTPlan *longplan;
   UINT4 mylength;
+
+  /* Flags for PhenSpin approximant */  
+  InputAxis axisChoice;
+  UINT4 fixedStep;
+  UINT4 inspiralOnly;
+
 }  LALMCMCInput;
 
 

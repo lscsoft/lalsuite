@@ -1056,7 +1056,7 @@ int MAIN( int argc, char *argv[]) {
       return HIERARCHICALSEARCH_EFILE;
     }
   /* write header-line comment explaining columns */
-  fprintf ( fpSemiCoh, "%%%% Freq       Alpha      Delta     f1dot  HoughFStat AlphaBest DeltaBest MeanSig VarSig <multiF> <F1> <F2> ...\n" );
+  fprintf ( fpSemiCoh, "%%%%  Freq            Alpha              Delta              f1dot                 HoughFStat        AlphaBest          DeltaBest          MeanSig   VarSig    <multiF>   <F1>    <F2> ...\n");
 
   sort_houghFStat_toplist(semiCohToplist);
   if ( write_houghFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
