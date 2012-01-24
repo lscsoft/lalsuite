@@ -288,7 +288,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 df2dot_fg, f2dotmin_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_fg, f1dot_fg, f2dot_fg;
-  REAL4 Fstat, TwoFthreshold; /* REAL4 precision of Fstat values */
+  REAL4 Fstat;
   REAL8 A1, B1;
   // currently unused: REAL8 A2;
   REAL8 B2; /* GCT helper variables for faster calculation of u1 or u2 */
@@ -562,7 +562,9 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* 2F threshold for semicoherent stage */
-  TwoFthreshold = 2.0 * uvar_ThrF;
+#ifndef EXP_NO_NUM_COUNT
+  REAL4 TwoFthreshold = 2.0 * uvar_ThrF;
+#endif
 
   if ( (uvar_SortToplist != 0) && (uvar_SortToplist != 1) && (uvar_SortToplist != 2) ) {
     fprintf(stderr, "Invalid value specified for toplist sorting\n");
@@ -1606,7 +1608,11 @@ int MAIN( int argc, char *argv[]) {
                 REAL4 * fgrid2F = finegrid.sumTwoF + FG_INDEX(finegrid, 0);
                 FINEGRID_NC_T * fgridnc = finegrid.nc + FG_INDEX(finegrid, 0);
 #ifdef GC_SSE2_OPT
+#ifndef EXP_NO_NUM_COUNT
                 gc_hotloop( fgrid2F, cgrid2F, fgridnc, TwoFthreshold, finegrid.freqlength );
+#else
+                gc_hotloop_no_nc ( fgrid2F, cgrid2F, fgridnc, finegrid.freqlength );
+#endif
                 if ( uvar_computeLV ) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
