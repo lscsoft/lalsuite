@@ -393,4 +393,5 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
         nest_node.set_output(p_outfile_name)
     outfile_name=os.path.join(path,'outfile_%f_%s.dat'%(end_time,nest_node.get_ifos()))
     merge_node.add_file_opt('out',outfile_name,file_is_output_file=True)
+    merge_node.add_file_opt('headers',p_outfile_name+'_params.txt',file_is_output_file=False)
     return (merge_node,nest_nodes)
