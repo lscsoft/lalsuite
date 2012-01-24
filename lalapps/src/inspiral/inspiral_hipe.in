@@ -1896,7 +1896,8 @@ cohire_slide_summary_job.set_sub_file( basename + '.cohire_slide_summary' +
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
   sire_summary_job, coire_job, coire_slide_job, coire_summary_job,
   coire_slide_summary_job, coire2_job, coire2_slide_job, coire2_summary_job, 
-  coire2_slide_summary_job, cohinspbank_job, cohire_job, cohire_summary_job]
+  coire2_slide_summary_job, cohinspbank_job, cohire_job, cohire_summary_job,
+  cohire_slide_job, cohire_slide_summary_job]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1969,7 +1970,7 @@ except:
 play_jobs = [trig_job, sire_job, sire_summary_job, 
   coire_job, coire_slide_job, coire_summary_job, coire_slide_summary_job,
   coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job,
-  cohire_job, cohire_summary_job]
+  cohire_job, cohire_summary_job, cohire_slide_job, cohire_slide_summary_job]
 play_jobs.extend(thinca_jobs.values())
 play_jobs.extend(thinca_slide_jobs.values())
 play_jobs.extend(thinca2_jobs.values())
@@ -2190,7 +2191,7 @@ if inj_file:
   inj_jobs = [sire_job, sire_summary_job, 
     coire_job, coire_slide_job, coire_summary_job, coire_slide_summary_job, 
     coire2_job, coire2_slide_job, coire2_summary_job, coire2_slide_summary_job,
-    cohire_job, cohire_summary_job]
+    cohire_job, cohire_summary_job, cohire_slide_job, cohire_slide_summary_job]
   inj_jobs.extend(insp_jobs.values())
   inj_jobs.extend(insp_veto_jobs.values())
   inj_jobs.extend(insp_coh_jobs.values())
@@ -2678,8 +2679,9 @@ if not opts.ringdown:
         exttrigInjections,0,usertag=usertag,inspinjNode=inspinj)
 
     if num_slides:
+      #FIXME: Should use cohinsp_slide_jobs to use slide options:
       cohinsp_slide_nodes[ifos] = coherent_analysis(ifos,data,cohinsp_jobs[ifos],
-          dag,cohinspbank_slide_nodes[ifos],analyzed_trig_coh_data[ifos],
+          dag,cohinspbank_slide_nodes[ifos],analyzed_trig_coh_slide_data[ifos],
           exttrigInjections,1,usertag=usertag,inspinjNode=inspinj)
 
     if not doExtTrig:
@@ -2694,14 +2696,14 @@ if not opts.ringdown:
           ifos, num_slides, inj_file=inj_file, ifotag="COHERENT_" + ifos,
           usertag=usertag,inspinjNode=inspinj)
 
-    if len(cohire_nodes[ifos]):
-      cohire_segments(cohire_nodes[ifos], cohire_summary_job, dag,
+      if len(cohire_nodes[ifos]):
+        cohire_segments(cohire_nodes[ifos], cohire_summary_job, dag,
              opts.summary_coherent_inspiral_triggers,
              opts.cohire, ifos, gps_start_time, gps_end_time,
              0, inj_file=inj_file, ifotag="SUMMARY_COHERENT_" + ifos,
              usertag=usertag,inspinjNode=inspinj)
 
-      if num_slides:
+      if len(cohire_slide_nodes[ifos]) and num_slides:
         cohire_segments(cohire_slide_nodes[ifos], cohire_slide_summary_job, dag,
              opts.summary_coherent_inspiral_triggers,
              opts.cohire, ifos, gps_start_time, gps_end_time,

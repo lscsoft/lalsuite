@@ -321,7 +321,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	if(LALInferenceGetProcParamVal(commandLine,"--injXML"))
 	{
 		XLALPrintError("ERROR: --injXML option is deprecated. Use --inj and update your scripts\n");
-		XLAL_ERROR_NULL(XLAL_EINVAL);
         exit(1);
 	}
 	procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
