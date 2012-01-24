@@ -289,9 +289,12 @@ int MAIN( int argc, char *argv[]) {
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_fg, f1dot_fg, f2dot_fg;
   REAL4 Fstat, TwoFthreshold; /* REAL4 precision of Fstat values */
-  REAL8 A1, B1, B2; /* GCT helper variables for faster calculation of u1 or u2 */
+  REAL8 A1, B1;
+  // currently unused: REAL8 A2;
+  REAL8 B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
   REAL8 vel[3];
+  // currently unused: REAL8 acc[3];
   REAL8 cosAlpha, sinAlpha, cosDelta, sinDelta;
   REAL8 nvec[3]; /* unit vector pointing to sky position */
 
@@ -1135,8 +1138,6 @@ int MAIN( int argc, char *argv[]) {
       nvec[1] = sinAlpha * cosDelta;
       nvec[2] = sinDelta;
 
-      /* get amplitude modulation weights */
-
       {  /********Allocate fstat vector memory *****************/
 
         /* calculate number of bins for Fstat overhead due to residual spin-down */
@@ -1360,6 +1361,7 @@ int MAIN( int argc, char *argv[]) {
                 vel[0] = semiCohPar.vel->data[3*k];
                 vel[1] = semiCohPar.vel->data[3*k + 1];
                 vel[2] = semiCohPar.vel->data[3*k + 2];
+
                 /* currently unused:
                 REAL8 acc[3];
                 acc[0] = semiCohPar.acc->data[3*k];
@@ -1390,7 +1392,7 @@ int MAIN( int argc, char *argv[]) {
 
                 B2 = ( vel[0] * nvec[0] \
                        + vel[1] * nvec[1] \
-                       + vel[2] * nvec[2] ); /* This is \vec v \dot \vec n */
+                       + vel[2] * nvec[2] ); // This is \vec v \dot \vec n
 
                 A1 = 1.0 + B2;
 
@@ -1609,7 +1611,7 @@ int MAIN( int argc, char *argv[]) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                    gc_hotloop_no_nc( fgrid2FX, cgrid2FX, fgridnc, TwoFthreshold, finegrid.freqlength );
+                    gc_hotloop_no_nc( fgrid2FX, cgrid2FX, fgridnc, finegrid.freqlength );
                   }
                 }
 #else // GC_SSE2_OPT
@@ -1634,10 +1636,6 @@ int MAIN( int argc, char *argv[]) {
                   }
                 }
 #endif // GC_SSE2_OPT
-
-#ifndef GC_SSE2_OPT
-                /* FIXME the following diagnostic output was broken by the SSE2 code */
-#endif
 
                 /* timing */
                 if ( uvar_outputTiming ) {

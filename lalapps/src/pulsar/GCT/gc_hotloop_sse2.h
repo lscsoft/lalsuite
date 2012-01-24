@@ -1,5 +1,5 @@
 static inline void gc_hotloop (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  ) __attribute__ ((hot));
-static inline void gc_hotloop_no_nc (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  ) __attribute__ ((hot));
+static inline void gc_hotloop_no_nc (REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, UINT4 length  ) __attribute__ ((hot));
 
 #ifdef __APPLE__
 
@@ -187,10 +187,8 @@ for( ; ifreq_fg +16 < length; ifreq_fg+=16 ) {
 
 }
 
-void gc_hotloop_no_nc(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthreshold, UINT4 length  )  {
+void gc_hotloop_no_nc(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, UINT4 length  )  {
   UINT4 ifreq_fg;
-
-  REAL4 VTTTT[4] __attribute__ ((aligned (16))) = { TwoFthreshold,TwoFthreshold,TwoFthreshold,TwoFthreshold };
 
   /* ensure alignment on fine grid. note fgridnc is UCHAR*
      while fgrid2F is UINT4*  */
