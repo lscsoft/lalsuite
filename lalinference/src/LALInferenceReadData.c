@@ -1048,8 +1048,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
       XLALGPSAddGPS(&(hcross->epoch), &(injEvent->geocent_end_time));
-      XLALGPSAdd(&(hplus->epoch), -(REAL8)hplus->data->length*hplus->deltaT);
-      XLALGPSAdd(&(hcross->epoch), -(REAL8)hcross->data->length*hplus->deltaT);
+      //XLALGPSAdd(&(hplus->epoch), -(REAL8)hplus->data->length*hplus->deltaT);
+      //XLALGPSAdd(&(hcross->epoch), -(REAL8)hcross->data->length*hplus->deltaT);
       
       signalvecREAL8=XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, injEvent->longitude, injEvent->latitude, injEvent->polarization, det.site);      
       if (!signalvecREAL8) XLAL_ERROR_VOID(XLAL_EFUNC);      
