@@ -193,6 +193,10 @@ int XLALComputeFStatFreqBand (  MultiFstatFrequencySeries **fstatSeries,
 				const MultiDetectorStateSeries *multiDetStates,
 				const ComputeFParams *params);
 
+int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,
+					const LIGOTimeGPS usefulParamsRefTime,
+					const LIGOTimeGPS finegridRefTime);
+
 /* ---------- Global variables -------------------- */
 LALStatus *global_status; /* a global pointer to MAIN()s head of the LALStatus structure */
 extern int lalDebugLevel;
@@ -1710,6 +1714,14 @@ int MAIN( int argc, char *argv[]) {
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
   /*---------------------------------------------------------------------------------*/
 
+  /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
+  xlalErrno = 0;
+  XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
+  if ( xlalErrno != 0 ) {
+    XLALPrintError ("%s line %d : XLALExtrapolateToplistPulsarSpins() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+    return(HIERARCHICALSEARCH_EXLAL);
+  }
+
   /* timing */
   if ( uvar_outputTiming )
     timeEnd = XLALGetTimeOfDay();
@@ -2381,13 +2393,9 @@ void UpdateSemiCohToplist(LALStatus *status,
                           UsefulStageVariables *usefulparams)
 {
 
-  BOOLEAN translateSpins = FALSE;
-  PulsarSpins fkdot;
   REAL8 freq_fg;
   UINT4 ifreq_fg;
   GCTtopOutputEntry line;
-
-  INIT_MEM(fkdot);
 
   INITSTATUS( status, "UpdateSemiCohToplist", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -2396,29 +2404,12 @@ void UpdateSemiCohToplist(LALStatus *status,
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
-  /* check if translation to reference time of fine-grid is necessary */
-  if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) != 0 ) {
-    translateSpins = TRUE;
-    /*fprintf(stderr,"translateSpins = TRUE\n");*/
-  }
-
   /* ---------- Walk through fine-grid and insert candidates into toplist--------------- */
   for( ifreq_fg = 0; ifreq_fg < in->freqlength; ifreq_fg++ ) {
 
     freq_fg = in->freqmin_fg + ifreq_fg * in->dfreq_fg;
 
-    if ( translateSpins ) { /* propagate fkdot to reference-time  */
-      fkdot[0] = freq_fg;
-      fkdot[1] = f1dot_fg;
-      fkdot[2] = f2dot_fg;
-
-      TRY ( LALExtrapolatePulsarSpins (status->statusPtr,
-                                       fkdot, usefulparams->spinRange_refTime.refTime, fkdot, in->refTime), status );
-
-      freq_fg = fkdot[0];
-    }
-
-    line.Freq = freq_fg;
+    line.Freq = freq_fg; /* NOTE: this is not the final output frequency! For performance reasons, it will only later get correctly extrapolated for the final toplist */
     line.Alpha = in->alpha;
     line.Delta = in->delta;
     line.F1dot = f1dot_fg;
@@ -2952,6 +2943,49 @@ int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [ou
 
   /* return result */
   (*fstatSeries) = retFstatSeries;
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputeFStatFreqBand() */
+
+
+
+/** XLAL function to extrapolate the pulsar spin parameters of all toplist candidates from internal finegrid reftime to input/output reftime */
+int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,                       /**< [out/in] toplist with GCTtopOutputEntry items, 'Freq' fields will be overwritten  */
+					const LIGOTimeGPS usefulParamsRefTime, /**< reference time as requested for the final candidate output */
+					const LIGOTimeGPS finegridRefTime      /**< internal reference time of the finegrid */
+				        )
+{
+
+  /* check input parameters */
+  if ( !list )
+    XLAL_ERROR ( XLAL_EFAULT, "\nNULL pointer given instead of toplist.\n" );
+
+  /* check if translation to reference time of fine-grid is necessary */
+  if  ( XLALGPSDiff( &finegridRefTime, &usefulParamsRefTime) == 0 )
+    return XLAL_SUCCESS; /* can skip this step if reftimes are equal */
+
+  /* convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
+  REAL8 deltaTau = XLALGPSDiff( &usefulParamsRefTime, &finegridRefTime );
+
+  UINT4 numElements = list->elems;
+  for (UINT4 j = 0; j < numElements; j++ ) /* loop over toplist */
+    {
+      /* get fkdot of each candidate */
+      GCTtopOutputEntry *elem = toplist_elem ( list, j );
+      PulsarSpins fkdot;
+      fkdot[0] = elem->Freq;
+      fkdot[1] = elem->F1dot;
+      fkdot[2] = elem->F2dot;
+      /* propagate fkdot to reference-time  */
+      if ( XLALExtrapolatePulsarSpins( fkdot, fkdot, deltaTau ) != XLAL_SUCCESS )
+        {
+          XLALPrintError ("\n%s, line %d : XLALExtrapolatePulsarSpins() failed.\n\n", __func__, __LINE__);
+          XLAL_ERROR ( XLAL_EFUNC );
+        }
+      /* write back propagated frequency to toplist */
+      elem->Freq = fkdot[0];
+    }
 
   return XLAL_SUCCESS;
 
