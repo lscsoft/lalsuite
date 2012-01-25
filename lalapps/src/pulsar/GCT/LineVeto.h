@@ -114,6 +114,13 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,
 LALStringVector *
 XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV );
 
+/* these functions operate on the module-local lookup-table for logarithms,
+ * which will dynamically be generated on first use of XLALFastLog(), and can
+ * be destroyed at any time using XLALDestroyLogLUT()
+ */
+REAL8 XLALFastLog ( REAL8 x );
+void XLALDestroyLogLUT( void );
+
 #ifdef  __cplusplus
 }
 #endif
