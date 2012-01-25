@@ -56,6 +56,8 @@ pkgpython_DATA = \
 endif
 
 EXTRA_DIST = \
+	LALInferenceMCMCSampler.c \
+	LALInferenceMCMCSampler.h \
 	combine_evidence.in \
 	coherence_test.in \
 	merge_nested_sampling_runs.in \
