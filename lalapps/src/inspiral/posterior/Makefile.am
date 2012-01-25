@@ -56,13 +56,15 @@ pkgpython_DATA = \
 endif
 
 EXTRA_DIST = \
+	LALInferenceMCMCSampler.c \
+	LALInferenceMCMCSampler.h \
 	combine_evidence.in \
 	coherence_test.in \
 	merge_nested_sampling_runs.in \
 	nest_pipe.in \
 	nest_utils.py \
 	combine_evidence.py \
-    lalapps_vo_nest2pos.in
+	lalapps_vo_nest2pos.in
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
