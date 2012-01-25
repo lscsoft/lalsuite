@@ -109,7 +109,7 @@ J0534-2200, given heterodyned time domain data from the H1 detector in the file
 \code
 lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file
 J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200
---prop-file prop_J0534-2200.txt --ephem-earth
+--prior-file prior_J0534-2200.txt --ephem-earth
 lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
 lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
 100 --Nruns 1 --tolerance 0.25
@@ -128,7 +128,7 @@ F0  123.7896438753
 F1  4.592e-15
 PEPOCH 54324.8753
 \endcode
-The \c prop-file is a text file containing a list of the parameters to be
+The \c prior-file is a text file containing a list of the parameters to be
 searched over and their given upper and lower prior ranges e.g.
 \code
 h0 0 1e-21
@@ -137,7 +137,7 @@ cosiota -1 1
 psi -0.785398163397448 0.785398163397448
 \endcode
 Note that if searching over frequency parameters the ranges specified in the 
-\c prop-file should be given in terms of the pulsars rotation frequency and not
+\c prior-file should be given in terms of the pulsars rotation frequency and not
 necessarily the gravitational wave frequency e.g. for a triaxial star emitting
 gravitational waves at 100 Hz (which will be at twice the rotation frequency)
 if you wanted to search over 99.999 to 100.001 Hz then you should used
@@ -150,7 +150,7 @@ using the Advanced LIGO design noise curves and with a signal injected into the
 data is:
 \code
 lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file
-fake.par --par-file fake.par --outfile ns_fake --prop-file prop_fake.txt
+fake.par --par-file fake.par --outfile ns_fake --prior-file prior_fake.txt
 --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun
 lscsoft/share/lalpulsar/sun05-09.dat --model-type triaxial --Nlive 1000 --Nmcmc
 100 --Nruns 1 --tolerance 0.25
@@ -207,8 +207,8 @@ LALStringVector *corlist = NULL;
                      the likelihood e.g. 30 mins\n"\
 " --psi-bins          (INT4) no. of psi bins in the time-psi lookup table\n"\
 " --time-bins         (INT4) no. of time bins in the time-psi lookup table\n"\
-" --prop-file         file containing the parameters to search over and their\n\
-                     upper and lower ranges\n"\
+" --prior-file        file containing the parameters to search over and\n\
+                     their upper and lower ranges\n"\
 " --ephem-earth       Earth ephemeris file\n"\
 " --ephem-sun         Sun ephemeris file\n"\
 " --model-type        (CHAR) the signal model that you want to use. Currently\n\
@@ -221,6 +221,18 @@ LALStringVector *corlist = NULL;
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
+"\n"\
+" MCMC proposal parameters:\n"\
+" --covariance        (REAL8) relative weigth of using covariance matrix\n\
+                     of the live points as the proposal (DEFAULT = 14,\n\
+                     e.g. 70%%)\n"\
+" --temperature       (REAL8) temperature for covariance proposal\n\
+                     distribution (DEFAULT = 0.1)\n"\
+" --kDTree            (REAL8) relative weigth of using a k-D tree of the live\n\
+                     points to use as a proposal (DEFAULT = 3, e.g. 15%%)\n"\
+" --diffev            (REAL8) relative weight of using differential evolution\n\
+                     of the live points as the proposal (DEFAULT = 3, e.g.\n\
+                     15%%)\n"\
 "\n"\
 " Signal injection parameters:\n"\
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
@@ -303,12 +315,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   sumData( &runState );
   
   /* Initialise the prior distribution given the command line arguments */
-  /* Initialise the proposal distribution given the command line arguments */
-  initialiseProposal( &runState );
+  initialisePrior( &runState );
   
   gridOutput( &runState );
-  
-  runState.proposal = LALInferenceProposalPulsarNS;
   
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_model( runState.data );
@@ -318,14 +327,11 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
   
-  /* set up k-d tree is required */
-  ProcessParamsTable *ppt = LALInferenceGetProcParamVal( param_table,
-                                                         "--kDTree" );
-  if ( ppt ) LALInferenceSetupkDTreeLivePoints( &runState );
+  /* Initialise the MCMC proposal distribution */
+  initialiseProposal( &runState );
   
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
-  printf("Done nested sampling algorithm\n");
 
   /* get SNR of highest likelihood point */
   get_loudest_snr( &runState );
@@ -339,7 +345,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 /******************************************************************************/
 /*                      INITIALISATION FUNCTIONS                              */
 /******************************************************************************/
-
+ 
 /** \brief Initialises the nested sampling algorithm control
  * 
  * Memory is allocated for the parameters, priors and proposals. The nested
@@ -1108,8 +1114,8 @@ defined!\n");
  * deviation error on that parameter. For parameters where an error is present
  * the code will attempt to search over that parameter using a Gaussian prior
  * defined by the 1\f$\sigma\f$ error value. Other parameters will be set as
- * fixed by default. These can be overridden by the proposal file values
- * described in \c initialiseProposal().
+ * fixed by default. These can be overridden by the prior file values
+ * described in \c initialisePrior().
  * 
  * Based on the defined sky position defined in the par file a lookup table of
  * the detector antenna response over time and polarisation will be set by \c 
@@ -1512,7 +1518,7 @@ void add_initial_variables( LALInferenceVariables *ini,
  * 
  * For all parameters a scale factor and scale minimum range will be set. These 
  * are just initialised to 1 and 0 respectively and will be set in \c
- * initialiseProposal for any parameters that require them.
+ * initialisePrior for any parameters that require them.
  * 
  * \param var [in] Pointer to \c LALInferenceVariables type to contain
  * parameter information
@@ -1590,8 +1596,8 @@ void add_variable_scale_prior( LALInferenceVariables *var,
  * 
  * This function sets up any parameters that you require the code searches over
  * (it will overwrite anything set via the .par file if required) and specifies
- * the prior range for each. This information is contained in a proposal file 
- * specified by the command line argument \c prop-file. This file should
+ * the prior range for each. This information is contained in a prior file 
+ * specified by the command line argument \c prior-file. This file should
  * contain three columns: the first has the name of a parameter to be searched
  * over; the second has the lower limit of that parameters prior range; and the
  * third has the upper limit of the prior range. E.g.
@@ -1629,7 +1635,7 @@ void add_variable_scale_prior( LALInferenceVariables *var,
  * 
  * \param runState [in] A pointer to the LALInferenceRunState
  */
-void initialiseProposal( LALInferenceRunState *runState )
+void initialisePrior( LALInferenceRunState *runState )
 {
   CHAR *propfile = NULL;
   ProcessParamsTable *ppt;
@@ -1647,20 +1653,20 @@ void initialiseProposal( LALInferenceRunState *runState )
   
   INT4 phidef = 0, psidef = 0; /* check if phi0 and psi are in propfile */
   
-  ppt = LALInferenceGetProcParamVal( commandLine, "--prop-file" );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--prior-file" );
   if( ppt ){
-  propfile =
-    XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--prop-file")->value );
+    propfile = XLALStringDuplicate(
+      LALInferenceGetProcParamVal(commandLine,"--prior-file")->value );
   }
   else{
-    fprintf(stderr, "Error... --prop-file is required.\n");
+    fprintf(stderr, "Error... --prior-file is required.\n");
     fprintf(stderr, USAGE, commandLine->program);
     exit(0);
   }
   
   /* open file */
   if( (fp = fopen(propfile, "r")) == NULL ){
-    fprintf(stderr, "Error... Could not open proposal file %s.\n", propfile);
+    fprintf(stderr, "Error... Could not open prior file %s.\n", propfile);
     exit(3);
   }
   
@@ -1706,7 +1712,7 @@ set.\n", propfile, tempPar);
     
     /* don't rescale phi0, so that it varies over 0-2*pi - required by the 
        LALInferenceAngularVariance function when calculating the covariance 
-       (unless the prop-file a phi0 range that is not 2*pi) */
+       (unless the prior-file contains a phi0 range that is not 2*pi) */
     if( !strcmp(tempPar, "phi0") ){
       if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){ 
         scale = 1.;
@@ -1790,7 +1796,7 @@ set.\n", propfile, tempPar);
  
   }
   
-  /* if phi0 and psi have been given in the prop-file and defined at the limits
+  /* if phi0 and psi have been given in the prior-file and defined at the limits
      of their range then remove them and add the phi0' and psi' coordinates */
   if( phidef && psidef ){
     LALInferenceIFOData *datatemp = data;
@@ -1953,6 +1959,94 @@ set.\n", propfile, tempPar);
   }
   
   return;
+}
+
+
+/** \brief Initialise the MCMC proposal distribution for sampling new points
+ * 
+ * There are various proposal distributions that can be used to sample new live
+ * points via an MCMC. A combination of different ones can be used to help
+ * efficiency for awkward posterior distributions. Here the proposals that can
+ * be used are:
+ *   \c covariance Drawing from a multi-variate Gaussian described by the
+ * covariance matrix of the current live points, with the spread of the
+ * distribution controlled by the \c temperature. One parameter is evolved
+ * during a single draw.
+ *   \c diffev Drawing a new point by differential evolution of two randomly
+ * chosen live points. All parameters are evolved during a single draw.
+ *   \c kDTree Drawing points from a distributions created from a k-D tree of
+ * the current live points, with probabilities of each leaf being inversely
+ * their volume. All parameters are evolved during a single draw.
+ * 
+ * This function sets up the relative weights with which each of above
+ * distributions is used.
+ * 
+ * \param runState [in] A pointer to the run state
+*/
+void initialiseProposal( LALInferenceRunState *runState ){
+  ProcessParamsTable *ppt = NULL;
+  UINT4 covfrac = 0, defrac = 0, kdfrac = 0;
+  REAL8 temperature = 0.;
+  const CHAR defaultPropName[] = "none";
+  
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--covariance" );
+  if( ppt ) covfrac = *(UINT4 *)ppt->value;
+  else covfrac = 14; /* default value */
+    
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
+  if( ppt ) defrac = *(UINT4 *)ppt->value;
+  else defrac = 3; /* default value */
+  
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDTree" );
+  if( ppt ) kdfrac = *(UINT4 *)ppt->value;
+  else kdfrac = 3; /* default value */
+ 
+  if( !covfrac && !defrac && !kdfrac ){
+    XLALPrintError("All proposal weights are zero!\n");
+    XLAL_ERROR_VOID(XLAL_EFAILED);
+  }
+  
+  runState->proposalStats = NULL;
+  
+  /* add proposals */
+  if( covfrac ){
+    LALInferenceAddProposalToCycle( runState, covarianceEigenvectorJumpName,
+                                    &LALInferenceCovarianceEigenvectorJump,
+                                    covfrac );
+  }
+  
+  if( defrac ){
+    LALInferenceAddProposalToCycle( runState, differentialEvolutionNonFixedName,
+                                    &LALInferenceDifferentialEvolutionNonFixed,
+                                    defrac );
+  }
+  
+  if( kdfrac ){
+    LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName,
+                                    &LALInferenceKDNeighborhoodProposal,
+                                    kdfrac );
+    
+    /* create k-D tree of live points */
+    LALInferenceSetupkDTreeNSLivePoints( runState );
+  }
+
+  LALInferenceRandomizeProposalCycle( runState );
+  /* set temperature */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
+  if( ppt ) temperature = *(REAL8 *)ppt->value;
+  else temperature = 0.1;
+ 
+  LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, 
+                           LALINFERENCE_REAL8Vector_t,
+                           LALINFERENCE_PARAM_FIXED );
+  
+  /* add default proposal name */
+  LALInferenceAddVariable( runState->proposalArgs,
+    LALInferenceCurrentProposalName, &defaultPropName, LALINFERENCE_string_t,
+    LALINFERENCE_PARAM_OUTPUT );
+  
+  /* set proposal */
+  runState->proposal = LALInferenceDefaultProposal;
 }
 
 
