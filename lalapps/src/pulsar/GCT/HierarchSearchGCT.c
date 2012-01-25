@@ -159,8 +159,8 @@ typedef struct {
   UINT4 nStacks;                   /**< number of stacks */
   LALSegList *segmentList;         /**< parsed segment list read from user-specified input file --segmentList */
   BOOLEAN LVuseAllTerms;           /**< which terms to use in LineVeto computation - FALSE: only leading term, TRUE: all terms */
-  REAL4 LVrho;                     /**< Prior parameter rho_max_line for LineVeto statistic */
-  REAL4Vector *LVlX;               /**< Vector of line prior ratios lX per detector for LineVeto statistic */
+  REAL4 LVlogRhoTerm;              /**< For LineVeto statistic: extra term coming from prior normalization: log(rho_max_line^4/70) */
+  REAL4Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
 } UsefulStageVariables;
 
 
@@ -568,13 +568,15 @@ int MAIN( int argc, char *argv[]) {
 
   /* take LV user vars and save them in usefulParams */
   usefulParams.LVuseAllTerms = uvar_LVuseAllTerms;
-  usefulParams.LVlX = NULL;
+  usefulParams.LVloglX = NULL;
   if ( uvar_LVrho < 0.0 ) {
     fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar_LVrho);
     return( HIERARCHICALSEARCH_EBAD );
   }
-  else
-    usefulParams.LVrho = (REAL4)uvar_LVrho;
+  else if ( uvar_LVrho > 0.0 )
+    usefulParams.LVlogRhoTerm = 4.0 * log((REAL4)uvar_LVrho) - log(70.0);
+  else /* if uvar_LVrho == 0.0, logRhoTerm should become irrelevant in summation */
+    usefulParams.LVlogRhoTerm = - LAL_REAL4_MAX;
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
@@ -1006,25 +1008,29 @@ int MAIN( int argc, char *argv[]) {
     } /* if ( uvar_computeLV ) */
 
   /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
-  usefulParams.LVlX = NULL;
+  usefulParams.LVloglX = NULL;
   if ( uvar_computeLV && uvar_LVlX ) {
     if (  uvar_LVlX->length != numDetectors ) {
       fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar_LVlX->length, numDetectors);
       return( HIERARCHICALSEARCH_EBAD );
     }
-    if ( (usefulParams.LVlX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+    if ( (usefulParams.LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
       fprintf(stderr, "Failed call to XLALCreateREAL4Vector( %d )\n", numDetectors );
       return( HIERARCHICALSEARCH_EXLAL );
     }
     for (UINT4 X = 0; X < numDetectors; X++) {
-        if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVlX->data[X] ) ) {
+      if ( 1 != sscanf ( uvar_LVlX->data[X], "%" LAL_REAL4_FORMAT, &usefulParams.LVloglX->data[X] ) ) {
         fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar_LVlX->data[X]);
         return ( HIERARCHICALSEARCH_EBAD );
       }
-      if ( usefulParams.LVlX->data[X] < 0.0 ) {
-        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, usefulParams.LVlX->data[X] );
+      if ( usefulParams.LVloglX->data[X] < 0.0 ) {
+        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, usefulParams.LVloglX->data[X] );
         return( HIERARCHICALSEARCH_EBAD );
       }
+      else if ( usefulParams.LVloglX->data[X] > 0.0 )
+        usefulParams.LVloglX->data[X] = log(usefulParams.LVloglX->data[X]);
+      else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+        usefulParams.LVloglX->data[X] = - LAL_REAL4_MAX;
     } /* for X < numDetectors */
   } /* if ( computeLV && uvar_LVlX ) */
 
@@ -1841,7 +1847,7 @@ int MAIN( int argc, char *argv[]) {
 
   free_gctFStat_toplist(&semiCohToplist);
 
-  XLALDestroyREAL4Vector ( usefulParams.LVlX );
+  XLALDestroyREAL4Vector ( usefulParams.LVloglX );
 
   XLALDestroyExpLUT(); /* lookup table for fast exponential function, used in computeLV case */
 
@@ -2430,11 +2436,11 @@ void UpdateSemiCohToplist(LALStatus *status,
         line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
       xlalErrno = 0;
 
-      REAL4 *lX = NULL;
-      if ( usefulparams->LVlX )
-        lX = usefulparams->LVlX->data;
+      REAL4 *loglX = NULL;
+      if ( usefulparams->LVloglX )
+        loglX = usefulparams->LVloglX->data;
 
-      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVrho, lX, usefulparams->LVuseAllTerms );
+      line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVlogRhoTerm, loglX, usefulparams->LVuseAllTerms );
 
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
