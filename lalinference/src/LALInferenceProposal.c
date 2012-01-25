@@ -41,9 +41,9 @@
 
 #include <lal/LALStdlib.h>
 
-static const char *cycleArrayName = "Proposal Cycle";
-static const char *cycleArrayLengthName = "Proposal Cycle Length";
-static const char *cycleArrayCounterName = "Proposal Cycle Counter";
+const char *cycleArrayName = "Proposal Cycle";
+const char *cycleArrayLengthName = "Proposal Cycle Length";
+const char *cycleArrayCounterName = "Proposal Cycle Counter";
 
 const char *LALInferenceSigmaJumpName = "sigmaJump";
 const char *LALInferenceCurrentProposalName = "Current Proposal";
@@ -60,6 +60,7 @@ const char *differentialEvolutionMassesName = "DifferentialEvolutionMasses";
 const char *differentialEvolutionAmpName = "DifferentialEvolutionAmp";
 const char *differentialEvolutionSpinsName = "DifferentialEvolutionSpins";
 const char *differentialEvolutionSkyName = "DifferentialEvolutionSky";
+const char *differentialEvolutionNonFixedName = "DifferentialEvolutionNonFixed";
 const char *drawApproxPriorName = "DrawApproxPrior";
 const char *skyReflectDetPlaneName = "SkyReflectDetPlane";
 const char *rotateSpinsName = "RotateSpins";
@@ -152,6 +153,7 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propN
     UINT4 i;
     
     length = weight;
+
     cycle = XLALMalloc(length*sizeof(LALInferenceProposalFunction *));
     if (cycle == NULL) {
       XLALError(fname, __FILE__, __LINE__, XLAL_ENOMEM);
@@ -162,8 +164,10 @@ LALInferenceAddProposalToCycle(LALInferenceRunState *runState, const char *propN
       cycle[i] = prop;
     }
 
-    LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(propArgs, cycleArrayLengthName, &length,
+LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(propArgs, cycleArrayName, (void *)&cycle,
+LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_LINEAR);
   }
 
   /* If propStats is not NULL, add counters for proposal function if they aren't already there */
@@ -889,6 +893,43 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
 }
 
+void LALInferenceDifferentialEvolutionNonFixed( LALInferenceRunState *runState,
+                                                LALInferenceVariables *pp ){
+  size_t i = 0;
+  size_t N = 0;
+  
+  const CHAR **names;
+  const CHAR *propName = differentialEvolutionNonFixedName;
+  LALInferenceSetVariable( runState->proposalArgs,
+                           LALInferenceCurrentProposalName, &propName);
+  
+  /* count number of non-fixed variables */
+  LALInferenceVariableItem *currentItem;
+  currentItem = runState->currentParams->head;
+  while( currentItem != NULL ){
+    if ( currentItem->vary != LALINFERENCE_PARAM_FIXED &&
+         currentItem->vary != LALINFERENCE_PARAM_OUTPUT ) N++;
+    
+    currentItem = currentItem->next;   
+  }
+  
+  /* set their names */
+  names = alloca((N+1)*sizeof(CHAR *));
+  currentItem = runState->currentParams->head;
+  while( currentItem != NULL ){
+    if ( currentItem->vary != LALINFERENCE_PARAM_FIXED &&
+         currentItem->vary != LALINFERENCE_PARAM_OUTPUT ){
+      names[i] = currentItem->name;
+      i++;   
+    }
+    
+    currentItem = currentItem->next;
+  }
+  names[i] = NULL;
+  
+  LALInferenceDifferentialEvolutionNames( runState, pp, names );
+}
+  
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
   const char *propName = differentialEvolutionMassesName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
