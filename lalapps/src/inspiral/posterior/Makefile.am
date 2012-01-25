@@ -62,7 +62,7 @@ EXTRA_DIST = \
 	nest_pipe.in \
 	nest_utils.py \
 	combine_evidence.py \
-    lalapps_vo_nest2pos.in
+	lalapps_vo_nest2pos.in
 
 python_config.sed: Makefile
 	-rm -f python_config.sed
