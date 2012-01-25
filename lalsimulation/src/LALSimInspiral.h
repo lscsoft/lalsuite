@@ -1029,7 +1029,34 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 /**
  * Driver routine to compute a non-precessing post-Newtonian inspiral waveform
  * in the frequency domain, described in http://arxiv.org/abs/1107.1267.
- * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+ *
+ * The chi parameter should be determined from
+ * XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+ *
+ * A note from Evan Ochsner on differences with respect to TaylorF2:
+ *
+ * The amplitude-corrected SPA/F2 waveforms are derived and explicitly given in
+ * <http://arxiv.org/abs/gr-qc/0607092> Sec. II and Appendix A (non-spinning)
+ * and <http://arxiv.org/abs/0810.5336> Sec. VI and Appendix D (spin-aligned).
+ *
+ * The difference between F2 and F2ReducedSpin is that F2ReducedSpin always
+ * keeps only the leading-order TD amplitude multiplying the 2nd harmonic (
+ * A_(2,0)(t) in Eq. 2.3 of the first paper OR alpha/beta_2^(0)(t) in Eq. 6.7
+ * of the second paper) but expands out the 1/\sqrt{\dot{F}} ( Eq. 5.3 OR Eq.
+ * 6.10-6.11 resp.) to whichever order is given as 'ampO' in the code.
+ *
+ * On the other hand, the F2 model in the papers above will PN expand BOTH the
+ * TD amplitude and the factor 1/\sqrt{\dot{F}}, take their product, and keep
+ * all terms up to the desired amplitude order, as in Eq. 6.13-6.14 of the
+ * second paper.
+ *
+ * In particular, the F2ReducedSpin will always have only the 2nd harmonic, but
+ * F2 will have multiple harmonics starting at ampO = 0.5PN. Even if you were
+ * to compare just the 2nd harmonic, you would have a difference starting at
+ * 1PN ampO, because the F2 has a 1PN TD amp. correction to the 2nd harmonic
+ * (alpha/beta_2^(2)(t)) which will not be accounted for by the F2ReducedSpin.
+ * So, the two should agree when ampO=0, but will be different in any other
+ * case.
  */
 int XLALSimInspiralTaylorF2ReducedSpin(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
