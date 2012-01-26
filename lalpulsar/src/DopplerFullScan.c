@@ -124,6 +124,8 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
   }
 
   thisScan->gridType = init->gridType;
+// grid's refTime: will be used to set correct refTime in returned doppler points
+  thisScan->refTime = init->searchRegion.refTime;
 
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
   switch ( thisScan->gridType )
@@ -141,7 +143,6 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
       /* ----- multi-dimensional covering of full parameter space ----- */
     case GRID_FILE_FULLGRID:
       TRY ( loadFullGridFile ( status->statusPtr, thisScan, init ), status );
-      thisScan->refTime = init->startTime;
       break;
 
     case GRID_METRIC_LATTICE:
@@ -424,6 +425,9 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
   if (  scan->state == STATE_FINISHED )
     return 1;
 
+  // set refTime in returned template to the refTime of the grid
+  pos->refTime  = scan->refTime;
+
   /* ----- step foward one template in full grid ----- */
   /* Which "class" of template grid are we dealing with: factored, or full-multidim ? */
   switch ( scan->gridType )
@@ -440,7 +444,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
     case GRID_FILE_FULLGRID:
       INIT_MEM(pos->fkdot);
-      pos->refTime  = scan->refTime;
       pos->fkdot[0] = scan->thisGridPoint->entry.data[0];
       pos->Alpha    = scan->thisGridPoint->entry.data[1];
       pos->Delta    = scan->thisGridPoint->entry.data[2];
@@ -490,7 +493,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 	case XLAL_SUCCESS:
 	  /* Found a point */
-	  pos->refTime    = scan->refTime;
 	  pos->fkdot[0]   = gsl_vector_get(scan->spindownTiling->current, 0);
 	  pos->Alpha      = gsl_vector_get(scan->spindownTiling->current, 1);
 	  pos->Delta      = gsl_vector_get(scan->spindownTiling->current, 2);
