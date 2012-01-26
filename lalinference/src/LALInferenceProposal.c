@@ -365,14 +365,6 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  if(LALInferenceCheckVariable(proposedParams,"inclination") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-distiota")) {
-    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
-  }
-
-  if(LALInferenceCheckVariable(proposedParams,"phase") && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-phasejump")) {
-    LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
-  }
-
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
     LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
