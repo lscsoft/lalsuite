@@ -237,7 +237,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   REAL8 dFreq;
 
   REAL8 deltaT;
-  REAL8 duration;
   UINT4 numFreqBins;
   REAL8 BandEff;		/* effective frequency band of SFTs (integer number of bins) */
   UINT4 numSamplesSFT;		/* number of samples in one SFTs (either time-domain or frequency-domain) */
@@ -296,7 +295,6 @@ XLALgenerateRandomData ( REAL4TimeSeries **ts, SFTVector **sfts )
   numBinsGap2 = gsl_rng_uniform_int (r, numSamplesSFT * numSFTs / 3 );
 
   numSamplesTS = numSFTs * numSamplesSFT + numBinsGap1 + numBinsGap2;
-  duration = numSamplesTS * deltaT;
 
   /* ----- allocate timeseries ----- */
   if ( (outTS = XLALCreateREAL4TimeSeries ("H1:test timeseries", &epoch0, 0, deltaT, &empty_LALUnit, numSamplesTS )) == NULL )

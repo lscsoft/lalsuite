@@ -218,7 +218,6 @@ int MAIN( int argc, char *argv[]) {
 
   /* General GPS times */
   LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tStartGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
 
   /* GPS time used for each segment's midpoint */
@@ -285,12 +284,10 @@ int MAIN( int argc, char *argv[]) {
   REAL8 df2dot_fg, f2dotmin_fg;
   REAL8 u1start, u1win, u1winInv;
   REAL8 freq_fg, f1dot_fg, f2dot_fg;
-  REAL4 Fstat, TwoFthreshold, sumTwoFmax; /* REAL4 precision of Fstat values */
-  UINT4 nc_max;
-  REAL8 A1, B1, A2, B2; /* GCT helper variables for faster calculation of u1 or u2 */
+  REAL4 Fstat, TwoFthreshold; /* REAL4 precision of Fstat values */
+  REAL8 A1, B1, B2; /* GCT helper variables for faster calculation of u1 or u2 */
   REAL8 pos[3];
   REAL8 vel[3];
-  REAL8 acc[3];
   REAL8 cosAlpha, sinAlpha, cosDelta, sinDelta;
   REAL8 nvec[3]; /* unit vector pointing to sky position */
 
@@ -747,7 +744,6 @@ int MAIN( int argc, char *argv[]) {
   tStack = usefulParams.tStack;
   tObs = usefulParams.tObs;
   nStacks = usefulParams.nStacks;
-  tStartGPS = usefulParams.tStartGPS;
   midTstack = usefulParams.midTstack;
   startTstack = usefulParams.startTstack;
   endTstack = usefulParams.endTstack;
@@ -1110,8 +1106,6 @@ int MAIN( int argc, char *argv[]) {
   while(thisScan.state != STATE_FINISHED)
     {
 
-      SkyPosition skypos;
-
       SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                     skyGridCounter * nf1dot + f1dotGridCounter,
                     thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
@@ -1132,9 +1126,6 @@ int MAIN( int argc, char *argv[]) {
       nvec[2] = sinDelta;
 
       /* get amplitude modulation weights */
-      skypos.longitude = thisPoint.Alpha;
-      skypos.latitude = thisPoint.Delta;
-      skypos.system = COORDINATESYSTEM_EQUATORIAL;
 
       {  /********Allocate fstat vector memory *****************/
 
@@ -1325,11 +1316,6 @@ int MAIN( int argc, char *argv[]) {
           finegrid.alpha = thisPoint.Alpha;
           finegrid.delta = thisPoint.Delta;
 
-
-          /* Keeping track of maximum number count in DIAGNOSE mode */
-          nc_max = 0;    /* initialize */
-          sumTwoFmax = 0.0;
-
           /* ---------- Walk through fine grid f1dot --------------- */
           for( if1dot_fg = 0; if1dot_fg < nf1dots_fg; if1dot_fg++ ) {
 
@@ -1364,11 +1350,12 @@ int MAIN( int argc, char *argv[]) {
                 vel[0] = semiCohPar.vel->data[3*k];
                 vel[1] = semiCohPar.vel->data[3*k + 1];
                 vel[2] = semiCohPar.vel->data[3*k + 2];
-
+                /* currently unused:
+                REAL8 acc[3];
                 acc[0] = semiCohPar.acc->data[3*k];
                 acc[1] = semiCohPar.acc->data[3*k + 1];
                 acc[2] = semiCohPar.acc->data[3*k + 2];
-
+                */
 
                 /* Midpoint in time of current segment */
                 midTstackGPS = midTstack->data[k];
@@ -1385,9 +1372,11 @@ int MAIN( int argc, char *argv[]) {
                        + pos[1] * nvec[1] \
                        + pos[2] * nvec[2] ); /* This is \vec r \dot \vec n */
 
-                A2 = ( acc[0] * nvec[0] \
+                /* current unused:
+                   REAL8 A2 = ( acc[0] * nvec[0]        \
                        + acc[1] * nvec[1] \
-                       + acc[2] * nvec[2] ); /* This is \vec a \dot \vec n */
+                       + acc[2] * nvec[2] ); // This is \vec a \dot \vec n
+                */
 
                 B2 = ( vel[0] * nvec[0] \
                        + vel[1] * nvec[1] \
@@ -1638,9 +1627,6 @@ int MAIN( int argc, char *argv[]) {
 
 #ifndef GC_SSE2_OPT
                 /* FIXME the following diagnostic output was broken by the SSE2 code */
-#ifdef DIAGNOSISMODE
-                fprintf(stderr, "  --- Seg: %03d  nc_max: %03d  avesumTwoFmax: %f \n", k, nc_max, sumTwoFmax/(k+1));
-#endif
 #endif
 
                 /* timing */
@@ -2391,8 +2377,7 @@ void UpdateSemiCohToplist(LALStatus *status,
   BOOLEAN translateSpins = FALSE;
   PulsarSpins fkdot;
   REAL8 freq_fg;
-  UINT4 ifreq_fg, Nsegments;
-  INT4 debug;
+  UINT4 ifreq_fg;
   GCTtopOutputEntry line;
 
   INIT_MEM(fkdot);
@@ -2403,8 +2388,6 @@ void UpdateSemiCohToplist(LALStatus *status,
   ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
-
-  Nsegments = usefulparams->nStacks;
 
   /* check if translation to reference time of fine-grid is necessary */
   if  ( XLALGPSDiff( &in->refTime, &usefulparams->spinRange_refTime.refTime) != 0 ) {
@@ -2463,7 +2446,7 @@ void UpdateSemiCohToplist(LALStatus *status,
     else
       line.LV = -LAL_REAL4_MAX; /* in non-LV case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
 
-    debug = insert_into_gctFStat_toplist( list, line);
+    insert_into_gctFStat_toplist( list, line);
 
   }
 
@@ -2785,11 +2768,7 @@ XLALSetUpStacksFromSegmentList ( const SFTCatalog *catalog,	/**< complete list o
   INT4 iSFT0 = 0, iSFT1 = 0;	/* indices of earliest and last SFT fitting into segment iSeg */
   for ( iSeg = 0; iSeg < numSegments; iSeg ++ )
     {
-      REAL8 tSeg0, tSeg1;	/* boundaries of this segment */
       LALSeg *thisSeg = &(segList->segs[iSeg]);
-
-      tSeg0 = XLALGPSGetREAL8 ( & thisSeg->start );
-      tSeg1 = XLALGPSGetREAL8 ( & thisSeg->end );
 
       /* ----- find earliest SFT fitting into this segment */
       iSFT0 = iSFT1;	/* start from previous segment's last SFT */
