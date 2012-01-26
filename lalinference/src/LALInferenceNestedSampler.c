@@ -294,6 +294,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		exit(1);
 	}
 	char *outfile=ppt->value;
+        
+        /* set up k-D tree if required and not already set */
+        if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+         LALInferenceGetProcParamVal(runState->commandLine,"--kdtree") ) &&
+         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
+            LALInferenceSetupkDTreeNSLivePoints( runState );
+        }
+          
     if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
         displayprogress=1;
 
@@ -377,7 +385,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
-	/* setup a k-D tree if required */
+	/* re-calculate the k-D tree from the new points if required */
 	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
           LALInferenceSetupkDTreeNSLivePoints( runState );
 

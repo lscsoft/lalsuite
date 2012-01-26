@@ -2025,9 +2025,6 @@ void initialiseProposal( LALInferenceRunState *runState ){
     LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName,
                                     &LALInferenceKDNeighborhoodProposal,
                                     kdfrac );
-    
-    /* create k-D tree of live points */
-    LALInferenceSetupkDTreeNSLivePoints( runState );
   }
 
   LALInferenceRandomizeProposalCycle( runState );
