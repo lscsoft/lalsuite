@@ -1445,7 +1445,7 @@ int MAIN( int argc, char *argv[]) {
                     /* Resampling method implementation to compute the F-statistic */
                     LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, &fstatVector.data[k], &thisPoint,
                                                         stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],
-                                                        stackMultiDetStates.data[k], &CFparams), &status);
+                                                        &CFparams), &status);
 
                     /* repoint the buffer vector element to the potentially modified buffer */
                     resampbuffers.data[k] = CFparams.buffer;

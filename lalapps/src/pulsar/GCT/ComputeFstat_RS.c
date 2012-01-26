@@ -111,7 +111,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			       MultiSFTVector *multiSFTs, 		        /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			       const MultiNoiseWeights *multiWeights,	        /**< noise-weights of all SFTs */
-			       MultiDetectorStateSeries *dummy,                 /**< 'trajectories' of the different IFOs (not used) */
 			       ComputeFParams *params		                /**< addition computational params */
 			       )
 {
@@ -147,10 +146,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   cfBuffer = params->buffer;                      /* set local pointer to the buffer location */
   numDetectors = multiSFTs->length;               /* set the number of detectors to the number of sets of SFTs */
   // unused: SFTtype * firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
-
-  /* here we set the input MultiDetectorStateSeries to NULL since we don't ever use it */
-  /* this is ugly but preserves the same input variables as used for the non-resampling version */
-  dummy = NULL;
 
   /* check that the pre-allocated output vector doesn't point to NULL */
   ASSERT ( fstatVector, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
