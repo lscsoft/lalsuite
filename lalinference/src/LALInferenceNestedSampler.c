@@ -283,8 +283,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 	/* Set up the proposal scale factor, for use in the multi-student jump step */
-	REAL8 propScale = 0.1;     
-        REAL8 propScaleTmp = propScale;
+	REAL8 propScale = 0.1;
 	LALInferenceAddVariable(runState->proposalArgs,"proposal_scale",&propScale,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
 	/* Open output file */
@@ -442,33 +441,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the proposal */
-		if(!(iter%(Nlive/4))) {                    
-                  REAL8 ar = *(REAL8 *)LALInferenceGetVariable(
-                    runState->algorithmParams , "accept_rate" )/(REAL8)
-                    itercounter;
-                  REAL8 adaptScale = 0.1; /* scale down by 90% */
-                    
+		if(!(iter%(Nlive/4))) {                  
                   /* Update the covariance matrix */
                   if ( LALInferenceCheckVariable( runState->proposalArgs,
                                                   "covarianceMatrix" ) ){
-                  /* adapt the scale factor if acceptance rate is poor (< 1%) */
-                  if( ar < 0.01 ){
-                    propScaleTmp *= adaptScale;
-                    LALInferenceSetVariable( runState->proposalArgs,
-                                             "temperature", &propScaleTmp );
-                    LALInferenceSetVariable( runState->proposalArgs,
-                                             "proposal_scale", &propScaleTmp );
-                  }
-                  
-                  /* if acceptance rate has recovered then scale it back up to
-                     original temperature */
-                  if ( ar > 0.01 && propScaleTmp < propScale ){
-                    propScaleTmp /= adaptScale;
-                    LALInferenceSetVariable( runState->proposalArgs,
-                                             "temperature", &propScaleTmp );
-                    LALInferenceSetVariable( runState->proposalArgs,
-                                             "proposal_scale", &propScaleTmp );
-                  }
                   
                   LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
 		  gsl_matrix_memcpy(covCopy, *cvm);
