@@ -38,6 +38,29 @@
 #define TRUE (1==1)
 #define FALSE (1==0)
 
+/* Hooks for Einstein@Home / BOINC
+   These are defined to do nothing special in the standalone case
+   and will be set in boinc_extras.h if EAH_BOINC is set
+*/
+#ifdef EAH_BOINC
+#include "hs_boinc_extras.h"
+#else
+#ifdef HS_OPTIMIZATION
+extern void
+LocalComputeFStat ( LALStatus *status,
+		    Fcomponents *Fstat,
+		    const PulsarDopplerParams *doppler,
+		    const MultiSFTVector *multiSFTs,
+		    const MultiNoiseWeights *multiWeights,
+		    const MultiDetectorStateSeries *multiDetStates,
+		    const ComputeFParams *params,
+		    ComputeFBuffer *cfBuffer);
+#define COMPUTEFSTAT LocalComputeFStat
+#else
+#define COMPUTEFSTAT ComputeFStat
+#endif
+#endif /* EAH_BOINC */
+
 /*----- Macros ----- */
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 #define SQUARE(x) ( (x) * (x) )
@@ -116,6 +139,10 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
   PulsarDopplerParams candidateDopplerParams = empty_PulsarDopplerParams; /* struct containing sky position, frequency and fdot for the current candidate */
   UINT4 X;
 
+  /* temporary copy of Fstatistic parameters structure, needed to change returnSingleF for function scope only */
+  ComputeFParams CFparams_internal = (*CFparams);
+  CFparams_internal.returnSingleF  = TRUE;
+
   /* initialize doppler parameters */
   candidateDopplerParams.refTime = refTimeGPS;  /* spin parameters in toplist refer to this refTime */
 
@@ -191,7 +218,7 @@ int XLALComputeExtraStatsForToplist ( toplist_t *list,                          
                   candidateDopplerParams.fkdot[0], candidateDopplerParams.Alpha, candidateDopplerParams.Delta, candidateDopplerParams.fkdot[1], refTimeGPS.gpsSeconds );
 
       /*  recalculate multi- and single-IFO Fstats for all segments for this candidate */
-      XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, CFparams, SignalOnly, singleSegStatsFile );
+      XLALComputeExtraStatsSemiCoherent( &lineVeto, &candidateDopplerParams, multiSFTsV, multiNoiseWeightsV, multiDetStatesV, detectorIDs, &CFparams_internal, SignalOnly, singleSegStatsFile );
       if ( xlalErrno != 0 ) {
         XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeLineVetoSemiCoherent().\n\n", __func__, __LINE__);
         XLAL_ERROR ( XLAL_EFUNC );
@@ -270,10 +297,6 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
     XLAL_ERROR ( XLAL_EBADLEN );
   }
 
-  /* temporary copy of Fstatistic parameters structure, needed to change returnAtoms for function scope only */
-  ComputeFParams CFparams_internal = (*CFparams);
-  CFparams_internal.returnAtoms   = TRUE;
-
   /* initialiase LVcomponents structure */
   lineVeto->TwoF = 0.0;
   lineVeto->LV   = 0.0;
@@ -335,7 +358,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
       if ( singleSegStatsFile )
         fprintf ( singleSegStatsFile, "%%%% Reftime: %d %%%% Freq: %.16g %%%% RA: %.13g %%%% Dec: %.13g %%%% f1dot: %.13g\n", dopplerParams_temp.refTime.gpsSeconds, dopplerParams_temp.fkdot[0], dopplerParams_temp.Alpha, dopplerParams_temp.Delta, dopplerParams_temp.fkdot[1] );
       fakeStatus = blank_status;
-      ComputeFStat ( &fakeStatus, &Fstat, &dopplerParams_temp, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], &CFparams_internal, NULL );
+      COMPUTEFSTAT ( &fakeStatus, &Fstat, &dopplerParams_temp, multiSFTsV->data[k], multiNoiseWeightsThisSeg, multiDetStatesV->data[k], CFparams, NULL );
       if ( fakeStatus.statusCode ) {
         XLALPrintError ("\%s, line %d : Failed call to LAL function ComputeFStat(). statusCode=%d\n\n", __func__, __LINE__, fakeStatus.statusCode);
         XLAL_ERROR ( XLAL_EFUNC );
@@ -369,11 +392,7 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
           }
           numSegmentsX[detid] += 1; /* have to keep this for correct averaging */
 
-          twoFXseg->data[detid] = 2.0 * XLALComputeFstatFromAtoms ( Fstat.multiFstatAtoms, X );
-          if ( xlalErrno != 0 ) {
-            XLALPrintError ("\nError in function %s, line %d : Failed call to XLALComputeFstatFromAtoms().\n\n", __func__, __LINE__);
-            XLAL_ERROR ( XLAL_EFUNC );
-          }
+          twoFXseg->data[detid] = 2.0 * Fstat.FX[X];
 
           if ( SignalOnly ) {                      /* normalization factor correction */
             twoFXseg->data[detid] *= 2.0 / Tsft;
@@ -389,9 +408,6 @@ int XLALComputeExtraStatsSemiCoherent ( LVcomponents *lineVeto,                 
           fprintf ( singleSegStatsFile, " %.6f",twoFXseg->data[X] );
         fprintf ( singleSegStatsFile, "\n" );
       }
-
-      /* free memory for atoms that was allocated within ComputeFStat  */
-      XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
 
     } /* for k < numSegments */
 
