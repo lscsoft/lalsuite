@@ -189,9 +189,6 @@ void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInf
 
 /** Perform a differential evolution step on only the extrinsic
     parameters that control the amplitude. */
-void LALInferenceDifferentialEvolutionNonFixed( LALInferenceRunState *runState,
-                                                LALInferenceVariables *pp );
-
 void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Perform a differential evolution step on only the spin variables. */

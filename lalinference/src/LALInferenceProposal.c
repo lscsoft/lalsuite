@@ -892,43 +892,6 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   
   LALInferenceSetLogProposalRatio(runState, 0.0); /* Symmetric proposal. */
 }
-
-void LALInferenceDifferentialEvolutionNonFixed( LALInferenceRunState *runState,
-                                                LALInferenceVariables *pp ){
-  size_t i = 0;
-  size_t N = 0;
-  
-  const CHAR **names;
-  const CHAR *propName = differentialEvolutionNonFixedName;
-  LALInferenceSetVariable( runState->proposalArgs,
-                           LALInferenceCurrentProposalName, &propName);
-  
-  /* count number of non-fixed variables */
-  LALInferenceVariableItem *currentItem;
-  currentItem = runState->currentParams->head;
-  while( currentItem != NULL ){
-    if ( currentItem->vary != LALINFERENCE_PARAM_FIXED &&
-         currentItem->vary != LALINFERENCE_PARAM_OUTPUT ) N++;
-    
-    currentItem = currentItem->next;   
-  }
-  
-  /* set their names */
-  names = alloca((N+1)*sizeof(CHAR *));
-  currentItem = runState->currentParams->head;
-  while( currentItem != NULL ){
-    if ( currentItem->vary != LALINFERENCE_PARAM_FIXED &&
-         currentItem->vary != LALINFERENCE_PARAM_OUTPUT ){
-      names[i] = currentItem->name;
-      i++;   
-    }
-    
-    currentItem = currentItem->next;
-  }
-  names[i] = NULL;
-  
-  LALInferenceDifferentialEvolutionNames( runState, pp, names );
-}
   
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LALInferenceVariables *pp) {
   const char *propName = differentialEvolutionMassesName;
