@@ -149,12 +149,27 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
 void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Differential evolution */
+/** Differential evolution, on all non-fixed, non-output parameters. */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform differential evolution on the parameters of the given
+    names (the names array should be terminated by a NULL pointer).
+    If names == NULL, then perform a
+    LALInferenceDifferentialEvolutionFull() step.*/
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);
+
+/** Perform differential evolution on only the mass parameters. */
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform a differential evolution step on only the extrinsic
+    parameters that control the amplitude. */
 void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform a differential evolution step on only the spin variables. */
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform a differential evolution step on just the sky location and
+    arrival time.*/
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Draws from an approximation to the true prior.  Flat in all

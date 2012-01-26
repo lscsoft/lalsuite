@@ -821,15 +821,22 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
                                             const char **names) {
   if (names == NULL) {
     size_t i;
-    size_t N = LALInferenceGetVariableDimension(runState->currentParams) + 1;
+    size_t N = LALInferenceGetVariableDimension(runState->currentParams) + 1; /* More names than we need. */
     names = alloca(N*sizeof(char *)); /* Hope we have alloca---saves
                                          having to deallocate after
                                          proposal. */
-    for (i = 1; i <= N-1; i++) {
-      names[i-1] = LALInferenceGetVariableName(runState->currentParams, i);
-    }
 
-    names[N-1]=NULL; /* Terminate */
+    LALInferenceVariableItem *item = runState->currentParams->head;
+    i = 0;
+    while (item != NULL) {
+      if (item->vary != LALINFERENCE_PARAM_FIXED && item->vary != LALINFERENCE_PARAM_OUTPUT) {
+        names[i] = item->name;
+        i++;
+      }
+
+      item = item->next;
+    }
+    names[i]=NULL; /* Terminate */
   }
 
 
