@@ -296,8 +296,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	char *outfile=ppt->value;
         
         /* set up k-D tree if required and not already set */
-        if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
-         LALInferenceGetProcParamVal(runState->commandLine,"--kdtree") ) &&
+        if ( LALInferenceGetVariable( runState->proposalArgs,
+                                      KDNeighborhoodProposalName ) &&
          !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
             LALInferenceSetupkDTreeNSLivePoints( runState );
         }
