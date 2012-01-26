@@ -60,7 +60,6 @@ const char *differentialEvolutionMassesName = "DifferentialEvolutionMasses";
 const char *differentialEvolutionAmpName = "DifferentialEvolutionAmp";
 const char *differentialEvolutionSpinsName = "DifferentialEvolutionSpins";
 const char *differentialEvolutionSkyName = "DifferentialEvolutionSky";
-const char *differentialEvolutionNonFixedName = "DifferentialEvolutionNonFixed";
 const char *drawApproxPriorName = "DrawApproxPrior";
 const char *skyReflectDetPlaneName = "SkyReflectDetPlane";
 const char *rotateSpinsName = "RotateSpins";

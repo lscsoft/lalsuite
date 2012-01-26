@@ -2016,8 +2016,8 @@ void initialiseProposal( LALInferenceRunState *runState ){
   }
   
   if( defrac ){
-    LALInferenceAddProposalToCycle( runState, differentialEvolutionNonFixedName,
-                                    &LALInferenceDifferentialEvolutionNonFixed,
+    LALInferenceAddProposalToCycle( runState, differentialEvolutionFullName,
+                                    &LALInferenceDifferentialEvolutionFull,
                                     defrac );
   }
   

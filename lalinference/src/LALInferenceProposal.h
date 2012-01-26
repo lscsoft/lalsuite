@@ -98,7 +98,6 @@ extern const char *differentialEvolutionMassesName;
 extern const char *differentialEvolutionAmpName;
 extern const char *differentialEvolutionSpinsName;
 extern const char *differentialEvolutionSkyName;
-extern const char *differentialEvolutionNonFixedName;
 extern const char *drawApproxPriorName;
 extern const char *skyReflectDetPlaneName;
 extern const char *rotateSpinsName;
