@@ -625,35 +625,6 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	return;
 }
 
-void LALInferenceProposalPulsarNS( LALInferenceRunState *runState,
-                                   LALInferenceVariables *parameter) {
-  REAL8 randnum;
-  
-  REAL8 COVARIANCEFRAC = 0.8,
-        DIFFEVFRAC = 0.1,
-        KDTREEFREAC = 0.1;
-        
-  const char defaultPropName[]="none";
-  
-  if ( !LALInferenceCheckVariable( runState->proposalArgs,
-                                   LALInferenceCurrentProposalName ) ){
-    LALInferenceAddVariable( runState->proposalArgs,
-                             LALInferenceCurrentProposalName, &defaultPropName,
-                             LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT );
-  }
-  
-  randnum = gsl_rng_uniform( runState->GSLrandom );
-  /* Choose a random type of jump to propose */
-  if( randnum < COVARIANCEFRAC )
-    LALInferenceCovarianceEigenvectorJump( runState, parameter );
-  else if( randnum < COVARIANCEFRAC + DIFFEVFRAC )
-    LALInferenceDifferentialEvolutionNonFixed( runState, parameter );
-  else if( randnum < COVARIANCEFRAC + DIFFEVFRAC + KDTREEFREAC )
-    LALInferenceKDNeighborhoodProposal( runState, parameter );
-        
-  return; 
-}
-
 
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALInferenceVariables *parameter)
 {
