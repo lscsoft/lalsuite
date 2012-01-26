@@ -839,6 +839,12 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
     names[i]=NULL; /* Terminate */
   }
 
+  size_t Ndim = 0;
+  const char *name = names[0];
+  while (name != NULL) {
+    Ndim++;
+    name = names[Ndim];
+  }
 
   LALInferenceVariables **dePts = runState->differentialPoints;
   size_t nPts = runState->differentialPointsLength;
@@ -865,8 +871,7 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
   if (gsl_rng_uniform(runState->GSLrandom) < modeHoppingFrac) {
     scale = 1.0;
   } else {  
-    UINT4 N = LALInferenceGetVariableDimensionNonFixed(proposedParams);
-    scale = 2.38 * gsl_ran_ugaussian(runState->GSLrandom) / sqrt(2.0*N);
+    scale = 2.38 * gsl_ran_ugaussian(runState->GSLrandom) / sqrt(2.0*Ndim);
   }
 
   for (i = 0; names[i] != NULL; i++) {
