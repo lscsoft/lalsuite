@@ -121,7 +121,6 @@ int main(int argc,char *argv[])
   UINT4 Nbins;                          /* number of frequency bins */
   INT4 Mmin;
   INT4 Mmax;
-  REAL8 temp;
   INT4 i;
   EphemerisData *edat;			    /**< ephemeris data (from LALInitBarycenter()) */
   BarycenterInput baryinput;         /* Stores detector location and other barycentering data */
@@ -225,8 +224,6 @@ int main(int argc,char *argv[])
   Mmax = ceil(LAL_TWOPI*uvar_f0*uvar_semimajoraxis);                    /* compute the expected number of lower sidebands */
  
   /* make sure that we only generate harmonics in the band */
-  if ((uvar_minfreq+0.5*uvar_freqband)<uvar_f0) temp = uvar_f0-uvar_minfreq;
-  else temp = uvar_minfreq+uvar_freqband-uvar_f0;
   if (abs(Mmin)>(floor((uvar_f0-uvar_minfreq)*uvar_orbitalperiod))) Mmin = (-1.0)*floor((uvar_f0-uvar_minfreq)*uvar_orbitalperiod);
   if (Mmax>(floor((uvar_minfreq+uvar_freqband-uvar_f0)*uvar_orbitalperiod))) Mmax = floor((uvar_minfreq+uvar_freqband-uvar_f0)*uvar_orbitalperiod);
 

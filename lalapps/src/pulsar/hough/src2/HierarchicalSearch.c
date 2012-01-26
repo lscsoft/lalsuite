@@ -307,7 +307,6 @@ int MAIN( int argc, char *argv[]) {
 
 
   LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tStartGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
   REAL8 tObs;
 
@@ -707,7 +706,7 @@ int MAIN( int argc, char *argv[]) {
   tStack = usefulParams.tStack;
   tObs = usefulParams.tObs;
   nStacks = usefulParams.nStacks;
-  tStartGPS = usefulParams.tStartGPS;
+  /* currently unused: LIGOTimeGPS tStartGPS = usefulParams.tStartGPS; */
   midTstack = usefulParams.midTstack;
   startTstack = usefulParams.startTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
@@ -2986,7 +2985,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
 				 REAL8 delta,
 				 REAL8 fdot)
 {
-  INT4 k, length, debug;
+  INT4 k, length;
   REAL8 deltaF, f0;
   HoughFStatOutputEntry line;
 
@@ -3009,7 +3008,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
       line.HoughFStat = in->data->data[k];
       line.Freq = f0 + k*deltaF;
 
-      debug = insert_into_houghFStat_toplist( list, line);
+      insert_into_houghFStat_toplist( list, line);
 
     }
 
@@ -3409,7 +3408,7 @@ void GetSemiCohToplist(LALStatus            *status,
 		       REAL8                sigmaN)
 {
 
-  INT4 k, debug;
+  INT4 k;
   HoughFStatOutputEntry line;
 
   INITSTATUS( status, "GetSemiCohToplist", rcsid );
@@ -3447,7 +3446,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
 
-    debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
+    INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
   }
 
   DETATCHSTATUSPTR (status);

@@ -774,7 +774,7 @@ int CheckCoincidence(RTPLocation *p_RTPloc,RTPLocation *s_RTPloc,BinaryMeshFileH
   REAL8 dummy;
   UINT4Vector *dimlength=NULL;
   INT4 dim=2;
-  INT4 i,j,k,q;
+  INT4 i,j,q;
   Corner *temp_p_corner;
   Corner *p_corner;
   Corner *s_corner;
@@ -948,7 +948,6 @@ int CheckCoincidence(RTPLocation *p_RTPloc,RTPLocation *s_RTPloc,BinaryMeshFileH
   line[2]=3;
   line[3]=0;
  
-  k=0;
   /* now we loop over each primary box corner */
   for (i=0;i<4;i++) {
 

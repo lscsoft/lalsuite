@@ -68,14 +68,12 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   INT4 s;                       /* local variable for spinDwn calcs. */
   REAL8 xTemp;                  /* temp variable for phase model */
   REAL4 xTInt;                   /* integer part of xTemp */
-  REAL8 deltaF;                 /* width of SFT band */
   /* INT4  k1; */                    /* defining the sum over which is calculated */
   UINT4 k=0;
   REAL8 *skyConst;              /* vector of sky constants data */
   REAL8 *spinDwn;               /* vector of spinDwn parameters (maybe a structure? */
   INT4  spOrder;                /* maximum spinDwn order */
   REAL8 realXP, imagXP;         /* temp variables used in computation of */
-  INT4  nDeltaF;                /* number of frequency bins per SFT band */
   INT4  sftIndex;               /* more temp variables */
   REAL8 realQ, imagQ;
   INT4 *tempInt1;
@@ -120,8 +118,6 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
   spOrder=params->spinDwnOrder;
   spinDwn=params->spinDwn;
   skyConst=params->skyConst;
-  deltaF=(*input)->fft->deltaF;
-  nDeltaF=(*input)->fft->data->length;
 
   /* res=10*(params->mCohSFT); */
   /* This size LUT gives errors ~ 10^-7 with a three-term Taylor series */

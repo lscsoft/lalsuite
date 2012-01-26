@@ -75,7 +75,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 pixelFactor;
   REAL8 alphaStart, alphaEnd, dAlpha, thisAlpha;
   REAL8 deltaStart, deltaEnd, dDelta, thisDelta;
-  REAL8 fdotStart, fdotEnd, dfdot, thisFdot;
+  REAL8 fdotStart, dfdot, thisFdot;
   UINT4 ialpha,nalpha,idelta,ndelta,ifdot,nfdot;
   UINT2 numSpindown;
 
@@ -87,7 +87,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 f0, deltaF, tEffSTK, fmid, alpha, delta;
   /* REAL8 patchSizeX, patchSizeY, f1jump; */  /* 12/14/06 gm; f1jump no longer needed */
   REAL8 patchSizeX, patchSizeY;
-  REAL8VectorSequence *vel, *pos;
+  REAL8VectorSequence *vel;
   REAL8 fdot, refTime;
   LIGOTimeGPS refTimeGPS;
   LIGOTimeGPSVector   *tsMid;
@@ -138,7 +138,6 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   alpha = params->alpha;
   delta = params->delta;
   vel = params->vel;
-  pos = params->pos;
   fdot = params->fdot;
   tsMid = params->tsMid;
   refTimeGPS = params->refTime;  
@@ -194,7 +193,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   /* dfdot     = deltaF * f1jump; */
   dfdot     = params->dfdot; /* 12/14/06 gm; dfdot now a user parameter; default is df1dot/nStacks1; not nfdot set above. */
   fdotStart = fdot - dfdot*(REAL8)(nfdot/2);
-  fdotEnd   = fdot + dfdot*(REAL8)(nfdot/2);
+  /* unused: fdotEnd   = fdot + dfdot*(REAL8)(nfdot/2); */
   if (nfdot < 1) nfdot = 1; /* do at least one value of fdot below */
 
   /* The input parameter space point */
@@ -363,13 +362,12 @@ void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus stru
 			      SemiCoherentParams *params)        /**< input parameters  */
 {
 
-  UINT2  xSide, ySide, maxNBins, maxNBorders;
+  UINT2  xSide, ySide;
   INT8  fBinIni, fBinFin, fBin;
   INT4  iHmap, nfdot;
   UINT4 k, nStacks ;
   REAL8 deltaF, dfdot, alpha, delta;
   REAL8 patchSizeX, patchSizeY;
-  REAL8VectorSequence *vel, *pos;
   REAL8 fdot, refTime;
   LIGOTimeGPS refTimeGPS;
   LIGOTimeGPSVector   *tsMid;
@@ -427,8 +425,6 @@ void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus stru
   dfdot = params->dfdot;
   alpha = params->alpha;
   delta = params->delta;
-  vel = params->vel;
-  pos = params->pos;
   fdot = params->fdot;
   tsMid = params->tsMid;
   refTimeGPS = params->refTime;
@@ -568,9 +564,6 @@ void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus stru
     xSide = parSize.xSide;
     ySide = parSize.ySide;
 
-    maxNBins = parSize.maxNBins;
-    maxNBorders = parSize.maxNBorders;
-	
     /*------------------ create patch grid at fBin ----------------------*/
     patch.xSide = xSide;
     patch.ySide = ySide;
@@ -709,7 +702,7 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LA
                                        UINT2 numSpindown)                 /**< Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
 {
                   UINT2 k;
-                  REAL8 f0, F0, F0zeta, alpha, delta, cosAlpha, cosDelta, sinAlpha, sinDelta;
+                  REAL8 f0, F0, F0zeta, alpha, delta, cosAlpha, cosDelta, sinDelta;
                   REAL8 nx, ny, nz, ndx, ndy, ndz;
                   REAL8 vx, vy, vz;
                   REAL8 kFact, deltaTPowk;
@@ -728,7 +721,6 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LA
                   delta = inputPoint->Delta;
                   cosAlpha = cos(alpha);
                   cosDelta = cos(delta);
-                  sinAlpha = sin(alpha);
                   sinDelta = sin(delta);
                   ndx = cosDelta*cosAlpha;
                   ndy = cosDelta*sinDelta;
@@ -739,7 +731,6 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LA
                   delta = outputPoint->Delta;
                   cosAlpha = cos(alpha);
                   cosDelta = cos(delta);
-                  sinAlpha = sin(alpha);
                   sinDelta = sin(delta);
                   nx = cosDelta*cosAlpha;
                   ny = cosDelta*sinDelta;

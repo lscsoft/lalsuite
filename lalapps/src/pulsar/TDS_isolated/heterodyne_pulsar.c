@@ -417,10 +417,9 @@ heterodyne.\n");  }
         INT4 memcount=1;
       
         do{
-          size_t rc;
-          rc = fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
-          rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
-          rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
+          fread((void*)&times->data[i], sizeof(REAL8), 1, fpin);
+          fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
+          fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
           if( feof(fpin) ) break;
           
@@ -1758,7 +1757,6 @@ void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes,
 
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
-  int rc;
   
   if(calfiles.calibcoefficientfile == NULL){
     fprintf(stderr, "No calibration coefficient file.\n\
@@ -1810,7 +1808,7 @@ Assume calibration coefficients are 1 and use the response function.\n",
         break;
       }
       if(strstr(jnkstr, "%")){
-        rc = fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
+        fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
                                          line */
         continue;
       }
@@ -1923,7 +1921,6 @@ void get_calibration_values(REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename,
   long offset;
   CHAR jnkstr[256]; /* junk string to contain comment lines */
   REAL8 freq=0.;
-  int rc;
 
   /* open calibration file for reading */
   if(calibfilename == NULL){
@@ -1940,9 +1937,9 @@ calibfilename);
   do{
     offset = ftell(fp); /* get current position of file stream */
 
-    rc = fscanf(fp, "%s", jnkstr); /* scan in value and check if == to % */
+    fscanf(fp, "%s", jnkstr); /* scan in value and check if == to % */
     if(strstr(jnkstr, "%")){
-      rc = fscanf(fp, "%*[^\n]");   /* if == % then skip to the end of the line */
+      fscanf(fp, "%*[^\n]");   /* if == % then skip to the end of the line */
       continue;
     }
     else{
