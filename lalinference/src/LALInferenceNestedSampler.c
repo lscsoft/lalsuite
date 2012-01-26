@@ -294,14 +294,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		exit(1);
 	}
 	char *outfile=ppt->value;
-        
-        /* set up k-D tree if required and not already set */
-        if ( LALInferenceGetVariable( runState->proposalArgs,
-                                      KDNeighborhoodProposalName ) &&
-         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
-            LALInferenceSetupkDTreeNSLivePoints( runState );
-        }
-          
+       
     if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
         displayprogress=1;
 
@@ -375,7 +368,14 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	
 	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
-       
+      
+        /* set up k-D tree if required and not already set */
+        if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+             LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
+         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
+          LALInferenceSetupkDTreeNSLivePoints( runState );
+        }
+        
 	/* Sprinkle points */
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
