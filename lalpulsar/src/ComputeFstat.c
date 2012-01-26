@@ -463,7 +463,8 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   if ( Ed != 0 ) /* extra term in RAA case */
     retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
 
-  (*Fstat) = retF;
+  /* set correct F-stat reference time (taken from template 'doppler') [relevant only for phase of {Fa,Fb}] */
+  retF.refTime = doppler->refTime;
 
   /* free memory if no buffer was available */
   if ( !cfBuffer )
@@ -475,6 +476,9 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 
   /* this always needs to be free'ed, as it's no longer buffered */
   XLALDestroyMultiSSBtimes ( multiBinary );
+
+  /* return final Fstat result */
+  (*Fstat) = retF;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1745,7 +1749,6 @@ void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatus structure */
 				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
 				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
-				  const LIGOTimeGPS *FstatRefTime,	/**<  reference-time for the phase of Fa, Fb */
 				  const CmplxAntennaPatternMatrix *Mmunu/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
 				  )
 {
@@ -1778,7 +1781,6 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
   ASSERT ( pulsarParams, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( FstatRefTime, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Mmunu, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
   Ad = Mmunu->Ad;
@@ -1962,8 +1964,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
   /* ===== debug-output resulting matrices ===== */
   /* propagate initial-phase from Fstat-reference-time to refTime of Doppler-params */
-  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, (*FstatRefTime) ),
-	status );
+  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, Fstat->refTime ), status );
 
   if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
     phi0 += LAL_TWOPI;
