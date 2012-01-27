@@ -32,7 +32,9 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-
+static void getMinMaxLivePointValue( LALInferenceVariables **livepoints, 
+                                     const CHAR *pname, UINT4 Nlive, 
+                                     REAL8 *minval, REAL8 *maxval );
 
 static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
@@ -53,6 +55,26 @@ REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
 	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
 }
 
+/** Get the maximum value of a parameter from a set of live points */
+static void getMinMaxLivePointValue( LALInferenceVariables **livepoints, 
+                                     const CHAR *pname, UINT4 Nlive, 
+                                     REAL8 *minval, REAL8 *maxval ){
+  REAL8 maxvaltmp = -DBL_MAX, minvaltmp = DBL_MAX;
+  UINT4 i = 0;
+  
+  for ( i = 0; i < Nlive; i++ ){
+    REAL8 val = *(REAL8 *)LALInferenceGetVariable( livepoints[i], pname );
+    
+    if ( val < minvaltmp ) minvaltmp = val;
+    if ( val > maxvaltmp ) maxvaltmp = val;
+  }
+  
+  *minval = minvaltmp;
+  *maxval = maxvaltmp;
+  return;
+}
+  
+ 
 /* Calculate the variance of a modulo-2pi distribution */
 REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N){
 	int i=0;
@@ -1276,26 +1298,32 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
       else if( LALInferenceCheckGaussianPrior( runState->priorArgs,
                                                currentItem->name ) ){
         REAL8 mn, stddiv;
-                
+        REAL8 livelow, livehigh, difflh;
+        
         cnt++;
-         
+        
         low = XLALRealloc(low, sizeof(REAL8)*cnt);
         high = XLALRealloc(high, sizeof(REAL8)*cnt);
         pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
-              
+        
         LALInferenceGetGaussianPrior( runState->priorArgs, currentItem->name,
                                       &mn, &stddiv );
-                          
-        /* for Gaussian prior set limits at the 5 sigma ranges */
-        low[cnt-1] = mn - 5.*stddiv;
-        high[cnt-1] = mn + 5*stddiv;        
+        
+        /* find the maximum and minimum live point values */
+        getMinMaxLivePointValue( runState->livePoints, currentItem->name, Nlive,
+                                 &livelow, &livehigh );
+        difflh = livehigh - livelow;
+        
+        /* to add a bit of room at either side add on half the difference */
+        low[cnt-1] = livelow - difflh/2.;
+        high[cnt-1] = livehigh + difflh/2.;
       }
     }
                       
     currentItem = currentItem->next;
   }
 
-  ndim = cnt;
+  ndim = (size_t)cnt;
           
   /* set up tree */
   tree = LALInferenceKDEmpty( low, high, ndim );
