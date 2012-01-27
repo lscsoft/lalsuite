@@ -1253,8 +1253,10 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   
   /* if a current tree exists remove it */
   if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+  {
+    LALInferenceKDTreeDelete(*(LALInferenceKDTree **)LALInferenceGetVariable(runState->proposalArgs,"kDTree"));
     LALInferenceRemoveVariable( runState->proposalArgs, "kDTree" );
-                    
+  }
   /* get the upper and lower bounds for each parameter */
   currentItem = runState->currentParams->head;
   while ( currentItem != NULL ) {
