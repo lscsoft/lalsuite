@@ -124,7 +124,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
   }
 
   thisScan->gridType = init->gridType;
-// grid's refTime: will be used to set correct refTime in returned doppler points
+  // grid's refTime: will be used to set correct refTime in returned doppler points
   thisScan->refTime = init->searchRegion.refTime;
 
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
@@ -169,14 +169,11 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	SkyRegion sky = empty_SkyRegion;
 
 	/* Check that the reference time is the same as the start time */
-	if (XLALGPSCmp(&init->searchRegion.refTime, &init->startTime) != 0) {
+	if (XLALGPSCmp(&thisScan->refTime, &init->startTime) != 0) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option currently restricts "
 			"the reference time to be the same as the start time.\n");
 	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
-
-	/* Set the reference time */
-	thisScan->refTime = init->startTime;
 
 	/* Create a flat lattice tiling */
 	if (NULL == (thisScan->spindownTiling = XLALCreateFlatLatticeTiling(2 + PULSAR_MAX_SPINS))) {
