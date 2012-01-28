@@ -139,7 +139,7 @@ typedef struct tagMultiCmplxAMCoeffs {
 void LALGetCmplxAMCoeffs( LALStatus *, CmplxAMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, const FreqSkypos_t *freq_skypos );
 void LALGetMultiCmplxAMCoeffs( LALStatus *, MultiCmplxAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, PulsarDopplerParams doppler );
 
-int XLALWeighMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
+int XLALWeightMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 /* destructors */
 void XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef );

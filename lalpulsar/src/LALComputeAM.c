@@ -624,7 +624,7 @@ void LALComputeAM (LALStatus          *status,
  * \note *) if multiWeights = NULL, we assume unit-weights.
  */
 int
-XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
 
   /* ----- input sanity checks ----- */
@@ -710,7 +710,7 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
 
   return XLAL_SUCCESS;
 
-} /* XLALWeighMultiAMCoefs() */
+} /* XLALWeightMultiAMCoeffs() */
 
 
 /** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
@@ -809,7 +809,7 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
  *
  * \note contrary to LALGetMultiAMCoeffs(), this function already applies
  * the noise-weights and computes  the corresponding antenna-pattern matrix {A, B, C},
- * so DONT use XLALWeighMultiAMCoeffs() on the result!
+ * so DONT use XLALWeightMultiAMCoeffs() on the result!
  *
  * \note a NULL input to noise weights corresponds to unit-weights
  */
@@ -854,8 +854,8 @@ XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**<
     } /* for X < numDetectors */
 
   /* apply noise-weights and compute antenna-pattern matrix {A,B,C} */
-  if ( XLALWeighMultiAMCoeffs (  ret, multiWeights ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALWeighMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
+  if ( XLALWeightMultiAMCoeffs (  ret, multiWeights ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: call to XLALWeightMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
     XLALDestroyMultiAMCoeffs ( ret );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }

@@ -637,8 +637,8 @@ BOOLEAN calc_AM_coeffs(
   
   /* Calculate and noise-weigh the AM coefficients */
   LAL_CALL(LALGetMultiAMCoeffs(status, &AM_coeffs, detector_states, sky), status);
-  if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-    XLALPrintError("XLALWeighMultiAMCoeffs failed\n");
+  if (XLALWeightMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
+    XLALPrintError("XLALWeightMultiAMCoeffs failed\n");
     return EXIT_FAILURE;
   }
   *A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;

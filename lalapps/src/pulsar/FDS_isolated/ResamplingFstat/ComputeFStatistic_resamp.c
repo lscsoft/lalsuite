@@ -2804,8 +2804,8 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       } ENDFAIL (status);
 
       /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
  

@@ -268,9 +268,9 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
           }
 
           /* apply noise-weights to Antenna-patterns and compute A,B,C */
-          if ( XLALWeighMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
+          if ( XLALWeightMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
+            XLALPrintError("%s: XLALWeightMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 

@@ -1198,9 +1198,9 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   TRY ( LALGetMultiAMCoeffs (status->statusPtr, &(cfg->multiAMcoe), cfg->multiDetStates,
 			     cfg->dopplerPoint.skypos ), status );
 
-  if ( XLALWeighMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
+  if ( XLALWeightMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "\nSomething failed in XLALWeighMultiAMCoeffs() ...\n\n");
+      XLALPrintError ( "\nSomething failed in XLALWeightMultiAMCoeffs() ...\n\n");
       ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT );
     }
 

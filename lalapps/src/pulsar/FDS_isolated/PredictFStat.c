@@ -589,8 +589,8 @@ InitPFS ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   TRY ( LALGetMultiAMCoeffs ( status->statusPtr, &multiAMcoef, multiDetStates, skypos ), status);
   /* noise-weighting of Antenna-patterns and compute A,B,C */
-  if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
-    LogPrintf (LOG_CRITICAL, "XLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+  if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiNoiseWeights ) != XLAL_SUCCESS ) {
+    LogPrintf (LOG_CRITICAL, "XLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
     ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
   }
 

@@ -167,7 +167,7 @@ void LALGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *De
 void LALNewGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, SkyPosition skypos);
 int XLALComputeAntennaPatternCoeffs ( REAL8 *ai, REAL8 *bi, const SkyPosition *skypos, const LIGOTimeGPS *tGPS, const LALDetector *site, const EphemerisData *edat );
 void LALGetMultiAMCoeffs (LALStatus *, MultiAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, SkyPosition pos );
-int XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
+int XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 AMCoeffs *XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates, SkyPosition skypos );
 MultiAMCoeffs *XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, const MultiNoiseWeights *multiWeights, SkyPosition skypos );

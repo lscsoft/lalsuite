@@ -287,7 +287,7 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
  * NOTE2: if the weights = NULL, we assume unit-weights.
  */
 int
-XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
   UINT4 numDetectors, X;
   REAL8 Ad, Bd, Cd, Ed;
@@ -380,4 +380,4 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 
   return XLAL_SUCCESS;
 
-} /* XLALWeighMultiCmplxAMCoefs() */
+} /* XLALWeightMultiCmplxAMCoefs() */
