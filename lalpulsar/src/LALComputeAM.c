@@ -613,15 +613,15 @@ void LALComputeAM (LALStatus          *status,
 
 } /* LALComputeAM() */
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
- * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}\f$ by simply *SUMMING* them, i.e.
- * \f$\widehat{A}^X \equiv \sum_{\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$, etc for the single-IFO values
- * for detector $X$, and
- * \f$\widehat{A} \equiv \sum_{X} \widehat{A}^X$ etc, for the multi-IFO values,
+/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by multi-weights \f$\sqrt{w_{X\alpha}}\f$ and
+ * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}\f$ by *SUMMING* them in quadrature, i.e.
+ * \f$\widehat{A}^X \equiv \sum_{\alpha} w_{X\alpha} a_{X\alpha}^2\f$, etc for the single-IFO values
+ * for detector \f$X\f$, and
+ * \f$\widehat{A} \equiv \sum_{X} \widehat{A}^X\f$ etc, for the multi-IFO values,
  * see Sec.4.1 in CFSv2 (https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4)
  *
- * NOTE: this function modifies the input AMCoeffs *in place* !
- * NOTE2: if multiWeights = NULL, we assume unit-weights.
+ * \note *) this function modifies the input AMCoeffs *in place* !
+ * \note *) if multiWeights = NULL, we assume unit-weights.
  */
 int
 XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
