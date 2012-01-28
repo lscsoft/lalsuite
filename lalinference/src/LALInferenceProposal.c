@@ -1631,8 +1631,15 @@ static int inBounds(REAL8 *pt, REAL8 *low, REAL8 *high, size_t N) {
 }
 
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
-  const size_t NCell = 64;
+  size_t NCell;
   LALInferenceVariables *proposalArgs = runState->proposalArgs;
+
+  if (LALInferenceCheckVariable(runState->proposalArgs, "KDNCell")) {
+    NCell = *(INT4 *)LALInferenceGetVariable(runState->proposalArgs, "KDNCell");
+  } else {
+    /* NCell default value. */
+    NCell = 64;
+  }
 
   const char *propName = KDNeighborhoodProposalName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);

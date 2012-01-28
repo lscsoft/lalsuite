@@ -403,6 +403,7 @@ void initVariables(LALInferenceRunState *state)
                (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
                (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
                (--kDTree)                      Use a kDTree proposal\n\
+               (--kDNCell N)                   Number of points per kD cell in proposal.\n\
                (--appendOutput fname)          Basename of the file to append outputs to\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation\n\
                (--lambda1)                     Trigger lambda1\n\
@@ -1425,6 +1426,13 @@ void initVariables(LALInferenceRunState *state)
     state->differentialPoints = NULL;
     state->differentialPointsLength = 0;
     state->differentialPointsSize = 0;
+  }
+
+  /* kD Tree NCell parameter. */
+  ppt=LALInferenceGetProcParamVal(commandLine, "--kDNCell");
+  if (ppt) {
+    INT4 NCell = atoi(ppt->value);
+    LALInferenceAddVariable(state->proposalArgs, "KDNCell", &NCell, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
   }
 
   /* KD Tree propsal. */
