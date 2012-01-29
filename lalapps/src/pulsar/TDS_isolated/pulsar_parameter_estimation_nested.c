@@ -230,6 +230,7 @@ LALStringVector *corlist = NULL;
                      distribution (DEFAULT = 0.1)\n"\
 " --kDTree            (REAL8) relative weigth of using a k-D tree of the live\n\
                      points to use as a proposal (DEFAULT = 3, e.g. 15%%)\n"\
+" --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
 " --diffev            (REAL8) relative weight of using differential evolution\n\
                      of the live points as the proposal (DEFAULT = 3, e.g.\n\
                      15%%)\n"\
@@ -2052,9 +2053,24 @@ void initialiseProposal( LALInferenceRunState *runState ){
   }
   
   if( kdfrac ){
+    INT4 kdncells = 0;
+    
+    /* set the maximum number of points in a kd-tree cell if given */
+    ppt = LALInferenceGetProcParamVal( runState->commandLine, 
+                                       "--kDNCell" );
+    if( ppt ){
+      kdncells = *(INT4 *)ppt->value;
+
+      LALInferenceAddVariable( runState->proposalArgs, "KDNCell", 
+                               &kdncells, LALINFERENCE_INT4_t,
+                               LALINFERENCE_PARAM_FIXED );
+    } 
+
     LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName,
                                     &LALInferenceKDNeighborhoodProposal,
                                     kdfrac );
+    
+
     LALInferenceSetupkDTreeNSLivePoints( runState );
   }
 
