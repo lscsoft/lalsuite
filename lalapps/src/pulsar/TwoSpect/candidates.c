@@ -772,6 +772,60 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
 }
 
 
+
+candidateVector * keepMostSignificantCandidates(candidateVector *input, inputParamsStruct *params)
+{
+   
+   INT4 ii, jj;
+   candidateVector *output = NULL;
+   
+   if (params->keepOnlyTopNumIHS>0 && (INT4)input->numofcandidates<=params->keepOnlyTopNumIHS) {
+      output = new_candidateVector(input->numofcandidates);
+      if (output==NULL) {
+         fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, input->numofcandidates);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+      
+      for (ii=0; ii<(INT4)input->numofcandidates; ii++) {
+         loadCandidateData(&(output->data[ii]), input->data[ii].fsig, input->data[ii].period, input->data[ii].moddepth, input->data[ii].ra, input->data[ii].dec, input->data[ii].stat, input->data[ii].h0, input->data[ii].prob, input->data[ii].proberrcode, input->data[ii].normalization);
+      }
+      output->numofcandidates = input->numofcandidates;
+      
+   } else if (params->keepOnlyTopNumIHS>0 && (INT4)input->numofcandidates>params->keepOnlyTopNumIHS) {
+      output = new_candidateVector(params->keepOnlyTopNumIHS);
+      if (output==NULL) {
+         fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, params->keepOnlyTopNumIHS);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+      
+      for (ii=0; ii<(INT4)output->length; ii++) {
+         REAL8 highestsignificance = 0.0;
+         INT4 candidateWithHighestSignificance = 0;
+         for (jj=0; jj<(INT4)input->numofcandidates; jj++) {
+            if (input->data[jj].prob<highestsignificance) {
+               highestsignificance = input->data[jj].prob;
+               candidateWithHighestSignificance = jj;
+            }
+         }
+         
+         loadCandidateData(&(output->data[ii]), input->data[candidateWithHighestSignificance].fsig, input->data[candidateWithHighestSignificance].period, input->data[candidateWithHighestSignificance].moddepth, input->data[candidateWithHighestSignificance].ra, input->data[candidateWithHighestSignificance].dec, input->data[candidateWithHighestSignificance].stat, input->data[candidateWithHighestSignificance].h0, input->data[candidateWithHighestSignificance].prob, input->data[candidateWithHighestSignificance].proberrcode, input->data[candidateWithHighestSignificance].normalization);
+         
+         input->data[candidateWithHighestSignificance].prob = 0.0;
+         
+      }
+      output->numofcandidates = params->keepOnlyTopNumIHS;
+      
+   } else {
+      fprintf(stderr, "%s: keepOnlyTopNumIHS given (%d) is not greater than 0, but it should be to use this function.\n", __func__, params->keepOnlyTopNumIHS);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+   }
+
+   
+   return output;
+   
+}
+
+
 //////////////////////////////////////////////////////////////
 // Calculate the R statistic
 REAL8 calculateR(REAL4Vector *ffdata, templateStruct *templatestruct, REAL4Vector *noise, REAL4Vector *fbinaveratios)

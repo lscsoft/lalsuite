@@ -5,7 +5,7 @@ purpose "TwoSpect analysis program"
 args "--string-parser --conf-parser"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string typestr="filename" optional
-option "verbosity" v "LAL debug level" int default="0" optional
+option "laldebug" v "LAL debug level" int default="0" optional
 
 section "Observational parameters"
 option "Tobs"  - "Total observation time (in seconds)" double optional
@@ -42,6 +42,7 @@ option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="
 option "ihsfar"   - "IHS FAR threshold" double default="0.01" optional
 option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double optional
 option "ihsfomfar" - "IHS FOM FAR threshold" double optional
+option "keepOnlyTopNumIHS"    - "Keep the top <number> of IHS candidates based on significance" int optional
 option "tmplfar"  - "Template FAR threshold" double default="0.01" optional
 option "minTemplateLength" - "Maximum number of pixels to use in the template" int default="50" optional
 option "maxTemplateLength" - "Maximum number of pixels to use in the template" int default="50" optional

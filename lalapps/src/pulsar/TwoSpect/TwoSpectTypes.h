@@ -59,6 +59,7 @@ typedef struct
    REAL8 simpleSigmaExclusion;
    REAL8 lineDetection;
    INT4 ihsfactor;
+   INT4 keepOnlyTopNumIHS;
    INT4 blksize;
    INT4 maxbinshift;
    INT4 mintemplatelength;

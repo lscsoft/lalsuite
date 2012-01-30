@@ -402,11 +402,6 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
          if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
-         
-         //REAL8 randval = 1.0 + 6.0*gsl_ran_gaussian(rng, sigmaval);
-         //while (randval<0.0) randval = 1.0 + 6.0*gsl_ran_gaussian(rng, sigmaval);
-         //if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj]*randval));
-         
          else noise->data[jj] = 0.0;
       } /* for jj < aveNoise->length */
       
@@ -1502,7 +1497,6 @@ REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
 {
    
    if (ihsval<=0.0) return 0.0;
-   //return 4.6*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
    REAL8 prefact = 1.0;
    prefact = 7.2;
    return prefact*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
