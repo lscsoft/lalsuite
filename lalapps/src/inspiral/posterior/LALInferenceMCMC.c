@@ -635,7 +635,7 @@ void initVariables(LALInferenceRunState *state)
       {
         PhaseOrder = LAL_PNORDER_TWO;
       }
-    else if ( ! strcmp( "twoPointFive", ppt->value ) )
+    else if ( ! strcmp( "twoPointFivePN", ppt->value ) )
       {
         PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
       }
@@ -686,7 +686,7 @@ void initVariables(LALInferenceRunState *state)
       {
         AmpOrder = LAL_PNORDER_TWO;
       }
-    else if ( ! strcmp( "twoPointFive", ppt->value ) )
+    else if ( ! strcmp( "twoPointFivePN", ppt->value ) )
       {
         AmpOrder = LAL_PNORDER_TWO_POINT_FIVE;
       }
@@ -711,7 +711,7 @@ void initVariables(LALInferenceRunState *state)
                  "threePointFivePN\n");
         exit( 1 );
       }
-    fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(PhaseOrder))/2.0);
+    fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(AmpOrder))/2.0);
   }
   
   /* This flag was added to account for the broken Big Dog
