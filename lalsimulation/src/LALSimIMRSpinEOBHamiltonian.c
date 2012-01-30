@@ -393,7 +393,6 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
 
   //printf( "Hns = %.16e, Hs = %.16e, Hss = %.16e, other = %.16e\n", Hns, Hs, Hss, dheffSS * eta * (sKerr_x*sStar_x + sKerr_y*sStar_y + sKerr_z*sStar_z) / (r*r*r*r) );
   //printf( "H = %.16e\n", H );
-     
   Hreal = sqrt(1. + 2.*eta *(H - 1.));
 
   return Hreal;

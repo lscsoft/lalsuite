@@ -38,6 +38,7 @@ the inspiral part of the compat binary coalescing waveform.
 #include <gsl/gsl_spline.h>
 
 #include "LALSimIMREOBNRv2.h"
+#include "LALSimIMREOBNQCCorrection.c"
 
 #ifndef _LALSIMIMREOBHYBRIDRINGDOWN_C
 #define _LALSIMIMREOBHYBRIDRINGDOWN_C
@@ -1705,7 +1706,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
 
       /* Replace the last QNM with pQNM */
       /* We assume aligned/antialigned spins here */
-
+      a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * sqrt(1.0 - 4.0 * eta);
       NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
       printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
              mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);

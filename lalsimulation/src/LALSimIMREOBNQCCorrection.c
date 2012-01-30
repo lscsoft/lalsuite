@@ -425,13 +425,15 @@ UNUSED static int  XLALSimIMREOBNonQCCorrection(
 {
 
   REAL8 rOmega, rOmegaSq;
-  REAL8 r, p;
+  REAL8 r, p, sqrtR;
 
   REAL8 mag, phase;
 
 
   r = values->data[0];
   p = values->data[2];
+
+  sqrtR = sqrt(r);
 
   rOmega = r * omega;
   rOmegaSq = rOmega*rOmega;
@@ -440,10 +442,11 @@ UNUSED static int  XLALSimIMREOBNonQCCorrection(
   /* through XLALSimIMREOBGetCalibratedNQCCoeffs() */
   /* and XLALSimIMREOBCalculateNQCCoefficients() */
   mag = 1. + (p*p / rOmegaSq) * ( coeffs->a1
-     + coeffs->a2 / r + coeffs->a3 / (r*sqrt(r))
-     + coeffs->a4 / (r*r) );
+     + coeffs->a2 / r + ( coeffs->a3 + coeffs->a3S) / (r*sqrtR)
+     + coeffs->a4 / (r*r) + coeffs->a5 / (r*r*sqrtR));
 
-  phase = coeffs->b1 * p / rOmega + coeffs->b2 * p*p*p/rOmega;
+  phase = coeffs->b1 * p / rOmega + p*p*p/rOmega * ( coeffs->b2
+     + coeffs->b3 / sqrtR + coeffs->b4 / r );
 
   nqc->re = mag * cos(phase);
   nqc->im = mag * sin(phase);
@@ -765,7 +768,7 @@ UNUSED static inline REAL8 GetNRSpinPeakOmega( INT4 UNUSED l, INT4 UNUSED m, REA
   return 0.27581190323955274 + 0.19347381066059993*eta
        - 0.08898338208573725*log(1.0 - a/(1.0-2.0*eta))
        + eta*eta*(1.78832*(0.2690779744133912 + a/(2.0-4.0*eta))*(1.2056469070395925
-       + a/(2.0-4.0*eta)) + 1.423734113371796*log(1.0 - a/(1.0-2.0*eta)))
+       + a/(2.0-4.0*eta)) + 1.423734113371796*log(1.0 - a/(1.0-2.0*eta)));
 }
 
 UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )

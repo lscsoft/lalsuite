@@ -185,8 +185,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8  UNUSED           tMax;
 
   /* Accuracies of adaptive Runge-Kutta integrator */
-  const REAL8 EPS_ABS = 1.0e-9;
-  const REAL8 EPS_REL = 1.0e-8;
+  const REAL8 EPS_ABS = 1.0e-10;
+  const REAL8 EPS_REL = 1.0e-9;
 
   /* Parameter structures containing important parameters for the model */
   SpinEOBParams           seobParams;
@@ -612,6 +612,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
 
   /* Apply to the high sampled part */
+  out = fopen( "saWavesHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
   {
     values->data[0] = rHi.data[i];
@@ -619,6 +620,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     values->data[2] = prHi.data[i];
     values->data[3] = pPhiHi.data[i];
 
+    //printf("NQCs entering hNQC: %.16e, %.16e, %.16e, %.16e, %.16e, %.16e\n", nqcCoeffs.a1, nqcCoeffs.a2,nqcCoeffs.a3, nqcCoeffs.a3S, nqcCoeffs.a4, nqcCoeffs.a5 );
     if ( XLALSimIMREOBNonQCCorrection( &hNQC, values, omegaHi->data[i], &nqcCoeffs ) == XLAL_FAILURE )
     {
       XLAL_ERROR( XLAL_EFUNC );
@@ -626,6 +628,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
     hLM.re = sigReHi->data[i];
     hLM.im = sigImHi->data[i];
+    fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], hLM.re, hLM.im, hNQC.re, hNQC.im );
 
     hLM = XLALCOMPLEX16Mul( hNQC, hLM );
     sigReHi->data[i] = (REAL4) hLM.re;
@@ -638,13 +641,16 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     }
     oldsigAmpSqHi = sigAmpSqHi;
   }
+  fclose(out);
   if (timewavePeak < 1.0e-16)
   {
     printf("YP::warning: could not locate mode peak.\n");
   }
   /* Failed to locate mode peak, use calibrated timeshiftPeak instead */
-  timewavePeak = XLALGetNRSpinPeakDeltaT(2, 2, eta,  a);
+  printf( "eta: %.16e  a: %.16e\n", eta, a);
+  timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaT(2, 2, eta,  a);
   timewavePeak = timePeak - timewavePeak;
+
   out = fopen( "saInspWaveHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
   {
