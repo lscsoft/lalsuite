@@ -613,14 +613,24 @@ void LALComputeAM (LALStatus          *status,
 
 } /* LALComputeAM() */
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by multi-weights \f$\sqrt{w_{X\alpha}}\f$ and
- * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}\f$ by *SUMMING* them in quadrature, i.e.
- * \f$\widehat{A}^X \equiv \sum_{\alpha} w_{X\alpha} a_{X\alpha}^2\f$, etc for the single-IFO values
- * for detector \f$X\f$, and
- * \f$\widehat{A} \equiv \sum_{X} \widehat{A}^X\f$ etc, for the multi-IFO values,
- * see Sec.4.1 in CFSv2 (https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4)
+/** <b>Replace</b> AM-coeffs by weighted AM-coeffs, i.e.
+ * \f$a_{X\alpha} \rightarrow \widehat{a}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$, and
+ * \f$b_{X\alpha} \rightarrow \widehat{b}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$,
+ * where \f$w_{X\alpha}\f$ are the \a multiWeights for SFT \f$\alpha\f$ and detector \f$X\f$.
  *
- * \note *) this function modifies the input AMCoeffs *in place* !
+ * Also compute the resulting per-detector \f$X\f$ antenna-pattern matrix coefficients
+ * \f$\widehat{A}_X \equiv \sum_{\alpha} \widehat{a}^2_{X\alpha}\f$,
+ * \f$\widehat{B}_X \equiv \sum_{\alpha} \widehat{b}^2_{X\alpha}\f$,
+ * \f$\widehat{C}_X \equiv \sum_{\alpha} \widehat{a}_{X\alpha}\widehat{b}_{X\alpha}\f$,
+ *
+ * and corresponding multi-detector antenna-pattern matrix coefficients
+ * \f$\widehat{A} \equiv \sum_{X} \widehat{A}_X\f$,
+ * \f$\widehat{B} \equiv \sum_{X} \widehat{B}_X\f$,
+ * \f$\widehat{C} \equiv \sum_{X} \widehat{C}_X\f$.
+ *
+ * See Sec.4.1 in CFSv2.pdf notes https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4
+ *
+ * \note *) this function modifies the input AMCoeffs->{a,b,c} *in place* !
  * \note *) if multiWeights = NULL, we assume unit-weights.
  */
 int
@@ -729,8 +739,10 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
  * the response tensor of a bar detector with no further modification
  * needed.)
  *
- * \note The fields 'A', 'B', 'C' in AMCoeffs are obsolete and are not
- * computed by this function at all. Use AntennaPatternMatrix instead.
+ * \note The fields AMCoeffs->{A, B, C, D} are not computed by this function,
+ * as they require correct SFT noise-weights. These fields would be computed, for
+ * example by XLALWeightMultiAMCoeffs().
+ *
  */
 AMCoeffs *
 XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
@@ -807,11 +819,13 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
  * Computes noise-weighted combined multi-IFO antenna pattern functions.
 
  *
- * \note contrary to LALGetMultiAMCoeffs(), this function already applies
- * the noise-weights and computes  the corresponding antenna-pattern matrix {A, B, C},
- * so DONT use XLALWeightMultiAMCoeffs() on the result!
+ * \note *) contrary to LALGetMultiAMCoeffs(), and XLALComputeAMCoeffs(), this function applies
+ * the noise-weights and computes  the multi-IFO antenna-pattern matrix components
+ * {A, B, C}, and single-IFO matrix components {A_X,B_X,C_X} for detector X.
  *
- * \note a NULL input to noise weights corresponds to unit-weights
+ * Therefore: DONT use XLALWeightMultiAMCoeffs() on the result!
+ *
+ * \note *) an input of multiWeights = NULL corresponds to unit-weights
  */
 MultiAMCoeffs *
 XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
