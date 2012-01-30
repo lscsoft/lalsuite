@@ -95,7 +95,7 @@ static int
 XLALSimIMREOBCalculateNewtonianMultipole(
                             COMPLEX16 *multipole, /**<< Newtonian multipole (returned) */
                             REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
-                            REAL8 r,              /**<< Orbital separation (units of total mass M */
+                            UNUSED REAL8 r,              /**<< Orbital separation (units of total mass M */
                             REAL8 phi,            /**<< Orbital phase (in radians) */
                             UINT4  l,             /**<< Mode l */
                             INT4  m,              /**<< Mode m */
@@ -119,14 +119,14 @@ XLALSimIMREOBCalculateNewtonianMultipole(
   }
 
 
-  if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
+/*  if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
   {
     *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r );
   }
   else
-  {
+  {*/
     *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
-  }
+//  }
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
   return XLAL_SUCCESS;
