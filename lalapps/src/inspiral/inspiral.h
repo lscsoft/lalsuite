@@ -28,6 +28,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LALSimInspiral.h>
 #include <lal/AVFactories.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
@@ -66,6 +67,16 @@ REAL4 compute_candle_distance(
     REAL4 candleM1,
     REAL4 candleM2,
     REAL4 snr,
+    REAL8 chanDeltaT,
+    INT4 nPoints,
+    REAL8FrequencySeries *spec,
+    UINT4 cut);
+
+REAL4 XLALCandleDistanceTD(
+    Approximant approximant,
+    REAL4 candleM1,
+    REAL4 candleM2,
+    REAL4 candlesnr,
     REAL8 chanDeltaT,
     INT4 nPoints,
     REAL8FrequencySeries *spec,
