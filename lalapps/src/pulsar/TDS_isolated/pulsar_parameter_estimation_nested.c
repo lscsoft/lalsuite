@@ -396,18 +396,32 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
                            LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
   /* Number of live points */
-  tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nlive")->value );
-  LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, LALINFERENCE_INT4_t, 
-                           LALINFERENCE_PARAM_FIXED );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--Nlive" );
+  if( ppt ){
+    tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nlive")->value );
+    LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi,
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+  }
+  else{
+   XLALPrintError("Error... Number of live point must be specified.\n");
+   XLAL_ERROR_VOID(XLAL_EIO);
+  }
         
   /* Number of points in MCMC chain */
-  tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nmcmc")->value );
-  LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi, LALINFERENCE_INT4_t, 
-                           LALINFERENCE_PARAM_FIXED );
+  ppt = LALInferenceGetProcParamVal( commandLine, "--Nmcmc" );
+  if( ppt ){
+    tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nmcmc")->value );
+    LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi,
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+  }
+  else{
+    XLALPrintError("Error... Number of MCMC iterations must be specified.\n");
+    XLAL_ERROR_VOID(XLAL_EIO);
+  }
 
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
-  if(ppt) {
+  if( ppt ) {
     tmpi = atoi( ppt->value );
     LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, LALINFERENCE_INT4_t,
                              LALINFERENCE_PARAM_FIXED );
