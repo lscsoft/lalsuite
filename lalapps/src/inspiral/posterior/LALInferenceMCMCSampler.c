@@ -271,7 +271,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       priorMax = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMax));
       dprior = priorMax - priorMin;
 
-      for(x=0;x<100;++x){
+      for(x=0;x<10000;++x){
         randVal = gsl_rng_uniform(runState->GSLrandom);
         paramVal = priorMin + randVal * (priorMax - priorMin);
         LALInferenceSetVariable(&flatPriorTestParams, name, &paramVal);
@@ -285,7 +285,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     /* Construct temporary linear temperature ladder to probe for best max temp */
-    REAL8 tempSearchLow = 2.0;
+    REAL8 tempSearchLow = 5.0;
     REAL8 tempSearchHigh = tempMax;
     tempDelta = (tempSearchHigh-tempSearchLow)/(REAL8)(nChain-1);
     for(t=0; t<nChain; ++t){

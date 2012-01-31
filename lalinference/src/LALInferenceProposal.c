@@ -436,7 +436,6 @@ static void
 SetupPTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
   LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, 1);
-  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 1);
   LALInferenceRandomizeProposalCycle(runState);
 }
 
