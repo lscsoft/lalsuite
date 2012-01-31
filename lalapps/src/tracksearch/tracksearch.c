@@ -1604,6 +1604,7 @@ void LALappsGetAsciiData(
 {
   FILE                 *fp=NULL;
   INT4                  i;
+  int                   n;
 
   /* File opening via an absolute path */
   fp = fopen(dirname->data,"r");
@@ -1614,7 +1615,12 @@ void LALappsGetAsciiData(
     };
   for(i=0;i<(INT4)params->TimeLengthPoints;i++)
     {
-      fscanf(fp,"%f\n",&(DataIn->data->data[i]));
+      n = fscanf(fp,"%f\n",&(DataIn->data->data[i]));
+      if (n != 1)
+      {
+        fprintf(stderr,TRACKSEARCHC_MSGEREAD);
+        exit(TRACKSEARCHC_EREAD);
+      }
     }
   fclose(fp);
   if (DataIn->data->length != params->TimeLengthPoints)
