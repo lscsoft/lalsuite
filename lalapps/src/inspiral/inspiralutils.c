@@ -499,7 +499,7 @@ void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to L
           thisSNR = calculate_ligo_snr_from_strain( tempStrain, thisInj, ifo);
 
           /* set channel name */
-          snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+          snprintf( chan->name, LALNameLength * sizeof( CHAR ),
                     "%s:STRAIN", ifo );
 
           if ((thisSNR < snrHigh) && (thisSNR > snrLow))
@@ -603,7 +603,7 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to L
           thisSNR = calculate_ligo_snr_from_strain_real8(strain, ifo);
 
            /* set channel name */
-           snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+           snprintf( chan->name, LALNameLength * sizeof( CHAR ),
                     "%s:STRAIN", ifo );
 
           if ((thisSNR < snrHigh) && (thisSNR > snrLow))
