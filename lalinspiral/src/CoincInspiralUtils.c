@@ -1274,7 +1274,7 @@ XLALGenerateCoherentBank(
       XLALReturnIFO( ifo, ifoNumber);
 
 
-      if ((runType == cohinspbank)) {
+      if (runType == cohinspbank) {
 	/* decide whether we want a template for this ifo */
 	if ( (thisCoinc->snglInspiral[ifoNumber] ) )
 	  {
