@@ -1,5 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = ComplexFFT.h RealFFT.h FFTWMutex.h TimeFreqFFT.h
+pkginclude_HEADERS = ComplexFFT.h RealFFT.h TimeFreqFFT.h
 if CUDA
 pkginclude_HEADERS += CudaPlan.h
 endif
