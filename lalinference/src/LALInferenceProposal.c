@@ -346,7 +346,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   const char defaultPropName[]="none";
   ProcessParamsTable *ppt;
   if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
-      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, &defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, (void*)&defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
