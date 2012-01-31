@@ -342,7 +342,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       if(LALInferenceCheckVariable(&flatPriorParams, name)){
         pdf_count=0;
         for(x=0;x<10;++x){
-          if(pdf[p][x]<600) pdf_count++;
+          if(pdf[p][x]<600 || pdf[p][x]>1400) pdf_count++;
         }
         if(pdf_count==0) param_count++;
       }
