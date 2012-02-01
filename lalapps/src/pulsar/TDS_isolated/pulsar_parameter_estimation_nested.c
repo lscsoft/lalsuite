@@ -238,7 +238,7 @@ LALStringVector *corlist = NULL;
 " --inject-file       a pulsar parameter (par) file containing the parameters\n\
                      of a signal to be injected. If this is given a signal\n\
                      will be injected\n"\
-" --inject-output     a filename to with the injected signal will be\n\
+" --inject-output     a filename to which the injected signal will be\n\
                      output if specified\n"\
 " --fake-data         a list of IFO's for which fake data will be generated\n\
                      e.g. H1,L1 (delimited by commas). Unless the --fake-psd\n\
@@ -2412,9 +2412,11 @@ parameter file %s is wrong.\n", injectfile);
       CHAR *outfile = NULL;
       CHAR *signalonly = NULL; /* file containing only signal and no noise */
       
-      outfile = XLALStringDuplicate( data->detector->frDetector.prefix );
+      outfile = XLALStringDuplicate( ppt2->value );
       
-      outfile = XLALStringAppend( outfile, ppt2->value );
+      /* append detector name to file */
+      outfile = XLALStringAppend( outfile, "_" );
+      outfile = XLALStringAppend( outfile, data->detector->frDetector.prefix );
       
       if ( ( !strcmp( modeltype, "pinsf" ) ) && (fmod(j,2)==0) ){
         outfile = XLALStringAppend( outfile, "_2f");
