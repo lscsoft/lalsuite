@@ -260,8 +260,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     flatPriorParams.head          = NULL;
     flatPriorParams.dimension     = 0;
     runState->prior = &LALInferenceInspiralPriorNormalised;
-    LALInferenceCopyVariables(runState->currentParams, &flatPriorParams);
+    runState->currentPrior = runState->prior(runState, runState->currentParams);
     flatPriorTestVal = runState->currentPrior;
+    LALInferenceCopyVariables(runState->currentParams, &flatPriorParams);
 
     for(p=0;p<nPar;++p){
       LALInferenceCopyVariables(runState->currentParams, &flatPriorTestParams);
@@ -297,97 +298,105 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));
 
-    pdf=(UINT4**)calloc(nPar,sizeof(INT4 *));
-    for(p=0;p<nPar;++p){
-      pdf[p]=calloc(10,sizeof(INT4));
-      for(x=0;x<10;++x){
-        pdf[p][x]=0;
-      }
-    }
-
     /* Use specialized jump proposal and run a short MCMC */
     if(MPIrank==0)
       fprintf(stdout,"Running exploratory MCMC to determine best temperature ladder.\n");
 
     runState->proposal = &LALInferencePTTempTestProposal;
     runState->prior = &LALInferenceInspiralPriorNormalised;
-    for(i=0;i<10000;++i){
-      PTMCMCOneStep(runState);
+    pdf=(UINT4**)calloc(nPar,sizeof(INT4 *));
 
-      ptr=runState->currentParams->head;
-      p=0;
-      while(ptr!=NULL) {
-        if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-          parameters->data[p]=*(REAL8 *)ptr->value;
-          p++;
+    while (tMaxSearch == 1) {
+      for(p=0;p<nPar;++p){
+        pdf[p]=calloc(10,sizeof(INT4));
+        for(x=0;x<10;++x){
+          pdf[p][x]=0;
         }
-        ptr=ptr->next;
       }
 
-      /* Bin parameterm values */
+
+      for(i=0;i<10000;++i){
+        PTMCMCOneStep(runState);
+
+        ptr=runState->currentParams->head;
+        p=0;
+        while(ptr!=NULL) {
+          if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+            parameters->data[p]=*(REAL8 *)ptr->value;
+            p++;
+          }
+          ptr=ptr->next;
+        }
+
+        /* Bin parameterm values */
+        for (p=0;p<nPar;++p){
+          name = LALInferenceGetVariableName(runState->currentParams, (p+1));
+          sprintf(nameMin, "%s_min", name);
+          sprintf(nameMax, "%s_max", name);
+          priorMin = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMin));
+          priorMax = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMax));
+          dprior = priorMax - priorMin;
+          x=(int)(((parameters->data[p] - priorMin)/dprior)*10);
+          if(x<0) x=0;
+          if(x>9) x=9;
+          pdf[p][x]++;
+        }
+      }//for(i=0;i<10000;++i)
+
+      /* Check for flat PDFs in parameters w/ flat priors */
+      param_count=0;
       for (p=0;p<nPar;++p){
         name = LALInferenceGetVariableName(runState->currentParams, (p+1));
-        sprintf(nameMin, "%s_min", name);
-        sprintf(nameMax, "%s_max", name);
-        priorMin = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMin));
-        priorMax = *((REAL8 *)LALInferenceGetVariable(runState->priorArgs, nameMax));
-        dprior = priorMax - priorMin;
-        x=(int)(((parameters->data[p] - priorMin)/dprior)*10);
-        if(x<0) x=0;
-        if(x>9) x=9;
-        pdf[p][x]++;
-      }
-    }//for(i=0;i<10000;++i)
-
-    /* Check for flat PDFs in parameters w/ flat priors */
-    param_count=0;
-    for (p=0;p<nPar;++p){
-      name = LALInferenceGetVariableName(runState->currentParams, (p+1));
-      if(LALInferenceCheckVariable(&flatPriorParams, name)){
-        pdf_count=0;
-        for(x=0;x<10;++x){
-          if(pdf[p][x]<600 || pdf[p][x]>1400) pdf_count++;
+        if(LALInferenceCheckVariable(&flatPriorParams, name)){
+          pdf_count=0;
+          for(x=0;x<10;++x){
+            if(pdf[p][x]<600 || pdf[p][x]>1400) pdf_count++;
+          }
+          if(pdf_count==0) param_count++;
         }
-        if(pdf_count==0) param_count++;
       }
-    }
 
-    if (param_count == nFlatPar) {
-      acceptanceCount = 1;
-    } else {
-      acceptanceCount = 0;
-    }
-
-    MPI_Allgather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, MPI_COMM_WORLD);
-
-    UINT4 recoveredPrior = 0;
-    tempMax = tempLadder[nChain-1];
-    for (i=0;i<nChain;++i) {
-      if (acceptanceCountLadder[i]) {
-        if (!recoveredPrior) {
-          recoveredPrior = 1;
-          tempMax = tempLadder[i];
-        }
+      if (param_count == nFlatPar) {
+        acceptanceCount = 1;
       } else {
-        if (recoveredPrior) {
-          recoveredPrior = 0;
-          tempMax = tempLadder[nChain-1];
+        acceptanceCount = 0;
+      }
+
+      MPI_Allgather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, MPI_COMM_WORLD);
+
+      UINT4 recoveredPrior = 0;
+      tempMax = tempLadder[nChain-1];
+      for (i=0;i<nChain;++i) {
+        if (acceptanceCountLadder[i]) {
+          if (!recoveredPrior) {
+            recoveredPrior = 1;
+            tempMax = tempLadder[i];
+            tMaxSearch = 0;
+          }
+        } else {
+          if (recoveredPrior) {
+            fprintf(stdout,"Inconsistent temperature performance, possibly due to stuck chain.  Re-running exploritory MCMC");
+            recoveredPrior = 0;
+            tempMax = tempLadder[nChain-1];
+            tMaxSearch = 1;
+            break;
+          }
         }
       }
-    }
+      MPI_Barrier(MPI_COMM_WORLD);
+    } //while (tMaxSearch == 1)
 
     if (tempMax == tempLadder[nChain-1])
       fprintf(stdout,"WARNING: The search set max temperature to the maximum allowed temperature (%f). \
               This may be insufficient. Recommend allowing higher temperatures using --Tmax=<Tmax>.\n",tempMax);
 
-    tMaxSearch = 0;
     LALInferenceSetVariable(runState->proposalArgs, "tMaxSearch", &(tMaxSearch));
 
     /* Reset values to those before temperature search */
     LALInferenceCopyVariables(&tempCurrentParams, runState->currentParams);
-    runState->currentPrior = tempCurrentPrior;
     runState->currentLikelihood = tempCurrentLikelihood;
     runState->prior = tempPrior;
+    runState->currentPrior = tempCurrentPrior;
     runState->proposal = tempProposal;
     acceptanceCount = 0;
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
