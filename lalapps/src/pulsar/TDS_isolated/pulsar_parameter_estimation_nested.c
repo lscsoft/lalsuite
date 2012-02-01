@@ -266,6 +266,11 @@ LALStringVector *corlist = NULL;
                      60s.\n"\
 " --scale-snr         give a (multi-detector) SNR value to which you want to\n\
                      scale the injection. This is 1 by default.\n"\
+"\n"\
+" Legacy code flags:\n"\
+" --oldChunks         set if using fixed chunk sizes for dividing the data as\n\
+                     in the old code, rather than the calculating chunks\n\
+                     using the change point method.\n"\
 "\n"
 
 
@@ -1256,12 +1261,15 @@ void setupFromParFile( LALInferenceRunState *runState )
  * used. The data times as a fraction of a sidereal day from the start time
  * will also be calculated.
  * 
- * The function will also calls \c chop_n_merge() for each data set, which will 
- * split the data into chunks during which it can be considered Gaussian and
- * stationary. The command line arguments \c chunk-min and \c chunk-max can be
- * used to specify hardwire minimum and maximum lengths of chunks that are
- * allowable. By default the maximum chunk length is 0, which corresponds to no
- * maximum value being set.
+ * The function will be default also call \c chop_n_merge() for each data set,
+ * which will split the data into chunks during which it can be considered
+ * Gaussian and stationary. The command line arguments \c chunk-min and \c
+ * chunk-max can be used to specify hardwire minimum and maximum lengths of
+ * chunks that are allowable. By default the maximum chunk length is 0, which
+ * corresponds to no maximum value being set. If the \c --oldChunks flag is set
+ * then data will be split as in the older version of the parameter estimation
+ * code, in which the chunk length is fixed, except for the possibility of
+ * shorter segments at the end of science segments.
  * 
  * \param runState [in] A pointer to the LALInferenceRunState
  * \param source [in] A pointer to a LALSource variable containing the source
@@ -1349,11 +1357,12 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( data->dataParams, "chunkMax", &chunkMax, 
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-    
-    /* get chunk lengths of data */
-    /* chunkLength = get_chunk_lengths( data, chunkMax ); */
-    
-    chunkLength = chop_n_merge( data, chunkMin, chunkMax );
+   
+    ppt = LALInferenceGetProcParamVal( commandLine, "--oldChunks" );
+    if ( ppt ) /* use old style quasi-fixed data chunk lengths */
+      chunkLength = get_chunk_lengths( data, chunkMax );
+    else /* use new change points analysis to get chunks */
+      chunkLength = chop_n_merge( data, chunkMin, chunkMax );
     
     LALInferenceAddVariable( data->dataParams, "chunkLength", &chunkLength, 
                              LALINFERENCE_UINT4Vector_t, LALINFERENCE_PARAM_FIXED );
