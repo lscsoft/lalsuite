@@ -310,6 +310,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       fprintf(stdout,"Running exploratory MCMC to determine best temperature ladder.\n");
 
     runState->proposal = &LALInferencePTTempTestProposal;
+    runState->prior = &LALInferenceInspiralPriorNormalised;
     for(i=0;i<10000;++i){
       PTMCMCOneStep(runState);
 
