@@ -122,6 +122,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceVariables flatPriorTestParams;
   LALInferenceVariables flatPriorParams;
   LALInferenceProposalFunction *tempProposal;
+  LALInferencePriorFunction *tempPrior;
   char *name = NULL;
   char nameMin[VARNAME_MAX], nameMax[VARNAME_MAX];
 
@@ -249,6 +250,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     LALInferenceCopyVariables(runState->currentParams, &tempCurrentParams);
     tempCurrentPrior = runState->currentPrior;
     tempCurrentLikelihood = runState->currentLikelihood;
+    tempPrior = runState->prior;
     tempProposal = runState->proposal;
 
     /* Find parameters with flat prior */
@@ -257,6 +259,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     flatPriorTestParams.dimension = 0;
     flatPriorParams.head          = NULL;
     flatPriorParams.dimension     = 0;
+    runState->prior = &LALInferenceInspiralPriorNormalised;
     LALInferenceCopyVariables(runState->currentParams, &flatPriorParams);
     flatPriorTestVal = runState->currentPrior;
 
@@ -383,6 +386,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     LALInferenceCopyVariables(&tempCurrentParams, runState->currentParams);
     runState->currentPrior = tempCurrentPrior;
     runState->currentLikelihood = tempCurrentLikelihood;
+    runState->prior = tempPrior;
     runState->proposal = tempProposal;
     acceptanceCount = 0;
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
