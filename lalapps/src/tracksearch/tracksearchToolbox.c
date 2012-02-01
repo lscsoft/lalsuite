@@ -773,6 +773,9 @@ LALappsTSALoadCacheFile(
   lineCount=0;
   /*
    * Estimating number of lines in the file
+   * This should be merged to dynamically allocate
+   * while reading file instead of using a two pass method
+   * See 2nd Pass reopen loop
    */
   while (errCode != EOF)
     {
@@ -806,7 +809,12 @@ LALappsTSALoadCacheFile(
     inputFilePtr=fopen(filename->data,"r");
     for (i=0;i<(*mapCache)->numMapFilenames;i++)
       {
-	fscanf(inputFilePtr,"%s\n",(*mapCache)->filename[i]->data);
+	errCode=fscanf(inputFilePtr,"%s\n",(*mapCache)->filename[i]->data);
+	if ((errCode == EOF) && (i<(*mapCache)->numMapFilenames))
+	  {
+	    fprintf(stderr,TRACKSEARCHTOOLBOXC_EMSGFAIL);
+	    exit(TRACKSEARCHTOOLBOXC_EFAIL);
+	  }
 	/*
 	 * Ignore blank lines
 	 */
