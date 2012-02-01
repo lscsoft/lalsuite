@@ -375,7 +375,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           }
         } else {
           if (recoveredPrior) {
-            fprintf(stdout,"Inconsistent temperature performance, possibly due to stuck chain.  Re-running exploritory MCMC");
+            if(MPIrank==0)
+              fprintf(stdout,"Inconsistent temperature performance, possibly due to stuck chain.  Re-running exploritory MCMC");
             recoveredPrior = 0;
             tempMax = tempLadder[nChain-1];
             tMaxSearch = 1;
