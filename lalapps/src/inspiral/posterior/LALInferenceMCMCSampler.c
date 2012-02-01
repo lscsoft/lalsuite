@@ -259,6 +259,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     flatPriorTestParams.dimension = 0;
     flatPriorParams.head          = NULL;
     flatPriorParams.dimension     = 0;
+    runState->prior = &LALInferenceInspiralPriorNormalised;
     LALInferenceCopyVariables(runState->currentParams, &flatPriorParams);
     flatPriorTestVal = runState->currentPrior;
 
