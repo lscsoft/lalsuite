@@ -37,6 +37,12 @@
 #include <lal/LALFrameL.h>
 #include <lal/LALFrameIO.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 static char tempdir[] = "/tmp/TestLowLatencyDataXXXXXX";
 
 static void write_dummy_frame(long gps_start_time, int duration)
@@ -57,10 +63,9 @@ static void write_dummy_frame(long gps_start_time, int duration)
   XLALFrameWrite(frame, filename, 0);
 }
 
-static void *write_dummy_frames(void *not_used)
+static void *write_dummy_frames(void UNUSED *not_used)
 {
   int i;
-  not_used = not_used; /* Shut up, compiler warning! */
   for (i = 0; i < 1000; i ++)
     write_dummy_frame(1000000000 + i, 1);
   return NULL;
@@ -107,15 +112,11 @@ static void remove_tempdir(void)
     perror("rmdir");
 }
 
-int main(int argc, char **argv)
+int main(void)
 {
   pthread_t thread;
   LowLatencyData *reader;
   int i;
-
-  /* Shut up, compiler warning! */
-  argc = argc;
-  argv = argv;
 
   /* exit() abnormally if anything goes wrong in XLAL land */
   XLALSetErrorHandler(XLALExitErrorHandler);
