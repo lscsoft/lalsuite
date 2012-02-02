@@ -16,6 +16,10 @@ if [ -n "${srcdir}" ]; then
 else
     srcdir=.
 fi
+
+# The only thing where 'dirsep' can and should be used is in paths of the SFT files,
+# as in fact SFTfileIO is the only code that requires it to be set properly. Other
+# file references should be handled by the shell (or wine) and converted if necessary.
 dirsep="/"
 
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
