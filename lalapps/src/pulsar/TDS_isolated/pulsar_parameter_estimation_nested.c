@@ -1359,8 +1359,15 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
    
     ppt = LALInferenceGetProcParamVal( commandLine, "--oldChunks" );
-    if ( ppt ) /* use old style quasi-fixed data chunk lengths */
+    if ( ppt ){ /* use old style quasi-fixed data chunk lengths */
+      /* is a chunk max wasn't set use 30 mins by default */
+      if ( !LALInferenceGetProcParamVal( commandLine, "--chunk-max" ) ){
+        chunkMax = 30.;
+        LALInferenceSetVariable( data->dataParams, "chunkMax", &chunkMax );
+      }
+        
       chunkLength = get_chunk_lengths( data, chunkMax );
+    }
     else /* use new change points analysis to get chunks */
       chunkLength = chop_n_merge( data, chunkMin, chunkMax );
     

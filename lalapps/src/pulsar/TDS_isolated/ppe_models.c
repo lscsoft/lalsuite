@@ -834,7 +834,7 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
-                                                        "sumData" );
+                                                       "sumData" );
   
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
