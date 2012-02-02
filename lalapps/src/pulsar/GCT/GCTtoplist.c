@@ -188,18 +188,6 @@ static int gctLV_smaller(const void*a, const void*b) {
 
 
 /* functions for qsort based on the above ordering functions */
-static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
-  void const* const* pa = (void const* const*)a;
-  void const* const* pb = (void const* const*)b;
-  return(gctFStat_smaller(*pb,*pa));
-}
-
-static int gctFStat_strongest_qsort(const void*a, const void*b) {
-  void const* const* pa = (void const* const*)a;
-  void const* const* pb = (void const* const*)b;
-  return(gctFStat_smaller(*pa,*pb));
-}
-
 static int gctFStat_final_qsort(const void*a, const void*b) {
   void const* const* pa = (void const* const*)a;
   void const* const* pb = (void const* const*)b;
@@ -250,12 +238,6 @@ int insert_into_gctFStat_toplist(toplist_t*tl, GCTtopOutputEntry elem) {
 void sort_gctFStat_toplist(toplist_t*l) {
   qsort(l->heap,l->elems,sizeof(char*),gctFStat_final_qsort);
 }
-
-/* (q)sort the toplist in order of strongest candidates */
-void sort_gctFStat_toplist_strongest(toplist_t*l) {
-  qsort(l->heap,l->elems,sizeof(char*),gctFStat_strongest_qsort);
-}
-
 
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
@@ -745,7 +727,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   _atomic_write_gctFStat_toplist_to_file(tl, "toplist_read_from_checkpoint", NULL, 0);
 #endif
 
-  qsort(tl->heap,tl->elems,sizeof(char*),gctFStat_restore_heap_qsort);
+  qsort_toplist_r(tl, tl->smaller);
 
 #ifdef DEBUG_SORTING
   _atomic_write_gctFStat_toplist_to_file(tl, "toplist_sorted_from_checkpoint", NULL, 0);
@@ -773,7 +755,6 @@ static void sort_gctFStat_toplist_debug(toplist_t*l) {
   if(!debugfp)
     debugfp=fopen("debug_sort","w");
   sort_gctFStat_toplist(l);
-  /*sort_gctFStat_toplist_strongest(l);*/
   if(debugfp) {
     fclose(debugfp);
     debugfp=NULL;
