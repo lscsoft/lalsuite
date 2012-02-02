@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    msftdir="${builddir}../MakeSFTs/"
-else
-    srcdir=.
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
 fi
+
+builddir="./";
+msftdir="${builddir}../MakeSFTs/"
 
 mfdCODE="${builddir}lalapps_Makefakedata_v4"
 cmpCODE="${builddir}lalapps_compareSFTs"

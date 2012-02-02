@@ -4,13 +4,8 @@
 extra_args="$@"
 debug=0;
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-else
-    srcdir=.
-fi
+builddir="./";
+injectdir="../Injections/"
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"

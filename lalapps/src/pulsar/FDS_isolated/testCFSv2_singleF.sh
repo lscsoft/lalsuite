@@ -5,14 +5,6 @@
 ## take user-arguments
 extra_args="$@"
 
-## allow 'make test' to work from builddir != srcdir
-# if [ -n "${srcdir}" ]; then
-#     builddir="./";
-#     injectdir="../Injections/"
-#     fdsdir="../FDS_isolated/"
-# else
-#     srcdir=.
-# fi
 builddir="./";
 injectdir="../Injections/"
 fdsdir="../FDS_isolated/"

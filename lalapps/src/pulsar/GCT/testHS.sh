@@ -8,19 +8,15 @@
 LC_ALL_old=$LC_ALL
 export LC_ALL=C
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-    fdsdir="../FDS_isolated/"
-else
-    srcdir=.
-fi
-
 # The only thing where 'dirsep' can and should be used is in paths of the SFT files,
 # as in fact SFTfileIO is the only code that requires it to be set properly. Other
 # file references should be handled by the shell (or wine) and converted if necessary.
 dirsep="/"
+
+builddir="./";
+injectdir="../Injections/"
+fdsdir="../FDS_isolated/"
+
 
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     builddir="./";

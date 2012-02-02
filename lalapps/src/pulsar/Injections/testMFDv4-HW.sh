@@ -9,12 +9,7 @@
 ##
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-else
-    srcdir=.
-fi
-
+builddir="./";
 testDIR="./mfd_TEST-HW"
 
 v2_code="${builddir}lalapps_makefakedata_v2"

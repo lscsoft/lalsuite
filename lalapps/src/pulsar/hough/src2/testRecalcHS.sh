@@ -7,13 +7,8 @@
 ## take user-arguments:
 extra_args="$@"
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../../Injections/"
-else
-    srcdir=.
-fi
+builddir="./";
+injectdir="../../Injections/"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then

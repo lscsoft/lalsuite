@@ -3,7 +3,6 @@
 ## take user-arguments for CFS-v2:
 extra_args="$@"
 
-## allow 'make test' to work from builddir != srcdir
 builddir="./";
 injectdir="../Injections/"
 
