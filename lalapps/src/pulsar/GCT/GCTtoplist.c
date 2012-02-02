@@ -519,7 +519,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
   char*tmpfilename;
   FILE*fp;
   UINT4 len;
-  UINT4 checksum;
+  UINT4 checksum = 0;
   static UINT4 sync_fail_counter = 0;
 
   /* construct temporary filename */
@@ -531,15 +531,6 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
   }
   strncpy(tmpfilename,filename,len);
   strncat(tmpfilename,TMP_EXT,len);
-
-  /* calculate checksum */
-  checksum = 0;
-  for(len = 0; len < sizeof(tl->elems); len++)
-    checksum += *(((char*)&(tl->elems)) + len);
-  for(len = 0; len < (tl->elems * tl->size); len++)
-    checksum += *(((char*)tl->data) + len);
-  for(len = 0; len < sizeof(counter); len++)
-    checksum += *(((char*)&counter) + len);
 
   /* open tempfile */
   fp=LALFopen(tmpfilename,"wb");
@@ -571,6 +562,22 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     return(-1);
   }
 
+  /* dump heap order */
+  for(UINT4 i = 0; i < tl->elems; i++) {
+    UINT4 index = ((unsigned int)tl->heap[i] - (unsigned int)tl->data) / tl->size;
+    len = fwrite(&index, sizeof(index), 1, fp);
+    if(len != 1) {
+      LOGIOERROR("Couldn't write index to", tmpfilename);
+      LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
+      if(fclose(fp))
+	LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
+      return(-1);
+    }
+    for(len = 0; len < sizeof(index); len++)
+      checksum += *(((char*)&index) + len);
+  }
+
   /* write counter */
   len = fwrite(&counter, sizeof(counter), 1, fp);
   if(len != 1) {
@@ -581,6 +588,14 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
       LALFree(tmpfilename);
     return(-1);
   }
+
+  /* calculate checksum */
+  for(len = 0; len < sizeof(tl->elems); len++)
+    checksum += *(((char*)&(tl->elems)) + len);
+  for(len = 0; len < (tl->elems * tl->size); len++)
+    checksum += *(((char*)tl->data) + len);
+  for(len = 0; len < sizeof(counter); len++)
+    checksum += *(((char*)&counter) + len);
 
   /* write checksum */
   len = fwrite(&checksum, sizeof(checksum), 1, fp);
@@ -628,7 +643,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
 int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   FILE*fp;
   UINT4 len;
-  UINT4 checksum;
+  UINT4 checksum, indexsum = 0;
 
   /* counter should be 0 if we couldn't read a checkpoint */
   *counter = 0;
@@ -677,6 +692,22 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
     return(-1);
   }
 
+  /* read heap order */
+  for(UINT4 i = 0; i < tl->elems; i++) {
+    UINT4 index;
+    len = fread(&index, sizeof(index), 1, fp);
+    if(len != 1) {
+      LOGIOERROR("Couldn't read index from", filename);
+      LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n",len,1);
+      if(fclose(fp))
+	LOGIOERROR("In addition: couldn't close", filename);
+      return(-1);
+    }
+    tl->heap[i] = (char*)((unsigned int)tl->data + index * tl->size);
+    for(len = 0; len < sizeof(index); len++)
+      indexsum += *(((char*)&index) + len);
+  }
+
   /* read counter */
   len = fread(counter, sizeof(*counter), 1, fp);
   if(len != 1) {
@@ -691,7 +722,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* read checksum */
   len = fread(&checksum, sizeof(checksum), 1, fp);
   if(len != 1) {
-    LOGIOERROR("Couldn't read checksum to", filename);
+    LOGIOERROR("Couldn't read checksum from", filename);
     LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, 1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -707,6 +738,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   }
 
   /* verify checksum */
+  checksum -= indexsum;
   for(len = 0; len < sizeof(tl->elems); len++)
     checksum -= *(((char*)&(tl->elems)) + len);
   for(len = 0; len < (tl->elems * tl->size); len++)
@@ -718,20 +750,6 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
     clear_toplist(tl);
     return(-2);
   }
-
-  /* restore Heap structure by sorting */
-  for(len = 0; len < tl->elems; len++)
-    tl->heap[len] = tl->data + len * tl->size;
-
-#ifdef DEBUG_SORTING
-  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_read_from_checkpoint", NULL, 0);
-#endif
-
-  qsort_toplist_r(tl, tl->smaller);
-
-#ifdef DEBUG_SORTING
-  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_sorted_from_checkpoint", NULL, 0);
-#endif
 
   /* all went well */
   LogPrintf(LOG_DEBUG,"Successfully read checkpoint:%d\n", *counter);
