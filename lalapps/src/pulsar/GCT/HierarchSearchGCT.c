@@ -2950,10 +2950,12 @@ int XLALComputeFStatFreqBand ( MultiFstatFrequencySeries **fstatSeries,	/**< [ou
 
 
 
-/** XLAL function to extrapolate the pulsar spin parameters of all toplist candidates from internal finegrid reftime to input/output reftime */
-int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,                       /**< [out/in] toplist with GCTtopOutputEntry items, 'Freq' fields will be overwritten  */
-					const LIGOTimeGPS usefulParamsRefTime, /**< reference time as requested for the final candidate output */
-					const LIGOTimeGPS finegridRefTime      /**< internal reference time of the finegrid */
+/** XLAL function to extrapolate the pulsar spin parameters of all toplist candidates
+ * from reftime of the input toplist ('inRefTime') to a user-specified output reftime 'outRefTime'
+ */
+int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,              /**< [out/in] toplist with GCTtopOutputEntry items, 'Freq,F1dot,F2dot' fields will be overwritten  */
+					const LIGOTimeGPS outRefTime, /**< reference time as requested for the final candidate output */
+					const LIGOTimeGPS inRefTime   /**< reference time of the input toplist */
 				        )
 {
 
@@ -2961,19 +2963,21 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,                       /
   if ( !list )
     XLAL_ERROR ( XLAL_EFAULT, "\nNULL pointer given instead of toplist.\n" );
 
-  /* check if translation to reference time of fine-grid is necessary */
-  if  ( XLALGPSDiff( &finegridRefTime, &usefulParamsRefTime) == 0 )
+  /* convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
+  REAL8 deltaTau = XLALGPSDiff( &outRefTime, &inRefTime );
+
+  /* check if translation to reference time of toplist is necessary */
+  if  ( deltaTau == 0 )
     return XLAL_SUCCESS; /* can skip this step if reftimes are equal */
 
-  /* convert LIGOTimeGPS into real number difference for XLALExtrapolatePulsarSpins */
-  REAL8 deltaTau = XLALGPSDiff( &usefulParamsRefTime, &finegridRefTime );
+  PulsarSpins fkdot;
+  INIT_MEM ( fkdot );
 
   UINT4 numElements = list->elems;
   for (UINT4 j = 0; j < numElements; j++ ) /* loop over toplist */
     {
       /* get fkdot of each candidate */
       GCTtopOutputEntry *elem = toplist_elem ( list, j );
-      PulsarSpins fkdot;
       fkdot[0] = elem->Freq;
       fkdot[1] = elem->F1dot;
       fkdot[2] = elem->F2dot;
@@ -2984,9 +2988,11 @@ int XLALExtrapolateToplistPulsarSpins ( toplist_t *list,                       /
           XLAL_ERROR ( XLAL_EFUNC );
         }
       /* write back propagated frequency to toplist */
-      elem->Freq = fkdot[0];
+      elem->Freq  = fkdot[0];
+      elem->F1dot = fkdot[1];
+      elem->F2dot = fkdot[2];
     }
 
   return XLAL_SUCCESS;
 
-} /* XLALComputeFStatFreqBand() */
+} /* XLALExtrapolateToplistPulsarSpins() */
