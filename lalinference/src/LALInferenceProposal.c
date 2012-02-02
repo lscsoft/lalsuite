@@ -69,7 +69,7 @@ const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
 const char *KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
-static const REAL8 modeHoppingFrac = 0.1;
+static const REAL8 modeHoppingFrac = 0.5;
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -344,6 +344,12 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   const UINT4 SMALLWEIGHT = 5;
   const UINT4 TINYWEIGHT = 1;
   const char defaultPropName[]="none";
+  UINT4 fullProp = 1;
+
+  if(LALInferenceCheckVariable(runState->proposalArgs, "hotChain")) {
+    fullProp = *(UINT4 *)LALInferenceGetVariable(runState->proposalArgs, "hotChain");
+  }
+
   ProcessParamsTable *ppt;
   if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
       LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, (void*)&defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
@@ -354,28 +360,42 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
       LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
 
+
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
-      LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
+    LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
+  if (fullProp) {
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
       LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
-  UINT4 nDet = numDetectorsUniquePositions(runState);
-  if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
-    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+    UINT4 nDet = numDetectorsUniquePositions(runState);
+    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
+      LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+    }
+
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
+      LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
+
+    if(LALInferenceCheckVariable(proposedParams,"phase")) {
+      LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
+    }
   }
-  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
-    LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
+  /*
+  if(LALInferenceCheckVariable(proposedParams,"inclination")) {
+    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
+  }
+  */
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
     LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
   }
 
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covariancematrix");
   if(!ppt){
- 	ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
- 	if(ppt) XLALPrintWarning("WARNING: Deprecated --covarianceMatrix option will be removed, please change to --covariancematrix");
+    ppt=LALInferenceGetProcParamVal(runState->commandLine, "--covarianceMatrix");
+    if(ppt) XLALPrintWarning("WARNING: Deprecated --covarianceMatrix option will be removed, please change to --covariancematrix");
   }
   if (ppt) {
     LALInferenceAddProposalToCycle(runState, covarianceEigenvectorJumpName, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
@@ -387,7 +407,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionAmpName, &LALInferenceDifferentialEvolutionAmp, SMALLWEIGHT);
     LALInferenceAddProposalToCycle(runState, differentialEvolutionSkyName, &LALInferenceDifferentialEvolutionSky, SMALLWEIGHT);
-    if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+    if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
       LALInferenceAddProposalToCycle(runState, differentialEvolutionSpinsName, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
     }
   }
@@ -918,7 +938,7 @@ void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *runState, LALI
 void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *runState, LALInferenceVariables *pp) {
   const char *propName = differentialEvolutionSkyName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
-  const char *names[] = {"rightascension", "declination", "time", NULL};
+  const char *names[] = {"rightascension", "declination", "polarisation", "inclination", "phase", "time", NULL};
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 

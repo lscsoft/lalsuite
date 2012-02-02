@@ -147,7 +147,8 @@ void initializeMCMC(LALInferenceRunState *runState)
   char help[]="\
                (--Niter N)                     Number of iterations(2*10^6)\n\
                (--Nskip n)                     Number of iterations between disk save(100)\n\
-               (--tempMax T)                   Highest temperature for parallel tempering(40.0)\n\
+               (--tempMin T)                   Lowest temperature for parallel tempering(1.0)\n\
+               (--tempMax T)                   Highest temperature for parallel tempering(50.0)\n\
                (--randomseed seed)             Random seed of sampling distribution(random)\n\
                (--tdlike)                      Compute likelihood in the time domain\n\
                (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n\
@@ -164,6 +165,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   INT4 verbose=0,tmpi=0;
   unsigned int randomseed=0;
+  REAL8 tempMin = 1.0;
   REAL8 tempMax = 50.0;
   ProcessParamsTable *commandLine=runState->commandLine;
   ProcessParamsTable *ppt=NULL;
@@ -267,7 +269,15 @@ void initializeMCMC(LALInferenceRunState *runState)
   }
   LALInferenceAddVariable(runState->algorithmParams,"Nskip",&tmpi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 
-  printf("set highest temperature.\n");
+ printf("set lowest temperature.\n");
+  /* Minimum temperature of the temperature ladder */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--tempMin");
+  if(ppt){
+    tempMin=strtod(ppt->value,(char **)NULL);
+  }
+  LALInferenceAddVariable(runState->algorithmParams,"tempMin",&tempMin, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
+ printf("set highest temperature.\n");
   /* Maximum temperature of the temperature ladder */
   ppt=LALInferenceGetProcParamVal(commandLine,"--tempMax");
   if(ppt){
