@@ -81,6 +81,7 @@ extern "C" {
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
 #define COMPUTEFSTAT LocalComputeFStat
 
+extern void
 LocalComputeFStat ( LALStatus *status,
 		    Fcomponents *Fstat,
 		    const PulsarDopplerParams *doppler,
