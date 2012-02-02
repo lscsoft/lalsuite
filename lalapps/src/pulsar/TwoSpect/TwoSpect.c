@@ -476,10 +476,10 @@ int main(int argc, char *argv[])
       REAL4VectorSequence *trackedlines = NULL;
       if (lines!=NULL) {
          trackedlines = trackLines(lines, binshifts, inputParams);
-         for (ii=0; ii<(INT4)trackedlines->length; ii++) {
+         /* for (ii=0; ii<(INT4)trackedlines->length; ii++) {
             fprintf(stderr, "%f-%f, ", trackedlines->data[ii*3+1], trackedlines->data[ii*3+2]);
          }
-         fprintf(stderr, "\n");
+         fprintf(stderr, "\n"); */
       }
       
       
@@ -2153,8 +2153,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       if (backgrnd->data[ii*numfbins]!=0.0) {
          memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-         aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
-         //aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
+         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
+         aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
          //aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
          if (XLAL_IS_REAL4_FAIL_NAN(aveNoiseInTime->data[ii])) {
             fprintf(stderr,"%s: calcMean() failed.\n", __func__);
