@@ -143,7 +143,9 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
   ASSERT ( params, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
   numDetectors = multiSFTs->length;
-  ASSERT ( multiDetStates->length == numDetectors, status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+  if ( multiDetStates->length != numDetectors )
+    ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+
   ASSERT ( fstatVector, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( fstatVector->data->data, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
@@ -312,7 +314,7 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 
       /* make sure Dterms is what we expect */
       if (DTERMS != params->Dterms)
-        XLAL_ERROR ( XLAL_EINVAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
+        XLAL_ERROR_VOID ( XLAL_EINVAL, "LocalComputeFstat has been compiled with fixed DTERMS (%d) != params->Dtems (%d)\n",DTERMS, params->Dterms);
 
       firstcall = FALSE;
     }
@@ -415,7 +417,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   UINT4 spdnOrder;		/* maximal spindown-orders */
   UINT4 numSFTs;		/* number of SFTs (M in the Notes) */
   COMPLEX16 Fa, Fb;
-  REAL8 f;			/* !! MUST be REAL8, or precision breaks down !! */
   REAL8 Tsft; 			/* length of SFTs in seconds */
   INT4 freqIndex0;		/* index of first frequency-bin in SFTs */
   INT4 freqIndex1;		/* index of last frequency-bin in SFTs */
@@ -447,8 +448,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #endif
 
   if ( params->upsampling > 1 ) {
-    fprintf (stderr, "\n===== WARNING: LocalXLALComputeFaFb() should not be used with upsampled-SFTs!\n");
-    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL, "LocalXLALComputeFaFb() should not be used with upsampled-SFTs!" );
   }
 
   /* ----- prepare convenience variables */
@@ -464,8 +464,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   for ( spdnOrder = PULSAR_MAX_SPINS - 1;  spdnOrder > 0 ; spdnOrder --  )
     if ( fkdot[spdnOrder] != 0.0 )
       break;
-
-  f = fkdot[0];
 
   Fa.re = 0.0f;
   Fa.im = 0.0f;
@@ -492,15 +490,14 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
       REAL4 realXP, imagXP;     /* re/im of sum_k X_ak * P_ak */
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
 
-      REAL8 lambda_alpha, kappa_max, kappa_star;
+      REAL8 lambda_alpha, kappa_star;
 
-      /* ----- calculate kappa_max and lambda_alpha */
+      /* ----- calculate lambda_alpha */
       {
 	UINT4 s; 		/* loop-index over spindown-order */
 	REAL8 phi_alpha, Dphi_alpha, DT_al;
 	REAL8 Tas;	/* temporary variable to calculate (DeltaT_alpha)^s */
         REAL8 TAS_invfact_s;
-	static const REAL8 Dterms_1f = DTERMS - 1; /* Dterms - 1 as a double constant */
 
 	/* init for s=0 */
 	phi_alpha = 0.0;
@@ -530,7 +527,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	if (!finite(Dphi_alpha)) {
 	  LogPrintf(LOG_CRITICAL, "non-finite Dphi_alpha:%e, alpha:%d, Tsft:%e, Tkdot_al:%e Tas:%e, DT_al:%e\n",
 		    Dphi_alpha, alpha, Tsft, (*Tdot_al), Tas, DT_al);
-	  XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
+	  XLAL_ERROR( XLAL_EDOM );
 	}
 #endif
 	lambda_alpha = 0.5 * Dphi_alpha - phi_alpha;
@@ -538,7 +535,6 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 	/* FIXME: that might be possible to do faster */
 	kstar = (INT4) (Dphi_alpha);	/* k* = floor(Dphi_alpha*chi) for positive Dphi */
 	kappa_star = Dphi_alpha - 1.0 * kstar;	/* remainder of Dphi_alpha: >= 0 ! */
-	kappa_max  = kappa_star + Dterms_1f;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - DTERMS + 1;
@@ -558,7 +554,7 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 		      "\t\t[Parameters: alpha:%d, Dphi_alpha:%e, Tsft:%e, *Tdot_al:%e]\n",
 		      k0, k1, freqIndex0, freqIndex1,
 		      alpha, Dphi_alpha, Tsft, *Tdot_al);
-	    XLAL_ERROR("LocalXLALComputeFaFb", XLAL_EDOM);
+	    XLAL_ERROR(XLAL_EDOM);
 	  }
 
       } /* compute kappa_star, lambda_alpha */
