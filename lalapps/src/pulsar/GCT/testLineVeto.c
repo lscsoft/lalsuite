@@ -71,7 +71,7 @@ int main( int argc, char *argv[]) {
   REAL4Vector *lX = NULL; /* per-IFO prior odds ratio for line vs. Gaussian noise, NULL is interpreted as l[X]=1 for all X */
 
   /* maximum allowed difference between recalculated and XLAL result */
-  REAL4 tolerance_allterms = 1e-04;
+  REAL4 tolerance_allterms = 2e-04;
   REAL4 tolerance_leadterm = 2e-02;
 
   /* compute and compare the results for one set of rhomaxline, lX values */
