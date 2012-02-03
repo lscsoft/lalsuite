@@ -142,7 +142,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
         }
 
         /* Calculate the newtonian multipole */
-        status = XLALSimIMREOBCalculateNewtonianMultipole( &hNewton, vPhi2, r,
+        status = XLALSimIMRSpinEOBCalculateNewtonianMultipole( &hNewton, vPhi2, r,
                          values->data[1], (UINT4)l, m, params->eobParams );
         if ( status == XLAL_FAILURE )
         {

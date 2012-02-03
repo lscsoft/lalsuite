@@ -91,7 +91,7 @@ static int XLALSimIMREOBComputeNewtonMultipolePrefixes(
  * This function calculates the Newtonian multipole part of the
  * factorized waveform. This is defined in Pan et al, arXiv:1106.1021v1 [gr-qc].
  */
-static int
+UNUSED static int
 XLALSimIMREOBCalculateNewtonianMultipole(
                             COMPLEX16 *multipole, /**<< Newtonian multipole (returned) */
                             REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
@@ -119,14 +119,51 @@ XLALSimIMREOBCalculateNewtonianMultipole(
   }
 
 
-/*  if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
+  if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
   {
     *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r );
   }
   else
-  {*/
+  {
     *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
-//  }
+  }
+  *multipole = XLALCOMPLEX16Mul( *multipole, y );
+
+  return XLAL_SUCCESS;
+}
+
+
+/**
+ * This function calculates the Newtonian multipole part of the
+ * factorized waveform for spin aligned waveforms.
+ */
+UNUSED static int
+XLALSimIMRSpinEOBCalculateNewtonianMultipole(
+                            COMPLEX16 *multipole, /**<< Newtonian multipole (returned) */
+                            REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
+                            UNUSED REAL8 r,              /**<< Orbital separation (units of total mass M */
+                            REAL8 phi,            /**<< Orbital phase (in radians) */
+                            UINT4  l,             /**<< Mode l */
+                            INT4  m,              /**<< Mode m */
+                            EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
+                            )
+{
+   INT4 xlalStatus;
+
+   COMPLEX16 y;
+
+   INT4 epsilon = (l + m) % 2;
+
+   y.re = y.im = 0.0;
+
+  /* Calculate the necessary Ylm */
+  xlalStatus = XLALScalarSphHarmThetaPiBy2( &y, l - epsilon, - m, phi );
+  if (xlalStatus != XLAL_SUCCESS )
+  {
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0) );
   *multipole = XLALCOMPLEX16Mul( *multipole, y );
 
   return XLAL_SUCCESS;
