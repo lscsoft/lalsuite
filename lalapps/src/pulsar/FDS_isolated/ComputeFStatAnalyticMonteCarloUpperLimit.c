@@ -378,7 +378,7 @@ int main(int argc, char *argv[]) {
       REAL8 twoF_pdf_FDR = 0.0;
 
       /* Output at beginning of loop */
-      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%i\n", h0_iter, h0, dh0, MC_trials);
+      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%" LAL_INT8_FORMAT "\n", h0_iter, h0, dh0, MC_trials);
       fprintf(fp, "MC_trials=%" LAL_INT8_FORMAT, MC_trials);
 
       /* Destroy any previous histogram */
@@ -567,7 +567,7 @@ int main(int argc, char *argv[]) {
 
     /* If number of MC trials exceeded reset */
     if (MC_trials >= MC_trials_reset)
-      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trails=%i): trying again ...\n", h0_iter, MC_trials);
+      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trials=%" LAL_INT8_FORMAT "): trying again ...\n", h0_iter, MC_trials);
 
   } while (MC_trials >= MC_trials_reset);
   
