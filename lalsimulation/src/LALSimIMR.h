@@ -199,8 +199,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
         const REAL8     fMin,
         const REAL8     r,
         const REAL8     inc,
-        const REAL8     spin1[3],
-        const REAL8     spin2[3]
+        const REAL8     spin1z,
+        const REAL8     spin2z
      );
 
 /**

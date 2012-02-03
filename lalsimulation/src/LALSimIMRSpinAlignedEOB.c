@@ -105,8 +105,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
         const REAL8     fMin,
         const REAL8     r,
         const REAL8     inc,
-        const REAL8     spin1[3],
-        const REAL8     spin2[3]
+        const REAL8     spin1z,
+        const REAL8     spin2z
      )
 {
 
@@ -123,6 +123,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Wrapper spin vectors used to calculate sigmas */
   REAL8Vector s1Vec;
   REAL8Vector s2Vec;
+  REAL8       spin1[3] = {0, 0, spin1z};
+  REAL8       spin2[3] = {0, 0, spin2z};
   REAL8       s1Data[3], s2Data[3];
 
 
@@ -245,7 +247,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   modefreqVec.length = 1;
   modefreqVec.data   = &modeFreq;
 
-  if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, 2, 2, 1, SpinAlignedEOB ) == XLAL_FAILURE )
+  if ( XLALSimIMREOBGenerateQNMFreqV2( &modefreqVec, m1, m2, spin1, spin2, 2, 2, 1, SEOBNRv1 ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( values );
     XLAL_ERROR( XLAL_EFUNC );
@@ -684,7 +686,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
   if ( XLALSimIMREOBHybridAttachRingdown( sigReHi, sigImHi, 2, 2,
-              deltaT, m1, m2, spin1, spin2, &timeHi, rdMatchPoint, SpinAlignedEOB)
+              deltaT, m1, m2, spin1, spin2, &timeHi, rdMatchPoint, SEOBNRv1)
           == XLAL_FAILURE ) 
   {
     XLAL_ERROR( XLAL_EFUNC );

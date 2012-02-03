@@ -1622,7 +1622,7 @@ static INT4 XLALFinalMassSpin(
       *finalMass = 1 - 0.057191 * eta - 0.498 * eta2;
       *finalSpin = 3.464102 * eta - 2.9 * eta2;
       break;
-    case SpinAlignedEOB:
+    case SEOBNRv1:
       /* Final mass/spin comes from a fit in Andrea Tarrachini's C++ code */
 
       a1 = spin1[2];
