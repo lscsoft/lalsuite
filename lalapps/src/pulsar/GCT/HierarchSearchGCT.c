@@ -1250,7 +1250,6 @@ int MAIN( int argc, char *argv[]) {
           finegrid.freqlength = nfreqs_fg ;
 #define ALIGN_REAL4 4  /* 16 bytes / sizeof(REAL4) = 4 */
           finegrid.freqlengthAL = ALIGN_REAL4 * ((UINT4)ceil ( 1.0 * finegrid.freqlength / ALIGN_REAL4 ));
-          LogPrintf (LOG_DEBUG, "finegrid.freqlength = %d, finegrid.freqlengthAL = %d\n", finegrid.freqlength, finegrid.freqlengthAL );
 
           /* fine-grid f1dot resolution */
           if (nf1dot == 1) {
