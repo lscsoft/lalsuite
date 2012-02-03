@@ -97,7 +97,6 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,
 int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hplus,
         REAL8TimeSeries **hcross,
-        LIGOTimeGPS     *tc,
         const REAL8     UNUSED phiC,
         REAL8           deltaT,
         const REAL8     m1,
@@ -131,6 +130,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Parameters of the system */
   REAL8 mTotal, eta, mTScaled;
   REAL8 amp0;
+  LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
   /* Dynamics of the system */
   REAL8Vector rVec, phiVec, prVec, pPhiVec;
@@ -748,8 +748,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
 
   /* For now, let us just try to create a waveform */
-  REAL8TimeSeries *hPlusTS  = XLALCreateREAL8TimeSeries( "H_PLUS", tc, 0.0, deltaT, &lalStrainUnit, sigReVec->length );
-  REAL8TimeSeries *hCrossTS = XLALCreateREAL8TimeSeries( "H_CROSS", tc, 0.0, deltaT, &lalStrainUnit, sigImVec->length );
+  REAL8TimeSeries *hPlusTS  = XLALCreateREAL8TimeSeries( "H_PLUS", &tc, 0.0, deltaT, &lalStrainUnit, sigReVec->length );
+  REAL8TimeSeries *hCrossTS = XLALCreateREAL8TimeSeries( "H_CROSS", &tc, 0.0, deltaT, &lalStrainUnit, sigImVec->length );
 
   /* Compute spin-weighted spherical harmonics and generate waveform */
   REAL8 coa_phase = 0.0;

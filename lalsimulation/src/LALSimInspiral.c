@@ -1053,7 +1053,7 @@ int XLALSimInspiralChooseWaveform(
             ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z, phaseO, TotalJ);
             break;
         case SEOBNRv1:
-            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, t0, phi0, deltaT, m1, m2, f_min, r, i, S1[2], S2[2]);
+            ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1z, S2z);
             break;
 
         default:

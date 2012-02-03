@@ -506,7 +506,7 @@ int main (int argc , char **argv) {
 	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice);
                     break;
                 case GSApproximant_SEOBNRv1:
-                    XLALSimIMRSpinAlignedEOBWaveform( &hplus, &hcross, &tRef,
+                    XLALSimIMRSpinAlignedEOBWaveform( &hplus, &hcross,
                             params->phiRef, params->deltaT, params->m1,
                             params->m2, params->fRef, params->distance,
                             params->inclination, params->s1z, params->s2z);

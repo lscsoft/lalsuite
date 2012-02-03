@@ -191,7 +191,6 @@ int XLALSimIMREOBNRv2AllModes(
 int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hplus,
         REAL8TimeSeries **hcross,
-        LIGOTimeGPS     *tc,
         const REAL8     phiC,
         REAL8           deltaT,
         const REAL8     m1,
