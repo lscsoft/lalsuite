@@ -42,7 +42,7 @@ void gc_hotloop(REAL4 * fgrid2F, REAL4 * cgrid2F, UCHAR * fgridnc, REAL4 TwoFthr
   /* ensure alignment on fine grid. note fgridnc is UCHAR*
      while fgrid2F is UINT4*  */
 
-  int offset = ((UINT4)fgridnc & 0xf) ;
+  UINT8 offset = ((UINT8)fgridnc & 0xf) ;
 
   if(offset != 0) offset = 16-offset;
 
