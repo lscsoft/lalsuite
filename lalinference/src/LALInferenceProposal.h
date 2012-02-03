@@ -146,6 +146,9 @@ void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenc
 /** Proposal for finding max temperature for PTMCMC. */
 void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Proposal for after annealing is over. */
+void LALInferenceNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Non-adaptive, sigle-variable update proposal with reasonable
     widths in each dimension. */
 void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);

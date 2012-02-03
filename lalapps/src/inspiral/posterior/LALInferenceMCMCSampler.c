@@ -128,7 +128,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   char nameMin[VARNAME_MAX], nameMax[VARNAME_MAX];
 
   INT4 adaptationOn = 0;
-  INT4 annealingOn = 0;
+  INT4 annealingOn = 1;
   INT4 acceptanceRatioOn = 0;
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
@@ -199,9 +199,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 startAnnealing       = 500000;           // Iteration where annealing starts
   INT4 annealLength         = 100000;           // Number of iterations to cool temperatures to ~1.0
 
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--anneal");
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--noAnneal");
   if (ppt) {
-    annealingOn = 1;
+    annealingOn = 0;
   }
 
   /* Parallel tempering settings */
@@ -561,6 +561,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     /* Annealing */
     if (annealingOn) {
       if (i == startAnnealing) {
+        runState->proposal = &LALInferenceNothingButDEProposal;
         if (!adaptationOn) {
           adaptationOn = 1;
           s_gamma = 1.0;

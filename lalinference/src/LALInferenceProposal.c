@@ -459,6 +459,13 @@ SetupPTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *p
   LALInferenceRandomizeProposalCycle(runState);
 }
 
+static void
+SetupNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 1);
+  LALInferenceRandomizeProposalCycle(runState);
+}
+
 void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceVariables *propArgs = runState->proposalArgs;
   if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
@@ -469,6 +476,18 @@ void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInference
 
   LALInferenceCyclicProposal(runState, proposedParams);
 }
+
+void LALInferenceNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceVariables *propArgs = runState->proposalArgs;
+  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
+    /* In case there is a partial cycle set up already, delete it. */
+    LALInferenceDeleteProposalCycle(runState);
+    SetupNothingButDEProposal(runState, proposedParams);
+  }
+
+  LALInferenceCyclicProposal(runState, proposedParams);
+}
+
 
 void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceVariables *propArgs = runState->proposalArgs;
