@@ -564,18 +564,18 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
 
   /* dump heap order */
   for(UINT4 i = 0; i < tl->elems; i++) {
-    UINT4 index = ((unsigned int)tl->heap[i] - (unsigned int)tl->data) / tl->size;
-    len = fwrite(&index, sizeof(index), 1, fp);
+    UINT4 idx = (tl->heap[i] - tl->data) / tl->size;
+    len = fwrite(&idx, sizeof(idx), 1, fp);
     if(len != 1) {
-      LOGIOERROR("Couldn't write index to", tmpfilename);
+      LOGIOERROR("Couldn't write idx to", tmpfilename);
       LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
       if(fclose(fp))
 	LOGIOERROR("In addition: couldn't close", tmpfilename);
       LALFree(tmpfilename);
       return(-1);
     }
-    for(len = 0; len < sizeof(index); len++)
-      checksum += *(((char*)&index) + len);
+    for(len = 0; len < sizeof(idx); len++)
+      checksum += *(((char*)&idx) + len);
   }
 
   /* write counter */
@@ -694,18 +694,18 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
 
   /* read heap order */
   for(UINT4 i = 0; i < tl->elems; i++) {
-    UINT4 index;
-    len = fread(&index, sizeof(index), 1, fp);
+    UINT4 idx;
+    len = fread(&idx, sizeof(idx), 1, fp);
     if(len != 1) {
-      LOGIOERROR("Couldn't read index from", filename);
+      LOGIOERROR("Couldn't read idx from", filename);
       LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n",len,1);
       if(fclose(fp))
 	LOGIOERROR("In addition: couldn't close", filename);
       return(-1);
     }
-    tl->heap[i] = (char*)((unsigned int)tl->data + index * tl->size);
-    for(len = 0; len < sizeof(index); len++)
-      indexsum += *(((char*)&index) + len);
+    tl->heap[i] = (char*)(tl->data + idx * tl->size);
+    for(len = 0; len < sizeof(idx); len++)
+      indexsum += *(((char*)&idx) + len);
   }
 
   /* read counter */
