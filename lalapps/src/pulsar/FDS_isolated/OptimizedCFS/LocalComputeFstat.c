@@ -431,18 +431,18 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
   /* ----- check validity of input */
   if ( !FaFb ) {
     XLALPrintError ("\nOutput-pointer is NULL !\n\n");
-    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
 
   if ( !sfts || !sfts->data ) {
     XLALPrintError ("\nInput SFTs are NULL!\n\n");
-    XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
+    XLAL_ERROR ( XLAL_EINVAL);
   }
   
   if ( !tSSB || !tSSB->DeltaT || !tSSB->Tdot || !amcoe || !amcoe->a || !amcoe->b || !params)
     {
       XLALPrintError ("\nIllegal NULL in input !\n\n");
-      XLAL_ERROR ( "LocalXLALComputeFaFb", XLAL_EINVAL);
+      XLAL_ERROR ( XLAL_EINVAL);
     }
 
 #endif
