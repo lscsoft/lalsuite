@@ -1362,7 +1362,7 @@ void setupLookupTables( LALInferenceRunState *runState, LALSource *source ){
     if ( ppt ){ /* use old style quasi-fixed data chunk lengths */
       /* is a chunk max wasn't set use 30 mins by default */
       if ( !LALInferenceGetProcParamVal( commandLine, "--chunk-max" ) ){
-        chunkMax = 30.;
+        chunkMax = 30;
         LALInferenceSetVariable( data->dataParams, "chunkMax", &chunkMax );
       }
         
