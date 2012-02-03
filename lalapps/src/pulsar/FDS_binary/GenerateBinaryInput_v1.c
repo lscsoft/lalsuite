@@ -100,8 +100,10 @@ int GenTimeStamps()
 
   FILE *fpstamps;
   INT4 j;
+  REAL8 tobs;
   INT4 nsft;
 
+  tobs=tsft*floor(duration/tsft);
   nsft=floor(duration/tsft);
 
   /* opening the output timestamps file */

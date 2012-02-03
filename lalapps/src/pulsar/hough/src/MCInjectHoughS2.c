@@ -164,6 +164,8 @@ int main(int argc, char *argv[]){
   FILE  *fpLog = NULL;
   CHAR   *logstr=NULL; 
 
+  int rc;
+
   /* user input variables */
   BOOLEAN uvar_help;
   INT4 uvar_blocksRngMed, uvar_nh0, uvar_nMCloop, uvar_AllSkyFlag;
@@ -285,7 +287,7 @@ int main(int argc, char *argv[]){
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", uvar_harmonicsfile, fnamelog);
-    system(command);
+    rc = system(command);
   }
 
   /* append an ident-string defining the exact CVS-version of the code used */
@@ -297,7 +299,7 @@ int main(int argc, char *argv[]){
     fclose (fpLog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-    system(command);	/* we don't check this. If it fails, we assume that */
+    rc = system(command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 
@@ -957,7 +959,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if ( count == 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
   
   fclose(fpRandom);
   

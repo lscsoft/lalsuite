@@ -176,7 +176,7 @@ static void convertendianness(double *val) {
 
 static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     ezxml_t param, array, dim, stream;
-    const char *name=NULL, *timeoffset=NULL, *cadence=NULL, *length=NULL, *records=NULL, *encoding=NULL, *binaryfile=NULL;
+    const char *name=NULL, *timeoffset=NULL, *cadence=NULL, *length=NULL, *records=NULL, *type=NULL, *encoding=NULL, *binaryfile=NULL;
 
     TimeSeries *timeseries;
     double *buffer;
@@ -186,6 +186,8 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
 
     int i,j;
 
+    size_t num;
+        
     name = ezxml_attr(series,"Name");
     
     for(param = ezxml_child(series,"Param"); param; param = param->next) {
@@ -219,7 +221,7 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     stream = ezxml_child(array,"Stream");
     assert(stream);
     
-    ezxml_attr(stream,"Type");
+    type = ezxml_attr(stream,"Type");
     encoding = ezxml_attr(stream,"Encoding");
 
     binaryfile = ezxml_txt(stream);
@@ -260,7 +262,7 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     
     free(pathbinfile);
     
-    fread(buffer,sizeof(double),timeseries->Length * timeseries->Records,binfile);
+    num = fread(buffer,sizeof(double),timeseries->Length * timeseries->Records,binfile);
 
     /* Do the encoding switch if necessary */
 

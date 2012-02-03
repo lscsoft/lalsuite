@@ -153,6 +153,7 @@ int main(int argc, char *argv[]){
   DetChoice detChoice;
   LIGOTimeGPS firstTimeStamp, lastTimeStamp;
   REAL8 tObs;
+  REAL8 patchSizeX, patchSizeY;
 
   /* ephemeris */
   EphemerisData    *edat=NULL;
@@ -186,6 +187,7 @@ int main(int argc, char *argv[]){
 
   INT8 paramCounter = 0;
 
+  static INT4VectorSequence  *sftPairIndexList=NULL;
   REAL8Vector  *sigmasq;
   PulsarDopplerParams thisPoint;
   static REAL8Vector *rho, *variance;
@@ -210,6 +212,7 @@ int main(int argc, char *argv[]){
 
   /* new SFT I/O data types */
   SFTCatalog *catalog = NULL;
+  SFTCatalog *slidingcat = NULL;
   static SFTConstraints constraints;
   INT4 sftcounter = 0, slidingcounter = 1, listLength = 0;
 
@@ -671,6 +674,8 @@ int main(int argc, char *argv[]){
   for(sftcounter=0; sftcounter < (INT4)catalog->length -1; sftcounter++) {
     tmpSFT = NULL;
     tmpPSD = NULL;
+    slidingcat = NULL;
+    sftPairIndexList = NULL;
     yalpha = NULL;
     ualpha = NULL;
     sigmasq = NULL;
@@ -792,6 +797,9 @@ int main(int argc, char *argv[]){
         thisPoint.Alpha = skyAlpha[skyCounter]; 
         thisPoint.Delta = skyDelta[skyCounter]; 
 
+         patchSizeX = skySizeDelta[skyCounter]; 
+         patchSizeY = skySizeAlpha[skyCounter]; 
+ 
          /* get the amplitude modulation coefficients */
          skypos.longitude = thisPoint.Alpha; 
          skypos.latitude = thisPoint.Delta; 

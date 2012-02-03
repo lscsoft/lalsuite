@@ -86,9 +86,9 @@ int main( int argc, char *argv[] )
   /* Define input variables and set default values */
   int begin            = 731265908;  /* start time of integration */
   REAL4 duration       = 1.8e5;      /* duration of integration (seconds) */
-  // currently unused: REAL4 min_spindown   = 1e10;       /* minimum spindown age (seconds) */
-  // currently unused: int spindown_order   = 0;          /* minimum spindown order */
-  // currently unused: REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
+  REAL4 min_spindown   = 1e10;       /* minimum spindown age (seconds) */
+  int spindown_order   = 0;          /* minimum spindown order */
+  REAL4 mismatch       = 0.05;       /* mismatch threshold of mesh */
   REAL4 max_frequency  = 1e3;        /* maximum frequency of search (Hz) */
 
   /* other useful variables */
@@ -166,15 +166,15 @@ int main( int argc, char *argv[] )
       break;
 
     case 6:
-      // currently unused: min_spindown = atoi ( optarg );
+      min_spindown = atoi ( optarg );
       break;
 
     case 7:
-      // currently unused: spindown_order = atoi ( optarg );
+      spindown_order = atoi ( optarg );
       break;
 
     case 8:
-      // currently unused: mismatch = atof( optarg );
+      mismatch = atof( optarg );
       break;
 
     case 9:

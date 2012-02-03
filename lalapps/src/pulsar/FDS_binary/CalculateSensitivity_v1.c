@@ -749,9 +749,15 @@ int GetAB(EphemerisData *edat, char *detector, dataset *dataparams,binarysource 
   LALDetector Detector;              /* Our detector*/
   EarthState earth;
   AMCoeffsParams *amParams;
+  LIGOTimeGPS FirstStamp;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   INT4 k;
   AMCoeffs amc;
+  REAL8 C;
+
+
+  FirstStamp.gpsSeconds=dataparams->stamps[0].gpsSeconds;
+  FirstStamp.gpsNanoSeconds=dataparams->stamps[0].gpsNanoSeconds;
 
   if(strcmp(detector,"GEO")) Detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   if(strcmp(detector,"LLO")) Detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
@@ -808,6 +814,8 @@ int GetAB(EphemerisData *edat, char *detector, dataset *dataparams,binarysource 
  
   results->A=amc.A;
   results->B=amc.B;
+  C=amc.C;
+
 
   LALFree(midTS);
 

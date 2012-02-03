@@ -1531,6 +1531,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
 #ifndef NOGLOB
   glob_t globbuf;
 #endif
+  LIGOTimeGPS starttime;
 
   INITSTATUS (status, "SetGlobalVariables", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1627,6 +1628,8 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
       /* if this is the first SFT, save initial time */
       if (filenum==0) {
 	cfg->Ti=header.gps_sec;
+	starttime.gpsSeconds = header.gps_sec;
+	starttime.gpsNanoSeconds = header.gps_nsec;
       }
       /* increment file no and pointer to the start of the next header */
       filenum++;
@@ -1723,6 +1726,8 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
     fclose(fp);
     
     /* INITIAL TIME */
+    starttime.gpsSeconds = header.gps_sec;
+    starttime.gpsNanoSeconds = header.gps_nsec;
     cfg->Ti = header.gps_sec; 
     
     /* open LAST file and get info from it*/
@@ -2870,6 +2875,7 @@ int ReadBinaryTemplateBank(void)
   char filename[256];
   UINT4 i;
   REAL8 temp1,temp2;
+  int rc;
 
   
   strcpy(filename,uvar_binarytemplatefile);
@@ -2997,7 +3003,7 @@ int ReadBinaryTemplateBank(void)
   /* Now read in all templates into memory */
   i=0;
   while (i<BinaryBank->BMFheader.Nfilters) {
-    fscanf(BTBfp,"%le%le%d%d%le%le\n",
+    rc = fscanf(BTBfp,"%le%le%d%d%le%le\n",
 		 &(BinaryBank->BTB[i]).ProjSMaxis,
 		 &(BinaryBank->BTB[i]).Period,
 		 &(BinaryBank->BTB[i]).TperiSSB.gpsSeconds,

@@ -109,7 +109,8 @@ int main(int argc, char *argv[]){
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;
-  LIGOTimeGPS firstTimeStamp;
+  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
+  REAL8 tObs;
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
@@ -136,6 +137,7 @@ int main(int argc, char *argv[]){
 
   /* miscellaneous */
   UINT4  mObsCoh;
+  INT8   f0Bin, fLastBin;
   REAL8  timeBase, deltaF;
   REAL8  numberCount;
 
@@ -287,6 +289,7 @@ int main(int argc, char *argv[]){
     static SFTConstraints constraints;
 
     REAL8 doppWings, f_min, f_max;
+    INT4 length;
 
     /* set detector constraint */
     constraints.detector = NULL;
@@ -322,12 +325,14 @@ int main(int argc, char *argv[]){
     mObsCoh = catalog->length; /* number of sfts */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
     timeBase= 1.0/deltaF; /* coherent integration time */
-    // unused: UINT8 f0Bin = floor( uvar_fStart * timeBase + 0.5); /* initial search frequency */
-    // unused: INT4 length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
+    f0Bin = floor( uvar_fStart * timeBase + 0.5); /* initial search frequency */
+    length =  uvar_fSearchBand * timeBase; /* total number of search bins - 1 */
+    fLastBin = f0Bin + length;   /* final frequency bin to be analyzed */
     
     /* catalog is ordered in time so we can get start, end time and tObs*/
     firstTimeStamp = catalog->data[0].header.epoch;
-    // unused: LIGOTimeGPS lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
+    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;
+    tObs = XLALGPSDiff( &lastTimeStamp, &firstTimeStamp ) + timeBase;
 
     /* allocate memory for velocity vector */
     velV.length = mObsCoh;

@@ -331,6 +331,7 @@ void ComputeSideBandLikelihood(LALStatus *status,
   REAL8 Lr = 0.0;                       /* the likelihood for the real part of h(f) */
   BinarySourceParams BSParams;          /* structure for binary source parameters */
   INT4 i;
+  REAL8 Sh;
  
   INITSTATUS( status, "ComputeSideBandLikelihood", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -354,6 +355,9 @@ void ComputeSideBandLikelihood(LALStatus *status,
   BSParams.psi = lambda->psi;
   BSParams.cosi = lambda->cosi;
   BSParams.h0 = lambda->h0;
+
+  /* define noise floor */
+  Sh = TParams->sqrtSh*TParams->sqrtSh;
 
   if (lalDebugLevel) printf ("\nFilled in the template parameter structures.\n");
 
@@ -728,6 +732,7 @@ void ReadSideBandData (LALStatus * status,
   REAL8 fre,fim;
   REAL8 norm;
   REAL8 sum = 0.0;
+  int rc;
 
   INITSTATUS( status, "ReadSideBandData", rcsid );
   ATTATCHSTATUSPTR (status);
@@ -759,9 +764,9 @@ void ReadSideBandData (LALStatus * status,
   
   /* return to end of header and read first 2 lines to assess frequency resolution */
   fsetpos(fp,&pos);
-  fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+  rc = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
 	     &ftemp1,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
-  fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+  rc = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
 	     &ftemp2,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
   params->df = ftemp2 - ftemp1;
   
@@ -921,8 +926,10 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 A1,A2,A3,A4;
   REAL8 b;
   REAL8 T;
+  REAL8 Sh;
   REAL8 tp;
   REAL8 f0;
+  REAL8 dfp;
   INT4 i;
   REAL8 freq;
   INT4 n;
@@ -931,6 +938,8 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 x;
   REAL8 P;
   REAL8 argp;
+  REAL8 sPe;
+  REAL8 w0;
   INT4 nmax;
   INT4 nmin;
   REAL8 kappa;
@@ -942,6 +951,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 bn;
   REAL8 bp;
   INT4 q;
+  INT4 pmax;
   INT4 winindex;
   REAL8 cosy,siny;
   REAL8 tdiff;
@@ -960,7 +970,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   if (lalDebugLevel) printf ("\nChecked input structures in SideBandTemplate.\n");
   
   /* compute sideband spacing */
-  /* currently unused: REAL8 dfp = 1.0/BSParams->OrbitalPeriod; */
+  dfp = 1.0/BSParams->OrbitalPeriod; 
      
   if (lalDebugLevel) printf ("\nInside fourier option in SideBandTemplate.\n");
 
@@ -985,11 +995,15 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   tdiff = TParams->tstart.gpsSeconds+1e-9*TParams->tstart.gpsNanoSeconds-TParams->reftime.gpsSeconds-1e-9*TParams->reftime.gpsNanoSeconds;
   phi0 = fmod((phi0 + LAL_TWOPI*tdiff*f0),LAL_TWOPI);
 
+  /* if non-eccentric then remove loop over eccentricity */  
+  if (e==0.0) pmax = 0;
+  else pmax = TParams->pmax;
+  
   /* redefine some detector and dataset parameters */
   T = TParams->Tobs;
-  /* currently unused: Sh = TParams->sqrtSh*TParams->sqrtSh; */
-  /* currently unused: REAL8 sPe = 86400.0*(1.0/((1.0/365.2524)+1.0)); // define the sidereal day */
-  /* currently unused: REAL8 w0 = TParams->ABCco->omega0; */
+  Sh = TParams->sqrtSh*TParams->sqrtSh;
+  sPe = 86400.0*(1.0/((1.0/365.2524)+1.0)); /* define the sidereal day */
+  w0 = TParams->ABCco->omega0;
   
   /* define the eccentricity expansion coefficients */
   R1 = LAL_TWOPI*BSParams->f0*a*sqrt(1.0-e*e*cos(argp)*cos(argp));

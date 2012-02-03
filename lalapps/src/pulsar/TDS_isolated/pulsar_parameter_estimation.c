@@ -152,7 +152,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   CHAR outputFile[256];
 
   OutputParams output = empty_OutputParams;
-  // currently unused: REAL8 maxPost=0.;
+  REAL8 maxPost=0.;
   REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
   REAL8 h0ul=0.;
@@ -396,7 +396,7 @@ defined!\n");
       /*======================================================================*/
 
       /*========== CREATE THE SINGLE DETECTOR POSTERIORS =====================*/
-      // currently unused: maxPost = log_posterior(singleLike, inputs.priors, inputs.mesh, output);
+      maxPost = log_posterior(singleLike, inputs.priors, inputs.mesh, output);
 
       /* marginalise over each parameter and output the data */
       for( n = 0 ; n < 4 ; n++ ){
@@ -447,7 +447,7 @@ defined!\n");
       output.outPost = inputs.outputPost; /* set for whether we want to output
                                             the full posterior */
 
-      // currently unused: maxPost = log_posterior(jointLike, inputs.priors, inputs.mesh, output);
+      maxPost = log_posterior(jointLike, inputs.priors, inputs.mesh, output);
       if( verbose )
         fprintf(stderr, "I've calculated the joint posterior.\n");
 
@@ -3040,6 +3040,8 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
   INT4 numDM=0;
   REAL8 corTemp=0., junk=0.;
 
+  int rc;
+
   ParamData paramData[]=
   {
     { "f0",  0., 0., 0 },{ "f1",  0., 0., 0 },{ "f2",  0., 0., 0 },
@@ -3171,23 +3173,23 @@ reading any correlation data!");
   k=0;
   for(i=0;i<numParams+numDM;i++){
     n=0;
-    fscanf(fp, "%s%s", tmpStr, tmpStr2);
+    rc = fscanf(fp, "%s%s", tmpStr, tmpStr2);
 
     /* if its a dispersion measure then just skip the line */
     if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
-      fscanf(fp, "%*[^\n]");
+      rc = fscanf(fp, "%*[^\n]");
       k--;
       continue;
     }
 
     for(j=0;j<i+1;j++){
       if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
-        fscanf(fp, "%lf", &junk);
+        rc = fscanf(fp, "%lf", &junk);
         n--;
         continue;
       }
 
-      fscanf(fp, "%lf", &corTemp);
+      rc = fscanf(fp, "%lf", &corTemp);
 
       /* if covariance equals 1 set as 0.9999999, because values of 1
            can cause problems of giving singular matrices */

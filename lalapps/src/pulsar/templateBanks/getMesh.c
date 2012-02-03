@@ -729,6 +729,7 @@ setTrueRandomSeed(void)
 {
   FILE *fpRandom;
   INT4 seed;		/* NOTE: possibly used un-initialized! that's ok!! */
+  size_t num;
 
   fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
   if ( fpRandom == NULL )
@@ -737,7 +738,7 @@ setTrueRandomSeed(void)
     }
   else
     {
-      fread(&seed, sizeof(INT4),1, fpRandom);
+      num = fread(&seed, sizeof(INT4),1, fpRandom);
       fclose(fpRandom);
     }
 

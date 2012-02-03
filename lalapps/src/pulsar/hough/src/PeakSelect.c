@@ -218,6 +218,7 @@ void LALPeriodo2PSDrng (LALStatus  *status,
 
   INT4   length, j;
   UINT2  blockSize, nblocks2;
+  REAL8  *data;
   REAL8  *medians;
   LALRunningMedianPar rngmedPar;
   REAL8Sequence mediansV;
@@ -252,6 +253,7 @@ void LALPeriodo2PSDrng (LALStatus  *status,
     nblocks2 = floor(blockSize/2.0);
     
     medians = psd->data+nblocks2; 
+    data=peri->data;
 
     rngmedPar.blocksize = (UINT4)blockSize;      
     inputV.length = length;

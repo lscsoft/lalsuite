@@ -99,7 +99,7 @@ int main(int argc, char *argv[]){
   CHAR   *uvar_fnameIn = NULL;  
   INT4   numberCount, ind;
   UINT8  nTemplates;   
-  UINT4   mObsCoh;
+  UINT4   mObsCoh, nfSizeCylinder;
   REAL8  uvar_peakThreshold;
   REAL8  f_min, f_max, fWings, timeBase;
   INT4  uvar_blocksRngMed;
@@ -113,6 +113,8 @@ int main(int argc, char *argv[]){
   CHAR *logstr=NULL;
   /*REAL8 asq, bsq;*/ /* square of amplitude modulation functions a and b */
 
+  int rc;
+
   /******************************************************************/
   /*    Set up the default parameters.      */
   /* ****************************************************************/
@@ -125,6 +127,7 @@ int main(int argc, char *argv[]){
   LAL_CALL( LALGetDebugLevel( &status, argc, argv, 'd'), &status);
 
   msp = 1; /*only one spin-down */
+  nfSizeCylinder = NFSIZE;
  
   /* memory allocation for spindown */
   pulsarTemplate.spindown.length = msp;
@@ -199,7 +202,7 @@ int main(int argc, char *argv[]){
     fclose (fpLog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
-    system (command);	/* we don't check this. If it fails, we assume that */
+    rc = system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 

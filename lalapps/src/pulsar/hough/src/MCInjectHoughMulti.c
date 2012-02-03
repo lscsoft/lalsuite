@@ -1122,7 +1122,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if ( count != 0 ) ABORT( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
   
   fclose(fpRandom);
   
@@ -1346,7 +1346,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  if (count != 0) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
+  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
   
   fclose(fpRandom);
   
@@ -1597,6 +1597,8 @@ void PrintLogFile2 (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
+  int rc;
+
   INITSTATUS (status, "PrintLogFile2", rcsid);
   ATTATCHSTATUSPTR (status);
   
@@ -1649,7 +1651,7 @@ void PrintLogFile2 (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
-	system (command);
+	rc = system (command);	 
       } 
     } 
   }
@@ -1663,7 +1665,7 @@ void PrintLogFile2 (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      system (command);	/* we don't check this. If it fails, we assume that */
+      rc = system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */ 
     }

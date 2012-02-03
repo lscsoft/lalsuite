@@ -532,6 +532,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
       XLAL_ERROR_REAL8(XLAL_EINVAL);
    }
    
+   REAL8 x = 0.0;
    REAL8 pk = p;
    INT4 count_limit = 100;
    INT4 count = 0;
@@ -559,7 +560,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
          }
       }
       h = xk-xnew;
-      // unused: REAL8 x = xnew;
+      x = xnew;
       if (!(fabs(h)>crit*fabs(xk) && fabs(h)>crit)) return xk;
       xk = xnew;
       F = newF;

@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
   {
     unsigned long seed;
     FILE *fpr = NULL;
-
+    size_t num;
     if ((rng = gsl_rng_alloc(gsl_rng_mt19937)) == NULL) {
       XLALPrintError("Couldn't allocate a gsl_rng\n");
       return EXIT_FAILURE;
@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Couldn't open '/dev/random'\n");
       return EXIT_FAILURE;
     }
-    fread(&seed, sizeof(seed), 1, fpr);
+    num = fread(&seed, sizeof(seed), 1, fpr);
     fclose(fpr);
     gsl_rng_set(rng, seed);
   }
