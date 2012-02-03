@@ -109,7 +109,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,
 			       const PulsarDopplerParams *doppler,
 			       MultiSFTVector *multiSFTs,                   /* modified */
 			       const MultiNoiseWeights *multiWeights,
-			       MultiDetectorStateSeries *multiDetStates,    /* modified */
 			       ComputeFParams *params
 			       );
 

@@ -11,10 +11,12 @@ check_PROGRAMS = \
 	ArrayFactoriesTest \
 	ArraySequenceFactoriesTest \
 	VectorFactoriesTest \
+	StringVectorTest \
 	VectorSequenceFactoriesTest
 
 TESTS = \
 	ArrayFactoriesTest \
 	ArraySequenceFactoriesTest \
 	VectorFactoriesTest \
+	StringVectorTest \
 	VectorSequenceFactoriesTest

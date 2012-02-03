@@ -160,8 +160,8 @@ typedef struct {
   REAL8 Alpha;                              /**< sky position alpha in radians */
   REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
-  LIGOTimeGPS refTime;			    /**< reference-time for pulsar-parameters in SBB frame */
-  DopplerRegion searchRegion;		    /**< parameter-space region (at *internalRefTime*) to search over */
+  LIGOTimeGPS internalRefTime;	            /**< internal reference time used purely for F-stat computation (defaults to startTime) */
+  DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
   EphemerisData *ephemeris;		    /**< ephemeris data (from LALInitBarycenter()) */
@@ -277,6 +277,7 @@ typedef struct {
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
+  BOOLEAN outputSingleFstats;   /**< in multi-detector case, also output single-detector F-stats */
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   REAL8 transient_t0Days;	/**< earliest GPS start-time for transient window search, as offset in days from dataStartGPS */
@@ -511,23 +512,32 @@ int main(int argc,char *argv[])
   REAL8 tic0, tic, toc;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
 
+  /* fixed time-offset between internalRefTime and refTime */
+  REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
+
   /* skip search if user supplied --countTemplates */
   while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
       dopplerpos.orbit = orbitalParams;		/* temporary solution until binary-gridding exists */
 
       tic0 = tic = GETTIME();
+
+      /* use internalRefTime in order to safely computing F-statistic (avoid large |tRef - tStart|) */
+      PulsarDopplerParams internalDopplerpos = dopplerpos;
+      XLALExtrapolatePulsarSpins ( internalDopplerpos.fkdot, dopplerpos.fkdot, DeltaTRefInt );	// can't fail
+      internalDopplerpos.refTime = GV.internalRefTime;
+
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
-          LAL_CALL( ComputeFStat(&status, &Fstat, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
-                                       GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+          LAL_CALL( ComputeFStat(&status, &Fstat, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
+                                 GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
         }
       else
         {
           REAL4 F;
 
-          XLALDriverFstatREAL4 ( &F, &dopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
+          XLALDriverFstatREAL4 ( &F, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, GV.CFparams.Dterms, &cfBuffer4 );
           if ( xlalErrno ) {
             XLALPrintError ("%s: XLALDriverFstatREAL4() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
@@ -571,13 +581,8 @@ int main(int argc,char *argv[])
 	  return -1;
 	}
 
-      /* propagate fkdot from internalRefTime back to refTime for outputting results */
-      /* FIXE: only do this for candidates we're going to write out */
-      LAL_CALL ( LALExtrapolatePulsarSpins ( &status, dopplerpos.fkdot, GV.refTime, dopplerpos.fkdot, GV.searchRegion.refTime ), &status );
-      dopplerpos.refTime = GV.refTime;
-
       /* collect data on current 'Fstat-candidate' */
-      thisFCand.doppler = dopplerpos;
+      thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
       if ( !uvar.GPUready )
         {
           if ( cfBuffer.multiCmplxAMcoef ) {
@@ -611,12 +616,17 @@ int main(int argc,char *argv[])
 	  Fstat.Fb.re *= norm;  Fstat.Fb.im *= norm;
 	  Fstat.F *= norm * norm;
 	  Fstat.F += 2;		/* compute E[2F]:= 4 + SNR^2 */
+	  UINT4 X, numDet = Fstat.numDetectors;
+	  for ( X = 0; X < numDet ; X ++ ) {
+	    Fstat.FX[X] *= norm * norm;
+	    Fstat.FX[X] += 2;
+	  }
 	  thisFCand.Mmunu.Sinv_Tsft = GV.Tsft;
 
 	  /* if outputting FstatAtoms, we need to renormalize them too ! */
 	  if ( Fstat.multiFstatAtoms )
 	    {
-	      UINT4 X, alpha;
+	      UINT4 alpha;
 	      for ( X=0; X < Fstat.multiFstatAtoms->length; X++ )
 		{
 		  FstatAtomVector *thisAtomList = Fstat.multiFstatAtoms->data[X];
@@ -862,8 +872,7 @@ int main(int argc,char *argv[])
       PulsarCandidate pulsarParams = empty_PulsarCandidate;
       pulsarParams.Doppler = loudestFCand.doppler;
 
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &GV.searchRegion.refTime, &loudestFCand.Mmunu ),
-	       &status );
+      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &loudestFCand.Mmunu ), &status );
 
       if ( (fpLoudest = fopen (uvar.outputLoudest, "wb")) == NULL)
 	{
@@ -1108,6 +1117,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
+  LALregBOOLUserStruct(status,outputSingleFstats,0, UVAR_OPTIONAL,  "In multi-detector case, also output single-detector F-stats?");
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "Output filename for outputting transient-CW statistics.");
   LALregSTRINGUserStruct(status, transient_WindowType,0,UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
@@ -1267,19 +1277,20 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   XLALGPSAdd(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
-  if ( LALUserVarWasSet(&uvar->refTime))
+  LIGOTimeGPS refTime;
+  if ( LALUserVarWasSet(&uvar->refTime) )
     {
-      XLALGPSSetREAL8(&(cfg->refTime), uvar->refTime);
+      XLALGPSSetREAL8 ( &refTime, uvar->refTime );
     }
   else if (LALUserVarWasSet(&uvar->refTimeMJD))
     {
       /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
       REAL8 GPSfloat;
       GPSfloat = LALTDBMJDtoGPS(uvar->refTimeMJD);
-      XLALGPSSetREAL8(&(cfg->refTime),GPSfloat);
+      XLALGPSSetREAL8 ( &refTime, GPSfloat );
     }
   else
-    cfg->refTime = startTime;
+    refTime = startTime;
 
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
 
@@ -1326,7 +1337,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     f3dotMin = MYMIN ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
     f3dotMax = MYMAX ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
 
-    spinRangeRef.refTime = cfg->refTime;
+    spinRangeRef.refTime  = refTime;
     spinRangeRef.fkdot[0] = fMin;
     spinRangeRef.fkdot[1] = f1dotMin;
     spinRangeRef.fkdot[2] = f2dotMin;
@@ -1456,9 +1467,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     }
   else cfg->Delta = uvar->Delta;
 
-  { /* ----- set up Doppler region (at internalRefTime) to scan ----- */
-    LIGOTimeGPS internalRefTime = empty_LIGOTimeGPS;
-    PulsarSpinRange spinRangeInt = empty_PulsarSpinRange;
+  { /* ----- set up Doppler region to scan ----- */
     BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta)) || (LALUserVarWasSet(&uvar->RA) && LALUserVarWasSet(&uvar->Dec));
 
     if (uvar->skyRegion)
@@ -1475,17 +1484,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 				cfg->Alpha, cfg->Delta,	uvar->AlphaBand, uvar->DeltaBand), status);
       }
 
-    if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
-      XLALGPSSetREAL8(&(internalRefTime), uvar->internalRefTime);
-    }
-    else
-      internalRefTime = startTime;
-
-    /* spin searchRegion defined by spin-range at *internal* reference-time */
-    TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeInt, internalRefTime, &spinRangeRef ), status );
-    cfg->searchRegion.refTime = spinRangeInt.refTime;
-    memcpy ( &cfg->searchRegion.fkdot, &spinRangeInt.fkdot, sizeof(spinRangeInt.fkdot) );
-    memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeInt.fkdotBand, sizeof(spinRangeInt.fkdotBand) );
+    /* spin searchRegion defined by spin-range at reference-time */
+    cfg->searchRegion.refTime = spinRangeRef.refTime;
+    memcpy ( &cfg->searchRegion.fkdot,     &spinRangeRef.fkdot,     sizeof(spinRangeRef.fkdot) );
+    memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeRef.fkdotBand, sizeof(spinRangeRef.fkdotBand) );
 
   } /* get DopplerRegion */
 
@@ -1504,6 +1506,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->stepSizes.fkdot[2] = uvar->df2dot;
   cfg->stepSizes.fkdot[3] = uvar->df3dot;
   cfg->stepSizes.orbit = NULL;
+
+  /* internal refTime is used for computing the F-statistic at, to avoid large (tRef - tStart) values */
+  if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
+    XLALGPSSetREAL8 ( &(cfg->internalRefTime), uvar->internalRefTime);
+  }
+  else
+    cfg->internalRefTime = startTime;
 
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
   if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) == NULL ) {
@@ -1601,6 +1610,8 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
+  if ( uvar->outputSingleFstats )
+    cfg->CFparams.returnSingleF = TRUE;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1653,11 +1664,11 @@ getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg )
   sprintf (line, "%%%% Total time spanned    = %12.3f s  (%.1f hours)\n",
 	   cfg->multiDetStates->Tspan, cfg->multiDetStates->Tspan/3600 );
   ret = append_string ( ret, line );
-  sprintf (line, "%%%% Pulsar-params refTime = %12.3f \n", GPS2REAL8(cfg->refTime) );
+  sprintf (line, "%%%% InternalRefTime       = %12.3f \n", XLALGPSGetREAL8 ( &(cfg->internalRefTime)) );
   ret = append_string ( ret, line );
-  sprintf (line, "%%%% InternalRefTime       = %12.3f \n", GPS2REAL8(cfg->searchRegion.refTime) );
+  sprintf (line, "%%%% Pulsar-params refTime = %12.3f \n", XLALGPSGetREAL8 ( &(cfg->searchRegion.refTime) ));
   ret = append_string ( ret, line );
-  sprintf (line, "%%%% Spin-range at internalRefTime: " );
+  sprintf (line, "%%%% Spin-range at refTime: " );
   ret = append_string ( ret, line );
 
   ret = append_string (ret, "fkdot = [ " );
@@ -2065,6 +2076,10 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   fprintf (fp, "Fa       = % .6g  %+.6gi;\n", Fcand->Fstat.Fa.re, Fcand->Fstat.Fa.im );
   fprintf (fp, "Fb       = % .6g  %+.6gi;\n", Fcand->Fstat.Fb.re, Fcand->Fstat.Fb.im );
   fprintf (fp, "twoF     = % .6g;\n", 2.0 * Fcand->Fstat.F );
+  /* single-IFO Fstat-values, if present */
+  UINT4 X, numDet = Fcand->Fstat.numDetectors;
+  for ( X = 0; X < numDet ; X ++ )
+    fprintf (fp, "twoF%d    = % .6g;\n", X, 2.0 * Fcand->Fstat.FX[X] );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
@@ -2098,10 +2113,31 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
   if ( !fp || !thisFCand )
     return -1;
 
-  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g\n",
+  /* add extra output-field containing per-detector FX if non-NULL */
+  char singleFstr[256] = "";     /* defaults to empty */
+  char buf0[256];
+  if ( thisFCand->Fstat.numDetectors > 0 )
+    {
+      snprintf ( singleFstr, sizeof(singleFstr), " %.9g", 2.0*thisFCand->Fstat.FX[0] );
+      UINT4 numDet = thisFCand->Fstat.numDetectors;
+      UINT4 X;
+      for ( X = 1; X < numDet ; X ++ )
+        {
+          snprintf ( buf0, sizeof(buf0), " %.9g", 2.0*thisFCand->Fstat.FX[X] );
+          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( singleFstr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
+            break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
+          }
+          strcat ( singleFstr, buf0 );
+        } /* for X < numDet */
+
+    } /* if FX */
+
+  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g%s\n",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
-	   2.0 * thisFCand->Fstat.F );
+	   2.0 * thisFCand->Fstat.F, singleFstr );
 
   return 0;
 

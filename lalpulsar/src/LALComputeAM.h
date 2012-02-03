@@ -83,18 +83,23 @@ NRCSID (LALCOMPUTEAMH, "$Id: LALComputeAM.h");
 
 /* ---------- exported data types -------------------- */
 
-/** This structure contains the output of the routine: a(t), b(t),
- * and the scalar products therein.  That is:
+/** This structure contains the per-SFT (weighted) antenna-pattern functions
+ * \f$\widehat{a}_{X\alpha}, \widehat{b}_{X\alpha}\f$,
+ * with \f$\alpha\f$ the SFT-index, and \f$X\f$ the IFO index. The per-IFO summed antenna-pattern coefficients
+ * for detector X are
+ * \f$\widehat{A}_X,\widehat{B}_X,\widehat{C}_X\f$ and their determinant \f$\widehat{D}_X=\widehat{A}_X \widehat{B}_X - \widehat{C}_X^2\f$.
+ *
+ * \p See Sec.4.1 in CFSv2 notes (https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4)
  */
 typedef struct tagAMCoeffs
 {
   SWIGLAL_STRUCT(AMCoeffs);
-  REAL4Vector     *a;          /**< the function a(t)         */
-  REAL4Vector     *b;          /**< the function b(t)         */
-  REAL4           A;           /**< the scalar product (a||a) */
-  REAL4           B;           /**< the scalar product (b||b) */
-  REAL4           C;           /**< the scalar product (a||b) */
-  REAL4           D;           /**< the quantity AB-C^2       */
+  REAL4Vector     *a;          /**< (weighted) per-SFT \f$X\alpha\f$ antenna-pattern function \f$\widehat{a}_{X\alpha}\f$ */
+  REAL4Vector     *b;          /**< (weighted) per-SFT \f$X\alpha\f$ antenna-pattern function \f$\widehat{b}_{X\alpha}\f$ */
+  REAL4           A;           /**< summed antenna-pattern matrix coefficient: \f$\widehat{A}_X = \sum_{\alpha} \widehat{a}^2_{X\alpha}\f$ */
+  REAL4           B;           /**< summed antenna-pattern matrix coefficient: \f$\widehat{B}_X = \sum_{\alpha} \widehat{b}^2_{X\alpha}\f$ */
+  REAL4           C;           /**< summed antenna-pattern matrix coefficient: \f$\widehat{C}_X = \sum_{\alpha} \widehat{a}_{X\alpha}\,\widehat{b}_{X\alpha}\f$ */
+  REAL4           D;           /**< determinant \f$\widehat{D}_X = \widehat{A}_X \widehat{B}_X - \widehat{C}_X^2\f$  */
 } AMCoeffs;
 
 /** This structure contains the parameters for the routine.  They include:
@@ -114,18 +119,23 @@ typedef struct tagAMCoeffsParams
 /** Struct holding the "antenna-pattern" matrix \f$\mathcal{M}_{\mu\nu} \equiv \left( \mathbf{h}_\mu|\mathbf{h}_\nu\right)\f$,
  * in terms of the multi-detector scalar product. This matrix can be shown to be expressible as
  * \f{equation}
- * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c} A_d & C_d & 0 & 0 \\ C_d & B_d & 0 & 0 \\ 0 & 0 & A_d & C_d \\ 0 & 0 & C_d & B_d \\ \end{array}\right)\,,
+ * \mathcal{M}_{\mu\nu} = \mathcal{S}^{-1}\,T_\mathrm{SFT}\,\left( \begin{array}{c c c c}
+ * \widehat{A} & \widehat{C} & 0 & 0 \\
+ * \widehat{C} & \widehat{B} & 0 & 0 \\
+ * 0 & 0 & \widehat{A} & \widehat{C} \\
+ * 0 & 0 & \widehat{C} & \widehat{B} \\
+ * \end{array}\right)\,,
  * \f}
  * where (here) \f$\mathcal{S} \equiv \frac{1}{N_\mathrm{SFT}}\sum_{X,\alpha} S_{X\alpha}\f$ characterizes the (single-sided!)
  * multi-detector noise-floor, and
  * \f{equation}
- * A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\,,\quad
- * B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha \,,\quad
- * C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha \,,
+ * \widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \,,\quad
+ * \widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \,,\quad
+ * \widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha} \,,
  * \f}
- * and the noise-weighted atenna-functions \f$\widehat{a}^X_\alpha = \sqrt{w^X_\alpha}\,a^X_\alpha\f$,
- * \f$\widehat{b}^X_\alpha = \sqrt{w^X_\alpha}\,b^X_\alpha\f$, and noise-weights
- * \f$w^X_\alpha \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
+ * and the noise-weighted atenna-functions \f$\widehat{a}_{X\alpha} = \sqrt{w_{X\alpha}}\,a_{X\alpha}\f$,
+ * \f$\widehat{b}_{X\alpha} = \sqrt{w_{X\alpha}}\,b_{X\alpha}\f$, and noise-weights
+ * \f$w_{X\alpha} \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
  *
  * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd and the normalization-factor \a Sinv_Tsft separately
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation
@@ -133,18 +143,18 @@ typedef struct tagAMCoeffsParams
  */
 typedef struct tagAntennaPatternMatrix {
   SWIGLAL_STRUCT(AntennaPatternMatrix);
-  REAL8 Ad; 		/**<  \f$A_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{a}^X_\alpha\f$ */
-  REAL8 Bd; 		/**<  \f$B_d \equiv \sum_{X,\alpha} \widehat{b}^X_\alpha \widehat{b}^X_\alpha\f$ */
-  REAL8 Cd; 		/**<  \f$C_d \equiv \sum_{X,\alpha} \widehat{a}^X_\alpha \widehat{b}^X_\alpha\f$ */
-  REAL8 Dd; 		/**<  determinant \f$D_d \equiv A_d B_d - C_d^2 \f$ */
+  REAL8 Ad; 		/**<  \f$\widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \f$ */
+  REAL8 Bd; 		/**<  \f$\widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \f$ */
+  REAL8 Cd; 		/**<  \f$\widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha}\f$ */
+  REAL8 Dd; 		/**<  determinant \f$\widehat{D} \equiv \widehat{A} \widehat{B} - \widehat{C}^2 \f$ */
   REAL8 Sinv_Tsft;	/**< normalization-factor \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (wrt single-sided PSD!) */
 } AntennaPatternMatrix;
 
-/** Multi-IFO container for antenna-pattern coefficients a^X(t), b^X(t) and atenna-pattern matrix M_mu_nu */
+/** Multi-IFO container for antenna-pattern coefficients \f$a_{X\alpha}, b_{X\alpha}\f$ and atenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 typedef struct tagMultiAMCoeffs {
   SWIGLAL_STRUCT(MultiAMCoeffs);
-  UINT4 length;		/**< number of IFOs */
-  AMCoeffs **data;	/**< noise-weighted am-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
+  UINT4 length;			/**< number of IFOs */
+  AMCoeffs **data;		/**< noise-weighted AM-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 } MultiAMCoeffs;
 
@@ -164,7 +174,7 @@ void LALGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *De
 void LALNewGetAMCoeffs(LALStatus *, AMCoeffs *coeffs, const DetectorStateSeries *DetectorStates, SkyPosition skypos);
 int XLALComputeAntennaPatternCoeffs ( REAL8 *ai, REAL8 *bi, const SkyPosition *skypos, const LIGOTimeGPS *tGPS, const LALDetector *site, const EphemerisData *edat );
 void LALGetMultiAMCoeffs (LALStatus *, MultiAMCoeffs **multiAMcoef, const MultiDetectorStateSeries *multiDetStates, SkyPosition pos );
-int XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
+int XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
 AMCoeffs *XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates, SkyPosition skypos );
 MultiAMCoeffs *XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, const MultiNoiseWeights *multiWeights, SkyPosition skypos );

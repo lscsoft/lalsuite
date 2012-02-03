@@ -1015,6 +1015,9 @@ static void worker (void) {
 #ifdef HS_OPTIMIZATION
 	  ", HS_OPTIMIZATION"
 #endif
+#ifdef GC_SSE2_OPT
+	  ", GC_SSE2_OPT"
+#endif
 #ifdef USE_CUDA
 	  ", CUDA"
 #endif

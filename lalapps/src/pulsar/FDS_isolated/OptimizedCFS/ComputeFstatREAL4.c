@@ -253,9 +253,9 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
           }
 
           /* apply noise-weights to Antenna-patterns and compute A,B,C */
-          if ( XLALWeighMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
+          if ( XLALWeightMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
+            XLALPrintError("%s: XLALWeightMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
             XLAL_ERROR ( XLAL_EFUNC );
           }
 
@@ -371,8 +371,8 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
       }
 
       /* apply noise-weights to Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("%s: XLALWeightMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
 	XLAL_ERROR ( XLAL_EFUNC );
       }
 
