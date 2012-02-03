@@ -91,7 +91,7 @@ const char * usage =
 "                             SpinTaylorT4\n"
 "                             TaylorF2RedSpin\n"
 "                             PhenSpinTaylorRD\n"
-"                             SpinAlignedEOB\n"
+"                             SEOBNRv1\n"
 "--phase-order ORD          Twice PN order of phase (e.g. ORD=7 <==> 3.5PN)\n"
 "--amp-order ORD            Twice PN order of amplitude\n"
 "--domain DOM               'TD' for time domain or 'FD' for frequency\n"
@@ -425,8 +425,6 @@ int main (int argc , char **argv) {
     REAL8TimeSeries *hplus = NULL;
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
-    REAL8 S1[3];
-    REAL8 S2[3];
     // For now, hardcode spin flags as 1.5PN SO + 2PN SS
     /*LALSpinInteraction spinFlags = LAL_SOInter | LAL_SSInter;*/
 	/*LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN | LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;*/
@@ -507,17 +505,11 @@ int main (int argc , char **argv) {
 	    case GSApproximant_PhenSpinTaylorRD:
 	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice);
                     break;
-                case GSApproximant_SpinAlignedEOB:
-                    S1[0] = params->s1x;
-                    S1[1] = params->s1y;
-                    S1[2] = params->s1z;
-                    S2[0] = params->s2x;
-                    S2[1] = params->s2y;
-                    S2[2] = params->s2z;
+                case GSApproximant_SEOBNRv1:
                     XLALSimIMRSpinAlignedEOBWaveform( &hplus, &hcross, &tRef,
                             params->phiRef, params->deltaT, params->m1,
                             params->m2, params->fRef, params->distance,
-                            params->inclination, S1, S2);
+                            params->inclination, params->s1z, params->s2z);
                     break;
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their TD waveform generation function\n");
