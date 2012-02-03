@@ -483,7 +483,6 @@ INT2 RearrangeData(void)
   REAL8 dFreqO,dFreqT,dFreqLCM;
   INT4   nObsv,nTest,nData;
   INT4 indexOffset=0;
-  INT4 indexStepO=1,indexStepT=1;
   REAL8 errorTol=1.0*10e-5;
 
   /* pass the data to the local variables */
@@ -510,8 +509,6 @@ INT2 RearrangeData(void)
     }
   }
   indexOffset= (INT4) myRound((sFreqO-sFreqT)/dFreqLCM);
-  indexStepO=(INT4) myRound(dFreqLCM/dFreqO);
-  indexStepT=(INT4) myRound(dFreqLCM/dFreqT);
   
   /* if dFreqLCM is really LCM, need to recompute nData */
 
@@ -572,8 +569,6 @@ INT2 ReadData(void)
   const INT4 Nheadlines=4;
 
   FILE *fpobsv,*fptest;
-  char *str;
-  int rc;
 
   fpobsv = fopen(obsvdatafile,"r");
   fptest = fopen(testdatafile,"r");
@@ -586,13 +581,13 @@ INT2 ReadData(void)
   /* skip the header */
   /* depend on data format specification */
   for(irec=0;irec<Nheadlines;irec++) {
-    str = fgets(buff,sizeof(buff),fpobsv);
-    str = fgets(buff,sizeof(buff),fptest);
+    fgets(buff,sizeof(buff),fpobsv);
+    fgets(buff,sizeof(buff),fptest);
   }
 
   /* data input begin */
   for(irec=0;irec<(ObsvHeader.nData);irec++) {
-    rc = fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
+    fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
 	   &(FaFbObsv[irec].freq),
 	   &(FaFbObsv[irec].RFa),
 	   &(FaFbObsv[irec].IFa),
@@ -606,7 +601,7 @@ INT2 ReadData(void)
     return 1;
   }
   for(irec=0;irec<(TestHeader.nData);irec++) {
-    rc = fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
+    fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
 	   &(FaFbTest[irec].freq),
 	   &(FaFbTest[irec].RFa),
 	   &(FaFbTest[irec].IFa),

@@ -262,7 +262,6 @@ int main(int argc, char *argv[]){
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
-  UINT4 binsSFT, sftFminBin;
   UINT4 numSearchBins;
   
   /* information about all the ifos */
@@ -635,11 +634,6 @@ int main(int argc, char *argv[]){
       } /* end cleaning */
 
 
-    /* SFT info -- assume all SFTs have same length */
-    binsSFT = inputSFTs->data[0]->data->data->length;
-    sftFminBin = (INT4) floor(inputSFTs->data[0]->data[0].f0 * timeBase + 0.5);
-
-
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
   } /* end of sft reading block */
@@ -965,7 +959,6 @@ int main(int argc, char *argv[]){
 
 	    INT4   n;
 	    REAL8  f1dis;
-	    REAL8 significance;
 
 	    ht.f0Bin = fBinSearch;
 	    ht.spinRes.length = 1;
@@ -1006,7 +999,6 @@ int main(int argc, char *argv[]){
 		for(j = 0; j < histTotal->length; j++){ 
 		  histTotal->data[j] += hist->data[j]; 
 		}
-		significance =  (stats.maxCount - meanN)/sigmaN;   
 	      }	      	      
 
 	      /* select candidates from hough maps */
@@ -1299,7 +1291,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   char filename[ HOUGHMAXFILENAMELENGTH ], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
-  INT4 mObsCoh;
   REAL8 f0,f1;
    
   strcpy(  filename, fnameOut);
@@ -1315,7 +1306,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   ySide= ht->ySide;
   xSide= ht->xSide;
   f0=ht->f0Bin* ht->deltaF;
-  mObsCoh = ht->mObsCoh;
   f1=0.0;
   if( ht->spinRes.length ){ f1=ht->spinRes.data[0]; }
   
@@ -1352,8 +1342,6 @@ void PrintLogFile (LALStatus       *status,
   FILE *fpLog=NULL;
   CHAR *logstr=NULL; 
   UINT4 k;
-
-  int rc;
 
   INITSTATUS (status, "PrintLogFile", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1402,7 +1390,7 @@ void PrintLogFile (LALStatus       *status,
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
-    rc = system(command);
+    system(command);
   }
 
 
@@ -1417,7 +1405,7 @@ void PrintLogFile (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
-	rc = system (command);	 
+	system (command);
       } 
     } 
   }
@@ -1431,7 +1419,7 @@ void PrintLogFile (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
+      system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */ 
     }

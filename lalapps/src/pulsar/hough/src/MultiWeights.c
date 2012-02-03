@@ -94,7 +94,6 @@ int main(int argc, char *argv[]){
    /* sft constraint variables */
   LIGOTimeGPS startTimeGPS, endTimeGPS;
   LIGOTimeGPSVector *inputTimeStampsVector=NULL;
-  LIGOTimeGPS firstTimeStamp, lastTimeStamp;
  
  
  /* information about all the ifos */
@@ -251,9 +250,7 @@ int main(int argc, char *argv[]){
     }
     
     /* catalog is ordered in time so we can get start, end time and tObs*/
-    firstTimeStamp = catalog->data[0].header.epoch;
     mObsCoh = catalog->length; /* not always correct number of sfts */ 
-    lastTimeStamp = catalog->data[mObsCoh - 1].header.epoch;    /* irrelevant here */
     deltaF = catalog->data->header.deltaF;  /* frequency resolution */
   
     /* add wings for Doppler modulation and running median block size*/
@@ -487,8 +484,6 @@ void PrintLogFile (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  int rc;
-
   INITSTATUS (status, "PrintLogFile", rcsid);
   ATTATCHSTATUSPTR (status);
   
@@ -526,7 +521,7 @@ void PrintLogFile (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
-	rc = system (command);	 
+	system (command);
       } 
     } 
   }
@@ -540,7 +535,7 @@ void PrintLogFile (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
+      system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */ 
     }

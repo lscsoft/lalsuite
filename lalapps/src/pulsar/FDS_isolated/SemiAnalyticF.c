@@ -171,7 +171,7 @@ void
 ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
 {
 
-  REAL8 A,B,C,D, A1,A2,A3,A4, To,Sh,F;
+  REAL8 A,B,C,A1,A2,A3,A4, To,Sh,F;
   REAL8 aPlus, aCross;
   REAL8 twopsi, twophi;
 
@@ -181,7 +181,6 @@ ComputeF( LALStatus *status, struct CommandLineArgsTag CLA)
   A = amc.A;
   B = amc.B;
   C = amc.C;
-  D = amc.D; 
 
   twophi = 2.0 * CLA.phi0;
   twopsi = 2.0 * CLA.psi;

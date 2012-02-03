@@ -316,9 +316,7 @@ int MAIN( int argc, char *argv[]) {
 
 
   LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tStartGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
-  REAL8 tObs;
 
   /* velocities and positions at midTstack */
   REAL8VectorSequence *velStack=NULL;
@@ -701,9 +699,8 @@ int MAIN( int argc, char *argv[]) {
 
   /* some useful params computed by SetUpSFTs */
   tStack = usefulParams.tStack;
-  tObs = usefulParams.tObs;
   nStacks = usefulParams.nStacks;
-  tStartGPS = usefulParams.tStartGPS;
+  /* currently unused: LIGOTimeGPS tStartGPS = usefulParams.tStartGPS; */
   midTstack = usefulParams.midTstack;
   startTstack = usefulParams.startTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
@@ -3050,7 +3047,7 @@ void GetSemiCohToplist(LALStatus            *status,
 		       REAL8                sigmaN)
 {
 
-  INT4 k, debug;
+  INT4 k;
   HoughFStatOutputEntry line;
 
   INITSTATUS( status, "GetSemiCohToplist", rcsid );
@@ -3092,7 +3089,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.sumTwoF = -1;    	/* sum of 2F-values for LV postprocessing */
     line.sumTwoFX = NULL; 	/* sum of 2F-values per detector for LV postprocessing */
 
-    debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
+    INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
 
   }
 
