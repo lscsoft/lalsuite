@@ -13,7 +13,8 @@ endif
 
 lalinference_mcmc_SOURCES = \
 	$(srcdir)/../LALInferenceMCMC.c \
-	$(srcdir)/../LALInferenceMCMCSampler.c 
+	$(srcdir)/../LALInferenceMCMCSampler.c \
+	$(srcdir)/../LALInferenceMCMCSampler.h
 
 bin_PROGRAMS = $(mpi_progs)
 

@@ -37,6 +37,7 @@ doc/lsd.toc
 include/config.h
 include/config.h.in
 include/lal/*.h
+include/lal/*.i
 include/lal/stamp-h2
 include/stamp-h1
 lal-*.tar.gz
@@ -84,8 +85,6 @@ packages/date/test/TestLMST2
 packages/date/test/TestLeapSecs
 packages/date/test/TestStrToGPS
 packages/date/test/TestUTCtoGPS
-packages/factories/include/AVFactories.h
-packages/factories/include/SeqFactories.h
 packages/factories/test/ArrayFactoriesTest
 packages/factories/test/ArraySequenceFactoriesTest
 packages/factories/test/VectorFactoriesTest
@@ -144,9 +143,6 @@ packages/support/test/UserInputTest
 packages/tdfilter/test/BandPassTest
 packages/tdfilter/test/IIRFilterTest
 packages/tdfilter/test/LPCTest
-packages/tools/include/FrequencySeries.h
-packages/tools/include/Sequence.h
-packages/tools/include/TimeSeries.h
 packages/tools/test/CoherentEstimationTest
 packages/tools/test/ComputeTransferTest
 packages/tools/test/DetectorSiteTest
@@ -179,7 +175,6 @@ packages/utilities/test/SCoarseGrainFrequencySeriesTest
 packages/utilities/test/SFTCleanTest
 packages/utilities/test/SortTest
 packages/utilities/test/ZCoarseGrainFrequencySeriesTest
-packages/vectorops/include/VectorIndexRange.h
 packages/vectorops/test/VectorIndexRangeTest
 packages/vectorops/test/VectorOpsTest
 packages/window/test/WindowTest

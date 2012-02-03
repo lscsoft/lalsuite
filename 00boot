@@ -7,12 +7,6 @@ fail () {
   exit 1
 }
 
-## build sources, where appropriate
-for d in lal; do
-	echo "00boot: building sources in $d"
-	(cd "$d" && ./00boot --only-build-sources 1>/dev/null) || fail "00boot in $d"
-done
-
 echo "00boot: running autoreconf"
 LIBTOOLIZE=true autoreconf || fail "autoreconf"
 

@@ -43,9 +43,7 @@ void gridOutput( LALInferenceRunState *runState ){
   REAL8Vector *logL = NULL;
   
   CHAR *parname = NULL, parscale[256], parmin[256], outputgrid[256];
-  
-  
-  
+ 
   /*------------------------------------------------------------*/
   /* test output on a h0 grid */
   ppt = LALInferenceGetProcParamVal( commandLine, "--grid" );

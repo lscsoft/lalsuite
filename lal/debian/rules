@@ -31,6 +31,7 @@ config.status : configure
 	dh_testdir
 #	LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
+	PKG_CONFIG_PATH="" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 		--prefix=$(PREFIX) \
 		--sysconfdir=/etc \

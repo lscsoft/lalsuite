@@ -144,9 +144,9 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
    //Make FFT plan if option 1 is given
    REAL4FFTPlan *plan = NULL;
    if (option==1) {
-      plan = XLALCreateForwardREAL4FFTPlan((UINT4)floor(2*(params->Tobs/params->Tcoh)-1), 0);
+      plan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, 1);
       if (plan==NULL) {
-         fprintf(stderr,"%s: XLALCreateForwardREAL4FFTPlan(%d, 0) failed.\n", __func__, (INT4)floor(2*(params->Tobs/params->Tcoh)-1));
+         fprintf(stderr,"%s: XLALCreateForwardREAL4FFTPlan(%d, 1) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
    }
@@ -278,7 +278,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                            XLAL_ERROR_VOID(XLAL_EFUNC);
                         }
                      } else {
-                        makeTemplateGaussians(template, cand, params);
+                        makeTemplateGaussians(template, cand, params, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                            XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -294,10 +294,10 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR_VOID(XLAL_EFUNC);
                      }
-                     REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
+                     //REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
                      
                      if (prob < bestProb) {
-                        besth0 = h0;
+                        //besth0 = h0;
                         bestmoddepth = mindf + kk*0.5/params->Tcoh;
                         bestR = R;
                         bestProb = prob;
@@ -313,6 +313,7 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             } /* if loc2 > 1 ... */
             
             if (bestR != 0.0) {
+               besth0 = 2.7426*pow(bestR/(params->Tcoh*params->Tobs),0.25);
                if (output->numofcandidates == output->length-1) {
                   output = resize_candidateVector(output, 2*output->length);
                   if (output->data==NULL) {
@@ -397,7 +398,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             resetTemplateStruct(template);
             
             //Make a Gaussian train template
-            makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+            makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
             if (xlalErrno!=0) {
                fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
@@ -423,7 +424,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                fprintf(stderr,"%s: probR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+            //REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
             
             /* Log the candidate if R exceeds the FAR or check other possibilities of different 
              periods */
@@ -431,7 +432,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             INT4 bestproberrcode = 0, loggedacandidate = 0;
             if ((!inputParams->calcRthreshold && prob<log10templatefar) || (inputParams->calcRthreshold && R>farval->far)) {
                bestR = R;
-               besth0 = h0;
+               //besth0 = h0;  //Calculate h0 at the end
                bestProb = prob;
                bestPeriod = ihsCandidates->data[ii].period;
                if (output->numofcandidates == output->length-1) {
@@ -452,7 +453,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                for (jj=2; jj<6; jj++) {
                   if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -467,7 +468,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (inputParams->calcRthreshold && bestProb==0.0) {
                         numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                         if (xlalErrno!=0) {
@@ -477,7 +478,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      }
                      if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -486,7 +487,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   } // shorter period harmonics
                   if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                      ihsCandidates->data[ii].period *= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -501,7 +502,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (inputParams->calcRthreshold && bestProb==0.0) {
                         numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                         if (xlalErrno!=0) {
@@ -511,7 +512,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      }
                      if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -530,7 +531,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         ihsCandidates->data[ii].period *= periodfact;   //Shift period
                         
                         //Make a template
-                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
@@ -546,7 +547,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            fprintf(stderr,"%s: probR() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
                         }
-                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                         //Calculate FAR if bestProb=0
                         if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
@@ -558,7 +559,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         //Log candidate if more significant or exceeding the FAR for the first time
                         if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
-                           besth0 = h0;
+                           //besth0 = h0;  //Calculate h0 at the end
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
@@ -568,7 +569,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      periodfact = 1.0/periodfact;
                      if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
                         ihsCandidates->data[ii].period *= periodfact;
-                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                        makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
                            fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
@@ -583,7 +584,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                            fprintf(stderr,"%s: probR() failed.\n", __func__);
                            XLAL_ERROR(XLAL_EFUNC);
                         }
-                        h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                        //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                         if (inputParams->calcRthreshold && bestProb==0.0) {
                            numericFAR(farval, template, inputParams->templatefar, aveNoise, aveTFnoisePerFbinRatio, inputParams, inputParams->rootFindingMethod);
                            if (xlalErrno!=0) {
@@ -593,7 +594,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         }
                         if ((bestProb!=0.0 && prob<bestProb) || (bestProb==0.0 && !inputParams->calcRthreshold && prob<log10templatefar) || (bestProb==0.0 && inputParams->calcRthreshold && R>farval->far)) {
                            bestPeriod = ihsCandidates->data[ii].period;
-                           besth0 = h0;
+                           //besth0 = h0;  //Calculate h0 at the end
                            bestR = R;
                            bestProb = prob;
                            bestproberrcode = proberrcode;
@@ -610,10 +611,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                
                //Shift period by harmonics
                //for (jj=2; jj<8; jj++) {
-               for (jj=2; jj<4; jj++) {
+               for (jj=2; jj<3; jj++) {
                   if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -628,10 +629,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -640,7 +641,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   } // shorter period harmonics
                   if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
                      ihsCandidates->data[ii].period *= (REAL8)jj;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -655,10 +656,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -673,7 +674,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   REAL8 periodfact = (jj+1.0)/(jj+2.0);
                   if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
                      ihsCandidates->data[ii].period *= periodfact;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -688,10 +689,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -701,7 +702,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   periodfact = 1.0/periodfact;
                   if ( periodfact*ihsCandidates->data[ii].period<=0.2*inputParams->Tobs ) {
                      ihsCandidates->data[ii].period *= periodfact;
-                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams);
+                     makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
                         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
@@ -716,10 +717,10 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         fprintf(stderr,"%s: probR() failed.\n", __func__);
                         XLAL_ERROR(XLAL_EFUNC);
                      }
-                     h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+                     //h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);  //Calculate h0 at the end
                      if (prob < bestProb) {
                         bestPeriod = ihsCandidates->data[ii].period;
-                        besth0 = h0;
+                        //besth0 = h0;  //Calculate h0 at the end
                         bestR = R;
                         bestProb = prob;
                         bestproberrcode = proberrcode;
@@ -730,6 +731,9 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             } // if bestR != 0.0
             
             if (bestProb != 0.0) {
+               //besth0 = 2.7426*pow(bestR/(inputParams->Tcoh*inputParams->Tobs),0.25);
+               besth0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));
+               
                if (loggedacandidate==1 && bestProb < output->data[output->numofcandidates-1].prob) {
                   output->data[output->numofcandidates-1].prob = bestProb;
                   output->data[output->numofcandidates-1].period = bestPeriod;
@@ -764,6 +768,60 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
    farval = NULL;
    
    return 0;
+   
+}
+
+
+
+candidateVector * keepMostSignificantCandidates(candidateVector *input, inputParamsStruct *params)
+{
+   
+   INT4 ii, jj;
+   candidateVector *output = NULL;
+   
+   if (params->keepOnlyTopNumIHS>0 && (INT4)input->numofcandidates<=params->keepOnlyTopNumIHS) {
+      output = new_candidateVector(input->numofcandidates);
+      if (output==NULL) {
+         fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, input->numofcandidates);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+      
+      for (ii=0; ii<(INT4)input->numofcandidates; ii++) {
+         loadCandidateData(&(output->data[ii]), input->data[ii].fsig, input->data[ii].period, input->data[ii].moddepth, input->data[ii].ra, input->data[ii].dec, input->data[ii].stat, input->data[ii].h0, input->data[ii].prob, input->data[ii].proberrcode, input->data[ii].normalization);
+      }
+      output->numofcandidates = input->numofcandidates;
+      
+   } else if (params->keepOnlyTopNumIHS>0 && (INT4)input->numofcandidates>params->keepOnlyTopNumIHS) {
+      output = new_candidateVector(params->keepOnlyTopNumIHS);
+      if (output==NULL) {
+         fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, params->keepOnlyTopNumIHS);
+         XLAL_ERROR_NULL(XLAL_EFUNC);
+      }
+      
+      for (ii=0; ii<(INT4)output->length; ii++) {
+         REAL8 highestsignificance = 0.0;
+         INT4 candidateWithHighestSignificance = 0;
+         for (jj=0; jj<(INT4)input->numofcandidates; jj++) {
+            if (input->data[jj].prob<highestsignificance) {
+               highestsignificance = input->data[jj].prob;
+               candidateWithHighestSignificance = jj;
+            }
+         }
+         
+         loadCandidateData(&(output->data[ii]), input->data[candidateWithHighestSignificance].fsig, input->data[candidateWithHighestSignificance].period, input->data[candidateWithHighestSignificance].moddepth, input->data[candidateWithHighestSignificance].ra, input->data[candidateWithHighestSignificance].dec, input->data[candidateWithHighestSignificance].stat, input->data[candidateWithHighestSignificance].h0, input->data[candidateWithHighestSignificance].prob, input->data[candidateWithHighestSignificance].proberrcode, input->data[candidateWithHighestSignificance].normalization);
+         
+         input->data[candidateWithHighestSignificance].prob = 0.0;
+         
+      }
+      output->numofcandidates = params->keepOnlyTopNumIHS;
+      
+   } else {
+      fprintf(stderr, "%s: keepOnlyTopNumIHS given (%d) is not greater than 0, but it should be to use this function.\n", __func__, params->keepOnlyTopNumIHS);
+      XLAL_ERROR_NULL(XLAL_EINVAL);
+   }
+
+   
+   return output;
    
 }
 

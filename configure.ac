@@ -1,4 +1,4 @@
-AC_INIT([lalsuite],[6.5.0.5],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsuite],[6.6.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -9,7 +9,6 @@ AC_CONFIG_FILES([
   doxygen/src/Makefile
 ])
 AM_INIT_AUTOMAKE([foreign])
-AC_PREFIX_DEFAULT([/opt/lscsoft/lalsuite])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 

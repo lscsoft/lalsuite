@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	depcomp \
 	header-link.mk \
 	install-sh \
+	lalframe.m4 \
 	lalsuite_build.m4 \
 	lalsuite_c99.m4 \
 	lalsuite_gccflags.m4 \

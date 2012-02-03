@@ -199,7 +199,6 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          if (ihsminusnoise>loudestoutlierminusnoise && 
              (fsig>=params->ULfmin && fsig<=params->ULfmin+params->ULfspan) && 
              (moddepth>=params->ULmindf && moddepth<=params->ULmaxdf)) {
-            //fprintf(stderr, "Replaced %f with %f, %f with %f, %f with %f, %d with %d, %d with %d\n", loudestoutlier, ihsmaxima->maxima->data[locationinmaximavector], loudestoutliernoise, totalnoise, loudestoutlierminusnoise, ihsminusnoise, locationofloudestoutlier, ihsmaxima->locations->data[locationinmaximavector], jjbinofloudestoutlier, jj);
             loudestoutlier = ihsmaxima->maxima->data[locationinmaximavector];
             loudestoutliernoise = totalnoise;
             loudestoutlierminusnoise = ihsminusnoise;
@@ -209,11 +208,11 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       } /* for jj < ffdata->numfbins-(ii-1) */
       
       if (locationofloudestoutlier==-1) {
-         fprintf(stderr, "%s: Failed to reach a louder outlier minus noise than 0\n", __func__);
+         fprintf(stderr, "%s: Failed to reach a louder outlier minus noise greater than 0\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      //TODO: comment or remove this
+      //comment or remove this
       //fprintf(stderr, "%f %f %.6f %.6f %d %d\n", params->fmin + (0.5*(ii-1.0) + jjbinofloudestoutlier)/params->Tcoh, 0.5*(ii-1.0)/params->Tcoh, loudestoutliernoise, loudestoutlierminusnoise, locationofloudestoutlier, jjbinofloudestoutlier);
       
       REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
@@ -221,7 +220,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n", __func__, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      REAL8 lo = 0.05*initialguess, hi = 5.0*initialguess;
+      REAL8 lo = 0.001*initialguess, hi = 10.0*initialguess;
       pars.val = 2.0*loudestoutlier;
       pars.dof = 2.0*loudestoutliernoise;
       pars.ULpercent = 0.95;

@@ -1,2 +1,3 @@
+usr/bin/lalframe_lld
 usr/lib/*.so*
 etc/*

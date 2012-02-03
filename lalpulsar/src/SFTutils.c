@@ -1110,79 +1110,111 @@ XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS )
  * it is set to '1', and a warning will be printed if lalDebugLevel > 0.
  *
  * NOTE2: the returned string is allocated here!
+ *
+ * Note3: if more than one valid detector-string is found in the input, an error is returned
+ *
  */
 CHAR *
 XLALGetChannelPrefix ( const CHAR *name )
 {
-  CHAR *channel = LALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
+  CHAR *channel = XLALCalloc( 3, sizeof(CHAR) );  /* 2 chars + \0 */
+
+#define CHECK_UNIQUE do { if ( channel[0] != 0 ) XLAL_ERROR_NULL ( XLAL_EINVAL, "More than one matching detector name found in '%s'", name ); } while(0)
 
   if ( !channel ) {
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc(3)!\n" );
   }
   if ( !name ) {
     LALFree ( channel );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input 'name'" );
   }
 
   /* first handle (currently) unambiguous ones */
-  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") )
+  if ( strstr( name, "ALLEGRO") || strstr ( name, "A1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "A1");
-  else if ( strstr(name, "NIOBE") || strstr( name, "B1") )
+  }
+  if ( strstr(name, "NIOBE") || strstr( name, "B1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "B1");
-  else if ( strstr(name, "EXPLORER") || strstr( name, "E1") )
+  }
+  if ( strstr(name, "EXPLORER") || strstr( name, "E1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "E1");
-  else if ( strstr(name, "GEO") || strstr(name, "G1") )
+  }
+  if ( strstr(name, "GEO") || strstr(name, "G1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "G1" );
-  else if ( strstr(name, "ACIGA") || strstr (name, "K1") )
+  }
+  if ( strstr(name, "ACIGA") || strstr (name, "K1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "K1" );
-  else if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") )
+  }
+  if ( strstr(name, "LLO") || strstr(name, "Livingston") || strstr(name, "L1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "L1" );
-  else if ( strstr(name, "Nautilus") || strstr(name, "N1") )
+  }
+  if ( strstr(name, "Nautilus") || strstr(name, "N1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "N1" );
-  else if ( strstr(name, "AURIGA") || strstr(name,"O1") )
+  }
+  if ( strstr(name, "AURIGA") || strstr(name,"O1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "O1" );
-  else if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") )
+  }
+  if ( strstr(name, "CIT_40") || strstr(name, "Caltech-40") || strstr(name, "P1") ) {
+    CHECK_UNIQUE;
     strcpy ( channel, "P1" );
-  else if ( strstr(name, "TAMA") || strstr(name, "T1") )
+  }
+  if ( strstr(name, "TAMA") || strstr(name, "T1") ) {
+    CHECK_UNIQUE;
     strcpy (channel, "T1" );
+  }
   /* currently the only real ambiguity arises with H1 vs H2 */
-  else if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") )
-    {
-      if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
-	strcpy ( channel, "H2" );
-      else if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
-	strcpy ( channel, "H1" );
-      else /* otherwise: guess */
-	{
-	  strcpy ( channel, "H1" );
-	  if ( lalDebugLevel )
-	    XLALPrintError("WARNING: Detector-name '%s' not unique, guessing '%s'\n", name, channel );
-	}
-    } /* if LHO */
+  if ( strstr(name, "LHO") || strstr(name, "Hanford") || strstr(name, "H1") || strstr(name, "H2") ) {
+    if ( strstr(name, "LHO_2k") ||  strstr(name, "H2") )
+      {
+        CHECK_UNIQUE;
+        strcpy ( channel, "H2" );
+      }
+    if ( strstr(name, "LHO_4k") ||  strstr(name, "H1") )
+      {
+        CHECK_UNIQUE;
+        strcpy ( channel, "H1" );
+      }
+    /* otherwise: guess */
+    if ( channel[0] == 0 )
+      {
+        strcpy ( channel, "H1" );
+        XLALPrintWarning("Detector-name '%s' ambiguous, guessing '%s'\n", name, channel );
+      }
+  } /* if LHO */
   /* LISA channel names are simply left unchanged */
-  else if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
-	    || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
-	    || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
+  if ( strstr(name, "Z1") || strstr(name, "Z2") || strstr(name, "Z3")
+       || strstr(name, "Z4") || strstr(name, "Z5") || strstr(name, "Z6")
+       || strstr(name, "Z7") || strstr(name, "Z8") || strstr(name, "Z9") )
     {
+      CHECK_UNIQUE;
       strncpy ( channel, name, 2);
       channel[2] = 0;
     }
-  /* try matching VIRGO last, because 'V1','V2' might be used as version-numbers
-   * also in some input-strings */
-  else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
+  if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") || strstr(name, "V2") )
     {
-      if ( strstr(name, "Virgo_CITF") || strstr(name, "V1") )
-	strcpy ( channel, "V1" );
-      else if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V2") )
-	strcpy ( channel, "V2" );
+      if ( strstr(name, "Virgo_CITF") || strstr(name, "V2") )
+        {
+          CHECK_UNIQUE;
+          strcpy ( channel, "V2" );
+        }
+      if ( strstr(name, "Virgo") || strstr(name, "VIRGO") || strstr(name, "V1") )
+        {
+          CHECK_UNIQUE;
+          strcpy ( channel, "V1" );
+        }
     } /* if Virgo */
 
-
+  /* Did we fail to find any matches? */
   if ( channel[0] == 0 )
-    {
-      if ( lalDebugLevel ) XLALPrintError ( "\nERROR: unknown detector-name '%s'\n\n", name );
-      XLAL_ERROR_NULL ( XLAL_EINVAL );
-    }
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Unknown detector-name '%s'", name );
   else
     return channel;
 

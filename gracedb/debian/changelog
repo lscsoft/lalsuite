@@ -1,3 +1,15 @@
+ligo-gracedb (1.1-1) unstable; urgency=low
+
+  * Bug Fix.
+
+ -- Brian Moe <brian.moe@ligo.org>  Sun, 22 Jan 2012 09:50:26 -0600
+
+ligo-gracedb (1.0-3) unstable; urgency=low
+
+  * Made lib from gracedb script.
+
+ -- Brian Moe <bmoe@oz.phys.uwm.edu>  Tue, 13 Dec 2011 10:10:24 -0600
+
 ligo-gracedb (1.0-2) lucid; urgency=low
 
   * Updated service URL.  Point to gracedb.ligo.org and not archie.phys.uwm.edu.

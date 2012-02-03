@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Bernd Machenschalk, Jolien Creighton, Kipp Cannon
+*  Copyright (C) 2007 Bernd Machenschalk, Jolien Creighton, Kipp Cannon, Drew Keppel
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -1646,6 +1646,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   for(i = 0; i < r->mean_square->data->length; i++)
   {
     unsigned j;
+    double log_bin_median;
 
     /* retrieve the history for this bin */
 
@@ -1655,6 +1656,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
     /* sort (to find the median) */
 
     qsort(bin_history, history_length, sizeof(*bin_history), compare_REAL8);
+    log_bin_median = log(bin_history[history_length / 2]);
 
     /* use logarithm of median to update geometric mean.
      *
@@ -1668,7 +1670,10 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
      * variable that is so the correction factor is the same.
      */
 
-    r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + log(bin_history[history_length / 2]) - median_bias) / r->n_samples;
+    if(isinf(log_bin_median) && log_bin_median < 0)
+      r->mean_square->data->data[i] = r->mean_square->data->data[i] + log((r->n_samples - 1.0) / r->n_samples);
+    else
+      r->mean_square->data->data[i] = (r->mean_square->data->data[i] * (r->n_samples - 1) + log_bin_median - median_bias) / r->n_samples;
   }
 
   XLALFree(bin_history);

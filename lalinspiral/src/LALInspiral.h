@@ -400,7 +400,7 @@ tagInspiralTemplate
    */
   REAL4  Gamma[10];
   REAL4  qmParameter[2];
-  LALSpinInteraction	spinInteraction;
+  LALSimInspiralInteraction	interaction;
 
   InputAxis axisChoice;
   UINT4 fixedStep;

@@ -40,24 +40,6 @@ int XLALPopulateProcessTable(
 );
 
 
-/*
- * don't use
- */
-
-
-#include <lal/LALDatatypes.h>
-
-
-void populate_process_table(
-	LALStatus *status,
-	ProcessTable *ptable,
-	const CHAR *program_name,
-	const CHAR *cvs_revision,
-	const CHAR *cvs_source,
-	const CHAR *cvs_date
-);
-
-
 #ifdef  __cplusplus
 }
 #endif

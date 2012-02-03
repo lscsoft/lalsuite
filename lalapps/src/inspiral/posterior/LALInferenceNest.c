@@ -82,7 +82,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	char help[]="\
 Initialisation arguments:\n\
-(--randomseed seed           Random seed for Nested Sampling)\n\n";
+(--seed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
@@ -265,6 +265,7 @@ Nested sampling arguments:\n\
 
 	INT4 verbose=0,tmpi=0,randomseed=0;
 	REAL8 tmp=0;
+	
 	/* Initialise parameters structure */
 	runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
@@ -285,7 +286,7 @@ Nested sampling arguments:\n\
 	}
 	else
 	  runState->proposal=&LALInferenceProposalNS;
-	
+
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPrior;
 	
@@ -404,7 +405,7 @@ void initVariables(LALInferenceRunState *state)
 	INT4 aligned_spin=0;
 	char help[]="\
 Parameter arguments:\n\
-(--injXML injections.xml)\tInjection XML file to use\n\
+(--inj injections.xml)\tInjection XML file to use\n\
 (--Mmin mchirp)\tMinimum chirp mass\n\
 (--Mmax mchirp)\tMaximum chirp mass\n\
 (--etamin eta)\tMinimum eta\n\
@@ -432,7 +433,7 @@ Parameter arguments:\n\
 
 	
 	/* Read injection XML file for parameters if specified */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--injXML");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
 	if(ppt){
 		SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
 		if(!injTable){
@@ -444,9 +445,9 @@ Parameter arguments:\n\
 		if(ppt){
 		  event = atoi(ppt->value);
 		  while(i<event) {i++; injTable = injTable->next;}
-		  endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
 		}
-
+		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
+        fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
 		AmpOrder=injTable->amp_order;
 		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
 		LALGetApproximantFromString(&status,injTable->waveform,&approx);

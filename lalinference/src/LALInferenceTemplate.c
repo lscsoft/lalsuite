@@ -317,7 +317,7 @@ void LALInferenceTemplateStatPhase(LALInferenceIFOData *IFOdata)
   /* leaving out the following term makes freqDomain template scaling match that of "XLALREAL8TimeFreqFFT()" output: */
   /* ampliConst /= IFOdata->timeData->deltaT; */
   plusCoef  = (-0.5*(1.0+pow(cos(iota),2.0)));
-  crossCoef = (-1.0*cos(iota));
+  crossCoef = cos(iota);//was   crossCoef = (-1.0*cos(iota));, change iota to -iota+Pi to match HW injection definitions.
   dataStart = XLALGPSGetREAL8(&(IFOdata->timeData->epoch));
   twopitc = LAL_TWOPI * (tc - dataStart);
   a[0] =  exp(log(3.0/128.0) - (5.0/3.0)*log_q - log_eta);
@@ -681,7 +681,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
   double m1, m2, chirptime, deltaT;
   double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
-  double crossCoef = -1.0 * cos(iota);
+  double crossCoef = cos(iota);//was   crossCoef = (-1.0*cos(iota));, change iota to -iota+Pi to match HW injection definitions.
   double instant;
   int forceTimeLocation;
   double twopit, f, deltaF, re, im, templateReal, templateImag;
@@ -1634,7 +1634,10 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
             if (!sizeWarning) {
               sizeWarning = 1;
               fprintf(stderr, "WARNING: waveform.phi->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", waveform.phi->data->length, IFOdata->timeData->data->length,(int) windowshift);
-              fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
+              if(waveform.phi->data->length + (int) windowshift > IFOdata->timeData->data->length)
+                fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
+              else
+                fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.phi->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
               if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)waveform.phi->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0){
@@ -1669,7 +1672,10 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
             if (!sizeWarning) {
               sizeWarning = 1;
               fprintf(stderr, "WARNING: waveform.h->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", waveform.h->data->length, IFOdata->timeData->data->length, (int) windowshift);
-              fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
+              if(waveform.h->data->length + (int) windowshift > IFOdata->timeData->data->length)
+                fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
+              else
+                fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",waveform.h->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
             }
             for (i=0; i<IFOdata->timeData->data->length; i++){
               if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0 || isnan(waveform.h->data->data[2*((INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)]) || isnan(waveform.h->data->data[2*((INT8)i+(INT8)waveform.h->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift)]+1) ){
@@ -1747,12 +1753,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*   - "spin2z"			(z component of the spin of object 2; REAL8) (if SpinTaylor approx)	*/
 /*	 - "shift0"			(shift offset; REAL8, radians)			                            */
 /*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
-/*	 - "PNorder"		(Phase PN order; REAL8)												*/
+/*	 - "PNorder"		(Phase PN order)												*/
+/*   - "Amporder"   (Amplitude PN order)                                                    */
 /********************************************************************************************/
 {
 	
 	Approximant			approximant=0;
 	int			order=0;
+  int amporder=0;
 
 	unsigned long				i;
 	static int sizeWarning = 0;
@@ -1763,7 +1771,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform [returned] */
   
 	REAL8 mc;
-  REAL8 phi0, deltaT, m1, m2, S1[3], S2[3], f_min, distance, inclination;
+  REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
 	
   REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
   UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
@@ -1783,7 +1791,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
 	  XLAL_ERROR_VOID(XLAL_EDATA);
 	}
-	
+  if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_AMPORDER"))
+		amporder = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_AMPORDER");
+
 
 	mc  = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
     if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
@@ -1812,13 +1822,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	REAL8 phi_spin2		= 0.0;
 	if(LALInferenceCheckVariable(IFOdata->modelParams, "phi_spin2"))	phi_spin2	= *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phi_spin2");
 	
-	S1[0] = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
-	S1[1] = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
-	S1[2] = (a_spin1 * cos(theta_spin1));
+	spin1x = (a_spin1 * sin(theta_spin1) * cos(phi_spin1));
+	spin1y = (a_spin1 * sin(theta_spin1) * sin(phi_spin1));
+	spin1z = (a_spin1 * cos(theta_spin1));
 	
-	S2[0] = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
-	S2[1] = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
-	S2[2] = (a_spin2 * cos(theta_spin2));
+	spin2x = (a_spin2 * sin(theta_spin2) * cos(phi_spin2));
+	spin2y = (a_spin2 * sin(theta_spin2) * sin(phi_spin2));
+	spin2z = (a_spin2 * cos(theta_spin2));
 	
 	distance	= LAL_PC_SI * 1.0e6;        /* distance (1 Mpc) in units of metres */
 	
@@ -1839,12 +1849,19 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	}
 	
 	INT4 errnum=0;
-  if(LALInferenceCheckVariable(IFOdata->modelParams, "LALSimulationRestrictedWaveform")){
-    XLAL_TRY(ret=XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], S2[1], S2[2], f_min, distance, inclination, order, approximant), errnum);
-  }else{
-    XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], S2[1], S2[2], f_min, distance, inclination, order, order, approximant), errnum);
-  }
-  
+
+  REAL8 lambda1 = 0.;
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda1")) lambda1 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda1");
+  REAL8 lambda2 = 0.;
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda2")) lambda2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda2");
+  LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "interactionFlags")) interactionFlags = *(LALSimInspiralInteraction*) LALInferenceGetVariable(IFOdata->modelParams, "interactionFlags");
+
+
+  XLAL_TRY(ret=XLALSimInspiralChooseWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
+                                             spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, 
+                                             inclination, lambda1, lambda2, interactionFlags, 
+                                             amporder, order, approximant), errnum);
   
   if (ret == XLAL_FAILURE)
   {
@@ -1856,9 +1873,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 		return;
   }
 
-	// FIXME: these waveform shifts need to be checked
-	XLALGPSAdd(&(hplus->epoch), start_time);
-	XLALGPSAdd(&(hcross->epoch), start_time);
+	// FIXME: these waveform shifts need to be checked -> not needed, neither hplus->epoch nor hcross->epoch are used from then onward. 
+	//XLALGPSAdd(&(hplus->epoch), start_time);
+	//XLALGPSAdd(&(hcross->epoch), start_time);
 
 	instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)+hplus->data->length*deltaT;
 	
@@ -1885,7 +1902,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
         if (!sizeWarning) {
           sizeWarning = 1;
           fprintf(stderr, "WARNING: hplus->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", hplus->data->length, IFOdata->timeData->data->length, (int) windowshift);
-          fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
+          if(hplus->data->length + (int) windowshift > IFOdata->timeData->data->length)
+            fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
+          else
+            fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
         }
         for (i=0; i<IFOdata->timeData->data->length; i++){
           if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0 || isnan(hplus->data->data[(INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift]) || isnan(hcross->data->data[(INT8)i+(INT8)hcross->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift]) ){

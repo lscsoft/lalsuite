@@ -342,14 +342,14 @@ main(int argc, char *argv[])
 
   /* if user requesting single concatenated SFT */
   if ( uvar_outSingleSFT ) {
-    
+
     /* check that user isn't giving a directory */
     if ( is_directory ( uvar_outSFTbname ) ) {
       XLALPrintError("\nERROR: '%s' is a directory, but --outSingleSFT expects a filename!\n",
                      uvar_outSFTbname);
       return MAKEFAKEDATAC_EBAD;
     }
-    
+
     /* open concatenated SFT file for writing */
     if ( (fpSingleSFT = LALFopen ( uvar_outSFTbname, "wb" )) == NULL )
       {
@@ -573,7 +573,7 @@ main(int argc, char *argv[])
 
   /* if user requesting single concatenated SFT */
   if ( uvar_outSingleSFT ) {
-    
+
     /* close concatenated SFT */
     LALFclose( fpSingleSFT );
 
@@ -844,7 +844,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       UINT4 imin, imax;
       volatile REAL8 dFreq = 1.0 / uvar_Tsft;
       volatile REAL8 tmp;
-      REAL8 fMax, fMax_eff, fMin_eff;
+      REAL8 fMax, fMin_eff;
 
       /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
@@ -860,7 +860,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       fMax = uvar_fmin + uvar_Band;
       tmp = fMax / dFreq;
       imax = (UINT4) ceil (tmp);
-      fMax_eff = (REAL8)imax * dFreq;
 
       /* Increase Band correspondingly. */
       cfg->fmin_eff = fMin_eff;
@@ -889,13 +888,20 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
     haveStart = LALUserVarWasSet(&uvar_startTime);
     haveDuration = LALUserVarWasSet(&uvar_duration);
-    haveTimestampsFile = LALUserVarWasSet(&uvar_timestampsFile);
-    haveOverlap = LALUserVarWasSet ( &uvar_SFToverlap );
+    haveTimestampsFile = ( uvar_timestampsFile != NULL );
+    haveOverlap = ( uvar_SFToverlap > 0 );
 
     if ( ( haveDuration && !haveStart) || ( !haveDuration && haveStart ) )
       {
 	printf ( "\nNeed BOTH --startTime AND --duration if you give one of them !\n\n");
 	ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+      }
+
+    /* don't allow using --SFToverlap with anything other than pure (--startTime,--duration) */
+    if ( haveOverlap && ( uvar_noiseSFTs || haveTimestampsFile ) )
+      {
+        XLALPrintError ("\nERROR: I can't combine --SFToverlap with --noiseSFTs or --timestampsFile, only use with (--startTime, --duration)!\n\n");
+        ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
       }
 
     /*-------------------- check special case: Hardware injection ---------- */
@@ -1423,65 +1429,55 @@ InitUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   help,		'h', UVAR_HELP    , "Print this help/usage message");
 
   /* output options */
-  LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output directory for output SFTs (include file-basename ONLY for --outSingleSFT or writing v1-SFTs!) ");
   LALregBOOLUserVar(status,   outSingleSFT, 	's', UVAR_OPTIONAL, "Write a single concatenated SFT (name given by --outSFTbname)" );
+  LALregSTRINGUserVar(status, outSFTbname,	'n', UVAR_OPTIONAL, "Output SFTs: target Directory (if --outSingleSFT=false) or filename (if --outSingleSFT=true)");
 
-  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename for output of time-series");
-  LALregBOOLUserVar(status,   hardwareTDD,	'b', UVAR_OPTIONAL, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  LALregSTRINGUserVar(status, TDDfile,		't', UVAR_OPTIONAL, "Filename to output time-series into");
 
   LALregSTRINGUserVar(status, logfile,		'l', UVAR_OPTIONAL, "Filename for log-output");
 
   /* detector and ephemeris */
-  LALregSTRINGUserVar(status, IFO,  		'I', UVAR_OPTIONAL, "Detector: 'G1','L1','H1,'H2',...");
-  LALregSTRINGUserVar(status, detector,  	 0,  UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
+  LALregSTRINGUserVar(status, IFO,  		'I', UVAR_OPTIONAL, "Detector: one of 'G1','L1','H1,'H2','V1', ...");
 
-  LALregSTRINGUserVar(status, actuation,   	 0,  UVAR_OPTIONAL, "Filname containing actuation function of this detector");
-  LALregREALUserVar(status,   actuationScale, 	 0,  UVAR_OPTIONAL,  "(Signed) scale-factor to apply to the actuation-function.");
-
-  LALregSTRINGUserVar(status, ephemDir,		'E', UVAR_OPTIONAL, "Directory path for ephemeris files");
-  LALregSTRINGUserVar(status, ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
+  LALregSTRINGUserVar(status, ephemDir,		'E', UVAR_OPTIONAL, "Directory path for ephemeris files (use LAL_DATA_PATH if unspecified)");
+  LALregSTRINGUserVar(status, ephemYear, 	'y', UVAR_OPTIONAL, "Year-range string of ephemeris files to be used");
 
   /* start + duration of timeseries */
   LALregINTUserVar(status,   startTime,		'G', UVAR_OPTIONAL, "Start-time of requested signal in detector-frame (GPS seconds)");
   LALregINTUserVar(status,   duration,	 	 0,  UVAR_OPTIONAL, "Duration of requested signal in seconds");
-  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
-
-  /* generation-mode of timeseries: all-at-once or per-sft */
-  LALregINTUserVar(status,   generationMode, 	 0,  UVAR_OPTIONAL, "How to generate timeseries: 0=all-at-once, 1=per-sft");
+  LALregSTRINGUserVar(status,timestampsFile,	 0,  UVAR_OPTIONAL, "ALTERNATIVE: File to read timestamps from (file-format: lines with <seconds> <nanoseconds>)");
 
   /* sampling and heterodyning frequencies */
   LALregREALUserVar(status,   fmin,	 	 0, UVAR_OPTIONAL, "Lowest frequency in output SFT (= heterodyning frequency)");
-  LALregREALUserVar(status,   Band,	 	 0, UVAR_OPTIONAL, "bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
+  LALregREALUserVar(status,   Band,	 	 0, UVAR_OPTIONAL, "Bandwidth of output SFT in Hz (= 1/2 sampling frequency)");
 
   /* SFT properties */
   LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
-  LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds");
-  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function for the SFT ('Hann')");
+  LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
+  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (e.g. 'Hann')");
 
   /* pulsar params */
-  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar reference time in SSB (if 0: use startTime)");
-  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "Pulsar reference time in SSB in MJD (if 0: use startTime)");
+  LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
+  LALregREALUserVar(status,   refTimeMJD, 	 0 , UVAR_OPTIONAL, "ALTERNATIVE: Pulsar SSB reference time in MJD (if 0: use startTime)");
 
-  LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right ascension/longitude [radians] of pulsar");
-  LALregREALUserVar(status,   Delta, 	 	 0, UVAR_OPTIONAL, "Declination/latitude [radians] of pulsar");
-  LALregSTRINGUserVar(status, RA,	 	 0, UVAR_OPTIONAL, "Right ascension/longitude [hh:mm:ss.ssss] of pulsar");
-  LALregSTRINGUserVar(status, Dec, 	 	 0, UVAR_OPTIONAL, "Declination/latitude [dd:mm:ss.ssss] of pulsar");
-  LALregREALUserVar(status,   longitude,	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
-  LALregREALUserVar(status,   latitude, 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
+  LALregREALUserVar(status,   Alpha,	 	 0, UVAR_OPTIONAL, "Right-ascension/longitude of pulsar in radians");
+  LALregSTRINGUserVar(status, RA,	 	 0, UVAR_OPTIONAL, "ALTERNATIVE: Righ-ascension/longitude of pulsar in HMS 'hh:mm:ss.ssss'");
+
+  LALregREALUserVar(status,   Delta, 	 	 0, UVAR_OPTIONAL, "Declination/latitude of pulsar in radians");
+  LALregSTRINGUserVar(status, Dec, 	 	 0, UVAR_OPTIONAL, "ALTERNATIVE: Declination/latitude of pulsar in DMS 'dd:mm:ss.ssss'");
 
   LALregREALUserVar(status,   h0,	 	 0, UVAR_OPTIONAL, "Overall signal-amplitude h0");
   LALregREALUserVar(status,   cosi, 	 	 0, UVAR_OPTIONAL, "cos(iota) of inclination-angle iota");
-  LALregREALUserVar(status,   aPlus,	 	 0, UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_+ amplitude");
-  LALregREALUserVar(status,   aCross, 	 	 0, UVAR_OPTIONAL, "Alternative to {h0,cosi}: A_x amplitude");
+  LALregREALUserVar(status,   aPlus,	 	 0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_+ amplitude");
+  LALregREALUserVar(status,   aCross, 	 	 0, UVAR_OPTIONAL, "ALTERNATIVE to {--h0,--cosi}: A_x amplitude");
 
   LALregREALUserVar(status,   psi,  	 	 0, UVAR_OPTIONAL, "Polarization angle psi");
-  LALregREALUserVar(status,   phi0,	 	 0, UVAR_OPTIONAL, "Initial phase phi");
+  LALregREALUserVar(status,   phi0,	 	 0, UVAR_OPTIONAL, "Initial GW phase phi");
   LALregREALUserVar(status,   Freq,  	 	 0, UVAR_OPTIONAL, "Intrinsic GW-frequency at refTime");
-  LALregREALUserVar(status,   f0,  	 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
 
-  LALregREALUserVar(status,   f1dot,  	 	 0, UVAR_OPTIONAL, "First spindown parameter f'");
-  LALregREALUserVar(status,   f2dot,  	 	 0, UVAR_OPTIONAL, "Second spindown parameter f''");
-  LALregREALUserVar(status,   f3dot,  	 	 0, UVAR_OPTIONAL, "Third spindown parameter f'''");
+  LALregREALUserVar(status,   f1dot,  	 	 0, UVAR_OPTIONAL, "First spindown parameter f' at refTime");
+  LALregREALUserVar(status,   f2dot,  	 	 0, UVAR_OPTIONAL, "Second spindown parameter f'' at refTime");
+  LALregREALUserVar(status,   f3dot,  	 	 0, UVAR_OPTIONAL, "Third spindown parameter f''' at refTime");
 
   /* binary-system orbital parameters */
   LALregREALUserVar(status,   orbitasini,        0, UVAR_OPTIONAL, "Projected orbital semi-major axis in seconds (a/c)");
@@ -1493,28 +1489,36 @@ InitUserVars (LALStatus *status)
   LALregREALUserVar(status,   orbitArgp,         0, UVAR_OPTIONAL, "Argument of periapsis (radians)");
 
   /* noise */
-  LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Glob-like pattern specifying noise-SFTs to be added to signal");
-  LALregREALUserVar(status,   noiseSigma,	 0, UVAR_OPTIONAL, "Gaussian noise with standard-deviation sigma");
-  LALregREALUserVar(status,   noiseSqrtSh,	 0, UVAR_OPTIONAL, "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
+  LALregSTRINGUserVar(status, noiseSFTs,	'D', UVAR_OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile)");
+  LALregREALUserVar(status,   noiseSigma,	 0, UVAR_OPTIONAL,  "Gaussian noise with standard-deviation sigma");
+  LALregREALUserVar(status,   noiseSqrtSh,	 0, UVAR_OPTIONAL,  "ALTERNATIVE: Gaussian noise with single-sided PSD sqrt(Sh)");
 
-  /* signal precision-level */
-  LALregBOOLUserVar(status,   exactSignal,	 0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
-
-  LALregBOOLUserVar(status,   outSFTv1,	 	 0, UVAR_OPTIONAL, "Write output-SFTs in obsolete SFT-v1 format." );
-
-  LALregBOOLUserVar(status,   lineFeature,	 0, UVAR_OPTIONAL, "Generate a line-feature amplitude h0 and frequency 'Freq'}");
-
+  LALregBOOLUserVar(status,   lineFeature,	 0, UVAR_OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");
 
   LALregBOOLUserVar(status,   version,	         'V', UVAR_SPECIAL, "Output version information");
-
-  LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
 
   LALregSTRINGUserVar(status, parfile,           'p', UVAR_OPTIONAL, "Directory path for optional .par files");            /*registers .par file in mfd*/
 
   /* transient signal window properties (name, start, duration) */
-  LALregSTRINGUserVar(status, transientWindowType, 0, UVAR_DEVELOPER, "Type of transient signal window to use. ('none', 'rect', 'exp').");
-  LALregREALUserVar(status,   transientStartTime,  0, UVAR_DEVELOPER, "GPS start-time 't0' of transient signal window.");
-  LALregREALUserVar(status,   transientTauDays,    0, UVAR_DEVELOPER, "Timescale 'tau' of transient signal window in days.");
+  LALregSTRINGUserVar(status, transientWindowType, 0, UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
+  LALregREALUserVar(status,   transientStartTime,  0, UVAR_OPTIONAL, "GPS start-time 't0' of transient signal window.");
+  LALregREALUserVar(status,   transientTauDays,    0, UVAR_OPTIONAL, "Timescale 'tau' of transient signal window in days.");
+
+  /* ----- 'expert-user/developer' and deprecated options ----- */
+  LALregINTUserVar(status,   generationMode, 	 0,  UVAR_DEVELOPER, "How to generate timeseries: 0=all-at-once (faster), 1=per-sft (slower)");
+
+  LALregBOOLUserVar(status,   hardwareTDD,	'b', UVAR_DEVELOPER, "Hardware injection: output TDD in binary format (implies generationMode=1)");
+  LALregSTRINGUserVar(status, actuation,   	 0,  UVAR_DEVELOPER, "Filname containing actuation function of this detector");
+  LALregREALUserVar(status,   actuationScale, 	 0,  UVAR_DEVELOPER,  "(Signed) scale-factor to apply to the actuation-function.");
+
+  LALregBOOLUserVar(status,   exactSignal,	  0, UVAR_DEVELOPER, "Generate signal time-series as exactly as possible (slow).");
+  LALregINTUserVar(status,    randSeed,           0, UVAR_DEVELOPER, "Specify random-number seed for reproducible noise (use /dev/urandom otherwise).");
+
+  LALregREALUserVar(status,   longitude,	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Alpha instead!");
+  LALregREALUserVar(status,   latitude, 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Delta instead!");
+  LALregREALUserVar(status,   f0,  	 	 0, UVAR_DEVELOPER, "[DEPRECATED] Use --Freq instead!");
+  LALregSTRINGUserVar(status, detector,  	 0,  UVAR_DEVELOPER, "[DEPRECATED] Detector: use --IFO instead!.");
+  LALregBOOLUserVar(status,   outSFTv1,	 	  0, UVAR_DEVELOPER, "[DEPRECATED]Write output-SFTs in obsolete SFT-v1 format." );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);

@@ -947,18 +947,24 @@ int main ( int argc, char *argv[] )
     CHAR  candleComment[LIGOMETA_SUMMVALUE_COMM_MAX];
     REAL8 distance = 0;
 
-    while ( candleMass1 < 50.0 )
+    while ( candleMass1 <= 50.0 )
     {
-      /* experimental code to ease the computation of the standard candle */
-      distance = compute_candle_distance(candleMass1, candleMass2,
-          candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
+      if ( approximant == EOB || approximant == EOBNR || approximant == EOBNRv2 || approximant == IMRPhenomA || approximant == IMRPhenomB )
+      {
+        distance = XLALCandleDistanceTD(approximant, candleMass1, candleMass2,
+            candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
+      }
+      else
+      {
+        distance = compute_candle_distance(candleMass1, candleMass2,
+            candleSnr, chan.deltaT, numPoints, &(bankIn.shf), cut);
+      }
+     
+      snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
+          "%3.2f_%3.2f_%3.2f", candleMass1, candleMass2, candleSnr );
 
       if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
           "at signal-to-noise %3.2f = ", candleMass1, candleMass2, candleSnr );
-
-      /* experimental code to populate the summValue table */
-      snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
-          "%3.2f_%3.2f_%3.2f", candleMass1, candleMass2, candleSnr );
 
       this_summvalue =
         add_summvalue_table(this_summvalue, gpsStartTime, gpsEndTime,
@@ -1328,17 +1334,17 @@ fprintf(a, "  --td-follow-up FILE          follow up BCV events contained in FIL
 fprintf(a, "\n");\
 fprintf(a, "  --standard-candle            compute a standard candle from the PSD\n");\
 fprintf(a, "  --candle-snr SNR             signal-to-noise ratio of standard candle\n");\
-fprintf(a, "  --candle-mass1 M             mass of first component in candle binary\n");\
-fprintf(a, "  --candle-mass2 M             mass of second component in candle binary\n");\
+fprintf(a, "  --candle-mass1 M             lowest mass for first component in candle binary\n");\
+fprintf(a, "  --candle-mass2 M             lowest mass for second component in candle binary - usually equals mass1\n");\
 fprintf(a, "\n");\
 fprintf(a, "  --low-frequency-cutoff F     do not filter below F Hz\n");\
 fprintf(a, "  --high-frequency-cutoff F    upper frequency cutoff in Hz\n");\
 fprintf(a, "  --disable-compute-moments    do not recompute the moments stored in the template bank. \n");\
 fprintf(a, "\n");\
-fprintf(a, "  --minimum-mass MASS          set minimum component mass of bank to MASS\n");\
+fprintf(a, "  --minimum-mass MASS          set minimum component mass of bank to MASS: required\n");\
 fprintf(a, "  --maximum-mass MASS          set maximum component mass of bank to MASS\n");\
-fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS\n");\
-fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS\n");\
+fprintf(a, "  --max-total-mass MASS        set maximum total mass of the bank to MASS. Will override --maximum-mass option\n");\
+fprintf(a, "  --min-total-mass MASS        set minimum total mass of the bank to MASS: --max-total-mass must also be given\n");\
 fprintf(a, "  --chirp-mass-cutoff MASS     set chirp mass cutoff to MASS\n");\
 fprintf(a, "  --max-eta ETA                set maximum symmetric mass ratio of the bank to ETA\n");\
 fprintf(a, "  --min-eta ETA                set minimum symmetric mass ratio of the bank to ETA\n");\
@@ -2107,6 +2113,18 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         {
           approximant = EOBNR;
         }
+        else if ( ! strcmp( "EOBNRv2", optarg ) )
+        {
+          approximant = EOBNRv2;
+        }
+        else if ( ! strcmp( "IMRPhenomA", optarg ) )
+        {
+          approximant = IMRPhenomA;
+        }
+        else if ( ! strcmp( "IMRPhenomB", optarg ) )
+        {
+          approximant = IMRPhenomB;
+        }
         else if ( ! strcmp( "BCV", optarg ) )
         {
           approximant = BCV;
@@ -2128,7 +2146,8 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown order specified: "
               "%s (must be one of: TaylorT1, TaylorT2, TaylorT3, TaylorF1,\n"
-              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, BCV, SpinTaylorT3, BCVSpin)\n"
+              "TaylorF2, PadeT1, PadeF1, EOB, EOBNR, EOBNRv2, IMRPhenomA,\n"
+              "IMRPhenomB, BCV, SpinTaylorT3, BCVSpin\n"
               "or FindChirpPTF)\n", long_options[option_index].name, optarg );
           exit( 1 );
         }

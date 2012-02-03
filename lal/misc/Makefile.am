@@ -2,6 +2,7 @@ EXTRA_DIST = \
 	ax_pthread.m4 \
 	config.guess \
 	config.sub \
+	cuda.common \
 	depcomp \
 	doc.mk \
 	dvi.mk \

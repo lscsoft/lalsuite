@@ -54,17 +54,22 @@ LALFindChirpClusterEvents (
     FindChirpFilterParams      *params,
     FindChirpBankVetoData      *bankVetoData,
     UINT4                       subBankIndex,
-    int                         writeCData
+    int                         writeCData,
+    InspiralTemplate           *bankCurrent
     )
 
 {
 
   int                   xlalRetCode = 0;
-
+  INT8                  bvTimeNS = 0;
   UINT4                 numPoints = 0;
   UINT4                 ignoreIndex = 0;
   UINT4                 eventStartIdx = 0;
   UINT4  		deltaEventIndex = 0;
+  UINT4                 lowerIndex = 0;
+  UINT4                 upperIndex = 0;
+  UINT4                 buffer = 0;
+  UINT4                 bvTimeIndex = 0;
   UINT4                 j, kmax;
   UINT4 		doChisqFlag = 1;
   REAL4                 norm = 0;
@@ -121,6 +126,8 @@ LALFindChirpClusterEvents (
   q = params->qVec->data;
   numPoints = params->qVec->length;
   ignoreIndex = params->ignoreIndex;
+  lowerIndex = ignoreIndex;
+  upperIndex = numPoints - ignoreIndex;
   deltaT = params->deltaT;
   deltaF = 1.0 / ( (REAL4) params->deltaT * (REAL4) numPoints );
   kmax = input->fcTmplt->tmplt.fFinal / deltaF < numPoints/2 ?
@@ -191,9 +198,27 @@ LALFindChirpClusterEvents (
      }
    }
 
+  /* In coherent stage cluster around trigbank-coherent triggers */
+  if (writeCData) {
+    /* set the event LIGO GPS time of the bankVetoTrigger */
+    bvTimeNS = 1000000000L * (INT8) (bankCurrent->end_time.gpsSeconds);
+    bvTimeNS += (INT8) (bankCurrent->end_time.gpsNanoSeconds);
+    bvTimeNS -= XLALGPSToINT8NS( &(input->segment->data->epoch) );
+    bvTimeIndex = (UINT4) rint( ((REAL8) bvTimeNS)/ (deltaT*1.0e9) );
+
+    buffer = (UINT4) rint( 64.0 / deltaT );
+    if ( (bvTimeIndex < buffer ) || (bvTimeIndex > (numPoints-buffer) ) ) {
+      upperIndex = 0;
+      lowerIndex = 0;
+    }
+    else {
+      lowerIndex = ( ( bvTimeIndex > deltaEventIndex ) ? (bvTimeIndex) : 0 );
+      upperIndex = bvTimeIndex + deltaEventIndex;
+    }
+  }
 
   /* look for an events in the filter output */
-  for ( j = ignoreIndex; j < numPoints - ignoreIndex; ++j )
+  for ( j = lowerIndex; j < upperIndex; ++j )
   {
     REAL4 modqsq = q[j].re * q[j].re + q[j].im * q[j].im;
 
@@ -286,8 +311,10 @@ LALFindChirpClusterEvents (
 					     thisEvent->end_time.gpsSeconds, deltaT, &bvDOF);
             }
 
-            ccChisq = XLALComputeFullChisq(bankVetoData,input,params,q,
+	    if ( !writeCData ) {
+	      ccChisq = XLALComputeFullChisq(bankVetoData,input,params,q,
                 subBankIndex, thisEvent->end_time.gpsSeconds, &ccDOF, norm);
+	    }
 
             LALFindChirpStoreEvent(status->statusPtr, input, params,
                 thisEvent, q, kmax, norm, eventStartIdx, numChisqBins,
@@ -300,9 +327,10 @@ LALFindChirpClusterEvents (
             thisEvent->cont_chisq_dof = ccDOF;
             thisEvent->cont_chisq = ccChisq;
 
-            if ( writeCData && !thisEvent->event_id )  {
+            if ( writeCData ) {
+              if ( !thisEvent->event_id )
                 thisEvent->event_id = (EventIDColumn *) LALCalloc(1, sizeof(EventIDColumn) );
-                thisEvent->event_id->id = bankVetoData->fcInputArray[subBankIndex]->fcTmplt->tmplt.event_id->id;
+              thisEvent->event_id->id = bankVetoData->fcInputArray[subBankIndex]->fcTmplt->tmplt.event_id->id;
             }
 
             /* store the start of the crossing */
@@ -341,8 +369,10 @@ LALFindChirpClusterEvents (
 				     thisEvent->end_time.gpsSeconds, deltaT, &bvDOF);
     }
 
-    ccChisq = XLALComputeFullChisq(bankVetoData, input,params,q,
+    if ( !writeCData ) {
+      ccChisq = XLALComputeFullChisq(bankVetoData, input,params,q,
             subBankIndex, thisEvent->end_time.gpsSeconds, &ccDOF, norm);
+    }
 
     LALFindChirpStoreEvent(status->statusPtr, input, params,
          thisEvent, q, kmax, norm, eventStartIdx, numChisqBins,
@@ -353,10 +383,11 @@ LALFindChirpClusterEvents (
     thisEvent->cont_chisq_dof = ccDOF;
     thisEvent->cont_chisq = ccChisq;
 
-    if ( writeCData && !thisEvent->event_id )  {
-       thisEvent->event_id = (EventIDColumn *) LALCalloc(1, sizeof(EventIDColumn) );
-
-       thisEvent->event_id->id = bankVetoData->fcInputArray[subBankIndex]->fcTmplt->tmplt.event_id->id;
+    if ( writeCData ) {
+      if ( !thisEvent->event_id )
+	thisEvent->event_id = (EventIDColumn *) LALCalloc(1, sizeof(EventIDColumn) );
+      
+      thisEvent->event_id->id = bankVetoData->fcInputArray[subBankIndex]->fcTmplt->tmplt.event_id->id;
     }
 
     CHECKSTATUSPTR( status );

@@ -971,8 +971,6 @@ ReadData( LALStatus *status,
 
   FILE *fpobsv,*fptest;
 
-  char *str;
-
   INITSTATUS( status, "ReadData", rcsid );
   ASSERT ( cla, status, FSTATSHAPETESTC_ENULL , FSTATSHAPETESTC_MSGENULL );  
 
@@ -989,8 +987,8 @@ ReadData( LALStatus *status,
   /* skip the header */
   /* depend on data format specification */
   for(irec=0;irec<Nheadlines;irec++) {
-    str = fgets(buff,sizeof(buff),fpobsv);
-    str = fgets(buff,sizeof(buff),fptest);
+    fgets(buff,sizeof(buff),fpobsv);
+    fgets(buff,sizeof(buff),fptest);
   }
 
 

@@ -1,11 +1,11 @@
 package "lalapps_TwoSpect"
-version "1.1.13"
+version "1.1.16"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string typestr="filename" optional
-option "verbosity" v "LAL debug level" int default="0" optional
+option "laldebug" v "LAL debug level" int default="0" optional
 
 section "Observational parameters"
 option "Tobs"  - "Total observation time (in seconds)" double optional
@@ -23,6 +23,7 @@ section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
 option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
+option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
 option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
 option "ephemDir"       - "Path to ephemeris files" string typestr="directory" default="/opt/lscsoft/lalpulsar/share/lalpulsar" optional
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
@@ -34,12 +35,14 @@ option "dfmin" - "Minimum modulation depth to search (Hz)" double optional
 option "dfmax" - "Maximum modulation depth to search (Hz)" double optional
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string optional
 option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
+option "linPolAngle"    - "Polarization angle to search using linear polarization (when unspecified default is circular polarization" double optional
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
 option "ihsfar"   - "IHS FAR threshold" double default="0.01" optional
 option "ihsfom"    - "IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2" double optional
 option "ihsfomfar" - "IHS FOM FAR threshold" double optional
+option "keepOnlyTopNumIHS"    - "Keep the top <number> of IHS candidates based on significance" int optional
 option "tmplfar"  - "Template FAR threshold" double default="0.01" optional
 option "minTemplateLength" - "Maximum number of pixels to use in the template" int default="50" optional
 option "maxTemplateLength" - "Maximum number of pixels to use in the template" int default="50" optional
@@ -71,4 +74,5 @@ option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is u
 option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" flag off hidden
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
 option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
+option "ULoff"    - "Turn off upper limits computation" flag off hidden
 

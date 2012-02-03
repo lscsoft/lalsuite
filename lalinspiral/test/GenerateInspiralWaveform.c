@@ -685,28 +685,38 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
       strcat(simTable.waveform,"fixedStep");
     }
   }
-  switch (params->spinInteraction) {
-  case LAL_NOInter:
-    strcat(simTable.waveform,"LAL_NOInter");
+  switch (params->interaction) {
+  case LAL_SIM_INSPIRAL_INTERACTION_NONE:
+    strcat(simTable.waveform,"NO");
     break;
-  case LAL_SOInter:
-    strcat(simTable.waveform,"LAL_SOInter");
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN:
+    strcat(simTable.waveform,"SO");
     break;
-  case LAL_SSInter:
-    strcat(simTable.waveform,"LAL_SSInter");
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN:
+	strcat(simTable.waveform,"SO");
+	break;
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN:
+    strcat(simTable.waveform,"SS");
     break;
-  case LAL_SSselfInter:
-    strcat(simTable.waveform,"LAL_SSselfInter");
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN:
+    strcat(simTable.waveform,"SELF");
     break;
-  case LAL_QMInter:
-    strcat(simTable.waveform,"LAL_QMInter");
+  case LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN:
+    strcat(simTable.waveform,"QM");
     break;
-  case LAL_SO25Inter:
-    strcat(simTable.waveform,"LAL_SO25Inter");
+  case LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN:
+    strcat(simTable.waveform,"ALL_SPIN");
     break;
-  case LAL_AllInter:
-    strcat(simTable.waveform,"LAL_AllInter");
-    break;
+  case LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN:
+	strcat(simTable.waveform,"TIDAL5PN");
+	break;
+  case LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN:
+	strcat(simTable.waveform,"TIDAL6PN");
+	break;
+  case LAL_SIM_INSPIRAL_INTERACTION_ALL:
+	strcat(simTable.waveform,"ALL");
+	break;
+		  
   }
 
   simTable.mass1 = params->mass1;

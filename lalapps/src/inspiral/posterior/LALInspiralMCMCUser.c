@@ -975,9 +975,12 @@ REAL8 MCMCLikelihoodMultiCoherentF_PhenSpin(LALMCMCInput *inputMCMC,LALMCMCParam
 	template.ieta = 1;
 	template.inclination=XLALMCMCGetParameter(parameter,"iota");
 
+	template.fixedStep=inputMCMC->fixedStep;
+	template.inspiralOnly=inputMCMC->inspiralOnly;
+	template.axisChoice=inputMCMC->axisChoice;
+
 	//template.totalMass=mtot;
 	//template.eta=eta;
-
 
 	double a1=0.;
 	double theta1=0.;

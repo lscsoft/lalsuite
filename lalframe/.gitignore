@@ -14,6 +14,7 @@ configure
 include/config.h
 include/config.h.in
 include/lal/*.h
+include/lal/*.i
 include/stamp-h1
 lalframe-*.tar.gz
 lalframe.pc
@@ -35,4 +36,5 @@ test/MakeFrames
 test/Read40mData
 test/ReadGEOData
 test/ReadLHOData
+test/TestLowLatencyData*
 test/catalog*

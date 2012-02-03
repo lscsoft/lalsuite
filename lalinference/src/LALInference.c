@@ -131,7 +131,6 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars)
 	return count;
 }
 
-
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name)
 {
 	return LALInferenceGetItem(vars,name)->type;
@@ -545,6 +544,34 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 	return;
 }
 
+int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats) {
+  LALInferenceVariableItem *head = propStats->head;
+  while (head != NULL) {
+    fprintf(fp, "%s\t", head->name);
+    head = head->next;
+  }
+  fprintf(fp, "\n");
+  return 0;
+}
+
+void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats){
+  REAL4 accepted = 0;
+  REAL4 proposed = 0;
+  REAL4 acceptanceRate = 0;
+
+  if(propStats==NULL || fp==NULL) return;
+  LALInferenceVariableItem *ptr=propStats->head;
+  while(ptr!=NULL) {
+    accepted = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).accepted;
+    proposed = (REAL4) (*(LALInferenceProposalStatistics *) ptr->value).proposed;
+    acceptanceRate = accepted/proposed;
+    fprintf(fp, "%9.5f\t", acceptanceRate);
+    ptr=ptr->next;
+  }
+  fprintf(fp, "\n");
+  return;
+}
+
 const char *LALInferenceTranslateInternalToExternalParamName(const char *inName) {
   if (!strcmp(inName, "a_spin1")) {
     return "a1";
@@ -664,10 +691,17 @@ ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,c
 /* if present, and NULL otherwise.                              */
 {
   ProcessParamsTable *this=procparams;
+
+  if (this==NULL) {
+    fprintf(stderr, " Warning:  ProcessParamsTable is a NULL pointer\n");
+    exit(1);
+  }
+
   while (this!=NULL) { 
     if (!strcmp(this->param, name)) break;
     else this=this->next;
   }
+                          
   return(this);
 }
 
@@ -1135,4 +1169,338 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
     LALInferenceSetVariable(state->algorithmParams,"N_outputarray",&N_output_array);
   }
   return;
+}
+
+void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & mass ratio (eta)  */
+/*  (note: m1 >= m2).                              */
+{
+  double root = sqrt(0.25-eta);
+  double fraction = (0.5+root) / (0.5-root);
+  *m2 = mc * (pow(1+fraction,0.2) / pow(fraction,0.6));
+  *m1 = mc * (pow(1+1.0/fraction,0.2) / pow(1.0/fraction,0.6));
+  return;
+}
+
+void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2)
+/*  Compute individual companion masses (m1, m2)   */
+/*  for given chirp mass (m_c) & asymmetric mass   */
+/*  ratio (q).  note: q = m2/m1, where m1 >= m2    */
+{
+  double factor = mc * pow(1 + q, 1.0/5.0);
+  *m1 = factor * pow(q, -3.0/5.0); 
+  *m2 = factor * pow(q, +2.0/5.0);
+  return;
+}
+
+static void deleteCell(LALInferenceKDCell *cell) {
+  if (cell == NULL) {
+    return; /* Our work here is done. */
+  } else {
+    deleteCell(cell->left);
+    deleteCell(cell->right);
+    XLALFree(cell->lowerLeft);
+    XLALFree(cell->upperRight);
+    XLALFree(cell->pointsLowerLeft);
+    XLALFree(cell->pointsUpperRight);
+    XLALFree(cell);
+    return;
+  }
+}
+
+/* KD Tree stuff. */
+void LALInferenceKDTreeDelete(LALInferenceKDTree *tree) {
+  if (tree == NULL) {
+    return; /* Our work here is done. */
+  } else {
+    size_t i;
+    for (i = 0; i < tree->npts; i++) {
+      XLALFree(tree->pts[i]);
+    }
+    XLALFree(tree->pts);
+
+    deleteCell(tree->topCell);
+    XLALFree(tree);
+    return;
+  }
+}
+
+typedef enum {
+  LEFT,
+  RIGHT,
+  TOP
+} cellType;
+
+static LALInferenceKDCell *newCell(size_t ndim, REAL8 *lowerLeft, REAL8 *upperRight, size_t level, cellType type) {
+  LALInferenceKDCell *cell = XLALCalloc(1, sizeof(LALInferenceKDCell));
+
+  cell->lowerLeft = XLALMalloc(ndim*sizeof(REAL8));
+  cell->upperRight = XLALMalloc(ndim*sizeof(REAL8));
+  cell->pointsLowerLeft = XLALCalloc(ndim, sizeof(REAL8));
+  cell->pointsUpperRight = XLALCalloc(ndim, sizeof(REAL8));
+
+  memcpy(cell->lowerLeft, lowerLeft, ndim*sizeof(REAL8));
+  memcpy(cell->upperRight, upperRight, ndim*sizeof(REAL8));
+  
+  if (type == LEFT) {
+    cell->upperRight[level] = 0.5*(lowerLeft[level] + upperRight[level]);
+  } else if (type == RIGHT) {
+    cell->lowerLeft[level] = 0.5*(lowerLeft[level] + upperRight[level]);
+  } else {
+    /* Do not change lowerLeft or upperRight, since this is the top-level cell. */
+  }
+
+  return cell;
+}
+
+LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim) {
+  LALInferenceKDTree *tree = XLALCalloc(1, sizeof(LALInferenceKDTree));
+  tree->ndim = ndim;
+  tree->pts = XLALCalloc(1, sizeof(REAL8 *)); /* No points, but valid
+                                                 memory reference. */
+  tree->topCell = newCell(ndim, lowerLeft, upperRight, 0, TOP);
+  return tree;
+}
+
+
+static void expandCellBounds(LALInferenceKDCell *cell, REAL8 *pt, size_t ndim) {
+  size_t i;
+
+  for (i = 0; i < ndim; i++) {
+    if (cell->pointsLowerLeft[i] > pt[i]) cell->pointsLowerLeft[i] = pt[i];
+    if (cell->pointsUpperRight[i] < pt[i]) cell->pointsUpperRight[i] = pt[i];
+  }
+}
+
+static int insertIntoCell(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size_t level);
+
+static int doInsert(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size_t level, cellType type) {
+  if (type == LEFT) {
+    if (cell->left == NULL) {
+      cell->left = newCell(ndim, cell->lowerLeft, cell->upperRight, level, LEFT);
+    }
+    return insertIntoCell(cell->left, ndim, pt, (level+1)%ndim);
+  } else if (type == RIGHT) {
+    if (cell->right == NULL) {
+      cell->right = newCell(ndim, cell->lowerLeft, cell->upperRight, level, RIGHT);
+    }
+    return insertIntoCell(cell->right, ndim, pt, (level+1)%ndim);
+  } else {
+    XLAL_ERROR(XLAL_EINVAL, "doInsert called with TOP-level cell type");
+  }
+}
+
+static int equalPoints(REAL8 *a, REAL8 *b, size_t n) {
+  size_t i;
+  for (i = 0; i < n; i++) {
+    if (a[i] != b[i]) return 0;
+  }
+  return 1;
+}
+
+static int insertIntoCell(LALInferenceKDCell *cell, size_t ndim, REAL8 *pt, size_t level) {
+  if (cell->npts == 0) {
+    /* Reached the end of the line, insert into this cell. */
+    cell->npts = 1;
+    memcpy(cell->pointsLowerLeft, pt, ndim*sizeof(REAL8));
+    memcpy(cell->pointsUpperRight, pt, ndim*sizeof(REAL8));
+    return 0;
+  } else if (cell->npts == 1) {
+    if (equalPoints(pt, cell->pointsLowerLeft, ndim)) {
+      /* If we're trying to insert a point into the cell that is the
+         same as the current point, we just bail, leaving one point in
+         the tree.  This makes the tree not interpolate quite
+         correctly, but hopefully doesn't happen too often. */
+      return 0;
+    } else {
+      /* We need to push the pre-existing point in this cell down to a
+         lower level before we insert the current pt. */
+      REAL8 *cellPt = cell->pointsLowerLeft;
+      REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
+      
+      if (cellPt[level] <= mid) {
+        doInsert(cell, ndim, cellPt, level, LEFT);
+      } else {
+        doInsert(cell, ndim, cellPt, level, RIGHT);
+      }
+      
+      /* Now insert this point. */
+      cell->npts += 1;
+      expandCellBounds(cell, pt, ndim);
+      
+      if (pt[level] <= mid) {
+        return doInsert(cell, ndim, pt, level, LEFT);
+      } else {
+        return doInsert(cell, ndim, pt, level, RIGHT);
+      }
+    }
+  } else {
+    /* There are some points in cell already, so insert into
+       sub-cells. */
+    REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
+
+    cell->npts += 1;
+    expandCellBounds(cell, pt, ndim);
+    if (pt[level] <= mid) {
+      return doInsert(cell, ndim, pt, level, LEFT);
+    } else {
+      return doInsert(cell, ndim, pt, level, RIGHT);
+    }
+  }
+}
+
+static int inBounds(REAL8 *pt, REAL8 *low, REAL8 *high, size_t n) {
+  size_t i;
+
+  for (i = 0; i < n; i++) {
+    if (pt[i] < low[i] || pt[i] > high[i]) return 0;
+  }
+
+  return 1;
+}
+
+int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt) {
+  if (tree == NULL) XLAL_ERROR(XLAL_EINVAL, "given NULL tree");
+
+  if (!inBounds(pt, tree->topCell->lowerLeft, tree->topCell->upperRight, tree->ndim))
+    XLAL_ERROR(XLAL_EINVAL, "given point that is not in global tree bounds");
+
+  tree->npts += 1;
+  tree->pts = XLALRealloc(tree->pts, tree->npts*sizeof(REAL8 *));
+  
+  tree->pts[tree->npts-1] = XLALMalloc(tree->ndim*sizeof(REAL8));
+
+  memcpy(tree->pts[tree->npts-1], pt, tree->ndim*sizeof(REAL8));
+
+  return insertIntoCell(tree->topCell, tree->ndim, tree->pts[tree->npts-1], 0);
+}
+
+static LALInferenceKDCell *doFindCell(LALInferenceKDCell *cell, REAL8 *pt, size_t dim, size_t Npts, size_t level) {
+  if (cell == NULL) {
+    /* If we encounter a NULL cell, then pass it up the chain. */
+    return cell;
+  } else if (cell->npts == 0) {
+    XLAL_ERROR_NULL(XLAL_FAILURE, "could not find cell containing point");
+  } else if (cell->npts == 1 || cell->npts < Npts) {
+    return cell;
+  } else {
+    REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
+
+    if (pt[level] <= mid) {
+      LALInferenceKDCell *maybeCell = doFindCell(cell->left, pt, dim, Npts, (level+1)%dim);
+      if (maybeCell == NULL) {
+        return cell; /* If a NULL comes up from below, then this cell
+                        is the one with the fewest points containing
+                        pt. */
+      } else {
+        return maybeCell;
+      }
+    } else {
+      LALInferenceKDCell *maybeCell = doFindCell(cell->right, pt, dim, Npts, (level+1)%dim);
+      if (maybeCell == NULL) {
+        return cell;
+      } else {
+        return maybeCell;
+      }
+    }
+  }
+}
+
+LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts) {
+  return doFindCell(tree->topCell, pt, tree->ndim, Npts, 0);
+}
+
+static void printVector(REAL8 *pt, size_t dim, FILE *stream) {
+  size_t i;
+  fprintf(stream, "{");
+  for (i = 0; i < dim-1; i++) {
+    fprintf(stream, "%g, ", pt[i]);
+  }
+  fprintf(stream, "%g}", pt[dim-1]);
+}
+
+void LALInferencePrintCell(LALInferenceKDCell *cell, size_t dim, FILE *stream);
+void LALInferencePrintCell(LALInferenceKDCell *cell, size_t dim, FILE *stream) {
+  if (cell != NULL) {
+    fprintf(stream, "  Cell: %p, npts = %zd\n    Left = %p, right = %p\n", cell, cell->npts, cell->left, cell->right);
+
+    fprintf(stream,   "    Left bounds: ");
+    printVector(cell->lowerLeft, dim, stream);
+    fprintf(stream, "\n    Tight left bounds: ");
+    printVector(cell->pointsLowerLeft, dim, stream);
+    fprintf(stream, "\n    Right bounds: ");
+    printVector(cell->upperRight, dim, stream);
+    fprintf(stream, "\n    Tight right bounds: ");
+    printVector(cell->pointsUpperRight, dim, stream);
+
+    fprintf(stderr, "\n");
+    LALInferencePrintCell(cell->left, dim, stream);
+    fprintf(stderr, "\n");
+    LALInferencePrintCell(cell->right, dim, stream);
+  }
+}
+
+void LALInferencePrintKDTree(LALInferenceKDTree *tree, FILE *stream);
+void LALInferencePrintKDTree(LALInferenceKDTree *tree, FILE *stream) {
+  fprintf(stream, "KDTree: %p\n", tree);
+  if (tree != NULL) {
+    fprintf(stream, "  npts = %zd\n  ndim = %zd\n", tree->npts, tree->ndim);
+    size_t i;
+    for (i = 0; i < tree->npts; i++) {
+      fprintf(stream, "    pt: ");
+      printVector(tree->pts[i], tree->ndim, stream);
+      fprintf(stream, "\n");
+    }
+
+    LALInferencePrintCell(tree->topCell, tree->ndim, stream);
+  }
+}
+
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell) {
+  double logVol = 0.0;
+  size_t ndim = tree->ndim;
+  size_t i;
+  for (i = 0; i < ndim; i++) {
+    logVol += log(cell->upperRight[i] - cell->lowerLeft[i]);
+  }
+
+  return logVol;
+}
+
+double LALInferenceKDLogPointsVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell) {
+  double logVol = 0.0;
+  size_t ndim = tree->ndim;
+  size_t i;
+  for (i = 0; i < ndim; i++) {
+    logVol += log(cell->pointsUpperRight[i] - cell->pointsLowerLeft[i]);
+  }
+
+  return logVol;
+}
+
+void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
+  LALInferenceVariableItem *templateItem = template->head;
+  size_t i = 0;
+  while (templateItem != NULL) {
+    if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
+        templateItem->vary != LALINFERENCE_PARAM_OUTPUT ) {
+      pt[i] = *(REAL8 *)LALInferenceGetVariable(params, templateItem->name);
+      i++;
+    }
+    templateItem = templateItem->next;
+  }
+}
+
+void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template) {
+  LALInferenceVariableItem *templateItem = template->head;
+  size_t i = 0;
+  while (templateItem != NULL) {
+    if (templateItem->vary != LALINFERENCE_PARAM_FIXED && 
+        templateItem->vary != LALINFERENCE_PARAM_OUTPUT) {
+      LALInferenceSetVariable(params, templateItem->name, &(pt[i]));
+      i++;
+    }
+    templateItem = templateItem->next;
+  }
 }

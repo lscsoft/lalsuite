@@ -499,7 +499,11 @@ int XLALBBHPhenTimeDomEngine(
 
   sigLength = 0;
   if (signalvec1) sigLength = signalvec1->length;
-  if (signalvec2) sigLength = signalvec2->length;
+  else if (signalvec2) sigLength = signalvec2->length;
+  else if (freqVec) sigLength = freqVec->length;
+  else if (phiVec) sigLength = phiVec->length;
+  else if (aVec) sigLength = aVec->length / 2;
+  else if (h) sigLength = h->length / 2;
 
   /* inclination-weights on two polarizations */
   z1 = -0.5*(1. + cosI*cosI);
@@ -554,6 +558,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
   UINT4 count, i;
   REAL8 s, phiC;            /* phase at coalescence */
   CHAR message[256];
+  LIGOTimeGPS zero_time = {0, 0};
   InspiralInit paramsInit;
   int returnval = XLAL_SUCCESS;
 
@@ -648,10 +653,10 @@ int XLALBBHPhenWaveTimeDomForInjection (
   }
   memset(waveform->h, 0, sizeof(REAL4TimeVectorSeries));
   memset(waveform->a, 0, sizeof(REAL4TimeVectorSeries));
-  waveform->h->data = XLALCreateREAL4VectorSequence(2, count);
-  waveform->a->data = XLALCreateREAL4VectorSequence(2, count);
-  waveform->f = XLALCreateREAL4TimeSeries("Phenom inspiral frequency", NULL, 0, 1. / params->tSampling, &lalHertzUnit, count);
-  waveform->phi = XLALCreateREAL8TimeSeries("Phenom inspiral phase", NULL, 0, 1 / params->tSampling, &lalDimensionlessUnit, count);
+  waveform->h->data = XLALCreateREAL4VectorSequence(count, 2);
+  waveform->a->data = XLALCreateREAL4VectorSequence(count, 2);
+  waveform->f = XLALCreateREAL4TimeSeries("Phenom inspiral frequency", &zero_time, 0, 1. / params->tSampling, &lalHertzUnit, count);
+  waveform->phi = XLALCreateREAL8TimeSeries("Phenom inspiral phase", &zero_time, 0, 1 / params->tSampling, &lalDimensionlessUnit, count);
   if (!(waveform->h->data) || !(waveform->a->data) || !(waveform->f) || !(waveform->phi)) {
     XLALError(__func__, __FILE__, __LINE__, XLAL_ENOMEM);
     returnval = XLAL_FAILURE;
@@ -666,8 +671,8 @@ int XLALBBHPhenWaveTimeDomForInjection (
    */
   memcpy(waveform->h->data->data, h->data, 2*count*(sizeof(REAL4)));
   memcpy(waveform->a->data->data, a->data, 2*count*(sizeof(REAL4)));
-  memcpy(waveform->f->data, ff->data, count*(sizeof(REAL4)));
-  memcpy(waveform->phi->data, phi->data, count*(sizeof(REAL8)));
+  memcpy(waveform->f->data->data, ff->data, count*(sizeof(REAL4)));
+  memcpy(waveform->phi->data->data, phi->data, count*(sizeof(REAL8)));
 
   /* also set other parameters in the waveform structure */
   waveform->h->sampleUnits = waveform->a->sampleUnits = lalStrainUnit;

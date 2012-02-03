@@ -161,6 +161,12 @@ RCSID( "$Id$");
 #define UNINITIALIZE_COPROCESSOR_DEVICE
 #endif
 
+#if USE_OPENCL_KERNEL || defined(USE_CUDA)
+extern int gpu_device_id;
+#else
+int gpu_device_id;
+#endif
+
 extern int lalDebugLevel;
 
 BOOLEAN uvar_printMaps = FALSE; /**< global variable for printing Hough maps */
@@ -307,7 +313,6 @@ int MAIN( int argc, char *argv[]) {
 
 
   LIGOTimeGPS refTimeGPS = empty_LIGOTimeGPS;
-  LIGOTimeGPS tStartGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS tMidGPS = empty_LIGOTimeGPS;
   REAL8 tObs;
 
@@ -436,10 +441,13 @@ int MAIN( int argc, char *argv[]) {
   BOOLEAN uvar_version = 0;
   INT4 uvar_partitionIndex = 0;
 
+  BOOLEAN uvar_correctFreqs = TRUE;
+
 #ifndef GPUREADY_DEFAULT
 #define GPUREADY_DEFAULT 0
 #endif
   BOOLEAN uvar_GPUready = GPUREADY_DEFAULT;
+  INT4 uvar_gpu_device = -1;
   global_status = &status;
 
 
@@ -478,7 +486,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "DataFiles1",   0,  UVAR_REQUIRED, "1st SFT file pattern", &uvar_DataFiles1), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "skyRegion",    0,  UVAR_OPTIONAL, "Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'", &uvar_skyRegion), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "numSkyPartitions",0,UVAR_OPTIONAL, "Number of (equi-)partitions to split skygrid into", &uvar_numSkyPartitions), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0,UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "partitionIndex",0, UVAR_OPTIONAL, "Index [0,numSkyPartitions-1] of sky-partition to generate", &uvar_partitionIndex), &status);
 
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default=1/Tstack)", &uvar_dFreq), &status);
@@ -508,7 +516,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "ephemS",       0,  UVAR_OPTIONAL, "Location of Sun ephemeris file", &uvar_ephemS),  &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "minStartTime1",0,  UVAR_OPTIONAL, "1st stage min start time of observation", &uvar_minStartTime1), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "maxEndTime1",  0,  UVAR_OPTIONAL, "1st stage max end time of observation",   &uvar_maxEndTime1),   &status);
-  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0, UVAR_OPTIONAL,  "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "printFstat1",  0,  UVAR_OPTIONAL, "Print 1st stage Fstat vectors", &uvar_printFstat1), &status);
 
   /* developer user variables */
   LAL_CALL( LALRegisterINTUserVar(    &status, "blocksRngMed", 0, UVAR_DEVELOPER, "RngMed block size", &uvar_blocksRngMed), &status);
@@ -523,8 +531,10 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "useToplist1",  0, UVAR_DEVELOPER, "Use toplist for 1st stage candidates?", &uvar_useToplist1 ), &status);
-  LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0,  UVAR_DEVELOPER,"Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
+  LAL_CALL( LALRegisterREALUserVar (  &status, "df1dotRes",    0, UVAR_DEVELOPER, "Resolution in residual fdot values (default=df1dot/nf1dotRes)", &uvar_df1dotRes), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "GPUready",     0, UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines", &uvar_GPUready), &status);
+  LAL_CALL( LALRegisterBOOLUserVar(   &status, "correctFreqs", 0, UVAR_DEVELOPER, "Correct candidate output frequencies (ie fix bug #147). Allows reproducing 'historical results'", &uvar_correctFreqs), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "device",       0, UVAR_DEVELOPER, "GPU device id", &uvar_gpu_device ), &status);
   LAL_CALL ( LALRegisterBOOLUserVar(  &status, "version",     'V', UVAR_SPECIAL,  "Output version information", &uvar_version), &status);
 
   /* read all command line variables */
@@ -555,6 +565,9 @@ int MAIN( int argc, char *argv[]) {
 #else
   LogSetLevel ( lalDebugLevel );
 #endif
+
+  if(uvar_gpu_device >= 0)
+    gpu_device_id = uvar_gpu_device;
 
   /* some basic sanity checks on user vars */
   if ( (uvar_method != 0) && (uvar_method != 1) && (uvar_method != -1)) {
@@ -707,7 +720,7 @@ int MAIN( int argc, char *argv[]) {
   tStack = usefulParams.tStack;
   tObs = usefulParams.tObs;
   nStacks = usefulParams.nStacks;
-  tStartGPS = usefulParams.tStartGPS;
+  /* currently unused: LIGOTimeGPS tStartGPS = usefulParams.tStartGPS; */
   midTstack = usefulParams.midTstack;
   startTstack = usefulParams.startTstack;
   tMidGPS = usefulParams.spinRange_midTime.refTime;
@@ -825,7 +838,17 @@ int MAIN( int argc, char *argv[]) {
     LogPrintfVerbatim(LOG_DETAIL, "\n");
   } /* loop over stacks */
 
-
+  /** fix frequency-quantization offset bug #147, by applying a fixed frequency-correction to all candidates */
+  REAL8 FreqBugCorrection = 0;
+  if ( uvar_correctFreqs )
+    {
+      FreqBugCorrection = uvar_Freq - uvar_dFreq * floor ( uvar_Freq / uvar_dFreq + 0.5 );
+      printf ("Applying frequency-correction shift of %.9g Hz \n", FreqBugCorrection );
+    }
+  else
+    {
+      printf ("WARNING: turned off frequency-shift bug correction! I hope you know what you're doing!\n");
+    }
 
   /*---------- set up F-statistic calculation stuff ---------*/
 
@@ -971,7 +994,7 @@ int MAIN( int argc, char *argv[]) {
     {
       UINT4 ifdot;  /* counter for spindown values */
       SkyPosition skypos;
-      ComputeFBufferREAL4V cfvBuffer;
+      ComputeFBufferREAL4V cfvBuffer = empty_ComputeFBufferREAL4V;
 
       /* if (skyGridCounter == 25965) { */
 
@@ -1179,6 +1202,12 @@ int MAIN( int argc, char *argv[]) {
 	       below that refers to the LALHOUGH functions in LAL */
 	    LAL_CALL ( COMPUTEFSTATHOUGHMAP ( &status, &semiCohCandList, &pgV, &semiCohPar), &status);
 
+            /* ----- now apply frequency-shift correction to fix bug #147 to all candidates returned */
+            INT4 iCand;
+            for ( iCand = 0; iCand < semiCohCandList.nCandidates; iCand ++ )
+              semiCohCandList.list[iCand].freq += FreqBugCorrection;
+            /* ------------------------------------------------------------ */
+
 	    /* free peakgrams -- we don't need them now because we have the Hough maps */
 	    for (k=0; k<nStacks; k++)
 	      LALFree(pgV.pg[k].peak);
@@ -1269,6 +1298,7 @@ int MAIN( int argc, char *argv[]) {
 	return HIERARCHICALSEARCH_EFILE;
       }
     if ( uvar_printCand1 && uvar_semiCohToplist ) {
+      fprintf ( fpSemiCoh, "%%%%  Freq            Alpha              Delta              f1dot                 HoughFStat        AlphaBest          DeltaBest          MeanSig    VarSig\n");
       sort_houghFStat_toplist(semiCohToplist);
       if ( write_houghFStat_toplist_to_fp( semiCohToplist, fpSemiCoh, NULL) < 0)
 	fprintf( stderr, "Error in writing toplist to file\n");
@@ -2986,7 +3016,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
 				 REAL8 delta,
 				 REAL8 fdot)
 {
-  INT4 k, length, debug;
+  INT4 k, length;
   REAL8 deltaF, f0;
   HoughFStatOutputEntry line;
 
@@ -3009,7 +3039,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
       line.HoughFStat = in->data->data[k];
       line.Freq = f0 + k*deltaF;
 
-      debug = insert_into_houghFStat_toplist( list, line);
+      insert_into_houghFStat_toplist( list, line);
 
     }
 
@@ -3409,7 +3439,7 @@ void GetSemiCohToplist(LALStatus            *status,
 		       REAL8                sigmaN)
 {
 
-  INT4 k, debug;
+  INT4 k;
   HoughFStatOutputEntry line;
 
   INITSTATUS( status, "GetSemiCohToplist", rcsid );
@@ -3447,7 +3477,7 @@ void GetSemiCohToplist(LALStatus            *status,
     line.MeanSig = (in->list[k].meanSig - meanN) / sigmaN;
     line.VarianceSig = in->list[k].varianceSig / (sigmaN * sigmaN);
 
-    debug = INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
+    INSERT_INTO_HOUGHFSTAT_TOPLIST( list, line);
   }
 
   DETATCHSTATUSPTR (status);

@@ -824,7 +824,9 @@ int main(int argc,char *argv[])
   
   while (1)
     {
+#if USE_BOINC
       BOOLEAN need2checkpoint = FALSE;
+#endif
       /* If our Fstat-file reaches a MaxFileSizeKB-threshold, we 'compatify'
        * the Fstat-file back to the contents of toplist with NumCandidatesToKeep
        * 
@@ -857,8 +859,9 @@ int main(int argc,char *argv[])
 	    }
 	  if ( fstatbuff )
 	    setvbuf(fpFstat, fstatbuff, _IOFBF, uvar_OutputBufferKB * 1024);
-
+#if USE_BOINC
 	  need2checkpoint = TRUE;
+#endif
 	  LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
 	} /* if maxFileSizeKB atteined => re-compactify output file by toplist */
@@ -1001,7 +1004,7 @@ int main(int argc,char *argv[])
           if (uvar_outputFstat || uvar_outputLoudest) 
             {
               INT4 i;
-	      FstatOutputEntry outputLine;
+	      FstatOutputEntry outputLine = empty_FstatOutputEntry;
 
               for(i=0;i < GV.FreqImax ;i++)
                 {
@@ -2885,7 +2888,6 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     UINT4 len;
     CHAR *fname = NULL;
     FILE *fplog;
-    int rc;
 
     INITSTATUS (stat, "WriteFStatLog", rcsid);
     ATTATCHSTATUSPTR (stat);
@@ -2925,7 +2927,7 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fclose (fplog);
     
     sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
-    rc = system (command);   /* we currently don't check this. If it fails, we assume that */
+    system (command);   /* we currently don't check this. If it fails, we assume that */
                         /* one of the system-commands was not available, and */
                         /* therefore the CVS-versions will simply not be logged */
 

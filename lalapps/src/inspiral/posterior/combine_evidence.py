@@ -125,7 +125,7 @@ def combine_evidence(data,xflag,Nlive,logLcolumn=-1):
     #Posterior Samples
     weights=weightsamp(d,Nlive)
     d_all = reduce(lambda x,y: vstack([x,y]), d)
-    pos=nest2pos(d_all,weights)
+    pos=nest2pos(d_all,weights,logLcolumn=logLcolumn)
 
     d_idx=argsort(d_all[:,logLcolumn])
     d_all=d_all[d_idx,:]

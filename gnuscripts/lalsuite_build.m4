@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 29
+# serial 31
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -385,32 +385,24 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
       cuda=false
       ;;
     yes)
-      if test "x$build_os" != "xlinux"; then
-        AC_MSG_ERROR([CUDA not supported on this platform])
-      else
-        AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
-        cuda=true
-        if test "x$build_cpu" = "xx86_64"; then
-          CLIBS="lib64"
-        else
-          CLIBS="lib"
-        fi
-        CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
-        CUDA_CFLAGS="-I/opt/cuda/include"
-        LIBS="$LIBS $CUDA_LIBS"
-        CFLAGS="$CFLAGS $CUDA_CFLAGS"
-        AC_SUBST(CUDA_LIBS)
-        AC_SUBST(CUDA_CFLAGS)
-      fi
+      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
+      cuda=true
+      AS_CASE([$build_os],
+          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
+          [CLIBS="lib"])
+      CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
+      CUDA_CFLAGS="-I/opt/cuda/include"
+      LIBS="$LIBS $CUDA_LIBS"
+      CFLAGS="$CFLAGS $CUDA_CFLAGS"
+      AC_SUBST(CUDA_LIBS)
+      AC_SUBST(CUDA_CFLAGS)
       ;;
     *)
       AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
       cuda=true
-      if test "x$build_cpu" = "xx86_64"; then
-        CLIBS="lib64"
-      else
-        CLIBS="lib"
-      fi
+      AS_CASE([$build_os],
+          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
+          [CLIBS="lib"])
       CUDA_LIBS="-L${with_cuda}/$CLIBS -lcufft -lcudart"
       CUDA_CFLAGS="-I${with_cuda}/include"
       LIBS="$LIBS $CUDA_LIBS"
@@ -476,4 +468,33 @@ if test "x${osx_version_check}" = "xtrue"; then
     esac
   fi
 fi
+])
+
+AC_DEFUN([LALSUITE_WITH_NVCC_CFLAGS],
+[AC_ARG_WITH(
+  [nvcc_cflags],
+  AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
+  [ if test -n "${with_nvcc_cflags}"
+    then
+      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}";
+    fi
+  ],)
+])
+
+AC_DEFUN([LALSUITE_CHECK_CUDA],
+[AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
+AC_TRY_RUN([
+#include <lal/LALConfig.h>
+#ifdef LAL_CUDA_ENABLED
+int main( void ) { return 0; }
+#else
+int main( void ) { return 1; }
+#endif
+],
+AC_MSG_RESULT([yes])
+[cuda=true],
+AC_MSG_RESULT([no])
+[cuda=false],
+AC_MSG_RESULT([unknown])
+[cuda=false])
 ])

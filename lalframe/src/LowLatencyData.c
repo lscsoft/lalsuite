@@ -14,263 +14,305 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA  02111-1307  USA
  *
- * Copyright (C) 2011 Adam Mercer
+ * Copyright (C) 2011 Adam Mercer, Leo Singer
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glob.h>
-#include <getopt.h>
-#include <math.h>
+#include <fcntl.h>
+#include <fnmatch.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
-#include <lal/LALDatatypes.h>
+#if HAVE_INOTIFY
+#include <sys/inotify.h>
+#else
+#include <errno.h>
+#include <dirent.h>
+#endif
+
 #include <lal/LowLatencyData.h>
 
-/*
- *  static functions
+struct tagLowLatencyData
+{
+  /* File descriptor for inotify or directory */
+  int fd;
+
+#if HAVE_INOTIFY
+  /* Watch descriptor for inotify */
+  int wd;
+  /* Buffer for change notifications */
+  char buf[sizeof(struct inotify_event) + FILENAME_MAX + 1];
+  /* Pointer to next unconsumed inotify event in buf */
+  struct inotify_event *next;
+#else
+  DIR *dir;
+#endif
+
+  /* Path to directory */
+  char path[FILENAME_MAX + 1];
+  /* Filename pattern */
+  char pattern[FILENAME_MAX + 1];
+  /* Last filename successfully read */
+  char last_filename[FILENAME_MAX + 1];
+
+  /* Pointer frame in memory, if any */
+  void *frame_ptr;
+  /* Size of frame in memory */
+  size_t frame_size;
+};
+
+
+/**
+ * Create a new instance of LowLatencyData.
+ * It will be ready to read the next available frame file.
  */
-
-/* prototypes */
-
-/* return glob of files with given pattern */
-static glob_t *lld_get_files(CHAR *glob_pattern);
-
-/* return gps start time of first frame file */
-static INT4 lld_gps_start_time(CHAR *data_path, CHAR *observatory,
-    CHAR *frame_type, glob_t *files);
-
-/* return gps start time of last frame file */
-static INT4 lld_last_gps_start_time(CHAR *data_path, CHAR *observatory,
-    CHAR *frame_type, glob_t *files);
-
-/* return frame duration */
-static INT4 lld_frame_duration(CHAR *data_path, CHAR *observatory,
-    CHAR *frame_type, glob_t *files);
-
-/* return gps end time of last frame file */
-static INT4 lld_gps_end_time(CHAR *data_path, CHAR *observatory,
-    CHAR *frame_type, glob_t *files);
-
-/* check if requested time is in range */
-static INT4 lld_time_in_range(CHAR *data_path, CHAR *observatory,
-    CHAR *frame_type, INT4 requested_time, glob_t *files);
-
-/* functions */
-
-/* return glob of files with given pattern */
-static glob_t *lld_get_files(
-    CHAR *glob_pattern)
+LowLatencyData *XLALLowLatencyDataOpen(
+  const char *data_path,    /* for example:  "/dev/shm/H1"    */
+  const char *observatory,  /* for example:  "H"              */
+  const char *frame_type    /* for example:  "H1_DMT_C00_L0"  */
+)
 {
-  /* variables */
-  glob_t *glob_files;
+  LowLatencyData *data = (LowLatencyData *)calloc(1, sizeof(LowLatencyData));
+  if (!data)
+    return NULL;
 
-  /* allocate memory for glob_files */
-  glob_files = calloc(1, sizeof(*glob_files));
+  strcpy(data->path, data_path);
 
-  /* get files matching pattern */
-  if (glob(glob_pattern, 0, NULL, glob_files) != 0)
+  snprintf(data->pattern, FILENAME_MAX, "%s-%s-*-*.gwf", observatory, frame_type);
+
+#if HAVE_INOTIFY
+  data->fd = inotify_init();
+  if (data->fd == -1)
   {
-    /* glob failed */
-    globfree(glob_files);
+    free(data);
     return NULL;
   }
 
-  return glob_files;
-}
-
-/* return gps start time of first frame file */
-static INT4 lld_gps_start_time(
-    CHAR *data_path,
-    CHAR *observatory,
-    CHAR *frame_type,
-    glob_t *files)
-{
-  /* variables */
-  CHAR fmt[FILENAME_MAX];
-  INT4 gps_start_time;
-
-  /* get sscanf format for parsing start time */
-  snprintf(fmt, FILENAME_MAX, "%s/%s-%s-%%d-%%*d.gwf", data_path, \
-      observatory, frame_type);
-
-  /* get start time */
-  if (sscanf(files->gl_pathv[0], fmt, &gps_start_time) != 1)
+  data->wd = inotify_add_watch(data->fd, data_path, IN_MOVED_TO);
+  if (data->wd == -1)
   {
-    /* error parsing start time */
-    return -1;
+    close(data->fd);
+    free(data);
+    return NULL;
   }
 
-  return gps_start_time;
-}
-
-/* return gps start time of last frame file */
-static INT4 lld_last_gps_start_time(
-    CHAR *data_path,
-    CHAR *observatory,
-    CHAR *frame_type,
-    glob_t *files)
-{
-  /* variables */
-  CHAR fmt[FILENAME_MAX];
-  INT4 gps_end_time;
-
-  /* get sscanf format for parsing start time */
-  snprintf(fmt, FILENAME_MAX, "%s/%s-%s-%%d-%%*d.gwf", data_path, \
-      observatory, frame_type);
-
-  /* get start time */
-  if (sscanf(files->gl_pathv[files->gl_pathc - 1], fmt, &gps_end_time) != 1)
+  data->next = NULL;
+#else
+  data->dir = opendir(data_path);
+  if (!data->dir)
   {
-    /* error parsing start time */
-    return -1;
+    free(data);
+    return NULL;
   }
 
-  return gps_end_time;
-}
-
-/* return frame duration */
-static INT4 lld_frame_duration(
-    CHAR *data_path,
-    CHAR *observatory,
-    CHAR *frame_type,
-    glob_t *files)
-{
-  /* variables */
-  CHAR fmt[FILENAME_MAX];
-  INT4 duration;
-
-  /* get sscanf format for parsing start time */
-  snprintf(fmt, FILENAME_MAX, "%s/%s-%s-%%*d-%%d.gwf", data_path, \
-      observatory, frame_type);
-
-  /* get frame duration */
-  if (sscanf(files->gl_pathv[0], fmt, &duration) != 1)
+  data->fd = dirfd(data->dir);
+  if (data->fd == -1)
   {
-    /* error parsing frame duration */
-    return -1;
+    closedir(data->dir);
+    free(data);
+    return NULL;
   }
+#endif
 
-  return duration;
+  data->frame_ptr = MAP_FAILED;
+
+  /* technically, doesn't have to be set because calloc zeros the struct,
+   * but best to make this explicit */
+  data->last_filename[0] = '\0';
+
+  return data;
 }
 
-/* return gps end time of last frame file */
-static INT4 lld_gps_end_time(
-    CHAR *data_path,
-    CHAR *observatory,
-    CHAR *frame_type,
-    glob_t *files)
-{
-  /* variables */
-  INT4 last_start_time;
-  INT4 duration;
 
-  /* get start time of last frame */
-  last_start_time = lld_last_gps_start_time(data_path, observatory, \
-      frame_type, files);
-  if (last_start_time == -1)
-    return -1;
-
-  /* get frame duration */
-  duration = lld_frame_duration(data_path, observatory, frame_type, \
-      files);
-  if (duration == -1)
-    return -1;
-
-  return last_start_time + duration;
-}
-
-/* check if requested time is in range */
-static INT4 lld_time_in_range(
-    CHAR *data_path,
-    CHAR *observatory,
-    CHAR *frame_type,
-    INT4 requested_time,
-    glob_t *files)
-{
-  /* variables */
-  INT4 start_time;
-  INT4 end_time;
-
-  /* get start and end times */
-  start_time = lld_gps_start_time(data_path, observatory, frame_type, files);
-  end_time = lld_gps_end_time(data_path, observatory, frame_type, files);
-  if ((start_time == -1) || (end_time == -1))
-    return -1;
-
-  /* is requested time in range */
-  if (!((start_time <= requested_time) && (end_time >= requested_time)))
-    return -1;
-
-  return 0;
-}
-
-/*
- * externally linkable functions
+/**
+ * Destroy an instance of LowLatencyData.
+ * Release resources associated with monitoring /dev/shm.
  */
-
-/* return file name of the next frame following requested time */
-CHAR *LALFrameLLDNextFrameName(
-    CHAR *data_path,
-    CHAR *observatory,
-    CHAR *frame_type,
-    LIGOTimeGPS *requested_time)
+void XLALLowLatencyDataClose(LowLatencyData *data)
 {
-  /* variables */
-  CHAR glob_pattern[FILENAME_MAX];
-  glob_t *files;
-  INT4 start_time;
-  INT4 duration;
-  REAL8 span;
-  INT4 n_frames;
-  INT4 frame_start;
-  CHAR *filename;
+#if HAVE_INOTIFY
+  inotify_rm_watch(data->fd, data->wd);
+  data->wd = -1;
+  close(data->fd);
+  data->fd = -1;
+#else
+  closedir(data->dir);
+  data->dir = NULL;
+  data->fd = -1;
+#endif
+  if (data->frame_ptr != MAP_FAILED)
+  {
+    munmap(data->frame_ptr, data->frame_size);
+    data->frame_ptr = MAP_FAILED;
+  }
+  free(data);
+}
 
-  /* get glob pattern */
-  snprintf(glob_pattern, FILENAME_MAX, "%s/*-*-*-*.gwf", data_path);
 
-  /* get list of files */
-  files = lld_get_files(glob_pattern);
-  if (files == NULL)
+static char *XLALLowLatencyDataNextFilename(LowLatencyData *data)
+{
+#if HAVE_INOTIFY /* Inotify version */
+
+  char *filename;
+
+  do {
+    int match;
+    struct inotify_event *evt;
+
+    /* Ignore queue overflow events. */
+    do {
+
+      /* Check to see if there is another inotify event already in our buffer.
+       * If so, return that event and advance to the next event.
+       * Otherwise, try to read from the inotify file descriptor again.*/
+
+      if (data->next && (char *) data->next < (char *) &data->buf + sizeof(data->buf))
+        evt = data->next;
+      else if (read(data->fd, data->buf, sizeof(data->buf)) != -1)
+        evt = (struct inotify_event *) data->buf;
+      else
+        return NULL; /* Something went wrong reading from inotify. */
+
+      data->next = (struct inotify_event *) ((char *) evt + sizeof(struct inotify_event) + evt->len);
+
+    } while (!(evt->mask & ~IN_Q_OVERFLOW));
+
+    match = fnmatch(data->pattern, evt->name, 0);
+    if (match == 0) /* match found */
+      filename = evt->name;
+    else if (match == FNM_NOMATCH) /* not a match */
+      filename = NULL;
+    else /* error occurred in fnmatch */
+      return NULL;
+
+  } while (!filename || (data->last_filename && strcmp(filename, data->last_filename) <= 0));
+
+#else /* Directory polling version */
+
+  char filename[FILENAME_MAX + 1];
+
+  do /* Loop until candidate filename is a non-empty string. */ {
+    struct dirent *entry;
+
+    for (filename[0] = '\0', rewinddir(data->dir); errno = 0, entry = readdir(data->dir); )
+    {
+      int match;
+
+      /* Demand that the filename matches the pattern. */
+      match = fnmatch(data->pattern, entry->d_name, 0);
+      if (match == FNM_NOMATCH) /* not a match */
+        continue;
+      else if (match != 0) /* error occurred in fnmatch */
+        return NULL;
+
+      /* Demand that the filename is lexicographically greater than the
+       * last opened filename. */
+      if (strcmp(entry->d_name, data->last_filename) < 1)
+        continue;
+
+      /* If there is already another candidate filename, then we have to
+       * compare the name of this entry lexicographically with it. */
+      if (filename[0])
+      {
+        if (data->last_filename[0])
+        {
+          /* If we have returned a filename before, then demand that
+           * the new filename is lexicographically less than the candidate. */
+          if (strcmp(entry->d_name, filename) >= 0)
+            continue;
+        } else {
+          /* Otherwise, we are searching for the first filename of the
+           * session, so we want the newest possible file, so we demand
+           * that the new filename is lexographically greater than the
+           * candidate. */
+          if (strcmp(entry->d_name, filename) <= 0)
+            continue;
+        }
+      }
+
+      /* This entry is even better than the previous candidate, so make
+       * it the new candidate. */
+      strcpy(filename, entry->d_name);
+    }
+
+    /* If an error occurred when calling readdir, fail. */
+    if (errno)
+      return NULL;
+
+    /* If no new filename was found, then sleep 1 second before returning. */
+    if (!filename[0])
+      sleep(1);
+
+  } while (!filename[0]);
+
+#endif
+
+  /* Record this as the last filename. */
+  strcpy(data->last_filename, filename);
+
+  /* Success! */
+  return data->last_filename;
+}
+
+
+/**
+ * Retrieve the next available frame file.
+ * On success, a pointer to a new in-memory frame file is returned.  If size is
+ * a non-NULL pointer, then the size of the file in bytes is written to (*size).
+ * Any prevoiusly returned pointer from this instance of LowLatencyData is
+ * invalidated.
+ *
+ * On failure, NULL is returned and (*size) is not modified.  It is unspecified
+ * whether any previously returned pointer is invalidated on failure.
+ */
+void *XLALLowLatencyDataNextBuffer(LowLatencyData *data, size_t *size)
+{
+  int fd;
+  struct stat st;
+  char pathname[FILENAME_MAX + 1];
+  char *filename = XLALLowLatencyDataNextFilename(data);
+
+  if (!filename)
     return NULL;
 
-  /* get start time of first frame */
-  start_time = lld_gps_start_time(data_path, observatory, frame_type, files);
-  if (start_time == -1)
+  /* create full path to file */
   {
-    /* free memory */
-    globfree(files);
+    int ret = snprintf(pathname, sizeof(pathname), "%s/%s", data->path, filename);
+    if (ret < 0 || (size_t) ret >= (size_t) sizeof(pathname))
+      return NULL;
+  }
 
+  /* open file */
+  fd = open(pathname, O_RDONLY);
+  if (fd == -1) return NULL;
+
+  /* get stats */
+  if (fstat(fd, &st) == -1)
+  {
+    close(fd);
     return NULL;
   }
 
-  /* get frame duration */
-  duration = lld_frame_duration(data_path, observatory, frame_type, files);
-  if (duration == -1)
+  /* unmap old file */
+  if (data->frame_ptr != MAP_FAILED)
   {
-    /* free memory */
-    globfree(files);
-
-    return NULL;
+    munmap(data->frame_ptr, data->frame_size);
+    data->frame_ptr = MAP_FAILED;
   }
 
-  /* is requested time in range */
-  if (lld_time_in_range(data_path, observatory, frame_type, requested_time->gpsSeconds, files) != 0)
-  {
-    /* free memory */
-    globfree(files);
+  data->frame_size = st.st_size;
+  data->frame_ptr = mmap(0, data->frame_size, PROT_READ, MAP_SHARED, fd, 0);
+  close(fd);
 
+  if (data->frame_ptr == MAP_FAILED)
     return NULL;
-  }
 
-  /* determine start time of frame */
-  span = requested_time->gpsSeconds - start_time;
-  n_frames = (INT4)ceil(span / duration);
-  frame_start = start_time + (n_frames * duration);
+  if (size)
+    *size = data->frame_size;
 
-  /* report */
-  filename = (CHAR *)calloc(FILENAME_MAX, sizeof(CHAR));
-  snprintf(filename, FILENAME_MAX, "%s/%s-%s-%d-%d.gwf", data_path, observatory, frame_type, frame_start, duration);
-
-  return filename;
+  return data->frame_ptr;
 }

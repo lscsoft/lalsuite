@@ -1,4 +1,4 @@
-AC_INIT([lalframe],[1.0.2.2],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalframe],[1.0.4.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -38,9 +38,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[2])
+AC_SUBST([LIBCURRENT],[3])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[2])
+AC_SUBST([LIBAGE],[3])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
@@ -48,6 +48,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # debug
 LALSUITE_ENABLE_DEBUG
+
+# enable check for inotify
+LALFRAME_ENABLE_INOTIFY
 
 # put version/configure info in config header
 lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -125,8 +128,16 @@ AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library
 AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.5.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.5.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.6.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.6.0],[LALOpenDataFile],[lal/FileIO.h])
+
+# check for inotify
+if test "${inotify}" = "true"; then
+  AC_CHECK_HEADER([sys/inotify.h],
+                  [AC_DEFINE([HAVE_INOTIFY],[1],[Define if you have inotify])],
+                  [inotify=false])
+fi
+INOTIFY_ENABLE_VAL="`eval test x$inotify = xtrue && echo "ENABLED" || echo "DISABLED"`"
 
 # check for SWIG wrapping
 LALSUITE_ENABLE_SWIG
@@ -151,6 +162,7 @@ echo "
 
         LALFrame has now been successfully configured:
 
+                inotify support is $INOTIFY_ENABLE_VAL
                 SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
                 SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 

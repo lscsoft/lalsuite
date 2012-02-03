@@ -59,8 +59,6 @@ typedef struct tagGSParams {
     REAL8 m1;                 /**< mass of companion 1 */
     REAL8 m2;                 /**< mass of companion 2 */
     REAL8 chi;                /**< dimensionless aligned-spin parameter */
-    REAL8 lambda1;            /**< dimensionless tidal deformability of companion 1 */
-    REAL8 lambda2;            /**< dimensionless tidal deformability of companion 2 */
     REAL8 f_min;              /**< start frequency */
     REAL8 f_max;              /**< end frequency */
     REAL8 distance;           /**< distance of source */
@@ -71,6 +69,9 @@ typedef struct tagGSParams {
     REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
     REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
     REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
+    REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	LALSimInspiralInteraction interactionFlags;    /**< flag to control spin and tidal effects */
     char outname[256];        /**< file to which output should be written */
     int verbose;
 } GSParams;
@@ -108,6 +109,9 @@ const char * usage =
 "--spin2x S2X               Vector components for spin of mass2\n"
 "--spin2y S2Y               z-axis=line of sight, L in x-z plane at reference\n"
 "--spin2z S2Z               Kerr limit: s2x^2 + s2y^2 + s2z^2 <= 1\n"
+"--tidal-flag Flag          'NOTIDAL', 'TIDAL5PN', 'TIDAL6PN'\n"
+"--tidal-lambda1 L1         (tidal deformability of mass 1) / (total mass)^5 (~4-80 for NS)\n"
+"--tidal-lambda2 L2         (tidal deformability of mass 2) / (total mass)^5 (~4-80 for NS)\n"
 "--f-min FMIN               Frequency at which to start waveform in Hz\n"
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
@@ -135,6 +139,11 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         params->f_min = 40;
         params->distance = 100 * 1e6 * LAL_PC_SI;
     }
+
+    /* tidal terms are not always used.  set to zero unless specified below */
+    /*params->interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_NONE;*/
+    /*params->lambda1 = 0.0;*/
+    /*params->lambda2 = 0.0;*/
 
     /* consume command line */
     for (i = 1; i < argc; ++i) {
@@ -206,6 +215,22 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->s2y = atof(argv[++i]);
         } else if (strcmp(argv[i], "--spin2z") == 0) {
             params->s2z = atof(argv[++i]);
+	} else if (strcmp(argv[i], "--tidal-flag") == 0) {
+            i++;
+            if (strcmp(argv[i], "NOTIDAL") == 0)
+                params->interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_NONE;
+            else if (strcmp(argv[i], "TIDAL5PN") == 0)
+                params->interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
+	    else if (strcmp(argv[i], "TIDAL6PN") == 0)
+                params->interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
+            else {
+                XLALPrintError("Error: Unknown interactionFlags\n");
+                goto fail;
+	    }
+	} else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
+            params->lambda1 = atof(argv[++i]);
+	} else if (strcmp(argv[i], "--tidal-lambda2") == 0) {
+            params->lambda2 = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-min") == 0) {
             params->f_min = atof(argv[++i]);
         } else if (strcmp(argv[i], "--f-max") == 0) {
@@ -361,8 +386,9 @@ int main (int argc , char **argv) {
     REAL8TimeSeries *hcross = NULL;
     GSParams *params;
     // For now, hardcode spin flags as 1.5PN SO + 2PN SS
-    LALSpinInteraction spinFlags = LAL_SOInter | LAL_SSInter;
-
+    /*LALSpinInteraction spinFlags = LAL_SOInter | LAL_SSInter;*/
+	/*LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN | LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;*/
+	
     /* set us up to fail hard */
     lalDebugLevel = 7;
     XLALSetErrorHandler(XLALAbortErrorHandler);
@@ -370,6 +396,9 @@ int main (int argc , char **argv) {
     /* parse commandline */
     params = parse_args(argc, argv);
 
+	// For now, hardcode spin flags as 1.5PN SO + 2PN SS
+	params->interactionFlags = params->interactionFlags | LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN | LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
+	
     /* generate waveform */
     start_time = time(NULL);
     switch (params->domain) {
@@ -418,8 +447,8 @@ int main (int argc , char **argv) {
                             params->m2, params->fRef, params->distance, 
                             params->s1x, params->s1y, params->s1z, params->s2x,
                             params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
-                            E1x, E1y, E1z, spinFlags, params->phaseO, 
-                            params->ampO);
+							E1x, E1y, E1z, params->lambda1, params->lambda2, 
+							params->interactionFlags, params->phaseO, params->ampO);
                     break;
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their TD waveform generation function\n");

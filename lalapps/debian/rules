@@ -90,7 +90,7 @@ install: build $(PYVERS:%=install-%)
 		fi ;                                                     \
 	done
 	mkdir -p $(CURDIR)/debian/$(PACKAGE)/etc/
-	cp -p debain/lalapps-user-env.* $(CURDIR)/debian/$(PACKAGE)/etc/
+	cp -p debian/lalapps-user-env.* $(CURDIR)/debian/$(PACKAGE)/etc/
 	-rmdir $(CURDIR)/debian/$(PACKAGE)/usr/doc/*
 	-rmdir $(CURDIR)/debian/$(PACKAGE)/usr/doc
 
@@ -101,6 +101,7 @@ install-%:
 	set -e
 	PYTHON="/usr/bin/$*" \
 	CFLAGS="$(CFLAGS)" \
+	PKG_CONFIG_PATH="" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
 	    --sysconfdir=/etc \

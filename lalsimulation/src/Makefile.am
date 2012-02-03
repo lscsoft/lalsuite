@@ -6,7 +6,8 @@ bin_PROGRAMS = \
 	lalsim-bh-ringdown \
 	lalsim-bh-sphwf \
 	lalsim-ligo-noise \
-	lalsim-sgwb
+	lalsim-sgwb \
+	lalsim-unicorn
 
 lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
@@ -34,6 +35,7 @@ lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
+	LALSimBurstImg.c \
 	LALSimIMREOBNRv2.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPSpinInspiralRD.c \
@@ -55,7 +57,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimNoise.c \
 	LALSimSGWB.c \
 	LALSimSGWBORF.c \
-	check_series_macros.h
+	LALSimUnicorn.c \
+	check_series_macros.h \
+	unicorn.xpm
 
 liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
 
@@ -64,6 +68,7 @@ lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
 lalsim_ligo_noise_SOURCES = ligo_noise.c
 lalsim_sgwb_SOURCES = sgwb.c
+lalsim_unicorn_SOURCES = unicorn.c
 
 CLEANFILES = \
 	lalsimulation-user-env.shell \

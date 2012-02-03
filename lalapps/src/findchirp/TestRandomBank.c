@@ -1672,6 +1672,7 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
   /**/
   overlapin->param.nStartPad 	= 0;
   overlapin->param.startPhase 	= 0;
+VS_DATE
 
   /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation
    *  process; let's get the input data namely x and the spectrum namely psd
@@ -2214,12 +2215,12 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow(&(templateBank.processTable->start_time));
-    LAL_CALL( populate_process_table( &status,
-				      templateBank.processTable,
-				      PROGRAM_NAME,
-				      CVS_REVISION,
-				      CVS_SOURCE,
-				      CVS_DATE ), &status );
+    XLALPopulateProcessTable(templateBank.processTable,
+        PROGRAM_NAME,
+        CVS_REVISION,
+        CVS_SOURCE,
+        CVS_DATE,
+        );
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -2376,8 +2377,8 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow(&(templateBank.processTable->start_time));
-    LAL_CALL( populate_process_table( &status, templateBank.processTable,
-				      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+    XLALPopulateProcssTable(templateBank.processTable,
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -4353,8 +4354,8 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  LAL_CALL( populate_process_table( &status, proctable.processTable,
-				    PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  XLALPopulateProcessTable(proctable.processTable,
+      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
   this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 

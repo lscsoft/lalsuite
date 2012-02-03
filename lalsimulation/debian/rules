@@ -30,6 +30,7 @@ config.status: configure
 
 #	LDFLAGS="-Wl,-z,defs"
 	CFLAGS="$(CFLAGS)" \
+	PKG_CONFIG_PATH="" \
 	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
 	    --prefix=$(PREFIX) \
 	    --sysconfdir=/etc \
@@ -59,9 +60,9 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	$(MAKE) DESTDIR=$(CURDIR)/debian/lalsimulation install ;                     \
-	echo "tree after install:" ;                                                 \
-	ls -lR $(CURDIR)/debian ;                                                    \
+	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	echo "tree after install:"
+	ls -lR $(CURDIR)/debian
 	$(MAKE) clean
 # only if necessary overwrite user-env scripts
 #	cp -p debian/lalsimulation-user-env.* $(CURDIR)/debian/lalsimulation/etc/
@@ -72,7 +73,7 @@ binary-common: build install
 	dh_installchangelogs
 	dh_installdocs
 	dh_installexamples
-#	dh_install
+	dh_install --sourcedir=debian/tmp
 #	dh_installmenu
 #	dh_installdebconf
 #	dh_installlogrotate

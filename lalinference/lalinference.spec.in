@@ -12,7 +12,7 @@ URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python
-Requires: gsl libmetaio lal lalmetaio lalinspiral lalpulsar
+Requires: gsl libmetaio lal lalmetaio lalsimulation lalinspiral lalpulsar
 Prefix: %{_prefix}
 
 %description
@@ -24,7 +24,7 @@ that use the LAL Inference library.
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel libmetaio-devel lal-devel lalmetaio-devel lalinspiral-devel lalpulsar-devel
+Requires: gsl-devel libmetaio-devel lal-devel lalmetaio-devel lalsimulation-devel lalinspiral-devel lalpulsar-devel
 %description devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
@@ -39,6 +39,7 @@ library.
 
 %install
 %makeinstall
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
 ldconfig
@@ -57,6 +58,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 
 %files devel
 %defattr(-,root,root)
-%{_libdir}/*a
+%{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal

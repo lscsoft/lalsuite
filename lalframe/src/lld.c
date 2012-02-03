@@ -17,17 +17,20 @@
  * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  * MA  02111-1307  USA
  *
- * Copyright (C) 2011 Adam Mercer
+ * Copyright (C) 2011 Adam Mercer, Leo Singer
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <glob.h>
 #include <getopt.h>
-#include <math.h>
 
+#include <lal/LALDatatypes.h>
 #include <lal/LowLatencyData.h>
+#include <lal/LALFrameL.h>
+
+#include <lal/LALVCSInfo.h>
+#include <lal/LALFrameVCSInfo.h>
 
 /* default options */
 #define LLD_DATA_PATH "/dev/shm"
@@ -36,7 +39,6 @@
 
 /* global variables */
 int vrbflg;
-LIGOTimeGPS requested_time = {0,0};
 CHAR *observatory = NULL;
 CHAR *frame_type = NULL;
 CHAR *data_path = NULL;
@@ -48,6 +50,7 @@ CHAR *data_path = NULL;
 /* prototypes */
 void parse_options(int argc, char **argv);
 void display_help_message(void);
+void display_version_message(void);
 
 /* parse command line options */
 void parse_options(
@@ -64,7 +67,7 @@ void parse_options(
       {"verbose", no_argument, &vrbflg, 1},
       /* options that don't set a flag */
       {"help", no_argument, 0, 'a'},
-      {"time", required_argument, 0, 'b'},
+      {"version", no_argument, 0, 'b'},
       {"observatory", required_argument, 0, 'c'},
       {"type", required_argument, 0, 'd'},
       {"path", required_argument, 0, 'e'},
@@ -77,7 +80,7 @@ void parse_options(
 
     /* parse options */
     c = getopt_long_only(argc, argv, \
-        "ab:c:d:", \
+        "ab:c:d:e:", \
         long_options, &option_index);
 
     if (c == -1)
@@ -106,14 +109,9 @@ void parse_options(
         break;
 
       case 'b':
-        /* time */
-        requested_time.gpsSeconds = atoi(optarg);
-        if (requested_time.gpsSeconds <= 0)
-        {
-          fprintf(stderr, "invalid argument to --%s: %d\n", \
-              long_options[option_index].name, requested_time.gpsSeconds);
-          exit(1);
-        }
+        /* version */
+        display_version_message();
+        exit(0);
         break;
 
       case 'c':
@@ -183,13 +181,6 @@ void parse_options(
    * check for required arguments
    */
 
-  /* time */
-  if (requested_time.gpsSeconds == 0)
-  {
-    fprintf(stderr, "--time must be specified\n");
-    exit(1);
-  }
-
   return;
 }
 
@@ -198,11 +189,25 @@ void display_help_message(void)
 {
   fprintf(stdout, "Usage: lalframe_lld [options]\n");
   fprintf(stdout, " --help          print this message\n");
+  fprintf(stdout, " --version       print version information\n");
   fprintf(stdout, " --verbose       run in verbose mode\n");
-  fprintf(stdout, " --time          time to return\n");
   fprintf(stdout, " --observatory   observatory [default = X]\n");
   fprintf(stdout, " --type          frame type [default = R]\n");
   fprintf(stdout, " --path          location of data [default = /dev/shm]\n");
+  return;
+}
+
+/* display version */
+void display_version_message(void)
+{
+  const char delim[] = ":";
+  char *tree_status;
+  tree_status = strdup(lalVCSInfo.vcsStatus);
+  fprintf(stdout, "%%%% LAL: %s (%s %s)\n", lalVCSInfo.version, \
+      strsep(&tree_status, delim), lalVCSInfo.vcsId);
+  tree_status = strdup(lalFrameVCSInfo.vcsStatus);
+  fprintf(stdout, "%%%% LALFrame: %s (%s %s)\n", lalFrameVCSInfo.version, \
+      strsep(&tree_status, delim), lalFrameVCSInfo.vcsId);
   return;
 }
 
@@ -212,26 +217,37 @@ void display_help_message(void)
 
 int main(int argc, char **argv)
 {
+  LowLatencyData *reader;
+  void *bytes;
+  size_t size;
+  int i;
+
   /* parse command line options */
   parse_options(argc, argv);
 
-  /* get filename of next frame following requested time */
-  CHAR *filename;
-  filename = LALFrameLLDNextFrameName(data_path, observatory, frame_type, &requested_time);
-  if (filename == NULL)
+  /* create reader */
+  reader = XLALLowLatencyDataOpen(data_path, observatory, frame_type);
+  if (!reader)
   {
-    fprintf(stderr, "Unable to get frame name\n");
-
-    /* free memory */
-    free(observatory);
-    free(frame_type);
-
-    /* exit */
+    perror("Unable to create reader");
     exit(1);
   }
 
-  /* report */
-  fprintf(stdout, "filename = %s\n", filename);
+  /* open 1000 frames as they arrive */
+  for (i = 0; i < 1000; i ++)
+  {
+    bytes = XLALLowLatencyDataNextBuffer(reader, &size);
+    if (!bytes)
+    {
+      perror("Unable to read frame");
+      exit(1);
+    }
+    FrameH *frame = FrameReadFromBuf(bytes, size, 0);
+    printf("Got frame file of %llu bytes: GPS time %u.%09u\n", (long long unsigned)size, frame->GTimeS, frame->GTimeN);
+    FrameFree(frame);
+  }
+
+  XLALLowLatencyDataClose(reader);
 
   /* free memory */
   free(observatory);

@@ -1,3 +1,42 @@
+lal (6.6.2-1) unstable; urgency=low
+
+  * LAL 6.6.2
+  * fix fence post error in Adaptive RK integrator
+  * prevent running geometric mean PSD from getting pinned at zero by zeroes
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 23 Jan 2012 08:40:10 -0600
+
+lal (6.6.1-1) unstable; urgency=low
+
+  * LAL 6.6.1
+  * update to automake-1.11.2
+  * support leap second at end of June 2012
+  * ensure "science" definition of calibration DQ vector follows definition
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 13 Jan 2012 15:42:13 -0600
+
+lal (6.6.0-1) unstable; urgency=low
+
+  * LAL 6.6.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 13 Dec 2011 12:42:59 -0600
+
+lal (6.6.0~rc2-1) unstable; urgency=low
+
+  * LAL 6.6.0 Release Candidate 2
+  * name anonymous enums (fixes issue when built with g++-4.0.1)
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 09 Dec 2011 14:00:07 -0600
+
+lal (6.6.0~rc1-1) unstable; urgency=low
+
+  * LAL 6.6.0 Release Candidate 1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 06 Dec 2011 14:30:51 -0600
+
 lal (6.5.0-1lscsoft1) unstable; urgency=low
 
   * LAL 6.5.0

@@ -32,8 +32,5 @@ endif
 MOSTLYCLEANFILES =
 DISTCLEANFILES =
 
-if CUDA
-SUFFIXES = .cu .cpp
-.cu.cpp:
-	nvcc --cuda $(INCLUDES) $(CPPFLAGS) --output-file $@ $<
-endif
+# cuda build rules
+include $(top_srcdir)/misc/cuda.common

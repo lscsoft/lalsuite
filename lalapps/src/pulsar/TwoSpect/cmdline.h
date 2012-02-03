@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.13"
+#define CMDLINE_PARSER_VERSION "1.1.16"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -43,9 +43,9 @@ struct gengetopt_args_info
   char * config_arg;	/**< @brief Configuration file in gengetopt format for passing parameters.  */
   char * config_orig;	/**< @brief Configuration file in gengetopt format for passing parameters original value given at command line.  */
   const char *config_help; /**< @brief Configuration file in gengetopt format for passing parameters help description.  */
-  int verbosity_arg;	/**< @brief LAL debug level (default='0').  */
-  char * verbosity_orig;	/**< @brief LAL debug level original value given at command line.  */
-  const char *verbosity_help; /**< @brief LAL debug level help description.  */
+  int laldebug_arg;	/**< @brief LAL debug level (default='0').  */
+  char * laldebug_orig;	/**< @brief LAL debug level original value given at command line.  */
+  const char *laldebug_help; /**< @brief LAL debug level help description.  */
   double Tobs_arg;	/**< @brief Total observation time (in seconds).  */
   char * Tobs_orig;	/**< @brief Total observation time (in seconds) original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time (in seconds) help description.  */
@@ -87,6 +87,9 @@ struct gengetopt_args_info
   char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
   char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
   const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
+  char * normRMSoutput_arg;	/**< @brief File for the output of the normalized RMS from the non-slided data.  */
+  char * normRMSoutput_orig;	/**< @brief File for the output of the normalized RMS from the non-slided data original value given at command line.  */
+  const char *normRMSoutput_help; /**< @brief File for the output of the normalized RMS from the non-slided data help description.  */
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
@@ -114,6 +117,9 @@ struct gengetopt_args_info
   char * skyRegionFile_arg;	/**< @brief File with the grid points.  */
   char * skyRegionFile_orig;	/**< @brief File with the grid points original value given at command line.  */
   const char *skyRegionFile_help; /**< @brief File with the grid points help description.  */
+  double linPolAngle_arg;	/**< @brief Polarization angle to search using linear polarization (when unspecified default is circular polarization.  */
+  char * linPolAngle_orig;	/**< @brief Polarization angle to search using linear polarization (when unspecified default is circular polarization original value given at command line.  */
+  const char *linPolAngle_help; /**< @brief Polarization angle to search using linear polarization (when unspecified default is circular polarization help description.  */
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
   char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
   const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */
@@ -126,6 +132,9 @@ struct gengetopt_args_info
   double ihsfomfar_arg;	/**< @brief IHS FOM FAR threshold.  */
   char * ihsfomfar_orig;	/**< @brief IHS FOM FAR threshold original value given at command line.  */
   const char *ihsfomfar_help; /**< @brief IHS FOM FAR threshold help description.  */
+  int keepOnlyTopNumIHS_arg;	/**< @brief Keep the top <number> of IHS candidates based on significance.  */
+  char * keepOnlyTopNumIHS_orig;	/**< @brief Keep the top <number> of IHS candidates based on significance original value given at command line.  */
+  const char *keepOnlyTopNumIHS_help; /**< @brief Keep the top <number> of IHS candidates based on significance help description.  */
   double tmplfar_arg;	/**< @brief Template FAR threshold (default='0.01').  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
@@ -183,12 +192,14 @@ struct gengetopt_args_info
   const char *gaussTemplatesOnly_help; /**< @brief Gaussian templates only throughout the pipeline if this flag is used help description.  */
   int validateSSE_flag;	/**< @brief Validate the use of SSE functions (default=off).  */
   const char *validateSSE_help; /**< @brief Validate the use of SSE functions help description.  */
+  int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
+  const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int config_given ;	/**< @brief Whether config was given.  */
-  unsigned int verbosity_given ;	/**< @brief Whether verbosity was given.  */
+  unsigned int laldebug_given ;	/**< @brief Whether laldebug was given.  */
   unsigned int Tobs_given ;	/**< @brief Whether Tobs was given.  */
   unsigned int Tcoh_given ;	/**< @brief Whether Tcoh was given.  */
   unsigned int SFToverlap_given ;	/**< @brief Whether SFToverlap was given.  */
@@ -202,6 +213,7 @@ struct gengetopt_args_info
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
+  unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
@@ -211,10 +223,12 @@ struct gengetopt_args_info
   unsigned int dfmax_given ;	/**< @brief Whether dfmax was given.  */
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
   unsigned int skyRegionFile_given ;	/**< @brief Whether skyRegionFile was given.  */
+  unsigned int linPolAngle_given ;	/**< @brief Whether linPolAngle was given.  */
   unsigned int ihsfactor_given ;	/**< @brief Whether ihsfactor was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int ihsfom_given ;	/**< @brief Whether ihsfom was given.  */
   unsigned int ihsfomfar_given ;	/**< @brief Whether ihsfomfar was given.  */
+  unsigned int keepOnlyTopNumIHS_given ;	/**< @brief Whether keepOnlyTopNumIHS was given.  */
   unsigned int tmplfar_given ;	/**< @brief Whether tmplfar was given.  */
   unsigned int minTemplateLength_given ;	/**< @brief Whether minTemplateLength was given.  */
   unsigned int maxTemplateLength_given ;	/**< @brief Whether maxTemplateLength was given.  */
@@ -238,6 +252,7 @@ struct gengetopt_args_info
   unsigned int noiseWeightOff_given ;	/**< @brief Whether noiseWeightOff was given.  */
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
   unsigned int validateSSE_given ;	/**< @brief Whether validateSSE was given.  */
+  unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
 
 } ;
 

@@ -77,7 +77,6 @@ int main(int argc, char **argv){
   ULData ULdata;
   REAL8Vector *results=NULL;
   REAL8Vector *tempresults=NULL;
-  REAL8 confsum;
 
    /* read the command line arguments */
   if (ReadCommandLine(argc,argv)) return 1;
@@ -119,7 +118,6 @@ int main(int argc, char **argv){
     ULdata.UL[i].p_loudestsig=loudest[i].p_sig;
     ULdata.UL[i].s_loudestsig=loudest[i].s_sig;
     ULdata.UL[i].co_loudestsig=loudest[i].co_sig;
-    confsum=0.0;
 
     /* loop over the chunks that we have split the dataset into */
     for (j=0;j<Nh0;j++) {
@@ -718,7 +716,6 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
   char **loudestline;
   glob_t globbuf;
   INT4 i,j;
-  INT4 nfiles;
   REAL8 a,f;
   INT4 A;
   REAL8 p_sig,s_sig,co_sig;
@@ -755,7 +752,6 @@ int FindLoudest(char *resultsdir,FreqMeshes *freqmeshes,char *maxoutfile,Loudest
 	}
     }
   globfree(&globbuf);
-  nfiles=filenum;
 
   /* allocate memory for loudest events */
   (*loudest)=(Loudest *)LALMalloc(freqmeshes->Nheaders*sizeof(Loudest));
