@@ -70,15 +70,15 @@ static INT4 XLALFinalMassSpin(
  * by solving the linear equations found in the DCC document T1100433.
  */ 
 static INT4 XLALSimIMREOBHybridRingdownWave(
-	REAL8Vector			*rdwave1,   /**<< Real part of ringdown */
-	REAL8Vector			*rdwave2,   /**<< Imaginary part of ringdown */
-        const REAL8                     dt,         /**<< Sampling interval */
-	const REAL8                     mass1,      /**<< First component mass (in Solar masses) */
-        const REAL8                     mass2,      /**<< Second component mass (in Solar masses) */
-	REAL8VectorSequence		*inspwave1, /**<< Values and derivatives of real part of inspiral waveform */
-	REAL8VectorSequence		*inspwave2, /**<< Values and derivatives of Imaginary part of inspiral waveform */
-	COMPLEX16Vector			*modefreqs, /**<< Complex frequencies of ringdown (scaled by total mass) */
-	REAL8Vector			*matchrange /**<< Times which determine the comb size for ringdown attachment */
+    REAL8Vector			*rdwave1,   /**<< Real part of ringdown */
+    REAL8Vector			*rdwave2,   /**<< Imaginary part of ringdown */
+    const REAL8         dt,         /**<< Sampling interval */
+	const REAL8         mass1,      /**<< First component mass (in Solar masses) */
+    const REAL8         mass2,      /**<< Second component mass (in Solar masses) */
+    REAL8VectorSequence		*inspwave1, /**<< Values and derivatives of real part of inspiral waveform */
+    REAL8VectorSequence		*inspwave2, /**<< Values and derivatives of Imaginary part of inspiral waveform */
+    COMPLEX16Vector			*modefreqs, /**<< Complex frequencies of ringdown (scaled by total mass) */
+    REAL8Vector			*matchrange /**<< Times which determine the comb size for ringdown attachment */
 	)
 {
 
@@ -1664,8 +1664,12 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       const REAL8       dt,           /**<< Sample time step (in seconds) */
       const REAL8       mass1,        /**<< First component mass (in Solar masses) */
       const REAL8       mass2,        /**<< Second component mass (in Solar masses) */
-      const REAL8       spin1[3],     /**<<The spin of the first object; only needed for spin waveforms */
-      const REAL8       spin2[3],     /**<<The spin of the second object; only needed for spin waveforms */
+      const REAL8       spin1x,       /**<<The spin of the first object; only needed for spin waveforms */
+      const REAL8       spin1y,       /**<<The spin of the first object; only needed for spin waveforms */
+      const REAL8       spin1z,       /**<<The spin of the first object; only needed for spin waveforms */
+      const REAL8       spin2x,       /**<<The spin of the second object; only needed for spin waveforms */
+      const REAL8       spin2y,       /**<<The spin of the second object; only needed for spin waveforms */
+      const REAL8       spin2z,       /**<<The spin of the second object; only needed for spin waveforms */
       REAL8Vector       *timeVec,     /**<< Vector containing the time values */
       REAL8Vector       *matchrange,  /**<< Time values chosen as points for performing comb matching */
       Approximant       approximant   /**<<The waveform approximant being used */
@@ -1686,6 +1690,8 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       REAL8VectorSequence	*inspwaves2;
       REAL8 eta, a, NRPeakOmega22; /* To generate pQNM frequency */
       REAL8 mTot; /* In geometric units */
+      REAL8 spin1[3] = { spin1x, spin1y, spin1z };
+      REAL8 spin2[3] = { spin2x, spin2y, spin2z };
 
       mTot  = (mass1 + mass2) * LAL_MTSUN_SI;
       eta       = mass1 * mass2 / ( (mass1 + mass2) * (mass1 + mass2) );

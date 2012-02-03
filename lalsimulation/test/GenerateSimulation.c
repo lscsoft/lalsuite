@@ -39,8 +39,10 @@ typedef enum tagGSApproximant {
     GSApproximant_SpinTaylorT4,
     GSApproximant_PhenSpinTaylorRD,
     GSApproximant_TaylorF2RedSpin,
+    GSApproximant_SEOBNRv1,
     GSApproximant_TaylorF2RedSpinTidal,
-    GSApproximant_SpinAlignedEOB,
+    GSApproximant_EOBNRv2,
+    GSApproximant_EOBNRv2HM,
     GSApproximant_NUM
 } GSApproximant;
 
@@ -92,6 +94,8 @@ const char * usage =
 "                             TaylorF2RedSpin\n"
 "                             PhenSpinTaylorRD\n"
 "                             SEOBNRv1\n"
+"                             EOBNRv2\n"
+"                             EOBNRv2HM\n"
 "--phase-order ORD          Twice PN order of phase (e.g. ORD=7 <==> 3.5PN)\n"
 "--amp-order ORD            Twice PN order of amplitude\n"
 "--domain DOM               'TD' for time domain or 'FD' for frequency\n"
@@ -178,8 +182,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 params->approximant = GSApproximant_TaylorF2RedSpinTidal;
             else if (strcmp(argv[i], "PhenSpinTaylorRD") == 0)
                 params->approximant = GSApproximant_PhenSpinTaylorRD;
-            else if (strcmp(argv[i], "SpinAlignedEOB") == 0)
-                params->approximant = GSApproximant_SpinAlignedEOB;
+            else if (strcmp(argv[i], "SEOBNRv1") == 0)
+                params->approximant = GSApproximant_SEOBNRv1;
+            else if (strcmp(argv[i], "EOBNRv2") == 0)
+                params->approximant = GSApproximant_EOBNRv2;
+            else if (strcmp(argv[i], "EOBNRv2HM") == 0)
+                params->approximant = GSApproximant_EOBNRv2HM;
             else {
                 XLALPrintError("Error: Unknown approximant\n");
                 goto fail;
@@ -357,6 +365,10 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         case GSApproximant_SpinTaylorT4:
             /* no additional checks required */
             break;
+        case GSApproximant_EOBNRv2:
+        case GSApproximant_EOBNRv2HM:
+        case GSApproximant_SEOBNRv1:
+            break;
         default:
             XLALPrintError("Error: some lazy developer forgot to update waveform-specific checks\n");
     }
@@ -510,6 +522,18 @@ int main (int argc , char **argv) {
                             params->phiRef, params->deltaT, params->m1,
                             params->m2, params->fRef, params->distance,
                             params->inclination, params->s1z, params->s2z);
+                    break;
+                case GSApproximant_EOBNRv2:
+                    XLALSimIMREOBNRv2DominantMode( &hplus, &hcross,
+                        params->phiRef, params->deltaT, params->m1,
+                        params->m2, params->fRef, params->distance,
+                        params->inclination);
+                    break;
+                case GSApproximant_EOBNRv2HM:
+                    XLALSimIMREOBNRv2AllModes( &hplus, &hcross,
+                        params->phiRef, params->deltaT, params->m1,
+                        params->m2, params->fRef, params->distance,
+                        params->inclination);
                     break;
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their TD waveform generation function\n");

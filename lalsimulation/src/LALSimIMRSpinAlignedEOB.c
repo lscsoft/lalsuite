@@ -99,8 +99,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hcross,
         const REAL8     UNUSED phiC,
         REAL8           deltaT,
-        const REAL8     m1,
-        const REAL8     m2,
+        const REAL8     m1SI,
+        const REAL8     m2SI,
         const REAL8     fMin,
         const REAL8     r,
         const REAL8     inc,
@@ -128,7 +128,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
 
   /* Parameters of the system */
-  REAL8 mTotal, eta, mTScaled;
+  REAL8 m1, m2, mTotal, eta, mTScaled;
   REAL8 amp0;
   LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
@@ -198,6 +198,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   NewtonMultipolePrefixes prefixes;
 
   /* Initialize parameters */
+  m1 = m1SI / LAL_MSUN_SI;
+  m2 = m2SI / LAL_MSUN_SI;
   mTotal = m1 + m2;
   mTScaled = mTotal * LAL_MTSUN_SI;
   eta    = m1 * m2 / (mTotal*mTotal);
@@ -686,7 +688,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
   if ( XLALSimIMREOBHybridAttachRingdown( sigReHi, sigImHi, 2, 2,
-              deltaT, m1, m2, spin1, spin2, &timeHi, rdMatchPoint, SEOBNRv1)
+              deltaT, m1, m2, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2],
+              &timeHi, rdMatchPoint, SEOBNRv1)
           == XLAL_FAILURE ) 
   {
     XLAL_ERROR( XLAL_EFUNC );

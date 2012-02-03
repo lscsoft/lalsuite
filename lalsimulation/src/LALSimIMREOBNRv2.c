@@ -1446,7 +1446,7 @@ XLALSimIMREOBNRv2Generator(
      rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
      xlalStatus = XLALSimIMREOBHybridAttachRingdown(sigReHi, sigImHi,
-                   modeL, modeM, dt, mass1, mass2, NULL, NULL, &tVecHi, rdMatchPoint, EOBNRv2 );
+                   modeL, modeM, dt, mass1, mass2, 0, 0, 0, 0, 0, 0, &tVecHi, rdMatchPoint, EOBNRv2 );
      if (xlalStatus != XLAL_SUCCESS )
      {
        XLALDestroyREAL8Vector( rdMatchPoint );
