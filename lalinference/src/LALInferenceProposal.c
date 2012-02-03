@@ -69,7 +69,7 @@ const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
 const char *KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
-static const REAL8 modeHoppingFrac = 0.5;
+static const REAL8 modeHoppingFrac = 0.8;
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
