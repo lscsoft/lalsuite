@@ -209,7 +209,7 @@ REAL8 priorFunction( LALInferenceRunState *runState,
                                     &min, &max );
       
         if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max ){
-          return -INFINITY;
+          return -DBL_MAX;
         }
         else prior -= log( (max - min) * scale );
       }

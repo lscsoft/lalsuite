@@ -1,22 +1,3 @@
-/*
-*  Copyright (C) 2011 Matt Pitkin, John Veitch, Colin Gill
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
-*/
-
 /* functions to create the likelihood for a pulsar search to be used with the
 LALInference tools */
 
@@ -316,6 +297,8 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   
   /* add injections if requested */
   injectSignal( &runState );
+  /*fprintf(stderr,"Done the injection\n");
+  sleep(4);*/
   
   /* create sum square of the data to speed up the likelihood calculation */
   sumData( &runState );
@@ -1421,8 +1404,12 @@ void add_initial_variables( LALInferenceVariables *ini,
   add_variable_scale_prior( ini, scaleFac, priorArgs, "psi", pars.psi,  
                             pars.psiErr );
   /* amplitude model parameters for pinned superfluid model*/
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "h1", pars.h1,  
-                            pars.h1Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "I21", pars.I21,  
+                            pars.I21Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "I31", pars.I31,  
+                            pars.I31Err );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "r", pars.r,  
+                            pars.rErr );
   add_variable_scale_prior( ini, scaleFac, priorArgs, "lambda", pars.lambda,  
                             pars.lambdaErr );
   add_variable_scale_prior( ini, scaleFac, priorArgs, "theta", pars.theta,  
@@ -1745,7 +1732,7 @@ set.\n", propfile, tempPar);
        LALInferenceAngularVariance function when calculating the covariance 
        (unless the prior-file contains a phi0 range that is not 2*pi) */
     if( !strcmp(tempPar, "phi0") ){
-      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){ 
+      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
         scale = 1.;
         scaleMin = 0.;
         high = 2.*LAL_PI; /* make sure range spans exactly 2pi */
@@ -1761,6 +1748,24 @@ set.\n", propfile, tempPar);
         scaleMin = -LAL_PI/4.;
         high = LAL_PI/4.; /* make sure range spans exactly pi/2 */
         psidef = 1;
+      }
+    }
+    
+    /* if theta is covering the range 0 to pi scale it, so that it covers
+    the 0 to 2pi range of a circular parameter */
+    if( !strcmp(tempPar, "theta") ){
+      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
+        scale = 0.5;
+        scaleMin = 0;
+      }
+    }
+    
+    /* if lambda is covering the range 0 to pi scale it, so that it covers
+    the 0 to 2pi range of a circular parameter */
+    if( !strcmp(tempPar, "lambda") ){
+      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
+        scale = 0.5;
+        scaleMin = 0;
       }
     }
     
@@ -1788,7 +1793,11 @@ set.\n", propfile, tempPar);
     /* re-add variable */    
     if( !strcmp(tempPar, "phi0") && scale == 1. ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "phi0") && scale == 0.25 ) 
+    else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
+    else if ( !strcmp(tempPar, "theta") && scale == 0.5 ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
+    else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else varyType = LALINFERENCE_PARAM_LINEAR;
     
@@ -1827,8 +1836,8 @@ set.\n", propfile, tempPar);
  
   }
   
-  /* if phi0 and psi have been given in the prior-file and defined at the limits
-     of their range then remove them and add the phi0' and psi' coordinates */
+  /* if phi0 and psi have been given in the prop-file and defined at the limits
+     of their range the remove them and add the phi0' and psi' coordinates */
   if( phidef && psidef ){
     LALInferenceIFOData *datatemp = data;
     
@@ -1933,11 +1942,8 @@ set.\n", propfile, tempPar);
       memcpy( checkPrior->value, &tempVar, 
               LALInferenceTypeSize[checkPrior->type] );
       
-      /* mu -= scaleMin;
-      sigma /= scale; */
-      /* scaled Gaussian will have zero mean and unit sigma */
-      mu = 0.;
-      sigma = 1.0;
+      mu -= scaleMin;
+      sigma /= scale;
       
       /* remove the Gaussian prior values and reset as scaled values */
       LALInferenceRemoveGaussianPrior( runState->priorArgs, checkPrior->name );
@@ -2281,7 +2287,7 @@ parameter file %s is wrong.\n", injectfile);
     /* count the number of SNRs (comma seperated values) */
     numSNRs = count_csv( snrscales );
     
-    if( numSNRs != 1 || numSNRs != (INT4)freqFactors->length ){
+    if( (numSNRs != 1) && (numSNRs != (INT4)freqFactors->length) ){
       fprintf(stderr, "Error... number of SNR values must either be 1, or equal\
  to the number of data streams required for your model!\n");
       exit(0);
@@ -2319,6 +2325,7 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
+    /*fprintf(stderr,"theta: %f, I21: %e, r: %e, ciota: %f, I31: %e\n",injpars.theta, injpars.I21, injpars.r, injpars.cosiota, injpars.I31);*/
     pulsar_model( injpars, data );
     
     /* reset varyphase to its original value */
@@ -2328,7 +2335,7 @@ parameter file %s is wrong.\n", injectfile);
     
     /* If modeltype uses more than one data stream need to advance data on to
        next, so this loop only runs once if there is only 1 det*/
-    for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
+    for ( k = 1; k < (INT4)freqFactors->length; k++ )data = data->next;
   }
   
   /* reset data to head */
@@ -2341,16 +2348,21 @@ parameter file %s is wrong.\n", injectfile);
    
       snrmulti[k] += SQUARE(snrval);
       
-      if ( snrscale[k] == 0 ) fprintf(fpsnr, "%le\t", snrval);
+      /*if ( snrscale[k] == 0 ) */
+      fprintf(fpsnr, "freq_factor: %f, non-scaled snr: %le\t",freqFactors->data[ndets], snrval);
+      fprintf(stderr, "freq_factor: %f, non-scaled snr: %le\t",freqFactors->data[ndets], snrval);
                              
       data = data->next;
     }
-    
     ndets++;
   }
   
+  fprintf(stderr, "\n");
+  
   /* get overall multi-detector SNR */
-  for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
+  for ( k = 0; k < numSNRs; k++ ){
+    snrmulti[k] = sqrt( snrmulti[k] );
+  }
   
   /* only need to print out multi-detector snr if the were multiple detectors */
   if( numSNRs == 1 && snrscale[0] == 0 ){
@@ -2361,15 +2373,26 @@ parameter file %s is wrong.\n", injectfile);
     /* rescale the signal and calculate the SNRs */
     data = runState->data;
    
-    for ( k = 0; k < numSNRs; k++ ) snrscale[k] /= snrmulti[k];
+    for ( k = 0; k < numSNRs; k++ ){
+      snrscale[k] /= snrmulti[k];
+    }
     
-    /* rescale the h0 (and other amplitude factors for other models) */
-    if ( !strcmp(modeltype, "triaxial") || !strcmp(modeltype, "pinsf") ){
+    /* rescale the h0 for triaxial mode only) */
+    if ( !strcmp(modeltype, "triaxial")  ){
       for ( k = 0; k < numSNRs; k++ ){
         if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[k];
-        if ( freqFactors->data[k] == 1. ) injpars.h1 *= snrscale[k];
       }
     }
+    
+    /* rescale the r parameter for pinsf mode only. note, strcmp returns 0 for a match.*/
+    if (!strcmp(modeltype, "pinsf") ){
+      fprintf(stderr,"inj par r: %le\n",injpars.r);
+      fprintf(stderr,"snrscale: %le\n",snrscale[0]);
+      injpars.r /= snrscale[0];
+      /*if ( freqFactors->data[k] == 1. ) injpars.I21 *= snrscale[k];*/
+      fprintf(stderr,"inj par r: %le\n",injpars.r);
+    }
+    
     
     /* recreate the signal with scale amplitude */
     while( data ){
@@ -2400,7 +2423,8 @@ parameter file %s is wrong.\n", injectfile);
       
         snrmulti[k] += SQUARE(snrval);
       
-        fprintf(fpsnr, "%le\t", snrval);
+        fprintf(fpsnr, "scaled snr: %le\t", snrval);
+        fprintf(stderr, "scaled snr: %le\t", snrval);
       
         data = data->next;
       }
@@ -2408,10 +2432,12 @@ parameter file %s is wrong.\n", injectfile);
     
     for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
     
-    if( ndets > 1 ){ 
-      for ( k = 0; k < numSNRs; k++ ) fprintf(fpsnr, "%le\t", snrmulti[k]);
-      fprintf(fpsnr, "\n");
-      /*fprintf(stderr,"snr multi: %f\n",snrmulti); */
+    if( ndets > 1 ){
+      for ( k = 0; k < numSNRs; k++ ){
+        fprintf(fpsnr, "%le\t", snrmulti[k]);
+        fprintf(stderr, "re-scaled snr: %le\n", snrmulti[k]);
+      }
+      fprintf(fpsnr, "\n"); 
     }
     else fprintf(fpsnr, "\n");
 

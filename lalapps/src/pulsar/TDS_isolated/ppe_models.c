@@ -19,7 +19,7 @@ RCSID("$Id$");
  * 
  * This function is the wrapper for functions defining the pulsar model 
  * template to be used in the analysis. It also uses \c rescale_parameter to
- * scale any parameters back to there true values for use in the model and 
+ * scale any parameters back to their true values for use in the model and 
  * places them into a \c BinaryPulsarParams structure.
  * 
  * Note: Any additional models should be added into this function.
@@ -51,7 +51,9 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   }
   
   /*pinned superfluid parameters*/
-  pars.h1 = rescale_parameter( data, "h1" );
+  pars.I21 = rescale_parameter( data, "I21" );
+  pars.I31 = rescale_parameter( data, "I31" );
+  pars.r = rescale_parameter( data, "r" );
   pars.lambda = rescale_parameter( data, "lambda" );
   pars.theta = rescale_parameter( data, "theta" );
  
@@ -669,13 +671,13 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
   
   LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-"LU_Fplus");
+    "LU_Fplus");
   LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-"LU_Fcross");
+    "LU_Fcross");
   /* get the sidereal time since the initial data point % sidereal day */
   sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
                                                         "siderealDay" );
-  
+  /*how do I hangle phi0?*/
   sin_cos_LUT( &sinphi, &cosphi, 0.5*pars.phi0 );
   sin_cos_LUT( &sin2phi, &cos2phi, pars.phi0 );
   
@@ -686,18 +688,19 @@ neutron
      (as defined in Jones 2009):
 
    ****************************************************************************/
+  Xplusf = 0.5*(pars.f0*pars.f0/pars.r)*sin(acos(pars.cosiota))*pars.cosiota;
+  Xcrossf = 0.5*(pars.f0*pars.f0/pars.r)*sin(acos(pars.cosiota));
+  Xplus2f = 0.5*((2*pars.f0)*(2*pars.f0)/pars.r)*(1.+(pars.cosiota*pars.cosiota));
+  Xcross2f = pars.cosiota*((2*pars.f0)*(2*pars.f0)/pars.r);
   
-  Xplusf = 0.125*sin(acos(pars.cosiota))*pars.cosiota*pars.h0;
-  Xcrossf = 0.125*sin(acos(pars.cosiota))*pars.h0;
-  Xplus2f = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
-  Xcross2f = 0.5*pars.cosiota*pars.h0;
-  A1=( (cos(pars.lambda)*cos(pars.lambda)) - pars.h1 ) * (sin( (2*pars.theta)
-));
-  A2=sin(2*pars.lambda)*sin(pars.theta);
-  B1=( (cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) ) -
-(sin(pars.lambda)*sin(pars.lambda)) 
-    + ( pars.h1*(sin(pars.theta)*sin(pars.theta)) );
-  B2=sin(2*pars.lambda)*cos(pars.theta);
+  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( (2*pars.theta));
+  A2=pars.I21*sin(2*pars.lambda)*sin(pars.theta);
+  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) -(sin(pars.lambda)*sin(pars.lambda))) ) 
+    + ( pars.I31*(sin(pars.theta)*sin(pars.theta)) );
+  B2=pars.I21*sin(2*pars.lambda)*cos(pars.theta);
+  
+  /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
+  fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
   
   /* set the psi bin for the lookup table */
   psv = LAL_PI_2 / ( psteps - 1. );
@@ -711,7 +714,9 @@ neutron
   
   tsv = LAL_DAYSID_SI / tsteps;
   
+  /*--------------------------------------------------------------------------*/
   /* set model for 1f component */
+  
   length = data->dataTimes->length;
   
   for( i=0; i<length; i++ ){
@@ -747,20 +752,20 @@ neutron
     /* create the complex signal amplitude model */
     /*at f*/
     data->compModelData->data->data[i].re =
-plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + 
-    ( cross*Xcrossf*((A2*cosphi)-(A1*sinphi)) );
+    ( plus*Xplusf*((A1*cosphi)-(A2*sinphi)) ) + 
+    ( cross*Xcrossf*((A2*cosphi)+(A1*sinphi)) );
     
     data->compModelData->data->data[i].im =
-plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + 
+    ( plus*Xplusf*((A2*cosphi)+(A1*sinphi)) ) + 
     ( cross*Xcrossf*((A2*sinphi)-(A1*cosphi)) );
 
   }
-  
+  /*--------------------------------------------------------------------------*/
   /* set model for 2f component */
   length = data->next->dataTimes->length;
   
-  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
-                                                        "siderealDay" );
+  /*sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
+                                                        "siderealDay" );*/
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
@@ -794,14 +799,14 @@ plus*Xplusf*((A2*cosphi)+(A1*sinphi)) +
     
     /* create the complex signal amplitude model at 2f*/
     data->next->compModelData->data->data[i].re =
-      plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) +
+      (plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) ) +
       cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
     
     data->next->compModelData->data->data[i].im =
-      plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) -
-      cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+      (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-
+      ( cross*Xcross2f*((B1*cos2phi)+(B2*sin2phi)) );
   }
-  
+  /*--------------------------------------------------------------------------*/
 }
 
 
