@@ -194,6 +194,7 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
  --seglen length                length of segments for PSD estimation and analysis in seconds\n\
  --trigtime GPStime             GPS time of the trigger to analyse\n\
 (--srate rate)                  Downsample data to rate in Hz (4096.0,)\n\
+(--injectionsrate rate)         Downsample injection signal to rate in Hz (--srate)\n\
 (--flow [freq1,freq2,...])      Specify lower frequency cutoff for overlap integral (40.0)\n\
 (--fhigh [freq1,freq2,...])     Specify higher frequency cutoff for overlap integral (2048.0)\n\
 (--channel [chan1,chan2,...])   Specify channel names when reading cache files\n\
@@ -918,6 +919,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	LALInferenceIFOData *thisData=IFOdata->next;
 	REAL8 minFlow=IFOdata->fLow;
 	REAL8 MindeltaT=IFOdata->timeData->deltaT;
+  REAL8 InjSampleRate=1.0/MindeltaT;
 	REAL4TimeSeries *injectionBuffer=NULL;
   REAL8 padding=0.4; //default, set in LALInferenceReadData()
 	
@@ -930,7 +932,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	thisData=IFOdata;
 	//InjParams.deltaT = MindeltaT;
 	//InjParams.fStartIn=(REAL4)minFlow;
-	
+
 	if(!LALInferenceGetProcParamVal(commandLine,"--inj")) {fprintf(stdout,"No injection file specified, not injecting\n"); return;}
 	if(LALInferenceGetProcParamVal(commandLine,"--event")){
     event= atoi(LALInferenceGetProcParamVal(commandLine,"--event")->value);
@@ -954,6 +956,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	
 	/* Begin loop over interferometers */
 	while(thisData){
+    InjSampleRate=1.0/thisData->timeData->deltaT;
+    if(LALInferenceGetProcParamVal(commandLine,"--injectionsrate")) InjSampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--injectionsrate")->value);
+    
 		memset(&det,0,sizeof(det));
 		det.site=thisData->detector;
 		COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&thisData->timeData->epoch,
@@ -968,12 +973,12 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 
 		/* We need a long buffer to inject into so that FindChirpInjectSignals() works properly
 		 for low mass systems. Use 100 seconds here */
-		bufferN = (UINT4) (bufferLength/thisData->timeData->deltaT);
+		bufferN = (UINT4) (bufferLength*InjSampleRate);// /thisData->timeData->deltaT);
 		memcpy(&bufferStart,&thisData->timeData->epoch,sizeof(LIGOTimeGPS));
 		XLALGPSAdd(&bufferStart,(REAL8) thisData->timeData->data->length * thisData->timeData->deltaT);
 		XLALGPSAdd(&bufferStart,-bufferLength);
 		injectionBuffer=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries(thisData->detector->frDetector.prefix,
-																	 &bufferStart, 0.0, thisData->timeData->deltaT,
+																	 &bufferStart, 0.0, 1.0/InjSampleRate,//thisData->timeData->deltaT,
 																	 &lalADCCountUnit, bufferN);
 		REAL8TimeSeries *inj8Wave=(REAL8TimeSeries *)XLALCreateREAL8TimeSeries("injection8",
                                                                            &thisData->timeData->epoch,
@@ -1031,13 +1036,16 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
         if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL")) interactionFlags=LAL_SIM_INSPIRAL_INTERACTION_ALL;
       }
-            
-        XLALSimInspiralChooseWaveform(&hplus, &hcross, injEvent->coa_phase, thisData->timeData->deltaT,
+
+        XLALSimInspiralChooseWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
                                                 injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
                                                 injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
                                                 injEvent->spin2z, injEvent->f_lower, injEvent->distance*LAL_PC_SI * 1.0e6,
                                                 injEvent->inclination, lambda1, lambda2, interactionFlags, 
                                                 amporder, order, approximant);
+      
+      XLALResampleREAL8TimeSeries(hplus,thisData->timeData->deltaT);
+      XLALResampleREAL8TimeSeries(hcross,thisData->timeData->deltaT);
       
       if(!hplus || !hcross) {
         fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
@@ -1070,6 +1078,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       
     }else{      
       LALInferenceLALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp,det.site);
+      XLALResampleREAL4TimeSeries(injectionBuffer,thisData->timeData->deltaT); //downsample to analysis sampling rate.
       if(status.statusCode) REPORTSTATUS(&status);
     
       XLALDestroyCOMPLEX8FrequencySeries(resp);
@@ -1079,7 +1088,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       PPNParamStruc         ppnParams;
       memset( &waveform, 0, sizeof(CoherentGW) );
       memset( &ppnParams, 0, sizeof(PPNParamStruc) );
-      ppnParams.deltaT   = thisData->timeData->deltaT;
+      ppnParams.deltaT   = 1.0/InjSampleRate;//thisData->timeData->deltaT;
       ppnParams.lengthIn = 0;
       ppnParams.ppn      = NULL;
       unsigned lengthTest = 0;
@@ -1087,8 +1096,13 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       LALGenerateInspiral(&status, &waveform, injEvent, &ppnParams ); //Recompute the waveform just to get access to ppnParams.tc and waveform.h->data->length or waveform.phi->data->length
       if(status.statusCode) REPORTSTATUS(&status);
 
-      if(waveform.h){lengthTest = waveform.h->data->length;}
-      if(waveform.phi){lengthTest = waveform.phi->data->length;}
+      if(waveform.h){
+        lengthTest = waveform.h->data->length*(thisData->timeData->deltaT*InjSampleRate);
+      }
+      if(waveform.phi){
+        XLALResampleREAL8TimeSeries(waveform.phi,thisData->timeData->deltaT);
+        lengthTest = waveform.phi->data->length;
+      }
     
     
       if(lengthTest>thisData->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT)){
