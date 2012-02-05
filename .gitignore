@@ -13,3 +13,8 @@ lalsuite.spec
 libtool
 TAGS
 auto/
+/bin/
+/etc/
+/include/
+/lib/
+/share/
