@@ -318,7 +318,10 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Couldn't open '/dev/random'\n");
       return EXIT_FAILURE;
     }
-    fread(&seed, sizeof(seed), 1, fpr);
+    if (fread(&seed, sizeof(seed), 1, fpr) != 1) {
+      XLALPrintError("Couldn't read from '/dev/random'\n");
+      return EXIT_FAILURE;
+    }
     fclose(fpr);
     gsl_rng_set(rng, seed);
   }
