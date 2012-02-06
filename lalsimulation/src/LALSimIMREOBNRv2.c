@@ -613,8 +613,9 @@ XLALHighSRStoppingCondition(double UNUSED t,       /**<< Current time (required 
                            void UNUSED *funcParams /**<< Structure containing necessary parameters */
                           )
 {
+  EOBParams *params = (EOBParams *)funcParams;
 
-  if ( values[0] <= 1.0 || isnan( dvalues[3] ) || isnan (dvalues[2]) )
+  if ( values[0] <= 2.5 - 6.0 * params->eta || isnan(dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
     return 1;
   }
