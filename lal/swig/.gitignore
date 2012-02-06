@@ -6,5 +6,7 @@ octave/swiglal*.oct
 python/.swig-lal*.deps
 python/swiglal*.cpp
 python/swiglal*.py
+python/swiglal*.pyc
 python/_swiglal*.so
+python/.install.txt
 python/build/

@@ -129,9 +129,11 @@ do { \
   } \
 } \
 while ( 0 )
-
-#define die( msg ) ( fputs( "Error: " #msg "\n", mystderr ), exit( 1 ), 1 )
-
+#define die(msg) \
+  do { \
+    fputs("Error: " #msg "\n", mystderr); \
+    exit(1); \
+  } while (0)
 
 extern int lalDebugLevel;
 

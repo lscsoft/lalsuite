@@ -251,7 +251,6 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
   char freqInfo[] = "Frequency validity range: 40Hz-5kHz.";
-  int c;
 
   char *cnames[] = { alphareName, gammareName, alphaimName, gammaimName, dqName };
 
@@ -348,8 +347,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, allargs);
 
   /* hostname and user */
-  c = gethostname(hostname,sizeof(hostname));
-  c = getdomainname(domainname,sizeof(domainname));
+  gethostname(hostname,sizeof(hostname));
+  getdomainname(domainname,sizeof(domainname));
   snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
 

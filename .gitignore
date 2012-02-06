@@ -13,3 +13,4 @@ lalsuite.spec
 libtool
 TAGS
 auto/
+/_inst/

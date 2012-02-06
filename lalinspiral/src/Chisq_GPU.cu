@@ -56,7 +56,6 @@ __global__ void
 chisqKernel( REAL4* g_chisq, COMPLEX8* g_q, COMPLEX8 *g_data, 
 	     UINT4 numPoints, UINT4 numChisqBins, REAL4 chisqNorm) 
 {
-  
   for (unsigned l=0; l < numChisqBins; l++)
     {
       unsigned j= blockIdx.x * blockDim.x + threadIdx.x;
@@ -70,11 +69,7 @@ chisqKernel( REAL4* g_chisq, COMPLEX8* g_q, COMPLEX8 *g_data,
 	(chisqNorm * g_q[j].im / (REAL4) (numChisqBins));
       
       g_chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
-      
     }
-  
-  __syncthreads();
-  
 }
 
 ////////////////////////////////////////////////////////////////////////////////

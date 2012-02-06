@@ -318,7 +318,10 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Couldn't open '/dev/random'\n");
       return EXIT_FAILURE;
     }
-    fread(&seed, sizeof(seed), 1, fpr);
+    if (fread(&seed, sizeof(seed), 1, fpr) != 1) {
+      XLALPrintError("Couldn't read from '/dev/random'\n");
+      return EXIT_FAILURE;
+    }
     fclose(fpr);
     gsl_rng_set(rng, seed);
   }
@@ -378,7 +381,7 @@ int main(int argc, char *argv[]) {
       REAL8 twoF_pdf_FDR = 0.0;
 
       /* Output at beginning of loop */
-      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%i\n", h0_iter, h0, dh0, MC_trials);
+      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%" LAL_INT8_FORMAT "\n", h0_iter, h0, dh0, MC_trials);
       fprintf(fp, "MC_trials=%" LAL_INT8_FORMAT, MC_trials);
 
       /* Destroy any previous histogram */
@@ -540,7 +543,7 @@ int main(int argc, char *argv[]) {
       dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
 
       /* Output at end of loop */
-      fprintf(fp, "h0=%0.5e FDR_MC_int=%0.4f FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
+      fprintf(fp, " h0=%0.5e FDR_MC_int=%0.4f FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
       fflush(fp);      
       LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with error=%0.4e, FDR(MC int.)=%0.4f, FDR(2F dist.)=%0.4f\n", h0_iter, H0_ERROR, J, twoF_pdf_FDR);
 
@@ -567,7 +570,7 @@ int main(int argc, char *argv[]) {
 
     /* If number of MC trials exceeded reset */
     if (MC_trials >= MC_trials_reset)
-      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trails=%i): trying again ...\n", h0_iter, MC_trials);
+      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trials=%" LAL_INT8_FORMAT "): trying again ...\n", h0_iter, MC_trials);
 
   } while (MC_trials >= MC_trials_reset);
   

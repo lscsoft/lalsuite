@@ -36,12 +36,19 @@
 #include <lal/FindChirpChisq.h>
 #include "Chisq_CPU.h"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 void Chisq_CPU (REAL4* chisq, COMPLEX8* q, COMPLEX8* qtilde, FindChirpChisqParams* params, 
-		UINT4 numPoints, UINT4 numChisqBins, REAL4 chisqNorm, LALStatus *status)
+    UINT4 numPoints, UINT4 numChisqBins, REAL4 chisqNorm, LALStatus UNUSED *status)
 {
   
   UINT4* chisqBin     = params->chisqBinVec->data;
   COMPLEX8* qtildeBin = params->qtildeBinVec->data;
+  int rc;
 
   for ( UINT4 l = 0; l < numChisqBins; ++l )
     {
@@ -50,9 +57,10 @@ void Chisq_CPU (REAL4* chisq, COMPLEX8* q, COMPLEX8* qtilde, FindChirpChisqParam
       memcpy( qtildeBin + chisqBin[l], qtilde + chisqBin[l],
 	      (chisqBin[l+1] - chisqBin[l]) * sizeof(COMPLEX8) );
       
-      LALCOMPLEX8VectorFFT( status->statusPtr, params->qBinVecPtr[l],
-			    params->qtildeBinVec, params->plan );
-      CHECKSTATUSPTR( status );
+      rc = XLALCOMPLEX8VectorFFT(params->qBinVecPtr[l], \
+          params->qtildeBinVec, params->plan);
+      if (rc != 0)
+        XLAL_ERROR_VOID(rc);
     }
   
   memset( chisq, 0, numPoints * sizeof(REAL4) );

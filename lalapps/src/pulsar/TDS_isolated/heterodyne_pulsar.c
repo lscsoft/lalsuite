@@ -577,6 +577,8 @@ sigma for 2nd time.\n",
       /* if data has been scaled then undo scaling for output */
       
       if( inputParams.binaryoutput ){
+        size_t rc = 0;        
+
         /*FIXME: maybe add header info to binary output - or output to frames!*/
         /* binary output will be same as ASCII text - time real imag */
         if( inputParams.scaleFac > 1.0 ){
@@ -585,17 +587,17 @@ sigma for 2nd time.\n",
           tempreal = resampData->data->data[i].re/inputParams.scaleFac;
           tempimag = resampData->data->data[i].im/inputParams.scaleFac;
           
-          fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
-          fwrite(&tempreal, sizeof(REAL8), 1, fpout);
-          fwrite(&tempimag, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
+          rc = fwrite(&tempreal, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&tempimag, sizeof(REAL8), 1, fpout);
         }
         else{
-          fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
-          fwrite(&resampData->data->data[i].re, sizeof(REAL8), 1, fpout);
-          fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
+          rc = fwrite(&resampData->data->data[i].re, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
         }
         
-        if( ferror(fpout) ){
+        if( ferror(fpout) || !rc ){
           fprintf(stderr, "Error... problem writing out data to binary \
 file!\n");
           exit(1);
