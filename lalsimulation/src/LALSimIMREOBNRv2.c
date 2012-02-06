@@ -1202,6 +1202,7 @@ XLALSimIMREOBNRv2Generator(
               rInitMax, xacc, &pr3in);
    if ( XLAL_IS_REAL8_FAIL_NAN( r ) )
    {
+     XLALPrintError( "Failed solving the initial radius. The desired initial orbital frequency is %e\n", omega );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( XLAL_EFUNC );
