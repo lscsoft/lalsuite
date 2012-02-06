@@ -65,7 +65,6 @@ liblalinspiral_la_SOURCES = \
 	FindChirpBCVChisq.c \
 	FindChirpBCVData.c \
 	FindChirpBCVFilter.c \
-	FindChirpBCVSpinChisq.c \
 	FindChirpBCVSpinData.c \
 	FindChirpBCVSpinFilter.c \
 	FindChirpBCVSpinTemplate.c \

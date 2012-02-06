@@ -327,7 +327,6 @@ testCovering (void)
   gsl_matrix *generatorB = NULL;
   gsl_matrix_view gij;
   REAL8Vector startPoint;
-  REAL8Vector *metric = NULL;
 
   LatticeType type = LATTICE_TYPE_ANSTAR;
   REAL8 radius = 0.1;
@@ -377,7 +376,6 @@ testCovering (void)
   covering = NULL;
 
   /* do the same again with the new high-level function */
-  metric = XLALgsl2LALmetric ( &(gij.matrix) );
   LAL_CALL( LALLatticeCovering (&status, &covering, radius, &(gij.matrix), &startPoint, testArea1,
 				LATTICE_TYPE_ANSTAR), &status);
 

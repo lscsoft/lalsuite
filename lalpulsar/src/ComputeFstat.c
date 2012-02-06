@@ -97,6 +97,8 @@ const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
 
+static const LALStatus blank_status;
+
 static REAL8 p,q,r;          /* binary time delay coefficients (need to be global so that the LAL root finding procedure can see them) */
 
 /*---------- internal prototypes ----------*/
@@ -308,8 +310,8 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
       } ENDFAIL (status);
 
       /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALWeighMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
+      if ( XLALWeightMultiCmplxAMCoeffs ( multiCmplxAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("\nXLALWeightMultiCmplxAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
 
@@ -331,8 +333,8 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
       } ENDFAIL (status);
 
       /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
 
@@ -365,6 +367,16 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
     {
       XLALPrintError ( "Programming error: neither 'multiAMcoef' nor 'multiCmplxAMcoef' are available!\n");
       ABORT ( status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
+    }
+
+  /* if requested, prepare for returning single-IFO F-stat vector */
+  if ( params->returnSingleF )
+    {
+      retF.numDetectors = numDetectors;
+      if ( numDetectors > CFS_MAX_IFOS ) {
+        XLALPrintError ("%s: numDetectors = %d exceeds currently allowed upper limit of detectors (%d) for returnSingleF=TRUE\n", __func__, numDetectors, CFS_MAX_IFOS );
+        ABORT ( status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT );
+      }
     }
 
   /* ----- loop over detectors and compute all detector-specific quantities ----- */
@@ -412,6 +424,21 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
       }
 #endif
 
+      /* compute single-IFO F-stats, if requested */
+      if ( params->returnSingleF )
+        {
+         REAL8 AdX = multiAMcoef->data[X]->A;
+         REAL8 BdX = multiAMcoef->data[X]->B;
+         REAL8 CdX = multiAMcoef->data[X]->C;
+         REAL8 DdX_inv = 1.0 / multiAMcoef->data[X]->D;
+
+	 /* compute final single-IFO F-stat */
+	 retF.FX[X] = DdX_inv * (  BdX * (SQ(FcX.Fa.re) + SQ(FcX.Fa.im) )
+	                           + AdX * ( SQ(FcX.Fb.re) + SQ(FcX.Fb.im) )
+		                   - 2.0 * CdX *( FcX.Fa.re * FcX.Fb.re + FcX.Fa.im * FcX.Fb.im )
+		                   );
+        } /* if returnSingleF */
+
       /* Fa = sum_X Fa_X */
       retF.Fa.re += FcX.Fa.re;
       retF.Fa.im += FcX.Fa.im;
@@ -436,7 +463,8 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   if ( Ed != 0 ) /* extra term in RAA case */
     retF.F += - 2.0 * Dd_inv * Ed *( - retF.Fa.re * retF.Fb.im + retF.Fa.im * retF.Fb.re ); /* -2 E Im(Fa Fb^* ) / D */
 
-  (*Fstat) = retF;
+  /* set correct F-stat reference time (taken from template 'doppler') [relevant only for phase of {Fa,Fb}] */
+  retF.refTime = doppler->refTime;
 
   /* free memory if no buffer was available */
   if ( !cfBuffer )
@@ -448,6 +476,9 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
 
   /* this always needs to be free'ed, as it's no longer buffered */
   XLALDestroyMultiSSBtimes ( multiBinary );
+
+  /* return final Fstat result */
+  (*Fstat) = retF;
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1718,7 +1749,6 @@ void
 LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatus structure */
 				  PulsarCandidate *pulsarParams,  	/**< [out] estimated params {h0,cosi,phi0,psi} plus error-estimates */
 				  const Fcomponents *Fstat,	 	/**<  Fstat-components Fa, Fb */
-				  const LIGOTimeGPS *FstatRefTime,	/**<  reference-time for the phase of Fa, Fb */
 				  const CmplxAntennaPatternMatrix *Mmunu/**<  antenna-pattern A,B,C and normalization S_inv*Tsft */
 				  )
 {
@@ -1751,7 +1781,6 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
   ASSERT ( pulsarParams, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Fstat, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
-  ASSERT ( FstatRefTime, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
   ASSERT ( Mmunu, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
 
   Ad = Mmunu->Ad;
@@ -1935,8 +1964,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
 
   /* ===== debug-output resulting matrices ===== */
   /* propagate initial-phase from Fstat-reference-time to refTime of Doppler-params */
-  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, (*FstatRefTime) ),
-	status );
+  TRY ( LALExtrapolatePulsarPhase (status->statusPtr, &phi0, pulsarParams->Doppler.fkdot, pulsarParams->Doppler.refTime, phi0, Fstat->refTime ), status );
 
   if ( phi0 < 0 )	      /* make sure phi0 in [0, 2*pi] */
     phi0 += LAL_TWOPI;

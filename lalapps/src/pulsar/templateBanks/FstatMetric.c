@@ -1198,9 +1198,9 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   TRY ( LALGetMultiAMCoeffs (status->statusPtr, &(cfg->multiAMcoe), cfg->multiDetStates,
 			     cfg->dopplerPoint.skypos ), status );
 
-  if ( XLALWeighMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
+  if ( XLALWeightMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "\nSomething failed in XLALWeighMultiAMCoeffs() ...\n\n");
+      XLALPrintError ( "\nSomething failed in XLALWeightMultiAMCoeffs() ...\n\n");
       ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT );
     }
 
@@ -1249,7 +1249,6 @@ getMultiPhaseDerivs (LALStatus *status,
   LIGOTimeGPS refTimeGPS;
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
   MultiPhaseDerivs *mdPhi = NULL;
-  REAL8 TspanInv;
 
   INITSTATUS (status, "getMultiPhaseDerivs", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1277,7 +1276,6 @@ getMultiPhaseDerivs (LALStatus *status,
 
   refTimeGPS = multiDetStates->data[0]->data[0].tGPS;	/* use 1st detectors startTime as refTime */
   refTime = GPS2REAL8(refTimeGPS);
-  TspanInv = 1.0 / multiDetStates->Tspan;
 
   /* get tAutumn */
   times.epoch = refTimeGPS;

@@ -1168,7 +1168,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   char filename[256], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
-  INT4 mObsCoh;
   REAL8 f0,f1;
    
   strcpy(  filename, fnameOut);
@@ -1184,7 +1183,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   ySide= ht->ySide;
   xSide= ht->xSide;
   f0=ht->f0Bin* ht->deltaF;
-  mObsCoh = ht->mObsCoh;
   f1=0.0;
   if( ht->spinRes.length ){ f1=ht->spinRes.data[0]; }
   
@@ -1284,7 +1282,6 @@ void PrintLogFile (LALStatus       *status,
   CHAR *fnameLog=NULL; 
   FILE *fpLog=NULL;
   CHAR *logstr=NULL;
-  int rc;
 
   INITSTATUS (status, "PrintLogFile", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1333,7 +1330,7 @@ void PrintLogFile (LALStatus       *status,
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
-    rc = system(command);    
+    system(command);
 
   }
 
@@ -1346,7 +1343,7 @@ void PrintLogFile (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefile, fnameLog);      
-	rc = system (command);	 
+	system (command);
       } 
   }
 
@@ -1359,7 +1356,7 @@ void PrintLogFile (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
+      system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */ 
     }

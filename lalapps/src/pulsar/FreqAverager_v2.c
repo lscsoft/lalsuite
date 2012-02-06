@@ -191,13 +191,12 @@ int main(int argc, char *argv[]){
     /* append an ident-string defining the exact CVS-version of the code used */
     {
       CHAR command[1024] = "";
-      int rc;
       fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
       fprintf (fpLog, "# -----------------------------------------\n");
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
+      system (command);	/* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
       

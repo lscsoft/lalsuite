@@ -844,7 +844,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       UINT4 imin, imax;
       volatile REAL8 dFreq = 1.0 / uvar_Tsft;
       volatile REAL8 tmp;
-      REAL8 fMax, fMax_eff, fMin_eff;
+      REAL8 fMax, fMin_eff;
 
       /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
@@ -860,7 +860,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       fMax = uvar_fmin + uvar_Band;
       tmp = fMax / dFreq;
       imax = (UINT4) ceil (tmp);
-      fMax_eff = (REAL8)imax * dFreq;
 
       /* Increase Band correspondingly. */
       cfg->fmin_eff = fMin_eff;
@@ -992,6 +991,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 
 	/* get timestamps from the loaded noise SFTs */
+        if ( cfg->timestamps )
+          XLALDestroyTimestampVector ( cfg->timestamps );
 	if ( ( cfg->timestamps = XLALExtractTimestampsFromSFTs ( cfg->noiseSFTs )) == NULL ) {
           XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed to obtain timestamps from SFTvector.\n", fn );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);

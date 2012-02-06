@@ -823,7 +823,6 @@ int OutputRandomConfigFile(char *outfile,RandomParameters *rd,RandomParameters *
   char sftbasetext[256];
   char noisedirtext[256];
   char reftimetext[256];
-  INT4 i;
 
   /* defining the actual strings to identify in the input file */
   snprintf(phi0text,256,"phi0");
@@ -877,7 +876,6 @@ int OutputRandomConfigFile(char *outfile,RandomParameters *rd,RandomParameters *
   else h0=rd->h0->value;
 
 
-  i=0;
   /* read in the input file and identify the appropriate lines */ 
   while (fgets(line,255,fpin))  
     {

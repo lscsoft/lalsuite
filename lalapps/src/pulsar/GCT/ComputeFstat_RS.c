@@ -111,7 +111,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 			       const PulsarDopplerParams *doppler,		/**< parameter-space point to compute F for */
 			       MultiSFTVector *multiSFTs, 		        /**< normalized (by DOUBLE-sided Sn!) data-SFTs of all IFOs */
 			       const MultiNoiseWeights *multiWeights,	        /**< noise-weights of all SFTs */
-			       MultiDetectorStateSeries *dummy,                 /**< 'trajectories' of the different IFOs (not used) */
 			       ComputeFParams *params		                /**< addition computational params */
 			       )
 {
@@ -129,13 +128,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   COMPLEX8Vector *Faf_resampled = NULL;
   COMPLEX8Vector *Fbf_resampled = NULL;
   UINT4 numSamples;
-  REAL8 Tsft;
-  REAL8 f0_sft;
   REAL8 f0_shifted;
   REAL8 dt;
-  SFTtype *firstSFT;
   REAL8 df_out;
-  REAL8 f0_out;
   ComplexFFTPlan *pfwd = NULL;  /* this will store the FFT plan */
   COMPLEX8Vector *outa = NULL;  /* this will contain the FFT output of Fa for this detector */
   COMPLEX8Vector *outb = NULL;  /* this will contain the FFT output of Fb for this detector */
@@ -150,13 +145,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 
   cfBuffer = params->buffer;                      /* set local pointer to the buffer location */
   numDetectors = multiSFTs->length;               /* set the number of detectors to the number of sets of SFTs */
-  firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
-  Tsft = 1.0 / firstSFT->deltaF;                  /* define the length of an SFT (assuming 1/T resolution) */
-  f0_sft = firstSFT->f0;                          /* define the frequency of the first bin in the SFT */
-
-  /* here we set the input MultiDetectorStateSeries to NULL since we don't ever use it */
-  /* this is ugly but preserves the same input variables as used for the non-resampling version */
-  dummy = NULL;
+  // unused: SFTtype * firstSFT = &(multiSFTs->data[0]->data[0]);      /* use data from the first SFT from the first detector to set other params */
 
   /* check that the pre-allocated output vector doesn't point to NULL */
   ASSERT ( fstatVector, status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
@@ -165,7 +154,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   ASSERT ( fstatVector->data->length > 0, status, COMPUTEFSTATRSC_EINPUT, COMPUTEFSTATRSC_MSGEINPUT );
 
   df_out = fstatVector->deltaF;                   /* the user defined frequency resolution */
-  f0_out = fstatVector->f0;                       /* the user defined first output frequency bin */
 
   /* check that the multidetector noise weights have the same length as the multiSFTs */
   if ( multiWeights ) {
@@ -293,8 +281,8 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
       } ENDFAIL (status);
 
       /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
       }
 

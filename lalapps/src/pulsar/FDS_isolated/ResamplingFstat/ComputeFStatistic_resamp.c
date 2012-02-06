@@ -643,8 +643,9 @@ int main(int argc,char *argv[])
       PulsarCandidate pulsarParams = empty_PulsarCandidate;
       pulsarParams.Doppler = loudestFCand.doppler;
 
-      LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &GV.searchRegion.refTime, &loudestFCand.Mmunu ),
-	       &status );
+      // deactivated the following call, which is defunct: this function requires {Fa,Fb} in loudestFCand.Fstat, but this is not
+      // returned by the resampling Fstat-code.
+      // LAL_CALL(LALEstimatePulsarAmplitudeParams (&status, &pulsarParams, &loudestFCand.Fstat, &loudestFCand.Mmunu ), &status );
 
       if ( (fpLoudest = fopen (uvar_outputLoudest, "wb")) == NULL)
 	{
@@ -1051,18 +1052,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg )
      * propagate spin-range from refTime to startTime and endTime of observation
      */
     PulsarSpinRange spinRangeStart, spinRangeEnd;	/* temporary only */
-    REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
 
     /* compute spin-range at startTime of observation */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, startTime, &spinRangeRef ), status );
     /* compute spin-range at endTime of these SFTs */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeEnd, endTime, &spinRangeStart ), status );
-
-    fminStart = spinRangeStart.fkdot[0];
-    /* ranges are in canonical format! */
-    fmaxStart = fminStart + spinRangeStart.fkdotBand[0];
-    fminEnd   = spinRangeEnd.fkdot[0];
-    fmaxEnd   = fminEnd + spinRangeEnd.fkdotBand[0];
 
   } /* extrapolate spin-range */
 
@@ -1348,7 +1342,6 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   CHAR *logstr = NULL;
   CHAR command[512] = "";
   FILE *fplog;
-  int rc;
 
   INITSTATUS (status, "WriteFStatLog", rcsid);
   ATTATCHSTATUSPTR (status);
@@ -1378,7 +1371,7 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   fclose (fplog);
 
   sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], log_fname);
-  rc = system(command); /* we don't check this. If it fails, we assume that */
+  system(command); /* we don't check this. If it fails, we assume that */
     			/* one of the system-commands was not available, and */
     			/* therefore the CVS-versions will not be logged */
 
@@ -1882,9 +1875,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
   INT4 k = 0;
   INT4 res=64;
   REAL8 STimeBaseLine = 0;
-  REAL8 LTimeBaseLine = 0;
   REAL8 deltaF = 0;
-  INT4  nDeltaF = 0;            /* Number of Frequency Bins per SFT band */
   INT4 alpha,m;                 /* loop indices */
   REAL8	xTemp;	                /* temp variable for phase model */
   INT4 k1;	                /* defining the sum over which is calculated */
@@ -1897,7 +1888,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 
   COMPLEX16 llSFT;
 
-  REAL8 f,if0,ifmin;
+  REAL8 if0,ifmin;
   
   sinVal=(REAL8 *)XLALMalloc((res+1)*sizeof(REAL8));
   cosVal=(REAL8 *)XLALMalloc((res+1)*sizeof(REAL8)); 
@@ -1910,9 +1901,7 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
 
   /* Variable redefinitions for code readability */
   deltaF  = sft_vect->data->deltaF;
-  nDeltaF = sft_vect->data->data->length;
   STimeBaseLine = 1.0/deltaF;
-  LTimeBaseLine = number*STimeBaseLine;
 
   if0 = floor(FMIN*STimeBaseLine);
 
@@ -1924,8 +1913,6 @@ INT4 CombineSFTs(COMPLEX16Vector *L,SFTVector *sft_vect,REAL8 FMIN,INT4 number,I
   {
     llSFT.re =0.0;
     llSFT.im =0.0;
-
-    f=if0*deltaF+m*deltaF/number;
 
     /* Loop over SFTs that contribute to F-stat for a given frequency */
     for(alpha=0;alpha<number;alpha++)
@@ -2200,8 +2187,6 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 
       REAL8 CurrentTime = 0;
 
-      UINT4 err = 0;
-
       /* Initialize C, length = 0 to begin with. But we need to assign memory to Gap and NumContinuous. The maximum number of continuous blocks is the total number of SFTs, therefore it is appropriate to assign that much memory */
       C.length = 0;
       C.Gap = (REAL8*)XLALMalloc(sizeof(REAL8)*NumofSFTs);
@@ -2323,7 +2308,7 @@ MultiCOMPLEX8TimeSeries* CalcTimeSeries(MultiSFTVector *multiSFTs,FILE *Out,Resa
 	  /* Call the CombineSFTs function only if C.NumContinuous  > 1 */
 	  if(C.NumContinuous[k] > 1)
 	    {
-	      err =  CombineSFTs(L,SFT_Vect,Fmin,C.NumContinuous[k],StartIndex);
+	      CombineSFTs(L,SFT_Vect,Fmin,C.NumContinuous[k],StartIndex);
 	    }
 
 	  /* Else just assign the lone SFT to L */
@@ -2819,8 +2804,8 @@ void ComputeFStat_resamp(LALStatus *status, const PulsarDopplerParams *doppler, 
       } ENDFAIL (status);
 
       /* noise-weight Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("\nXLALWeighMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("\nXLALWeightMultiAMCoeffs() failed with error = %d\n\n", xlalErrno );
 	ABORT ( status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL );
       }
  

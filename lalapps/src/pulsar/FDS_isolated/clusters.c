@@ -397,7 +397,7 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
 /* Given the input (the data and the index of the first datum) and the parameters (the "floor" of the data used to normalize the data, the threshold on the normalized data, the wings that we would like to leave at the edges and the index of the first datum) this routine determines the outliers (how many, how many wing-bins at the edges, the indexes of the outliers, their value)*/
 int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outliers *outliers){
 
-  INT4 j,imin;
+  INT4 j;
   INT4 leftwing, rightwing,wings;
   /*ITOH*/
   /*  UINT4 ileft,iright; */
@@ -413,7 +413,6 @@ int ComputeOutliers(OutliersInput *input, OutliersParams *outliersParams, Outlie
 
   nbins=input->data->length;
   wings=outliersParams->wings;
-  imin=input->ifmin;
   thresh = outliersParams->Thr;
 
 
