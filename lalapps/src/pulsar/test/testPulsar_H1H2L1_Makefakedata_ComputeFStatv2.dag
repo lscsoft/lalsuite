@@ -1,5 +1,3 @@
-# $Id$
-
 DOT pulsarTestDAG.dot
 
 JOB Makefakedata_H1 test_lalapps_Makefakedata.sub

@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $Id$
 #
 # Implementation of various functions relating to sets and intervals on
 # real line, used in creatRDS and elsewhere.

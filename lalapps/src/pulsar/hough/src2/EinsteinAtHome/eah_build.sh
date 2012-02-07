@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# $Id$
 
 ## function definitions follow here, the 'main-code' starts at MAIN
 

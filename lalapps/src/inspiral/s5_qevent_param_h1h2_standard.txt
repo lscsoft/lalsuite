@@ -3,8 +3,6 @@
 # Shourov K. Chatterji
 # shourov@ligo.caltech.edu
 
-# $Id$
-
 channelNames:                {'H1:LSC-STRAIN', 'H2:LSC-STRAIN'}
 frameTypes:                  {'H1_RDS_C03_L2', 'H2_RDS_C03_L2'}
 timeShifts:                  [0 0]
