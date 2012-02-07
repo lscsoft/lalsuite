@@ -19,7 +19,6 @@
 
 /************************ <lalVerbatim file="StreamSeriesInputTestCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

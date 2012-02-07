@@ -19,7 +19,6 @@
 
 /************************ <lalVerbatim file="ButterworthTimeSeriesCV">
 Author: Creighton, T. D.
-Revision: $Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

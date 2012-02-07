@@ -20,7 +20,6 @@
 /*
  * inspawgfile.c
  * Author: Brown, D. A, and Creighton, T. D.
- * $Id$
  */
 
 #include <math.h>

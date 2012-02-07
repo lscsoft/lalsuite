@@ -25,7 +25,6 @@
  * Current Developer: Torres, Cristina V. (LLO)
  * Original Developer: R. Balasubramanian
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *

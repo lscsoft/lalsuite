@@ -24,7 +24,6 @@
  * \ingroup pulsarTODO
  * \brief Header-file defining the API for the LISA-specific functions
  *
- * $Id$
  *
  */
 

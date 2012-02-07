@@ -25,7 +25,6 @@
  * \ingroup moduleLatticeCovering
  * \brief test-functions for the module LatticeCovering
  *
- * $Id$
  *
  */
 

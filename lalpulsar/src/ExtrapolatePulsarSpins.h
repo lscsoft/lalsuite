@@ -20,7 +20,6 @@
 /** \defgroup ExtrapolatePulsarSpins Extrapolate Pulsar Spins and Phase
  *  \ingroup pulsarTODO
  *  \author Reinhard Prix
- *  \date $Date$
  *  \brief  Extrapolate the Pulsar spin-paramters
  *  \f$\{f^{(k)}\}\equiv\{f, \stackrel{.}{f},\ddot{f},...\}\f$, and "spin-ranges"
  * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
@@ -75,7 +74,6 @@
 /** \file
  * \ingroup ExtrapolatePulsarSpins
  * \author Reinhard Prix
- * \date $Date$
  * \brief Contains prototype for XLALExtrapolatePulsarSpins().
  */
 

@@ -1,4 +1,3 @@
-//$Id$
 
 #include "StatPatternRecognition/SprExperiment.hh"
 #include "MySqliteReader.hh"

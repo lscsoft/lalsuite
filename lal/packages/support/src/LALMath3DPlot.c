@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="LALMath3DPlotCV">
  * Author: Hanna, C. R.
- * $Id$
  * </lalVerbatim> */
 
 /* <lalLaTeX>

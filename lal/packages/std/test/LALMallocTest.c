@@ -18,7 +18,6 @@
 */
 
 /*************** <lalVerbatim file="LALMallocTestCV"> *************
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>

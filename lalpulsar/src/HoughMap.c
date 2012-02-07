@@ -23,7 +23,6 @@
  * \brief Subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
  * \author Sintes, A.M.,
  * \ingroup pulsarHough
- * Revision: $Id$
  *
  * History:   Created by Sintes June 22, 2001
  *            Modified    "    August 6, 2001

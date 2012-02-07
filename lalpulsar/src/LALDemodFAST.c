@@ -18,7 +18,7 @@
 */
 
 /**
-\author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X \f$Id\f$
+\author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X
 \file
 \ingroup pulsarTODO
 

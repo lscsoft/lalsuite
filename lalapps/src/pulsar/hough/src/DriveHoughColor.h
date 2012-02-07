@@ -26,7 +26,6 @@
  *
  * Authors: Sintes, A.M., Krishnan, B.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes June 16, 2003
  *    to test part of the Hough-Driver code.

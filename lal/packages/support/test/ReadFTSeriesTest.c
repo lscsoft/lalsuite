@@ -19,7 +19,6 @@
 
 /*************** <lalVerbatim file="ReadFTSeriesTestCV"> *******
 Author: Torres, C. W.
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>

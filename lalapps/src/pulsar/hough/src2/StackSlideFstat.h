@@ -24,7 +24,6 @@
  * \file StackSlideFstat.h
  * \brief Header file for StackSlideFstat.c 
  * \author Gregory Mendell
- * \date $Date$
  * 
  ****/
 

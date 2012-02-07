@@ -19,7 +19,6 @@
 
 /****************** <lalVerbatim file="MersenneRandomTestCV">
 Author: Tibbits, M. M.
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

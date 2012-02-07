@@ -21,10 +21,8 @@
  * \file
  * \ingroup pulsarCommon
  * \author Badri Krishnan and Alicia Sintes
- * \date $Date$
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
  *
- * $Id$
  *
  * History: Created by B. Krishnan Aug, 2004
  *       Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps

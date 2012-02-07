@@ -24,7 +24,6 @@
  * \file
  * \brief Header file for DriveHoughFStat.c 
  * \author Badri Krishnan, Alicia Sintes
- * \date $Date$
  * 
  ****/
 

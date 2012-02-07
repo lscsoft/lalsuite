@@ -23,7 +23,6 @@
  * \file
  * \brief Header file defining the Doppler lattice-covering
  *
- * $Id$
  */
 
 #ifndef _DOPPLERLATTICECOVERING_H  /* Double-include protection. */

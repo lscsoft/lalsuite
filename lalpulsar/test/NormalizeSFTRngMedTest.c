@@ -22,7 +22,6 @@
  * File Name: SFTCleanTest.c
  * Authors:  Krishnan, B.
  *
- * Revision: $Id$
  *
  * History:   Created by Krishnan August 2005
  *

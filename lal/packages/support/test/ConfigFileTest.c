@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="ConfigFileTestCV">
 Author: Reinhard Prix
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>

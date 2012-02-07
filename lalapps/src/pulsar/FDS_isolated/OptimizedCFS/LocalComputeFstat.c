@@ -22,7 +22,6 @@
 /*
  * Stripped together and modified from ComputeFStat.c in LAL
  * by Bernd Machenschalk for Einstein@Home
- * $Id$
  */
 
 

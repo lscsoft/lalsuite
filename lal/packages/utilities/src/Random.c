@@ -20,7 +20,6 @@
 #if 0  /* autodoc block */
 
 <lalVerbatim file="RandomCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>

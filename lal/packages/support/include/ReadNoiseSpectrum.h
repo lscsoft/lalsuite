@@ -23,14 +23,12 @@
  *
  * Author: Brady, P. R.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
 
 /* <lalVerbatim file="ReadNoiseSpectrumHV">
 Author: Brady, P. R.
-$Id$
 </lalVerbatim>
 <lalLaTeX>
 \section{Header \texttt{ReadNoiseSpectrum.h}}

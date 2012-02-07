@@ -23,7 +23,6 @@
 /* Purpose: Drive StackSlide jobs under Condor and the Grid                      */
 /* Author: Mendell, G. and Landry, M.                                            */
 /* Started: 03 December 2003                                                     */
-/* $Id$         */
 /*                                                                               */
 /*********************************************************************************/
 

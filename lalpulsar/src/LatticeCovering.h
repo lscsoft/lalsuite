@@ -34,7 +34,6 @@
  * \ingroup moduleLatticeCovering
  * \brief Header-file defining the API for the lattice-covering functions.
  *
- * $Id$
  *
  */
 

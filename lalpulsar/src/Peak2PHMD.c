@@ -18,7 +18,6 @@
  */
 
 /*
- * Revision: $Id$
  *
  * History:   Created by Sintes June 20, 2001
  *            Modified...

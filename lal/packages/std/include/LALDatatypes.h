@@ -20,7 +20,6 @@
 /** \file
  * \ingroup std
  * \author Creighton, J. D. E., and Creighton, T. D.
- * \date $Id$
  * \brief Provides the basic LAL datatypes.
  *
  * This header defines the standard data types and data
@@ -37,7 +36,6 @@
  */
 /********************************* <lalVerbatim file="LALDatatypesHV">
 Author: J. D. E. Creighton, T. D. Creighton
-$Id$
 ********************************** </lalVerbatim> */
 
 /* <lalLaTeX>

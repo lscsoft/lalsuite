@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="LALRunningMedianHV">
 Author: B. Machenschalk
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>

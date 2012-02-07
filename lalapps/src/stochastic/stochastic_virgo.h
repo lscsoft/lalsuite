@@ -23,7 +23,6 @@
  *
  * Tania Regimbau <regimbau@obs-nice>
  *
- * $Id$
  */
 
 #ifndef _STOCHASTIC2_H

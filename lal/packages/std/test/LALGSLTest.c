@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="LALGSLTestCV">
  * Author: Creighton, J. D. E.
- * $Id$
  **** </lalVerbatim> */
 
 /* <lalLaTeX>

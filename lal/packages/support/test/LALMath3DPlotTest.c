@@ -23,7 +23,6 @@
  *
  * Author: Hanna C. R.
  *
- * Revision: $Id$
  *
  *_______________________________________________________________________________________
  */
@@ -34,7 +33,6 @@
 
 /*<lalVerbatim file="LALMath3DPlotTestCV">
   Author: Hanna, C.R.
-  $Id$
   </lalVerbatim>*/
 
 /*SUBSECTION - PROGRAM - "LALMath3DPlotTest.c" ------------------------------- <lalLaTeX>

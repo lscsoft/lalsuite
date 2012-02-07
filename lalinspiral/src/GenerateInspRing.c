@@ -23,7 +23,6 @@
  *  \brief Functions for adding a (realistic?) merger ringdown to the end of
  *  and inspiral waveform
  *
- * $Id$
  *
  */
 

@@ -19,7 +19,6 @@
 
 /*************** <lalVerbatim file="PrintFTSeriesTestCV"> *******
 Author: J. T. Whelan <jtwhelan@loyno.edu>
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>

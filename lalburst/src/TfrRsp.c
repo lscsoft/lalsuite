@@ -24,7 +24,6 @@
  * Author: Chassande-Mottin, E.
  * Maintainer: Torres, C (Univ of TX at Brownsville)
  *
- * Revision: $Id:
  *
  *-----------------------------------------------------------------------
  *

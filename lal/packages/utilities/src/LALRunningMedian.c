@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="LALRunningMedianCV">
 Author: Somya D. Mohanty, B. Machenschalk
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>

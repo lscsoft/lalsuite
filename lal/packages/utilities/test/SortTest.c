@@ -23,14 +23,12 @@
  *
  * Author: Creighton, T. D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
 
 /*
 
 <lalVerbatim file="SortTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>

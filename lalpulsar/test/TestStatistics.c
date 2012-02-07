@@ -23,7 +23,6 @@
  *
  * Authors: Krishnan, B., Sintes, A.M.,
  *
- * Revision: $Id$
  *
  * History:   Created by Badri Krishnan May 24, 2003
  *

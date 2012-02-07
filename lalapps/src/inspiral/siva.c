@@ -20,7 +20,6 @@
 /*--------------------------------------------------------------------------
  * File name: siva.c  -  Simple Inspiral Veto Application
  * Author: Peter Shawhan (borrowing heavily from sire.c)
- * Revision: $Id $
  *--------------------------------------------------------------------------*/
 
 #include <stdlib.h>

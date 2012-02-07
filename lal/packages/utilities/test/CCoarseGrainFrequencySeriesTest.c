@@ -19,7 +19,6 @@
 
 /****************** <lalVerbatim file="CCoarseGrainFrequencySeriesTestCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

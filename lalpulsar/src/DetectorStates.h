@@ -25,7 +25,6 @@
  * \ingroup pulsarTODO
  * \brief API for the DetectorStates.c functions.
  *
- * $Id$
  *
  */
 

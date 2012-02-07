@@ -23,7 +23,6 @@
  *
  * Author: Anand S. Sengupta and Craig Robinson
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */

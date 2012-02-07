@@ -25,7 +25,6 @@
  *
  * Author: Brown, D. A., Creighton, J. D. E. and Dietz A. IPN contributions from Predoi, V.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */

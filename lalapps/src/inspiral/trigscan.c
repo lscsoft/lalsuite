@@ -23,7 +23,6 @@
  *
  * Author: Brady, P. R., Brown, D. A., Fairhurst, S. and Pekowsky, L.
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */

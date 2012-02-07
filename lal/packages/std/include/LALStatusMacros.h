@@ -19,7 +19,6 @@
 
 /****************************** <lalVerbatim file="LALStatusMacrosHV">
 Author: Creighton, J. D. E. and Creighton, T. D.
-$Id$
 ******************************* </lalVerbatim> */
 
 /* <lalLaTeX>

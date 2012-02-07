@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="ODECV">
  * Author: J. D. E. Creighton
- * $Id$
  **** </lalVerbatim> */
 /**** <lalLaTeX>
  *

@@ -17,9 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/*
-$Id$
-*/
 
 /*
 This code implements the phenomenological formula for hybrid PN-NR waves

@@ -23,7 +23,6 @@
  *  \brief Functions for generating random distributions of inspiral parameters
  *  for injection purposes
  *
- * $Id$
  *
  */
 

@@ -32,7 +32,6 @@
  *
  * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
  *
- * $Id$
  *
  */
 

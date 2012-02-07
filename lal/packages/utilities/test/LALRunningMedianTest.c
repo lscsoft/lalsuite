@@ -19,7 +19,6 @@
 
 /******************************** <lalVerbatim file="LALRunningMedianTestCV">
 Author: B. Machenschalk
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

@@ -23,7 +23,6 @@
  * \author Sintes, A.M., and Krishnan, B. 
  * \brief Header file for  PeakSelect.c
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan Oct 2005

@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 <lalVerbatim file="SegmentsIOCV">
 Author: Peter Shawhan
-Revision: $Id$
 </lalVerbatim>
 
 <lalLaTeX>

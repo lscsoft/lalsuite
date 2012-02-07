@@ -19,7 +19,6 @@
 
 /**************************** <lalVerbatim file="ReadNoiseSpectrumCV">
 Author: Patrick Brady
-$Id$
 *********************************** </lalVerbatim> */
 
 /* <lalLaTeX>

@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="LALMathematicaHV">
  * Author: Hanna, C. R.
- * $Id$
  * </lalVerbatim> */
 
 /* <lalLaTeX>

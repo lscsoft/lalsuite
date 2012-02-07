@@ -23,7 +23,6 @@
  *
  * Author: Fairhurst, S. (based on inspiral.c by Brown, D.A.)
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */

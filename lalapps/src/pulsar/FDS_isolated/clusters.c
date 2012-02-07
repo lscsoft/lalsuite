@@ -23,7 +23,6 @@
 /* Revision: Y. Itoh - AEI December 2003  */
 /*           Commented out "if Nclust==0. NclustPoints[Nclust]=k"  */
 
-/* $Id$ */
 
 /* #include <stdlib.h> */
 #include <lal/LALStdlib.h>

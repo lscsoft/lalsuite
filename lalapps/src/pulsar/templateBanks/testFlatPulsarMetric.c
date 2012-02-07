@@ -24,7 +24,6 @@
  * \ingroup flatPulsarMetric
  * \brief test-functions for the module FlatPulsarMetric.
  *
- * $Id$
  *
  */
 

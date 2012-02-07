@@ -24,7 +24,6 @@
  * \ingroup moduleLatticeCovering
  * \brief Functions for covering metric parameter-spaces with a lattice.
  *
- * $Id$
  *
  * \todo
  *  - iterative generation of lattice

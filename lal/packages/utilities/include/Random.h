@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="RandomHV">
  * Author: Creighton, J. D. E. and Tibbits, M. M.
- * $Id$
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>

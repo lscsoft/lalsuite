@@ -24,7 +24,6 @@
  * \ingroup PulsarMetric
  * \brief Header-file defining the API for the flat pulsar-metric functions.
  *
- * $Id$
  *
  */
 

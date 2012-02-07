@@ -20,7 +20,6 @@
 /******************************** <lalVerbatim file="StringConvertCV">
 Authors: Creighton, T. D.
          Shawhan, P. S.   (LALStringToGPS)
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>

@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="LALStdlibHV">
 Author: J. D. E. Creighton, T. D. Creighton
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>

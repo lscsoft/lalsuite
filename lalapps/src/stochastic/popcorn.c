@@ -23,7 +23,6 @@
  * Tania Regimbau <regimbau@obs-nice.fr>  
  *
  *
- * $Id$
  */
 
 

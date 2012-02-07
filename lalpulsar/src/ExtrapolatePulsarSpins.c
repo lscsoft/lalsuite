@@ -33,7 +33,6 @@
 /** \file
  * \ingroup ExtrapolatePulsarSpins
  * \author Reinhard Prix
- * \date $Date$
  *
  * \brief Defines functions to extrapolate the pulsar spin-paramters
  * \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$ from one SSB epoch to another.

@@ -19,7 +19,6 @@
 
 /*!@file
    @author Itoh, Yousuke  
-   $Id$
    @note 
    @brief A helper function for wide-sky-area search codes validation.
 
@@ -43,7 +42,6 @@
   to introduce additional command line arguments to ComputeFStatistic. 
 
 
- $Revision$
 
  @todo 
 <ul>

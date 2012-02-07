@@ -24,7 +24,6 @@
  * \file
  * \brief Header file defining the API for DopplerScan.
  *
- * $Id$
  */
 
 #ifndef _DOPPLERSCAN_H  /* Double-include protection. */

@@ -24,7 +24,6 @@
  * \ingroup PulsarMetric
  * \brief Calculate flat approximation to the pulsar-metric.
  *
- * $Id$
  *
  */
 

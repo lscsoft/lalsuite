@@ -21,10 +21,8 @@
 /** \file
  * \ingroup support
  * \author Creighton, J. D. E.
- * \date $Date$
  * \brief Routines for exporting time series as sound files.
  *
- * $Id$
  */
 
 #include <math.h>

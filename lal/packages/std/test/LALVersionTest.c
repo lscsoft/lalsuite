@@ -19,7 +19,6 @@
 
 #if 0 /* autodoc block */
 <lalVerbatim file="LALVersionTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>

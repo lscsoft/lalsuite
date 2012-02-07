@@ -24,7 +24,6 @@
  *
  * \brief Test-code for NRWaveIO
  *
- * $Id$
  *
  */
 

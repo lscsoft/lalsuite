@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M.,
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 15, 2001
  *            Modified...

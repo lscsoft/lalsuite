@@ -18,7 +18,6 @@
 */
 
 /*************** <lalVerbatim file="PrintVectorTestCV"> *************
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>

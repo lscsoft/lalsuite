@@ -23,7 +23,6 @@
  *
  * Authors:  Krishnan, B.
  *
- * Revision: $Id$
  *
  * History:   Created by Krishnan Feb 24, 2004
  *
@@ -33,7 +32,6 @@
 
 /* *********************************** <lalVerbatim file="RngMedBiasHV">
 Author: Krishnan, B., Itoh, Y.
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *********************************************

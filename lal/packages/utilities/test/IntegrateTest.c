@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="IntegrateTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>

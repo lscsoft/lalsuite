@@ -98,7 +98,6 @@ the local (mean) sidereal time at the detector for given GPS-time,
 (which I double-checked with an independent Mathematica script),
 and and LALBarycenter() to calculate \f$\tau(t)\f$.
 
- * $Id$
  *
  */
 

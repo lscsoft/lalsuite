@@ -25,7 +25,6 @@
  *
  * Based on inspiral.c, originally by Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */

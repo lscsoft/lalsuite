@@ -22,7 +22,6 @@
  * File Name: RngMedBiasTest.c
  * Authors: Krishnan, B., Itoh, Y.,
  *
- * Revision: $Id$
  *
  * History:   Created by Krishnan Mar 2, 2004
  *            Modified...
@@ -31,7 +30,6 @@
  */
 /************************************ <lalVerbatim file="RngMedBiasTestCV">
 Author: Krishnan, B. and Itoh, Y.
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *******************************************************

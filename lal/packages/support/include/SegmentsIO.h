@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="SegmentsIOHV">
 Author: Peter Shawhan
-Revision: $Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>

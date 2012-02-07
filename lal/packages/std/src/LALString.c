@@ -20,10 +20,8 @@
 /** \file
  * \ingroup std
  * \author Creighton, J. D. E.
- * \date $Date$
  * \brief XLAL string manipulation routines.
  *
- * $Id$
  */
 
 #include <string.h>

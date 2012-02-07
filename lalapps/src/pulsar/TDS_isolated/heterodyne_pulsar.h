@@ -19,7 +19,6 @@
 
 /*
   Author: Pitkin, M. D.
-  $Id$
 */
 
 /* Matt Pitkin 09/02/06 -------------- heterodyne_pulsar.h */

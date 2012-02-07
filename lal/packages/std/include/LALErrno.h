@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="LALErrnoHV">
 Author: Cannon, K. C.
-Revision: $Id$
 </lalVerbatim>
  */
 

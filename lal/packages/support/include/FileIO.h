@@ -18,7 +18,6 @@
 */
 
 /* <lalVerbatim file="FileIOHV">
-$Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>

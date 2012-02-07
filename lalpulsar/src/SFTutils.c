@@ -24,7 +24,6 @@
  * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVector's.
  *
- * $Id$
  *
  */
 

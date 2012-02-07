@@ -21,7 +21,6 @@
 /** \file
  * \ingroup std
  * \author Creighton, J. D. E.
- * \date $Date$
  * \brief Routines for exporting time series data as sound files.
  *
  * Supported formats are AU and WAVE.  AIFF is not supported at this time.

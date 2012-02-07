@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., BCV-Modifications by Messaritaki E.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */

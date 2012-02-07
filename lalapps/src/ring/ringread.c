@@ -23,7 +23,6 @@
  *
  * Author: Goggin, L. M. based on sire.c by Brady, P. R, Brown, D. A., and Fairhurst, S
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */

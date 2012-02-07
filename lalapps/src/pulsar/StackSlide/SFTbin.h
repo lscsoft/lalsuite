@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M.,  Krishnan, B. & inspired from Siemens, X.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified...

@@ -23,7 +23,6 @@
  *
  *  \brief Functions for reading/writing numerical relativity waveforms
  *
- * $Id$
  *
  */
 

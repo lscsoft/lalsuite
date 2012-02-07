@@ -22,9 +22,8 @@
  * File Name: coherent_inspiral.c
  *
  * Author: Bose, S. and Seader, S. and Rogan, A.
- *
- * Revision: $Id$
- *
+ * 
+ * 
  *-----------------------------------------------------------------------
  */
 

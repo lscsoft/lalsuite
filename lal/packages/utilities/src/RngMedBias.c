@@ -23,7 +23,6 @@
  *
  * Authors: Krishnan, B.  Itoh, Y.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified...
@@ -33,7 +32,6 @@
 
 /************************************ <lalVerbatim file="RngMedBiasCV">
 Author: Krishnan, B., Itoh, Y.
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *******************************************************

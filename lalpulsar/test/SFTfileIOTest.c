@@ -25,7 +25,6 @@
  *
  * \brief Test-code for SFT-fileIO library
  *
- * $Id$
  *
  */
 

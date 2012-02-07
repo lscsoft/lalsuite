@@ -19,7 +19,6 @@
 
 /*----------------------------------- <lalVerbatim file="SegmentsIOTestCV">
  * Author: Peter Shawhan
- * Revision: $Id$
  *----------------------------------- </lalVerbatim> */
 
 #if 0

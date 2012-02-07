@@ -219,7 +219,6 @@ not in the <tt>2*Dterms</tt> band are initialized to zero.
  * \ingroup moduleGeneratePulsarSignal
  * \brief API for GeneratePulsarSignal.c
  *
- * $Id$
  */
 
 /* NOTES: */
