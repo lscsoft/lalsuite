@@ -529,6 +529,18 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
   if ( !qMatrix || !aCoeff || !amps || !pMatrix || !bCoeff || !omegaVec )
   {
     /* TODO : Free memory */
+    gsl_matrix_free( qMatrix );
+    gsl_vector_free( amps );
+    gsl_vector_free( aCoeff );
+    gsl_permutation_free( perm1 );
+    gsl_matrix_free( pMatrix );
+    gsl_vector_free( omegaVec );
+    gsl_vector_free( bCoeff );
+    gsl_permutation_free( perm2 );
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
@@ -537,6 +549,10 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
   nrDeltaT = XLALSimIMREOBGetNRPeakDeltaT( l, m, eta );
   if ( XLAL_IS_REAL8_FAIL_NAN( nrDeltaT ) )
   {
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -579,6 +595,10 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
 
   if ( XLAL_IS_REAL8_FAIL_NAN( nra ) || XLAL_IS_REAL8_FAIL_NAN( nraDDot ) )
   {
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -628,6 +648,10 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
 
   if ( XLAL_IS_REAL8_FAIL_NAN( nromega ) || XLAL_IS_REAL8_FAIL_NAN( nromegaDot ) )
   {
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
