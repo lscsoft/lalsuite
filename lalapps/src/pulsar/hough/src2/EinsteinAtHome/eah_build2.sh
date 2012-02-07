@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# $Id: eah_build2.sh,v 1.76 2010/07/19 17:12:34 bema Exp $
-
 # simple failure
 fail() {
     echo
