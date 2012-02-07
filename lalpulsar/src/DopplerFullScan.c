@@ -640,8 +640,16 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
  *
  * Freq   Alpha  Delta  f1dot  f2dot  f3dot
  *
- * \note Given that in this case we don't know the covered sky-region and frequency-bands
- * beforehand, this function determines the effective search-ranges and sets them in DopplerFullScanState
+ * \note
+ * *) this function returns the effective spinRange covered by the read-in template bank
+ *    by storing it in scan->spinRange, potentially overwriting any previous user-input values in there.
+ *
+ * *) a possible future extension should probably *clip* the template-bank to the user-specified ranges,
+ *    then return the effective ranges spanned by the resultant template bank.
+ *
+ * *) in order to avoid surprises until such a feature is implemented, we currently return an error if
+ *    any of the input spinRanges are non-zero
+ *
  */
 void
 loadFullGridFile ( LALStatus *status,
@@ -663,28 +671,74 @@ loadFullGridFile ( LALStatus *status,
   ASSERT ( init->gridFile, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
+  /* Check that all user-input spin-ranges are zero, otherwise fail!
+   *
+   * NOTE: In the future we should allow combining the user-input ranges with
+   * those found in the grid-file by forming the intersection, ie *clipping*
+   * of the read-in grids to the user-input ranges
+   */
+  for ( UINT4 s = 0; s < PULSAR_MAX_SPINS; s ++ )
+    {
+      if ( (init->searchRegion.fkdot[s] != 0) || (init->searchRegion.fkdotBand[s] != 0 )) {
+        XLALPrintError ("\n%s: non-zero input spinRanges currently not supported! fkdot[%d] = %g, fkdotBand[%d] = %g\n\n",
+                        __func__, s, init->searchRegion.fkdot[s], s, init->searchRegion.fkdotBand[s] );
+        ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+      }
+    } /* for s < max_spins */
+
+  /* open input data file */
   if ( (fp = LALOpenDataFile (init->gridFile)) == NULL) {
     XLALPrintError ("Could not open data-file: `%s`\n\n", init->gridFile);
     ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
+  /* prepare grid-entry buffer */
   if ( (entry = XLALCreateREAL8Vector ( 6 ) ) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
+
+  /* keep track of the spinRanges spanned by the template bank */
+  REAL8 FreqMax  = - LAL_REAL4_MAX, FreqMin  = LAL_REAL4_MAX;	// only using REAL4 ranges to avoid over/under flows, and should be enough
+  REAL8 f1dotMax = - LAL_REAL4_MAX, f1dotMin = LAL_REAL4_MAX;
+  REAL8 f2dotMax = - LAL_REAL4_MAX, f2dotMin = LAL_REAL4_MAX;
+  REAL8 f3dotMax = - LAL_REAL4_MAX, f3dotMin = LAL_REAL4_MAX;
 
   /* parse this list of lines into a full grid */
   numTemplates = 0;
   tail = &head;	/* head will remain empty! */
   while ( ! feof ( fp ) )
     {
-      if ( 6 != fscanf( fp, "%lf %lf %lf %lf %lf %lf\n",
-			entry->data + 0, entry->data + 1, entry->data + 2, entry->data + 3, entry->data + 4, entry->data + 5 ) )
-	{
-	  LogPrintf (LOG_CRITICAL,"ERROR: Failed to parse 6 REAL's from line %d in grid-file '%s'\n\n", numTemplates + 1, init->gridFile);
-	  if ( head.next )
-	    XLALREAL8VectorListDestroy (head.next);
-	  ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	}
+      REAL8 Freq, Alpha, Delta, f1dot, f2dot, f3dot;
+      // File format expects lines containing 6 columns: Freq   Alpha  Delta  f1dot  f2dot  f3dot
+      if ( 6 != fscanf( fp, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "\n",
+                        &Freq, &Alpha, &Delta, &f1dot, &f2dot, &f3dot ) )
+        {
+          LogPrintf (LOG_CRITICAL,"ERROR: Failed to parse 6 REAL8's from line %d in grid-file '%s'\n\n", numTemplates + 1, init->gridFile);
+          if ( head.next )
+            XLALREAL8VectorListDestroy (head.next);
+          ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+        }
+
+      /* keep track of maximal spans */
+      if ( Freq < FreqMin ) FreqMin = Freq;
+      if ( Freq > FreqMax ) FreqMax = Freq;
+
+      if ( f1dot < f1dotMin ) f1dotMin = f1dot;
+      if ( f1dot > f1dotMax ) f1dotMax = f1dot;
+
+      if ( f2dot < f2dotMin ) f2dotMin = f2dot;
+      if ( f2dot > f2dotMax ) f2dotMax = f2dot;
+
+      if ( f3dot < f3dotMin ) f3dotMin = f3dot;
+      if ( f3dot > f3dotMax ) f3dotMax = f3dot;
+
+      /* add this entry to template-bank list */
+      entry->data[0] = Freq;
+      entry->data[1] = Alpha;
+      entry->data[2] = Delta;
+      entry->data[3] = f1dot;
+      entry->data[4] = f2dot;
+      entry->data[5] = f3dot;
 
       if ( (tail = XLALREAL8VectorListAddEntry (tail, entry)) == NULL )
 	{
@@ -697,14 +751,28 @@ loadFullGridFile ( LALStatus *status,
 
     } /* while !feof(fp) */
 
-  LALFree ( entry->data );
-  LALFree ( entry );
+  XLALDestroyREAL8Vector ( entry );
 
-  LogPrintf (LOG_DEBUG, "Template grid: nTot = %.0f\n", 1.0 * numTemplates );
-  /* return ready scan-state  */
+  /* update scan-state  */
+  scan->spinRange.fkdot[0]     = FreqMin;
+  scan->spinRange.fkdotBand[0] = FreqMax - FreqMin;
+
+  scan->spinRange.fkdot[1]     = f1dotMin;
+  scan->spinRange.fkdotBand[1] = f1dotMax - f1dotMin;
+
+  scan->spinRange.fkdot[2]     = f2dotMin;
+  scan->spinRange.fkdotBand[2] = f2dotMax - f2dotMin;
+
+  scan->spinRange.fkdot[3]     = f3dotMin;
+  scan->spinRange.fkdotBand[3] = f3dotMax - f3dotMin;
+
   scan->numTemplates = numTemplates;
   scan->covering = head.next;	/* pass result (without head!) */
   scan->thisGridPoint = scan->covering;	/* init to start */
+
+  LogPrintf (LOG_DEBUG, "Template grid: nTot = %.0f\n", 1.0 * numTemplates );
+  LogPrintf (LOG_DEBUG, "Spanned ranges: Freq in [%g, %g], f1dot in [%g, %g], f2dot in [%g, %g], f3dot in [%g, %g]\n",
+             FreqMin, FreqMax, f1dotMin, f1dotMax, f2dotMin, f2dotMax, f3dotMin, f3dotMax );
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );
