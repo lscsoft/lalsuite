@@ -1,7 +1,6 @@
 # Epoch data for S5 H2
 # This file contains data that can change from epoch to epoch and must be
 # accounted for when doing noise comparisons
-# $Id$
 #
 # Epoch 	GPS start	GPS end		duration	open loop gain (re)	open loop gain (im)	servo (re)		servo (im)		whitener (re)		whitener (im)		filters file	olg file	sensing file
 1		815155213	822760000	7604787		-0.44761314397906 	-0.09999284928620	-0.14346135865327	0.22204243370711	0.0			0.0			S5H2Filters_815155213-9793975.txt	H-H2_CAL_REF_OLOOP_GAIN_S5_V3-815155213-9793975.txt	H-H2_CAL_REF_CAV_GAIN_DARM_ERR_S5_V3-815155213-9793975.txt
