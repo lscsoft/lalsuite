@@ -196,12 +196,17 @@ XLALDestroyStringVector ( LALStringVector *vect )
 /* comparison function for strings */
 static int StringCompare (const void *p1, const void *p2)
 {
-  const char *s1 = p1;
-  const char *s2 = p2;
-  return (strcmp ( s1, s2 ) );
+  /* this formulation explicitly follows the example given in 'man qsort' for string-array sorting
+   * Quoting from there:
+   ** The actual arguments to this function are "pointers to
+   ** pointers to char", but strcmp(3) arguments are "pointers
+   ** to char", hence the following cast plus dereference
+   *
+   */
+  return strcmp ( * ( char * const *) p1, * ( char * const *) p2 );
 }
 
-/** Sort string-vector alphabetically
+/** Sort string-vector alphabetically *in place*
  */
 int
 XLALSortStringVector (LALStringVector *strings)
@@ -211,7 +216,7 @@ XLALSortStringVector (LALStringVector *strings)
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-  qsort ( (void*)(strings->data), (size_t)(strings->length), sizeof(CHAR*), StringCompare );
+  qsort ( (void*)(&strings->data[0]), (size_t)(strings->length), sizeof(strings->data[0]), StringCompare );
 
   return XLAL_SUCCESS;
 

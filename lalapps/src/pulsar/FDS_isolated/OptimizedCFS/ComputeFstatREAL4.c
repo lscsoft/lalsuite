@@ -253,9 +253,9 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
           }
 
           /* apply noise-weights to Antenna-patterns and compute A,B,C */
-          if ( XLALWeighMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
+          if ( XLALWeightMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
+            XLALPrintError("%s: XLALWeightMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
             XLAL_ERROR ( XLAL_EFUNC );
           }
 
@@ -371,8 +371,8 @@ XLALDriverFstatREAL4 ( REAL4 *Fstat,	                 		/**< [out] Fstatistic va
       }
 
       /* apply noise-weights to Antenna-patterns and compute A,B,C */
-      if ( XLALWeighMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
-	XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAMcoef, multiWeights ) != XLAL_SUCCESS ) {
+	XLALPrintError("%s: XLALWeightMultiAMCoeffs() failed with error = %d\n", __func__, xlalErrno );
 	XLAL_ERROR ( XLAL_EFUNC );
       }
 
@@ -611,7 +611,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
       REAL4 realQXP, imagQXP;	/* Re/Im of Q_alpha R_alpha */
 
       REAL4 lambda_alpha;
-      REAL4 kappa_max, kappa_star;
+      REAL4 kappa_star;
 
       /* ----- calculate kappa_max and lambda_alpha */
       {
@@ -663,7 +663,6 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 
         kstar = (INT4)Dphi_alpha_int + (INT4)Dphi_alpha_rem;
 	kappa_star = REM(Dphi_alpha_int) + REM(Dphi_alpha_rem);
-	kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
 
 	/* ----- check that required frequency-bins are found in the SFTs ----- */
 	k0 = kstar - Dterms + 1;
@@ -730,6 +729,7 @@ XLALComputeFaFbREAL4 ( FcomponentsREAL4 *FaFb,		/**< [out] single-IFO Fa/Fb for 
 	   * take out repeated divisions into a single common denominator,
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
+          REAL4 kappa_max = kappa_star + 1.0f * Dterms - 1.0f;
 	  REAL4 Sn = (*Xalpha_l).re;
 	  REAL4 Tn = (*Xalpha_l).im;
 	  REAL4 pn = kappa_max;

@@ -628,7 +628,6 @@ int main(int argc, char *argv[]){
 	   the fractional part [0,1) and _int refers to the integer
 	   part. */
 
-	int    dt_int;
 	double dt_fra;
 
 	/*  Avoid long longs in inner loop as they are slow. */
@@ -646,7 +645,7 @@ int main(int argc, char *argv[]){
 	t_rem   -= t_int*SRATE;
 	t_int   += tdelt;
 
-	dt_int   = t_int;
+	// unused: int dt_int   = t_int;
 	dt_fra   = t_rem;
 	dt_fra  /= SRATE;
 

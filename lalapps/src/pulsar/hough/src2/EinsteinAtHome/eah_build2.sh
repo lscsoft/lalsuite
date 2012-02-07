@@ -80,8 +80,10 @@ for i; do
 	    rebuild_boinc=""
 	    rebuild_lal=""
 	    rebuild="" ;;
+	--gc-opt)
+	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
 	--64)
-	    CPPFLAGS="-DGC_SSE2_OPT -m64 $CPPFLAGS"
+	    CPPFLAGS="-m64 $CPPFLAGS"
 	    CXXFLAGS="-m64 $CXXFLAGS"
 	    CFLAGS="-m64 $CFLAGS"
 	    LDFLAGS="-m64 $LDFLAGS" ;;
@@ -97,7 +99,7 @@ for i; do
 	    planclass=__SSE
 	    acc="_sse";;
 	--sse2)
-	    CPPFLAGS="-DGC_SSE2_OPT -DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
+	    CPPFLAGS="-DENABLE_SSE_EXCEPTIONS $CPPFLAGS"
 	    CFLAGS="-msse -msse2 -mfpmath=sse -march=pentium-m $CFLAGS"
             fftw_copts_single=--enable-sse
             fftw_copts_double=--enable-sse2
@@ -163,6 +165,7 @@ for i; do
 	    echo "  --sse             build an App that uses SSE"
 	    echo "  --sse2            build an App that uses SSE2"
 	    echo "  --altivec         build an App that uses AltiVec"
+	    echo "  --gc-opt          build an App that uses SSE2 GC optimization (doesn't work with current LineVeto code)"
 	    echo "  --boinc-rev=<rev> specify a BOINC SVN trunk revision to use"
 	    echo "  --with-ssl=<path> gets paased to BOINC configure"
 	    echo "  --check           test the newly built HierarchSearchGC App"
@@ -226,7 +229,6 @@ else
                 platform=powerpc-apple-darwin
 	    else
 		platform=i686-apple-darwin
-		CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS"
 	    fi
 	    LDFLAGS="-framework Carbon -framework AppKit -framework IOKit -framework CoreFoundation $LDFLAGS" ;;
 	Linux)
@@ -267,7 +269,7 @@ if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
     LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
 fi
 
-export CPPFLAGS="-DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
+export CPPFLAGS="-DGCTTOP_MAX_IFOS=2 -DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
 export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"
@@ -565,8 +567,8 @@ if [ ! .$MACOSX_DEPLOYMENT_TARGET = .10.3 ] ; then
     log_and_do make eah_Makefakedata_v4$ext
     log_and_do cp eah_Makefakedata_v4$ext "$EAH"
     log_and_do cd "$BUILD/lalapps/src/pulsar/FDS_isolated"
-    log_and_do make eah_PredictFStat$ext
-    log_and_do cp eah_PredictFStat$ext "$EAH"
+    log_and_do make eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext
+    log_and_do cp eah_PredictFStat$ext eah_ComputeFStatistic_v2$ext "$EAH"
 fi
 
 log_and_show "==========================================="
@@ -585,8 +587,9 @@ if [ .$check = .true ]; then
     log_and_do rm -rf test
     log_and_do mkdir test
     log_and_do cd test
-    log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4$ext
-    log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat$ext
+    log_and_do cp ../eah_Makefakedata_v4$ext lalapps_Makefakedata_v4
+    log_and_do cp ../eah_PredictFStat$ext lalapps_PredictFStat
+    log_and_do cp ../eah_ComputeFStatistic_v2$ext lalapps_ComputeFStatistic_v2
     log_and_do cp "$INSTALL"/share/lalpulsar/*05-09.dat .
     NOCLEANUP=1 PATH=".:$PATH" LAL_DATA_PATH="$PWD" \
 	log_and_do ../source/lalsuite/lalapps/src/pulsar/GCT/testHS.sh $wine "$check_app" --Dterms=8

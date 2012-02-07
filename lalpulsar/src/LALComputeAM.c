@@ -613,95 +613,114 @@ void LALComputeAM (LALStatus          *status,
 
 } /* LALComputeAM() */
 
-/** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
- * compute the resulting \f$A_d, B_d, C_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} \sqrt{w_{X\alpha} a_{X\alpha}^2\f$ etc.
+/** <b>Replace</b> AM-coeffs by weighted AM-coeffs, i.e.
+ * \f$a_{X\alpha} \rightarrow \widehat{a}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$, and
+ * \f$b_{X\alpha} \rightarrow \widehat{b}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$,
+ * where \f$w_{X\alpha}\f$ are the \a multiWeights for SFT \f$\alpha\f$ and detector \f$X\f$.
  *
- * NOTE: this function modifies the AMCoeffs *in place* !
- * NOTE2: if the weights = NULL, we assume unit-weights.
+ * Also compute the resulting per-detector \f$X\f$ antenna-pattern matrix coefficients
+ * \f$\widehat{A}_X \equiv \sum_{\alpha} \widehat{a}^2_{X\alpha}\f$,
+ * \f$\widehat{B}_X \equiv \sum_{\alpha} \widehat{b}^2_{X\alpha}\f$,
+ * \f$\widehat{C}_X \equiv \sum_{\alpha} \widehat{a}_{X\alpha}\widehat{b}_{X\alpha}\f$,
+ *
+ * and corresponding multi-detector antenna-pattern matrix coefficients
+ * \f$\widehat{A} \equiv \sum_{X} \widehat{A}_X\f$,
+ * \f$\widehat{B} \equiv \sum_{X} \widehat{B}_X\f$,
+ * \f$\widehat{C} \equiv \sum_{X} \widehat{C}_X\f$.
+ *
+ * See Sec.4.1 in CFSv2.pdf notes https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4
+ *
+ * \note *) this function modifies the input AMCoeffs->{a,b,c} *in place* !
+ * \note *) if multiWeights = NULL, we assume unit-weights.
  */
 int
-XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
-  UINT4 numDetectors, X;
-  REAL8 Ad, Bd, Cd;
-  UINT4 alpha;
 
-  if ( !multiAMcoef )
+  /* ----- input sanity checks ----- */
+  if ( !multiAMcoef ) {
+    XLALPrintError ("%s: illegal NULL input received in 'multiAMcoefs'.\n", __func__ );
     XLAL_ERROR( XLAL_EINVAL );
-
-  numDetectors = multiAMcoef->length;
-
-  if ( multiWeights && ( multiWeights->length != numDetectors ) )
+  }
+  UINT4 numDetectors = multiAMcoef->length;
+  /* make sure identical number of detectors in amCoefs and weights */
+  if ( multiWeights && (multiWeights->length != numDetectors) ) {
+    XLALPrintError("%s: multiWeights must be NULL or have the same number of detectors (numDet=%d) as mulitAMcoef (numDet=%d)!\n", __func__, multiWeights->length, numDetectors );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+  /* make sure identical number of timesteps in a_X, b_X and (if given) weights w_X, respectively */
+  UINT4 X;
+  for ( X = 0; X < numDetectors; X ++ )
     {
-      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-      XLAL_ERROR( XLAL_EINVAL );
-    }
+      UINT4 numStepsX = multiAMcoef->data[X]->a->length;
+      if ( numStepsX != multiAMcoef->data[X]->b->length ) {
+        XLALPrintError ("%s: per-SFT antenna-pattern series have different length: a_alpha (len=%d), b_alpha (len=%d)\n", __func__, numStepsX, multiAMcoef->data[X]->b->length );
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
+      if ( multiWeights && (multiWeights->data[X]->length != numStepsX )) {
+        XLALPrintError("%s: multiWeights[X=%d] must be NULL or have the same length (len=%d) as mulitAMcoef[X] (len=%d)!\n", __func__, X, multiWeights->data[X]->length, numStepsX );
+        XLAL_ERROR( XLAL_EINVAL );
+      }
+    } // for X < numDetectors
 
-  /* noise-weight Antenna-patterns and compute A,B,C */
-  Ad = Bd = Cd = 0;
-
-  if ( multiWeights  )
+  REAL8 Ad = 0, Bd = 0, Cd = 0;	// multi-IFO values
+  /* ---------- main loop over detectors X ---------- */
+  for ( X=0; X < numDetectors; X ++)
     {
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  UINT4 numSteps = amcoeX->a->length;
+      AMCoeffs *amcoeX = multiAMcoef->data[X];
+      UINT4 numStepsX = amcoeX->a->length;
 
-	  REAL8Vector *weightsX = multiWeights->data[X];;
-	  if ( weightsX->length != numSteps )
-	    {
-	      XLALPrintError("\nmultiWeights must have same length as mulitAMcoef!\n\n");
-	      XLAL_ERROR( XLAL_EINVAL );
-	    }
+      /* ----- if given, apply noise-weights to all Antenna-pattern coefficients from detector X ----- */
+      if ( multiWeights )
+        {
+          REAL8Vector *weightsX = multiWeights->data[X];
+          UINT4 alpha;	// SFT-index
+          for(alpha = 0; alpha < numStepsX; alpha++)
+            {
+              REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
+              /* apply noise-weights, *replace* original a, b by noise-weighed version! */
+	      amcoeX->a->data[alpha] *= Sqwi;
+	      amcoeX->b->data[alpha] *= Sqwi;
+            } // for alpha < numSteps
+        } // if weights
 
-	  for(alpha = 0; alpha < numSteps; alpha++)
-	    {
-	      REAL8 Sqwi = sqrt ( weightsX->data[alpha] );
-	      REAL8 ahat = Sqwi * amcoeX->a->data[alpha] ;
-	      REAL8 bhat = Sqwi * amcoeX->b->data[alpha] ;
+      UINT4 alpha;	// SFT-index
+      REAL8 AdX = 0, BdX = 0, CdX = 0;	// single-IFO values
+      /* compute single-IFO antenna-pattern coefficients AX,BX,CX, by summing over time-steps 'alpha' */
+      for(alpha = 0; alpha < numStepsX; alpha++)
+        {
+          REAL8 ahat = amcoeX->a->data[alpha];
+          REAL8 bhat = amcoeX->b->data[alpha];
 
-	      /* *replace* original a(t), b(t) by noise-weighed version! */
-	      amcoeX->a->data[alpha] = ahat;
-	      amcoeX->b->data[alpha] = bhat;
+          AdX += ahat * ahat;
+          BdX += bhat * bhat;
+          CdX += ahat * bhat;
+        } /* for alpha < numStepsX */
 
-	      /* sum A, B, C on the fly */
-	      Ad += ahat * ahat;
-	      Bd += bhat * bhat;
-	      Cd += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-      multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
-    }
-  else /* if no noise-weights: simply add to get A,B,C */
-    {
-      for ( X=0; X < numDetectors; X ++)
-	{
-	  AMCoeffs *amcoeX = multiAMcoef->data[X];
-	  UINT4 numSteps = amcoeX->a->length;
+      /* store those */
+      amcoeX->A = AdX;
+      amcoeX->B = BdX;
+      amcoeX->C = CdX;
+      amcoeX->D = AdX * BdX - CdX * CdX;
 
-	  for(alpha = 0; alpha < numSteps; alpha++)
-	    {
-	      REAL8 ahat = amcoeX->a->data[alpha] ;
-	      REAL8 bhat = amcoeX->b->data[alpha] ;
+      /* compute multi-IFO antenna-pattern coefficients A,B,C by summing over IFOs X */
+      Ad += AdX;
+      Bd += BdX;
+      Cd += CdX;
 
-	    /* sum A, B, C on the fly */
-	    Ad += ahat * ahat;
-	    Bd += bhat * bhat;
-	    Cd += ahat * bhat;
-	    } /* for alpha < numSFTsX */
-	} /* for X < numDetectors */
-
-    } /* if multiWeights == NULL */
+    } /* for X < numDetectors */
 
   multiAMcoef->Mmunu.Ad = Ad;
   multiAMcoef->Mmunu.Bd = Bd;
   multiAMcoef->Mmunu.Cd = Cd;
   multiAMcoef->Mmunu.Dd = Ad * Bd - Cd * Cd;
 
+  if ( multiWeights )
+    multiAMcoef->Mmunu.Sinv_Tsft = multiWeights->Sinv_Tsft;
+
   return XLAL_SUCCESS;
 
-} /* XLALWeighMultiAMCoefs() */
+} /* XLALWeightMultiAMCoeffs() */
 
 
 /** Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
@@ -720,8 +739,10 @@ XLALWeighMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *m
  * the response tensor of a bar detector with no further modification
  * needed.)
  *
- * \note The fields 'A', 'B', 'C' in AMCoeffs are obsolete and are not
- * computed by this function at all. Use AntennaPatternMatrix instead.
+ * \note The fields AMCoeffs->{A, B, C, D} are not computed by this function,
+ * as they require correct SFT noise-weights. These fields would be computed, for
+ * example by XLALWeightMultiAMCoeffs().
+ *
  */
 AMCoeffs *
 XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries of detector states */
@@ -798,11 +819,13 @@ XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates,	/**< timeseries
  * Computes noise-weighted combined multi-IFO antenna pattern functions.
 
  *
- * \note contrary to LALGetMultiAMCoeffs(), this function already applies
- * the noise-weights and computes  the corresponding antenna-pattern matrix {A, B, C},
- * so DONT use XLALWeighMultiAMCoeffs() on the result!
+ * \note *) contrary to LALGetMultiAMCoeffs(), and XLALComputeAMCoeffs(), this function applies
+ * the noise-weights and computes  the multi-IFO antenna-pattern matrix components
+ * {A, B, C}, and single-IFO matrix components {A_X,B_X,C_X} for detector X.
  *
- * \note a NULL input to noise weights corresponds to unit-weights
+ * Therefore: DONT use XLALWeightMultiAMCoeffs() on the result!
+ *
+ * \note *) an input of multiWeights = NULL corresponds to unit-weights
  */
 MultiAMCoeffs *
 XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**< [in] detector-states at timestamps t_i */
@@ -845,8 +868,8 @@ XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, 	/**<
     } /* for X < numDetectors */
 
   /* apply noise-weights and compute antenna-pattern matrix {A,B,C} */
-  if ( XLALWeighMultiAMCoeffs (  ret, multiWeights ) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALWeighMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
+  if ( XLALWeightMultiAMCoeffs (  ret, multiWeights ) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: call to XLALWeightMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
     XLALDestroyMultiAMCoeffs ( ret );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }

@@ -160,7 +160,7 @@ int main(int argc, char **argv){
 
   /* variable names taken from Curt's code */
   REAL8 jd_2000=2451544.5;
-  INT4 gps=0, gps_2000=630720000, gps_yr=0, gps_start=0;
+  INT4 gps=0, gps_2000=630720000, gps_yr=0;
   REAL8 fgps=0.; /* float version of gps */
   REAL8 time[2], R[6], A[3], gps_JD[2];
   REAL8 Vlast[3], Vnow[3], Vnext[3], Rnow[3];
@@ -263,7 +263,7 @@ inputs.noverlap);
   ndays = 365*inputs.nyears + extraleaps;
 
   gps_yr = gps_2000 + day*(365*(nyr-2000) + leapdays);
-  gps_start = gps_yr - inputs.noverlap*day;
+  // unused: INT4 gps_start = gps_yr - inputs.noverlap*day;
   gps_JD_start1 = jd_2000 + 365.*(REAL8)(nyr-2000.) + (REAL8)leapdays -
     (REAL8)inputs.noverlap;
 
@@ -735,7 +735,8 @@ planetary body from the Chebyshev coefficients - it does not compute nutations
 of librations */
 void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   REAL8 *state, FILE *fp){
-  REAL8 A[50], B[50], Cp[50], Psum[3], Vsum[3], Up[50];
+  REAL8 A[50], Cp[50], Psum[3], Vsum[3], Up[50];
+  // unused: REAL8 B[50];
   REAL8 Tbreak = 0., Tseg = 0., Tsub=0., Tc=0.;
 
   INT4 i=0, j=0;
@@ -744,7 +745,7 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   /* initialise local arrays */
   for(i=0; i<50 ;i++){
     A[i] = 0.;
-    B[i] = 0.;
+    // unused: B[i] = 0.;
   }
 
   /* determin if we need a new record to be read, or if the current one is OK */

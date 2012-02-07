@@ -1076,7 +1076,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
 
   tstart = data.times->data[0]; /* time of first B_k */
-
+  
   for( i = 0 ; i < length ; i += chunkLength ){
     chunkLength = (REAL8)data.chunkLengths->data[count];
 
@@ -1151,7 +1151,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       likeArray[k] += exclamation[(INT4)chunkLength];
       likeArray[k] -= chunkLength*log(chiSquare);
     }
-
+    
     /* get the log evidence for the data not containing a signal */
     noiseEvidence += (chunkLength - 1.)*logOf2;
     noiseEvidence += exclamation[(INT4)chunkLength];
@@ -1160,7 +1160,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
     first++;
     count++;
   }
-  
+
   return noiseEvidence;
 }
 

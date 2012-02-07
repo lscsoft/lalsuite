@@ -254,7 +254,7 @@ through the loop.*/
  * sky location as observed at Earth. The phase evolution is described by a 
  * Taylor expansion:
  * \f[
- * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}{k!} T^k,
+ * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}}{k!} T^k,
  * \f]
  * where \f$f^x\f$ is the xth time derivative of the gravitational wave
  * frequency, and \f$T\f$ is the pulsar proper time. Frequency time derivatives
@@ -834,7 +834,7 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
-                                                        "sumData" );
+                                                       "sumData" );
   
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];

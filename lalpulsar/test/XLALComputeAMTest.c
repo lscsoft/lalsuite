@@ -25,7 +25,7 @@
  * comparison with the equivalent LAL functions LALNewGetAMCoeffs() and LALGetMultiAMCoeffs().
  *
  * Note, we run a comparison only for the 2-IFO multiAM functions XLALComputeMultiAMCoeffs()
- * comparing it to LALGetMultiAMCoeffs() [combined with XLALWeighMultiAMCoeffs()],
+ * comparing it to LALGetMultiAMCoeffs() [combined with XLALWeightMultiAMCoeffs()],
  * as this excercises the 1-IFO functions as well.
  *
  * Sky-location is picked at random each time, which allows a minimal
@@ -177,8 +177,8 @@ int main(int argc, char *argv[])
         XLALPrintError ("%s: LALGetMultiAMCoeffs() failed with statusCode = %d : %s\n", __func__, status.statusCode, status.statusDescription );
         return XLAL_EFAILED;
       }
-      if ( XLALWeighMultiAMCoeffs ( multiAM_LAL, weights ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALWeighMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
+      if ( XLALWeightMultiAMCoeffs ( multiAM_LAL, weights ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: XLALWeightMultiAMCoeffs() failed with xlalErrno = %d\n", __func__, xlalErrno );
         return XLAL_EFAILED;
       }
 

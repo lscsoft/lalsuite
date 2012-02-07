@@ -175,7 +175,7 @@ LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus struc
 int
 XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
 			     const PulsarSpins fkdotIn,		/**< inptut fkdot array */
-			     REAL8 DeltaTau 			/**< time-difference to extrapolate fkdot to */
+			     REAL8 DeltaTau 			/**< time-difference (tRefOut - tRefIn) to extrapolate fkdot to */
 			     )
 {
   UINT4 numSpins = sizeof(PulsarSpins) / sizeof(fkdotIn[0]); 	/* fixed size array */

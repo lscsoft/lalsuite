@@ -280,14 +280,14 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 
 
 /** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
- * compute the resulting \f$A_d, B_d, C_d, E_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
+ * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}, \widehat{E}\f$ by simply *SUMMING* them, i.e.
+ * \f$\widehat{A} \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
  *
  * NOTE: this function modifies the CmplxAMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
  */
 int
-XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
   UINT4 numDetectors, X;
   REAL8 Ad, Bd, Cd, Ed;
@@ -380,4 +380,4 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 
   return XLAL_SUCCESS;
 
-} /* XLALWeighMultiCmplxAMCoefs() */
+} /* XLALWeightMultiCmplxAMCoefs() */
