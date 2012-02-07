@@ -1,5 +1,4 @@
 
-% $Id$
 %
 % script to produce the figures
 

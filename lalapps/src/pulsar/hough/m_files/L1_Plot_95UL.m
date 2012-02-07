@@ -1,4 +1,3 @@
-% $Id$
 %
 %  Matlab script to plot approx h0(95%) by linear interpolation
 %
