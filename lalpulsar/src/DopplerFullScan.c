@@ -56,7 +56,6 @@
 typedef struct {
   PulsarDopplerParams thisPoint; /**< current doppler-position of the scan */
   DopplerSkyScanState skyScan;	/**< keep track of sky-grid stepping */
-  PulsarSpinRange spinRange;	/**< spin-range to search */
 } factoredGridScan_t;
 
 /** ----- internal [opaque] type to store the state of a FULL multidimensional grid-scan ----- */
@@ -64,6 +63,7 @@ struct tagDopplerFullScanState {
   INT2 state;  			/**< idle, ready or finished */
   DopplerGridType gridType;	/**< what type of grid are we dealing with */
   REAL8 numTemplates;		/**< total number of templates in the grid */
+  PulsarSpinRange spinRange;	/**< spin-range covered by template bank */
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
   gsl_matrix *gij;			/**< flat parameter-space metric */
@@ -320,9 +320,9 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   scan->factoredScan = fscan;
   TRY ( InitDopplerSkyScan ( status->statusPtr, &(fscan->skyScan), &skyScanInit), status);
 
-  fscan->spinRange.refTime = init->searchRegion.refTime;
-  memcpy ( fscan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
-  memcpy ( fscan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
+  scan->spinRange.refTime = init->searchRegion.refTime;
+  memcpy ( scan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
+  memcpy ( scan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
   /* overload spin step-sizes with user-settings if given */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
@@ -341,14 +341,14 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   fscan->thisPoint.Delta = skypos.latitude;
   /* set spins to start */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
-    fscan->thisPoint.fkdot[i] = fscan->spinRange.fkdot[i];
+    fscan->thisPoint.fkdot[i] = scan->spinRange.fkdot[i];
 
   { /* count total number of templates */
     REAL8 nSky, nTot;
     REAL8 nSpins[PULSAR_MAX_SPINS];
     nSky = fscan->skyScan.numSkyGridPoints;
     for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
-      nSpins[i] = floor( fscan->spinRange.fkdotBand[i] / fscan->skyScan.dfkdot[i] ) + 1.0;
+      nSpins[i] = floor( scan->spinRange.fkdotBand[i] / fscan->skyScan.dfkdot[i] ) + 1.0;
     nTot = nSky;
     for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
       nTot *= nSpins[i];
@@ -541,7 +541,7 @@ nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
   if ( ( fscan = scan->factoredScan ) == NULL )
     return -1;
 
-  range = &(fscan->spinRange);	/* shortcut */
+  range = &(scan->spinRange);	/* shortcut */
 
   (*pos) = fscan->thisPoint;	/* RETURN current Doppler-point (struct-copy) */
 
@@ -637,7 +637,13 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
 
 
-/** load a full multi-dim template grid from the file init->gridFile
+/** load a full multi-dim template grid from the file init->gridFile,
+ * the file-format is: lines of 6 columns, which are:
+ *
+ * Freq   Alpha  Delta  f1dot  f2dot  f3dot
+ *
+ * \note Given that in this case we don't know the covered sky-region and frequency-bands
+ * beforehand, this function determines the effective search-ranges and sets them in DopplerFullScanState
  */
 void
 loadFullGridFile ( LALStatus *status,
