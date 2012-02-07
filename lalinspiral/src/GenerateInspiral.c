@@ -278,25 +278,6 @@ LALGenerateInspiral(
 
 
 
-void
-LALGetOrderFromString(
-    LALStatus  *status,
-    CHAR       *thisEvent,
-    LALPNOrder *order
-    )
-
-{
-
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning( "LALGetOrderFromString", "XLALGetOrderFromString" );
-
-  if ( XLALGetOrderFromString( thisEvent, order ) == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
-
 int
 XLALGetOrderFromString(
     CHAR       * restrict thisEvent,
@@ -416,25 +397,6 @@ int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent) {
   return XLAL_SUCCESS;
 }
 
-void
-LALGetApproximantFromString(
-    LALStatus   *status,
-    CHAR        *thisEvent,
-    Approximant *approximant
-    )
-
-{
-
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning("LALGetApproximantFromString", "XLALGetApproximantFromString");
-
-  if ( XLALGetApproximantFromString( thisEvent, approximant) == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
-
 int
 XLALGetApproximantFromString(
     CHAR        * restrict thisEvent,
@@ -543,27 +505,6 @@ XLALGetApproximantFromString(
 
 
 
-void
-LALGenerateInspiralPopulatePPN(
-    LALStatus             *status,
-    PPNParamStruc         *ppnParams,
-    SimInspiralTable      *thisEvent
-    )
-
-{
-
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulatePPN", 
-      "XLALGenerateInspiralPopulatePPN" );
-
-  if ( XLALGenerateInspiralPopulatePPN( ppnParams, thisEvent )
-       == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
-
 int
 XLALGenerateInspiralPopulatePPN(
     PPNParamStruc    * restrict ppnParams,
@@ -608,29 +549,6 @@ XLALGenerateInspiralPopulatePPN(
   return XLAL_SUCCESS;
 }
 
-
-
-void
-LALGenerateInspiralPopulateInspiral(
-    LALStatus           *status,
-    InspiralTemplate    *inspiralParams,
-    SimInspiralTable    *thisEvent,
-    PPNParamStruc       *ppnParams
-    )
-
-
-{
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulateInspiral",
-     "XLALGenerateInspiralPopulateInspiral" );
-
-  if ( XLALGenerateInspiralPopulateInspiral( inspiralParams, thisEvent, ppnParams )
-         == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
 
 
 int
