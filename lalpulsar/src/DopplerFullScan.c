@@ -279,6 +279,27 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* InitDopplerFullScan() */
 
+/** Return the spin-range spanned by the given template bank stored in the
+ * *opaque* DopplerFullScanState.
+ *
+ * \note The user cannot directly access any internal fields of that opaque type,
+ * which is why we need this API.
+ */
+int
+XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState *scan )
+{
+  if ( spinRange == NULL )
+    XLAL_ERROR ( XLAL_EINVAL, "\nPulsarSpinRange pointer 'spinRange' is NULL\n" );
+
+  if ( scan == NULL )
+    XLAL_ERROR ( XLAL_EINVAL, "\nDopplerFullScanState pointer 'scan' is NULL\n" );
+
+  (*spinRange) = scan->spinRange;	// simple struct-copy is all that's needed
+
+  return XLAL_SUCCESS;
+
+} /* XLALGetDopplerSpinRange() */
+
 /** Initialize Doppler-scanner to emulate an old-style factored template grid: 'sky x f0dot x f1dot x f2dot x f3dot'.
  *  This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
  */
