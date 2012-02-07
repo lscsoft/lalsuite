@@ -253,15 +253,15 @@ void initVariables(LALInferenceRunState *state)
 		}
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
 		AmpOrder=injTable->amp_order;
-		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
-		LALGetApproximantFromString(&status,injTable->waveform,&approx);
+		XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
+		XLALGetApproximantFromString(injTable->waveform,&approx);
 	}	
 	
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(ppt){
-		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
-		LALGetApproximantFromString(&status,ppt->value,&approx);
+		XLALGetOrderFromString(ppt->value,&PhaseOrder);
+		XLALGetApproximantFromString(ppt->value,&approx);
 		//printf("%d\n",approx);
 		if(strstr(ppt->value,"TaylorF2")) {approx=TaylorF2;}//numberI4 = TaylorF2;}		LALGetApproximantFromString DOES NOT HAVE TaylorF2 !!!!!!
 		//if(strstr(ppt->value,"TaylorT3")) {approx=TaylorT3;}//numberI4 = TaylorT3;}

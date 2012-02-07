@@ -454,8 +454,8 @@ Parameter arguments:\n\
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
         fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
 		AmpOrder=injTable->amp_order;
-		LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
-		LALGetApproximantFromString(&status,injTable->waveform,&approx);
+		XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
+		XLALGetApproximantFromString(injTable->waveform,&approx);
 	}
 
 	/* Over-ride approximant if user specifies */
@@ -463,8 +463,8 @@ Parameter arguments:\n\
 	if(ppt){
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
 		else
-		    LALGetApproximantFromString(&status,ppt->value,&approx);
-        LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
+		    XLALGetApproximantFromString(ppt->value,&approx);
+        XLALGetOrderFromString(ppt->value,&PhaseOrder);
 	}
 	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 
