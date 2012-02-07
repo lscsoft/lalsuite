@@ -359,11 +359,12 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
                 fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
                 exit(1);
               }
-              norm = log( pow(MTotMax,2.0)/4.0 - (pow(MTotMax-component_max,2.0)/2.0) );
+              norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
               //printf("norm@%s=%f\n",item->name,norm);
               LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
             }
-          
+            logPrior+=norm;
+            
             if(!strcmp(item->name, "chirpmass")){
               mc=(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
             }
