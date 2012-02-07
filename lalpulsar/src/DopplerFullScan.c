@@ -67,7 +67,6 @@ struct tagDopplerFullScanState {
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
   gsl_matrix *gij;			/**< flat parameter-space metric */
-  LIGOTimeGPS refTime;			/**< reference time for grid templates */
   REAL8VectorList *covering;		/**< multi-dimensional covering */
   REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
   /* lattice scan state */
@@ -122,8 +121,11 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
   }
 
   thisScan->gridType = init->gridType;
-  // grid's refTime: will be used to set correct refTime in returned doppler points
-  thisScan->refTime = init->searchRegion.refTime;
+
+  /* store the user-input spinRange (includes refTime) in DopplerFullScanState */
+  thisScan->spinRange.refTime = init->searchRegion.refTime;
+  memcpy ( thisScan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
+  memcpy ( thisScan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
   switch ( thisScan->gridType )
@@ -167,7 +169,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	SkyRegion sky = empty_SkyRegion;
 
 	/* Check that the reference time is the same as the start time */
-	if (XLALGPSCmp(&thisScan->refTime, &init->startTime) != 0) {
+	if (XLALGPSCmp(&thisScan->spinRange.refTime, &init->startTime) != 0) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option currently restricts "
 			"the reference time to be the same as the start time.\n");
 	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
@@ -320,10 +322,6 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   scan->factoredScan = fscan;
   TRY ( InitDopplerSkyScan ( status->statusPtr, &(fscan->skyScan), &skyScanInit), status);
 
-  scan->spinRange.refTime = init->searchRegion.refTime;
-  memcpy ( scan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
-  memcpy ( scan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
-
   /* overload spin step-sizes with user-settings if given */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
     if ( init->stepSizes.fkdot[i] )
@@ -421,7 +419,7 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
     return 1;
 
   // set refTime in returned template to the refTime of the grid
-  pos->refTime  = scan->refTime;
+  pos->refTime  = scan->spinRange.refTime;
 
   /* ----- step foward one template in full grid ----- */
   /* Which "class" of template grid are we dealing with: factored, or full-multidim ? */
