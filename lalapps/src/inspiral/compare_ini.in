@@ -2,8 +2,6 @@
 
 """
 Compare two ini files and print out their differences
-$Id$
-
 """
 
 import sys

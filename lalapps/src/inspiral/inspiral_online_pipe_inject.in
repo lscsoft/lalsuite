@@ -2,8 +2,6 @@
 """
 inspiral_online_pipe_inject.py - online inspiral pipeline driver script
 
-$Id$
-
 This script produced the necessary condor submit and dag files to run
 a prototype online analysis in E11
 """

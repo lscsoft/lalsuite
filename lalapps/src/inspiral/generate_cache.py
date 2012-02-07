@@ -2,7 +2,6 @@
 """
 Something
 
-$Id$
 
 This program creates cache files for the output of inspiral hipe
 """

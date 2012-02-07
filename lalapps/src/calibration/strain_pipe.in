@@ -2,8 +2,6 @@
 """
 strain_pipe - standalone strain pipeline driver script
 
-$Id$
-
 This script produces the condor submit and dag files to run
 the standalone strain
 """

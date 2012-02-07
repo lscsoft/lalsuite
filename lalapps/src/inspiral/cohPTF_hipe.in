@@ -2,8 +2,6 @@
 """
 inspiral_hipe.in - standalone inspiral pipeline driver script
 
-$Id$
-
 This script generates the condor DAG necessary to analyze LIGO and GEO
 data through the inspiral pipeline.  The DAG does datafind, tmpltbank,
 inspiral, inca and sire/coire steps of the pipeline.  It analyzes the

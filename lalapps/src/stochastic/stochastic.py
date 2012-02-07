@@ -14,7 +14,6 @@ WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 General Public License for more details.
 
-$Id$
 """
 
 __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'

@@ -2,8 +2,6 @@
 """
 qscan.in - simple dag generator for q scans
 
-$Id$
-
 This program takes a list of GPS times and creates a condor dag to run
 qscans and the related post processing.
 """

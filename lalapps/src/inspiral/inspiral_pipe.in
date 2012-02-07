@@ -2,8 +2,6 @@
 """
 inspiral_pipeline.py - standalone inspiral pipeline driver script
 
-$Id$
-
 This script produced the necessary condor submit and dag files to run
 the standalone inspiral code on LIGO data
 """

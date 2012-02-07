@@ -3,7 +3,6 @@
   
   Matt Pitkin 11/09/08
   
-  $Id$
 """
 
 __author__ = 'Matt Pitkin <matthew@astro.gla.ac.uk>'

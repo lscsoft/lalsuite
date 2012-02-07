@@ -2,8 +2,6 @@
 """
 inspiral_sip.in - standalone Single-stage Inspiral Pipeline driver script
 
-$Id$
-
 This script generates the condor DAG necessary to analyze LIGO, GEO, Virgo
 data through the inspiral pipeline.  The DAG does datafind, tmpltbank,
 inspiral, and thinca steps of the pipeline.  It analyzes the

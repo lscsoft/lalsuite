@@ -5,7 +5,6 @@
 fscanDriver.py - Driver script for calling other code to generates SFTs and turns these into plots showing spectra.
 
 
-$Id$
 
 """
 

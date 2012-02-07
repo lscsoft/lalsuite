@@ -2,8 +2,6 @@
 """
 ihope.in - weekly automate pipeline driver script
 
-$Id$
-
 This script generates the condor DAG necessary to analyze a given amount
 of LIGO and GEO data.  It takes in the start and end times, generates the
 segment lists, runs the zero-lag, time shift and injection analyses, generates

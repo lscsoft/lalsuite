@@ -13,7 +13,6 @@
 Standalone ring pipeline driver script
 
 
-$Id$
 
 This script produces the condor submit and dag files to run
 the standalone ring code on LIGO data
