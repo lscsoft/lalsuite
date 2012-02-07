@@ -2,8 +2,6 @@
 """
 noise_comp_pipe - standalone noise comparison pipeline driver script
 
-$Id$
-
 This script produces the condor submit and dag files to run
 the noise comparison between h(t) and calibrated DARM_ERR
 """
