@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-# $Id$
 
 CFSsrc = $(top_srcdir)/src/pulsar/FDS_isolated
 OPTsrc = $(top_srcdir)/src/pulsar/FDS_isolated/OptimizedCFS
