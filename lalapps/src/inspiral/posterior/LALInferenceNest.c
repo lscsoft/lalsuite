@@ -196,7 +196,7 @@ Initialisation arguments:\n\
 void initializeTemplate(LALInferenceRunState *runState)
 {
 	char help[]="\
-(--template [LAL,PhenSpin,LALGenerateInspiral]\tSpecify template (default LAL)\n";
+(--template [LAL,PhenSpin,LALGenerateInspiral,LALSim]\tSpecify template (default LAL)\n";
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
 	/* Print command line arguments if help requested */
@@ -222,12 +222,13 @@ void initializeTemplate(LALInferenceRunState *runState)
 			runState->template=&LALInferenceTemplateLALGenerateInspiral;
 		else if(!strcmp("LAL",ppt->value))
 			runState->template=&LALInferenceTemplateLAL;
+        else if(!strcmp("LALSim",ppt->value))
+            runState->template=&LALInferenceTemplateXLALSimInspiralChooseWaveform;
 		else {
 			XLALPrintError("Error: unknown template %s\n",ppt->value);
 			XLALPrintError(help);
 			XLAL_ERROR_VOID(XLAL_EINVAL);
 		}
-
 	}
 	return;
 }
@@ -288,7 +289,7 @@ Nested sampling arguments:\n\
 	  runState->proposal=&LALInferenceProposalNS;
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
-	runState->prior = &LALInferenceInspiralPrior;
+	runState->prior = &LALInferenceInspiralPriorNormalised;
 	
 	#ifdef HAVE_LIBLALXML
 	runState->logsample=LogNSSampleAsMCMCSampleToArray;
@@ -397,6 +398,8 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 m1_max=0.;
 	REAL8 m2_min=0.;
 	REAL8 m2_max=0.;
+    REAL8 mtot_min=0.0;
+    REAL8 mtot_max=0.0;
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	memset(&status,0,sizeof(LALStatus));
 	INT4 event=0;	
@@ -417,6 +420,8 @@ Parameter arguments:\n\
 (--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2threePointFivePN)\n\
 (--compmin min)\tMinimum component mass (1.0)\n\
 (--compmax max)\tMaximum component mass (30.0)\n\
+(--mtotalmin)\tMinimum total mass (2*compmin)\n\
+(--mtotalmax)\tMaximum total mass (2*compmax)\n\
 (--enable-spin)\tEnable spin parameters\n\
 (--aligned-spin)\tUse only aligned spin parameters (uses spins between -1 and 1)\n\
 (--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
@@ -527,6 +532,17 @@ Parameter arguments:\n\
 	if(ppt)	mMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
+    /* Set the minimum and maximum total mass, using user values if specified */
+    ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmin");
+    if(ppt) mtot_min=atof(ppt->value);
+    else mtot_min=2.*mMin;
+    LALInferenceAddVariable(priorArgs,"MTotMin",&mtot_min,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
+    ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmax");
+    if(ppt) mtot_max=atof(ppt->value);
+    else mtot_max=2.*(mMax-mMin);
+    LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
 	
 	printf("Read end time %f\n",endtime);
 	
