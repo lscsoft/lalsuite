@@ -32,6 +32,8 @@
 
 typedef enum tagGSApproximant {
     GSApproximant_DEFAULT,
+    GSApproximant_EOBNRv2,
+    GSApproximant_EOBNRv2HM,
     GSApproximant_IMRPhenomA,
     GSApproximant_IMRPhenomB,
     GSApproximant_SpinTaylorT4,
@@ -154,7 +156,11 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             exit(0);
         } else if (strcmp(argv[i], "--approximant") == 0) {
             i++;
-            if (strcmp(argv[i], "IMRPhenomA") == 0)
+            if (strcmp(argv[i], "EOBNRv2") == 0)
+                params->approximant = GSApproximant_EOBNRv2;
+            else if (strcmp(argv[i], "EOBNRv2HM") == 0)
+                params->approximant = GSApproximant_EOBNRv2HM;
+            else if (strcmp(argv[i], "IMRPhenomA") == 0)
                 params->approximant = GSApproximant_IMRPhenomA;
             else if (strcmp(argv[i], "IMRPhenomB") == 0)
                 params->approximant = GSApproximant_IMRPhenomB;
@@ -289,6 +295,22 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     /* waveform-specific checks for presence
      * tRef, masses, f_min, and distance have already been checked. */
     switch (params->approximant) {
+        case GSApproximant_EOBNRv2:
+            if (params->s1x || params->s1y || params->s1z ||
+                params->s2x || params->s2y || params->s2z ||
+                params->chi) {
+                XLALPrintError("Error: EOBNRv2 is a non-spinning approximant\n");
+                goto fail;
+            }
+            break;
+        case GSApproximant_EOBNRv2HM:
+            if (params->s1x || params->s1y || params->s1z ||
+                params->s2x || params->s2y || params->s2z ||
+                params->chi) {
+                XLALPrintError("Error: EOBNRv2HM is a non-spinning approximant\n");
+                goto fail;
+            }
+            break;
         case GSApproximant_IMRPhenomA:
             if (params->s1x || params->s1y || params->s1z ||
                 params->s2x || params->s2y || params->s2z ||
@@ -404,7 +426,13 @@ int main (int argc , char **argv) {
     switch (params->domain) {
         case GSDomain_FD:
             switch (params->approximant) {
-                case GSApproximant_IMRPhenomA:
+               case GSApproximant_EOBNRv2:
+                    XLALPrintError("Error: EOBNRv2 is not an FD waveform!\n");
+                    break;
+               case GSApproximant_EOBNRv2HM:
+                    XLALPrintError("Error: EOBNRv2HM is not an FD waveform!\n");
+                    break;
+               case GSApproximant_IMRPhenomA:
                     XLALSimIMRPhenomAGenerateFD(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->f_min, params->f_max, params->distance);
                     break;
                 case GSApproximant_IMRPhenomB:
@@ -425,6 +453,12 @@ int main (int argc , char **argv) {
             break;
         case GSDomain_TD:
             switch (params->approximant) {
+                case GSApproximant_EOBNRv2:
+                    XLALSimIMREOBNRv2DominantMode(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->distance, params->inclination);
+                    break;
+                case GSApproximant_EOBNRv2HM:
+                    XLALSimIMREOBNRv2AllModes(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->distance, params->inclination);
+                    break;
                 case GSApproximant_IMRPhenomA:
                     XLALSimIMRPhenomAGenerateTD(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->f_min, params->f_max, params->distance, params->inclination);
                     break;
