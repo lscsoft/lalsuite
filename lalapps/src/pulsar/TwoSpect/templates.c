@@ -724,7 +724,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    INT4 mextent = (INT4)floor(input.moddepth*params->Tcoh); //Bins filled by modulation
    REAL4 overage = (k-(REAL4)mextent)-1.0;                  //spillage
    INT4 fnumstart = m0-mextent-2, fnumend = m0+mextent+2;   //start and end bins
-   memset(scale->data, numfbins*sizeof(*scale->data), 0);
+   memset(scale->data, 0, numfbins*sizeof(*scale->data));
    for (ii=m0-mextent; ii<=m0+mextent; ii++) scale->data[ii] = 1.0;
    scale->data[m0-mextent-2] = scale->data[m0+mextent+2] = sqsincxoverxsqminusone(overage-1.0);
    scale->data[m0-mextent-1] = scale->data[m0+mextent+1] = sqsincxoverxsqminusone(overage);

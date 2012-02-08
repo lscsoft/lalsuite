@@ -42,7 +42,7 @@
  * Compute the time offset which should be used in computing the
  * non-quasicircular correction and performing the ringdown attachment.
  * These numbers were tuned to numerical relativity simulations, and
- * are taken from Pan et al, arXiv:1106.1021v1 [gr-qc] 
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
  */
  static REAL8 XLALSimIMREOBGetNRPeakDeltaT( 
                          INT4 l,    /**<< Mode l */ 
@@ -105,7 +105,7 @@
 /**
  * Function which returns a value of the expected peak amplitude
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II.  
  */
 static inline
 REAL8 GetNRPeakAmplitude( 
@@ -169,7 +169,7 @@ REAL8 GetNRPeakAmplitude(
 /**
  * Function which returns second derivative of the amplitude at the peak
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
  */
 static inline
 REAL8 GetNRPeakADDot( 
@@ -234,7 +234,7 @@ REAL8 GetNRPeakADDot(
 /**
  * Function which returns a value of the expected peak frequency
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
  */
 static inline 
 REAL8 GetNRPeakOmega( 
@@ -298,7 +298,7 @@ REAL8 GetNRPeakOmega(
 /**
  * Function which returns the derivative of the expected peak frequency
  * taken from a fit to numerical relativity simulations. The functions
- * are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
+ * are taken from Pan et al, PRD84, 124052(2011), lines 1-5 of Table II. 
  */
 static inline 
 REAL8 GetNRPeakOmegaDot( 
@@ -361,7 +361,8 @@ REAL8 GetNRPeakOmegaDot(
 
 
 /**
- * For the 2,2 mode, there are fits available for the NQC coefficients.
+ * For the 2,2 mode, there are fits available for the NQC coefficients,
+ * given in Eqs.(40a)-(40c) of Pan et al, PRD84, 124052(2011).
  * This function provides the values of these coefficients, so the 
  * correction can be used in the dynamics prior to finding the more
  * accurate NQC values later on.
@@ -398,8 +399,8 @@ static int XLALSimIMREOBGetCalibratedNQCCoeffs(
 
 /**
  * This function calculates the non-quasicircular correction to apply to 
- * the waveform. The form of this correction can be found in  Pan et al, 
- * arXiv:1106.1021v1 [gr-qc], and also in the DCC document T1100433. Note
+ * the waveform. The form of this correction can be found in Pan et al, 
+ * PRD84, 124052(2011), Eq.(22), and also in the DCC document T1100433. Note
  * that when calling this function, the NQC coefficients should already 
  * have been pre-computed.
  */
@@ -424,6 +425,9 @@ static int  XLALSimIMREOBNonQCCorrection(
   rOmega = r * omega;
   rOmegaSq = rOmega*rOmega;
 
+  /* In EOBNRv2, coeffs->a4 is set to zero */
+  /* through XLALSimIMREOBGetCalibratedNQCCoeffs() */
+  /* and XLALSimIMREOBCalculateNQCCoefficients() */
   mag = 1. + (p*p / rOmegaSq) * ( coeffs->a1
      + coeffs->a2 / r + coeffs->a3 / (r*sqrt(r))
      + coeffs->a4 / (r*r) );
@@ -459,8 +463,6 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
 {
 
   UINT4 i;
-
-  /* For gsl perutation stuff */
 
   int signum;
 
@@ -527,6 +529,18 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
   if ( !qMatrix || !aCoeff || !amps || !pMatrix || !bCoeff || !omegaVec )
   {
     /* TODO : Free memory */
+    gsl_matrix_free( qMatrix );
+    gsl_vector_free( amps );
+    gsl_vector_free( aCoeff );
+    gsl_permutation_free( perm1 );
+    gsl_matrix_free( pMatrix );
+    gsl_vector_free( omegaVec );
+    gsl_vector_free( bCoeff );
+    gsl_permutation_free( perm2 );
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
@@ -535,6 +549,10 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
   nrDeltaT = XLALSimIMREOBGetNRPeakDeltaT( l, m, eta );
   if ( XLAL_IS_REAL8_FAIL_NAN( nrDeltaT ) )
   {
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -577,6 +595,10 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
 
   if ( XLAL_IS_REAL8_FAIL_NAN( nra ) || XLAL_IS_REAL8_FAIL_NAN( nraDDot ) )
   {
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -626,6 +648,10 @@ static int XLALSimIMREOBCalculateNQCCoefficients(
 
   if ( XLAL_IS_REAL8_FAIL_NAN( nromega ) || XLAL_IS_REAL8_FAIL_NAN( nromegaDot ) )
   {
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( timeVec );
     XLAL_ERROR( XLAL_EFUNC );
   }
 

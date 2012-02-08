@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# $Id: eah_build2.sh,v 1.76 2010/07/19 17:12:34 bema Exp $
-
 # simple failure
 fail() {
     echo
@@ -43,7 +41,7 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
-boinc_rev=-r23037
+boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 
 for i; do
@@ -148,8 +146,10 @@ for i; do
 	    check=true
 	    check_only=true
 	    check_app=`echo $PWD/$i | sed 's/--check-app=//;s%.*//%/%'`;;
-	--boinc-rev=*)
-	    boinc_rev="`echo $i | sed s/^--boinc-rev=//`";;
+	--boinc-tag=*)
+	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
+	--boinc-commit=*)
+	    boinc_rev="`echo $i | sed 's/^.*=//'`";;
 	--help)
 	    echo "$0 builds Einstein@home Applications of LALApps HierarchicalSearch codes"
 	    echo "  --win32           cros-compile a Win32 App (requires MinGW, target i586-mingw32msvc-gcc)"
@@ -166,7 +166,7 @@ for i; do
 	    echo "  --sse2            build an App that uses SSE2"
 	    echo "  --altivec         build an App that uses AltiVec"
 	    echo "  --gc-opt          build an App that uses SSE2 GC optimization (doesn't work with current LineVeto code)"
-	    echo "  --boinc-rev=<rev> specify a BOINC SVN trunk revision to use"
+	    echo "  --boinc-tag=<tag>|--boinc-commit=<sha1> specify a BOINC commit to use (defaults to 'current_gw_apps'"
 	    echo "  --with-ssl=<path> gets paased to BOINC configure"
 	    echo "  --check           test the newly built HierarchSearchGC App"
 	    echo "  --check-only      only test the already built HierarchSearchGC App"
@@ -349,7 +349,20 @@ if test -z "$rebuild_boinc" -a -d "$SOURCE/boinc" ; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
-    log_and_do svn co "$boinc_rev" http://boinc.berkeley.edu/svn/trunk/boinc
+    if test -d "$SOURCE/boinc" ; then
+        if test -d "$SOURCE/boinc/.git" ; then
+            log_and_do cd "$SOURCE/boinc"
+            log_and_do git remote update
+        else
+            log_and_do cd "$SOURCE"
+            log_and_do rm -rf boinc
+            log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+        fi
+    else
+        log_and_do cd "$SOURCE"
+        log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+    fi
+    log_and_do git checkout $boinc_rev
 fi
 
 if test \! -d lalsuite/.git ; then
