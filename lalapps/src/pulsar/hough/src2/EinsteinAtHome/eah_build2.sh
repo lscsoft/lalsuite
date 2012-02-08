@@ -357,10 +357,12 @@ else
             log_and_do cd "$SOURCE"
             log_and_do rm -rf boinc
             log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+            log_and_do cd boinc
         fi
     else
         log_and_do cd "$SOURCE"
         log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+        log_and_do cd boinc
     fi
     log_and_do git checkout $boinc_rev
 fi
