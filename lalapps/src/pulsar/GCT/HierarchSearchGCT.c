@@ -99,7 +99,7 @@ int global_argc;
 #define SUNEPHEMERIS    "sun05-09.dat"
 #define BLOCKSRNGMED    101     /**< Default running median window size */
 #define FSTART          100.0	/**< Default Start search frequency */
-#define FBAND           0.01  /**< Default search band */
+#define FBAND           0.0  /**< Default search band */
 #define FDOT            0.0       /**< Default value of first spindown */
 #define DFDOT           0.0       /**< Default range of first spindown parameter */
 #define F2DOT           0.0       /**< Default value of second spindown */
