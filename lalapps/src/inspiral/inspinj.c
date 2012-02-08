@@ -179,7 +179,7 @@ REAL4 deltaMass1=-1;
 REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
-InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
+LALSimInspiralApplyTaper taperInj = LAL_SIM_INSPIRAL_TAPER_NONE;
 AlignmentType alignInj = notAligned;
 REAL8 redshift;
 
@@ -2286,15 +2286,15 @@ int main( int argc, char *argv[] )
         /* Set injection tapering */
         if ( ! strcmp( "start", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_START;
+            taperInj = LAL_SIM_INSPIRAL_TAPER_START;
         }
         else if ( ! strcmp( "end", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_END;
+            taperInj = LAL_SIM_INSPIRAL_TAPER_END;
         }
         else if ( ! strcmp( "startend", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_STARTEND;
+            taperInj = LAL_SIM_INSPIRAL_TAPER_STARTEND;
         }
         else
         {
@@ -3092,19 +3092,19 @@ int main( int argc, char *argv[] )
     {
         switch (taperInj)
         {
-            case INSPIRAL_TAPER_NONE:
+            case LAL_SIM_INSPIRAL_TAPER_NONE:
                  snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_NONE");
                  break;
-            case INSPIRAL_TAPER_START:
+            case LAL_SIM_INSPIRAL_TAPER_START:
                  snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_START");
                  break;
-            case INSPIRAL_TAPER_END:
+            case LAL_SIM_INSPIRAL_TAPER_END:
                  snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_END");
                  break;
-            case INSPIRAL_TAPER_STARTEND:
+            case LAL_SIM_INSPIRAL_TAPER_STARTEND:
                  snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_STARTEND");
                  break;

@@ -280,9 +280,9 @@ LALFindChirpTDTemplate (
 
 
   /* Taper the waveform if required */
-  if ( params->taperTmplt != INSPIRAL_TAPER_NONE )
+  if ( params->taperTmplt != LAL_SIM_INSPIRAL_TAPER_NONE )
   {
-    if ( XLALInspiralWaveTaper( params->xfacVec, params->taperTmplt )
+    if ( XLALSimInspiralREAL4WaveTaper( params->xfacVec, params->taperTmplt )
            == XLAL_FAILURE )
     {
       ABORTXLAL( status );

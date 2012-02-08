@@ -475,7 +475,7 @@ main(int argc, char **argv)
 
   /* Taper hoft */
   if( taper > 0 )
-    LALInspiralWaveTaper(&stat, hoft, 3);
+    XLALSimInspiralREAL4WaveTaper(hoft, LAL_SIM_INSPIRAL_TAPER_STARTEND);
 
   if( fftout )
   {

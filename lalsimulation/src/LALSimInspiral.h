@@ -108,6 +108,35 @@ typedef enum {
 	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 8) - 1 /**< all spin and tidal interactions */
 } LALSimInspiralInteraction;
 
+
+/** Enumeration to specify the tapering method to apply to the waveform */
+typedef enum
+{
+  LAL_SIM_INSPIRAL_TAPER_NONE,		/**< No tapering */
+  LAL_SIM_INSPIRAL_TAPER_START,		/**< Taper the start of the waveform */
+  LAL_SIM_INSPIRAL_TAPER_END,		/**< Taper the end of the waveform */
+  LAL_SIM_INSPIRAL_TAPER_STARTEND,	/**< Taper the start and the end of the waveform */
+  LAL_SIM_INSPIRAL_TAPER_NUM_OPTS	/**< UNDOCUMENTED */
+}  LALSimInspiralApplyTaper;
+
+
+/**
+ * Tapers a REAL4 inspiral waveform in the time domain.
+ */
+int XLALSimInspiralREAL4WaveTaper(
+		REAL4Vector              *signalvec,	/**< pointer to waveform vector */
+		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
+		);
+
+/**
+ * Tapers a REAL8 inspiral waveform in the time domain.
+ */
+int XLALSimInspiralREAL8WaveTaper(
+		REAL8Vector              *signalvec,	/**< pointer to waveform vector */
+		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
+		);
+
+
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
  * the post-Newtonian inspiral waveform.
