@@ -1710,14 +1710,18 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_EFUNC );
       }
 
-      /* Replace the last QNM with pQNM */
-      /* We assume aligned/antialigned spins here */
-      a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * sqrt(1.0 - 4.0 * eta);
-      NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
-      printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
-             mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);
-      modefreqs->data[7].re = (NRPeakOmega22 + modefreqs->data[0].re) / 2.;
-      modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
+      if ( approximant == SEOBNRv1 )
+      {
+          /* Replace the last QNM with pQNM */
+          /* We assume aligned/antialigned spins here */
+          a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * sqrt(1.0 - 4.0 * eta);
+          NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
+          printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
+                 mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);
+          modefreqs->data[7].re = (NRPeakOmega22 + modefreqs->data[0].re) / 2.;
+          modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
+      }
+
       for (j = 0; j < nmodes; j++)
       {
         printf("QNM frequencies: %d %e %e\n",j,modefreqs->data[j].re*mTot,1./modefreqs->data[j].im/mTot);
