@@ -352,17 +352,24 @@ else
     if test -d "$SOURCE/boinc" ; then
         if test -d "$SOURCE/boinc/.git" ; then
             log_and_do cd "$SOURCE/boinc"
-            log_and_do git remote update
+            # if "$boinc_rev" is a tag that already exists locally,
+            # delete it locally first in order to get updated from remote. Praise git !!
+            if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
+              log_and_dont_fail git tag -d "$boinc_rev"
+            fi
+            log_and_do git fetch --tags
         else
             log_and_do cd "$SOURCE"
             log_and_do rm -rf boinc
             log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+            log_and_do cd boinc
         fi
     else
         log_and_do cd "$SOURCE"
         log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+        log_and_do cd boinc
     fi
-    log_and_do git checkout $boinc_rev
+    log_and_do git checkout "$boinc_rev"
 fi
 
 if test \! -d lalsuite/.git ; then
