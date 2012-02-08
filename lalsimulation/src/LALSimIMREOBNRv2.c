@@ -25,7 +25,7 @@
 \file
 
 \brief Functions to generate the EOBNRv2 waveforms, as defined in
-Pan et al, arXiv:1106.1021v1 [gr-qc].
+Pan et al, PRD84, 124052(2011).
 
 */
 
@@ -702,7 +702,7 @@ REAL8 XLALvrP4PN( const REAL8 r,    /**<< Orbital separation (in units of total 
 /**
  * Calculates the time window over which the ringdown attachment takes
  * place. These values were calibrated to numerical relativity simulations,
- * and come from Pan et al, arXiv:1106.1021v1 [gr-qc]. 
+ * and come from Pan et al, PRD84, 124052(2011). 
  * The time returned is in units of M.
  */
 static REAL8
@@ -1717,7 +1717,7 @@ XLALSimIMREOBNRv2Generator(
 /**
  * This function generates the plus and cross polarizations for the dominant
  * (2,2) mode of the EOBNRv2 approximant. This model is defined in Pan et al,
- * arXiv:1106.1021v1 [gr-qc].
+ * PRD84, 124052(2011).
  */
 int
 XLALSimIMREOBNRv2DominantMode(
@@ -1745,7 +1745,7 @@ XLALSimIMREOBNRv2DominantMode(
 /**
  * This function generates the plus and cross polarizations for the EOBNRv2 approximant
  * with all available modes included. This model is defined in Pan et al,
- * arXiv:1106.1021v1 [gr-qc].
+ * PRD84, 124052(2011).
  */
 int
 XLALSimIMREOBNRv2AllModes(
