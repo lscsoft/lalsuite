@@ -357,7 +357,7 @@ else
             if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
               log_and_dont_fail git tag -d "$boinc_rev"
             fi
-            log_and_do git fetch --all --tags
+            log_and_do git fetch --tags
         else
             log_and_do cd "$SOURCE"
             log_and_do rm -rf boinc
