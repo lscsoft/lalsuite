@@ -518,10 +518,10 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
 					break;
 				case LALINFERENCE_REAL4_t:
-					fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
+					fprintf(fp, "%11.7f", *(REAL4 *) ptr->value);
 					break;
 				case LALINFERENCE_REAL8_t:
-					fprintf(fp, "%9.5f", *(REAL8 *) ptr->value);
+					fprintf(fp, "%11.7f", *(REAL8 *) ptr->value);
 					break;
 				case LALINFERENCE_COMPLEX8_t:
 					fprintf(fp, "%e + i*%e",
