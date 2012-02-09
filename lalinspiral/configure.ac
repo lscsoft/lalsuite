@@ -82,8 +82,7 @@ AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_DATE],["$lalinspiral_configure_date"],
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
 # check for c compiler
-m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
+AC_PROG_CC_C99
 
 # CUDA requires a c++ compiler
 AC_PROG_CXX
