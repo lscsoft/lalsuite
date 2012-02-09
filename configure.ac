@@ -9,7 +9,7 @@ AC_CONFIG_FILES([
   doxygen/Makefile \
   doxygen/src/Makefile
 ])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11 foreign])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 

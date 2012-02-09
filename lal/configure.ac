@@ -87,7 +87,7 @@ AC_CONFIG_FILES([ \
   packages/support/src/Makefile \
   packages/support/test/Makefile
 ])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11 foreign])
 AH_TOP([
 #ifndef CONFIG_H__LAL
 #define CONFIG_H__LAL
