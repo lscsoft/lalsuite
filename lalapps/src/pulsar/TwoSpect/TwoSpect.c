@@ -170,14 +170,14 @@ int main(int argc, char *argv[])
    DopplerSkyScanState scan = empty_DopplerSkyScanState;
    PulsarDopplerParams dopplerpos;
    if (args_info.skyRegion_given) {
-      scanInit.gridType = 1;     //Default value for an approximate-isotropic grid
+      scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
       scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
       scanInit.dAlpha = 0.5/((inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh * detectorVmax);
       scanInit.dDelta = scanInit.dAlpha;
    } else {
-      scanInit.gridType = 3;
+      scanInit.gridType = GRID_FILE_SKYGRID;
       scanInit.skyGridFile = sky;
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
@@ -276,6 +276,16 @@ int main(int argc, char *argv[])
    /* FILE *rawtfdata = fopen("./output/rawtfdata.dat","w");
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
+   if (args_info.printSFTtimes_given) {
+      char v[1000];
+      snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat");
+      FILE *INSFTTIMES = fopen(v, "w");
+      INT4 sftlength = tfdata->length/ffdata->numffts;
+      for (ii=0; ii<ffdata->numffts; ii++) {
+         if (tfdata->data[ii*sftlength]!=0.0) fprintf(INSFTTIMES, "%9d 0\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)));
+      }
+      fclose(INSFTTIMES);
+   }
    
    //Removing bad SFTs
    if (inputParams->markBadSFTs!=0) {
@@ -292,6 +302,16 @@ int main(int argc, char *argv[])
    /* FILE *rawtfdata = fopen("./output/rawtfdata.dat","w");
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
+   if (args_info.printUsedSFTtimes_given) {
+      char v[1000];
+      snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, "usedSFTtimes.dat");
+      FILE *USEDSFTTIMES = fopen(v, "w");
+      INT4 sftlength = tfdata->length/ffdata->numffts;
+      for (ii=0; ii<ffdata->numffts; ii++) {
+         if (tfdata->data[ii*sftlength]!=0.0) fprintf(USEDSFTTIMES, "%9d 0\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)));
+      }
+      fclose(USEDSFTTIMES);
+   }
    
    
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,

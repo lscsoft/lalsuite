@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.16"
+#define CMDLINE_PARSER_VERSION "1.1.17"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -194,6 +194,10 @@ struct gengetopt_args_info
   const char *validateSSE_help; /**< @brief Validate the use of SSE functions help description.  */
   int ULoff_flag;	/**< @brief Turn off upper limits computation (default=off).  */
   const char *ULoff_help; /**< @brief Turn off upper limits computation help description.  */
+  int printSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs (default=off).  */
+  const char *printSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs help description.  */
+  int printUsedSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests (default=off).  */
+  const char *printUsedSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
@@ -253,6 +257,8 @@ struct gengetopt_args_info
   unsigned int gaussTemplatesOnly_given ;	/**< @brief Whether gaussTemplatesOnly was given.  */
   unsigned int validateSSE_given ;	/**< @brief Whether validateSSE was given.  */
   unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
+  unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
+  unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
 
 } ;
 

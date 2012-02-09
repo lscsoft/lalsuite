@@ -98,6 +98,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
   "      --validateSSE             Validate the use of SSE functions  \n                                  (default=off)",
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
+  "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
+  "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
     0
 };
 
@@ -277,6 +279,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->gaussTemplatesOnly_given = 0 ;
   args_info->validateSSE_given = 0 ;
   args_info->ULoff_given = 0 ;
+  args_info->printSFTtimes_given = 0 ;
+  args_info->printUsedSFTtimes_given = 0 ;
 }
 
 static
@@ -365,6 +369,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->gaussTemplatesOnly_flag = 0;
   args_info->validateSSE_flag = 0;
   args_info->ULoff_flag = 0;
+  args_info->printSFTtimes_flag = 0;
+  args_info->printUsedSFTtimes_flag = 0;
   
 }
 
@@ -433,6 +439,8 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[63] ;
   args_info->validateSSE_help = gengetopt_args_info_full_help[64] ;
   args_info->ULoff_help = gengetopt_args_info_full_help[65] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[66] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[67] ;
   
 }
 
@@ -815,6 +823,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "validateSSE", 0, 0 );
   if (args_info->ULoff_given)
     write_into_file(outfile, "ULoff", 0, 0 );
+  if (args_info->printSFTtimes_given)
+    write_into_file(outfile, "printSFTtimes", 0, 0 );
+  if (args_info->printUsedSFTtimes_given)
+    write_into_file(outfile, "printUsedSFTtimes", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -1445,6 +1457,8 @@ cmdline_parser_internal (
         { "gaussTemplatesOnly",	0, NULL, 0 },
         { "validateSSE",	0, NULL, 0 },
         { "ULoff",	0, NULL, 0 },
+        { "printSFTtimes",	0, NULL, 0 },
+        { "printUsedSFTtimes",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -2207,6 +2221,30 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->ULoff_flag), 0, &(args_info->ULoff_given),
                 &(local_args_info.ULoff_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "ULoff", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs.  */
+          else if (strcmp (long_options[option_index].name, "printSFTtimes") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->printSFTtimes_flag), 0, &(args_info->printSFTtimes_given),
+                &(local_args_info.printSFTtimes_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "printSFTtimes", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests.  */
+          else if (strcmp (long_options[option_index].name, "printUsedSFTtimes") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->printUsedSFTtimes_flag), 0, &(args_info->printUsedSFTtimes_given),
+                &(local_args_info.printUsedSFTtimes_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "printUsedSFTtimes", '-',
                 additional_error))
               goto failure;
           
