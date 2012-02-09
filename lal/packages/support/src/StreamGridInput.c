@@ -184,6 +184,7 @@ where <tt>\<typecode\></tt> is any of \c I2, \c I4, \c I8,
 
 /* This quote will fix the C syntax highlighting: " */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

@@ -91,6 +91,7 @@ for integers are not tested.
 #define PRINTFTSERIESTESTC_MSGEFUN "Error from LAL function"
 /********************** </lalErrTable> */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/PrintFTSeries.h>
 #include <math.h>

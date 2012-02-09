@@ -138,6 +138,7 @@ fabs()
 #define CZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/Window.h>
 

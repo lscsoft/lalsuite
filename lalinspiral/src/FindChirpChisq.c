@@ -58,6 +58,7 @@ LALCOMPLEX8VectorFFT()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

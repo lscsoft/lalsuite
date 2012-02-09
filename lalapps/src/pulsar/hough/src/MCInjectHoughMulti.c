@@ -47,6 +47,7 @@
    signals. 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
 extern int lalDebugLevel;

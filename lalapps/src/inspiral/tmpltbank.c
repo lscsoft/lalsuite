@@ -39,6 +39,7 @@
 #include <regex.h>
 #include <time.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>

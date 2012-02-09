@@ -161,6 +161,7 @@ and \verb@strtol()@ are not used as they are not guaranteed to have
 
 ******************************************************* </lalLaTeX> */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <ctype.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

@@ -44,6 +44,7 @@
 int finite(double);
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>

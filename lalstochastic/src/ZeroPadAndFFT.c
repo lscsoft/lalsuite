@@ -124,6 +124,7 @@ t\f$ times the discrete Fourier transform.</li>
 @{
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>

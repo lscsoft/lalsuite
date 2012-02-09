@@ -27,6 +27,7 @@
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
 #include <lal/LALStdlib.h>

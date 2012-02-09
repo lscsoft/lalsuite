@@ -31,6 +31,7 @@
 
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALComplex.h>
 
 #include <gsl/gsl_vector.h>

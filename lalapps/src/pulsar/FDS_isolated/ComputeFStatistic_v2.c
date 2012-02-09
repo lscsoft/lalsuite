@@ -50,6 +50,7 @@
 int finite(double);
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/GSLSupport.h>
 #include <lal/LALInitBarycenter.h>

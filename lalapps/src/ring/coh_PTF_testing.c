@@ -1,3 +1,4 @@
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 #define PROGRAM_NAME "lalapps_coh_PTF_inspiral"

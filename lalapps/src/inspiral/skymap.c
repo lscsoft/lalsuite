@@ -8,6 +8,7 @@
 #include <png.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
 

@@ -162,6 +162,7 @@ LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>

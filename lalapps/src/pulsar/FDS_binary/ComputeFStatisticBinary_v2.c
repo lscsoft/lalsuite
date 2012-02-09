@@ -39,6 +39,7 @@
 /*                                                                               */
 /* Binary modifications added by Chris Messenger (University of Birmingham UK)   */
 /*********************************************************************************/
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>

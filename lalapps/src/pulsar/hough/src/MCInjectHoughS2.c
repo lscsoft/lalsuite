@@ -54,6 +54,7 @@ Input shoud be from
    signals. 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 

@@ -75,6 +75,7 @@ file.
 #include <string.h>
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/GenerateInspiral.h>
 #include <lal/VectorOps.h>
 #include <lal/SeqFactories.h>

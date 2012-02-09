@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>

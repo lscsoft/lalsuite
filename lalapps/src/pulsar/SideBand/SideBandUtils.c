@@ -33,6 +33,7 @@
 #endif
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>

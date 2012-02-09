@@ -145,6 +145,7 @@ specified then the fake data containing the signal, and a fake signal-only data
 set, will be output.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_models.h"
 #include "ppe_likelihood.h"

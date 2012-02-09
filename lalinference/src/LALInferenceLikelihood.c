@@ -20,6 +20,7 @@
  *  MA  02111-1307  USA
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInference.h>
 #include <lal/DetResponse.h>

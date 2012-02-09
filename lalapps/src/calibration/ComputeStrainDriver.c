@@ -51,6 +51,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <pwd.h>
 #include <time.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>

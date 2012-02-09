@@ -42,6 +42,7 @@
 #include <math.h>
 #include <fftw3.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>

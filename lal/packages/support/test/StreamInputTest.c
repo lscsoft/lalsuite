@@ -121,6 +121,7 @@ LALZReadSequence()              LALZDestroyVector()
 
 ******************************************************* </lalLaTeX> */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>

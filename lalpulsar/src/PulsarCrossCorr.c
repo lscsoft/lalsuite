@@ -27,6 +27,7 @@
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/DopplerScan.h>
 #include <lal/PulsarCrossCorr.h>
 #include <gsl/gsl_permutation.h>

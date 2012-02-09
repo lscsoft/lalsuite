@@ -29,6 +29,7 @@ Pan et al, PRD84, 124052(2011).
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/FindRoot.h>
