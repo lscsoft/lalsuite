@@ -1194,6 +1194,14 @@ void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2)
   return;
 }
 
+void LALInferenceQ2Eta(double q, double *eta)
+/*  Compute symmetric mass ratio eta from the     */
+/*  asymmetric mass ratio q.                      */
+{
+  *eta = q/((1+q)*(1+q));
+  return;
+}
+
 static void deleteCell(LALInferenceKDCell *cell) {
   if (cell == NULL) {
     return; /* Our work here is done. */
