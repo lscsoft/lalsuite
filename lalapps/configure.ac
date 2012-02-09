@@ -143,8 +143,8 @@ if test "x$mpi" = "xtrue"; then
 fi
 LALSUITE_ENABLE_MODULE([MPI],[mpi])
 
-# use silent build rules if appropriate
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+# use silent build rules
+AM_SILENT_RULES([yes])
 
 # checks for programs
 AC_PROG_CPP

@@ -87,8 +87,8 @@ AC_PROG_CC_C99
 # CUDA requires a c++ compiler
 AC_PROG_CXX
 
-# use silent build rules if available
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+# use silent build rules
+AM_SILENT_RULES([yes])
 
 # check for c++ compiler
 AC_PROG_CXX
