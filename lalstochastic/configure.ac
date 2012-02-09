@@ -1,3 +1,4 @@
+AC_PREREQ([2.63])
 AC_INIT([lalstochastic],[1.1.3.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALStochasticConfig.h])
 AC_CONFIG_SRCDIR([src/StochasticOmegaGW.c])

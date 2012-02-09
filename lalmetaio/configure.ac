@@ -1,3 +1,4 @@
+AC_PREREQ([2.63])
 AC_INIT([lalmetaio],[1.0.3.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])

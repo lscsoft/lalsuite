@@ -1,3 +1,4 @@
+AC_PREREQ([2.63])
 AC_INIT([lalburst],[1.1.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
