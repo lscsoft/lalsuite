@@ -915,6 +915,12 @@ LALHCapDerivativesP4PN( double UNUSED t,
   /* qDot */
   dvalues[3] = - flux / (eta * omega);
 
+  /* Let the integrator know via the return code if the derivative is nan */
+  if ( isnan( dvalues[0] ) || isnan( dvalues[1] ) || isnan( dvalues[2] ) || isnan( dvalues[3] ) )
+  {
+    return 1;
+  }
+
   return GSL_SUCCESS;
 }
 
@@ -972,8 +978,9 @@ XLALHighSRStoppingCondition(double UNUSED t,
                            void UNUSED *funcParams
                           )
 {
+  EOBParams *params = (EOBParams *)funcParams;
 
-  if ( values[0] <= 1.0 || isnan( dvalues[3] ) || isnan (dvalues[2]) )
+  if ( values[0] <= 2.5 - 6.0 * params->eta || isnan(dvalues[3]) || isnan(dvalues[2]) || isnan(dvalues[1]) || isnan(dvalues[0]) )
   {
     return 1;
   }
@@ -1880,6 +1887,7 @@ XLALEOBPPWaveformEngine (
    }
 
    integrator->stopontestonly = 1;
+   integrator->retries = 1;
 
    count = 0;
    if (h || signalvec2)
