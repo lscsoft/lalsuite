@@ -31,7 +31,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
-#include <lal/NRWaveInject.h>
+#include <lal/SphericalHarmonics.h>
 #include <gsl/gsl_sf_gamma.h>
 
 #include "LALSimIMREOBNRv2.h"
