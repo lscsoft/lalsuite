@@ -78,7 +78,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
     INT4 i;
 
     REAL8 eta;	
-	REAL8 r, pr, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs;
+	REAL8 r, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs; //pr
 	REAL8 Slm, deltalm, rholm, rholmPwrl;
 	COMPLEX16 Tlm;
     COMPLEX16 hNewton;
@@ -112,7 +112,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
         }
         
 	r	= values->data[0];
-        pr	= values->data[2];
+	//pr	= values->data[2];
 	pp	= values->data[3];
 
 	v2	= v * v;

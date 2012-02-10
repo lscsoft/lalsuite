@@ -552,7 +552,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Stuff to find the actual peak time */
   gsl_spline    *spline = NULL;
   gsl_interp_accel *acc = NULL;
-  REAL8 omegaDeriv1, omegaDeriv2;
+  REAL8 omegaDeriv1; //, omegaDeriv2;
   REAL8 time1, time2;
   REAL8 timePeak, timewavePeak = 0., omegaDerivMid;
   REAL8 sigAmpSqHi = 0., oldsigAmpSqHi = 0.;
@@ -568,11 +568,11 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   if ( omegaDeriv1 > 0. )
   {
     time2 = dynamicsHi->data[peakIdx+1];
-    omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
+    //omegaDeriv2 = gsl_spline_eval_deriv( spline, time2, acc );
   }
   else
   {
-    omegaDeriv2 = omegaDeriv1;
+    //omegaDeriv2 = omegaDeriv1;
     time2 = time1;
     time1 = dynamicsHi->data[peakIdx-1];
     peakIdx--;
@@ -586,7 +586,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
     if ( omegaDerivMid * omegaDeriv1 < 0.0 )
     {
-      omegaDeriv2 = omegaDerivMid;
+      //omegaDeriv2 = omegaDerivMid;
       time2 = timePeak;
     }
     else

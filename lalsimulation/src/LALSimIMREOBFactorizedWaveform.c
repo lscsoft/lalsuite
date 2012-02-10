@@ -255,7 +255,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   REAL8 eta2 = eta*eta;
   REAL8 eta3 = eta2 * eta;
 
-  REAL8 dM, dM2, dM3;
+  REAL8 dM, dM2; //dM3;
 
   REAL8 a = 0;
   REAL8 a2 = 0;
@@ -263,7 +263,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   REAL8 chiS = 0;
   REAL8 chiA = 0;
 
-  REAL8 chiAPlusChiSdM;
+  //REAL8 chiAPlusChiSdM;
   REAL8 chiSPlusChiAdM;
 
   /* Combination which appears a lot */
@@ -279,9 +279,9 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   }
 
   dM  = sqrt( dM2 );
-  dM3 = dM2 * dM;
+  //dM3 = dM2 * dM;
 
-  chiAPlusChiSdM = chiA + chiS*dM;
+  //chiAPlusChiSdM = chiA + chiS*dM;
   chiSPlusChiAdM = chiS + chiA*dM;
 
   m1Plus3eta  = - 1. + 3.*eta;
@@ -1114,10 +1114,10 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   REAL8 eta2 = eta*eta;
   REAL8 eta3 = eta2 * eta;
 
-  REAL8 dM, dM2, dM3;
+  REAL8 dM, dM2; //dM3;
   REAL8 a2, a3;
 
-  REAL8 chiAPlusChiSdM;
+  //REAL8 chiAPlusChiSdM;
   REAL8 chiSPlusChiAdM;
 
   /* Combination which appears a lot */
@@ -1135,12 +1135,12 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   }
 
   dM  = sqrt( dM2 );
-  dM3 = dM2 * dM;
+  //dM3 = dM2 * dM;
 
   a2 = a*a;
   a3 = a2*a;
 
-  chiAPlusChiSdM = chiA + chiS*dM;
+  //chiAPlusChiSdM = chiA + chiS*dM;
   chiSPlusChiAdM = chiS + chiA*dM;
 
   m1Plus3eta  = - 1. + 3.*eta;

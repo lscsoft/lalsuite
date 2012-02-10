@@ -235,12 +235,12 @@ static int CartesianToSpherical(
   REAL8 r;
   REAL8 pr, pTheta, pPhi;
   
-  REAL8 x, y, z;
+  REAL8 x; //, y, z;
   REAL8 pX, pY, pZ;
 
   x  = qCart[0];
-  y  = qCart[1];
-  z  = qCart[2];
+  //y  = qCart[1];
+  //z  = qCart[2];
   pX = pCart[0];
   pY = pCart[1];
   pZ = pCart[2];
