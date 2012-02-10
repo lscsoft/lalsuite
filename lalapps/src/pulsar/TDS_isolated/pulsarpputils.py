@@ -318,11 +318,47 @@ class psr_par:
       
     return out
 
+# class to read in a nested sampling prior file    
+class priorfile:
+  def __init__(self, priorfilenm):
+    self.FILE = priorfilenm
+    pf = open(priorfilenm)
+    for line in pf.readlines():
+      splitline = line.split()
+      
+      # get all upper case version in case lower case in par file
+      key = splitline[0].upper()
+      
+      if key in str_keys:
+        setattr(self, key, splitline[1:2])
+      elif key in float_keys:
+          setattr(self, key, [float(splitline[1]), float(splitline[2]])        
+ 
+    # sky position
+    if hasattr(self, 'RA'):
+      setattr(self, 'RA', [ra_to_rad(self.RAJ[0]), ra_to_rad(self.RAJ[1]))
+      
+    if hasattr(self, 'DEC'):
+      setattr(self, 'DEC', [dec_to_rad(self.DEC[0]), ra_to_rad(self.DEC[1]))
+        
+    pf.close()
+    
+  def __str__(self):
+    out = ""
+    for k, v in self.__dict__.items():
+      if k[:2]!="__":
+        if type(self.__dict__[k]) is StringType:
+          out += "%10s = '%s'\n" % (k, v)
+        else:
+          out += "%10s = %-20.15g\n" % (k, v)
+      
+    return out
 
+    
 # function to convert the psi' and phi0' coordinates used in nested sampling
 # into the standard psi and phi0 coordinates (using vectors of those parameters
 def phipsiconvert(phipchain, psipchain):
-  chainlen=size(phipchain)
+  chainlen=len(phipchain)
   
   phichain = []
   psichain = []
@@ -352,8 +388,8 @@ def phipsiconvert(phipchain, psipchain):
     else:
       phi0 = 2.*math.pi - math.fmod(2.*math.pi-phi0, 2.*math.pi);
     
-    phichain[i] = phi0
-    psichain[i] = psi
+    phichain.append(phi0)
+    psichain.append(psi)
 
   return phichain, psichain
  
