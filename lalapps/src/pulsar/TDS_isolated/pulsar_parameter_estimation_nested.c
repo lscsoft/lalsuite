@@ -1942,8 +1942,11 @@ set.\n", propfile, tempPar);
       memcpy( checkPrior->value, &tempVar, 
               LALInferenceTypeSize[checkPrior->type] );
       
-      mu -= scaleMin;
-      sigma /= scale;
+      /* mu -= scaleMin;
+      sigma /= scale; */
+      /* scaled Gaussian will have zero mean and unit sigma */
+      mu = 0.;
+      sigma = 1.;
       
       /* remove the Gaussian prior values and reset as scaled values */
       LALInferenceRemoveGaussianPrior( runState->priorArgs, checkPrior->name );
@@ -2325,7 +2328,6 @@ parameter file %s is wrong.\n", injectfile);
     UINT4 varyphasetmp = varyphase;
     varyphase = 1;
     
-    /*fprintf(stderr,"theta: %f, I21: %e, r: %e, ciota: %f, I31: %e\n",injpars.theta, injpars.I21, injpars.r, injpars.cosiota, injpars.I31);*/
     pulsar_model( injpars, data );
     
     /* reset varyphase to its original value */
@@ -2335,7 +2337,7 @@ parameter file %s is wrong.\n", injectfile);
     
     /* If modeltype uses more than one data stream need to advance data on to
        next, so this loop only runs once if there is only 1 det*/
-    for ( k = 1; k < (INT4)freqFactors->length; k++ )data = data->next;
+    for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
   }
   
   /* reset data to head */
@@ -2349,20 +2351,16 @@ parameter file %s is wrong.\n", injectfile);
       snrmulti[k] += SQUARE(snrval);
       
       /*if ( snrscale[k] == 0 ) */
-      fprintf(fpsnr, "freq_factor: %f, non-scaled snr: %le\t",freqFactors->data[ndets], snrval);
-      fprintf(stderr, "freq_factor: %f, non-scaled snr: %le\t",freqFactors->data[ndets], snrval);
+      fprintf(fpsnr, "freq_factor: %f, non-scaled snr: %le\t",
+              freqFactors->data[ndets], snrval);
                              
       data = data->next;
     }
     ndets++;
   }
   
-  fprintf(stderr, "\n");
-  
   /* get overall multi-detector SNR */
-  for ( k = 0; k < numSNRs; k++ ){
-    snrmulti[k] = sqrt( snrmulti[k] );
-  }
+  for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
   
   /* only need to print out multi-detector snr if the were multiple detectors */
   if( numSNRs == 1 && snrscale[0] == 0 ){
@@ -2424,7 +2422,6 @@ parameter file %s is wrong.\n", injectfile);
         snrmulti[k] += SQUARE(snrval);
       
         fprintf(fpsnr, "scaled snr: %le\t", snrval);
-        fprintf(stderr, "scaled snr: %le\t", snrval);
       
         data = data->next;
       }
@@ -2435,7 +2432,6 @@ parameter file %s is wrong.\n", injectfile);
     if( ndets > 1 ){
       for ( k = 0; k < numSNRs; k++ ){
         fprintf(fpsnr, "%le\t", snrmulti[k]);
-        fprintf(stderr, "re-scaled snr: %le\n", snrmulti[k]);
       }
       fprintf(fpsnr, "\n"); 
     }
