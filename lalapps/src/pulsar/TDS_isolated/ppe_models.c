@@ -664,7 +664,8 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   REAL4 sinphi, cosphi, sin2phi, cos2phi;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
-  REAL8Vector *sidDayFrac = NULL;
+  REAL8Vector *sidDayFrac1 = NULL;
+	REAL8Vector *sidDayFrac2 = NULL;
   
   /* set lookup table parameters */
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
@@ -675,17 +676,16 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
     "LU_Fcross");
   /* get the sidereal time since the initial data point % sidereal day */
-  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
+  sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
                                                         "siderealDay" );
-  /*how do I hangle phi0?*/
+  /*how do I handle phi0?*/
   sin_cos_LUT( &sinphi, &cosphi, 0.5*pars.phi0 );
   sin_cos_LUT( &sin2phi, &cos2phi, pars.phi0 );
   
   /************************* CREATE MODEL *************************************/
-  /* This model is a complex heterodyned time series for a pinned superfluid
-neutron
-     star emitting at its roation frequency and twice its rotation frequency 
-     (as defined in Jones 2009):
+  /* This model is a complex heterodyned time series for a pinned superfluid neutron
+	star emitting at its roation frequency and twice its rotation frequency 
+	(as defined in Jones 2009):
 
    ****************************************************************************/
   Xplusf = 0.5*(pars.f0*pars.f0/pars.r)*sin(acos(pars.cosiota))*pars.cosiota;
@@ -722,7 +722,7 @@ neutron
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/    
-    T = sidDayFrac->data[i];
+    T = sidDayFrac1->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
@@ -764,13 +764,13 @@ neutron
   /* set model for 2f component */
   length = data->next->dataTimes->length;
   
-  /*sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
-                                                        "siderealDay" );*/
+  sidDayFrac2 = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
+                                                        "siderealDay" );
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/    
-    T = sidDayFrac->data[i];
+    T = sidDayFrac2->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
