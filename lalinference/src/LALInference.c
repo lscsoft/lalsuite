@@ -674,16 +674,16 @@ ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,c
 {
   ProcessParamsTable *this=procparams;
 
-  if (this == NULL || name == NULL) {
-    XLAL_ERROR_NULL(XLAL_EFAULT, "Null arguments received.");
+  if (this==NULL) {
+    fprintf(stderr, " Warning:  ProcessParamsTable is a NULL pointer\n");
+    exit(1);
   }
 
   while (this!=NULL) {
     if (!strcmp(this->param, name)) break;
     else this=this->next;
   }
-  if (this==NULL) fprintf(stderr, " Warning:  ProcessParamsTable is a NULL pointer\n");	
-  
+
   return(this);
 }
 
