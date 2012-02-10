@@ -209,10 +209,9 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6",
               "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
               "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
               "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
-              "FB0", "FB1", "FB2", "ELAT", "ELONG", "LAMBDA", "BETA",
-              "PMRA", "PMDEC",
+              "FB0", "FB1", "FB2", "ELAT", "ELONG", "PMRA", "PMDEC", "DIST",
               # GW PARAMETERS
-              "H0", "COSIOTA", "PSI", "PHI0"]
+              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
             "CLK", "BINARY"]
 

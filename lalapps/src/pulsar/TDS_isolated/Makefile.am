@@ -38,6 +38,11 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_testing.c \
 	ppe_testing.h
 
+if HAVE_PYTHON
+pkgpython_DATA = \
+	pulsarpputils.py
+endif
+
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
 	make_frame_cache H1response.txt \
