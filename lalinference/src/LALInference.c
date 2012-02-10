@@ -518,10 +518,10 @@ void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample){
 					fprintf(fp, "%ud", *(UINT4 *) ptr->value);
 					break;
 				case LALINFERENCE_REAL4_t:
-					fprintf(fp, "%9.5f", *(REAL4 *) ptr->value);
+					fprintf(fp, "%11.7f", *(REAL4 *) ptr->value);
 					break;
 				case LALINFERENCE_REAL8_t:
-					fprintf(fp, "%9.5f", *(REAL8 *) ptr->value);
+					fprintf(fp, "%11.7f", *(REAL8 *) ptr->value);
 					break;
 				case LALINFERENCE_COMPLEX8_t:
 					fprintf(fp, "%e + i*%e",
@@ -1191,6 +1191,14 @@ void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2)
   double factor = mc * pow(1 + q, 1.0/5.0);
   *m1 = factor * pow(q, -3.0/5.0); 
   *m2 = factor * pow(q, +2.0/5.0);
+  return;
+}
+
+void LALInferenceQ2Eta(double q, double *eta)
+/*  Compute symmetric mass ratio eta from the     */
+/*  asymmetric mass ratio q.                      */
+{
+  *eta = q/((1+q)*(1+q));
   return;
 }
 

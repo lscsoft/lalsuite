@@ -447,6 +447,8 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
   UINT4 i=0;
+  REAL8 m1=0;
+  REAL8 m2=0;
   REAL8 logDmin=log(1.0);
   REAL8 logDmax=log(100.0);
   REAL8 Dmin=1.0;
@@ -516,8 +518,8 @@ void initVariables(LALInferenceRunState *state)
 
       endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
       AmpOrder=injTable->amp_order;
-      LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
-      LALGetApproximantFromString(&status,injTable->waveform,&approx);
+      XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
+      XLALGetApproximantFromString(injTable->waveform,&approx);
     }
   }
 
@@ -752,12 +754,15 @@ void initVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--eta");
   if(ppt){
     start_eta=atof(ppt->value);
+    LALInferenceMcEta2Masses(start_mc, start_eta, &m1, &m2);
+    start_q=m2/m1;
   }
 
   /* Over-ride q if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--q");
   if(ppt){
     start_q=atof(ppt->value);
+    LALInferenceQ2Eta(start_q, &start_eta);
   }
 
   /* Over-ride phase if specified */
@@ -986,25 +991,27 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t);
 
   /* Check if running with symmetric (eta) or asymmetric (q) mass ratio.*/
-  ppt=LALInferenceGetProcParamVal(commandLine,"--symMassRatio");
+  ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
   if(ppt){
+    LALInferenceAddVariable(currentParams, "asym_massratio", &start_q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+    if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
+  }else{
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixEta");
     if(ppt){
-      LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(currentParams, "massratio", &start_eta, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddMinMaxPrior(priorArgs,	"massratio", &etaMin, &etaMax, LALINFERENCE_REAL8_t);
       if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
     }else{
-      LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      ppt=LALInferenceGetProcParamVal(commandLine,"--symMassRatio");
+      if(ppt){
+        LALInferenceAddVariable(currentParams, "massratio", &start_eta, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddMinMaxPrior(priorArgs,	"massratio", &etaMin, &etaMax, LALINFERENCE_REAL8_t);
+      }else{
+        LALInferenceAddVariable(currentParams, "asym_massratio", &start_q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+      }
     }
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
-  }else{
-    ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
-    if(ppt){
-      LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
-    }else{
-      LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
-    LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
   }
 
   tmpMin=endtime-dt; tmpMax=endtime+dt;

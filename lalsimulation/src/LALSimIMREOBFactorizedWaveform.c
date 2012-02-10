@@ -575,9 +575,13 @@ static int  XLALSimIMREOBGetFactorizedWaveform(
 
 
   /* Calculate the non-Keplerian velocity */
+  /* given by Eq. (18) of Pan et al, PRD84, 124052(2011) */
+  /* psi given by Eq. (19) of Pan et al, PRD84, 124052(2011) */
+  /* Assign temporarily to vPhi */
   vPhi = nonKeplerianCoefficient( values, eta, params->aCoeffs );
-
+  /* Assign rOmega value temporarily to vPhi */
   vPhi  = r * cbrt(vPhi);
+  /* Assign rOmega * Omega to vPhi */
   vPhi *= Omega;
 
   /* Calculate the newtonian multipole */

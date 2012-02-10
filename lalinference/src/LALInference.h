@@ -461,6 +461,9 @@ void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
 /** Convert from Mc, q space to m1, m2 space (q = m2/m1, with m1 > m2). */
 void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
 
+/** Convert from q to eta (q = m2/m1, with m1 > m2). */
+void LALInferenceQ2Eta(double q, double *eta);
+
 /** A kD tree cell contains some points (npts), a bounding box
     enclosing the cell (lowerLeft to upperRight), a bounding box
     tightly enclosing all the points currently in the cell

@@ -948,7 +948,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	
 	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
-	LALGetApproximantFromString(&status,injTable->waveform,&injapprox);
+	XLALGetApproximantFromString(injTable->waveform,&injapprox);
 	printf("Injecting approximant %i: %s\n", injapprox, injTable->waveform);
 	REPORTSTATUS(&status);
 	//LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
@@ -1005,8 +1005,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       Approximant       approximant;        /* And its approximant value      */
       INT4              amporder=0;         /* Amplitude order of the model   */
 
-      LALGetApproximantFromString(&status, injEvent->waveform, &approximant);
-      LALGetOrderFromString(&status, injEvent->waveform, &order);
+      XLALGetApproximantFromString(injEvent->waveform, &approximant);
+      XLALGetOrderFromString(injEvent->waveform, &order);
       amporder = injEvent->amp_order;
       //if(amporder<0) amporder=0;
       /* FIXME - tidal lambda's and interactionFlag are just set to command line values here.

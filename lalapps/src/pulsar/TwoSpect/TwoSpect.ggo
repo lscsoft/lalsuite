@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.16"
+version "1.1.17"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -75,4 +75,7 @@ option "noiseWeightOff"     - "Turn off noise weighting if this flag is used" fl
 option "gaussTemplatesOnly" - "Gaussian templates only throughout the pipeline if this flag is used" flag off hidden
 option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
 option "ULoff"    - "Turn off upper limits computation" flag off hidden
+option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
+option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
+
 

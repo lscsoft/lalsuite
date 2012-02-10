@@ -3545,7 +3545,6 @@ INT4 recognised_parameter( CHAR *parname ){
  */
 REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
   REAL8 snrval = 0., chunkLength;
-  COMPLEX16 snrc = {0., 0.}, vari = {0., 0.};
                                                    
   INT4 i = 0, j = 0, length = 0, cl = 0;
   
@@ -3553,18 +3552,20 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
   INT4 chunkMin = 0, count = 0;
   
   /* subtract a running median value from the data to remove any underlying
-     trends (e.g. caused by a string signal) */
+     trends (e.g. caused by a strong signal) */
   meddata = subtract_running_median( data->compTimeData->data );
   
   UINT4Vector *chunkLengths = NULL;
   chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
-                                                             "chunkLength" );
+                                                           "chunkLength" );
   chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
   
   length = data->compTimeData->data->length;
   
   /* add the signal to the data */
   for ( i = 0; i < length; i+=chunkLength ){
+    COMPLEX16 snrc = {0., 0.}, vari = {0., 0.};
+    
     chunkLength = (REAL8)chunkLengths->data[count];
     
     /* skip section of data if its length is less than the minimum allowed
