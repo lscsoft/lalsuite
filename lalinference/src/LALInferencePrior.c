@@ -682,7 +682,7 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	gsl_function f;
 	
     if(!massRatioName){
-        XLAL_ERROR_REAL8(XLAL_ENAME, "Null arguments received.");
+        XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
     }
     
     // Disable GSL error reporting in favour of XLAL (the integration routines are liable to fail).
@@ -707,7 +707,7 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
     else if(!strcmp(massRatioName,"massratio"))
         oData.innerIntegrand.function = &etaInnerIntegrand;
     else{
-        XLAL_ERROR_REAL8(XLAL_EINVAL,"Invalid mass ratio name specified");
+        XLAL_ERROR_REAL8(XLAL_ENAME,"Invalid mass ratio name specified");
     }
     
 
