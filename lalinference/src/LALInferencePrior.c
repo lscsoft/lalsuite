@@ -580,7 +580,7 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 	return(logPrior);
 }
 
-/*
+
 
 typedef struct {
 	double M1;
@@ -623,11 +623,11 @@ typedef struct {
 	double McMax;
 	double massRatioMin;
 	double massRatioMax;
-    char   massRatioName[VARNAME_MAX];
 	double MTotMax;
 	double MMin;
 	double epsabs;
 	double epsrel;
+    gsl_function innerIntegrand;
 } outerData;
 
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
@@ -643,11 +643,9 @@ static double outerIntegrand(double M1, void *voData) {
 	iData.McMax = oData->McMax;
 	iData.massRatioMin = oData->massRatioMin;
 	iData.massRatioMax = oData->massRatioMax;
-
-    if(!strcmp(oData->massRatioName,"asym_massratio"))
-        f.function = &qInnerIntegrand;
-    else if(!strcmp(oData->massRatioName,"massratio"))
-        f.function = &etaInnerIntegrand;
+ 
+    f.function=(oData->innerIntegrand.function);
+    
 	f.params = &iData;
 	
 	gsl_integration_qag(&f, oData->MMin, MIN(M1, oData->MTotMax-M1), oData->epsabs, oData->epsrel, 
@@ -658,7 +656,7 @@ static double outerIntegrand(double M1, void *voData) {
 
 #undef MIN
 
-static double computePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
+REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
                     const double McMin, const double McMax,
                     const double massRatioMin, const double massRatioMax, const char *massRatioName) {
 	const double epsabs = 1e-8;
@@ -668,6 +666,11 @@ static double computePriorMassNorm(const double MMin, const double MMax, const d
 	outerData oData;
 	gsl_function f;
 	
+    if(!massRatioName){
+        XLAL_ERROR_REAL8(XLAL_EFAILED);
+    }
+    
+    
 	gsl_integration_workspace *wsOuter = gsl_integration_workspace_alloc(wsSize);
 	gsl_integration_workspace *wsInner = gsl_integration_workspace_alloc(wsSize);
 	
@@ -681,7 +684,15 @@ static double computePriorMassNorm(const double MMin, const double MMax, const d
 	oData.epsabs = epsabs;
 	oData.epsrel = epsrel;
 	oData.MMin = MMin;
-    strcpy(oData.massRatioName,massRatioName);	
+    
+    if(!strcmp(massRatioName,"asym_massratio"))
+        oData.innerIntegrand.function = &qInnerIntegrand;
+    else if(!strcmp(massRatioName,"massratio"))
+        oData.innerIntegrand.function = &etaInnerIntegrand;
+    else{
+        XLAL_ERROR_REAL8(XLAL_EINVAL,"Invalid mass ratio name specified");
+    }
+    
 
 	f.function = &outerIntegrand;
 	f.params = &oData;
@@ -694,7 +705,7 @@ static double computePriorMassNorm(const double MMin, const double MMax, const d
 	
 	return result;
 }
-*/
+
 
 /* Function to add the min and max values for the prior onto the priorArgs */
 void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type){
