@@ -1115,6 +1115,10 @@ REAL8 LALInferenceComputeFrequencyDomainOverlap(LALInferenceIFOData * dataPtr,
                                     COMPLEX16Vector * freqData1, 
                                     COMPLEX16Vector * freqData2)
 {
+  if (dataPtr==NULL || freqData1 ==NULL || freqData2==NULL){
+  	XLAL_ERROR_REAL8(XLAL_EFAULT); 
+  	}
+  	
   int lower, upper, i;
   double deltaT, deltaF;
   

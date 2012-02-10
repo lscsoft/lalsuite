@@ -155,4 +155,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
 /** Prior that is 1 everywhere. */
 REAL8 LALInferenceNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
+/** LALInferenceComputePriorMassNorm - Doc string. */
+REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, const double MTotMax, 
+                    const double McMin, const double McMax,
+                    const double massRatioMin, const double massRatioMax, const char *massRatioName);
+
 #endif

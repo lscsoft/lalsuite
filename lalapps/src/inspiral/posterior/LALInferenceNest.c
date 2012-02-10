@@ -426,7 +426,8 @@ Parameter arguments:\n\
 (--aligned-spin)\tUse only aligned spin parameters (uses spins between -1 and 1)\n\
 (--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
 (--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
-(--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n";
+(--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
+(--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -549,18 +550,34 @@ Parameter arguments:\n\
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	
-	/* Set up the variable parameters */
-	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
-	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
-    LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t); */
-	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	logmcMin=log(mcMin); logmcMax=log(mcMax);
-	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		LALINFERENCE_REAL8_t);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--mcq");
+    if(ppt) /* Use MC and Q as sampling variables */
+    {
+        /* Set up the variable parameters */
+        tmpVal=mcMin+(mcMax-mcMin)/2.0;
+        LALInferenceAddMinMaxPrior(priorArgs,   "chirpmass",    &mcMin, &mcMax,     LALINFERENCE_REAL8_t);
+        LALInferenceAddVariable(currentParams,"chirpmass",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        tmpVal=1.5;
+        REAL8 qMin=1.0;
+        REAL8 qMax=mMax/mMin;
+        LALInferenceAddVariable(currentParams, "asym_massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddMinMaxPrior(priorArgs,   "asym_massratio",    &qMin,    &qMax,    LALINFERENCE_REAL8_t);
 
-	tmpVal=0.24;
-	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
+    else /* Use log chirp mass and eta (default) */
+    {
+    	/* Set up the variable parameters */
+    	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
+    	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t); */
+    	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    	logmcMin=log(mcMin); logmcMax=log(mcMax);
+    	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		LALINFERENCE_REAL8_t);
+    	tmpVal=0.24;
+	    LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     	LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
-	
+	}
+
     	LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
 	LALInferenceAddMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);	

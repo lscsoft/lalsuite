@@ -435,7 +435,7 @@ void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats);
 /** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the
    columns.  Returns 0 on success. */
-int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
+void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
 /** Sorts the variable structure by name */
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
