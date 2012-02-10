@@ -107,6 +107,10 @@ class LALInferenceNode(pipeline.CondorDAGNode):
         if(length > maxLength):
             while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
                     self.__GPSstart+=maxLength/2.0
+        # Override calculated start time if requested by user in ini file
+        if self.job().get_cp().has_option('lalinference','psdstart'):
+		self.__GPSstart=self.job().get_cp().getfloat('lalinference','psdstart')
+		print 'Over-riding start time to user-specified value %f'%(self.__GPSstart)
         self.add_var_opt('PSDstart',str(self.__GPSstart))
         length=self.__GPSend-self.__GPSstart
         if(length>maxLength):
