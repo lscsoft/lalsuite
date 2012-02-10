@@ -468,7 +468,48 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 				}
         */
 				else if(!strcmp(item->name, "massratio") || !strcmp(item->name, "asym_massratio")) continue;
+        
+        else if(!strcmp(item->name, "mass1")){
+          if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
+             && LALInferenceCheckVariable(priorParams,"MTotMax")
+             && LALInferenceCheckVariable(params,"mass2") ){
+          
+            m1=(*(REAL8 *)LALInferenceGetVariable(params,"mass1"));
+            m2=(*(REAL8 *)LALInferenceGetVariable(params,"mass2"));
+            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
+            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+            
+            if(component_min > m1
+               || component_min > m2)
+              return -DBL_MAX;
+            
+            if(component_max < m1
+               || component_max < m2)
+              return -DBL_MAX;
+            
+            if(MTotMax < m1+m2)
+              return -DBL_MAX;              
 
+            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
+              norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
+            }else{
+              if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
+                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
+                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
+                exit(1);
+              }
+              norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
+              //printf("norm@%s=%f\n",item->name,norm);
+              LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            }
+            logPrior+=norm;
+            
+          }else{
+            fprintf(stderr,"ERROR; mass2, component_max, component_min and MTotMax required for this prior.\n");
+            exit(1);
+          }
+        }
 				else if(!strcmp(item->name, "distance")){
 					if(LALInferenceCheckVariable(priorParams,"distance_norm")) {
 						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"distance_norm");
