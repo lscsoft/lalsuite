@@ -345,6 +345,8 @@ int main(int argc, char *argv[]) {
       fp = stdout;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
     fprintf(fp, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
@@ -582,6 +584,8 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
     fprintf(fpH, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;

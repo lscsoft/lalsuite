@@ -42,6 +42,8 @@ void write_ccspectra_frame(COMPLEX8FrequencySeries *series,
 {
   /* variables */
   CHAR hertz[] = "Hz";
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   CHAR frame_comment[] = "$Id$";
   CHAR frame_type[] = "CCSPECTRA";
   CHAR source[FILENAME_MAX];

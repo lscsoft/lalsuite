@@ -1536,6 +1536,8 @@ echo "  as date tag: `date +%Y-%m-%dT%H:%M%z`"  >> "$LOGFILE"
 echo >> "$LOGFILE"
 ## we have to strip the $'s from Id-string to avoid cvs-expansion
 ## in case the build-log gets checked into cvs!
+## FIXME: the following code uses obsolete CVS ID tags.
+## It should be modified to use git version information.
 cvs_version=`echo '$Id$' | sed 's/[$]\(.*\)[$]/\1/g'`
 
 echo "Version of the build-script: '${cvs_version}'" >> ${LOGFILE}

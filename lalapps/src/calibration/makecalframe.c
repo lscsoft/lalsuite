@@ -56,6 +56,8 @@ static void err_exit( const char *fmt, ... )
 
 int main( int argc, char *argv[] )
 {
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   char rcsid[] = "$Id$";
   char rcsname[] = "$Name$";
   char *arguments = NULL;

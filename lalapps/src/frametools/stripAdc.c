@@ -44,6 +44,8 @@
 
 int main(int argc, char *argv[])
 {
+   /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+    *  It should be modified to use git version information. */
    static const char *rcsid = "$Id$";
    struct FrFile     *iFile, *oFile;
    struct FrameH     *frame;

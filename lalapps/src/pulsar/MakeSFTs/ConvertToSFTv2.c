@@ -161,6 +161,8 @@ main(int argc, char *argv[])
       return CONVERTSFT_EMEM;
     }
 
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
     sprintf ( add_comment, "Converted by $Id$, inputSFTs = '%s';", uvar_inputSFTs );
     if ( uvar_extraComment )
       {

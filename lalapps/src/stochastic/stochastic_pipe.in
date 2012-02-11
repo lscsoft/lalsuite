@@ -316,6 +316,8 @@ if usertag:
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
 
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write("$Id$" + "\n\n")
 log_fh.write("Invoked with arguments:\n")
 for o, a in opts:

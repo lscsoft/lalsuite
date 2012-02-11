@@ -700,6 +700,8 @@ int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat
     fprintf(Cstat_out, "%%%% ***************   Fstat Header   ****************** \n %s", Fstat->comment);
     fprintf(Cstat_out, "%%%% *********************************************************************** \n");
     fprintf(Cstat_out, "%%%% ***************   Cstat Header   ****************** \n");
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
     fprintf(Cstat_out, "%%%% %s\n%%%% cmdline: %s\n", "$Id$", Cstat->comment);
     
     /* Cstat header - output user input to file */
