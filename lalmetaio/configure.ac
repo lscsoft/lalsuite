@@ -137,12 +137,12 @@ AC_SUBST_FILE(LAL_HEADER_LINK)
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LALMetaIO has now been successfully configured
         and will be installed under the directory:
 
-          ${prefix}
+            ${prefix}
 
         Now run 'make' to build LALMetaIO
         and run 'make install' to install LALMetaIO

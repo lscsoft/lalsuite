@@ -170,16 +170,17 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
-        LALInspiral has now been successfully configured
+        LALInspiral has now been successfully configured:
+
+            CUDA support is $CUDA_ENABLE_VAL
+
         and will be installed under the directory:
 
-          ${prefix}
+            ${prefix}
 
         Now run 'make' to build LALInspiral
         and run 'make install' to install LALInspiral
-
-          CUDA support is $CUDA_ENABLE_VAL
 
 ================================================================="

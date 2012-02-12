@@ -154,16 +154,16 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LALXML has now been successfully configured:
 
-                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 
-          ${prefix}
+            ${prefix}
 
         Now run 'make' to build LALXML
         and run 'make install' to install LALXML
