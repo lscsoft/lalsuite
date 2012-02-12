@@ -134,7 +134,7 @@ LALSUITE_MULTILIB_LIBTOOL_HACK
 m4_pattern_allow([AC_PROG_CC_C99])
 m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 
-# boinc requires a c++ compiler
+# check for c++ compiler
 AC_PROG_CXX
 
 # check for MPI compiler
@@ -186,6 +186,9 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
+
+# check complex number types
+LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
