@@ -18,7 +18,6 @@
 */
 
 /* <lalVerbatim file="FileIOHV">
-$Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -53,10 +52,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdio.h>
-
-NRCSID( FILEIOH, "$Id$" );
 
 /* maximum string size to print with LAL Printf routines */
 #define LAL_PRINTF_BUFSIZE 4096

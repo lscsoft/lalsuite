@@ -30,9 +30,6 @@
 
 /* Default parameters. */
 
-NRCSID (SFTCLEANC, "$Id$");
-
-
 INT4 lalDebugLevel=0;
 
 

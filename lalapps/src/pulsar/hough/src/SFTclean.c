@@ -27,8 +27,6 @@
 #include <glob.h> 
 #include <lalapps.h>
 
-RCSID ( "$Id$");
-
 /* Error codes and messages */
 
 /**\name Error Codes */ /*@{*/

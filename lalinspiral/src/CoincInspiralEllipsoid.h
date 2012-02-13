@@ -71,8 +71,6 @@ using error ellipsoids.
 extern "C" {
 #endif
 
-NRCSID( COINCINSPIRALELLIPSOIDH, "$Id$" );
-
 /** The \c TriggerErrorList is a linked list used within e-thinca. It
 contains pointers to the \c SnglInspiralTable for a given trigger,
 and its associated error matrix and position vector.

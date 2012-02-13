@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., Jones, G
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -50,8 +49,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpTD.h>
-
-NRCSID (MAIN, "$Id$");
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);

@@ -25,8 +25,6 @@
 
 /* Independently computes the calibration factors \alpha(t)*\beta(t) and \alpha (t) from */
 
-NRCSID( UPDATEFACTORSC, "$Id$" );
-RCSID("$Id$");
 
 static COMPLEX16 *cmul( COMPLEX16 *pc, COMPLEX16 *pa, COMPLEX16 *pb )
 {
@@ -85,7 +83,7 @@ void LALComputeCalibrationFactors(
   REAL8 s;
   UINT4 i;
 
-  INITSTATUS( status, "LALComputeCalibrationFactors", UPDATEFACTORSC );
+  INITSTATUS(status);
 
   ASSERT( output, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );
   ASSERT( params, status, CALIBRATIONH_ENULL, CALIBRATIONH_MSGENULL );

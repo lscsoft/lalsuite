@@ -64,8 +64,6 @@ lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 #define UNUSED
 #endif
 
-RCSID("$Id");
-
 extern int vrbflg;
 extern int lalDebugLevel;
 

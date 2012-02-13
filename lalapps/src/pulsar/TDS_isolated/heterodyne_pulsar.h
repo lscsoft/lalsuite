@@ -19,7 +19,6 @@
 
 /*
   Author: Pitkin, M. D.
-  $Id$
 */
 
 /* Matt Pitkin 09/02/06 -------------- heterodyne_pulsar.h */
@@ -62,7 +61,6 @@
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-#include <lal/LALRCSID.h>
 
 /* lalapps header */
 #include <lalapps.h>

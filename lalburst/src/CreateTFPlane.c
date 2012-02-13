@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon and Flanagan, E
  *
@@ -45,11 +44,6 @@
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID(CREATETFPLANEC, "$Id$");
-
 
 static double min(double a, double b) { return a < b ? a : b; }
 static double max(double a, double b) { return a > b ? a : b; }

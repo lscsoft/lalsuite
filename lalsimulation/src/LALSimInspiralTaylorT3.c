@@ -39,8 +39,6 @@
 #define UNUSED
 #endif
 
-NRCSID(LALSIMINSPIRALTAYLORT3C, "$Id$");
-
 typedef struct
 tagexpnCoeffsTaylorT3 {
    int ieta;

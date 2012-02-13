@@ -25,7 +25,6 @@
  *
  * \brief Test-code for SFT-fileIO library
  *
- * $Id$
  *
  */
 
@@ -33,8 +32,6 @@
 #include <config.h>
 #include <lal/SFTfileIO.h>
 #include <lal/Units.h>
-
-NRCSID (SFTFILEIOTESTC, "$Id$");
 
 /*---------- DEFINES ----------*/
 
@@ -74,7 +71,7 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
   if ( lalDebugLevel & LALERROR )					\
     XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"	\
 		    "        %s %s\n", (code), *argv, __FILE__,		\
-		    __LINE__, SFTFILEIOTESTC, statement ? statement :	\
+		    __LINE__, "$Id$", statement ? statement :	\
 		    "", (msg) );					\
 } while (0)
 
@@ -83,7 +80,7 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
     if ( lalDebugLevel & LALINFO )				      \
       XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"   \
 		      "        %s\n", *argv, __FILE__, __LINE__,      \
-		      SFTFILEIOTESTC, (statement) );		      \
+		      "$Id$", (statement) );		      \
   } while (0)
 
 #define SUB( func, statusptr )                                       \

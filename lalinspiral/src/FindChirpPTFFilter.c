@@ -48,10 +48,6 @@
 #include <lal/FindChirpPTF.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID (FINDCHIRPPTFFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpPTFFilterSegment (
     LALStatus                  *status,
@@ -103,7 +99,7 @@ LALFindChirpPTFFilterSegment (
   kmax        = fFinal / deltaF < numPoints/2 ? fFinal / deltaF : numPoints/2;
   kmin        = f_min / deltaF > 1.0 ? f_min/ deltaF : 1;
 
-  INITSTATUS( status, "LALFindChirpPTFFilter", FINDCHIRPPTFFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

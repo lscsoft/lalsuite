@@ -60,8 +60,6 @@ extern "C" {
 #define VECTOROPSH_MSGESZMM "Size mismatch"
 #define VECTOROPSH_MSGESAME "Input/Output data vectors are the same"
 
-NRCSID (VECTOROPSH, "$Id$");
-
 /*
  *
  * XLAL Routines.

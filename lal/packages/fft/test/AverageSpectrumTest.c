@@ -27,9 +27,6 @@
 #include <lal/Window.h>
 #include <lal/Random.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (AVERAGESPECTRUMTESTC,"$Id$");
-
 #define TESTSTATUS( s ) \
   if ( (s)->statusCode ) { REPORTSTATUS( s ); exit( 1 ); } else \
 ((void)0)

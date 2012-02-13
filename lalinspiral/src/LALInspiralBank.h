@@ -56,8 +56,6 @@ This header file covers routines that are used in template placement.
 extern "C" {
 #endif
 
-NRCSID(LALINSPIRALBANKH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define LALINSPIRALBANKH_ENULL      1
 #define LALINSPIRALBANKH_EMEM       2

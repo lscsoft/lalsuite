@@ -33,8 +33,6 @@
 /* include files: */
 #include "./StackSlideFstat.h"
 
-RCSID( "$Id$");
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -103,7 +101,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
   /* Add error checking here: */
   ASSERT ( vecF != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
 
-  INITSTATUS( status, "StackSlideVecF", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* create toplist of candidates */
@@ -384,7 +382,7 @@ void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus stru
   toplist_t *houghToplist;
   UINT8FrequencyIndexVector freqInd; /* for trajectory in time-freq plane */
 
-  INITSTATUS( status, "StackSlideVecF_HoughMode", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -709,7 +707,7 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LA
                   PulsarSpins inputfkdot; /* input demodulation spindown values */
                   PulsarSpins deltafkdot; /* residual spindown values */
 
-                  INITSTATUS( status, "LALappsFindFreqFromMasterEquation", rcsid );
+                  INITSTATUS(status);
                   ATTATCHSTATUSPTR (status);
   
                   ASSERT ( outputPoint != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
@@ -794,7 +792,7 @@ void GetStackSlideCandidates_threshold(LALStatus *status,			/**< pointer to LALS
   REAL8 thisSig, thisSigMinus1, thisSigPlus1;
   REAL8 *pstackslideData;  /* temporary pointer */
   
-  INITSTATUS( status, "GetStackSlideCandidates_threshold", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( out != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );
@@ -892,7 +890,7 @@ void GetStackSlideCandidates_toplist(LALStatus *status,
   SemiCohCandidate thisCandidate;
   REAL8 *pstackslideData;  /* temporary pointer */
 
-  INITSTATUS( status, "GetStackSlideCandidates_toplist", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( stackslideSum != NULL, status, STACKSLIDEFSTAT_ENULL, STACKSLIDEFSTAT_MSGENULL );

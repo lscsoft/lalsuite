@@ -23,8 +23,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-NRCSID(RULESTOTIMINGDIFFERENCEC,"$Id$");
-
 /** \author Creighton, T. D.
     \ingroup Resample_h
     \brief Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a set of resampling rules.
@@ -83,8 +81,7 @@ LALRulesToTimingDifference( LALStatus       *stat,
   INT2 *shift;      /* Pointer to data in rules->shift */
   REAL4 *data;      /* Pointer to data in difference->data->data */
 
-  INITSTATUS( stat, "LALRulesToTimingDifference",
-	      RULESTOTIMINGDIFFERENCEC);
+  INITSTATUS(stat);
 
   /* Check that the input fields exist. */
   ASSERT( difference, stat, RESAMPLEH_ENUL, RESAMPLEH_MSGENUL );

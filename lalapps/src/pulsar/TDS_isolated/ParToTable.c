@@ -25,9 +25,6 @@
  */
 
 /* Matt Pitkin 22/06/04 */
-/*
-$Id$
-*/
 /* ParToTable.c
    Preprocessor code to take inputs from a TEMPO .par file and output the values
    into a table with a specific format like that used for S2 (don't know if I

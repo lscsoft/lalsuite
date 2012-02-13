@@ -13,7 +13,6 @@
 Standalone ring pipeline driver script
 
 
-$Id$
 
 This script produces the condor submit and dag files to run
 the standalone ring code on LIGO data
@@ -43,7 +42,7 @@ from lalapps import power
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 
 #
@@ -104,6 +103,8 @@ options, filenames = parse_command_line()
 
 basename = os.path.splitext(os.path.basename(options.config_file))[0]
 log_fh = open(basename + '.pipeline.log', 'w')
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 print >>log_fh, "$Id$\nInvoked with arguments:"
 for name_value in options.__dict__.items():
 	print >>log_fh, "%s %s" % name_value

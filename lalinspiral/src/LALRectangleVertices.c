@@ -68,10 +68,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALRECTANGLEVERTICESC, "$Id$");
-
-
-
 void
 LALRectangleVertices(
    LALStatus *status,
@@ -82,7 +78,7 @@ LALRectangleVertices(
 
    REAL4 x1, x2, x3, x4, myy1, y2, y3, y4;
    REAL4 ctheta,stheta;
-   INITSTATUS(status, "LALRectangleVertices", LALRECTANGLEVERTICESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (out,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

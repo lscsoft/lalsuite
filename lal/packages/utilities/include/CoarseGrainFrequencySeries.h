@@ -19,7 +19,6 @@
 
 /*********************** <lalVerbatim file="CoarseGrainFrequencySeriesHV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$
 *********************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -56,9 +55,6 @@ which coarse-grain a frequency series.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( COARSEGRAINFREQUENCYSERIESH,
-        "$Id$" );
 
 /****************** <lalErrTable file="CoarseGrainFrequencySeriesHE"> */
 

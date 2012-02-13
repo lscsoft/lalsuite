@@ -23,7 +23,6 @@
  * Tania Regimbau <regimbau@obs-nice.fr>  
  *
  *
- * $Id$
  */
 
 
@@ -44,7 +43,6 @@
 #include <lal/FrameStream.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -58,8 +56,6 @@
 
 #include "stochastic_virgo.h"
 
-NRCSID (READFRAMESC, "$Id$");
-RCSID ("$Id$");
 
 /* cvs info */
 #define CVS_ID "$Id$"

@@ -27,7 +27,6 @@
  * \file
  * \brief General-purpose log-message handling, controlled by lalDebugLevel
  *
- * $Id$
  */
 
 #ifndef _LOGPRINTF_H  /* Double-include protection. */
@@ -39,8 +38,6 @@ extern "C" {
 #endif
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
-NRCSID( LOGPRINTFH, "$Id$" );
 
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>

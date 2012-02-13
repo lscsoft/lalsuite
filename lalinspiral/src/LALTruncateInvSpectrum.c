@@ -21,8 +21,6 @@
 #include <lal/RealFFT.h>
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALTRUNCATEINVSPECTRUMC, "$Id$");
-
 void LALTruncateInvSpectrum(
         LALStatus                *status,
         REAL8Vector              *inputVec,
@@ -36,7 +34,7 @@ void LALTruncateInvSpectrum(
     REAL4Vector       *hvec = NULL;
     REAL4             *w, norm;
 
-    INITSTATUS( status, "LALTruncateInvSpectrum", LALTRUNCATEINVSPECTRUMC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR( status );
 
     ASSERT (inputVec,         status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

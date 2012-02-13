@@ -79,7 +79,6 @@ typedef struct {
 /***********************************************************************************************/
 /* global variables */
 extern int vrbflg;	 	/**< defined in lalapps.c */
-RCSID( "$Id$");		        /* FIXME: use git-ID instead to set 'rcsid' */
 
 /* gsl stuff needs to be seen globally for the root finding */
 gsl_interp_accel *acc_x = NULL;               /* gsl interpolation accelerator */
@@ -278,7 +277,7 @@ static void TimeOfEmission(LALStatus *status,
 			   void *tr0
 			   )
 {
-  INITSTATUS(status, "TimeOfEmission", "Function TimeOfEmission()");
+  INITSTATUS(status);
   ASSERT(tr0,status, 1, "Null pointer");
 
   /* interpolate to find the x,y,z coordinates of the heliocenter in the SSB frame (in seconds) */

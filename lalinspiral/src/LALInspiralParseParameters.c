@@ -111,10 +111,6 @@ None
 #define INSPIRALTEMPLATE_FIXEDSTEP              0
 #define INSPIRALTEMPLATE_INSPIRALONLY           0
 
-NRCSID (LALINSPIRALPARSEPARAMETERSC, "");
-
-
-
 void LALInspiralITStructureParseParameters(LALStatus *status,
 					   UINT4 argc,
 					   CHAR **argv,
@@ -123,7 +119,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 {
   UINT4 i	= 1;
 
-  INITSTATUS( status, "LALInspiralParseParameters", LALINSPIRALPARSEPARAMETERSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   while(i <argc)

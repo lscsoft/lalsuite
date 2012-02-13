@@ -7,7 +7,7 @@ Program to construct post-processing dag.
 
 __author__ = 'Collin Capano <cdcapano@physics.syr.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path

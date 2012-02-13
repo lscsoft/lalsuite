@@ -125,8 +125,6 @@ spindown timescale.
 extern "C" {
 #endif
 
-NRCSID(FLATMESHH,"$Id$");
-
 /** \name Error Codes */ /*@{*/
 /** \ingroup FlatMesh_h */
 #define FLATMESHH_ENUL 1

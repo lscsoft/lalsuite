@@ -23,7 +23,6 @@
  *
  * Authors:  Krishnan, B.
  *
- * Revision: $Id$
  *
  * History:   Created by Krishnan Feb 24, 2004
  *
@@ -33,7 +32,6 @@
 
 /* *********************************** <lalVerbatim file="RngMedBiasHV">
 Author: Krishnan, B., Itoh, Y.
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *********************************************
@@ -96,12 +94,6 @@ $Id$
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
- /*
- * 6. Assignment of Id string using NRCSID()
- */
-
-NRCSID (RNGMEDBIASH, "$Id$");
 
 /*
  * 7. Error codes and messages. This must be auto-extracted for

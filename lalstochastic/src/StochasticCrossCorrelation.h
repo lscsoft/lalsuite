@@ -82,8 +82,6 @@ and <tt>LALStochasticCrossCorrelationSpectrum()</tt>),
 extern "C" {
 #endif
 
-NRCSID( STOCHASTICCROSSCORRELATIONH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define STOCHASTICCROSSCORRELATIONH_ENULLPTR        1	/**< Null pointer */
 #define STOCHASTICCROSSCORRELATIONH_ESAMEPTR        2	/**< Input and Output pointers the same */

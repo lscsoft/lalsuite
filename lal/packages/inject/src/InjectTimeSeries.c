@@ -25,8 +25,6 @@
 #include <lal/Random.h>
 #include <lal/Inject.h>
 
-NRCSID( INJECTTIMESERIESC, "$Id$" );
-
 /**
 \author Creighton, T. D.
 \addtogroup InjectTimeSeries_c
@@ -97,7 +95,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
   const INT2 max = 32767;  /* largest INT2 */
   const INT2 min = -32768; /* smallest INT2 */
 
-  INITSTATUS( stat, "LALSI2InjectTimeSeries", INJECTTIMESERIESC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */
@@ -225,7 +223,7 @@ LALSSInjectTimeSeries( LALStatus       *stat,
   REAL8 offset;   /* the time from the start of *signalvec to the start
 		     of *output, in units of signalvec->deltaT. */
 
-  INITSTATUS( stat, "LALSSInjectTimeSeries", INJECTTIMESERIESC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */

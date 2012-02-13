@@ -33,8 +33,6 @@
 #include <lal/SeqFactories.h>
 #include "LALSTPNWaveform2.h"
 
-NRCSID (LALSTPNWAVEFORMC, "$Id$");
-
 /* private structure with PN parameters*/
 
 void LALSTPNderivatives(REAL8Vector *values, REAL8Vector *dvalues, void *mparams);
@@ -280,7 +278,7 @@ LALSTPNWaveform (
 
    UINT4 count;
    InspiralInit paramsInit;
-   INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec,  status,
@@ -330,7 +328,7 @@ LALSTPNWaveformTemplates (
 
    InspiralInit paramsInit;
 
-   INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1,  status,
@@ -380,10 +378,6 @@ LALSTPNWaveformTemplates (
 
 int newswitch = 0;
 
-NRCSID (LALSTPNWAVEFORMFORINJECTIONC,
-"$Id$");
-
-
 void
 LALSTPNWaveformForInjection (
 			     LALStatus        *status,
@@ -405,7 +399,7 @@ LALSTPNWaveformForInjection (
 
   CreateVectorSequenceIn in;
 
-  INITSTATUS(status, "LALSRPNWaveformForInjection", LALSTPNWAVEFORMFORINJECTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
 
@@ -676,7 +670,7 @@ LALSTPNWaveformEngine (
   REAL8 alpha, alpha0, omegadot;
   REAL8 f2a, apcommon;
 
-  INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* set parameters from InspiralTemplate structure*/

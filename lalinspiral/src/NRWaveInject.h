@@ -54,9 +54,6 @@
 extern "C" {
 #endif
 
-NRCSID( NRWAVEINJECTH, "$Id$");
-
-
 #define NRWAVEINJECT_ENULL    1
 #define NRWAVEINJECT_EFILE    2
 #define NRWAVEINJECT_ENONULL  3

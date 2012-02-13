@@ -25,7 +25,6 @@
  * \ingroup pulsarTODO
  * \brief API for the DetectorStates.c functions.
  *
- * $Id$
  *
  */
 
@@ -41,9 +40,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include <lal/LALRCSID.h>
-NRCSID( DETECTORSTATESH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/PulsarDataTypes.h>

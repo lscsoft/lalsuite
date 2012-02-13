@@ -99,9 +99,6 @@ include "broken" power law spectra
 #include <math.h>
 #include <lal/StochasticCrossCorrelation.h>
 
-NRCSID (STOCHASTICOMEGAGWC, "$Id$");
-
-
 void
 LALStochasticOmegaGW(
     LALStatus                         *status,
@@ -122,7 +119,7 @@ LALStochasticOmegaGW(
 
   UINT4 length;
 
-  INITSTATUS(status, "LALStochasticOmegaGW", STOCHASTICOMEGAGWC);
+  INITSTATUS(status);
 
   /* ERROR CHECKING -------------------------------------------------- */
 

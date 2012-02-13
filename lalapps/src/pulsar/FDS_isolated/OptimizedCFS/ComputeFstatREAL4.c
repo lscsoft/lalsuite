@@ -48,8 +48,6 @@
 
 #include "ComputeFstatREAL4.h"
 
-NRCSID( COMPUTEFSTATC, "$Id$");
-
 #ifdef EAH_OPTIMIZATION_FLAGS
 #include "LocalOptimizationFlags.h"
 #endif

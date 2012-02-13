@@ -52,8 +52,6 @@
 #define NUM 1000 
 /*used for defining structures such as crabOutput*/
 
-RCSID("$Id");
-
 int main(int argc, char **argv)
 {
     FILE *fp  = NULL;

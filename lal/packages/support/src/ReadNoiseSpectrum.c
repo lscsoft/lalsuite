@@ -19,7 +19,6 @@
 
 /**************************** <lalVerbatim file="ReadNoiseSpectrumCV">
 Author: Patrick Brady
-$Id$
 *********************************** </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -74,8 +73,6 @@ LALFree()
 #include <lal/Interpolate.h>
 #include <lal/ReadNoiseSpectrum.h>
 
-NRCSID(LALREADNOISESPECTRUMC,"$Id$");
-
 /*********************************************************************
  * STATIC FUNCTION to locate the point nearest to the desired
  * frequency for the interpolation step below
@@ -124,7 +121,7 @@ LALReadNoiseSpectrum(LALStatus *stat, REAL4FrequencySeries *spectrum, CHAR *fnam
     DInterpolateOut  intOutput;
     DInterpolatePar  intParams;
 
-    INITSTATUS(stat,"LALReadNoiseSpectrum",LALREADNOISESPECTRUMC);
+    INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);
 
     /* this is the file containing the spectrum data */

@@ -119,8 +119,6 @@
    StackSlideFstat.h needs SemiCohCandidateList defined. */
 #include "StackSlideFstat.h"
 
-RCSID( "$Id$");
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -1413,7 +1411,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   INT4 sft_check_result = 0;
 
-  INITSTATUS( status, "SetUpSFTs", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get sft catalog */
@@ -1660,7 +1658,7 @@ void ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structur
 
   toplist_t *houghToplist;
 
-  INITSTATUS( status, "ComputeFstatHoughMap", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input is not null */
@@ -2179,7 +2177,7 @@ void FstatVectToPeakGram (LALStatus *status,			/**< pointer to LALStatus structu
   INT4 nStacks, nSearchBins, nPeaks;
   UCHAR *upg;
 
-  INITSTATUS( status, "FstatVectToPeakGram", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( FstatVect == NULL ) {
@@ -2279,7 +2277,7 @@ void SetUpStacks(LALStatus *status, 	   /**< pointer to LALStatus structure */
   REAL8 tStart, thisTime;
   REAL8 Tsft;
 
-  INITSTATUS( status, "SetUpStacks", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input parameters */
@@ -2376,7 +2374,7 @@ void PrintHmap2file(LALStatus *status,
   INT4  k, i ;
   UINT2 xSide, ySide;
 
-  INITSTATUS( status, "PrintHmap2file", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   strcpy(  filename, fnameOut);
@@ -2419,7 +2417,7 @@ void PrintHoughGrid(LALStatus *status,
   INT4  k, i ;
   REAL8UnitPolarCoor sourceLocation;
 
-  INITSTATUS( status, "PrintHoughGrid", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   sprintf( filenumber, ".%06d",iHmap);
@@ -2492,7 +2490,7 @@ void ValidateHoughLUT(LALStatus       *status,
 
   BOOLEAN validateFlag = FALSE;
 
-  INITSTATUS( status, "ValidateHoughLUT", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   strcpy(  filename, basename);
@@ -2595,7 +2593,7 @@ void DumpLUT2file(LALStatus       *status,
   HOUGHMapDeriv  hd;
   HOUGHMapTotal  ht;
 
-  INITSTATUS( status, "DumpLUT2file", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   strcpy(  filename, basename);
@@ -2693,7 +2691,7 @@ void GetHoughCandidates_toplist(LALStatus *status,
   INT4 i,j, xSide, ySide;
   SemiCohCandidate thisCandidate;
 
-  INITSTATUS( status, "GetHoughCandidates_toplist", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   deltaF = ht->deltaF;
@@ -2756,7 +2754,7 @@ void GetHoughCandidates_threshold(LALStatus            *status,
   SemiCohCandidate thisCandidate;
   UINT2 criteria=1;
 
-  INITSTATUS( status, "GetHoughCandidates_threshold", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -2937,7 +2935,7 @@ void PrintSemiCohCandidates(LALStatus *status,
   INT4 k;
   PulsarSpins  fkdotIn, fkdotOut;
 
-  INITSTATUS( status, "PrintSemiCohCandidates", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   INIT_MEM ( fkdotIn );
@@ -2975,7 +2973,7 @@ void PrintSemiCohCandidates(LALStatus *status,
   REAL8 f0, deltaF, alpha, delta;
   PulsarSpins fkdot;
 
-  INITSTATUS( status, "PrintFstatVec", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   INIT_MEM(fkdot);
@@ -3020,7 +3018,7 @@ void GetFstatCandidates_toplist( LALStatus *status,
   REAL8 deltaF, f0;
   HoughFStatOutputEntry line;
 
-  INITSTATUS( status, "GetFstatCandidates_toplist", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* fill up alpha, delta and fdot in fstatline */
@@ -3058,7 +3056,7 @@ void PrintHoughHistogram( LALStatus *status,
   char filename[256];
   UINT4  i ;
 
-  INITSTATUS( status, "PrintHoughHistogram", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   strcpy(  filename, fnameOut);
@@ -3089,7 +3087,7 @@ void PrintCatalogInfo( LALStatus  *status,
   INT4 nSFT;
   LIGOTimeGPS start, end;
 
-  INITSTATUS( status, "PrintCatalogInfo", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
@@ -3118,7 +3116,7 @@ void PrintStackInfo( LALStatus  *status,
 
   INT4 nStacks, k;
 
-  INITSTATUS( status, "PrintStackInfo", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
@@ -3154,7 +3152,7 @@ void GetChkPointIndex( LALStatus *status,
   UINT4 tmpIndex;
   CHAR lastnewline='\0';
 
-  INITSTATUS( status, "GetChkPointIndex", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* if something goes wrong later then lopindex will be 0 */
@@ -3206,7 +3204,7 @@ void GetStackVelPos( LALStatus *status,
   INT4 counter, numifo;
   CreateVectorSequenceIn createPar;
 
-  INITSTATUS( status, "GetStackVelPos", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -3297,7 +3295,7 @@ void ComputeStackNoiseWeights( LALStatus *status,
   MultiNoiseWeights *multNoiseWts;
 
 
-  INITSTATUS( status, "", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
@@ -3364,7 +3362,7 @@ void ComputeStackNoiseAndAMWeights( LALStatus *status,
   MultiDetectorStateSeries *multDetStates;
   MultiAMCoeffs *multiAMcoef = NULL;
 
-  INITSTATUS( status, "ComputeStackNoiseAndAMWeights", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( inNoise != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
@@ -3442,7 +3440,7 @@ void GetSemiCohToplist(LALStatus            *status,
   INT4 k;
   HoughFStatOutputEntry line;
 
-  INITSTATUS( status, "GetSemiCohToplist", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
@@ -3511,7 +3509,7 @@ void ComputeNumExtraBins(LALStatus            *status,
   REAL8VectorSequence  *pos;
   LIGOTimeGPSVector    *tsMid;
 
-  INITSTATUS( status, "ComputeNumExtraBins", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   vel = par->vel;
@@ -3704,7 +3702,7 @@ void GetXiInSingleStack (LALStatus         *status,
   REAL8   timeDiffProd;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "GetXiInSingleStack", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

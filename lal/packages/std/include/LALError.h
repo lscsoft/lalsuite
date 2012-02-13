@@ -18,7 +18,6 @@
 */
 
 /************************************ <lalVerbatim file="LALErrorHV">
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -51,9 +50,6 @@ that allow functions to abort.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID( LALERRORH, "$Id$" );
 
 /* lalDebugLevel bit field values: */
 enum

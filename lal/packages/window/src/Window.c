@@ -38,10 +38,6 @@
 #include <lal/Window.h>
 #include <lal/XLALError.h>
 
-
-NRCSID(WINDOWC, "$Id$");
-
-
 /*
  * ============================================================================
  *

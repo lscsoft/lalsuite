@@ -32,10 +32,6 @@
 #include "./DriveHoughColor.h"
 #include "./MCInjectHoughMulti.h"
 
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 
@@ -688,7 +684,7 @@ void ComputeFoft(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -753,7 +749,7 @@ void SplitSFTs(LALStatus         *status,
     REAL8   partialsumWeightp, partialsumWeightSquarep;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "SplitSFTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

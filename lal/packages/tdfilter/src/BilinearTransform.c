@@ -19,7 +19,6 @@
 
 /**************************** <lalVerbatim file="BilinearTransformCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -123,8 +122,6 @@ LALSHeapIndex()                 LALDHeapIndex()
 #include <lal/Sort.h>
 #include <math.h>
 #include <lal/ZPGFilter.h>
-
-NRCSID(BILINEARTRANSFORMC,"$Id$");
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -655,7 +652,7 @@ void
 LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
 			  COMPLEX8ZPGFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALWToZCOMPLEX8ZPGFilter",BILINEARTRANSFORMC);
+  INITSTATUS(stat);
 
   if(XLALWToZCOMPLEX8ZPGFilter(filter)<0)
   {
@@ -680,7 +677,7 @@ void
 LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
 			   COMPLEX16ZPGFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALWToZCOMPLEX16ZPGFilter",BILINEARTRANSFORMC);
+  INITSTATUS(stat);
 
   if(XLALWToZCOMPLEX16ZPGFilter(filter)<0)
   {

@@ -25,7 +25,6 @@
  * \ingroup moduleLatticeCovering
  * \brief test-functions for the module LatticeCovering
  *
- * $Id$
  *
  */
 
@@ -40,10 +39,6 @@
 
 #include <lal/LatticeCovering.h>
 #include <lal/DopplerScan.h>
-
-
-
-RCSID ("$Id$");
 
 /*---------- DEFINES ----------*/
 #define TRUE (1==1)
@@ -146,7 +141,7 @@ int main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   uvar_dimension = 2;

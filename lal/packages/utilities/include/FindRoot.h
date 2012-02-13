@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="FindRootHV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -54,9 +53,6 @@ Root finding routines.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID (FINDROOTH, "$Id$");
 
 #if 0 /* autodoc block */
 

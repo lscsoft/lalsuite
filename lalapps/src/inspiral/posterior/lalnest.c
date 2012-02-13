@@ -35,8 +35,6 @@
 
 #include "nest_calc.h"
 
-RCSID(LALAPPS_VCS_IDENT_ID);
-
 #define MAXSTR 128
 #define TIMESLIDE 10 /* Length of time to slide data to lose coherency */
 #define DEBUG 0

@@ -54,8 +54,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( FRAMESTREAMH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002

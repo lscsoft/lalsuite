@@ -93,8 +93,6 @@ AstroOmegaParams;
 #ifdef __cplusplus
 extern "C" {
 #endif
-NRCSID (ASTROOMEGAH, "$Id$");
-
 
 /*type corresponding to the spectral energy density of a single source*/
 typedef void (REAL8LALSDensity) (REAL8 *output, REAL8 input);

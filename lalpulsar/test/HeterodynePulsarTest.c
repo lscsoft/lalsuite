@@ -66,10 +66,6 @@ LALFineHeterodyneToPulsar()
 #include <lal/ZPGFilter.h>
 #include <lal/LALInitBarycenter.h>
 
-/******* DEFINE RCS ID STRING ************/
-
-NRCSID( HETERODYNEPULSARTESTC, "$Id$" );
-
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 #define SQRT3_2 0.8660254037844386467637231707529361L
 

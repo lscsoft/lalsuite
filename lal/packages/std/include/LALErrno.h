@@ -19,15 +19,11 @@
 
 /* <lalVerbatim file="LALErrnoHV">
 Author: Cannon, K. C.
-Revision: $Id$
 </lalVerbatim>
  */
 
 #ifndef _LALERRNO_H
 #define _LALERRNO_H
-
-#include <lal/LALRCSID.h>
-NRCSID (LALERRNOH,"$Id$");
 
 /*
  * Error codes and corresponding error messages.

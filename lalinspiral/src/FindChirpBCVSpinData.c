@@ -71,9 +71,6 @@ LALDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVSPINDATAC, "$Id$");
-
-
 void
 LALFindChirpBCVSpinData (
     LALStatus                  *status,
@@ -116,7 +113,7 @@ LALFindChirpBCVSpinData (
 
 
   /*declaration*/
-  INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the output exists */

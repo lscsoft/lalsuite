@@ -69,8 +69,6 @@ LALCOMPLEX8VectorFFT()
 #include <lal/Chisq_CPU.h>
 #include <lal/LALInspiralConfig.h>
 
-NRCSID (FINDCHIRPCHISQC, "$Id$");
-
 
 void
 LALFindChirpComputeChisqBins(
@@ -90,7 +88,7 @@ LALFindChirpComputeChisqBins(
   REAL4         nextBin;
   REAL4         partSum;
 
-  INITSTATUS( status, "LALFindChirpComputeChisqBins", FINDCHIRPCHISQC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -190,7 +188,7 @@ LALFindChirpChisqVeto (
 
 {
 
-  INITSTATUS( status, "LALFindChirpChisqVeto", FINDCHIRPCHISQC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

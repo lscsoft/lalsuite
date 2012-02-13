@@ -89,8 +89,6 @@
  *
 */
 
-NRCSID( RINGC, "$Id$" );
-
 static REAL4 ring_spin_factor( REAL4 a )
 {
   /* Cardoso's equation from Berti et al. (2008) */

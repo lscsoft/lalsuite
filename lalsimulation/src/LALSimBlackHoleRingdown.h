@@ -34,16 +34,11 @@ typedef double complex dcomplex;
 
 #include <lal/LALDatatypes.h>
 
-#include <lal/LALRCSID.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID(LALSIMBLACKHOLERINGDOWNH, "$Id$");
-
 
 /* LOW-LEVEL ROUTINES (USE LEAVER'S CONVENSIONS G = c = 2M = 1) */
 

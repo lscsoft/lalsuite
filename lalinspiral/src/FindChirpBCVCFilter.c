@@ -50,10 +50,6 @@
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVCFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpBCVCFilterSegment (
     LALStatus                  *status,
@@ -122,7 +118,7 @@ LALFindChirpBCVCFilterSegment (
    * */
 
 
-  INITSTATUS( status, "LALFindChirpBCVCFilter", FINDCHIRPBCVCFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*

@@ -43,10 +43,6 @@ functions.
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 
-
-NRCSID (FINDCHIRPDATAC, "$Id$");
-
-
 void
 LALFindChirpDataInit (
     LALStatus                  *status,
@@ -66,7 +62,7 @@ LALFindChirpDataInit (
   const REAL8                   exponentBCVSpin2 = -2.0/3.0;
   UINT4                         k;
 
-  INITSTATUS( status, "LALFindChirpDataInit", FINDCHIRPDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -474,7 +470,7 @@ LALFindChirpDataFinalize (
 {
   FindChirpDataParams          *dataParamPtr;
 
-  INITSTATUS( status, "LALFindChirpDataFinalize", FINDCHIRPDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

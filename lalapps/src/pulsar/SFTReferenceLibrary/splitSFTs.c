@@ -52,7 +52,7 @@
 #include <LALAppsVCSInfo.h>
 #include "SFTReferenceLibrary.h"
 
-#define RCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
+#define VCSID LALAPPS_VCS_IDENT_ID LALAPPS_VCS_IDENT_STATUS
 
 /** rounding (for positive numbers!)
     taken from SFTfileIO in LALSupport, should be consistent with that */
@@ -129,7 +129,7 @@ int main(int argc, char**argv) {
   double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
   int firstfile = TRUE;           /* are we processing the first input SFT file? */
   int allcomments = FALSE;        /* write comment into _every_ SFT in the file */
-  int add_comment = CMT_FULL;     /* add RCSID and full command-line to every SFT file */
+  int add_comment = CMT_FULL;     /* add VCS ID and full command-line to every SFT file */
   unsigned int start = 0, end = 0;     /* start and end in bins */
   unsigned int width = 0, overlap = 0; /* width and overlap in bins */
   double fMin = -1.0, fMax = -1.0;     /* start and end in Hz */
@@ -186,16 +186,16 @@ int main(int argc, char**argv) {
 	    "  as you wish (or the OS supports - using xargs should be simple with this command-line\n"
 	    "  syntax).\n"
 	    "\n"
-	    "  The program adds its own RCSID and command-line to the comment of the written SFTs,\n"
+	    "  The program adds its own VCS ID and command-line to the comment of the written SFTs,\n"
 	    "  a mystery factor should show up as 'xxx' there.\n",
 	    argv[0], argv[0]);
     exit(0);
   }
 
-  /* record RCSID and command-line for the comment */
-  TRY((cmdline = (char*)malloc(strlen(RCSID)+2)) == NULL,
+  /* record VCS ID and command-line for the comment */
+  TRY((cmdline = (char*)malloc(strlen(VCSID)+2)) == NULL,
       "out of memory allocating cmdline",1);
-  strcpy(cmdline,RCSID);
+  strcpy(cmdline,VCSID);
   strcat(cmdline, "\n");
   for(arg = 0; arg < argc; arg++) {
     if (strcmp(argv[arg], "-m") == 0) {

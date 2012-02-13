@@ -23,7 +23,6 @@
 /* Revision: Y. Itoh - AEI December 2003  */
 /*           Commented out "if Nclust==0. NclustPoints[Nclust]=k"  */
 
-/* $Id$ */
 
 /* #include <stdlib.h> */
 #include <lal/LALStdlib.h>
@@ -31,8 +30,6 @@
 #include "clusters.h"
 
 #include <lal/LALRunningMedian.h>
-
-NRCSID( CLUSTERSC, "$Id$");
 
 /* a few error codes */
 #define CLUSTERSC_ENULL 		1
@@ -66,7 +63,7 @@ EstimateFloor(LALStatus *stat, REAL8Vector *input, INT2 windowSize, REAL8Vector 
   REAL8 *dmp;
   INT4 M;
 
-  INITSTATUS( stat, "EstimateFloor", CLUSTERSC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat); 
 
   M = nbins - windowSize + 1;
@@ -148,7 +145,7 @@ DetectClusters(LALStatus *stat, ClustersInput *input, ClustersParams *clParams, 
 
   int k,i,i0,lpc,j,imax1,imax2,shift;
 
-  INITSTATUS( stat, "DetectClusters", CLUSTERSC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat); 
 
   wings      = clParams->wings;

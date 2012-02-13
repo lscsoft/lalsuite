@@ -24,8 +24,6 @@
 #include <lal/LALDatatypes.h>
 #include <gsl/gsl_rng.h>
 
-#include <lal/LALRCSID.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

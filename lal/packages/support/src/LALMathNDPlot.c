@@ -23,7 +23,6 @@
  *
  * Author: Hanna C. R.
  *
- * Revision: $Id$
  *
  *_______________________________________________________________________________________
  */
@@ -34,7 +33,6 @@
 
 /*<lalVerbatim file="LALMathNDPlotCV">
   Author: Hanna, C. R.
-  $Id$
   </lalVerbatim>*/
 
 /*SUBSECTION - MODULE - "LALMathNDPlot.c" ------------------------------------ <lalLaTeX>
@@ -104,8 +102,6 @@
 
 #define INSTRUCTIONS    fprintf(nb, "Running this entire notebook using ctrl+A and shift+enter may crash your computer.  Evaluate each section as needed.  The Initialization and User Variables sections must be evaluated first.  The 3-dimensional projections are represented in the sections below User Varibles as PointList (x1, x2, x3) etc.  Evaluating the entire Image Generation sections creates animated plots (if AnimationPlot := True).  If (AnimationPlot := False) you get only still plots, saving time and memory.")
 
-NRCSID(LALMATHNDPLOTC, "$Id$");
-
 /* <lalVerbatim file="LALMathNDPlotCP"> */
 void
 LALMathNDPlot( LALStatus *stat,
@@ -125,7 +121,7 @@ LALMathNDPlot( LALStatus *stat,
   INT4 z = 0;
 
 
-  INITSTATUS( stat, "LALMathNDPlot", LALMATHNDPLOTC );
+  INITSTATUS(stat);
 
   /* Check that the PointList isn't NULL */
   if (!first) {

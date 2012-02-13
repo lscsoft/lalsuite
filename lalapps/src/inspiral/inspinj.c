@@ -25,7 +25,6 @@
  *
  * Author: Brown, D. A., Creighton, J. D. E. and Dietz A. IPN contributions from Predoi, V.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -48,8 +47,6 @@
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
-
-RCSID( "$Id$" );
 
 #define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"

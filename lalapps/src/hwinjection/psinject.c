@@ -71,9 +71,6 @@
 /* sample rate of output */
 #define SRATE 16384
 
-/* Give 'ident' something to recognize in the executable */
-const char *cvsid="$Id$";
-
 /* Flag to initiate graceful shutdown, set by sighandler */
 volatile int shutdown_pulsar_injection = 0;
 int npulsars=0;

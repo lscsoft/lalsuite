@@ -44,7 +44,6 @@ Provides prototype information for the routines in
 #ifndef _READFTSERIES_H
 #define _READFTSERIES_H
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
@@ -63,8 +62,6 @@ enum enumMaxLineLength {
   MaxLineLength = LALSupportUnitTextSize + sizeof("Units are ()\n")
 };
 #endif /* SWIG */
-
-NRCSID( READFTSERIESH, "$Id$" );
 
 void LALReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALSReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );

@@ -47,9 +47,6 @@ None so far...
 
 #include <lal/LALAdaptiveRungeKutta4.h>
 
-NRCSID(LALADAPTIVERUNGEKUTTA4C, "$Id$");
-
-
 ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),  /* These are XLAL functions! */
                              int (* stop) (double t, const double y[], double dydt[], void * params),

@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2008-9 Antony Searle
  *
@@ -31,8 +30,6 @@ extern "C" {
 #endif
 
 #include <lal/LALDetectors.h>
-#include <lal/LALRCSID.h>
-NRCSID(EPSEARCHH, "$Id$");
 
 // Manipulate log-represented values without overflowing
 

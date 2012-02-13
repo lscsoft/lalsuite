@@ -80,7 +80,6 @@
 extern "C" {
 #endif
   
-NRCSID (STACKSLIDEBINARYH, "$Id$");
 
 /* 04/12/05 gam; add StackSlideSearchParams *params */
 void StackSlideBinary(  LALStatus *status,

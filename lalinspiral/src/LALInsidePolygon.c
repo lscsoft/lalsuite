@@ -50,9 +50,6 @@ Tested in matlab codes and some BCV tests within lal/lalapps.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSIDEPOLYGONC, "Id: $");
-
-
 void LALInsidePolygon(  LALStatus          *status,
                         REAL4              *inputx,
                         REAL4              *inputy,
@@ -65,7 +62,7 @@ void LALInsidePolygon(  LALStatus          *status,
 {
 
 
-   INITSTATUS (status, "LALInsidePolygon", LALINSIDEPOLYGONC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (n>=3,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 

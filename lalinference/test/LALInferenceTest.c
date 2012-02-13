@@ -1,9 +1,8 @@
 /* 
- *  InferenceTest.c:  Bayesian Followup function testing site
+ *  LALInferenceTest.c:  Unit tests for LALInference.c library code
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
- *
- *
+ *  Copyright (C) 2011 Ben Aylott, Ilya Mandel, Chiara Mingarelli Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch, Will Vousden
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -20,23 +19,356 @@
  *  MA  02111-1307  USA
  */
 
-/* example command line: */
-/* 
-./InferenceTest --IFO [H1] --cache [/Users/john/data/triple/H1/frames.cache] --PSDstart 864162143.0 --PSDlength 1000 --srate 1024 --seglen 10 --trigtime 864162943.0
-*/
-
 #include <stdio.h>
-#include <lal/Date.h>
+#include <stdlib.h>
 #include <lal/LALInference.h>
-#include <lal/FrequencySeries.h>
 #include <lal/Units.h>
+#include <lal/FrequencySeries.h>
+#include <lal/TimeFreqFFT.h>
+#include <lal/VectorOps.h>
+#include <lal/Date.h>
+#include <lal/XLALError.h>
+#include <lal/TimeSeries.h>
+#include <lal/Sequence.h>
 #include <lal/StringInput.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/TimeSeries.h>
-#include <lal/LALInferenceReadData.h>
+#include <lal/LALInferenceReadData.h> 
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferencePrior.h>
+
+#include "LALInferenceTest.h"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
+size_t LALInferenceTypeSize[] = {sizeof(INT4), 
+                                 sizeof(INT8),
+                                 sizeof(UINT4),
+                                 sizeof(REAL4), 
+                                 sizeof(REAL8), 
+                                 sizeof(COMPLEX8), 
+                                 sizeof(COMPLEX16), 
+                                 sizeof(gsl_matrix *),
+                                 sizeof(REAL8Vector *),
+                                 sizeof(UINT4Vector *),
+                                 sizeof(CHAR *),
+                                 sizeof(void *)
+};
+
+/* for LALInferenceParseCommandLine tests*/
+int LALInferenceParseCommandLineTEST_NODBLDASH(void);
+int LALInferenceParseCommandLineTEST_STDINPUT(void);
+int LALInferenceParseCommandLineTEST_DASHINPUT(void);
+
+/*  LALInferenceProcessParamLine tests */
+int LALInferenceProcessParamLine_TEST(void);
+int LALInferenceProcessParamLine_TEST_EMPTYFILE(void);
+int LALInferenceProcessParamLine_TEST_CHARFILE(void);
+
+/*  LALInferenceExecuteFT tests */
+int LALInferenceExecuteFTTEST_SOMETHING(void);
+
+int main(void){
+    lalDebugLevel |= LALERROR;
+    
+	int failureCount = 0;
+
+	failureCount += LALInferenceParseCommandLineTEST_NODBLDASH();
+	printf("\n");
+	failureCount += LALInferenceParseCommandLineTEST_STDINPUT();
+	printf("\n");
+	failureCount += LALInferenceParseCommandLineTEST_DASHINPUT();
+	printf("\n");
+	failureCount += LALInferenceProcessParamLine_TEST();
+	printf("\n");
+	failureCount += LALInferenceProcessParamLine_TEST_EMPTYFILE();
+	printf("\n");
+	failureCount += LALInferenceProcessParamLine_TEST_CHARFILE();
+	printf("\n");
+	failureCount += LALInferenceExecuteFTTEST_SOMETHING();
+	printf("\n");
+	printf("Test results: %i failure(s).\n", failureCount);
+
+	return failureCount;
+
+}
+
+/*****************     TEST CODE for LALInferenceParseCommandLine     *****************/
+
+/*this function tests to see if LALInferenceParseCommandLine catches the double dash condition. Expect fail. */
+int LALInferenceParseCommandLineTEST_NODBLDASH(void){
+    TEST_HEADER();
+    int errnum,i;
+    const int number=3;
+    ProcessParamsTable *answer;
+    
+    char** list=(char**)XLALCalloc(3,sizeof(char*));
+    for(i=0;i<number;i++){
+        list[i]=(char*)XLALCalloc(10,sizeof(char));
+    }
+    
+    strcpy(list[0],"foo");
+    strcpy(list[1],"bar");
+    strcpy(list[2],"baz");
+   
+    XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
+    (void)number;
+    
+    if (errnum == XLAL_SUCCESS||answer!=NULL)
+    {
+        TEST_FAIL("Did not use double dash on fist input, should fail; XLAL error code: %i.", errnum);
+    } 
+
+    TEST_FOOTER();
+
+}
+
+/*this function tests to see if LALInferenceParseCommandLine tests standard input. Expect pass. */
+int LALInferenceParseCommandLineTEST_STDINPUT(void){
+    TEST_HEADER();
+    int errnum,i;
+    ProcessParamsTable *answer;
+    const int number=3;
+    
+    char** list=(char**)XLALCalloc(3,sizeof(char*));
+    for(i=0;i<number;i++){
+        list[i]=(char*)XLALCalloc(10,sizeof(char));
+    }
+    
+    strcpy(list[0],"filename");
+    strcpy(list[1],"--bar");
+    strcpy(list[2],"--baz");
+   
+    XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
+    if (errnum == XLAL_SUCCESS||answer!=NULL)
+    {
+        printf("Standard input woking ... \n ");
+    } 
+    else{
+      TEST_FAIL("Input error; XLAL error code: %i.", errnum);
+    }
+
+    TEST_FOOTER();
+
+}
+
+/*this function tests to see if LALInferenceParseCommandLine tests inputs. We expect this to fail bc !dbldash. */
+int LALInferenceParseCommandLineTEST_DASHINPUT(void){
+    TEST_HEADER();
+    int errnum,i;
+    ProcessParamsTable *answer;
+    const int number=3;
+    
+    char** list=(char**)XLALCalloc(3,sizeof(char*));
+    for(i=0;i<number;i++){
+        list[i]=(char*)XLALCalloc(10,sizeof(char));
+    }
+    
+    strcpy(list[0],"foo");
+    strcpy(list[1],"bar");
+    strcpy(list[2],"baz");
+   
+    XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
+    if (errnum == XLAL_SUCCESS||answer!=NULL)
+    {
+        TEST_FAIL("Did not use double dash on fist input, should fail; XLAL error: %s.", XLALErrorString(errnum));
+    }
+
+    TEST_FOOTER();
+
+}
+
+
+
+
+/*****************     TEST CODE for LALInferenceProcessParamLine     *****************/
+
+//this should work, and it does
+int LALInferenceProcessParamLine_TEST(void){
+    TEST_HEADER();
+    int errnum,i;
+
+    FILE *file;
+    LALInferenceVariables *vars;
+
+    const int argc=3;
+    const int argLength=10;
+    char **headers=XLALCalloc(argc + 1,sizeof(char*));
+
+    for(i=0;i<argc;i++){
+        headers[i]=XLALCalloc(argLength,sizeof(char));
+    }
+
+    strcpy(headers[0],"foo");
+    strcpy(headers[1],"barbie");
+    strcpy(headers[2],"baz");
+    headers[3]=NULL;
+    vars=XLALCalloc(1,sizeof(LALInferenceVariables));
+
+    // Create a temporary file, populate it, and rewind to the beginning before using it.
+    file=tmpfile();
+    fprintf(file, "-1.01 3.01 4.01");
+    rewind(file);
+
+    XLAL_TRY(LALInferenceProcessParamLine(file, headers,vars), errnum);
+    if (errnum != XLAL_SUCCESS)
+    {
+        TEST_FAIL("Could not read file; XLAL error: %s.", XLALErrorString(errnum));
+    }
+
+    fclose(file);
+    TEST_FOOTER();
+}
+
+//what happens with an empty file? expect failure and fails.
+int LALInferenceProcessParamLine_TEST_EMPTYFILE(void){
+    TEST_HEADER();
+    int errnum,i;
+
+    FILE *file;
+    LALInferenceVariables *vars;
+
+    const int argc=3;
+    const int argLength=10;
+    char **headers=XLALCalloc(argc + 1,sizeof(char*));
+
+    for(i=0;i<argc;i++){
+        headers[i]=XLALCalloc(argLength,sizeof(char));
+    }
+
+    strcpy(headers[0],"foo");
+    strcpy(headers[1],"barbie");
+    strcpy(headers[2],"baz");
+    headers[3]=NULL;
+    vars=XLALCalloc(1,sizeof(LALInferenceVariables));
+
+    // Create a temporary file and leave it empty.
+    file=tmpfile();
+
+    XLAL_TRY(LALInferenceProcessParamLine(file, headers,vars), errnum);
+    if (errnum == XLAL_SUCCESS)
+    {
+        TEST_FAIL("Reading empty file succeeded but should have failed!.");
+    }
+
+    fclose(file);
+    TEST_FOOTER();
+}
+
+/*what happens if it gets chars instad of doubles? */
+int LALInferenceProcessParamLine_TEST_CHARFILE(void){
+    TEST_HEADER();
+    int errnum,i;
+
+    FILE *file;
+    LALInferenceVariables *vars;
+    
+    char** headers=(char**)XLALCalloc(4,sizeof(char*));
+    
+    for(i=0;i<3;i++){
+        headers[i]=(char*)XLALCalloc(10,sizeof(char));
+    }
+    
+    strcpy(headers[0],"foo");
+    strcpy(headers[1],"barbie");
+    strcpy(headers[2],"baz");
+    headers[3]=NULL;
+    vars=XLALCalloc(1,sizeof(LALInferenceVariables));
+    
+    // Create a temporary file, populate it, and rewind to the beginning before using it.
+    file=tmpfile();
+    fprintf(file, "2.99 3.01 b");
+    rewind(file);
+
+    XLAL_TRY(LALInferenceProcessParamLine(file, headers,vars), errnum);
+    if (errnum == XLAL_SUCCESS)
+    {
+        TEST_FAIL("Should not pass; non-numeric characters in file!.");
+    }
+
+    TEST_FOOTER();
+}
+
+
+
+
+/*****************     TEST CODE for LALInferenceExecuteFT     *****************/
+/* This doesn't do any testing....*/
+
+int LALInferenceExecuteFTTEST_SOMETHING(void){
+    
+    TEST_HEADER();
+    
+    UINT4 i,deltaF,length;
+    LIGOTimeGPS epoch;
+    
+    length = 1;
+    
+    deltaF=0.1;
+    
+    LALInferenceIFOData *testIFOData=(LALInferenceIFOData*)LALCalloc(1, sizeof(LALInferenceIFOData));
+    //LALInferenceIFOData  *testNULLIFOData = NULL;
+    
+    REAL8TimeSeries *timeModelhPlus=(REAL8TimeSeries*)XLALCalloc(1, sizeof(REAL8TimeSeries));
+    REAL8TimeSeries *timeModelhCross=(REAL8TimeSeries*)XLALCalloc(1, sizeof(REAL8TimeSeries));
+    REAL8TimeSeries *TData=(REAL8TimeSeries*)XLALCreateREAL8TimeSeries("timeData",&epoch,0.0,0.1,&lalDimensionlessUnit,length);
+    
+    REAL8Sequence *TimedataPlus=XLALCreateREAL8Sequence(length);
+    REAL8Sequence *TimedataCross=XLALCreateREAL8Sequence(length);
+    
+    REAL8Window *window=XLALCalloc(1, sizeof(REAL8Window));
+    REAL8Sequence *Windowdata=XLALCreateREAL8Sequence(length);
+    
+    COMPLEX16Sequence *Freqdata=XLALCreateCOMPLEX16Sequence(length);
+    
+    COMPLEX16FrequencySeries *freqData=XLALCalloc(1, sizeof(COMPLEX16FrequencySeries));
+    
+    testIFOData->freqData=freqData;
+    testIFOData->freqData->deltaF=deltaF;
+    testIFOData->freqData->data=Freqdata;
+    
+    testIFOData->freqData->data->length=length;
+    
+    testIFOData->timeModelhPlus=timeModelhPlus;
+    testIFOData->timeModelhPlus->data=TimedataPlus;
+    testIFOData->timeModelhPlus->data->length=length;
+    
+    testIFOData->timeModelhCross=timeModelhCross;
+    testIFOData->timeModelhCross->data=TimedataCross;
+    testIFOData->timeModelhCross->data->length=length;
+    
+    testIFOData->timeData=TData;
+    testIFOData->timeData->epoch=epoch;
+    
+    testIFOData->window=window;
+    
+    testIFOData->window->data=Windowdata;
+    
+    testIFOData->timeToFreqFFTPlan=NULL;
+
+    for (i=0; i<length; ++i){
+        testIFOData->timeModelhPlus->data->data[i]  = 0.0; 
+        testIFOData->timeModelhCross->data->data[i] = 0.0;
+    }
+
+    if (testIFOData!=NULL){            
+        LALInferenceExecuteFT(testIFOData);
+    }
+    
+    TEST_FOOTER();
+
+}
+
+
+/******************************************
+ * 
+ * Old tests
+ * 
+ ******************************************/
 
 LALInferenceVariables variables;
 LALInferenceVariables variables2;
@@ -56,14 +388,10 @@ LALInferenceRunState *runstate=NULL;
 int i, j, k;
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
-//Test LALInferenceProposalFunction
-void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-//Test LALPriorFunction
-REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
-REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+
 //Test LALEvolveOneStepFunction
 void BasicMCMCOneStep(LALInferenceRunState *runState);
+
 //Test LALAlgorithm
 void MCMCAlgorithm (struct tagLALInferenceRunState *runState);
 void NelderMeadEval(struct tagLALInferenceRunState *runState,
@@ -73,14 +401,12 @@ void NelderMeadAlgorithm(struct tagLALInferenceRunState *runState, LALInferenceV
 
 
 void LALVariablesTest(void);
-void ParseCommandLineTest(int argc, char ** argv);
 void DataTest(void);
 void TemplateStatPhaseTest(void);
 void SingleIFOLikelihoodTest(void);
 void BasicMCMCTest(void);
 void TemplateDumpTest(void);
 void PTMCMCTest(void);
-REAL8 FreqDomainNullLogLikelihood(LALInferenceIFOData *data);
 
 // gsl_rng * InitializeRandomSeed(void);
 // unsigned long int random_seed();
@@ -205,256 +531,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	return(irs);
 }
 
-
-
-
-REAL8 FreqDomainNullLogLikelihood(LALInferenceIFOData *data)
-/* calls the `FreqDomainLogLikelihood()' function in conjunction   */
-/* with the `templateNullFreqdomain()' template in order to return */
-/* the "Null likelihood" without having to bother specifying       */
-/* parameters or template while ensuring computations are exactly  */
-/* the same as in usual likelihood calculations.                   */
-{
-	LALInferenceVariables dummyParams;
-	double dummyValue;
-	double loglikeli;
-	/* set some (basically arbitrary) dummy values for intrinsic parameters */
-	/* (these shouldn't make a difference, but need to be present):         */
-	dummyParams.head      = NULL;
-	dummyParams.dimension = 0;
-	dummyValue = 0.5;
-	LALInferenceAddVariable(&dummyParams, "rightascension", &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_CIRCULAR);
-	LALInferenceAddVariable(&dummyParams, "declination",    &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddVariable(&dummyParams, "polarisation",   &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddVariable(&dummyParams, "distance",       &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
-	+ (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
-	LALInferenceAddVariable(&dummyParams, "time",           &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	loglikeli = LALInferenceFreqDomainLogLikelihood(&dummyParams, data, &LALInferenceTemplateNullFreqdomain);
-	LALInferenceDestroyVariables(&dummyParams);
-	return(loglikeli);
-}
-
-
-
-
-
-int main(int argc, char *argv[]){
-  fprintf(stdout," ========== InferenceTest.c ==========\n");
-
-  /* test "LALInferenceVariables" stuff: */
-  //LALInferenceVariablesTest();  //does not affect other testing
-  
-  /* test "LALInferenceParseCommandLine()" function: */
-  ParseCommandLineTest(argc, argv);  //necessary for reading data
-
-  /* Test the data initialisation &c. */
-  runstate = initialize(ppt);
-  
-  if(runstate->data) {
-    /* Test the created data */  
-    //DataTest();
-    
-    /* TemplateStatPhase() test */
-	//TemplateStatPhaseTest();
-			
-	/* Single IFO likelihood test */
-	//SingleIFOLikelihoodTest();
-	
-	/* MCMC basic Sampler test */
-	//BasicMCMCTest();
- 
-	/* Nelder-Mead test */
-	//NelderMeadAlgorithm(runstate, NULL);
-
-    /* Template alignment and dump test */
-	//TemplateDumpTest();
-	  
-	/* PTMCMC test */
-	PTMCMCTest();
-	  
-
-  }
-  printf(" ========== main(): finished. ==========\n");
-  return 0;
-}
-
-
-
-//Test LALProposalFunction
-void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-/****************************************/
-/* Assumes the following parameters		*/
-/* exist (e.g., for TaylorT1):			*/
-/* chirpmass, massratio, inclination,	*/
-/* phase, time, rightascension,			*/
-/* desclination, polarisation, distance.*/
-/* Simply picks a new value based on	*/
-/* fixed Gaussian;						*/
-/* need smarter wall bounces in future.	*/
-/****************************************/
-{
-  REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
-  REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
-        ra_proposed, dec_proposed, psi_proposed, dist_proposed;
-  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
-  gsl_rng * GSLrandom=runState->GSLrandom;
-  LALInferenceVariables * currentParams_local = runState->currentParams;
-
-  mc   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "chirpmass");		/* solar masses*/
-  eta  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "massratio");		/* dim-less    */
-  iota = *(REAL8*) LALInferenceGetVariable(currentParams_local, "inclination");		/* radian      */
-  tc   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "time");				/* GPS seconds */
-  phi  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "phase");			/* radian      */
-  ra   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "rightascension");	/* radian      */
-  dec  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "declination");		/* radian      */
-  psi  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "polarisation");		/* radian      */
-  dist = *(REAL8*) LALInferenceGetVariable(currentParams_local, "distance");			/* Mpc         */
-
-  //mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
-  // (above proposal is not symmetric!)
-  //mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
-  mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*0.001);          /* mc changed by ~0.1% */
-  logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-  eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
-  //TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-  iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*0.1;
-  tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*0.005; /*time changed by 5 ms*/
-  phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*0.5;
-  ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*0.05;
-  dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*0.05;
-  psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*0.1;
-  //dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
-  dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*0.1); // ~10% change
-  logProposalRatio *= dist_proposed / dist;
-		
-  LALInferenceCopyVariables(currentParams_local, proposedParams);
-  LALInferenceSetVariable(proposedParams, "chirpmass",      &mc_proposed);		
-  LALInferenceSetVariable(proposedParams, "massratio",      &eta_proposed);
-  LALInferenceSetVariable(proposedParams, "inclination",    &iota_proposed);
-  LALInferenceSetVariable(proposedParams, "phase",          &phi_proposed);
-  LALInferenceSetVariable(proposedParams, "time",           &tc_proposed); 
-  LALInferenceSetVariable(proposedParams, "rightascension", &ra_proposed);
-  LALInferenceSetVariable(proposedParams, "declination",    &dec_proposed);
-  LALInferenceSetVariable(proposedParams, "polarisation",   &psi_proposed);
-  LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
-
-  // return ratio of proposal densities (for back & forth jumps) 
-  // in "runstate->proposalArgs" vector:
-  if (LALInferenceCheckVariable(runstate->proposalArgs, "logProposalRatio"))
-    LALInferenceSetVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio);
-  else
-    LALInferenceAddVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-}
-
-
-
-//Test LALInferencePriorFunction
-REAL8 BasicUniformLALPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
-/****************************************/
-/* Returns unnormalized (!),            */
-/* logarithmic (!) prior density.      	*/
-/****************************************/
-/* Assumes the following parameters	*/
-/* exist (e.g., for TaylorT1):		*/
-/* chirpmass, massratio, inclination,	*/
-/* phase, time, rightascension,		*/
-/* desclination, polarisation, distance.*/
-/* Prior is flat if within range	*/
-/****************************************/
-{
-  (void) runState; /* avoid warning about unused parameter */
-  REAL8 eta, iota, phi, ra, dec, psi;
-  REAL8 logdensity;
-  
-  // UNUSED!!: REAL8 mc   = *(REAL8*) LALInferenceGetVariable(params, "chirpmass");		/* solar masses*/
-  eta  = *(REAL8*) LALInferenceGetVariable(params, "massratio");		/* dim-less    */
-  iota = *(REAL8*) LALInferenceGetVariable(params, "inclination");		/* radian      */
-  // UNUSED!!: REAL8 tc   = *(REAL8*) LALInferenceGetVariable(params, "time");			/* GPS seconds */
-  phi  = *(REAL8*) LALInferenceGetVariable(params, "phase");		/* radian      */
-  ra   = *(REAL8*) LALInferenceGetVariable(params, "rightascension");	/* radian      */
-  dec  = *(REAL8*) LALInferenceGetVariable(params, "declination");		/* radian      */
-  psi  = *(REAL8*) LALInferenceGetVariable(params, "polarisation"); 	/* radian      */
-  // UNUSED!!: REAL8  dist = *(REAL8*) LALInferenceGetVariable(params, "distance");		/* Mpc         */
-
-  if(eta>0.0 && eta<=0.25 && iota>=0.0 && iota<=LAL_PI && phi>=0.0 && phi<=LAL_TWOPI 
-     && ra>=0.0 && ra<=LAL_TWOPI && dec>=-LAL_PI_2 && dec<=LAL_PI_2 && psi>=0.0 && psi<=LAL_PI)	
-    logdensity = 0.0;
-  else
-    logdensity = -HUGE_VAL;
-  //TODO: should be properly normalized; pass in range via priorArgs?	
-
-  return(logdensity);
-}
-
-
-
-//Test LALProposalFunction
-void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-/****************************************/
-/* Assumes the following parameters		*/
-/* exist:	A, Omega					*/
-/* Simply picks a new value based on	*/
-/* fixed Gaussian						*/
-/****************************************/
-{
-  REAL8 A, Omega;
-  REAL8 A_proposed, Omega_proposed;
-  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
-  gsl_rng * GSLrandom=runState->GSLrandom;
-  LALInferenceVariables * currentParams_local = runState->currentParams;	
-
-  A     = *(REAL8*) LALInferenceGetVariable(currentParams_local, "A");				/* dim-less	   */
-  Omega = *(REAL8*) LALInferenceGetVariable(currentParams_local, "Omega");			/* rad/sec     */	
-
-  //A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
-  //Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
-  // (above proposals not symmetric!)
-  //A_proposed     = A     + gsl_ran_ugaussian(GSLrandom) * 1e-20;   // (insert some sensible number here)
-  //Omega_proposed = Omega + gsl_ran_ugaussian(GSLrandom) * 0.01;
-  A_proposed     = A     * exp(gsl_ran_ugaussian(GSLrandom)*0.1);   // ~ 10% change
-  logProposalRatio *= A_proposed / A;
-  Omega_proposed = Omega * exp(gsl_ran_ugaussian(GSLrandom)*0.01);  // ~ 1% change
-  logProposalRatio *= Omega_proposed / Omega;
-  
-  LALInferenceCopyVariables(currentParams_local, proposedParams);
-  LALInferenceSetVariable(proposedParams, "A",     &A_proposed);		
-  LALInferenceSetVariable(proposedParams, "Omega", &Omega_proposed);
-
-  // return ratio of proposal densities (for back & forth jumps) 
-  // in "runstate->proposalArgs" vector:
-  if (LALInferenceCheckVariable(runstate->proposalArgs, "logProposalRatio"))
-    LALInferenceSetVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio);
-  else
-    LALInferenceAddVariable(runstate->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-}
-
-
-
-//Test LALPriorFunction
-REAL8 ASinOmegaTPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
-/****************************************/
-/* Prior for two-parameter				*/
-/* waveform family ASinOmegaT			*/
-/* Assumes the following parameters		*/
-/* exist:	A, Omega					*/
-/* Prior is flat if within range		*/
-/****************************************/
-{
-  (void) runState; /* avoid warning about unused parameter */
-  REAL8 A, Omega;
-  REAL8 logdensity;
-  
-  A     = *(REAL8*) LALInferenceGetVariable(params, "A");				/* dim-less	   */
-  Omega = *(REAL8*) LALInferenceGetVariable(params, "Omega");			/* rad/sec     */
-  
-  if ((A>0.0) & (Omega>0))
-    logdensity = 0.0;
-  else
-    logdensity = -HUGE_VAL;
-
-  return logdensity;
-}
 
 
 
@@ -835,20 +911,6 @@ void LALVariablesTest(void)
   fprintf(stdout," ----------\n");
 }
 
-void ParseCommandLineTest(int argc, char ** argv)
-{
-  ppt = (ProcessParamsTable*) LALInferenceParseCommandLine(argc,argv);
-  printf("parsed command line arguments:\n");
-  ptr = ppt;
-  i=1;
-  while (ptr != NULL){
-    printf(" (%d)  %s  %s  %s  \"%s\"\n", i, ptr->program, ptr->param, ptr->type, ptr->value);
-    ptr = ptr->next;
-    ++i;
-  }
-  fprintf(stdout," ----------\n");
-}
-
 void DataTest(void)
 {
 	fprintf(stdout," data found --> trying some template computations etc.\n");
@@ -1066,23 +1128,23 @@ void SingleIFOLikelihoodTest(void)
     //	XLALDestroyCOMPLEX16Vector(freqModel2);
 }
 
-void BasicMCMCTest(void)
-{
-	fprintf(stdout, "Try MCMC basic Sampler test\n");
-	runstate->algorithm=MCMCAlgorithm;
-	runstate->evolve=BasicMCMCOneStep;
-	runstate->prior=BasicUniformLALPrior;
-	runstate->proposal=BasicMCMCLALProposal;
-        runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
-        runstate->proposalArgs->head=NULL;
-        runstate->proposalArgs->dimension=0;
-	runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
-	//runstate->template=templateLAL;
-	runstate->template=LALInferenceTemplateStatPhase;
-	runstate->currentParams=&currentParams;
-	MCMCAlgorithm(runstate);
-	fprintf(stdout, "End of MCMC basic Sampler test\n");
-}
+//void BasicMCMCTest(void)
+//{
+	//fprintf(stdout, "Try MCMC basic Sampler test\n");
+	//runstate->algorithm=MCMCAlgorithm;
+	//runstate->evolve=BasicMCMCOneStep;
+	//runstate->prior=BasicUniformLALPrior;
+	//runstate->proposal=BasicMCMCLALProposal;
+        //runstate->proposalArgs = malloc(sizeof(LALInferenceVariables));
+        //runstate->proposalArgs->head=NULL;
+        //runstate->proposalArgs->dimension=0;
+	//runstate->likelihood=LALInferenceFreqDomainLogLikelihood;
+	////runstate->template=templateLAL;
+	//runstate->template=LALInferenceTemplateStatPhase;
+	//runstate->currentParams=&currentParams;
+	//MCMCAlgorithm(runstate);
+	//fprintf(stdout, "End of MCMC basic Sampler test\n");
+//}
 
 
 void TemplateDumpTest(void)
@@ -1243,4 +1305,5 @@ void PTMCMCTest(void)
 	//PTMCMCAlgorithm(runstate);
 	fprintf(stdout, "End of PTMCMC test\n");
 }
+
 

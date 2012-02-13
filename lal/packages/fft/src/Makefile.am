@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-## $Id$
 if QTHREAD
 QTHREADSRC = qthread.c
 else

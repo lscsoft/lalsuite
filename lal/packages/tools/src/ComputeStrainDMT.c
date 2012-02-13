@@ -48,8 +48,6 @@
 #define N_FIR_HP 2000
 #define fhigh_FIRHP 0.00244140625
 
-NRCSID( COMPUTESTRAINC, "$Id$" );
-
 void LALComputeStrainDMT(
     LALStatus              *status,
     StrainOut              *output,
@@ -66,7 +64,7 @@ REAL8IIRFilter ALPHASLPFIR;
 REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYWings=NULL;
 
 
- INITSTATUS( status, "LALComputeStrainDMT", COMPUTESTRAINC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR( status );
 
  LALGetFactors(status->statusPtr, output, input);
@@ -446,7 +444,7 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
 void LALFreeFilter(LALStatus *status, REAL8IIRFilter *F2, int ORDER)
 {
   int n;
-  INITSTATUS( status, "LALCopyFilter", COMPUTESTRAINC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   for(n=0;n<ORDER;n++){
@@ -469,7 +467,7 @@ void LALCopyFilter(LALStatus *status, REAL8IIRFilter **F2, REAL8IIRFilter *F1, i
 {
   REAL8IIRFilter *F2Array;
   int n;
-  INITSTATUS( status, "LALCopyFilter", COMPUTESTRAINC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Allocate inverse sensing funtion filters */

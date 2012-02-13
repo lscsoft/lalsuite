@@ -23,8 +23,6 @@
 #include <lal/Random.h>
 #include <lal/Inject.h>
 
-NRCSID( INJECTVECTORC, "$Id$" );
-
 /**
 \author Creighton, T. D.
 \addtogroup InjectVector_c
@@ -80,7 +78,7 @@ LALSI2InjectVector( LALStatus    *stat,
   const INT2 max = 32767;  /* largest INT2 */
   const INT2 min = -32768; /* smallest INT2 */
 
-  INITSTATUS( stat, "LALSI2InjectVector", INJECTVECTORC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */
@@ -143,7 +141,7 @@ LALSSInjectVector( LALStatus    *stat,
   UINT4 n;  /* number of samples injected */
   UINT4 i;  /* an index */
 
-  INITSTATUS( stat, "LALSSInjectVector", INJECTVECTORC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures and their fields exist. */
   ASSERT( signalvec, stat, INJECTH_ENUL, INJECTH_MSGENUL );

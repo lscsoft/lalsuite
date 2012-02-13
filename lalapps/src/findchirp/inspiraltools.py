@@ -2,8 +2,8 @@
     
 __Id__ = "$Id$"
 __author__ = "Thomas Cokelaer <Thomas.Cokelaer@astro.cf.ac.uk>"
-__version__ = "$Revision$"[11:-2]
-__date__ = "$Date$"[7:-2]
+__version__ = "$Revision$"
+__date__ = "$Date$"
 __name__ = "inspiraltools"
 __title__ = "Found and Missed plots for triggers"
     

@@ -24,7 +24,6 @@
  * \ingroup PulsarMetric
  * \brief Calculate flat approximation to the pulsar-metric.
  *
- * $Id$
  *
  */
 
@@ -42,8 +41,6 @@
 #include <lal/DetectorStates.h>
 #include <lal/PulsarTimes.h>
 #include <lal/FlatPulsarMetric.h>
-
-NRCSID( FLATPULSARMETRICC, "$Id$");
 
 /*---------- DEFINES ----------*/
 #define TRUE (1==1)
@@ -357,7 +354,7 @@ LALFlatPulsarMetric ( LALStatus *status,	/**< pointer to LALStatus structure */
   REAL8 cosEps;				/* Eps = ecliptic inclination of earth-spin (ca 23.4deg) */
 
   /*----------*/
-  INITSTATUS( status, "LALFlatPulsarMetric", FLATPULSARMETRICC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get detector's position */

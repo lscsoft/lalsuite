@@ -48,7 +48,6 @@ The coherent statistic will be defined here.
 #ifndef _COHERENTINSPIRALH_H
 #define _COHERENTINSPIRALH_H
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
@@ -64,9 +63,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-
-NRCSID (COHERENTINSPIRALH, "$Id$");
 
 /**\name Error Codes */ /*@{*/
 #define COHERENTINSPIRALH_ENULL 1

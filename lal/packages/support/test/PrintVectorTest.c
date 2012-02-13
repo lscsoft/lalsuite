@@ -18,7 +18,6 @@
 */
 
 /*************** <lalVerbatim file="PrintVectorTestCV"> *************
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
@@ -111,8 +110,6 @@ LALCHARDestroyVector()
 #define _AVFACTORIES_H
 #endif
 #endif
-
-NRCSID( PRINTVECTORTESTC, "$Id$" );
 
 INT4 lalDebugLevel = 3;
 

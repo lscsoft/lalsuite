@@ -91,10 +91,6 @@ XLALInspiralWave1Engine(
    InspiralInit     *paramsInit
    );
 
-
-NRCSID (LALINSPIRALWAVE1C, "$Id$");
-
-
 void
 LALInspiralWave1(
    LALStatus        *status,
@@ -103,7 +99,7 @@ LALInspiralWave1(
    )
 {
    XLALPrintDeprecationWarning("LALInspiralWave1", "XLALInspiralWave1");
-   INITSTATUS(status, "LALInspiralWave1", LALINSPIRALWAVE1C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALInspiralWave1(output, params) )
@@ -164,9 +160,6 @@ XLALInspiralWave1(
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
 
-NRCSID (LALINSPIRALWAVE1TEMPLATESC, "$Id$");
-
-
 void
 LALInspiralWave1Templates(
    LALStatus        *status,
@@ -176,7 +169,7 @@ LALInspiralWave1Templates(
    )
 {
    XLALPrintDeprecationWarning("LALInspiralWave1Templates", "XLALInspiralWave1Templates");
-   INITSTATUS(status, "LALInspiralWave1Templates", LALINSPIRALWAVE1TEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALInspiralWave1Templates(output1, output2, params) )
@@ -243,9 +236,6 @@ XLALInspiralWave1Templates(
    waveforms for injection packages T.Cokelaer sept 2003
 */
 
-NRCSID (LALINSPIRALWAVE1FORINJECTIONC, "$Id$");
-
-
 void
 LALInspiralWave1ForInjection(
   LALStatus        *status,
@@ -255,7 +245,7 @@ LALInspiralWave1ForInjection(
   )
 {
   XLALPrintDeprecationWarning("LALInspiralWave1ForInjection", "XLALInspiralWave1ForInjection");
-  INITSTATUS(status, "LALInspiralWave1ForInjection", LALINSPIRALWAVE1FORINJECTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave1ForInjection(waveform, params, ppnParams) )
@@ -465,8 +455,6 @@ XLALInspiralWave1ForInjection(
  *  Engine function for use by other LALInspiralWave1* functions
  *  Craig Robinson April 2005
  */
-
-NRCSID (LALINSPIRALWAVE1ENGINEC, "$Id$");
 
 int
 XLALInspiralWave1Engine(

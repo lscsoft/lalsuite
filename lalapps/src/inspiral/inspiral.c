@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -91,8 +90,6 @@
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
-
-RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"

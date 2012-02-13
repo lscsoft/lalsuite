@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="LALRunningMedianHV">
 Author: B. Machenschalk
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -53,8 +52,6 @@ running median of REAL4 and REAL8 sequences
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID (LALRUNNINGMEDIANH, "$Id$");
 
 /* <lalLaTeX>
 

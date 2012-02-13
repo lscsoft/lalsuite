@@ -27,9 +27,6 @@
 extern "C" {
 #endif
 
-
-NRCSID( LALPRIMERH, "$Id$" );
-
 #define LALPRIMERH_ENULL 1
 #define LALPRIMERH_EDIV0 2
 #define LALPRIMERH_MSGENULL "Null pointer"

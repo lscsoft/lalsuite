@@ -126,9 +126,6 @@ LALInspiralSpinModulatedWave()
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 
-NRCSID (LALINSPIRALWAVEC, "$Id$");
-
-
 void
 LALInspiralWave(
    LALStatus        *status,
@@ -137,7 +134,7 @@ LALInspiralWave(
    )
 {
 
-   INITSTATUS(status, "LALInspiralWave", LALINSPIRALWAVEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -253,10 +250,6 @@ LALInspiralWave(
    RETURN (status);
 }
 
-
-NRCSID (LALINSPIRALWAVETEMPLATESC, "$Id$");
-
-
 void
 LALInspiralWaveTemplates(
    LALStatus        *status,
@@ -266,7 +259,7 @@ LALInspiralWaveTemplates(
    )
 {
 
-   INITSTATUS(status, "LALInspiralWaveTemplates", LALINSPIRALWAVETEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (signalvec1,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -357,11 +350,6 @@ LALInspiralWaveTemplates(
    RETURN (status);
 }
 
-
-
-NRCSID (LALINSPIRALWAVEFORINJECTIONC, "$Id$");
-
-
 void
 LALInspiralWaveForInjection(
    LALStatus        *status,
@@ -370,7 +358,7 @@ LALInspiralWaveForInjection(
    PPNParamStruc  *ppnParams)
 {
 
-   INITSTATUS(status, "LALInspiralWaveForInjection", LALINSPIRALWAVEFORINJECTIONC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (inspiralParams,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

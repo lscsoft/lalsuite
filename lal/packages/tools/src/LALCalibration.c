@@ -32,9 +32,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/LALCalibration.h>
 
-NRCSID (LALCALIBRATIONC,"$Id$");
-
-
 void XLALDestroyCalData( LALCalData *caldata )
 {
   XLALDestroyCOMPLEX8FrequencySeries( caldata->digitalFilterReference );

@@ -197,10 +197,6 @@ LALReverseRealFFT()
 #include <lal/FindChirpSP.h>
 #include <math.h>
 
-NRCSID (FINDCHIRPSPDATAC, "$Id$");
-
-
-
 void
 LALFindChirpSPData (
     LALStatus                  *status,
@@ -234,7 +230,7 @@ LALFindChirpSPData (
   COMPLEX8Vector       *fftVec = NULL;
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
-  INITSTATUS( status, "LALFindChirpSPData", FINDCHIRPSPDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

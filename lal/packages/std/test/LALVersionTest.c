@@ -19,7 +19,6 @@
 
 #if 0 /* autodoc block */
 <lalVerbatim file="LALVersionTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -63,8 +62,6 @@ to.
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALVersion.h>
-
-NRCSID (LALVERSIONTESTC,"$Id$");
 
 extern int lalDebugLevel;
 

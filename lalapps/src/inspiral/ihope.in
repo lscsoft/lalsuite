@@ -2,8 +2,6 @@
 """
 ihope.in - weekly automate pipeline driver script
 
-$Id$
-
 This script generates the condor DAG necessary to analyze a given amount
 of LIGO and GEO data.  It takes in the start and end times, generates the
 segment lists, runs the zero-lag, time shift and injection analyses, generates
@@ -11,7 +9,7 @@ summary information and plots and follows up the loudest events.
 """
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
@@ -1213,6 +1211,8 @@ to debug any failed jobs.
 # write out a log file for this script
 log_fh = open(basename + '.pipeline.log', 'w')
   
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" \
     + "\n" )
 log_fh.write( "$Name$" + "\n\n" )

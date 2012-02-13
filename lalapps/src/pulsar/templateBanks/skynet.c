@@ -43,8 +43,6 @@
 #include <lal/StackMetric.h>
 #include <lal/TwoDMesh.h>
 
-
-RCSID( "$Id$" );
  
 /* type of parameter space metric to use  */
 enum {

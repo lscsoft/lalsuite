@@ -31,8 +31,6 @@
 extern "C" {
 #endif
 
-NRCSID( LALDETECTORSH, "$Id$" );
-
 /**
    \author J. T. Whelan and J. D. E. Creighton
    \addtogroup LALDetectors_h

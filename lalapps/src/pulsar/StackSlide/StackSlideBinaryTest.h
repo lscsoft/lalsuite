@@ -129,8 +129,7 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 #ifdef __cplusplus
 extern "C" {
 #endif
-  
-NRCSID (STACKSLIDEH, "$Id$");
+
   
 /* Author-defined error codes */
 

@@ -63,7 +63,6 @@ extern "C" {
 #endif
 
 /** \cond DONT_DOXYGEN */
-NRCSID( LALINSPIRALH, "$Id$" );
 
 # define oneby3    0.333333333333333333333333333
 # define twoby3    0.666666666666666666666666667

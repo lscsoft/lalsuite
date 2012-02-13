@@ -32,8 +32,6 @@
 extern "C" {
 #endif
 
-NRCSID (LALCORRELATIONH, "$Id$");
-
 /**
 \author Yakushin, Igor
 \addtogroup LALCorrelation_h

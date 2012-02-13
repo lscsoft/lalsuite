@@ -24,7 +24,6 @@
  * Maintainer: Torres C,  (Univ of TX at Brownsville)
  * Author: Chassande-Mottin, E.
  *
- * Revision: $Id:
  *
  *-----------------------------------------------------------------------
  *
@@ -48,9 +47,6 @@
 
 
 #include <lal/TimeFreq.h>
-
-NRCSID (TFRWVTESTC,"$Id$");
-
 
 extern int lalDebugLevel;
 

@@ -35,9 +35,6 @@ LALREAL4VectorFFT
 
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALWAVECORRELATEC, "$Id$");
-
-
 void
 LALInspiralComputeSNRIntegrand
    (
@@ -52,7 +49,7 @@ LALInspiralComputeSNRIntegrand
   REAL8 rShift, iShift;
 
 
-  INITSTATUS (status, "LALInspiralComputeSNRIntegrand", LALINSPIRALWAVECORRELATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (output,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

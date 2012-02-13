@@ -99,8 +99,6 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-NRCSID( UNITSTESTC, "$Id$" );
-
 /* The main function */
 int main( int argc, char *argv[] )
 {

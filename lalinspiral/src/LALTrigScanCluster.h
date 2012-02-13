@@ -44,8 +44,6 @@
 #include    <lal/EllipsoidOverlapTools.h>
 #include    <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( LALTRIGSCANCLUSTERH, "$Id$");
-
 /** UNDOCUMENTED */
 typedef enum {
     trigScanNone,	/**< UNDOCUMENTED */

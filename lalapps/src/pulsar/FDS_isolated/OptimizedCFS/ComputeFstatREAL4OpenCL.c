@@ -48,8 +48,6 @@
 
 #include "ComputeFstatREAL4.h"
 
-NRCSID( COMPUTEFSTATC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */

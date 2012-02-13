@@ -78,10 +78,6 @@ extern int vrbflg;                      /* verbocity of lal function    */
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPFILTERC, "$Id$");
-
-
-
 void
 LALFindChirpFilterSegment (
     LALStatus                  *status,
@@ -106,7 +102,7 @@ LALFindChirpFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   /*SnglInspiralTable    *thisEvent     = NULL;*/
 
-  INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

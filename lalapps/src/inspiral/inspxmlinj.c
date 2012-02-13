@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -68,9 +67,6 @@
 "  --waveform NAME         set waveform type to NAME (GeneratePPNtwoPN)\n"\
 "  --user-tag STRING       set the usertag to STRING\n"\
 "\n"
-
-
-RCSID( "$Id$" );
 
 #define MPC ( 1e6 * LAL_PC_SI )
 

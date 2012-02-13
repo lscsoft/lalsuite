@@ -32,7 +32,7 @@ void XFUNC ( ATYPE *array )
 
 void FUNC ( LALStatus *status, ATYPE **array )
 {
-  INITSTATUS (status, STRING(FUNC), ARRAYFACTORIESC);
+  INITSTATUS(status);
 
   ASSERT (array,          status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR);
   ASSERT (*array,         status, AVFACTORIESH_EUPTR, AVFACTORIESH_MSGEUPTR);

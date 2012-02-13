@@ -23,8 +23,6 @@
 #include <string.h>
 #include <lal/DetectorSite.h>
 
-NRCSID( CREATEDETECTORC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \defgroup CreateDetector_c Module CreateDetector.c
@@ -811,7 +809,7 @@ void LALCreateDetector( LALStatus             *status,
                         const LALFrDetector   *input,
                         const LALDetectorType  type )
 {
-  INITSTATUS( status, "LALCreateDetector", CREATEDETECTORC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, LALDETECTORSH_ENULLP,
           LALDETECTORSH_MSGENULLP );

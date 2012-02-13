@@ -353,9 +353,6 @@ InspiralComputeMetricGetPsiCoefficients (
     InspiralMomentsEtc *moments
     );
 
-NRCSID(LALINSPIRALCOMPUTEMETRICC, "$Id$");
-
-
 void
 LALInspiralComputeMetric (
     LALStatus          *status,
@@ -371,7 +368,7 @@ LALInspiralComputeMetric (
   REAL8 a, b, c, q;
   UINT4 PNorder, m, n;
 
-  INITSTATUS(status, "LALInspiralComputeMetric", LALINSPIRALCOMPUTEMETRICC );
+  INITSTATUS(status);
 
   ASSERT( metric, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
@@ -535,8 +532,7 @@ LALInspiralComputeMetricBCV (
   REAL8 num;
   REAL8 a, b, c, q;
 
-  INITSTATUS( status,
-      "LALInspiralComputeMetricBCV ", LALINSPIRALCOMPUTEMETRICC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   moments.alpha = params->alpha;

@@ -22,9 +22,6 @@
 
 #include <lal/LALDatatypes.h>
 
-NRCSID( BLACKHOLEMODEH, "$Id$" );
-
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

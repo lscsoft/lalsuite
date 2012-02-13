@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M., Krishnan, B. 
  *
- * Revision: $Id$
 *-----------------------------------------------------------------------
  */
 /*
@@ -59,12 +58,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (MCINJECTCOMPUTEHOUGHH, "$Id$");
 
 /* ************************************************************
  * Usage format string. (Similar to DriveHoughColor_velo.c)

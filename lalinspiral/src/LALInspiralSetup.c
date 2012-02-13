@@ -60,10 +60,6 @@ None.
 
 /* static void LALPadeCoeffs7(int n, double *padecoeffs, double *taylorcoeffs); */
 
-NRCSID (LALINSPIRALSETUPC, "$Id$");
-
-
-
 void
 LALInspiralSetup (
    LALStatus        *status,
@@ -73,7 +69,7 @@ LALInspiralSetup (
 {
    XLALPrintDeprecationWarning("LALInspiralSetup", "XLALInspiralSetup");
 
-   INITSTATUS (status, "LALInspiralSetup", LALINSPIRALSETUPC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if ( XLALInspiralSetup(ak, params) == XLAL_FAILURE )

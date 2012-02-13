@@ -23,14 +23,12 @@
  *
  * Author: Messaritaki, E.
  *
- * Revision: $Id$
  *-----------------------------------------------------------------------
  */
 
 #include <math.h>
 #include <string.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -45,9 +43,6 @@
 #include <lal/Date.h>
 #include <lal/CoherentInspiral.h>
 #include <lal/NullStatistic.h>
-
-NRCSID (NULLSTATISTICC, "$Id$");
-
 
 static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 {

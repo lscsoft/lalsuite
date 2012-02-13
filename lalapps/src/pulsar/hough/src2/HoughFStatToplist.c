@@ -45,9 +45,6 @@ extern int eah_rename(const char* oldf, const char* newf);
 
 #include <lal/LogPrintf.h>
 
-RCSID("$Id$");
-
-
 /* Windows specifics */
 #ifdef _WIN32
 #include <io.h>

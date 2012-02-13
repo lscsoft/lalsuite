@@ -52,10 +52,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALMATRIXTRANSFORMC, "$Id$");
-
-
-
 void LALMatrixTransform (LALStatus *status,
                          INT4 n,
                          REAL8 **data1,
@@ -65,7 +61,7 @@ void LALMatrixTransform (LALStatus *status,
 
    INT4 i, j, l, m;
 
-   INITSTATUS(status, "LALMatrixTransform", LALMATRIXTRANSFORMC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (data1,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (data2,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

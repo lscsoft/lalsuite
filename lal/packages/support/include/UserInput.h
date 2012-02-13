@@ -21,7 +21,6 @@
 /** \defgroup UserInput User-input handling
  * \ingroup support
  * \author Reinhard Prix
- * \date $Date$
  * \brief Module for general parsing of user-input from config-file and/or command-line.
  *
  */

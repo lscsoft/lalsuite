@@ -29,8 +29,6 @@
 #define CAL_S2START 729273613
 #define CAL_S2END 734367613
 
-NRCSID( COMPUTETRANSFERC, "$Id$" );
-
 /**
 \author Patrick Brady, Jolien Creighton
 \defgroup ComputeTransfer_c Module ComputeTransfer.c
@@ -163,7 +161,7 @@ LALComputeTransfer( LALStatus                 *stat,
   REAL4         f,df;                    /* freq and interval     */
   REAL8         norm;
 
-  INITSTATUS( stat, "LALComputeTransfer", COMPUTETRANSFERC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure parameter structures and their fields exist. */
@@ -307,7 +305,7 @@ LALUpdateCalibration(
   UINT4 length = 0;
   CHAR  warnMsg[512];
 
-  INITSTATUS( status, "LALUpdateCalibration", COMPUTETRANSFERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check input */
@@ -522,7 +520,7 @@ LALResponseConvert(
   INT4 fac;
   INT4 bad;
 
-  INITSTATUS( status, "LALResponseConvert", COMPUTETRANSFERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   output->epoch = input->epoch;

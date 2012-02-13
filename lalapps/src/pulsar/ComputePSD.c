@@ -52,8 +52,6 @@
 
 #include <lalapps.h>
 
-RCSID( "$Id$");
-
 /* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0
 #define COMPUTEPSDC_ESUB  1
@@ -708,7 +706,7 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
   float num, *row_data;		/* cast to float for writing (gnuplot binary format) */
   FILE *fp;
 
-  INITSTATUS( status, "LALfwriteSpectrograms", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( !bname || !multiPSD || multiPSD->length == 0 ) {

@@ -160,10 +160,6 @@ XLALEOBPPWaveformEngine (
                 InspiralInit     *paramsInit
                 );
 
-NRCSID (LALEOBPPWAVEFORMC,
-"$Id$");
-
-
 INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 				REAL8Vector           * restrict values,
                                 const REAL8           v,
@@ -1126,7 +1122,7 @@ LALEOBPPWaveform (
    )
 {
 
-   INITSTATUS(status, "LALEOBPPWaveform", LALEOBPPWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBPPWaveform", "XLALEOBPPWaveform" );
 
@@ -1216,7 +1212,7 @@ LALEOBPPWaveformTemplates (
    )
 {
 
-   INITSTATUS(status, "LALEOBPPWaveform", LALEOBPPWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBPPWaveformTemplates", "XLALEOBPPWaveformTemplates" );
 
@@ -1320,7 +1316,7 @@ LALEOBPPWaveformForInjection (
 			    PPNParamStruc    *ppnParams
 			    )
 {
-  INITSTATUS(status, "LALEOBPPWaveformForInjection", LALEOBPPWAVEFORMC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALEOBPPWaveformForInjection", "XLALEOBPPWaveformForInjection" );
 

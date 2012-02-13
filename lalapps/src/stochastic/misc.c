@@ -19,13 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
  *
- * $Id$
  */
 
 #include "misc.h"
 
-NRCSID(DATAINPUTC, "$Id$");
-RCSID("$Id$");
 
 /* cut a time series between given start and end times */
 REAL4TimeSeries *cut_time_series(REAL4TimeSeries *input,

@@ -47,10 +47,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/FrequencySeries.h>
 
-
-NRCSID(GENERATEBURSTC, "$Id$");
-
-
 /*
  * ============================================================================
  *

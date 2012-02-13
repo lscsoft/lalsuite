@@ -147,7 +147,6 @@ points very close to the equator.
 
 
 /** \cond DONT_DOXYGEN */
-NRCSID( GENERALMESHTESTC, "$Id$" );
 
 #define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */
 #define MAX_DURATION (3.16e7)           /* one year; arbitrary */
@@ -487,7 +486,7 @@ int main( int argc, char **argv )
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
 {
   /* Set up shop. */
-  INITSTATUS( stat, "getRange", GENERALMESHTESTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Search a circle. BEN: The 1.001 is a kludge. */
@@ -535,7 +534,7 @@ void getMetric( LALStatus *stat,
 
 
   /* Set up shop. */
-  INITSTATUS( stat, "getMetric", GENERALMESHTESTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
   TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
 

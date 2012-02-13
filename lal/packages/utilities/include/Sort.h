@@ -23,14 +23,12 @@
  *
  * Author: Creighton, T. D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
 
 /*
 
 <lalVerbatim file="SortHV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -56,9 +54,6 @@ elements.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID(SORTH,"$Id$");
 
 /* <lalLaTeX>
 

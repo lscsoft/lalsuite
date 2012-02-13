@@ -2,14 +2,13 @@
 """
 Something
 
-$Id$
 
 This program creates cache files for the output of inspiral hipe
 """
 
 __author__ = 'Chad Hanna <channa@phys.lsu.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path

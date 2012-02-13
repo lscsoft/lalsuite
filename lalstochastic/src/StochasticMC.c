@@ -66,7 +66,6 @@ The following program shows how to use the routines LALStochasticMCDso and LALSt
 #include <lal/SimulateSB.h>
 #include <lal/StochasticMC.h>
 
-NRCSID(STOCHASTICTESTMCC, "$Id$");
 int main( ){
 
   static LALStatus status;
@@ -319,9 +318,6 @@ LALResponseConvert()
 #include <lal/SimulateSB.h>
 #include <lal/StochasticMC.h>
 
-
-NRCSID(STOCHASTICMCC, "$Id$");
-
 static int verbose = 0;
 
 static void SinusoidalSplice(REAL4Vector **longData, REAL4Vector **shortData, REAL4Vector *output, UINT4 nSpliceSegs, UINT4 offset);
@@ -374,7 +370,7 @@ void LALStochasticMCDso (LALStatus *status,
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* initialize status pointer */
-   INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */
@@ -714,7 +710,7 @@ void LALStochasticMCDsoSplice (LALStatus *status,
   const LALUnit countPerStrain = {0,{0,0,0,0,0,-1,1},{0,0,0,0,0,0,0}};
 
   /* initialize status pointer */
-   INITSTATUS(status, "LALStochasticMC", STOCHASTICMCC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
     /* ERROR CHECKING */

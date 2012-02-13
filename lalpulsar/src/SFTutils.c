@@ -24,7 +24,6 @@
  * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVector's.
  *
- * $Id$
  *
  */
 
@@ -40,8 +39,6 @@
 #include <lal/LISAspecifics.h>
 
 #include "SFTutils.h"
-
-NRCSID( SFTUTILSC, "$Id$" );
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -201,7 +198,7 @@ LALCreateSFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 {
   SFTtype *sft = NULL;
 
-  INITSTATUS( status, "LALCreateSFTtype", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT (output != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -240,7 +237,7 @@ LALCreateSFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 {
   SFTVector *vect;
 
-  INITSTATUS( status, "LALCreateSFTVector", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT (output != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -316,7 +313,7 @@ void LALCreateMultiSFTVector ( LALStatus *status,     /**< pointer to LALStatus 
   UINT4 k, j, numifo;
   MultiSFTVector *multSFTVec=NULL;
 
-  INITSTATUS (status, "LALCreateMultiSFTs", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( out, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
@@ -362,7 +359,7 @@ LALDestroySFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 		   SFTtype **sft)	/**< SFT-struct to free */
 {
 
-  INITSTATUS( status, "LALDestroySFTtype", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (sft != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -394,7 +391,7 @@ void
 LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 		     SFTVector **vect)	/**< the SFT-vector to free */
 {
-  INITSTATUS( status, "LALDestroySFTVector", SFTUTILSC);
+  INITSTATUS(status);
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
@@ -447,7 +444,7 @@ LALDestroyPSDVector (LALStatus *status,	/**< pointer to LALStatus structure */
   UINT4 i;
   REAL8FrequencySeries *psd;
 
-  INITSTATUS( status, "LALDestroyPSDVector", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -486,7 +483,7 @@ LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structur
 {
   UINT4 i;
 
-  INITSTATUS( status, "LALDestroyMultiSFTVector", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -518,7 +515,7 @@ LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structur
 {
   UINT4 i;
 
-  INITSTATUS( status, "LALDestroyMultiPSDVector", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -557,7 +554,7 @@ LALCopySFT (LALStatus *status,	/**< pointer to LALStatus structure */
 {
 
 
-  INITSTATUS( status, "LALCopySFT", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT (dest,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -601,7 +598,7 @@ LALSubtractSFTVectors (LALStatus *status,	/**< pointer to LALStatus structure */
   CHAR prefix[LALNameLength];
   UINT4 halfNameLength;
 
-  INITSTATUS( status, "LALSubtractSFTVectors", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -699,7 +696,7 @@ LALLinearlyCombineSFTVectors
   UINT4 i, j, k;
   SFTVector *ret = NULL;
 
-  INITSTATUS( status, "LALLinearlyCombineSFTVectors", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (outVect,  status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -807,7 +804,7 @@ LALAppendSFT2Vector (LALStatus *status,		/**< pointer to LALStatus structure */
 		     const SFTtype *sft)	/**< the SFT to append */
 {
   UINT4 oldlen;
-  INITSTATUS( status, "LALAppendSFT2Vector", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( sft, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
@@ -861,7 +858,7 @@ LALCreateTimestampVector (LALStatus *status,		/**< pointer to LALStatus structur
 {
   LIGOTimeGPSVector *out = NULL;
 
-  INITSTATUS( status, "LALCreateTimestampVector", SFTUTILSC);
+  INITSTATUS(status);
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*vect == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
@@ -899,7 +896,7 @@ void
 LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structure */
 			   LIGOTimeGPSVector **vect)	/**< timestamps-vector to be freed */
 {
-  INITSTATUS( status, "LALDestroyTimestampVector", SFTUTILSC);
+  INITSTATUS(status);
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
@@ -932,7 +929,7 @@ LALMakeTimestamps(LALStatus *status,			/**< pointer to LALStatus structure */
   LIGOTimeGPS tt;
   LIGOTimeGPSVector *ts = NULL;
 
-  INITSTATUS( status, "LALMakeTimestamps", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (timestamps != NULL, status, SFTUTILS_ENULL,
@@ -980,7 +977,7 @@ LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
 {
   LIGOTimeGPSVector *ret = NULL;
 
-  INITSTATUS (status, __func__, SFTUTILSC );
+  INITSTATUS(status);
 
   ASSERT ( timestamps, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
   ASSERT ( sfts, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL );
@@ -1308,7 +1305,7 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   LALRunningMedianPar rngMedPar;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALComputeNoiseWeights", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -1412,7 +1409,7 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   MultiNoiseWeights *weights;
   REAL8 Tsft = 1.0 / rngmed->data[0]->data[0].deltaF;
 
-  INITSTATUS (status, "LALComputeMultiNoiseWeights", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( rngmed, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
@@ -1515,7 +1512,7 @@ LALDestroyMultiNoiseWeights  (LALStatus         *status,
 {
   UINT4 k;
 
-  INITSTATUS (status, "LALDestroyMultiNoiseWeights", SFTUTILSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( weights != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
@@ -1556,7 +1553,7 @@ upsampleMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structure 
 {
   UINT4 X, numDet;
 
-  INITSTATUS( status, "upsampleMultiSFTVector", SFTUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( inout, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
@@ -1589,7 +1586,7 @@ upsampleSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
 {
   UINT4 alpha, numSFTs;
 
-  INITSTATUS( status, "upsampleSFTVector", SFTUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( inout, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);

@@ -21,13 +21,11 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALPrimer.h>
 
-NRCSID( LALPRIMERC, "$Id$" );
-
 void
 REAL4Invert( LALStatus *stat, REAL4 *output, REAL4 input )
      /* Computes the inverse of a REAL4 number. */
 {
-  INITSTATUS( stat, "REAL4Invert", LALPRIMERC );
+  INITSTATUS(stat);
 
   /* This traps coding errors in the calling routine. */
   ASSERT( output != NULL, stat, LALPRIMERH_ENULL, LALPRIMERH_MSGENULL );
@@ -45,7 +43,7 @@ void
 REAL4Divide( LALStatus *stat, REAL4 *output, REAL4 numer, REAL4 denom )
      /* Computes the ratio of two REAL4 numbers. */
 {
-  INITSTATUS( stat, "REAL4Divide", LALPRIMERC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   TRY( REAL4Invert( stat->statusPtr, output, denom ), stat );

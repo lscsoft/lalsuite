@@ -20,7 +20,6 @@
 /** \file
  * \ingroup std
  * \author Creighton, J. D. E., and Creighton, T. D.
- * \date $Id$
  * \brief The primative LAL datatypes.
  *
  * This header defines the primative LAL datatypes.  These datatypes
@@ -53,7 +52,6 @@
 
 /*************************** <lalVerbatim file="LALAtomicDatatypesHV">
 Author: J. D. E. Creighton, T. D. Creighton
-$Id$
 **************************** </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -212,8 +210,6 @@ typedef unsigned char BOOLEAN;
 
 #include <stdint.h>
 #include <lal/LALConfig.h>
-#include <lal/LALRCSID.h>
-NRCSID( LALATOMICDATATYPESH, "$Id$" );
 
 /* If INT8 etc. are already defined, undefine them */
 #undef CHAR

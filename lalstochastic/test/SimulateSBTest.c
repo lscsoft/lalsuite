@@ -134,9 +134,6 @@ LALCheckMemoryLeaks()
 #include "CheckStatus.h"
 #include <lal/DetectorSite.h>
 
-
-NRCSID(SIMULATESBTESTC, "$Id$");
-
 #define SIMULATESBTESTC_LENGTH    8192
 #define SIMULATESBTESTC_SEED      123
 #define SIMULATESBTESTC_RATE      128.0

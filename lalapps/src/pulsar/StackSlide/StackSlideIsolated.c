@@ -120,8 +120,6 @@
 /*                                           */
 /*********************************************/
 
-NRCSID( STACKSLIDEISOLATEDC,  "$Id$");
-
 /*********************************************************************************/
 /*              START FUNCTION: StackSlideIsolated                               */
 /*********************************************************************************/
@@ -152,7 +150,7 @@ void StackSlideIsolated (
    fflush(stdout);
  #endif    
 
- INITSTATUS( status, "StackSlideIsolated", STACKSLIDEISOLATEDC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR(status);
   
  /* 04/12/05 gam; allocate memory and initialize parameters for StackSlideComputeSky and StackSlide */
@@ -566,7 +564,7 @@ void RunStackSlideIsolatedMonteCarloSimulation(LALStatus *status, StackSlideSear
   REAL8 f0BLK, f0STK, bandBLK, bandSTK;
   INT4 nBinsPerBLK, nBinsPerSTK;
   
-  INITSTATUS( status, "RunStackSlideIsolatedMonteCarloSimulation", STACKSLIDEISOLATEDC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* 07/29/05 gam; check that parameters are set to search SUM for loudest event; not search above threshold needed */
@@ -1982,7 +1980,7 @@ void FindStackSlideEstimatedUL(
      INT4 iFDRateBin;
      REAL8 d2, percentUncertainty, newUL;
   
-     INITSTATUS( status, "FindStackSlideEstimatedUL", STACKSLIDEISOLATEDC );
+     INITSTATUS(status);
      ATTATCHSTATUSPTR (status);
 
      #ifdef DEBUG_FIND_ESTIMATED_UL
@@ -2041,7 +2039,7 @@ void WriteStackSlideLEsToPriorResultsFile(
   INT4 k;
   FILE *fid = NULL;
   
-  INITSTATUS( status, "WriteStackSlideLEsToPriorResultsFile", STACKSLIDEISOLATEDC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
      
   fid = fopen( priorResultsFile, "w");
@@ -2079,7 +2077,7 @@ void getStackSlidePriorResults(LALStatus *status,
   CHAR buffer[256];
   FILE *fpPrior = NULL;
   
-  INITSTATUS( status, "getStackSlidePriorResults", STACKSLIDEISOLATEDC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
      
   fpPrior = fopen( priorResultsFile, "r");
@@ -2104,7 +2102,7 @@ void StackSlideGetUniformDeviate(LALStatus *status, REAL8 *returnVal, REAL8 star
 {  
   REAL4 randval;
   
-  INITSTATUS( status, "StackSlideGetUniformDeviate", STACKSLIDEISOLATEDC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   LALUniformDeviate(status->statusPtr, &randval, randPar); CHECKSTATUSPTR (status);
@@ -2201,7 +2199,7 @@ void EstimateStackSlidePower(LALStatus *status,
   REAL4 d2;
   REAL8 smallFactor = 1.e-3;
 
-  INITSTATUS (status, "EstimateStackSlidePower", STACKSLIDEISOLATEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Compute F_+ and F_x at the midpoint time of each SFT */

@@ -25,9 +25,6 @@
 #include "PulsarDataTypes.h"
 #include "ComputeFstat.h"
 
-
-NRCSID( PULSARDATATYPESC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 
 /*----- Macros ----- */

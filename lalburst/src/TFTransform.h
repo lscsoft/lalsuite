@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon and Flanagan, E
  *
@@ -36,11 +35,6 @@
 #ifdef  __cplusplus		/* C++ protection. */
 extern "C" {
 #endif
-
-
-#include <lal/LALRCSID.h>
-NRCSID(TFTRANSFORMH, "$Id$");
-
 
 /*
  * An excess power filter bank

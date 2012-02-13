@@ -24,7 +24,6 @@
  * \ingroup SFTfileIO
  * \brief Utility functions for handling of SFTtype and SFTVectors
  *
- * $Id$
  *
  *  The helper functions LALCreateSFTtype(), LALDestroySFTtype(), LALCreateSFTVector()
  * and LALDestroySFTVector() respectively allocate and free SFT-structs and SFT-vectors.
@@ -52,7 +51,6 @@
 extern "C" {
 #endif
 
-NRCSID( SFTUTILSH, "$Id$" );
 /*---------- INCLUDES ----------*/
 #include <stdarg.h>
 

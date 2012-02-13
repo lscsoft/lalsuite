@@ -211,8 +211,6 @@ typedef struct tagPulsarTimesParamStruc {
 
 /** \cond DONT_DOXYGEN */
 
-NRCSID(PULSARTIMESH,"$Id$");
-
 /* Function prototypes. */
 void
 LALGetEarthTimes( LALStatus *, PulsarTimesParamStruc *times );

@@ -18,7 +18,6 @@
 */
 
 /*************** <lalVerbatim file="LALMallocTestCV"> *************
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
@@ -73,8 +72,6 @@ LALCheckMemoryLeaks()
 #include <signal.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
-
-NRCSID (LALMALLOCTESTC,"$Id$");
 
 char caughtMessage[1024];
 jmp_buf jump;

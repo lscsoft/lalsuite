@@ -24,10 +24,6 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-
-NRCSID( SNGLBURSTUTILSC, "$Id$" );
-
-
 /*
  * A few quickies for convenience.
  */

@@ -86,10 +86,6 @@
 #include <lal/SeqFactories.h>
 #include <lal/TemplateBankGeneration.h>
 
-
-NRCSID(INSPIRALSPINBANKWNDTEMPLATEBANKC, "$Id$");
-
-
 /* LALINSPIRALSPINBANKMETRIC() --------------------------------------------- */
 void
 LALInspiralSpinBankMetric(
@@ -112,7 +108,7 @@ LALInspiralSpinBankMetric(
   REAL8 J14 = 0.0;
   REAL8 J17 = 0.0;
 
-  INITSTATUS( status, "LALInspiralSpinBankMetric", INSPIRALSPINBANKWNDTEMPLATEBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -175,7 +171,7 @@ LALInspiralSpinBankwNDTemplateBank(
   REAL4 f0, m1Max, m1Min, m2Max, m2Min;
 
   /* Set up status pointer. */
-  INITSTATUS( status, "LALInspiralSpinBankwNDTemplateBank", INSPIRALSPINBANKWNDTEMPLATEBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Check to make sure that all the parameters are okay */

@@ -37,8 +37,6 @@
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 
-RCSID ("$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define CONVERTSFT_ENORM 	0
@@ -151,7 +149,7 @@ main(int argc, char *argv[])
       return CONVERTSFT_EINPUT;
     }
 
-  /* build up full comment-string to be added to SFTs: 1) converted by ConvertToSFTv2, RCSID 2) user extraComment */
+  /* build up full comment-string to be added to SFTs: 1) converted by ConvertToSFTv2, VCS ID 2) user extraComment */
   {
     UINT4 len = 128;
     len += strlen ( uvar_inputSFTs );
@@ -163,6 +161,8 @@ main(int argc, char *argv[])
       return CONVERTSFT_EMEM;
     }
 
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
     sprintf ( add_comment, "Converted by $Id$, inputSFTs = '%s';", uvar_inputSFTs );
     if ( uvar_extraComment )
       {
@@ -238,7 +238,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set defaults */
@@ -287,7 +287,7 @@ applyFactor2SFTs ( LALStatus *status, SFTVector *SFTs, REAL8 factor )
 {
   UINT4 i, numSFTs;
 
-  INITSTATUS( status, "applyFactor2SFTs", rcsid );
+  INITSTATUS(status);
 
   ASSERT ( SFTs, status, CONVERTSFT_EINPUT, CONVERTSFT_MSGEINPUT );
 

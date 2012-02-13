@@ -2,8 +2,6 @@
 """
 inspiral_sip.in - standalone Single-stage Inspiral Pipeline driver script
 
-$Id$
-
 This script generates the condor DAG necessary to analyze LIGO, GEO, Virgo
 data through the inspiral pipeline.  The DAG does datafind, tmpltbank,
 inspiral, and thinca steps of the pipeline.  It analyzes the
@@ -13,7 +11,7 @@ run with injections.
 
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>, Drew Keppel <drew.keppel@ligo.org>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
@@ -1258,6 +1256,8 @@ if usertag:
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
   
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n" )
 log_fh.write( "$Name$" + "\n\n" )
 log_fh.write( "Invoked with arguments:" )

@@ -102,10 +102,6 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 
-NRCSID( LIGOLWXMLREADC, "$Id$" );
-
-
-
 /**
  * Test a LIGO Light Weight XML file for the presence of a specific table.
  * Returns > 0 if the document contains the table, 0 if the document does

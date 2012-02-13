@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="LALVersionHV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -73,8 +72,6 @@ configuration information.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-NRCSID( LALVERSIONH, "$Id$" );
 
 /* <lalErrTable file="LALVersionHErrTab"> */
 

@@ -37,8 +37,6 @@
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <gsl/gsl_permutation.h>
 
-RCSID( "$Id$");
-
 /* globals, constants and defaults */
 
 extern int lalDebugLevel;
@@ -1161,7 +1159,7 @@ void SetUpRadiometerSkyPatches(LALStatus           *status,	/**< pointer to LALS
   UINT4 nSkyPatches, skyCounter;
   PulsarDopplerParams dopplerpos;
 
-  INITSTATUS (status, "SetUpRadiometerSkyPatches", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (out, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
@@ -1271,7 +1269,7 @@ void InitDoppParams(LALStatus *status,
 
   INT4 i; 
 
-  INITSTATUS (status, "InitDoppParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1330,7 +1328,7 @@ void GetBeamInfo(LALStatus *status,
   CrossCorrBeamFnListElement *beamtmp;
   LIGOTimeGPS tgps;
 
-  INITSTATUS (status, "GetBeamInfo", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   freq1 = 0;
@@ -1434,7 +1432,7 @@ void CopySFTFromCatalog(LALStatus *status,
   SFTCatalog *slidingcat;
   SFTDescriptor *desc;
 
-  INITSTATUS (status, "CopySFTFromCatalog", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1483,7 +1481,7 @@ void AddSFTtoList(LALStatus *status,
 
   SFTListElement *sftList;
 
-  INITSTATUS (status, "AddSFTtoList", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   sftList = (SFTListElement *)LALCalloc(1, sizeof(SFTListElement));
@@ -1514,7 +1512,7 @@ void AddPSDtoList(LALStatus *status,
 {
   PSDListElement *psdList;
 
-  INITSTATUS (status, "AddPSDtoList", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   psdList = (PSDListElement *)LALCalloc(1, sizeof(PSDListElement));
@@ -1540,7 +1538,7 @@ void AddREAL8toList(LALStatus *status,
 {
   REAL8ListElement *List;
 
-  INITSTATUS (status, "AddREAL8toList", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1568,7 +1566,7 @@ void AddBeamFntoList(LALStatus *status,
 
   CrossCorrBeamFnListElement *beamList;
 
-  INITSTATUS (status, "AddBeamFntoList", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1595,7 +1593,7 @@ void DeleteSFTHead (LALStatus *status,
   SFTListElement *sftList;
   SFTtype *tmpSFT;
 
-  INITSTATUS (status, "DeleteSFTHead", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1618,7 +1616,7 @@ void DeletePSDHead (LALStatus *status,
   PSDListElement *psdList;
   REAL8FrequencySeries *tmpPSD;
 
-  INITSTATUS (status, "DeletePSDHead", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   psdList = *psdHead;
@@ -1639,7 +1637,7 @@ void DeleteREAL8Head (LALStatus *status,
   REAL8ListElement *List;
   REAL8 *tmpVal;
 
-  INITSTATUS (status, "DeleteREAL8Head", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1661,7 +1659,7 @@ void DeleteBeamFnHead (LALStatus *status,
   CrossCorrBeamFnListElement *beamList;
   CrossCorrBeamFn *beamfns;
 
-  INITSTATUS (status, "DeleteBeamFnHead", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   beamList = *beamHead;
@@ -1683,7 +1681,7 @@ void CalculateFdots (LALStatus *status,
 		     REAL8 q2,
 		     REAL8 n)
 {
-  INITSTATUS (status, "CalculateFdots", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(fdots->length >= 6, status, PULSAR_CROSSCORR_ENULL, PULSAR_CROSSCORR_MSGENULL);
@@ -1734,7 +1732,7 @@ void CalculateFdots (LALStatus *status,
 
 void initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 

@@ -36,10 +36,6 @@
 extern "C" {
 #endif
 
-/** \cond DONT_DOXYGEN */
-NRCSID (LALBARYCENTERH,"$Id$");
-/** \endcond */
-
 /** \name Error codes */
 /*@{*/ /** \ingroup Barycenter_h */
 #define LALBARYCENTERH_ENULL  2

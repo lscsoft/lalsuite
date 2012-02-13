@@ -38,8 +38,6 @@
 
 #include "getopt.h"
 
-NRCSID( FSTATSHAPETESTC, "$Id$" );
-
 #define MAX_DATA_POINTS 100000000
 
 /* #define DEBG_CONSTDATA  */

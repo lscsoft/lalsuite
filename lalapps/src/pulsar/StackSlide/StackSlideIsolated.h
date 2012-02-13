@@ -71,7 +71,6 @@
 extern "C" {
 #endif
   
-NRCSID (STACKSLIDEISOLATEDH, "$Id$");
 
 /*********************************************/
 /*                                           */

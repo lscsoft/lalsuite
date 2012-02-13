@@ -1,4 +1,4 @@
-% $Id$ making up 0.25 % UL using the old run
+% making up 0.25 % UL using the old run
 
 %prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
 %prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_599_500/MCfreq_';

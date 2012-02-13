@@ -44,7 +44,6 @@ extern "C" {
 #include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 
 /*---------- DEFINES ----------*/
 

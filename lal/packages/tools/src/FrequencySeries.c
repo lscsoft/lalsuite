@@ -28,10 +28,6 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
-
-#include <lal/LALRCSID.h>
-NRCSID(FREQUENCYSERIESC, "$Id$");
-
 #define DATATYPE REAL4
 #define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 #define ARG1 arg1->data->data[i] = 0.0;

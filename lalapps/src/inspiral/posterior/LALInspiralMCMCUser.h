@@ -45,8 +45,6 @@ This header file covers user routines that are used for the Markov Chain Monte C
 extern "C" {
 #endif*/
 
-NRCSID( LALINSPIRALMCMCUSERH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $" );
-
 /**\name Error Codes */ /*@{*/
 #define LALINSPIRALH_ENULL           1
 #define LALINSPIRALH_EMEM            2

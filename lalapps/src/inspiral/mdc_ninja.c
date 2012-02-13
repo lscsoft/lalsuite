@@ -59,7 +59,6 @@
 #include "inspiral.h"
 
 /* cvs information */
-RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapp_mdc_ninja"
 
 /* defines */
@@ -828,6 +827,8 @@ static void output_frame(CHAR *ifo,
       detectorFlags );
 
   /* set creator metadata */
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
   XLALFrHistoryAdd(frame, "creator", creator);
 
@@ -901,6 +902,8 @@ static void output_frame_real8(CHAR *ifo,
       detectorFlags );
 
   /* set creator metadata */
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
   XLALFrHistoryAdd(frame, "creator", creator);
 
@@ -956,6 +959,8 @@ static void output_multi_channel_frame(INT4 num_ifos,
       detectorFlags );
 
   /* set creator metadata */
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
   XLALFrHistoryAdd(frame, "creator", creator);
 
@@ -1018,6 +1023,8 @@ static void output_multi_channel_frame_real8(INT4 num_ifos,
       detectorFlags );
 
   /* set creator metadata */
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   snprintf(creator, HISTORY_COMMENT, "creator:$Id$");
   XLALFrHistoryAdd(frame, "creator", creator);
 
@@ -1168,7 +1175,7 @@ static void add_colored_noise(LALStatus *status,
   REAL8             deltaF         = 1.0 / (deltaT * (REAL8) length);
   REAL8             tObs           = length * deltaT;
 
-  INITSTATUS( status, "add_colored_noise", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Generate white Gaussian noise with unit variance */

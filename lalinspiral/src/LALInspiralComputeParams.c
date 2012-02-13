@@ -106,10 +106,6 @@ LALInspiralParameterCalc
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALCOMPUTEPARAMSC, "$Id$");
-
-
-
 void LALInspiralComputeParams(LALStatus            *status,
                               InspiralTemplate     *pars,
                               InspiralBankParams   bankParams,
@@ -117,7 +113,7 @@ void LALInspiralComputeParams(LALStatus            *status,
 {
 
 
-  INITSTATUS (status, "LALInspiralComputeParams", LALINSPIRALCOMPUTEPARAMSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   ASSERT (pars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
 

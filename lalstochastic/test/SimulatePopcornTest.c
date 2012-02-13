@@ -40,9 +40,6 @@
 #include <lal/FileIO.h>
 #include <lal/SimulatePopcorn.h>
 
-NRCSID (SIMULATEPOPCORNTESTC, "$Id$");
-
-
 /* ***********************************************************************/
 
 

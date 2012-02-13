@@ -20,8 +20,6 @@
 
 #include "coh_PTF.h"
 
-RCSID( "$Id$" );
-
 void coh_PTF_template (
     FindChirpTemplate          *fcTmplt,
     InspiralTemplate           *InspTmplt,

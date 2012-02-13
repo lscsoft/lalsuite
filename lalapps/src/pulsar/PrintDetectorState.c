@@ -96,8 +96,6 @@ int XLALDestroyConfig ( ConfigVariables *cfg );
  * FUNCTION definitions
  *============================================================*/
 
-RCSID("$Id");
-
 int
 main(int argc, char *argv[])
 {
@@ -278,7 +276,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status, UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */

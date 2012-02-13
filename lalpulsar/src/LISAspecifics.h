@@ -24,7 +24,6 @@
  * \ingroup pulsarTODO
  * \brief Header-file defining the API for the LISA-specific functions
  *
- * $Id$
  *
  */
 
@@ -40,9 +39,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include <lal/LALRCSID.h>
-NRCSID( LISASPECIFICSH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALDetectors.h>

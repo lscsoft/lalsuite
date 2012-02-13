@@ -19,7 +19,6 @@
 
 /*************** <lalVerbatim file="PrintFTSeriesTestCV"> *******
 Author: J. T. Whelan <jtwhelan@loyno.edu>
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
@@ -97,8 +96,6 @@ for integers are not tested.
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
-
-NRCSID( PRINTFTSERIESTESTC, "$Id$" );
 
 INT4 lalDebugLevel = LALMSGLVL3;
 

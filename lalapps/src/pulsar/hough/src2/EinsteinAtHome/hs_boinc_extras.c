@@ -86,8 +86,6 @@
 /* FIXME: we should probably eliminate the references to this */
 #include "ComputeFStatistic.h"
 
-char* HSBOINCEXTRASCRCSID = "$Id$";
-
 #ifdef __APPLE__
 #include "EaH_Mac_Icon.h" 
 #endif
@@ -1213,9 +1211,6 @@ int main(int argc, char**argv) {
                          BOINC_DIAG_TRACETOSTDERR);
 
   LogSetLevel(LOG_DETAIL); /* as long as we are debugging */
-
-  /* dummy for keeping the RCSIDs */
-  HSBOINCEXTRASCRCSID = HSBOINCEXTRASHRCSID;
 
   LogPrintf(LOG_NORMAL, "This program is published under the GNU General Public License, version 2\n");
   LogPrintf(LOG_NORMAL, "For details see http://einstein.phys.uwm.edu/license.php\n");

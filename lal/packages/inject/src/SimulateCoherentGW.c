@@ -59,9 +59,6 @@
  + (1.0-indexFrac)*delayData[intIndex]                               \
 )
 
-
-NRCSID( SIMULATECOHERENTGWC, "$Id$" );
-
 /**
 \ingroup SimulateCoherentGW_h
 \author Creighton, T. D.
@@ -252,7 +249,7 @@ LALSimulateCoherentGW( LALStatus        *stat,
   INT4 intIndex;
   REAL8 indexFrac;
 
-  INITSTATUS( stat, "LALSimulateCoherentGW", SIMULATECOHERENTGWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures and their fields exist. */

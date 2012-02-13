@@ -87,8 +87,6 @@ extern int optind, opterr, optopt;
 
 #define MAXTEMPLATES 50
 
-NRCSID( STRINGSEARCHC, "StringSearch $Id$");
-RCSID( "StringSearch $Id$");
 
 /* FIXME:  should be "lalapps_StringSearch" to match the executable */
 /* requires post-processing codes to be updated */

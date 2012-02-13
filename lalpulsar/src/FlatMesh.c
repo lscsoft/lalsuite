@@ -24,7 +24,6 @@
 #include <lal/FlatMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID(FLATMESHC,"$Id$");
 
 /* Local function prototypes. */
 static int
@@ -90,7 +89,7 @@ LALCreateFlatMesh( LALStatus           *stat,
   UINT4 *nMax; /* max. no. of mesh points in each y direction */
   REAL4 *yMin; /* minimum value of each y-coordinate */
 
-  INITSTATUS( stat, "LALCreateFlatMesh", FLATMESHC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
@@ -367,7 +366,7 @@ LALRectIntersect( LALStatus           *stat,
      both xIn and xOut will point to the same contiguous block of
      memory. */
 
-  INITSTATUS( stat, "LALRectIntersect", FLATMESHC );
+  INITSTATUS(stat);
 
   /* Check that all parameters exist. */
   ASSERT( mesh, stat, FLATMESHH_ENUL, FLATMESHH_MSGENUL );

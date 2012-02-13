@@ -24,7 +24,6 @@
  * \file
  * \brief Header file defining the API for DopplerFullScan.
  *
- * $Id$
  */
 
 #ifndef _DOPPLERFULLSCAN_H  /* Double-include protection. */
@@ -50,9 +49,6 @@ extern "C" {
 #include <lal/ComputeFstat.h>
 
 #include "DopplerScan.h"
-
-
-NRCSID( DOPPLERFULLSCANH, "$Id$" );
 
 /*---------- DEFINES ----------*/
 

@@ -65,10 +65,6 @@ LALInspiralChooseModel()
 #define  LALINSPIRAL_LENGTHOVERESTIMATION  0.1       /* 10 % */
 #define  LALINSPIRAL_MINIMALWAVELENGTH     0.03125   /* 64 bins with a 2048Hz sampling*/
 
-
-NRCSID (LALINSPIRALWAVELENGTHC, "$Id$");
-
-
 void
 LALInspiralWaveLength(
    LALStatus        *status,
@@ -83,7 +79,7 @@ LALInspiralWaveLength(
    expnCoeffs ak;
    expnFunc func;
 
-   INITSTATUS (status, "LALInspiralWaveLength", LALINSPIRALWAVELENGTHC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params.nStartPad >= 0, status, LALINSPIRALH_ESIZE, LALINSPIRALH_MSGESIZE);

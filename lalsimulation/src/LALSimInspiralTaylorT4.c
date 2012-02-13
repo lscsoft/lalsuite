@@ -42,8 +42,6 @@
 #define UNUSED
 #endif
 
-NRCSID(LALSIMINSPIRALTAYLORT4C, "$Id$");
-
 /**
  * This structure contains the intrinsic parameters and post-newtonian 
  * co-efficients for the energy and angular acceleration expansions. 

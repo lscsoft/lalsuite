@@ -25,9 +25,6 @@
 #include <lal/FrameCache.h>
 #include <lal/LALFrameL.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (LALFRAMEIOH,"$Id$");
-
 #ifdef __cplusplus
 extern "C" {
 #endif

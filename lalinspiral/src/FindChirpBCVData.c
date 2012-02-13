@@ -70,9 +70,6 @@ LALFree()
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVDATAC, "$Id$");
-
-
 void
 LALFindChirpBCVData (
     LALStatus                  *status,
@@ -122,7 +119,7 @@ LALFindChirpBCVData (
   DataSegment          *dataSeg;
 
 
-  INITSTATUS( status, "LALFindChirpBCVData", FINDCHIRPBCVDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

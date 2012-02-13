@@ -23,7 +23,6 @@
  *
  * Author: Fairhurst, S. (based on inspiral.c by Brown, D.A.)
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -69,8 +68,6 @@
 #include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
-
-RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"

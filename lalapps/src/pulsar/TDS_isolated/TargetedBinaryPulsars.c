@@ -40,9 +40,6 @@
 /*                                                                               */
 /*                  University of Glasgow - last modified 26/03/2004             */
 /*********************************************************************************/
-/*
-$Id$
-*/
 #include "TargetedPulsars.h"
 /* include binary pulsar timing header file */
 #include "BinaryPulsarTiming.h"

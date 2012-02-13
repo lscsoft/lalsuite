@@ -29,8 +29,6 @@
 #define CS_COSMO_H
 #include <stdlib.h>
 
-/*  "$Id$" "$Name$"; */
-
 typedef struct cs_cosmo_functions {
 	double *phit;
 	double *phiA;

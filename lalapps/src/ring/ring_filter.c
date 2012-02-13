@@ -36,8 +36,6 @@
 #include "gpstime.h"
 #include "ring.h"
 
-RCSID( "$Id$" );
-
 static REAL8 compute_template_variance(
     COMPLEX8FrequencySeries  *stilde,
     REAL4FrequencySeries     *invspec,

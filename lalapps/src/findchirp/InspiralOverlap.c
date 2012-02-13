@@ -84,9 +84,6 @@ LALDestroyRealFFTPlan
 #include <lalapps.h>
 
 
-NRCSID( INSPIRALOVERLAP, "$Id$");
-RCSID(  "$Id$");
-
 
 void printf_timeseries (INT4 n, REAL4 *signal, REAL8 delta, REAL8 t0);
 void PrintParams(InspiralTemplate params, InspiralTemplate parans);

@@ -39,8 +39,6 @@ Determination of a specific moment of a set of data.
 #include <math.h>
 #include <lal/LALMoment.h>
 
-NRCSID( LALMOMENTC, "$Id$");
-
 #define TYPECODE D
 #define TYPE REAL8
 #include "LALMoment_source.c"

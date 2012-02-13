@@ -33,8 +33,6 @@
 #include <lal/SFTfileIO.h>
 #include "sft_extra.h"
 
-RCSID ("$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define MAKEFAKEDATAC_ENORM 	0
@@ -172,7 +170,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* now register all our user-variable */

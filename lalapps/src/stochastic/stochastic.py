@@ -14,12 +14,11 @@ WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 General Public License for more details.
 
-$Id$
 """
 
 __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 import string
 import exceptions

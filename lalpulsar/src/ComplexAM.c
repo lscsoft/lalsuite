@@ -44,8 +44,6 @@
 #include <lal/LISAspecifics.h>
 #include <lal/ComputeFstat.h>
 
-NRCSID( COMPLEXAMC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -85,7 +83,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
   UINT4 i, numSteps;
   CHAR channelNum;
 
-  INITSTATUS (status, "LALGetCmplxAMCoeffs", COMPLEXAMC);
+  INITSTATUS(status);
 
   /*---------- check input ---------- */
   ASSERT ( DetectorStates, status, COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
@@ -149,7 +147,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus struct
   REAL4 sin1Alpha, cos1Alpha;
   FreqSkypos_t freq_skypos;
 
-  INITSTATUS( status, "LALGetMultiCmplxAMCoeffs", COMPLEXAMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */

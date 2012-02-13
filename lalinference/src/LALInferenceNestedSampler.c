@@ -18,7 +18,6 @@
 #include <lal/LALInferenceXML.h>
 #endif
 
-RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceNestedSampler.c"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"

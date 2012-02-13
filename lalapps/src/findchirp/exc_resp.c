@@ -25,8 +25,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 
-RCSID( "$Id$" );
-
 /* Calibration Constants for L1:LSC-ETMX        */
 /* Based on mail from Gaby Mon, 24 Jun 2002     */
 /* #define L1_DC_RESP 2.63  */      /* nm/count */

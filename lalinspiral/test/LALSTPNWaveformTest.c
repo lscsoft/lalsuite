@@ -48,8 +48,6 @@ be refactored with access to the new frameless LALSTPNWaveform.]
 #define UNUSED
 #endif
 
-NRCSID(LALSTPNWaveformTestC, "$Id: LALSTPNWaveformTest.c,v 1.1 2004/05/05 20:06:23 thomas Exp");
-
 extern int newswitch;
 
 int main(int argc,char UNUSED **argv) {

@@ -23,7 +23,6 @@
  *  \brief Functions for adding a (realistic?) merger ringdown to the end of
  *  and inspiral waveform
  *
- * $Id$
  *
  */
 
@@ -48,8 +47,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspRing.h>
-
-NRCSID (GENERATEINSPRINGC,"$Id$");
 
 static SimRingdownTable*
 XLALDeriveRingdownParameters(

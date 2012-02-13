@@ -14,8 +14,6 @@ File Name: AVFactories.h
 extern "C" {
 #endif
 
-NRCSID (AVFACTORIESH, "$Id$");
-
 /**
 \defgroup AVFactories_h AVFactories_h
 \ingroup factories

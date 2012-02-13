@@ -23,7 +23,6 @@
 /* Purpose: Contains driver functions for StackSlide search                      */
 /* Author: Mendell, G. and Landry, M.                                            */
 /* Started: 03 December 2003                                                     */
-/* $Id$               */
 /*                                                                               */
 /*********************************************************************************/
 /* Notes: */
@@ -150,8 +149,6 @@
 /* END SECTION: include header files         */
 /*                                           */
 /*********************************************/
-
-NRCSID( DRIVESTACKSLIDEH, "$Id$");
 
 /*********************************************/
 /*                                           */

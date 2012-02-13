@@ -24,7 +24,6 @@
  *
  * Author: Hanna C. R.
  *
- * Revision: $Id$
  *
  *________________________________________________________________________
  */
@@ -34,8 +33,6 @@
 #include<lal/InspiralBankGeneration.h>
 #include<lal/LIGOMetadataTables.h>
 
-NRCSID(MAKETEMPLATEBANKC, "$Id$");
-
 void
 LALMakeTemplateBank(
      LALStatus *status,
@@ -43,7 +40,7 @@ LALMakeTemplateBank(
      MakeTemplateBankInput *input,
      MetadataTable *table)
 {
-  INITSTATUS(status, "LALMakeTemplateBank", MAKETEMPLATEBANKC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
   if(type == NULL){
     ABORT(status, TEMPLATEBANKGENERATIONH_ENULL, TEMPLATEBANKGENERATIONH_MSGENULL);

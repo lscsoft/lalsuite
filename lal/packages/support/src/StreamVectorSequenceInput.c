@@ -89,8 +89,6 @@ LALDReadVector()    LALDDestroyVector()    LALDCreateVectorSequence()
 #include <lal/SeqFactories.h>
 #include <lal/StreamInput.h>
 
-NRCSID( STREAMVECTORSEQUENCEINPUTC, "$Id$" );
-
 /* Define linked-list of pointers to vectors of arbitrary type. */
 typedef union tagVector {
   CHARVector *CHV;
@@ -141,8 +139,7 @@ LALCHARReadVectorSequence( LALStatus          *stat,
   UINT4 nRows, nCols;        /* number and length of lines */
   CreateVectorSequenceIn in; /* parameters for creating sequence */
 
-  INITSTATUS( stat, "LALCHARReadVectorSequence",
-	      STREAMVECTORSEQUENCEINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Read the first line. */

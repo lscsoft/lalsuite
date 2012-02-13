@@ -67,9 +67,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( GENERATEINSPIRALH,
-    "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define GENERATEINSPIRALH_ENORM 0
 #define GENERATEINSPIRALH_ENULL 1

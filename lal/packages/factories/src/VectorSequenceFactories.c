@@ -26,9 +26,6 @@ LALFree()
 #include "LALStdlib.h"
 #include "SeqFactories.h"
 
-
-NRCSID( VECTORSEQUENCEFACTORIESC, "$Id$" );
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #include "CreateVectorSequence_source.c"

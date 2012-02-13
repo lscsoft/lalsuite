@@ -924,9 +924,9 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       result = (__m128d*)(void*)alignedoutput;
    }
    
-   __m128i expoffset = _mm_set1_epi64x((INT8)1023);      //Exponent mask for double precision
-   __m128i maskupper32bits = _mm_set1_epi64x((INT8)0xffffffff00000000);    //mask for upper 32 bits
-   __m128i masklower32bits = _mm_set1_epi64x((INT8)0x00000000ffffffff);    //mask for lower 32 bits
+   __m128i expoffset = _mm_set_epi32(0, 1023, 0, 1023); //__m128i expoffset = _mm_set1_epi64x(1023);      //Exponent mask for double precision
+   __m128i maskupper32bits = _mm_set_epi32(0xffffffff, 0x00000000, 0xffffffff, 0x00000000); //__m128i maskupper32bits = _mm_set1_epi64x(0xffffffff00000000);    //mask for upper 32 bits
+   __m128i masklower32bits = _mm_set_epi32(0x00000000, 0xffffffff, 0x00000000, 0xffffffff); //__m128i masklower32bits = _mm_set1_epi64x(0x00000000ffffffff);    //mask for lower 32 bits
    __m128d log2e = _mm_set1_pd(1.442695040888963);                   //ln(2)
    __m128d onehalf = _mm_set1_pd(0.5);             //0.5
    __m128d one = _mm_set1_pd(1.0);                 //1.0

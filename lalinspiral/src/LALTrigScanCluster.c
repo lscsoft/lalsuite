@@ -28,8 +28,6 @@
 #include <lal/TrigScanEThincaCommon.h>
 #include <lal/LALTrigScanCluster.h>
 
-NRCSID (LALTRIGSCANCLUSTERC, "$Id$");
-
 /**
 \author Sengupta, Anand. S. and Gupchup, Jayant A.
 \file

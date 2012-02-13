@@ -23,8 +23,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Sequence.h>
 
-NRCSID (SEQUENCETESTC,"$Id$");
-
 static REAL4Sequence *random_sequence(size_t length)
 {
 	REAL4Sequence *s = XLALCreateREAL4Sequence(length);

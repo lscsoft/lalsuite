@@ -70,10 +70,6 @@ LALFree()
 #include <lal/GenerateInspRing.h>
 #include <lal/TimeSeries.h>
 
-
-NRCSID( FINDCHIRPIMRSIMULATIONC, "$Id$" );
-
-
 void
 LALFindChirpInjectIMR (
     LALStatus                  *status,
@@ -100,7 +96,7 @@ LALFindChirpInjectIMR (
   UINT4 i;
 #endif
 
-  INITSTATUS( status, "LALFindChirpInjectIMR", FINDCHIRPIMRSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,

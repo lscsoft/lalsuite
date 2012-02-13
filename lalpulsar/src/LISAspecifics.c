@@ -34,9 +34,6 @@
 
 #include "LISAspecifics.h"
 
-
-NRCSID( LISASPECIFICSC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)

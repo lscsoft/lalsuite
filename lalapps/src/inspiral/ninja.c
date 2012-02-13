@@ -67,7 +67,6 @@
 #include "inspiral.h"
 
 /* program info */
-RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapps_ninja"
 
 /* verbose flag */

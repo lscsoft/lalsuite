@@ -72,9 +72,6 @@ Functions in the Metaio library:
 #define UNUSED
 #endif
 
-NRCSID( CREATEMETATABLEDIRC, "$Id$" );
-
-
 MetaTableDirectory* XLALCreateMetaTableDir(
     const MetaioParseEnv    env,
     MetadataTableType       table
@@ -347,7 +344,7 @@ LALCreateMetaTableDir(
     )
 
 {
-  INITSTATUS( status, "LALCreateMetaTableDir", CREATEMETATABLEDIRC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check the inputs */

@@ -51,8 +51,6 @@
 /*                                           */
 /*********************************************/
 
-NRCSID( STACKSLIDEFSTATISOLATEDC,  "$Id$");
-
 /*********************************************************************************/
 /*              START FUNCTION: StackSlideFStatIsolated                               */
 /*********************************************************************************/
@@ -97,7 +95,7 @@ void StackSlideFStatIsolated (
    fflush(stdout);
  #endif    
 
- INITSTATUS( status, "StackSlideFStatIsolated", STACKSLIDEISOLATEDC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR(status);
  
  /* allocate memory for inputSFTs */

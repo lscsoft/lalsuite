@@ -24,7 +24,6 @@
  * Author: Chassande-Mottin, E.
  * Maintainer: Torres, C (Univ TX at Browsville)
  *
- * Revision: $Id:
  *
  *-----------------------------------------------------------------------
  *
@@ -56,9 +55,6 @@
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))
 
-NRCSID (TFRWVC, "$Id$");
-
-
 void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqParam *param)
 {
 
@@ -70,7 +66,7 @@ void LALTfrWv (LALStatus *stat, REAL4Vector* sig, TimeFreqRep *tfr, TimeFreqPara
   COMPLEX8Vector  *vtmp = NULL;
   RealFFTPlan  *plan = NULL;
 
-  INITSTATUS (stat, "LALTfrWv", TFRWVC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* Make sure the arguments are not NULL: */

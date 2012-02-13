@@ -282,8 +282,6 @@ const char xtechannelname[16] = "X1";
 /* a list of useless data modes (specifically for the Sco X-1 analysis) */
 const char *USELESSDATAMODE[5] = {"D_1US_0_249_1024_64S_F","D_1US_0_249_128_1S_F","D_1US_0_249_128_1S_2LLD_F","CB","GoodXenon"};
 
-RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
-
 /***********************************************************************************************/
 /* define functions */
 int main(int argc,char *argv[]);
@@ -480,7 +478,7 @@ void ReadUserVars(LALStatus *status,int argc,char *argv[],UserInput_t *uvar,CHAR
   CHAR *version_string;
   INT4 i;
 
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* initialise user variables */

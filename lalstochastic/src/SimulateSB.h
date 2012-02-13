@@ -50,8 +50,6 @@ detector transfer function in each detector.
 extern "C" {
 #endif
 
-  NRCSID( SIMULATESBH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define SIMULATESBH_ENULLP          1	/**< Null pointer */
 #define SIMULATESBH_ENONPOSLEN      2	/**< Negative or zero length for data member of time series */

@@ -34,8 +34,6 @@
 #define UNUSED
 #endif
 
-/*  "$Id$" "$Name$"; */
-
 static double cs_lambda_hubble( double one_plus_z )
 {
 	const double Omega_m = LAMBDA_OMEGA_M;

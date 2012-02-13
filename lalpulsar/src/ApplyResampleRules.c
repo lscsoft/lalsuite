@@ -23,9 +23,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-NRCSID(APPLYRESAMPLERULESC,"$Id$");
-
-
 /**
     \author Creighton, T. D.
     \ingroup Resample_h
@@ -51,7 +48,7 @@ LALApplyResampleRules( LALStatus       *stat,
 {
   INT4 nStart, nStop; /* output domain for which we can get data */
 
-  INITSTATUS(stat,"LALApplyResampleRules",APPLYRESAMPLERULESC);
+  INITSTATUS(stat);
 
   /* Check that the inputs all exist. */
   ASSERT(rules,stat,RESAMPLEH_ENUL,RESAMPLEH_MSGENUL);

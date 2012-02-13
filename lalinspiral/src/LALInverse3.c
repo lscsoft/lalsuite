@@ -54,7 +54,6 @@ Do not generalise to more than 3 dimensions.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALINVERSE3C, "$Id$");
 #define Dim 3
 
 
@@ -77,7 +76,7 @@ void LALInverse3(LALStatus *status,
    REAL8 det,x;
    int i,j,p,q,a,b;
 
-   INITSTATUS(status, "LALInverse3", LALINVERSE3C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (inverse,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (matrix,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

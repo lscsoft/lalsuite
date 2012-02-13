@@ -22,7 +22,7 @@ FUNC ( LALStatus *stat, VTYPE **vector, FILE *stream, BOOLEAN strict )
   BOOLEAN more = 1;        /* whether or not to read more numbers */
   UINT4 nTot = 0;          /* total number of numbers read */
 
-  INITSTATUS( stat, STRING(FUNC), STREAMVECTORINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

@@ -72,10 +72,6 @@ imaginary part of the element.
 #include <lal/LALDatatypes.h>
 #include <lal/PrintVector.h>
 
-
-NRCSID( PRINTVECTORC, "$Id$" );
-
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #define FMT "%i %g %g\n"

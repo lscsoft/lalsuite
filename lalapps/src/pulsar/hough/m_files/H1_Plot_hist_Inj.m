@@ -1,5 +1,4 @@
 %
-% $Id$
 %
 %  Matlab script to plot C(h_0) for the 1st iteration
 %

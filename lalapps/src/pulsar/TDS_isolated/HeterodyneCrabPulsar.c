@@ -214,9 +214,6 @@
 #include <lal/BinaryPulsarTiming.h>
 #include "HeterodyneCrabPulsar.h"
 
-/* DEFINE RCS ID STRING */
-NRCSID( HETERODYNECRABPULSARC, "$Id$");
-
 void
 LALGetCrabEphemeris	( LALStatus			*status,
 			  CrabSpindownParamsInput	*output,
@@ -238,7 +235,7 @@ LALGetCrabEphemeris	( LALStatus			*status,
 
   FILE *fp;
 
-  INITSTATUS( status, "LALGetCrabEphemeris", HETERODYNECRABPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Check Input Arguments */
@@ -312,7 +309,7 @@ LALComputeFreqDerivatives	( LALStatus			*status,
   REAL8 phase0, phase; /* phase of signal */
   REAL8 phaseNew;
 
-  INITSTATUS( status, "LALComputeFreqDerivatives", HETERODYNECRABPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Check Input Arguments */
@@ -391,7 +388,7 @@ LALSetSpindownParams	( LALStatus  *status,
   UINT4 i = 0;
   REAL8 dataEpoch;
 
-  INITSTATUS( status, "LALSetSpindownParams", HETERODYNECRABPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Check Input Arguments */
@@ -442,7 +439,7 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
   /* find the SSB barycenter time delay */
   LALBarycenter(status, &emit, &baryinput, &earth);
 
-  INITSTATUS( status, "LALTimingNoiseHeterodyne", HETERODYNECRABPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Check Input Arguments */

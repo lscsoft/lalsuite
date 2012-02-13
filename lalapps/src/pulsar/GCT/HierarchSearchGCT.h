@@ -75,16 +75,10 @@ extern "C" {
 #endif
 
 
-  /******************************************************
-   *  Assignment of Id string using NRCSID()
-   */
-
-  NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14:37 hpletsch Exp $" );
-
-  /******************************************************
-   *  Error codes and messages.
-   */
-
+/******************************************************
+ *  Error codes and messages.
+ */
+ 
 #define HIERARCHICALSEARCH_ENORM 0
 #define HIERARCHICALSEARCH_ESUB  1
 #define HIERARCHICALSEARCH_EARG  2

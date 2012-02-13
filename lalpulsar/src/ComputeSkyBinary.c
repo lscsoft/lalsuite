@@ -33,8 +33,6 @@ for the case of a continuous wave source in a binary system.
 #include <lal/FindRoot.h>
 #include <lal/LALBarycenter.h>
 
-NRCSID (COMPUTESKYBINARYC, "$Id$");
-
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 t, void *tr0);
 
 static REAL8 a;      /* semi major axis */
@@ -85,7 +83,7 @@ void LALComputeSkyBinary (LALStatus	*status,
 	REAL8 tr0;
 	REAL8 acc;
 
- INITSTATUS (status, "LALComputeSkyBinary", COMPUTESKYBINARYC);
+ INITSTATUS(status);
  ATTATCHSTATUSPTR(status);
 
 /* Check for non-negativity of sky positions in SkyCoh[] */
@@ -209,7 +207,7 @@ void LALComputeSkyBinary (LALStatus	*status,
 
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0)
 {
-  INITSTATUS(status, "Ft", "Function Ft()");
+  INITSTATUS(status);
   ASSERT(tr0,status, 1, "Null pointer");
 
   /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */

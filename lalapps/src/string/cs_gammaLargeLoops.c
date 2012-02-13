@@ -53,8 +53,6 @@ double *eff, *lnamp, *amp, *Deff, Dlnz;  /* arrays for efficiency, amplitude and
 double H0 = LAMBDA_H_0, DlnA;
 int Namp;   /* size of amplitude/eff array */
 
-NRCSID( CSGAMMAC, "cs_gammaLargeLoops $Id$");
-RCSID( "cs_gammaLargeLoops $Id$");
 
 #define PROGRAM_NAME "cs_gammaLargeLoops"
 #define CVS_REVISION "$Revision$"

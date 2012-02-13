@@ -2,15 +2,13 @@
 """
 inspiral_pipeline.py - standalone inspiral pipeline driver script
 
-$Id$
-
 This script produced the necessary condor submit and dag files to run
 the standalone inspiral code on LIGO data
 """
 
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -459,6 +457,8 @@ if usertag:
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
   
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
 for o, a in opts:

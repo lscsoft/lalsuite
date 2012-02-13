@@ -43,8 +43,6 @@
 #include "clusters.h"
 #include "DopplerScan.h"
 
-RCSID( "$Id$");
-
 /*
 #define DEBG_FAFB                
 #define DEBG_ESTSIGPAR
@@ -338,7 +336,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* set a few defaults */
@@ -770,7 +768,7 @@ void CreateDemodParams (LALStatus *status)
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
   INT4 k;
 
-  INITSTATUS (status, "CreateDemodParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   edat=(EphemerisData *)LALMalloc(sizeof(EphemerisData));
@@ -871,7 +869,7 @@ void AllocateMem(LALStatus *status)
 {
   INT4 k;
 
-  INITSTATUS (status, "AllocateMem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Allocate space for AMCoeffs */
@@ -1194,7 +1192,7 @@ SetGlobalVariables(LALStatus *status, ConfigVariables *cfg)
   INT4 i;                           /* index over SFTs */
   REAL8 df;                         /* freq resolution */
 
-  INITSTATUS (status, "SetGlobalVariables", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* do some sanity checks on the user-input before we proceed */
@@ -1391,7 +1389,7 @@ void CreateDetector(LALStatus *status, LALDetector *Detector)
   LALDetectorType bar;
   LALDetector Detector1;
 
-  INITSTATUS (status, "CreateDetector", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 /*   detector_params=(LALFrDetector )LALMalloc(sizeof(LALFrDetector)); */
@@ -1420,7 +1418,7 @@ void Freemem(LALStatus *status)
 
   INT4 k;
 
-  INITSTATUS (status, "Freemem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Free SFTData */

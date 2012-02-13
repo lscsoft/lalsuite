@@ -166,8 +166,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( GENERATEPPNINSPIRALH, "$Id$" );
-
 /** \name Error Codes */ /*@{*/
 #define GENERATEPPNINSPIRALH_ENUL  1
 #define GENERATEPPNINSPIRALH_EOUT  2

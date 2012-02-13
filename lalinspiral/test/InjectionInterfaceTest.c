@@ -95,15 +95,13 @@ file.
 #include <lal/FindChirp.h>
 #include <lal/PrintFTSeries.h>
 
-NRCSID( INJECTIONINTERFACETESTC, "$Id$" );
-
 #define ERROR( code, msg, statement )                                \
 do                                                                   \
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), program, __FILE__,       \
-		 __LINE__, INJECTIONINTERFACETESTC, statement ? statement :   \
+		 __LINE__, "$Id$", statement ? statement :   \
                  "", (msg) );                                        \
 }                                                                    \
 while (0)

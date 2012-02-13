@@ -63,9 +63,6 @@ LALDestroyVector()
 #include <lal/FindChirpPTF.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID(FINDCHIRPPTFTEMPLATEC, "$Id$");
-
-
 void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,
@@ -88,7 +85,7 @@ LALFindChirpPTFTemplate (
   onebysqrtofsix = 1.0 / sqrt(6.0);
   N = params->PTFphi->length;
 
-  INITSTATUS( status, "LALFindChirpPTFTemplate", FINDCHIRPPTFTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -244,7 +241,7 @@ LALFindChirpPTFNormalize(
   fFinal    = (REAL4) fcTmplt->tmplt.fFinal;
   kmax      = fFinal / deltaF < (len - 1) ? fFinal / deltaF : (len - 1);
 
-  INITSTATUS( status, "LALFindChirpPTFNormalize", FINDCHIRPPTFTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check the required input exists */

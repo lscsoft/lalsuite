@@ -19,7 +19,6 @@
 
 /********************************** <lalVerbatim file="StringTokenCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -90,8 +89,6 @@ LALFree()                       LALCHARDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
 
-NRCSID( STRINGTOKENC, "$Id$" );
-
 /* <lalVerbatim file="StringTokenCP"> */
 void
 LALCreateTokenList( LALStatus  *stat,
@@ -106,7 +103,7 @@ LALCreateTokenList( LALStatus  *stat,
   UINT4 tLength = 0;     /* length of token list */
   CHAR *copy;            /* working copy of token list */
 
-  INITSTATUS( stat, "LALCreateTokenList", STRINGTOKENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -282,7 +279,7 @@ void
 LALDestroyTokenList( LALStatus *stat,
 		     TokenList **list )
 { /* </lalVerbatim> */
-  INITSTATUS( stat, "LALCreateTokenList", STRINGTOKENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

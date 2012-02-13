@@ -19,7 +19,6 @@
 
 /*************** <lalVerbatim file="ReadFTSeriesTestCV"> *******
 Author: Torres, C. W.
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
@@ -117,9 +116,6 @@ LALUnitPair
 #include <lal/AVFactories.h>
 #define  READFTSERIESTEST_TOL 1e6
 #define  READFTSERIESTEST_LEN 20
-
-
-NRCSID( READFTSERIESTESTC, "$Id$" );
 
 extern int lalDebugLevel;
 

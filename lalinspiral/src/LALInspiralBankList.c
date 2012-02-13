@@ -32,10 +32,6 @@
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (LALINSPIRALBANKLISTC,"$Id$");
-
-
 /* for debugging only
 void
 print_list(CellList *head)

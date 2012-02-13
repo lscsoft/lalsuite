@@ -38,9 +38,6 @@
 #define UNUSED
 #endif
 
-RCSID( "$Id$" );
-
-
 /* routine to compute an average spectrum from time series data */
 REAL4FrequencySeries *compute_average_spectrum(
     REAL4TimeSeries         *series,

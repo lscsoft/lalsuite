@@ -109,8 +109,6 @@
 #include <lal/NRWaveInject.h>
 #include <lal/RealFFT.h>
 
-NRCSID(LALPSPININSPIRALRDC, "$Id$");
-
 #define sqrtOnePointFive 1.22474
 #define sqrtPoint15      0.387298
 #define sqrtFiveOver2    1.1183
@@ -661,7 +659,7 @@ static int XLALPSpinInspiralRDEngine(
 
 void LALPSpinInspiralRD(LALStatus * status, REAL4Vector * signalvec, InspiralTemplate * params)
 {
-  INITSTATUS(status, "LALPSpinInspiralRD", LALPSPININSPIRALRDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if (XLALPSpinInspiralRD(signalvec, params))
@@ -707,9 +705,6 @@ int XLALPSpinInspiralRD(REAL4Vector * signalvec, InspiralTemplate * params)
   return XLAL_SUCCESS;
 }
 
-
-NRCSID(LALPSPININSPIRALRDTEMPLATESC, "$Id$");
-
 /**
  * \ingroup psird
  * \brief Module to produce waveform templates
@@ -720,7 +715,7 @@ void LALPSpinInspiralRDTemplates(LALStatus * status,
          REAL4Vector * signalvec2,
          InspiralTemplate * params)
 {
-    INITSTATUS(status, "LALPSpinInspiralRDTemplates",LALPSPININSPIRALRDTEMPLATESC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     if (XLALPSpinInspiralRDTemplates(signalvec1, signalvec2, params))
@@ -779,9 +774,6 @@ int XLALPSpinInspiralRDTemplates(
     return XLAL_SUCCESS;
 }
 
-
-NRCSID(LALPSPININSPIRALRDINJECTIONC, "$Id$");
-
 /**
  * \ingroup psird
  * \brief Module to produce injection waveforms
@@ -792,7 +784,7 @@ void LALPSpinInspiralRDForInjection(LALStatus        * status,
             InspiralTemplate * params,
             PPNParamStruc    * ppnParams)
 {
-    INITSTATUS(status, "LALPSpinInspiralRDInjection", LALPSPININSPIRALRDINJECTIONC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     if (XLALPSpinInspiralRDForInjection(waveform, params, ppnParams))
@@ -930,7 +922,7 @@ void LALPSpinInspiralRDFreqDom(LALStatus * status,
 			       REAL4Vector * signalvec,
 			       InspiralTemplate * params)
 {
-    INITSTATUS(status, "LALPSpinInspiralRDFReqDom", LALPSPININSPIRALRDC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     if (XLALPSpinInspiralRDFreqDom(signalvec, params))
@@ -1052,8 +1044,6 @@ int XLALPSpinInspiralRDFreqDom(
 
     return XLAL_SUCCESS;
 }
-
-NRCSID(LALPSPININSPIRALRDENGINEC, "$Id$");
 
 /**
  * \ingroup psird
@@ -1379,8 +1369,6 @@ static int XLALSpinInspiralFillH4Modes(
 
   return 0;
 }
-
-NRCSID(LALSPININSPIRALENGINEC,"$Id$");
 
 static int XLALSpinInspiralEngine(
 				UINT4 neqs, 

@@ -70,9 +70,6 @@ LALComputeDetAMResponse()
 #include <lal/LALStdlib.h>
 #include <lal/FitToPulsar.h>
 
-/******* DEFINE RCS ID STRING ************/
-NRCSID( FITTOPULSARC, "$Id$" );
-
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 #define INICHISQU 1.e50
 #define INIMAXEH 0
@@ -117,7 +114,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
 	REAL8 oldMinEh0, oldMaxEh0, weh0;
 	UINT4			iH0, iCosIota, iPhase, iPsi, arg;
 
-  INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/

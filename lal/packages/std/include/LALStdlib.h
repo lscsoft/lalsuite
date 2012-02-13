@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="LALStdlibHV">
 Author: J. D. E. Creighton, T. D. Creighton
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -116,7 +115,6 @@ most LAL functions, by including the following header files in the
 #define _LALSTDLIB_H
 
 /* <lalVerbatim> */
-#include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStatusMacros.h>
 /* </lalVerbatim>
@@ -141,8 +139,6 @@ for certain standard modules used by many LAL routines:
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID (LALSTDLIBH, "$Id$");
 
 /* These are non-ANSI standard routines that will be allowed in LAL */
 #ifndef SWIG /* exclude from SWIG interface */

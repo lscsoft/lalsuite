@@ -45,8 +45,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-NRCSID(FLATMESHTESTC,"$Id$");
-
 /* Default parameter settings. */
 INT4 lalDebugLevel = 0;
 

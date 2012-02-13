@@ -1214,8 +1214,6 @@ fclose(file);
 	return;
 }
 
-
-NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
 //temporary? replacement function for FindChirpInjectSignals in order to accept any detector.site and not only the ones in lalCachedDetectors.
 void
 LALInferenceLALFindChirpInjectSignals (
@@ -1244,7 +1242,7 @@ LALInferenceLALFindChirpInjectSignals (
   REAL8TimeSeries       *signalvecREAL8=NULL;
  // REAL4TimeSeries       *signalvecREAL4=NULL;
   
-  INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,

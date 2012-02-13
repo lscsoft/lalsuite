@@ -56,8 +56,6 @@
 #define UNUSED
 #endif
 
-NRCSID (NRWAVEINJECTC, "$Id$");
-
 int compare_abs_float(const void *a, const void *b);
 int compare_abs_double(const void *a, const void *b);
 
@@ -646,7 +644,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   REAL8 offset;
   InspiralApplyTaper taper = INSPIRAL_TAPER_NONE;
 
-  INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* sampleRate = 1.0/strain->deltaT;   */
@@ -752,7 +750,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   LALDetector det;
 
-  INITSTATUS (status, "LALNRInject",  NRWAVEINJECTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get the detector information */

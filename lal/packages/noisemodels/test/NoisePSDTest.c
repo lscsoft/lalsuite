@@ -45,7 +45,6 @@ LALCheckMemoryLeaks
 #include <lal/LALNoiseModels.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID (NOISEPSDTESTC,"$Id$");
 
 INT4 lalDebugLevel=1;
 /** \endcond */

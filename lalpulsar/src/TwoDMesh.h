@@ -33,8 +33,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(TWODMESHH,"$Id$");
-
 /** \name Error Codes */ /*@{*/
 /** \ingroup TwoDMesh_h */
 #define TWODMESHH_ENUL    1

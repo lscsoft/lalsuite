@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# $Id: eah_build.sh,v 1.159 2010/02/18 13:38:40 bema Exp $
 
 ## function definitions follow here, the 'main-code' starts at MAIN
 
@@ -1537,7 +1536,9 @@ echo "  as date tag: `date +%Y-%m-%dT%H:%M%z`"  >> "$LOGFILE"
 echo >> "$LOGFILE"
 ## we have to strip the $'s from Id-string to avoid cvs-expansion
 ## in case the build-log gets checked into cvs!
-cvs_version=`echo '$Id: eah_build.sh,v 1.159 2010/02/18 13:38:40 bema Exp $' | sed 's/[$]\(.*\)[$]/\1/g'`
+## FIXME: the following code uses obsolete CVS ID tags.
+## It should be modified to use git version information.
+cvs_version=`echo '$Id$' | sed 's/[$]\(.*\)[$]/\1/g'`
 
 echo "Version of the build-script: '${cvs_version}'" >> ${LOGFILE}
 echo >> ${LOGFILE}

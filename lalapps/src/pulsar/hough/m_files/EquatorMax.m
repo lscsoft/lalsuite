@@ -1,5 +1,4 @@
 % 
-% $Id$
 %
 %  Matlab script to get the maximum numbercount values of the Hough map results
 %  for the different frequency bins.

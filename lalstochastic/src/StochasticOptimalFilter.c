@@ -169,9 +169,6 @@ LALUnitCompare()
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
 
-NRCSID (STOCHASTICOPTIMALFILTERC,
-"$Id$");
-
 void
 LALStochasticOptimalFilterCal(
     LALStatus                             *status,
@@ -200,8 +197,7 @@ LALStochasticOptimalFilterCal(
   LALUnit tmpUnit1, tmpUnit2, checkUnit;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALStochasticOptimalFilterCal", \
-      STOCHASTICOPTIMALFILTERC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING ----------------------------------------------------- */
@@ -496,7 +492,7 @@ LALStochasticOptimalFilter(
   LALUnit tmpUnit1, tmpUnit2, checkUnit;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALStochasticOptimalFilter", STOCHASTICOPTIMALFILTERC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING ----------------------------------------------------- */

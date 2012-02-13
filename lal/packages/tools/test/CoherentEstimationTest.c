@@ -24,8 +24,6 @@
 #include <lal/Random.h>
 #include <lal/SkyCoordinates.h>
 
-NRCSID( COHERENTESTIMATIONTESTC, "$Id$" );
-
 extern int lalDebugLevel;
 
 int

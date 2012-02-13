@@ -32,10 +32,6 @@
 static const MetricParamStruc empty_MetricParamStruc;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
-/** \cond DONT_DOXYGEN */
-NRCSID( PTOLEMETRICC, "$Id$" );
-/** \endcond */
-
 /* Bounds on acceptable parameters, may be somewhat arbitrary */
 #define MIN_DURATION (LAL_DAYSID_SI/LAL_TWOPI) /* Metric acts funny if duration too short */
 #define MIN_MAXFREQ  1.                        /* Arbitrary */
@@ -152,7 +148,7 @@ void LALPtoleMetric( LALStatus *status,
   INT2 j_max;  /* Number of terms in series */
 
 
-  INITSTATUS( status, "LALPtoleMetric", PTOLEMETRICC );
+  INITSTATUS(status);
 
   /* Check for valid input structure. */
   ASSERT( input != NULL, status, PTOLEMETRICH_ENULL,
@@ -648,7 +644,7 @@ void LALPulsarMetric ( LALStatus *stat,
   REAL8Vector *lambda = NULL;
   UINT4 i, nSpin, dim;
 
-  INITSTATUS( stat, "LALPulsarMetric", PTOLEMETRICC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   ASSERT ( input, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );

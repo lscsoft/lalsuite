@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon
  *
@@ -28,11 +27,6 @@
 #include <lal/LALError.h>
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID(SEQUENCEC, "$Id$");
-
 
 /*
  * Shift the bytes in the buffer buff, whose length is length, count bytes to

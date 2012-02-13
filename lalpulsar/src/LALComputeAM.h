@@ -54,7 +54,6 @@ extern "C" {
 #include <lal/DetectorStates.h>
 
 /* ---------- exported defines and macros -------------------- */
-NRCSID (LALCOMPUTEAMH, "$Id: LALComputeAM.h");
 
 /** \name Error codes */
 /*@{*/

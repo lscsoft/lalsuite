@@ -21,8 +21,6 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( SNGLINSPIRALUTILSC, "$Id$");
-
 /**
 \author Bose, S.
 \file
@@ -67,7 +65,7 @@ LALFreeMultiInspiral (
     )
 
 {
-  INITSTATUS( status, "LALFreeMultiInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   XLALFreeMultiInspiral( eventHead );
   RETURN( status );
 }

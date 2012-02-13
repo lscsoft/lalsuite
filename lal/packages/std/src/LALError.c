@@ -18,7 +18,6 @@
 */
 
 /************************************ <lalVerbatim file="LALErrorCV">
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -204,8 +203,6 @@ lalDebugLevel
 #define vfprintf( stream, fmt, ap ) 0
 #endif
 #endif
-
-NRCSID( LALERRORC, "$Id$" );
 
 extern int lalDebugLevel;
 

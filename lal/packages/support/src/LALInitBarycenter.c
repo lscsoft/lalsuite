@@ -23,7 +23,6 @@
 #include <lal/LALInitBarycenter.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID(LALINITBARYCENTERC,"$Id$");
 
 /* ----- defines and macros ---------- */
 #define SQ(x) ((x) * (x))
@@ -425,7 +424,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
                           Jan. 2 of given year */
     INT4 ret; /* return value for checking */
 
-    INITSTATUS(stat,"LALInitBarycenter",LALINITBARYCENTERC);
+    INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);
 
     /* open earth file */

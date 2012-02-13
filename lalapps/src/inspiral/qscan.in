@@ -2,8 +2,6 @@
 """
 qscan.in - simple dag generator for q scans
 
-$Id$
-
 This program takes a list of GPS times and creates a condor dag to run
 qscans and the related post processing.
 """
@@ -11,7 +9,7 @@ qscans and the related post processing.
 __author__ = 'Romain Gouaty <romain@phys.lsu.edu>, ' + \
              'Chad Hanna <channa@phys.lsu.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path

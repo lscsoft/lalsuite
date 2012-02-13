@@ -54,8 +54,6 @@ lalDebugLevel
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
-NRCSID( MAIN, "$Id$" );
-
 extern char *optarg;
 extern int   optind;
 

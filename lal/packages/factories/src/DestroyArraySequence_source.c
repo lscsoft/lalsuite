@@ -18,7 +18,7 @@ void FUNC ( LALStatus *status, STYPE **aseq )
    * Initialize status
    */
 
-  INITSTATUS( status, STRING(FUNC), ARRAYSEQUENCEFACTORIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*

@@ -44,9 +44,6 @@ Gets IFO_DMRO data from frame files.
 extern "C" {
 #endif
 
-
-NRCSID (FRAMEDATAH, "$Id$");
-
 /** \name Error Codes */ /*@{*/
 
 #define FRAMEDATAH_ENULL 1

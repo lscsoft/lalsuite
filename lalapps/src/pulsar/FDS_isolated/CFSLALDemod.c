@@ -56,9 +56,6 @@ extern INT4 maxSFTindex;  /**< maximal sftindex, for error-checking */
 #include "CFSLALDemod_Experimental.c"
 #else /* rather generic version */
 
-RCSID( "$Id$");
-
-
 void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params) 
 
 { 
@@ -105,7 +102,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
   UINT4 M=params->SFTno;
 
-  INITSTATUS( status, "TestLALDemod", rcsid );
+  INITSTATUS(status);
 
   /* catch some obvious programming errors */
   ASSERT ( (Fs != NULL)&&(Fs->F != NULL), status, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL );

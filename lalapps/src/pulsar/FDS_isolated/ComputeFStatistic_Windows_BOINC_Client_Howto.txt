@@ -3,8 +3,6 @@ HOWTO compile ComputeFStatistic for Windows and build a BOINC client from it
 ----------------------------------------------------------------------------
 
 Written by Bernd Machenschalk Jul/Aug 2004
-($Id$)
-
 
 This document should tell you how to build ComputeFStatistic as a
 BOINC client for Windows.

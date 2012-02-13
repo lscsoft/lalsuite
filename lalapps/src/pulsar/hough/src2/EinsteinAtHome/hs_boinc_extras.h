@@ -28,14 +28,11 @@
 #include "boinc/filesys.h"
 
 #include <lal/LALError.h>
-#include <lal/LALRCSID.h>
 #ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 #include "../HoughFStatToplist.h"
 #else
 #include "GCTtoplist.h"
 #endif
-
-#define HSBOINCEXTRASHRCSID "$Id$"
 
 #ifndef EAH_LOGLEVEL
 #define EAH_LOGLEVEL 1        /* LOG_DEBUG */

@@ -30,8 +30,6 @@
 extern "C" {
 #endif
 
-NRCSID( LALMOMENTH, "$Id$");
-
 /**
 \author Tibbits, M. M.
 \addtogroup LALMoment_h

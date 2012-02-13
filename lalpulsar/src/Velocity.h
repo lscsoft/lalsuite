@@ -101,8 +101,6 @@ typedef struct tagVelocityPar {
 
 /** \cond DONT_DOXYGEN */
 
-NRCSID( VELOCITYH, "$Id$");
-
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
  */

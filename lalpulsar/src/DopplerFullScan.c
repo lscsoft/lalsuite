@@ -52,8 +52,6 @@
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
-NRCSID( DOPPLERFULLSCANC, "$Id$" );
-
 /*---------- internal types ----------*/
 typedef struct {
   PulsarDopplerParams thisPoint; /**< current doppler-position of the scan */
@@ -112,7 +110,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 {
   DopplerFullScanState *thisScan;
 
-  INITSTATUS( status, "InitDopplerFullScan", DOPPLERFULLSCANC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
@@ -293,7 +291,7 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   factoredGridScan_t *fscan = NULL;
   UINT4 i;
 
-  INITSTATUS( status, "initFactoredGrid", DOPPLERFULLSCANC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
@@ -606,7 +604,7 @@ void
 FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 {
 
-  INITSTATUS( status, "FreeDopplerFullScan", DOPPLERFULLSCANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* This traps coding errors in the calling routine. */
@@ -653,7 +651,7 @@ loadFullGridFile ( LALStatus *status,
   UINT4 numTemplates;
   FILE *fp;
 
-  INITSTATUS( status, "loadFullGridFile", DOPPLERFULLSCANC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);

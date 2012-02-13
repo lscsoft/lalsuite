@@ -23,9 +23,6 @@
 #include "lal/FFUtils.h"
 
 /* --- version information --- */
-NRCSID( FFUTILSC, "$Id$");
-RCSID(  "$Id$");
-
 #define CVS_ID_STRING_C      "$Id$"
 #define CVS_REVISION_C      "$Revision$"
 
@@ -38,7 +35,7 @@ void GetMaximumTemplateSize(LALStatus *status, RandomInspiralSignalIn  randIn,
 		      UINT4 *checkLength)
 {
 
-   INITSTATUS(status, "BEGetMaximumSize", BANKEFFICIENCYNEWC);
+   INITSTATUS(status);
    ATTACHSTATUSPTR(status);
 
    InspiralTemplate dummy;

@@ -119,8 +119,6 @@ example uses of the functions tested by this code.
 /* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv); */ /* 02/02/05 gam */
 void RunGeneratePulsarSignalTest(LALStatus *status);
 
-NRCSID( GENERATEPULSARSIGNALTESTC, "$Id$" );
-
 /*********************************************************/
 /*                                                       */
 /* START FUNCTION: main                                  */
@@ -152,7 +150,7 @@ int main(int UNUSED argc, char **argv)
   if ( lalDebugLevel & LALINFO ) {
     XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"
        "        %s\n", *argv, __FILE__, __LINE__,
-       GENERATEPULSARSIGNALTESTC, (GENERATEPULSARSIGNALTESTC_MSGENORM) );
+       "$Id$", (GENERATEPULSARSIGNALTESTC_MSGENORM) );
   }
 
   return GENERATEPULSARSIGNALTESTC_ENORM;
@@ -254,7 +252,7 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
    FILE *fpRandom;
   #endif
 
-  INITSTATUS( status, "RunGeneratePulsarSignalTest", GENERATEPULSARSIGNALTESTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* generate timeStamps */

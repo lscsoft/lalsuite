@@ -2,8 +2,6 @@
 
 """
 Check a cache file to see which files actually exist and which are missing
-$Id$
-
 """
 
 

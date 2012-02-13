@@ -19,7 +19,6 @@
 
 /****************** <lalVerbatim file="CCoarseGrainFrequencySeriesTestCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -166,8 +165,6 @@ fabs()
 #include <lal/TimeFreqFFT.h>
 
 #include "CheckStatus.h"
-
-NRCSID(CCOARSEGRAINFREQUENCYSERIESTESTC, "$Id$");
 
 #define CCOARSEGRAINFREQUENCYSERIESTESTC_TOL           1e-6
 

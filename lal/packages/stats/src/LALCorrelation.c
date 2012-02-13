@@ -28,9 +28,6 @@
 #include <lal/LALCorrelation.h>
 #include <math.h>
 
-/* ****** DEFINE RCS ID STRING ************/
-NRCSID( LALCORRELATIONC, "$Id$" );
-
 /* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
 /* ****** DECLARE LOCAL (static) FUNCTIONS ************/
@@ -86,7 +83,7 @@ LALCorrelation( LALStatus                      *status,
   REAL4 *data1, *data2;
   OutputCorrelation *output;
 
-  INITSTATUS( status, "LALCorrelation", LALCORRELATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ****** CHECK VALIDITY OF ARGUMENTS; for example ************/

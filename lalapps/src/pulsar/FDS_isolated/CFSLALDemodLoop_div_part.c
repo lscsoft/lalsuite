@@ -18,7 +18,6 @@
 */
 
           {
-	    NRCSID (CFSLOOPNEWDIVTAG, "$Id$");
 
             COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
 	    REAL4 accFreq = 1.0; /* accumulating frequency factor, becomes common denominator */

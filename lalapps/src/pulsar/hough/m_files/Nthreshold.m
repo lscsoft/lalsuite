@@ -1,4 +1,3 @@
-%  $Id$
 % script to compute statistic values
 
  

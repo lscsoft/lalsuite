@@ -46,8 +46,6 @@
 #define ALFree LALFree
 #endif
 
-RCSID( "$Id$");
-
 /* ---------- Defines -------------------- */
 /* #define OUTPUT_TIMING 1 */
 /* #define DIAGNOSISMODE 1 */
@@ -1909,7 +1907,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   INT4 sft_check_result = 0;
 
-  INITSTATUS( status, "SetUpSFTs", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get sft catalog */
@@ -2171,7 +2169,7 @@ void SetUpStacks(LALStatus *status,        /**< pointer to LALStatus structure *
   REAL8 tStart, thisTime;
   REAL8 Tsft;
 
-  INITSTATUS( status, "SetUpStacks", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input parameters */
@@ -2271,7 +2269,7 @@ void PrintCatalogInfo( LALStatus  *status,
   INT4 nSFT;
   LIGOTimeGPS start, end;
 
-  INITSTATUS( status, "PrintCatalogInfo", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
@@ -2303,7 +2301,7 @@ void PrintStackInfo( LALStatus  *status,
 
   INT4 nStacks, k;
 
-  INITSTATUS( status, "PrintStackInfo", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( fp != NULL, status, HIERARCHICALSEARCH_EFILE, HIERARCHICALSEARCH_MSGEFILE );
@@ -2343,7 +2341,7 @@ void GetChkPointIndex( LALStatus *status,
   UINT4 tmpIndex;
   CHAR lastnewline='\0';
 
-  INITSTATUS( status, "GetChkPointIndex", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* if something goes wrong later then lopindex will be 0 */
@@ -2403,7 +2401,7 @@ void UpdateSemiCohToplist(LALStatus *status,
   UINT4 ifreq_fg;
   GCTtopOutputEntry line;
 
-  INITSTATUS( status, "UpdateSemiCohToplist", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
@@ -2476,7 +2474,7 @@ void PrintFstatVec (LALStatus *status,
   REAL8 f0, deltaF, alpha, delta;
   PulsarSpins fkdot;
 
-  INITSTATUS( status, "PrintFstatVec", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   INIT_MEM(fkdot);
@@ -2536,7 +2534,7 @@ void GetSegsPosVelAccEarthOrb( LALStatus *status,
   LIGOTimeGPSVector *tsMid;
   vect3Dlist_t *pvaUR = NULL;
 
-  INITSTATUS( status, "GetSegsPosVelAccEarthOrb", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );

@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.,  Woods D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -45,9 +44,6 @@
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPSTOREEVENTC, "$Id$");
-
-
 void
 LALFindChirpStoreEvent (
     LALStatus                  *status,
@@ -68,7 +64,7 @@ LALFindChirpStoreEvent (
   INT4                       timeIndex;
   REAL4                      deltaT;
 
-  INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

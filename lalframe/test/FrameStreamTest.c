@@ -48,9 +48,6 @@
 #include <lal/FrameStream.h>
 #include <lal/LALFrameL.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (FRAMESTREAMTESTC,"$Id$");
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { \
     fprintf( stderr, "Failure on line %d\n", __LINE__ ); \

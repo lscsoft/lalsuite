@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -42,9 +41,6 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
-
-NRCSID (FINDCHIRPCLUSTEREVENTSC, "$Id$");
-
 
 void
 LALFindChirpClusterEvents (
@@ -85,7 +81,7 @@ LALFindChirpClusterEvents (
   REAL4			bvChisq = 0;
   UINT4                 ccDOF = 0;
   REAL4                 ccChisq = 0;
-  INITSTATUS( status, "LALFindChirpClusterEvents", FINDCHIRPCLUSTEREVENTSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

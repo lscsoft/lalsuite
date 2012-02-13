@@ -108,8 +108,6 @@ LALGeneratePPNInspiral()        LALSDestroyVectorSequence()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-NRCSID( GENERATEPPNINSPIRALTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define EPOCH (315187200000000000LL) /* about Jan. 1, 1990 */
@@ -137,7 +135,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, GENERATEPPNINSPIRALTESTC,                 \
+		 __LINE__, "$Id$",                 \
 		 statement ? statement : "", (msg) );                \
 }                                                                    \
 while (0)
@@ -148,7 +146,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 GENERATEPPNINSPIRALTESTC, (statement) );            \
+		 "$Id$", (statement) );            \
 }                                                                    \
 while (0)
 
@@ -158,7 +156,7 @@ if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
   LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 GENERATEPPNINSPIRALTESTC, (statement) );            \
+		 "$Id$", (statement) );            \
 }                                                                    \
 while (0)
 

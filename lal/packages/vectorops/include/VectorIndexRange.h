@@ -19,7 +19,6 @@
  */
 
 #include <math.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/AVFactories.h>
@@ -61,9 +60,6 @@ extern "C" {
 #define VECTORINDEXRANGEH_MSGENUMZ "Incorrect number of command line arguments"
 #define VECTORINDEXRANGEH_MSGELNTH "Vector/Array of Improper Length"
 #define VECTORINDEXRANGEH_MSGENNUL "Non-Null Pointer that should be NULL"
-
-
-NRCSID( VECTORINDEXRANGEH, "$Id$" );
 
 /* typedefs */
 

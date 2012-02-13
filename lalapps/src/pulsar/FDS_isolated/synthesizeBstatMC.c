@@ -164,8 +164,6 @@ typedef struct {
 } integrationParams_t;
 
 
-RCSID( "$Id$");		/* FIXME: use git-ID instead to set 'rcsid' */
-
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
 
@@ -417,7 +415,7 @@ void
 initUserVars (LALStatus *status, UserInput_t *uvar )
 {
 
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */

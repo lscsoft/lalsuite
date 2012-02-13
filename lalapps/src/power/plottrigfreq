@@ -1,6 +1,5 @@
 #!/usr/bin/python
 #
-# $Id$
 #
 # Copyright (C) 2006  Kipp C. Cannon
 #
@@ -44,8 +43,8 @@ from pylal import SnglBurstUtils
 from pylal.xlal import inject
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
-__version__ = "$Revision$"[11:-2]
-__date__ = "$Date$"[7:-2]
+__version__ = "$Revision$"
+__date__ = "$Date$"
 
 inject.cached_detector.update({
 	"H1": inject.cached_detector["LHO_4k"],

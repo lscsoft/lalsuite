@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $Id$
 #
 # Started 08/24/06 by Greg Mendell
 #

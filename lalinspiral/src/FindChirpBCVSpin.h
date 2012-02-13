@@ -66,9 +66,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (FINDCHIRPBCVSPINH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define FINDCHIRPBCVSPINH_ENULL 1
 #define FINDCHIRPBCVSPINH_ENNUL 2

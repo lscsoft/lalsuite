@@ -1,6 +1,5 @@
 #!/usr/bin/python
 #
-# $Id$
 #
 # Copyright (C) 2006  Kipp C. Cannon
 #
@@ -46,8 +45,8 @@ from pylal import llwapp
 
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
-__version__ = "$Revision$"[11:-2]
-__date__ = "$Date$"[7:-2]
+__version__ = "$Revision$"
+__date__ = "$Date$"
 
 
 #

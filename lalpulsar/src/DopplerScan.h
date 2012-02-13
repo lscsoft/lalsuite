@@ -24,7 +24,6 @@
  * \file
  * \brief Header file defining the API for DopplerScan.
  *
- * $Id$
  */
 
 #ifndef _DOPPLERSCAN_H  /* Double-include protection. */
@@ -48,8 +47,6 @@ extern "C" {
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
-
-NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*---------- DEFINES ----------*/
 

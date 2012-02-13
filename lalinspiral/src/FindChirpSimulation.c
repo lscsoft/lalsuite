@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., and Creighton, T. D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -93,8 +92,6 @@ LALFree()
 #define UNUSED
 #endif
 
-NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
-
 static int FindTimeSeriesStartAndEnd (
               REAL4Vector *signalvec,
               UINT4 *start,
@@ -123,7 +120,7 @@ LALFindChirpInjectSignals (
   CHAR                  ifo[LIGOMETA_IFO_MAX];
   REAL8                 timeDelay;
 
-  INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,
@@ -830,7 +827,7 @@ LALFindChirpSetAnalyseTemplate (
   CHAR                  myMsg[8192];
   UINT4                 approximant;
 
-  INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( analyseThisTmplt, status,

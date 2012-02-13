@@ -42,11 +42,6 @@
 #include <lal/Date.h>
 #include "check_series_macros.h"
 
-
-#include <lal/LALRCSID.h>
-NRCSID(LALSIMBURSTC, "$Id:");
-
-
 /*
  * ============================================================================
  *

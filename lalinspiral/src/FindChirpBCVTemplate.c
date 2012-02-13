@@ -23,7 +23,6 @@
  *
  * Author: Brown D. A., Messaritaki, E., and Woods, D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -66,11 +65,6 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCV.h>
 
-
-NRCSID (FINDCHIRPBCVTEMPLATEC, "$Id$");
-
-
-
 void
 LALFindChirpBCVTemplate (
     LALStatus                  *status,
@@ -102,7 +96,7 @@ LALFindChirpBCVTemplate (
   REAL4        distNorm;
   const REAL4  cannonDist = 1.0; /* Mpc */
 
-  INITSTATUS( status, "LALFindChirpBCVTemplate", FINDCHIRPBCVTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

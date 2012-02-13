@@ -101,8 +101,6 @@
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
 
-NRCSID( FRAMECALIBRATIONC, "$Id$" );
-
 #define DURATION 256
 
 #define RESPONSE_CHAN "CAL-RESPONSE"
@@ -197,7 +195,7 @@ LALExtractFrameResponse(
   REAL8				duration_real;
   const REAL8                   fuzz = 0.1 / 16384.0;
 
-  INITSTATUS( status, "LALFrameExtractResponse", FRAMECALIBRATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,
@@ -646,7 +644,7 @@ LALCreateCalibFrCache(
 
 { 
 
-  INITSTATUS( status, "LALCreateCalibFrCache", FRAMECALIBRATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,

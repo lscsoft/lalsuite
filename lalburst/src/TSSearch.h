@@ -31,7 +31,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Interpolate.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdlib.h>
@@ -52,8 +51,6 @@
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-  NRCSID (TSSEARCHH, "$Id$");
 
   /**\name Error Codes */ /*@{*/
 #define TSSEARCHH_ENULLP       1

@@ -76,8 +76,6 @@
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
-NRCSID( MAIN, "$Id$" );
-
 extern char *optarg;
 extern int   optind;
 
@@ -462,7 +460,7 @@ LALDFT(
   UINT4 j;
   UINT4 k;
 
-  INITSTATUS( status, "DFT", MAIN );
+  INITSTATUS(status);
 
   n = output->length;
 
@@ -499,7 +497,7 @@ void LALForwardRealDFT(
   UINT4 j;
   UINT4 k;
 
-  INITSTATUS( status, "LALForwardRealDFT", MAIN );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   n = input->length;

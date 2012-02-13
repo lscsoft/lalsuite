@@ -56,8 +56,6 @@ INT4 lalDebugLevel;
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-NRCSID (HOUGHMISMATCHC, "$Id$");
-
 int main( int argc, char *argv[]){
 
   static LALStatus            status;  
@@ -501,7 +499,7 @@ void ComputeFoft(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", HOUGHMISMATCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

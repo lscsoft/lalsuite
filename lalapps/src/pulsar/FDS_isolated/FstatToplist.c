@@ -33,10 +33,6 @@
 
 #include <lal/LogPrintf.h>
 
-RCSID("$Id$");
-
-
-
 /* MSC specifics */
 #ifdef _MSC_VER
 

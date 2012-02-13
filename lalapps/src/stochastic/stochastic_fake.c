@@ -20,7 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
  *
- * $Id$
  */
 
 #include "fake_data.h"
@@ -29,8 +28,6 @@
 #include "data_output.h"
 #include "stochastic.h"
 
-NRCSID(STOCHASTICC, "$Id$");
-RCSID("$Id$");
 
 /* program info */
 const CHAR* prog_name="lalapps_stochastic_fake";

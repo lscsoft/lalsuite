@@ -23,7 +23,6 @@
  *
  * Author: Messaritaki, E.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -50,7 +49,6 @@
 #include <processtable.h>
 #include <lalappsfrutils.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -82,8 +80,6 @@
 
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
-
-RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"

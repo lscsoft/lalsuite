@@ -19,7 +19,6 @@
 
 /****************** <lalVerbatim file="ZCoarseGrainFrequencySeriesTestCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -163,8 +162,6 @@ fabs()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID(ZCOARSEGRAINFREQUENCYSERIESTESTC, "$Id$");
 
 #define ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL           1e-15
 

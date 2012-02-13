@@ -20,17 +20,13 @@
 /** \file
  * \ingroup std
  * \author Creighton, J. D. E.
- * \date $Date$
  * \brief XLAL string manipulation routines.
  *
- * $Id$
  */
 
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
-
-NRCSID( LALSTRINGC, "$Id$" );
 
 /** Like strcat but dynamically reallocates string with LALRealloc. */
 char * XLALStringAppend( char *s, const char *append )

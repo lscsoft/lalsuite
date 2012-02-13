@@ -46,8 +46,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-NRCSID(METRICTESTC,"$Id$");
-
 extern int lalDebugLevel;
 
 static void
@@ -166,7 +164,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "GetInspiralMoments", METRICTESTC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

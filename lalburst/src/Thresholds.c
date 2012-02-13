@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon and Flanagan, E.
  *
@@ -31,11 +30,6 @@
 #include <lal/XLALGSL.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID(THRESHOLDSC, "$Id:");
-
 
 /**
  * Cumulative Probability Distribution for Chi Squared distribution.

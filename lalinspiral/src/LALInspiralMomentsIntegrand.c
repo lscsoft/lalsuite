@@ -60,9 +60,6 @@ LALDPolynomialInterpolation
 #include <lal/Interpolate.h>
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALINSPIRALMOMENTSINTEGRANDC, "$Id$");
-
-
 void
 LALInspiralMomentsIntegrand(
     LALStatus  *status,
@@ -84,8 +81,7 @@ LALInspiralMomentsIntegrand(
    REAL8                deltaF;
    UINT8                freqIndex;
 
-   INITSTATUS( status, "LALInspiralMomentsIntegrand",
-       LALINSPIRALMOMENTSINTEGRANDC );
+   INITSTATUS(status);
    ATTATCHSTATUSPTR( status );
 
    ASSERT( params, status,

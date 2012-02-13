@@ -52,8 +52,6 @@ complex datatypes nor the unsigned datatypes.
 #include <math.h>
 #include "Matrix.h"
 
-NRCSID( MATLABMATRIXDIVC, "$Id$");
-
 #define TYPECODE D
 #define TYPE REAL8
 #define TYPECODE2 D

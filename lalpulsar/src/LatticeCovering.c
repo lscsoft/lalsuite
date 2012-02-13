@@ -24,7 +24,6 @@
  * \ingroup moduleLatticeCovering
  * \brief Functions for covering metric parameter-spaces with a lattice.
  *
- * $Id$
  *
  * \todo
  *  - iterative generation of lattice
@@ -41,8 +40,6 @@
 #include <gsl/gsl_blas.h>
 
 #include "LatticeCovering.h"
-
-NRCSID( LATTICECOVERINGC, "$Id$" );
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -111,7 +108,7 @@ LALLatticeCovering (LALStatus *status,			/**< pointer to LALStatus structure */
 {
   gsl_matrix *generator = NULL;
 
-  INITSTATUS( status, "LALLatticeCovering", LATTICECOVERINGC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- Check validity of input params */
@@ -177,7 +174,7 @@ LALLatticeFill (LALStatus *status,		/**< pointer to LALStatus structure */
   INT4Vector  *latticePoint = NULL;		/* lattice-coordinates (Z^N) */
   REAL8Vector *physicalPoint = NULL;		/* physical coordinates (R^N) */
 
-  INITSTATUS( status, "LALLatticeFill", LATTICECOVERINGC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Check input validity */

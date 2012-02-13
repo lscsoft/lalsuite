@@ -214,9 +214,6 @@ XLALEOBWaveformEngine (
                 InspiralInit     *paramsInit
                 );
 
-NRCSID (LALEOBWAVEFORMC,
-"$Id$");
-
 /*--------------------------------------------------------------------*/
 
 static REAL8
@@ -329,8 +326,7 @@ XLALrOfOmega (
 }
 
 /*--------------------------------------------------------------------*/
-NRCSID (LALLIGHTRINGRADIUSC,
-"$Id$");
+
 static REAL8
 XLALlightRingRadius(
    REAL8 r,
@@ -976,7 +972,7 @@ LALEOBWaveform (
    )
 {
 
-   INITSTATUS(status, "LALEOBWaveform", LALEOBWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBWaveform", "XLALEOBWaveform" );
 
@@ -1055,12 +1051,6 @@ XLALEOBWaveform(
    return XLAL_SUCCESS;
 }
 
-
-NRCSID (LALEOBWAVEFORMTEMPLATESC,
-"$Id$");
-
-
-
 void
 LALEOBWaveformTemplates (
    LALStatus        *status,
@@ -1070,7 +1060,7 @@ LALEOBWaveformTemplates (
    )
 {
 
-   INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBWaveformTemplates", "XLALEOBWaveformTemplates" );
 
@@ -1174,7 +1164,7 @@ LALEOBWaveformForInjection (
 			    )
 {
 
-  INITSTATUS(status, "LALEOBWaveformForInjection", LALEOBWAVEFORMTEMPLATESC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALEOBWaveformForInjection", "XLALEOBWaveformForInjection" );
 

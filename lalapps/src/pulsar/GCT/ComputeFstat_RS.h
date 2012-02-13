@@ -29,7 +29,6 @@
  * ComputSky.[ch] by Jolien Creighton, Reinhard Prix, Steve Berukoff
  * LALComputeAM.[ch] by Jolien Creighton, Maria Alessandra Papa, Reinhard Prix, Steve Berukoff, Xavier Siemens
  *
- * $Id$
  *
  */
 
@@ -40,9 +39,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#include <lal/LALRCSID.h>
-NRCSID( COMPUTEFSTATRSH, "$Id$" );
 
 /*---------- exported INCLUDES ----------*/
 #include <lal/LALComputeAM.h>

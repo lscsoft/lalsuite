@@ -28,8 +28,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (TESTGPSTOGMST1C, "$Id$");
-
 int main(void)
 {
   LIGOTimeGPS      gps = {0., 0.};

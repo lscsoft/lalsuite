@@ -61,11 +61,6 @@
 #include <stdio.h>
 #include <math.h>
 
-NRCSID(LALINSPIRALWAVETAPERC,
-		  "$Id$");
-
-
-
 void LALInspiralWaveTaper(
                    LALStatus   *status,
                    REAL4Vector *signalvec,
@@ -74,7 +69,7 @@ void LALInspiralWaveTaper(
 
   InspiralApplyTaper taperType;
 
-  INITSTATUS(status, "LALInspiralWaveTaper",LALINSPIRALWAVETAPERC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALInspiralWaveTaper", "XLALInspiralWaveTaper" );
 

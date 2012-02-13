@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="IIRFilterHV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -119,8 +118,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID(IIRFILTERH,"$Id$");
 
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}

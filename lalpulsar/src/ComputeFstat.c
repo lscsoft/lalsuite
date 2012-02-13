@@ -53,8 +53,6 @@
 #include "ComputeFstat.h"
 #include "ComplexAM.h"
 
-NRCSID( COMPUTEFSTATC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -130,7 +128,7 @@ void ComputeFStatFreqBand ( LALStatus *status,				/**< pointer to LALStatus stru
   PulsarDopplerParams thisPoint;
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
 
-  INITSTATUS( status, "ComputeFStatFreqBand", COMPUTEFSTATC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( multiSFTs, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );
@@ -224,7 +222,7 @@ ComputeFStat ( LALStatus *status,				/**< pointer to LALStatus structure */
   REAL8 Ad, Bd, Cd, Dd_inv, Ed;
   SkyPosition skypos;
 
-  INITSTATUS( status, "ComputeFStat", COMPUTEFSTATC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -1251,7 +1249,7 @@ LALGetBinarytimes (LALStatus *status,				/**< pointer to LALStatus structure */
   DFindRootIn input;    /* the input structure for the root finding procedure */
   REAL8 acc;            /* the accuracy in radians of the eccentric anomoly computation */
 
-  INITSTATUS( status, "LALGetBinarytimes", COMPUTEFSTATC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
@@ -1335,7 +1333,7 @@ static void EccentricAnomoly(LALStatus *status,
 			     void *tr0
 			     )
 {
-  INITSTATUS(status, "EccentricAnomoly", "Function EccentricAnomoly()");
+  INITSTATUS(status);
   ASSERT(tr0,status, 1, "Null pointer");
 
   /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */
@@ -1360,7 +1358,7 @@ LALGetMultiBinarytimes (LALStatus *status,				/**< pointer to LALStatus structur
   UINT4 X, numDetectors;
   MultiSSBtimes *ret = NULL;
 
-  INITSTATUS( status, "LALGetMultiBinarytimes", COMPUTEFSTATC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -1441,7 +1439,7 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
   REAL8 alpha, delta;	/* source position */
   REAL8 refTimeREAL8;
 
-  INITSTATUS( status, "LALGetSSBtimes", COMPUTEFSTATC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (DetectorStates, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL);
@@ -1547,7 +1545,7 @@ LALGetMultiSSBtimes (LALStatus *status,			/**< pointer to LALStatus structure */
   UINT4 X, numDetectors;
   MultiSSBtimes *ret = NULL;
 
-  INITSTATUS( status, "LALGetMultiSSBtimes", COMPUTEFSTATC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -1776,7 +1774,7 @@ LALEstimatePulsarAmplitudeParams (LALStatus * status,			/**< pointer to LALStatu
   gsl_matrix *tmp, *tmp2;
   int signum;
 
-  INITSTATUS (status, "LALEstimatePulsarAmplitudeParams", COMPUTEFSTATC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( pulsarParams, status, COMPUTEFSTATC_ENULL, COMPUTEFSTATC_MSGENULL );

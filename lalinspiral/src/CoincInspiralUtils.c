@@ -42,8 +42,6 @@
 #include <lal/XLALError.h>
 #include <lal/CoincInspiralEllipsoid.h>
 
-NRCSID( COINCINSPIRALUTILSC, "$Id$" );
-
 /**
 \author Fairhurst, S.
 \file
@@ -171,7 +169,7 @@ LALCreateTwoIFOCoincList(
   INT4                          ifoNumber;
   INT8                          maxTimeDiff = 0;
 
-  INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincOutput, status,
@@ -293,7 +291,7 @@ LALCreateNIFOCoincList(
   void (*func)(CoincInspiralTable *, SnglInspiralTable *, InspiralAccuracyList *) = NULL;
 
 
-  INITSTATUS( status, "LALCreateNIFOCoincList", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Choose the appropriate comparison function */
@@ -419,7 +417,7 @@ LALRemoveRepeatedCoincs(
   EventIDColumn                *thisID        = NULL;
 
 
-  INITSTATUS( status, "LALRemoveRepeatedCoincs", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* loop over all the coincidences in the list */
@@ -516,7 +514,7 @@ LALFreeCoincInspiral(
     CoincInspiralTable        **coincPtr
     )
 {
-  INITSTATUS( status, "LALFreeCoincInspiral", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   XLALFreeCoincInspiral( coincPtr );
@@ -616,7 +614,7 @@ LALAddSnglInspiralToCoinc(
 
 {
 
-  INITSTATUS( status, "LALAddSnglInspiralToCoinc", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincPtr, status,
@@ -738,7 +736,7 @@ LALSnglInspiralCoincTest(
 
 {
 
-  INITSTATUS( status, "LALSnglInspiralCoincTest", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
 
   XLALSnglInspiralCoincTest( coincInspiral, snglInspiral, accuracyParams );
 
@@ -805,7 +803,7 @@ LALExtractSnglInspiralFromCoinc(
     )
 
 {
-  INITSTATUS( status, "LALExtractCoincSngls", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *snglPtr = XLALExtractSnglInspiralFromCoinc( coincInspiral, gpsStartTime,
@@ -1656,7 +1654,7 @@ LALInspiralDistanceCutCleaning(
   CoincInspiralTable   *coincHead = NULL;
   REAL4 dH1, dH2, snrH1, snrH2;
   REAL4 iotaCut;
-  INITSTATUS( status, "LALInspiralDistanceCutCleaning", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   thisCoinc = *coincInspiral;
@@ -1947,7 +1945,7 @@ LALCoincCutSnglInspiral(
   SnglInspiralTable  *prevEvent = NULL;
   SnglInspiralTable  *thisEvent = NULL;
 
-  INITSTATUS( status, "LALCoincCutSnglInspiral", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that eventHead is non-null */

@@ -1,4 +1,3 @@
-# $Id$
 # 
 # setup script for lvalert
 

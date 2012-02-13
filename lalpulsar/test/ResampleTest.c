@@ -140,8 +140,6 @@ LALDestroyResampleRules()
 #define UNUSED
 #endif
 
-NRCSID( RESAMPLETESTC, "$Id$" );
-
 /* Default parameter settings. */
 INT4 lalDebugLevel = 0;
 #define NPTS 4096
@@ -172,7 +170,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, RESAMPLETESTC, statement ? statement : "",\
+		 __LINE__, "$Id$", statement ? statement : "",\
 		 (msg) );                                            \
 }                                                                    \
 else (void)(0)
@@ -182,7 +180,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 RESAMPLETESTC, (statement) );                       \
+		 "$Id$", (statement) );                       \
 }                                                                    \
 else (void)(0)
 

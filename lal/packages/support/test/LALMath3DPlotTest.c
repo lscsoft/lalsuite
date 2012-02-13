@@ -23,7 +23,6 @@
  *
  * Author: Hanna C. R.
  *
- * Revision: $Id$
  *
  *_______________________________________________________________________________________
  */
@@ -34,7 +33,6 @@
 
 /*<lalVerbatim file="LALMath3DPlotTestCV">
   Author: Hanna, C.R.
-  $Id$
   </lalVerbatim>*/
 
 /*SUBSECTION - PROGRAM - "LALMath3DPlotTest.c" ------------------------------- <lalLaTeX>
@@ -106,8 +104,6 @@
 #define LALMATH3DPLOTTESTC_MSGEMEM      "Memory allocation error"
 #define LALMATH3DPLOTTESTC_MSGESUB      "Subroutine error"
 /*</lalErrTable>*/
-
-NRCSID(LALMATH3DPLOTTESTC, "$Id:");
 
 int main(void){
   static LALStatus status;

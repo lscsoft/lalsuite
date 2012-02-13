@@ -19,8 +19,6 @@
 
 #include "coh_PTF.h"
 
-RCSID( "$Id$" );
-
 /* parse command line arguments using getopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {

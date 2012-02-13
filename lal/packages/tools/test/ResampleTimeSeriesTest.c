@@ -103,8 +103,6 @@
 #include <getopt.h>
 #endif
 
-NRCSID (MAIN, "$Id$");
-
 extern char *optarg;
 extern int   optind;
 

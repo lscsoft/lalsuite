@@ -48,8 +48,6 @@ LALInspiralWaveCorrelate()
 #include <lal/LALNoiseModelsInspiral.h>
 
 void LALInspiralGetOrthoNormalFilter(REAL4Vector *filter2, REAL4Vector *filter1);
-NRCSID (LALINSPIRALWAVEOVERLAPC, "$Id$");
-
 
 void
 LALInspiralWaveOverlap
@@ -66,7 +64,7 @@ LALInspiralWaveOverlap
    INT4 i, nBegin, nEnd;
    InspiralWaveNormaliseIn normin;
 
-   INITSTATUS (status, "LALInspiralWaveOverlap", LALINSPIRALWAVEOVERLAPC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (output->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

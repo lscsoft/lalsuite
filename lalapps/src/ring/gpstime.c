@@ -22,8 +22,6 @@
 #include "lalapps.h"
 #include "gpstime.h"
 
-RCSID( "$Id$" );
-
 /* one second in nano seconds as an INT8 */
 #define I8_SEC_NS LAL_INT8_C(1000000000)
 

@@ -85,10 +85,6 @@ None.
 #include <lal/SeqFactories.h>
 #include <lal/Units.h>
 
-NRCSID( GENERATEINSPIRALC,
-"$Id$" );
-
-
 void
 LALGenerateInspiral(
     LALStatus		*status,
@@ -104,7 +100,7 @@ LALGenerateInspiral(
   CHAR              warnMsg[1024];
   int               oldxlalErrno;       /* store old xlal error number    */
 
-  INITSTATUS(status, "LALGenerateInspiral",GENERATEINSPIRALC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(thisEvent, status,
@@ -294,7 +290,7 @@ LALGetOrderFromString(
 
 {
 
-  INITSTATUS( status, "LALGetOrderFromString", GENERATEINSPIRALC );
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALGetOrderFromString", "XLALGetOrderFromString" );
 
@@ -426,8 +422,7 @@ LALGetApproximantFromString(
 
 {
 
-  INITSTATUS( status, "LALGenerateInspiralGetApproxFromString",
-      GENERATEINSPIRALC );
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning("LALGetApproximantFromString", "XLALGetApproximantFromString");
 
@@ -554,7 +549,7 @@ LALGenerateInspiralPopulatePPN(
 
 {
 
-  INITSTATUS( status, "LALGenerateInspiralPopulatePPN", GENERATEINSPIRALC );
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALGenerateInspiralPopulatePPN", 
       "XLALGenerateInspiralPopulatePPN" );
@@ -622,8 +617,7 @@ LALGenerateInspiralPopulateInspiral(
 
 
 {
-  INITSTATUS( status, "LALGenerateInspiralPopulateInspiral",
-      GENERATEINSPIRALC );
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALGenerateInspiralPopulateInspiral",
      "XLALGenerateInspiralPopulateInspiral" );

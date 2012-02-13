@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon and Flanagan, E.
  *
@@ -45,11 +44,6 @@
 #include <lal/TFTransform.h>
 #include <lal/Thresholds.h>
 #include <lal/XLALError.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID(FREQSERIESTOTFPLANEC, "$Id:");
-
 
 /*
  * ============================================================================

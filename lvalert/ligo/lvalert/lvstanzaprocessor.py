@@ -21,7 +21,7 @@ Normative reference:
   - `RFC 3920 <http://www.ietf.org/rfc/rfc3920.txt>`__
 """
 
-__revision__="$Id: stanzaprocessor.py 668 2007-01-05 16:24:08Z jajcus $"
+__revision__="$Id$"
 __docformat__="restructuredtext en"
 
 ## Needed because openfire has a minor bug associated with results

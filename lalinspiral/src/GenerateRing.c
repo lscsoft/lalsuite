@@ -66,9 +66,6 @@ LALDCreateVector()            LALDDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID( GENERATERINGC, "$Id$" );
-
-
 void
 LALGenerateRing(
     LALStatus          *stat,
@@ -102,7 +99,7 @@ LALGenerateRing(
   LALTimeInterval dummyInterval;
 #endif
 
-  INITSTATUS( stat, "LALGenerateRing", GENERATERINGC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */
@@ -267,7 +264,7 @@ LALRingInjectSignals(
   LALDetector       *tmpDetector=NULL /*,*nullDetector=NULL*/;
   COMPLEX8FrequencySeries    *transfer = NULL;
 
-  INITSTATUS( stat, "LALRingInjectSignals", GENERATERINGC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* set up start and end of injection zone TODO: fix this hardwired 10 */

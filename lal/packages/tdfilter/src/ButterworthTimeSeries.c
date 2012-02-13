@@ -19,7 +19,6 @@
 
 /************************ <lalVerbatim file="ButterworthTimeSeriesCV">
 Author: Creighton, T. D.
-Revision: $Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -220,8 +219,6 @@ LALIIRFilterREAL4VectorR()      LALIIRFilterREAL8VectorR()
 #include <math.h>
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
-
-NRCSID(BUTTERWORTHTIMESERIESC,"$Id$");
 
 extern INT4 lalDebugLevel;
 
@@ -585,7 +582,7 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
   INT4 j;    /* Another index. */
   REAL8 wc;  /* The filter's transformed frequency. */
 
-  INITSTATUS(stat,"LALButterworthREAL4TimeSeries",BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure the input pointers are non-null. */
@@ -738,7 +735,7 @@ LALButterworthREAL8TimeSeries( LALStatus          *stat,
 			       REAL8TimeSeries    *series,
 			       PassBandParamStruc *params )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALButterworthREAL8TimeSeries",BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat);
 
   if (XLALButterworthREAL8TimeSeries(series,params)<0)
   {
@@ -764,7 +761,7 @@ LALDButterworthREAL4TimeSeries( LALStatus          *stat,
 				REAL4TimeSeries    *series,
 				PassBandParamStruc *params )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALButterworthREAL8TimeSeries",BUTTERWORTHTIMESERIESC);
+  INITSTATUS(stat);
 
   if (XLALButterworthREAL4TimeSeries(series,params)<0)
   {

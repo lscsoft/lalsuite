@@ -34,10 +34,6 @@ Authors: Ian Harry, B.S. Sathyaprakash,  Chris Van Den Broeck
 #include <lal/LALInspiralRandomBank.h>
 #include <lal/LALSBBH-Metric.h>
 
-
-NRCSID(LALINSPIRALBCVSPINRANDOMBANKC, "$Id$");
-
-
 void
 LALInspiralBCVSpinRandomBank(
     LALStatus         	 *status,
@@ -56,7 +52,7 @@ LALInspiralBCVSpinRandomBank(
   SnglInspiralTable *bank=NULL;
   MetricFunc *thisMetric;
 
-  INITSTATUS(status, "LALInspiralBCVSpinRandomBank", LALINSPIRALBCVSPINRANDOMBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn != NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );

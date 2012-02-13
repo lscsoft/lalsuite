@@ -127,9 +127,6 @@ LALDestroyVector()
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
-
-
 void
 LALFindChirpBCVSpinFilterSegment (
     LALStatus                  *status,
@@ -196,7 +193,7 @@ LALFindChirpBCVSpinFilterSegment (
 
 
 
-  INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

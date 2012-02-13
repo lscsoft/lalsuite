@@ -60,9 +60,6 @@ function.
 #include <lal/LALInspiral.h>
 #define  LALINSPIRALINIT_LENGTHOVERESTIMATION  0.1       /* 10 % */
 
-NRCSID (LALINSPIRALAMPLITUDEC, "$Id$");
-
-
 void
 LALInspiralInit (LALStatus        *status,
 		 InspiralTemplate *params,
@@ -70,7 +67,7 @@ LALInspiralInit (LALStatus        *status,
 {
   XLALPrintDeprecationWarning("LALInspiralInit", "XLALInspiralInit");
 
-  INITSTATUS (status, "LALInspiralInit", LALINSPIRALAMPLITUDEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if ( XLALInspiralInit(params, paramsInit) == XLAL_FAILURE )

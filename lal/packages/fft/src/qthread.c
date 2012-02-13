@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -33,9 +32,6 @@
 #include <errno.h>
 #include <pthread.h>
 #include <bits/local_lim.h>
-
-#include <lal/LALRCSID.h>
-NRCSID (QTHREADC,"$Id$");
 
 /* lal debug flag for verbosity level */
 extern int lalDebugLevel;

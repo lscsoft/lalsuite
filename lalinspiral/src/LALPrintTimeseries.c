@@ -19,9 +19,6 @@
 
 #include <stdio.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (LALPRINTTIMESERIESC,"$Id$");
-
 void LALPrintTimeseries (int n, double *signal, double delta, double t0) ;
 void LALPrintTimeseries (int n, double *signal, double delta, double t0)
 {

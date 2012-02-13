@@ -74,10 +74,6 @@ and
 #include <lal/LALInspiralBank.h>
 #include <lal/LALStdlib.h>
 
-
-NRCSID (LALINSPIRALSETSEARCHLIMITSC, "$Id$");
-
-
 void
 LALInspiralSetSearchLimits (
     LALStatus            *status,
@@ -88,8 +84,7 @@ LALInspiralSetSearchLimits (
 {
    InspiralTemplate *Pars1=NULL, *Pars2=NULL, *Pars3=NULL, *Pars4=NULL;
 
-   INITSTATUS( status, "LALInspiralSetSearchLimits",
-       LALINSPIRALSETSEARCHLIMITSC );
+   INITSTATUS(status);
    ATTATCHSTATUSPTR( status );
 
    ASSERT( bankParams, status,

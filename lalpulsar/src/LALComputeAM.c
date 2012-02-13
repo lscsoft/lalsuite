@@ -62,7 +62,6 @@
 #include <lal/ComputeFstat.h>
 
 /*---------- local DEFINES and macros ----------*/
-NRCSID (LALCOMPUTEAMC, "$Id LALComputeAM.c $");
 
 #define SQ(x) (x) * (x)
 
@@ -118,7 +117,7 @@ LALGetAMCoeffs(LALStatus *status,				/**< [in/out] LAL status structure pointer 
   REAL4 norm;
   UINT4 i, numSteps;
 
-  INITSTATUS (status, "LALGetAMCoeffs", LALCOMPUTEAMC);
+  INITSTATUS(status);
 
   /*---------- check input ---------- */
   ASSERT ( DetectorStates, status, LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
@@ -276,7 +275,7 @@ LALNewGetAMCoeffs(LALStatus *status,			/**< [in/out] LAL status structure pointe
   REAL4 norm;
   UINT4 i, numSteps;
 
-  INITSTATUS (status, "LALNewGetAMCoeffs", LALCOMPUTEAMC);
+  INITSTATUS(status);
 
   /*---------- check input ---------- */
   ASSERT ( DetectorStates, status, LALCOMPUTEAMH_ENULL, LALCOMPUTEAMH_MSGENULL);
@@ -476,7 +475,7 @@ LALGetMultiAMCoeffs (LALStatus *status,			/**< [in/out] LAL status structure poi
   UINT4 X, numDetectors;
   MultiAMCoeffs *ret = NULL;
 
-  INITSTATUS( status, "LALGetMultiAMCoeffs", LALCOMPUTEAMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -556,7 +555,7 @@ void LALComputeAM (LALStatus          *status,
   REAL4 cos2psi;
   REAL4 sin2psi;               /* temp variables                             */
 
-  INITSTATUS(status, "LALComputeAM", LALCOMPUTEAMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Must put an ASSERT checking that ts vec and coe vec are same length */

@@ -38,7 +38,6 @@
 #include <gsl/gsl_vector_int.h>
 #include <gsl/gsl_matrix.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/GSLSupport.h>
@@ -51,8 +50,6 @@
 #include <lal/ComputeFstat.h>
 #include <lal/ConfigFile.h>
 #include <lalapps.h>
-
-RCSID("$Id$");
 
 BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
@@ -348,7 +345,9 @@ int main(int argc, char *argv[]) {
       fp = stdout;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-    fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
+    fprintf(fp, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
     fprintf(fp, "alpha=%0.4f alpha_band=%0.4f\n", alpha, alpha_band);
@@ -585,7 +584,9 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-    fprintf(fpH, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
+    fprintf(fpH, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
     

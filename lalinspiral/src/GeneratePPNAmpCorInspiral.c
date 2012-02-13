@@ -70,8 +70,6 @@ LALSBisectionFindRoot()       snprintf()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GeneratePPNInspiral.h>
 
-NRCSID( GENERATEPPNAMPCORINSPIRALC, "$Id$" );
-
 /* Define some constants used in this module. */
 #define MAXORDER 8               /* Maximum number of N and PN terms */
 #define AMPMAXORDER 6            /* Maximum PN order in amplitude (plus one) */
@@ -143,7 +141,7 @@ FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
   BOOLEAN b0, b1, b2, b3, b4, b5, b6, b7;   /* whether each order is nonzero */
   REAL4 x2, x3, x4, x5, x6, x7;             /* x^2, x^3, x^4, x^5, x^6, & x^7 */
 
-  INITSTATUS( stat, "FreqDiff", GENERATEPPNAMPCORINSPIRALC );
+  INITSTATUS(stat);
   ASSERT( p, stat, 1, "Null pointer" );
 
   /* Set constants used by FREQ() macro. */
@@ -272,7 +270,7 @@ LALGeneratePPNAmpCorInspiral(
 
   PPNInspiralBuffer *head, *here; /* pointers to buffered data */
 
-  INITSTATUS( stat, "LALGeneratePPNAmpCorInspiral", GENERATEPPNAMPCORINSPIRALC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /*******************************************************************

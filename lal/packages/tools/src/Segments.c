@@ -22,10 +22,6 @@
 #include <lal/Date.h>
 #include <lal/Segments.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID( SEGMENTSC, "$Id$" );
-/** \endcond */
-
 /**
 \addtogroup Segments_h
 

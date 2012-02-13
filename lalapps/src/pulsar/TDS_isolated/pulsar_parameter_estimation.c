@@ -34,8 +34,6 @@
 
 #include "pulsar_parameter_estimation.h"
 
-RCSID("$Id$");
-
 /* global variable */
 INT4 verbose=0;
 

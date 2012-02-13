@@ -156,9 +156,6 @@ snprintf()                 LALWarning()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-NRCSID( GENERATEHYPERBOLICSPINORBITCWC, "$Id$" );
-
-
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 				  CoherentGW            *output,
@@ -189,8 +186,7 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
   REAL4 *fData;                  /* pointer to frequency data */
   REAL8 *phiData;                /* pointer to phase data */
 
-  INITSTATUS( stat, "LALGenerateHyperbolicSpinOrbitCW",
-	      GENERATEHYPERBOLICSPINORBITCWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */

@@ -20,7 +20,6 @@
 /** \file
  * \ingroup std
  * \author Creighton, T. D.
- * \date $Id$
  * \brief Provides standard numerical constants for LAL.
  *
  * This header defines a number of useful numerical constants
@@ -36,7 +35,6 @@
 
 /********************************* <lalVerbatim file="LALConstantsHV">
 Author: Creighton, T. D.
-$Id$
 ********************************** </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -67,13 +65,9 @@ constants.
 #ifndef _LALCONSTANTS_H
 #define _LALCONSTANTS_H
 
-#include <lal/LALRCSID.h>
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID (LALCONSTANTSH, "$Id$");
 
 /* <lalLaTeX>
 

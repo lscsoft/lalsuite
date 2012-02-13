@@ -32,8 +32,6 @@
 
 #include "./Validation1.h"
 
-NRCSID (VALIDATION1C, "$Id$");
-
 /* ************************************************************
  * Usage format string. 
  */

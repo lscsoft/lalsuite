@@ -19,8 +19,6 @@
 
 /* Header file for MS-Windows specific functions */
 
-static volatile const char *rcsid_win_lib_h = "$Id$";
-
 #ifdef _WIN32
 #include <time.h>
 

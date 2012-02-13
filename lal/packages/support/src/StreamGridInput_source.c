@@ -33,7 +33,7 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
   LALUnit *dimUnits = NULL;
   UINT4 nDimLength = 0, nOffset = 0, nInterval = 0, nDimUnits = 0;
 
-  INITSTATUS( stat, STRING(FUNC), STREAMGRIDINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Default values. */

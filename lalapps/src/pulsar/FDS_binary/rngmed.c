@@ -21,7 +21,6 @@
 Implementation file for running median.
 \author Soumya D. Mohanty
 \date May 2001
-$Id$
 
 
 Revision 1.2  2004/07/26 14:36:14  bema

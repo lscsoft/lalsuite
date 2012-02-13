@@ -44,8 +44,6 @@
 #include <lalapps.h>
 #include <lal/SFTfileIO.h>
 
-RCSID( "$Id:$");
-
 /*---------- DEFINES ----------*/
 #define MAXUINT4 2147483647
 
@@ -156,7 +154,7 @@ int main(int argc,char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* set a few defaults */

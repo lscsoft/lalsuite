@@ -128,9 +128,6 @@ Pulsar catalogue entries with epochs earlier than this date will cause
 #include <lal/SkyCoordinates.h>
 #include <lal/PulsarCat.h>
 
-NRCSID( PULSARCATINPUTC, "$Id$" );
-
-
 /* Local routine to parse a token into a REAL8 number, with additional
    precision information stored in codes: codes[0] is -1 for no number
    parsed, 0 for a normal representable output, 1 for a subnormal
@@ -153,7 +150,7 @@ LALParseREAL8( LALStatus  *stat,
   INT2 expSign = 1;       /* sign of exponent */
   UINT4 i = 0;            /* index */
 
-  INITSTATUS( stat, "LALParseREAL8", PULSARCATINPUTC );
+  INITSTATUS(stat);
 
   /* Check input parameters. */
   ASSERT( output, stat, PULSARCATH_ENUL, PULSARCATH_MSGENUL );
@@ -289,7 +286,7 @@ LALParseREAL8HMS( LALStatus  *stat,
   REAL8 norm = 1.0;  /* running count of 10^(digits) */
   UINT4 i = 0;       /* index */
 
-  INITSTATUS( stat, "LALParseREAL8", PULSARCATINPUTC );
+  INITSTATUS(stat);
 
   /* Check input parameters. */
   ASSERT( output, stat, PULSARCATH_ENUL, PULSARCATH_MSGENUL );
@@ -371,7 +368,7 @@ LALReadPulsarCatHead( LALStatus *stat,
 		      TokenList *list )
 {
   UINT4 i;                /* an index */
-  INITSTATUS( stat, "LALReadPulsarCatHead", PULSARCATINPUTC );
+  INITSTATUS(stat);
 
   /* Check that required input exists. */
   ASSERT( list, stat, PULSARCATH_ENUL, PULSARCATH_MSGENUL );
@@ -440,7 +437,7 @@ LALReadPulsarCatLine( LALStatus     *stat,
   INT4 i;       /* an index */
   CHAR *endptr; /* pointer to end of a given token */
 
-  INITSTATUS( stat, "LALReadPulsarCatLine", PULSARCATINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that pointers exist. */

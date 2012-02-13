@@ -99,12 +99,6 @@ them to clean SFT data
 extern "C" {
 #endif
 
- /*
- * 6. Assignment of Id string using NRCSID()
- */
-
-NRCSID (SFTCLEANH, "$Id$");
-
 /*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.

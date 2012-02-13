@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="LALStdioHV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -47,13 +46,10 @@ Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
 #include <stdarg.h>
 #include <inttypes.h>
 #include <lal/LALConfig.h>
-#include <lal/LALRCSID.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-NRCSID( LALSTDIOH, "$Id$" );
 
 #if LAL_BOINC_ENABLED
   extern FILE* boinc_fopen(const char* path, const char* mode);

@@ -18,7 +18,6 @@
 */
 
           {
-	    NRCSID (CFSLOOPVECTTAG, "$Id$");
 
 	    /* THIS IS DANGEROUS!! It relies on current implementation of COMPLEX8 type!! */
 	    REAL4 *Xalpha_kR4 = &(Xalpha[sftIndex].re);

@@ -31,9 +31,6 @@
 #include <lal/Window.h>
 #include <lal/Date.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (AVERAGESPECTRUMC,"$Id$");
-
 /** \ingroup TimeFreqFFT_h */
 /*@{*/
 

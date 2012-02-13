@@ -21,9 +21,6 @@
 #include<lal/LALStdlib.h>
 #include<lal/StackMetric.h>
 
-NRCSID(PROJECTMETRICC,"$Id$");
-
-
 /**\brief Project out the zeroth dimension of a metric.
  * \author Creighton, T. D.
  * \date 2000
@@ -90,7 +87,7 @@ LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
   UINT4 i, j;  /* Indecies. */
   REAL8 *data; /* The metric data array. */
 
-  INITSTATUS(stat,"ProjectMetric",PROJECTMETRICC);
+  INITSTATUS(stat);
 
   /* Check that data exist. */
   ASSERT(metric,stat,STACKMETRICH_ENUL,STACKMETRICH_MSGENUL);

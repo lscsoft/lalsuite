@@ -1,4 +1,3 @@
-% $Id$
 %only valind for initial 10 h_0 values
 % 
 % script that look into L1kkoutput and create a file with the refine H0 values

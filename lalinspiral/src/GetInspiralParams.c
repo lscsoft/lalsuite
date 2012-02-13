@@ -85,8 +85,6 @@ LALCreateRandomParams()         LALDestroyRandomParams()
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/SkyCoordinates.h>
 
-NRCSID( GETINSPIRALPARAMSC, "$Id$" );
-
 #define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
 
 
@@ -103,7 +101,7 @@ LALGetInspiralParams( LALStatus                  *stat,
   SkyPosition direction; /* direction to the source */
   RandomParams *localParams = NULL; /* local random parameters pointer */
 
-  INITSTATUS( stat, "LALGetInspiralParams", GETINSPIRALPARAMSC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures exist. */
