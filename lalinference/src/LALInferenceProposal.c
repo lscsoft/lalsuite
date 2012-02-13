@@ -69,7 +69,7 @@ const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
 const char *KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
-static const REAL8 modeHoppingFrac = 0.8;
+static const REAL8 modeHoppingFrac = 0.5;
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -462,7 +462,16 @@ SetupPTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *p
 static void
 SetupNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-  LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 1);
+
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
+    LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 5);
+
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
+    LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
+
+  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, 10);
+
   LALInferenceRandomizeProposalCycle(runState);
 }
 
