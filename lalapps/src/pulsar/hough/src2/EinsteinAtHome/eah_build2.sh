@@ -370,6 +370,7 @@ else
         log_and_do cd boinc
     fi
     log_and_do git checkout "$boinc_rev"
+    log_and_do cd "$SOURCE"
 fi
 
 if test \! -d lalsuite/.git ; then
