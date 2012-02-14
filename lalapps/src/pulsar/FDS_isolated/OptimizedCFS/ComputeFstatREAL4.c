@@ -155,7 +155,7 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
 #ifdef AUTOVECT_HOTLOOP
   {
     static int firstcall = -1;
-    nDterms = 4 * (Dterms / 4);
+    UINT4 nDterms = 4 * (Dterms / 4);
     if ((firstcall) && (Dterms != nDterms)) {
       firstcall = 0;
       fprintf (stderr, "WARNING: continuing with Dterms = %d instead of the passed %d\n", nDterms, Dterms);
