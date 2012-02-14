@@ -548,7 +548,7 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-# Windows may need a bit of a hack here, just collecting some infos in comments for now
+# Windows needs a bit of a hack here
 if [ ."$build_win32" = ."true" ] ; then
     echo '/**/' > processtable.c
 fi
