@@ -15,7 +15,8 @@ ephemeris = load(ephemfile);
 % find data between start and end times
 vals = find(ephemeris(:,1) >= starttime & ephemeris(:,1) <= endtime);
 
-times = MJD_to_GPS(ephemeris(vals,1)) + ephemeris(vals,2);
+times = (ephemeris(vals,1)-44244)*86400 - 51.184 + ephemeris(vals,2);
+%times = MJD_to_GPS(ephemeris(vals,1)) + ephemeris(vals,2);
 times = times - times(1); % set time epoch
 
 if strcmp(type,'phase')
@@ -44,15 +45,15 @@ if strcmp(type,'phase')
 elseif strcmp(type,'frequency')
     % calculate a 2nd order fit to the frequency (i.e. include fdotdot)
     % 2 times for GW timing noise
-    %p = polyfit(times, 2*ephemeris(vals,3), 2);
-    p = polyfit(times, ephemeris(vals,3), 2);
+    p = polyfit(times, 2*ephemeris(vals,3), 2);
+    %p = polyfit(times, ephemeris(vals,3), 2);
     
     freqfit = p(3) + p(2)*times + p(1)*times.^2;
     fit = p;
     
     % calculate the residual
-    %residual = 2*ephemeris(vals,3) - freqfit;
-    residual = ephemeris(vals,3) - freqfit;
+    residual = 2*ephemeris(vals,3) - freqfit;
+    %residual = ephemeris(vals,3) - freqfit;
 else
     error('type must be either frequency or phase');
 end

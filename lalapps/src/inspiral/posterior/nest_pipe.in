@@ -345,6 +345,12 @@ length=float(endtime)-float(starttime)+2*padding
 datastart=starttime-padding
 dataend=endtime+padding
 
+# Check for manual over-ride of PSD start time
+if cp.has_option('lalinference','psdstart'):
+	manual_datastart=cp.getfloat('lalinference','psdstart')-padding
+	if manual_datastart<datastart:
+		datastart=manual_datastart
+
 cp.add_section('input')
 cp.set('input','gps-start-time',str(int(datastart)))
 cp.set('input','gps-end-time',str(int(dataend)))
