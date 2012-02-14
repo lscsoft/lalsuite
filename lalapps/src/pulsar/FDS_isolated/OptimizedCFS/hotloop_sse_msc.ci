@@ -5,6 +5,7 @@
 	  __declspec(align(16)) static struct { REAL4 a,b,c,d; } v2222 = {2.0, 2.0, 2.0, 2.0};
   	  __declspec(align(16)) COMPLEX8 STn; 
 	
+          REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
 	  REAL4 kappa_m = kappa_max; /* single precision version of kappa_max */
 	      
 	  /* prelude */

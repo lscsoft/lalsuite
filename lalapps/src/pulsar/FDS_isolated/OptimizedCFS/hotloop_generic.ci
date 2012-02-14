@@ -9,6 +9,7 @@
 	   * take out repeated divisions into a single common denominator,
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
+	  REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
 	  REAL4 Sn = (*Xalpha_l).re;
 	  REAL4 Tn = (*Xalpha_l).im;
 	  REAL4 pn = kappa_max;

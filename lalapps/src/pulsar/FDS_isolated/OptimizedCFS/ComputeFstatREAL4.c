@@ -71,6 +71,9 @@
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
 #define OOTWOPI_FLOAT   (1.0f / TWOPI_FLOAT)	/**< single-precision 1 / (2pi) */
 
+/** fixed DTERMS to allow for loop unrolling */
+#define DTERMS 8
+
 /*----- Macros ----- */
 #define SQ(x) ( (x) * (x) )
 #define REM(x) ( (x) - (INT4)(x) )
@@ -162,11 +165,11 @@ XLALComputeFStatFreqBandVectorCPU (   REAL4FrequencySeriesVector *fstatBandV, 		
 #elif __ALTIVEC__ || __SSE__
   {
     static int firstcall = -1;
-    if ((firstcall) && (Dterms != 8)) {
+    if ((firstcall) && (Dterms != DTERMS)) {
       firstcall = 0;
-      fprintf (stderr, "WARNING: continuing with Dterms = 8 instead of the passed %d\n", Dterms);
+      fprintf (stderr, "WARNING: continuing with Dterms = %d instead of the passed %d\n", DTERMS, Dterms);
     }
-    Dterms = 8;
+    Dterms = DTERMS;
   }
 #endif
 
