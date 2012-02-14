@@ -1003,13 +1003,13 @@ int MAIN( int argc, char *argv[]) {
   numDetectors = detectorIDs->length;
 
   /* assemble column headings string for output file */
-  char colum_headings_string_base[] = "freq alpha delta f1dot f2dot nc 2F";
+  char colum_headings_string_base[] = "freq alpha delta f1dot f2dot nc <2F>";
   UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
   if ( uvar_computeLV ) {
-    column_headings_string_length += 3 + numDetectors*6; /* 3 for " LV" and 6 per detector for " 2F_XY" */
+    column_headings_string_length += 3 + numDetectors*8; /* 3 for " LV" and 8 per detector for " <2F_XY>" */
   }
   if ( uvar_recalcToplistStats ) {
-    column_headings_string_length += 4 + numDetectors*7; /* 4 for " 2Fr" and 6 per detector for " 2Fr_XY" */
+    column_headings_string_length += 6 + numDetectors*9; /* 6 for " <2Fr>" and 9 per detector for " <2Fr_XY>" */
   }
   char column_headings_string[column_headings_string_length];
   INIT_MEM( column_headings_string );
@@ -1017,16 +1017,16 @@ int MAIN( int argc, char *argv[]) {
   if ( uvar_computeLV ) {
     strcat ( column_headings_string, " LV" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
-      char headingX[7];
-      snprintf ( headingX, sizeof(headingX), " 2F_%s", detectorIDs->data[X] );
+      char headingX[9];
+      snprintf ( headingX, sizeof(headingX), " <2F_%s>", detectorIDs->data[X] );
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
   }
   if ( uvar_recalcToplistStats ) {
-    strcat ( column_headings_string, " 2Fr" );
+    strcat ( column_headings_string, " <2Fr>" );
     for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
-      char headingX[8];
-      snprintf ( headingX, sizeof(headingX), " 2Fr_%s", detectorIDs->data[X] );
+      char headingX[10];
+      snprintf ( headingX, sizeof(headingX), " <2Fr_%s>", detectorIDs->data[X] );
       strcat ( column_headings_string, headingX );
     } /* for X < numDet */
   }
