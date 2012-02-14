@@ -2298,13 +2298,14 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
   /* if timingInfo == NULL ==> write header comment line */
   if ( ti == NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]\n");
+      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]  tauF0 [s]\n");
       return XLAL_SUCCESS;
     } /* if ti == NULL */
 
-
-  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate );
+  // compute fundamental timing constant 'tauF0' = F-stat time per template per SFT
+  REAL8 tauF0 = ti->tauTemplate / ti->NSFTs;
+  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e   %10.6e\n",
+            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate, tauF0 );
 
   return XLAL_SUCCESS;
 

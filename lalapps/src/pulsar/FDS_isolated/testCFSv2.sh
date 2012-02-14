@@ -208,9 +208,9 @@ echo "----------------------------------------"
 echo " STEP 5: Timing info: "
 echo "----------------------------------------"
 
-awk_timing='BEGIN { sumTau0 = 0; counter=0; } \
-           { Tau0 = $9 / $1; sumTau0 = sumTau0 + Tau0; counter=counter+1; } \
-           END {printf "tau0 = %5.3g s", sumTau0 / counter }'
+awk_timing='BEGIN { sumTauF0 = 0; counter=0; } \
+           { sumTauF0 = sumTauF0 + $10; counter=counter+1; } \
+           END {printf "tauF0 = %5.3g s", sumTauF0 / counter }'
 timing_tau0=$(sed '/^%.*/d' $timingfile | awk "$awk_timing")
 echo
 echo "Fundamental F-stat timing constant (time per template per SFT):"
