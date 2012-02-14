@@ -66,7 +66,7 @@ f1dot=-1e-10;
 mfd_fmin=$(echo $Freq $mfd_FreqBand | awk '{printf "%g", $1 - $2 / 2.0}');
 
 ## cfs search bands
-NFreq=100;
+NFreq=500;
 cfs_FreqBand=$(echo $duration | awk '{printf "%.16g", 1.0 / $1 }');	## fix band to 1/T so we're close to signal peak always
 cfs_Freq=$(echo $Freq $cfs_FreqBand | awk '{printf "%.16g", $1 - $2 / 2.0}');
 cfs_dFreq=$(echo $cfs_FreqBand $NFreq | awk '{printf "%.16g", $1 / $2 }');
@@ -74,12 +74,12 @@ cfs_dFreq=$(echo $cfs_FreqBand $NFreq | awk '{printf "%.16g", $1 / $2 }');
 ## unfortunately CFSv1 has a different band-convention resulting in one more frequency-bin
 ## so we compensate for that by inputting a slightly smaller band in CFSv1 to get the same
 ## bins for comparisong
-cfs_FreqBand_v1=$cfs_FreqBand  ##$(echo $cfs_FreqBand $cfs_dFreq | awk '{printf "%g", $1 - 0.5 * $2}' )
+cfs_FreqBand_v1=$(echo $cfs_FreqBand $cfs_dFreq | awk '{printf "%g", $1 - 0.5 * $2}' )
 
 cfs_f1dotBand=0;
 cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');
 Nf1dot=10
-cfs_df1dot=1;##$(echo $cfs_f1dotBand $Nf1dot | awk '{printf "%g", $1 / $2}');
+cfs_df1dot=1 ##$(echo $cfs_f1dotBand $Nf1dot | awk '{printf "%g", $1 / $2}');
 
 noiseSqrtSh=5
 
@@ -162,7 +162,8 @@ echo " STEP 3: run CFS_v2 with perfect match"
 echo "----------------------------------------------------------------------"
 echo
 outfile_v2NWon="Fstat_v2NWon.dat";
-cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true $extra_args"
+timingfile="timing_v2NWon.dat";
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true --outputTiming=$timingfile --$extra_args"
 echo $cmdlineNoiseWeightsOn;
 if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -202,9 +203,26 @@ else
 fi
 echo
 
+echo
+echo "----------------------------------------"
+echo " STEP 5: Timing info: "
+echo "----------------------------------------"
+
+awk_timing='BEGIN { sumTau0 = 0; counter=0; } \
+           { Tau0 = $9 / $1; sumTau0 = sumTau0 + Tau0; counter=counter+1; } \
+           END {printf "tau0 = %5.3g s", sumTau0 / counter }'
+timing_tau0=$(sed '/^%.*/d' $timingfile | awk "$awk_timing")
+echo
+echo "Fundamental F-stat timing constant (time per template per SFT):"
+echo $timing_tau0
+echo
+echo
+
+## -------------------------------------------
 ## clean up files
+## -------------------------------------------
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff Fstats Fstats.log
+    rm -rf $SFTdir $outfile_v1 $outfile_v2NWon $outfile_v2NWoff $timingfile Fstats Fstats.log
 fi
 
 ## restore original locale, just in case someone source'd this file
