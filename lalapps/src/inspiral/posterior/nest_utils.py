@@ -114,7 +114,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
 		if self.__GPSstart<starttime or self.__GPSstart>endtime:
 			print 'ERROR: Over-ridden time lies outside of science segment!'
 			raise Exception('Bad psdstart specified')
-        self.add_var_opt('PSDstart',str(self.__GPSstart))
+	self.add_var_opt('psdstart',str(self.__GPSstart))
         length=self.__GPSend-self.__GPSstart
         if(length>maxLength):
             length=maxLength
