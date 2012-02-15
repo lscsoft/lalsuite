@@ -9,6 +9,8 @@
 
 #include "ppe_models.h"
 
+static BinaryPulsarParams empty_BinaryPulsarParams;
+
 /******************************************************************************/
 /*                            MODEL FUNCTIONS                                 */
 /******************************************************************************/
@@ -28,7 +30,7 @@
  * \sa pulsar_model
  */
 void get_pulsar_model( LALInferenceIFOData *data ){
-  BinaryPulsarParams pars;
+  BinaryPulsarParams pars = empty_BinaryPulsarParams; /* initialise as empty */
   
   /* set model parameters (including rescaling) */
   pars.h0 = rescale_parameter( data, "h0" );
@@ -75,7 +77,7 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
 
   /* binary parameters */
-  if( pars.model != NULL ){
+  if( !strcmp(pars.model, "None") ){
     pars.e = rescale_parameter( data, "e" );
     pars.w0 = rescale_parameter( data, "w0" );
     pars.Pb = rescale_parameter( data, "Pb" );
@@ -295,6 +297,10 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
  
+  /* check if binary model is "None" - if so, set to NULL */
+  if ( params.model )
+    if ( !strcmp(params.model, "None") ) params.model = NULL;
+  
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
