@@ -22,6 +22,6 @@ CLEANFILES = \
 	test_vot.xml \
 	*.out \
 	*.dat \
-    *.xml
+	*.xml
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
