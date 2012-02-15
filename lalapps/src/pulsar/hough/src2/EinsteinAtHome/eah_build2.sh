@@ -78,6 +78,10 @@ for i; do
 	    rebuild_boinc=""
 	    rebuild_lal=""
 	    rebuild="" ;;
+        --noupdate)
+            noupdate=true ;;
+        --nohough)
+	    nohough=true ;;
 	--gc-opt)
 	    CPPFLAGS="-DGC_SSE2_OPT $CPPFLAGS" ;;
 	--64)
@@ -114,6 +118,7 @@ for i; do
 	    cuda=true
 	    acc="_cuda" ;;
 	--panther)
+	    nohough=true
 	    export MACOSX_DEPLOYMENT_TARGET=10.3
 	    export SDKROOT="/Developer/SDKs/MacOSX10.3.9.sdk"
 	    pflags="-arch ppc -D_NONSTD_SOURCE -isystem $SDKROOT"
@@ -176,6 +181,8 @@ for i; do
 	    echo "  --appname=<name>  set an application name (only used in --release builds, defaults to einstein_S5GC1HF)"
 	    echo "  --appversion=N.NN set an application version (only used in --release builds, defaults to 0.00)"
 	    echo "  --norebuild       disables --rebuild on --release. DANGEROUS! Use only for testing the build script"
+	    echo "  --noupdate        use previously retrieved (ossibly locally modified) sources, doesn't need internet"
+	    echo "  --nohough         don't build HierarchicalSearch from pulsar/hough/src2, just build HierarchSearchGCT"
 	    echo "  --help            show this message and exit"
 	    exit ;;
 	*) echo "unknown option '$i', try $0 --help"; exit ;;
@@ -322,7 +329,7 @@ log_and_do cd "$SOURCE"
 
 if test -z "$rebuild" && pkg-config --exists gsl; then
     log_and_show "using existing gsl"
-else
+elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
     download http://www.aei.mpg.de/~repr/EaH_packages $gsl.tar.gz
     log_and_do tar xzf "$gsl.tar.gz"
@@ -330,13 +337,13 @@ fi
 
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
     log_and_show "using existing fftw"
-else
+elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
     download ftp://ftp.fftw.org/pub/fftw $fftw.tar.gz
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
-if test -n "$build_binutils" -a -n "$rebuild_binutils"; then
+if test -n "$build_binutils" -a -n "$rebuild_binutils" -a -z "$noupdate"; then
     log_and_show "retrieving $binutils"
     download http://www.aei.mpg.de/~bema $binutils.tar.gz
     log_and_do rm -rf "$binutils"
@@ -345,7 +352,7 @@ if test -n "$build_binutils" -a -n "$rebuild_binutils"; then
 #    log_and_do mv $binutils/bfd/Makefile.tmp $binutils/bfd/Makefile.am
 fi
 
-if test -z "$rebuild_boinc" -a -d "$SOURCE/boinc" ; then
+if test -n "$noupdate" -o -z "$rebuild_boinc" -a -d "$SOURCE/boinc"; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
@@ -370,6 +377,7 @@ else
         log_and_do cd boinc
     fi
     log_and_do git checkout "$boinc_rev"
+    log_and_do cd "$SOURCE"
 fi
 
 if test \! -d lalsuite/.git ; then
@@ -547,7 +555,7 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-# Windows may need a bit of a hack here, just collecting some infos in comments for now
+# Windows needs a bit of a hack here
 if [ ."$build_win32" = ."true" ] ; then
     echo '/**/' > processtable.c
 fi
@@ -556,7 +564,9 @@ if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ] ; then
     log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
 else
     log_and_do make LALAppsVCSInfo.h liblalapps.la
+fi
 
+if test -z "$nohough" ; then
     log_and_do cd "$BUILD/lalapps/src/pulsar/hough/src2"
     log_and_dont_fail make gitID
     if [ ".$cuda" = ".true" ] ; then

@@ -458,9 +458,9 @@ void writeSkymapOut( SkyMapProperties* skyMap )
     /*
      *  Write a gzipped ascii file describing the sky map
      */
-    gzFile* h = NULL;
+    gzFile h;
     h = gzopen(output_file, "wb");
-    if (h == NULL)
+    if (h == Z_NULL)
       {
         fprintf(stderr,"cannot gzopen() %s\n",output_file);
         exit(1);
