@@ -36,7 +36,8 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBAuxFuncs.c \
 	LALSimIMRSpinEOBFactorizedWaveform.c \
-	LALSimIMRSpinEOBFactorizedFlux.c
+	LALSimIMRSpinEOBFactorizedFlux.c \
+	LALSimIMREOBFactorizedFlux.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
