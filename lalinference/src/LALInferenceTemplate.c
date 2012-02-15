@@ -671,11 +671,37 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   else
     eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
   double spin1    = 0.0;
-  if (LALInferenceCheckVariable(IFOdata->modelParams, "spin1")) 
-    spin1 =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin1");
   double spin2    = 0.0;
-  if (LALInferenceCheckVariable(IFOdata->modelParams, "spin2")) 
-    spin2 =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin2");
+  /* Just two spins specified - assume they are the z-components */
+  if (LALInferenceCheckVariable(IFOdata->modelParams, "spin1")){
+	    spin1 =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin1");
+	    params.spin1[2]=spin1;
+	}
+  if (LALInferenceCheckVariable(IFOdata->modelParams, "spin2")) {
+     	    spin2 =  *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "spin2");
+	    params.spin2[2]=spin2;
+	}
+  
+  if(LALInferenceCheckVariable(IFOdata->modelParams,"a_spin1")&&LALInferenceCheckVariable(IFOdata->modelParams,"theta_spin1")&&LALInferenceCheckVariable(IFOdata->modelParams,"phi_spin1"))
+  {
+        REAL8 theta=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"theta_spin1");
+        REAL8 phi_spin=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"phi_spin1");
+        REAL8 a=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"a_spin1");
+	params.spin1[0]=a*sin(theta)*cos(phi_spin);
+	params.spin1[1]=a*sin(theta)*sin(phi_spin);
+	params.spin1[2]=a*cos(theta);
+  }
+ if(LALInferenceCheckVariable(IFOdata->modelParams,"a_spin2")&&LALInferenceCheckVariable(IFOdata->modelParams,"theta_spin2")&&LALInferenceCheckVariable(IFOdata->modelParams,"phi_spin2"))
+  {
+        REAL8 theta=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"theta_spin2");
+        REAL8 phi_spin=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"phi_spin2");
+        REAL8 a=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"a_spin2");
+        params.spin2[0]=a*sin(theta)*cos(phi_spin);
+        params.spin2[1]=a*sin(theta)*sin(phi_spin);
+        params.spin2[2]=a*cos(theta);
+  }
+
+
   int approximant=0, order=0;
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
   double m1, m2, chirptime, deltaT;

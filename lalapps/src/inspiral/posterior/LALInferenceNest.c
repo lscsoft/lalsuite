@@ -388,8 +388,8 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
 	REAL8 phi_spin1_max=LAL_PI;
-	REAL8 theta_spin1_min=-LAL_PI/2.0;
-	REAL8 theta_spin1_max=LAL_PI/2.0;	
+	REAL8 theta_spin1_min=0.0;
+	REAL8 theta_spin1_max=LAL_PI;
 	REAL8 etaMin=0.01;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -623,7 +623,7 @@ Parameter arguments:\n\
 	/* If aligned spins use magnitude in (-1,1) */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
 	if(ppt) {enable_spin=1; aligned_spin=1; a_spin1_min=-1; a_spin2_min=-1;}
-		
+	
 	if(enable_spin){
 		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
@@ -635,10 +635,9 @@ Parameter arguments:\n\
 	
 		
 		if(aligned_spin){ /* Set the spin angles to be parallel to orbital */
-			tmpVal=LAL_PI/2;
+			tmpVal=0;
 			LALInferenceAddVariable(currentParams,"theta_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 			LALInferenceAddVariable(currentParams,"theta_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-			tmpVal=0;
 			LALInferenceAddVariable(currentParams,"phi_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 			LALInferenceAddVariable(currentParams,"phi_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		}
