@@ -427,7 +427,8 @@ Parameter arguments:\n\
 (--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
 (--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
 (--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
-(--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n";
+(--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n\
+(--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -544,7 +545,12 @@ Parameter arguments:\n\
     else mtot_max=2.*(mMax-mMin);
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
-	
+    UINT4 tempint=1;
+	if(LALInferenceGetProcParamVal(commandLine,"--crazyinjectionhlsign") || LALInferenceGetProcParamVal(commandLine,"--crazyInjectionHLSign"))
+    {
+        printf("Using signal sign flip in Hanford and Livingston");
+        LALInferenceAddVariable(currentParams,"crazyInjectionHLSign",&tempint,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    }
 	printf("Read end time %f\n",endtime);
 	
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
