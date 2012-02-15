@@ -241,7 +241,16 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   return;
 }
 
+int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name)
+/* Checks for a writeable variable */
+{
+  LALInferenceVariableType type;
+  if(!LALInferenceCheckVariable(vars,name)) return 0;
+  type=LALInferenceGetVariableType(vars,name);
+  if(type==LALINFERENCE_PARAM_CIRCULAR||type==LALINFERENCE_PARAM_LINEAR) return 1;
+  else return 0;
 
+}
 
 int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
 /* Check for existance of name */

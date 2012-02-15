@@ -234,6 +234,11 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
 
+/** Checks for \param name being present in \param vars and having type LINEAR or CIRCULAR.
+ * returns 1 or 0
+ */
+int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
+
 /** Delete the variables in this structure.
  *  Does not free the LALInferenceVariables itself
  *  \param vars will have its dimension set to 0 */
