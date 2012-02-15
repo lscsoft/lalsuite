@@ -28,7 +28,7 @@ noinst_HEADERS = \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNewtonianMultipole.c \
 	LALSimInspiralPNCoefficients.c \
-	LALSimInspiraldEnergyFlux.c
+	LALSimInspiraldEnergyFlux.c \
 	LALSimIMRSpinEOBHamiltonian.c \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
