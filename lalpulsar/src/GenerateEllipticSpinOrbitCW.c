@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2007 Reinhard Prix, Teviet Creighton
-*  Copyright (C) 2012 Evan Goetz
+*  Copyright (C) 2012 Teviet Creighton, Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -207,6 +207,7 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
   REAL8 ecc;               /* orbital eccentricity */
   REAL8 oneMinusEcc, onePlusEcc; /* 1 - ecc and 1 + ecc */
   REAL8 e = 0.0;                 /* eccentric anomaly */
+  REAL8 de = 0.0;                /* eccentric anomaly step */
   REAL8 sine = 0.0, cose = 0.0;  /* sine of e, and cosine of e minus 1 */
   REAL8 *fSpin = NULL;           /* pointer to Taylor coefficients */
   REAL4 *fData;                  /* pointer to frequency data */
@@ -395,15 +396,22 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
     INT4 maxiter = 100, iter = 0;
     while ( iter<maxiter && fabs( dx = e + a*sine + b*cose - x ) > dxMax ) {
       iter++;
-      e -= dx/( 1.0 + a*cose + a - b*sine );
+      //Make a check on the step-size so we don't step too far
+      de = dx/( 1.0 + a*cose + a - b*sine );
+      if ( de > LAL_PI )
+        de = LAL_PI;
+      else if ( de < -LAL_PI )
+        de = -LAL_PI;
+      e -= de;
+      
       if ( e < 0.0 )
-	e = 0.0;
+        e = 0.0;
       else if ( e > LAL_TWOPI )
-	e = LAL_TWOPI;
+        e = LAL_TWOPI;
       sine = sin( e );
       cose = cos( e ) - 1.0;
     }
-    /* Bisection algorithm from GSL if Newton's method fails to converge. */
+    /* Bisection algorithm from GSL if Newton's method (above) fails to converge. */
     if (iter==maxiter && fabs( dx = e + a*sine + b*cose - x ) > dxMax ) {
        //Initialize solver
        const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
