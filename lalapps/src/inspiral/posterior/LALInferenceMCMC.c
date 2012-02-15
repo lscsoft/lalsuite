@@ -147,6 +147,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   char help[]="\
                (--Niter N)                     Number of iterations(2*10^6)\n\
                (--Nskip n)                     Number of iterations between disk save(100)\n\
+               (--trigSNR SNR)                 Network SNR from trigger, used to calculate tempMax\n\
                (--tempMin T)                   Lowest temperature for parallel tempering(1.0)\n\
                (--tempMax T)                   Highest temperature for parallel tempering(50.0)\n\
                (--randomseed seed)             Random seed of sampling distribution(random)\n\
@@ -165,6 +166,7 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   INT4 verbose=0,tmpi=0;
   unsigned int randomseed=0;
+  REAL8 trigSNR = 0.0;
   REAL8 tempMin = 1.0;
   REAL8 tempMax = 50.0;
   ProcessParamsTable *commandLine=runState->commandLine;
@@ -268,6 +270,14 @@ void initializeMCMC(LALInferenceRunState *runState)
     tmpi=100;
   }
   LALInferenceAddVariable(runState->algorithmParams,"Nskip",&tmpi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
+
+ printf("set trigger SNR.\n");
+  /* Network SNR of trigger */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--trigSNR");
+  if(ppt){
+    trigSNR=strtod(ppt->value,(char **)NULL);
+  }
+  LALInferenceAddVariable(runState->algorithmParams,"trigSNR",&trigSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
  printf("set lowest temperature.\n");
   /* Minimum temperature of the temperature ladder */
