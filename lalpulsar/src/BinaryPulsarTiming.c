@@ -746,8 +746,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->Aplus=0.;
   output->Across=0.;
   output->I21=0.;
-	output->I31=0.;
-	output->r=0.;
+  output->I31=0.;
+  output->r=0.;
   output->lambda=0.;
   output->theta=0.;
 
@@ -758,8 +758,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->AplusErr=0.;
   output->AcrossErr=0.;
   output->I21Err=0.;
-	output->I31Err=0.;
-	output->rErr=0.;
+  output->I31Err=0.;
+  output->rErr=0.;
   output->lambdaErr=0.;
   output->thetaErr=0.;
 
