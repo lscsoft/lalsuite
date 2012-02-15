@@ -688,11 +688,14 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
     strcat(simTable.waveform,"NO");
     break;
   case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN:
-    strcat(simTable.waveform,"SO");
+    strcat(simTable.waveform,"SO15PN");
     break;
   case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN:
-	strcat(simTable.waveform,"SO");
-	break;
+    strcat(simTable.waveform,"SO25PN");
+    break;
+  case LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN:
+    strcat(simTable.waveform,"SO");
+    break;
   case LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN:
     strcat(simTable.waveform,"SS");
     break;
@@ -709,7 +712,7 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
 	strcat(simTable.waveform,"TIDAL5PN");
 	break;
   case LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN:
-	strcat(simTable.waveform,"TIDAL6PN");
+	strcat(simTable.waveform,"TIDAL");
 	break;
   case LAL_SIM_INSPIRAL_INTERACTION_ALL:
 	strcat(simTable.waveform,"ALL");
@@ -801,16 +804,14 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
   }
   else /* build h(t) from h+ and hx in waveform->h */
   {
-    len = waveform.h->data->length;
+    len=waveform.h->data->length < wave->length ? waveform.h->data->length : wave->length;
     for(i = 0; i < len; i++)
-    {
-      wave->data[i] = Fp * waveform.h->data->data[2*i] 
-                    + Fc * waveform.h->data->data[2*i+1];
-    }
+      {
+	wave->data[i] = Fp * waveform.h->data->data[2*i] 
+	  + Fc * waveform.h->data->data[2*i+1];
+      }
+    for (i=len;i<wave->length;i++) wave->data[i]=0.;
   }
-
-  for (i=len;i<wave->length;i++) wave->data[i]=0.;
 
   return;
 }
-

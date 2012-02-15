@@ -37,6 +37,7 @@ typedef enum tagGSApproximant {
     GSApproximant_IMRPhenomA,
     GSApproximant_IMRPhenomB,
     GSApproximant_SpinTaylorT4,
+    GSApproximant_PhenSpinTaylorRD,
     GSApproximant_TaylorF2RedSpin,
     GSApproximant_TaylorF2RedSpinTidal,
     GSApproximant_NUM
@@ -73,7 +74,8 @@ typedef struct tagGSParams {
     REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
     REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	LALSimInspiralInteraction interactionFlags;    /**< flag to control spin and tidal effects */
+  LALSimInspiralInteraction interactionFlags;    /**< flag to control spin and tidal effects */
+  int axisChoice;            /**< flag to choose reference frame for spin coordinates */
     char outname[256];        /**< file to which output should be written */
     int verbose;
 } GSParams;
@@ -87,6 +89,7 @@ const char * usage =
 "                             IMRPhenomB\n"
 "                             SpinTaylorT4\n"
 "                             TaylorF2RedSpin\n"
+"                             PhenSpinTaylorRD\n"
 "--phase-order ORD          Twice PN order of phase (e.g. ORD=7 <==> 3.5PN)\n"
 "--amp-order ORD            Twice PN order of amplitude\n"
 "--domain DOM               'TD' for time domain or 'FD' for frequency\n"
@@ -118,6 +121,7 @@ const char * usage =
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc\n"
+"--axis                     Ref. frame for PhenSpin (0: L, 1: J, 2: N default)\n"
 "--outname FNAME            File to which output should be written (overwrites)\n"
 "--verbose                  Provide this flag to add verbose output\n"
 ;
@@ -170,6 +174,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 params->approximant = GSApproximant_TaylorF2RedSpin;
             else if (strcmp(argv[i], "TaylorF2RedSpinTidal") == 0)
                 params->approximant = GSApproximant_TaylorF2RedSpinTidal;
+            else if (strcmp(argv[i], "PhenSpinTaylorRD") == 0)
+                params->approximant = GSApproximant_PhenSpinTaylorRD;
             else {
                 XLALPrintError("Error: Unknown approximant\n");
                 goto fail;
@@ -245,6 +251,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->distance = atof(argv[++i]) * 1e6 * LAL_PC_SI;
         } else if (strcmp(argv[i], "--inclination") == 0) {
             params->inclination = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--axis") == 0) {
+            params->axisChoice = atof(argv[++i]);
         } else if (strcmp(argv[i], "--outname") == 0) {
             strncpy(params->outname, argv[++i], 256);
         } else if (strcmp(argv[i], "--verbose") == 0) {
@@ -336,6 +344,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
                 goto fail;
             }
             break;
+        case GSApproximant_PhenSpinTaylorRD:
+	  if (((params->s1x*params->s1x+params->s1y*params->s1y+params->s1z*params->s1z)>1.)||((params->s2x*params->s2x+params->s2y*params->s2y+params->s2z*params->s2z)>1.)) {
+	    XLALPrintError("Error: Spin values are not physical for PhenSpinTaylorRD\n");
+	    goto fail;
+	  }
+	  break;
         case GSApproximant_SpinTaylorT4:
             /* no additional checks required */
             break;
@@ -419,6 +433,7 @@ int main (int argc , char **argv) {
     params = parse_args(argc, argv);
 
 	// For now, hardcode spin flags as 1.5PN SO + 2PN SS
+        // Note the existence of 3PN SO interaction
 	params->interactionFlags = params->interactionFlags | LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN | LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
 	
     /* generate waveform */
@@ -483,6 +498,8 @@ int main (int argc , char **argv) {
                             params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
 							E1x, E1y, E1z, params->lambda1, params->lambda2, 
 							params->interactionFlags, params->phaseO, params->ampO);
+	    case GSApproximant_PhenSpinTaylorRD:
+	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice);
                     break;
                 default:
                     XLALPrintError("Error: some lazy programmer forgot to add their TD waveform generation function\n");

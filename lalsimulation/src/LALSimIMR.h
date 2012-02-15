@@ -45,8 +45,8 @@ extern "C" {
  * PSpinInspiralRD waveforms.
  */
 typedef enum {
-  TotalJ,
   View,
+  TotalJ,
   OrbitalL,
 } InputAxis;
 

@@ -100,11 +100,11 @@ typedef enum {
 	LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN = 1 << 2,     /**<  Spin-spin-self interaction */
 	LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN = 1 << 3,     /**< Quadrupole-monopole interaction */
 	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN = 1 << 4,     /**<  Next-to-leading-order spin-orbit interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 5, /**< Leading-order tidal interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 6, /**< Next-to-leading-order tidal interaction */
-
-	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 5) - 1, /**< all spin interactions, no tidal interactions */
-	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 7) - 1 /**< all spin and tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN = 1 << 5,  /**< Spin-spin interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 6, /**< Leading-order tidal interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 7, /**< Next-to-leading-order tidal interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 6) - 1, /**< all spin interactions, no tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 8) - 1 /**< all spin and tidal interactions */
 } LALSimInspiralInteraction;
 
 /**
