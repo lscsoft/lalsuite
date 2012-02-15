@@ -289,15 +289,13 @@ INT4 main( INT4 argc, CHAR *argv[] ){
  
   /* set output style (change this when the code if fixed for using XML) */
   runState.logsample = LALInferenceLogSampleToFile;
-  
+
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
-  
+
   /* add injections if requested */
   injectSignal( &runState );
-  /*fprintf(stderr,"Done the injection\n");
-  sleep(4);*/
-  
+
   /* create sum square of the data to speed up the likelihood calculation */
   sumData( &runState );
   
@@ -1168,16 +1166,12 @@ void setupFromParFile( LALInferenceRunState *runState )
   runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   
   scaletemp = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  
-  /* if no binary model set the value to "None" */
-  if ( pulsar.model == NULL )
-    pulsar.model = XLALStringDuplicate("None");
-  
+ 
   /* Add initial (unchanging) variables for the model, initial (unity) scale
      factors, and any Gaussian priors defined from the par file */
   add_initial_variables( runState->currentParams, scaletemp,
                          runState->priorArgs, pulsar );
-  
+
   /* Setup initial phase, and barycentring delays */
   while( data ){
     REAL8Vector *freqFactors = NULL;
@@ -1190,23 +1184,22 @@ void setupFromParFile( LALInferenceRunState *runState )
       UINT4 i = 0;
       LALInferenceVariableItem *scaleitem = scaletemp->head;
       REAL8Vector *dts = NULL, *bdts = NULL;
- 
-    
+
       dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->detector,
                            0. );
-   
-      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
-    
+      
       LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
-    
+     
+      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
+      
       LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
 
       phase_vector = get_phase_model( pulsar, data, freqFactors->data[j] );
-      
+  
       data->timeData = NULL;
       data->timeData = XLALCreateREAL8TimeSeries( "",
                                                   &data->dataTimes->data[0], 
@@ -1443,76 +1436,82 @@ void add_initial_variables( LALInferenceVariables *ini,
   add_variable_scale_prior( ini, scaleFac, priorArgs, "posepoch", pars.posepoch,
                             pars.posepochErr );
   
-  /* binary system parameters */
-  LALInferenceAddVariable( ini, "model", &pars.model, LALINFERENCE_string_t, 
-                           LALINFERENCE_PARAM_FIXED );
+  /* only add binary system parameters if required */
+  if ( pars.model ){
+    LALInferenceAddVariable( ini, "model", &pars.model, LALINFERENCE_string_t, 
+                             LALINFERENCE_PARAM_FIXED );
   
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb", pars.Pb, 
-                            pars.PbErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "e", pars.e, pars.eErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1", pars.eps1,
-                            pars.eps1Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2", pars.eps2,
-                            pars.eps2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "T0", pars.T0, 
-                            pars.T0Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Tasc", pars.Tasc,
-                            pars.TascErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "x", pars.x, pars.xErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "w0", pars.w0, 
-                            pars.w0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb", pars.Pb, 
+                              pars.PbErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "e", pars.e, 
+                              pars.eErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1", pars.eps1,
+                              pars.eps1Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2", pars.eps2,
+                              pars.eps2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "T0", pars.T0, 
+                              pars.T0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Tasc", pars.Tasc,
+                              pars.TascErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "x", pars.x, 
+                              pars.xErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "w0", pars.w0, 
+                              pars.w0Err );
 
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb2", pars.Pb2,
-                            pars.Pb2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "e2", pars.e2, 
-                            pars.e2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "T02", pars.T02,
-                            pars.T02Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "x2", pars.x2, 
-                            pars.x2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "w02", pars.w02,
-                            pars.w02Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb2", pars.Pb2,
+                              pars.Pb2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "e2", pars.e2, 
+                              pars.e2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "T02", pars.T02,
+                              pars.T02Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "x2", pars.x2, 
+                              pars.x2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "w02", pars.w02,
+                              pars.w02Err );
 
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb3", pars.Pb3,
-                            pars.Pb3Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "e3", pars.e3, 
-                            pars.e3Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "T03", pars.T03,
-                            pars.T03Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "x3", pars.x3, 
-                            pars.x3Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "w03", pars.w03,
-                            pars.w03Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb3", pars.Pb3,
+                              pars.Pb3Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "e3", pars.e3, 
+                              pars.e3Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "T03", pars.T03,
+                              pars.T03Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "x3", pars.x3, 
+                              pars.x3Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "w03", pars.w03,
+                              pars.w03Err );
 
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "xpbdot", pars.xpbdot,
-                            pars.xpbdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1dot", pars.eps1dot,
-                            pars.eps1dotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2dot", pars.eps2dot,
-                            pars.eps2dotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "wdot", pars.wdot,
-                            pars.wdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "gamma", pars.gamma,
-                            pars.gammaErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pbdot", pars.Pbdot,
-                            pars.PbdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "xdot", pars.xdot,
-                            pars.xdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "edot", pars.edot,
-                            pars.edotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "xpbdot", pars.xpbdot,
+                              pars.xpbdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1dot", pars.eps1dot,
+                              pars.eps1dotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2dot", pars.eps2dot,
+                              pars.eps2dotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "wdot", pars.wdot,
+                              pars.wdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "gamma", pars.gamma,
+                              pars.gammaErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pbdot", pars.Pbdot,
+                              pars.PbdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "xdot", pars.xdot,
+                              pars.xdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "edot", pars.edot,
+                              pars.edotErr );
  
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "s", pars.s, pars.sErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "dr", pars.dr, 
-                            pars.drErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "dth", pars.dth,
-                            pars.dthErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "a0", pars.a0, 
-                            pars.a0Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "b0", pars.b0, 
-                            pars.b0Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "M", pars.M, pars.MErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "m2", pars.m2, 
-                            pars.m2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "s", pars.s, 
+                              pars.sErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "dr", pars.dr, 
+                              pars.drErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "dth", pars.dth,
+                              pars.dthErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "a0", pars.a0, 
+                              pars.a0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "b0", pars.b0, 
+                              pars.b0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "M", pars.M, 
+                              pars.MErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "m2", pars.m2, 
+                              pars.m2Err );
+  }
 }
 
 

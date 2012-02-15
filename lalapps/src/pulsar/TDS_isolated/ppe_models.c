@@ -72,12 +72,12 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.f3 = rescale_parameter( data, "f3" );
   pars.f4 = rescale_parameter( data, "f4" );
   pars.f5 = rescale_parameter( data, "f5" );
-  
-  /* binary system model - NOT pulsar model */
-  pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
 
-  /* binary parameters */
-  if( !strcmp(pars.model, "None") ){
+  /* check if there are binary parameters */
+  if( LALInferenceCheckVariable(data->modelParams, "model") ){
+    /* binary system model - NOT pulsar model */
+    pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
+    
     pars.e = rescale_parameter( data, "e" );
     pars.w0 = rescale_parameter( data, "w0" );
     pars.Pb = rescale_parameter( data, "Pb" );
@@ -233,7 +233,7 @@ through the loop.*/
           REAL4 sp, cp;
     
           dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
-    
+          
           sin_cos_2PI_LUT( &sp, &cp, dphit );
     
           M.re = data->compModelData->data->data[i].re;
@@ -296,10 +296,6 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
- 
-  /* check if binary model is "None" - if so, set to NULL */
-  if ( params.model )
-    if ( !strcmp(params.model, "None") ) params.model = NULL;
   
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
@@ -510,11 +506,13 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
   bdts = XLALCreateREAL8Vector( length );
   
   for ( i = 0; i < length; i++ ){
-    binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
-  
-    XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );
-    
-    bdts->data[i] = boutput.deltaT;
+    /* check whether there's a binary model */
+    if ( pars.model ){
+      binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+      XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );    
+      bdts->data[i] = boutput.deltaT;
+    }
+    else bdts->data[i] = 0.;
   }
   
   return bdts;
