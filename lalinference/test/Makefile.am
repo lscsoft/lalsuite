@@ -10,6 +10,10 @@ XMLPRG = \
 
 endif
 
+LALInferenceTest_SOURCES = \
+	LALInferenceTest.c \
+	LALInferenceTest.h
+
 check_PROGRAMS = \
 	LALInferenceTest \
 	$(XMLPRG)
@@ -24,8 +28,7 @@ TESTS = \
 endif
 endif
 
-EXTRA_DIST = \
-	LALInferenceTest.h
+EXTRA_DIST =
 
 CLEANFILES = \
 	test_vot.xml \
