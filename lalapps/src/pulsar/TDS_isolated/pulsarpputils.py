@@ -30,6 +30,7 @@ import sys
 import math
 import os
 import numpy as np
+from scipy.integrate import quadrature as quad
 
 from types import StringType, FloatType
 
@@ -258,7 +259,7 @@ class psr_par:
       
       # set DEC error in rads (rather than arcsecs)
       if hasattr(self, 'DECJ_ERR'):
-        setattr(self, 'DEC_RAD_ERR', dms_to_rad(0, 0, self.DECJ_ERR)
+        setattr(self, 'DEC_RAD_ERR', dms_to_rad(0, 0, self.DECJ_ERR))
       
     # periods and frequencies
     if hasattr(self, 'P'):
@@ -306,7 +307,15 @@ class psr_par:
       setattr(self, 'TASC', self.T0 - self.PB * self.OM/360.0)
         
     pf.close()
-    
+  
+  def __getitem__(self, key):
+    try:
+      par = getattr(self, key)
+    except:
+      par = None
+      
+    return par
+  
   def __str__(self):
     out = ""
     for k, v in self.__dict__.items():
@@ -318,8 +327,8 @@ class psr_par:
       
     return out
 
-# class to read in a nested sampling prior file    
-class priorfile:
+# class to read in a nested sampling prior file   
+class psr_prior:
   def __init__(self, priorfilenm):
     self.FILE = priorfilenm
     pf = open(priorfilenm)
@@ -330,19 +339,36 @@ class priorfile:
       key = splitline[0].upper()
       
       if key in str_keys:
-        setattr(self, key, splitline[1:2])
+        # everything in a prior files should be numeric
+        setattr(self, key, [float(splitline[1]), float(splitline[2])])
       elif key in float_keys:
-          setattr(self, key, [float(splitline[1]), float(splitline[2]])        
+        setattr(self, key, [float(splitline[1]), float(splitline[2])])        
  
-    # sky position
+    # get sky positions in rads as strings 'dd/hh:mm:ss.s'  
     if hasattr(self, 'RA'):
-      setattr(self, 'RA', [ra_to_rad(self.RAJ[0]), ra_to_rad(self.RAJ[1]))
+      hl, ml, sl = rad_to_hms(self.RA[0])
+      rastrl = coord_to_string(hl, ml, sl)
+      hu, mu, su = rad_to_hms(self.RA[1])
+      rastru = coord_to_string(hu, mu, su)
+      setattr(self, 'RA_STR', [rastrl, rastru])
       
     if hasattr(self, 'DEC'):
-      setattr(self, 'DEC', [dec_to_rad(self.DEC[0]), ra_to_rad(self.DEC[1]))
-        
-    pf.close()
+      dl, ml, sl = rad_to_dms(self.DEC[0])
+      decstrl = coord_to_string(dl, ml, sl)
+      du, mu, su = rad_to_dms(self.DEC[1])
+      decstru = coord_to_string(du, mu, su)
+      setattr(self, 'DEC_STR', [decstrl, decstru])
     
+    pf.close()
+  
+  def __getitem__(self, key):
+    try:
+      atr = getattr(self, key)
+    except:
+      atr = None
+    
+    return atr
+  
   def __str__(self):
     out = ""
     for k, v in self.__dict__.items():
@@ -350,7 +376,7 @@ class priorfile:
         if type(self.__dict__[k]) is StringType:
           out += "%10s = '%s'\n" % (k, v)
         else:
-          out += "%10s = %-20.15g\n" % (k, v)
+          out += "%10s = %-20.15g, %-20.15g\n" % (k, float(v[0]), float(v[1]))
       
     return out
 
@@ -393,3 +419,31 @@ def phipsiconvert(phipchain, psipchain):
 
   return phichain, psichain
  
+# function to create histogram plot of the 1D posterior (potentially for
+# multiple IFOs) for a parameter (params). If an upper limit is given then
+# that will be output
+def plot_posterior_hist(poslist, param, nbins=50, ifos=None, upperlimit=0):
+  # create list of figures
+  myfigs = []
+  
+  # loop over ifos
+  for idx, ifo in enumerate(ifos):
+    myfig=plt.figure(figsize=(4,3.5),dpi=200)
+    
+    pos = poslist[idx]
+    
+    pos_samps = pos[param].samples
+    
+    # get a normalised histogram for each
+    (n, bins, patches) = plt.hist(pos_samps, nbins, normed='true')
+    
+    myfigs.append(myfig)
+    
+    # if upper limit is needed then integrate posterior using trapezium rule
+    if upperlimit != 0:
+      ct = quad.cumtrapz(n, bins)
+      
+      
+      
+      
+  
