@@ -757,17 +757,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Compute spin-weighted spherical harmonics and generate waveform */
   REAL8 coa_phase = 0.0;
 
-  if ( XLALSphHarm( &MultSphHarmP, 2, 2, inc, coa_phase ) == XLAL_FAILURE )
-  {
-    /* TODO: Clean-up */
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  if ( XLALSphHarm( &MultSphHarmM, 2, -2, inc, coa_phase ) == XLAL_FAILURE )
-  {
-    /* TODO: Clean-up */
-    XLAL_ERROR( XLAL_EFUNC );
-  }
+  MultSphHarmP = XLALSpinWeightedSphericalHarmonic( inc, coa_phase, -2, 2, 2 );
+  MultSphHarmM = XLALSpinWeightedSphericalHarmonic( inc, coa_phase, -2, 2, -2 );
 
   y_1 =   MultSphHarmP.re + MultSphHarmM.re;
   y_2 =   MultSphHarmM.im - MultSphHarmP.im;
