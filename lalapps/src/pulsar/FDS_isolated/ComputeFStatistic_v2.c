@@ -1474,6 +1474,10 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       LogPrintf ( LOG_CRITICAL, "\nXLALGetDopplerSpinRange() failed\n" );
       ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
     }
+    // write this search spin-range@refTime back into 'cfg' struct for users' reference
+    cfg->searchRegion.refTime = spinRangeRef.refTime;
+    memcpy ( cfg->searchRegion.fkdot, spinRangeRef.fkdot, sizeof(cfg->searchRegion.fkdot) );
+    memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
     /* compute spin-range at startTime of observation */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, startTime, &spinRangeRef ), status );
