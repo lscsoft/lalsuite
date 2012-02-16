@@ -30,7 +30,10 @@ import sys
 import math
 import os
 import numpy as np
-from scipy.integrate import quadrature as quad
+
+from matplotlib import pyplot as plt
+from scipy.integrate import cumtrapz
+from scipy.interpolate import interp1d
 
 from types import StringType, FloatType
 
@@ -420,30 +423,49 @@ def phipsiconvert(phipchain, psipchain):
   return phichain, psichain
  
 # function to create histogram plot of the 1D posterior (potentially for
-# multiple IFOs) for a parameter (params). If an upper limit is given then
+# multiple IFOs) for a parameter (param). If an upper limit is given then
 # that will be output
-def plot_posterior_hist(poslist, param, nbins=50, ifos=None, upperlimit=0):
+def plot_posterior_hist(poslist, param, ifos, nbins=50, upperlimit=0):
   # create list of figures
   myfigs = []
   
+  # create a list of upper limits
+  ulvals = []
+  
+  # ifos line colour specs
+  coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  
   # loop over ifos
   for idx, ifo in enumerate(ifos):
-    myfig=plt.figure(figsize=(4,3.5),dpi=200)
+    myfig = plt.figure(figsize=(4,3.5),dpi=200)
     
     pos = poslist[idx]
     
     pos_samps = pos[param].samples
     
     # get a normalised histogram for each
-    (n, bins, patches) = plt.hist(pos_samps, nbins, normed='true')
+    n, bins, patches = plt.hist( pos_samps, bins=int(nbins), normed='True', \
+                                 histtype='step', color=coldict[ifo] )
     
     myfigs.append(myfig)
     
     # if upper limit is needed then integrate posterior using trapezium rule
     if upperlimit != 0:
-      ct = quad.cumtrapz(n, bins)
+      dbins = bins[1]-bins[0]
       
+      # get list of bin centres
+      bincentres = []
+      for i in range(0, len(bins)-1):
+        bincentres.append(bins[i]+dbins/2)
       
+      ct = cumtrapz(n, bincentres)
       
+      #plt.plot(bincentres[1:len(bincentres)], ct)
       
+      # use spline interpolation to find the value at 'upper limit'
+      intf = interp1d(ct, bincentres[1:len(bincentres)], kind='cubic')
+      ulvals.append(intf(float(upperlimit)))
+  
+  return myfigs, ulvals
+  
   
