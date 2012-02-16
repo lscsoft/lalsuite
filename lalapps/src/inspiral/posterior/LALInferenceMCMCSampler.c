@@ -121,12 +121,6 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, int sourceTemp)
         ptr=ptr->next;
       }
     }
-    //for (i=0; i < nPoints; i++) {
-    //  for(p=0; p < nPar; p++) {
-    //    printf("%f\t",packedDEpoints[i][p]);
-    //  }
-    //  printf("\n");
-    //}
   }
 
   /* Send it out */
@@ -154,10 +148,7 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, int sourceTemp)
       }
     }
   }
-  /* Clean up the mess */
-  //for (i = 0; i < nPoints; i++)
-  //  free(packedDEpoints[i]);
-  //free(packedDEpoints);
+  /* Clean up */
   XLALFree(temp);
   MPI_Barrier(MPI_COMM_WORLD);
 }
@@ -176,31 +167,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 *annealDecay = NULL;
   INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
   double *TcurrentLikelihood = NULL; //the current likelihood for each chain
-  INT4 **pdf = NULL;
-  INT4 pdf_count = 0;
-  INT4 param_count = 0;
   INT4 parameter=0;
-  UINT4 tMaxSearch = 0;
   UINT4 hotChain = 0;                 // Affects proposal setup
   REAL8Vector *sigmas = NULL;
   REAL8Vector *PacceptCount = NULL;
   REAL8Vector *PproposeCount = NULL;
   REAL8 *parametersVec = NULL;
-  REAL8 flatPriorTestVal = 0.0;
-  REAL8 randVal = 0.0;
-  REAL8 paramVal = 0.0;
-  REAL8 tempCurrentPrior = 0.0;
-  REAL8 tempCurrentLikelihood = 0.0;
-  REAL8 priorMin, priorMax, dprior;
   REAL8 tempDelta = 0.0;
   REAL8Vector * parameters = NULL;
-  LALInferenceVariables tempCurrentParams;
-  LALInferenceVariables flatPriorTestParams;
-  LALInferenceVariables flatPriorParams;
-  LALInferenceProposalFunction *tempProposal;
-  LALInferencePriorFunction *tempPrior;
-  char *name = NULL;
-  char nameMin[VARNAME_MAX], nameMax[VARNAME_MAX];
 
   INT4 adaptationOn = 0;
   INT4 adapting = 0;
@@ -292,6 +266,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
   LALInferenceSetVariable(runState->algorithmParams, "tempMax", &tempMax);
 
+  if (tempMin > tempMax) {
+    fprintf(stdout,"WARNING: tempMin > tempMax.  Forcing tempMin=1.0.\n");
+    tempMin = 1.0;
+    LALInferenceSetVariable(runState->algorithmParams, "tempMin", &tempMin);
+  }
 
 
   /* Annealing settings */
@@ -307,6 +286,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 nSwaps               = (nChain-1)*nChain/2;                // Number of proposed swaps between temperatures in one swap iteration
   INT4 Tskip                = 100;                                // Number of iterations between proposed temperature swaps 
   INT4 Tkill                = startAnnealing+annealLength;        // Iterature where parallel tempering ends
+
+  if (LALInferenceGetProcParamVal(runState->commandLine,"--startAnnealing"))
+    startAnnealing = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--startAnnealing")->value);
+
+  if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
+    annealLength = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealLength")->value);
+
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
     Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
 
@@ -360,30 +346,27 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(runState->proposalArgs, "tMaxSearch", &tMaxSearch, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-  LALInferenceAddVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]),  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-  LALInferenceAddVariable(runState->proposalArgs, "hotChain", &hotChain, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
   REAL8 logLAtAdaptStart = runState->currentLikelihood;
 
   /* Construct temperature ladder */
   if(nChain > 1){
     if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")){ //temperature spacing uniform in 1/T
-      tempDelta = (1.0 - 1.0/tempMax)/(REAL8)(nChain-1);
+      tempDelta = (1.0/tempMin - 1.0/tempMax)/(REAL8)(nChain-1);
       for (t=0; t<nChain; ++t) {
-        tempLadder[t]=1.0/(REAL8)(1.0-t*tempDelta);
+        tempLadder[t]=1.0/(REAL8)(1.0/tempMin-t*tempDelta);
       }
     }
     else if(LALInferenceGetProcParamVal(runState->commandLine, "--geomLadder")){ //Geometric spacing (most efficient so far. Should become default?
-      tempDelta=pow(tempMax,1.0/(REAL8)(nChain-1));
+      tempDelta=pow(tempMax-tempMin+1,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
-        tempLadder[t]=pow(tempDelta,t);
-        annealDecay[t] = (tempLadder[t]-1)/(REAL8)annealLength;
+        tempLadder[t]=tempMin + pow(tempDelta,t) - 1.0;
+        annealDecay[t] = (tempLadder[t]-1.0)/(REAL8)annealLength;
       }
     }
     else{ //epxonential spacing
-      tempDelta = log(tempMax)/(REAL8)(nChain-1);
+      tempDelta = log(tempMax-tempMin+1)/(REAL8)(nChain-1);
       for (t=0; t<nChain; ++t) {
-        tempLadder[t]=exp(t*tempDelta);
+        tempLadder[t]=tempMin + exp(t*tempDelta) - 1.0;
       }
     }
   } else {
@@ -399,8 +382,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     hotChain = 1;
   }
 
-  LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));
-  LALInferenceSetVariable(runState->proposalArgs, "hotChain", &(hotChain));
+  LALInferenceAddVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]),  LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(runState->proposalArgs, "hotChain", &hotChain, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   if (MPIrank == 0){
     for (t=0; t<nChain; ++t) {
@@ -632,7 +615,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           ptr=ptr->next;
         }
 
-        if (i < startAnnealing) {
+        if (i < Tkill) {
           MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
           MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
           MPI_Gather(parameters->data,nPar,MPI_DOUBLE,parametersVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
@@ -715,7 +698,6 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 diff = 0.0;
   INT4 acceptanceCount;
   INT4 accepted = 0;
-  UINT4 tMaxSearch = 0;
   const char *currentProposalName;
   LALInferenceProposalStatistics *propStat;
   ProcessParamsTable *ppt, *commandLine = runState->commandLine;
@@ -726,7 +708,6 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 
   temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
   acceptanceCount = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "acceptanceCount");
-  tMaxSearch = *(UINT4*) LALInferenceGetVariable(runState->proposalArgs, "tMaxSearch");
 
   // generate proposal:
   proposedParams.head = NULL;
@@ -778,8 +759,8 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
     }
     acceptanceRate = PacceptCount->data[i] / PproposeCount->data[i];
   }
-  /* Update proposal statistics unless we are searching for max temperature */
-  if (runState->proposalStats && !tMaxSearch){
+  /* Update proposal statistics */
+  if (runState->proposalStats){
     currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
     propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
     propStat->proposed++;
