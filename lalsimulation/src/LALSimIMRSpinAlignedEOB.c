@@ -158,6 +158,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   COMPLEX16  MultSphHarmM;
 
   /* We will have to switch to a high sample rate for ringdown attachment */
+  REAL8 deltaTHigh;
   UINT4 resampFac;
   UINT4 resampPwr;
   REAL8 resampEstimate;
@@ -450,7 +451,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   /* Set up the high sample rate integration */
   hiSRndx = retLen - nStepBack;
-  deltaT /= (REAL8)resampFac;
+  deltaTHigh = deltaT / (REAL8)resampFac;
 
   fprintf( stderr, "Stepping back %d points - we expect %d points at high SR\n", nStepBack, nStepBack*resampFac );
   fprintf( stderr, "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
@@ -463,7 +464,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   integrator->stop = XLALSpinAlignedHiSRStopCondition;
 
-  retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaT/mTScaled, &dynamicsHi );
+  retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
   if ( retLen == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
@@ -487,9 +488,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   fclose( out );
 
   /* Allocate the high sample rate vectors */
-  sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
-  sigImHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
-  omegaHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaT )) );
+  sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
+  sigImHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
+  omegaHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
   ampNQC   = XLALCreateREAL8Vector( retLen );
   phaseNQC = XLALCreateREAL8Vector( retLen );
 
@@ -610,7 +611,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   /* Calculate non-quasicircular coefficients and apply to hi-sampled waveform */
   if ( XLALSimIMRSpinEOBCalculateNQCCoefficients( ampNQC, phaseNQC, &rHi, &prHi, omegaHi,
-          2, 2, timePeak, deltaT/mTScaled, eta, a, &nqcCoeffs ) == XLAL_FAILURE )
+          2, 2, timePeak, deltaTHigh/mTScaled, eta, a, &nqcCoeffs ) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -640,7 +641,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     sigAmpSqHi = hLM.re*hLM.re+hLM.im*hLM.im;
     if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0) 
     {
-      timewavePeak = (i-1)*deltaT/mTScaled;
+      timewavePeak = (i-1)*deltaTHigh/mTScaled;
       peakCount += 1;
     }
     oldsigAmpSqHi = sigAmpSqHi;
@@ -688,7 +689,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
 
   if ( XLALSimIMREOBHybridAttachRingdown( sigReHi, sigImHi, 2, 2,
-              deltaT, m1, m2, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2],
+              deltaTHigh, m1, m2, spin1[0], spin1[1], spin1[2], spin2[0], spin2[1], spin2[2],
               &timeHi, rdMatchPoint, SEOBNRv1)
           == XLAL_FAILURE ) 
   {
