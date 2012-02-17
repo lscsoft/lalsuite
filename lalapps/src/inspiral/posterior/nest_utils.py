@@ -116,11 +116,14 @@ class LALInferenceNode(pipeline.CondorDAGNode):
 			raise Exception('Bad psdstart specified')
 	else: 
 		self.add_var_opt('psdstart',str(self.__GPSstart))
-        length=self.__GPSend-self.__GPSstart
-        if(length>maxLength):
-            length=maxLength
-
-        self.add_var_opt('PSDlength',str(int(length)))
+        if self.job().get_cp().has_option('lalinference','psdlength'):
+		length=self.job().get_cp().getfloat('lalinference','psdlength')
+		print 'Over-riding PSD length to user-specified value %f'%(length)
+	else:
+		length=self.__GPSend-self.__GPSstart
+	        if(length>maxLength):
+        	    length=maxLength
+	        self.add_var_opt('PSDlength',str(int(length)))
         self.add_var_opt('seglen',self.job().get_cp().get('analysis','psd-chunk-length'))
 
 
