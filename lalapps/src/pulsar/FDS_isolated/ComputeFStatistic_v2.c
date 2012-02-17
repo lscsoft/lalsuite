@@ -138,7 +138,7 @@ typedef struct
 {
   UINT4 NSFTs;			/**< total number of SFTs */
   REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
-  REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (toplist etc) */
+  REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (transient stats, toplist etc) */
 
   /* transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
@@ -466,20 +466,6 @@ int main(int argc,char *argv[])
     gsl_vector_int_set_zero(Fstat_histogram);
   }
 
-  /* if timing-output was requested, open that output file now */
-  FILE *fpTiming = NULL;
-  if ( uvar.outputTiming ) {
-    if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
-      XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
-      return COMPUTEFSTATISTIC_ESYS;
-    }
-    /* write header comment line */
-    if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
-      return COMPUTEFSTATISTIC_EXLAL;
-    }
-  } /* if outputTiming */
-
   /* setup binary parameters */
   orbitalParams = NULL;
   if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
@@ -520,6 +506,7 @@ int main(int argc,char *argv[])
 
   REAL8 tic0, tic, toc;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
+  timing.NSFTs = GV.NSFTs;
 
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
@@ -557,8 +544,8 @@ int main(int argc,char *argv[])
 
         } /* if GPUready==true */
       toc = GETTIME();
-      timing.tauFstat = toc - tic;	// pure Fstat-calculation time
-      timing.NSFTs = GV.NSFTs;
+      timing.tauFstat += (toc - tic);	// pure Fstat-calculation time
+
 
       /* Progress meter */
       templateCounter += 1.0;
@@ -755,7 +742,7 @@ int main(int argc,char *argv[])
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = GETTIME();
-          timing.tauTransFstatMap = toc - tic; // time to compute transient Fstat-map
+          timing.tauTransFstatMap += (toc - tic); // time to compute transient Fstat-map
 
           /* compute marginalized Bayes factor */
           tic = GETTIME();
@@ -766,7 +753,7 @@ int main(int argc,char *argv[])
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = GETTIME();
-          timing.tauTransMarg = toc - tic;
+          timing.tauTransMarg += (toc - tic);
 
           /* ----- compute parameter posteriors for {t0, tau} */
           pdf1D_t *pdf_t0  = NULL;
@@ -825,20 +812,39 @@ int main(int argc,char *argv[])
 
       /* now measure total loop time per template */
       toc = GETTIME();
-      timing.tauTemplate = toc - tic0;
-
-      /* if requested: output timings into timing-file */
-      if ( fpTiming ) {
-        if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
-          XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
-          return COMPUTEFSTATISTIC_EXLAL;
-        }
-      } /* if timing output requested */
+      timing.tauTemplate += (toc - tic0);
 
     } /* while more Doppler positions to scan */
 
-  /* close timing-file, if it's open */
-  if ( fpTiming ) fclose ( fpTiming );
+
+  /* if requested: output timings into timing-file */
+  if ( uvar.outputTiming )
+    {
+      FILE *fpTiming = NULL;
+
+      // compute averages:
+      timing.tauFstat         /= templateCounter;
+      timing.tauTemplate      /= templateCounter;
+      timing.tauTransFstatMap /= templateCounter;
+      timing.tauTransMarg     /= templateCounter;
+
+      if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
+        XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
+        return COMPUTEFSTATISTIC_ESYS;
+      }
+      /* write header comment line */
+      if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
+        return COMPUTEFSTATISTIC_EXLAL;
+      }
+
+      if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
+        return COMPUTEFSTATISTIC_EXLAL;
+      }
+
+      fclose ( fpTiming );
+    } /* if timing output requested */
 
   /* ----- if using toplist: sort and write it out to file now ----- */
   if ( fpFstat && GV.FstatToplist )
