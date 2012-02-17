@@ -1905,11 +1905,11 @@ set.\n", propfile, tempPar);
     high = LAL_TWOPI;
     LALInferenceRemoveMinMaxPrior( runState->priorArgs, "phi0" );
     LALInferenceAddMinMaxPrior( runState->priorArgs, "phi0prime", &low, 
-                                &high, LALINFERENCE_PARAM_CIRCULAR );
+                                &high, LALINFERENCE_REAL8_t );
     
     LALInferenceRemoveMinMaxPrior( runState->priorArgs, "psi" );
     LALInferenceAddMinMaxPrior( runState->priorArgs, "psiprime", &low, 
-                                &high, LALINFERENCE_PARAM_CIRCULAR);
+                                &high, LALINFERENCE_REAL8_t );
   }
   
   /* check for any parameters with Gaussian priors and rescale to mean value */
@@ -2024,18 +2024,19 @@ void initialiseProposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
   UINT4 covfrac = 0, defrac = 0, kdfrac = 0;
   REAL8 temperature = 0.;
-  const CHAR defaultPropName[] = "none";
+  const CHAR *defaultPropName = NULL;
+  defaultPropName = XLALStringDuplicate( "none" );
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--covariance" );
-  if( ppt ) covfrac = *(UINT4 *)ppt->value;
+  if( ppt ) covfrac = atoi( ppt->value );
   else covfrac = 14; /* default value */
     
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
-  if( ppt ) defrac = *(UINT4 *)ppt->value;
+  if( ppt ) defrac = atoi( ppt->value );
   else defrac = 3; /* default value */
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDTree" );
-  if( ppt ) kdfrac = *(UINT4 *)ppt->value;
+  if( ppt ) kdfrac = atoi( ppt->value );
   else kdfrac = 3; /* default value */
  
   if( !covfrac && !defrac && !kdfrac ){
@@ -2065,7 +2066,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
     ppt = LALInferenceGetProcParamVal( runState->commandLine, 
                                        "--kDNCell" );
     if( ppt ){
-      kdncells = *(INT4 *)ppt->value;
+      kdncells = atoi( ppt->value );
 
       LALInferenceAddVariable( runState->proposalArgs, "KDNCell", 
                                &kdncells, LALINFERENCE_INT4_t,
@@ -2083,7 +2084,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
   LALInferenceRandomizeProposalCycle( runState );
   /* set temperature */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
-  if( ppt ) temperature = *(REAL8 *)ppt->value;
+  if( ppt ) temperature = atof( ppt->value );
   else temperature = 0.1;
  
   LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, 
