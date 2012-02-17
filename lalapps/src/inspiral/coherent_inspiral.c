@@ -732,9 +732,9 @@ int main( int argc, char *argv[] )
 	    if( vrbflg ) fprintf(stdout,"numDetector = %d, cdata gpsSeconds = %d, cdata gpsNanoSeconds = %d\n",l,cohInspCVec->cData[l]->epoch.gpsSeconds,cohInspCVec->cData[l]->epoch.gpsNanoSeconds);
           }
 
-	if( vrbflg ) fprintf(stdout,"slideNS[0] = %Ld, slideNS[1] = %Ld, slideNS[2] = %Ld\n", (long long int) slideNS[0], (long long int) slideNS[1], (long long int) slideNS[2]);
+	if( vrbflg ) fprintf(stdout,"slideNS[0] = %" LAL_INT8_FORMAT ", slideNS[1] = %" LAL_INT8_FORMAT ", slideNS[2] = %" LAL_INT8_FORMAT "\n", slideNS[0], slideNS[1], slideNS[2]);
 
-	if( vrbflg ) fprintf(stdout,"slideNSWrapped[0] = %Ld, slideNSWrapped[1] = %Ld, slideNSWrapped[2] = %Ld\n", (long long int) slideNSWrapped[0], (long long int) slideNSWrapped[1], (long long int) slideNSWrapped[2]);
+	if( vrbflg ) fprintf(stdout,"slideNSWrapped[0] = %" LAL_INT8_FORMAT ", slideNSWrapped[1] = %" LAL_INT8_FORMAT ", slideNSWrapped[2] = %" LAL_INT8_FORMAT "\n", slideNSWrapped[0], slideNSWrapped[1], slideNSWrapped[2]);
 
         /* store the start and end time of the first ifo cdata in the search summary */
         searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = cohInspCVec->cData[0]->epoch;
