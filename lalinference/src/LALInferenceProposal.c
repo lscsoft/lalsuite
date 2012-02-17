@@ -69,7 +69,7 @@ const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
 const char *KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
-static const REAL8 modeHoppingFrac = 0.5;
+static const REAL8 modeHoppingFrac = 1.0;
 
 static int
 same_detector_location(LALInferenceIFOData *d1, LALInferenceIFOData *d2) {
@@ -460,7 +460,7 @@ SetupPTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *p
 }
 
 static void
-SetupNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+SetupPostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
@@ -486,12 +486,12 @@ void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInference
   LALInferenceCyclicProposal(runState, proposedParams);
 }
 
-void LALInferenceNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceVariables *propArgs = runState->proposalArgs;
   if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
     /* In case there is a partial cycle set up already, delete it. */
     LALInferenceDeleteProposalCycle(runState);
-    SetupNothingButDEProposal(runState, proposedParams);
+    SetupPostPTProposal(runState, proposedParams);
   }
 
   LALInferenceCyclicProposal(runState, proposedParams);

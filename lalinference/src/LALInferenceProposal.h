@@ -147,7 +147,7 @@ void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenc
 void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Proposal for after annealing is over. */
-void LALInferenceNothingButDEProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Non-adaptive, sigle-variable update proposal with reasonable
     widths in each dimension. */

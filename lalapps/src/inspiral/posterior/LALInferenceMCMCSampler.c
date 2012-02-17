@@ -494,7 +494,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (annealingOn) {
       /* Annealing */
       if (i == startAnnealing) {
-        runState->proposal = &LALInferenceNothingButDEProposal;
+        runState->proposal = &LALInferencePostPTProposal;
         BcastDifferentialEvolutionPoints(runState, 0);
         if (!adaptationOn) {
           adaptationOn = 1;
