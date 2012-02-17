@@ -722,7 +722,7 @@ INT4 main(INT4 argc, CHAR *argv[])
   ifoOne = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
   ifoTwo = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
   strncpy(ifoOne, "G1", LIGOMETA_IFO_MAX * sizeof(CHAR));
-  strncpy(ifoTwo, "G1", LIGOMETA_IFO_MAX * sizeof(ifoTwo));
+  strncpy(ifoTwo, "G1", LIGOMETA_IFO_MAX * sizeof(CHAR));
 
   /* set fake channels */
   channelOne = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
