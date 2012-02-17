@@ -1460,6 +1460,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status);
     LogPrintfVerbatim (LOG_DEBUG, "template grid ready.\n");
     XLALNumDopplerTemplates ( cfg->scanState );
+    XLALFree ( detector );
   }
 
 
