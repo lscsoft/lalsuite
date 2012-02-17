@@ -842,10 +842,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   /* allocate (temporary) waveform vector: */
   LALCreateVector(&status, &LALSignal, n);
   
-  for (i=0; i<n; ++i) LALSignal->data[i] = 0.0;
-
-
   /*--  ACTUAL WAVEFORM COMPUTATION:  --*/
+  /* Catch any previous errors */
   if (status.statusCode != 0) {
     fprintf(stderr, " ERROR in templateLAL(): encountered non-zero status code.\n");
     fprintf(stderr, " Template parameters:\n");
@@ -854,6 +852,17 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
     REPORTSTATUS(&status);
     exit(1);
   }
+
+  /* Check for the Integration overflow error and work around it */
+  if(XLALGetBaseErrno() == XLAL_EMAXITER )
+  {
+    XLALPrintError("Template generation failed!");
+    if(LALSignal)     LALDestroyVector(&status, &LALSignal);                                                                                                                  
+    XLAL_ERROR_VOID(XLAL_FAILURE);
+  }
+
+  memset(LALSignal->data,0,LALSignal->length*sizeof(LALSignal->data[0]));
+
 	// lal_errhandler = LAL_ERR_RTRN;
     // REPORTSTATUS(&status); 
   LALInspiralWave(&status, LALSignal, &params);

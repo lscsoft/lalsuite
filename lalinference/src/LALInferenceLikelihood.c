@@ -212,6 +212,9 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
+      if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
+          return(-DBL_MAX);
+
       if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
 	if (!timeDomainWarning) {
 	  timeDomainWarning = 1;
