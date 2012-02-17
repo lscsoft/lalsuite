@@ -29,6 +29,7 @@
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/Units.h>
@@ -63,7 +64,8 @@ int main ( void )
     {  1.292773e-21,  -1.402466e-21 }
   };
   /* reference result for 3-bin block running-median computed in octave:
-octave> sft = [ -1.249241e-21 +  1.194085e-21i, \
+octave> sft = [ \
+        -1.249241e-21 +  1.194085e-21i, \
          2.207420e-21 +  2.472366e-22i, \
          1.497939e-21 +  6.593609e-22i, \
          3.544089e-20 -  9.365807e-21i, \
@@ -78,7 +80,7 @@ printf ("rngmedREF3[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
   */
   REAL8 rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
 
-  int numBins = sizeof ( vals ) / sizeof(vals[0] );
+  UINT4 numBins = sizeof ( vals ) / sizeof(vals[0] );
 
   if ( (mySFT = XLALCreateSFT ( numBins )) == NULL ) {
     XLALPrintError ("%s: Failed to create test-SFT using XLALCreateSFT(), xlalErrno = %d\n", fn, xlalErrno );
@@ -121,7 +123,7 @@ printf ("rngmedREF3[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
   }
 
   BOOLEAN pass = 1;
-  CHAR *passStr = NULL;
+  const CHAR *passStr;
   printf ("%4s %22s %22s %8s    <%g\n", "Bin", "rngmed(LAL)", "rngmed(Octave)", "relError", tol);
   for (iBin=0; iBin < numBins; iBin ++ )
     {
