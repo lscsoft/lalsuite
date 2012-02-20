@@ -190,8 +190,14 @@ class InspNestNode(pipeline.CondorDAGNode):
         # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
         # Used when we are running the coherence test.
         # Otherwise the noise evidence will differ.
-        starttime=max([int(data_tuples[ifo][0][0]) for ifo in allifos])
-        endtime=min([int(data_tuples[ifo][0][1]) for ifo in allifos])
+	offsets={}
+	for k in allifos:
+        	if shift_time_dict is not None:
+			offsets[k]=shift_time_dict[k]
+		else:
+			offsets[k]=0.0
+	starttime=max([int(data_tuples[ifo][0][0])+offsets[ifo] for ifo in allifos])
+        endtime=min([int(data_tuples[ifo][0][1])+offsets[ifo] for ifo in allifos])
         self.__GPSstart=starttime
         self.__GPSend=endtime
         length=endtime-starttime
@@ -204,24 +210,22 @@ class InspNestNode(pipeline.CondorDAGNode):
         if shift_time_dict:
         	# Make sure that all trig times are in our time interval.
         	# shift_times is a list of all time shifts.
-        	shift_times = shift_time_dict.values()
+        	# shift_times = shift_time_dict.values()
         	# mid_shift_time is the middle of shift times.
-        	max_trig_time=max(shift_times)+trig_time
-        	min_trig_time=min(shift_times)+trig_time
-        	length=min(length,maxLength)
-        	self.__GPSstart=max(self.__GPSstart,(min_trig_time+max_trig_time-length)/2) 
-        	self.add_var_opt('GPSstart',str(self.__GPSstart))
+        	#max_trig_time=max(shift_times)+trig_time
+        	#min_trig_time=min(shift_times)+trig_time
+        	#length=min(length,maxLength)
+        	#self.__GPSstart=max(self.__GPSstart,(min_trig_time+max_trig_time-length)/2) 
+        	#self.add_var_opt('GPSstart',str(self.__GPSstart))
         	for ifo in shift_time_dict:
         		self.add_var_arg('--'+ifo+'GPSshift '+str(shift_time_dict[ifo]))
-        	
-        else:
-        	if(length > maxLength):
-            		while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
-                	    self.__GPSstart+=maxLength/2.0
-        	self.add_var_opt('GPSstart',str(self.__GPSstart))
-        	length=self.__GPSend-self.__GPSstart
-        	if(length>maxLength):
-            		length=maxLength
+        if(length > maxLength):
+        	while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
+                	self.__GPSstart+=maxLength/2.0
+        self.add_var_opt('GPSstart',str(self.__GPSstart))
+        length=self.__GPSend-self.__GPSstart
+        #if(length>maxLength):
+        #	length=maxLength
 
         self.add_var_opt('length',str(int(length)))
         self.add_var_opt('Nsegs',str(int(length/float(self.job().get_cp().get('analysis','psd-chunk-length')))))
