@@ -1769,10 +1769,13 @@ int MAIN( int argc, char *argv[]) {
 
   UINT4 Nrefine = nf1dots_fg;
 
-  LogPrintf( LOG_NORMAL, "Finished analysis.\n");
+  LogPrintf( LOG_NORMAL, "Finished main analysis.\n");
 
   /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
   if ( uvar_recalcToplistStats ) {
+
+    LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist... ");
+
     /* timing */
     if ( uvar_outputTiming )
       timeStamp1 = XLALGetTimeOfDay();
@@ -1793,6 +1796,9 @@ int MAIN( int argc, char *argv[]) {
       timeStamp2 = XLALGetTimeOfDay();
       vetoTime = timeStamp2 - timeStamp1;
     }
+
+    LogPrintfVerbatim( LOG_NORMAL, "done.\n");
+
   }
 
   if ( uvar_outputTiming )
