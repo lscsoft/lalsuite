@@ -782,7 +782,7 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
 
       if ( ifo[0] == 'V' )
         {
-          if (freq < 50)
+          if (freq < 35)
             continue;
 
           LALVIRGOPsd( NULL, &psdValue, freq );
