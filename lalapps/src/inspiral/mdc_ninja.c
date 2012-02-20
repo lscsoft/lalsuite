@@ -89,10 +89,11 @@ static void add_colored_noise(LALStatus *status, REAL4TimeSeries *chan, INT4 ifo
 
 /* getopt flags */
 extern int vrbflg;
-INT4 ifosFlag  = 0;
-INT4 frameFlag = 0;
-INT4 mdcFlag   = 0;
-INT4 addNoise  = 0;
+INT4 ifosFlag   = 0;
+INT4 frameFlag  = 0;
+INT4 mdcFlag    = 0;
+INT4 addNoise   = 0;
+INT4 doingREAL8 = 0;
 
 /* main program entry */
 INT4 main( INT4 argc, CHAR *argv[] )
@@ -137,7 +138,8 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   /* injection waveforms time series */
   INT4 sampleRate = -1;
-  REAL4TimeSeries *injData[LAL_NUM_IFO];
+  REAL4TimeSeries *injDataREAL4[LAL_NUM_IFO];
+  REAL8TimeSeries *injDataREAL8[LAL_NUM_IFO];
 
   /* random seed for producing gaussian noise if required */
   RandomParams  *randParams = NULL;
@@ -160,6 +162,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"write-frame",             no_argument,       &frameFlag,        1 },
     {"write-mdc-log",           no_argument,       &mdcFlag,          1 },
     {"simulate-noise",          no_argument,       &addNoise,         1 },
+    {"double-precision",        no_argument,       &doingREAL8,       1 },
     /* these options don't set a flag */
     {"debug-level",             required_argument, 0,                'D'},
     {"injection-type",          required_argument, 0,                'T'},
@@ -602,21 +605,43 @@ INT4 main( INT4 argc, CHAR *argv[] )
       num_ifos = 1;
 
     /* setup the injection time series to be zeros of the correct length */
-    for ( i = 0; i < num_ifos; i++ )
+    if (doingREAL8)
     {
-      injData[i] = XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
-          &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
-      memset( injData[i]->data->data, 0.0, injData[i]->data->length * sizeof(REAL4) );
+      for ( i = 0; i < num_ifos; i++ )
+      {
+        injDataREAL8[i] = XLALCreateREAL8TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
+            &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
+        memset( injDataREAL8[i]->data->data, 0.0, injDataREAL8[i]->data->length * sizeof(REAL8) );
 
-      if (addNoise)  {
+        if (addNoise)  {
+          fprintf( stderr, "ERROR: --simulate-noise is only available for single-precision" );
+          exit( 1 );
+        }
+      }
+    }
+    else
+    {
+      for ( i = 0; i < num_ifos; i++ )
+      {
+        injDataREAL4[i] = XLALCreateREAL4TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
+            &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
+        memset( injDataREAL4[i]->data->data, 0.0, injDataREAL4[i]->data->length * sizeof(REAL4) );
 
-        LAL_CALL( add_colored_noise( &status, injData[i], i, randParams, dynRange, strainLowPassFreq), &status);
+        if (addNoise) {
+          LAL_CALL( add_colored_noise( &status, injDataREAL4[i], i, randParams, dynRange, strainLowPassFreq), &status);
+        }
       }
     }
 
     /* setup a unity response frequency series */
     if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)
     {
+      if (doingREAL8)
+      {
+        fprintf( stderr, "ERROR: approximant injections are only available for single-precision" );
+        exit( 1 );
+      }
+
       if (vrbflg)
         fprintf(stdout, "generating unity response...\n");
 
@@ -650,58 +675,67 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
       /* set the channel name */
       snprintf(channel, LALNameLength, "%s:STRAIN", ifo);
-      strncpy(injData[i]->name, channel, LALNameLength);
+      if (doingREAL8)
+        strncpy(injDataREAL8[i]->name, channel, LALNameLength);
+      else
+        strncpy(injDataREAL4[i]->name, channel, LALNameLength);
 
       if (strncmp(injectionType, "approximant", strlen(injectionType) + 1) == 0)
       {
+        if (doingREAL8)
+        {
+          fprintf( stderr, "ERROR: approximant injections are only available for single-precision" );
+          exit( 1 );
+        }
+        
         /* inject the specified waveforms */
-        LAL_CALL( LALFindChirpInjectSignals( &status, injData[i], injections, response), &status);
+        LAL_CALL( LALFindChirpInjectSignals( &status, injDataREAL4[i], injections, response), &status);
 
         /* reset the channel name to IFO:STRAIN as LALFindChirpInjectSignals()
          * messes with it */
-        strncpy(injData[i]->name, channel, LALNameLength);
+        strncpy(injDataREAL4[i]->name, channel, LALNameLength);
       }
       else
       {
         /* inject the numerical waveforms */
-        LAL_CALL( InjectNumRelWaveforms ( &status, injData[i], injections, ifo,
-              dynRange, freqLowCutoff, snrLow, snrHigh,
-              fnameOutXML), &status);
+        if (doingREAL8)
+        {
+          LAL_CALL( InjectNumRelWaveformsREAL8 ( &status, injDataREAL8[i], injections, ifo,
+                freqLowCutoff, snrLow, snrHigh,
+                fnameOutXML), &status);
+        }
+        else
+        {
+          LAL_CALL( InjectNumRelWaveforms ( &status, injDataREAL4[i], injections, ifo,
+                dynRange, freqLowCutoff, snrLow, snrHigh,
+                fnameOutXML), &status);
+        }
       }
 
       /* set strain as unit */
-      injData[i]->sampleUnits = lalStrainUnit;
+      if (doingREAL8)
+        injDataREAL8[i]->sampleUnits = lalStrainUnit;
+      else
+        injDataREAL4[i]->sampleUnits = lalStrainUnit;
 
     } /* loop over ifos */
 
     if (vrbflg)
       fprintf(stdout, "\n");
 
-    int writing_real_8 = 0;
-
     /* output frame */
     if ( ifosFlag )
     {
-      if ( writing_real_8 )
-      {
-        /* Stub call to surpress compiler warning until we're ready with the real
-           REAL8 call
-         */
-         output_multi_channel_frame_real8( num_ifos, gpsStartSec, gpsEndSec, NULL, frameType, outDir );
-      }
+      if ( doingREAL8 )
+         output_multi_channel_frame_real8( num_ifos, gpsStartSec, gpsEndSec, injDataREAL8, frameType, outDir );
       else
-         output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injData, frameType, outDir );
+         output_multi_channel_frame( num_ifos, gpsStartSec, gpsEndSec, injDataREAL4, frameType, outDir );
     }
     else {
-      if ( writing_real_8 )
-      { 
-        /* Stub call to surpress compiler warning until we're ready with the real
-           REAL8 call
-        */
-        output_frame_real8( ifo, gpsStartSec, gpsEndSec, NULL, frameType, outDir );
-      }
+      if ( doingREAL8 )
+        output_frame_real8( ifo, gpsStartSec, gpsEndSec, injDataREAL8[0], frameType, outDir );
       else
-        output_frame( ifo, gpsStartSec, gpsEndSec, injData[0], frameType, outDir );
+        output_frame( ifo, gpsStartSec, gpsEndSec, injDataREAL4[0], frameType, outDir );
     }
   }
 
@@ -720,7 +754,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     free( ifo );
 
   for ( i = 0; i < num_ifos; i++ )
-    XLALDestroyREAL4TimeSeries(injData[i]);
+    if (doingREAL8)
+      XLALDestroyREAL8TimeSeries(injDataREAL8[i]);
+    else
+      XLALDestroyREAL4TimeSeries(injDataREAL4[i]);
 
   if (response != NULL)
     XLALDestroyCOMPLEX8FrequencySeries(response);
@@ -773,6 +810,7 @@ static void print_usage( CHAR *program )
       "  --snr-high            snr_hi      upper cutoff on snr\n"\
       "  --out-xml-file        output xml  output file with list of injections performed\n"\
       "  --fr-out-dir          dir         directory to output frames to\n"\
+      "  --double-precision                read REAL8 NR files, produce REAL8 injections\n"\
       "\n", program );
 }
 
