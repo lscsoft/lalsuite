@@ -145,17 +145,18 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeMCMC(LALInferenceRunState *runState)
 {
   char help[]="\
-               (--Niter N)                     Number of iterations(2*10^6)\n\
-               (--Nskip n)                     Number of iterations between disk save(100)\n\
+               (--Niter N)                      Number of iterations(2*10^6)\n\
+               (--Nskip n)                      Number of iterations between disk save(100)\n\
                (--trigSNR SNR)                 Network SNR from trigger, used to calculate tempMax\n\
                (--tempMin T)                   Lowest temperature for parallel tempering(1.0)\n\
-               (--tempMax T)                   Highest temperature for parallel tempering(50.0)\n\
-               (--randomseed seed)             Random seed of sampling distribution(random)\n\
-               (--tdlike)                      Compute likelihood in the time domain\n\
-               (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n\
-               (--LALSimulation)               Interface with the LALSimulation package for template generation\n\
-               (--correlatedGaussianLikelihood)Use analytic, correlated Gaussian for Likelihood.\n\
-               (--studentTLikelihood)          Use the Student-T Likelihood that marginalizes over noise.\n";
+               (--tempMax T)                    Highest temperature for parallel tempering(40.0)\n\
+               (--randomseed seed)              Random seed of sampling distribution(random)\n\
+               (--tdlike)                       Compute likelihood in the time domain\n\
+               (--rapidSkyLoc)                  Use rapid sky localization jump proposals\n\
+               (--LALSimulation)                Interface with the LALSimulation package for template generation\n\
+               (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
+               (--bimodalGaussianLikelihood)    Use analytic, correlated Gaussian for Likelihood.\n\
+               (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -228,6 +229,8 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->likelihood=&LALInferenceZeroLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
     runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
+    runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
     fprintf(stderr, "Using Student's T Likelihood.\n");
     runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
@@ -237,7 +240,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
+  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
+              LALInferenceGetProcParamVal(commandLine, "--bimodalCorrelatedGaussianLikelihood")) {
     runState->prior=&LALInferenceNullPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
