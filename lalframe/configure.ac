@@ -52,6 +52,9 @@ LALSUITE_ENABLE_DEBUG
 # enable check for inotify
 LALFRAME_ENABLE_INOTIFY
 
+# enable strict gcc flags
+LALSUITE_ENABLE_GCC_FLAGS
+
 # put version/configure info in config header
 lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
 lalframe_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -73,9 +76,6 @@ AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALFrame Configure Arguments])
 AC_DEFINE_UNQUOTED([LALFRAME_CONFIGURE_DATE],["$lalframe_configure_date"],
                    [LALFrame Configure Date])
-
-# enable strict gcc flags
-LALSUITE_ENABLE_GCC_FLAGS
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

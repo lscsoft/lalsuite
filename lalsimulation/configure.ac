@@ -49,6 +49,9 @@ LALSUITE_ENABLE_NIGHTLY
 # debug
 LALSUITE_ENABLE_DEBUG
 
+# enable strict gcc flags
+LALSUITE_ENABLE_GCC_FLAGS
+
 # put version/configure info in config header
 lalsimulation_version_major=`echo "$VERSION" | cut -d. -f1`
 lalsimulation_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -70,9 +73,6 @@ AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALSimulation Configure Arguments])
 AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_DATE],["$lalsimulation_configure_date"],
                    [LALSimulation Configure Date])
-
-# enable strict gcc flags
-LALSUITE_ENABLE_GCC_FLAGS
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK

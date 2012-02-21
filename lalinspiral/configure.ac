@@ -46,6 +46,15 @@ LALSUITE_ENABLE_NIGHTLY
 # debug
 LALSUITE_ENABLE_DEBUG
 
+# enable CUDA support
+LALSUITE_WITH_CUDA
+
+# enable strict gcc flags
+LALSUITE_ENABLE_GCC_FLAGS
+
+# optional lal libraries
+LALSUITE_ENABLE_LALFRAME
+
 # put version/configure info in config header
 lalinspiral_version_major=`echo "$VERSION" | cut -d. -f1`
 lalinspiral_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -67,15 +76,6 @@ AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_ARGS],["$ac_configure_args"],
                    [LALInspiral Configure Arguments])
 AC_DEFINE_UNQUOTED([LALINSPIRAL_CONFIGURE_DATE],["$lalinspiral_configure_date"],
                    [LALInspiral Configure Date])
-
-# enable CUDA support
-LALSUITE_WITH_CUDA
-
-# enable strict gcc flags
-LALSUITE_ENABLE_GCC_FLAGS
-
-# optional lal libraries
-LALSUITE_ENABLE_LALFRAME
 
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
