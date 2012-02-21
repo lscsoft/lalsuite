@@ -192,8 +192,8 @@ class InspNestNode(pipeline.CondorDAGNode):
         # Otherwise the noise evidence will differ.
 	offsets={}
 	for k in allifos:
-        	if shift_time_dict is not None:
-			offsets[k]=shift_time_dict[k]
+        	if shift_time_dict is not None and k[0] in allifos:
+			offsets[k]=shift_time_dict[k[0]]
 		else:
 			offsets[k]=0.0
 	starttime=max([int(data_tuples[ifo][0][0])+offsets[ifo] for ifo in allifos])
