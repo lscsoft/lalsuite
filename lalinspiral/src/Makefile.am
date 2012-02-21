@@ -212,12 +212,24 @@ liblalinspiral_la_SOURCES = \
 	TrigScanEThincaCommon.c
 
 if CUDA
-liblalinspiral_la_SOURCES += Chisq_GPU.cu
+INSPCXXSRC =
+INSPCXXGENSRC = Chisq_GPU.cpp
+INSPLIBCXX = liblalinspiralcxx.la
+else
+INSPCXXSRC =
+INSPCXXGENSRC =
+INSPLIBCXX =
 endif
+
+noinst_LTLIBRARIES = $(INSPLIBCXX)
+liblalinspiralcxx_la_SOURCES = $(INSPCXXSRC)
+nodist_liblalinspiralcxx_la_SOURCES = $(INSPCXXGENSRC)
+liblalinspiral_la_LIBADD = $(INSPLIBCXX)
 
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
+	Chisq_GPU.cpp \
 	lalinspiral-user-env.shell \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
@@ -246,6 +258,7 @@ lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(s
 	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
+	Chisq_GPU.cu \
 	LALInspiralConfig.h.in \
 	LALInspiralVCSInfo.h.in \
 	generate_user_env.awk \
