@@ -91,8 +91,7 @@ packages/factories/test/ArraySequenceFactoriesTest
 packages/factories/test/VectorFactoriesTest
 packages/factories/test/VectorSequenceFactoriesTest
 packages/factories/test/StringVectorTest
-packages/fft/src/CudaFFT.c
-packages/fft/src/CudaFFT.linkinfo
+packages/fft/src/CudaFFT.cpp
 packages/fft/test/*.dat
 packages/fft/test/AverageSpectrumTest
 packages/fft/test/AvgSpecTest
