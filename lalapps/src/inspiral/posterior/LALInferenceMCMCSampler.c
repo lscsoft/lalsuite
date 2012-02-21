@@ -99,7 +99,6 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, int sourceTemp)
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 nPoints = runState->differentialPointsLength;
-  printf("%i\t%i\t%i\n",MPIrank,nPoints,nPar);
 
   /* Prepare 2D array for DE points */
   packedDEpoints = (double**) XLALMalloc(nPoints * sizeof(double*));
@@ -125,14 +124,6 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, int sourceTemp)
 
   /* Send it out */
   MPI_Bcast(packedDEpoints[0], nPoints*nPar, MPI_DOUBLE, sourceTemp, MPI_COMM_WORLD);
-  printf("%i:\n",MPIrank);
-  for (i=0; i < nPoints; i++) {
-    for(p=0; p < nPar; p++) {
-      printf("%f\t",packedDEpoints[i][p]);
-    }
-    printf("\n");
-  }
-
 
   /* Unpack it */
   if (MPIrank != sourceTemp) {

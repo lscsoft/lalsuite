@@ -1433,7 +1433,7 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     mean[12]=M_PI/2.0;
     mean[13]=M_PI;
     mean[14]=M_PI;
-  } else {
+  } else if (mode==1) {
     mean[0] = 16.0;
     mean[1] = 7.0;
     mean[2] = 3.0*M_PI/4.0;
@@ -1449,7 +1449,27 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     mean[12]=3.0*M_PI/4.0;
     mean[13]=3.0*M_PI/2.0;
     mean[14]=3.0*M_PI/2.0;
+  } else if (mode==2) {
+    mean[0] = 16.0;
+    mean[1] = 7.0;
+    mean[2] = 1.0*M_PI/4.0;
+    mean[3] = 1.0*M_PI/2.0;
+    mean[4] = 1.0*M_PI/4.0;
+    mean[5] = 1.0*M_PI/2.0;
+    mean[6] = -M_PI/4.0;
+    mean[7] = 75.0;
+    mean[8] = 0.0;
+    mean[9] =0.8;
+    mean[10]=0.8;
+    mean[11]=1.0*M_PI/4.0;
+    mean[12]=1.0*M_PI/4.0;
+    mean[13]=1.0*M_PI/2.0;
+    mean[14]=1.0*M_PI/2.0;
+  } else {
+    printf("Error!  Unrecognized mode in analytic likelihood!\n");
+    exit(1);
   }
+
 
   if (LALInferenceCheckVariable(currentParams, "chirpmass")) {
     Mc = *(REAL8 *)LALInferenceGetVariable(currentParams, "chirpmass");
@@ -1611,7 +1631,7 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     gsl_linalg_LU_decomp(LUCM, LUCMPerm, &signum);
   }
 
-  for(mode = 0; mode < 2; mode++) {
+  for(mode = 1; mode < 3; mode++) {
     xView = gsl_vector_view_array(x, DIM);
 
     extractDimensionlessVariableVector(currentParams, x, mode);
@@ -1624,7 +1644,7 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     for (i = 0; i < DIM; i++) {
       sum += xOrig[i]*x[i];
     }
-    exps[mode] = -sum/2.0;
+    exps[mode-1] = -sum/2.0;
   }
 
   /* Assumes only two modes used from here on out */
