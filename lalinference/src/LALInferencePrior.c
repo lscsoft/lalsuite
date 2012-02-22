@@ -705,9 +705,14 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	outerData oData;
 	gsl_function f;
 	
-    if(!massRatioName){
+    if(!massRatioName)
         XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
-    }
+    else if(!strcmp(massRatioName,"asym_massratio"))
+        oData.innerIntegrand.function = &qInnerIntegrand;
+    else if(!strcmp(massRatioName,"massratio"))
+        oData.innerIntegrand.function = &etaInnerIntegrand;
+    else
+        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid mass ratio name specified");
     
     // Disable GSL error reporting in favour of XLAL (the integration routines are liable to fail).
     gsl_error_handler_t *oldHandler = gsl_set_error_handler_off();
@@ -725,15 +730,6 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	oData.epsabs = epsabs;
 	oData.epsrel = epsrel;
 	oData.MMin = MMin;
-    
-    if(!strcmp(massRatioName,"asym_massratio"))
-        oData.innerIntegrand.function = &qInnerIntegrand;
-    else if(!strcmp(massRatioName,"massratio"))
-        oData.innerIntegrand.function = &etaInnerIntegrand;
-    else{
-        XLAL_ERROR_REAL8(XLAL_ENAME,"Invalid mass ratio name specified");
-    }
-    
 
 	f.function = &outerIntegrand;
 	f.params = &oData;
@@ -751,7 +747,6 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	
 	return result;
 }
-
 
 /* Function to add the min and max values for the prior onto the priorArgs */
 void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type){
