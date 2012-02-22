@@ -242,7 +242,7 @@ through the loop.*/
           /* heterodyne */
           data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
           data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
-					fprintf(stderr,"dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
+					if(i<1)fprintf(stderr,"dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
         }
       }
     }
