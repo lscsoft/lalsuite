@@ -879,7 +879,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   /* reset filestr if using real data (i.e. not fake) */
   if ( !ppt2 ) filestr = XLALStringDuplicate( inputfile );
  
-  /* read in data, needs to read in two sets of data for each ifo! */
+  /* read in data, needs to read in two sets of data for each ifo! for pinsf model */
   for( i = 0, prev=NULL ; i < ml*numDets ; i++, prev=ifodata ){
     CHAR *datafile = NULL;
     REAL8 times = 0;
@@ -1754,6 +1754,7 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = 0;
+				high = LAL_PI;/* make sure range spans exactly pi*/
       }
     }
     
@@ -1763,6 +1764,7 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = 0;
+				high = LAL_PI; /* make sure range spans exactly pi*/
       }
     }
     
@@ -1830,7 +1832,6 @@ set.\n", propfile, tempPar);
         break;
       }
     }
- 
   }
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
@@ -2335,7 +2336,10 @@ parameter file %s is wrong.\n", injectfile);
     
     /* If modeltype uses more than one data stream need to advance data on to
        next, so this loop only runs once if there is only 1 det*/
-    for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
+    for ( k = 1; k < (INT4)freqFactors->length; k++ ){
+			data = data->next;
+			fprintf(stderr,"data has been advanced for 2nd datastream\n");
+		}
   }
   
   /* reset data to head */
