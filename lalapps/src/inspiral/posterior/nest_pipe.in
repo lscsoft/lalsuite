@@ -353,8 +353,8 @@ if cp.has_option('lalinference','psdstart'):
 
 if cp.has_option('lalinference','psdlength'):
 	manual_length=cp.getfloat('lalinference','psdlength')
-	if dataend<datastart+manual_length:
-		dataend=datastart+manual_length
+	if dataend<datastart+manual_length+2.0*padding:
+		dataend=datastart+manual_length+2.0*padding
 
 cp.add_section('input')
 cp.set('input','gps-start-time',str(int(datastart)))
