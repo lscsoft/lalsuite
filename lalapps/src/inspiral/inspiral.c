@@ -1559,9 +1559,22 @@ int main( int argc, char *argv[] )
     {
       snprintf( fname, FILENAME_MAX, "%s.ckpt", fileName );
     }
+
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
+
+    /* flush stdout before we checkpoint as otherwise we may not see any */
+    /* output from the verbose messages in the job before the checkpoint */
+    fflush( stdout );
+    
+    /* now create a memory image and exit with SIGUSR2 (signal 12)       */
+    /* if doing this, we must run in the vanilla universe or condor will */
+    /* just resubmit the job as it thinks it is a regular checkpoint     */
     ckpt_and_exit();
+
+    /* say that we are back and flush stdout so we see the message */
+    if ( vrbflg ) fprintf( stdout, "resuming from checkpoint file\n" );
+    fflush( stdout );
 #else
     fprintf( stderr, "--data-checkpoint cannot be used unless "
         "lalapps is condor compiled\n" );
@@ -2085,7 +2098,6 @@ int main( int argc, char *argv[] )
               m, mu, candle.rhosq, chan.deltaT, numPoints,
               fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1],
               candleTmpltNorm, candle.distance, candle.sigmasq );
-          fflush( stdout );
         }
       }
       else if ( approximant == BCV )
@@ -2125,7 +2137,6 @@ int main( int argc, char *argv[] )
               m,mu,candle.rhosq,chan.deltaT,
               numPoints,fcSegVec->data->segNorm->data[kmax],kmax,
               candleTmpltNorm,candle.distance,candle.sigmasq);
-          fflush(stdout);
         }
       }
       else
@@ -2135,7 +2146,6 @@ int main( int argc, char *argv[] )
           fprintf( stdout, "standard candle not calculated;\n"
               "chan.deltaT = %e\nnumPoints = %d\n",
               chan.deltaT, numPoints );
-          fflush( stdout );
         }
       }
     }
@@ -2248,6 +2258,10 @@ int main( int argc, char *argv[] )
     }
     /* set the workspace vectors to null before they are allocated later */
     XLALInitBankVetoData(&bankVetoData);
+
+    /* flush stdout before we start the computationally intensive loop */
+    fflush( stdout );
+
 
     /*
      *
@@ -2591,7 +2605,7 @@ int main( int argc, char *argv[] )
         if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
         {
 
-          if (vrbflg) fprintf(stderr, "doing ccmat\n");
+          if (vrbflg) fprintf(stdout, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData,
 			     fcDataParams->ampVec,
 			     subBankCurrent->subBankSize,
