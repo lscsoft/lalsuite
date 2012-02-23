@@ -90,7 +90,7 @@ int computePriorMassNormTest(void)
 
 	strcpy(massRatioName, "foo");
 	XLAL_TRY(result = LALInferenceComputePriorMassNorm(MMin, MMax, MTotMax, McMin, McMax, massRatioMin, massRatioMax, massRatioName), errnum);
-	if (!XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_ENAME)
+	if (!XLAL_IS_REAL8_FAIL_NAN(result) || errnum != XLAL_EINVAL)
 		TEST_FAIL("Invalid mass ratio name specified but appropriate error not generated.");
 
 	strcpy(massRatioName, "asym_massratio");
