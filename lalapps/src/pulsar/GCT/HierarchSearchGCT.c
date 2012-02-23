@@ -161,6 +161,7 @@ typedef struct {
   REAL4Vector *LVloglX;            /**< For LineVeto statistic: vector of logs of line prior ratios lX per detector */
   REAL8 dFreqStack;                /**< frequency resolution of Fstat calculation */
   REAL8 df1dot;                    /**< coarse grid resolution in spindown */
+  REAL8 df2dot;                    /**< coarse grid resolution in 2nd spindown */
   UINT4 extraBinsFstat;            /**< Extra bins required for Fstat calculation */
 } UsefulStageVariables;
 
@@ -768,6 +769,14 @@ int MAIN( int argc, char *argv[]) {
     usefulParams.df1dot = -1;
   }
 
+  /* set Fstat spindown resolution (coarse grid) */
+  if ( LALUserVarWasSet(&uvar_df2dot) ) {
+    usefulParams.df2dot = uvar_df2dot;
+  }
+  else {
+    usefulParams.df2dot = -1;
+  }
+
   /* for 1st stage: read sfts, calculate detector states */
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
   LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams, uvar_useWholeSFTs), &status);
@@ -832,6 +841,7 @@ int MAIN( int argc, char *argv[]) {
 
   dFreqStack = usefulParams.dFreqStack;
   df1dot = usefulParams.df1dot;
+  df2dot = usefulParams.df2dot;
 
   /* number of coarse grid spindown values */
   nf1dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[1] / df1dot) + 1;
@@ -850,14 +860,6 @@ int MAIN( int argc, char *argv[]) {
     sigmasq = sigmasq / (nStacks * tStack * tStack);
     /* Refinement factor (approximate) */
     gammaRefine = sqrt(1.0 + 60 * sigmasq);   /* Eq. from PRL, page 3 */
-  }
-
-  /* set Fstat 2nd spindown resolution (coarse grid) */
-  if ( LALUserVarWasSet(&uvar_df2dot) ) {
-    df2dot = uvar_df2dot;
-  }
-  else {
-    df2dot = 1.0/(tStack*tStack*tStack);
   }
 
   /* number of coarse grid 2nd spindown values */
@@ -2087,8 +2089,13 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     in->df1dot = 1.0 / ( in->tStack * in->tStack );
   }
 
+  /* set Fstat 2nd spindown resolution (coarse grid) */
+  if ( in->df2dot < 0 ) {
+    in->df2dot = 1.0 / ( in->tStack * in->tStack * in->tStack );
+  }
+
   /* calculate number of bins for Fstat overhead due to residual spin-down */
-  in->extraBinsFstat = (UINT4)( (0.25 * in->tObs * in->df1dot)/in->dFreqStack + 1e-6) + 1;
+  in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
 
   /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
   in->spinRange_refTime.refTime = refTimeGPS;
