@@ -1738,7 +1738,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 		
 		if(*(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")<5 && *(LALInferenceApplyTaper*)LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER")>0){
 			
-			InspiralApplyTaper bookends = *(InspiralApplyTaper*) LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER");
+			LALSimInspiralApplyTaper bookends = *(LALSimInspiralApplyTaper*) LALInferenceGetVariable(IFOdata->modelParams, "INFERENCE_TAPER");
 			
 			REAL4Vector *tempVec = NULL;
 			tempVec = (REAL4Vector *)XLALCreateREAL4Vector(IFOdata->timeData->data->length);
@@ -1746,7 +1746,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 			for (i=0; i<IFOdata->timeData->data->length; i++){
 				tempVec->data[i]=(REAL4) IFOdata->timeModelhPlus->data->data[i];
 			}
-			XLALInspiralWaveTaper(tempVec,bookends);
+			XLALSimInspiralREAL4WaveTaper(tempVec,bookends);
 			for (i=0; i<IFOdata->timeData->data->length; i++){
 				IFOdata->timeModelhPlus->data->data[i]=(REAL8) tempVec->data[i];
 			}
@@ -1754,7 +1754,7 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 			for (i=0; i<IFOdata->timeData->data->length; i++){
 				tempVec->data[i]=(REAL4) IFOdata->timeModelhCross->data->data[i];
 			}
-			XLALInspiralWaveTaper(tempVec,bookends);
+			XLALSimInspiralREAL4WaveTaper(tempVec,bookends);
 			for (i=0; i<IFOdata->timeData->data->length; i++){
 				IFOdata->timeModelhCross->data->data[i]=(REAL8) tempVec->data[i];
 			}

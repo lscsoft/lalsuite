@@ -384,15 +384,15 @@ LALFindChirpInjectSignals (
 
           if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_START );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_START );
           }
           else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_END );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_END );
           }
           else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_STARTEND );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_STARTEND );
           }
           else if ( strcmp( "TAPER_NONE", thisEvent->taper ) )
           {

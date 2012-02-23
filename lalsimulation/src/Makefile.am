@@ -50,6 +50,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
+	LALSimInspiralSpinTaylorT4.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
 	LALSimInspiralTaylorF2ReducedSpinMetric.c \
@@ -59,8 +60,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
 	LALSimInspiralTaylorLength.c \
+	LALSimInspiralWaveformTaper.c \
 	LALSimulation.c \
-	LALSimInspiralSpinTaylorT4.c \
 	LALSimulationVCSInfo.c \
 	LALSimNoisePSD.c \
 	LALSimNoise.c \

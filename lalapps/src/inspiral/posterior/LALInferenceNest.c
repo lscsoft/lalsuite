@@ -545,7 +545,7 @@ Parameter arguments:\n\
     else mtot_max=2.*(mMax-mMin);
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
-    UINT4 tempint=1;
+    INT4 tempint=1;
 	if(LALInferenceGetProcParamVal(commandLine,"--crazyinjectionhlsign") || LALInferenceGetProcParamVal(commandLine,"--crazyInjectionHLSign"))
     {
         printf("Using signal sign flip in Hanford and Livingston");
@@ -564,8 +564,8 @@ Parameter arguments:\n\
         LALInferenceAddMinMaxPrior(priorArgs,   "chirpmass",    &mcMin, &mcMax,     LALINFERENCE_REAL8_t);
         LALInferenceAddVariable(currentParams,"chirpmass",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
         tmpVal=1.5;
-        REAL8 qMin=1.0;
-        REAL8 qMax=mMax/mMin;
+        REAL8 qMax=1.0;
+        REAL8 qMin=mMin/mMax;
         LALInferenceAddVariable(currentParams, "asym_massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
         LALInferenceAddMinMaxPrior(priorArgs,   "asym_massratio",    &qMin,    &qMax,    LALINFERENCE_REAL8_t);
 

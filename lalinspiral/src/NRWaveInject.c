@@ -642,7 +642,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   REAL4TimeSeries *htData = NULL;
   UINT4  k;
   REAL8 offset;
-  InspiralApplyTaper taper = INSPIRAL_TAPER_NONE;
+  LALSimInspiralApplyTaper taper = LAL_SIM_INSPIRAL_TAPER_NONE;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -675,15 +675,15 @@ void LALInjectStrainGW( LALStatus                 *status,
 
     if ( ! strcmp( "TAPER_START", thisInj->taper ) )
     {
-      taper = INSPIRAL_TAPER_START;
+      taper = LAL_SIM_INSPIRAL_TAPER_START;
     }
     else if (  ! strcmp( "TAPER_END", thisInj->taper ) )
     {
-      taper = INSPIRAL_TAPER_END;
+      taper = LAL_SIM_INSPIRAL_TAPER_END;
     }
     else if (  ! strcmp( "TAPER_STARTEND", thisInj->taper ) )
     {
-      taper = INSPIRAL_TAPER_STARTEND;
+      taper = LAL_SIM_INSPIRAL_TAPER_STARTEND;
     }
     else
     {
@@ -692,7 +692,7 @@ void LALInjectStrainGW( LALStatus                 *status,
       LALFree(htData);
       ABORT( status, NRWAVEINJECT_EVAL, NRWAVEINJECT_MSGEVAL );
     }
-    if ( XLALInspiralWaveTaper( htData->data, taper ) == XLAL_FAILURE )
+    if ( XLALSimInspiralREAL4WaveTaper( htData->data, taper ) == XLAL_FAILURE )
     {
       XLALClearErrno();
       XLALDestroyREAL4Vector ( htData->data);

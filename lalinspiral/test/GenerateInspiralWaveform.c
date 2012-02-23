@@ -319,12 +319,12 @@ int main (int argc , char **argv) {
       }
       if(otherIn.taper) /* Taper if requested */
       {
-        InspiralApplyTaper bookends;
+        LALSimInspiralApplyTaper bookends;
         bookends = 0;
-        if (otherIn.taper==1) bookends = INSPIRAL_TAPER_START;
-        if (otherIn.taper==2) bookends = INSPIRAL_TAPER_END;
-        if (otherIn.taper==3) bookends = INSPIRAL_TAPER_STARTEND;
-        XLALInspiralWaveTaper(signal1, bookends);
+        if (otherIn.taper==1) bookends = LAL_SIM_INSPIRAL_TAPER_START;
+        if (otherIn.taper==2) bookends = LAL_SIM_INSPIRAL_TAPER_END;
+        if (otherIn.taper==3) bookends = LAL_SIM_INSPIRAL_TAPER_STARTEND;
+        XLALSimInspiralREAL4WaveTaper(signal1, bookends);
       }
       break;
   }

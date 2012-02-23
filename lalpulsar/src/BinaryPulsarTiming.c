@@ -1699,7 +1699,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"I21") || !strcmp(val[i],"I21") ) {
+    else if( !strcmp(val[i],"i21") || !strcmp(val[i],"I21") ) {
       output->I21 = atof(val[i+1]);
       j++;
 
@@ -1708,7 +1708,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"I31") || !strcmp(val[i],"I31") ) {
+    else if( !strcmp(val[i],"i31") || !strcmp(val[i],"I31") ) {
       output->I31 = atof(val[i+1]);
       j++;
 
@@ -1717,7 +1717,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"r") || !strcmp(val[i],"r") ) {
+    else if( !strcmp(val[i],"r") || !strcmp(val[i],"R") ) {
       output->r = atof(val[i+1]);
       j++;
 
