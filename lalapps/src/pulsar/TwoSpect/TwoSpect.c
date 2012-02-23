@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
       fclose(INSFTTIMES);
    }
    
-   //Removing bad SFTs
+   //Removing bad SFTs using K-S test
    if (inputParams->markBadSFTs!=0) {
       fprintf(stderr, "Marking and removing bad SFTs... ");
       INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, inputParams);
@@ -329,6 +329,39 @@ int main(int argc, char *argv[])
       fprintf(stderr, "\n%s: tfRngMeans() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
    }
+   
+   //TODO: check this
+   //Remove SFTs where the background mean and median are different
+   /* if (inputParams->markBadSFTs!=0) {
+      REAL4Vector *rngMeansOverBand = XLALCreateREAL4Vector(ffdata->numfbins + 2*inputParams->maxbinshift);
+      if (rngMeansOverBand==NULL) {
+         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins + 2*inputParams->maxbinshift);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      INT4Vector *removeTheseSFTs = XLALCreateINT4Vector(ffdata->numffts);
+      if (removeTheseSFTs==NULL) {
+         fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ffdata->numffts);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      memset(removeTheseSFTs->data, 0, sizeof(INT4)*removeTheseSFTs->length);
+      for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) {
+         if (background->data[ii*(ffdata->numfbins + 2*inputParams->maxbinshift)]!=0.0) {
+            memcpy(rngMeansOverBand->data, &(background->data[ii*(ffdata->numfbins + 2*inputParams->maxbinshift)]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
+            //for (jj=0; jj<(INT4)rngMeansOverBand->length; jj++) fprintf(stderr, "%f\n", rngMeansOverBand->data[jj]);  //TODO: remove this
+            REAL4 meanvalue = calcMean(rngMeansOverBand);
+            REAL4 medianvalue = calcMedian(rngMeansOverBand);
+            if (fabs(medianvalue/meanvalue - 1.0) > 0.05) {
+               memset(&(tfdata->data[ii*(ffdata->numfbins + 2*inputParams->maxbinshift)]), 0, sizeof(REAL4)*(ffdata->numfbins + 2*inputParams->maxbinshift));
+               removeTheseSFTs->data[ii] = 1;
+            }
+         }
+      }
+      removeBadSFTs(tfdata, removeTheseSFTs);
+      
+      XLALDestroyREAL4Vector(rngMeansOverBand);
+      XLALDestroyINT4Vector(removeTheseSFTs);
+   } */
+   
    
    //Existing SFTs listed in this vector
    INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
@@ -1511,6 +1544,18 @@ n       10      20      30      40      50      60      80      n>80
 alpha=0.05
 n       10      20      30      40      50      60      80      n>80
         .409    .294    .242    .210    .188    .172    .150    1.358/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.1 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+        .369    .265    .218    .189    .170    .155    .135    1.224/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.5 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+        .249    .179    .147    .128    .115    .105    .091    0.828/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.9 (E.G derived using root finding)
+n       n>80
+        0.571/(sqrt(n)+0.12+0.11/sqrt(n))
 */
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
 {
@@ -1532,7 +1577,8 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
-   REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
+   //REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
+   REAL8 ksthreshold = 0.571/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a fairly tight restriction
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(tfdata->data[ii*numfbins]), sizeof(REAL4)*tempvect->length);
@@ -1597,13 +1643,14 @@ INT4VectorSequence * markBadMultiSFTs(REAL4VectorSequence *multiTFdata, inputPar
 void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
 {
    
-   INT4 ii, jj;
+   INT4 ii;//, jj;
    
    INT4 numfbins_tfdata = tfdata->length/badsfts->length;
    
    for (ii=0; ii<(INT4)badsfts->length; ii++) {
       if (badsfts->data[ii]==1) {
-         for (jj=0; jj<numfbins_tfdata; jj++) tfdata->data[ii*numfbins_tfdata + jj] = 0.0;
+         //for (jj=0; jj<numfbins_tfdata; jj++) tfdata->data[ii*numfbins_tfdata + jj] = 0.0;
+         memset(&(tfdata->data[ii*numfbins_tfdata]), 0, sizeof(REAL4)*numfbins_tfdata);
       }
    }
    
@@ -2173,7 +2220,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       if (backgrnd->data[ii*numfbins]!=0.0) {
          memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
+         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);  //comment out
          aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
          //aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
          if (XLAL_IS_REAL4_FAIL_NAN(aveNoiseInTime->data[ii])) {
