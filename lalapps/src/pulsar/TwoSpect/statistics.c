@@ -616,6 +616,7 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
    
    qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   //for (ii=0; ii<(INT4)tempvect->length; ii++) fprintf(stderr, "%f\n", tempvect->data[ii]);  //TODO: remove this!
    
    REAL4 vector_median = 0.0;
    if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
@@ -635,6 +636,52 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    XLALDestroyREAL4Vector(tempvect);
    
    return ksvalue;
+   
+}
+
+
+/* Critical values of Kuiper's test using root finding by E.G.
+alpha=0.05
+n                                                               n>80
+                                                                1.747/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.1
+n                                                               n>80
+                                                                1.620/(sqrt(n)+0.155+0.24/sqrt(n)) */
+REAL8 kuipers_test_exp(REAL4Vector *vector)
+{
+   
+   INT4 ii;
+   
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(vector->length);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, vector->length);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+   REAL4 vector_median = 0.0;
+   if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
+   else vector_median = tempvect->data[(INT4)(0.5*tempvect->length)];
+   
+   REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
+   
+   REAL8 loval = 0.0, hival = 0.0;
+   REAL8 oneoverlength = 1.0/tempvect->length;
+   for (ii=0; ii<(INT4)tempvect->length; ii++) {
+      REAL8 testval1 = (1.0+ii)*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      REAL8 testval2 = ii*oneoverlength - gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
+      if (hival<testval1) hival = testval1;
+      if (loval<testval2) loval = testval2;
+   }
+   REAL8 kuiperval = hival + loval;
+   
+   XLALDestroyREAL4Vector(tempvect);
+   
+   return kuiperval;
    
 }
 

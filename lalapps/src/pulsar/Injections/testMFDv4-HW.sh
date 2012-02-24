@@ -21,6 +21,14 @@ v4_strain="${testDIR}/v4-strain.dat"
 
 tol=1e-4	## error tolerance for v2-v4 strain comparison
 
+## ----- user-controlled level of debug-output detail
+if [ -n "$DEBUG" ]; then
+    debug=${DEBUG}
+else
+    debug=0	## default=quiet
+fi
+
+
 if [ -z "$LAL_DATA_PATH" ]; then
     if [ -n "$LALPULSAR_PREFIX" ]; then
 	LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
@@ -42,8 +50,6 @@ else
 ## cleanup: remove previous timeseries output
     rm -f $testDIR/* || true
 fi
-
-echo "LAL_DATA_PATH=$LAL_DATA_PATH"
 
 # determine ephemdir from LAL_DATA_PATH
 SAVEIFS="$IFS"
@@ -91,7 +97,7 @@ v4_cfg=In.data-v4
 v4_log=v4.log
 
 v2_CL="-i $v2_cfg -I $IFO -E $ephemdir -S $refTime -G $startTime -b"
-v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -E $ephemdir -y 00-04 -l $v4_log --generationMode=1 -b"
+v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -E $ephemdir -y 00-04 -l $v4_log --generationMode=1 -b -v${debug}"
 
 ## produce In.data-v2 file for makefakedata_v2
 echo "
@@ -156,7 +162,7 @@ fi
 echo
 echo "3) Comparison of resulting binary strains ..."
 echo
-cmdline="$comp_code -1 ${v2_strain} -2 ${v4_strain} --relErrorMax=$tol -d1"
+cmdline="$comp_code -1 ${v2_strain} -2 ${v4_strain} --relErrorMax=$tol -d${debug}"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. comparison failed using '$comp_code' ..."

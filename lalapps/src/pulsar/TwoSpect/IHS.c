@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2012 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -151,8 +151,12 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
       
    } /* for ii < ihss->length */
    
-   //ihsSums2_withFAR(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
-   //ihsSums2_withFAR_withnoise(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
+   /* FILE *IHSSEQUENCE = fopen("./outputtemp/ihssequence.dat","w");
+   for (ii=0; ii<(INT4)(ihsvectorsequence->length*ihsvectorsequence->vectorLength); ii++) {
+      fprintf(IHSSEQUENCE, "%.6f\n", ihsvectorsequence->data[ii]);
+   }
+   fclose(IHSSEQUENCE); */
+   
    sumIHSSequence(output, ihsfarinput, ihsvectorsequence, rows, FbinMean, input->numfprbins, params);
    XLALDestroyREAL4VectorSequence(ihsvectorsequence);
    

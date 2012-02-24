@@ -138,7 +138,7 @@ typedef struct
 {
   UINT4 NSFTs;			/**< total number of SFTs */
   REAL8 tauFstat;		/**< time to compute one Fstatistic over full data-duration (NSFT atoms) [in seconds]*/
-  REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (toplist etc) */
+  REAL8 tauTemplate;		/**< total loop time per template, includes candidate-handling (transient stats, toplist etc) */
 
   /* transient-specific timings */
   UINT4 tauMin;			/**< shortest transient timescale [s] */
@@ -466,20 +466,6 @@ int main(int argc,char *argv[])
     gsl_vector_int_set_zero(Fstat_histogram);
   }
 
-  /* if timing-output was requested, open that output file now */
-  FILE *fpTiming = NULL;
-  if ( uvar.outputTiming ) {
-    if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
-      XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
-      return COMPUTEFSTATISTIC_ESYS;
-    }
-    /* write header comment line */
-    if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
-      XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
-      return COMPUTEFSTATISTIC_EXLAL;
-    }
-  } /* if outputTiming */
-
   /* setup binary parameters */
   orbitalParams = NULL;
   if ( LALUserVarWasSet(&uvar.orbitasini) && (uvar.orbitasini > 0) )
@@ -520,6 +506,7 @@ int main(int argc,char *argv[])
 
   REAL8 tic0, tic, toc;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
+  timing.NSFTs = GV.NSFTs;
 
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
@@ -557,8 +544,8 @@ int main(int argc,char *argv[])
 
         } /* if GPUready==true */
       toc = GETTIME();
-      timing.tauFstat = toc - tic;	// pure Fstat-calculation time
-      timing.NSFTs = GV.NSFTs;
+      timing.tauFstat += (toc - tic);	// pure Fstat-calculation time
+
 
       /* Progress meter */
       templateCounter += 1.0;
@@ -755,7 +742,7 @@ int main(int argc,char *argv[])
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = GETTIME();
-          timing.tauTransFstatMap = toc - tic; // time to compute transient Fstat-map
+          timing.tauTransFstatMap += (toc - tic); // time to compute transient Fstat-map
 
           /* compute marginalized Bayes factor */
           tic = GETTIME();
@@ -766,7 +753,7 @@ int main(int argc,char *argv[])
             return COMPUTEFSTATISTIC_EXLAL;
           }
           toc = GETTIME();
-          timing.tauTransMarg = toc - tic;
+          timing.tauTransMarg += (toc - tic);
 
           /* ----- compute parameter posteriors for {t0, tau} */
           pdf1D_t *pdf_t0  = NULL;
@@ -825,20 +812,39 @@ int main(int argc,char *argv[])
 
       /* now measure total loop time per template */
       toc = GETTIME();
-      timing.tauTemplate = toc - tic0;
-
-      /* if requested: output timings into timing-file */
-      if ( fpTiming ) {
-        if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
-          XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
-          return COMPUTEFSTATISTIC_EXLAL;
-        }
-      } /* if timing output requested */
+      timing.tauTemplate += (toc - tic0);
 
     } /* while more Doppler positions to scan */
 
-  /* close timing-file, if it's open */
-  if ( fpTiming ) fclose ( fpTiming );
+
+  /* if requested: output timings into timing-file */
+  if ( uvar.outputTiming )
+    {
+      FILE *fpTiming = NULL;
+
+      // compute averages:
+      timing.tauFstat         /= templateCounter;
+      timing.tauTemplate      /= templateCounter;
+      timing.tauTransFstatMap /= templateCounter;
+      timing.tauTransMarg     /= templateCounter;
+
+      if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
+        XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
+        return COMPUTEFSTATISTIC_ESYS;
+      }
+      /* write header comment line */
+      if ( write_TimingInfo_to_fp ( fpTiming, NULL ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: write_TimingInfo_to_fp() failed to write header-comment into file '%s'\n", __func__, uvar.outputTiming );
+        return COMPUTEFSTATISTIC_EXLAL;
+      }
+
+      if ( write_TimingInfo_to_fp ( fpTiming, &timing ) != XLAL_SUCCESS ) {
+        XLALPrintError ("%s: write_TimingInfo_to_fp() failed.\n", __func__ );
+        return COMPUTEFSTATISTIC_EXLAL;
+      }
+
+      fclose ( fpTiming );
+    } /* if timing output requested */
 
   /* ----- if using toplist: sort and write it out to file now ----- */
   if ( fpFstat && GV.FstatToplist )
@@ -997,9 +1003,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->SignalOnly = FALSE;
   uvar->UseNoiseWeights = TRUE;
 
-  uvar->f1dot     = 0.0;
-  uvar->f1dotBand = 0.0;
-
   /* default step-sizes for GRID_FLAT */
   uvar->dAlpha 	= 0.001;
   uvar->dDelta 	= 0.001;
@@ -1071,7 +1074,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregREALUserStruct(status, 	Delta, 		'd', UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in radians");
   LALregSTRINGUserStruct(status,RA, 		 0 , UVAR_OPTIONAL, "Sky position alpha (equatorial coordinates) in format hh:mm:ss.sss");
   LALregSTRINGUserStruct(status,Dec, 		 0 , UVAR_OPTIONAL, "Sky position delta (equatorial coordinates) in format dd:mm:ss.sss");
-  LALregREALUserStruct(status, 	Freq, 		'f', UVAR_REQUIRED, "Starting search frequency in Hz");
+  LALregREALUserStruct(status, 	Freq, 		'f', UVAR_OPTIONAL, "Starting search frequency in Hz");
   LALregREALUserStruct(status, 	f1dot, 		's', UVAR_OPTIONAL, "First spindown parameter  dFreq/dt");
   LALregREALUserStruct(status, 	f2dot, 		 0 , UVAR_OPTIONAL, "Second spindown parameter d^2Freq/dt^2");
   LALregREALUserStruct(status, 	f3dot, 		 0 , UVAR_OPTIONAL, "Third spindown parameter  d^3Freq/dt^2");
@@ -1244,7 +1247,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   SFTConstraints constraints = empty_SFTConstraints;
   LIGOTimeGPS minStartTimeGPS = empty_LIGOTimeGPS;
   LIGOTimeGPS maxEndTimeGPS = empty_LIGOTimeGPS;
-  PulsarSpinRange spinRangeRef = empty_PulsarSpinRange;
 
   LIGOTimeGPS startTime, endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
@@ -1290,6 +1292,23 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   endTime   = catalog->data[numSFTfiles - 1].header.epoch;
   XLALGPSAdd(&endTime, cfg->Tsft);	/* add on Tsft to last SFT start-time */
 
+  { /* ----- load ephemeris-data ----- */
+    CHAR *ephemDir;
+    BOOLEAN isLISA = FALSE;
+
+    cfg->ephemeris = LALCalloc(1, sizeof(EphemerisData));
+    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
+      ephemDir = uvar->ephemDir;
+    else
+      ephemDir = NULL;
+
+    /* hack: if first SFT's detector is LISA, we load MLDC-ephemeris instead of 'earth' files */
+    if ( catalog->data[0].header.name[0] == 'Z' )
+      isLISA = TRUE;
+
+    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar->ephemYear, isLISA ), status);
+  }
+
   /* ----- get reference-times (from user if given, use startTime otherwise): ----- */
   LIGOTimeGPS refTime;
   if ( LALUserVarWasSet(&uvar->refTime) )
@@ -1306,10 +1325,23 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   else
     refTime = startTime;
 
+  /* define sky position variables from user input */
+  if (LALUserVarWasSet(&uvar->RA))
+    {
+      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+      cfg->Alpha = LALDegsToRads(uvar->RA, "alpha");
+    }
+  else cfg->Alpha = uvar->Alpha;
+  if (LALUserVarWasSet(&uvar->Dec))
+    {
+      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
+      cfg->Delta = LALDegsToRads(uvar->Dec, "delta");
+    }
+  else cfg->Delta = uvar->Delta;
+
+
+  REAL8 fMin, fMax, f1dotMin, f1dotMax, f2dotMin, f2dotMax, f3dotMin, f3dotMax;
   { /* ----- prepare spin-range at refTime (in *canonical format*, ie all Bands >= 0) ----- */
-
-    REAL8 fMin, fMax, f1dotMin, f1dotMax, f2dotMin, f2dotMax, f3dotMin, f3dotMax;
-
     fMin = MYMIN ( uvar->Freq, uvar->Freq + uvar->FreqBand );
     fMax = MYMAX ( uvar->Freq, uvar->Freq + uvar->FreqBand );
 
@@ -1336,9 +1368,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       f2dotMax = uvar->maxBraking * (f1dotMin * f1dotMin) / fMin;
 
     }
-
-    /* Used for all other --gridTypes */
-    else {
+    else {     /* Used for all other --gridTypes */
 
       f1dotMin = MYMIN ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
       f1dotMax = MYMAX ( uvar->f1dot, uvar->f1dot + uvar->f1dotBand );
@@ -1351,23 +1381,104 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     f3dotMin = MYMIN ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
     f3dotMax = MYMAX ( uvar->f3dot, uvar->f3dot + uvar->f3dotBand );
 
-    spinRangeRef.refTime  = refTime;
-    spinRangeRef.fkdot[0] = fMin;
-    spinRangeRef.fkdot[1] = f1dotMin;
-    spinRangeRef.fkdot[2] = f2dotMin;
-    spinRangeRef.fkdot[3] = f3dotMin;
-
-    spinRangeRef.fkdotBand[0] = fMax - fMin;
-    spinRangeRef.fkdotBand[1] = f1dotMax - f1dotMin;
-    spinRangeRef.fkdotBand[2] = f2dotMax - f2dotMin;
-    spinRangeRef.fkdotBand[3] = f3dotMax - f3dotMin;
   } /* spin-range at refTime */
+
+
+  { /* ----- set up Doppler region to scan ----- */
+    BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta)) || (LALUserVarWasSet(&uvar->RA) && LALUserVarWasSet(&uvar->Dec));
+
+    if (uvar->skyRegion)
+      {
+	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar->skyRegion)+1);
+	if ( cfg->searchRegion.skyRegionString == NULL ) {
+	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
+	}
+	strcpy (cfg->searchRegion.skyRegionString, uvar->skyRegion);
+      }
+    else if (haveAlphaDelta)    /* parse this into a sky-region */
+      {
+	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
+				cfg->Alpha, cfg->Delta,	uvar->AlphaBand, uvar->DeltaBand), status);
+      }
+
+    /* spin searchRegion defined by spin-range at reference-time */
+    cfg->searchRegion.refTime = refTime;
+
+    cfg->searchRegion.fkdot[0] = fMin;
+    cfg->searchRegion.fkdot[1] = f1dotMin;
+    cfg->searchRegion.fkdot[2] = f2dotMin;
+    cfg->searchRegion.fkdot[3] = f3dotMin;
+
+    cfg->searchRegion.fkdotBand[0] = fMax - fMin;
+    cfg->searchRegion.fkdotBand[1] = f1dotMax - f1dotMin;
+    cfg->searchRegion.fkdotBand[2] = f2dotMax - f2dotMin;
+    cfg->searchRegion.fkdotBand[3] = f3dotMax - f3dotMin;
+
+  } /* get DopplerRegion */
+
+  /* ----- set fixed grid step-sizes from user-input: only used for GRID_FLAT ----- */
+  cfg->stepSizes.Alpha = uvar->dAlpha;
+  cfg->stepSizes.Delta = uvar->dDelta;
+  cfg->stepSizes.fkdot[0] = uvar->dFreq;
+  cfg->stepSizes.fkdot[1] = uvar->df1dot;
+  cfg->stepSizes.fkdot[2] = uvar->df2dot;
+  cfg->stepSizes.fkdot[3] = uvar->df3dot;
+  cfg->stepSizes.orbit = NULL;
+
+
+  /* initialize full multi-dimensional Doppler-scanner */
+  {
+    DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
+
+    scanInit.searchRegion = cfg->searchRegion;
+    scanInit.gridType = uvar->gridType;
+    scanInit.gridFile = uvar->gridFile;
+    scanInit.metricType = uvar->metricType;
+    scanInit.projectMetric = uvar->projectMetric;
+    scanInit.metricMismatch = uvar->metricMismatch;
+    scanInit.stepSizes = cfg->stepSizes;
+    scanInit.ephemeris = cfg->ephemeris;		/* used by Ephemeris-based metric */
+    scanInit.startTime = startTime;
+    scanInit.Tspan     = XLALGPSDiff ( &endTime, &startTime );
+
+    // just use first SFTs' IFO for metric (should be irrelevant)
+    LALDetector *detector;
+    if ( ( detector = XLALGetSiteInfo ( catalog->data[0].header.name ) ) == NULL ) {
+      LogPrintf ( LOG_CRITICAL, "\nXLALGetSiteInfo() failed for detector '%s'\n", catalog->data[0].header.name );
+      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+    }
+    scanInit.Detector  = detector;
+
+    /* Specific to --gridType=GRID_SPINDOWN_AGEBRK parameter space */
+    if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+      scanInit.extraArgs[0] = uvar->spindownAge;
+      scanInit.extraArgs[1] = uvar->minBraking;
+      scanInit.extraArgs[2] = uvar->maxBraking;
+    }
+
+    LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
+    TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status);
+    LogPrintfVerbatim (LOG_DEBUG, "template grid ready.\n");
+    XLALNumDopplerTemplates ( cfg->scanState );
+    XLALFree ( detector );
+  }
+
 
   { /* ----- What frequency-band do we need to read from the SFTs?
      * propagate spin-range from refTime to startTime and endTime of observation
      */
-    PulsarSpinRange spinRangeStart, spinRangeEnd;	/* temporary only */
+    PulsarSpinRange spinRangeRef, spinRangeStart, spinRangeEnd;	/* temporary only */
     REAL8 fmaxStart, fmaxEnd, fminStart, fminEnd;
+
+    // extract spanned spin-range at reference-time from the template-bank
+    if ( XLALGetDopplerSpinRange ( &spinRangeRef, cfg->scanState ) != XLAL_SUCCESS ) {
+      LogPrintf ( LOG_CRITICAL, "\nXLALGetDopplerSpinRange() failed\n" );
+      ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
+    }
+    // write this search spin-range@refTime back into 'cfg' struct for users' reference
+    cfg->searchRegion.refTime = spinRangeRef.refTime;
+    memcpy ( cfg->searchRegion.fkdot, spinRangeRef.fkdot, sizeof(cfg->searchRegion.fkdot) );
+    memcpy ( cfg->searchRegion.fkdotBand, spinRangeRef.fkdotBand, sizeof(cfg->searchRegion.fkdotBand) );
 
     /* compute spin-range at startTime of observation */
     TRY ( LALExtrapolatePulsarSpinRange (status->statusPtr, &spinRangeStart, startTime, &spinRangeRef ), status );
@@ -1388,11 +1499,11 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   {/* ----- load the multi-IFO SFT-vectors ----- */
     UINT4 wings = MYMAX(uvar->Dterms, uvar->RngMedWindow/2 +1);	/* extra frequency-bins needed for rngmed, and Dterms */
-    REAL8 fMax = (1.0 + uvar->dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
-    REAL8 fMin = (1.0 - uvar->dopplermax) * fCoverMin - wings / cfg->Tsft;
+    REAL8 fMaxSFT = (1.0 + uvar->dopplermax) * fCoverMax + wings / cfg->Tsft; /* correct for doppler-shift and wings */
+    REAL8 fMinSFT = (1.0 - uvar->dopplermax) * fCoverMin - wings / cfg->Tsft;
 
     LogPrintf (LOG_DEBUG, "Loading SFTs ... ");
-    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMin, fMax ), status );
+    TRY ( LALLoadMultiSFTs ( status->statusPtr, &(cfg->multiSFTs), catalog, fMinSFT, fMaxSFT ), status );
     LogPrintfVerbatim (LOG_DEBUG, "done.\n");
     TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
     /* count total number of SFTs loaded */
@@ -1401,22 +1512,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       NSFTs += cfg->multiSFTs->data[X]->length;
     cfg->NSFTs = NSFTs;
   }
-  { /* ----- load ephemeris-data ----- */
-    CHAR *ephemDir;
-    BOOLEAN isLISA = FALSE;
 
-    cfg->ephemeris = LALCalloc(1, sizeof(EphemerisData));
-    if ( LALUserVarWasSet ( &uvar->ephemDir ) )
-      ephemDir = uvar->ephemDir;
-    else
-      ephemDir = NULL;
-
-    /* hack: if first detector is LISA, we load MLDC-ephemeris instead of 'earth' files */
-    if ( cfg->multiSFTs->data[0]->data[0].name[0] == 'Z' )
-      isLISA = TRUE;
-
-    TRY( InitEphemeris (status->statusPtr, cfg->ephemeris, ephemDir, uvar->ephemYear, isLISA ), status);
-  }
 
   /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
   TRY ( LALGetMultiDetectorStates ( status->statusPtr, &(cfg->multiDetStates), cfg->multiSFTs, cfg->ephemeris ), status );
@@ -1467,44 +1563,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   }
 
-  /* define sky position variables from user input */
-  if (LALUserVarWasSet(&uvar->RA))
-    {
-      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Alpha = LALDegsToRads(uvar->RA, "alpha");
-    }
-  else cfg->Alpha = uvar->Alpha;
-  if (LALUserVarWasSet(&uvar->Dec))
-    {
-      /* use Matt Pitkins conversion code found in lal/packages/pulsar/src/BinaryPulsarTiming.c */
-      cfg->Delta = LALDegsToRads(uvar->Dec, "delta");
-    }
-  else cfg->Delta = uvar->Delta;
-
-  { /* ----- set up Doppler region to scan ----- */
-    BOOLEAN haveAlphaDelta = (LALUserVarWasSet(&uvar->Alpha) && LALUserVarWasSet(&uvar->Delta)) || (LALUserVarWasSet(&uvar->RA) && LALUserVarWasSet(&uvar->Dec));
-
-    if (uvar->skyRegion)
-      {
-	cfg->searchRegion.skyRegionString = (CHAR*)LALCalloc(1, strlen(uvar->skyRegion)+1);
-	if ( cfg->searchRegion.skyRegionString == NULL ) {
-	  ABORT (status, COMPUTEFSTATC_EMEM, COMPUTEFSTATC_MSGEMEM);
-	}
-	strcpy (cfg->searchRegion.skyRegionString, uvar->skyRegion);
-      }
-    else if (haveAlphaDelta)    /* parse this into a sky-region */
-      {
-	TRY ( SkySquare2String( status->statusPtr, &(cfg->searchRegion.skyRegionString),
-				cfg->Alpha, cfg->Delta,	uvar->AlphaBand, uvar->DeltaBand), status);
-      }
-
-    /* spin searchRegion defined by spin-range at reference-time */
-    cfg->searchRegion.refTime = spinRangeRef.refTime;
-    memcpy ( &cfg->searchRegion.fkdot,     &spinRangeRef.fkdot,     sizeof(spinRangeRef.fkdot) );
-    memcpy ( &cfg->searchRegion.fkdotBand, &spinRangeRef.fkdotBand, sizeof(spinRangeRef.fkdotBand) );
-
-  } /* get DopplerRegion */
-
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->CFparams.Dterms = uvar->Dterms;
   cfg->CFparams.SSBprec = uvar->SSBprecision;
@@ -1512,14 +1570,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
 
-  /* ----- set fixed grid step-sizes from user-input for GRID_FLAT ----- */
-  cfg->stepSizes.Alpha = uvar->dAlpha;
-  cfg->stepSizes.Delta = uvar->dDelta;
-  cfg->stepSizes.fkdot[0] = uvar->dFreq;
-  cfg->stepSizes.fkdot[1] = uvar->df1dot;
-  cfg->stepSizes.fkdot[2] = uvar->df2dot;
-  cfg->stepSizes.fkdot[3] = uvar->df3dot;
-  cfg->stepSizes.orbit = NULL;
 
   /* internal refTime is used for computing the F-statistic at, to avoid large (tRef - tStart) values */
   if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
@@ -1531,35 +1581,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
   if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) == NULL ) {
     ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
-  }
-
-  /* initialize full multi-dimensional Doppler-scanner */
-  {
-    DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
-
-    scanInit.searchRegion = cfg->searchRegion;
-    scanInit.gridType = uvar->gridType;
-    scanInit.gridFile = uvar->gridFile;
-    scanInit.metricType = uvar->metricType;
-    scanInit.projectMetric = uvar->projectMetric;
-    scanInit.metricMismatch = uvar->metricMismatch;
-    scanInit.stepSizes = cfg->stepSizes;
-    scanInit.ephemeris = cfg->ephemeris;		/* used by Ephemeris-based metric */
-    scanInit.startTime = cfg->multiDetStates->startTime;
-    scanInit.Tspan     = cfg->multiDetStates->Tspan;
-    scanInit.Detector  = &(cfg->multiDetStates->data[0]->detector);	/* just use first IFO for metric */
-
-    /* Specific to --gridType=GRID_SPINDOWN_AGEBRK parameter space */
-    if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
-      scanInit.extraArgs[0] = uvar->spindownAge;
-      scanInit.extraArgs[1] = uvar->minBraking;
-      scanInit.extraArgs[2] = uvar->maxBraking;
-    }
-
-    LogPrintf (LOG_DEBUG, "Setting up template grid ... ");
-    TRY ( InitDopplerFullScan ( status->statusPtr, &cfg->scanState, &scanInit), status);
-    LogPrintfVerbatim (LOG_DEBUG, "template grid ready.\n");
-    XLALNumDopplerTemplates ( cfg->scanState );
   }
 
   /* set number of toplist candidates from fraction if asked to */
@@ -1903,7 +1924,8 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 
     if ( !useFullGridFile && !useSkyGridFile && haveGridFile )
       {
-        LALWarning (status, "\nWARNING: gridFile was specified but not needed ... will be ignored\n\n");
+        XLALPrintError ("\nERROR: gridFile was specified but not needed for gridType=%d\n\n", uvar->gridType );
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
     if ( useSkyGridFile && !haveGridFile )
       {
@@ -2298,13 +2320,14 @@ write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti )
   /* if timingInfo == NULL ==> write header comment line */
   if ( ti == NULL )
     {
-      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]\n");
+      fprintf ( fp, "%%%%NSFTs  costFstat[s]   tauMin[s]  tauMax[s]  NStart    NTau    costTransFstatMap[s]  costTransMarg[s] costTemplate[s]  tauF0 [s]\n");
       return XLAL_SUCCESS;
     } /* if ti == NULL */
 
-
-  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e\n",
-            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate );
+  // compute fundamental timing constant 'tauF0' = F-stat time per template per SFT
+  REAL8 tauF0 = ti->tauTemplate / ti->NSFTs;
+  fprintf ( fp, "% 5d    %10.6e      %6d     %6d    %5d   %5d           %10.6e       %10.6e	%10.6e   %10.6e\n",
+            ti->NSFTs, ti->tauFstat, ti->tauMin, ti->tauMax, ti->NStart, ti->NTau, ti->tauTransFstatMap, ti->tauTransMarg, ti->tauTemplate, tauF0 );
 
   return XLAL_SUCCESS;
 

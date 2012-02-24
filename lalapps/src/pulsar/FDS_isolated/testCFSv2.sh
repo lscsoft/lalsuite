@@ -7,6 +7,13 @@ export LC_ALL=C
 builddir="./";
 injectdir="../Injections/"
 
+## ----- user-controlled level of debug-output detail
+if [ -n "$DEBUG" ]; then
+    debug=${DEBUG}
+else
+    debug=0	## default=quiet
+fi
+
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 saf_code="${builddir}lalapps_SemiAnalyticF"
@@ -19,7 +26,6 @@ else
     cfsv2_code="$@"
 fi
 
-extra_args=""
 SFTdir="./testSFTs"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
@@ -70,6 +76,7 @@ NFreq=500;
 cfs_FreqBand=$(echo $duration | awk '{printf "%.16g", 1.0 / $1 }');	## fix band to 1/T so we're close to signal peak always
 cfs_Freq=$(echo $Freq $cfs_FreqBand | awk '{printf "%.16g", $1 - $2 / 2.0}');
 cfs_dFreq=$(echo $cfs_FreqBand $NFreq | awk '{printf "%.16g", $1 / $2 }');
+cfs_nCands=$NFreq	## toplist length: keep all cands
 
 ## unfortunately CFSv1 has a different band-convention resulting in one more frequency-bin
 ## so we compensate for that by inputting a slightly smaller band in CFSv1 to get the same
@@ -78,7 +85,7 @@ cfs_FreqBand_v1=$(echo $cfs_FreqBand $cfs_dFreq | awk '{printf "%g", $1 - 0.5 * 
 
 cfs_f1dotBand=0;
 cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');
-Nf1dot=10
+##Nf1dot=10
 cfs_df1dot=1 ##$(echo $cfs_f1dotBand $Nf1dot | awk '{printf "%g", $1 / $2}');
 
 noiseSqrtSh=5
@@ -113,7 +120,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1 -v${debug}"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -127,7 +134,7 @@ fi
 
 echo
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh -v${debug}"
 echo $cmdline
 if ! resF=`eval "$cmdline  2> /dev/null"`; then
     echo "Error ... something failed running '$saf_code' ..."
@@ -143,7 +150,7 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime --Dterms=${Dterms}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -163,7 +170,8 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_v2NWon="Fstat_v2NWon.dat";
 timingfile="timing_v2NWon.dat";
-cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true --outputTiming=$timingfile --$extra_args"
+cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true --outputTiming=$timingfile"
+
 echo $cmdlineNoiseWeightsOn;
 if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -171,7 +179,7 @@ if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
 fi
 
 outfile_v2NWoff="Fstat_v2NWoff.dat";
-cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=false $extra_args"
+cmdlineNoiseWeightsOff="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWoff --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=false"
 echo $cmdlineNoiseWeightsOff;
 if ! eval "$cmdlineNoiseWeightsOff &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
@@ -183,8 +191,13 @@ echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
 
+## work around toplist-sorting bugs in CFSv2: manually sort before comparing
+sort $outfile_v1 > __tmp_sorted && mv __tmp_sorted $outfile_v1
+sort $outfile_v2NWoff > __tmp_sorted && mv __tmp_sorted $outfile_v2NWoff
+sort $outfile_v2NWon > __tmp_sorted && mv __tmp_sorted $outfile_v2NWon
+
 echo
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -193,7 +206,7 @@ else
     echo "	==> OK."
 fi
 
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -208,9 +221,9 @@ echo "----------------------------------------"
 echo " STEP 5: Timing info: "
 echo "----------------------------------------"
 
-awk_timing='BEGIN { sumTau0 = 0; counter=0; } \
-           { Tau0 = $9 / $1; sumTau0 = sumTau0 + Tau0; counter=counter+1; } \
-           END {printf "tau0 = %5.3g s", sumTau0 / counter }'
+awk_timing='BEGIN { sumTauF0 = 0; counter=0; } \
+           { sumTauF0 = sumTauF0 + $10; counter=counter+1; } \
+           END {printf "tauF0 = %5.3g s", sumTauF0 / counter }'
 timing_tau0=$(sed '/^%.*/d' $timingfile | awk "$awk_timing")
 echo
 echo "Fundamental F-stat timing constant (time per template per SFT):"
