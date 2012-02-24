@@ -234,7 +234,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 tempMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temperature in ladder
   REAL8 tempMax = 0.0;
   REAL8 trigSNR = 0.0;
-  REAL8 targetHotLike       = 25;               // Targeted max 'experienced' log(likelihood) of hottest chain
+  REAL8 targetHotLike       = 20;               // Targeted max 'experienced' log(likelihood) of hottest chain
   INT4  hotThreshold        = nChain/2;         // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
 
   /* Set maximum temperature (command line value take precidence) */
