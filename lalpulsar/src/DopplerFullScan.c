@@ -64,6 +64,7 @@ struct tagDopplerFullScanState {
   DopplerGridType gridType;	/**< what type of grid are we dealing with */
   REAL8 numTemplates;		/**< total number of templates in the grid */
   PulsarSpinRange spinRange;	/**< spin-range covered by template bank */
+  SkyRegion skyRegion;		/**< sky-range covered by template bank */
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
   gsl_matrix *gij;			/**< flat parameter-space metric */
@@ -632,7 +633,7 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
   if ( (*scan)->factoredScan ) {
     TRY ( FreeDopplerSkyScan ( status->statusPtr, &((*scan)->factoredScan->skyScan) ), status );
-    LALFree ( (*scan)->factoredScan );
+    XLALFree ( (*scan)->factoredScan );
   }
 
   if ( (*scan)->covering )
@@ -646,7 +647,11 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
     XLALFreeFlatLatticeTiling((*scan)->spindownTiling);
   }
 
-  LALFree ( (*scan) );
+  if ( (*scan)->skyRegion.vertices)
+    XLALFree ( (*scan)->skyRegion.vertices);
+
+
+  XLALFree ( (*scan) );
   (*scan) = NULL;
 
   DETATCHSTATUSPTR (status);
@@ -692,12 +697,18 @@ loadFullGridFile ( LALStatus *status,
   ASSERT ( init->gridFile, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
-  /* Check that all user-input spin-ranges are zero, otherwise fail!
+  /* Check that all user-input spin- and sky-ranges are zero, otherwise fail!
    *
    * NOTE: In the future we should allow combining the user-input ranges with
    * those found in the grid-file by forming the intersection, ie *clipping*
-   * of the read-in grids to the user-input ranges
+   * of the read-in grids to the user-input ranges.
+   * Right now we require empty ranges input, and report back the ranges from the grid-file
+   *
    */
+  if ( init->searchRegion.skyRegionString != NULL ) {
+    XLALPrintError ("\n%s: non-NULL skyRegion input currently not supported! skyRegion = '%s'\n\n", __func__, init->searchRegion.skyRegionString );
+    ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  }
   for ( UINT4 s = 0; s < PULSAR_MAX_SPINS; s ++ )
     {
       if ( (init->searchRegion.fkdot[s] != 0) || (init->searchRegion.fkdotBand[s] != 0 )) {
@@ -718,11 +729,14 @@ loadFullGridFile ( LALStatus *status,
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
 
-  /* keep track of the spinRanges spanned by the template bank */
+  /* keep track of the sky- and spinRanges spanned by the template bank */
   REAL8 FreqMax  = - LAL_REAL4_MAX, FreqMin  = LAL_REAL4_MAX;	// only using REAL4 ranges to avoid over/under flows, and should be enough
   REAL8 f1dotMax = - LAL_REAL4_MAX, f1dotMin = LAL_REAL4_MAX;
   REAL8 f2dotMax = - LAL_REAL4_MAX, f2dotMin = LAL_REAL4_MAX;
   REAL8 f3dotMax = - LAL_REAL4_MAX, f3dotMin = LAL_REAL4_MAX;
+
+  REAL8 alphaMax = - LAL_REAL4_MAX, alphaMin = LAL_REAL4_MAX;
+  REAL8 deltaMax = - LAL_REAL4_MAX, deltaMin = LAL_REAL4_MAX;
 
   /* parse this list of lines into a full grid */
   numTemplates = 0;
@@ -741,17 +755,19 @@ loadFullGridFile ( LALStatus *status,
         }
 
       /* keep track of maximal spans */
-      if ( Freq < FreqMin ) FreqMin = Freq;
-      if ( Freq > FreqMax ) FreqMax = Freq;
+      alphaMin = fmin ( Alpha, alphaMin );
+      deltaMin = fmin ( Delta, deltaMin );
+      FreqMin  = fmin ( Freq,  FreqMin );
+      f1dotMin = fmin ( f1dot, f1dotMin );
+      f2dotMin = fmin ( f2dot, f2dotMin );
+      f3dotMin = fmin ( f3dot, f3dotMin );
 
-      if ( f1dot < f1dotMin ) f1dotMin = f1dot;
-      if ( f1dot > f1dotMax ) f1dotMax = f1dot;
-
-      if ( f2dot < f2dotMin ) f2dotMin = f2dot;
-      if ( f2dot > f2dotMax ) f2dotMax = f2dot;
-
-      if ( f3dot < f3dotMin ) f3dotMin = f3dot;
-      if ( f3dot > f3dotMax ) f3dotMax = f3dot;
+      alphaMax = fmax ( Alpha, alphaMax );
+      deltaMax = fmax ( Delta, deltaMax );
+      FreqMax  = fmax ( Freq,  FreqMax );
+      f1dotMax = fmax ( f1dot, f1dotMax );
+      f2dotMax = fmax ( f2dot, f2dotMax );
+      f3dotMax = fmax ( f3dot, f3dotMax );
 
       /* add this entry to template-bank list */
       entry->data[0] = Freq;
@@ -774,7 +790,18 @@ loadFullGridFile ( LALStatus *status,
 
   XLALDestroyREAL8Vector ( entry );
 
-  /* update scan-state  */
+  /* ---------- update scan-state  ---------- */
+
+  // ----- report back ranges actually spanned by grid-file
+
+  CHAR *skyRegionString = NULL;
+  REAL8 eps = LAL_REAL8_EPS;
+  TRY ( SkySquare2String ( status->statusPtr, &skyRegionString, alphaMin, deltaMin, (alphaMax - alphaMin) + eps, (deltaMax - deltaMin) + eps ), status );
+  // note: we slight expanded the enclosing sky-square by eps to avoid complaints when a grid-file contains
+  // only points in a line, which is perfectly valid here.
+  TRY ( ParseSkyRegionString ( status->statusPtr, &scan->skyRegion, skyRegionString ), status );
+  XLALFree ( skyRegionString );
+
   scan->spinRange.fkdot[0]     = FreqMin;
   scan->spinRange.fkdotBand[0] = FreqMax - FreqMin;
 

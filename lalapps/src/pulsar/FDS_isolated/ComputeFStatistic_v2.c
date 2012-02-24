@@ -1924,7 +1924,8 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
 
     if ( !useFullGridFile && !useSkyGridFile && haveGridFile )
       {
-        LALWarning (status, "\nWARNING: gridFile was specified but not needed ... will be ignored\n\n");
+        XLALPrintError ("\nERROR: gridFile was specified but not needed for gridType=%d\n\n", uvar->gridType );
+        ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
       }
     if ( useSkyGridFile && !haveGridFile )
       {
