@@ -7,6 +7,13 @@ export LC_ALL=C
 builddir="./";
 injectdir="../Injections/"
 
+## ----- user-controlled level of debug-output detail
+if [ -n "$DEBUG" ]; then
+    debug=${DEBUG}
+else
+    debug=0	## default=quiet
+fi
+
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 saf_code="${builddir}lalapps_SemiAnalyticF"
@@ -113,7 +120,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1 -v${debug}"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -127,7 +134,7 @@ fi
 
 echo
 echo -n "Running '$saf_code' ... "
-cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh"
+cmdline="$saf_code $saf_CL --sqrtSh=$sqrtSh -v${debug}"
 echo $cmdline
 if ! resF=`eval "$cmdline  2> /dev/null"`; then
     echo "Error ... something failed running '$saf_code' ..."
@@ -143,7 +150,7 @@ echo "----------------------------------------------------------------------"
 echo
 outfile_v1="Fstat_v1.dat";
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands}"
+cfs_CL="--IFO=$IFO --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=$cfs_df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime --Dterms=${Dterms} --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -190,7 +197,7 @@ sort $outfile_v2NWoff > __tmp_sorted && mv __tmp_sorted $outfile_v2NWoff
 sort $outfile_v2NWon > __tmp_sorted && mv __tmp_sorted $outfile_v2NWon
 
 echo
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
@@ -199,7 +206,7 @@ else
     echo "	==> OK."
 fi
 
-cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon"
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

@@ -2,10 +2,16 @@
 
 ## take user-arguments for CFS-v2:
 extra_args="$@"
-debug=0;
 
 builddir="./";
 injectdir="../Injections/"
+
+## ----- user-controlled level of debug-output detail
+if [ -n "$DEBUG" ]; then
+    debug=${DEBUG}
+else
+    debug=0	## default=quiet
+fi
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
@@ -129,7 +135,7 @@ outputv1_1="./Fstatv1_grid1.dat";
 outputv1_2="./Fstatv1_grid2.dat";
 
 ## common cmdline-options for v1 and v2
-cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime"
+cfs_CL="--IFO=$IFO --Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot --DataFiles='$SFTdir/testSFT*' --refTime=$refTime -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -137,34 +143,31 @@ fi
 cmdlinev1="$cfs_code $cfs_CL --expLALDemod=1 --Fthreshold=0"
 
 ## ----- grid=0
-echo -n "CFSv1 using gridType=0 ..."
+echo "CFSv1 using gridType=0:"
 cmd0="$cmdlinev1 $gridType0 --outputFstat=$outputv1_0";
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
+echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd0' ..."
     exit 1
 fi
-echo "done."
 
 ## ----- grid=1
-echo -n "CFSv1 using gridType=1 ..."
+echo "CFSv1 using gridType=1:"
 cmd0="$cmdlinev1 $gridType1 --outputFstat=$outputv1_1";
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
+echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd1' ..."
     exit 1
 fi
-echo "done."
 
 ## ----- grid=2
-echo -n "CFSv1 using gridType=2 ..."
+echo "CFSv1 using gridType=2:"
 cmd0="$cmdlinev1 $gridType2 --outputFstat=$outputv1_2";
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
+echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."
     exit 1
 fi
-echo "done."
 
 
 echo
@@ -178,34 +181,31 @@ outputv2_2="./Fstatv2_grid2.dat";
 cmdlinev2="$cfsv2_code $cfs_CL --TwoFthreshold=0 $extra_args";
 
 ## ----- grid=0
-echo -n "CFSv2 using gridType=0 ..."
+echo "CFSv2 using gridType=0:"
 cmd0="$cmdlinev2 $gridType0 --outputFstat=$outputv2_0";
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
+echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd0' ..."
     exit 1
 fi
-echo "done."
 
 ## ----- grid=1
-echo -n "CFSv2 using gridType=1 ..."
+echo "CFSv2 using gridType=1:"
 cmd0="$cmdlinev2 $gridType1 --outputFstat=$outputv2_1";
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
+echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd1' ..."
     exit 1
 fi
-echo "done."
 
 ## ----- grid=2
-echo -n "CFSv2 using gridType=2 ..."
+echo "CFSv2 using gridType=2:"
 cmd0="$cmdlinev2 $gridType2 --outputFstat=$outputv2_2";
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
+echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."
     exit 1
 fi
-echo "done."
 
 
 echo
@@ -215,9 +215,9 @@ echo "----------------------------------------"
 echo
 
 ## ----- grid=0
-echo -n "Comparing gridType=0 ... "
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
-cmd0="$cmp_code -1 ./$outputv1_0  -2 ./$outputv2_0 --clusterFiles=0 --Ftolerance=0.1";
+echo "Comparing gridType=0:"
+echo $cmd0
+cmd0="$cmp_code -1 ./$outputv1_0  -2 ./$outputv2_0 --clusterFiles=0 --Ftolerance=0.1 -v${debug}";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -226,9 +226,9 @@ else
 fi
 
 ## ----- grid=1
-echo -n "Comparing gridType=1 ... "
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
-cmd0="$cmp_code -1 ./$outputv1_1  -2 ./$outputv2_1 --clusterFiles=0 --Ftolerance=0.1";
+echo "Comparing gridType=1:"
+echo $cmd0
+cmd0="$cmp_code -1 ./$outputv1_1  -2 ./$outputv2_1 --clusterFiles=0 --Ftolerance=0.1 -v${debug}";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
@@ -238,9 +238,9 @@ fi
 
 
 ## ----- grid=2
-echo -n "Comparing gridType=2 ... "
-if [ $debug = 1 ]; then echo; echo $cmd0; fi
-cmd0="$cmp_code -1 ./$outputv1_2  -2 ./$outputv2_2 --clusterFiles=0 --Ftolerance=0.1";
+echo "Comparing gridType=2:"
+echo $cmd0
+cmd0="$cmp_code -1 ./$outputv1_2  -2 ./$outputv2_2 --clusterFiles=0 --Ftolerance=0.1 -v${debug}";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2
