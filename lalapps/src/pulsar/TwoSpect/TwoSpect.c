@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2012 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
       fclose(INSFTTIMES);
    }
    
-   //Removing bad SFTs
+   //Removing bad SFTs using K-S test
    if (inputParams->markBadSFTs!=0) {
       fprintf(stderr, "Marking and removing bad SFTs... ");
       INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, inputParams);
@@ -339,6 +339,10 @@ int main(int argc, char *argv[])
    INT4 totalincludedsftnumber = 0.0;
    for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
+   if (frac_tobs_complete<0.1) {
+      fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+   }
    
    //Index values of existing SFTs
    INT4Vector *indexValuesOfExistingSFTs = XLALCreateINT4Vector(totalincludedsftnumber);
@@ -462,15 +466,11 @@ int main(int argc, char *argv[])
    
    //Antenna normalization (determined from injections on H1 at ra=0, dec=0, with circular polarization)
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
-   if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
-   else {
-      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+   CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
+   if (xlalErrno!=0) {
+      fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
+      XLAL_ERROR(XLAL_EFUNC);
    }
-
    
    
    //Search over the sky region
@@ -1511,6 +1511,27 @@ n       10      20      30      40      50      60      80      n>80
 alpha=0.05
 n       10      20      30      40      50      60      80      n>80
         .409    .294    .242    .210    .188    .172    .150    1.358/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.1 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+        .369    .265    .218    .189    .170    .155    .135    1.224/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.5 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+        .249    .179    .147    .128    .115    .105    .091    0.828/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.9 (E.G derived using root finding)
+n                                                               n>80
+                                                                0.571/(sqrt(n)+0.12+0.11/sqrt(n))
+
+Critical values of Kuiper's test using root finding by E.G.
+alpha=0.05
+n                                                               n>80
+                                                                1.747/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.1
+n                                                               n>80
+                                                                1.620/(sqrt(n)+0.155+0.24/sqrt(n))
 */
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
 {
@@ -1533,6 +1554,9 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
    }
    
    REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
+   //REAL8 ksthreshold = 1.224/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a tighter restriction
+   REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
+   //REAL8 kuiperthreshold = 1.620/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is a tighter restriction
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(tfdata->data[ii*numfbins]), sizeof(REAL4)*tempvect->length);
@@ -1542,7 +1566,13 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
             XLAL_ERROR_NULL(XLAL_EFUNC);
          }
          
-         if (kstest>ksthreshold) output->data[ii] = 1;
+         REAL8 kuipertest = kuipers_test_exp(tempvect);
+         if (XLAL_IS_REAL8_FAIL_NAN(kuipertest)) {
+            fprintf(stderr,"%s: kuipers_test_exp() failed.\n", __func__);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+         }
+         
+         if (kstest>ksthreshold || kuipertest>kuiperthreshold) output->data[ii] = 1;
       }
    }
    
@@ -1597,13 +1627,14 @@ INT4VectorSequence * markBadMultiSFTs(REAL4VectorSequence *multiTFdata, inputPar
 void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
 {
    
-   INT4 ii, jj;
+   INT4 ii;//, jj;
    
    INT4 numfbins_tfdata = tfdata->length/badsfts->length;
    
    for (ii=0; ii<(INT4)badsfts->length; ii++) {
       if (badsfts->data[ii]==1) {
-         for (jj=0; jj<numfbins_tfdata; jj++) tfdata->data[ii*numfbins_tfdata + jj] = 0.0;
+         //for (jj=0; jj<numfbins_tfdata; jj++) tfdata->data[ii*numfbins_tfdata + jj] = 0.0;
+         memset(&(tfdata->data[ii*numfbins_tfdata]), 0, sizeof(REAL4)*numfbins_tfdata);
       }
    }
    
@@ -2173,7 +2204,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       if (backgrnd->data[ii*numfbins]!=0.0) {
          memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
+         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);  //comment out
          aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
          //aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
          if (XLAL_IS_REAL4_FAIL_NAN(aveNoiseInTime->data[ii])) {
