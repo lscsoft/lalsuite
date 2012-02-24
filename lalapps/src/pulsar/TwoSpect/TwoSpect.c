@@ -1554,8 +1554,17 @@ n       10      20      30      40      50      60      80      n>80
         .249    .179    .147    .128    .115    .105    .091    0.828/(sqrt(n)+0.12+0.11/sqrt(n))
 
 alpha=0.9 (E.G derived using root finding)
-n       n>80
-        0.571/(sqrt(n)+0.12+0.11/sqrt(n))
+n                                                               n>80
+                                                                0.571/(sqrt(n)+0.12+0.11/sqrt(n))
+
+Critical values of Kuiper's test using root finding by E.G.
+alpha=0.05
+n                                                               n>80
+                                                                1.747/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.1
+n                                                               n>80
+                                                                1.620/(sqrt(n)+0.155+0.24/sqrt(n))
 */
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
 {
@@ -1577,8 +1586,10 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
-   //REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
-   REAL8 ksthreshold = 0.571/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a fairly tight restriction
+   REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
+   //REAL8 ksthreshold = 1.224/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a tighter restriction
+   REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
+   //REAL8 kuiperthreshold = 1.620/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is a tighter restriction
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(tfdata->data[ii*numfbins]), sizeof(REAL4)*tempvect->length);
@@ -1588,7 +1599,13 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
             XLAL_ERROR_NULL(XLAL_EFUNC);
          }
          
-         if (kstest>ksthreshold) output->data[ii] = 1;
+         REAL8 kuipertest = kuipers_test_exp(tempvect);
+         if (XLAL_IS_REAL8_FAIL_NAN(kuipertest)) {
+            fprintf(stderr,"%s: kuipers_test_exp() failed.\n", __func__);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+         }
+         
+         if (kstest>ksthreshold || kuipertest>kuiperthreshold) output->data[ii] = 1;
       }
    }
    
