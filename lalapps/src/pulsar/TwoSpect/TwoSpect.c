@@ -330,39 +330,6 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
-   //TODO: check this
-   //Remove SFTs where the background mean and median are different
-   /* if (inputParams->markBadSFTs!=0) {
-      REAL4Vector *rngMeansOverBand = XLALCreateREAL4Vector(ffdata->numfbins + 2*inputParams->maxbinshift);
-      if (rngMeansOverBand==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins + 2*inputParams->maxbinshift);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-      INT4Vector *removeTheseSFTs = XLALCreateINT4Vector(ffdata->numffts);
-      if (removeTheseSFTs==NULL) {
-         fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ffdata->numffts);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
-      memset(removeTheseSFTs->data, 0, sizeof(INT4)*removeTheseSFTs->length);
-      for (ii=0; ii<(INT4)removeTheseSFTs->length; ii++) {
-         if (background->data[ii*(ffdata->numfbins + 2*inputParams->maxbinshift)]!=0.0) {
-            memcpy(rngMeansOverBand->data, &(background->data[ii*(ffdata->numfbins + 2*inputParams->maxbinshift)]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-            //for (jj=0; jj<(INT4)rngMeansOverBand->length; jj++) fprintf(stderr, "%f\n", rngMeansOverBand->data[jj]);  //TODO: remove this
-            REAL4 meanvalue = calcMean(rngMeansOverBand);
-            REAL4 medianvalue = calcMedian(rngMeansOverBand);
-            if (fabs(medianvalue/meanvalue - 1.0) > 0.05) {
-               memset(&(tfdata->data[ii*(ffdata->numfbins + 2*inputParams->maxbinshift)]), 0, sizeof(REAL4)*(ffdata->numfbins + 2*inputParams->maxbinshift));
-               removeTheseSFTs->data[ii] = 1;
-            }
-         }
-      }
-      removeBadSFTs(tfdata, removeTheseSFTs);
-      
-      XLALDestroyREAL4Vector(rngMeansOverBand);
-      XLALDestroyINT4Vector(removeTheseSFTs);
-   } */
-   
-   
    //Existing SFTs listed in this vector
    INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
    if (sftexist==NULL) {
