@@ -983,8 +983,14 @@ ReadData( LALStatus *status,
   /* skip the header */
   /* depend on data format specification */
   for(irec=0;irec<Nheadlines;irec++) {
-    fgets(buff,sizeof(buff),fpobsv);
-    fgets(buff,sizeof(buff),fptest);
+    if ( fgets(buff,sizeof(buff),fpobsv) == NULL ) {
+      fprintf (stderr, "\nfgets() failed!\n" );
+      ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
+    }
+    if ( fgets(buff,sizeof(buff),fptest) == NULL ) {
+      fprintf (stderr, "\nfgets() failed!\n" );
+      ABORT( status, FSTATSHAPETESTC_EFILEIO, FSTATSHAPETESTC_MSGEFILIO );
+    }
   }
 
 
