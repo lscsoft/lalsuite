@@ -670,7 +670,7 @@ int main(int argc,char *argv[]){
 	  pout("System error when reading Frame data: %s\n", strerror(saveerrno));
 	pout("Following is output of ls -l on Frame file list:\n");
 	sprintf(command, "cat %s | xargs ls -l 1>&2", framelist);
-	system(command);
+	if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n", command );
 	lsffl=1;
       }
 
@@ -686,7 +686,7 @@ int main(int argc,char *argv[]){
 	char command[256];
 	pout("Using FrCheck to validate frame data:\n");
 	sprintf(command, "cat %s | xargs --maxlines=1 /home/ballen/projects/LIGO/src/v6r06/Linux-i686/FrCheck -d 1 -i 1>&2", framelist);
-	system(command);
+	if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n", command );
 	verifyframes=1;
       }
       continue;
