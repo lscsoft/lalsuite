@@ -1496,7 +1496,7 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
       return 0;
@@ -1518,7 +1518,7 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
       return 0;
@@ -1539,7 +1539,7 @@ int parseI4(FILE *fp, const char* vname, INT4 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
       return 0;
