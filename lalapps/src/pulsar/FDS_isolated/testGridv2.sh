@@ -282,5 +282,5 @@ fi
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $outputv2_0 $outputv2_1 $outputv2_2 $outputv1_0 $outputv1_1 $outputv1_2 Fstats Fstats.log ${gridFile}
+    rm -rf $SFTdir $outputv2_0 $outputv2_1 $outputv2_2 $outputv1_0 $outputv1_1 $outputv1_2 Fstats Fstats.log ${gridFile} ${outputv2_6}
 fi
