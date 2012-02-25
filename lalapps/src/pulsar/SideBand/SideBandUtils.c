@@ -463,7 +463,7 @@ void ReadSideBandPriors(LALStatus *status,
     XLALPrintError("\nError opening file '%s' for reading..\n\n",rangefile);
   }
 
-  while (fgets(line,512,fprange)!=NULL) {
+  while (fgets(line,sizeof(line),fprange)!=NULL) {
     
     /* read in line from file */
     sscanf(line,"%s %s %s %s %s %s %s %s %s %s %s",y,ymin,ymin2,ymax,ymax2,yjump1,yprob1,yjump2,yprob2,yjump3,yprob3);
@@ -757,10 +757,21 @@ void ReadSideBandData (LALStatus * status,
   
   /* return to end of header and read first 2 lines to assess frequency resolution */
   fsetpos(fp,&pos);
-  fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-	     &ftemp1,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
-  fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-	     &ftemp2,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
+  int count;
+  count = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+                 &ftemp1,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
+  if ( count != 11 ) {
+    XLALPrintError ("\n fscanf() failed to read 11 items from 'fp'\n" );
+    ABORT ( status, SIDEBANDUTILSC_EINPUT, SIDEBANDUTILSC_MSGEINPUT );
+  }
+  
+  count = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+                 &ftemp2,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
+  if ( count != 11 ) {
+    XLALPrintError ("\n fscanf() failed to read 11 items from 'fp'\n" );
+    ABORT ( status, SIDEBANDUTILSC_EINPUT, SIDEBANDUTILSC_MSGEINPUT );
+  }
+
   params->df = ftemp2 - ftemp1;
   
   printf("ftemp1 = %6.12f ftemp2 = %6.12f\n",ftemp1,ftemp2);
