@@ -2925,9 +2925,11 @@ WriteFStatLog (LALStatus *stat, char *argv[])
     fclose (fplog);
     
     sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], fname);
-    system (command);   /* we currently don't check this. If it fails, we assume that */
-                        /* one of the system-commands was not available, and */
-                        /* therefore the CVS-versions will simply not be logged */
+    /* we don't fail here. If system() fails, we assume that */
+    /* one of the system-commands was not available, and */
+    /* therefore the CVS-versions will not be logged */
+    if ( system(command) )
+      LogPrintf ( LOG_DEBUG, "\nsystem('%s') returned non-zero status!\n", command );
 
     LALFree (fname);
 
