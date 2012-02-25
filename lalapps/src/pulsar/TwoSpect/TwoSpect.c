@@ -339,8 +339,8 @@ int main(int argc, char *argv[])
    INT4 totalincludedsftnumber = 0.0;
    for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
-   if (frac_tobs_complete<0.1) {
-      fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+   if (frac_tobs_complete<0.2) {
+      fprintf(stderr, "%s: The useable SFTs cover less than 20 percent of the total observation time\n", __func__);
       XLAL_ERROR(XLAL_EFAILED);
    }
    
@@ -1516,6 +1516,10 @@ alpha=0.1 (E.G derived using root finding)
 n       10      20      30      40      50      60      80      n>80
         .369    .265    .218    .189    .170    .155    .135    1.224/(sqrt(n)+0.12+0.11/sqrt(n))
 
+alpha=0.2 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+                                                                1.073/(sqrt(n)+0.12+0.11/sqrt(n))
+
 alpha=0.5 (E.G derived using root finding)
 n       10      20      30      40      50      60      80      n>80
         .249    .179    .147    .128    .115    .105    .091    0.828/(sqrt(n)+0.12+0.11/sqrt(n))
@@ -1532,6 +1536,10 @@ n                                                               n>80
 alpha=0.1
 n                                                               n>80
                                                                 1.620/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.2
+n                                                               n>80
+                                                                1.473/(sqrt(n)+0.155+0.24/sqrt(n))
 */
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
 {
@@ -1555,8 +1563,10 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
    
    REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
    //REAL8 ksthreshold = 1.224/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a tighter restriction
+   //REAL8 ksthreshold = 1.073/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is an even tighter restriction
    REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
    //REAL8 kuiperthreshold = 1.620/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is a tighter restriction
+   //REAL8 kuiperthreshold = 1.473/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is an even tighter restriction
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(tfdata->data[ii*numfbins]), sizeof(REAL4)*tempvect->length);
