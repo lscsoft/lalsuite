@@ -1643,7 +1643,7 @@ void PrintLogFile2 (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
-	system (command);
+        if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
       } 
     } 
   }
@@ -1657,9 +1657,10 @@ void PrintLogFile2 (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */ 
+      /* we don't check this. If it fails, we assume that */
+      /* one of the system-commands was not available, and */
+      /* therefore the CVS-versions will not be logged */
+      if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
     }
 
   LALFree(fnameLog); 
