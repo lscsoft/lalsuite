@@ -346,7 +346,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* hostname and user */
   gethostname(hostname,sizeof(hostname));
-  getdomainname(domainname,sizeof(domainname));
+  if ( getdomainname(domainname,sizeof(domainname)) == -1 )
+    XLALPrintError ("\ngetdomainname() failed!\n");
   snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
 
