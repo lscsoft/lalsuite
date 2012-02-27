@@ -48,7 +48,7 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/hwinjection/Makefile \
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])

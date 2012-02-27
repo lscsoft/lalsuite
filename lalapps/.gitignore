@@ -1,6 +1,7 @@
 *.aux
 *.la
 *.lo
+*.log
 *.o
 .deps
 .libs

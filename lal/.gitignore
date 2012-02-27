@@ -2,6 +2,7 @@
 *.la
 *.lo
 *.loT
+*.log
 *.o
 *.pc
 .adoc

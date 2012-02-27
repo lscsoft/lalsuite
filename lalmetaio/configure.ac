@@ -14,7 +14,7 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   src/Makefile
 ])
-AM_INIT_AUTOMAKE([1.11 foreign color-tests])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
