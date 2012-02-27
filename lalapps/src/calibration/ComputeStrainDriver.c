@@ -51,6 +51,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <pwd.h>
 #include <time.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -346,7 +347,8 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
 
   /* hostname and user */
   gethostname(hostname,sizeof(hostname));
-  getdomainname(domainname,sizeof(domainname));
+  if ( getdomainname(domainname,sizeof(domainname)) == -1 )
+    XLALPrintError ("\ngetdomainname() failed!\n");
   snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
 

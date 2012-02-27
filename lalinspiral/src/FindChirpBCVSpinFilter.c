@@ -110,6 +110,7 @@ LALDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>

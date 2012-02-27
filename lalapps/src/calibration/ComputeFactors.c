@@ -46,6 +46,7 @@ int main(void) {fputs("disabled, no frame library support.\n", stderr);return 1;
 #include <glob.h>
 #include <errno.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>

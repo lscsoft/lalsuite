@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/BlackHoleMode.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS

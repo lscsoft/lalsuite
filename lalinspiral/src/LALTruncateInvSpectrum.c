@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/RealFFT.h>
 #include <lal/LALNoiseModelsInspiral.h>

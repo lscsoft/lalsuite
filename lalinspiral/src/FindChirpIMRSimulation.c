@@ -49,6 +49,7 @@ LALFree()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>

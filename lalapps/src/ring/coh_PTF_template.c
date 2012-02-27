@@ -18,6 +18,7 @@
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 void coh_PTF_template (

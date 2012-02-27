@@ -75,6 +75,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <getopt.h>
 #include <stdarg.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -271,7 +272,7 @@ void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT
      strcat(sftPath,"-");
      strncat(sftPath,gpstime,numGPSdigits);
      sprintf(mkdirCommand,"mkdir -p %s",sftPath);
-     system(mkdirCommand);
+     if ( system(mkdirCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
 /* 12/27/05 gam; make SFT file name according to LIGO T040164-01 specification */
@@ -292,7 +293,7 @@ void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR
 void mvFilenames(CHAR *filename1, CHAR *filename2) {
      CHAR mvFilenamesCommand[512];
      sprintf(mvFilenamesCommand,"mv %s %s",filename1,filename2);
-     system(mvFilenamesCommand);
+     if ( system(mvFilenamesCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
 #if TRACKMEMUSE
@@ -301,7 +302,7 @@ void printmemuse() {
    char commandline[256];
    fflush(NULL);
    sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
-   system(commandline);
+   if ( system(commandline) ) XLALPrintError ("system() returned non-zero status\n");
    fflush(NULL);
  }
 #endif

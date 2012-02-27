@@ -77,36 +77,38 @@ int ReadMeshFileHeader(FILE *fp,BinaryMeshFileHeader *BMFheader)
   /* this function simply reads in the mesh header to memory */
 
   char dmp[256];
+  int count = 0;
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->f_max);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->tspan);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsSeconds);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsNanoSeconds);
+  count += fscanf(fp,"%s%u",dmp,&BMFheader->Nfilters);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->mismatch);
+  count += fscanf(fp,"%s%s",dmp,BMFheader->det);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->RA);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->dec);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->sma_0);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->sma_MIN);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->sma_MAX);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tperi_0.gpsSeconds);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tperi_0.gpsNanoSeconds);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MIN.gpsSeconds);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MIN.gpsNanoSeconds);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MAX.gpsSeconds);
+  count += fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MAX.gpsNanoSeconds);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->ecc_MIN);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->ecc_MAX);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->argp_MIN);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->argp_MAX);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->period_MIN);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->period_MAX);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->metric_XX);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->metric_XY);
+  count += fscanf(fp,"%s%lf",dmp,&BMFheader->metric_YY);
+  count += fscanf(fp,"%s%s",dmp,BMFheader->version);
+  count += fscanf(fp," ");
 
-  fscanf(fp,"%s%lf",dmp,&BMFheader->f_max);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->tspan);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tstart.gpsNanoSeconds);
-  fscanf(fp,"%s%u",dmp,&BMFheader->Nfilters);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->mismatch);
-  fscanf(fp,"%s%s",dmp,BMFheader->det);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->RA);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->dec);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->sma_0);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->sma_MIN);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->sma_MAX);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tperi_0.gpsSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tperi_0.gpsNanoSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MIN.gpsSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MIN.gpsNanoSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MAX.gpsSeconds);
-  fscanf(fp,"%s%d",dmp,&BMFheader->tperi_MAX.gpsNanoSeconds);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->ecc_MIN);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->ecc_MAX);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->argp_MIN);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->argp_MAX);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->period_MIN);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->period_MAX);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->metric_XX);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->metric_XY);
-  fscanf(fp,"%s%lf",dmp,&BMFheader->metric_YY);
-  fscanf(fp,"%s%s",dmp,BMFheader->version);
-  fscanf(fp," ");
+  if ( count != 28 ) fprintf (stderr, "\nSome fscanf() conversions failed in %s\n\n", __func__ );
 
   return 0;
 

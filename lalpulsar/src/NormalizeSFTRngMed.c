@@ -63,6 +63,7 @@ the Running median method.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/NormalizeSFTRngMed.h>
 
 /** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.

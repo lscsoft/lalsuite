@@ -7,6 +7,7 @@
  * targeted pulsar searches.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_models.h"
 
 static BinaryPulsarParams empty_BinaryPulsarParams;

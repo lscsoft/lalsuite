@@ -67,6 +67,7 @@
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdarg.h>
 #include <stdio.h>
 #include <lal/Date.h>

@@ -26,6 +26,7 @@
 #include <gsl/gsl_multiroots.h>
 #include <gsl/gsl_integration.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS

@@ -66,6 +66,7 @@
 #include <getopt.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>

@@ -26,6 +26,7 @@
  * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/TimeSeries.h>

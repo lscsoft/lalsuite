@@ -67,6 +67,7 @@ LALComputeDetAMResponse()
 /******* INCLUDE ANY LDAS LIBRARY HEADERS ************/
 
 /******* INCLUDE ANY LAL HEADERS ************/
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/FitToPulsar.h>
 

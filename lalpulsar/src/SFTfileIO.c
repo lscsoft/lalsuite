@@ -47,6 +47,7 @@
 #include <io.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>

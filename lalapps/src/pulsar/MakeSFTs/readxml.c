@@ -260,7 +260,9 @@ static TimeSeries *dotimeseries(ezxml_t series,char *xmlname) {
     
     free(pathbinfile);
     
-    fread(buffer,sizeof(double),timeseries->Length * timeseries->Records,binfile);
+    size_t len = timeseries->Length * timeseries->Records;
+    if ( len != fread(buffer,sizeof(double),len,binfile) )
+      fprintf (stderr, "\nFailed to read %zd entries from 'binfile'\n", len );
 
     /* Do the encoding switch if necessary */
 

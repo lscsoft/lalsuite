@@ -18,6 +18,7 @@
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <string.h>
 #include <lal/Date.h>
 #include <lal/LALComplex.h>

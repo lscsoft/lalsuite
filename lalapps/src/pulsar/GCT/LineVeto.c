@@ -31,6 +31,7 @@
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "LineVeto.h"
 #include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
 

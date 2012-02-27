@@ -44,6 +44,7 @@
 
 /** \cond DONT_DOXYGEN */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

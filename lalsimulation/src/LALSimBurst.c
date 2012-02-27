@@ -27,6 +27,7 @@
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>

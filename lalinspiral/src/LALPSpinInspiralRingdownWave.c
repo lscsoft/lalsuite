@@ -91,6 +91,7 @@
  *
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>

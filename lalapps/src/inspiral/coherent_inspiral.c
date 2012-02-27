@@ -37,6 +37,7 @@
 #include <unistd.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALFrameIO.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeDelay.h>

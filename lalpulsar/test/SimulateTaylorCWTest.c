@@ -173,6 +173,7 @@ LALGenerateTaylorCW()           LALSDestroyVectorSequence()
 #define SIMULATETAYLORCWTESTC_MSGEPRINT "Wrote past end of message string"
 /*@}*/
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>
