@@ -268,15 +268,15 @@ typedef double complex COMPLEX16;
 
 /* Complex type constructors */
 #if defined(__cplusplus)
-#define CX8rect(re, im)  std::complex<float>( re, im )
-#define CX16rect(re, im) std::complex<float>( re, im )
-#define CX8polar(r, th)  ( (r) * exp( _Complex_I * (th) ) )
-#define CX16polar(r, th) ( (r) * exp( _Complex_I * (th) ) )
+#define CX8rect(re, im)  COMPLEX8 ( re, im )
+#define CX16rect(re, im) COMPLEX16( re, im )
+#define CX8polar(r, th)  ( (r) * std::exp( CX8rect ( 0, th ) ) )
+#define CX16polar(r, th) ( (r) * std::exp( CX16rect( 0, th ) ) )
 #else
 #define CX8rect(re, im)  ( (re) + _Complex_I * (im) )
 #define CX16rect(re, im) ( (re) + _Complex_I * (im) )
-#define CX8polar(r, th)  ( (r) * cexpf( _Complex_I * (th) ) )
-#define CX16polar(r, th) ( (r) * cexp ( _Complex_I * (th) ) )
+#define CX8polar(r, th)  ( (r) * cexpf( CX8rect ( 0, th ) ) )
+#define CX16polar(r, th) ( (r) * cexp ( CX16rect( 0, th ) ) )
 #endif
 
 /* Real and imaginary part accessors */
@@ -304,8 +304,8 @@ typedef double complex COMPLEX16;
 #define setCX8im(z, im)  __imag__(z) = (im)
 #define setCX16im(z, im) __imag__(z) = (im)
 #else
-#define setCX8re(z, re)  (z) = CX8rect ( re, CX8imag (z) )
-#define setCX16re(z, re) (z) = CX16rect( re, CX16imag(z) )
+#define setCX8re(z, re)  (z) = CX8rect ( re, CX8im (z) )
+#define setCX16re(z, re) (z) = CX16rect( re, CX16im(z) )
 #define setCX8im(z, im)  (z) = CX8rect ( CX8re (z), im )
 #define setCX16im(z, im) (z) = CX16rect( CX16re(z), im )
 #endif
