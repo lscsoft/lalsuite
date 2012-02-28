@@ -208,7 +208,7 @@ int main(int argc, char *argv[])
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
 
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 
   if ( argc == 1)	/* avoid warning */
     argc = 1;
@@ -340,7 +340,7 @@ int main(int argc, char *argv[])
       "H-1_H1_60SFT_test-000012465-61.sft",
       "H-1_H1_60SFT_test-000012585-61.sft"
     };
-    fprintf(stderr, "*** Comparing single and concatenated SFTs ***\n");
+    printf("*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
     if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
       LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
@@ -392,7 +392,7 @@ int main(int argc, char *argv[])
       }
     }
     fclose(fpConcat);
-    fprintf(stderr, "*** Comparing was successful!!! ***\n");
+    printf( "*** Comparing was successful!!! ***\n");
   }
 
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */
