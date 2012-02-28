@@ -982,7 +982,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
       REAL8 f = headData->freqModelhPlus->deltaF * ui;
       COMPLEX16 d = headData->freqModelhPlus->data->data[ui];
 
-      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
     }
     fclose(out);
 
@@ -992,7 +992,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
       REAL8 f = headData->freqModelhCross->deltaF * ui;
       COMPLEX16 d = headData->freqModelhCross->data->data[ui];
 
-      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
     }
     fclose(out);
 
