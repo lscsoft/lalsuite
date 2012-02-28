@@ -1522,9 +1522,6 @@ void initVariables(LALInferenceRunState *state)
       LALInferenceAddVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmas, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     }
-  }
-  ppt=LALInferenceGetProcParamVal(commandLine, "--acceptanceRatio");
-  if (ppt) {
 
     REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
     REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);

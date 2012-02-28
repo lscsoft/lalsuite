@@ -146,7 +146,7 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, int sourceTemp)
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
-  int i,t,p,lowerRank,upperRank,x; //indexes for for() loops
+  int i,t,p,lowerRank,upperRank; //indexes for for() loops
   int nChain;
   int MPIrank, MPIsize;
   LALStatus status;
@@ -170,7 +170,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 adaptationOn = 0;
   INT4 adapting = 0;
   INT4 annealingOn = 1;
-  INT4 acceptanceRatioOn = 0;
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
@@ -220,10 +219,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4  adaptTau          = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau")); // Sets the length and slope of adaption function
   INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
   INT4  adaptationLength  = pow(10,adaptTau);   // Number of iterations to adapt before turning off
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatio");
-  if(ppt){
-    acceptanceRatioOn = 1;
-  }
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
   if (ppt) {
     adaptationOn = 1;                           // Flag to indicate adaptation is being used during the run
@@ -400,7 +395,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
     sprintf(statfilename,"PTMCMC.statistics.%u.%2.2d",randomseed,MPIrank);
     stat = fopen(statfilename, "a");
   }
@@ -420,9 +415,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (adaptationOn == 1) {
     LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
-  }
-
-  if (acceptanceRatioOn == 1){
     PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
     PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
   }
@@ -558,7 +550,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       fflush(chainoutput);
 
       if (adaptationOn == 1) {
-        if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+        if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
           fseek(stat, 0L, SEEK_END);
           fprintf(stat,"%d\t",i);
 
@@ -567,8 +559,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             for (p=0; p<nPar; ++p) {
               fprintf(stat,"%f\t",sigmas->data[p]);
             }
-          }
-          if(LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")){
             for (p=0; p<nPar; ++p) {
               fprintf(stat,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
             }
@@ -655,7 +645,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   fclose(chainoutput);
 
   if(MPIrank == 0){
-    if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose") || LALInferenceGetProcParamVal(runState->commandLine, "--acceptanceRatioVerbose")) {
+    if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
       fclose(stat);
     }
     if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
@@ -688,12 +678,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 temperature;
   REAL8 targetAcceptance = 0.234;
   REAL8 acceptanceRate = 0.0;
-  REAL8 diff = 0.0;
   INT4 acceptanceCount;
   INT4 accepted = 0;
   const char *currentProposalName;
   LALInferenceProposalStatistics *propStat;
-  ProcessParamsTable *ppt, *commandLine = runState->commandLine;
 
   // current values:
   logPriorCurrent      = runState->currentPrior;
@@ -791,18 +779,10 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 
       dprior = priorMax - priorMin;
 
-      /*
-      diff = acceptanceRate - targetAcceptance;
-      if (diff > 0){
-        sigma=sigma*(1+s_gamma*diff*diff);
-      } else {
-        sigma=sigma*(1-s_gamma*diff*diff);
-      }
-      */
       if(accepted == 1){
-        sigma=sigma+s_gamma*(dprior/100.0)*(1.0-0.234);
+        sigma=sigma+s_gamma*(dprior/100.0)*(1.0-targetAcceptance);
       }else{
-        sigma=sigma-s_gamma*(dprior/100.0)*(0.234);
+        sigma=sigma-s_gamma*(dprior/100.0)*(targetAcceptance);
       }
 
       sigma = (sigma > dprior ? dprior : sigma);
