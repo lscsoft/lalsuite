@@ -1461,7 +1461,7 @@ int MAIN( int argc, char *argv[]) {
                 thisPoint.fkdot[2] = usefulParams.spinRange_midTime.fkdot[2] + if2dot * df2dot;
 
                 /* Frequency at the segment's midpoint for later use */
-                f1dot_event = thisPoint.fkdot[1];
+                f1dot_event = thisPoint.fkdot[1] + thisPoint.fkdot[2] * timeDiffSeg;
                 myf0 = thisPoint.fkdot[0] + thisPoint.fkdot[1] * timeDiffSeg +
                   + 0.5 * thisPoint.fkdot[2] * timeDiffSeg * timeDiffSeg;
 
