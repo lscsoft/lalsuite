@@ -884,28 +884,34 @@ XLALSimIMREOBNRv2Generator(
      XLAL_ERROR( XLAL_EINVAL );
    }
 
-   /* Check that the 220 QNM freq. is less than the Nyquist freq. */
-   /* Get QNM frequencies */
+   /* Check that the (l,m,0) QNM freq. is less than the Nyquist freq. */
    modefreqs = XLALCreateCOMPLEX16Vector( 3 );
-   xlalStatus = XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, NULL, NULL, 2, 2, 3, EOBNRv2);
-   if ( xlalStatus != XLAL_SUCCESS )
+   for ( currentMode = 0; currentMode < nModes; currentMode++ )
    {
-     XLALDestroyCOMPLEX16Vector( modefreqs );
-     XLALDestroyREAL8Vector( values );
-     XLALDestroyREAL8Vector( dvalues );
-     XLAL_ERROR( XLAL_EFUNC );
-   }
+     count = 0;
 
-   /* If Nyquist freq. <  220 QNM freq., exit */
-   /* Note that we cancelled a factor of 2 occuring on both sides */
-   if ( LAL_PI / modefreqs->data[0].re < dt )
-   {
-     XLALDestroyCOMPLEX16Vector( modefreqs );
-     XLALDestroyREAL8Vector( values );
-     XLALDestroyREAL8Vector( dvalues );
-     XLALPrintError( "Ringdown freq greater than Nyquist freq. "
-           "Increase sample rate or consider using EOB approximant.\n" );
-     XLAL_ERROR( XLAL_EINVAL );
+     modeL = lmModes[currentMode][0];
+     modeM = lmModes[currentMode][1];
+     /* Get QNM frequencies */
+     xlalStatus = XLALSimIMREOBGenerateQNMFreqV2( modefreqs, mass1, mass2, NULL, NULL, modeL, modeM, 3, EOBNRv2);
+     if ( xlalStatus != XLAL_SUCCESS )
+     {
+       XLALDestroyCOMPLEX16Vector( modefreqs );
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
+       XLAL_ERROR( XLAL_EFUNC );
+     }
+     /* If Nyquist freq. <  (l,m,0) QNM freq., exit */
+     /* Note that we cancelled a factor of 2 occuring on both sides */
+     if ( LAL_PI / modefreqs->data[0].re < dt )
+     {
+       XLALDestroyCOMPLEX16Vector( modefreqs );
+       XLALDestroyREAL8Vector( values );
+       XLALDestroyREAL8Vector( dvalues );
+       XLALPrintError( "(%d,%d) mode ringdown freq greater than Nyquist freq. "
+             "Increase sample rate or consider using EOB approximant.\n",modeL,modeM );
+       XLAL_ERROR( XLAL_EINVAL );
+     }
    }
 
    /* Calculate the time we will need to step back for ringdown */
@@ -986,6 +992,20 @@ XLALSimIMREOBNRv2Generator(
 
    pr3in.omega = omega;
 
+   if ( XLALrOfOmegaP4PN(rInitMin, &pr3in) < 0.)
+   {
+     XLALPrintError( "Initial orbital frequency too high. The corresponding initial radius < %fM\n", rInitMin);
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
+     XLAL_ERROR( XLAL_EFUNC );
+   }
+   if ( XLALrOfOmegaP4PN(rInitMax, &pr3in) > 0.)
+   {
+     XLALPrintError( "Initial orbital frequency too low. The corresponding initial radius > %fM\n", rInitMax);
+     XLALDestroyREAL8Vector( values );
+     XLALDestroyREAL8Vector( dvalues );
+     XLAL_ERROR( XLAL_EFUNC );
+   }
    r = XLALDBisectionFindRoot( XLALrOfOmegaP4PN, rInitMin,
               rInitMax, xacc, &pr3in);
    if ( XLAL_IS_REAL8_FAIL_NAN( r ) )
@@ -1182,7 +1202,7 @@ XLALSimIMREOBNRv2Generator(
      XLALDestroyREAL8Vector( p2 );
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
-    XLALPrintError( "We don't seem to have crossed the low frequency cut-off\n" );
+    XLALPrintError( "Low frequency cut-off is too close to coalescence frequency.\n" );
     XLAL_ERROR( XLAL_EFAILED );
   }
 
