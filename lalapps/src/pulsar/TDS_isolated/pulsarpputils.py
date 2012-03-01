@@ -425,8 +425,9 @@ def phipsiconvert(phipchain, psipchain):
 # function to create histogram plot of the 1D posterior (potentially for
 # multiple IFOs) for a parameter (param). If an upper limit is given then
 # that will be output
-def plot_posterior_hist(poslist, param, parambounds, ifos, nbins=50,
-                        upperlimit=0):
+def plot_posterior_hist(poslist, param, 
+                        parambounds=[float("-inf"), float("inf")], 
+                        ifos, nbins=50, upperlimit=0):
   # create list of figures
   myfigs = []
   
@@ -446,7 +447,7 @@ def plot_posterior_hist(poslist, param, parambounds, ifos, nbins=50,
  
     # get a normalised histogram for each
     n, bins = hist_norm_bounds( pos_samps, int(nbins), parambounds[0], \
-                                paramsbounds[1] )
+                                parambounds[1] )
     
     #n, bins, patches = plt.hist( pos_samps, bins=int(nbins), normed='True', \
     #                             histtype='step', color=coldict[ifo] )
