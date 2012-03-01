@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 32
+# serial 33
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
@@ -524,10 +524,6 @@ void Function1(ComplexStruct *pz) {
 int Function2(ComplexStruct pz) {
   return (pz.re == zre && pz.im == zim);
 }
-ComplexStruct Function3() {
-  ComplexStruct z = {zre, zim};
-  return z;
-}
 ])
     ],[
       # if compilation was successful, save the compiled object
@@ -562,7 +558,6 @@ extern const $2 zre;
 extern const $2 zim;
 void Function1($3 *pz);
 int Function2($3 pz);
-$3 Function3();
 #ifdef __cplusplus
 }
 #endif
@@ -577,10 +572,6 @@ $3 Function3();
   }
   if (!Function2(c)) {
     return 3;
-  }
-  c = Function3();
-  if ($4(c) != zre || $5(c) != zim) {
-    return 4;
   }
   return 0 /* ; */
 ])
