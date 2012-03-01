@@ -147,10 +147,10 @@ DATATYPE TYPESUM (
 	size_t count
 )
 {
-	DATATYPE sum = ZERO;
+	DATATYPE sum = 0;
 
 	for(data += first; count-- > 0; data++)
-		SUM
+		sum += *data;
 
 	return sum;
 }
@@ -165,7 +165,7 @@ SQUAREDATATYPE TYPESUMSQ (
 	SQUAREDATATYPE sum = 0;
 
 	for(data += first; count-- > 0; data++)
-		sum += SUMSQ;
+		sum += *data * *data;
 
 	return sum;
 }
@@ -178,7 +178,7 @@ DATATYPE SEQUENCESUM (
 )
 {
 	if(first >= sequence->length)
-		return ZERO;
+		return 0;
 	if(first + count > sequence->length)
 		count = sequence->length - first;
 	return TYPESUM (sequence->data, first, count);
