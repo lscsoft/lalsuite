@@ -225,7 +225,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 tempMax = 0.0;
   REAL8 trigSNR = 0.0;
   REAL8 targetHotLike       = 15;               // Targeted max 'experienced' log(likelihood) of hottest chain
-  INT4  hotThreshold        = nChain/2;         // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
+  INT4  hotThreshold        = nChain/2-1;         // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
 
   /* Set maximum temperature (command line value take precidence) */
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
@@ -259,9 +259,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSwaps"))
     tempSwaps = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSwaps")->value);
 
-  INT4  startAnnealing  = 500000;                             // Iteration where annealing starts
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--startAnnealing"))
-    startAnnealing = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--startAnnealing")->value);
+  INT4  annealStart     = 500000;                             // Iteration where annealing starts
+  if (LALInferenceGetProcParamVal(runState->commandLine,"--annealStart"))
+    annealStart = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealStart")->value);
 
   INT4  annealLength    = 100000;                             // Number of iterations to cool temperatures to ~1.0
   if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
@@ -280,7 +280,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempKill"))
     Tkill = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempKill")->value);
   else if (annealingOn)
-    Tkill = startAnnealing+annealLength;
+    Tkill = annealStart+annealLength;
 
   for (t=0; t<nChain; ++t) {
     tempLadder[t] = 0.0;
@@ -335,23 +335,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   /* Construct temperature ladder */
   if(nChain > 1){
-    if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")){ //temperature spacing uniform in 1/T
+    if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")) {     //temperature spacing uniform in 1/T
       tempDelta = (1.0/tempMin - 1.0/tempMax)/(REAL8)(nChain-1);
       for (t=0; t<nChain; ++t) {
         tempLadder[t]=1.0/(REAL8)(1.0/tempMin-t*tempDelta);
       }
-    }
-    else if(LALInferenceGetProcParamVal(runState->commandLine, "--geomLadder")){ //Geometric spacing (most efficient so far. Should become default?
+    } else {                                                                        //Geometric spacing
       tempDelta=pow(tempMax-tempMin+1,1.0/(REAL8)(nChain-1));
       for (t=0;t<nChain; ++t) {
         tempLadder[t]=tempMin + pow(tempDelta,t) - 1.0;
         annealDecay[t] = (tempLadder[t]-1.0)/(REAL8)annealLength;
-      }
-    }
-    else{ //epxonential spacing
-      tempDelta = log(tempMax-tempMin+1)/(REAL8)(nChain-1);
-      for (t=0; t<nChain; ++t) {
-        tempLadder[t]=tempMin + exp(t*tempDelta) - 1.0;
       }
     }
   } else {
@@ -444,7 +437,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     else
       printf(" Adaptation off.\n");
     if (annealingOn)
-      printf(" Annealing linearly starting at iteration %i for %i iterations.\n", startAnnealing, annealLength);
+      printf(" Annealing linearly starting at iteration %i for %i iterations.\n", annealStart, annealLength);
     else
       printf(" Annealing off.\n");
     if (Tkill != Niter)
@@ -469,6 +462,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   // iterate:
+  fflush(stdout);
   MPI_Barrier(MPI_COMM_WORLD);
   for (i=1; i<=Niter; i++) {
 
@@ -510,35 +504,40 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         }
 
         /* If adaptation hasn't been turned off, set envelope variable */
-        if (adapting) 
+        if (adapting)
           LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &s_gamma);
       }
     }
 
     if (annealingOn) {
       /* Annealing */
-      if (i == startAnnealing) {
+      if (i == annealStart) {
         runState->proposal = &LALInferencePostPTProposal;
-        BcastDifferentialEvolutionPoints(runState, 0);
-        /* Force chains to re-adapt */
-        if (!adaptationOn) {
-          adaptationOn = 1;
-          s_gamma = 1.0;
-          LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
+          BcastDifferentialEvolutionPoints(runState, 0);
+        if (adaptationOn && tempLadder[MPIrank] != 1.0) {
+          /* Force hot chains to re-adapt */
+          if (!adapting) {
+            adapting = 1;
+            LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
+            LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+          }
+          for (p=0; p<nPar; ++p) {
+            PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+            PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
+            PacceptCount->data[p] =0;
+            PproposeCount->data[p]=0;
+          }
+          s_gamma = 0.0;
+          LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &s_gamma);
+          adaptStart = i;
         }
-        for (p=0; p<nPar; ++p) {
-          PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-          PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-          PacceptCount->data[p] =0;
-          PproposeCount->data[p]=0;
-        }
-        adaptStart = i;
-      } else if (i > startAnnealing) {
+      } else if (i > annealStart) {
         for (t=0;t<nChain; ++t) {
           tempLadder[t] = tempLadder[t] - annealDecay[t];
           LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));
         }
-        if (annealLength == i - startAnnealing)
+        if (annealLength == i - annealStart)
           annealingOn = 0;
       }
     }
