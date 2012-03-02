@@ -34,8 +34,7 @@ check_PROGRAMS = \
 #	LALInferenceKDTest
 
 TESTS = \
-	$(check_PROGRAMS) \
-	$(XML_PROGRAMS)
+	$(check_PROGRAMS)
 
 endif
 endif
