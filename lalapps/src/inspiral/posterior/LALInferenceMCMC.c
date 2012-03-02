@@ -1499,8 +1499,12 @@ void initVariables(LALInferenceRunState *state)
 
   UINT4 N = LALInferenceGetVariableDimensionNonFixed(currentParams);
 
-  ppt=LALInferenceGetProcParamVal(commandLine, "--adapt");
+  INT4 adaptationOn = 1;  // Run includes adaptation
+  ppt=LALInferenceGetProcParamVal(commandLine, "--noAdapt");
   if (ppt) {
+    fprintf(stdout, "Turning off adaptation.\n");
+    adaptationOn = 0;
+  } else {
     fprintf(stdout, "Adapting single-param step sizes.\n");
     if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
       /* We need a sigma vector for adaptable jumps. */
@@ -1534,12 +1538,12 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(state->proposalArgs, "PacceptCount", &PacceptCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(state->proposalArgs, "PproposeCount", &PproposeCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
   }
+  INT4 adapting = adaptationOn;      // Indicates if current iteration is being adapted
+  LALInferenceAddVariable(state->proposalArgs, "adaptationOn", &adaptationOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(state->proposalArgs, "adapting", &adapting, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   INT4 adaptableStep = 0;
   LALInferenceAddVariable(state->proposalArgs, "adaptableStep", &adaptableStep, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
-
-  INT4 adapting = 0;
-  LALInferenceAddVariable(state->proposalArgs, "adapting", &adapting, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   INT4 varNumber = 0;
   LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
@@ -1547,7 +1551,7 @@ void initVariables(LALInferenceRunState *state)
   INT4 sigmasNumber = 0;
   LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &sigmasNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-  INT4 tau = 6;
+  INT4 tau = 5;
   LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   ppt = LALInferenceGetProcParamVal(commandLine, "--adaptTau");

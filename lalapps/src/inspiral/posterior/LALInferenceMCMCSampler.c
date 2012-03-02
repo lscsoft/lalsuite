@@ -167,8 +167,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 tempDelta = 0.0;
   REAL8Vector * parameters = NULL;
 
-  INT4 adaptationOn = 0;
-  INT4 adapting = 0;
   INT4 annealingOn = 0;
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
@@ -214,18 +212,13 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   /* Adaptation settings */
+  INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
+  INT4  adapting     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));     // Current step being adapted
   REAL8 s_gamma           = 1.0;                // Sets the size of changes to jump size during adaptation
   INT4  adaptStart        = 0;                  // Keeps track of last iteration adaptation was restarted
-  INT4  adaptTau          = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau")); // Sets the length and slope of adaption function
   INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
+  INT4  adaptTau          = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau")); // Sets the length and slope of adaption function
   INT4  adaptationLength  = pow(10,adaptTau);   // Number of iterations to adapt before turning off
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
-  if (ppt) {
-    adaptationOn = 1;                           // Flag to indicate adaptation is being used during the run
-    adapting = 1;                               // Flag to indicate the current steps are being adapted
-  }
-
-  LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
 
   /* Temperature ladder settings */
   REAL8 tempMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temperature in ladder
@@ -378,6 +371,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceAddVariable(runState->proposalArgs, "hotChain", &hotChain, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   if (MPIrank == 0){
+    printf("\nTemperature ladder:\n");
     for (t=0; t<nChain; ++t) {
       printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
     }
@@ -423,8 +417,26 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
   }
 
+  /* Print run details */
   if (MPIrank == 0) {
-    printf(" PTMCMCAlgorithm(); starting parameter values:\n");
+    printf("\nParallel Behavior:\n");
+    if (adaptationOn)
+      printf(" Adapting with decay power %i for %i iterations after max log(L) increases by nParams/2 (%1.2f).\n", adaptTau, adaptationLength, (double)nPar/2.0);
+    else
+      printf(" Adaptation off.\n");
+    if (annealingOn)
+      printf(" Annealing linearly starting at iteration %i for %i iterations.\n", startAnnealing, annealLength);
+    else
+      printf(" Annealing off.\n");
+    if (Tkill != Niter)
+      printf(" Parallel tempering for %i iterations.\n", Tkill);
+    else
+      printf(" Parallel tempering for the entire run.\n");
+  }
+
+
+  if (MPIrank == 0) {
+    printf("\nPTMCMCAlgorithm(); starting parameter values:\n");
     LALInferencePrintVariables(runState->currentParams);
     printf(" MCMC iteration: 0\t");
     printf("%f\t", runState->currentLikelihood - nullLikelihood);
