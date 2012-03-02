@@ -67,6 +67,7 @@ imaginary part of the element.
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>

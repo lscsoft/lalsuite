@@ -19,6 +19,7 @@
 
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALComplex.h>

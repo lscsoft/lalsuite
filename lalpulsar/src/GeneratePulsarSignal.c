@@ -36,6 +36,7 @@
 #include <math.h>
 #include <gsl/gsl_math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>

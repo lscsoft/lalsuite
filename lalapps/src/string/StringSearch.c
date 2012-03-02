@@ -45,6 +45,7 @@
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_roots.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>

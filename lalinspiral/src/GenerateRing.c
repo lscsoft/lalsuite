@@ -45,6 +45,7 @@ LALDCreateVector()            LALDDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>

@@ -44,6 +44,7 @@
 int finite(double);
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
@@ -1369,9 +1370,11 @@ WriteFStatLog (LALStatus *status, char *argv[], const CHAR *log_fname )
   fclose (fplog);
 
   sprintf (command, "ident %s 2> /dev/null | sort -u >> %s", argv[0], log_fname);
-  system(command); /* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
+  /* we don't fail here. If system() fails, we assume that */
+  /* one of the system-commands was not available, and */
+  /* therefore the CVS-versions will not be logged */
+  if ( system(command) )
+    LogPrintf ( LOG_DEBUG, "\nsystem('%s') returned non-zero status!\n", command );
 
   DETATCHSTATUSPTR (status);
   RETURN(status);

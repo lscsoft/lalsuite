@@ -41,6 +41,7 @@ code can also be used to update heterodyned data using new parameters (old and n
 are required) i.e. it will take the difference of the original heterodyne phase and the new phase
 and reheterodyne with this phase difference. */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "heterodyne_pulsar.h"
 
 /* define a macro to round a number without having to use the C round function */

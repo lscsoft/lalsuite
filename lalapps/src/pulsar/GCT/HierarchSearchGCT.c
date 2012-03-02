@@ -633,8 +633,8 @@ int MAIN( int argc, char *argv[]) {
         return HIERARCHICALSEARCH_EFILE;
       }
       /* write column headings */
-      fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s\n",
-                "%% Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]" );
+      fprintf ( timing_fp, "%6s %6s %6s %6s %6s %6s %6s    %9s %9s %9s %9s    %9s %9s\n",
+                "%% Nsky", "Nf1", "Nf_F", "Nf_SB", "Nsft", "Nseg", "refine", "tau [s]", "tcoh [s]", "tsc [s]", "tLV [s]", "tauF0 [s]", "tauS0 [s]" );
       fclose ( timing_fp );
     } /* if outputTiming */
 
@@ -1809,9 +1809,22 @@ int MAIN( int argc, char *argv[]) {
         return HIERARCHICALSEARCH_EFILE;
       }
       REAL8 tau = timeEnd - timeStart;
-      fprintf ( timing_fp, "%6d %6d %6d %6d %6d %6d %6d    %9.3g %9.3g %9.3g %9.3g\n",
+
+      /* compute fundamental timing-model constants:
+       * 'tauF0' = Fstat time per template per SFT,
+       * 'tauS0' = time to add one per-segment F-stat value per fine-grid point
+       */
+      REAL8 Ncoarse = thisScan.numSkyGridPoints * nf1dot * ( binsFstatSearch + 2 * semiCohPar.extraBinsFstat);
+      REAL8 Nfine   = thisScan.numSkyGridPoints * binsFstatSearch * Nrefine * nf1dot;	// Note: doesn't include F-stat sideband bins!
+      REAL8 tauF0   = coherentTime / ( Ncoarse * nSFTs );
+      // Note: we use (total-FstatTime) instead of incoherentTime to ensure accurate prediction power
+      // whatever extra time isn't captured by incoherentTime+coherentTime also needs to be accounted as 'incoherent time'
+      // in our model...
+      REAL8 tauS0   = (tau - coherentTime) / ( Nfine * nStacks );
+
+      fprintf ( timing_fp, "%6d %6d %6d %6d %6d %6d %6d    %9.3g %9.3g %9.3g %9.3g    %9.3g %9.3g\n",
                 thisScan.numSkyGridPoints, nf1dot, binsFstatSearch, 2 * semiCohPar.extraBinsFstat, nSFTs,
-                nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime );
+                nStacks, Nrefine, tau, coherentTime, incoherentTime, vetoTime, tauF0, tauS0 );
       fclose ( timing_fp );
     }
 

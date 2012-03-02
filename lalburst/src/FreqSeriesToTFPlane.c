@@ -34,6 +34,7 @@
 #include <gsl/gsl_blas.h>
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Date.h>
 #include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>

@@ -40,6 +40,7 @@
 #include <time.h>
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -854,21 +855,8 @@ XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj)
            inj->longitude, inj->latitude, inj->polarization, &det);
 
   /* We want the end time to be the time of largest amplitude */
-  REAL8 max_value = 0;
-  REAL8 offset    = 0;
-  uint  max_idx   = 0;
-  
-  for (uint j = 0; j < strain->data->length; j++)
-  {
-    if (fabs(strain->data->data[j]) > max_value)
-    {
-      max_value = abs(strain->data->data[j]);
-      max_idx   = j;
-    }
-  }
-
-  offset = max_idx * strain->deltaT;
-
+  REAL8 offset = 0;
+  XLALFindNRCoalescencePlusCrossREAL8(&offset, plus_int, cross_int);
   XLALGPSAdd( &(strain->epoch), -offset);
 
   XLALDestroyREAL8TimeSeries (plus);

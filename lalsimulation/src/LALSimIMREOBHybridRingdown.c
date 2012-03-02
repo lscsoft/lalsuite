@@ -28,6 +28,7 @@ the inspiral part of the compat binary coalescing waveform.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -187,7 +188,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
 	}
   }
 
-#if 0
+  #if 0
   /* print ringdown-matching linear system: coefficient matrix and RHS vector */
   printf("\nRingdown matching matrix:\n");
   for (i = 0; i < 16; ++i)
@@ -204,7 +205,7 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
     printf("%.12e   ",gsl_vector_get(hderivs,i));
   }
   printf("\n");
- #endif
+  #endif
 
   /* Call gsl LU decomposition to solve the linear system */
   XLAL_CALLGSL( gslStatus = gsl_linalg_LU_decomp(coef, p, &s) );
@@ -1641,7 +1642,7 @@ static INT4 XLALFinalMassSpin(
       XLAL_ERROR( XLAL_EINVAL );
   }
 
-  printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );
+  /*printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );*/
 
   return XLAL_SUCCESS;
 }
@@ -1722,10 +1723,10 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
       }
 
-      for (j = 0; j < nmodes; j++)
+      /*for (j = 0; j < nmodes; j++)
       {
-        printf("QNM frequencies: %d %e %e\n",j,modefreqs->data[j].re*mTot,1./modefreqs->data[j].im/mTot);
-      }
+        printf("QNM frequencies: %d %d %d %e %e\n",l,m,j,modefreqs->data[j].re*mTot,1./modefreqs->data[j].im/mTot);
+      }*/
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
       Nrdwave = (INT4) (EOB_RD_EFOLDS / modefreqs->data[0].im / dt);

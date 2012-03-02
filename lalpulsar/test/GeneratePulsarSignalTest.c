@@ -89,6 +89,7 @@ example uses of the functions tested by this code.
 /* #define INCLUDE_RANDVAL_MISMATCH */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

@@ -95,6 +95,7 @@ void loadFullGridFile ( LALStatus *, DopplerFullScanState *scan, const DopplerFu
 int  XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan);
 void FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan);
 REAL8 XLALNumDopplerTemplates ( DopplerFullScanState *scan);
+int XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState *scan );
 
 /* ----- variout utility functions ----- */
 

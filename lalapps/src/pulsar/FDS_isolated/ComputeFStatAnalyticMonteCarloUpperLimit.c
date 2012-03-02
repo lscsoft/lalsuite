@@ -38,6 +38,7 @@
 #include <gsl/gsl_vector_int.h>
 #include <gsl/gsl_matrix.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/GSLSupport.h>

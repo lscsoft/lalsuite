@@ -31,6 +31,7 @@
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_sf_bessel.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>

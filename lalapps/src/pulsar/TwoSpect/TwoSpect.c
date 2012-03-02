@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>
@@ -341,7 +342,9 @@ int main(int argc, char *argv[])
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
    if (frac_tobs_complete<0.1) {
       fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
       XLAL_ERROR(XLAL_EFAILED);
+      //return 0;
    }
    
    //Index values of existing SFTs
@@ -603,7 +606,7 @@ int main(int argc, char *argv[])
       fclose(TFDATA); */
       
       //Calculation of average TF noise per frequency bin ratio to total mean
-      REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
+      /* REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
       if (aveTFnoisePerFbinRatio==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins);
@@ -613,19 +616,6 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
-         /* INT4 nolinesinterfering = 1;
-         if (lines!=NULL) {
-            REAL8 fbinfrequency = inputParams->fmin+ii/inputParams->Tcoh;
-            INT4 kk = 0;
-            while (kk<(INT4)trackedlines->length && nolinesinterfering==1) {
-               if (fbinfrequency>=trackedlines->data[kk*3+1] && fbinfrequency<=trackedlines->data[kk*3+2]) nolinesinterfering = 0;
-               kk++;
-            } // while kk < trackedlines->length && nolinesinterfering==1
-         }
-         if (nolinesinterfering) {
-            for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
-            aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
-         } else aveTFnoisePerFbinRatio->data[ii] = 0.0; */
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
@@ -635,8 +625,45 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
-      XLALDestroyREAL4Vector(TSofPowers);
+      XLALDestroyREAL4Vector(TSofPowers); */
       
+      REAL4 aveTFave = 0.0;
+      INT4 numinave = 0;
+      REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
+      REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
+      if (aveTFnoisePerFbinRatio==NULL) {
+         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins);
+         XLAL_ERROR(XLAL_EFUNC);
+      } else if (TSofPowers==NULL) {
+         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      memset(aveTFnoisePerFbinRatio->data, 0, sizeof(REAL4)*aveTFnoisePerFbinRatio->length);
+      for (ii=0; ii<ffdata->numfbins; ii++) {
+         INT4 nolinesinterfering = 1;
+         if (lines!=NULL) {
+            REAL4 fbinfrequency = inputParams->fmin+ii/inputParams->Tcoh;
+            INT4 kk = 0;
+            while (kk<(INT4)trackedlines->length && nolinesinterfering==1) {
+               if (fbinfrequency>=trackedlines->data[kk*3+1] && fbinfrequency<=trackedlines->data[kk*3+2]) {
+                  nolinesinterfering = 0;
+               }
+               kk++;
+            } // while kk < trackedlines->length && nolinesinterfering==1
+         } //if lines != NULL
+         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
+         aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
+         if (nolinesinterfering) {
+            aveTFave += aveTFnoisePerFbinRatio->data[ii]; 
+            numinave++;
+         }
+      }
+      REAL4 aveTFaveinv = (REAL4)numinave/aveTFave;
+      for (ii=0; ii<ffdata->numfbins; ii++) {
+         aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
+         //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
+      }
+      XLALDestroyREAL4Vector(TSofPowers);
       
       //Do the second FFT
       makeSecondFFT(ffdata, TFdata_weighted, secondFFTplan);
@@ -655,10 +682,16 @@ int main(int argc, char *argv[])
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
       
+      //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
-         fprintf(stderr, "Apparently, no SFTs were read in (Average power value is zero). Program exiting with failure.\n");
+         fprintf(stderr, "%s: Average second FFT power is 0.0. Perhaps no SFTs are remaining? Program exiting with failure.\n", __func__);
+         fprintf(LOG, "%s: Average second FFT power is 0.0. Perhaps no SFTs are remaining? Program exiting with failure.\n", __func__);
          XLAL_ERROR(XLAL_FAILURE);
       }
+      
+      //if (fabs(secFFTsigma-1.0)>=2.0) {
+         //fprintf(stderr, "%s: Background noise estimate is ", __func__);
+      //}
       
       
 ////////Start of the IHS step!
@@ -1516,6 +1549,10 @@ alpha=0.1 (E.G derived using root finding)
 n       10      20      30      40      50      60      80      n>80
         .369    .265    .218    .189    .170    .155    .135    1.224/(sqrt(n)+0.12+0.11/sqrt(n))
 
+alpha=0.2 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+                                                                1.073/(sqrt(n)+0.12+0.11/sqrt(n))
+
 alpha=0.5 (E.G derived using root finding)
 n       10      20      30      40      50      60      80      n>80
         .249    .179    .147    .128    .115    .105    .091    0.828/(sqrt(n)+0.12+0.11/sqrt(n))
@@ -1532,6 +1569,10 @@ n                                                               n>80
 alpha=0.1
 n                                                               n>80
                                                                 1.620/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.2
+n                                                               n>80
+                                                                1.473/(sqrt(n)+0.155+0.24/sqrt(n))
 */
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
 {
@@ -1555,8 +1596,10 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
    
    REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
    //REAL8 ksthreshold = 1.224/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a tighter restriction
+   //REAL8 ksthreshold = 1.073/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is an even tighter restriction
    REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
    //REAL8 kuiperthreshold = 1.620/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is a tighter restriction
+   //REAL8 kuiperthreshold = 1.473/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is an even tighter restriction
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(tfdata->data[ii*numfbins]), sizeof(REAL4)*tempvect->length);
@@ -1770,8 +1813,10 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, input
    INT4 ii;
    for (ii=0; ii<(INT4)lines->length; ii++) {
       output->data[ii*3] = lines->data[ii]*df + minfbin;
-      output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
-      output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
+      //output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
+      //output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
+      output->data[ii*3 + 1] = (lines->data[ii] + (minshift-1))*df + minfbin;  //Add one extra bin for buffer
+      output->data[ii*3 + 2] = (lines->data[ii] + (maxshift+1))*df + minfbin;  //Add one extra bin for buffer
    }
    
    return output;

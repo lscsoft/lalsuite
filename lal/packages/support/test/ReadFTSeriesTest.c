@@ -108,6 +108,7 @@ LALUnitPair
 #define READFTSERIESTESTC_MSGEFLS "Subroutine returned unexpected results"
 /********************** </lalErrTable> */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>

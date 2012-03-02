@@ -267,7 +267,10 @@ int ReadFullBank(void)
 
   /* cycle through the templates and calculate the distance from the central point */ 
   for (i=0;i<Nfull;i++) {
-    fscanf(fbfp,"%lf%lf%d%d%lf%lf",&sma[i],&dummy,&tperi[i].gpsSeconds,&tperi[i].gpsNanoSeconds,&dummy,&dummy);
+    if ( 6 != fscanf(fbfp,"%lf%lf%d%d%lf%lf",&sma[i],&dummy,&tperi[i].gpsSeconds,&tperi[i].gpsNanoSeconds,&dummy,&dummy) ) {
+      fprintf (stderr, "\nfscanf() failed to read 6 items from stream 'fbfp'\n" );
+      exit(1);
+    }
     RTPloc.sma=sma[i];
     RTPloc.tperi.gpsSeconds=tperi[i].gpsSeconds;
     RTPloc.tperi.gpsNanoSeconds=tperi[i].gpsNanoSeconds;

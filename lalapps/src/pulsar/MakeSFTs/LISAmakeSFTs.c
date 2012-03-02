@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/TimeSeries.h>

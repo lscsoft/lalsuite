@@ -25,6 +25,7 @@
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
@@ -493,6 +494,38 @@ XLALFindNRCoalescenceTime(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
   gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL4), compare_abs_float);
 
   *tc = ind[len-1] * in->deltaT;
+
+  LALFree(ind);
+  LALFree(sumSquare);
+
+  return 0;
+}
+
+
+  INT4
+XLALFindNRCoalescencePlusCrossREAL8(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
+    const REAL8TimeSeries *plus,   /**< input strain plus time series */
+    const REAL8TimeSeries *cross   /**< input strain cross time series */)
+{
+
+  size_t *ind=NULL;
+  size_t len;
+  REAL8 *sumSquare=NULL;
+  UINT4 k;
+
+  len = plus->data->length;
+  ind = LALCalloc(1,len*sizeof(*ind));
+
+  sumSquare = LALCalloc(1, len*sizeof(*sumSquare));
+
+  for (k=0; k < len; k++) {
+    sumSquare[k] = plus->data->data[k]*plus->data->data[k] +
+      cross->data->data[k]*cross->data->data[k];
+  }
+
+  gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL8), compare_abs_double);
+
+  *tc = ind[len-1] * plus->deltaT;
 
   LALFree(ind);
   LALFree(sumSquare);

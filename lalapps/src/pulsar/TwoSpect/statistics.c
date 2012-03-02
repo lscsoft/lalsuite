@@ -614,9 +614,9 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    }
    
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+   //for (ii=0; ii<(INT4)tempvect->length; ii++) fprintf(stderr, "%f\n", tempvect->data[ii]);  //TODO: remove this!
    
    qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-   //for (ii=0; ii<(INT4)tempvect->length; ii++) fprintf(stderr, "%f\n", tempvect->data[ii]);  //TODO: remove this!
    
    REAL4 vector_median = 0.0;
    if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);

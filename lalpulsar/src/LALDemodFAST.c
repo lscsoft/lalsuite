@@ -89,6 +89,7 @@ None
 #define LALDEMODFAST_C
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStatusMacros.h>
 #include <lal/LALDemod.h>
 

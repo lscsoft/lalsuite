@@ -20,6 +20,9 @@
 #ifndef _LALCOMPLEX_H
 #define _LALCOMPLEX_H
 
+/* include only if using old LAL complex struct types */
+#ifdef LAL_USE_OLD_COMPLEX_STRUCTS
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -565,5 +568,7 @@ COMPLEX8 XLALCOMPLEX8Arccoth (COMPLEX8 a);
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 #endif /* _LALCOMPLEX8_H */

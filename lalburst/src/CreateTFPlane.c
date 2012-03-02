@@ -34,6 +34,7 @@
 #include <gsl/gsl_matrix.h>
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>

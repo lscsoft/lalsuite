@@ -28,6 +28,7 @@ gh
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #define LAL_NO_COMPLEX_MACROS
 #include <lal/LALComplex.h>

@@ -194,9 +194,11 @@ int main(int argc, char *argv[]){
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", argv[0], fnameLog);
-      system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
+      /* we don't check this. If it fails, we assume that */
+      /* one of the system-commands was not available, and */
+      /* therefore the CVS-versions will not be logged */
+      if ( system (command) )
+        fprintf (stderr, "\nsystem('%s') returned non-zero status!\n", command );
       
       LALFree(fnameLog); 
     }

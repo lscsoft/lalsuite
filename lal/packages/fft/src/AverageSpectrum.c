@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_sf_gamma.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALComplex.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALStdlib.h>

@@ -24,6 +24,7 @@
  */
 
 /* ---------- includes ---------- */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
 #include <lal/UserInput.h>

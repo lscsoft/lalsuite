@@ -117,6 +117,7 @@
 
 // Include basic LAL headers in wrapping code.
 %header %{
+  #define LAL_USE_OLD_COMPLEX_STRUCTS
   #include <lal/XLALError.h>
   #include <lal/LALMalloc.h>
   #include <lal/LALAtomicDatatypes.h>

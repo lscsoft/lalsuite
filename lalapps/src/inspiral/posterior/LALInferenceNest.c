@@ -165,8 +165,10 @@ Initialisation arguments:\n\
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
+	{
 		fprintf(stdout, " initialize(): no data read.\n");
-	
+		exit(1);
+	}
 	/* set up GSL random number generator: */
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);

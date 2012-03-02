@@ -26,6 +26,7 @@
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>

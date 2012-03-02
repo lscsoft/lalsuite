@@ -29,6 +29,7 @@
  * for calculating the standard scalar spherical harmonics Ylm.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALComplex.h>
 
 #include <gsl/gsl_sf_gamma.h>

@@ -22,6 +22,7 @@
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "sgwb.h"
 #include "misc.h"
 #include "data_output.h"

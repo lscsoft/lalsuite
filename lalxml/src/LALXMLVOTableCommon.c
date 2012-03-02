@@ -33,6 +33,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/StringInput.h>
 #include <lal/XLALError.h>

@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LPC.h>
 #include <lal/LALError.h>
 #include <lal/LALStatusMacros.h>

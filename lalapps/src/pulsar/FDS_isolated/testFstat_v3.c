@@ -96,7 +96,7 @@ int main(void)
 
   lalDebugLevel = 1;
 
-  LogPrintf (LOG_NORMAL, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", __func__);
+  LogPrintf (LOG_DEBUG, "%s: Now testing XLALSFTVectorToCOMPLEX8TimeSeries() ... ", __func__);
   if ( (res1 = test_XLALSFTVectorToCOMPLEX8TimeSeries()) != TEST_PASSED )
     {
       LogPrintfVerbatim (LOG_CRITICAL, "failed.\n\n");
@@ -104,7 +104,7 @@ int main(void)
     }
   else
     {
-      LogPrintfVerbatim (LOG_NORMAL, "succeeded.\n\n");
+      LogPrintfVerbatim (LOG_DEBUG, "succeeded.\n\n");
     }
 
   LALCheckMemoryLeaks();

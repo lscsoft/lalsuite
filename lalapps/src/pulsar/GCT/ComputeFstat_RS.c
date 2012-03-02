@@ -30,6 +30,7 @@
 #define __USE_ISOC99 1
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FindRoot.h>
 

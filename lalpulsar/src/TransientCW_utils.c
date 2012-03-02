@@ -32,6 +32,7 @@
 #include <math.h>
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/XLALError.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>

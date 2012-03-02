@@ -20,6 +20,7 @@
 /* LALDemod variants put out of ComputeFStatistic.c for separate compilation
  * Authors see ComputeFStatistic.c
                                                          Bernd Machenschalk */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ComputeFStatistic.h"
 
 #if defined(USE_BOINC) && defined(_WIN32)

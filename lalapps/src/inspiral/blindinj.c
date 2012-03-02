@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <config.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <ctype.h>
 #include <assert.h>

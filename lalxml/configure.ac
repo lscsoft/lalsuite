@@ -84,7 +84,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
-# SWIG wrapping requires a c++ compiler
+# check for c++ compiler
 AC_PROG_CXX
 
 # checks for programs
@@ -100,6 +100,9 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
+
+# check complex number types
+LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for header files
 AC_HEADER_STDC

@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
 #include <lal/LALConfig.h>

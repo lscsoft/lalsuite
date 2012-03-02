@@ -82,6 +82,7 @@ LALCHARDestroyVector()
 \vfill{\footnotesize\input{PrintVectorTestCV}}
 
 </lalLaTeX> */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 
 #ifndef _PRINTVECTOR_H
 #include <lal/PrintVector.h>
