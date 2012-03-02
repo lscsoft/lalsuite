@@ -520,7 +520,7 @@ XLALGetApproximantFromString(
   {
     *approximant = NumRel;
   }
-  else if ( strstr(thisEvent, "NumRelNinja2" ) )
+  else if ( strstr(thisEvent, "Ninja2" ) )
   {
     *approximant = NumRelNinja2;
   }

@@ -179,6 +179,12 @@ INT4
 XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
                                const REAL8TimeSeries *in);
 
+INT4
+XLALFindNRCoalescencePlusCrossREAL8(REAL8 *tc,
+                                    const REAL8TimeSeries *plus,
+                                    const REAL8TimeSeries *cross);
+
+
 /** channel name for nr data in frame file */
 CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cross */
                               UINT4 l, /**< azimuthal mode index */
