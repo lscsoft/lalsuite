@@ -373,14 +373,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (MPIrank == 0){
     printf("\nTemperature ladder:\n");
     for (t=0; t<nChain; ++t) {
-      printf("tempLadder[%d]=%f\n",t,tempLadder[t]);
+      printf(" tempLadder[%d]=%f\n",t,tempLadder[t]);
     }
   }
 
 
   FILE * chainoutput = NULL;
 
-  FILE *stat = NULL;
+  FILE *statfile = NULL;
   FILE *propstatfile = NULL;
   FILE *tempfile = NULL;
   char statfilename[256];
@@ -389,18 +389,37 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if(MPIrank == 0){
     if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
       sprintf(tempfilename,"PTMCMC.tempswaps.%u",randomseed);
-      tempfile = fopen(tempfilename, "a");
+      tempfile = fopen(tempfilename, "w");
+      /* Print header */
+      fprintf(tempfile, "cycle\tlog(chain_swap)\ttemp_low\ttemp_high\n");
     }
   }
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
     sprintf(statfilename,"PTMCMC.statistics.%u.%2.2d",randomseed,MPIrank);
-    stat = fopen(statfilename, "a");
+    statfile = fopen(statfilename, "w");
+    /* Print header */
+    fprintf(statfile,"cycle\ts_gamma");
+    ptr=runState->currentParams->head;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        fprintf(statfile, "\tsigma_%s", LALInferenceTranslateInternalToExternalParamName(ptr->name));
+      }
+      ptr=ptr->next;
+    }
+    ptr=runState->currentParams->head;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        fprintf(statfile, "\tPaccept_%s", LALInferenceTranslateInternalToExternalParamName(ptr->name));
+      }
+      ptr=ptr->next;
+    }
+    fprintf(statfile,"\n");
   }
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")) {
     sprintf(propstatfilename,"PTMCMC.propstats.%u.%2.2d",randomseed,MPIrank);
-    propstatfile = fopen(propstatfilename, "a");
+    propstatfile = fopen(propstatfilename, "w");
   }
 
   chainoutput = LALInferencePrintPTMCMCHeader(runState);
@@ -517,7 +536,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       } else if (i > startAnnealing) {
         for (t=0;t<nChain; ++t) {
           tempLadder[t] = tempLadder[t] - annealDecay[t];
-          //tempLadder[t]= pow(tempMax-1, t/(nChain-1))*exp(-(i-startAnnealing)/annealDecay[t]) + 1;
           LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));
         }
         if (annealLength == i - startAnnealing)
@@ -572,20 +590,20 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
       if (adaptationOn == 1) {
         if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
-          fseek(stat, 0L, SEEK_END);
-          fprintf(stat,"%d\t",i);
+          fseek(statfile, 0L, SEEK_END);
+          fprintf(statfile,"%d\t",i);
 
           if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
-            fprintf(stat,"%f\t",s_gamma);
+            fprintf(statfile,"%f\t",s_gamma);
             for (p=0; p<nPar; ++p) {
-              fprintf(stat,"%f\t",sigmas->data[p]);
+              fprintf(statfile,"%f\t",sigmas->data[p]);
             }
             for (p=0; p<nPar; ++p) {
-              fprintf(stat,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
+              fprintf(statfile,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
             }
           }
-          fprintf(stat,"\n");
-          fflush(stat);
+          fprintf(statfile,"\n");
+          fflush(statfile);
         }
       }
 
@@ -665,7 +683,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   if(MPIrank == 0){
     if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
-      fclose(stat);
+      fclose(statfile);
     }
     if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
       fclose(tempfile);
