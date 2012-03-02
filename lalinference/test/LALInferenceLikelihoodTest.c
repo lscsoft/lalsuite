@@ -22,6 +22,7 @@
 
 #include <lal/LALInference.h>
 #include <lal/LALInferenceLikelihood.h>
+#include <lal/LALInferenceTemplate.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
@@ -32,14 +33,22 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALInference.h>
 
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
 #endif
 
-int LALInferenceComputeFrequencyDomainOverlapNullTest(){
+int LALInferenceComputeFrequencyDomainOverlapNullTest(void);
+int LALInferenceComputeFrequencyDomainOverlapTest(void);
+int LALInferenceNullLogLikelihoodNullTest(void);
+int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
+int LALInferenceWhitenedTimeDomainOverlapNullTest(void);
+int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
+int LALInferenceIntegrateSeriesProductNullTest(void);
+int LALInferenceConvolveTimeSeriesNullTest(void);
+
+int LALInferenceComputeFrequencyDomainOverlapNullTest(void){
 	REAL8 answer;
 	fprintf(stdout, " Testing LALInferenceComputeFrequencyDomainOverlap...\n");
 	fprintf(stdout, "...with NULL \n");
@@ -47,7 +56,7 @@ int LALInferenceComputeFrequencyDomainOverlapNullTest(){
 	return 0; 
 }
 
-int LALInferenceComputeFrequencyDomainOverlapTest(){
+int LALInferenceComputeFrequencyDomainOverlapTest(void){
 /*
 Parameters used in this function are:
 	dataPtr->timeData->deltaT
@@ -66,10 +75,10 @@ Parameters used in this function are:
 	COMPLEX16Vector * test_freq2 = XLALMalloc(sizeof(COMPLEX16Vector));
 	COMPLEX16 * test_freq_data1 = XLALMalloc(sizeof(COMPLEX16));
 	COMPLEX16 * test_freq_data2 = XLALMalloc(sizeof(COMPLEX16));
-	REAL8TimeSeries * test_data_time_data = XLALMalloc(sizeof(REAL8TimeSeries));
-	REAL8Sequence * test_data_time_data_data = XLALMalloc(sizeof(REAL8Sequence));
-	REAL8FrequencySeries *test_data_noise = XLALMalloc(sizeof(REAL8FrequencySeries));
-	REAL8Sequence * test_data_noise_data = XLALMalloc(sizeof(REAL8Sequence));
+	/*REAL8TimeSeries * test_data_time_data = XLALMalloc(sizeof(REAL8TimeSeries));*/
+	/*REAL8Sequence * test_data_time_data_data = XLALMalloc(sizeof(REAL8Sequence));*/
+	/*REAL8FrequencySeries *test_data_noise = XLALMalloc(sizeof(REAL8FrequencySeries));*/
+	/*REAL8Sequence * test_data_noise_data = XLALMalloc(sizeof(REAL8Sequence));*/
 	
 	REAL8 deltaT = 1;
 	UINT4 length = 2;
@@ -77,12 +86,12 @@ Parameters used in this function are:
 	test_freq1->length=length;
 	test_freq2->length=length;
 	
-	for (int i=1; i<length; i++){
+	for (UINT4 i=1; i<length; i++){
 	    test_freq_data1[i].re = 1;
 	 	test_freq_data1[i].im= 1;
 	}
 	
-	for (int i=1; i<length; i++){
+	for (UINT4 i=1; i<length; i++){
 	 	test_freq_data2[i].re = 1;
 		test_freq_data2[i].im= 1;
 	}	
@@ -101,7 +110,7 @@ Parameters used in this function are:
 	return 0; 
 }
 
-int LALInferenceNullLogLikelihoodNullTest(){
+int LALInferenceNullLogLikelihoodNullTest(void){
 	REAL8 answer;
 	fprintf(stdout, " Testing LALInferenceNullLogLikelihood...\n");
 	fprintf(stdout, "...with Null \n");
@@ -113,7 +122,7 @@ int LALInferenceNullLogLikelihoodNullTest(){
 	
 	
 
-int LALInferenceWhitenedTimeDomainOverlapNullTest(){
+int LALInferenceWhitenedTimeDomainOverlapNullTest(void){
 	REAL8 answer;
 	fprintf(stdout, " Testing LALInferenceWhitenedTimeDomainOverlap...\n");
 	fprintf(stdout, "...with NULL \n");
@@ -121,7 +130,7 @@ int LALInferenceWhitenedTimeDomainOverlapNullTest(){
 	return 0; 
 }
 
-int LALInferenceTimeDomainNullLogLikelihoodNullTest(){
+int LALInferenceTimeDomainNullLogLikelihoodNullTest(void){
 	REAL8 answer;
 	fprintf(stdout, " Testing LALInferenceTimeDomainNullLogLikelihood...\n");
 	fprintf(stdout, "...with NULL \n");
@@ -129,7 +138,7 @@ int LALInferenceTimeDomainNullLogLikelihoodNullTest(){
 	return 0;
 }
 
-int LALInferenceIntegrateSeriesProductNullTest(){
+int LALInferenceIntegrateSeriesProductNullTest(void){
 	REAL8 answer;
 	fprintf(stdout, " Testing LALInferenceIntegrateSeriesProduct...\n");
 	fprintf(stdout, "...with NULL \n");
@@ -144,7 +153,7 @@ int LALInferenceConvolveTimeSeriesNullTest(){
 	return 0;
 }
 
-int main(){
+int main(void){
 
 	//LALInferenceComputeFrequencyDomainOverlapNullTest();
 	LALInferenceComputeFrequencyDomainOverlapTest();
