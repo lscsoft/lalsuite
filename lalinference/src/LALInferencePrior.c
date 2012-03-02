@@ -712,7 +712,7 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
     else if(!strcmp(massRatioName,"massratio"))
         oData.innerIntegrand.function = &etaInnerIntegrand;
     else
-        XLAL_ERROR_REAL8(XLAL_EINVAL, "Invalid mass ratio name specified");
+        XLAL_ERROR_REAL8(XLAL_ENAME, "Invalid mass ratio name specified");
     
     // Disable GSL error reporting in favour of XLAL (the integration routines are liable to fail).
     gsl_error_handler_t *oldHandler = gsl_set_error_handler_off();
