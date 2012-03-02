@@ -95,9 +95,8 @@ extern const char *covarianceEigenvectorJumpName;
 extern const char *skyLocWanderJumpName;
 extern const char *differentialEvolutionFullName;
 extern const char *differentialEvolutionMassesName;
-extern const char *differentialEvolutionAmpName;
 extern const char *differentialEvolutionSpinsName;
-extern const char *differentialEvolutionSkyName;
+extern const char *differentialEvolutionExtrinsicName;
 extern const char *drawApproxPriorName;
 extern const char *skyReflectDetPlaneName;
 extern const char *rotateSpinsName;
@@ -190,15 +189,11 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInfe
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Perform a differential evolution step on only the extrinsic
-    parameters that control the amplitude. */
-void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+    parameters. */
+void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Perform a differential evolution step on only the spin variables. */
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-
-/** Perform a differential evolution step on just the sky location and
-    arrival time.*/
-void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Draws from an approximation to the true prior.  Flat in all
     variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
