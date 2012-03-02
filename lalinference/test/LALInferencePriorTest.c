@@ -319,10 +319,10 @@ int LALInferenceDrawFromPriorTest(void)
 		TEST_FAIL("Null reference check failed.");
 
 	int i;
-	const char *varyName;
+	const char *varyName=NULL;
 	char caseTag[VARNAME_MAX];
 	LALInferenceVariableType type = LALINFERENCE_REAL8_t;
-	LALInferenceParamVaryType vary;
+	LALInferenceParamVaryType vary=-1;
 	for (i = 0; i < 2; i++)
 	{
 		switch (i)
