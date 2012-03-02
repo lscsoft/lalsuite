@@ -169,7 +169,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   INT4 adaptationOn = 0;
   INT4 adapting = 0;
-  INT4 annealingOn = 1;
+  INT4 annealingOn = 0;
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
@@ -278,14 +278,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
     Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
 
-  INT4 Tkill            = startAnnealing+annealLength;        // Iterature where parallel tempering ends
+  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--anneal");
+  if (ppt) {
+    annealingOn = 1;                                          // Flag to indicate annealing is being used during the run
+  }
+
+  INT4 Tkill            = Niter;                              // Iteration where parallel tempering ends 
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempKill"))
     Tkill = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempKill")->value);
-
-  ppt=LALInferenceGetProcParamVal(runState->commandLine, "--noAnneal");
-  if (ppt) {
-    annealingOn = 0;                                          // Flag to indicate annealing is being used during the run
-  }
+  else if (annealingOn)
+    Tkill = startAnnealing+annealLength;
 
   for (t=0; t<nChain; ++t) {
     tempLadder[t] = 0.0;
@@ -605,44 +607,42 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           ptr=ptr->next;
         }
 
-        if (i < Tkill) {
-          MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-          MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          MPI_Gather(parameters->data,nPar,MPI_DOUBLE,parametersVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
-          MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Gather(parameters->data,nPar,MPI_DOUBLE,parametersVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Barrier(MPI_COMM_WORLD);
 
-          if (MPIrank == 0) { //swap parameters and likelihood between chains
-            if(LALInferenceGetProcParamVal(runState->commandLine, "--oldPT")) {
-              for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
-                for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
-                  LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
-                } //for(upperRank=lowerRank+1;upperRank<nChain;upperRank++)
-              } //for(lowerRank=0;lowerRank<nChain-1;lowerRank++)
-            } else {
-              for(swapAttempt=0; swapAttempt<tempSwaps; ++swapAttempt) {
-                lowerRank = gsl_rng_uniform_int(runState->GSLrandom, nChain-1);
-                upperRank = lowerRank+1;
+        if (MPIrank == 0) { //swap parameters and likelihood between chains
+          if(LALInferenceGetProcParamVal(runState->commandLine, "--oldPT")) {
+            for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
+              for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
                 LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
-              } //for(swapAttempt=0; swapAttempt<50; ++swapAttempt)
-            } //else
-          } //if (MPIrank == 0)
+              } //for(upperRank=lowerRank+1;upperRank<nChain;upperRank++)
+            } //for(lowerRank=0;lowerRank<nChain-1;lowerRank++)
+          } else {
+            for(swapAttempt=0; swapAttempt<tempSwaps; ++swapAttempt) {
+              lowerRank = gsl_rng_uniform_int(runState->GSLrandom, nChain-1);
+              upperRank = lowerRank+1;
+              LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
+            } //for(swapAttempt=0; swapAttempt<50; ++swapAttempt)
+          } //else
+        } //if (MPIrank == 0)
 
-          MPI_Scatter(parametersVec,nPar,MPI_DOUBLE,parameters->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
-          MPI_Scatter(TcurrentLikelihood, 1, MPI_DOUBLE, &(runState->currentLikelihood), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-          MPI_Scatter(acceptanceCountLadder, 1, MPI_INT, &acceptanceCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Scatter(parametersVec,nPar,MPI_DOUBLE,parameters->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
+        MPI_Scatter(TcurrentLikelihood, 1, MPI_DOUBLE, &(runState->currentLikelihood), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Scatter(acceptanceCountLadder, 1, MPI_INT, &acceptanceCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-          ptr=runState->currentParams->head;
-          p=0;
-          while(ptr!=NULL) {
-            if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-              memcpy(ptr->value,&(parameters->data[p]),LALInferenceTypeSize[ptr->type]);
-              p++;
-            }
-            ptr=ptr->next;
+        ptr=runState->currentParams->head;
+        p=0;
+        while(ptr!=NULL) {
+          if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+            memcpy(ptr->value,&(parameters->data[p]),LALInferenceTypeSize[ptr->type]);
+            p++;
           }
-
-          MPI_Barrier(MPI_COMM_WORLD);
+          ptr=ptr->next;
         }
+
+        MPI_Barrier(MPI_COMM_WORLD);
       }// if (i <= Tkill)
     }// if ((i % Tskip) == 0)
   }// for (i=1; i<=Niter; i++)
@@ -665,6 +665,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   free(tempLadder);
   free(acceptanceCountLadder);
+  free(annealDecay);
+  free(parametersVec);
 
   if (MPIrank == 0) {
     free(TcurrentLikelihood);
