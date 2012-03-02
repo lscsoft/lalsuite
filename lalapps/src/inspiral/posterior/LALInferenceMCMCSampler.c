@@ -154,6 +154,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 acceptanceCount = 0;
   INT4 swapAttempt=0;
   REAL8 nullLikelihood;
+  REAL8 trigSNR = 0.0;
   REAL8 *tempLadder = NULL;			//the temperature ladder
   REAL8 *annealDecay = NULL;
   INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
@@ -214,34 +215,41 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   /* Adaptation settings */
   INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
   INT4  adapting     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));     // Current step being adapted
+  INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));     // Sets decay of adaption function
+  INT4  adaptationLength  = pow(10,adaptTau);   // Number of iterations to adapt before turning off
+  INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
   REAL8 s_gamma           = 1.0;                // Sets the size of changes to jump size during adaptation
   INT4  adaptStart        = 0;                  // Keeps track of last iteration adaptation was restarted
-  INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
-  INT4  adaptTau          = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau")); // Sets the length and slope of adaption function
-  INT4  adaptationLength  = pow(10,adaptTau);   // Number of iterations to adapt before turning off
 
   /* Temperature ladder settings */
   REAL8 tempMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temperature in ladder
-  REAL8 tempMax = 0.0;
-  REAL8 trigSNR = 0.0;
+  REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   // Max temperature in ladder
   REAL8 targetHotLike       = 15;               // Targeted max 'experienced' log(likelihood) of hottest chain
-  INT4  hotThreshold        = nChain/2-1;         // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
+  INT4  hotThreshold        = nChain/2-1;       // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
+
 
   /* Set maximum temperature (command line value take precidence) */
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
-    tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");
+    if(MPIrank==0)
+      fprintf(stdout,"Using tempMax specified by commandline: %f.\n", tempMax);
+
+  /* If --trigSNR given, choose max temp so targetHotLike is achieved */
   } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigSNR")) {
     trigSNR = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "trigSNR");
     networkSNRsqrd = trigSNR * trigSNR;
-    tempMax = networkSNRsqrd/(2*targetHotLike); // If trigSNR specified, choose max temp so targetHotLike is achieved
+    tempMax = networkSNRsqrd/(2*targetHotLike);
     if(MPIrank==0)
       fprintf(stdout,"Trigger SNR of %f specified, setting tempMax to %f.\n", trigSNR, tempMax);
+
+  /* If injection, choose max temp so targetHotLike is achieved */
   } else if (networkSNRsqrd > 0.0) {
-    tempMax = networkSNRsqrd/(2*targetHotLike); // If injection, choose max temp so targetHotLike is achieved
+    tempMax = networkSNRsqrd/(2*targetHotLike);
     if(MPIrank==0)
       fprintf(stdout,"Injecting SNR of %f, setting tempMax to %f.\n", sqrt(networkSNRsqrd), tempMax);
+
+  /* If all else fails, use the default. */
   } else {
-    tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax"); // Otherwise use default
+    tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");
     if(MPIrank==0)
       fprintf(stdout,"No --trigSNR or --tempMax specified, and not injecting a signal. Setting tempMax to default of %f.\n", tempMax);
   }
@@ -252,7 +260,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     tempMin = 1.0;
     LALInferenceSetVariable(runState->algorithmParams, "tempMin", &tempMin);
   }
-
 
   /* Parallel tempering settings */
   INT4 tempSwaps        = (nChain-1)*nChain/2;                // Number of proposed swaps between temperatures in one swap iteration
@@ -335,7 +342,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   /* Construct temperature ladder */
   if(nChain > 1){
-    if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")) {     //temperature spacing uniform in 1/T
+    if(LALInferenceGetProcParamVal(runState->commandLine, "--inverseLadder")) {     //Spacing uniform in 1/T
       tempDelta = (1.0/tempMin - 1.0/tempMax)/(REAL8)(nChain-1);
       for (t=0; t<nChain; ++t) {
         tempLadder[t]=1.0/(REAL8)(1.0/tempMin-t*tempDelta);
@@ -383,15 +390,15 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (LALInferenceGetProcParamVal(runState->commandLine, "--tempVerbose")) {
       sprintf(tempfilename,"PTMCMC.tempswaps.%u",randomseed);
       tempfile = fopen(tempfilename, "w");
-      /* Print header */
-      fprintf(tempfile, "cycle\tlog(chain_swap)\ttemp_low\ttemp_high\n");
+      fprintf(tempfile, "cycle\tlog(chain_swap)\ttemp_low\ttemp_high\n");  // Print header for temp stat file
     }
   }
 
   if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
     sprintf(statfilename,"PTMCMC.statistics.%u.%2.2d",randomseed,MPIrank);
     statfile = fopen(statfilename, "w");
-    /* Print header */
+
+    /* Print header for adaptation stats */
     fprintf(statfile,"cycle\ts_gamma");
     ptr=runState->currentParams->head;
     while(ptr!=NULL) {
