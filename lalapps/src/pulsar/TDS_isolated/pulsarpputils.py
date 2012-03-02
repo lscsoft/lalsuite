@@ -425,9 +425,9 @@ def phipsiconvert(phipchain, psipchain):
 # function to create histogram plot of the 1D posterior (potentially for
 # multiple IFOs) for a parameter (param). If an upper limit is given then
 # that will be output
-def plot_posterior_hist(poslist, param, 
+def plot_posterior_hist(poslist, param, ifos,
                         parambounds=[float("-inf"), float("inf")], 
-                        ifos, nbins=50, upperlimit=0):
+                        nbins=50, upperlimit=0):
   # create list of figures
   myfigs = []
   
@@ -461,6 +461,9 @@ def plot_posterior_hist(poslist, param,
     if upperlimit != 0:
       ct = cumtrapz(n, bins)
       
+      # prepend a zero to ct
+      ct = np.insert(ct, 0, 0)
+     
       #plt.plot(bincentres[1:len(bincentres)], ct)
       
       # use spline interpolation to find the value at 'upper limit'
@@ -471,7 +474,7 @@ def plot_posterior_hist(poslist, param,
   
 # a function that creates and normalises a histograms of samples, with nbins
 # between an upper and lower bound a upper and lower bound. The values at the
-# bin points (with length nbins+2) will be returned 
+# bin points (with length nbins+2) will be returned as numpy arrays
 def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
   # get histogram
   n, binedges = np.histogram( samples, nbins )
@@ -480,22 +483,18 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
   binwidth = binedges[1] - binedges[0]
   
   # create bin centres
-  bincentres = []
-  for i in range(0, len(bins)-1):
-    bincentres.append(binedges[i]+binwidth/2)
+  bincentres = np.array([])
+  for i in range(0, len(binedges)-1):
+    bincentres = np.append(bincentres, binedges[i]+binwidth/2)
   
   # if histogram points are not close to boundaries (i.e. within a bin of the
   # boundaries) then add zeros to histrogram edges
   if bincentres[0] - binwidth > low:
     # prepend a zero to n
-    n.reverse()
-    n.append(0)
-    n.reverse()
+    n = np.insert(n, 0, 0);
     
     # prepend a new bin centre at bincentres[0] - binwidth
-    bincentres.reverse()
-    bincentres.append(bincentres[0] - binwidth)
-    bincentres.reverse()
+    bincentres = np.insert(bincentres, 0, bincentres[0] - binwidth)
   else:
     # we're  closer to the boundary edge than the bin width then, so set a new
     # bin on the boundary with a value linearly extrapolated from the
@@ -503,38 +502,40 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
     dx = bincentres[0] - low;
     
     # prepend low value to bins
-    bincentres.reverse()
-    bincentres.append(low)
-    bincentres.reverse()
+    bincentres = np.insert(bincentres, 0, low)
     
     dn = n[1]-n[0]
     
     nbound = n[0] - (dn/binwidth)*dx
     
     # prepend to n
-    n.reverse()
-    n.append(nbound)
-    n.reverse()
+    n = np.insert(n, 0, nbound)
   
   # now the other end!
   if bincentres[-1] + binwidth < high:
     # append a zero to n
-    n.append(0)
+    n = np.append(n, 0)
     
     # append a new bin centre at bincentres[end] + binwidth
-    bincentres.append(bincentres[-1] + binwidth)
+    bincentres = np.append(bincentres, bincentres[-1] + binwidth)
   else:
     dx = high - bincentres[-1];
     
     # prepend low value to bins
-    bincentres.append(high)
+    bincentres = np.append(bincentres, high)
     
     dn = n[-1]-n[-2]
     
     nbound = n[-1] + (dn/binwidth)*dx
     
     # prepend to n
-    n.append(nbound)
+    n = np.append(n, nbound)
   
-  return n, bincentres
-    
+  # now calculate area and normalise
+  area = np.trapz(n, x=bincentres)
+  
+  ns = np.array([])
+  for i in range(0, len(bincentres)):
+    ns = np.append(ns, float(n[i])/area)
+  
+  return ns, bincentres
