@@ -1614,7 +1614,7 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
   gsl_matrix *LUCM = NULL;
   gsl_permutation *LUCMPerm = NULL;
   gsl_vector_view xView;
-  
+
   REAL8 x[DIM];
   REAL8 xOrig[DIM];
   REAL8 exps[MODES];
