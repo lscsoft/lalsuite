@@ -145,18 +145,50 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeMCMC(LALInferenceRunState *runState)
 {
   char help[]="\
-               (--Niter N)                      Number of iterations(2*10^6)\n\
-               (--Nskip n)                      Number of iterations between disk save(100)\n\
-               (--trigSNR SNR)                 Network SNR from trigger, used to calculate tempMax\n\
-               (--tempMin T)                   Lowest temperature for parallel tempering(1.0)\n\
-               (--tempMax T)                    Highest temperature for parallel tempering(40.0)\n\
-               (--randomseed seed)              Random seed of sampling distribution(random)\n\
-               (--tdlike)                       Compute likelihood in the time domain\n\
-               (--rapidSkyLoc)                  Use rapid sky localization jump proposals\n\
-               (--LALSimulation)                Interface with the LALSimulation package for template generation\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- General Algorithm Parameters ---------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--Niter N)                      Number of iterations (2*10^7).\n\
+               (--Nskip N)                      Number of iterations between disk save (100).\n\
+               (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
+               (--randomseed seed)              Random seed of sampling distribution (random).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Likelihood Functions -----------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--tdlike)                       Compute likelihood in the time domain.\n\
+               (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
                (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
-               (--bimodalGaussianLikelihood)    Use analytic, correlated Gaussian for Likelihood.\n\
-               (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n";
+               (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Proposals  ---------------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--rapidSkyLoc)                  Use rapid sky localization jump proposals.\n\
+               (--kDTree)                       Use a kDTree proposal.\n\
+               (--kDNCell N)                    Number of points per kD cell in proposal.\n\
+               (--covarianceMatrix file)        Find the Cholesky decomposition of the covariance matrix for jumps in file.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Parallel Tempering Algorithm Parameters ----------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
+               (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
+               (--tempSwaps N)                  Number of random swaps proposed every <tempSkip> iterations ((nTemps-1)nTemps/2).\n\
+               (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
+               (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
+               (--tempMin T)                    Lowest temperature for parallel tempering (1.0).\n\
+               (--tempMax T)                    Highest temperature for parallel tempering (50.0).\n\
+               (--annealStart N)                Iteration number to start annealing (5*10^5).\n\
+               (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Output -------------------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
+               (--tempVerbose)                  Output temperature swapping stats to file.\n\
+               (--propVerbose)                  Output proposal stats to file.\n\
+               (--data-dump)                    Output waveforms to file.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -374,72 +406,88 @@ void initVariables(LALInferenceRunState *state)
 {
 
   char help[]="\
-               (--inj injections.xml)       Injection XML file to use\n\
-               (--tempSkip )                   Number of iterations between proposed temperature swaps (100)\n\
-               (--symMassRatio)                Run with symmetric mass ratio eta, instead of q=m2/m1\n\
-               (--mc-min mchirp)               Minimum chirp mass\n\
-               (--mc-max mchirp)               Maximum chirp mass\n\
-               (--eta-min etaMin)              Minimum eta\n\
-               (--eta-max etaMax)              Maximum eta\n\
-               (--q-min qMin)                  Minimum q\n\
-               (--q-max qMax)                  Maximum q\n\
-               (--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
-               (--trigtime time)               Trigger time to use\n\
-               (--mc mchirp)                   Trigger chirpmass to use\n\
-               (--fixMc)                       Do not allow chirpmass to vary\n\
-               (--eta eta)                     Trigger eta to use\n\
-               (--q q)                         Trigger q to use\n\
-               (--fixEta)                      Do not allow mass ratio to vary\n\
-               (--fixQ)                        Do not allow mass ratio to vary\n\
-               (--phi phase)                   Trigger phase to use\n\
-               (--fixPhi)                      Do not allow phase to vary\n\
-               (--iota inclination)            Trigger inclination to use\n\
-               (--fixIota)                     Do not allow inclination to vary\n\
-               (--dist dist)                   Trigger distance\n\
-               (--fixDist)                     Do not allow distance to vary\n\
-               (--ra ra)                       Trigger RA\n\
-               (--fixRa)                       Do not allow RA to vary\n\
-               (--dec dec)                     Trigger declination\n\
-               (--fixDec)                      Do not allow declination to vary\n\
-               (--psi psi)                     Trigger psi\n\
-               (--fixPsi)                      Do not allow polarization to vary\n\
-               (--a1 a1)                       Trigger a1\n\
-               (--fixA1)                       Do not allow spin to vary\n\
-               (--theta1 theta1)               Trigger theta1\n\
-               (--fixTheta1)                   Do not allow spin 1 colatitude to vary\n\
-               (--phi1 phi1)                   Trigger phi1\n\
-               (--fixPhi1)                     Do not allow spin 1 longitude to vary\n\
-               (--a2 a2)                       Trigger a2\n\
-               (--fixA2)                       Do not allow spin 2 to vary\n\
-               (--theta2 theta2)               Trigger theta2\n\
-               (--fixTheta2)                   Do not allow spin 2 colatitude to vary\n\
-               (--phi2 phi2)                   Trigger phi2\n\
-               (--fixPhi2)                     Do not allow spin 2 longitude to vary\n\
-               (--time time)                   Waveform time (overrides random about trigtime)\n\
-               (--fixTime)                     Do not allow coalescence time to vary\n\
-               (--Dmin dist)                   Minimum distance in Mpc (1)\n\
-               (--Dmax dist)                   Maximum distance in Mpc (100)\n\
-               (--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
-               (--order PNorder)               Specify a PN order in phase to use, (default threePointFivePN)\n\
-               (--ampOrder PNorder)            Specify a PN order in amplitude to use, (default newtonian)\n\
-               (--comp-min min)                Minimum component mass (1.0)\n\
-               (--comp-max max)                Maximum component mass (30.0)\n\
-               (--MTotMax max)                 Maximum total mass (35.0)\n\
-               (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
-               (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
-               (--kDTree)                      Use a kDTree proposal\n\
-               (--kDNCell N)                   Number of points per kD cell in proposal.\n\
-               (--appendOutput fname)          Basename of the file to append outputs to\n\
-               (--tidal)                       Enables tidal corrections, only with LALSimulation\n\
-               (--lambda1)                     Trigger lambda1\n\
-               (--fixLambda1)                  Do not allow lambda1 to vary\n\
-               (--lambda1-min)                 Minimum lambda1 (0)\n\
-               (--lambda1-max)                 Maximum lambda1 (80)\n\
-               (--lambda2)                     Trigger lambda2\n\
-               (--fixLambda2)                  Do not allow lambda2 to vary\n\
-               (--lambda2-min)                 Minimum lambda2 (0)\n\
-               (--lambda2-max)                 Maximum lambda2 (80)\n\
-               (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL)\n";
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Injection Arguments ------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--inj injections.xml)          Injection XML file to use.\n\
+               (--inj N)                       Event number from Injection XML file to use.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Template Arguments -------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
+               (--LALSimulation)               Interface with the LALSimulation package for template generation.\n\
+               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2).\n\
+               (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
+               (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
+               (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
+               (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Starting Parameters ------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--trigtime time)               Trigger time to use.\n\
+               (--time time)                   Waveform time (overrides random about trigtime).\n\
+               (--mc mchirp)                   Trigger chirpmass to use.\n\
+               (--eta eta)                     Trigger eta (symmetric mass ratio) to use.\n\
+               (--q q)                         Trigger q (asymmetric mass ratio) to use.\n\
+               (--phi phase)                   Trigger phase to use.\n\
+               (--iota inclination)            Trigger inclination to use.\n\
+               (--dist dist)                   Trigger distance.\n\
+               (--ra ra)                       Trigger RA.\n\
+               (--dec dec)                     Trigger declination.\n\
+               (--psi psi)                     Trigger psi.\n\
+               (--a1 a1)                       Trigger a1.\n\
+               (--theta1 theta1)               Trigger theta1.\n\
+               (--phi1 phi1)                   Trigger phi1.\n\
+               (--a2 a2)                       Trigger a2.\n\
+               (--theta2 theta2)               Trigger theta2.\n\
+               (--phi2 phi2)                   Trigger phi2.\n\
+               (--lambda1)                     Trigger lambda1.\n\
+               (--lambda2)                     Trigger lambda2.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Prior Arguments ----------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--mc-min mchirp)               Minimum chirp mass.\n\
+               (--mc-max mchirp)               Maximum chirp mass.\n\
+               (--eta-min etaMin)              Minimum eta.\n\
+               (--eta-max etaMax)              Maximum eta.\n\
+               (--q-min qMin)                  Minimum q.\n\
+               (--q-max qMax)                  Maximum q.\n\
+               (--comp-min min)                Minimum component mass (1.0).\n\
+               (--comp-max max)                Maximum component mass (30.0).\n\
+               (--MTotMax max)                 Maximum total mass (35.0).\n\
+               (--Dmin dist)                   Minimum distance in Mpc (1).\n\
+               (--Dmax dist)                   Maximum distance in Mpc (100).\n\
+               (--lambda1-min)                 Minimum lambda1 (0).\n\
+               (--lambda1-max)                 Maximum lambda1 (80).\n\
+               (--lambda2-min)                 Minimum lambda2 (0).\n\
+               (--lambda2-max)                 Maximum lambda2 (80).\n\
+               (--dt time)                     Width of time prior, centred around trigger (0.1s).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Fix Parameters -----------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--fixMc)                       Do not allow chirpmass to vary.\n\
+               (--fixEta)                      Do not allow mass ratio to vary.\n\
+               (--fixQ)                        Do not allow mass ratio to vary.\n\
+               (--fixPhi)                      Do not allow phase to vary.\n\
+               (--fixIota)                     Do not allow inclination to vary.\n\
+               (--fixDist)                     Do not allow distance to vary.\n\
+               (--fixRa)                       Do not allow RA to vary.\n\
+               (--fixDec)                      Do not allow declination to vary.\n\
+               (--fixPsi)                      Do not allow polarization to vary.\n\
+               (--fixA1)                       Do not allow spin to vary.\n\
+               (--fixTheta1)                   Do not allow spin 1 colatitude to vary.\n\
+               (--fixPhi1)                     Do not allow spin 1 longitude to vary.\n\
+               (--fixA2)                       Do not allow spin 2 to vary.\n\
+               (--fixTheta2)                   Do not allow spin 2 colatitude to vary.\n\
+               (--fixPhi2)                     Do not allow spin 2 longitude to vary.\n\
+               (--fixTime)                     Do not allow coalescence time to vary.\n\
+               (--fixLambda1)                  Do not allow lambda1 to vary.\n\
+               (--fixLambda2)                  Do not allow lambda2 to vary.\n";
 
   /* Print command line arguments if state was not allocated */
   if(state==NULL)
