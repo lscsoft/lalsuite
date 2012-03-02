@@ -1359,7 +1359,7 @@ XLALSimIMREOBNRv2Generator(
     gsl_spline_free( spline );
     gsl_interp_accel_free( acc );
 
-    XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );
+    /*XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );*/
 
     /* Calculate the NQC correction */
     XLALSimIMREOBCalculateNQCCoefficients( &nqcCoeffs, ampNQC, phseHi, q1,q2,q3,p1,p2, modeL, modeM, timePeak, dt/m, eta );
