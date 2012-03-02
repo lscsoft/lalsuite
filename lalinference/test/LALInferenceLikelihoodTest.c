@@ -99,7 +99,9 @@ Parameters used in this function are:
 	test_freq1->data=test_freq_data1;
 	test_freq2->data=test_freq_data2;
 
+	test_data->timeData=XLALMalloc(sizeof(REAL8TimeSeries));
 	test_data->timeData->deltaT= deltaT;
+	test_data->timeData->data=XLALMalloc(sizeof(REAL8Sequence));
 	test_data->timeData->data->length=2;
 	test_data->fLow=10;
 	test_data->fHigh=1000;	
