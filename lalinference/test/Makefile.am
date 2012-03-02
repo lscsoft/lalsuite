@@ -28,9 +28,10 @@ LALInferencePriorTest_SOURCES = \
 
 check_PROGRAMS = \
 	LALInferenceTest \
-	$(XMLPRG) \
-	LALInferencePriorTest
-#	LALInferenceProposalTest \
+	LALInferencePriorTest \
+	$(XMLPRG)
+
+#	LALInferenceProposalTest
 #	LALInferenceKDTest
 
 TESTS = \
