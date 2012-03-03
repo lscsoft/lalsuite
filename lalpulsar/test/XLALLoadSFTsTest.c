@@ -30,6 +30,7 @@
 
 /*---------- INCLUDES ----------*/
 #include <config.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 #include <lal/Units.h>
