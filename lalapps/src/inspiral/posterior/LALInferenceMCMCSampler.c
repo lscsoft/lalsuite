@@ -232,23 +232,17 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")) {
     if(MPIrank==0)
       fprintf(stdout,"Using tempMax specified by commandline: %f.\n", tempMax);
-
-  /* If --trigSNR given, choose max temp so targetHotLike is achieved */
-  } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigSNR")) {
+  } else if (LALInferenceGetProcParamVal(runState->commandLine,"--trigSNR")) {        //--trigSNR given, choose tempMax to get targetHotLike
     trigSNR = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "trigSNR");
     networkSNRsqrd = trigSNR * trigSNR;
     tempMax = networkSNRsqrd/(2*targetHotLike);
     if(MPIrank==0)
       fprintf(stdout,"Trigger SNR of %f specified, setting tempMax to %f.\n", trigSNR, tempMax);
-
-  /* If injection, choose max temp so targetHotLike is achieved */
-  } else if (networkSNRsqrd > 0.0) {
+  } else if (networkSNRsqrd > 0.0) {                                                  //injection, choose tempMax to get targetHotLike
     tempMax = networkSNRsqrd/(2*targetHotLike);
     if(MPIrank==0)
       fprintf(stdout,"Injecting SNR of %f, setting tempMax to %f.\n", sqrt(networkSNRsqrd), tempMax);
-
-  /* If all else fails, use the default. */
-  } else {
+  } else {                                                                            //If all else fails, use the default
     tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");
     if(MPIrank==0)
       fprintf(stdout,"No --trigSNR or --tempMax specified, and not injecting a signal. Setting tempMax to default of %f.\n", tempMax);
@@ -354,8 +348,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         annealDecay[t] = (tempLadder[t]-1.0)/(REAL8)annealLength;
       }
     }
-  } else {
-    if(LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")){
+  } else {                                                                          //single chain
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--tempMax")){             //assume --tempMax specified intentionally
       tempLadder[0]=tempMax;
     }else{
       tempLadder[0]=1.0;
