@@ -46,7 +46,8 @@ endif
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
 	make_frame_cache H1response.txt \
-	H-CW_Injection-875206560-120.gwf
+	H-CW_Injection-875206560-120.gwf \
+	pulsarpputils.py
 
 TESTS_ENVIRONMENT = >&/dev/null \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
