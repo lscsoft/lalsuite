@@ -87,13 +87,11 @@ Parameters used in this function are:
 	test_freq2->length=length;
 	
 	for (UINT4 i=1; i<length; i++){
-	    test_freq_data1[i].re = 1;
-	 	test_freq_data1[i].im= 1;
+	    test_freq_data1[i] = CX16rect(1, 1);
 	}
 	
 	for (UINT4 i=1; i<length; i++){
-	 	test_freq_data2[i].re = 1;
-		test_freq_data2[i].im= 1;
+	    test_freq_data2[i] = CX16rect(1, 1);
 	}	
 
 	test_freq1->data=test_freq_data1;
