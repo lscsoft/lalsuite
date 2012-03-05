@@ -491,6 +491,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           adapting = 1;
           LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
           LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+          fprintf(stdout,"Restarting adaptation for temperature %u at iteration %u.\n",MPIrank,i);
         }
       }
       if (adapting) {
@@ -528,6 +529,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             adapting = 1;
             LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
             LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+            fprintf(stdout,"Restarting adaptation for temperature %u at iteration %u.\n",MPIrank,i);
           }
           for (p=0; p<nPar; ++p) {
             PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));

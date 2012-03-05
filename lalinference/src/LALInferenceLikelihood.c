@@ -1436,35 +1436,35 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
   } else if (mode==1) {
     mean[0] = 16.0;
     mean[1] = 7.0;
-    mean[2] = 3.0*M_PI/4.0;
-    mean[3] = 3.0*M_PI/2.0;
-    mean[4] = 3.0*M_PI/4.0;
-    mean[5] = 3.0*M_PI/2.0;
-    mean[6] = M_PI/4.0;
-    mean[7] = 25.0;
-    mean[8] = 0.03;
-    mean[9] =0.2;
-    mean[10]=0.2;
-    mean[11]=3.0*M_PI/4.0;
-    mean[12]=3.0*M_PI/4.0;
-    mean[13]=3.0*M_PI/2.0;
-    mean[14]=3.0*M_PI/2.0;
-  } else if (mode==2) {
-    mean[0] = 16.0;
-    mean[1] = 7.0;
     mean[2] = 1.0*M_PI/4.0;
     mean[3] = 1.0*M_PI/2.0;
     mean[4] = 1.0*M_PI/4.0;
     mean[5] = 1.0*M_PI/2.0;
     mean[6] = -M_PI/4.0;
-    mean[7] = 75.0;
-    mean[8] = 0.0;
-    mean[9] =0.8;
-    mean[10]=0.8;
+    mean[7] = 25.0;
+    mean[8] = -0.03;
+    mean[9] =0.2;
+    mean[10]=0.2;
     mean[11]=1.0*M_PI/4.0;
     mean[12]=1.0*M_PI/4.0;
     mean[13]=1.0*M_PI/2.0;
     mean[14]=1.0*M_PI/2.0;
+  } else if (mode==2) {
+    mean[0] = 16.0;
+    mean[1] = 7.0;
+    mean[2] = 3.0*M_PI/4.0;
+    mean[3] = 3.0*M_PI/2.0;
+    mean[4] = 3.0*M_PI/4.0;
+    mean[5] = 3.0*M_PI/2.0;
+    mean[6] = M_PI/4.0;
+    mean[7] = 75.0;
+    mean[8] = 0.03;
+    mean[9] =0.8;
+    mean[10]=0.8;
+    mean[11]=3.0*M_PI/4.0;
+    mean[12]=3.0*M_PI/4.0;
+    mean[13]=3.0*M_PI/2.0;
+    mean[14]=3.0*M_PI/2.0;
   } else {
     printf("Error!  Unrecognized mode in analytic likelihood!\n");
     exit(1);
