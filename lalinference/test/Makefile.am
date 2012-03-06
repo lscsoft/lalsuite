@@ -32,8 +32,10 @@ check_PROGRAMS = \
 	LALInferenceLikelihoodTest \
 	$(XMLPRG)
 
-#	LALInferenceProposalTest
 #	LALInferenceKDTest
+
+noinst_PROGRAMS = \
+	LALInferenceProposalTest
 
 TESTS = \
 	$(check_PROGRAMS)
