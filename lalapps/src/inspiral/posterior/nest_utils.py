@@ -163,6 +163,24 @@ class InspNestNode(pipeline.CondorDAGNode):
     """
     def __init__(self,inspnest_job):
         pipeline.CondorDAGNode.__init__(self,inspnest_job)
+    def finalize(self):
+        pipeline.CondorDAGNode.finalize(self)
+        cp=self.job().get_cp()
+        maxLength=float(cp.get('analysis','analysis-chunk-length'))
+        trigtime=self.__trigtime
+        if(self.__GPSend-self.__GPSstart > maxLength):
+            while(self.__GPSend-self.__GPSstart >maxLength):
+                if self.__GPSend-trigtime > trigtime-self.__GPSstart:
+                    self.__GPSend-=1
+                else:
+                    self.__GPSstart+=1
+        length=self.__GPSend-self.__GPSstart
+        if self.__trigtime<self.__GPSstart or self.__trigtime>self.__GPSend:
+            print 'ERROR in generating Inspnest Node, trig time %f not inside data segment (%f,%f)'%(self.__trigtime,self.__GPSstart,self.__GPSend)
+            raise Exception('Bad data segment or trig time')
+        self.add_var_opt('GPSstart',str(self.__GPSstart))
+        self.add_var_opt('length',str(int(length)))
+        self.add_var_opt('Nsegs',str(int(length/float(self.job().get_cp().get('analysis','psd-chunk-length')))))
     def set_seed(self,seed):
         self.add_var_opt('seed',seed)
     def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
@@ -202,11 +220,6 @@ class InspNestNode(pipeline.CondorDAGNode):
         self.__GPSend=endtime
         length=endtime-starttime
     
-        # Now we need to adjust the start time and length to make sure the maximum data length
-        # is not exceeded.
-        trig_time=self.get_trig_time()
-        maxLength=float(cp.get('analysis','analysis-chunk-length'))
-       # modified:
         if shift_time_dict:
         	# Make sure that all trig times are in our time interval.
         	# shift_times is a list of all time shifts.
@@ -219,16 +232,6 @@ class InspNestNode(pipeline.CondorDAGNode):
         	#self.add_var_opt('GPSstart',str(self.__GPSstart))
         	for ifo in shift_time_dict:
         		self.add_var_arg('--'+ifo+'GPSshift '+str(shift_time_dict[ifo]))
-        if(length > maxLength):
-        	while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
-                	self.__GPSstart+=maxLength/2.0
-        self.add_var_opt('GPSstart',str(self.__GPSstart))
-        length=self.__GPSend-self.__GPSstart
-        #if(length>maxLength):
-        #	length=maxLength
-
-        self.add_var_opt('length',str(int(length)))
-        self.add_var_opt('Nsegs',str(int(length/float(self.job().get_cp().get('analysis','psd-chunk-length')))))
 
     def get_ifos(self):
         return ''.join(map(str,self.__ifos))
