@@ -62,7 +62,8 @@ SOL         = float('299792458.0')    # m/s
 MSUN        = float('1.989e+30')      # kg
 G           = float('6.673e-11')      # m^3/s^2/kg 
 C           = SOL
-
+KPC         = float('3.0856776e19')
+I38         = float('1e38')           # moment of inertia kg m^2 
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -383,7 +384,21 @@ class psr_prior:
       
     return out
 
-    
+# Function to return a pulsar's strain spin-down limit given its spin frequency
+#(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
+# inertia of 1e38 kg m^2 is used
+def spin_down_limit(freq, fdot, dist):
+  hsd = math.sqrt((5./2.)*(G/C^3)*I38*math.abs(fdot)*freq)/(dist*KPC.)
+  
+  return hsd
+  
+# Function to convert a pulsar stain into ellipticity assuming the canonical
+# moment of inertia
+def h0_to_ellipticity(h0, freq, dist):
+  ell = h0*C^4*dist*KPC/(16.*math.pi^2*G*I38*freq^2)
+  
+  return ell
+
 # function to convert the psi' and phi0' coordinates used in nested sampling
 # into the standard psi and phi0 coordinates (using vectors of those parameters
 def phipsiconvert(phipchain, psipchain):

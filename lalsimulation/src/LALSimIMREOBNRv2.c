@@ -403,7 +403,7 @@ XLALHighSRStoppingCondition(double UNUSED t,       /**<< Current time (required 
 {
   EOBParams *params = (EOBParams *)funcParams;
 
-  if ( values[0] <= 2.5 - 6.0 * params->eta || isnan(dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
+  if ( values[0] <= 2.2 - 7.0 * params->eta || isnan(dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
     return 1;
   }
@@ -1208,14 +1208,85 @@ XLALSimIMREOBNRv2Generator(
 
   startIdx = i;
 
+  omegaOld = 0.0;
+  phaseCounter = 0;
+  for ( i=0; i < (UINT4)retLen; i++ )
+  {
+    omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
+    omegaHi->data[i] = omega;
+    /* For now we re-populate values - there may be a better way to do this */
+    values->data[0] = r = rVecHi.data[i];
+    values->data[1] = s = phiVecHi.data[i] - sSub;
+    values->data[2] = p = prVecHi.data[i];
+    values->data[3] = q = pPhiVecHi.data[i];
+
+    if ( omega <= omegaOld && !peakIdx )
+    {
+      peakIdx = i-1;
+    }
+    omegaOld = omega;
+  }
+  finalIdx = retLen - 1;
+
+  /* Stuff to find the actual peak time */
+  gsl_spline    *spline = NULL;
+  gsl_interp_accel *acc = NULL;
+  REAL8 omegaDeriv1;
+  REAL8 time1, time2;   
+  REAL8 timePeak, omegaDerivMid;
+
+  spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
+  acc    = gsl_interp_accel_alloc();
+
+  time1 = dynamicsHi->data[peakIdx];
+
+  gsl_spline_init( spline, dynamicsHi->data, omegaHi->data, retLen );
+  omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
+  if ( omegaDeriv1 > 0. )
+  {
+    time2 = dynamicsHi->data[peakIdx+1];
+  }
+  else
+  {
+    time2 = time1;
+    time1 = dynamicsHi->data[peakIdx-1];
+    peakIdx--;
+    omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
+  }
+
+  do
+  {
+    timePeak = ( time1 + time2 ) / 2.;
+    omegaDerivMid = gsl_spline_eval_deriv( spline, timePeak, acc );
+
+    if ( omegaDerivMid * omegaDeriv1 < 0.0 )
+    {
+      time2 = timePeak;
+    }
+    else
+    {
+      omegaDeriv1 = omegaDerivMid;
+      time1 = timePeak;
+    }
+  }
+  while ( time2 - time1 > 1.0e-5 );
+
+  /* XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak ); */
+
   /* Set the coalescence time and phase */
   /* It is not easy to define an exact coalescence time and phase for an IMR time-domain model */
   /* Therefore we set them at the time when the orbital frequency reaches maximum */
   /* Note that the coalescence phase is defined for the ORBITAL phase, not the GW phasae */
   /* With PN corrections in the GW modes, GW phase is not exactly m times orbital phase */
   /* In brief, at the highest orbital frequency, the orbital phase is phiC/2 */ 
-  t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
-  sSub = phiVecHi.data[peakIdx] - phiC/2.;
+  //t = m * (dynamics->data[hiSRndx] + dynamicsHi->data[peakIdx] - dynamics->data[startIdx]);
+  t = m * (dynamics->data[hiSRndx] + timePeak - dynamics->data[startIdx]);
+  gsl_spline_init( spline, dynamicsHi->data, phiVecHi.data, retLen );
+  /* sSub = phiVecHi.data[peakIdx] - phiC/2.; */
+  sSub = gsl_spline_eval( spline, timePeak, acc ) - phiC/2.;
+
+  gsl_spline_free( spline );
+  gsl_interp_accel_free( acc );
 
   XLALGPSAdd( &epoch, -t);
 
@@ -1258,9 +1329,7 @@ XLALSimIMREOBNRv2Generator(
   memset( (*hplus)->data->data, 0, sigMode->data->length * sizeof( REAL8 ) );
   memset( (*hcross)->data->data, 0, sigMode->data->length * sizeof( REAL8 ) );
 
-
   /* We can now start calculating things for NQCs, and hiSR waveform */
-  omegaOld = 0.0;
 
   for ( currentMode = 0; currentMode < nModes; currentMode++ )
   {
@@ -1275,91 +1344,36 @@ XLALSimIMREOBNRv2Generator(
        continue;
      }
 
-     phaseCounter = 0;
-     for ( i=0; i < (UINT4)retLen; i++ )
-     {
-       omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
-       omegaHi->data[i] = omega;
-       /* For now we re-populate values - there may be a better way to do this */
-       values->data[0] = r = rVecHi.data[i];
-       values->data[1] = s = phiVecHi.data[i] - sSub;
-       values->data[2] = p = prVecHi.data[i];
-       values->data[3] = q = pPhiVecHi.data[i];
-
-       v = cbrt( omega );
-
-       xlalStatus = XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
-
-       ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
-       sigReHi->data[i] = (REAL8) ampl0 * hLM.re;
-       sigImHi->data[i] = (REAL8) ampl0 * hLM.im;
-       phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
-       if ( i && phseHi->data[i] > phseHi->data[i-1] )
-       {
-         phaseCounter--;
-         phseHi->data[i] -= LAL_TWOPI;
-       }
-       q1->data[i] = p*p / (r*r*omega*omega);
-       q2->data[i] = q1->data[i] / r;
-       q3->data[i] = q2->data[i] / sqrt(r);
-       p1->data[i] = p / ( r*omega );
-       p2->data[i] = p1->data[i] * p*p;
-
-       if ( omega <= omegaOld && !peakIdx )
-       {
-         peakIdx = i-1;
-       }
-       omegaOld = omega;
-     }
-     finalIdx = retLen - 1;
-
-    /* Stuff to find the actual peak time */
-    gsl_spline    *spline = NULL;
-    gsl_interp_accel *acc = NULL;
-    REAL8 omegaDeriv1;
-    REAL8 time1, time2;
-    REAL8 timePeak, omegaDerivMid;
-
-    spline = gsl_spline_alloc( gsl_interp_cspline, retLen );
-    acc    = gsl_interp_accel_alloc();
-
-    time1 = dynamicsHi->data[peakIdx];
-
-    gsl_spline_init( spline, dynamicsHi->data, omegaHi->data, retLen );
-    omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
-    if ( omegaDeriv1 > 0. )
+    phaseCounter = 0;
+    for ( i=0; i < (UINT4)retLen; i++ )
     {
-      time2 = dynamicsHi->data[peakIdx+1];
-    }
-    else
-    {
-      time2 = time1;
-      time1 = dynamicsHi->data[peakIdx-1];
-      peakIdx--;
-      omegaDeriv1 = gsl_spline_eval_deriv( spline, time1, acc );
-    }
+      omega = XLALCalculateOmega( eta, rVecHi.data[i], prVecHi.data[i], pPhiVecHi.data[i], &aCoeffs );
+      omegaHi->data[i] = omega;
+      /* For now we re-populate values - there may be a better way to do this */
+      values->data[0] = r = rVecHi.data[i];
+      values->data[1] = s = phiVecHi.data[i] - sSub;
+      values->data[2] = p = prVecHi.data[i];
+      values->data[3] = q = pPhiVecHi.data[i];
 
-    do
-    {
-      timePeak = ( time1 + time2 ) / 2.;
-      omegaDerivMid = gsl_spline_eval_deriv( spline, timePeak, acc );
+      v = cbrt( omega );
 
-      if ( omegaDerivMid * omegaDeriv1 < 0.0 )
+      xlalStatus = XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
+
+      ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
+      sigReHi->data[i] = (REAL8) ampl0 * hLM.re;
+      sigImHi->data[i] = (REAL8) ampl0 * hLM.im;
+      phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
+      if ( i && phseHi->data[i] > phseHi->data[i-1] )
       {
-        time2 = timePeak;
+        phaseCounter--;
+        phseHi->data[i] -= LAL_TWOPI;
       }
-      else
-      {
-        omegaDeriv1 = omegaDerivMid;
-        time1 = timePeak;
-      }
+      q1->data[i] = p*p / (r*r*omega*omega);
+      q2->data[i] = q1->data[i] / r;
+      q3->data[i] = q2->data[i] / sqrt(r);
+      p1->data[i] = p / ( r*omega );
+      p2->data[i] = p1->data[i] * p*p;
     }
-    while ( time2 - time1 > 1.0e-5 );
-
-    gsl_spline_free( spline );
-    gsl_interp_accel_free( acc );
-
-    /*XLALPrintInfo( "Estimation of the peak is now at time %e\n", timePeak );*/
 
     /* Calculate the NQC correction */
     XLALSimIMREOBCalculateNQCCoefficients( &nqcCoeffs, ampNQC, phseHi, q1,q2,q3,p1,p2, modeL, modeM, timePeak, dt/m, eta );
@@ -1462,6 +1476,7 @@ XLALSimIMREOBNRv2Generator(
      {
        XLALPrintWarning( "Comb size not as big as it should be\n" );
      }
+
      rdMatchPoint->data[0] = combSize < timePeak + nrPeakDeltaT ? timePeak + nrPeakDeltaT - combSize : 0;
      rdMatchPoint->data[1] = timePeak + nrPeakDeltaT;
      rdMatchPoint->data[2] = dynamicsHi->data[finalIdx];
