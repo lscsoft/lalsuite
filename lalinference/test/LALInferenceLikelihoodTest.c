@@ -53,7 +53,8 @@ int LALInferenceComputeFrequencyDomainOverlapNullTest(void){
 	fprintf(stdout, " Testing LALInferenceComputeFrequencyDomainOverlap...\n");
 	fprintf(stdout, "...with NULL \n");
 	answer=LALInferenceComputeFrequencyDomainOverlap(NULL,NULL, NULL);
-	return 0; 
+	//return 0;
+        return answer;
 }
 
 int LALInferenceComputeFrequencyDomainOverlapTest(void){
@@ -107,7 +108,8 @@ Parameters used in this function are:
 	fprintf(stdout, " Testing LALInferenceComputeFrequencyDomainOverlap...\n");
 	fprintf(stdout, "...with test variables \n");
 	answer=LALInferenceComputeFrequencyDomainOverlap(NULL,NULL, NULL);
-	return 0; 
+	//return 0;
+        return answer;
 }
 
 int LALInferenceNullLogLikelihoodNullTest(void){
@@ -115,7 +117,8 @@ int LALInferenceNullLogLikelihoodNullTest(void){
 	fprintf(stdout, " Testing LALInferenceNullLogLikelihood...\n");
 	fprintf(stdout, "...with Null \n");
 	answer=LALInferenceNullLogLikelihood(NULL);
-	return 0; 
+	//return 0;
+        return answer;
 }
 
 
@@ -127,7 +130,8 @@ int LALInferenceWhitenedTimeDomainOverlapNullTest(void){
 	fprintf(stdout, " Testing LALInferenceWhitenedTimeDomainOverlap...\n");
 	fprintf(stdout, "...with NULL \n");
 	answer=LALInferenceWhitenedTimeDomainOverlap(NULL, NULL);
-	return 0; 
+	//return 0;
+        return answer;
 }
 
 int LALInferenceTimeDomainNullLogLikelihoodNullTest(void){
@@ -135,7 +139,8 @@ int LALInferenceTimeDomainNullLogLikelihoodNullTest(void){
 	fprintf(stdout, " Testing LALInferenceTimeDomainNullLogLikelihood...\n");
 	fprintf(stdout, "...with NULL \n");
 	answer = LALInferenceTimeDomainNullLogLikelihood(NULL);
-	return 0;
+	//return 0;
+        return answer;
 }
 
 int LALInferenceIntegrateSeriesProductNullTest(void){
@@ -143,7 +148,8 @@ int LALInferenceIntegrateSeriesProductNullTest(void){
 	fprintf(stdout, " Testing LALInferenceIntegrateSeriesProduct...\n");
 	fprintf(stdout, "...with NULL \n");
 	answer = LALInferenceIntegrateSeriesProduct(NULL, NULL);
-	return 0;
+	//return 0;
+        return answer;
 }
 
 int LALInferenceConvolveTimeSeriesNullTest(){
