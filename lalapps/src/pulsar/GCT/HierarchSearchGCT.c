@@ -173,7 +173,7 @@ void PrintFstatVec( LALStatus *status, REAL4FrequencySeries *in, FILE *fp, Pulsa
                     LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
-void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, UsefulStageVariables *usefulparams );
+void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, UsefulStageVariables *usefulparams, REAL4 NSegmentsInv, REAL4 *NSegmentsInvX );
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                                UsefulStageVariables *usefulparams );
@@ -282,7 +282,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 gamma2Refine, sigma4;  /* 2nd spindown refinement factor and 4th moment */
 
   /* GCT helper variables */
-  UINT4 ifreq_fg, if1dot_fg, if2dot_fg;
+  UINT4 if1dot_fg, if2dot_fg;
   UINT4 fveclength, ifreq;
   INT4  U1idx;
   REAL8 myf0, freq_event, f1dot_event, deltaF, f1dot_eventB1;
@@ -1035,24 +1035,26 @@ int MAIN( int argc, char *argv[]) {
   }
   global_column_headings_stringp = column_headings_string;
 
-  /* get effective number of segments per detector (needed for correct averaging in single-IFO F calculation) */
-  UINT4 * NsegmentsX = NULL;
+  /* get effective inverse number of segments per detector (needed for correct averaging in single-IFO F calculation) */
+  REAL4 * NSegmentsInvX = NULL;
   if ( uvar_computeLV )
     {
-      NsegmentsX = ALRealloc( NsegmentsX, numDetectors * sizeof(*NsegmentsX));
+      NSegmentsInvX = ALRealloc( NSegmentsInvX, numDetectors * sizeof(*NSegmentsInvX));
       for (UINT4 X = 0; X < numDetectors; X++)
         {
-          NsegmentsX[X] = 0;
+          NSegmentsInvX[X] = 0;
           for (k = 0; k < nStacks; k++)
             { /* for each detector, check if present in each segment, and save the number of segments where it is */
               for (UINT4 Y = 0; Y < stackMultiSFT.data[k]->length; Y++)
                 {
                   if ( strcmp( stackMultiSFT.data[k]->data[Y]->data[0].name, detectorIDs->data[X] ) == 0 )
-                    NsegmentsX[X] += 1;
+                    NSegmentsInvX[X] += 1;
                 } /* for Y < numDetectors */
             } /* for k < nStacks */
+          NSegmentsInvX[X] = 1.0 / NSegmentsInvX[X]; /* now it is the inverse number */
         } /* for X < numDetectors */
     } /* if ( uvar_computeLV ) */
+  REAL4 NSegmentsInv = 1.0 / nStacks; /* also need this for multi-detector F-stat averaging later on */
 
   /* set up line prior ratios: either given by user, then convert from string to REAL4 vector; else, pass NULL, which is interpreted as lX=1.0 for all X */
   usefulParams.LVloglX = NULL;
@@ -1657,7 +1659,7 @@ int MAIN( int argc, char *argv[]) {
                   }
                 }
 #else // GC_SSE2_OPT
-                for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
                   fgrid2F[0] += cgrid2F[0];
 #ifndef EXP_NO_NUM_COUNT
                   fgridnc[0] += (TwoFthreshold < cgrid2F[0]);
@@ -1670,7 +1672,7 @@ int MAIN( int argc, char *argv[]) {
                   for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
                     REAL4 * cgrid2FX = coarsegrid.TwoFX + CG_FX_INDEX(coarsegrid, X, k, U1idx);
                     REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                    for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
+                    for(UINT4 ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
                       fgrid2FX[0] += cgrid2FX[0];
                       fgrid2FX++;
                       cgrid2FX++;
@@ -1689,29 +1691,11 @@ int MAIN( int argc, char *argv[]) {
 
               /* ############################################################### */
 
-              /* take F-stat averages over segments */
-              REAL4 * fgrid2F = finegrid.sumTwoF + FG_INDEX(finegrid, 0);
-              REAL4 nStacksInv = 1.0 / nStacks;
-              for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                fgrid2F[0] *= nStacksInv; /* average multi-2F by full number of segments */
-                fgrid2F++;
-              }
-              if ( uvar_computeLV ) {
-                for (UINT4 X = 0; X < finegrid.numDetectors; X++) {
-                  REAL4 NsegmentsXInv = 1.0 / NsegmentsX[X];
-                  REAL4 * fgrid2FX = finegrid.sumTwoFX + FG_FX_INDEX(finegrid, X, 0);
-                  for(ifreq_fg=0; ifreq_fg < finegrid.freqlength; ifreq_fg++) {
-                    fgrid2FX[0] *= NsegmentsXInv; /* average single-2F by per-IFO number of segments */
-                    fgrid2FX++;
-                  }
-                }
-              }
-
               if( uvar_semiCohToplist ) {
                 /* this is necessary here, because UpdateSemiCohToplist() might set
                    a checkpoint that needs some information from here */
                 LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
-                LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, f1dot_fg, f2dot_fg, &usefulParams), &status);
+                LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, f1dot_fg, f2dot_fg, &usefulParams, NSegmentsInv, NSegmentsInvX ), &status);
               }
 
             } /* for( if1dot_fg = 0; if1dot_fg < nf1dots_fg; if1dot_fg++ ) */
@@ -1892,8 +1876,8 @@ int MAIN( int argc, char *argv[]) {
     LALFree ( scanInit.skyRegionString );
 
   XLALDestroyStringVector ( detectorIDs );
-  if (NsegmentsX)
-    ALFree(NsegmentsX);
+  if (NSegmentsInvX)
+    ALFree(NSegmentsInvX);
 
   /* free fine grid and coarse grid */
   if (finegrid.nc) {
@@ -2462,7 +2446,9 @@ void UpdateSemiCohToplist(LALStatus *status,
                           FineGrid *in,
                           REAL8 f1dot_fg,
                           REAL8 f2dot_fg,
-                          UsefulStageVariables *usefulparams)
+                          UsefulStageVariables *usefulparams,
+                          REAL4 NSegmentsInv,
+                          REAL4 *NSegmentsInvX)
 {
 
   REAL8 freq_fg;
@@ -2487,7 +2473,7 @@ void UpdateSemiCohToplist(LALStatus *status,
     line.F1dot = f1dot_fg;
     line.F2dot = f2dot_fg;
     line.nc = in->nc[ifreq_fg];
-    line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's already the average 2F value */
+    line.sumTwoF = in->sumTwoF[ifreq_fg]; /* here it's still the summed 2F value over segments, not the average */
     line.numDetectors = in->numDetectors;
     for (UINT4 X = 0; X < GCTTOP_MAX_IFOS; X++) { /* initialise single-IFO F-stat arrays to zero */
       line.sumTwoFX[X] = 0.0;
@@ -2497,7 +2483,7 @@ void UpdateSemiCohToplist(LALStatus *status,
 
     if ( in->sumTwoFX ) { /* if we already have FX values from the main loop, insert these, and calculate LV-stat here */
       for (UINT4 X = 0; X < in->numDetectors; X++)
-        line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)];
+        line.sumTwoFX[X] = in->sumTwoFX[FG_FX_INDEX(*in, X, ifreq_fg)]; /* here it's still the summed 2F value over segments, not the average */
       xlalErrno = 0;
 
       REAL4 *loglX = NULL;
@@ -2505,6 +2491,7 @@ void UpdateSemiCohToplist(LALStatus *status,
         loglX = usefulparams->LVloglX->data;
 
       line.LV = XLALComputeLineVetoArray ( line.sumTwoF, line.numDetectors, line.sumTwoFX, usefulparams->LVlogRhoTerm, loglX, usefulparams->LVuseAllTerms );
+      line.LV *= NSegmentsInv; /* normalize by number of segments */
 
       if ( xlalErrno != 0 ) {
         XLALPrintError ("%s line %d : XLALComputeLineVeto() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
@@ -2515,6 +2502,14 @@ void UpdateSemiCohToplist(LALStatus *status,
     }
     else
       line.LV = -LAL_REAL4_MAX; /* in non-LV case, block field with minimal value, needed for output checking in print_gctFStatline_to_str() */
+
+    /* take F-stat averages over segments */
+    line.sumTwoF *= NSegmentsInv; /* average multi-2F by full number of segments */
+    if ( in->sumTwoFX ) {
+      for (UINT4 X = 0; X < in->numDetectors; X++) {
+        line.sumTwoFX[X] *= NSegmentsInvX[X]; /* average single-2F by per-IFO number of segments */
+      }
+    }
 
     insert_into_gctFStat_toplist( list, line);
 
