@@ -555,10 +555,6 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-# Windows needs a bit of a hack here
-if [ ."$build_win32" = ."true" ] ; then
-    echo '/**/' > processtable.c
-fi
 if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ] ; then
     log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o
     log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o
