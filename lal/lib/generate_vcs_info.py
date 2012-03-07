@@ -153,7 +153,7 @@ def generate_git_version_info():
   git_id, git_udate, git_author_name, git_author_email, \
     git_committer_name, git_committer_email = \
     check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(",")
+      '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(",")
 
   git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000',
     time.gmtime(float(git_udate)))
