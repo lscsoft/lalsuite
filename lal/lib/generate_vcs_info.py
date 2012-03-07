@@ -118,6 +118,10 @@ def check_call_out(command):
   if p.returncode != 0:
     raise GitInvocationError('failed to run "%s"' % " ".join(command))
 
+  # convert byte objects to strings, if appropriate
+  if not isinstance(out, str) and sys.version_info >= (3,):
+    out = str(out, encoding='utf8')
+
   return out.strip()
 
 #
