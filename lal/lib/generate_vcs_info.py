@@ -34,10 +34,7 @@ import time
 import optparse
 import filecmp
 import shutil
-try:
-  import subprocess
-except ImportError:
-  sys.exit("Python-2.4, or higher is required")
+import subprocess
 
 #
 # class definitions
