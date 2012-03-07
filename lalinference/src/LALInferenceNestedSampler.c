@@ -654,7 +654,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	}
 	while(data)
 	{
-		tmp=logLnew - data->nullloglikelihood;
+		tmp=data->loglikelihood - data->nullloglikelihood;
 		sprintf(tmpName,"deltalogl%s",data->name);
 		LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 		data=data->next;
