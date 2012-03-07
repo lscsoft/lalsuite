@@ -411,7 +411,7 @@ void initVariables(LALInferenceRunState *state)
                --- Injection Arguments ------------------------------------------------------------------------------------------\n\
                ------------------------------------------------------------------------------------------------------------------\n\
                (--inj injections.xml)          Injection XML file to use.\n\
-               (--inj N)                       Event number from Injection XML file to use.\n\
+               (--event N)                     Event number from Injection XML file to use.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Template Arguments -------------------------------------------------------------------------------------------\n\
