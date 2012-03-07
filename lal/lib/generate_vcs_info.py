@@ -239,13 +239,13 @@ if __name__ == "__main__":
 
   if options.sed_file:
     # output sed command file to stdout
-    print 's/@ID@/%s/g' % info.id
-    print 's/@DATE@/%s/g' % info.date
-    print 's/@BRANCH@/%s/g' % info.branch
-    print 's/@TAG@/%s/g' % info.tag
-    print 's/@AUTHOR@/%s/g' % info.author
-    print 's/@COMMITTER@/%s/g' % info.committer
-    print 's/@STATUS@/%s/g' % info.status
+    print('s/@ID@/%s/g' % info.id)
+    print('s/@DATE@/%s/g' % info.date)
+    print('s/@BRANCH@/%s/g' % info.branch)
+    print('s/@TAG@/%s/g' % info.tag)
+    print('s/@AUTHOR@/%s/g' % info.author)
+    print('s/@COMMITTER@/%s/g' % info.committer)
+    print('s/@STATUS@/%s/g' % info.status)
   elif options.sed:
     # generate sed command line options
     sed_cmd = ('sed',
@@ -272,12 +272,12 @@ if __name__ == "__main__":
       os.rename(tmpfile, dstfile)
   else:
     # output version info
-    print 'Id: %s' % info.id
-    print 'Date: %s' % info.date
-    print 'Branch: %s' % info.branch
-    print 'Tag: %s' % info.tag
-    print 'Author: %s' % info.author
-    print 'Committer: %s' % info.committer
-    print 'Status: %s' % info.status
+    print('Id: %s' % info.id)
+    print('Date: %s' % info.date)
+    print('Branch: %s' % info.branch)
+    print('Tag: %s' % info.tag)
+    print('Author: %s' % info.author)
+    print('Committer: %s' % info.committer)
+    print('Status: %s' % info.status)
 
 # vim: syntax=python tw=72 ts=2 et
