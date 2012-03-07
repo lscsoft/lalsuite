@@ -419,10 +419,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   chainoutput = LALInferencePrintPTMCMCHeader(runState);
 
 
-  UINT4 adaptStart = 0;
-  REAL8 s_gamma = 1.0;
-  REAL8 logLAtAdaptStart = runState->currentLikelihood;
-
   if (adaptationOn == 1) {
     LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
