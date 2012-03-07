@@ -252,7 +252,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
 	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-	UINT4 Nruns=1;
+	UINT4 Nruns=100;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
@@ -403,7 +403,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
 	  runState->evolve(runState);
-	  logLikelihoods[i]=runState->currentLikelihood;
+	  logLikelihoods[i]=runState->likelihood(runState->currentParams,runState->data,runState->template);
+          LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
@@ -446,7 +447,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
-                        itercounter++;			
+                        itercounter++;
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
@@ -462,6 +463,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 		for(j=0;j<Nruns;j++) logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
+		LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
