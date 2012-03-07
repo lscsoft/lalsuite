@@ -172,23 +172,23 @@ void initializeMCMC(LALInferenceRunState *runState)
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Parallel Tempering Algorithm Parameters ----------------------------------------------------------------------\n\
                ------------------------------------------------------------------------------------------------------------------\n\
-               (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
+               (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
                (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
                (--tempSwaps N)                  Number of random swaps proposed every <tempSkip> iterations ((nTemps-1)nTemps/2).\n\
                (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
-               (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
                (--tempMin T)                    Lowest temperature for parallel tempering (1.0).\n\
                (--tempMax T)                    Highest temperature for parallel tempering (50.0).\n\
+               (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
                (--annealStart N)                Iteration number to start annealing (5*10^5).\n\
                (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5).\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Output -------------------------------------------------------------------------------------------------------\n\
                ------------------------------------------------------------------------------------------------------------------\n\
+               (--data-dump)                    Output waveforms to file.\n\
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
-               (--propVerbose)                  Output proposal stats to file.\n\
-               (--data-dump)                    Output waveforms to file.\n";
+               (--propVerbose)                  Output proposal stats to file.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
