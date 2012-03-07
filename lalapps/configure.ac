@@ -179,7 +179,7 @@ AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 AC_CHECK_PROGS([BIBTEX],[bibtex],[echo])
-AM_PATH_PYTHON([2.4],,[:])
+AM_PATH_PYTHON([2.6],,[:])
 AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for supported mac os x version

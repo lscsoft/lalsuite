@@ -94,7 +94,7 @@ AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 LT_INIT
-AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
+AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
