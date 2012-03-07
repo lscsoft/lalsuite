@@ -259,9 +259,9 @@ if __name__ == "__main__":
                infile)
 
     # create tmp file
-    # FIXME: subprocess.check_call becomes available in Python 2.5
-    sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
-    if sed_retcode:
+    try:
+      subprocess.check_call(sed_cmd, stdout=open(tmpfile, "w"))
+    except CalledProcessError:
       raise GitInvocationError, "Failed call (modulo quoting): " \
           + " ".join(sed_cmd) + " > " + tmpfile
 
