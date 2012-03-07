@@ -116,7 +116,7 @@ def check_call_out(command):
 
   # throw exception if process failed
   if p.returncode != 0:
-    raise GitInvocationError, 'failed to run "%s"' % " ".join(command)
+    raise GitInvocationError('failed to run "%s"' % " ".join(command))
 
   return out.strip()
 
@@ -262,8 +262,8 @@ if __name__ == "__main__":
     try:
       subprocess.check_call(sed_cmd, stdout=open(tmpfile, "w"))
     except CalledProcessError:
-      raise GitInvocationError, "Failed call (modulo quoting): " \
-          + " ".join(sed_cmd) + " > " + tmpfile
+      raise GitInvocationError("Failed call (modulo quoting): " \
+          + " ".join(sed_cmd) + " > " + tmpfile)
 
     # only update vcs header if appropriate
     if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
