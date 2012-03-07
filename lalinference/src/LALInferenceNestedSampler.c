@@ -247,6 +247,7 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	which contains a REAL8 array of likelihood values for the live
 	points.
  */
+
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
@@ -600,11 +601,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
 	LALInferenceVariables *newParams=NULL;
+	LALInferenceIFOData *data=runState->data;
+	char tmpName[32];
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
         REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX;
-	REAL8 logProposalRatio;
+	REAL8 logProposalRatio,tmp=0.0;
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
@@ -645,6 +648,17 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	/* Update information to pass back out */
 	if(logLnew==DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
 	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
+		tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
+		LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	}
+	while(data)
+	{
+		tmp=logLnew - data->nullloglikelihood;
+		sprintf(tmpName,"deltalogl%s",data->name);
+		LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+		data=data->next;
+	}
 	runState->currentLikelihood=logLnew;
 	
 	LALInferenceDestroyVariables(newParams);
