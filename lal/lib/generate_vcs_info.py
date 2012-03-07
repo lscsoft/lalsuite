@@ -28,7 +28,6 @@
 __author__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
 # import required system modules
-import exceptions
 import os
 import sys
 import time
@@ -56,7 +55,7 @@ class git_info(object):
     status = None
 
 # git invocation error exception handler
-class GitInvocationError(exceptions.LookupError):
+class GitInvocationError(LookupError):
   pass
 
 #
