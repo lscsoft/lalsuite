@@ -24,7 +24,7 @@ void FUNC (
 	TYPE	sum	= 0.0;
 	TYPE	base	= 0.0;
 
-	INITSTATUS( status, STRING(FUNC) , LALMOMENTC);
+	INITSTATUS(status);
 
 	/*  Check input for existence.  */
 	/*  Result should come in Allocated  */

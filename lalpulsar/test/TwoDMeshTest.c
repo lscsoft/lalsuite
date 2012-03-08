@@ -263,7 +263,6 @@ LALPlotTwoDMesh()
 #include "TwoDMeshPlot.h"
 
 /** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHTESTC, "$Id$" );
 
 /* Default parameter settings. */
 extern int lalDebugLevel;
@@ -293,7 +292,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, TWODMESHTESTC, statement ? statement :    \
+		 __LINE__, "$Id$", statement ? statement :    \
                  "", (msg) );                                        \
 }                                                                    \
 else (void)(0)
@@ -303,7 +302,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 TWODMESHTESTC, (statement) );                       \
+		 "$Id$", (statement) );                       \
 }                                                                    \
 else (void)(0)
 
@@ -717,7 +716,7 @@ LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 
   /* NOTE: It is assumed and required that xy[0] <= xy[2]. */
 
-  INITSTATUS( stat, "LALRangeTest", TWODMESHTESTC );
+  INITSTATUS(stat);
   ASSERT( range, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
 
@@ -780,7 +779,7 @@ LALMetricTest( LALStatus *stat,
   REAL4 lambda1, lambda2;           /* metric eigenvalues */
   REAL4 cosc, sinc;                 /* cosine and sine of c */
 
-  INITSTATUS( stat, "LALMetricTest", TWODMESHTESTC );
+  INITSTATUS(stat);
   ASSERT( metric, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( position, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );

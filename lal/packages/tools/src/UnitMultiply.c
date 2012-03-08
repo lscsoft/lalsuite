@@ -23,8 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-NRCSID( UNITMULTIPLYC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitMultiply_c
@@ -126,7 +124,7 @@ void
 LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
 
 {
-  INITSTATUS( status, "LALUnitMultiply", UNITMULTIPLYC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

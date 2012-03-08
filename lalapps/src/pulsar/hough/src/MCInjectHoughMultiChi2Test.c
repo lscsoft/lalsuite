@@ -47,6 +47,7 @@
    signals. 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughMulti.h" /* proper path*/
 
 extern int lalDebugLevel;
@@ -126,12 +127,6 @@ void PrintLogFile2(LALStatus       *status,
 /******************************************/
 
 
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-RCSID ("$Id$");
-
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
 
@@ -178,7 +173,6 @@ int main(int argc, char *argv[]){
     
   UINT4  msp = 1; /*number of spin-down parameters */ 
   REAL8  numberCount;
-  REAL8  numberCountV[NTEMPLATES];
   UINT4  nTemplates;
    
   UINT4  mObsCoh;
@@ -854,7 +848,7 @@ int main(int argc, char *argv[]){
     for(h0loop=0; h0loop <uvar_nh0; ++h0loop){
       
 /*      UINT4       index;*/
-      UINT4       j, itemplate; 
+      UINT4       j;
       UINT4       numsft;
       COMPLEX8   *noiseSFT;
       COMPLEX8   *signalSFT;
@@ -862,9 +856,6 @@ int main(int argc, char *argv[]){
       
       
       numberCount=0.0;
-      for(itemplate=0; itemplate<nTemplates; ++itemplate){
-        numberCountV[itemplate]=0.0;
-      }
       
       h0scale =h0V.data[h0loop]/h0V.data[0]; /* different for different h0 values */
       
@@ -1188,7 +1179,7 @@ void GenerateInjectParams(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1209,7 +1200,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
+  if ( count != 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
@@ -1413,7 +1404,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1433,7 +1424,7 @@ void GenerateInjectParamsNoVeto(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
+  if ( count != 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
@@ -1618,7 +1609,7 @@ void ComputeFoft_NM(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -1688,9 +1679,7 @@ void PrintLogFile2 (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  int rc;
-
-  INITSTATUS (status, "PrintLogFile2", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
@@ -1742,7 +1731,7 @@ void PrintLogFile2 (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
-	rc = system (command);	 
+        if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
       } 
     } 
   }
@@ -1756,9 +1745,10 @@ void PrintLogFile2 (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */ 
+      /* we don't check this. If it fails, we assume that */
+      /* one of the system-commands was not available, and */
+      /* therefore the CVS-versions will not be logged */
+      if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
     }
 
   LALFree(fnameLog); 
@@ -1782,7 +1772,7 @@ void SplitSFTs(LALStatus         *status,
     REAL8   partialsumWeightp, partialsumWeightSquarep;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "SplitSFTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

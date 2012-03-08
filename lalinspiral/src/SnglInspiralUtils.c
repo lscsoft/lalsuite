@@ -40,8 +40,6 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( SNGLINSPIRALUTILSC, "$Id$" );
-
 /**
 \author Brown, D. A., Fairhurst, S. and Messaritaki, E.
 \file
@@ -211,7 +209,7 @@ LALFreeSnglInspiral (
     )
 
 {
-  INITSTATUS( status, "LALFreeSnglInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   XLALFreeSnglInspiral( eventHead );
   RETURN( status );
 }
@@ -259,7 +257,7 @@ LALSortSnglInspiral (
     )
 
 {
-  INITSTATUS( status, "LALSortSnglInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
 
   *eventHead = XLALSortSnglInspiral ( *eventHead, comparfunc );
 
@@ -460,7 +458,7 @@ LALCompareSnglInspiral (
   REAL4 dmchirp, deta;
   REAL4 dpsi0, dpsi3;
 
-  INITSTATUS( status, "LALCompareSnglInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   params->match = 1;
@@ -584,7 +582,7 @@ LALCompareInspirals (
 
 {
 
-  INITSTATUS( status, "LALCompareInspirals", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
 
   XLALCompareInspirals( aPtr, bPtr, params );
 
@@ -759,7 +757,7 @@ LALClusterSnglInspiralTable (
     )
 
 {
-  INITSTATUS( status, "LALClusterSnglInspiralTable", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( inspiralEvent, status,
@@ -1047,7 +1045,7 @@ LALTimeCutSingleInspiral(
     )
 
 {
-  INITSTATUS( status, "LALTimeCutSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *eventHead = XLALTimeCutSingleInspiral( *eventHead, startTime, endTime );
@@ -1118,7 +1116,7 @@ void LALSNRCutSingleInspiral (
     )
 
 {
-  INITSTATUS( status, "LALSNRCutSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *eventHead = XLALSNRCutSingleInspiral( *eventHead, snrCut );
@@ -1283,7 +1281,7 @@ LALBCVCVetoSingleInspiral(
   REAL4 alphaF;
   INT4 veto;
 
-  INITSTATUS( status, "LALBCVCVetoSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   thisEvent = *eventHead;
@@ -1362,7 +1360,7 @@ LALalphaFCutSingleInspiral(
   SnglInspiralTable    *prevEvent = NULL;
 
 
-  INITSTATUS( status, "LALalphaFCutSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -1417,7 +1415,7 @@ LALIfoCutSingleInspiral(
   SnglInspiralTable    *ifoHead   = NULL;
   SnglInspiralTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoCutSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ifoHead = XLALIfoCutSingleInspiral( eventHead, ifo );
@@ -1515,7 +1513,7 @@ LALIfoCountSingleInspiral(
 {
   SnglInspiralTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoCountSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that output is null and input non-null */
@@ -1786,7 +1784,7 @@ LALPlayTestSingleInspiral(
     )
 
 {
-  INITSTATUS( status, "LALPlayTestSingleInspiral", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *eventHead = XLALPlayTestSingleInspiral(*eventHead, dataType);
@@ -1813,7 +1811,7 @@ LALCreateTrigBank(
   INT4 numEvents = 0;
   INT4 i = 0;
 
-  INITSTATUS( status, "LALCreateTrigBank", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -1930,7 +1928,7 @@ LALIncaCoincidenceTest(
   INT8 ta,tb;
   INT4 j;
 
-  INITSTATUS( status, "LALIncaCoincidenceTest", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
@@ -2051,7 +2049,7 @@ LALTamaCoincidenceTest(
   INT8 ta,tb;
   INT4 j;
 
-  INITSTATUS( status, "LALIncaCoincidenceTest", SNGLINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   memset( currentTrigger, 0, 2 * sizeof(SnglInspiralTable *) );
@@ -2386,12 +2384,9 @@ int XLALAddSnglInspiralCData( CDataNode **cdataStrCat, CHAR *id )
 {
   int notPresent = 1;
   int addedCData = 0;
-  CDataNode *prevCData = NULL;
-  CDataNode *nextCData = NULL;
   CDataNode *thisCData = NULL;
 
   thisCData = *cdataStrCat;
-  nextCData = (*cdataStrCat)->next;
   *cdataStrCat = NULL;
 
   while ( thisCData ) {
@@ -2406,10 +2401,7 @@ int XLALAddSnglInspiralCData( CDataNode **cdataStrCat, CHAR *id )
       *cdataStrCat = thisCData;
     }
 
-    prevCData = thisCData;
     thisCData = thisCData->next;
-    if ( thisCData )
-      nextCData = thisCData->next;
   }
 
   if ( notPresent ) {

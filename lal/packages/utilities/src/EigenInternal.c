@@ -19,7 +19,6 @@
 
 /******************************** <lalVerbatim file="EigenInternalCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -114,8 +113,6 @@ left in indeterminate states.
 #define EIGENINTERNALC_MAXITER 30 /* max. number of iterations in
 				     diagonalizing */
 
-NRCSID( EIGENINTERNALC, "$Id$" );
-
 /* A quick macro to take the square root of the sum of squares,
    without overflowing or underflowing. */
 #define RSS( a, b ) ( fabs( a ) > fabs( b ) ?                        \
@@ -136,7 +133,7 @@ LALSSymmetricToTriDiagonal( LALStatus   *stat,
   REAL4 H, K; /* scalars defined in Eqs. (11.2.4) and (11.2.11) of NR */
   REAL4 x, y, scale; /* temporary variables */
 
-  INITSTATUS( stat, "LALSSymmetricToTriDiagonal", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -279,7 +276,7 @@ LALSSymmetricToTriDiagonal2( LALStatus   *stat,
   REAL4 H, K; /* scalars defined in Eqs. (11.2.4) and (11.2.11) of NR */
   REAL4 x, y, scale; /* temporary variables */
 
-  INITSTATUS( stat, "LALSSymmetricToTriDiagonal2", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -392,7 +389,7 @@ LALSTriDiagonalToDiagonal( LALStatus   *stat,
   REAL4 *m, *d, *o;                /* pointers to data arrays */
   REAL4 x, y, xx, yy, s, c, r, d2; /* temporary variables */
 
-  INITSTATUS( stat, "LALSTriDiagonalToDiagonal", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -514,7 +511,7 @@ LALSTriDiagonalToDiagonal2( LALStatus   *stat,
   REAL4 *d, *o;                    /* pointers to data arrays */
   REAL4 x, y, xx, yy, s, c, r, d2; /* temporary variables */
 
-  INITSTATUS( stat, "LALSTriDiagonalToDiagonal2", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -623,7 +620,7 @@ LALDSymmetricToTriDiagonal( LALStatus   *stat,
   REAL8 H, K; /* scalars defined in Eqs. (11.2.4) and (11.2.11) of NR */
   REAL8 x, y, scale; /* temporary variables */
 
-  INITSTATUS( stat, "LALSSymmetricToTriDiagonal", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -766,7 +763,7 @@ LALDSymmetricToTriDiagonal2( LALStatus   *stat,
   REAL8 H, K; /* scalars defined in Eqs. (11.2.4) and (11.2.11) of NR */
   REAL8 x, y, scale; /* temporary variables */
 
-  INITSTATUS( stat, "LALSSymmetricToTriDiagonal2", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -879,7 +876,7 @@ LALDTriDiagonalToDiagonal( LALStatus   *stat,
   REAL8 *m, *d, *o;                /* pointers to data arrays */
   REAL8 x, y, xx, yy, s, c, r, d2; /* temporary variables */
 
-  INITSTATUS( stat, "LALSTriDiagonalToDiagonal", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -1001,7 +998,7 @@ LALDTriDiagonalToDiagonal2( LALStatus   *stat,
   REAL8 *d, *o;                    /* pointers to data arrays */
   REAL8 x, y, xx, yy, s, c, r, d2; /* temporary variables */
 
-  INITSTATUS( stat, "LALSTriDiagonalToDiagonal2", EIGENINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( diag, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );

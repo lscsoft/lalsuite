@@ -28,8 +28,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(LALSIMIMRH, "$Id$");
-
 /**
  * The number of e-folds of ringdown which should be attached for 
  * EOBNR models
@@ -47,8 +45,8 @@ NRCSID(LALSIMIMRH, "$Id$");
  * PSpinInspiralRD waveforms.
  */
 typedef enum {
-  TotalJ,
   View,
+  TotalJ,
   OrbitalL,
 } InputAxis;
 
@@ -189,6 +187,20 @@ int XLALSimIMREOBNRv2AllModes(
     const REAL8       distance,   /**<< Distance to source (in metres) */
     const REAL8       inclination /**<< Inclination of the source (in radians) */
 );
+
+int XLALSimIMRSpinAlignedEOBWaveform(
+        REAL8TimeSeries **hplus,
+        REAL8TimeSeries **hcross,
+        const REAL8     phiC,
+        REAL8           deltaT,
+        const REAL8     m1SI,
+        const REAL8     m2SI,
+        const REAL8     fMin,
+        const REAL8     r,
+        const REAL8     inc,
+        const REAL8     spin1z,
+        const REAL8     spin2z
+     );
 
 /**
  * Routine to compute the mass and spin of the final black hole given 

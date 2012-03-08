@@ -718,10 +718,6 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 
 /* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */
 
-/** \cond DONT_DOXYGEN */
-NRCSID(LALBARYCENTERC, "$Id$");
-/** \endcond */
-
 /** Deprecated LAL wrapper to XLALBarycenterEarth()
  * \deprecated use XLALBarycenterEarth() instead.
  */
@@ -731,7 +727,7 @@ LALBarycenterEarth(LALStatus *status,		/**< [in/out] LAL status structure pointe
 		   const LIGOTimeGPS *tGPS, 	/**< [in] GPS time tgps */
 		   const EphemerisData *edat) 	/**< [in] ephemeris-files */
 {
-  INITSTATUS ( status, __func__, LALBARYCENTERC);
+  INITSTATUS(status);
 
   if ( XLALBarycenterEarth ( earth, tGPS, edat) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALBarycenterEarth() failed with xlalErrno = %d\n", __func__, xlalErrno );
@@ -751,7 +747,7 @@ LALBarycenter(LALStatus *status,		/**< [in/out] LAL status structure pointer */
 	      const BarycenterInput *baryinput, /**< [in] info about detector and source-location */
 	      const EarthState *earth) 		/**< [in] earth-state (from LALBarycenterEarth()) */
 {
-  INITSTATUS ( status, __func__, LALBARYCENTERC);
+  INITSTATUS(status);
 
   if ( XLALBarycenter ( emit, baryinput, earth ) != XLAL_SUCCESS ) {
     XLALPrintError ("%s: XLALBarycenter() failed with xlalErrno = %d\n", __func__, xlalErrno );

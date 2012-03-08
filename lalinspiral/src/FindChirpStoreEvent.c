@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.,  Woods D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -35,6 +34,7 @@
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -44,9 +44,6 @@
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
 #include <lal/FindChirp.h>
-
-NRCSID (FINDCHIRPSTOREEVENTC, "$Id$");
-
 
 void
 LALFindChirpStoreEvent (
@@ -68,7 +65,7 @@ LALFindChirpStoreEvent (
   INT4                       timeIndex;
   REAL4                      deltaT;
 
-  INITSTATUS( status, "LALFindChirpStoreEvent", FINDCHIRPSTOREEVENTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

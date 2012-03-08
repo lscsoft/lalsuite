@@ -54,6 +54,7 @@ LALDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -61,10 +62,6 @@ LALDestroyVector()
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpTD.h>
-
-
-NRCSID (FINDCHIRPTDTEMPLATEC, "$Id$");
-
 
 void
 LALFindChirpTDTemplate (
@@ -91,7 +88,7 @@ LALFindChirpTDTemplate (
   REAL4Vector  *tmpxfac = NULL; /* Used for band-passing */
 
 
-  INITSTATUS( status, "LALFindChirpTDTemplate", FINDCHIRPTDTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -284,9 +281,9 @@ LALFindChirpTDTemplate (
 
 
   /* Taper the waveform if required */
-  if ( params->taperTmplt != INSPIRAL_TAPER_NONE )
+  if ( params->taperTmplt != LAL_SIM_INSPIRAL_TAPER_NONE )
   {
-    if ( XLALInspiralWaveTaper( params->xfacVec, params->taperTmplt )
+    if ( XLALSimInspiralREAL4WaveTaper( params->xfacVec, params->taperTmplt )
            == XLAL_FAILURE )
     {
       ABORTXLAL( status );
@@ -440,7 +437,7 @@ LALFindChirpTDNormalize(
   REAL4        *segNorm;
   REAL4         segNormSum;
 
-  INITSTATUS( status, "LALFindChirpTDNormalize", FINDCHIRPTDTEMPLATEC );
+  INITSTATUS(status);
 
   /* check the required input exists */
   ASSERT( fcTmplt, status,

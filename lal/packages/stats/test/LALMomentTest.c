@@ -35,9 +35,6 @@
 #include <lal/LALMoment.h>
 #include "CheckStatus.h"
 
-
-NRCSID (LALMOMENTTESTC, "$Id$");
-
 /**
 \author Tibbits, M. M.
 \file
@@ -195,7 +192,7 @@ int main( int argc, char *argv[] )
 
 	ParseOptions( argc, argv );
 
-	printf("\n\nMESG: %s \n",LALMOMENTTESTC);
+	printf("\n\nMESG: %s \n","$Id$");
 
 #ifndef LAL_NDEBUG
 	REAL8Sequence		*nullSequence	=  NULL;

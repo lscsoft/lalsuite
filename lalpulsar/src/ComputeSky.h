@@ -32,10 +32,10 @@
 This is a short summary of the analytical calculations which form the basis for the code in this routine.
 
 Recall that a demodulated Fourier Transform (DeFT) is given by
-\anchor eq_e4 \f{equation}{
+\anchor eq_e4a \f{equation}{
 \hat{x}_b({\vec{\lambda}})=
 \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
-\label{eq_e4}
+\label{eq_e4a}
 \f}
 The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
 the SFTs that build the DeFT, \f$k\f$ runs on all the SFT frequency bins, and \f$j\f$
@@ -113,8 +113,6 @@ B_{s \alpha}=\mathcal{T}_{SFT}\dot{T}_{\alpha}\Delta T_{\alpha}^{s}
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-  NRCSID (COMPUTESKYH, "$Id: ComputeSky.h");
 
 /**\name Error Codes */ /*@{*/
 #define COMPUTESKYH_ENULL 1

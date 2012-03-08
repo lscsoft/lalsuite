@@ -50,14 +50,12 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (CREATETIMEFREQPARAMC, "$Id$");
-
 void LALCreateTimeFreqParam (LALStatus *status,
 			TimeFreqParam **param,
 			CreateTimeFreqIn *in)
 {
   /* Initialize status */
-  INITSTATUS (status, "LALCreateTimeFreqParam", CREATETIMEFREQPARAMC);
+  INITSTATUS(status);
 
   /* Check input structure: report if NULL */
   ASSERT (in != NULL, status, CREATETFP_ENULL, CREATETFP_MSGENULL);

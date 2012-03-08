@@ -120,8 +120,6 @@ the code \ref LALInspiralMCMCUser.c.
 #define UNUSED
 #endif
 
-NRCSID (LALINSPIRALMCMCC, "$Id: LALInspiralPhase.c,v 1.9 2003/04/14 00:27:22 sathya Exp $");
-
 /* *****************************
 printMatrix
   ***************************** */

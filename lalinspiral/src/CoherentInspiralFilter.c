@@ -29,7 +29,7 @@
 #include <math.h>
 #include <string.h>
 
-#include <lal/LALRCSID.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -75,8 +75,6 @@ void XLALCoherentCBCEstimateDistanceCase3a(INT4 caseID[6], double C_Real0, doubl
 void XLALCoherentCBCSigmasqFor3Sites(INT4 caseID[6], REAL8 sigmasq4DArray[4], REAL4 chisq4DArray[4], MultiInspiralTable *thisEvent, UINT4 case3b);
 double XLALCoherentCBCParamEstim( double *psi_est, double *iota_est, double *coa_phase_est, double a1, double a2, double a3, double a4, double amplitudeConst, MultiInspiralTable *thisEvent, double chirpTime, double C_Real0, double C_Im0, double C_Real1,double C_Im1, double C_Real2, double C_Im2, double C_Real3, double C_Im3, REAL8 sigmasq[4], UINT4 case3b, INT4 caseID[6] );
 
-NRCSID (COHERENTINSPIRALFILTERC, "$Id$");
-
 static REAL4 cartesianInnerProduct(REAL4 x[3], REAL4 y[3])
 {
   return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];
@@ -97,8 +95,7 @@ LALCoherentInspiralFilterInputInit (
   DetectorBeamArray               *detBeamArray = NULL;
   CoherentInspiralCVector         *cVecPtr = NULL;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterInputInit",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -256,8 +253,7 @@ LALCoherentInspiralFilterInputFinalize (
   CoherentInspiralFilterInput     *inputPtr;
   CoherentInspiralCVector         *cVecPtr;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterInputFinalize",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -337,8 +333,7 @@ LALCoherentInspiralFilterParamsInit (
   CoherentInspiralFilterParams     *outputPtr;
   INT4                              networkLength = LAL_NUM_IFO;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterParamsInit",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -893,8 +888,7 @@ LALCoherentInspiralFilterParamsFinalize (
 {
   CoherentInspiralFilterParams     *outputPtr;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterParamsInit",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -1062,8 +1056,7 @@ LALCoherentInspiralEstimatePsiEpsilonCoaPhase (
   COMPLEX8               cMinus;
   COMPLEX8               cRatio;  /* cMinus/cPlus */
 
-  INITSTATUS( status, "LALCoherentInspiralEstimatePsiEpsilon",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Must have 3 sites to estimate psi and epsilon */
@@ -1539,8 +1532,7 @@ LALCoherentInspiralEstimateDistance (
     REAL4                                 *distance
     )
 {
-  INITSTATUS( status, "LALCoherentInspiralEstimateDistance",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* This function computes the effective distance for the H1-H2 pair */
@@ -1675,8 +1667,7 @@ XLALCoherentInspiralFilterSegment (
   REAL4 eff_coh_snr = 0.0;
   REAL4 crossCorrCohSqEff = 0.0;
 
-  INITSTATUS( status, "LALCoherentInspiralFilterSegment",
-	      COHERENTINSPIRALFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*
@@ -3867,14 +3858,10 @@ REAL4 XLALComputeCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId< (UINT4) numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFac = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints[detId];
-
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-	pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
@@ -3942,14 +3929,10 @@ REAL4 XLALComputeCrossCohStatCase3b(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId< (UINT4) numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFacSq = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints[detId];
-
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-      pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
@@ -4285,13 +4268,10 @@ REAL4 XLALComputeCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4], RE
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId<numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFac = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints4D[detId];
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-      pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 
@@ -4361,14 +4341,10 @@ REAL4 XLALComputeCrossCohStatCase4a(COMPLEX8TimeSeries *cData[4], REAL4 VVPlus[4
 
   /* Compute components of the coherent SNR */
   for ( detId=0 ; detId< (UINT4) numDetectors ; detId++ ) {
-    REAL4          snrsqloc = 0.0;
     REAL4          chisqFacSq = 1.0;
     REAL4          chisq_r  = 0.0;
 
     detIdSlidTimePt = timeP+slidePoints4D[detId];
-
-    snrsqloc = pow(cData[detId]->data->data[detIdSlidTimePt].re, 2) +
-      pow(cData[detId]->data->data[detIdSlidTimePt].im, 2);
 
     chisq_r = chisq[detId]/(2*chisq_dof[detId] -2);
 

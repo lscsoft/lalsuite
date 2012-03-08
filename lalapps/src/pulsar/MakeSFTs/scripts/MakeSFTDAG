@@ -4,13 +4,12 @@
 MakeSFTDAG.py - Creates DAGs to run jobs that generates SFTs; can act as a dag generator for use with onasys.
 Loosely based on lalapps_strain_pipe
 
-$Id$
 
 """
 
 __author__ = 'Greg Mendell<gmendell@ligo-wa.caltech.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 # REVISIONS:
 # 12/02/05 gam; generate datafind.sub and MakeSFTs.sub as well as dag file in PWD, with log files based subLogPath and dag filename. 

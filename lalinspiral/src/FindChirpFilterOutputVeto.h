@@ -35,8 +35,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID (FINDCHIRPFILTEROUTPUTVETOH, "$Id$");
-
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

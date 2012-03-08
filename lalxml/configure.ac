@@ -1,4 +1,4 @@
-AC_INIT([lalxml],[1.1.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalxml],[1.1.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -84,7 +84,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
-# SWIG wrapping requires a c++ compiler
+# check for c++ compiler
 AC_PROG_CXX
 
 # checks for programs
@@ -92,6 +92,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
+AC_PROG_SED
 LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
@@ -100,6 +101,9 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
+
+# check complex number types
+LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for header files
 AC_HEADER_STDC
@@ -150,16 +154,16 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LALXML has now been successfully configured:
 
-                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 
-          ${prefix}
+            ${prefix}
 
         Now run 'make' to build LALXML
         and run 'make install' to install LALXML

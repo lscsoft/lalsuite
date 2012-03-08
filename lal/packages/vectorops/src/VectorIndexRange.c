@@ -3,8 +3,6 @@
 #include <math.h>
 #include "VectorIndexRange.h"
 
-NRCSID( VECTORINDEXRANGEC, "$Id$" );
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #include "VectorIndexRange_source.c"

@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <lal/AVFactories.h>
@@ -28,9 +29,6 @@
 #include <lal/VectorOps.h>
 #include <lal/Window.h>
 #include <lal/FrequencySeries.h>
-
-#include <lal/LALRCSID.h>
-NRCSID (CONVOLUTIONC,"$Id$");
 
 /**
  * \addtogroup Convolution

@@ -19,7 +19,6 @@
 
 /***************************** <lalVerbatim file="DestroyIIRFilterCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -60,8 +59,6 @@ void LALDDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/IIRFilter.h>
 
-NRCSID(DESTROYIIRFILTERC,"$Id$");
-
 void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter )
 {
   if ( filter )
@@ -91,7 +88,7 @@ void
 LALDestroyREAL4IIRFilter( LALStatus      *stat,
 			  REAL4IIRFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyREAL4IIRFilter",DESTROYIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALSDestroyVector will check that the data fields are
@@ -113,7 +110,7 @@ void
 LALDestroyREAL8IIRFilter( LALStatus      *stat,
 			  REAL8IIRFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyREAL8IIRFilter",DESTROYIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
      (The routine LALDDestroyVector will check that the data fields are

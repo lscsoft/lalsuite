@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M.,  Krishnan, B. & inspired from Siemens, X.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan on Feb 22, 2004
@@ -60,8 +59,6 @@ LALHO()
 
 #include "./SFTbin.h"
 
-NRCSID (SFTBINC, "$Id$");
-
 /*
  * The functions that make up the guts of this module
  */
@@ -78,7 +75,7 @@ void ReadSFTbinHeader1 (LALStatus  *status,
   size_t    errorcode;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ReadSFTbinHeader1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -122,7 +119,7 @@ void ReadCOMPLEX8SFTbinData1(LALStatus  *status,
   INT4       length;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ReadCOMPLEX8SFTbinData1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -202,7 +199,7 @@ void ReadCOMPLEX16SFTbinData1(LALStatus  *status,
   INT4       length;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ReadCOMPLEX16SFTbinData1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -278,7 +275,7 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
   INT4       length;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -340,7 +337,7 @@ void COMPLEX16SFT2Periodogram1 (LALStatus  *status,
   INT4       length;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -402,7 +399,7 @@ void SFT2Periodogram (LALStatus  *status,
   INT4       length;
   REAL8      f0, deltaF;
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -474,7 +471,7 @@ void FindNumberHarmonics (LALStatus    *status,
   REAL8 temp1, temp2, temp3, temp4;   
 
 
-  INITSTATUS (status, "FindNumberHarmonics", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -522,7 +519,7 @@ void  ReadHarmonicsInfo (LALStatus          *status,
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
 
-  INITSTATUS (status, "ReadHarmonicsInfo", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -579,7 +576,7 @@ void  Harmonics2Lines (LALStatus          *status,
   REAL8   f0, deltaf, leftDeltaf, rightDeltaf;
 
 
-  INITSTATUS (status, "Harmonics2Lines", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -647,7 +644,7 @@ void FindNumberLines (LALStatus          *status,
   INT4  lineCount, r;
   CHAR  dump[128]; 
 
-  INITSTATUS (status, "FindNumberLines", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -690,7 +687,7 @@ void  ReadLineInfo (LALStatus     *status,
   REAL8   *rightWing=NULL;
   CHAR    dump[128];
 
-  INITSTATUS (status, "ReadLineInfo", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);  
 
   /* make sure arguments are not null */
@@ -737,7 +734,7 @@ void ChooseLines (LALStatus        *status,
   INT4 nLinesIn, nLinesOut, j;
   REAL8 lineFreq, leftWing, rightWing;
 
-  INITSTATUS (status, "ChooseLines", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);   
 
   /* some sanity checks */
@@ -814,7 +811,7 @@ void CheckLines ( LALStatus           *status,
   INT4 nLines, j;
   REAL8 lineFreq, leftWing, rightWing, doppler;
 
-  INITSTATUS (status, "CheckLines", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);   
 
   /* sanity checks */
@@ -870,7 +867,7 @@ void CleanCOMPLEX8SFT (LALStatus          *status,
   static REAL4Vector *ranVector=NULL; 
   REAL4 *randVal;
   /* --------------------------------------------- */
-  INITSTATUS (status, "CleanCOMPLEX8SFT", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);   
   
   /*   Make sure the arguments are not NULL: */ 
@@ -1044,7 +1041,7 @@ void CleanCOMPLEX16SFT (LALStatus                 *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "CleanCOMPLEX16SFT", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);   
  
   /*   Make sure the arguments are not NULL: */ 
@@ -1167,7 +1164,7 @@ void WriteCOMPLEX8SFT (LALStatus          *status,
   REAL4  rePt, imPt;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "WriteCOMPLEX8SFT", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);   
  
   /*   Make sure the arguments are not NULL and perform basic checks*/ 
@@ -1232,7 +1229,7 @@ void WriteCOMPLEX16SFT (LALStatus          *status,
   REAL4  rePt, imPt;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "WriteCOMPLEX16SFT", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);   
  
   /*   Make sure the arguments are not NULL and perform basic checks*/ 

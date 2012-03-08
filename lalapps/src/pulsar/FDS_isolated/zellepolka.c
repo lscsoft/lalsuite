@@ -385,12 +385,6 @@ extern INT4 lalDebugLevel;
 /*! @param vrbflg        INT4 Control debugging messages. Defined in lalapps.h */
 extern INT4 vrbflg;
 
-
-
-RCSID ("$Id$");
-
-
-
 /* ------------------------------------------------------------------------------------------*/
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/
@@ -774,7 +768,7 @@ void PrepareCells( LALStatus *lalStatus, CellData **cell, const INT8 CLength )
   INT8 icell, ncell;
   INT4 errflg = 0;
 
-  INITSTATUS( lalStatus, "InitCode", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( *cell == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
@@ -839,7 +833,7 @@ void RePrepareCells( LALStatus *lalStatus,	/**< LALStatus* pointer */
   INT4 errflg = 0;
   CellData *tmp;
   
-  INITSTATUS( lalStatus, "RePrepareCells", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   /*  ASSERT( *cell == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL); */
@@ -926,7 +920,7 @@ void PrintResult(LALStatus *lalStatus, 		/**< LALStatus pointer */
   INT8 idxmaxcoin = 0;
   REAL4 Sigmax = 0.0;
   
-  INITSTATUS( lalStatus, "PrintResult", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( cell != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -1229,7 +1223,7 @@ void print_info_of_the_cell( LALStatus *lalStatus,
 {
   INT8 icell;
 
-  INITSTATUS( lalStatus, "print_info_of_the_cell", rcsid );
+  INITSTATUS(lalStatus);
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
   icell = icell_start;
@@ -1259,7 +1253,7 @@ void FreeMemory( LALStatus *lalStatus,	/**< LALStatus*  pointer */
                  PolkaConfigVars *CLA, 	/**< configuration variables structure */
                  CandidateList *CList) /**< CandidateList structure */
 {
-  INITSTATUS( lalStatus, "FreeMemory", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   FreeConfigVars( lalStatus->statusPtr, CLA );
@@ -1292,7 +1286,7 @@ void FreeMemoryCellsOnly( LALStatus *lalStatus, /**< LALStatus*  pointer */
 {
   INT8 icell;
 
-  INITSTATUS( lalStatus, "FreeMemoryCellsOnly", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   /* FIX (?) ME:  
@@ -1320,7 +1314,7 @@ void FreeConfigVars(LALStatus *lalStatus, PolkaConfigVars *CLA )
 {
   UINT4 k;
 
-  INITSTATUS( lalStatus, "FreeConfigVars", rcsid );
+  INITSTATUS(lalStatus);
 
   if( CLA->FstatsFile != NULL ) LALFree(CLA->FstatsFile);
   if( CLA->OutputFile != NULL ) LALFree(CLA->OutputFile);
@@ -1354,7 +1348,7 @@ void add_int8_data(LALStatus *lalStatus, struct int8_linked_list **list_ptr, con
 {
   struct int8_linked_list *p = NULL;
 
-  INITSTATUS( lalStatus, "add_int8_data", rcsid );
+  INITSTATUS(lalStatus);
 
   p = (struct int8_linked_list *) LALMalloc(sizeof(struct int8_linked_list));
   if( p == NULL ) {
@@ -1381,7 +1375,7 @@ void delete_int8_linked_list( LALStatus *lalStatus, struct int8_linked_list *lis
   INT8 ic;
   struct int8_linked_list *q;
 
-  INITSTATUS( lalStatus, "delete_int8_linked_list", rcsid );
+  INITSTATUS(lalStatus);
 
   ic = 0;
   while( list_ptr !=NULL && ic <= LINKEDSTR_MAX_DEPTH ) {  
@@ -1419,7 +1413,7 @@ void get_info_of_the_cell( LALStatus *lalStatus, CellData *cd, const CandidateLi
   REAL8 lfa;
   struct int8_linked_list *p;
 
-  INITSTATUS( lalStatus, "get_info_of_the_cell", rcsid );
+  INITSTATUS(lalStatus);
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
@@ -1497,7 +1491,7 @@ void print_cand_of_most_coin_cell( LALStatus *lalStatus, CellData *cd, const Can
   REAL8 AlphaTmp=0;
   struct int8_linked_list *p;
 
-  INITSTATUS( lalStatus, "print_cand_of_most_coin_cell", rcsid );
+  INITSTATUS(lalStatus);
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);  
 
@@ -1564,7 +1558,7 @@ void print_Fstat_of_the_cell( LALStatus *lalStatus,
   INT8 idx, ic, icell;
   struct int8_linked_list *p;
 
-  INITSTATUS( lalStatus, "print_Fstat_of_the_cell", rcsid );
+  INITSTATUS(lalStatus);
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
@@ -1755,7 +1749,7 @@ ReadCandidateFiles(LALStatus *lalStatus,
   /* UINT4 *CLenFthr;*/
   /* REAL8 percentage = 0; */
 
-  INITSTATUS( lalStatus, "ReadCandidateFiles", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -1858,7 +1852,7 @@ GetFilesListInThisDir( LALStatus *lalStatus,
   glob_t globbuf;
 #endif
 
-  INITSTATUS (lalStatus, "GetFilesListInThisDir", rcsid);
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
   ASSERT( directory != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( basename != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -1971,7 +1965,7 @@ ReadCandidateListFromZipFile( LALStatus *lalStatus,
 
   UzpBuffer uzpbuff;
 
-  INITSTATUS (lalStatus, "ReadCandidateListFromZipFile", rcsid);
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
   ASSERT( fname != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
@@ -2272,7 +2266,7 @@ ReadOneCandidateFileV2( LALStatus *lalStatus,
   INT8 bytecount=0;
 
 
-  INITSTATUS( lalStatus, "ReadOneCandidateFileV2", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
   ASSERT( fname != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
@@ -2542,7 +2536,7 @@ ReadOneCandidateFile( LALStatus *lalStatus, 	/**< LALStatus pointer */
   INT8 numlinesFthr=0;
 
 
-  INITSTATUS( lalStatus, "ReadOneCandidateFile", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
   ASSERT( fname != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( *CList == NULL, lalStatus, POLKAC_ENONULL, POLKAC_MSGENONULL);
@@ -2832,7 +2826,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
   const CHAR BNAME[] = "Test";
 
-  INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( CLA != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
@@ -2908,7 +2902,7 @@ ReadCommandLineArgs( LALStatus *lalStatus,
 
 
   if (uvar_help) {	/* if help was requested, we're done here */
-    XLALPrintError("%s\n",rcsid);
+    XLALPrintError("%s\n","$Id$");
     fflush(stderr);
     LALDestroyUserVars(lalStatus->statusPtr);
     exit(POLKA_EXIT_OK);
@@ -3226,7 +3220,7 @@ void print_info_of_cell_and_ifo_S4R2a( LALStatus *lalStatus,
   INT4 cH1,cL1;
   struct int8_linked_list *p;
 
-  INITSTATUS( lalStatus, "print_info_of_cell_and_ifo_S4R2a", rcsid );
+  INITSTATUS(lalStatus);
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 
@@ -3310,7 +3304,7 @@ void print_info_of_cell_and_ifo_S5R1a( LALStatus *lalStatus,
   INT4 cH1,cL1;
   struct int8_linked_list *p;
 
-  INITSTATUS( lalStatus, "print_info_of_cell_and_ifo_S5R1a", rcsid );
+  INITSTATUS(lalStatus);
   ASSERT( cd != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
   ASSERT( CList != NULL, lalStatus, POLKAC_ENULL, POLKAC_MSGENULL);
 

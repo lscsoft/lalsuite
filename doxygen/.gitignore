@@ -1,9 +1,11 @@
 /doxy-html-config.cfg
-/doxy-html-html.log
+/doxy-html-warn.log
+/doxy-html-eqns.log
 /doxy-pdf-config.cfg
-/doxy-pdf.log
+/doxy-pdf-warn.log
+/doxy-pdf-make.log
 /figures/
 /html/
 /latex/
 /refman.pdf
-doxy-html-eqns.log
+/doxygen_*.tmp

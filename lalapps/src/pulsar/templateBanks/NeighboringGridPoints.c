@@ -19,7 +19,6 @@
 
 /*!@file
    @author Itoh, Yousuke  
-   $Id$
    @note 
    @brief A helper function for wide-sky-area search codes validation.
 
@@ -43,7 +42,6 @@
   to introduce additional command line arguments to ComputeFStatistic. 
 
 
- $Revision$
 
  @todo 
 <ul>
@@ -68,7 +66,6 @@
 #include <lal/StringInput.h>
 
 extern INT4 lalDebugLevel;
-NRCSID( NEIGHBORINGGRIDPOINTSC, "$Id$" );
 
 #define NEIGHBORINGGRIDPOINTSH_ENULL 	1
 #define NEIGHBORINGGRIDPOINTSH_ENONULL	2
@@ -113,7 +110,7 @@ InitDopplerScanOnRefinedGrid ( LALStatus *status, 		/**< pointer to LALStatus st
   SkyPosition centerOfMass;
   DopplerScanInit *scanInitTmp;
 
-  INITSTATUS( status, "InitDopplerScanOnRefinedGrid", NEIGHBORINGGRIDPOINTSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
   /* This traps coding errors in the calling routine. */
   ASSERT ( scanInit, status, NEIGHBORINGGRIDPOINTSH_ENULL , NEIGHBORINGGRIDPOINTSH_MSGENULL );  
@@ -205,7 +202,7 @@ ComputeCenterOfMass ( LALStatus *status, 	/**< pointer to LALStatus structure */
   REAL8 longitudeCM = 0.0, latitudeCM = 0.0;
   UINT4 ic;
 
-  INITSTATUS( status, "ComputeCenterOfMass", NEIGHBORINGGRIDPOINTSC );
+  INITSTATUS(status);
   /* This traps coding errors in the calling routine. */
   ASSERT ( skyRegion, status, NEIGHBORINGGRIDPOINTSH_ENULL , NEIGHBORINGGRIDPOINTSH_MSGENULL );  
   ASSERT ( skyposCM != NULL, status, NEIGHBORINGGRIDPOINTSH_ENONULL , NEIGHBORINGGRIDPOINTSH_MSGENONULL );  
@@ -258,7 +255,7 @@ RefineSkyRegion (LALStatus *status, 		/**< pointer to LALStatus structure */
   CHAR *ptr;
   UINT4 ic;
 
-  INITSTATUS( status, "RefineSkyRegion", NEIGHBORINGGRIDPOINTSC );
+  INITSTATUS(status);
 
   longitudeCM = centerOfMass->longitude; 
   latitudeCM = centerOfMass->latitude; 

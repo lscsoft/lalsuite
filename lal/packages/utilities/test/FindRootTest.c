@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="FindRootTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -82,8 +81,6 @@ Options:
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
-NRCSID (MAIN, "$Id$");
-
 extern char *optarg;
 extern int   optind;
 
@@ -115,7 +112,7 @@ static void
 F (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   REAL4 y_0;
-  INITSTATUS (s, "F", MAIN);
+  INITSTATUS(s);
   ASSERT (y, s, 1, "Null pointer");
   ASSERT (p, s, 1, "Null pointer");
   y_0 = *(REAL4 *)p;
@@ -127,7 +124,7 @@ static void
 FF (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   REAL8 y_0;
-  INITSTATUS (s, "FF", MAIN);
+  INITSTATUS(s);
   ASSERT (y, s, 1, "Null pointer");
   ASSERT (p, s, 1, "Null pointer");
   y_0 = *(REAL8 *)p;

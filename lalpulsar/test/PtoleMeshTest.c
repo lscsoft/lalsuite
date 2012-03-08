@@ -111,7 +111,6 @@ LALXMGRPlotMesh()
 #include <lal/TwoDMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID( PTOLEMESHTESTC, "$Id$" );
 
 /* BEN: These aren't used right now, but should be. */
 #define MIN_DURATION (86400./LAL_TWOPI) /* one radian of rotation */
@@ -304,7 +303,7 @@ int main( int argc, char **argv )
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
 {
   /* Set up shop. */
-  INITSTATUS( stat, "getRange", PTOLEMESHTESTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Search a circle. BEN: The 1.001 is a kludge. */
@@ -336,7 +335,7 @@ void getMetric( LALStatus *stat,
   REAL8Vector   *metric = NULL;  /* for output of metric */
 
   /* Set up shop. */
-  INITSTATUS( stat, "getMetric", PTOLEMESHTESTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
   TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
 

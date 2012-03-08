@@ -1,4 +1,3 @@
-% $Id$
 %
 %  Matlab script to get  approx h0(95%) by linear interpolation
 %

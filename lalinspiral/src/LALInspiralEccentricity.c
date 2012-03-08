@@ -115,10 +115,6 @@ LALInspiralEccentricityEngine(
    InspiralTemplate *params
    );
 
-
-NRCSID (LALINSPIRALECCENTRICITYC, "$Id$");
-
-
 void
 LALInspiralEccentricity(
    LALStatus        *status,
@@ -129,7 +125,7 @@ LALInspiralEccentricity(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralEccentricity", LALINSPIRALECCENTRICITYC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -155,9 +151,6 @@ LALInspiralEccentricity(
    waveforms by solving the ODEs using a 4th order Runge-Kutta; April 5, 00.
 */
 
-NRCSID (LALINSPIRALECCENTRICITYTEMPLATESC, "$Id$");
-
-
 void
 LALInspiralEccentricityTemplates(
    LALStatus        *status,
@@ -169,7 +162,7 @@ LALInspiralEccentricityTemplates(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralEccentricityTemplates", LALINSPIRALECCENTRICITYTEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -195,9 +188,6 @@ LALInspiralEccentricityTemplates(
    waveforms for injection packages T.Cokelaer sept 2003
 */
 
-NRCSID (LALINSPIRALECCENTRICITYFORINJECTIONC, "$Id$");
-
-
 void
 LALInspiralEccentricityForInjection(
 			     LALStatus        *status,
@@ -220,7 +210,7 @@ LALInspiralEccentricityForInjection(
 
   InspiralInit paramsInit;
 
-  INITSTATUS(status, "LALInspiralEccentricityForInjection", LALINSPIRALECCENTRICITYTEMPLATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Make sure parameter and waveform structures exist. */
@@ -367,8 +357,6 @@ LALInspiralEccentricityForInjection(
  *  Craig Robinson April 2005
  */
 
-NRCSID (LALINSPIRALECCENTRICITYENGINEC, "$Id$");
-
 void
 LALInspiralEccentricityEngine(
 		LALStatus        *status,
@@ -415,7 +403,7 @@ LALInspiralEccentricityEngine(
    REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 #endif
 
-   INITSTATUS(status, "LALInspiralEccentricityEngine", LALINSPIRALECCENTRICITYENGINEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

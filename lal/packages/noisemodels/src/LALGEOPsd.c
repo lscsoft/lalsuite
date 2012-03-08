@@ -19,8 +19,6 @@
 
 #include <lal/LALNoiseModels.h>
 
-NRCSID (LALGEOPSDC,"$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

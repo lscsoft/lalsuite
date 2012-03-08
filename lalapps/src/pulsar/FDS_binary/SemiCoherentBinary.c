@@ -31,6 +31,7 @@
 
 /***********************************************************************************************/
 /* includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -275,7 +276,6 @@ typedef struct {
 /***********************************************************************************************/
 /* global variables */
 extern int vrbflg;	 	/**< defined in lalapps.c */
-RCSID( "$Id$");		        /* FIXME: use git-ID instead to set 'rcsid' */
 
 /* parameters for bessel function calculation (taken from Abramowitz and Stegun P.367) */
 UINT4 LEN_BESSCO_HIGH = 9;

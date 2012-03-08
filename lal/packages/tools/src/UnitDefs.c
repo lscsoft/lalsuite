@@ -124,8 +124,6 @@ And finally a couple of convenient scaled units:
 #include <ctype.h>
 #include <lal/Units.h>
 
-NRCSID( UNITDEFSC, "$Id$" );
-
 #define UNITDEFSC_TEMPSIZE 20
 
 /**\addtogroup UnitDefs_c
@@ -336,7 +334,7 @@ LALUnitAsString( LALStatus *status,
 		 const LALUnit *input )
 
 {
-  INITSTATUS( status, "LALUnitAsString", UNITDEFSC );
+  INITSTATUS(status);
   /* ATTATCHSTATUSPTR (status); */
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
@@ -564,7 +562,7 @@ LALParseUnitString ( LALStatus *status,
 {
   CHAR         *charPtr, *charStopPtr;
 
-  INITSTATUS( status, "LALParseUnitString", UNITDEFSC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

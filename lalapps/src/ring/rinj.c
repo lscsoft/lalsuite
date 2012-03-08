@@ -23,7 +23,6 @@
  *
  * Author: Goggin, L. M., and  Brown, D. A.
  *
- * $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -61,7 +60,6 @@
 
 #include <LALAppsVCSInfo.h>
 
-RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"

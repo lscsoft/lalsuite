@@ -23,9 +23,6 @@
 #include "TestRandomBank.h"
 
 /* --- version information --- */
-NRCSID( BANKEFFICIENCYC, "$Id$");
-RCSID(  "$Id$");
-
 #define CVS_ID_STRING_C      "$Id$"
 #define CVS_REVISION_C      "$Revision$"
 
@@ -742,7 +739,7 @@ GetResult(
   InspiralTemplate trigger;
 
 
-  INITSTATUS (status, "GetResult", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   templateNumber = bestOverlap.templateNumber;
@@ -1226,7 +1223,7 @@ LALWaveOverlapBCV(	     LALStatus               *status,
   FILE *Foutput;
 
 
-  INITSTATUS (status, "LALWaveOverlapBCV", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* size affectation*/
@@ -1653,7 +1650,7 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
   FILE *Foutput;
 
 
-  INITSTATUS (status, "LALWaveOverlapBCV", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* size affectation*/
@@ -1672,6 +1669,7 @@ LALWaveOverlapBCVSpin(	     LALStatus               *status,
   /**/
   overlapin->param.nStartPad 	= 0;
   overlapin->param.startPhase 	= 0;
+VS_DATE
 
   /*  We want to compute <x|h1> and <x|h2>; let's prepare the correlation
    *  process; let's get the input data namely x and the spectrum namely psd
@@ -2214,12 +2212,12 @@ BEPrintResultsXml( InspiralCoarseBankIn         coarseBankIn,
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow(&(templateBank.processTable->start_time));
-    LAL_CALL( populate_process_table( &status,
-				      templateBank.processTable,
-				      PROGRAM_NAME,
-				      CVS_REVISION,
-				      CVS_SOURCE,
-				      CVS_DATE ), &status );
+    XLALPopulateProcessTable(templateBank.processTable,
+        PROGRAM_NAME,
+        CVS_REVISION,
+        CVS_SOURCE,
+        CVS_DATE,
+        );
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -2376,8 +2374,8 @@ BEPrintProtoXml(InspiralCoarseBankIn   coarseBankIn,
     /* create the process and process params tables */
     templateBank.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
     XLALGPSTimeNow(&(templateBank.processTable->start_time));
-    LAL_CALL( populate_process_table( &status, templateBank.processTable,
-				      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+    XLALPopulateProcssTable(templateBank.processTable,
+        PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
     this_proc_param = processParamsTable.processParamsTable =
       (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
@@ -2440,7 +2438,7 @@ void BEGetMaximumSize(LALStatus  *status,
   InspiralTemplate params;
   UINT4 maxTmpltLength = 0;
 
-  INITSTATUS( status, "BEGetMaximumSize", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   randIn.param.massChoice 	= m1Andm2;
@@ -2478,7 +2476,7 @@ void BECreatePsd(LALStatus                *status,
   FILE  *Foutput;
   FILE  *Finput;
 
-  INITSTATUS( status, "BECreatePsd", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -2577,7 +2575,7 @@ void BEGenerateInputData(LALStatus *status,
   UINT4 success ;
   REAL4 u;
 
-  INITSTATUS( status, "BEGenerateInputData", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   trial =0 ;
@@ -2808,7 +2806,7 @@ LALCreateRealPsd(LALStatus *status,
 
   CHAR         *calGlobPattern;
 
-  INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -3729,7 +3727,7 @@ void LALComputeWindowSpectrum(LALStatus *status,
   AverageSpectrumParams         avgSpecParams;
   INT4 k;
 
-  INITSTATUS( status, "LALCreatRealPsd", BANKEFFICIENCYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* compute the windowed power spectrum for the data channel */
@@ -3845,7 +3843,7 @@ void BECreatePowerVector(LALStatus              *status,
 {
 
 
-  INITSTATUS (status, "BECreatePowerVector", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   powerVector->fm2_3.length = length / 2 ;
@@ -3892,7 +3890,7 @@ void LALInspiralOverlapBCV(LALStatus *status,
   REAL4 df;
   INT4 n, kMin, kMax;
 
-  INITSTATUS (status, "LALInspiralOverlapBCV", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   n    = FilterBCV1->length;
@@ -3968,7 +3966,7 @@ void LALInspiralOverlapBCVSpin(LALStatus *status,
   REAL4 df;
   INT4 n, kMin, kMax;
 
-  INITSTATUS (status, "LALInspiralOverlapBCV", BANKEFFICIENCYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   n    = FilterBCVSpin1->length;
@@ -4353,8 +4351,8 @@ void LALBankPrintXML(MetadataTable templateBank ,
 
 
   XLALGPSTimeNow(&(proctable.processTable->start_time));
-  LAL_CALL( populate_process_table( &status, proctable.processTable,
-				    PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE ), &status );
+  XLALPopulateProcessTable(proctable.processTable,
+      PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
   this_proc_param = processParamsTable.processParamsTable =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 

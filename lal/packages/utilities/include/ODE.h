@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="ODEHV">
  * Author: J. D. E. Creighton
- * $Id$
  **** </lalVerbatim> */
 
 /**** <lalLaTeX>
@@ -56,8 +55,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID( ODEH, "$Id$" );
 
 /**** <lalLaTeX>
  *

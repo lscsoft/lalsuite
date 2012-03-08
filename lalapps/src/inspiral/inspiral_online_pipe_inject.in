@@ -2,15 +2,13 @@
 """
 inspiral_online_pipe_inject.py - online inspiral pipeline driver script
 
-$Id$
-
 This script produced the necessary condor submit and dag files to run
 a prototype online analysis in E11
 """
 
 __author__ = 'Duncan Brown <duncan@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 # import standard modules and append the lalapps prefix to the python path
 import sys, os
@@ -263,6 +261,8 @@ dag.write_dag()
 # write out a log file for this script
 log_fh = open(basename + '.pipeline.log', 'w')
   
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
 for o, a in opts:

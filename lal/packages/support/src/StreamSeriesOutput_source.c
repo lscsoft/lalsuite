@@ -20,7 +20,7 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
-  INITSTATUS( stat, STRING(SFUNC), STREAMSERIESOUTPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -138,7 +138,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   UINT4 vectorLength; /* length of each element in sequence */
   TYPE *data; /* pointer to data in sequence */
 
-  INITSTATUS( stat, STRING(VFUNC), STREAMSERIESOUTPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -276,7 +276,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   UINT4 *dimData; /* pointer to dimLength data */
   TYPE *data; /* pointer to data in sequence */
 
-  INITSTATUS( stat, STRING(AFUNC), STREAMSERIESOUTPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -424,7 +424,7 @@ FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
   UINT4 length; /* length of data sequence */
   TYPE *data;   /* pointer to data in sequence */
 
-  INITSTATUS( stat, STRING(FFUNC), STREAMSERIESOUTPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

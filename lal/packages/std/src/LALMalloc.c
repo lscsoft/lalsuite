@@ -18,7 +18,6 @@
 */
 
 /************************************ <lalVerbatim file="LALMallocCV">
-$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -398,8 +397,6 @@ static pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #include <lal/LALStdlib.h>
-
-NRCSID( LALMALLOCC, "$Id$" );
 
 /* global variables to assist in memory debugging */
 /* watch the value of these variables to find a particular alloc/free */

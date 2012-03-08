@@ -3,14 +3,14 @@
 # this script will be used as part of 'make test' to make sure that the
 # lalapps_heterodyne_pulsar code outputs the correct result. It will run 
 # the code in all its 4 modes and compare the results to standard
-# archived files 
+# archived files
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-else
-    srcdir=.
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
 fi
+
+builddir="./";
 
 CODENAME=${builddir}lalapps_heterodyne_pulsar
 

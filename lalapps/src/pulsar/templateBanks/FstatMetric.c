@@ -50,8 +50,6 @@
 
 #include <lalapps.h>
 
-RCSID ("$Id$");
-
 /* ---------- Error codes and messages ---------- */
 #define FSTATMETRIC_EMEM 	1
 #define FSTATMETRIC_EINPUT	2
@@ -922,7 +920,7 @@ computePhaseMetric ( gsl_matrix *g_ij, const PhaseDerivs *dPhi, const REAL8Vecto
 void
 initUserVars (LALStatus *status, UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -995,7 +993,7 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   REAL8Vector *detWeights;
   UINT4 X, numDet;
 
-  INITSTATUS (status, "InitCode", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- determine start-time from user-input */
@@ -1198,9 +1196,9 @@ InitCode (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
   TRY ( LALGetMultiAMCoeffs (status->statusPtr, &(cfg->multiAMcoe), cfg->multiDetStates,
 			     cfg->dopplerPoint.skypos ), status );
 
-  if ( XLALWeighMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
+  if ( XLALWeightMultiAMCoeffs( cfg->multiAMcoe, cfg->multiNoiseWeights ) != XLAL_SUCCESS )
     {
-      XLALPrintError ( "\nSomething failed in XLALWeighMultiAMCoeffs() ...\n\n");
+      XLALPrintError ( "\nSomething failed in XLALWeightMultiAMCoeffs() ...\n\n");
       ABORT ( status, FSTATMETRIC_EINPUT, FSTATMETRIC_MSGEINPUT );
     }
 
@@ -1249,9 +1247,8 @@ getMultiPhaseDerivs (LALStatus *status,
   LIGOTimeGPS refTimeGPS;
   PulsarTimesParamStruc times = empty_PulsarTimesParamStruc;
   MultiPhaseDerivs *mdPhi = NULL;
-  REAL8 TspanInv;
 
-  INITSTATUS (status, "getMultiPhaseDerivs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( dopplerPoint, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
@@ -1277,7 +1274,6 @@ getMultiPhaseDerivs (LALStatus *status,
 
   refTimeGPS = multiDetStates->data[0]->data[0].tGPS;	/* use 1st detectors startTime as refTime */
   refTime = GPS2REAL8(refTimeGPS);
-  TspanInv = 1.0 / multiDetStates->Tspan;
 
   /* get tAutumn */
   times.epoch = refTimeGPS;
@@ -1392,7 +1388,7 @@ void
 FreeMem ( LALStatus *status, ConfigVariables *cfg )
 {
 
-  INITSTATUS (status, "FreeMem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( cfg, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );
@@ -1611,7 +1607,7 @@ InitEphemeris (LALStatus * status,	/**< pointer to LALStatus structure */
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  INITSTATUS( status, "InitEphemeris", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( edat, status, FSTATMETRIC_ENULL, FSTATMETRIC_MSGENULL );

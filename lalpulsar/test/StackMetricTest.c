@@ -95,8 +95,6 @@ LALGetEarthTimes()
 #include <lal/StackMetric.h>
 #include <lal/PulsarTimes.h>
 
-NRCSID(STACKMETRICTESTC,"$Id$");
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define NSTACKS 1
@@ -127,7 +125,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, STACKMETRICTESTC, statement ? statement : \
+		 __LINE__, "$Id$", statement ? statement : \
                  "", (msg) );                                        \
 }                                                                    \
 while (0)
@@ -138,7 +136,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 STACKMETRICTESTC, (statement) );                    \
+		 "$Id$", (statement) );                    \
 }                                                                    \
 while (0)
 

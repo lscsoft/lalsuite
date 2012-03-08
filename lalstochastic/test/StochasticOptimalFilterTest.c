@@ -163,6 +163,7 @@ fabs()
 #define STOCHASTICOPTIMALFILTERTESTC_MSGEFLS "Incorrect answer for valid data"
 #define STOCHASTICOPTIMALFILTERTESTC_MSGEUSE "Bad user-entered data"
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 
@@ -186,9 +187,6 @@ fabs()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID(STOCHASTICOPTIMALFILTERTESTC,
-       "$Id$");
 
 #define STOCHASTICOPTIMALFILTERTESTC_TRUE     1
 #define STOCHASTICOPTIMALFILTERTESTC_FALSE    0

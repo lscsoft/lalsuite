@@ -23,7 +23,6 @@
  *
  * Author: Santamaria L, Krishnan B, Dias M, Parameswaran A
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -58,10 +57,6 @@
 extern "C" {
 #pragma }
 #endif
-
-
-NRCSID (FINDCHIRPPHENOMWAVEFORMC, "$Id$");
-
 
 typedef struct tagPhenomCoeffs{
     REAL8 fMerg_a;

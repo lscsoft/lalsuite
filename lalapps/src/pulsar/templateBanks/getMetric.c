@@ -41,8 +41,6 @@
 #include <lal/FlatPulsarMetric.h>
 #include <lal/DopplerScan.h>
 
-RCSID ("$Id$");
-
 /* Error codes and messages */
 #define GETMETRIC_ENORM 	0
 #define GETMETRIC_ESUB  	1
@@ -163,7 +161,7 @@ void
 initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 {
 
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- set defaults ----- */
@@ -229,7 +227,7 @@ initUserVars (LALStatus *status, UserInput *uvar, int argc, char *argv[])
 void
 initGeneral (LALStatus *status, ConfigVariables *cfg, const UserInput *uvar)
 {
-  INITSTATUS( status, "initGeneral", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   XLALGPSSetREAL8(&(cfg->startTimeGPS),  uvar->startTime);
@@ -278,7 +276,7 @@ printPulsarMetric(LALStatus *status, const UserInput *uvar, const ConfigVariable
   UINT4 dim, a;
   static LALDetector this_detector;
 
-  INITSTATUS (status, "printPulsarMetric", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   metricpar.position.system = COORDINATESYSTEM_EQUATORIAL;
@@ -332,7 +330,7 @@ printFlatPulsarMetric (LALStatus *status, const UserInput *uvar, const ConfigVar
 {
   REAL8Vector *metric = NULL;
 
-  INITSTATUS (status, "printFlatPulsarMetric", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* calculate the flat metric */
@@ -360,7 +358,7 @@ printMetric (LALStatus *status, const REAL8Vector *metric )
 {
   UINT4 row, col, dim;
 
-  INITSTATUS (status, "printMetric", rcsid);
+  INITSTATUS(status);
 
   ASSERT ( metric, status, GETMETRIC_EBAD, GETMETRIC_MSGEBAD);
   ASSERT ( metric->length, status, GETMETRIC_EBAD, GETMETRIC_MSGEBAD);

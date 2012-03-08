@@ -19,7 +19,6 @@
 
 /********************************* <lalVerbatim file="BandPassTestCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -103,8 +102,6 @@ LALDButterworthREAL4TimeSeries()        LALCheckMemoryLeaks()
 #include <lal/StreamInput.h>
 #include <lal/StreamOutput.h>
 
-NRCSID(BANDPASSTESTC,"$Id$");
-
 /* Default parameters. */
 INT4 lalDebugLevel=0;
 #define NPTS 4096   /* Length of time series. */
@@ -126,7 +123,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
 		   "        %s %s\n", (code), *argv, __FILE__,       \
-		   __LINE__, BANDPASSTESTC, statement ? statement :  \
+		   __LINE__, "$Id$", statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -135,7 +132,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
 		   "        %s\n", *argv, __FILE__, __LINE__,        \
-		   BANDPASSTESTC, (statement) );                     \
+		   "$Id$", (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \

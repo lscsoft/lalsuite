@@ -25,16 +25,14 @@
  *
  * \brief Test-code for SFT-fileIO library
  *
- * $Id$
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 /*---------- INCLUDES ----------*/
 #include <config.h>
 #include <lal/SFTfileIO.h>
 #include <lal/Units.h>
-
-NRCSID (SFTFILEIOTESTC, "$Id$");
 
 /*---------- DEFINES ----------*/
 
@@ -74,7 +72,7 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
   if ( lalDebugLevel & LALERROR )					\
     XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"	\
 		    "        %s %s\n", (code), *argv, __FILE__,		\
-		    __LINE__, SFTFILEIOTESTC, statement ? statement :	\
+		    __LINE__, "$Id$", statement ? statement :	\
 		    "", (msg) );					\
 } while (0)
 
@@ -83,7 +81,7 @@ NRCSID (SFTFILEIOTESTC, "$Id$");
     if ( lalDebugLevel & LALINFO )				      \
       XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"   \
 		      "        %s\n", *argv, __FILE__, __LINE__,      \
-		      SFTFILEIOTESTC, (statement) );		      \
+		      "$Id$", (statement) );		      \
   } while (0)
 
 #define SUB( func, statusptr )                                       \
@@ -210,7 +208,7 @@ int main(int argc, char *argv[])
   REAL8 fMin = 1008.5;
   REAL8 fMax = 1009.1;
 
-  lalDebugLevel = 3;
+  lalDebugLevel = 0;
 
   if ( argc == 1)	/* avoid warning */
     argc = 1;
@@ -342,7 +340,7 @@ int main(int argc, char *argv[])
       "H-1_H1_60SFT_test-000012465-61.sft",
       "H-1_H1_60SFT_test-000012585-61.sft"
     };
-    fprintf(stderr, "*** Comparing single and concatenated SFTs ***\n");
+    printf("*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
     if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
       LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
@@ -394,7 +392,7 @@ int main(int argc, char *argv[])
       }
     }
     fclose(fpConcat);
-    fprintf(stderr, "*** Comparing was successful!!! ***\n");
+    printf( "*** Comparing was successful!!! ***\n");
   }
 
   /* write v2-SFt as a v1-SFT to disk (correct normalization) */

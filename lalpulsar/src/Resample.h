@@ -31,8 +31,6 @@
 extern "C" {
 #endif
 
-NRCSID(RESAMPLEH,"$Id$");
-
 /** \name Error Codes */
 /*@{*/
 /** \ingroup Resample_h */

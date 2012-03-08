@@ -59,9 +59,6 @@ LALREAL4VectorFFT()
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/RealFFT.h>
 
-NRCSID (LALINSPIRALWAVECORRELATEC, "$Id$");
-
-
 void
 LALInspiralWaveCorrelate
    (
@@ -75,7 +72,7 @@ LALInspiralWaveCorrelate
   REAL4Vector buff;
 
 
-  INITSTATUS (status, "LALInspiralWaveCorrelate", LALINSPIRALWAVECORRELATEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (output,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

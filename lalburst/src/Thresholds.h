@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon and Flanagan, E
  *
@@ -29,11 +28,6 @@
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-
-#include <lal/LALRCSID.h>
-NRCSID(THRESHOLDSH, "$Id:");
-
 
 REAL8 XLALChisqCdf(
 	REAL8 chi2,

@@ -42,7 +42,7 @@ void FUNC ( LALStatus *status, VTYPE **vector, UINT4 length )
    * Initialize status structure
    */
 
-  INITSTATUS( status, STRING(FUNC), VECTORFACTORIESC );
+  INITSTATUS(status);
 
   /* Check sequence length: report error if 0
    * Use of unsigned for length means we can't check if negative

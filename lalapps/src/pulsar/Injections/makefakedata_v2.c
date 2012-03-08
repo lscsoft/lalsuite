@@ -120,10 +120,8 @@ LALCheckMemoryLeaks()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
-
-NRCSID (MAKEFAKEDATAC, "$Id$");
-
 
 /* Error codes and messages */
 
@@ -208,7 +206,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     fprintf(stderr, "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, MAKEFAKEDATAC, statement ? statement :  \
+              __LINE__, "$Id$", statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -217,7 +215,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     fprintf(stderr, "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
-              MAKEFAKEDATAC, (statement) );                     \
+              "$Id$", (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \
@@ -1487,7 +1485,6 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
-  int rc;
 
   memset(junk, '\0', 1024);
   memset(junk2,'\0', 1024);
@@ -1500,7 +1497,7 @@ int parseR4(FILE *fp, const char* vname, REAL4 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
       return 0;
@@ -1510,7 +1507,6 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
-  int rc;
 
   memset(junk, '\0', 1024);
   memset(junk2,'\0', 1024);
@@ -1523,7 +1519,7 @@ int parseR8(FILE *fp, const char* vname, REAL8 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
       return 0;
@@ -1532,7 +1528,6 @@ int parseI4(FILE *fp, const char* vname, INT4 *data){
   char junk[1024], junk2[1024];
   char command[1024];
   int r;
-  int rc;
 
   memset(junk, '\0', 1024);
   memset(junk2,'\0', 1024);
@@ -1545,7 +1540,7 @@ int parseI4(FILE *fp, const char* vname, INT4 *data){
 	  "with white space in between. TEXT is NOT optional!\n",
 	  vname, inDataFilename);
     sprintf(command, "cat %s 1>&2\n", inDataFilename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
       return 0;

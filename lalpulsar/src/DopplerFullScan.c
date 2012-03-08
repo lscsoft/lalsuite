@@ -52,13 +52,10 @@
 
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
 
-NRCSID( DOPPLERFULLSCANC, "$Id$" );
-
 /*---------- internal types ----------*/
 typedef struct {
   PulsarDopplerParams thisPoint; /**< current doppler-position of the scan */
   DopplerSkyScanState skyScan;	/**< keep track of sky-grid stepping */
-  PulsarSpinRange spinRange;	/**< spin-range to search */
 } factoredGridScan_t;
 
 /** ----- internal [opaque] type to store the state of a FULL multidimensional grid-scan ----- */
@@ -66,10 +63,11 @@ struct tagDopplerFullScanState {
   INT2 state;  			/**< idle, ready or finished */
   DopplerGridType gridType;	/**< what type of grid are we dealing with */
   REAL8 numTemplates;		/**< total number of templates in the grid */
+  PulsarSpinRange spinRange;	/**< spin-range covered by template bank */
+  SkyRegion skyRegion;		/**< sky-range covered by template bank */
 
   /* ----- full multi-dim parameter-space grid stuff ----- */
   gsl_matrix *gij;			/**< flat parameter-space metric */
-  LIGOTimeGPS refTime;			/**< reference time for grid templates */
   REAL8VectorList *covering;		/**< multi-dimensional covering */
   REAL8VectorList *thisGridPoint; 	/**< pointer to current grid-point */
   /* lattice scan state */
@@ -112,7 +110,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 {
   DopplerFullScanState *thisScan;
 
-  INITSTATUS( status, "InitDopplerFullScan", DOPPLERFULLSCANC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
@@ -124,6 +122,11 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
   }
 
   thisScan->gridType = init->gridType;
+
+  /* store the user-input spinRange (includes refTime) in DopplerFullScanState */
+  thisScan->spinRange.refTime = init->searchRegion.refTime;
+  memcpy ( thisScan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
+  memcpy ( thisScan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
 
   /* which "class" of template grid to generate?: factored, or full-multidim ? */
   switch ( thisScan->gridType )
@@ -141,7 +144,6 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
       /* ----- multi-dimensional covering of full parameter space ----- */
     case GRID_FILE_FULLGRID:
       TRY ( loadFullGridFile ( status->statusPtr, thisScan, init ), status );
-      thisScan->refTime = init->startTime;
       break;
 
     case GRID_METRIC_LATTICE:
@@ -168,14 +170,11 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	SkyRegion sky = empty_SkyRegion;
 
 	/* Check that the reference time is the same as the start time */
-	if (XLALGPSCmp(&init->searchRegion.refTime, &init->startTime) != 0) {
+	if (XLALGPSCmp(&thisScan->spinRange.refTime, &init->startTime) != 0) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: This option currently restricts "
 			"the reference time to be the same as the start time.\n");
 	  ABORT(status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 	}
-
-	/* Set the reference time */
-	thisScan->refTime = init->startTime;
 
 	/* Create a flat lattice tiling */
 	if (NULL == (thisScan->spindownTiling = XLALCreateFlatLatticeTiling(2 + PULSAR_MAX_SPINS))) {
@@ -281,6 +280,27 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 } /* InitDopplerFullScan() */
 
+/** Return the spin-range spanned by the given template bank stored in the
+ * *opaque* DopplerFullScanState.
+ *
+ * \note The user cannot directly access any internal fields of that opaque type,
+ * which is why we need this API.
+ */
+int
+XLALGetDopplerSpinRange ( PulsarSpinRange *spinRange, const DopplerFullScanState *scan )
+{
+  if ( spinRange == NULL )
+    XLAL_ERROR ( XLAL_EINVAL, "\nPulsarSpinRange pointer 'spinRange' is NULL\n" );
+
+  if ( scan == NULL )
+    XLAL_ERROR ( XLAL_EINVAL, "\nDopplerFullScanState pointer 'scan' is NULL\n" );
+
+  (*spinRange) = scan->spinRange;	// simple struct-copy is all that's needed
+
+  return XLAL_SUCCESS;
+
+} /* XLALGetDopplerSpinRange() */
+
 /** Initialize Doppler-scanner to emulate an old-style factored template grid: 'sky x f0dot x f1dot x f2dot x f3dot'.
  *  This is a compatiblity-mode with the previous implementation currently also used in ComputeFStatistic.c.
  */
@@ -295,7 +315,7 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   factoredGridScan_t *fscan = NULL;
   UINT4 i;
 
-  INITSTATUS( status, "initFactoredGrid", DOPPLERFULLSCANC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( scan, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
@@ -324,10 +344,6 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   scan->factoredScan = fscan;
   TRY ( InitDopplerSkyScan ( status->statusPtr, &(fscan->skyScan), &skyScanInit), status);
 
-  fscan->spinRange.refTime = init->searchRegion.refTime;
-  memcpy ( fscan->spinRange.fkdot, init->searchRegion.fkdot, sizeof(PulsarSpins) );
-  memcpy ( fscan->spinRange.fkdotBand, init->searchRegion.fkdotBand, sizeof(PulsarSpins) );
-
   /* overload spin step-sizes with user-settings if given */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
     if ( init->stepSizes.fkdot[i] )
@@ -345,14 +361,14 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   fscan->thisPoint.Delta = skypos.latitude;
   /* set spins to start */
   for (i=0; i < PULSAR_MAX_SPINS; i ++ )
-    fscan->thisPoint.fkdot[i] = fscan->spinRange.fkdot[i];
+    fscan->thisPoint.fkdot[i] = scan->spinRange.fkdot[i];
 
   { /* count total number of templates */
     REAL8 nSky, nTot;
     REAL8 nSpins[PULSAR_MAX_SPINS];
     nSky = fscan->skyScan.numSkyGridPoints;
     for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
-      nSpins[i] = floor( fscan->spinRange.fkdotBand[i] / fscan->skyScan.dfkdot[i] ) + 1.0;
+      nSpins[i] = floor( scan->spinRange.fkdotBand[i] / fscan->skyScan.dfkdot[i] ) + 1.0;
     nTot = nSky;
     for ( i=0; i < PULSAR_MAX_SPINS; i ++ )
       nTot *= nSpins[i];
@@ -424,6 +440,9 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
   if (  scan->state == STATE_FINISHED )
     return 1;
 
+  // set refTime in returned template to the refTime of the grid
+  pos->refTime  = scan->spinRange.refTime;
+
   /* ----- step foward one template in full grid ----- */
   /* Which "class" of template grid are we dealing with: factored, or full-multidim ? */
   switch ( scan->gridType )
@@ -440,7 +459,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
     case GRID_FILE_FULLGRID:
       INIT_MEM(pos->fkdot);
-      pos->refTime  = scan->refTime;
       pos->fkdot[0] = scan->thisGridPoint->entry.data[0];
       pos->Alpha    = scan->thisGridPoint->entry.data[1];
       pos->Delta    = scan->thisGridPoint->entry.data[2];
@@ -490,7 +508,6 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 	case XLAL_SUCCESS:
 	  /* Found a point */
-	  pos->refTime    = scan->refTime;
 	  pos->fkdot[0]   = gsl_vector_get(scan->spindownTiling->current, 0);
 	  pos->Alpha      = gsl_vector_get(scan->spindownTiling->current, 1);
 	  pos->Delta      = gsl_vector_get(scan->spindownTiling->current, 2);
@@ -544,7 +561,7 @@ nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
   if ( ( fscan = scan->factoredScan ) == NULL )
     return -1;
 
-  range = &(fscan->spinRange);	/* shortcut */
+  range = &(scan->spinRange);	/* shortcut */
 
   (*pos) = fscan->thisPoint;	/* RETURN current Doppler-point (struct-copy) */
 
@@ -607,7 +624,7 @@ void
 FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 {
 
-  INITSTATUS( status, "FreeDopplerFullScan", DOPPLERFULLSCANC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* This traps coding errors in the calling routine. */
@@ -616,7 +633,7 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
   if ( (*scan)->factoredScan ) {
     TRY ( FreeDopplerSkyScan ( status->statusPtr, &((*scan)->factoredScan->skyScan) ), status );
-    LALFree ( (*scan)->factoredScan );
+    XLALFree ( (*scan)->factoredScan );
   }
 
   if ( (*scan)->covering )
@@ -630,7 +647,11 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
     XLALFreeFlatLatticeTiling((*scan)->spindownTiling);
   }
 
-  LALFree ( (*scan) );
+  if ( (*scan)->skyRegion.vertices)
+    XLALFree ( (*scan)->skyRegion.vertices);
+
+
+  XLALFree ( (*scan) );
   (*scan) = NULL;
 
   DETATCHSTATUSPTR (status);
@@ -640,7 +661,21 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
 
 
 
-/** load a full multi-dim template grid from the file init->gridFile
+/** load a full multi-dim template grid from the file init->gridFile,
+ * the file-format is: lines of 6 columns, which are:
+ *
+ * Freq   Alpha  Delta  f1dot  f2dot  f3dot
+ *
+ * \note
+ * *) this function returns the effective spinRange covered by the read-in template bank
+ *    by storing it in scan->spinRange, potentially overwriting any previous user-input values in there.
+ *
+ * *) a possible future extension should probably *clip* the template-bank to the user-specified ranges,
+ *    then return the effective ranges spanned by the resultant template bank.
+ *
+ * *) in order to avoid surprises until such a feature is implemented, we currently return an error if
+ *    any of the input spinRanges are non-zero
+ *
  */
 void
 loadFullGridFile ( LALStatus *status,
@@ -654,7 +689,7 @@ loadFullGridFile ( LALStatus *status,
   UINT4 numTemplates;
   FILE *fp;
 
-  INITSTATUS( status, "loadFullGridFile", DOPPLERFULLSCANC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( scan, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
@@ -662,28 +697,85 @@ loadFullGridFile ( LALStatus *status,
   ASSERT ( init->gridFile, status, DOPPLERSCANH_ENULL, DOPPLERSCANH_MSGENULL);
   ASSERT ( scan->state == STATE_IDLE, status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
 
+  /* Check that all user-input spin- and sky-ranges are zero, otherwise fail!
+   *
+   * NOTE: In the future we should allow combining the user-input ranges with
+   * those found in the grid-file by forming the intersection, ie *clipping*
+   * of the read-in grids to the user-input ranges.
+   * Right now we require empty ranges input, and report back the ranges from the grid-file
+   *
+   */
+  if ( init->searchRegion.skyRegionString != NULL ) {
+    XLALPrintError ("\n%s: non-NULL skyRegion input currently not supported! skyRegion = '%s'\n\n", __func__, init->searchRegion.skyRegionString );
+    ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+  }
+  for ( UINT4 s = 0; s < PULSAR_MAX_SPINS; s ++ )
+    {
+      if ( (init->searchRegion.fkdot[s] != 0) || (init->searchRegion.fkdotBand[s] != 0 )) {
+        XLALPrintError ("\n%s: non-zero input spinRanges currently not supported! fkdot[%d] = %g, fkdotBand[%d] = %g\n\n",
+                        __func__, s, init->searchRegion.fkdot[s], s, init->searchRegion.fkdotBand[s] );
+        ABORT ( status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT );
+      }
+    } /* for s < max_spins */
+
+  /* open input data file */
   if ( (fp = LALOpenDataFile (init->gridFile)) == NULL) {
     XLALPrintError ("Could not open data-file: `%s`\n\n", init->gridFile);
     ABORT (status, CONFIGFILEH_EFILE, CONFIGFILEH_MSGEFILE);
   }
 
+  /* prepare grid-entry buffer */
   if ( (entry = XLALCreateREAL8Vector ( 6 ) ) == NULL ) {
     ABORT (status, DOPPLERSCANH_EMEM, DOPPLERSCANH_MSGEMEM);
   }
+
+  /* keep track of the sky- and spinRanges spanned by the template bank */
+  REAL8 FreqMax  = - LAL_REAL4_MAX, FreqMin  = LAL_REAL4_MAX;	// only using REAL4 ranges to avoid over/under flows, and should be enough
+  REAL8 f1dotMax = - LAL_REAL4_MAX, f1dotMin = LAL_REAL4_MAX;
+  REAL8 f2dotMax = - LAL_REAL4_MAX, f2dotMin = LAL_REAL4_MAX;
+  REAL8 f3dotMax = - LAL_REAL4_MAX, f3dotMin = LAL_REAL4_MAX;
+
+  REAL8 alphaMax = - LAL_REAL4_MAX, alphaMin = LAL_REAL4_MAX;
+  REAL8 deltaMax = - LAL_REAL4_MAX, deltaMin = LAL_REAL4_MAX;
 
   /* parse this list of lines into a full grid */
   numTemplates = 0;
   tail = &head;	/* head will remain empty! */
   while ( ! feof ( fp ) )
     {
-      if ( 6 != fscanf( fp, "%lf %lf %lf %lf %lf %lf\n",
-			entry->data + 0, entry->data + 1, entry->data + 2, entry->data + 3, entry->data + 4, entry->data + 5 ) )
-	{
-	  LogPrintf (LOG_CRITICAL,"ERROR: Failed to parse 6 REAL's from line %d in grid-file '%s'\n\n", numTemplates + 1, init->gridFile);
-	  if ( head.next )
-	    XLALREAL8VectorListDestroy (head.next);
-	  ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
-	}
+      REAL8 Freq, Alpha, Delta, f1dot, f2dot, f3dot;
+      // File format expects lines containing 6 columns: Freq   Alpha  Delta  f1dot  f2dot  f3dot
+      if ( 6 != fscanf( fp, "%" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT " %" LAL_REAL8_FORMAT "\n",
+                        &Freq, &Alpha, &Delta, &f1dot, &f2dot, &f3dot ) )
+        {
+          LogPrintf (LOG_CRITICAL,"ERROR: Failed to parse 6 REAL8's from line %d in grid-file '%s'\n\n", numTemplates + 1, init->gridFile);
+          if ( head.next )
+            XLALREAL8VectorListDestroy (head.next);
+          ABORT (status, DOPPLERSCANH_EINPUT, DOPPLERSCANH_MSGEINPUT);
+        }
+
+      /* keep track of maximal spans */
+      alphaMin = fmin ( Alpha, alphaMin );
+      deltaMin = fmin ( Delta, deltaMin );
+      FreqMin  = fmin ( Freq,  FreqMin );
+      f1dotMin = fmin ( f1dot, f1dotMin );
+      f2dotMin = fmin ( f2dot, f2dotMin );
+      f3dotMin = fmin ( f3dot, f3dotMin );
+
+      alphaMax = fmax ( Alpha, alphaMax );
+      deltaMax = fmax ( Delta, deltaMax );
+      FreqMax  = fmax ( Freq,  FreqMax );
+      f1dotMax = fmax ( f1dot, f1dotMax );
+      f2dotMax = fmax ( f2dot, f2dotMax );
+      f3dotMax = fmax ( f3dot, f3dotMax );
+
+      /* add this entry to template-bank list */
+      entry->data[0] = Freq;
+      entry->data[1] = Alpha;
+      entry->data[2] = Delta;
+      entry->data[3] = f1dot;
+      entry->data[4] = f2dot;
+      entry->data[5] = f3dot;
 
       if ( (tail = XLALREAL8VectorListAddEntry (tail, entry)) == NULL )
 	{
@@ -696,14 +788,39 @@ loadFullGridFile ( LALStatus *status,
 
     } /* while !feof(fp) */
 
-  LALFree ( entry->data );
-  LALFree ( entry );
+  XLALDestroyREAL8Vector ( entry );
 
-  LogPrintf (LOG_DEBUG, "Template grid: nTot = %.0f\n", 1.0 * numTemplates );
-  /* return ready scan-state  */
+  /* ---------- update scan-state  ---------- */
+
+  // ----- report back ranges actually spanned by grid-file
+
+  CHAR *skyRegionString = NULL;
+  REAL8 eps = LAL_REAL8_EPS;
+  TRY ( SkySquare2String ( status->statusPtr, &skyRegionString, alphaMin, deltaMin, (alphaMax - alphaMin) + eps, (deltaMax - deltaMin) + eps ), status );
+  // note: we slight expanded the enclosing sky-square by eps to avoid complaints when a grid-file contains
+  // only points in a line, which is perfectly valid here.
+  TRY ( ParseSkyRegionString ( status->statusPtr, &scan->skyRegion, skyRegionString ), status );
+  XLALFree ( skyRegionString );
+
+  scan->spinRange.fkdot[0]     = FreqMin;
+  scan->spinRange.fkdotBand[0] = FreqMax - FreqMin;
+
+  scan->spinRange.fkdot[1]     = f1dotMin;
+  scan->spinRange.fkdotBand[1] = f1dotMax - f1dotMin;
+
+  scan->spinRange.fkdot[2]     = f2dotMin;
+  scan->spinRange.fkdotBand[2] = f2dotMax - f2dotMin;
+
+  scan->spinRange.fkdot[3]     = f3dotMin;
+  scan->spinRange.fkdotBand[3] = f3dotMax - f3dotMin;
+
   scan->numTemplates = numTemplates;
   scan->covering = head.next;	/* pass result (without head!) */
   scan->thisGridPoint = scan->covering;	/* init to start */
+
+  LogPrintf (LOG_DEBUG, "Template grid: nTot = %.0f\n", 1.0 * numTemplates );
+  LogPrintf (LOG_DEBUG, "Spanned ranges: Freq in [%g, %g], f1dot in [%g, %g], f2dot in [%g, %g], f3dot in [%g, %g]\n",
+             FreqMin, FreqMax, f1dotMin, f1dotMax, f2dotMin, f2dotMax, f3dotMin, f3dotMax );
 
   DETATCHSTATUSPTR ( status );
   RETURN ( status );

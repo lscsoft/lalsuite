@@ -55,7 +55,7 @@ lalmetaio-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 
 lalmetaio-user-env.csh lalmetaio-user-env.sh: lalmetaio-user-env.shell $(srcdir)/generate_user_env.awk
 	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 LALMetaIOVCSInfo.h: ._vcsinfo
 

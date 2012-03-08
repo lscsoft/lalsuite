@@ -28,8 +28,6 @@
 
 #include <lal/LALAtomicDatatypes.h>
 
-NRCSID(BITFIELDH, "$Id$");
-
 /**
  * Return a mask where the (zero-based) ith bit is set
  */

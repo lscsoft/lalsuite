@@ -19,7 +19,6 @@
 
 #if 0 /* autodoc block */
 <lalVerbatim file="FileIOCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -134,8 +133,6 @@ LALFILE * lalstderr( void )
 	_lalstderr.fp = (void*)stderr;
 	return &_lalstderr;
 }
-
-NRCSID (FILEIOC,"$Id$");
 
 #define STR( x ) #x
 #define XSTR( x ) STR( x )

@@ -28,10 +28,6 @@
 #include <lal/LALCorrelation.h>
 #include <lal/AVFactories.h>
 
-/* ****** DEFINE RCS ID STRING ************/
-
-NRCSID( LALCORRELATIONTESTC, "$Id$" );
-
 /* ****** DEFINE LOCAL CONSTANTS AND MACROS ************/
 
 /**

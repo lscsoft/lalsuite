@@ -29,9 +29,6 @@ LALFree()
 #include "AVFactories.h"
 #include "SeqFactories.h"
 
-
-NRCSID( ARRAYSEQUENCEFACTORIESC, "$Id$" );
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #include "CreateArraySequence_source.c"

@@ -52,6 +52,9 @@ Spinning waveforms are only defined at the highest PN order.</li>
 
 */
 
+#ifndef LALSIMINSPIRALDENERGYFLUC_C
+#define LALSIMINSPIRALDENERGYFLUC_C
+
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -540,3 +543,5 @@ static REAL8 UNUSED XLALSimInspiralFp8(REAL8 v, expnCoeffsdEnergyFlux *ak)
    return (flux);
 }
 */
+
+#endif /* LALSIMINSPIRALDENERGYFLUC_C */

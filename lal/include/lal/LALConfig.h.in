@@ -1,5 +1,4 @@
 /* only include this file if LAL's config.h has not been included */
-/* $Id$ */
 #ifndef CONFIG_H__LAL
 
 #ifndef _LALCONFIG_H
@@ -43,6 +42,9 @@
 
 /* Define if using boinc library */
 #undef LAL_BOINC_ENABLED
+
+/* Define if using CUDA library */
+#undef LAL_CUDA_ENABLED
 
 /* Define if using qthread library */
 #undef LAL_QTHREAD

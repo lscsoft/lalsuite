@@ -3,9 +3,8 @@
  * File Name: cohire.c
  *
  * Author: Bose, S.
- *
- * Revision: $Id$
- *
+ * 
+ * 
  *-----------------------------------------------------------------------
  */
 
@@ -31,9 +30,6 @@
 #include <LALAppsVCSInfo.h>
 #include <lalapps.h>
 #include <processtable.h>
-
-
-RCSID("$Id$");
 
 #define PROGRAM_NAME "sire"
 #define CVS_ID_STRING "$Id$"

@@ -24,7 +24,6 @@
  * \ingroup flatPulsarMetric
  * \brief test-functions for the module FlatPulsarMetric.
  *
- * $Id$
  *
  */
 
@@ -35,8 +34,6 @@
 #include <lal/FlatPulsarMetric.h>
 
 #include <lalapps.h>
-
-RCSID ("$Id$");
 
 /*---------- DEFINES ----------*/
 #define TRUE (1==1)

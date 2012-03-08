@@ -1,26 +1,42 @@
 # Environment script generation
 # Author: Karl Wette, 2011
 
-# before processing any file
+# print an error message to standard error, and exit
+function msg(str) {
+    print "generate_user_env.awk: " str >"/dev/stderr"
+    exit 1
+}
+
+# print a string to output file
+function printout(str, first) {
+    if (first) {
+        print str >output
+    }
+    else {
+        print str >>output
+    }
+}
+
+# script setup
 BEGIN {
-    prompt = "user_env.awk:"
     # check that required variables were set on command line
+    if (SED == "") {
+        msg("no value for 'SED' given on command line")
+    }
     if (package == "") {
-        print prompt, "no value for 'package' given on command line" >"/dev/stderr"
-        exit 1
+        msg("no value for 'package' given on command line")
     }
     if (output == "") {
-        print prompt, "no value for 'output' given on command line" >"/dev/stderr"
-        exit 1
+        msg("no value for 'output' given on command line")
     }
-    sourcecount = 0
 }
 
 # source another environment setup file
 #   syntax: source FILE
 $1 == "source" {
-    ++sourcecount
-    sourcefiles[sourcecount] = $2
+    for (i = 2; i <= NF; ++i) {
+        sourcefiles[$i] = $i
+    }
 }
 
 # set a environment variable to a given value or path
@@ -29,8 +45,7 @@ $1 == "source" {
 $1 == "set" {
     name = $2
     if (name == "") {
-        print prompt, "no name given to prepend" > "/dev/stderr"
-        exit 1
+        msg("no name given to prepend")
     }
     setvars[name] = ""
     value = ""
@@ -50,8 +65,7 @@ $1 == "set" {
 $1 == "prepend" {
     name = $2
     if (name == "") {
-        print prompt, "no name given to prepend" > "/dev/stderr"
-        exit 1
+        msg("no name given to prepend")
     }
     if (pathvars[name] == "") {
         pathvars[name] = sprintf("${%s}", name)
@@ -73,8 +87,7 @@ $1 == "prepend" {
 $1 == "append" {
     name = $2
     if (name == "") {
-        print prompt, "no name given to prepend" > "/dev/stderr"
-        exit 1
+        msg("no name given to prepend")
     }
     if (pathvars[name] == "") {
         pathvars[name] = sprintf("${%s}", name)
@@ -95,69 +108,46 @@ $1 == "append" {
 END {
     # if output file ends in 'csh', use C shell syntax, otherwise Bourne shell syntax
     csh = (output ~ /\.csh$/)
-    # print usage
-    printf "# source this file to access '%s'\n", package >output
-    printf "# usage:\n" >>output
-    printf "#   source %s\n", output >>output
+    # output usage
+    printout("# source this file to access '" package "'", 1)
     # output source files
-    for (i = 1; i <= sourcecount; ++i) {
+    for (sourcefile in sourcefiles) {
         if (csh) {
-            printf "if ( -f %s.csh ) then\n", sourcefiles[i] >>output
-            printf "   source %s.csh $argv:q\n", sourcefiles[i] >>output
-            printf "endif\n" >>output
+            printout("source " sourcefile ".csh")
         }
         else {
-            printf "if [ -f %s.sh ]; then\n", sourcefiles[i] >>output
-            printf "   source %s.sh \"$@\"\n", sourcefiles[i] >>output
-            printf "fi\n" >>output
+            printout(". " sourcefile ".sh")
         }
     }
     # output set variables
     for (name in setvars) {
         if (csh) {
-            printf "setenv %s \"%s\"\n", name, setvars[name] >>output
+            printout("setenv " name " \"" setvars[name] "\"")
         }
         else {
-            printf "%s=\"%s\"\n", name, setvars[name] >>output
-            printf "export %s\n", name >>output
+            printout(name "=\"" setvars[name] "\"")
+            printout("export " name)
         }
     }
     # output prepend/append variables
-    #   - use sed, if available, to first remove path
-    #     elements from path variable if already present
     for (name in pathvars) {
-        if (csh) {
-            printf "if ( ! ${?%s} ) setenv %s\n", name, name >>output
-            printf "which sed >&/dev/null\n" >>output
-            printf "if ( ! $status ) then\n" >>output
-        }
-        else {
-            printf "type -p sed >/dev/null\n" >>output
-            printf "if [ $? -eq 0 ]; then\n" >>output
-        }
+        sed_script = ""
         split(pathvars[name], pathvar, ":")
         for (i in pathvar) {
             if (substr(pathvar[i], 1, 1) != "$") {
-                if (csh) {
-                    printf "   setenv %s `echo \":${%s}:\" | sed 's|:%s:|:|;s|^:||;s|:$||'`\n", name, name, pathvar[i] >>output
-                }
-                else {
-                    printf "   %s=`echo \":${%s}:\" | sed 's|:%s:|:|;s|^:||;s|:$||'`\n", name, name, pathvar[i] >>output
-                }
+                sed_script = sed_script "s|:" pathvar[i] ":|:|;"
             }
         }
+        sed_script = sed_script "s|::*|:|g;s|^:||;s|:$||"
         if (csh) {
-            printf "   setenv %s `echo \"%s\" | sed 's|^:||;s|:$||'`\n", name, pathvars[name] >>output
-            printf "else\n" >>output
-            printf "   setenv %s \"%s\"\n", name, pathvars[name] >>output
-            printf "endif\n" >>output
+            printout("if ( ! ${?" name "} ) setenv " name)
+            printout("setenv " name " `echo \":${" name "}:\" | " SED " '" sed_script "'`")
+            printout("setenv " name " \"" pathvars[name] "\"")
         }
         else {
-            printf "   %s=`echo \"%s\" | sed 's|^:||;s|:$||'`\n", name, pathvars[name] >>output
-            printf "else\n" >>output
-            printf "   %s=\"%s\"\n", name, pathvars[name] >>output
-            printf "fi\n" >>output
-            printf "export %s\n", name >>output
+            printout(name "=`echo \":${" name "}:\" | " SED " '" sed_script "'`")
+            printout(name "=\"" pathvars[name] "\"")
+            printout("export " name)
         }
     }
 }

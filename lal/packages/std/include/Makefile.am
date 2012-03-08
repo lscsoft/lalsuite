@@ -8,7 +8,6 @@ pkginclude_HEADERS = \
 	LALError.h \
 	LALGSL.h \
 	LALMalloc.h \
-	LALRCSID.h \
 	LALStatusMacros.h \
 	LALStdio.h \
 	LALStdlib.h \

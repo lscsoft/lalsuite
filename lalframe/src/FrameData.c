@@ -113,6 +113,7 @@ LALI2DestroyVector( &status, &dmro.data );
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -121,9 +122,6 @@ LALI2DestroyVector( &status, &dmro.data );
 #include <lal/SeqFactories.h>
 #include <lal/FrameData.h>
 #include <lal/LALFrameL.h>
-
-NRCSID (FRAMEDATAC, "$Id$");
-
 
 void
 LALInitializeFrameData (
@@ -140,7 +138,7 @@ LALInitializeFrameData (
   CHAR                   command[1024];
   INT4                   nameType;
 
-  INITSTATUS (status, "LALInitializeFrameData", FRAMEDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -227,7 +225,7 @@ LALFinalizeFrameData (
     FrameData **frameData
     )
 { 
-  INITSTATUS (status, "LALFinalizeFrameData", FRAMEDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure argument is reasonable */
@@ -267,7 +265,7 @@ GetNewFrame (
 {
   const REAL4 resolution = 3.2e-3;
 
-  INITSTATUS (status, "GetNewFrame", FRAMEDATAC);
+  INITSTATUS(status);
 
   /* make sure argument is not NULL */
   ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);
@@ -401,7 +399,7 @@ LALGetFrameData (
   INT4 numPoints;
   INT4 needed;
 
-  INITSTATUS (status, "LALGetFrameData", FRAMEDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -571,7 +569,7 @@ SplineFit (
   REAL4       *ypp;
   UINT4        n;
 
-  INITSTATUS (status, "SplineFit", FRAMEDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are reasonable */
@@ -707,7 +705,7 @@ LALGetFrameDataResponse (
   INT4   n;
   UINT4  i;
 
-  INITSTATUS (status, "LALGetFrameDataResponse", FRAMEDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (frameData, status, FRAMEDATAH_ENULL, FRAMEDATAH_MSGENULL);

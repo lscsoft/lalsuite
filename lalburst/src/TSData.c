@@ -23,11 +23,11 @@
  *
  * Author: Torres Cristina V. (LLO)
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TSData.h>
 #include <lal/TSSearch.h>
 #include <lal/LALStdlib.h>
@@ -37,8 +37,6 @@
 #else
 #define UNUSED
 #endif
-
-NRCSID (TSDATAC,"$Id$");
 
 /*
  * Local static functions
@@ -97,7 +95,7 @@ LALTracksearchFindLambdaMean(
   INT4        UNUSED lowerFRow=-1;
   INT4        UNUSED upperFRow=-1;
   REAL8       binPerHz=0;
-  INITSTATUS(status,"LALTracksearchFindLambdaMean", TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(searchParams,status, TSDATA_ENNUL, TSDATA_MSGENNUL);
@@ -194,7 +192,7 @@ LALTracksearchFindLambdaMedian(
   INT4        lowerFRow=-1;
   INT4        upperFRow=-1;
 
-  INITSTATUS(status,"LALTracksearchFindLambdaMedian", TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   /*
    * If there was band passing determine regions of F to
@@ -282,7 +280,7 @@ LALCreateTSDataSegmentVector (
   UINT4                  segmentLength=0;
   const LIGOTimeGPS      gps_zero = LIGOTIMEGPSZERO;
 
-  INITSTATUS (status, "LALCreateTSSegmentVector", TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (!*vector, status, TSDATA_ENNUL, TSDATA_MSGENNUL);
@@ -334,7 +332,7 @@ LALDestroyTSDataSegmentVector (
 {
   INT4                    i;
 
-  INITSTATUS (status, "LALDestroyTSDataSegmentVector", TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT (vector,
 	  status,
@@ -364,7 +362,7 @@ LALTrackSearchConnectSigma(
   Curve *curveA;
   Curve *curveB;
 
-  INITSTATUS(status,"LALTrackSearchConnectSigma",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -421,7 +419,7 @@ LALTrackSearchApplyThreshold(
   INT4 j;
   INT4 cicn;
 
-  INITSTATUS(status,"LALTrackSearchApplyThreshold",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT(dataProduct->curves==NULL,status,TS_NON_NULL_POINTER,TS_MSGNON_NULL_POINTER);
   /*Trackstore struct field not copied! */
@@ -505,7 +503,7 @@ LALTrackSearchWhitenREAL4TimeSeries(
   LALUnit                   tmpUnit1=lalDimensionlessUnit;
   LALUnitPair               tmpUnitPair;
   RAT4                      exponent;
-  INITSTATUS(status,"LALTrackSearchWhitenREAL4TimeSeries",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*Setup FFT Plans*/
@@ -633,7 +631,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
   LALUnitPair   tmpUnitPair;
   RAT4          exponent;
 
-  INITSTATUS(status,"LALTrackSearchWhitenCOMPLEX8FrequencySeries",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   /*
    * Error checking
@@ -695,7 +693,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
   COMPLEX8FrequencySeries   *signalFFT=NULL;
   UINT4                      planLength=0;
 
-  INITSTATUS(status,"LALTrackSearchCalibrateREAL4TimeSeries",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   /* Need consistency checks for inputs so that the df of each match */
   /*
@@ -795,7 +793,7 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
   REAL4          c=0;
   REAL4          d=0;
 
-  INITSTATUS(status,"LALTrackSearchCalibrateCOMPLEX8FrequencySeries",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   /*
    * Error checking
@@ -852,7 +850,7 @@ LALTrackSearchDataSegmenter(
   REAL8         kTime;
   LIGOTimeGPS   timeInterval;
 
-  INITSTATUS (status, "LALTrackSearchDataSegmenter", TSDATAC);
+  INITSTATUS(status);
 
   /*
    * Error checking
@@ -927,7 +925,7 @@ LALSVectorPolynomialInterpolation(
   INT4                         bottomElement,topElement,currentElement;
   BOOLEAN                       cut;
 
-  INITSTATUS(status,"LALSVectorPolynomialInterpolation",TSDATAC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT(range->length > 5,status,TSDATA_EINTP,TSDATA_MSGEINTP);
   LALCreateVector(status->statusPtr,&xfrag,5);

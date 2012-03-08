@@ -18,7 +18,6 @@
 */
 
 #include <lal/LALNoiseModels.h>
-NRCSID (LALADDVECTORSC, "$Id$");
 
 /**
 \author Sathyaprakash, B. S.
@@ -50,7 +49,7 @@ LALAddVectors
 {
    INT4 n, i;
 
-   INITSTATUS (status, "LALAddVectors", LALADDVECTORSC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (vector,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
    ASSERT (vector->length >= 2, status, LALNOISEMODELSH_ESIZE, LALNOISEMODELSH_MSGESIZE);

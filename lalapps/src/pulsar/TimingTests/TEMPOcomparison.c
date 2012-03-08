@@ -44,8 +44,6 @@
 
 #include <lalapps.h>
 
-RCSID( "$Id$");
-
 /* ---------- Error codes and messages ---------- */
 #define TEMPOCOMPARISONC_ENORM 0
 #define TEMPOCOMPARISONC_ESUB  1
@@ -753,7 +751,7 @@ main(int argc, char *argv[]){
 void
 initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -823,7 +821,7 @@ initUserVars (LALStatus *status, int argc, char *argv[], UserVariables_t *uvar)
 /* corresponding to 1e-7 sec */
 void REAL8toMJD(LALStatus *status,MJDTime *MJD,REAL8 x) {
 
-  INITSTATUS( status, "REAL8toMJD", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* take integer part of input time */
@@ -837,7 +835,7 @@ void REAL8toMJD(LALStatus *status,MJDTime *MJD,REAL8 x) {
 
 void MJDtoREAL8(LALStatus *status,REAL8 *x,MJDTime MJD) {
 
-  INITSTATUS( status, "MJDtoREAL8", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   *x = (REAL8)MJD.days + (REAL8)MJD.fracdays*86400.0;
@@ -851,7 +849,7 @@ void deltaMJD(LALStatus *status,MJDTime *dMJD,MJDTime *x,MJDTime *y) {
 
   MJDTime z;
   
-  INITSTATUS( status, "deltaMJD", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* remove the days part from the other time */
@@ -988,7 +986,7 @@ void UTCMJDtoGPS(LALStatus *status,LIGOTimeGPS *GPS,MJDTime MJD,INT4 leap){
   REAL8 MJDtemp;
   INT4 tempsec, tempnano;
 
-  INITSTATUS( status, "UTCMJDtoGPS", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* convert MJD to REAL8 for error checking */
@@ -1063,7 +1061,7 @@ void LALRadstoRA(LALStatus *status, CHAR *RA, REAL8 rads) {
   INT4 hours, mins, secs, fracsecs;
   REAL8 x;
 
-  INITSTATUS( status, "LALRadstoRA", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ((rads<0.0)||(rads>=LAL_TWOPI)) {
@@ -1095,7 +1093,7 @@ void LALRadstoDEC(LALStatus *status, CHAR *DEC, REAL8 rads) {
   REAL8 x;
   INT4 sign = 1;
 
-  INITSTATUS( status, "LALRadstoDEC", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ((rads<-(LAL_PI/2.0))||(rads>=(LAL_PI/2.0))) {

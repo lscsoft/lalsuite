@@ -27,9 +27,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (LALTESTGPSTOFLOATC, "$Id$");
-
-
 static int test_random_doubles(unsigned int seed)
 {
 	int i;

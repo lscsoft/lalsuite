@@ -2,7 +2,6 @@
 
 # Matt Pitkin 10/05/07
 
-# $Id$
 
 # cat_fine_files.sh - this is a bash script that will take in any number of directories as command
 # line arguments, list the files in the directories, and concatenate any that have the same name

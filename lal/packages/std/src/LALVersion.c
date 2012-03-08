@@ -19,7 +19,6 @@
 
 #if 0 /* autodoc block */
 <lalVerbatim file="LALVersionCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -56,8 +55,6 @@ is also provided if the verbose flag is set.
 #include <lal/LALVersion.h>
 #include <lal/LALVCSInfo.h>
 
-NRCSID( LALVERSIONC, "$Id$" );
-
 const char *const lalVersion       = LAL_VERSION;
 const int         lalVersionMajor  = LAL_VERSION_MAJOR;
 const int         lalVersionMinor  = LAL_VERSION_MINOR;
@@ -71,7 +68,7 @@ void
 LALVersion( LALStatus *status, CHAR *message, UINT4 size, INT4 verbose )
 { /* </lalVerbatim> */
   INT4 nchar;
-  INITSTATUS( status, "LALVersion", LALVERSIONC );
+  INITSTATUS(status);
 
   ASSERT( message,  status, LALVERSIONH_ENULL, LALVERSIONH_MSGENULL );
   ASSERT( size > 0, status, LALVERSIONH_ESIZE, LALVERSIONH_MSGESIZE );

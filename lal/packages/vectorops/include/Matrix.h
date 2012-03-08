@@ -37,7 +37,6 @@
 */
 
 #include <math.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/AVFactories.h>
@@ -74,8 +73,6 @@ extern "C" {
 #define MATLABMATRIXH_MSGENUMZ "Incorrect number of command line arguments"
 #define MATLABMATRIXH_MSGELNTH "Vector/Array of Improper Length"
 #define MATLABMATRIXH_MSGENNUL "Non-Null Pointer that should be NULL"
-
-NRCSID( MATLABMATRIXH, "$Id$");
 
 /* Multiply */
 /** \addtogroup MatrixMultiply_c

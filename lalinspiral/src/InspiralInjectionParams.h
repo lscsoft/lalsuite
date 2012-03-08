@@ -29,6 +29,7 @@ typedef enum
   unknownDistanceDist,
   distFromSourceFile,
   uniformDistance,
+  uniformDistanceSquared,
   uniformLogDistance,
   uniformVolume,
   sfr
@@ -106,8 +107,6 @@ AlignmentType;
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-NRCSID( NRWAVEIOC, "$Id$");
 
 SimInspiralTable* XLALRandomInspiralTime( SimInspiralTable *inj,
   RandomParams *randParams,

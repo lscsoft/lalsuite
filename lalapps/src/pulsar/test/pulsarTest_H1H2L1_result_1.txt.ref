@@ -1,4 +1,3 @@
-%% $Id$
 %%  --Alpha=3.4 --Delta=-1.2 --Freq=59.4995 --f1dot=-7.4598537911e-10 --f2dot=2.4847e-20 --FreqBand=0.0005 --f1dotBand=3e-13 --f2dotBand=1e-23 --dFreq=5.556e-05 --df1dot=1.2359e-13 --df2dot=5.6432e-22 --DataFiles="sfts/*.sft" --ephemDir="edata" --ephemYear="03-06" --SignalOnly=TRUE --TwoFthreshold=0.0 --outputLabel="pulsarTest_H1H2L1_1" --outputFstat="pulsarTest_H1H2L1_result_1.txt" --outputLoudest="pulsarTest_H1H2L1_loudest_1.txt"
 %% Started search: Wed Apr 23 23:42:55 2008
 %% Loaded SFTs: [ L1:10, H2:10, H1:10 ]

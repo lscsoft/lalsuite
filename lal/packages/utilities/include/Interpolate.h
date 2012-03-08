@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="InterpolateHV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -54,8 +53,6 @@ Generates random numbers.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-NRCSID (INTERPOLATEH, "$Id: Interpolate.h");
 
 #if 0 /* autodoc block */
 

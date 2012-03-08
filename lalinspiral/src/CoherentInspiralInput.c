@@ -37,7 +37,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -59,8 +58,6 @@
 #include <lal/LALInspiral.h>
 #include <lal/CoherentInspiral.h>
 #include <lal/LALStatusMacros.h>
-
-NRCSID( COHERENTINSPIRALINPUTC, "$Id$");
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -98,8 +95,7 @@ LALFindChirpCreateCoherentInput(
   INT4                     fullCohSegLength = 0;
   INT4                     eventTimePoint = 0;
 
-  INITSTATUS( status, "LALFindChirpCreateCoherentInput",
-	      COHERENTINSPIRALINPUTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Ensure that arguments are reasonable */

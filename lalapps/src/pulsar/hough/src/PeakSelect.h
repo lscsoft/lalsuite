@@ -23,7 +23,6 @@
  * \author Sintes, A.M., and Krishnan, B. 
  * \brief Header file for  PeakSelect.c
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan Oct 2005
@@ -78,12 +77,6 @@ From periodogram to peakgram
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
- /*
- * 6. Assignment of Id string using NRCSID()
- */
-
-NRCSID (PEAKSELECTH, "$Id$");
 
 /*
  * 7. Error codes and messages. This must be auto-extracted for

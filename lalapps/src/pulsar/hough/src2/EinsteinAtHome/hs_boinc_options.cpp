@@ -34,7 +34,6 @@ using namespace std;
 #include <boinc/util.h> /* for BOINC's dtime() */
 #include <boinc/svn_version.h>
 
-char* rcsid = "$Id$";
 BOINC_OPTIONS eah_boinc_options;
 APP_INIT_DATA eah_app_init_data;
 int eah_userid, eah_hostid;
@@ -125,7 +124,6 @@ int setup_shmem(void) {
 
 
 void set_boinc_options(void) {
-  rcsid = HS_BOINC_OPTIONS_H_RCSID;
   boinc_get_init_data(eah_app_init_data);
 #if defined(SVN_REVISION) && (SVN_REVISION >= 22905)
   // this breaks compilation for BOINC older than SVN trunk r22902

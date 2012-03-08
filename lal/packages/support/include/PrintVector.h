@@ -43,8 +43,6 @@ LAL\f$\langle\mbox{DT}\rangle\f$PrintVector functions
 #ifndef _PRINTVECTOR_H
 #define _PRINTVECTOR_H
 
-#include <lal/LALRCSID.h>
-
 #ifndef _LALSTDLIB_H
 #include <lal/LALStdlib.h>
 #ifndef _LALSTDLIB_H
@@ -55,9 +53,6 @@ LAL\f$\langle\mbox{DT}\rangle\f$PrintVector functions
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID( PRINTVECTORH, "$Id$" );
 
 void LALCHARPrintVector( CHARVector *vector );
 void LALI2PrintVector( INT2Vector *vector );

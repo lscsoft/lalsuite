@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -49,8 +50,6 @@
 #define N_FIR_HP 2000
 #define fhigh_FIRHP 0.00244140625
 
-NRCSID( COMPUTESTRAINC, "$Id$" );
-RCSID("$Id$");
 
 
 /* Local helper functions, defined static so they cannot be used outside. */
@@ -74,7 +73,7 @@ int p;
 REAL8IIRFilter HPFIR;
 REAL8IIRFilter ALPHASLPFIR;
 
- INITSTATUS( status, "LALComputeStrain", COMPUTESTRAINC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR( status );
 
  set_output_to_zero(output);
@@ -340,7 +339,7 @@ void LALMakeFIRLP(LALStatus *status, REAL8IIRFilter *LPFIR, int USF)
   int k[2*N_FIR_LP+1];
   REAL8 fN=fhigh_FIRLP/USF;
 
-  INITSTATUS( status, "LALMakeFIRLP", COMPUTESTRAINC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   LPFIR->directCoef=NULL;
@@ -385,7 +384,7 @@ void LALMakeFIRLPALPHAS(LALStatus *status, REAL8IIRFilter *LPFIR)
   int k[2*N_FIR_LP_ALPHAS+1];
   REAL8 fN=fhigh_FIRLP_ALPHAS;
 
-  INITSTATUS( status, "LALMakeFIRLPALPHAS", COMPUTESTRAINC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   LPFIR->directCoef=NULL;
@@ -429,7 +428,7 @@ void LALMakeFIRHP(LALStatus *status, REAL8IIRFilter *HPFIR)
   int k[2*N_FIR_HP+1];
   REAL8 fN=fhigh_FIRHP;
 
-  INITSTATUS( status, "LALMakeFIRHP", COMPUTESTRAINC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   HPFIR->directCoef=NULL;
@@ -553,7 +552,7 @@ REAL4 deltaT=input->DARM_ERR.deltaT, To=input->To;
 INT4 length = input->DARM_ERR.data->length;
 /*INT4 localtime = input->DARM_ERR.epoch.gpsSeconds;*/
 
- INITSTATUS( status, "LALGetFactors", COMPUTESTRAINC );
+ INITSTATUS(status);
  ATTATCHSTATUSPTR( status );
 
   /* Create local data vectors */
@@ -692,7 +691,7 @@ void LALFFTFIRFilter(LALStatus *status, REAL8TimeSeries *tseries, REAL8IIRFilter
   int n;
   int xlerr;
 
-  INITSTATUS( status, "LALFFTFIRFilter", COMPUTESTRAINC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the time series is larger than the length of the filter */

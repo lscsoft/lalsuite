@@ -56,7 +56,6 @@ tests passed, 1 if one or more tests failed.
 #include <lal/Date.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID( SEGMENTSTESTC, "$Id$" );
 
 /*-- Macros for this test program --*/
 

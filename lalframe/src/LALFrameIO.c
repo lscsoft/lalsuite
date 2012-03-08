@@ -37,9 +37,6 @@ int gethostname(char *name, int len);
 #include <lal/LALFrameIO.h>
 #include <lal/LALCalibration.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (LALFRAMEIOC,"$Id$");
-
 /* FIXME: WARNING: this value might need to change in the future */
 #define FR_FILE_HEADER_SIZE 40 /* size of frame file header in bytes */
 
@@ -219,6 +216,8 @@ FrameH * XLALFrameNew( LIGOTimeGPS *epoch, double duration,
 {
   static char histidname[] = __FILE__ " Id";
   static char histtagname[] = __FILE__ " Tag";
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   static char rcsname[] = "$Name$";
   static char rcsid[] = "$Id$";
   int detector;
@@ -471,6 +470,8 @@ FrVect * XLALFrVectCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series )
 int XLALFrameAddCalRef( FrameH *frame, COMPLEX8FrequencySeries *series, int version, double duration )
 {
   char representation[] = "freq_series";
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   char comment[] = "$Id$";
   char prefix[3];
   FrDetector *detector;
@@ -561,6 +562,8 @@ COMPLEX8FrequencySeries * XLALFrameGetCalRef( LIGOTimeGPS *validUntil, LIGOTimeG
 int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series, int version )
 {
   char representation[] = "time_series";
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   char comment[] = "$Id$";
   char prefix[3];
   FrDetector *detector;
@@ -827,6 +830,8 @@ int XLALFrameAddREAL4TimeSeriesAdcData( FrameH *frame, REAL4TimeSeries *series )
 #if 0
 int XLALFrameAddCalFac( FrameH *frame, REAL4TimeSeries *series )
 {
+  /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+   *  It should be modified to use git version information. */
   char comment[] = "$Id$";
   LIGOTimeGPS frameEpoch;
   FrProcData *proc;

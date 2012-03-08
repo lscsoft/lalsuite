@@ -19,7 +19,6 @@
 
 /*************** <lalVerbatim file="ReadFTSeriesTestCV"> *******
 Author: Torres, C. W.
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
@@ -109,6 +108,7 @@ LALUnitPair
 #define READFTSERIESTESTC_MSGEFLS "Subroutine returned unexpected results"
 /********************** </lalErrTable> */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/ReadFTSeries.h>
 #include <lal/PrintFTSeries.h>
@@ -117,9 +117,6 @@ LALUnitPair
 #include <lal/AVFactories.h>
 #define  READFTSERIESTEST_TOL 1e6
 #define  READFTSERIESTEST_LEN 20
-
-
-NRCSID( READFTSERIESTESTC, "$Id$" );
 
 extern int lalDebugLevel;
 

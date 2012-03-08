@@ -7,9 +7,10 @@
  * targeted pulsar searches.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_models.h"
 
-RCSID("$Id$");
+static BinaryPulsarParams empty_BinaryPulsarParams;
 
 /******************************************************************************/
 /*                            MODEL FUNCTIONS                                 */
@@ -19,7 +20,7 @@ RCSID("$Id$");
  * 
  * This function is the wrapper for functions defining the pulsar model 
  * template to be used in the analysis. It also uses \c rescale_parameter to
- * scale any parameters back to there true values for use in the model and 
+ * scale any parameters back to their true values for use in the model and 
  * places them into a \c BinaryPulsarParams structure.
  * 
  * Note: Any additional models should be added into this function.
@@ -30,7 +31,7 @@ RCSID("$Id$");
  * \sa pulsar_model
  */
 void get_pulsar_model( LALInferenceIFOData *data ){
-  BinaryPulsarParams pars;
+  BinaryPulsarParams pars = empty_BinaryPulsarParams; /* initialise as empty */
   
   /* set model parameters (including rescaling) */
   pars.h0 = rescale_parameter( data, "h0" );
@@ -51,7 +52,9 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   }
   
   /*pinned superfluid parameters*/
-  pars.h1 = rescale_parameter( data, "h1" );
+  pars.I21 = rescale_parameter( data, "I21" );
+  pars.I31 = rescale_parameter( data, "I31" );
+  pars.r = rescale_parameter( data, "r" );
   pars.lambda = rescale_parameter( data, "lambda" );
   pars.theta = rescale_parameter( data, "theta" );
  
@@ -70,12 +73,12 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.f3 = rescale_parameter( data, "f3" );
   pars.f4 = rescale_parameter( data, "f4" );
   pars.f5 = rescale_parameter( data, "f5" );
-  
-  /* binary system model - NOT pulsar model */
-  pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
 
-  /* binary parameters */
-  if( pars.model != NULL ){
+  /* check if there are binary parameters */
+  if( LALInferenceCheckVariable(data->modelParams, "model") ){
+    /* binary system model - NOT pulsar model */
+    pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
+
     pars.e = rescale_parameter( data, "e" );
     pars.w0 = rescale_parameter( data, "w0" );
     pars.Pb = rescale_parameter( data, "Pb" );
@@ -231,7 +234,7 @@ through the loop.*/
           REAL4 sp, cp;
     
           dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
-    
+          
           sin_cos_2PI_LUT( &sp, &cp, dphit );
     
           M.re = data->compModelData->data->data[i].re;
@@ -240,6 +243,7 @@ through the loop.*/
           /* heterodyne */
           data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
           data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+					if(i<1)fprintf(stderr,"dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
         }
       }
     }
@@ -254,7 +258,7 @@ through the loop.*/
  * sky location as observed at Earth. The phase evolution is described by a 
  * Taylor expansion:
  * \f[
- * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}{k!} T^k,
+ * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}}{k!} T^k,
  * \f]
  * where \f$f^x\f$ is the xth time derivative of the gravitational wave
  * frequency, and \f$T\f$ is the pulsar proper time. Frequency time derivatives
@@ -294,17 +298,18 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
- 
+
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
-
+	
   length = data->dataTimes->length;
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
   
   /* get time delays */ 
+	/*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){
     /* get time delays with an interpolation of interptime (30 mins) */
@@ -319,11 +324,11 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   }
   
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );
+    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );/*time of data*/
     
-    T0 = params.pepoch;
+    T0 = params.pepoch;/*time of ephem info*/
 
-    DT = realT - T0;
+    DT = realT - T0;/*time diff between data and ephem info*/
 
     if ( params.model != NULL )
       deltat = DT + dts->data[i] + bdts->data[i];
@@ -338,6 +343,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
       inv_fact[4]*params.f3*deltat*deltat2 +
       inv_fact[5]*params.f4*deltat2*deltat2 +
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
+
   }
   
   /* free memory */
@@ -504,11 +510,13 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
   bdts = XLALCreateREAL8Vector( length );
   
   for ( i = 0; i < length; i++ ){
-    binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
-  
-    XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );
-    
-    bdts->data[i] = boutput.deltaT;
+    /* check whether there's a binary model */
+    if ( pars.model ){
+      binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+      XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );    
+      bdts->data[i] = boutput.deltaT;
+    }
+    else bdts->data[i] = 0.;
   }
   
   return bdts;
@@ -662,42 +670,43 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   REAL4 sinphi, cosphi, sin2phi, cos2phi;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
-  REAL8Vector *sidDayFrac = NULL;
+  REAL8Vector *sidDayFrac1 = NULL;
+	REAL8Vector *sidDayFrac2 = NULL;
   
   /* set lookup table parameters */
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
   tsteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "timeSteps" );
   
   LU_Fplus = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-"LU_Fplus");
+    "LU_Fplus");
   LU_Fcross = *(gsl_matrix**)LALInferenceGetVariable( data->dataParams,
-"LU_Fcross");
+    "LU_Fcross");
   /* get the sidereal time since the initial data point % sidereal day */
-  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
+  sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
                                                         "siderealDay" );
-  
+  /*how do I handle phi0?*/
   sin_cos_LUT( &sinphi, &cosphi, 0.5*pars.phi0 );
   sin_cos_LUT( &sin2phi, &cos2phi, pars.phi0 );
   
   /************************* CREATE MODEL *************************************/
-  /* This model is a complex heterodyned time series for a pinned superfluid
-neutron
-     star emitting at its roation frequency and twice its rotation frequency 
-     (as defined in Jones 2009):
+  /* This model is a complex heterodyned time series for a pinned superfluid neutron
+	star emitting at its roation frequency and twice its rotation frequency 
+	(as defined in Jones 2009):
 
    ****************************************************************************/
+  Xplusf = ((pars.f0*pars.f0)/(2*pars.r)) * sin(acos(pars.cosiota))*pars.cosiota;
+  Xcrossf =((pars.f0*pars.f0)/(2*pars.r)) * sin(acos(pars.cosiota));
+  Xplus2f = ((pars.f0*pars.f0)/pars.r) * (1.+(pars.cosiota*pars.cosiota));
+  Xcross2f = ((2*pars.f0*pars.f0)/pars.r) * pars.cosiota;
   
-  Xplusf = 0.125*sin(acos(pars.cosiota))*pars.cosiota*pars.h0;
-  Xcrossf = 0.125*sin(acos(pars.cosiota))*pars.h0;
-  Xplus2f = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
-  Xcross2f = 0.5*pars.cosiota*pars.h0;
-  A1=( (cos(pars.lambda)*cos(pars.lambda)) - pars.h1 ) * (sin( (2*pars.theta)
-));
-  A2=sin(2*pars.lambda)*sin(pars.theta);
-  B1=( (cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) ) -
-(sin(pars.lambda)*sin(pars.lambda)) 
-    + ( pars.h1*(sin(pars.theta)*sin(pars.theta)) );
-  B2=sin(2*pars.lambda)*cos(pars.theta);
+  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( (2*pars.theta));
+  A2=pars.I21*sin(2*pars.lambda)*sin(pars.theta);
+  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) -(sin(pars.lambda)*sin(pars.lambda))) ) 
+    + ( pars.I31*(sin(pars.theta)*sin(pars.theta)) );
+  B2=pars.I21*sin(2*pars.lambda)*cos(pars.theta);
+  
+  /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
+  fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
   
   /* set the psi bin for the lookup table */
   psv = LAL_PI_2 / ( psteps - 1. );
@@ -711,13 +720,15 @@ neutron
   
   tsv = LAL_DAYSID_SI / tsteps;
   
+  /*--------------------------------------------------------------------------*/
   /* set model for 1f component */
+  
   length = data->dataTimes->length;
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/    
-    T = sidDayFrac->data[i];
+    T = sidDayFrac1->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
@@ -747,25 +758,25 @@ neutron
     /* create the complex signal amplitude model */
     /*at f*/
     data->compModelData->data->data[i].re =
-plus*Xplusf*((A1*cosphi)-(A2*sinphi)) + 
-    ( cross*Xcrossf*((A2*cosphi)-(A1*sinphi)) );
+    ( plus*Xplusf*((A1*cosphi)-(A2*sinphi)) ) + 
+    ( cross*Xcrossf*((A2*cosphi)+(A1*sinphi)) );
     
     data->compModelData->data->data[i].im =
-plus*Xplusf*((A2*cosphi)+(A1*sinphi)) + 
+    ( plus*Xplusf*((A2*cosphi)+(A1*sinphi)) ) + 
     ( cross*Xcrossf*((A2*sinphi)-(A1*cosphi)) );
 
   }
-  
+  /*--------------------------------------------------------------------------*/
   /* set model for 2f component */
   length = data->next->dataTimes->length;
   
-  sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
+  sidDayFrac2 = *(REAL8Vector**)LALInferenceGetVariable( data->next->dataParams,
                                                         "siderealDay" );
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
     /* sidereal day in secs*/    
-    T = sidDayFrac->data[i];
+    T = sidDayFrac2->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
     timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
@@ -794,14 +805,15 @@ plus*Xplusf*((A2*cosphi)+(A1*sinphi)) +
     
     /* create the complex signal amplitude model at 2f*/
     data->next->compModelData->data->data[i].re =
-      plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) +
+      (plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) ) +
       cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
     
     data->next->compModelData->data->data[i].im =
-      plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) -
-      cross*Xcross2f*((B1*cos2phi)-(B2*sin2phi));
+      (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-
+      ( cross*Xcross2f*((B1*cos2phi)+(B2*sin2phi)) );
+		
   }
-  
+  /*--------------------------------------------------------------------------*/
 }
 
 
@@ -834,7 +846,7 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
-                                                        "sumData" );
+                                                       "sumData" );
   
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];

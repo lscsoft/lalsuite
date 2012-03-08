@@ -43,9 +43,6 @@ LALDRombergIntegrate()
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALTOFVC, "$Id$");
-
-
 void
 LALInspiralTofV (
    LALStatus *status,
@@ -63,7 +60,7 @@ LALInspiralTofV (
    REAL8 sign;
 
 
-   INITSTATUS (status, "LALInspiralTofV", LALINSPIRALTOFVC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (tofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

@@ -8,6 +8,7 @@
 #include <png.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 #include <lal/Skymap.h>
 
@@ -458,9 +459,9 @@ void writeSkymapOut( SkyMapProperties* skyMap )
     /*
      *  Write a gzipped ascii file describing the sky map
      */
-    gzFile* h = NULL;
+    gzFile h;
     h = gzopen(output_file, "wb");
-    if (h == NULL)
+    if (h == Z_NULL)
       {
         fprintf(stderr,"cannot gzopen() %s\n",output_file);
         exit(1);

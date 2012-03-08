@@ -50,9 +50,6 @@ Authors: Tagoshi, H, Takahashi, H, Van Den Broeck, C, Jones, G, Sathyaprakash, B
 #include <lal/LALInspiralBCVSpinBank.h>
 #include <gsl/gsl_linalg.h>
 
-NRCSID(LALINSPIRALBCVSPINBANKC, "$Id$");
-
-
 void
 LALInspiralBCVSpinBank(
     LALStatus         	 *status,
@@ -81,7 +78,7 @@ LALInspiralBCVSpinBank(
   static REAL4VectorSequence *totList=NULL;
   SnglInspiralTable *bank=NULL, *tmpBank=NULL;
 
-  INITSTATUS(status, "LALInspiralBCVSpinBank", LALINSPIRALBCVSPINBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn != NULL, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );

@@ -32,10 +32,6 @@
 extern "C" {
 #endif
 
-
-NRCSID (WINDOWH, "$Id$");
-
-
 typedef struct tagREAL4Window {
 	SWIGLAL_STRUCT(REAL4Window);
 	REAL4Sequence *data;

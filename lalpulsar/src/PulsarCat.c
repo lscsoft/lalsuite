@@ -180,9 +180,6 @@ LALDDestroyVector()           LALFree()
 #include <lal/SkyCoordinates.h>
 #include <lal/PulsarCat.h>
 
-NRCSID( PULSARCATC, "$Id$" );
-
-
 /* First, define a function to compute n!. */
 static UINT4
 fact( UINT2 n );
@@ -210,7 +207,7 @@ LALUpdatePulsarCatNode( LALStatus      *stat,
   ConvertSkyParams params;    /* sky coordinate parameters */
   CompanionNode *here;        /* paramaters of system companions */
 
-  INITSTATUS( stat, "LALUpdatePulsarCatNode", PULSARCATC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that required input parameters exist. */
@@ -395,7 +392,7 @@ LALUpdatePulsarCat( LALStatus      *stat,
 		    LALPlaceAndGPS *detectorTime,
 		    EphemerisData  *edat )
 {
-  INITSTATUS( stat, "LALUpdatePulsarCat", PULSARCATC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that head points to a list.  All further pointer checks are
@@ -420,7 +417,7 @@ void
 LALDestroyPulsarCat( LALStatus    *stat,
 		     PulsarCatNode **head )
 {
-  INITSTATUS( stat, "LALDestroyPulsarCat", PULSARCATC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that the list exists. */

@@ -19,7 +19,6 @@
 
 /************************** <lalVerbatim file="CoarseGrainFrequencySeriesCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu (original by S. Drasco)
-$Id$
 ************************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -206,13 +205,11 @@ strncpy()
 % \bibitem{utilities:}
 
 ******************************************************* </lalLaTeX> */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/CoarseGrainFrequencySeries.h>
 #include <math.h>
-
-NRCSID(COARSEGRAINFREQUENCYSERIESC,
-       "$Id$");
 
 /* <lalVerbatim file="CoarseGrainFrequencySeriesCP"> */
 void
@@ -234,8 +231,7 @@ LALSCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL4         value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALSCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -473,8 +469,7 @@ LALDCoarseGrainFrequencySeries(LALStatus                      *status,
   REAL8         value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALDCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* checks for null pointers: */
@@ -712,8 +707,7 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
   COMPLEX8      value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALCCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* printf("entering function\n"); */
@@ -974,8 +968,7 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
   COMPLEX16      value;
 
   /* initialize status structure */
-  INITSTATUS( status, "LALZCoarseGrainFrequencySeries",
-              COARSEGRAINFREQUENCYSERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* printf("entering function\n"); */

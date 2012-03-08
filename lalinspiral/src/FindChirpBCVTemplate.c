@@ -23,7 +23,6 @@
  *
  * Author: Brown D. A., Messaritaki, E., and Woods, D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -60,16 +59,12 @@ LALDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCV.h>
-
-
-NRCSID (FINDCHIRPBCVTEMPLATEC, "$Id$");
-
-
 
 void
 LALFindChirpBCVTemplate (
@@ -102,7 +97,7 @@ LALFindChirpBCVTemplate (
   REAL4        distNorm;
   const REAL4  cannonDist = 1.0; /* Mpc */
 
-  INITSTATUS( status, "LALFindChirpBCVTemplate", FINDCHIRPBCVTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

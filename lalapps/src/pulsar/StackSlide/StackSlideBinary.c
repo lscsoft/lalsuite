@@ -59,8 +59,6 @@
 /*                                           */
 /*********************************************/
 
-NRCSID( STACKSLIDEBINARYC,  "$Id$");
-
 /* 04/12/05 gam; add StackSlideSearchParams *params */
 void StackSlideBinary(  LALStatus *status,
                         StackSlideParams *stksldParams,
@@ -104,7 +102,7 @@ void StackSlideBinary(  LALStatus *status,
     
     fprintf(stdout,"Start function StackSlideBinary\n");
     fflush(stdout);
-    INITSTATUS (status, "StackSlideBinary", STACKSLIDEBINARYC); 
+    INITSTATUS(status); 
     ATTATCHSTATUSPTR(status);
   
     ParamsSMA=(REAL8 *)LALMalloc(params->numSUMsTotal*sizeof(REAL8)); /*stores SMA for each sum in parameter space*/
@@ -538,7 +536,7 @@ void RunStackSlideBinaryMonteCarloSimulation(LALStatus *status, StackSlideSearch
 	CHAR MonteCarloResults[256];
 	
   
-   INITSTATUS( status, "RunStackSlideBinaryMonteCarloSimulation", STACKSLIDEBINARYC );
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
 printf("!!!!!!!!!start function MC!!!!!!!!!!!!!!!\n");
@@ -1632,7 +1630,7 @@ DETATCHSTATUSPTR(status);
  /* 
   FILE *fpPrior = NULL;
   
-  INITSTATUS( status, "getStackSlideBinaryPriorResults", STACKSLIDEBINARYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
      
   printf("get prior results\n");
@@ -1656,7 +1654,7 @@ DETATCHSTATUSPTR(status);
 
 
 void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL4 maxPower, REAL8 *Confidence, REAL8 *conf_err){
-  INITSTATUS( status, "ComputeConfidence", STACKSLIDEBINARYC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1724,7 +1722,7 @@ void ComputeConfidence(LALStatus *status, REAL4 priorLoudestEvent, REAL4 maxPowe
 
 void getStackSlideBinarySearchResults(LALStatus *status, StackSlideSearchParams *params, REAL8 *SearchLoudestEvent){
  
-	INITSTATUS( status, "getStackSlideBinarySearchResults", STACKSLIDEBINARYC );
+	INITSTATUS(status);
         ATTATCHSTATUSPTR (status);
         
        #define TEST_MODE
@@ -1835,7 +1833,7 @@ void ValidateMCResults(LALStatus *status,
 
   LALDetector cachedDetector ;
 
-	INITSTATUS( status, "ValidateMCResults", STACKSLIDEBINARYC );
+	INITSTATUS(status);
         ATTATCHSTATUSPTR (status);
 
         fprintf(stdout,"start function ValidateMCResults\n ");
@@ -2011,7 +2009,7 @@ printf("tstk %f, psi %f SUMData[kSUM]->data->data[%i] %f \n",  params->tSTK, sea
 }
 
 void ComputeUpperLimit(LALStatus *status, const REAL8 *arrayULs, const REAL8 *arrayConfs, REAL8 desiredConf){
-	INITSTATUS( status, "ComputeUL", STACKSLIDEBINARYC );
+	INITSTATUS(status);
         ATTATCHSTATUSPTR (status);
         
         #define DEBUG_COMPUTEUPPERLIMIT
@@ -2034,7 +2032,7 @@ void ComputeUpperLimit(LALStatus *status, const REAL8 *arrayULs, const REAL8 *ar
 
 void Readh0File(LALStatus *status, FILE *fph0, INT4 *N, REAL8 **h0){
 
-        INITSTATUS( status, "Readh0File", STACKSLIDEBINARYC );
+        INITSTATUS(status);
         ATTATCHSTATUSPTR (status);
 	
       	printf("Readh0File\n");

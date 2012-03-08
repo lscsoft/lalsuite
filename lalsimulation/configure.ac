@@ -1,4 +1,4 @@
-AC_INIT([lalsimulation],[0.1.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalsimulation],[0.1.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([src/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -38,9 +38,9 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[0])
+AC_SUBST([LIBCURRENT],[1])
 AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
@@ -48,6 +48,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # debug
 LALSUITE_ENABLE_DEBUG
+
+# enable strict gcc flags
+LALSUITE_ENABLE_GCC_FLAGS
 
 # put version/configure info in config header
 lalsimulation_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -71,9 +74,6 @@ AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALSIMULATION_CONFIGURE_DATE],["$lalsimulation_configure_date"],
                    [LALSimulation Configure Date])
 
-# enable strict gcc flags
-LALSUITE_ENABLE_GCC_FLAGS
-
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
@@ -84,7 +84,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if available
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
-# SWIG wrapping requires a c++ compiler
+# check for c++ compiler
 AC_PROG_CXX
 
 # checks for programs
@@ -92,6 +92,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
+AC_PROG_SED
 LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4],[m4])
@@ -101,6 +102,9 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
+
+# check complex number types
+LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for header files
 AC_HEADER_STDC
@@ -148,16 +152,16 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LALSimulation has now been successfully configured:
 
-                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 
-          ${prefix}
+            ${prefix}
 
         Now run 'make' to build LALSimulation
         and run 'make install' to install LALSimulation

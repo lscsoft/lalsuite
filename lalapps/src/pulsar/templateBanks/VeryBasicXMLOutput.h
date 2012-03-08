@@ -32,14 +32,11 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-  NRCSID(VERYBASICXMLOUTPUTH, "$Id$");
 
   /**
    * Information for XML functions

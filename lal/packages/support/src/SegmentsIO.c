@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 <lalVerbatim file="SegmentsIOCV">
 Author: Peter Shawhan
-Revision: $Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -96,8 +95,6 @@ Character  & Effect \\ \hline
 #include <lal/SegmentsIO.h>
 #include <lal/StringInput.h>
 
-NRCSID( SEGMENTSIOC, "$Id$" );
-
 /* <lalVerbatim file="SegmentsIOCP"> */
 void
 LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )
@@ -113,7 +110,7 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
   INT4 segid;
   INT4 xstatus;
 
-  INITSTATUS( status, "LALSegListRead", SEGMENTSIOC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*-- Check arguments for sanity.  Note that the options string pointer is
@@ -286,7 +283,7 @@ LALSegListWrite( LALStatus *status, LALSegList *seglist, const CHAR *fileName, c
   LALSeg *segp;
   REAL8 duration;
 
-  INITSTATUS( status, "LALSegListWrite", SEGMENTSIOC );
+  INITSTATUS(status);
 
   /*-- Check arguments for sanity --*/
   if ( seglist == NULL ) {

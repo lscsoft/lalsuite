@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2007 Jolien Creighton, Kipp Cannon, Shin Kee Chung
+*  Copyright (C) 2010 Karsten Wiesner, Jolien Creighton, Kipp Cannon, Shin Kee Chung
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStatusMacros.h>
@@ -29,9 +30,6 @@
 
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
-
-NRCSID( REALFFTC, "$Id$" );
-
 
 struct
 tagREAL4FFTPlan
@@ -62,11 +60,10 @@ tagREAL8FFTPlan
 REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 {
   UINT4 createSize;
-  static const char *func = "XLALCreateREAL4FFTPlan";
   REAL4FFTPlan *plan;
 
   if ( ! size )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   /* "use" measurelvl */
   measurelvl = 0;
@@ -76,28 +73,36 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   if ( ! plan )
   {
     XLALFree( plan );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   /*
    * Use a different size for plan creation to avoid current CUDA bug
    * in performing FFT to array with size 1
    */
+
+  int retval;
+	
   if( size == 1 ) createSize = 2;
   else	createSize = size;
   /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
   if ( fwdflg ) /* forward */
-    cufftPlan1d( &plan->plan, createSize, CUFFT_R2C, 1 );
+    retval= cufftPlan1d( &plan->plan, createSize, CUFFT_R2C, 1 );
   else /* reverse */
-    cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
+    retval= cufftPlan1d( &plan->plan, createSize, CUFFT_C2R, 1 );
   /* LAL_FFTW_PTHREAD_MUTEX_UNLOCK; */
   /* check to see success of plan creation */
-  if ( ! plan->plan )
-  {
-    XLALFree( plan );
-    XLAL_ERROR_NULL( func, XLAL_EFAILED );
-  }
+	
+  /* "Plan=0" Bugfix by Wiesner, K.: plan->plan is an integer handle not a pointer and 0 is a valid handle
+      So checking against 0 and occasionaly destroy the plan is a bug.
 
+      if ( ! plan->plan )
+      {
+         XLALFree( plan );
+         XLAL_ERROR_NULL( XLAL_EFAILED );
+      }
+  */
+	
   /* Allocate memory in the GPU */
   plan->d_real = XLALCudaMallocReal(size);
   plan->d_complex = XLALCudaMallocComplex(size/2 + 1);
@@ -112,33 +117,34 @@ REAL4FFTPlan * XLALCreateREAL4FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 
 REAL4FFTPlan * XLALCreateForwardREAL4FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateForwardREAL4FFTPlan";
   REAL4FFTPlan *plan;
   plan = XLALCreateREAL4FFTPlan( size, 1, measurelvl );
   if ( ! plan )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return plan;
 }
 
 
 REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateReverseREAL4FFTPlan";
   REAL4FFTPlan *plan;
   plan = XLALCreateREAL4FFTPlan( size, 0, measurelvl );
   if ( ! plan )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return plan;
 }
 
 
 void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
 {
-  static const char *func = "XLALDestroyREAL4FFTPlan";
   if ( ! plan )
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  if ( ! plan->plan )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
+
+  /* Plan=0 Bugfix
+    if ( ! plan->plan )
+      XLAL_ERROR_VOID( XLAL_EINVAL );
+  */
+
   /* LAL_FFTW_PTHREAD_MUTEX_LOCK; */
   /* Free the Cuda specific variables */
   XLALCudaFree( plan->d_real );
@@ -153,16 +159,17 @@ void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan )
 int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
     const REAL4FFTPlan *plan )
 {
-  static const char *func = "XLALREAL4ForwardFFT";
-
   if ( ! output || ! input || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size || plan->sign != -1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix
+    if ( ! plan->plan || ! plan->size || plan->sign != -1 )
+  */
+  if ( ! plan->size || plan->sign != -1 )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! output->data || ! input->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( input->length != plan->size || output->length != plan->size/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* do the fft */
   /*
@@ -191,20 +198,21 @@ int XLALREAL4ForwardFFT( COMPLEX8Vector *output, const REAL4Vector *input,
 int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
     const REAL4FFTPlan *plan )
 {
-  static const char *func = "XLALREAL4ReverseFFT";
-
   if ( ! output || ! input || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size || plan->sign != 1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix 
+     if ( ! plan->plan || ! plan->size || plan->sign != 1 )
+   */
+  if ( ! plan->size || plan->sign != 1 )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! output->data || ! input->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( output->length != plan->size || input->length != plan->size/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( input->data[0].im != 0.0 )
-    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of DC must be zero */
+    XLAL_ERROR( XLAL_EDOM );  /* imaginary part of DC must be zero */
   if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
-    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
+    XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* perform the fft */
   /*
@@ -226,18 +234,20 @@ int XLALREAL4ReverseFFT( REAL4Vector *output, const COMPLEX8Vector *input,
 int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
     const REAL4FFTPlan *plan )
 {
-  static const char *func = "XLALREAL4VectorFFT";
   COMPLEX8 *tmp;
   UINT4 k;
 
   if ( ! output || ! input || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix
+     if ( ! plan->plan || ! plan->size )
+  */
+  if ( ! plan->size )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! output->data || ! input->data || output->data == input->data )
-    XLAL_ERROR( func, XLAL_EINVAL ); /* note: must be out-of-place */
+    XLAL_ERROR( XLAL_EINVAL ); /* note: must be out-of-place */
   if ( output->length != plan->size || input->length != plan->size )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   if( plan->size == 1 )
   {
@@ -296,23 +306,25 @@ int XLALREAL4VectorFFT( REAL4Vector *output, const REAL4Vector *input,
 int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
     const REAL4FFTPlan *plan )
 {
-  static const char *func = "XLALREAL4PowerSpectrum";
   COMPLEX8 *tmp;
   UINT4 k;
 
   if ( ! spec || ! data || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix  
+     if ( ! plan->plan || ! plan->size )
+  */
+  if (! plan->size )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! spec->data || ! data->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( data->length != plan->size || spec->length != plan->size/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* allocate temporary storage space */
   tmp = XLALMalloc( (plan->size/2 + 1) * sizeof( *tmp ) );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   /* Check for size 1 to avoid the CUDA bug */
   if( plan->size == 1 )
@@ -358,14 +370,13 @@ int XLALREAL4PowerSpectrum( REAL4Vector *spec, const REAL4Vector *data,
 
 REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 {
-  static const char *func = "XLALCreateREAL8FFTPlan";
   REAL8FFTPlan *plan;
   REAL8 *tmp1;
   REAL8 *tmp2;
   int flags = FFTW_UNALIGNED;
 
   if ( ! size )
-    XLAL_ERROR_NULL( func, XLAL_EBADLEN );
+    XLAL_ERROR_NULL( XLAL_EBADLEN );
 
   /* based on measurement level, set fftw3 flags to perform
    * requested degree of measurement */
@@ -394,7 +405,7 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
     XLALFree( plan );
     XLALFree( tmp1 );
     XLALFree( tmp2 );
-    XLAL_ERROR_NULL( func, XLAL_ENOMEM );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
@@ -409,11 +420,13 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
   XLALFree( tmp1 );
 
   /* check to see success of plan creation */
+  /* Plan=0 Bugfix
   if ( ! plan->plan )
   {
     XLALFree( plan );
-    XLAL_ERROR_NULL( func, XLAL_EFAILED );
+    XLAL_ERROR_NULL( XLAL_EFAILED );
   }
+  */
 
   /* now set remaining plan fields */
   plan->size = size;
@@ -425,36 +438,32 @@ REAL8FFTPlan * XLALCreateREAL8FFTPlan( UINT4 size, int fwdflg, int measurelvl )
 
 REAL8FFTPlan * XLALCreateForwardREAL8FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateForwardREAL8FFTPlan";
-
   REAL8FFTPlan *plan;
   plan = XLALCreateREAL8FFTPlan( size, 1, measurelvl );
   if ( ! plan )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return plan;
 }
 
 
 REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl )
 {
-  static const char *func = "XLALCreateReverseREAL8FFTPlan";
-
   REAL8FFTPlan *plan;
   plan = XLALCreateREAL8FFTPlan( size, 0, measurelvl );
   if ( ! plan )
-    XLAL_ERROR_NULL( func, XLAL_EFUNC );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   return plan;
 }
 
 
 void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
 {
-  static const char *func = "XLALDestroyREAL8FFTPlan";
-
   if ( ! plan )
-    XLAL_ERROR_VOID( func, XLAL_EFAULT );
-  if ( ! plan->plan )
-    XLAL_ERROR_VOID( func, XLAL_EINVAL );
+    XLAL_ERROR_VOID( XLAL_EFAULT );
+  /* Plan=0 Bugfix
+     if ( ! plan->plan )
+     XLAL_ERROR_VOID( XLAL_EINVAL );
+  */
   LAL_FFTW_PTHREAD_MUTEX_LOCK;
   fftw_destroy_plan( plan->plan );
   LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
@@ -467,23 +476,25 @@ void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan )
 int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
     const REAL8FFTPlan *plan )
 {
-  static const char *func = "XLALREAL8ForwardFFT";
   REAL8 *tmp;
   UINT4 k;
 
   if ( ! output || ! input || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size || plan->sign != -1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix
+    if ( ! plan->plan || ! plan->size || plan->sign != -1 )
+  */
+  if ( ! plan->size || plan->sign != -1 )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! output->data || ! input->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( input->length != plan->size || output->length != plan->size/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* create temporary storage space */
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   /* do the fft */
   fftw_execute_r2r( plan->plan, input->data, tmp );
@@ -516,27 +527,29 @@ int XLALREAL8ForwardFFT( COMPLEX16Vector *output, REAL8Vector *input,
 int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
     const REAL8FFTPlan *plan )
 {
-  static const char *func = "XLALREAL8ReverseFFT";
   REAL8 *tmp;
   UINT4 k;
 
   if ( ! output || ! input || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size || plan->sign != 1 )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix:
+     if ( ! plan->plan || ! plan->size || plan->sign != 1 )
+  */
+  if ( ! plan->size || plan->sign != 1 )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! output->data || ! input->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( output->length != plan->size || input->length != plan->size/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
   if ( input->data[0].im != 0.0 )
-    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of DC must be zero */
+    XLAL_ERROR( XLAL_EDOM );  /* imaginary part of DC must be zero */
   if ( ! plan->size % 2 && input->data[plan->size/2].im != 0.0 )
-    XLAL_ERROR( func, XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
+    XLAL_ERROR( XLAL_EDOM );  /* imaginary part of Nyquist must be zero */
 
   /* create temporary storage space */
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   /* unpack input into temporary array */
 
@@ -566,15 +579,17 @@ int XLALREAL8ReverseFFT( REAL8Vector *output, COMPLEX16Vector *input,
 int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
     const REAL8FFTPlan *plan )
 {
-  static const char *func="XLALREAL8VectorFFT";
   if ( ! output || ! input || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix
+     if ( ! plan->plan || ! plan->size )
+  */
+  if (! plan->size )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! output->data || ! input->data || output->data == input->data )
-    XLAL_ERROR( func, XLAL_EINVAL ); /* note: must be out-of-place */
+    XLAL_ERROR( XLAL_EINVAL ); /* note: must be out-of-place */
   if ( output->length != plan->size || input->length != plan->size )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* do the fft */
   fftw_execute_r2r( plan->plan, input->data, output->data );
@@ -585,23 +600,25 @@ int XLALREAL8VectorFFT( REAL8Vector *output, REAL8Vector *input,
 int XLALREAL8PowerSpectrum( REAL8Vector *spec, REAL8Vector *data,
     const REAL8FFTPlan *plan )
 {
-  static const char *func = "XLALREAL8PowerSpectrum";
   REAL8 *tmp;
   UINT4 k;
 
   if ( ! spec || ! data || ! plan )
-    XLAL_ERROR( func, XLAL_EFAULT );
-  if ( ! plan->plan || ! plan->size )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EFAULT );
+  /* Plan=0 Bugfix  
+     if ( ! plan->plan || ! plan->size )
+  */
+  if ( ! plan->size )
+    XLAL_ERROR( XLAL_EINVAL );
   if ( ! spec->data || ! data->data )
-    XLAL_ERROR( func, XLAL_EINVAL );
+    XLAL_ERROR( XLAL_EINVAL );
   if ( data->length != plan->size || spec->length != plan->size/2 + 1 )
-    XLAL_ERROR( func, XLAL_EBADLEN );
+    XLAL_ERROR( XLAL_EBADLEN );
 
   /* allocate temporary storage space */
   tmp = XLALMalloc( plan->size * sizeof( *tmp ) );
   if ( ! tmp )
-    XLAL_ERROR( func, XLAL_ENOMEM );
+    XLAL_ERROR( XLAL_ENOMEM );
 
   /* transform the data */
   fftw_execute_r2r( plan->plan, data->data, tmp );
@@ -650,7 +667,7 @@ LALCreateForwardREAL4FFTPlan(
     INT4          measure
     )
 {
-  INITSTATUS( status, "LALCreateForwardREAL4FFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateForwardREAL4FFTPlan", "XLALCreateForwardREAL4FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -688,7 +705,7 @@ LALCreateReverseREAL4FFTPlan(
     INT4          measure
     )
 {
-  INITSTATUS( status, "LALCreateReverseREAL4FFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateReverseREAL4FFTPlan", "XLALCreateReverseREAL4FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -724,7 +741,7 @@ LALDestroyREAL4FFTPlan(
     REAL4FFTPlan **plan
     )
 {
-  INITSTATUS( status, "LALDestroyREAL4FFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALDestroyREAL4FFTPlan", "XLALDestroyREAL4FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -757,7 +774,7 @@ LALForwardREAL4FFT(
 {
   int code;
   UINT4 n;
-  INITSTATUS( status, "LALForwardREAL4FFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALForwardREAL4FFT", "XLALForwardREAL4FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -766,7 +783,9 @@ LALForwardREAL4FFT(
 
   ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  */
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -820,7 +839,7 @@ LALReverseREAL4FFT(
 {
   int code;
   UINT4 n;
-  INITSTATUS( status, "LALReverseREAL4FFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALReverseREAL4FFT", "XLALReverseREAL4FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -829,7 +848,9 @@ LALReverseREAL4FFT(
 
   ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  */
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -889,7 +910,7 @@ LALREAL4PowerSpectrum (
   int code;
   UINT4 n;
 
-  INITSTATUS( status, "LALREAL4PowerSpectrum", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALREAL4PowerSpectrum", "XLALREAL4PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -898,7 +919,9 @@ LALREAL4PowerSpectrum (
 
   ASSERT( spec->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
   ASSERT( data->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  /* Plan=0 Bugfix
+    ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  */
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -944,7 +967,7 @@ LALREAL4VectorFFT(
     )
 {
   int code;
-  INITSTATUS( status, "LALREAL4VectorFFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALREAL4VectorFFT", "XLALREAL4VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -953,7 +976,9 @@ LALREAL4VectorFFT(
 
   ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  */
 
   /* make sure that it is not the same data! */
   ASSERT( output->data != input->data, status,
@@ -1012,7 +1037,7 @@ LALCreateForwardREAL8FFTPlan(
     INT4          measure
     )
 {
-  INITSTATUS( status, "LALCreateForwardREAL8FFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateForwardREAL8FFTPlan", "XLALCreateForwardREAL8FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1049,7 +1074,7 @@ LALCreateReverseREAL8FFTPlan(
     INT4          measure
     )
 {
-  INITSTATUS( status, "LALCreateReverseREAL8FFTPlan", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateReverseREAL8FFTPlan", "XLALCreateReverseREAL8FFTPlan");
 
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1084,7 +1109,7 @@ LALDestroyREAL8FFTPlan(
     REAL8FFTPlan **plan
     )
 {
-    INITSTATUS( status, "LALDestroyREAL8FFTPlan", REALFFTC );
+    INITSTATUS(status);
   XLALPrintDeprecationWarning("LALDestroyREAL8FFTPlan", "XLALDestroyREAL8FFTPlan");
   ASSERT( plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( *plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1117,7 +1142,7 @@ LALForwardREAL8FFT(
 {
   int code;
   UINT4 n;
-  INITSTATUS( status, "LALForwardREAL8FFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALForwardREAL8FFT", "XLALForwardREAL8FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1126,7 +1151,9 @@ LALForwardREAL8FFT(
 
   ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  */
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -1179,7 +1206,7 @@ LALReverseREAL8FFT(
 {
   int code;
   UINT4 n;
-  INITSTATUS( status, "LALReverseREAL8FFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALReverseREAL8FFT", "XLALReverseREAL8FFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1188,7 +1215,9 @@ LALReverseREAL8FFT(
 
   ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  */
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -1247,7 +1276,7 @@ LALREAL8PowerSpectrum (
   int code;
   UINT4 n;
 
-  INITSTATUS( status, "LALREAL8PowerSpectrum", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALREAL8PowerSpectrum", "XLALREAL8PowerSpectrum");
 
   ASSERT( spec, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1256,7 +1285,9 @@ LALREAL8PowerSpectrum (
 
   ASSERT( spec->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
   ASSERT( data->data, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
-  ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENNUL, REALFFTH_MSGENNUL );
+  */
 
   n = plan->size;
   ASSERT( n > 0, status, REALFFTH_ESIZE, REALFFTH_MSGESIZE );
@@ -1301,7 +1332,7 @@ LALREAL8VectorFFT(
     )
 {
   int code;
-  INITSTATUS( status, "LALREAL8VectorFFT", REALFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALREAL8VectorFFT", "XLALREAL8VectorFFT");
 
   ASSERT( output, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
@@ -1310,7 +1341,9 @@ LALREAL8VectorFFT(
 
   ASSERT( output->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
   ASSERT( input->data, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
-  ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  /* Plan=0 Bugfix
+     ASSERT( plan->plan, status, REALFFTH_ENULL, REALFFTH_MSGENULL );
+  */
 
   /* make sure that it is not the same data! */
   ASSERT( output->data != input->data, status,

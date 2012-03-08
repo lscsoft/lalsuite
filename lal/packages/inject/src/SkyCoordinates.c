@@ -26,8 +26,6 @@
 #define LAL_DELTAGAL (0.473477302)
 #define LAL_LGAL     (0.576)
 
-NRCSID( SKYCOORDINATESC, "$Id$" );
-
 /**
    \author Creighton, T. D.
    \addtogroup SkyCoordinates_c
@@ -88,7 +86,7 @@ LALConvertSkyCoordinates( LALStatus        *stat,
 {
   SkyPosition temp; /* temporary sky position (duh) */
 
-  INITSTATUS( stat, "LALConvertSkyCoordinates", SKYCOORDINATESC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structures exist. */
@@ -179,7 +177,7 @@ LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure *
 {
   SkyPosition tmp;	/* allow posOut == posIn */
 
-  INITSTATUS( stat, "NormalizeSkyPosition", SKYCOORDINATESC);
+  INITSTATUS(stat);
 
   ASSERT (posIn, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );
   ASSERT (posOut, stat, SKYCOORDINATESH_ENUL ,  SKYCOORDINATESH_MSGENUL );

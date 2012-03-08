@@ -1,5 +1,5 @@
 % deltaF = 0.125
-% $Name:  $
+% $Name$
 %  Frequency (Hz)         Amplitude (strain/ct)        Phase (rad)
 490.1250000	2.5436623e-15	1.4635746e+00
 490.2500000	2.5442236e-15	1.4640739e+00

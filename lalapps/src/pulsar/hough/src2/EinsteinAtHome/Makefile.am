@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-# $Id: Makefile.am,v 1.25 2009/06/11 20:55:22 bema Exp $
 
 # for using lalapps-defines + functions
 INCLUDES = -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated

@@ -19,7 +19,6 @@
 
 /********************************** <lalVerbatim file="StringTokenCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -90,8 +89,6 @@ LALFree()                       LALCHARDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
 
-NRCSID( STRINGTOKENC, "$Id$" );
-
 /* <lalVerbatim file="StringTokenCP"> */
 void
 LALCreateTokenList( LALStatus  *stat,
@@ -106,7 +103,7 @@ LALCreateTokenList( LALStatus  *stat,
   UINT4 tLength = 0;     /* length of token list */
   CHAR *copy;            /* working copy of token list */
 
-  INITSTATUS( stat, "LALCreateTokenList", STRINGTOKENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -282,7 +279,7 @@ void
 LALDestroyTokenList( LALStatus *stat,
 		     TokenList **list )
 { /* </lalVerbatim> */
-  INITSTATUS( stat, "LALCreateTokenList", STRINGTOKENC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -302,22 +299,14 @@ LALDestroyTokenList( LALStatus *stat,
 }
 
 
-/* <lalVerbatim file="StringTokenCP"> */
-int
-XLALDestroyTokenList( TokenList **list )
-{ /* </lalVerbatim> */
-  /* Check for valid input arguments. */
-  if ( !list || !*list ) {
-    fprintf(stderr, STRINGINPUTH_MSGENUL);
-    return STRINGINPUTH_ENUL;
-  }
+void
+XLALDestroyTokenList( TokenList *list )
+{
   /* Free everything and exit. */
-  if ( (*list)->list )
-    XLALDestroyCHARVector( (*list)->list );
-
-  LALFree( (*list)->tokens );
-  LALFree( *list );
-  *list = NULL;
-
-  return 0;
+  if ( list ) {
+    if ( list->list )
+      XLALDestroyCHARVector( list->list );
+    XLALFree( list->tokens );
+    XLALFree( list );
+  }
 }

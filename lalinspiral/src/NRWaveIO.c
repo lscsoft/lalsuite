@@ -23,7 +23,6 @@
  *
  *  \brief Functions for reading/writing numerical relativity waveforms
  *
- * $Id$
  *
  */
 
@@ -31,10 +30,6 @@
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
-
-NRCSID( NRWAVEIOC, "$Id$");
-
-
 
 /** Functionfor reading the numrel waveform -- just returns the numrel
     data as it is without any rescaling of time or amplitude */
@@ -51,7 +46,7 @@ void LALReadNRWave_raw(LALStatus *status,	/**< pointer to LALStatus structure */
   LALParsedDataFile *cfgdata=NULL;
   REAL4 tmp1, tmp2, tmp3;
 
-  INITSTATUS (status, "LALReadNRWave_raw", NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* some consistency checks */
@@ -128,7 +123,7 @@ void LALReadNRWave_raw_real8(LALStatus *status,	/**< pointer to LALStatus struct
   LALParsedDataFile *cfgdata=NULL;
   REAL8 tmp1, tmp2, tmp3;
 
-  INITSTATUS (status, "LALReadNRWave_raw_real8", NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* some consistency checks */
@@ -210,7 +205,7 @@ void LALReadNRWave(LALStatus *status,		/**< pointer to LALStatus structure */
   LALParsedDataFile *cfgdata=NULL;
   REAL4 tmp1, tmp2, tmp3;
 
-  INITSTATUS (status, "LALReadNRWave", NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* some consistency checks */
@@ -293,7 +288,7 @@ LALNRDataFind( LALStatus *status,   /**< pointer to LALStatus structure */
   LALParsedDataFile *cfgdata=NULL;
   UINT4 k, numWaves;
 
-  INITSTATUS (status, "LALNRDataFind", NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (filename != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
@@ -335,7 +330,7 @@ LALGetSingleNRMetaData( LALStatus       *status, /**< pointer to LALStatus struc
   INT4 test;
   CHAR tmpStr[512];
 
-  INITSTATUS (status, "LALGetSingleNRMetaData", NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (cfgstr != NULL, status, NRWAVEIO_ENULL, NRWAVEIO_MSGENULL );
@@ -392,7 +387,7 @@ LALAddStrainModes(
   REAL4TimeVectorSeries *tempStrain=NULL;
   NRWaveMetaData thisMetaData;
 
-  INITSTATUS (status, "LALAddStrainModes", NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* loop over l values */
@@ -464,7 +459,7 @@ void LALDriveNRInject( LALStatus *status,	/**< pointer to LALStatus structure */
   REAL4TimeVectorSeries *sumStrain = NULL;
   SimInspiralTable *thisInj    = NULL;   /* current injection */
 
-  INITSTATUS (status, "LALDriveNRInject",  NRWAVEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* loop over injections */

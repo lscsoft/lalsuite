@@ -30,9 +30,6 @@
 #include <lal/ComputeSky.h>
 #include <gsl/gsl_cdf.h>
 
-RCSID( "$Id$");
-
-
 extern INT4 lalDebugLevel;
 
 /* defaults */
@@ -60,8 +57,6 @@ extern INT4 lalDebugLevel;
 #define FILEOUT "./ValidateAMOut"   
 #define TRUE (1==1)
 #define FALSE (1==0)
-
-NRCSID (HOUGHMISMATCHC, "$Id$");
 
 int main( int argc, char *argv[]){
 
@@ -110,7 +105,7 @@ int main( int argc, char *argv[]){
   REAL8  tSamplingRate;
 
   /* grid spacings */
-  REAL8 deltaTheta, deltaFdot;
+  REAL8 deltaTheta;
   INT4 mmP, mmT; /* for loop over mismatched templates */
 
   /* user input variables */
@@ -128,8 +123,6 @@ int main( int argc, char *argv[]){
 
   /* vector of weights */
   REAL8Vector *weight;
-
-  int rc;
 
   /*  set up the default parameters  */
   lalDebugLevel = 0;
@@ -228,9 +221,10 @@ int main( int argc, char *argv[]){
     fclose (fpLog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-    rc = system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
+    /* we don't check this. If it fails, we assume that */
+    /* one of the system-commands was not available, and */
+    /* therefore the CVS-versions will not be logged */
+    if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
 
     LALFree(fnamelog); 
   }
@@ -457,13 +451,8 @@ int main( int argc, char *argv[]){
   /* *********************************************************************** */
   /* set grid spacings */
   {
-    REAL8 vel2;
-
-    /* use start velocity to set delta Theta */    
-    vel2 = velV.data[0].x * velV.data[0].x + velV.data[0].y * velV.data[0].y + velV.data[0].z * velV.data[0].z;
-    
     deltaTheta = 1.0 / ( VTOT * uvar_f0 * timeBase );
-    deltaFdot = deltaF / timeBase;
+    /* currently unused: REAL8 deltaFdot = deltaF / timeBase; */
   }
 
   /* *********************************************************************** */
@@ -678,7 +667,7 @@ void ComputeFoft(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", HOUGHMISMATCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

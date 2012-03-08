@@ -113,7 +113,7 @@ void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 {
   ATYPE *tmparr = NULL;
 
-  INITSTATUS (status, STRING(FUNC), ARRAYFACTORIESC);
+  INITSTATUS(status);
 
   ASSERT ( array != NULL, status, AVFACTORIESH_EVPTR, AVFACTORIESH_MSGEVPTR );
 

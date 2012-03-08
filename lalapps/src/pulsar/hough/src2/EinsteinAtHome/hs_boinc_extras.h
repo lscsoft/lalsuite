@@ -28,14 +28,11 @@
 #include "boinc/filesys.h"
 
 #include <lal/LALError.h>
-#include <lal/LALRCSID.h>
 #ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
 #include "../HoughFStatToplist.h"
 #else
 #include "GCTtoplist.h"
 #endif
-
-#define HSBOINCEXTRASHRCSID "$Id$"
 
 #ifndef EAH_LOGLEVEL
 #define EAH_LOGLEVEL 1        /* LOG_DEBUG */
@@ -79,6 +76,17 @@ extern "C" {
 /* use platform-specific optimized ComputeFStatFreqBand and ComputeFstatHoughMap functions */
 #define COMPUTEFSTATHOUGHMAP LocalComputeFstatHoughMap
 #define COMPUTEFSTATFREQBAND LocalComputeFStatFreqBand
+#define COMPUTEFSTAT LocalComputeFStat
+
+extern void
+LocalComputeFStat ( LALStatus *status,
+		    Fcomponents *Fstat,
+		    const PulsarDopplerParams *doppler,
+		    const MultiSFTVector *multiSFTs,
+		    const MultiNoiseWeights *multiWeights,
+		    const MultiDetectorStateSeries *multiDetStates,
+		    const ComputeFParams *params,
+		    ComputeFBuffer *cfBuffer);
 
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status, 

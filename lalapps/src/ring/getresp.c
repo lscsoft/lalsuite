@@ -20,6 +20,7 @@
 #include <math.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
@@ -34,8 +35,6 @@
 #include "getresp.h"
 #include "errutil.h"
 #include "gpstime.h"
-
-RCSID( "$Id$" );
 
 /* a few useful constants */
 static LALUnit      strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};

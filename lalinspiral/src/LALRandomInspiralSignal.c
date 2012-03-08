@@ -179,10 +179,6 @@ static void GenerateRandomSkyPositionAndPolarisation (
         RandomInspiralSignalIn *randIn
         );
 
-NRCSID (LALRANDOMINSPIRALSIGNALC, "$Id$");
-
-
-
 void LALRandomInspiralSignal
 (
  LALStatus              *status,
@@ -201,7 +197,7 @@ void LALRandomInspiralSignal
     static RandomParams     *randomparams;
     InspiralWaveNormaliseIn normin;
 
-    INITSTATUS (status, "LALRandomInspiralSignal", LALRANDOMINSPIRALSIGNALC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     ASSERT (signalvec->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);
@@ -725,7 +721,7 @@ static void GenerateRandomSkyPositionAndPolarisation (
     REAL8 u;
     REAL8 cosThetaMin, cosThetaMax;
 
-    INITSTATUS (status, "GenerateRandomSkyPositionAndPolarisation", LALRANDOMINSPIRALSIGNALC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     ASSERT (randIn->sourceThetaMin <= randIn->sourceThetaMax ,
@@ -773,7 +769,7 @@ static void GenerateRandomSpinTaylorParameters (
 {
     REAL8 u;
 
-    INITSTATUS (status, "GenerateRandomSpinTaylorParameters", LALRANDOMINSPIRALSIGNALC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     /* Setting spin 1 */
@@ -866,7 +862,7 @@ void GenerateTimeDomainWaveformForInjection (
     PPNParamStruc       ppnParams;
     INT4                nStartPad = 0;
 
-    INITSTATUS (status, "GenerateTimeDomainWaveformForInjection", LALRANDOMINSPIRALSIGNALC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
 

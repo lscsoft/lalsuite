@@ -37,8 +37,6 @@ extern "C"
 {
 #endif
 
-NRCSID( DETRESPONSEH, "$Id$" );
-
 /**
 \author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
 \addtogroup DetResponse_h

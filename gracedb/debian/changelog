@@ -1,3 +1,9 @@
+ligo-gracedb (1.1-1) unstable; urgency=low
+
+  * Bug Fix.
+
+ -- Brian Moe <brian.moe@ligo.org>  Sun, 22 Jan 2012 09:50:26 -0600
+
 ligo-gracedb (1.0-3) unstable; urgency=low
 
   * Made lib from gracedb script.

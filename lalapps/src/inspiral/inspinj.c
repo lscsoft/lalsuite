@@ -25,7 +25,6 @@
  *
  * Author: Brown, D. A., Creighton, J. D. E. and Dietz A. IPN contributions from Predoi, V.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -48,8 +47,6 @@
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
-
-RCSID( "$Id$" );
 
 #define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"
@@ -182,7 +179,7 @@ REAL4 deltaMass1=-1;
 REAL4 deltaMass2=-1;
 INT4 bandPassInj = 0;
 INT4 writeSimRing = 0;
-InspiralApplyTaper taperInj = INSPIRAL_TAPER_NONE;
+LALSimInspiralApplyTaper taperInj = LAL_SIM_INSPIRAL_TAPER_NONE;
 AlignmentType alignInj = notAligned;
 REAL8 redshift;
 
@@ -551,6 +548,7 @@ static void print_usage(char *program)
       "  --d-distr distDist       set the distance distribution of injections\n"\
       "                           source: take distance from galaxy source file\n"\
       "                           uniform: uniform distribution in distance\n"\
+      "                           distancesquared: uniform distribution in distance^2\n"\
       "                           log10: uniform distribution in log10(d) \n"\
       "                           volume: uniform distribution in volume\n"\
       "                           sfr: distribution derived from the SFR\n"\
@@ -1963,6 +1961,10 @@ int main( int argc, char *argv[] )
         {
           dDistr=uniformDistance;
         }
+        else if (!strcmp(dummy, "distancesquared"))
+        {
+          dDistr=uniformDistanceSquared;
+        }
         else if (!strcmp(dummy, "log10"))
         {
           dDistr=uniformLogDistance;
@@ -1979,7 +1981,7 @@ int main( int argc, char *argv[] )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
               "unknown source distribution: "
-              "%s, must be one of (uniform, log10, volume, source)\n",
+              "%s, must be one of (uniform, distancesquared, log10, volume, source, sfr)\n",
               long_options[option_index].name, optarg );
           exit( 1 );
         }
@@ -2284,15 +2286,15 @@ int main( int argc, char *argv[] )
         /* Set injection tapering */
         if ( ! strcmp( "start", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_START;
+            taperInj = LAL_SIM_INSPIRAL_TAPER_START;
         }
         else if ( ! strcmp( "end", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_END;
+            taperInj = LAL_SIM_INSPIRAL_TAPER_END;
         }
         else if ( ! strcmp( "startend", optarg ) )
         {
-            taperInj = INSPIRAL_TAPER_STARTEND;
+            taperInj = LAL_SIM_INSPIRAL_TAPER_STARTEND;
         }
         else
         {
@@ -3090,20 +3092,20 @@ int main( int argc, char *argv[] )
     {
         switch (taperInj)
         {
-            case INSPIRAL_TAPER_NONE:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+            case LAL_SIM_INSPIRAL_TAPER_NONE:
+                 snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_NONE");
                  break;
-            case INSPIRAL_TAPER_START:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+            case LAL_SIM_INSPIRAL_TAPER_START:
+                 snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_START");
                  break;
-            case INSPIRAL_TAPER_END:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+            case LAL_SIM_INSPIRAL_TAPER_END:
+                 snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_END");
                  break;
-            case INSPIRAL_TAPER_STARTEND:
-                 snprintf( simTable->taper, LIGOMETA_WAVEFORM_MAX,
+            case LAL_SIM_INSPIRAL_TAPER_STARTEND:
+                 snprintf( simTable->taper, LIGOMETA_INSPIRALTAPER_MAX,
                          "%s", "TAPER_STARTEND");
                  break;
             default: /* Never reach here */
@@ -3123,7 +3125,7 @@ int main( int argc, char *argv[] )
        memcpy( simRingTable->waveform, "Ringdown",
           sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
        memcpy( simRingTable->coordinates, "EQUATORIAL",
-          sizeof(CHAR) * LIGOMETA_WAVEFORM_MAX );
+          sizeof(CHAR) * LIGOMETA_COORDINATES_MAX );
        simRingTable->geocent_start_time = simTable->geocent_end_time;
        simRingTable->h_start_time = simTable->h_end_time;
        simRingTable->l_start_time = simTable->l_end_time;

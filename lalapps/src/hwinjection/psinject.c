@@ -71,9 +71,6 @@
 /* sample rate of output */
 #define SRATE 16384
 
-/* Give 'ident' something to recognize in the executable */
-const char *cvsid="$Id$";
-
 /* Flag to initiate graceful shutdown, set by sighandler */
 volatile int shutdown_pulsar_injection = 0;
 int npulsars=0;
@@ -628,7 +625,6 @@ int main(int argc, char *argv[]){
 	   the fractional part [0,1) and _int refers to the integer
 	   part. */
 
-	int    dt_int;
 	double dt_fra;
 
 	/*  Avoid long longs in inner loop as they are slow. */
@@ -646,7 +642,7 @@ int main(int argc, char *argv[]){
 	t_rem   -= t_int*SRATE;
 	t_int   += tdelt;
 
-	dt_int   = t_int;
+	// unused: int dt_int   = t_int;
 	dt_fra   = t_rem;
 	dt_fra  /= SRATE;
 

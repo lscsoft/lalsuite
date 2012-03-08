@@ -85,13 +85,13 @@
 
 /** \cond DONT_DOXYGEN */
 #include <math.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #define LAL_USE_COMPLEX_SHORT_MACROS 1
 #include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/VectorOps.h>
 
-NRCSID (VECTORPOLARC, "$Id$");
 /** \endcond */
 
 /** computes the magnitudes of a vector of complex numbers */
@@ -217,7 +217,7 @@ LALCVectorAbs(
     const COMPLEX8Vector *in
     )
 {
-  INITSTATUS (status, "LALCVectorAbs", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -248,7 +248,7 @@ LALZVectorAbs(
     const COMPLEX16Vector *in
     )
 {
-  INITSTATUS (status, "LALZVectorAbs", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -279,7 +279,7 @@ LALCVectorAngle (
     const COMPLEX8Vector *in
     )
 {
-  INITSTATUS (status, "LALCVectorAngle", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -310,7 +310,7 @@ LALZVectorAngle (
     const COMPLEX16Vector  *in
     )
 {
-  INITSTATUS (status, "LALZVectorAngle", VECTORPOLARC);
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -340,7 +340,7 @@ LALUnwrapREAL4Angle (
     const REAL4Vector    *in
     )
 {
-  INITSTATUS (status, "LALUnwrapREAL4Angle", VECTORPOLARC );
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -373,7 +373,7 @@ LALUnwrapREAL8Angle (
     const REAL8Vector    *in
     )
 {
-  INITSTATUS (status, "LALUnwrapREAL8Angle", VECTORPOLARC );
+  INITSTATUS(status);
 
   /* Make sure the arguments are not NULL: */
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);

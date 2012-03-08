@@ -21,13 +21,10 @@
 #define _FFTWMUTEX_H
 
 #include <lal/LALConfig.h>
-#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( FFTWMUTEXH, "$Id$" );
 
 #ifdef LAL_PTHREAD_LOCK
 # include <pthread.h>

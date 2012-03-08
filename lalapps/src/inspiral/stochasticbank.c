@@ -23,7 +23,6 @@
  *
  * Author: Keppel, D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -41,6 +40,7 @@
 #include <time.h>
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -66,7 +66,6 @@
 #include "inspiral.h"
 #include <LALAppsVCSInfo.h>
 
-RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"

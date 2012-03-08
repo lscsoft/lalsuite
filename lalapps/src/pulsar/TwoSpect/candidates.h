@@ -24,6 +24,7 @@
 
 candidateVector * new_candidateVector(UINT4 length);
 candidateVector * resize_candidateVector(candidateVector *vector, UINT4 length);
+candidateVector * keepMostSignificantCandidates(candidateVector *input, inputParamsStruct *params);
 void free_candidateVector(candidateVector *vector);
 
 void loadCandidateData(candidate* output, REAL8 fsig, REAL8 period, REAL8 moddepth, REAL4 ra, REAL4 dec, REAL8 stat, REAL8 h0, REAL8 prob, INT4 proberrcode, REAL8 normalization);

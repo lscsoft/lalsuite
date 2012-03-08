@@ -133,10 +133,6 @@ m_{2} \geq \mathtt{mMin}
 #include <lal/LALInspiralBank.h>
 #include <stdio.h>
 
-NRCSID (LALINSPIRALVALIDPARAMSC, "$Id$");
-
-
-
 void LALInspiralValidParams(
     LALStatus            *status,
     INT4                 *valid,
@@ -148,7 +144,7 @@ void LALInspiralValidParams(
 
   InspiralTemplate *Pars=NULL;
 
-  INITSTATUS( status, "LALInspiralValidParams", LALINSPIRALVALIDPARAMSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.fLower > 0.L, status,

@@ -1,18 +1,23 @@
 #!/bin/bash
 
-NORESAMP="1"
+#NORESAMP="1"
 #NOCLEANUP="1"
-#SEPIFOVETO="1"
+#DEBUG=1
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-    fdsdir="../FDS_isolated/"
-else
-    srcdir=.
-fi
-dirsep=/
+## make sure we work in 'C' locale here to avoid awk sillyness
+LC_ALL_old=$LC_ALL
+export LC_ALL=C
+
+# The only thing where 'dirsep' can and should be used is in paths of the SFT files,
+# as in fact SFTfileIO is the only code that requires it to be set properly. Other
+# file references should be handled by the shell (or wine) and converted if necessary.
+dirsep="/"
+
+builddir="./";
+injectdir="../Injections/"
+fdsdir="../FDS_isolated/"
+
+
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     builddir="./";
     injectdir="$1 ./"
@@ -20,17 +25,8 @@ if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     dirsep='\'
 fi
 
-##---------- names of codes and input/output files
-mfd_code="${injectdir}lalapps_Makefakedata_v4"
-pfs_code="${fdsdir}lalapps_PredictFStat"
-if test $# -eq 0 ; then
-    gct_code="${builddir}lalapps_HierarchSearchGCT"
-else
-    gct_code="$@"
-fi
-
-SFTdir="TestSFTs"
-SFTfiles="$SFTdir${dirsep}*.sft"
+edat="earth05-09.dat"
+sdat="sun05-09.dat"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
@@ -46,92 +42,123 @@ if [ -z "$LAL_DATA_PATH" ]; then
     fi
 fi
 
+##---------- names of codes and input/output files
+mfd_code="${injectdir}lalapps_Makefakedata_v4"
+cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
+if test $# -eq 0 ; then
+    gct_code="${builddir}lalapps_HierarchSearchGCT"
+else
+    gct_code="$@"
+fi
+
+testDirBase="testHS_dir"
+testDir="./${testDirBase}";
+if [ ! -d "$testDir" ]; then
+    mkdir -p "$testDir"
+fi
+
+SFTdir="${testDirBase}"
+SFTfiles="$SFTdir${dirsep}*.sft"
+SFTfiles_H1="$SFTdir${dirsep}H1-*.sft"
+SFTfiles_L1="$SFTdir${dirsep}L1-*.sft"
 
 ## Tolerance of comparison
-Tolerance="0.05"
+Tolerance=5e-2	## 5%
 
 ## ---------- fixed parameter of our test-signal -------------
-Alpha="3.1"
-Delta="-0.5"
-h0="1.0"
-cosi="-0.3"
-psi="0.6"
-phi0="1.5"
-Freq="100.123456789"
-f1dot="-1e-9"
+Alpha=3.1
+Delta=-0.5
+h0=1.0
+cosi=-0.3
+psi=0.6
+phi0=1.5
+Freq=100.123456789
+f1dot=-1e-9
 
+## perfectly targeted search in sky
 AlphaSearch=$Alpha
 DeltaSearch=$Delta
 
 ## Produce skygrid file for the search
-skygridfile="tmpskygridfile.dat"
-echo $AlphaSearch" "$DeltaSearch > $skygridfile
+skygridfile="${testDir}/tmpskygridfile.dat"
+echo "$AlphaSearch $DeltaSearch" > $skygridfile
 
 mfd_FreqBand=0.20;
 mfd_fmin=100;
 numFreqBands=4;	## produce 'frequency-split' SFTs used in E@H
 
-gct_FreqBand="0.01"
-gct_F1dotBand="2.0e-10"
-gct_dFreq="0.000002" #"2.0e-6"
-gct_dF1dot="1.0e-10"
-gct_nCands="1000"
+Dterms=8
+RngMedWindow=50
 
-noiseSqrtSh="0"
+gct_FreqBand=0.01
+gct_F1dotBand=2.0e-10
+gct_dFreq=0.000002 #"2.0e-6"
+gct_dF1dot=1.0e-10
+gct_nCands=1000
+
+sqrtSh=1
 
 ## --------- Generate fake data set time stamps -------------
 echo "----------------------------------------------------------------------"
-echo " STEP 0: Generating fake data time-stamps file "
+echo " STEP 0: Generating time-stamps and segments files "
 echo "----------------------------------------------------------------------"
 echo
 
-Tsft="1800"
-startTime="852443819"
-refTime="862999869"
-Tsegment="90000"
-Nsegments="14"
-seggap=$(echo "scale=0; ${Tsegment} * 1.12345" | bc)
-tsfile="timestampsTEST.txt"
-segFile="segments.txt"
-rm -rf $tsfile $segFile
-tmpTime=$startTime
-ic1="1"
-while [ "$ic1" -le "$Nsegments" ];
-do
-    t0=$tmpTime
-    t1=`echo $t0 $Tsegment | LC_ALL=C awk '{print $1 + $2}'`
-    TspanHours=`echo $Tsegment | LC_ALL=C awk '{printf "%.7f", $1 / 3600.0 }'`
-    NSFT=`echo $Tsegment $Tsft | LC_ALL=C awk '{print int(2.0 * $1 / $2 + 0.5) }'`
-    echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
-    segs[${ic1}]=$tmpTime # save seg's beginning for later use
-    echo "Segment: "$ic1" of "$Nsegments"   GPS start time: "${segs[${ic1}]}
+Tsft=1800
+startTime=852443819
+refTime=862999869
+Tsegment=90000
+Nsegments=14
 
-    ic2=$Tsft
-    while [ "$ic2" -le "$Tsegment" ];
-    do
-	echo ${tmpTime}" 0" >> $tsfile
-	tmpTime=$(echo "scale=0; ${tmpTime} + ${Tsft}" | bc)
-	ic2=$(echo "scale=0; ${ic2} + ${Tsft}" | bc)
-    done
+seggap=$(echo ${Tsegment} | awk '{printf "%.0f", $1 * 1.12345}')
 
-    tmpTime=$(echo "scale=0; ${tmpTime} + ${seggap}" | bc | LC_ALL=C awk '{printf "%.0f",$1}')
-    ic1=$(echo "scale=0; ${ic1} + 1" | bc)
-done
+tsFile_H1="${testDir}/timestampsH1.dat"  # for makefakedata
+tsFile_L1="${testDir}/timestampsL1.dat"  # for makefakedata
+segFile="${testDir}/segments.dat"
 
-## ------------------------------------------------------------
-
-if [ "$noiseSqrtSh" != 0 ]; then
-    sqrtSh=$noiseSqrtSh
-    haveNoise=true;
-else
-    sqrtSh=1;	## for SemiAnalyticF signal-only case
-    haveNoise=false;
+if [ -r "$tsFile_H1" -a -r "$tsFile_L1" -a -r "$segFile" ]; then
+    reuseSegFiles=true
+    echo "Reusing '$tsFile_H1', '$tsFile_L1' and '$segFile'"
+    echo
 fi
 
+tmpTime=$startTime
+iSeg=1
+while [ $iSeg -le $Nsegments ]; do
+    t0=$tmpTime
+    ## only write segment-file if we can re-use from previous runs
+    if [ "$reuseSegFiles" != "true" ]; then
+        t1=$(($t0 + $Tsegment))
+        TspanHours=`echo $Tsegment | awk '{printf "%.7f", $1 / 3600.0 }'`
+        ## first and last segment will be single-IFO only
+        if [ $iSeg -eq 1 -o $iSeg -eq $Nsegments ]; then
+            NSFT=`echo $Tsegment $Tsft |  awk '{print int(1.0 * $1 / $2 + 0.5) }'`
+        else	## while all other segments are 2-IFO
+            NSFT=`echo $Tsegment $Tsft |  awk '{print int(2.0 * $1 / $2 + 0.5) }'`
+        fi
+        echo "$t0 $t1 $TspanHours $NSFT" >> $segFile
+    fi
+    segs[$iSeg]=$tmpTime # save seg's beginning for later use
+    echo "Segment: $iSeg of $Nsegments	GPS start time: ${segs[$iSeg]}"
 
-##--------------------------------------------------
-## test starts here
-##--------------------------------------------------
+    Tseg=$Tsft
+    while [ $Tseg -le $Tsegment ]; do
+        ## only write timestamps-file if it is not found already
+        if [ "$reuseSegFiles" != "true" ]; then	            ## we skip segment 1 for H1
+            if [ $iSeg -ne 1 ]; then
+	        echo "${tmpTime} 0" >> $tsFile_H1
+            fi
+            if [ $iSeg -ne $Nsegments ]; then	            ## we skip segment N for L1
+	        echo "${tmpTime} 0" >> $tsFile_L1
+            fi
+        fi
+	tmpTime=$(($tmpTime + $Tsft))
+	Tseg=$(($Tseg + $Tsft))
+    done
+
+    tmpTime=$(($tmpTime + $seggap))
+    iSeg=$(($iSeg + 1))
+done
 
 echo
 echo "----------------------------------------------------------------------"
@@ -140,37 +167,56 @@ echo "----------------------------------------------------------------------"
 echo
 if [ ! -d "$SFTdir" ]; then
     mkdir -p $SFTdir;
-else
-    rm -f $SFTdir/*;
 fi
 
-FreqStep=`echo $mfd_FreqBand $numFreqBands | LC_ALL=C awk '{print $1 / $2}'`
-mfd_fBand=`echo $FreqStep $Tsft | LC_ALL=C awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
+FreqStep=`echo $mfd_FreqBand $numFreqBands |  awk '{print $1 / $2}'`
+mfd_fBand=`echo $FreqStep $Tsft |  awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
+
+# construct common MFD cmd
+mfd_CL_common="--Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
+
+if [ "$sqrtSh" != "0" ]; then
+    mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
+fi
+
 iFreq=1
-while [ "$iFreq" -le "$numFreqBands" ]; do
-    mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | LC_ALL=C awk '{print $1 + ($2 - 1) * $3}'`
-
-    # construct common MFD cmd
-    mfd_CL_common=" --fmin=$mfd_fi --Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --timestampsFile=$tsfile --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
-
-    if [ "$haveNoise" = true ]; then
-        mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
-    fi
+while [ $iFreq -le $numFreqBands ]; do
+    mfd_fi=`echo $mfd_fmin $iFreq $FreqStep | awk '{print $1 + ($2 - 1) * $3}'`
 
     # for H1:
-    cmdline="$mfd_code $mfd_CL_common --IFO=H1 --outSFTbname=${SFTdir}\\${dirsep}H1-${mfd_fi}_${FreqStep}.sft";
-    echo "$cmdline";
-    if ! eval "$cmdline"; then
-        echo "Error.. something failed when running '$mfd_code' ..."
-        exit 1
+    SFTname="${SFTdir}/H1-${mfd_fi}_${FreqStep}.sft"
+    if [ ! -r $SFTname ]; then
+        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=H1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_H1'"
+        if [ -n "$DEBUG" ]; then
+            cmdline="$cmdline -v1"
+        else
+            cmdline="$cmdline -v0 &> /dev/null"
+        fi
+        echo "$cmdline";
+        if ! eval "$cmdline"; then
+            echo "Error.. something failed when running '$mfd_code' ..."
+            exit 1
+        fi
+    else
+        echo "SFT '$SFTname' exists already ... reusing it"
     fi
 
     # for L1:
-    cmdline="$mfd_code $mfd_CL_common --IFO=L1 --outSFTbname=${SFTdir}\\${dirsep}L1-${mfd_fi}_${FreqStep}.sft";
-    echo "$cmdline";
-    if ! eval "$cmdline"; then
-        echo "Error.. something failed when running '$mfd_code' ..."
-        exit 1
+    SFTname="${SFTdir}/L1-${mfd_fi}_${FreqStep}.sft"
+    if [ ! -r $SFTname ]; then
+        cmdline="$mfd_code $mfd_CL_common --fmin=$mfd_fi --IFO=L1 --outSFTbname='$SFTname' --timestampsFile='$tsFile_L1'";
+        if [ -n "$DEBUG" ]; then
+            cmdline="$cmdline -v1"
+        else
+            cmdline="$cmdline -v0 &> /dev/null"
+        fi
+        echo "$cmdline";
+        if ! eval "$cmdline"; then
+            echo "Error.. something failed when running '$mfd_code' ..."
+            exit 1
+        fi
+    else
+        echo "SFT '$SFTname' exists already ... reusing it"
     fi
 
     iFreq=$(( $iFreq + 1 ))
@@ -180,114 +226,107 @@ done
 
 echo
 echo "----------------------------------------------------------------------"
-echo "STEP 2: run PredictFstat (perfect match) "
+echo "STEP 2: run CFSv2 over segments"
 echo "----------------------------------------------------------------------"
 echo
+outfile_cfs="${testDir}/CFS.dat";
 
-
-TwoFsum="0"
-TwoFsum1="0"
-TwoFsum2="0"
-
-for ((x=1; x <= $Nsegments; x++))
-  do
-    outfile_pfs="__tmp_PFS.dat";
-
-    startGPS=${segs[${x}]}
-    endGPS=$(echo "scale=0; ${startGPS} + ${Tsegment}" | bc | awk '{printf "%.0f",$1}')
-    #echo "Segment: "$x"  "$startGPS" "$endGPS
-    # construct pfs cmd
-    pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='$SFTfiles' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
-    if [ "$haveNoise" = false ]; then
-        pfs_CL="$pfs_CL --SignalOnly";
+if [ ! -r "$outfile_cfs" ]; then
+    tmpfile_cfs="${testDir}/__tmp_CFS.dat";
+    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --outputLoudest=$tmpfile_cfs --ephemYear=05-09 --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --outputSingleFstats "
+    if [ "$sqrtSh" = "0" ]; then
+        cfs_CL_common="$cfs_CL_common --SignalOnly";
     fi
 
-    cmdline="$pfs_code $pfs_CL"
-    echo "  "$cmdline
-    if ! tmp=`eval $cmdline`; then
-	echo "Error.. something failed when running '$pfs_code' ..."
-	exit 1
-    fi
-    resPFS=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
-    #resPFS=`echo $tmp | awk '{printf "%g", $1}'`
-    TwoFsum=$(echo "scale=6; ${TwoFsum} + ${resPFS}" | bc);
+    TwoFsum=0
+    TwoFsum_L1=0
+    TwoFsum_H1=0
 
-    if [ -n "$SEPIFOVETO" ]; then
-	# H1 only
-	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}H1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
-        if [ "$haveNoise" = false ]; then
-            pfs_CL="$pfs_CL --SignalOnly";
-        fi
-	cmdline="$pfs_code $pfs_CL"
-	echo "  "$cmdline
-	if ! tmp=`eval $cmdline`; then
-            echo "Error.. something failed when running '$pfs_code' ..."
-            exit 1
-	fi
-	resPFS1=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
-	TwoFsum1=$(echo "scale=6; ${TwoFsum1} + ${resPFS1}" | bc);
+    for ((iSeg=1; iSeg <= $Nsegments; iSeg++)); do
+        startGPS=${segs[$iSeg]}
+        endGPS=$(($startGPS + $Tsegment))
+        cfs_CL="$cfs_code $cfs_CL_common --minStartTime=$startGPS --maxEndTime=$endGPS"
 
-	# L1 only
-	pfs_CL=" --Alpha=$Alpha --Delta=$Delta --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0 --Freq=$Freq --DataFiles='${SFTfiles}L1*' --outputFstat=$outfile_pfs --ephemYear=05-09 --minStartTime=$startGPS --maxEndTime=$endGPS"
-        if [ "$haveNoise" = false ]; then
-            pfs_CL="$pfs_CL --SignalOnly";
+        # ----- get multi-IFO + single-IFO F-stat values
+        cmdline="$cfs_CL --DataFiles='$SFTfiles'"
+        if [ -n "$DEBUG" ]; then
+            cmdline="$cmdline -v1"
+        else
+            cmdline="$cmdline -v0 &> /dev/null"
         fi
-        cmdline="$pfs_code $pfs_CL"
-        echo "  "$cmdline
-        if ! tmp=`eval $cmdline`; then
-            echo "Error.. something failed when running '$pfs_code' ..."
+        echo "$cmdline"
+        if ! eval "$cmdline"; then
+	    echo "Error.. something failed when running '$cfs_code' ..."
 	    exit 1
         fi
-        resPFS2=$(cat ${outfile_pfs} | grep 'twoF_expected' | awk -F';' '{print $1}' | awk '{print $3}')
-        TwoFsum2=$(echo "scale=6; ${TwoFsum2} + ${resPFS2}" | bc);
 
-	echo "Segment: "$x"   2F: "$resPFS"    (H1 only: "$resPFS1"  L1 only: "$resPFS2")"
-    else
-	echo "Segment: "$x"   2F: "$resPFS
-    fi
-    echo
-done
-TwoFsum=$(echo "scale=6; ${TwoFsum} / ${Nsegments}" | bc);
-if [ -n "$SEPIFOVETO" ]; then
-    TwoFsum1=$(echo "scale=6; ${TwoFsum1} / ${Nsegments}" | bc);
-    TwoFsum2=$(echo "scale=6; ${TwoFsum2} / ${Nsegments}" | bc);
-    echo
-    echo "==>   Average 2F: "$TwoFsum"  in H1: "$TwoFsum1"  in L1: "$TwoFsum2
+        resCFS=$(cat ${tmpfile_cfs} | awk '{if($1=="twoF") {printf "%.11g", $3}}')
+        TwoFsum=$(echo $TwoFsum $resCFS | awk '{printf "%.11g", $1 + $2}')
+
+        if [ $iSeg -eq 1 ]; then	## segment 1 has no H1 SFTs
+            resCFS_L1=$(cat ${tmpfile_cfs} | awk '{if($1=="twoF0") {printf "%.11g", $3}}')
+            TwoFsum_L1=$(echo $TwoFsum_L1 $resCFS_L1 | awk '{printf "%.11g", $1 + $2}')
+        elif [ $iSeg -eq $Nsegments ]; then	## segment N has no L1 SFTs
+            resCFS_H1=$(cat ${tmpfile_cfs} | awk '{if($1=="twoF0") {printf "%.11g", $3}}')	## therefore 'H1' is the first and only detector
+            TwoFsum_H1=$(echo $TwoFsum_H1 $resCFS_H1 | awk '{printf "%.11g", $1 + $2}')
+        else
+            resCFS_H1=$(cat ${tmpfile_cfs} | awk '{if($1=="twoF0") {printf "%.11g", $3}}')	## 'H1' is first
+            TwoFsum_H1=$(echo $TwoFsum_H1 $resCFS_H1 | awk '{printf "%.11g", $1 + $2}')
+
+            resCFS_L1=$(cat ${tmpfile_cfs} | awk '{if($1=="twoF1") {printf "%.11g", $3}}')	## 'L1' second
+            TwoFsum_L1=$(echo $TwoFsum_L1 $resCFS_L1 | awk '{printf "%.11g", $1 + $2}')
+        fi
+    done
+
+    TwoFAvg=$(echo    $TwoFsum    $Nsegments | awk '{printf "%.11g", $1 / ($2)}')
+    TwoFAvg_H1=$(echo $TwoFsum_H1 $Nsegments | awk '{printf "%.11g", $1 / ($2-1)}')	## H1 has one segment less (the first one)
+    TwoFAvg_L1=$(echo $TwoFsum_L1 $Nsegments | awk '{printf "%.11g", $1 / ($2-1)}')	## L1 also one segment less (the last one)
+    echo "$TwoFAvg	$TwoFAvg_H1	$TwoFAvg_L1" > $outfile_cfs
 else
-    echo
-    echo "==>   Average 2F: "$TwoFsum
+    echo "CFS result file '$outfile_cfs' exists already ... reusing it"
+    cfs_res=$(cat $outfile_cfs)
+    TwoFAvg=$(echo $cfs_res | awk '{print $1}')
+    TwoFAvg_H1=$(echo $cfs_res | awk '{print $2}')
+    TwoFAvg_L1=$(echo $cfs_res | awk '{print $3}')
 fi
 
-edat="earth05-09.dat"
-sdat="sun05-09.dat"
+echo
+echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L1"
 
-echo
-echo
-echo "----------------------------------------------------------------------"
-echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match)"
-echo "----------------------------------------------------------------------"
-echo
+## ---------- run GCT code on this data ----------------------------------------
 
-if [ -e "checkpoint.cpt" ]; then
-    rm checkpoint.cpt # delete checkpoint to start correctly
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
+if [ "$sqrtSh" = "0" ]; then
+    gct_CL_common="$gct_CL_common --SignalOnly";
 fi
 
-outfile_gct1="__tmp_GCT1.dat"
+echo
+echo "----------------------------------------------------------------------------------------------------"
+echo " STEP 3: run HierarchSearchGCT using Resampling (perfect match) and segment-list file and --recalcToplistStats"
+echo "----------------------------------------------------------------------------------------------------"
+echo
 
-gct_CL=" --useResamp --fnameout=$outfile_gct1 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
-if [ "$haveNoise" = false ]; then
-    gct_CL="$gct_CL --SignalOnly";
-fi
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_RS="${testDir}/GCT_RS.dat"
+timingsfile_RS="${testDir}/timing_RS.dat"
 
-cmdline="$gct_code $gct_CL"
-echo $cmdline
 if [ -z "$NORESAMP" ]; then
-    if ! tmp=`eval $cmdline`; then
+    cmdline="$gct_code $gct_CL_common --useResamp=true --fnameout='$outfile_GCT_RS' --outputTiming='$timingsfile_RS' --recalcToplistStats"
+    if [ -n "$DEBUG" ]; then
+        cmdline="$cmdline -d1"
+    else
+        cmdline="$cmdline -d0 &> /dev/null"
+    fi
+    echo "$cmdline"
+    if ! eval "$cmdline"; then
 	echo "Error.. something failed when running '$gct_code' ..."
 	exit 1
     fi
-    resGCT1=$(cat $outfile_gct1 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
-    freqGCT1=$(cat $outfile_gct1 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $1}')
+    topline=$(sort -nr -k7,7 $outfile_GCT_RS | head -1)
+    resGCT_RS=$(echo $topline | awk '{print $7}')
+    resGCT_RS_H1=$(echo $topline | awk '{print $9}')
+    resGCT_RS_L1=$(echo $topline | awk '{print $10}')
+    freqGCT_RS=$(echo $topline | awk '{print $1}')
 else
     echo
     echo "Not run with resampling."
@@ -295,183 +334,155 @@ fi
 
 
 echo
-echo "----------------------------------------------------------------------"
-echo " STEP 4: run HierarchSearchGCT without Resampling (perfect match)"
-echo "----------------------------------------------------------------------"
+echo "----------------------------------------------------------------------------------------------------"
+echo " STEP 4: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --recalcToplistStats"
+echo "----------------------------------------------------------------------------------------------------"
 echo
 
-if [ -e "checkpoint.cpt" ]; then
-    rm checkpoint.cpt # delete checkpoint to start correctly
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_DM="${testDir}/GCT_DM.dat"
+timingsfile_DM="${testDir}/timing_DM.dat"
+
+cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' --recalcToplistStats"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline -d1"
+else
+    cmdline="$cmdline -d0 &> /dev/null"
 fi
 
-outfile_gct2="__tmp_GCT2.dat"
-
-gct_CL=" --fnameout=$outfile_gct2 --gridType1=3 --tStack=$Tsegment --nCand1=$gct_nCands --nStacksMax=$Nsegments --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime "
-if [ "$haveNoise" = false ]; then
-    gct_CL="$gct_CL --SignalOnly";
-fi
-
-if [ -n "$SEPIFOVETO" ]; then
-    gct_CL=$gct_CL" --SepDetVeto"
-fi
-
-cmdline="$gct_code $gct_CL > >(tee stdout.log) 2> >(tee stderr.log >&2)"
 echo $cmdline
-if ! eval $cmdline; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
-resGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
-freqGCT2=$(cat $outfile_gct2 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $1}')
 
-if [ -n "$SEPIFOVETO" ]; then
-    resGCT2H1=$(cat stderr.log | grep "average2F\[1\]=" | awk '{print $4}')
-    resGCT2L1=$(cat stderr.log | grep "average2F\[2\]=" | awk '{print $4}')
-    oZ1=$(cat stderr.log | grep "average2F\[1\]=" | awk '{print $6}')
-    oZ2=$(cat stderr.log | grep "average2F\[2\]=" | awk '{print $6}')
-fi
-
-
-if [ -z "$NORESAMP" ]; then
-reldev1=$(echo "scale=5; ($TwoFsum - $resGCT1)/(0.5 * ($TwoFsum + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
-freqreldev1=$(echo "scale=13; (($Freq - $freqGCT1)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.6f",$1} else {printf "%.6f",$1*(-1)}}')
-reldev3=$(echo "scale=5; ($resGCT1 - $resGCT2)/(0.5 * ($resGCT2 + $resGCT1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
-fi
-
-reldev2=$(echo "scale=5; ($TwoFsum - $resGCT2)/(0.5 * ($TwoFsum + $resGCT2))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
-freqreldev2=$(echo "scale=13; (($Freq - $freqGCT2)/$Freq) " | bc | awk '{ if($1>=0) {printf "%.13f",$1} else {printf "%.12f",$1*(-1)}}')
-
-if [ -n "$SEPIFOVETO" ]; then
-    reldev2H1=$(echo "scale=5; ($TwoFsum1 - $resGCT2H1)/(0.5 * ($TwoFsum1 + $resGCT2H1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
-    reldev2L1=$(echo "scale=5; ($TwoFsum2 - $resGCT2L1)/(0.5 * ($TwoFsum2 + $resGCT2L1))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
-fi
-freqreldev2B=$(echo "scale=13; (($Freq - $freqGCT2)/${gct_dFreq})" | bc | awk '{ if($1>=0) {printf "%.12f",$1} else {printf "%.12f",$1*(-1)}}')
+topline=$(sort -nr -k7,7 $outfile_GCT_DM | head -1)
+resGCT_DM=$(echo $topline  | awk '{print $7}')
+resGCT_DM_H1=$(echo $topline  | awk '{print $9}')
+resGCT_DM_L1=$(echo $topline  | awk '{print $10}')
+freqGCT_DM=$(echo $topline | awk '{print $1}')
 
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
-echo " STEP 5: re-run HierarchSearchGCT with a segment list file instead of --tStack and --nStacksMax"
+echo " STEP 5: run HierarchSearchGCT using LALDemod (perfect match) and --tStack and --nStacksMax and --computeLV"
 echo "----------------------------------------------------------------------------------------------------"
 echo
-if [ -e "checkpoint.cpt" ]; then
-    rm checkpoint.cpt # delete checkpoint to start correctly
+
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_DM_LV="${testDir}/GCT_DM_LV.dat"
+timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
+
+cmdline="$gct_code $gct_CL_common --useResamp=false --computeLV --SortToplist=2 --LVrho=5.0 --LVlX='0.5,0.5' --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline -d1"
+else
+    cmdline="$cmdline -d0 &> /dev/null"
 fi
 
-outfile_gct5="__tmp_GCT5.dat"
-
-gct_CL=" --SignalOnly --fnameout=$outfile_gct5 --gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles'  --ephemE=$edat --ephemS=$sdat --skyGridFile='./$skygridfile'  --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile -d1"
-
-cmdline="$gct_code $gct_CL > >(tee stdout.log) 2> >(tee stderr.log >&2)"
 echo $cmdline
-if ! eval $cmdline; then
+if ! eval "$cmdline"; then
     echo "Error.. something failed when running '$gct_code' ..."
     exit 1
 fi
-resGCT5=$(cat $outfile_gct5 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $6}')
-freqGCT5=$(cat $outfile_gct5 | sed -e '/%/d;' | sort -nr -k6,6 | head -1 | awk '{print $1}')
-reldev5=$(echo "scale=5; ($resGCT2 - $resGCT5)/(0.5 * ($resGCT2 + $resGCT5))" | bc | awk '{ if($1>=0) {printf "%.4f",$1} else {printf "%.4f",$1*(-1)}}')
 
-echo
-echo "----------------------------------------------------------------------"
-echo "==>  Predicted:      "$TwoFsum
+topline=$(sort -nr -k7,7 $outfile_GCT_DM_LV | head -1)
+resGCT_DM_LV=$(echo $topline  | awk '{print $7}')
+resGCT_DM_H1_LV=$(echo $topline  | awk '{print $9}')
+resGCT_DM_L1_LV=$(echo $topline  | awk '{print $10}')
+freqGCT_DM_LV=$(echo $topline | awk '{print $1}')
 
 
-# Check predicted 2F against search code output
-
-if [ -z "$NORESAMP" ]; then
-if [ `echo $reldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")"
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-    exit 2
-else
-    echo "==>  GCT, Resamp:    "$resGCT1"  ("$reldev1")     OK."
-fi
-fi
-
-if [ `echo $reldev2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")"
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-    exit 2
-else
-    echo "==>  GCT, no Resamp: "$resGCT2"  ("$reldev2")     OK."
-fi
-
-if [ `echo $reldev5" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, seg-list: "$resGCT5"  ("$reldev5")"
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-    exit 2
-else
-    echo "==>  GCT, seg-list: "$resGCT5"  ("$reldev5")     OK."
-fi
-
+## ---------- compute relative differences and check against tolerance --------------------
+awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 
 if [ -z "$NORESAMP" ]; then
-if [ `echo $reldev3" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp vs. no-Resamp:     "$reldev3
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-    exit 2
-else
-    echo "==>  GCT, Resamp vs. no-Resamp:    "$reldev3"      OK."
-fi
+    reldev_RS=$(echo $TwoFAvg $resGCT_RS | awk "$awk_reldev")
+    reldev_RS_H1=$(echo $TwoFAvg_H1 $resGCT_RS_H1 | awk "$awk_reldev")
+    reldev_RS_L1=$(echo $TwoFAvg_L1 $resGCT_RS_L1 | awk "$awk_reldev")
+    freqreldev_RS=$(echo $Freq $freqGCT_RS | awk "$awk_reldev")
 fi
 
-# Check relative error in frequency
+reldev_DM=$(echo $TwoFAvg $resGCT_DM | awk "$awk_reldev")
+reldev_DM_H1=$(echo $TwoFAvg_H1 $resGCT_DM_H1 | awk "$awk_reldev")
+reldev_DM_L1=$(echo $TwoFAvg_L1 $resGCT_DM_L1 | awk "$awk_reldev")
+freqreldev_DM=$(echo $Freq $freqGCT_DM | awk "$awk_reldev")
+reldev_DM_LV=$(echo $TwoFAvg $resGCT_DM_LV | awk "$awk_reldev")
+reldev_DM_H1_LV=$(echo $TwoFAvg_H1 $resGCT_DM_H1_LV | awk "$awk_reldev")
+reldev_DM_L1_LV=$(echo $TwoFAvg_L1 $resGCT_DM_L1_LV | awk "$awk_reldev")
+freqreldev_DM_LV=$(echo $Freq $freqGCT_DM_LV | awk "$awk_reldev")
+
+# ---------- Check relative deviations against tolerance, report results ----------
+retstatus=0
+awk_isgtr='{if($1>$2) {print "1"}}'
+
+echo
+echo "--------- Timings ------------------------------------------------------------------------------------------------"
+awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; sumTauF0 = 0; sumTauS0 = 0; counter=0; } \
+           { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; sumTauF0 = sumTauF0 + $12; sumTauS0 = sumTauS0 + $13; counter=counter+1; } \
+           END {printf "tau = %6.3g s, tauCoh = %6.3g s, tauSC = %6.3g s;  tauF0 = %6.3g s, tauS0 = %6.3g s",
+                sumTau/counter, sumTauCoh/counter, sumTauSC/counter, sumTauF0 / counter, sumTauS0 / counter}'
+timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
+timing_DM_LV=$(sed '/^%.*/d' $timingsfile_DM_LV | awk "$awk_timing")
+timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")
+echo " GCT-LALDemod:     $timing_DM"
+echo " GCT-LALDemod-LV:  $timing_DM_LV"
+echo " GCT-Resamp:       $timing_RS"
+
+echo
+echo "--------- Compare results ----------------------------------------------------------------------------------------"
+echo "                     	<2F_multi>	<2F_H1>  	<2F_L1>  	 @ Freq [Hz]     	(reldev, reldev_H1, reldev_L1, reldev_Freq)"
+echo    "==>  CFSv2:         	$TwoFAvg 	$TwoFAvg_H1   	$TwoFAvg_L1   	 @ $Freq 	[Tolerance = ${Tolerance}]"
+
+echo -n "==>  GCT-LALDemod: 	$resGCT_DM 	$resGCT_DM_H1 	$resGCT_DM_L1  	 @ $freqGCT_DM 	($reldev_DM, $reldev_DM_H1, $reldev_DM_L1, $freqreldev_DM)"
+fail1=$(echo $freqreldev_DM $Tolerance | awk "$awk_isgtr")
+fail2=$(echo $reldev_DM $Tolerance     | awk "$awk_isgtr")
+fail3=$(echo $reldev_DM_H1 $Tolerance  | awk "$awk_isgtr")
+fail4=$(echo $reldev_DM_L1 $Tolerance  | awk "$awk_isgtr")
+if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
+    echo " ==> FAILED"
+    retstatus=1
+else
+    echo " ==> OK"
+fi
+
+echo -n "==>  GCT-LALDemodLV:	$resGCT_DM_LV 	$resGCT_DM_H1_LV	$resGCT_DM_L1_LV	 @ $freqGCT_DM_LV 	($reldev_DM_LV, $reldev_DM_H1_LV, $reldev_DM_L1_LV, $freqreldev_DM_LV)"
+fail1=$(echo $freqreldev_DM_LV $Tolerance | awk "$awk_isgtr")
+fail2=$(echo $reldev_DM_LV $Tolerance     | awk "$awk_isgtr")
+fail3=$(echo $reldev_DM_H1_LV $Tolerance  | awk "$awk_isgtr")
+fail4=$(echo $reldev_DM_L1_LV $Tolerance  | awk "$awk_isgtr")
+if [ "$fail1" -o "$fail2" -o "$fail3" -o "$fail4" ]; then
+    echo " ==> FAILED"
+    retstatus=1
+else
+    echo " ==> OK"
+fi
+
 if [ -z "$NORESAMP" ]; then
-echo
-echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT1
-if [ `echo $freqreldev1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, Resamp.     Rel. dev. in frequency: "$freqreldev1
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-    exit 2
-else
-    echo "==>  GCT, Resamp.     Rel. dev. in frequency: "$freqreldev1"   OK."
-fi
-fi
-
-echo
-echo "==>  Signal frequency: "$Freq"  Found at: "$freqGCT2
-if [ `echo $freqreldev2" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-    echo "==>  GCT, no Resamp.  Rel. dev. in frequency: "$freqreldev2
-    echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-    exit 2
-else
-    echo "==>  GCT, no Resamp.  Rel. dev. in frequency: "$freqreldev2"   OK."
-    echo "     offset as fraction of frequency bins: "$freqreldev2B
-fi
-
-
-if [ -n "$SEPIFOVETO" ]; then
-    echo
-
-    if [ `echo $reldev2H1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-	echo "==>  GCT, H1 only deviation:     "$reldev2H1
-	echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-	exit 2
+    echo -n "==>  GCT-Resamp: 	$resGCT_RS 	$resGCT_RS_H1 	$resGCT_RS_L1  	 @ $freqGCT_RS 	($reldev_RS, NA, NA, $freqreldev_RS)"
+    fail1=$(echo $freqreldev_RS $Tolerance | awk "$awk_isgtr")
+    fail2=$(echo $reldev_RS $Tolerance | awk "$awk_isgtr")
+    ## these are currently defunct => not testing them
+    fail3=$(echo $reldev_RS_H1 $Tolerance | awk "$awk_isgtr")
+    fail4=$(echo $reldev_RS_L1 $Tolerance | awk "$awk_isgtr")
+    if [ "$fail1" -o "$fail2" ]; then
+        echo " ==> FAILED"
+        retstatus=1
     else
-	echo "==>  GCT, H1 only deviation:    "$reldev2H1"      OK."
+        echo " ==> OK"
     fi
-
-    if [ `echo $reldev2L1" "$Tolerance | awk '{if($1>$2) {print "1"}}'` ];then
-        echo "==>  GCT, L1 only deviation:     "$reldev2L1
-        echo "OUCH... results differ by more than tolerance limit. Something might be wrong..."
-        exit 2
-    else
-        echo "==>  GCT, L1 only deviation:    "$reldev2L1"      OK."
-    fi
-
-
-    Z1=$(echo "scale=6; ($TwoFsum / $TwoFsum1)" | bc )
-    Z2=$(echo "scale=6; ($TwoFsum / $TwoFsum2)" | bc )
-    echo "( Predicted: Z = <F>_H1L1 / <F>_H1 = "$Z1"   Obtained: "$oZ1" )"
-    echo "( Predicted: Z = <F>_H1L1 / <F>_L1 = "$Z2"   Obtained: "$oZ2" )"
 fi
 
 
 echo "----------------------------------------------------------------------"
-
 
 ## clean up files
 if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir $skygridfile $tsfile $outfile_pfs $outfile_gct1 $outfile_gct2 $outfile_gct5 checkpoint.cpt stderr.log stdout.log $segFile
+    rm -rf $testDir
     echo "Cleaned up."
 fi
+
+## restore original locale, just in case someone source'd this file
+export LC_ALL=$LC_ALL_old
+
+exit $retstatus

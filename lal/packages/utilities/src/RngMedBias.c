@@ -23,7 +23,6 @@
  *
  * Authors: Krishnan, B.  Itoh, Y.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified...
@@ -33,7 +32,6 @@
 
 /************************************ <lalVerbatim file="RngMedBiasCV">
 Author: Krishnan, B., Itoh, Y.
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *******************************************************
@@ -81,8 +79,6 @@ LALHO()
 
 #include <lal/RngMedBias.h>
 
-NRCSID (RNGMEDBIASC, "$Id$");
-
 /*
  * The functions that make up the guts of this module
  */
@@ -103,7 +99,7 @@ void LALRngMedBias (LALStatus   *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALRngMedBias", RNGMEDBIASC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check arguments are not null and block size is positive*/

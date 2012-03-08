@@ -41,9 +41,8 @@ code can also be used to update heterodyned data using new parameters (old and n
 are required) i.e. it will take the difference of the original heterodyne phase and the new phase
 and reheterodyne with this phase difference. */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "heterodyne_pulsar.h"
-
-RCSID("$Id$");
 
 /* define a macro to round a number without having to use the C round function */
 #define ROUND(a) (floor(a+0.5))
@@ -422,7 +421,7 @@ heterodyne.\n");  }
           rc = fread((void*)&data->data->data[i].re, sizeof(REAL8), 1, fpin);
           rc = fread((void*)&data->data->data[i].im, sizeof(REAL8), 1, fpin);
 
-          if( feof(fpin) ) break;
+          if( feof(fpin) || rc == 0 ) break;
           
           if(inputParams.scaleFac > 1.0){
             data->data->data[i].re *= inputParams.scaleFac;
@@ -577,6 +576,8 @@ sigma for 2nd time.\n",
       /* if data has been scaled then undo scaling for output */
       
       if( inputParams.binaryoutput ){
+        size_t rc = 0;        
+
         /*FIXME: maybe add header info to binary output - or output to frames!*/
         /* binary output will be same as ASCII text - time real imag */
         if( inputParams.scaleFac > 1.0 ){
@@ -585,17 +586,17 @@ sigma for 2nd time.\n",
           tempreal = resampData->data->data[i].re/inputParams.scaleFac;
           tempimag = resampData->data->data[i].im/inputParams.scaleFac;
           
-          fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
-          fwrite(&tempreal, sizeof(REAL8), 1, fpout);
-          fwrite(&tempimag, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
+          rc = fwrite(&tempreal, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&tempimag, sizeof(REAL8), 1, fpout);
         }
         else{
-          fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
-          fwrite(&resampData->data->data[i].re, sizeof(REAL8), 1, fpout);
-          fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&times->data[i], sizeof(REAL8), 1, fpout);
+          rc = fwrite(&resampData->data->data[i].re, sizeof(REAL8), 1, fpout);
+          rc = fwrite(&resampData->data->data[i].im, sizeof(REAL8), 1, fpout);
         }
         
-        if( ferror(fpout) ){
+        if( ferror(fpout) || !rc ){
           fprintf(stderr, "Error... problem writing out data to binary \
 file!\n");
           exit(1);
@@ -1811,7 +1812,9 @@ Assume calibration coefficients are 1 and use the response function.\n",
       }
       if(strstr(jnkstr, "%")){
         rc = fscanf(fpcoeff, "%*[^\n]");   /* if == % then skip to the end of the
-                                         line */
+                                              line */
+        if( rc == EOF ) continue;
+          
         continue;
       }
       else{
@@ -1943,6 +1946,8 @@ calibfilename);
     rc = fscanf(fp, "%s", jnkstr); /* scan in value and check if == to % */
     if(strstr(jnkstr, "%")){
       rc = fscanf(fp, "%*[^\n]");   /* if == % then skip to the end of the line */
+      
+      if ( rc == EOF ) continue;
       continue;
     }
     else{

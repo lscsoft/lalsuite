@@ -57,15 +57,12 @@ LALDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
-
-
-NRCSID (FINDCHIRPSPTEMPLATEC, "$Id$");
-
 
 double
 XLALFindChirpChirpTime (double m1,
@@ -165,7 +162,7 @@ LALFindChirpSPTemplate (
   const REAL4 c4 =  0.03705;
 
 
-  INITSTATUS( status, "LALFindChirpSPTemplate", FINDCHIRPSPTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

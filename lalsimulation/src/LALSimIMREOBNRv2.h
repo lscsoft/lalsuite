@@ -33,8 +33,8 @@
 #include <lal/LALSimIMR.h>
 #include <lal/LALSimInspiral.h>
 
-#ifndef _LALSIMREOBNRv2_H
-#define _LALSIMREOBNRv2_H
+#ifndef _LALSIMIMREOBNRv2_H
+#define _LALSIMIMREOBNRv2_H
 
 #if defined(__cplusplus)
 extern "C" {
@@ -323,9 +323,13 @@ tagEOBNonQCCoeffs
   REAL8 a1;
   REAL8 a2;
   REAL8 a3;
+  REAL8 a3S;
   REAL8 a4;
+  REAL8 a5;
   REAL8 b1;
   REAL8 b2;
+  REAL8 b3;
+  REAL8 b4;
 } EOBNonQCCoeffs;
 
 /**
@@ -349,204 +353,34 @@ struct tagEOBParams
 EOBParams;
 
 /**
- * This function calculates the factorized flux in the EOB dynamics for
- * the EOBNR (and potentially subsequent) models. The flux function
- * is found in Phys.Rev.D79:064004,2009.
+ * Structure containing parameters used to determine
+ * r as a function of omega. Since this is determined within
+ * a root finding function, it is necessary to place all parameters
+ * with the exception of the current guess of the radius within 
+ * a structure.
  */
-static REAL8 XLALSimIMREOBFactorizedFlux(
-                      REAL8Vector  *values, /**<< Dynamics r, phi, pr, pphi */
-                      const REAL8  omega,   /**<< Angular frequency omega */
-                      EOBParams    *ak,     /**<< Structure containing pre-computed parameters */
-                      const INT4   lMax     /**<< Maximum l to include when calculating flux (between 2 and 8) */
-                     );
-
-/**
- * Function which computes the various coefficients in the Newtonian
- * multipole. The definition of this can be found in Pan et al, 
- * arXiv:1106.1021v1 [gr-qc]. Note that, although this function gets passed
- * masses measured in Solar masses (which is fine since it is a static function),
- * the units of mass won't matter so long as they are consistent. This is because
- * all uses of the mass within the function are normalized by the total mass.
- */
-static int XLALSimIMREOBComputeNewtonMultipolePrefixes(
-                NewtonMultipolePrefixes *prefix, /**<< Structure containing the coefficients (populated in function) */
-                const REAL8             m1,      /**<< Mass of first component */
-                const REAL8             m2       /**<< Nass of second component */
-                );
-
-/**
- * This function calculates the Newtonian multipole part of the
- * factorized waveform. This is defined in Pan et al, arXiv:1106.1021v1 [gr-qc].
- */
-static int
-XLALSimIMREOBCalculateNewtonianMultipole(
-                            COMPLEX16 *multipole, /**<< Newtonian multipole (returned) */
-                            REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
-                            REAL8 r,              /**<< Orbital separation (units of total mass M */
-                            REAL8 phi,            /**<< Orbital phase (in radians) */
-                            UINT4  l,             /**<< Mode l */
-                            INT4  m,              /**<< Mode m */
-                            EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
-                            );
-
-/**
- * Function which calculates the various coefficients used in the generation
- * of the factorized waveform. These coefficients depend only on the symmetric
- * mass ratio eta. It should be noted that this function calculates the 
- * coefficients used in calculating the flux. For generating the waveforms
- * themselves, the coefficients have additional terms added which are calculated
- * using XLALModifyFacWaveformCoefficients(). THe non-spinning parts of these
- * coefficients can be found in Pan et al, arXiv:1106.1021v1 [gr-qc].
- */
-static int XLALSimIMREOBCalcFacWaveformCoefficients(
-          FacWaveformCoeffs * const coeffs, /**<< Structure containing coefficients (populated in function) */
-          const REAL8               eta     /**<< Symmetric mass ratio */
-          );
-
-/**
- * Computes the factorized waveform according to the prescription
- * given in Pan et al, arXiv:1106.1021v1 [gr-qc], for a given
- * mode l,m, for the given values of the dynamics at that point.
- * The function returns XLAL_SUCCESS if everything works out properly,
- * otherwise XLAL_FAILURE will be returned.
- */
-static int XLALSimIMREOBGetFactorizedWaveform( 
-                                COMPLEX16   * restrict hlm,    /**<< The value of hlm (populated by the function) */
-                                REAL8Vector * restrict values, /**<< Vector containing dynamics r, phi, pr, pphi for a given point */
-                                const REAL8 v,                 /**<< Velocity (in geometric units) */
-                                const INT4  l,                 /**<< Mode l */
-                                const INT4  m,                 /**<< Mode m */
-                                EOBParams   * restrict params  /**<< Structure containing pre-computed coefficients, etc. */
-                                );
+typedef struct tagrOfOmegaIn {
+   REAL8 eta;   /**<< Symmetric mass ratio */
+   REAL8 omega; /**<< Angular frequency (dimensionless combination M omega) */
+} rOfOmegaIn;
 
 
 /**
- * This function generates the quasinormal mode frequencies for a black
- * hole ringdown. At present, this function works for the 22, 21, 33, 44
- * and 55 modes, and includes 8 overtones. The final frequencies are
- * computed by interpolating the data found on the webpage of 
- * Emanuele Berti, http://www.phy.olemiss.edu/~berti/qnms.html
+ * Structure containing parameters used to determine the initial radial
+ * momentum. Since this is determined within a root finding function,
+ * it is necessary to place all parameters with the exception of the
+ * current guess of the radial momentum within a structure.
  */
-static INT4 XLALSimIMREOBGenerateQNMFreqV2(
-        COMPLEX16Vector          *modefreqs, /**<<The complex frequencies of the overtones (scaled by total mass) */
-        const REAL8              mass1,      /**<<The mass of the first component of the system (in Solar masses) */
-        const REAL8              mass2,      /**<<The mass of the second component of the system (in Solar masses) */
-        UINT4                    l,          /**<<The l value of the mode in question */
-        UINT4                    m,          /**<<The m value of the mode in question */
-        UINT4                   nmodes       /**<<The number of overtones that should be included (max 8) */
-        );
+typedef struct tagPr3In {
+  REAL8 eta;                 /**<< Symmetric mass ratio */
+  REAL8 omega;               /**<< Angular frequency (dimensionless combination M omega) */
+  REAL8 vr;                  /**<< Radial velocity (dimensionless) */
+  REAL8 r;                   /**<< Orbital separation (units of total mass) */
+  REAL8 q;                   /**<< Momentum pphi */
+  EOBACoefficients *aCoeffs; /**<< Pre-computed coefficients of EOB A function */
+  
+} pr3In;
 
-/**
- * The main workhorse function for performing the ringdown attachment for EOB
- * models EOBNRv2 and later. This is the function which gets called by the 
- * code generating the full IMR waveform once generation of the inspiral part
- * has been completed.
- * The ringdown is attached using the hybrid comb matching detailed in 
- * Buonanno et al, arXiv:1106.1021v1 [gr-qc]. Further details of the
- * implementation of the found in the DCC document T1100433.
- */
-static int XLALSimIMREOBHybridAttachRingdown(
-      REAL8Vector       *signal1,     /**<<Real part of inspiral waveform to which we attach the ringdown */
-      REAL8Vector       *signal2,     /**<<Imaginary part of inspiral waveform to which we attach the ringdown */
-      const INT4        l,            /**<< Current mode l */
-      const INT4        m,            /**<< Current mode m */
-      const REAL8       dt,           /**<< Sample time step (in seconds) */
-      const REAL8       mass1,        /**<< First component mass (in Solar masses) */
-      const REAL8       mass2,        /**<< Second component mass (in Solar masses) */
-      REAL8Vector       *timeVec,     /**<< Vector containing the time values */
-      REAL8Vector       *matchrange   /**<< Time values chosen as points for performing comb matching */
-      );
-
-/**
- * Compute the time offset which should be used in computing the
- * non-quasicircular correction and performing the ringdown attachment.
- * These numbers were tuned to numerical relativity simulations, and
- * are taken from Pan et al, arXiv:1106.1021v1 [gr-qc] 
- */
- static REAL8 XLALSimIMREOBGetNRPeakDeltaT(
-                         INT4 l,    /**<< Mode l */
-                         INT4 m,    /**<< Mode m */
-                         REAL8 eta  /**<< Symmetric mass ratio */
-                         );
-
-/**
- * This function computes the coefficients a1, a2, etc. used in the
- * non-quasicircular correction. The details of the calculation of these
- * coefficients are found in the DCC document T1100433. */
-static int XLALSimIMREOBCalculateNQCCoefficients(
-                 EOBNonQCCoeffs * restrict coeffs,    /**<< NQC coefficients (populated by function) */
-                 REAL8Vector    * restrict amplitude, /**<< Amplitude of waveform as function of time */
-                 REAL8Vector    * restrict phase,     /**<< Phase of waveform (in radians) as function of time */
-                 REAL8Vector    * restrict q1,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict q2,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict q3,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict p1,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict p2,        /**<< Function of dynamics (see DCC document for details) */
-                 INT4                      l,         /**<< Mode l */
-                 INT4                      m,         /**<< Mode m */
-                 REAL8                     timePeak,  /**<< Time for which we reach the peak frequency */
-                 REAL8                     deltaT,    /**<< Sampling interval */
-                 REAL8                     eta        /**<< Symmetric mass ratio */
-                 );
-
-/**
- * For the 2,2 mode, there are fits available for the NQC coefficients.
- * This function provides the values of these coefficients, so the 
- * correction can be used in the dynamics prior to finding the more
- * accurate NQC values later on.
- */
-static int XLALSimIMREOBGetCalibratedNQCCoeffs( 
-                                EOBNonQCCoeffs *coeffs, /**<< Structure for NQC coefficients (populated in function) */
-                                INT4            l,      /**<< Mode l */
-                                INT4            m,      /**<< Mode m */
-                                REAL8           eta     /**<< Symmetric mass ratio */
-                                );
-
-/**
- * This function calculates the non-quasicircular correction to apply to 
- * the waveform. The form of this correction can be found in  Pan et al, 
- * arXiv:1106.1021v1 [gr-qc], and also in the DCC document T1100433. Note
- * that when calling this function, the NQC coefficients should already 
- * have been pre-computed.
- */
-static int  XLALSimIMREOBNonQCCorrection(
-                      COMPLEX16      * restrict nqc,    /**<< The NQC correction (populated in function) */
-                      REAL8Vector    * restrict values, /**<< Dynamics r, phi, pr, pphi */
-                      const REAL8               omega,  /**<< Angular frequency */
-                      EOBNonQCCoeffs * restrict coeffs  /**<< NQC coefficients */
-                     );
-
-/**
- * Function to calculate the EOB effective Hamiltonian for the
- * given values of the dynamical variables. The coefficients in the
- * A potential function should already have been computed.
- * Note that the pr used here is the tortoise co-ordinate.
- */
-static
-REAL8 XLALEffectiveHamiltonian( const REAL8 eta,          /**<< Symmetric mass ratio */
-                                const REAL8 r,            /**<< Orbital separation */
-                                const REAL8 pr,           /**<< Tortoise co-ordinate */
-                                const REAL8 pp,           /**<< Momentum pphi */
-                                EOBACoefficients *aCoeffs /**<< Pre-computed coefficients in A function */
-                              );
-
-/**
- * This function calculates the EOB A function which using the pre-computed
- * coefficients which should already have been calculated.
- */
-static
-REAL8 XLALCalculateEOBA( const REAL8 r,                     /**<< Orbital separation (in units of total mass M) */
-                         EOBACoefficients * restrict coeffs /**<< Pre-computed coefficients for the A function */
-                       );
-
-/**
- * Calculated the derivative of the EOB A function with respect to 
- * r, using the pre-computed A coefficients
- */
-static
-REAL8 XLALCalculateEOBdAdr( const REAL8 r,                     /**<< Orbital separation (in units of total mass M) */
-                            EOBACoefficients * restrict coeffs /**<< Pre-computed coefficients for the A function */
-                          );
 
 #if 0
 { /* so that editors will match succeeding brace */
@@ -554,4 +388,4 @@ REAL8 XLALCalculateEOBdAdr( const REAL8 r,                     /**<< Orbital sep
 }
 #endif
 
-#endif /* _LALSIMEOBNRv2_H */
+#endif /* _LALSIMIMREOBNRv2_H */

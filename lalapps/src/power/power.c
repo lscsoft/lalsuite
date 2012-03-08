@@ -41,6 +41,7 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
@@ -83,8 +84,6 @@
 
 #include <LALAppsVCSInfo.h>
 
-NRCSID(POWERC, "$Id$");
-RCSID("$Id$");
 
 
 #define PROGRAM_NAME "lalapps_power"

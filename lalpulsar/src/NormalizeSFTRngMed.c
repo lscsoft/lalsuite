@@ -21,10 +21,8 @@
  * \file
  * \ingroup pulsarCommon
  * \author Badri Krishnan and Alicia Sintes
- * \date $Date$
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
  *
- * $Id$
  *
  * History: Created by B. Krishnan Aug, 2004
  *       Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
@@ -65,11 +63,8 @@ the Running median method.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/NormalizeSFTRngMed.h>
-
-
-NRCSID (NORMALIZESFTRNGMEDC, "$Id$");
-
 
 /** Calculate the "periodogram" of an SFT, ie the modulus-squares of the SFT-data.
  */
@@ -83,7 +78,7 @@ LALSFTtoPeriodogram (LALStatus    *status,		/**< pointer to LALStatus structure 
   REAL8    *out;
   COMPLEX8 *in;
 
-  INITSTATUS (status, "LALSFTtoPeriodogram", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
@@ -142,7 +137,7 @@ LALPeriodoToRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
   REAL8Sequence mediansV, inputV;
   REAL8 medianBias;
 
-  INITSTATUS (status, "LALPeriodoToRngmed", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
@@ -216,7 +211,7 @@ LALSFTtoRngmed (LALStatus  *status,		/**< pointer to LALStatus structure */
   REAL8FrequencySeries periodo;
   INT4 length;
 
-  INITSTATUS (status, "LALSFTtoRngmed", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */
@@ -283,7 +278,7 @@ LALNormalizeSFT (LALStatus           *status,		/**< pointer to LALStatus structu
   UINT4 j;
   REAL8 Tsft_Sn_b2;	/* Wiener-Kinchine: E[|data|^2] = Tsft * Sn / 2 */
 
-  INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL and other sanity checks*/
@@ -333,7 +328,7 @@ LALNormalizeSFTVect (LALStatus  *status,		/**< pointer to LALStatus structure */
   UINT4 j, lengthsft;
   REAL8FrequencySeries *rngmed = NULL;
 
-  INITSTATUS (status, "LALNormalizeSFT", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL and other sanity checks*/
@@ -420,7 +415,7 @@ LALNormalizeMultiSFTVect (LALStatus      *status,		/**< pointer to LALStatus str
   UINT4 numifo, numsft;
   MultiPSDVector *ret = NULL;
 
-  INITSTATUS (status, "LALNormalizeMultiSFT", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL and other sanity checks*/
@@ -533,7 +528,7 @@ LALSFTstoCrossPeriodogram (LALStatus    *status,		/**< pointer to LALStatus stru
   REAL8    *out;
   COMPLEX8 *in1, *in2;
 
-  INITSTATUS (status, "LALSFTstoCrossPeriodogram", NORMALIZESFTRNGMEDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check argments are not NULL */

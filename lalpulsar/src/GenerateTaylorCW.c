@@ -106,9 +106,6 @@ snprintf()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateTaylorCW.h>
 
-NRCSID( GENERATETAYLORCWC, "$Id$" );
-
-
 void
 LALGenerateTaylorCW( LALStatus          *stat,
 		     CoherentGW         *output,
@@ -126,7 +123,7 @@ LALGenerateTaylorCW( LALStatus          *stat,
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
 
-  INITSTATUS( stat, "LALGenerateTaylorCW", GENERATETAYLORCWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */

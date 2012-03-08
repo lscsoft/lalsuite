@@ -19,7 +19,6 @@
 
 /***************************** <lalVerbatim file="DestroyZPGFilterCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -60,8 +59,6 @@ LALZDestroyVector()
 #include <lal/AVFactories.h>
 #include <lal/ZPGFilter.h>
 
-NRCSID(DESTROYZPGFILTERC,"$Id$");
-
 void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 {
   if ( filter )
@@ -89,7 +86,7 @@ void
 LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
 			     COMPLEX8ZPGFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyCOMPLEX8ZPGFilter",DESTROYZPGFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null
      pointer. */
@@ -109,7 +106,7 @@ void
 LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
 			      COMPLEX16ZPGFilter **input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDestroyCOMPLEX16ZPGFilter",DESTROYZPGFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null
      pointer. */

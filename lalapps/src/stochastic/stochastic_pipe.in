@@ -18,13 +18,11 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA
-
-$Id$
 """
 
 __author__ = 'Adam Mercer <ram@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 # import required modules
 import sys
@@ -318,6 +316,8 @@ if usertag:
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
 
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write("$Id$" + "\n\n")
 log_fh.write("Invoked with arguments:\n")
 for o, a in opts:

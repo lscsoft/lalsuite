@@ -54,9 +54,6 @@
 extern "C" {
 #endif
 
-NRCSID( NRWAVEINJECTH, "$Id$");
-
-
 #define NRWAVEINJECT_ENULL    1
 #define NRWAVEINJECT_EFILE    2
 #define NRWAVEINJECT_ENONULL  3
@@ -181,6 +178,12 @@ XLALFindNRCoalescenceTimeFromhoft(REAL8 *tc,
 INT4
 XLALFindNRCoalescenceTimeREAL8(REAL8 *tc,
                                const REAL8TimeSeries *in);
+
+INT4
+XLALFindNRCoalescencePlusCrossREAL8(REAL8 *tc,
+                                    const REAL8TimeSeries *plus,
+                                    const REAL8TimeSeries *cross);
+
 
 /** channel name for nr data in frame file */
 CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cross */

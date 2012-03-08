@@ -1,12 +1,11 @@
 #!/bin/sh
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-else
-    srcdir=.
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
 fi
 
+builddir="./";
 sftdir="${srcdir}/.."
 
 sftbase="SFT.0000"

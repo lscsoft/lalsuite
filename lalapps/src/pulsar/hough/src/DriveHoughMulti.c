@@ -99,12 +99,6 @@
 /* gsl includes */
 #include <gsl/gsl_permutation.h>
 
-
-
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 
@@ -262,7 +256,6 @@ int main(int argc, char *argv[]){
 
   /* standard pulsar sft types */ 
   MultiSFTVector *inputSFTs = NULL;
-  UINT4 binsSFT, sftFminBin;
   UINT4 numSearchBins;
   
   /* information about all the ifos */
@@ -635,11 +628,6 @@ int main(int argc, char *argv[]){
       } /* end cleaning */
 
 
-    /* SFT info -- assume all SFTs have same length */
-    binsSFT = inputSFTs->data[0]->data->data->length;
-    sftFminBin = (INT4) floor(inputSFTs->data[0]->data[0].f0 * timeBase + 0.5);
-
-
     LAL_CALL( LALDestroySFTCatalog( &status, &catalog ), &status);  	
 
   } /* end of sft reading block */
@@ -965,7 +953,6 @@ int main(int argc, char *argv[]){
 
 	    INT4   n;
 	    REAL8  f1dis;
-	    REAL8 significance;
 
 	    ht.f0Bin = fBinSearch;
 	    ht.spinRes.length = 1;
@@ -1006,7 +993,6 @@ int main(int argc, char *argv[]){
 		for(j = 0; j < histTotal->length; j++){ 
 		  histTotal->data[j] += hist->data[j]; 
 		}
-		significance =  (stats.maxCount - meanN)/sigmaN;   
 	      }	      	      
 
 	      /* select candidates from hough maps */
@@ -1299,7 +1285,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   char filename[ HOUGHMAXFILENAMELENGTH ], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
-  INT4 mObsCoh;
   REAL8 f0,f1;
    
   strcpy(  filename, fnameOut);
@@ -1315,7 +1300,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   ySide= ht->ySide;
   xSide= ht->xSide;
   f0=ht->f0Bin* ht->deltaF;
-  mObsCoh = ht->mObsCoh;
   f1=0.0;
   if( ht->spinRes.length ){ f1=ht->spinRes.data[0]; }
   
@@ -1353,9 +1337,7 @@ void PrintLogFile (LALStatus       *status,
   CHAR *logstr=NULL; 
   UINT4 k;
 
-  int rc;
-
-  INITSTATUS (status, "PrintLogFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
@@ -1402,7 +1384,7 @@ void PrintLogFile (LALStatus       *status,
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
-    rc = system(command);
+    if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
   }
 
 
@@ -1417,7 +1399,7 @@ void PrintLogFile (LALStatus       *status,
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
 	sprintf(command, "cat %s >> %s", linefiles->data[k], fnameLog);      
-	rc = system (command);	 
+        if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
       } 
     } 
   }
@@ -1431,9 +1413,10 @@ void PrintLogFile (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */ 
+      /* we don't check this. If it fails, we assume that */
+      /* one of the system-commands was not available, and */
+      /* therefore the CVS-versions will not be logged */ 
+      if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
     }
 
   LALFree(fnameLog); 
@@ -1455,7 +1438,7 @@ void ReadTimeStampsFile (LALStatus          *status,
   UINT4 j;
   REAL8 temp1, temp2;
 
-  INITSTATUS (status, "ReadTimeStampsFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(ts, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 
@@ -1514,7 +1497,7 @@ void LALHoughHistogramSignificance(LALStatus      *status,
   INT4   i, j, binsHisto, xSide, ySide, binIndex;
   REAL8  temp;
 
-  INITSTATUS (status, "LALHoughHistogramSignificance", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -1575,7 +1558,7 @@ void GetSFTVelTime(LALStatus                *status,
 
   UINT4 numifo, numsft, iIFO, iSFT, j;  
   
-  INITSTATUS (status, "GetSFTVelTime", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
@@ -1630,7 +1613,7 @@ void GetSFTNoiseWeights(LALStatus          *status,
 
   UINT4 numifo, numsft, iIFO, iSFT, j;  
   
-  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
@@ -1679,7 +1662,7 @@ void GetPeakGramFromMultSFTVector(LALStatus           *status,		/**< pointer to 
   INT4   nPeaks;
   UINT4  iIFO, iSFT, numsft, numifo, j, binsSFT; 
   
-  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   numifo = in->length;
@@ -1741,7 +1724,7 @@ void SetUpSkyPatches(LALStatus           *status,		/**< pointer to LALStatus str
   UINT4 nSkyPatches, skyCounter;
   PulsarDopplerParams dopplerpos;	  
   
-  INITSTATUS (status, "SetUpSkyPatches", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (out, status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
@@ -1867,7 +1850,7 @@ void GetAMWeights(LALStatus                *status,
   REAL8 a, b;
   SkyPosition skypos;
   
-  INITSTATUS (status, "GetAMWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* get the amplitude modulation coefficients */
@@ -1917,7 +1900,7 @@ void SelectBestStuff(LALStatus      *status,
   size_t *ind=NULL;
   UINT4 k, mObsCoh;
 
-  INITSTATUS (status, "SelectBestStuff", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check consistency of input */
@@ -2006,7 +1989,7 @@ void DuplicateBestStuff(LALStatus      *status,
 
   UINT4 mObsCoh;
 
-  INITSTATUS (status, "SelectBestStuff", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check consistency of input */
@@ -2076,7 +2059,7 @@ void LALHOUGHCreateLUTVector(LALStatus           *status,
 			     UINT4               length)
 {
 
-  INITSTATUS (status, "LALHOUGHCreateLUTVector", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2113,7 +2096,7 @@ void LALHOUGHCreateLUTs(LALStatus           *status,
 
   UINT4 j,i;
 
-  INITSTATUS (status, "LALHOUGHCreateLUTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2167,7 +2150,7 @@ void LALHOUGHDestroyLUTs(LALStatus           *status,
 
   UINT4 j,i;
 
-  INITSTATUS (status, "LALHOUGHDestroyLUTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   for (j = 0; j < lutV->length ; ++j){
@@ -2201,7 +2184,7 @@ void LALHOUGHCreatePHMDVS(LALStatus           *status,
 			  UINT4               nfSize)
 {
 
-  INITSTATUS (status, "LALHOUGHCreatePHMDVS", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2245,7 +2228,7 @@ void LALHOUGHCreatePHMDs(LALStatus           *status,
 
   UINT4 j;
 
-  INITSTATUS (status, "LALHOUGHCreatePHMDs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2293,7 +2276,7 @@ void LALHOUGHDestroyPHMDs(LALStatus           *status,
 {
   UINT4 j;
 
-  INITSTATUS (status, "LALHOUGHDestroyPHMDs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   for(j = 0; j < phmdVS->length * phmdVS->nfSize; j++){
@@ -2320,7 +2303,7 @@ void LALHOUGHCreateHT(LALStatus             *status,
 		      UINT2                 ySide)
 {
 
-  INITSTATUS (status, "LALHOUGHCreateHT", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2361,7 +2344,7 @@ void LALHOUGHCreateFreqIndVector(LALStatus                 *status,
 				 REAL8                     deltaF)
 {
 
-  INITSTATUS (status, "LALHOUGHCreateFreqIndVector", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input pars are ok */
@@ -2406,7 +2389,7 @@ void GetToplistFromHoughmap(LALStatus *status,
   INT4 i,j, xSide, ySide;
   FstatOutputEntry candidate;
 
-  INITSTATUS( status, "GetToplistFromHoughMap", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   deltaF = ht->deltaF;
@@ -2530,7 +2513,7 @@ void ComputeFoft_NM(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -2596,7 +2579,7 @@ void SplitSFTs(LALStatus         *status,
   REAL8   partialsumWeightp, partialsumWeightSquarep;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "SplitSFTs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -2683,7 +2666,7 @@ void ComputeandPrintChi2 ( LALStatus                *status,
     REAL8Vector numberCountV;  /* Vector with the number count of each block inside */
 
     /* --------------------------------------------- */
-    INITSTATUS (status, "ComputeandPrintChi2", rcsid);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR (status);
   
     /*   Make sure the arguments are not NULL: */
@@ -2863,7 +2846,7 @@ void GetPeakGramFromMultSFTVector_NondestroyPg1(LALStatus                   *sta
   INT4   nPeaks;
   UINT4  iIFO, iSFT, numsft, numifo, j, binsSFT; 
   
-  INITSTATUS (status, "GetSFTNoiseWeights", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   numifo = in->length;

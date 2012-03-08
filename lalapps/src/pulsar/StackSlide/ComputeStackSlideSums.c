@@ -81,8 +81,6 @@
 /*                                           */
 /*********************************************/
 
-NRCSID( COMPUTESTACKSLIDESUMSC, "$Id$");
-
 /*********************************************/
 /*                                           */
 /* START SECTION: declare global variables   */

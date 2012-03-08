@@ -55,8 +55,6 @@ of detectors that arises from low duty cycle astrophysical backgrounds.
 extern "C" {
 #endif
 
-NRCSID (SIMULATEPOPCORNH, "$Id$");
-
 /** \name Error Codes *//*@{*/
 #define SIMULATEPOPCORNH_ENULLP          1	/**< Null pointer */
 #define SIMULATEPOPCORNH_ENONNULLFMIN    2	/**< Non zero start frequency */

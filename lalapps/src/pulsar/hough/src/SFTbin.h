@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M.,  Krishnan, B. & inspired from Siemens, X.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified...
@@ -88,12 +87,6 @@ Routines for reading SFT binary files
 extern "C" {
 #endif
 
- /*
- * 6. Assignment of Id string using NRCSID()  
- */
-  
-NRCSID (SFTBINH, "$Id$");
-  
 /*
  * 7. Error codes and messages. This must be auto-extracted for 
  *    inclusion in the documentation.

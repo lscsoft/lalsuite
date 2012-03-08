@@ -19,8 +19,6 @@
 
 #include <lal/LALNoiseModels.h>
 
-NRCSID (LALNOISESPECTRALDENSITYC, "$Id$");
-
 /**
 \author Sathyaprakash, B. S.
 \ingroup LALNoiseModels_h
@@ -62,7 +60,7 @@ LALNoiseSpectralDensity
     REAL8 f, shf, fs, s0;
     INT4 i, n;
 
-   INITSTATUS(status, "LALNoiseSpectralDensity", LALNOISESPECTRALDENSITYC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (psd->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

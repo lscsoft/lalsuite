@@ -44,8 +44,6 @@ generated using the lalinspiral routine.
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
-NRCSID(CompareLalsimultaionLalinspiralWaveformsC, "$Id$");
-
 typedef struct{
   INT4 order;
   char waveformString[LIGOMETA_WAVEFORM_MAX];

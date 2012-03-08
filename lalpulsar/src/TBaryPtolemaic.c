@@ -26,10 +26,6 @@
 /* Uncomment to remove orbital motion.
 #define LAL_AU_SI 0.0 */
 
-/** \cond DONT_DOXYGEN */
-NRCSID(TBARYPTOLEMAICC,"$Id$");
-/** \endcond */
-
 /** \file
     \author Creighton, T. D.
     \ingroup PulsarTimes_h
@@ -167,7 +163,7 @@ LALTBaryPtolemaic( LALStatus             *stat,
   REAL8 cosi=cos(LAL_IEARTH);
   REAL8 sini=sin(LAL_IEARTH);
 
-  INITSTATUS(stat,"TBaryPtolemaic",TBARYPTOLEMAICC);
+  INITSTATUS(stat);
 
   /* This function may be called a lot.  Do error checking only in
      debug mode. */
@@ -244,7 +240,7 @@ LALDTBaryPtolemaic( LALStatus             *stat,
 
   UINT4 numDeriv; /* number of variables wrt which to compute derivatives */
 
-  INITSTATUS(stat,"DTBaryPtolemaic",TBARYPTOLEMAICC);
+  INITSTATUS(stat);
 
   numDeriv = dtBary->length - 1;
 

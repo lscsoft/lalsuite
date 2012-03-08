@@ -67,9 +67,6 @@ none.
 */
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALWAVENORMALISEC, "$Id$");
-
-
 void
 LALInspiralWaveNormaliseLSO
    (
@@ -83,7 +80,7 @@ LALInspiralWaveNormaliseLSO
   INT4 i, n, nby2;
   REAL8 psd, f;
 
-  INITSTATUS (status, "LALInspiralWaveNormaliseLSO", LALINSPIRALWAVENORMALISEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (filter->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

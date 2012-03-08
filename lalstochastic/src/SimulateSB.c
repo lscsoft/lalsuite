@@ -143,6 +143,7 @@ LALNormalDeviates()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
@@ -156,9 +157,6 @@ LALNormalDeviates()
 #include <lal/Random.h>
 #include <lal/SimulateSB.h>
 #include <lal/DetectorSite.h>
-
-NRCSID (SIMULATESBC, "$Id$");
-
 
 void
 LALSSSimStochBGTimeSeries( LALStatus                    *status,
@@ -202,7 +200,7 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
   RealFFTPlan      *invPlan=NULL;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALSSSimStochBGTimeSeries", SIMULATESBC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
 
@@ -855,7 +853,7 @@ LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
   RealFFTPlan      *invPlan2=NULL;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALSSSimStochBGStrainTimeSeries", SIMULATESBC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
 

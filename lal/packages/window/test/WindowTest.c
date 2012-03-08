@@ -26,10 +26,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/Window.h>
 
-
-NRCSID(WINDOWTESTC, "$Id$");
-
-
 #define NWINDOWS 11
 
 

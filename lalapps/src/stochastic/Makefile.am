@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-# $Id$
 
 ## sources
 STOCH_SRCS       = data_input.c data_input.h \

@@ -38,8 +38,6 @@ extern "C" {
 #define RESTRICT restrict
 #endif
 
-NRCSID( COMPLEXFFTH, "$Id$" );
-
 /**
  * \addtogroup ComplexFFT_h
  *

@@ -38,9 +38,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (FINDCHIRPACTDH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define FINDCHIRPACTDH_EQMAS 1
 #define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"

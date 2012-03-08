@@ -19,8 +19,6 @@
 
 #include "coh_PTF.h"
 
-RCSID( "$Id$" );
-
 /*
  *
  * Routines to output event triggers.

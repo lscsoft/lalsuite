@@ -133,8 +133,6 @@
 #include <stddef.h>
 #include <lal/LALAtomicDatatypes.h>
 
-NRCSID( XLALERRORH, "$Id$" );
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

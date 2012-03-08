@@ -19,7 +19,6 @@
 
 /****************************** <lalVerbatim file="LALStatusMacrosHV">
 Author: Creighton, J. D. E. and Creighton, T. D.
-$Id$
 ******************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -262,31 +261,14 @@ which a function sould deliberately raise a signal.  In all other
 cases the error should be trapped, reported in the status structure,
 and control returned to the calling routine.
 
-\subsubsection{Assigning an RCS \texttt{\$Id\$} string}
-\idx{NRCSID()}
-
-Every source file should have a unique character string identifying
-that version of that file.  The standard convention, for a file
-\verb@MyFile.c@, is to declare a string \verb@MYFILEC@ at the top of
-the module using the macro \verb@NRCSID()@ (defined in the include
-file \verb@LALRCSID.h@):
-
-\vspace{2ex}
-\noindent\texttt{NRCSID( MYFILEC, \$Id\$ );}
-\vspace{2ex}
-
-\noindent where \texttt{\$Id\$} is expanded by RCS to give the full
-name and version number of the source file.
-
 \subsubsection{Initializing the status structure}
 \idx{INITSTATUS()}
 
 The first instruction in any function, after variable declarations,
-should be the macro \verb@INITSTATUS()@, which takes three arguments:
-the function's status pointer, the function name (a string literal)
-and the module's RCS \texttt{\$Id\$} string.
+should be the macro \verb@INITSTATUS()@, which takes one argument:
+the function's status pointer.
 \begin{verbatim}
-INITSTATUS( stat, "MyFunction", MYFILEC );
+INITSTATUS(stat);
 \end{verbatim}
 This macro checks that a valid status pointer has been passed to the
 function, and if so, initializes the other fields to indicate (by
@@ -784,14 +766,10 @@ package using the autodocumentation utilities, which the
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
-#include <lal/LALRCSID.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID (LALSTATUSMACROSH, "$Id$");
 
 extern int lalDebugLevel;
 extern const int lalNoDebug;
@@ -802,15 +780,15 @@ extern const int lalNoDebug;
 
 #ifndef NOLALMACROS
 
-#define INITSTATUS( statusptr, funcname, id )                                 \
+#define INITSTATUS( statusptr )                                               \
   do { if ( (statusptr) )                                                     \
   {                                                                           \
     INT4 level_ = (statusptr)->level ;                                        \
     INT4 statp_ = (statusptr)->statusPtr ? 1 : 0 ;                            \
     memset( (statusptr), 0, sizeof( LALStatus ) ); /* possible memory leak */ \
     (statusptr)->level    = level_ > 0 ? level_ : 1 ;                         \
-    (statusptr)->Id       = (id);                                             \
-    (statusptr)->function = (funcname);                                       \
+    (statusptr)->Id       = "$Id$";                                           \
+    (statusptr)->function = __func__;                                         \
     SETSTATUSFILELINE( statusptr );                                           \
     (void) LALTrace( statusptr, 0 );                                          \
     if ( statp_ )                                                             \
@@ -821,7 +799,7 @@ extern const int lalNoDebug;
   else                                                                        \
     lalAbortHook( "Abort: function %s, file %s, line %d, %s\n"                \
                   "       Null status pointer passed to function\n",          \
-                  (funcname), __FILE__, __LINE__, (id) );                     \
+                  __func__, __FILE__, __LINE__, "$Id$" );                     \
   } while ( 0 )
 
 #define RETURN( statusptr )                                                   \
@@ -936,8 +914,8 @@ extern const int lalNoDebug;
 
 #else /* NOLALMACROS */
 
-#define INITSTATUS( statusptr, funcname, id ) \
-  do { if ( LALInitStatus( statusptr, funcname, id, __FILE__, __LINE__ ) ) return; } while ( 0 )
+#define INITSTATUS( statusptr ) \
+  do { if ( LALInitStatus( statusptr, __func__, "$Id$", __FILE__, __LINE__ ) ) return; } while ( 0 )
 
 #define RETURN( statusptr ) \
   do { if ( LALPrepareReturn( statusptr, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )

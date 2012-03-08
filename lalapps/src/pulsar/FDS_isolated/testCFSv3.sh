@@ -3,14 +3,8 @@
 ## take extra user-arguments
 extra_args="$@"
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-else
-    srcdir=./
-    builddir="~/Software/development/lalapps-BUILD-dbg/src/pulsar/FDS_isolated/"
-fi
+builddir="./";
+injectdir="../Injections/"
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"

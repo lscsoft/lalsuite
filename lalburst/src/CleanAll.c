@@ -117,10 +117,8 @@ LALZDestroyVector()
 
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/CLR.h>
-
-NRCSID (CLEANALLC, "$Id$");
-
 
 void LALCleanAll (LALStatus     *status,
                REAL4Vector      *out,  /* clean data */
@@ -148,7 +146,7 @@ void LALCleanAll (LALStatus     *status,
 
 /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALCleanAll", CLEANALLC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

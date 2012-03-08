@@ -117,8 +117,6 @@ This structure stores the parameters for the coarse fit.
 extern "C" {
 #endif
 
-NRCSID (FITTOPULSARH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define FITTOPULSARH_ENULLINPUT 1
 #define FITTOPULSARH_ENULLOUTPUT 2

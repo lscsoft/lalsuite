@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Brady, P. and Kipp Cannon
  *
@@ -36,11 +35,6 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 #include <lal/Window.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID(EPSEARCHC, "$Id$");
-
 
 /*
  * Generate a linked list of burst events from a time series.

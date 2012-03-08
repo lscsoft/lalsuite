@@ -4,7 +4,6 @@
  *
  * Author: Keppel, D
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -30,8 +29,6 @@
 #include <lalapps.h>
 #include <processtable.h>
 #include <LALAppsVCSInfo.h>
-
-RCSID("$Id$");
 
 #define PROGRAM_NAME "corse"
 #define CVS_ID_STRING "$Id$"

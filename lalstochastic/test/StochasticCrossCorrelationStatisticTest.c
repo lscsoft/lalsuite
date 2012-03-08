@@ -150,6 +150,7 @@ fabs()
 
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -171,8 +172,6 @@ fabs()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID (STOCHASTICCROSSCORRELATIONSTATISTICTESTC, "$Id$");
 
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSTATISTICTESTC_F0        80.0

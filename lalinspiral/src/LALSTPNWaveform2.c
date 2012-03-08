@@ -1,7 +1,5 @@
 #include <lal/LALSTPNWaveform2.h>
 
-NRCSID (LALSTPNWAVEFORM2C, "$Id$");
-
 typedef struct LALSTPNstructparams {
 	REAL8 eta, m1m2, m2m1;
 	REAL8 wdotnew, wdotorb[9], wspin15, wspin20;
@@ -296,7 +294,7 @@ LALSTPNAdaptiveWaveformEngine( LALStatus *status,
   /* other computed values */
   REAL8 unitHz, dt, m, lengths, norm;
 
-  INITSTATUS(status, "LALSTPNWaveform", LALSTPNWAVEFORM2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
  	/* Make sure parameter and waveform structures exist. */

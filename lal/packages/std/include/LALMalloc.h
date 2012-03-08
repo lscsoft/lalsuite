@@ -18,7 +18,6 @@
 */
 
 /************************************ <lalVerbatim file="LALMallocHV">
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -52,15 +51,11 @@ standard C routines.
 #define _LALMALLOC_H
 
 #include <stddef.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID( LALMALLOCH, "$Id$" );
 
 void *XLALMalloc( size_t n );
 void *XLALMallocLong( size_t n, const char *file, int line );

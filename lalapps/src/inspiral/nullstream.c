@@ -23,7 +23,6 @@
  *
  * Author: Messaritaki, E.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -50,7 +49,6 @@
 #include <processtable.h>
 #include <lalappsfrutils.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -82,8 +80,6 @@
 
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
-
-RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
@@ -228,16 +224,13 @@ int main( int argc, char *argv[] )
   XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
+      XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+          CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
     }
   else
     {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
+      XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME,
+          lalappsGitCommitID, lalappsGitGitStatus, lalappsGitCommitDate, 0);
     }
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     LALCalloc( 1, sizeof(ProcessParamsTable) );

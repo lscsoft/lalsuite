@@ -36,9 +36,6 @@ LALFree()
 #include "LALStdlib.h"
 #include "AVFactories.h"
 
-
-NRCSID( VECTORFACTORIESC, "$Id$" );
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #include "CreateVector_source.c"

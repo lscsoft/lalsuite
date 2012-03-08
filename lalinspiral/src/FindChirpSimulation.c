@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., and Creighton, T. D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -61,6 +60,7 @@ LALFree()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -93,8 +93,6 @@ LALFree()
 #define UNUSED
 #endif
 
-NRCSID( FINDCHIRPSIMULATIONC, "$Id$" );
-
 static int FindTimeSeriesStartAndEnd (
               REAL4Vector *signalvec,
               UINT4 *start,
@@ -123,7 +121,7 @@ LALFindChirpInjectSignals (
   CHAR                  ifo[LIGOMETA_IFO_MAX];
   REAL8                 timeDelay;
 
-  INITSTATUS( status, "LALFindChirpInjectSignals", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,
@@ -387,15 +385,15 @@ LALFindChirpInjectSignals (
 
           if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_START );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_START );
           }
           else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_END );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_END );
           }
           else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_STARTEND );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_STARTEND );
           }
           else if ( strcmp( "TAPER_NONE", thisEvent->taper ) )
           {
@@ -830,7 +828,7 @@ LALFindChirpSetAnalyseTemplate (
   CHAR                  myMsg[8192];
   UINT4                 approximant;
 
-  INITSTATUS( status, "LALFindChirpSetAnalyseTemplate", FINDCHIRPSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( analyseThisTmplt, status,

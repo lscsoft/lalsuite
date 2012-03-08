@@ -36,8 +36,6 @@
 extern "C" {
 #endif
 
-  NRCSID( LALNOISEMODELSH, "$Id$" );
-
 /**
 
 \addtogroup LALNoiseModels_h

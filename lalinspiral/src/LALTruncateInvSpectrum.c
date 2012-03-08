@@ -17,11 +17,10 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/RealFFT.h>
 #include <lal/LALNoiseModelsInspiral.h>
-
-NRCSID (LALTRUNCATEINVSPECTRUMC, "$Id$");
 
 void LALTruncateInvSpectrum(
         LALStatus                *status,
@@ -36,7 +35,7 @@ void LALTruncateInvSpectrum(
     REAL4Vector       *hvec = NULL;
     REAL4             *w, norm;
 
-    INITSTATUS( status, "LALTruncateInvSpectrum", LALTRUNCATEINVSPECTRUMC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR( status );
 
     ASSERT (inputVec,         status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

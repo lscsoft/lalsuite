@@ -23,8 +23,6 @@
 #include <lal/TwoDMesh.h>
 #include "TwoDMeshPlot.h"
 
-NRCSID( TWODEMESHPLOTC, "$Id$" );
-
 /* Local constants. */
 #define TWODMESHPLOTC_MAXOBJ 797 /* Maximum number of objects in a
                                     PostScript macro */
@@ -110,7 +108,7 @@ LALPlotTwoDMesh( LALStatus         *stat,
   MeshMacroParamStruc macroParams; /* parameters for
 				      LALMakeMeshMacro() */
 
-  INITSTATUS( stat, "LALPlotTwoDMesh", TWODEMESHPLOTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that arguments and their fields exist. */
@@ -397,7 +395,7 @@ LALMakeMeshMacro( LALStatus           *stat,
   void *metricParams = NULL;
   REAL4 mThresh = 0.0;
 
-  INITSTATUS( stat, "LALMakeMeshMacro", TWODEMESHPLOTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   ASSERT( params, stat, TWODMESHPLOTH_ENUL, TWODMESHPLOTH_MSGENUL );

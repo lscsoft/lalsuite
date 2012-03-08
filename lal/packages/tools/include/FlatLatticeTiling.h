@@ -34,7 +34,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Random.h>
 #include <lal/GSLSupport.h>
@@ -44,8 +43,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID(FLATLATTICETILINGH, "$Id$");
 
 /**
  * Flat lattice tiling bound

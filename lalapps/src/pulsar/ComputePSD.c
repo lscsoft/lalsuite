@@ -25,6 +25,7 @@
  * \brief Compute power spectral densities
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <glob.h>
 #include <stdlib.h>
 #include <math.h>
@@ -51,8 +52,6 @@
 #include <lal/LogPrintf.h>
 
 #include <lalapps.h>
-
-RCSID( "$Id$");
 
 /* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0
@@ -708,7 +707,7 @@ LALfwriteSpectrograms ( LALStatus *status, const CHAR* bname, const MultiPSDVect
   float num, *row_data;		/* cast to float for writing (gnuplot binary format) */
   FILE *fp;
 
-  INITSTATUS( status, "LALfwriteSpectrograms", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if ( !bname || !multiPSD || multiPSD->length == 0 ) {
@@ -1040,7 +1039,7 @@ XLALReadSFTs ( ConfigVariables_t *cfg,		/**< [out] return derived configuration 
     XLALPrintError ("%s: XLALLoadMultiSFTs( %f, %f ) failed with xlalErrno = %d\n", __func__, fMin, fMax, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
-  XLALDestroySFTCatalog ( &catalog );
+  XLALDestroySFTCatalog ( catalog );
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
   /* ---------- end loading SFTs ---------- */
 

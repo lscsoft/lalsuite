@@ -27,10 +27,6 @@
 
 #include "PulsarTimes.h"
 
-/** \cond DONT_DOXYGEN */
-NRCSID(DTEPHEMERISC,"$Id$");
-/** \endcond */
-
 /** \file
     \author Jones, D. I.,   Owen, B. J.
     \ingroup PulsarTimes_h
@@ -84,7 +80,7 @@ LALDTEphemeris( LALStatus             *status,
   REAL8 upper, lower;         /* Quantities for finite differnecing */
   REAL8 d_alpha, d_delta;
 
-  INITSTATUS(status,"DTEphemeris",DTEPHEMERISC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* Make sure parameter structures and their fields exist. */
@@ -220,7 +216,7 @@ LALTEphemeris( LALStatus   *status,
   BarycenterInput baryin; /* Input structure for Barycenter() */
   EmissionTime emit; /*Output structure of Barycenter() */
 
-  INITSTATUS(status,"TEphemeris",DTEPHEMERISC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*Make sure that param structs and their fields exist. */

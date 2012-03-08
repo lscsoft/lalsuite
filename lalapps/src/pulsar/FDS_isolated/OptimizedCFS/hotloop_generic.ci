@@ -4,11 +4,13 @@
 	 * We choose the value sin[ 2pi(Dphi_alpha - kstar) ] because it is the 
 	 * closest to zero and will pose no numerical difficulties !
 	 */
+      { 
 	{ 
 	  /* improved hotloop algorithm by Fekete Akos: 
 	   * take out repeated divisions into a single common denominator,
 	   * plus use extra cleverness to compute the nominator efficiently...
 	   */
+	  REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
 	  REAL4 Sn = (*Xalpha_l).re;
 	  REAL4 Tn = (*Xalpha_l).im;
 	  REAL4 pn = kappa_max;
@@ -43,3 +45,4 @@
 	  SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
 	  SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
         }
+      }

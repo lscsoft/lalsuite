@@ -1,6 +1,5 @@
 ## Process this file with automake to produce Makefile.in
 #
-# $Id$
 #
 check_PROGRAMS = TestJulianDay TestLMST TestLMST2 TestDelay \
                  TestGPStoUTC TestUTCtoGPS TestGPStoGMST1 TestLeapSecs \

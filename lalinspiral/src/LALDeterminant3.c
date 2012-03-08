@@ -53,10 +53,6 @@ would take many more operations than some of the standard routines.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID(LALDETERMINANT3C, "$Id$");
-
-
-
 void LALDeterminant3(LALStatus *status,
                      REAL8     *determinant,
                      REAL8     **matrix)
@@ -73,7 +69,7 @@ void LALDeterminant3(LALStatus *status,
                               {-1, 0, 0},
                               { 0, 0, 0}}};
    INT4 Dim=3,i,j,k;
-   INITSTATUS(status, "LALDeterminant3", LALDETERMINANT3C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (matrix,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

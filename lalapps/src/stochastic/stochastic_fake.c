@@ -20,7 +20,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
  *
- * $Id$
  */
 
 #include "fake_data.h"
@@ -29,8 +28,6 @@
 #include "data_output.h"
 #include "stochastic.h"
 
-NRCSID(STOCHASTICC, "$Id$");
-RCSID("$Id$");
 
 /* program info */
 const CHAR* prog_name="lalapps_stochastic_fake";
@@ -722,16 +719,16 @@ INT4 main(INT4 argc, CHAR *argv[])
   parse_options(argc, argv);
 
   /* set fake ifos */
-  ifoOne = (CHAR*)calloc(3, sizeof(CHAR));
-  ifoTwo = (CHAR*)calloc(3, sizeof(CHAR));
-  strncpy(ifoOne, "G1", sizeof(ifoOne));
-  strncpy(ifoTwo, "G1", sizeof(ifoTwo));
+  ifoOne = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+  ifoTwo = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+  strncpy(ifoOne, "G1", LIGOMETA_IFO_MAX * sizeof(CHAR));
+  strncpy(ifoTwo, "G1", LIGOMETA_IFO_MAX * sizeof(CHAR));
 
   /* set fake channels */
-  channelOne = (CHAR*)calloc(3, sizeof(CHAR));
-  channelTwo = (CHAR*)calloc(3, sizeof(CHAR));
-  strncpy(channelOne, "G1", sizeof(channelOne));
-  strncpy(channelTwo, "G1", sizeof(channelTwo));
+  channelOne = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+  channelTwo = (CHAR*)calloc(LIGOMETA_IFO_MAX, sizeof(CHAR));
+  strncpy(channelOne, "G1", LIGOMETA_IFO_MAX * sizeof(CHAR));
+  strncpy(channelTwo, "G1", LIGOMETA_IFO_MAX * sizeof(CHAR));
 
   /* initialise gps time structures */
   endTime = startTime + totalDuration;

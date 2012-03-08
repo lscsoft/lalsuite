@@ -48,9 +48,6 @@ This program does zero-th order tests for XLALTimeDelayFromEarthCenter().
 #include <lal/SkyCoordinates.h>
 #include <lal/DetectorSite.h>
 
-
-NRCSID( LALTESTDELAYC, "$Id$" );
-
 /* This should already be defined as X_EPS in /usr/include/values.h ;
  * in Darwin, it's defined as DBL_EPSILON in /usr/include/float.h */
 #define DOUBLE_EPSILON 1.0536712127723507013e-08
@@ -99,7 +96,7 @@ int main(int argc, char **argv)
   if(!XLALCreateDetector(&detector1, &frdet1, LALDETECTORTYPE_IFODIFF))
     {
       fprintf(stderr, "TestDelay: XLALCreateDetector failed, line %i, %s\n",
-              __LINE__, LALTESTDELAYC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -113,7 +110,7 @@ int main(int argc, char **argv)
       detector1.location[2] != 0.)
     {
       fprintf(stderr, "TestDelay: XLALCreateDetector output is wrong, line %i, %s\n",
-              __LINE__, LALTESTDELAYC);
+              __LINE__, "$Id$");
       fprintf(stderr, "Got Det #1 location: (% 16.8e, % 16.8e, % 16.8e)\n",
               (float)detector1.location[0], (float)detector1.location[1],
               (float)detector1.location[2]);
@@ -141,7 +138,7 @@ int main(int argc, char **argv)
   if(!XLALCreateDetector(&detector2, &frdet2, LALDETECTORTYPE_IFODIFF))
     {
       fprintf(stderr, "TestDelay: XLALCreateDetector failed, line %i, %s\n",
-              __LINE__, LALTESTDELAYC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -157,7 +154,7 @@ int main(int argc, char **argv)
     {
       fprintf(stderr,
               "TestDelay: XLALTimeDelayFromEarthCenter() failed, line %i, %s\n",
-              __LINE__, LALTESTDELAYC);
+              __LINE__, "$Id$");
       return 1;
     }
 

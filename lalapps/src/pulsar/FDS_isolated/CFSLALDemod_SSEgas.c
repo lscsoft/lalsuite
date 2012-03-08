@@ -20,7 +20,6 @@
 /* LALDemod variant with large assembler part for modifications by Feket Akos
  * Authors see ComputeFStatistic.c
                                                          Bernd Machenschalk */
-RCSID( "$Id$");
 
 /* gcc version and Apples assembler specials aren't needed currently, but kept for reference */
 #ifdef __GNUC__
@@ -97,7 +96,7 @@ void TestLALDemod(LALStatus *status, LALFstat *Fs, FFT **input, DemodPar *params
 
   UINT4 M=params->SFTno;
 
-  INITSTATUS( status, "TestLALDemod", rcsid );
+  INITSTATUS(status);
 
   /* catch some obvious programming errors */
   ASSERT ( (Fs != NULL)&&(Fs->F != NULL), status, COMPUTEFSTAT_ENULL, COMPUTEFSTAT_MSGENULL );

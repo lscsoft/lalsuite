@@ -113,8 +113,8 @@ LALCheckMemoryLeaks()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
-NRCSID (MAKEFAKEDATABINARYC, "$Id$");
 
 /**\name Error Codes */ /*@{*/
 #define MAKEFAKEDATABINARYC_ENORM 0
@@ -193,7 +193,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, MAKEFAKEDATABINARYC, statement ? statement :  \
+              __LINE__, "$Id$", statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -202,7 +202,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
-              MAKEFAKEDATABINARYC, (statement) );                     \
+              "$Id$", (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \
@@ -1158,7 +1158,6 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
   int r,i,msp;
   UINT4 imin, nsamples;
   FILE *fp;
-  int rc;
 
   /* scan through the list of arguments on the command line
      and get the input data filename*/
@@ -1262,8 +1261,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	  char command[1024];
     fprintf(stderr,"Unable to assign A plus from %s\n",filename);
    sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
-
+   if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
   /*Ac REAL4*/
@@ -1274,7 +1272,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
     if (r==1) fprintf(stderr,"Have A cross=%f\n", genTayParams.aCross);
     if (r==0) fprintf(stderr,"Last item read was %s\n", dmp);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+   if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
     return 1;
   }
   /*psi REAL4*/
@@ -1283,7 +1281,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign psi from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+   if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }
@@ -1293,7 +1291,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign phi0 from %s\n",filename);
    sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+   if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }
@@ -1325,7 +1323,8 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign orbital radius from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
+
 
     return 1;
   }
@@ -1335,7 +1334,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign orbital angular velocity from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }
@@ -1346,7 +1345,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign orbital initial phase from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }
@@ -1357,7 +1356,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign orbital initial phase from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }
@@ -1368,7 +1367,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign orbital initial phase from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }
@@ -1379,7 +1378,7 @@ int read_file(LALStatus* status, int argc,char *argv[]) {
 	          char command[1024];
     fprintf(stderr,"Unable to assign orbital initial phase from %s\n",filename);
     sprintf(command, "cat %s 1>&2\n", filename);
-    rc = system(command);
+    if ( system(command) ) error("\nsystem(%s) returned non-zero status!\n", command );
 
     return 1;
   }

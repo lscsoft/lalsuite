@@ -26,8 +26,6 @@
 #include <lal/BandPassTimeSeries.h>
 #include <lal/ResampleTimeSeries.h>
 
-NRCSID( RESAMPLETIMESERIESC, "$Id$" );
-
 /**
  * \author Brown, D. A., Brady, P. R., Charlton, P.
  *
@@ -374,7 +372,7 @@ LALResampleREAL4TimeSeries(
     -6.5785565693739621e-05, -1.7899485045886187e-19
   };
 
-  INITSTATUS( status, "LALResampleREAL4TimeSeries", RESAMPLETIMESERIESC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( ts, status,

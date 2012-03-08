@@ -33,8 +33,6 @@
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
 
-NRCSID( USERINPUTC, "$Id$");
-
 extern INT4 lalDebugLevel;
 
 #define TRUE  (1==1)
@@ -1317,7 +1315,7 @@ RegisterUserVar (LALStatus *status,
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, "LALRegisterUserVar", USERINPUTC );
+  INITSTATUS(status);
 
   ASSERT (cvar != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (name != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -1339,7 +1337,7 @@ void
 LALDestroyUserVars (LALStatus *status)
 {
 
-  INITSTATUS( status, "LALDestroyUserVars", USERINPUTC );
+  INITSTATUS(status);
 
   XLALDestroyUserVars();
 
@@ -1354,7 +1352,7 @@ void
 LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 {
   const char *fn = __func__;
-  INITSTATUS( status, "LALUserVarReadCmdline", USERINPUTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (argv, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -1374,7 +1372,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 void
 LALUserVarCheckRequired (LALStatus *status)
 {
-  INITSTATUS( status, "LALUserVarCheckRequired", USERINPUTC);
+  INITSTATUS(status);
 
   if ( XLALUserVarCheckRequired() != XLAL_SUCCESS ) {
     ABORT (status, USERINPUTH_ENOTSET, USERINPUTH_MSGENOTSET);
@@ -1391,7 +1389,7 @@ void
 LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 {
   const char *fn = __func__;
-  INITSTATUS( status, "LALUserVarReadAllInput", USERINPUTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
@@ -1419,7 +1417,7 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, "UVARgetDebugLevel", USERINPUTC);
+  INITSTATUS(status);
 
   ASSERT (argv, status,  USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (UVAR_vars.next == NULL, status, USERINPUTH_EDEBUG,  USERINPUTH_MSGEDEBUG);
@@ -1441,7 +1439,7 @@ LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 {
   const char *fn = __func__;
 
-  INITSTATUS( status, "LALUserVarGetLog", USERINPUTC);
+  INITSTATUS(status);
 
   ASSERT (logstr, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
   ASSERT (*logstr == NULL, status, USERINPUTH_ENONULL,USERINPUTH_MSGENONULL);
@@ -1470,7 +1468,7 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
   CHAR *typestr=NULL;
   ProcessParamsTable *this_proc_param=NULL;
 
-  INITSTATUS( status, "LALUserVarGetProcParamsTable", USERINPUTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (out, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -1526,7 +1524,7 @@ LALUserVarHelpString (LALStatus *status,
 {
   const char *fn = __func__;
 
-  INITSTATUS (status, fn, USERINPUTC);
+  INITSTATUS(status);
 
   ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
   ASSERT (helpstring != NULL, status, USERINPUTH_ENULL, USERINPUTH_MSGENULL);
@@ -1603,9 +1601,8 @@ void
 LALUserVarReadCfgfile (LALStatus *status,
 		       const CHAR *cfgfile) 	   /* name of config-file */
 {
-  const char *fn = __func__;
 
-  INITSTATUS( status, fn, USERINPUTC );
+  INITSTATUS(status);
 
   ASSERT (UVAR_vars.next, status, USERINPUTH_ENOUVARS,  USERINPUTH_MSGENOUVARS);
 

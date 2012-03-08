@@ -53,8 +53,6 @@ extern "C" {
 
 #include <lal/LALDatatypes.h>
 
-NRCSID( FRAMECACHEH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define FRAMECACHEH_ENULL  1
 #define FRAMECACHEH_ENNUL  2

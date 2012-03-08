@@ -34,15 +34,12 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_nan.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/GSLSupport.h>
 #include <lal/FlatLatticeTilingPulsar.h>
-
-NRCSID(FLATLATTICETILINGPULSARC, "$Id$");
 
 #define TRUE  (1==1)
 #define FALSE (1==0)
@@ -88,8 +85,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
 
   /* Check input */
   if (Tspan <= 0.0)
-    XLALPrintError("%s: Tspan must be strictly positive", __func__);
-    XLAL_ERROR(XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL, "Tspan must be strictly positive");
 
   /* Allocate memory */
   ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_FAILURE);
@@ -146,8 +142,7 @@ static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *poin
     x /= gsl_vector_get(point, 0);
     break;
   default:
-    XLALPrintError ("%s: invalid dimension %d input, allowed are 0-2.\n", __func__, dimension );
-    XLAL_ERROR ( XLAL_EINVAL );
+    XLAL_ERROR(XLAL_EINVAL, "invalid dimension %d input, allowed are 0-2", dimension);
   }
 
   /* Set lower and upper bound */
@@ -181,8 +176,7 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
 
   /* Check tiling dimension */
   if (tiling->dimensions < (3 + gap))
-    XLALPrintError("%s: 'tiling->dimensions' is too small", __func__);
-    XLAL_ERROR(XLAL_EINVAL);
+    XLAL_ERROR(XLAL_EINVAL, "'tiling->dimensions' is too small");
 
   /* Allocate memory */
   ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_FAILURE);

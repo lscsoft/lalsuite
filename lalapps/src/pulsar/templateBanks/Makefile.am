@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-# $Id$
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
@@ -31,9 +30,9 @@ EXTRA_DIST = testMetricCodes.py
 
 TESTS = testMetricCodes.py
 
-TESTS_ENVIRONMENT = \
+TESTS_ENVIRONMENT = 1>/dev/null \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+LAL_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 CLEANFILES = Fmetric.dat Fmetric_v2.dat
 

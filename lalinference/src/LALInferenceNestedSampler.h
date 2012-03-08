@@ -67,8 +67,6 @@ REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
 REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
 
 /* Functions for proposal distributions */
-void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALInferenceVariables
-*parameter);
 void LALInferenceProposalNS(LALInferenceRunState *runState, LALInferenceVariables *parameter);
 void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInferenceVariables *parameter);
 //Declared in LALInferencePrior.h instead:
@@ -113,6 +111,9 @@ XLALMultiStudentDeviates(REAL4Vector  *vector,
 UINT4 LALInferenceCheckPositiveDefinite(gsl_matrix *matrix, UINT4 dim);
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
 
+/** Setup a k-D tree from the current set of nested sampling live points for use
+    as a proposal distribution. */
+void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState );
 
 #endif
 

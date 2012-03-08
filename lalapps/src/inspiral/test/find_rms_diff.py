@@ -11,7 +11,6 @@ __name__ = "plotinspiral"
 __Id__ = "$Id$"
 __title__ = "Inspiral Plots"
 
-# $Source$
 
 import sys
 import os

@@ -23,7 +23,6 @@
  *
  * Author: Brown D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -72,10 +71,6 @@ LALDestroyVector()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpACTD.h>
 
-
-NRCSID (FINDCHIRPTEMPLATEC, "$Id$");
-
-
 void
 LALFindChirpTemplateInit (
     LALStatus                  *status,
@@ -89,7 +84,7 @@ LALFindChirpTemplateInit (
   REAL4                        *xfac = NULL;
   const REAL4                   exponent = -1.0/3.0;
 
-  INITSTATUS( status, "LALFindChirpTemplateInit", FINDCHIRPTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -256,7 +251,7 @@ LALFindChirpTemplateFinalize (
 {
   FindChirpTmpltParams         *outputPtr;
 
-  INITSTATUS( status, "LALFindChirpTemplateFinalize", FINDCHIRPTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

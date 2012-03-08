@@ -52,8 +52,6 @@ linked lists used in TrigScan and E-thinca.
 extern "C" {
 #endif
 
-NRCSID( TRIGSCANETHINCACOMMONH, "$Id$" );
-
 TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
                                                REAL8             scaleFactor,
                                                REAL8             *tcMax );

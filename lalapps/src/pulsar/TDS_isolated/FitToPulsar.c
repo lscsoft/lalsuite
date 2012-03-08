@@ -37,9 +37,6 @@ LALComputeDetAMResponse()
 #include <lal/LALStdlib.h>
 #include "FitToPulsar.h" /* use local version until up-to-date file commited to lal */
 
-/******* DEFINE RCS ID STRING ************/
-NRCSID( FITTOPULSARC, "$Id$" );
-
 #define INICHISQU 1.e10
 
 
@@ -76,7 +73,7 @@ LALCoarseFitToPulsar	( 	LALStatus            *status,
   UINT4			iH0, iCosIota, iPhase, iPsi, arg;
   LALGPSandAcc		pGPSandAcc;
 	
-  INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/	 
@@ -256,7 +253,7 @@ LALFitToPulsarStudentT	( 	LALStatus            *status,
         LALGPSandAcc		pGPSandAcc;
 
 	
-  INITSTATUS(status, "LALFitToPulsarStudentT", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/	 
@@ -415,7 +412,7 @@ LALPulsarMarginalize   ( 	LALStatus              *status,
    UINT4 iH0, iPsi, iPhase, iCosIota; 
    REAL8 area;
   
-  INITSTATUS(status, "LALPulsarMarginalize", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* initialize outputs */

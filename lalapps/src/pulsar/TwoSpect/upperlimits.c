@@ -173,28 +173,29 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
    gsl_root_fsolver *s = gsl_root_fsolver_alloc (T);
    gsl_function F;
+   F.function = &gsl_ncx2cdf_float_withouttinyprob_solver;     //single precision, without the extremely tiny probability part
    struct ncx2cdf_solver_params pars;
    
    //loop over modulation depths
    for (ii=minrows; ii<=ihsmaxima->rows; ii++) {
       REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = -1;
-      REAL8 noise = 0.0, totalnoise = 0.0, ihsminusnoise = 0.0;
       INT4 startpositioninmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2;
       //loop over frequency bins
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          
-         INT4 locationinmaximavector = startpositioninmaximavector + jj;
+         INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
+         INT4 location = ihsmaxima->locations->data[locationinmaximavector];  //Location of maximum value
+         REAL8 noise = ihsfar->expectedIHSVector->data[location-5];           //Expected noise at the location of the maximum value
          
-         INT4 location = ihsmaxima->locations->data[locationinmaximavector];
-         
-         noise = ihsfar->expectedIHSVector->data[location-5];
-         totalnoise = 0.0;
+         //Sum across multiple frequency bins scaling noise each time with average noise floor
+         REAL8 totalnoise = 0.0;
          for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
-         ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;
          
-         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;
-         REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;
+         REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;    //IHS value minus noise
+         
+         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;  //"Signal" frequency
+         REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;                    //"Signal" modulation depth
          
          if (ihsminusnoise>loudestoutlierminusnoise && 
              (fsig>=params->ULfmin && fsig<=params->ULfmin+params->ULfspan) && 
@@ -207,6 +208,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          }
       } /* for jj < ffdata->numfbins-(ii-1) */
       
+      //Signal an error if we didn't find something above the noise level
       if (locationofloudestoutlier==-1) {
          fprintf(stderr, "%s: Failed to reach a louder outlier minus noise greater than 0\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -215,16 +217,17 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       //comment or remove this
       //fprintf(stderr, "%f %f %.6f %.6f %d %d\n", params->fmin + (0.5*(ii-1.0) + jjbinofloudestoutlier)/params->Tcoh, 0.5*(ii-1.0)/params->Tcoh, loudestoutliernoise, loudestoutlierminusnoise, locationofloudestoutlier, jjbinofloudestoutlier);
       
+      //We do a root finding algorithm to find the delta value required so that only 5% of a non-central chi-square
+      //distribution lies below the maximum value.
       REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
       if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
          fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n", __func__, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      REAL8 lo = 0.01*initialguess, hi = 5.0*initialguess;
+      REAL8 lo = 0.001*initialguess, hi = 10.0*initialguess;
       pars.val = 2.0*loudestoutlier;
       pars.dof = 2.0*loudestoutliernoise;
       pars.ULpercent = 0.95;
-      F.function = &gsl_ncx2cdf_float_withouttinyprob_solver;
       F.params = &pars;
       if (gsl_root_fsolver_set(s, &F, lo, hi) != 0) {
          fprintf(stderr,"%s: gsl_root_fsolver_set() failed.\n", __func__);
@@ -250,7 +253,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
             fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", __func__, status);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
-      }
+      } /* while status==GSL_CONTINUE and jj<max_iter */
       if (status != GSL_SUCCESS) {
          fprintf(stderr, "%s: Root finding iteration (%d/%d) failed with code %d. Current root = %f\n", __func__, jj, max_iter, status, root);
          XLAL_ERROR_VOID(XLAL_FAILURE);
@@ -259,11 +262,14 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          XLAL_ERROR_VOID(XLAL_FAILURE);
       }
       
+      //Convert the root value to an h0 value
       REAL8 h0 = ihs2h0(root, params);
       if (XLAL_IS_REAL8_FAIL_NAN(h0)) {
          fprintf(stderr, "%s: ihs2h0() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
+      
+      //Store values in the upper limit struct
       ul->fsig->data[ii-minrows] = params->fmin + (0.5*(ii-1.0) + jjbinofloudestoutlier)/params->Tcoh;
       ul->period->data[ii-minrows] = params->Tobs/locationofloudestoutlier;
       ul->moddepth->data[ii-minrows] = 0.5*(ii-1.0)/params->Tcoh;
@@ -333,7 +339,7 @@ void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, INT4 printAllULvalu
    for (ii=0; ii<(INT4)ul.moddepth->length; ii++) {
       if (printAllULvalues==1) {
          fprintf(outputfile, "%.6f %.6f %.6g %.6f %.6f %.6f %.6f %.6g\n", ul.alpha, ul.delta, ul.ULval->data[ii], ul.effSNRval->data[ii], ul.fsig->data[ii], ul.period->data[ii], ul.moddepth->data[ii], ul.normalization);
-      } else if (ul.ULval->data[ii]>highesth0) {
+      } else if (printAllULvalues==0 && ul.ULval->data[ii]>highesth0) {
          highesth0 = ul.ULval->data[ii];
          snr = ul.effSNRval->data[ii];
          fsig = ul.fsig->data[ii];

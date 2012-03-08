@@ -44,9 +44,6 @@
 
 #include <lal/LogPrintf.h>
 
-RCSID("$Id$");
-
-
 /* Windows specifics */
 #ifdef _WIN32
 
@@ -87,6 +84,9 @@ static FILE*debugfp = NULL;
 
 /* maximum number of succesive failures before switching off syncing */
 #define SYNC_FAIL_LIMIT 5
+
+/* output file column headings string, globally defined from HSGCT program */
+extern char *global_column_headings_stringp;
 
 /* local prototypes */
 static void reduce_gctFStat_toplist_precision(toplist_t *l);
@@ -166,19 +166,28 @@ static int gctNC_smaller(const void*a, const void*b) {
 }
 
 
+/* ordering function defining the toplist: SORT BY LVstat */
+static int gctLV_smaller(const void*a, const void*b) {
+#ifdef DEBUG_SORTING
+  if(debugfp)
+    fprintf(debugfp,"%20lf  %20lf\n%20lf  %20lf\n\n",
+	    ((const GCTtopOutputEntry*)a)->sumTwoF,  ((const GCTtopOutputEntry*)b)->sumTwoF,
+	    ((const GCTtopOutputEntry*)a)->LV, ((const GCTtopOutputEntry*)b)->LV);
+#endif
+  if      (((const GCTtopOutputEntry*)a)->LV < ((const GCTtopOutputEntry*)b)->LV)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->LV > ((const GCTtopOutputEntry*)b)->LV)
+    return -1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF < ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return 1;
+  else if (((const GCTtopOutputEntry*)a)->sumTwoF > ((const GCTtopOutputEntry*)b)->sumTwoF)
+    return -1;
+  else
+    return(gctFStat_result_order(a,b));
+}
+
+
 /* functions for qsort based on the above ordering functions */
-static int gctFStat_restore_heap_qsort(const void*a, const void*b) {
-  void const* const* pa = (void const* const*)a;
-  void const* const* pb = (void const* const*)b;
-  return(gctFStat_smaller(*pb,*pa));
-}
-
-static int gctFStat_strongest_qsort(const void*a, const void*b) {
-  void const* const* pa = (void const* const*)a;
-  void const* const* pb = (void const* const*)b;
-  return(gctFStat_smaller(*pa,*pb));
-}
-
 static int gctFStat_final_qsort(const void*a, const void*b) {
   void const* const* pa = (void const* const*)a;
   void const* const* pb = (void const* const*)b;
@@ -197,28 +206,19 @@ int create_gctFStat_toplist(toplist_t**tl, UINT8 length, UINT4 whatToSortBy) {
   if (whatToSortBy==1) {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctNC_smaller) );
   }
+  else if (whatToSortBy==2) {
+    return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctLV_smaller) );
+  }
   else {
     return( create_toplist(tl, length, sizeof(GCTtopOutputEntry), gctFStat_smaller) );
   }
 
 }
 
-/* frees the space occupied by the toplist */
+/* frees the space occupied by the toplist
+   NOTE: toplist must not contain any allocated structs */
 void free_gctFStat_toplist(toplist_t**l) {
-
-  /* special handling of sumTwoFX entries, which are REAL4Vectors
-   * and need to be free'ed first if they are non-NULL
-   */
-  UINT4 i;
-  for (i = 0; i < (*l)->elems; i++ )
-    {
-      GCTtopOutputEntry *elem = toplist_elem ( (*l), i );
-      XLALDestroyREAL4Vector ( elem->sumTwoFX );
-    } /* for cand < numCands */
-
-  /* free the rest of the toplist and the 'container' */
   free_toplist(l);
-
 } /* free_gctFStat_toplist() */
 
 
@@ -239,34 +239,43 @@ void sort_gctFStat_toplist(toplist_t*l) {
   qsort(l->heap,l->elems,sizeof(char*),gctFStat_final_qsort);
 }
 
-/* (q)sort the toplist in order of strongest candidates */
-void sort_gctFStat_toplist_strongest(toplist_t*l) {
-  qsort(l->heap,l->elems,sizeof(char*),gctFStat_strongest_qsort);
-}
-
-
 /* Prints a Toplist line to a string buffer.
    Separate function to assure consistency of output and reduced precision for sorting */
 static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buflen) {
   const char *fn = __func__;
 
-  /* add extra output-field containing sumTwoFnew and per-detector sumTwoFX if non-NULL */
-  char extraFStr[256] = "";	/* defaults to empty */
-  char buf0[256];
-  if ( fline.sumTwoFX )
+  /* add extra output-field containing fields of LVstats struct, if non-NULL */
+  char LVStr[256] = "";	/* defaults to empty */
+  if ( fline.LV > -LAL_REAL4_MAX*0.2 ) /* if --computeLV=FALSE, the LV field was initialised to -LAL_REAL4_MAX. if --computeLV=TRUE, it is at least -LAL_REAL4_MAX*0.1 */
     {
-      snprintf ( extraFStr, sizeof(extraFStr), " %.6f", fline.sumTwoFnew );
-      UINT4 numDet = fline.sumTwoFX->length;
-      UINT4 X;
-      for ( X = 0; X < numDet ; X ++ )
+      char buf0[256];
+      snprintf ( LVStr, sizeof(LVStr), " %.6f", fline.LV );
+      for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
         {
-          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX->data[X] );
-          UINT4 len1 = strlen ( extraFStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( extraFStr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(extraFStr ));
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFX[X] );
+          UINT4 len1 = strlen ( LVStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( LVStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVStr ));
             break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( extraFStr, buf0 );
+          strcat ( LVStr, buf0 );
+        } /* for X < numDet */
+
+    } /* if fline.LVstats */
+  char LVRecalcStr[256] = "";	/* defaults to empty */
+  if ( fline.sumTwoFrecalc >= 0.0 ) /* this was initialised to -1.0 and is only >= 0.0 if actually recomputed in recalcToplistStats step */
+    {
+      char buf0[256];
+      snprintf ( LVRecalcStr, sizeof(LVRecalcStr), " %.6f", fline.sumTwoFrecalc );
+      for ( UINT4 X = 0; X < fline.numDetectors ; X ++ )
+        {
+          snprintf ( buf0, sizeof(buf0), " %.6f", fline.sumTwoFXrecalc[X] );
+          UINT4 len1 = strlen ( LVRecalcStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( LVRecalcStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", fn, len1, sizeof(LVRecalcStr ));
+            break;	/* we can't really terminate with error in this function, but at least we avoid crashing */
+          }
+          strcat ( LVRecalcStr, buf0 );
         } /* for X < numDet */
 
     } /* if sumTwoFX */
@@ -275,17 +284,19 @@ static int print_gctFStatline_to_str(GCTtopOutputEntry fline, char* buf, int buf
 #ifdef EAH_BOINC /* for S5GC1HF Apps use exactly the precision used in the workunit generator
 		    (12g for Freq and F1dot) and skygrid file (7f for Alpha & Delta)
 		    as discussed with Holger & Reinhard 5.11.2010 */
-                     "%.16f %.7f %.7f %.12g %d %.6f%s\n",
+                     "%.16f %.7f %.7f %.12g %.12g %d %.6f%s%s\n",
 #else
-                     "%.16g %.13g %.13g %.13g %d %.6f%s\n",
+                     "%.16g %.13g %.13g %.13g %.13g %d %.6f%s%s\n",
 #endif
                      fline.Freq,
                      fline.Alpha,
                      fline.Delta,
                      fline.F1dot,
+                     fline.F2dot,
                      fline.nc,
                      fline.sumTwoF,
-                     extraFStr
+                     LVStr,
+                     LVRecalcStr
                  );
 
   return len;
@@ -430,6 +441,16 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
 	  length += ret;
       }
     }
+
+    /* write column headings line */
+    if (length >= 0) {
+      ret = fprintf(fpnew,"%%%% columns:\n%%%% %s\n", global_column_headings_stringp);
+      if (ret < 0)
+        length = ret;
+      else
+        length += ret;
+    }
+
   }
 
   /* write the actual toplist */
@@ -508,7 +529,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
   char*tmpfilename;
   FILE*fp;
   UINT4 len;
-  UINT4 checksum;
+  UINT4 checksum = 0;
   static UINT4 sync_fail_counter = 0;
 
   /* construct temporary filename */
@@ -520,15 +541,6 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
   }
   strncpy(tmpfilename,filename,len);
   strncat(tmpfilename,TMP_EXT,len);
-
-  /* calculate checksum */
-  checksum = 0;
-  for(len = 0; len < sizeof(tl->elems); len++)
-    checksum += *(((char*)&(tl->elems)) + len);
-  for(len = 0; len < (tl->elems * tl->size); len++)
-    checksum += *(((char*)tl->data) + len);
-  for(len = 0; len < sizeof(counter); len++)
-    checksum += *(((char*)&counter) + len);
 
   /* open tempfile */
   fp=LALFopen(tmpfilename,"wb");
@@ -560,6 +572,22 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
     return(-1);
   }
 
+  /* dump heap order */
+  for(UINT4 i = 0; i < tl->elems; i++) {
+    UINT4 idx = (tl->heap[i] - tl->data) / tl->size;
+    len = fwrite(&idx, sizeof(idx), 1, fp);
+    if(len != 1) {
+      LOGIOERROR("Couldn't write idx to", tmpfilename);
+      LogPrintf(LOG_CRITICAL,"fwrite() returned %d, length was %d\n",len,1);
+      if(fclose(fp))
+	LOGIOERROR("In addition: couldn't close", tmpfilename);
+      LALFree(tmpfilename);
+      return(-1);
+    }
+    for(len = 0; len < sizeof(idx); len++)
+      checksum += *(((char*)&idx) + len);
+  }
+
   /* write counter */
   len = fwrite(&counter, sizeof(counter), 1, fp);
   if(len != 1) {
@@ -570,6 +598,14 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
       LALFree(tmpfilename);
     return(-1);
   }
+
+  /* calculate checksum */
+  for(len = 0; len < sizeof(tl->elems); len++)
+    checksum += *(((char*)&(tl->elems)) + len);
+  for(len = 0; len < (tl->elems * tl->size); len++)
+    checksum += *(((char*)tl->data) + len);
+  for(len = 0; len < sizeof(counter); len++)
+    checksum += *(((char*)&counter) + len);
 
   /* write checksum */
   len = fwrite(&checksum, sizeof(checksum), 1, fp);
@@ -617,7 +653,7 @@ int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLE
 int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   FILE*fp;
   UINT4 len;
-  UINT4 checksum;
+  UINT4 checksum, indexsum = 0;
 
   /* counter should be 0 if we couldn't read a checkpoint */
   *counter = 0;
@@ -666,6 +702,22 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
     return(-1);
   }
 
+  /* read heap order */
+  for(UINT4 i = 0; i < tl->elems; i++) {
+    UINT4 idx;
+    len = fread(&idx, sizeof(idx), 1, fp);
+    if(len != 1) {
+      LOGIOERROR("Couldn't read idx from", filename);
+      LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n",len,1);
+      if(fclose(fp))
+	LOGIOERROR("In addition: couldn't close", filename);
+      return(-1);
+    }
+    tl->heap[i] = (char*)(tl->data + idx * tl->size);
+    for(len = 0; len < sizeof(idx); len++)
+      indexsum += *(((char*)&idx) + len);
+  }
+
   /* read counter */
   len = fread(counter, sizeof(*counter), 1, fp);
   if(len != 1) {
@@ -680,7 +732,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   /* read checksum */
   len = fread(&checksum, sizeof(checksum), 1, fp);
   if(len != 1) {
-    LOGIOERROR("Couldn't read checksum to", filename);
+    LOGIOERROR("Couldn't read checksum from", filename);
     LogPrintf(LOG_CRITICAL,"fread() returned %d, length was %d\n", len, 1);
     if(fclose(fp))
       LOGIOERROR("In addition: couldn't close", filename);
@@ -696,6 +748,7 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
   }
 
   /* verify checksum */
+  checksum -= indexsum;
   for(len = 0; len < sizeof(tl->elems); len++)
     checksum -= *(((char*)&(tl->elems)) + len);
   for(len = 0; len < (tl->elems * tl->size); len++)
@@ -707,20 +760,6 @@ int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter) {
     clear_toplist(tl);
     return(-2);
   }
-
-  /* restore Heap structure by sorting */
-  for(len = 0; len < tl->elems; len++)
-    tl->heap[len] = tl->data + len * tl->size;
-
-#ifdef DEBUG_SORTING
-  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_read_from_checkpoint", NULL, 0);
-#endif
-
-  qsort(tl->heap,tl->elems,sizeof(char*),gctFStat_restore_heap_qsort);
-
-#ifdef DEBUG_SORTING
-  _atomic_write_gctFStat_toplist_to_file(tl, "toplist_sorted_from_checkpoint", NULL, 0);
-#endif
 
   /* all went well */
   LogPrintf(LOG_DEBUG,"Successfully read checkpoint:%d\n", *counter);
@@ -744,7 +783,6 @@ static void sort_gctFStat_toplist_debug(toplist_t*l) {
   if(!debugfp)
     debugfp=fopen("debug_sort","w");
   sort_gctFStat_toplist(l);
-  /*sort_gctFStat_toplist_strongest(l);*/
   if(debugfp) {
     fclose(debugfp);
     debugfp=NULL;

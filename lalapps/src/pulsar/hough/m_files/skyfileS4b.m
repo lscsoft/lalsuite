@@ -1,4 +1,3 @@
-% $Id$
 %
 %  Matlab script to create one skyfile 
 

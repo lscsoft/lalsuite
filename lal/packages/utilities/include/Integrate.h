@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="IntegrateHV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -55,8 +54,6 @@ Integrates a function.
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-NRCSID (INTEGRATEH, "$Id$");
 
 #if 0 /* autodoc block */
 

@@ -8,8 +8,6 @@
 #include <lal/LALSQTPNIntegrator.h>
 #include <lal/LALSQTPNWaveform.h>
 
-NRCSID (LALSQTPNINTEGRATORC, "$Id LALSQTPNIntegrator.c$");
-
 int XLALSQTPNIntegratorInit(LALSQTPNIntegratorSystem *integrator, INT2 num, 
 		void *params, int(*derivator)(REAL8, const REAL8[], REAL8[], 
 		void *)) {

@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M.,
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 15, 2001
  *            Modified...
@@ -89,10 +88,6 @@ stereographic  projection) of type \c REAL8UnitPolarCoor.
 
 #include <lal/LUT.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (STEREOGRAPHICC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */
@@ -115,7 +110,7 @@ void LALRotatePolarU(LALStatus            *status,
   REAL8 Vx, Vy, Vz;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, " LALRotatePolarU", STEREOGRAPHICC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -195,7 +190,7 @@ void LALInvRotatePolarU(LALStatus            *status,
   REAL8 Vx, Vy, Vz;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, " LALInvRotatePolarU", STEREOGRAPHICC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -266,7 +261,7 @@ void LALStereoProjectPolar(LALStatus           *status,
 
   REAL8   mygamma;
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALStereoProjectPolar", STEREOGRAPHICC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -300,7 +295,7 @@ void LALStereoProjectCart(LALStatus           *status,
   REAL8   mygamma;
   REAL8   alpha, radius;
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALStereoProjectCart", STEREOGRAPHICC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -334,7 +329,7 @@ void LALStereoInvProjectPolar(LALStatus        *status,
 
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALStereoInvProjectPolar", STEREOGRAPHICC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -366,7 +361,7 @@ void LALStereoInvProjectCart(LALStatus           *status,
 
   REAL8 x,y,radius;
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALStereoInvProjectCart", STEREOGRAPHICC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

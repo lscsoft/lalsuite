@@ -22,8 +22,6 @@
 #include<lal/AVFactories.h>
 #include<lal/StackMetric.h>
 
-NRCSID(STACKMETRICC,"$Id$");
-
 /**
  * \brief Computes the parameter space metric for a coherent pulsar search.
  * \author Creighton, T. D.
@@ -85,7 +83,7 @@ LALStackMetric( LALStatus        *stat,
   MetricParamStruc subParams;  /* Parameters passed to coherent metric
 				  computation. */
 
-  INITSTATUS(stat,"StackMetric",STACKMETRICC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure parameter structures and their fields exist. */

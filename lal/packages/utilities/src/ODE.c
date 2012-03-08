@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="ODECV">
  * Author: J. D. E. Creighton
- * $Id$
  **** </lalVerbatim> */
 /**** <lalLaTeX>
  *
@@ -229,8 +228,6 @@
 #include <lal/AVFactories.h>
 #include <lal/ODE.h>
 
-NRCSID( ODEC, "$Id$" );
-
 #define NSTEP 4
 /* <lalVerbatim file="ODECP"> */
 void LALSRungeKutta4(
@@ -253,7 +250,7 @@ void LALSRungeKutta4(
   REAL4  dt;
   REAL4  t;
 
-  INITSTATUS( status, "LALSRungeKutta4", ODEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( input,  status, ODEH_ENULL, ODEH_MSGENULL );
@@ -371,7 +368,7 @@ void LALSRungeKutta5(
   REAL4  dt;
   REAL4  t;
 
-  INITSTATUS( status, "LALSRungeKutta5", ODEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( input,  status, ODEH_ENULL, ODEH_MSGENULL );
@@ -486,7 +483,7 @@ void LALSRungeKutta5Adapt(
   UINT4 n;
   UINT4 i;
 
-  INITSTATUS( status, "LALSRungeKutta5Adapt", ODEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( input,  status, ODEH_ENULL, ODEH_MSGENULL );

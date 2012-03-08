@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M.,  Krishnan, B. & inspired from Siemens, X.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 21, 2003
  *            Modified by Krishnan on Feb 22, 2004
@@ -56,9 +55,8 @@ LALHO()
 \endcode
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./SFTbin.h"
-
-NRCSID (SFTBINC, "$Id$");
 
 /*
  * The functions that make up the guts of this module
@@ -74,7 +72,7 @@ void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
   INT4       length;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 
@@ -138,7 +136,7 @@ void SFT2Periodogram (LALStatus  *status,
   INT4       length;
   REAL8      f0, deltaF;
   /* --------------------------------------------- */
-  INITSTATUS (status, "COMPLEX8SFT2Periodogram1", SFTBINC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status); 
   
   /*   Make sure the arguments are not NULL: */ 

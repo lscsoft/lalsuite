@@ -145,15 +145,50 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeMCMC(LALInferenceRunState *runState)
 {
   char help[]="\
-               (--Niter N)                     Number of iterations(2*10^6)\n\
-               (--Nskip n)                     Number of iterations between disk save(100)\n\
-               (--tempMax T)                   Highest temperature for parallel tempering(40.0)\n\
-               (--randomseed seed)             Random seed of sampling distribution(random)\n\
-               (--tdlike)                      Compute likelihood in the time domain\n\
-               (--rapidSkyLoc)                 Use rapid sky localization jump proposals\n\
-               (--LALSimulation)               Interface with the LALSimulation package for template generation\n\
-               (--correlatedGaussianLikelihood)Use analytic, correlated Gaussian for Likelihood.\n\
-               (--studentTLikelihood)          Use the Student-T Likelihood that marginalizes over noise.\n";
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- General Algorithm Parameters ---------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--Niter N)                      Number of iterations (2*10^7).\n\
+               (--Nskip N)                      Number of iterations between disk save (100).\n\
+               (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
+               (--randomseed seed)              Random seed of sampling distribution (random).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Likelihood Functions -----------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--tdlike)                       Compute likelihood in the time domain.\n\
+               (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
+               (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
+               (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Proposals  ---------------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--rapidSkyLoc)                  Use rapid sky localization jump proposals.\n\
+               (--kDTree)                       Use a kDTree proposal.\n\
+               (--kDNCell N)                    Number of points per kD cell in proposal.\n\
+               (--covarianceMatrix file)        Find the Cholesky decomposition of the covariance matrix for jumps in file.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Parallel Tempering Algorithm Parameters ----------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
+               (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
+               (--tempSwaps N)                  Number of random swaps proposed every <tempSkip> iterations ((nTemps-1)nTemps/2).\n\
+               (--tempKill N)                   Iteration number to stop temperature swapping (Niter).\n\
+               (--tempMin T)                    Lowest temperature for parallel tempering (1.0).\n\
+               (--tempMax T)                    Highest temperature for parallel tempering (50.0).\n\
+               (--anneal)                       Anneal hot temperature linearly to T=1.0.\n\
+               (--annealStart N)                Iteration number to start annealing (5*10^5).\n\
+               (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Output -------------------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--data-dump)                    Output waveforms to file.\n\
+               (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
+               (--tempVerbose)                  Output temperature swapping stats to file.\n\
+               (--propVerbose)                  Output proposal stats to file.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -164,7 +199,9 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   INT4 verbose=0,tmpi=0;
   unsigned int randomseed=0;
-  REAL8 tempMax = 10.0;
+  REAL8 trigSNR = 0.0;
+  REAL8 tempMin = 1.0;
+  REAL8 tempMax = 50.0;
   ProcessParamsTable *commandLine=runState->commandLine;
   ProcessParamsTable *ppt=NULL;
   FILE *devrandom;
@@ -182,6 +219,8 @@ void initializeMCMC(LALInferenceRunState *runState)
   runState->algorithmParams=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->priorArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
   runState->proposalArgs=XLALCalloc(1,sizeof(LALInferenceVariables));
+  if(LALInferenceGetProcParamVal(commandLine,"--propVerbose"))
+    runState->proposalStats=XLALCalloc(1,sizeof(LALInferenceVariables));
 
   /* Set up the appropriate functions for the MCMC algorithm */
   runState->algorithm=&PTMCMCAlgorithm;
@@ -222,6 +261,8 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->likelihood=&LALInferenceZeroLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
     runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
+    runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--studentTLikelihood")) {
     fprintf(stderr, "Using Student's T Likelihood.\n");
     runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
@@ -231,7 +272,8 @@ void initializeMCMC(LALInferenceRunState *runState)
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
+  } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
+              LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
     runState->prior=&LALInferenceNullPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
@@ -265,7 +307,23 @@ void initializeMCMC(LALInferenceRunState *runState)
   }
   LALInferenceAddVariable(runState->algorithmParams,"Nskip",&tmpi, LALINFERENCE_UINT4_t,LALINFERENCE_PARAM_FIXED);
 
-  printf("set highest temperature.\n");
+ printf("set trigger SNR.\n");
+  /* Network SNR of trigger */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--trigSNR");
+  if(ppt){
+    trigSNR=strtod(ppt->value,(char **)NULL);
+  }
+  LALInferenceAddVariable(runState->algorithmParams,"trigSNR",&trigSNR,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
+ printf("set lowest temperature.\n");
+  /* Minimum temperature of the temperature ladder */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--tempMin");
+  if(ppt){
+    tempMin=strtod(ppt->value,(char **)NULL);
+  }
+  LALInferenceAddVariable(runState->algorithmParams,"tempMin",&tempMin, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+
+ printf("set highest temperature.\n");
   /* Maximum temperature of the temperature ladder */
   ppt=LALInferenceGetProcParamVal(commandLine,"--tempMax");
   if(ppt){
@@ -348,70 +406,88 @@ void initVariables(LALInferenceRunState *state)
 {
 
   char help[]="\
-               (--inj injections.xml)       Injection XML file to use\n\
-               (--tempSkip )                   Number of iterations between proposed temperature swaps (100)\n\
-               (--symMassRatio)                Run with symmetric mass ratio eta, instead of q=m2/m1\n\
-               (--mc-min mchirp)               Minimum chirp mass\n\
-               (--mc-max mchirp)               Maximum chirp mass\n\
-               (--eta-min etaMin)              Minimum eta\n\
-               (--eta-max etaMax)              Maximum eta\n\
-               (--q-min qMin)                  Minimum q\n\
-               (--q-max qMax)                  Maximum q\n\
-               (--dt time)                     Width of time prior, centred around trigger (0.1s)\n\
-               (--trigtime time)               Trigger time to use\n\
-               (--mc mchirp)                   Trigger chirpmass to use\n\
-               (--fixMc)                       Do not allow chirpmass to vary\n\
-               (--eta eta)                     Trigger eta to use\n\
-               (--q q)                         Trigger q to use\n\
-               (--fixEta)                      Do not allow mass ratio to vary\n\
-               (--fixQ)                        Do not allow mass ratio to vary\n\
-               (--phi phase)                   Trigger phase to use\n\
-               (--fixPhi)                      Do not allow phase to vary\n\
-               (--iota inclination)            Trigger inclination to use\n\
-               (--fixIota)                     Do not allow inclination to vary\n\
-               (--dist dist)                   Trigger distance\n\
-               (--fixDist)                     Do not allow distance to vary\n\
-               (--ra ra)                       Trigger RA\n\
-               (--fixRa)                       Do not allow RA to vary\n\
-               (--dec dec)                     Trigger declination\n\
-               (--fixDec)                      Do not allow declination to vary\n\
-               (--psi psi)                     Trigger psi\n\
-               (--fixPsi)                      Do not allow polarization to vary\n\
-               (--a1 a1)                       Trigger a1\n\
-               (--fixA1)                       Do not allow spin to vary\n\
-               (--theta1 theta1)               Trigger theta1\n\
-               (--fixTheta1)                   Do not allow spin 1 colatitude to vary\n\
-               (--phi1 phi1)                   Trigger phi1\n\
-               (--fixPhi1)                     Do not allow spin 1 longitude to vary\n\
-               (--a2 a2)                       Trigger a2\n\
-               (--fixA2)                       Do not allow spin 2 to vary\n\
-               (--theta2 theta2)               Trigger theta2\n\
-               (--fixTheta2)                   Do not allow spin 2 colatitude to vary\n\
-               (--phi2 phi2)                   Trigger phi2\n\
-               (--fixPhi2)                     Do not allow spin 2 longitude to vary\n\
-               (--time time)                   Waveform time (overrides random about trigtime)\n\
-               (--fixTime)                     Do not allow coalescence time to vary\n\
-               (--Dmin dist)                   Minimum distance in Mpc (1)\n\
-               (--Dmax dist)                   Maximum distance in Mpc (100)\n\
-               (--approximant Approximant)     Specify a template approximant to use, (default TaylorF2)\n\
-               (--order PNorder)               Specify a PN order in phase to use, (default threePointFivePN)\n\
-               (--ampOrder PNorder)            Specify a PN order in amplitude to use, (default newtonian)\n\
-               (--comp-min min)                Minimum component mass (1.0)\n\
-               (--comp-max max)                Maximum component mass (30.0)\n\
-               (--MTotMax max)                 Maximum total mass (35.0)\n\
-               (--covarianceMatrix file)       Find the Cholesky decomposition of the covariance matrix for jumps in file\n\
-               (--noDifferentialEvolution)     Do not use differential evolution to propose jumps (it is used by default)\n\
-               (--appendOutput fname)          Basename of the file to append outputs to\n\
-               (--tidal)                       Enables tidal corrections, only with LALSimulation\n\
-               (--lambda1)                     Trigger lambda1\n\
-               (--fixLambda1)                  Do not allow lambda1 to vary\n\
-               (--lambda1-min)                 Minimum lambda1 (0)\n\
-               (--lambda1-max)                 Maximum lambda1 (80)\n\
-               (--lambda2)                     Trigger lambda2\n\
-               (--fixLambda2)                  Do not allow lambda2 to vary\n\
-               (--lambda2-min)                 Minimum lambda2 (0)\n\
-               (--lambda2-max)                 Maximum lambda2 (80)\n\
-               (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL)\n";
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Injection Arguments ------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--inj injections.xml)          Injection XML file to use.\n\
+               (--event N)                     Event number from Injection XML file to use.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Template Arguments -------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
+               (--LALSimulation)               Interface with the LALSimulation package for template generation.\n\
+               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2).\n\
+               (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
+               (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
+               (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
+               (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Starting Parameters ------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--trigtime time)               Trigger time to use.\n\
+               (--time time)                   Waveform time (overrides random about trigtime).\n\
+               (--mc mchirp)                   Trigger chirpmass to use.\n\
+               (--eta eta)                     Trigger eta (symmetric mass ratio) to use.\n\
+               (--q q)                         Trigger q (asymmetric mass ratio) to use.\n\
+               (--phi phase)                   Trigger phase to use.\n\
+               (--iota inclination)            Trigger inclination to use.\n\
+               (--dist dist)                   Trigger distance.\n\
+               (--ra ra)                       Trigger RA.\n\
+               (--dec dec)                     Trigger declination.\n\
+               (--psi psi)                     Trigger psi.\n\
+               (--a1 a1)                       Trigger a1.\n\
+               (--theta1 theta1)               Trigger theta1.\n\
+               (--phi1 phi1)                   Trigger phi1.\n\
+               (--a2 a2)                       Trigger a2.\n\
+               (--theta2 theta2)               Trigger theta2.\n\
+               (--phi2 phi2)                   Trigger phi2.\n\
+               (--lambda1)                     Trigger lambda1.\n\
+               (--lambda2)                     Trigger lambda2.\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Prior Arguments ----------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--mc-min mchirp)               Minimum chirp mass.\n\
+               (--mc-max mchirp)               Maximum chirp mass.\n\
+               (--eta-min etaMin)              Minimum eta.\n\
+               (--eta-max etaMax)              Maximum eta.\n\
+               (--q-min qMin)                  Minimum q.\n\
+               (--q-max qMax)                  Maximum q.\n\
+               (--comp-min min)                Minimum component mass (1.0).\n\
+               (--comp-max max)                Maximum component mass (30.0).\n\
+               (--MTotMax max)                 Maximum total mass (35.0).\n\
+               (--Dmin dist)                   Minimum distance in Mpc (1).\n\
+               (--Dmax dist)                   Maximum distance in Mpc (100).\n\
+               (--lambda1-min)                 Minimum lambda1 (0).\n\
+               (--lambda1-max)                 Maximum lambda1 (80).\n\
+               (--lambda2-min)                 Minimum lambda2 (0).\n\
+               (--lambda2-max)                 Maximum lambda2 (80).\n\
+               (--dt time)                     Width of time prior, centred around trigger (0.1s).\n\
+               \n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               --- Fix Parameters -----------------------------------------------------------------------------------------------\n\
+               ------------------------------------------------------------------------------------------------------------------\n\
+               (--fixMc)                       Do not allow chirpmass to vary.\n\
+               (--fixEta)                      Do not allow mass ratio to vary.\n\
+               (--fixQ)                        Do not allow mass ratio to vary.\n\
+               (--fixPhi)                      Do not allow phase to vary.\n\
+               (--fixIota)                     Do not allow inclination to vary.\n\
+               (--fixDist)                     Do not allow distance to vary.\n\
+               (--fixRa)                       Do not allow RA to vary.\n\
+               (--fixDec)                      Do not allow declination to vary.\n\
+               (--fixPsi)                      Do not allow polarization to vary.\n\
+               (--fixA1)                       Do not allow spin to vary.\n\
+               (--fixTheta1)                   Do not allow spin 1 colatitude to vary.\n\
+               (--fixPhi1)                     Do not allow spin 1 longitude to vary.\n\
+               (--fixA2)                       Do not allow spin 2 to vary.\n\
+               (--fixTheta2)                   Do not allow spin 2 colatitude to vary.\n\
+               (--fixPhi2)                     Do not allow spin 2 longitude to vary.\n\
+               (--fixTime)                     Do not allow coalescence time to vary.\n\
+               (--fixLambda1)                  Do not allow lambda1 to vary.\n\
+               (--fixLambda2)                  Do not allow lambda2 to vary.\n";
 
   /* Print command line arguments if state was not allocated */
   if(state==NULL)
@@ -443,6 +519,8 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
   UINT4 i=0;
+  REAL8 m1=0;
+  REAL8 m2=0;
   REAL8 logDmin=log(1.0);
   REAL8 logDmax=log(100.0);
   REAL8 Dmin=1.0;
@@ -512,8 +590,8 @@ void initVariables(LALInferenceRunState *state)
 
       endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
       AmpOrder=injTable->amp_order;
-      LALGetOrderFromString(&status,injTable->waveform,&PhaseOrder);
-      LALGetApproximantFromString(&status,injTable->waveform,&approx);
+      XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
+      XLALGetApproximantFromString(injTable->waveform,&approx);
     }
   }
 
@@ -632,7 +710,7 @@ void initVariables(LALInferenceRunState *state)
       {
         PhaseOrder = LAL_PNORDER_TWO;
       }
-    else if ( ! strcmp( "twoPointFive", ppt->value ) )
+    else if ( ! strcmp( "twoPointFivePN", ppt->value ) )
       {
         PhaseOrder = LAL_PNORDER_TWO_POINT_FIVE;
       }
@@ -683,7 +761,7 @@ void initVariables(LALInferenceRunState *state)
       {
         AmpOrder = LAL_PNORDER_TWO;
       }
-    else if ( ! strcmp( "twoPointFive", ppt->value ) )
+    else if ( ! strcmp( "twoPointFivePN", ppt->value ) )
       {
         AmpOrder = LAL_PNORDER_TWO_POINT_FIVE;
       }
@@ -708,7 +786,7 @@ void initVariables(LALInferenceRunState *state)
                  "threePointFivePN\n");
         exit( 1 );
       }
-    fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(PhaseOrder))/2.0);
+    fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(AmpOrder))/2.0);
   }
   
   /* This flag was added to account for the broken Big Dog
@@ -748,12 +826,15 @@ void initVariables(LALInferenceRunState *state)
   ppt=LALInferenceGetProcParamVal(commandLine,"--eta");
   if(ppt){
     start_eta=atof(ppt->value);
+    LALInferenceMcEta2Masses(start_mc, start_eta, &m1, &m2);
+    start_q=m2/m1;
   }
 
   /* Over-ride q if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--q");
   if(ppt){
     start_q=atof(ppt->value);
+    LALInferenceQ2Eta(start_q, &start_eta);
   }
 
   /* Over-ride phase if specified */
@@ -982,25 +1063,27 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t);
 
   /* Check if running with symmetric (eta) or asymmetric (q) mass ratio.*/
-  ppt=LALInferenceGetProcParamVal(commandLine,"--symMassRatio");
+  ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
   if(ppt){
+    LALInferenceAddVariable(currentParams, "asym_massratio", &start_q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+    if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
+  }else{
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixEta");
     if(ppt){
-      LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(currentParams, "massratio", &start_eta, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddMinMaxPrior(priorArgs,	"massratio", &etaMin, &etaMax, LALINFERENCE_REAL8_t);
       if(MPIrank==0) fprintf(stdout,"eta fixed and set to %f\n",start_eta);
     }else{
-      LALInferenceAddVariable(currentParams, "massratio",       &start_eta,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+      ppt=LALInferenceGetProcParamVal(commandLine,"--symMassRatio");
+      if(ppt){
+        LALInferenceAddVariable(currentParams, "massratio", &start_eta, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddMinMaxPrior(priorArgs,	"massratio", &etaMin, &etaMax, LALINFERENCE_REAL8_t);
+      }else{
+        LALInferenceAddVariable(currentParams, "asym_massratio", &start_q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
+      }
     }
-    LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
-  }else{
-    ppt=LALInferenceGetProcParamVal(commandLine,"--fixQ");
-    if(ppt){
-      LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      if(MPIrank==0) fprintf(stdout,"q fixed and set to %f\n",start_q);
-    }else{
-      LALInferenceAddVariable(currentParams, "asym_massratio",       &start_q,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-    }
-    LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
   }
 
   tmpMin=endtime-dt; tmpMax=endtime+dt;
@@ -1336,6 +1419,11 @@ void initVariables(LALInferenceRunState *state)
  }
  
   
+
+  /* Initialize variable that will store the name of the last proposal function used */
+  const char *initPropName = "INITNAME";
+  LALInferenceAddVariable(state->proposalArgs, LALInferenceCurrentProposalName, &initPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_LINEAR);
+
   /* If the currentParams are not in the prior, overwrite and pick paramaters from the priors. OVERWRITE EVEN USER CHOICES.
      (necessary for complicated prior shapes where LALInferenceCyclicReflectiveBound() is not enought */
   while(state->prior(state, currentParams)<=-DBL_MAX){
@@ -1420,6 +1508,13 @@ void initVariables(LALInferenceRunState *state)
     state->differentialPointsSize = 0;
   }
 
+  /* kD Tree NCell parameter. */
+  ppt=LALInferenceGetProcParamVal(commandLine, "--kDNCell");
+  if (ppt) {
+    INT4 NCell = atoi(ppt->value);
+    LALInferenceAddVariable(state->proposalArgs, "KDNCell", &NCell, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+  }
+
   /* KD Tree propsal. */
   ppt=LALInferenceGetProcParamVal(commandLine, "--kDTree");
   if (ppt) {
@@ -1452,23 +1547,33 @@ void initVariables(LALInferenceRunState *state)
 
   UINT4 N = LALInferenceGetVariableDimensionNonFixed(currentParams);
 
-  ppt=LALInferenceGetProcParamVal(commandLine, "--adapt");
+  INT4 adaptationOn = 1;  // Run includes adaptation
+  ppt=LALInferenceGetProcParamVal(commandLine, "--noAdapt");
   if (ppt) {
+    fprintf(stdout, "Turning off adaptation.\n");
+    adaptationOn = 0;
+  } else {
     fprintf(stdout, "Adapting single-param step sizes.\n");
     if (!LALInferenceCheckVariable(state->proposalArgs, SIGMAVECTORNAME)) {
       /* We need a sigma vector for adaptable jumps. */
+      char *name = NULL;
       REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
-      for (i = 0; i < N; i++) {
-        sigmas->data[i] = 1e-4;
+      for(i=0;i<N;++i){
+        name = LALInferenceGetVariableName(state->currentParams, (i+1));
+
+        if (!strcmp(name,"massratio") || !strcmp(name,"asym_massratio") || !strcmp(name,"time") || !strcmp(name,"a_spin2") || !strcmp(name,"a_spin1")){
+          sigmas->data[i] = 0.001;
+        } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") || !strcmp(name,"inclination")){
+          sigmas->data[i] = 0.1;
+        } else {
+          sigmas->data[i] = 0.01;
+        }
       }
 
 
       LALInferenceAddVariable(state->proposalArgs, SIGMAVECTORNAME, &sigmas, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 
     }
-  }
-  ppt=LALInferenceGetProcParamVal(commandLine, "--acceptanceRatio");
-  if (ppt) {
 
     REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
     REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
@@ -1481,6 +1586,9 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceAddVariable(state->proposalArgs, "PacceptCount", &PacceptCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(state->proposalArgs, "PproposeCount", &PproposeCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
   }
+  INT4 adapting = adaptationOn;      // Indicates if current iteration is being adapted
+  LALInferenceAddVariable(state->proposalArgs, "adaptationOn", &adaptationOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(state->proposalArgs, "adapting", &adapting, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   INT4 adaptableStep = 0;
   LALInferenceAddVariable(state->proposalArgs, "adaptableStep", &adaptableStep, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
@@ -1491,7 +1599,7 @@ void initVariables(LALInferenceRunState *state)
   INT4 sigmasNumber = 0;
   LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &sigmasNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
-  INT4 tau = 6;
+  INT4 tau = 5;
   LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   ppt = LALInferenceGetProcParamVal(commandLine, "--adaptTau");

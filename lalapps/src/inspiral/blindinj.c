@@ -23,7 +23,6 @@
  *
  * Author: Fairhurst, S
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -32,6 +31,7 @@
 #include <stdlib.h>
 #include <config.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <ctype.h>
 #include <assert.h>
@@ -64,7 +64,6 @@
 #include <lal/VectorOps.h>
 #include <LALAppsVCSInfo.h>
 
-RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"

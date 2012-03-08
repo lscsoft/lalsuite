@@ -27,6 +27,7 @@
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
@@ -41,11 +42,6 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Window.h>
 #include "check_series_macros.h"
-
-
-#include <lal/LALRCSID.h>
-NRCSID(LALSIMULATIONC, "$Id:");
-
 
 /*
  * ============================================================================

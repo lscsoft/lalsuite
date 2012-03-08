@@ -33,9 +33,6 @@
  
 /* Matt Pitkin (26/03/04) CrabTNHeterodyne.c v0.1 */
 
-/*
-$Id$
-*/
 
 /* headers */
 #include <stdio.h>

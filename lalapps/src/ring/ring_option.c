@@ -32,8 +32,6 @@
 #include "ring.h"
 #include "injsgnl.h"
 
-RCSID( "$Id$" );
-
 extern int vrbflg;
 static int ring_usage( const char *program );
 static int ring_default_params( struct ring_params *params );

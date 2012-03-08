@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/TimeSeries.h>
@@ -48,8 +49,6 @@
 
 /* lisaXML stuff */
 #include "readxml.h"
-
-RCSID ("$Id$");
 
 /** \name Error codes */
 /*@{*/
@@ -508,7 +507,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set defaults */
@@ -569,7 +568,7 @@ ConvertLISAtimeseries2LAL ( LALStatus *status, MultiREAL4TimeSeries **lalTs, con
   UINT4 nIFOs, i;
   MultiREAL4TimeSeries *ret = NULL;
 
-  INITSTATUS( status, "ConvertLISAtimeseries2LAL", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( lalTs, status, LISAMAKESFTS_ENULL, LISAMAKESFTS_MSGENULL );

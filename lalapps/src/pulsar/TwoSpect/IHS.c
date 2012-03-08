@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2012 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -151,8 +151,12 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
       
    } /* for ii < ihss->length */
    
-   //ihsSums2_withFAR(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
-   //ihsSums2_withFAR_withnoise(output, NULL, ihsvectorsequence, ihss, locs, aveNoise, rows, FbinMean, input->numfprbins, params, 0);
+   /* FILE *IHSSEQUENCE = fopen("./outputtemp/ihssequence.dat","w");
+   for (ii=0; ii<(INT4)(ihsvectorsequence->length*ihsvectorsequence->vectorLength); ii++) {
+      fprintf(IHSSEQUENCE, "%.6f\n", ihsvectorsequence->data[ii]);
+   }
+   fclose(IHSSEQUENCE); */
+   
    sumIHSSequence(output, ihsfarinput, ihsvectorsequence, rows, FbinMean, input->numfprbins, params);
    XLALDestroyREAL4VectorSequence(ihsvectorsequence);
    
@@ -402,11 +406,6 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
          if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
-         
-         //REAL8 randval = 1.0 + 6.0*gsl_ran_gaussian(rng, sigmaval);
-         //while (randval<0.0) randval = 1.0 + 6.0*gsl_ran_gaussian(rng, sigmaval);
-         //if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj]*randval));
-         
          else noise->data[jj] = 0.0;
       } /* for jj < aveNoise->length */
       
@@ -998,80 +997,6 @@ void SSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *input
    
 }
 
-/* void addScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
-{
-   
-   INT4 ii;
-   for (ii=0; ii<(INT4)input->length; ii++) output->data[outputvectorpos*output->vectorLength + ii] += (REAL4)(scale*input->data[ii]);
-   
-}
-void sseAddScaledVectorIntoVectorSequence(REAL4VectorSequence *output, REAL4Vector *input, REAL4 scale, INT4 outputvectorpos)
-{
-   
-#ifdef __SSE__
-   INT4 roundedvectorlength = (INT4)input->length / 4;
-   INT4 vectoraligned = 0, outputaligned = 0, ii = 0, outvec = outputvectorpos*output->vectorLength;
-   
-   REAL4 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
-   __m128 *arr1, scaledarr1, *result;
-   
-   __m128 scalefactor = _mm_set1_ps(scale);
-   
-   //Allocate memory for aligning input vector if necessary
-   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
-      vectoraligned = 1;
-      arr1 = (__m128*)input->data;
-   } else {
-      allocinput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocinput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
-      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
-      memcpy(alignedinput, input->data, sizeof(REAL4)*4*roundedvectorlength);
-      arr1 = (__m128*)alignedinput;
-   }
-   
-   //Allocate memory for aligning output vector if necessary
-   if ( &(output->data[outvec])==(void*)(((UINT8)&(output->data[outvec])+15) & ~15) ) {
-      outputaligned = 1;
-      result = (__m128*)&(output->data[outvec]);
-   } else {
-      allocoutput = (REAL4*)XLALMalloc(4*roundedvectorlength*sizeof(REAL4) + 15);
-      if (allocoutput==NULL) {
-         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*roundedvectorlength*sizeof(REAL4) + 15);
-         XLAL_ERROR_VOID(XLAL_ENOMEM);
-      }
-      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
-      memcpy(alignedoutput, output->data, sizeof(REAL4)*4*roundedvectorlength);
-      result = (__m128*)alignedoutput;
-   }
-   
-   //Scale the input array, and add the scaled array into the output
-   for (ii=0; ii<roundedvectorlength; ii++) {
-      scaledarr1 = _mm_mul_ps(*arr1, scalefactor);
-      *result = _mm_add_ps(*result, scaledarr1);
-      arr1++;
-      result++;
-   }
-   
-   //Copy output aligned memory to non-aligned memory if necessary
-   if (!outputaligned) memcpy(&(output->data[outvec]), alignedoutput, 4*roundedvectorlength*sizeof(REAL4));
-   
-   //Finish up the remaining part
-   for (ii=4*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[outvec + ii] += (REAL4)(scale*input->data[ii]);
-   
-   //Free memory if necessary
-   if (!vectoraligned) XLALFree(allocinput);
-   if (!outputaligned) XLALFree(allocoutput);
-   
-#else
-   fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
-   XLAL_ERROR_VOID(XLAL_EFAILED);
-#endif
-   
-} */
-
 
 REAL4VectorSequence * ihsVectorSums(REAL4VectorSequence *input, INT4 rows)
 {
@@ -1209,7 +1134,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      REAL8 highestval = 0.0;
+      REAL8 highestval = 0.0, highestvalnoise = 0.0;
       INT4 highestvalloc = -1, jjloc = 0;
       for (jj=0; jj<(INT4)numfbins-(ii-1); jj++) {
       
@@ -1246,14 +1171,14 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   kk = 0;
                   while (kk<(INT4)trackedlines->length && nolinesinterfering==1) {
                      if (2.0*B>=(trackedlines->data[kk*3+2]-trackedlines->data[kk*3+1])) {
-                        if ((trackedlines->data[kk*3+2]>=fsig-B && trackedlines->data[kk*3+2]<=fsig+B) || 
-                            (trackedlines->data[kk*3+1]>=fsig-B && trackedlines->data[kk*3+1]<=fsig+B)) {
+                        if ((trackedlines->data[kk*3+2]>=(REAL4)(fsig-B) && trackedlines->data[kk*3+2]<=(REAL4)(fsig+B)) || 
+                            (trackedlines->data[kk*3+1]>=(REAL4)(fsig-B) && trackedlines->data[kk*3+1]<=(REAL4)(fsig+B))) {
                            nolinesinterfering = 0;
                         }
                      } // if the band spanned by the line is smaller than the band spanned by the signal
                      else {
-                        if ((fsig+B>=trackedlines->data[kk*3+1] && fsig+B<=trackedlines->data[kk*3+2]) || 
-                            (fsig-B>=trackedlines->data[kk*3+1] && fsig-B<=trackedlines->data[kk*3+2])) {
+                        if (((REAL4)(fsig+B)>=trackedlines->data[kk*3+1] && (REAL4)(fsig+B)<=trackedlines->data[kk*3+2]) || 
+                            ((REAL4)(fsig-B)>=trackedlines->data[kk*3+1] && (REAL4)(fsig-B)<=trackedlines->data[kk*3+2])) {
                            nolinesinterfering = 0;
                         }
                      } // instead if the band spanned by the line is larger than the band spanned by the signal
@@ -1275,6 +1200,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                       B>=params->ULmindf && B<=params->ULmaxdf)) ) {
                      //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
+                     highestvalnoise = totalnoise;
                      highestvalloc = locationinmaximastruct;
                      jjloc = jj;
                      notskipped++;
@@ -1310,8 +1236,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          //Candidate h0
          //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
          REAL8 h0 = ihs2h0(2.0*highestval, params);  //Need factor of 2 for the degrees of freedom counting
-         //REAL8 significance = 0.0;
-         //significance = log10(significance_of_IHSval(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs));
+         REAL8 significance = log10(significance_of_IHSval(2.0*(highestval+highestvalnoise), 2.0*highestvalnoise));
          
          if (candlist->numofcandidates == candlist->length-1) {
             candlist = resize_candidateVector(candlist, 2*(candlist->length));
@@ -1321,7 +1246,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             }
          }
          //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, 0.0, 0, ffdata->tfnormalization);
+         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, significance, 0, ffdata->tfnormalization);
          (candlist->numofcandidates)++;
       }
       
@@ -1337,7 +1262,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    //The outer loop is over "frequency" (the order in the ihs maxima vector, first 2 row sums, then three, and so on)
    for (ii=0; ii<(INT4)numfbins; ii++) {
-      REAL8 highestval = 0.0;
+      REAL8 highestval = 0.0, highestvalnoise = 0.0;
       INT4 highestvalloc = -1, jjloc = 0;
       
       //This controls the maximum modulation depth to search which depends on the position in the "frequency" loop
@@ -1420,8 +1345,9 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                       (params->followUpOutsideULrange || (!params->followUpOutsideULrange && 
                         fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && 
                         B>=params->ULmindf && B<=params->ULmaxdf)) ) {
-                     highestval = ihsmaxima->maxima->data[locationinmaximastruct];
+                     //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
+                     highestvalnoise = totalnoise;
                      highestvalloc = locationinmaximastruct;
                      jjloc = jj;
                      notskipped++;
@@ -1448,8 +1374,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          //Candidate h0
          //REAL8 h0 = ihs2h0_withNoiseSubtraction(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs);
          REAL8 h0 = ihs2h0(2.0*highestval, params);  //Need factor of 2 for the degrees of freedom counting
-         //REAL8 significance = 0.0;
-         //significance = log10(significance_of_IHSval(ihsmaxima->maxima->data[highestvalloc], loc, jjloc, ii, params, aveNoise, fbinavgs));
+         REAL8 significance = significance = log10(significance_of_IHSval(2.0*(highestval+highestvalnoise), 2.0*highestvalnoise));
          
          if (candlist->numofcandidates == candlist->length-1) {
             candlist = resize_candidateVector(candlist, 2*(candlist->length));
@@ -1459,7 +1384,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
             }
          }
          //loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[locationinmaximastruct], h0, 0.0, 0, sqrt(ffdata->tfnormalization/2.0*params->Tcoh));
-         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, 0.0, 0, ffdata->tfnormalization);
+         loadCandidateData(&candlist->data[candlist->numofcandidates], fsig, per0, B, 0.0, 0.0, ihsmaxima->maxima->data[highestvalloc], h0, significance, 0, ffdata->tfnormalization);
          (candlist->numofcandidates)++;
       }
    }
@@ -1502,7 +1427,6 @@ REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
 {
    
    if (ihsval<=0.0) return 0.0;
-   //return 4.6*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
    REAL8 prefact = 1.0;
    prefact = 7.2;
    return prefact*pow(ihsval/(params->Tcoh*params->Tobs),0.25);
@@ -1510,24 +1434,10 @@ REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params)
 }
 
 
-REAL8 significance_of_IHSval(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs)
+REAL8 significance_of_IHSval(REAL8 ihsval, REAL8 noise)
 {
    
-   INT4 ii;
-   
-   REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
-   REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
-   REAL8 noise = 0.0;
-   for (ii=1; ii<=params->ihsfactor; ii++) {
-      if (!(fabs(dailyharmonic-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic2-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic3-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic4-(REAL8)(ii*location))<=1.0)) {
-         noise += aveNoise->data[ii*location];
-      }
-   }
-   
-   REAL8 totalnoise = 0.0;
-   for (ii=0; ii<rows; ii++) totalnoise += noise*fbinavgs->data[lowestfrequencybin+ii];
-   
-   REAL8 significance = gsl_cdf_chisq_Q(2.0*ihsval, 2.0*totalnoise);
+   REAL8 significance = gsl_cdf_chisq_Q(2.0*ihsval, 2.0*noise);
    
    return significance;
    

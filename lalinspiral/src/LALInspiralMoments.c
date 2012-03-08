@@ -75,9 +75,6 @@ LALDRombergIntegrate
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
 
-NRCSID( LALINSPIRALMOMENTSC, "$Id$" );
-
-
 void
 LALGetInspiralMoments (
     LALStatus            *status,
@@ -90,7 +87,7 @@ LALGetInspiralMoments (
   UINT4 k;
   InspiralMomentsIn in;
 
-  INITSTATUS( status, "LALGetInspiralMoments", LALINSPIRALMOMENTSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( params, status,
@@ -169,7 +166,7 @@ LALGetInspiralMomentsBCV (
   UINT4 k;
   InspiralMomentsIn in;
 
-  INITSTATUS( status, "LALGetInspiralMomentsBCV", LALINSPIRALMOMENTSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* doesn't seem to be needed. thomas, janvier 2004. I prefer to remove it for the moment.
@@ -297,7 +294,7 @@ LALInspiralMoments(
   UINT4 kMin;
   UINT4 kMax;
 
-  INITSTATUS( status, "LALInspiralMoments", LALINSPIRALMOMENTSC );
+  INITSTATUS(status);
 
   ASSERT( pars.shf, status,
       LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );

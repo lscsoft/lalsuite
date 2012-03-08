@@ -30,6 +30,7 @@
 #include <stdio.h>
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>

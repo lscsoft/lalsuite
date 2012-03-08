@@ -4,7 +4,7 @@ Classes needed for the cosmic string analysis pipeline.
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 import string,sys,os
 import exceptions

@@ -17,6 +17,7 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <limits.h>
@@ -35,8 +36,6 @@
 #include "errutil.h"
 #include "gpstime.h"
 #include "ring.h"
-
-RCSID( "$Id$" );
 
 static REAL8 compute_template_variance(
     COMPLEX8FrequencySeries  *stilde,

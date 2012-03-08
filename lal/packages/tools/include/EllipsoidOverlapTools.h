@@ -23,7 +23,6 @@
  *
  * Author: Robinson, C. A., and Sengupta, A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -57,8 +56,6 @@ Author: Robinson, C. A. and Sengupta, A. S.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( ELLIPSOIDOVERLAPTOOLSH, "$Id$" );
 
 typedef struct tagfContactWorkSpace
 {

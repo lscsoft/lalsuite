@@ -39,8 +39,6 @@ REAL8 globalNum;
 #define ROUND( num )                                                 \
   (INT4)( num + 1 ) */
 
-NRCSID(CREATERESAMPLERULESC,"$Id$");
-
 /* Prototypes for local functions. */
 static INT2
 ConstantRules( INT4 **tempRules, INT4 *nRules, REAL8 *startDiff,
@@ -248,7 +246,7 @@ LALCreateResampleRules( LALStatus          *stat,
   INT4 *interval;     /* Pointer to interval elements in rules */
   INT2 *shift;        /* Pointer to shift elements in rules */
 
-  INITSTATUS(stat,"LALCreateResampleRules",CREATERESAMPLERULESC);
+  INITSTATUS(stat);
 
   /* Check that the inputs all exist. */
   ASSERT(rules,stat,RESAMPLEH_ENUL,RESAMPLEH_MSGENUL);

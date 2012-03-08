@@ -19,8 +19,6 @@
 
 #include <lal/LALNoiseModels.h>
 
-NRCSID (LALSTATSREAL4VECTORC, "$Id$");
-
 /**
 \author Sathyaprakash, B. S.
 \ingroup LALNoiseModels_h
@@ -40,7 +38,7 @@ LALStatsREAL4Vector
    INT4 i, n;
    REAL8 x;
 
-   INITSTATUS (status, "LALStatsREAL4Vector", LALSTATSREAL4VECTORC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (vector->data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

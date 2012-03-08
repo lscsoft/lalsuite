@@ -58,27 +58,12 @@
 # include <lal/PHMD.h>
 
 /*
- *  #include "LALRCSID.h"
- *  not needed, it is included in "LALConstants.h"
- */
-
-
-
-/*
  *   Protection against C++ name mangling
  */
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-/*
- * 6. Assignment of Id string using NRCSID()
- */
-
-/** \cond DONT_DOXYGEN */
-NRCSID (HOUGHMAPH, "$Id$");
-/** \endcond */
 
 /*
  * 7. Error codes and messages. This must be auto-extracted for

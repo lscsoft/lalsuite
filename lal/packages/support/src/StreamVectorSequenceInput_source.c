@@ -38,7 +38,7 @@ FUNC ( LALStatus  *stat, VTYPE **sequence, FILE *stream )
   UINT4 nRows, nCols;   /* number and length of lines */
   CreateVectorSequenceIn in; /* parameters for creating sequence */
 
-  INITSTATUS( stat, STRING(FUNC), STREAMVECTORSEQUENCEINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Read the first line. */

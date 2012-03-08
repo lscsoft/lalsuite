@@ -41,8 +41,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/RingUtils.h>
 
-NRCSID( SNGLRINGDOWNUTILSC, "$Id$" );
-
 /**
 \author Brown, D. A., Fairhurst, S. and Messaritaki, E.
 \file
@@ -163,7 +161,7 @@ LALFreeSnglRingdown (
     )
 
 {
-  INITSTATUS( status, "LALFreeSnglRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   XLALFreeSnglRingdown( eventHead );
   RETURN( status );
 }
@@ -212,7 +210,7 @@ LALSortSnglRingdown (
     )
 
 {
-  INITSTATUS( status, "LALSortSnglRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
 
   *eventHead = XLALSortSnglRingdown ( *eventHead, comparfunc );
 
@@ -318,7 +316,7 @@ LALCompareRingdowns (
     )
 
 {
-  INITSTATUS( status, "LALCompareRingdowns", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
   SnglRingdownAccuracy aAcc, bAcc;
   InterferometerNumber ifoaNum,  ifobNum;
@@ -512,7 +510,7 @@ LALClusterSnglRingdownTable (
   SnglRingdownTable     *thisEvent=NULL;
   SnglRingdownTable     *prevEvent=NULL;
 
-  INITSTATUS( status, "LALClusterSnglRingdownTable", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( ringdownEvent, status,
@@ -611,7 +609,7 @@ LALIfoCutSingleRingdown(
   SnglRingdownTable    *ifoHead   = NULL;
   SnglRingdownTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoCutSingleRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ifoHead = XLALIfoCutSingleRingdown( eventHead, ifo );
@@ -706,7 +704,7 @@ LALTimeCutSingleRingdown(
     )
 
 {
-  INITSTATUS( status, "LALTimeCutSingleRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *eventHead = XLALTimeCutSingleRingdown( *eventHead, startTime, endTime );
@@ -782,7 +780,7 @@ LALIfoCountSingleRingdown(
 {
   SnglRingdownTable    *thisEvent = NULL;
 
-  INITSTATUS( status, "LALIfoCountSingleRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that output is null and input non-null */
@@ -822,7 +820,7 @@ LALTimeSlideSingleRingdown(
   INT8                  endTimeNS   = 0;
   INT8                  slideNS     = 0;
   INT8                  trigTimeNS  = 0;
-  INITSTATUS( status, "LALTimeSlideSingleRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* time slide triggers by a time = slideTime, except those from the
@@ -958,7 +956,7 @@ LALPlayTestSingleRingdown(
     )
 
 {
-  INITSTATUS( status, "LALPlayTestSingleRingdown", SNGLRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *eventHead = XLALPlayTestSingleRingdown(*eventHead, dataType);

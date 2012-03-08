@@ -1,3 +1,26 @@
+lalapps (6.6.4-1) unstable; urgency=low
+
+  * LALApps 6.6.4
+  * ensure LALInferenceMCMCSampler.{c,h} is in dist
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 25 Jan 2012 11:20:28 -0600
+
+lalapps (6.6.3-1) unstable; urgency=low
+
+  * LALApps 6.6.3
+  * fix buffer overflow in lalapps_inspinj
+  * fix volume distribution of lalapps_inspinj
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 20 Jan 2012 12:42:39 -0600
+
+lalapps (6.6.2-1) unstable; urgency=low
+
+  * LALApps 6.6.2
+  * report version of LALSimulation in version reporting
+  * packaging updates
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 06 Jan 2012 10:10:30 -0600
+
 lalapps (6.6.1-1) unstable; urgency=low
 
   * updates to lalapps_binj for ER1 data generation

@@ -44,6 +44,7 @@
 
 /** \cond DONT_DOXYGEN */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,8 +62,6 @@
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-
-NRCSID (MAIN, "$Id$");
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

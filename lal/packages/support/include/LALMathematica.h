@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="LALMathematicaHV">
  * Author: Hanna, C. R.
- * $Id$
  * </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -195,8 +194,6 @@ extern "C" {
 #define END_TEXTCELL		fprintf(nb, "\\>\", \"Text\"],\n")
 #define END_TEXTCELL_		fprintf(nb, "\\>\", \"Text\"]\n")
 /* </lalVerbatim> */
-
-NRCSID (LALMATHEMATICAH, "$Id$");
 
 /* <lalVerbatim file="LALMathematicaHT"> */
 typedef struct tagMath3DPointList{

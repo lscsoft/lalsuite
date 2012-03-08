@@ -8,7 +8,7 @@ the binary pulsar upper limit analysis.
 
 __author__ = 'Chris Messenger <cm@star.sr.bham.ac.uk>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 import string
 import exceptions

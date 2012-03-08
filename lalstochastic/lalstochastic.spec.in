@@ -39,6 +39,7 @@ Stochastic library.
 
 %install
 %makeinstall
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
 
 %post
 ldconfig

@@ -18,7 +18,6 @@
 */
 
 /*************** <lalVerbatim file="LALMallocTestCV"> *************
-$Id$
 **************** </lalVerbatim> ***********************************/
 
 /* <lalLaTeX>
@@ -74,8 +73,6 @@ LALCheckMemoryLeaks()
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 
-NRCSID (LALMALLOCTESTC,"$Id$");
-
 char caughtMessage[1024];
 jmp_buf jump;
 FILE *mystderr;
@@ -129,9 +126,11 @@ do { \
   } \
 } \
 while ( 0 )
-
-#define die( msg ) ( fputs( "Error: " #msg "\n", mystderr ), exit( 1 ), 1 )
-
+#define die(msg) \
+  do { \
+    fputs("Error: " #msg "\n", mystderr); \
+    exit(1); \
+  } while (0)
 
 extern int lalDebugLevel;
 

@@ -33,13 +33,12 @@
 #endif
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lalapps.h>
 #include "SideBand.h"
-
-RCSID( "$Id:$");
 
 /*---------- DEFINES ----------*/
 #define TRUE (1==1)
@@ -82,7 +81,7 @@ void ReadTimeStamps(LALStatus *status,
   INT4 Ngap;
  
 
-  INITSTATUS( status, "ReadTimeStamps", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   ASSERT ( *TParams, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -173,7 +172,7 @@ void ComputeSideBandWindow(LALStatus *status,
   COMPLEX16 ae,as,be,bs;
   REAL8 ddf = (*TParams)->dfwindow/1000;
   
-  INITSTATUS( status, "ComputeSideBandWindow", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   ASSERT (*TParams, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -331,9 +330,8 @@ void ComputeSideBandLikelihood(LALStatus *status,
   REAL8 Lr = 0.0;                       /* the likelihood for the real part of h(f) */
   BinarySourceParams BSParams;          /* structure for binary source parameters */
   INT4 i;
-  REAL8 Sh;
  
-  INITSTATUS( status, "ComputeSideBandLikelihood", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (lambda,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -355,9 +353,6 @@ void ComputeSideBandLikelihood(LALStatus *status,
   BSParams.psi = lambda->psi;
   BSParams.cosi = lambda->cosi;
   BSParams.h0 = lambda->h0;
-
-  /* define noise floor */
-  Sh = TParams->sqrtSh*TParams->sqrtSh;
 
   if (lalDebugLevel) printf ("\nFilled in the template parameter structures.\n");
 
@@ -405,7 +400,7 @@ void InitEphemeris (LALStatus * status,   	/**< pointer to LALStatus structure *
   CHAR EphemEarth[FNAME_LENGTH];	/* filename of earth-ephemeris data */
   CHAR EphemSun[FNAME_LENGTH];	/* filename of sun-ephemeris data */
 
-  INITSTATUS( status, "InitEphemeris", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( edat, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -458,7 +453,7 @@ void ReadSideBandPriors(LALStatus *status,
   CHAR y[32];
   CHAR line[352];
 
-  INITSTATUS( status, "ReadSideBandPriors", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (ranges,status,SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -469,7 +464,7 @@ void ReadSideBandPriors(LALStatus *status,
     XLALPrintError("\nError opening file '%s' for reading..\n\n",rangefile);
   }
 
-  while (fgets(line,512,fprange)!=NULL) {
+  while (fgets(line,sizeof(line),fprange)!=NULL) {
     
     /* read in line from file */
     sscanf(line,"%s %s %s %s %s %s %s %s %s %s %s",y,ymin,ymin2,ymax,ymax2,yjump1,yprob1,yjump2,yprob2,yjump3,yprob3);
@@ -619,7 +614,7 @@ void SelectSideBandFrequencies (LALStatus * status,
   INT4 mmin,mmax;
   REAL8 f;
 
-  INITSTATUS( status, "SelectSideBandFrequencies", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   ASSERT ( fulldata, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -732,9 +727,8 @@ void ReadSideBandData (LALStatus * status,
   REAL8 fre,fim;
   REAL8 norm;
   REAL8 sum = 0.0;
-  int rc;
 
-  INITSTATUS( status, "ReadSideBandData", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* open and read file */
@@ -764,10 +758,21 @@ void ReadSideBandData (LALStatus * status,
   
   /* return to end of header and read first 2 lines to assess frequency resolution */
   fsetpos(fp,&pos);
-  rc = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-	     &ftemp1,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
-  rc = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-	     &ftemp2,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
+  int count;
+  count = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+                 &ftemp1,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
+  if ( count != 11 ) {
+    XLALPrintError ("\n fscanf() failed to read 11 items from 'fp'\n" );
+    ABORT ( status, SIDEBANDUTILSC_EINPUT, SIDEBANDUTILSC_MSGEINPUT );
+  }
+  
+  count = fscanf(fp,"%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+                 &ftemp2,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf,&dumf);
+  if ( count != 11 ) {
+    XLALPrintError ("\n fscanf() failed to read 11 items from 'fp'\n" );
+    ABORT ( status, SIDEBANDUTILSC_EINPUT, SIDEBANDUTILSC_MSGEINPUT );
+  }
+
   params->df = ftemp2 - ftemp1;
   
   printf("ftemp1 = %6.12f ftemp2 = %6.12f\n",ftemp1,ftemp2);
@@ -844,7 +849,7 @@ void EstimateSideBandNoise (LALStatus * status,
   INT4 k = 0;
   BOOLEAN flag;
 
-  INITSTATUS( status, "EstimateSideBandNoise", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( *fulldata, status, SIDEBANDUTILSC_ENULL,SIDEBANDUTILSC_MSGENULL );
@@ -926,10 +931,8 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 A1,A2,A3,A4;
   REAL8 b;
   REAL8 T;
-  REAL8 Sh;
   REAL8 tp;
   REAL8 f0;
-  REAL8 dfp;
   INT4 i;
   REAL8 freq;
   INT4 n;
@@ -938,8 +941,6 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 x;
   REAL8 P;
   REAL8 argp;
-  REAL8 sPe;
-  REAL8 w0;
   INT4 nmax;
   INT4 nmin;
   REAL8 kappa;
@@ -951,12 +952,11 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   REAL8 bn;
   REAL8 bp;
   INT4 q;
-  INT4 pmax;
   INT4 winindex;
   REAL8 cosy,siny;
   REAL8 tdiff;
 
-  INITSTATUS( status, "SideBandTemplate", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input results vectors */ 
@@ -970,7 +970,7 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   if (lalDebugLevel) printf ("\nChecked input structures in SideBandTemplate.\n");
   
   /* compute sideband spacing */
-  dfp = 1.0/BSParams->OrbitalPeriod; 
+  /* currently unused: REAL8 dfp = 1.0/BSParams->OrbitalPeriod; */
      
   if (lalDebugLevel) printf ("\nInside fourier option in SideBandTemplate.\n");
 
@@ -995,15 +995,11 @@ void GenerateSideBandTemplate (LALStatus *status,   			/**< pointer to LALStatus
   tdiff = TParams->tstart.gpsSeconds+1e-9*TParams->tstart.gpsNanoSeconds-TParams->reftime.gpsSeconds-1e-9*TParams->reftime.gpsNanoSeconds;
   phi0 = fmod((phi0 + LAL_TWOPI*tdiff*f0),LAL_TWOPI);
 
-  /* if non-eccentric then remove loop over eccentricity */  
-  if (e==0.0) pmax = 0;
-  else pmax = TParams->pmax;
-  
   /* redefine some detector and dataset parameters */
   T = TParams->Tobs;
-  Sh = TParams->sqrtSh*TParams->sqrtSh;
-  sPe = 86400.0*(1.0/((1.0/365.2524)+1.0)); /* define the sidereal day */
-  w0 = TParams->ABCco->omega0;
+  /* currently unused: Sh = TParams->sqrtSh*TParams->sqrtSh; */
+  /* currently unused: REAL8 sPe = 86400.0*(1.0/((1.0/365.2524)+1.0)); // define the sidereal day */
+  /* currently unused: REAL8 w0 = TParams->ABCco->omega0; */
   
   /* define the eccentricity expansion coefficients */
   R1 = LAL_TWOPI*BSParams->f0*a*sqrt(1.0-e*e*cos(argp)*cos(argp));
@@ -1274,7 +1270,7 @@ ComputeABCcoefficients (LALStatus *status,   			/**< pointer to LALStatus struct
   REAL8 alpha;
   REAL8 delta;
 
-  INITSTATUS( status, "ComputeABCcoefficients", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input results vectors */

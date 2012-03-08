@@ -141,6 +141,7 @@ fabs()
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_MSGEUSE "Bad user-entered data"
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -163,8 +164,6 @@ fabs()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID (STOCHASTICCROSSCORRELATIONSPECTRUMTESTC, "$Id$");
 
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_LENGTH    9
 #define STOCHASTICCROSSCORRELATIONSPECTRUMTESTC_F0        80.0

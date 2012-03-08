@@ -24,8 +24,6 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
-NRCSID( UNITCOMPAREC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitCompare_c
@@ -146,7 +144,7 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 {
   int code;
 
-  INITSTATUS( status, "LALUnitCompare", UNITCOMPAREC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

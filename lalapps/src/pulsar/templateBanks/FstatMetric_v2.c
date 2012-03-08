@@ -58,8 +58,6 @@
 
 #include <lalapps.h>
 
-RCSID("$Id");
-
 /* ---------- Error codes and messages ---------- */
 #define FSTATMETRIC_EMEM 	1
 #define FSTATMETRIC_EINPUT	2

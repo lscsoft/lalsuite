@@ -208,7 +208,6 @@ LALMalloc()                 LALDestroyTwoDMesh()
 #include <lal/TwoDMesh.h>
 
 /** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHINTERNALC, "$Id$" );
 
 /* Whether or not to track progress internally. */
 static UINT4 columnNo;
@@ -326,7 +325,7 @@ LALTwoDMesh( LALStatus          *stat,
   REAL4 maxColumnFac = 0.0;
   UINT4 nIn = (UINT4)( -1 );
 
-  INITSTATUS( stat, "LALTwoDMesh", TWODMESHINTERNALC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
@@ -478,7 +477,7 @@ LALTwoDColumn( LALStatus            *stat,
   REAL4 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
   UINT4 nIn = (UINT4)( -1 );
 
-  INITSTATUS( stat, "LALTwoDColumn", TWODMESHINTERNALC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
@@ -761,7 +760,7 @@ LALTwoDNodeCopy( LALStatus    *stat,
   TwoDMeshNode *tail;      /* current tail of old->subMesh */
   TwoDMeshNode **tailCopy; /* pointer to copy of *tail */
 
-  INITSTATUS( stat, "LALTwoDNodeCopy", TWODMESHINTERNALC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check parameters. */

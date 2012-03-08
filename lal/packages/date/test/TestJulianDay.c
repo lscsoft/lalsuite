@@ -24,8 +24,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID(LALTESTJULIANDAYC, "$Id$");
-
 #define SUCCESS              0
 #define FAIL_JULIAN_DAY      1
 #define FAIL_MOD_JULIAN_DAY  2

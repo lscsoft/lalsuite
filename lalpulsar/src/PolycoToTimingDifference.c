@@ -23,8 +23,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-NRCSID(POLYCOTOTIMINGDIFFERENCEC,"$Id$");
-
 /** \author Creighton, T. D.
     \ingroup Resample_h
     \brief Computes values of the timing difference \f$(\tau-t)/\Delta t\f$ from a polynomial fit.
@@ -73,8 +71,7 @@ LALPolycoToTimingDifference( LALStatus       *stat,
   REAL4 *t0;        /* Pointer to polynomial fit times */
   REAL4 *poly;      /* Pointer to polynomial coefficients */
 
-  INITSTATUS(stat,"LALPolycoToTimingDifference",
-	     POLYCOTOTIMINGDIFFERENCEC);
+  INITSTATUS(stat);
 
   /* Check that the input fields exist. */
   ASSERT(difference,stat,RESAMPLEH_ENUL,RESAMPLEH_MSGENUL);

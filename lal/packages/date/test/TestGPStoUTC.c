@@ -28,8 +28,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (LALTESTGPSTOUTCC, "$Id$");
-
 int main(int argc, char *argv[])
 {
   LIGOTimeGPS         gpsTime = {0, 0};
@@ -50,7 +48,7 @@ int main(int argc, char *argv[])
   if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
       fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -68,7 +66,7 @@ int main(int argc, char *argv[])
     {
       fprintf(stderr, "XLALGPStoUTC conversion failed: wrong UTC result\n");
       fprintf(stderr, "TestGPStoUTC: date strings do not match, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       XLALDestroyCHARVector(timestamp);
       return 1;
     }
@@ -82,7 +80,7 @@ int main(int argc, char *argv[])
   if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
       fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -112,7 +110,7 @@ int main(int argc, char *argv[])
   if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
       fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -145,7 +143,7 @@ int main(int argc, char *argv[])
   if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
       fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -181,14 +179,14 @@ int main(int argc, char *argv[])
     if (XLALGetBaseErrno() != XLAL_EDOM) /* not expected error */
         {
           fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-                  __LINE__, LALTESTGPSTOUTCC);
+                  __LINE__, "$Id$");
           return 1;
         }
     }
   else /* no error */
     {
       fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
   XLALClearErrno();
@@ -202,7 +200,7 @@ int main(int argc, char *argv[])
   if(!XLALGPSToUTC(&utcDate, gpsTime.gpsSeconds))
     {
       fprintf(stderr, "TestGPStoUTC: XLALGPSToUTC() failed, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -211,7 +209,7 @@ int main(int argc, char *argv[])
     {
       fprintf(stderr,
               "TestUTCtoGPS: error in XLALUTCToGPS, line %i, %s\n",
-              __LINE__, LALTESTGPSTOUTCC);
+              __LINE__, "$Id$");
       return 1;
     }
 
@@ -228,7 +226,7 @@ int main(int argc, char *argv[])
       tmpGps.gpsNanoSeconds != gpsTime.gpsNanoSeconds)
     {
       fprintf(stderr,
-              "TestGPStoUTC: conversion from GPS to UTC and back to GPS failed, line %i, %s\n", __LINE__, LALTESTGPSTOUTCC);
+              "TestGPStoUTC: conversion from GPS to UTC and back to GPS failed, line %i, %s\n", __LINE__, "$Id$");
       return 1;
     }
 

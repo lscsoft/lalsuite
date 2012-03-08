@@ -163,6 +163,7 @@ LALUnitAsString()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <ctype.h>
 #include <lal/LALStdlib.h>
@@ -171,8 +172,6 @@ LALUnitAsString()
 #include <lal/StringInput.h>
 #include <lal/StreamOutput.h>
 #include <lal/Date.h>
-
-NRCSID( STREAMSERIESOUTPUTC, "$Id$" );
 
 /* Define a function for printing a string as a literal. */
 static int

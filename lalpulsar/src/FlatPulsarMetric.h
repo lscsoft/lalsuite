@@ -24,7 +24,6 @@
  * \ingroup PulsarMetric
  * \brief Header-file defining the API for the flat pulsar-metric functions.
  *
- * $Id$
  *
  */
 
@@ -47,9 +46,6 @@ extern "C" {
 #include <lal/DetectorSite.h>
 #include <lal/DetectorStates.h>
 #include <lal/PtoleMetric.h>
-
-NRCSID( FLATPULSARMETRICH, "$Id$" );
-
 
 /*---------- DEFINES ----------*/
 #define SIN_EPS		0.3977771557	/**< sin(LAL_IEARTH) */

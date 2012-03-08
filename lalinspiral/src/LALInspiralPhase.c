@@ -51,9 +51,6 @@ LALDRombergIntegrate()
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALPHASEC, "$Id$");
-
-
 void
 LALInspiralPhase (
    LALStatus *status,
@@ -70,7 +67,7 @@ LALInspiralPhase (
    REAL8 sign;
    REAL8 answer;
 
-   INITSTATUS (status, "LALInspiralPhase", LALINSPIRALPHASEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR (status);
 
    ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

@@ -1,6 +1,5 @@
 #!/usr/local/bin/python2.3
 """
-$Id$
 
 binary_pulsar_pipeline.py - binary pulsar pipeline driver script
 

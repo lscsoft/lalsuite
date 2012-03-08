@@ -63,7 +63,6 @@ extern "C" {
 #endif
 
 /** \cond DONT_DOXYGEN */
-NRCSID( LALINSPIRALH, "$Id$" );
 
 # define oneby3    0.333333333333333333333333333
 # define twoby3    0.666666666666666666666666667
@@ -701,16 +700,6 @@ tagInspiralInit
 
 }  InspiralInit;
 
-/** UNDOCUMENTED */
-typedef enum
-{
-  INSPIRAL_TAPER_NONE,		/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_START,		/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_END,		/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_STARTEND,	/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_NUM_OPTS	/**< UNDOCUMENTED */
-}  InspiralApplyTaper;
-
 /* Function prototypes */
 
 /* --- HERE ARE SOME USEFUL PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
@@ -792,18 +781,6 @@ XLALInspiralInit(
 
 
 
-
-
-
-void LALInspiralWaveTaper(
-     LALStatus    *status,
-     REAL4Vector  *signalvec,
-     UINT4       bookends
-     );
-
-int XLALInspiralWaveTaper(
-                   REAL4Vector         *signalvec,
-                   InspiralApplyTaper  bookends);
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 

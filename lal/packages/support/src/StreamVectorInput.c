@@ -97,8 +97,6 @@ LALWarning()
 #include <lal/StringInput.h>
 #include <lal/StreamInput.h>
 
-NRCSID( STREAMVECTORINPUTC, "$Id$" );
-
 /* Define linked-list of buffers for storing an arbitrary number of
    arbitrary datatypes. */
 #define BUFFSIZE 16
@@ -142,7 +140,7 @@ LALCHARReadVector( LALStatus *stat, CHARVector **vector, FILE *stream )
   BOOLEAN done = 0;     /* whether or not to read more buffers */
   size_t nTot;          /* total number of characters read */
 
-  INITSTATUS( stat, "LALCHARReadVector", STREAMVECTORINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

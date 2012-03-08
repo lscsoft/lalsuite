@@ -26,8 +26,6 @@
 #define UNUSED
 #endif
 
-NRCSID( LALEVALUATEINSPIRALCHISQTESTC, "$Id$" );
-
 /* Local Functions used only in this file */
 static REAL4 **matrix(long nrl, long nrh, long ncl, long nch);
 static void  free_matrix(REAL4 **m, long nrl, long nrh, long ncl, long nch);
@@ -48,7 +46,7 @@ void LALEvaluateInspiralChisqTest ( LALStatus                *status,
     REAL4                     *pBandRho1=NULL, *pBandRho2=NULL;
     InspiralWaveCorrelateIn   corrin;
 
-    INITSTATUS (status, "LALEvaluateInspiralChisqTest", LALEVALUATEINSPIRALCHISQTESTC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     /* If fCutoff > flso, we need to modify imax

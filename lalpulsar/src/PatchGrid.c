@@ -23,7 +23,6 @@
  *
  * Authors: Sintes, A.M., Krishnan, B.
  *
- * Revision: $Id$
  *
  * History:   Created by Sintes May 14, 2001
  *            Modified by Badri Krishnan Feb 2003
@@ -85,10 +84,6 @@ This value should be in the interval  [1.0, 25.0].
 #include <lal/LUT.h>
 
 
-/** \cond DONT_DOXYGEN */
-NRCSID (PATCHGRIDC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */
@@ -123,7 +118,7 @@ void LALHOUGHComputeSizePar (LALStatus  *status, /* demodulated case */
   REAL8   patchSkySizeY;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHComputeSizePar", PATCHGRIDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -236,7 +231,7 @@ void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non-demod. case */
   REAL8   patchSkySizeY;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, "LALHOUGHComputeNDSizePar", PATCHGRIDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -352,7 +347,7 @@ void LALHOUGHFillPatchGrid (LALStatus      *status,
   REAL8   *yCoord;
   /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALHOUGHFillPatchGrid", PATCHGRIDC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */

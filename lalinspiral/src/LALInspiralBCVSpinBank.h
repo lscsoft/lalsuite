@@ -82,9 +82,6 @@ dcomplex DRCmul(double x, dcomplex a);
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_roots.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (LALINSPIRALBCVSPINBANKH,"$Id$");
-
 int cos_sin_func(/* input */
 		 int N, double beta,double fmax,
 		 /* output */

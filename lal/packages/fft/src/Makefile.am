@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-## $Id$
 if QTHREAD
 QTHREADSRC = qthread.c
 else
@@ -32,8 +31,5 @@ endif
 MOSTLYCLEANFILES =
 DISTCLEANFILES =
 
-if CUDA
-SUFFIXES = .cu .cpp
-.cu.cpp:
-	nvcc --cuda $(INCLUDES) $(CPPFLAGS) --output-file $@ $<
-endif
+# cuda build rules
+include $(top_srcdir)/misc/cuda.common

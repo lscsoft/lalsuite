@@ -22,14 +22,22 @@ lalsimulationinclude_HEADERS = \
 	LALSimulationVCSInfo.h
 
 noinst_HEADERS = \
-	LALSimIMREOBFactorizedFlux.c \
 	LALSimIMREOBFactorizedWaveform.c \
 	LALSimIMREOBHybridRingdown.c \
 	LALSimIMREOBNQCCorrection.c \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNewtonianMultipole.c \
 	LALSimInspiralPNCoefficients.c \
-	LALSimInspiraldEnergyFlux.c
+	LALSimInspiraldEnergyFlux.c \
+	LALSimIMRSpinEOBHamiltonian.c \
+	LALSimIMRSpinEOBHcapNumericalDerivative.c \
+	LALSimIMRSpinAlignedEOBHcapDerivative.c \
+	LALSimIMRSpinEOB.h \
+	LALSimIMRSpinEOBInitialConditions.c \
+	LALSimIMRSpinEOBAuxFuncs.c \
+	LALSimIMRSpinEOBFactorizedWaveform.c \
+	LALSimIMRSpinEOBFactorizedFlux.c \
+	LALSimIMREOBFactorizedFlux.c
 
 lib_LTLIBRARIES = liblalsimulation.la
 liblalsimulation_la_SOURCES = \
@@ -37,10 +45,12 @@ liblalsimulation_la_SOURCES = \
 	LALSimBurst.c \
 	LALSimBurstImg.c \
 	LALSimIMREOBNRv2.c \
+	LALSimIMRSpinAlignedEOB.c \
 	LALSimIMRPhenom.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
+	LALSimInspiralSpinTaylorT4.c \
 	LALSimInspiralTaylorEt.c \
 	LALSimInspiralTaylorF2ReducedSpin.c \
 	LALSimInspiralTaylorF2ReducedSpinMetric.c \
@@ -50,8 +60,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorT3.c \
 	LALSimInspiralTaylorT4.c \
 	LALSimInspiralTaylorLength.c \
+	LALSimInspiralWaveformTaper.c \
 	LALSimulation.c \
-	LALSimInspiralSpinTaylorT4.c \
 	LALSimulationVCSInfo.c \
 	LALSimNoisePSD.c \
 	LALSimNoise.c \
@@ -97,7 +107,7 @@ lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 
 lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.shell $(srcdir)/generate_user_env.awk
 	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	generate_user_env.awk \

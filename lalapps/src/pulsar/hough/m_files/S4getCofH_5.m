@@ -1,4 +1,3 @@
-% $Id$
 
 %prefix='/local_data/sintes/S4/MultiMC_100_199_500/MCfreq_';
 prefix='/local_data/sintes/S4/MultiMC/MultiMC_600_999.5_500/MCfreq_';

@@ -25,9 +25,6 @@
 #include <lal/LALStdio.h>
 #include <lal/XLALError.h>
 
-NRCSID(STRINGCONVERTTESTC, "$Id$");
-
-
 extern int lalDebugLevel;
 
 

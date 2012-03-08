@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-# $Id$
 """
 Tools to create a HTML document that summarizes results produced by ihope. 
 """

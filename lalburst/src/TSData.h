@@ -41,7 +41,6 @@ and production use of the tracksearch libraries.
 #include <lal/FrequencySeries.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALMoment.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/Matrix.h>
 #include <lal/RealFFT.h>
@@ -52,9 +51,6 @@ and production use of the tracksearch libraries.
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-
-NRCSID (TSDATAH, "$Id$");
 
 /**\name Error Codes */ /*@{*/
 #define TSDATA_ENULL    1

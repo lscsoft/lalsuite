@@ -15,7 +15,7 @@ ADDFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
   UINT4 ni, nj;                      /* index ranges */
   TYPE *outData, *in1Data, *in2Data; /* data pointers */
 
-  INITSTATUS( stat, STRING(ADDFUNC), MATRIXOPSC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( out, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -74,7 +74,7 @@ MULFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
   UINT4 ij, ik, kj, in, kn;          /* array indices */
   TYPE *outData, *in1Data, *in2Data; /* data pointers */
 
-  INITSTATUS( stat, STRING(MULFUNC), MATRIXOPSC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( out, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -142,7 +142,7 @@ TRNFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1 )
   UINT4 ij, ji, in;        /* array indices */
   TYPE *outData, *in1Data; /* data pointers */
 
-  INITSTATUS( stat, STRING(TRNFUNC), MATRIXOPSC );
+  INITSTATUS(stat);
 
   /* Check for valid input arguments. */
   ASSERT( out, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );

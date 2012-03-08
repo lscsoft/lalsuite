@@ -104,6 +104,7 @@ at the last stable orbit. It is recommended that a rather generous
 <tt>params->nEndPad</tt> be used to prevent the code from crashing.
 
 */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindRoot.h>
@@ -213,9 +214,6 @@ XLALEOBWaveformEngine (
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 );
-
-NRCSID (LALEOBWAVEFORMC,
-"$Id$");
 
 /*--------------------------------------------------------------------*/
 
@@ -329,8 +327,7 @@ XLALrOfOmega (
 }
 
 /*--------------------------------------------------------------------*/
-NRCSID (LALLIGHTRINGRADIUSC,
-"$Id$");
+
 static REAL8
 XLALlightRingRadius(
    REAL8 r,
@@ -976,7 +973,7 @@ LALEOBWaveform (
    )
 {
 
-   INITSTATUS(status, "LALEOBWaveform", LALEOBWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBWaveform", "XLALEOBWaveform" );
 
@@ -1055,12 +1052,6 @@ XLALEOBWaveform(
    return XLAL_SUCCESS;
 }
 
-
-NRCSID (LALEOBWAVEFORMTEMPLATESC,
-"$Id$");
-
-
-
 void
 LALEOBWaveformTemplates (
    LALStatus        *status,
@@ -1070,7 +1061,7 @@ LALEOBWaveformTemplates (
    )
 {
 
-   INITSTATUS(status, "LALEOBWaveformTemplates", LALEOBWAVEFORMTEMPLATESC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBWaveformTemplates", "XLALEOBWaveformTemplates" );
 
@@ -1174,7 +1165,7 @@ LALEOBWaveformForInjection (
 			    )
 {
 
-  INITSTATUS(status, "LALEOBWaveformForInjection", LALEOBWAVEFORMTEMPLATESC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALEOBWaveformForInjection", "XLALEOBWaveformForInjection" );
 

@@ -25,7 +25,6 @@
 
 /* B. Krishnan, July 2005 */
 /* small modification by M.A. Papa */
-/* $Id$*/
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_fit.h>

@@ -49,7 +49,7 @@ void FUNC ( LALStatus *status, STYPE **vseq, CreateVectorSequenceIn *in )
   /*
    * Initialize status
    */
-  INITSTATUS( status, STRING(FUNC), VECTORSEQUENCEFACTORIESC );
+  INITSTATUS(status);
 
   /* Check input structure: report if NULL */
 

@@ -33,6 +33,7 @@
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -43,9 +44,6 @@
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <time.h>
-
-
-NRCSID (FINDCHIRPBANKVETOC, "$Id$");
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

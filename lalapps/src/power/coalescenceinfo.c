@@ -33,9 +33,6 @@
 #include <lal/LALInspiral.h>
 #include <lalapps.h>
 
-
-RCSID("$Id$");
-
 #define MAXSTR 2048
 
 /* Usage format string. */

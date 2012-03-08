@@ -51,6 +51,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <pwd.h>
 #include <time.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -87,8 +88,6 @@ extern int optind, opterr, optopt;
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 
-RCSID("$Id$");
-NRCSID(COMPUTESTRAINDRIVERC, "$Id$");
 
 #define CVS_ID "$Id$"
 #define CVS_HEADER "$Header$"
@@ -251,7 +250,6 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   char gammaimName[] = "Xn:CAL-OLOOP_FAC_Im";
   char dqName[] = "Xn:LSC-DATA_QUALITY_VECTOR";
   char freqInfo[] = "Frequency validity range: 40Hz-5kHz.";
-  int c;
 
   char *cnames[] = { alphareName, gammareName, alphaimName, gammaimName, dqName };
 
@@ -348,8 +346,9 @@ int WriteFrame(int argc,char *argv[],struct CommandLineArgsTag CLA)
   FrHistoryAdd( frame, allargs);
 
   /* hostname and user */
-  c = gethostname(hostname,sizeof(hostname));
-  c = getdomainname(domainname,sizeof(domainname));
+  gethostname(hostname,sizeof(hostname));
+  if ( getdomainname(domainname,sizeof(domainname)) == -1 )
+    XLALPrintError ("\ngetdomainname() failed!\n");
   snprintf( hostnameanduser, sizeof( hostnameanduser), "Made by user: %s. Made on machine: %s.%s",getlogin(),hostname,domainname);
   FrHistoryAdd( frame, hostnameanduser);
 

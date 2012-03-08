@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., Messaritaki E.
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -63,7 +62,6 @@ int main( void ) { fprintf( stderr, "no gsl: disabled\n" ); return 77; }
 #include <lal/lalGitID.h>
 #include <lalappsGitID.h>
 
-RCSID( "$Id$" );
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
 #define CVS_REVISION "$Revision$"
@@ -235,16 +233,15 @@ int main( int argc, char *argv[] )
   XLALGPSTimeNow(&(proctable.processTable->start_time));
   if (strcmp(CVS_REVISION,"$Revi" "sion$"))
     {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, CVS_REVISION,
-                                        CVS_SOURCE, CVS_DATE ), &status );
+      XLALPopulateProcessTable(proctable.processTable,
+          PROGRAM_NAME, CVS_REVISION, CVS_SOURCE, CVS_DATE, 0);
     }
   else
     {
-      LAL_CALL( populate_process_table( &status, proctable.processTable, 
-                                        PROGRAM_NAME, lalappsGitCommitID,
-                                        lalappsGitGitStatus,
-                                        lalappsGitCommitDate ), &status );
+      XLALPopulateProcessTable(proctable.processTable,
+          PROGRAM_NAME, lalappsGitCommitID,
+          lalappsGitGitStatus,
+          lalappsGitCommitDate, 0);
     }
   snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 

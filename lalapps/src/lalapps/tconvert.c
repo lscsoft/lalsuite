@@ -73,8 +73,6 @@ static int is_blank( const char *s )
   return *s ? 0 : 1;
 }
 
-const char *rcsid = "$Id$";
-
 void output( int gps_sec, int output_type );
 void usage( const char *program, int exitcode );
 char * parse_options( char *buf, int buflen, int argc, char **argv );

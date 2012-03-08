@@ -19,7 +19,6 @@
 
 /****************************** <lalVerbatim file="LALGSLHV">
 Author: Creighton, J. D. E.
-$Id$
 ******************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -127,7 +126,6 @@ do nothing.
 #include <lal/LALMalloc.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
-#include <lal/LALRCSID.h>
 
 #include <lal/XLALGSL.h>
 
@@ -136,8 +134,6 @@ do nothing.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( LALGSLH, "$Id$" );
 
 #ifndef SWIG /* exclude from SWIG interface */
 extern LALStatus * lalGSLGlobalStatusPtr;

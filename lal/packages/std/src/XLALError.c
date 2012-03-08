@@ -30,8 +30,6 @@
 #include <lal/XLALError.h>
 #include <lal/LALStdlib.h>
 
-NRCSID(XLALERRORC, "$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else

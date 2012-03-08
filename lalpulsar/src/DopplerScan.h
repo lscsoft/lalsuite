@@ -24,7 +24,6 @@
  * \file
  * \brief Header file defining the API for DopplerScan.
  *
- * $Id$
  */
 
 #ifndef _DOPPLERSCAN_H  /* Double-include protection. */
@@ -48,8 +47,6 @@ extern "C" {
 #include <lal/LALBarycenter.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
-
-NRCSID( DOPPLERSCANH, "$Id$" );
 
 /*---------- DEFINES ----------*/
 
@@ -126,7 +123,7 @@ typedef struct tagSkyRegion {
 typedef struct tagDopplerRegion {
   SWIGLAL_STRUCT(DopplerRegion);
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
-  LIGOTimeGPS refTime;
+  LIGOTimeGPS refTime;		/** reference time of definition of Doppler parameters */
   PulsarSpins fkdot;		/**< first points of spin-intervals */
   PulsarSpins fkdotBand;	/**< spin-intervals */
 } DopplerRegion;

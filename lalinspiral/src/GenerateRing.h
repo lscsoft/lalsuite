@@ -44,8 +44,6 @@
 #include <lal/SkyCoordinates.h>
 #include <lal/LIGOMetadataTables.h>
 
-NRCSID (GENERATERINGH,"$Id$");
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

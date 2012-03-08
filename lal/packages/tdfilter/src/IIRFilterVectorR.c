@@ -19,7 +19,6 @@
 
 /***************************** <lalVerbatim file="IIRFilterVectorRCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -71,9 +70,6 @@ switch to this implementation if there is any demand for it.)
 
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
-
-NRCSID(IIRFILTERVECTORRC,"$Id$");
-
 
 int XLALIIRFilterReverseREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 {
@@ -219,7 +215,7 @@ LALIIRFilterREAL4VectorR( LALStatus      *stat,
   REAL4 *directCoef; /* Direct filter coefficients. */
   REAL4 *recursCoef; /* Recursive filter coefficients. */
 
-  INITSTATUS(stat,"LALIIRFilterREAL4VectorR",IIRFILTERVECTORRC);
+  INITSTATUS(stat);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -278,7 +274,7 @@ LALIIRFilterREAL8VectorR( LALStatus      *stat,
 			  REAL8Vector    *vector,
 			  REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALIIRFilterREAL8VectorR",IIRFILTERVECTORRC);
+  INITSTATUS(stat);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -308,7 +304,7 @@ LALDIIRFilterREAL4VectorR( LALStatus      *stat,
 			   REAL4Vector    *vector,
 			   REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDIIRFilterREAL4VectorR",IIRFILTERVECTORRC);
+  INITSTATUS(stat);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);

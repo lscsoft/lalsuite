@@ -2,6 +2,7 @@
 /* And support functions */
 /* (C) John Veitch 2009 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALStdlib.h>
 #include "LALInspiralMCMC.h"

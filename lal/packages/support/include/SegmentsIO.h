@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="SegmentsIOHV">
 Author: Peter Shawhan
-Revision: $Id$
 </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -81,8 +80,6 @@ extern "C" {
 #include <stdio.h>
 #include <lal/FileIO.h>
 #include <lal/Segments.h>
-
-NRCSID( SEGMENTSIOH, "$Id$" );
 
 /* Function prototypes */
 

@@ -85,12 +85,6 @@ HybridHexagonal placement. The function LALInspiralHybridHexagonal describes thi
 #include <lal/LALInspiralBank.h>
 #include <math.h>
 
-
-NRCSID(LALINSPIRALBANKUTILSC, "$Id$");
-
-
-
-
 REAL4
 XLALInspiralTau3FromTau0AndEqualMassLine(
     REAL4               tau0,

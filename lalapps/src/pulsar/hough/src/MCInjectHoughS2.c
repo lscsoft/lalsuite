@@ -54,6 +54,7 @@ Input shoud be from
    signals. 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "./MCInjectHoughS2.h" /* proper path*/
 
 
@@ -90,12 +91,6 @@ extern int lalDebugLevel;
 
 #define TRUE (1==1)
 #define FALSE (1==0)
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-RCSID ("$Id$");
 
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
 int main(int argc, char *argv[]){
@@ -163,8 +158,6 @@ int main(int argc, char *argv[]){
   FILE  *fpNc = NULL;
   FILE  *fpLog = NULL;
   CHAR   *logstr=NULL; 
-
-  int rc;
 
   /* user input variables */
   BOOLEAN uvar_help;
@@ -287,7 +280,7 @@ int main(int argc, char *argv[]){
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", uvar_harmonicsfile, fnamelog);
-    rc = system(command);
+    if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
   }
 
   /* append an ident-string defining the exact CVS-version of the code used */
@@ -299,9 +292,10 @@ int main(int argc, char *argv[]){
     fclose (fpLog);
     
     sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
-    rc = system(command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */
+    /* we don't check this. If it fails, we assume that */
+    /* one of the system-commands was not available, and */
+    /* therefore the CVS-versions will not be logged */
+    if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
 
     LALFree(fnamelog); 
   }
@@ -938,7 +932,7 @@ void GenerateInjectParams(LALStatus   *status,
   UINT4    msp;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "GenerateInjectParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */
@@ -959,7 +953,7 @@ void GenerateInjectParams(LALStatus   *status,
   ASSERT (fpRandom, status, DRIVEHOUGHCOLOR_EFILE,  DRIVEHOUGHCOLOR_MSGEFILE); 
   
   count = fread(&seed, sizeof(INT4),1, fpRandom);
-  ASSERT (count, status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG); 
+  if ( count == 0 ) ABORT ( status, DRIVEHOUGHCOLOR_EARG,  DRIVEHOUGHCOLOR_MSGEARG);
   
   fclose(fpRandom);
   
@@ -1159,7 +1153,7 @@ void ComputeFoft(LALStatus   *status,
   REAL8Cart3Coor  sourceLocation;
   
   /* --------------------------------------------- */
-  INITSTATUS (status, "ComputeFoft", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /*   Make sure the arguments are not NULL: */

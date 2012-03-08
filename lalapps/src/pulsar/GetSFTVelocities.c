@@ -28,10 +28,6 @@
 /* lalapps includes */
 #include <lalapps.h>
 
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 

@@ -5,6 +5,7 @@
 	  c_alpha -= 1.0f;
 	  {
 	    REAL4 *Xalpha_kR4 = (REAL4*)(Xalpha_l);
+            REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
 	    
 	    float STn[4] __attribute__ ((aligned (16)));       /* aligned for vector output */
 	    /* the vectors actually become registers in the AVUnit */

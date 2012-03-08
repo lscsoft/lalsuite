@@ -57,6 +57,7 @@ LALCOMPLEX8VectorFFT()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -65,10 +66,6 @@ LALCOMPLEX8VectorFFT()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpChisq.h>
 #include <lal/FindChirpBCV.h>
-
-NRCSID (FINDCHIRPBCVCHISQC, "$Id$");
-
-
 
 void
 LALFindChirpBCVChisqVeto (
@@ -100,7 +97,7 @@ LALFindChirpBCVChisqVeto (
   COMPLEX8             *qtildeBin;
   COMPLEX8             *qtildeBinBCV;
 
-  INITSTATUS( status, "LALFindChirpBCVChisqVeto", FINDCHIRPBCVCHISQC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

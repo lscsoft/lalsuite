@@ -1,5 +1,4 @@
 ## Process this file with automake to produce Makefile.in
-# $Id$
 
 # for using lalapps-defines + functions
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_srcdir)/src/pulsar/FDS_isolated
@@ -20,7 +19,8 @@ CUDART ?= -lcudart
 
 bin_PROGRAMS = lalapps_HoughValidateAM lalapps_HoughMismatch lalapps_HierarchicalSearch lalapps_RecalcHSCandidates
 
-EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 lalapps_HierarchicalSearch_cuda \
+EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2 \
+		 lalapps_HierarchicalSearch_cuda lalapps_HierarchicalSearch_opencl_mac lalapps_HierarchicalSearch_opencl_lin \
 		 eah_HierarchicalSearch eah_HierarchicalSearch_cuda
 
 # lalapps_HierarchicalSearch doesn't condor compile
@@ -80,6 +80,14 @@ lalapps_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)
 lalapps_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA
 lalapps_HierarchicalSearch_cuda_LDADD = $(LDADD) $(CUDART)
 
+lalapps_HierarchicalSearch_opencl_mac_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4OpenCL.c
+lalapps_HierarchicalSearch_opencl_mac_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_OPENCL_KERNEL=1
+lalapps_HierarchicalSearch_opencl_mac_LDFLAGS = $(AM_LDFLAGS) -framework OpenCL
+
+lalapps_HierarchicalSearch_opencl_lin_SOURCES = $(HierarchicalSearchSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4OpenCL.c
+lalapps_HierarchicalSearch_opencl_lin_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_OPENCL_KERNEL=1
+lalapps_HierarchicalSearch_opencl_lin_LDADD = $(LDADD) -lOpenCL
+
 # Einstein@home targets
 eah_HierarchicalSearch_cuda_SOURCES = $(HierarchicalSearchSources) $(EAHSources) $(FDSsrc)/OptimizedCFS/ComputeFstatREAL4CUDA.c $(FDSsrc)/OptimizedCFS/FStatCUDA.cu
 eah_HierarchicalSearch_cuda_CPPFLAGS = $(AM_CPPFLAGS) -DUSE_CUDA -DEAH_BOINC -DHS_OPTIMIZATION
@@ -111,9 +119,9 @@ erp_execinfo_plus.o: EinsteinAtHome/erp_execinfo_plus.c
 TESTS = testRecalcHS.sh
 EXTRA_DIST = testRecalcHS.sh
 
-TESTS_ENVIRONMENT = \
+TESTS_ENVIRONMENT = 1>/dev/null \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LAL_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+LAL_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

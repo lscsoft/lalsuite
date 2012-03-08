@@ -119,6 +119,7 @@ LALCheckMemoryLeaks()
 #include <string.h>
 #include <stdio.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStatusMacros.h>
@@ -133,9 +134,6 @@ LALCheckMemoryLeaks()
 #include <lal/SimulateSB.h>
 #include "CheckStatus.h"
 #include <lal/DetectorSite.h>
-
-
-NRCSID(SIMULATESBTESTC, "$Id$");
 
 #define SIMULATESBTESTC_LENGTH    8192
 #define SIMULATESBTESTC_SEED      123

@@ -142,6 +142,7 @@ LALCheckMemoryLeaks()
 #define STOCHASTICINVERSENOISETESTC_MSGEUSE "Bad user-entered data"
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -164,8 +165,6 @@ LALCheckMemoryLeaks()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID(STOCHASTICINVERSENOISETESTC, "$Id$");
 
 #define STOCHASTICINVERSENOISETESTC_TRUE     1
 #define STOCHASTICINVERSENOISETESTC_FALSE    0

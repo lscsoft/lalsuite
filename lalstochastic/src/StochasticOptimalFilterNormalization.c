@@ -229,9 +229,6 @@ LALUnitCompare()
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
 
-NRCSID (STOCHASTICOPTIMALFILTERC, "$Id$");
-
-
 void
 LALStochasticOptimalFilterNormalization(
     LALStatus                                            *status,
@@ -274,8 +271,7 @@ LALStochasticOptimalFilterNormalization(
   REAL4WithUnits *lamPtr;
 
   /* initialize status pointer */
-  INITSTATUS(status, "LALStochasticOptimalFilterNormalization", \
-      STOCHASTICOPTIMALFILTERC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING ----------------------------------------------------- */

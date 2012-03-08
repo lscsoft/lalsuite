@@ -234,6 +234,11 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
 
+/** Checks for \param name being present in \param vars and having type LINEAR or CIRCULAR.
+ * returns 1 or 0
+ */
+int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
+
 /** Delete the variables in this structure.
  *  Does not free the LALInferenceVariables itself
  *  \param vars will have its dimension set to 0 */
@@ -268,6 +273,18 @@ typedef void (LALInferenceTemplateFunction) (struct tagLALInferenceIFOData *data
  */
 typedef void (LALInferenceProposalFunction) (struct tagLALInferenceRunState *runState,
 	LALInferenceVariables *proposedParams);
+
+/** Jump proposal statistics
+ * Stores the weight given for a proposal function, the number of times
+ * it has been proposed, and the number of times it has been accepted
+ */
+typedef struct
+tagLALInferenceProposalStatistics
+{
+  UINT4   weight;     // Weight of proposal function in cycle
+  UINT4   proposed;   // Number of times proposal has been called
+  UINT4   accepted;   // Number of times a proposal from this function has been accepted
+} LALInferenceProposalStatistics;
 
 /** Type declaration for prior function which returns p(\param params)
   * Can depend on \param runState ->priorArgs
@@ -316,6 +333,7 @@ tagLALInferenceRunState
   LALInferenceVariables              *currentParams, /** The current parameters */
     *priorArgs,                                      /** Any special arguments for the prior function */
     *proposalArgs,                                   /** Any special arguments for the proposal function */
+    *proposalStats,                                  /** Set of structs containing statistics for each proposal*/
     *algorithmParams;                                /** Parameters which control the running of the algorithm*/
   LALInferenceVariables				**livePoints; /** Array of live points for Nested Sampling */
   LALInferenceVariables **differentialPoints;        /** Array of points for differential evolution */
@@ -392,7 +410,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
 /** Output the command line to \param str based on the ProcessParamsTable */
-void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str);
+char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
 /** Execute FFT for data in \param data */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
@@ -413,10 +431,16 @@ void LALInferencePrintSample(FILE *fp,LALInferenceVariables *sample);
 /** Output only non-fixed parameters */
 void LALInferencePrintSampleNonFixed(FILE *fp,LALInferenceVariables *sample);
 
+/** Output proposal statistics header to file *fp */
+int LALInferencePrintProposalStatsHeader(FILE *fp,LALInferenceVariables *propStats);
+
+/** Output proposal statistics to file *fp */
+void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats);
+
 /** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the
    columns.  Returns 0 on success. */
-int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
+void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
 /** Sorts the variable structure by name */
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
@@ -441,6 +465,9 @@ void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
 
 /** Convert from Mc, q space to m1, m2 space (q = m2/m1, with m1 > m2). */
 void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
+
+/** Convert from q to eta (q = m2/m1, with m1 > m2). */
+void LALInferenceQ2Eta(double q, double *eta);
 
 /** A kD tree cell contains some points (npts), a bounding box
     enclosing the cell (lowerLeft to upperRight), a bounding box

@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="LALRunningMedianCV">
 Author: Somya D. Mohanty, B. Machenschalk
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -74,11 +73,6 @@ LALFree()
 #include <lal/AVFactories.h>
 #include <lal/LALRunningMedian.h>
 /* #include "LALRunningMedian.h" */
-
-/* <lalVerbatim file="LALRunningMedianNRCSID"> */
-NRCSID( LALRUNNINGMEDIANC, "$Id$" );
-/* </lalVerbatim> */
-
 
 /*----------------------------------
   A structure to store values and indices
@@ -215,7 +209,7 @@ void LALDRunningMedian( LALStatus *status,
   REAL8 *sorted_indices;
   struct rngmed_val_index8 *index_block;
 
-  INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
+  INITSTATUS(status);
 
   /* check input parameters */
   /* input must not be NULL */
@@ -624,7 +618,7 @@ void LALSRunningMedian( LALStatus *status,
   struct rngmed_val_index4 *index_block;
 
 
-  INITSTATUS( status, "LALSRunningMedian", LALRUNNINGMEDIANC );
+  INITSTATUS(status);
 
   /* check input parameters */
   /* input must not be NULL */
@@ -1032,7 +1026,7 @@ void LALDRunningMedian2( LALStatus *status,
   REAL8 oldvalue,newvalue;      /* old + new value of the node being replaced */
   UINT4 oldlesser,oldgreater;   /* remember the pointers of the replaced node */
 
-  INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
+  INITSTATUS(status);
 
   /* check input parameters */
   /* input must not be NULL */
@@ -1316,7 +1310,7 @@ void LALSRunningMedian2( LALStatus *status,
   REAL4 oldvalue,newvalue;      /* old + new value of the node being replaced */
   UINT4 oldlesser,oldgreater;   /* remember the pointers of the replaced node */
 
-  INITSTATUS( status, "LALDRunningMedian", LALRUNNINGMEDIANC );
+  INITSTATUS(status);
 
   /* check input parameters */
   /* input must not be NULL */

@@ -23,8 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-NRCSID( UNITRAISEC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitRaise_c
@@ -163,7 +161,7 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 void
 LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power)
 {
-  INITSTATUS( status, "LALUnitRaise", UNITRAISEC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

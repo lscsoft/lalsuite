@@ -23,7 +23,6 @@
  *
  * Author: Ravi Kumar and Chad Hanna
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -52,8 +51,6 @@
 "  --cosDEC-bin-size (0,1]     input Cos(Declination) bin size from +0,1\n"\
 "  --logDIST-bin-size (0,3]    input log10(Distance) bin size from +0,3\n"\
 "\n"
-
-RCSID( "$Id$" );
 
 #define KPC ( 1e3 * LAL_PC_SI )
 #define MPC ( 1e6 * LAL_PC_SI )

@@ -37,8 +37,6 @@
 /* verbose flag */
 extern int vrbflg;
 
-NRCSID(STOPPC, "$Id$");
-RCSID("$Id$");
 
 /* cvs info */
 #define PROGRAM_NAME "stopp"

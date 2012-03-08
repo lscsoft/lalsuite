@@ -21,8 +21,6 @@
 #include <lal/LALNoiseModelsInspiral.h>
 #include <lal/LALConstants.h>
 
-NRCSID (LALDISCOVERINSPIRALEVENTSC, "$Id$");
-
 static void findValidInspiralEvents (REAL4Vector, REAL4Vector, DiscoverInspiralEventsIn, INT4 *, INT4 *);
 static void findMax ( REAL4 *vec, INT4 *ok, INT4 n, REAL4 *mVal, INT4 *mPos);
 static INT4 computeSum (INT4 *ivec, INT4 n);
@@ -47,7 +45,7 @@ void  LALDiscoverInspiralEvents (
     InspiralWaveOverlapIn              overlapin;
     InspiralWaveOverlapOut             overlapout;
 
-    INITSTATUS (status, "LALDiscoverInspiralEvents", LALDISCOVERINSPIRALEVENTSC);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR(status);
 
     ASSERT (findeventsin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

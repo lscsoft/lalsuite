@@ -29,8 +29,6 @@
 #include <lal/LALConstants.h>
 #include <lal/ComputeSky.h>
 
-NRCSID (COMPUTESKYC, "$Id ComputeSky.c $");
-
 static void TimeToFloat(REAL8 *f, LIGOTimeGPS *tgps);
 static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 
@@ -75,7 +73,7 @@ LALComputeSky (LALStatus *status,
   REAL8	dTbary;
   REAL8	tBary;
   REAL8	tB0;
-  INITSTATUS (status, "LALComputeSky", COMPUTESKYC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Check for non-negativity of sky positions in SkyCoh[] */

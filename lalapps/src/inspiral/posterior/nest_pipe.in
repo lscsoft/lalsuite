@@ -46,6 +46,14 @@ def get_timeslides_pipedown(database_connection):
 	returns a dict of dicts { trigtime: {'H1':0,'L1':5,'V1':10}) , ... }
 	of times and timeslide offsets
 	"""
+	db_segments=[]
+	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
+	db_out = database_connection.cursor().execute(sql_seg_query)
+	for d in db_out:
+		if d not in db_segments:
+			db_segments.append(d)
+	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
+	print seglist
 	db_out_saved=[]
 	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset\
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
@@ -61,10 +69,22 @@ def get_timeslides_pipedown(database_connection):
 		events=[tup for tup in db_out_saved if tup[0]==ts]
 		d={}
 		for e in events:
-			d[e[2]]=e[3]
-		print events
+			segfilt=filter(lambda seg:e[1] in seg, seglist)
+			if len(segfilt)!=1:
+				print ' ERROR: time %f must appear in only one segment'%(e[3])
+			else:
+				seg=segfilt[0]
+			deltat=e[3]
+			while (e[1]+deltat) not in seg:
+				print ' adjusting timeslide for '+str(e[1])+' + '+str(deltat)
+				if deltat<0:
+					deltat=deltat+(seg[1]-seg[0])
+				else:
+					deltat=deltat-(seg[1]-seg[0])
+			d[e[2]]=deltat
 		t=events[0][1]+events[0][3]
 		output[t]=d
+	print output
 	return output
 
 # Read command line options
@@ -88,8 +108,8 @@ model where possible (>1 IFO available).
 parser=OptionParser(usage)
 parser.add_option("-i","--ini-file",default=None,action="store",type="string",help="ini-file for nestGRB pipeline",metavar="CONFIG.ini")
 parser.add_option("-r","--run-path",default="./",action="store",type="string",help="Directory to run pipeline in (default: %default)",metavar="RUNDIR")
-parser.add_option("-p","--dag-log-path",default=None,action="store",type="string",help="Directory to store log files for the dag, defaults to RUNDIR/log/",metavar="DAGLOGDIR")
-parser.add_option("-l","--jobs-log-path",default=None,action="store",type="string",help="Directory to store log files for the jobs, defaults to RUNDIR/log/",metavar="JOBLOGDIR")
+parser.add_option("-p","--dag-log-path",default=None,action="store",type="string",help="Directory to store condor log files for the dag, defaults to RUNDIR/log/ SHOULD BE LOCAL TO SUBMIT NODE",metavar="DAGLOGDIR")
+parser.add_option("-l","--jobs-log-path",default=None,action="store",type="string",help="Directory to store stderr and stdout files for the jobs, defaults to RUNDIR/log/ MUST BE VISIBLE FROM THE NODES",metavar="JOBLOGDIR")
 parser.add_option("-s","--gps-start-time",action="store",type="string",default=None,help="Start time of analysis")
 parser.add_option("-e","--gps-end-time",action="store",type="string",default=None,help="End time of analysis")
 parser.add_option("-I","--inj",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
@@ -324,6 +344,17 @@ length=float(endtime)-float(starttime)+2*padding
 
 datastart=starttime-padding
 dataend=endtime+padding
+
+# Check for manual over-ride of PSD start time
+if cp.has_option('lalinference','psdstart'):
+	manual_datastart=cp.getfloat('lalinference','psdstart')-padding
+	if manual_datastart<datastart:
+		datastart=manual_datastart
+
+if cp.has_option('lalinference','psdlength'):
+	manual_length=cp.getfloat('lalinference','psdlength')
+	if dataend<datastart+manual_length+2.0*padding:
+		dataend=datastart+manual_length+2.0*padding
 
 cp.add_section('input')
 cp.set('input','gps-start-time',str(int(datastart)))

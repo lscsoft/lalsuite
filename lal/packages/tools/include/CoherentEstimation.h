@@ -36,9 +36,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( COHERENTESTIMATION, "$Id$" );
-
-
 #define COHERENTESTIMATIONH_EMEM 1
 #define COHERENTESTIMATIONH_ENULL 2
 #define COHERENTESTIMATIONH_E0DEC 3

@@ -242,35 +242,3 @@ int XLALPopulateProcessTable(
 
 	return 0;
 }
-
-
-/**
- * Legacy compatibility wrapper.  Remove when not used.
- */
-
-
-#include <lal/LALStatusMacros.h>
-
-
-NRCSID(PROCESSTABLEC, "$Id$");
-
-
-void populate_process_table(
-	LALStatus *status,
-	ProcessTable *ptable,
-	const CHAR *program_name,
-	const CHAR *cvs_revision,
-	const CHAR *cvs_source,
-	const CHAR *cvs_date
-)
-{
-	INITSTATUS(status, "populate_process_table", PROCESSTABLEC);
-	ATTATCHSTATUSPTR(status);
-
-	XLALPrintDeprecationWarning("populate_process_table", "XLALPopulateProcessTable");
-
-	ASSERT(!XLALPopulateProcessTable(ptable, program_name, cvs_revision, cvs_source, cvs_date, 0), status, LAL_EXLAL, LAL_MSGEXLAL);
-
-	DETATCHSTATUSPTR(status);
-	RETURN(status);
-}

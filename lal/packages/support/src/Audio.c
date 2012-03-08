@@ -21,10 +21,8 @@
 /** \file
  * \ingroup support
  * \author Creighton, J. D. E.
- * \date $Date$
  * \brief Routines for exporting time series as sound files.
  *
- * $Id$
  */
 
 #include <math.h>
@@ -34,8 +32,6 @@
 #include <lal/Audio.h>
 
 #define LAL_SOUND_MAX 32760
-
-NRCSID( AUDIOC, "$Id$" );
 
 /* if file pointer is NULL then create a new file based on series name */
 static FILE * fopen_if_null( FILE *fp, const char *name, const char *extn )

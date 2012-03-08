@@ -98,7 +98,6 @@ the local (mean) sidereal time at the detector for given GPS-time,
 (which I double-checked with an independent Mathematica script),
 and and LALBarycenter() to calculate \f$\tau(t)\f$.
 
- * $Id$
  *
  */
 
@@ -107,8 +106,6 @@ and and LALBarycenter() to calculate \f$\tau(t)\f$.
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/ComputeFstat.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-
-NRCSID( SIMULATEPULSARSIGNALC, "$Id$");
 
 extern INT4 lalDebugLevel;
 
@@ -190,7 +187,7 @@ LALSimulateExactPulsarSignal (LALStatus *status,
 
   CHAR *channel;
 
-  INITSTATUS( status, "LALSimulatePulsarSignal", SIMULATEPULSARSIGNALC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT ( timeSeries, status, SIMULATEPULSARSIGNAL_ENULL, SIMULATEPULSARSIGNAL_MSGENULL);

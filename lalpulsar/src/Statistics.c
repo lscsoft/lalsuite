@@ -19,10 +19,6 @@
 
 #include <lal/Statistics.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID (STATISTICSC, "$Id$");
-/** \endcond */
-
 /*
  * The functions that make up the guts of this module
  */
@@ -44,7 +40,7 @@ void LALHoughStatistics( LALStatus     *status,
   HoughTT max, min;
   /*--------------------------------------------------------------- */
 
-  INITSTATUS (status, "LALHoughStatistics", STATISTICSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */
@@ -136,7 +132,7 @@ void LALHoughmapMeanVariance( LALStatus     *status,
   REAL8  sum, tempVariance, tempMean, ep, temp;
   /*--------------------------------------------------------------- */
 
-  INITSTATUS (status, "LALHoughmapMeanVariance", STATISTICSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -189,7 +185,7 @@ void LALHoughHistogram(LALStatus      *status,
 
   INT4   i, j, length, xSide, ySide, temp;
 
-  INITSTATUS (status, "LALHoughHistogram", STATISTICSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* make sure arguments are not null */

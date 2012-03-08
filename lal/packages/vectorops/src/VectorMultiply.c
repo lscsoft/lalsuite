@@ -63,13 +63,10 @@
 
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/VectorOps.h>
-
-/** \cond DONT_DOXYGEN */
-NRCSID (VECTORMULTIPLYC, "$Id$");
-/** \endcond */
 
 COMPLEX8Vector * XLALCCVectorDivide(
     COMPLEX8Vector       *out,
@@ -514,7 +511,7 @@ LALCCVectorDivide (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "LALCCVectorDivide", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -583,7 +580,7 @@ LALZZVectorDivide (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "LALZZVectorDivide", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -653,7 +650,7 @@ LALCCVectorMultiply (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "LALCCVectorMultiply", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -708,7 +705,7 @@ LALZZVectorMultiply (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "LALZZVectorMultiply", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -763,7 +760,7 @@ LALCCVectorMultiplyConjugate (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "LALCCVectorMultiplyConjugate", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -818,7 +815,7 @@ LALZZVectorMultiplyConjugate (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "LALZZVectorMultiplyConjugate", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -873,7 +870,7 @@ LALSCVectorMultiply (
   COMPLEX8 *c;
   INT4      n;
 
-  INITSTATUS (status, "LALSCVectorMultiply", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -927,7 +924,7 @@ LALDZVectorMultiply (
   COMPLEX16 *c;
   INT4       n;
 
-  INITSTATUS (status, "LALDZVectorMultiply", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -981,7 +978,7 @@ LALSSVectorMultiply (
   REAL4 *c;
   INT4   n;
 
-  INITSTATUS (status, "LALSSVectorMultiply", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -1026,7 +1023,7 @@ LALDDVectorMultiply (
   REAL8 *c;
   INT4   n;
 
-  INITSTATUS (status, "LALDDVectorMultiply", VECTORMULTIPLYC);
+  INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
   ASSERT (in1, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);

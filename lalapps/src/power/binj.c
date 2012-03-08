@@ -62,9 +62,6 @@
 
 #include <LALAppsVCSInfo.h>
 
-RCSID("$Id$");
-
-
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"

@@ -43,8 +43,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/XLALError.h>
 
-NRCSID( COINCRINGDOWNUTILSC, "$Id$" );
-
 /**
 \author Fairhurst, S.
 \file
@@ -196,7 +194,7 @@ LALCreateTwoIFORingdownCoincList(
   INT4                          ifoNumber;
   INT8                          maxTimeDiff = 0;
 
-  INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincOutput, status,
@@ -307,7 +305,7 @@ LALCreateNIFORingdownCoincList(
   EventIDColumn                *thisID        = NULL;
 
 
-  INITSTATUS( status, "LALCreateNIFORingdownCoincList", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* loop over all the coincidences in the list */
@@ -417,7 +415,7 @@ LALRemoveRepeatedRingdownCoincs(
   EventIDColumn                *thisID        = NULL;
 
 
-  INITSTATUS( status, "LALRemoveRepeatedRingdownCoincs", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* loop over all the coincidences in the list */
@@ -508,7 +506,7 @@ LALFreeCoincRingdown(
     CoincRingdownTable        **coincPtr
     )
 {
-  INITSTATUS( status, "LALFreeCoincRingdown", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   XLALFreeCoincRingdown( coincPtr );
@@ -579,7 +577,7 @@ LALAddSnglRingdownToCoinc(
   EventIDColumn       *eventId = NULL;
   */
 
-  INITSTATUS( status, "LALAddSnglRingdownToCoinc", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coincPtr, status,
@@ -694,7 +692,7 @@ LALSnglRingdownCoincTest(
   INT4                  match = 1;
   INT4                  ifoNumber = 0;
 
-  INITSTATUS( status, "LALSnglRingdownCoincTest", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -745,7 +743,7 @@ LALExtractSnglRingdownFromCoinc(
     )
 
 {
-  INITSTATUS( status, "LALExtractCoincSngls", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   *snglPtr = XLALExtractSnglRingdownFromCoinc( coincRingdown, gpsStartTime,
@@ -1553,7 +1551,7 @@ LALCoincCutSnglInspiral(
   SnglInspiralTable  *prevEvent = NULL;
   SnglInspiralTable  *thisEvent = NULL;
 
-  INITSTATUS( status, "LALCoincCutSnglInspiral", COINCINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that eventHead is non-null */
@@ -1948,7 +1946,7 @@ LALRingdownH1H2Consistency(
   CoincRingdownTable   *prevCoinc = NULL;
   CoincRingdownTable   *coincHead = NULL;
   REAL4 snrH1;
-  INITSTATUS( status, "LALRingdownH1H2Consistency", COINCRINGDOWNUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   thisCoinc = *coincRingdown;

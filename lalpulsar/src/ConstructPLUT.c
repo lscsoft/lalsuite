@@ -60,13 +60,7 @@ More detailed documentation can be found in the source code itself.
 #include <lal/LUT.h>
 
 
-/*
- * 4. Assignment of Id string using NRCSID()
- */
-
 /** \cond DONT_DOXYGEN */
-NRCSID (CONSTRUCTPLUTC, "$Id$");
-
 
 /*
  * 5.a) Constants, structures (used only internally in this module)
@@ -160,7 +154,7 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
   INT8    f0Bin;
 
   /* --------------------------------------------- */
-  INITSTATUS (status, " LALHOUGHConstructPLUT", CONSTRUCTPLUTC);
+  INITSTATUS(status);
   /*  ATTATCHSTATUSPTR (status); */
 
   /*   Make sure the arguments are not NULL: */

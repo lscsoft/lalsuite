@@ -49,8 +49,6 @@
 #define UNUSED
 #endif
 
-NRCSID( COINCINSPIRALELLIPSOIDC, "$Id$" );
-
 /**
 
 \author Craig Robinson
@@ -143,7 +141,7 @@ LALCreateTwoIFOCoincListEllipsoid(
   REAL8                        timeError = 0.0;
 
 
-  INITSTATUS( status, "LALCreateTwoIFOCoincList", COINCINSPIRALELLIPSOIDC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( snglInput, status,

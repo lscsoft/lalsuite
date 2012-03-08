@@ -61,9 +61,6 @@ Options:
 #include <getopt.h>
 #endif
 
-
-NRCSID (MAIN, "$Id$");
-
 #define CODES_(x) #x
 #define CODES(X)  CODES_(x)
 

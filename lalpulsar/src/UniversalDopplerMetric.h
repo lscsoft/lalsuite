@@ -25,7 +25,6 @@
  * Function to compute the full F-statistic metric, including
  * antenna-pattern functions from multi-detector, derived in \ref Prix07.
  *
- * Revision: $Id$
  *
  */
 
