@@ -198,6 +198,13 @@ user_tags = set([ '_'.join([ entry.description.split('_')[ii]
 non_sim_dbs = []
 
 ##############################################################################
+# Get the time column name (for inspiral, it is end_time; for ringdown, it is 
+# start_time)
+
+print "Getting the name of the time column..."
+time_column = cp.get('pipeline', 'time-column')
+
+##############################################################################
 # Create the needed jobs to be run
 
 # thinca_to_coinc jobs
@@ -559,6 +566,7 @@ for tag in user_tags:
   cluster_node.set_category('cluster_coincs')
   cluster_node.set_tmp_space( tmp_space )
   cluster_node.set_input( raw_result_db )
+  cluster_node.add_var_opt('time-column',time_column)
   # output database name has form:
   # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sqlite
   db_type = tag + '_CLUSTERED_CBC_RESULTS'
@@ -923,6 +931,7 @@ for result_db in result_dbs_cache:
       printlc_node.set_extract_to_database( '.'.join([ full_filename, 'sqlite' ]) )
       printlc_node.set_include_only_coincs( '[ALLin' + on_instruments + ']' )
       printlc_node.set_datatype( datatype )
+      printlc_node.add_var_opt('time-column',time_column)
 
       # set parent node
       printlc_node.add_parent( ccfar_node )
@@ -1012,6 +1021,7 @@ for result_db in result_dbs_cache:
           printsims_node.set_comparison_datatype( datatype )
           printsims_node.set_sim_tag( sim_tag )
           printsims_node.set_output_format( summ_file_type )
+          printsims_node.add_var_opt('time-column',time_column)
     
           # set parent node
           printsims_node.add_parent( ccfar_node )
