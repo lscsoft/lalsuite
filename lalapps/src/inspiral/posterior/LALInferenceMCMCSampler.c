@@ -911,8 +911,8 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
   double pnorder = 0.0;
   if(LALInferenceCheckVariable(runState->currentParams,"LAL_PNORDER")) pnorder = ((double)(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
 
-  char str[999];
-  LALInferencePrintCommandLine(runState->commandLine, str);
+  char *str;
+  str = LALInferencePrintCommandLine(runState->commandLine);
 
   REAL8 networkSNR=0.0;
   ifodata1=runState->data;
