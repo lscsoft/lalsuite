@@ -187,7 +187,7 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 
   REAL8 t, tintp, h;
 
-  REAL8 *ytemp;
+  REAL8 *ytemp = NULL;
 
   /* If want to stop only on test, then tend = +/-infinity; otherwise
      tend_in */
