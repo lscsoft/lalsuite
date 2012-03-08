@@ -1351,7 +1351,7 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
 %typemap(freearg) SWIGTYPE ** "";
 // output typemaps for single pointers
 %typemap(argout, noblock=1) SWIGTYPE *OUTPUT {
-  %append_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, owner$argnum | %newpointer_flags));
+  %append_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, $owner | %newpointer_flags));
 }
 %typemap(freearg) SWIGTYPE *OUTPUT "";
 
