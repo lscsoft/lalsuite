@@ -247,11 +247,12 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	which contains a REAL8 array of likelihood values for the live
 	points.
  */
+
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
 	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-	UINT4 Nruns=1;
+	UINT4 Nruns=100;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
@@ -402,7 +403,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
 	  runState->evolve(runState);
-	  logLikelihoods[i]=runState->currentLikelihood;
+	  logLikelihoods[i]=runState->likelihood(runState->currentParams,runState->data,runState->template);
+          LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
@@ -445,7 +447,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
-                        itercounter++;			
+                        itercounter++;
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
@@ -461,6 +463,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 		for(j=0;j<Nruns;j++) logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
+		LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
@@ -600,11 +603,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
 	LALInferenceVariables *newParams=NULL;
+	LALInferenceIFOData *data=runState->data;
+	char tmpName[32];
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
         REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX;
-	REAL8 logProposalRatio;
+	REAL8 logProposalRatio,tmp=0.0;
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
@@ -645,6 +650,17 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	/* Update information to pass back out */
 	if(logLnew==DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
 	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
+		tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
+		LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	}
+	while(data)
+	{
+		tmp=data->loglikelihood - data->nullloglikelihood;
+		sprintf(tmpName,"deltalogl%s",data->name);
+		LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+		data=data->next;
+	}
 	runState->currentLikelihood=logLnew;
 	
 	LALInferenceDestroyVariables(newParams);

@@ -370,7 +370,7 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
     XLAL_ERROR_REAL8( XLAL_EFUNC );
   }
 
-  printf( "Abserr = %e\n", absErr );
+  //printf( "Abserr = %e\n", absErr );
 
   return result;
 }

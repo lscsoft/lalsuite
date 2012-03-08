@@ -208,6 +208,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
+AC_PROG_SED
 LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4], m4)
@@ -419,19 +420,20 @@ AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LAL has now been successfully configured:
 
-                CUDA support is $CUDA_ENABLE_VAL
-                BOINC support is $BOINC_ENABLE_VAL
-                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            CUDA support is $CUDA_ENABLE_VAL
+            BOINC support is $BOINC_ENABLE_VAL
+            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+
+        and will be installed under the directory:
+
+            ${prefix}
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL
-        LAL will be installed under the directory:
-
-                $prefix
 
 ================================================================="

@@ -625,7 +625,7 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
 
     /* free memory */
     if ( dataTypes ) XLALFree ( dataTypes );
-    if ( fmtList ) XLALDestroyTokenList( &fmtList );
+    if ( fmtList ) XLALDestroyTokenList( fmtList );
     if ( dataFmts ) XLALFree ( dataFmts );
     if ( dataColumns ) XLALFree ( dataColumns );
 
@@ -634,7 +634,7 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
 
  failed:
     if ( dataTypes ) XLALFree ( dataTypes );
-    if ( fmtList ) XLALDestroyTokenList( &fmtList );
+    if ( fmtList ) XLALDestroyTokenList( fmtList );
     if ( dataFmts ) XLALFree ( dataFmts );
     if ( dataColumns ) XLALFree ( dataColumns );
     if ( xmlTABLEDATAnode ) xmlFreeNode ( xmlTABLEDATAnode );
@@ -1272,7 +1272,7 @@ XLALVOTResourcePath2XPath ( const CHAR *extResourcePath )
 
     } /* for i < nTokens */
 
-  XLALDestroyTokenList ( &resParents );
+  XLALDestroyTokenList ( resParents );
 
   return(xpath);
 

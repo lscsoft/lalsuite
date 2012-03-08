@@ -158,7 +158,7 @@ lalpulsar-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 
 lalpulsar-user-env.csh lalpulsar-user-env.sh: lalpulsar-user-env.shell $(srcdir)/generate_user_env.awk
 	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v package=$(PACKAGE_NAME) -v output=$@ $<
+	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	LALPulsarConfig.h.in \

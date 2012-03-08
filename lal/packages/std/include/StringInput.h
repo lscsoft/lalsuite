@@ -207,8 +207,8 @@ XLALCreateTokenList( TokenList  **list,
 		     const CHAR *string,
 		     const CHAR *delimiters );
 
-int
-XLALDestroyTokenList( TokenList **list );
+void
+XLALDestroyTokenList( TokenList *list );
 
 
 /* <lalLaTeX>

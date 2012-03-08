@@ -116,6 +116,7 @@
 %enddef
 
 // Include basic LAL headers in wrapping code.
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 %header %{
   #define LAL_USE_OLD_COMPLEX_STRUCTS
   #include <lal/XLALError.h>
