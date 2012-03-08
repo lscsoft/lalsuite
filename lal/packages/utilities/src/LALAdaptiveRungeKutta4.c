@@ -134,6 +134,7 @@ static int storeStateInOutput(REAL8Array **output, REAL8 t, REAL8 *y, size_t dim
   }
 
   *output = out;
+  *outputlen = len;
   return GSL_SUCCESS;
 }
 
