@@ -1717,8 +1717,8 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           /* We assume aligned/antialigned spins here */
           a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * sqrt(1.0 - 4.0 * eta);
           NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
-          printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
-                 mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);
+          /*printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
+                 mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);*/
           modefreqs->data[7].re = (NRPeakOmega22 + modefreqs->data[0].re) / 2.;
           modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
       }
@@ -1735,7 +1735,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       if ( matchrange->data[0] * mTot / dt < 5 || matchrange->data[1]*mTot/dt > matchrange->data[2] *mTot/dt - 2 )
       {
         XLALPrintError( "More inspiral points needed for ringdown matching.\n" );
-        printf("%.16e,%.16e,%.16e\n",matchrange->data[0] * mTot / dt, matchrange->data[1]*mTot/dt, matchrange->data[2] *mTot/dt - 2);
+        //printf("%.16e,%.16e,%.16e\n",matchrange->data[0] * mTot / dt, matchrange->data[1]*mTot/dt, matchrange->data[2] *mTot/dt - 2);
         XLALDestroyCOMPLEX16Vector( modefreqs );
         XLAL_ERROR( XLAL_EFAILED );
       }

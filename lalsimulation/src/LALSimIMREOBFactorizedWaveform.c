@@ -1125,7 +1125,7 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
 
   dM2 = 1. - 4.*eta;
  
-  printf( "****************************** a = %e *********************************\n", a );
+  //printf( "****************************** a = %e *********************************\n", a );
  
   /* Check that deltaM has a reasonable value */
   if ( dM2 < 0 )
@@ -1175,11 +1175,11 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   coeffs->rho22v10  = -16094530514677./533967033600.;
   coeffs->rho22v10l =  439877./55566.;
 
-  printf( "v2 = %.16e, v3 = %.16e, v4 = %.16e, v5 = %.16e\n"
+  /*printf( "v2 = %.16e, v3 = %.16e, v4 = %.16e, v5 = %.16e\n"
     "v6 = %.16e, v6l = %.16e v7 = %.16e v8 = %.16e, v8l = %.16e v10 = %.16e v10l = %.16e\n",
       coeffs->rho22v2, coeffs->rho22v3, coeffs->rho22v4, coeffs->rho22v5, coeffs->rho22v6,
       coeffs->rho22v6l, coeffs->rho22v7, coeffs->rho22v8, coeffs->rho22v8l, coeffs->rho22v10,
-      coeffs->rho22v10l );
+      coeffs->rho22v10l );*/
 
   if ( dM2 )
   {

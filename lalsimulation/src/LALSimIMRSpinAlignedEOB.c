@@ -386,9 +386,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  fprintf( stderr, "ICs = %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", tmpValues->data[0], tmpValues->data[1], tmpValues->data[2],
+  /*fprintf( stderr, "ICs = %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e %.16e\n", tmpValues->data[0], tmpValues->data[1], tmpValues->data[2],
       tmpValues->data[3], tmpValues->data[4], tmpValues->data[5], tmpValues->data[6], tmpValues->data[7], tmpValues->data[8],
-      tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] );
+      tmpValues->data[9], tmpValues->data[10], tmpValues->data[11] );*/
 
   /* Taken from Andrea's code */
 /*  memset( tmpValues->data, 0, tmpValues->length*sizeof(tmpValues->data[0]));*/
@@ -403,7 +403,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   values->data[2] = tmpValues->data[3];
   values->data[3] = tmpValues->data[0] * tmpValues->data[4];
 
-  fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
+  //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
   XLALDestroyREAL8Vector( tmpValues );
 
@@ -440,23 +440,23 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   prVec.data   = dynamics->data+3*retLen;
   pPhiVec.data = dynamics->data+4*retLen;
 
-  printf( "We think we hit the peak at time %e\n", dynamics->data[retLen-1] );
+  //printf( "We think we hit the peak at time %e\n", dynamics->data[retLen-1] );
 
   /* TODO : Insert high sampling rate / ringdown here */
-  FILE *out = fopen( "saDynamics.dat", "w" );
+  /*FILE *out = fopen( "saDynamics.dat", "w" );
   for ( i = 0; i < retLen; i++ )
   {
     fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", dynamics->data[i], rVec.data[i], phiVec.data[i], prVec.data[i], pPhiVec.data[i] );
   }
-  fclose( out );
+  fclose( out );*/
 
   /* Set up the high sample rate integration */
   hiSRndx = retLen - nStepBack;
   deltaTHigh = deltaT / (REAL8)resampFac;
 
-  fprintf( stderr, "Stepping back %d points - we expect %d points at high SR\n", nStepBack, nStepBack*resampFac );
+  /*fprintf( stderr, "Stepping back %d points - we expect %d points at high SR\n", nStepBack, nStepBack*resampFac );
   fprintf( stderr, "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
-     (dynamics->data)[hiSRndx],rVec.data[hiSRndx], phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx] );
+     (dynamics->data)[hiSRndx],rVec.data[hiSRndx], phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx] );*/
 
   values->data[0] = rVec.data[hiSRndx];
   values->data[1] = phiVec.data[hiSRndx];
@@ -471,7 +471,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  fprintf( stderr, "We got %d points at high SR\n", retLen );
+  //fprintf( stderr, "We got %d points at high SR\n", retLen );
 
   /* Set up pointers to the dynamics */
   rHi.length = phiHi.length = prHi.length = pPhiHi.length = timeHi.length = retLen;
@@ -481,12 +481,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   prHi.data   = dynamicsHi->data+3*retLen;
   pPhiHi.data = dynamicsHi->data+4*retLen;
 
-  out = fopen( "saDynamicsHi.dat", "w" );
+  /*out = fopen( "saDynamicsHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
   {
     fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], rHi.data[i], phiHi.data[i], prHi.data[i], pPhiHi.data[i] );
   }
-  fclose( out );
+  fclose( out );*/
 
   /* Allocate the high sample rate vectors */
   sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
@@ -543,12 +543,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
     if ( omega <= omegaOld && !peakIdx )
     {
-      printf( "Have we got the peak? omegaOld = %.16e, omega = %.16e\n", omegaOld, omega );
+      //printf( "Have we got the peak? omegaOld = %.16e, omega = %.16e\n", omegaOld, omega );
       peakIdx = i;
     }
     omegaOld = omega;
   }
-  printf( "We now think the peak is at %d\n", peakIdx );
+  //printf( "We now think the peak is at %d\n", peakIdx );
   finalIdx = retLen - 1;
 
   /* Stuff to find the actual peak time */
@@ -618,7 +618,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
 
   /* Apply to the high sampled part */
-  out = fopen( "saWavesHi.dat", "w" );
+  //out = fopen( "saWavesHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
   {
     values->data[0] = rHi.data[i];
@@ -634,7 +634,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
     hLM.re = sigReHi->data[i];
     hLM.im = sigImHi->data[i];
-    fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], hLM.re, hLM.im, hNQC.re, hNQC.im );
+    //fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], hLM.re, hLM.im, hNQC.re, hNQC.im );
 
     hLM = XLALCOMPLEX16Mul( hNQC, hLM );
     sigReHi->data[i] = (REAL4) hLM.re;
@@ -647,22 +647,22 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     }
     oldsigAmpSqHi = sigAmpSqHi;
   }
-  fclose(out);
-  if (timewavePeak < 1.0e-16)
+  //fclose(out);
+  /*if (timewavePeak < 1.0e-16)
   {
     printf("YP::warning: could not locate mode peak.\n");
-  }
+  }*/
   /* Failed to locate mode peak, use calibrated timeshiftPeak instead */
-  printf( "eta: %.16e  a: %.16e\n", eta, a);
+  //printf( "eta: %.16e  a: %.16e\n", eta, a);
   timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaT(2, 2, eta,  a);
   timewavePeak = timePeak - timewavePeak;
 
-  out = fopen( "saInspWaveHi.dat", "w" );
+  /*out = fopen( "saInspWaveHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
   {
     fprintf( out, "%.16e %.16e %.16e\n", timeHi.data[i], sigReHi->data[i], sigImHi->data[i] );
   }
-  fclose( out );
+  fclose( out );*/
   
 
   /* Attach the ringdown */
@@ -672,7 +672,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8 timeshiftPeak;
   timeshiftPeak = timePeak - timewavePeak;
 
-  printf("YP::timePeak and timewavePeak: %.16e and %.16e\n",timePeak,timewavePeak);
+  //printf("YP::timePeak and timewavePeak: %.16e and %.16e\n",timePeak,timewavePeak);
  
   REAL8Vector *rdMatchPoint = XLALCreateREAL8Vector( 3 );
   if ( !rdMatchPoint )
