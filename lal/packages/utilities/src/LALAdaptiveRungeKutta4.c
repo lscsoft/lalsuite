@@ -242,6 +242,7 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
      step. */
   while (1) {
     REAL8 told = t;
+
     status = gsl_odeiv_evolve_apply(integrator->evolve, integrator->control, integrator->step, integrator->sys, &t, tend, &h, yinit);
 
     /* Check for failure, retry if haven't retried too many times
@@ -265,8 +266,10 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
     while (tintp + deltat < t) {
       tintp += deltat;
 
-      /* tintp = told + h*theta, 0 <= theta <= 1. */
-      REAL8 theta = (tintp - told)/h;
+      /* tintp = told + (t-told)*theta, 0 <= theta <= 1.  We have to
+         compute h = (t-told) because the integrator returns a
+         suggested next h, not the actual stepsize taken. */
+      REAL8 theta = (tintp - told)/(t-told);
 
       /* These are the interpolating coefficients for y(t + h*theta) =
          ynew + i1*h*k1 + i5*h*k5 + i6*h*k6 + O(h^4). */
