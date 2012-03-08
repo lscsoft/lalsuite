@@ -68,6 +68,15 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          REAL8Array **yout
                          );
 
+/* Should be nearly identical output to ARK4, but interpolates within
+   the integration evolution, instead of collecting non-equally-spaced
+   samples and using splines. */
+int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
+                                void *params,
+                                REAL8 *yinit,
+                                REAL8 tinit, REAL8 tend_in, REAL8 deltat,
+                                REAL8Array **yout );
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
