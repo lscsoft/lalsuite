@@ -924,55 +924,62 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value);
 
-  outfileName = (char*)calloc(99,sizeof(char*));
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--appendOutput");
+  
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--output");
   if (ppt) {
-    sprintf(outfileName, "%s.%2.2d", ppt->value, MPIrank);
+    outfileName = (char*)calloc(strlen(ppt->value)+255,sizeof(char*));
+    sprintf(outfileName,"%s//PTMCMC.output.%u.%2.2d",ppt->value,randomseed,MPIrank);
   } else {
+    outfileName = (char*)calloc(255,sizeof(char*));
     sprintf(outfileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
   }
-  if (!ppt) { /* Skip header output if we are appending. */
-    chainoutput = fopen(outfileName,"w");
-    fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
-    fprintf(chainoutput,"  %s\n",str);
-    fprintf(chainoutput, "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
-        "nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
-    fprintf(chainoutput, "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
-        Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,temperature,networkSNR,waveform,(double)pnorder,nPar);
-    fprintf(chainoutput, "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
-        "Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
-    ifodata1=runState->data;
-    while(ifodata1){
-      fprintf(chainoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %.1f  %12d  %12d\n",
-          ifodata1->detector->frDetector.name,ifodata1->SNR,ifodata1->fLow,ifodata1->fHigh,atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
-          XLALGPSGetREAL8(&(ifodata1->epoch)),atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),SampleRate,
-          (int)(atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*SampleRate),
-          (int)(atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*SampleRate));
-      ifodata1=ifodata1->next;
-    }
-    fprintf(chainoutput, "\n\n%31s\n","");
-    fprintf(chainoutput, "cycle\tlogpost\tlogprior\t");
-    LALInferenceFprintParameterNonFixedHeaders(chainoutput, runState->currentParams);
-    fprintf(chainoutput, "logl\t");
-    LALInferenceIFOData *headIFO = runState->data;
-    while (headIFO != NULL) {
-      fprintf(chainoutput, "logl");
-      fprintf(chainoutput, "%s",headIFO->name);
-      fprintf(chainoutput, "\t");
-      headIFO = headIFO->next;
-    }
-    fprintf(chainoutput,"\n");
-    fprintf(chainoutput, "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
-    LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
-    fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
-    headIFO = runState->data;
-    while (headIFO != NULL) {
-      fprintf(chainoutput, "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
-      headIFO = headIFO->next;
-    }
+  chainoutput = fopen(outfileName,"w");
+  if(chainoutput == NULL){
+    //XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+		//XLAL_ERROR_NULL(XLAL_EIO);
+    fprintf(stderr,"Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+    exit(1);
+  }
+  fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
+  fprintf(chainoutput,"  %s\n",str);
+  fprintf(chainoutput, "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
+      "nIter","Nburn","seed","null likelihood","Ndet","nCorr","nTemps","Tmax","Tchain","Network SNR","Waveform","pN order","Npar");
+  fprintf(chainoutput, "%10d  %10d  %u  %20.10lf  %6d %8d   %6d%10d%12.1f%14.6f  %9i  %9.1f  %8i\n",
+      Niter,0,randomseed,nullLikelihood,nIFO,0,nChain,(int)tempMax,temperature,networkSNR,waveform,(double)pnorder,nPar);
+  fprintf(chainoutput, "\n%16s  %16s  %10s  %10s  %10s  %10s  %20s  %15s  %12s  %12s  %12s\n",
+      "Detector","SNR","f_low","f_high","before tc","after tc","Sample start (GPS)","Sample length","Sample rate","Sample size","FT size");
+  ifodata1=runState->data;
+  while(ifodata1){
+    fprintf(chainoutput, "%16s  %16.8lf  %10.2lf  %10.2lf  %10.2lf  %10.2lf  %20.8lf  %15.7lf  %.1f  %12d  %12d\n",
+        ifodata1->detector->frDetector.name,ifodata1->SNR,ifodata1->fLow,ifodata1->fHigh,atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)-2.0,2.00,
+        XLALGPSGetREAL8(&(ifodata1->epoch)),atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value),SampleRate,
+        (int)(atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*SampleRate),
+        (int)(atof(LALInferenceGetProcParamVal(runState->commandLine,"--seglen")->value)*SampleRate));
+    ifodata1=ifodata1->next;
+  }
+  fprintf(chainoutput, "\n\n%31s\n","");
+  fprintf(chainoutput, "cycle\tlogpost\tlogprior\t");
+  LALInferenceFprintParameterNonFixedHeaders(chainoutput, runState->currentParams);
+  fprintf(chainoutput, "logl\t");
+  LALInferenceIFOData *headIFO = runState->data;
+  while (headIFO != NULL) {
+    fprintf(chainoutput, "logl");
+    fprintf(chainoutput, "%s",headIFO->name);
+    fprintf(chainoutput, "\t");
+    headIFO = headIFO->next;
+  }
+  fprintf(chainoutput,"\n");
+  fprintf(chainoutput, "%d\t%f\t%f\t", 0,(runState->currentLikelihood - nullLikelihood)+runState->currentPrior, runState->currentPrior);
+  LALInferencePrintSampleNonFixed(chainoutput,runState->currentParams);
+  fprintf(chainoutput,"%f\t",runState->currentLikelihood - nullLikelihood);
+  headIFO = runState->data;
+  while (headIFO != NULL) {
+    fprintf(chainoutput, "%f\t", headIFO->acceptedloglikelihood - headIFO->nullloglikelihood);
+    headIFO = headIFO->next;
 
-    fprintf(chainoutput,"\n");
-    fclose(chainoutput);
+
+  fprintf(chainoutput,"\n");
+  fclose(chainoutput);
   }
 
   chainoutput = fopen(outfileName,"a");
