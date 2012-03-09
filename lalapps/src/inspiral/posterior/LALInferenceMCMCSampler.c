@@ -911,8 +911,8 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
   double pnorder = 0.0;
   if(LALInferenceCheckVariable(runState->currentParams,"LAL_PNORDER")) pnorder = ((double)(*(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_PNORDER")))/2.0;
 
-  char str[999];
-  LALInferencePrintCommandLine(runState->commandLine, str);
+  char *str;
+  str = LALInferencePrintCommandLine(runState->commandLine);
 
   REAL8 networkSNR=0.0;
   ifodata1=runState->data;
@@ -924,15 +924,31 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
 
   if(LALInferenceGetProcParamVal(runState->commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value);
 
-  outfileName = (char*)calloc(99,sizeof(char*));
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--appendOutput");
+
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--output");
   if (ppt) {
-    sprintf(outfileName, "%s.%2.2d", ppt->value, MPIrank);
+    outfileName = (char*)calloc(strlen(ppt->value)+255,sizeof(char*));
+    sprintf(outfileName,"%s//PTMCMC.output.%u.%2.2d",ppt->value,randomseed,MPIrank);
   } else {
+    outfileName = (char*)calloc(255,sizeof(char*));
     sprintf(outfileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
   }
-  if (!ppt) { /* Skip header output if we are appending. */
+
+  //outfileName = (char*)calloc(99,sizeof(char*));
+  //  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--appendOutput");
+  //  if (ppt) {
+  //    sprintf(outfileName, "%s.%2.2d", ppt->value, MPIrank);
+  // } else {
+  //sprintf(outfileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
+    // }
+    //if (!ppt) { /* Skip header output if we are appending. */
     chainoutput = fopen(outfileName,"w");
+    if(chainoutput == NULL){
+      //XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+      //XLAL_ERROR_NULL(XLAL_EIO);
+      fprintf(stderr,"Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+      exit(1);
+    }
     fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
     fprintf(chainoutput,"  %s\n",str);
     fprintf(chainoutput, "%10s  %10s  %6s  %20s  %6s %8s   %6s  %8s  %10s  %12s  %9s  %9s  %8s\n",
@@ -973,7 +989,7 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
 
     fprintf(chainoutput,"\n");
     fclose(chainoutput);
-  }
+    //}
 
   chainoutput = fopen(outfileName,"a");
   free(outfileName);
