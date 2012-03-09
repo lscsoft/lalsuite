@@ -235,8 +235,10 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 
   XLAL_BEGINGSL;
 
-  /* We are starting a fresh integration; clear GSL step object. */
+  /* We are starting a fresh integration; clear GSL step and evolve
+     objects. */
   gsl_odeiv_step_reset(integrator->step);
+  gsl_odeiv_evolve_reset(integrator->evolve);
 
   /* Enter evolution loop.  NOTE: we *always* take at least one
      step. */
