@@ -32,6 +32,7 @@ import os
 import numpy as np
 
 from matplotlib import pyplot as plt
+from matplotlib.mlab import specgram, find
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
@@ -388,14 +389,14 @@ class psr_prior:
 #(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-  hsd = math.sqrt((5./2.)*(G/C^3)*I38*math.abs(fdot)*freq)/(dist*KPC.)
+  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.abs(fdot)*freq)/(dist*KPC)
   
   return hsd
   
 # Function to convert a pulsar stain into ellipticity assuming the canonical
 # moment of inertia
 def h0_to_ellipticity(h0, freq, dist):
-  ell = h0*C^4*dist*KPC/(16.*math.pi^2*G*I38*freq^2)
+  ell = h0*C**4*dist*KPC/(16.*math.pi**2*G*I38*freq**2)
   
   return ell
 
@@ -554,3 +555,137 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
     ns = np.append(ns, float(n[i])/area)
   
   return ns, bincentres
+
+# create a Tukey window of length N
+def tukey_window(N, alpha=0.5):
+  # if alpha >= 1 just return a Hanning window
+  if alpha >= 1:
+    return np.hanning(N)
+  
+  # get x values at which to calculate window
+  x = np.linspace(0, 1, N)
+  
+  # initial square window
+  win = np.ones(x.shape)
+
+  # get the left-hand side of the window  0 <= x < alpha/2  
+  lhs = x<alpha/2
+  win[lhs] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[lhs] - alpha/2) ))
+
+  # get right hand side condition 1 - alpha / 2 <= x <= 1
+  rhs = x>=(1 - alpha/2)
+  win[rhs] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[rhs] - 1 + alpha/2)))
+  
+  return win
+
+# create a function for plotting the absolute value of Bk data (read in from
+# data files) and an averaged 1 day spectrogram for each IFO
+def plot_Bks_PSDs( Bkdata, ifos ):
+  # create list of figures
+  Bkfigs = []
+  psdfigs = []
+  
+  # ifos line colour specs
+  coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  
+  # there should be data for each ifo
+  for i, ifo in enumerate(ifos):
+    # get data for given ifo
+    try:
+      dfile = open(Bkdata[i])
+    except:
+      print "Could not open file ", Bkdata[i]
+      exit(-1)
+      
+    # should be three lines in file
+    gpstime = []
+    Bk = []
+      
+    Bkabs = [] # absolute Bk value
+      
+    # minimum time step between points (should generally be 60 seconds)
+    mindt = float("inf")
+      
+    for line in dfile.readlines():
+      sl = line.split()
+        
+      gpstime.append(float(sl[0]))
+      Bk.append(complex(float(sl[1]), float(sl[2])))
+        
+      # get absolute value
+      Bkabs.append(math.sqrt(Bk[-1].real**2 + Bk[-1].imag**2))
+        
+      # check time step
+      if len(gpstime) > 1:
+        dt = gpstime[-1] - gpstime[-2]
+          
+        if dt < mindt:
+          mindt = dt
+      
+    dfile.close()
+      
+    # plot the time series of the data
+    Bkfig = plt.figure(figsize=(4,3.5),dpi=200)
+      
+    plt.plot(gpstime, Bkabs, '.', color=coldict[ifo])
+      
+    Bkfigs.append(Bkfig)
+      
+    # create PSD by splitting data into days, padding with zeros to give a
+    # sample a second, getting the PSD for each day and combining them
+    totlen = gpstime[-1] - gpstime[0] # total data length
+      
+    # check mindt is an integer and greater than 1
+    if math.fmod(mindt, 1) != 0. or mindt < 1:
+      print "Error time steps between data points must be integers"
+      exit(-1)
+        
+    # loop over data, splitting it up
+    mr = int(math.ceil(totlen/86400))
+    print mr, totlen, len(Bkabs)
+    count = 0
+    npsds = 0
+    totalpsd = np.zeros(86400) # add sum of PSDs
+    for i in range(0, mr):
+      datachunk = np.zeros(86400, dtype=complex)
+       
+      gpsstart = int(gpstime[count])
+      
+      for gt in gpstime[count:-1]:
+        if gt >= gpsstart+86400:
+          break
+        else:
+          datachunk[gt-gpsstart] = Bk[count]
+          count += 1
+        
+      # get the PSD using a Tukey window with alpha = 0.25
+      win = tukey_window(86400, alpha=0.25)
+        
+      print len(datachunk)
+        
+      psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=1, window=win)
+      
+      # add psd onto total value
+      totalpsd = map(lambda x, y: x+y, totalpsd, psd)
+      
+      # count number of psds
+      npsds = npsds+1
+      
+    # average the PSD and convert to amplitude spectral density
+    totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
+    
+    # plot PSD
+    psdfig = plt.figure(figsize=(4,3.5),dpi=200)
+    
+    # get the indices to plot in the actual frequency range 
+    df = freqs[1]-freqs[0]
+    minfbin = int((math.fabs(freqs[0])-1./(2.*mindt))/df)
+    maxfbin = len(freqs) - minfbin
+    
+    plt.plot(freqs[minfbin:maxfbin], totalpsd[minfbin:maxfbin],
+             color=coldict[ifo])
+    plt.xlim(freqs[minfbin], freqs[maxfbin])
+    psdfigs.append(psdfig)
+      
+  return Bkfigs, psdfigs
+  
