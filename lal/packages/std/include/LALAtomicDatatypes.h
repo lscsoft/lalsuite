@@ -268,46 +268,41 @@ typedef double complex COMPLEX16;
 
 /* Complex type constructors */
 #if defined(__cplusplus)
-#define CX8rect(re, im)  COMPLEX8 ( re, im )
+#define CX8rect( re, im) COMPLEX8(  re, im )
 #define CX16rect(re, im) COMPLEX16( re, im )
-#define CX8polar(r, th)  ( (r) * std::exp( CX8rect ( 0, th ) ) )
+#define CX8polar( r, th) ( (r) * std::exp( CX8rect(  0, th ) ) )
 #define CX16polar(r, th) ( (r) * std::exp( CX16rect( 0, th ) ) )
 #else
-#define CX8rect(re, im)  ( (re) + _Complex_I * (im) )
+#define CX8rect( re, im) ( (re) + _Complex_I * (im) )
 #define CX16rect(re, im) ( (re) + _Complex_I * (im) )
-#define CX8polar(r, th)  ( (r) * cexpf( CX8rect ( 0, th ) ) )
-#define CX16polar(r, th) ( (r) * cexp ( CX16rect( 0, th ) ) )
+#define CX8polar( r, th) ( (r) * cexpf( CX8rect(  0, th ) ) )
+#define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )
 #endif
 
 /* Real and imaginary part accessors */
 #if defined(__cplusplus)
-#define CX8re(z)  std::real(z)
+#define CX8re( z) std::real(z)
 #define CX16re(z) std::real(z)
-#define CX8im(z)  std::imag(z)
+#define CX8im( z) std::imag(z)
 #define CX16im(z) std::imag(z)
-#elif defined(__GNUC__)
-#define CX8re(z)  __real__(z)
-#define CX16re(z) __real__(z)
-#define CX8im(z)  __imag__(z)
-#define CX16im(z) __imag__(z)
 #else
-#define CX8re(z)  crealf(z)
-#define CX16re(z) creal (z)
-#define CX8im(z)  cimagf(z)
-#define CX16im(z) cimag (z)
+#define CX8re( z) crealf(z)
+#define CX16re(z) creal( z)
+#define CX8im( z) cimagf(z)
+#define CX16im(z) cimag( z)
 #endif
 
 /* Real and imaginary part assignment */
 #if !defined(__cplusplus) && defined(__GNUC__)
-#define setCX8re(z, re)  __real__(z) = (re)
-#define setCX16re(z, re) __real__(z) = (re)
-#define setCX8im(z, im)  __imag__(z) = (im)
-#define setCX16im(z, im) __imag__(z) = (im)
+#define setCX8re( z, re) ( __real__(z) = (re) )
+#define setCX16re(z, re) ( __real__(z) = (re) )
+#define setCX8im( z, im) ( __imag__(z) = (im) )
+#define setCX16im(z, im) ( __imag__(z) = (im) )
 #else
-#define setCX8re(z, re)  (z) = CX8rect ( re, CX8im (z) )
-#define setCX16re(z, re) (z) = CX16rect( re, CX16im(z) )
-#define setCX8im(z, im)  (z) = CX8rect ( CX8re (z), im )
-#define setCX16im(z, im) (z) = CX16rect( CX16re(z), im )
+#define setCX8re( z, re) ( (z) = CX8rect(  re, CX8im( z) ) )
+#define setCX16re(z, re) ( (z) = CX16rect( re, CX16im(z) ) )
+#define setCX8im( z, im) ( (z) = CX8rect(  CX8re( z), im ) )
+#define setCX16im(z, im) ( (z) = CX16rect( CX16re(z), im ) )
 #endif
 
 #else /* LAL_USE_OLD_COMPLEX_STRUCTS */
