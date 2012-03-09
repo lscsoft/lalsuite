@@ -269,22 +269,24 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
       /* tintp = told + (t-told)*theta, 0 <= theta <= 1.  We have to
          compute h = (t-told) because the integrator returns a
          suggested next h, not the actual stepsize taken. */
-      REAL8 theta = (tintp - told)/(t-told);
+      REAL8 hUsed = t - told;
+      REAL8 theta = (tintp - told)/hUsed;
 
       /* These are the interpolating coefficients for y(t + h*theta) =
          ynew + i1*h*k1 + i5*h*k5 + i6*h*k6 + O(h^4). */
-      REAL8 i1 = 1.0/6.0*(theta - 1.0)*(theta - 1.0)*(4.0*theta - 1.0);
-      REAL8 i5 = 1.0/6.0*(theta - 1.0)*(1.0 + theta + 4.0*theta*theta);
-      REAL8 i6 = -2.0/3.0*(theta - 1.0)*(theta - 1.0)*(2.0*theta + 1.0);
+      REAL8 i0 = 1.0 + theta*theta*(3.0-4.0*theta);
+      REAL8 i1 = -theta*(theta-1.0);
+      REAL8 i6 = -4.0*theta*theta*(theta-1.0);
+      REAL8 iend = theta*theta*(4.0*theta - 3.0);
 
       /* Grab the k's from the integrator state. */
       rkf45_state_t *rkfState = integrator->step->state;
       REAL8 *k1 = rkfState->k1;
-      REAL8 *k5 = rkfState->k5;
       REAL8 *k6 = rkfState->k6;
+      REAL8 *y0 = rkfState->y0;      
 
       for (i = 0; i < dim; i++) {
-        ytemp[i] = yinit[i] + h*i1*k1[i] + h*i5*k5[i] + h*i6*k6[i];
+        ytemp[i] = i0*y0[i] + iend*yinit[i] + hUsed*i1*k1[i] + hUsed*i6*k6[i];
       }
 
       /* Store the interpolated value in the output array. */
