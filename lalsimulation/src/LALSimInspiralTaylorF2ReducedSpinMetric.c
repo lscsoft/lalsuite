@@ -78,19 +78,19 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
     REAL8 f_mc_eta_one_third = cbrt(f_mc_eta);
 
     return (sqrt(0.8333333333333334)*pow(mc/eta_three_fifths,0.8333333333333334)*
-        sqrt(eta)*(1 + (Pi_1by3*Pi_1by3*
+        sqrt(eta)*(1 + (Pi_p4by3*
          f_mc_eta_one_third * f_mc_eta_one_third *
          (743 + 924*eta))/672. -
-        (Pi_p2 * LAL_PI * Pi_1by3 *
+        (Pi_p10by3 *
          f_mc_eta * f_mc_eta * f_mc_eta_one_third*
          (5111593 + 8088752*eta + 151088*etap2))/2.709504e6 +
         (f*mc*LAL_PI*(-2*LAL_PI + (113*chi)/24.))/eta_three_fifths +
-        (Pi_p2 / Pi_1by3 *
+        (Pi_p5by3 *
          f_mc_eta * f_mc_eta / f_mc_eta_one_third *
          (12*LAL_PI*(-4757 + 4788*eta) -
            (113*(502429 - 591368*eta + 1680*etap2)*chi)/
             (-113 + 76*eta)))/16128. +
-        (cbrt(Pi_p2 * Pi_p2) *
+        (Pi_p5 * Pi_p1by3 *
          f_mc_eta * f_mc_eta_one_third *
          (7266251 + 9532152*eta + 9730224*etap2 +
            (3243530304*(-81 + 4*eta)*chip2)/
@@ -102,7 +102,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
            (1041557*etap2)/258048. +
            (67999*etap3)/82944. +
            (856*(3*LAL_GAMMA + log((64*f*mc*LAL_PI)/eta_three_fifths)))/315.))/(eta_three_fifths * eta_three_fifths)))/
-        (2.*pow(f,1.1666666666666667)*cbrt(Pi_p2));
+        (2.*pow(f,1.1666666666666667)*Pi_p4by3);
 }
 
 /**
@@ -118,13 +118,13 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
     const REAL8 etap2 = eta*eta;
     REAL8 etap35 = pow(eta, 0.6);
 
-    return (113*sqrt(0.8333333333333334)*Pi_1by3*
+    return (113*sqrt(0.8333333333333334)*Pi_p1by3*
         pow(mc/etap35,0.8333333333333334)*sqrt(eta)*
         ((672*f*mc)/etap35 -
-        (Pi_1by3*Pi_1by3*
+        (Pi_p1by3*Pi_p1by3*
          pow((f*mc)/etap35,1.6666666666666667)*
          (502429 - 591368*eta + 1680*etap2))/
-        (-113 + 76*eta) + (113904*Pi_1by3*
+        (-113 + 76*eta) + (113904*Pi_p1by3*
          pow((f*mc)/etap35,1.3333333333333333)*
          (-81 + 4*eta)*chi)/pow(113 - 76*eta,2)))/
     (32256.*pow(f,1.1666666666666667));
@@ -153,26 +153,26 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
     return (pow(mc/eta_three_fifths,0.8333333333333334)*
         (2235340800*f_mc_eta_one_third * f_mc_eta_one_third*
         eta_three_fifths*eta_three_fifths*eta_fac*(-743 + 1386*eta) +
-        f*f*mcp2*LAL_PI*Pi_1by3*
+        f*f*mcp2*Pi_p4by3*
         eta_fac *
         (257959397806029 - 36738273116160*LAL_GAMMA -
          95047630643350*eta - 12126223216800*etap2 +
          5541700903200*etap3 +
          7823692800*Pi_p2*(-1920 + 451*eta) -
-         1940400*LAL_PI*Pi_1by3*
+         1940400*Pi_p4by3*
           f_mc_eta_one_third*
           (-5111593 - 2311072*eta + 64752*etap2)) +
-        369600*f*mc*Pi_1by3*eta_three_fifths*
+        369600*f*mc*Pi_p1by3*eta_three_fifths*
         (12192768*LAL_PI*eta_fac +
-         35962920*Pi_p2/Pi_1by3*
+         35962920*Pi_p5by3*
           f_mc_eta_one_third * f_mc_eta_one_third *
           eta_fac -
          28703808*eta_fac*chi -
-         71190*Pi_1by3*Pi_1by3*
+         71190*Pi_p2by3*
           f_mc_eta_one_third * f_mc_eta_one_third *
           (-6415515901 + 12944580756*eta -
             10861276272*etap2 + 3401313728*etap3)*
-          chi + Pi_1by3*
+          chi + Pi_p1by3*
           f_mc_eta_one_third *
           (34636018030144*etap3 -
             27532505500416*etap4 +
@@ -180,7 +180,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
             1442897*(-7266251 + 20575296*chip2) -
             21696*etap2*(-4887203 + 102257316*chip2) +
             76614*eta*(-320998087 + 907387488*chip2))) -
-        12246091038720*f*f*mcp2*LAL_PI*Pi_1by3*
+        12246091038720*f*f*mcp2*Pi_p4by3*
         eta_fac*log((64*f*mc*LAL_PI)/eta_three_fifths)))/
         (1.5021490176e12*sqrt(30)*pow(f,1.1666666666666667)*pow(eta,1.7)*
         eta_fac);
@@ -202,16 +202,15 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
     const REAL8 chip2 = chi*chi;
     const REAL8 mcp2  = mc*mc;
     REAL8 eta_three_fifths = pow(eta, 0.6);
-    REAL8 f_mc_eta_one_third = cbrt((f*mc)/eta_three_fifths);
 
     return (sqrt(0.8333333333333334)*(5 -
       (17*f*f*mcp2*Pi_p2*Pi_p2*(-320 + 451*eta))/
        (96.*eta_three_fifths*eta_three_fifths) +
-      (3*LAL_PI/Pi_1by3*
-         f_mc_eta_one_third*f_mc_eta_one_third*
+      (3*Pi_p2by3*
+         pow((f*mc)/eta_three_fifths,0.6666666666666666)*
          (743 + 924*eta))/224. +
-      (5*Pi_p2*LAL_PI/Pi_1by3*
-         f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*
+      (5*Pi_p3/Pi_p1by3*
+         pow((f*mc)/eta_three_fifths,1.6666666666666667)*
          (-4757 + 4788*eta))/448. -
       (19*pow(LAL_PI,3.3333333333333335)*
          pow((f*mc)/eta_three_fifths,2.3333333333333335)*
@@ -222,12 +221,12 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
               20935314523200*etap3)))/
        (1.5021490176e12*eta_three_fifths*eta_three_fifths) +
       (1243*f*mc*LAL_PI*chi)/(24.*eta_three_fifths) -
-      (565*Pi_p2/Pi_1by3*
-         f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*
+      (565*Pi_p5by3*
+         pow((f*mc)/eta_three_fifths,1.6666666666666667)*
          (502429 - 591368*eta + 1680*etap2)*chi)/
        (5376.*(-113 + 76*eta)) +
-      (13*LAL_PI*Pi_1by3*
-         f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*
+      (13*Pi_p4by3*
+         pow((f*mc)/eta_three_fifths,1.3333333333333333)*
          (2490853280*etap2 - 112068617472*etap3 +
            56201773824*etap4 +
            1808*eta*(-1708561 + 7175952*chip2) -
@@ -235,8 +234,8 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
        (8.128512e6*pow(113 - 76*eta,2)) +
       (14552*f*f*mcp2*Pi_p2*
          log((64*f*mc*LAL_PI)/eta_three_fifths))/(315.*eta_three_fifths*eta_three_fifths)))/
-    (12.*f*LAL_PI/Pi_1by3*
-    sqrt(f_mc_eta_one_third)*pow(eta,0.1));
+    (12.*pow(f,1.1666666666666667)*Pi_p2by3*
+    pow(mc/eta_three_fifths,0.16666666666666666)*pow(eta,0.1));
 }
 
 /**
@@ -253,15 +252,15 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
     REAL8 eta_three_fifths = pow(eta, 0.6);
 
     return (113*((756*f*mc)/eta_three_fifths +
-      (320355*Pi_1by3*
+      (320355*Pi_p1by3*
          pow((f*mc)/eta_three_fifths,1.3333333333333333)*
          (-81 + 4*eta)*chi)/pow(113 - 76*eta,2) -
-      (5*Pi_1by3*Pi_1by3*
+      (5*Pi_p2by3*
          pow((f*mc)/eta_three_fifths,1.6666666666666667)*
          (-146597 + 135856*eta + 17136*etap2)*
          (1 + log(f / 40.)))/
        (-113 + 76*eta)))/
-    (96768.*Pi_1by3*Pi_1by3*
+    (96768.*Pi_p2by3*
     pow((f*mc)/eta_three_fifths,1.6666666666666667)*eta);
 }
 
@@ -293,26 +292,26 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
          cbrt(mc/eta_three_fifths))) +
     (31046400*fmc_fac*fmc_fac*
         eta_three_fifths * eta_three_fifths *eta_fac*eta_fac*eta_fac*(-743 + 1386*eta) -
-       f*f*mcp2*LAL_PI * Pi_1by3 *
+       f*f*mcp2*LAL_PI * Pi_p1by3 *
         eta_fac * eta_fac * eta_fac *
         (33984313019673 - 4592284139520*LAL_GAMMA -
           12118079538950*eta - 413215941600*etap2 +
           2083465692000*etap3 +
           977961600*Pi_p2*(-3072 + 451*eta) +
-          323400*LAL_PI*Pi_1by3*
+          323400*LAL_PI*Pi_p1by3*
            fmc_fac*
            (15419335 + 3633744*eta + 2132496*etap2)) -
-       18480*f*mc*Pi_1by3*eta_three_fifths*
+       18480*f*mc*Pi_p1by3*eta_three_fifths*
         (-6096384*LAL_PI*eta_fac * eta_fac * eta_fac +
-          32461800*Pi_p2/Pi_1by3*
+          32461800*Pi_p2/Pi_p1by3*
            fmc_fac*fmc_fac*
            eta_fac * eta_fac * eta_fac +
           14351904*eta_fac * eta_fac * eta_fac*chi -
-          158200*LAL_PI/Pi_1by3*
+          158200*LAL_PI/Pi_p1by3*
            fmc_fac*fmc_fac*
            (-1871897093 + 3776925108*eta -
              3079029456*etap2 + 931868224*etap3)*
-           chi - 5*Pi_1by3*
+           chi - 5*Pi_p1by3*
            fmc_fac*
            (14990425815136*etap3 -
              12186233587584*etap4 +
@@ -320,7 +319,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
              1442897*(-3058673 + 5143824*chip2) +
              612912*eta*(-17749451 + 28355859*chip2) -
              2712*etap2*(-202619251 + 204514632*chip2)))
-        + 1530761379840*f*f*mcp2*LAL_PI*Pi_1by3*
+        + 1530761379840*f*f*mcp2*LAL_PI*Pi_p1by3*
         eta_fac * eta_fac * eta_fac*log((64*f*mc*LAL_PI)/eta_three_fifths))/
      (fmc_fac * fmc_fac *eta_three_fifths))/
     (5.007163392e11*f*mc*LAL_PI*etap2*eta_fac * eta_fac * eta_fac);
@@ -346,15 +345,15 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiMChirp(
 
     return (cbrt((f*mc)/eta_three_fifths)*
     (-93139200*pow(113 - 76*eta,2)*eta_three_fifths * eta_three_fifths *
-       (252 + Pi_1by3 * Pi_1by3*
+       (252 + Pi_p2by3*
           pow((f*mc)/eta_three_fifths,0.6666666666666666)*
           (743 + 924*eta)) +
       f*f*mcp2*LAL_PI*LAL_PI*pow(113 - 76*eta,2)*
        (10052469856691 - 1530761379840*LAL_GAMMA -
          24236159077900*eta + 206607970800*etap2 -
          462992376000*etap3 +
-         1955923200*LAL_PI*LAL_PI*(-512 + 451*eta) -
-         184800*pow(LAL_PI,1.3333333333333333)*
+         1955923200*Pi_p2*(-512 + 451*eta) -
+         184800*Pi_p4by3*
           cbrt((f*mc)/eta_three_fifths)*
           (-15419335 - 12718104*eta + 4975824*etap2)) +
       9240*f*mc*LAL_PI*eta_three_fifths*
@@ -584,9 +583,7 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
     REAL8 fLow,             /**< low frequency cutoff (Hz) */
     REAL8 df)               /**< frequency resolution of the psd vector (Hz) */
 {
-
-    REAL8 fbyfLow;
-	UINT4 i;
+    size_t i;
 
     momI_0->data[0] = 0.;
     momI_2->data[0] = 0.;
@@ -620,22 +617,20 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
     momK_11->data[0] = 0.;
     momK_12->data[0] = 0.;
 
-    REAL8 fLowmSevenBythree = pow(fLow, -7./3.);
-    REAL8 fLowFac = fLowmSevenBythree * df;
-
+    const REAL8 fLowmSevenBythree = pow(fLow, -7./3.);
+    const REAL8 fLowFac = fLowmSevenBythree * df;
     for (i=1; i<Sh->length; i++) {
-
-         fbyfLow = (i*df+fLow)/fLow;
-         const REAL8 logfbyfLow = log(fbyfLow);
-         const REAL8 logfbyfLowSq = logfbyfLow * logfbyfLow;
-         const REAL8 fbyfLowp2 = fbyfLow * fbyfLow;
-         const REAL8 fbyfLowp3 = fbyfLowp2 * fbyfLow;
-         const REAL8 fbyfLowp4 = fbyfLowp3 * fbyfLow;
-         const REAL8 fbyfLowp5 = fbyfLowp4 * fbyfLow;
-         const REAL8 cbrtfbyfLow = cbrt(fbyfLow);
          const REAL8 psdfac = Sh->data[i];
-
          if (psdfac) {
+             const REAL8 fbyfLow = (i*df+fLow)/fLow;
+             const REAL8 logfbyfLow = log(fbyfLow);
+             const REAL8 logfbyfLowSq = logfbyfLow * logfbyfLow;
+             const REAL8 fbyfLowp2 = fbyfLow * fbyfLow;
+             const REAL8 fbyfLowp3 = fbyfLowp2 * fbyfLow;
+             const REAL8 fbyfLowp4 = fbyfLowp3 * fbyfLow;
+             const REAL8 fbyfLowp5 = fbyfLowp4 * fbyfLow;
+             const REAL8 cbrtfbyfLow = cbrt(fbyfLow);
+
              momI_0->data[i]  = momI_0->data[i-1]  + fLowFac/(fbyfLowp5*cbrtfbyfLow*cbrtfbyfLow)/psdfac; /* f^{-17/3} */
              momI_2->data[i]  = momI_2->data[i-1]  + fLowFac/fbyfLowp5/psdfac; /* f^{-15/3} */
              momI_3->data[i]  = momI_3->data[i-1]  + fLowFac/fbyfLowp5*cbrtfbyfLow/psdfac; /* f^{-14/3} */
@@ -651,7 +646,7 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
              momI_13->data[i] = momI_13->data[i-1] + fLowFac/fbyfLow/cbrtfbyfLow/psdfac; /* f^{-4/3} */
              momI_14->data[i] = momI_14->data[i-1] + fLowFac/fbyfLow/psdfac; /* f^{-3/3} */
              momI_15->data[i] = momI_15->data[i-1] + fLowFac/fbyfLow*cbrtfbyfLow/psdfac; /* f^{-2/3} */
-             momI_16->data[i] = momI_16->data[i-1] + fLowFac/cbrt(fbyfLow)/psdfac; /* f^{-1/3} */
+             momI_16->data[i] = momI_16->data[i-1] + fLowFac/cbrtfbyfLow/psdfac; /* f^{-1/3} */
 
              momJ_5->data[i]  = momJ_5->data[i-1]  + fLowFac*logfbyfLow/fbyfLowp4/psdfac; /* f^{-12/3} */
              momJ_6->data[i]  = momJ_6->data[i-1]  + fLowFac*logfbyfLow/fbyfLowp4*cbrtfbyfLow/psdfac; /* f^{-11/3} */
@@ -722,7 +717,6 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 ) {
 
     REAL8 theta0_p2 = theta0 * theta0;
-    REAL8 theta0_p3 = theta0_p2 * theta0;
     REAL8 theta3_p2 = theta3 * theta3;
     REAL8 theta3s_p2 = theta3s * theta3s;
     REAL8 theta3_p3 = theta3_p2 * theta3;
@@ -738,7 +732,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
     REAL8 theta0_p5by3 = theta0_p2 / theta0_p1by3;
     REAL8 theta3_p8by3 = theta3_p3 / theta3_p1by3;
     REAL8 theta0_p7by3 = theta0_p2 * theta0_p1by3;
-    REAL8 theta3_p10by3 = theta0_p3 * theta0_p1by3;
+    REAL8 theta3_p10by3 = theta3_p3 * theta3_p1by3;
     REAL8 theta3bytheta0_p2by3 = cbrt(theta3_p2/theta0_p2);
 
     /* harder to name combinations that come up a lot */
@@ -750,8 +744,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
      * (Schwarzschild test particle ISCO). Note that the first frequency
      * bin correspond to a frequency of fLow  */
     REAL8 fISCO = (8*sqrt(0.6666666666666666)*fLow*LAL_PI*theta0)/(15.*theta3);
-
-    int iCut = (int) (fISCO-fLow)/df;
+    size_t iCut = (fISCO - fLow) / df;
 
     /* template norm */
     REAL8 hSqr = 2.*momI_10->data[iCut];
@@ -765,7 +758,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 
     REAL8 dPhi2byDtheta0 = (11088*LAL_PI + (743*tenbyPi_p2by3*theta3_p5by3)/theta0_p2by3)/(12096.*theta3);
 
-    REAL8 dPhi4byDtheta0 = (5429*2.92401773821287*cbrt(LAL_PI/2.)*cbrt(1/(theta0_p2*theta3)))/16128. - (15293365*1.7099759466767)/(3.2514048e7*1.5874010519682*Pi_p4by3/theta3bytheta0_p2by3/theta3bytheta0_p2by3) + (617*Pi_p2)/(384.*theta3_p2) + (13596750*4.64158883361278*Pi_p7by3*theta3_p8by3*theta3s_p2)/(theta0_p2by3*theta03_fac_p3) + (91125*1.7099759466767*Pi_p2by3*theta3_p8by3*theta3s_p2)/(2.*1.5874010519682*theta0_p4by3*theta03_fac_p2) - (2052000*Pi_p4*theta3*theta3s_p2)/theta03_fac_p3;
+    REAL8 dPhi4byDtheta0 = (5429*2.92401773821287*cbrt(LAL_PI/(2.*theta0_p2*theta3)))/16128. - (15293365*1.7099759466767)/(3.2514048e7*1.5874010519682*Pi_p4by3/theta3bytheta0_p2by3/theta3bytheta0_p2by3) + (617*Pi_p2)/(384.*theta3_p2) - (13596750*4.64158883361278*Pi_p7by3*theta3_p8by3*theta3s_p2)/(theta0_p2by3*theta03_fac_p3) + (91125*1.7099759466767*Pi_p2by3*theta3_p8by3*theta3s_p2)/(2.*1.5874010519682*theta0_p4by3*theta03_fac_p2) + (2052000*Pi_p4*theta3*theta3s_p2)/theta03_fac_p3;
 
     REAL8 dPhi5byDtheta0 = (5*1.7099759466767*theta3_p2by3*(-873377*2.15443469003188*theta3 + 2345552*2.15443469003188*theta3s + (344829849600*Pi_p10by3*theta0_p4by3*theta3s)/theta03_fac_p2))/(1.0934784e7*twoPi_p2by3*theta0_p5by3);
 
@@ -773,11 +766,11 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 
     REAL8 dPhi7byDtheta0 = (-5*theta3_p2by3*(12718104*4.64158883361278*Pi_p5by3*theta0_p2by3 + 77096675*2.15443469003188*theta3_p5by3))/(2.60112384e8*Pi_p4by3*theta0_p7by3);
 
-    REAL8 dPhi2byDtheta3 = (-5544*LAL_PI*theta0 + 743*tenbyPi_p2by3*cbrt(theta0*theta3_p5))/(6048.*theta3_p2);
+    REAL8 dPhi2byDtheta3 = (-5544*LAL_PI*theta0 + 743*tenbyPi_p2by3*theta0_p1by3*theta3_p5by3)/(6048.*theta3_p2);
 
     REAL8 dPhi3byDtheta3 = -1.5;
 
-    REAL8 dPhi4byDtheta3 = ((-52242624*Pi_p2*theta0_p4by3)/theta3_p3 - (2736216*4.64158883361278*Pi_p1by3*theta0_p2by3)/theta3_p4by3 + (15293365*2.15443469003188*theta3_p1by3)/Pi_p4by3 + (740710656000*2.15443469003188*Pi_p2by3*theta3_p5by3*(608*2.15443469003188*Pi_p5by3*theta0_p2by3 - 565*theta3_p5by3)*theta3s_p2)/theta03_fac_p3 + (7315660800*4.64158883361278*Pi_p7by3*theta0_p2by3*(456*2.15443469003188*Pi_p5by3*theta0_p2by3 + 3955*theta3_p5by3)*theta3s_p2)/theta03_fac_p3)/(1.6257024e7*theta0_p1by3);
+    REAL8 dPhi4byDtheta3 = ((-52242624*Pi_p2*theta0_p4by3)/theta3_p3 - (2736216*4.64158883361278*Pi_p1by3*theta0_p2by3)/theta3_p4by3 + (15293365*2.15443469003188*theta3_p1by3)/Pi_p4by3 + (740710656000*2.15443469003188*Pi_p2by3*theta3_p5by3*(608*2.15443469003188*Pi_p5by3*theta0_p2by3 + 565*theta3_p5by3)*theta3s_p2)/theta03_fac_p3 - (7315660800*4.64158883361278*Pi_p7by3*theta0_p2by3*(456*2.15443469003188*Pi_p5by3*theta0_p2by3 + 3955*theta3_p5by3)*theta3s_p2)/theta03_fac_p3)/(1.6257024e7*theta0_p1by3);
 
     REAL8 dPhi5byDtheta3 = (5*(640*2.15443469003188*Pi_p10by3*theta0_p4by3*theta3_p5by3*(13950845*theta3 - 36141056*theta3s) - 4000*Pi_p5by3*theta0_p2by3*theta3_p10by3*(16594163*theta3 - 12773768*theta3s) + 2825*4.64158883361278*theta3_p5*(4366885*theta3 - 4691104*theta3s) + 1000194048*4.64158883361278*Pi_p5*theta0_p2*theta3s))/(387072.*Pi_p2by3*theta0_p2by3*pow(152*2.15443469003188*Pi_p5by3*theta0_p2by3*theta3 - 565*theta3_p8by3,2));
 
@@ -789,7 +782,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 
     REAL8 dPhi4byDtheta3s = (675*theta3*(8*4.64158883361278*Pi_p7by3*theta0_p2by3 - 405*2.15443469003188*Pi_p2by3*theta3_p5by3)*theta3s)/(2.*theta0_p1by3*theta03_fac_p2);
 
-    REAL8 dPhi5byDtheta3s = (5*(-2785343*tenbyPi_p2by3*theta3bytheta0_p2by3 + (816*LAL_PI*(-2373 + (3301450*theta3_p5by3)/(-152*2.15443469003188*Pi_p5by3*theta0_p2by3 + 565*theta3_p5by3)))/theta3))/1.7313408e7;
+    REAL8 dPhi5byDtheta3s = (5*(-2785343*tenbyPi_p2by3*theta3bytheta0_p2by3 + (816*LAL_PI*(-2373 + (3301450*theta3_p5by3)/theta03_fac))/theta3))/1.7313408e7;
 
     REAL8 dPhi8byDt0 = 2.*fLow*LAL_PI;
 
@@ -803,7 +796,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 
     REAL8 dPhiL6byDtheta3 = (-535*theta3)/(168.*Pi_p2*theta0);
 
-    REAL8 dPhiL5byDtheta3s = (5*(-2785343*tenbyPi_p2by3*theta3bytheta0_p2by3 + (816*LAL_PI*(-2373 + (3301450*theta3_p5by3)/(-152*2.15443469003188*Pi_p5by3*theta0_p2by3 + 565*theta3_p5by3)))/theta3))/1.7313408e7;
+    REAL8 dPhiL5byDtheta3s = (5*(-2785343*tenbyPi_p2by3*theta3bytheta0_p2by3 + (816*LAL_PI*(-2373 + (3301450*theta3_p5by3)/theta03_fac))/theta3))/1.7313408e7;
 
     /*******************************************************************/
     /*              (theta0, theta0) component of the metric           */
