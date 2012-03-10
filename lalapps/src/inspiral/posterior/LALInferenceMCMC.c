@@ -189,7 +189,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--data-dump)                    Output waveforms to file.\n\
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
-               (--propVerbose)                  Output proposal stats to file.\n";
+               (--propVerbose)                  Output proposal stats to file.\n\
+               (--output dir)                   Write output files PTMCMC.output.*.* in directory dir.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
