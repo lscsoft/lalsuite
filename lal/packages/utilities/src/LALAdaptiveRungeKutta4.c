@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Michele Vallisneri
+*  Copyright (C) 2010 Michele Vallisneri, Will Farr, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -105,6 +105,7 @@ void XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator )
   return;
 }
 
+/* Local function to store interpolated step in output array */
 static int storeStateInOutput(REAL8Array **output, REAL8 t, REAL8 *y, size_t dim, int *outputlen, int count) {
   REAL8Array *out = *output;
   int len = *outputlen;
@@ -138,6 +139,7 @@ static int storeStateInOutput(REAL8Array **output, REAL8 t, REAL8 *y, size_t dim
   return GSL_SUCCESS;
 }
 
+/* Local function to shrink output array to proper size before it's returned */
 static int shrinkOutput(REAL8Array **output, int *outputlen, int count, size_t dim) {
   REAL8Array *out = *output;
   int len = *outputlen;
@@ -175,6 +177,24 @@ typedef struct
 }
 rkf45_state_t;
 
+/**
+ * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
+ * steps with adaptive step size control.  Intended for use in various 
+ * waveform generation routines such as SpinTaylorT4 and various EOB models.
+ * 
+ * The method is described in
+ *
+ * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing, 
+ * National Bureau of Standards, Washington, DC, 1972 
+ * (available online at http://people.math.sfu.ca/~cbm/aands/ )
+ * 
+ * This function also includes "on-the-fly" interpolation of the differential
+ * equations at regular intervals in-between integration steps. This
+ * "on-the-fly" interpolation method is derived and described in the 
+ * Mathematica notebook "RKF_with_interpolation.nb"
+ *
+ * FIXME: Place NB in DCC, CVS or similar?
+ */
 int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                                 void *params,
                                 REAL8 *yinit,
