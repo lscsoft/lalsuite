@@ -969,7 +969,7 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 int XLALSimInspiralChooseWaveform(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    REAL8 phi0,                 /**< start phase */
+    REAL8 phi0,                 /**< peak phase */
     REAL8 deltaT,               /**< sampling interval */
     REAL8 m1,                   /**< mass of companion 1 */
     REAL8 m2,                   /**< mass of companion 2 */
@@ -1031,7 +1031,7 @@ int XLALSimInspiralChooseWaveform(
         // and J (J is constant during the evolution, J//z, both N and initial 
 		// L are in the x-z plane) and the spin coordinates are given wrt 
 		// initial ** L **.
-        case SpinTaylorFrameless:
+        case SpinTaylorT4:
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);
@@ -1130,7 +1130,7 @@ int XLALSimInspiralChooseRestrictedWaveform(
         // and J (J is constant during the evolution, J//z, both N and initial 
 		// L are in the x-z plane) and the spin coordinates are given wrt 
 		// initial ** L **.
-        case SpinTaylorFrameless:
+        case SpinTaylorT4:
             LNhatx = sin(i);
             LNhaty = 0.;
             LNhatz = cos(i);

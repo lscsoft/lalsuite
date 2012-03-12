@@ -62,6 +62,7 @@ typedef enum {
    BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri [\ref BCV03]; Outputs a frequency-domain wave. */
    BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects [\ref BCV03b]; Outputs a frequency-domain wave. */
    SpinTaylorT3,	/**< Spinning case T3 models */
+   SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless) */
    SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity) */
    SpinTaylor,		/**< Spinning case PN models (should replace SpinTaylorT3 in the future) */
    PhenSpinTaylorRD,	/**< Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown. */
