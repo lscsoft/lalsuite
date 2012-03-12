@@ -30,8 +30,10 @@ import sys
 import math
 import os
 import numpy as np
+#import matplotlib
 
 from matplotlib import pyplot as plt
+from matplotlib import rc
 from matplotlib.mlab import specgram, find
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
@@ -63,7 +65,7 @@ SOL         = float('299792458.0')    # m/s
 MSUN        = float('1.989e+30')      # kg
 G           = float('6.673e-11')      # m^3/s^2/kg 
 C           = SOL
-KPC         = float('3.0856776e19')
+KPC         = float('3.0856776e19')   # kiloparsec in metres
 I38         = float('1e38')           # moment of inertia kg m^2 
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
@@ -450,8 +452,27 @@ def plot_posterior_hist(poslist, param, ifos,
   # create a list of upper limits
   ulvals = []
   
+  # set some matplotlib defaults
+  rc('text', usetex=True) # use LaTeX for all text
+  rc('axes', linewidth=0.5) # set axes linewidths to 0.5
+  rc('axes', grid=True) # add a grid
+  rc('grid', linewidth=0.5)
+  rc('font', family='serif')
+  rc('font', size=12)
+  
   # ifos line colour specs
   coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  
+  # some parameter names for special LaTeX treatment in figures
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
+               '$\psi~{\rm(rads)}$', 'PHI0': '$\phi_0~{\rm(rads)}$', 'RA':
+               '$\alpha$', 'DEC': '$\delta$'}
+ 
+  # param name for axis label
+  try:
+    paraxis = paramdict[param.upper()]
+  except:
+    paraxis = param
   
   # loop over ifos
   for idx, ifo in enumerate(ifos):
@@ -465,11 +486,11 @@ def plot_posterior_hist(poslist, param, ifos,
     n, bins = hist_norm_bounds( pos_samps, int(nbins), parambounds[0], \
                                 parambounds[1] )
     
-    #n, bins, patches = plt.hist( pos_samps, bins=int(nbins), normed='True', \
-    #                             histtype='step', color=coldict[ifo] )
-    
     # plot histogram
     plt.plot(bins, n, color=coldict[ifo])
+    plt.xlabel(r''+paraxis, fontsize=14, fontweight=100)
+    plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
+    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
     
     myfigs.append(myfig)
     
@@ -579,14 +600,25 @@ def tukey_window(N, alpha=0.5):
   return win
 
 # create a function for plotting the absolute value of Bk data (read in from
-# data files) and an averaged 1 day spectrogram for each IFO
-def plot_Bks_PSDs( Bkdata, ifos ):
+# data files) and an averaged 1 day amplitude spectral density spectrogram for
+# each IFO
+def plot_Bks_ASDs( Bkdata, ifos ):
   # create list of figures
   Bkfigs = []
   psdfigs = []
   
   # ifos line colour specs
   coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  
+  # set some matplotlib defaults
+  rc('text', usetex=True) # use LaTeX for all text
+  rc('axes', linewidth=0.5) # set axes linewidths to 0.5
+  rc('axes', grid=True) # add a grid
+  rc('grid', linewidth=0.5)
+  #rc('font', family='sans-serif')
+  #rc('font', family='monospace')
+  rc('font', family='serif')
+  rc('font', size=12)
   
   # there should be data for each ifo
   for i, ifo in enumerate(ifos):
@@ -625,10 +657,17 @@ def plot_Bks_PSDs( Bkdata, ifos ):
     dfile.close()
       
     # plot the time series of the data
-    Bkfig = plt.figure(figsize=(4,3.5),dpi=200)
-      
-    plt.plot(gpstime, Bkabs, '.', color=coldict[ifo])
-      
+    Bkfig = plt.figure(figsize=(10,4), dpi=200)
+    Bkfig.subplots_adjust(bottom=0.12, left=0.06, right=0.94)
+    
+    tms = map(lambda x: x-gpstime[0], gpstime)
+    
+    plt.plot(tms, Bkabs, '.', color=coldict[ifo])
+    plt.xlabel(r'GPS + ' + str(gpstime[0]), fontsize=14, fontweight=100)
+    plt.ylabel(r'$|B_k|$', fontsize=14, fontweight=100)
+    plt.title(r'$B_k$s for ' + ifo.upper(), fontsize=14)
+    plt.xlim(tms[0], tms[-1])
+    
     Bkfigs.append(Bkfig)
       
     # create PSD by splitting data into days, padding with zeros to give a
@@ -642,7 +681,7 @@ def plot_Bks_PSDs( Bkdata, ifos ):
         
     # loop over data, splitting it up
     mr = int(math.ceil(totlen/86400))
-    print mr, totlen, len(Bkabs)
+
     count = 0
     npsds = 0
     totalpsd = np.zeros(86400) # add sum of PSDs
@@ -661,8 +700,6 @@ def plot_Bks_PSDs( Bkdata, ifos ):
       # get the PSD using a Tukey window with alpha = 0.25
       win = tukey_window(86400, alpha=0.25)
         
-      print len(datachunk)
-        
       psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=1, window=win)
       
       # add psd onto total value
@@ -675,7 +712,8 @@ def plot_Bks_PSDs( Bkdata, ifos ):
     totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
     
     # plot PSD
-    psdfig = plt.figure(figsize=(4,3.5),dpi=200)
+    psdfig = plt.figure(figsize=(4,3.5), dpi=200)
+    psdfig.subplots_adjust(left=0.18, bottom=0.15)
     
     # get the indices to plot in the actual frequency range 
     df = freqs[1]-freqs[0]
@@ -685,6 +723,10 @@ def plot_Bks_PSDs( Bkdata, ifos ):
     plt.plot(freqs[minfbin:maxfbin], totalpsd[minfbin:maxfbin],
              color=coldict[ifo])
     plt.xlim(freqs[minfbin], freqs[maxfbin])
+    plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
+    plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
+    plt.title(r'ASD for ' + ifo.upper(), fontsize=14)
+    
     psdfigs.append(psdfig)
       
   return Bkfigs, psdfigs
