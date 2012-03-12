@@ -681,7 +681,7 @@ def plot_Bks_ASDs( Bkdata, ifos ):
         
     # loop over data, splitting it up
     mr = int(math.ceil(totlen/86400))
-
+    
     count = 0
     npsds = 0
     totalpsd = np.zeros(86400) # add sum of PSDs
@@ -690,23 +690,31 @@ def plot_Bks_ASDs( Bkdata, ifos ):
        
       gpsstart = int(gpstime[count])
       
+      prevcount = count
+      
       for gt in gpstime[count:-1]:
         if gt >= gpsstart+86400:
           break
         else:
           datachunk[gt-gpsstart] = Bk[count]
           count += 1
-        
-      # get the PSD using a Tukey window with alpha = 0.25
-      win = tukey_window(86400, alpha=0.25)
-        
-      psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=1, window=win)
       
-      # add psd onto total value
-      totalpsd = map(lambda x, y: x+y, totalpsd, psd)
+      # only include the PSD if the chunk is more than 25% full of data
+      pf = float(count-prevcount)*mindt/86400.
       
-      # count number of psds
-      npsds = npsds+1
+      if pf > 0.25:
+        # get the PSD using a Tukey window with alpha = 0.25
+        win = tukey_window(86400, alpha=0.25)
+        
+        Fs = 1 # sample rate in Hz
+        
+        psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=Fs, window=win)
+      
+        # add psd onto total value
+        totalpsd = map(lambda x, y: x+y, totalpsd, psd)
+      
+        # count number of psds
+        npsds = npsds+1
       
     # average the PSD and convert to amplitude spectral density
     totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
