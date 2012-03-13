@@ -1525,6 +1525,7 @@ XLALSimIMREOBNRv2Generator(
    XLALDestroyREAL8Array( dynamicsHi );
    XLALDestroyREAL8Vector ( sigReHi );
    XLALDestroyREAL8Vector ( sigImHi );
+   XLALDestroyCOMPLEX16TimeSeries( sigMode );
    XLALDestroyREAL8Vector ( phseHi );
    XLALDestroyREAL8Vector ( omegaHi );
    XLALDestroyREAL8Vector( ampNQC );
