@@ -29,5 +29,8 @@ src/lalinference-user-env.shell
 src/stamp-h2
 test/LALInferenceTest
 test/LALInferenceKDTest
+test/LALInferenceLikelihoodTest
+test/LALInferencePriorTest
+test/LALInferenceProposalTest
 test/LALInferenceXMLTest
 test/test_vot.xml

@@ -8,6 +8,7 @@
 
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTfileIO.h>
 #include <stdio.h>
 #include <stdlib.h>

@@ -1249,7 +1249,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
       for (ii=0; ii<(INT4)tfdata->length; ii++) tfdata->data[ii] *= vladimirfactor;
    }
    
-   XLALDestroySFTCatalog(&catalog);
+   XLALDestroySFTCatalog(catalog);
    XLALDestroySFTVector(sfts);
    
    fprintf(stderr,"TF before weighting, mean subtraction = %g\n",calcMean(tfdata));
@@ -1347,7 +1347,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
       for (ii=0; ii<(INT4)(multiTFdata->length*multiTFdata->vectorLength); ii++) multiTFdata->data[ii] *= vladimirfactor;
    }
    
-   XLALDestroySFTCatalog(&catalog);
+   XLALDestroySFTCatalog(catalog);
    LALDestroyMultiSFTVector(&status, &sfts);
    XLALDestroyINT4Vector(IFOspecificNonexistantsft);
    

@@ -125,11 +125,15 @@ int
 LALCheckStatusPtr( LALStatus *status, const char *statement, const char *file,
                    const int line );
 
+#ifdef NOLALMACROS
+
 void
 FREESTATUSPTR( LALStatus *status );
 
 void
 REPORTSTATUS( LALStatus *status );
+
+#endif
 
 #ifdef NDEBUG
 

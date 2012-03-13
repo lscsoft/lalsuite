@@ -423,7 +423,7 @@ int XLALFrSetMode( FrStream *stream, int mode )
 }
 
 
-int XLALFrState( FrStream *stream )
+int XLALFrGetState( FrStream *stream )
 {
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
@@ -934,7 +934,7 @@ LALFrEnd(
   INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  *end = XLALFrState( stream ) & LAL_FR_END;
+  *end = XLALFrGetState( stream ) & LAL_FR_END;
   RETURN( status );
 }
 

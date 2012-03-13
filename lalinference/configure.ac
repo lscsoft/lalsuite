@@ -46,6 +46,16 @@ LALSUITE_ENABLE_NIGHTLY
 # debug
 LALSUITE_ENABLE_DEBUG
 
+# enable strict gcc flags
+LALSUITE_ENABLE_GCC_FLAGS
+
+# optional lal libraries
+LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALMETAIO
+LALSUITE_ENABLE_LALINSPIRAL
+LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_LALXML
+
 # put version/configure info in config header
 lalinference_version_major=`echo "$VERSION" | cut -d. -f1`
 lalinference_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -68,16 +78,6 @@ AC_DEFINE_UNQUOTED([LALINFERENCE_CONFIGURE_ARGS],["$ac_configure_args"],
 AC_DEFINE_UNQUOTED([LALINFERENCE_CONFIGURE_DATE],["$lalinspiral_configure_date"],
                    [LALInference Configure Date])
 
-# enable strict gcc flags
-LALSUITE_ENABLE_GCC_FLAGS
-
-# optional lal libraries
-LALSUITE_ENABLE_LALFRAME
-LALSUITE_ENABLE_LALMETAIO
-LALSUITE_ENABLE_LALINSPIRAL
-LALSUITE_ENABLE_LALPULSAR
-LALSUITE_ENABLE_LALXML
-
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
@@ -96,6 +96,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
+AC_PROG_SED
 LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 
@@ -170,15 +171,15 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LALInference has now been successfully configured:
 
-                LAL XML library support is $LALXML_ENABLE_VAL
+            LALXML library support is $LALXML_ENABLE_VAL
 
         and will be installed under the directory:
 
-          ${prefix}
+            ${prefix}
 
         Now run 'make' to build LALInference
         and run 'make install' to install LALInference

@@ -299,22 +299,14 @@ LALDestroyTokenList( LALStatus *stat,
 }
 
 
-/* <lalVerbatim file="StringTokenCP"> */
-int
-XLALDestroyTokenList( TokenList **list )
-{ /* </lalVerbatim> */
-  /* Check for valid input arguments. */
-  if ( !list || !*list ) {
-    fprintf(stderr, STRINGINPUTH_MSGENUL);
-    return STRINGINPUTH_ENUL;
-  }
+void
+XLALDestroyTokenList( TokenList *list )
+{
   /* Free everything and exit. */
-  if ( (*list)->list )
-    XLALDestroyCHARVector( (*list)->list );
-
-  LALFree( (*list)->tokens );
-  LALFree( *list );
-  *list = NULL;
-
-  return 0;
+  if ( list ) {
+    if ( list->list )
+      XLALDestroyCHARVector( list->list );
+    XLALFree( list->tokens );
+    XLALFree( list );
+  }
 }

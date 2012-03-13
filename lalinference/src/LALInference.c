@@ -816,9 +816,23 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
 }
 
 
-void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str)
+char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
 {
   ProcessParamsTable *this=procparams;
+  INT8 len=14; //number of characters of the "Command line: " string.
+  while (this!=NULL) {
+    len+=strlen(this->param);
+    len+=strlen(this->value);
+    len+=2;
+    this=this->next;
+  }// Now we know how long the buffer has to be.
+  char * str = (char*) calloc(len+1,sizeof(char));
+  if (str==NULL) {
+    XLALPrintError("Calloc error, str is NULL (in %s, line %d)\n",__FILE__, __LINE__);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
+  }
+  
+  this=procparams;
   strcpy (str,"Command line: ");
   //strcat (str,this->program);
   while (this!=NULL) {
@@ -828,6 +842,7 @@ void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str)
     strcat (str,this->value);
     this=this->next;
   }
+  return str;
 }
 
 

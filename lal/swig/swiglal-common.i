@@ -116,6 +116,7 @@
 %enddef
 
 // Include basic LAL headers in wrapping code.
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 %header %{
   #define LAL_USE_OLD_COMPLEX_STRUCTS
   #include <lal/XLALError.h>
@@ -1348,6 +1349,11 @@ fail: // SWIG doesn't add a fail label to a global variable '_get' function
   %append_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, owner$argnum | %newpointer_flags));
 }
 %typemap(freearg) SWIGTYPE ** "";
+// output typemaps for single pointers
+%typemap(argout, noblock=1) SWIGTYPE *OUTPUT {
+  %append_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, $owner | %newpointer_flags));
+}
+%typemap(freearg) SWIGTYPE *OUTPUT "";
 
 // Make the wrapping of printf-style LAL functions a little
 // safer, as suggested in the SWIG 1.3 documentation (section 13.5).

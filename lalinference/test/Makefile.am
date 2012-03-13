@@ -18,9 +18,9 @@ LALInferencePriorTest_SOURCES = \
 	LALInferencePriorTest.c
 	LALInferenceTest.h
 
-#LALInferenceLikelihoodTest_SOURCES = \
-#	LALInferenceLikelihoodTest.c
-#	LALInferenceTest.h
+LALInferenceLikelihoodTest_SOURCES = \
+	LALInferenceLikelihoodTest.c
+	LALInferenceTest.h
 
 #LALInferenceProposalTest_SOURCES = \
 #	LALInferenceProposalTest.c
@@ -29,10 +29,13 @@ LALInferencePriorTest_SOURCES = \
 check_PROGRAMS = \
 	LALInferenceTest \
 	LALInferencePriorTest \
+	LALInferenceLikelihoodTest \
 	$(XMLPRG)
 
-#	LALInferenceProposalTest
 #	LALInferenceKDTest
+
+noinst_PROGRAMS = \
+	LALInferenceProposalTest
 
 TESTS = \
 	$(check_PROGRAMS)

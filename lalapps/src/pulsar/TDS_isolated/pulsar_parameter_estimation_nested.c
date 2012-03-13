@@ -2338,9 +2338,9 @@ parameter file %s is wrong.\n", injectfile);
     /* If modeltype uses more than one data stream need to advance data on to
        next, so this loop only runs once if there is only 1 det*/
     for ( k = 1; k < (INT4)freqFactors->length; k++ ){
-			data = data->next;
-			fprintf(stderr,"data has been advanced for 2nd datastream\n");
-		}
+      data = data->next;
+      fprintf(stderr,"data has been advanced for 2nd datastream\n");
+    }
   }
   
   /* reset data to head */
@@ -2354,8 +2354,8 @@ parameter file %s is wrong.\n", injectfile);
       snrmulti[k] += SQUARE(snrval);
       
       /*if ( snrscale[k] == 0 ) */
-      fprintf(fpsnr, "freq_factor: %f, non-scaled snr: %le\t",
-              freqFactors->data[ndets], snrval);
+      fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\t",
+              freqFactors->data[k], snrval);
                              
       data = data->next;
     }
