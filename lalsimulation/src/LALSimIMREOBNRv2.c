@@ -112,6 +112,8 @@ REAL8 XLALrOfOmegaP4PN( REAL8 r, void *params);
 static
 REAL8 XLALvrP4PN(const REAL8 r, const REAL8 omega, pr3In *params);
 
+static 
+size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start);
 
 /*-------------------------------------------------------------------*/
 /*                      pseudo-4PN functions                         */
@@ -690,6 +692,28 @@ XLALSimIMREOBNRv2SetupFlux(
   return XLAL_SUCCESS;
 }
 
+/* return the index before the instantaneous frequency rises past target */
+static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start) {
+  size_t k = start + 1;
+  const size_t n = hp->data->length - 1;
+
+  /* Use second order differencing to find the instantaneous frequency as
+   * h = A e^(2 pi i f t) ==> f = d/dt(h) / (2*pi*h) */
+  for (; k < n; k++) {
+    const REAL8 hpDot = (hp->data->data[k+1] - hp->data->data[k-1]) / (2 * hp->deltaT);
+    const REAL8 hcDot = (hc->data->data[k+1] - hc->data->data[k-1]) / (2 * hc->deltaT);
+    REAL8 f = hcDot * hp->data->data[k] - hpDot * hc->data->data[k];
+    f /= LAL_TWOPI;
+    f /= hp->data->data[k] * hp->data->data[k] + hc->data->data[k] * hc->data->data[k];
+//printf("this f: %f\n",f);
+    if (f >= target) return k - 1;
+  }
+//printf("target f: %f\n",target);
+  printf("Error: initial frequency too high, no waveform generated");
+  XLAL_ERROR(XLAL_EDOM);
+}
+
+/* Engine function of EOBNRv2 */
 static int
 XLALSimIMREOBNRv2Generator(
               REAL8TimeSeries **hplus,
@@ -705,6 +729,7 @@ XLALSimIMREOBNRv2Generator(
               )
 {
    UINT4                   count, nn=4, hiSRndx=0;
+   UINT4                   flag_fLower_extend = 0;
 
    /* Vector containing the current signal mode */
    COMPLEX16TimeSeries     *sigMode = NULL;
@@ -992,12 +1017,21 @@ XLALSimIMREOBNRv2Generator(
 
    pr3in.omega = omega;
 
-   if ( XLALrOfOmegaP4PN(rInitMin, &pr3in) < 0.)
+   /* if ( XLALrOfOmegaP4PN(rInitMin, &pr3in) < 0.)
    {
      XLALPrintError( "Initial orbital frequency too high. The corresponding initial radius < %fM\n", rInitMin);
      XLALDestroyREAL8Vector( values );
      XLALDestroyREAL8Vector( dvalues );
      XLAL_ERROR( XLAL_EFUNC );
+   } */
+   /* If initial frequency too high and initial r < 10M, start at r = 10M, set flag and remove low freq waveform at the end */
+   if ( XLALrOfOmegaP4PN(10., &pr3in) < 0.)
+   {
+     flag_fLower_extend = 1;
+     omega = pow(10., -1.5);
+     pr3in.omega = omega;
+     v = cbrt( omega );
+     f = omega / LAL_PI / m;
    }
    if ( XLALrOfOmegaP4PN(rInitMax, &pr3in) > 0.)
    {
@@ -1176,6 +1210,10 @@ XLALSimIMREOBNRv2Generator(
   /* We want to start outputting when the 2,2 mode crosses the user-requested fLower */
   /* Find the point where we reach the low frequency cutoff */
   REAL8 lfCut = fLower * LAL_PI*m;
+  if (flag_fLower_extend == 1)
+  {
+    lfCut = pow(10., -1.5);
+  }
 
   i = 0;
   while ( i < hiSRndx )
@@ -1513,28 +1551,39 @@ XLALSimIMREOBNRv2Generator(
        count++;
      }
 
-   /* Add mode to final output h+ and hx */
-   XLALSimAddMode( *hplus, *hcross, sigMode, inclination, 0., modeL, modeM, 1 );
+     /* Add mode to final output h+ and hx */
+     XLALSimAddMode( *hplus, *hcross, sigMode, inclination, 0., modeL, modeM, 1 );
 
-   } /* End loop over modes */
+  } /* End loop over modes */
 
-   /* Clean up */
-   XLALDestroyREAL8Vector( values );
-   XLALDestroyREAL8Vector( dvalues );
-   XLALDestroyREAL8Array( dynamics );
-   XLALDestroyREAL8Array( dynamicsHi );
-   XLALDestroyREAL8Vector ( sigReHi );
-   XLALDestroyREAL8Vector ( sigImHi );
-   XLALDestroyREAL8Vector ( phseHi );
-   XLALDestroyREAL8Vector ( omegaHi );
-   XLALDestroyREAL8Vector( ampNQC );
-   XLALDestroyREAL8Vector( q1 );
-   XLALDestroyREAL8Vector( q2 );
-   XLALDestroyREAL8Vector( q3 );
-   XLALDestroyREAL8Vector( p1 );
-   XLALDestroyREAL8Vector( p2 );
+  /* clip the parts below f_min */
+  size_t cut_ind = 0.;
+  if (flag_fLower_extend == 1)
+  {
+    cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1); 
+    *hplus = XLALResizeREAL8TimeSeries(*hplus, cut_ind, (*hplus)->data->length - cut_ind);
+    *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
+    if (!(*hplus) || !(*hcross))
+      XLAL_ERROR(XLAL_EFUNC);
+  }
 
-   return XLAL_SUCCESS;
+  /* Clean up */
+  XLALDestroyREAL8Vector( values );
+  XLALDestroyREAL8Vector( dvalues );
+  XLALDestroyREAL8Array( dynamics );
+  XLALDestroyREAL8Array( dynamicsHi );
+  XLALDestroyREAL8Vector ( sigReHi );
+  XLALDestroyREAL8Vector ( sigImHi );
+  XLALDestroyREAL8Vector ( phseHi );
+  XLALDestroyREAL8Vector ( omegaHi );
+  XLALDestroyREAL8Vector( ampNQC );
+  XLALDestroyREAL8Vector( q1 );
+  XLALDestroyREAL8Vector( q2 );
+  XLALDestroyREAL8Vector( q3 );
+  XLALDestroyREAL8Vector( p1 );
+  XLALDestroyREAL8Vector( p2 );
+
+  return XLAL_SUCCESS;
 }
 
 /**
