@@ -78,21 +78,24 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
  * National Bureau of Standards, Washington, DC, 1972 
  * (available online at http://people.math.sfu.ca/~cbm/aands/ )
  * 
- * This function also includes "on-the-fly" interpolation of the differential
- * equations at regular intervals in-between integration steps. This
- * "on-the-fly" interpolation method is derived and described in the 
- * Mathematica notebook "RKF_with_interpolation.nb"
+ * This function also includes "on-the-fly" interpolation of the
+ * differential equations at regular intervals in-between integration
+ * steps. This "on-the-fly" interpolation method is derived and
+ * described in the Mathematica notebook "RKF_with_interpolation.nb";
+ * see
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/120312111836InspiralPipelineDevelopmentImproved%20Adaptive%20Runge-Kutta%20integrator
  *
- * FIXME: Place NB in DCC, CVS or similar?
+ * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
+ * but is nearly always faster due to the improved interpolation.
  */
-int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator, /**< struct holding dydt, stopping test, stepper, etc. */
-                                void *params, /**< params struct used to compute dydt and stopping test */
-                                REAL8 *yinit, /**< pass in initial values of all variables - overwritten to final values */
-                                REAL8 tinit, /**< integration start time */
-                                REAL8 tend_in, /**< maximum integration time */
-                                REAL8 deltat, /**< step size for evenly sampled output */
-                                REAL8Array **yout /**< array holding the evenly sampled output */
-                                );
+int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator, /**< struct holding dydt, stopping test, stepper, etc. */
+                                    void *params, /**< params struct used to compute dydt and stopping test */
+                                    REAL8 *yinit, /**< pass in initial values of all variables - overwritten to final values */
+                                    REAL8 tinit, /**< integration start time */
+                                    REAL8 tend_in, /**< maximum integration time */
+                                    REAL8 deltat, /**< step size for evenly sampled output */
+                                    REAL8Array **yout /**< array holding the evenly sampled output */
+                                    );
 
 #if 0
 { /* so that editors will match succeeding brace */

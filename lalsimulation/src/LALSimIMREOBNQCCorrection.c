@@ -875,6 +875,8 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
   gsl_spline_init( spline, alistq1, a5slistq1, 19 );
   gsl_interp_accel_reset( acc );
   a5sq1 = gsl_spline_eval( spline, a/(1.0-2.0*eta), acc );
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
 
   spline = gsl_spline_alloc( gsl_interp_cspline, 19 );
   acc    = gsl_interp_accel_alloc();
@@ -887,6 +889,8 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
   gsl_spline_init( spline, alistq10, a5slistq10, 19 );
   gsl_interp_accel_reset( acc );
   a5sq10 = gsl_spline_eval( spline, a/(1.0-2.0*eta), acc );
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
 
   spline = gsl_spline_alloc( gsl_interp_cspline, 19 );
   acc    = gsl_interp_accel_alloc();
@@ -899,6 +903,8 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
   gsl_spline_init( spline, alistq20, a5slistq20, 19 );
   gsl_interp_accel_reset( acc );
   a5sq20 = gsl_spline_eval( spline, a/(1.0-2.0*eta), acc );
+  gsl_spline_free(spline);
+  gsl_interp_accel_free(acc);
  
   coeffs->a1 = -12.67955358602124 + 75.41927959573084 * eta - 106.15933052937714 * eta2;
   coeffs->a2 = 101.45522216901628 - 757.3158549733314 * eta + 1473.314771676588 * eta2;
