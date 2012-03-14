@@ -188,18 +188,21 @@ rkf45_state_t;
  * National Bureau of Standards, Washington, DC, 1972 
  * (available online at http://people.math.sfu.ca/~cbm/aands/ )
  * 
- * This function also includes "on-the-fly" interpolation of the differential
- * equations at regular intervals in-between integration steps. This
- * "on-the-fly" interpolation method is derived and described in the 
- * Mathematica notebook "RKF_with_interpolation.nb"
+ * This function also includes "on-the-fly" interpolation of the
+ * differential equations at regular intervals in-between integration
+ * steps. This "on-the-fly" interpolation method is derived and
+ * described in the Mathematica notebook "RKF_with_interpolation.nb";
+ * see
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/120312111836InspiralPipelineDevelopmentImproved%20Adaptive%20Runge-Kutta%20integrator
  *
- * FIXME: Place NB in DCC, CVS or similar?
+ * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
+ * but is nearly always faster due to the improved interpolation.
  */
-int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
-                                void *params,
-                                REAL8 *yinit,
-                                REAL8 tinit, REAL8 tend, REAL8 deltat,
-                                REAL8Array **yout ) {
+int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
+                                    void *params,
+                                    REAL8 *yinit,
+                                    REAL8 tinit, REAL8 tend, REAL8 deltat,
+                                    REAL8Array **yout ) {
   int status;
   size_t dim, retries, i;
   int outputlen = 0, count = 0;
