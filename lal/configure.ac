@@ -160,7 +160,8 @@ LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LALSUITE_ENABLE_NIGHTLY
 
-LALSUITE_SWIG_REQUIRE_CXX
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # get version
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -363,8 +364,8 @@ if test "${boinc}" = "true"; then
   AC_SUBST(BOINC_LIBS)
 fi
 
-# check for SWIG wrapping
-LALSUITE_ENABLE_SWIG
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
 
 # record the libraries needed for linking lal
 LAL_LIBADD="$LIBS"
@@ -420,8 +421,8 @@ echo "
 
             CUDA support is $CUDA_ENABLE_VAL
             BOINC support is $BOINC_ENABLE_VAL
-            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 

@@ -1,262 +1,55 @@
 # SWIG configuration
-# Author: Karl Wette, 2011
+# Author: Karl Wette, 2011, 2012
 #
-# serial 14
+# serial 15
 
-# basic version string comparison
-# can only handle numeric versions separated by periods
-AC_DEFUN([LALSUITE_VERSION_COMPARE],[
-  vcmp_awkprog='{n = 0; while(++n <= NF) { if($n > 99) printf "ERROR"; printf "%02u", $n; } }'
-  vcmp_v1=[`echo $1 | ${SED} '/[^0-9.]/d' | ${AWK} -F . "${vcmp_awkprog}" | ${SED} '/ERROR/d'`]
-  vcmp_v2=[`echo $2 | ${SED} '/[^0-9.]/d' | ${AWK} -F . "${vcmp_awkprog}" | ${SED} '/ERROR/d'`]
-  AS_IF([test x${vcmp_v1} = x],[AC_MSG_ERROR([could not parse version string '$1'])])
-  AS_IF([test x${vcmp_v2} = x],[AC_MSG_ERROR([could not parse version string '$2'])])
-  AS_IF([test ${vcmp_v1} -lt ${vcmp_v2}],[$3])
-  AS_IF([test ${vcmp_v1} -eq ${vcmp_v2}],[$4])
-  AS_IF([test ${vcmp_v1} -gt ${vcmp_v2}],[$5])
-])
-
-# workaround to check whether SWIG modules are going to be
-# built (and therefore a C++ compiler is required) before
-# calling LALSUITE_PROG_CC_CXX, since LALSUITE_ENABLE_SWIG
-# must appear after LALSUITE_PROG_CC_CXX. to be fixed!
-AC_DEFUN([LALSUITE_SWIG_REQUIRE_CXX],[
-  AS_IF([test "${enable_swig}" = yes],[LALSUITE_REQUIRE_CXX])
-  AS_IF([test "${enable_swig_octave}" = yes],[LALSUITE_REQUIRE_CXX])
-  AS_IF([test "${enable_swig_python}" = yes],[LALSUITE_REQUIRE_CXX])
-])
-
-# SWIG setup and configuration
+# enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
 
-  # minimum required SWIG version
-  SWIG_MIN_VERSION=1.3.40
-
-  # save and clear CPPFLAGS and LIBS
-  swig_CPPFLAGS=${CPPFLAGS}
-  swig_LIBS=${LIBS}
-  CPPFLAGS=
-  LIBS=
-
-  # check for sed and awk
-  AC_PROG_SED
-  AC_PROG_AWK
-
-  # check for MKDIR_P
-  m4_ifdef([AC_PROG_MKDIR_P],[],[
-    MKDIR_P='$(INSTALL) -d'
-    AC_SUBST(MKDIR_P)
-  ])
-
-  # command line option to enable/disable all languages
+  # option to enable/disable all languages
   AC_ARG_ENABLE(
     [swig],
     AC_HELP_STRING(
       [--enable-swig],
-      [generate SWIG wrappings for all languages]
+      [generate SWIG wrapping modules for all languages]
     ),[
-      case "${enableval}" in
-        yes) swig_build_all=true;;
-        no)  swig_build_all=false;;
-        *)   AC_MSG_ERROR([invalid value '${enableval}' for --enable-swig]);;
-      esac
+      AS_CASE(["${enableval}"],
+        [yes],[swig_build_all=true],
+        [no],[swig_build_all=false],
+        [*],[AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig])]
+      )
     ],[
       swig_build_all=
     ]
   )
 
-  # command line option to use specific SWIG binary
+  # options to enable/disable languages
+  swig_build_any=false
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Octave],[false],[LALSUITE_REQUIRE_CXX])
+  LALSUITE_ENABLE_SWIG_LANGUAGE([Python],[false])
+
+  # option to use specific SWIG binary
   AC_ARG_WITH(
     [swig],
     AC_HELP_STRING(
       [--with-swig],
-      [specify SWIG binary (default: search \$PATH)]
+      [specify SWIG binary (default: search $PATH)]
     ),[
       AS_IF([test -f "${withval}"],[
         SWIG="${withval}"
       ],[
-        AC_MSG_ERROR([file '${withval}' not found])
+        AC_MSG_ERROR([file "${withval}" not found])
       ])
     ],[
       SWIG=
     ]
   )
 
-  # are we are binding LAL itself, or one of the other LAL libraries?
-  AS_IF([test x${PACKAGE_NAME} = xlal],[
-    swig_is_lal=true
-  ],[
-    swig_is_lal=false
-  ])
-
-  # common SWIG interface headers (with LAL only)
-  AS_IF([test ${swig_is_lal} = true],[
-    SWIG_HEADERS=
-    AC_SUBST(SWIG_HEADERS)
-  ])
-
-  # string to add to user environment setup scripts
-  SWIG_USER_ENV=
-
-  # configure SWIG target scripting languages
-  swig_build=false
-  LALSUITE_SWIG_LANGUAGES
-
-  # check if any language was configured
-  AM_CONDITIONAL(SWIG_BUILD,[test ${swig_build} = true])
-  AS_IF([test ${swig_build} = true],[
-
-    # check for swig binary
-    AC_MSG_CHECKING([for swig])
-    AS_IF([test "x${SWIG}" = x],[
-      AC_PATH_PROGS(SWIG,[swig],[])
-      AS_IF([test "x${SWIG}" = x],[
-        AC_MSG_ERROR([could not find 'swig' in path])
-      ])
-    ])
-    AC_MSG_RESULT([${SWIG}])
-
-    # check for swig version
-    AC_MSG_CHECKING([for swig version])
-    swig_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\) *$|\1|p;d']
-    swig_version=[`${SWIG} -version | ${SED} "${swig_regex}"`]
-    AS_IF([test "x${swig_version}" = x],[
-      AC_MSG_ERROR([could not determine swig version])
-    ])
-    AC_MSG_RESULT([${swig_version}])
-
-    # check if swig version is newer than required
-    LALSUITE_VERSION_COMPARE([${SWIG_MIN_VERSION}],[${swig_version}],[],[],[
-      AC_MSG_ERROR([require swig version >= ${SWIG_MIN_VERSION}])
-    ])
-
-    # check for perl binary
-    AC_PATH_PROGS(PERL,[perl],[])
-    AS_IF([test "x${PERL}" = x],[
-      AC_MSG_ERROR([could not find 'perl' in path])
-    ])
-
-    # symbols to define when generating SWIG wrapping code
-    SWIG_SWIG_DEFINES=
-    AC_SUBST(SWIG_SWIG_DEFINES)
-
-    # symbols to define when compiling SWIG wrapping code
-    SWIG_CXX_DEFINES=
-    AC_SUBST(SWIG_CXX_DEFINES)
-
-    # are we are binding LAL itself, or one of the other LAL libraries?
-    AS_IF([test ${swig_is_lal} = true],[
-      SWIG_SWIG_DEFINES="${SWIG_SWIG_DEFINES} SWIGLAL_IS_LAL"
-    ])
-
-    # are we (not) in debugging mode?
-    AS_IF([test x${enable_debug} = xno],[
-      SWIG_SWIG_DEFINES="${SWIG_SWIG_DEFINES} SWIGLAL_NDEBUG"
-      SWIG_CXX_DEFINES="${SWIG_CXX_DEFINES} SWIGLAL_NDEBUG"
-    ])
-
-    # try to figure out the underlying type of int64_t
-    AC_CHECK_HEADERS([stdint.h],[],[
-      AC_MSG_ERROR([could not find 'stdint.h'])
-    ])
-    AC_MSG_CHECKING([underlying type of int64_t])
-    AC_LANG_PUSH([C++])
-    AC_COMPILE_IFELSE(
-      [
-        AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[
-          int64_t i64 = 0; const long int *pli = &i64;
-        ])
-      ],[
-        AC_MSG_RESULT([long int])
-        swig_wordsize=SWIGWORDSIZE64
-      ],[
-        AC_COMPILE_IFELSE(
-          [
-            AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[
-              int64_t i64 = 0; const long long int *plli = &i64;
-            ])
-          ],[
-            AC_MSG_RESULT([long long int])
-            swig_wordsize=
-          ],[
-            AC_MSG_ERROR([could not determine underlying type of int64_t])
-          ]
-        )
-      ]
-    )
-    AC_LANG_POP([C++])
-    SWIG_SWIG_DEFINES="${SWIG_SWIG_DEFINES} ${swig_wordsize}"
-
-    # ensure that all LAL library modules share type information
-    SWIG_SWIG_DEFINES="${SWIG_SWIG_DEFINES} SWIG_TYPE_TABLE=swiglaltypetable"
-
-    # make SWIG use C++ casts
-    SWIG_SWIG_DEFINES="${SWIG_SWIG_DEFINES} SWIG_CPLUSPLUS_CAST"
-
-    # define C99 constant and limit macros
-    SWIG_CXX_DEFINES="${SWIG_CXX_DEFINES} __STDC_CONSTANT_MACROS __STDC_LIMIT_MACROS"               
-
-    # common SWIG interface headers (with LAL only)
-    AS_IF([test ${swig_is_lal} = true],[
-      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-common.i"
-      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-gsl.i"
-      SWIG_HEADERS="${SWIG_HEADERS} \$(swig_srcdir)/swiglal-test.i"
-    ])
-
-    # string to add to user environment setup scripts
-    AC_SUBST(SWIG_USER_ENV)
-
-    # path SWIG should look in for header files:
-    #  - keep any -I options in CPPFLAGS, without the -I prefix
-    SWIG_INCLPATH=[`for n in ${swig_CPPFLAGS}; do echo $n | ${SED} 's|^-I||p;d'; done`]
-    SWIG_INCLPATH=[`echo ${SWIG_INCLPATH}`]   # get rid of newlines
-    AC_SUBST(SWIG_INCLPATH)
-
-    # path SWIG should look in for (pre-installed) libraries:
-    #  - keep any -L options in _LIB variables, without the -L prefix
-    #  - keep any "lib*.la" files, replace filename with $objdir (pre-install)
-    swig_all_libs="${LAL_LIBS} ${LALSUPPORT_LIBS} ${swig_LIBS}"
-    SWIG_LIBPATH=[`for n in ${swig_all_libs}; do echo $n | ${SED} 's|^-L||p;d'; done`]
-    SWIG_LIBPATH=[`echo ${SWIG_LIBPATH}`]   # get rid of newlines
-    AC_SUBST(SWIG_LIBPATH)
-    SWIG_PREINST_LIBPATH=[`for n in ${swig_all_libs}; do echo $n | ${SED} 's|lib[^/][^/]*\.la|'"${objdir}"'|p;d'; done`]
-    SWIG_PREINST_LIBPATH=[`echo ${SWIG_PREINST_LIBPATH}`]   # get rid of newlines
-    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/lib/${objdir}"
-    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/src/${objdir}"
-    SWIG_PREINST_LIBPATH="${SWIG_PREINST_LIBPATH} \$(top_builddir)/packages/support/src/${objdir}"
-    AC_SUBST(SWIG_PREINST_LIBPATH)
-
-    # deduce library load path to use when running check scripts prior to installation
-    AS_IF([test ${build_vendor} = apple],[
-      SWIG_LD_LIBPATH_NAME=DYLD_FALLBACK_LIBRARY_PATH
-    ],[
-      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
-    ])
-    AC_SUBST(SWIG_LD_LIBPATH_NAME)
-
-  ],[
-
-    # if no SWIG languages were found
-    SWIG_WRAPPINGS="NONE"
-
-  ])
-
-  # restore CPPFLAGS and LIBS
-  CPPFLAGS=${swig_CPPFLAGS}
-  LIBS=${swig_LIBS}
-
 ])
 
-# tell the SWIG wrappings to use some feature
-AC_DEFUN([LALSUITE_SWIG_USE],[
-  SWIG_SWIG_DEFINES="${SWIG_SWIG_DEFINES} SWIGLAL_USE_$1"
-])
-
-# SWIG language configuration
-AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
-
-  # uppercase and lowercase language name
-  m4_pushdef([uppercase],translit([$1],[a-z],[A-Z]))
+# options to enable/disable languages
+# args: $1=language, $2=default enabled?, [$3=action if enabled]
+AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
 
   # command line option to enable/disable $1
@@ -264,32 +57,256 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
     [swig-]lowercase,
     AC_HELP_STRING(
       [--enable-swig-]lowercase,
-      [generate SWIG wrappings for $1]
+      [generate SWIG wrapping module for $1]
     ),[
-      case "${enableval}" in
-        yes) swig_build_]lowercase[=true;;
-        no)  swig_build_]lowercase[=false;;
-        *)   AC_MSG_ERROR([invalid value '${enableval}' for --enable-swig-]]lowercase[);;
-      esac
+      AS_CASE(["${enableval}"],
+        [yes],[swig_build_]lowercase[=true],
+        [no],[swig_build_]lowercase[=false],
+        [*],[AC_MSG_ERROR([invalid value "${enableval}" for --enable-swig-]]lowercase[)]
+      )
     ],[
-      swig_build_]lowercase[=${swig_build_all:-false}
+      swig_build_]lowercase[=${swig_build_all:-$2}
     ]
   )
 
+  # if $1 is enabled
+  AS_IF([test "${swig_build_]lowercase[}" = true],[:
+    swig_build_any=true
+    $3
+  ])
+
+  m4_popdef([lowercase])
+])
+
+# configure SWIG wrapping modules
+# args: $1=symbol prefixes
+AC_DEFUN([LALSUITE_USE_SWIG],[
+
+  # save and clear global compiler/linker variables
+  swig_save_CPPFLAGS=${CPPFLAGS}
+  swig_save_CFLAGS=${CFLAGS}
+  swig_save_CXXFLAGS=${CXXFLAGS}
+  swig_save_LDFLAGS=${LDFLAGS}
+  swig_save_LIBS=${LIBS}
+  CPPFLAGS=
+  CFLAGS=
+  CXXFLAGS=
+  LDFLAGS=
+  LIBS=
+
+  # check for required programs
+  AC_REQUIRE([AC_PROG_LN_S])
+  AC_REQUIRE([AC_PROG_MKDIR_P])
+  AC_REQUIRE([AC_PROG_SED])
+
+  # if any language was configured
+  AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
+  AM_COND_IF(SWIG_BUILD,[
+
+    # check for SWIG binary
+    AS_IF([test "x${SWIG}" = x],[
+      AC_PATH_PROGS(SWIG,[swig2.0 swig],[])
+      AS_IF([test "x${SWIG}" = x],[
+        AC_MSG_ERROR([could not find "swig" in path])
+      ])
+    ])
+
+    # check SWIG version
+    swig_min_version=2.0.7
+    AC_MSG_CHECKING([${SWIG} version])
+    swig_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\) *$|\1|p;d']
+    swig_version=[`${SWIG} -version | ${SED} "${swig_regex}"`]
+    AS_IF([test "x${swig_version}" = x],[
+      AC_MSG_ERROR([could not determine SWIG version])
+    ])
+    AC_MSG_RESULT([${swig_version}])
+    AS_VERSION_COMPARE([${swig_min_version}],[${swig_version}],[],[],[
+      AC_MSG_ERROR([require SWIG version >= ${swig_min_version}])
+    ])
+
+    # symbol prefixes for this LAL library
+    AC_SUBST(SWIG_SYMBOL_PREFIXES,["$1"])
+
+    # flags for generating SWIG wrapping module sources
+    AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
+
+    # if we are wrapping the LAL library (instead of one of the LAL* libraries)
+    AS_IF([test "x${PACKAGE_NAME}" = xlal],[
+      lalswig=true
+    ],[
+      lalswig=false
+    ])
+
+    # common SWIG interfaces (with LAL only)
+    AS_IF([test ${lalswig} = true],[
+      AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
+    ])
+
+    # try to figure out the underlying type of int64_t
+    AC_CHECK_HEADERS([stdint.h],[],[
+      AC_MSG_ERROR([could not find "stdint.h"])
+    ])
+    AC_MSG_CHECKING([underlying type of int64_t])
+    CFLAGS="-Wall -Werror"
+    AC_LANG_PUSH([C])
+    AC_COMPILE_IFELSE([
+      AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[
+        int64_t i64 = 0; long int *pli = &i64; *pli = 0 /*;*/
+      ])
+    ],[
+      AC_MSG_RESULT([long int])
+      swig_wordsize=-DSWIGWORDSIZE64
+    ],[
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[
+          int64_t i64 = 0; long long int *plli = &i64; *plli = 0 /*;*/
+        ])
+      ],[
+        AC_MSG_RESULT([long long int])
+        swig_wordsize=
+      ],[
+        AC_MSG_FAILURE([could not determine underlying type of int64_t])
+      ])
+    ])
+    CFLAGS=
+    AC_LANG_POP([C])
+    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} ${swig_wordsize}"
+
+    # directories SWIG should look in for interfaces and LAL headers
+    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
+
+    # send language-specific SWIG output files to libtool directory
+    AC_SUBST(SWIG_OUTDIR,["\$(abs_builddir)/${objdir}"])
+    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -outdir \$(SWIG_OUTDIR)"
+
+    # flags for generating/compiling SWIG wrapping module sources
+    AC_SUBST(SWIG_CPPFLAGS,["${swig_save_CPPFLAGS}"])
+
+    # are we (not) in debugging mode?
+    AS_IF([test "x${enable_debug}" = xno],[
+      SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -DNDEBUG"
+      SWIG_CPPFLAGS="${SWIG_CPPFLAGS} -DNDEBUG"
+    ])
+
+    # flags for compiling SWIG wrapping module sources
+    AC_SUBST(SWIG_CFLAGS,["${swig_save_CFLAGS}"])
+    AC_SUBST(SWIG_CXXFLAGS,["${swig_save_CXXFLAGS}"])
+
+    # define C99 constant and limit macros for C++ sources
+    SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
+
+    # make SWIG use C++ casts in typemaps in C++ mode
+    SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -DSWIG_CPLUSPLUS_CAST"
+
+    # disable optimisation in debug mode, for faster compilation
+    AS_IF([test "x${enable_debug}" != xno],[
+      SWIG_CFLAGS="${SWIG_CFLAGS} -O0"
+      SWIG_CXXFLAGS="${SWIG_CXXFLAGS} -O0"
+    ])
+
+    # flags for linking SWIG wrapping modules
+    AC_SUBST(SWIG_LDFLAGS,["${swig_save_LDFLAGS}"])
+
+    # libraries SWIG wrapping module should be linked against
+    AC_SUBST(SWIG_LIBS,["${swig_save_LIBS}"])
+    AS_IF([test ${lalswig} = true],[
+      SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/packages/support/src/liblalsupport.la \$(abs_top_builddir)/lib/liblal.la"
+    ],[
+      SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
+    ])
+
+    # dynamic linker search path for pre-installed LAL libraries
+    SWIG_LD_LIBRARY_PATH=[`for n in ${SWIG_LIBS}; do echo $n | ${SED} -n 's|/liblal[^.]*\.la|/'"${objdir}"'|p'; done`]
+    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH}`]   # get rid of newlines
+    SWIG_LD_LIBRARY_PATH=[`echo ${SWIG_LD_LIBRARY_PATH} | ${SED} 's|(top_builddir)|(abs_top_builddir)|g;s|  *|:|g'`]
+    AC_SUBST(SWIG_LD_LIBRARY_PATH)
+    AS_IF([test "${build_vendor}" = apple],[
+      SWIG_LD_LIBPATH_NAME=DYLD_LIBRARY_PATH
+    ],[
+      SWIG_LD_LIBPATH_NAME=LD_LIBRARY_PATH
+    ])
+    AC_SUBST(SWIG_LD_LIBPATH_NAME)
+
+    # check for additional compiler flags:
+    extra_flags=
+    # - suppress warnings about uninitialized variables in SWIG-generated code
+    extra_flags="${extra_flags} -Wno-uninitialized"
+    for flag in ${extra_flags}; do
+      AC_MSG_CHECKING([if ${flag} is supported])
+      CFLAGS=${flag}
+      AC_LANG_PUSH([C])
+      AC_COMPILE_IFELSE([
+        AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[])
+      ],[
+        AC_MSG_RESULT([yes])
+        SWIG_CFLAGS="${SWIG_CFLAGS} ${flag}"
+        SWIG_CXXFLAGS="${SWIG_CXXFLAGS} ${flag}"
+      ],[
+        AC_MSG_RESULT([no])
+        swig_wordsize=
+      ])
+      CFLAGS=
+      AC_LANG_POP([C])
+    done
+
+  ])
+
+  # string to add to user environment setup scripts
+  AC_SUBST(SWIG_USER_ENV,[""])
+
+  # configure SWIG languages
+  LALSUITE_USE_SWIG_OCTAVE
+  LALSUITE_USE_SWIG_PYTHON
+
+  # list of other LAL libraries SWIG wrapping module depends on
+  AC_SUBST(SWIG_MODULE_DEPENDS,[""])
+
+  # scripting-language path to search for pre-installed SWIG modules
+  AC_SUBST(SWIG_PREINST_PATH,["\$(SWIG_OUTDIR)"])
+
+  # restore global compiler/linker variables
+  CPPFLAGS=${swig_save_CPPFLAGS}
+  CFLAGS=${swig_save_CFLAGS}
+  CXXFLAGS=${swig_save_CXXFLAGS}
+  LDFLAGS=${swig_save_LDFLAGS}
+  LIBS=${swig_save_LIBS}
+
+])
+
+# add to list of other LAL libraries SWIG wrapping module depends on
+# args: $1=LAL library, $2=enable dependency?
+AC_DEFUN([LALSUITE_SWIG_DEPENDS],[
+  AS_IF([test "x$2" = xtrue],[
+    SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} $1"
+
+    # add to scripting-language path to search for pre-installed SWIG modules
+    AS_IF([test ${LALSUITE_BUILD} = true],[
+      SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../$1/\$(subdir)/${objdir}"
+    ])
+
+  ])
+])
+
+# configure SWIG language wrapping module
+# args: $1=language, $2=actions if enabled
+AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
+  m4_pushdef([uppercase],translit([$1],[a-z],[A-Z]))
+  m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
+
   # check whether to configure $1
   AM_CONDITIONAL(SWIG_BUILD_[]uppercase,[test ${swig_build_]lowercase[} = true])
-  AS_IF([test ${swig_build_]lowercase[} = true],[
-    
+  AM_COND_IF(SWIG_BUILD_[]uppercase,[
+
     # at least one language was configured
     swig_build=true
 
     # set message string to indicate language will be built
     SWIG_]uppercase[_ENABLE_VAL=ENABLED
 
-    # language-specific SWIG interface headers (with LAL only)
-    AS_IF([test ${swig_is_lal} = true],[
-      SWIG_]uppercase[_HEADERS="\$(swig_srcdir)/]lowercase[/swiglal-]lowercase[.i"
-      AC_SUBST(SWIG_]uppercase[_HEADERS)
+    # common and language-specific SWIG interfaces (with LAL only)
+    AS_IF([test ${lalswig} = true],[
+      SWIG_]uppercase[_IFACES="swiglal_]lowercase[.i"
+      AC_SUBST(SWIG_]uppercase[_IFACES)
     ])
 
     # configure $1
@@ -300,93 +317,203 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE],[
     SWIG_]uppercase[_ENABLE_VAL=DISABLED
   ])
 
-  # clear M4 definitions
   m4_popdef([uppercase])
   m4_popdef([lowercase])
-
 ])
 
-# SWIG languages
-AC_DEFUN([LALSUITE_SWIG_LANGUAGES],[
-  LALSUITE_SWIG_LANGUAGE_OCTAVE
-  LALSUITE_SWIG_LANGUAGE_PYTHON
-])
+# configure SWIG Octave wrapping module
+AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
+  LALSUITE_USE_SWIG_LANGUAGE([Octave],[
 
-# SWIG octave configuration
-AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
-  LALSUITE_SWIG_LANGUAGE([Octave],[
+    # check for Octave binary
+    AC_PATH_PROG(OCTAVE,[octave],[],[])
+    AS_IF([test "x${OCTAVE}" = x],[
+      AC_MSG_ERROR([could not find "octave" in path])
+    ])
+    octave_prefix=[`${OCTAVE} -qfH --eval "disp(octave_config_info('prefix'))" | ${SED} 's|/*$||'`]
 
-    # minimum required octave version
-    OCTAVE_MIN_VERSION=3.2.0
-
-    # check for octave-config binary
-    AC_PATH_PROGS(OCTAVE_CONFIG,[octave-config],[])
-    AS_IF([test "x${OCTAVE_CONFIG}" = x],[
-      AC_MSG_ERROR([could not find 'octave-config' in path])
+    # check for Octave mkoctfile binary
+    AC_MSG_CHECKING([for mkoctfile])
+    AS_IF([test "x`${OCTAVE} -qfH --eval 'mkoctfile -p CXX' 2>/dev/null`" != x],[
+      AC_MSG_RESULT([yes])
+    ],[
+      AC_MSG_ERROR([mkoctfile is not installed])
     ])
 
-    # check for corresponding octave binary
-    AC_MSG_CHECKING([for octave])
-    OCTAVE=`${OCTAVE_CONFIG} -p BINDIR`/octave
-    AS_IF([test -f "${OCTAVE}" && test -x "${OCTAVE}"],[],[
-      AC_MSG_ERROR([could not find 'octave' in path])
-    ])
-    AC_MSG_RESULT([${OCTAVE}])
-    AC_SUBST(OCTAVE)
-    # add flags for silence and environment-independence
-    OCTAVE="${OCTAVE} -qfH"
-
-    # check for octave version
-    AC_MSG_CHECKING([for octave version])
-    octave_version=`${OCTAVE_CONFIG} --version`
+    # check Octave version
+    octave_min_version=3.2.0
+    AC_MSG_CHECKING([${OCTAVE} version])
+    octave_version=[`${OCTAVE} -qfH --eval "disp(version)"`]
     AS_IF([test "x${octave_version}" = x],[
-      AC_MSG_ERROR([could not determine octave version])
+      AC_MSG_ERROR([could not determine ${OCTAVE} version])
     ])
     AC_MSG_RESULT([${octave_version}])
-
-    # check if octave version is newer than required
-    LALSUITE_VERSION_COMPARE([${OCTAVE_MIN_VERSION}],[${octave_version}],[],[],[
-      AC_MSG_ERROR([require octave version >= ${OCTAVE_MIN_VERSION}])
+    AS_VERSION_COMPARE([${octave_min_version}],[${octave_version}],[],[],[
+      AC_MSG_ERROR([require ${OCTAVE} version >= ${octave_min_version}])
     ])
 
-    # determine where to install .oct files:
-    # take site .oct install dir given by octave-config,
-    # and strip off prefix; thus, if LAL is installed in
-    # the same directory as octave, .oct files will be
-    # found by octave without having to add to OCTAVE_PATH
-    octave_prefix=[`${OCTAVE_CONFIG} -p PREFIX | ${SED} 's|/*$||'`]
-    AC_MSG_CHECKING([for octave .oct installation directory])
-    octave_localoctfiledir=[`${OCTAVE_CONFIG} -p LOCALOCTFILEDIR | ${SED} 's|/*$||'`]
-    octave_octfiledir=[`echo ${octave_localoctfiledir} | ${SED} "s|^${octave_prefix}/||"`]
-    AS_IF([test -n "`echo ${octave_octfiledir} | ${SED} -n '\|^/|p'`"],[
-      AC_MSG_ERROR([could not build relative path from '${octave_octfiledir}'])
+    # check that wrappings are being compiled with the same C++ compiler used to compile Octave itself
+    octave_CXX=`${OCTAVE} -qfH --eval "mkoctfile -p CXX"`
+    AS_IF([test "x${CXX}" != "x${octave_CXX}"],[
+      AC_MSG_ERROR([configured C++ compiler "${CXX}" differs from ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
-    AC_MSG_RESULT([\${prefix}/${octave_octfiledir}])
-    AC_SUBST(octfiledir, [${prefix}/${octave_octfiledir}])
+
+    # determine Octave module flags
+    AC_MSG_CHECKING([for ${OCTAVE} module CPPFLAGS])
+    AC_SUBST(OCTAVE_CPPFLAGS,[""])
+    for n in CPPFLAGS INCFLAGS; do
+      OCTAVE_CPPFLAGS="${OCTAVE_CPPFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
+    done
+    AC_MSG_RESULT([${OCTAVE_CPPFLAGS}])
+    AC_MSG_CHECKING([for ${OCTAVE} module CXXFLAGS])
+    AC_SUBST(OCTAVE_CXXFLAGS,[""])
+    for n in ALL_CXXFLAGS; do
+      OCTAVE_CXXFLAGS="${OCTAVE_CXXFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
+    done
+    AC_MSG_RESULT([${OCTAVE_CXXFLAGS}])
+    AC_MSG_CHECKING([for ${OCTAVE} module LDFLAGS])
+    AC_SUBST(OCTAVE_LDFLAGS,[""])
+    for n in RDYNAMIC_FLAG LFLAGS RLD_FLAG OCTAVE_LIBS LIBS; do
+      OCTAVE_LDFLAGS="${OCTAVE_LDFLAGS} "`${OCTAVE} -qfH --eval "mkoctfile -p $n"`
+    done
+    AC_MSG_RESULT([${OCTAVE_LDFLAGS}])
+
+    # check for Octave headers
+    CPPFLAGS=${OCTAVE_CPPFLAGS}
+    AC_LANG_PUSH([C++])
+    AC_CHECK_HEADERS([octave/oct.h],[],[
+      AC_MSG_ERROR([could not find the header "octave/oct.h"])
+    ],[
+      AC_INCLUDES_DEFAULT
+    ])
+    CPPFLAGS=
+    AC_LANG_POP([C++])
+
+    # determine where to install Octave module:
+    # take site .oct file directory given by octave-config,
+    # and strip off prefix; thus, if LALSuite is installed in
+    # the same directory as Octave, .oct module files will be
+    # found by Octave without having to add to OCTAVE_PATH
+    AC_MSG_CHECKING([for ${OCTAVE} module installation directory])
+    octexecdir=[`${OCTAVE} -qfH --eval "disp(octave_config_info('localoctfiledir'))" | ${SED} 's|/*$||'`]
+    octexecdir=[`echo ${octexecdir} | ${SED} "s|^${octave_prefix}/||"`]
+    AS_IF([test "x`echo ${octexecdir} | ${SED} -n '\|^/|p'`" != x],[
+      AC_MSG_ERROR([could not build relative path from "${octexecdir}"])
+    ])
+    octexecdir='${prefix}'/"${octexecdir}"
+    AC_MSG_RESULT([${octexecdir}])
+    AC_SUBST(octexecdir)
 
     # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octfiledir)~E~O~L~'
+    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend OCTAVE_PATH $(octexecdir)\n'
 
   ])
 ])
 
-# SWIG python configuration
-AC_DEFUN([LALSUITE_SWIG_LANGUAGE_PYTHON],[
-  LALSUITE_SWIG_LANGUAGE([Python],[
+# configure SWIG Python wrapping module
+AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
+  LALSUITE_USE_SWIG_LANGUAGE([Python],[
 
-    # check for python
-    AM_PATH_PYTHON([2.4])
+    # check for Python
+    python_min_version=2.5
+    AM_PATH_PYTHON([${python_min_version}])
 
-    # check for numpy
-    AC_MSG_CHECKING([for numpy])
-    ${PYTHON} -c "import numpy" 2>/dev/null
+    # check for distutils
+    AC_MSG_CHECKING([for distutils])
+    cat <<EOD | ${PYTHON} - 2>/dev/null
+import distutils
+EOD
     AS_IF([test $? -ne 0],[
-      AC_MSG_ERROR([could not import numpy])
+      AC_MSG_ERROR([could not import distutils])
     ])
     AC_MSG_RESULT([yes])
 
+    # check for NumPy
+    numpy_min_version=1.3
+    AC_MSG_CHECKING([for NumPy])
+    numpy_version=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+import numpy
+print(numpy.__version__)
+EOD`]
+    AS_IF([test $? -ne 0],[
+      AC_MSG_ERROR([could not import NumPy])
+    ])
+    AC_MSG_RESULT([yes])
+
+    # check NumPy version
+    AC_MSG_CHECKING([NumPy version])
+    AS_VERSION_COMPARE([${numpy_min_version}],[${numpy_version}],[],[],[
+      AC_MSG_ERROR([require NumPy version >= ${numpy_min_version}])
+    ])
+    AC_MSG_RESULT([${numpy_version}])
+
+    # determine Python module CPPFLAGS
+    AC_MSG_CHECKING([for ${PYTHON} module CPPFLAGS])
+    PYTHON_CPPFLAGS=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+import sys
+import distutils.sysconfig as cfg
+import numpy.lib.utils as npyutil
+sys.stdout.write( '-I' + cfg.get_python_inc())
+sys.stdout.write(' -I' + cfg.get_python_inc(plat_specific=1))
+sys.stdout.write(' -I' + npyutil.get_include())
+EOD`]
+    AS_IF([test $? -ne 0],[
+      AC_MSG_ERROR([could not determine ${PYTHON} module CPPFLAGS])
+    ])
+    AC_SUBST(PYTHON_CPPFLAGS)
+    AC_MSG_RESULT([${PYTHON_CPPFLAGS}])
+
+    # determine Python module CFLAGS
+    AC_MSG_CHECKING([for ${PYTHON} module CFLAGS])
+    PYTHON_CFLAGS=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+import sys
+import distutils.sysconfig as cfg
+cflags = cfg.get_config_var('CFLAGS').split()
+cflags = [f for f in cflags if f != '-DNDEBUG']
+sys.stdout.write(" ".join(cflags))
+EOD`]
+    AS_IF([test $? -ne 0],[
+      AC_MSG_ERROR([could not determine ${PYTHON} module CFLAGS])
+    ])
+    AC_SUBST(PYTHON_CFLAGS)
+    AC_MSG_RESULT([${PYTHON_CFLAGS}])
+
+    # determine Python module LDFLAGS
+    AC_MSG_CHECKING([for ${PYTHON} module LDFLAGS])
+    PYTHON_LDFLAGS=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+import sys, os
+import distutils.sysconfig as cfg
+sys.stdout.write(cfg.get_config_var('LINKFORSHARED'))
+sys.stdout.write(' -L' + cfg.get_python_lib())
+sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
+stdlibdir = cfg.get_python_lib(plat_specific=1,standard_lib=1)
+sys.stdout.write(' ' + os.path.join(stdlibdir, cfg.get_config_var('LDLIBRARY')))
+EOD`]
+    AS_IF([test $? -ne 0],[
+      AC_MSG_ERROR([could not determine ${PYTHON} module LDFLAGS])
+    ])
+    AC_SUBST(PYTHON_LDFLAGS)
+    AC_MSG_RESULT([${PYTHON_LDFLAGS}])
+
+    # check for Python headers
+    CPPFLAGS=${PYTHON_CPPFLAGS}
+    AC_LANG_PUSH([C])
+    AC_CHECK_HEADERS([Python.h],[],[
+      AC_MSG_ERROR([could not find the header "Python.h"])
+    ],[
+      AC_INCLUDES_DEFAULT
+    ])
+    AC_CHECK_HEADERS([numpy/arrayobject.h],[],[
+      AC_MSG_ERROR([could not find the header "numpy/arrayobject.h"])
+    ],[
+      AC_INCLUDES_DEFAULT
+      #include <Python.h>
+    ])
+    CPPFLAGS=
+    AC_LANG_POP([C])
+
     # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend PYTHONPATH $(pyexecdir)~E~O~L~'
+    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend PYTHONPATH $(pyexecdir)\n'
 
   ])
 ])
