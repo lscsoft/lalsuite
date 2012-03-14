@@ -37,6 +37,7 @@
 #include <lal/LALInferenceProposal.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceReadData.h>
+#include <lalapps.h>
 
 #include <mpi.h>
 
@@ -188,7 +189,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--data-dump)                    Output waveforms to file.\n\
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
-               (--propVerbose)                  Output proposal stats to file.\n";
+               (--propVerbose)                  Output proposal stats to file.\n\
+               (--output dir)                   Write output files PTMCMC.output.*.* in directory dir.\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -285,7 +287,9 @@ void initializeMCMC(LALInferenceRunState *runState)
     verbose=1;
     LALInferenceAddVariable(runState->algorithmParams,"verbose", &verbose , LALINFERENCE_UINT4_t,
                             LALINFERENCE_PARAM_FIXED);
+    set_debug_level("ERROR|INFO");
   }
+  else set_debug_level("NDEBUG");
 
   printf("set iteration number.\n");
   /* Number of live points */

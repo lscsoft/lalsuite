@@ -84,11 +84,15 @@ static int
 XLALSpinAlignedHiSRStopCondition(double UNUSED t,
                            const double UNUSED values[],
                            double dvalues[],
-                           void UNUSED *funcParams
+                           void *funcParams
                           )
 {
+  SpinEOBParams *params = (SpinEOBParams *)funcParams;
+  REAL8 K, eta;
+  eta = params->eobParams->eta;
+  K = 1.4467 -  1.7152360250654402 * eta - 3.246255899738242 * eta * eta;
 
-  if ( values[0] <= 1.8 || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
+  if ( values[0] <= (1.+sqrt(1-params->a))*(1.-K*eta) + 0.3 || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
     return 1;
   }
@@ -404,8 +408,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   values->data[3] = tmpValues->data[0] * tmpValues->data[4];
 
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
-
-  XLALDestroyREAL8Vector( tmpValues );
 
   /* Now compute the spinning H coefficients, just in case the don't have the right values */
   if ( XLALSimIMRCalculateSpinEOBHCoeffs( &seobCoeffs, eta, a ) == XLAL_FAILURE )
@@ -780,6 +782,19 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   (*hplus)  = hPlusTS;
   (*hcross) = hCrossTS;
 
+  /* Free memory */
+  XLALDestroyREAL8Vector( tmpValues );
+  XLALDestroyREAL8Vector( sigmaKerr );
+  XLALDestroyREAL8Vector( sigmaStar );
+  XLALDestroyREAL8Vector( values );
+  XLALDestroyREAL8Vector( rdMatchPoint );
+  XLALDestroyREAL8Vector( ampNQC );
+  XLALDestroyREAL8Vector( phaseNQC );
+  XLALDestroyREAL8Vector( sigReVec );
+  XLALDestroyREAL8Vector( sigImVec );
+  XLALAdaptiveRungeKutta4Free( integrator );
+  XLALDestroyREAL8Array( dynamics );
+  XLALDestroyREAL8Array( dynamicsHi );
 
   return XLAL_SUCCESS;
 }

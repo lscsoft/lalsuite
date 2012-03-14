@@ -832,6 +832,7 @@ char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
   }
   
+  this=procparams;
   strcpy (str,"Command line: ");
   //strcat (str,this->program);
   while (this!=NULL) {

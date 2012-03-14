@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Michele Vallisneri
+*  Copyright (C) 2010 Michele Vallisneri, Will Farr, Evan Ochsner
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -105,6 +105,7 @@ void XLALAdaptiveRungeKutta4Free( ark4GSLIntegrator *integrator )
   return;
 }
 
+/* Local function to store interpolated step in output array */
 static int storeStateInOutput(REAL8Array **output, REAL8 t, REAL8 *y, size_t dim, int *outputlen, int count) {
   REAL8Array *out = *output;
   int len = *outputlen;
@@ -138,6 +139,7 @@ static int storeStateInOutput(REAL8Array **output, REAL8 t, REAL8 *y, size_t dim
   return GSL_SUCCESS;
 }
 
+/* Local function to shrink output array to proper size before it's returned */
 static int shrinkOutput(REAL8Array **output, int *outputlen, int count, size_t dim) {
   REAL8Array *out = *output;
   int len = *outputlen;
@@ -175,11 +177,32 @@ typedef struct
 }
 rkf45_state_t;
 
-int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
-                                void *params,
-                                REAL8 *yinit,
-                                REAL8 tinit, REAL8 tend, REAL8 deltat,
-                                REAL8Array **yout ) {
+/**
+ * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
+ * steps with adaptive step size control.  Intended for use in various 
+ * waveform generation routines such as SpinTaylorT4 and various EOB models.
+ * 
+ * The method is described in
+ *
+ * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing, 
+ * National Bureau of Standards, Washington, DC, 1972 
+ * (available online at http://people.math.sfu.ca/~cbm/aands/ )
+ * 
+ * This function also includes "on-the-fly" interpolation of the
+ * differential equations at regular intervals in-between integration
+ * steps. This "on-the-fly" interpolation method is derived and
+ * described in the Mathematica notebook "RKF_with_interpolation.nb";
+ * see
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/120312111836InspiralPipelineDevelopmentImproved%20Adaptive%20Runge-Kutta%20integrator
+ *
+ * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
+ * but is nearly always faster due to the improved interpolation.
+ */
+int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
+                                    void *params,
+                                    REAL8 *yinit,
+                                    REAL8 tinit, REAL8 tend, REAL8 deltat,
+                                    REAL8Array **yout ) {
   int status;
   size_t dim, retries, i;
   int outputlen = 0, count = 0;
@@ -235,8 +258,10 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 
   XLAL_BEGINGSL;
 
-  /* We are starting a fresh integration; clear GSL step object. */
+  /* We are starting a fresh integration; clear GSL step and evolve
+     objects. */
   gsl_odeiv_step_reset(integrator->step);
+  gsl_odeiv_evolve_reset(integrator->evolve);
 
   /* Enter evolution loop.  NOTE: we *always* take at least one
      step. */
@@ -269,22 +294,24 @@ int XLALNewAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
       /* tintp = told + (t-told)*theta, 0 <= theta <= 1.  We have to
          compute h = (t-told) because the integrator returns a
          suggested next h, not the actual stepsize taken. */
-      REAL8 theta = (tintp - told)/(t-told);
+      REAL8 hUsed = t - told;
+      REAL8 theta = (tintp - told)/hUsed;
 
       /* These are the interpolating coefficients for y(t + h*theta) =
          ynew + i1*h*k1 + i5*h*k5 + i6*h*k6 + O(h^4). */
-      REAL8 i1 = 1.0/6.0*(theta - 1.0)*(theta - 1.0)*(4.0*theta - 1.0);
-      REAL8 i5 = 1.0/6.0*(theta - 1.0)*(1.0 + theta + 4.0*theta*theta);
-      REAL8 i6 = -2.0/3.0*(theta - 1.0)*(theta - 1.0)*(2.0*theta + 1.0);
+      REAL8 i0 = 1.0 + theta*theta*(3.0-4.0*theta);
+      REAL8 i1 = -theta*(theta-1.0);
+      REAL8 i6 = -4.0*theta*theta*(theta-1.0);
+      REAL8 iend = theta*theta*(4.0*theta - 3.0);
 
       /* Grab the k's from the integrator state. */
       rkf45_state_t *rkfState = integrator->step->state;
       REAL8 *k1 = rkfState->k1;
-      REAL8 *k5 = rkfState->k5;
       REAL8 *k6 = rkfState->k6;
+      REAL8 *y0 = rkfState->y0;      
 
       for (i = 0; i < dim; i++) {
-        ytemp[i] = yinit[i] + h*i1*k1[i] + h*i5*k5[i] + h*i6*k6[i];
+        ytemp[i] = i0*y0[i] + iend*yinit[i] + hUsed*i1*k1[i] + hUsed*i6*k6[i];
       }
 
       /* Store the interpolated value in the output array. */

@@ -30,8 +30,11 @@ import sys
 import math
 import os
 import numpy as np
+#import matplotlib
 
 from matplotlib import pyplot as plt
+from matplotlib import rc
+from matplotlib.mlab import specgram, find
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
@@ -62,7 +65,7 @@ SOL         = float('299792458.0')    # m/s
 MSUN        = float('1.989e+30')      # kg
 G           = float('6.673e-11')      # m^3/s^2/kg 
 C           = SOL
-KPC         = float('3.0856776e19')
+KPC         = float('3.0856776e19')   # kiloparsec in metres
 I38         = float('1e38')           # moment of inertia kg m^2 
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
@@ -388,14 +391,14 @@ class psr_prior:
 #(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-  hsd = math.sqrt((5./2.)*(G/C^3)*I38*math.abs(fdot)*freq)/(dist*KPC.)
+  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.abs(fdot)*freq)/(dist*KPC)
   
   return hsd
   
 # Function to convert a pulsar stain into ellipticity assuming the canonical
 # moment of inertia
 def h0_to_ellipticity(h0, freq, dist):
-  ell = h0*C^4*dist*KPC/(16.*math.pi^2*G*I38*freq^2)
+  ell = h0*C**4*dist*KPC/(16.*math.pi**2*G*I38*freq**2)
   
   return ell
 
@@ -449,8 +452,27 @@ def plot_posterior_hist(poslist, param, ifos,
   # create a list of upper limits
   ulvals = []
   
+  # set some matplotlib defaults
+  rc('text', usetex=True) # use LaTeX for all text
+  rc('axes', linewidth=0.5) # set axes linewidths to 0.5
+  rc('axes', grid=True) # add a grid
+  rc('grid', linewidth=0.5)
+  rc('font', family='serif')
+  rc('font', size=12)
+  
   # ifos line colour specs
   coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  
+  # some parameter names for special LaTeX treatment in figures
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
+               '$\psi~{\rm(rads)}$', 'PHI0': '$\phi_0~{\rm(rads)}$', 'RA':
+               '$\alpha$', 'DEC': '$\delta$'}
+ 
+  # param name for axis label
+  try:
+    paraxis = paramdict[param.upper()]
+  except:
+    paraxis = param
   
   # loop over ifos
   for idx, ifo in enumerate(ifos):
@@ -464,11 +486,11 @@ def plot_posterior_hist(poslist, param, ifos,
     n, bins = hist_norm_bounds( pos_samps, int(nbins), parambounds[0], \
                                 parambounds[1] )
     
-    #n, bins, patches = plt.hist( pos_samps, bins=int(nbins), normed='True', \
-    #                             histtype='step', color=coldict[ifo] )
-    
     # plot histogram
     plt.plot(bins, n, color=coldict[ifo])
+    plt.xlabel(r''+paraxis, fontsize=14, fontweight=100)
+    plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
+    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
     
     myfigs.append(myfig)
     
@@ -554,3 +576,166 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
     ns = np.append(ns, float(n[i])/area)
   
   return ns, bincentres
+
+# create a Tukey window of length N
+def tukey_window(N, alpha=0.5):
+  # if alpha >= 1 just return a Hanning window
+  if alpha >= 1:
+    return np.hanning(N)
+  
+  # get x values at which to calculate window
+  x = np.linspace(0, 1, N)
+  
+  # initial square window
+  win = np.ones(x.shape)
+
+  # get the left-hand side of the window  0 <= x < alpha/2  
+  lhs = x<alpha/2
+  win[lhs] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[lhs] - alpha/2) ))
+
+  # get right hand side condition 1 - alpha / 2 <= x <= 1
+  rhs = x>=(1 - alpha/2)
+  win[rhs] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[rhs] - 1 + alpha/2)))
+  
+  return win
+
+# create a function for plotting the absolute value of Bk data (read in from
+# data files) and an averaged 1 day amplitude spectral density spectrogram for
+# each IFO
+def plot_Bks_ASDs( Bkdata, ifos ):
+  # create list of figures
+  Bkfigs = []
+  psdfigs = []
+  
+  # ifos line colour specs
+  coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  
+  # set some matplotlib defaults
+  rc('text', usetex=True) # use LaTeX for all text
+  rc('axes', linewidth=0.5) # set axes linewidths to 0.5
+  rc('axes', grid=True) # add a grid
+  rc('grid', linewidth=0.5)
+  #rc('font', family='sans-serif')
+  #rc('font', family='monospace')
+  rc('font', family='serif')
+  rc('font', size=12)
+  
+  # there should be data for each ifo
+  for i, ifo in enumerate(ifos):
+    # get data for given ifo
+    try:
+      dfile = open(Bkdata[i])
+    except:
+      print "Could not open file ", Bkdata[i]
+      exit(-1)
+      
+    # should be three lines in file
+    gpstime = []
+    Bk = []
+      
+    Bkabs = [] # absolute Bk value
+      
+    # minimum time step between points (should generally be 60 seconds)
+    mindt = float("inf")
+      
+    for line in dfile.readlines():
+      sl = line.split()
+        
+      gpstime.append(float(sl[0]))
+      Bk.append(complex(float(sl[1]), float(sl[2])))
+        
+      # get absolute value
+      Bkabs.append(math.sqrt(Bk[-1].real**2 + Bk[-1].imag**2))
+        
+      # check time step
+      if len(gpstime) > 1:
+        dt = gpstime[-1] - gpstime[-2]
+          
+        if dt < mindt:
+          mindt = dt
+      
+    dfile.close()
+      
+    # plot the time series of the data
+    Bkfig = plt.figure(figsize=(10,4), dpi=200)
+    Bkfig.subplots_adjust(bottom=0.12, left=0.06, right=0.94)
+    
+    tms = map(lambda x: x-gpstime[0], gpstime)
+    
+    plt.plot(tms, Bkabs, '.', color=coldict[ifo])
+    plt.xlabel(r'GPS + ' + str(gpstime[0]), fontsize=14, fontweight=100)
+    plt.ylabel(r'$|B_k|$', fontsize=14, fontweight=100)
+    plt.title(r'$B_k$s for ' + ifo.upper(), fontsize=14)
+    plt.xlim(tms[0], tms[-1])
+    
+    Bkfigs.append(Bkfig)
+      
+    # create PSD by splitting data into days, padding with zeros to give a
+    # sample a second, getting the PSD for each day and combining them
+    totlen = gpstime[-1] - gpstime[0] # total data length
+      
+    # check mindt is an integer and greater than 1
+    if math.fmod(mindt, 1) != 0. or mindt < 1:
+      print "Error time steps between data points must be integers"
+      exit(-1)
+        
+    # loop over data, splitting it up
+    mr = int(math.ceil(totlen/86400))
+    
+    count = 0
+    npsds = 0
+    totalpsd = np.zeros(86400) # add sum of PSDs
+    for i in range(0, mr):
+      datachunk = np.zeros(86400, dtype=complex)
+       
+      gpsstart = int(gpstime[count])
+      
+      prevcount = count
+      
+      for gt in gpstime[count:-1]:
+        if gt >= gpsstart+86400:
+          break
+        else:
+          datachunk[gt-gpsstart] = Bk[count]
+          count += 1
+      
+      # only include the PSD if the chunk is more than 25% full of data
+      pf = float(count-prevcount)*mindt/86400.
+      
+      if pf > 0.25:
+        # get the PSD using a Tukey window with alpha = 0.25
+        win = tukey_window(86400, alpha=0.25)
+        
+        Fs = 1 # sample rate in Hz
+        
+        psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=Fs, window=win)
+      
+        # add psd onto total value
+        totalpsd = map(lambda x, y: x+y, totalpsd, psd)
+      
+        # count number of psds
+        npsds = npsds+1
+      
+    # average the PSD and convert to amplitude spectral density
+    totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
+    
+    # plot PSD
+    psdfig = plt.figure(figsize=(4,3.5), dpi=200)
+    psdfig.subplots_adjust(left=0.18, bottom=0.15)
+    
+    # get the indices to plot in the actual frequency range 
+    df = freqs[1]-freqs[0]
+    minfbin = int((math.fabs(freqs[0])-1./(2.*mindt))/df)
+    maxfbin = len(freqs) - minfbin
+    
+    plt.plot(freqs[minfbin:maxfbin], totalpsd[minfbin:maxfbin],
+             color=coldict[ifo])
+    plt.xlim(freqs[minfbin], freqs[maxfbin])
+    plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
+    plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
+    plt.title(r'ASD for ' + ifo.upper(), fontsize=14)
+    
+    psdfigs.append(psdfig)
+      
+  return Bkfigs, psdfigs
+  
