@@ -175,6 +175,8 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = SpinTaylorFrameless;}
 	  else if (strcmp(argv[i],"SpinTaylorT3")==0){
 	    params->approximant = SpinTaylorT3; }
+	  else if (strcmp(argv[i],"SpinTaylorT4")==0){
+	    params->approximant = SpinTaylorT4; }
 	  else if (strcmp(argv[i],"SpinQuadTaylor")==0){
 	    params->approximant = SpinQuadTaylor;}
 	  else if (strcmp(argv[i],"PhenSpinTaylorRDF")==0){
