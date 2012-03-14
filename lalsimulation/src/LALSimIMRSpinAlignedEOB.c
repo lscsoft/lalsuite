@@ -795,6 +795,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   XLALAdaptiveRungeKutta4Free( integrator );
   XLALDestroyREAL8Array( dynamics );
   XLALDestroyREAL8Array( dynamicsHi );
+  XLALDestroyREAL8Vector( sigReHi );
+  XLALDestroyREAL8Vector( sigImHi );
+  XLALDestroyREAL8Vector( omegaHi );
 
   return XLAL_SUCCESS;
 }
