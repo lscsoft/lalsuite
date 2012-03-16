@@ -390,6 +390,24 @@ XLALSimInspiralTaylorLength(
 /* Waveform switching functions */
 
 /**
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseTDWaveform().
+ *
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimInspiralImplementedTDApproximants(
+    Approximant approximant /**< post-Newtonian approximant for use in waveform production */
+    );
+
+/**
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseFDWaveform().
+ *
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimInspiralImplementedFDApproximants(
+    Approximant approximant /**< post-Newtonian approximant for use in waveform production */
+    );
+
+/**
  * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD
  *
  * Chooses between different approximants when requesting a waveform to be generated

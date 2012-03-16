@@ -1173,3 +1173,56 @@ int XLALSimInspiralChooseFDWaveform(
 
     return ret;
 }
+
+
+/**
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseTDWaveform().
+ * 
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimInspiralImplementedTDApproximants(
+    Approximant approximant /**< post-Newtonian approximant for use in waveform production */
+    )
+{
+    switch (approximant)
+    {
+        case TaylorEt:
+        case TaylorT1:
+        case TaylorT2:
+        case TaylorT3:
+        case TaylorT4:
+        case EOBNRv2:
+        case IMRPhenomA:
+        case EOBNRv2HM:
+        case SpinTaylorT4:
+        case IMRPhenomB:
+        case PhenSpinTaylorRD:
+        case SEOBNRv1:
+            return 1;
+
+        default:
+            return 0;
+    }
+}
+
+/**
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseFDWaveform().
+ *
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimInspiralImplementedFDApproximants(
+    Approximant approximant /**< post-Newtonian approximant for use in waveform production */
+    )
+{
+    switch (approximant)
+    {
+        case IMRPhenomA:
+        case IMRPhenomB:
+        case TaylorF2RedSpin:
+        case TaylorF2RedSpinTidal:
+            return 1;
+
+        default:
+            return 0;
+    }
+}
