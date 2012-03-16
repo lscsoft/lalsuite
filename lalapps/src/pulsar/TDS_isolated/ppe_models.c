@@ -806,7 +806,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
     /* create the complex signal amplitude model at 2f*/
     data->next->compModelData->data->data[i].re =
       (plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) ) +
-      cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
+      (cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi)) );
     
     data->next->compModelData->data->data[i].im =
       (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-

@@ -1760,7 +1760,7 @@ set.\n", propfile, tempPar);
     }
     
     /* if lambda is covering the range 0 to pi scale it, so that it covers
-    the 0 to 2pi range of a circular parameter */
+    the 0 to pi range of a circular parameter */
     if( !strcmp(tempPar, "lambda") ){
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
@@ -1837,7 +1837,8 @@ set.\n", propfile, tempPar);
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
      of their range the remove them and add the phi0' and psi' coordinates */
-  if( phidef && psidef ){
+  if( phidef && psidef && !LALInferenceCheckVariable(runState->currentParams,"lambda") && !LALInferenceCheckVariable(runState->currentParams,"theta")){
+		fprintf(stderr,"Do phi and psi transform\n");
     LALInferenceIFOData *datatemp = data;
     
     REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
