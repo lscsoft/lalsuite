@@ -390,12 +390,45 @@ XLALSimInspiralTaylorLength(
 /* Waveform switching functions */
 
 /**
- * Chooses between different approximants when requesting a waveform to be generated.
+ * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD
+ *
+ * Chooses between different approximants when requesting a waveform to be generated
+ * For spinning waveforms, all known spin effects up to given PN order are included
  *
  * The parameters passed must be in SI units.
- * The phi0 is the phase at a reference time. FIXME: this should be made consistent across waveforms.
  */
 int XLALSimInspiralChooseWaveform(
+    REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
+    REAL8 phi0,                                 /**< peak phase */
+    REAL8 deltaT,                               /**< sampling interval */
+    REAL8 m1,                                   /**< mass of companion 1 */
+    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< start frequency */
+    REAL8 r,                                    /**< distance of source */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    );
+
+/**
+ * Chooses between different approximants when requesting a waveform to be generated
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ * Returns the waveform in the time domain.
+ *
+ * The parameters passed must be in SI units.
+ */
+int XLALSimInspiralChooseTDWaveform(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
     REAL8 phi0,                 /**< reference phase */
@@ -422,30 +455,35 @@ int XLALSimInspiralChooseWaveform(
 
 /**
  * Chooses between different approximants when requesting a waveform to be generated
- * with Newtonian-only amplitude
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ * Returns the waveform in the frequency domain.
+ *
+ * The parameters passed must be in SI units.
  */
-int XLALSimInspiralChooseRestrictedWaveform(
-    REAL8TimeSeries **hplus,    /**< +-polarization waveform */
-    REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    REAL8 phi0,                 /**< reference phase */
-    REAL8 deltaT,               /**< sampling interval */
-    REAL8 m1,                   /**< mass of companion 1 */
-    REAL8 m2,                   /**< mass of companion 2 */
-    REAL8 s1x,                  /**< x-component of the dimensionless spin of object 1 */
-    REAL8 s1y,                  /**< y-component of the dimensionless spin of object 1 */
-    REAL8 s1z,                  /**< z-component of the dimensionless spin of object 1 */
-    REAL8 s2x,                  /**< x-component of the dimensionless spin of object 2 */
-    REAL8 s2y,                  /**< y-component of the dimensionless spin of object 2 */
-    REAL8 s2z,                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                /**< start frequency */
-    REAL8 r,                    /**< distance of source */
-    REAL8 i,                    /**< inclination of source (rad) */
-    REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2,              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+int XLALSimInspiralChooseFDWaveform(
+    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
+    REAL8 phi0,                                 /**< peak phase */
+    REAL8 deltaF,                               /**< sampling interval */
+    REAL8 m1,                                   /**< mass of companion 1 */
+    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_max,                                /**< end frequency */
+    REAL8 r,                                    /**< distance of source */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-    int O,                      /**< twice post-Newtonian order */
-    Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
+
 
 /* TaylorT4 functions */
 
