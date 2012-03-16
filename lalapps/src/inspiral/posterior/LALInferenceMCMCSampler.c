@@ -88,61 +88,91 @@ accumulateKDTreeSample(LALInferenceRunState *runState) {
   XLALFree(pt);
 }
 
+static void DEbuffer2array(LALInferenceRunState *runState, double** DEarray) {
+  LALInferenceVariableItem *ptr;
+  int i=0,p=0;
+
+  INT4 nPoints = runState->differentialPointsLength;
+
+  for (i=0; i < nPoints; i++) {
+    ptr=runState->differentialPoints[i]->head;
+    p=0;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        DEarray[i][p]=*(double *)ptr->value;
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+}
+
+static void
+array2DEbuffer(LALInferenceRunState *runState, double** DEarray) {
+  LALInferenceVariableItem *ptr;
+  int i=0,p=0;
+
+  INT4 nPoints = runState->differentialPointsLength;
+
+  for (i=0; i < nPoints; i++) {
+    ptr=runState->differentialPoints[i]->head;
+    p=0;
+    while(ptr!=NULL) {
+      if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
+        p++;
+      }
+      ptr=ptr->next;
+    }
+  }
+}
+
 static void
 BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, int sourceTemp) {
   int MPIrank;
-  double** packedDEpoints;
+  double** packedDEsamples;
   double*  temp;
-  LALInferenceVariableItem *ptr;
-  int i=0,p=0;
+  int i=0;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 nPoints = runState->differentialPointsLength;
 
   /* Prepare 2D array for DE points */
-  packedDEpoints = (double**) XLALMalloc(nPoints * sizeof(double*));
+  packedDEsamples = (double**) XLALMalloc(nPoints * sizeof(double*));
   temp = (double*) XLALMalloc(nPoints * nPar * sizeof(double));
   for (i=0; i < nPoints; i++) {
-    packedDEpoints[i] = temp + (i*nPar);
+    packedDEsamples[i] = temp + (i*nPar);
   }
 
   /* Pack it up */
-  if (MPIrank==sourceTemp) {
-    for (i=0; i < nPoints; i++) {
-      ptr=runState->differentialPoints[i]->head;
-      p=0;
-      while(ptr!=NULL) {
-        if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-          packedDEpoints[i][p]=*(double *)ptr->value;
-          p++;
-        }
-        ptr=ptr->next;
-      }
-    }
-  }
+  if (MPIrank == sourceTemp)
+    DEbuffer2array(runState, packedDEsamples);
 
   /* Send it out */
-  MPI_Bcast(packedDEpoints[0], nPoints*nPar, MPI_DOUBLE, sourceTemp, MPI_COMM_WORLD);
+  MPI_Bcast(packedDEsamples[0], nPoints*nPar, MPI_DOUBLE, sourceTemp, MPI_COMM_WORLD);
 
   /* Unpack it */
   if (MPIrank != sourceTemp) {
-    for (i=0; i < nPoints; i++) {
-      ptr=runState->differentialPoints[i]->head;
-      p=0;
-      while(ptr!=NULL) {
-        if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-          *((REAL8 *)ptr->value) = (REAL8)packedDEpoints[i][p];
-          p++;
-        }
-        ptr=ptr->next;
-      }
-    }
+    array2DEbuffer(runState, packedDEsamples);
   }
+
   /* Clean up */
   XLALFree(temp);
   MPI_Barrier(MPI_COMM_WORLD);
 }
+
+/*
+static void
+computeAutoCorrLen(LALInferenceRunState *runState, int* ACL) {
+  double** DEarray;
+
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  INT4 nPoints = runState->differentialPointsLength;
+
+  DEbuffer2array(runState, DEarray);
+}
+*/
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
