@@ -283,7 +283,36 @@ LALInspiralWave(
    ASSERT((UINT4)params->order < (UINT4)LAL_PNORDER_NUM_ORDER,
             status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
-   switch (params->approximant)
+   if ( XLALSimInspiralImplementedTDApproximants(params->approximant) )
+   {
+      REAL8TimeSeries *hplus = NULL;
+      REAL8TimeSeries *hcross = NULL;
+      unsigned int idx;
+
+      /* generate hplus and hcross */
+      if (XLALSimInspiralChooseWaveformFromInspiralTemplate(&hplus, &hcross, params) == XLAL_FAILURE)
+         ABORTXLAL(status);
+
+      /* check length of waveform compared to signalvec */
+      if (hplus->data->length > signalvec->length)
+      {
+         XLALDestroyREAL8TimeSeries(hplus);
+         XLALDestroyREAL8TimeSeries(hcross);
+         XLALPrintError("XLALSimInspiralChooseWaveformFromInspiralTemplate generated a waveform longer than output vector.\n");
+         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
+
+      /* convert REAL8 hplus and hcross waveforms to REAL4 and store them in waveform->h->data */
+      for(idx = 0; idx < signalvec->length && idx < hplus->data->length ; idx++)
+      {
+          signalvec->data[idx] = (REAL4) hplus->data->data[idx];
+      }
+
+      /* free hplus and hcross */
+      XLALDestroyREAL8TimeSeries(hplus);
+      XLALDestroyREAL8TimeSeries(hcross);
+   }
+   else switch (params->approximant)
    {
       case TaylorT1:
       case PadeT1:
@@ -411,7 +440,37 @@ LALInspiralWaveTemplates(
    ASSERT((UINT4)params->order < (UINT4)LAL_PNORDER_NUM_ORDER,
                status, LALINSPIRALH_EORDER, LALINSPIRALH_MSGEORDER);
 
-   switch (params->approximant)
+   if ( XLALSimInspiralImplementedTDApproximants(params->approximant) )
+   {
+      REAL8TimeSeries *hplus = NULL;
+      REAL8TimeSeries *hcross = NULL;
+      unsigned int idx;
+
+      /* generate hplus and hcross */
+      if (XLALSimInspiralChooseWaveformFromInspiralTemplate(&hplus, &hcross, params) == XLAL_FAILURE)
+         ABORTXLAL(status);
+
+      /* check length of waveform compared to signalvec */
+      if (hplus->data->length > signalvec1->length)
+      {
+         XLALDestroyREAL8TimeSeries(hplus);
+         XLALDestroyREAL8TimeSeries(hcross);
+         XLALPrintError("XLALSimInspiralChooseWaveformFromInspiralTemplate generated a waveform longer than output vector.\n");
+         ABORT(status, LALINSPIRALH_EVECTOR, LALINSPIRALH_MSGEVECTOR);
+      }
+
+      /* convert REAL8 hplus and hcross waveforms to REAL4 and store them in waveform->h->data */
+      for(idx = 0; idx < signalvec1->length; idx++)
+      {
+          signalvec1->data[idx] = (REAL4) hplus->data->data[idx];
+          signalvec2->data[idx] = (REAL4) hcross->data->data[idx];
+      }
+
+      /* free hplus and hcross */
+      XLALDestroyREAL8TimeSeries(hplus);
+      XLALDestroyREAL8TimeSeries(hcross);
+   }
+   else switch (params->approximant)
    {
       case TaylorT1:
       case PadeT1:
@@ -500,7 +559,58 @@ LALInspiralWaveForInjection(
    ASSERT (ppnParams,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
 
 
-   switch (inspiralParams->approximant)
+   if ( XLALSimInspiralImplementedTDApproximants(inspiralParams->approximant) )
+   {
+      REAL8TimeSeries *hplus = NULL;
+      REAL8TimeSeries *hcross = NULL;
+      unsigned int idx;
+
+      /* generate hplus and hcross */
+      if (XLALSimInspiralChooseWaveformFromInspiralTemplate(&hplus, &hcross, inspiralParams) == XLAL_FAILURE)
+        ABORTXLAL(status);
+
+      /* allocate the waveform data stucture h in the CoherentGW structure */
+      waveform->h = (REAL4TimeVectorSeries *) LALMalloc( sizeof(REAL4TimeVectorSeries) );
+      if ( waveform->h == NULL )
+      {
+         XLALDestroyREAL8TimeSeries(hplus);
+         XLALDestroyREAL8TimeSeries(hcross);   
+         ABORT(status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM);
+      }
+      memset( waveform->h, 0, sizeof(REAL4TimeVectorSeries) );
+
+      /* populate the waveform data stucture h in the CoherentGW structure */
+      waveform->h->data = XLALCreateREAL4VectorSequence(hplus->data->length, 2);
+      if (waveform->h == NULL)
+      {
+         CHAR warnMsg[1024];
+         XLALDestroyREAL8TimeSeries(hplus);
+         XLALDestroyREAL8TimeSeries(hcross);
+         LALFree(waveform->h);
+         snprintf( warnMsg, sizeof(warnMsg)/sizeof(*warnMsg),
+             "Memory allocation error when allocating CoherentGW REAL4VectorSequence.\n");
+         LALInfo( status, warnMsg );
+         ABORT( status, LALINSPIRALH_EMEM, LALINSPIRALH_MSGEMEM );
+      }
+      waveform->h->f0 = hplus->f0;
+      waveform->h->deltaT = hplus->deltaT;
+      waveform->h->epoch = hplus->epoch;
+      waveform->h->sampleUnits = hplus->sampleUnits;
+      waveform->position = ppnParams->position;
+      waveform->psi = ppnParams->psi;
+
+      /* convert REAL8 hplus and hcross waveforms to REAL4 and store them in waveform->h->data */
+      for(idx = 0; idx < waveform->h->data->length; idx++)
+      {
+         waveform->h->data->data[idx * 2] = (REAL4) hplus->data->data[idx];
+         waveform->h->data->data[idx * 2 + 1] = (REAL4) hcross->data->data[idx];
+      }
+
+      /* free hplus and hcross */
+      XLALDestroyREAL8TimeSeries(hplus);
+      XLALDestroyREAL8TimeSeries(hcross);
+   }
+   else switch (inspiralParams->approximant)
    {
       case TaylorT1:
       case PadeT1:
