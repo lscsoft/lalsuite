@@ -782,6 +782,36 @@ XLALInspiralInit(
 
 
 
+/**
+ * Generate the plus and cross polarizations for a waveform
+ * form a row of the sim_inspiral table.
+ *
+ * Parses a row from the sim_inspiral table and passes the appropriate members
+ * to XLALSimInspiralChooseWaveform().
+ *
+ * FIXME: this should eventually be moved to lalsimulation
+ * along with the appropriate string parsing functions
+ */
+int XLALSimInspiralChooseWaveformFromSimInspiral(
+    REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+    REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+    SimInspiralTable *thisRow,	/**< row from the sim_inspiral table containing waveform parameters */
+    REAL8 deltaT		/**< sampling interval */
+    );
+
+/**
+ * Generate the plus and cross polarizations for a waveform
+ * form a row of the InspiralTemplate structure.
+ *
+ * Parses the InspiralTemplate stucture and passes the appropriate members
+ * to XLALSimInspiralChooseWaveform().
+ */
+int XLALSimInspiralChooseWaveformFromInspiralTemplate(
+   REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+   REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+   InspiralTemplate *params	/**< stucture containing waveform parameters */
+   );
+
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 
 

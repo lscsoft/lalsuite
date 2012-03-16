@@ -73,7 +73,7 @@ typedef struct tagGSParams {
     REAL8 s1z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
     REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
     REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
-    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
+    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
     REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
   LALSimInspiralInteraction interactionFlags;    /**< flag to control spin and tidal effects */
