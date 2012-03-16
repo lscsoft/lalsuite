@@ -131,6 +131,12 @@ XLALGetApproximantFromString(
     );
 
 int
+XLALGetTaperFromString(
+    LALSimInspiralApplyTaper * restrict taper,
+    CHAR                     * restrict thisEvent
+    );
+
+int
 XLALGenerateInspiralPopulatePPN(
     PPNParamStruc    * restrict ppnParams,
     SimInspiralTable * restrict thisEvent

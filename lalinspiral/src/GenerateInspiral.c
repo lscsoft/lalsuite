@@ -506,6 +506,35 @@ XLALGetApproximantFromString(
 
 
 int
+XLALGetTaperFromString(
+    LALSimInspiralApplyTaper * restrict taper,
+    CHAR                     * restrict thisEvent
+    )
+{
+
+  if ( ! strcmp( "TAPER_START", thisEvent ) )
+  {
+    *taper = LAL_SIM_INSPIRAL_TAPER_START;
+  }
+  else if ( ! strcmp( "TAPER_END", thisEvent ) )
+  {
+    *taper = LAL_SIM_INSPIRAL_TAPER_END;
+  }
+  else if ( ! strcmp( "TAPER_STARTEND", thisEvent ) )
+  {
+    *taper = LAL_SIM_INSPIRAL_TAPER_STARTEND;
+  }
+  else
+  {
+    XLALPrintError( "Invalid injection tapering option specified: %s\n", thisEvent );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+
+  return XLAL_SUCCESS;
+}
+
+
+int
 XLALGenerateInspiralPopulatePPN(
     PPNParamStruc    * restrict ppnParams,
     SimInspiralTable * restrict thisEvent
