@@ -19,7 +19,7 @@ cfs_code="${builddir}lalapps_ComputeFStatistic"
 cfsv2_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
-SFTdir="./testSFTs"
+SFTdir="./testGridv2_sfts"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then

@@ -21,7 +21,7 @@ fi
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 
-SFTdir="TestSFTs"
+SFTdir="testCFSv2_singleF_sfts"
 SFTfiles="$SFTdir${dirsep}*"
 
 

@@ -11,7 +11,7 @@ mfd_code="${injectdir}lalapps_Makefakedata_v4"
 cfs_code="${builddir}lalapps_ComputeFStatistic_v2"
 cmp_code="${builddir}lalapps_compareFstats"
 
-SFTdir="./testSFTs"
+SFTdir="./testCFSv2GPU_sfts"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then
