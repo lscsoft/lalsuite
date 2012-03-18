@@ -1749,13 +1749,24 @@ set.\n", propfile, tempPar);
       }
     }
     
+    /* if psi is covering the range -pi/2 to pi/2 scale it, so that it covers
+       the 0 to 2pi range of a circular parameter */
+    if( !strcmp(tempPar, "psi") ){
+      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
+        scale = 0.5;
+        scaleMin = -LAL_PI/2.;
+        high = LAL_PI/2.;
+        psidef = 1;
+      }
+    }
+    
     /* if theta is covering the range 0 to pi scale it, so that it covers
     the 0 to 2pi range of a circular parameter */
     if( !strcmp(tempPar, "theta") ){
-      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
-        scale = 0.5;
-        scaleMin = 0;
-				high = LAL_PI;/* make sure range spans exactly pi*/
+      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
+        scale = 1.;
+        scaleMin = 0.;
+				high = 2.*LAL_PI;
       }
     }
     
@@ -1765,7 +1776,7 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = 0;
-				high = LAL_PI; /* make sure range spans exactly pi*/
+				high = LAL_PI;
       }
     }
     
@@ -1795,7 +1806,9 @@ set.\n", propfile, tempPar);
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "theta") && scale == 0.5 ) 
+		else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
+    else if ( !strcmp(tempPar, "theta") && scale == 1.0 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
       varyType = LALINFERENCE_PARAM_CIRCULAR;
