@@ -862,6 +862,10 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 
   memset(LALSignal->data,0,LALSignal->length*sizeof(LALSignal->data[0]));
 
+  
+  if (params.fCutoff >= 0.5*params.tSampling)
+    params.fCutoff = 0.5*params.tSampling - 0.5*IFOdata->freqData->deltaF; //should not be needed.
+  
 	// lal_errhandler = LAL_ERR_RTRN;
     // REPORTSTATUS(&status); 
   LALInspiralWave(&status, LALSignal, &params);
