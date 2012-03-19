@@ -88,13 +88,18 @@ accumulateKDTreeSample(LALInferenceRunState *runState) {
   XLALFree(pt);
 }
 
-static void DEbuffer2array(LALInferenceRunState *runState, REAL8** DEarray) {
+static void DEbuffer2array(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {
   LALInferenceVariableItem *ptr;
   INT4 i=0,p=0;
 
-  INT4 nPoints = runState->differentialPointsLength;
+  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+  INT4 totalPoints = runState->differentialPointsLength;
+  INT4 start = (REAL8)startCycle/(REAL8)Nskip;
+  INT4 end = (REAL8)endCycle/(REAL8)Nskip;
+  if (end > totalPoints)
+    end = totalPoints;
 
-  for (i=0; i < nPoints; i++) {
+  for (i=start; i < end; i++) {
     ptr=runState->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
@@ -108,13 +113,18 @@ static void DEbuffer2array(LALInferenceRunState *runState, REAL8** DEarray) {
 }
 
 static void
-array2DEbuffer(LALInferenceRunState *runState, REAL8** DEarray) {
+array2DEbuffer(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {
   LALInferenceVariableItem *ptr;
   INT4 i=0,p=0;
 
-  INT4 nPoints = runState->differentialPointsLength;
+  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+  INT4 totalPoints = runState->differentialPointsLength;
+  INT4 start = (REAL8)startCycle/(REAL8)Nskip;
+  INT4 end = (REAL8)endCycle/(REAL8)Nskip;
+  if (end > totalPoints)
+    end = totalPoints;
 
-  for (i=0; i < nPoints; i++) {
+  for (i=start; i < end; i++) {
     ptr=runState->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
@@ -136,7 +146,9 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   INT4 nPoints = runState->differentialPointsLength;
+  INT4 startCycle=0, endCycle=nPoints*Nskip;
 
   /* Prepare 2D array for DE points */
   packedDEsamples = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
@@ -147,14 +159,14 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
   /* Pack it up */
   if (MPIrank == sourceTemp)
-    DEbuffer2array(runState, packedDEsamples);
+    DEbuffer2array(runState, startCycle, endCycle, packedDEsamples);
 
   /* Send it out */
   MPI_Bcast(packedDEsamples[0], nPoints*nPar, MPI_DOUBLE, sourceTemp, MPI_COMM_WORLD);
 
   /* Unpack it */
   if (MPIrank != sourceTemp) {
-    array2DEbuffer(runState, packedDEsamples);
+    array2DEbuffer(runState, startCycle, endCycle, packedDEsamples);
   }
 
   /* Clean up */
@@ -163,10 +175,15 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 }
 
 static void
-computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL) {
+computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, INT4* maxACL) {
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  INT4 nPoints = runState->differentialPointsLength;
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
+  INT4 totalPoints = runState->differentialPointsLength;
+  INT4 start = (REAL8)startCycle/(REAL8)Nskip;
+  INT4 end = (REAL8)endCycle/(REAL8)Nskip;
+  if (end > totalPoints)
+    end = totalPoints;
+  INT4 nPoints = end - start;
   REAL8** DEarray;
   REAL8*  temp;
   REAL8 mean, ACL, max=0;
@@ -179,7 +196,7 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4* maxACL) {
     DEarray[i] = temp + (i*nPar);
   }
 
-  DEbuffer2array(runState, DEarray);
+  DEbuffer2array(runState, 0, nPoints*Nskip, DEarray);
 
   for (par=0; par<nPar; par++) {
     ACL=0;
@@ -206,7 +223,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 acceptanceCount = 0;
   INT4 swapAttempt=0;
   REAL8 nullLikelihood;
-  INT4 maxACL=0;
+  INT4 PTacl=0;
   REAL8 trigSNR = 0.0;
   REAL8 *tempLadder = NULL;			//the temperature ladder
   REAL8 *annealDecay = NULL;
@@ -563,6 +580,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (annealingOn) {
       /* Annealing */
       if (i == annealStart) {
+        if (MPIrank==0)
+          computeMaxAutoCorrLen(runState, adaptStart, i, &PTacl);
         runState->proposal = &LALInferencePostPTProposal;
         if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
           BcastDifferentialEvolutionPoints(runState, 0);
