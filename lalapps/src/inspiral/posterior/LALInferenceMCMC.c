@@ -650,9 +650,9 @@ void initVariables(LALInferenceRunState *state)
       {
         approx = SpinTaylor;
       }
-    else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
+    else if ( ! strcmp( "SpinTaylorT4", ppt->value ) )
       {
-        approx = SpinTaylorT3;
+        approx = SpinTaylorT4;
       }
     else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
       {
@@ -684,7 +684,7 @@ void initVariables(LALInferenceRunState *state)
                  "unknown approximant %s specified: "
                  "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
                  "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-                 "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
+                 "EOBNRv2HM, SpinTaylor, SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4\n"
                  "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
         exit( 1 );
       }
