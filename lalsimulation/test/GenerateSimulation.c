@@ -501,12 +501,13 @@ int main (int argc , char **argv) {
                     E1y = 0.;
                     E1z = - sin(params->inclination);
                     XLALSimInspiralSpinTaylorT4(&hplus, &hcross,
-                            params->phiRef, 0., params->deltaT, params->m1, 
-                            params->m2, params->fRef, params->distance, 
-                            params->s1x, params->s1y, params->s1z, params->s2x,
-                            params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
-							E1x, E1y, E1z, params->lambda1, params->lambda2, 
-							params->interactionFlags, params->phaseO, params->ampO);
+                        params->phiRef, 0., params->deltaT, params->m1, 
+                        params->m2, params->fRef, params->distance, 
+                        params->s1x, params->s1y, params->s1z, params->s2x,
+                        params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
+                        E1x, E1y, E1z, params->lambda1, params->lambda2, 
+                        params->interactionFlags, params->phaseO, params->ampO);
+                    break;
 	    case GSApproximant_PhenSpinTaylorRD:
 	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice);
                     break;

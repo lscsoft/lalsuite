@@ -996,7 +996,7 @@ int XLALSimInspiralChooseWaveform(
 {
     XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", "XLALSimInspiralChooseTDWaveform");
 
-    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, phaseO, amplitudeO, approximant);
+    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, phaseO, approximant);
 }
 
 /**
