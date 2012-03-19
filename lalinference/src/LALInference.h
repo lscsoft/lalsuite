@@ -79,6 +79,7 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_statistics.h>
 #include <sys/time.h>
 
 //...other includes
