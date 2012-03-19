@@ -1177,7 +1177,7 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
-  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD) && !ppt){
+  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD || approx==SpinTaylorT4) && !ppt){
 
 
     ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
