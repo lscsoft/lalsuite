@@ -19,7 +19,6 @@
 
 /*----------------------------------- <lalVerbatim file="SegmentsIOTestCV">
  * Author: Peter Shawhan
- * Revision: $Id$
  *----------------------------------- </lalVerbatim> */
 
 #if 0
@@ -77,8 +76,6 @@ LALSegListWrite()
 
 #include <lal/LALStatusMacros.h>
 #include <lal/SegmentsIO.h>
-
-NRCSID( SEGMENTSIOTESTC, "$Id$" );
 
 /*-- Macros for this test program --*/
 

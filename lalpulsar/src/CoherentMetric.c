@@ -25,8 +25,6 @@
 #include<lal/SeqFactories.h>
 #include<lal/StackMetric.h>
 
-NRCSID(COHERENTMETRICC,"$Id$");
-
 #define COHERENTMETRICC_NPTS 100000	/** Number of points to average per time interval. */
 
 
@@ -170,7 +168,7 @@ LALCoherentMetric( LALStatus        *stat,
   CreateVectorSequenceIn in; /* Input structure. */
   PulsarTimesParamStruc *constants; /* Timing constants. */
 
-  INITSTATUS(stat,"LALCoherentMetric",COHERENTMETRICC);
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR(stat);
 
   /* Make sure parameter structures and their fields exist. */

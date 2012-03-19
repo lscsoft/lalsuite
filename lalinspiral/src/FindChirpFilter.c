@@ -58,6 +58,7 @@ and \f$\phi(t)\f$ is the phase evolution of the inspiral waveform.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -77,10 +78,6 @@ extern int vrbflg;                      /* verbocity of lal function    */
 #else
 #define UNUSED
 #endif
-
-NRCSID (FINDCHIRPFILTERC, "$Id$");
-
-
 
 void
 LALFindChirpFilterSegment (
@@ -106,7 +103,7 @@ LALFindChirpFilterSegment (
   COMPLEX8             *tmpltSignal   = NULL;
   /*SnglInspiralTable    *thisEvent     = NULL;*/
 
-  INITSTATUS( status, "LALFindChirpFilter", FINDCHIRPFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

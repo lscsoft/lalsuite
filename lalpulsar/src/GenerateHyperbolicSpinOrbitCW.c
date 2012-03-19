@@ -67,7 +67,7 @@ angular speed for closed orbits).  For simplicity we write this as:
 t_r = T_p + \frac{1}{n}\left( E + A\sinh E + B[\cosh E - 1] \right) \;,
 \f}
 
-\wrapfig{r,0.23\textwidth,fig_binary-orbit_hyp}
+\wrapfig{r,0.23\textwidth,fig_binary_orbit_hyp}
 \image html  inject_hanomaly.png "Fig. [fig_binary_orbit_hyp]: Function to be inverted to find eccentric anomaly"
 \image latex inject_hanomaly.pdf "Function to be inverted to find eccentric anomaly" width=0.23\textwidth
 
@@ -156,9 +156,6 @@ snprintf()                 LALWarning()
 #include <lal/SimulateCoherentGW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-NRCSID( GENERATEHYPERBOLICSPINORBITCWC, "$Id$" );
-
-
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 				  CoherentGW            *output,
@@ -189,8 +186,7 @@ LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
   REAL4 *fData;                  /* pointer to frequency data */
   REAL8 *phiData;                /* pointer to phase data */
 
-  INITSTATUS( stat, "LALGenerateHyperbolicSpinOrbitCW",
-	      GENERATEHYPERBOLICSPINORBITCWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */

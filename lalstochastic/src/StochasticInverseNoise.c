@@ -90,6 +90,7 @@ strncpy()
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/Units.h>
@@ -103,7 +104,6 @@ strncpy()
 #define wNoise input->unCalibratedNoisePSD
 #define wFilter input->responseFunction
 
-NRCSID(STOCHASTICINVERSENOISEC, "$Id$");
 /** \endcond */
 
 void
@@ -126,7 +126,7 @@ LALStochasticInverseNoiseCal(
   COMPLEX8FrequencySeries *hcInvNoise;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticInverseNoiseCal", STOCHASTICINVERSENOISEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /*****************************************************************
@@ -326,7 +326,7 @@ LALStochasticInverseNoise(
   LALUnit wInvNoiseUnits;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALStochasticInverseNoise", STOCHASTICINVERSENOISEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /*****************************************************************

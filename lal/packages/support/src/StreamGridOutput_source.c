@@ -14,7 +14,7 @@ FUNC ( LALStatus *stat, FILE *stream, GTYPE *grid )
   UINT4 pLength, np;  /* length and number of data ``paragraphs'' */
   TYPE *data;         /* pointer to grid->data->data */
 
-  INITSTATUS( stat, STRING(FUNC), STREAMGRIDOUTPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

@@ -4,8 +4,6 @@
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
 
-NRCSID (LALSTPNWAVEFORMFRAMELESSC, "$Id$");
-
 typedef struct LALSTPNstructparams {
 	REAL8 eta, m1m2, m2m1;
 	REAL8 wdotnew, wdotorb[9], wspin15, wspin20;
@@ -310,7 +308,7 @@ void LALSTPNFramelessWaveform(LALStatus *status, REAL4Vector *signalvec,
 {
   XLALPrintDeprecationWarning("LALSTPNFramelessWaveform",
       "XLALSTPNFramelessWaveform");
-  INITSTATUS(status, "LALSTPNFramelessWaveform", LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessWaveform(signalvec, params) )
@@ -353,8 +351,7 @@ void LALSTPNFramelessWaveformTemplates(LALStatus *status,
 {
   XLALPrintDeprecationWarning("LALSTPNFramelessWaveformTemplates",
       "XLALSTPNFramelessWaveformTemplates");
-  INITSTATUS(status, "LALSTPNFramelessWaveformTemplates", 
-      LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessWaveformTemplates(signalvec1, signalvec2, params) )
@@ -396,15 +393,12 @@ int XLALSTPNFramelessWaveformTemplates(REAL4Vector *signalvec1,
   return XLAL_SUCCESS;
 }
 
-/* NRCSID (LALSTPNWAVEFORMFRAMELESSFORINJECTIONC,"$Id$"); */
-
 void LALSTPNFramelessWaveformForInjection(LALStatus *status, 
     CoherentGW *waveform, InspiralTemplate *params, PPNParamStruc *ppnParams)
 {
   XLALPrintDeprecationWarning("LALSTPNFramelessWaveformForInjection",
       "XLALSTPNFramelessWaveformForInjection");
-  INITSTATUS(status, "LALSTPNFramelessWaveformForInjection", 
-      LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessWaveformForInjection(waveform, params, ppnParams) )
@@ -534,8 +528,7 @@ void LALSTPNFramelessAdaptiveWaveformEngine( LALStatus *status,
   XLALPrintDeprecationWarning("LALSTPNFramelessAdaptiveWaveformEngine",
       "XLALSTPNFramelessAdaptiveWaveformEngine");
 
-  INITSTATUS(status, "LALSTPNFramelessWaveformForInjection", 
-      LALSTPNWAVEFORMFRAMELESSC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALSTPNFramelessAdaptiveWaveformEngine(signalvec1, signalvec2, 

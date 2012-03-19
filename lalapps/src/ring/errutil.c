@@ -26,9 +26,6 @@
 #include "lalapps.h"
 #include "errutil.h"
 
-RCSID( "$Id$" );
-
-
 /* global flag to abort on error (rather than just exit) */
 int abrtflg;
 

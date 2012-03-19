@@ -20,7 +20,6 @@
 #if 0 /* autodoc block */
 
 <lalVerbatim file="IntegrateTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -89,9 +88,6 @@ Options:
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
 
-NRCSID (MAIN, "$Id$");
-
-
 /*
  *
  * These functions are used as integrands for the test integrations.
@@ -104,7 +100,7 @@ static void f1 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
   REAL4  x2 = x*x;
   REAL4  x4 = x2*x2;
   INT4  *n;
-  INITSTATUS (s, "f1", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = x4*log(x + sqrt(x2 + 1));
@@ -116,7 +112,7 @@ static void ff1 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
   REAL8  x2 = x*x;
   REAL8  x4 = x2*x2;
   INT4  *n;
-  INITSTATUS (s, "ff1", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = x4*log(x + sqrt(x2 + 1));
@@ -139,7 +135,7 @@ static REAL8 xff1 (REAL8 x, void *p)
 static void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "f2", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/(x*x*x);
@@ -149,7 +145,7 @@ static void f2 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 static void ff2 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "ff2", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/(x*x*x);
@@ -170,7 +166,7 @@ static REAL8 xff2 (REAL8 x, void *p)
 static void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "f3", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = exp(-x*x/2);
@@ -180,7 +176,7 @@ static void f3 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 static void ff3 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "ff3", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = exp(-x*x/2);
@@ -201,7 +197,7 @@ static REAL8 xff3 (REAL8 x, void *p)
 static void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "f4", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/sqrt(x);
@@ -211,7 +207,7 @@ static void f4 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 static void ff4 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "ff4", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = 1/sqrt(x);
@@ -232,7 +228,7 @@ static REAL8 xff4 (REAL8 x, void *p)
 static void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "f5", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = x + 1/sqrt(5 - x);
@@ -242,7 +238,7 @@ static void f5 (LALStatus *s, REAL4 *y, REAL4 x, void *p)
 static void ff5 (LALStatus *s, REAL8 *y, REAL8 x, void *p)
 {
   INT4 *n;
-  INITSTATUS (s, "ff5", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   ++(*(n = (INT4 *)p));
   *y = x + 1/sqrt(5 - x);
@@ -263,7 +259,7 @@ static REAL8 xff5 (REAL8 x, void *p)
 static void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
 {
   REAL4 y;
-  INITSTATUS (s, "g", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   y  = *((REAL4 *)p);
   *z = exp(-(x*x + y*y)/2);
@@ -273,7 +269,7 @@ static void g (LALStatus *s, REAL4 *z, REAL4 x, void *p)
 static void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
 {
   REAL8 y;
-  INITSTATUS (s, "gg", MAIN);
+  INITSTATUS(s);
   ASSERT (p, s, 1, "Null pointer");
   y  = *((REAL8 *)p);
   *z = exp(-(x*x + y*y)/2);
@@ -283,7 +279,7 @@ static void gg (LALStatus *s, REAL8 *z, REAL8 x, void *p)
 static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
 {
   SIntegrateIn intinp;
-  INITSTATUS (s, "h", MAIN);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   if ( p )
     ABORT ( s, 2, "Non-null pointer");
@@ -301,7 +297,7 @@ static void h (LALStatus *s, REAL4 *z, REAL4 y, void *p)
 static void hh (LALStatus *s, REAL8 *z, REAL8 y, void *p)
 {
   DIntegrateIn intinp;
-  INITSTATUS (s, "hh", MAIN);
+  INITSTATUS(s);
   ATTATCHSTATUSPTR (s);
   if ( p )
     ABORT ( s, 2, "Non-null pointer");

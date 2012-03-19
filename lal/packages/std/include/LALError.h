@@ -18,7 +18,6 @@
 */
 
 /************************************ <lalVerbatim file="LALErrorHV">
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -51,9 +50,6 @@ that allow functions to abort.
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID( LALERRORH, "$Id$" );
 
 /* lalDebugLevel bit field values: */
 enum
@@ -129,11 +125,15 @@ int
 LALCheckStatusPtr( LALStatus *status, const char *statement, const char *file,
                    const int line );
 
+#ifdef NOLALMACROS
+
 void
 FREESTATUSPTR( LALStatus *status );
 
 void
 REPORTSTATUS( LALStatus *status );
+
+#endif
 
 #ifdef NDEBUG
 

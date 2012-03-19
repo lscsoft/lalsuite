@@ -27,13 +27,12 @@
  */
 
 /* ---------- includes ---------- */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include "sft_extra.h"
-
-RCSID ("$Id$");
 
 /** \name Error codes */
 /*@{*/
@@ -172,7 +171,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *stat)
 {
-  INITSTATUS( stat, "initUserVars", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
 
   /* now register all our user-variable */

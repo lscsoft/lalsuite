@@ -45,9 +45,6 @@ LALInspiralWaveCorrelate()
 */
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALFINDEVENTSC, "$Id$");
-
-
 void
 LALInspiralFindLoudestEvent
    (
@@ -99,7 +96,7 @@ LALInspiralFindLoudestEvent
    InspiralChisqParams chisqParams;
    InspiralWaveNormaliseIn normin;
 
-   INITSTATUS (status, "LALInspiralFindLoudestEvent", LALINSPIRALFINDEVENTSC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (findeventsin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

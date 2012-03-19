@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., BCV-Modifications by Messaritaki E.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -46,10 +45,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/FindChirpACTD.h>
 
-NRCSID (FINDCHIRPFILTERINITC, "$Id$");
-
-
-
 void
 LALCreateFindChirpInput (
     LALStatus                  *status,
@@ -60,7 +55,7 @@ LALCreateFindChirpInput (
 {
   FindChirpFilterInput         *outputPtr;
 
-  INITSTATUS( status, "LALCreateFindChirpFilterInput", FINDCHIRPFILTERINITC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -240,7 +235,7 @@ LALDestroyFindChirpInput (
 {
   FindChirpFilterInput         *outputPtr;
 
-  INITSTATUS( status, "LALDestroyFindChirpFilterInput", FINDCHIRPFILTERINITC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -342,7 +337,7 @@ LALFindChirpFilterInit (
 {
   FindChirpFilterParams        *outputPtr;
 
-  INITSTATUS( status, "LALFindChirpFilterInit", FINDCHIRPFILTERINITC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -1011,7 +1006,7 @@ LALFindChirpFilterFinalize (
   FindChirpFilterParams        *outputPtr;
   /*UINT4 i,j;*/
 
-  INITSTATUS( status, "LALFindChirpFilterFinalize", FINDCHIRPFILTERINITC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

@@ -24,7 +24,6 @@
  * \file
  * \brief Header file for DriveHoughFStat.c 
  * \author Badri Krishnan, Alicia Sintes
- * \date $Date$
  * 
  ****/
 
@@ -79,12 +78,6 @@
 extern "C" {
 #endif
 
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID( HIERARCHICALSEARCHH, "$Id$" );
 
 /******************************************************
  *  Error codes and messages.

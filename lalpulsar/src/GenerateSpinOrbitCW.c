@@ -108,8 +108,6 @@ LALGenerateTaylorCW()
 #include <lal/GenerateTaylorCW.h>
 #include <lal/GenerateSpinOrbitCW.h>
 
-NRCSID( GENERATESPINORBITCWC, "$Id$" );
-
 /* First, define a function to compute C(a,b) = (a!)/[(b!)*(a-b)!] */
 static UINT4
 choose( UINT4 a, UINT4 b );
@@ -134,7 +132,7 @@ LALGenerateSpinOrbitCW( LALStatus             *stat,
 			SpinOrbitCWParamStruc *params )
 {
 
-  INITSTATUS( stat, "LALGenerateSpinOrbitCW", GENERATESPINORBITCWC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter structure exists (output structure will be

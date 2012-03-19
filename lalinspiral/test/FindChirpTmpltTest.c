@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -31,8 +30,6 @@
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/FindChirpEngine.h>
-
-NRCSID (MAIN, "$Id$");
 
 extern int lalDebugLevel;
 
@@ -199,7 +196,7 @@ PrintInspiralBank (
 {
   InspiralTemplate    *current;
 
-  INITSTATUS( status, "PrintInspiralBank", MAIN );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( head, status, 1, "Null Pointer" );

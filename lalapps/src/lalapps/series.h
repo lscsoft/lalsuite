@@ -26,8 +26,6 @@
 extern "C" {
 #endif
 
-NRCSID( SERIESH, "$Id$" );
-
 typedef enum { Time, Freq, Trans } domain;
 
 #define IS_TIME( domain_ ) ( domain_ == Time )

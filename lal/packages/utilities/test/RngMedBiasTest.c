@@ -22,7 +22,6 @@
  * File Name: RngMedBiasTest.c
  * Authors: Krishnan, B., Itoh, Y.,
  *
- * Revision: $Id$
  *
  * History:   Created by Krishnan Mar 2, 2004
  *            Modified...
@@ -31,7 +30,6 @@
  */
 /************************************ <lalVerbatim file="RngMedBiasTestCV">
 Author: Krishnan, B. and Itoh, Y.
-$Id$
 ************************************* </lalVerbatim> */
 
 /* <lalLaTeX>  *******************************************************
@@ -40,8 +38,6 @@ $Id$
 
 
 #include <lal/RngMedBias.h>
-
-NRCSID (RNGMEDBIASTESTC, "$Id$");
 
 /* Error codes and messages */
 
@@ -77,7 +73,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALERROR )                                    \
     LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n" \
                    "        %s %s\n", (code), *argv, __FILE__,       \
-              __LINE__, RNGMEDBIASTESTC, statement ? statement :  \
+              __LINE__, "$Id$", statement ? statement :  \
                    "", (msg) );                                      \
 } while (0)
 
@@ -86,7 +82,7 @@ do {                                                                 \
   if ( lalDebugLevel & LALINFO )                                     \
     LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"     \
                    "        %s\n", *argv, __FILE__, __LINE__,        \
-              RNGMEDBIASTESTC, (statement) );                     \
+              "$Id$", (statement) );                     \
 } while (0)
 
 #define SUB( func, statusptr )                                       \

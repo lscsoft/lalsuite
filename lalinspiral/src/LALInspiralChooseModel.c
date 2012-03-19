@@ -94,9 +94,6 @@ Spinning waveforms are only defined at the highest PN order.</li>
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALCHOOSEMODELC, "$Id$");
-
-
 static REAL8 dEt0(REAL8 v, expnCoeffs *ak)
 {
    REAL8 dEnergy;
@@ -490,7 +487,7 @@ LALInspiralChooseModel(
 {
    XLALPrintDeprecationWarning("LALInspiralChooseModel", "XLALInspiralChooseModel");
 
-   INITSTATUS (status, "LALInspiralChooseModel", LALINSPIRALCHOOSEMODELC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if (XLALInspiralChooseModel(f, ak, params))

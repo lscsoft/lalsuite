@@ -58,6 +58,7 @@ LALDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -70,9 +71,6 @@ LALDestroyVector()
 #else
 #define UNUSED
 #endif
-
-NRCSID (FINDCHIRPBCVSPINDATAC, "$Id$");
-
 
 void
 LALFindChirpBCVSpinData (
@@ -116,7 +114,7 @@ LALFindChirpBCVSpinData (
 
 
   /*declaration*/
-  INITSTATUS( status, "LALFindChirpBCVSpinData", FINDCHIRPBCVSPINDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the output exists */

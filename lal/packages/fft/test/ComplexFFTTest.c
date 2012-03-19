@@ -62,6 +62,7 @@
 #include <getopt.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
@@ -69,8 +70,6 @@
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
-
-NRCSID( MAIN, "$Id$" );
 
 extern char *optarg;
 extern int   optind;

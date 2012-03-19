@@ -45,9 +45,6 @@ LALInspiralWaveLength
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (INSPIRALSEARCHC, "$Id$");
-
-
 void
 LALInspiralLongestTemplateInBank
    (
@@ -58,7 +55,7 @@ LALInspiralLongestTemplateInBank
 {
 
    InspiralTemplate param;
-   INITSTATUS (status, "LALInspiralLongestTemplateInBank", INSPIRALSEARCHC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (coarseIn,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    param.startTime = 0.0;

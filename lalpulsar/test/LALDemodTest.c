@@ -233,7 +233,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,		\
-		 __LINE__, LALDEMODTESTC, statement ? statement : "",\
+		 __LINE__, "$Id$", statement ? statement : "",\
 		 (msg) );                                            \
 }                                                                    \
 else (void)(0)
@@ -253,8 +253,6 @@ static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 static void times(REAL8 , INT4, LIGOTimeGPS *, INT4 );
 
 static void times2(REAL8 tSFT, INT4 howMany, LIGOTimeGPS **ts, INT4 **sftPerCoh, INT4 sw, INT4 mCohSFT);
-
-NRCSID(LALDEMODTESTC, "$Id$");
 
 extern int lalDebugLevel;
 

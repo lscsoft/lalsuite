@@ -108,8 +108,6 @@ AlignmentType;
 extern "C" {
 #endif
 
-NRCSID( NRWAVEIOC, "$Id$");
-
 SimInspiralTable* XLALRandomInspiralTime( SimInspiralTable *inj,
   RandomParams *randParams,
   LIGOTimeGPS startTime,

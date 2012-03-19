@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $Id$
 #
 # First written by Philip Charlton, 2003.
 #

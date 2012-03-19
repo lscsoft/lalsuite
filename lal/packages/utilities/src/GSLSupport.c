@@ -31,14 +31,11 @@
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_math.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
 #include <lal/GSLSupport.h>
-
-NRCSID(GSLSUPPORTC, "$Id$");
 
 /**
  * Convert variable argument list to a gsl_vector

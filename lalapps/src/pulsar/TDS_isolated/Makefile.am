@@ -38,14 +38,20 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_testing.c \
 	ppe_testing.h
 
+if HAVE_PYTHON
+pkgpython_DATA = \
+	pulsarpputils.py
+endif
+
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
 	make_frame_cache H1response.txt \
-	H-CW_Injection-875206560-120.gwf
+	H-CW_Injection-875206560-120.gwf \
+	pulsarpputils.py
 
-TESTS_ENVIRONMENT = \
+TESTS_ENVIRONMENT = >&/dev/null \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LALSUITE_DATA_PATH=.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+LALSUITE_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

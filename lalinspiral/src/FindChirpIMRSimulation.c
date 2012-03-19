@@ -49,6 +49,7 @@ LALFree()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -69,10 +70,6 @@ LALFree()
 #include <lal/GenerateInspiral.h>
 #include <lal/GenerateInspRing.h>
 #include <lal/TimeSeries.h>
-
-
-NRCSID( FINDCHIRPIMRSIMULATIONC, "$Id$" );
-
 
 void
 LALFindChirpInjectIMR (
@@ -100,7 +97,7 @@ LALFindChirpInjectIMR (
   UINT4 i;
 #endif
 
-  INITSTATUS( status, "LALFindChirpInjectIMR", FINDCHIRPIMRSIMULATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( chan, status,

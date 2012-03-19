@@ -71,11 +71,11 @@ rotation.
 
 \heading{Orbital motion}
 
-\wrapfig{r,0.52\textwidth,fig_binary-orbit}
-\image html  inject_binary.png "Fig.[fig_binary-orbit]: Binary orbit orientation parameters"
+\wrapfig{r,0.52\textwidth,fig_binary_orbit}
+\image html  inject_binary.png "Fig.[fig_binary_orbit]: Binary orbit orientation parameters"
 \image latex inject_binary.pdf "Binary orbit orientation parameters" width=0.47\textwidth
 
-Fig.\figref{fig_binary-orbit} illustrates the notation conventions
+Fig.\figref{fig_binary_orbit} illustrates the notation conventions
 defining a binary orbit.  We define a radial axis \f$R\f$ directed
 \e from the observer (Earth) \e to the source, as shown.  The
 horizontal plane is thus the plane of the sky, and the direction
@@ -307,8 +307,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID( GENERATESPINORBITCWH, "$Id$" );
 
 /**
  \name Error Codes */ /*@{*/

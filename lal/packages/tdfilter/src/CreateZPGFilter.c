@@ -19,7 +19,6 @@
 
 /****************************** <lalVerbatim file="CreateZPGFilterCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -63,9 +62,6 @@ LALZCreateVector()              LALZDestroyVector()
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ZPGFilter.h>
-
-NRCSID(CREATEZPGFILTERC,"$Id$");
-
 
 COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter( INT4 numZeros, INT4 numPoles )
 {
@@ -130,7 +126,7 @@ LALCreateCOMPLEX8ZPGFilter( LALStatus         *stat,
 			    INT4              numZeros,
 			    INT4              numPoles )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALCreateCOMPLEX8ZPGFilter",CREATEZPGFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure that the output handle exists, but points to a null
      pointer. */
@@ -160,7 +156,7 @@ LALCreateCOMPLEX16ZPGFilter( LALStatus          *stat,
 			     INT4               numZeros,
 			     INT4               numPoles )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALCreateCOMPLEX16ZPGFilter",CREATEZPGFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure that the output handle exists, but points to a null
      pointer. */

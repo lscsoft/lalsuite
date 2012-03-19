@@ -29,9 +29,6 @@ LALFree()
 #include "LALStdlib.h"
 #include "AVFactories.h"
 
-
-NRCSID( ARRAYFACTORIESC, "$Id$" );
-
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #include "CreateArray_source.c"

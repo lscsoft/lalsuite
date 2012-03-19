@@ -64,9 +64,6 @@ LALFree()
 
 #include <lal/FindChirp.h>
 
-NRCSID (FINDCHIRPLINKEDLISTC, "$Id$");
-
-
 void
 LALFindChirpCreateTmpltNode (
     LALStatus                  *status,
@@ -77,7 +74,7 @@ LALFindChirpCreateTmpltNode (
 {
   InspiralTemplateNode         *current = NULL;
 
-  INITSTATUS( status, "LALFindChirpCreateTmpltNode", FINDCHIRPLINKEDLISTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( tmplt, status,
@@ -134,7 +131,7 @@ LALFindChirpDestroyTmpltNode (
   InspiralTemplateNode  *prev = NULL;
   InspiralTemplateNode  *next = NULL;
 
-  INITSTATUS( status, "FindChirpDestroyTmpltNode", FINDCHIRPLINKEDLISTC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( tmpltNode, status,

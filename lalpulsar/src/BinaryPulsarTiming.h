@@ -56,8 +56,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>
 
-NRCSID (BINARYPULSARTIMINGH,"$Id$");
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -167,26 +165,29 @@ tagBinaryPulsarParams
 
   /* orbital frequency coefficients for BTX model (only for one orbit at the
      moment i.e. a two body system) */
-  REAL8 fb[12]; /**> orbital frequency coefficients for BTX model */
-  INT4 nfb;     /**> the number of fb coefficients */
+  REAL8 fb[12]; /**< orbital frequency coefficients for BTX model */
+  INT4 nfb;     /**< the number of fb coefficients */
 
-  REAL8 px;     /**> pulsar parallax (in milliarcsecs) */
-  REAL8 dist;   /**> pulsar distance (in kiloparsecs) */
+  REAL8 px;     /**< pulsar parallax (in milliarcsecs) */
+  REAL8 dist;   /**< pulsar distance (in kiloparsecs) */
 
-  REAL8 DM;     /**> dispersion measure */
-  REAL8 DM1;    /**> first derivative of dispersion measure */
+  REAL8 DM;     /**< dispersion measure */
+  REAL8 DM1;    /**< first derivative of dispersion measure */
 
   /* gravitational wave parameters */
-  REAL8 h0;     /**> gravitational wave amplitude */
-  REAL8 cosiota;/**> cosine of the pulsars orientation angle */
-  REAL8 psi;    /**> polarisation angle */
-  REAL8 phi0;   /**> initial phase */
-  REAL8 Aplus;  /**> 0.5*h0*(1+cos^2iota) */
-  REAL8 Across; /**> h0*cosiota */
+  REAL8 h0;     /**< gravitational wave amplitude */
+  REAL8 cosiota;/**< cosine of the pulsars orientation angle */
+  REAL8 psi;    /**< polarisation angle */
+  REAL8 phi0;   /**< initial phase */
+  REAL8 Aplus;  /**< 0.5*h0*(1+cos^2iota) */
+  REAL8 Across; /**< h0*cosiota */
   /*pinned superfluid gw parameters*/
-  REAL8 h1;     /**> determines relative strength of 2 vs 2f emission */
-  REAL8 lambda;/**> this is a longitude like angle between pinning axis and line of sight */
-  REAL8 theta;    /**> angle between rotation axis and pinning axis */
+  REAL8 I21;    /**< parameter for pinsf model.**/
+  REAL8 I31;    /**< parameter for pinsf model.**/
+  REAL8 r;      /**< parameter for pinsf model.**/
+  REAL8 lambda; /**< this is a longitude like angle between pinning axis and
+                     line of sight */
+  REAL8 theta;  /**< angle between rotation axis and pinning axis */
   
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -249,7 +250,9 @@ tagBinaryPulsarParams
   REAL8 phi0Err;
   REAL8 AplusErr;
   REAL8 AcrossErr;
-  REAL8 h1Err;
+  REAL8 I21Err;
+  REAL8 I31Err;
+  REAL8 rErr;
   REAL8 lambdaErr;
   REAL8 thetaErr;
 }BinaryPulsarParams;
@@ -269,10 +272,6 @@ tagBinaryPulsarOutput
   SWIGLAL_STRUCT(BinaryPulsarOutput);
   REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
-
-
-
-
 
 /**** DEFINE FUNCTIONS ****/
 /** function to calculate the binary system delay

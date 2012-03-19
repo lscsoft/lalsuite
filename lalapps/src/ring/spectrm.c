@@ -19,6 +19,7 @@
 
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/Units.h>
@@ -37,9 +38,6 @@
 #else
 #define UNUSED
 #endif
-
-RCSID( "$Id$" );
-
 
 /* routine to compute an average spectrum from time series data */
 REAL4FrequencySeries *compute_average_spectrum(

@@ -33,7 +33,6 @@
 /** \file
  * \ingroup ExtrapolatePulsarSpins
  * \author Reinhard Prix
- * \date $Date$
  *
  * \brief Defines functions to extrapolate the pulsar spin-paramters
  * \f$\{f, \stackrel{.}{f},\ddot{f},...\}\f$ from one SSB epoch to another.
@@ -56,8 +55,6 @@
 
 #define TRUE (1==1)
 #define FALSE (1==0)
-
-NRCSID( EXTRAPOLATEPULSARSPINSC, "$Id$");
 
 /*---------- main functions ---------- */
 
@@ -83,7 +80,7 @@ LALExtrapolatePulsarSpinRange(  LALStatus *status,
   PulsarSpinRange inRange;
   REAL8 dtau;
 
-  INITSTATUS( status, "LALExtrapolatePulsarSpinRange", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS(status);
 
   ASSERT ( range1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
   ASSERT ( range0, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
@@ -154,7 +151,7 @@ LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus struc
 {
   REAL8 dtau;
 
-  INITSTATUS( status, "LALExtrapolatePulsarSpins", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS(status);
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
 
@@ -175,7 +172,7 @@ LALExtrapolatePulsarSpins (LALStatus   *status,		/**< pointer to LALStatus struc
 int
 XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
 			     const PulsarSpins fkdotIn,		/**< inptut fkdot array */
-			     REAL8 DeltaTau 			/**< time-difference to extrapolate fkdot to */
+			     REAL8 DeltaTau 			/**< time-difference (tRefOut - tRefIn) to extrapolate fkdot to */
 			     )
 {
   UINT4 numSpins = sizeof(PulsarSpins) / sizeof(fkdotIn[0]); 	/* fixed size array */
@@ -226,7 +223,7 @@ LALExtrapolatePulsarPhase (LALStatus *status,		/**< pointer to LALStatus structu
   REAL8 frac_cycles;
   REAL8 dummy, phi;
 
-  INITSTATUS( status, "LALExtrapolatePulsarPhase", EXTRAPOLATEPULSARSPINSC );
+  INITSTATUS(status);
 
   ASSERT ( fkdot1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);
   ASSERT ( phi1, status, EXTRAPOLATEPULSARSPINS_ENULL, EXTRAPOLATEPULSARSPINS_MSGENULL);

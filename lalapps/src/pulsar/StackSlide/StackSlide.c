@@ -75,8 +75,6 @@ Sum them.
 
 #include "StackSlide.h"/*This includes isolated/binary info*/
 
-NRCSID( STACKSLIDEC,  "$Id$");
-
 /*********************************************************************************/
 /*              START function: StackSlide                                       */
 /*********************************************************************************/
@@ -102,7 +100,7 @@ void StackSlide(	LALStatus *status,
     fflush(stdout);
   #endif   
 
-  INITSTATUS (status, "StackSlide", STACKSLIDEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
@@ -237,7 +235,7 @@ void SumStacks( 	LALStatus *status,
 
   INT4 i,k;
 
-  INITSTATUS (status, "SumStacks", STACKSLIDEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   INT4 iMinSTK = floor((params->f0SUM-params->f0STK)*params->tSTK + 0.5); /* Index of mimimum frequency to include when making SUMs from STKs */
@@ -302,7 +300,7 @@ void StackSlideComputeSky (LALStatus            *status,
   LALTimeInterval HalfSFT;        /* timebase of SFT/2 as GPS interval  */
   REAL8 HalfSFTfloat;             /* timebase of SFT/2 as REAL8 number */
 
-  INITSTATUS (status, "StackSlideComputeSky", STACKSLIDEC);
+  INITSTATUS(status);
   #ifdef DEBUG_STACKSLIDECOMPUTESKY_FNC
      fprintf(stdout, "Start StackSlideComputeSky\n"); 
      fflush(stdout);
@@ -448,7 +446,7 @@ void StackSlideComputeSkyBinary( LALStatus 			*status,
     fflush(stdout);   
   #endif
 
-  INITSTATUS (status, "StackSlideComputeSkyBinary", STACKSLIDEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /*for (i=0;i< SSparams->numSTKs; i++)
@@ -685,7 +683,7 @@ void StackSlideComputeSkyBinary( LALStatus 			*status,
 
 static void Ft(LALStatus *status, REAL8 *tr, REAL8 lE, void *tr0)
 {
-  INITSTATUS(status, "Ft", "Function Ft()");
+  INITSTATUS(status);
   ASSERT(tr0,status, 1, "Null pointer");
 
   /* this is the function relating the observed time since periapse in the SSB to the true eccentric anomoly E */

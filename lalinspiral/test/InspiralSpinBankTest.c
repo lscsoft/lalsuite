@@ -110,8 +110,6 @@ extern char *optarg;
 #define INSPIRALSPINBANKTESTC_MSGEFILE  "File I/O error"
 /*@}*/
 
-NRCSID(LALINSPIRALSPINBANKTESTC, "$Id$");
-
 int main( int argc, char *argv[] )
 {
   static LALStatus status;

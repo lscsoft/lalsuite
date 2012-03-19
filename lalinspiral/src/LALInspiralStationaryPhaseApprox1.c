@@ -95,9 +95,6 @@ XLALPsiOfT (
    void      *param
    );
 
-
-NRCSID (LALINSPIRALSTATIONARYPHASEAPPROX1C, "$Id$");
-
 /* This is the main function to compute the stationary phase approximation */
 
 
@@ -113,8 +110,7 @@ LALInspiralStationaryPhaseApprox1 (
 			      "XLALInspiralStationaryPhaseApprox1");
 
   /* Initialize the status pointer */
-  INITSTATUS (status, "LALInspiralStationaryPhaseApprox1", 
-	      LALINSPIRALSTATIONARYPHASEAPPROX1C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Call XLAL function and check for errors */

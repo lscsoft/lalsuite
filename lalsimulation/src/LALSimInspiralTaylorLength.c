@@ -47,8 +47,6 @@ XLALDRombergIntegrate()
 #include "LALSimInspiraldEnergyFlux.c"
 #include "LALSimInspiralPNCoefficients.c"
 
-NRCSID (LALINSPIRALTOFVC, "$Id$");
-
 static REAL8
 XLALSimInspiralTofVIntegrand(
    REAL8      v,

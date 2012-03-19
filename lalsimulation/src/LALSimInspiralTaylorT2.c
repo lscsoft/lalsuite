@@ -19,6 +19,7 @@
 
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/FindRoot.h>
@@ -36,8 +37,6 @@
 #else
 #define UNUSED
 #endif
-
-NRCSID(LALSIMINSPIRALTAYLORT3C, "$Id$");
 
 typedef struct
 tagexpnCoeffsTaylorT2 {

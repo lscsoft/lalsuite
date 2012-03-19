@@ -103,10 +103,6 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    InspiralTemplate *params
    );
 
-
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEC, "$Id$");
-
-
 void
 LALInspiralAmplitudeCorrectedWave(
    LALStatus        *status,
@@ -117,7 +113,7 @@ LALInspiralAmplitudeCorrectedWave(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralAmplitudeCorrectedWave",LALINSPIRALAMPLITUDECORRECTEDWAVEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -134,11 +130,6 @@ LALInspiralAmplitudeCorrectedWave(
    RETURN (status);
 }
 
-
-
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC, "$Id$");
-
-
 void
 LALInspiralAmplitudeCorrectedWaveTemplates(
    LALStatus        *status,
@@ -150,7 +141,7 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
 
    INT4 count;
 
-   INITSTATUS(status, "LALInspiralAmplitudeCorrectedWaveTemplates",LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT(signalvec1, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -175,9 +166,6 @@ LALInspiralAmplitudeCorrectedWaveTemplates(
    waveforms for injection packages T.Cokelaer sept 2003
 */
 
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEFORINJECTIONC, "$Id$");
-
-
 void
 LALInspiralAmplitudeCorrectedWaveForInjection(
 			     LALStatus        *status,
@@ -200,8 +188,7 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
 
   InspiralInit paramsInit;
 
-  INITSTATUS(status,"LALInspiralAmplitudeCorrectedWaveForInjection",
-  LALINSPIRALAMPLITUDECORRECTEDWAVETEMPLATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* Make sure parameter and waveform structures exist. */
@@ -353,8 +340,6 @@ LALInspiralAmplitudeCorrectedWaveForInjection(
  *  Craig Robinson April 2005
  */
 
-NRCSID (LALINSPIRALAMPLITUDECORRECTEDWAVEENGINEC, "$Id$");
-
 void
 LALInspiralAmplitudeCorrectedWaveEngine(
 		LALStatus        *status,
@@ -386,7 +371,7 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
    REAL4 longitude,latitude,polarization,gmst;
 */
-   INITSTATUS(status, "LALInspiralAmplitudeCorrectedWaveEngine", LALINSPIRALAMPLITUDECORRECTEDWAVEENGINEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

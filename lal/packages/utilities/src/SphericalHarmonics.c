@@ -29,8 +29,6 @@
  *
  */
 
-#define LAL_USE_COMPLEX_SHORT_MACROS
-#include <LALComplex.h>
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALError.h>
 #include <lal/XLALGSL.h>
@@ -68,12 +66,12 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
   if ( l < abs(s) ) 
   {
     XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |s| <= l\n", __func__, s, l, m );
-    XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+    XLAL_ERROR_VAL(0, XLAL_EINVAL);
   }
   if ( l < abs(m) ) 
   {
     XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-    XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+    XLAL_ERROR_VAL(0, XLAL_EINVAL);
   }
 
   if ( s == -2 ) 
@@ -102,7 +100,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       } /*  switch (m) */
     }  /* l==2*/
@@ -136,7 +134,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       }
     }   /* l==3 */
@@ -174,7 +172,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       }
     }    /* l==4 */
@@ -217,7 +215,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       }
     }  /* l==5 */
@@ -274,7 +272,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       }
     } /* l==6 */
@@ -340,7 +338,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       }
     } /* l==7 */
@@ -414,25 +412,25 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
           break;
         default:
           XLALPrintError("XLAL Error - %s: Invalid mode s=%d, l=%d, m=%d - require |m| <= l\n", __func__, s, l, m );
-          XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+          XLAL_ERROR_VAL(0, XLAL_EINVAL);
           break;
       }
     } /* l==8 */
     else 
     {
       XLALPrintError("XLAL Error - %s: Unsupported mode l=%d (only l in [2,8] implemented)\n", __func__, l);
-      XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+      XLAL_ERROR_VAL(0, XLAL_EINVAL);
     }
   }
   else 
   {
     XLALPrintError("XLAL Error - %s: Unsupported mode s=%d (only s=-2 implemented)\n", __func__, s);
-    XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+    XLAL_ERROR_VAL(0, XLAL_EINVAL);
   }
   if (m)
-    ans = cmulr(cpolar(1.0, m*phi), fac);
+    ans = CX16polar(1.0, m*phi) * fac;
   else
-    ans = csetr(fac);
+    ans = fac;
   return ans;
 }
 
@@ -470,14 +468,12 @@ XLALScalarSphericalHarmonic(
   }
 
   /* Compute the values for the spherical harmonic */
-  y->re = pLm.val * cos(m * phi);
-  y->im = pLm.val * sin(m * phi);
+  *y = CX16polar(pLm.val, m * phi);
 
   /* If m is negative, perform some jiggery-pokery */
   if ( m < 0 && absM % 2  == 1 )
   {
-    y->re = - y->re;
-    y->im = - y->im;
+    *y = - *y;
   }
 
   return XLAL_SUCCESS;

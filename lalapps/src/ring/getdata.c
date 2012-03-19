@@ -35,8 +35,6 @@
 #include "getdata.h"
 #include "errutil.h"
 
-RCSID( "$Id$" );
-
 /* create simulated data */
 REAL4TimeSeries * get_simulated_data(
     const char  *channelName,

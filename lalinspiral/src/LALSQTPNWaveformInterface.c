@@ -10,14 +10,12 @@
 #include <lal/LALSQTPNWaveformInterface.h>
 #include <lal/LALSQTPNWaveform.h>
 
-NRCSID (LALSQTPNWAVEFORMINTERFACEC, "$Id LALSQTPNWaveformInterface.c$");
-
 void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1, 
 		REAL4Vector *signalvec2, InspiralTemplate *params) {
 
 	XLALPrintDeprecationWarning("LALSQTPNWaveformTemplates", 
 		"XLALSQTPNWaveformTemplates");
-	INITSTATUS(status, "LALSTPNWaveform", LALSQTPNWAVEFORMINTERFACEC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
 	if(XLALSQTPNWaveformTemplates(signalvec1, signalvec2, params))
@@ -66,7 +64,7 @@ int XLALSQTPNWaveformTemplates (REAL4Vector *signalvec1,
 void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec, InspiralTemplate *params){
 
 	XLALPrintDeprecationWarning("LALSQTPNWaveform", "XLALSQTPNWaveform");
-	INITSTATUS(status, "LALSQTPNWaveform", LALSQTPNWAVEFORMINTERFACEC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
 	if(XLALSQTPNWaveform(signalvec, params))
@@ -118,8 +116,7 @@ void LALSQTPNWaveformForInjection(LALStatus *status, CoherentGW *waveform,
 
 	XLALPrintDeprecationWarning("LALSQTPNWaveformForInjection", 
 		"XLALSQTPNWaveformForInjection");
-	INITSTATUS(status, "LALSQTPNWaveformForInjection", 
-		LALSQTPNWAVEFORMINTERFACEC);
+	INITSTATUS(status);
 	ATTATCHSTATUSPTR(status);
 
 	if(XLALSQTPNWaveformForInjection(waveform, params, ppnParams))

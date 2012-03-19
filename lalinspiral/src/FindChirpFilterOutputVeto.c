@@ -23,7 +23,6 @@
  *
  * Author: A.C. Rodriguez
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -120,9 +119,6 @@ input to the function for future work.
 #define UNUSED
 #endif
 
-NRCSID (FINDCHIRPFILTEROUTPUTVETOC, "$Id$");
-
-
 void
 LALFindChirpFilterOutputVeto(
     LALStatus                          *status,
@@ -149,8 +145,7 @@ LALFindChirpFilterOutputVeto(
 
   event = *eventList;
 
-  INITSTATUS( status, "LALFindChirpFilterFilterOutputVeto",
-      FINDCHIRPFILTEROUTPUTVETOC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

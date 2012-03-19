@@ -93,9 +93,6 @@ XLALInspiralWave3Engine(
                 InspiralInit     *paramsInit
                 );
 
-NRCSID (LALINSPIRALWAVE3C, "$Id$");
-
-
 void
 LALInspiralWave3 (
    LALStatus        *status,
@@ -105,7 +102,7 @@ LALInspiralWave3 (
 {
    XLALPrintDeprecationWarning("LALInspiralWave3", 
          "XLALInspiralWave3");
-   INITSTATUS(status, "LALInspiralWave3", LALINSPIRALWAVE3C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALInspiralWave3(output, params) )
@@ -178,10 +175,6 @@ static REAL8 XLALInspiralFrequency3Wrapper(REAL8 tC, void *pars)
   return f;
 }
 
-NRCSID (LALINSPIRALWAVE3TEMPLATESC, "$Id$");
-
-
-
 void
 LALInspiralWave3Templates (
    LALStatus        *status,
@@ -192,7 +185,7 @@ LALInspiralWave3Templates (
 {
    XLALPrintDeprecationWarning("LALInspiralWave3Templates", 
          "XLALInspiralWave3Templates");
-   INITSTATUS(status, "LALInspiralWave3Templates", LALINSPIRALWAVE3TEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALInspiralWave3Templates(output1, output2, params) )
@@ -255,14 +248,6 @@ XLALInspiralWave3Templates (
   return XLAL_SUCCESS;
 }
 
-
-
-
-
-NRCSID (LALINSPIRALWAVE3FORINJECTIONC, "$Id$");
-
-
-
 void
 LALInspiralWave3ForInjection (
    LALStatus        *status,
@@ -273,7 +258,7 @@ LALInspiralWave3ForInjection (
 {
    XLALPrintDeprecationWarning("LALInspiralWave3ForInjection", 
          "XLALInspiralWave3ForInjection");
-   INITSTATUS(status, "LALInspiralWave3ForInjection", LALINSPIRALWAVE3FORINJECTIONC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    if( XLALInspiralWave3ForInjection(waveform, params, ppnParams) )

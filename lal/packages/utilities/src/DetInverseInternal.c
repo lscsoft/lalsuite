@@ -19,7 +19,6 @@
 
 /*************************** <lalVerbatim file="DetInverseInternalCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -105,8 +104,6 @@ LALMalloc()                     LALFree()
 #include <lal/LALConstants.h>
 #include <lal/MatrixUtils.h>
 
-NRCSID( DETINVERSEINTERNALC, "$Id$" );
-
 /* <lalVerbatim file="DetInverseInternalCP"> */
 void
 LALSLUDecomp( LALStatus   *stat,
@@ -121,7 +118,7 @@ LALSLUDecomp( LALStatus   *stat,
   REAL4 *s, *m;         /* pointers to data arrays */
   REAL4 tmp, max, sum;  /* temporary computation variables */
 
-  INITSTATUS( stat, "LALSLUDecomp", DETINVERSEINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( sgn, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -235,7 +232,7 @@ LALSLUBackSub( LALStatus   *stat,
   REAL4 *v, *m;       /* pointers to data arrays */
   REAL4 sum;          /* temporary computation variable */
 
-  INITSTATUS( stat, "LALSLUBackSub", DETINVERSEINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( vector, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -307,7 +304,7 @@ LALDLUDecomp( LALStatus   *stat,
   REAL8 *s, *m;         /* pointers to data arrays */
   REAL8 tmp, max, sum;  /* temporary computation variables */
 
-  INITSTATUS( stat, "LALDLUDecomp", DETINVERSEINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( sgn, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );
@@ -421,7 +418,7 @@ LALDLUBackSub( LALStatus   *stat,
   REAL8 *v, *m;       /* pointers to data arrays */
   REAL8 sum;          /* temporary computation variable */
 
-  INITSTATUS( stat, "LALDLUBackSub", DETINVERSEINTERNALC );
+  INITSTATUS(stat);
 
   /* Check input fields. */
   ASSERT( vector, stat, MATRIXUTILSH_ENUL, MATRIXUTILSH_MSGENUL );

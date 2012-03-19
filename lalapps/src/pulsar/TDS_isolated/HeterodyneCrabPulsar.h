@@ -62,7 +62,6 @@
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
@@ -74,9 +73,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* DEFINE RCS ID STRING */
-NRCSID (HETERODYNECRABPULSARH, "$Id$"); 
 
 /**\name Error Codes */ /*@{*/
 #define HETERODYNECRABPULSARH_ENULLINPUT 1

@@ -21,9 +21,6 @@
 #include <lal/AVFactories.h>
 #include <lal/Resample.h>
 
-NRCSID(DESTROYRESAMPLERULESC,"$Id$");
-
-
 /** \author Creighton, T. D.
  * \ingroup Resample_h
  * \brief Destroys an object of type ResampleRules, and sets <tt>*rules</tt> to \c NULL.
@@ -32,7 +29,7 @@ void
 LALDestroyResampleRules( LALStatus     *stat,
 			 ResampleRules **rules )
 {
-  INITSTATUS(stat,"LALDestroyResampleRules",DESTROYRESAMPLERULESC);
+  INITSTATUS(stat);
 
   /* Make sure that the handle is non-null, that it points to a
      non-null pointer, and that the interval and shift fields are

@@ -21,13 +21,10 @@
 #define _LALSTRING_H
 
 #include <stddef.h>
-#include <lal/LALRCSID.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-NRCSID( LALSTRINGH, "$Id$" );
 
 char * XLALStringAppend( char *s, const char *append );
 char * XLALStringDuplicate( const char *s );

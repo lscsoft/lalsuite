@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010, 2011 Evan Goetz
+*  Copyright (C) 2010, 2011, 2012 Evan Goetz
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
 #include <lal/SFTutils.h>
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
    }
    
    //Set lalDebugLevel to user input or 0 if no input
-   lalDebugLevel = args_info.verbosity_arg;
+   lalDebugLevel = args_info.laldebug_arg;
    
    //Create directory
    mkdir(args_info.outdirectory_arg, 0777);
@@ -170,14 +171,14 @@ int main(int argc, char *argv[])
    DopplerSkyScanState scan = empty_DopplerSkyScanState;
    PulsarDopplerParams dopplerpos;
    if (args_info.skyRegion_given) {
-      scanInit.gridType = 1;     //Default value for an approximate-isotropic grid
+      scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
       scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
       scanInit.dAlpha = 0.5/((inputParams->fmin+0.5*inputParams->fspan) * inputParams->Tcoh * detectorVmax);
       scanInit.dDelta = scanInit.dAlpha;
    } else {
-      scanInit.gridType = 3;
+      scanInit.gridType = GRID_FILE_SKYGRID;
       scanInit.skyGridFile = sky;
       scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
       scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band
@@ -276,8 +277,18 @@ int main(int argc, char *argv[])
    /* FILE *rawtfdata = fopen("./output/rawtfdata.dat","w");
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
+   if (args_info.printSFTtimes_given) {
+      char v[1000];
+      snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat");
+      FILE *INSFTTIMES = fopen(v, "w");
+      INT4 sftlength = tfdata->length/ffdata->numffts;
+      for (ii=0; ii<ffdata->numffts; ii++) {
+         if (tfdata->data[ii*sftlength]!=0.0) fprintf(INSFTTIMES, "%9d 0\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)));
+      }
+      fclose(INSFTTIMES);
+   }
    
-   //Removing bad SFTs
+   //Removing bad SFTs using K-S test
    if (inputParams->markBadSFTs!=0) {
       fprintf(stderr, "Marking and removing bad SFTs... ");
       INT4Vector *removeTheseSFTs = markBadSFTs(tfdata, inputParams);
@@ -292,6 +303,16 @@ int main(int argc, char *argv[])
    /* FILE *rawtfdata = fopen("./output/rawtfdata.dat","w");
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
+   if (args_info.printUsedSFTtimes_given) {
+      char v[1000];
+      snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, "usedSFTtimes.dat");
+      FILE *USEDSFTTIMES = fopen(v, "w");
+      INT4 sftlength = tfdata->length/ffdata->numffts;
+      for (ii=0; ii<ffdata->numffts; ii++) {
+         if (tfdata->data[ii*sftlength]!=0.0) fprintf(USEDSFTTIMES, "%9d 0\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)));
+      }
+      fclose(USEDSFTTIMES);
+   }
    
    
    //Calculate the running mean values of the SFTs (output here is smaller than initialTFdata). Here,
@@ -319,6 +340,12 @@ int main(int argc, char *argv[])
    INT4 totalincludedsftnumber = 0.0;
    for (ii=0; ii<(INT4)sftexist->length; ii++) if (sftexist->data[ii]==1) totalincludedsftnumber++;
    REAL4 frac_tobs_complete = (REAL4)totalincludedsftnumber/(REAL4)sftexist->length;
+   if (frac_tobs_complete<0.1) {
+      fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
+      XLAL_ERROR(XLAL_EFAILED);
+      //return 0;
+   }
    
    //Index values of existing SFTs
    INT4Vector *indexValuesOfExistingSFTs = XLALCreateINT4Vector(totalincludedsftnumber);
@@ -442,15 +469,11 @@ int main(int argc, char *argv[])
    
    //Antenna normalization (determined from injections on H1 at ra=0, dec=0, with circular polarization)
    REAL4Vector *antweightsforihs2h0 = XLALCreateREAL4Vector(ffdata->numffts);
-   if (args_info.antennaOff_given) for (ii=0; ii<(INT4)antweightsforihs2h0->length; ii++) antweightsforihs2h0->data[ii] = 1.0;
-   else {
-      CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      }
+   CompAntennaPatternWeights(antweightsforihs2h0, 0.0, 0.0, inputParams->searchstarttime, inputParams->Tcoh, inputParams->SFToverlap, inputParams->Tobs, 0, 0.0, lalCachedDetectors[LAL_LHO_4K_DETECTOR]);
+   if (xlalErrno!=0) {
+      fprintf(stderr, "%s: CompAntennaPatternWeights() failed.\n", __func__);
+      XLAL_ERROR(XLAL_EFUNC);
    }
-
    
    
    //Search over the sky region
@@ -474,7 +497,13 @@ int main(int argc, char *argv[])
       
       //track identified lines
       REAL4VectorSequence *trackedlines = NULL;
-      if (lines!=NULL) trackedlines = trackLines(lines, binshifts, inputParams);
+      if (lines!=NULL) {
+         trackedlines = trackLines(lines, binshifts, inputParams);
+         /* for (ii=0; ii<(INT4)trackedlines->length; ii++) {
+            fprintf(stderr, "%f-%f, ", trackedlines->data[ii*3+1], trackedlines->data[ii*3+2]);
+         }
+         fprintf(stderr, "\n"); */
+      }
       
       
       //Compute antenna pattern weights. If antennaOff input flag is given, then set all values equal to 1.0
@@ -577,7 +606,7 @@ int main(int argc, char *argv[])
       fclose(TFDATA); */
       
       //Calculation of average TF noise per frequency bin ratio to total mean
-      REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
+      /* REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
       if (aveTFnoisePerFbinRatio==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins);
@@ -588,18 +617,53 @@ int main(int argc, char *argv[])
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
          for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
-      //REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //Better in case of strong lines (approaches mean value)
+      REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
+      //REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //Better in case of strong lines (approaches mean value)
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
-      //XLALDestroyREAL4Vector(background_slided);
-      XLALDestroyREAL4Vector(TSofPowers);
+      XLALDestroyREAL4Vector(TSofPowers); */
       
+      REAL4 aveTFave = 0.0;
+      INT4 numinave = 0;
+      REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
+      REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
+      if (aveTFnoisePerFbinRatio==NULL) {
+         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins);
+         XLAL_ERROR(XLAL_EFUNC);
+      } else if (TSofPowers==NULL) {
+         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      memset(aveTFnoisePerFbinRatio->data, 0, sizeof(REAL4)*aveTFnoisePerFbinRatio->length);
+      for (ii=0; ii<ffdata->numfbins; ii++) {
+         INT4 nolinesinterfering = 1;
+         if (lines!=NULL) {
+            REAL4 fbinfrequency = inputParams->fmin+ii/inputParams->Tcoh;
+            INT4 kk = 0;
+            while (kk<(INT4)trackedlines->length && nolinesinterfering==1) {
+               if (fbinfrequency>=trackedlines->data[kk*3+1] && fbinfrequency<=trackedlines->data[kk*3+2]) {
+                  nolinesinterfering = 0;
+               }
+               kk++;
+            } // while kk < trackedlines->length && nolinesinterfering==1
+         } //if lines != NULL
+         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
+         aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
+         if (nolinesinterfering) {
+            aveTFave += aveTFnoisePerFbinRatio->data[ii]; 
+            numinave++;
+         }
+      }
+      REAL4 aveTFaveinv = (REAL4)numinave/aveTFave;
+      for (ii=0; ii<ffdata->numfbins; ii++) {
+         aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
+         //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
+      }
+      XLALDestroyREAL4Vector(TSofPowers);
       
       //Do the second FFT
       makeSecondFFT(ffdata, TFdata_weighted, secondFFTplan);
@@ -618,10 +682,16 @@ int main(int argc, char *argv[])
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
       
+      //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
-         fprintf(stderr, "Apparently, no SFTs were read in (Average power value is zero). Program exiting with failure.\n");
+         fprintf(stderr, "%s: Average second FFT power is 0.0. Perhaps no SFTs are remaining? Program exiting with failure.\n", __func__);
+         fprintf(LOG, "%s: Average second FFT power is 0.0. Perhaps no SFTs are remaining? Program exiting with failure.\n", __func__);
          XLAL_ERROR(XLAL_FAILURE);
       }
+      
+      //if (fabs(secFFTsigma-1.0)>=2.0) {
+         //fprintf(stderr, "%s: Background noise estimate is ", __func__);
+      //}
       
       
 ////////Start of the IHS step!
@@ -654,29 +724,70 @@ int main(int argc, char *argv[])
       fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
       fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
       //for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].h0);
+      
+      //If requested, keep only the most significant IHS candidates
+      candidateVector *ihsCandidates_reduced = NULL;
+      if (args_info.keepOnlyTopNumIHS_given) {
+         ihsCandidates_reduced = keepMostSignificantCandidates(ihsCandidates, inputParams);
+         if (ihsCandidates_reduced==NULL) {
+            fprintf(stderr,"%s: keepMostSignificantCandidates() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      }
+      
 ////////End of the IHS step
       
 ////////Start of the Gaussian template search!
       if (args_info.IHSonly_given) {
-         if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
-            exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
-            if (exactCandidates2->data==NULL) {
-               fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, ihsCandidates->numofcandidates);
-               XLAL_ERROR(XLAL_EFUNC);
+         
+         if (args_info.keepOnlyTopNumIHS_given) {
+            if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates) {
+               exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates);
+               if (exactCandidates2->data==NULL) {
+                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, ihsCandidates_reduced->numofcandidates);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
             }
+            
+            INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
+            for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) {
+               loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates_reduced->data[ii].stat, ihsCandidates_reduced->data[ii].h0, ihsCandidates_reduced->data[ii].prob, 0, ihsCandidates_reduced->data[ii].normalization);
+               exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
+               (exactCandidates2->numofcandidates)++;
+            }
+            
+         } else {
+            if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates->numofcandidates) {
+               exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates->numofcandidates);
+               if (exactCandidates2->data==NULL) {
+                  fprintf(stderr,"%s: resize_candidateVector(%d) failed.\n", __func__, ihsCandidates->numofcandidates);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
+            }
+            
+            INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
+            for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
+               loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, ihsCandidates->data[ii].prob, 0, ihsCandidates->data[ii].normalization);
+               exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
+               (exactCandidates2->numofcandidates)++;
+            }
+            
          }
-         INT4 numofcandidatesalready = exactCandidates2->numofcandidates;
-         for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
-            loadCandidateData(&(exactCandidates2->data[ii+numofcandidatesalready]), ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, dopplerpos.Alpha, dopplerpos.Delta, ihsCandidates->data[ii].stat, ihsCandidates->data[ii].h0, 0.0, 0, ihsCandidates->data[ii].normalization);
-            exactCandidates2->data[ii+numofcandidatesalready].h0 /= sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25); //Scaling here
-            (exactCandidates2->numofcandidates)++;
-         }
+         
       } else if ((!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion))) {
          
-         //Test the IHS candidates against Gaussian templates in this function
-         if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
-            fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
-            XLAL_ERROR(XLAL_EFUNC);
+         if (args_info.keepOnlyTopNumIHS_given) {
+            //Test the IHS candidates against Gaussian templates in this function
+            if ( testIHScandidates(gaussCandidates1, ihsCandidates_reduced, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
+               fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+         } else {
+            //Test the IHS candidates against Gaussian templates in this function
+            if ( testIHScandidates(gaussCandidates1, ihsCandidates, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
+               fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
          }
          
          fprintf(LOG,"Initial stage done with candidates = %d\n",gaussCandidates1->numofcandidates);
@@ -684,7 +795,9 @@ int main(int argc, char *argv[])
          
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
       } /* if IHSonly is not given */
-
+      
+      if (args_info.keepOnlyTopNumIHS_given) free_candidateVector(ihsCandidates_reduced);
+      
 ////////End of the Gaussian template search
 
       //Reset IHS candidates, but keep length the same (doesn't reset actual values in the vector)
@@ -1136,7 +1249,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
       for (ii=0; ii<(INT4)tfdata->length; ii++) tfdata->data[ii] *= vladimirfactor;
    }
    
-   XLALDestroySFTCatalog(&catalog);
+   XLALDestroySFTCatalog(catalog);
    XLALDestroySFTVector(sfts);
    
    fprintf(stderr,"TF before weighting, mean subtraction = %g\n",calcMean(tfdata));
@@ -1234,7 +1347,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
       for (ii=0; ii<(INT4)(multiTFdata->length*multiTFdata->vectorLength); ii++) multiTFdata->data[ii] *= vladimirfactor;
    }
    
-   XLALDestroySFTCatalog(&catalog);
+   XLALDestroySFTCatalog(catalog);
    LALDestroyMultiSFTVector(&status, &sfts);
    XLALDestroyINT4Vector(IFOspecificNonexistantsft);
    
@@ -1431,6 +1544,35 @@ n       10      20      30      40      50      60      80      n>80
 alpha=0.05
 n       10      20      30      40      50      60      80      n>80
         .409    .294    .242    .210    .188    .172    .150    1.358/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.1 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+        .369    .265    .218    .189    .170    .155    .135    1.224/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.2 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+                                                                1.073/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.5 (E.G derived using root finding)
+n       10      20      30      40      50      60      80      n>80
+        .249    .179    .147    .128    .115    .105    .091    0.828/(sqrt(n)+0.12+0.11/sqrt(n))
+
+alpha=0.9 (E.G derived using root finding)
+n                                                               n>80
+                                                                0.571/(sqrt(n)+0.12+0.11/sqrt(n))
+
+Critical values of Kuiper's test using root finding by E.G.
+alpha=0.05
+n                                                               n>80
+                                                                1.747/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.1
+n                                                               n>80
+                                                                1.620/(sqrt(n)+0.155+0.24/sqrt(n))
+
+alpha=0.2
+n                                                               n>80
+                                                                1.473/(sqrt(n)+0.155+0.24/sqrt(n))
 */
 INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
 {
@@ -1453,6 +1595,11 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
    }
    
    REAL8 ksthreshold = 1.358/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));
+   //REAL8 ksthreshold = 1.224/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is a tighter restriction
+   //REAL8 ksthreshold = 1.073/(sqrt(numfbins)+0.12+0.11/sqrt(numfbins));  //This is an even tighter restriction
+   REAL8 kuiperthreshold = 1.747/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));
+   //REAL8 kuiperthreshold = 1.620/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is a tighter restriction
+   //REAL8 kuiperthreshold = 1.473/(sqrt(numfbins)+0.155+0.24/sqrt(numfbins));  //This is an even tighter restriction
    for (ii=0; ii<numffts; ii++) {
       if (tfdata->data[ii*numfbins]!=0.0) {
          memcpy(tempvect->data, &(tfdata->data[ii*numfbins]), sizeof(REAL4)*tempvect->length);
@@ -1462,7 +1609,13 @@ INT4Vector * markBadSFTs(REAL4Vector *tfdata, inputParamsStruct *params)
             XLAL_ERROR_NULL(XLAL_EFUNC);
          }
          
-         if (kstest>ksthreshold) output->data[ii] = 1;
+         REAL8 kuipertest = kuipers_test_exp(tempvect);
+         if (XLAL_IS_REAL8_FAIL_NAN(kuipertest)) {
+            fprintf(stderr,"%s: kuipers_test_exp() failed.\n", __func__);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+         }
+         
+         if (kstest>ksthreshold || kuipertest>kuiperthreshold) output->data[ii] = 1;
       }
    }
    
@@ -1517,13 +1670,14 @@ INT4VectorSequence * markBadMultiSFTs(REAL4VectorSequence *multiTFdata, inputPar
 void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
 {
    
-   INT4 ii, jj;
+   INT4 ii;//, jj;
    
    INT4 numfbins_tfdata = tfdata->length/badsfts->length;
    
    for (ii=0; ii<(INT4)badsfts->length; ii++) {
       if (badsfts->data[ii]==1) {
-         for (jj=0; jj<numfbins_tfdata; jj++) tfdata->data[ii*numfbins_tfdata + jj] = 0.0;
+         //for (jj=0; jj<numfbins_tfdata; jj++) tfdata->data[ii*numfbins_tfdata + jj] = 0.0;
+         memset(&(tfdata->data[ii*numfbins_tfdata]), 0, sizeof(REAL4)*numfbins_tfdata);
       }
    }
    
@@ -1659,8 +1813,10 @@ REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, input
    INT4 ii;
    for (ii=0; ii<(INT4)lines->length; ii++) {
       output->data[ii*3] = lines->data[ii]*df + minfbin;
-      output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
-      output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
+      //output->data[ii*3 + 1] = (lines->data[ii] + minshift)*df + minfbin;
+      //output->data[ii*3 + 2] = (lines->data[ii] + maxshift)*df + minfbin;
+      output->data[ii*3 + 1] = (lines->data[ii] + (minshift-1))*df + minfbin;  //Add one extra bin for buffer
+      output->data[ii*3 + 2] = (lines->data[ii] + (maxshift+1))*df + minfbin;  //Add one extra bin for buffer
    }
    
    return output;
@@ -2093,7 +2249,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
       if (backgrnd->data[ii*numfbins]!=0.0) {
          memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);
+         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);  //comment out
          aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
          //aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
          if (XLAL_IS_REAL4_FAIL_NAN(aveNoiseInTime->data[ii])) {
@@ -2315,6 +2471,8 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    else params->ULfmin = params->fmin;
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;
    else params->ULfspan = params->fspan;
+   if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;
+   else params->keepOnlyTopNumIHS = -1;
    if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;
    if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;
    

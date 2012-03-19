@@ -30,6 +30,7 @@
 #include <math.h>
 
 /* GSL includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -43,8 +44,6 @@
 #include <lal/ComplexAM.h>
 #include <lal/LISAspecifics.h>
 #include <lal/ComputeFstat.h>
-
-NRCSID( COMPLEXAMC, "$Id$");
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
@@ -85,7 +84,7 @@ LALGetCmplxAMCoeffs(LALStatus *status,				/**< pointer to LALStatus structure */
   UINT4 i, numSteps;
   CHAR channelNum;
 
-  INITSTATUS (status, "LALGetCmplxAMCoeffs", COMPLEXAMC);
+  INITSTATUS(status);
 
   /*---------- check input ---------- */
   ASSERT ( DetectorStates, status, COMPLEXAMC_ENULL, COMPLEXAMC_MSGENULL);
@@ -149,7 +148,7 @@ LALGetMultiCmplxAMCoeffs (LALStatus *status,				/**< pointer to LALStatus struct
   REAL4 sin1Alpha, cos1Alpha;
   FreqSkypos_t freq_skypos;
 
-  INITSTATUS( status, "LALGetMultiCmplxAMCoeffs", COMPLEXAMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -280,14 +279,14 @@ XLALDestroyMultiCmplxAMCoeffs ( MultiCmplxAMCoeffs *multiAMcoef )
 
 
 /** Multiply AM-coeffs \f$a_{X\alpha}, b_{X\alpha}\f$ by weights \f$\sqrt(w_{X\alpha})\f$ and
- * compute the resulting \f$A_d, B_d, C_d, E_d\f$ by simply *SUMMING* them, i.e.
- * \f$A_d \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
+ * compute the resulting \f$\widehat{A}, \widehat{B}, \widehat{C}, \widehat{E}\f$ by simply *SUMMING* them, i.e.
+ * \f$\widehat{A} \equiv \sum_{X,\alpha} w_{X\alpha} a_{X\alpha}^2\f$ etc.
  *
  * NOTE: this function modifies the CmplxAMCoeffs *in place* !
  * NOTE2: if the weights = NULL, we assume unit-weights.
  */
 int
-XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
+XLALWeightMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights )
 {
   UINT4 numDetectors, X;
   REAL8 Ad, Bd, Cd, Ed;
@@ -380,4 +379,4 @@ XLALWeighMultiCmplxAMCoeffs (  MultiCmplxAMCoeffs *multiAMcoef, const MultiNoise
 
   return XLAL_SUCCESS;
 
-} /* XLALWeighMultiCmplxAMCoefs() */
+} /* XLALWeightMultiCmplxAMCoefs() */

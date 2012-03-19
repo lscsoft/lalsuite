@@ -42,8 +42,6 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 
-NRCSID( SIMINSPIRALUTILSC, "$Id$" );
-
 /**
 \author Brown, D. A.
 \file
@@ -440,7 +438,7 @@ LALGalacticInspiralParamsToSimInspiralTable(
   REAL8     time_diff;
   REAL4                 splus, scross, cosiota;
 
-  INITSTATUS( status, "LALGalacticParamsToSimInspiral", SIMINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,
@@ -584,7 +582,7 @@ LALInspiralSiteTimeAndDist(
   REAL8                 time_diff;
   REAL4                 splus, scross, cosiota;
 
-  INITSTATUS( status, "LALInspiralSiteTimeAndDist", SIMINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the arguments are not null */
@@ -651,7 +649,7 @@ LALPopulateSimInspiralSiteInfo(
   LIGOTimeGPS          *end_time;
 
 
-  INITSTATUS( status, "LALPopulateSimInspiralSiteInfo", SIMINSPIRALUTILSC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,

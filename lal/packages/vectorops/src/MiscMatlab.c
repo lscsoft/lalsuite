@@ -48,8 +48,6 @@ functions from one codebase.
 #include <math.h>
 #include <lal/Matrix.h>
 
-NRCSID( MATLABMATRIXSUMC, "$Id$");
-
 #define TYPECODE D
 #define TYPE REAL8
 #include "MiscMatlab_source.c"

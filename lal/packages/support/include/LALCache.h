@@ -41,8 +41,6 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/FileIO.h>
 
-NRCSID( LALCACHEH, "$Id$" );
-
 /** An entry in a LAL cache */
 typedef struct tagLALCacheEntry {
         SWIGLAL_STRUCT(LALCacheEntry);

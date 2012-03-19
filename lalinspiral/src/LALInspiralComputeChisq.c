@@ -41,9 +41,6 @@ LALREAL4VectorFFT
 #include <lal/AVFactories.h>
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALCOMPUTECHISQ, "$Id$");
-
-
 void
 LALInspiralComputeChisq
    (
@@ -60,7 +57,7 @@ LALInspiralComputeChisq
   INT4Vector *binIndexes = NULL;
   REAL8Vector *binSNRs = NULL;
 
-  INITSTATUS (status, "LALInspiralComputeChisq", LALINSPIRALCOMPUTECHISQ);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
 /* Need to calculate the total SNR from the stationary phase approximation */

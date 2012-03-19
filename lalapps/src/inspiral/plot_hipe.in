@@ -2,15 +2,13 @@
 """
 plot_inspiral_hipe.in - generates plots from ihope output
 
-$Id$
-
 This script generates a condor DAG to make plots that summarize the
 results of an inspiral search
 """
 
 __author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
@@ -944,6 +942,8 @@ if usertag:
 else:
   log_fh = open(basename + '.plotter.log', 'w')
   
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n" )
 log_fh.write( "$Name$" + "\n\n" )
 log_fh.write( "Invoked with arguments:" )

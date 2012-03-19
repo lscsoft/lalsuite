@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A., Krishnan, B
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -41,6 +40,7 @@
 #include <time.h>
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -80,10 +80,6 @@
 
 #include "inspiral.h"
 
-
-RCSID( "$Id$" );
-
-
 REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     REAL4 thissnr, REAL8 chanDeltaT, INT4 nPoints,
     REAL8FrequencySeries *spec, UINT4 cut)
@@ -119,6 +115,75 @@ REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
   return distance;
 }
 
+REAL4 XLALCandleDistanceTD(
+    Approximant approximant,
+    REAL4 candleM1,
+    REAL4 candleM2,
+    REAL4 candlesnr,
+    REAL8 chanDeltaT,
+    INT4 nPoints,
+    REAL8FrequencySeries *spec,
+    UINT4 cut)
+{
+
+  LALStatus      status   = blank_status;
+
+  InspiralTemplate  tmplt;
+  REAL4Vector    *waveform = NULL;
+  COMPLEX8Vector *waveFFT  = NULL;
+  REAL4FFTPlan   *fwdPlan  = NULL;
+
+  REAL8          sigmaSq;
+  REAL8          distance;
+  UINT4          i;
+
+  memset( &tmplt, 0, sizeof(tmplt) );
+
+  /* Create storage for TD and FD template */
+  waveform = XLALCreateREAL4Vector( nPoints );
+  waveFFT  = XLALCreateCOMPLEX8Vector( spec->data->length );
+  fwdPlan  = XLALCreateForwardREAL4FFTPlan( nPoints, 0 );
+
+  /* Populate the template parameters */
+  tmplt.mass1 = candleM1;
+  tmplt.mass2 = candleM2;
+  tmplt.ieta  = 1;
+  tmplt.approximant = approximant;
+  tmplt.tSampling   = 1.0/chanDeltaT;
+  tmplt.order       = LAL_PNORDER_PSEUDO_FOUR; /* Hardcode for EOBNR for now */
+  tmplt.fLower      = spec->deltaF *cut;
+  tmplt.distance    = 1.0e6 * LAL_PC_SI; /* Mpc */
+  tmplt.massChoice  = m1Andm2;
+  tmplt.fCutoff     = tmplt.tSampling / 2.0 - spec->deltaF;
+
+  /* From this, calculate the other parameters */
+  LAL_CALL( LALInspiralParameterCalc( &status, &tmplt ), &status );
+
+  /* Generate the waveform */
+  LAL_CALL( LALInspiralWave( &status, waveform, &tmplt ), &status );
+
+  XLALREAL4ForwardFFT( waveFFT, waveform, fwdPlan );
+
+  sigmaSq = 0.0;
+  for ( i = cut; i < waveFFT->length; i++ )
+  {
+    sigmaSq += ( waveFFT->data[i].re * waveFFT->data[i].re
+            + waveFFT->data[i].im * waveFFT->data[i].im )
+            / spec->data->data[i];
+  }
+
+  sigmaSq *= 4.0 * chanDeltaT / nPoints;
+
+  /* Now calculate the distance */
+  distance = sqrt( sigmaSq ) / (REAL8)candlesnr;
+
+  /* Clean up! */
+  XLALDestroyREAL4Vector( waveform );
+  XLALDestroyCOMPLEX8Vector( waveFFT );
+  XLALDestroyREAL4FFTPlan( fwdPlan );
+
+  return (REAL4)distance;
+}
 
 SummValueTable **add_summvalue_table(SummValueTable **newTable,
     LIGOTimeGPS gpsStartTime, LIGOTimeGPS gpsEndTime,
@@ -163,7 +228,7 @@ void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to 
   REAL4TimeVectorSeries *tempStrain=NULL;
   /*   NRWaveMetaData thisMetaData; */
 
-  INITSTATUS (status, "LALAddStrainModes", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   modeLlo = thisinj->numrel_mode_min;
@@ -292,7 +357,7 @@ void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatu
   REAL8TimeSeries  *modePlus=NULL;
   REAL8TimeSeries  *modeCross=NULL;
   REAL8 massMpc, timeStep;
-  INITSTATUS (status, "AddNumRelStrainModesREAL8", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   modeLlo = thisinj->numrel_mode_min;
@@ -409,7 +474,7 @@ void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to L
   SimInspiralTable *simTableOut=NULL;
   SimInspiralTable *thisInjOut=NULL;
 
-  INITSTATUS (status, "InjectNumRelWaveforms", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
   ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
@@ -430,7 +495,7 @@ void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to L
           thisSNR = calculate_ligo_snr_from_strain( tempStrain, thisInj, ifo);
 
           /* set channel name */
-          snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+          snprintf( chan->name, LALNameLength * sizeof( CHAR ),
                     "%s:STRAIN", ifo );
 
           if ((thisSNR < snrHigh) && (thisSNR > snrLow))
@@ -513,7 +578,7 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to L
   SimInspiralTable *simTableOut=NULL;
   SimInspiralTable *thisInjOut=NULL;
 
-  INITSTATUS (status, "InjectNumRelWaveformsREAL8", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
   ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
@@ -534,7 +599,7 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to L
           thisSNR = calculate_ligo_snr_from_strain_real8(strain, ifo);
 
            /* set channel name */
-           snprintf( chan->name, LIGOMETA_CHANNEL_MAX * sizeof( CHAR ),
+           snprintf( chan->name, LALNameLength * sizeof( CHAR ),
                     "%s:STRAIN", ifo );
 
           if ((thisSNR < snrHigh) && (thisSNR > snrLow))
@@ -718,7 +783,7 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
 
       if ( ifo[0] == 'V' )
         {
-          if (freq < 50)
+          if (freq < 35)
             continue;
 
           LALVIRGOPsd( NULL, &psdValue, freq );
@@ -790,21 +855,8 @@ XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj)
            inj->longitude, inj->latitude, inj->polarization, &det);
 
   /* We want the end time to be the time of largest amplitude */
-  REAL8 max_value = 0;
-  REAL8 offset    = 0;
-  uint  max_idx   = 0;
-  
-  for (uint j = 0; j < strain->data->length; j++)
-  {
-    if (fabs(strain->data->data[j]) > max_value)
-    {
-      max_value = abs(strain->data->data[j]);
-      max_idx   = j;
-    }
-  }
-
-  offset = max_idx * strain->deltaT;
-
+  REAL8 offset = 0;
+  XLALFindNRCoalescencePlusCrossREAL8(&offset, plus_int, cross_int);
   XLALGPSAdd( &(strain->epoch), -offset);
 
   XLALDestroyREAL8TimeSeries (plus);

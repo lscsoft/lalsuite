@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon
  *
@@ -19,6 +18,7 @@
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <lal/Date.h>
@@ -28,10 +28,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/XLALError.h>
-
-
-#include <lal/LALRCSID.h>
-NRCSID(TIMESERIESC, "$Id$");
 
 #define DATATYPE REAL4
 #define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;

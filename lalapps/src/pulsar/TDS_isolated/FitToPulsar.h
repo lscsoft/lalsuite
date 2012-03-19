@@ -59,8 +59,6 @@ y(t;\textrm{\c a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_
 extern "C" {
 #endif
 
-NRCSID (FITTOPULSARH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define FITTOPULSARH_ENULLINPUT 1
 #define FITTOPULSARH_ENULLOUTPUT 2

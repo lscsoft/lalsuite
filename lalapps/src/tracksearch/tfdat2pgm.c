@@ -34,8 +34,6 @@ typedef struct
 }LALInitSearchParams;
 
 /* Code Identifying information */
-NRCSID( TRACKSEARCHAVERAGERC, "tracksearchAverager $Id$");
-RCSID( "tracksearchAverager $Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"

@@ -2,15 +2,13 @@
 """
 strain_pipe - standalone strain pipeline driver script
 
-$Id$
-
 This script produces the condor submit and dag files to run
 the standalone strain
 """
 
 __author__ = 'Xavier Siemens<siemens@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 
 # import standard modules and append the lalapps prefix to the python path
@@ -259,6 +257,8 @@ dag.write_dag()
 # write out a log file for this script
 log_fh = open(basename + '.pipeline.log', 'w')
 
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n\n" )
 log_fh.write( "Invoked with arguments:\n" )
 for o, a in opts:

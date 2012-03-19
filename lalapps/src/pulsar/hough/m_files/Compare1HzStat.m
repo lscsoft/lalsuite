@@ -1,5 +1,4 @@
 
-% $Id$
 %
 %  Matlab script to plot statistics and compare them with theoretical 
 %  distributions

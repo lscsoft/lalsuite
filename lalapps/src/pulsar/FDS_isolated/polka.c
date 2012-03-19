@@ -49,9 +49,6 @@
 
 #include "getopt.h"
 
-RCSID ("$Id$");
-
-
 /* some error codes and messages */
 #define POLKAC_ENULL  		1
 #define POLKAC_ENONULL 		2
@@ -901,7 +898,7 @@ ReadOneCandidateFile (LALStatus *stat, CandidateList *CList, const char *fname)
   const CHAR *thisline;
   CandidateList cands;
   
-  INITSTATUS( stat, "ReadOneCandidateFile", rcsid );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR (stat);
  
   ASSERT ( fname, stat, POLKAC_ENULL, POLKAC_MSGENULL);

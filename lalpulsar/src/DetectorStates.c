@@ -34,8 +34,6 @@
 #include "DetectorStates.h"
 #include "LISAspecifics.h"
 
-NRCSID( DETECTORSTATESC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)
 #define FALSE (1==0)
@@ -73,7 +71,7 @@ LALGetDetectorStates (LALStatus *status,			/**< pointer to LALStatus structure *
 		      REAL8 tOffset				/**< compute detector states at timestamps SHIFTED by tOffset */
 		      )
 {
-  INITSTATUS( status, __func__, DETECTORSTATESC );
+  INITSTATUS(status);
 
   ASSERT ( DetectorStates != NULL, status,  DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
   ASSERT ( *DetectorStates == NULL, status,  DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
@@ -326,7 +324,7 @@ LALGetMultiDetectorStates( LALStatus *status,				/**< pointer to LALStatus struc
 			   const MultiSFTVector *multiSFTs, 		/**< [in] multi-IFO SFTs */
 			   const EphemerisData *edat )			/**< ephemeris data */
 {
-  INITSTATUS (status, __func__, DETECTORSTATESC );
+  INITSTATUS(status);
 
   ASSERT ( mdetStates, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
   ASSERT ( multiSFTs, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
@@ -382,7 +380,7 @@ LALCreateDetectorStateSeries (LALStatus *status,		/**< pointer to LALStatus stru
 {
   DetectorStateSeries *ret = NULL;
 
-  INITSTATUS (status, "LALCreateDetectorStateSeries", DETECTORSTATESC );
+  INITSTATUS(status);
 
   ASSERT ( vect, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
   ASSERT ( *vect == NULL, status, DETECTORSTATES_ENONULL, DETECTORSTATES_MSGENONULL);
@@ -417,7 +415,7 @@ void
 LALDestroyDetectorStateSeries (LALStatus *status,		/**< pointer to LALStatus structure */
 			       DetectorStateSeries **detStates ) /**< pointer to vector to be destroyed */
 {
-  INITSTATUS (status, "LALDestroyDetectorStateSeries", DETECTORSTATESC );
+  INITSTATUS(status);
 
   ASSERT ( detStates, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);
 
@@ -471,7 +469,7 @@ void LALGetMultiDetectorVelTimePos(LALStatus                *status,
   REAL8VectorSequence *posV = NULL;
   LIGOTimeGPSVector *timeV = NULL;
 
-  INITSTATUS (status, "GetSFTVelTime", DETECTORSTATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, DETECTORSTATES_ENULL, DETECTORSTATES_MSGENULL);

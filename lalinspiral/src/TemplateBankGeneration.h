@@ -63,8 +63,6 @@
 #include<lal/LALDatatypes.h>
 #include<lal/LIGOMetadataTables.h>
 
-NRCSID (TEMPLATEBANKGENERATIONH,"$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define TEMPLATEBANKGENERATIONH_ENULL 1
 #define TEMPLATEBANKGENERATIONH_MSGENULL "Unexpected NULL pointer to an input type"

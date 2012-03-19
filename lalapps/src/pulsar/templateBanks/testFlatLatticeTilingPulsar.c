@@ -31,7 +31,6 @@
 
 #include <gsl/gsl_math.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/UserInput.h>
@@ -43,8 +42,6 @@
 #include <lalapps.h>
 
 #include "VeryBasicXMLOutput.h"
-
-RCSID("$Id$");
 
 #define TRUE  (1==1)
 #define FALSE (1==0)

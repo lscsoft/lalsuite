@@ -32,7 +32,6 @@
  *
  * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
  *
- * $Id$
  *
  */
 
@@ -48,6 +47,7 @@
 #include <io.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/SFTfileIO.h>
@@ -56,7 +56,6 @@
 #include <lal/ConfigFile.h>
 #include <lal/LogPrintf.h>
 
-NRCSID (SFTFILEIOC, "$Id$");
 /*---------- DEFINES ----------*/
 
 #define MIN_SFT_VERSION 1
@@ -192,7 +191,7 @@ LALSFTdataFind (LALStatus *status,			/**< pointer to LALStatus structure */
   SFTCatalog *ret = NULL;
   SFTtype first_header = empty_SFTtype;
 
-  INITSTATUS (status, "LALSFTdataFind", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- check input */
@@ -507,7 +506,7 @@ LALSFTtimestampsFromCatalog (LALStatus *status,			/**< pointer to LALStatus stru
   LIGOTimeGPSVector *ret = NULL;
   REAL8 Tsft;
 
-  INITSTATUS (status, "LALSFTtimestampsFromCatalog", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( timestamps, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -1259,7 +1258,7 @@ LALLoadSFTs ( LALStatus *status,	/**< pointer to LALStatus structure */
   UINT4 i;                     /* loop counter */
   UINT4 firstInSFT, lastInSFT=0; /* first and last bin in current SFT */
 
-  INITSTATUS (status, "LALLoadSegmentedSFTs", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( outsfts, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -1516,7 +1515,7 @@ void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure 
   SFTCatalog **catalog=NULL;
   MultiSFTVector *multSFTVec=NULL;
 
-  INITSTATUS (status, "LALLoadMultiSFTs", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( out, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -1730,7 +1729,7 @@ LALCheckSFTs ( LALStatus *status,			/**< pointer to LALStatus structure */
   LALStatus sft_status = empty_status;
   SFTCatalog *catalog = NULL;
 
-  INITSTATUS (status, "LALCheckSFTs", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( check_result, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -1771,7 +1770,7 @@ LALCheckSFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 {
   UINT4 i;
 
-  INITSTATUS (status, "LALCheckSFTCatalog", SFTFILEIOC);
+  INITSTATUS(status);
 
   ASSERT ( check_result, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
   ASSERT ( catalog,      status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -1892,7 +1891,7 @@ LALReadTimestampsFile (LALStatus* status, LIGOTimeGPSVector **timestamps, const 
   FILE *fp;
   LIGOTimeGPSVector *ts = NULL;
 
-  INITSTATUS( status, "LALReadTimestampsFile", SFTFILEIOC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (fname, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
@@ -2102,7 +2101,7 @@ LALWriteSFT2file (LALStatus *status,			/**< pointer to LALStatus structure */
 		  const CHAR *comment)		/**< optional comment (for v2 only) */
 {
   XLALPrintDeprecationWarning("LALWriteSFT2file", "XLALWriteSFT2file");
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( XLALWriteSFT2file( sft, fname, comment ) != XLAL_SUCCESS ) {
     ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
@@ -2219,7 +2218,7 @@ LALWriteSFTVector2Dir (LALStatus *status,			/**< pointer to LALStatus structure 
 		       const CHAR *description)         /**< optional sft description to go in the filename */
 {
   XLALPrintDeprecationWarning("LALWriteSFTVector2Dir", "XLALWriteSFTVector2Dir");
-  INITSTATUS (status, "LALWriteSFTVector2Dir", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( XLALWriteSFTVector2Dir( sftVect, dirname, comment, description ) != XLAL_SUCCESS ) {
     ABORT ( status, LAL_EXLAL, LAL_MSGEXLAL );
@@ -2301,7 +2300,7 @@ LALWrite_v2SFT_to_v1file (LALStatus *status,			/**< pointer to LALStatus structu
   REAL8 Band, dt;
   SFTtype v1SFT;
 
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL and perform basic checks*/
@@ -2363,7 +2362,7 @@ LALWriteSFTfile (LALStatus  *status,			/**< pointer to LALStatus structure */
   CHAR *rawheader, *ptr;
   SFTHeader header;
 
-  INITSTATUS (status, "LALWriteSFTfile", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL and perform basic checks*/
@@ -2458,7 +2457,7 @@ void
 LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure */
 		       SFTCatalog **catalog )	/**< the 'catalogue' to free */
 {
-  INITSTATUS (status, "LALDestroySFTcatalog", SFTFILEIOC);
+  INITSTATUS(status);
 
   ASSERT ( catalog, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );
 
@@ -2502,44 +2501,39 @@ LALDestroySFTCatalog ( LALStatus *status,			/**< pointer to LALStatus structure 
 
 /** Free an 'SFT-catalogue' */
 void
-XLALDestroySFTCatalog ( SFTCatalog **catalog )	/**< the 'catalogue' to free */
+XLALDestroySFTCatalog ( SFTCatalog *catalog  /**< the 'catalogue' to free */ )
 {
   if ( catalog ) {
 
-    if ( *catalog ) {
+    if ( catalog -> data )
+      {
+        UINT4 i;
+        for ( i=0; i < catalog->length; i ++ )
+          {
+            SFTDescriptor *ptr = &( catalog->data[i] );
+            if ( ptr->locator )
+              {
+                if ( ptr->locator->fname )
+                  XLALFree ( ptr->locator->fname );
+                XLALFree ( ptr->locator );
+              }
+            if ( ptr->comment )
+              XLALFree ( ptr->comment );
 
-      if ( (*catalog) -> data )
-	{
-	  UINT4 i;
-	  for ( i=0; i < (*catalog)->length; i ++ )
-	    {
-	      SFTDescriptor *ptr = &( (*catalog)->data[i] );
-	      if ( ptr->locator )
-		{
-		  if ( ptr->locator->fname )
-		    XLALFree ( ptr->locator->fname );
-		  XLALFree ( ptr->locator );
-		}
-	      if ( ptr->comment )
-		XLALFree ( ptr->comment );
+            /* this should not happen, but just in case: free data-entry in SFT-header */
+            if ( ptr->header.data )
+              XLALDestroyCOMPLEX8Sequence (ptr->header.data);
+          } /* for i < length */
 
-	      /* this should not happen, but just in case: free data-entry in SFT-header */
-	      if ( ptr->header.data )
-		XLALDestroyCOMPLEX8Sequence (ptr->header.data);
-	    } /* for i < length */
+        catalog->length = 0;
 
-	  (*catalog)->length = 0;
+        XLALFree ( catalog->data );
 
-	  XLALFree ( (*catalog)->data );
+      } /* if catalog->data */
 
-	} /* if *catalog->data */
+    XLALFree ( catalog );
 
-      XLALFree ( *catalog );
-
-    } /* if *catalog */
-
-    (*catalog) = NULL;
-  }
+  } /* if catalog */
 
 } /* XLALDestroySFTCatalog() */
 
@@ -2634,7 +2628,7 @@ LALGetSFTheaders (LALStatus *status,			/**< pointer to LALStatus structure */
   REAL8 t0, t1;		/* start- and end-times as reals */
   UINT4 numHeaders;
 
-  INITSTATUS (status, "LALGetSFTheaders", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* check input */
@@ -2745,7 +2739,7 @@ LALReadSFTfile (LALStatus *status,			/**< pointer to LALStatus structure */
   UINT4 i;
   REAL4 renorm;
 
-  INITSTATUS (status, "LALReadSFTfile", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (sft, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
@@ -2848,7 +2842,7 @@ LALReadSFTfiles (LALStatus *status,			/**< pointer to LALStatus structure */
   LALStringVector *fnames;
   UINT4 firstlen = 0;
 
-  INITSTATUS (status, "LALReadSFTfiles", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (sftvect, status, SFTFILEIO_ENULL,  SFTFILEIO_MSGENULL);
@@ -3054,7 +3048,7 @@ LALReadSFTheader (LALStatus  *status,			/**< pointer to LALStatus structure */
   REAL8 version;
   BOOLEAN swapEndian = 0;
 
-  INITSTATUS (status, "LALReadSFTHeader", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -3190,7 +3184,7 @@ LALReadSFTdata(LALStatus *status,			/**< pointer to LALStatus structure */
   BOOLEAN swapEndian = 0;
   UINT4 i;
 
-  INITSTATUS (status, "LALReadSFTdata", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /*   Make sure the arguments are not NULL: */
@@ -3419,7 +3413,7 @@ lal_read_sft_bins_from_fp ( LALStatus *status, SFTtype **sft, UINT4 *binsread, U
   long offsetBytes;
   volatile REAL8 tmp;	/* intermediate results: try to force IEEE-arithmetic */
 
-  INITSTATUS (status, "lal_read_sft_bins_from_fp", SFTFILEIOC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR ( status );
 
   ASSERT ( sft, status, SFTFILEIO_ENULL, SFTFILEIO_MSGENULL );

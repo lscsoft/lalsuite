@@ -111,9 +111,6 @@ int gethostname(char *name, int len);
 #include <lal/FrameCache.h>
 #include <lal/FrameStream.h>
 
-NRCSID( FRAMESTREAMC, "$Id$" );
-
-
 /*
  *
  * These functions are for internal use.
@@ -426,7 +423,7 @@ int XLALFrSetMode( FrStream *stream, int mode )
 }
 
 
-int XLALFrState( FrStream *stream )
+int XLALFrGetState( FrStream *stream )
 {
   if ( ! stream )
     XLAL_ERROR( XLAL_EFAULT );
@@ -831,7 +828,7 @@ LALFrCacheOpen(
 { 
   FrStream *stream;
 
-  INITSTATUS( status, "LALFrCacheOpen", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( cache, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( output, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *output, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -867,7 +864,7 @@ LALFrOpen(
 { 
   FrCache *cache = NULL;
 
-  INITSTATUS( status, "LALFrOpen", FRAMESTREAMC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( ! *stream, status, FRAMESTREAMH_ENNUL, FRAMESTREAMH_MSGENNUL );
@@ -903,7 +900,7 @@ LALFrClose(
     FrStream  **stream
     )
 { 
-  INITSTATUS( status, "LALFrClose", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( *stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   XLALFrClose( *stream );
@@ -919,7 +916,7 @@ LALFrSetMode(
     FrStream  *stream
     )
 { 
-  INITSTATUS( status, "LALFrSetMode", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   stream->mode = mode;
   RETURN( status );
@@ -934,10 +931,10 @@ LALFrEnd(
     FrStream  *stream
     )
 { 
-  INITSTATUS( status, "LALFrEnd", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
-  *end = XLALFrState( stream ) & LAL_FR_END;
+  *end = XLALFrGetState( stream ) & LAL_FR_END;
   RETURN( status );
 }
 
@@ -948,7 +945,7 @@ LALFrRewind(
     FrStream  *stream
     )
 { 
-  INITSTATUS( status, "LALFrRewind", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( XLALFrRewind( stream ) )
   {
@@ -975,7 +972,7 @@ LALFrNext(
 { 
   CHAR frErrMsg[1024];
   int code;
-  INITSTATUS( status, "LALFrNext", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
 
   if ( stream->state & LAL_FR_ERR )
@@ -1028,7 +1025,7 @@ LALFrSeek(
 { 
   CHAR frErrMsg[1024];
   int code;
-  INITSTATUS( status, "LALFrSeek", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -1075,7 +1072,7 @@ LALFrTell(
     FrStream    *stream
     )
 { 
-  INITSTATUS( status, "LALFrTell", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -1095,7 +1092,7 @@ LALFrGetPos(
     FrStream  *stream
     )
 { 
-  INITSTATUS( status, "LALFrGetPos", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )
@@ -1115,7 +1112,7 @@ LALFrSetPos(
     FrStream  *stream
     )
 { 
-  INITSTATUS( status, "LALFrSetPos", FRAMESTREAMC );
+  INITSTATUS(status);
   ASSERT( position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   ASSERT( stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL );
   if ( stream->state & LAL_FR_ERR )

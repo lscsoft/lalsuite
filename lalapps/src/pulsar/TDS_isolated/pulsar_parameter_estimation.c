@@ -32,9 +32,8 @@
 
 *******************************************************************************/
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation.h"
-
-RCSID("$Id$");
 
 /* global variable */
 INT4 verbose=0;
@@ -152,11 +151,11 @@ INT4 main(INT4 argc, CHAR *argv[]){
   CHAR outputFile[256];
 
   OutputParams output = empty_OutputParams;
-  REAL8 maxPost=0.;
   REAL8 logNoiseEv[5]; /* log evidence for noise only (no signal) */
   Results results;
   REAL8 h0ul=0.;
-
+  REAL8 maxPost=0.;
+  
   CHAR params[][10]={"h0", "phi", "psi", "ciota"};
 
   EphemerisData *edat=NULL;
@@ -398,6 +397,11 @@ defined!\n");
       /*========== CREATE THE SINGLE DETECTOR POSTERIORS =====================*/
       maxPost = log_posterior(singleLike, inputs.priors, inputs.mesh, output);
 
+      if( isinf(maxPost) ){
+        fprintf(stderr, "Error... posterior is infinite!\n");
+        return 0;
+      }
+      
       /* marginalise over each parameter and output the data */
       for( n = 0 ; n < 4 ; n++ ){
         output.margParam = params[n];
@@ -448,6 +452,12 @@ defined!\n");
                                             the full posterior */
 
       maxPost = log_posterior(jointLike, inputs.priors, inputs.mesh, output);
+      
+      if( isinf(maxPost) ){
+        fprintf(stderr, "Error... posterior is infinite!\n");
+        return 0;
+      }
+      
       if( verbose )
         fprintf(stderr, "I've calculated the joint posterior.\n");
 
@@ -1065,7 +1075,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
            data.chunkLengths->data[(INT4)data.chunkLengths->length-1];
 
   tstart = data.times->data[0]; /* time of first B_k */
-
+  
   for( i = 0 ; i < length ; i += chunkLength ){
     chunkLength = (REAL8)data.chunkLengths->data[count];
 
@@ -1140,7 +1150,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
       likeArray[k] += exclamation[(INT4)chunkLength];
       likeArray[k] -= chunkLength*log(chiSquare);
     }
-
+    
     /* get the log evidence for the data not containing a signal */
     noiseEvidence += (chunkLength - 1.)*logOf2;
     noiseEvidence += exclamation[(INT4)chunkLength];
@@ -1149,7 +1159,7 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
     first++;
     count++;
   }
-  
+
   return noiseEvidence;
 }
 
@@ -1245,7 +1255,7 @@ prior.meanh0)*(prior.vars.h0 - prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
    - print out the log posterior if requested */
 REAL8 log_posterior(REAL8 ****logLike, PriorVals prior, MeshGrid mesh,
   OutputParams output){
-  REAL8 maxPost=-1.e200, mP=0.;
+  REAL8 maxPost=-INFINITY, mP=0.;
   REAL8 logPi=0.;
 
   INT4 i=0, j=0, k=0, n=0;
@@ -1309,8 +1319,8 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   REAL8 **evSum2=NULL;       /* second integral */
   REAL8 *evSum3=NULL;        /* third integral */
   REAL8 *cumsum=NULL;        /* cumulative probability */
-  REAL8 evSum4=-1.e200;      /* fouth integral */
-  REAL8 maxPost=-1.e200;
+  REAL8 evSum4=-INFINITY;    /* fouth integral */
+  REAL8 maxPost=-INFINITY;
   REAL8 evVal=0., sumVal=0.;
 
   Results results={0.,0.,0.,0.}; /* the results structure */
@@ -1378,7 +1388,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
     for( j = 0 ; j < numSteps2 ; j++ ){
       evSum1[i][j] = XLALCalloc(numSteps3, sizeof(REAL8));
       for( k = 0 ; k < numSteps3 ; k++ ){
-        evSum1[i][j][k] = -1.e200; /* initialise */
+        evSum1[i][j][k] = -INFINITY; /* initialise */
 
         /* if we only have one point in the parameter space */
         if( numSteps4 == 1 ){
@@ -1469,7 +1479,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
   for( i = 0 ; i < numSteps1 ; i++ ){
     evSum2[i] = XLALCalloc(numSteps2, sizeof(REAL8));
     for( j = 0 ; j < numSteps2 ; j++ ){
-      evSum2[i][j] = -1.e200;
+      evSum2[i][j] = -INFINITY;
 
       if( numSteps3 == 1 ) evSum2[i][j] = evSum1[i][j][0];
       else{  
@@ -1492,7 +1502,7 @@ Results marginalise_posterior(REAL8 ****logPost, MeshGrid mesh,
 
   /* perform third integration */
   for( i = 0 ; i < numSteps1 ; i++ ){
-    evSum3[i] = -1.e200;
+    evSum3[i] = -INFINITY;
 
     if( numSteps2 == 1 ) evSum3[i] = evSum2[i][0];
     else{
@@ -2500,7 +2510,7 @@ paramData ) ) == NULL ){
     /* if this is the first time in the chain an h0 was negative then set
        the value of logL2 to something close to -Inf */
     if( onlyonce == 1 ){
-      logL2 = -1e200;
+      logL2 = -INFINITY;
       onlyonce = 0; /* reset value */
     }
 
@@ -3207,7 +3217,7 @@ reading any correlation data!");
     }
 
     /* send an error if we hit the end of the file */
-    if(feof(fp)){
+    if( feof(fp) || rc == EOF ){
       fprintf(stderr, "Error reading in matrix - hit end of file!\n");
       exit(0);
     }

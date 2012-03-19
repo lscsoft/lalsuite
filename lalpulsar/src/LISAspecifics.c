@@ -29,13 +29,11 @@
 #include <math.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALError.h>
 #include <ComputeFstat.h>
 
 #include "LISAspecifics.h"
-
-
-NRCSID( LISASPECIFICSC, "$Id$");
 
 /*---------- local DEFINES ----------*/
 #define TRUE (1==1)

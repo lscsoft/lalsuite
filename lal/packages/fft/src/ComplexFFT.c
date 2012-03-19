@@ -114,9 +114,6 @@
 #include <lal/ComplexFFT.h>
 #include <lal/FFTWMutex.h>
 
-NRCSID( COMPLEXFFTC, "$Id$" );
-
-
 /** Plan to perform an FFT of COMPLEX8 data
  * \ingroup ComplexFFT_h
  */
@@ -422,7 +419,7 @@ LALCreateForwardCOMPLEX8FFTPlan(
     INT4             measure
     )
 {
-  INITSTATUS( status, "LALCreateForwardCOMPLEX8FFTPlan", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX8FFTPlan", "XLALCreateForwardCOMPLEX8FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -460,7 +457,7 @@ LALCreateReverseCOMPLEX8FFTPlan(
     INT4             measure
     )
 {
-  INITSTATUS( status, "LALCreateReverseCOMPLEX8FFTPlan", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX8FFTPlan", "XLALCreateReverseCOMPLEX8FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -496,7 +493,7 @@ LALDestroyCOMPLEX8FFTPlan (
     COMPLEX8FFTPlan **plan
     )
 {
-  INITSTATUS( status, "LALDestroyCOMPLEX8FFTPlan", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALDestroyCOMPLEX8FFTPlan", "XLALDestroyCOMPLEX8FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -527,7 +524,7 @@ LALCOMPLEX8VectorFFT (
     )
 {
   int code;
-  INITSTATUS( status, "LALCOMPLEX8VectorFFT", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCOMPLEX8VectorFFT", "XLALCOMPLEX8VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -595,7 +592,7 @@ LALCreateForwardCOMPLEX16FFTPlan(
     INT4             measure
     )
 {
-  INITSTATUS( status, "LALCreateForwardCOMPLEX16FFTPlan", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateForwardCOMPLEX16FFTPlan", "XLALCreateForwardCOMPLEX16FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -633,7 +630,7 @@ LALCreateReverseCOMPLEX16FFTPlan(
     INT4             measure
     )
 {
-  INITSTATUS( status, "LALCreateReverseCOMPLEX16FFTPlan", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCreateReverseCOMPLEX16FFTPlan", "XLALCreateReverseCOMPLEX16FFTPlan");
 
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -669,7 +666,7 @@ LALDestroyCOMPLEX16FFTPlan (
     COMPLEX16FFTPlan **plan
     )
 {
-  INITSTATUS( status, "LALDestroyCOMPLEX16FFTPlan", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALDestroyCOMPLEX16FFTPlan", "XLALDestroyCOMPLEX16FFTPlan");
   ASSERT( plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
   ASSERT( *plan, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );
@@ -700,7 +697,7 @@ LALCOMPLEX16VectorFFT (
     )
 {
   int code;
-  INITSTATUS( status, "LALCOMPLEX16VectorFFT", COMPLEXFFTC );
+  INITSTATUS(status);
   XLALPrintDeprecationWarning("LALCOMPLEX16VectorFFT", "XLALCOMPLEX16VectorFFT");
 
   ASSERT( output, status, COMPLEXFFTH_ENULL, COMPLEXFFTH_MSGENULL );

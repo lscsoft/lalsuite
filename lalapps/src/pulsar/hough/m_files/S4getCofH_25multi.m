@@ -1,4 +1,4 @@
-% $Id$ making up 0.25 
+% making up 0.25 
 
 %prefix='/local_data/sintes/S4/MultiMC/MultiMC_100_1000_500/MCfreq_';
 prefix='/local_data/sintes/S4/MultiMC/MultiMC/MCfreq_';

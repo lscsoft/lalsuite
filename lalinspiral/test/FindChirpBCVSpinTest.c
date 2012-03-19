@@ -23,11 +23,11 @@
  *
  * Author: Brown, D. A., Jones, G
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -50,8 +50,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
 #include <lal/FindChirpTD.h>
-
-NRCSID (MAIN, "$Id$");
 
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);

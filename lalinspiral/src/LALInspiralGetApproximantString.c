@@ -54,8 +54,6 @@ snprintf
 
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALGETAPPROXIMANTSTRINGC, "$Id$");
-
 int XLALInspiralGetApproximantString( CHAR        *output,
                                       UINT4       length,
                                       Approximant approx,

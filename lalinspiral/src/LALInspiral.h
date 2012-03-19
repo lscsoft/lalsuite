@@ -63,7 +63,6 @@ extern "C" {
 #endif
 
 /** \cond DONT_DOXYGEN */
-NRCSID( LALINSPIRALH, "$Id$" );
 
 # define oneby3    0.333333333333333333333333333
 # define twoby3    0.666666666666666666666666667
@@ -701,16 +700,6 @@ tagInspiralInit
 
 }  InspiralInit;
 
-/** UNDOCUMENTED */
-typedef enum
-{
-  INSPIRAL_TAPER_NONE,		/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_START,		/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_END,		/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_STARTEND,	/**< UNDOCUMENTED */
-  INSPIRAL_TAPER_NUM_OPTS	/**< UNDOCUMENTED */
-}  InspiralApplyTaper;
-
 /* Function prototypes */
 
 /* --- HERE ARE SOME USEFUL PROTOTYPE FOR LENGTH, PARAMETER CALCULATION... --- */
@@ -793,17 +782,35 @@ XLALInspiralInit(
 
 
 
+/**
+ * Generate the plus and cross polarizations for a waveform
+ * form a row of the sim_inspiral table.
+ *
+ * Parses a row from the sim_inspiral table and passes the appropriate members
+ * to XLALSimInspiralChooseWaveform().
+ *
+ * FIXME: this should eventually be moved to lalsimulation
+ * along with the appropriate string parsing functions
+ */
+int XLALSimInspiralChooseWaveformFromSimInspiral(
+    REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+    REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+    SimInspiralTable *thisRow,	/**< row from the sim_inspiral table containing waveform parameters */
+    REAL8 deltaT		/**< sampling interval */
+    );
 
-
-void LALInspiralWaveTaper(
-     LALStatus    *status,
-     REAL4Vector  *signalvec,
-     UINT4       bookends
-     );
-
-int XLALInspiralWaveTaper(
-                   REAL4Vector         *signalvec,
-                   InspiralApplyTaper  bookends);
+/**
+ * Generate the plus and cross polarizations for a waveform
+ * form a row of the InspiralTemplate structure.
+ *
+ * Parses the InspiralTemplate stucture and passes the appropriate members
+ * to XLALSimInspiralChooseWaveform().
+ */
+int XLALSimInspiralChooseWaveformFromInspiralTemplate(
+   REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+   REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+   InspiralTemplate *params	/**< stucture containing waveform parameters */
+   );
 
 /* --- HERE ARE THE WAVEFORMS/MODELS PROTOTYPES --- */
 

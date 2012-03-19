@@ -81,11 +81,6 @@ XLALInspiralWave2Engine(
 		InspiralInit     *paramsInit
                 );
 
-
-NRCSID (LALINSPIRALWAVE2C, "$Id$");
-
-
-
 void
 LALInspiralWave2 (
    LALStatus        *status,
@@ -94,7 +89,7 @@ LALInspiralWave2 (
    )
 {
   XLALPrintDeprecationWarning("LALInspiralWave2", "XLALInspiralWave2");
-  INITSTATUS(status, "LALInspiralWave2", LALINSPIRALWAVE2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave2(output, params) )
@@ -150,10 +145,6 @@ XLALInspiralWave2(
   return XLAL_SUCCESS;
 }
 
-NRCSID (LALINSPIRALWAVE2TEMPLATESC, "$Id$");
-
-
-
 void
 LALInspiralWave2Templates (
   LALStatus        *status,
@@ -163,7 +154,7 @@ LALInspiralWave2Templates (
   )
 {
   XLALPrintDeprecationWarning("LALInspiralWave2Templates", "XLALInspiralWave2Templates");
-  INITSTATUS(status, "LALInspiralWave2Templates", LALINSPIRALWAVE2TEMPLATESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave2Templates(output1, output2, params) )
@@ -226,13 +217,6 @@ XLALInspiralWave2Templates(
   return XLAL_SUCCESS;
 }
 
-
-
-
-NRCSID (LALINSPIRALWAVE2FORINJECTIONC, "$Id$");
-
-
-
 void
 LALInspiralWave2ForInjection (
   LALStatus        *status,
@@ -242,7 +226,7 @@ LALInspiralWave2ForInjection (
   )
 {
   XLALPrintDeprecationWarning("LALInspiralWave2ForInjection", "XLALInspiralWave2ForInjection");
-  INITSTATUS(status, "LALInspiralWave2ForInjection", LALINSPIRALWAVE2FORINJECTIONC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   if( XLALInspiralWave2ForInjection(waveform, params, ppnParams) )
@@ -443,9 +427,6 @@ XLALInspiralWave2ForInjection(
 
   return XLAL_SUCCESS;
 }
-
-
-NRCSID (LALINSPIRALWAVE2ENGINEC, "$Id$");
 
 /* 'Engine' function upon which all the other functions invoke
     Craig Robinson 04/05 */

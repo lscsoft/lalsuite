@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="LALGSLCV">
  * Author: Creighton, J. D. E.
- * $Id$
  **** </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -66,8 +65,6 @@ with the LAL GSL error handler in effect.
 #include <lal/LALGSL.h>
 #include <gsl/gsl_errno.h>
 
-NRCSID( LALGSLC, "$Id$" );
-
 LALStatus * lalGSLGlobalStatusPtr = NULL;
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
@@ -87,10 +84,10 @@ LALGSLErrorHandler(
   {
     lalAbortHook( "Abort: function LALGSLErrorHandler, file %s, line %d, %s\n"
                   "       Null global status pointer\n",
-                  __FILE__, __LINE__, LALGSLC );
+                  __FILE__, __LINE__, "$Id$" );
   }
   lalGSLGlobalStatusPtr->statusPtr = NULL;
-  INITSTATUS( lalGSLGlobalStatusPtr, "LALGSLErrorHandler", LALGSLC );
+  INITSTATUS(lalGSLGlobalStatusPtr);
   lalGSLGlobalStatusPtr->statusDescription = gsl_strerror( my_gsl_error );
   lalGSLGlobalStatusPtr->statusCode        = my_gsl_error;
   lalGSLGlobalStatusPtr->file              = file;

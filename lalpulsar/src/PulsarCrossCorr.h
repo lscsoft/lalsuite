@@ -84,12 +84,6 @@ extern "C" {
 
 
 /******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (PULSARCROSSCORRH, "$Id$");
-
-/******************************************************
  *  Error codes and messages.
  */
 

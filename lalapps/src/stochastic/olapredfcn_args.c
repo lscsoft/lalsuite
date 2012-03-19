@@ -23,7 +23,6 @@
  *
  * Author: John T. Whelan
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -89,6 +88,7 @@ olapredfcn_parse_options (
     )
 {
   const char *dbglvl  = NULL;
+  FILE *fp;
 
   while (1)
   {
@@ -144,8 +144,18 @@ olapredfcn_parse_options (
         break;
 
       case 'q': /* quiet: run silently (ignore error messages) */
-        freopen("/dev/null", "w", stderr);
-        freopen("/dev/null", "w", stdout);
+        fp = freopen("/dev/null", "w", stderr);
+        if ( fp == NULL )
+        {
+          XLALPrintError( "XLAL Error - %s: unable to open /dev/null\n", __func__);
+          XLAL_ERROR_VOID( XLAL_EFAILED );
+        }
+        fp = freopen("/dev/null", "w", stdout);
+        if ( fp == NULL )
+        {
+          XLALPrintError( "XLAL Error - %s: unable to open /dev/null\n", __func__);
+          XLAL_ERROR_VOID( XLAL_EFAILED );
+        }
         break;
 
       case 'h':

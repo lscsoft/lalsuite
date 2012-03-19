@@ -1,4 +1,4 @@
-/*  
+/*
  *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.h by
@@ -15,10 +15,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
- * 
+ *
  */
 
 #ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 /* lal includes */
 #include <lal/UserInput.h>
@@ -49,11 +49,11 @@
 #include <lal/LALDemod.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
-#include <lal/LALHough.h> 
+#include <lal/LALHough.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
-#include <lal/GeneratePulsarSignal.h> 
+#include <lal/GeneratePulsarSignal.h>
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
 #include <lal/UniversalDopplerMetric.h>
@@ -74,12 +74,6 @@
 extern "C" {
 #endif
 
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14:37 hpletsch Exp $" );
 
 /******************************************************
  *  Error codes and messages.
@@ -115,9 +109,9 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #define HIERARCHICALSEARCH_MSGEXLAL    "XLAL function call failed"
 
 
-/* ******************************************************************
- *  Structure, enum, union, etc., typdefs.
- */
+  /* ******************************************************************
+   *  Structure, enum, union, etc., typdefs.
+   */
 
   /** type describing one coherent segment of data: ( start-time + duration ) */
   typedef struct {
@@ -144,7 +138,7 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
     LIGOTimeGPS refTime;       /**< reference time for f, fdot definition */
     REAL8VectorSequence *pos;  /**< Earth orbital position for each segment */
     REAL8VectorSequence *vel;  /**< Earth orbital velocity for each segment */
-    REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */ 
+    REAL8VectorSequence *acc;  /**< Earth orbital acceleration for each segment (new) */
     CHAR *outBaseName;         /**< file for writing output -- if chosen */
     REAL8  threshold;          /**< Threshold for candidate selection */
     UINT4 extraBinsFstat;      /**< Extra bins required for Fstat calculation */
@@ -162,47 +156,71 @@ NRCSID( HIERARCHICALSEARCHH, "$Id: HierarchicalSearchGC.h,v 1.9 2009/10/07 08:14
 #endif
   typedef struct tagFineGrid {
     REAL8 freqmin_fg;       /**< fine-grid start in frequency */
-    REAL8 f1dotmin_fg;      /**< fine-grid start in 1st spindown */
     REAL8 dfreq_fg;         /**< fine-grid spacing in frequency */
-    REAL8 df1dot_fg;        /**< fine-grid spacing in 1st spindown */
     REAL8 alpha;            /**< right ascension */
     REAL8 delta;            /**< declination */
     LIGOTimeGPS refTime;    /**< reference time for candidates */
-    UINT4 length;           /**< maximum allowed length of vectors */
+    UINT4 length;           /**< length of multi-IFO stats vectors 'sumTwoF', 'nc' (currently 'length'= 'freqlength') */
     UINT4 freqlength;       /**< number of fine-grid points in frequency */
-    UINT4 f1dotlength;      /**< number of fine-grid points in 1st spindown */
-    REAL4 * sumTwoF;        /**< sum of 2F-values */
-    FINEGRID_NC_T * nc;     /**< number count */
+    UINT4 numDetectors;     /**< number of detectors for sumTwoFX array */
+    REAL4 * sumTwoF;        /**< sum of 2F-values, 1D array over fine-grid frequencies (of length 'length') */
+    UINT4 freqlengthAL;     /**< "aligned" number of fine-grid points in frequency: in blocks of 16 bytes, consistent with ALAlloc() [used only for sumTwoFX]*/
+    REAL4 * sumTwoFX;       /**< sum of per-IFO 2F-values, 2D array over frequencies and detectors (of length 'freqlengthAL*numDetectors') */
+    FINEGRID_NC_T * nc;     /**< number count (1D array over frequencies, of length 'length') */
   } FineGrid;
 
+  /* macro to index arrays in the FineGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define FG_INDEX(fg, iFreq)                     \
+  ( (iFreq) )
 
-  /** one coarse-grid point */
-  typedef struct tagCoarseGridPoint {
-    UINT4 Uindex;      /**< U index */
-    REAL4 TwoF;       /**< 2F-value */
-  } CoarseGridPoint;  
+  /* macro to index FX array in the FineGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   * NOTE!: this 2D array needs 16-byte aligned blocks of frequency-bins (one block per detector),
+   * therefore we need to use the special length field freqlengthAL (which is a multiple of 4xREAL4 bytes)
+   */
+#define FG_FX_INDEX(fg, iDet, iFreq)       \
+  ( ( (iDet) * (fg).freqlengthAL ) + (iFreq) )
 
+  /* ------------------------------------------------------------------------- */
 
   /** structure for storing coarse-grid points */
   typedef struct tagCoarseGrid {
-    UINT4 length;             /**< maximum allowed length of vectors */
-    UINT4 * Uindex;      /**< U index */
-    REAL4 * TwoF;       /**< 2F-value */
+    UINT4 length;        /**< length of multi-IFO array 'sumTwoF', 'Uindex' (currently 'length'= 'nStacks * freqlength') */
+    UINT4 nStacks;       /**< number of stacks */
+    UINT4 freqlength;    /**< number of coarse-grid points in frequency */
+    UINT4 * Uindex;      /**< U index, 2D array over stacks and frequencies (of length 'length') */
+    REAL4 * TwoF;        /**< 2F-value, 2D array over stacks and frequencies (of length 'length') */
+    UINT4 numDetectors;  /**< number of detectors */
+    REAL4 *TwoFX;        /**< per-IFO 2F-values, 3D array over {frequencies, stacks, detectors} (of length = 'numDetector * length' */
   } CoarseGrid;
 
- /* ------------------------------------------------------------------------- */
+  /* macro to index 2D arrays in the CoarseGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define CG_INDEX(cg, iStack, iFreq)             \
+  ( ( (iStack) * (cg).freqlength ) + (iFreq) )
 
- /* function prototypes */
+  /* macro to index 3D FX array in the CoarseGrid structure
+   * frequency/GCT U1 index MUST always be the innermost index
+   */
+#define CG_FX_INDEX(cg, iDet, iStack, iFreq)       \
+  ( ( (iDet) * (cg).length ) + ( (iStack) * (cg).freqlength ) + (iFreq) )
 
-  void SetUpStacks(LALStatus *status, 
-		 SFTCatalogSequence  *out,  
-		 REAL8 tStack,
-		 SFTCatalog  *in,
-		 UINT4 nStacks);
+  /* ------------------------------------------------------------------------- */
+
+  /* function prototypes */
+
+  void SetUpStacks(LALStatus *status,
+                   SFTCatalogSequence  *out,
+                   REAL8 tStack,
+                   SFTCatalog  *in,
+                   UINT4 nStacks);
 
   void GetChkPointIndex( LALStatus *status,
-			 INT4 *loopindex, 
-			 const CHAR *fnameChkPoint);
+                         INT4 *loopindex,
+                         const CHAR *fnameChkPoint);
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

@@ -187,8 +187,6 @@ int ReadFullBank(void)
   REAL8 tperiMAXFLT;
   REAL8 dummy;
   REAL8 dist_min=999999999.0;
-  REAL8 Xmin,Ymin;
-  int rc;
  
   /* here we read in the full template file and its header information */
   
@@ -269,7 +267,10 @@ int ReadFullBank(void)
 
   /* cycle through the templates and calculate the distance from the central point */ 
   for (i=0;i<Nfull;i++) {
-    rc = fscanf(fbfp,"%lf%lf%d%d%lf%lf",&sma[i],&dummy,&tperi[i].gpsSeconds,&tperi[i].gpsNanoSeconds,&dummy,&dummy);
+    if ( 6 != fscanf(fbfp,"%lf%lf%d%d%lf%lf",&sma[i],&dummy,&tperi[i].gpsSeconds,&tperi[i].gpsNanoSeconds,&dummy,&dummy) ) {
+      fprintf (stderr, "\nfscanf() failed to read 6 items from stream 'fbfp'\n" );
+      exit(1);
+    }
     RTPloc.sma=sma[i];
     RTPloc.tperi.gpsSeconds=tperi[i].gpsSeconds;
     RTPloc.tperi.gpsNanoSeconds=tperi[i].gpsNanoSeconds;
@@ -278,8 +279,6 @@ int ReadFullBank(void)
   
     if (dist[i]<dist_min) {
       dist_min = dist[i];
-      Xmin=XYloc.X;
-      Ymin=XYloc.Y;
     }
   }
   

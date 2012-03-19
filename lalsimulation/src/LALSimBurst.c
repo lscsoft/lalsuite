@@ -27,6 +27,7 @@
  */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -41,11 +42,6 @@
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include "check_series_macros.h"
-
-
-#include <lal/LALRCSID.h>
-NRCSID(LALSIMBURSTC, "$Id:");
-
 
 /*
  * ============================================================================

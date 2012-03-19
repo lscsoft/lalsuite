@@ -20,8 +20,6 @@
 extern "C" {
 #endif
 
-NRCSID (LALSQTPNWAVEFORMINTERFACEH, "$Id LALSQTPNWaveformInterface.h$");
-
 #define LALSQTPN_MSGPPNPARAMS "the PPNParamsStruct structure is null"
 #define LALSQTPN_MSGINSPIRALTEMPLATE "the InspiralTemplate structure is null"
 #define LALSQTPN_ZEROLENGTH 3

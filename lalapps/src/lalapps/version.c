@@ -27,7 +27,6 @@
 #include <LALAppsVCSInfo.h>
 
 /* program information */
-RCSID(LALAPPS_VCS_IDENT_ID);
 #define PROGRAM_NAME "lalapps_version"
 
 /* verbose flag */

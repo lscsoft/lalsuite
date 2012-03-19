@@ -54,6 +54,7 @@
 #include <unistd.h>
 #endif
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
@@ -63,9 +64,6 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALMoment.h>
-
-#include <lal/LALRCSID.h>
-NRCSID (TIMEFREQFFTTESTC,"$Id$");
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)

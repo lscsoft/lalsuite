@@ -124,16 +124,13 @@ t\f$ times the discrete Fourier transform.</li>
 @{
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/AVFactories.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <string.h>
-
-NRCSID(ZEROPADANDFFTC,
-       "$Id$");
-
 
 void
 LALSZeroPadAndFFT(
@@ -148,7 +145,7 @@ LALSZeroPadAndFFT(
   REAL4 *sPtr, *sStopPtr, *hBarPtr, *windowPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALSZeroPadAndFFT", ZEROPADANDFFTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING --------------------------------------------------- */
@@ -331,7 +328,7 @@ LALCZeroPadAndFFT(
   REAL4 *windowPtr;
 
   /* initialize status structure */
-  INITSTATUS(status, "LALCZeroPadAndFFT", ZEROPADANDFFTC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /* ERROR CHECKING --------------------------------------------------- */

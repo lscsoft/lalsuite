@@ -1,4 +1,3 @@
-//$Id: MySqliteReader.cc,v 1.10 2008-02-14 20:21:01 narsky Exp $
 
 #include "StatPatternRecognition/SprExperiment.hh"
 #include "MySqliteReader.hh"

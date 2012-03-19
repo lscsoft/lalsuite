@@ -24,6 +24,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/LALComplex.h>
@@ -41,8 +42,6 @@
 #else
 #define UNUSED
 #endif
-
-NRCSID(LALSIMINSPIRALTAYLORT1C, "$Id$");
 
 /**
  * This structure contains the intrinsic parameters and post-newtonian 

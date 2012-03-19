@@ -20,7 +20,6 @@
 #if 0  /* autodoc block */
 
 <lalVerbatim file="InterpolateCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -90,8 +89,6 @@ Numerical Recipes~\cite{ptvf:1992}.
 #include <lal/LALStdlib.h>
 #include <lal/Interpolate.h>
 
-NRCSID (INTERPOLATEC, "$Id$");
-
 /* <lalVerbatim file="InterpolateCP"> */
 void
 LALSPolynomialInterpolation (
@@ -109,7 +106,7 @@ LALSPolynomialInterpolation (
   UINT4  n;
   UINT4  i;
 
-  INITSTATUS (status, "LALSPolynomialInterpolation", INTERPOLATEC);
+  INITSTATUS(status);
 
   ASSERT (output, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
   ASSERT (params, status, INTERPOLATEH_ENULL, INTERPOLATEH_MSGENULL);
@@ -187,7 +184,7 @@ LALDPolynomialInterpolation (
     DInterpolatePar *params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALDPolynomialInterpolation", INTERPOLATEC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning("LALDPolynomialInterpolation", "XLALDPolynomialInterpolation");
 

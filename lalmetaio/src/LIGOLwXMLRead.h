@@ -54,9 +54,6 @@
 extern "C" {
 #endif
 
-
-NRCSID( LIGOLWXMLREADH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define LIGOLWXMLREADH_ENULL 1
 #define LIGOLWXMLREADH_ENNUL 2

@@ -26,13 +26,12 @@
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInspiral.h>
 #include <lal/FindChirp.h>
 #include <lal/FindChirpBCVSpin.h>
-
-NRCSID (FINDCHIRPSBCVTEMPLATEC, "$Id$");
 
 /**
 
@@ -175,7 +174,7 @@ LALFindChirpBCVSpinTemplate (
   REAL4                 deltaT;
   REAL4                 rLSOto3by2       = 0.0;
 
-  INITSTATUS( status, "LALFindChirpBCVSpinTemplate", FINDCHIRPSBCVTEMPLATEC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* check that the output structures exist */

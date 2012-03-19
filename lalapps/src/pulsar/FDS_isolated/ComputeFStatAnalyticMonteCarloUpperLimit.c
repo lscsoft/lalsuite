@@ -38,7 +38,7 @@
 #include <gsl/gsl_vector_int.h>
 #include <gsl/gsl_matrix.h>
 
-#include <lal/LALRCSID.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/GSLSupport.h>
@@ -51,8 +51,6 @@
 #include <lal/ComputeFstat.h>
 #include <lal/ConfigFile.h>
 #include <lalapps.h>
-
-RCSID("$Id$");
 
 BOOLEAN calc_AM_coeffs(LALStatus*, gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
@@ -309,7 +307,7 @@ int main(int argc, char *argv[]) {
   {
     unsigned long seed;
     FILE *fpr = NULL;
-    size_t num;
+
     if ((rng = gsl_rng_alloc(gsl_rng_mt19937)) == NULL) {
       XLALPrintError("Couldn't allocate a gsl_rng\n");
       return EXIT_FAILURE;
@@ -318,7 +316,10 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Couldn't open '/dev/random'\n");
       return EXIT_FAILURE;
     }
-    num = fread(&seed, sizeof(seed), 1, fpr);
+    if (fread(&seed, sizeof(seed), 1, fpr) != 1) {
+      XLALPrintError("Couldn't read from '/dev/random'\n");
+      return EXIT_FAILURE;
+    }
     fclose(fpr);
     gsl_rng_set(rng, seed);
   }
@@ -345,7 +346,9 @@ int main(int argc, char *argv[]) {
       fp = stdout;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-    fprintf(fp, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
+    fprintf(fp, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
     fprintf(fp, "alpha=%0.4f alpha_band=%0.4f\n", alpha, alpha_band);
@@ -378,7 +381,7 @@ int main(int argc, char *argv[]) {
       REAL8 twoF_pdf_FDR = 0.0;
 
       /* Output at beginning of loop */
-      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%i\n", h0_iter, h0, dh0, MC_trials);
+      LogPrintf(LOG_DEBUG, "Beginning h0 loop %2i with h0=%0.5e, dh0=% 0.5e, MC_trials=%" LAL_INT8_FORMAT "\n", h0_iter, h0, dh0, MC_trials);
       fprintf(fp, "MC_trials=%" LAL_INT8_FORMAT, MC_trials);
 
       /* Destroy any previous histogram */
@@ -540,7 +543,7 @@ int main(int argc, char *argv[]) {
       dh0 = GSL_SIGN(dh0) * GSL_MIN(fabs(dh0), fabs(h0 * h0_brake));
 
       /* Output at end of loop */
-      fprintf(fp, "h0=%0.5e FDR_MC_int=%0.4f FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
+      fprintf(fp, " h0=%0.5e FDR_MC_int=%0.4f FDR_2F_dist=%0.4f\n", h0, J, twoF_pdf_FDR);
       fflush(fp);      
       LogPrintf(LOG_DEBUG, "Ending    h0 loop %2i with error=%0.4e, FDR(MC int.)=%0.4f, FDR(2F dist.)=%0.4f\n", h0_iter, H0_ERROR, J, twoF_pdf_FDR);
 
@@ -567,7 +570,7 @@ int main(int argc, char *argv[]) {
 
     /* If number of MC trials exceeded reset */
     if (MC_trials >= MC_trials_reset)
-      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trails=%i): trying again ...\n", h0_iter, MC_trials);
+      LogPrintf(LOG_DEBUG, "Failed to converge after %i iterations (MC_trials=%" LAL_INT8_FORMAT "): trying again ...\n", h0_iter, MC_trials);
 
   } while (MC_trials >= MC_trials_reset);
   
@@ -582,7 +585,9 @@ int main(int argc, char *argv[]) {
       return EXIT_FAILURE;
     }
     LAL_CALL(LALUserVarGetLog(&status, &cmdline, UVAR_LOGFMT_CMDLINE), &status);
-    fprintf(fpH, "%%%% %s\n%%%% %s\n", rcsid, cmdline);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
+    fprintf(fpH, "%%%% %s\n%%%% %s\n", "$Id$", cmdline);
     LALFree(cmdline);
     cmdline = NULL;
     
@@ -637,8 +642,8 @@ BOOLEAN calc_AM_coeffs(
   
   /* Calculate and noise-weigh the AM coefficients */
   LAL_CALL(LALGetMultiAMCoeffs(status, &AM_coeffs, detector_states, sky), status);
-  if (XLALWeighMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
-    XLALPrintError("XLALWeighMultiAMCoeffs failed\n");
+  if (XLALWeightMultiAMCoeffs(AM_coeffs, noise_weights) != XLAL_SUCCESS) {
+    XLALPrintError("XLALWeightMultiAMCoeffs failed\n");
     return EXIT_FAILURE;
   }
   *A_coeff = AM_coeffs->Mmunu.Ad * AM_coeffs->Mmunu.Sinv_Tsft;

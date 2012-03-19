@@ -115,6 +115,7 @@ list of all the files which must be updated.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -137,11 +138,6 @@ list of all the files which must be updated.
 #define fprintf XLALFilePrintf
 #include <lal/LIGOLwXMLHeaders.h>
 #include <lal/LIGOLwXMLInspiralHeaders.h>
-
-
-NRCSID( LIGOLWXMLC, "$Id$" );
-
-
 
 /* JC: ISO C89 COMPILERS ARE REQUIRED TO SUPPORT STRINGS UP TO 509 CHARS LONG;
  * MANY OF THE STRINGS IN THE ORIGINAL MACROS WERE LONGER.  TO FIX I CHANGED
@@ -210,7 +206,7 @@ LALOpenLIGOLwXMLFile (
 {
   LIGOLwXMLStream *new;
   XLALPrintDeprecationWarning("LALOpenLIGOLwXMLFile", "XLALOpenLIGOLwXMLFile");
-  INITSTATUS( status, "LALOpenLIGOLwXMLFile", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( ! xml->fp, status, LIGOLWXMLH_ENNUL, LIGOLWXMLH_MSGENNUL );
 
@@ -267,7 +263,7 @@ LALCloseLIGOLwXMLFile (
   LIGOLwXMLStream *copy;
   XLALPrintDeprecationWarning("LALCloseLIGOLwXMLFile", "XLALCloseLIGOLwXMLFile");
   /* print the xml footer and close the file handle */
-  INITSTATUS( status, "LALCloseLIGOLwXMLFile", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   /* make an XLALFree()'able copy */
@@ -296,7 +292,7 @@ LALBeginLIGOLwXMLTable (
 
 {
   /* print the header for the xml table */
-  INITSTATUS( status, "LALBeginLIGOLwXMLTable", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table != no_table )
@@ -375,7 +371,7 @@ LALEndLIGOLwXMLTable (
 
 {
   /* print the header for the xml table */
-  INITSTATUS( status, "LALEndLIGOLwXMLTable", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table == no_table )
@@ -408,7 +404,7 @@ LALWriteLIGOLwXMLTable (
 
 {
   /* print contents of the database struct into the xml table */
-  INITSTATUS( status, "LALWriteLIGOLwXMLTable", LIGOLWXMLC );
+  INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   if ( xml->table == no_table )

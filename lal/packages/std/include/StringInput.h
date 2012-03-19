@@ -19,7 +19,6 @@
 
 /********************************** <lalVerbatim file="StringInputHV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -79,8 +78,6 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID( STRINGINPUTH, "$Id$");
 
 /********************************************************** <lalLaTeX>
 \subsection*{Error conditions}
@@ -210,8 +207,8 @@ XLALCreateTokenList( TokenList  **list,
 		     const CHAR *string,
 		     const CHAR *delimiters );
 
-int
-XLALDestroyTokenList( TokenList **list );
+void
+XLALDestroyTokenList( TokenList *list );
 
 
 /* <lalLaTeX>

@@ -22,8 +22,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALPrimer.h>
 
-NRCSID( LALPRIMERTESTC, "$Id$" );
-
 extern int lalDebugLevel;
 
 int
@@ -51,7 +49,7 @@ main( int argc, char **argv )
     fprintf( stderr,
 	     "Error[0] 1: program %s, file %s, line %i, %s\n"
 	     "         Function REAL4Divide() failed\n",
-	     argv[0], __FILE__, __LINE__, LALPRIMERTESTC );
+	     argv[0], __FILE__, __LINE__, "$Id$" );
 
   /* Print result. */
   if ( !stat.statusCode )

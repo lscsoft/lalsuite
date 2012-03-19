@@ -45,6 +45,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <getopt.h>
 #include <stdarg.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -104,8 +105,6 @@ REAL4 tmpx, tmpy;
 #define MAXFREQUENCIES 200       /* Maximum number of frequemcies for which to do the comparison */
 #define DECIMATE 4 /*Factor by which to decimate the data when the -D (decimate) flag is used */
 
-NRCSID( NOISECOMPARISONC, "NoiseComparison $Id$");
-RCSID( "NoiseComparison $Id$");
 
 #define PROGRAM_NAME "NoiseComparison"
 #define CVS_REVISION "$Revision$"

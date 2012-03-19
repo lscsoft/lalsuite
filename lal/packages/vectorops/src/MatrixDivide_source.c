@@ -38,7 +38,7 @@ void F1 (
         UINT4   iterator;
         UINT4   length;
 
-        INITSTATUS( status, STRING(F1) , MATLABMATRIXDIVC);
+        INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -76,7 +76,7 @@ void F2 (
         UINT4   iterator;
         UINT4   length;
 
-        INITSTATUS( status, STRING(F2) , MATLABMATRIXDIVC);
+        INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -114,7 +114,7 @@ void F3 (
         UINT4    iterator;
         UINT4   length;
 
-        INITSTATUS( status, STRING(F3) , MATLABMATRIXDIVC);
+        INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -158,7 +158,7 @@ void F4 (
         UINT4		iterator, myindex;
 	UINT4		row, column;
 
-        INITSTATUS( status, STRING(F4) , MATLABMATRIXDIVC);
+        INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -223,7 +223,7 @@ void F5 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, STRING(F5) , MATLABMATRIXDIVC);
+        INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */
@@ -288,7 +288,7 @@ void F6 (
         UINT4            iterator, myindex;
         UINT4            row, column;
 
-        INITSTATUS( status, STRING(F6) , MATLABMATRIXDIVC);
+        INITSTATUS(status);
         ATTATCHSTATUSPTR( status );
 
         /*  Check input for existence.  */

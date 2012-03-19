@@ -19,8 +19,6 @@
 
 #include "coh_PTF.h"
 
-RCSID( "$Id$" );
-
 /* parse command line arguments using getopt_long to get ring params */
 int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
 {
@@ -456,11 +454,13 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
   /* check for H1H2 */
   if (localparams.numIFO == 2)
   {
-    char ifos[4];
-    snprintf(ifos, LIGOMETA_IFOS_MAX, "%s%s",
-             localparams.ifoName[0], localparams.ifoName[1]);
-    if (! strcmp(ifos,"H1H2"))
-      localparams.singlePolFlag = 1;
+    if (! strcmp(localparams.ifoName[0],"H1"))
+    {
+      if (! strcmp(localparams.ifoName[1],"H2"))
+      {
+        localparams.singlePolFlag = 1;
+      }
+    }
   }
 
   *params = localparams;

@@ -111,9 +111,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (FINDCHIRPH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define FINDCHIRPH_ENULL 1
 #define FINDCHIRPH_ENNUL 2
@@ -379,7 +376,7 @@ tagFindChirpTmpltParams
   LALPNOrder                    order;
   INT4                          reverseChirpBank;
   INT4                          bandPassTmplt;
-  InspiralApplyTaper            taperTmplt;
+  LALSimInspiralApplyTaper      taperTmplt;
 }
 FindChirpTmpltParams;
 

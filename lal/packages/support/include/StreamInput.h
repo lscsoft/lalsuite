@@ -78,8 +78,6 @@ crippling computational overhead.
 extern "C" {
 #endif
 
-NRCSID(STREAMINPUTH,"$Id$");
-
 /**
 \heading{Error conditions}
  \name Error Codes */ /*@{*/

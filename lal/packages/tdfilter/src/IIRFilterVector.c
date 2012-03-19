@@ -19,7 +19,6 @@
 
 /****************************** <lalVerbatim file="IIRFilterVectorCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -77,8 +76,6 @@ LALFree()
 
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
-
-NRCSID(IIRFILTERVECTORC,"$Id$");
 
 int XLALIIRFilterREAL4Vector( REAL4Vector *vector, REAL8IIRFilter *filter )
 {
@@ -254,7 +251,7 @@ LALIIRFilterREAL4Vector( LALStatus      *stat,
   REAL4 *history;    /* Filter history. */
   REAL4 *temp=NULL;  /* Temporary storage for the filter history. */
 
-  INITSTATUS(stat,"LALIIRFilterREAL4Vector",IIRFILTERVECTORC);
+  INITSTATUS(stat);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -336,7 +333,7 @@ LALIIRFilterREAL8Vector( LALStatus      *stat,
     REAL8Vector    *vector,
     REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALIIRFilterREAL8Vector",IIRFILTERVECTORC);
+  INITSTATUS(stat);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -368,7 +365,7 @@ LALDIIRFilterREAL4Vector( LALStatus      *stat,
 			  REAL4Vector    *vector,
 			  REAL8IIRFilter *filter )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALDIIRFilterREAL4Vector",IIRFILTERVECTORC);
+  INITSTATUS(stat);
 
   /* Make sure all the structures have been initialized. */
   ASSERT(vector,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);

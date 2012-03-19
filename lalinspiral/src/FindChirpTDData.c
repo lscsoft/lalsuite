@@ -54,11 +54,6 @@
 #include <lal/FindChirpTD.h>
 #include <lal/FindChirpSP.h>
 
-
-NRCSID (FINDCHIRPTDDATAC, "$Id$");
-
-
-
 void
 LALFindChirpTDData (
     LALStatus                  *status,
@@ -71,7 +66,7 @@ LALFindChirpTDData (
   Approximant approx;
   UINT4 i, k;
 
-  INITSTATUS( status, "LALFindChirpTDData", FINDCHIRPTDDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( params, status,

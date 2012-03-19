@@ -119,7 +119,6 @@ complication to the tiling.
 
 /** \cond DONT_DOXYGEN */
 extern char *optarg;
-NRCSID( PTOLEMETRICTESTC, "$Id" );
 
 #define DEFAULT_DURATION 1e5 /* seconds */
 #define NUM_SPINDOWN 0       /* Number of spindown parameters */

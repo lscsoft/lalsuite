@@ -66,8 +66,6 @@ extern "C" {
 #include <lal/LALDetectors.h>
 #include <lal/Segments.h>
 
-NRCSID( LIGOMETADATAUTILSH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define LIGOMETADATAUTILSH_ENULL 1
 #define LIGOMETADATAUTILSH_ENNUL 2

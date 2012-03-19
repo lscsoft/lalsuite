@@ -7,7 +7,7 @@ Build-Depends: debhelper (>= 5), pkg-config, python-all-dev (>= 2.4),
   libframe-dev (>= 8.0), libmetaio-dev (>= 8.2), lal-dev (>= 6.6.0),
   lalstochastic-dev (>= 1.1.2), lalframe-dev (>= 1.0.3),
   lalmetaio-dev (>= 1.0.2), lalburst-dev (>= 1.1.0),
-  lalinspiral-dev (>= 1.2.0), lalpulsar-dev (>= 1.2.0),
+  lalinspiral-dev (>= 1.2.3), lalpulsar-dev (>= 1.2.0),
   lalsimulation-dev (>= 0.1.0), lalinference-dev (>= 0.1.0)
 Standards-Version: 3.7.2
 
@@ -17,7 +17,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, zlib1g,
   libframe1 (>= 8.0), libmetaio1 (>= 8.2), lal (>= 6.6.0),
   lalstochastic (>= 1.1.2), lalframe (>= 1.0.3), lalmetaio (>= 1.0.2),
-  lalburst (>= 1.1.0), lalinspiral (>= 1.2.0), lalpulsar (>= 1.2.0),
+  lalburst (>= 1.1.0), lalinspiral (>= 1.2.3), lalpulsar (>= 1.2.0),
   lalsimulation (>= 0.1.0), lalinference (>= 0.1.0)
 Recommends: python (>= 2.4)
 Description: LSC Algorithm Library Applications

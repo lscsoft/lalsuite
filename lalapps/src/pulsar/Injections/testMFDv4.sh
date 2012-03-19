@@ -1,12 +1,12 @@
 #!/bin/bash
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    msftdir="${builddir}../MakeSFTs/"
-else
-    srcdir=.
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
 fi
+
+builddir="./";
+msftdir="${builddir}../MakeSFTs/"
 
 mfdCODE="${builddir}lalapps_Makefakedata_v4"
 cmpCODE="${builddir}lalapps_compareSFTs"
@@ -16,6 +16,13 @@ testDIR1="./mfdv4_TEST1"
 testDIR2="./mfdv4_TEST2"
 testDIR3="./mfdv4_TEST3"
 
+
+## ----- user-controlled level of debug-output detail
+if [ -n "$DEBUG" ]; then
+    debug=${DEBUG}
+else
+    debug=0	## default=quiet
+fi
 
 if [ -z "$LAL_DATA_PATH" ]; then
     if [ -n "$LALPULSAR_PREFIX" ]; then
@@ -88,15 +95,15 @@ echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=0 [ALL_AT_ONCE] )..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 --outSFTbname=$testDIR1"
-cmdline="$mfdCODE $mfdCL";
+mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 -v${debug}"
+cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR1";
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdCODE' ..."
     exit 1
 fi
 # generate concatenated SFT
-mfdCL="${mfdCL}.sft --outSingleSFT"
+mfdCL="${mfdCL} --outSFTbname=${testDIR1}.sft --outSingleSFT"
 cmdline="$mfdCODE $mfdCL";
 echo "$cmdline (concatenated SFT version)";
 if ! eval $cmdline; then
@@ -109,15 +116,15 @@ echo
 echo "mfd_v4: producing SFTs via heterodyned timeseries (generationMode=1 [PER_SFT] )..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 --outSFTbname=$testDIR2"
-cmdline="$mfdCODE $mfdCL";
+mfdCL="--Tsft=$Tsft --fmin=$fmin --Band=$Band --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=1 -v${debug}"
+cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR2";
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdCODE' ..."
     exit 1
 fi
 # generate concatenated SFT
-mfdCL="${mfdCL}.sft --outSingleSFT"
+mfdCL="${mfdCL} --outSFTbname=${testDIR2}.sft --outSingleSFT"
 cmdline="$mfdCODE $mfdCL";
 echo "$cmdline (concatenated SFT version)";
 if ! eval $cmdline; then
@@ -130,20 +137,19 @@ echo
 echo "mfd_v4: producing SFTs via 'exact' timeseries (non-heterodyned)..."
 echo
 
-mfdCL="--Tsft=$Tsft --fmin=0 --Band=$fUpper --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 --outSFTbname=$testDIR3"
-cmdline="$mfdCODE $mfdCL";
+mfdCL="--Tsft=$Tsft --fmin=0 --Band=$fUpper --aPlus=$aPlus --aCross=$aCross --psi=$psi --phi0=$phi0 --f0=$f0 --longitude=$alpha --latitude=$delta --detector=$IFO --timestampsFile=$timestamps --refTime=$refTime --f1dot=$f1dot --f2dot=$f2dot --generationMode=0 -v${debug}"
+cmdline="$mfdCODE $mfdCL --outSFTbname=$testDIR3";
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdCODE' ..."
     exit 1
 fi
 
-
 echo "... and extracting the relevant frequency band ..."
 echo
 
 ## extract relevant frequency-band
-extractCL="--inputSFTs='$testDIR3/*.sft' --fmin=$fmin --fmax=$fmax --outputDir=$testDIR3 --descriptionMisc=Band"
+extractCL="--inputSFTs='$testDIR3/*.sft' --fmin=$fmin --fmax=$fmax --outputDir=$testDIR3 --descriptionMisc=Band -v${debug}"
 cmdline="$extractCODE $extractCL"
 echo $cmdline;
 if ! eval $cmdline; then
@@ -158,7 +164,7 @@ fi
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*_Band*'"
+cmdline="$cmpCODE -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*_Band*' -d${debug}"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -169,7 +175,7 @@ fi
 
 
 echo
-cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*_Band*'"
+cmdline="$cmpCODE -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*_Band*' -d${debug}"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -182,7 +188,7 @@ fi
 echo
 echo "comparison of concatenating SFTs:"
 
-cmdline="$cmpCODE -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft'"
+cmdline="$cmpCODE -e 1e-10 -1 '${testDIR1}/*.sft' -2 '${testDIR1}.sft' -d${debug}"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."
@@ -192,7 +198,7 @@ else
 fi
 
 echo
-cmdline="$cmpCODE -e 1e-10 -1 '${testDIR2}/*.sft' -2 '${testDIR2}.sft'"
+cmdline="$cmpCODE -e 1e-10 -1 '${testDIR2}/*.sft' -2 '${testDIR2}.sft' -d${debug}"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... concatenated SFTs differ! Something might be wrong..."
@@ -206,5 +212,3 @@ fi
 if [ -z "$NOCLEANUP" ]; then
     rm -rf $testDIR1 ${testDIR1}.sft $testDIR2 ${testDIR2}.sft $testDIR3 ${testDIR3}.sft
 fi
-
-

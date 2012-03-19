@@ -42,6 +42,7 @@ functions, not in any production code.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -58,10 +59,6 @@ void LALParseUnitString ( LALStatus *status,
 		          const CHARVector *input );
 static const LALUnit lalDimensionlessUnit 
 	= {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };
-
-
-NRCSID( READFREQUENCYSERIESC, "$Id$" );
-
 
 /* Change the first instance of the target to '\0'; returns 0 on success,
    1 on failure */

@@ -34,8 +34,6 @@
 extern "C" {
 #endif
 
-NRCSID (DETECTORSITEH, "$Id$");
-
 /** Legacy code: should now use data in LALDetectors.h */
 enum
 {

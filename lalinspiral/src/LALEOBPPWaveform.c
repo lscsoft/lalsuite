@@ -49,6 +49,7 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 </ul>
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>
@@ -159,10 +160,6 @@ XLALEOBPPWaveformEngine (
                 InspiralTemplate *params,
                 InspiralInit     *paramsInit
                 );
-
-NRCSID (LALEOBPPWAVEFORMC,
-"$Id$");
-
 
 INT4 XLALGetFactorizedWaveform( COMPLEX16             * restrict hlm,
 				REAL8Vector           * restrict values,
@@ -915,6 +912,12 @@ LALHCapDerivativesP4PN( double UNUSED t,
   /* qDot */
   dvalues[3] = - flux / (eta * omega);
 
+  /* Let the integrator know via the return code if the derivative is nan */
+  if ( isnan( dvalues[0] ) || isnan( dvalues[1] ) || isnan( dvalues[2] ) || isnan( dvalues[3] ) )
+  {
+    return 1;
+  }
+
   return GSL_SUCCESS;
 }
 
@@ -972,8 +975,9 @@ XLALHighSRStoppingCondition(double UNUSED t,
                            void UNUSED *funcParams
                           )
 {
+  EOBParams *params = (EOBParams *)funcParams;
 
-  if ( values[0] <= 1.0 || isnan( dvalues[3] ) || isnan (dvalues[2]) )
+  if ( values[0] <= 2.5 - 6.0 * params->eta || isnan(dvalues[3]) || isnan(dvalues[2]) || isnan(dvalues[1]) || isnan(dvalues[0]) )
   {
     return 1;
   }
@@ -1119,7 +1123,7 @@ LALEOBPPWaveform (
    )
 {
 
-   INITSTATUS(status, "LALEOBPPWaveform", LALEOBPPWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBPPWaveform", "XLALEOBPPWaveform" );
 
@@ -1209,7 +1213,7 @@ LALEOBPPWaveformTemplates (
    )
 {
 
-   INITSTATUS(status, "LALEOBPPWaveform", LALEOBPPWAVEFORMC);
+   INITSTATUS(status);
 
    XLALPrintDeprecationWarning( "LALEOBPPWaveformTemplates", "XLALEOBPPWaveformTemplates" );
 
@@ -1313,7 +1317,7 @@ LALEOBPPWaveformForInjection (
 			    PPNParamStruc    *ppnParams
 			    )
 {
-  INITSTATUS(status, "LALEOBPPWaveformForInjection", LALEOBPPWAVEFORMC);
+  INITSTATUS(status);
 
   XLALPrintDeprecationWarning( "LALEOBPPWaveformForInjection", "XLALEOBPPWaveformForInjection" );
 
@@ -1880,6 +1884,7 @@ XLALEOBPPWaveformEngine (
    }
 
    integrator->stopontestonly = 1;
+   integrator->retries = 1;
 
    count = 0;
    if (h || signalvec2)

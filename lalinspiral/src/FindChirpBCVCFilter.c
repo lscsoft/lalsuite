@@ -33,6 +33,7 @@
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -49,10 +50,6 @@
 #else
 #define UNUSED
 #endif
-
-NRCSID (FINDCHIRPBCVCFILTERC, "$Id$");
-
-
 
 void
 LALFindChirpBCVCFilterSegment (
@@ -122,7 +119,7 @@ LALFindChirpBCVCFilterSegment (
    * */
 
 
-  INITSTATUS( status, "LALFindChirpBCVCFilter", FINDCHIRPBCVCFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /*

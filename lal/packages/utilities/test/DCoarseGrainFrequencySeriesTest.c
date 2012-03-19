@@ -19,7 +19,6 @@
 
 /****************** <lalVerbatim file="DCoarseGrainFrequencySeriesTestCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -153,8 +152,6 @@ fabs()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID(DCOARSEGRAINFREQUENCYSERIESTESTC, "$Id$");
 
 #define DCOARSEGRAINFREQUENCYSERIESTESTC_TOL           1e-15
 

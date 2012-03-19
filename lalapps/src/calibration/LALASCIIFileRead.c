@@ -25,6 +25,7 @@ int isnan( double );
 #include <stdlib.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
@@ -304,13 +305,20 @@ REAL4 XLALASCIIFileReadCalFacHeader( const char *fname )
   char cvsname[LINE_MAX];
   REAL4 deltaT;
   FILE *fp;
+  char *rc;
   int c;
 
   fp = fopen( fname, "r" );
   if ( ! fp )
     XLAL_ERROR_REAL4( XLAL_EIO );
 
-  fgets( line, sizeof( line ), fp );
+  rc = fgets( line, sizeof( line ), fp );
+  if ( rc == NULL )
+  {
+    XLALPrintError( "XLAL Error - %s: unable to read file: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
+
   c = sscanf( line, fmt1, &deltaT );
   if ( c != 1 ) /* wrong number of conversions */
   {
@@ -318,7 +326,13 @@ REAL4 XLALASCIIFileReadCalFacHeader( const char *fname )
     XLAL_ERROR( XLAL_EFAILED );
   }
 
-  fgets( line, sizeof( line ), fp );
+  rc = fgets( line, sizeof( line ), fp );
+  if ( rc == NULL )
+  {
+    XLALPrintError( "XLAL Error - %s: unable to read file: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
+
   c = sscanf( line, fmt2, cvsname );
   if ( c != 1 ) /* wrong number of conversions */
   {
@@ -341,13 +355,20 @@ REAL4 XLALASCIIFileReadCalRefHeader( const char *fname )
   REAL4 deltaF;
   char cvsname[LINE_MAX];
   FILE *fp;
+  char *rc;
   int c;
 
   fp = fopen( fname, "r" );
   if ( ! fp )
     XLAL_ERROR_REAL4( XLAL_EIO );
 
-  fgets( line, sizeof( line ), fp );
+  rc = fgets( line, sizeof( line ), fp );
+  if ( rc == NULL )
+  {
+    XLALPrintError( "XLAL Error - %s: unable to read file: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
+
   c = sscanf( line, fmt1, &deltaF );
   if ( c != 1 ) /* wrong number of conversions */
   {
@@ -355,7 +376,12 @@ REAL4 XLALASCIIFileReadCalRefHeader( const char *fname )
     XLAL_ERROR( XLAL_EFAILED );
   }
 
-  fgets( line, sizeof( line ), fp );
+  rc = fgets( line, sizeof( line ), fp );
+  if ( rc == NULL )
+  {
+    XLALPrintError( "XLAL Error - %s: unable to read file: %s\n", __func__, fname );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
   c = sscanf( line, fmt2, cvsname );
   if ( c != 1 ) /* wrong number of conversions */
   {

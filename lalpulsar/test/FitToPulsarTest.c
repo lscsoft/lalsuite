@@ -69,11 +69,9 @@ LALComputeDetAMResponse()
 /******* INCLUDE ANY LDAS LIBRARY HEADERS ************/
 
 /******* INCLUDE ANY LAL HEADERS ************/
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/FitToPulsar.h>
-
-/******* DEFINE RCS ID STRING ************/
-NRCSID( FITTOPULSARC, "$Id$" );
 
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 #define INICHISQU 1.e50
@@ -120,7 +118,7 @@ LALCoarseFitToPulsar    (       LALStatus            *status,
         UINT4                   iH0, iCosIota, iPhase, iPsi, arg;
 
 
-  INITSTATUS(status, "LALCoarseFitToPulsar", FITTOPULSARC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   /******* CHECK VALIDITY OF ARGUMENTS  ************/
@@ -327,10 +325,6 @@ LALFineFitToPulsar()
 /******* INCLUDE ANY LAL HEADERS ************/
 #include <lal/FitToPulsar.h>
 #include <lal/Random.h>
-
-/******* DEFINE RCS ID STRING ************/
-
-NRCSID( FitToPulsarTestC, "$Id$" );
 
 /******* DEFINE LOCAL CONSTANTS AND MACROS ************/
 

@@ -98,8 +98,6 @@ extern char *optarg;
 #define INSPIRALSPINBANKWNDTEMPLATEBANKTESTC_MSGESUB   "Subroutine error"
 /*@}*/
 
-NRCSID(LALINSPIRALSPINBANKWNDTEMPLATEBANKTESTC, "$Id$");
-
 int main(int argc, char *argv[]){
   static LALStatus stat;
   INT4 loop = 0; 			/* loop counter */

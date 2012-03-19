@@ -47,6 +47,7 @@
 #endif
 
 /* LAL-includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConfig.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALStdio.h>
@@ -120,8 +121,6 @@ typedef struct {
   INT4 cbins;				/**< number of bins in Cstat */
   REAL8 df;				/**< size of bin */
 }ExRegion;
-
-RCSID( "$Id$");
 
 /***********************************************************************************************/
 /* Global variables */
@@ -702,7 +701,9 @@ int OutputCstats(UserInput_t *uvar, ParamStruct *userParams, VectorStruct *Fstat
     fprintf(Cstat_out, "%%%% ***************   Fstat Header   ****************** \n %s", Fstat->comment);
     fprintf(Cstat_out, "%%%% *********************************************************************** \n");
     fprintf(Cstat_out, "%%%% ***************   Cstat Header   ****************** \n");
-    fprintf(Cstat_out, "%%%% %s\n%%%% cmdline: %s\n", rcsid, Cstat->comment);
+    /** \deprecated FIXME: the following code uses obsolete CVS ID tags.
+     *  It should be modified to use git version information. */
+    fprintf(Cstat_out, "%%%% %s\n%%%% cmdline: %s\n", "$Id$", Cstat->comment);
     
     /* Cstat header - output user input to file */
     fprintf(Cstat_out,"%%%% input: f0 = %f,\t asini = %lf, Porb = %lf,\t user fmin = %f,\n",userParams->f0,userParams->orbitasini,userParams->orbitPeriod,userParams->freq);

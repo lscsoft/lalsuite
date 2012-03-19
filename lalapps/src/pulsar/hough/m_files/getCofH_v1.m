@@ -1,5 +1,4 @@
 %
-% $Id$
 %
 %  Matlab script to get C(h_0)
 %  

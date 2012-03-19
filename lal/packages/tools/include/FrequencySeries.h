@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon
  *
@@ -25,15 +24,12 @@
 
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID(FREQUENCYSERIESH, "$Id:");
 
 /* COMPLEX8 prototypes */
 

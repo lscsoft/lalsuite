@@ -24,7 +24,6 @@
  * New Maintainer: Torres, C (Univ TX at Browsville)
  * Author: E.C. Mottin
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  *
@@ -70,8 +69,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID (TIMEFREQH, "$Id$");
 
 /*
  * 5. Macros. But, note that macros are deprecated.

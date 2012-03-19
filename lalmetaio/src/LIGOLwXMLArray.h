@@ -25,8 +25,6 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LALDatatypes.h>
 
-NRCSID(LIGOLWXMLARRAYH, "$Id$");
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0

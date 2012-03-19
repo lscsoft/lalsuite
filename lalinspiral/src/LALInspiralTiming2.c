@@ -56,9 +56,6 @@ None
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALTIMING2C, "$Id$");
-
-
 void
 LALInspiralTiming2_0PN (
    LALStatus *status,
@@ -69,7 +66,7 @@ LALInspiralTiming2_0PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_0PN", "XLALInspiralTiming2_0PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_0PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -122,7 +119,7 @@ LALInspiralTiming2_2PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_2PN", "XLALInspiralTiming2_2PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_2PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -177,7 +174,7 @@ LALInspiralTiming2_3PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_3PN", "XLALInspiralTiming2_3PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_3PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -234,7 +231,7 @@ LALInspiralTiming2_4PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_4PN", "XLALInspiralTiming2_4PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_4PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -293,7 +290,7 @@ LALInspiralTiming2_5PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_5PN", "XLALInspiralTiming2_5PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_5PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -354,7 +351,7 @@ LALInspiralTiming2_6PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_6PN", "XLALInspiralTiming2_6PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_6PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -418,7 +415,7 @@ LALInspiralTiming2_7PN (
 {
   XLALPrintDeprecationWarning("LALInspiralTiming2_7PN", "XLALInspiralTiming2_7PN");
 
-  INITSTATUS (status, "LALInspiralTiming2_7PN", LALINSPIRALTIMING2C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(toff, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

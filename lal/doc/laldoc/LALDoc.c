@@ -17,7 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* static char *rcsid="$Id$"; */
 /* Authors: Patrick Brady, Teviet Creighton and Alan Wiseman */
 #include "LALDoc.h"
 

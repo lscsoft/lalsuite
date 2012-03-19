@@ -23,7 +23,6 @@
  *
  * Authors: Krishnan, B. 
  *
- * Revision: $Id$
 *-----------------------------------------------------------------------
  */
 /*
@@ -55,14 +54,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID (HOUGHVALIDATEAMH, "$Id$");
-
-
 
 /* ***************************************************************
  * Constant Declarations.  Default parameters.

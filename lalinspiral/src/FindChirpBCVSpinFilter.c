@@ -110,6 +110,7 @@ LALDestroyVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -126,9 +127,6 @@ LALDestroyVector()
 #else
 #define UNUSED
 #endif
-
-NRCSID (FINDCHIRPBCVSPINFILTERC, "$Id$");
-
 
 void
 LALFindChirpBCVSpinFilterSegment (
@@ -196,7 +194,7 @@ LALFindChirpBCVSpinFilterSegment (
 
 
 
-  INITSTATUS( status, "LALFindChirpBCVSpinFilter", FINDCHIRPBCVSPINFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

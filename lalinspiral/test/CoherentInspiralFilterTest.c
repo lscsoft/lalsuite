@@ -23,7 +23,6 @@
  *
  * Author: Seader, S. E., Bose, S.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -42,7 +41,6 @@
 #endif
 #include <getopt.h>
 
-#include <lal/LALRCSID.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -56,9 +54,6 @@
 #include <lal/StochasticCrossCorrelation.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/CoherentInspiral.h>
-
-
-NRCSID(MAIN,"$Id$");
 
 static void
 ParseOptions (int argc, char *argv[]);

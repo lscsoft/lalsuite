@@ -116,7 +116,7 @@ ATYPE * XFUNC ( UINT4Vector *dimLength )
 
 void FUNC ( LALStatus *status, ATYPE **array, UINT4Vector *dimLength )
 {
-  INITSTATUS (status, STRING(FUNC), ARRAYFACTORIESC);
+  INITSTATUS(status);
 
   /* make sure arguments are sane */
 

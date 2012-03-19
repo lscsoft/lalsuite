@@ -86,10 +86,6 @@
 #include "./timer/cycle_counter/Intel/GCC/cycle_counter.h"
 #endif
 
-RCSID( "$Id$");
-
-
-
 /* globals, constants and defaults */
 
 extern int lalDebugLevel;
@@ -1168,7 +1164,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   char filename[256], filenumber[16]; 
   INT4  k, i ;
   UINT2 xSide, ySide;
-  INT4 mObsCoh;
   REAL8 f0,f1;
    
   strcpy(  filename, fnameOut);
@@ -1184,7 +1179,6 @@ int PrintHmap2m_file(HOUGHMapTotal *ht, CHAR *fnameOut, INT4 iHmap){
   ySide= ht->ySide;
   xSide= ht->xSide;
   f0=ht->f0Bin* ht->deltaF;
-  mObsCoh = ht->mObsCoh;
   f1=0.0;
   if( ht->spinRes.length ){ f1=ht->spinRes.data[0]; }
   
@@ -1225,7 +1219,7 @@ void PrintHoughEvents (LALStatus       *status,
   REAL8    temp;
   REAL8    f0;
   /* --------------------------------------------- */
-  INITSTATUS (status, "PrintHoughEvents", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
  /* make sure arguments are not null */
@@ -1284,9 +1278,8 @@ void PrintLogFile (LALStatus       *status,
   CHAR *fnameLog=NULL; 
   FILE *fpLog=NULL;
   CHAR *logstr=NULL;
-  int rc;
 
-  INITSTATUS (status, "PrintLogFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* open log file for writing */
@@ -1333,7 +1326,7 @@ void PrintLogFile (LALStatus       *status,
   {
     CHAR command[1024] = "";
     sprintf(command, "cat %s >> %s", skyfile, fnameLog);
-    rc = system(command);    
+    if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
 
   }
 
@@ -1345,8 +1338,9 @@ void PrintLogFile (LALStatus       *status,
 	fprintf (fpLog, "\n\n# Contents of linefile:\n");
 	fprintf (fpLog, "# -----------------------------------------\n");
 	fclose (fpLog);
-	sprintf(command, "cat %s >> %s", linefile, fnameLog);      
-	rc = system (command);	 
+	sprintf(command, "cat %s >> %s", linefile, fnameLog);
+        if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
+
       } 
   }
 
@@ -1359,9 +1353,10 @@ void PrintLogFile (LALStatus       *status,
       fclose (fpLog);
       
       sprintf (command, "ident %s | sort -u >> %s", executable, fnameLog);
-      rc = system (command);	/* we don't check this. If it fails, we assume that */
-    			/* one of the system-commands was not available, and */
-    			/* therefore the CVS-versions will not be logged */ 
+      /* we don't check this. If it fails, we assume that */
+      /* one of the system-commands was not available, and */
+      /* therefore the CVS-versions will not be logged */
+      if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
     }
 
   LALFree(fnameLog); 
@@ -1384,7 +1379,7 @@ void PrintnStarFile (LALStatus                   *status,
   HoughSignificantEvent *event;
   INT4 mkdir_result;
 
-  INITSTATUS (status, "PrintnStarFile", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(eventVec, status, DRIVEHOUGHCOLOR_ENULL,DRIVEHOUGHCOLOR_MSGENULL); 

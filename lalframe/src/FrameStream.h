@@ -54,8 +54,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( FRAMESTREAMH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define FRAMESTREAMH_ENULL 00001
 #define FRAMESTREAMH_ENNUL 00002
@@ -244,7 +242,7 @@ FrStream * XLALFrCacheOpen( FrCache *cache );
 FrStream * XLALFrOpen( const char *dirname, const char *pattern );
 int XLALFrClose( FrStream *stream );
 int XLALFrSetMode( FrStream *stream, int mode );
-int XLALFrState( FrStream *stream );
+int XLALFrGetState( FrStream *stream );
 int XLALFrClearErr( FrStream *stream );
 int XLALFrRewind( FrStream *stream );
 int XLALFrNext( FrStream *stream );
@@ -562,13 +560,6 @@ LALFrWriteINT2TimeSeries(
     );
 
 void
-LALFrWriteINT2TimeSeries(
-    LALStatus       *status,
-    INT2TimeSeries  *series,
-    FrOutPar        *params
-    );
-
-void
 LALFrWriteINT4TimeSeries(
     LALStatus       *status,
     INT4TimeSeries  *series,
@@ -610,14 +601,6 @@ LALFrWriteCOMPLEX16TimeSeries(
     FrOutPar            *params
     );
 
-
-void
-LALFrWriteINT2FrequencySeries(
-    LALStatus       *status,
-    INT2FrequencySeries  *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
 
 void
 LALFrWriteINT2FrequencySeries(

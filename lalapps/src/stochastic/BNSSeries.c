@@ -23,7 +23,6 @@
 #include <lal/Units.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
-#include <lal/LALRCSID.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
@@ -41,13 +40,11 @@
 #define Msolar 1.989e33
 #define day 86164.1
 
-NRCSID (BNSSeriesC, "$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $");
-RCSID ("$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $");
 
 /* cvs info */
-#define CVS_ID "$Id: BNSSeries.c,v 1.1 2009/08/04 11:07:52 tania Exp $"
-#define CVS_REVISION "$Revision: 1.1 $"
-#define CVS_DATE "$Date: 2009/08/04 11:07:52 $"
+#define CVS_ID "$Id$"
+#define CVS_REVISION "$Revision$"
+#define CVS_DATE "$Date$"
 #define PROGRAM_NAME "BNSSeries"
 
 /* variables for getopt options parsing */

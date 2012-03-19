@@ -146,11 +146,10 @@ multiplication (negating the sign of the imaginary part) per element.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/MatrixUtils.h>
-
-NRCSID( MATRIXOPSC, "$Id$" );
 
 #define TYPECODE I2
 #define TYPE INT2
@@ -259,7 +258,7 @@ LALCMatrixAdjoint( LALStatus *stat, COMPLEX8Array *out, COMPLEX8Array *in1 )
   UINT4 n;        /* number of elements */
   COMPLEX8 *data; /* pointer to elements */
 
-  INITSTATUS( stat, "LALCMatrixAdjoint", MATRIXOPSC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* All argument checking is done by the subroutine. */
@@ -284,7 +283,7 @@ LALZMatrixAdjoint( LALStatus *stat, COMPLEX16Array *out, COMPLEX16Array *in1 )
   UINT4 n;         /* number of elements */
   COMPLEX16 *data; /* pointer to elements */
 
-  INITSTATUS( stat, "LALZMatrixAdjoint", MATRIXOPSC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* All argument checking is done by the subroutine. */

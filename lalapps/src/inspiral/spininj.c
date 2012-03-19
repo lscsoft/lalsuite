@@ -54,8 +54,6 @@
 #include <lal/LALErrno.h>
 #include <LALAppsVCSInfo.h>
 
-NRCSID( SPININJC, "$Id$");
-RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"

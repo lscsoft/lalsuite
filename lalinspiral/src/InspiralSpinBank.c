@@ -109,9 +109,6 @@
 #define INSPIRALSPINBANKC_ENOTILES 5
 #define INSPIRALSPINBANKC_MSGENOTILES "No templates were generated"
 
-
-NRCSID(INSPIRALSPINBANKC, "$Id$");
-
 /* Internal structures and functions --------------------------------------- */
 
 static void cleanup(LALStatus *,
@@ -193,7 +190,7 @@ LALInspiralSpinBankMetric(
   REAL8 J14 = 0.0;
   REAL8 J17 = 0.0;
 
-  INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   if (!metric){
@@ -324,7 +321,7 @@ LALInspiralSpinBank(
   BOOLEAN havePsi;			/* are we using phenom parameters?  */
 
   /* Set up status pointer. */
-  INITSTATUS( status, "LALInspiralSpinBank", INSPIRALSPINBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 
@@ -636,7 +633,7 @@ static void cleanup(
     SnglInspiralTable *t,
     INT4 *nt)
 {
-  INITSTATUS( s, "LALInspiralSpinBank-cleanup", INSPIRALSPINBANKC );
+  INITSTATUS(s);
   ATTATCHSTATUSPTR( s );
 
   if (m){

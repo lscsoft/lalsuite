@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2007 Gregory Mendell
+*  Copyright (C) 2010,2011 Bernd Machenschalk
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@
 /**
  * \file
  * \ingroup pulsarApps
- * \author Gregory Mendell, Xavier Siemens, Bruce Allen
+ * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Bernd Machenschalk
  * \brief generate SFTs
  */
 
@@ -75,6 +76,7 @@ int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", std
 #include <getopt.h>
 #include <stdarg.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -135,6 +137,7 @@ struct CommandLineArgsTag {
   char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
   INT4 PSSCleaning;	   /* 1=YES and 0=NO*/
   REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
+  INT4 PSSCleanExt;        /* Extend the timeseries at the beginning before calculating the autoregressive mean */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
@@ -178,6 +181,10 @@ COMPLEX16Vector *fftDataDouble = NULL;
 REAL4FFTPlan *fftPlanSingle;           /* 11/19/05 gam; fft plan and data container, single precision case */
 COMPLEX8Vector *fftDataSingle = NULL;
 
+#ifdef PSS_ENABLED
+XLALPSSParamSet XLALPSSParams;
+#endif
+
 CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on /lalapps/src/calibration/ComputeStrainDriver.c */
 /***************************************************************************/
 
@@ -202,7 +209,7 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 #ifdef PSS_ENABLED
 /* Time Domain Cleaning with PSS functions */
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA);
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency);
+int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency, INT4 extendTimeseries);
 #endif
 
 /* create an SFT */
@@ -263,7 +270,6 @@ void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT
 void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime, INT4 numGPSdigits) {
      CHAR sftDescField[256];
      CHAR mkdirCommand[256];
-     int rc;
      strcat(sftPath,"/");
      strcat(sftPath,site);
      strcat(sftPath,"-");
@@ -272,7 +278,7 @@ void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT
      strcat(sftPath,"-");
      strncat(sftPath,gpstime,numGPSdigits);
      sprintf(mkdirCommand,"mkdir -p %s",sftPath);
-     rc = system(mkdirCommand);
+     if ( system(mkdirCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
 /* 12/27/05 gam; make SFT file name according to LIGO T040164-01 specification */
@@ -292,9 +298,8 @@ void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR
 /* 01/09/06 gam; move filename1 to filename2 */
 void mvFilenames(CHAR *filename1, CHAR *filename2) {
      CHAR mvFilenamesCommand[512];
-     int rc;
      sprintf(mvFilenamesCommand,"mv %s %s",filename1,filename2);
-     rc = system(mvFilenamesCommand);
+     if ( system(mvFilenamesCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
 #if TRACKMEMUSE
@@ -303,7 +308,7 @@ void printmemuse() {
    char commandline[256];
    fflush(NULL);
    sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
-   system(commandline);
+   if ( system(commandline) ) XLALPrintError ("system() returned non-zero status\n");
    fflush(NULL);
  }
 #endif
@@ -448,7 +453,8 @@ void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTty
 
 #ifdef PSS_ENABLED
 /* debug function */
-int PrintREAL4ArrayToFile(char*name,REAL4*array,UINT4 length) {
+int PrintREAL4ArrayToFile(const char*name, REAL4*array, UINT4 length);
+int PrintREAL4ArrayToFile(const char*name, REAL4*array, UINT4 length) {
   UINT4 i;
   FILE*fp=fopen(name,"w");
   if(!fp) {
@@ -573,19 +579,27 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"channel-name",         required_argument, NULL,          'N'},
     {"gps-start-time",       required_argument, NULL,          's'},
     {"gps-end-time",         required_argument, NULL,          'e'},
-    {"sft-version",          optional_argument, NULL,          'v'},
-    {"comment-field",        optional_argument, NULL,          'c'},
-    {"start-freq",           optional_argument, NULL,          'F'},
-    {"band",                 optional_argument, NULL,          'B'},
-    {"make-gps-dirs",        optional_argument, NULL,          'D'},
-    {"make-tmp-file",        optional_argument, NULL,          'Z'},
-    {"misc-desc",            optional_argument, NULL,          'X'},
-    {"frame-struct-type",    optional_argument, NULL,          'u'},
-    {"ifo",                  optional_argument, NULL,          'i'},
-    {"window-type",          optional_argument, NULL,          'w'},
-    {"overlap-fraction",     optional_argument, NULL,          'P'},
-    {"td-cleaning-freq",     optional_argument, NULL,          'b'},
+    {"sft-version",          required_argument, NULL,          'v'},
+    {"comment-field",        required_argument, NULL,          'c'},
+    {"start-freq",           required_argument, NULL,          'F'},
+    {"band",                 required_argument, NULL,          'B'},
+    {"make-gps-dirs",        required_argument, NULL,          'D'},
+    {"make-tmp-file",        required_argument, NULL,          'Z'},
+    {"misc-desc",            required_argument, NULL,          'X'},
+    {"frame-struct-type",    required_argument, NULL,          'u'},
+    {"ifo",                  required_argument, NULL,          'i'},
+    {"window-type",          required_argument, NULL,          'w'},
+    {"overlap-fraction",     required_argument, NULL,          'P'},
     {"td-cleaning",          no_argument,       NULL,          'a'},
+#ifdef PSS_ENABLED
+    {"pss-freq",             required_argument, NULL,          'b'},
+    {"pss-abs",              required_argument, NULL,          512},
+    {"pss-tau",              required_argument, NULL,          513},
+    {"pss-fact",             required_argument, NULL,          514},
+    {"pss-cr",               required_argument, NULL,          515},
+    {"pss-edge",             required_argument, NULL,          516},
+    {"pss-ext",              required_argument, NULL,          517},
+#endif
     {"ht-data",              no_argument,       NULL,          'H'},
     {"use-single",           no_argument,       NULL,          'S'},
     {"help",                 no_argument,       NULL,          'h'},
@@ -614,7 +628,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->useSingle = 0;        /* 11/19/05 gam; default is to use double precision, not single. */
   CLA->frameStructType=NULL; /* 01/10/07 gam */
   CLA->PSSCleaning = 0;	     /* 1=YES and 0=NO*/
-  CLA->PSSCleanHPf = 0.0;    /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
+  CLA->PSSCleanHPf = 100.0;  /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES. defaults to 100Hz */
+  CLA->PSSCleanExt = 1;      /* by default, extend the timeseries */
 
   strcat(allargs, "Command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
@@ -721,6 +736,31 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'b':
       CLA->PSSCleanHPf = atof(optarg);
       break;
+#ifdef PSS_ENABLED
+    case 512:
+      XLALPSSParams.abs  = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_ABS;
+      break;
+    case 513:
+      XLALPSSParams.tau  = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_TAU;
+      break;
+    case 514:
+      XLALPSSParams.fact = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_FACT;
+      break;
+    case 515:
+      XLALPSSParams.cr   = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_CR;
+      break;
+    case 516:
+      XLALPSSParams.edge = atof(optarg);
+      XLALPSSParams.set |= XLALPSS_SET_EDGE;
+      break;
+    case 517:
+      CLA->PSSCleanExt = atoi(optarg);
+      break;
+#endif
     case 'h':
       /* print usage/help message */
       fprintf(stdout,"Arguments are:\n");
@@ -744,15 +784,26 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
       fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
       fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
-      fprintf(stdout,"\ttd-cleaning (-a)\tFLAG\t Use time-domain cleaning with PSS routines");
-      fprintf(stdout,"\ttd-cleaning-freq (-b) \tFLOAT\t(optional) Cut frequency for the bilateral highpass filter for time-domain cleaning");
+      fprintf(stdout,"\ttd-cleaning (-a)\tFLAG\t Use time-domain cleaning with PSS routines\n");
+#ifdef PSS_ENABLED
+      fprintf(stdout,"\tpss-freq (-b)      \tFLOAT\t Cut frequency for the bilateral highpass filter for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-abs            \tFLOAT\t (optional) Set PSS parameter 'abs' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-tau            \tFLOAT\t (optional) Set PSS parameter 'tau' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-fact           \tFLOAT\t (optional) Set PSS parameter 'fact' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-cr             \tFLOAT\t (optional) Set PSS parameter 'cr' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
+      fprintf(stdout,"\tpss-ext            \tINT\t (optional) Extend the timeseries at the beginning before calculating the autoregressive mean, defaults to 1, set to 0 for no\n");
+#endif
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
       break;
     default:
       /* unrecognized option */
       errflg++;
-      fprintf(stderr,"Unrecognized option argument %c\n",c);
+      if((c>=48) && (c<128))
+	fprintf(stderr,"Unrecognized option '%c'\n",c);
+      else
+	fprintf(stderr,"Unrecognized option %d\n",c);
       exit(1);
       break;
     }
@@ -1591,7 +1642,7 @@ int CreateSFT(struct CommandLineArgsTag CLA)
   -3 if input parameters are invalid
    0 otherwise (all went well)
 */
-int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
+int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency, INT4 extendTimeseries) {
   UINT4 samples;                /**< number of samples in the timeseries */
   PSSTimeseries *originalTS;    /**< the timeseries converted to a PSS timeseries */
   PSSTimeseries *highpassTS;    /**< originalTS after high pass filtering */
@@ -1619,7 +1670,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   /* creation / memory allocation */
   /* there can't be more events than there are samples,
      so we prepare for as many events as we have samples */
-  if( (eventParams = XLALCreatePSSEventParams(samples)) == NULL) {
+  if( (eventParams = XLALCreatePSSEventParams(samples, XLALPSSParams)) == NULL) {
     fprintf(stderr,"XLALCreatePSSEventParams call failed %s,%d\n",__FILE__,__LINE__);
     retval = -1;
     goto PSSTDCleaningREAL8FreeNothing;
@@ -1671,10 +1722,18 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
   if(debug)
     XLALPrintPSSTimeseriesToFile(highpassTS,"highpassTS.dat",0);
 
-  if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
-    fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
-    retval = -2;
-    goto PSSTDCleaningREAL8FreeAll;
+  if( extendTimeseries ) {
+    if( XLALPSSComputeExtARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
+      fprintf(stderr,"XLALPSSComputeExtARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
+      retval = -2;
+      goto PSSTDCleaningREAL8FreeAll;
+    }
+  } else {
+    if( XLALPSSComputeARMeanAndStdev(eventParams, highpassTS, &headerParams) == NULL) {
+      fprintf(stderr,"XLALPSSComputeARMeanAndStdev call failed %s,%d\n",__FILE__,__LINE__);
+      retval = -2;
+      goto PSSTDCleaningREAL8FreeAll;
+    }
   }
 
   if( XLALIdentifyPSSCleaningEvents(eventParams, highpassTS) == NULL) {
@@ -1738,7 +1797,7 @@ int PSSTDCleaningREAL8(REAL8TimeSeries *LALTS, REAL4 highpassFrequency) {
 
 
 int PSSTDCleaningDouble(struct CommandLineArgsTag CLA) {
-  return(PSSTDCleaningREAL8(&dataDouble, CLA.PSSCleanHPf));
+  return(PSSTDCleaningREAL8(&dataDouble, CLA.PSSCleanHPf, CLA.PSSCleanExt));
 }
 
 #endif /* PSS_ENABLED */

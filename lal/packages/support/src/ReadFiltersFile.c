@@ -21,6 +21,7 @@
  * Read the filters file. To be used for calibration.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/ConfigFile.h>   /* to use LALParseDataFile() */
 #include <lal/AVFactories.h>  /* to use XLALCreateREAL8Vector() */
 

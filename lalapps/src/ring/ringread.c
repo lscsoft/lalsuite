@@ -23,7 +23,6 @@
  *
  * Author: Goggin, L. M. based on sire.c by Brady, P. R, Brown, D. A., and Fairhurst, S
  * 
- * Revision: $Id$
  * 
  *-----------------------------------------------------------------------
  */
@@ -49,8 +48,6 @@
 #include <lalapps.h>
 #include <processtable.h>
 #include <LALAppsVCSInfo.h>
-
-RCSID("$Id$");
 
 #define PROGRAM_NAME "ringread.c"
 #define CVS_ID_STRING "$Id$"

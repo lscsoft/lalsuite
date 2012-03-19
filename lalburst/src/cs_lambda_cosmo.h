@@ -25,8 +25,6 @@
 /*                         UWM/Caltech - September 2006                          */
 /*********************************************************************************/
 
-/*  "$Id$" "$Name$" */
-
 #include "lal/cs_cosmo.h"
 
 #define LAMBDA_Z_EQ 5440.0		/* redshift of matter-radiation equilib: 10^3.94 */

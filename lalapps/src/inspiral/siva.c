@@ -20,7 +20,6 @@
 /*--------------------------------------------------------------------------
  * File name: siva.c  -  Simple Inspiral Veto Application
  * Author: Peter Shawhan (borrowing heavily from sire.c)
- * Revision: $Id $
  *--------------------------------------------------------------------------*/
 
 #include <stdlib.h>
@@ -34,8 +33,6 @@
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lalapps.h>
-
-RCSID("$Id$");
 
 #define USAGE \
   "Usage: lalapps_siva INPUTFILE VETOFILE OUTPUTFILE\n"\

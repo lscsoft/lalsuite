@@ -28,8 +28,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (LALTESTUTCTOGPSC, "$Id$");
-
 static int test(struct tm *t, int correct_gps, int line)
 {
   int gps = XLALUTCToGPS(t);

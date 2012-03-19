@@ -36,7 +36,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --full-help               Print help, including hidden options, and exit",
   "  -V, --version                 Print version and exit",
   "      --config=filename         Configuration file in gengetopt format for \n                                  passing parameters",
-  "  -v, --verbosity=INT           LAL debug level  (default=`0')",
+  "  -v, --laldebug=INT            LAL debug level  (default=`0')",
   "\nObservational parameters:",
   "      --Tobs=DOUBLE             Total observation time (in seconds)",
   "      --Tcoh=DOUBLE             SFT coherence time (in seconds)  \n                                  (default=`1800')",
@@ -69,6 +69,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ihsfar=DOUBLE           IHS FAR threshold  (default=`0.01')",
   "      --ihsfom=DOUBLE           IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2",
   "      --ihsfomfar=DOUBLE        IHS FOM FAR threshold",
+  "      --keepOnlyTopNumIHS=INT   Keep the top <number> of IHS candidates based \n                                  on significance",
   "      --tmplfar=DOUBLE          Template FAR threshold  (default=`0.01')",
   "      --minTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
   "      --maxTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
@@ -97,6 +98,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --gaussTemplatesOnly      Gaussian templates only throughout the pipeline \n                                  if this flag is used  (default=off)",
   "      --validateSSE             Validate the use of SSE functions  \n                                  (default=off)",
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
+  "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
+  "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
     0
 };
 
@@ -158,11 +161,12 @@ init_help_array(void)
   gengetopt_args_info_help[52] = gengetopt_args_info_full_help[52];
   gengetopt_args_info_help[53] = gengetopt_args_info_full_help[53];
   gengetopt_args_info_help[54] = gengetopt_args_info_full_help[54];
-  gengetopt_args_info_help[55] = 0; 
+  gengetopt_args_info_help[55] = gengetopt_args_info_full_help[55];
+  gengetopt_args_info_help[56] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[56];
+const char *gengetopt_args_info_help[57];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -221,7 +225,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->full_help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->config_given = 0 ;
-  args_info->verbosity_given = 0 ;
+  args_info->laldebug_given = 0 ;
   args_info->Tobs_given = 0 ;
   args_info->Tcoh_given = 0 ;
   args_info->SFToverlap_given = 0 ;
@@ -250,6 +254,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
   args_info->ihsfomfar_given = 0 ;
+  args_info->keepOnlyTopNumIHS_given = 0 ;
   args_info->tmplfar_given = 0 ;
   args_info->minTemplateLength_given = 0 ;
   args_info->maxTemplateLength_given = 0 ;
@@ -274,6 +279,8 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->gaussTemplatesOnly_given = 0 ;
   args_info->validateSSE_given = 0 ;
   args_info->ULoff_given = 0 ;
+  args_info->printSFTtimes_given = 0 ;
+  args_info->printUsedSFTtimes_given = 0 ;
 }
 
 static
@@ -282,8 +289,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->config_arg = NULL;
   args_info->config_orig = NULL;
-  args_info->verbosity_arg = 0;
-  args_info->verbosity_orig = NULL;
+  args_info->laldebug_arg = 0;
+  args_info->laldebug_orig = NULL;
   args_info->Tobs_orig = NULL;
   args_info->Tcoh_arg = 1800;
   args_info->Tcoh_orig = NULL;
@@ -330,6 +337,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ihsfar_orig = NULL;
   args_info->ihsfom_orig = NULL;
   args_info->ihsfomfar_orig = NULL;
+  args_info->keepOnlyTopNumIHS_orig = NULL;
   args_info->tmplfar_arg = 0.01;
   args_info->tmplfar_orig = NULL;
   args_info->minTemplateLength_arg = 50;
@@ -361,6 +369,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->gaussTemplatesOnly_flag = 0;
   args_info->validateSSE_flag = 0;
   args_info->ULoff_flag = 0;
+  args_info->printSFTtimes_flag = 0;
+  args_info->printUsedSFTtimes_flag = 0;
   
 }
 
@@ -373,7 +383,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->full_help_help = gengetopt_args_info_full_help[1] ;
   args_info->version_help = gengetopt_args_info_full_help[2] ;
   args_info->config_help = gengetopt_args_info_full_help[3] ;
-  args_info->verbosity_help = gengetopt_args_info_full_help[4] ;
+  args_info->laldebug_help = gengetopt_args_info_full_help[4] ;
   args_info->Tobs_help = gengetopt_args_info_full_help[6] ;
   args_info->Tcoh_help = gengetopt_args_info_full_help[7] ;
   args_info->SFToverlap_help = gengetopt_args_info_full_help[8] ;
@@ -404,30 +414,33 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->ihsfar_help = gengetopt_args_info_full_help[34] ;
   args_info->ihsfom_help = gengetopt_args_info_full_help[35] ;
   args_info->ihsfomfar_help = gengetopt_args_info_full_help[36] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[37] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[38] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[39] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[41] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[42] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[43] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[44] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[45] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[47] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[48] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[49] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[51] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[52] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[53] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[54] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[56] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[57] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[58] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[59] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[60] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[61] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[62] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[63] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[64] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[37] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[38] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[39] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[40] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[42] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[43] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[44] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[45] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[46] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[48] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[49] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[50] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[52] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[53] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[54] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[55] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[57] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[58] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[59] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[60] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[61] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[62] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[63] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[64] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[65] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[66] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[67] ;
   
 }
 
@@ -565,7 +578,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->config_arg));
   free_string_field (&(args_info->config_orig));
-  free_string_field (&(args_info->verbosity_orig));
+  free_string_field (&(args_info->laldebug_orig));
   free_string_field (&(args_info->Tobs_orig));
   free_string_field (&(args_info->Tcoh_orig));
   free_string_field (&(args_info->SFToverlap_orig));
@@ -604,6 +617,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->ihsfar_orig));
   free_string_field (&(args_info->ihsfom_orig));
   free_string_field (&(args_info->ihsfomfar_orig));
+  free_string_field (&(args_info->keepOnlyTopNumIHS_orig));
   free_string_field (&(args_info->tmplfar_orig));
   free_string_field (&(args_info->minTemplateLength_orig));
   free_string_field (&(args_info->maxTemplateLength_orig));
@@ -702,8 +716,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->config_given)
     write_into_file(outfile, "config", args_info->config_orig, 0);
-  if (args_info->verbosity_given)
-    write_into_file(outfile, "verbosity", args_info->verbosity_orig, 0);
+  if (args_info->laldebug_given)
+    write_into_file(outfile, "laldebug", args_info->laldebug_orig, 0);
   if (args_info->Tobs_given)
     write_into_file(outfile, "Tobs", args_info->Tobs_orig, 0);
   if (args_info->Tcoh_given)
@@ -759,6 +773,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "ihsfom", args_info->ihsfom_orig, 0);
   if (args_info->ihsfomfar_given)
     write_into_file(outfile, "ihsfomfar", args_info->ihsfomfar_orig, 0);
+  if (args_info->keepOnlyTopNumIHS_given)
+    write_into_file(outfile, "keepOnlyTopNumIHS", args_info->keepOnlyTopNumIHS_orig, 0);
   if (args_info->tmplfar_given)
     write_into_file(outfile, "tmplfar", args_info->tmplfar_orig, 0);
   if (args_info->minTemplateLength_given)
@@ -807,6 +823,10 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "validateSSE", 0, 0 );
   if (args_info->ULoff_given)
     write_into_file(outfile, "ULoff", 0, 0 );
+  if (args_info->printSFTtimes_given)
+    write_into_file(outfile, "printSFTtimes", 0, 0 );
+  if (args_info->printUsedSFTtimes_given)
+    write_into_file(outfile, "printUsedSFTtimes", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -1383,7 +1403,7 @@ cmdline_parser_internal (
         { "full-help",	0, NULL, 0 },
         { "version",	0, NULL, 'V' },
         { "config",	1, NULL, 0 },
-        { "verbosity",	1, NULL, 'v' },
+        { "laldebug",	1, NULL, 'v' },
         { "Tobs",	1, NULL, 0 },
         { "Tcoh",	1, NULL, 0 },
         { "SFToverlap",	1, NULL, 0 },
@@ -1412,6 +1432,7 @@ cmdline_parser_internal (
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
         { "ihsfomfar",	1, NULL, 0 },
+        { "keepOnlyTopNumIHS",	1, NULL, 0 },
         { "tmplfar",	1, NULL, 0 },
         { "minTemplateLength",	1, NULL, 0 },
         { "maxTemplateLength",	1, NULL, 0 },
@@ -1436,6 +1457,8 @@ cmdline_parser_internal (
         { "gaussTemplatesOnly",	0, NULL, 0 },
         { "validateSSE",	0, NULL, 0 },
         { "ULoff",	0, NULL, 0 },
+        { "printSFTtimes",	0, NULL, 0 },
+        { "printUsedSFTtimes",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -1458,11 +1481,11 @@ cmdline_parser_internal (
         case 'v':	/* LAL debug level.  */
         
         
-          if (update_arg( (void *)&(args_info->verbosity_arg), 
-               &(args_info->verbosity_orig), &(args_info->verbosity_given),
-              &(local_args_info.verbosity_given), optarg, 0, "0", ARG_INT,
+          if (update_arg( (void *)&(args_info->laldebug_arg), 
+               &(args_info->laldebug_orig), &(args_info->laldebug_given),
+              &(local_args_info.laldebug_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
-              "verbosity", 'v',
+              "laldebug", 'v',
               additional_error))
             goto failure;
         
@@ -1878,6 +1901,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Keep the top <number> of IHS candidates based on significance.  */
+          else if (strcmp (long_options[option_index].name, "keepOnlyTopNumIHS") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->keepOnlyTopNumIHS_arg), 
+                 &(args_info->keepOnlyTopNumIHS_orig), &(args_info->keepOnlyTopNumIHS_given),
+                &(local_args_info.keepOnlyTopNumIHS_given), optarg, 0, 0, ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "keepOnlyTopNumIHS", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Template FAR threshold.  */
           else if (strcmp (long_options[option_index].name, "tmplfar") == 0)
           {
@@ -2184,6 +2221,30 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->ULoff_flag), 0, &(args_info->ULoff_given),
                 &(local_args_info.ULoff_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "ULoff", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs.  */
+          else if (strcmp (long_options[option_index].name, "printSFTtimes") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->printSFTtimes_flag), 0, &(args_info->printSFTtimes_given),
+                &(local_args_info.printSFTtimes_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "printSFTtimes", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests.  */
+          else if (strcmp (long_options[option_index].name, "printUsedSFTtimes") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->printUsedSFTtimes_flag), 0, &(args_info->printUsedSFTtimes_given),
+                &(local_args_info.printUsedSFTtimes_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "printUsedSFTtimes", '-',
                 additional_error))
               goto failure;
           

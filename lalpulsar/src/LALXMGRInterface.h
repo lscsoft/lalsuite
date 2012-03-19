@@ -67,9 +67,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (LALXMGRINTERFACEH, "$Id$");
-
 /**\name Error Codes */ /*@{*/
 #define LALXMGRINTERFACEH_ENULL 1
 #define LALXMGRINTERFACEH_ENNUL 2

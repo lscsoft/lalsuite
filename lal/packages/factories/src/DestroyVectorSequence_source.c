@@ -36,7 +36,7 @@ void FUNC ( LALStatus *status, STYPE **vseq )
    * Initialize status
    */
 
-  INITSTATUS( status, STRING(FUNC), VECTORSEQUENCEFACTORIESC );
+  INITSTATUS(status);
 
   /*
    * Check vseq: is it non-NULL?

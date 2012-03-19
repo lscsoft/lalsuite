@@ -30,7 +30,7 @@ void FUNC ( LALStatus* status,
   CHARVector            *string=NULL;
   
   /* need to declare error section here */
-  INITSTATUS(status, "ReadFrequencySeries", READFREQUENCYSERIESC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT( filename != NULL, status, READFTSERIESH_EFILENOTFOUND,

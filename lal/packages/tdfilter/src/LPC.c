@@ -17,14 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LPC.h>
-#include "lal/LALRCSID.h"
 #include <lal/LALError.h>
 #include <lal/LALStatusMacros.h>
 #include <lal/RealFFT.h>
 #include <string.h>
-
-NRCSID (LPCC, "$Id$");
 
 static INT4 balanc(REAL4 **a, INT4 n);
 static INT4 toeplz(REAL4 r[], REAL4 x[], REAL4 y[], INT4 n);
@@ -58,7 +56,7 @@ Train a FIR filter aout of order p on the data x.
   COMPLEX8Vector *Hvec = NULL;
   REAL4Vector rv;
 
-  INITSTATUS (status, "LALLPC", LPCC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(x->length>=p+1, status, LPCH_EIN, LPCH_MSGEIN);
@@ -188,7 +186,7 @@ Reflects poles and zeroes of a inside the complex unit circle.
 \end{verbatim}
 ********* </lalLaTeX> ********/
 
-  INITSTATUS (status, "LALPolystab", LPCC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   if(a->length > 1) {

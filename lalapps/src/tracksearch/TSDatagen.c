@@ -50,8 +50,6 @@ void Get_External_Data(LALStatus*,REAL4Vector*,REAL4Vector*,TSDataGenParams);
 void multipleInjection(LALStatus*,REAL4Vector*,INT4,INT4);
 
 /* Code identification Text */
-NRCSID( TRACKSEARCHC, "TSDatagen $Id$");
-RCSID( "datagen $Id$");
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE "$Source$"
 #define CVS_DATE "$Date$"
@@ -385,7 +383,7 @@ void createdata(
   UINT4             j;
   REAL4Vector      *nd = NULL;
   RandomParams     *RP = NULL;
-  INITSTATUS (status, "makefakenoise", TRACKSEARCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   
   /* Define DeltaA for data set */
@@ -485,7 +483,7 @@ void generateoutput(
   FILE                  *fp;
   CHARVector            *filetxtname=NULL;
 
-  INITSTATUS (status, "makefakedata", TRACKSEARCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* Fill time series struct with pseudo-data */
@@ -542,7 +540,8 @@ void Get_External_Data(LALStatus*          status,
 {
   FILE                 *fp=NULL;
   INT4                  i;
-  INITSTATUS (status, "readascii", TRACKSEARCHC);
+  int                   n;
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   /* File opening via an absolute path */
   fp = fopen(params.signalFileName,"r");
@@ -553,7 +552,12 @@ void Get_External_Data(LALStatus*          status,
     };
   for(i=0;i<params.numSamplePoints;i++)
     {
-      fscanf(fp,"%f\n",&(dataY->data[i]));
+      n = fscanf(fp,"%f\n",&(dataY->data[i]));
+      if (n != 1)
+      {
+        fprintf(stderr,TSDATAGENC_MSGEREAD);
+        exit(TSDATAGENC_EREAD);
+      }
       dataX->data[i]=i;
     }
   fclose(fp);
@@ -578,7 +582,7 @@ void multipleInjection(LALStatus*               status,
   INT4         origLength;
   INT4         totalPoints;
   REAL4Vector* tempVec=NULL;
-  INITSTATUS (status, "readascii", TRACKSEARCHC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   LALCreateVector(status->statusPtr,&tempVec,p_dataY->length);
   origLength=p_dataY->length;
@@ -632,7 +636,7 @@ void writePSD(
   FILE                      *fp;
   CHAR                      *filetxtname;
 
- INITSTATUS (status, "makeLIGO_PSD", TRACKSEARCHC);
+ INITSTATUS(status);
  ATTATCHSTATUSPTR (status);
  /* Simple checks */
  ASSERT(params.noisePSDDeltaF > 0,status,TSDATAGENC_EARGS,TSDATAGENC_MSGEVAL);

@@ -27,4 +27,7 @@
 /* Define to 1 if you have the LALFrame library */
 #undef HAVE_LIBLALFRAME
 
+/* Define if using CUDA library */
+#undef LALINSPIRAL_CUDA_ENABLED
+
 #endif /* _LALINSPIRALCONFIG_H */

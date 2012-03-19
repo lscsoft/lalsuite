@@ -198,17 +198,9 @@ harmonics, which can be obtained applying a least square method.
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 
-/*
- *  #include "LALRCSID.h"
- *	not needed, it is included in "LALConstants.h"
- */
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-
-NRCSID (CLRH, "$Id: CLR.h");
 
 /*
  * 5. Macros. But, note that macros are deprecated.

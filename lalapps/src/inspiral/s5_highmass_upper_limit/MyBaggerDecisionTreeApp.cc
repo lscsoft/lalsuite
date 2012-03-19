@@ -1,4 +1,3 @@
-//$Id: SprBaggerDecisionTreeApp.cc,v 1.18 2008-04-02 23:36:45 narsky Exp $
 
 #include "StatPatternRecognition/SprExperiment.hh"
 #include "StatPatternRecognition/SprDefs.hh"

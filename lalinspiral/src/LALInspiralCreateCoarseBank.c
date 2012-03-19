@@ -259,12 +259,6 @@ LALRalloc()
 #include <lal/LALStdio.h>
 #include <lal/FindRoot.h>
 
-
-
-NRCSID(LALINSPIRALCREATECOARSEBANKC, "$Id$");
-
-
-
 void
 LALInspiralCreateCoarseBank(
     LALStatus            *status,
@@ -275,8 +269,7 @@ LALInspiralCreateCoarseBank(
 {
   INT4 i;
 
-  INITSTATUS( status,
-      "LALInspiralCreateCoarseBank", LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.shf.data, status,
@@ -315,6 +308,9 @@ LALInspiralCreateCoarseBank(
     case PadeF1:
     case EOB:
     case EOBNR:
+    case EOBNRv2:
+    case IMRPhenomA:
+    case IMRPhenomB:
     case TaylorEt:
     case TaylorN:
     case FindChirpPTF:
@@ -392,8 +388,7 @@ LALNudgeTemplatesToConstantTotalMassLine(
   InspiralMetric        *metric=NULL;
   InspiralMomentsEtc    moments;
 
-  INITSTATUS( status, "LALNudgeTemplatesToConstantTotalMassLine",
-      LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   /* If there are no templates, return now */
@@ -504,8 +499,7 @@ LALInspiralCreatePNCoarseBank(
   INT4 validPars;
   REAL8 x01, x02, x11, x12, dist1, dist2, ndx1, ndx2, a25;
 
-  INITSTATUS( status, "LALInspiralCreateCoarseBank",
-      LALINSPIRALCREATECOARSEBANKC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( coarseIn.mMin > 0., status,

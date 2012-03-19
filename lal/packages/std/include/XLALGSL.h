@@ -28,8 +28,6 @@
 extern "C" {
 #endif
 
-NRCSID( XLALGSLH, "$Id$" );
-
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
 extern pthread_mutex_t lalGSLPthreadMutex;

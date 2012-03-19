@@ -61,9 +61,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-
-NRCSID (FINDCHIRPPTFH, "$Id$");
-
 void
 LALFindChirpPTFTemplate (
     LALStatus                  *status,

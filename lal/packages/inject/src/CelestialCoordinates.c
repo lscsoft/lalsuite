@@ -26,8 +26,6 @@
 #define LAL_DELTAGAL (0.473477302)
 #define LAL_LGAL     (0.576)
 
-NRCSID( CELESTIALCOORDINATESC, "$Id$" );
-
 /**
    \author T.D. Creighton
    \addtogroup CelestialCoordinates_c
@@ -166,7 +164,7 @@ LALGalacticToEquatorial( LALStatus   *stat,
   REAL8 sinB, cosB, sinL, cosL; /* sin and cos of b and l */
   REAL8 sinD, sinA, cosA;       /* sin and cos of delta and alpha */
 
-  INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -214,7 +212,7 @@ LALEquatorialToGalactic( LALStatus   *stat,
   REAL8 sinD, cosD, sinA, cosA; /* sin and cos of delta and alpha */
   REAL8 sinB, sinL, cosL;       /* sin and cos of b and l */
 
-  INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -261,7 +259,7 @@ LALEclipticToEquatorial( LALStatus   *stat,
   REAL8 sinB, cosB, sinL, cosL;   /* sin and cos of b and l */
   REAL8 sinD, sinA, cosA;         /* sin and cos of delta and alpha */
 
-  INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );
@@ -306,7 +304,7 @@ LALEquatorialToEcliptic( LALStatus   *stat,
   REAL8 sinD, cosD, sinA, cosA;   /* sin and cos of delta and alpha */
   REAL8 sinB, sinL, cosL;         /* sin and cos of b and l */
 
-  INITSTATUS( stat, "LALGalacticToEquatorial", CELESTIALCOORDINATESC );
+  INITSTATUS(stat);
 
   /* Make sure parameter structures exist. */
   ASSERT( input, stat, SKYCOORDINATESH_ENUL, SKYCOORDINATESH_MSGENUL );

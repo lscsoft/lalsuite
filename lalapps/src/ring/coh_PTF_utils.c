@@ -1,3 +1,4 @@
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 /* gets the data, performs any injections, and conditions the data */
@@ -869,7 +870,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
             lambda = LAL_PI_2;
           }
           else
-            if (abs(LAL_PI_2-lambdamin) < abs(LAL_PI_2-lambdamax))
+            if (fabs(LAL_PI_2-lambdamin) < fabs(LAL_PI_2-lambdamax))
               lambda = lambdamin;
             else
               lambda = lambdamax;

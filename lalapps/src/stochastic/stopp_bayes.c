@@ -39,8 +39,6 @@
 /* verbose flag */
 extern int vrbflg;
 
-NRCSID(STOPPBAYESC, "$Id$");
-RCSID("$Id$");
 
 /* cvs info */
 #define PROGRAM_NAME "stopp_bayes"

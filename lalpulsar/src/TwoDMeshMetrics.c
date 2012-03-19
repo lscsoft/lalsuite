@@ -58,9 +58,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/Grid.h>
 #include <lal/TwoDMesh.h>
-/** \cond DONT_DOXYGEN */
-NRCSID( TWODMESHMETRICSC, "$Id$" );
-/** \endcond */
+
 void
 LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *params )
 {
@@ -72,7 +70,7 @@ LALGetNearestMetric( LALStatus *stat, REAL4 metric[3], REAL4 position[2], void *
   REAL4VectorSequence *p; /* params cast to a REAL4VectorSequence */
   REAL4 *data;            /* pointer to p->data */
 
-  INITSTATUS( stat, "LALGetNearestMetric", TWODMESHMETRICSC );
+  INITSTATUS(stat);
 
   p = (REAL4VectorSequence *)params;
   /* This function may be called a lot.  Do error checking only in
@@ -125,7 +123,7 @@ LALInterpolateMetricGrid( LALStatus *stat, REAL4 metric[3], REAL4 position[2], v
   REAL4 iFrac, jFrac;   /* fractional parts of i, j */
   UINT4 k1, k2, k3, k4; /* indecies of four nearby points in grid */
 
-  INITSTATUS( stat, "LALGetNearestMetric", TWODMESHMETRICSC );
+  INITSTATUS(stat);
 
   p = (REAL4Grid *)params;
    /* This function may be called a lot.  Do error checking only in

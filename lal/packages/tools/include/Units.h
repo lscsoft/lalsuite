@@ -140,8 +140,6 @@ would not be an integer.
 extern "C" {
 #endif
 
-NRCSID (UNITSH, "$Id$");
-
 /** \ingroup Units_h
  * @{
  */

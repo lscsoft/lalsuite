@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# $Id: sets.tcl,v 1.1 2006/10/19 00:28:55 gmendell Exp $
 #
 # Implementation of various functions relating to sets and intervals on
 # real line, used in creatRDS and elsewhere.

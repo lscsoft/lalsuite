@@ -41,7 +41,6 @@
 
 #include "ring.h"
 
-RCSID( "$Id$" );
 #define PROGRAM_NAME "lalapps_ring"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE   "$Source$"

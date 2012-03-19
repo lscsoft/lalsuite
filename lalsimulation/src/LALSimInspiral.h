@@ -34,8 +34,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID(LALSIMINSPIRALH, "$Id$");
-
 #define LAL_PN_MODE_L_MAX 3
 
 /** Enum that specifies the PN approximant to be used in computing the waveform.
@@ -64,6 +62,7 @@ typedef enum {
    BCV,			/**< Detection template family of Buonanno, Chen and Vallisneri [\ref BCV03]; Outputs a frequency-domain wave. */
    BCVSpin,		/**< Detection template family of Buonanno, Chen and Vallisneri including  spin effects [\ref BCV03b]; Outputs a frequency-domain wave. */
    SpinTaylorT3,	/**< Spinning case T3 models */
+   SpinTaylorT4,	/**< Spinning case T4 models (lalsimulation's equivalent of SpinTaylorFrameless) */
    SpinTaylorFrameless,	/**< Spinning case PN models (replace SpinTaylor by removing the coordinate singularity) */
    SpinTaylor,		/**< Spinning case PN models (should replace SpinTaylorT3 in the future) */
    PhenSpinTaylorRD,	/**< Phenomenological waveforms, interpolating between a T4 spin-inspiral and the ringdown. */
@@ -81,6 +80,7 @@ typedef enum {
    EOBNR,		/**< UNDOCUMENTED */
    EOBNRv2,
    EOBNRv2HM,
+   SEOBNRv1,        /**< Spin-aligned EOBNR model */
    IMRPhenomA,		/**< Time domain (non-spinning) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFA  */
    IMRPhenomB,		/**< Time domain (non-precessing spins) inspiral-merger-ringdown waveforms generated from the inverse FFT of IMRPhenomFB */
    IMRPhenomFA,		/**< Frequency domain (non-spinning) inspiral-merger-ringdown templates of Ajith et al [\ref Ajith:2007kx] with phenomenological coefficients defined in the Table I of [\ref Ajith:2007xh]*/
@@ -102,12 +102,41 @@ typedef enum {
 	LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN = 1 << 2,     /**<  Spin-spin-self interaction */
 	LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN = 1 << 3,     /**< Quadrupole-monopole interaction */
 	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN = 1 << 4,     /**<  Next-to-leading-order spin-orbit interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 5, /**< Leading-order tidal interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 6, /**< Next-to-leading-order tidal interaction */
-
-	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 5) - 1, /**< all spin interactions, no tidal interactions */
-	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 7) - 1 /**< all spin and tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN = 1 << 5,  /**< Spin-spin interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 6, /**< Leading-order tidal interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 7, /**< Next-to-leading-order tidal interaction */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 6) - 1, /**< all spin interactions, no tidal interactions */
+	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 8) - 1 /**< all spin and tidal interactions */
 } LALSimInspiralInteraction;
+
+
+/** Enumeration to specify the tapering method to apply to the waveform */
+typedef enum
+{
+  LAL_SIM_INSPIRAL_TAPER_NONE,		/**< No tapering */
+  LAL_SIM_INSPIRAL_TAPER_START,		/**< Taper the start of the waveform */
+  LAL_SIM_INSPIRAL_TAPER_END,		/**< Taper the end of the waveform */
+  LAL_SIM_INSPIRAL_TAPER_STARTEND,	/**< Taper the start and the end of the waveform */
+  LAL_SIM_INSPIRAL_TAPER_NUM_OPTS	/**< UNDOCUMENTED */
+}  LALSimInspiralApplyTaper;
+
+
+/**
+ * Tapers a REAL4 inspiral waveform in the time domain.
+ */
+int XLALSimInspiralREAL4WaveTaper(
+		REAL4Vector              *signalvec,	/**< pointer to waveform vector */
+		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
+		);
+
+/**
+ * Tapers a REAL8 inspiral waveform in the time domain.
+ */
+int XLALSimInspiralREAL8WaveTaper(
+		REAL8Vector              *signalvec,	/**< pointer to waveform vector */
+		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
+		);
+
 
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of
@@ -361,12 +390,63 @@ XLALSimInspiralTaylorLength(
 /* Waveform switching functions */
 
 /**
- * Chooses between different approximants when requesting a waveform to be generated.
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseTDWaveform().
+ *
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimInspiralImplementedTDApproximants(
+    Approximant approximant /**< post-Newtonian approximant for use in waveform production */
+    );
+
+/**
+ * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseFDWaveform().
+ *
+ * returns 1 if the approximant is implemented, 0 otherwise.
+ */
+int XLALSimInspiralImplementedFDApproximants(
+    Approximant approximant /**< post-Newtonian approximant for use in waveform production */
+    );
+
+/**
+ * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD
+ *
+ * Chooses between different approximants when requesting a waveform to be generated
+ * For spinning waveforms, all known spin effects up to given PN order are included
  *
  * The parameters passed must be in SI units.
- * The phi0 is the phase at a reference time. FIXME: this should be made consistent across waveforms.
  */
 int XLALSimInspiralChooseWaveform(
+    REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
+    REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
+    REAL8 phi0,                                 /**< peak phase */
+    REAL8 deltaT,                               /**< sampling interval */
+    REAL8 m1,                                   /**< mass of companion 1 */
+    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< start frequency */
+    REAL8 r,                                    /**< distance of source */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    );
+
+/**
+ * Chooses between different approximants when requesting a waveform to be generated
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ * Returns the waveform in the time domain.
+ *
+ * The parameters passed must be in SI units.
+ */
+int XLALSimInspiralChooseTDWaveform(
     REAL8TimeSeries **hplus,    /**< +-polarization waveform */
     REAL8TimeSeries **hcross,   /**< x-polarization waveform */
     REAL8 phi0,                 /**< reference phase */
@@ -393,30 +473,35 @@ int XLALSimInspiralChooseWaveform(
 
 /**
  * Chooses between different approximants when requesting a waveform to be generated
- * with Newtonian-only amplitude
+ * For spinning waveforms, all known spin effects up to given PN order are included
+ * Returns the waveform in the frequency domain.
+ *
+ * The parameters passed must be in SI units.
  */
-int XLALSimInspiralChooseRestrictedWaveform(
-    REAL8TimeSeries **hplus,    /**< +-polarization waveform */
-    REAL8TimeSeries **hcross,   /**< x-polarization waveform */
-    REAL8 phi0,                 /**< reference phase */
-    REAL8 deltaT,               /**< sampling interval */
-    REAL8 m1,                   /**< mass of companion 1 */
-    REAL8 m2,                   /**< mass of companion 2 */
-    REAL8 s1x,                  /**< x-component of the dimensionless spin of object 1 */
-    REAL8 s1y,                  /**< y-component of the dimensionless spin of object 1 */
-    REAL8 s1z,                  /**< z-component of the dimensionless spin of object 1 */
-    REAL8 s2x,                  /**< x-component of the dimensionless spin of object 2 */
-    REAL8 s2y,                  /**< y-component of the dimensionless spin of object 2 */
-    REAL8 s2z,                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                /**< start frequency */
-    REAL8 r,                    /**< distance of source */
-    REAL8 i,                    /**< inclination of source (rad) */
-    REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-    REAL8 lambda2,              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+int XLALSimInspiralChooseFDWaveform(
+    COMPLEX16FrequencySeries **htilde,          /**< FD waveform */
+    REAL8 phi0,                                 /**< peak phase */
+    REAL8 deltaF,                               /**< sampling interval */
+    REAL8 m1,                                   /**< mass of companion 1 */
+    REAL8 m2,                                   /**< mass of companion 2 */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_max,                                /**< end frequency */
+    REAL8 r,                                    /**< distance of source */
+    REAL8 i,                                    /**< inclination of source (rad) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-    int O,                      /**< twice post-Newtonian order */
-    Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
+
 
 /* TaylorT4 functions */
 
@@ -1029,7 +1114,34 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 /**
  * Driver routine to compute a non-precessing post-Newtonian inspiral waveform
  * in the frequency domain, described in http://arxiv.org/abs/1107.1267.
- * The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+ *
+ * The chi parameter should be determined from
+ * XLALSimInspiralTaylorF2ReducedSpinComputeChi.
+ *
+ * A note from Evan Ochsner on differences with respect to TaylorF2:
+ *
+ * The amplitude-corrected SPA/F2 waveforms are derived and explicitly given in
+ * <http://arxiv.org/abs/gr-qc/0607092> Sec. II and Appendix A (non-spinning)
+ * and <http://arxiv.org/abs/0810.5336> Sec. VI and Appendix D (spin-aligned).
+ *
+ * The difference between F2 and F2ReducedSpin is that F2ReducedSpin always
+ * keeps only the leading-order TD amplitude multiplying the 2nd harmonic (
+ * A_(2,0)(t) in Eq. 2.3 of the first paper OR alpha/beta_2^(0)(t) in Eq. 6.7
+ * of the second paper) but expands out the 1/\sqrt{\dot{F}} ( Eq. 5.3 OR Eq.
+ * 6.10-6.11 resp.) to whichever order is given as 'ampO' in the code.
+ *
+ * On the other hand, the F2 model in the papers above will PN expand BOTH the
+ * TD amplitude and the factor 1/\sqrt{\dot{F}}, take their product, and keep
+ * all terms up to the desired amplitude order, as in Eq. 6.13-6.14 of the
+ * second paper.
+ *
+ * In particular, the F2ReducedSpin will always have only the 2nd harmonic, but
+ * F2 will have multiple harmonics starting at ampO = 0.5PN. Even if you were
+ * to compare just the 2nd harmonic, you would have a difference starting at
+ * 1PN ampO, because the F2 has a 1PN TD amp. correction to the 2nd harmonic
+ * (alpha/beta_2^(2)(t)) which will not be accounted for by the F2ReducedSpin.
+ * So, the two should agree when ampO=0, but will be different in any other
+ * case.
  */
 int XLALSimInspiralTaylorF2ReducedSpin(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */

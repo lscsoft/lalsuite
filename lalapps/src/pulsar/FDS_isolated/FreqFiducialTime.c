@@ -59,7 +59,6 @@
 /*   FreqFiducialTime_SOURCES = FreqFiducialTime.c CFS_S4R2_setup.C WU_generator_misc.C WU_generator_daemon.h              */
 /*                                                                                                                         */
 /***************************************************************************************************************************/
-/* $Id$  */
 
 /* ----------------------------------------------------------------------------- */
 /* defines */
@@ -189,11 +188,6 @@ extern INT4 vrbflg;
 
 const REAL8 FIXED_FIDUCIAL_TIME = 793555944; /* here e.g. GPS startTime of first data stretch in S4 is chosen */
 
-
-RCSID ("$Id$");
-
-
-
 /* ------------------------------------------------------------------------------------------*/
 /* Code starts here.                                                                         */
 /* ------------------------------------------------------------------------------------------*/
@@ -252,7 +246,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   INT4 nmax = 0;
   const CHAR *fname;
   
-  INITSTATUS( lalStatus, "PrintResultFile", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( CLA != NULL, lalStatus, FIDUCIALC_ENULL, FIDUCIALC_MSGENULL);
@@ -280,7 +274,7 @@ void PrintResultFile(LALStatus *lalStatus, const FiducialTimeConfigVars *CLA, Ca
   }
 
   /* output lines */
-  /*INITSTATUS( lalStatus, "print_output", rcsid ); */
+  /*INITSTATUS(lalStatus); */
  
   iindex=0;
   
@@ -315,7 +309,7 @@ void FreeMemory( LALStatus *lalStatus,
 	    CandidateList *CList, 
 	    const UINT4 CLength)
 {
-  INITSTATUS( lalStatus, "FreeMemory", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   FreeConfigVars( lalStatus->statusPtr, CLA );
@@ -331,7 +325,7 @@ void FreeMemory( LALStatus *lalStatus,
 
 void FreeConfigVars(LALStatus *lalStatus, FiducialTimeConfigVars *CLA )
 {
-  INITSTATUS( lalStatus, "FreeConfigVars", rcsid );
+  INITSTATUS(lalStatus);
 
   if( CLA->OutputFile != NULL ) LALFree(CLA->OutputFile);
   if( CLA->InputFile != NULL ) LALFree(CLA->InputFile);
@@ -360,7 +354,7 @@ void ReadCombinedFile( LALStatus *lalStatus,
         
   fname = CLA->InputFile;
  
-  INITSTATUS( lalStatus, "ReadCombinedFile", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
   ASSERT( fname != NULL, lalStatus, FIDUCIALC_ENULL, FIDUCIALC_MSGENULL);
   ASSERT( *CList == NULL, lalStatus, FIDUCIALC_ENONULL, FIDUCIALC_MSGENONULL);
@@ -733,7 +727,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
   INT4 uvar_InNumLines;
   INT4 uvar_FiducialTime;
 
-  INITSTATUS( lalStatus, "ReadCommandLineArgs", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   ASSERT( CLA != NULL, lalStatus, FIDUCIALC_ENULL, FIDUCIALC_MSGENULL);
@@ -758,7 +752,7 @@ void ReadCommandLineArgs( LALStatus *lalStatus,
 
 
   if (uvar_help) {	/* if help was requested, we're done here */
-    XLALPrintError("%s\n",rcsid);
+    XLALPrintError("%s\n","$Id$");
     fflush(stderr);
     LALDestroyUserVars(lalStatus->statusPtr);
     exit(FIDUCIAL_EXIT_OK);
@@ -850,7 +844,7 @@ void ComputeFiducialTimeFrequency( LALStatus *lalStatus,
   WU_search_params_t wparams;
 
 
-  INITSTATUS( lalStatus, "ComputeFiducialTimeFrequency", rcsid );
+  INITSTATUS(lalStatus);
   ATTATCHSTATUSPTR (lalStatus);
 
   f_CFS=0;

@@ -162,6 +162,7 @@ LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -178,9 +179,6 @@ LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
    is defined as the point where the sensitivity is reduced by a
    factor of SIMULATEINSPIRALC_CUTOFF: */
 #define SIMULATEINSPIRALC_CUTOFF (0.000001)
-
-NRCSID( SIMULATEINSPIRALC, "$Id$" );
-
 
 void
 LALSimulateInspiral( LALStatus                  *stat,
@@ -212,7 +210,7 @@ LALSimulateInspiral( LALStatus                  *stat,
   */
   REAL8 dfInv, fOffset;
 
-  INITSTATUS( stat, "LALSimulateInspiral", SIMULATEINSPIRALC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure argument structures and their fields exist. */

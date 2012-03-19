@@ -21,7 +21,6 @@
 /** \defgroup SFTfileIO SFT-file IO
  * \ingroup support
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
- * $Date$
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier transforms)
  *
  *
@@ -150,7 +149,6 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 
 /** \file
  * \ingroup SFTfileIO
- * \date $Date$
  * \brief Header file defining the API for the SFTfileIO modules.
  *
  * Routines for reading and writing SFT binary files.
@@ -184,8 +182,6 @@ i.e. this will only be correct for v1-normalized data (i.e. data = DFT)
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-NRCSID (SFTFILEIOH, "$Id$");
 
 /** \name Error codes */
 /*@{*/
@@ -306,7 +302,7 @@ void LALSFTtimestampsFromCatalog (LALStatus *, LIGOTimeGPSVector **timestamps, c
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-void XLALDestroySFTCatalog ( SFTCatalog **catalog );
+void XLALDestroySFTCatalog ( SFTCatalog *catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog);
 const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
 

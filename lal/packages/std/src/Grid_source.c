@@ -14,7 +14,7 @@
 void
 CFUNCGRID ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimension )
 {
-  INITSTATUS( stat, STRING(CFUNCGRID), GRIDC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */
@@ -74,7 +74,7 @@ CFUNCGRID ( LALStatus *stat, GTYPE **grid, UINT4Vector *dimLength, UINT4 dimensi
 void
 DFUNCGRID ( LALStatus *stat, GTYPE **grid )
 {
-  INITSTATUS( stat, STRING(DFUNCGRID), GRIDC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input argument. */

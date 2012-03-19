@@ -27,13 +27,12 @@
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/DopplerScan.h>
 #include <lal/PulsarCrossCorr.h>
 #include <gsl/gsl_permutation.h>
 
 #define SQUARE(x) (x*x)
-
-RCSID( "$Id$");
 
 /* this function is currently unused (20/07/09) */
 void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
@@ -55,7 +54,7 @@ void LALCreateSFTPairsIndicesFrom2SFTvectors(LALStatus          *status,
   REAL8 timeDiff;
   SFTListElement *sfttmp;
 
-  INITSTATUS (status, "CreateSFTPairsIndicesFrom2SFTvectors", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (in, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -167,7 +166,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   REAL8 deltaF;
   REAL8 re1, re2, im1, im2;
 
-  INITSTATUS (status, "CorrelateSingleSFTPair", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT (sft1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
   ASSERT (sft2, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -226,7 +225,7 @@ void LALGetSignalFrequencyInSFT(LALStatus                *status,
   REAL8 alpha, delta;
   REAL8 vDotn_c, fhat, factor, timeDiff;
 
-  INITSTATUS (status, "GetSignalFrequencyInSFT", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -276,7 +275,7 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
   REAL8 rDotn_c, phihat, factor, timeDiff;
   REAL8 epoch_plus_rdotn;
 
-  INITSTATUS (status, "GetSignalPhaseInSFT", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(epoch, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -334,7 +333,7 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
   INT8 bin1, bin2;
   REAL8 deltaF;
 
-  INITSTATUS (status, "CalculateSigmaAlphaSq", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT(psd1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -367,7 +366,7 @@ void LALCalculateAveUalpha(LALStatus *status,
 {
   REAL8 deltaPhi;
   REAL8 re, im;
-  INITSTATUS (status, "CalculateAveUalpha", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
@@ -411,7 +410,7 @@ void LALCalculateUalpha(LALStatus *status,
   REAL8 FplusI, FplusJ, FcrossI, FcrossJ;
   REAL8 FpIFpJ, FcIFcJ, FpIFcJ, FcIFpJ;
 
-  INITSTATUS (status, "CalculateUalpha", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
@@ -483,7 +482,7 @@ void LALCalculateCrossCorrPower(LALStatus       *status,
 {
   INT4 i;
 
-  INITSTATUS (status, "CalculateCrossCorrPower", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (out, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -515,7 +514,7 @@ void LALNormaliseCrossCorrPower(LALStatus        *status,
   INT4 i;
   REAL8 variance = 0;
 
-  INITSTATUS (status, "NormaliseCrossCorrPower", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (out, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);
@@ -553,7 +552,7 @@ void LALCalculateEstimators(LALStatus    *status,
   INT4 i;
   REAL8 ap1 = 0, ap2 = 0, ac1 = 0, ac2 = 0;
 
-  INITSTATUS (status, "CalculateEstimators", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (aplussq1, status, PULSARCROSSCORR_ENULL, PULSARCROSSCORR_MSGENULL);

@@ -34,8 +34,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( RESAMPLETIMESERIESH, "$Id$" );
-
 /**
  * \author Brown, D. A.
  * \addtogroup ResampleTimeSeries_h Header ResampleTimeSeries.h

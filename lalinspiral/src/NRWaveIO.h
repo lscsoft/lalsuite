@@ -56,8 +56,6 @@
 extern "C" {
 #endif
 
-NRCSID (NRWAVEIOH, "$Id$");
-
 /** \name Error codes */
 /*@{*/
 #define NRWAVEIO_ENULL 	  1

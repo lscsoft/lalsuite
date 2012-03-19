@@ -24,7 +24,6 @@
  * Current Developer: Torres, Cristina V.  (LLO)
  * Original Developer: Balasubramanian, R. (Cardiff University, UK)
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
 
@@ -59,8 +58,6 @@
 #ifdef  __cplusplus   /* C++ protection. */
 extern "C" {
 #endif
-
-NRCSID (TRACKSEARCHH, "$Id$");
 
 /* Mathematical constants */
 #ifndef SQRT_2_PI_INV

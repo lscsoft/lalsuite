@@ -30,7 +30,6 @@ mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
 #include <lal/MatrixUtils.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include <lal/LALRCSID.h>
 
 #include <getopt.h>
 
@@ -54,9 +53,6 @@ mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
 " --earth             Earth ephemeris\n"\
 " --sun               Sun ephemeris\n"\
 "\n"
-
-
-RCSID("$Id$");
 
 typedef struct tagInputParams{
   CHAR det[10];

@@ -33,6 +33,7 @@
 /*                                UWM - November 2002                            */
 /*********************************************************************************/
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>

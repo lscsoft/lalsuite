@@ -20,9 +20,6 @@
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (FINDCHIRPTDTESTH,"$Id$");
-
 int Start(
     DataSegmentVector      **dataSegVec,
     FindChirpFilterInput   **filterInput,

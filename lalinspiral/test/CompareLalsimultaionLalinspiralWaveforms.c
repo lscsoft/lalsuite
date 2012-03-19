@@ -44,8 +44,6 @@ generated using the lalinspiral routine.
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
-NRCSID(CompareLalsimultaionLalinspiralWaveformsC, "$Id$");
-
 typedef struct{
   INT4 order;
   char waveformString[LIGOMETA_WAVEFORM_MAX];
@@ -178,14 +176,7 @@ int main(int argc , char **argv)
 
 	start = clock();
 	/* --- now we can call the lalsimulation function --- */
-	switch (params.approximant)
-	{
-		case EOBNRv2HM:
-			length = XLALSimInspiralChooseWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, lambda1, lambda2, interaction, otherIn.order, otherIn.order, params.approximant);
-			break;
-		default:
-			length = XLALSimInspiralChooseRestrictedWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, lambda1, lambda2, interaction, otherIn.order, params.approximant);
-	}
+	length = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, lambda1, lambda2, interaction, 0, otherIn.order, params.approximant);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

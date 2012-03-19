@@ -23,14 +23,12 @@
  *
  * Author: Creighton, T. D.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------*/
 
 /*
 
 <lalVerbatim file="SortTestCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -97,8 +95,6 @@ LALPrintError()
 #include <lal/AVFactories.h>
 #include <lal/Random.h>
 #include <lal/Sort.h>
-
-NRCSID(SORTTESTC,"$Id$");
 
 #define NPTS 5
 

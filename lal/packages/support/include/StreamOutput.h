@@ -53,8 +53,6 @@ library rather than in \c lal proper.
 extern "C" {
 #endif
 
-NRCSID( STREAMOUTPUTH, "$Id$" );
-
 /**
 \heading{Error conditions}
  \name Error Codes */ /*@{*/

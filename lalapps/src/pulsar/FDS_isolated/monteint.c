@@ -50,9 +50,6 @@
 /* LALApps-includes */
 #include <lalapps/lalapps.h>
 
-RCSID( "$Id$");
-
-
 /* Definitions */
 /*
 #define USE_S2ALLSKY
@@ -329,7 +326,7 @@ main (INT4 argc, CHAR *argv[])
 void testCode(LALStatus *status, BayesFstatParams *bfparams) 
 {
 
-  INITSTATUS (status, "testCode", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   if ( bfparams == NULL ) {
     ABORT (status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
@@ -377,7 +374,7 @@ findRoot (LALStatus *status, findRootOut *frout, findRootParams *frparams)
   gsl_function F;
   REAL8 x_lo, x_hi;
 
-  INITSTATUS (status, "findRoot", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   F.function = frparams->function;
@@ -761,7 +758,7 @@ InitBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams, INT4 argc, C
 
   ConfigVariables *cfg = NULL;
 
-  INITSTATUS (status, "InitBayesFstatParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
@@ -823,7 +820,7 @@ InitBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams, INT4 argc, C
  *----------------------------------------------------------------------*/
 void InitUserVars(LALStatus *status)
 {
-  INITSTATUS (status, "InitUserVars", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set-up: IFO, timestampsfilename, ephemeris stuffs, tsft. */
@@ -886,7 +883,7 @@ InitConfigVariables(LALStatus *status, ConfigVariables *cfg)
   INT4 nout;
 
 
-  INITSTATUS (status, "InitConfigVariables", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( cfg != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1069,7 +1066,7 @@ filelength(LALStatus *status, INT8 *length, CHAR *filename)
   CHAR line[256];
   CHAR *ptr;
 
-  INITSTATUS (status, "filelength", rcsid);
+  INITSTATUS(status);
 
   fp=fopen(filename,"r");
   if (fp==NULL) {
@@ -1123,7 +1120,7 @@ InitAMParams(LALStatus *status, BayesFstatParams *bfparams, ConfigVariables *cfg
   INT8 ntimestamps = 0;
   INT4 ic;
 
-  INITSTATUS (status, "InitAMParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( cfg != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1257,7 +1254,7 @@ ReadTimeStamps(LALStatus *status, LIGOTimeGPS *timestamps, INT8 ntimestamps, CHA
   FILE *fp = NULL;
   INT4 ic = 0, nout = -1;
 
-  INITSTATUS (status, "ReadTimeStamps", rcsid);
+  INITSTATUS(status);
 
   fp=fopen(timestampsfile,"r");
   if (fp==NULL) {
@@ -1294,7 +1291,7 @@ ReadTimeStamps(LALStatus *status, LIGOTimeGPS *timestamps, INT8 ntimestamps, CHA
 void FreeMem(LALStatus *status, ConfigVariables *cfg, BayesFstatParams *bfparams)
 {
 
-  INITSTATUS (status, "FreeMem", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( cfg != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
@@ -1325,7 +1322,7 @@ void FreeMem(LALStatus *status, ConfigVariables *cfg, BayesFstatParams *bfparams
 void FreeConfigVariables(LALStatus *status, ConfigVariables *cfg)
 {
 
-  INITSTATUS (status, "FreeConfigVariables", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( cfg != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1361,7 +1358,7 @@ void FreeConfigVariables(LALStatus *status, ConfigVariables *cfg)
 void FreeBayesFstatParams(LALStatus *status, BayesFstatParams *bfparams)
 {
 
-  INITSTATUS (status, "FreeBayesFstatParams", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1518,7 +1515,7 @@ void testInterPolate2DSphere(LALStatus *status, BayesFstatParams *bfparams)
   UINT4 ic,N;
 
 
-  INITSTATUS (status, "testInterpolate2DSphere", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
@@ -1554,7 +1551,7 @@ void testInterPolate2DSphereCore(LALStatus *status, BayesFstatParams *bfparams, 
 
 
 
-  INITSTATUS (status, "testInterpolate2DSphereCore", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1689,7 +1686,7 @@ ABCLookUpTable(LALStatus *status, ABCcoeffs *ABCs, BayesFstatParams *bfparams, R
   UINT4 ic,jc, idx, idx2;
 
 
-  INITSTATUS (status, "ABCLookUpTable", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( ABCs != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
@@ -1788,7 +1785,7 @@ void
 AllocateABCcoeffs(LALStatus *status, ABCcoeffs *ABCs,UINT4 Ndelta, UINT4 Nalpha)
 {
 
-  INITSTATUS (status, "AllocateABCcoeffs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( ABCs != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1841,7 +1838,7 @@ AllocateABCcoeffs(LALStatus *status, ABCcoeffs *ABCs,UINT4 Ndelta, UINT4 Nalpha)
 void
 FreeABCcoeffs(LALStatus *status, ABCcoeffs *ABCs)
 {
-  INITSTATUS (status, "FreeABCcoeffs", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
   ASSERT( ABCs != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
@@ -1951,7 +1948,7 @@ void integrateDSquare(LALStatus *status, BayesFstatParams *bfparams)
 
   REAL8 norm;
 
-  INITSTATUS (status, "integrateDSquare", rcsid);
+  INITSTATUS(status);
   ASSERT( bfparams != NULL, status, BAYESFSTATC_ENULL, BAYESFSTATC_MSGENULL);
 
   mciparams.verboseflag = lalDebugLevel;

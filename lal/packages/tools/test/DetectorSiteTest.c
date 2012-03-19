@@ -100,8 +100,6 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-NRCSID( DETECTORSITETESTC, "$Id$" );
-
 #define DETECTORSITETESTC_LOCTOL 3e-2
 #define DETECTORSITETESTC_RESTOL 1e-06
 

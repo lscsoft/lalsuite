@@ -56,6 +56,7 @@ LALFree()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -69,9 +70,6 @@ LALFree()
 #else
 #define UNUSED
 #endif
-
-NRCSID (FINDCHIRPBCVDATAC, "$Id$");
-
 
 void
 LALFindChirpBCVData (
@@ -122,7 +120,7 @@ LALFindChirpBCVData (
   DataSegment          *dataSeg;
 
 
-  INITSTATUS( status, "LALFindChirpBCVData", FINDCHIRPBCVDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

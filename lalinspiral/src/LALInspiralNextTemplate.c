@@ -63,10 +63,6 @@ None.
 
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALNEXTTEMPLATEC, "Id: $");
-
-
-
 void LALInspiralNextTemplate(LALStatus          *status,
                              InspiralBankParams *bankPars,
                              InspiralMetric     metric)
@@ -75,7 +71,7 @@ void LALInspiralNextTemplate(LALStatus          *status,
    REAL8 x0tmp, myphi, theta;
    INT4 k;
 
-   INITSTATUS (status, "LALInspiralNextTemplate", LALINSPIRALNEXTTEMPLATEC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (bankPars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT (bankPars->dx0 != 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);

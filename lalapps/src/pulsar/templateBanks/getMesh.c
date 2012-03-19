@@ -44,8 +44,6 @@
 
 #include <lal/DopplerScan.h>
 
-RCSID ("$Id$");
-
 /* Error codes and messages */
 #define GETMESH_ENORM 	0
 #define GETMESH_ESUB  	1
@@ -314,7 +312,7 @@ main(int argc, char *argv[])
 void
 initUserVars (LALStatus *status, UserVariables_t *uvar)
 {
-  INITSTATUS( status, "initUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* set a few defaults */
@@ -410,7 +408,7 @@ void
 initGeneral (LALStatus *status, ConfigVariables *cfg, const UserVariables_t *uvar)
 {
 
-  INITSTATUS( status, "initGeneral", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ----- set up Tspan */
@@ -463,7 +461,7 @@ void
 checkUserInputConsistency (LALStatus *status, const UserVariables_t *uvar)
 {
 
-  INITSTATUS (status, "checkUserInputConsistency", rcsid);
+  INITSTATUS(status);
 
   if (uvar->ephemYear == NULL)
     {
@@ -599,7 +597,7 @@ getSearchRegion (LALStatus *status,		/**< pointer to LALStatus structure */
 
   DopplerRegion ret = empty_DopplerRegion;
 
-  INITSTATUS (status, "getSearchRegion", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( searchRegion, status, GETMESH_ENULL, GETMESH_MSGENULL);
@@ -729,16 +727,16 @@ setTrueRandomSeed(void)
 {
   FILE *fpRandom;
   INT4 seed;		/* NOTE: possibly used un-initialized! that's ok!! */
-  size_t num;
 
   fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
   if ( fpRandom == NULL )
     {
-      XLALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
+      XLALPrintError ("\nCould not open /dev/urandom ... using default seed.\n\n");
     }
   else
     {
-      num = fread(&seed, sizeof(INT4),1, fpRandom);
+      if ( fread(&seed, sizeof(INT4),1, fpRandom) != 1 )
+        XLALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
       fclose(fpRandom);
     }
 

@@ -20,7 +20,6 @@
 #if 0  /* autodoc block */
 
 <lalVerbatim file="RandomCV">
-$Id$
 </lalVerbatim>
 
 <lalLaTeX>
@@ -96,8 +95,6 @@ This is an implementation of the random number generators \verb+ran1+ and
 #include <lal/Random.h>
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
-
-NRCSID (RANDOMC, "$Id$");
 
 static const INT4 a = 16807;
 static const INT4 m = 2147483647;
@@ -292,7 +289,7 @@ LALCreateRandomParams (
     INT4           seed
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALCreateRandomParams", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (!*params, status, RANDOMH_ENNUL, RANDOMH_MSGENNUL);
@@ -315,7 +312,7 @@ LALDestroyRandomParams (
     RandomParams **params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALDestroyRandomParams", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (*params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -335,7 +332,7 @@ LALUniformDeviate (
     RandomParams *params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALUniformDeviate", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (deviate, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -359,7 +356,7 @@ LALNormalDeviates (
     RandomParams *params
     )
 { /* </lalVerbatim> */
-  INITSTATUS (status, "LALNormalDeviates", RANDOMC);
+  INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
   ASSERT (deviates, status, RANDOMH_ENULL, RANDOMH_MSGENULL);

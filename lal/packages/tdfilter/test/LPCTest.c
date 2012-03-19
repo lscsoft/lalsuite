@@ -20,9 +20,6 @@
 #include <lal/LPC.h>
 #include <lal/LALStatusMacros.h>
 
-NRCSID (LPCTESTC,"$Id$");
-
-
 #define CHKST if(status.statusCode != 0) {REPORTSTATUS (&status); return -1;}
 
 INT4 lalDebugLevel = 2;

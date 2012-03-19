@@ -120,11 +120,8 @@ that clearly stand over the noise level.
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/CLR.h>
-
-
-NRCSID (REFINTERFERENCEC, "$Id$");
-
 
 void LALRefInterference (LALStatus    *status,
 		   COMPLEX8Vector     *out,   /*  M(t), size n */
@@ -166,7 +163,7 @@ void LALRefInterference (LALStatus    *status,
   ComplexFFTPlan  *pinv = NULL;
 /* --------------------------------------------- */
 
-  INITSTATUS (status, "LALRefInterference", REFINTERFERENCEC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 

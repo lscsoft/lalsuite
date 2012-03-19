@@ -262,8 +262,14 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 
 /** An analytic likeilhood that is a correlated Gaussian in 15
     dimensions.  */
-REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, 
-                                                  LALInferenceIFOData *data, 
+REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
+                                                  LALInferenceIFOData *data,
+                                                  LALInferenceTemplateFunction *template);
+
+/** An analytic likeilhood that is two correlated Gaussians in 15
+    dimensions.  */
+REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams,
+                                                  LALInferenceIFOData *data,
                                                   LALInferenceTemplateFunction *template);
 
 /** 15-D Rosenbrock log(L) function (see Eq (3) of

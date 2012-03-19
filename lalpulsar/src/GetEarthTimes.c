@@ -25,10 +25,6 @@
 #include <lal/Date.h>
 #include <lal/PulsarTimes.h>
 
-/** \cond DONT_DOXYGEN */
-NRCSID( GETEARTHTIMESC, "$Id$" );
-/** \endcond */
-
 #define NEQUINOXES 29
 /** Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
 static const INT4 equinoxes[NEQUINOXES] = {
@@ -92,7 +88,7 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
   LIGOTimeGPS epoch;   /* local copy of times->epoch */
   REAL8 t;             /* time as a floating-point number (s) */
 
-  INITSTATUS( stat, "GetEarthTimes", GETEARTHTIMESC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure the parameters exist. */

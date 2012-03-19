@@ -77,8 +77,6 @@
 
 #include <lal/LALInspiral.h>
 
-NRCSID (LALBCVWAVEFORMC, "$Id$");
-
 void
 LALBCVWaveform(
    LALStatus        *status,
@@ -92,7 +90,7 @@ LALBCVWaveform(
   REAL8 Sevenby6, Fiveby3, Twoby3, alpha;
   INT4 n, i;
 
-  INITSTATUS(status, "LALBCVWaveform", LALBCVWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (signalvec,  status,       LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -185,7 +183,7 @@ LALBCVSpinWaveform(
   REAL8 Sevenby6, Fiveby3, Twoby3;
   INT4 n, i;
 
-  INITSTATUS(status, "LALBCVSpinWaveform", LALBCVWAVEFORMC);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT (signalvec,  status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

@@ -37,6 +37,7 @@ chirps for BCV templates.
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALErrno.h>
 #include <lal/XLALError.h>
@@ -53,10 +54,6 @@ chirps for BCV templates.
 #else
 #define UNUSED
 #endif
-
-NRCSID (FINDCHIRPBCVFILTERC, "$Id$");
-
-
 
 void
 LALFindChirpBCVFilterSegment (
@@ -111,7 +108,7 @@ LALFindChirpBCVFilterSegment (
   /* CHAR                  infomsg[256]; */
 
 
-  INITSTATUS( status, "LALFindChirpBCVFilter", FINDCHIRPBCVFILTERC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

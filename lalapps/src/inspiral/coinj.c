@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <processtable.h>
 #include <lal/LALStdio.h>
@@ -63,8 +64,6 @@ lalapps_coinj: create coherent injection files for LIGO and VIRGO\n"
 #else
 #define UNUSED
 #endif
-
-RCSID("$Id");
 
 extern int vrbflg;
 extern int lalDebugLevel;

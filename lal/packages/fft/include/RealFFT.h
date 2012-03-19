@@ -38,8 +38,6 @@ extern "C" {
 #define RESTRICT restrict
 #endif
 
-NRCSID( REALFFTH, "$Id$" );
-
 /** Plan to perform FFT of REAL4 data */
 typedef struct tagREAL4FFTPlan REAL4FFTPlan;
 /** Plan to perform FFT of REAL8 data */

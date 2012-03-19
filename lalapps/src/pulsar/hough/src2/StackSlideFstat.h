@@ -24,7 +24,6 @@
  * \file StackSlideFstat.h
  * \brief Header file for StackSlideFstat.c 
  * \author Gregory Mendell
- * \date $Date$
  * 
  ****/
 
@@ -72,12 +71,6 @@
 extern "C" {
 #endif
 
-
-/******************************************************
- *  Assignment of Id string using NRCSID()
- */
-
-NRCSID( STACKSLIDEFSTATH, "$Id$" );
 
 /******************************************************
  *  Error codes and messages.

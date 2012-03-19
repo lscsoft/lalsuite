@@ -19,7 +19,6 @@
 
 /************************************ <lalVerbatim file="DirichletHV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
 *********************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -79,8 +78,6 @@ The fields are:
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID (DIRICHLETH, "$Id$");
 
 /******************************** <lalErrTable file="DirichletHErrTable"> */
 

@@ -32,16 +32,23 @@ extern int global_argc;
 }
 #endif
 
+#ifndef GCTTOP_MAX_IFOS
+#define GCTTOP_MAX_IFOS 10
+#endif
 /** Type to hold the fields that will be kept in a "toplist"  */
 typedef struct {
   REAL8 Freq;  /**< frequency */
   REAL8 F1dot;/**< spindown value f1dot = df/dt */
+  REAL8 F2dot;/**< spindown value f2dot = d2f/dt2 */
   REAL8 Alpha; /**< skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;/**< skyposition: latitude */
   REAL4 sumTwoF;  /**< sum of 2F-values */
   UINT4 nc;       /**< number count */
-  REAL4 sumTwoFnew;      /**< sum of 2F-values as recomputed in LV postprocessing */
-  REAL4Vector *sumTwoFX; /**< sum of 2F-values per detector, computed in LV postprocessing */
+  REAL4 LV;       /**< Line Veto statistic */
+  UINT4 numDetectors; /**< number of detectors for optional sumTwoFX arrays */
+  REAL4 sumTwoFX[GCTTOP_MAX_IFOS]; /**< fixed-size array of single-detector 2F-values */
+  REAL4 sumTwoFrecalc;  /**< sum of 2F-values as recomputed by recalcToplistStats */
+  REAL4 sumTwoFXrecalc[GCTTOP_MAX_IFOS];  /**< fixed-size array of single-detector 2F-values as recomputed by recalcToplistStats */
 } GCTtopOutputEntry;
 
 /* This has by now been reduced to an interface to the HeapToplist functions */

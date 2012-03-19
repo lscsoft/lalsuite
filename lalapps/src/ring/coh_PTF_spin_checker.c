@@ -1,6 +1,5 @@
 #include "coh_PTF.h"
 
-RCSID( "$Id$" );
 #define PROGRAM_NAME "lalapps_coh_PTF_spin_checker"
 #define CVS_REVISION "$Revision$"
 #define CVS_SOURCE   "$Source$"

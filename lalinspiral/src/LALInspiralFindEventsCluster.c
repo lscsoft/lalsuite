@@ -52,9 +52,6 @@ LALInspiralWaveCorrelate()
 */
 #include <lal/LALNoiseModelsInspiral.h>
 
-NRCSID (LALINSPIRALFINDEVENTSCLUSTERC, "$Id$");
-
-
 void
 LALInspiralFindEventsCluster
    (
@@ -111,7 +108,7 @@ LALInspiralFindEventsCluster
    InspiralChisqParams chisqParams;
    InspiralWaveNormaliseIn normin;
 
-   INITSTATUS (status, "LALInspiralFindEventsCluster", LALINSPIRALFINDEVENTSCLUSTERC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (findeventsin->psd.data,  status, LALNOISEMODELSH_ENULL, LALNOISEMODELSH_MSGENULL);

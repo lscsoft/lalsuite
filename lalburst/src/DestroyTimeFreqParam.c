@@ -24,7 +24,6 @@
  * Maintainer: Torres, C (Univ TX at Browsville)
  * Author: Chassande-Mottin, E.
  *
- * Revision: $Id:
  *
  *-----------------------------------------------------------------------
  *
@@ -50,12 +49,10 @@
 
 #include <lal/TimeFreq.h>
 
-NRCSID (DESTROYTIMEFREQPARAMC, "$Id$");
-
 void LALDestroyTimeFreqParam (LALStatus *status, TimeFreqParam **param)
 {
   /*  Initialize status */
-  INITSTATUS (status, "LALDestroyTimeFreqParam", DESTROYTIMEFREQPARAMC);
+  INITSTATUS(status);
 
   /* Check param: report if NULL */
   ASSERT (param != NULL, status, DESTROYTFP_ENULL, DESTROYTFP_MSGENULL);

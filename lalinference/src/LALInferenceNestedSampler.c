@@ -18,7 +18,6 @@
 #include <lal/LALInferenceXML.h>
 #endif
 
-RCSID("$Id$");
 #define PROGRAM_NAME "LALInferenceNestedSampler.c"
 #define CVS_ID_STRING "$Id$"
 #define CVS_REVISION "$Revision$"
@@ -32,7 +31,9 @@ static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
 static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
-
+static void getMinMaxLivePointValue( LALInferenceVariables **livepoints, 
+                                     const CHAR *pname, UINT4 Nlive, 
+                                     REAL8 *minval, REAL8 *maxval );
 
 static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
@@ -53,6 +54,26 @@ REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
 	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
 }
 
+/** Get the maximum value of a parameter from a set of live points */
+static void getMinMaxLivePointValue( LALInferenceVariables **livepoints, 
+                                     const CHAR *pname, UINT4 Nlive, 
+                                     REAL8 *minval, REAL8 *maxval ){
+  REAL8 maxvaltmp = -DBL_MAX, minvaltmp = DBL_MAX;
+  UINT4 i = 0;
+  
+  for ( i = 0; i < Nlive; i++ ){
+    REAL8 val = *(REAL8 *)LALInferenceGetVariable( livepoints[i], pname );
+    
+    if ( val < minvaltmp ) minvaltmp = val;
+    if ( val > maxvaltmp ) maxvaltmp = val;
+  }
+  
+  *minval = minvaltmp;
+  *maxval = maxvaltmp;
+  return;
+}
+  
+ 
 /* Calculate the variance of a modulo-2pi distribution */
 REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N){
 	int i=0;
@@ -226,11 +247,12 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 	which contains a REAL8 array of likelihood values for the live
 	points.
  */
+
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 {
 	UINT4 iter=0,i,j,minpos;
 	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-	UINT4 Nruns=1;
+	UINT4 Nruns=100;
 	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray;
 	REAL8 TOLERANCE=0.1;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
@@ -283,16 +305,18 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 	/* Set up the proposal scale factor, for use in the multi-student jump step */
-	REAL8 propScale=0.1;
+	REAL8 propScale = 0.1;
 	LALInferenceAddVariable(runState->proposalArgs,"proposal_scale",&propScale,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
 	/* Open output file */
-	ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
+        ProcessParamsTable *ppt = NULL; 
+	ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
 	if(!ppt){
 		fprintf(stderr,"Must specify --outfile <filename.dat>\n");
 		exit(1);
 	}
 	char *outfile=ppt->value;
+       
     if(LALInferenceGetProcParamVal(runState->commandLine,"--progress"))
         displayprogress=1;
 
@@ -365,18 +389,29 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	
-	
 	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
+      
+        /* set up k-D tree if required and not already set */
+        if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+             LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
+         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
+          LALInferenceSetupkDTreeNSLivePoints( runState );
+        }
         
 	/* Sprinkle points */
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
 	  runState->evolve(runState);
-	  logLikelihoods[i]=runState->currentLikelihood;
+	  logLikelihoods[i]=runState->likelihood(runState->currentParams,runState->data,runState->template);
+          LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
+	/* re-calculate the k-D tree from the new points if required */
+	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
+          LALInferenceSetupkDTreeNSLivePoints( runState );
+
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
@@ -412,7 +447,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
-                        itercounter++;			
+                        itercounter++;
 		}while( runState->currentLikelihood<=logLmin ||  *(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")==0.0);
 
                 LALInferenceCopyVariables(runState->currentParams,runState->livePoints[minpos]);
@@ -428,6 +463,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 
 		for(j=0;j<Nruns;j++) logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
+		LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
 		if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",
 									   iter,100.0*((REAL8)iter)/(((REAL8) Nlive)*H),*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"accept_rate")/(REAL8)itercounter
@@ -436,8 +472,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
-		/* Update the covariance matrix */
-		if(!(iter%(Nlive/4))) {                    
+		/* Update the proposal */
+		if(!(iter%(Nlive/4))) {                  
+                  /* Update the covariance matrix */
+                  if ( LALInferenceCheckVariable( runState->proposalArgs,
+                                                  "covarianceMatrix" ) ){
+                  
                   LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
 		  gsl_matrix_memcpy(covCopy, *cvm);
 		  
@@ -455,6 +495,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		  
 		  LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",
                                         (void *)cvm);
+                  }
+                  
+                  /* update k-d tree */
+                  if ( LALInferenceCheckVariable( runState->proposalArgs,
+                                                  "kDTree" ) )
+                    LALInferenceSetupkDTreeNSLivePoints( runState ); 
                 }
 	}
 	while( iter <= Nlive ||  dZ> TOLERANCE ); 
@@ -557,11 +603,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
 	LALInferenceVariables *newParams=NULL;
+	LALInferenceIFOData *data=runState->data;
+	char tmpName[32];
 	UINT4 mcmc_iter=0,Naccepted=0;
 	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
 	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
-	REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX;
-	REAL8 logProposalRatio;
+        REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX;
+	REAL8 logProposalRatio,tmp=0.0;
 	newParams=calloc(1,sizeof(LALInferenceVariables));
 
 	/* Evolve the sample until it is accepted */
@@ -576,7 +624,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 		if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
 		  logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
 		else logProposalRatio=0.0;
-		
+                
 		/* If rejected, continue to next iteration */
 		if(logPriorNew==-DBL_MAX || isnan(logPriorNew)) continue;
                 if(log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
@@ -602,6 +650,17 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	/* Update information to pass back out */
 	if(logLnew==DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
 	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
+		tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
+		LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	}
+	while(data)
+	{
+		tmp=data->loglikelihood - data->nullloglikelihood;
+		sprintf(tmpName,"deltalogl%s",data->name);
+		LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+		data=data->next;
+	}
 	runState->currentLikelihood=logLnew;
 	
 	LALInferenceDestroyVariables(newParams);
@@ -609,23 +668,6 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)mcmc_iter;
 	LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
 	return;
-}
-
-void LALInferenceProposalPulsarNS(LALInferenceRunState *runState, LALInferenceVariables
-*parameter)
-{
-        REAL8 randnum;
-        REAL8 STUDENTTFRAC=0.8,
-              DIFFEVFRAC=0.2;
-              
-        randnum=gsl_rng_uniform(runState->GSLrandom);
-        /* Choose a random type of jump to propose */
-        if(randnum<STUDENTTFRAC)
-                LALInferenceProposalMultiStudentT(runState, parameter);
-        else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
-                LALInferenceProposalDifferentialEvolution(runState,parameter);
-                                 
-        return; 
 }
 
 
@@ -1230,4 +1272,97 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	LALInferenceAddVariable(runState->livePoints[i],"logPrior",(void*)&logPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	}
 	
+}
+
+
+void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
+  /* create a k-d tree from the nested sampling live points */
+  LALInferenceKDTree *tree;
+  REAL8 *low = NULL, *high = NULL; /* upper and lower bounds of tree */
+  size_t ndim = 0;
+  LALInferenceVariableItem *currentItem;
+  UINT4 cnt = 0;
+  REAL8 *pt = NULL;
+  LALInferenceVariables *template =
+    XLALCalloc(1,sizeof(LALInferenceVariables));
+  UINT4 Nlive = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
+                                                   "Nlive" );
+  
+  /* if a current tree exists remove it */
+  if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+  {
+    LALInferenceKDTreeDelete(*(LALInferenceKDTree **)LALInferenceGetVariable(runState->proposalArgs,"kDTree"));
+    LALInferenceRemoveVariable( runState->proposalArgs, "kDTree" );
+  }
+  /* get the upper and lower bounds for each parameter */
+  currentItem = runState->currentParams->head;
+  while ( currentItem != NULL ) {
+    if ( currentItem->vary != LALINFERENCE_PARAM_FIXED &&
+         currentItem->vary != LALINFERENCE_PARAM_OUTPUT ) {
+      if( LALInferenceCheckMinMaxPrior( runState->priorArgs,
+                                        currentItem->name ) ){
+        cnt++;
+         
+        low = XLALRealloc(low, sizeof(REAL8)*cnt);
+        high = XLALRealloc(high, sizeof(REAL8)*cnt);
+        pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
+                
+        LALInferenceGetMinMaxPrior( runState->priorArgs, currentItem->name,
+                                    &(low[cnt-1]), &(high[cnt-1]) );
+      }
+      else if( LALInferenceCheckGaussianPrior( runState->priorArgs,
+                                               currentItem->name ) ){
+        REAL8 mn, stddiv;
+        REAL8 livelow, livehigh, difflh;
+        
+        cnt++;
+        
+        low = XLALRealloc(low, sizeof(REAL8)*cnt);
+        high = XLALRealloc(high, sizeof(REAL8)*cnt);
+        pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
+        
+        LALInferenceGetGaussianPrior( runState->priorArgs, currentItem->name,
+                                      &mn, &stddiv );
+        
+        /* find the maximum and minimum live point values */
+        getMinMaxLivePointValue( runState->livePoints, currentItem->name, Nlive,
+                                 &livelow, &livehigh );
+        difflh = livehigh - livelow;
+        
+        /* to add a bit of room at either side add on half the difference */
+        low[cnt-1] = livelow - difflh/2.;
+        high[cnt-1] = livehigh + difflh/2.;
+      }
+    }
+                      
+    currentItem = currentItem->next;
+  }
+
+  ndim = (size_t)cnt;
+          
+  /* set up tree */
+  tree = LALInferenceKDEmpty( low, high, ndim );
+  LALInferenceCopyVariables( runState->currentParams, template );
+                    
+  /* add points to tree */
+  for( cnt = 0; cnt < Nlive; cnt++ ){
+    LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, template );
+    LALInferenceKDAddPoint( tree, pt );
+  }
+                  
+  /* add tree */
+  LALInferenceAddVariable( runState->proposalArgs, "kDTree", &tree,
+                           LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
+  
+  /* if template doesn't exist add it */
+  if ( !LALInferenceCheckVariable( runState->proposalArgs,
+                                   "kDTreeVariableTemplate" ) ){
+    LALInferenceAddVariable( runState->proposalArgs, "kDTreeVariableTemplate",
+                             &template, LALINFERENCE_void_ptr_t,
+                             LALINFERENCE_PARAM_FIXED );
+  }
+  
+  XLALFree( high );
+  XLALFree( low );
+  XLALFree( pt );
 }

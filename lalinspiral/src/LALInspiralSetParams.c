@@ -61,16 +61,12 @@ None
 #include <stdio.h>
 #include <lal/LALInspiralBank.h>
 
-NRCSID (LALINSPIRALSETPARAMSC, "Id: $");
-
-
-
 void LALInspiralSetParams(LALStatus            *status,
                           InspiralTemplate     *tempPars,
                           InspiralCoarseBankIn coarseIn)
 {
 
-   INITSTATUS (status, "LALInspiralSetParams", LALINSPIRALSETPARAMSC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
    ASSERT (tempPars,  status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);
    ASSERT ((INT4)coarseIn.space >= 0, status, LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);

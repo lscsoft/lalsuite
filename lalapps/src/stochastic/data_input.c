@@ -19,13 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
  * 02110-1301, USA
  *
- * $Id$
  */
 
 #include "data_input.h"
 
-NRCSID(DATAINPUTC, "$Id$");
-RCSID("$Id$");
 
 /* externally declared variables */
 extern int high_pass_flag;

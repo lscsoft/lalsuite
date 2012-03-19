@@ -32,8 +32,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 
-NRCSID (TIMESERIESTESTC,"$Id$");
-
 static LIGOTimeGPS gps_zero = LIGOTIMEGPSZERO;
 
 

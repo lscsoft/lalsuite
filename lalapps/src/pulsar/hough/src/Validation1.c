@@ -72,9 +72,6 @@
 char *lalWatch;
 #endif
 
-
-NRCSID (VALIDATION1C, "$Id$");
-
 /* ************************************************************
  * Usage format string. 
  */

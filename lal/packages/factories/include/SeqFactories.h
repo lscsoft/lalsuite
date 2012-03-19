@@ -76,8 +76,6 @@ has zero length, vector length, or \c NULL data pointer then
 extern "C" {
 #endif
 
-NRCSID (SEQFACTORIESH, "$Id$");
-
 /**\name Error Codes *//*@{*/
 /** \ingroup SeqFactories_h */
 #define SEQFACTORIESH_ESLENGTH  1

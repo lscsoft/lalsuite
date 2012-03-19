@@ -49,9 +49,6 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/FrameStream.h>
 
-#include <lal/LALRCSID.h>
-NRCSID (READ40MDATAC,"$Id$");
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 1; } else ((void)0)
 

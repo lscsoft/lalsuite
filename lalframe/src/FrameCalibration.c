@@ -90,6 +90,7 @@
  * SenseMon frames are used in preference.
  * </li></ol>
 */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
@@ -100,8 +101,6 @@
 #include <lal/Date.h>
 #include <lal/FrameStream.h>
 #include <lal/FrameCalibration.h>
-
-NRCSID( FRAMECALIBRATIONC, "$Id$" );
 
 #define DURATION 256
 
@@ -197,7 +196,7 @@ LALExtractFrameResponse(
   REAL8				duration_real;
   const REAL8                   fuzz = 0.1 / 16384.0;
 
-  INITSTATUS( status, "LALFrameExtractResponse", FRAMECALIBRATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,
@@ -646,7 +645,7 @@ LALCreateCalibFrCache(
 
 { 
 
-  INITSTATUS( status, "LALCreateCalibFrCache", FRAMECALIBRATIONC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
   ASSERT( output, status,

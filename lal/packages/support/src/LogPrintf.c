@@ -53,16 +53,6 @@
 
 #include "LogPrintf.h"
 
-NRCSID (LOGPRINTFC,"$Id$");
-
-/*---------- DEFINES ----------*/
-#  ifndef __GNUC__
-static volatile const char *name  = "$Id$";
-#  else
-static volatile const char __attribute__ ((unused)) *name  = "$Id$";
-#  endif /* !__GNUC__ */
-
-
 /* output file for log messages, default to standard error */
 #define LogOutputDefault stderr
 static FILE* LogOutput = NULL;

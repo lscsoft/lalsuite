@@ -91,14 +91,13 @@ LALCCreateVector()              LALZCreateVector()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
 #include <lal/StreamInput.h>
-
-NRCSID( STREAMSEQUENCEINPUTC, "$Id$" );
 
 /* Define linked-list of buffers for storing an arbitrary number of
    arbitrary datatypes. */
@@ -144,7 +143,7 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
   CHAR *data;       /* pointer to vector data */
   size_t nTot = 0;  /* total number of characters read */
 
-  INITSTATUS( stat, "LALCHARReadSequence", STREAMSEQUENCEINPUTC );
+  INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
   /* Check for valid input arguments. */

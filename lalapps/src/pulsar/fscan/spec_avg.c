@@ -22,6 +22,8 @@
  * \ingroup pulsarApps
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files
 #include <lal/LALStdlib.h>
@@ -51,8 +53,6 @@
 
 #define NUM 1000 
 /*used for defining structures such as crabOutput*/
-
-RCSID("$Id");
 
 int main(int argc, char **argv)
 {
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     INT4 cur_epoch = 0, next_epoch = 0;
     
     /* these varibales are for converting GPS seconds into UTC time and date*/
-    LALUnixDate       date;
+    struct tm         date;
     CHARVector        *timestamp = NULL;
     CHARVector	     *year_date = NULL;
     REAL8Vector     *timestamps=NULL;

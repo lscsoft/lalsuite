@@ -25,7 +25,6 @@
  *
  * Based on inspiral.c, originally by Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -43,6 +42,7 @@
 #include <time.h>
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -85,8 +85,6 @@
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
-
-RCSID("$Id$");
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
@@ -275,7 +273,7 @@ INT4 reverseChirpBank = 0;      /* enable the reverse chirp     */
 
 /* taper/band pass template options */
 INT4 bandPassTmplt = 0;
-InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
+LALSimInspiralApplyTaper taperTmplt = LAL_SIM_INSPIRAL_TAPER_NONE;
 
 /* template bank veto options */
 UINT4 subBankSize = 0;          /* num templates in a subbank   */
@@ -482,19 +480,19 @@ int main(int argc, char *argv[])
     snprintf(filtertable.filterTable->program, LIGOMETA_PROGRAM_MAX, "%s",
              PROGRAM_NAME);
     filtertable.filterTable->start_time = gpsStartTime.gpsSeconds;
-    snprintf(filtertable.filterTable->filter_name, LIGOMETA_COMMENT_MAX,
+    snprintf(filtertable.filterTable->filter_name, LIGOMETA_FILTER_NAME_MAX,
              "%s%s", approximantName, orderName);
 
     /* fill the comment, if a user has specified on, or leave it blank */
     if (!*comment) {
         snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
                  " ");
-        snprintf(filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX,
+        snprintf(filtertable.filterTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
                  " ");
     } else {
         snprintf(proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
                  "%s", comment);
-        snprintf(filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX,
+        snprintf(filtertable.filterTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
                  "%s", comment);
     }
 
@@ -3503,11 +3501,11 @@ int arg_parse_check(int argc, char *argv[], MetadataTable procparams)
 
             case '{':
                 if (!strcmp("start", optarg)) {
-                    taperTmplt = INSPIRAL_TAPER_START;
+                    taperTmplt = LAL_SIM_INSPIRAL_TAPER_START;
                 } else if (!strcmp("end", optarg)) {
-                    taperTmplt = INSPIRAL_TAPER_END;
+                    taperTmplt = LAL_SIM_INSPIRAL_TAPER_END;
                 } else if (!strcmp("startend", optarg)) {
-                    taperTmplt = INSPIRAL_TAPER_STARTEND;
+                    taperTmplt = LAL_SIM_INSPIRAL_TAPER_STARTEND;
                 } else {
                     fprintf(stderr, "invalid argument to --%s:\n"
                             "Taper must be set to start, end or startend:(%s specified)\n",

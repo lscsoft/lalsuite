@@ -37,11 +37,6 @@
 #include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
 
-NRCSID (FFUTILSH,"$Id$");
-
-
-
-
 #define CVS_ID_STRING      "$Id$"
 #define CVS_NAME_STRING    "$Name$"
 #define CVS_REVISION       "$Revision$"

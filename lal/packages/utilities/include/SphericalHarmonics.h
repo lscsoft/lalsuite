@@ -45,8 +45,6 @@
 extern "C" {
 #endif
 
-NRCSID( SPHERICALHARMONICSH, "$Id$");
-
 /**
  * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
  *

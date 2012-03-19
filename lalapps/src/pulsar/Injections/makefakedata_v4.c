@@ -40,6 +40,7 @@
 /* ---------- includes ---------- */
 #include <sys/stat.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
@@ -57,8 +58,6 @@
 #include <lal/TransientCW_utils.h>
 
 #include <lalapps.h>
-
-RCSID ("$Id$");
 
 /* Error codes and messages */
 /**\name Error Codes */ /*@{*/
@@ -598,7 +597,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
   CHAR *channelName = NULL;
   BinaryPulsarParams pulparams;
 
-  INITSTATUS( status, fn, rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* register all user-variables */
@@ -844,7 +843,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       UINT4 imin, imax;
       volatile REAL8 dFreq = 1.0 / uvar_Tsft;
       volatile REAL8 tmp;
-      REAL8 fMax, fMax_eff, fMin_eff;
+      REAL8 fMax, fMin_eff;
 
       /* calculate "effective" fmin from uvar_fmin: following makefakedata_v2, we
        * make sure that fmin_eff * Tsft = integer, such that freqBinIndex corresponds
@@ -860,7 +859,6 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       fMax = uvar_fmin + uvar_Band;
       tmp = fMax / dFreq;
       imax = (UINT4) ceil (tmp);
-      fMax_eff = (REAL8)imax * dFreq;
 
       /* Increase Band correspondingly. */
       cfg->fmin_eff = fMin_eff;
@@ -992,6 +990,8 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	TRY ( LALDestroySFTCatalog ( status->statusPtr, &catalog ), status );
 
 	/* get timestamps from the loaded noise SFTs */
+        if ( cfg->timestamps )
+          XLALDestroyTimestampVector ( cfg->timestamps );
 	if ( ( cfg->timestamps = XLALExtractTimestampsFromSFTs ( cfg->noiseSFTs )) == NULL ) {
           XLALPrintError ("%s: XLALExtractTimestampsFromSFTs() failed to obtain timestamps from SFTvector.\n", fn );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
@@ -1369,7 +1369,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 void
 InitUserVars (LALStatus *status)
 {
-  INITSTATUS( status, "InitUserVars", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* ---------- set a few defaults ----------  */
@@ -1531,7 +1531,7 @@ InitUserVars (LALStatus *status)
 void FreeMem (LALStatus* status, ConfigVars_t *cfg)
 {
 
-  INITSTATUS( status, "FreeMem", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1597,7 +1597,7 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
   UINT4          numPoints, i;
   REAL4Vector *bak;
 
-  INITSTATUS( status, "AddGaussianNoise", rcsid );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
 
@@ -1650,7 +1650,7 @@ AddGaussianNoise (LALStatus* status, REAL4TimeSeries *outSeries, REAL4TimeSeries
 /*   LIGOTimeGPS TperiTrue; */
 /*   LIGOTimeGPS TperiSSB; */
 
-/*   INITSTATUS( status, "GetOrbitalParams", rcsid ); */
+/*   INITSTATUS(status); */
 /*   ATTATCHSTATUSPTR (status); */
 
 /*   OneMEcc = 1.0 - uvar_orbitEccentricity; */
@@ -1688,7 +1688,7 @@ WriteMFDlog (LALStatus *status, const char *logfile, const ConfigVars_t *cfg )
     CHAR *logstr = NULL;
     FILE *fplog;
 
-    INITSTATUS (status, "WriteMFDlog", rcsid);
+    INITSTATUS(status);
     ATTATCHSTATUSPTR (status);
 
     if ( logfile == NULL )
@@ -1749,7 +1749,7 @@ LoadTransferFunctionFromActuation(LALStatus *status,		/**< pointer to LALStatus 
   REAL8 amp, phi;
   REAL8 f0, f1;
 
-  INITSTATUS (status, "ReadActuationFunction", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT (transfer, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD);
@@ -1849,7 +1849,7 @@ LALExtractSFTBand ( LALStatus *status, SFTVector **outSFTs, const SFTVector *inS
   REAL8 SFTf0, SFTBand, df;
   SFTVector *ret = NULL;
 
-  INITSTATUS (status, "LALExtractSFTBand", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( inSFTs, status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD );
@@ -1929,7 +1929,7 @@ LALGenerateLineFeature ( LALStatus *status, REAL4TimeSeries **Tseries, const Pul
   REAL8 h0;
   REAL8 ti, tStart;
 
-  INITSTATUS (status, "LALGenerateLineFeature", rcsid);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   ASSERT ( params, status, MAKEFAKEDATAC_EBAD, MAKEFAKEDATAC_MSGEBAD );

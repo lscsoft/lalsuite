@@ -1,5 +1,4 @@
 % 
-% $Id$
 %
 %  Matlab script to count the number of templates used in a 1 Hz band
 %  for the full sky search

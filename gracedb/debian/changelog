@@ -1,8 +1,8 @@
-ligo-gracedb (1.0-4) unstable; urgency=low
+ligo-gracedb (1.1-1) unstable; urgency=low
 
-  * Fix typo in command line client. (query -> search)
+  * Bug Fix.
 
- -- Brian Moe <brian.moe@ligo.org> Fri, 20 Jan 2012 19:15:23 -0600
+ -- Brian Moe <brian.moe@ligo.org>  Sun, 22 Jan 2012 09:50:26 -0600
 
 ligo-gracedb (1.0-3) unstable; urgency=low
 

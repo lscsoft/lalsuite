@@ -108,8 +108,8 @@ model where possible (>1 IFO available).
 parser=OptionParser(usage)
 parser.add_option("-i","--ini-file",default=None,action="store",type="string",help="ini-file for nestGRB pipeline",metavar="CONFIG.ini")
 parser.add_option("-r","--run-path",default="./",action="store",type="string",help="Directory to run pipeline in (default: %default)",metavar="RUNDIR")
-parser.add_option("-p","--dag-log-path",default=None,action="store",type="string",help="Directory to store log files for the dag, defaults to RUNDIR/log/",metavar="DAGLOGDIR")
-parser.add_option("-l","--jobs-log-path",default=None,action="store",type="string",help="Directory to store log files for the jobs, defaults to RUNDIR/log/",metavar="JOBLOGDIR")
+parser.add_option("-p","--dag-log-path",default=None,action="store",type="string",help="Directory to store condor log files for the dag, defaults to RUNDIR/log/ SHOULD BE LOCAL TO SUBMIT NODE",metavar="DAGLOGDIR")
+parser.add_option("-l","--jobs-log-path",default=None,action="store",type="string",help="Directory to store stderr and stdout files for the jobs, defaults to RUNDIR/log/ MUST BE VISIBLE FROM THE NODES",metavar="JOBLOGDIR")
 parser.add_option("-s","--gps-start-time",action="store",type="string",default=None,help="Start time of analysis")
 parser.add_option("-e","--gps-end-time",action="store",type="string",default=None,help="End time of analysis")
 parser.add_option("-I","--inj",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
@@ -344,6 +344,17 @@ length=float(endtime)-float(starttime)+2*padding
 
 datastart=starttime-padding
 dataend=endtime+padding
+
+# Check for manual over-ride of PSD start time
+if cp.has_option('lalinference','psdstart'):
+	manual_datastart=cp.getfloat('lalinference','psdstart')-padding
+	if manual_datastart<datastart:
+		datastart=manual_datastart
+
+if cp.has_option('lalinference','psdlength'):
+	manual_length=cp.getfloat('lalinference','psdlength')
+	if dataend<datastart+manual_length+2.0*padding:
+		dataend=datastart+manual_length+2.0*padding
 
 cp.add_section('input')
 cp.set('input','gps-start-time',str(int(datastart)))

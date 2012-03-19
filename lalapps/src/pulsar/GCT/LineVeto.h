@@ -27,7 +27,6 @@
  * This code is partly based on work done by
  * Reinhard Prix, Maria Alessandra Papa, M. Siddiqi
  *
- * $Id$
  *
  */
 
@@ -44,6 +43,7 @@ extern "C" {
 /* lal includes */
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/ComputeFstat.h>
+#include <lal/StringVector.h>
 
 /* lalapps includes */
 #include <lalapps.h>
@@ -57,12 +57,12 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-  /** Type containing multi- and single-detector F statistics and Line Veto statistic */
-  typedef struct tagLVcomponents {
-    REAL8 TwoF;                           /**< multi-detector F-statistic value */
-    REAL8 LV;                             /**< multi-detector Line Veto statistic value */
-    REAL8Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
-  } LVcomponents;
+/** Type containing multi- and single-detector F statistics and Line Veto statistic */
+typedef struct tagLVcomponents {
+   REAL4 TwoF;                           /**< multi-detector F-statistic value */
+   REAL4 LV;                             /**< multi-detector Line Veto statistic value */
+   REAL4Vector *TwoFX;                   /**< vector of single-detector F-statistic values */
+} LVcomponents;
 
 /*---------- exported Global variables ----------*/
 /* empty init-structs for the types defined in here */
@@ -95,14 +95,30 @@ REAL8
 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,
 			    const INT4 X );
 
-REAL8
-XLALComputeLineVeto ( const REAL8 TwoF,
-		      const REAL8Vector *TwoFX,
-		      const REAL8 rhomax,
-		      const REAL8Vector *priorX );
+REAL4
+XLALComputeLineVeto ( const REAL4 TwoF,
+		      const REAL4Vector *TwoFX,
+		      const REAL4 rhomaxline,
+		      const REAL4Vector *lX,
+		      const BOOLEAN useAllTerms );
+
+REAL4
+XLALComputeLineVetoArray ( const REAL4 TwoF,
+                           const UINT4 numDetectors,
+                           const REAL4 *TwoFX,
+                           const REAL4 rhomaxline,
+                           const REAL4 *lX,
+                           const BOOLEAN useAllTerms );
 
 LALStringVector *
 XLALGetDetectorIDs ( const MultiSFTVectorSequence *multiSFTsV );
+
+/* these functions operate on the module-local lookup-table for logarithms,
+ * which will dynamically be generated on first use of XLALFastLog(), and can
+ * be destroyed at any time using XLALDestroyLogLUT()
+ */
+REAL8 XLALFastLog ( REAL8 x );
+void XLALDestroyLogLUT( void );
 
 #ifdef  __cplusplus
 }

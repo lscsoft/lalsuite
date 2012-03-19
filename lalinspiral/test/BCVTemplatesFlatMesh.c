@@ -74,8 +74,6 @@ LALSCreateVector()              LALSDestroyVector()
 #include <lal/FlatMesh.h>
 #include <lal/StreamInput.h>
 
-NRCSID(FLATMESHTESTC,"$Id$");
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
@@ -414,7 +412,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "GetInspiralMoments", FLATMESHTESTC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

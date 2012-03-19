@@ -23,7 +23,6 @@
 /* Purpose: Drive StackSlide jobs under Condor and the Grid                      */
 /* Author: Mendell, G. and Landry, M.                                            */
 /* Started: 03 December 2003                                                     */
-/* $Id$         */
 /*                                                                               */
 /*********************************************************************************/
 
@@ -43,7 +42,6 @@
 /* START SECTION: include header files       */
 /*                                           */
 /*********************************************/
-#include <lal/LALRCSID.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,8 +78,6 @@
 /* END SECTION: include header files         */
 /*                                           */
 /*********************************************/
-
-NRCSID( COMPUTESTACKSLIDESUMSH, "$Id$");
 
 /*********************************************/
 /*                                           */

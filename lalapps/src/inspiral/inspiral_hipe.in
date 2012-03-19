@@ -2,8 +2,6 @@
 """
 inspiral_hipe.in - standalone inspiral pipeline driver script
 
-$Id$
-
 This script generates the condor DAG necessary to analyze LIGO and GEO
 data through the inspiral pipeline.  The DAG does datafind, tmpltbank,
 inspiral, inca and sire/coire steps of the pipeline.  It analyzes the
@@ -13,7 +11,7 @@ run with injections.
 
 __author__ = 'Stephen Fairhurst <sfairhur@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
@@ -32,6 +30,7 @@ from glue import pipeline
 from glue import segments as glue_segments
 from glue import lal
 import inspiral
+from inspiralutils import get_data_options
 
 ##############################################################################
 # concrete dag setup functions
@@ -154,32 +153,15 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
     tmplt_job.add_ini_opts(cp,ifo_name.lower() + '-tmpltbank')
 
   GeoBank = None
+
+  # to analyze GEO data we may use a fixed bank specified in ini file
   if ifo_name == 'G1':
-    data_opts = 'geo-data'
-    try: type = cp.get('input','geo-type')
-    except: type = None
-    channel = cp.get('input','geo-channel')
-    # to analyze GEO data we may use a fixed bank specified in ini file
     try: GeoBank = cp.get('input','geo-bank')
     except: GeoBank = None
     if GeoBank: print "For G1 we use bank ", GeoBank
-  elif ifo_name == 'V1':
-    data_opts = 'virgo-data'
-    try: 
-      type = cp.get('input','virgo-type')
-      if ('NINJA' in type):
-        type = ifo_name + '_' + type
-    except: type = None
-    channel = cp.get('input','virgo-channel')
-  else:
-    data_opts = 'ligo-data'
-    try: 
-      type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type):
-        type = ifo_name + '_' + type
-    except: type = None
-    channel = cp.get('input','ligo-channel')
-  
+
+  data_opts, type, channel = get_data_options(cp,ifo_name)
+
   if cp.has_section('tmpltbank-1'):
     tmplt_job.add_ini_opts(cp, 'tmpltbank-1')
   if cp.has_section(data_opts):
@@ -2299,8 +2281,8 @@ for ifos in ifo_coincs:
       coire_segments(coinc_nodes[ifos], coire_summary_job, dag,
           opts.summary_first_coinc_triggers,
           opts.coire_coincidence, ifos, gps_start_time, gps_end_time,
-          inj_file=inj_file, ifotag="SUMMARY_FIRST_" + ifos, usertag=usertag, inspinjNode=inspinj)
-
+          inj_file=inj_file, ifotag="SUMMARY_FIRST_" + ifos, usertag=usertag, 
+          inspinjNode=inspinj)
 
   # Step 6 slide: Time slides 
   coinc_slide_nodes[ifos] = []
@@ -2439,7 +2421,8 @@ for ifos in ifo_coincs:
         coire_segments(coire2_nodes[ifos], coire2_summary_job, dag,
             opts.summary_coinc_triggers, 
             opts.coire_second_coinc, ifos, gps_start_time, gps_end_time, 
-            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag)
+            inj_file=inj_file, ifotag="SUMMARY_SECOND_" + ifos, usertag=usertag,
+            inspinjNode=inspinj)
 
       for ifo in ifo_list:
         if ifo in ifos: 
@@ -2453,7 +2436,8 @@ for ifos in ifo_coincs:
             sire_segments(sire_nodes, sire_summary_job, dag, 
                 opts.summary_single_ifo_triggers, opts.sire_second_coinc, ifo, 
                 gps_start_time, gps_end_time, inj_file = inj_file, 
-                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag)
+                ifotag="SUMMARY_SECOND_" + ifos, usertag = usertag,
+                inspinjNode=inspinj)
 
 
   # Step 8slide: Time slides on the data
@@ -2808,6 +2792,8 @@ if usertag:
 else:
   log_fh = open(basename + '.pipeline.log', 'w')
   
+# FIXME: the following code uses obsolete CVS ID tags.
+# It should be modified to use git version information.
 log_fh.write( "$Id$" + "\n" )
 log_fh.write( "$Name$" + "\n\n" )
 log_fh.write( "Invoked with arguments:" )

@@ -48,8 +48,6 @@
 
 #include "ComputeFstatREAL4.h"
 
-NRCSID( COMPUTEFSTATC, "$Id$");
-
 /*---------- local DEFINES ----------*/
 #define LD_SMALL4       ((REAL4)2.0e-4)		/**< "small" number for REAL4*/
 #define TWOPI_FLOAT     6.28318530717958f  	/**< single-precision 2*pi */
@@ -74,21 +72,10 @@ int gpu_platform_id = 0;
 #define LUT_RES         	64      /* resolution of lookup-table */
 #define OO_LUT_RES		(1.0f / LUT_RES )
 
-static REAL4 sinVal[LUT_RES+1], cosVal[LUT_RES+1];
-
 /* empty initializers  */
 static const LALStatus empty_LALStatus;
 static const AMCoeffs empty_AMCoeffs;
-
-const SSBtimes empty_SSBtimes;
-const MultiSSBtimes empty_MultiSSBtimes;
-const AntennaPatternMatrix empty_AntennaPatternMatrix;
-const MultiAMCoeffs empty_MultiAMCoeffs;
-const Fcomponents empty_Fcomponents;
-const ComputeFBuffer empty_ComputeFBuffer;
 const PulsarSpinsREAL4 empty_PulsarSpinsREAL4;
-const ComputeFBufferREAL4 empty_ComputeFBufferREAL4;
-const ComputeFBufferREAL4V empty_ComputeFBufferREAL4V;
 const FcomponentsREAL4 empty_FcomponentsREAL4;
 const CLWorkspace empty_CLWorkspace;
 
@@ -97,12 +84,118 @@ int finite(double x);
 void sin_cos_2PI_LUT_REAL4 (REAL4 *sin2pix, REAL4 *cos2pix, REAL4 x);
 void sin_cos_LUT_REAL4 (REAL4 *sinx, REAL4 *cosx, REAL4 x);
 void init_sin_cos_LUT_REAL4 (void);
+const char *pclerror(cl_int err);
+const char *pclerrorM(cl_int err);
 
 #if USE_OPENCL_KERNEL_CPU
 #include "FStatOpenCLKernel.cl"
 #endif
 
 /*==================== FUNCTION DEFINITIONS ====================*/
+
+const char *pclerror(cl_int err) {
+  switch (err) {
+  case CL_SUCCESS:                          return ("Success");
+  case CL_DEVICE_NOT_FOUND:                 return ("Device not found");
+  case CL_DEVICE_NOT_AVAILABLE:             return ("Device not available");
+  case CL_COMPILER_NOT_AVAILABLE:           return ("Compiler not available");
+  case CL_MEM_OBJECT_ALLOCATION_FAILURE:    return ("Memory object allocation failure");
+  case CL_OUT_OF_RESOURCES:                 return ("Out of resources");
+  case CL_OUT_OF_HOST_MEMORY:               return ("Out of host memory");
+  case CL_PROFILING_INFO_NOT_AVAILABLE:     return ("Profiling information not available");
+  case CL_MEM_COPY_OVERLAP:                 return ("Memory copy overlap");
+  case CL_IMAGE_FORMAT_MISMATCH:            return ("Image format mismatch");
+  case CL_IMAGE_FORMAT_NOT_SUPPORTED:       return ("Image format not supported");
+  case CL_BUILD_PROGRAM_FAILURE:            return ("Program build failure");
+  case CL_MAP_FAILURE:                      return ("Map failure");
+  case CL_INVALID_VALUE:                    return ("Invalid value");
+  case CL_INVALID_DEVICE_TYPE:              return ("Invalid device type");
+  case CL_INVALID_PLATFORM:                 return ("Invalid platform");
+  case CL_INVALID_DEVICE:                   return ("Invalid device");
+  case CL_INVALID_CONTEXT:                  return ("Invalid context");
+  case CL_INVALID_QUEUE_PROPERTIES:         return ("Invalid queue properties");
+  case CL_INVALID_COMMAND_QUEUE:            return ("Invalid command queue");
+  case CL_INVALID_HOST_PTR:                 return ("Invalid host pointer");
+  case CL_INVALID_MEM_OBJECT:               return ("Invalid memory object");
+  case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:  return ("Invalid image format descriptor");
+  case CL_INVALID_IMAGE_SIZE:               return ("Invalid image size");
+  case CL_INVALID_SAMPLER:                  return ("Invalid sampler");
+  case CL_INVALID_BINARY:                   return ("Invalid binary");
+  case CL_INVALID_BUILD_OPTIONS:            return ("Invalid build options");
+  case CL_INVALID_PROGRAM:                  return ("Invalid program");
+  case CL_INVALID_PROGRAM_EXECUTABLE:       return ("Invalid program executable");
+  case CL_INVALID_KERNEL_NAME:              return ("Invalid kernel name");
+  case CL_INVALID_KERNEL_DEFINITION:        return ("Invalid kernel definition");
+  case CL_INVALID_KERNEL:                   return ("Invalid kernel");
+  case CL_INVALID_ARG_INDEX:                return ("Invalid argument index");
+  case CL_INVALID_ARG_VALUE:                return ("Invalid argument value");
+  case CL_INVALID_ARG_SIZE:                 return ("Invalid argument size");
+  case CL_INVALID_KERNEL_ARGS:              return ("Invalid kernel arguments");
+  case CL_INVALID_WORK_DIMENSION:           return ("Invalid work dimension");
+  case CL_INVALID_WORK_GROUP_SIZE:          return ("Invalid work group size");
+  case CL_INVALID_WORK_ITEM_SIZE:           return ("Invalid work item size");
+  case CL_INVALID_GLOBAL_OFFSET:            return ("Invalid global offset");
+  case CL_INVALID_EVENT_WAIT_LIST:          return ("Invalid event wait list");
+  case CL_INVALID_EVENT:                    return ("Invalid event");
+  case CL_INVALID_OPERATION:                return ("Invalid operation");
+  case CL_INVALID_GL_OBJECT:                return ("Invalid OpenGL object");
+  case CL_INVALID_BUFFER_SIZE:              return ("Invalid buffer size");
+  case CL_INVALID_MIP_LEVEL:                return ("Invalid mip-map level");
+  default:                                  return ("Unknown error code");
+  }
+}
+
+const char *pclerrorM(cl_int err) {
+  switch (err) {
+  case CL_SUCCESS:                          return ("CL_SUCCESS");
+  case CL_DEVICE_NOT_FOUND:                 return ("CL_DEVICE_NOT_FOUND");
+  case CL_DEVICE_NOT_AVAILABLE:             return ("CL_DEVICE_NOT_AVAILABLE");
+  case CL_COMPILER_NOT_AVAILABLE:           return ("CL_COMPILER_NOT_AVAILABLE");
+  case CL_MEM_OBJECT_ALLOCATION_FAILURE:    return ("CL_MEM_OBJECT_ALLOCATION_FAILURE");
+  case CL_OUT_OF_RESOURCES:                 return ("CL_OUT_OF_RESOURCES");
+  case CL_OUT_OF_HOST_MEMORY:               return ("CL_OUT_OF_HOST_MEMORY");
+  case CL_PROFILING_INFO_NOT_AVAILABLE:     return ("CL_PROFILING_INFO_NOT_AVAILABLE");
+  case CL_MEM_COPY_OVERLAP:                 return ("CL_MEM_COPY_OVERLAP");
+  case CL_IMAGE_FORMAT_MISMATCH:            return ("CL_IMAGE_FORMAT_MISMATCH");
+  case CL_IMAGE_FORMAT_NOT_SUPPORTED:       return ("CL_IMAGE_FORMAT_NOT_SUPPORTED");
+  case CL_BUILD_PROGRAM_FAILURE:            return ("CL_BUILD_PROGRAM_FAILURE");
+  case CL_MAP_FAILURE:                      return ("CL_MAP_FAILURE");
+  case CL_INVALID_VALUE:                    return ("CL_INVALID_VALUE");
+  case CL_INVALID_DEVICE_TYPE:              return ("CL_INVALID_DEVICE_TYPE");
+  case CL_INVALID_PLATFORM:                 return ("CL_INVALID_PLATFORM");
+  case CL_INVALID_DEVICE:                   return ("CL_INVALID_DEVICE");
+  case CL_INVALID_CONTEXT:                  return ("CL_INVALID_CONTEXT");
+  case CL_INVALID_QUEUE_PROPERTIES:         return ("CL_INVALID_QUEUE_PROPERTIES");
+  case CL_INVALID_COMMAND_QUEUE:            return ("CL_INVALID_COMMAND_QUEUE");
+  case CL_INVALID_HOST_PTR:                 return ("CL_INVALID_HOST_PTR");
+  case CL_INVALID_MEM_OBJECT:               return ("CL_INVALID_MEM_OBJECT");
+  case CL_INVALID_IMAGE_FORMAT_DESCRIPTOR:  return ("CL_INVALID_IMAGE_FORMAT_DESCRIPTOR");
+  case CL_INVALID_IMAGE_SIZE:               return ("CL_INVALID_IMAGE_SIZE");
+  case CL_INVALID_SAMPLER:                  return ("CL_INVALID_SAMPLER");
+  case CL_INVALID_BINARY:                   return ("CL_INVALID_BINARY");
+  case CL_INVALID_BUILD_OPTIONS:            return ("CL_INVALID_BUILD_OPTIONS");
+  case CL_INVALID_PROGRAM:                  return ("CL_INVALID_PROGRAM");
+  case CL_INVALID_PROGRAM_EXECUTABLE:       return ("CL_INVALID_PROGRAM_EXECUTABLE");
+  case CL_INVALID_KERNEL_NAME:              return ("CL_INVALID_KERNEL_NAME");
+  case CL_INVALID_KERNEL_DEFINITION:        return ("CL_INVALID_KERNEL_DEFINITION");
+  case CL_INVALID_KERNEL:                   return ("CL_INVALID_KERNEL");
+  case CL_INVALID_ARG_INDEX:                return ("CL_INVALID_ARG_INDEX");
+  case CL_INVALID_ARG_VALUE:                return ("CL_INVALID_ARG_VALUE");
+  case CL_INVALID_ARG_SIZE:                 return ("CL_INVALID_ARG_SIZE");
+  case CL_INVALID_KERNEL_ARGS:              return ("CL_INVALID_KERNEL_ARGS");
+  case CL_INVALID_WORK_DIMENSION:           return ("CL_INVALID_WORK_DIMENSION");
+  case CL_INVALID_WORK_GROUP_SIZE:          return ("CL_INVALID_WORK_GROUP_SIZE");
+  case CL_INVALID_WORK_ITEM_SIZE:           return ("CL_INVALID_WORK_ITEM_SIZE");
+  case CL_INVALID_GLOBAL_OFFSET:            return ("CL_INVALID_GLOBAL_OFFSET");
+  case CL_INVALID_EVENT_WAIT_LIST:          return ("CL_INVALID_EVENT_WAIT_LIST");
+  case CL_INVALID_EVENT:                    return ("CL_INVALID_EVENT");
+  case CL_INVALID_OPERATION:                return ("CL_INVALID_OPERATION");
+  case CL_INVALID_GL_OBJECT:                return ("CL_INVALID_GL_OBJECT");
+  case CL_INVALID_BUFFER_SIZE:              return ("CL_INVALID_BUFFER_SIZE");
+  case CL_INVALID_MIP_LEVEL:                return ("CL_INVALID_MIP_LEVEL");
+  default:                                  return ("UNKNOWN");
+  }
+} 
 
 /** REAL4 and GPU-ready version of ComputeFStatFreqBand(), extended to loop over segments as well.
  *
@@ -268,9 +361,9 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
           }
 
           /* apply noise-weights to Antenna-patterns and compute A,B,C */
-          if ( XLALWeighMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
+          if ( XLALWeightMultiAMCoeffs ( cfvBuffer->multiAMcoefV[n], multiWeightsV->data[n] ) != XLAL_SUCCESS ) {
             XLALEmptyComputeFBufferREAL4V ( cfvBuffer );
-            XLALPrintError("%s: XLALWeighMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
+            XLALPrintError("%s: XLALWeightMultiAMCoeffs() failed with error = %d\n", fn, xlalErrno );
             XLAL_ERROR ( fn, XLAL_EFUNC );
           }
 
@@ -365,7 +458,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
         err_total += (err-CL_SUCCESS);
 
         if (err_total != CL_SUCCESS) {
-          XLALPrintError ("%s: Error copying data to memory buffer, error code = %d\n", fn, err );
+          XLALPrintError ("%s: Error copying data to memory buffer: %s (%d)\n", fn, pclerror(err), err);
           XLALDestroyCLWorkspace (clWp, multiSFTsV);
           XLAL_ERROR ( fn, XLAL_EINVAL );
         }
@@ -388,7 +481,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                clWp->fkdot16.data, 0, NULL, NULL);
   err_total += (err-CL_SUCCESS);
   if (err_total != CL_SUCCESS) {
-    XLALPrintError ("%s: Error copying frequency data to device memory, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error copying frequency data to device memory: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -453,7 +546,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   err_total += (err-CL_SUCCESS);
 
   if (err_total != CL_SUCCESS) {
-    XLALPrintError ("%s: Error while setting the kernel arguments, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error while setting the kernel arguments: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -471,6 +564,10 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
   global_work_size[0] = local_work_size[0] * numBins;
   global_work_size[1] = local_work_size[1] * clWp->numSegments;
 
+  LogPrintf(LOG_DEBUG,
+	    "In function %s: work group size local 0: %d, local 1: %d, max device: %d\n",
+	    fn,local_work_size[0],local_work_size[1],CL_KERNEL_WORK_GROUP_SIZE);
+
   err = clEnqueueNDRangeKernel(*(clWp->cmd_queue), *(clWp->kernel),
                                2, // Work dimensions
                                NULL, // must be NULL (work offset)
@@ -480,7 +577,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                                NULL, // event list
                                NULL); // event for this kernel
   if (err != CL_SUCCESS) {
-    XLALPrintError ("%s: Error enqueueing the kernel, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error enqueueing the kernel: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -496,7 +593,7 @@ XLALComputeFStatFreqBandVectorOpenCL (   REAL4FrequencySeriesVector *fstatBandV,
                              clWp->Fstat.data,    // pointer
                              0, NULL, NULL);     // events
   if (err != CL_SUCCESS) {
-    XLALPrintError ("%s: Error reading output buffer, error code = %d\n", fn, err );
+    XLALPrintError ("%s: Error reading output buffer: %s (%d)\n", fn, pclerror(err), err);
     XLALDestroyCLWorkspace (clWp, multiSFTsV);
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -637,6 +734,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   static const char *fn = "XLALInitCLWorkspace()";
   // TODO: do something with the hardcoded kernel path
   static const char *cl_kernel_filepath = "FStatOpenCLKernel.cl";
+  size_t max_work_size = 0;
 
 #if USE_OPENCL_KERNEL
   cl_int err, err_total;
@@ -651,6 +749,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   static cl_command_queue cmd_queue;
   static cl_program program;
   static cl_kernel kernel;
+  static cl_context_properties properties[3];
 
   clW->platform  = NULL;
   clW->device    = NULL;
@@ -676,29 +775,46 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
 #if USE_OPENCL_KERNEL
   // query the platform ID
   LogPrintf(LOG_DEBUG, "In function %s: query the platform ID\n", fn);
-  clGetPlatformIDs(max_num_platforms, platforms, &num_platforms);
-  clW->platform = &(platforms[gpu_platform_id]);
+  err = clGetPlatformIDs(max_num_platforms, platforms, &num_platforms);
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformIDs: %s (%d)\n", fn, pclerror(err), err);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  if (num_platforms == 0) {
+      XLALPrintError ("%s: clGetPlatformInfo found no usable platform\n", fn);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
 
+  clW->platform = &(platforms[gpu_platform_id]);
   LogPrintf(LOG_DEBUG, "In function %s: Found %d platforms, using platform id %d\n", fn, num_platforms, gpu_platform_id);
 
   // query OpenCL platform info
   LogPrintf(LOG_DEBUG, "In function %s: query the OpenCL platform info\n", fn);
-  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_PROFILE, 100, strInfo, NULL );
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_PROFILE, sizeof(strInfo), strInfo, NULL );
   if (err != CL_SUCCESS) {
-      XLALPrintError ("%s: Error calling clGetPlatformInfo.\n", fn );
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-
-  // create OpenCL GPU context
-  LogPrintf(LOG_DEBUG, "In function %s: create the OpenCL GPU context\n", fn);
-  context = clCreateContextFromType(0, CL_DEVICE_TYPE_GPU, NULL, NULL, NULL);
-  if (context == (cl_context)0) {
-      XLALPrintError ("%s: Failed to create context\n", fn );
-      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+  LogPrintf(LOG_DEBUG, "In function %s: platform profile: %s\n", fn, strInfo);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_VERSION, sizeof(strInfo), strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
-  clW->context = &context;
-
+  LogPrintf(LOG_DEBUG, "In function %s: platform version: %s\n", fn, strInfo);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_NAME, sizeof(strInfo), strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: platform name: %s\n", fn, strInfo);
+  err = clGetPlatformInfo ( *(clW->platform), CL_PLATFORM_VENDOR, sizeof(strInfo), strInfo, NULL );
+  if (err != CL_SUCCESS) {
+      XLALPrintError ("%s: Error calling clGetPlatformInfo: %s (%d)\n", fn, pclerror(err), err);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: platform vendor: %s\n", fn, strInfo);
+  
   // get the list of available GPU devices
   LogPrintf(LOG_DEBUG, "In function %s: get the list of all available GPU devices\n", fn);
   err = clGetDeviceIDs( *(clW->platform),
@@ -707,7 +823,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
                     devices,
                     &num_devices);
   if (err != CL_SUCCESS) {
-      XLALPrintError ("%s: Error querying number of OpenCL devices\n", fn );
+      XLALPrintError ("%s: Error querying number of OpenCL devices: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   } else if ( gpu_device_id >= num_devices ) {
@@ -719,13 +835,34 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   }
   clW->device = &(devices[gpu_device_id]);
 
+  properties[0] = (cl_context_properties)CL_CONTEXT_PLATFORM;  // indicates that next element is platform
+  properties[1] = (cl_context_properties)platforms[gpu_platform_id];  // platform is of type cl_platform_id
+  properties[2] = (cl_context_properties)0;
+
+  // create OpenCL GPU context
+  LogPrintf(LOG_DEBUG, "In function %s: create the OpenCL GPU context\n", fn);
+  context = clCreateContextFromType(properties, CL_DEVICE_TYPE_GPU, NULL, NULL, &err);
+  if (context == NULL) {
+      XLALPrintError ("%s: Failed to create context: %s (%d)\n", fn, pclerror(err), err);
+      XLALDestroyCLWorkspace (clW, stackMultiSFT);
+      XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  clW->context = &context;
+
+  // get the max work group size
+  err = clGetDeviceInfo(devices[gpu_device_id],CL_DEVICE_MAX_WORK_GROUP_SIZE,sizeof(max_work_size),&max_work_size,NULL);
+  if (err != CL_SUCCESS) {
+    XLALPrintError ("%s: Error querying max work group size: %s (%d)\n", fn, pclerror(err), err);
+    XLALDestroyCLWorkspace (clW, stackMultiSFT);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: device id %d max work group size: %d\n", fn, gpu_device_id, max_work_size);
+
   // create a command-queue
   LogPrintf(LOG_DEBUG, "In function %s: create OpenCL command queue\n", fn);
-  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device),
-                                   CL_QUEUE_PROFILING_ENABLE,
-                                   &err);
+  cmd_queue = clCreateCommandQueue(*(clW->context), *(clW->device), 0, &err);
   if (cmd_queue == (cl_command_queue)0) {
-      XLALPrintError ("%s: Failed to create command queue\n", fn );
+      XLALPrintError ("%s: Failed to create command queue: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -878,7 +1015,7 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
   err_total += (err-CL_SUCCESS);
 
   if (err_total != CL_SUCCESS) {
-      XLALPrintError ("%s: Error creating OpenCL memory buffer, error code = %d\n", fn, err );
+      XLALPrintError ("%s: Error creating OpenCL memory buffer: %s (%d)\n", fn, pclerror(err), err);
       XLALDestroyCLWorkspace (clW, stackMultiSFT);
       XLAL_ERROR ( fn, XLAL_EINVAL );
   }
@@ -970,6 +1107,16 @@ XLALInitCLWorkspace ( CLWorkspace *clW,
     XLAL_ERROR ( fn, XLAL_EINVAL );
   }
   clW->kernel = &kernel;
+
+  err = clGetKernelWorkGroupInfo(kernel, devices[gpu_device_id], CL_KERNEL_WORK_GROUP_SIZE,
+				 sizeof(clW->kernel_work_size), &(clW->kernel_work_size), NULL);
+  if (err != CL_SUCCESS) {
+    XLALPrintError ("%s: Error querying max work group size: %s (%d)\n", fn, pclerror(err), err);
+    XLALDestroyCLWorkspace (clW, stackMultiSFT);
+    XLAL_ERROR ( fn, XLAL_EINVAL );
+  }
+  LogPrintf(LOG_DEBUG, "In function %s: device id %d kernel group size: %d\n", fn, gpu_device_id, clW->kernel_work_size);
+
 #endif // #if USE_OPENCL_KERNEL
 
   return 0;
@@ -1005,7 +1152,7 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
 
   if ( clW->Fstat.data == NULL || clW->Freq.data == NULL ) {
       XLALPrintError ("%s: XLALMalloc() failed.\n", fn );
-      XLAL_ERROR ( fn, XLAL_EINVAL );
+      XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
   }
 
 #if USE_OPENCL_KERNEL
@@ -1024,8 +1171,8 @@ XLALRearrangeSFTData ( CLWorkspace *clW,
     err_total += (err-CL_SUCCESS);
 
     if (err_total != CL_SUCCESS) {
-        XLALPrintError ("%s: Error creating OpenCL memory buffer, error code = %d\n", fn, err_total );
-        XLAL_ERROR ( fn, XLAL_EINVAL );
+        XLALPrintError ("%s: Error creating OpenCL memory buffer: %s (%d)\n", fn, pclerror(err_total), err_total);
+        XLAL_ERROR_VOID ( fn, XLAL_EINVAL );
     }
   }
 #endif // #if USE_OPENCL_KERNEL

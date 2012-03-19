@@ -67,9 +67,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-NRCSID( GENERATEINSPIRALH,
-    "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define GENERATEINSPIRALH_ENORM 0
 #define GENERATEINSPIRALH_ENULL 1
@@ -105,22 +102,6 @@ LALGenerateInspiral(
     PPNParamStruc    *ppnParamsInputOutput
     );
 
-/* Legacy wrappers for parsing approximants and orders */
-/* three function to read the order and approximant from a string */
-void
-LALGetOrderFromString(
-    LALStatus   *status,
-    CHAR        *message,
-    LALPNOrder  *result
-    );
-
-void
-LALGetApproximantFromString(
-    LALStatus   *status,
-    CHAR        *message,
-    Approximant *result
-    );
-
 /**	Convert a string provided by the #CoherentGW structure in order to retrieve
  *	the approximant of the waveform to generate.
  *	@param[out]	inter	: the level of the spin interaction
@@ -135,22 +116,6 @@ int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent);
 
 int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent);
 
-/*  three function to populate the needed structures */
-void
-LALGenerateInspiralPopulatePPN(
-    LALStatus           *status,
-    PPNParamStruc       *ppnParams,
-    SimInspiralTable    *thisEvent
-    );
-
-void
-LALGenerateInspiralPopulateInspiral(
-    LALStatus           *status,
-    InspiralTemplate    *inspiralParams,
-    SimInspiralTable    *thisEvent,
-    PPNParamStruc       *ppnParams
-    );
-
 /* XLAL functions for parsing approximants and orders */
 /* and also for populating structures */
 int
@@ -163,6 +128,12 @@ int
 XLALGetApproximantFromString(
     CHAR        * restrict message,
     Approximant * restrict result
+    );
+
+int
+XLALGetTaperFromString(
+    LALSimInspiralApplyTaper * restrict taper,
+    CHAR                     * restrict thisEvent
     );
 
 int

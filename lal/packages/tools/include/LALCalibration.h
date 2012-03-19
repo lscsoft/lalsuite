@@ -27,8 +27,6 @@
 
 #include <lal/LALDatatypes.h>
 
-NRCSID( LALCALIBRATIONH, "$Id$" );
-
 #ifdef __cplusplus
 extern "C" {
 #endif

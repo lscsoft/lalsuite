@@ -189,6 +189,7 @@ LALReverseRealFFT()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -196,10 +197,6 @@ LALReverseRealFFT()
 #include <lal/FindChirp.h>
 #include <lal/FindChirpSP.h>
 #include <math.h>
-
-NRCSID (FINDCHIRPSPDATAC, "$Id$");
-
-
 
 void
 LALFindChirpSPData (
@@ -234,7 +231,7 @@ LALFindChirpSPData (
   COMPLEX8Vector       *fftVec = NULL;
   FindChirpSegment     *fcSeg;
   DataSegment          *dataSeg;
-  INITSTATUS( status, "LALFindChirpSPData", FINDCHIRPSPDATAC );
+  INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
 
 

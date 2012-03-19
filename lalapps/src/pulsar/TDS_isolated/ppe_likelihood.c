@@ -7,6 +7,7 @@
  * codes for targeted pulsar searches.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_likelihood.h"
 
 /******************************************************************************/

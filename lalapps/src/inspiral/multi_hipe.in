@@ -2,8 +2,6 @@
 """
 multi_hipe.in - multi inspiral pipeline driver script
 
-$Id$
-
 This script uses master segment lists to determine a set of segment
 lists appropriate to running inspiral_hipe on multiple epochs of fixed
 length between some start and some end time.  At present, the script
@@ -31,7 +29,7 @@ Coming soon:
 
 __author__ = 'Patrick Brady <patrick@gravity.phys.uwm.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path

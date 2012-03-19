@@ -234,6 +234,11 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
 
+/** Checks for \param name being present in \param vars and having type LINEAR or CIRCULAR.
+ * returns 1 or 0
+ */
+int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
+
 /** Delete the variables in this structure.
  *  Does not free the LALInferenceVariables itself
  *  \param vars will have its dimension set to 0 */
@@ -405,7 +410,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
 /** Output the command line to \param str based on the ProcessParamsTable */
-void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str);
+char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
 /** Execute FFT for data in \param data */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
@@ -435,7 +440,7 @@ void LALInferencePrintProposalStats(FILE *fp,LALInferenceVariables *propStats);
 /** Reads one line from the given file and stores the values there into
    the variable structure, using the given header array to name the
    columns.  Returns 0 on success. */
-int LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
+void LALInferenceProcessParamLine(FILE *inp, char **headers, LALInferenceVariables *vars);
 
 /** Sorts the variable structure by name */
 void LALInferenceSortVariablesByName(LALInferenceVariables *vars);
@@ -460,6 +465,9 @@ void LALInferenceMcEta2Masses(double mc, double eta, double *m1, double *m2);
 
 /** Convert from Mc, q space to m1, m2 space (q = m2/m1, with m1 > m2). */
 void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
+
+/** Convert from q to eta (q = m2/m1, with m1 > m2). */
+void LALInferenceQ2Eta(double q, double *eta);
 
 /** A kD tree cell contains some points (npts), a bounding box
     enclosing the cell (lowerLeft to upperRight), a bounding box

@@ -19,7 +19,6 @@
 
 /**** <lalVerbatim file="ODETestCV">
  * Author: J. D. E. Creighton
- * $Id$
  **** </lalVerbatim> */
 /**** <lalLaTeX>
  *
@@ -46,8 +45,6 @@
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/ODE.h>
-
-NRCSID (ODETESTC,"$Id$");
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

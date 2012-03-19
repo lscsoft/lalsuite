@@ -51,6 +51,7 @@ Unless the <tt>-f</tt> option is used, the environment variable
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -70,8 +71,6 @@ Unless the <tt>-f</tt> option is used, the environment variable
 
 #define CODES_(x) #x
 #define CODES(x) CODES_(x)
-
-NRCSID (MAIN, "$Id$");
 
 extern char *optarg;
 extern int   optind;

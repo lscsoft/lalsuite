@@ -22,8 +22,6 @@
 	      REAL4 a,b,c,d;
 	    } R44V;
 
-	    NRCSID (CFSLOOPx86MAS, "$Id$");
-
 	    COMPLEX8 *Xalpha_k = Xalpha + sftIndex;
 
 	    REAL4 tsin2pi = tsin * (REAL4)OOTWOPI;

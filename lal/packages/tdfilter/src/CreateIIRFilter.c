@@ -19,7 +19,6 @@
 
 /****************************** <lalVerbatim file="CreateIIRFilterCV">
 Author: Creighton, T. D.
-$Id$
 **************************************************** </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -114,13 +113,12 @@ LALDCreateVector()              LALDDestroyVector()
 
 ******************************************************* </lalLaTeX> */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <math.h>
 #include <lal/IIRFilter.h>
-
-NRCSID(CREATEIIRFILTERC,"$Id$");
 
 extern INT4 lalDebugLevel;
 
@@ -595,7 +593,7 @@ void LALCreateREAL4IIRFilter( LALStatus         *stat,
 			      REAL4IIRFilter    **output,
 			      COMPLEX8ZPGFilter *input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALCreateREAL4IIRFilter",CREATEIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure all the input structures have been initialized. */
   ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);
@@ -634,7 +632,7 @@ void LALCreateREAL8IIRFilter( LALStatus          *stat,
 			      REAL8IIRFilter     **output,
 			      COMPLEX16ZPGFilter *input )
 { /* </lalVerbatim> */
-  INITSTATUS(stat,"LALCreateREAL8IIRFilter",CREATEIIRFILTERC);
+  INITSTATUS(stat);
 
   /* Make sure all the input structures have been initialized. */
   ASSERT(input,stat,IIRFILTERH_ENUL,IIRFILTERH_MSGENUL);

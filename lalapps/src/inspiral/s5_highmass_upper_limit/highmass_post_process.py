@@ -5,7 +5,7 @@ This program makes the S5 high mass post processing dag
 
 __author__ = 'Chad Hanna <channa@caltech.edu>'
 __date__ = '$Date$'
-__version__ = '$Revision$'[11:-2]
+__version__ = '$Revision$'
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path

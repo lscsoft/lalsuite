@@ -47,6 +47,7 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f
 #define GENERATEPPNINSPIRALTESTC_MSGEFILE  "Could not open file"
 #define GENERATEPPNINSPIRALTESTC_MSGEPRINT "Wrote past end of message string"
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <stdlib.h>
 #include <lal/LALStdio.h>
@@ -78,8 +79,6 @@ GeneratePPNAmpCorInspiralTest [-m m1 m2] [-r dist] [-i inc phii psi] [-f f_min f
 
 #include <lal/LALInspiral.h>
 
-NRCSID( GENERATEPPNINSPIRALTESTC, "$Id$" );
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 #define EPOCH (315187200000000000LL) /* about Jan. 1, 1990 */
@@ -108,7 +107,7 @@ if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   LALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
 		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, GENERATEPPNINSPIRALTESTC,                 \
+		 __LINE__, "$Id$",                 \
 		 statement ? statement : "", (msg) );                \
 }                                                                    \
 while (0)
@@ -119,7 +118,7 @@ if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   LALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 GENERATEPPNINSPIRALTESTC, (statement) );            \
+		 "$Id$", (statement) );            \
 }                                                                    \
 while (0)
 
@@ -129,7 +128,7 @@ if ( lalDebugLevel & LALWARNING )                                    \
 {                                                                    \
   LALPrintError( "Warning[0]: program %s, file %s, line %d, %s\n"    \
 		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 GENERATEPPNINSPIRALTESTC, (statement) );            \
+		 "$Id$", (statement) );            \
 }                                                                    \
 while (0)
 
@@ -477,7 +476,7 @@ main(int argc, char **argv)
 
   /* Taper hoft */
   if( taper > 0 )
-    LALInspiralWaveTaper(&stat, hoft, 3);
+    XLALSimInspiralREAL4WaveTaper(hoft, LAL_SIM_INSPIRAL_TAPER_STARTEND);
 
   if( fftout )
   {

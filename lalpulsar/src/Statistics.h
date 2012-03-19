@@ -94,7 +94,6 @@ typedef struct tagHoughStats {
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
-NRCSID( STATISTICSH, "$Id$");
 
 /*
  *  Extern Global variables. (discouraged)

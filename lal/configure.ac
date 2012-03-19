@@ -147,7 +147,10 @@ LAL_WITH_EXTRA_LDFLAGS
 LAL_WITH_EXTRA_LIBS
 
 LAL_ENABLE_INTELFFT
+
 LALSUITE_WITH_CUDA
+LALSUITE_WITH_NVCC_CFLAGS
+
 LALSUITE_ENABLE_BOINC
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -197,7 +200,7 @@ m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
 # use silent build rules if appropriate
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
 
-# boinc requires a c++ compiler
+# check for c++ compiler
 AC_PROG_CXX
 
 # check for programs
@@ -205,6 +208,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
+AC_PROG_SED
 LT_INIT
 AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
 AC_CHECK_PROGS([M4],[gm4 m4], m4)
@@ -217,6 +221,9 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
+
+# check complex number types
+LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for support tex flags
 if test -z "$TEXFLAGS"
@@ -413,19 +420,20 @@ AC_SUBST_FILE([DOCMKFILE])
 AC_SUBST_FILE([DVIMKFILE])
 AC_OUTPUT
 echo "
-================================================================
+=================================================================
 
         LAL has now been successfully configured:
 
-                CUDA support is $CUDA_ENABLE_VAL
-                BOINC support is $BOINC_ENABLE_VAL
-                SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-                SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            CUDA support is $CUDA_ENABLE_VAL
+            BOINC support is $BOINC_ENABLE_VAL
+            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+
+        and will be installed under the directory:
+
+            ${prefix}
 
         Now run 'make' to build LAL
         and run 'make install' to install LAL
-        LAL will be installed under the directory:
-
-                $prefix
 
 ================================================================="

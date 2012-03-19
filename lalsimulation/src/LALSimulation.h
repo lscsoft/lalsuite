@@ -23,17 +23,11 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
 
-
-#include <lal/LALRCSID.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
-
-NRCSID(LALSIMULATIONH, "$Id:");
-
 
 const LALDetector *XLALInstrumentNameToLALDetector(
 	const char *string

@@ -19,7 +19,6 @@
 
 /******************************** <lalVerbatim file="DirichletTestCV">
 Author: UTB Relativity Group; contact whelan@phys.utb.edu
-$Id$
 ********************************* </lalVerbatim> */
 
 /********************************************************** <lalLaTeX>
@@ -105,8 +104,6 @@ None.
 extern int lalDebugLevel;
 
 int check ( LALStatus*, INT4, const CHAR* );
-
-NRCSID(MAIN, "$Id$");
 
 int
 main( void )

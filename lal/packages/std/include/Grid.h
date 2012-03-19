@@ -50,8 +50,6 @@ space.
 extern "C" {
 #endif
 
-NRCSID( GRIDH, "$Id$" );
-
 /**
 \heading{Error conditions}
  \name Error Codes */ /*@{*/

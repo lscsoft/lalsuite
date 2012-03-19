@@ -45,8 +45,6 @@ lalDebugLevel
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 
-NRCSID(PNTEMPLATESC,"$Id$");
-
 /* Default parameter settings. */
 extern int lalDebugLevel;
 
@@ -232,7 +230,7 @@ GetInspiralMoments (
    UINT4 k;
    InspiralMomentsIn in;
 
-   INITSTATUS (status, "GetInspiralMoments", PNTEMPLATESC);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR(status);
 
    ASSERT (params, status, LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL);

@@ -28,8 +28,6 @@
 
 INT4 lalDebugLevel = 0;
 
-NRCSID (LALTESTLMSTC, "$Id$");
-
 #define SUCCESS               0
 #define TESTLMSTC_DATESTRING  1
 

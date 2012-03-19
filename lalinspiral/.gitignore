@@ -14,11 +14,13 @@ configure
 include/config.h
 include/config.h.in
 include/lal/*.h
+include/lal/*.i
 include/stamp-h1
 lalinspiral-*.tar.gz
 lalinspiral.pc
 lalinspiral.spec
 libtool
+src/Chisq_GPU.cpp
 src/LALInspiralConfig.h
 src/LALInspiralVCSInfo.h
 src/git_version

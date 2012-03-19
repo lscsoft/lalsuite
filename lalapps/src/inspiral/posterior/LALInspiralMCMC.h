@@ -145,9 +145,6 @@ Structure that holds all data needed for the MCMC algorithm. It contains input d
 
 */
 
-
-NRCSID( LALINSPIRALMCMCH, "$Id: LALInspiralMCMC.h,v 1.79 2007/02/19 15:52:17 thomas Exp $" );
-
 /**\name Error Codes */ /*@{*/
 #define LALINSPIRALH_ENULL           1
 #define LALINSPIRALH_EMEM            2
@@ -332,6 +329,12 @@ tagLALMCMCInput
   REAL4Vector* Fwfc;
   REAL4FFTPlan *longplan;
   UINT4 mylength;
+
+  /* Flags for PhenSpin approximant */  
+  InputAxis axisChoice;
+  UINT4 fixedStep;
+  UINT4 inspiralOnly;
+
 }  LALMCMCInput;
 
 

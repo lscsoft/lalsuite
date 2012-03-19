@@ -136,10 +136,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \cond DONT_DOXYGEN */
-NRCSID( SEGMENTSH, "$Id$" );
-/** \endcond */
-
 /*------------------- Compile-time parameters -------------------*/
 /** \ingroup Segments_h */ /*@{*/
 #define SEGMENTSH_ALLOCBLOCK 64  /**< Initial number of LALSeg spaces to

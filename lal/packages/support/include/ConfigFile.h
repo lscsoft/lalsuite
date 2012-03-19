@@ -20,7 +20,6 @@
 /** \defgroup ConfigFile  Config-File reading module
  * \ingroup support
  * \author Reinhard Prix
- * \date $Date$
  * \brief Module for general parsing of simple ASCII-based config-files.
  *
  */
@@ -28,7 +27,6 @@
 /** \file
  * \ingroup ConfigFile
  * \author Reinhard Prix
- * \date $Date$
  * \brief Header file defining the API for ConfigFile.c.
  */
 
@@ -47,8 +45,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( CONFIGFILEH, "$Id$");
 
 /** Levels of strictness for config-file parsing. */
 typedef enum {

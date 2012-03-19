@@ -26,22 +26,50 @@ void XLALPSSCloseLog(void) {
     logfile_close(LOG_INFO);
 }
 
-PSSEventParams *XLALCreatePSSEventParams(UINT4 length) { 
+PSSEventParams *XLALCreatePSSEventParams(UINT4 length, XLALPSSParamSet setpar) {
   PSSEventParams*ep = NULL;
   if ( length == 0 )
     XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EINVAL ); 
   ep = crea_evenparam(length,0);
   if ( ep == NULL )
     XLAL_ERROR_NULL( "XLALCreatePSSEventParams", XLAL_EFAULT );
-  /* values that differ from the defaults set in crea_evenpar() */
 
-  ep->absvalue = 0.0f;      /* 1 uses abs values. Else uses values with sign */
-  ep->tau = 20.0f;          /* memory time of the autoregressive average */
-  ep->factor = ep->tau/(6.103515625e-05f);
-  ep->cr = 5.0f;            /* CR of the threshold */
-  ep->edge = 0.00061035f;   /* how many seconds around (before and after) the event have to be "purged" */
+  /* values that we might set differently from the defaults in PSS' crea_evenpar() */
+  // PSS default // Paola used /* PSS paramter comment */
+
+  // 1.0   // 0.0f           /* 1.0f = use absolute values. Else use signed values */
+  if(setpar.set & XLALPSS_SET_ABS) {
+    fprintf(stderr, "overriding PSS default %f for abs: %.13f\n", ep->absvalue, setpar.abs);
+    ep->absvalue = setpar.abs;
+  }
+
+  // 600   // 20.0f          /* memory time of the autoregressive average */
+  if(setpar.set & XLALPSS_SET_TAU) {
+    fprintf(stderr, "overriding PSS default %f for tau: %.13f\n", ep->tau, setpar.tau);
+    ep->tau = setpar.tau;
+  }
+
+  // 20    // ep->tau/(6.103515625e-05f); /* e.g. 10 or 20 : when re-evaluate mean and std */
+  if(setpar.set & XLALPSS_SET_FACT) {
+    fprintf(stderr, "overriding PSS default %f for tau: %.13f\n", ep->factor, setpar.fact);
+    ep->factor = setpar.fact;
+  }
+
+  // 6.0   // 5.0f;          /* critical ratio of the threshold */
+  if(setpar.set & XLALPSS_SET_CR) {
+    fprintf(stderr, "overriding PSS default %f for cr: %.13f\n", ep->cr, setpar.cr);
+    ep->cr = setpar.cr;
+  }
+
+  // 0.15  // 0.00061035f;   /* how many seconds around (before and after) the event have to be "purged" */
+  if(setpar.set & XLALPSS_SET_EDGE) {
+    fprintf(stderr, "overriding PSS default %f for edge: %.13f\n", ep->edge, setpar.edge);
+    ep->edge = setpar.edge;
+  }
+
+  // 0.00001 // 1e-25f       /* value added to denominator to avoid division by zero */
   ep->notzero = 1e-25f;
-  ep->w_norm=1.0f;          /* to be sure, might already be set in crea_evenparam() */
+  ep->w_norm=1.0f;           /* to be sure, might already be set in crea_evenparam() */
 
   return ep;
 }

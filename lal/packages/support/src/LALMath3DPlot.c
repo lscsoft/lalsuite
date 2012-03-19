@@ -19,7 +19,6 @@
 
 /* <lalVerbatim file="LALMath3DPlotCV">
  * Author: Hanna, C. R.
- * $Id$
  * </lalVerbatim> */
 
 /* <lalLaTeX>
@@ -83,9 +82,6 @@
 
 #define INSTRUCTIONS 	fprintf(nb, "This notebook will produce an animated 3D plot of your template bank.  See the next section to change any user variables before evaluating.  The cells of this notebook must be evaluated sequentially.  If you wish to evaluate the entire notebook at once press Ctrl+A then press Shift+Enter in most operating systems.")
 
-
-NRCSID(LALMATH3DPLOTC, "$Id$");
-
 /* <lalVerbatim file="LALMath3DPlotCP"> */
 void
 LALMath3DPlot( LALStatus *stat,
@@ -102,7 +98,7 @@ LALMath3DPlot( LALStatus *stat,
   REAL4 xmax, ymax, zmax; /* maximum values plotted */
   INT2 xlog, ylog, zlog;  /* log10 of axis scaling factors */
 
-  INITSTATUS( stat, "LALMath3DPlot", LALMATH3DPLOTC );
+  INITSTATUS(stat);
 
   if (!first) {
     ABORT(stat, LALMATHEMATICAH_ENULL, LALMATHEMATICAH_MSGENULL);

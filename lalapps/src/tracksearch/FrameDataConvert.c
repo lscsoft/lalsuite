@@ -26,8 +26,6 @@
 #include "tracksearchToolbox.h"
 #include <unistd.h>
 
-NRCSID( TRACKSEARCHC, "tracksearch $Id$");
-RCSID( "tracksearch $Id$");
 
 #define TYPE REAL8
 #define SCALE 20

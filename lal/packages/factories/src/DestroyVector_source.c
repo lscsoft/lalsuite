@@ -34,7 +34,7 @@ void FUNC ( LALStatus *status, VTYPE **vector )
    * Initialize status
    */
 
-  INITSTATUS( status, STRING(FUNC), VECTORFACTORIESC );
+  INITSTATUS(status);
 
   /*
    * Check vector: is it non-NULL?

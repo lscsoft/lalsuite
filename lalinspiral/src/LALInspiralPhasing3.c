@@ -56,11 +56,6 @@ None.
 #include <lal/LALStdlib.h>
 #include <lal/LALInspiral.h>
 
-NRCSID (LALINSPIRALPHASING3C, "$Id$");
-
-
-
-
 void
 LALInspiralPhasing3_0PN (
    LALStatus  *status,
@@ -71,7 +66,7 @@ LALInspiralPhasing3_0PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_0PN", "XLALInspiralPhasing3_0PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_0PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -116,7 +111,7 @@ LALInspiralPhasing3_2PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_2PN", "XLALInspiralPhasing3_2PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_2PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -165,7 +160,7 @@ LALInspiralPhasing3_3PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_3PN", "XLALInspiralPhasing3_3PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_3PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -216,7 +211,7 @@ LALInspiralPhasing3_4PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_4PN", "XLALInspiralPhasing3_4PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_4PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -269,7 +264,7 @@ LALInspiralPhasing3_5PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_5PN", "XLALInspiralPhasing3_5PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_5PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -323,7 +318,7 @@ LALInspiralPhasing3_6PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_6PN", "XLALInspiralPhasing3_6PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_6PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
@@ -379,7 +374,7 @@ LALInspiralPhasing3_7PN (
 {
   XLALPrintDeprecationWarning("LALInspiralPhasing3_7PN", "XLALInspiralPhasing3_7PN");
 
-  INITSTATUS (status, "LALInspiralPhasing3_7PN", LALINSPIRALPHASING3C);
+  INITSTATUS(status);
   ATTATCHSTATUSPTR(status);
 
   ASSERT(phase, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);

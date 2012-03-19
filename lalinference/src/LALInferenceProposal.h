@@ -81,6 +81,30 @@
 
 #include <lal/LALInference.h>
 
+extern const char *cycleArrayName;
+extern const char *cycleArrayLengthName;
+extern const char *cycleArrayCounterName;
+
+
+/* Proposal Names */
+extern const char *singleAdaptProposalName;
+extern const char *singleProposalName;
+extern const char *orbitalPhaseJumpName;
+extern const char *inclinationDistanceName;
+extern const char *covarianceEigenvectorJumpName;
+extern const char *skyLocWanderJumpName;
+extern const char *differentialEvolutionFullName;
+extern const char *differentialEvolutionMassesName;
+extern const char *differentialEvolutionSpinsName;
+extern const char *differentialEvolutionExtrinsicName;
+extern const char *drawApproxPriorName;
+extern const char *skyReflectDetPlaneName;
+extern const char *rotateSpinsName;
+extern const char *polarizationPhaseJumpName;
+extern const char *distanceQuasiGibbsProposalName;
+extern const char *orbitalPhaseQuasiGibbsProposalName;
+extern const char *KDNeighborhoodProposalName;
+
 /** The name of the variable that holds the vector of single-parameter
     jump widths. */
 extern const char *LALInferenceSigmaJumpName;
@@ -121,6 +145,9 @@ void LALInferenceRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenc
 /** Proposal for finding max temperature for PTMCMC. */
 void LALInferencePTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Proposal for after annealing is over. */
+void LALInferencePostPTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
 /** Non-adaptive, sigle-variable update proposal with reasonable
     widths in each dimension. */
 void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
@@ -149,13 +176,24 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
 void LALInferenceAdaptationProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 void LALInferenceAdaptationSingleProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
-/** Differential evolution */
+/** Differential evolution, on all non-fixed, non-output parameters. */
 void LALInferenceDifferentialEvolutionFull(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform differential evolution on the parameters of the given
+    names (the names array should be terminated by a NULL pointer).
+    If names == NULL, then perform a
+    LALInferenceDifferentialEvolutionFull() step.*/
 void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *state, LALInferenceVariables *proposedParams, const char *names[]);
+
+/** Perform differential evolution on only the mass parameters. */
 void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-void LALInferenceDifferentialEvolutionAmp(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform a differential evolution step on only the extrinsic
+    parameters. */
+void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
+
+/** Perform a differential evolution step on only the spin variables. */
 void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
-void LALInferenceDifferentialEvolutionSky(LALInferenceRunState *state, LALInferenceVariables *proposedParams);
 
 /** Draws from an approximation to the true prior.  Flat in all
     variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat

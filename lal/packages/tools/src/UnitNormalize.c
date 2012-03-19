@@ -23,8 +23,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-NRCSID( UNITNORMALIZEC, "$Id$" );
-
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitNormalize_c
@@ -101,7 +99,7 @@ void
 LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input)
 {
 
-  INITSTATUS( status, "LALUnitNormalize", UNITNORMALIZEC );
+  INITSTATUS(status);
 
   ASSERT( input != NULL, status, UNITSH_ENULLPIN, UNITSH_MSGENULLPIN );
 

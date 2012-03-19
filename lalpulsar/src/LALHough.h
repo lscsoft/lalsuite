@@ -58,13 +58,6 @@
 #include <lal/NormalizeSFTRngMed.h>
 
 /*
- *  #include "LALRCSID.h"
- *  not needed, it is included in "LALConstants.h"
- */
-
-
-
-/*
  *   Protection against C++ name mangling
  */
 
@@ -236,7 +229,6 @@ typedef struct tagHOUGHResidualSpinPar{
 
 
 /** \cond DONT_DOXYGEN */
-NRCSID (LALHOUGHH, "$Id$");
 
 /*
  * 11. Extern Global variables. (discouraged)

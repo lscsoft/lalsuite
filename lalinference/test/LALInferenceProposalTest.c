@@ -294,8 +294,8 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
 		else
-			LALGetApproximantFromString(&status,ppt->value,&approx);
-		LALGetOrderFromString(&status,ppt->value,&PhaseOrder);
+			XLALGetApproximantFromString(ppt->value,&approx);
+		XLALGetOrderFromString(ppt->value,&PhaseOrder);
 	}
 	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	
@@ -533,14 +533,17 @@ int main(int argc, char *argv[]) {
 	  fprintf(outfile,"\n");
 	  
 	}
-	fclose(outfile);
+    if(outfile) fclose(outfile);
 	outfile=fopen("headers.txt","w");
     LALInferenceFprintParameterNonFixedHeaders(outfile,state->currentParams);
     fclose(outfile);
     
     /* Perform K-S test for parameters with analytic distributions */
-    varArray = *(LALInferenceVariables **)LALInferenceGetVariable(state->algorithmParams,"outputarray");
-    NvarArray = *(INT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+    varArray = (LALInferenceVariables*)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+    UINT4* pNvarArray = (UINT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
+    int exists=LALInferenceCheckVariable(state->algorithmParams,"N_outputarray");
+    printf("%d\n",exists);    
+    NvarArray=*pNvarArray;
     
     if(NvarArray!=Nmcmc) printf("ERROR: Not all iterations were saved\n");
 
@@ -567,6 +570,122 @@ int main(int argc, char *argv[]) {
     }
     
     return(0);
+}
+
+/******************************************
+ * 
+ * Old tests
+ * 
+ ******************************************/
+ 
+//Test LALInferenceProposalFunction
+void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+//Test LALProposalFunction
+void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist (e.g., for TaylorT1):			*/
+/* chirpmass, massratio, inclination,	*/
+/* phase, time, rightascension,			*/
+/* desclination, polarisation, distance.*/
+/* Simply picks a new value based on	*/
+/* fixed Gaussian;						*/
+/* need smarter wall bounces in future.	*/
+/****************************************/
+{
+  REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
+  REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
+        ra_proposed, dec_proposed, psi_proposed, dist_proposed;
+  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
+  gsl_rng * GSLrandom=runState->GSLrandom;
+  LALInferenceVariables * currentParams_local = runState->currentParams;
+
+  mc   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "chirpmass");		/* solar masses*/
+  eta  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "massratio");		/* dim-less    */
+  iota = *(REAL8*) LALInferenceGetVariable(currentParams_local, "inclination");		/* radian      */
+  tc   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "time");				/* GPS seconds */
+  phi  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "phase");			/* radian      */
+  ra   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "rightascension");	/* radian      */
+  dec  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "declination");		/* radian      */
+  psi  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "polarisation");		/* radian      */
+  dist = *(REAL8*) LALInferenceGetVariable(currentParams_local, "distance");			/* Mpc         */
+
+  //mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
+  // (above proposal is not symmetric!)
+  //mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
+  mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*0.001);          /* mc changed by ~0.1% */
+  logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
+  eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
+  //TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
+  iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*0.1;
+  tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*0.005; /*time changed by 5 ms*/
+  phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*0.5;
+  ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*0.05;
+  dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*0.05;
+  psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*0.1;
+  //dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
+  dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*0.1); // ~10% change
+  logProposalRatio *= dist_proposed / dist;
+		
+  LALInferenceCopyVariables(currentParams_local, proposedParams);
+  LALInferenceSetVariable(proposedParams, "chirpmass",      &mc_proposed);		
+  LALInferenceSetVariable(proposedParams, "massratio",      &eta_proposed);
+  LALInferenceSetVariable(proposedParams, "inclination",    &iota_proposed);
+  LALInferenceSetVariable(proposedParams, "phase",          &phi_proposed);
+  LALInferenceSetVariable(proposedParams, "time",           &tc_proposed); 
+  LALInferenceSetVariable(proposedParams, "rightascension", &ra_proposed);
+  LALInferenceSetVariable(proposedParams, "declination",    &dec_proposed);
+  LALInferenceSetVariable(proposedParams, "polarisation",   &psi_proposed);
+  LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
+
+  // return ratio of proposal densities (for back & forth jumps) 
+  // in "runstate->proposalArgs" vector:
+  if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
+    LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+  else
+    LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
+}
+
+//Test LALProposalFunction
+void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+/****************************************/
+/* Assumes the following parameters		*/
+/* exist:	A, Omega					*/
+/* Simply picks a new value based on	*/
+/* fixed Gaussian						*/
+/****************************************/
+{
+  REAL8 A, Omega;
+  REAL8 A_proposed, Omega_proposed;
+  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
+  gsl_rng * GSLrandom=runState->GSLrandom;
+  LALInferenceVariables * currentParams_local = runState->currentParams;	
+
+  A     = *(REAL8*) LALInferenceGetVariable(currentParams_local, "A");				/* dim-less	   */
+  Omega = *(REAL8*) LALInferenceGetVariable(currentParams_local, "Omega");			/* rad/sec     */	
+
+  //A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
+  //Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
+  // (above proposals not symmetric!)
+  //A_proposed     = A     + gsl_ran_ugaussian(GSLrandom) * 1e-20;   // (insert some sensible number here)
+  //Omega_proposed = Omega + gsl_ran_ugaussian(GSLrandom) * 0.01;
+  A_proposed     = A     * exp(gsl_ran_ugaussian(GSLrandom)*0.1);   // ~ 10% change
+  logProposalRatio *= A_proposed / A;
+  Omega_proposed = Omega * exp(gsl_ran_ugaussian(GSLrandom)*0.01);  // ~ 1% change
+  logProposalRatio *= Omega_proposed / Omega;
+  
+  LALInferenceCopyVariables(currentParams_local, proposedParams);
+  LALInferenceSetVariable(proposedParams, "A",     &A_proposed);		
+  LALInferenceSetVariable(proposedParams, "Omega", &Omega_proposed);
+
+  // return ratio of proposal densities (for back & forth jumps) 
+  // in "runstate->proposalArgs" vector:
+  if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
+    LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
+  else
+    LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 }
 
 static int cmpREAL8p(const void *p1, const void *p2)

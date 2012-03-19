@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Copyright (C) 2007  Kipp Cannon
  *
@@ -29,11 +28,6 @@
 #include <lal/Sequence.h>
 #include <lal/XLALError.h>
 
-
-#include <lal/LALRCSID.h>
-NRCSID(SEQUENCEC, "$Id$");
-
-
 /*
  * Shift the bytes in the buffer buff, whose length is length, count bytes to
  * higher addresses.  If the magnitude of count is greater than or equal to
@@ -59,123 +53,66 @@ static void memshift(void *buff, size_t length, int count)
 
 #define DATATYPE REAL4
 #define SQUAREDATATYPE REAL4
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
 
 #define DATATYPE REAL8
 #define SQUAREDATATYPE REAL8
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
 
 #define DATATYPE COMPLEX8
 #define SQUAREDATATYPE REAL4
-#define ZERO LAL_COMPLEX8_ZERO
-#define SUM sum = XLALCOMPLEX8Add(sum, *data);
-#define SUMSQ XLALCOMPLEX8Abs2(*data)
+#define CONJ conjf
 #include "Sequence_source.c"
 #include "SequenceComplex_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
+#undef CONJ
 
 #define DATATYPE COMPLEX16
 #define SQUAREDATATYPE REAL8
-#define ZERO LAL_COMPLEX16_ZERO
-#define SUM sum = XLALCOMPLEX16Add(sum, *data);
-#define SUMSQ XLALCOMPLEX16Abs2(*data)
+#define CONJ conj
 #include "Sequence_source.c"
 #include "SequenceComplex_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
+#undef CONJ
 
 #define DATATYPE INT2
 #define SQUAREDATATYPE UINT2
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
-
 
 #define DATATYPE UINT2
 #define SQUAREDATATYPE UINT2
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
 
 #define DATATYPE INT4
 #define SQUAREDATATYPE UINT4
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
 
 #define DATATYPE UINT4
 #define SQUAREDATATYPE UINT4
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
 
 #define DATATYPE INT8
 #define SQUAREDATATYPE UINT8
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ
 
 #define DATATYPE UINT8
 #define SQUAREDATATYPE UINT8
-#define ZERO 0
-#define SUM sum += *data;
-#define SUMSQ *data * *data
 #include "Sequence_source.c"
 #undef DATATYPE
 #undef SQUAREDATATYPE
-#undef ZERO
-#undef SUM
-#undef SUMSQ

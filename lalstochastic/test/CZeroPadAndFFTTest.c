@@ -138,6 +138,7 @@ fabs()
 #define CZEROPADANDFFTTESTC_MSGEUSE "Bad user-entered data"
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/Window.h>
 
@@ -161,8 +162,6 @@ fabs()
 #include <lal/Units.h>
 
 #include "CheckStatus.h"
-
-NRCSID(CZEROPADANDFFTTESTC, "$Id$");
 
 #define CZEROPADANDFFTTESTC_LENGTH        8
 #define CZEROPADANDFFTTESTC_FULLLENGTH (2 * CZEROPADANDFFTTESTC_LENGTH - 1)

@@ -23,7 +23,6 @@
  *
  * Author: Brown, D. A.
  *
- * Revision: $Id$
  *
  *-----------------------------------------------------------------------
  */
@@ -43,10 +42,15 @@
 #include <math.h>
 #include <fftw3.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
 #include <lalappsfrutils.h>
+
+#ifdef LALAPPS_CUDA_ENABLED
+#include <cuda_runtime_api.h>
+#endif
 
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
@@ -87,8 +91,6 @@
 #include <LALAppsVCSInfo.h>
 
 #include "inspiral.h"
-
-RCSID( "$Id$" );
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"
@@ -278,7 +280,7 @@ INT4 reverseChirpBank      = 0;         /* enable the reverse chirp     */
 
 /* taper/band pass template options */
 INT4  bandPassTmplt           = 0;
-InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
+LALSimInspiralApplyTaper taperTmplt = LAL_SIM_INSPIRAL_TAPER_NONE;
 
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
@@ -329,6 +331,10 @@ int    writeTemplate    = 0;            /* write the template time series */
 
 /* other command line args */
 CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
+
+#ifdef LALAPPS_CUDA_ENABLED
+INT4  gpuDeviceID       = 0;            /* device Id of GPU             */ 
+#endif
 
 int main( int argc, char *argv[] )
 {
@@ -527,20 +533,20 @@ int main( int argc, char *argv[] )
   snprintf( filtertable.filterTable->program, LIGOMETA_PROGRAM_MAX, "%s",
             PROGRAM_NAME );
   filtertable.filterTable->start_time = gpsStartTime.gpsSeconds;
-  snprintf( filtertable.filterTable->filter_name, LIGOMETA_COMMENT_MAX,
+  snprintf( filtertable.filterTable->filter_name, LIGOMETA_FILTER_NAME_MAX,
       "%s%s", approximantName, orderName );
 
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    snprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( filtertable.filterTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX, " " );
   }
   else
   {
     snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
               "%s", comment );
-    snprintf( filtertable.filterTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( filtertable.filterTable->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
               "%s", comment );
   }
 
@@ -1408,8 +1414,12 @@ int main( int argc, char *argv[] )
 
       /* read the event waveform approximant to see if we've been asked to
        perform NumRel injections */
-      LAL_CALL( LALGetApproximantFromString( &status, injections->waveform,
-                                  &injApproximant ), &status);
+      if (XLALGetApproximantFromString( injections->waveform,
+                                  &injApproximant ) == XLAL_FAILURE)
+      {
+        fprintf( stderr, "could not parse approximant from sim_inspiral.waveform\n" );
+        exit( 1 );
+      }
 
       if (injApproximant == NumRel)
       {
@@ -3603,8 +3613,13 @@ int main( int argc, char *argv[] )
   if ( vrbflg ) fprintf( stdout, "checking memory leaks and exiting\n" );
   LALCheckMemoryLeaks();
 
+#ifdef LALAPPS_CUDA_ENABLED
+  cudaThreadExit();
+#endif
+
   /* print a success message to stdout for parsing by exitcode */
   fprintf( stdout, "%s: EXITCODE0\n", argv[0] );
+
   exit( 0 );
 }
 
@@ -3629,6 +3644,7 @@ fprintf( a, "  --debug-level LEVEL          set the LAL debug level to LEVEL\n")
 fprintf( a, "  --user-tag STRING            set the process_params usertag to STRING\n");\
 fprintf( a, "  --ifo-tag STRING             set the ifotag to STRING - for file naming\n");\
 fprintf( a, "  --comment STRING             set the process table comment to STRING\n");\
+fprintf( a, "  --gpu-device-id ID           set GPU device id (works only with Cuda enabled version) \n");\
 fprintf( a, "\n");\
 fprintf( a, "  --gps-start-time SEC         GPS second of data start time\n");\
 fprintf( a, "  --gps-start-time-ns NS       GPS nanosecond of data start time\n");\
@@ -3812,6 +3828,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"number-of-segments",      required_argument, 0,                'e'},
     {"segment-overlap",         required_argument, 0,                'f'},
     {"sample-rate",             required_argument, 0,                'g'},
+#ifdef LALAPPS_CUDA_ENABLED
+    {"gpu-device-id",           required_argument, 0,                '+'},
+#endif
     {"calibrated-data",         required_argument, 0,                'y'},
     {"strain-high-pass-freq",   required_argument, 0,                'E'},
     {"strain-high-pass-order",  required_argument, 0,                'P'},
@@ -3900,6 +3919,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {0, 0, 0, 0}
   };
   int c;
+#ifdef LALAPPS_CUDA_ENABLED
+  cudaError_t cudaError = cudaSuccess;
+#endif 
   INT4 haveDynRange = 0;
   INT4 haveApprox = 0;
   INT4 haveOrder = 0;
@@ -3920,13 +3942,20 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     /* getopt_long stores long option here */
     int option_index = 0;
     size_t optarg_len;
-
+#ifdef LALAPPS_CUDA_ENABLED
+    c = getopt_long_only( argc, argv,
+        "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
+        "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:~:$:+:=:^:.:+:",
+        long_options, &option_index );
+#endif
+#ifndef LALAPPS_CUDA_ENABLED
     c = getopt_long_only( argc, argv,
         "-A:B:C:D:E:F:G:H:I:J:K:L:M:N:O:P:Q:R:S:T:U:VW:?:X:Y:Z:"
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:"
         "0:1::2:3:4:567:8:9:*:>:<:(:):[:],:{:}:|:~:$:+:=:^:.:",
         long_options, &option_index );
-
+#endif
     /* detect the end of the options */
     if ( c == - 1 )
     {
@@ -4178,6 +4207,23 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         ADD_PROCESS_PARAM( "int", "%d", sampleRate );
         break;
+
+#ifdef LALAPPS_CUDA_ENABLED
+      case '+':
+        gpuDeviceID = (INT4) atoi( optarg );
+	cudaError = cudaSetDevice( gpuDeviceID );
+        if ( cudaError != cudaSuccess )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+		           "could not associate thread to GPU %d\n"
+		           "CudaError: %s\n",
+		   long_options[option_index].name, gpuDeviceID,
+                   cudaGetErrorString(cudaError));
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", gpuDeviceID );
+        break;
+#endif
 
       case 'y':
         /* specify which type of calibrated data */
@@ -5196,15 +5242,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '{':
         if ( !strcmp( "start", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_START;
+          taperTmplt = LAL_SIM_INSPIRAL_TAPER_START;
         }
         else if ( !strcmp( "end", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_END;
+          taperTmplt = LAL_SIM_INSPIRAL_TAPER_END;
         }
         else if ( !strcmp( "startend", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_STARTEND;
+          taperTmplt = LAL_SIM_INSPIRAL_TAPER_STARTEND;
         }
         else
         {

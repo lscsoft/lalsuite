@@ -44,14 +44,11 @@ Provides prototype information for the routines in
 #ifndef _PRINTFTSERIES_H
 #define _PRINTFTSERIES_H
 
-#include <lal/LALRCSID.h>
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-NRCSID( PRINTFTSERIESH, "$Id$" );
 
 void LALI2PrintTimeSeries( INT2TimeSeries *series , const CHAR *filename );
 void LALI4PrintTimeSeries( INT4TimeSeries *series , const CHAR *filename );

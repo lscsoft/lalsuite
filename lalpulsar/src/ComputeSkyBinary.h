@@ -170,8 +170,6 @@ It is these constants that form the input to the function <tt>LALDemod()</tt>.
 extern "C" {
 #endif
 
-  NRCSID( COMPUTESKYBINARYH, "$Id$" );
-
 /**\name Error Codes */ /*@{*/
 #define COMPUTESKYBINARYH_ENULL 1
 #define COMPUTESKYBINARYH_ENNUL 2

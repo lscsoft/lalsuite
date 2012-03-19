@@ -60,9 +60,6 @@ XLALDRombergIntegrate()
 #include <lal/LALInspiral.h>
 #include <lal/Integrate.h>
 
-NRCSID (LALINSPIRALPHASING1C, "$Id$");
-
-
 void
 LALInspiralPhasing1 (
    LALStatus *status,
@@ -73,7 +70,7 @@ LALInspiralPhasing1 (
 {
    XLALPrintDeprecationWarning("LALInspiralPhasing1", "XLALInspiralPhasing1");
 
-   INITSTATUS (status, "LALInspiralPhasing1", LALINSPIRALPHASING1C);
+   INITSTATUS(status);
    ATTATCHSTATUSPTR (status);
 
    ASSERT (phiofv, status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL);
