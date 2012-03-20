@@ -51,6 +51,9 @@
 
 void LALInferencePTswap(LALInferenceRunState *runState, double *TcurrentLikelihood, REAL8 *parametersVec,
                         REAL8 *tempLadder, int lowerRank, int upperRank, int i, FILE *tempfile);
+void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
+void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
+void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle);
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceRunState *runState);
 
@@ -284,12 +287,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   /* Adaptation settings */
   INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
-  INT4  adapting     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));     // Current step being adapted
   INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));     // Sets decay of adaption function
-  INT4  adaptationLength  = pow(10,adaptTau);   // Number of iterations to adapt before turning off
+  INT4  adaptLength       = pow(10,adaptTau);   // Number of iterations to adapt before turning off
   INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
   REAL8 s_gamma           = 1.0;                // Sets the size of changes to jump size during adaptation
   INT4  adaptStart        = 0;                  // Keeps track of last iteration adaptation was restarted
+  REAL8 logLAtAdaptStart  = 0.0;                // max log likelihood as of last adaptation restart
+
+  LALInferenceAddVariable(runState->proposalArgs, "adaptLength", &adaptLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(runState->proposalArgs, "adaptResetBuffer", &adaptResetBuffer,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(runState->proposalArgs, "adaptStart", &adaptStart, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(runState->proposalArgs, "logLAtAdaptStart", &logLAtAdaptStart, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 
   /* Temperature ladder settings */
   REAL8 tempMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temperature in ladder
@@ -402,7 +411,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceAddVariable(runState->proposalArgs, "parameter",&parameter, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->proposalArgs, "nullLikelihood", &nullLikelihood, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(runState->proposalArgs, "acceptanceCount", &acceptanceCount,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
-  REAL8 logLAtAdaptStart = runState->currentLikelihood;
+  logLAtAdaptStart = runState->currentLikelihood;
+  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(logLAtAdaptStart));
 
   /* Construct temperature ladder */
   if(nChain > 1){
@@ -490,7 +500,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
   if (adaptationOn == 1) {
-    LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
     PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
     PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
@@ -500,7 +509,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (MPIrank == 0) {
     printf("\nParallel Behavior:\n");
     if (adaptationOn)
-      printf(" Adapting with decay power %i for %i iterations after max log(L) increases by nParams/2 (%1.2f).\n", adaptTau, adaptationLength, (double)nPar/2.0);
+      printf(" Adapting with decay power %i for %i iterations after max log(L) increases by nParams/2 (%1.2f).\n", adaptTau, adaptLength, (double)nPar/2.0);
     else
       printf(" Adaptation off.\n");
     if (annealingOn)
@@ -536,73 +545,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     LALInferenceSetVariable(runState->proposalArgs, "acceptanceCount", &(acceptanceCount));
 
-    if (adaptationOn) {
-      /* if maximum logL has increased by more than nParam/2, restart it */
-      if (runState->currentLikelihood > logLAtAdaptStart+nPar/2) {
-        for (p=0; p<nPar; ++p) {
-          PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-          PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-          PacceptCount->data[p] =0;
-          PproposeCount->data[p]=0;
-        }
-        adaptStart = i;
-        logLAtAdaptStart = runState->currentLikelihood;
-        if (!adapting) {
-          adapting = 1;
-          LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
-          LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-          fprintf(stdout,"Restarting adaptation for temperature %u at iteration %u.\n",MPIrank,i);
-        }
-      }
-      if (adapting) {
-        /* Turn off adaption after after adaptationLength step without restarting */
-        if ((i-adaptStart) > adaptationLength) {
-          adapting = 0;  //turn off adaptation
-          LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
-          LALInferenceRemoveVariable(runState->proposalArgs,"s_gamma");
-          fprintf(stdout,"Ending adaptation for temperature %u at iteration %u.\n",MPIrank,i);
-
-        /* Else set adaptation envelope */
-        } else if (i-adaptStart < adaptResetBuffer) {
-          s_gamma=(((double)i-(double)adaptStart)/(double)adaptResetBuffer)*(((double)i-(double)adaptStart)/(double)(adaptResetBuffer));
-        } else if (i-adaptStart == adaptResetBuffer) {
-          s_gamma=1;
-        } else {
-          s_gamma=10.0*exp(-(1.0/adaptTau)*log((double)(i-adaptStart)))-1;
-        }
-
-        /* If adaptation hasn't been turned off, set envelope variable */
-        if (adapting)
-          LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &s_gamma);
-      }
-    }
+    if (adaptationOn)
+      LALInferenceAdaptation(runState, i);
 
     if (annealingOn) {
       /* Annealing */
       if (i == annealStart) {
-        if (MPIrank==0)
+        if (MPIrank==0) {
           computeMaxAutoCorrLen(runState, adaptStart, i, &PTacl);
+        }
         runState->proposal = &LALInferencePostPTProposal;
         if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
           BcastDifferentialEvolutionPoints(runState, 0);
-        if (adaptationOn && tempLadder[MPIrank] != 1.0) {
-          /* Force hot chains to re-adapt */
-          if (!adapting) {
-            adapting = 1;
-            LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
-            LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-            fprintf(stdout,"Restarting adaptation for temperature %u at iteration %u.\n",MPIrank,i);
-          }
-          for (p=0; p<nPar; ++p) {
-            PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-            PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-            PacceptCount->data[p] =0;
-            PproposeCount->data[p]=0;
-          }
-          s_gamma = 0.0;
-          LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &s_gamma);
-          adaptStart = i;
-        }
+
+        /* Force hot chains to re-adapt */
+        if (adaptationOn && tempLadder[MPIrank] != 1.0)
+          LALInferenceAdaptationRestart(runState, i);
       } else if (i > annealStart) {
         for (t=0;t<nChain; ++t) {
           tempLadder[t] = tempLadder[t] - annealDecay[t];
@@ -945,6 +903,95 @@ void LALInferencePTswap(LALInferenceRunState *runState,
   TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
   TcurrentLikelihood[lowerRank] = dummyR8;
   }
+}
+
+
+//-----------------------------------------
+// Adaptation:
+//-----------------------------------------
+void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
+{
+  INT4 MPIrank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  INT4 adapting = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adapting");
+  INT4 adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
+  INT4 adaptLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptLength");
+  REAL8 logLAtAdaptStart = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logLAtAdaptStart");
+
+  /* if maximum logL has increased by more than nParam/2, restart it */
+  if (runState->currentLikelihood > logLAtAdaptStart+nPar/2) {
+    LALInferenceAdaptationRestart(runState, cycle);
+    if (!adapting)
+      fprintf(stdout,"Turning on adaptation for temperature %u at iteration %u.\n",MPIrank,cycle);
+  }
+
+  if (adapting) {
+    /* Turn off adaption after adaptLength steps without restarting */
+    if ((cycle-adaptStart) > adaptLength) {
+      adapting = 0;  //turn off adaptation
+      LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
+      LALInferenceRemoveVariable(runState->proposalArgs,"s_gamma");
+      fprintf(stdout,"Ending adaptation for temperature %u at iteration %u.\n",MPIrank,cycle);
+
+    /* Else set adaptation envelope */
+    } else {
+      LALInferenceAdaptationEnvelope(runState, cycle);
+    }
+  }
+}
+
+
+//-----------------------------------------
+// Restart adaptation:
+//-----------------------------------------
+void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
+{
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  REAL8 logLAtAdaptStart = runState->currentLikelihood;
+  REAL8Vector *PacceptCount = NULL;
+  REAL8Vector *PproposeCount = NULL;
+  INT4 p=0, adapting;
+
+  for (p=0; p<nPar; ++p) {
+    PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+    PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
+    PacceptCount->data[p] =0;
+    PproposeCount->data[p]=0;
+  }
+
+  adapting = 1;
+  LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
+  LALInferenceSetVariable(runState->proposalArgs, "adaptStart", &cycle);
+  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &logLAtAdaptStart);
+  LALInferenceAdaptationEnvelope(runState, cycle);
+}
+
+
+//-----------------------------------------
+// Adaptation envelop function:
+//-----------------------------------------
+void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle)
+{
+  INT4 adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
+  INT4 adaptTau = *(INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau");
+  INT4 adaptLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptLength");
+  INT4 adaptResetBuffer = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptResetBuffer");
+  REAL8 s_gamma = 0.0;
+
+  if (cycle-adaptStart <= adaptResetBuffer) {
+    s_gamma=(((REAL8)cycle-(REAL8)adaptStart)/(REAL8)adaptResetBuffer)*(((REAL8)cycle-(REAL8)adaptStart)/(REAL8)(adaptResetBuffer));
+  } else if (cycle-adaptStart < adaptLength) {
+    s_gamma=10.0*exp(-(1.0/adaptTau)*log((REAL8)(cycle-adaptStart)))-1;
+  } else {
+    s_gamma=0.0;
+  }
+
+  if (LALInferenceCheckVariable(runState->proposalArgs, "s_gamma"))
+    LALInferenceSetVariable(runState->proposalArgs, "s_gamma", &s_gamma);
+  else
+    LALInferenceAddVariable(runState->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 }
 
 
