@@ -523,7 +523,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
 }
 
 
-/** \brief The amplitude model of a complex heterodyned traxial neutron star
+/** \brief The amplitude model of a complex heterodyned triaxial neutron star
  * 
  * This function calculates the complex heterodyned time series model for a 
  * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
@@ -653,7 +653,31 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   }
 }
 
-
+/** \brief The amplitude model of a complex heterodyned signal from a NS rotating
+ * about the pinning axis of its pinned superfluid component.
+ * 
+ * This function calculates the complex heterodyned time series model for a 
+ * triaxial neutron star rotating about the pinning axis of its pinned superfluid component.
+ * 
+ * Unlike the standard triaxial model, this model has emission at f and 2f, therefore
+ * this model function processes two sets of data per detector.
+ * 
+ * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within
+ * this function the correct value for the given time and \f$\psi\f$ are
+ * interpolated from this lookup table using bilinear interpolation (e.g.):
+ * \f{eqnarray*}{
+ * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
+ * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
+ * \f}
+ * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square,
+ * and \f$\psi_i\f$ and \f$t_j\f$ are the closest points within the lookup
+ * table to the required values.
+ * 
+ * \param pars [in] A set of pulsar parameters
+ * \param data [in] The data parameters giving information on the data and
+ * detector
+ * 
+ */
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
 *data ){
   INT4 i = 0, length;
@@ -816,7 +840,6 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   /*--------------------------------------------------------------------------*/
 }
 
-
 /** \brief Calculate the natural logarithm of the evidence that the data
  * consists of only Gaussian noise
  * 
@@ -831,32 +854,67 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
  * 
  * \return The natural logarithm of the noise only evidence
  */
-REAL8 noise_only_model( LALInferenceIFOData *data ){
-  LALInferenceIFOData *datatemp = data;
+REAL8 noise_only_model( LALInferenceRunState *runState ){
+	
+  LALInferenceIFOData *data = runState->data;
   
   REAL8 logL = 0.0;
   UINT4 i = 0;
+	INT4 k = 0;
+	
+	REAL8Vector *freqFactors = NULL;
+	FILE *fp = NULL;
+	CHAR *Znoisefile = NULL;
+	ProcessParamsTable *ppt;
+	ProcessParamsTable *commandLine = runState->commandLine;
+	/*-----------------------------*/
+	
+	ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );/*get the outfile name*/
+	
+	freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,                                                        "freqfactors" );
+
+	/*set the Znoise filename to the outfile name with "_Znoise" appended*/
+	Znoisefile = XLALStringDuplicate( ppt->value );
+  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+
+	/*Open the Znoise file for writing*/
+	if( (fp = fopen(Znoisefile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output Znoise file!\n");
+    exit(0);
+  }
   
-  while ( datatemp ){
+  /*calculate the evidence */
+  while ( data ){
     UINT4Vector *chunkLengths = NULL;
     REAL8Vector *sumDat = NULL;
   
     REAL8 chunkLength = 0.;
+		
   
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                        "sumData" );
-  
+		/*Sum the logL over the datachunks*/
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
    
       logL -= chunkLength * log(sumDat->data[i]);
     }
-  
-    datatemp = datatemp->next;
+		
+		/*if I am dealing with any model with more than one datastream, I will have more than one freq factor
+		and I want to output the evidence for the data being gaussian noise seperately for each datastream*/
+		if((INT4)freqFactors->length > 1) fprintf(fp,"Datastream at freq factor: %f, Z: %f\n",freqFactors->data[k],logL);
+		
+		k+=1;/* advance counter now, as freqfactors array index starts at zero.*/
+		
+		/*reset k, freqfactor counter once all datastreamns for a detector are done*/
+		if(k >= (INT4)freqFactors->length) k=0;
+		
+		data = data->next;
+		
   }
-  
+  fclose(fp);
   return logL;
 }
 

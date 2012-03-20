@@ -64,7 +64,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
 *data );
   
-REAL8 noise_only_model( LALInferenceIFOData *data );
+REAL8 noise_only_model( LALInferenceRunState *runState );
 
 #ifdef __cplusplus
 }

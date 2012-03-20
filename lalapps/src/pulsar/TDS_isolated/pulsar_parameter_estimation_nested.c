@@ -306,7 +306,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   gridOutput( &runState );
   
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_model( runState.data );
+  logZnoise = noise_only_model( &runState );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, 
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
                
