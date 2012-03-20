@@ -468,7 +468,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
   }
 
-  if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
+  if (adaptationOn && LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
     sprintf(statfilename,"PTMCMC.statistics.%u.%2.2d",randomseed,MPIrank);
     statfile = fopen(statfilename, "w");
 

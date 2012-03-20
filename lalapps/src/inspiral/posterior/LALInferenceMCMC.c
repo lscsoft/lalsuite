@@ -153,6 +153,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--Nskip N)                      Number of iterations between disk save (100).\n\
                (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
                (--randomseed seed)              Random seed of sampling distribution (random).\n\
+               (--adaptTau)                     Adaptation decay power, results in adapt length of 10^tau (5).\n\
+               (--noAdapt)                      Do not adapt run.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Likelihood Functions -----------------------------------------------------------------------------------------\n\
