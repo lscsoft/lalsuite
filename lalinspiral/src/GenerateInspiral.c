@@ -446,6 +446,10 @@ XLALGetApproximantFromString(
   {
     *approximant = PhenSpinTaylorRD;
   }
+  else if ( strstr(thisEvent, "SpinTaylorT4" ) )
+  {
+    *approximant = SpinTaylorT4;
+  }
   else if ( strstr(thisEvent, "SpinTaylorFrameless" ) )
   {
 	  *approximant = SpinTaylorFrameless;
