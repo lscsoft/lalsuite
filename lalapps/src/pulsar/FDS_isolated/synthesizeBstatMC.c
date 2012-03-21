@@ -1561,7 +1561,7 @@ XLALComputeBhatCorrection ( const gsl_vector * A_Mu_in, const gsl_matrix *M_mu_n
   /* ---------- */
 
   /* ---------- compute alpha derivatives alpha, alpha_mu = \partial_mu alpha, alpha_mu_nu = partial_mu_nu alpha ---------- */
-  REAL8 alpha = - 3.0 / 4.0 * log (K);
+  /*REAL8 alpha = - 3.0 / 4.0 * log (K);*/
 
   REAL8 a_mu_array [4], a_mu_nu_array[4 * 4];
   gsl_vector_view a_mu_view       = gsl_vector_view_array ( a_mu_array, 4 );
