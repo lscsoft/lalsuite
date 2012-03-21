@@ -560,13 +560,6 @@ LALFrWriteINT2TimeSeries(
     );
 
 void
-LALFrWriteINT2TimeSeries(
-    LALStatus       *status,
-    INT2TimeSeries  *series,
-    FrOutPar        *params
-    );
-
-void
 LALFrWriteINT4TimeSeries(
     LALStatus       *status,
     INT4TimeSeries  *series,
@@ -608,14 +601,6 @@ LALFrWriteCOMPLEX16TimeSeries(
     FrOutPar            *params
     );
 
-
-void
-LALFrWriteINT2FrequencySeries(
-    LALStatus       *status,
-    INT2FrequencySeries  *series,
-    FrOutPar        *params,
-    INT4             subtype
-    );
 
 void
 LALFrWriteINT2FrequencySeries(

@@ -547,6 +547,16 @@ Parameter arguments:\n\
     else mtot_max=2.*(mMax-mMin);
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
+    /* Set the minimum and maximum chirp mass, using user values if specified */
+    ppt=LALInferenceGetProcParamVal(commandLine,"--Mmin");
+    if(ppt)
+        mcMin=atof(ppt->value);
+    else mcMin=pow(mMin*mMin,0.6)/pow(2.0*mMin,0.2);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
+    if(ppt)
+        mcMax=atof(ppt->value);
+    else mcMax=pow(mMax*mMax,0.6)/pow(2.0*mMax,0.2);
+
     INT4 tempint=1;
 	if(LALInferenceGetProcParamVal(commandLine,"--crazyinjectionhlsign") || LALInferenceGetProcParamVal(commandLine,"--crazyInjectionHLSign"))
     {
@@ -563,6 +573,7 @@ Parameter arguments:\n\
     {
         /* Set up the variable parameters */
         tmpVal=mcMin+(mcMax-mcMin)/2.0;
+        
         LALInferenceAddMinMaxPrior(priorArgs,   "chirpmass",    &mcMin, &mcMax,     LALINFERENCE_REAL8_t);
         LALInferenceAddVariable(currentParams,"chirpmass",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
         tmpVal=1.5;

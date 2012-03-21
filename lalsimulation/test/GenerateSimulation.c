@@ -73,7 +73,7 @@ typedef struct tagGSParams {
     REAL8 s1z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
     REAL8 s2x;                /**< (x,y,z) component ofs spin of m2 body */
     REAL8 s2y;                /**< z-axis along line of sight, L in x-z plane */
-    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s1| <= 1 */
+    REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
     REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
   LALSimInspiralInteraction interactionFlags;    /**< flag to control spin and tidal effects */
@@ -501,12 +501,13 @@ int main (int argc , char **argv) {
                     E1y = 0.;
                     E1z = - sin(params->inclination);
                     XLALSimInspiralSpinTaylorT4(&hplus, &hcross,
-                            params->phiRef, 0., params->deltaT, params->m1, 
-                            params->m2, params->fRef, params->distance, 
-                            params->s1x, params->s1y, params->s1z, params->s2x,
-                            params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
-							E1x, E1y, E1z, params->lambda1, params->lambda2, 
-							params->interactionFlags, params->phaseO, params->ampO);
+                        params->phiRef, 0., params->deltaT, params->m1, 
+                        params->m2, params->fRef, params->distance, 
+                        params->s1x, params->s1y, params->s1z, params->s2x,
+                        params->s2y, params->s2z, LNhatx, LNhaty, LNhatz, 
+                        E1x, E1y, E1z, params->lambda1, params->lambda2, 
+                        params->interactionFlags, params->phaseO, params->ampO);
+                    break;
 	    case GSApproximant_PhenSpinTaylorRD:
 	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice);
                     break;

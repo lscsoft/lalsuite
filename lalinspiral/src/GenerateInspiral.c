@@ -278,25 +278,6 @@ LALGenerateInspiral(
 
 
 
-void
-LALGetOrderFromString(
-    LALStatus  *status,
-    CHAR       *thisEvent,
-    LALPNOrder *order
-    )
-
-{
-
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning( "LALGetOrderFromString", "XLALGetOrderFromString" );
-
-  if ( XLALGetOrderFromString( thisEvent, order ) == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
-
 int
 XLALGetOrderFromString(
     CHAR       * restrict thisEvent,
@@ -416,25 +397,6 @@ int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent) {
   return XLAL_SUCCESS;
 }
 
-void
-LALGetApproximantFromString(
-    LALStatus   *status,
-    CHAR        *thisEvent,
-    Approximant *approximant
-    )
-
-{
-
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning("LALGetApproximantFromString", "XLALGetApproximantFromString");
-
-  if ( XLALGetApproximantFromString( thisEvent, approximant) == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
-
 int
 XLALGetApproximantFromString(
     CHAR        * restrict thisEvent,
@@ -483,6 +445,10 @@ XLALGetApproximantFromString(
   else if ( strstr(thisEvent, "PhenSpinTaylorRD" ) )
   {
     *approximant = PhenSpinTaylorRD;
+  }
+  else if ( strstr(thisEvent, "SpinTaylorT4" ) )
+  {
+    *approximant = SpinTaylorT4;
   }
   else if ( strstr(thisEvent, "SpinTaylorFrameless" ) )
   {
@@ -543,26 +509,34 @@ XLALGetApproximantFromString(
 
 
 
-void
-LALGenerateInspiralPopulatePPN(
-    LALStatus             *status,
-    PPNParamStruc         *ppnParams,
-    SimInspiralTable      *thisEvent
+int
+XLALGetTaperFromString(
+    LALSimInspiralApplyTaper * restrict taper,
+    CHAR                     * restrict thisEvent
     )
-
 {
 
-  INITSTATUS(status);
+  if ( ! strcmp( "TAPER_START", thisEvent ) )
+  {
+    *taper = LAL_SIM_INSPIRAL_TAPER_START;
+  }
+  else if ( ! strcmp( "TAPER_END", thisEvent ) )
+  {
+    *taper = LAL_SIM_INSPIRAL_TAPER_END;
+  }
+  else if ( ! strcmp( "TAPER_STARTEND", thisEvent ) )
+  {
+    *taper = LAL_SIM_INSPIRAL_TAPER_STARTEND;
+  }
+  else
+  {
+    XLALPrintError( "Invalid injection tapering option specified: %s\n", thisEvent );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
 
-  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulatePPN", 
-      "XLALGenerateInspiralPopulatePPN" );
-
-  if ( XLALGenerateInspiralPopulatePPN( ppnParams, thisEvent )
-       == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
+
 
 int
 XLALGenerateInspiralPopulatePPN(
@@ -608,29 +582,6 @@ XLALGenerateInspiralPopulatePPN(
   return XLAL_SUCCESS;
 }
 
-
-
-void
-LALGenerateInspiralPopulateInspiral(
-    LALStatus           *status,
-    InspiralTemplate    *inspiralParams,
-    SimInspiralTable    *thisEvent,
-    PPNParamStruc       *ppnParams
-    )
-
-
-{
-  INITSTATUS(status);
-
-  XLALPrintDeprecationWarning( "LALGenerateInspiralPopulateInspiral",
-     "XLALGenerateInspiralPopulateInspiral" );
-
-  if ( XLALGenerateInspiralPopulateInspiral( inspiralParams, thisEvent, ppnParams )
-         == XLAL_FAILURE )
-    ABORTXLAL( status );
-
-  RETURN( status );
-}
 
 
 int

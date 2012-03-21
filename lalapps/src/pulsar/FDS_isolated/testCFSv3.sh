@@ -12,8 +12,8 @@ cfs_code="${builddir}lalapps_CFSv3"
 dumpSFT_code="${injectdir}lalapps_dumpSFT"
 extract_code="lalapps_ConvertToSFTv2"
 
-noiseSFTdir="./noiseSFTs"
-SFTdir="./SFTdir"
+noiseSFTdir="./testCFSv3_noiseSFTs"
+SFTdir="./testCFSv3_sfts"
 
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files

@@ -153,6 +153,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--Nskip N)                      Number of iterations between disk save (100).\n\
                (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
                (--randomseed seed)              Random seed of sampling distribution (random).\n\
+               (--adaptTau)                     Adaptation decay power, results in adapt length of 10^tau (5).\n\
+               (--noAdapt)                      Do not adapt run.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Likelihood Functions -----------------------------------------------------------------------------------------\n\
@@ -650,9 +652,9 @@ void initVariables(LALInferenceRunState *state)
       {
         approx = SpinTaylor;
       }
-    else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
+    else if ( ! strcmp( "SpinTaylorT4", ppt->value ) )
       {
-        approx = SpinTaylorT3;
+        approx = SpinTaylorT4;
       }
     else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
       {
@@ -684,7 +686,7 @@ void initVariables(LALInferenceRunState *state)
                  "unknown approximant %s specified: "
                  "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
                  "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-                 "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
+                 "EOBNRv2HM, SpinTaylor, SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4\n"
                  "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
         exit( 1 );
       }
@@ -1177,7 +1179,7 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
-  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD) && !ppt){
+  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD || approx==SpinTaylorT4) && !ppt){
 
 
     ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
