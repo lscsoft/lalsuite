@@ -71,7 +71,6 @@ EXTRA_DIST = \
 LALInferenceVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALInferenceConfig.h
-	@echo "creating LALInferenceVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALInference $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALInference $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

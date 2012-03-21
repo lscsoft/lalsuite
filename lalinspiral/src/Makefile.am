@@ -254,8 +254,7 @@ EXTRA_DIST = \
 LALInspiralVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALInspiralConfig.h
-	@echo "creating LALInspiralVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALInspiral $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALInspiral $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
 

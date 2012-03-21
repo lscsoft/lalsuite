@@ -24,6 +24,7 @@ doc/lalapps.log
 doc/lalapps.out
 doc/lalapps.pdf
 doc/lalapps.toc
+git_version.py
 lalapps-*.tar.gz
 lalapps.spec
 libtool

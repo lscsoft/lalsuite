@@ -54,8 +54,7 @@ EXTRA_DIST = \
 LALXMLVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALXMLConfig.h
-	@echo "creating LALXMLVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALXML $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALXML $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
 
