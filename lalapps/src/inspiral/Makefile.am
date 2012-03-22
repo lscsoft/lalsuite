@@ -39,17 +39,39 @@ STOCHBANKSRC = stochasticbank.c
 if LALFRAME
 if LALMETAIO
 if LALINSPIRAL
-LALFRAME_LALMETAIO_PROGS = lalapps_inspiral lalapps_tmpltbank \
-               lalapps_inca lalapps_sire lalapps_coire lalapps_siva \
-               lalapps_inspinj lalapps_injcut lalapps_splitbank \
-               lalapps_minj lalapps_bbhinj lalapps_blindinj \
-               lalapps_inspfrinj lalapps_gwf2xml \
-               lalapps_thinca lalapps_trigbank lalapps_populate_chisq lalapps_trigscan \
-               lalapps_spininj lalapps_cohire \
-               lalapps_coherentbank lalapps_coinext \
-               lalapps_randombank lalapps_ninja lalapps_fr_ninja \
-               lalapps_mdc_ninja lalapps_calcexpsnr lalapps_sned \
-               lalapps_corse lalapps_skymap lalapps_coinj lalapps_cbc_stochasticbank
+LALFRAME_LALMETAIO_PROGS = \
+	lalapps_inspiral \
+	lalapps_tmpltbank \
+	lalapps_inca \
+	lalapps_sire \
+	lalapps_coire \
+	lalapps_siva \
+	lalapps_inspinj \
+	lalapps_injcut \
+	lalapps_splitbank \
+	lalapps_minj \
+	lalapps_bbhinj \
+	lalapps_blindinj \
+	lalapps_inspfrinj \
+	lalapps_gwf2xml \
+	lalapps_thinca \
+	lalapps_trigbank \
+	lalapps_populate_chisq \
+	lalapps_trigscan \
+	lalapps_spininj \
+	lalapps_cohire \
+	lalapps_coherentbank \
+	lalapps_coinext \
+	lalapps_randombank \
+	lalapps_ninja \
+	lalapps_fr_ninja \
+	lalapps_mdc_ninja \
+	lalapps_calcexpsnr \
+	lalapps_sned \
+	lalapps_corse \
+	lalapps_skymap \
+	lalapps_coinj \
+	lalapps_cbc_stochasticbank
 lalapps_inspiral_SOURCES = $(INSPIRALSRC)
 lalapps_cohire_SOURCES = $(COHIRESRC)
 lalapps_coherentbank_SOURCES = $(COHEREBANK)
@@ -97,28 +119,46 @@ endif
 endif
 endif
 
-bin_PROGRAMS = $(LALFRAME_LALMETAIO_PROGS) $(LALPULSAR_PROGS)
+bin_PROGRAMS = \
+	$(LALFRAME_LALMETAIO_PROGS) \
+	$(LALPULSAR_PROGS)
 
 if HAVE_PYTHON
-bin_SCRIPTS = lalapps_inspiral_pipe lalapps_inspiral_hipe \
-              lalapps_inspiral_ssipe lalapps_multi_hipe lalapps_trigger_hipe \
-              lalapps_inspiral_online_pipe \
-              lalapps_inspiral_online_pipe_inject \
-              lalapps_ihope_daily_page \
-              lalapps_flag_triggers lalapps_check_flag \
-              lalapps_check_hipe_times lalapps_ihope \
-              lalapps_followup0_pipe lalapps_plot_hipe \
-              lalapps_ihope_status lalapps_write_ihope_page \
-	      lalapps_compare_ini lalapps_link_old_ihope \
-	      lalapps_generate_upper_limits lalapps_followup0_page \
-	      lalapps_cbc_pipedown lalapps_glitch_probe \
-              lalapps_cohPTF_hipe lalapps_coh_PTF_post_processing
-pkgpython_DATA = inspiral.py inspiralutils.py
+bin_SCRIPTS = \
+	lalapps_inspiral_pipe \
+	lalapps_inspiral_hipe \
+	lalapps_inspiral_ssipe \
+	lalapps_multi_hipe \
+	lalapps_trigger_hipe \
+	lalapps_inspiral_online_pipe \
+	lalapps_inspiral_online_pipe_inject \
+	lalapps_ihope_daily_page \
+	lalapps_flag_triggers \
+	lalapps_check_flag \
+	lalapps_check_hipe_times \
+	lalapps_ihope \
+	lalapps_followup0_pipe \
+	lalapps_plot_hipe \
+	lalapps_ihope_status \
+	lalapps_write_ihope_page \
+	lalapps_compare_ini \
+	lalapps_link_old_ihope \
+	lalapps_generate_upper_limits \
+	lalapps_followup0_page \
+	lalapps_cbc_pipedown \
+	lalapps_glitch_probe \
+	lalapps_cohPTF_hipe \
+	lalapps_coh_PTF_post_processing
+pkgpython_DATA = \
+	inspiral.py \
+	inspiralutils.py
 endif
 
-dist_bin_SCRIPTS = lalapps_makeblindinj lalapps_makeblindinj_himass \
-                   lalapps_cbc_code_compare \
-                   followup/followup_InspiralDataMover.sh
+dist_bin_SCRIPTS = \
+	lalapps_makeblindinj \
+	lalapps_makeblindinj_himass \
+	lalapps_cbc_code_compare \
+	followup/followup_InspiralDataMover.sh
 
 python_config.sed: Makefile
 	@-rm -f python_config.sed
@@ -246,29 +286,116 @@ lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_con
 	@chmod +x lalapps_coh_PTF_post_processing
 
 
-pkgdata_DATA = BNSMasses.dat inspsrcs100Mpc.errors inspiral_pipe.ini inspiral_hipe.ini online.ini online_inject_bbh.ini cbc_pipedown.ini followup0_pipe.ini plot_hipe.ini write_ihope_page.ini write_ihope_style.css s5_background_H0H1-RDS_R_L1-cbc.txt s5_background_H0H1-RDS_R_L1-seismic-cbc.txt s5_background_H0H2-RDS_R_L1-cbc.txt s5_background_H0H2-RDS_R_L1-seismic-cbc.txt s5_background_H1_hoft_cbc.txt s5_background_H2_hoft_cbc.txt s5_background_L0L1-RDS_R_L1-cbc.txt s5_background_L0L1-RDS_R_L1-seismic-cbc.txt s5_background_L1_hoft_cbc.txt s5_background_V1-raw-cbc.txt s5_background_V1-raw-seismic-cbc.txt s5_background_V1_hoft_cbc.txt s5_foreground_H0H1-RDS_R_L1-cbc.txt s5_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s5_foreground_H0H2-RDS_R_L1-cbc.txt s5_foreground_H0H2-RDS_R_L1-seismic-cbc.txt s5_foreground_H1_hoft_cbc.txt s5_foreground_H2_hoft_cbc.txt s5_foreground_L0L1-RDS_R_L1-cbc.txt s5_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s5_foreground_L1_hoft_cbc.txt s5_foreground_V1-raw-cbc.txt s5_foreground_V1-raw-seismic-cbc.txt s5_foreground_V1_hoft_cbc.txt s6_background_H0H1-RDS_R_L1-cbc.txt s6_background_H0H1-RDS_R_L1-seismic-cbc.txt s6_background_H1_hoft_cbc.txt s6_background_L0L1-RDS_R_L1-cbc.txt s6_background_L0L1-RDS_R_L1-seismic-cbc.txt s6_background_L1_hoft_cbc.txt s6_background_V1-raw-cbc.txt s6_background_V1-raw-seismic-cbc.txt s6_background_V1_hoft_cbc.txt s6_foreground_H0H1-RDS_R_L1-cbc.txt s6_foreground_H0H1-RDS_R_L1-seismic-cbc.txt s6_foreground_H1_hoft_cbc.txt s6_foreground_L0L1-RDS_R_L1-cbc.txt s6_foreground_L0L1-RDS_R_L1-seismic-cbc.txt s6_foreground_L1_hoft_cbc.txt s6_foreground_V1-raw-cbc.txt s6_foreground_V1-raw-seismic-cbc.txt s6_foreground_V1_hoft_cbc.txt ratioTest.pickle remove_h1h2.sql cluster.sql simplify.sql mcmcsummary.R
+pkgdata_DATA = \
+	BNSMasses.dat \
+	inspsrcs100Mpc.errors \
+	inspiral_pipe.ini \
+	inspiral_hipe.ini \
+	online.ini \
+	online_inject_bbh.ini \
+	cbc_pipedown.ini \
+	followup0_pipe.ini \
+	plot_hipe.ini \
+	write_ihope_page.ini \
+	write_ihope_style.css \
+	s5_background_H0H1-RDS_R_L1-cbc.txt \
+	s5_background_H0H1-RDS_R_L1-seismic-cbc.txt \
+	s5_background_H0H2-RDS_R_L1-cbc.txt \
+	s5_background_H0H2-RDS_R_L1-seismic-cbc.txt \
+	s5_background_H1_hoft_cbc.txt \
+	s5_background_H2_hoft_cbc.txt \
+	s5_background_L0L1-RDS_R_L1-cbc.txt \
+	s5_background_L0L1-RDS_R_L1-seismic-cbc.txt \
+	s5_background_L1_hoft_cbc.txt \
+	s5_background_V1-raw-cbc.txt \
+	s5_background_V1-raw-seismic-cbc.txt \
+	s5_background_V1_hoft_cbc.txt \
+	s5_foreground_H0H1-RDS_R_L1-cbc.txt \
+	s5_foreground_H0H1-RDS_R_L1-seismic-cbc.txt \
+	s5_foreground_H0H2-RDS_R_L1-cbc.txt \
+	s5_foreground_H0H2-RDS_R_L1-seismic-cbc.txt \
+	s5_foreground_H1_hoft_cbc.txt \
+	s5_foreground_H2_hoft_cbc.txt \
+	s5_foreground_L0L1-RDS_R_L1-cbc.txt \
+	s5_foreground_L0L1-RDS_R_L1-seismic-cbc.txt \
+	s5_foreground_L1_hoft_cbc.txt \
+	s5_foreground_V1-raw-cbc.txt \
+	s5_foreground_V1-raw-seismic-cbc.txt \
+	s5_foreground_V1_hoft_cbc.txt \
+	s6_background_H0H1-RDS_R_L1-cbc.txt \
+	s6_background_H0H1-RDS_R_L1-seismic-cbc.txt \
+	s6_background_H1_hoft_cbc.txt \
+	s6_background_L0L1-RDS_R_L1-cbc.txt \
+	s6_background_L0L1-RDS_R_L1-seismic-cbc.txt \
+	s6_background_L1_hoft_cbc.txt \
+	s6_background_V1-raw-cbc.txt \
+	s6_background_V1-raw-seismic-cbc.txt \
+	s6_background_V1_hoft_cbc.txt \
+	s6_foreground_H0H1-RDS_R_L1-cbc.txt \
+	s6_foreground_H0H1-RDS_R_L1-seismic-cbc.txt \
+	s6_foreground_H1_hoft_cbc.txt \
+	s6_foreground_L0L1-RDS_R_L1-cbc.txt \
+	s6_foreground_L0L1-RDS_R_L1-seismic-cbc.txt \
+	s6_foreground_L1_hoft_cbc.txt \
+	s6_foreground_V1-raw-cbc.txt \
+	s6_foreground_V1-raw-seismic-cbc.txt \
+	s6_foreground_V1_hoft_cbc.txt \
+	ratioTest.pickle \
+	remove_h1h2.sql \
+	cluster.sql \
+	simplify.sql \
+	mcmcsummary.R
 
-
-EXTRA_DIST = $(INSPIRALSRC) $(TMPLTBANKSRC) \
-             $(SIRESRC) $(COIRESRC) $(SIVASRC) $(MINJSRC) \
-             $(INCASRC) $(COHERESRC) $(INSPINJSRC) \
-             $(SPLITBANKSRC) inspiral.py inspiralutils.py inspiral_pipe.in \
-             inspiral_online_pipe.in inspiral_hipe.in inspiral_ssipe.in \
-	     cohPTF_hipe.in multi_hipe.in trigger_hipe.in ihope.in \
-	     ihope_status.in inspiral_online_pipe_inject.in \
-	     check_hipe_times.in followup0_pipe.in plot_hipe.in \
-	     write_ihope_page.in compare_ini.in link_old_ihope.in \
-	     generate_upper_limits.in followup0_page.in cbc_pipedown.in \
-	     ihope_daily_page.in check_flag.in flag_triggers.in \
-	     glitch_probe.in coh_PTF_post_processing.in $(DATA)
+EXTRA_DIST = \
+	$(INSPIRALSRC) \
+	$(TMPLTBANKSRC) \
+	$(SIRESRC) \
+	$(COIRESRC) \
+	$(SIVASRC) \
+	$(MINJSRC) \
+	$(INCASRC) \
+	$(COHERESRC) \
+	$(INSPINJSRC) \
+	$(SPLITBANKSRC) \
+	inspiral.py \
+	inspiralutils.py \
+	inspiral_pipe.in \
+	inspiral_online_pipe.in \
+	inspiral_hipe.in \
+	inspiral_ssipe.in \
+	cohPTF_hipe.in \
+	multi_hipe.in \
+	trigger_hipe.in \
+	ihope.in \
+	ihope_status.in \
+	inspiral_online_pipe_inject.in \
+	check_hipe_times.in \
+	followup0_pipe.in \
+	plot_hipe.in \
+	write_ihope_page.in \
+	compare_ini.in \
+	link_old_ihope.in \
+	generate_upper_limits.in \
+	followup0_page.in \
+	cbc_pipedown.in \
+	ihope_daily_page.in \
+	check_flag.in \
+	flag_triggers.in \
+	glitch_probe.in \
+	coh_PTF_post_processing.in $(DATA)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
-CLEANFILES = $(bin_SCRIPTS) python_config.sed
+CLEANFILES = \
+	$(bin_SCRIPTS) \
+	python_config.sed
 
-MOSTLYCLEANFILES = *INSPIRAL*.xml *INSPIRAL*.gwf \
-                   *TMPLTBANK*.gwf *TMPLTBANK*.xml
+MOSTLYCLEANFILES = \
+	*INSPIRAL*.xml \
+	*INSPIRAL*.gwf \
+	*TMPLTBANK*.gwf \
+	*TMPLTBANK*.xml
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
