@@ -67,29 +67,34 @@ EXTRA_DIST = \
 	lalapps_vo_nest2pos.in
 
 python_config.sed: Makefile
-	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
+	@-rm -f python_config.sed
+	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
+	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
 lalapps_combine_evidence: $(srcdir)/combine_evidence.in python_config.sed
-	sed -f python_config.sed $(srcdir)/combine_evidence.in > lalapps_combine_evidence
-	chmod a+x lalapps_combine_evidence
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/combine_evidence.in > lalapps_combine_evidence
+	@chmod a+x lalapps_combine_evidence
 
 lalapps_coherence_test: $(srcdir)/coherence_test.in python_config.sed
-	sed -f python_config.sed $(srcdir)/coherence_test.in > lalapps_coherence_test
-	chmod a+x lalapps_coherence_test
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/coherence_test.in > lalapps_coherence_test
+	@chmod a+x lalapps_coherence_test
 
 lalapps_merge_nested_sampling_runs: $(srcdir)/merge_nested_sampling_runs.in python_config.sed
-	sed -f python_config.sed $(srcdir)/merge_nested_sampling_runs.in >lalapps_merge_nested_sampling_runs
-	chmod a+x lalapps_merge_nested_sampling_runs
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/merge_nested_sampling_runs.in >lalapps_merge_nested_sampling_runs
+	@chmod a+x lalapps_merge_nested_sampling_runs
 
 lalapps_nest_pipe: $(srcdir)/nest_pipe.in python_config.sed
-	sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
-	chmod a+x lalapps_nest_pipe
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
+	@chmod a+x lalapps_nest_pipe
 
 lalapps_vo_nest2pos: $(srcdir)/lalapps_vo_nest2pos.in python_config.sed
-	sed -f python_config.sed $(srcdir)/lalapps_vo_nest2pos.in >lalapps_vo_nest2pos
-	chmod a+x lalapps_vo_nest2pos
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/lalapps_vo_nest2pos.in >lalapps_vo_nest2pos
+	@chmod a+x lalapps_vo_nest2pos
 
 
 CLEANFILES = \
