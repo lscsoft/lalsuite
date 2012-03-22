@@ -32,91 +32,47 @@ if FRAME
 if LALFRAME
 if LALMETAIO
 if LALINSPIRAL
+GENERAL_SOURCES = \
+	errutil.c \
+	errutil.h \
+	gpstime.c \
+	gpstime.h \
+	getdata.c \
+	getdata.h \
+	injsgnl.c \
+	injsgnl.h \
+	getresp.c \
+	getresp.h \
+	spectrm.c \
+	spectrm.h \
+	segment.c \
+	segment.h
+COH_PTF_SOURCES = \
+	coh_PTF.h \
+	coh_PTF_option.c \
+	coh_PTF_template.c \
+	coh_PTF_output.c \
+	coh_PTF_bankveto.c \
+	coh_PTF_utils.c
 lalapps_ring_SOURCES = \
 	ring.c \
 	ring.h \
 	ring_option.c \
 	ring_filter.c \
 	ring_output.c \
-	errutil.c \
-	errutil.h \
-	gpstime.c \
-	gpstime.h \
-	getdata.c \
-	getdata.h \
-	injsgnl.c \
-	injsgnl.h \
-	getresp.c \
-	getresp.h \
-	spectrm.c \
-	spectrm.h \
-	segment.c \
-	segment.h
+	$(GENERAL_SOURCES)
 lalapps_coh_PTF_inspiral_SOURCES = \
 	coh_PTF_inspiral.c \
-	coh_PTF.h \
-	coh_PTF_option.c \
-	coh_PTF_template.c \
-	coh_PTF_output.c \
-	coh_PTF_bankveto.c \
-	coh_PTF_utils.c \
-	errutil.c \
-	errutil.h \
-	gpstime.c \
-	gpstime.h \
-	injsgnl.c \
-	injsgnl.h \
-	getdata.c \
-	getdata.h \
-	getresp.c \
-	getresp.h \
-	spectrm.c \
-	spectrm.h \
-	segment.c \
-	segment.h
+	$(COH_PTF_SOURCES) \
+	$(GENERAL_SOURCES)
 lalapps_coh_PTF_testing_SOURCES = \
 	coh_PTF_testing.c \
-	coh_PTF.h \
-	coh_PTF_option.c \
-	coh_PTF_template.c \
-	coh_PTF_output.c \
-	coh_PTF_bankveto.c \
-	coh_PTF_utils.c \
-	errutil.c \
-	errutil.h \
-	gpstime.c \
-	gpstime.h \
-	injsgnl.c \
-	injsgnl.h \
-	getdata.c \
-	getdata.h \
-	getresp.c \
-	getresp.h \
-	spectrm.c \
-	spectrm.h \
-	segment.c \
-	segment.h
+	$(COH_PTF_SOURCES) \
+	$(GENERAL_SOURCES)
 lalapps_coh_PTF_spin_checker_SOURCES = \
 	coh_PTF_spin_checker.c \
-	coh_PTF.h \
-	coh_PTF_option.c \
-	coh_PTF_template.c \
-	coh_PTF_output.c \
-	coh_PTF_utils.c \
-	errutil.c \
-	errutil.h \
-	gpstime.c \
-	gpstime.h \
-	injsgnl.c \
-	injsgnl.h \
-	getdata.c \
-	getdata.h \
-	getresp.c \
-	getresp.h \
-	spectrm.c \
-	spectrm.h \
-	segment.c \
-	segment.h
+	$(COH_PTF_SOURCES) \
+	$(GENERAL_SOURCES)
 lalapps_rinj_SOURCES = rinj.c
 lalapps_ringread_SOURCES = ringread.c
 lalapps_rinca_SOURCES = rinca.c
