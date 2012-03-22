@@ -254,7 +254,9 @@ Nested sampling arguments:\n\
 (--mcmcprop)\tUse PTMCMC proposal engine\n\
 \t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 \t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
-\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n";
+\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
+\t(--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
+\t(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
@@ -292,7 +294,13 @@ Nested sampling arguments:\n\
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 	runState->prior = &LALInferenceInspiralPriorNormalised;
-	
+
+	if(LALInferenceGetProcParamVal(commandLine,"--correlatedgaussianlikelihood"))
+        runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
+    if(LALInferenceGetProcParamVal(commandLine,"--bimodalgaussianlikelihood"))
+        runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
+    
+    
 	#ifdef HAVE_LIBLALXML
 	runState->logsample=LogNSSampleAsMCMCSampleToArray;
 	#else
@@ -761,7 +769,7 @@ Arguments for each section follow:\n\n";
 	
 	/* Check for student-t and apply */
 	initStudentt(state);
-
+    
        /* Print command line arguments if help requested */
         if(LALInferenceGetProcParamVal(state->commandLine,"--help"))
         {
