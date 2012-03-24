@@ -240,7 +240,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 acceptanceCount = 0;
   INT4 swapAttempt=0;
   REAL8 nullLikelihood;
-  INT4 PTacl=0;
   REAL8 trigSNR = 0.0;
   REAL8 *tempLadder = NULL;			//the temperature ladder
   REAL8 *annealDecay = NULL;
@@ -367,7 +366,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine,"--annealStart"))
     annealStart = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealStart")->value);
 
-  INT4  annealLength    = 1;                                  // Number of auto correlation lenghts to cool temperatures to ~1.0
+  INT4  annealLength    = 5;                                  // Number of auto correlation lenghts to cool temperatures to ~1.0
   if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
     annealLength = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealLength")->value);
 
