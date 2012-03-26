@@ -120,6 +120,7 @@ that clearly stand over the noise level.
 */
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/CLR.h>
 
 void LALRefInterference (LALStatus    *status,

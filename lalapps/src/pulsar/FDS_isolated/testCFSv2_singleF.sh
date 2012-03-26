@@ -5,14 +5,6 @@
 ## take user-arguments
 extra_args="$@"
 
-## allow 'make test' to work from builddir != srcdir
-# if [ -n "${srcdir}" ]; then
-#     builddir="./";
-#     injectdir="../Injections/"
-#     fdsdir="../FDS_isolated/"
-# else
-#     srcdir=.
-# fi
 builddir="./";
 injectdir="../Injections/"
 fdsdir="../FDS_isolated/"
@@ -29,7 +21,7 @@ fi
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
 
-SFTdir="TestSFTs"
+SFTdir="testCFSv2_singleF_sfts"
 SFTfiles="$SFTdir${dirsep}*"
 
 

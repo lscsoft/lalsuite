@@ -3,13 +3,8 @@
 ## take user-arguments for CFS-resamp:
 extra_args="$@"
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../../Injections/"
-else
-    srcdir=.
-fi
+builddir="./";
+injectdir="../../Injections/"
 
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
@@ -18,7 +13,7 @@ cfs_code="${builddir}../lalapps_ComputeFStatistic"
 cfs2_code="${builddir}lalapps_ComputeFStatistic_resamp"
 cmp_code="${builddir}../lalapps_compareFstats"
 
-SFTdir="./testSFTs"
+SFTdir="./testCFSv2_resamp_sfts"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then

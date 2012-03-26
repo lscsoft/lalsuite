@@ -34,6 +34,7 @@
 /*                                UWM - November 2002                            */
 /*********************************************************************************/
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "Calibrate60sSFTs.h"
 INT4 SFTno,RealSFTno; 
 INT4 lalDebugLevel=3;

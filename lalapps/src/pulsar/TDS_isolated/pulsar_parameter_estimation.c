@@ -32,6 +32,7 @@
 
 *******************************************************************************/
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation.h"
 
 /* global variable */

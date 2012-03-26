@@ -36,6 +36,7 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SynthesizeCWDraws.h>
 
 /*---------- DEFINES ----------*/

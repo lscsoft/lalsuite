@@ -60,6 +60,7 @@ LALFree()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -384,15 +385,15 @@ LALFindChirpInjectSignals (
 
           if ( ! strcmp( "TAPER_START", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_START );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_START );
           }
           else if (  ! strcmp( "TAPER_END", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_END );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_END );
           }
           else if (  ! strcmp( "TAPER_STARTEND", thisEvent->taper ) )
           {
-              XLALInspiralWaveTaper( signalvec.data, INSPIRAL_TAPER_STARTEND );
+              XLALSimInspiralREAL4WaveTaper( signalvec.data, LAL_SIM_INSPIRAL_TAPER_STARTEND );
           }
           else if ( strcmp( "TAPER_NONE", thisEvent->taper ) )
           {
@@ -826,6 +827,7 @@ LALFindChirpSetAnalyseTemplate (
   REAL4                 dt0, dt3, metricDist, match;
   CHAR                  myMsg[8192];
   UINT4                 approximant;
+  int                   oldxlalErrno;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
@@ -852,9 +854,12 @@ LALFindChirpSetAnalyseTemplate (
     /* Get the approximant. If the approximant is not BCV or BCVSpin, then */
     /* we try to tag the templates ... the BCV waveforms are not included  */
     /* yet in the scheme of things                                         */
-    LALGetApproximantFromString(status->statusPtr, injections->waveform,
-        &approximant);
-    CHECKSTATUSPTR (status);
+    oldxlalErrno = xlalErrno;
+    xlalErrno = 0;
+    if (XLALGetApproximantFromString(injections->waveform,
+        &approximant) == XLAL_FAILURE)
+      ABORTXLAL(status);
+    xlalErrno = oldxlalErrno;
 
     if (approximant != (UINT4)BCV &&
         approximant != (UINT4)BCVSpin &&
@@ -894,12 +899,16 @@ LALFindChirpSetAnalyseTemplate (
       mmFTemplate->tSampling  = (REAL4)(sampleRate);
       mmFTemplate->massChoice = m1Andm2;
       mmFTemplate->ieta       = 1.L;
-      LALGetApproximantFromString(status->statusPtr, injections->waveform,
-          &(mmFTemplate->approximant));
-      CHECKSTATUSPTR (status);
-      LALGetOrderFromString(status->statusPtr, injections->waveform,
-          &(mmFTemplate->order));
-      CHECKSTATUSPTR (status);
+      oldxlalErrno = xlalErrno;
+      xlalErrno = 0;
+      if (XLALGetApproximantFromString(injections->waveform,
+          &(mmFTemplate->approximant)) == XLAL_FAILURE)
+        ABORTXLAL(status);
+
+      if (XLALGetOrderFromString(injections->waveform,
+          &(mmFTemplate->order)) == XLAL_FAILURE)
+        ABORTXLAL(status);
+      xlalErrno = oldxlalErrno;
 
       snprintf (myMsg, sizeof(myMsg)/sizeof(*myMsg),
           "%d Injections, Order = %d, Approx = %d\n\n",

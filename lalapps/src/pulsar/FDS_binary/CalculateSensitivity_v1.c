@@ -38,6 +38,7 @@
 /************************************************************************************/
 
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "CalculateSensitivity_v1.h" 
 
 int ReadSource(char *,char *,LIGOTimeGPS *,binarysource *); 

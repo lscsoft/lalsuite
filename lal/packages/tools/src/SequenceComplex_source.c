@@ -11,7 +11,7 @@ SEQUENCETYPE *CSEQUENCE (
 	unsigned int i;
 
 	for(i = 0; i < sequence->length; i++)
-		sequence->data[i].im = -sequence->data[i].im;
+		sequence->data[i] = CONJ(sequence->data[i]);
 
 	return sequence;
 }

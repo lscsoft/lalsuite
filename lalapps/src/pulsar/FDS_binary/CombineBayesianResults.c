@@ -430,9 +430,15 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	}
 
 	/* if we've found the Bayes factor information line then the actual individual Bayes factors are 3 lines later */
-	for (k=0;k<3;k++) fgets(line,sizeof(line),fp);
+	for (k=0;k<3;k++) {
+          if ( fgets(line,sizeof(line),fp) == NULL ) {
+            XLAL_ERROR (XLAL_EIO, "\nfgets() failed\n");
+          }
+        }
 	for (k=0;k<(INT4)((*resultsfiles)->file[i].nseg);k++) {
-	  fgets(line,sizeof(line),fp);
+          if ( fgets(line,sizeof(line),fp) == NULL ) {
+            XLAL_ERROR (XLAL_EIO, "\nfgets() failed\n");
+          }
 	  sscanf(line,"%d %d %lf",&((*resultsfiles)->file[i].Bayes_start->data[k]),
 		 &((*resultsfiles)->file[i].Bayes_end->data[k]),
 		 &((*resultsfiles)->file[i].Bayes_perseg->data[k]));
@@ -492,9 +498,15 @@ int XLALReadResultsDir(BayesianResultsFileList **resultsfiles,     /**< [out] a 
 	  sscanf(strstr(c,"=")+2,"%s",((*resultsfiles)->file[i].prior[j]));
 
 	  /* if we've found the prior information line then the actual pdf is 3 lines later */
-	  for (k=0;k<3;k++) fgets(line,sizeof(line),fp);
+	  for (k=0;k<3;k++) {
+            if ( fgets(line,sizeof(line),fp) == NULL ) {
+              XLAL_ERROR (XLAL_EIO, "\nfgets() failed\n");
+            }
+          }
 	  for (k=0;k<(INT4)((*resultsfiles)->file[i].length[j]);k++) {
-	    fgets(line,sizeof(line),fp);
+            if ( fgets(line,sizeof(line),fp) == NULL ) {
+              XLAL_ERROR (XLAL_EIO, "\nfgets() failed\n");
+            }
 	    sscanf(line,"%*e %le %*e %le %*e %le",&((*resultsfiles)->file[i].logposterior[j]->data[k]),
 		   &((*resultsfiles)->file[i].logposterior_fixed[j]->data[k]),
 		   &((*resultsfiles)->file[i].logprior[j]->data[k]));

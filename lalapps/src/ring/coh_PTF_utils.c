@@ -1,3 +1,4 @@
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "coh_PTF.h"
 
 /* gets the data, performs any injections, and conditions the data */

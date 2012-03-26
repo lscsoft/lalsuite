@@ -20,8 +20,6 @@
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALSimInspiral.h>
-#define LAL_USE_COMPLEX_SHORT_MACROS
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 
 /**
@@ -57,7 +55,7 @@ COMPLEX16 XLALSimInspiralPNMode22(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+			XLAL_ERROR_VAL(0, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 6:
 			re += ((27027409.0/646800.0) - (856.0/105.0)*LAL_GAMMA 
@@ -83,8 +81,8 @@ COMPLEX16 XLALSimInspiralPNMode22(
 		case 0:
 			re += 1.0;
 	}
-	ans = cmul(cpolar(1.0, -2.0*phi), crect(re, im));
-	ans = cmulr(ans, (fac*nu*m/r)*v2);
+	ans = CX16polar(1.0, -2.0*phi) * CX16rect(re, im);
+	ans = ans * ((fac*nu*m/r)*v2);
 	return ans;
 }
 
@@ -120,7 +118,7 @@ COMPLEX16 XLALSimInspiralPNMode21(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+			XLAL_ERROR_VAL(0, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re -= ((43.0/126.0) + (509.0/126.0)*nu 
@@ -136,8 +134,8 @@ COMPLEX16 XLALSimInspiralPNMode21(
 		case 0:
 			re += 0.0;
 	}
-	ans = cmul(cpolar(1.0, -phi), crect(re, im));
-	ans = cmuli(ans, (fac*nu*dm/r)*v2*v);
+	ans = CX16polar(1.0, -phi) * CX16rect(re, im);
+	ans = ans * I * ((fac*nu*dm/r)*v2*v);
 	return ans;
 }
 
@@ -173,7 +171,7 @@ COMPLEX16 XLALSimInspiralPNMode33(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+			XLAL_ERROR_VAL(0, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += ((123.0/110.0) - (1838.0/165.0)*nu 
@@ -190,8 +188,8 @@ COMPLEX16 XLALSimInspiralPNMode33(
 		case 0:
 			re += 0.0;
 	}
-	ans = cmul(cpolar(1.0, -3.0*phi), crect(re, im));
-	ans = cmuli(ans, (fac*nu*dm/r)*v2*v);
+	ans = CX16polar(1.0, -3.0*phi) * CX16rect(re, im);
+	ans = ans * I * ((fac*nu*dm/r)*v2*v);
 	return ans;
 }
 
@@ -227,7 +225,7 @@ COMPLEX16 XLALSimInspiralPNMode32(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+			XLAL_ERROR_VAL(0, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += 2.0*LAL_PI*(1.0 - 3.0*nu)*v2*v;
@@ -243,8 +241,8 @@ COMPLEX16 XLALSimInspiralPNMode32(
 		case 0:
 			re += 0.0;
 	}
-	ans = cmul(cpolar(1.0, -2.0*phi), crect(re, im));
-	ans = cmulr(ans, (fac*nu*m/r)*v2*v2);
+	ans = CX16polar(1.0, -2.0*phi) * CX16rect(re, im);
+	ans = ans * ((fac*nu*m/r)*v2*v2);
 	return ans;
 }
 
@@ -280,7 +278,7 @@ COMPLEX16 XLALSimInspiralPNMode31(
 	switch (O) {
 		default: /* unsupported pN order */
 			XLALPrintError("XLAL Error - %s: PN order %d%s not supported\n", __func__, O/2, O%2?".5":"" );
-			XLAL_ERROR_VAL(czero, XLAL_EINVAL);
+			XLAL_ERROR_VAL(0, XLAL_EINVAL);
 		case -1: /* use highest available pN order */
 		case 5:
 			re += ((607.0/198.0) - (136.0/99.0)*nu 
@@ -296,7 +294,7 @@ COMPLEX16 XLALSimInspiralPNMode31(
 		case 0:
 			re += 0.0;
 	}
-	ans = cmul(cpolar(1.0, -phi), crect(re, im));
-	ans = cmuli(ans, (fac*nu*dm/r)*v2*v);
+	ans = CX16polar(1.0, -phi) * CX16rect(re, im);
+	ans = ans * I * ((fac*nu*dm/r)*v2*v);
 	return ans;
 }

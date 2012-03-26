@@ -31,6 +31,7 @@
 
 #include <complex.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALComplex.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>

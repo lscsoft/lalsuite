@@ -7,7 +7,10 @@
  * targeted pulsar searches.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_models.h"
+
+static BinaryPulsarParams empty_BinaryPulsarParams;
 
 /******************************************************************************/
 /*                            MODEL FUNCTIONS                                 */
@@ -28,7 +31,7 @@
  * \sa pulsar_model
  */
 void get_pulsar_model( LALInferenceIFOData *data ){
-  BinaryPulsarParams pars;
+  BinaryPulsarParams pars = empty_BinaryPulsarParams; /* initialise as empty */
   
   /* set model parameters (including rescaling) */
   pars.h0 = rescale_parameter( data, "h0" );
@@ -70,12 +73,12 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.f3 = rescale_parameter( data, "f3" );
   pars.f4 = rescale_parameter( data, "f4" );
   pars.f5 = rescale_parameter( data, "f5" );
-  
-  /* binary system model - NOT pulsar model */
-  pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
 
-  /* binary parameters */
-  if( pars.model != NULL ){
+  /* check if there are binary parameters */
+  if( LALInferenceCheckVariable(data->modelParams, "model") ){
+    /* binary system model - NOT pulsar model */
+    pars.model = *(CHAR**)LALInferenceGetVariable( data->modelParams, "model" );
+
     pars.e = rescale_parameter( data, "e" );
     pars.w0 = rescale_parameter( data, "w0" );
     pars.Pb = rescale_parameter( data, "Pb" );
@@ -231,7 +234,7 @@ through the loop.*/
           REAL4 sp, cp;
     
           dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
-    
+          
           sin_cos_2PI_LUT( &sp, &cp, dphit );
     
           M.re = data->compModelData->data->data[i].re;
@@ -240,6 +243,7 @@ through the loop.*/
           /* heterodyne */
           data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
           data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+					if(i<1)fprintf(stderr,"dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
         }
       }
     }
@@ -294,17 +298,18 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
- 
+
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
-
+	
   length = data->dataTimes->length;
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
   
   /* get time delays */ 
+	/*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){
     /* get time delays with an interpolation of interptime (30 mins) */
@@ -319,11 +324,11 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   }
   
   for( i=0; i<length; i++){
-    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );
+    REAL8 realT = XLALGPSGetREAL8( &data->dataTimes->data[i] );/*time of data*/
     
-    T0 = params.pepoch;
+    T0 = params.pepoch;/*time of ephem info*/
 
-    DT = realT - T0;
+    DT = realT - T0;/*time diff between data and ephem info*/
 
     if ( params.model != NULL )
       deltat = DT + dts->data[i] + bdts->data[i];
@@ -338,6 +343,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
       inv_fact[4]*params.f3*deltat*deltat2 +
       inv_fact[5]*params.f4*deltat2*deltat2 +
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
+
   }
   
   /* free memory */
@@ -504,18 +510,20 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
   bdts = XLALCreateREAL8Vector( length );
   
   for ( i = 0; i < length; i++ ){
-    binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
-  
-    XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );
-    
-    bdts->data[i] = boutput.deltaT;
+    /* check whether there's a binary model */
+    if ( pars.model ){
+      binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+      XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );    
+      bdts->data[i] = boutput.deltaT;
+    }
+    else bdts->data[i] = 0.;
   }
   
   return bdts;
 }
 
 
-/** \brief The amplitude model of a complex heterodyned traxial neutron star
+/** \brief The amplitude model of a complex heterodyned triaxial neutron star
  * 
  * This function calculates the complex heterodyned time series model for a 
  * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
@@ -645,7 +653,31 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   }
 }
 
-
+/** \brief The amplitude model of a complex heterodyned signal from a NS rotating
+ * about the pinning axis of its pinned superfluid component.
+ * 
+ * This function calculates the complex heterodyned time series model for a 
+ * triaxial neutron star rotating about the pinning axis of its pinned superfluid component.
+ * 
+ * Unlike the standard triaxial model, this model has emission at f and 2f, therefore
+ * this model function processes two sets of data per detector.
+ * 
+ * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within
+ * this function the correct value for the given time and \f$\psi\f$ are
+ * interpolated from this lookup table using bilinear interpolation (e.g.):
+ * \f{eqnarray*}{
+ * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
+ * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
+ * \f}
+ * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square,
+ * and \f$\psi_i\f$ and \f$t_j\f$ are the closest points within the lookup
+ * table to the required values.
+ * 
+ * \param pars [in] A set of pulsar parameters
+ * \param data [in] The data parameters giving information on the data and
+ * detector
+ * 
+ */
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
 *data ){
   INT4 i = 0, length;
@@ -686,10 +718,10 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
 	(as defined in Jones 2009):
 
    ****************************************************************************/
-  Xplusf = 0.5*(pars.f0*pars.f0/pars.r)*sin(acos(pars.cosiota))*pars.cosiota;
-  Xcrossf = 0.5*(pars.f0*pars.f0/pars.r)*sin(acos(pars.cosiota));
-  Xplus2f = 0.5*((2*pars.f0)*(2*pars.f0)/pars.r)*(1.+(pars.cosiota*pars.cosiota));
-  Xcross2f = pars.cosiota*((2*pars.f0)*(2*pars.f0)/pars.r);
+  Xplusf = ((pars.f0*pars.f0)/(2*pars.r)) * sin(acos(pars.cosiota))*pars.cosiota;
+  Xcrossf =((pars.f0*pars.f0)/(2*pars.r)) * sin(acos(pars.cosiota));
+  Xplus2f = ((pars.f0*pars.f0)/pars.r) * (1.+(pars.cosiota*pars.cosiota));
+  Xcross2f = ((2*pars.f0*pars.f0)/pars.r) * pars.cosiota;
   
   A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( (2*pars.theta));
   A2=pars.I21*sin(2*pars.lambda)*sin(pars.theta);
@@ -701,9 +733,9 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
   
   /* set the psi bin for the lookup table */
-  psv = LAL_PI_2 / ( psteps - 1. );
-  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
-  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/2. )/psv );
+  psiMin = -(LAL_PI/2.) + psibinMin*psv;
   psibinMax = psibinMin + 1;
   psiMax = psiMin + psv;
   
@@ -798,15 +830,15 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
     /* create the complex signal amplitude model at 2f*/
     data->next->compModelData->data->data[i].re =
       (plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) ) +
-      cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi));
+      (cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi)) );
     
     data->next->compModelData->data->data[i].im =
       (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-
       ( cross*Xcross2f*((B1*cos2phi)+(B2*sin2phi)) );
+		
   }
   /*--------------------------------------------------------------------------*/
 }
-
 
 /** \brief Calculate the natural logarithm of the evidence that the data
  * consists of only Gaussian noise
@@ -822,32 +854,67 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
  * 
  * \return The natural logarithm of the noise only evidence
  */
-REAL8 noise_only_model( LALInferenceIFOData *data ){
-  LALInferenceIFOData *datatemp = data;
+REAL8 noise_only_model( LALInferenceRunState *runState ){
+	
+  LALInferenceIFOData *data = runState->data;
   
   REAL8 logL = 0.0;
   UINT4 i = 0;
+	INT4 k = 0;
+	
+	REAL8Vector *freqFactors = NULL;
+	FILE *fp = NULL;
+	CHAR *Znoisefile = NULL;
+	ProcessParamsTable *ppt;
+	ProcessParamsTable *commandLine = runState->commandLine;
+	/*-----------------------------*/
+	
+	ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );/*get the outfile name*/
+	
+	freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,                                                        "freqfactors" );
+
+	/*set the Znoise filename to the outfile name with "_Znoise" appended*/
+	Znoisefile = XLALStringDuplicate( ppt->value );
+  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+
+	/*Open the Znoise file for writing*/
+	if( (fp = fopen(Znoisefile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output Znoise file!\n");
+    exit(0);
+  }
   
-  while ( datatemp ){
+  /*calculate the evidence */
+  while ( data ){
     UINT4Vector *chunkLengths = NULL;
     REAL8Vector *sumDat = NULL;
   
     REAL8 chunkLength = 0.;
+		
   
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                        "sumData" );
-  
+		/*Sum the logL over the datachunks*/
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
    
       logL -= chunkLength * log(sumDat->data[i]);
     }
-  
-    datatemp = datatemp->next;
+		
+		/*if I am dealing with any model with more than one datastream, I will have more than one freq factor
+		and I want to output the evidence for the data being gaussian noise seperately for each datastream*/
+		if((INT4)freqFactors->length > 1) fprintf(fp,"Datastream at freq factor: %f, Z: %f\n",freqFactors->data[k],logL);
+		
+		k+=1;/* advance counter now, as freqfactors array index starts at zero.*/
+		
+		/*reset k, freqfactor counter once all datastreamns for a detector are done*/
+		if(k >= (INT4)freqFactors->length) k=0;
+		
+		data = data->next;
+		
   }
-  
+  fclose(fp);
   return logL;
 }
 

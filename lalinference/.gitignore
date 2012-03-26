@@ -27,7 +27,10 @@ src/lalinference-user-env.csh
 src/lalinference-user-env.sh
 src/lalinference-user-env.shell
 src/stamp-h2
-test/InferenceTest
+test/LALInferenceTest
 test/LALInferenceKDTest
+test/LALInferenceLikelihoodTest
+test/LALInferencePriorTest
+test/LALInferenceProposalTest
 test/LALInferenceXMLTest
 test/test_vot.xml

@@ -55,7 +55,7 @@ int main( int argc, char *argv[]) {
   if ( argc != 1 )
     XLAL_ERROR ( XLAL_EINVAL, "The executable '%s' doesn't support any input arguments right now.\n", argv[0] );
 
-  LogPrintf( LOG_NORMAL, "Starting test...\n");
+  printf ("Starting test...\n");
 
   /* set up single- and multi-IFO F-stat input */
   REAL4 TwoF = 7.0;
@@ -75,7 +75,7 @@ int main( int argc, char *argv[]) {
   REAL4 tolerance_leadterm = 2e-02;
 
   /* compute and compare the results for one set of rhomaxline, lX values */
-  LogPrintf( LOG_NORMAL, "Computing LV-stat for TwoF_multi=%f, TwoFX[0]=%f, TwoFX[1]=%f, rhomaxline=%f, priors lX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], rhomaxline );
+  printf ("Computing LV-stat for TwoF_multi=%f, TwoFX[0]=%f, TwoFX[1]=%f, rhomaxline=%f, priors lX=NULL...\n", TwoF, TwoFX->data[0], TwoFX->data[1], rhomaxline );
   if ( XLALCompareLVComputations( TwoF, TwoFX, rhomaxline, lX, tolerance_allterms, tolerance_leadterm ) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EFUNC, "Test failed.\n" );
     return XLAL_EFAILED;
@@ -91,7 +91,7 @@ int main( int argc, char *argv[]) {
   lX->data[1] = 0.8;
 
   /* compute and compare the results for second set of rhomaxline, lX values */
-  LogPrintf( LOG_NORMAL, "Computing LV-stat for TwoF_multi=%f, TwoFX[0]=%f, TwoFX[1]=%f, rhomaxline=%f, priors lX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], rhomaxline, lX->data[0], lX->data[1] );
+  printf ("Computing LV-stat for TwoF_multi=%f, TwoFX[0]=%f, TwoFX[1]=%f, rhomaxline=%f, priors lX=(%f,%f)...\n", TwoF, TwoFX->data[0], TwoFX->data[1], rhomaxline, lX->data[0], lX->data[1] );
   if ( XLALCompareLVComputations( TwoF, TwoFX, rhomaxline, lX, tolerance_allterms, tolerance_leadterm ) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EFUNC, "Test failed.\n" );
     return XLAL_EFAILED;
@@ -150,20 +150,20 @@ XLALCompareLVComputations ( const REAL4 TwoF,          /**< multi-detector  Fsta
   REAL4 diff_leadterm = fabs( LV_XLAL_leadterm - LV_extcomp ) / ( 0.5 * ( LV_XLAL_leadterm + LV_extcomp ));
 
   /* output results and deviations and return with error when tolerances are violated */
-  LogPrintf( LOG_NORMAL, "Externally recomputed             : LV=%f\n", LV_extcomp);
-  LogPrintf( LOG_NORMAL, "XLALComputeLineVeto with allterms : LV=%f (rel. dev.: %f)", LV_XLAL_allterms, diff_allterms);
+  printf ("Externally recomputed             : LV=%f\n", LV_extcomp);
+  printf ("XLALComputeLineVeto with allterms : LV=%f (rel. dev.: %f)", LV_XLAL_allterms, diff_allterms);
   if ( fabs(diff_allterms) <= tolerance_allterms )
-    printf(" ==> OK!\n");
+    printf (" ==> OK!\n");
   else {
-    printf(" ==> BAD!\n");
+    printf (" ==> BAD!\n");
     XLAL_ERROR ( XLAL_EFAILED, "\nTolerance %f exceeded for useAllTerms=TRUE!\n", tolerance_allterms );
     return XLAL_FAILURE;
   }
-  LogPrintf( LOG_NORMAL, "XLALComputeLineVeto with !allterms: LV=%f (rel. dev.: %f)", LV_XLAL_leadterm, diff_leadterm);
+  printf ("XLALComputeLineVeto with !allterms: LV=%f (rel. dev.: %f)", LV_XLAL_leadterm, diff_leadterm);
   if ( fabs(diff_leadterm) <= tolerance_leadterm )
-    printf(" ==> OK!\n");
+    printf (" ==> OK!\n");
   else {
-    printf(" ==> BAD!\n");
+    printf (" ==> BAD!\n");
     XLAL_ERROR ( XLAL_EFAILED, "\nTolerance %f exceeded for useAllTerms=FALSE!\n", tolerance_leadterm );
     return XLAL_FAILURE;
   }

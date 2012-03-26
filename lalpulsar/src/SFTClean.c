@@ -71,6 +71,7 @@
 /* 09/09/05 gam; only assert harmonicInfo and fname in LALFindNumberHarmonic and fix assert of fp. */
 /*               Other pointers can be unititialized until nHarmonicSets is determined.            */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/SFTClean.h>
 
 /*

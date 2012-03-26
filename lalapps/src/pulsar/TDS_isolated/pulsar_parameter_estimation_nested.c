@@ -145,6 +145,7 @@ specified then the fake data containing the signal, and a fake signal-only data
 set, will be output.
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_models.h"
 #include "ppe_likelihood.h"
@@ -289,15 +290,13 @@ INT4 main( INT4 argc, CHAR *argv[] ){
  
   /* set output style (change this when the code if fixed for using XML) */
   runState.logsample = LALInferenceLogSampleToFile;
-  
+
   /* Generate the lookup tables and read parameters from par file */
   setupFromParFile( &runState );
-  
+
   /* add injections if requested */
   injectSignal( &runState );
-  /*fprintf(stderr,"Done the injection\n");
-  sleep(4);*/
-  
+
   /* create sum square of the data to speed up the likelihood calculation */
   sumData( &runState );
   
@@ -307,7 +306,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   gridOutput( &runState );
   
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_model( runState.data );
+  logZnoise = noise_only_model( &runState );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, 
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
                
@@ -881,7 +880,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   /* reset filestr if using real data (i.e. not fake) */
   if ( !ppt2 ) filestr = XLALStringDuplicate( inputfile );
  
-  /* read in data, needs to read in two sets of data for each ifo! */
+  /* read in data, needs to read in two sets of data for each ifo! for pinsf model */
   for( i = 0, prev=NULL ; i < ml*numDets ; i++, prev=ifodata ){
     CHAR *datafile = NULL;
     REAL8 times = 0;
@@ -1168,16 +1167,12 @@ void setupFromParFile( LALInferenceRunState *runState )
   runState->currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
   
   scaletemp = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  
-  /* if no binary model set the value to "None" */
-  if ( pulsar.model == NULL )
-    pulsar.model = XLALStringDuplicate("None");
-  
+ 
   /* Add initial (unchanging) variables for the model, initial (unity) scale
      factors, and any Gaussian priors defined from the par file */
   add_initial_variables( runState->currentParams, scaletemp,
                          runState->priorArgs, pulsar );
-  
+
   /* Setup initial phase, and barycentring delays */
   while( data ){
     REAL8Vector *freqFactors = NULL;
@@ -1190,23 +1185,22 @@ void setupFromParFile( LALInferenceRunState *runState )
       UINT4 i = 0;
       LALInferenceVariableItem *scaleitem = scaletemp->head;
       REAL8Vector *dts = NULL, *bdts = NULL;
- 
-    
+
       dts = get_ssb_delay( pulsar, data->dataTimes, data->ephem, data->detector,
                            0. );
-   
-      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
-    
+      
       LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
-    
+     
+      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
+      
       LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
 
       phase_vector = get_phase_model( pulsar, data, freqFactors->data[j] );
-      
+  
       data->timeData = NULL;
       data->timeData = XLALCreateREAL8TimeSeries( "",
                                                   &data->dataTimes->data[0], 
@@ -1443,76 +1437,82 @@ void add_initial_variables( LALInferenceVariables *ini,
   add_variable_scale_prior( ini, scaleFac, priorArgs, "posepoch", pars.posepoch,
                             pars.posepochErr );
   
-  /* binary system parameters */
-  LALInferenceAddVariable( ini, "model", &pars.model, LALINFERENCE_string_t, 
-                           LALINFERENCE_PARAM_FIXED );
+  /* only add binary system parameters if required */
+  if ( pars.model ){
+    LALInferenceAddVariable( ini, "model", &pars.model, LALINFERENCE_string_t, 
+                             LALINFERENCE_PARAM_FIXED );
   
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb", pars.Pb, 
-                            pars.PbErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "e", pars.e, pars.eErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1", pars.eps1,
-                            pars.eps1Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2", pars.eps2,
-                            pars.eps2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "T0", pars.T0, 
-                            pars.T0Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Tasc", pars.Tasc,
-                            pars.TascErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "x", pars.x, pars.xErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "w0", pars.w0, 
-                            pars.w0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb", pars.Pb, 
+                              pars.PbErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "e", pars.e, 
+                              pars.eErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1", pars.eps1,
+                              pars.eps1Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2", pars.eps2,
+                              pars.eps2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "T0", pars.T0, 
+                              pars.T0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Tasc", pars.Tasc,
+                              pars.TascErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "x", pars.x, 
+                              pars.xErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "w0", pars.w0, 
+                              pars.w0Err );
 
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb2", pars.Pb2,
-                            pars.Pb2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "e2", pars.e2, 
-                            pars.e2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "T02", pars.T02,
-                            pars.T02Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "x2", pars.x2, 
-                            pars.x2Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "w02", pars.w02,
-                            pars.w02Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb2", pars.Pb2,
+                              pars.Pb2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "e2", pars.e2, 
+                              pars.e2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "T02", pars.T02,
+                              pars.T02Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "x2", pars.x2, 
+                              pars.x2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "w02", pars.w02,
+                              pars.w02Err );
 
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb3", pars.Pb3,
-                            pars.Pb3Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "e3", pars.e3, 
-                            pars.e3Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "T03", pars.T03,
-                            pars.T03Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "x3", pars.x3, 
-                            pars.x3Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "w03", pars.w03,
-                            pars.w03Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pb3", pars.Pb3,
+                              pars.Pb3Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "e3", pars.e3, 
+                              pars.e3Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "T03", pars.T03,
+                              pars.T03Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "x3", pars.x3, 
+                              pars.x3Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "w03", pars.w03,
+                              pars.w03Err );
 
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "xpbdot", pars.xpbdot,
-                            pars.xpbdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1dot", pars.eps1dot,
-                            pars.eps1dotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2dot", pars.eps2dot,
-                            pars.eps2dotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "wdot", pars.wdot,
-                            pars.wdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "gamma", pars.gamma,
-                            pars.gammaErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "Pbdot", pars.Pbdot,
-                            pars.PbdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "xdot", pars.xdot,
-                            pars.xdotErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "edot", pars.edot,
-                            pars.edotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "xpbdot", pars.xpbdot,
+                              pars.xpbdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps1dot", pars.eps1dot,
+                              pars.eps1dotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "eps2dot", pars.eps2dot,
+                              pars.eps2dotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "wdot", pars.wdot,
+                              pars.wdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "gamma", pars.gamma,
+                              pars.gammaErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "Pbdot", pars.Pbdot,
+                              pars.PbdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "xdot", pars.xdot,
+                              pars.xdotErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "edot", pars.edot,
+                              pars.edotErr );
  
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "s", pars.s, pars.sErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "dr", pars.dr, 
-                            pars.drErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "dth", pars.dth,
-                            pars.dthErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "a0", pars.a0, 
-                            pars.a0Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "b0", pars.b0, 
-                            pars.b0Err );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "M", pars.M, pars.MErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "m2", pars.m2, 
-                            pars.m2Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "s", pars.s, 
+                              pars.sErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "dr", pars.dr, 
+                              pars.drErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "dth", pars.dth,
+                              pars.dthErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "a0", pars.a0, 
+                              pars.a0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "b0", pars.b0, 
+                              pars.b0Err );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "M", pars.M, 
+                              pars.MErr );
+    add_variable_scale_prior( ini, scaleFac, priorArgs, "m2", pars.m2, 
+                              pars.m2Err );
+  }
 }
 
 
@@ -1749,21 +1749,34 @@ set.\n", propfile, tempPar);
       }
     }
     
+    /* if psi is covering the range -pi/2 to pi/2 scale it, so that it covers
+       the 0 to 2pi range of a circular parameter */
+    if( !strcmp(tempPar, "psi") ){
+      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
+        scale = 0.5;
+        scaleMin = -LAL_PI/2.;
+        high = LAL_PI/2.;
+        psidef = 1;
+      }
+    }
+    
     /* if theta is covering the range 0 to pi scale it, so that it covers
     the 0 to 2pi range of a circular parameter */
     if( !strcmp(tempPar, "theta") ){
-      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
-        scale = 0.5;
-        scaleMin = 0;
+      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
+        scale = 1.;
+        scaleMin = 0.;
+				high = 2.*LAL_PI;
       }
     }
     
     /* if lambda is covering the range 0 to pi scale it, so that it covers
-    the 0 to 2pi range of a circular parameter */
+    the 0 to pi range of a circular parameter */
     if( !strcmp(tempPar, "lambda") ){
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = 0;
+				high = LAL_PI;
       }
     }
     
@@ -1793,7 +1806,9 @@ set.\n", propfile, tempPar);
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "theta") && scale == 0.5 ) 
+		else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
+    else if ( !strcmp(tempPar, "theta") && scale == 1.0 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
       varyType = LALINFERENCE_PARAM_CIRCULAR;
@@ -1831,12 +1846,12 @@ set.\n", propfile, tempPar);
         break;
       }
     }
- 
   }
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
      of their range the remove them and add the phi0' and psi' coordinates */
-  if( phidef && psidef ){
+  if( phidef && psidef && !LALInferenceCheckVariable(runState->currentParams,"lambda") && !LALInferenceCheckVariable(runState->currentParams,"theta")){
+		fprintf(stderr,"Do phi and psi transform\n");
     LALInferenceIFOData *datatemp = data;
     
     REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
@@ -1906,11 +1921,11 @@ set.\n", propfile, tempPar);
     high = LAL_TWOPI;
     LALInferenceRemoveMinMaxPrior( runState->priorArgs, "phi0" );
     LALInferenceAddMinMaxPrior( runState->priorArgs, "phi0prime", &low, 
-                                &high, LALINFERENCE_PARAM_CIRCULAR );
+                                &high, LALINFERENCE_REAL8_t );
     
     LALInferenceRemoveMinMaxPrior( runState->priorArgs, "psi" );
     LALInferenceAddMinMaxPrior( runState->priorArgs, "psiprime", &low, 
-                                &high, LALINFERENCE_PARAM_CIRCULAR);
+                                &high, LALINFERENCE_REAL8_t );
   }
   
   /* check for any parameters with Gaussian priors and rescale to mean value */
@@ -2025,18 +2040,19 @@ void initialiseProposal( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
   UINT4 covfrac = 0, defrac = 0, kdfrac = 0;
   REAL8 temperature = 0.;
-  const CHAR defaultPropName[] = "none";
+  const CHAR *defaultPropName = NULL;
+  defaultPropName = XLALStringDuplicate( "none" );
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--covariance" );
-  if( ppt ) covfrac = *(UINT4 *)ppt->value;
+  if( ppt ) covfrac = atoi( ppt->value );
   else covfrac = 14; /* default value */
     
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
-  if( ppt ) defrac = *(UINT4 *)ppt->value;
+  if( ppt ) defrac = atoi( ppt->value );
   else defrac = 3; /* default value */
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--kDTree" );
-  if( ppt ) kdfrac = *(UINT4 *)ppt->value;
+  if( ppt ) kdfrac = atoi( ppt->value );
   else kdfrac = 3; /* default value */
  
   if( !covfrac && !defrac && !kdfrac ){
@@ -2066,7 +2082,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
     ppt = LALInferenceGetProcParamVal( runState->commandLine, 
                                        "--kDNCell" );
     if( ppt ){
-      kdncells = *(INT4 *)ppt->value;
+      kdncells = atoi( ppt->value );
 
       LALInferenceAddVariable( runState->proposalArgs, "KDNCell", 
                                &kdncells, LALINFERENCE_INT4_t,
@@ -2084,7 +2100,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
   LALInferenceRandomizeProposalCycle( runState );
   /* set temperature */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
-  if( ppt ) temperature = *(REAL8 *)ppt->value;
+  if( ppt ) temperature = atof( ppt->value );
   else temperature = 0.1;
  
   LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, 
@@ -2238,7 +2254,7 @@ void injectSignal( LALInferenceRunState *runState ){
   BinaryPulsarParams injpars;
  
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1;
+  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1, ml=1;
   
   REAL8Vector *freqFactors = NULL;
   REAL8 *snrmulti = NULL, *snrscale = NULL;
@@ -2268,7 +2284,6 @@ parameter file %s is wrong.\n", injectfile);
  
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
                                                           "freqfactors" );
- 
   snrscale = XLALCalloc(sizeof(REAL8), numSNRs);
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
@@ -2276,7 +2291,7 @@ parameter file %s is wrong.\n", injectfile);
     /* if there are more than one data streams (i.e. a stream at twice the 
        pulsar frequency and one at the pulsar frequency) the SNRs for the 
        individual (multi-detector) streams can be set, rather than having a 
-       combined SNR. The SNR vales are set as comma separated values to 
+       combined SNR. The SNR values are set as comma separated values to 
        --scale-snr. If only one value is given, but the data has multiple 
        streams then the combined multi-stream SNR will still be used. */
     CHAR *snrscales = NULL, *tmpsnrs = NULL, *tmpsnr = NULL, snrval[256];
@@ -2287,24 +2302,29 @@ parameter file %s is wrong.\n", injectfile);
       
     /* count the number of SNRs (comma seperated values) */
     numSNRs = count_csv( snrscales );
+		fprintf(stderr,"Number of snrs: %d\n",numSNRs);
+		
+		ml=(INT4)freqFactors->length;
     
-    if( (numSNRs != 1) && (numSNRs != (INT4)freqFactors->length) ){
-      fprintf(stderr, "Error... number of SNR values must either be 1, or equal\
- to the number of data streams required for your model!\n");
+    if(numSNRs != ml){
+      fprintf(stderr, "Error... number of SNR values must equal\
+			the number of data streams required for your model!\n");
       exit(0);
     }
     
     snrscale = XLALRealloc(snrscale, sizeof(REAL8)*numSNRs);
-    
+		
+    /*goes through the input scale snr string and adds the values to the snrscale vector.*/
     for( k = 0; k < numSNRs; k++ ){
       tmpsnr = strsep( &tmpsnrs, "," );
       XLALStringCopy( snrval, tmpsnr, strlen(tmpsnr)+1 );
       snrscale[k] = atof(snrval);
     }
   }
- 
-  snrmulti = XLALCalloc(sizeof(REAL8), numSNRs);
- 
+
+
+  snrmulti = XLALCalloc(sizeof(REAL8), 1);
+
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if( !ppt ){
     fprintf(stderr, "Error... no output file specified!\n");
@@ -2335,7 +2355,10 @@ parameter file %s is wrong.\n", injectfile);
     
     /* If modeltype uses more than one data stream need to advance data on to
        next, so this loop only runs once if there is only 1 det*/
-    for ( k = 1; k < (INT4)freqFactors->length; k++ ) data = data->next;
+    for ( k = 1; k < (INT4)freqFactors->length; k++ ){
+      data = data->next;
+      fprintf(stderr,"data has been advanced for 2nd datastream\n");
+    }
   }
   
   /* reset data to head */
@@ -2345,20 +2368,21 @@ parameter file %s is wrong.\n", injectfile);
   while ( data ){
     for ( k = 0; k < numSNRs; k++ ){
       REAL8 snrval = calculate_time_domain_snr( data );
-   
-      snrmulti[k] += SQUARE(snrval);
-      
-      /*if ( snrscale[k] == 0 ) */
-      fprintf(fpsnr, "freq_factor: %f, non-scaled snr: %le\t",
-              freqFactors->data[ndets], snrval);
-                             
+
+      snrmulti[0] += SQUARE(snrval);
+			
+      fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\t",
+              freqFactors->data[k], snrval);
+			fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\t",freqFactors->data[k], snrval);
+			fprintf(stderr, "SNR multi %le\n",snrmulti[0]);
+
       data = data->next;
     }
     ndets++;
   }
   
   /* get overall multi-detector SNR */
-  for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
+  snrmulti[0] = sqrt(snrmulti[0]);
   
   /* only need to print out multi-detector snr if the were multiple detectors */
   if( numSNRs == 1 && snrscale[0] == 0 ){
@@ -2368,15 +2392,12 @@ parameter file %s is wrong.\n", injectfile);
   else{
     /* rescale the signal and calculate the SNRs */
     data = runState->data;
-   
-    for ( k = 0; k < numSNRs; k++ ){
-      snrscale[k] /= snrmulti[k];
-    }
-    
+    snrscale[0] /= snrmulti[0];
+
     /* rescale the h0 for triaxial mode only) */
     if ( !strcmp(modeltype, "triaxial")  ){
       for ( k = 0; k < numSNRs; k++ ){
-        if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[k];
+        if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[0];
       }
     }
     
@@ -2408,7 +2429,7 @@ parameter file %s is wrong.\n", injectfile);
     data = runState->data;
     
     /* get new snrs */
-    for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = 0;
+    snrmulti[0] = 0;
     
     while( data ){
       for ( k = 0; k < numSNRs; k++ ){
@@ -2417,7 +2438,7 @@ parameter file %s is wrong.\n", injectfile);
         /* recalculate the SNR */
         snrval = calculate_time_domain_snr( data );
       
-        snrmulti[k] += SQUARE(snrval);
+        snrmulti[0] += SQUARE(snrval);
       
         fprintf(fpsnr, "scaled snr: %le\t", snrval);
       
@@ -2425,11 +2446,12 @@ parameter file %s is wrong.\n", injectfile);
       }
     }
     
-    for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
+    snrmulti[0] = sqrt( snrmulti[0] );
+		fprintf(stderr, "scaled multi data snr: %le\n", snrmulti[0]);
     
     if( ndets > 1 ){
       for ( k = 0; k < numSNRs; k++ ){
-        fprintf(fpsnr, "%le\t", snrmulti[k]);
+        fprintf(fpsnr, "%le\t", snrmulti[0]);
       }
       fprintf(fpsnr, "\n"); 
     }

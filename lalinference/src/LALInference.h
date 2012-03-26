@@ -79,6 +79,7 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_statistics.h>
 #include <sys/time.h>
 
 //...other includes
@@ -233,6 +234,11 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
  *  returns 1(==true) or 0
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
+
+/** Checks for \param name being present in \param vars and having type LINEAR or CIRCULAR.
+ * returns 1 or 0
+ */
+int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name);
 
 /** Delete the variables in this structure.
  *  Does not free the LALInferenceVariables itself
@@ -405,7 +411,7 @@ void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
 /** Output the command line to \param str based on the ProcessParamsTable */
-void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str);
+char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
 /** Execute FFT for data in \param data */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);

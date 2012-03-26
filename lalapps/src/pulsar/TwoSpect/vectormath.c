@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011 Evan Goetz
+ *  Copyright (C) 2011, 2012 Evan Goetz
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 #include <math.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 
 #include "vectormath.h"
@@ -436,17 +437,15 @@ void sseSSVectorSequenceSum(REAL4VectorSequence *output, REAL4VectorSequence *in
    for (ii=0; ii<numvectors; ii++) {
       INT4 vec1 = (vectorpos1+ii)*input1->vectorLength, vec2 = (vectorpos2+ii)*input2->vectorLength, outvec = (outputvectorpos+ii)*output->vectorLength;
       
-      INT4 input1vecaligned = 0, input2vecaligned = 0, outputvecaligned = 0;
+      INT4 outputvecaligned = 0;
       __m128 *arr1, *arr2, *result;
       if ( &(input1->data[vec1])==(void*)(((UINT8)&(input1->data[vec1])+15) & ~15) ) {
-         input1vecaligned = 1;
          arr1 = (__m128*)(void*)&(input1->data[vec1]);
       } else {
          memcpy(alignedinput1, &(input1->data[vec1]), sizeof(REAL4)*4*roundedvectorlength);
          arr1 = (__m128*)(void*)alignedinput1;
       }
       if ( &(input2->data[vec2])==(void*)(((UINT8)&(input2->data[vec2])+15) & ~15) ) {
-         input2vecaligned = 1;
          arr2 = (__m128*)(void*)&(input2->data[vec2]);
       } else {
          memcpy(alignedinput2, &(input2->data[vec2]), sizeof(REAL4)*4*roundedvectorlength);

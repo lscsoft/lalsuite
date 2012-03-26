@@ -86,14 +86,7 @@
 #define SYNTHBSTAT_MSGENONULL "Output pointer is non-NULL"
 #define SYNTHBSTAT_MSGEXLAL	"XLALFunction-call failed"
 
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
-#define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
-#define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
-
 #define SQ(x) ((x)*(x))
-#define SIGN(x) ( (x) < 0 ? -1 : 1 )
 
 /** Signal (amplitude) parameter ranges
  */
@@ -181,11 +174,13 @@ int XLALcomputeFstatistic ( gsl_vector **Fstat, gsl_matrix **A_Mu_MLE_i, const g
 int XLALcomputeBstatisticMC ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i, gsl_rng * rng, UINT4 numMCpoints );
 int XLALcomputeBstatisticGauss ( gsl_vector **Bstat, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
-int XLALcomputeBhatStatistic ( gsl_vector **Bhat_i, const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
+gsl_vector * XLALcomputeBhatStatistic ( const gsl_matrix *M_mu_nu, const gsl_matrix *x_mu_i );
 
 double BstatIntegrandOuter ( double cosi, void *p );
 double BstatIntegrandInner ( double psi, void *p );
 double BstatIntegrand ( double A[], size_t dim, void *p );
+
+REAL8 XLALComputeBhatCorrection ( const gsl_vector * A_Mu, const gsl_matrix *M_mu_nu );
 
 /*---------- empty initializers ---------- */
 ConfigVariables empty_ConfigVariables;
@@ -330,11 +325,10 @@ int main(int argc,char *argv[])
 
 
   /* ---------- compute (approximate) B-statistic 'Bhat' ---------- */
-  if ( XLALcomputeBhatStatistic ( &Bhat_i, GV.M_mu_nu, x_mu_i) ) {
+  if ( ( Bhat_i = XLALcomputeBhatStatistic ( GV.M_mu_nu, x_mu_i)) == NULL ) {
     LogPrintf (LOG_CRITICAL, "XLALcomputeBhatStatistic() failed with error = %d\n", xlalErrno );
     return 1;
   }
-
 
   /* ---------- output F-statistic and B-statistic samples into file, if requested */
   if (uvar.outputStats)
@@ -1360,169 +1354,262 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 
 
 /** Compute an approximation to the full B-statistic, without using any integrations!
+ *
+ * Returns Bhat vector of dimensions (numDraws x 1), or NULL on error.
  */
-int
-XLALcomputeBhatStatistic ( gsl_vector **Bhat_i,		/**< [OUT] Bhat-statistic vector */
-			   const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
+gsl_vector *
+XLALcomputeBhatStatistic ( const gsl_matrix *M_mu_nu,	/**< antenna-pattern matrix M_mu_nu */
 			   const gsl_matrix *x_mu_i	/**< data-vectors x_mu: numDraws x 4 */
 			   )
 {
-  gsl_matrix *ADA_D;
-  gsl_matrix *CC;
-  gsl_matrix *MpCC_LU;
-
-  gsl_vector *Ahat;
-  gsl_permutation *perm = gsl_permutation_calloc ( 4 );
-  int sig;
-
-  REAL8 Delta;
-  UINT4 row, numDraws;
   int gslstat;
 
   /* ----- check input arguments ----- */
-  if ( !M_mu_nu || !x_mu_i ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input M_mu_nu, x_mu_i must not be NULL.\n", __func__);
-    return XLAL_EINVAL;
-  }
+  if ( !M_mu_nu || !x_mu_i )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "\nInput M_mu_nu, x_mu_i must not be NULL.\n" );
 
-  numDraws = x_mu_i->size1;
-  if ( ! (numDraws > 0) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: Invalid input, numDraws must be > 0.", __func__ );
-    return XLAL_EINVAL;
-  }
+  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "\nAntenna-pattern matrix M_mu_nu must be 4x4.\n" );
 
-  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: antenna-pattern matrix M_mu_nu must be 4x4.\n", __func__);
-    return XLAL_EINVAL;
-  }
-  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: input vector-list x_mu_i must be numDraws x 4.\n", __func__);
-    return XLAL_EINVAL;
-  }
-
-  if ( ((*Bhat_i) != NULL) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: output vector 'Bhat_i' must be set to NULL.\n", __func__);
-    return XLAL_EINVAL;
-  }
+  size_t numDraws = x_mu_i->size1;
+  if ( (x_mu_i->size1 != numDraws) || (x_mu_i->size2 != 4) )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "\nInput vector-list dimensions of x_mu_i must be ( numDraws x 4 ).\n" );
 
   /* ----- allocate return statistics vectors ---------- */
-  if ( ( (*Bhat_i) = gsl_vector_calloc ( numDraws )) == NULL ) {
-    LogPrintf ( LOG_CRITICAL, "%s: gsl_vector_calloc (%d) failed.\n", __func__, numDraws);
-    return XLAL_ENOMEM;
-  }
+  gsl_vector *Bhat_i;
+  if ( ( Bhat_i = gsl_vector_calloc ( numDraws )) == NULL )
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "\ngsl_vector_calloc (%d) failed.\n", numDraws);
 
-  /* ----- allocate intermediate vectors and matrices ----------*/
-  CC      = gsl_matrix_alloc ( 4, 4 );
-  MpCC_LU = gsl_matrix_alloc ( 4, 4 );
-  ADA_D   = gsl_matrix_alloc ( 4, 4 );
+  /* ----- prepare Mmunu_LU for M-inverse operations ---------- */
+  gsl_matrix *Mmunu_LU = gsl_matrix_calloc ( 4, 4 );
+  if ( Mmunu_LU == NULL ) XLAL_ERROR_NULL ( XLAL_ENOMEM, "\nMmunu_LU = gsl_matrix_calloc (4,4) failed.\n");
+  gsl_permutation *perm = gsl_permutation_calloc ( 4 );
+  if ( Mmunu_LU == NULL ) XLAL_ERROR_NULL ( XLAL_ENOMEM, "\nperm = gsl_permutation_calloc (4) failed.\n");
 
-  Ahat    = gsl_vector_alloc ( 4 );
+  gsl_matrix_memcpy (Mmunu_LU, M_mu_nu);
 
-  for ( row=0; row < numDraws; row ++ )
+  /* Function: int gsl_linalg_LU_decomp (gsl_matrix * A, gsl_permutation * p, int * signum)
+   *
+   * These functions factorize the square matrix A into the LU decomposition PA = LU.
+   * On output the diagonal and upper triangular part of the input matrix A contain the matrix U. The lower
+   * triangular part of the input matrix (excluding the diagonal) contains L. The diagonal elements of L are
+   * unity, and are not stored. The permutation matrix P is encoded in the permutation p. The j-th column of
+   * the matrix P is given by the k-th column of the identity matrix, where k = p_j the j-th element of the
+   * permutation vector. The sign of the permutation is given by signum. It has the value (-1)^n, where n is
+   * the number of interchanges in the permutation.
+   * The algorithm used in the decomposition is Gaussian Elimination with partial pivoting
+   * (Golub & Van Loan, Matrix Computations, Algorithm 3.4.1).
+   */
+  int sig;
+  if ( (gslstat = gsl_linalg_LU_decomp (Mmunu_LU, perm, &sig)) )
+    XLAL_ERROR_NULL ( XLAL_EFAILED, "gsl_linalg_LU_decomp (Mmunu) failed: %s\n", gsl_strerror (gslstat) );
+
+  /* ----- invert M_{mu,nu} to get M^{mu,nu} ---------- */
+  gsl_matrix *M_MuNu = gsl_matrix_calloc ( 4, 4 );
+  if ( M_MuNu == NULL ) XLAL_ERROR_NULL ( XLAL_ENOMEM, "\nM_MuNu = gsl_matrix_calloc (4,4) failed.\n");
+
+  /* These functions compute the inverse of a matrix A from its LU decomposition (LU,p),
+   * storing the result in the matrix inverse.
+   * The inverse is computed by solving the system A x = b for each column of the identity matrix.
+   * It is preferable to avoid direct use of the inverse whenever possible, as the linear solver
+   * functions can obtain the same result more efficiently and reliably (consult any introductory
+   * textbook on numerical linear algebra for details).
+   */
+  if ( (gslstat = gsl_linalg_LU_invert ( Mmunu_LU, perm, M_MuNu)) )
+    XLAL_ERROR_NULL ( XLAL_EFAILED, "gsl_linalg_LU_invert (Mmunu_LU) failed: %s\n", gsl_strerror (gslstat) );
+
+  /* ----- compute AMLE^mu = Minv^{mu nu} x_nu ----- */
+  gsl_matrix *Ah_Mu_i = gsl_matrix_calloc ( 4, numDraws );
+  if ( Ah_Mu_i == NULL ) XLAL_ERROR_NULL ( XLAL_ENOMEM, "\nAh_Mu_i = gsl_matrix_calloc (%d,4) failed.\n", numDraws);
+
+  /* These functions compute the matrix-matrix product and sum C = \alpha op(A) op(B) + \beta C
+   * where op(A) = A, A^T, A^H for TransA = CblasNoTrans, CblasTrans, CblasConjTrans and similarly
+   * for the parameter TransB.
+   */
+  if ( (gslstat = gsl_blas_dgemm ( CblasNoTrans, CblasTrans, 1.0, M_MuNu, x_mu_i, 0.0, Ah_Mu_i )) )
+    XLAL_ERROR_NULL ( XLAL_EFAILED, "gsl_blas_dgemm: Ah^mu = M^{mu,nu} x_nu failed: %s\n", gsl_strerror (gslstat) );
+
+  /* ----- compute F = 1/2 * x_mu M^{mu nu} x_nu = 1/2 * x_mu A^mu ---------- */
+  for ( UINT4 iTrial = 0; iTrial < numDraws; iTrial ++ )
     {
-      REAL8 Bhat, tmp;
-      UINT4 it, numIt = 2;
-      gsl_vector_const_view xi = gsl_matrix_const_row ( x_mu_i, row );
+      gsl_vector_const_view x_mu = gsl_matrix_const_row ( x_mu_i, iTrial );
+      gsl_vector_const_view A_Mu = gsl_matrix_const_column ( Ah_Mu_i, iTrial );
 
-      /* iterate recursive solution for Ahat */
-      for ( it = 0; it <= numIt; it ++ )
-	{
-
-	  /* compute CC */
-	  if ( it == 0 )
-	    {
-	      gsl_matrix_set_zero ( CC );
-	    }
-	  else
-	    {
-	      REAL8 A1, A2, A3, A4;
-	      REAL8 al1, al2, al4;
-	      REAL8 AIA, ADA;
-
-	      A1 = gsl_vector_get ( Ahat, 0 );
-	      A2 = gsl_vector_get ( Ahat, 1 );
-	      A3 = gsl_vector_get ( Ahat, 2 );
-	      A4 = gsl_vector_get ( Ahat, 3 );
-
-	      al1 = SQ(A1) + SQ(A3);
-	      al2 = SQ(A2) + SQ(A4);
-	      al4 = A1 * A4 - A2 * A3;
-
-	      AIA = SQ ( al1 + al2 );
-	      ADA = 2.0 * al4;
-
-	      Delta = SQ ( AIA ) - SQ ( ADA );
-
-	      /* CC = 3/(2*Delta) * ( AIA * Id - ADA * DD ) */
-	      gsl_matrix_set_identity ( CC );
-	      gsl_matrix_scale ( CC, AIA );
-
-	      gsl_matrix_set ( ADA_D, 0, 3,  ADA);
-	      gsl_matrix_set ( ADA_D, 1, 2, -ADA);
-	      gsl_matrix_set ( ADA_D, 2, 1, -ADA);
-	      gsl_matrix_set ( ADA_D, 3, 0,  ADA);
-
-	      gsl_matrix_sub ( CC, ADA_D );
-
-	      gsl_matrix_scale ( CC, 1.5 / Delta );
-	    }
-
-	  if ( it < numIt )
-	    {
-	      /* compute MpCC = M + CC */
-	      gsl_matrix_memcpy (MpCC_LU, M_mu_nu);
-	      gsl_matrix_add ( MpCC_LU, CC );
-
-	      /* prepare matrix inversion: first get LU-decomposition [see XLALcomputeFstatistic()] */
-	      if( (gslstat = gsl_linalg_LU_decomp (MpCC_LU, perm, &sig)) ) {
-		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_decomp (MpCC_LU) failed: %s\n", __func__, gsl_strerror (gslstat) );
-		return 1;
-	      }
-
-	      /* ---------- now solve the equation: (M + CC) A = x ---------- */
-	      /* Function: int gsl_linalg_LU_solve (const gsl_matrix * LU, const gsl_permutation * p, const gsl_vector * b, gsl_vector * x)
-	       *
-	       * These functions solve the square system A x = b using the LU decomposition of A into (LU, p) given by
-	       * gsl_linalg_LU_decomp or gsl_linalg_complex_LU_decomp.
-	       */
-	      if ( (gslstat = gsl_linalg_LU_solve (MpCC_LU, perm, &(xi.vector), Ahat)) ) {
-		LogPrintf ( LOG_CRITICAL, "%s: gsl_linalg_LU_solve (M+CC). Ahat = x failed: %s\n", __func__, gsl_strerror (gslstat) );
-		return 1;
-	      }
-	      /*
-	      XLALfprintfGSLvector ( stdout, "%g", Ahat );
-	      */
-	    }
-
-	} /* for it <= numIt */
-
-      printf ("\n");
-
-      /* compute scalar product Ahat . x */
-
+      REAL8 TwoF;
       /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
-       * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result.
-       */
-      if ( (gslstat = gsl_blas_ddot ( Ahat, &(xi.vector), &tmp )) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: row = %d: int gsl_blas_ddot (Ahat . x) failed: %s\n", __func__, row, gsl_strerror (gslstat) );
-	return 1;
-      }
+       * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result. */
+      if ( (gslstat = gsl_blas_ddot ( &(x_mu.vector), &(A_Mu.vector), &TwoF)) )
+	XLAL_ERROR_NULL ( XLAL_EFAILED, "iTrial = %d: 2F = gsl_blas_ddot (x_mu, A^mu) failed: %s\n", iTrial, gsl_strerror (gslstat) );
 
-      Bhat = tmp; /*  - 1.5 * log(Delta); */
-
-      gsl_vector_set ( *Bhat_i, row, Bhat );
-
-    } /* for row < numDraws */
+      REAL8 Bhat = 0.5 * TwoF;
+      Bhat += XLALComputeBhatCorrection ( &(A_Mu.vector), M_mu_nu );
+      if ( xlalErrno ) XLAL_ERROR_NULL ( XLAL_EFUNC, "\nXLALComputeBhatCorrection() failed for iTrial = %d\n", iTrial );
 
 
+      /* write resulting Bstat-values into return vector */
+      gsl_vector_set ( Bhat_i, iTrial, Bhat );
+
+    } // for iTrial < numDraws
+
+  /* ----- free memory ---------- */
   gsl_permutation_free ( perm );
+  gsl_matrix_free ( Mmunu_LU );
+  gsl_matrix_free ( M_MuNu );
+  gsl_matrix_free ( Ah_Mu_i );
 
-  gsl_matrix_free ( CC );
-  gsl_matrix_free ( MpCC_LU );
-  gsl_matrix_free ( ADA_D );
-
-  gsl_vector_free ( Ahat );
-
-  return XLAL_SUCCESS;
+  return Bhat_i;
 
 } /* XLALcomputeBhatStatistic() */
+
+/** Compute 'Bstat' approximate correction terms with respect to F, ie deltaB in Bstat = F + deltaB
+ */
+REAL8
+XLALComputeBhatCorrection ( const gsl_vector * A_Mu_in, const gsl_matrix *M_mu_nu )
+{
+  int gslstat;
+
+  /* ----- check input arguments ----- */
+  if ( !M_mu_nu || !A_Mu_in )
+    XLAL_ERROR ( XLAL_EINVAL, "\nInput M_mu_nu, A_Mu_in must not be NULL.\n" );
+
+  if ( (M_mu_nu->size1 != 4) || (M_mu_nu->size2 != 4) )
+    XLAL_ERROR ( XLAL_EINVAL, "\nAntenna-pattern matrix M_mu_nu must be 4x4.\n" );
+
+  if ( A_Mu_in->size != 4 )
+    XLAL_ERROR ( XLAL_EINVAL, "\nAmplitude vector A_Mu_in must be 4D\n");
+
+
+  /* ----- 'reflection' matrix R_mu_nu ---------- */
+  REAL8 R_array[4 * 4] = {
+     0,  0,  0, -1,
+     0,  0, -1,  0,
+     0, -1,  0,  0,
+    -1,  0,  0,  0
+  };
+  gsl_matrix_const_view R_mu_nu_view = gsl_matrix_const_view_array ( R_array, 4, 4);
+  const gsl_matrix *R_mu_nu = &(R_mu_nu_view.matrix);
+
+  /* ----- compute 'reflected' \underline{A}_mu vector : AR_mu = R_{mu,nu} A^\nu = (A4,-A3, -A2, A1) ---------- */
+  REAL8 A1 = gsl_vector_get ( A_Mu_in, 1 );
+  REAL8 A2 = gsl_vector_get ( A_Mu_in, 2 );
+  REAL8 A3 = gsl_vector_get ( A_Mu_in, 3 );
+  REAL8 A4 = gsl_vector_get ( A_Mu_in, 4 );
+
+  REAL8 A_array[4]  = { A1,  A2,  A3, A4 };
+  REAL8 AR_array[4] = { A4, -A3, -A2, A1 };
+  gsl_vector_view A_mu_view = gsl_vector_view_array ( A_array, 4 );
+  gsl_vector_view AR_mu_view = gsl_vector_view_array ( AR_array, 4 );
+
+  gsl_vector *A_mu = &(A_mu_view.vector);
+  gsl_vector *AR_mu = &(AR_mu_view.vector);
+
+  /* ----- compute intermediate quantities: ka = A_mu A^mu, and ks = AR_mu A^mu ---------- */
+  REAL8 ks, ka;
+  /* Function: int gsl_blas_ddot (const gsl_vector * x, const gsl_vector * y, double * result)
+   * These functions compute the scalar product x^T y for the vectors x and y, returning the result in result. */
+  if ( (gslstat = gsl_blas_ddot ( A_mu, A_mu, &ks)) )
+    XLAL_ERROR ( XLAL_EFAILED, "ks = gsl_blas_ddot (A_mu, A^mu) failed: %s\n", gsl_strerror (gslstat) );
+
+  if ( (gslstat = gsl_blas_ddot ( AR_mu, A_mu, &ka)) )
+    XLAL_ERROR ( XLAL_EFAILED, "ka = gsl_blas_ddot (AR_mu, A^mu) failed: %s\n", gsl_strerror (gslstat) );
+
+  REAL8 K = SQ(ks) - SQ(ka);
+
+  /* ----- compute intermediate derivatives K_mu = \partial_mu K, and K_{mu,nu} = \partial_{\mu,\nu} K ---------- */
+  REAL8 tmpV_array[4], tmpM_array [ 4 * 4 ];
+  gsl_vector_view tmpV_view    = gsl_vector_view_array ( tmpV_array, 4 );
+  gsl_matrix_view tmpM_view    = gsl_matrix_view_array ( tmpM_array, 4, 4 );
+  gsl_vector *tmpV = &(tmpV_view.vector);
+  gsl_matrix *tmpM = &(tmpM_view.matrix);
+
+  REAL8 K_mu_array [4], K_mu_nu_array[4 * 4];
+  gsl_vector_view K_mu_view    = gsl_vector_view_array ( K_mu_array, 4 );
+  gsl_matrix_view K_mu_nu_view = gsl_matrix_view_array ( K_mu_nu_array, 4, 4 );
+  gsl_vector *K_mu = &(K_mu_view.vector);
+  gsl_matrix *K_mu_nu = &(K_mu_nu_view.matrix);
+
+  /* ----- K_mu ----- */
+  gsl_vector_memcpy ( K_mu, A_mu );
+  gsl_vector_scale  ( K_mu, 4.0 * ks );	//  K_mu = 4 ks A_mu
+
+  gsl_vector_memcpy ( tmpV, AR_mu );
+  gsl_vector_scale  ( tmpV, - 4.0 * ka );
+  gsl_vector_add    ( K_mu, tmpV );	// K_mu += - 4 ka AR_mu;
+  /* ---------- */
+
+  /* ----- K_mu_nu ----- */
+  gsl_matrix_set_identity ( K_mu_nu );
+  gsl_matrix_scale ( K_mu_nu, 4.0 * ks );	// K_mu_nu = 4 ks delta_mu_nu
+
+  gsl_matrix_memcpy ( tmpM, R_mu_nu );
+  gsl_matrix_scale ( tmpM, - 4.0 * ka );
+  gsl_matrix_add ( K_mu_nu, tmpM );		// K_mu_nu += - 4 ka R_mu_nu
+
+  /* --> tensor product A_mu A_nu */
+  gsl_matrix_const_view A_mat  = gsl_matrix_const_view_vector (  A_mu, 1, 4 );
+  if ( (gslstat = gsl_blas_dgemm ( CblasTrans, CblasNoTrans, 1.0, &(A_mat.matrix), &(A_mat.matrix), 0.0, tmpM)) )
+    XLAL_ERROR ( XLAL_EFAILED, "\ngsl_blas_dgemm ( A_mu, A_nu ) failed: %s\n",  gsl_strerror (gslstat) );
+  gsl_matrix_scale ( tmpM, 8.0 );
+  gsl_matrix_add ( K_mu_nu, tmpM );		// K_mu_nu += 8 A_mu A_nu
+
+  /* --> tensor product AR_mu AR_nu */
+  gsl_matrix_const_view AR_mat = gsl_matrix_const_view_vector ( AR_mu, 1, 4 );
+  if ( (gslstat = gsl_blas_dgemm ( CblasTrans, CblasNoTrans, 1.0, &(AR_mat.matrix), &(AR_mat.matrix), 0.0, tmpM)) )
+    XLAL_ERROR ( XLAL_EFAILED, "\ngsl_blas_dgemm ( A_mu, A_nu ) failed: %s\n",  gsl_strerror (gslstat) );
+  gsl_matrix_scale ( tmpM, - 8.0 );
+  gsl_matrix_add ( K_mu_nu, tmpM );		// K_mu_nu += - 8 AR_mu AR_nu
+  /* ---------- */
+
+  /* ---------- compute alpha derivatives alpha, alpha_mu = \partial_mu alpha, alpha_mu_nu = partial_mu_nu alpha ---------- */
+  /*REAL8 alpha = - 3.0 / 4.0 * log (K);*/
+
+  REAL8 a_mu_array [4], a_mu_nu_array[4 * 4];
+  gsl_vector_view a_mu_view       = gsl_vector_view_array ( a_mu_array, 4 );
+  gsl_matrix_view a_mu_nu_view    = gsl_matrix_view_array ( a_mu_nu_array, 4, 4 );
+  gsl_vector *a_mu    = &(a_mu_view.vector);
+  gsl_matrix *a_mu_nu = &(a_mu_nu_view.matrix);
+
+  /* ----- a_mu ----- */
+  gsl_vector_memcpy ( a_mu, K_mu );
+  gsl_vector_scale ( a_mu, - 3.0 / (4.0 * K ) );	// a_mu = -3/(4K) * K_mu
+  /* ----- a_mu_nu ----- */
+  gsl_matrix_memcpy ( a_mu_nu, K_mu_nu );
+  gsl_matrix_scale ( a_mu_nu, K );			// a_mu_nu = K * K_mu_nu
+
+  gsl_matrix_const_view Kmu_mat = gsl_matrix_const_view_vector ( K_mu, 1, 4 );
+  if ( (gslstat = gsl_blas_dgemm ( CblasTrans, CblasNoTrans, 1.0, &(Kmu_mat.matrix), &(Kmu_mat.matrix), 0.0, tmpM)) )
+    XLAL_ERROR ( XLAL_EFAILED, "\ngsl_blas_dgemm ( K_mu, K_nu ) failed: %s\n",  gsl_strerror (gslstat) );
+  gsl_matrix_sub  ( a_mu_nu, tmpM );			// a_mu_nu -= K_mu K_nu
+
+  gsl_matrix_scale ( a_mu_nu, -3.0 / ( 4.0 * SQ(K) ) );	// a_mu_nu *= -3/(4K^2)
+
+  /* ----- modified antenna-pattern matrix N_munu ---------- */
+  REAL8 N_array[4 * 4];
+  gsl_matrix_view N_view = gsl_matrix_view_array ( N_array, 4, 4 );
+  gsl_matrix *N_mu_nu = &(N_view.matrix);
+
+  gsl_matrix_memcpy ( N_mu_nu, M_mu_nu );
+  gsl_matrix_sub ( N_mu_nu, a_mu_nu );	// N_mu_nu = M_mu_nu - alpha_mu_nu
+
+  /* ----- N_mu_nu : LU-decompose and compute determinant ---------- */
+  REAL8 NLU_array[4 * 4];
+  gsl_matrix_view NLU_view = gsl_matrix_view_array ( NLU_array, 4, 4 );
+  gsl_matrix *NLU_mu_nu = &(NLU_view.matrix);
+
+  size_t perm_data[4];
+  gsl_permutation perm = {4, perm_data };
+  int sig;
+
+  gsl_matrix_memcpy ( NLU_mu_nu, N_mu_nu );
+  if ( (gslstat = gsl_linalg_LU_decomp ( NLU_mu_nu, &perm, &sig)) )
+    XLAL_ERROR ( XLAL_EFAILED, "\ngsl_linalg_LU_decomp ( N_mu_nu ) failed: %s\n",  gsl_strerror (gslstat) );
+
+  REAL8 detN;
+  detN = gsl_linalg_LU_det ( NLU_mu_nu, 1 );
+
+  /* ----- compute Bstat correction ---------- */
+  REAL8 deltaB = - 0.5 * log ( detN );
+
+  return deltaB;
+
+} /* XLALComputeBhatCorrection() */

@@ -20,6 +20,7 @@
  * Author: Torres Cristina 
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "tracksearch.h"
 #include <lal/FrameStream.h>
 

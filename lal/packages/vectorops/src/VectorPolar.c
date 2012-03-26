@@ -85,6 +85,7 @@
 
 /** \cond DONT_DOXYGEN */
 #include <math.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #define LAL_USE_COMPLEX_SHORT_MACROS 1
 #include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>

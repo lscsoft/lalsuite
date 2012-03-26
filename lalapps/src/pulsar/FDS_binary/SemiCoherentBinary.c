@@ -31,6 +31,7 @@
 
 /***********************************************************************************************/
 /* includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <time.h>
 #include <stdio.h>

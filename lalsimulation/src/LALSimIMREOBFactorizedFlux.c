@@ -26,7 +26,9 @@
  */
 
 #include <lal/LALComplex.h>
-#include "LALSimIMREOBNRv2.h"
+
+#ifndef _LALSIMIMRFACTORIZEDFLUX_C
+#define _LALSIMIMRFACTORIZEDFLUX_C
 
 /**
  * This function calculates the factorized flux in the EOB dynamics for
@@ -126,3 +128,5 @@ static REAL8 XLALSimIMREOBFactorizedFlux(
 
   return flux * LAL_1_PI / 8.0;
 }
+
+#endif /*_LALSIMIMRFACTORIZEDFLUX_C*/

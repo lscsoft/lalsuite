@@ -376,7 +376,7 @@ tagFindChirpTmpltParams
   LALPNOrder                    order;
   INT4                          reverseChirpBank;
   INT4                          bandPassTmplt;
-  InspiralApplyTaper            taperTmplt;
+  LALSimInspiralApplyTaper      taperTmplt;
 }
 FindChirpTmpltParams;
 

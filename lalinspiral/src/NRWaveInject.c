@@ -25,6 +25,7 @@
  *
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
@@ -501,6 +502,38 @@ XLALFindNRCoalescenceTime(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
 }
 
 
+  INT4
+XLALFindNRCoalescencePlusCrossREAL8(REAL8 *tc,  /**< FIXME: !TO BE DOCUMENTED! */
+    const REAL8TimeSeries *plus,   /**< input strain plus time series */
+    const REAL8TimeSeries *cross   /**< input strain cross time series */)
+{
+
+  size_t *ind=NULL;
+  size_t len;
+  REAL8 *sumSquare=NULL;
+  UINT4 k;
+
+  len = plus->data->length;
+  ind = LALCalloc(1,len*sizeof(*ind));
+
+  sumSquare = LALCalloc(1, len*sizeof(*sumSquare));
+
+  for (k=0; k < len; k++) {
+    sumSquare[k] = plus->data->data[k]*plus->data->data[k] +
+      cross->data->data[k]*cross->data->data[k];
+  }
+
+  gsl_heapsort_index( ind, sumSquare, len, sizeof(REAL8), compare_abs_double);
+
+  *tc = ind[len-1] * plus->deltaT;
+
+  LALFree(ind);
+  LALFree(sumSquare);
+
+  return 0;
+}
+
+
 /** Function for calculating the coalescence time (defined to be the
   peak) of a NR wave
   This uses the peak of h(t)
@@ -642,7 +675,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   REAL4TimeSeries *htData = NULL;
   UINT4  k;
   REAL8 offset;
-  InspiralApplyTaper taper = INSPIRAL_TAPER_NONE;
+  LALSimInspiralApplyTaper taper = LAL_SIM_INSPIRAL_TAPER_NONE;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -675,15 +708,15 @@ void LALInjectStrainGW( LALStatus                 *status,
 
     if ( ! strcmp( "TAPER_START", thisInj->taper ) )
     {
-      taper = INSPIRAL_TAPER_START;
+      taper = LAL_SIM_INSPIRAL_TAPER_START;
     }
     else if (  ! strcmp( "TAPER_END", thisInj->taper ) )
     {
-      taper = INSPIRAL_TAPER_END;
+      taper = LAL_SIM_INSPIRAL_TAPER_END;
     }
     else if (  ! strcmp( "TAPER_STARTEND", thisInj->taper ) )
     {
-      taper = INSPIRAL_TAPER_STARTEND;
+      taper = LAL_SIM_INSPIRAL_TAPER_STARTEND;
     }
     else
     {
@@ -692,7 +725,7 @@ void LALInjectStrainGW( LALStatus                 *status,
       LALFree(htData);
       ABORT( status, NRWAVEINJECT_EVAL, NRWAVEINJECT_MSGEVAL );
     }
-    if ( XLALInspiralWaveTaper( htData->data, taper ) == XLAL_FAILURE )
+    if ( XLALSimInspiralREAL4WaveTaper( htData->data, taper ) == XLAL_FAILURE )
     {
       XLALClearErrno();
       XLALDestroyREAL4Vector ( htData->data);

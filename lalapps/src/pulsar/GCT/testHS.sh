@@ -8,19 +8,15 @@
 LC_ALL_old=$LC_ALL
 export LC_ALL=C
 
-## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-    injectdir="../Injections/"
-    fdsdir="../FDS_isolated/"
-else
-    srcdir=.
-fi
-
 # The only thing where 'dirsep' can and should be used is in paths of the SFT files,
 # as in fact SFTfileIO is the only code that requires it to be set properly. Other
 # file references should be handled by the shell (or wine) and converted if necessary.
 dirsep="/"
+
+builddir="./";
+injectdir="../Injections/"
+fdsdir="../FDS_isolated/"
+
 
 if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     builddir="./";
@@ -422,9 +418,10 @@ awk_isgtr='{if($1>$2) {print "1"}}'
 
 echo
 echo "--------- Timings ------------------------------------------------------------------------------------------------"
-awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; counter=0; } \
-           { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; counter=counter+1; } \
-           END {printf "tau = %5.3g s, tauCoh = %5.3g s, tauSC = %5.3g s", sumTau/counter, sumTauCoh/counter, sumTauSC/counter}'
+awk_timing='BEGIN { sumTau = 0; sumTauCoh = 0; sumTauSC = 0; sumTauF0 = 0; sumTauS0 = 0; counter=0; } \
+           { sumTau = sumTau + $8; sumTauCoh = sumTauCoh + $9; sumTauSC = sumTauSC + $10; sumTauF0 = sumTauF0 + $12; sumTauS0 = sumTauS0 + $13; counter=counter+1; } \
+           END {printf "tau = %6.3g s, tauCoh = %6.3g s, tauSC = %6.3g s;  tauF0 = %6.3g s, tauS0 = %6.3g s",
+                sumTau/counter, sumTauCoh/counter, sumTauSC/counter, sumTauF0 / counter, sumTauS0 / counter}'
 timing_DM=$(sed '/^%.*/d' $timingsfile_DM | awk "$awk_timing")
 timing_DM_LV=$(sed '/^%.*/d' $timingsfile_DM_LV | awk "$awk_timing")
 timing_RS=$(sed '/^%.*/d' $timingsfile_RS | awk "$awk_timing")

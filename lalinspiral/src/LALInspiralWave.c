@@ -125,6 +125,113 @@ LALInspiralSpinModulatedWave()
 #include <lal/LALStdlib.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
+#include <lal/TimeSeries.h>
+
+/**
+ * Generate the plus and cross polarizations for a waveform
+ * form a row of the sim_inspiral table.
+ *
+ * Parses a row from the sim_inspiral table and passes the appropriate members
+ * to XLALSimInspiralChooseWaveform().
+ *
+ * FIXME: this should eventually be moved to lalsimulation
+ * along with the appropriate string parsing functions
+ */
+int XLALSimInspiralChooseWaveformFromSimInspiral(
+    REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+    REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+    SimInspiralTable *thisRow,	/**< row from the sim_inspiral table containing waveform parameters */
+    REAL8 deltaT		/**< time step */
+    )
+{
+   LALPNOrder order;
+   Approximant approximant;
+   LALSimInspiralApplyTaper taper;
+
+   REAL8 phi0 = thisRow->coa_phase;
+   REAL8 m1 = thisRow->mass1 * LAL_MSUN_SI;
+   REAL8 m2 = thisRow->mass2 * LAL_MSUN_SI;
+   REAL8 S1x = thisRow->spin1x;
+   REAL8 S1y = thisRow->spin1y;
+   REAL8 S1z = thisRow->spin1z;
+   REAL8 S2x = thisRow->spin2x;
+   REAL8 S2y = thisRow->spin2y;
+   REAL8 S2z = thisRow->spin2z;
+   REAL8 f_min = thisRow->f_lower;
+   REAL8 r = thisRow->distance * LAL_PC_SI * 1e6;
+   REAL8 i = thisRow->inclination;
+   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+   LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+   int amplitudeO = thisRow->amp_order;
+
+   /* get approximant */
+   if (XLALGetApproximantFromString(thisRow->waveform, &approximant) == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   /* get phase PN order; this is an enum such that the value is twice the PN order */
+   if (XLALGetOrderFromString(thisRow->waveform, &order) == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   /* get taper option */
+   if (XLALGetTaperFromString(&taper, thisRow->taper) == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   /* generate +,x waveforms */
+   if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   /* taper the waveforms */
+   if (XLALSimInspiralREAL8WaveTaper((*hplus)->data, taper) == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   if (XLALSimInspiralREAL8WaveTaper((*hcross)->data, taper) == XLAL_FAILURE)
+      XLAL_ERROR(XLAL_EFUNC);
+
+   return XLAL_SUCCESS;
+}
+
+/**
+ * Generate the plus and cross polarizations for a waveform
+ * form a row of the InspiralTemplate structure.
+ *
+ * Parses the InspiralTemplate stucture and passes the appropriate members
+ * to XLALSimInspiralChooseWaveform().
+ */
+int
+XLALSimInspiralChooseWaveformFromInspiralTemplate(
+   REAL8TimeSeries **hplus,	/**< +-polarization waveform */
+   REAL8TimeSeries **hcross,	/**< x-polarization waveform */
+   InspiralTemplate *params	/**< stucture containing waveform parameters */
+   )
+{
+  REAL8 deltaT = 1./params->tSampling;
+  REAL8 phi0 = params->startPhase; /* startPhase is used as the peak amplitude phase here */
+  REAL8 m1 = params->mass1 * LAL_MSUN_SI;
+  REAL8 m2 = params->mass2 * LAL_MSUN_SI;
+  REAL8 S1x = params->spin1[0];
+  REAL8 S1y = params->spin1[1];
+  REAL8 S1z = params->spin1[2];
+  REAL8 S2x = params->spin2[0];
+  REAL8 S2y = params->spin2[1];
+  REAL8 S2z = params->spin2[2];
+  REAL8 f_min = params->fLower;
+  REAL8 r = params->distance; /* stored as Mpc in InspiralTemplate */
+  REAL8 i = params->inclination;
+  REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+  REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
+  LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  LALPNOrder amplitudeO = params->ampOrder;
+  LALPNOrder order = params->order;
+  Approximant approximant = params->approximant;
+
+  /* generate +,x waveforms */
+  if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+    XLAL_ERROR(XLAL_EFUNC);
+
+  return XLAL_SUCCESS;
+}
+
 
 void
 LALInspiralWave(
@@ -355,7 +462,7 @@ LALInspiralWaveForInjection(
    LALStatus        *status,
    CoherentGW       *waveform,
    InspiralTemplate *inspiralParams,
-   PPNParamStruc  *ppnParams)
+   PPNParamStruc    *ppnParams)
 {
 
    INITSTATUS(status);

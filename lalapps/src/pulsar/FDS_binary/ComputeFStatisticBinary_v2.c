@@ -39,6 +39,7 @@
 /*                                                                               */
 /* Binary modifications added by Chris Messenger (University of Birmingham UK)   */
 /*********************************************************************************/
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/UserInput.h>
 #include <lal/LALDemod.h>
 #include <lal/RngMedBias.h>
@@ -2994,13 +2995,17 @@ int ReadBinaryTemplateBank(void)
   /* Now read in all templates into memory */
   i=0;
   while (i<BinaryBank->BMFheader.Nfilters) {
-    fscanf(BTBfp,"%le%le%d%d%le%le\n",
+    int count = fscanf(BTBfp,"%le%le%d%d%le%le\n",
 		 &(BinaryBank->BTB[i]).ProjSMaxis,
 		 &(BinaryBank->BTB[i]).Period,
 		 &(BinaryBank->BTB[i]).TperiSSB.gpsSeconds,
 		 &(BinaryBank->BTB[i]).TperiSSB.gpsNanoSeconds,
 		 &(BinaryBank->BTB[i]).Eccentricity,
-		 &(BinaryBank->BTB[i]).ArgPeri); 
+                 &(BinaryBank->BTB[i]).ArgPeri);
+    if ( count != 6 ) {
+      fprintf (stderr, "\nfscanf() failed to read 6 items from stream 'BTBfp'\n" );
+      return 1;
+    }
   
     /* printf("ProjSMaxis = %le Period = %le TperiSSB.sec = %d TperiSSB.nano = %d Eccentricity = %le ArgPeri = %le\n", \
 	   BinaryBank->BTB[i].ProjSMaxis,BinaryBank->BTB[i].Period,BinaryBank->BTB[i].TperiSSB.gpsSeconds, \

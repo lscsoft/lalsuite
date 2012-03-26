@@ -85,6 +85,9 @@ static FILE*debugfp = NULL;
 /* maximum number of succesive failures before switching off syncing */
 #define SYNC_FAIL_LIMIT 5
 
+/* output file column headings string, globally defined from HSGCT program */
+extern char *global_column_headings_stringp;
+
 /* local prototypes */
 static void reduce_gctFStat_toplist_precision(toplist_t *l);
 static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *filename, UINT4*checksum, int write_done);
@@ -438,6 +441,16 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
 	  length += ret;
       }
     }
+
+    /* write column headings line */
+    if (length >= 0) {
+      ret = fprintf(fpnew,"%%%% columns:\n%%%% %s\n", global_column_headings_stringp);
+      if (ret < 0)
+        length = ret;
+      else
+        length += ret;
+    }
+
   }
 
   /* write the actual toplist */

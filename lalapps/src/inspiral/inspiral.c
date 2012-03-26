@@ -42,6 +42,7 @@
 #include <math.h>
 #include <fftw3.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
 #include <series.h>
 #include <processtable.h>
@@ -279,7 +280,7 @@ INT4 reverseChirpBank      = 0;         /* enable the reverse chirp     */
 
 /* taper/band pass template options */
 INT4  bandPassTmplt           = 0;
-InspiralApplyTaper taperTmplt = INSPIRAL_TAPER_NONE;
+LALSimInspiralApplyTaper taperTmplt = LAL_SIM_INSPIRAL_TAPER_NONE;
 
 /* template bank veto options */
 UINT4 subBankSize          = 0;         /* num templates in a subbank   */
@@ -1413,8 +1414,12 @@ int main( int argc, char *argv[] )
 
       /* read the event waveform approximant to see if we've been asked to
        perform NumRel injections */
-      LAL_CALL( LALGetApproximantFromString( &status, injections->waveform,
-                                  &injApproximant ), &status);
+      if (XLALGetApproximantFromString( injections->waveform,
+                                  &injApproximant ) == XLAL_FAILURE)
+      {
+        fprintf( stderr, "could not parse approximant from sim_inspiral.waveform\n" );
+        exit( 1 );
+      }
 
       if (injApproximant == NumRel)
       {
@@ -5237,15 +5242,15 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
       case '{':
         if ( !strcmp( "start", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_START;
+          taperTmplt = LAL_SIM_INSPIRAL_TAPER_START;
         }
         else if ( !strcmp( "end", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_END;
+          taperTmplt = LAL_SIM_INSPIRAL_TAPER_END;
         }
         else if ( !strcmp( "startend", optarg ) )
         {
-          taperTmplt = INSPIRAL_TAPER_STARTEND;
+          taperTmplt = LAL_SIM_INSPIRAL_TAPER_STARTEND;
         }
         else
         {

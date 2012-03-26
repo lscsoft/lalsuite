@@ -29,6 +29,7 @@
 #include <math.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALError.h>
 #include <ComputeFstat.h>
 

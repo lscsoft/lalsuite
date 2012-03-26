@@ -322,8 +322,8 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
   static int S6PEpriorWarning = 0;
   REAL8 logPrior=0.0;
 	
-	(void)runState;
-	LALInferenceVariableItem *item=params->head;
+(void)runState;
+LALInferenceVariableItem *item=params->head;
 	LALInferenceVariables *priorParams=runState->priorArgs;
 	REAL8 min, max;
 	REAL8 mc=0.0;
@@ -358,75 +358,66 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 			if(*(REAL8 *) item->value < min || *(REAL8 *)item->value > max) return -DBL_MAX;
 			else
 			{
-        if(!strcmp(item->name, "chirpmass") || !strcmp(item->name, "logmc")){
+		        	if(!strcmp(item->name, "chirpmass") || !strcmp(item->name, "logmc")){
+			          if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
+			            && LALInferenceCheckVariable(priorParams,"MTotMax")
+			            && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
+            
+				            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
+				            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+				            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+            
+				            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
+				                norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
+				            }else{
+				              	if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
+					                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
+					                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
+					                exit(1);
+              					}
+				             	norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
+				             	//printf("norm@%s=%f\n",item->name,norm);
+				    	     	LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+            				}
+				        logPrior+=norm;
+				        if(!strcmp(item->name, "chirpmass")){
+				              mc=(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
+            				}
+				        else if(!strcmp(item->name, "logmc")){
+				              mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
+           				}
+            
+              				if(LALInferenceCheckVariable(params,"asym_massratio"))
+				                LALInferenceMcQ2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"),&m1,&m2);
+			              	else if(LALInferenceCheckVariable(params,"massratio")){
+				                eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+				                LALInferenceMcEta2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
+				        }
+			               if(component_min > m1 || component_min > m2)
+			                  return -DBL_MAX;
+ 			               if(component_max < m1 || component_max < m2)
+			                  return -DBL_MAX;
+			               if(MTotMax < m1+m2)
+			                  return -DBL_MAX;              
           
-          if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
-            && LALInferenceCheckVariable(priorParams,"MTotMax")
-            && (LALInferenceCheckVariable(params,"asym_massratio") || LALInferenceCheckVariable(params,"massratio")) ){
-            
-            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
-            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
-            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
-            
-            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
-                norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
-            }else{
-              if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
-                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
-                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
-                exit(1);
-              }
-              norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
-              //printf("norm@%s=%f\n",item->name,norm);
-              LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-            }
-            logPrior+=norm;
-            
-            if(!strcmp(item->name, "chirpmass")){
-              mc=(*(REAL8 *)LALInferenceGetVariable(params,"chirpmass"));
-            }
-            else if(!strcmp(item->name, "logmc")){
-              mc=exp(*(REAL8 *)LALInferenceGetVariable(params,"logmc"));
-            }
-            
-              if(LALInferenceCheckVariable(params,"asym_massratio"))
-                LALInferenceMcQ2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio"),&m1,&m2);
-              else if(LALInferenceCheckVariable(params,"massratio")){
-                eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
-                LALInferenceMcEta2Masses(mc,*(REAL8 *)LALInferenceGetVariable(params,"massratio"),&m1,&m2);
-              }
-              
-                if(component_min > m1
-                   || component_min > m2)
-                  return -DBL_MAX;
-              
-                if(component_max < m1
-                   || component_max < m2)
-                  return -DBL_MAX;
-              
-                if(MTotMax < m1+m2)
-                  return -DBL_MAX;              
-          
-                  if(LALInferenceCheckVariable(params,"logmc")) {
-                    if(LALInferenceCheckVariable(params,"asym_massratio")) {
-                      logPrior+=log(m1*m1);
-                    } else {
-                      logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
-                    }
-                  } else if(LALInferenceCheckVariable(params,"chirpmass")) {
-                    if(LALInferenceCheckVariable(params,"asym_massratio")) {
-                      logPrior+=log(m1*m1/mc);
-                    } else {
-                      logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
-                    }
-                  }
-
-                  
-          }else{
-            fprintf(stderr,"ERROR; component_max, component_min and MTotMax required for this prior.\n");
-            exit(1);
-          }
-        }
+			               if(LALInferenceCheckVariable(params,"logmc")) {
+			                    if(LALInferenceCheckVariable(params,"asym_massratio")) {
+			                      	logPrior+=log(m1*m1);
+			                    } else {
+						logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
+                    			    }
+			               } else if(LALInferenceCheckVariable(params,"chirpmass")) {
+ 			                    if(LALInferenceCheckVariable(params,"asym_massratio")) {
+			                      logPrior+=log(m1*m1/mc);
+                    			    } else {
+			                      logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
+					    }
+					}
+			         }else{
+			            fprintf(stderr,"ERROR; component_max, component_min and MTotMax required for this prior.\n");
+			            exit(1);
+			         }
+        		}
         /*
         {
 					if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
@@ -483,50 +474,42 @@ REAL8 LALInferenceInspiralPriorNormalised(LALInferenceRunState *runState, LALInf
 					//printf("logPrior@%s=%f\n",item->name,logPrior);
 				}
         */
-				else if(!strcmp(item->name, "massratio") || !strcmp(item->name, "asym_massratio")) continue;
-        
-        else if(!strcmp(item->name, "mass1")){
-          if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
-             && LALInferenceCheckVariable(priorParams,"MTotMax")
-             && LALInferenceCheckVariable(params,"mass2") ){
-          
-            m1=(*(REAL8 *)LALInferenceGetVariable(params,"mass1"));
-            m2=(*(REAL8 *)LALInferenceGetVariable(params,"mass2"));
-            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
-            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
-            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
-            
-            if(component_min > m1
-               || component_min > m2)
-              return -DBL_MAX;
-            
-            if(component_max < m1
-               || component_max < m2)
-              return -DBL_MAX;
-            
-            if(MTotMax < m1+m2)
-              return -DBL_MAX;              
+			else if(!strcmp(item->name, "massratio") || !strcmp(item->name, "asym_massratio")) continue;
+		        else if(!strcmp(item->name, "mass1")){
+          			if( LALInferenceCheckVariable(priorParams,"component_max") && LALInferenceCheckVariable(priorParams,"component_min") 
+			             && LALInferenceCheckVariable(priorParams,"MTotMax")
+			             && LALInferenceCheckVariable(params,"mass2") ){
+			            m1=(*(REAL8 *)LALInferenceGetVariable(params,"mass1"));
+			            m2=(*(REAL8 *)LALInferenceGetVariable(params,"mass2"));
+			            MTotMax=*(REAL8 *)LALInferenceGetVariable(priorParams,"MTotMax");
+			            component_min=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_min");
+			            component_max=*(REAL8 *)LALInferenceGetVariable(priorParams,"component_max");
+			            if(component_min > m1 || component_min > m2)
+			              return -DBL_MAX;
+			            if(component_max < m1 || component_max < m2)
+			              return -DBL_MAX;
+ 			            if(MTotMax < m1+m2)
+			              return -DBL_MAX;
 
-            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
-              norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
-            }else{
-              if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
-                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
-                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
-                exit(1);
-              }
-              norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
-              //printf("norm@%s=%f\n",item->name,norm);
-              LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-            }
-            logPrior+=norm;
-            
-          }else{
-            fprintf(stderr,"ERROR; mass2, component_max, component_min and MTotMax required for this prior.\n");
-            exit(1);
-          }
-        }
-				else if(!strcmp(item->name, "distance")){
+			            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
+			              norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
+			            }else{
+			              if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
+			                	fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
+			                	fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
+			                	exit(1);
+			              }
+			              norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
+				      //printf("norm@%s=%f\n",item->name,norm);
+			              LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+		            	    }
+		            	    logPrior+=norm;
+			       	}else{
+			        	fprintf(stderr,"ERROR; mass2, component_max, component_min and MTotMax required for this prior.\n");
+				        exit(1);
+			        }
+		     	}
+			else if(!strcmp(item->name, "distance")){
 					if(LALInferenceCheckVariable(priorParams,"distance_norm")) {
 						norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"distance_norm");
 					}
@@ -722,9 +705,14 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	outerData oData;
 	gsl_function f;
 	
-    if(!massRatioName){
+    if(!massRatioName)
         XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
-    }
+    else if(!strcmp(massRatioName,"asym_massratio"))
+        oData.innerIntegrand.function = &qInnerIntegrand;
+    else if(!strcmp(massRatioName,"massratio"))
+        oData.innerIntegrand.function = &etaInnerIntegrand;
+    else
+        XLAL_ERROR_REAL8(XLAL_ENAME, "Invalid mass ratio name specified");
     
     // Disable GSL error reporting in favour of XLAL (the integration routines are liable to fail).
     gsl_error_handler_t *oldHandler = gsl_set_error_handler_off();
@@ -742,15 +730,6 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	oData.epsabs = epsabs;
 	oData.epsrel = epsrel;
 	oData.MMin = MMin;
-    
-    if(!strcmp(massRatioName,"asym_massratio"))
-        oData.innerIntegrand.function = &qInnerIntegrand;
-    else if(!strcmp(massRatioName,"massratio"))
-        oData.innerIntegrand.function = &etaInnerIntegrand;
-    else{
-        XLAL_ERROR_REAL8(XLAL_ENAME,"Invalid mass ratio name specified");
-    }
-    
 
 	f.function = &outerIntegrand;
 	f.params = &oData;
@@ -768,7 +747,6 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
 	
 	return result;
 }
-
 
 /* Function to add the min and max values for the prior onto the priorArgs */
 void LALInferenceAddMinMaxPrior(LALInferenceVariables *priorArgs, const char *name, REAL8 *min, REAL8 *max, LALInferenceVariableType type){

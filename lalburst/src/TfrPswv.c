@@ -51,6 +51,7 @@
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/TimeFreq.h>
 
 #define MIN(A, B)       ((A) < (B) ? (A) : (B))

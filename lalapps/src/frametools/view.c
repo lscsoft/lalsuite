@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/LALComplex.h>
 

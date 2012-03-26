@@ -175,12 +175,14 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
 	    params->approximant = SpinTaylorFrameless;}
 	  else if (strcmp(argv[i],"SpinTaylorT3")==0){
 	    params->approximant = SpinTaylorT3; }
+	  else if (strcmp(argv[i],"SpinTaylorT4")==0){
+	    params->approximant = SpinTaylorT4; }
 	  else if (strcmp(argv[i],"SpinQuadTaylor")==0){
 	    params->approximant = SpinQuadTaylor;}
-	  else if (strcmp(argv[i],"PhenSpinTaylorRD")==0){
-	    params->approximant = PhenSpinTaylorRD;}
 	  else if (strcmp(argv[i],"PhenSpinTaylorRDF")==0){
 	    params->approximant = PhenSpinTaylorRDF;}
+	  else if (strcmp(argv[i],"PhenSpinTaylorRD")==0){
+	    params->approximant = PhenSpinTaylorRD;}
 	  else if (strcmp(argv[i],"FindChirpSP")==0){
 	    params->approximant = FindChirpSP;}
 	  else if (strcmp(argv[i],"FindChirpPTF")==0){
@@ -299,7 +301,7 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       {
         if (strcmp(argv[++i],"NO")==0){
           params->interaction = LAL_SIM_INSPIRAL_INTERACTION_NONE; }
-        else if (strcmp(argv[i],"SO")==0){
+        else if (strcmp(argv[i],"SO15")==0){
           params->interaction = LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN; }
         else if (strcmp(argv[i],"SS")==0){
           params->interaction = LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN; }
@@ -307,8 +309,18 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
           params->interaction = LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN; }
         else if (strcmp(argv[i],"QM")==0){
           params->interaction = LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN; }
-        else if (strcmp(argv[i],"Allspin")==0){
+        else if (strcmp(argv[i],"SO25")==0){
+          params->interaction = LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN; }
+        else if (strcmp(argv[i],"SO30")==0){
+          params->interaction = LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN; }
+        else if (strcmp(argv[i],"AllSpin")==0){
           params->interaction = LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN; }
+        else if (strcmp(argv[i],"Tidal")==0){
+          params->interaction = LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN; }
+        else if (strcmp(argv[i],"Tidal6")==0){
+          params->interaction = LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN; }
+        else if (strcmp(argv[i],"All")==0){
+          params->interaction = LAL_SIM_INSPIRAL_INTERACTION_ALL; }
         else
           fprintf(stderr,"Invalid choice of --interaction\n");
       }

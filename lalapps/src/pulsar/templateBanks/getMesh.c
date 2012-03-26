@@ -731,11 +731,12 @@ setTrueRandomSeed(void)
   fpRandom = fopen("/dev/urandom", "r");	/* read Linux random-pool for seed */
   if ( fpRandom == NULL )
     {
-      XLALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
+      XLALPrintError ("\nCould not open /dev/urandom ... using default seed.\n\n");
     }
   else
     {
-      fread(&seed, sizeof(INT4),1, fpRandom);
+      if ( fread(&seed, sizeof(INT4),1, fpRandom) != 1 )
+        XLALPrintError ("\nCould not read from /dev/urandom ... using default seed.\n\n");
       fclose(fpRandom);
     }
 

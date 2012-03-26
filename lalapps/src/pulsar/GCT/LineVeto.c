@@ -31,6 +31,7 @@
 
 /*---------- INCLUDES ----------*/
 #define __USE_ISOC99 1
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "LineVeto.h"
 #include <lal/TransientCW_utils.h> /* for XLALFastNegExp */
 
@@ -612,13 +613,13 @@ XLALComputeLineVetoArray ( const REAL4 TwoF,   /**< multi-detector Fstat */
       REAL4 extraSum=0;	/* will be:  e^[-(maxInSum - logRhoTerm)] + sum_X e^[ -(maxInSum - FXprior) ] >= 1 */
 
       /* need to treat (rho^4/70) term separately */
-      extraSum += XLALFastNegExp ( maxInSum - logRhoTerm ); /* faster version of exp[ -(maxInSum - logRhoTerm) ] */
+      extraSum += exp ( logRhoTerm - maxInSum );
 
       /* now add all FX-contributions */
       for (UINT4 X = 0; X < numDetectors; X++)
-        extraSum += XLALFastNegExp( maxInSum - FXprior[X] ); /* faster version of exp[ -(maxInSum - FXprior)] */
+        extraSum += exp ( FXprior[X] - maxInSum );
 
-      LV -= XLALFastLog( extraSum );
+      LV -= log ( extraSum );
 
     } /* if useAllTerms */
 

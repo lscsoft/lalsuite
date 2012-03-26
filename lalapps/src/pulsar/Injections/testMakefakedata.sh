@@ -1,12 +1,11 @@
 #!/bin/bash
 
 ## allow 'make test' to work from builddir != srcdir
-if [ -n "${srcdir}" ]; then
-    builddir="./";
-else
-    srcdir=.
+if [ -z "${srcdir}" ]; then
+    srcdir=`dirname $0`
 fi
 
+builddir="./";
 testDIR="./mfd_TEST"
 
 oldcode="${builddir}lalapps_makefakedata_test"

@@ -20,6 +20,7 @@
  *  MA  02111-1307  USA
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <stdlib.h>
 #include <lal/LALInference.h>
@@ -241,7 +242,16 @@ void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name)
   return;
 }
 
+int LALInferenceCheckVariableNonFixed(LALInferenceVariables *vars, const char *name)
+/* Checks for a writeable variable */
+{
+  LALInferenceParamVaryType type;
+  if(!LALInferenceCheckVariable(vars,name)) return 0;
+  type=LALInferenceGetVariableVaryType(vars,name);
+  if(type==LALINFERENCE_PARAM_CIRCULAR||type==LALINFERENCE_PARAM_LINEAR) return 1;
+  else return 0;
 
+}
 
 int LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name)
 /* Check for existance of name */
@@ -806,9 +816,23 @@ sizeof(CHAR)*LIGOMETA_PROGRAM_MAX);
 }
 
 
-void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str)
+char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
 {
   ProcessParamsTable *this=procparams;
+  INT8 len=14; //number of characters of the "Command line: " string.
+  while (this!=NULL) {
+    len+=strlen(this->param);
+    len+=strlen(this->value);
+    len+=2;
+    this=this->next;
+  }// Now we know how long the buffer has to be.
+  char * str = (char*) calloc(len+1,sizeof(char));
+  if (str==NULL) {
+    XLALPrintError("Calloc error, str is NULL (in %s, line %d)\n",__FILE__, __LINE__);
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
+  }
+  
+  this=procparams;
   strcpy (str,"Command line: ");
   //strcat (str,this->program);
   while (this!=NULL) {
@@ -818,6 +842,7 @@ void LALInferencePrintCommandLine(ProcessParamsTable *procparams, char *str)
     strcat (str,this->value);
     this=this->next;
   }
+  return str;
 }
 
 
@@ -868,7 +893,7 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
 		XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
 		XLAL_ERROR_VOID(errnum);
 		}
-			    
+  }
 	if (!IFOdata->window || !IFOdata->window->data){
 		XLALPrintError("IFOdata->window is NULL at LALInferenceExecuteFT: Exiting!");
 		XLAL_ERROR_VOID(XLAL_EFAULT);
@@ -893,7 +918,6 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
 			XLAL_ERROR_VOID(errnum);
 			}
     			    
-	}
  
     /* hx */
   if(!IFOdata->freqModelhCross){ 
@@ -904,7 +928,7 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
 			XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
 		 	XLAL_ERROR_VOID(errnum);		
 			}
-
+  }
 	XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data),errnum);
 
 		if (errnum){
@@ -919,7 +943,6 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
 			XLAL_ERROR_VOID(errnum);
 			}   
 
-	} 
 
     norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
     

@@ -18,8 +18,7 @@ bin_PROGRAMS = lalapps_ComputeFStatistic lalapps_FstatShapeTest lalapps_SemiAnal
 check_PROGRAMS = testFstat_v3
 
 EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2 \
-		 lalapps_ComputeFStatistic_v2_sse lalapps_ComputeFStatistic_v2_sse2 lalapps_ComputeFStatistic_v2_cuda
-
+		 lalapps_ComputeFStatistic_v2_SSE lalapps_ComputeFStatistic_v2_cuda
 
 # CFSv2 doesn't compile with Condor
 #if CONDOR_ENABLED
@@ -29,6 +28,7 @@ EXTRA_PROGRAMS = lalapps_CFSv3 eah_PredictFStat eah_ComputeFStatistic_v2 \
 #endif
 
 LVsrc = ../GCT
+OPTsrc = ./OptimizedCFS
 
 lalapps_zellepolka_SOURCES = zellepolka.c
 lalapps_monteint_SOURCES = monteint.c
@@ -68,10 +68,9 @@ lalapps_ComputeFStatistic_v2_SOURCES = $(ComputeFStatisticV2Sources)
 
 # compilation of SSE targets requires a valid CPU architecture being set in AM_CFLAGS
 # (e.g. configure with CFLAGS=-march=pentium-m),
-lalapps_ComputeFStatistic_v2_sse_SOURCES = $(ComputeFStatisticV2Sources)
-lalapps_ComputeFStatistic_v2_sse_CFLAGS = $(AM_CFLAGS) -msse -mfpmath=sse
-lalapps_ComputeFStatistic_v2_sse2_SOURCES = $(ComputeFStatisticV2Sources)
-lalapps_ComputeFStatistic_v2_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
+lalapps_ComputeFStatistic_v2_SSE_SOURCES = $(ComputeFStatisticV2Sources) $(OPTsrc)/LocalComputeFstat.c
+lalapps_ComputeFStatistic_v2_SSE_CPPFLAGS = $(AM_CPPFLAGS) -DCFS_SSE_OPT
+lalapps_ComputeFStatistic_v2_SSE_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
 
 # compilation of CUDA target requires cuda header and library directories included in
 # CPPFLAGS and LDFLAGS respectively (until LAL/LALAapps have a proper CUDA detection in configure)
@@ -103,11 +102,11 @@ EXTRA_DIST = testFStat.sh testCFSv2.sh testGridv2.sh Fstats.ref1 Fstats.ref2 tes
 TESTS = testFStat.sh testPredictFStat.sh testFstat_v3
 
 if !CONDOR_ENABLED
-TESTS += testCFSv2.sh testGridv2.sh ## testCFSv2GPU.sh
+TESTS += testCFSv2.sh testGridv2.sh
 endif
 
 
-TESTS_ENVIRONMENT = \
+TESTS_ENVIRONMENT = 1>/dev/null \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
 LAL_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
 

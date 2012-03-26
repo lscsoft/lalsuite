@@ -245,7 +245,7 @@ int main(int argc, char *argv[]){
   LALFree(edat);
   LALCheckMemoryLeaks();
 
-  INFO(TESTVELOCITYC_MSGENORM);
+  //INFO(TESTVELOCITYC_MSGENORM);
   return TESTVELOCITYC_ENORM;
 }
 

@@ -207,11 +207,11 @@ int compare_toplists(toplist_t*list1, toplist_t*list2) {
 static int (*_qsort_compare1)(const void*, const void*);
 /* wrapper function for qsort */
 static int _qsort_compare2(const void*a, const void*b){
-  return (_qsort_compare1(a,b));
+  return (_qsort_compare1(*(void*const*)a,*(void*const*)b));
 }
 /* inverse wrapper */
 static int _qsort_compare3(const void*b, const void*a){
-  return (_qsort_compare1(a,b));
+  return (_qsort_compare1(*(void*const*)a,*(void*const*)b));
 }
 
 /* sorts the toplist with an arbitrary sorting function

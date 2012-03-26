@@ -19,8 +19,10 @@
 
 /** \file
  * \ingroup std
- * \author Creighton, J. D. E., and Creighton, T. D.
  * \brief The primative LAL datatypes.
+ * \authors J. D. E. Creighton
+ * \authors T. D. Creighton
+ * \authors K. Wette
  *
  * This header defines the primative LAL datatypes.  These datatypes
  * are: CHAR, INT2, INT4, INT8 (signed integer types); UCHAR, UINT2
@@ -209,6 +211,15 @@ typedef unsigned char UCHAR;
 typedef unsigned char BOOLEAN;
 
 #include <stdint.h>
+
+#ifndef LAL_USE_OLD_COMPLEX_STRUCTS
+#if defined(__cplusplus)
+#include <complex>
+#else
+#include <complex.h>
+#endif
+#endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
+
 #include <lal/LALConfig.h>
 
 /* If INT8 etc. are already defined, undefine them */
@@ -241,6 +252,62 @@ typedef uint64_t UINT8;
 /* Real types */
 typedef float REAL4;
 typedef double REAL8;
+
+#ifndef SWIG /* exclude from SWIG interface */
+
+#ifndef LAL_USE_OLD_COMPLEX_STRUCTS
+
+/* Complex types */
+#if defined(__cplusplus)
+typedef std::complex<float> COMPLEX8;
+typedef std::complex<double> COMPLEX16;
+#else
+typedef float complex COMPLEX8;
+typedef double complex COMPLEX16;
+#endif
+
+/* Complex type constructors */
+#if defined(__cplusplus)
+#define CX8rect( re, im) COMPLEX8(  re, im )
+#define CX16rect(re, im) COMPLEX16( re, im )
+#define CX8polar( r, th) ( (r) * std::exp( CX8rect(  0, th ) ) )
+#define CX16polar(r, th) ( (r) * std::exp( CX16rect( 0, th ) ) )
+#else
+#define CX8rect( re, im) ( (re) + _Complex_I * (im) )
+#define CX16rect(re, im) ( (re) + _Complex_I * (im) )
+#define CX8polar( r, th) ( (r) * cexpf( CX8rect(  0, th ) ) )
+#define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )
+#endif
+
+/* Real and imaginary part accessors */
+#if defined(__cplusplus)
+#define CX8re( z) std::real(z)
+#define CX16re(z) std::real(z)
+#define CX8im( z) std::imag(z)
+#define CX16im(z) std::imag(z)
+#else
+#define CX8re( z) crealf(z)
+#define CX16re(z) creal( z)
+#define CX8im( z) cimagf(z)
+#define CX16im(z) cimag( z)
+#endif
+
+/* Real and imaginary part assignment */
+#if !defined(__cplusplus) && defined(__GNUC__)
+#define setCX8re( z, re) ( __real__(z) = (re) )
+#define setCX16re(z, re) ( __real__(z) = (re) )
+#define setCX8im( z, im) ( __imag__(z) = (im) )
+#define setCX16im(z, im) ( __imag__(z) = (im) )
+#else
+#define setCX8re( z, re) ( (z) = CX8rect(  re, CX8im( z) ) )
+#define setCX16re(z, re) ( (z) = CX16rect( re, CX16im(z) ) )
+#define setCX8im( z, im) ( (z) = CX8rect(  CX8re( z), im ) )
+#define setCX16im(z, im) ( (z) = CX16rect( CX16re(z), im ) )
+#endif
+
+#else /* LAL_USE_OLD_COMPLEX_STRUCTS */
+
+/** \cond DONT_DOXYGEN */
 
 /* <lalLaTeX>
 
@@ -278,7 +345,6 @@ memory.  The fields are:
 </lalLaTeX> */
 
 /** Single-precision floating-point complex number (8 bytes total) */
-#ifndef SWIG /* exclude from SWIG interface */
 typedef struct
 tagCOMPLEX8
 {
@@ -286,10 +352,8 @@ tagCOMPLEX8
   REAL4 im; /**< The imaginary part. */
 }
 COMPLEX8;
-#endif /* SWIG */
 
 /** Double-precision floating-point complex number (16 bytes total) */
-#ifndef SWIG /* exclude from SWIG interface */
 typedef struct
 tagCOMPLEX16
 {
@@ -297,13 +361,17 @@ tagCOMPLEX16
   REAL8 im; /**< The imaginary part. */
 }
 COMPLEX16;
-#endif /* SWIG */
 
 
 /* <lalLaTeX>
 \vfill{\footnotesize\input{LALAtomicDatatypesHV}}
 </lalLaTeX> */
 
+/** \endcond */
+
+#endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
+
+#endif /* SWIG */
 
 #ifdef  __cplusplus
 }

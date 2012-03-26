@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <cufft.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALAtomicDatatypes.h>
 
 static void CudaError(cudaError_t error, const char *file, int line)

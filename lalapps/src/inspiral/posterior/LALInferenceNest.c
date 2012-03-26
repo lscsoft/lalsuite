@@ -165,8 +165,10 @@ Initialisation arguments:\n\
 		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
+	{
 		fprintf(stdout, " initialize(): no data read.\n");
-	
+		exit(1);
+	}
 	/* set up GSL random number generator: */
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
@@ -386,10 +388,10 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
-	REAL8 phi_spin1_min=-LAL_PI;
-	REAL8 phi_spin1_max=LAL_PI;
-	REAL8 theta_spin1_min=-LAL_PI/2.0;
-	REAL8 theta_spin1_max=LAL_PI/2.0;	
+	REAL8 phi_spin1_min=0.0;
+	REAL8 phi_spin1_max=2.0*LAL_PI;
+	REAL8 theta_spin1_min=0.0;
+	REAL8 theta_spin1_max=LAL_PI;
 	REAL8 etaMin=0.01;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -427,7 +429,8 @@ Parameter arguments:\n\
 (--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
 (--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
 (--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
-(--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n";
+(--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n\
+(--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -544,7 +547,22 @@ Parameter arguments:\n\
     else mtot_max=2.*(mMax-mMin);
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
-	
+    /* Set the minimum and maximum chirp mass, using user values if specified */
+    ppt=LALInferenceGetProcParamVal(commandLine,"--Mmin");
+    if(ppt)
+        mcMin=atof(ppt->value);
+    else mcMin=pow(mMin*mMin,0.6)/pow(2.0*mMin,0.2);
+    ppt=LALInferenceGetProcParamVal(commandLine,"--Mmax");
+    if(ppt)
+        mcMax=atof(ppt->value);
+    else mcMax=pow(mMax*mMax,0.6)/pow(2.0*mMax,0.2);
+
+    INT4 tempint=1;
+	if(LALInferenceGetProcParamVal(commandLine,"--crazyinjectionhlsign") || LALInferenceGetProcParamVal(commandLine,"--crazyInjectionHLSign"))
+    {
+        printf("Using signal sign flip in Hanford and Livingston");
+        LALInferenceAddVariable(currentParams,"crazyInjectionHLSign",&tempint,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    }
 	printf("Read end time %f\n",endtime);
 	
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
@@ -555,11 +573,12 @@ Parameter arguments:\n\
     {
         /* Set up the variable parameters */
         tmpVal=mcMin+(mcMax-mcMin)/2.0;
+        
         LALInferenceAddMinMaxPrior(priorArgs,   "chirpmass",    &mcMin, &mcMax,     LALINFERENCE_REAL8_t);
         LALInferenceAddVariable(currentParams,"chirpmass",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
         tmpVal=1.5;
-        REAL8 qMin=1.0;
-        REAL8 qMax=mMax/mMin;
+        REAL8 qMax=1.0;
+        REAL8 qMin=mMin/mMax;
         LALInferenceAddVariable(currentParams, "asym_massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
         LALInferenceAddMinMaxPrior(priorArgs,   "asym_massratio",    &qMin,    &qMax,    LALINFERENCE_REAL8_t);
 
@@ -617,7 +636,7 @@ Parameter arguments:\n\
 	/* If aligned spins use magnitude in (-1,1) */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--aligned-spin");
 	if(ppt) {enable_spin=1; aligned_spin=1; a_spin1_min=-1; a_spin2_min=-1;}
-		
+	
 	if(enable_spin){
 		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
@@ -629,10 +648,9 @@ Parameter arguments:\n\
 	
 		
 		if(aligned_spin){ /* Set the spin angles to be parallel to orbital */
-			tmpVal=LAL_PI/2;
+			tmpVal=0;
 			LALInferenceAddVariable(currentParams,"theta_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 			LALInferenceAddVariable(currentParams,"theta_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-			tmpVal=0;
 			LALInferenceAddVariable(currentParams,"phi_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 			LALInferenceAddVariable(currentParams,"phi_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		}

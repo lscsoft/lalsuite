@@ -561,17 +561,17 @@ class CohireJob(InspiralAnalysisJob):
     self.set_stderr_file('logs/cohire-$(macroifo)-$(cluster)-$(process).err')
 
 
-class InspInjFindJob(InspiralAnalysisJob):
+class InjFindJob(InspiralAnalysisJob):
   """
-  An inspinjfind job. The static options are read from the [inspinjfind]
+  An injfind job. The static options are read from the [injfind]
   section in the cp file.
   """
   def __init__(self, cp, dax = False):
     """
     @cp: a ConfigParser object from which the options are read.
     """
-    exec_name = 'inspinjfind'
-    sections = ['inspinjfind']
+    exec_name = 'injfind'
+    sections = ['injfind']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
     self.add_condor_cmd('getenv', 'True')
@@ -1266,7 +1266,7 @@ class ThincaToCoincNode(InspiralAnalysisNode):
     """
     return self.__input_cache
 
-  def get_output_from_cache(self):
+  def get_output_from_cache(self, coinc_file_tag ):
     """
     Returns a list of files that this node will generate using the input_cache.
     The output file names are the same as the input urls, but with the 
@@ -1278,10 +1278,10 @@ class ThincaToCoincNode(InspiralAnalysisNode):
       raise ValueError, "no input-cache specified"
     # open the input cache file
     fp = open(self.__input_cache, 'r')
-    input_cache = lal.Cache().fromfile(fp).sieve( description = 'THINCA_SECOND' )
+    input_cache = lal.Cache().fromfile(fp).sieve( description = coinc_file_tag )
     output_files = [ \
       '/'.join([ os.getcwd(), 
-      re.sub('THINCA', 'THINCA_TO_COINC', os.path.basename(entry.url)) ]) for entry in input_cache \
+      re.sub('INCA', 'INCA_TO_COINC', os.path.basename(entry.url)) ]) for entry in input_cache \
       ]
     return output_files
 

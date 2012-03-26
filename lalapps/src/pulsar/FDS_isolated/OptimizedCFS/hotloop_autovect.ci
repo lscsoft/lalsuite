@@ -1,7 +1,7 @@
 
-	/* designed for four vector elemens (ve) as there are in SSE and AltiVec */
-	/* vectorizes with gcc-4.2.3 and gcc-4.1.3 */
-
+      /* designed for four vector elemens (ve) as there are in SSE and AltiVec */
+      /* vectorizes with gcc-4.2.3 and gcc-4.1.3 */
+      {
 	{
 	  /* the initialization already handles the first elements,
 	     thus there are only 7 loop iterations left */
@@ -9,6 +9,7 @@
 	  UINT4 ve;
 	  REAL4 *Xal   = (REAL4*)Xalpha_l;
 	  REAL4 STn[4] = {Xal[0],Xal[1],Xal[2],Xal[3]};
+          REAL4 kappa_max = kappa_star + 1.0f * DTERMS - 1.0f;
 	  REAL4 pn[4]  = {kappa_max, kappa_max, kappa_max-1.0f, kappa_max-1.0f};
 	  REAL4 qn[4];
 	  
@@ -59,8 +60,9 @@
 	  }
 	}
 
-      {
-	REAL8 _lambda_alpha = lambda_alpha;
-	SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
-	SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+        {
+          REAL8 _lambda_alpha = lambda_alpha;
+          SINCOS_TRIM_X (_lambda_alpha,_lambda_alpha);
+          SINCOS_2PI_TRIMMED( &imagQ, &realQ, _lambda_alpha );
+        }
       }

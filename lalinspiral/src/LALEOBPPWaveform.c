@@ -49,6 +49,7 @@ Pan et al, arXiv:1106.1021v1 [gr-qc].
 </ul>
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALEOBNRv2Waveform.h>

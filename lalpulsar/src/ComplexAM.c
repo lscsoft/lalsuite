@@ -30,6 +30,7 @@
 #include <math.h>
 
 /* GSL includes */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>

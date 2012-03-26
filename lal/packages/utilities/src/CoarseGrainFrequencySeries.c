@@ -205,6 +205,7 @@ strncpy()
 % \bibitem{utilities:}
 
 ******************************************************* </lalLaTeX> */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/CoarseGrainFrequencySeries.h>

@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
    DopplerSkyScanInit scanInit = empty_DopplerSkyScanInit;
    DopplerSkyScanState scan = empty_DopplerSkyScanState;
    PulsarDopplerParams dopplerpos;
-   scanInit.gridType = 1;     //Default value for an approximate-isotropic grid
+   scanInit.gridType = GRID_ISOTROPIC;     //Default value for an approximate-isotropic grid
    scanInit.skyRegionString = sky;      //"allsky" = Default value for all-sky search
    scanInit.numSkyPartitions = 1;   //Default value so sky is not broken into chunks
    scanInit.Freq = args_info.fmin_arg+0.5*args_info.fspan_arg;  //Mid-point of the frequency band

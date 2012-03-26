@@ -114,11 +114,13 @@ extern "C" {
 /** The total number of 'amplitude' parameters that can define a signal e.g.
  * gravitational wave amplitude from a triaxial star \f$ h_0 \f$, initial phase
  * of the signal \f$ \phi_0 \f$, polarisation angle \f$ psi \f$, and cosine of
- * the inclination angle \f$ \cos{\iota} \f$. 
+ * the inclination angle \f$ \cos{\iota} \f$.  For the pinSf model, extra pars include
+ \f$ I_{31}, I_{21}\f$ the equivalents of \f$ h_0 \f$, and the extra orientation parameters
+ \f$ \theta \f$ and \f$ \lambda \f$.
  * 
  * Note: These should be increased if additional model parameters are added.
  */ 
-#define NUMAMPPARS 7
+#define NUMAMPPARS 8
 
 /** The total number of frequency parameters that can defined a signal e.g.
  * the signal frequency and its time derivatives, and the frequency (period)
@@ -137,7 +139,7 @@ extern "C" {
 /** A list of the amplitude parameters. The names given here are those that are
  * recognised within the code. */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
-"cosiota", "h1", "lambda", "theta" };
+"cosiota", "I31", "I21", "lambda", "theta" };
 
 /** A list of the frequency parameters. The names given here are those that are
  * recognised within the code. */

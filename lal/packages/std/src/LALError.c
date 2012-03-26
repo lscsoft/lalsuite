@@ -190,6 +190,9 @@ lalDebugLevel
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 
+void FREESTATUSPTR( LALStatus *status );
+void REPORTSTATUS( LALStatus *status );
+
 #undef LALError
 #undef LALWarning
 #undef LALInfo

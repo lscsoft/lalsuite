@@ -163,6 +163,7 @@ LALUnitAsString()
 
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <ctype.h>
 #include <lal/LALStdlib.h>

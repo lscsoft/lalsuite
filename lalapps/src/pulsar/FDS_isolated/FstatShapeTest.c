@@ -579,13 +579,19 @@ INT2 ReadData(void)
   /* skip the header */
   /* depend on data format specification */
   for(irec=0;irec<Nheadlines;irec++) {
-    fgets(buff,sizeof(buff),fpobsv);
-    fgets(buff,sizeof(buff),fptest);
+    if ( fgets(buff,sizeof(buff),fpobsv) == NULL ) {
+      fprintf (stderr, "\nfgets() failed!\n" );
+      return 1;
+    }
+    if ( fgets(buff,sizeof(buff),fptest) == NULL ) {
+      fprintf (stderr, "\nfgets() failed!\n" );
+      return 1;
+    }
   }
 
   /* data input begin */
   for(irec=0;irec<(ObsvHeader.nData);irec++) {
-    fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
+    int numread = fscanf(fpobsv,"%lf %lf %lf %lf %lf %lf",
 	   &(FaFbObsv[irec].freq),
 	   &(FaFbObsv[irec].RFa),
 	   &(FaFbObsv[irec].IFa),
@@ -593,13 +599,17 @@ INT2 ReadData(void)
 	   &(FaFbObsv[irec].IFb),
 	   &(FaFbObsv[irec].Fstat)
 	   );
+    if ( numread != 6 ) {
+      fprintf (stderr, "\nfscanf() failed to read 6 items from streadm 'fpobsv'\n");
+      return 1;
+    }
   }
   if(irec !=(ObsvHeader.nData)) {
     fprintf(stderr,"Data read error\n");
     return 1;
   }
   for(irec=0;irec<(TestHeader.nData);irec++) {
-    fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
+    int numread = fscanf(fptest,"%lf %lf %lf %lf %lf %lf",
 	   &(FaFbTest[irec].freq),
 	   &(FaFbTest[irec].RFa),
 	   &(FaFbTest[irec].IFa),
@@ -607,6 +617,11 @@ INT2 ReadData(void)
 	   &(FaFbTest[irec].IFb),
 	   &(FaFbTest[irec].Fstat)
 	   );
+    if ( numread != 6 ) {
+      fprintf (stderr, "\nfscanf() failed to read 6 items from streadm 'fptest'\n");
+      return 1;
+    }
+
   }
   if(irec !=(TestHeader.nData)) {
     fprintf(stderr,"Data read error\n");

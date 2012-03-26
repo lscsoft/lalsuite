@@ -555,7 +555,7 @@ int MAIN( int argc, char *argv[]) {
   REAL8 FreqShift = 0;	/* frequency-shift correction for frequency-quantization offset bug */
   if ( uvar_WU_Freq > 0 )
     FreqShift = uvar_WU_Freq - uvar_WU_dFreq * floor ( uvar_WU_Freq / uvar_WU_dFreq + 0.5 );
-  LogPrintf (LOG_NORMAL, "Applying frequency-correction shift of %.9g Hz \n", FreqShift );
+  LogPrintf (LOG_DEBUG, "Applying frequency-correction shift of %.9g Hz \n", FreqShift );
 
   HoughCandidateList *InputCandList;
   if ( ( InputCandList = XLALLoadHoughCandidateList ( uvar_followupList, FreqShift )) == NULL ) {

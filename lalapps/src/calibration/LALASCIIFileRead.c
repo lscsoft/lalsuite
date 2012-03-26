@@ -25,6 +25,7 @@ int isnan( double );
 #include <stdlib.h>
 #include <string.h>
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/SeqFactories.h>
 #include <lal/Date.h>
