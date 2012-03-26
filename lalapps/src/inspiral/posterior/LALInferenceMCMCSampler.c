@@ -644,9 +644,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
             LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
 
-            if(MPIrank==0)
-              printf("Phase 1 ACL (%i): %i\n",i,acl);
-
           /* Estimated ACL, check if phase 1 is complete. */
           } else if (i-adaptStart >= acl*annealStart) {
             /* Double check ACL before moving to next phase */
@@ -662,15 +659,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
             LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
 
-            if(MPIrank==0)
-              printf("Phase 1' ACL (%i): %i\n",i,acl);
-
             if (i-adaptStart >= acl*annealStart) {
               /* Broadcast the cold chain ACL from parallel tempering */
               MPI_Bcast(&PTacl, 1, MPI_INT, 0, MPI_COMM_WORLD);
               runPhase += 1;
               annealStartIter=i;
               runState->proposal = &LALInferencePostPTProposal;
+              if(MPIrank==0)
+                printf("Starting to anneal at iteration %i.\n",i);
 
               /* Share DE buffer from cold chain */
               if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
@@ -717,7 +713,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         if (acl==Niter) {
           if ((i-adaptStart)%PTacl == 0) {
             updateMaxAutoCorrLen(runState, adaptStart, i);
-            printf("Phase 3 (chain %i) ACL (%i): %i\n",MPIrank,i,acl);
           }
         } else {
           if (i-adaptStart >= acl*Neff/nChain) {
@@ -1077,15 +1072,10 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
 
   /* if maximum logL has increased by more than nParam/2, restart it */
   if (runState->currentLikelihood > logLAtAdaptStart+nPar/2) {
-    LALInferenceAdaptationRestart(runState, cycle);
-    if (!adapting) {
-      adapting = 1;
-      LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
+    if (!adapting)
       fprintf(stdout,"Turning on adaptation for chain %u at iteration %u.\n",MPIrank,cycle);
-    }
-  }
-
-  if (adapting) {
+    LALInferenceAdaptationRestart(runState, cycle);
+  } else if (adapting) {
     /* Turn off adaption after adaptLength steps without restarting */
     if ((cycle-adaptStart) > adaptLength) {
       adapting = 0;  //turn off adaptation
@@ -1108,11 +1098,10 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
 {
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  REAL8 logLAtAdaptStart = runState->currentLikelihood;
   REAL8Vector *PacceptCount = NULL;
   REAL8Vector *PproposeCount = NULL;
-  INT4 p=0;
   INT4 adapting=1;
+  INT4 p=0;
 
   for (p=0; p<nPar; ++p) {
     PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
@@ -1123,7 +1112,7 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
   LALInferenceSetVariable(runState->proposalArgs, "adaptStart", &cycle);
-  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &logLAtAdaptStart);
+  LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(runState->currentLikelihood));
   LALInferenceSetVariable(runState->algorithmParams, "acl", &Niter);
   LALInferenceAdaptationEnvelope(runState, cycle);
 }
