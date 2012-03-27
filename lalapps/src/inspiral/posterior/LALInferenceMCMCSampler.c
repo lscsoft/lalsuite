@@ -227,7 +227,7 @@ updateMaxAutoCorrLen(LALInferenceRunState *runState, INT4 currentCycle) {
   REAL8 aclThreshold = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "aclThreshold");
 
   computeMaxAutoCorrLen(runState, adaptStart, currentCycle, &proposedACL);
-  if (proposedACL < aclThreshold*(currentCycle-adaptStart)) {
+  if (proposedACL < aclThreshold*(currentCycle-adaptStart))
     LALInferenceSetVariable(runState->algorithmParams, "acl", &proposedACL);
 }
 
@@ -264,7 +264,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 Neff = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Neffective");
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
-  INT4 acl=Niter, PTacl=Niter;
+  INT4 acl=Niter, PTacl=Niter, oldACL=0, goodACL=0;
+  INT4 iEff=0;
 
   ProcessParamsTable *ppt;
 
@@ -378,6 +379,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--anneal");
   if (ppt) {
     annealingOn = 1;                                          // Flag to indicate annealing is being used during the run
+    runPhase=1;
   }
 
   for (t=0; t<nChain; ++t) {
@@ -533,7 +535,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     else
       printf(" Adaptation off.\n");
     if (annealingOn)
-      printf(" Annealing linearly for %i autocorrelation lengths.\n", annealLength);
+      printf(" Annealing linearly for %i effective samples.\n", annealLength);
     else
       printf(" Annealing off.\n");
     if (Neff != Niter)
@@ -565,147 +567,126 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (adaptationOn)
       LALInferenceAdaptation(runState, i);
 
-    if (runPhase==0) {
+    if (runPhase < 2) {
       /* Parallel Tempering */
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
 
       if (i % (100*Tskip) == 0) {
-        MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&adaptStart, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
+        acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
 
-        /* Check if cold chain ACL has been calculated */
-        if (acl == Niter) {
+        if (!LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior")){
           MPI_Gather(&adapting,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-          adapting=0;
-          for (p=0; p<nChain; p++) {
-            if (intVec[p]>0){
-              adapting=1;
-              break;
-            }
-          }
-          MPI_Bcast(&adapting, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-          if (!adapting) {
-            if (MPIrank==0)
-              updateMaxAutoCorrLen(runState, i);
-            acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-          }
-        } else if (i-adaptStart >= acl*Neff) {
-          /* Double check ACL before ending */
-          if (MPIrank==0)
-            updateMaxAutoCorrLen(runState, i);
-          acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-          MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-          LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-          if (i-adaptStart >= acl*Neff) {
-            if (MPIrank==0)
-              fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, (i-adaptStart)/acl);
-            break;                                 // Sampling is done!
-          }
-        }
-      }
-    }
-
-    if (runPhase==1) {
-      /* Parallel Tempering */
-      adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
-      adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
-
-      if (i % (100*Tskip) == 0) {
-        /* Make sure all chains using same ACL */
-        MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-
-        MPI_Gather(&adapting,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-        if (MPIrank==0) {
-          adapting=0;
-          for (p=0; p<nChain; p++) {
-            if (intVec[p]>0){
-              adapting=1;
-              break;
+          if (MPIrank==0) {
+            adapting=0;
+            for (p=0; p<nChain; p++) {
+              if (intVec[p]>0){
+                adapting=1;
+                break;
+              }
             }
           }
         }
         MPI_Bcast(&adapting, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+        /* Check if cold chain ACL has been calculated */
         if (!adapting) {
-          /* Still no ACL is estimate. */
-          if (acl==Niter) {
+          if (iEff == 0) {
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            MPI_Gather(&acl,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-            if (MPIrank == 0) {
-              for (p=0; p<nChain; p++) {
-                if (intVec[p]>acl)
-                  acl=intVec[p];
+            iEff = (i - adaptStart)/acl;
+            if (!LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior")){
+              MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
+              if (MPIrank==0) {
+                for (p=0; p<nChain; p++) {
+                  if (intVec[p]<iEff){
+                    iEff=intVec[p];
+                  }
+                }
               }
             }
-            MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-
-          /* Estimated ACL, check if phase 1 is complete. */
-          } else if (i-adaptStart >= acl*annealStart) {
-            /* Double check ACL before moving to next phase */
+            MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          } else {
+            /* Double check ACL before changing phase */
+            oldACL = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            PTacl = acl;
-            MPI_Gather(&acl,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-            if (MPIrank == 0) {
-              for (p=0; p<nChain; p++) {
-                if (intVec[p]>acl)
-                  acl=intVec[p];
+
+            if (!goodACL) {
+              MPI_Bcast(&oldACL, 1, MPI_INT, 0, MPI_COMM_WORLD);
+              MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
+              if (acl <= oldACL)
+                goodACL=1;
+            } else {
+              iEff = (i - adaptStart)/acl;
+              if (MPIrank==0) {
+                printf("ACL:%i(%i)\tiEff:%i\n",acl,i,iEff);
               }
-            }
-            MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
+              if (!LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior")) {
+                MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
+                if (MPIrank==0) {
+                  for (p=0; p<nChain; p++) {
+                    if (intVec[p]<iEff){
+                      iEff=intVec[p];
+                    }
+                  }
+                }
+              }
+              MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-            if (i-adaptStart >= acl*annealStart) {
-              /* Broadcast the cold chain ACL from parallel tempering */
-              MPI_Bcast(&PTacl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-              runPhase += 1;
-              annealStartIter=i;
-              runState->proposal = &LALInferencePostPTProposal;
-              if(MPIrank==0)
-                printf("Starting to anneal at iteration %i.\n",i);
+              if (runPhase==0) {
+                if (iEff >= Neff) {
+                  if (MPIrank==0)
+                    fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, (i-adaptStart)/acl);
+                  break;                                 // Sampling is done!
+                }
+              } else if (runPhase==1) {
+                if (iEff >= annealStart) {
+                  /* Broadcast the cold chain ACL from parallel tempering */
+                  PTacl = acl;
+                  MPI_Bcast(&PTacl, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                  runPhase += 1;
+                  annealStartIter=i;
+                  runState->proposal = &LALInferencePostPTProposal;
+                  if(MPIrank==0)
+                    printf("Starting to anneal at iteration %i.\n",i);
 
-              /* Share DE buffer from cold chain */
-              if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
-                BcastDifferentialEvolutionPoints(runState, 0);
+                  /* Share DE buffer from cold chain */
+                  if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution"))
+                    BcastDifferentialEvolutionPoints(runState, 0);
 
-              /* Force chains to re-adapt */
-              if (adaptationOn)
-                LALInferenceAdaptationRestart(runState, i);
+                  /* Force chains to re-adapt */
+                  if (adaptationOn)
+                    LALInferenceAdaptationRestart(runState, i);
 
-              /* Calculate speed of annealing based on ACL */
-              for (t=0; t<nChain; ++t) {
-                annealDecay[t] = (tempLadder[t]-1.0)/(REAL8)(annealLength*acl);
+                  /* Calculate speed of annealing based on ACL */
+                  for (t=0; t<nChain; ++t) {
+                    annealDecay[t] = (tempLadder[t]-1.0)/(REAL8)(annealLength*PTacl);
+                  }
+
+                  /* Reset effective sample size and ACL */
+                  iEff=0;
+                  acl = Niter;
+                  LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
+                }
               }
             }
           }
         }
       }
-    } //if (runState==1)
+    } //if (runPhase < 2)
+
 
     if (runPhase==2) {
-      if (i-annealStartIter < acl*annealLength) {
+      if (i-annealStartIter < PTacl*annealLength) {
         for (t=0;t<nChain; ++t) {
           tempLadder[t] = tempLadder[t] - annealDecay[t];
           LALInferenceSetVariable(runState->proposalArgs, "temperature", &(tempLadder[MPIrank]));
         }
-        if (MPIrank == 0){
-          printf("\nTemperature ladder:\n");
-          for (t=0; t<nChain; ++t) {
-            printf(" tempLadder[%d]=%f\n",t,tempLadder[t]);
-          }
-        }
       } else {
         runPhase += 1;
         if (MPIrank==0)
-          printf(" Single-chain sampling starting at iteration %i.\n", i+annealLength*acl);
+          printf(" Single-chain sampling starting at iteration %i.\n", i);
       }
     } //if (runState==2)
 
@@ -713,18 +694,20 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
       if (!adapting) {
-        if (acl==Niter) {
+        if (iEff==0) {
           if ((i-adaptStart)%PTacl == 0) {
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
+            iEff = (i-adaptStart)/acl;
           }
         } else {
-          if (i-adaptStart >= acl*Neff/nChain) {
+          if (iEff >= Neff/nChain) {
             /* Double check ACL before ending */
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            if (i-adaptStart >= acl*Neff/nChain) {
-              fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, (i-adaptStart)/acl);
+            iEff = (i-adaptStart)/acl;
+            if (iEff >= Neff/nChain) {
+              fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
               break;                                 // Sampling is done for this chain!
             }
           }
