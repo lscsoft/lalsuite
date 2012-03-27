@@ -1138,19 +1138,19 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--inj");
   if (ppt) {
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--output");
+    UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
     FILE *out = NULL;
     char *fname = NULL;
-    int shouldFreeFname = 0;
     LALInferenceVariables *saveParams = NULL;
 
     saveParams = (LALInferenceVariables *)XLALCalloc(sizeof(LALInferenceVariables), 1);
 
     if (ppt2) {
       fname = (char *) XLALCalloc((strlen(ppt2->value)+255)*sizeof(char), 1);
-      shouldFreeFname = 1;
-      sprintf(fname, "%s//PTMCMC.output.injection", ppt2->value);
+      sprintf(fname, "%s//PTMCMC.output.%u.injection", ppt2->value, randomseed);
     } else {
-      fname = (char *) "PTMCMC.output.injection";
+      fname = (char *) XLALCalloc(255*sizeof(char), 1);
+      sprintf(fname, "PTMCMC.output.%u.injection", randomseed);
     }
     out = fopen(fname, "w");
 
@@ -1258,9 +1258,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
     setIFOAcceptedLikelihoods(runState);    
 
-    if (shouldFreeFname) {
-      XLALFree(fname);
-    }
+    XLALFree(fname);
     LALInferenceDestroyVariables(saveParams);
     XLALFree(saveParams);
   }
