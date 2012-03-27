@@ -1296,6 +1296,18 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     }
     fclose(out);
 
+    snprintf(filename, nameLength, "%s-freqModel.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
+      REAL8 f = headData->freqModelhCross->deltaF * ui;
+      COMPLEX16 d;
+      d = headData->fPlus * headData->freqModelhPlus->data->data[ui] +
+             headData->fCross * headData->freqModelhCross->data->data[ui];
+
+      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d) );
+    }
+    fclose(out);
+
     snprintf(filename, nameLength, "%s-timeModelhPlus.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {

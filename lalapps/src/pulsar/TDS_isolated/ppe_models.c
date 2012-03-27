@@ -733,9 +733,9 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
   
   /* set the psi bin for the lookup table */
-  psv = LAL_PI_2 / ( psteps - 1. );
-  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
-  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/2. )/psv );
+  psiMin = -(LAL_PI/2.) + psibinMin*psv;
   psibinMax = psibinMin + 1;
   psiMax = psiMin + psv;
   
