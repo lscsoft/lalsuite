@@ -1142,12 +1142,10 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
       REAL8 f = headData->freqModelhCross->deltaF * ui;
       COMPLEX16 d;
-      d.re = headData->fPlus * headData->freqModelhPlus->data->data[ui].re +
-             headData->fCross * headData->freqModelhCross->data->data[ui].re;
-      d.im = headData->fPlus * headData->freqModelhPlus->data->data[ui].im +
-             headData->fCross * headData->freqModelhCross->data->data[ui].im;
+      d = headData->fPlus * headData->freqModelhPlus->data->data[ui] +
+             headData->fCross * headData->freqModelhCross->data->data[ui];
 
-      fprintf(out, "%g %g %g\n", f, d.re, d.im);
+      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d) );
     }
     fclose(out);
 
