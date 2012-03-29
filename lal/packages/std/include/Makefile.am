@@ -15,12 +15,10 @@ pkginclude_HEADERS = \
 	LALVersion.h \
 	StringInput.h \
 	XLALError.h \
-	XLALGSL.h
-
-if SWIG_BUILD
-pkginclude_HEADERS += \
-	swig-lal-error.i
-endif
+	XLALGSL.h \
+	lalswig_error.i \
+	lalswig_gsl.i \
+	lalswig_ligotimegps.i
 
 EXTRA_DIST =
 
@@ -33,4 +31,4 @@ all-local: include-link
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-include $(top_srcdir)/swig/swig-header.am
+include $(top_srcdir)/swig/swiglal_header.am

@@ -57,4 +57,4 @@ include-link: LALVCSInfo.h
 		fi
 
 swig_headers = $(pkginclude_HEADERS)
-include $(top_srcdir)/swig/swig-header.am
+include $(top_srcdir)/swig/swiglal_header.am

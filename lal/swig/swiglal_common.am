@@ -1,0 +1,70 @@
+# Common SWIG build makefile.
+# Author: Karl Wette, 2011, 2012
+
+# SWIG interface file
+swig_iface = @PACKAGE_NAME@swig.i
+
+# SWIG interface dependencies file
+swig_iface_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig.deps
+$(swig_iface_deps) : ../$(swig_iface) Makefile
+	@echo '#dummy' > $@
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
+
+# test script for the SWIG wrapping module
+swig_modl_check = check_@PACKAGE_NAME@swig
+
+# automake libtool variables for SWIG wrapping module
+swig_lt_nodist_sources = $(swig_modl_src)
+swig_lt_sources =
+swig_lt_cppflags = $(AM_CPPFLAGS) -shared
+swig_lt_cflags = $(AM_CFLAGS)
+swig_lt_cxxflags = $(AM_CXXFLAGS)
+swig_lt_ldflags = $(AM_LDFLAGS) -module -version-info $(LIBVERSION)
+swig_lt_libadd =
+
+# installation location for SWIG interfaces
+swigincludedir = $(includedir)/lal
+
+# SWIG interfaces to install
+EXTRA_HEADERS =
+nodist_swiginclude_HEADERS =
+swiginclude_HEADERS =
+
+# extra distribution files
+EXTRA_DIST =
+
+# clean files
+CLEANFILES = \
+	$(swig_modl_src)
+DISTCLEANFILES = \
+	$(swig_iface_deps)
+
+# delete failed targets
+rm_targets = { rm -f $@; exit 1; }
+
+# create links to SWIG interfaces
+.PHONY : swig_iface_links
+swig_iface_links :
+	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
+		srcdir=$(abs_srcdir); \
+		builddir=$(abs_builddir); \
+		incldir=$(abs_top_builddir)/include/lal; \
+		if test ! -r $${incldir}/$${file}; then \
+			rm -f $${incldir}/$${file}; \
+			if test -f $${srcdir}/$${file}; then \
+				$(LN_S) $${srcdir}/$${file} $${incldir}; \
+			elif test -f $${builddir}/$${file}; then \
+				$(LN_S) $${builddir}/$${file} $${incldir}; \
+			fi; \
+		fi; \
+	done
+
+# generate SWIG interface file
+../$(swig_iface) :
+	@cd .. && $(MAKE) $(swig_iface)
+
+# generate SWIG wrapping module source
+$(swig_modl_src) : ../$(swig_iface) Makefile
+	@$(MAKE) swig_iface_links
+	@$(MKDIR_P) $(SWIG_OUTDIR)
+	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)

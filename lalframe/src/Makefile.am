@@ -60,7 +60,7 @@ lalframe-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
-	@echo "$(SWIG_USER_ENV)" | $(SED) 's|~E~O~L~|\n|g' >>$@
+	@printf "$(SWIG_USER_ENV)" >>$@
 
 lalframe-user-env.csh lalframe-user-env.sh: lalframe-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
@@ -79,4 +79,4 @@ LALFrameVCSInfo.h: ._vcsinfo
 @LAL_HEADER_LINK@
 
 swig_headers = $(lalframeinclude_HEADERS)
-include $(top_srcdir)/swig/swig-header.am
+include $(top_srcdir)/swig/swiglal_header.am
