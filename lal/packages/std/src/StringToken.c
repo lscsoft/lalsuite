@@ -17,85 +17,66 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="StringTokenCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
+/**
+   \file
+   \ingroup StringInput_h
+   \author Creighton, T. D.
 
-/********************************************************** <lalLaTeX>
+   \brief Converts a string into a series of tokens, for use by other routines.
 
-\subsection{Module \texttt{StringToken.c}}
-\label{ss:StringToken.c}
+\heading{Description}
 
-Converts a string into a series of tokens, for use by other routines.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{StringTokenCP}
-\idx{LALCreateTokenList()}
-\idx{LALDestroyTokenList()}
-
-\subsubsection*{Description}
-
-The routine \verb@LALCreateTokenList()@ parses \verb@*string@ as a
+The routine <tt>XLALCreateTokenList()</tt> parses <tt>*string</tt> as a
 sequence of tokens (substrings of non-null characters that do not
-appear in \verb@delimiters@), separated by delimiters (substrings
-consisting only of characters that appear in \verb@delimiters@), and
-terminated by the null character \verb@'\0'@.  The structure
-\verb@**list@ is created, storing the sequence of tokens as a list
+appear in \c delimiters), separated by delimiters (substrings
+consisting only of characters that appear in \c delimiters), and
+terminated by the null character <tt>'\0'</tt>.  The structure
+<tt>**list</tt> is created, storing the sequence of tokens as a list
 null-terminated character strings.
 
-The output \verb@list@ should be a non-\verb@NULL@ handle that points
-to the value \verb@NULL@ (i.e.\ \verb@list@$\neq$\verb@NULL@ but
-\verb@*list@=\verb@NULL@).  Even if no tokens were found, \verb@*list@
-will be created, but will have \verb@(*list)->nTokens@=0,
-\verb@(*list)->tokens[0]@=\verb@NULL@, and
-\verb@(*list)->list@=\verb@NULL@.  Note that this is \emph{not} an
+The output \c list should be a non-\c NULL handle that points
+to the value \c NULL (i.e.\ \c list\f$\neq\f$\c NULL but
+<tt>*list</tt>=\c NULL).  Even if no tokens were found, <tt>*list</tt>
+will be created, but will have <tt>(*list)->nTokens</tt>=0,
+<tt>(*list)->tokens[0]</tt>=\c NULL, and
+<tt>(*list)->list</tt>=\c NULL.  Note that this is \e not an
 error, so the calling routine need not guarantee in advance that
-\verb@string@ contain any non-delimiter characters.
+\c string contain any non-delimiter characters.
 
-The routine \verb@LALDestroyTokenList()@ destroys a list of tokens as
-created by \verb@LALCreateTokenList()@, setting \verb@*list@ to
-\verb@NULL@.
+The routine <tt>XLALDestroyTokenList()</tt> destroys a list of tokens as
+created by <tt>XLALCreateTokenList()</tt>, setting <tt>*list</tt> to
+\c NULL.
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-The \verb@LALCreateTokenList()@ function is not particularly
+The <tt>XLALCreateTokenList()</tt> function is not particularly
 memory-efficient, requiring internal storage up to twice the length of
-\verb@*string@.  It first creates a working copy of
-\verb@string->data@, and replaces all occurences of characters
-appearing in \verb@*delimiters@ with \verb@'\0'@, while at the same
+<tt>*string</tt>.  It first creates a working copy of
+<tt>string->data</tt>, and replaces all occurences of characters
+appearing in <tt>*delimiters</tt> with <tt>'\0'</tt>, while at the same
 time keeping track of the number and total length of all tokens.  It
 then allocates a contiguous block of memory to store all the tokens
-(separated by and terminated with single \verb@'\0'@ characters), and
-a set of \verb@CHAR *@ pointers to point to the individual tokens in
+(separated by and terminated with single <tt>'\0'</tt> characters), and
+a set of <tt>CHAR *</tt> pointers to point to the individual tokens in
 this block.  Then the routine proceeds through the working copy one
 last time, copying tokens into the token list and setting the token
 pointers accordingly, before destroying the working copy.
 
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc()                     LALCHARCreateVector()
-LALFree()                       LALCHARDestroyVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{StringTokenCV}}
-
-******************************************************* </lalLaTeX> */
+*/
 
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
 
-/* <lalVerbatim file="StringTokenCP"> */
+/** \deprecated Use XLALCreateTokenList() instead
+ */
 void
 LALCreateTokenList( LALStatus  *stat,
 		    TokenList  **list,
 		    const CHAR *string,
 		    const CHAR *delimiters )
-{ /* </lalVerbatim> */
+{
   BOOLEAN delimiter = 1; /* whether current character is a delimiter */
   UINT4 i = 0, j = 0;    /* indecies */
   UINT4 nTokens = 0;     /* number of tokens */
@@ -182,12 +163,12 @@ LALCreateTokenList( LALStatus  *stat,
 
 
 
-/* <lalVerbatim file="StringTokenCP"> */
+/** See StringToken.c for documentation */
 int
 XLALCreateTokenList(TokenList  **list,
 		    const CHAR *string,
 		    const CHAR *delimiters )
-{ /* </lalVerbatim> */
+{
   BOOLEAN delimiter = 1; /* whether current character is a delimiter */
   UINT4 i = 0, j = 0;    /* indecies */
   UINT4 nTokens = 0;     /* number of tokens */
@@ -274,11 +255,12 @@ XLALCreateTokenList(TokenList  **list,
 
 
 
-/* <lalVerbatim file="StringTokenCP"> */
+/** \deprecated Use XLALDestroyTokenList() instead
+ */
 void
 LALDestroyTokenList( LALStatus *stat,
 		     TokenList **list )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
   ATTATCHSTATUSPTR( stat );
 
@@ -298,7 +280,7 @@ LALDestroyTokenList( LALStatus *stat,
   RETURN( stat );
 }
 
-
+/** See StringToken.c for documentation */
 void
 XLALDestroyTokenList( TokenList *list )
 {

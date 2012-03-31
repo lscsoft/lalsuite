@@ -17,46 +17,36 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
-<lalVerbatim file="LALVersionTestCV">
-</lalVerbatim>
+/**
+   \file
+   \ingroup LALVersion_h
 
-<lalLaTeX>
-\subsection{Program \texttt{LALVersionTest.c}}
-\label{s:LALVersionTest.c}
+   \brief Prints the version and configure options of the LAL library being used.
 
-Prints the version and configure options of the LAL library being used.
+   \heading{Usage}
+   \code
+   LALVersionTest
+   \endcode
 
-\subsubsection*{Usage}
-\begin{verbatim}
-LALVersionTest
-\end{verbatim}
+   \heading{Description}
 
-\subsubsection*{Description}
+   This program prints the current version of LAL.\@  If the version information
+   in the library differs from the version information in the header file, this
+   program prints the two versions and exits with code 1.  This is useful for
+   determining which version of the LAL library and header files you are linking
+   to.
 
-This program prints the current version of LAL.\@  If the version information
-in the library differs from the version information in the header file, this
-program prints the two versions and exits with code 1.  This is useful for
-determining which version of the LAL library and header files you are linking
-to.
+   \heading{Exit codes}
 
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Version info in library disagrees with header file. \\
-\tt 2 & Subroutine failed.            \\
-\hline
-\end{tabular}
+   <table>
+   <tr><th>Code</th><th>Explanation</th></tr>
+   <tr><td>   0</td><td>Success, normal exit.</td></tr>
+   <tr><td>   1</td><td>Version info in library disagrees with header file.</td></tr>
+   <tr><td>   2</td><td>Subroutine failed.</td></tr>
+   </table>
 
-
-\vfill{\footnotesize\input{LALVersionTestCV}}
-
-
-</lalLaTeX>
-#endif /* autodoc block */
+*/
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <string.h>
@@ -114,3 +104,5 @@ int main( void )
 
   return 0;
 }
+
+/** \endcond */

@@ -17,53 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
-
-<lalVerbatim file="LALVersionHV">
-</lalVerbatim>
-
-<lalLaTeX>
-
-\section{Header \texttt{LALVersion.h}}
-\label{s:LALVersion.h}
-
-Provides routines for reporting the LAL version.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LALVersion.h>
-\end{verbatim}
-
-\noindent This header covers the routines for reporting the LAL version.
-
-
-\subsection*{Global variables}
-\idx[Constant]{lalVersion}
-\idx[Constant]{lalVersionMajor}
-\idx[Constant]{lalVersionMinor}
-\idx[Constant]{lalConfigureArgs}
-\idx[Constant]{lalConfigureDate}
-\begin{verbatim}
-extern const char *lalVersion;
-extern const int   lalVersionMajor;
-extern const int   lalVersionMinor;
-extern const char *lalConfigureArgs;
-extern const char *lalConfigureDate;
-\end{verbatim}
-
-These constant variables are set at compile time and included into the LAL
-library.  They contain the information about the version of LAL and the
-configuration information.
-
-\subsection*{Error conditions}
-\input{LALVersionHErrTab}
-
-\newpage\input{LALVersionC}
-\newpage\input{LALVersionTestC}
-
-</lalLaTeX>
-#endif /* autodoc block */
-
 #ifndef _LALVERSION_H
 #define _LALVERSION_H
 
@@ -73,19 +26,47 @@ configuration information.
 extern "C" {
 #endif
 
-/* <lalErrTable file="LALVersionHErrTab"> */
+/**
+   \addtogroup LALVersion_h
 
-#define LALVERSIONH_ENULL 1
-#define LALVERSIONH_ESIZE 2
-#define LALVERSIONH_ESPRN 4
-#define LALVERSIONH_ESHRT 8
+   \brief Provides routines for reporting the LAL version.
+
+   \heading{Synopsis}
+   \code
+   #include <lal/LALVersion.h>
+   \endcode
+
+
+\section ss_globals Global variables
+
+\code
+extern const char *lalVersion;
+extern const int   lalVersionMajor;
+extern const int   lalVersionMinor;
+extern const char *lalConfigureArgs;
+extern const char *lalConfigureDate;
+\endcode
+
+These constant variables are set at compile time and included into the LAL
+library.  They contain the information about the version of LAL and the
+configuration information.
+
+*/ /*@{*/
+
+/**\name Error Codes */ /*@{*/
+
+#define LALVERSIONH_ENULL 1	/**< Null string pointer */
+#define LALVERSIONH_ESIZE 2	/**< Zero string size */
+#define LALVERSIONH_ESPRN 4	/**< Error in snprintf */
+#define LALVERSIONH_ESHRT 8	/**< String too short */
+/*@}*/
+/*@}*/
 
 #define LALVERSIONH_MSGENULL "Null string pointer."
 #define LALVERSIONH_MSGESIZE "Zero string size."
 #define LALVERSIONH_MSGESPRN "Error in snprintf."
 #define LALVERSIONH_MSGESHRT "String too short."
 
-/* </lalErrTable> */
 
 extern const char *const lalVersion;
 extern const int         lalVersionMajor;

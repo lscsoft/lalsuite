@@ -16,14 +16,7 @@ libstd_la_SOURCES = \
 
 noinst_HEADERS = Grid_source.c
 
-EXTRA_DIST = \
-	LALPrimer.c
+EXTRA_DIST =
 
-EXTRA_TEXSOURCES = LALPrimer.c
-
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-
-dvi-local: .dvi-dep
-
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =
