@@ -237,13 +237,18 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
   REAL8 logPrior=0.0;
-
+  static int SkyLocPriorWarning = 0;
   (void)runState;
   LALInferenceVariableItem *item=params->head;
   LALInferenceVariables *priorParams=runState->priorArgs;
   REAL8 min, max;
   REAL8 logmc=0.0,mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
+
+  if (!SkyLocPriorWarning ) {
+    SkyLocPriorWarning  = 1;
+    fprintf(stderr, "SkyLocalization priors are being used. (in %s, line %d)\n", __FILE__, __LINE__);
+  }
   /* Check boundaries */
   for(;item;item=item->next)
   {
