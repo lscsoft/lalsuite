@@ -254,7 +254,8 @@ Nested sampling arguments:\n\
 (--mcmcprop)\tUse PTMCMC proposal engine\n\
 \t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 \t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
-\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n";
+\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
+\t(--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n";
 
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
@@ -291,7 +292,15 @@ Nested sampling arguments:\n\
 	  runState->proposal=&LALInferenceProposalNS;
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
-	runState->prior = &LALInferenceInspiralPriorNormalised;
+
+        /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPriorNormalised. That should probably be replaced with a swhich over the possible priors. */
+        ppt=LALInferenceGetProcParamVal(commandLine,"--prior_distr");
+        if(ppt){
+            if (!strcmp(ppt->value,"SkyLoc")) runState->prior = &LALInferenceInspiralSkyLocPrior;
+        }
+        else{
+            runState->prior = &LALInferenceInspiralPriorNormalised;
+        }
 	
 	#ifdef HAVE_LIBLALXML
 	runState->logsample=LogNSSampleAsMCMCSampleToArray;
