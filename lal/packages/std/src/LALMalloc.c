@@ -17,286 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="LALMallocCV">
-************************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{LALMalloc.c}}
-\label{ss:LALMalloc.c}
-
-LAL memory allocation routines.
-
-\subsubsection*{Macros}
-\begin{verbatim}
-#if defined NDEBUG || defined LAL_NDEBUG
-
-#define LALMalloc                           malloc
-#define LALMallocShort                      malloc
-#define LALMallocLong( n, file, line )      malloc( n )
-#define LALCalloc                           calloc
-#define LALCallocShort                      calloc
-#define LALCallocLong( m, n, file, line )   calloc( m, n )
-#define LALRealloc                          realloc
-#define LALReallocShort                     realloc
-#define LALReallocLong( p, n, file, line )  realloc( p, n )
-#define LALFree                             free
-#define LALCheckMemoryLeaks()
-
-#else
-
-#define LALMalloc( n )      LALMallocLong( n, __FILE__, __LINE__ )
-#define LALCalloc( m, n )   LALCallocLong( m, n, __FILE__, __LINE__ )
-#define LALRealloc( p, n )  LALReallocLong( p, n, __FILE__, __LINE__ )
-
-#endif
-\end{verbatim}
-\idx[Macro]{LALMalloc()}
-\idx[Macro]{LALCalloc()}
-\idx[Macro]{LALRealloc()}
-
-\subsubsection*{Prototypes}
-\input{LALMallocCP}
-\idx{LALMallocLong()}
-\idx{LALCallocLong()}
-\idx{LALReallocLong()}
-\idx{LALMallocShort()}
-\idx{LALCallocShort()}
-\idx{LALReallocShort()}
-\idx{LALFree()}
-\idx{LALCheckMemoryLeaks()}
-
-\subsubsection*{Description}
-
-These functions are the LAL replacements for \verb+malloc()+, \verb+calloc()+,
-\verb+realloc()+, and \verb+free()+, with extra functionality to check for
-memory leaks (i.e.\ unfreed memory and segmentation violations).
-The \verb+LALMallocLong()+, \verb+LALCallocLong()+, and \verb+LALReallocLong()+
-functions have two extra arguments giving the file name and line number of the
-calling statement; \verb+LALMallocShort()+, \verb+LALCallocShort()+, and
-\verb+LALReallocShort()+ do not have these extra arguments, and are merely
-call the corresponding long alloc functions with a file name of
-\verb+"unknown"+ and a line number of \verb+-1+ (they are useful if you want
-to replace hooks to \verb+malloc()+, \verb+calloc()+, and \verb+realloc()+ of
-an external package that provides suitable hooks).  \verb+LALMalloc()+,
-\verb+LALCalloc()+, and \verb+LALRealloc()+ are actually macros which call the
-functions \verb+LALMallocLong()+, \verb+LALCallocLong()+, and
-\verb+LALReallocLong+ with the appropriate file name and line number
-information.  In practice, it is almost sufficient to use \verb+LALMalloc()+,
-\verb+LALCalloc()+, and \verb+LALRealloc()+ as you would \verb+malloc()+,
-\verb+calloc()+, and \verb+realloc()+.
-
-Any time an object is freed, \verb+LALFree()+ checks to make sure that the
-memory bounds were not over-written, and that the memory address is valid.  The
-function \verb+LALCheckMemoryLeaks()+ is to be called at the end of a program
-when all the allocated memory is expected to have been freed.  If there is
-memory that has been allocated but not freed then this routine reports an
-error.  Whenever a memory leak is detected, the routines raise a segmentation
-violation signal \verb+SIGSEGV+.  (The signal is raised using the signal
-raising hook \verb+lalRaiseHook+, which can be reset to a different handler if
-desired.)
-
-Memory leak detection adds significant computational overhead to a
-program.  It also requires the use of static memory, making the code
-non-thread-safe (but it can be made posix-thread-safe using the
-\verb+--enable-pthread-lock+ configure option).  Production code should
-suppress memory leak detection at runtime by setting the global
-\verb+lalDebugLevel+ equal to zero or by setting the \verb+LALNMEMDBG+ bit of
-\verb+lalDebugLevel+, or at compile time by compiling all modules with the
-\verb+NDEBUG+ flag set or by using the \verb+--disable-debug+ configure option.
-This causes \verb+LALCheckMemoryLeaks()+ to do nothing, and the other functions
-to revert to their standard C counterparts.  In addition, you can turn off
-individual components of the memory debugging tools.  Setting the
-\verb+LALNMEMPAD+ bit of \verb+lalDebugLevel+ prevents the allocation routines
-from ``padding out'' the arrays in an effort to detect buffer overflows.
-Setting the \verb+LALNMEMTRK+  bit of \verb+lalDebugLevel+ prevents tracking
-the allocations/frees.  Setting the \verb+LALMEMINFO+ bit of
-\verb+lalDebugLevel+ produces copious output describing each memory allocation
-and deallocation.
-
-\subsubsection*{Algorithm}
-
-When buffer overflow detection is active, \verb+LALMalloc()+ allocates, in
-addition to the requested memory, storage at the beginning of the object where
-a magic number and the size of the object is recorded, and padding at the end
-of the object.  The number of allocations and the total size of allocated
-memory are stored in static memory.  When \verb+LALFree()+ is executed, the
-padding at the end of the object and the magic number are examined to see if
-the bounds of the object were over-written.  The total number of allocations
-and the total memory allocated are decreased.  \verb+LALCheckMemoryLeaks()+ is
-called when all memory should have been freed.  If the number of allocations or
-the total memory allocated is not zero, this routine reports an error.
-
-When memory tracking is active, \verb+LALMalloc()+ keeps a linked list
-containing information about each allocation: the memory address, the size of
-the allocation, and the file name and line number of the calling statement.
-Subsequent calls to \verb+LALFree()+ make sure that the address to be freed was
-correctly allocated.  In addition, in the case of a memory leak in which some
-memory that was allocated was not freed, \verb+LALCheckMemoryLeaks()+ prints a
-list of all allocations and the information about the allocations.
-
-When any of these routines encounter an error, they will issue an error message
-using \verb+LALPrintError()+ and will raise a \verb+SIGSEGV+ signal, which will
-normally cause execution to terminate.  The signal is raised using the hook
-\verb+lalRaiseHook+, which can be set to perform a different action if desired.
-
-These routines also issue status messages indicating how much memory is being
-allocated or freed with each function call.  These memory information messages
-are considered a distinct class of status message, and can be activated or
-suppressed independently of other status messages.  See the discussion in
-\verb+LALStatusMacros.h+.
-
-When \verb+lalDebugLevel+ is set to zero or the \verb+LALNMEMDBG+ bit is set,
-or when compiled with the \verb+NDEBUG+ flag set, these functions revert to
-their standard system versions, and \verb+LALCheckMemoryLeaks()+ does nothing.
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-lalDebugLevel
-lalRaiseHook
-LALPrintError()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-Memory leak detection only occurs when \verb+lalDebugLevel+$\neq0$.  To
-turn on leak detection independent of error reporting, simply switch
-on the most-significant bit of \verb+lalDebugLevel+, which is reserved
-not to be associated with any type of status message.  See the
-discussion in \verb+LALStatusMacros.h+ for more information about
-\verb+lalDebugLevel+.
-
-It is assumed that pointers of type \verb+size_t *+ have the most restrictive
-alignment.  If this is not true, then this code may not work except in
-non-debugging mode.  (It will probably produce bus errors.)
-
-
-\subsubsection*{Debugging memory leak tips}
-
-Programs should end by calling \verb+LALCheckMemoryLeaks()+.  This will
-ensure that all memory that has been allocated has been freed.  Making
-sure that all memory allocated is freed is a good idea in order to
-make sure (i) that memory isn't being ``lost'' (which may mean that
-the computer will run out of memory when the program is run under more
-extensive use), (ii) that array bounds are not being exceeded (since this
-will usually overwrite the pad area at the end of the array, and this
-overwrite is detected when the array is freed).  \verb+LALCheckMemoryLeaks()+
-should pass silently---if it doesn't, then there is probably some memory
-that has not been freed; \verb+LALCheckMemoryLeaks()+ will give information
-about where this memory was allocated.
-
-The most common problem (after forgetting to free some memory) is overwriting
-of array bounds.  When this is detected, \verb+LALFree()+ reports the memory
-address that was overwritten, as well as the address of the array that
-\verb+LALFree()+ attempted to free.  In order to find out where the overwrite
-occurs, run the program in the debugger and stop the execution as soon as the
-array that is being overwritten has been allocated.  The \verb+LALMalloc+
-module has some secret memory debugging tools (for use in debugging only!).
-One is the global variable \verb+lalMemDbgUsrPtr+, which is of type
-\verb+char *+.  Set this variable to be equal to the memory address
-where the overwrite occurs.  Then watch the contents of the variable
-to find out where the overwrite occurs.  This is done in \verb+gdb+ using
-the commands:
-\begin{verbatim}
-set var lalMemDbgUsrPtr=0x20f530
-watch *lalMemDgbUsrPtr
-cont
-\end{verbatim}
-where \verb+0x20f530+ is the corrupted memory address.  The program
-will run until the value of this address is changed, thereby allowing
-you to find out where in the program the overwrite occurs.
-
-If you don't know where the memory was allocated, you can locate this
-too.  To do so, set \verb+lalMemDbgUsrPtr+ to be the address of the array.
-Then, every time \verb+LALMalloc()+ is called, it sets the value of the
-global variable \verb+lalIsMemDbgRetPtr+ to be one zero if the array
-address produced by \verb+LALMalloc()+ is not the address in
-\verb+lalMemDbgUsrPtr+, and one if it is.  Then you can watch the value
-of \verb+lalIsMemDbgRetPtr+ in a debugger until it changes to one, which stops
-execution at that point.  (Note: it is possible that a given address is
-allocated, then freed, the allocated again---you may need to watch
-\verb+lalIsMemDbgRetPtr+ for a while.)
-
-Here's an example debugging session: first we run the program, identify
-the address of the array whose bounds are being overwritten, and find
-out where that array is allocated.
-\begin{verbatim}
-(gdb) run
-LALFree error: array bounds overwritten
-Byte 4 past end of array has changed
-Corrupted address: 0x1cf530
-Array address: 0x1cf528
-
-Program received signal SIGSEGV, Segmentation fault.
-0x9001b46c in kill ()
-(gdb) list 1,11
-1       #include <lal/LALStdlib.h>
-2       int main( void )
-3       {
-4         char *s;
-5         lalDebugLevel = 1;
-6         s = LALMalloc( 5 );
-7         s[8] = 'x';
-8         LALFree( s );
-9         LALCheckMemoryLeaks();
-10        return 0;
-11      }
-(gdb) break 5
-Breakpoint 1 at 0x1b60: file bad.c, line 5.
-(gdb) run
-
-Breakpoint 1, main () at bad.c:5
-5         lalDebugLevel = 1;
-(gdb) set var lalMemDbgUsrPtr = 0x1cf528
-(gdb) watch lalIsMemDbgRetPtr
-Hardware watchpoint 2: lalIsMemDbgRetPtr
-(gdb) cont
-Continuing.
-Hardware watchpoint 2: lalIsMemDbgRetPtr
-
-Old value = 0
-New value = 1
-0x0088d63c in LALMallocLong (n=5, file=0x1ff8 "bad.c", line=6) at LALMalloc.c:575
-575       lalIsMemDbgPtr = lalIsMemDbgRetPtr = ( lalMemDbgRetPtr == lalMemDbgUsrPtr );
-(gdb) up
-#1  0x00001b84 in main () at bad.c:6
-6         s = LALMalloc( 5 );
-\end{verbatim}
-So here is where the memory is allocated.  We want to find out where the
-memory is being corrupted.
-\begin{verbatim}
-(gdb) set var lalMemDbgUsrPtr = 0x1cf530
-(gdb) watch *lalMemDbgUsrPtr
-Hardware watchpoint 3: *lalMemDbgUsrPtr
-(gdb) cont
-Continuing.
-Hardware watchpoint 3: *lalMemDbgUsrPtr
-
-Old value = -25
-New value = 120 'x'
-main () at bad.c:8
-8         LALFree( s );
-(gdb) list
-3       {
-4         char *s;
-5         lalDebugLevel = 1;
-6         s = LALMalloc( 5 );
-7         s[8] = 'x';
-8         LALFree( s );
-9         LALCheckMemoryLeaks();
-10        return 0;
-11      }
-\end{verbatim}
-Notice that the program has stopped just \emph{after} the line in which
-the array bounds were overwritten.
-
-
-\vfill{\footnotesize\input{LALMallocCV}}
-
-******************************************************* </lalLaTeX> */
-
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -729,19 +449,19 @@ static void *ModAlloc( void *p, void *q, size_t n, const char *func,
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void *
 LALMallocShort( size_t n )
-{ /* </lalVerbatim> */
+{
   return ( ! lalDebugLevel || lalDebugLevel & LALNMEMDBG ) ? malloc( n ) :
     LALMallocLong( n, "unknown", -1 );
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void *
 LALMallocLong( size_t n, const char *file, int line )
-{ /* </lalVerbatim> */
+{
   void *p;
   void *q;
 
@@ -771,19 +491,19 @@ LALMallocLong( size_t n, const char *file, int line )
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void *
 LALCallocShort( size_t m, size_t n )
-{ /* </lalVerbatim> */
+{
   return ( ! lalDebugLevel || lalDebugLevel & LALNMEMDBG ) ? calloc( m, n ) :
     LALCallocLong( m, n, "unknown", -1 );
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void *
 LALCallocLong( size_t m, size_t n, const char *file, int line )
-{ /* </lalVerbatim> */
+{
   size_t sz;
   void *p;
   void *q;
@@ -815,19 +535,19 @@ LALCallocLong( size_t m, size_t n, const char *file, int line )
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void *
 LALReallocShort( void *p, size_t n )
-{ /* </lalVerbatim> */
+{
   return ( ! lalDebugLevel || lalDebugLevel & LALNMEMDBG ) ? realloc( p, n ) :
     LALReallocLong( p, n, "unknown", -1 );
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void *
 LALReallocLong( void *q, size_t n, const char *file, const int line )
-{ /* </lalVerbatim> */
+{
   void *p;
   if ( ! lalDebugLevel || lalDebugLevel & LALNMEMDBG )
   {
@@ -881,10 +601,10 @@ LALReallocLong( void *q, size_t n, const char *file, const int line )
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void
 LALFree( void *q )
-{ /* </lalVerbatim> */
+{
   void *p;
   if ( ! lalDebugLevel || lalDebugLevel & LALNMEMDBG )
   {
@@ -902,10 +622,10 @@ LALFree( void *q )
 }
 
 
-/* <lalVerbatim file="LALMallocCP"> */
+
 void
 LALCheckMemoryLeaks( void )
-{ /* </lalVerbatim> */
+{
   int leak = 0;
   if ( ! lalDebugLevel || lalDebugLevel & LALNMEMDBG )
   {

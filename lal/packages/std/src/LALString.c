@@ -18,7 +18,7 @@
 */
 
 /** \file
- * \ingroup std
+ * \addtogroup LALString_h
  * \author Creighton, J. D. E.
  * \brief XLAL string manipulation routines.
  *

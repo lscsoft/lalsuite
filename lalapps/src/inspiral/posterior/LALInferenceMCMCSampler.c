@@ -38,6 +38,8 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 
 #include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
@@ -55,6 +57,8 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle);
 FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState);
+void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *file);
+void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState);
 void LALInferenceDataDump(LALInferenceRunState *runState);
 
 static void
@@ -497,7 +501,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
   chainoutput = LALInferencePrintPTMCMCHeader(runState);
-
+  if (MPIrank == 0) {
+    LALInferencePrintPTMCMCInjectionSample(runState);
+  }
 
   if (adaptationOn == 1) {
     sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, SIGMAVECTORNAME));
@@ -998,32 +1004,64 @@ void LALInferenceAdaptationEnvelope(LALInferenceRunState *runState, INT4 cycle)
 //-----------------------------------------
 // file output routines:
 //-----------------------------------------
-
-FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
-{
-
+FILE *LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState) {
+  ProcessParamsTable *ppt;
+  char *outFileName = NULL;
+  FILE *chainoutput = NULL;
+  UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
   int MPIrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--output");
+  if (ppt) {
+    outFileName = (char*)XLALCalloc(strlen(ppt->value)+255,sizeof(char*));
+    sprintf(outFileName,"%s//PTMCMC.output.%u.%2.2d",ppt->value,randomseed,MPIrank);
+  } else {
+    outFileName = (char*)XLALCalloc(255,sizeof(char*));
+    sprintf(outFileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
+  }
+
+  chainoutput = fopen(outFileName,"w");
+  if(chainoutput == NULL){
+    XLALErrorHandler = XLALExitErrorHandler;
+    XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+    XLAL_ERROR_NULL(XLAL_EIO);
+  }
+  
+  LALInferencePrintPTMCMCHeaderFile(runState, chainoutput);
+
+  fclose(chainoutput);
+
+  chainoutput = fopen(outFileName, "a");
+  if (chainoutput == NULL) {
+    XLALErrorHandler = XLALExitErrorHandler;
+    XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
+    XLAL_ERROR_NULL(XLAL_EIO);
+  }
+
+  XLALFree(outFileName);
+
+  return chainoutput;
+}
+
+void LALInferencePrintPTMCMCHeaderFile(LALInferenceRunState *runState, FILE *chainoutput)
+{
+  int MPIrank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+  UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");
-  UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
   REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
   INT4 nChain = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "nChain");
   REAL8 temperature = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "temperature");
   REAL8 SampleRate=4096.0; //default value of the sample rate from LALInferenceReadData()
   UINT4 nIFO=0;
   LALInferenceIFOData *ifodata1=runState->data;
-  ProcessParamsTable *ppt;
 
   while(ifodata1){
     nIFO++;
     ifodata1=ifodata1->next;
   }
-
-  FILE * chainoutput = NULL;
-  char *outfileName = NULL;
 
   int waveform = 0;
   if(LALInferenceCheckVariable(runState->currentParams,"LAL_APPROXIMANT")) waveform= *(INT4 *)LALInferenceGetVariable(runState->currentParams,"LAL_APPROXIMANT");
@@ -1044,21 +1082,6 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
   if(LALInferenceGetProcParamVal(runState->commandLine,"--srate")) SampleRate=atof(LALInferenceGetProcParamVal(runState->commandLine,"--srate")->value);
 
 
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--output");
-  if (ppt) {
-    outfileName = (char*)calloc(strlen(ppt->value)+255,sizeof(char*));
-    sprintf(outfileName,"%s//PTMCMC.output.%u.%2.2d",ppt->value,randomseed,MPIrank);
-  } else {
-    outfileName = (char*)calloc(255,sizeof(char*));
-    sprintf(outfileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
-  }
-
-    chainoutput = fopen(outfileName,"w");
-    if(chainoutput == NULL){
-      XLALErrorHandler = XLALExitErrorHandler;
-      XLALPrintError("Output file error. Please check that the specified path exists. (in %s, line %d)\n",__FILE__, __LINE__);
-      XLAL_ERROR_NULL(XLAL_EIO);
-    }
     fprintf(chainoutput, "  LALInference version:%s,%s,%s,%s,%s\n", LALAPPS_VCS_ID,LALAPPS_VCS_DATE,LALAPPS_VCS_BRANCH,LALAPPS_VCS_AUTHOR,LALAPPS_VCS_STATUS);
     fprintf(chainoutput,"  %s\n",str);
     fprintf(chainoutput, "%10s  %10s  %6s  %20s  %6s %8s   %6s  %10s  %12s  %9s  %9s  %8s\n",
@@ -1098,13 +1121,147 @@ FILE* LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState)
     }
 
     fprintf(chainoutput,"\n");
-    fclose(chainoutput);
-    //}
+}
 
-  chainoutput = fopen(outfileName,"a");
-  free(outfileName);
+static void setIFOAcceptedLikelihoods(LALInferenceRunState *runState) {
+  LALInferenceIFOData *data = runState->data;
+  LALInferenceIFOData *ifo = NULL;
 
-  return chainoutput;
+  for (ifo = data; ifo != NULL; ifo = ifo->next) {
+    ifo->acceptedloglikelihood = ifo->loglikelihood;
+  }
+}
+
+void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
+  ProcessParamsTable *ppt;
+
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--inj");
+  if (ppt) {
+    ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--output");
+    UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
+    FILE *out = NULL;
+    char *fname = NULL;
+    LALInferenceVariables *saveParams = NULL;
+
+    saveParams = (LALInferenceVariables *)XLALCalloc(sizeof(LALInferenceVariables), 1);
+
+    if (ppt2) {
+      fname = (char *) XLALCalloc((strlen(ppt2->value)+255)*sizeof(char), 1);
+      sprintf(fname, "%s//PTMCMC.output.%u.injection", ppt2->value, randomseed);
+    } else {
+      fname = (char *) XLALCalloc(255*sizeof(char), 1);
+      sprintf(fname, "PTMCMC.output.%u.injection", randomseed);
+    }
+    out = fopen(fname, "w");
+
+    LALInferenceCopyVariables(runState->currentParams, saveParams);
+
+    SimInspiralTable *injTable = NULL;
+    SimInspiralTable *theEventTable = NULL;
+
+    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
+    
+    ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--event");
+    if (ppt2) {
+      UINT4 event = atoi(ppt2->value);
+      UINT4 i;
+      theEventTable = injTable;
+      for (i = 0; i < event; i++) {
+        theEventTable = theEventTable->next;
+      }
+      theEventTable->next = NULL;
+    } else {
+      theEventTable=injTable;
+      theEventTable->next = NULL;
+    }
+
+    REAL8 q = theEventTable->mass2 / theEventTable->mass1;
+    if (q > 1.0) q = 1.0/q;
+
+    REAL8 sx = theEventTable->spin1x;
+    REAL8 sy = theEventTable->spin1y;
+    REAL8 sz = theEventTable->spin1z;
+
+    REAL8 a_spin1 = sqrt(sx*sx + sy*sy + sz*sz);
+    
+    REAL8 theta_spin1, phi_spin1;
+    if (a_spin1 == 0.0) {
+      theta_spin1 = 0.0;
+      phi_spin1 = 0.0;
+    } else {
+      theta_spin1 = acos(sz / a_spin1);
+      phi_spin1 = atan2(sy, sx);
+      if (phi_spin1 < 0.0) phi_spin1 += 2.0*M_PI;
+    }
+
+    sx = theEventTable->spin2x;
+    sy = theEventTable->spin2y;
+    sz = theEventTable->spin2z;
+    
+    REAL8 a_spin2 = sqrt(sx*sx + sy*sy + sz*sz), theta_spin2, phi_spin2;
+    if (a_spin2 == 0.0) {
+      theta_spin2 = 0.0;
+      phi_spin2 = 0.0;
+    } else {
+      theta_spin2 = acos(sz / a_spin2);
+      phi_spin2 = atan2(sy, sx);
+      if (phi_spin2 < 0.0) phi_spin2 += 2.0*M_PI;
+    }
+
+    REAL8 psi = theEventTable->polarization;
+    if (psi>=M_PI) psi -= M_PI;
+
+    REAL8 injGPSTime = XLALGPSGetREAL8(&(theEventTable->geocent_end_time));
+
+    REAL8 chirpmass = theEventTable->mchirp;
+
+    REAL8 dist = theEventTable->distance;
+    REAL8 inclination = theEventTable->inclination;
+    REAL8 phase = theEventTable->coa_phase;
+    REAL8 dec = theEventTable->latitude;
+    REAL8 ra = theEventTable->longitude;
+
+    LALInferenceSetVariable(runState->currentParams, "chirpmass", &chirpmass);
+    LALInferenceSetVariable(runState->currentParams, "asym_massratio", &q);
+    LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
+    LALInferenceSetVariable(runState->currentParams, "distance", &dist);
+    LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
+    LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
+    LALInferenceSetVariable(runState->currentParams, "phase", &phase);
+    LALInferenceSetVariable(runState->currentParams, "declination", &dec);
+    LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);
+    if (LALInferenceCheckVariable(runState->currentParams, "a_spin1")) {
+      LALInferenceSetVariable(runState->currentParams, "a_spin1", &a_spin1);
+    }
+    if (LALInferenceCheckVariable(runState->currentParams, "theta_spin1")) {
+      LALInferenceSetVariable(runState->currentParams, "theta_spin1", &theta_spin1);
+    }
+    if (LALInferenceCheckVariable(runState->currentParams, "phi_spin1")) {
+      LALInferenceSetVariable(runState->currentParams, "phi_spin1", &phi_spin1);
+    }
+    if (LALInferenceCheckVariable(runState->currentParams, "a_spin2")) {
+      LALInferenceSetVariable(runState->currentParams, "a_spin2", &a_spin2);
+    }
+    if (LALInferenceCheckVariable(runState->currentParams, "theta_spin2")) {
+      LALInferenceSetVariable(runState->currentParams, "theta_spin2", &theta_spin2);
+    }
+    if (LALInferenceCheckVariable(runState->currentParams, "phi_spin2")) {
+      LALInferenceSetVariable(runState->currentParams, "phi_spin2", &phi_spin2);
+    }
+
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    setIFOAcceptedLikelihoods(runState);
+    LALInferencePrintPTMCMCHeaderFile(runState, out);
+    fclose(out);
+    
+    LALInferenceCopyVariables(saveParams, runState->currentParams);
+    runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    setIFOAcceptedLikelihoods(runState);    
+
+    XLALFree(fname);
+    LALInferenceDestroyVariables(saveParams);
+    XLALFree(saveParams);
+  }
 }
 
 void LALInferenceDataDump(LALInferenceRunState *runState){
@@ -1134,6 +1291,18 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
       COMPLEX16 d = headData->freqModelhCross->data->data[ui];
 
       fprintf(out, "%g %g %g\n", f, creal(d), cimag(d));
+    }
+    fclose(out);
+
+    snprintf(filename, nameLength, "%s-freqModel.dat", headData->name);
+    out = fopen(filename, "w");
+    for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
+      REAL8 f = headData->freqModelhCross->deltaF * ui;
+      COMPLEX16 d;
+      d = headData->fPlus * headData->freqModelhPlus->data->data[ui] +
+             headData->fCross * headData->freqModelhCross->data->data[ui];
+
+      fprintf(out, "%g %g %g\n", f, creal(d), cimag(d) );
     }
     fclose(out);
 
