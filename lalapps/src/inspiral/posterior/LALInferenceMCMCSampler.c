@@ -222,12 +222,14 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
 
 static void
 updateMaxAutoCorrLen(LALInferenceRunState *runState, INT4 currentCycle) {
+  REAL8 aclThreshold = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "aclThreshold");
   INT4 proposedACL;
   INT4 adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
-  REAL8 aclThreshold = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "aclThreshold");
+  INT4 adaptLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptLength");
+  INT4 iEffStart = adaptStart+adaptLength;
 
-  computeMaxAutoCorrLen(runState, adaptStart, currentCycle, &proposedACL);
-  if (proposedACL < aclThreshold*(currentCycle-adaptStart))
+  computeMaxAutoCorrLen(runState, iEffStart, currentCycle, &proposedACL);
+  if (proposedACL < aclThreshold*(currentCycle-iEffStart))
     LALInferenceSetVariable(runState->algorithmParams, "acl", &proposedACL);
 }
 
@@ -249,6 +251,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 parameter=0;
   INT4 *intVec = NULL;
   INT4 annealStartIter = 0;
+  INT4 iEffStart = 0;
   UINT4 hotChain = 0;                 // Affects proposal setup
   REAL8Vector *sigmas = NULL;
   REAL8Vector *PacceptCount = NULL;
@@ -571,6 +574,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       /* Parallel Tempering */
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
+      iEffStart = adaptStart+adaptLength;
 
       if (i % (100*Tskip) == 0) {
         if (!(LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior"))){
@@ -594,7 +598,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
             MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
           }
-          iEff = (i - adaptStart)/acl;
+          iEff = (i - iEffStart)/acl;
           if (!LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior")){
             MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
             if (MPIrank==0) {
@@ -620,7 +624,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
               if (acl <= oldACL)
                 goodACL=1;
             } else {
-              iEff = (i - adaptStart)/acl;
+              iEff = (i - iEffStart)/acl;
               if (MPIrank==0) {
                 printf("ACL:%i(%i)\tiEff:%i\n",acl,i,iEff);
               }
@@ -638,7 +642,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
               if (runPhase==0 && iEff >= Neff) {
                 if (MPIrank==0)
-                  fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, (i-adaptStart)/acl);
+                  fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, (i-iEffStart)/acl);
                 break;                                 // Sampling is done!
               } else if (runPhase==1 && iEff >= annealStart) {
                 /* Broadcast the cold chain ACL from parallel tempering */
@@ -691,19 +695,20 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (runPhase==3) {
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
+      iEffStart = adaptStart+adaptLength;
       if (!adapting) {
         if (iEff==0) {
-          if ((i-adaptStart)%PTacl == 0) {
+          if ((i-iEffStart)%PTacl == 0) {
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            iEff = (i-adaptStart)/acl;
+            iEff = (i-iEffStart)/acl;
           }
         } else {
           if (iEff >= Neff/nChain) {
             /* Double check ACL before ending */
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            iEff = (i-adaptStart)/acl;
+            iEff = (i-iEffStart)/acl;
             if (iEff >= Neff/nChain) {
               fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
               break;                                 // Sampling is done for this chain!
