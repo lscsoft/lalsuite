@@ -1854,7 +1854,7 @@ XLALReadTimestampsFile ( const CHAR *fname )
       if ( sscanf ( flines->lines->tokens[iTS], "%d %d\n", &secs, &ns ) != 2 ) {
         XLALPrintError ("%s: failed to parse data-line %d: '%s' in timestamps-file '%s' (needs to be in format 'sec ns')\n", __func__, iTS + 1, flines->lines->tokens[iTS], fname );
         XLALDestroyTimestampVector ( timestamps );
-        XLALDestroyParsedDataFile ( &flines );
+        XLALDestroyParsedDataFile ( flines );
         XLAL_ERROR_NULL ( XLAL_ESYS );
       }
       if ( ( secs < 0 ) || ( ns < 0 ) ) {
@@ -1872,8 +1872,7 @@ XLALReadTimestampsFile ( const CHAR *fname )
     } /* for iTS < numTS */
 
   /* free parsed segment file contents */
-  if ( XLALDestroyParsedDataFile ( &flines ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLALDestroyParsedDataFile ( flines );
 
   return timestamps;
 
@@ -4143,12 +4142,12 @@ find_files (const CHAR *globdir)
     if (numFiles == 0) {
       XLALPrintWarning("\n%s: List file '%s' contains no file names\n", __func__, listfname);
       LALFree(listfname);
-      XLALDestroyParsedDataFile(&list);
+      XLALDestroyParsedDataFile(list);
       return NULL;
     }
     if ((filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
       LALFree(listfname);
-      XLALDestroyParsedDataFile(&list);
+      XLALDestroyParsedDataFile(list);
       return NULL;
     }
 
@@ -4175,7 +4174,7 @@ find_files (const CHAR *globdir)
 	  LALFree(filelist[j]);
 	LALFree(filelist);
 	LALFree(listfname);
-	XLALDestroyParsedDataFile(&list);
+	XLALDestroyParsedDataFile(list);
 	return NULL;
       }
 
@@ -4186,7 +4185,7 @@ find_files (const CHAR *globdir)
 
     /* cleanup */
     LALFree(listfname);
-    XLALDestroyParsedDataFile(&list);
+    XLALDestroyParsedDataFile(list);
 
   } /* if list file */
 
