@@ -65,14 +65,13 @@ detectors and signals with random parameters in background noise.
 #define LALNOISEMODELSH_MSGESIZE "Invalid input size"
 /** \endcond */
 
-    typedef enum
+    enum enumDetector
     {
         geo,
         ligo,
         tama,
         virgo
-    }
-    Detector;
+    };
 
     typedef struct
             tagAddVectorsIn
