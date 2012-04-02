@@ -57,7 +57,7 @@ static int smallerHough(const void *a,const void *b) {
 
 #define LocalHOUGHComputeSizePar     LALHOUGHComputeSizePar
 #define LocalHOUGHFillPatchGrid      LALHOUGHFillPatchGrid
-#define LocalHOUGHParamPLUT          LALHOUGHParamPLUT
+#define LocalHOUGHCalcParamPLUT      LALHOUGHCalcParamPLUT
 #define LocalHOUGHConstructPLUT      LALHOUGHConstructPLUT
 #define LocalHOUGHConstructSpacePHMD LALHOUGHConstructSpacePHMD
 #define LocalHOUGHWeighSpacePHMD     LALHOUGHWeighSpacePHMD
@@ -410,7 +410,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
       parDem.timeDiff = timeDiffV->data[j];
 
       /* calculate parameters needed for buiding the LUT */
-      TRY( LocalHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem), status);
+      TRY( LocalHOUGHCalcParamPLUT( status->statusPtr, &parLut, &parSize, &parDem), status);
 
       /* build the LUT */
       TRY( LocalHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ), status);

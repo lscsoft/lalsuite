@@ -1971,7 +1971,7 @@ void ComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structur
       parDem.timeDiff = timeDiffV->data[j];
 
       /* calculate parameters needed for buiding the LUT */
-      TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem), status);
+      TRY( LALHOUGHCalcParamPLUT( status->statusPtr, &parLut, &parSize, &parDem), status);
 
       /* build the LUT */
       TRY( LALHOUGHConstructPLUT( status->statusPtr, &(lutV.lut[j]), &patch, &parLut ), status);
@@ -3589,7 +3589,7 @@ void ComputeNumExtraBins(LALStatus            *status,
     parDem.timeDiff = timeDiffV->data[j];
 
     /* calculate parameters needed for buiding the LUT */
-    TRY( LALHOUGHParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
+    TRY( LALHOUGHCalcParamPLUT( status->statusPtr, &parLut, &parSize, &parDem),status );
     /* build the LUT */
     TRY( LALHOUGHConstructPLUT( status->statusPtr, &lut, &patch, &parLut ),
 	 status );

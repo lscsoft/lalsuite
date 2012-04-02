@@ -396,7 +396,7 @@ void LALHOUGHFillPatchGrid (LALStatus   *status,
                    HOUGHSizePar        *par
 		       );
 
-void LALHOUGHParamPLUT (LALStatus   *status, /* Demod. case */
+void LALHOUGHCalcParamPLUT (LALStatus   *status, /* Demod. case */
                    HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
 		   HOUGHSizePar     *sizePar,
                    HOUGHDemodPar    *par  /* demodulation parameters */
