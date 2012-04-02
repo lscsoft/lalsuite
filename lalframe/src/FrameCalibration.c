@@ -251,7 +251,7 @@ LALExtractFrameResponse(
   /* sieve the calibration cache for the reference frame */
   memset( &sieve, 0, sizeof(FrCacheSieve) );
   sieve.dscRegEx = REF_TYPE;
-  LALFrCacheSieve( status->statusPtr, &refCache, calCache, &sieve );
+  LALFrSieveCache( status->statusPtr, &refCache, calCache, &sieve );
   if ( status->statusPtr->statusCode || ! refCache->numFrameFiles )
   {
     /* if we don't have a reference calibration, we can't do anything */
@@ -326,7 +326,7 @@ LALExtractFrameResponse(
   {
     /* try and get sensemon frames */
     snprintf( facDsc, LALNameLength * sizeof(CHAR), SENSEMON_FAC_TYPE );
-    LALFrCacheSieve( status->statusPtr, &facCache, calCache, &sieve );
+    LALFrSieveCache( status->statusPtr, &facCache, calCache, &sieve );
     BEGINFAIL( status )
     {
       RETURN_POINT_CAL;
@@ -473,7 +473,7 @@ LALExtractFrameResponse(
 
     /* try and get the the factors from lalapps_mkcalfac frames */
     sieve.dscRegEx = FAC_TYPE;
-    LALFrCacheSieve( status->statusPtr, &facCache, calCache, &sieve );
+    LALFrSieveCache( status->statusPtr, &facCache, calCache, &sieve );
     BEGINFAIL( status )
     {
       RETURN_POINT_CAL;
