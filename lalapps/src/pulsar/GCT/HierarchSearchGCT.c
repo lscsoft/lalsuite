@@ -2747,7 +2747,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
         XLALPrintError ("%s: failed to parse data-line %d (%d) in segment-list %s: '%s'\n", __func__, iSeg, ret, fname, flines->lines->tokens[iSeg] );
         XLALSegListClear ( segList );
         XLALFree ( segList );
-        XLALDestroyParsedDataFile ( &flines );
+        XLALDestroyParsedDataFile ( flines );
         XLAL_ERROR_NULL ( XLAL_ESYS );
       }
       /* check internal consistency of these numbers */
@@ -2775,8 +2775,7 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
     XLAL_ERROR_NULL ( XLAL_EFUNC );
 
   /* free parsed segment file contents */
-  if ( XLALDestroyParsedDataFile ( &flines ) != XLAL_SUCCESS )
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  XLALDestroyParsedDataFile ( flines );
 
   return segList;
 

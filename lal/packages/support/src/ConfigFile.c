@@ -158,25 +158,20 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
 
 /** Free memory associated with a LALParsedDataFile structure.
  */
-int
-XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
+void
+XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)	/**< [in] config-file data */
 {
 
-  if ( ! cfgdata || ! *cfgdata || ! (*cfgdata)->lines ) {
-    XLALPrintError( "%s:" CONFIGFILEH_MSGENULL, __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  if ( cfgdata ) {
 
-  XLALDestroyTokenList ( (*cfgdata)->lines );
+    XLALDestroyTokenList ( cfgdata->lines );
 
-  if ( (*cfgdata)->wasRead )
-    XLALFree ( (*cfgdata)->wasRead );
+    if ( cfgdata->wasRead )
+      XLALFree ( cfgdata->wasRead );
 
-  XLALFree ( *cfgdata );
+    XLALFree ( cfgdata );
 
-  *cfgdata = NULL;
-
-  return XLAL_SUCCESS;
+  }  
 
 } /* XLALDestroyParsedDataFile() */
 
@@ -877,13 +872,10 @@ void
 LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 			  LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
 {
-  const char *fn = __func__;
   INITSTATUS(status);
 
-  if ( XLALDestroyParsedDataFile (cfgdata) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALDestroyParsedDataFile() failed with code %d\n", fn, xlalErrno );
-    ABORT ( status, CONFIGFILEH_EXLAL, CONFIGFILEH_MSGEXLAL );
-  }
+  XLALDestroyParsedDataFile (*cfgdata);
+  *cfgdata = NULL;
 
   RETURN (status);
 

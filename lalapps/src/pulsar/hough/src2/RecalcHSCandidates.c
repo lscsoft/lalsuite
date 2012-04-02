@@ -3441,7 +3441,7 @@ XLALLoadHoughCandidateList ( const char *fname,	/**< input candidate-list file '
 
     } /* for i < nLines */
 
-  XLALDestroyParsedDataFile ( &data );
+  XLALDestroyParsedDataFile ( data );
 
   /* set frequency/f1dot search-space boundaries */
   out->FreqMin  = candMin.Freq;

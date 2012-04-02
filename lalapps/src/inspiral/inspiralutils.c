@@ -939,7 +939,7 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
   /* allocate memory */
   ret = XLALCreateREAL8FrequencySeries("PSD", &stubEpoch, 0, 0, &lalHertzUnit, length);
   if (ret == NULL) {
-    XLALDestroyParsedDataFile( &cfgdata );
+    XLALDestroyParsedDataFile( cfgdata );
     XLALPrintError ("%s: XLALPsdFromFile() failed.\n", __func__ );
     XLAL_ERROR ( XLAL_ENOMEM );
   }
@@ -950,7 +950,7 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
 
     /* Check the data file format */
     if ( r != 2 ) {
-      XLALDestroyParsedDataFile( &cfgdata );
+      XLALDestroyParsedDataFile( cfgdata );
       XLALPrintError ("%s: XLALPsdFromFile() failed on bad line in psd file.\n", __func__ );
       XLAL_ERROR ( XLAL_EFUNC );
     }
@@ -969,7 +969,7 @@ XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
 
   (*psd) = ret;
 
-  XLALDestroyParsedDataFile( &cfgdata );
+  XLALDestroyParsedDataFile( cfgdata );
 
   return XLAL_SUCCESS;
 } 

@@ -152,7 +152,7 @@ typedef struct tagLALParsedDataFile {
 
 /* Function prototypes */
 int XLALParseDataFile (LALParsedDataFile **cfgdata, const CHAR *fname);
-int XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata);
+void XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata);
 
 int XLALConfigSectionExists(const LALParsedDataFile *, const CHAR *);
 
