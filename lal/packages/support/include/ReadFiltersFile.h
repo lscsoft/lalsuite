@@ -34,7 +34,7 @@ extern "C" {
 
 int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData);
 
-int XLALDestroyFiltersFile(StrainIn *InputData);
+void XLALDestroyFiltersFile(StrainIn *InputData);
 
   /* C++ protection. */
 #ifdef  __cplusplus
