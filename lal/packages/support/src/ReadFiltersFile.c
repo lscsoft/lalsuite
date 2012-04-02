@@ -284,7 +284,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
 /*
  * Free memory reserved for the filters.
  */
-int XLALDestroyFiltersFile(StrainIn* InputData)
+void XLALDestroyFiltersFile(StrainIn* InputData)
 {
     int i;
 
@@ -302,7 +302,6 @@ int XLALDestroyFiltersFile(StrainIn* InputData)
         LALFree(filters[i]);
     }
 
-    return 0;
 }
 
 
