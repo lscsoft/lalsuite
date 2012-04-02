@@ -82,7 +82,7 @@ The <b>-p</b> option sets the velocity orientation of the detector
 
 \heading{Uses}
 \code
-LALHOUGHParamPLUT()
+LALHOUGHCalcParamPLUT()
 LALHOUGHConstructPLUT()
 LALHOUGHPeak2PHMD()
 LALHOUGHInitializeHT()
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   /* calculate parameters needed for buiding the LUT */
   /******************************************************************/
-  SUB( LALHOUGHParamPLUT( &status, &parLut, &parSize, &parDem ),  &status );
+  SUB( LALHOUGHCalcParamPLUT( &status, &parLut, &parSize, &parDem ),  &status );
 
   /******************************************************************/
   /* build the LUT */
