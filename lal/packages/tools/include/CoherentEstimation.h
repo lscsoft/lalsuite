@@ -78,7 +78,7 @@ typedef struct tagCoherentEstimation {
 
 
 void
-LALCoherentEstimation (
+LALDoCoherentEstimation (
 		       LALStatus          *status,
 		       REAL4TimeSeries *output,
 		       CoherentEstimation *params,
