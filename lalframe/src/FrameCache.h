@@ -176,7 +176,7 @@ void LALDestroyFrCache(
     );
 
 void
-LALFrCacheSieve(
+LALFrSieveCache(
     LALStatus     *status,
     FrCache      **output,
     FrCache       *input,

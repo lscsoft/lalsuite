@@ -250,7 +250,7 @@ int main(INT4 argc, CHAR *argv[])
 
   memset(&sieve, 0, sizeof(FrCacheSieve));
   /* sieve doesn't actually do anything yet */
-  LAL_CALL( LALFrCacheSieve(&status, &frInCache, frGlobCache, &sieve),
+  LAL_CALL( LALFrSieveCache(&status, &frInCache, frGlobCache, &sieve),
             &status);
 
   LAL_CALL(LALDestroyFrCache(&status, &frGlobCache), &status);

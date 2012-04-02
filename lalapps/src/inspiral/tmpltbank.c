@@ -447,7 +447,7 @@ int main ( int argc, char *argv[] )
         fqChanName[0] );
     sieve.srcRegEx = ifoRegExPattern;
     sieve.dscRegEx = frInType;
-    LAL_CALL( LALFrCacheSieve( &status, &frInCache, frGlobCache, &sieve ),
+    LAL_CALL( LALFrSieveCache( &status, &frInCache, frGlobCache, &sieve ),
         &status );
 
     /* check we got at least one frame file back after the sieve */
