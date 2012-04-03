@@ -572,7 +572,9 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     REAL8 dS1x, dS1y, dS1z, dS2x, dS2y, dS2z, dE1x, dE1y, dE1z;
 
     /* auxiliary variables */
-    REAL8 v, v2, v3, v4, v5, v7, v11, omega2, LNdotS1, LNdotS2, S1dotS2;
+    REAL8 v, v2, v3, v4, v5, v7, v11, omega2, omega2by2;
+    REAL8 LNdotS1, LNdotS2, threeLNdotS1, threeLNdotS2, S1dotS2;
+    REAL8 v5etaLNhatSO15s1, v5etaLNhatSO15s2;
     REAL8 OmegaLx, OmegaLy, OmegaLz, OmegaLdotLN;
     REAL8 OmegaEx, OmegaEy, OmegaEz, OmegaSx, OmegaSy, OmegaSz;
     REAL8 wspin15 = 0., wspin2 = 0., wspin25 = 0.;
@@ -595,7 +597,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
         return LALSIMINSPIRAL_ST4_DERIVATIVE_OMEGANONPOS;
     }
 
-    v = pow(omega,1./3.);
+    v = cbrt(omega);
     v2  = v * v; v3 = v2 * v; v4 = v3 * v; 
     v5 = v * v4; v7 = v4 * v3; v11 = v7 * v4;
 
@@ -636,14 +638,14 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 
     domega  = params->wdotnewt * v11 * ( params->wdotcoeff[0] 
             + v * ( params->wdotcoeff[1] 
-			+ v * ( params->wdotcoeff[2]
+            + v * ( params->wdotcoeff[2]
             + v * ( params->wdotcoeff[3] + wspin15 
             + v * ( params->wdotcoeff[4] + wspin2 
             + v * ( params->wdotcoeff[5] + wspin25 
             + v * ( params->wdotcoeff[6] + params->wdotlogcoeff * log(omega)
             + v * ( params->wdotcoeff[7] 
-			+ v3 * ( params->wdottidal5pn
-			+ v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
+            + v3 * ( params->wdottidal5pn
+            + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
 
     /**
      * dLN
@@ -690,12 +692,15 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      * However, that paper uses spin variables which are M^2 times our spins
      */
     /* \Omega_{S1} vector */
-    OmegaSx = v5 * params->eta * params->LNhatSO15s1 * LNhx
-            + omega2 * 0.5 * (S2x - 3. * LNdotS2 * LNhx);
-    OmegaSy = v5 * params->eta * params->LNhatSO15s1 * LNhy
-            + omega2 * 0.5 * (S2y - 3. * LNdotS2 * LNhy);
-    OmegaSz = v5 * params->eta * params->LNhatSO15s1 * LNhz
-            + omega2 * 0.5 * (S2z - 3. * LNdotS2 * LNhz);
+    omega2by2 = omega2 * 0.5;
+    threeLNdotS2 = 3. * LNdotS2;
+    v5etaLNhatSO15s1 = v5 * params->eta * params->LNhatSO15s1;
+    OmegaSx = v5etaLNhatSO15s1 * LNhx
+            + omega2by2 * (S2x - threeLNdotS2 * LNhx);
+    OmegaSy = v5etaLNhatSO15s1 * LNhy
+            + omega2by2 * (S2y - threeLNdotS2 * LNhy);
+    OmegaSz = v5etaLNhatSO15s1 * LNhz
+            + omega2by2 * (S2z - threeLNdotS2 * LNhz);
 
     /* Take cross product of \Omega_{S1} with S_1 */
     dS1x = (-OmegaSz*S1y + OmegaSy*S1z);
@@ -710,12 +715,14 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      * However, that paper uses spin variables which are M^2 times our spins
      */
     /* \Omega_{S2} vector */
-    OmegaSx = v5 * params->eta * params->LNhatSO15s2 * LNhx
-            + omega2 * 0.5 * (S1x - 3. * LNdotS1 * LNhx);
-    OmegaSy = v5 * params->eta * params->LNhatSO15s2 * LNhy
-            + omega2 * 0.5 * (S1y - 3. * LNdotS1 * LNhy);
-    OmegaSz = v5 * params->eta * params->LNhatSO15s2 * LNhz
-            + omega2 * 0.5 * (S1z - 3. * LNdotS1 * LNhz);
+    threeLNdotS1 = 3. * LNdotS1;
+    v5etaLNhatSO15s2 = v5 * params->eta * params->LNhatSO15s2;
+    OmegaSx = v5etaLNhatSO15s2 * LNhx
+            + omega2by2 * (S1x - threeLNdotS1 * LNhx);
+    OmegaSy = v5etaLNhatSO15s2 * LNhy
+            + omega2by2 * (S1y - threeLNdotS1 * LNhy);
+    OmegaSz = v5etaLNhatSO15s2 * LNhz
+            + omega2by2 * (S1z - threeLNdotS1 * LNhz);
 
     /* Take cross product of \Omega_{S2} with S_2 */
     dS2x = (-OmegaSz*S2y + OmegaSy*S2z);
