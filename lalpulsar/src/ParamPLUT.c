@@ -66,7 +66,7 @@ LALRotatePolarU()
 
 #include <lal/LUT.h>
 
-void LALHOUGHCalcParamPLUT (LALStatus    *status,
+void LALHOUGHParamPLUT (LALStatus    *status,
                    HOUGHParamPLUT    *out, /* parameters needed build LUT*/
                    HOUGHSizePar      *size,
                    HOUGHDemodPar     *par)  /* demodulation parameters */
