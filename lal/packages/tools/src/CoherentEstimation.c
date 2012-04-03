@@ -35,7 +35,7 @@ double acosh(double);
 static INT4 jacobi(float **a, int n, float d[], float **v, int *nrot);
 
 void
-LALDoCoherentEstimation ( LALStatus          *stat,
+LALCoherentEstimation ( LALStatus          *stat,
 			REAL4TimeSeries *output,
 			CoherentEstimation *params,
 			DetectorsData      *in) {
