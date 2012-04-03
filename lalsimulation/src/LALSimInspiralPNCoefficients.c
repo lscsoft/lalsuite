@@ -112,7 +112,7 @@ static REAL8 UNUSED
 XLALSimInspiralTaylorT1Flux_6PNCoeff(
 	REAL8 eta)
 {
-	return (664.3739519/6.9854400 + 16.0/3.0 * LAL_PI - 17.12/1.05 * LAL_GAMMA
+	return (664.3739519/6.9854400 + 16.0/3.0 * LAL_PI*LAL_PI - 17.12/1.05 * LAL_GAMMA
 		+ (4.1/4.8 * LAL_PI*LAL_PI - 134.543/7.776) * eta
 		- 94.403/3.024 * eta*eta - 7.75/3.24 * eta*eta*eta);
 }
