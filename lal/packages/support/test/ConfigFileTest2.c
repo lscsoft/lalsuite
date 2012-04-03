@@ -96,8 +96,7 @@ int main(int argc, char *argv[]){
   XLALReadConfigBOOLVariable   (&testBool,  cfgdata, 0, "testBool", &wasRead);
 
   XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR);
-  XLALDestroyParsedDataFile (cfgdata);
-  cfgdata = NULL;
+  XLALDestroyParsedDataFile (&cfgdata);
 
   /* now check the stuff got read-in correctly */
   if (somefloat != 1.0) {
@@ -175,8 +174,7 @@ int main(int argc, char *argv[]){
   XLALReadConfigBOOLVariable   (&testBool,  cfgdata, "section3", "testBool", &wasRead);
 
   XLALCheckConfigReadComplete (cfgdata, CONFIGFILE_ERROR);
-  XLALDestroyParsedDataFile (cfgdata);
-  cfgdata = NULL;
+  XLALDestroyParsedDataFile (&cfgdata);
 
   /* now check the stuff got read-in correctly */
   if (somefloat != 1.0) {

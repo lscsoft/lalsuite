@@ -560,7 +560,10 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
-  XLALDestroyParsedDataFile(cfg);
+  if ( XLALDestroyParsedDataFile (&cfg) != XLAL_SUCCESS ) {
+    XLALPrintError ("%s: XLALDestroyParsedDataFile() failed, code = %d\n", __func__, xlalErrno );
+    XLAL_ERROR ( XLAL_EFUNC );
+  }
 
   return XLAL_SUCCESS;
 } /* XLALUserVarReadCfgfile() */
