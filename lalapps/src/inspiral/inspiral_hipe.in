@@ -287,7 +287,7 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              if opts.inspiral: dag.add_node(insp)
 
              # make an inspiral checkpoint restore job
-             if True:
+             if opts.data_checkpoint:  
                insp_job.set_universe("vanilla")
                insp.set_data_checkpoint()
                insp.set_post_script(cp.get('condor','checkpoint-post-script'))
@@ -563,7 +563,9 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               if opts.inspiral_veto: dag.add_node(insp)
 
               # make an inspiral checkpoint restore job
-              if True:
+              # only if command line arg for ckpt set -- hope the args are
+              # right
+              if opts.data_checkpoint:
                 insp_veto_job.set_universe("vanilla")
                 insp.set_data_checkpoint()
                 insp.set_post_script(cp.get('condor','checkpoint-post-script'))
@@ -1466,6 +1468,9 @@ parser.add_option("-w", "--write-script", action="store_true", default=False,
 parser.add_option("--summary-first-coinc-triggers", action='store_true', default=False,\
     help="coire (first coincidence) files containing triggers from the whole run. "
     "Use with care, as files can become very large.")
+
+parser.add_option("--data-checkpoint", action="store_true", default=False,\
+    help="checkpoint the inspiral code")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
