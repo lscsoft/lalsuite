@@ -85,7 +85,6 @@ XLALInspiralInit (InspiralTemplate *params,
 {
   UINT4 ndx;
   REAL8 x;
-  CHAR message[256];
 
 
   if (params == NULL)
@@ -124,9 +123,7 @@ XLALInspiralInit (InspiralTemplate *params,
     XLALPrintWarning(LALINSPIRALH_MSGEFLOWER);
     paramsInit->nbins = 0;
 
-    sprintf(message, "#Estimated Length (seconds) requested = %f | fCutoff = %f",
-	    paramsInit->ak.tn, params->fCutoff);
-    XLALPrintInfo(message);
+    XLALPrintInfo("XLAL Info - %s: Estimated Length (seconds) requested = %f | fCutoff = %f\n", __func__, paramsInit->ak.tn, params->fCutoff);
 
     return XLAL_SUCCESS;
   }
@@ -134,9 +131,7 @@ XLALInspiralInit (InspiralTemplate *params,
   if( paramsInit->ak.tn <=0 || params->tC <= 0){
     XLALPrintWarning(LALINSPIRALH_MSGESIZE);
     paramsInit->nbins = 0;
-    sprintf(message, "#Estimated Length (seconds) requested = %f ",
-	    paramsInit->ak.tn);
-    XLALPrintInfo(message);
+    XLALPrintInfo("XLAL Info - %s: Estimated Length (seconds) requested = %f\n", __func__, paramsInit->ak.tn);
 
     return XLAL_SUCCESS;
   }
@@ -151,10 +146,8 @@ XLALInspiralInit (InspiralTemplate *params,
   ndx = ceil(log10(x)/log10(2.));
   paramsInit->nbins = pow(2, ndx) ;
 
-  sprintf(message, "#Estimated Length (seconds) = %f | Allocated length (bins) = %d",
-    paramsInit->ak.tn,
-    paramsInit->nbins);
-  XLALPrintInfo(message);
+  XLALPrintInfo("XLAL Info - %s: Estimated Length (seconds)= %f | Allocated length (bins) = %d\n", __func__, paramsInit->ak.tn, paramsInit->nbins);
+
 
   return XLAL_SUCCESS;
 }
