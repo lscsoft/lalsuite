@@ -687,8 +687,6 @@ void readPulsarData( LALInferenceRunState *runState ){
       tempdets = XLALStringDuplicate( detectors );
       
       for( i = 0; i < ml*numDets; i++ ){
-        LALStatus status;
-	
         CHAR *tmpstr = NULL;
         REAL8 psdvalf = 0.;
         
@@ -701,14 +699,13 @@ void readPulsarData( LALInferenceRunState *runState ){
           
           if( !strcmp(dets[FACTOR(i,ml)], "H1") || 
               !strcmp(dets[FACTOR(i,ml)], "L1") ||  
-              !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* ALIGO */
-            LALAdvLIGOPsd( &status, &psdvalf, 
-                           pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-            psdvalf *= 1.e-49; /* scale factor in LALAdvLIGOPsd.c */
+              !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* ALIGO */            
+            psdvalf = XLALSimNoisePSDaLIGOZeroDetHighPower(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "V1") ){ /* AVirgo */
-            LALEGOPsd( &status, &psdvalf,
-                       pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
+            psdvalf = XLALSimNoisePSDAdvVirgo(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else{
             fprintf(stderr, "Error... trying to use Advanced detector that is\
@@ -722,27 +719,25 @@ void readPulsarData( LALInferenceRunState *runState ){
           if( !strcmp(dets[FACTOR(i,ml)], "H1") || 
               !strcmp(dets[FACTOR(i,ml)], "L1") ||  
               !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* Initial LIGO */
-            psdvalf = 
-              XLALLIGOIPsd( pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-          
+            psdvalf = XLALSimNoisePSDiLIGOSRD(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
+            
             /* divide H2 psds by 2 */
             if( !strcmp(dets[FACTOR(i,ml)], "H2") ){
               psdvalf /= 2.;
             }
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "V1") ){ /* Initial Virgo */
-            LALVIRGOPsd( &status, &psdvalf,
-                         pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
+            psdvalf = XLALSimNoisePSDVirgo(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "G1") ){ /* GEO 600 */
-            LALGEOPsd( &status, &psdvalf,
-                       pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-            psdvalf *= 1.e-46; /* scale factor in LALGEOPsd.c */
+            psdvalf = XLALSimNoisePSDGEO(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "T1") ){ /* TAMA300 */
-            LALTAMAPsd( &status, &psdvalf,
-                        pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-            psdvalf *= 75. * 1.e-46; /* scale factor in LALTAMAPsd.c */
+            psdvalf = XLALSimNoisePSDTAMA(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else{
             fprintf(stderr, "Error... trying to use detector that is\
