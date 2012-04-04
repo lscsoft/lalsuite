@@ -2907,7 +2907,7 @@ mainpage.div(id_='header')
 mainpage.add('<h1>' + title  +' </h1>')
 leads = 'Lead: ' + Lead + '&nbsp;&nbsp&nbsp Second: '+ Second
 mainpage.add('<h3> ' + leads + ' </h3>')
-mainpage.add('<h3>' + Notes + ' </h3')
+mainpage.add('<h3>' + Notes + ' </h3>')
 mainpage.div.close()
 mainpage.div(id_='iframecontent')
 mainpage.add('<p id="placeholder">Please select a report section on the left.</p>')
