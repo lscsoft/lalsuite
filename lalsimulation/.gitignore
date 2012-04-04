@@ -25,7 +25,7 @@ src/LALSimulationVCSInfo.h
 src/lalsim-bh-qnmode
 src/lalsim-bh-ringdown
 src/lalsim-bh-sphwf
-src/lalsim-ligo-noise
+src/lalsim-detector-noise
 src/lalsim-sgwb
 src/lalsim-unicorn
 src/lalsimulation-user-env.csh
