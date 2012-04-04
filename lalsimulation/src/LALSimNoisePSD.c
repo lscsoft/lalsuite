@@ -428,6 +428,67 @@ double XLALSimNoisePSDeLIGOModel(double f /**< frequency (Hz) */)
 	return shot + seismic + thermal;
 }
 
+/**
+ * Provides the design noise power spectrum for Virgo based on a
+ * phenomenological fit (from the Virgo webiste) that can be approximated by the
+ * following:
+ * \f{equation}{
+ *  S_h(f) =
+ *  s_0 \left ( \frac {7.87f}{f_0} \right )^{-4.8} + \frac{6}{17} \frac{f_0}{f}
+ *  + \left [1 + \left (\frac {f}{f_0} \right)^2 \right ],
+ * \f}
+ * where \f$s_0=10.2e-46\f$.
+ *
+ * Warning: This comes from the deprecated function LALVIRGOPsd in the lal
+ * noisemodels package, which comes with no reference to the curve. An updated
+ * version of this model, with a reference would be welcomed.
+ */
+double XLALSimNoisePSDVirgo(double f /**< frequency (Hz) */)
+{
+  REAL8 s0, x;
+
+  x = f/500.;
+
+  s0 = 10.2e-46;
+
+  return s0*( pow(7.87*x,-4.8) + 6./17./x + 1. + x*x);
+}
+
+/** Provides a GEO noise power spectrum based on that from Table IV of
+ * \ref dis2001.
+ *
+ * The comes from the deprecated function LALGEOPsd in the lal noisemodels
+ * package.
+ */
+double XLALSimNoisePSDGEO(double f /**< frequency (Hz) */)
+{
+  REAL8 x, seismic, thermal, shot;
+
+  x = f/150.;
+  seismic = pow(10.,-16.) *  pow(x,-30.);
+  thermal = 34. / x;
+  shot = 20. * (1 - pow(x,2.) + 0.5 * pow(x,4.)) / (1. + 0.5 * pow(x,2.));
+
+  return 1e-46*(seismic + thermal + shot);
+}
+
+/** Provides a TAMA300 noise power spectrum based on that from Table IV of
+ * \ref dis2001.
+ *
+ * The comes from the deprecated function LALTAMAPsd in the lal noisemodels
+ * package.
+ */
+double XLALSimNoisePSDTAMA(double f /**< frequency (Hz) */)
+{
+  REAL8 seismic, thermal, shot, x;
+
+  x = f/400.;
+  seismic = pow(x,-5);
+  thermal = 13. / x;
+  shot = 9. * (1. + x*x);
+
+  return 75.e-46*(seismic + thermal + shot);
+}
 
 /*
  *
@@ -826,6 +887,48 @@ double XLALSimNoisePSDaLIGOHighFrequency(double f /**< frequency (Hz) */)
 	thermal = XLALSimNoisePSDaLIGOThermal(f);
 
 	return quantum + thermal;
+}
+
+
+/** Provides the noise power spectrum for KAGRA based on that from Eqn 5 of
+ * \ref md2012. This is a phenomenological fit to the KAGRA spectrum from
+ * http://gwcenter.icrr.u-tokyo.ac.jp/en/researcher/parameter
+ */
+double XLALSimNoisePSDKAGRA(double f /**< frequency (Hz) */)
+{
+  REAL8 x = log(f / 100.);
+  REAL8 x2 = x*x;
+  REAL8 asd = 0.;
+
+  /* calculate ASD from reference */
+  asd = 6.499e-25 * ( 9.72e-9*exp(-1.43 - 9.88*x - 0.23*x2)
+                     + 1.17*exp(0.14 - 3.10*x - 0.26*x2)
+                     + 1.70*exp(0.14 + 1.09*x - 0.013*x2)
+                     + 1.25*exp(0.071 + 2.83*x - 4.91*x2) );
+
+  /* return PSD */
+  return asd*asd;
+}
+
+
+/** Provides the noise power spectrum for AdvVirgo based on that from Eqn 6 of
+ * \ref md2012. This is a phenomenological fit to the AdvVirgo spectrum from
+ * http://wwwcascina.virgo.infin.it/advirgo.
+ */
+double XLALSimNoisePSDAdvVirgo(double f /**< frequency (Hz) */)
+{
+  REAL8 x = log(f / 300.);
+  REAL8 x2 = x*x;
+  REAL8 asd = 0.;
+
+  /* calculate ASD from reference */
+  asd = 1.259e-24 * ( 0.07*exp(-0.142 - 1.437*x + 0.407*x2)
+                     + 3.1*exp(-0.466 - 1.043*x - 0.548*x2)
+                     + 0.4*exp(-0.304 + 2.896*x - 0.293*x2)
+                     + 0.09*exp(1.466 + 3.722*x - 0.984*x2) );
+
+  /* return PSD */
+  return asd*asd;
 }
 
 

@@ -68,19 +68,21 @@ CLEANFILES        = python_config.sed lalapps_stochastic_pipe \
 ## rules to build python scripts
 
 python_config.sed:
-	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
+	@-rm -f python_config.sed
+	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
+	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
 lalapps_stochastic_pipe: $(srcdir)/stochastic_pipe.in python_config.sed
-	sed -f python_config.sed $(srcdir)/stochastic_pipe.in > \
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/stochastic_pipe.in > \
 		lalapps_stochastic_pipe
-	chmod +x lalapps_stochastic_pipe
+	@chmod +x lalapps_stochastic_pipe
 
 lalapps_stochastic_bayes: $(srcdir)/stochastic_bayes.in python_config.sed
-	sed -f python_config.sed $(srcdir)/stochastic_bayes.in > \
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/stochastic_bayes.in > \
 		lalapps_stochastic_bayes
-	chmod +x lalapps_stochastic_bayes
+	@chmod +x lalapps_stochastic_bayes
 
 BUILT_SOURCES =
 include $(top_srcdir)/misc/vcsID.common
