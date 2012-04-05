@@ -55,8 +55,6 @@
  * function that constructs a REAL8Window into a function to construct a
  * REAL4Window.
  */
-
-
 static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 {
 	REAL4Window *new;
@@ -365,9 +363,9 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
  */
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -384,9 +382,9 @@ REAL8Window *XLALCreateRectangularREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -403,9 +401,9 @@ REAL8Window *XLALCreateHannREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -423,9 +421,9 @@ REAL8Window *XLALCreateWelchREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -444,9 +442,9 @@ REAL8Window *XLALCreateBartlettREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -467,9 +465,9 @@ REAL8Window *XLALCreateParzenREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -488,9 +486,9 @@ REAL8Window *XLALCreatePapoulisREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -507,9 +505,9 @@ REAL8Window *XLALCreateHammingREAL8Window(UINT4 length)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	REAL8 I0beta=0;
@@ -593,9 +591,9 @@ REAL8Window *XLALCreateKaiserREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -629,9 +627,9 @@ REAL8Window *XLALCreateCreightonREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 transition_length = beta * length + 0.5;
@@ -657,9 +655,9 @@ REAL8Window *XLALCreateTukeyREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
-/* </lalVerbatim> */
+
 {
 	REAL8Sequence *sequence;
 	UINT4 i;
@@ -686,9 +684,9 @@ REAL8Window *XLALCreateGaussREAL8Window(UINT4 length, REAL8 beta)
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 void XLALDestroyREAL8Window(REAL8Window * window)
-/* </lalVerbatim> */
+
 {
 	if(window)
 		XLALDestroyREAL8Sequence(window->data);
@@ -705,97 +703,97 @@ void XLALDestroyREAL8Window(REAL8Window * window)
  */
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateRectangularREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateRectangularREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateHannREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateHannREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateWelchREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateWelchREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateBartlettREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateBartlettREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateParzenREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateParzenREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreatePapoulisREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreatePapoulisREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateHammingREAL4Window(UINT4 length)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateHammingREAL8Window(length));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateKaiserREAL4Window(UINT4 length, REAL4 beta)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateKaiserREAL8Window(length, beta));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateCreightonREAL4Window(UINT4 length, REAL4 beta)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateCreightonREAL8Window(length, beta));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateTukeyREAL4Window(UINT4 length, REAL4 beta)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateTukeyREAL8Window(length, beta));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 REAL4Window *XLALCreateGaussREAL4Window(UINT4 length, REAL4 beta)
-/* </lalVerbatim> */
+
 {
 	return XLALREAL4Window_from_REAL8Window(XLALCreateGaussREAL8Window(length, beta));
 }
 
 
-/* <lalVerbatim file="WindowCP"> */
+
 void XLALDestroyREAL4Window(REAL4Window * window)
-/* </lalVerbatim> */
+
 {
 	if(window)
 		XLALDestroyREAL4Sequence(window->data);

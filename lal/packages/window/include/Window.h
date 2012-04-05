@@ -32,19 +32,28 @@
 extern "C" {
 #endif
 
+/** \addtogroup window */
+/*@{*/
+
+/** Structure for storing REAL4 window function data, providing storage for a sequence of samples
+ * as well as metadata about the window such as the sum-of-squarse of the samples
+ */
 typedef struct tagREAL4Window {
 	SWIGLAL_STRUCT(REAL4Window);
-	REAL4Sequence *data;
-	REAL8          sumofsquares;
-	REAL8          sum;
+        REAL4Sequence *data;		/**< The window function samples */
+	REAL8          sumofsquares;	/**< The sum of the squares of the window function samples */
+        REAL8          sum;		/**< The sum of the window function samples */
 } REAL4Window;
 
 
+/** Structure for storing REAL8 window function data, providing storage for a sequence of samples
+ * as well as metadata about the window such as the sum-of-squarse of the samples
+ */
 typedef struct tagREAL8Window {
 	SWIGLAL_STRUCT(REAL8Window);
-	REAL8Sequence *data;
-	REAL8          sumofsquares;
-	REAL8          sum;
+	REAL8Sequence *data;		/**< The window function samples */
+	REAL8          sumofsquares;	/**< The sum of the squares of the window function samples */
+	REAL8          sum;		/**< The sum of the window function samples */
 } REAL8Window;
 
 
@@ -83,6 +92,7 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
 REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window);
 COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequence, const REAL8Window *window);
 
+/*@}*/
 
 #ifdef  __cplusplus
 }

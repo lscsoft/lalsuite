@@ -360,7 +360,7 @@ Int. J. Modern. Phys. D.
   href="http://adsabs.harvard.edu/abs/2005PhRvD..72j2002D">Phys. Rev. D,
   <b>72</b>, 102002 (2005)</a>
 
-\anchor Jones2010 <b>Jones2010</b> 
+\anchor Jones2010 <b>Jones2010</b>
   D. I. Jones, <i>Gravitational wave emission from rotating superfluid neutron
   stars</i>, <a href="http://adsabs.harvard.edu/abs/2010MNRAS.402.2503J">MNRAS,
   <b>402</b>, 4, 2503-2519 (2010)</a>
@@ -368,7 +368,7 @@ Int. J. Modern. Phys. D.
 \anchor VeitchVecchio2010 <b>VeitchVecchio2010</b>
   J. Veitch and A. Vecchio, <i>Bayesian coherent analysis of in-spiral
   gravitational wave signals with a detector network</i>, <a
-  href="http://adsabs.harvard.edu/abs/2010PhRvD..81f2003V">Phys. Rev. D, 
+  href="http://adsabs.harvard.edu/abs/2010PhRvD..81f2003V">Phys. Rev. D,
   <b>81</b>, 062003 (2010)</a>
 
 \anchor Skilling2006 <b>Skilling2006</b>
@@ -392,5 +392,16 @@ href="http://adsabs.harvard.edu/abs/1998ApJ...504..405S">Ap. J., <b>504</b>,
 
 \anchor md2012 <b>[md2012]</b>
   A. Manzotti and A. Dietz, <i>Propects for early localization of gravitational-wave signals from compact binary coalescences with advanced detectors</i>, <a href="http://arxiv.org/pdf/1202.4031.pdf">arXiv:1202.4031 (2012)</a>
+
+\anchor pw93 <b>[pw93]</b>
+  D.B. Percival and A.T. Walden, <em>Spectral analysis for physical applications</em>, first edition, Cambridge University Press, (1993).
+
+\anchor pm95 <b>[pm95]</b>
+J.G. Proakis and D.G. Manolakis, <em>Digital Signal Processing: principles, algorithms and applications</em>,
+3rd Edition, 1995. Prentice Hall
+
+\anchor stakgold79 <b>[stakgold79]</b>
+I. Stakgold, <em>Green's Functions and Boundary Value Problems</em>, 1979.
+Wiley Interscience
 
 */
