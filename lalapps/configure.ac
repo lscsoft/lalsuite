@@ -131,11 +131,11 @@ fi
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
-# check for c compiler
-AC_PROG_CC_C99
+# use silent build rules
+AM_SILENT_RULES([yes])
 
-# check for c++ compiler
-AC_PROG_CXX
+# check for C/C++ compilers
+LALSUITE_PROG_CC_CXX
 
 # check for MPI compiler
 if test "x$mpi" = "xtrue"; then
@@ -143,11 +143,7 @@ if test "x$mpi" = "xtrue"; then
 fi
 LALSUITE_ENABLE_MODULE([MPI],[mpi])
 
-# use silent build rules
-AM_SILENT_RULES([yes])
-
 # checks for programs
-AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
@@ -187,9 +183,6 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
-
-# check complex number types
-LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])

@@ -59,6 +59,8 @@ LALSUITE_ENABLE_BOINC
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
+LALSUITE_SWIG_REQUIRE_CXX
+
 # put version/configure info in config header
 lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
 lalpulsar_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -84,22 +86,17 @@ AC_DEFINE_UNQUOTED([LALPULSAR_CONFIGURE_DATE],["$lalpulsar_configure_date"],
 # workaround broken libtool multilib support on sl6
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
-# check for c compiler
-AC_PROG_CC_C99
-
 # use silent build rules
 AM_SILENT_RULES([yes])
 
-# check for c++ compiler
-AC_PROG_CXX
+# check for C/C++ compilers
+LALSUITE_PROG_CC_CXX
 
 # checks for programs
-AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LT_INIT
 AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
 
 # check for supported mac os x version
@@ -107,9 +104,6 @@ LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
-
-# check complex number types
-LALSUITE_CHECK_COMPLEX_NUMBER_TYPES
 
 # check for header files
 AC_HEADER_STDC
