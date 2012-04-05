@@ -17,64 +17,49 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
-<lalVerbatim file="FileIOCV">
-</lalVerbatim>
+/**
+   \addtogroup FileIO_h
 
-<lalLaTeX>
-\subsection{Module \texttt{FileIO.c}}
-
-File IO routines for LAL.  These should \emph{not} be used in routines within
-the LAL library---only within test programs.
-
-\subsection*{Prototypes}
-\input{FileIOCP}
-\begin{verbatim}
+   \heading{Obsolete LAL Prototypes}
+   \code
 FILE *LALFopen( const char *path, const char *mode );
 int LALFclose( FILE *stream );
-\end{verbatim}
-\idx{LALOpenDataFile()}
-\idx{LALFopen()}
-\idx{LALFclose()}
+   \endcode
 
-\subsection*{Description}
+\heading{Description}
 
-The routines \verb+LALFopen()+ and \verb+LALFclose()+ are macro defined to be
-the same as the standard C routines \verb+LALFopen()+ and \verb+fclose()+.  These
+The routines <tt>LALFopen()</tt> and <tt>LALFclose()</tt> are macro defined to be
+the same as the standard C routines <tt>LALFopen()</tt> and <tt>fclose()</tt>.  These
 should only be used in test programs.
 
-The routine \verb+LALOpenDataFile()+ is used to open a data file for reading.
+The routine <tt>LALOpenDataFile()</tt> is used to open a data file for reading.
 This routine is also to be used in test programs only.  Unless the data file
-is specified with an absolute path (beginning with a \verb+/+), or a specific
-path (beginning with a \verb+./+ or a \verb+../+), the directory
+is specified with an absolute path (beginning with a <tt>/</tt>), or a specific
+path (beginning with a <tt>./</tt> or a <tt>../</tt>), the directory
 that the file is in is obtained from the environment variable
-\verb+LAL_DATA_PATH+, which must be set at run-time.  (If the environment
-variable is not set, the default path is \verb+.+ --- i.e., the current
+\c LAL_DATA_PATH, which must be set at run-time.  (If the environment
+variable is not set, the default path is <tt>.</tt> --- i.e., the current
 directory.)
 
-\verb+LAL_DATA_PATH+ should typically be set to
-\verb+/usr/local/share/lal+, or wherever LAL data is installed in your system
-(which may be different if you used a \verb+--prefix+ argument when
-configuring LAL), but when the test suite is run with \verb+make check+, the
-variable \verb+LAL_DATA_PATH+ is set to the current source directory.  If the
+\c LAL_DATA_PATH should typically be set to
+<tt>/usr/local/share/lal</tt>, or wherever LAL data is installed in your system
+(which may be different if you used a <tt>--prefix</tt> argument when
+configuring LAL), but when the test suite is run with <tt>make check</tt>, the
+variable \c LAL_DATA_PATH is set to the current source directory.  If the
 filename (including the directory path) is too long (more than 256
-characters), \verb+LALOpenDataFile()+ returns \verb+NULL+ and sets
-\verb+errno+ to \verb+ENAMETOOLONG+.
+characters), <tt>LALOpenDataFile()</tt> returns \c NULL and sets
+\c errno to \c ENAMETOOLONG.
 
-\verb+LAL_DATA_PATH+ can be any colon-delimeted list of directories, which
-are searched in order (just like the \verb+PATH+ environment variable).
+\c LAL_DATA_PATH can be any colon-delimeted list of directories, which
+are searched in order (just like the \c PATH environment variable).
 An extra colon inserts the default data directory
-($\langle$prefix$\rangle$\verb+/share/lal+) into the search path at that
+(\f$\langle\f$prefix\f$\rangle\f$<tt>/share/lal</tt>) into the search path at that
 point.  E.g., a leading/trailing colon will look for the default data
 directory at the start/end of the list of directories.
 
-It is strongly recommended that
-\verb+LALOpenDataFile()+ be used when writing test code.
+It is strongly recommended that <tt>LALOpenDataFile()</tt> be used when writing test code.
 
-\vfill{\footnotesize\input{FileIOCV}}
-
-</lalLaTeX>
-#endif /* autodoc block */
+*/
 
 #include "config.h"
 
@@ -148,10 +133,10 @@ LALFILE * lalstderr( void )
 #endif
 
 
-/* <lalVerbatim file="FileIOCP"> */
+
 FILE *
 LALOpenDataFile( const char *fname )
-{ /* </lalVerbatim> */
+{
   FILE *fp;
   const char *path;
   char *datapath;	/* locally allocated copy of env-var LAL_DATA_PATH */

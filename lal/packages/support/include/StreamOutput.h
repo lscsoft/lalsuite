@@ -17,15 +17,21 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _STREAMOUTPUT_H
+#define _STREAMOUTPUT_H
+
+#include <lal/LALStdlib.h>
+#include <lal/Grid.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
+   \addtogroup StreamOutput_h
 \author Creighton, T. D.
-\file
 
-\heading{Header \ref StreamOutput.h}
-\latexonly\label{s_StreamOutput_h}\endlatexonly
-
-Provides routines to write data from LAL data structures to an open
-stream.
+   \brief Provides routines to write data from LAL data structures to an open stream.
 
 \heading{Synopsis}
 \code
@@ -41,41 +47,19 @@ writeable stream.  Nonetheless, because they involve I/O stream
 manipulation, these routines are placed in the \c lalsupport
 library rather than in \c lal proper.
 
-*/
+*/ /*@{*/
 
-#ifndef _STREAMOUTPUT_H
-#define _STREAMOUTPUT_H
-
-#include <lal/LALStdlib.h>
-#include <lal/Grid.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/**
-\heading{Error conditions}
- \name Error Codes */ /*@{*/
-#define STREAMOUTPUTH_ENUL 1
-#define STREAMOUTPUTH_EPRN 2
+/** \name Error Codes */ /*@{*/
+#define STREAMOUTPUTH_ENUL 1    /**< Unexpected null pointer in arguments */
+#define STREAMOUTPUTH_EPRN 2    /**< Print statement failed */
+/*@}*/
+/*@}*/
 
 #define STREAMOUTPUTH_MSGENUL "Unexpected null pointer in arguments"
 #define STREAMOUTPUTH_MSGEPRN "Print statement failed"
-/*@}*//**
-
-\heading{Types}
-
-*/
-
-
-
 
 
 /* Function prototypes. */
-
-
-
-
 void
 LALI2WriteTSeries( LALStatus  *status, FILE *stream, INT2TimeSeries *series );
 void

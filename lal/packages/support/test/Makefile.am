@@ -96,13 +96,9 @@ MOSTLYCLEANFILES = \
 	*.dat \
 	*.out \
 	*PrintVector.00* \
-	.dvi-dep \
 	Math3DNotebook.nb \
 	MathNDNotebook.nb \
 	SegmentsOutput1.data \
 	ConfigFile.cfg
 
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-
-@DVIMKFILE@
+DISTCLEANFILES =

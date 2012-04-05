@@ -21,62 +21,28 @@
  * File name: LALMathNDPlotTest.c
  *
  * Author: Hanna C. R.
- *
  * ______________________________________________________________________________________
  */
 
-/* ------------------------------------ AUTO-DOC ------------------------------------- */
-/* ----------------------------------------------------------------------------------- */
-
-/*<lalVerbatim file="LALMathNDPlotTestCV">
-  Author: Hanna, C.R.
-  </lalVerbatim>*/
-
-/*SUBSECTION - PROGRAM - "LALMathNDPlotTest.c" ------------------------------- <lalLaTeX>
-  \subsection{Program \texttt{LALMathNDPlotTest.c}}
-  \label{s:LALMathNDPlotTest.c}
-  \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
-* Tests LALMathNDPlot().
-  </lalLaTeX>*/
-
-  /*SUBSUBSECTION - USAGE - "LALMathNDPlotTest.c" ---------------------------- <lalLaTeX>
-    \begin{verbatim}
-    LALMathNDPlotTest
-    \end{verbatim}
-    </lalLaTeX>
-    END SUBSUBSECTION - USAGE - "LALMathNDPlotTest.c" -------------------------------- */
-
-  /*SUBSUBSECTION - DESCRIPTION - "LALMathNDPlotTest.c" ---------------------- <lalLaTeX>
-    \subsubsection{Description}
+/**
+ * \author Hanna, C.R.
+ * \file
+ * \ingroup LALMathematica_h
+ *
+ * \brief Tests LALMathNDPlot().
+ *
+ * \code
+ * LALMathNDPlotTest
+ * \endcode
+ *
+ *
+ * \heading{Description}
   * This program generates a set of points simulating a 4-D template bank and calls
-  * LALMathNDPlot() to generate a \MATHEMATICA notebook to display the permutations of
+ * LALMathNDPlot() to generate a MATHEMATICA notebook to display the permutations of
   * 3D projections of the template bank.  Instructions on how to evaluate the notebook
   * appear when it is opened.
-    </lalLaTeX>
-    END SUBSUBSECTION - DESCRIPTION - "LALMathNDPlotTest.c" -------------------------- */
-
-  /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
-    /* <lalLaTeX>
-    \subsubsection*{Exit codes}
-    \input{LALMathNDPlotTestCE}
-    </lalLaTeX>
-    END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
-
-  /*SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" ------------------------- <lalLaTeX>
-    \subsubsection{Notes}
-    \begin{itemize}
-  * \item No notes yet.
-    \end{itemize}
-    </lalLaTeX>
-    END - SUBSUBSECTION - NOTES - "LALMathNDPlotTest.c" --------------------------- */
-
-  /*<lalLaTeX>
-  \vfill{\footnotesize\input{LALMathNDPlotTestCV}}
-  </lalLaTeX>
-  END SUBSECTION - PROGRAM - "LALMathNDPlotTest.c" -------------------------------- */
-
-/* ----------------------------------------------------------------------------------- */
-/* ----------------------------------- END AUTO-DOC ---------------------------------- */
+ *
+ */
 
 #include <math.h>
 #include <stdio.h>
@@ -92,16 +58,18 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 
-/*<lalErrTable file="LALMathNDPlotTestCE">*/
-#define LALMATHNDPLOTTESTC_ENORM        0
-#define LALMATHNDPLOTTESTC_EMEM         1
-#define LALMATHNDPLOTTESTC_ESUB         2
+/**\name Error Codes */ /*@{*/
+#define LALMATHNDPLOTTESTC_ENORM        0       /**< Normal exit */
+#define LALMATHNDPLOTTESTC_EMEM         1       /**< Memory allocation error */
+#define LALMATHNDPLOTTESTC_ESUB         2       /**< Subroutine error */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 
 #define LALMATHNDPLOTTESTC_MSGENORM     "Normal exit"
 #define LALMATHNDPLOTTESTC_MSGEMEM      "Memory allocation error"
 #define LALMATHNDPLOTTESTC_MSGESUB      "Subroutine error"
-/*</lalErrTable>*/
+
 
 int main(void){
   static LALStatus status;
@@ -235,4 +203,4 @@ int main(void){
     return LALMATHNDPLOTTESTC_ENORM;
 
 }
-
+/** \endcond */

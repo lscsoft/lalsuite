@@ -17,61 +17,47 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="ConfigFileTestCV">
-Author: Reinhard Prix
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>
-
-\subsection{Program \texttt{ConfigFileTest.c}}
-\label{s:ConfigFileTest.c}
-
-Tests the routines in \verb@ConfigFile.h@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-ConfigFileTest
-\end{verbatim}
-
-\subsubsection*{Description}
-
-Do some standard-tests for the config-file reading routines. No
-extensive error-condition checking is done here, we only check if the
-basic functionality works.
-
-\subsubsection*{Exit codes}
-
-\input{ConfigFileErrors}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ConfigFileTestCV}}
-
-</lalLaTeX> */
-
 #include <lal/AVFactories.h>
 #include <lal/ConfigFile.h>
 
+/**
+   \file
+   \ingroup ConfigFile_h
+   \author Reinhard Prix
+
+   \brief Tests the routines in \ref ConfigFile.h.
+
+   \heading{Usage}
+   \code
+ConfigFileTest
+   \endcode
+
+\heading{Description}
+
+Does some standard-tests for the config-file reading routines. No
+extensive error-condition checking is done here, we only check if the
+basic functionality works.
+
+*/
+
 /* Error codes and messages */
 
-/************** <lalErrTable file="ConfigFileErrors"> */
-#define CONFIGFILETESTC_ENORM 		0
-#define CONFIGFILETESTC_EFLOAT 		1
-#define CONFIGFILETESTC_EINT 		2
-#define CONFIGFILETESTC_EBOOL 		3
-#define CONFIGFILETESTC_ESTRING 	4
-#define CONFIGFILETESTC_ESUB	 	5
+/**\name Error Codes */ /*@{*/
+#define CONFIGFILETESTC_ENORM           0       /**< Normal exit */
+#define CONFIGFILETESTC_EFLOAT          1       /**< Read-in REAL8 variable is not what it should be... */
+#define CONFIGFILETESTC_EINT            2       /**< Read-in INT4 variable is not what it should be... */
+#define CONFIGFILETESTC_EBOOL           3       /**< Read-in BOOL variable is not what it should be... */
+#define CONFIGFILETESTC_ESTRING         4       /**< Read-in STRING-variable is not what it should be... */
+#define CONFIGFILETESTC_ESUB            5       /**< Error occurred in sub-routine */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define CONFIGFILETESTC_MSGENORM 	"Normal exit"
 #define CONFIGFILETESTC_MSGEFLOAT 	"Read-in REAL8 variable is not what it should be..."
 #define CONFIGFILETESTC_MSGEINT 	"Read-in INT4 variable is not what it should be..."
 #define CONFIGFILETESTC_MSGEBOOL 	"Read-in BOOL variable is not what it should be..."
 #define CONFIGFILETESTC_MSGESTRING 	"Read-in STRING-variable is not what it should be..."
 #define CONFIGFILETESTC_MSGESUB	 	"Error occurred in sub-routine"
-
-/******************************************** </lalErrTable> */
 
 
 /* Default parameters. */
@@ -192,5 +178,4 @@ int main(int argc, char *argv[]){
 
   return CONFIGFILETESTC_ENORM;
 }
-
-
+/** \endcond */

@@ -17,133 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALMathematicaHV">
- * Author: Hanna, C. R.
- * </lalVerbatim> */
-
-/* <lalLaTeX>
- * \section{Header \texttt{LALMathematica.h}}
- * \label{s:LALMathematica.h}
- * \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
- * Provides structures, functions and macro definitions for modules that
- * generate \MATHEMATICA notebooks. Currently, the only modules using this
- * header file are \texttt{LALMath3DPlot()}, which generates 3D animated
- * plots of template banks having three parameters and
- * \texttt{LALMathNDPlot()} which plots the 3-dimensional projections of a
- * bank that is N-dimensional.
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
- * #include <lal/LALMathematica.h>
- * \end{verbatim}
- *
- * This header file defines macros containing \MATHEMATICA syntax that is
- * otherwise messy to implement into C source files.  Here is how to use
- * these macros to make your own program generate a \MATHEMATICA notebook.
- *
- * \begin{enumerate}
- * \item Open a file with a pointer named ``nb" and a file extenstion ``.nb".
- * \item Use BEG\_NOTEBOOK to start the notebook file.
- * \item Use the appropriate BEG and END macros with fprint(nb, ``Your
- * Text") in between to write your text to the cells of the notebook.  If
- * you are writing \MATHEMATICA commands use the INPUT macros; for plain
- * text, use TEXT Macros.
- * \item Denote titles and sections with the appropriate macros.
- * \item Use END\_NOTEBOOK to end the notebook and use fclose(nb) to close
- * the file ``nb".
- * \end{enumerate}
- *
- * The result is very readable/changeable source similar in style to most
- * markup languages. An example program might look like:
- *  \begin{verbatim}
- * FILE *nb;
- * nb = fopen("YourFileName.nb", "rw");
- * BEG_NOTEBOOK;
- * BEG_TITLECELL;
- *  fprintf(nb, "Sample Program Title");
- * END_TITLECELL_;
- * BEG_SECTIONCELL;
- *   fprintf(nb, "Sample Program Section Name");
- * END_SECTIONCELL;
- * END_NOTEBOOK;
- * fclose(nb);
- * \end{verbatim}
- *
- * \vfill{\footnotesize\input{LALMathematicaHV}}
- *
- * \newpage
- * \subsection*{Error codes}
- * \input{LALMathematicaHE}
- *
- * \subsection*{Macros}
- *  \input{LALMathematicaHM}
- *  \noindent
- * See the source file \texttt{Math3DPlot.c} for an example of how to use
- * these macros to generate a \MATHEMATICA notebook in your own program.
- *
- * \begin{description}
- * \item{NOTEBOOK} Denotes the beginning and ending of the notebook file.  A
- * BEG\_NOTEBOOK tag must start the file and an END\_NOTEBOOK tag must end
- * it.
- * \item{TITLE} Placing an fprint(nb, ``Your Title") between BEG and END
- * tags will place a \emph{title font} cell in the notebook.
- * \item{GROUP} Cells placed in between these tags will be grouped together
- * \item{SECTION} Same as title except the text printed will be in
- * \emph{section font}.  Subsequent input and text cells following the
- * END\_SECTIONCELL tag will be grouped with that section until a new
- * BEG\_SECTIONCELL tag is encountered.
- * \item{INPUT} provides cells to input \MATHEMATICA  commands.
- * \item{TEXT} provides cells to input plain text.
- * \end{description}
- *
- * Notice that the file pointer must be named ``nb" in order to use the
- * macros defined in this header.  When grouping several cell objects
- * together the last object in the list should have an underscored END tag
- * instead of an END tag without an underscore.  Although the notebook will
- * compile (usually) if you use the tags without an ending underscore, the
- * dangling comma is taken as a null member of the list of grouped cells.
- * Therefore, when you view the notebook in \MATHEMATICA  you may see the
- * word ``NULL" printed on a line.  That is an indication that you should
- * use the underscore version of the tag which preceeded the ``NULL"
- * statement.
- *
- * \vfill{\footnotesize\input{LALMathematicaHV}}
- *
- * \newpage
- * \subsection*{Types}
- * \input{LALMathematicaHT}
- * \idx[Type]{Math3DPointList}
- * \idx[Type]{MathNDPointList}
- * \noindent
- * The Math3DPointList type is used by \texttt{Math3DPlot.c} as an input
- * structure to plot 3-dimensional template banks.  It is a linked list with
- * parameters for each coordinate x,y,z and a next pointer.  It also has a
- * parameter called grayLevel which must be $\epsilon [0,1]$.  It specifies
- * the shading of the point in the final plot with 0 representing black and
- * 1 representing white.  By creatively assigning its value the grayscale
- * shade of the points may convey additional information.
- * \\\\
- * \noindent The MathNDPointList type is similar except the coordinates are
- * stored as data in the REAL4Vector \texttt{coordinates}.
- *
- * \subsection*{Notes}
- * \noindent\begin{itemize}
- * \item Obviously the definitions and functions associated with this header
- * are NOT lal compliant and thus do not belong in any lal routines except
- * test programs.
- * \item There are many more commands to manipulate the structure of
- * \MATHEMATICA notebooks that are not included in this header.  The macros
- * are only what is necessary for a \emph{bare minimum} interface.
- * \end{itemize}
- *
- * \vfill{\footnotesize\input{LALMathematicaHV}}
- *
- * \newpage\input{LALMath3DPlotC}
- * \newpage\input{LALMathNDPlotC}
- * \newpage\input{LALMath3DPlotTestC}
- * \newpage\input{LALMathNDPlotTestC}
- * </lalLaTeX> */
-
 #ifndef _LALMATHEMATICA_H
 #define _LALMATHEMATICA_H
 
@@ -165,17 +38,114 @@ extern "C" {
 #endif
 
 
-/* <lalErrTable file="LALMathematicaHE"> */
-#define LALMATHEMATICAH_ENULL 1
-#define LALMATHEMATICAH_MSGENULL "NULL pointer to a LALMathematica.h input structure"
-#define LALMATHEMATICAH_EFILE 2
-#define LALMATHEMATICAH_MSGEFILE "Could not open file to write a Mathematica Notebook"
-#define LALMATHEMATICAH_EVAL 3
-#define LALMATHEMATICAH_MSGEVAL "Invalid parameter value"
-/* </lalErrTable> */
+/**
+ * \addtogroup LALMathematica_h
+ * \author Hanna, C. R.
+ *
+ * \brief Provides structures, functions and macro definitions for modules that
+ * generate MATHEMATICA notebooks.
+ *
+ * Currently, the only modules using this
+ * header file are <tt>LALMath3DPlot()</tt>, which generates 3D animated
+ * plots of template banks having three parameters and
+ * <tt>LALMathNDPlot()</tt> which plots the 3-dimensional projections of a
+ * bank that is N-dimensional.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/LALMathematica.h>
+ * \endcode
+ *
+ * This header file defines macros containing MATHEMATICA syntax that is
+ * otherwise messy to implement into C source files.  Here is how to use
+ * these macros to make your own program generate a MATHEMATICA notebook.
+ *
+ * <ol>
+ * <li> Open a file with a pointer named &quot;nb&quot; and a file extenstion &quot;.nb&quot;.
+ * </li><li> Use BEG_NOTEBOOK to start the notebook file.
+ * </li><li> Use the appropriate BEG and END macros with fprint(nb, &quot;Your
+ * Text&quot) in between to write your text to the cells of the notebook.  If
+ * you are writing MATHEMATICA commands use the INPUT macros; for plain
+ * text, use TEXT Macros.
+ * </li><li> Denote titles and sections with the appropriate macros.
+ * </li><li> Use END_NOTEBOOK to end the notebook and use fclose(nb) to close
+ * the file &quot;nb&quot;.
+ * </li></ol>
+ *
+ * The result is very readable/changeable source similar in style to most
+ * markup languages. An example program might look like:
+ *  \code
+ * FILE *nb;
+ * nb = fopen("YourFileName.nb", "rw");
+ * BEG_NOTEBOOK;
+ * BEG_TITLECELL;
+ *  fprintf(nb, "Sample Program Title");
+ * END_TITLECELL_;
+ * BEG_SECTIONCELL;
+ *   fprintf(nb, "Sample Program Section Name");
+ * END_SECTIONCELL;
+ * END_NOTEBOOK;
+ * fclose(nb);
+ * \endcode
+ *
+ *
+ * \heading{Notes}
+ * <ul>
+ * <li> Obviously the definitions and functions associated with this header
+ * are NOT LAL compliant and thus do not belong in any lal routines except
+ * test programs.</li>
+ * <li> There are many more commands to manipulate the structure of
+ * MATHEMATICA notebooks that are not included in this header.  The macros
+ * are only what is necessary for a <em>bare minimum</em> interface.</li>
+ * </ul>
+ *
+*/
+/*@{*/
 
+/**\name Error Codes */ /*@{*/
+#define LALMATHEMATICAH_ENULL 1         /**< NULL pointer to a LALMathematica.h input structure */
+#define LALMATHEMATICAH_EFILE 2         /**< Could not open file to write a Mathematica Notebook */
+#define LALMATHEMATICAH_EVAL  3         /**< Invalid parameter value */
+/*@}*/
 
-/* <lalVerbatim file="LALMathematicaHM"> */
+/** \cond DONT_DOXYGEN */
+#define LALMATHEMATICAH_MSGENULL        "NULL pointer to a LALMathematica.h input structure"
+#define LALMATHEMATICAH_MSGEFILE        "Could not open file to write a Mathematica Notebook"
+#define LALMATHEMATICAH_MSGEVAL         "Invalid parameter value"
+/** \endcond */
+
+/** \name Macros
+ *
+ * See the source file \ref LALMath3DPlot.c for an example of how to use
+ * these macros to generate a MATHEMATICA notebook in your own program.
+ *
+ * <dl>
+ * <dt>NOTEBOOK</dt><dd>Denotes the beginning and ending of the notebook file.  A
+ * BEG_NOTEBOOK tag must start the file and an END_NOTEBOOK tag must end
+ * it.</dd>
+ * <dt>TITLE</dt><dd>Placing an fprint(nb, &quot;Your Title&quot;) between BEG and END
+ * tags will place a <em>title font</em> cell in the notebook.</dd>
+ * <dt>GROUP</dt><dd>Cells placed in between these tags will be grouped together</dd>
+ * <dt>SECTION</dt><dd>Same as title except the text printed will be in
+ * <em>section font</em>.  Subsequent input and text cells following the
+ * END_SECTIONCELL tag will be grouped with that section until a new
+ * BEG_SECTIONCELL tag is encountered.</dd>
+ * <dt>INPUT</dt><dd>provides cells to input MATHEMATICA  commands.</dd>
+ * <dt>TEXT</dt><dd>provides cells to input plain text.</dd>
+ * </dl>
+ *
+ * Notice that the file pointer must be named &quot;nb&quot; in order to use the
+ * macros defined in this header.  When grouping several cell objects
+ * together the last object in the list should have an underscored END tag
+ * instead of an END tag without an underscore.  Although the notebook will
+ * compile (usually) if you use the tags without an ending underscore, the
+ * dangling comma is taken as a null member of the list of grouped cells.
+ * Therefore, when you view the notebook in MATHEMATICA  you may see the
+ * word &quot;NULL&quot; printed on a line.  That is an indication that you should
+ * use the underscore version of the tag which preceeded the &quot;NULL&quot;
+ * statement.
+*/
+/*@{*/
 #define BEG_NOTEBOOK 		fprintf(nb, "Notebook[{\n")
 #define END_NOTEBOOK		fprintf(nb, "}]\n")
 #define BEG_TITLECELL		fprintf(nb, "Cell[\"")
@@ -193,9 +163,17 @@ extern "C" {
 #define BEG_TEXTCELL		fprintf(nb, "Cell[\"\\<")
 #define END_TEXTCELL		fprintf(nb, "\\>\", \"Text\"],\n")
 #define END_TEXTCELL_		fprintf(nb, "\\>\", \"Text\"]\n")
-/* </lalVerbatim> */
+/*@}*/
 
-/* <lalVerbatim file="LALMathematicaHT"> */
+
+/** This type is used by \ref LALMath3DPlot.c as an input structure to plot 3-dimensional template banks.
+ * It is a linked list with
+ * parameters for each coordinate x,y,z and a next pointer.  It also has a
+ * parameter called grayLevel which must be \f$\epsilon [0,1]\f$.  It specifies
+ * the shading of the point in the final plot with 0 representing black and
+ * 1 representing white.  By creatively assigning its value the grayscale
+ * shade of the points may convey additional information.
+ */
 typedef struct tagMath3DPointList{
   SWIGLAL_STRUCT(Math3DPointList);
   struct tagMath3DPointList *next;
@@ -205,6 +183,9 @@ typedef struct tagMath3DPointList{
   REAL4 grayLevel;
   }Math3DPointList;
 
+/** This type is similar to Math3DPointList except the coordinates are
+ * stored as data in the REAL4Vector \c coordinates.
+ */
 typedef struct tagMathNDPointList{
   SWIGLAL_STRUCT(MathNDPointList);
   struct tagMathNDPointList *next;
@@ -212,8 +193,8 @@ typedef struct tagMathNDPointList{
   INT4 dimension;
   REAL4 grayLevel;
   } MathNDPointList;
-/* </lalVerbatim> */
 
+/*@}*/
 
 void
 LALMath3DPlot( LALStatus *status,

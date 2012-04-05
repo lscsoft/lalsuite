@@ -1,14 +1,9 @@
 /**
+   \defgroup StreamSeriesInput_c Module StreamSeriesInput.c
+   \ingroup StreamInput_h
 \author Creighton, T. D.
-\file
-*/
 
-/**
-
-\heading{Module \ref StreamSeriesInput.c}
-\latexonly\label{ss_StreamSeriesInput_c}\endlatexonly
-
-Converts an input stream into a time or frequency series.
+   \brief Converts an input stream into a time or frequency series.
 
 \heading{Prototypes}
 
@@ -35,54 +30,11 @@ LAL<typecode>ReadFSeries( LALStatus                 *stat,
 \endcode
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \heading{Description}
 
 These routines parse an input stream <tt>*stream</tt> to fill in the
 data and metadata fields of a time or frequency series <tt>*series</tt>.
-The field <tt>series->data</tt> must be \c NULL, so that it can be
+The field <tt>series-\>data</tt> must be \c NULL, so that it can be
 created and filled by the routine.  The other fields may be
 initialized or not; they will be overwritten by metadata read from
 <tt>*stream</tt>.  If an error occurs, <tt>*series</tt> will be left
@@ -90,43 +42,37 @@ unchanged, but <tt>*stream</tt> will have been read up to the point
 where the error occured.
 
 For each of these prototype templates there are in fact 10 separate
-routines corresponding to all the atomic datatypes <tt><datatype></tt>
-(except \c CHAR) referred to by <tt><typecode></tt>:
+routines corresponding to all the atomic datatypes <tt>\<datatype\></tt>
+(except \c CHAR) referred to by <tt>\<typecode\></tt>:
 
-<table><tr><td>
-
-\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
-<tr><td>
-\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
-<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
-<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
-<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
-<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-<tr><td>
-</td></tr></table>
-
+<table>
+<tr><th>\<typecode\></th><th>\<datatype\></th><th>\<typecode\></th><th>\<datatype\></th></tr>
+<tr><td>I2</td><td> INT2</td><td> U2</td><td>   UINT2</td></tr>
+<tr><td>I4</td><td> INT4</td><td> U4</td><td>   UINT4</td></tr>
+<tr><td>I8</td><td> INT8</td><td> U8</td><td>   UINT8</td></tr>
+<tr><td> S</td><td>REAL4</td><td>  C</td><td>COMPLEX8</td></tr>
+<tr><td> D</td><td>REAL8</td><td>  Z</td><td>COMPLEX16</td></tr>
+</table>
 
 \heading{Format for <tt>*stream</tt>:} The input stream is assumed
 to be a text stream (ASCII) consisting of a header containing metadata
 followed by numerical data in standard integer or floating-point
 format, as recognized by the routines in \ref StringConvert.c.  The
-header consists of zero or more lines beginning with a <tt>'#'</tt>
+header consists of zero or more lines beginning with a \c \#
 character, followed by a metadata field name and value in the format:
 
-
-<table><tr><td>
-<tt># </tt>\e fieldname<tt>=</tt>\e value
-</td></tr></table>
-
+\code
+# fieldname=value
+\endcode
 
 The <tt>=</tt> sign in this format is standard but optional;
 it may be replaced or surrounded with any amount of any whitespace
-except a newline <tt>'\n'</tt>.  If \e fieldname is unrecognized,
+except a newline <tt>\\n</tt>.  If \e fieldname is unrecognized,
 it is ignored; if it is recognized, then \e value must be in a
 suitable format for the field type, as described below.  Blank lines,
-or lines containing just a <tt>#</tt> character, are skipped.  Once a
+or lines containing just a \c \# character, are skipped.  Once a
 line is encountered that contains non-whitespace characters and does
-not start with <tt>'#'</tt>, that line is assumed to be the beginning of
+not start with \c \#, that line is assumed to be the beginning of
 the numerical data.  From that point on, all non-whitespace characters
 must be part of parseable numbers; no more comments are permitted
 (although blank lines will still be skipped).
@@ -135,11 +81,12 @@ If a metadata field appears twice in the header, the later one takes
 precedence.  At present these routines do not track which fields have
 been previously assigned, so no warnings or errors are generated.
 
-How the data is packed into the <tt>series->data</tt> structure depends
+How the data is packed into the <tt>series-\>data</tt> structure depends
 on what metadata has been provided, as described below.
 
-\heading{Required, conditional, and optional metadata:} The input
-stream need not contain a complete set of metadata, allowing some
+<b>Required, conditional, and optional metadata:</b>
+
+The input stream need not contain a complete set of metadata, allowing some
 metadata to be read from <tt>*stream</tt> and others to be set
 elsewhere.  For each type of series, some metadata will be
 \e required, and the routine will abort if the metadata is not
@@ -149,65 +96,61 @@ metadata were found.  The remaining metadata are \e optional; if
 they are not found in <tt>*stream</tt>, they will be left unchanged.
 The recognized metadata fields are listed below.
 
-<tt><datatype>TimeSeries</tt>:
+<tt>\<datatype\>TimeSeries</tt>:
 <dl>
 <dt>Required fields:</dt><dd> none</dd>
 <dt>Conditional fields:</dt><dd> \c length</dd>
-<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
-\c f0, \c sampleUnits, \c datatype</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT, \c f0, \c sampleUnits, \c datatype</dd>
 </dl>
 
-<tt><datatype>TimeVectorSeries</tt>:
+<tt>\<datatype\>TimeVectorSeries</tt>:
 <dl>
 <dt>Required fields:</dt><dd> none</dd>
 <dt>Conditional fields:</dt><dd> \c length, \c vectorLength</dd>
-<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
-\c f0, \c sampleUnits, \c datatype</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT, \c f0, \c sampleUnits, \c datatype</dd>
 </dl>
 
-<tt><datatype>TimeArraySeries</tt>:
+<tt>\<datatype\>TimeArraySeries</tt>:
 <dl>
 <dt>Required fields:</dt><dd> \c dimLength</dd>
 <dt>Conditional fields:</dt><dd> \c length, \c arrayDim</dd>
-<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
-\c f0, \c sampleUnits, \c datatype</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT, \c f0, \c sampleUnits, \c datatype</dd>
 </dl>
 
-<tt><datatype>FrequencySeries</tt>:
+<tt>\<datatype\>FrequencySeries</tt>:
 <dl>
 <dt>Required fields:</dt><dd> none</dd>
 <dt>Conditional fields:</dt><dd> \c length</dd>
-<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT,
-\c f0, \c deltaF, \c sampleUnits, \c datatype</dd>
+<dt>Optional fields:</dt><dd> \c name, \c epoch, \c deltaT, \c f0, \c deltaF, \c sampleUnits, \c datatype</dd>
 </dl>
 
 Below we describe the required format for the field values, as well as
 what occurs if a conditional field is or isn't present.
 
-\bigskip<em>Required fields:</em>
+\heading{Required fields:}
 <dl>
-<dt>\c dimLength</dt><dd> (\c TimeArraySeries only):
+<dt>dimLength</dt><dd> (\c TimeArraySeries only):
 \e value consists of a sequence of \c UINT4s separated by
-whitespace (but \e not a newline <tt>'\n'</tt>).  These data are
-stored in <tt>series->data->dimLength</tt>: the number of integers gives
+whitespace (but \e not a newline <tt>'\\n'</tt>).  These data are
+stored in <tt>series-\>data-\>dimLength</tt>: the number of integers gives
 the number of array indecies, while the value of each integer gives
 the dimension of the corresponding array index.</dd>
 </dl>
 
-<em>Conditional fields:</em>
+\heading{Conditional fields:}
 <dl>
-<dt>\c arrayDim</dt><dd> (\c TimeArraySeries only): \e value
+<dt>arrayDim</dt><dd> (\c TimeArraySeries only): \e value
 is a single \c UINT4, to be stored in
-<tt>series->data->arrayDim</tt>.  This must equal the product of the
+<tt>series-\>data-\>arrayDim</tt>.  This must equal the product of the
 index ranges in \c dimLength, above, or an error is returned.  If
 not given, the \c arrayDim field will be set equal to the product
 of the index ranges in \c dimLength.  (The \c arrayDim and
 \c dimLength fields can appear in any order in <tt>*stream</tt>;
 checking is done only after all header lines have been read.)</dd>
 
-<dt>\c vectorLength</dt><dd> (\c TimeVectorSeries only):
+<dt>vectorLength</dt><dd> (\c TimeVectorSeries only):
 \e value is a single \c UINT4, to be stored in
-<tt>series->data->vectorLength</tt>.  If not specified in the header
+<tt>series-\>data-\>vectorLength</tt>.  If not specified in the header
 portion of <tt>*stream</tt>, it will be taken to be the number of data
 on the \e first line of the data portion of <tt>*stream</tt>, or
 half the number of real data for a complex-valued
@@ -215,8 +158,8 @@ half the number of real data for a complex-valued
 the first line of a complex \c TimeVectorSeries, then an error is
 returned.</dd>
 
-<dt>\c length:</dt><dd> \e value is a single \c UINT4, to be
-stored in <tt>series->data->length</tt>.  If it is specified in the
+<dt>length:</dt><dd> \e value is a single \c UINT4, to be
+stored in <tt>series-\>data-\>length</tt>.  If it is specified in the
 header portion of <tt>*stream</tt>, data will be read until
 \c length is reached.  Otherwise, <tt>*stream</tt> will be read to
 its end or until an unparseable character is read, and \c length
@@ -225,46 +168,48 @@ filling a complex, vector, or array valued element, the partly-read
 element is discarded.)</dd>
 </dl>
 
-<em>Optional fields:</em>
+\heading{Optional fields:}
+
 <dl>
-<dt>\c name:</dt><dd> \e value is a string surrounded by quotes
-<tt>"</tt>, which is parsed in the manner of a string literal in C: it
-may contain ordinary printable characters (except <tt>"</tt> and
-<tt>\</tt>), escape sequences (such as <tt>\t</tt> for tab, <tt>\n</tt> for
-newline, or <tt>\\</tt> and <tt>\"</tt> for literal backslash and quote
-characters), and octal or hexadecimal codes (<tt>\</tt>\f$ooo\f$ or
-<tt>\x</tt>\f$hh\f$ respectively) for arbitrary bytes.  Unlike in C,
+<dt>name:</dt><dd>\c value is a string surrounded by double-quotes,
+which is parsed in the manner of a string literal in C: it
+may contain ordinary printable characters (except double-quote and \\),
+escape sequences (such as \\t for tab, \\n for
+newline, or \\ and double-quote literal backslash and quote
+characters), and octal or hexadecimal codes (\\\c ooo or
+\\x\c hh, respectively) for arbitrary bytes.  Unlike in C,
 literals cannot be split between lines, adjacent literals are not
 concatenated, and converted strings longer than
-\c LALNameLength\f$-1\f$ will be truncated.  The resulting string is
-stored in <tt>series->name</tt>, and will always contain a <tt>\0</tt>
+\c LALNameLength-1 will be truncated.  The resulting string is
+stored in <tt>series-\>name</tt>, and will always contain a \c \\0
 terminator, beyond which the contents are unspecified.</dd>
 
-<dt>\c epoch:</dt><dd> \e value is a single \c INT8 number
+<dt>epoch:</dt><dd> \e value is a single \c INT8 number
 of GPS nanoseconds, or a pair of \c INT4s representing GPS seconds
 and nanoseconds separately, separated by non-newline whitespace.</dd>
 
-<dt>\c deltaT</dt><dd> (any time series): \e value is a single
+<dt>deltaT</dt><dd> (any time series): \e value is a single
 \c REAL8 number.</dd>
 
-<dt>\c f0:</dt><dd> \e value is a single \c REAL8 number.</dd>
+<dt>f0:</dt><dd> \e value is a single \c REAL8 number.</dd>
 
-<dt>\c deltaF</dt><dd> (\c FrequencySeries only): \e value
+<dt>deltaF</dt><dd> (\c FrequencySeries only): \e value
 is a single \c REAL8 number.</dd>
 
-<dt>\c sampleUnits:</dt><dd> \e value is string surrounded by
-quotes <tt>"</tt>; the quotes are stripped and the string passed to
-<tt>LALParseUnitString()</tt> to determine <tt>series->sampleUnits</tt>.
+<dt>sampleUnits:</dt><dd> \e value is string surrounded by
+double-quotes; the quotes are stripped and the string passed to
+<tt>LALParseUnitString()</tt> to determine <tt>series-\>sampleUnits</tt>.
 Since <tt>LALParseUnitString()</tt> is not very robust, it is
 recommended to use only unit strings that have been generated by
 <tt>LALUnitAsString()</tt>, or to remove this metadata field and set
-<tt>series->sampleUnits</tt> within the code.</dd>
+<tt>series-\>sampleUnits</tt> within the code.</dd>
 
-<dt>\c datatype:</dt><dd> \e value is string identifying the
+<dt>datatype:</dt><dd> \e value is string identifying the
 series type; e.g. \c REAL4TimeSeries (\e not surrounded by
 quotes).  This should correspond to the type of <tt>*series</tt>, not to
 any field in <tt>*series</tt>.  If there is a type mismatch, a warning
 is generated (and errors may occur later while parsing the data).</dd>
+
 </dl>
 
 \heading{Data format:} The data portion of <tt>*stream</tt> consists
@@ -272,7 +217,7 @@ of whitespace-separated integer or real numbers.  For complex input
 routines, the real data are parsed as alternately the real and
 imaginary parts of successive complex numbers.  By convention, each
 line should correspond to a single base, complex, vector, or array
-valued element of the <tt>series->data</tt> sequence.  However, this is
+valued element of the <tt>series-\>data</tt> sequence.  However, this is
 \e required only in the case of a \c TimeVectorSeries where
 the \c vectorLength metadata was not set in the header, since in
 this case the value of \c vectorLength will be taken from the
@@ -286,7 +231,7 @@ a character that cannot be interpreted as part of the numerical data),
 an error is returned.  If a \c length value was not specified,
 data are read until <tt>fscanf()</tt> returns zero or negative: at this
 point any partially-completed complex, vector, or array valued element
-is discarded, and <tt>series->data->length</tt> set to the number of
+is discarded, and <tt>series-\>data-\>length</tt> set to the number of
 elements read.
 
 \heading{Algorithm}
@@ -305,30 +250,9 @@ explicitly specified \c vectorLength).  If \c length is also
 specified, a sequence of the appropriate size is allocated, and all
 the data is copied or read directly into it.  If \c length was not
 specified, the data read with <tt>fscanf()</tt> are stored in a linked
-list of buffers of size \c BUFFSIZE (a local <tt>#define</tt>d
+list of buffers of size \c BUFFSIZE (a local <tt>\# define</tt>d
 constant) until parsing stops.  Then a sequence of the appropriate
 size is allocated and the data copied into it.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                         LALWarning()
-LALMalloc()                             LALFree()
-LALCHARReadVector()                     LALCHARDestroyVector()
-LAL<typecode>CreateVector()             LAL<typecode>DestroyVector()
-LAL<typecode>CreateVectorSequence()     LAL<typecode>DestroyVectorSequence()
-LAL<typecode>CreateArraySequence()      LAL<typecode>DestroyArraySequence()
-LALStringTo<typecode>()                 LALParseUnitString()
-\endcode
-where <tt><typecode></tt> is any of \c I2, \c I4, \c I8,
-\c U2, \c U4, \c U8, \c S, \c D, \c C, or
-\c Z.
-
-\heading{Notes}
-
-
-
-% This quote will fix the C syntax highlighting: "
 
 */
 
