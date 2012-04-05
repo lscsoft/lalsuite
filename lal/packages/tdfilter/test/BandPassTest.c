@@ -17,81 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="BandPassTestCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Program \texttt{BandPassTest.c}}
-\label{s:BandPassTest.c}
-
-Tests time-domain high- and low-pass filters.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-BandPassTest [-d debuglevel] [-i infile | -n npts dt offset] [-o outfile]
-             [-f f1 f2 a1 a2 order]
-\end{verbatim}
-
-\subsubsection*{Description}
-
-This program applies a Butterworth time-domain low-pass or high-pass
-filter to a time series, using the routine
-\verb@LALDButterworthREAL4TimeSeries()@.  The following option flags
-are accepted:
-\begin{itemize}
-\item[\texttt{-d}] Changes the default debug level from 0 to
-\verb@debuglevel@.
-\item[\texttt{-i}] Reads the input time series from \verb@infile@
-using the routine \verb@LALSReadTSeries()@; see \verb@StreamInput.h@
-for a description of the file format.
-\item[\texttt{-n}] Generates an input time series of length
-\verb@npts@ and sampling interval \verb@dt@, containing just an
-impulse at sample index \verb@offset@.  If the \verb@-i@ option is
-also given, it overrides this option.  If neither are given,
-\verb@-n 4096 1.0 1024@ is assumed.
-\item[\texttt{-o}] Writes the output time series to \verb@outfile@,
-using the routine \verb@LALSWriteTSeries()@; see \verb@StreamOutput.h@
-for a description of the file format.  If not specified, the routines
-are exercised, but no output is written.
-\item[\texttt{-f}] Sets the filter to have attenuation \verb@a1@ and
-\verb@a2@ at frequencies \verb@f1@ and \verb@f2@, with a maximum
-filter order of \verb@order@; see \verb@ButterworthTimeSeries.c@ for a
-description of how these values are interpreted.  If not specified,
-\verb@-f 0.01 0.015 0.9 0.1 20@ is assumed.
-\end{itemize}
-
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define BANDPASSTESTC_ENORM 0
-#define BANDPASSTESTC_ESUB  1
-#define BANDPASSTESTC_EARG  2
-#define BANDPASSTESTC_EBAD  3
-#define BANDPASSTESTC_EFILE 4
-
-#define BANDPASSTESTC_MSGENORM "Normal exit"
-#define BANDPASSTESTC_MSGESUB  "Subroutine failed"
-#define BANDPASSTESTC_MSGEARG  "Error parsing arguments"
-#define BANDPASSTESTC_MSGEBAD  "Bad argument values"
-#define BANDPASSTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                         snprintf()
-LALSCreateVector()                      LALSDestroyVector()
-LALSReadTSeries()                       LALSWriteTSeries()
-LALDButterworthREAL4TimeSeries()        LALCheckMemoryLeaks()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{BandPassTestCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <string.h>
@@ -101,6 +26,64 @@ LALDButterworthREAL4TimeSeries()        LALCheckMemoryLeaks()
 #include <lal/BandPassTimeSeries.h>
 #include <lal/StreamInput.h>
 #include <lal/StreamOutput.h>
+
+/**
+   \author Creighton, T. D.
+   \file
+   \ingroup BandPassTimeSeries_h
+
+   \brief Tests time-domain high- and low-pass filters.
+
+\heading{Usage}
+\code
+BandPassTest [-d debuglevel] [-i infile | -n npts dt offset] [-o outfile]
+             [-f f1 f2 a1 a2 order]
+\endcode
+
+\heading{Description}
+
+This program applies a Butterworth time-domain low-pass or high-pass
+filter to a time series, using the routine
+<tt>LALDButterworthREAL4TimeSeries()</tt>.  The following option flags
+are accepted:
+<ul>
+<li>[<tt>-d</tt>] Changes the default debug level from 0 to
+\c debuglevel.</li>
+<li>[<tt>-i</tt>] Reads the input time series from \c infile
+using the routine LALSReadTSeries(); see \ref StreamInput_h
+for a description of the file format.</li>
+<li>[<tt>-n</tt>] Generates an input time series of length
+\c npts and sampling interval \c dt, containing just an
+impulse at sample index \c offset.  If the <tt>-i</tt> option is
+also given, it overrides this option.  If neither are given,
+<tt>-n 4096 1.0 1024</tt> is assumed.</li>
+<li>[<tt>-o</tt>] Writes the output time series to \c outfile,
+using the routine LALSWriteTSeries(); see StreamOutput_h
+for a description of the file format.  If not specified, the routines
+are exercised, but no output is written.</li>
+<li>[<tt>-f</tt>] Sets the filter to have attenuation \c a1 and
+\c a2 at frequencies \c f1 and \c f2, with a maximum
+filter order of \c order; see \ref ButterworthTimeSeries_c for a
+description of how these values are interpreted.  If not specified,
+<tt>-f 0.01 0.015 0.9 0.1 20</tt> is assumed.</li>
+</ul>
+*/
+
+/** \name Error Codes */
+/*@{*/
+#define BANDPASSTESTC_ENORM 0	/**< Normal exit */
+#define BANDPASSTESTC_ESUB  1	/**< Subroutine failed */
+#define BANDPASSTESTC_EARG  2	/**< Error parsing arguments */
+#define BANDPASSTESTC_EBAD  3	/**< Bad argument values */
+#define BANDPASSTESTC_EFILE 4	/**< Could not open file */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define BANDPASSTESTC_MSGENORM "Normal exit"
+#define BANDPASSTESTC_MSGESUB  "Subroutine failed"
+#define BANDPASSTESTC_MSGEARG  "Error parsing arguments"
+#define BANDPASSTESTC_MSGEBAD  "Bad argument values"
+#define BANDPASSTESTC_MSGEFILE "Could not open file"
 
 /* Default parameters. */
 INT4 lalDebugLevel=0;
@@ -291,3 +274,4 @@ main(int argc, char **argv)
   INFO( BANDPASSTESTC_MSGENORM );
   return BANDPASSTESTC_ENORM;
 }
+/** \endcond */

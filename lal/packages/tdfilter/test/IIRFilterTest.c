@@ -17,145 +17,129 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="IIRFilterTestCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
+/** \cond DONT_DOXYGEN */
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+/** \endcond */
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <ctype.h>
+#include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <lal/AVFactories.h>
+#include <lal/Random.h>
+#include <lal/IIRFilter.h>
+#include <lal/ZPGFilter.h>
 
-/********************************************************** <lalLaTeX>
 
-\subsection{Program \texttt{IIRFilterTest.c}}
-\label{s:IIRFilterTest.c}
+/**
+   \author Creighton, T. D.
+   \file
+   \ingroup IIRFilter_h
 
-Tests the routines in \verb@IIRFilter.h@.
+   \brief Tests the routines in \ref IIRFilter_h.
 
-\subsubsection*{Usage}
-\begin{verbatim}
-IIRFilterTest [-f filtertag] [-o] [-t] [-d debuglevel] [-n npts] [-r reps] [-w freq]
-\end{verbatim}
+   \heading{Usage}
+   \code
+   IIRFilterTest [-f filtertag] [-o] [-t] [-d debuglevel] [-n npts] [-r reps] [-w freq]
+   \endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program generates a time series vector, and passes it through a
 third-order Butterworth low-pass filter.  By default, running this
 program with no arguments simply passes an impulse function to the
 filter routines, producing no output.  All filter parameters are set
-from \verb@#define@d constants.  The following option flags are
+from <tt>\#define</tt>d constants.  The following option flags are
 accepted:
-\begin{itemize}
-\item[\texttt{-f}] Specifies which filter(s) to be used:
-\verb@filtertag@ is a token containing one or more character codes
-from \verb@a@ to \verb@f@ and/or from \verb@A@ to \verb@D@, each
+<ul>
+<li>[<tt>-f</tt>] Specifies which filter(s) to be used:
+\c filtertag is a token containing one or more character codes
+from \c a to \c f and/or from \c A to \c D, each
 corresponding to a different filter:
-\begin{center}
-\begin{tabular}{rcl@{\qquad\qquad}rcl}
-\verb@a@ &=& \verb@LALSIIRFilter()@             &
-\verb@A@ &=& \verb@LALDIIRFilter()@             \\
-\verb@b@ &=& \verb@LALIIRFilterREAL4()@         &
-\verb@B@ &=& \verb@LALIIRFilterREAL8()@         \\
-\verb@c@ &=& \verb@LALIIRFilterREAL4Vector()@   &
-\verb@C@ &=& \verb@LALIIRFilterREAL8Vector()@   \\
-\verb@d@ &=& \verb@LALIIRFilterREAL4VectorR()@  &
-\verb@D@ &=& \verb@LALIIRFilterREAL8VectorR()@  \\
-\verb@e@ &=& \verb@LALDIIRFilterREAL4Vector()@  &&& \\
-\verb@f@ &=& \verb@LALDIIRFilterREAL4VectorR()@ &&&
-\end{tabular}
-\end{center}
-If not specified, \verb@-f abcd@ is assumed.
 
-\item[\texttt{-o}] Prints the input and output vectors to data files:
-\verb@out.0@ stores the initial impulse, \verb@out.@$c$ the response
-computed using the filter with character code $c$ (above).  If not
-specified, the routines are exercised, but no output is written.
+<table>
+<tr><td>\c a</td><td>=</td><td><tt>LALSIIRFilter()</tt></td><td>\c A</td><td>=</td><td><tt>LALDIIRFilter()</tt></td></tr>
+<tr><td>\c b</td><td>=</td><td><tt>LALIIRFilterREAL4()</tt></td><td>\c B</td><td>=</td><td><tt>LALIIRFilterREAL8()</tt></td></tr>
+<tr><td>\c c</td><td>=</td><td><tt>LALIIRFilterREAL4Vector()</tt></td><td>\c C</td><td>=</td><td><tt>LALIIRFilterREAL8Vector()</tt></td></tr>
+<tr><td>\c d</td><td>=</td><td><tt>LALIIRFilterREAL4VectorR()</tt></td><td>\c D</td><td>=</td><td><tt>LALIIRFilterREAL8VectorR()</tt></td></tr>
+<tr><td>\c e</td><td>=</td><td><tt>LALDIIRFilterREAL4Vector()</tt></td><td></td><td></td><td></td></tr>
+<tr><td>\c f</td><td>=</td><td><tt>LALDIIRFilterREAL4VectorR()</tt></td><td></td><td></td><td></td></tr>
+</table>
 
-\item[\texttt{-t}] Causes \verb@IIRFilterTest@ to fill the time series
+If not specified, <tt>-f abcd</tt> is assumed.</li>
+
+<li>[<tt>-o</tt>] Prints the input and output vectors to data files:
+<tt>out.0</tt> stores the initial impulse, <tt>out.</tt>\f$c\f$ the response
+computed using the filter with character code \f$c\f$ (above).  If not
+specified, the routines are exercised, but no output is written.</li>
+
+<li>[<tt>-t</tt>] Causes \c IIRFilterTest to fill the time series
 vector with Gaussian random deviates, and prints execution times for
-the various filter subroutines to \verb@stdout@.  To generate useful
+the various filter subroutines to \c stdout.  To generate useful
 timing data, the default size of the time vector is increased (unless
-explicitly set, below).
+explicitly set, below).</li>
 
-\item[\texttt{-d}] Changes the debug level from 0 to the specified
-value \verb@debuglevel@.
+<li>[<tt>-d</tt>] Changes the debug level from 0 to the specified
+value \c debuglevel.</li>
 
-\item[\texttt{-n}] Sets the size of the time vectors to \verb@npts@.
-If not specified, 4096 points are used (4194304 if the \verb@-t@
-option was also given).
+<li>[<tt>-n</tt>] Sets the size of the time vectors to \c npts.
+If not specified, 4096 points are used (4194304 if the <tt>-t</tt>
+option was also given).</li>
 
-\item[\texttt{-r}] Applies each filter to the data \verb@reps@ times
-instead of just once.
+<li>[<tt>-r</tt>] Applies each filter to the data \c reps times
+instead of just once.</li>
 
-\item[\texttt{-w}] Sets the characteristic frequency of the filter to
-\verb@freq@ in the $w$-plane (described in \verb@ZPGFilter.h@).  If
-not specified, \verb@-w 0.01@ is assumed (i.e.\ a characteristic
-frequency of 2\% of Nyquist).
-\end{itemize}
+<li>[<tt>-w</tt>] Sets the characteristic frequency of the filter to
+\c freq in the \f$w\f$-plane (described in \ref ZPGFilter.h).  If
+not specified, <tt>-w 0.01</tt> is assumed (i.e.\ a characteristic
+frequency of 2\% of Nyquist).</li>
+</ul>
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define IIRFILTERTESTC_ENORM 0
-#define IIRFILTERTESTC_ESUB  1
-#define IIRFILTERTESTC_EARG  2
-#define IIRFILTERTESTC_EBAD  3
-#define IIRFILTERTESTC_EFILE 4
+\heading{Algorithm}
 
-#define IIRFILTERTESTC_MSGENORM "Normal exit"
-#define IIRFILTERTESTC_MSGESUB  "Subroutine failed"
-#define IIRFILTERTESTC_MSGEARG  "Error parsing arguments"
-#define IIRFILTERTESTC_MSGEBAD  "Bad argument value"
-#define IIRFILTERTESTC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable><lalLaTeX>
+\wrapfig{r,0.6\textwidth,fig_iirfiltertest}
+\image html tdfilter_iirfiltertest.png "Fig.[fig_iirfiltertest]: Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option."
+\image latex tdfilter_iirfiltertest.pdf "Impulse response functions in the frequency domain (computed as a windowed FFT) for various filtering routines, run using the <tt>-r 5</tt> option." width=0.55\textwidth
 
-\newpage
-
-\subsubsection*{Algorithm}
-
-\begin{wrapfigure}{r}{0.6\textwidth}
-\vspace{-7ex}
-\begin{center}
-\resizebox{0.55\textwidth}{!}{\includegraphics{tdfilter_iirfiltertest}}
-\\ \parbox{0.55\textwidth}{\caption{\label{fig:iirfiltertest} Impulse
-response functions in the frequency domain (computed as a windowed
-FFT) for various filtering routines, run using the \texttt{-r~5}
-option.}}
-\end{center}
-\vspace{-4ex}
-\end{wrapfigure}
 A third-order Butterworth low-pass filter is defined by the following
 power response function:
-$$
+\f[
 |T(w)|^2 = \frac{1}{1+(w/w_c)^6}\;,
-$$
-where the frequency parameter $w=\tan(\pi f\Delta t)$ maps the Nyquist
-interval onto the entire real axis, and $w_c$ is the (transformed)
-characteristic frequency set by the \verb@-w@ option above.  A stable
-time-domain filter has poles with $|z|<1$ in the $z$-plane
-representation, which means that the $w$-plane poles should have
-$\Im(w)>0$.  We construct a transfer function using only the
+\f]
+where the frequency parameter \f$w=\tan(\pi f\Delta t)\f$ maps the Nyquist
+interval onto the entire real axis, and \f$w_c\f$ is the (transformed)
+characteristic frequency set by the <tt>-w</tt> option above.  A stable
+time-domain filter has poles with \f$|z|<1\f$ in the \f$z\f$-plane
+representation, which means that the \f$w\f$-plane poles should have
+\f$\Im(w)>0\f$.  We construct a transfer function using only the
 positive-imaginary poles of the power response function:
-$$
+\f[
 T(w) = \frac{iw_c^3}{\prod_{k=0}^2
 	\left[w-w_c e^{(2k+1)i\pi/6}\right]}\;,
-$$
-where we have chosen a phase coefficient $i$ in the numerator in order
-to get a purely real DC response.  This ensures that the $z$-plane
+\f]
+where we have chosen a phase coefficient \f$i\f$ in the numerator in order
+to get a purely real DC response.  This ensures that the \f$z\f$-plane
 representation of the filter will have a real gain, resulting in a
 physically-realizable IIR filter.
 
-The poles and gain of the transfer function $T(w)$ are simply read off
-of the equation above, and are stored in a \verb@COMPLEX8ZPGFilter@.
-This is transformed from the $w$-plane to the $z$-plane representation
-using \verb@LALWToZCOMPLEX8ZPGFilter()@, and then used to create an
-IIR filter with \verb@LALCreateREAL4IIRFilter()@.  This in turn is
-used by the routines \verb@LALSIIRFilter()@,
-\verb@LALIIRFilterREAL4()@, \verb@LALIIRFilterREAL4Vector()@, and
-\verb@LALIIRFilterREAL4VectorR()@ to filter a data vector containing
+The poles and gain of the transfer function \f$T(w)\f$ are simply read off
+of the equation above, and are stored in a \c COMPLEX8ZPGFilter.
+This is transformed from the \f$w\f$-plane to the \f$z\f$-plane representation
+using <tt>LALWToZCOMPLEX8ZPGFilter()</tt>, and then used to create an
+IIR filter with <tt>LALCreateREAL4IIRFilter()</tt>.  This in turn is
+used by the routines <tt>LALSIIRFilter()</tt>,
+<tt>LALIIRFilterREAL4()</tt>, <tt>LALIIRFilterREAL4Vector()</tt>, and
+<tt>LALIIRFilterREAL4VectorR()</tt> to filter a data vector containing
 either a unit impulse or white Gaussian noise (for more useful timing
 information).
 
-\subsubsection*{Sample output}
+\heading{Sample output}
 
-Running this program on a 1.3~GHz Intel machine with no optimization
+Running this program on a 1.3 GHz Intel machine with no optimization
 produced the following typical timing information:
-\begin{verbatim}
+\code
 > IIRFilterTest -r 5 -t -f abcdefABCD
 Filtering 4194304 points 5 times:
 Elapsed time for LALSIIRFilter():             1.39 s
@@ -168,64 +152,43 @@ Elapsed time for LALIIRFilterREAL4VectorR():  1.33 s
 Elapsed time for LALIIRFilterREAL8VectorR():  1.96 s
 Elapsed time for LALDIIRFilterREAL4Vector():  1.12 s
 Elapsed time for LALDIIRFilterREAL4VectorR(): 1.06 s
-\end{verbatim}
+\endcode
 From these results it is clear that the mixed-precision vector
 filtering routines are the most efficient, outperforming even the
 purely single-precision vector filtering routines by 20\%--30\%.  This
 was unanticipated; by my count the main inner loop of the
-single-precision routines contain $2M+2N+1$ dereferences and $2M+2N-3$
-floating-point operations per vector element, where $M$ and $N$ are
+single-precision routines contain \f$2M+2N+1\f$ dereferences and \f$2M+2N-3\f$
+floating-point operations per vector element, where \f$M\f$ and \f$N\f$ are
 the direct and recursive filter orders, whereas the mixed-precision
-routines contain $2\max\{M,N\}+2M+2$ dereferences and $2M+2N-1$
+routines contain \f$2\max\{M,N\}+2M+2\f$ dereferences and \f$2M+2N-1\f$
 floating-point operations per element.  However, most of the
 dereferences in the mixed-precision routines are to short internal
 arrays rather than to the larger data vector, which might cause some
 speedup.
 
-Running the same command with the \verb@-t@ flag replaced with
-\verb@-o@ generates files containing the impulse response of the
+Running the same command with the <tt>-t</tt> flag replaced with
+<tt>-o</tt> generates files containing the impulse response of the
 filters.  The frequency-domain impulse response is shown in
-Fig.~\ref{fig:iirfiltertest}.  This shows the steady improvement in
+Fig.\figref{fig_iirfiltertest}.  This shows the steady improvement in
 truncation error from single- to mixed- to double-precision filtering.
 
+*/
 
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALSCreateVector()              LALDCreateVector()
-LALSDestroyVector()             LALDDestroyVector()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALNormalDeviates()             LALPrintError()
-LALCreateCOMPLEX8ZPGFilter()    LALCreateCOMPLEX16ZPGFilter()
-LALDestroyCOMPLEX8ZPGFilter()   LALDestroyCOMPLEX16ZPGFilter()
-LALCreateREAL4IIRFilter()       LALCreateREAL8IIRFilter()
-LALDestroyREAL4IIRFilter()      LALDestroyREAL8IIRFilter()
-LALWToZCOMPLEX8ZPGFilter()      LALWToZCOMPLEX16ZPGFilter()
-LALSIIRFilter()                 LALDIIRFilter()
-LALIIRFilterREAL4()             LALIIRFilterREAL8()
-LALIIRFilterREAL4Vector()       LALIIRFilterREAL8Vector()
-LALIIRFilterREAL4VectorR()      LALIIRFilterREAL8VectorR()
-LALDIIRFilterREAL4Vector()      LALDIIRFilterREAL4VectorR()
-\end{verbatim}
+/** \name Error Codes */
+/*@{*/
+#define IIRFILTERTESTC_ENORM 0	/**< Normal exit */
+#define IIRFILTERTESTC_ESUB  1	/**< Subroutine failed */
+#define IIRFILTERTESTC_EARG  2	/**< Error parsing arguments */
+#define IIRFILTERTESTC_EBAD  3	/**< Bad argument value */
+#define IIRFILTERTESTC_EFILE 4	/**< Could not create output file */
+/*@}*/
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{BandPassTestCV}}
-
-******************************************************* </lalLaTeX> */
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <ctype.h>
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
-#include <time.h>
-#include <lal/AVFactories.h>
-#include <lal/Random.h>
-#include <lal/IIRFilter.h>
-#include <lal/ZPGFilter.h>
+/** \cond DONT_DOXYGEN */
+#define IIRFILTERTESTC_MSGENORM "Normal exit"
+#define IIRFILTERTESTC_MSGESUB  "Subroutine failed"
+#define IIRFILTERTESTC_MSGEARG  "Error parsing arguments"
+#define IIRFILTERTESTC_MSGEBAD  "Bad argument value"
+#define IIRFILTERTESTC_MSGEFILE "Could not create output file"
 
 /* Default parameters. */
 INT4 lalDebugLevel=0;
@@ -719,3 +682,4 @@ main(int argc, char **argv)
   INFO( IIRFILTERTESTC_MSGENORM );
   return IIRFILTERTESTC_ENORM;
 }
+/** \endcond */
