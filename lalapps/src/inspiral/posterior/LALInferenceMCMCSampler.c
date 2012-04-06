@@ -101,17 +101,18 @@ static void DEbuffer2array(LALInferenceRunState *runState, INT4 startCycle, INT4
 
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   INT4 totalPoints = runState->differentialPointsLength;
-  INT4 start = (REAL8)startCycle/(REAL8)Nskip;
-  INT4 end = (REAL8)endCycle/(REAL8)Nskip;
-  if (end > totalPoints)
-    end = totalPoints;
+  INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
+  INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
+  /* Include last point */
+  if (end > totalPoints-1)
+    end = totalPoints-1;
 
-  for (i=start; i < end; i++) {
+  for (i = start; i <= end; i++) {
     ptr=runState->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
       if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-        DEarray[i][p]=*(REAL8 *)ptr->value;
+        DEarray[i-start][p]=*(REAL8 *)ptr->value;
         p++;
       }
       ptr=ptr->next;
@@ -126,8 +127,10 @@ array2DEbuffer(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, R
 
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   INT4 totalPoints = runState->differentialPointsLength;
-  INT4 start = (REAL8)startCycle/(REAL8)Nskip;
-  INT4 end = (REAL8)endCycle/(REAL8)Nskip;
+  INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
+  INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
+  /* Include last point */
+  end += 1;
   if (end > totalPoints)
     end = totalPoints;
 
@@ -136,7 +139,7 @@ array2DEbuffer(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, R
     p=0;
     while(ptr!=NULL) {
       if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-        *((REAL8 *)ptr->value) = (REAL8)DEarray[i][p];
+        *((REAL8 *)ptr->value) = (REAL8)DEarray[i-start][p];
         p++;
       }
       ptr=ptr->next;
@@ -186,15 +189,19 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   INT4 totalPoints = runState->differentialPointsLength;
-  INT4 start = (REAL8)startCycle/(REAL8)Nskip;
-  INT4 end = (REAL8)endCycle/(REAL8)Nskip;
-  if (end > totalPoints)
-    end = totalPoints;
-  INT4 nPoints = end - start;
+  INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
+  INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
+  /* Include last point */
+  if (end > totalPoints-1)
+    end = totalPoints-1;
+  INT4 nPoints = end - start + 1;
   REAL8** DEarray;
   REAL8*  temp;
   REAL8 mean, ACL, max=0;
-  INT4 par=0, lag=0, i=0;
+  INT4 par=0, lag=0, i=0, p=0;
+  int MPIrank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+  LALInferenceVariableItem *ptr=runState->currentParams->head;
 
   /* Prepare 2D array for DE points */
   DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
@@ -203,7 +210,7 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
     DEarray[i] = temp + (i*nPar);
   }
 
-  DEbuffer2array(runState, 0, nPoints*Nskip, DEarray);
+  DEbuffer2array(runState, startCycle, endCycle, DEarray);
 
   for (par=0; par<nPar; par++) {
     ACL=0;
@@ -215,22 +222,39 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
     ACL *= Nskip;
     if (ACL>max)
       max=ACL;
+    if (MPIrank==0) {
+      p=0;
+      while(ptr!=NULL) {
+        if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+          printf("Chain %i:%s\t=>\t%i\n",MPIrank,LALInferenceTranslateInternalToExternalParamName(ptr->name),(INT4)ACL);
+          p++;
+        }
+        ptr=ptr->next;
+      }
+    }
   }
+
   *maxACL = (INT4)max;
   XLALFree(temp);
 }
 
 static void
 updateMaxAutoCorrLen(LALInferenceRunState *runState, INT4 currentCycle) {
+  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   REAL8 aclThreshold = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "aclThreshold");
-  INT4 proposedACL;
+  INT4 proposedACL=0;
   INT4 adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
   INT4 adaptLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptLength");
   INT4 iEffStart = adaptStart+adaptLength;
+  INT4 acl=Niter;
 
-  computeMaxAutoCorrLen(runState, iEffStart, currentCycle, &proposedACL);
-  if (proposedACL < aclThreshold*(currentCycle-iEffStart))
-    LALInferenceSetVariable(runState->algorithmParams, "acl", &proposedACL);
+  if (iEffStart<currentCycle)
+    computeMaxAutoCorrLen(runState, iEffStart, currentCycle, &proposedACL);
+
+  if (proposedACL < aclThreshold*(currentCycle-iEffStart) && proposedACL != 0)
+    acl = proposedACL;
+
+  LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
 }
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
@@ -573,19 +597,18 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     if (runPhase < 2) {
       /* Parallel Tempering */
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
-      adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
+      adaptStart = *((INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart"));
       iEffStart = adaptStart+adaptLength;
+      acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
 
       if (i % (100*Tskip) == 0) {
-        if (!(LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior"))){
-          MPI_Gather(&adapting,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-          if (MPIrank==0) {
-            adapting=0;
-            for (p=0; p<nChain; p++) {
-              if (intVec[p]>0){
-                adapting=1;
-                break;
-              }
+        MPI_Gather(&adapting,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
+        if (MPIrank==0) {
+          adapting=0;
+          for (p=0; p<nChain; p++) {
+            if (intVec[p]>0){
+              adapting=1;
+              break;
             }
           }
         }
@@ -593,20 +616,25 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
         /* Check if cold chain ACL has been calculated */
         if (!adapting) {
+          MPI_Gather(&acl,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
+          if (MPIrank==0) {
+            for (p=0; p<nChain; p++) {
+              if (intVec[p]>acl)
+                acl=intVec[p];
+            }
+          }
+          MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
           if (acl == Niter) {
             updateMaxAutoCorrLen(runState, i);
-            acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
           }
+          acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
           iEff = (i - iEffStart)/acl;
-          if (!LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior")){
-            MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-            if (MPIrank==0) {
-              for (p=0; p<nChain; p++) {
-                if (intVec[p]<iEff){
-                  iEff=intVec[p];
-                }
-              }
+          MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
+          if (MPIrank==0) {
+            for (p=0; p<nChain; p++) {
+              if (intVec[p]<iEff)
+                iEff=intVec[p];
             }
           }
           MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -616,25 +644,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             oldACL = acl;
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
             if (!goodACL) {
-              MPI_Bcast(&oldACL, 1, MPI_INT, 0, MPI_COMM_WORLD);
-              MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
-              if (acl <= oldACL)
-                goodACL=1;
+              if (MPIrank==0){
+                if (acl<=oldACL)
+                  goodACL=1;
+              }
+              MPI_Bcast(&goodACL, 1, MPI_INT, 0, MPI_COMM_WORLD);
             } else {
               iEff = (i - iEffStart)/acl;
+              printf("Chain %i => %i:\tACL=%i(%i)\tiEff=%i\n",MPIrank,i,acl,i-(adaptStart+adaptLength),iEff);
+              MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
               if (MPIrank==0) {
-                printf("ACL:%i(%i)\tiEff:%i\n",acl,i,iEff);
-              }
-              if (!LALInferenceGetProcParamVal(runState->commandLine,"--skyLocPrior")) {
-                MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-                if (MPIrank==0) {
-                  for (p=0; p<nChain; p++) {
-                    if (intVec[p]<iEff){
-                      iEff=intVec[p];
-                    }
+                for (p=0; p<nChain; p++) {
+                  if (intVec[p]<iEff){
+                    iEff=intVec[p];
                   }
                 }
               }
@@ -642,7 +666,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
               if (runPhase==0 && iEff >= Neff) {
                 if (MPIrank==0)
-                  fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, (i-iEffStart)/acl);
+                  fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
                 break;                                 // Sampling is done!
               } else if (runPhase==1 && iEff >= annealStart) {
                 /* Broadcast the cold chain ACL from parallel tempering */
