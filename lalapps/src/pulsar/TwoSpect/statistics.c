@@ -191,6 +191,58 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REA
    
 }
 
+
+//Evan's sumseries function based on matlab's version above
+void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
+{
+   
+   REAL8 Pint = P, Cint = C, Eint = E;
+   INT8 counterint = counter;
+   REAL8 oneoverhalfdelta = 1.0/halfdelta;   //pre-compute
+   REAL8 halfdof = 0.5*dof;                  //pre-compute
+   REAL8 halfx = 0.5*x;                      //pre-compute
+   
+   if (countdown!=0) {
+      if (counterint>=0) {
+         Pint *= (counterint+1.0)*oneoverhalfdelta;
+         Cint += E;
+      } else {
+         counterint = -1;
+      }
+   }
+   
+   if (counterint==-1) return;
+   else if (countdown!=0) {
+      REAL8 oneoverhalfx = 1.0/halfx;
+      REAL8 counterintplusone = counterint + 1.0;
+      while (counterint!=-1) {
+         REAL8 pplus = Pint*Cint;
+         *(computedprob) += pplus;
+         
+         if (pplus<=*(computedprob)*err || counterint<0) return;
+         
+         counterint--;
+         counterintplusone = counterint + 1.0;
+         Pint *= counterintplusone*oneoverhalfdelta;
+         Eint *= (halfdof + counterintplusone)*oneoverhalfx;
+         Cint += Eint;
+      }
+   } else {
+      while (counterint!=-1) {
+         REAL8 pplus = Pint*Cint;
+         *(computedprob) += pplus;
+         
+         if (pplus<=*(computedprob)*err) return;
+         
+         counterint++;
+         Pint *= halfdelta/counterint;
+         Eint *= halfx/(halfdof+counterint-1.0);
+         Cint -= Eint;
+      }
+   }
+   
+}
+
 //Matlab's non-central chi square CDF up to REAL4 precision
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 {
@@ -311,19 +363,21 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   if (xlalErrno!=0) {
+   //sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   /* if (xlalErrno!=0) {
       fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
-   }
+   } */
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    counter--;
    if (counter<0) return (REAL4)fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   if (xlalErrno!=0) {
+   //sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   /* if (xlalErrno!=0) {
       fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
-   }
+   } */
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    
    return (REAL4)fmin(prob, 1.0);
    
@@ -618,7 +672,7 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
    REAL8 sigma = -2.0*log(mn) + temp;
    REAL8 xk = exp(norminv(pk, mu, sigma));
    REAL8 h = 0.0;
-   REAL8 F = ncx2cdf(xk, dof, delta);
+   REAL8 F = ncx2cdf_float_withouttinyprob(xk, dof, delta);
    while (count < count_limit) {
       count++;
       REAL8 f = ncx2pdf(xk, dof, delta);
