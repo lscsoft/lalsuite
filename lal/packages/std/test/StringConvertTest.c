@@ -17,11 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/********************************
-Author: Shawhan, P. S.
-**************************************************** */
-
-/* <lalVerbatim> */
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/StringInput.h>
@@ -213,4 +208,3 @@ main( int argc, char **argv )
 
   return 0;
 }
-/* </lalVerbatim> */

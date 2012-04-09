@@ -136,6 +136,8 @@ typedef struct
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
   REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
+  REAL8 f2dot;		/**< target 2. spindown-value d2f/dt2 */
+  REAL8 f3dot;		/**< target 3. spindown-value d3f/dt3 */
 
   CHAR *ephemDir;	/**< directory to look for ephemeris files */
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
@@ -319,6 +321,8 @@ initUserVars (UserVariables_t *uvar)
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;
+  uvar->f2dot = 0.0;
+  uvar->f3dot = 0.0;
   uvar->h0 = 1;
   uvar->phi0 = 0;
 
@@ -351,6 +355,8 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
+  XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
+  XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
   XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
@@ -423,6 +429,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     dop->Delta = uvar->Delta;
     dop->fkdot[0] = uvar->Freq;
     dop->fkdot[1] = uvar->f1dot;
+    dop->fkdot[2] = uvar->f2dot;
+    dop->fkdot[3] = uvar->f3dot;
     dop->orbit = NULL;
   }
 
@@ -636,6 +644,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     {
       fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+
+      gsl_matrix *gDN_ij;
+      if ( (gDN_ij = XLALDiagNormalizeMetric ( metric->g_ij )) == NULL ) {
+        XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+      fprintf ( fp, "\ngDN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
+      gsl_matrix_free ( gDN_ij );
     }
 
   /* ----- output F-metric (and related matrices ---------- */

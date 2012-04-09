@@ -17,62 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALMath3DPlotCV">
- * Author: Hanna, C. R.
- * </lalVerbatim> */
-
-/* <lalLaTeX>
- * \subsection{Module \texttt{LALMath3DPlot.c}}
- * \label{ss:LALMath3DPlot}
- *
- * \subsubsection{Prototypes}
- * \input{LALMath3DPlotCP}
- * \idx{LALMath3DPlot()}
- * \noindent\texttt{*stat} LALStatus structure pointer\\
- * \\\texttt{*first} Math3DPointList stucture pointer\\
- * \\\texttt{*ntiles} INT4 pointer to the number of templates you
- * \emph{plan} to plot.  This may be called as NULL.  If it is called with a
- * value this function will check to see if the Math3DPointList has the
- * correct number of templates.  If it does not a warning will be printed.
- * \\
- * \\\texttt{pointSize} REAL4 $\epsilon[0,1]$ which specifies the relative
- * size of each point to the final display area.  (e.g. 1 would fill the
- * entire plot.)  This may be called as NULL and a calculated value will be
- * assigned.  (It's only a rough guess)
- *
- * \subsubsection{Description}
- * This module contains a function for plotting 3D template banks by
- * creating a \MATHEMATICA notebook.  The notebook renders the templates as
- * points in a three dimensional lattice.  The plot is animated so the user
- * can see the template bank from different perspectives.  See figure 1.1.
- *
- * \begin{figure}
- * \begin{center}
- * \includegraphics[width=0.5\textwidth]{LALMathematicaHplot1}
- * \end{center}
- * \caption{Here is an example template bank produced by running
- * InspiralSpinBankTest.c to generate roughly 5000 templates.  Currently the
- * plot doesn't show the contour of the templates; it renders them as
- * spheres.  In the case of metrics with disimilar scales along the
- * principle directions you will notice considerable space between points
- * accordingly.}
- * \end{figure}
- *
- *  \subsubsection{Notes}
- *  \begin{itemize}
- * \item The output of this function is ``Math3DNotebook.nb" and will appear
- * in the directory of the program that called this function.
- * \item Exported \MATHEMATICA graphics  will appear in your home directory
- * for unix users and in the $\backslash$Mathematica directory for Windows
- * users unless you have another path configured in your \MATHEMATICA
- * installation. It is necessary to change the file name within the notebook
- * to avoid overwriting previous files.
- * \end{itemize}
- *
- *\vfill{\footnotesize\input{LALMath3DPlotCV}}
- * </lalLaTeX> */
-
-
 #include <lal/LALConfig.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALMathematica.h>
@@ -80,15 +24,54 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 
-#define INSTRUCTIONS 	fprintf(nb, "This notebook will produce an animated 3D plot of your template bank.  See the next section to change any user variables before evaluating.  The cells of this notebook must be evaluated sequentially.  If you wish to evaluate the entire notebook at once press Ctrl+A then press Shift+Enter in most operating systems.")
+#define INSTRUCTIONS    fprintf(nb, "This notebook will produce an animated 3D plot of your template bank.  See the next section to change any user variables before evaluating.  The cells of this notebook must be evaluated sequentially.  If you wish to evaluate the entire notebook at once press Ctrl+A then press Shift+Enter in most operating systems.")
 
-/* <lalVerbatim file="LALMath3DPlotCP"> */
+/** \brief This function is for plotting 3D template banks by creating a MATHEMATICA notebook.
+ *
+ * \ingroup LALMathematica_h
+ * \author Hanna, C. R.
+ *
+ * The notebook renders the templates as
+ * points in a three dimensional lattice.  The plot is animated so the user
+ * can see the template bank from different perspectives.  See Fig.\figref{LALMathematicaHplot}.
+ *
+ \floatfig{htbp,LALMathematicaHplot}
+ \image html  LALMathematicaHplot1.png "Fig. [LALMathematicaHplot]: an example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
+ \image latex LALMathematicaHplot1.pdf "An example template bank produced by running InspiralSpinBankTest.c to generate roughly 5000 templates"
+ *
+ * Currently the plot doesn't show the contour of the templates; it renders them as
+ * spheres.  In the case of metrics with disimilar scales along the
+ * principle directions you will notice considerable space between points
+ * accordingly.
+ *
+ * \heading{Notes}
+ * <ul>
+ * <li> The output of this function is &quot;Math3DNotebook.nb&quot; and will appear
+ * in the directory of the program that called this function.</li>
+ * <li> Exported MATHEMATICA graphics  will appear in your home directory
+ * for unix users and in the Mathematica directory for Windows
+ * users unless you have another path configured in your MATHEMATICA
+ * installation. It is necessary to change the file name within the notebook
+ * to avoid overwriting previous files.
+ * </li>
+ * </ul>
+ *
+ *
+ */
 void
-LALMath3DPlot( LALStatus *stat,
-               Math3DPointList *first,
-               INT4 *ntiles,
-               REAL4 *pointSize)
-/* </lalVerbatim>*/
+LALMath3DPlot ( LALStatus *stat,        /**< LALStatus structure pointer */
+               Math3DPointList *first,  /**< Math3DPointList stucture pointer */
+               INT4 *ntiles,            /**< pointer to the number of templates you \e plan to plot.
+                                         * This may be called as NULL.  If it is called with a
+                                         * value this function will check to see if the Math3DPointList has the
+                                         * correct number of templates.  If it does not a warning will be printed. */
+                REAL4 *pointSize        /**< \f$\epsilon[0,1]\f$ which specifies the relative
+                                         * size of each point to the final display area.  (e.g. 1 would fill the
+                                         * entire plot.)  This may be called as NULL and a calculated value will be
+                                         * assigned.  (It's only a rough guess)
+                                         */
+                )
+
 {
   FILE *nb; 				/* pointer to the notebook file */
   INT4 jflag = 0;			/* flag to justify the output data */
@@ -300,4 +283,3 @@ LALMath3DPlot( LALStatus *stat,
   fclose(nb);
   RETURN(stat);
 }
-

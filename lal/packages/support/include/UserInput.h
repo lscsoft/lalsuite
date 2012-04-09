@@ -18,19 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \defgroup UserInput User-input handling
- * \ingroup support
- * \author Reinhard Prix
- * \brief Module for general parsing of user-input from config-file and/or command-line.
- *
- */
-
-/** \file
- * \ingroup UserInput
- * \author Reinhard Prix
- * \brief Header file defining the API for the UserInput modules.
- */
-
 #ifndef _USERINPUT_H  /* Double-include protection. */
 #define _USERINPUT_H
 
@@ -43,8 +30,122 @@ extern "C" {
 #include <lal/LIGOMetadataTables.h>
 #endif
 
+/** \addtogroup UserInput_h
+ * \author Reinhard Prix
+ * \brief Module for simple unified handling of user-input from config-file and/or command-line.
 
-/*----- family of short-cut macros: register _struct-pointer_ "uvar->" struct User-Variables ----- */
+ \heading{Description}
+
+ This module provides simple function and macros to 'register' a set of C-variables as 'User Variables',
+ which can then be read in from the commandline and/or an input config file, as parsed by \ref ConfigFile_h.
+
+ The module handles generating and outputting a help-string on the available inputs when requested, and
+ can deal with required inputs and providing defaults.
+
+ \heading{Usage}
+
+ The general approach consists of these steps
+ <ol>
+ <li> read log-level from user-input using XLALGetDebugLevel() [<b>Note:</b> this must happend before and (X)LAL memory allocation!!]</li>
+ <li> set default-value for optional user-variables</li>
+ <li> \c register all user-variables using calls to \c XLALRegister<TYPE>UserVar(), or more conveniently, using the shortcut-macros
+      XLALreg<TYPE>UserStruct() that assume a struct-pointer named 'uvar' containing all user-variables as 'uvar->UserVariable'.</li>
+ <li> parse all user-input using XLALUserVarReadAllInput()</li>
+ <li> At the end, free user-input structure</li>
+ </ol>
+
+ One can use XLALUserVarWasSet() to determine wheter the user specified input for a given (optional) variable, or if it still has just its default value.
+
+ The function XLALUserVarGetLog() can be used to obtain a log-string containing the full user-input, either in \c commandline- or \c ConfigFile format.
+
+ Here is a worked simple example of its recommended use:
+\code
+#include <stdio.h>
+#include <lal/UserInput.h>
+
+// these are the C-variables we want to read in from user-input
+typedef struct {
+   BOOLEAN help;                // did user request help-output?
+   INT4 anInteger;
+   REAL8 aDoubleVar;
+   CHAR *andAString;
+   REAL8 specialGeekSwitch;
+} UserInput_t;
+
+UserInput_t empty_UserInput;    // this is zero-intialized!
+
+int main(int argc,char *argv[])
+{
+   UserInput_t UserVariables = empty_UserInput; // initializes this struct to {0}
+   UserInput_t *uvar = &UserVariables;          // struct-pointer allows us to use the XLALreg<TYPE>UserStruct() macros...
+
+   // 1. step: read lal-debug level, using short-option '-v'
+   if ( XLALGetDebugLevel ( argc, argv, 'v') != XLAL_SUCCESS )
+     XLAL_ERROR ( XLAL_EFUNC );
+
+   // 2. step: set default-values for optional user-input variables
+   uvar->anInteger = 0;
+   uvar->andAString = NULL;     // Note: need to assign allocated strings here as default!!
+
+   // 3. step: Register all user-variables using the shortcut macros:
+   XLALregBOOLUserStruct  ( help,               'h',  UVAR_HELP,     "Output this help-message");
+   XLALregINTUserStruct   ( anInteger,          'i',  UVAR_OPTIONAL, "An example user-variable of an optional integer");
+   XLALregREALUserStruct  ( aDoubleVar,         'r',  UVAR_REQUIRED, "This REAL8 user-variable is required");
+   XLALregSTRINGUserStruct( andAString,           0,  UVAR_OPTIONAL, "Optional string-input, has no short-option");
+
+   XLALregREALUserStruct  ( specialGeekSwitch,   'g',  UVAR_DEVELOPER, "This REAL8 user-variable is required");
+
+   // 4. step: parse all user-input, from either config-file if given, or commandline (overloads config-file values)
+   if ( XLALUserVarReadAllInput ( argc, argv ) != XLAL_SUCCESS )
+     XLAL_ERROR ( XLAL_EFUNC );
+
+   if (uvar->help)      // if user had requested help, then we're already done here
+      return 0;
+
+   printf ("User-input was: anInteger = %d, aDoubleVar = %f, andAString = %s\n", uvar->anInteger, uvar->aDoubleVar, uvar->andAString );
+
+   // 5. step: free user-input module memory
+   XLALDestroyUserVars();
+
+   LALCheckMemoryLeaks();
+   return 0;
+} // main()
+\endcode
+
+\note This code can be compiled <b>as is</b> within lalapps, and yields
+
+\code
+$ ./testUserInput -v1 --help
+
+Usage: testUserInput [@ConfigFile] [options], where options are:
+
+  -v                        INT      set lalDebugLevel [0]
+  -h, --help                BOOL     Output this help-message []
+  -i, --anInteger           INT      An example user-variable of an optional integer [0]
+  -r, --aDoubleVar          REAL     This REAL8 user-variable is required [REQUIRED]
+      --andAString          STRING   Optional string-input, has no short-option [NULL]
+
+   ---------- The following are 'Developer'-options not useful for most users:----------
+
+  -g, --specialGeekSwitch   REAL     This REAL8 user-variable is required [0.0]
+\endcode
+
+And if called correctly:
+\code
+$ ./testUserInput -r 3.1415 --andAString="stupid example"
+User-input was: anInteger = 0, aDoubleVar = 3.141500, andAString = stupid example
+\endcode
+
+\note For a real-world example of usage, see various codes in lalapps/src/pulsar, notably synthesizeLVStats.c
+
+*/
+/*@{*/
+
+/** \name Shortcut Macros
+ * With this family of short-cut macros one can conveniently register User-variables
+ * that are accessible via a \e struct-pointer &quot;uvar->&quot;
+ */
+/*@{*/
 #define XLALregREALUserStruct(name,option,flag,help) \
   XLALRegisterREALUserVar(#name, option, flag, help, &(uvar-> name))
 
@@ -59,7 +160,7 @@ extern "C" {
 
 #define XLALregLISTUserStruct(name,option,flag,help)                    \
   XLALRegisterLISTUserVar(#name, option, flag, help, &(uvar-> name))
-
+/*@}*/
 
 /** State-flags: variable is optional, required, help, developer or was_set */
 typedef enum {
@@ -104,21 +205,22 @@ int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag,
 
 /** \name Error codes */
 /*@{*/
-#define USERINPUTH_ENULL 	1
-#define USERINPUTH_ENONULL	2
-#define USERINPUTH_EMEM		3
-#define USERINPUTH_EOPT		4
-#define USERINPUTH_ENOUVARS	5
-#define USERINPUTH_ECMDLARG     6
-#define USERINPUTH_EUNKNOWN	7
-#define USERINPUTH_ENOTSET	8
-#define USERINPUTH_EDEBUG	9
-#define USERINPUTH_EONECONFIG   10
-#define USERINPUTH_ERECFORMAT   11
-#define USERINPUTH_EXLAL	12
-#define USERINPUTH_ENAMECOLL    13
+#define USERINPUTH_ENULL        1       /**< Arguments contained an unexpected null pointer. */
+#define USERINPUTH_ENONULL      2       /**< Output pointer is not NULL */
+#define USERINPUTH_EMEM         3       /**< Out of memory */
+#define USERINPUTH_EOPT         4       /**< Unknown command-line option encountered */
+#define USERINPUTH_ENOUVARS     5       /**< No user-variables have been registered! */
+#define USERINPUTH_ECMDLARG     6       /**< Illegal command-line argument */
+#define USERINPUTH_EUNKNOWN     7       /**< Unknown user-variable */
+#define USERINPUTH_ENOTSET      8       /**< Required user-variable was not set */
+#define USERINPUTH_EDEBUG       9       /**< lalDebugLevel can only be read before ANY mallocs(), even hidden */
+#define USERINPUTH_EONECONFIG   10      /**< Currently one ONE config-file can be specified using '\@' */
+#define USERINPUTH_ERECFORMAT   11      /**< Unknown format for recording user-input */
+#define USERINPUTH_EXLAL        12      /**< Failure in XLAL function */
+#define USERINPUTH_ENAMECOLL    13      /**< Commandline option assigned more than once */
+/*@}*/
 
-
+/** \cond DONT_DOXYGEN */
 #define USERINPUTH_MSGENULL 	"Arguments contained an unexpected null pointer."
 #define USERINPUTH_MSGENONULL	"Output pointer is not NULL"
 #define USERINPUTH_MSGEMEM	"Out of memory"
@@ -132,9 +234,11 @@ int XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag,
 #define USERINPUTH_MSGERECFORMAT   "Unknown format for recording user-input"
 #define USERINPUTH_MSGEXLAL	"Failure in XLAL function"
 #define USERINPUTH_MSGENAMECOLL "Commandline option assigned more than once"
+/** \endcond */
 
-/*@}*/
-
+/** \name Deprecated LAL-interface
+ * These functions and macros are deprecated, and you should user their XLAL-equivalents instead.
+ */ /*@{*/
 /*----- short-cut macros to register global "uvar_" User-Variables ----- */
 #define LALregREALUserVar(status,name,option,flag,help) \
 TRY(LALRegisterREALUserVar((status)->statusPtr, #name, option, flag, help,&(uvar_ ## name)), status)
@@ -189,11 +293,12 @@ void LALUserVarGetLog (LALStatus *, CHAR **logstr,  UserVarLogFormat format);
 void LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR *progname);
 #endif
 
+/*@}*/
+
+/*@}*/
+
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
 
 #endif  /* Double-include protection. */
-
-
-

@@ -17,71 +17,33 @@
 *  MA  02111-1307  USA
 */
 
-/*************** <lalVerbatim file="PrintVectorTestCV"> *************
-**************** </lalVerbatim> ***********************************/
+/**
+   \file
+   \ingroup PrintVector_h
 
-/* <lalLaTeX>
+   \brief Tests the routines in \ref PrintVector.c.
 
-\subsection{Program \texttt{PrintVectorTest.c}}
-\label{s:PrintVectorTest.c}
-
-Tests the routines in \verb@PrintVector.c@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+   \heading{Usage}
+   \code
 PrintVectorTest
-\end{verbatim}
+   \endcode
 
-\subsubsection*{Description}
+   \heading{Description}
 
 This program generates and prints a sequence of
-$\langle\mbox{datatype}\rangle$Vectors; the program itself always
+   <tt>\<datatype\></tt>Vectors; the program itself always
 returns success, so the testing function is actually served by
 examinaton of the output files.
 
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Always returned.              \\
-\hline
-\end{tabular}
+\heading{Exit codes}
+<table>
+<tr><th>Code</th><th>Explanation</th></tr>
+<tr><td>0</td><td>Always returned.</td></tr>
+/table>
 
-\subsubsection*{Uses}
+*/
+/** \cond DONT_DOXYGEN */
 
-\begin{verbatim}
-
-LALZCreateVector()
-LALCCreateVector()
-LALDCreateVector()
-LALSCreateVector()
-LALI2CreateVector()
-LALI4CreateVector()
-LALI8CreateVector()
-LALU2CreateVector()
-LALU4CreateVector()
-LALU8CreateVector()
-LALCHARCreateVector()
-LALZDestroyVector()
-LALCDestroyVector()
-LALDDestroyVector()
-LALSDestroyVector()
-LALI2DestroyVector()
-LALI4DestroyVector()
-LALI8DestroyVector()
-LALU2DestroyVector()
-LALU4DestroyVector()
-LALU8DestroyVector()
-LALCHARDestroyVector()
-
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{PrintVectorTestCV}}
-
-</lalLaTeX> */
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 
 #ifndef _PRINTVECTOR_H
@@ -255,3 +217,5 @@ int main( void )
 
   return 0;
 }
+
+/** \endcond */

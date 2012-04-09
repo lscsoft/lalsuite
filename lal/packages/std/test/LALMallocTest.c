@@ -17,52 +17,33 @@
 *  MA  02111-1307  USA
 */
 
-/*************** <lalVerbatim file="LALMallocTestCV"> *************
-**************** </lalVerbatim> ***********************************/
+/**
+   \file
+   \ingroup LALMalloc_h
 
-/* <lalLaTeX>
+   \brief Tests the routines in \ref LALMalloc_h.
 
-\subsection{Program \texttt{LALMallocTest.c}}
-\label{s:LALMallocTest.c}
+   \heading{Usage}
+   \code
+   LALMallocTest
+   \endcode
 
-Tests the routines in \verb@LALMalloc.h@.
+   \heading{Description}
 
-\subsubsection*{Usage}
-\begin{verbatim}
-LALMallocTest
-\end{verbatim}
+   This program has ugly code for testing the LAL memory allocation and freeing
+   routines.
 
-\subsubsection*{Description}
+   \heading{Exit codes}
 
-This program has ugly code for testing the LAL memory allocation and freeing
-routines.
+<table>
+<tr><th>Code</th><th>Explanation</th></tr>
+<tr><td> 0</td><td>Success.</td></tr>
+<tr><td> 1</td><td>Failure.</td></tr>
+</table>
 
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success.                      \\
-\tt 1 & Failure.                      \\
-\hline
-\end{tabular}
+*/
 
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALMalloc()
-LALCalloc()
-LALRealloc()
-LALFree()
-LALCheckMemoryLeaks()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{LALMallocTestCV}}
-
-</lalLaTeX> */
-
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -368,3 +349,5 @@ int main( void )
   return 0;
 #endif
 }
+
+/** \endcond */

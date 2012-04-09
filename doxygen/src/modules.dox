@@ -6,7 +6,7 @@
 
 
 /*----- top level chapters ----- */
-/** \defgroup standard LAL Standard Packages */
+/** \defgroup std LAL Standard Package */
 
 /** \defgroup general General Packages */
 

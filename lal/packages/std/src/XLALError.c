@@ -17,11 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/** \file
- * \ingroup std
- * \author Creighton, J. D. E.; Cannon, K. C.; Wette, K.; Mercer, R. A.
- * \brief Standard XLAL error routines.
- */
+// ---------- NOTE: API is doxygen-documented in header file XLALError.h ----------
 
 #include <math.h>
 #include <stdio.h>
@@ -42,25 +38,25 @@
  *
  */
 
-/** Prints an error message if error printing is enabled by lalDebugLevel. */
+/* Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALVPrintError(const char *fmt, va_list ap)
 {
 	return (lalDebugLevel & LALERROR) ?  vfprintf(stderr, fmt, ap) : 0;
 }
 
-/** Prints a warning message if warning printing is enabled by lalDebugLevel. */
+/* Prints a warning message if warning printing is enabled by lalDebugLevel. */
 int XLALVPrintWarning(const char *fmt, va_list ap)
 {
 	return (lalDebugLevel & LALWARNING) ?  vfprintf(stderr, fmt, ap) : 0;
 }
 
-/** Prints an info message if info printing is enabled by lalDebugLevel. */
+/* Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALVPrintInfo(const char *fmt, va_list ap)
 {
 	return (lalDebugLevel & LALINFO) ?  vfprintf(stderr, fmt, ap) : 0;
 }
 
-/** Prints an error message if error printing is enabled by lalDebugLevel. */
+/* Prints an error message if error printing is enabled by lalDebugLevel. */
 int XLALPrintError(const char *fmt, ...)
 {
 	int n = 0;
@@ -70,7 +66,7 @@ int XLALPrintError(const char *fmt, ...)
 	return n;
 }
 
-/** Prints a warning message if warning printing is enabled by lalDebugLevel. */
+/* Prints a warning message if warning printing is enabled by lalDebugLevel. */
 int XLALPrintWarning(const char *fmt, ...)
 {
 	int n = 0;
@@ -81,7 +77,7 @@ int XLALPrintWarning(const char *fmt, ...)
 	return n;
 }
 
-/** Prints an info message if info printing is enabled by lalDebugLevel. */
+/* Prints an info message if info printing is enabled by lalDebugLevel. */
 int XLALPrintInfo(const char *fmt, ...)
 {
 	int n = 0;
@@ -92,7 +88,7 @@ int XLALPrintInfo(const char *fmt, ...)
 	return n;
 }
 
-/**
+/*
  * Prints a standard-formatted error message
  * (if error printing is enabled by lalDebugLevel).
  */
@@ -164,7 +160,7 @@ void XLALPrintInfoMessage(const char *func, const char *file, int line, const ch
 
 
 
-/**
+/*
  * Prints a progress bar at the "info" verbosity level.
  */
 int XLALPrintProgressBar(double fraction)
@@ -179,7 +175,7 @@ int XLALPrintProgressBar(double fraction)
 	return XLALPrintInfo("[%s%s %.1f%%", mrk + l - offset, spc + offset, 100.0 * fraction);
 }
 
-/**
+/*
  * Prints a deprecation warning at the "warning" verbosity level.
  */
 
@@ -313,7 +309,7 @@ XLALErrorHandlerType **XLALGetErrorHandlerPtr(void)
  */
 
 
-/** Set the XLAL error number to errnum. */
+/* Set the XLAL error number to errnum. */
 int XLALSetErrno(int errnum)
 {
 	if (errnum == 0) {
@@ -341,14 +337,14 @@ int XLALSetErrno(int errnum)
 }
 
 
-/** Gets the basic error number ignoring the internal-function-failed flag. */
+/* Gets the basic error number ignoring the internal-function-failed flag. */
 int XLALGetBaseErrno(void)
 {
 	return xlalErrno & ~XLAL_EFUNC;
 }
 
 
-/** Clears the XLAL error number. */
+/* Clears the XLAL error number. */
 int XLALClearErrno(void)
 {
 	int olderrno = xlalErrno;
@@ -357,7 +353,7 @@ int XLALClearErrno(void)
 }
 
 
-/** Set the XLAL error handler to newHandler; return the old handler. */
+/* Set the XLAL error handler to newHandler; return the old handler. */
 XLALErrorHandlerType *XLALSetErrorHandler(XLALErrorHandlerType *newHandler)
 {
 	XLALErrorHandlerType *oldHandler;
@@ -367,7 +363,7 @@ XLALErrorHandlerType *XLALSetErrorHandler(XLALErrorHandlerType *newHandler)
 }
 
 
-/** Set the XLAL error handler to the default handler; return the old handler.  */
+/* Set the XLAL error handler to the default handler; return the old handler.  */
 XLALErrorHandlerType *XLALSetDefaultErrorHandler(void)
 {
 	XLALErrorHandlerType *oldHandler;
@@ -376,7 +372,7 @@ XLALErrorHandlerType *XLALSetDefaultErrorHandler(void)
 	return oldHandler;
 }
 
-/** Set the XLAL error handler to a silent handler; return the old handler. */
+/* Set the XLAL error handler to a silent handler; return the old handler. */
 XLALErrorHandlerType *XLALSetSilentErrorHandler(void)
 {
 	XLALErrorHandlerType *oldHandler;
@@ -393,7 +389,7 @@ XLALErrorHandlerType *XLALSetSilentErrorHandler(void)
  */
 
 
-/** Return the error message associated with an error number or return value. */
+/* Return the error message associated with an error number or return value. */
 const char *XLALErrorString(int code)
 {
 
@@ -518,7 +514,7 @@ const char *XLALErrorString(int code)
 	return NULL;				/* impossible to get here */
 }
 
-/** Print an error message associated with an error number or return code. */
+/* Print an error message associated with an error number or return code. */
 void XLALPerror(const char *func, const char *file, int line, int code)
 {
 	if (code > 0)
@@ -542,21 +538,21 @@ void XLALPerror(const char *func, const char *file, int line, int code)
  *
  */
 
-/** Default XLAL error handler */
+/* Default XLAL error handler */
 void XLALDefaultErrorHandler(const char *func, const char *file, int line, int errnum)
 {
 	XLALPerror(func, file, line, errnum);
 	return;
 }
 
-/** Silent XLAL error handler */
+/* Silent XLAL error handler */
 void XLALSilentErrorHandler(const char UNUSED * func, const char UNUSED * file, int UNUSED line, int UNUSED errnum)
 {
 	return;
 }
 
 
-/**
+/*
  *
  * Routine to set the error number and invoke the current error handler.
  *
@@ -577,14 +573,14 @@ void XLALError(const char *func, const char *file, int line, int errnum)
  *
  */
 
-/** XLAL error handler to abort on error. */
+/* XLAL error handler to abort on error. */
 void XLALAbortErrorHandler(const char *func, const char *file, int line, int errnum)
 {
 	XLALPerror(func, file, line, errnum);
 	abort();
 }
 
-/** XLAL error handler to exit on error. */
+/* XLAL error handler to exit on error. */
 void XLALExitErrorHandler(const char *func, const char *file, int line, int errnum)
 {
 	XLALPerror(func, file, line, errnum);
@@ -592,7 +588,7 @@ void XLALExitErrorHandler(const char *func, const char *file, int line, int errn
 }
 
 static int print_stack(void);
-/** XLAL error handler to abort on error and print a backtrace (if possible). */
+/* XLAL error handler to abort on error and print a backtrace (if possible). */
 void XLALBacktraceErrorHandler(const char *func, const char *file, int line, int errnum)
 {
 	XLALPerror(func, file, line, errnum);

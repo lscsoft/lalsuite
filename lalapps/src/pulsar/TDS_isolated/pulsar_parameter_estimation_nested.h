@@ -64,6 +64,8 @@
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceProposal.h>
 
+#include <lal/LALSimNoise.h>
+
 #ifdef HAVE_LIBLALXML
 #include <lal/LALInferenceXML.h>
 #endif

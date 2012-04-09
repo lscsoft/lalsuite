@@ -17,27 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="FileIOHV">
-</lalVerbatim> */
-
-/* <lalLaTeX>
-\section{Header \texttt{FileIO.h}}
-\label{s:FileIO.h}
-
-Provides standard LAL support IO functions.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LALStdio.h>
-#include <lal/FileIO.h>
-\end{verbatim}
-\noindent Only use \texttt{FileIO.h} in test code that links to
-the \texttt{lalsupport} library.
-
-\vfill{\footnotesize\input{FileIOHV}}
-\newpage\input{FileIOC}
-</lalLaTeX> */
-
 #ifndef _FILEIO_H
 #define _FILEIO_H
 
@@ -56,6 +35,21 @@ extern "C" {
 
 /* maximum string size to print with LAL Printf routines */
 #define LAL_PRINTF_BUFSIZE 4096
+
+/**
+   \addtogroup FileIO_h
+
+   \brief Provides standard LAL support IO functions.
+
+   \heading{Synopsis}
+   \code
+   #include <lal/LALStdio.h>
+   #include <lal/FileIO.h>
+   \endcode
+
+   Only use \ref FileIO.h in test code that links to the \c lalsupport library.
+*/
+/*@{*/
 
 FILE *
 LALOpenDataFile( const char * );
@@ -94,6 +88,7 @@ long XLALFileTell( LALFILE *file );
 void XLALFileRewind( LALFILE *file );
 int XLALFileEOF( LALFILE *file );
 
+/*@}*/
 
 #ifdef __cplusplus
 }

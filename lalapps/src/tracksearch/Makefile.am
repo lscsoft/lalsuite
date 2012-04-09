@@ -58,33 +58,39 @@ pkgpython_DATA = \
 endif
 
 python_config.sed:
-	-rm -f python_config.sed
-	echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
-	echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
+	@-rm -f python_config.sed
+	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
+	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
 lalapps_tracksearch_handler: $(srcdir)/tsHandler.pyin python_config.sed
-	sed -f python_config.sed $(srcdir)/tsHandler.pyin > lalapps_tracksearch_handler
-	chmod +x lalapps_tracksearch_handler
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/tsHandler.pyin > lalapps_tracksearch_handler
+	@chmod +x lalapps_tracksearch_handler
 
 lalapps_tracksearch_pipe: $(srcdir)/tsPipe.pyin python_config.sed
-	sed -f python_config.sed $(srcdir)/tsPipe.pyin > lalapps_tracksearch_pipe
-	chmod +x lalapps_tracksearch_pipe
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/tsPipe.pyin > lalapps_tracksearch_pipe
+	@chmod +x lalapps_tracksearch_pipe
 
 lalapps_tracksearch_cutpipe: $(srcdir)/tsCutPipe.pyin python_config.sed
-	sed -f python_config.sed $(srcdir)/tsCutPipe.pyin > lalapps_tracksearch_cutpipe
-	chmod +x lalapps_tracksearch_cutpipe
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/tsCutPipe.pyin > lalapps_tracksearch_cutpipe
+	@chmod +x lalapps_tracksearch_cutpipe
 
 lalapps_tracksearch_housekeeper: $(srcdir)/tsHousekeeper.pyin python_config.sed
-	sed -f python_config.sed $(srcdir)/tsHousekeeper.pyin > lalapps_tracksearch_housekeeper
-	chmod +x lalapps_tracksearch_housekeeper
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/tsHousekeeper.pyin > lalapps_tracksearch_housekeeper
+	@chmod +x lalapps_tracksearch_housekeeper
 
 lalapps_tracksearch_tune_pipe: $(srcdir)/tsTunePipe.pyin python_config.sed
-	sed -f python_config.sed $(srcdir)/tsTunePipe.pyin > lalapps_tracksearch_tune_pipe
-	chmod +x lalapps_tracksearch_tune_pipe
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/tsTunePipe.pyin > lalapps_tracksearch_tune_pipe
+	@chmod +x lalapps_tracksearch_tune_pipe
 
 lalapps_tracksearch_mapcachebuilder: $(srcdir)/tsMapCacheBuilder.pyin python_config.sed
-	sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
-	chmod +x lalapps_tracksearch_mapcachebuilder
+	@echo "creating $@"
+	@sed -f python_config.sed $(srcdir)/tsMapCacheBuilder.pyin > lalapps_tracksearch_mapcachebuilder
+	@chmod +x lalapps_tracksearch_mapcachebuilder
 
 pkgdata_DATA = \
 	tracksearch_pipeline_configuration.ini \

@@ -42,7 +42,7 @@ LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
 
 
 /** Sets GPS time given GPS integer seconds and residual nanoseconds. */
-LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan )
+LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan )
 {
   return XLALINT8NSToGPS( epoch, XLAL_BILLION_INT8 * gpssec + gpsnan );
 }
@@ -111,12 +111,19 @@ REAL8 XLALGPSDiff( const LIGOTimeGPS *t1, const LIGOTimeGPS *t0 )
  *  - -1 if t0 < t1
  *  - 0 if t0 == t1
  *  - 1 if t0 > t1.
+ * A NULL GPS time is always less than a non-NULL GPS time,
+ * and two NULL GPS times are considered equal.
  */
 int XLALGPSCmp( const LIGOTimeGPS *t0, const LIGOTimeGPS *t1 )
 {
-  INT8 ns0 = XLALGPSToINT8NS( t0 );
-  INT8 ns1 = XLALGPSToINT8NS( t1 );
-  return ( ns0 > ns1 ) - ( ns0 < ns1 );
+  if ( t0 == NULL || t1 == NULL ) {
+    return ( t1 != NULL ) ? -1 : ( ( t0 != NULL ) ? 1 : 0 );
+  }
+  else {
+    INT8 ns0 = XLALGPSToINT8NS( t0 );
+    INT8 ns1 = XLALGPSToINT8NS( t1 );
+    return ( ns0 > ns1 ) - ( ns0 < ns1 );
+  }
 }
 
 

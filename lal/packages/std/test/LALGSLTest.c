@@ -17,20 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="LALGSLTestCV">
- * Author: Creighton, J. D. E.
- **** </lalVerbatim> */
+/**
+ * \file
+ * \ingroup LALGSL_h
+ * \author Creighton, J. D. E.
 
-/* <lalLaTeX>
-\subsection{Program \texttt{LALGSLTest.c}}
-\label{ss:LALGSLTest.c}
+ This program tests the LAL macros for GSL function calls.  It makes sure
+ that a nominal status is returned if the GSL function succeeds, and that
+ an error code is returned if the GSL function fails.
 
-This program tests the LAL macros for GSL function calls.  It makes sure
-that a nominal status is returned if the GSL function succeeds, and that
-an error code is returned if the GSL function fails.
+*/
 
-\vfill{\footnotesize\input{LALGSLTestCV}}
-</lalLaTeX> */
+/** \cond DONT_DOXYGEN */
 
 #include <math.h>
 #include <stdio.h>
@@ -213,3 +211,5 @@ int main( void )
 
   return 0;
 }
+
+/** \endcond */

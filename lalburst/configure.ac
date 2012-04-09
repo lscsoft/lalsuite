@@ -1,3 +1,4 @@
+AC_PREREQ([2.63])
 AC_INIT([lalburst],[1.1.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([src/EPSearch.c])
@@ -14,7 +15,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   test/Makefile
 ])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 
 AC_CANONICAL_HOST
 
@@ -75,11 +76,10 @@ AC_DEFINE_UNQUOTED([LALBURST_CONFIGURE_DATE],["$lalburst_configure_date"],
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
 # check for c compiler
-m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
+AC_PROG_CC_C99
 
-# use silent build rules if available
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+# use silent build rules
+AM_SILENT_RULES([yes])
 
 # check for c++ compiler
 AC_PROG_CXX
@@ -91,7 +91,7 @@ AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
 LT_INIT
-AM_PATH_PYTHON([2.4],,[AC_MSG_ERROR([Python-2.4, or higher, is required])])
+AM_PATH_PYTHON([2.6],,[AC_MSG_ERROR([Python-2.6, or higher, is required])])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK

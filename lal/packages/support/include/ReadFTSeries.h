@@ -17,30 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Torres, C. W.
-\file
-
-\heading{Header \ref ReadFTSeries.h}
-\latexonly\label{s_ReadFTSeries_h}\endlatexonly
-
-This is a simple utility to Read time and frequency series into a
-file.
-
-\heading{Synopsis}
-\code
-#include <lal/ReadFTSeries.h>
-\endcode
-
-Provides prototype information for the routines in
-\ref ReadTimeSeries.c and \ref ReadFrequencySeries.c.
-
-
-
-
-
-*/
-
 #ifndef _READFTSERIES_H
 #define _READFTSERIES_H
 
@@ -50,7 +26,32 @@ Provides prototype information for the routines in
 extern "C" {
 #endif
 
+/**
+   \addtogroup ReadFTSeries_h
+\author Torres, C. W.
+
+   \brief This is a simple utility to Read time and frequency series into a file.
+
+\heading{Synopsis}
+\code
+#include <lal/ReadFTSeries.h>
+\endcode
+
+   Provides prototype information for the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
+*/ /*@{*/
+
+/**\name Error Codes */ /*@{*/
+#define  READFTSERIESH_EFILENOTFOUND       1    /**< Invalid Filename or File Not Found */
+#define  READFTSERIESH_EPARSE              2    /**< Error Parsing File */
+/*@}*/
+/** \cond DONT_DOXYGEN */
+#define  READFTSERIESH_MSGEFILENOTFOUND    "Invalid Filename or File Not Found"
+#define  READFTSERIESH_MSGEPARSE           "Error Parsing File"
+/** \endcond */
+
+
 #ifndef SWIG /* exclude from SWIG interface */
+/** \cond DONT_DOXYGEN */
 enum enumLALSupportUnitTextSize {
   LALSupportUnitTextSize = sizeof("10^-32768 m^-32768/32767 "
                                   "kg^-32768/32767 "
@@ -61,35 +62,50 @@ enum enumLALSupportUnitTextSize {
 enum enumMaxLineLength {
   MaxLineLength = LALSupportUnitTextSize + sizeof("Units are ()\n")
 };
+/** \endcond */
 #endif /* SWIG */
 
+
+/** \defgroup ReadTimeSeries_c Module ReadTimeSeries.c
+    \author Torres, C. V.
+
+    \brief Each member of this family of functions reads from a file the output of the corresponding \c PrintTimeSeries routine.
+
+    \heading{Notes}
+
+    These functions perform I/O operations, which are not a part of LAL
+    proper They should only be used for debugging purposes in test
+    functions, not in any production code.
+*/ /*@{*/
 void LALReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALSReadTimeSeries(LALStatus* status,  REAL4TimeSeries *series , const CHAR *filename );
 void LALDReadTimeSeries(LALStatus* status,  REAL8TimeSeries *series , const CHAR *filename );
 void LALCReadTimeSeries(LALStatus* status,  COMPLEX8TimeSeries *series , const CHAR *filename );
 void LALZReadTimeSeries(LALStatus* status,  COMPLEX16TimeSeries *series , const CHAR *filename );
+/*@}*/
 
+/** \defgroup ReadFrequencySeries_c Module ReadFrequencySeries.c
+    \author Torres, C. V.
+
+    \brief Each member of this family of functions reads from a file the output of the corresponding \c PrintFrequencySeries routine.
+
+    \heading{Notes}
+
+    These functions perform I/O operations, which are not a part of LAL
+    proper. They should only be used for debugging purposes in test
+    functions, not in any production code.
+*/ /*@{*/
 void LALReadFrequencySeries(LALStatus* status,  REAL4FrequencySeries *series , const CHAR *filename );
 void LALSReadFrequencySeries(LALStatus* status,  REAL4FrequencySeries *series , const CHAR *filename );
 void LALDReadFrequencySeries(LALStatus* status,  REAL8FrequencySeries *series , const CHAR *filename );
 void LALCReadFrequencySeries(LALStatus* status, COMPLEX8FrequencySeries *series , const CHAR *filename );
 void LALZReadFrequencySeries(LALStatus* status,  COMPLEX16FrequencySeries *series , const CHAR *filename );
+/*@}*/
 
+/*@}*/
 
 #ifdef  __cplusplus
 }
 #endif
 
 #endif /* _READSERIES_H */
-
-
-
-/**\name Error Codes */ /*@{*/
-
-#define  READFTSERIESH_EFILENOTFOUND       1
-#define  READFTSERIESH_EPARSE              2
-
-#define  READFTSERIESH_MSGEFILENOTFOUND    "Invalid Filename or File Not Found"
-#define  READFTSERIESH_MSGEPARSE           "Error Parsing File"
-
-/*@}*/

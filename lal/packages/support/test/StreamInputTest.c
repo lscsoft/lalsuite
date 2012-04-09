@@ -17,51 +17,47 @@
 *  MA  02111-1307  USA
 */
 
-/********************************* <lalVerbatim file="StreamInputTestCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
+/**
+   \file
+   \ingroup StreamInput_h
+   \author Creighton, T. D.
 
-/********************************************************** <lalLaTeX>
+\brief Reads a sequence or vector sequence from a file.
 
-\subsection{Program \texttt{StreamInputTest.c}}
-\label{ss:StreamInputTest.c}
-
-Reads a sequence or vector sequence from a file.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 StreamInputTest [-o outfile] [-d debuglevel] [-t]
                 [-v {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d} infile]
                 [-s {ch | i2 | i4 | i8 | u2 | u4 | u8 | s | d | c | z} infile]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This test program parses data from an input file or from \verb@stdin@.
+This test program parses data from an input file or from \c stdin.
 The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-o}] Writes the output to \verb@outfile@.  If
-\verb@outfile@ is given as \verb@stdout@, the data is written to
-standard output (\emph{not} to a file named \verb@stdout@).  If the
-\verb@-o@ flag is not given, the routines are exercised, but no output
-is written.
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@; if
-absent, \verb@-d 0@ is assumed.
-\item[\texttt{-t}] Writes to \verb@stderr@ the system time required to
-read the file.
-\item[\texttt{-v}] Reads the contents of \verb@infile@ as a sequence
+<ul>
+<li>[<tt>-o</tt>] Writes the output to \c outfile.  If
+\c outfile is given as \c stdout, the data is written to
+standard output (\e not to a file named \c stdout).  If the
+<tt>-o</tt> flag is not given, the routines are exercised, but no output
+is written.</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
+absent, <tt>-d 0</tt> is assumed.</li>
+<li>[<tt>-t</tt>] Writes to \c stderr the system time required to
+read the file.</li>
+<li>[<tt>-v</tt>] Reads the contents of \c infile as a sequence
 of vectors to be parsed by the routines
-\verb@LAL<datatype>ReadVectorSequence()@, where \verb@<datatype>@ is
-determined by the argument immediately following the \verb@-v@ option
-flag.  If \verb@infile@ is given as \verb@stdin@, the data is read
-from standard input (\emph{not} from a file named \verb@stdin@).
-\item[\texttt{-s}] As \verb@-v@, above, except that the file contents
-are parsed by the routines \verb@LAL<datatype>ReadSequence()@.  If
-neither \verb@-v@ nor \verb@-s@ is specified,
-\verb@-v s StreamInput.dat@ is assumed (this file is provided with the
+<tt>LAL\<datatype\>ReadVectorSequence()</tt>, where <tt>\<datatype\></tt> is
+determined by the argument immediately following the <tt>-v</tt> option
+flag.  If \c infile is given as \c stdin, the data is read
+from standard input (\e not from a file named \c stdin).</li>
+<li>[<tt>-s</tt>] As <tt>-v</tt>, above, except that the file contents
+are parsed by the routines <tt>LAL\<datatype\>ReadSequence()</tt>.  If
+neither <tt>-v</tt> nor <tt>-s</tt> is specified,
+<tt>-v s StreamInput.dat</tt> is assumed (this file is provided with the
 distribution so that running the code with no arguments, \'a la
-\verb@make check@, will perform a nontrivial test of the algorithm).
-\end{itemize}
+<tt>make check</tt>, will perform a nontrivial test of the algorithm).</li>
+</ul>
 
 For data read in as a character vector sequences, the output will
 consist of a number of lines equal to the length of the sequence, with
@@ -75,51 +71,21 @@ type-dependent format.  For numerical sequences, each line of output
 contains a single number, or, in the case of complex datatypes, two
 numbers representing the real and imaginary components, again in some
 type-dependent format.
+*/
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define STREAMINPUTTESTC_ENORM 0
-#define STREAMINPUTTESTC_ESUB  1
-#define STREAMINPUTTESTC_EARG  2
-#define STREAMINPUTTESTC_EFILE 3
+/** \name Error Codes */ /*@{*/
+#define STREAMINPUTTESTC_ENORM 0        /**< Normal exit */
+#define STREAMINPUTTESTC_ESUB  1        /**< Subroutine failed */
+#define STREAMINPUTTESTC_EARG  2        /**< Error parsing arguments */
+#define STREAMINPUTTESTC_EFILE 3        /**< Could not open file */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 
 #define STREAMINPUTTESTC_MSGENORM "Normal exit"
 #define STREAMINPUTTESTC_MSGESUB  "Subroutine failed"
 #define STREAMINPUTTESTC_MSGEARG  "Error parsing arguments"
 #define STREAMINPUTTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel                   LALPrintError()
-LALOpenDataFile()               LALCheckMemoryLeaks()
-LALCHARReadVectorSequence()     LALCHARDestroyVectorSequence()
-LALI2ReadVectorSequence()       LALI2DestroyVectorSequence()
-LALI4ReadVectorSequence()       LALI4DestroyVectorSequence()
-LALI8ReadVectorSequence()       LALI8DestroyVectorSequence()
-LALU2ReadVectorSequence()       LALU2DestroyVectorSequence()
-LALU4ReadVectorSequence()       LALU4DestroyVectorSequence()
-LALU8ReadVectorSequence()       LALU8DestroyVectorSequence()
-LALSReadVectorSequence()        LALSDestroyVectorSequence()
-LALDReadVectorSequence()        LALDDestroyVectorSequence()
-LALCHARReadSequence()           LALCHARDestroyVector()
-LALI2ReadSequence()             LALI2DestroyVector()
-LALI4ReadSequence()             LALI4DestroyVector()
-LALI8ReadSequence()             LALI8DestroyVector()
-LALU2ReadSequence()             LALU2DestroyVector()
-LALU4ReadSequence()             LALU4DestroyVector()
-LALU8ReadSequence()             LALU8DestroyVector()
-LALSReadSequence()              LALSDestroyVector()
-LALDReadSequence()              LALDDestroyVector()
-LALCReadSequence()              LALCDestroyVector()
-LALZReadSequence()              LALZDestroyVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{StreamInputTestCV}}
-
-******************************************************* </lalLaTeX> */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdlib.h>
@@ -609,3 +575,4 @@ main(int argc, char **argv)
   INFO( STREAMINPUTTESTC_MSGENORM );
   return STREAMINPUTTESTC_ENORM;
 }
+/** \endcond */

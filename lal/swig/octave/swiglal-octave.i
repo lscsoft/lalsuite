@@ -21,10 +21,12 @@
 // Author: Karl Wette, 2011
 
 // This function is declared in the Octave runtime but never defined
-// (as of SWIG 2.0.4). This empty definition is to prevents warnings.
+// (fixed in SWIG 2.0.5). This empty definition is to prevents warnings.
+#if SWIG_VERSION < 0x020005
 %runtime %{
   void Swig::swig_register_director(octave_swig_type*, void*, Swig::Director*) {}
 %}
+#endif
 
 // Rename Python unary operators to names recognised by the Octave runtime.
 %rename(__uplus__) __pos__;

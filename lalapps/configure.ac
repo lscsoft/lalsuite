@@ -1,3 +1,4 @@
+AC_PREREQ([2.63])
 AC_INIT([lalapps],[6.6.4.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/lalapps.c])
@@ -47,7 +48,7 @@ AC_CONFIG_FILES([\
   src/online/Makefile \
   src/hwinjection/Makefile \
 ])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 AH_TOP([
 #ifndef CONFIG_H
 #define CONFIG_H])
@@ -131,8 +132,7 @@ fi
 LALSUITE_MULTILIB_LIBTOOL_HACK
 
 # check for c compiler
-m4_pattern_allow([AC_PROG_CC_C99])
-m4_ifdef([AC_PROG_CC_C99],[AC_PROG_CC_C99],[LALSUITE_AC_PROG_CC_C99])
+AC_PROG_CC_C99
 
 # check for c++ compiler
 AC_PROG_CXX
@@ -143,8 +143,8 @@ if test "x$mpi" = "xtrue"; then
 fi
 LALSUITE_ENABLE_MODULE([MPI],[mpi])
 
-# use silent build rules if appropriate
-m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])],)
+# use silent build rules
+AM_SILENT_RULES([yes])
 
 # checks for programs
 AC_PROG_CPP
@@ -179,7 +179,7 @@ AC_CHECK_PROGS([LATEX],[pdflatex latex],[echo])
 AC_CHECK_PROGS([MKIND],[makeindex],[echo])
 AC_CHECK_PROGS([DVIPS],[dvips],[echo])
 AC_CHECK_PROGS([BIBTEX],[bibtex],[echo])
-AM_PATH_PYTHON([2.4],,[:])
+AM_PATH_PYTHON([2.6],,[:])
 AM_CONDITIONAL([HAVE_PYTHON],[test "$PYTHON" != :])
 
 # check for supported mac os x version

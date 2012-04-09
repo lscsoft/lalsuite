@@ -17,9 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-/* <lalVerbatim file="LALErrnoHV">
-Author: Cannon, K. C.
-</lalVerbatim>
+/** \author: Cannon, K. C.
  */
 
 #ifndef _LALERRNO_H

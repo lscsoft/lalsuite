@@ -32,7 +32,9 @@ void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL
 } /* CompBinShifts() */
 
 
-
+//Compute the antenna pattern weights
+//If linPolOn = 1, then the output weights are Fplus*Fplus for the given polarization angle
+//If linPolOn = 0, then the output weights are Fplus*Fplus + Fcross*Fcross
 void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, INT4 linPolOn, REAL8 polAngle, LALDetector det)
 {
    
@@ -65,7 +67,7 @@ void CompAntennaPatternWeights(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t
 } /* CompAntennaPatternWeights() */
 
 
-
+//Compute the antenna velocity
 void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
    
@@ -94,7 +96,7 @@ void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
 } /* CompAntennaVelocity() */
 
 
-
+//Determine the maximum change in velocity
 REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
    
@@ -137,6 +139,7 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
 } /* CompDetectorDeltaVmax() */
 
 
+//From a given t0 start time, determine the maximum velocity over the observation time
 REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDetector det, EphemerisData *edat)
 {
    

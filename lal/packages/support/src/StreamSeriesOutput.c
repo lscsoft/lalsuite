@@ -1,6 +1,7 @@
 /**
+   \defgroup StreamSeriesOutput_c Module StreamSeriesOutput.c
+   \ingroup StreamOutput_h
 \author Creighton, T. D.
-\file
 
 \brief Writes a time or frequency series to an output stream.
 
@@ -41,7 +42,7 @@ For each of these prototype templates there are in fact 10 separate
 routines corresponding to all the atomic datatypes <tt>\<datatype\></tt>
 (except \c CHAR) referred to by <tt>\<typecode\></tt>:
 
-<table><tr><th>\<typecode\></th><th>\<datatype\></th><th>\<typecode></th><th>\<datatype\></th></tr>
+<table><tr><th>\<typecode\></th><th>\<datatype\></th><th>\<typecode\></th><th>\<datatype\></th></tr>
 <tr><td> I2</td><td>  INT2</td><td> U2</td><td>    UINT2</td></tr>
 <tr><td> I4</td><td>  INT4</td><td> U4</td><td>    UINT4</td></tr>
 <tr><td> I8</td><td>  INT8</td><td> U8</td><td>    UINT8</td></tr>
@@ -54,8 +55,9 @@ output stream will be formatted in a manner consistent with the input
 routines in \ref StreamSeriesInput.c.  That is, it will begin with a
 metadata header, consisting of multiple lines of the form:
 
-
-<table><tr><td><tt>\# </tt>fieldname<tt> = </tt>value</td></tr></table>
+\code
+# fieldname=value
+\endcode
 
 where \e fieldname is the name of a field in
 <tt>*series</tt> and \e value is the value of that metadata field,
@@ -63,22 +65,14 @@ in some standard format (below).  The following metadata fields will
 be written, one per line, based on the type of <tt>*series</tt>:
 
 <dl>
-<dt><tt>\<datatype\>TimeSeries</tt>:</dt><dd> \c datatype, \c name,
-\c epoch, \c deltaT, \c f0, \c sampleUnits,
-\c length</dd>
-<dt><tt>\<datatype\>TimeVectorSeries</tt>:</dt><dd> \c datatype,
-\c name, \c epoch, \c deltaT, \c f0,
-\c sampleUnits, \c length, \c vectorLength</dd>
-<dt><tt>\<datatype\>TimeArraySeries</tt>:</dt><dd> \c datatype,
-\c name, \c epoch, \c deltaT, \c f0,
-\c sampleUnits, \c length, \c dimLength, \c arrayDim</dd>
-<dt><tt>\<datatype\>FrequencySeries</tt>:</dt><dd> \c datatype,
-\c name, \c epoch, \c deltaT, \c f0, \c deltaF,
-\c sampleUnits, \c length</dd>
+<dt><tt>\<datatype\>TimeSeries</tt>:</dt><dd> \c datatype, \c name,\c epoch, \c deltaT, \c f0, \c sampleUnits,\c length</dd>
+<dt><tt>\<datatype\>TimeVectorSeries</tt>:</dt><dd> \c datatype,\c name, \c epoch, \c deltaT, \c f0,\c sampleUnits, \c length, \c vectorLength</dd>
+<dt><tt>\<datatype\>TimeArraySeries</tt>:</dt><dd> \c datatype,\c name, \c epoch, \c deltaT, \c f0,\c sampleUnits, \c length, \c dimLength, \c arrayDim</dd>
+<dt><tt>\<datatype\>FrequencySeries</tt>:</dt><dd> \c datatype,\c name, \c epoch, \c deltaT, \c f0, \c deltaF,\c sampleUnits, \c length</dd>
 </dl>
 
 After all metadata have been written, the contents of
-<tt>series->data->data</tt> will be written in standard integer or
+<tt>series-\>data-\>data</tt> will be written in standard integer or
 floating-point notation, according to <tt>\<datatype\></tt>: integers will
 be written to full precision, while floating-point numbers will be
 written in exponential notation with sufficient digits to ensure that
@@ -90,9 +84,9 @@ parts.
 
 The body of the file will be formatted with newlines <tt>'\\n'</tt>
 separating individual base, complex, vector, or array valued elements
-of the sequence <tt>series->data</tt>.  Within each element, integer or
+of the sequence <tt>series-\>data</tt>.  Within each element, integer or
 floating-point components will be separated by single <tt>' '</tt>
-characters.  Thus the value of <tt>series->data->length</tt> will always
+characters.  Thus the value of <tt>series-\>data-\>length</tt> will always
 equal the number of lines following the metadata header.
 
 \heading{Format for metadata fields:} Here we summarize briefly the
@@ -103,63 +97,52 @@ format for the individual field values in the metadata header.
 surrounded by quotes) corresponding to the type of <tt>*series</tt>;
 e.g.\ COMPLEX8FrequencySeries.</dd>
 
-<dt>name:</dt><dd> \e value is a string surrounded by quotes
-<tt>\"</tt> representing <tt>series->name</tt>.  Standard C-language string
+<dt>name:</dt><dd> \e value is a string surrounded by double-quotes
+representing <tt>series-\>name</tt>.  Standard C-language string
 literal notation is used: printable characters are written directly
-except for <tt>\"</tt> and <tt>\\</tt> (rendered as <tt>\\\"</tt> and <tt>\\\\</tt>,
-respectively), characters with special C escape sequences are written
+except for double-quotes and <tt>\\</tt> (rendered as <tt>\\</tt>),
+characters with special C escape sequences are written
 as those sequences (e.g.\ <tt>\\t</tt> for tab and <tt>\\n</tt> for
 newline), and all other character bytes are written as three-digit
 octal codes <tt>\\</tt>ooo.  Writing stops at the first null byte
 <tt>\\0</tt>.</dd>
 
 <dt>epoch:</dt><dd> \e value is a single \c INT8 number
-representing <tt>series->epoch</tt> in GPS nanoseconds.</dd>
+representing <tt>series-\>epoch</tt> in GPS nanoseconds.</dd>
 
 <dt>deltaT</dt><dd> (any time series): \e value is a single
-\c REAL8 number representing <tt>series->deltaT</tt>.</dd>
+\c REAL8 number representing <tt>series-\>deltaT</tt>.</dd>
 
 <dt>f0:</dt><dd> \e value is a single \c REAL8 number
-representing <tt>series->f0</tt>.</dd>
+representing <tt>series-\>f0</tt>.</dd>
 
 <dt>deltaF</dt><dd> (\c FrequencySeries only): \e value
-is a single \c REAL8 number representing <tt>series->deltaF</tt>.</dd>
+is a single \c REAL8 number representing <tt>series-\>deltaF</tt>.</dd>
 
 <dt>sampleUnits:</dt><dd> \e value is string surrounded by
-quotes <tt>\"</tt>; inside the quotes is a unit string corresponding to
-<tt>series->sampleUnits</tt> as converted by the routine
+double-quotes; inside the quotes is a unit string corresponding to
+<tt>series-\>sampleUnits</tt> as converted by the routine
 LALUnitAsString().</dd>
 
 <dt>length:</dt><dd> \e value is a single \c UINT4
-representing <tt>series->data->length</tt>.</dd>
+representing <tt>series-\>data-\>length</tt>.</dd>
 
 <dt>vectorLength</dt><dd> (\c TimeVectorSeries only):
 \e value is a single \c UINT4 representing
-<tt>series->data->vectorLength</tt>.</dd>
+<tt>series-\>data-\>vectorLength</tt>.</dd>
 
 <dt>dimLength</dt><dd> (\c TimeArraySeries only):
 \e value consists of a sequence of \c UINT4s separated by
 single <tt>' '</tt> characters, representing the components of
-<tt>series->data->dimLength->data</tt>.  The value of
-<tt>series->data->dimLength->length</tt> must be inferred from the
+<tt>series-\>data-\>dimLength-\>data</tt>.  The value of
+<tt>series-\>data-\>dimLength-\>length</tt> must be inferred from the
 number of components; it is not given as separate metadata.</dd>
 
 <dt>arrayDim</dt><dd> (\c TimeArraySeries only): \e value
-is a single \c UINT4 representing <tt>series->data->arrayDim</tt>.
+is a single \c UINT4 representing <tt>series-\>data-\>arrayDim</tt>.
 If the array sequence was properly constructed, this will equal the
 product of the components of \c dimLength, above.</dd>
 </dl>
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel                           LALPrintError()
-LALCHARCreateVector()                   LALCHARDestroyVector()
-LALUnitAsString()
-\endcode
-
-\heading{Notes}
 
 */
 

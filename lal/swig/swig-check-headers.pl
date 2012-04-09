@@ -157,18 +157,11 @@ exit $status;
 sub parse_thru_cpp {
     my ($file, @opts) = @_;
 
-    my $cmd = "$ENV{CPP} @opts '$file' 2>/dev/null";
+    my $cmd = "sed '/^ *# *include/d' '$file' | $ENV{CPP} @opts - 2>/dev/null";
     open FILE, "$cmd |" or die "could not execute '$cmd': $!";
     my $header = "";
-    my $incl = 0;
     while (<FILE>) {
-        # since the C preprocessor might also include some
-        # system headers, parse lines beginning with '#' for
-        # the header file name; if found, turn on the $incl
-        # flag until another '#' line is encountered
-        $incl = /\"$file\"/ if /^#/;
-        # include line only of $incl is true
-        $header .= $_ if $incl;
+        $header .= $_;
     }
     close FILE;
 

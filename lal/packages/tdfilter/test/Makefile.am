@@ -9,7 +9,5 @@ LPCTest_LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_buil
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 TESTS = BandPassTest IIRFilterTest LPCTest
 TESTS_ENVIRONMENT = 1>/dev/null
-MOSTLYCLEANFILES = .dvi-dep out.dat
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+MOSTLYCLEANFILES = out.dat
+DISTCLEANFILES =

@@ -71,6 +71,7 @@ void free_farStruct(farStruct *farstruct)
 
 //////////////////////////////////////////////////////////////
 // Estimate the FAR of the R statistic from the weights
+// We do this by a number of trials
 void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios)
 {
    
@@ -143,6 +144,9 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
 
 //////////////////////////////////////////////////////////////
 // Numerically solve for the FAR of the R statistic from the weights
+// This is done using the Davies algorithm and a root finding algorithm
+// method = 0: Brent's method
+// method = 1: Newton's method
 void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method)
 {
    
@@ -262,6 +266,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
       
    } /* while status==GSL_CONTINUE && ii < max_iter */
    
+   //Failure modes
    if (method != 0) {
       if (status != GSL_SUCCESS) {
          fprintf(stderr,"%s: Root finding iteration (%d/%d) failed with failure code %d. Previous root = %f, current root = %f\n", __func__, ii, max_iter, status, prevroot, root);
@@ -302,6 +307,9 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    
    
 } /* numericFAR() */
+
+//For the root finding, calculating the false alarm probability of R
+//Takes an average of 3 values of close by R values for stability
 REAL8 gsl_probR(REAL8 R, void *param)
 {
    
@@ -327,6 +335,8 @@ REAL8 gsl_probR(REAL8 R, void *param)
    return returnval;
    
 } /* gsl_probR() */
+
+//When doing Newton's method, we need the slope
 REAL8 gsl_dprobRdR(REAL8 R, void *param)
 {
    
@@ -373,6 +383,8 @@ REAL8 gsl_dprobRdR(REAL8 R, void *param)
    return slope;
    
 } /* gsl_dprobRdR() */
+
+//For Newton's method, we need the slope
 void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {
    
@@ -386,7 +398,8 @@ void gsl_probRandDprobRdR(REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dpro
 
 
 //////////////////////////////////////////////////////////////
-// Analytically calculate the probability of a true signal output is log10(prob)
+// Analytically calculate the probability of a true signal using the Davies' method
+// output is log10(prob)
 REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, REAL8 R, inputParamsStruct *params, INT4 *errcode)
 {
    
@@ -528,6 +541,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
 } /* probR() */
 
 
+//Create a new template structure
 templateStruct * new_templateStruct(INT4 length)
 {
    
@@ -557,12 +571,6 @@ templateStruct * new_templateStruct(INT4 length)
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
    
-   /* for (ii=0; ii<length; ii++) {
-      templatestruct->templatedata->data[ii] = 0.0;
-      templatestruct->pixellocations->data[ii] = 0;
-      templatestruct->firstfftfrequenciesofpixels->data[ii] = 0;
-      templatestruct->secondfftfrequencies->data[ii] = 0;
-   } */
    memset(templatestruct->templatedata->data, 0, sizeof(REAL4)*length);
    memset(templatestruct->pixellocations->data, 0, sizeof(INT4)*length);
    memset(templatestruct->firstfftfrequenciesofpixels->data, 0, sizeof(INT4)*length);
@@ -576,17 +584,12 @@ templateStruct * new_templateStruct(INT4 length)
    
 } /* new_templateStruct() */
 
+
+//Reset the values in the template structure
 void resetTemplateStruct(templateStruct *templatestruct)
 {
    
    INT4 length = (INT4)templatestruct->templatedata->length;
-   /* INT4 ii;
-   for (ii=0; ii<length; ii++) {
-      templatestruct->templatedata->data[ii] = 0.0;
-      templatestruct->pixellocations->data[ii] = 0;
-      templatestruct->firstfftfrequenciesofpixels->data[ii] = 0;
-      templatestruct->secondfftfrequencies->data[ii] = 0;
-   } */
    memset(templatestruct->templatedata->data, 0, sizeof(REAL4)*length);
    memset(templatestruct->pixellocations->data, 0, sizeof(INT4)*length);
    memset(templatestruct->firstfftfrequenciesofpixels->data, 0, sizeof(INT4)*length);
@@ -598,6 +601,8 @@ void resetTemplateStruct(templateStruct *templatestruct)
    
 }
 
+
+//Free the memory of a template structure
 void free_templateStruct(templateStruct *nameoftemplate)
 {
    
@@ -630,11 +635,13 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    //Reset the data values to zero, just in case
    memset(output->templatedata->data, 0, sizeof(REAL4)*output->templatedata->length);
    
-   N = (INT4)floor(params->Tobs/input.period);     //Number of Gaussians
+   N = (INT4)floor(params->Tobs/input.period);     //Number of Gaussians = observation time / period
    
    REAL8 periodf = 1.0/input.period;
    
    //Determine separation in time of peaks for each frequency
+   //phi = P/2 - P/pi * asin[(f-f0)/modulation depth]
+   //When abs(f-f0)>modulation depth, phi := 0
    REAL4Vector *phi_actual = XLALCreateREAL4Vector(numfbins);
    if (phi_actual==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
@@ -653,6 +660,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    }
    for (ii=0; ii<(INT4)fpr->length; ii++) fpr->data[ii] = (REAL4)ii*(1.0/params->Tobs);
    
+   //For speed, we will precompute a number of useful vectors described by their names
+   //This part is the allocation
    REAL4Vector *omegapr = XLALCreateREAL4Vector(fpr->length);
    REAL4Vector *omegapr_squared = XLALCreateREAL4Vector(fpr->length);
    REAL4Vector *cos_omegapr_times_period = XLALCreateREAL4Vector(fpr->length);
@@ -680,6 +689,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    }
    memset(whichIfStatementToUse->data, 0, sizeof(INT4)*whichIfStatementToUse->length);
    
+   //Doing the precomputation of the useful values
    if (params->useSSE) {
       sseScaleREAL4Vector(omegapr, fpr, (REAL4)LAL_TWOPI);
       if (xlalErrno!=0) {
@@ -745,6 +755,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, wvals->length * sigmas->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+   
+   //Here is where the sigmas are computed. It is a weighted average
    for (ii=0; ii<(INT4)wvals->length; ii++) {         //t = (ii+1)*in->Tcoh*0.5
       REAL8 sigbin = (input.moddepth*cos(LAL_TWOPI*periodf*((ii+1)*params->Tcoh*0.5))+input.fsig)*params->Tcoh;
       REAL8 sigbinvelocity = fabs(-input.moddepth*sin(LAL_TWOPI*periodf*((ii+1)*params->Tcoh*0.5))*params->Tcoh*0.5*params->Tcoh*LAL_TWOPI*periodf);
@@ -769,7 +781,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       sigmas->data[ii] = sqrtf(calcMean(wvals));
    }
    
-   //Allocate more useful data vectors
+   //Allocate more useful data vectors. These get computed for each different first FFT frequency bin in the F-F plane
    REAL4Vector *exp_neg_sigma_sq_times_omega_pr_sq = XLALCreateREAL4Vector(omegapr_squared->length);
    if (exp_neg_sigma_sq_times_omega_pr_sq==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, omegapr_squared->length);
@@ -810,7 +822,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       //REAL8 prefact0 = scale1 * 2.0 * LAL_TWOPI * s * s;
       REAL4 prefact0 = scale1 * s * s; //don't need the 4*pi, as it will be normalized away anyway
       
-      INT4 needtocomputecos = 0;    //Do we need to compute the cosine not from a look up table?
+      INT4 needtocomputecos = 0;    //Do we need to compute the cosine not from a look up table? 1 = !LUT, 0 = LUT
       
       if (params->useSSE) {
          //Compute exp(-s*s*omegapr_squared)
@@ -935,11 +947,9 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          //3) denominator approaches zero, then the numerator is also approaching zero, so this fraction approaches 1.0 (second if)
          //4) both numerator and denominator approach zero, so, again, the fraction approaches 1.0 (second if)
          dataval = 0.0;
-         //if (cos_N_times_omegapr_times_period->data[jj]<=0.999999 && cos_omegapr_times_period->data[jj]<=0.999999) {
          if (whichIfStatementToUse->data[jj]==1) {
             //dataval = scale->data[ii+fnumstart] * prefact0 * exp_neg_sigma_sq_times_omega_pr_sq->data[jj] * (cos_phi_times_omega_pr->data[jj] + 1.0) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) * one_over_cos_omegapr_times_period_minus_one->data[jj];
             dataval = datavector->data[jj]*(cos_N_times_omegapr_times_period->data[jj]-1.0)*one_over_cos_omegapr_times_period_minus_one->data[jj];
-         //} else if (cos_N_times_omegapr_times_period->data[jj]>0.999999) {
          } else if (whichIfStatementToUse->data[jj]==2) {
             //dataval = scale->data[ii+fnumstart] * prefact0 * exp_neg_sigma_sq_times_omega_pr_sq->data[jj] * (cos_phi_times_omega_pr->data[jj] + 1.0);
             dataval = datavector->data[jj];
@@ -947,7 +957,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          
          //Sum up the weights in total
          //sum += dataval;
-         if (jj>3) sum += (REAL8)dataval;
+         if (jj>3) sum += (REAL8)dataval;    //Avoids first 4 frequency bins
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot (insertion sort)
          //if (jj>1 && dataval > output->templatedata->data[output->templatedata->length-1]) {
@@ -969,7 +979,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       }
    }
    
-   //Truncate weights
+   //Truncate weights when they don't add much to the total sum of weights
    sum = 0.0;
    for (ii=0; ii<params->mintemplatelength; ii++) sum += (REAL8)output->templatedata->data[ii];
    ii = params->mintemplatelength;
@@ -1151,7 +1161,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       }
    }
    
-   //Truncate weights
+   //Truncate weights if they don't contribute much to the sum
    sum = 0.0;
    for (ii=0; ii<params->mintemplatelength; ii++) sum += (REAL8)output->templatedata->data[ii];
    ii = params->mintemplatelength;
@@ -1161,7 +1171,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    }
    for (/* last ii val */; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
    
-   //Destroy
+   //Destroy stuff
    XLALDestroyREAL4Vector(psd1);
    XLALDestroyINT4Vector(freqbins);
    XLALDestroyREAL4Vector(x);
@@ -1171,13 +1181,14 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
 }
 
 
+//A brute force template search to find the most significant template around a candidate
 void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, INT4 numfsteps, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, INT4 numdfsteps, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    
    INT4 ii, jj, kk;
    REAL8Vector *trialf, *trialb, *trialp;
    REAL8 fstepsize, dfstepsize;
-   REAL4 tcohfactor = 1.49e-3*params->Tcoh + 1.76;
+   REAL4 tcohfactor = 1.49e-3*params->Tcoh + 1.76;    //From in-text equation after Eq. 23 of E.G. and K.R. 2011
    REAL8 log10templatefar = params->log10templatefar;
    
    //Set up parameters of modulation depth search
@@ -1228,7 +1239,9 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
    }
    
    INT4 midposition = (INT4)roundf((numperiods-1)*0.5), proberrcode = 0;
+   //Search over frequency
    for (ii=0; ii<(INT4)trialf->length; ii++) {
+      //Search over modulation depth
       for (jj=0; jj<(INT4)trialb->length; jj++) {
          //Start with period of the first guess, then determine nearest neighbor from the
          //modulation depth amplitude to find the other period guesses. These parameters 
@@ -1242,7 +1255,9 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
             trialp->data[midposition-(kk+1)] = trialp->data[midposition-kk] - nnp;
          }
          
+         //Search over period
          for (kk=0; kk<(INT4)trialp->length; kk++) {
+            //Within boundaries?
             if ( (trialf->data[ii]-trialb->data[jj]-6.0/params->Tcoh)>params->fmin && 
                 (trialf->data[ii]+trialb->data[jj]+6.0/params->Tcoh)<(params->fmin+params->fspan) && 
                 trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) && 
@@ -1329,6 +1344,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
 }
 
 
+//Untested "efficient" template search. Not ready for prime-time
 void efficientTemplateSearch(candidate *output, candidate input, REAL8 fminimum, REAL8 fmaximum, REAL8 minfstep, INT4 numperiods, REAL8 dfmin, REAL8 dfmax, REAL8 minDfstep, inputParamsStruct *params, REAL4Vector *ffdata, INT4Vector *sftexist, REAL4Vector *aveNoise, REAL4Vector *aveTFnoisePerFbinRatio, REAL4FFTPlan *secondFFTplan, INT4 useExactTemplates)
 {
    

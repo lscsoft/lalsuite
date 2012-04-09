@@ -17,65 +17,50 @@
 *  MA  02111-1307  USA
 */
 
-/*----------------------------------- <lalVerbatim file="SegmentsIOTestCV">
- * Author: Peter Shawhan
- *----------------------------------- </lalVerbatim> */
+#include <lal/LALStatusMacros.h>
+#include <lal/SegmentsIO.h>
 
-#if 0
-<lalLaTeX>
-
-\subsection{Program \texttt{SegmentsIOTest.c}}
-\label{s:SegmentsIOTest.c}
-
-Tests the routines in \verb@SegmentsIO.c@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+/**
+ * \file
+ * \ingroup SegmentsIO_h
+ * \author Peter Shawhan
+ *
+ * \brief Tests the routines in \ref SegmentsIO.c.
+ *
+\heading{Usage}
+\code
 SegmentsIOTest [ lalDebugLevel ]
-\end{verbatim}
+\endcode
 
-The default value of \texttt{lalDebugLevel} is 4.
+The default value of \c lalDebugLevel is 4.
 
-If the \texttt{lalDebugLevel} argument is omitted, the test program sets it
+If the \c lalDebugLevel argument is omitted, the test program sets it
 to 4 to turn on info messages only.
 Note that this default value does not enable LAL/XLAL error messages,
 since many of the tests intentionally create error conditions and verify that
 the proper error codes are generated.  If you want to turn on the LAL/XLAL
-error and warning messages, specify a \texttt{lalDebugLevel} value of 7,
+error and warning messages, specify a \c lalDebugLevel value of 7,
 or 23 if you also want informational messages related to memory checking.
 If you specify 0, then no messages will be printed under any circumstances.
 However, in all cases, the return status of the program will be 0 if all
 tests passed, 1 if one or more tests failed.
 
-\subsubsection*{Description}
-
-NOTE: This test program does not currently do an exhaustive test of
+\note This test program does not currently do an exhaustive test of
 functionality and failure modes; it is more like a starting point for
 spot-checking by modifying, recompiling and running this test program
 and inspecting the output.
 
-\subsubsection*{Exit codes}
+\heading{Exit codes}
 
-0 if all tests passed.
+<ul>
+<li>0 if all tests passed.</li>
 
-1 if one or more tests failed.
+<li>1 if one or more tests failed.</li>
+</ul>
 
-\subsubsection*{Uses}
+*/
 
-\begin{verbatim}
-LALSegListRead()
-LALSegListWrite()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SegmentsIOTestCV}}
-
-</lalLaTeX>
-#endif
-
-#include <lal/LALStatusMacros.h>
-#include <lal/SegmentsIO.h>
+/** \cond DONT_DOXYGEN */
 
 /*-- Macros for this test program --*/
 
@@ -202,3 +187,4 @@ int main( int argc, char *argv[] )
     return 1;
   }
 }
+/** \endcond */

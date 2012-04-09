@@ -121,7 +121,7 @@ INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch );
 LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns );
 
 /* Sets GPS time given GPS integer seconds and residual nanoseconds. */
-LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT4 gpsnan );
+LIGOTimeGPS * XLALGPSSet( LIGOTimeGPS *epoch, INT4 gpssec, INT8 gpsnan );
 
 /* Sets GPS time given GPS seconds as a REAL8. */
 LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t );

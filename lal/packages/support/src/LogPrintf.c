@@ -21,14 +21,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2005
- * \file
- * \brief General-purpose log-message handling, controlled by logLevel independent of lalDebugLevel
- * 	  mostly modelled after the MSG_LOG class in BOINC.
- */
-
 /* Windows version fixed by Bernd Machenschalk */
 
 /*---------- INCLUDES ----------*/
@@ -77,14 +69,14 @@ static const char *LogFormatLevel( LogLevel_t level );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
-/* set the output file for log messages */
+/** Set the output file for log messages */
 void LogSetFile(FILE *file)
 {
   LogOutput = file;
   return;
 }
 
-/* set the log-level to be used in this module.
+/* Set the log-level to be used in this module.
  * (allow independence of lalDebugLevel!)
  */
 void
@@ -375,4 +367,3 @@ XLALClearLinebreaks ( const char *str )
   return ret;
 
 } /* XLALClearLinebreaks() */
-

@@ -23,75 +23,8 @@
  *
  * Author: Hanna C. R.
  *
- *
  *_______________________________________________________________________________________
  */
-
-/* ------------------------------------- AUTO-DOC ------------------------------------ */
-/* ----------------------------------------------------------------------------------- */
-
-
-/*<lalVerbatim file="LALMathNDPlotCV">
-  Author: Hanna, C. R.
-  </lalVerbatim>*/
-
-/*SUBSECTION - MODULE - "LALMathNDPlot.c" ------------------------------------ <lalLaTeX>
-  \subsection{Module \texttt{LALMathNDPlot.c}}
-  \label{ss:LALMathNDPlot}
-  </lalLaTeX> */
-
-  /* SUBSUBSECTION - PROTOTYPES - "LALMathNDPlot()" -------------------------- <lalLaTeX>
-     \subsubsection{Prototypes}
-     \input{LALMathNDPlotCP}
-     \idx{LALMathNDPlot()}
-     \noindent\texttt{*stat} LALStatus structure pointer\\
-     \\\texttt{*first} MathNDPointList stucture pointer\\
-     \\\texttt{*ntiles} INT4 pointer to the number of templates you \emph{plan} to plot.
-     * This may be called as NULL.  If it is called with a value this function will check
-     * to see if the MathNDPointList has the correct number of templates.  If it does not
-     * a warning will be printed. \\
-     \\\texttt{pointSize} REAL4 $\epsilon[0,1]$ which specifies the relative size of each
-     * point to the final display area.  (e.g. 1 would fill the enire plot.)  This may be
-     * called as NULL and a calculated value will be assigned.  (Its only a rough guess)
-     </lalLaTeX>
-     END SUBSUBSECTION - PROTOTYPES "LALMathNDPlot()" -------------------------------- */
-
-  /* SUBSUBSECTION - DESCRIPTION --------------------------------------------- <lalLaTeX>
-     \subsubsection{Description}
-   * This module contains a function for plotting N-Dimensional template banks by creating
-   * a \MATHEMATICA notebook.  The notebook renders the templates as points in all of the
-   * 3-Dimensional projection permutations. Each projection may be animated so the user
-   * can see the template bank from different perspectives.
-     </lalLaTeX>
-     END SUBSUBSECTION - DESCRIPTION ------------------------------------------------- */
-
-
-  /* SUBSUBSECTION - NOTES --------------------------------------------------- <lalLaTeX>
-     \subsubsection{Notes}
-     \begin{itemize}
-   * \item The output of this function is ``MathNDNotebook.nb" and will appear in the
-   * directory of the program that called this function.
-   * \item Exported \MATHEMATICA graphics  will appear in
-   * your home directory for unix users and in the $\backslash$Mathematica directory for
-   * Windows users unless you have another path configured in your \MATHEMATICA
-   * installation. It is necessary to change the file name within the notebook to avoid
-   * overwriting previous files.
-   * \item The number of projections is N!/(3!(N-3)!).  Thus plotting 6 dimensions would
-   * produce 20 projections, 7 dimensions would yeilds 35 amd 8 gives 56.
-     \end{itemize}
-     </lalLaTeX>
-     END SUBSUBSECTION - NOTES ------------------------------------------------------- */
-
-/*END - SUBSECTION - MODULE - LALMathNDPlot.c" --------------------------------------- */
-
-/*<lalLaTeX>
-\vfill{\footnotesize\input{LALMathNDPlotCV}}
-</lalLaTeX>*/
-
-
-/* -------------------------------------END AUTO DOC --------------------------------- */
-/* ----------------------------------------------------------------------------------- */
-
 
 #include <lal/LALConfig.h>
 #include <lal/LALMalloc.h>
@@ -100,15 +33,45 @@
 #include <lal/LALMathematica.h>
 #include <lal/LALStdio.h>
 
+
 #define INSTRUCTIONS    fprintf(nb, "Running this entire notebook using ctrl+A and shift+enter may crash your computer.  Evaluate each section as needed.  The Initialization and User Variables sections must be evaluated first.  The 3-dimensional projections are represented in the sections below User Varibles as PointList (x1, x2, x3) etc.  Evaluating the entire Image Generation sections creates animated plots (if AnimationPlot := True).  If (AnimationPlot := False) you get only still plots, saving time and memory.")
 
-/* <lalVerbatim file="LALMathNDPlotCP"> */
+/** \brief This function is for plotting N-Dimensional template banks by creating
+ * a MATHEMATICA notebook.
+ *
+ * \ingroup LALMathematica_h
+ * \author Hanna, C. R.
+ *
+ * The notebook renders the templates as points in all of the
+ * 3-Dimensional projection permutations. Each projection may be animated so the user
+ * can see the template bank from different perspectives.
+ *
+ * \heading{Notes}
+ * <ul>
+ * <li> The output of this function is &quot;MathNDNotebook.nb&quot; will appear in the
+ * directory of the program that called this function.</li>
+ * <li> Exported MATHEMATICA graphics  will appear in
+ * your home directory for unix users and in the \\Mathematica directory for
+ * Windows users unless you have another path configured in your MATHEMATICA
+ * installation. It is necessary to change the file name within the notebook to avoid
+ * overwriting previous files.</li>
+ * <li> The number of projections is N!/(3!(N-3)!).  Thus plotting 6 dimensions would
+ * produce 20 projections, 7 dimensions would yeilds 35 amd 8 gives 56.</li>
+ * </ul>
+ *
+ */
 void
-LALMathNDPlot( LALStatus *stat,
-               MathNDPointList *first,
-               INT4 *ntiles,
-               REAL4 *pointSize)
-/* </lalVerbatim>*/
+LALMathNDPlot( LALStatus *stat,         /**< LALStatus structure pointer */
+               MathNDPointList *first,  /**< MathNDPointList stucture pointer */
+               INT4 *ntiles,            /**< INT4 pointer to the number of templates you \e plan to plot.
+                                         * This may be called as NULL.  If it is called with a value this function will check
+                                         * to see if the MathNDPointList has the correct number of templates.  If it does not
+                                         * a warning will be printed. */
+               REAL4 *pointSize         /**< \f$\epsilon[0,1]\f$ which specifies the relative size of each
+                                         * point to the final display area.  (e.g. 1 would fill the enire plot.)  This may be
+                                         * called as NULL and a calculated value will be assigned.  (Its only a rough guess) */
+               )
+
 {
   FILE *nb;                             /* pointer to the notebook file */
   INT4 jflag = 0;                       /* flag to justify the output data */
@@ -319,7 +282,3 @@ LALMathNDPlot( LALStatus *stat,
   fclose(nb);
   RETURN(stat);
 }/* END - LALMathNDPlot() */
-
-
-
-

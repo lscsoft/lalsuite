@@ -17,51 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/********************************** <lalVerbatim file="StringInputHV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\section{Header \texttt{StringInput.h}}
-\label{s:StringInput.h}
-
-Provides routines to parse \verb@CHARVector@s into other LAL
-datatypes.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include "StringInput.h"
-\end{verbatim}
-
-\noindent This header provides prototypes for routines that construct
-LAL data structures using the data from a character string.  As in
-standard C, a \emph{string} is a block of non-null bytes of arbitrary
-length, terminated by a null byte \verb@'\0'@, and referred to by a
-value of type \verb@CHAR *@ pointing to the first byte in the string.
-It is not to be confused with a \verb@CHARVector@, a LAL structure
-referring to a block of data of a specified length, which may or may
-not contain one or more instances of \verb@'\0'@.
-
-In general, the routines under this header will have string inputs of
-type \verb@const CHAR *@ (in order to allow, for instance, string
-literals to be used as inputs), but will allocate \verb@CHARVector@
-structures to store string outputs.  Unless otherwise specified, these
-outputs are guaranteed to contain at least one \verb@'\0'@ character,
-so their \verb@data@ fields are valid strings.  It is the
-responsibility of the calling routine to ensure that the string input
-contains a terminating \verb@'\0'@ within the memory segment pointed
-to by the \verb@CHAR *@ input, in order to avoid segmentation
-violation.
-
-These routines are intended to work in conjunction with the functions
-in \verb@StreamInput.h@ to add LAL robustness to otherwise ad-hoc data
-input routines.  However, the functions in \verb@StringInput.h@ are
-fully LAL-compliant and use only LAL types, so they are included in
-\verb@liblal@ proper.
-
-******************************************************* </lalLaTeX> */
-
 #ifndef _STRINGINPUT_H
 #define _STRINGINPUT_H
 
@@ -79,118 +34,121 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/********************************************************** <lalLaTeX>
-\subsection*{Error conditions}
-****************************************** </lalLaTeX><lalErrTable> */
-#define STRINGINPUTH_ENUL 1
-#define STRINGINPUTH_EOUT 2
-#define STRINGINPUTH_EMEM 3
 
-#define STRINGINPUTH_MSGENUL "Unexpected null pointer in arguments"
-#define STRINGINPUTH_MSGEOUT "Output handle points to a non-null pointer"
-#define STRINGINPUTH_MSGEMEM "Memory allocation error"
-/******************************************** </lalErrTable><lalLaTeX>
+/**
+   \addtogroup StringInput_h
+   \author Creighton, T. D.
 
-\subsection*{Constants}
-\idx[Constant]{LAL\_INT2\_FORMAT}
-\idx[Constant]{LAL\_INT4\_FORMAT}
-\idx[Constant]{LAL\_INT8\_FORMAT}
-\idx[Constant]{LAL\_UINT2\_FORMAT}
-\idx[Constant]{LAL\_UINT4\_FORMAT}
-\idx[Constant]{LAL\_UINT8\_FORMAT}
-\idx[Constant]{LAL\_REAL4\_FORMAT}
-\idx[Constant]{LAL\_REAL8\_FORMAT}
+   \brief Provides routines to parse \c CHARVectors into other LAL datatypes.
+
+   \heading{Synopsis}
+   \code
+   #include "StringInput.h"
+   \endcode
+
+This header provides prototypes for routines that construct
+LAL data structures using the data from a character string.  As in
+standard C, a \e string is a block of non-null bytes of arbitrary
+length, terminated by a null byte <tt>'\0'</tt>, and referred to by a
+value of type <tt>CHAR *</tt> pointing to the first byte in the string.
+It is not to be confused with a \c CHARVector, a LAL structure
+referring to a block of data of a specified length, which may or may
+not contain one or more instances of <tt>'\0'</tt>.
+
+In general, the routines under this header will have string inputs of
+type <tt>const CHAR *</tt> (in order to allow, for instance, string
+literals to be used as inputs), but will allocate \c CHARVector
+structures to store string outputs.  Unless otherwise specified, these
+outputs are guaranteed to contain at least one <tt>'\0'</tt> character,
+so their \c data fields are valid strings.  It is the
+responsibility of the calling routine to ensure that the string input
+contains a terminating <tt>'\0'</tt> within the memory segment pointed
+to by the <tt>CHAR *</tt> input, in order to avoid segmentation
+violation.
+
+These routines are intended to work in conjunction with the functions
+in <tt>StreamInput.h</tt> to add LAL robustness to otherwise ad-hoc data
+input routines.  However, the functions in \ref StringInput.h are
+fully LAL-compliant and use only LAL types, so they are included in
+\c liblal proper.
+
+\heading{Constants}
 
 The following constants are format strings that can be used by the
-various C \verb@scanf()@ or \verb@printf()@ functions to parse or
+various C <tt>scanf()</tt> or <tt>printf()</tt> functions to parse or
 write sequences of characters corresponding to base LAL datatypes.
-Since the C datatypes (\verb@short@, \verb@int@, \verb@long@,
-\verb@long long@, \verb@float@, \verb@double@, etc.) do not have fixed
-mappings to LAL base datatypes (\verb@INT2@, \verb@INT4@, \verb@INT8@,
-\verb@REAL4@, \verb@REAL8@, etc.), the appropriate format strings for
+Since the C datatypes (\c short, \c int, \c long,
+<tt>long long</tt>, \c float, \c double, etc.) do not have fixed
+mappings to LAL base datatypes (\c INT2, \c INT4, \c INT8,
+\c REAL4, \c REAL8, etc.), the appropriate format strings for
 each LAL datatype must be determined at configuration time and set at
 compile time.
 
 These format strings give only the conversion character preceded by
-any length modifier according to the type (\verb@short@, \verb@long@,
-etc.).  In particular they do \emph{not} contain the initial
-\verb@'%'@ character that initiates the conversion specification.
-However, being \verb@#define@d string literals, they can be combined
-with \verb@"%"@ string literals or more complicated format strings
-through implicit concatenation.  Thus to scan \verb@string@ for a
-\verb@UINT4@ number \verb@n@ one would write:
-\begin{verbatim}
+any length modifier according to the type (\c short, \c long,
+etc.).  In particular they do \e not contain the initial
+<tt>'%'</tt> character that initiates the conversion specification.
+However, being <tt>\#define</tt>d string literals, they can be combined
+with <tt>"%"</tt> string literals or more complicated format strings
+through implicit concatenation.  Thus to scan \c string for a
+\c UINT4 number \c n one would write:
+\code
   sscanf( string, "%" LAL_UINT4_FORMAT, &n );
-\end{verbatim}
-Similarly, to print a \verb@REAL8@ number \verb@x@ with 12 digits
+\endcode
+Similarly, to print a \c REAL8 number \c x with 12 digits
 following the decimal place, one could use the following:
-\begin{verbatim}
+\code
   printf( "%.12" LAL_REAL8_FORMAT, x );
-\end{verbatim}
+\endcode
 Of course, floating-point numbers are more commonly printed using the
-\verb@"%e"@ conversion specifier, which does not generally require
+<tt>"%e"</tt> conversion specifier, which does not generally require
 type-dependent length modifiers.
 
-\begin{center}
-\begin{tabular}{|ll|}
-\hline
-Name & Usual value \\
-\hline
-\tt LAL\_INT2\_FORMAT  & {\tt "hd"}                \\
-\tt LAL\_INT4\_FORMAT  & {\tt "d"}  or {\tt "ld"}  \\
-\tt LAL\_INT8\_FORMAT  & {\tt "ld"} or {\tt "lld"} \\
-\tt LAL\_UINT2\_FORMAT & {\tt "hu"}                \\
-\tt LAL\_UINT4\_FORMAT & {\tt "u"}  or {\tt "lu"}  \\
-\tt LAL\_UINT8\_FORMAT & {\tt "lu"} or {\tt "llu"} \\
-\tt LAL\_REAL4\_FORMAT & {\tt "f"}                 \\
-\tt LAL\_REAL8\_FORMAT & {\tt "lf"}                \\
-\hline
-\end{tabular}
-\end{center}
-******************************************************* </lalLaTeX> */
+<table>
+<tr><th>Name</th><th>Usual value</th></tr>
+<tr><td>#LAL_INT2_FORMAT</td><td><tt>"hd"</tt></td></tr>
+<tr><td>#LAL_INT4_FORMAT</td><td><tt>"d"</tt>  or <tt>"ld"</tt></td></tr>
+<tr><td>#LAL_INT8_FORMAT</td><td><tt>"ld"</tt> or <tt>"lld"</tt></td></tr>
+<tr><td>#LAL_UINT2_FORMAT</td><td><tt>"hu"</tt></td></tr>
+<tr><td>#LAL_UINT4_FORMAT</td><td><tt>"u"</tt>  or <tt>"lu"</tt></td></tr>
+<tr><td>#LAL_UINT8_FORMAT</td><td><tt>"lu"</tt> or <tt>"llu"</tt></td></tr>
+<tr><td>#LAL_REAL4_FORMAT</td><td><tt>"f"</tt></td></tr>
+<tr><td>#LAL_REAL8_FORMAT</td><td><tt>"lf"</tt></td></tr>
+</table>
 
-/********************************************************** <lalLaTeX>
+*/
+/*@{*/
 
-\subsection*{Types}
+/** \name Error Codes */ /*@{*/
+#define STRINGINPUTH_ENUL 1	/**< Unexpected null pointer in arguments */
+#define STRINGINPUTH_EOUT 2	/**< Output handle points to a non-null pointer */
+#define STRINGINPUTH_EMEM 3	/**< Memory allocation error */
+/*@}*/
+/** \cond DONT_DOXYGEN */
+#define STRINGINPUTH_MSGENUL "Unexpected null pointer in arguments"
+#define STRINGINPUTH_MSGEOUT "Output handle points to a non-null pointer"
+#define STRINGINPUTH_MSGEMEM "Memory allocation error"
+/** \endcond */
 
-\subsubsection*{Structure \texttt{TokenList}}
-\idx[Type]{TokenList}
-
-This structure stores a number of null-terminated strings of arbitrary
-length.  The entire list is stored flattened in a \verb@CHARVector@,
-and individual tokens are pointed to by a \verb@CHAR *[]@ handle.  The
-fields are:
-
-\begin{description}
-\item[\texttt{UINT4 nTokens}] The number of tokens in the list.
-
-\item[\texttt{CHAR **tokens}] A list of pointers to the individual
-tokens.  The elements \verb@tokens[0..nTokens-1]@ point to tokens, and
-the element \verb@tokens[nTokens]@ is explicitly \verb@NULL@ (as is
-the convention for an \verb@argv@ argument list).
-
-\item[\texttt{CHARVector *list}] The flattened list of tokens,
-separated by (and terminated with) \verb@'\0'@ characters.
-\end{description}
-
-******************************************************* </lalLaTeX> */
-
+/**
+ * This structure stores a number of null-terminated strings of arbitrary
+ * length.  The entire list is stored flattened in a \c CHARVector,
+ * and individual tokens are pointed to by a <tt>CHAR *[]</tt> handle.
+ */
 typedef struct tagTokenList {
   SWIGLAL_STRUCT(TokenList);
-  UINT4 nTokens;    /* number of tokens */
-  CHAR **tokens;    /* list of pointers to tokens */
-  CHARVector *list; /* flattened list of null-terminated tokens */
+  UINT4 nTokens;    /**< The number of tokens in the list */
+  CHAR **tokens;    /**< A list of pointers to the individual tokens;
+                     * the elements <tt>tokens[0..nTokens-1]</tt> point to tokens, and
+                     * the element <tt>tokens[nTokens]</tt> is explicitly \c NULL (as is
+                     the convention for an \c argv argument list */
+  CHARVector *list; /**< The flattened list of tokens, separated by (and terminated with) <tt>'\0'</tt> characters */
 } TokenList;
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{StringInputHV}}
-</lalLaTeX> */
+/*@}*/
 
 /* Function prototypes. */
 
-/* <lalLaTeX>
-\newpage\input{StringTokenC}
-</lalLaTeX> */
 void
 LALCreateTokenList( LALStatus  *status,
 		    TokenList  **list,
@@ -210,10 +168,6 @@ XLALCreateTokenList( TokenList  **list,
 void
 XLALDestroyTokenList( TokenList *list );
 
-
-/* <lalLaTeX>
-\newpage\input{StringConvertC}
-</lalLaTeX> */
 void
 LALStringToU2( LALStatus *status, UINT2 *value, const CHAR *string, CHAR **endptr );
 

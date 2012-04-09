@@ -37,6 +37,7 @@ double tstart;
 double duration;
 double flow;
 int psdonly;
+const char *detector;
 
 int usage(const char *program);
 int parseargs(int argc, char **argv);
@@ -60,7 +61,7 @@ int main(int argc, char *argv[])
 	XLALGPSSetREAL8(&epoch, tstart);
 	gsl_rng_env_setup();
 	rng = gsl_rng_alloc(gsl_rng_default);
-	psd = XLALCreateREAL8FrequencySeries("LIGO SRD", &epoch, 0.0, srate/length, &lalSecondUnit, length/2 + 1);
+	psd = XLALCreateREAL8FrequencySeries(detector, &epoch, 0.0, srate/length, &lalSecondUnit, length/2 + 1);
 	XLALSimNoisePSD(psd, flow, psdfunc);
 	if (psdonly) { // output PSD and exit
 		size_t klow = flow / psd->deltaF;
@@ -103,20 +104,25 @@ int parseargs( int argc, char **argv )
 			{ "aligo-bhbh20deg", no_argument, 0, 'E' },
 			{ "aligo-highfreq", no_argument, 0, 'F' },
 			{ "iligo-srd", no_argument, 0, 'I' },
+			{ "virgo", no_argument, 0, 'v' },
+			{ "advvirgo", no_argument, 0, 'V' },
+			{ "geo", no_argument, 0, 'g' },
+			{ "tama", no_argument, 0, 'T' },
+			{ "kagra", no_argument, 0, 'K' },
 			{ "psd-only", no_argument, 0, 'P' },
 			{ "start-time", required_argument, 0, 's' },
 			{ "duration", required_argument, 0, 't' },
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "hIABCDEFPs:t:";
+	char args[] = "hIABCDEFPvVgTKs:t:";
 	while (1) {
 		int option_index = 0;
 		int c;
-	
+
 		c = getopt_long_only(argc, argv, args, long_options, &option_index);
 		if (c == -1) /* end of options */
 			break;
-	
+
 		switch (c) {
 			case 0: /* if option set a flag, nothing else to do */
 				if (long_options[option_index].flag)
@@ -131,30 +137,62 @@ int parseargs( int argc, char **argv )
 			case 'A': /* aligo-nosrm */
 				psdfunc = XLALSimNoisePSDaLIGONoSRMLowPower;
 				flow = 9.0;
+				detector = "aLIGO";
 				break;
 			case 'B': /* aligo-zerodet-lowpower */
 				psdfunc = XLALSimNoisePSDaLIGOZeroDetLowPower;
 				flow = 9.0;
+				detector = "aLIGO";
 				break;
 			case 'C': /* aligo-zerodet-highpower */
 				psdfunc = XLALSimNoisePSDaLIGOZeroDetHighPower;
 				flow = 9.0;
+				detector = "aLIGO";
 				break;
 			case 'D': /* aligo-nsnsopt */
 				psdfunc = XLALSimNoisePSDaLIGONSNSOpt;
 				flow = 9.0;
+				detector = "aLIGO";
 				break;
 			case 'E': /* aligo-bhbh20deg */
 				psdfunc = XLALSimNoisePSDaLIGOBHBH20Deg;
 				flow = 9.0;
+				detector = "aLIGO";
 				break;
 			case 'F': /* aligo-highfreq */
 				psdfunc = XLALSimNoisePSDaLIGOHighFrequency;
 				flow = 9.0;
+				detector = "aLIGO";
 				break;
 			case 'I': /* iligo-srd */
 				psdfunc = XLALSimNoisePSDiLIGOSRD;
 				flow = 30.0;
+				detector = "LIGO SRD";
+				break;
+			case 'v': /* initial Virgo */
+				psdfunc = XLALSimNoisePSDVirgo;
+				flow = 5.0;
+				detector = "Virgo";
+				break;
+			case 'V': /* Advanced Virgo */
+				psdfunc = XLALSimNoisePSDAdvVirgo;
+				flow = 1.0;
+				detector = "AdvVirgo";
+				break;
+			case 'g': /* GEO600 */
+				psdfunc = XLALSimNoisePSDGEO;
+				flow = 30.0;
+				detector = "GEO600";
+				break;
+			case 'T': /* TAMA300 */
+				psdfunc = XLALSimNoisePSDTAMA;
+				flow = 30.0;
+				detector = "TAMA300";
+				break;
+			case 'K': /* KAGRA (formerly LCGT) */
+				psdfunc = XLALSimNoisePSDKAGRA;
+				flow = 5.0;
+				detector = "KAGRA";
 				break;
 			case 'P': /* start-time */
 				psdonly = 1;
@@ -171,7 +209,7 @@ int parseargs( int argc, char **argv )
 				exit(1);
 		}
 	}
-	
+
 	if ( optind < argc ) {
 		fprintf(stderr, "extraneous command line arguments:\n");
 		while (optind < argc)
@@ -184,10 +222,10 @@ int parseargs( int argc, char **argv )
 		usage(argv[0]);
 		exit(1);
 	}
-	
+
 	return 0;
 }
-	
+
 int usage( const char *program )
 {
 	fprintf(stderr, "usage: %s [options]\n", program);
@@ -199,8 +237,13 @@ int usage( const char *program )
 	fprintf(stderr, "\t-D, --aligo-nsnsopt          \taLIGO NSNS optimized noise\n");
 	fprintf(stderr, "\t-E, --aligo-bhbh20deg        \taLIGO BHBH optimized 20 deg detuning noise\n");
 	fprintf(stderr, "\t-F, --aligo-highfreq         \taLIGO kHz narrowband noise\n");
-	fprintf(stderr, "\t-I, --iligo-srd		\tiLIGO SRD noise power\n");
-	fprintf(stderr, "\t-P, --psd-only 		\toutput PSD only\n");
+	fprintf(stderr, "\t-I, --iligo-srd              \tiLIGO SRD noise power\n");
+	fprintf(stderr, "\t-v, --virgo                  \tinitial Virgo noise power\n");
+	fprintf(stderr, "\t-V, --advvirgo               \tAdvanced Virgo noise power\n");
+	fprintf(stderr, "\t-g, --geo                    \tGEO600 noise power\n");
+	fprintf(stderr, "\t-T, --tama                   \tTAMA300 noise power\n");
+	fprintf(stderr, "\t-K, --kagra                  \tKAGRA noise power\n");
+	fprintf(stderr, "\t-P, --psd-only               \toutput PSD only\n");
 	fprintf(stderr, "\t-s, --start-time             \tGPS start time (s)\n");
 	fprintf(stderr, "\t-t, --duration               \t(required) duration of data to produce (s)\n");
 	return 0;

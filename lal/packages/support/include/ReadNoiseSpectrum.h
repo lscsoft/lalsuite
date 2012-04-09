@@ -27,24 +27,6 @@
  *-----------------------------------------------------------------------
  */
 
-/* <lalVerbatim file="ReadNoiseSpectrumHV">
-Author: Brady, P. R.
-</lalVerbatim>
-<lalLaTeX>
-\section{Header \texttt{ReadNoiseSpectrum.h}}
-\label{s:ReadNoiseSpectrum.h}
-
-Provides function to read in a file containing a possibly unequally sampled
-noise amplitude spectrum ($\textrm{strain}/\sqrt(\textrm{Hz})$) and return as
-a frequency series.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/ReadNoiseSpectrum.h>
-\end{verbatim}
-
-</lalLaTeX> */
-
 #ifndef _READNOISESPECTRUMH_H
 #define _READNOISESPECTRUMH_H
 
@@ -57,16 +39,29 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/* <lalLaTeX>
-\newpage\subsection*{Error codes}
-</lalLaTeX> */
-/* <lalErrTable> */
-#define LALREADNOISESPECTRUMH_ENULL 1
-#define LALREADNOISESPECTRUMH_ENNUL 2
-#define LALREADNOISESPECTRUMH_EALOC 3
-#define LALREADNOISESPECTRUMH_EOPEN 4
-#define LALREADNOISESPECTRUMH_EFCLO 5
-#define LALREADNOISESPECTRUMH_EPARS 8
+/**
+   \addtogroup ReadNoiseSpectrum_h
+   \author Brady, P. R.
+
+   \brief Provides function to read in a file containing a possibly unequally sampled
+   noise amplitude spectrum (\f$\textrm{strain}/\sqrt(\textrm{Hz})\f$) and return as
+   a frequency series.
+
+   \heading{Synopsis}
+   \code
+   #include <lal/ReadNoiseSpectrum.h>
+   \endcode
+*/ /*@{*/
+
+/**\name Error Codes */ /*@{*/
+#define LALREADNOISESPECTRUMH_ENULL 1   /**< Null pointer */
+#define LALREADNOISESPECTRUMH_ENNUL 2   /**< Non-null pointer */
+#define LALREADNOISESPECTRUMH_EALOC 3   /**< Memory allocation error */
+#define LALREADNOISESPECTRUMH_EOPEN 4   /**< Error opening file */
+#define LALREADNOISESPECTRUMH_EFCLO 5   /**< Error closing file */
+#define LALREADNOISESPECTRUMH_EPARS 8   /**< Error parsing spectrum file */
+/*@}*/
+/*@}*/
 
 #define LALREADNOISESPECTRUMH_MSGENULL "Null pointer"
 #define LALREADNOISESPECTRUMH_MSGENNUL "Non-null pointer"
@@ -74,7 +69,7 @@ extern "C" {
 #define LALREADNOISESPECTRUMH_MSGEOPEN "Error opening file"
 #define LALREADNOISESPECTRUMH_MSGEFCLO "Error closing file"
 #define LALREADNOISESPECTRUMH_MSGEPARS "Error parsing spectrum file"
-/* </lalErrTable> */
+
 
 #define LALREADNOISESPECTRUM_MAXLINELENGTH 2048
 
@@ -84,10 +79,6 @@ void LALReadNoiseSpectrum(
     CHAR *fname
     );
 
-/* <lalLaTeX>
-\vfill{\footnotesize\input{ReadNoiseSpectrumHV}}
-\newpage\input{ReadNoiseSpectrumC}
-</lalLaTeX> */
 
 #if 0
 { /* so that editors will match succeeding brace */

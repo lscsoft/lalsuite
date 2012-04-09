@@ -17,27 +17,18 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
+/**
+   \addtogroup LALStdio_h
 
-<lalVerbatim file="LALStdioHV">
-</lalVerbatim>
+   \brief Provides LAL functions similar to the non-file functions in <tt><stdio.h></tt>.
 
-<lalLaTeX>
+   \heading{Synopsis}
+   \code
+   #include <lal/LALStdio.h>
+   #include <lal/FileIO.h>
+   \endcode
 
-\section{Header \texttt{LALStdio.h}}
-\label{s:LALStdio.h}
-
-Provides LAL functions similar to the non-file functions in \verb+<stdio.h>+.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LALStdio.h>
-#include <lal/FileIO.h>
-\end{verbatim}
-
-\vfill{\footnotesize\input{LALStdioHV}}
-</lalLaTeX>
-#endif /* autodoc block */
+*/
 
 #ifndef _LALSTDIO_H
 #define _LALSTDIO_H
