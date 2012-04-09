@@ -141,7 +141,6 @@ REAL8 errbound_twospect(qfvars *vars, REAL8 u, REAL8* cx)
       x = u * vars->weights->data[ii];
       y = 1.0 - x;
       xconst += 2.0*vars->weights->data[ii]/y;
-      //sum1 += 2 * (x*x / y + twospect_log_1plusx_mx(-x));
       sum1 += 2 * (x*x / y + (log1p(-x)+x));
    }
    *cx = xconst;
@@ -495,7 +494,7 @@ void integrate_eg(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 main
 }
 void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
-   
+   //Rewrite of integrate_eg() to make it fast
    INT4 ii, jj;
    
    for (ii=nterm; ii>=0; ii--) {
@@ -531,6 +530,7 @@ void integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, IN
 void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq, INT4 mainx)
 {
    
+   //Use SSE to make the integration even faster
    INT4 ii, jj;
    
    REAL8Vector *scaledweightvector = XLALCreateREAL8Vector(vars->weights->length);

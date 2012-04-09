@@ -39,6 +39,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 binodeviance(REAL8 x, REAL8 np);
 REAL8 epsval(REAL8 val);
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta);
+REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta);
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma);
 REAL8 ks_test_exp(REAL4Vector *vector);
 REAL8 kuipers_test_exp(REAL4Vector *vector);
