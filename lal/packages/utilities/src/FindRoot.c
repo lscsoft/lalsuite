@@ -17,98 +17,21 @@
 *  MA  02111-1307  USA
 */
 
-#if 0  /* autodoc block */
-
-<lalVerbatim file="FindRootCV">
-</lalVerbatim>
-
-<lalLaTeX>
-\subsection{Module \texttt{FindRoot.c}}
-\label{ss:FindRoot.c}
-
-Functions for root finding.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{FindRootCP}
-\idx{LALSBracketRoot()}
-\idx{LALDBracketRoot()}
-\idx{LALSBisectionFindRoot()}
-\idx{LALDBisectionFindRoot()}
-
-\subsubsection*{Description}
-
-The routine \verb+LALSBracketRoot()+ expands the specified domain until a root
-is contained.  The routine \verb+LALDBracketRoot()+ is the same but for a
-double-precision function.
-
-The routine \verb+LALSFindRoot()+ bisects the domain (which must contain one
-root) until the root is found with the desired accuracy.  The routine
-\verb+LALDFindRoot()+ is the same but for a double-precision function.
-
-\subsubsection*{Operating Instructions}
-
-Suppose we want to find the root of the function $y = F(x;y_0) = y_0 + x^2$.
-Define the function:
-\begin{verbatim}
-static void F( LALStatus *status, REAL4 *y, REAL4 x, void *y0 )
-{
-  INITSTATUS(status);
-  ASSERT( y0, status, 1, "Null pointer" );
-  *y = *(REAL4 *)y0 + x*x;
-  RETURN( status );
-}
-\end{verbatim}
-
-Then use the following code to bracket and find the root $x_0=1$ where
-$F(x_0;y_0=-1)=0$:
-\begin{verbatim}
-static LALStatus status;
-SFindRootIn      input;
-REAL4            y0;
-REAL4            x0;
-
-y0             = -1;
-input.function = F;
-input.xmin     = 0.1;
-input.xmax     = 0.2;
-input.xacc     = 1e-5;
-
-/* expand domain until a root is bracketed */
-LALSBracketRoot( &status, &input, &y0 );
-
-/* bisect domain until root is found */
-LALSBisectionFindRoot( &status, &x0, &input, &y0 );
-\end{verbatim}
-
-\subsubsection*{Algorithm}
-
-This is an implementation of the root bracketing and bisection finding
-routines \verb+zbrac+ and \verb+rtbis+ in Numerical Recipes~\cite{ptvf:1992}.
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{FindRootCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
+/* ---------- see FindRoot.h for doxygen documentation ---------- */
 
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/FindRoot.h>
 
-/* <lalVerbatim file="FindRootCP"> */
+/** \see See \ref FindRoot_h for documentation */
 void
 LALSBracketRoot (
     LALStatus      *status,
     SFindRootIn *inout,
     void        *params
     )
-{ /* </lalVerbatim> */
+{
   const REAL4 fac  = LAL_SQRT2;
 
   INT4  i = 0;
@@ -171,7 +94,7 @@ LALSBracketRoot (
 }
 
 
-/* <lalVerbatim file="FindRootCP"> */
+/** \see See \ref FindRoot_h for documentation */
 int
 XLALDBracketRoot(
     REAL8 (*y)(REAL8, void *),
@@ -179,7 +102,7 @@ XLALDBracketRoot(
     REAL8 *xmax,
     void *params
 )
-{ /* </lalVerbatim> */
+{
   const INT4 imax = 64;
   INT4 i;
   REAL8 y_1;
@@ -221,15 +144,14 @@ XLALDBracketRoot(
   return(0);
 }
 
-
-/* <lalVerbatim file="FindRootCP"> */
+/** \see See \ref FindRoot_h for documentation */
 void
 LALDBracketRoot (
     LALStatus      *status,
     DFindRootIn *inout,
     void        *params
     )
-{ /* </lalVerbatim> */
+{
   const REAL8 fac  = LAL_SQRT2;
 
   INT4  i = 0;
@@ -292,7 +214,7 @@ LALDBracketRoot (
 }
 
 
-/* <lalVerbatim file="FindRootCP"> */
+/** \see See \ref FindRoot_h for documentation */
 void
 LALSBisectionFindRoot (
     LALStatus      *status,
@@ -300,7 +222,7 @@ LALSBisectionFindRoot (
     SFindRootIn *input,
     void        *params
     )
-{ /* </lalVerbatim> */
+{
 
   INT4  i = 0;
   REAL4 y_1;
@@ -387,7 +309,7 @@ LALSBisectionFindRoot (
 }
 
 
-/* <lalVerbatim file="FindRootCP"> */
+/** \see See \ref FindRoot_h for documentation */
 REAL8
 XLALDBisectionFindRoot (
     REAL8 (*y)(REAL8, void *),
@@ -396,7 +318,7 @@ XLALDBisectionFindRoot (
     REAL8 xacc,
     void *params
 )
-{ /* </lalVerbatim> */
+{
   const INT4 imax = 80;
   INT4  i;
   REAL8 y_1;
@@ -460,8 +382,7 @@ XLALDBisectionFindRoot (
   return((xmin + xmax) / 2.0);
 }
 
-
-/* <lalVerbatim file="FindRootCP"> */
+/** \see See \ref FindRoot_h for documentation */
 void
 LALDBisectionFindRoot (
     LALStatus      *status,
@@ -469,7 +390,7 @@ LALDBisectionFindRoot (
     DFindRootIn *input,
     void        *params
     )
-{ /* </lalVerbatim> */
+{
 
   INT4  i = 0;
   REAL8 y_1;
@@ -554,4 +475,3 @@ LALDBisectionFindRoot (
   DETATCHSTATUSPTR (status);
   RETURN (status);
 }
-

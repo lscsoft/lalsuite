@@ -17,22 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="LALRunningMedianTestCV">
-Author: B. Machenschalk
-********************************* </lalVerbatim> */
+#include <math.h>
+#include <stdlib.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/LALMalloc.h>
+#include <lal/SeqFactories.h>
+#include <lal/PrintVector.h>
+#include <lal/LALRunningMedian.h>
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{LALRunningMedianTest.c}}
-\label{ss:LALRunningMedianTest.c}
 
-Program to test running median function
+/**
+\file
+\ingroup LALRunningMedian_h
+\author B. Machenschalk
 
-\subsubsection*{Usage}
-\begin{verbatim}
+\brief Program to test running median function
+
+\heading{Usage}
+\code
 LALRunningMedianTest [length blocksize [lalDebugLevel]]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program test the LALRunningMedian functions
 First the proper function of the input checks is tested.
@@ -49,52 +56,26 @@ outputs the values of the input and median arrays
 to files, using the PrintVector functions
 from the support package.
 
-\subsubsection*{Exit codes}
-\input{LALRunningMedianTestCE}
+*/
 
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()
-LALSCreateVector()
-LALSDestroyVector()
-LALSPrintVector()
-LALDCreateVector()
-LALDDestroyVector()
-LALDPrintVector()
-LALSRunningMedian()
-LALDRunningMedian()
-LALCheckMemoryLeaks()
-\end{verbatim}
+/**\name Error Codes */
+/*@{*/
+#define LALRUNNINGMEDIANTESTC_ENOM 0		/**< Nominal exit */
+#define LALRUNNINGMEDIANTESTC_EARG 1		/**< Error parsing command-line arguments */
+#define LALRUNNINGMEDIANTESTC_ESUB 2		/**< Subroutine returned error */
+#define LALRUNNINGMEDIANTESTC_EALOC 3		/**< Could not allocate data space */
+#define LALRUNNINGMEDIANTESTC_EFALSE 4		/**< Medians mismatch */
+#define LALRUNNINGMEDIANTESTC_EERR 5		/**< Subroutine returned wrong or no error */
+/*@}*/
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize \input{LALRunningMedianTestCV}}
-******************************************************* </lalLaTeX> */
-
-#include <math.h>
-#include <stdlib.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/LALMalloc.h>
-#include <lal/SeqFactories.h>
-#include <lal/PrintVector.h>
-#include <lal/LALRunningMedian.h>
-
-/***************************** <lalErrTable file="LALRunningMedianTestCE"> */
-#define LALRUNNINGMEDIANTESTC_ENOM 0
-#define LALRUNNINGMEDIANTESTC_EARG 1
-#define LALRUNNINGMEDIANTESTC_ESUB 2
-#define LALRUNNINGMEDIANTESTC_EALOC 3
-#define LALRUNNINGMEDIANTESTC_EFALSE 4
-#define LALRUNNINGMEDIANTESTC_EERR 5
+/** \cond DONT_DOXYGEN */
 #define LALRUNNINGMEDIANTESTC_MSGENOM "Nominal exit"
 #define LALRUNNINGMEDIANTESTC_MSGEARG "Error parsing command-line arguments"
 #define LALRUNNINGMEDIANTESTC_MSGESUB "Subroutine returned error"
 #define LALRUNNINGMEDIANTESTC_MSGEALOC "Could not allocate data space"
 #define LALRUNNINGMEDIANTESTC_MSGEFALSE "Medians mismatch"
 #define LALRUNNINGMEDIANTESTC_MSGEERR "Subroutine returned wrong or no error"
-/***************************** </lalErrTable> */
+
 
 /* Declare lalDebugLevel */
 extern int lalDebugLevel;
@@ -716,3 +697,4 @@ int main( int argc, char **argv )
   /* nominal exit */
   EXIT( LALRUNNINGMEDIANTESTC_ENOM, argv0, LALRUNNINGMEDIANTESTC_MSGENOM );
 }
+/** \endcond */

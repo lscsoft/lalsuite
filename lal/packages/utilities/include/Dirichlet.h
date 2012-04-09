@@ -17,54 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="DirichletHV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-*********************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\section{Header \texttt{Dirichlet.h}}
-\label{utilities:s:Dirichlet.h}
-
-Provides prototype and error code information for \texttt{LALDirichlet()},
-a routine which calculates the values of the Dirichlet kernel
-${\cal D}_N(x)$.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include "Dirichlet.h"
-\end{verbatim}
-
-\noindent
-% Add more information here, if necessary.
-
-\subsection*{Error conditions}
-\input{DirichletHErrTable}
-
-\subsection*{Structures}
-\begin{verbatim}
-struct DirichletParameters
-\end{verbatim}
-\idx[Type]{DirichletParameters}
-
-\noindent
-Contains parameters that specify the Dirichlet kernel $\mathcal{D}_N(x)$.
-The fields are:
-
-\begin{description}
-\item[\texttt{UINT4 n}] Dirichlet parameter $N$.
-
-\item[\texttt{UINT4 length}] Specified length of output vector.
-
-\item[\texttt{REAL8 deltaX}] Spacing of $x$ values.
-\end{description}
-
-\vfill{\footnotesize\input{DirichletHV}}
-
-\newpage\input{DirichletC}
-\newpage\input{DirichletTestC}
-
-*********************************************************** </lalLaTeX> */
-
 #ifndef  _DIRICHLET_H
 #define  _DIRICHLET_H
 
@@ -79,16 +31,34 @@ The fields are:
 extern "C" {
 #endif
 
-/******************************** <lalErrTable file="DirichletHErrTable"> */
+/**
+   \addtogroup Dirichlet_h
+   \author UTB Relativity Group; contact whelan@phys.utb.edu
 
-#define DIRICHLETH_ENULLPIN    1
-#define DIRICHLETH_ENVALUE     2
-#define DIRICHLETH_ESIZE       3
-#define DIRICHLETH_EDELTAX     4
-#define DIRICHLETH_ENULLPOUT   5
-#define DIRICHLETH_ESIZEMM     6
-#define DIRICHLETH_ENULLPDOUT  7
+   \brief Provides prototype and error code information for <tt>LALDirichlet()</tt>,
+   a routine which calculates the values of the Dirichlet kernel
+   \f${\cal D}_N(x)\f$.
 
+   \heading{Synopsis}
+   \code
+   #include "Dirichlet.h"
+   \endcode
+
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define DIRICHLETH_ENULLPIN    1		/**< Null pointer to input parameters */
+#define DIRICHLETH_ENVALUE     2		/**< Dirichlet parameter N less than or equal to zero */
+#define DIRICHLETH_ESIZE       3		/**< Length parameter less than or equal to zero */
+#define DIRICHLETH_EDELTAX     4		/**< Spacing of x values less than or equal to zero */
+#define DIRICHLETH_ENULLPOUT   5		/**< Null pointer to ouput vector */
+#define DIRICHLETH_ESIZEMM     6		/**< Length of data member of output vector does not equal length specified in input parameters */
+#define DIRICHLETH_ENULLPDOUT  7		/**< Null pointer to data member of output vector */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define DIRICHLETH_MSGENULLPIN   "Null pointer to input parameters"
 #define DIRICHLETH_MSGENVALUE    "Dirichlet parameter N less than or equal to zero"
 #define DIRICHLETH_MSGESIZE      "Length parameter less than or equal to zero"
@@ -96,20 +66,23 @@ extern "C" {
 #define DIRICHLETH_MSGENULLPOUT  "Null pointer to ouput vector"
 #define DIRICHLETH_MSGESIZEMM    "Length of data member of output vector does not equal length specified in input parameters"
 #define DIRICHLETH_MSGENULLPDOUT "Null pointer to data member of output vector"
+/** \endcond */
 
-/************************************ </lalErrTable> */
 
+/** Contains parameters that specify the Dirichlet kernel \f$\mathcal{D}_N(x)\f$ */
 typedef struct tagDirichletParameters{
   SWIGLAL_STRUCT(DirichletParameters);
-  UINT4	 n;       /* LALDirichlet parameter N */
-  UINT4	 length;  /* specified length of output vector */
-  REAL8	 deltaX;  /* spacing of x values */
+  UINT4	 n;       /**< Dirichlet parameter \f$N\f$ */
+  UINT4	 length;  /**< Specified length of output vector */
+  REAL8	 deltaX;  /**< Spacing of \f$x\f$ values */
 } DirichletParameters;
 
 void
 LALDirichlet(LALStatus*,
 	     REAL4Vector*,
 	     const DirichletParameters*);
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

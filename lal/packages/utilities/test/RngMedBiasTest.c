@@ -28,20 +28,11 @@
  *
  *-----------------------------------------------------------------------
  */
-/************************************ <lalVerbatim file="RngMedBiasTestCV">
-Author: Krishnan, B. and Itoh, Y.
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-*********************************************** </lalLaTeX> */
-
 
 #include <lal/RngMedBias.h>
 
 /* Error codes and messages */
 
-/************** <lalErrTable file="RNGMEDBIASTESTCErrorTable"> */
 #define RNGMEDBIASTESTC_ENORM 0
 #define RNGMEDBIASTESTC_ESUB  1
 #define RNGMEDBIASTESTC_EARG  2
@@ -53,7 +44,6 @@ Author: Krishnan, B. and Itoh, Y.
 #define RNGMEDBIASTESTC_MSGEARG  "Error parsing arguments"
 #define RNGMEDBIASTESTC_MSGEBAD  "Bad argument values"
 #define RNGMEDBIASTESTC_MSGEFILE "Could not create output file"
-/******************************************** </lalErrTable> */
 
 
 /* Default parameters. */
@@ -156,6 +146,3 @@ int main(int argc, char *argv[]){
 }
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-
-

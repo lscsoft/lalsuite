@@ -17,108 +17,89 @@
 *  MA  02111-1307  USA
 */
 
-/******************************* <lalVerbatim file="DetInverseTestCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
+/**
+\file
+\ingroup MatrixUtils_h
+\author Creighton, T. D.
 
-/********************************************************** <lalLaTeX>
+\brief Computes the inverse and determinant of a matrix.
 
-\subsection{Program \texttt{DetInverseTest.c}}
-\label{ss:DetInverseTest.c}
-
-Computes the inverse and determinant of a matrix.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 DetInverseTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program computes the inverse and determinant of a square real
-matrix using the routines in \verb@DetInverse.c@ and
-\verb@DetInverseInternal.c@.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-n}] Generates a random symmetric
-\verb@size@$\times$\verb@size@ metric.  If this option is not given,
-\verb@-n 3@ is assumed.  This option (or its default) is
-\emph{overridden} by the \verb@-i@ option, below.
-\item[\texttt{-i}] Reads a matrix from an input file \verb@infile@
-using the function \verb@LALSReadVector()@.  If the input file is
-specified as \verb@stdin@, the data is read from standard input (not a
-file named \verb@stdin@).
-\item[\texttt{-o}] Writes the determinant and inverse matrix to an
-output file \verb@outfile@.  If the output file is specified as
-\verb@stdout@ or \verb@stderr@, the data is written to standard output
-or standard error (not to files named \verb@stdout@ or \verb@stderr@).
-\item[\texttt{-v}] Specifies that the inverse matrix is to be computed
-as well the determinant.
-\item[\texttt{-t}] Specifies that the computation is to be timed;
-timing information is written to \verb@stderr@.
-\item[\texttt{-s}] Specifies that the calculations are to be done to
-single-precision (\verb@REAL4@) rather than double-precision
-(\verb@REAL8@).
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If not
-specified, level 0 is assumed.
-\end{itemize}
+matrix using the routines in \ref DetInverse_c and
+\ref DetInverseInternal_c.  The following option flags are accepted:
+<ul>
+<li>[<tt>-n</tt>] Generates a random symmetric
+\c size\f$\times\f$\c size metric.  If this option is not given,
+<tt>-n 3</tt> is assumed.  This option (or its default) is
+\e overridden by the <tt>-i</tt> option, below.</li>
+<li>[<tt>-i</tt>] Reads a matrix from an input file \c infile
+using the function <tt>LALSReadVector()</tt>.  If the input file is
+specified as \c stdin, the data is read from standard input (not a
+file named \c stdin).</li>
+<li>[<tt>-o</tt>] Writes the determinant and inverse matrix to an
+output file \c outfile.  If the output file is specified as
+\c stdout or \c stderr, the data is written to standard output
+or standard error (not to files named \c stdout or \c stderr).</li>
+<li>[<tt>-v</tt>] Specifies that the inverse matrix is to be computed
+as well the determinant.</li>
+<li>[<tt>-t</tt>] Specifies that the computation is to be timed;
+timing information is written to \c stderr.</li>
+<li>[<tt>-s</tt>] Specifies that the calculations are to be done to
+single-precision (\c REAL4) rather than double-precision
+(\c REAL8).</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
+specified, level 0 is assumed.</li>
+</ul>
 
-\paragraph{Input format:} If an input file or stream is specified, it
-should consist of $N$ consecutive lines of $N$ whitespace-separated
-numbers, that will be parsed using \verb@LALDReadVector()@, or
-\verb@LALSReadVector()@ if the \verb@-s@ option was given.  The data
+\heading{Input format:} If an input file or stream is specified, it
+should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
+numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
+<tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
 block may be preceded by blank or comment lines (lines containing no
 parseable numbers), but once a parseable number is found, the rest
 should follow in a contiguous block.  If the lines contain different
 numbers of data columns, or if there are fewer lines than columns,
-then an error is returned; if there are \emph{more} lines than
+then an error is returned; if there are \e more lines than
 columns, then the extra lines are ignored.
 
-\paragraph{Output format:} If an output file or stream is specified,
-the input matrix is first written as $N$ consecutive lines of $N$
+\heading{Output format:} If an output file or stream is specified,
+the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
 whitespace-separated numbers.  This will be followed with a blank
 line, then a single number representing the determinant.  If the
-\verb@-v@ option is specified, then another blank line will be
-appended to the output, followed by the inverse matrix written as $N$
-lines of $N$ whitespace-separated numbers.
+<tt>-v</tt> option is specified, then another blank line will be
+appended to the output, followed by the inverse matrix written as \f$N\f$
+lines of \f$N\f$ whitespace-separated numbers.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define DETINVERSETESTC_ENORM 0
-#define DETINVERSETESTC_ESUB  1
-#define DETINVERSETESTC_EARG  2
-#define DETINVERSETESTC_EMEM  3
-#define DETINVERSETESTC_EFILE 4
-#define DETINVERSETESTC_EFMT  5
+*/
 
+/** \name Error Codes */
+/*@{*/
+#define DETINVERSETESTC_ENORM 0		/**< Normal exit */
+#define DETINVERSETESTC_ESUB  1		/**< Subroutine failed */
+#define DETINVERSETESTC_EARG  2		/**< Error parsing arguments */
+#define DETINVERSETESTC_EMEM  3		/**< Out of memory */
+#define DETINVERSETESTC_EFILE 4		/**< Could not open file */
+#define DETINVERSETESTC_EFMT  5		/**< Bad input file format */
+/*@}*/
+
+
+
+
+/** \cond DONT_DOXYGEN */
 #define DETINVERSETESTC_MSGENORM "Normal exit"
 #define DETINVERSETESTC_MSGESUB  "Subroutine failed"
 #define DETINVERSETESTC_MSGEARG  "Error parsing arguments"
 #define DETINVERSETESTC_MSGEMEM  "Out of memory"
 #define DETINVERSETESTC_MSGEFILE "Could not open file"
 #define DETINVERSETESTC_MSGEFMT  "Bad input file format"
-/******************************************** </lalErrTable><lalLaTeX>
 
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALSCreateVector()              LALSDestroyVector()
-LALDCreateVector()              LALDDestroyVector()
-LALSCreateArray()               LALSDestroyArray()
-LALDCreateArray()               LALDDestroyArray()
-LALSMatrixDeterminant()         LALSMatrixInverse()
-LALDMatrixDeterminant()         LALDMatrixInverse()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALUniformDeviate()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DetInverseTestCV}}
-
-******************************************************* </lalLaTeX> */
 
 #include <math.h>
 #include <time.h>
@@ -516,3 +497,4 @@ main( int argc, char **argv )
   INFO( DETINVERSETESTC_MSGENORM );
   return DETINVERSETESTC_ENORM;
 }
+/** \endcond */

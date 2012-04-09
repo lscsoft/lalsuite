@@ -50,9 +50,6 @@ tagark4GSLIntegrator
 } ark4GSLIntegrator;
 
 
-/**
-\c ark4GSLIntegrator
-*/
 ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),
                              int (* stop) (double t, const double y[], double dydt[], void * params),
@@ -69,15 +66,15 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          );
 /**
  * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
- * steps with adaptive step size control.  Intended for use in various 
+ * steps with adaptive step size control.  Intended for use in various
  * waveform generation routines such as SpinTaylorT4 and various EOB models.
- * 
+ *
  * The method is described in
  *
- * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing, 
- * National Bureau of Standards, Washington, DC, 1972 
+ * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing,
+ * National Bureau of Standards, Washington, DC, 1972
  * (available online at http://people.math.sfu.ca/~cbm/aands/ )
- * 
+ *
  * This function also includes "on-the-fly" interpolation of the
  * differential equations at regular intervals in-between integration
  * steps. This "on-the-fly" interpolation method is derived and

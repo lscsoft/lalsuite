@@ -30,55 +30,8 @@
  *-----------------------------------------------------------------------
  */
 
-/* *********************************** <lalVerbatim file="RngMedBiasHV">
-Author: Krishnan, B., Itoh, Y.
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *********************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Header \texttt{RngMedBias.h}}
-\label{s:RngMedBias.h}
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Synopsis}
-
-\begin{verbatim}
-#include <lal/RngMedBias.h>
-\end{verbatim}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Error conditions}
-\vspace{0.1in}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{RngMedBiasHV}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newpage\input{RngMedBiasC}
-%%%%%%%%%% Test program. %%
-\newpage\input{RngMedBiasTestC}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*************************************************</lalLaTeX> */
-
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
 #ifndef _RNGMEDBIAS_H
 #define _RNGMEDBIAS_H
-
-/*
- * 5. Includes. This header may include others; if so, they go immediately
- *    after include-loop protection. Includes should appear in the following
- *    order:
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- */
 
 #include <stdlib.h>
 #include <math.h>
@@ -87,28 +40,34 @@ Author: Krishnan, B., Itoh, Y.
 #include <string.h>
 #include <lal/LALStdlib.h>
 
-/*
- *   Protection against C++ name mangling
- */
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-/*
- * 7. Error codes and messages. This must be auto-extracted for
- *    inclusion in the documentation.
- */
+/**
+\author Krishnan, B., Itoh, Y.
+\addtogroup RngMedBias_h
+\brief Routine for finding bias in median for exponential distribution
 
-/* <lalErrTable file="RngMedBiasHErrorTable"> */
+\heading{Synopsis}
 
-#define RNGMEDBIASH_ENULL 1
-#define RNGMEDBIASH_EVAL 5
+\code
+#include <lal/RngMedBias.h>
+\endcode
+
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define RNGMEDBIASH_ENULL 1		/**< Null pointer */
+#define RNGMEDBIASH_EVAL 5		/**< Invalid value */
+/*@}*/
+
+/*@}*/
 
 #define RNGMEDBIASH_MSGENULL "Null pointer"
 #define RNGMEDBIASH_MSGEVAL  "Invalid value"
-
-/* </lalErrTable>  */
 
 
 /* ******************************************************

@@ -17,48 +17,32 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
+/**
+   \file
+   \ingroup FindRoot_h
 
-<lalVerbatim file="FindRootTestCV">
-</lalVerbatim>
+   \brief Tests the routines in \ref FindRoot.h.
 
-<lalLaTeX>
-
-\subsection{Program \texttt{FindRootTest.c}}
-\label{ss:FindRootTest.c}
-
-Tests the routines in \verb+FindRoot.h+.
-
-\subsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 FindRootTest [options]
 Options:
   -h         print this message
   -q         quiet: run silently
   -v         verbose: print extra information
   -d level   set lalDebugLevel to level
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
+\heading{Exit codes}
 
-\subsubsection*{Uses}
-\subsubsection*{Notes}
+<table>
+<tr><th>Code</th><th>Explanation</th></tr>
+<tr><td>0</td><td>Success, normal exit.</td></tr>
+<tr><td>1</td><td>Subroutine failed.</td></tr>
+</table>
 
-\vfill{\footnotesize\input{FindRootTestCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
+*/
+/** \cond DONT_DOXYGEN */
 
 #include <stdio.h>
 #include <string.h>
@@ -534,3 +518,4 @@ ParseOptions (int argc, char *argv[])
   return;
 }
 
+/** \endcond */

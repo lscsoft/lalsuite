@@ -26,107 +26,7 @@
  *
  *-----------------------------------------------------------------------*/
 
-/*
-
-<lalVerbatim file="HeapSortCV">
-</lalVerbatim>
-
-<lalLaTeX>
-
-\subsection{Module \texttt{HeapSort.c}}
-
-Sorts, indexes, or ranks vector elements using the heap sort
-algorithm.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{HeapSortCP}
-\idx{XLALHeapSort()}
-\idx{XLALHeapIndex()}
-\idx{XLALHeapRank()}
-\idx{LALSHeapSort()}
-\idx{LALSHeapIndex()}
-\idx{LALSHeapRank()}
-\idx{LALDHeapSort()}
-\idx{LALDHeapIndex()}
-\idx{LALDHeapRank()}
-
-\subsubsection*{Description}
-
-These routines sort a vector \verb@*data@ (of type \verb@REAL4Vector@
-or \verb@REAL8Vector@) into ascending order using the in-place
-heapsort algorithm, or construct an index vector \verb@*index@ that
-indexes \verb@*data@ in increasing order (leaving \verb@*data@
-unchanged), or construct a rank vector \verb@*rank@ that gives the
-rank order of the corresponding \verb@*data@ element.
-
-The relationship between sorting, indexing, and ranking can be a bit
-confusing.  One way of looking at it is that the original array is
-ordered by index, while the sorted array is ordered by rank.  The
-index array gives the index as a function of rank; i.e.\ if you're
-looking for a given rank (say the 0th, or smallest element), the index
-array tells you where to look it up in the unsorted array:
-\begin{verbatim}
-unsorted_array[index[i]] = sorted_array[i]
-\end{verbatim}
-The rank array gives the rank as a function of index; i.e.\ it tells
-you where a given element in the unsorted array will appear in the
-sorted array:
-\begin{verbatim}
-unsorted_array[j] = sorted_array[rank[j]]
-\end{verbatim}
-Clearly these imply the following relationships, which can be used to
-construct the index array from the rank array or vice-versa:
-\begin{verbatim}
-index[rank[j]] = j
-rank[index[i]] = i
-\end{verbatim}
-
-The XLAL versions of these routines, \verb@XLALHeapSort@, \verb@XLALHeapIndex@,
-and \verb@XLALHeapRank@, perform the same operations but on arrays of
-\verb@nobj@ generic objects of size \verb@size@ pointed to by \verb@base@ and
-using the comparison function \verb@compar@.  The function \verb@compar@ has
-the prototype
-\begin{verbatim}
-int compar( void *p, const void *x, const void *y )
-\end{verbatim}
-and returns $-1$ if ${\mathtt{x}}<{\mathtt{y}}$,
-$0$ if ${\mathtt{x}}={\mathtt{y}}$,
-and $+1$ if ${\mathtt{x}}>{\mathtt{y}}$.  Here \verb@p@ (which may be NULL)
-is a pointer to additional data that may be used in the comparison function.
-This pointer is passed to the comparison function unchanged from the argument
-\verb@params@ of \verb@XLALHeapSort@, \verb@XLALHeapIndex@, and
-\verb@XLALHeapRank@.
-
-
-\subsubsection*{Algorithm}
-
-These routines use the standard heap sort algorithm described in
-Sec.~8.3 of Ref.~\cite{ptvf:1992}.
-
-The \verb@LALSHeapSort()@ and \verb@LALDHeapSort()@ routines are entirely
-in-place, with no auxiliary storage vector.  The \verb@LALSHeapIndex()@
-and \verb@LALDHeapIndex()@ routines are also technically in-place, but
-they require two input vectors (the data vector and the index vector),
-and leave the data vector unchanged.  The \verb@LALSHeapRank()@ and
-\verb@LALDHeapRank()@ routines require two input vectors (the data and
-rank vectors), and also allocate a temporary index vector internally;
-these routines are therefore the most memory-intensive.  All of these
-algorithms are $N\log_2(N)$ algorithms, regardless of the ordering of
-the initial dataset.
-
-Note: if you can use \verb@qsort@, you should.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALI4CreateVector()
-LALI4DestroyVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{HeapSortCV}}
-
-</lalLaTeX> */
+/* ---------- see Sort.h for doxygen documentation ---------- */
 
 #include <string.h>
 #include <lal/LALStdlib.h>
@@ -140,10 +40,10 @@ LALI4DestroyVector()
  * use compare function c with params p */
 #define CMP(x,i,y,j,s,p,c) ((c)((p),(char*)(x)+(i)*(s),(char*)(y)+(j)*(s)))
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) )
-{ /* </lalVerbatim> */
+{
   INT4 i, j, k, n = nobj;
   void *temp;
 
@@ -194,10 +94,10 @@ int XLALHeapSort( void *base, UINT4 nobj, UINT4 size, void *params,
   return 0;
 }
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) )
-{ /* </lalVerbatim> */
+{
   INT4 i, j, k, n = nobj;
   INT4 itemp;
 
@@ -248,10 +148,10 @@ int XLALHeapIndex( INT4 *indx, void *base, UINT4 nobj, UINT4 size, void *params,
   return 0;
 }
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
     int (*compar)(void *, const void *, const void *) )
-{ /* </lalVerbatim> */
+{
   INT4 i, n = nobj;
   INT4 *indx;
 
@@ -277,10 +177,10 @@ int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
 #undef COPY
 #undef CMP
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 void LALSHeapSort(LALStatus      *stat,
 	       REAL4Vector *vector)
-{ /* </lalVerbatim> */
+{
   INT4 i;
   INT4 j;
   INT4 k;
@@ -336,11 +236,11 @@ void LALSHeapSort(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 void LALSHeapIndex(LALStatus      *stat,
 		INT4Vector  *idx,
 		REAL4Vector *vector)
-{ /* </lalVerbatim> */
+{
   INT4 i;
   INT4 j;
   INT4 k;
@@ -410,11 +310,11 @@ void LALSHeapIndex(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 void LALSHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL4Vector *vector)
-{ /* </lalVerbatim> */
+{
   INT4       i;
   INT4       *indx;
   INT4       *rnk;
@@ -450,10 +350,10 @@ void LALSHeapRank(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 void LALDHeapSort(LALStatus      *stat,
 	       REAL8Vector *vector)
-{ /* </lalVerbatim> */
+{
   INT4 i;
   INT4 j;
   INT4 k;
@@ -509,11 +409,11 @@ void LALDHeapSort(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 void LALDHeapIndex(LALStatus      *stat,
 		INT4Vector  *idx,
 		REAL8Vector *vector)
-{ /* </lalVerbatim> */
+{
   INT4 i;
   INT4 j;
   INT4 k;
@@ -585,11 +485,11 @@ void LALDHeapIndex(LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="HeapSortCP"> */
+
 void LALDHeapRank(LALStatus      *stat,
 	       INT4Vector  *rank,
 	       REAL8Vector *vector)
-{ /* </lalVerbatim> */
+{
   INT4       i;
   INT4       *indx;
   INT4       *rnk;
