@@ -422,6 +422,10 @@ XLALGetApproximantFromString(
   {
     *approximant = TaylorT2;
   }
+  else if ( strstr(thisEvent, "TaylorF2" ) )
+  {
+    *approximant = TaylorF2;
+  }
   else if ( strstr(thisEvent, "TaylorT3" ) )
   {
     *approximant = TaylorT3;
