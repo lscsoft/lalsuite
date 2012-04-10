@@ -90,13 +90,16 @@ REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   //Fail for bad inputs
-   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -214,18 +217,16 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
    if (counterint==-1) return;
    else if (countdown!=0) {
       REAL8 oneoverhalfx = 1.0/halfx;
-      REAL8 counterintplusone = counterint + 1.0;
       while (counterint!=-1) {
          REAL8 pplus = Pint*Cint;
          *(computedprob) += pplus;
          
          if (pplus<=*(computedprob)*err || counterint<0) return;
          
-         counterint--;
-         counterintplusone = counterint + 1.0;
-         Pint *= counterintplusone*oneoverhalfdelta;
-         Eint *= (halfdof + counterintplusone)*oneoverhalfx;
+         Pint *= counterint*oneoverhalfdelta;
+         Eint *= (halfdof + counterint)*oneoverhalfx;
          Cint += Eint;
+         counterint--;
       }
    } else {
       while (counterint!=-1) {
@@ -234,10 +235,10 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
          
          if (pplus<=*(computedprob)*err) return;
          
-         counterint++;
          Pint *= halfdelta/counterint;
-         Eint *= halfx/(halfdof+counterint-1.0);
+         Eint *= halfx/(halfdof+counterint);
          Cint -= Eint;
+         counterint++;
       }
    }
    
@@ -247,12 +248,16 @@ void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, 
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
-   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL4(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return (REAL4)prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -307,12 +312,16 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -346,12 +355,16 @@ REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
 REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
-   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL4(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return (REAL4)prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -388,12 +401,16 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -427,12 +444,16 @@ REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
-   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
-      XLAL_ERROR_REAL4(XLAL_EINVAL);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return (REAL4)prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
