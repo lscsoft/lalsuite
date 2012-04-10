@@ -3,9 +3,5 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	dirs \
 	docs \
-	rules \
-	lalapps-user-env.sh \
-	lalapps-user-env.csh \
-	pyversions
+	rules
