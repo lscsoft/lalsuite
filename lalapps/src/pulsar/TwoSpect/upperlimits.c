@@ -253,7 +253,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          root = gsl_root_fsolver_root(s);
          lo = gsl_root_fsolver_x_lower(s);
          hi = gsl_root_fsolver_x_upper(s);
-         status = gsl_root_test_interval(lo, hi, 0.0, 0.005);
+         status = gsl_root_test_interval(lo, hi, 0.0, 0.001);
          if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
             fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", __func__, status);
             XLAL_ERROR_VOID(XLAL_EFUNC);
