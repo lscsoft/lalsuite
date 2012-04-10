@@ -34,7 +34,6 @@
 #include <gsl/gsl_matrix.h>
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
@@ -42,6 +41,7 @@
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>
@@ -379,7 +379,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	 */
 
 	for(i = 0; i < correlation->length; i++)
-		correlation->data[i] = tilde_wsquared->data[i].re;
+		correlation->data[i] = creal(tilde_wsquared->data[i]);
 	XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
 
 	/*
@@ -704,7 +704,6 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 	char filter_name[100];
 	REAL8Window *hann;
 	COMPLEX16FrequencySeries *filter;
-	const REAL8 *pdata;
 	unsigned i;
 	REAL8 norm;
 
@@ -732,25 +731,17 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 		XLALDestroyREAL8Window(hann);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
-	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re = hann->data->data[i];
-		filter->data->data[i].im = 0.0;
-	}
+	for(i = 0; i < filter->data->length; i++)
+		filter->data->data[i] = hann->data->data[i];
 	XLALDestroyREAL8Window(hann);
 
 	/*
 	 * divide by square root of PSD to whiten
 	 */
 
-	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length * psd->deltaF) {
-		XLALPrintError("%s(): psd does not span filter's frequency range", __func__);
+	if(!XLALWhitenCOMPLEX16FrequencySeries(filter, psd)) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
-		XLAL_ERROR_NULL(XLAL_EINVAL);
-	}
-	pdata = psd->data->data + (int) round((filter->f0 - psd->f0) / psd->deltaF);
-	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re /= sqrt(pdata[i]);
-		filter->data->data[i].im /= sqrt(pdata[i]);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -765,10 +756,8 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	norm = sqrt(channel_width / filter->deltaF / norm);
-	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re *= norm;
-		filter->data->data[i].im *= norm;
-	}
+	for(i = 0; i < filter->data->length; i++)
+		filter->data->data[i] *= norm;
 
 	/*
 	 * success
