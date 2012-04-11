@@ -130,11 +130,10 @@ array2DEbuffer(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, R
   INT4 start = (INT4)ceil((REAL8)startCycle/(REAL8)Nskip);
   INT4 end = (INT4)floor((REAL8)endCycle/(REAL8)Nskip);
   /* Include last point */
-  end += 1;
-  if (end > totalPoints)
-    end = totalPoints;
+  if (end > totalPoints-1)
+    end = totalPoints-1;
 
-  for (i=start; i < end; i++) {
+  for (i=start; i <= end; i++) {
     ptr=runState->differentialPoints[i]->head;
     p=0;
     while(ptr!=NULL) {
@@ -186,6 +185,7 @@ BcastDifferentialEvolutionPoints(LALInferenceRunState *runState, INT4 sourceTemp
 
 static void
 computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, INT4* maxACL) {
+  INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   INT4 totalPoints = runState->differentialPointsLength;
@@ -203,39 +203,43 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
   LALInferenceVariableItem *ptr=runState->currentParams->head;
 
-  /* Prepare 2D array for DE points */
-  DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
-  temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
-  for (i=0; i < nPoints; i++) {
-    DEarray[i] = temp + (i*nPar);
-  }
+  if (nPoints > 1) {
+    /* Prepare 2D array for DE points */
+    DEarray = (REAL8**) XLALMalloc(nPoints * sizeof(REAL8*));
+    temp = (REAL8*) XLALMalloc(nPoints * nPar * sizeof(REAL8));
+    for (i=0; i < nPoints; i++) {
+      DEarray[i] = temp + (i*nPar);
+    }
 
-  DEbuffer2array(runState, startCycle, endCycle, DEarray);
+    DEbuffer2array(runState, startCycle, endCycle, DEarray);
 
-  for (par=0; par<nPar; par++) {
-    ACL=0;
-    mean = gsl_stats_mean(&DEarray[0][par], nPar, nPoints);
-    for (i=0; i<nPoints; i++)
-      DEarray[i][par] -= mean;
-    for (lag=0; lag<nPoints/4; lag++)
-      ACL += fabs(gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag));
-    ACL *= Nskip;
-    if (ACL>max)
-      max=ACL;
-    if (MPIrank==0) {
-      p=0;
-      while(ptr!=NULL) {
-        if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-          printf("Chain %i:%s\t=>\t%i\n",MPIrank,LALInferenceTranslateInternalToExternalParamName(ptr->name),(INT4)ACL);
-          p++;
+    for (par=0; par<nPar; par++) {
+      ACL=0;
+      mean = gsl_stats_mean(&DEarray[0][par], nPar, nPoints);
+      for (i=0; i<nPoints; i++)
+        DEarray[i][par] -= mean;
+      for (lag=0; lag<nPoints/4; lag++)
+        ACL += fabs(gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag));
+      ACL *= Nskip;
+      if (ACL>max)
+        max=ACL;
+      if (MPIrank==0) {
+        p=0;
+        while(ptr!=NULL) {
+          if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
+            printf("Chain %i:%s\t=>\t%i\n",MPIrank,LALInferenceTranslateInternalToExternalParamName(ptr->name),(INT4)ACL);
+            p++;
+          }
+          ptr=ptr->next;
         }
-        ptr=ptr->next;
       }
     }
+    XLALFree(temp);
+  } else {
+    max = Niter;
   }
 
   *maxACL = (INT4)max;
-  XLALFree(temp);
 }
 
 static void
