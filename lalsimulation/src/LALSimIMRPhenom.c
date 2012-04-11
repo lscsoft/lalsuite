@@ -445,7 +445,7 @@ static BBHPhenomParams *ComputeIMRPhenomAParams(const REAL8 m1, const REAL8 m2) 
 /* Takes solar masses. Populates and returns a new BBHPhenomParams   */
 /* structure.                                                        */
 /*********************************************************************/
-static BBHPhenomParams *ComputeIMRPhenomBParams(const REAL8 m1, const REAL8 const m2, const REAL8 chi) {
+static BBHPhenomParams *ComputeIMRPhenomBParams(const REAL8 m1, const REAL8 m2, const REAL8 chi) {
   /* calculate the total mass and symmetric mass ratio */
   const REAL8 totalMass = m1 + m2;
   const REAL8 eta = m1 * m2 / (totalMass * totalMass);
