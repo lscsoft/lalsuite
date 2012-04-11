@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
       }
    }
    
+   
    //Set lalDebugLevel to user input or 0 if no input
    lalDebugLevel = args_info.laldebug_arg;
    
@@ -94,6 +95,20 @@ int main(int argc, char *argv[])
    mkdir(args_info.outdirectory_arg, 0777);
    snprintf(s, 1000, "%s/%s", args_info.outdirectory_arg, args_info.outfilename_arg);
    snprintf(t, 1000, "%s/%s", args_info.outdirectory_arg, args_info.ULfilename_arg);
+   
+   //Save args_info
+   char v[1000];
+   snprintf(v, 1000, "%s/input_values.conf", args_info.outdirectory_arg);
+   FILE *INPUTVALS = fopen(v, "w");
+   if (INPUTVALS==NULL) {
+      fprintf(stderr, "%s: Could not save input parameter values.\n", __func__);
+      XLAL_ERROR(XLAL_EINVAL);
+   }
+   if (cmdline_parser_dump(INPUTVALS, &args_info)) {
+      fprintf(stderr, "%s: cmdline_parser_dump() failed.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   fclose(INPUTVALS);
    
    //Open log file
    LOG = fopen(s,"w");
@@ -275,9 +290,9 @@ int main(int argc, char *argv[])
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
    if (args_info.printSFTtimes_given) {
-      char v[1000];
-      snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat");
-      FILE *INSFTTIMES = fopen(v, "w");
+      char w[1000];
+      snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat");
+      FILE *INSFTTIMES = fopen(w, "w");
       INT4 sftlength = tfdata->length/ffdata->numffts;
       for (ii=0; ii<ffdata->numffts; ii++) {
          if (tfdata->data[ii*sftlength]!=0.0) fprintf(INSFTTIMES, "%9d 0\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)));
@@ -301,9 +316,9 @@ int main(int argc, char *argv[])
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
    if (args_info.printUsedSFTtimes_given) {
-      char v[1000];
-      snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, "usedSFTtimes.dat");
-      FILE *USEDSFTTIMES = fopen(v, "w");
+      char w[1000];
+      snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "usedSFTtimes.dat");
+      FILE *USEDSFTTIMES = fopen(w, "w");
       INT4 sftlength = tfdata->length/ffdata->numffts;
       for (ii=0; ii<ffdata->numffts; ii++) {
          if (tfdata->data[ii*sftlength]!=0.0) fprintf(USEDSFTTIMES, "%9d 0\n", (INT4)round(inputParams->searchstarttime+ii*(inputParams->Tcoh-inputParams->SFToverlap)));
@@ -1684,6 +1699,8 @@ void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
    for (ii=0; ii<(INT4)badsfts->length; ii++) if (badsfts->data[ii]==1) memset(&(tfdata->data[ii*numfbins_tfdata]), 0, sizeof(REAL4)*numfbins_tfdata);
    
 }
+
+//Remove the SFTs (set to zero) the SFTs which fail the K-S and Kuiper's tests
 void removeBadMultiSFTs(REAL4VectorSequence *multiTFdata, INT4VectorSequence *badsfts)
 {
    
@@ -1798,6 +1815,8 @@ INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, input
    return lines;
    
 }
+
+//Track the lines as the SFTs are shifted
 REAL4VectorSequence * trackLines(INT4Vector *lines, INT4Vector *binshifts, inputParamsStruct *params)
 {
    
@@ -1849,6 +1868,8 @@ INT4Vector * existingSFTs(REAL4Vector *tfdata, inputParamsStruct *params, INT4 n
    return sftexist;
    
 } /* existingSFTs() */
+
+//Untested (should not be used) function to list existing SFTs from multiple detectors
 INT4VectorSequence * existingMultiSFTs(REAL4VectorSequence *tfdata, inputParamsStruct *params, INT4 numfbins, INT4 numffts)
 {
    
@@ -1869,6 +1890,8 @@ INT4VectorSequence * existingMultiSFTs(REAL4VectorSequence *tfdata, inputParamsS
    return sftexist;
    
 } /* existingMultiSFTs() */
+
+//Untested (should not be used) function to combine the existing SFTs from multiple detectors
 INT4Vector * combineExistingMultiSFTs(INT4VectorSequence *input)
 {
    
@@ -1986,7 +2009,7 @@ void tfWeightMeanSubtract(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector 
    INT4 ii, jj;
     
    INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
-   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);     //Number of frequency bins
+   INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);                    //Number of frequency bins
    
    REAL4Vector *antweightssq = XLALCreateREAL4Vector(numffts);
    REAL4Vector *rngMeanssq = XLALCreateREAL4Vector(numffts);
@@ -2209,7 +2232,7 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 
 
 //////////////////////////////////////////////////////////////
-// Measure of the average noise power in each 2st FFT frequency bin  -- 
+// Measure of the average noise power in each 2st FFT frequency bin
 void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization)
 {
    
@@ -2217,9 +2240,9 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    REAL8 invsumofweights = 0.0;
    REAL8 sumofweights = 0.0;
    
-   numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);   //Number of frequency bins
-   numffts = (INT4)antweights->length; //Number of FFTs
-   numfprbins = (INT4)floor(numffts*0.5)+1;     //number of 2nd fft frequency bins
+   numfbins = (INT4)(round(input->fspan*input->Tcoh)+1);    //Number of frequency bins
+   numffts = (INT4)antweights->length;                      //Number of FFTs
+   numfprbins = (INT4)floor(numffts*0.5)+1;                 //number of 2nd fft frequency bins
    
    //Initialize the random number generator
    gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -2433,66 +2456,67 @@ REAL4Vector * simpleTFdata(REAL8 fsig, REAL8 period, REAL8 moddepth, REAL8 Tcoh,
 
 
 
-
+//Convert the gengetopt_args_info struct into something less complicated and select appropriate IFO(s)
 INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_info args_info)
 {
    
    INT4 ii;
    
    //Defaults given or option passed
-   params->Tcoh = args_info.Tcoh_arg;
-   params->SFToverlap = args_info.SFToverlap_arg;
-   params->Pmin = args_info.Pmin_arg;
-   params->blksize = args_info.blksize_arg;
-   params->dopplerMultiplier = args_info.dopplerMultiplier_arg;
-   params->mintemplatelength = args_info.minTemplateLength_arg;
-   params->maxtemplatelength = args_info.maxTemplateLength_arg;
-   params->ihsfar = args_info.ihsfar_arg;
-   params->templatefar = args_info.tmplfar_arg;
-   params->log10templatefar = log10(params->templatefar);
-   params->ULmindf = args_info.ULminimumDeltaf_arg;
-   params->ULmaxdf = args_info.ULmaximumDeltaf_arg;
-   params->ihsfactor = args_info.ihsfactor_arg;
-   params->rootFindingMethod = args_info.BrentsMethod_given;
-   params->antennaOff = args_info.antennaOff_given;
-   params->noiseWeightOff = args_info.noiseWeightOff_given;
-   params->calcRthreshold = args_info.calcRthreshold_given;
-   params->markBadSFTs = args_info.markBadSFTs_given;
-   params->FFTplanFlag = args_info.FFTplanFlag_arg;
-   params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;
-   params->fastchisqinv = args_info.fastchisqinv_given;
-   params->useSSE = args_info.useSSE_given;
-   params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;
-   params->validateSSE = args_info.validateSSE_given;
+   params->Tcoh = args_info.Tcoh_arg;                                            //SFT coherence time (s)
+   params->SFToverlap = args_info.SFToverlap_arg;                                //SFT overlap (s)
+   params->Pmin = args_info.Pmin_arg;                                            //Minimum period to search (s)
+   params->blksize = args_info.blksize_arg;                                      //Block size of SFT running median (bins)
+   params->dopplerMultiplier = args_info.dopplerMultiplier_arg;                  //Velocity of Earth multiplier
+   params->mintemplatelength = args_info.minTemplateLength_arg;                  //Minimum number of template weights (pixels)
+   params->maxtemplatelength = args_info.maxTemplateLength_arg;                  //Maximum number of template weights (pixels)
+   params->ihsfar = args_info.ihsfar_arg;                                        //IHS false alarm rate
+   params->templatefar = args_info.tmplfar_arg;                                  //Template false alarm rate
+   params->log10templatefar = log10(params->templatefar);                        //log_10(template FAR)
+   params->ULmindf = args_info.ULminimumDeltaf_arg;                              //Upper limit minimum modulation depth (Hz)
+   params->ULmaxdf = args_info.ULmaximumDeltaf_arg;                              //Upper limit maximum modulation depth (Hz)
+   params->ihsfactor = args_info.ihsfactor_arg;                                  //IHS folding factor
+   params->rootFindingMethod = args_info.BrentsMethod_given;                     //Use Brent's method (default = 0)
+   params->antennaOff = args_info.antennaOff_given;                              //Antenna pattern off (default = 0)
+   params->noiseWeightOff = args_info.noiseWeightOff_given;                      //Noise weighting off (default = 0)
+   params->calcRthreshold = args_info.calcRthreshold_given;                      //Directly calculate the R threshold value (defualt = 0)
+   params->markBadSFTs = args_info.markBadSFTs_given;                            //Mark bad SFTs (default = 0)
+   params->FFTplanFlag = args_info.FFTplanFlag_arg;                              //FFTW plan flag
+   params->printAllULvalues = args_info.allULvalsPerSkyLoc_given;                //Output all UL values at each sky location (default = 0)
+   params->fastchisqinv = args_info.fastchisqinv_given;                          //Use faster chi-sq inversion (default = 0)
+   params->useSSE = args_info.useSSE_given;                                      //Use SSE optimized functions (dafualt = 0)
+   params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;      //Follow up outliers outside of UL range (default = 0)
+   params->validateSSE = args_info.validateSSE_given;                            //Validate SSE functions (default = 0)
    
    //Non-default arguments
-   if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;
+   if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)
    else params->Tobs = 10*168*3600;
-   if (args_info.fmin_given) params->fmin = args_info.fmin_arg;
+   if (args_info.fmin_given) params->fmin = args_info.fmin_arg;                  //Minimum frequency to search (Hz)
    else params->fmin = 99.9;
-   if (args_info.fspan_given) params->fspan = args_info.fspan_arg;
+   if (args_info.fspan_given) params->fspan = args_info.fspan_arg;               //Maximum frequency to search (Hz)
    else params->fspan = 0.2;
-   if (args_info.t0_given) params->searchstarttime = args_info.t0_arg;
+   if (args_info.t0_given) params->searchstarttime = args_info.t0_arg;           //GPS start time of the search (s)
    else params->searchstarttime = 900000000.0;
-   if (args_info.Pmax_given) params->Pmax = args_info.Pmax_arg;
+   if (args_info.Pmax_given) params->Pmax = args_info.Pmax_arg;                  //Maximum period to search (s)
    else params->Pmax = 0.2*(params->Tobs);
-   if (args_info.dfmin_given) params->dfmin = args_info.dfmin_arg;
+   if (args_info.dfmin_given) params->dfmin = args_info.dfmin_arg;               //Minimum modulation depth to search (Hz)
    else params->dfmin = 0.5/(params->Tcoh);
-   if (args_info.dfmax_given) params->dfmax = args_info.dfmax_arg;
+   if (args_info.dfmax_given) params->dfmax = args_info.dfmax_arg;               //Maximum modulation depth to search (Hz)
    else params->dfmax = maxModDepth(params->Pmax, params->Tcoh);
-   if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;
+   if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
    else params->ULfmin = params->fmin;
-   if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;
+   if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)
    else params->ULfspan = params->fspan;
-   if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;
+   if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;         //Keep only top X IHS candidates
    else params->keepOnlyTopNumIHS = -1;
-   if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;
-   if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;
+   if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;  //Simple band rejection (default off)
+   if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;                     //Line detection
    
    //Settings for IHS FOM
-   if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;
+   //Exit with error if neither is chosen
+   if (args_info.ihsfomfar_given) params->ihsfomfar = args_info.ihsfomfar_arg;   //IHS figure of merit false alarm rate
    else params->ihsfomfar = 0.0;
-   if (args_info.ihsfom_given) params->ihsfom = args_info.ihsfom_arg;
+   if (args_info.ihsfom_given) params->ihsfom = args_info.ihsfom_arg;            //IHS figure of merit threshold value
    else params->ihsfom = 0.0;
    if ((params->ihsfom!=0.0 && params->ihsfomfar!=0.0) || (params->ihsfom==0.0 && params->ihsfomfar==0.0)) {
       fprintf(stderr, "%s: You must choose either the IHS FOM FAR argument or the IHS FOM argument.\n", __func__);
@@ -2565,18 +2589,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr,"WARNING! Adjusting input minimum modulation depth to 1/2 a frequency bin!\n");
    }
    
-   //Print to log file and stderr the parameters of the search
-   fprintf(LOG,"Tobs = %f sec\n",params->Tobs);
-   fprintf(LOG,"Tcoh = %f sec\n",params->Tcoh);
-   fprintf(LOG,"SFToverlap = %f sec\n",params->SFToverlap);
-   fprintf(LOG,"fmin = %f Hz\n",params->fmin);
-   fprintf(LOG,"fspan = %f Hz\n",params->fspan);
-   fprintf(LOG,"Pmin = %f s\n",params->Pmin);
-   fprintf(LOG,"Pmax = %f s\n",params->Pmax);
-   fprintf(LOG,"dfmin = %f Hz\n",params->dfmin);
-   fprintf(LOG,"dfmax = %f Hz\n",params->dfmax);
-   fprintf(LOG,"Running median blocksize = %d\n",params->blksize);
-   fprintf(LOG,"FFT plan flag = %d\n", params->FFTplanFlag);
+   //Print to stderr the parameters of the search
    fprintf(stderr,"Tobs = %f sec\n",params->Tobs);
    fprintf(stderr,"Tcoh = %f sec\n",params->Tcoh);
    fprintf(stderr,"SFToverlap = %f sec\n",params->SFToverlap);
@@ -2588,15 +2601,9 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    fprintf(stderr,"dfmax = %f Hz\n",params->dfmax);
    fprintf(stderr,"Running median blocksize = %d\n",params->blksize);
    fprintf(stderr,"FFT plan flag = %d\n", params->FFTplanFlag);
-   if (args_info.ihsfomfar_given) {
-      fprintf(LOG,"IHS FOM FAR = %f\n", params->ihsfomfar);
-      fprintf(stderr,"IHS FOM FAR = %f\n", params->ihsfomfar);
-   } else {
-      fprintf(LOG,"IHS FOM = %f\n", params->ihsfom);
-      fprintf(stderr,"IHS FOM = %f\n", params->ihsfom);
-   }
+   if (args_info.ihsfomfar_given) fprintf(stderr,"IHS FOM FAR = %f\n", params->ihsfomfar);
+   else fprintf(stderr,"IHS FOM = %f\n", params->ihsfom);
 
-   
    //Root finding method
    if (args_info.BrentsMethod_given == 0) {
       fprintf(LOG,"Using Newton's method for root finding.\n");
@@ -2606,7 +2613,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr,"Using Brent's method for root finding.\n");
    }
    
-   //SFT type MFD or vladimir
+   //SFT type MFD or vladimir (Vladimir's SFT generation program has a different normalization factor than Makefakedata)
    params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
    if (params->sftType==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*(params->sftType)));
@@ -2624,7 +2631,8 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       XLAL_ERROR(XLAL_EINVAL);
    }
    
-   //Interferometer
+   //Interferometer from the IFO given parameter. Could be more than 1, but this functionality is not fully implemented, so we exit with
+   //an error if this is done
    params->numofIFOs = args_info.IFO_given;
    if (params->numofIFOs>1) {
       fprintf(stderr, "%s: Only one IFO is allowed at the present time.\n", __func__);
