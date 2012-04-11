@@ -140,11 +140,10 @@ typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
     fputs(" STACK_FAULT",stderr);      \
   PRINT_FPU_EXCEPTION_MASK(fpstat)
 
-static char* myultoa(unsigned long n) {
-  static char buf[12];
+static char* myultoa(unsigned long n, char*buf, size_t size) {
   int i;
-  memset(buf,'\0',sizeof(buf));
-  for(i=sizeof(buf)-1; i>=0; i++) {
+  memset(buf,'\0',size);
+  for(i=size-1; i>=0; i++) {
     buf[i] = n % 10 + '0';
     n /= 10;
     if (!n)
@@ -155,15 +154,14 @@ static char* myultoa(unsigned long n) {
   return buf;
 }
 
-static char* myltoa(long n) {
-  static char buf[12];
+static char* myltoa(long n, char*buf, size_t size) {
   int i, m=0;
-  memset(buf,'\0',sizeof(buf));
+  memset(buf,'\0',size);
   if (n<0) {
     n = -n;
     m = -1;
   }
-  for(i=sizeof(buf)-1; i>=0; i++) {
+  for(i=size-1; i>=0; i++) {
     buf[i] = n % 10 + '0';
     n /= 10;
     if (!n)
@@ -366,6 +364,7 @@ static void sighandler(int sig,
 static void sighandler(int sig)
 #endif /* __GLIBC__ */
 {
+  static char buf[32];
   static int killcounter = 0;
 #ifdef __GLIBC__
   /* for glibc stacktrace */
@@ -378,7 +377,7 @@ static void sighandler(int sig)
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
   fputs("\n-- signal handler called: signal ",stderr);
-  fputs(myultoa(sig), stderr);
+  fputs(myultoa(sig, buf, sizeof(buf)), stderr);
   fputs("\n",stderr);
 
   /* ignore TERM interrupts once  */
@@ -398,7 +397,7 @@ static void sighandler(int sig)
   if ( sig == SIGFPE ) {
     fpuw_t fpstat = uc->uc_mcontext.fpregs->FP_SW;
     fputs("FPU status word: ",stderr);
-    fputs(myultoa(fpstat), stderr);
+    fputs(myultoa(fpstat, buf, sizeof(buf)), stderr);
     fputs(", flags: ",stderr);
     PRINT_FPU_STATUS_FLAGS(fpstat);
     fputs("\n",stderr);
@@ -406,21 +405,22 @@ static void sighandler(int sig)
 #endif /* __X86__ */
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
-  fputs(myltoa(nostackframes), stderr);
+  fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
   fputs(" stack frames obtained for this thread:\n", stderr);
 #if defined(__i386__) && defined(EXT_STACKTRACE)
   /* overwrite sigaction with caller's address */
-  stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
+  // stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
   backtracesymbols = backtrace_symbols(stackframes, nostackframes);
   if(backtracesymbols != NULL) {
     backtrace_symbols_fd_plus(backtracesymbols, nostackframes, fileno(stderr));
     free(backtracesymbols);
+  } else
+#endif /* __X86__ */
+  {
+    fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
+    backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
   }
   fputs("\nEnd of stcaktrace\n",stderr);
-#else /* __X86__ */
-  fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
-  backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
-#endif /* __X86__ */
 #endif /* __GLIBC__ */
 
   if (global_status)
@@ -430,12 +430,12 @@ static void sighandler(int sig)
     fputs(" at ", stderr);
     fputs(global_status->file, stderr);
     fputs(":", stderr);
-    fputs(myultoa(global_status->line), stderr);
+    fputs(myultoa(global_status->line, buf, sizeof(buf)), stderr);
     fputs("\n", stderr);
     if (!(global_status->statusPtr)) {
       const char *p=global_status->statusDescription;
       fputs("At lowest level status code = ", stderr);
-      fputs(myltoa(global_status->statusCode), stderr);
+      fputs(myltoa(global_status->statusCode, buf, sizeof(buf)), stderr);
       fputs(": ", stderr);
       fputs(p?p:"NO LAL ERROR REGISTERED", stderr);
       fputs("\n", stderr);
