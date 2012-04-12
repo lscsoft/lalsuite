@@ -135,7 +135,7 @@ LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables
   return LALInferenceGetItem(vars,name)->type;
 }
 
-LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx)
+INT4 LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx)
 /* Returns type of the i-th entry, */
 /* where  1 <= idx <= dimension. */
 {
@@ -1416,7 +1416,7 @@ int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt) {
 
   tree->npts += 1;
   tree->pts = XLALRealloc(tree->pts, tree->npts*sizeof(REAL8 *));
-  
+
   tree->pts[tree->npts-1] = XLALMalloc(tree->ndim*sizeof(REAL8));
 
   memcpy(tree->pts[tree->npts-1], pt, tree->ndim*sizeof(REAL8));

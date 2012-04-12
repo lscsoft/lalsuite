@@ -196,7 +196,7 @@ INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 /** Get the LALInferenceVariableType of the \param idx -th item in the \param vars
  * Indexing starts at 1
  */
-LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx);
+INT4 LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx);
 
 /** Get the LALInferenceVariableType of the parameter named \param name in \param vars */
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name);

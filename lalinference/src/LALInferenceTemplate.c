@@ -572,9 +572,9 @@ void LALInferenceTemplatePSTRD(LALInferenceIFOData *IFOdata)
 	//template.distance = exp(distance)*LAL_PC_SI*1.e6;
 	template.distance = LAL_PC_SI*1.e6;
 	int order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
-	template.order=order; //check order is set correctly
+	template.order= (LALPNOrder) order; //check order is set correctly
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT")){
-		template.approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+		template.approximant = *(Approximant*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
 		if(template.approximant!=PhenSpinTaylorRD) {
 			XLALPrintError("Error, LALInferenceTemplatePSTRD can only use PhenSpinTaylorRD approximant!");
 			XLAL_ERROR_VOID(XLAL_EDATA);
@@ -753,8 +753,8 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   params.nStartPad   = 0;
   params.nEndPad     = 0;
   params.massChoice  = m1Andm2;
-  params.approximant = approximant;  /*  TaylorT1, ...   */
-  params.order       = order;        /*  Newtonian, ...  */
+  params.approximant = (Approximant) approximant;  /*  TaylorT1, ...   */
+  params.order       = (LALPNOrder) order;        /*  Newtonian, ...  */
   params.fLower      = IFOdata->fLow * 0.9;
   params.fCutoff     = (IFOdata->freqData->data->length-1) * IFOdata->freqData->deltaF;  /* (Nyquist freq.) */
   params.tSampling   = 1.0 / deltaT;
@@ -1472,8 +1472,8 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 	CoherentGW          waveform;
 	SimInspiralTable    injParams;
 	PPNParamStruc       ppnParams;
-	Approximant			approximant=0;
-	LALPNOrder			order=0;
+	Approximant			approximant=(Approximant)0;
+	LALPNOrder			order=(LALPNOrder)0;
 	CHAR				approximant_order[LIGOMETA_WAVEFORM_MAX];
 	unsigned long				i;
 	int					forceTimeLocation;
@@ -1498,14 +1498,14 @@ void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata)
 	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
-		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+		approximant = *(Approximant*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
 	else {
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
 	  XLAL_ERROR_VOID(XLAL_EDATA);
 	}
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_PNORDER"))
-		order = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
+		order = *(LALPNOrder*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_PNORDER");
 	else {
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_PNORDER\" parameter not provided!\n");
 	  XLAL_ERROR_VOID(XLAL_EDATA);
@@ -1795,7 +1795,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /********************************************************************************************/
 {
 	
-	Approximant			approximant=0;
+	Approximant			approximant= (Approximant) 0;
 	int			order=0;
   int amporder=0;
 
@@ -1816,7 +1816,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
-		approximant = *(INT4*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
+		approximant = *(Approximant*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
 	else {
 	  XLALPrintError(" ERROR in templateLALGenerateInspiral(): (INT4) \"LAL_APPROXIMANT\" parameter not provided!\n");
 	  XLAL_ERROR_VOID(XLAL_EDATA);
