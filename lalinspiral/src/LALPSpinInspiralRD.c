@@ -995,7 +995,7 @@ int XLALPSpinInspiralRDFreqDom(
     REAL4Vector *tsigR4=XLALCreateREAL4Vector(nbins);
     for (idx=0;idx<nbins;idx++) tsigR4->data[idx]=(REAL4) tsignalvec->data[idx];
     XLALDestroyREAL8Vector(tsignalvec);
-    XLALSimInspiralREAL4WaveTaper(tsigR4, 3);
+    XLALSimInspiralREAL4WaveTaper(tsigR4, (LALSimInspiralApplyTaper) 3);
 
     forwPlan = XLALCreateForwardREAL4FFTPlan(nbins, 0);
     if (forwPlan == NULL) {
@@ -2528,7 +2528,7 @@ static int XLALPSpinInspiralRDEngine(
   /* Here there used to be a check that OmegaRD is smaller than Nyquist, it
      has been taken out */
 
-  params->ampOrder = 1;
+  params->ampOrder = (LALPNOrder) 1;
   if (params->distance > 0.)
     amp22ini = -2.0 * params->mu * LAL_MRSUN_SI / params->distance * sqrt(16. * LAL_PI / 5.);
   else

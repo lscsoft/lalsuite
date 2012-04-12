@@ -578,7 +578,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
   }
 
   if (params->ampOrder) {
-    params->ampOrder = 0;
+    params->ampOrder = (LALPNOrder) 0;
     snprintf(message, 256, "WARNING: Amp Order has been reset to %d", params->ampOrder);
     XLALPrintInfo(message);
   }
