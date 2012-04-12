@@ -1477,7 +1477,7 @@ XLALDopplerCoordinateHelpAll ( void )
   /* get maximal field-length of coordinate names */
   for ( i = 0; i < DOPPLERCOORD_LAST; i ++ )
     {
-      if ( (name = XLALDopplerCoordinateName ( i )) == NULL ) {
+      if ( (name = XLALDopplerCoordinateName (  (DopplerCoordinateID) i )) == NULL ) {
 	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
       maxlen = MYMAX ( maxlen, strlen(name) );
@@ -1487,10 +1487,10 @@ XLALDopplerCoordinateHelpAll ( void )
   /* assemble help-lines */
   for ( i = 0; i < DOPPLERCOORD_LAST; i ++ )
     {
-      if ( (name = XLALDopplerCoordinateName ( i )) == NULL ) {
+      if ( (name = XLALDopplerCoordinateName ( (DopplerCoordinateID) i )) == NULL ) {
 	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
-      if ( (help = XLALDopplerCoordinateHelp ( i )) == NULL ) {
+      if ( (help = XLALDopplerCoordinateHelp ( (DopplerCoordinateID) i )) == NULL ) {
 	XLAL_ERROR_NULL ( XLAL_EINVAL );
       }
 
