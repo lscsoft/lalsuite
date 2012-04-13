@@ -551,7 +551,8 @@ def slide_sanity(config, playOnly = False):
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
-    dax = False, tmpltbankCache = None, local_exec_dir = None):
+    dax = False, tmpltbankCache = None, local_exec_dir = None, \
+    data_checkpoint = False):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -600,7 +601,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "ligolw_add", \
         "ligolw_cafe", "thinca", "thinca-1", "thinca-2", "thinca-slide", \
         "trigbank", "sire", "sire-inj", "coire", "coire-1", "coire-2", \
-        "coire-inj", "condor-max-jobs"]
+        "coire-inj", "condor-max-jobs"] 
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
@@ -722,6 +723,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
     hipeCommand += " --" + item[0] + " " + item[1]
+  # describes the ckpt if statement
+  if data_checkpoint: 
+    hipeCommand += " --data-checkpoint "
 
   def test_and_add_hipe_arg(hipeCommand, hipe_arg):
     if config.has_option("hipe-arguments",hipe_arg):
