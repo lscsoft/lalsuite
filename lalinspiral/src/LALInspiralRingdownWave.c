@@ -643,7 +643,6 @@ INT4 XLALGenerateWaveDerivatives (
   return errcode;
 }
 
-/* <lalVerbatim file="XLALGenerateQNMFreqCP">  */
 INT4 XLALGenerateQNMFreq(
 	COMPLEX8Vector		*modefreqs,
 	InspiralTemplate	*params,
@@ -1128,7 +1127,6 @@ INT4 XLALInspiralHybridAttachRingdownWave (
       return errcode;
 }
 
-/* <lalVerbatim file="XLALInspiralAttachRingdownWaveCP">  */
 INT4 XLALInspiralAttachRingdownWave (
       REAL4Vector 	*Omega,
       REAL4Vector 	*signal1,

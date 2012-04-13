@@ -712,7 +712,7 @@ UINT4 LALInferenceCheckPositiveDefinite(
 						  gsl_matrix       *matrix,
 						  UINT4            dim
 						  )
-{/* </lalVerbatim> */
+{
 	gsl_matrix  *m     = NULL;
 	gsl_vector  *eigen = NULL;
 	gsl_eigen_symm_workspace *workspace = NULL;
@@ -749,7 +749,6 @@ UINT4 LALInferenceCheckPositiveDefinite(
 }
 
 /* Reference: http://www.mail-archive.com/help-gsl@gnu.org/msg00631.html*/
-/*  <lalVerbatim file="XLALMultiNormalDeviatesCP"> */
 void
 XLALMultiNormalDeviates( 
 						REAL4Vector *vector, 
@@ -757,7 +756,7 @@ XLALMultiNormalDeviates(
 						UINT4 dim, 
 						RandomParams *randParam
 						)
-{/* </lalVerbatim> */
+{
 	UINT4 i=0;
 	gsl_matrix *work=NULL;
 	gsl_vector *result = NULL;
@@ -810,7 +809,7 @@ XLALMultiStudentDeviates(
 						 UINT4         n,
 						 RandomParams *randParam
 						 )
-{ /* </lalVerbatim> */
+{
 	REAL4Vector *dummy=NULL;
 	REAL4 chi=0.0, factor;
 	UINT4 i;
