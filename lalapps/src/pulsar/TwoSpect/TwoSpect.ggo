@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.18"
+version "1.1.19"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -77,5 +77,5 @@ option "validateSSE"   - "Validate the use of SSE functions" flag off hidden
 option "ULoff"    - "Turn off upper limits computation" flag off hidden
 option "printSFTtimes" - "Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs" flag off hidden
 option "printUsedSFTtimes"  - "Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests" flag off hidden
-
+option "randSeed" - "Random seed value" int default="0" optional hidden
 

@@ -922,17 +922,17 @@ void sort_float_ascend(REAL4Vector *vector)
 
 
 //Sample a number (sampleSize) of values from a REAL4Vector (input) randomly
-REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
+REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rng)
 {
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
    if (output==NULL) {
@@ -943,7 +943,7 @@ REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
    INT4 ii;
    for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
    
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return output;
    
@@ -951,17 +951,17 @@ REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
 
 //Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
 //Needs this numberofvectors limit because of the IHS algorithm
-REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize)
+REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    //gsl_rng_set(rng, 0);
    
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
@@ -973,7 +973,7 @@ REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numbero
    INT4 ii;
    for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
    
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return output;
    
@@ -982,17 +982,17 @@ REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numbero
 //Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
 //Needs this numberofvectors limit because of the IHS algorithm
 //This function doesn't accept zeros in the samples
-REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize)
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    //gsl_rng_set(rng, 0);
    
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
@@ -1009,7 +1009,7 @@ REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *inp
       }
    }
    
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return output;
    

@@ -1107,6 +1107,11 @@ inputParamsStruct * new_inputParams(INT4 numofIFOs)
       fprintf(stderr,"%s: XLALMalloc(%zu) failed.", __func__, numofIFOs*sizeof(LALDetector));
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
+   input->rng = gsl_rng_alloc(gsl_rng_mt19937);
+   if (input->rng==NULL) {
+      fprintf(stderr,"%s: gsl_rng_alloc() failed.", __func__);
+      XLAL_ERROR_NULL(XLAL_ENOMEM);
+   }
    
    return input;
 
@@ -1120,6 +1125,7 @@ void free_inputParams(inputParamsStruct *input)
    
    XLALFree((CHAR*)input->sftType);
    XLALFree((LALDetector*)input->det);
+   gsl_rng_free(input->rng);
    XLALFree((inputParamsStruct*)input);
 
 } /* free_inputParams() */
@@ -2245,15 +2251,16 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    numfprbins = (INT4)floor(numffts*0.5)+1;                 //number of 2nd fft frequency bins
    
    //Initialize the random number generator
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    //gsl_rng_set(rng, 0); //comment this out
+   gsl_rng *rng = input->rng;
    
    //Set up for making the PSD
    memset(aveNoise->data, 0, sizeof(REAL4)*aveNoise->length);
@@ -2406,7 +2413,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    XLALDestroyREAL4Vector(aveNoiseInTime);
    XLALDestroyREAL4Vector(rngMeansOverBand);
    XLALDestroyREAL8Vector(multiplicativeFactor);
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
 
 } /* ffPlaneNoise() */
 
@@ -2487,6 +2494,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->useSSE = args_info.useSSE_given;                                      //Use SSE optimized functions (dafualt = 0)
    params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;      //Follow up outliers outside of UL range (default = 0)
    params->validateSSE = args_info.validateSSE_given;                            //Validate SSE functions (default = 0)
+   params->randSeed = args_info.randSeed_arg;                                    //Seed value for random number generator
+   
+   //Set the random number generator with the given seed
+   gsl_rng_set(params->rng, params->randSeed);
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)

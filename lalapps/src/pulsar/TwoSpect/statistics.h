@@ -25,9 +25,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 
-REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize);
-REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
-REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
+REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rng);
+REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng);
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng);
 
 REAL8 calcMeanD(REAL8Vector *vector);
 REAL8 calcStddevD(REAL8Vector *vector);

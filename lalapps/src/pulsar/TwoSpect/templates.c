@@ -201,14 +201,15 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    }
    
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
+   gsl_rng *rng = inputParams->rng;
    
    
    //And now find the root
@@ -303,7 +304,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    //Cleanup
    gsl_root_fsolver_free(s1);
    gsl_root_fdfsolver_free(s0);
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    
 } /* numericFAR() */
@@ -462,15 +463,16 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       INT4 errcode1 = 0;//, errcode2 = 0;
       REAL8 probslope=0.0, tempprob, c1;//, tempprob2, c2, c = 0.0, logprobave = 0.0;
       
-      gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+      /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
       if (rng==NULL) {
          fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
          XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
-      gsl_rng_set(rng, 0);
+      gsl_rng_set(rng, 0); */
       //srand(time(NULL));
       //UINT8 randseed = rand();
       //gsl_rng_set(rng, randseed);
+      gsl_rng *rng = params->rng;
       
       REAL8 lowerend = 0.0;
       REAL8 upperend = Rpr;
@@ -516,7 +518,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       XLALDestroyREAL8Vector(probvals);
       XLALDestroyREAL8Vector(cvals);
       
-      gsl_rng_free(rng);
+      //gsl_rng_free(rng);
       
       *errcode = errcode1;
       

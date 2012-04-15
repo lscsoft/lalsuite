@@ -338,15 +338,16 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    trials += rows; */
    
    //Initialize random number generator
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_VOID(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    //gsl_rng_set(rng, 0);
+   gsl_rng *rng = params->rng;
    
    //Allocations for IHS values for the number of trials
    REAL4Vector *noise = XLALCreateREAL4Vector(aveNoise->length);
@@ -419,7 +420,7 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    XLALDestroyREAL4Vector(noise);
    XLALDestroyREAL4Vector(ihsvector);
    XLALDestroyINT4Vector(markedharmonics);
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    //Create a fake vector with the same average value in each bin = 1.0
    REAL4Vector *FbinMean = XLALCreateREAL4Vector(trials);
@@ -549,7 +550,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             //FILE *tworowvals = fopen("./output/tworowexpectedsample.dat","w");
             
             //We sample the tworows sequence (up to the number of rows-1) without accepting any zeros.
-            sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
+            sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
             
             //And then calculate the mean value
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
@@ -705,7 +706,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
             //FILE *row360expect = NULL;
             //if (ii==360) row360expect = fopen("./output/row360expect.dat","w");
-            sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000);
+            sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
             
             averageval = (REAL8)sampledtempihsvals->length;
