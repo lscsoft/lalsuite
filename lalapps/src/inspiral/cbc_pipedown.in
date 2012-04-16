@@ -286,6 +286,17 @@ if cp.has_section('repop_coinc'):
       repopcp.set('repop_coinc', repopopt, repopval)
     repop_coinc_jobs.append( (repop_coinc_tag, inspiral.RepopCoincJob(repopcp)) )
 
+# ditto dbinjfind
+dbinjfind_jobs = []
+if cp.has_section('dbinjfind'):
+  for dbinjfind_tag in cp.options('dbinjfind'):
+    dbinjcp = copy.deepcopy(cp)
+    dbinjcp.remove_section('dbinjfind')
+    dbinjcp.add_section('dbinjfind')
+    for dbinjopt, dbinjval in cp.items(dbinjfind_tag):
+      dbinjcp.set('dbinjfind', dbinjopt, dbinjval)
+    dbinjfind_jobs.append( (dbinjfind_tag, inspiral.DBInjFindJob(dbinjcp)) )
+
 # all other jobs: all the nodes share the same static options for these
 dbsimplify_job = inspiral.DBSimplifyJob(cp)
 dbaddinj_job = inspiral.DBAddInjJob(cp)
@@ -312,6 +323,8 @@ injfind_job.set_sub_file( '.'.join([ basename, 'injfind', 'sub' ]) )
 comp_durs_job.set_sub_file( '.'.join([ basename, 'compute_durations', 'sub' ]) )
 for repoptag, repopjob in repop_coinc_jobs:
   repopjob.set_sub_file( '.'.join([ basename, repoptag, 'repop_coinc', 'sub' ]) )
+for dbinjtag, dbinjjob in dbinjfind_jobs:
+  dbinjjob.set_sub_file( '.'.join([ basename, dbinjtag, 'dbinjfind', 'sub' ]) )
 cluster_job.set_sub_file( '.'.join([ basename, 'cluster_coincs', 'sub' ]) )
 ucfar_job.set_sub_file( '.'.join([ basename, 'uncombined', 'cfar', 'sub' ]) )
 ccfar_job.set_sub_file( '.'.join([ basename, 'combined', 'cfar', 'sub' ]) )
@@ -702,6 +715,27 @@ for result_db in result_dbs_cache:
     dbsimplify2_node.add_parent( sim2fulldb_node )
     dag.add_node( dbsimplify2_node )
 
+    print "\tsetting up dbinjfind node to add exact/nearby definitions..."
+
+    # set dbinjfind node options
+    last_node = dbsimplify2_node
+    for dbinjfind_tag, dbinjfind_job in dbinjfind_jobs:
+        dbinjfind_node = inspiral.DBInjFindNode( dbinjfind_job )
+        dbinjfind_node.set_category('dbinjfind')
+        dbinjfind_node.set_tmp_space( tmp_space )
+        dbinjfind_node.set_input( result_db.path() )
+        dbinjfind_node.set_output( result_db.path() )
+
+        # set parent node
+        dbinjfind_node.add_parent( last_node )
+
+        dag.add_node( dbinjfind_node )
+        # update last node to be the last dbinjfind node
+        last_node = dbinjfind_node
+
+  else:
+    last_node = cluster_nodes[tag]
+
   ############################################################################
   # Setup a LigolwSqliteNode for putting the veto-segments file into the
   # database 
@@ -714,7 +748,7 @@ for result_db in result_dbs_cache:
   veto2sql_node.set_database( result_db.path() )
   
   # set parent node
-  veto2sql_node.add_parent( cluster_nodes[tag] )
+  veto2sql_node.add_parent( last_node )
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
     veto2sql_node.add_parent( dbsimplify2_node )
   
