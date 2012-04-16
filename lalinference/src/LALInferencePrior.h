@@ -152,6 +152,9 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
                                     char *name, LALInferenceVariableType type, 
                                     gsl_rng *rdm );
 
+/** Prior that is 1 everywhere in component mass space. */
+REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+
 /** Prior that is 1 everywhere. */
 REAL8 LALInferenceNullPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
 
