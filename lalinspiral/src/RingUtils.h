@@ -40,8 +40,8 @@
  * \f{equation}{
  *   r(t) = \left\{
  *   \begin{array}{ll}
- *     e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for \f$t\ge0\f$} \\
- *     0 & \mbox{for \f$t<0\f$}
+ *     e^{-\pi ft/Q}\cos(2\pi ft + \phi_0) & \mbox{for } t\ge0 \\
+ *     0 & \mbox{for } t<0
  *   \end{array}
  *   \right.
  * \f}

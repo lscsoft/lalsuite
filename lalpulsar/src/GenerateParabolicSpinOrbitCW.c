@@ -88,7 +88,7 @@ Using the triple-angle hyperbolic identity
 original cubic equation is then:
 \f{equation}{
 E = 3v_p\sin\omega + 2\sqrt{\frac{p}{3}}
-	\sinh\left(\mbox{\f$\frac{1}{3}\f$}\sinh^{-1}C\right) \;.
+	\sinh\left(\frac{1}{3}\sinh^{-1}C\right) \;.
 \f}
 To ease the calculation of \f$E\f$, we precompute the constant part
 \f$E_0=3v_p\sin\omega\f$ and the coefficient \f$\Delta E=2\sqrt{p/3}\f$.
@@ -127,7 +127,7 @@ it seems likely that \c REAL8 precision may not be sufficient to
 track the orbit accurately.  We estimate that numerical errors could
 cause the number of computed wave cycles to vary by
 \f[
-\Delta N \lessim f_0 T\epsilon\left[
+\Delta N \lesssim f_0 T\epsilon\left[
 	\sim6+\ln\left(|C|+\sqrt{|C|^2+1}\right)\right] \;,
 \f]
 where \f$|C|\f$ is the maximum magnitude of the variable \f$C\f$ over the

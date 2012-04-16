@@ -311,7 +311,7 @@ XLALFlatMetricCW ( gsl_matrix *gij, 			/**< [out] metric */
  *
  * The (dimensionless) parameter-space coordinates (and their order) are:
  * \f$\{ \kappa^X, \kappa^Y, \varpi_0, \varpi_1, \varpi_2, ...\}\f$, defined as
- * \f[ \kappa^i \equiv R_{ES} {2\pi \over c} f \, n^i\,, \f]
+ * \f[ \kappa^i \equiv R_{ES} \frac{2\pi}{c} f \, n^i\,, \f]
  * \f[ \varpi_s \equiv T^{s+1}\, 2\pi f^{(s)}\, \f]
  * where \f$R_{ES} = 1\,\textrm{AU} \sim 1.5\times10^{11}\f$ m is the orbital radius,
  * \f$f\f$ is the frequency, \f$n^i\f$ is the unit-vector pointing to a sky-location,

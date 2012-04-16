@@ -210,7 +210,7 @@ t/2)^2\approx(\pi/4)\Delta f\Delta t\f$, where \f$\Delta f\f$ is the
 frequency shift over the timestep.  Thus in general we would like to
 have
 \f[
-\Delta f \Delta t \lessim 2
+\Delta f \Delta t \lesssim 2
 \f]
 for our linear interpolation to be valid.  This routine helps out by
 setting the output parameter field <tt>params->dfdt</tt> equal to the

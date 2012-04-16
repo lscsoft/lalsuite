@@ -247,7 +247,7 @@ the quantity \f$N w(t_j)\f$ to allow time domain trunction of the inverse
 power spectrum.</dd>
 
 <dt><tt>REAL4Vector *wVec</tt></dt><dd> A vector used as workspace when truncating
-the imverse power spectrum in the time domain.</dd>
+the inverse power spectrum in the time domain.</dd>
 
 <dt><tt>COMPLEX8Vector *wtildeVec</tt></dt><dd> A vector which on exit from
 the data conditioning function contains the inverse of the strain one sided
@@ -256,21 +256,21 @@ data segment conditioned.</em> Typically all the data segments are conditioned
 using the same power spectrum, so this quantity is identical for all data
 segments. It contains:
 \f{equation}{
-\tilde{w}_k = {1}/{\ospsd}.
+\tilde{w}_k = {1}/{S}.
 \f}</dd>
 
 <dt><tt>REAL4Vector *tmpltPowerVec</tt></dt><dd> A vector which on exit from
 <tt>FindChirpSPData()</tt> or from <tt>FindChirpBCVData()</tt>
 contains the quantity
 \f{equation}{
-\mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{\ospsd}
+\mathtt{tmpltPower[k]} = \frac{f^{-7/3}}{S}
 \f}</dd>
 
 <dt><tt>REAL4Vector *tmpltPowerVecBCV</tt></dt><dd> A vector which on exit from
 <tt>FindChirpBCVData()</tt>
 contains the quantity
 \f{equation}{
-\mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{\ospsd}
+\mathtt{tmpltPowerBCV[k]} = \frac{f^{-1}}{S}
 \f}</dd>
 
 <dt><tt>REAL4 fLow</tt></dt><dd> The frequency domain low frequency cutoff

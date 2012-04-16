@@ -181,7 +181,7 @@ change of frequency in the (post\f${}^0\f$-)Newtonian approximation is
 \f$\tau=Gm_\mathrm{tot}/c^3\f$ is the relativistic minimum timescale of
 the system.  As explained in \ref GeneratePPNInspiral.c, for linear
 interpolation of the waveform to be accurate to within \f$\pi/2\f$
-radians, we would like \f$\Delta f\Delta t\lessim2\f$ over any sampling
+radians, we would like \f$\Delta f\Delta t\lesssim2\f$ over any sampling
 interval.  This implies that \f$\Delta
 t\approx\sqrt{2/\dot{f}_\mathrm{max}}\f$, or:
 \f[
@@ -209,7 +209,7 @@ start time, by the following formula:
 \f{eqnarray}{
 f_{0\mathrm{(start)}} & = & f_0\left( 1+\sum_{k=1}^N f_k t^k \right)
 	\;,\nonumber\\
-f_{j\mathrm{(start)}} & = & \frac{\sum_{k=j}^N{j \choose k}f_k t^{k-j}}
+f_{j\mathrm{(start)}} & = & \frac{\sum_{k=j}^N \binom{j}{k}f_k t^{k-j}}
 	{1+\sum_{k=1}^N f_k t^k} \;,\nonumber
 \f}
 where \f$t=t_\mathrm{start}-t_\mathrm{ref}\f$ is the time shift.  These

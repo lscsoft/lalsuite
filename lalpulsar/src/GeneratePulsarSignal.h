@@ -131,11 +131,11 @@ Note that these are the same approximations used by LALDemod().
 
 One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
 \f[
-\tilde{h}_k = e^{i\Phi_0}  { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 }
-{ 1 - e^{2\pi i (\kappa - k)} \over 1 - e^{2\pi i (\kappa - k)/N} }
+\tilde{h}_k = e^{i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
+\frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} }
 \\
-+ e^{-i\Phi_0}  { ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times) \over 2 }
-{ 1 - e^{-2\pi i (\kappa + k)} \over 1 - e^{-2\pi i (\kappa + k)/N} }
++ e^{-i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times)
+\frac{ 1 - e^{-2\pi i (\kappa + k)}}{ 1 - e^{-2\pi i (\kappa + k)/N} }
 \f]
 where \f$N\f$ is the number of time samples used to find the
 DFT (i.e., the sample rate times \f$T_{\rm sft}\f$), and
@@ -148,9 +148,9 @@ Note that the factor \f$e^{\pm 2\pi i k}\f$ in the numerators of the equation fo
 equals 1.  Furthermore, for \f$0 < \kappa < N/2\f$ and \f$|\kappa - k| << N\f$ the first term
 dominates and can be Taylor expanded to give:
 \f[
-\tilde{h}_k = N e^{i\Phi_0} { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 }
-\left [ \, { {\rm sin} (2\pi\kappa) \over 2 \pi (\kappa - k) } \,
-+ \, i { 1 - {\rm cos} (2\pi\kappa) \over 2 \pi (\kappa - k) } \, \right ]
+\tilde{h}_k = N e^{i\Phi_0} \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
+\left [ \, \frac{ {\rm sin} (2\pi\kappa)}{2 \pi (\kappa - k) } \,
++ \, i \frac{ 1 - {\rm cos} (2\pi\kappa)}{2 \pi (\kappa - k) } \, \right ]
 \f]
 Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
 \f$e^{i\Phi_0} = Q_{\alpha}^*\f$ used by LALDemod.

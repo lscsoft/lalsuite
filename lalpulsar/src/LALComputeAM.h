@@ -134,7 +134,7 @@ typedef struct tagAMCoeffsParams
  * \f}
  * and the noise-weighted atenna-functions \f$\widehat{a}_{X\alpha} = \sqrt{w_{X\alpha}}\,a_{X\alpha}\f$,
  * \f$\widehat{b}_{X\alpha} = \sqrt{w_{X\alpha}}\,b_{X\alpha}\f$, and noise-weights
- * \f$w_{X\alpha} \equiv {S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
+ * \f$w_{X\alpha} \equiv S^{-1}_{X\alpha}/{\mathcal{S}^{-1}}\f$.
  *
  * \note One reason for storing the un-normalized \a Ad, \a Bd, \a Cd and the normalization-factor \a Sinv_Tsft separately
  * is that the former are of order unity, while \a Sinv_Tsft is very large, and it has numerical advantages for parameter-estimation

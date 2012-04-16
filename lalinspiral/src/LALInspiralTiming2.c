@@ -33,7 +33,7 @@
 
 Given \f$t\f$ and \f$v\f$ this module computes the quantity
 \f{equation}{
-\c tofv = t - t_C - t_N(v) \sum t_k v^k,
+tofv = t - t_C - t_N(v) \sum t_k v^k,
 \f}
 where the coefficients \f$t_k\f$ and the Newtonian value \f$t_N\f$ are all defined
 in Table.\tableref{table_flux}.

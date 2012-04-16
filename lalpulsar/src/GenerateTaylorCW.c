@@ -68,7 +68,7 @@ reasonable.  As a guideline, we want to be able to determine the
 instantaneous wave phase accurately to within a fraction of a cycle.
 For functions that compute the phase by linear interpolation of
 <tt>output->phi</tt>, this means sampling on timescales \f$\Delta
-t\lessim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}\f$, where \f$T\f$ is
+t\lesssim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}\f$, where \f$T\f$ is
 the duration of the waveform.  More precisely, the largest deviation
 from linear phase evolution will typically be on the order of
 \f$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta t/2)^2\approx(\pi/4)\Delta
@@ -76,7 +76,7 @@ f\Delta t\f$, where \f$\Delta f\f$ is the frequency shift over the timestep.
 So if we want our interpolated phase to agree with the true phase to
 within, say, \f$\pi/2\f$ radians, then we would like to have
 \f[
-\Delta f \Delta t \lessim 2 \;.
+\Delta f \Delta t \lesssim 2 \;.
 \f]
 This routine provides a check by setting the output parameter field
 <tt>params->dfdt</tt> equal to the maximum value of \f$\Delta f\Delta t\f$

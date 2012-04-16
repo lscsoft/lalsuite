@@ -271,7 +271,7 @@ Expansion coefficients \f$\Psi_{mn}\f$ can be considered be \f$(2\times N)\f$ ma
 second post-Newtonian order is given by:
 \f{equation}{
 \Psi =
-\left [ \matrix {
+\left [ \begin{matrix}
 	  a_{01}
 	& 0
 	& {a_{21}}/{\theta_2} + ({a_{22}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{2/3}
@@ -283,7 +283,8 @@ second post-Newtonian order is given by:
 	& - {a_{21}\theta_1}/{\theta_2^2} + (2 {a_{22}}/{3}) \left ( {\theta_1}/{\theta_2} \right )^{1/3}
 	& a_{31}
 	& - {2a_{41} \theta_1}/{\theta_2^3} - ({a_{42}}/{3}) \left ( {\theta_1}/{\theta_2^4} \right )^{1/3}
-	+ ({4a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{1/3} }
+	+ ({4a_{43}}/{3}) \left ( {\theta_2}/{\theta_1} \right )^{1/3}
+        \end{matrix}
 \right ].
 \f}
 

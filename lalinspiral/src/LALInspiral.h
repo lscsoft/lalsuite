@@ -247,7 +247,7 @@ typedef enum {
   </li><li> <tt> distance:</tt> Distance to the binary in seconds
   </li><li> <tt> psi0:</tt> BCV parameter \f$\psi_0.\f$
   </li><li> <tt> psi3:</tt> BCV parameter \f$\psi_3.\f$
-  </li><li> <tt> alpha:</tt> BCV amplitude correction factor \f$\alpha f_\textrm{cut}^{2/3}\f$
+  </li><li> <tt> alpha:</tt> BCV amplitude correction factor \f$\alpha f_\mathrm{cut}^{2/3}\f$
   </li><li> <tt> eccentricity:</tt> initial eccentricity of the orbit  (currently not in use)
   </li><li> <tt> totalMass:</tt> total mass of the binary \f$m=m_1+m_2\f$ in solar mass (input/output).
   </li><li> <tt> eta:</tt> symmetric mass ratio \f$\eta=m_1m_2/m^2.\f$ (input/output).

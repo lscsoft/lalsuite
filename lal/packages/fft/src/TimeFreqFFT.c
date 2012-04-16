@@ -27,7 +27,7 @@
  * \f$\tilde{h}_k\f$.  For LALTimeFreqRealFFT(),
  * \f[
  *    \tilde{h}_k = \Delta t \times H_k \;
- *    \mbox{for \f$0\le k\le\lfloor n/2\rfloor\f$.}
+ *    \mbox{for } 0\le k\le\lfloor n/2\rfloor
  * \f]
  * The packing covers the range from dc (inclusive) to Nyquist (inclusive if
  * \f$n\f$ is even).
@@ -36,9 +36,9 @@
  *    \tilde{h}_k = \Delta t \left\{
  *    \begin{array}{ll}
  *      H_{k+\lfloor(n+1)/2\rfloor} &
- *        \mbox{for \f$0\le k<\lfloor n/2\rfloor\f$}, \\
+ *        \mbox{for } 0\le k<\lfloor n/2\rfloor, \\
  *      H_{k-\lfloor n/2\rfloor} &
- *        \mbox{for \f$\lfloor n/2\rfloor\le k<n\f$}. \\
+ *        \mbox{for } \lfloor n/2\rfloor\le k<n. \\
  *    \end{array}
  *    \right.
  * \f]

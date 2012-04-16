@@ -67,7 +67,7 @@
      combines the different stacks following the \e master equation
      \f[ f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0) \f]
      where
-     \f[ F_0 = f_0 + \sum \Delta f_k {(\Delta t)^k \over k!}  \f]
+     \f[ F_0 = f_0 + \sum \Delta f_k \frac{(\Delta t)^k}{k!}  \f]
      Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is
      calculated and \f$ \Delta f_k \f$ is the \e residual spindown
      parameter.  For details see Phys.Rev.D 70, 082001 (2004).  The

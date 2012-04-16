@@ -130,8 +130,8 @@ the function \f$\Phi(t)\f$ as distinct quantities.
 The advantage of this quasiperiodic representation of a gravitational
 wave is that a physical sampling of the parameters \f$A_1\f$, \f$A_2\f$,
 \f$\phi\f$, and \f$\Phi\f$ need only be done on timescales \f$\Delta
-t\lessim\tau\f$, whereas the actual wave functions \f$h_{+,\times}\f$ need
-to be sampled on timescales \f$\Delta t\lessim1/f\f$.
+t\lesssim\tau\f$, whereas the actual wave functions \f$h_{+,\times}\f$ need
+to be sampled on timescales \f$\Delta t\lesssim1/f\f$.
 
 The following coordinate conventions are assumed:
 <ol>

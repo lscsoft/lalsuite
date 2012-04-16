@@ -149,19 +149,6 @@ Then, Eq.\eqref{OrthonormBasis} becomes:
 \label{OrthonormA}
 \f}
 So we choose:
-%\f{equation}{
-%\begin{pmatrix}A_1(f) \cr A_2(f) \cr
-%\end{pmatrix}
-%=
-%\begin{pmatrix}
-%a_1 &0 \cr b_1 &b_2 \cr
-%\end{pmatrix}
-%\begin{pmatrix}
-%f^{-7/6} \cr
-%f^{-1/2} \cr
-%\end{pmatrix}
-%\Rightarrow
-%\f}
 
 \f{eqnarray}{
 A_1(f) &=& a_1 f^{-7/6} \\

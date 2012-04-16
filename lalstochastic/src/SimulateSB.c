@@ -63,7 +63,7 @@ and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
 The Fourier components that
 obey the above relations are
   \f{equation}{
-    \widetilde{h}_1(f_i) = \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
+    \widetilde{h}_1(f_i) = \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
     \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
 (x_{1i} + i y_{1i})
     \,
@@ -72,7 +72,7 @@ obey the above relations are
   \f{equation}{
     \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
 {\gamma_{11}(f_i)} +
-    \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
+    \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
     \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
     \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
 (x_{2i} + i y_{2i})

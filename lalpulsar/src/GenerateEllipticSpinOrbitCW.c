@@ -135,12 +135,12 @@ periapsis, and \f$\Delta(r_p/r)\f$ is the total range swept out by the
 quantity \f$r_p/r\f$ over the course of the observation.  Other
 relativistic effects such as special relativistic time dilation are
 comparable in magnitude.  We make a crude estimate of when this is
-significant by noting that \f$v/c\greatersim v_p\f$ but
-\f$\Delta(r_p/r)\lessim 2e/(1+e)\f$; we take these approximations as
-equalities and require that \f$\Delta\phi\lessim\pi\f$, giving:
+significant by noting that \f$v/c\gtrsim v_p\f$ but
+\f$\Delta(r_p/r)\lesssim 2e/(1+e)\f$; we take these approximations as
+equalities and require that \f$\Delta\phi\lesssim\pi\f$, giving:
 \anchor eq_relativistic-orbit \f{equation}{
 \label{eq_relativistic-orbit}
-f_0Tv_p^2\frac{4e}{1+e}\lessim1 \;.
+f_0Tv_p^2\frac{4e}{1+e}\lesssim1 \;.
 \f}
 When this critereon is violated, a warning is generated.  Furthermore,
 as noted earlier, when \f$v_p\geq1\f$ the routine will return an error, as

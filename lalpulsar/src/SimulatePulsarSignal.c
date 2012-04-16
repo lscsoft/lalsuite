@@ -56,18 +56,18 @@ b(t) &=& b_1 \cos[ 2(\alpha - T)] + b_2 \sin[ 2(\alpha - T) ]
 where \f$T\f$ is the local (mean) sidereal time of the detector, and the
 time-independent coefficients \f$a_i\f$ and \f$b_i\f$ are given by
 \f{eqnarray}
-a_1 &=& {1\over 16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
-a_2 &=& -{1\over 4}\cos 2\gamma \,\sin \lambda \,(3 - \cos 2\delta) \,,\\
-a_3 &=& {1\over 4} \sin 2\gamma \,\sin 2\lambda \,\sin 2\delta  \,\\
-a_4 &=& -{1\over2} \cos 2\gamma \,\cos \lambda \,\sin 2 \delta\,,\\
-a_5 &=& {3\over4} \sin 2\gamma \, \cos^2 \lambda \,\cos^2 \delta\,,
+a_1 &=& \frac{1}{16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
+a_2 &=& -\frac{1}{4}\cos 2\gamma \,\sin \lambda \,(3 - \cos 2\delta) \,,\\
+a_3 &=& \frac{1}{4} \sin 2\gamma \,\sin 2\lambda \,\sin 2\delta  \,\\
+a_4 &=& -\frac{1}{2} \cos 2\gamma \,\cos \lambda \,\sin 2 \delta\,,\\
+a_5 &=& \frac{3}{4} \sin 2\gamma \, \cos^2 \lambda \,\cos^2 \delta\,,
 \f}
 and
 \f{eqnarray}
 b_1 &=& \cos 2\gamma \,\sin \lambda \,\sin \delta\,,\\
-b_2 &=& {1\over 4} \sin 2\gamma \,(3-\cos 2\lambda)\, \sin \delta\,,\\
+b_2 &=& \frac{1}{4} \sin 2\gamma \,(3-\cos 2\lambda)\, \sin \delta\,,\\
 b_3 &=& \cos 2\gamma \,\cos \lambda \,\cos\delta \,, \\
-b_4 &=& {1\over 2} \sin2\gamma \,\sin 2\lambda \,\cos\delta\,,
+b_4 &=& \frac{1}{2} \sin2\gamma \,\sin 2\lambda \,\cos\delta\,,
 \f}
 
 The source model considered is a plane-wave
@@ -78,7 +78,7 @@ h_\times(t) &=& A_\times \, \sin \Psi(t)\,,
 where the wave-phase is \f$\Psi(t) = \Phi_0 + \Phi(t)\f$, and for an
 isolated pulsar we have
 \f{equation}
-\Phi(t) = 2\pi \left[\sum_{s=0} {f^{(s)}(\tau_\mathrm{ref}) \over
+\Phi(t) = 2\pi \left[\sum_{s=0} \frac{f^{(s)}(\tau_\mathrm{ref})}{
 (s+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{s+1} \right]\,,
 \f}
 where \f$\tau_\mathrm{ref}\f$ is the "reference time" for the definition
@@ -87,7 +87,7 @@ of the pulsar-parameters \f$f^{(s)}\f$ in the solar-system barycenter
 detector at UTC-time \f$t\f$, which depends on the source-position
 (\f$\alpha\f$, \f$\delta\f$) and the detector-position, namely
 \f{equation}
-  \tau (t) = t + { \vec{r}(t)\cdot\vec{n} \over c}\,,
+  \tau (t) = t + \frac{ \vec{r}(t)\cdot\vec{n}}{c}\,,
 \f}
 where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$
 is the unit-vector pointing <em>to</em> the source.

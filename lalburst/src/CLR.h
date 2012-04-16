@@ -128,7 +128,7 @@ B_k(t)\equiv \left[ z_k(t)\right]^{1/k}\ ,\label{e10a}
 that can be rewritten as
 \anchor e10 \f{equation}{
 B_k(t)= (a_k)^{1/k}m(t) \beta_k(t) \ , \qquad
-\beta_k(t)=\left[ 1+ {n_k(t) \over a_k m(t)^k}\right]^{1/k} \ .
+\beta_k(t)=\left[ 1+ \frac{n_k(t)}{a_k m(t)^k}\right]^{1/k} \ .
 \label{e10}
 \f}
 All these  functions, \f$\{B_k(t)\}\f$, are almost monochromatic around the
@@ -145,13 +145,13 @@ that it has the same mean and minimum variance.
 If
 \f$M(t)\f$ is linear with \f$\{b_k(t)\}\f$, the statistically the best is
 \f{equation}{
- M(t)=\left(\sum_k {b_k(t) \over \textrm{Var}[\beta_k(t)]} \right) {\Big
+ M(t)=\left(\sum_k \frac{b_k(t)}{\textrm{Var}[\beta_k(t)]} \right) {\Big
  { /}}
-\left( \sum_k {1 \over \textrm{Var}[\beta_k(t)]}\right) \ ,
+\left( \sum_k \frac{1}{\mathrm{Var}[\beta_k(t)]}\right) \ ,
 \f}
 where
 \f{equation}{
-\textrm{Var}[\beta_k(t)]= {\langle n_k(t) n_k(t)^*\rangle\over  k^2
+\textrm{Var}[\beta_k(t)]= \frac{\langle n_k(t) n_k(t)^*\rangle}{k^2
 \vert a_k m(t)^k\vert^2}+ \mbox{corrections} \ .
 \f}
 In practice,

@@ -133,8 +133,8 @@ tagSInterpolatePar
 SInterpolatePar;
 
 /** These structures contain the interpolation parameters; These are the arrays
- * of \c n domain values \f$x[0]\ldotsx[n-1]\f$ and their
- * corresponding values \f$y[0]\ldotsy[n-1]\f$
+ * of \c n domain values \f$x[0]\ldots x[n-1]\f$ and their
+ * corresponding values \f$y[0]\ldots y[n-1]\f$
  */
 typedef struct
 tagDInterpolatePar

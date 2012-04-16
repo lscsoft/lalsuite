@@ -32,7 +32,7 @@
 \left\{
 \begin{array}{cl}
 (-1)^{x(N-1)} & \quad x=0, \pm 1, \pm 2, \cdots\\
-{\sin(N\pi x)\over N\sin(\pi x)} & \quad \textrm{otherwise}\ .
+\frac{\sin(N\pi x)}{N\sin(\pi x)} & \quad \textrm{otherwise}\ .
 \end{array}
 \right.
 \f]

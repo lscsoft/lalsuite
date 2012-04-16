@@ -94,7 +94,7 @@ In addition, we will refer to the following unary operations on
 
 \e Inversion: The inverse \f$(\mathsf{A}^{-1}){}^a{}_b\f$ of a
 matrix \f$\mathsf{A}^a{}_b\f$ is one such that their matrix product is the
-identity matrix \f$\bd^a{}_b\f$ (whose elements \f$\delta^i{}_j\f$ are just
+identity matrix \f$\delta^a{}_b\f$ (whose elements \f$\delta^i{}_j\f$ are just
 the Kronecker delta function).
 
 \e Transposition: The transpose \f$(\mathsf{A}^T){}^a{}_b\f$ of a
