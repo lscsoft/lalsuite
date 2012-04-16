@@ -1357,7 +1357,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 /** Function for calculating Hough Maps and candidates.
- *
+
     This function takes a peakgram as input. This peakgram was constructed
     by setting a threshold on a sequence of Fstatistic vectors.  The function
     produces a Hough map in the sky for each value of the frequency and spindown.
@@ -1371,7 +1371,7 @@ RCComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure *
                        SemiCohCandidateList  *out,   /**< Candidates from thresholding Hough number counts */
                        HOUGHPeakGramVector *pgV, 	/**< HOUGHPeakGramVector obtained after thresholding Fstatistic vectors */
                        SemiCoherentParams *params,	/**< pointer to HoughParams -- parameters for calculating Hough maps */
-                       INT8 fBin0
+                       INT8 fBin0			/**< UNDOCUMENTED */
                      )
 {
 

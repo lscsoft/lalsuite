@@ -16,7 +16,7 @@ Functions for the implementation of the standard burst searches:
 
 <li> A set of functions to implement the excess power search technique which was suggested in
 Ref.\ [\ref fh1998] and later independently invented in Ref.\ [\ref acdhp1999].  The implementation here
-is described in detail in Ref.\ [\ref abcf2000].
+is described in detail in Ref.\ [\ref ABCF2000].
 </li>
 </ul>
 

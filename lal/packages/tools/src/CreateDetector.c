@@ -205,7 +205,7 @@ XLALCreateDetector()
 \c ::LALDetector are filled in by hand (e.g., for testing
 purposes), the \c type field should be set to
 \c #LALDETECTORTYPE_ABSENT.</li>
-<li> The range of \c ::LALDetectorTypes could be expanded to
+<li> The range of \c ::LALDetectorType could be expanded to
 include the  monopole and five quadrupole modes for a spherical
 resonant detector
 [\ref Maggiore_2000b, \ref Zhou_1995, \ref Bianchi_1998, \ref Maggiore_2000a].</li>

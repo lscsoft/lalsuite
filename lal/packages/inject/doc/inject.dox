@@ -6,6 +6,22 @@
    \defgroup inject Inject
    \ingroup coreDA
 
+@{
+\defgroup Inject_h 		Header Inject.h
+\defgroup SimulateCoherentGW_h 	Header SimulateCoherentGW.h
+\defgroup SimulateInspiral_h 	Header SimulateInspiral.h
+\defgroup SimulateSB_h 		Header SimulateSB.h
+\defgroup SimulatePopcorn_h 	Header SimulatePopcorn.h
+\defgroup GenerateBurst_h 	Header GenerateBurst.h
+\defgroup GenerateInspiral_h 	Header GenerateInspiral.h
+\defgroup GeneratePPNInspiral_h Header GeneratePPNInspiral.h
+\defgroup GenerateTaylorCW_h 	Header GenerateTaylorCW.h
+\defgroup GenerateSpinOrbitCW_h Header GenerateSpinOrbitCW.h
+\defgroup GeneratePulsarSignal_h Header GeneratePulsarSignal.h
+\defgroup SkyCoordinates_h 	Header SkyCoordinates.h
+@}
+
+
 This package provides routines to simulate gravitational waves and
 their effect on a detector.  Conceptually, this can be divided into
 three stages:
@@ -48,21 +64,6 @@ that perform other useful tasks in signal injection or source
 simulation, such as combining signal generation, detector simulation,
 and injection into a single function call, or modelling astrophysical
 distributions of sources.
-
-@{
-\defgroup Inject_h 		Header Inject.h
-\defgroup SimulateCoherentGW_h 	Header SimulateCoherentGW.h
-\defgroup SimulateInspiral_h 	Header SimulateInspiral.h
-\defgroup SimulateSB_h 		Header SimulateSB.h
-\defgroup SimulatePopcorn_h 	Header SimulatePopcorn.h
-\defgroup GenerateBurst_h 	Header GenerateBurst.h
-\defgroup GenerateInspiral_h 	Header GenerateInspiral.h
-\defgroup GeneratePPNInspiral_h Header GeneratePPNInspiral.h
-\defgroup GenerateTaylorCW_h 	Header GenerateTaylorCW.h
-\defgroup GenerateSpinOrbitCW_h Header GenerateSpinOrbitCW.h
-\defgroup GeneratePulsarSignal_h Header GeneratePulsarSignal.h
-\defgroup SkyCoordinates_h 	Header SkyCoordinates.h
-@}
 
 \latexonly \pagebreak \endlatexonly
 

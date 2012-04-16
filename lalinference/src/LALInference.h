@@ -181,16 +181,16 @@ INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables
 /** Prints a variable item to a string (must be pre-allocated!) */
 void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
 
-/** Return a pointer to the memory the variable is stored in specified by \param name
+/** Return a pointer to the memory the variable \param vars is stored in specified by \param name
  * User must cast this pointer to the expected type before dereferencing
  * it to get the value of the variable.
  */
 void *LALInferenceGetVariable(const LALInferenceVariables * vars, const char * name);
 
-/** Get number of dimensions in this variable */
+/** Get number of dimensions in variable \param vars */
 INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 
-/** Get number of dimensions which are not fixed to a certain value */
+/** Get number of dimensions in \param vars which are not fixed to a certain value */
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
 /** Get the LALInferenceVariableType of the \param idx -th item in the \param vars
@@ -225,12 +225,12 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
 void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void * value, 
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
-/** Remove \param name from \param vars.
+/** Remove \param name from \param vars
  * Frees the memory for the \param name structure and its contents
  */
 void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
 
-/** Checks for \param name being present in \param vars.
+/** Checks for \param name being present in \param vars
  *  returns 1(==true) or 0
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
@@ -397,25 +397,27 @@ tagLALInferenceIFOData
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-/** parses a character string (passed as one of the options) and decomposes   
+/** parses a character string (passed as one of the options) and decomposes
  it into individual parameter character strings. \param input is of the form
-   input   :  "[one,two,three]"
- and the resulting \param output is
-   strings :  {"one", "two", "three"}   
- length of parameter names is for now limited to 512 characters. 
+   input   :  \"[one,two,three]\"
+ and the resulting output \param strings is
+   strings :  {\"one\", \"two\", \"three\"}
+ length of parameter names is for now limited to 512 characters.
  (should 'theoretically' (untested) be able to digest white space as well.
- Irrelevant for command line options, though.)                             */
+ Irrelevant for command line options, though.)
+\param n UNDOCUMENTED
+*/
 void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
 /** Return a ProcessParamsTable from the command line arguments */
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
-/** Output the command line to \param str based on the ProcessParamsTable */
+/** Output the command line based on the ProcessParamsTable \param procparams */
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
-/** Execute FFT for data in \param data */
+/** Execute FFT for data in \param IFOdata */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
-/** Execute Inverse FFT for data in \param data */
+/** Execute Inverse FFT for data in \param IFOdata */
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
 /** Return the list node for "name" - do not rely on this */

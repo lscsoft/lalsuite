@@ -45,7 +45,7 @@ extern "C" {
 
 According to the common frame format specification
 [\ref LIGOVIRGO_2000] the geometry of an interferometric
-detector will be stored in a \c ::FrDetector structure, specifying
+detector will be stored in a \c FrDetector structure, specifying
 the location of the detector vertex and the orientation of its arms in
 geodetic coördinates suited to geographical surveying.  Resonant
 bars and other sorts of detectors, if they write their data to frames,
@@ -63,7 +63,7 @@ h = h_{ab} \, d^{ab}
 \f}
 
 This header defines a \c ::LALFrDetector structure which contains
-essentially the same information as the \c ::FrDetector structure,
+essentially the same information as the \c FrDetector structure,
 as well as a \c LALDetector structure which contains the
 Cartesian coördinates of the detector along with the components of
 the response tensor \f$d^{ab}\f$ in the same coördinate system.

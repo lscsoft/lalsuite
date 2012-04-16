@@ -62,7 +62,7 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 m1msq;
   REAL8 m2msq;
   REAL8 m;
-  REAL8 wdotorb[8];           ///< Coefficients of the analytic PN expansion of \f$ \dot\omega_orb\f $
+  REAL8 wdotorb[8];           ///< Coefficients of the analytic PN expansion of \f$ \dot\omega_orb\f$
   REAL8 wdotorblog;           ///< Log coefficient of the PN expansion of of \f$\dot\omega_orb\f$
   REAL8 wdotspin15S1LNh;
   REAL8 wdotspin15S2LNh;

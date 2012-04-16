@@ -66,12 +66,12 @@
  * to obtain hplus - i hcross, which is added to the time series.
  *
  * Implements the sum of a single term of Eq. (11) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  *
  * If sym is non-zero, symmetrically add the m and -m terms assuming
- * that h(l,-m) = (-1)^l h(l,m)*; see Eq. (78) ibid.
+ * that \f$h(l,-m) = (-1)^l h(l,m)*\f$; see Eq. (78) ibid.
  */
 int XLALSimAddMode(
 		REAL8TimeSeries *hplus,      /**< +-polarization waveform */
@@ -120,9 +120,9 @@ int XLALSimAddMode(
  * the post-Newtonian inspiral waveform.
  *
  * See Eqns. (79)-(116) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
@@ -174,15 +174,15 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 
 
 /**
- * Given time series for a binary's orbital dynamical variables, 
- * construct the waveform polarizations h+ and hx as a sum of 
+ * Given time series for a binary's orbital dynamical variables,
+ * construct the waveform polarizations h+ and hx as a sum of
  * -2 spin-weighted spherical harmonic modes, h_lm.
  * NB: Valid only for non-precessing systems!
  *
  * Implements Equation (11) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
@@ -222,18 +222,18 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 }
 
 /**
- * Given time series for a binary's orbital dynamical variables, 
+ * Given time series for a binary's orbital dynamical variables,
  * construct the waveform polarizations h+ and hx directly.
  * NB: Valid only for non-precessing binaries!
  *
  * Implements Equations (8.8) - (8.10) of:
- * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha, 
- * "The third post-Newtonian gravitational wave polarisations 
- * and associated spherical harmonic modes for inspiralling compact binaries 
- * in quasi-circular orbits", Class. Quant. Grav. 25 165003 (2008);
+ * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha,
+ * \"The third post-Newtonian gravitational wave polarisations
+ * and associated spherical harmonic modes for inspiralling compact binaries
+ * in quasi-circular orbits\", Class. Quant. Grav. 25 165003 (2008);
  * arXiv:0802.1249
- * 
- * Note however, that we do not include the constant "memory" terms
+ *
+ * Note however, that we do not include the constant \"memory\" terms
  */
 int XLALSimInspiralPNPolarizationWaveforms(
 	REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
@@ -279,7 +279,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
     
-    /** 
+    /* 
      * cosines and sines of inclination between 
      * line of sight (N) and binary orbital angular momentum (L_N)
      */
@@ -295,7 +295,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
         phi = Phi->data->data[idx]; 	v = V->data->data[idx];   
         v2 = v * v; 	v3 = v * v2;
 
-        /** 
+        /* 
          * As explained in Blanchet et al, a phase shift can be applied 
          * to make log terms vanish which would appear in the amplitude 
          * at 1.5PN and 2.5PN orders. This shift is given in Eq. (8.8)
@@ -310,7 +310,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 
         phi = phi - phiShift;
 
-        /** 
+        /*
          * First set all h+/x coefficients to 0. Then use a switch to
          * set proper non-zero values up to order ampO. Note we
          * fall through the PN orders and break only after Newt. order
@@ -537,18 +537,18 @@ int XLALSimInspiralPNPolarizationWaveforms(
  * Computes polarizations h+ and hx for a spinning, precessing binary
  * when provided time series of all the dynamical quantities.
  * Amplitude can be chosen between 1.5PN and Newtonian orders (inclusive).
- * 
+ *
  * Based on K.G. Arun, Alesssandra Buonanno, Guillaume Faye and Evan Ochsner
- * "Higher-order spin effects in the amplitude and phase of gravitational 
- * waveforms emitted by inspiraling compact binaries: Ready-to-use 
- * gravitational waveforms", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
- * 
+ * \"Higher-order spin effects in the amplitude and phase of gravitational
+ * waveforms emitted by inspiraling compact binaries: Ready-to-use
+ * gravitational waveforms\", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
+ *
  * HOWEVER, the formulae have been adapted to use the output of the so-called
- * "Frameless" convention for evolving precessing binary dynamics, 
+ * \"Frameless\" convention for evolving precessing binary dynamics,
  * which is not susceptible to hitting coordinate singularities.
  *
  * FIXME: Clean up and commit Mathematica NB Showing correctness. Cite here.
- * 
+ *
  * NOTE: The vectors MUST be given in the so-called radiation frame where
  * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
  */
@@ -665,7 +665,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
         nx2 = nx*nx;	ny2 = ny*ny;	nz2 = nz*nz;	nz3 = nz*nz2;
         lx2 = lx*lx;	ly2 = ly*ly;	lz2 = lz*lz;	lz3 = lz*lz2;
 
-        /** 
+        /* 
          * First set all h+/x coefficients to 0. Then use a switch to
          * set proper non-zero values up to order ampO. Note we
          * fall through the PN orders and break only after Newt. order
@@ -676,7 +676,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 
         switch( ampO )
         {
-            /**
+            /*
              * case LAL_PNORDER_THREE_POINT_FIVE:
              * case LAL_PNORDER_THREE:
              * case LAL_PNORDER_TWO_POINT_FIVE:
@@ -810,33 +810,33 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 /**
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
- * "radiation frame" (with the z-axis along the direction of propagation) as
+ * \"radiation frame\" (with the z-axis along the direction of propagation) as
  * needed for initial conditions for the SpinTaylorT4 waveform routines.
- * 
- * Input: 
- *     thetaJN, phiJN are angles describing the desired orientation of the 
+ *
+ * Input:
+ *     thetaJN, phiJN are angles describing the desired orientation of the
  * total angular momentum (J) relative to direction of propagation (N)
  *     theta1, phi1, theta2, phi2 are angles describing the desired orientation
  * of spin 1 and 2 relative to the Newtonian orbital angular momentum (L_N)
- *     m1, m2, f0 are the component masses and initial GW frequency, 
+ *     m1, m2, f0 are the component masses and initial GW frequency,
  * they are needed to compute the magnitude of L_N, and thus J
- *     chi1, chi2 are the dimensionless spin magnitudes ( 0 <= chi1,2 <= 1),
+ *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$),
  * they are needed to compute the magnitude of S1 and S2, and thus J
- * 
- * Output: 
+ *
+ * Output:
  *     x, y, z components of LNhat (unit vector along orbital angular momentum),
  *     x, y, z components of E1 (unit vector in the initial orbital plane)
- *     x, y, z components S1 and S2 (unit spin vectors times their 
- * dimensionless spin magnitudes - i.e. they have unit magnitude for 
+ *     x, y, z components S1 and S2 (unit spin vectors times their
+ * dimensionless spin magnitudes - i.e. they have unit magnitude for
  * extremal BHs and smaller magnitude for slower spins)
  *
- * NOTE: Here the "total" angular momentum is computed as
+ * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
- * where L_N is the Newtonian orbital angular momentum. In fact, there are 
- * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR 
- * in this function. This is done so the function does not need to know about 
- * the PN order of the system and to avoid subtleties with spin-orbit 
- * contributions to L. Also, it is believed that the difference in Jhat 
+ * where L_N is the Newtonian orbital angular momentum. In fact, there are
+ * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR
+ * in this function. This is done so the function does not need to know about
+ * the PN order of the system and to avoid subtleties with spin-orbit
+ * contributions to L. Also, it is believed that the difference in Jhat
  * with or without these PN corrections to L is quite small.
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
@@ -1177,7 +1177,7 @@ int XLALSimInspiralChooseFDWaveform(
 
 /**
  * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseTDWaveform().
- * 
+ *
  * returns 1 if the approximant is implemented, 0 otherwise.
  */
 int XLALSimInspiralImplementedTDApproximants(

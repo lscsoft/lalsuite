@@ -31,7 +31,7 @@
 #include <lal/FrequencySeries.h>
 
 /**
- * \addtogroup Convolution
+ * \addtogroup Convolution_c
  * \brief Convolutions of time-series
  *
  * @{

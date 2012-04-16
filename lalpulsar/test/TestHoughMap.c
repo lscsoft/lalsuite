@@ -25,7 +25,7 @@
  *
  *
  * History:   Created by Sintes June 25, 2001
- *            Modified  "   August 6, 2001
+ *            Modified     August 6, 2001
  *            Modified by Badri Krishnan Feb 2003
  *-----------------------------------------------------------------------
  */

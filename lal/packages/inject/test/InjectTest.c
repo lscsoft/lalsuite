@@ -165,7 +165,7 @@ consecutively.
 
 \heading{\ref LALGeneratePPNInspiral():} Most arguments are parsed
 from the corresponding tokens using the functions in
-\ref StringConvert_c.  However, two input parameters require some
+\ref StringConvert.c.  However, two input parameters require some
 nontrivial computation.  First, the generator requires a start time,
 while \c sourcefile specifies a coalescence time.  The solution is
 to generate a waveform with an arbitrary start time (in this case zero
@@ -179,7 +179,7 @@ specified (either positive or negative), then the maximum rate of
 change of frequency in the (post\f${}^0\f$-)Newtonian approximation is
 \f$\dot{f}_\mathrm{max}=1.8\pi^{8/3}\tau^{5/3}f^{11/3}\f$, where
 \f$\tau=Gm_\mathrm{tot}/c^3\f$ is the relativistic minimum timescale of
-the system.  As explained in \ref GeneratePPNInspiral_c, for linear
+the system.  As explained in \ref GeneratePPNInspiral.c, for linear
 interpolation of the waveform to be accurate to within \f$\pi/2\f$
 radians, we would like \f$\Delta f\Delta t\lessim2\f$ over any sampling
 interval.  This implies that \f$\Delta
@@ -202,7 +202,7 @@ accordingly and the waveform regenerated.
 
 \heading{\ref LALGenerateTaylorCW():} Most arguments are parsed
 from the corresponding tokens using the routines in
-\ref StringConvert_c.  However, two input parameters require
+\ref StringConvert.c.  However, two input parameters require
 computation.  First, the base frequency \f$f_0\f$ and spindown terms
 \f$f_1,\ldots f_N\f$ need to be transformed from the reference time to the
 start time, by the following formula:
@@ -235,7 +235,7 @@ spindown terms), then \f$\Delta t\f$ is set equal to \f$T\f$.
 
 \heading{\ref LALGenerateSpinOrbitCW():} Most arguments are parsed
 from the corresponding tokens using the routines in
-\ref StringConvert_c.  The reference time is assumed to correspond
+\ref StringConvert.c.  The reference time is assumed to correspond
 to the orbital epoch of the system, and the conversion from reference
 time to start time discussed above is performed automatically within
 the LALGenerateSpinOrbitCW() function.  However, the program

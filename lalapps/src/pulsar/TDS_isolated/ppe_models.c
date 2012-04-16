@@ -850,11 +850,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
  * The evidence is obtained from the joint likelihood given in \c
  * pulsar_log_likelihood with the model term \f$y\f$ set to zero.
  * 
- * \param data [in] Structure containing detector data
+ * PARAM data [in] Structure containing detector data
  * 
  * \return The natural logarithm of the noise only evidence
  */
-REAL8 noise_only_model( LALInferenceRunState *runState ){
+REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
 	
   LALInferenceIFOData *data = runState->data;
   
