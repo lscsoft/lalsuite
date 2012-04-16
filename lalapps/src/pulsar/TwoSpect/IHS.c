@@ -337,18 +337,6 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    }
    trials += rows; */
    
-   //Initialize random number generator
-   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   }
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed); */
-   //gsl_rng_set(rng, 0);
-   gsl_rng *rng = params->rng;
-   
    //Allocations for IHS values for the number of trials
    REAL4Vector *noise = XLALCreateREAL4Vector(aveNoise->length);
    REAL4Vector *ihsvector = XLALCreateREAL4Vector((INT4)floor((1.0/(REAL8)params->ihsfactor)*aveNoise->length)-5);
@@ -394,14 +382,14 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    //Now do a number of trials
    for (ii=0; ii<trials; ii++) {
       
-      //Make a random number of 1 +/- 2*sigma to create the variations in the nosie that we typically observe
+      //Make a random number of 1 +/- sigma to create the variations in the nosie that we typically observe
       //This number needs to be positive
-      REAL8 randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
-      while (randval<0.0) randval = 1.0 + 2.0*gsl_ran_gaussian(rng, singleIHSsigma);
+      REAL8 randval = 1.0 + 1.0*gsl_ran_gaussian(params->rng, singleIHSsigma);
+      while (randval<0.0) randval = 1.0 + 1.0*gsl_ran_gaussian(params->rng, singleIHSsigma);
       
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-         if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(rng, aveNoise->data[jj])*randval);
+         if (markedharmonics->data[jj]==0) noise->data[jj] = (REAL4)(gsl_ran_exponential(params->rng, aveNoise->data[jj]*randval));
          else noise->data[jj] = 0.0;
       } /* for jj < aveNoise->length */
       
@@ -420,7 +408,6 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    XLALDestroyREAL4Vector(noise);
    XLALDestroyREAL4Vector(ihsvector);
    XLALDestroyINT4Vector(markedharmonics);
-   //gsl_rng_free(rng);
    
    //Create a fake vector with the same average value in each bin = 1.0
    REAL4Vector *FbinMean = XLALCreateREAL4Vector(trials);
@@ -478,6 +465,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
       ihslocations->data[ii] = max_index_from_vector_in_REAL4VectorSequence(ihsvectorsequence, ii) + 5;
       ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
    }
+   
+   //Reset the expectation vector, just in case
+   memset(outputfar->expectedIHSVector->data, 0, sizeof(REAL4)*outputfar->expectedIHSVector->length);
    
    //get the expected IHS vector value (the mean value)
    for (ii=0; ii<(INT4)ihsvectorsequence->vectorLength; ii++) {
@@ -547,7 +537,8 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          REAL8 averageval = 0.0, farave = 0.0;
          if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
             
-            //FILE *tworowvals = fopen("./output/tworowexpectedsample.dat","w");
+            //comment this out
+            //FILE *tworowvals = fopen("./output/tworowexpectedsample.dat0","w");
             
             //We sample the tworows sequence (up to the number of rows-1) without accepting any zeros.
             sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
@@ -563,7 +554,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
                   //When the user has not specified using faster chisq inversion, use the GSL function
                   if (!params->fastchisqinv) {
                      farave += gsl_cdf_chisq_Qinv(params->ihsfar, 0.5*sampledtempihsvals->data[jj]) + 0.5*sampledtempihsvals->data[jj];
-                     //TODO: figure out what the error would be from GSL
                   } else {
                      farave += cdf_chisq_Qinv(params->ihsfar, 0.5*sampledtempihsvals->data[jj]) + 0.5*sampledtempihsvals->data[jj];
                      if (xlalErrno!=0) {
@@ -704,8 +694,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          REAL4Vector *sampledtempihsvals = NULL;
          REAL8 averageval = 0.0, farave = 0.0;
          if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
+            //comment this out
             //FILE *row360expect = NULL;
-            //if (ii==360) row360expect = fopen("./output/row360expect.dat","w");
+            //if (ii==360) row360expect = fopen("./output/row360expect.dat0","w");
             sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
             
@@ -887,7 +878,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                fprintf(stderr, "%s: sseSSVectorSequenceSum() failed.\n", __func__);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
-            /* FILE *tworowreal = fopen("./output/tworowsumreal.dat","w");
+            //comment this out
+            /* FILE *tworowreal = fopen("./output/tworowsumreal.dat0","w");
             for (jj=0; jj<(INT4)(tworows->length*tworows->vectorLength); jj++) fprintf(tworowreal, "%f\n", tworows->data[jj]);
             fclose(tworowreal); */
             
@@ -1030,8 +1022,9 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                fprintf(stderr, "%s: sseSSVectorSequenceSum() failed.\n", __func__);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
+            //comment this out
             /* if (ii==360) {
-               FILE *row360real = fopen("./output/row360sumreal.dat","w");
+               FILE *row360real = fopen("./output/row360sumreal.dat0","w");
                for (jj=0; jj<(INT4)((tworows->length-(ii-2))*tworows->vectorLength); jj++) fprintf(row360real, "%f\n", tworows->data[jj]);
                fclose(row360real);
             } */

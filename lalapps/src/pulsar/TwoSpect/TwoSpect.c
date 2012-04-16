@@ -2355,7 +2355,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
       memset(x->data, 0, sizeof(REAL4)*x->length);
       for (jj=0; jj<(INT4)x->length; jj++) {
          if (aveNoiseInTime->data[jj] != 0.0) {
-            noiseval = expRandNum(aveNoiseInTime->data[jj], rng);
+            /* noiseval = expRandNum(aveNoiseInTime->data[jj], rng);
             if (jj==0 || (jj>0 && aveNoiseInTime->data[jj-1] == 0.0)) {
                x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0));
             } else {
@@ -2363,6 +2363,14 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
                REAL8 newavenoise = (1.0-corrfactorsquared)*aveNoiseInTime->data[jj] + corrfactorsquared*aveNoiseInTime->data[jj-1];
                x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(newnoiseval/newavenoise-1.0));
             }
+            prevnoiseval = noiseval; */
+            
+            noiseval = expRandNum(aveNoiseInTime->data[jj], rng);
+            if (jj>0 && aveNoiseInTime->data[jj-1]!=0.0) {
+               noiseval *= (1.0-corrfactorsquared);
+               noiseval += corrfactorsquared*prevnoiseval;
+            }
+            x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0));
             prevnoiseval = noiseval;
          }
       } /* for jj < x->length */
@@ -2402,7 +2410,8 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    
    //Extra factor for normalization to 1.0 (empirically determined)
    // *(normalization) /= 1.0245545525190294;
-   *normalization /= 1.040916688722758;
+   //*normalization /= 1.040916688722758;
+   *normalization /= 1.08;
    
    //fclose(BACKGRND);
    
