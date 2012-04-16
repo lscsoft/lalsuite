@@ -1064,6 +1064,40 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
   }
 }
 
+REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables *params) {
+  REAL8 logPrior=0.0;
+  REAL8 logmc=0.0,mc=0.0;
+  REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
+
+  if(LALInferenceCheckVariable(params,"massratio")||LALInferenceCheckVariable(params,"asym_massratio")) {
+    if(LALInferenceCheckVariable(params,"logmc")) {
+      logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
+      if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        LALInferenceMcQ2Masses(exp(logmc),q,&m1,&m2);
+        logPrior+=log(m1*m1);
+      } else {
+        eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+        LALInferenceMcEta2Masses(exp(logmc),eta,&m1,&m2);
+        logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
+      }
+      /*careful using LALInferenceMcEta2Masses, it returns m1>=m2*/
+    } else if(LALInferenceCheckVariable(params,"chirpmass")) {
+      mc=*(REAL8 *)LALInferenceGetVariable(params,"chirpmass");
+      if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        logPrior+=log(m1*m1/mc);
+      } else {
+        eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+        LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+        logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
+      }
+    }
+  }
+  return(logPrior);
+}
+
 REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params) {
   return 0.0;
 }
