@@ -1307,9 +1307,11 @@ void drawMassSpinFromNRNinja2( SimInspiralTable* inj )
   for ( j = 0; j < num_nr; j++ )
   {
     k           = indicies[j];
-    startFreq   = start_freq_from_frame_url(nrSimArray[k]->numrel_data);
+    if (nrSimArray[k]->f_lower > 0.0000001)
+      startFreq = nrSimArray[k]->f_lower;
+    else
+      startFreq   = start_freq_from_frame_url(nrSimArray[k]->numrel_data);
     startFreqHz = startFreq / (LAL_TWOPI * massTotal * LAL_MTSUN_SI);
-
     /* if this startFreqHz makes us happy, inject it */
     if (startFreqHz <= inj->f_lower)
     {
