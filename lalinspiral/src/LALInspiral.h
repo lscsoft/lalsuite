@@ -1937,6 +1937,13 @@ int XLALInspiralCalculateIIRSetInnerProduct(
 	double             *ip
 	);
 
+void XLALSimInjectNinjaSignals(
+        REAL4TimeSeries* chan,
+        const char *ifo,
+        REAL8 dynRange,
+        SimInspiralTable* events
+);
+
 /*---------------------------------------------------------------- */
 
 #ifdef  __cplusplus

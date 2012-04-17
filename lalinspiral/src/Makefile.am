@@ -144,6 +144,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralMoments.c \
 	LALInspiralMomentsIntegrand.c \
 	LALInspiralNextTemplate.c \
+	LALInspiralNinjaInject.c \
 	LALInspiralParameterCalc.c \
 	LALInspiralParseParameters.c \
 	LALInspiralPhasing1.c \
