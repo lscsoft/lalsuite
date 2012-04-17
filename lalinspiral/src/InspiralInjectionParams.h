@@ -1,5 +1,5 @@
 /** \defgroup InspiralInjectionParams Inspiral Injection package
- * \ingroup inject
+ * \ingroup pkg_inject
  * \author D. Brown, J. Creighton, S. Fairhurst, G. Jones, E. Messaritaki
  *
  * \brief Module for generating randomly distributed inspiral parameters

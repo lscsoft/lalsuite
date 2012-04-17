@@ -19,7 +19,7 @@
 
 
 /** \defgroup NRWaveInject Numerical-relativity waveforms
- * \ingroup inject
+ * \ingroup pkg_inject
  * \author S.Fairhurst, B. Krishnan, L.Santamaria
  *
  * \brief Module for generating h(t) from Numrel waveforms

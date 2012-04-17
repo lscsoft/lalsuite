@@ -17,15 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \defgroup GeneratePPNInspiral_h GeneratePPNInspiral_h
- * \ingroup inject
- */
+#ifndef _GENERATEPPNINSPIRAL_H
+#define _GENERATEPPNINSPIRAL_H
+
+#include <lal/LALStdlib.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/Random.h>
+#include <lal/LALSimInspiral.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 /**
+ \addtogroup GeneratePPNInspiral_h
 \author Creighton, T. D.
-\file
-\ingroup GeneratePPNInspiral_h
 
 \brief Provides routines to generate restricted parametrized
 post\f${}^{5/2}\f$-Newtonian inspiral waveforms.
@@ -150,32 +159,21 @@ h_\times(t) & = & A_\times(t)\sin\phi(t) \; .
 \f}
 
 */
+/*@{*/
 
-#ifndef _GENERATEPPNINSPIRAL_H
-#define _GENERATEPPNINSPIRAL_H
+/** \name Error Codes */
+/*@{*/
+#define GENERATEPPNINSPIRALH_ENUL  1	/**< Unexpected null pointer in arguments */
+#define GENERATEPPNINSPIRALH_EOUT  2	/**< output field a, f, phi, or shift already exists */
+#define GENERATEPPNINSPIRALH_ETBAD 3	/**< Bad sampling interval */
+#define GENERATEPPNINSPIRALH_EFBAD 4	/**< Bad starting frequency; could not get valid start time */
+#define GENERATEPPNINSPIRALH_EPBAD 5	/**< Bad post-Newtonian parameters */
+#define GENERATEPPNINSPIRALH_EMBAD 6	/**< Bad masses */
+#define GENERATEPPNINSPIRALH_EDBAD 7	/**< Bad distance */
+#define GENERATEPPNINSPIRALH_EMEM  8	/**< Out of memory */
+/*@}*/
 
-#include <lal/LALStdlib.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/SkyCoordinates.h>
-#include <lal/Random.h>
-#include <lal/LALSimInspiral.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/** \name Error Codes */ /*@{*/
-#define GENERATEPPNINSPIRALH_ENUL  1
-#define GENERATEPPNINSPIRALH_EOUT  2
-#define GENERATEPPNINSPIRALH_ETBAD 3
-#define GENERATEPPNINSPIRALH_EFBAD 4
-#define GENERATEPPNINSPIRALH_EPBAD 5
-#define GENERATEPPNINSPIRALH_EMBAD 6
-#define GENERATEPPNINSPIRALH_EDBAD 7
-#define GENERATEPPNINSPIRALH_EMEM  8
-
+/** \cond DONT_DOXYGEN */
 #define GENERATEPPNINSPIRALH_MSGENUL  "Unexpected null pointer in arguments"
 #define GENERATEPPNINSPIRALH_MSGEOUT  "output field a, f, phi, or shift already exists"
 #define GENERATEPPNINSPIRALH_MSGETBAD "Bad sampling interval"
@@ -184,7 +182,9 @@ extern "C" {
 #define GENERATEPPNINSPIRALH_MSGEMBAD "Bad masses"
 #define GENERATEPPNINSPIRALH_MSGEDBAD "Bad distance"
 #define GENERATEPPNINSPIRALH_MSGEMEM  "Out of memory"
-/*@}*//** \name More Termination conditions
+/** \endcond */
+
+/** \name More Termination conditions
 
 In addition to the error conditions above, there are a number of ways
 that the signal generation routine can terminate gracefully while
@@ -195,19 +195,22 @@ waveform generator to report exactly \e how things fell apart.
 
 For the sake of LAL namespace conventions, these termination codes are
 <tt>\#define</tt>d and autodocumented exactly like error codes.
-*/ /*@{*/
-#define GENERATEPPNINSPIRALH_EFSTOP     0
-#define GENERATEPPNINSPIRALH_ELENGTH    1
-#define GENERATEPPNINSPIRALH_EFNOTMON   2
-#define GENERATEPPNINSPIRALH_EPNFAIL    3
-#define GENERATEPPNINSPIRALH_ERTOOSMALL 4
+*/
+/*@{*/
+#define GENERATEPPNINSPIRALH_EFSTOP     0	/**< Reached requested termination frequency */
+#define GENERATEPPNINSPIRALH_ELENGTH    1	/**< Reached maximum length, or end of provided time series vector */
+#define GENERATEPPNINSPIRALH_EFNOTMON   2	/**< Frequency no longer increasing monotonically */
+#define GENERATEPPNINSPIRALH_EPNFAIL    3	/**< Evolution dominated by higher-order PN terms */
+#define GENERATEPPNINSPIRALH_ERTOOSMALL 4	/**< Orbital radius too small for PN approximation */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define GENERATEPPNINSPIRALH_MSGEFSTOP     "Reached requested termination frequency"
 #define GENERATEPPNINSPIRALH_MSGELENGTH    "Reached maximum length, or end of provided time series vector"
 #define GENERATEPPNINSPIRALH_MSGEFNOTMON   "Frequency no longer increasing monotonically"
 #define GENERATEPPNINSPIRALH_MSGEPNFAIL    "Evolution dominated by higher-order PN terms"
 #define GENERATEPPNINSPIRALH_MSGERTOOSMALL "Orbital radius too small for PN approximation"
-/*@}*/
+/** \endcond */
 
 /** This structure stores the parameters for constructing a restricted
 post-Newtonian waveform.  It is divided into three parts: parameters
@@ -354,21 +357,13 @@ typedef struct tagGalacticInspiralParamStruc {
 } GalacticInspiralParamStruc;
 
 
-
-
-
-
 typedef struct tagAmpSwitchStruc {
 	UINT4 q0, q1, q2, q3, q4, q5;
 } AmpSwitchStruc;
 
 
 
-/* Function prototypes. */
-
-
-
-
+/* ---------- Function prototypes. ----------  */
 void
 LALGeneratePPNInspiral( LALStatus     *,
 			CoherentGW    *output,
@@ -403,7 +398,7 @@ LALGenerateInspiralSmooth( LALStatus            *,
 			   REAL4		*qfactor);
 
 
-
+/*@}*/
 
 
 #if 0

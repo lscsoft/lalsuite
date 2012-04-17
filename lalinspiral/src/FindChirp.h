@@ -26,15 +26,29 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \defgroup FindChirp_h FindChirp_h
- * \ingroup CBC_findchirp
- */
+#ifndef _FINDCHIRPH_H
+#define _FINDCHIRPH_H
+
+#include <lal/LALDatatypes.h>
+#include <lal/ComplexFFT.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataInspiralUtils.h>
+#include <lal/LALInspiral.h>
+#include <lal/LALInspiralBank.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/FindChirpDatatypes.h>
+#include <lal/FindChirpChisq.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 
 /**
+ * \addtogroup FindChirp_h
 \author Allen, B., Brown, D. A. and Creighton, J. D. E.
-\file
-\ingroup FindChirp_h
 
 \brief This header provides core prototypes, structures and functions to
 filter interferometer data for binary inspiral chirps.
@@ -91,54 +105,39 @@ that implement the search.
 
 
 */
+/*@{*/
 
-#ifndef _FINDCHIRPH_H
-#define _FINDCHIRPH_H
+/**\name Error Codes */
+/*@{*/
+#define FINDCHIRPH_ENULL 1	/**< Null pointer */
+#define FINDCHIRPH_ENNUL 2	/**< Non-null pointer */
+#define FINDCHIRPH_EALOC 3	/**< Memory allocation error */
+#define FINDCHIRPH_ENUMZ 5	/**< Invalid number of points in segment */
+#define FINDCHIRPH_ESEGZ 6	/**< Invalid number of segments */
+#define FINDCHIRPH_ECHIZ 7	/**< Invalid number of chi squared bins */
+#define FINDCHIRPH_EDTZO 8	/**< deltaT is zero or negative */
+#define FINDCHIRPH_ETRNC 10	/**< Duration of inverse spectrum in time domain is negative */
+#define FINDCHIRPH_EFLOW 11	/**< Inverse spectrum low frequency cutoff is negative */
+#define FINDCHIRPH_EFREE 12	/**< Error freeing memory */
+#define FINDCHIRPH_ERHOT 15	/**< Rhosq threshold is negative */
+#define FINDCHIRPH_ECHIT 16	/**< Chisq threshold is negative */
+#define FINDCHIRPH_ECRUP 17	/**< Chirp length or invSpecTrunc too long for length of data segment */
+#define FINDCHIRPH_ESMSM 18	/**< Size mismatch between vectors */
+#define FINDCHIRPH_EHETR 19	/**< Attempting to simulate heterodyned GW */
+#define FINDCHIRPH_EDFDT 20	/**< Waveform sampling interval is too large */
+#define FINDCHIRPH_EAPRX 21	/**< Incorrect waveform approximant */
+#define FINDCHIRPH_EUAPX 22	/**< Unknown waveform approximant */
+#define FINDCHIRPH_ECHTZ 23	/**< Length of chirp is zero or negative */
+#define FINDCHIRPH_EMASS 24	/**< Invalid mass parameters for template generation */
+#define FINDCHIRPH_EWVFM 25	/**< Unknown injection waveform */
+#define FINDCHIRPH_EBCVC 25	/**< BCVC code: thetav not in [-pi, pi]. */
+#define FINDCHIRPH_EMAPX 26	/**< Mismatch in waveform approximant */
+#define FINDCHIRPH_EPTFW 27	/**< Error generating PTF waveform */
+#define FINDCHIRPH_EIGEN 28	/**< Error computing eigenvalues */
+#define FINDCHIRPH_EIMRW 29	/**< Error computing IMR waveform */
+/*@}*/
 
-#include <lal/LALDatatypes.h>
-#include <lal/ComplexFFT.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/LALInspiral.h>
-#include <lal/LALInspiralBank.h>
-#include <lal/GeneratePPNInspiral.h>
-#include <lal/FindChirpDatatypes.h>
-#include <lal/FindChirpChisq.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**\name Error Codes */ /*@{*/
-#define FINDCHIRPH_ENULL 1
-#define FINDCHIRPH_ENNUL 2
-#define FINDCHIRPH_EALOC 3
-#define FINDCHIRPH_ENUMZ 5
-#define FINDCHIRPH_ESEGZ 6
-#define FINDCHIRPH_ECHIZ 7
-#define FINDCHIRPH_EDTZO 8
-#define FINDCHIRPH_ETRNC 10
-#define FINDCHIRPH_EFLOW 11
-#define FINDCHIRPH_EFREE 12
-#define FINDCHIRPH_ERHOT 15
-#define FINDCHIRPH_ECHIT 16
-#define FINDCHIRPH_ECRUP 17
-#define FINDCHIRPH_ESMSM 18
-#define FINDCHIRPH_EHETR 19
-#define FINDCHIRPH_EDFDT 20
-#define FINDCHIRPH_EAPRX 21
-#define FINDCHIRPH_EUAPX 22
-#define FINDCHIRPH_ECHTZ 23
-#define FINDCHIRPH_EMASS 24
-#define FINDCHIRPH_EWVFM 25
-#define FINDCHIRPH_EBCVC 25
-#define FINDCHIRPH_EMAPX 26
-#define FINDCHIRPH_EPTFW 27
-#define FINDCHIRPH_EIGEN 28
-#define FINDCHIRPH_EIMRW 29
-
+/** \cond DONT_DOXYGEN */
 #define FINDCHIRPH_MSGENULL "Null pointer"
 #define FINDCHIRPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPH_MSGEALOC "Memory allocation error"
@@ -165,8 +164,7 @@ extern "C" {
 #define FINDCHIRPH_MSGEPTFW "Error generating PTF waveform"
 #define FINDCHIRPH_MSGEIGEN "Error computing eigenvalues"
 #define FINDCHIRPH_MSGEIMRW "Error computing IMR waveform"
-/*@}*/
-
+/** \endcond */
 
 /** This structure provides the essential information for the
 filter initialisation and memory allocation functions used by findchirp.
@@ -292,8 +290,6 @@ type \c approximant. Valid approximants are TaylorT1, TaylorT2,
 TaylorT3, PadeT1, EOB, FindChirpSP, BCV and BCVSpin.
 </dd>
 </dl>
-
-
 */
 typedef struct
 tagFindChirpDataParams
@@ -661,6 +657,11 @@ tagFindChirpBankSimParams
   REAL4			f_lower;
 }
 FindChirpBankSimParams;
+
+
+
+/*@}*/
+
 
 /*
  *

@@ -17,15 +17,22 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \defgroup RingUtils_h RingUtils_h
- * \ingroup CBC_ring
- */
+#ifndef _RING_H
+#define _RING_H
+
+#include <lal/LALDatatypes.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 
 /**
+ * \defgroup RingUtils_h RingUtils_h
+ * \ingroup pkg_ring
  * \author Jolien Creighton
- * \file
- * \ingroup RingUtils_h
  *
  * Black hole ringdown waveform generation.
  *
@@ -102,26 +109,20 @@
  * than\ \f$ds^2_{\mathrm{\scriptstyle threshold}}\f$ from the nearest template.
  *
 */
+/*@{*/
 
-#ifndef _RING_H
-#define _RING_H
+/**\name Error Codes */
+/*@{*/
+#define RINGH_ENULL 01	/**< Null pointer */
+#define RINGH_ENNUL 02	/**< Non-null pointer */
+#define RINGH_EALOC 04	/**< Memory allocation error */
+/*@}*/
 
-#include <lal/LALDatatypes.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**\name Error Codes */ /*@{*/
-#define RINGH_ENULL 01
-#define RINGH_ENNUL 02
-#define RINGH_EALOC 04
+/** \cond DONT_DOXYGEN */
 #define RINGH_MSGENULL "Null pointer"
 #define RINGH_MSGENNUL "Non-null pointer"
 #define RINGH_MSGEALOC "Memory allocation error"
-/*@}*/
+/** \endcond */
 
 /** This structure contains a bank of ringdown waveforms.  The fields are:
  * <dl>
@@ -166,6 +167,9 @@ tagRingTemplateBankInput
 }
 RingTemplateBankInput;
 
+/*@}*/
+
+/* ---------- Function prototypes ---------- */
 
 REAL4 XLALBlackHoleRingSpin( REAL4 Q );
 REAL4 XLALBlackHoleRingMass( REAL4 f, REAL4 Q );
@@ -189,13 +193,6 @@ int XLALComputeBlackHoleRing(
     REAL4TimeSeries *output, SnglRingdownTable *input, REAL4 dynRange );
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
-
-/**
- *
- *
- *
- *
-*/
 
 #if 0
 { /* so that editors will match succeeding brace */

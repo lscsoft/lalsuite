@@ -1,8 +1,5 @@
-// -*- mode: latex -*-
-
 /**
-\defgroup CBC_inspiral inspiral
-\ingroup inspiral
+   \addtogroup pkg_inspiral
 
 \brief This is a module which generates inspiral waveforms.
 
@@ -573,5 +570,9 @@ To second post-Newtonian order the carrier phase is given by
 \f}
 where \f$\theta=[\eta (t_C-t)/(5m)]^{-1/8},\f$ \f$t_C\f$ being the time at which the two stars
 merge together and the gravitational wave frequency formally diverges.
+
+@{
+  \defgroup LALInspiral_h Header LALInspiral.h
+@}
 
 */

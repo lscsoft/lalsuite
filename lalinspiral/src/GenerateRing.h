@@ -19,7 +19,7 @@
 
 /**
  * \defgroup GenerateRing_h GenerateRing_h
- * \ingroup inject
+ * \ingroup pkg_inject
  */
 
 /**

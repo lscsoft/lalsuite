@@ -1,6 +1,4 @@
 /**
-\defgroup CBC_ring ring
-\ingroup inspiral
-\brief Blackhole ringdown search
-
+        \addtogroup pkg_ring
+        \brief Blackhole ringdown search
 */

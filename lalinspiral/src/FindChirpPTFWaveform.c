@@ -26,16 +26,6 @@ template as described by the algorithm below.
 
 Blah.
 
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
-
 */
 
 #include <math.h>

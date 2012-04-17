@@ -26,14 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
-
-\author Brown, D. A. and Fazi, D.
-\file
-\ingroup FindChirpPTF_h
-
-*/
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <config.h>
 #include <stdlib.h>

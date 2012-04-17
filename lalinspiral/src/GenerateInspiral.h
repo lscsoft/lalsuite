@@ -19,7 +19,7 @@
 
 /**
  * \defgroup GenerateInspiral_h GenerateInspiral_h
- * \ingroup inject
+ * \ingroup pkg_inject
  */
 
 /**

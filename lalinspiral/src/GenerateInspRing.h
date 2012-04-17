@@ -19,14 +19,14 @@
 
 
 /** \defgroup GenerateInspRing Inspiral plus Ringdown
- * \ingroup inject
+ * \ingroup pkg_inject
  * \author S.Fairhurst
  *
  * \brief Module for pasting a (realistic) ringdown on the end of an inspiral
  *
  */
 
-/** \file GenerateInspRing.h
+/** \file
  *  \ingroup GenerateInspRing
  *
  */
