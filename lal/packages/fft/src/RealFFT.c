@@ -17,6 +17,16 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
+#include <fftw3.h>
+
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/FFTWMutex.h>
+
 /**
  * \addtogroup RealFFT_h
  *
@@ -131,40 +141,30 @@
  *
  *
 */
-
-
-#include <config.h>
-
-#include <fftw3.h>
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/FFTWMutex.h>
+/*@{*/
 
 /** \brief Plan to perform FFT of REAL4 data.
- * \ingroup RealFFT_h */
+ */
 struct
 tagREAL4FFTPlan
 {
-  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
-  UINT4      size; /*< length of the real data vector for this plan */
-  fftwf_plan plan; /*< the FFTW plan */
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the real data vector for this plan */
+  fftwf_plan plan; /**< the FFTW plan */
 };
 
 /** \brief Plan to perform FFT of REAL8 data.
- * \ingroup RealFFT_h
  */
 struct
 tagREAL8FFTPlan
 {
-  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
-  UINT4      size; /*< length of the real data vector for this plan */
-  fftw_plan  plan; /*< the FFTW plan */
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the real data vector for this plan */
+  fftw_plan  plan; /**< the FFTW plan */
 };
 
 
+/* ---------- Function prototypes ---------- */
 /*
  *
  * REAL4 XLAL Functions
@@ -1435,3 +1435,4 @@ LALREAL8VectorFFT(
 
   RETURN( status );
 }
+/*@}*/

@@ -54,7 +54,8 @@ extern "C" {
 */
 /*@{*/
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */
+/*@{*/
 #define COMPLEXFFTH_ENULL 1	/**< Null pointer */
 #define COMPLEXFFTH_ENNUL 2	/**< Non-null pointer */
 #define COMPLEXFFTH_ESIZE 4	/**< Invalid input size */
@@ -67,7 +68,6 @@ extern "C" {
 #define COMPLEXFFTH_EINTL 512	/**< Error in Intel FFT library */
 #define COMPLEXFFTH_ESIGN 1024	/**< Unknown sign of transform in plan */
 /*@}*/
-
 
 /** \cond DONT_DOXYGEN */
 #define COMPLEXFFTH_MSGENULL "Null pointer"
@@ -464,7 +464,8 @@ LALCOMPLEX16VectorFFT (
     );
 
 
-/*@} */
+/*@}*/
+
 #undef RESTRICT
 
 #if 0

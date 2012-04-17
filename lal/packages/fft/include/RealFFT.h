@@ -38,13 +38,6 @@ extern "C" {
 #define RESTRICT restrict
 #endif
 
-/** Plan to perform FFT of REAL4 data */
-typedef struct tagREAL4FFTPlan REAL4FFTPlan;
-/** Plan to perform FFT of REAL8 data */
-typedef struct tagREAL8FFTPlan REAL8FFTPlan;
-#define tagRealFFTPlan tagREAL4FFTPlan
-#define RealFFTPlan REAL4FFTPlan
-
 /**
  *
  * \addtogroup RealFFT_h
@@ -170,8 +163,18 @@ typedef struct tagREAL8FFTPlan REAL8FFTPlan;
  * same way but for double-precision transforms.
  *
 */
-/*@{ */
-/** \name Error Codes */ /*@{*/
+/*@{*/
+
+/** Plan to perform FFT of REAL4 data */
+typedef struct tagREAL4FFTPlan REAL4FFTPlan;
+/** Plan to perform FFT of REAL8 data */
+typedef struct tagREAL8FFTPlan REAL8FFTPlan;
+#define tagRealFFTPlan tagREAL4FFTPlan
+#define RealFFTPlan REAL4FFTPlan
+
+
+/** \name Error Codes */
+/*@{*/
 #define REALFFTH_ENULL 1	/**< Null pointer */
 #define REALFFTH_ENNUL 2	/**< Non-null pointer */
 #define REALFFTH_ESIZE 4	/**< Invalid input size */
