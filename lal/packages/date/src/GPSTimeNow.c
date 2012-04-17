@@ -22,7 +22,7 @@
 #include <lal/XLALError.h>
 
 /** \ingroup Date_h
- * Populate the LIGOTimeGPS argument with the current system time as
+ * \brief Populate the LIGOTimeGPS argument with the current system time as
  * returned by time(2) converted to GPS seconds.  Returns the address of
  * the LIGOTimeGPS argument or NULL on error.  On error, the GPS time is
  * undefined.
@@ -33,8 +33,6 @@
  * time indicates a time prior to Sun Jan 06 00:00:00 GMT 1980, this
  * function returns NULL.
  */
-
-
 LIGOTimeGPS *
 XLALGPSTimeNow (
     LIGOTimeGPS *gpstime

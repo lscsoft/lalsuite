@@ -22,7 +22,12 @@
 #include <lal/Date.h>
 #include <lal/XLALError.h>
 
-/** \ingroup Date_h */
+/** \defgroup XLALTime_c GPS Time
+ * \ingroup Date_h
+ *
+ * \brief GPS time manipulation functions.
+ */
+
 /*@{*/
 
 /** Converts GPS time to nano seconds stored as an INT8. */
