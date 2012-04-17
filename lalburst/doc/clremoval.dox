@@ -1,13 +1,13 @@
 /**
-\defgroup clremoval clremoval
-\ingroup burst
+\addtogroup pkg_clremoval
+
 \brief This package provides routines for finding line harmonics,
 generating a reference interference signal, and removing
 all the interference harmonics.
 
 As an example, these routines can be usefull
 for removing all those lines corresponding to the electricity supply
- frequency and its harmonics.
+frequency and its harmonics.
 
 The technique used  is the so-called coherent line removal
 (\c clr) [\ref Sintes1998,\ref Sintes2000].
@@ -23,7 +23,6 @@ broad-band signals (e.g., those which change frequency in time), even when
 there is no external reference source.  \c clr requires little
  a priori knowledge of the signals we want to remove.
 
-The package  is organized under the header \ref CLR.h and the modules
-  \ref HarmonicFinder.c,  \ref RefInterference.c and \ref CleanAll.c.
+The package  is organized under the \ref CLR_h.
 
 */

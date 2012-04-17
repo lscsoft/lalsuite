@@ -59,15 +59,23 @@
  */
 
 
+#include <lal/LALStdio.h>
+#include <lal/FileIO.h>
+#include <lal/CLR.h>
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
+
 /**
 \author Sintes, A. M.
 \file
-\ingroup clremoval
+\ingroup CLR_h
 
-\heading{Program \ref CLRTest.c}
-\latexonly\label{s_CLRTest_c}\endlatexonly
-
- Test for CLR  operations.
+\brief Test for CLR  operations.
 
 \heading{Usage}
 \code
@@ -86,48 +94,13 @@ writes the clean data into the file
 
 \heading{Exit codes}
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALI4CreateVector()
-LALCCreateVector()
-LALSCreateVector()
-LALMalloc()
-LALFree()
-LALCreateForwardRealFFTPlan()
-LALRealPowerSpectrum()
-LALForwardRealFFT()
-LALDestroyRealFFTPlan()
-LALI4DestroyVector()
-LALCDestroyVector()
-LALSDestroyVector()
-LALHarmonicFinder()
-LALRefInterference()
-LALCleanAll()
-LALCreateReverseComplexFFTPlan()
-LALCOMPLEX8VectorFFT()
-LALDestroyComplexFFTPlan()
-\endcode
-
 \heading{Notes}
 Take this program just as an example,  build
 your own one  and feed it  with the data of your interest.
 The CLR functions work on stretches of data from a few seconds up to a
 couple of minutes.
-
-
-
 */
 
-#include <lal/LALStdio.h>
-#include <lal/FileIO.h>
-#include <lal/CLR.h>
-
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
 
 INT4  lalDebugLevel = 2;
 
