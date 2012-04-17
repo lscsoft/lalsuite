@@ -80,7 +80,7 @@ struct tm * gmtime_r(const time_t *, struct tm *);
  * The inverse conversion is not attempted.
  *
  */
-/*@{*
+/*@{*/
 
 /* change in TAI-UTC from previous second:
  *

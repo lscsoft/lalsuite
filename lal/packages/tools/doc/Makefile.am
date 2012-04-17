@@ -1,8 +1,5 @@
 DOCSOURCEFILES = \
 	tools.dox \
-	sequence.dox \
-	frequencyseries.dox \
-	timeseries.dox \
 	resamp_1000x4.eps \
 	resamp_1000x4.pdf \
 	resamp_1000x8.eps \
