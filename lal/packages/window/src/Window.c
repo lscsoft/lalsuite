@@ -48,7 +48,7 @@
  */
 
 
-/*
+/**
  * Constructs a REAL4Window from a REAL8Window by quantizing the
  * double-precision data to single-precision.  The REAL8Window is freed
  * unconditionally.  Intended to be used as a wrapper, to convert any
@@ -86,7 +86,7 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
 }
 
 
-/*
+/**
  * Maps the length of a window and the offset within the window to the "y"
  * co-ordinate of the LAL documentation.
  *
@@ -106,8 +106,6 @@ static REAL4Window *XLALREAL4Window_from_REAL8Window(REAL8Window *orig)
  * (in the latter case, obviously i can't be a non-integer, but that's the
  * value it would have to be for this function to return 0.0)
  */
-
-
 static double Y(int length, int i)
 {
 	length -= 1;
@@ -115,7 +113,7 @@ static double Y(int length, int i)
 }
 
 
-/*
+/**
  * Computes the sum of squares, and sum, of the samples in a window
  * function.
  *
@@ -127,8 +125,6 @@ static double Y(int length, int i)
  * which a second variable is used to accumulate round-off errors and fold
  * them into later iterations.
  */
-
-
 static REAL8 sum_squares(REAL8 *start, int length)
 {
 
@@ -205,8 +201,6 @@ static REAL8 sum_samples(REAL8 *start, int length)
  * The return value is the address of the newly allocated REAL8Window or
  * NULL on failure.
  */
-
-
 REAL8Window *XLALCreateREAL8WindowFromSequence(REAL8Sequence *sequence)
 {
 	REAL8Window *new;
@@ -228,8 +222,6 @@ REAL8Window *XLALCreateREAL8WindowFromSequence(REAL8Sequence *sequence)
 /**
  * Single-precision version of XLALCreateREAL8WindowFromSequence().
  */
-
-
 REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence)
 {
 	/* a double-precision copy of the data is used from which to
@@ -269,8 +261,6 @@ REAL4Window *XLALCreateREAL4WindowFromSequence(REAL4Sequence *sequence)
  * S, then the input sequence is multiplied by the window * \f$\sqrt{N / S}\f$.
  * Returns the address of the REAL8Sequence or NULL on failure.
  */
-
-
 REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window)
 {
 	unsigned i;
@@ -291,8 +281,6 @@ REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REA
 /**
  * Double-precision complex version of XLALUnitaryWindowREAL8Sequence().
  */
-
-
 COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequence, const REAL8Window *window)
 {
 	unsigned i;
@@ -313,8 +301,6 @@ COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequenc
 /**
  * Single-precision version of XLALUnitaryWindowREAL8Sequence().
  */
-
-
 REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REAL4Window *window)
 {
 	unsigned i;
@@ -335,8 +321,6 @@ REAL4Sequence *XLALUnitaryWindowREAL4Sequence(REAL4Sequence *sequence, const REA
 /**
  * Single-precision complex version of XLALUnitaryWindowREAL8Sequence().
  */
-
-
 COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, const REAL4Window *window)
 {
 	unsigned i;
