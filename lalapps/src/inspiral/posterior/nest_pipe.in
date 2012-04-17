@@ -64,8 +64,8 @@ def get_timeslides_pipedown(database_connection):
 		db_out_saved.append(d)
 	output={}
 	ts_ids=set([tup[0] for tup in db_out_saved])
+        print 'Found %i timeslides to process from %i results in pipedown database'%(len(ts_ids),len(db_out_saved))
 	for ts in ts_ids:
-		print ts
 		events=[tup for tup in db_out_saved if tup[0]==ts]
 		d={}
 		for e in events:
@@ -83,6 +83,8 @@ def get_timeslides_pipedown(database_connection):
 					deltat=deltat-(seg[1]-seg[0])
 			d[e[2]]=deltat
 		t=events[0][1]+events[0][3]
+		if t in output.keys():
+			print 'ERROR: Key Collision, %s already in use'%(str(t))
 		output[t]=d
 	print output
 	return output
