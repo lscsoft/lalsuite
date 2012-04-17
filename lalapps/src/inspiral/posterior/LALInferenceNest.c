@@ -306,9 +306,9 @@ Nested sampling arguments:\n\
 	
 
 	if(LALInferenceGetProcParamVal(commandLine,"--correlatedgaussianlikelihood"))
-        runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
-    if(LALInferenceGetProcParamVal(commandLine,"--bimodalgaussianlikelihood"))
-        runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
+        	runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
+    	if(LALInferenceGetProcParamVal(commandLine,"--bimodalgaussianlikelihood"))
+        	runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
     
     
 	#ifdef HAVE_LIBLALXML
