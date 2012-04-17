@@ -37,9 +37,12 @@ extern "C" {
  * \defgroup CelestialCoordinates_c 	Module CelestialCoordinates.c
  * \defgroup TerrestrialCoordinates_c 	Module TerrestrialCoordinates.c
  * \defgroup SkyCoordinates_c 		Module SkyCoordinates.c
- *
+ * @}
  */
-/** \name Error codes *//**@{*/
+/*@{*/
+
+/** \name Error codes */
+/*@{*/
 #define SKYCOORDINATESH_ENUL  1	/**< Unexpected null pointer in arguments */
 #define SKYCOORDINATESH_ESYS  2	/**< Wrong coordinate system in input */
 #define SKYCOORDINATESH_EZERO 3	/**< Angular coordinates undefined at origin */
@@ -119,7 +122,7 @@ typedef struct tagConvertSkyParams {
 				 * equatorial system). */
 } ConvertSkyParams;
 
-/** @} */
+/*@}*/
 
 /* ---------- Function prototypes ---------- */
 
