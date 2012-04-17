@@ -26,12 +26,12 @@
 #include <lal/BandPassTimeSeries.h>
 #include <lal/ResampleTimeSeries.h>
 
-/**
+/** \defgroup ResampleTimeSeries_c Module ResampleTimeSeries.c
+ * \ingroup ResampleTimeSeries_h
+ *
  * \author Brown, D. A., Brady, P. R., Charlton, P.
  *
  * \brief Downsamples a time series in place by an integer power of two.
- * \defgroup ResampleTimeSeries_c Module ResampleTimeSeries.c
- * \ingroup ResampleTimeSeries_h
  *
 
 The routine LALResampleREAL4TimeSeries() provided functionality to
@@ -112,24 +112,10 @@ The filter coefficents used were produced by LDAS-CIT running version 0.7.0 of
 LDAS. See the LDAS dataconditioning API documentation for more information.
 </ol>
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALInfo()
-LALDButterworthREAL4TimeSeries()
-LALDCreateVector()
-LALDIIRFilterREAL4Vector()
-snprintf()
-LALWarning()
-LALDDestroyVector()
-LALRealloc()
-memmove()
-\endcode
-
 */
-/** @{ */
+/*@{*/
 
-/** UNDOCUMENTED */
+/** \see See \ref ResampleTimeSeries_c for documentation */
 int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
 {
   const INT4 filterOrder = 20;
@@ -180,7 +166,7 @@ int XLALResampleREAL4TimeSeries( REAL4TimeSeries *series, REAL8 dt )
   return 0;
 }
 
-/** UNDOCUMENTED */
+/** \see See \ref ResampleTimeSeries_c for documentation */
 int XLALResampleREAL8TimeSeries( REAL8TimeSeries *series, REAL8 dt )
 {
   const INT4 filterOrder = 20;
@@ -511,4 +497,4 @@ LALResampleREAL4TimeSeries(
   DETATCHSTATUSPTR( status );
   RETURN( status );
 }
-/** @} */
+/*@}*/

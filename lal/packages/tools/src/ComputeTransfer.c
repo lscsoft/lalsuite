@@ -30,12 +30,11 @@
 #define CAL_S2START 729273613
 #define CAL_S2END 734367613
 
-/**
-\author Patrick Brady, Jolien Creighton
-\defgroup ComputeTransfer_c Module ComputeTransfer.c
-\ingroup Calibration_h
+/** \defgroup ComputeTransfer_c Module ComputeTransfer.c
+    \ingroup Calibration_h
+    \author Patrick Brady, Jolien Creighton
 
-\brief Computes the transfer function from zero-pole-gain representation.
+    \brief Computes the transfer function from zero-pole-gain representation.
 
 A transfer function can either be specified as a list of coefficients or a
 list of poles and zeros. The function LALComputeTransfer() computes the
@@ -128,7 +127,7 @@ In most cases,  this should be irrelevant for gravitational wave data analysis,
 but care should be taken if DC is relevant when this function is used.
 
 */
-/** @{ */
+/*@{*/
 
 static void product(COMPLEX8 *c,COMPLEX8 *a, COMPLEX8 *b) {
 
@@ -740,4 +739,4 @@ XLALResponseConvert(
   return 0;
 }
 
-/** @} */
+/*@}*/

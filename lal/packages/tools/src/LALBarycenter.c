@@ -21,7 +21,6 @@
 #include <lal/LALBarycenter.h>
 
 /** \author Curt Cutler
- * \ingroup LALBarycenter_h
  * \brief Computes the position and orientation of the Earth, at some arrival time
  * \f$t_a\f$, specified <tt>LIGOTimeGPS</tt> input structure.
  *
@@ -426,7 +425,6 @@ XLALBarycenterEarth ( EarthState *earth, 		/**< [out] the earth's state at time 
 
 
 /** \author Curt Cutler
- * \ingroup LALBarycenter_h
  * \brief Transforms from detector arrival time \f$t_a\f$ in GPS (as specified in the
  * LIGOTimeGPS structure) to pulse emission time \f$t_e\f$, in TDB.
  *

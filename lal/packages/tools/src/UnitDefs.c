@@ -17,6 +17,14 @@
 *  MA  02111-1307  USA
 */
 
+#include <lal/LALStdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <lal/Units.h>
+
+#define UNITDEFSC_TEMPSIZE 20
+
+
 /**
 \author J. T. Whelan <john.whelan@ligo.org>
 \addtogroup UnitDefs_c
@@ -118,16 +126,8 @@ And finally a couple of convenient scaled units:
 </table>
 
 */
+/*@{*/
 
-#include <lal/LALStdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <lal/Units.h>
-
-#define UNITDEFSC_TEMPSIZE 20
-
-/**\addtogroup UnitDefs_c
- * @{ */
 /** To convert a units structure to a string repesentation, we need to
  * define the names of the basic units.
  */
@@ -136,7 +136,7 @@ const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
   "m", "kg", "s", "A", "K", "strain", "count"
 };
 
-/*********************************************************
+/* ********************************************************
  *                                                       *
  *                 Predefined units                      *
  *                                                       *
@@ -154,7 +154,8 @@ const CHAR lalUnitName[LALNumUnits][LALUnitNameSize] =
 
 const LALUnit lalDimensionlessUnit = {  0, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< dimensionless units */
 
-/* Basic Units */
+/** \name Basic Units */
+/*@{*/
 const LALUnit lalMeterUnit         = {  0, { 1, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< meter [m] */
 const LALUnit lalKiloGramUnit      = {  0, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< kilogram [kg]*/
 const LALUnit lalSecondUnit        = {  0, { 0, 0, 1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< second [s] */
@@ -162,15 +163,19 @@ const LALUnit lalAmpereUnit        = {  0, { 0, 0, 0, 1, 0, 0, 0}, { 0, 0, 0, 0,
 const LALUnit lalKelvinUnit        = {  0, { 0, 0, 0, 0, 1, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Kelvin [K] */
 const LALUnit lalStrainUnit        = {  0, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Strain [1] */
 const LALUnit lalADCCountUnit      = {  0, { 0, 0, 0, 0, 0, 0, 1}, { 0, 0, 0, 0, 0, 0, 0} };	/**< ADC count [count] */
+/*@}*/
 
-/* Derived Mechanical Units */
+/** \name Derived Mechanical Units */
+/*@{*/
 const LALUnit lalHertzUnit         = {  0, { 0, 0,-1, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Hertz [Hz] */
 const LALUnit lalNewtonUnit        = {  0, { 1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Newton [N] */
 const LALUnit lalPascalUnit        = {  0, {-1, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Pascal [Pa] */
 const LALUnit lalJouleUnit         = {  0, { 2, 1,-2, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Joule [J] */
 const LALUnit lalWattUnit          = {  0, { 2, 1,-3, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Watt [W ] */
+/*@}*/
 
-/* Derived Electromagnetic Units */
+/** \name Derived Electromagnetic Units */
+/*@{*/
 const LALUnit lalCoulombUnit       = {  0, { 0, 0, 1, 1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Coulomb [C] */
 const LALUnit lalVoltUnit          = {  0, { 2, 1,-3,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Volt [V] */
 const LALUnit lalOhmUnit           = {  0, { 2, 1,-3,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Ohm [\f$\Omega\f$] */
@@ -178,8 +183,10 @@ const LALUnit lalFaradUnit         = {  0, {-2,-1, 4, 2, 0, 0, 0}, { 0, 0, 0, 0,
 const LALUnit lalWeberUnit         = {  0, { 2, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Weber [Wb] */
 const LALUnit lalHenryUnit         = {  0, { 2, 1,-2,-2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Henry [H] */
 const LALUnit lalTeslaUnit         = {  0, { 0, 1,-2,-1, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Tesla [T] */
+/*@}*/
 
-/* Powers of Ten */
+/** \name Powers of Ten */
+/*@{*/
 const LALUnit lalYottaUnit         = { 24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Yotta [1e24] */
 const LALUnit lalZettaUnit         = { 21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Zetta [1e21] */
 const LALUnit lalExaUnit           = { 18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Exa [1e18] */
@@ -200,13 +207,14 @@ const LALUnit lalFemtoUnit         = {-15, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0,
 const LALUnit lalAttoUnit          = {-18, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Atto [1e-18] */
 const LALUnit lalZeptoUnit         = {-21, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Zepto [1e-21] */
 const LALUnit lalYoctoUnit         = {-24, { 0, 0, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Yocto [1e-24] */
+/*@}*/
 
-/* Convenient Scaled Units */
+/** \name Convenient Scaled Units */
+/*@{*/
 const LALUnit lalGramUnit          = { -3, { 0, 1, 0, 0, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< Gram [1e-3] */
 const LALUnit lalAttoStrainUnit    = {-18, { 0, 0, 0, 0, 0, 1, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< AttoStrain [1e-18] */
 const LALUnit lalPicoFaradUnit     = {-12, {-2,-1, 2, 2, 0, 0, 0}, { 0, 0, 0, 0, 0, 0, 0} };	/**< PicoFarad [1e-12 F] */
-
-/** @} */
+/*@}*/
 
 /* Static function to read a number into a character array */
 /* returns 0 on success, 1 on failure */
@@ -325,8 +333,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
   return string;
 }
 
-/** \ingroup UnitDefs_c
- * \deprecated Use XLALUnitAsString() instead.
+/** \deprecated Use XLALUnitAsString() instead.
  */
 void
 LALUnitAsString( LALStatus *status,
@@ -551,8 +558,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 }
 
 
-/** \ingroup UnitDefs_c
- * \deprecated Use XLALParseUnitString() instead.
+/** \deprecated Use XLALParseUnitString() instead.
  */
 void
 LALParseUnitString ( LALStatus *status,
@@ -589,3 +595,4 @@ LALParseUnitString ( LALStatus *status,
 
   RETURN(status);
 }
+/*@}*//* end: UnitDefs_c */

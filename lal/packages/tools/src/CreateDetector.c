@@ -23,13 +23,12 @@
 #include <string.h>
 #include <lal/DetectorSite.h>
 
-/**
-\author J. T. Whelan <john.whelan@ligo.org>
-\defgroup CreateDetector_c Module CreateDetector.c
-\ingroup LALDetectors_h
+/** \defgroup CreateDetector_c Module CreateDetector.c
+    \ingroup LALDetectors_h
 
-\brief Creates a \c LALDetector structure from a \c LALFrDetector
-structure and the type of detector.
+    \author J. T. Whelan <john.whelan@ligo.org>
+
+    \brief Creates a \c LALDetector structure from a \c LALFrDetector structure and the type of detector.
 
 This routine takes the site geometry described in the
 \c LALFrDetector structure, along with a
@@ -189,12 +188,6 @@ to the formula appropriate to the detector type.
 
 The calculation of \f$x^a\f$ is done to double precision, that of \f$d^{ab}\f$
 to single precision.
-
-\heading{Uses}
-
-\code
-XLALCreateDetector()
-\endcode
 
 \heading{Notes}
 
@@ -411,8 +404,7 @@ v          -0.3926141  & -0.0776130  & -0.2473886 \\
 </td></tr>
 </table>
 */
-
-/** @{ */
+/*@{*/
 
 /*  { name,
       vertexLatitiudeRadians,
@@ -623,7 +615,7 @@ void getCartesianComponents( REAL4 u[3],
 }
 
 
-
+/** UNDOCUMENTED */
 LALDetector * XLALCreateDetector( LALDetector *detector,
     const LALFrDetector *frDetector, LALDetectorType type )
 
@@ -803,7 +795,9 @@ LALDetector * XLALCreateDetector( LALDetector *detector,
   return detector;
 }
 
-
+/** DEPRECATED.
+ * \deprecated Use XLALCreateDetector() instead.
+ */
 void LALCreateDetector( LALStatus             *status,
                         LALDetector           *output,
                         const LALFrDetector   *input,
@@ -830,4 +824,4 @@ void LALCreateDetector( LALStatus             *status,
 
   RETURN(status);
 }
-/** @} */
+/*@}*/

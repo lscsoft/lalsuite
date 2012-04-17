@@ -24,13 +24,12 @@
 #include <lal/Units.h>
 #include <lal/XLALError.h>
 
-/**
-\author J. T. Whelan <john.whelan@ligo.org>
-\addtogroup UnitCompare_c
+/** \addtogroup UnitCompare_c
+    \author J. T. Whelan <john.whelan@ligo.org>
 
-\brief Function to compare two \c LALUnit structures.
-
+    \brief Function to compare two \c LALUnit structures.
 */
+/*@{*/
 
 /** Return 1 if a unit is dimensionless, 0 otherwise */
 int XLALUnitIsDimensionless(const LALUnit *unit)
@@ -117,9 +116,7 @@ int XLALUnitCompare( const LALUnit *unit1, const LALUnit *unit2 )
   return 0;
 }
 
-
-/** \ingroup UnitCompare_c
- * Compare two units structures, returning true if they are equivalent, false otherwise.
+/** Compare two units structures, returning true if they are equivalent, false otherwise.
  * This function determines whether the units represented by
  * <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt> are the same (both
  * dimensionally and in the power-of-ten prefactor).  In this way,
@@ -162,3 +159,4 @@ LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input)
 
   RETURN(status);
 }
+/*@}*/

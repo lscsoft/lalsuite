@@ -23,14 +23,13 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-/**
-\author J. T. Whelan <john.whelan@ligo.org>
-\addtogroup UnitMultiply_c
+/** \addtogroup UnitMultiply_c
+    \author J. T. Whelan <john.whelan@ligo.org>
 
-\brief Multiplies two \c LALUnit structures.
+    \brief Multiplies two \c LALUnit structures.
 
 This function multiplies together the \c LALUnit structures
-<tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt>, thus allowing a
+<tt>*(input-\>unitOne)</tt> and <tt>*(input-\>unitTwo)</tt>, thus allowing a
 module to <em>e.g.</em>, multiply two \c REAL8TimeSeries and
 give the resulting \c REAL8TimeSeries the correct units.
 
@@ -38,7 +37,7 @@ give the resulting \c REAL8TimeSeries the correct units.
 
 The function first adds together the overall powers of ten in the two
 input unit structures, then adds each of the corresponding rational
-powers in <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt> by naïve
+powers in <tt>*(input-\>unitOne)</tt> and <tt>*(input-\>unitTwo)</tt> by naïve
 addition of rational numbers
 \f[
 \frac{N_1}{1+D_1} + \frac{N_2}{1+D_2} =
@@ -47,11 +46,8 @@ addition of rational numbers
 and then calls <tt>LALUnitNormalize()</tt> to bring the result into
 standard form.
 
-\heading{Uses}
-
-<tt>LALUnitNormalize()</tt>
-
 */
+/*@{*/
 
 /** This function multiplies together the \c LALUnit structures
  * <tt>*(input->unitOne)</tt> and <tt>*(input->unitTwo)</tt>, thus allowing a
@@ -105,7 +101,7 @@ LALUnit * XLALUnitMultiply( LALUnit *output, const LALUnit *unit1, const LALUnit
   return output;
 }
 
-
+/** UNDOCUMENTED */
 LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *unit2 )
 {
   LALUnit scratch;
@@ -117,7 +113,7 @@ LALUnit * XLALUnitDivide( LALUnit *output, const LALUnit *unit1, const LALUnit *
   return output;
 }
 
-/** \ingroup UnitMultiply_c
+/** DEPRECATED.
  * \deprecated Use XLALUnitMultiply() instead.
  */
 void
@@ -145,3 +141,4 @@ LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input)
   }
   RETURN(status);
 }
+/*@}*/

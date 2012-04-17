@@ -37,13 +37,12 @@ extern "C"
 {
 #endif
 
-/**
-\author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
-\addtogroup DetResponse_h
+/** \addtogroup DetResponse_h
+    \author David Chin <dwchin@umich.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>
 
-\brief Provides routines to compute gravitational wave detector response to
-polarized planar gravitational wave originating from a given source,
-detected at a given time.
+    \brief Provides routines to compute gravitational wave detector response to
+    polarized planar gravitational wave originating from a given source,
+    detected at a given time.
 
 \heading{Synopsis}
 
@@ -66,21 +65,16 @@ Anderson, <em>et al.</em> [\ref Anderson_2000].  We compute the \f$h\f$-tensors 
 them (take the scalar product) with the detector response tensors as
 described in the \ref LALDetectors_h section of the \c tools package.
 
-\ref LALDetectors_h in the \c tools package  provides predefined
+\ref LALDetectors_h provides predefined
 \c LALDetector structures representing most current detectors,
 including LIGO (Hanford and Livingston), and GEO.
 
-\heading{Uses}
-LALGPStoGMST1()
-
 \heading{Notes}
 
-For examples of usage, please see the test programs in the \c test
-directory.
+For examples of usage, please see the test programs in the \c test directory.
 
 */
-
-/** @{ */
+/*@{*/
 
 /** \name Error Codes */
 /*@{*/
@@ -219,13 +213,10 @@ int XLALComputeDetAMResponseSeries(
 	const int n
 );
 
-/** @} */
+/*@}*/
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* !defined _DETRESPONSE_H */
-
-
-
