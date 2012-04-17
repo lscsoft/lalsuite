@@ -1,5 +1,5 @@
 /**
-\addtogroup std
+\addtogroup pkg_std
 
 \brief This package contains headers providing basic datatypes, constants,
        and macros that support the LAL standard.
