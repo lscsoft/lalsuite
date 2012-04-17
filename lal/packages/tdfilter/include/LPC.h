@@ -49,12 +49,12 @@ extern "C" {
 #define LPCH_EMEM 2	/**< memory error */
 #define LPCH_ENUM 3	/**< numerical error */
 /*@}*/
-/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define LPCH_MSGEIN "invalid input"
 #define LPCH_MSGEMEM "memory error"
 #define LPCH_MSGENUM "numerical error"
-
+/** \endcond */
 
 void LALPolystab(LALStatus *status,
 		 REAL4Vector *a);
@@ -64,6 +64,8 @@ void LALLPC(LALStatus *status,
 	    REAL4Vector *x,    /* training data */
 	    UINT4 p            /* filter order */
 	    );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

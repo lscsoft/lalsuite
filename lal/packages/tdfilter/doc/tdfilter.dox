@@ -1,6 +1,6 @@
 /**
 
-\addtogroup tdfilter
+\addtogroup pkg_tdfilter
 
 This package covers LAL routines for constructing and applying digital
 time-domain filters.  It is organized under three headers.  The
@@ -30,10 +30,10 @@ frequency variable.  (4) Use the routines in \ref IIRFilter_h to
 create IIR filters from the ZPG filters, and to apply them to data.
 
 @{
-   \defgroup ZPGFilter_h Header ZPGFilter.h
-   \defgroup IIRFilter_h Header IIRFilter.h
-   \defgroup BandPassTimeSeries_h Header BandPassTimeSeries.h
-   \defgroup LPC_h Header LPC.h
+   \defgroup ZPGFilter_h 		Header ZPGFilter.h
+   \defgroup IIRFilter_h 		Header IIRFilter.h
+   \defgroup BandPassTimeSeries_h 	Header BandPassTimeSeries.h
+   \defgroup LPC_h 			Header LPC.h
 @}
 
 */

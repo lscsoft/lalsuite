@@ -23,10 +23,8 @@
 
 
 /**
-   \author Creighton, T. D.
    \addtogroup DestroyZPGFilter_c
-
-
+   \author Creighton, T. D.
 
    \brief Destroys ZPG filter objects.
 

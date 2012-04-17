@@ -90,7 +90,8 @@ variable is assumed.
 @}
 */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */
+/*@{*/
 #define ZPGFILTERH_ENUL 1	/**< Unexpected null pointer in arguments */
 #define ZPGFILTERH_EOUT 2	/**< Output handle points to a non-null pointer */
 #define ZPGFILTERH_EMEM 3	/**< Memory allocation error */
@@ -104,7 +105,7 @@ variable is assumed.
 #define ZPGFILTERH_MSGEBAD "Bad filter parameters"
 
 
-/* Function prototypes. */
+/* ---------- Function prototypes. ---------- */
 COMPLEX8ZPGFilter *XLALCreateCOMPLEX8ZPGFilter(INT4 numZeros, INT4 numPoles);
 COMPLEX16ZPGFilter *XLALCreateCOMPLEX16ZPGFilter(INT4 numZeros, INT4 numPoles);
 void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter );

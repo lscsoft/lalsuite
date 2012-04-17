@@ -35,9 +35,8 @@ extern "C" {
 #endif
 
 /**
-   \author Creighton, T. D.
    \addtogroup IIRFilter_h
-
+   \author Creighton, T. D.
 
    \brief Provides routines to make and apply IIR filters.
 
@@ -126,7 +125,8 @@ routines never actually use this coefficient.
 @}
 */
 
-/** \name Error Codes */ /*@{*/
+/** \name Error Codes */
+/*@{*/
 #define IIRFILTERH_ENUL  1	/**< Unexpected null pointer in arguments */
 #define IIRFILTERH_EOUT  2	/**< Output handle points to a non-null pointer */
 #define IIRFILTERH_EMEM  3	/**< Memory allocation error */

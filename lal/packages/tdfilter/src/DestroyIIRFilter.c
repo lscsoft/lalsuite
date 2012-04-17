@@ -23,8 +23,8 @@
 
 
 /**
-   \author Creighton, T. D.
    \addtogroup DestroyIIRFilter_c
+   \author Creighton, T. D.
 
    \brief Destroys IIR filter objects.
 
