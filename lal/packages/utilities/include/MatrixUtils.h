@@ -27,8 +27,8 @@ extern "C" {
 #endif
 
 /**
-   \author Creighton, T. D.
    \addtogroup MatrixUtils_h
+   \author Creighton, T. D.
 
    \brief Provides routines to solve linear systems.
 
@@ -119,7 +119,7 @@ all real).  In this case, symmetric is equivalent to Hermitian, and
 orthogonal is equivalent to unitary.
 
 */
-/* @{ */
+/*@{*/
 
 /** \name Error Codes */
 /*@{*/
@@ -139,7 +139,9 @@ orthogonal is equivalent to unitary.
 #define MATRIXUTILSH_MSGEMEM  "Memory allocation error"
 
 
-/* Function prototypes. */
+/* ---------- Function prototypes. ---------- */
+/** \addtogroup MatrixOps_c */
+/*@{*/
 void
 LALI2MatrixAdd( LALStatus *, INT2Array *out, INT2Array *in1, INT2Array *in2 );
 void
@@ -207,8 +209,7 @@ void
 LALCMatrixAdjoint( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1 );
 void
 LALZMatrixAdjoint( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1 );
-
-
+/*@}*/
 
 
 void
@@ -228,7 +229,6 @@ LALDMatrixInverse( LALStatus *, REAL8 *det, REAL8Array *matrix, REAL8Array *inve
 
 void
 LALDMatrixDeterminantErr( LALStatus *, REAL8 det[2], REAL8Array *matrix, REAL8Array *matrixErr );
-
 
 
 

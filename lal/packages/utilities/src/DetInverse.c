@@ -23,9 +23,9 @@
 #include <lal/MatrixUtils.h>
 
 /**
-\author Creighton, T. D.
 \defgroup DetInverse_c Module DetInverse.c
 \ingroup MatrixUtils_h
+\author Creighton, T. D.
 
 \brief Routines to compute matrix determinants and inverses.
 

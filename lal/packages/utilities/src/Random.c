@@ -25,7 +25,7 @@
 #include <lal/XLALError.h>
 
 /**
- * \file
+ * \defgroup Random_c Module Random.c
  * \ingroup Random_h
  *
  * \brief Functions for generating random numbers.
@@ -74,6 +74,7 @@ This is an implementation of the random number generators \c ran1 and
 \c gasdev described in Numerical Recipes [\ref ptvf1992].
 
 */
+/*@{*/
 
 static const INT4 a = 16807;
 static const INT4 m = 2147483647;
@@ -359,3 +360,4 @@ LALNormalDeviates (
 
   RETURN (status);
 }
+/*@}*/

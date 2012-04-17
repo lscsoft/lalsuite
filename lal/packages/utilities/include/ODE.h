@@ -35,8 +35,8 @@ extern "C" {
 
 
 /**
- * \author J. D. E. Creighton
  * \addtogroup ODE_h
+ * \author J. D. E. Creighton
  *
  * \brief Routines for solving ordinary differential equations (ODEs).
  *
@@ -96,7 +96,7 @@ tagREAL4ODEParams
 }
 REAL4ODEParams;
 
-/** \see See ODE_h for documentation */
+/** See ODE_h for documentation */
 void LALSRungeKutta4(
     LALStatus      *status,
     REAL4Vector    *output,
@@ -104,7 +104,7 @@ void LALSRungeKutta4(
     REAL4ODEParams *params
     );
 
-/** \see See ODE_h for documentation */
+/** See ODE_h for documentation */
 void LALSRungeKutta5(
     LALStatus      *status,
     REAL4Vector    *output,
@@ -112,7 +112,7 @@ void LALSRungeKutta5(
     REAL4ODEParams *params
     );
 
-/** \see See ODE_h for documentation */
+/** See ODE_h for documentation */
 void LALSRungeKutta5Adapt(
     LALStatus      *status,
     REAL4Vector    *output,

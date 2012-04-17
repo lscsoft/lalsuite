@@ -36,13 +36,7 @@
  * The functions that make up the guts of this module
  */
 
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-/** \ingroup RngMedBias_h
-    \brief Routine for finding bias in median for exponential distribution
+/** Routine for finding bias in median for exponential distribution
  to be used with any code which uses the running median to estimate PSD.
 
 For the exponential distribution with unit mean and variance, the value of the

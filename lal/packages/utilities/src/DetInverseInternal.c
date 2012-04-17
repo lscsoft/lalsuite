@@ -25,9 +25,9 @@
 
 
 /**
-\author Creighton, T. D.
 \defgroup \DetInverseInternal_c Module DetInverseInternal.c
 \ingroup MatrixUtils_h
+\author Creighton, T. D.
 
 \brief Internal routines used to compute matrix determinants and inverses.
 

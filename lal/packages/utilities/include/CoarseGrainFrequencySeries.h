@@ -187,7 +187,8 @@ bins in the fine-grained series.
 */
 /*@{*/
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define COARSEGRAINFREQUENCYSERIESH_ENULLPTR        1		/**< Null pointer */
 #define COARSEGRAINFREQUENCYSERIESH_ESAMEPTR        2		/**< Input and Output pointers the same */
 #define COARSEGRAINFREQUENCYSERIESH_EZEROLEN        3		/**< Zero length for data member of series */

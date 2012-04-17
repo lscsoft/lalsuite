@@ -33,9 +33,9 @@ fabs( a )*sqrt( 1.0 + ((b)/(a))*((b)/(a)) ) :                        \
 
 
 /**
-\author Creighton, T. D.
 \defgroup EigenInternal_c Module EigenInternal.c
 \ingroup MatrixUtils_h
+\author Creighton, T. D.
 
 \brief Internal routines used to compute eigenvalues and eigenvectors.
 

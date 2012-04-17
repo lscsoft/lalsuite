@@ -17,25 +17,11 @@
  *  MA  02111-1307  USA
  */
 
-
-/** 
- * \defgroup SphericalHarmonics Spin-weighted Spherical Harmonics
- * \ingroup support
- * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson
- *
- * \brief Library of spherical harmonic functions
- *
-
- *
- */
-
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALError.h>
 #include <lal/XLALGSL.h>
 
 #include <gsl/gsl_sf_legendre.h>
-
-
 
 /**
  * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
@@ -436,7 +422,7 @@ COMPLEX16 XLALSpinWeightedSphericalHarmonic(
 
 
 /**
- * This function computes the regular scalar spherical harmonic.
+ * Computes the scalar spherical harmonic \f$ Y_{lm}(\theta, \phi) \f$.
  */
 int
 XLALScalarSphericalHarmonic(
@@ -482,7 +468,7 @@ XLALScalarSphericalHarmonic(
 /**
  * Computes the spin 2 weighted spherical harmonic. This function is now
  * deprecated and will be removed soon. All calls should be replaced with
- * calls to XLALSpinWeightedSphericalHarmonic.
+ * calls to XLALSpinWeightedSphericalHarmonic().
  */
 INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
                    UINT4   L,      /**< value of L */

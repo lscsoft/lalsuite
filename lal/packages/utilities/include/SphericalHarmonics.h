@@ -18,19 +18,6 @@
  */
 
 
-/** 
- * \defgroup SphericalHarmonics Spin-weighted Spherical Harmonics
- * \ingroup support
- * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson
- *
- * \brief Library of spherical harmonic functions
- *
-
- *
- */
-
-
-
 /* includes */
 #include <stdlib.h>
 #include <math.h>
@@ -46,50 +33,19 @@ extern "C" {
 #endif
 
 /**
- * Computes the (s)Y(l,m) spin-weighted spherical harmonic.
+ * \addtogroup SphericalHarmonics_h
+ * \author S.Fairhurst, B. Krishnan, L.Santamaria, C. Robinson
  *
- * From somewhere ....
+ * \brief Library of Spin-weighted Spherical Harmonic functions
  *
- * See also:
- * Implements Equations (II.9)-(II.13) of
- * D. A. Brown, S. Fairhurst, B. Krishnan, R. A. Mercer, R. K. Kopparapu,
- * L. Santamaria, and J. T. Whelan,
- * "Data formats for numerical relativity waves",
- * arXiv:0709.0093v1 (2007).
  *
- * Currently only supports s=-2, l=2,3,4,5,6,7,8 modes.
  */
-COMPLEX16 XLALSpinWeightedSphericalHarmonic(
-                                   REAL8 theta,  /**< polar angle (rad) */
-                                   REAL8 phi,    /**< azimuthal angle (rad) */
-                                   int s,        /**< spin weight */
-                                   int l,        /**< mode number l */
-                                   int m         /**< mode number m */
-    );
+/*@{*/
+COMPLEX16 XLALSpinWeightedSphericalHarmonic( REAL8 theta, REAL8 phi, int s, int l, int m );
+int XLALScalarSphericalHarmonic( COMPLEX16 *y, UINT4 l, INT4  m, REAL8 theta, REAL8 phi );
+INT4 XLALSphHarm ( COMPLEX16 *out, UINT4   L, INT4 M, REAL4 theta, REAL4   phi );
+/*@}*/
 
-/**
- * Computes the scalar spherical harmonic \f$ Y_{lm}(\theta, \phi) \f$.
- */
-int
-XLALScalarSphericalHarmonic(
-                         COMPLEX16 *y, /**< output */
-                         UINT4 l,      /**< value of l */
-                         INT4  m,      /**< value of m */
-                         REAL8 theta,  /**< angle theta */
-                         REAL8 phi     /**< angle phi */
-                         );
-
-/**
- * Computes the spin 2 weighted spherical harmonic. This function is now
- * deprecated and will be removed soon. All calls should be replaced with
- * calls to XLALSpinWeightedSphHarm.
- */
-INT4 XLALSphHarm ( COMPLEX16 *out, /**< output */
-                   UINT4   L,      /**< value of L */
-                   INT4 M,         /**< value of M */
-                   REAL4 theta,    /**< angle with respect to the z axis */
-                   REAL4   phi     /**< angle with respect to the x axis */
-                   );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

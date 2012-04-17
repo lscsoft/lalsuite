@@ -45,8 +45,9 @@ extern "C" {
 #endif
 
 /**
-\author Krishnan, B., Itoh, Y.
 \addtogroup RngMedBias_h
+\author Krishnan, B., Itoh, Y.
+
 \brief Routine for finding bias in median for exponential distribution
 
 \heading{Synopsis}
@@ -64,11 +65,10 @@ extern "C" {
 #define RNGMEDBIASH_EVAL 5		/**< Invalid value */
 /*@}*/
 
-/*@}*/
-
+/** \cond DONT_DOXYGEN */
 #define RNGMEDBIASH_MSGENULL "Null pointer"
 #define RNGMEDBIASH_MSGEVAL  "Invalid value"
-
+/** \endcond */
 
 /* ******************************************************
  * 8. Macros. But, note that macros are deprecated.
@@ -100,6 +100,8 @@ void LALRngMedBias (LALStatus   *status,
 		 REAL8       *biasFactor,
 		 INT4        blkSize
 		 );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

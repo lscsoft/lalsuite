@@ -24,9 +24,9 @@
 
 
 /**
-\author Creighton, T. D.
 \defgroup Eigen_c Module Eigen.c
 \ingroup MatrixUtils_h
+\author Creighton, T. D.
 
 \brief Routines to compute eigenvalues and eigenvectors.
 

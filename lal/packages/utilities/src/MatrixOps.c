@@ -1,7 +1,7 @@
 /**
-   \author Creighton, T. D.
    \defgroup MatrixOps_c Module MatrixOps.c
    \ingroup MatrixUtils_h
+   \author Creighton, T. D.
 
    \brief Routines to perform basic matrix operations.
 

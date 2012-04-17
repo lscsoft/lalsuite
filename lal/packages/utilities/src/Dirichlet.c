@@ -23,9 +23,7 @@
 #include <lal/Dirichlet.h>
 
 
-/** \ingroup Dirichlet_h
-
-\brief Calculates the values of the Dirichlet kernel [\ref pw93].
+/** \brief Calculates the values of the Dirichlet kernel [\ref pw93].
 
 \f[
 {\cal D}_N(x):=

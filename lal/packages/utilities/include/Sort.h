@@ -113,6 +113,7 @@ Note: if you can use \c qsort(), you should.
 
 */
 /*@{*/
+
 /** \name Error Codes */
 /*@{*/
 #define SORTH_ENUL 1		/**< Null pointer */

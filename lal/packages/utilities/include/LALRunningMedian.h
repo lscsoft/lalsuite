@@ -33,8 +33,8 @@ extern "C" {
 
 
 /**
-\author Somya D. Mohanty, B. Machenschalk
 \addtogroup LALRunningMedian_h
+\author Somya D. Mohanty, B. Machenschalk
 
 \brief Provides routines to efficiently calculate the running median
 
@@ -111,34 +111,33 @@ LALRunningMedianPar;
 
 /* Function prototypes. */
 
-/** \see See LALRunningMedian_h for documentation */
+/** See LALRunningMedian_h for documentation */
 void
 LALDRunningMedian( LALStatus *status,
 		   REAL8Sequence *medians,
 		   const REAL8Sequence *input,
 		   LALRunningMedianPar param);
 
-/** \see See LALRunningMedian_h for documentation */
+/** See LALRunningMedian_h for documentation */
 void
 LALSRunningMedian( LALStatus *status,
 		   REAL4Sequence *medians,
 		   const REAL4Sequence *input,
 		   LALRunningMedianPar param);
 
-/** \see See LALRunningMedian_h for documentation */
+/** See LALRunningMedian_h for documentation */
 void
 LALDRunningMedian2( LALStatus *status,
 		    REAL8Sequence *medians,
 		    const REAL8Sequence *input,
 		    LALRunningMedianPar param);
 
-/** \see See LALRunningMedian_h for documentation */
+/** See LALRunningMedian_h for documentation */
 void
 LALSRunningMedian2( LALStatus *status,
 		    REAL4Sequence *medians,
 		    const REAL4Sequence *input,
 		    LALRunningMedianPar param);
-
 
 /*@}*/
 

@@ -34,8 +34,8 @@ extern "C" {
 
 
 /**
- * \author Creighton, J. D. E. and Tibbits, M. M.
  * \addtogroup Random_h
+ * \author Creighton, J. D. E. and Tibbits, M. M.
  *
  * \brief Generates random numbers.
  *
@@ -62,8 +62,10 @@ extern "C" {
 #define RANDOMH_EZERO 256		/**< Output Vector length must be greater than zero */
 #define RANDOMH_ESEED 512		/**< Improper seed value */
 /*@}*/
+
 /*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define RANDOMH_MSGENULL "Null pointer"
 #define RANDOMH_MSGENNUL "Non-null pointer"
 #define RANDOMH_MSGESIZE "Invalid size"
@@ -74,6 +76,7 @@ extern "C" {
 #define RANDOMH_MSGEINIT "Params must be initialized with CreateParams first"
 #define RANDOMH_MSGEZERO "Output Vector length must be greater than zero"
 #define RANDOMH_MSGESEED "Improper seed value"
+/** \endcond */
 
 /** \ingroup Random_h
  * \brief This structure contains the parameters necessary for generating the current
