@@ -1,23 +1,4 @@
 /* -*- C -*- */
-/**
- * \author David Chin <dwchin@umich.edu> +1-734-709-9119
- * \addtogroup VectorIndexRange_h
- *
- * \section TODOref Header \ref VectorIndexRange.h
- *
- * \brief Routines to slice up vectors/sequences by specifying starting and ending indices, inclusive.
- *
- * VectorIndexHole() is "complementary" to VectorIndexRange(), in the sense that
- * it returns the two segments of the vector that would remain after VectorIndexRange() acts.
- *
- * \heading{Synopsis}
- * \code
- * #include <lal/VectorIndexRange.h>
- * \endcode
- *
- * @{
- */
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
@@ -35,7 +16,24 @@
 extern "C" {
 #endif /* C++ */
 
-/**\name Error Codes */ /*@{*/
+/**
+ * \addtogroup VectorIndexRange_h
+ * \author David Chin <dwchin@umich.edu> +1-734-709-9119
+ *
+ * \brief Routines to slice up vectors/sequences by specifying starting and ending indices, inclusive.
+ *
+ * VectorIndexHole() is "complementary" to VectorIndexRange(), in the sense that
+ * it returns the two segments of the vector that would remain after VectorIndexRange() acts.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/VectorIndexRange.h>
+ * \endcode
+ */
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
 #define VECTORINDEXRANGEH_EARG 1	/**< Error parsing command-line arguments */
 #define VECTORINDEXRANGEH_ECHK 2	/**< Error checking failed to catch bad data */
 #define VECTORINDEXRANGEH_EFLS 3	/**< Incorrect answer for valid data */
@@ -46,10 +44,9 @@ extern "C" {
 #define VECTORINDEXRANGEH_ENUMZ 8	/**< Incorrect number of command line arguments */
 #define VECTORINDEXRANGEH_ELNTH 9	/**< Vector/Array of Improper Length */
 #define VECTORINDEXRANGEH_ENNUL 10	/**< Non-Null Pointer that should be NULL */
-/** @}*/
+/*@}*/
 
-/** @}*/
-
+/** \cond DONT_DOXYGEN */
 #define VECTORINDEXRANGEH_MSGEARG "Error parsing command-line arguments"
 #define VECTORINDEXRANGEH_MSGECHK "Error checking failed to catch bad data"
 #define VECTORINDEXRANGEH_MSGEFLS "Incorrect answer for valid data"
@@ -60,8 +57,10 @@ extern "C" {
 #define VECTORINDEXRANGEH_MSGENUMZ "Incorrect number of command line arguments"
 #define VECTORINDEXRANGEH_MSGELNTH "Vector/Array of Improper Length"
 #define VECTORINDEXRANGEH_MSGENNUL "Non-Null Pointer that should be NULL"
+/** \endcond */
 
-/* typedefs */
+
+/* ---------- typedefs ---------- */
 
 /* CHAR */
 typedef struct
@@ -152,7 +151,7 @@ tagCOMPLEX16VectorPair {
 } COMPLEX16VectorPair;
 
 
-/* Function protos */
+/* ---------- Function protos ---------- */
 
 /* CHAR */
 void LALCHARVectorIndexRange ( LALStatus *status,
@@ -264,10 +263,10 @@ void LALZVectorIndexHole ( LALStatus  *status,
           COMPLEX16Vector      *v,
           const UINT4Vector *indexVector );
 
+/*@}*/
+
 #ifdef __cplusplus
 }
 #endif /* C++ */
 
 #endif /* __LALVECTORINDEXRANGE_H__ */
-
-
