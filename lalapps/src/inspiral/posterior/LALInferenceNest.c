@@ -305,10 +305,14 @@ Nested sampling arguments:\n\
         }
 	
 
-	if(LALInferenceGetProcParamVal(commandLine,"--correlatedgaussianlikelihood"))
+	if(LALInferenceGetProcParamVal(commandLine,"--correlatedgaussianlikelihood")){
         	runState->likelihood=&LALInferenceCorrelatedAnalyticLogLikelihood;
-    	if(LALInferenceGetProcParamVal(commandLine,"--bimodalgaussianlikelihood"))
+		runState->prior=LALInferenceAnalyticNullPrior;
+	}
+    	if(LALInferenceGetProcParamVal(commandLine,"--bimodalgaussianlikelihood")){
         	runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
+		runState->prior=LALInferenceAnalyticNullPrior;
+	}
     
     
 	#ifdef HAVE_LIBLALXML
@@ -383,6 +387,48 @@ Nested sampling arguments:\n\
 	
 }
 
+/* Setup the variable for the evidence calculation test for review */
+/* 5-sigma ranges for analytic likeliood function */
+/* https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/LALInferenceReviewAnalyticGaussianLikelihood */
+void initVariablesReviewEvidence(LALInferenceRunState *state);
+void initVariablesReviewEvidence(LALInferenceRunState *state)
+{
+	LALInferenceVariables *priorArgs=state->priorArgs;
+        state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+        LALInferenceVariables *currentParams=state->currentParams;
+	UINT4 i=0;
+
+	struct varSettings {const char *name; REAL8 val, min, max;};
+	
+	struct varSettings setup[]=
+	{
+		{.name="time", .val=0.0, .min=-0.1073625, .max=0.1073625},
+		{.name="m1", .val=16., .min=14.927715, .max=17.072285},
+		{.name="m2", .val=7., .min=5.829675, .max=8.170325},
+		{.name="distance", .val=50., .min=37.986000000000004, .max=62.013999999999996},
+		{.name="inclination", .val=LAL_PI/2., .min=1.4054428267948966, .max=1.7361498267948965},
+		{.name="phase", .val=LAL_PI, .min=2.8701521535897934, .max=3.413033153589793},
+		{.name="polarisation", .val=LAL_PI/2., .min=1.3885563267948966, .max=1.7530363267948965},
+		{.name="rightascension", .val=LAL_PI, .min=2.813050153589793, .max=3.4701351535897933},
+		{.name="declination", .val=0., .min=-0.300699, .max=0.300699},
+		{.name="a_spin1", .val=0.5, .min=0.3784565, .max=0.6215435},
+		{.name="a_spin2", .val=0.5, .min=0.421869, .max=0.578131},
+		{.name="theta_spin1", .val=LAL_PI/2., .min=1.3993998267948966, .max=1.7421928267948965},
+		{.name="theta_spin2", .val=LAL_PI/2., .min=1.4086158267948965, .max=1.7329768267948966},
+		{.name="phi_spin1", .val=LAL_PI, .min=2.781852653589793, .max=3.501332653589793},
+		{.name="phi_spin2", .val=LAL_PI, .min=2.777215653589793, .max=3.5059696535897933},
+		{.name="END", .val=0., .min=0., .max=0.}
+	};
+
+	while(strcmp("END",setup[i].name))
+	{
+		LALInferenceAddVariable(currentParams,setup[i].name, &(setup[i].val) ,LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
+	        LALInferenceAddMinMaxPrior(priorArgs, setup[i].name,    &(setup[i].min),    &(setup[i].max),    LALINFERENCE_REAL8_t);
+		i++;
+	}
+	return;
+}
+
 /* Setup the variables to control template generation */
 /* Includes specification of prior ranges */
 
@@ -396,8 +442,8 @@ void initVariables(LALInferenceRunState *state)
 	ProcessParamsTable *commandLine=state->commandLine;
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
-	INT4 AmpOrder=0;
 	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
+	int AmpOrder=0;
 	Approximant approx=TaylorF2;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
@@ -773,9 +819,13 @@ Arguments for each section follow:\n\n";
 	
 	/* Set up structures for nested sampling */
 	initializeNS(state);
-	
+
 	/* Set up currentParams with variables to be used */
-	initVariables(state);
+	/* Review task needs special priors */
+	if(LALInferenceGetProcParamVal(procParams,"--correlatedgaussianlikelihood") || LALInferenceGetProcParamVal(procParams,"--bimodalgaussianlikelihood"))
+		initVariablesReviewEvidence(state);
+	else
+		initVariables(state);
 	
 	/* Check for student-t and apply */
 	initStudentt(state);
