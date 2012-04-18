@@ -76,7 +76,7 @@ function.
 #define FINDCHIRPCHISQH_MSGEUAPX "Unknown waveform approximant"
 #define FINDCHIRPCHISQH_MSGEIAPX "Incorrect waveform approximant"
 #define FINDCHIRPCHISQH_MSGEBINS "Error computing chisq bin boundaries"
-/** \endcond *
+/** \endcond */
 
 
 /* --- structure for storing input to the chisq veto --------------------- */
