@@ -881,7 +881,6 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
 
 //Exponential of input vector is computed using SSE
 //Cephes library based
-//!!!!! only 0 and negative input values allowed !!!!!
 void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 {
    
@@ -951,9 +950,15 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       __m128d log2etimesx = _mm_mul_pd(log2e, *x);
       
       //Round
-      __m128d log2etimesxsubhalf = _mm_sub_pd(log2etimesx, onehalf);
-      __m128i log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesxsubhalf);
+      //__m128d log2etimesxsubhalf = _mm_sub_pd(log2etimesx, onehalf);
+      //__m128i log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesxsubhalf);
+      //__m128d log2etimesx_rounded = _mm_cvtepi32_pd(log2etimesx_rounded_i);
+      __m128d log2etimesxplushalf = _mm_add_pd(log2etimesx, onehalf);
+      __m128i log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesxplushalf);
       __m128d log2etimesx_rounded = _mm_cvtepi32_pd(log2etimesx_rounded_i);
+      __m128d mask = _mm_cmpgt_pd(log2etimesx_rounded, log2etimesxplushalf);
+      mask = _mm_and_pd(mask, one);
+      log2etimesx_rounded = _mm_sub_pd(log2etimesx_rounded, mask);
       
       //multiply and subtract as in the cephes code
       __m128d log2etimesx_rounded_times_c1 = _mm_mul_pd(log2etimesx_rounded, cephes_c1);
@@ -1031,7 +1036,6 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 
 //Exponential of input vector is computed using SSE
 //Cephes library based
-//!!!!! only 0 and negative input values allowed !!!!!
 void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 {
    
@@ -1099,9 +1103,15 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       __m128 log2etimesx = _mm_mul_ps(log2e, *x);
       
       //Round
-      __m128 log2etimesxsubhalf = _mm_sub_ps(log2etimesx, onehalf);
-      __m128i log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesxsubhalf);
+      //__m128 log2etimesxsubhalf = _mm_sub_ps(log2etimesx, onehalf);
+      //__m128i log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesxsubhalf);
+      //__m128 log2etimesx_rounded = _mm_cvtepi32_ps(log2etimesx_rounded_i);
+      __m128 log2etimesxplushalf = _mm_add_ps(log2etimesx, onehalf);
+      __m128i log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesxplushalf);
       __m128 log2etimesx_rounded = _mm_cvtepi32_ps(log2etimesx_rounded_i);
+      __m128 mask = _mm_cmpgt_ps(log2etimesx_rounded, log2etimesxplushalf);
+      mask = _mm_and_ps(mask, one);
+      log2etimesx_rounded = _mm_sub_ps(log2etimesx_rounded, mask);
       
       //multiply and subtract as in the cephes code
       __m128 log2etimesx_rounded_times_c1 = _mm_mul_ps(log2etimesx_rounded, cephes_c1);

@@ -405,6 +405,21 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
+            //TODO: remove this
+            /* for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj]);
+            resetTemplateStruct(template);
+            REAL4FFTPlan *FFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, inputParams->FFTplanFlag);
+            INT4Vector *sftexist = XLALCreateINT4Vector(ffdata->numffts);
+            for (jj=0; jj<(INT4)ffdata->numffts; jj++) sftexist->data[jj] = 1;
+            makeTemplate(template, ihsCandidates->data[ii], inputParams, sftexist, FFTplan);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
+               XLAL_ERROR(XLAL_EFUNC);
+            }
+            fprintf(stderr, "\n");
+            for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj]);
+            XLALDestroyREAL4FFTPlan(FFTplan);
+            XLALDestroyINT4Vector(sftexist); */
             
             //Estimate the FAR for these bin weights if the option was given
             if (inputParams->calcRthreshold) {
