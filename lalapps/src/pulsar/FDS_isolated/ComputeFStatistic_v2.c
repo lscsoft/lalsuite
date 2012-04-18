@@ -176,6 +176,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
+  REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
+  REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
 } ConfigVariables;
 
 
@@ -507,39 +509,6 @@ int main(int argc,char *argv[])
   if (uvar.countTemplates)
     printf("%%%% Number of templates: %0.0f\n", numTemplates);
 
-  /* prepare Line Veto statistics parameters */
-  REAL4 LVlogRhoTerm;
-  if ( uvar.LVrho < 0.0 ) {
-    fprintf(stderr, "Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar.LVrho);
-    return( COMPUTEFSTATISTIC_EINPUT );
-  }
-  else if ( uvar.LVrho > 0.0 )
-    LVlogRhoTerm = 4.0 * log((REAL4)uvar.LVrho) - log(70.0);
-  else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
-    LVlogRhoTerm = - LAL_REAL4_MAX;
-  UINT4 numDetectors = GV.multiSFTs->length;
-  REAL4 *LVloglX = NULL;
-  if ( uvar.computeLV && uvar.LVlX ) {
-    if (  uvar.LVlX->length != numDetectors ) {
-      fprintf(stderr, "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar.LVlX->length, numDetectors);
-      return( COMPUTEFSTATISTIC_EINPUT );
-    }
-    for (UINT4 X = 0; X < numDetectors; X++) {
-      if ( 1 != sscanf ( uvar.LVlX->data[X], "%" LAL_REAL4_FORMAT, &LVloglX[X] ) ) {
-        fprintf(stderr, "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar.LVlX->data[X]);
-        return ( COMPUTEFSTATISTIC_EINPUT );
-      }
-      if ( LVloglX[X] < 0.0 ) {
-        fprintf(stderr, "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, LVloglX[X] );
-        return( COMPUTEFSTATISTIC_EINPUT );
-      }
-      else if ( LVloglX[X] > 0.0 )
-        LVloglX[X] = log(LVloglX[X]);
-      else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
-        LVloglX[X] = - LAL_REAL4_MAX;
-    } /* for X < numDetectors */
-  } /* if ( uvar.computeLV && uvar.LVlX ) */
-
   /*----------------------------------------------------------------------
    * main loop: demodulate data for each point in the sky-position grid
    * and for each value of the frequency-spindown
@@ -687,7 +656,7 @@ int main(int argc,char *argv[])
           REAL4 TwoFX[Fstat.numDetectors];
           for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
             TwoFX[X] = 2.0*Fstat.FX[X];
-          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, LVlogRhoTerm, LVloglX, uvar.LVuseAllTerms );
+          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, GV.LVloglX->data, uvar.LVuseAllTerms );
           if ( xlalErrno ) {
             XLALPrintError ("%s: XLALComputeLineVetoArray() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
@@ -1753,13 +1722,51 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   if ( uvar->outputSingleFstats || uvar->computeLV )
     cfg->CFparams.returnSingleF = TRUE;
 
+  /* ---------- prepare Line Veto statistics parameters ---------- */
+  if ( uvar->LVrho < 0.0 ) {
+    XLALPrintError("Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar->LVrho);
+    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  }
+  else if ( uvar->LVrho > 0.0 )
+    cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
+  else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
+    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+  UINT4 numDetectors = cfg->multiSFTs->length;
+
+  if ( uvar->computeLV && uvar->LVlX )
+    {
+      if (  uvar->LVlX->length != numDetectors ) {
+        XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      for (UINT4 X = 0; X < numDetectors; X++)
+        {
+          REAL4 LVlX;
+          if ( 1 != sscanf ( uvar->LVlX->data[X], "%" LAL_REAL4_FORMAT, &LVlX ) ) {
+            XLALPrintError ( "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar->LVlX->data[X]);
+            ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+          }
+          if ( LVlX < 0.0 ) {
+            XLALPrintError ( "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, LVlX );
+            ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+          }
+          else if ( LVlX > 0.0 )
+            cfg->LVloglX->data[X] = log ( LVlX );
+          else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+            cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
+        } /* for X < numDetectors */
+    } /* if ( uvar.computeLV && uvar.LVlX ) */
+
   // ----- if user compiled special SSE-tuned code, check that SSE is actually available, otherwise fail!
   // in order to avoid 'unexpected' behaviour, ie the 'SSE-code' falling back on the non-SSE hotloop functions
 #if defined(CFS_SSE_OPT) && !defined(__SSE__)
   XLALPrintError ( "\n\nThis code was compiled for use of SSE-optimized LALDemod-hotloop, but no SSE extension present!\n\n");
   ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 #endif
-
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1911,6 +1918,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
     XLALFree ( cfg->VCSInfoString );
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
+
+  if ( cfg->LVloglX )
+    XLALDestroyREAL4Vector ( cfg->LVloglX );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
