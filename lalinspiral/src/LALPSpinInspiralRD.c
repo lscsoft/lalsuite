@@ -1,3 +1,4 @@
+
 /*
 *  Copyright (C) 2011 Riccardo Sturani
 *
@@ -1785,9 +1786,10 @@ static int XLALSpinInspiralAdaptiveEngine(
 {
 
   UINT4 j;
-  INT4 k;
-  INT4 kend=0;
-  INT4 jend=0;
+  UINT4 k;
+  UINT4 kMatch=0;
+  UINT4 jMatch=0;
+  UINT4 Npoints=10;
   UINT4 intlen;
   UINT4 intreturn;
 
@@ -1850,7 +1852,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 S2y0=yinit[9];
   REAL8 S2z0=yinit[10];
 
-  intlen = XLALAdaptiveRungeKutta4(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
+  intlen = XLALAdaptiveRungeKutta4Hermite(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
 
   intreturn = integrator->returncode;
   XLALAdaptiveRungeKutta4Free(integrator);
@@ -1895,9 +1897,6 @@ static int XLALSpinInspiralAdaptiveEngine(
   if (mparams->inspiralOnly!=1) {
 
     j=intlen;
-    jend=0;
-
-    INT4 Npoints=10;
 
     do {
       j--;
@@ -1908,28 +1907,29 @@ static int XLALSpinInspiralAdaptiveEngine(
       S2S2=(S2x[j]*S2x[j]+S2y[j]*S2y[j]+S2z[j]*S2z[j])/mparams->m2msq/mparams->m2msq;
       omegaMatch=OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
       if (omegaMatch>omega[j]) {
-	if (omega[j-1]<omega[j]) jend=j;
+	if (omega[j-1]<omega[j]) jMatch=j;
 	// The numerical integrator sometimes stops and stores twice the last
 	// omega value, this 'if' instruction avoids keeping two identical 
 	// values of omega at the end of the integration.
       }
-    } while ((j>0)&&(jend==0));
+    } while ((j>0)&&(jMatch==0));
 
-    if (omegaMatch<omega[jend]) {
+    if (omegaMatch<omega[jMatch]) {
       XLALPrintError("*** LALPSpinInspiralRD ERROR ***: Impossible to attach phenom. part\n");
       XLAL_ERROR(XLAL_EFAILED);
     }
 
-    kend=Npoints-1;
-    if (omega[jend+1]>omega[jend]) {
-      jend++;
-      kend--;
-    }
-    //We keep until the point where omega > omegaMatch for better derivative
-    // computation, but do the matching at the last point at which 
-    // omega < omegaMatch
+    // Data structure are copied into Npoints-long
+    // REAL8Array for interpolation and derivative computation
+    if (Npoints > intlen) Npoints = intlen;
 
-    if (Npoints > jend) Npoints = jend+1;
+    if ( (omega[jMatch+1]>omega[jMatch]) && ((jMatch+1)<intlen) )
+      kMatch=Npoints-2;
+    else
+      kMatch=Npoints-1;
+    //We keep until the point where omega > omegaMatch for better derivative
+    //computation, but do the matching at the last point at which 
+    // omega < omegaMatch
 
     REAL8Vector *omega_s   = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *LNhx_s    = XLALCreateREAL8Vector(Npoints);
@@ -1949,7 +1949,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     REAL8Vector *ddalpha   = XLALCreateREAL8Vector(Npoints);
 
     for (k=0;k<Npoints;k++) {
-      j=k+jend-Npoints+1;
+      j=k+jMatch-kMatch;
       omega_s->data[k]  = omega[j];
       LNhx_s->data[k]   = LNhx[j];
       LNhy_s->data[k]   = LNhy[j];
@@ -1965,7 +1965,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
-      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jend,omega);
+      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,omega);
       XLAL_ERROR(XLAL_EFAILED);
     }
 
@@ -1988,32 +1988,32 @@ static int XLALSpinInspiralAdaptiveEngine(
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
-      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jend,omega);
+      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,omega);
       XLAL_ERROR(XLAL_EFAILED);
     }
 
-    if (ddomega->data[kend]<0.) {
+    if (ddomega->data[kMatch]<0.) {
       XLALPrintWarning("*** LALPSpinInspiralRD WARNING: the attach of the phenom. phase has been shifted back: m1 %12.6f  m2 %12.6f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintWarning("  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n   1032: Omega > OmegaCut %12.6e\n",intreturn,mparams->OmCutoff); 
-      while ((kend>0)&&(ddomega->data[kend]<0.)) {
-	kend--;
-	jend--;
+      while ((kMatch>0)&&(ddomega->data[kMatch]<0.)) {
+	kMatch--;
+	jMatch--;
       } 
     }
 
     phenPars->intreturn = intreturn;
-    phenPars->energy    = energy[jend];
-    phenPars->omega     = omega_s->data[kend];
-    phenPars->domega    = domega->data[kend];
-    phenPars->ddomega   = ddomega->data[kend];
-    phenPars->diota     = diota->data[kend];
-    phenPars->ddiota    = ddiota->data[kend];
-    phenPars->dalpha    = dalpha->data[kend];
-    phenPars->ddalpha   = ddalpha->data[kend];
-    phenPars->countback = jend;
-    phenPars->Psi       = Phi[jend];
-    phenPars->endtime   = ((REAL8) jend)*dt;
-    phenPars->ci        = LNhz[jend];
+    phenPars->energy    = energy[jMatch];
+    phenPars->omega     = omega_s->data[kMatch];
+    phenPars->domega    = domega->data[kMatch];
+    phenPars->ddomega   = ddomega->data[kMatch];
+    phenPars->diota     = diota->data[kMatch];
+    phenPars->ddiota    = ddiota->data[kMatch];
+    phenPars->dalpha    = dalpha->data[kMatch];
+    phenPars->ddalpha   = ddalpha->data[kMatch];
+    phenPars->countback = jMatch;
+    phenPars->Psi       = Phi[jMatch];
+    phenPars->endtime   = ((REAL8) jMatch)*dt;
+    phenPars->ci        = LNhz[jMatch];
     phenPars->LNhS1     = LNhS1;
     phenPars->LNhS2     = LNhS2;
     phenPars->S1S2      = S1S2;
@@ -2036,7 +2036,7 @@ static int XLALSpinInspiralAdaptiveEngine(
     XLALDestroyREAL8Vector(ddalpha);
   }
   else {
-    jend=intlen-1;
+    jMatch=intlen-1;
     phenPars->intreturn = intreturn;
     phenPars->energy    = 0.;
     phenPars->omega     = 0.;
@@ -2073,7 +2073,7 @@ static int XLALSpinInspiralAdaptiveEngine(
       alpha=0.;  
   }
 
-  for (j=0;j<=(UINT4)jend;j++) {
+  for (j=0;j<=jMatch;j++) {
 
     freq->data[j]=omega[j];
     v=cbrt(omega[j]);

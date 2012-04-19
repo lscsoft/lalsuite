@@ -172,12 +172,12 @@ int XLALBBHPhenWaveAFreqDomTemplates(
   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
   /* generate one waveform with startPhase specified by the user */
-  if (!XLALBBHPhenWaveAFreqDom(signalvec1, params))
+  if (XLALBBHPhenWaveAFreqDom(signalvec1, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   /* generate another waveform orthogonal to it */
   params->startPhase += LAL_PI_2;
-  if (!XLALBBHPhenWaveAFreqDom(signalvec2, params))
+  if (XLALBBHPhenWaveAFreqDom(signalvec2, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
@@ -200,12 +200,12 @@ int XLALBBHPhenWaveBFreqDomTemplates(
   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
   /* generate one waveform with startPhase specified by the user */
-  if (!XLALBBHPhenWaveBFreqDom(signalvec1, params))
+  if (XLALBBHPhenWaveBFreqDom(signalvec1, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   /* generate another waveform orthogonal to it */
   params->startPhase += LAL_PI_2;
-  if (!XLALBBHPhenWaveBFreqDom(signalvec2, params))
+  if (XLALBBHPhenWaveBFreqDom(signalvec2, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
