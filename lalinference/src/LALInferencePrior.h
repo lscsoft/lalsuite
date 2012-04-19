@@ -167,4 +167,12 @@ REAL8 LALInferenceComputePriorMassNorm(const double MMin, const double MMax, con
                     const double McMin, const double McMax,
                     const double massRatioMin, const double massRatioMax, const char *massRatioName);
 
+/** Prior that checks for minimum and maximum prior range specified in runState->priorArgs
+    and returns 0.0 if sample lies inside the boundaries, -DBL_MAX otherwise.
+    Can be used with MinMaxPrior functions.
+    Ignores variables which are not REAL8 or do not have min and max values set.
+*/
+REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params);
+
+
 #endif

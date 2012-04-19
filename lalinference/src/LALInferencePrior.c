@@ -1095,7 +1095,26 @@ REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALIn
       }
     }
   }
+  logPrior+=LALInferenceFlatBoundedPrior(runState, params);
   return(logPrior);
+}
+
+REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+{
+  LALInferenceVariableItem *cur;
+  REAL8 min,max;
+  if(!params||!runState) XLAL_ERROR(XLAL_EFAULT, "Encountered NULL pointer in prior");
+  if(!runState->priorArgs) return 0.0; /* no prior ranges specified */
+  for(cur=params->head;cur;cur=cur->next)
+  {
+    if(cur->type!=LALINFERENCE_REAL8_t) continue;
+    if(LALInferenceCheckMinMaxPrior(runState->priorArgs, cur->name))
+    {
+      LALInferenceGetMinMaxPrior(runState->priorArgs, cur->name, &min, &max);
+      if (min>*(REAL8 *)cur->value || max<*(REAL8 *)cur->value) return -DBL_MAX;
+    }
+  }
+  return 0.0;
 }
 
 REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params) {
