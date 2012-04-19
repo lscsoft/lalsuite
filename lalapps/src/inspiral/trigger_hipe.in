@@ -854,7 +854,8 @@ for grb in ext_trigs:
       new_injfiles = [injFile]
 
       # XXX: hack since glue is having trouble with empty columns
-      fix_numrel_columns(sims)
+      #  Removing hack as it should no longer be needed!
+#      fix_numrel_columns(sims)
 
       # split the injections
       if opts.verbose: print "  Splitting injections..."
