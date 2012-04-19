@@ -37,8 +37,8 @@ extern "C" {
 #endif
 
 /**
-\author Creighton, T. D.
 \addtogroup SimulateCoherentGW_h
+\author Creighton, T. D.
 
 \brief Provides routines to simulate generic gravitational waveforms
 originating from a particular source.

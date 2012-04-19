@@ -17,13 +17,60 @@
  *  MA  02111-1307  USA
  */
 
-/**
+#include <lal/AVFactories.h>
+#include <lal/TimeSeries.h>
+#include <lal/GeneratePulsarSignal.h>
+#include <lal/ComputeFstat.h>
+#include <lal/ExtrapolatePulsarSpins.h>
+
+extern INT4 lalDebugLevel;
+
+
+/*----- Macros ----- */
+
+#define SQ(x) ((x) * (x))
+
+/** convert GPS-time to REAL8 */
+#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
+
+/** copy 3 components of Euklidean vector */
+#define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
+
+/** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
+#define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
+
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
+#define TRUE  (1==1)
+#define FALSE (1==0)
+
+#define oneBillion 1000000000L
+
+#define NUM_SPINDOWNS 	3
+
+/* error-codes */
+#define SIMULATEPULSARSIGNAL_ENULL 		1
+#define SIMULATEPULSARSIGNAL_ENONULL		2
+#define SIMULATEPULSARSIGNAL_EMEM		3
+#define SIMULATEPULSARSIGNAL_ESYS		4
+#define SIMULATEPULSARSIGNAL_EINPUT		5
+#define SIMULATEPULSARSIGNAL_EFUN		6
+
+
+#define SIMULATEPULSARSIGNAL_MSGENULL 		"Arguments contained an unexpected null pointer"
+#define SIMULATEPULSARSIGNAL_MSGENONULL		"Output pointer is not NULL"
+#define SIMULATEPULSARSIGNAL_MSGEMEM		"Out of memory"
+#define SIMULATEPULSARSIGNAL_MSGESYS		"System error, probably while File I/O"
+#define SIMULATEPULSARSIGNAL_MSGEINPUT		"Invalid input-arguments to function"
+#define SIMULATEPULSARSIGNAL_MSGEFUN		"Subroutine failed"
+
+static LALUnit emptyUnit;
+
+/** Simulate a pulsar signal to best accuracy possible.
  * \author Reinhard Prix
  * \date 2005
- * \file
- * \brief Routines to simulate pulsar-signals "exactly".
 
-The motivation for this module is to provide functions to
+The motivation for this function is to provide functions to
 simulate pulsar signals <em>with the best possible accuracy</em>,
 i.e. using no approximations, contrary to LALGeneratePulsarSignal().
 
@@ -41,7 +88,7 @@ where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions,
 which depend of the wave polarization \f$\psi\f$,
 the source position \f$\alpha\f$, \f$\delta\f$ and the detector position and
 orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for
-the beam-pattern functions are given in \ref JKS98 "[JKS98]", which we write as
+the beam-pattern functions are given in [\ref JKS98], which we write as
 \f{eqnarray}
 F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
 F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,
@@ -99,69 +146,14 @@ the local (mean) sidereal time at the detector for given GPS-time,
 and and LALBarycenter() to calculate \f$\tau(t)\f$.
 
  *
- */
-
-#include <lal/AVFactories.h>
-#include <lal/TimeSeries.h>
-#include <lal/GeneratePulsarSignal.h>
-#include <lal/ComputeFstat.h>
-#include <lal/ExtrapolatePulsarSpins.h>
-
-extern INT4 lalDebugLevel;
-
-
-/*----- Macros ----- */
-
-#define SQ(x) ((x) * (x))
-
-/** convert GPS-time to REAL8 */
-#define GPS2REAL8(gps) (1.0 * (gps).gpsSeconds + 1.e-9 * (gps).gpsNanoSeconds )
-
-/** copy 3 components of Euklidean vector */
-#define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
-
-/** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
-#define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
-
-#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
-
-#define TRUE  (1==1)
-#define FALSE (1==0)
-
-#define oneBillion 1000000000L
-
-#define NUM_SPINDOWNS 	3
-
-/* error-codes */
-#define SIMULATEPULSARSIGNAL_ENULL 		1
-#define SIMULATEPULSARSIGNAL_ENONULL		2
-#define SIMULATEPULSARSIGNAL_EMEM		3
-#define SIMULATEPULSARSIGNAL_ESYS		4
-#define SIMULATEPULSARSIGNAL_EINPUT		5
-#define SIMULATEPULSARSIGNAL_EFUN		6
-
-
-#define SIMULATEPULSARSIGNAL_MSGENULL 		"Arguments contained an unexpected null pointer"
-#define SIMULATEPULSARSIGNAL_MSGENONULL		"Output pointer is not NULL"
-#define SIMULATEPULSARSIGNAL_MSGEMEM		"Out of memory"
-#define SIMULATEPULSARSIGNAL_MSGESYS		"System error, probably while File I/O"
-#define SIMULATEPULSARSIGNAL_MSGEINPUT		"Invalid input-arguments to function"
-#define SIMULATEPULSARSIGNAL_MSGEFUN		"Subroutine failed"
-
-static LALUnit emptyUnit;
-
-
-
-/** Simulate a pulsar signal to best accuracy possible.
- *
  * NOTE: currently only isolated pulsars are supported
  *
  * NOTE2: we don't really use the highest possible accuracy right now,
  *   as we blatently neglect all relativistic timing effects (i.e. using dT=v.n/c)
  *
  * NOTE3: no heterodyning is performed here, the time-series is generated and sampled
- * at the given rate, that's all! ==> the caller needs to make sure about the
- * right sampling rate to use (->aliasing) and do the proper post-treatment...
+ * at the given rate, that's all! ==\> the caller needs to make sure about the
+ * right sampling rate to use (-\>aliasing) and do the proper post-treatment...
  *
  */
 void
@@ -357,5 +349,3 @@ LALSimulateExactPulsarSignal (LALStatus *status,
   RETURN(status);
 
 } /* LALSimulateExactPulsarSignal() */
-
-

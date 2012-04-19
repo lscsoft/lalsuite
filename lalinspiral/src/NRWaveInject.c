@@ -17,14 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \file NRWaveInject.c
- *  \ingroup NRWaveInject
- *  \author S.Fairhurst, B.Krishnan, L.Santamaria
- *
- *  \brief Functions for reading/writing numerical relativity waveforms
- *
- */
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>

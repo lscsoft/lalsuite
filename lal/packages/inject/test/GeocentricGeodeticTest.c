@@ -98,19 +98,10 @@ expression for \f$v\f$ with a power series, as described in
 equatorial plane.  The point of transition has been tuned by hand, so
 that the errors due to series truncation just within the wedge are
 about the same as the numerical loss of precision just outside of it.
+*/
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALGeocentricToGeodetic()       LALGeodeticToGeocentric()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALUniformDeviate()
-\endcode
-
-\heading{Notes}
-
-\name Error Codes */ /**@{*/
+/** \name Error Codes */
+/*@{*/
 #define GEOCENTRICGEODETICTESTC_ENORM 0	/**< Normal exit */
 #define GEOCENTRICGEODETICTESTC_ESUB  1	/**< Subroutine failed */
 #define GEOCENTRICGEODETICTESTC_EARG  2	/**< Error parsing arguments */

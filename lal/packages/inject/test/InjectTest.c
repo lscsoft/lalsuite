@@ -253,30 +253,6 @@ i/c\f$ is the projected, normalized periapsis distance, and
 \f$T=t_\mathrm{stop}-t_\mathrm{start}\f$ is the total signal length.  If
 this gives \f$\Delta t>T\f$ then \f$\Delta t\f$ is set equal to \f$T\f$.
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALMalloc()                     LALFree()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALCreateTokenList()            LALDestroyTokenList()
-LALCHARCreateVector()           LALCHARDestroyVector()
-LALCCreateVector()              LALCDestroyVector()
-LALDCreateVector()              LALDDestroyVector()
-LALSDestroyVector()             LALSDestroyVectorSequence()
-LALCReadFSeries()               LALSReadTSeries()
-LALCHARReadVector()             LALSWriteTSeries()
-LALCCVectorDivide()             LALNormalDeviates()
-LALUnitRaise()                  LALUnitMultiply()
-LALUnitCompare()                LALStringToI8()
-LALStringToS()                  LALStringToD()
-LALGeneratePPNInspiral()        LALGenerateTaylorCW()
-LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
-LALSSInjectTimeSeries()         LALInitBarycenter()
-snprintf()                   LALPrintError()
-LALCheckMemoryLeaks()
-\endcode
-
-
 \name Error Codes */ /*@{*/
 #define INJECTTESTC_ENORM 0	/**< Normal exit */
 #define INJECTTESTC_ESUB  1	/**< Subroutine failed */

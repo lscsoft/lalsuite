@@ -28,10 +28,7 @@
 /**
 \author Mendell, G.
 \file
-\ingroup pulsarTODO
-
-\heading{Program \ref GeneratePulsarSignalTest.c}
-\latexonly\label{ss_GeneratePulsarSignalTest_c}\endlatexonly
+\ingroup GeneratePulsarSignal_h
 
 \heading{Usage}
 \code
@@ -43,13 +40,12 @@ can be set to print output for debugging purposes.
 
 \heading{Description}
 
-This test program calls and compares the output from LALGeneratePulsarSignal
-and LALSignalToSFTs with the output from LALComputeSkyAndZeroPsiAMResponse
-and LALFastGeneratePulsarSFTs for a variety of signal parameters.
+This test program calls and compares the output from LALGeneratePulsarSignal()
+and LALSignalToSFTs() with the output from LALComputeSkyAndZeroPsiAMResponse()
+and LALFastGeneratePulsarSFTs() for a variety of signal parameters.
 
 The current code only compares the modulus of the output SFTs,
 not the phases.
-
 
 \heading{Notes}
 
@@ -58,19 +54,22 @@ example uses of the functions tested by this code.
 
 */
 
-/** \name Error Codes */ /*@{*/
-#define GENERATEPULSARSIGNALTESTC_ENORM  0
-#define GENERATEPULSARSIGNALTESTC_EIFO   1
-#define GENERATEPULSARSIGNALTESTC_EMOD   2
-#define GENERATEPULSARSIGNALTESTC_EBIN   3
-#define GENERATEPULSARSIGNALTESTC_EBINS  4
+/** \name Error Codes */
+/*@{*/
+#define GENERATEPULSARSIGNALTESTC_ENORM  0	/**< Normal exit */
+#define GENERATEPULSARSIGNALTESTC_EIFO   1	/**< IFO not supported */
+#define GENERATEPULSARSIGNALTESTC_EMOD   2	/**< SFT max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs */
+#define GENERATEPULSARSIGNALTESTC_EBIN   3	/**< SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin */
+#define GENERATEPULSARSIGNALTESTC_EBINS  4	/**< SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define GENERATEPULSARSIGNALTESTC_MSGENORM  "Normal exit"
 #define GENERATEPULSARSIGNALTESTC_MSGEIFO   "IFO not supported"
 #define GENERATEPULSARSIGNALTESTC_MSGEMOD   "SFT max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs"
 #define GENERATEPULSARSIGNALTESTC_MSGEBIN  "SFT freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs by more than 1 bin"
 #define GENERATEPULSARSIGNALTESTC_MSGEBINS "SFTs freq with max power from LALSignalToSFTs and LALFastGeneratePulsarSFTs differs too often"
-/*@}*/
+
 
 /* preprocessor flags that control output */
 /* First two are used with PRINT_OUTPUTSFT
@@ -120,11 +119,11 @@ example uses of the functions tested by this code.
 /* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv); */ /* 02/02/05 gam */
 void RunGeneratePulsarSignalTest(LALStatus *status);
 
-/*********************************************************/
+/* ********************************************************/
 /*                                                       */
 /* START FUNCTION: main                                  */
 /*                                                       */
-/*********************************************************/
+/* ********************************************************/
 int main(int UNUSED argc, char **argv)
 {
 
@@ -156,17 +155,17 @@ int main(int UNUSED argc, char **argv)
 
   return GENERATEPULSARSIGNALTESTC_ENORM;
 }
-/*********************************************************/
+/* ********************************************************/
 /*                                                       */
 /* END FUNCTION: main                                    */
 /*                                                       */
-/*********************************************************/
+/* ********************************************************/
 
-/*********************************************************/
+/* ********************************************************/
 /*                                                       */
 /* START FUNCTION: RunGeneratePulsarSignalTest           */
 /*                                                       */
-/*********************************************************/
+/* ********************************************************/
 /* void RunGeneratePulsarSignalTest(LALStatus *status, int argc, char **argv) */ /* 02/02/05 gam */
 void RunGeneratePulsarSignalTest(LALStatus *status)
 {
@@ -417,11 +416,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   pSFTandSignalParams->nSamples = nsamples;
   pSFTandSignalParams->Dterms = Dterms;  /* 09/07/05 gam */
 
-  /*********************************************************/
+  /* ********************************************************/
   /*                                                       */
   /* START SECTION: LOOP OVER SKY POSITIONS                */
   /*                                                       */
-  /*********************************************************/
+  /* ********************************************************/
   for(iSky=0;iSky<numSkyPosTotal;iSky++) {
 
     /* set source sky position declination (DEC) */
@@ -458,11 +457,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
     LALComputeSkyAndZeroPsiAMResponse (status->statusPtr, pSkyConstAndZeroPsiAMResponse, pSFTandSignalParams);
     CHECKSTATUSPTR (status);
 
-    /*********************************************************/
+    /* ********************************************************/
     /*                                                       */
     /* START SECTION: LOOP OVER SPINDOWN                     */
     /*                                                       */
-    /*********************************************************/
+    /* ********************************************************/
     for(jDeriv=0;jDeriv<numFreqDerivIncludingNoSpinDown;jDeriv++) {
      /* source spindown parameters */
      if (numSpinDown > 0) {
@@ -492,11 +491,11 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        }
      }
 
-     /****************************************************/
+     /* ***************************************************/
      /*                                                  */
      /* START SECTION: LOOP OVER FREQUENCIES             */
      /*                                                  */
-     /****************************************************/
+     /* ***************************************************/
      for(iFreq=0;iFreq<nBinsSGNL;iFreq++) {
 
        /* set source orientation psi */
@@ -691,24 +690,24 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
        LALFree(signalvec);
 
      } /* END for(iFreq=0;iFreq<nBinsSGNL;iFreq++) */
-     /****************************************************/
+     /* ***************************************************/
      /*                                                  */
      /* END SECTION: LOOP OVER FREQUENCIES               */
      /*                                                  */
-     /****************************************************/
+     /* ***************************************************/
    } /* END for(jDeriv=0;jDeriv<numFreqDerivIncludingNoSpinDown;jDeriv++) */
-  /*********************************************************/
+  /* ********************************************************/
   /*                                                       */
   /* END SECTION: LOOP OVER SPINDOWN                       */
   /*                                                       */
-  /*********************************************************/
+  /* ********************************************************/
 
   } /* END for(iSky=0;iSky<numSkyPosTotal;iSky++) */
-  /*********************************************************/
+  /* ********************************************************/
   /*                                                       */
   /* END SECTION: LOOP OVER SKY POSITIONS                  */
   /*                                                       */
-  /*********************************************************/
+  /* ********************************************************/
 
   /* 10/12/04 gam; check if too many bin errors */
   epsBinErrorRate = 0.20;  /* 10/12/04 gam; maximum allowed bin errors */
@@ -772,8 +771,10 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   CHECKSTATUSPTR (status);
   DETATCHSTATUSPTR (status);
 }
-/*********************************************************/
+/* ********************************************************/
 /*                                                       */
 /* END FUNCTION: RunGeneratePulsarSignalTest             */
 /*                                                       */
-/*********************************************************/
+/* ********************************************************/
+
+/** \endcond */

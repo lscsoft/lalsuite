@@ -32,14 +32,7 @@ extern "C" {
 #endif
 
 /** \addtogroup SkyCoordinates_h
- *
- * @{
- * \defgroup CelestialCoordinates_c 	Module CelestialCoordinates.c
- * \defgroup TerrestrialCoordinates_c 	Module TerrestrialCoordinates.c
- * \defgroup SkyCoordinates_c 		Module SkyCoordinates.c
- * @}
- */
-/*@{*/
+    @{*/
 
 /** \name Error codes */
 /*@{*/

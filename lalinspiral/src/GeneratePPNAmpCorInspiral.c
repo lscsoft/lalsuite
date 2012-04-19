@@ -18,47 +18,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Creighton, T. D., McKechan David, Van Den Broeck Chris
-\file
-\ingroup GeneratePPNInspiral_h
-
-\brief Computes a parametrized post-Newtonian inspiral waveform
-with ampltidude corrections.
-
-\heading{Description}
-
-See \ref GeneratePPNInspiral.c
-
-Phase computed to 3.5PN.
-Amplitude computed to 2.5PN.
-
-The ampitude corrrected gravitaional wave polarizations \f$h_+\f$ and \f$h_x\f$
-are stored in output.h.
-
-Warning! output.a is used to store the first three harmonics in
-alternate values, (i.e. [a1(0),a2(0),a3(0),a1(dt),a2(dt),a3(dt)...]) as
-this will be used for filtering with higher harmonic waveforms.
-
-Although \f$h_{+,\times} are computed, \f$output.phi is also required for filtering.
-
-
-\heading{Algorithm}
-
-
-\heading{Uses}
-\code
-LALMalloc()                   LALFree()
-LALSCreateVectorSequence()    LALSDestroyVectorSequence()
-LALSCreateVector()            LALSDestroyVector()
-LALDCreateVector()            LALDDestroyVector()
-LALSBisectionFindRoot()       snprintf()
-\endcode
-
-\heading{Notes}
-
-*/
-
 #include <math.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -197,12 +156,33 @@ do {                                                                 \
  * MAIN FUNCTION                                                     *
  *********************************************************************/
 
+/**
+\author Creighton, T. D., McKechan David, Van Den Broeck Chris
 
+\brief Computes a parametrized post-Newtonian inspiral waveform
+with ampltidude corrections.
+
+\heading{Description}
+
+See \ref GeneratePPNInspiral.c
+
+Phase computed to 3.5PN.
+Amplitude computed to 2.5PN.
+
+The ampitude corrrected gravitaional wave polarizations \f$h_+\f$ and \f$h_x\f$
+are stored in output.h.
+
+Warning! output.a is used to store the first three harmonics in
+alternate values, (i.e. [a1(0),a2(0),a3(0),a1(dt),a2(dt),a3(dt)...]) as
+this will be used for filtering with higher harmonic waveforms.
+
+Although \f$h_{+,\times} are computed, \f$output.phi is also required for filtering.
+*/
 void
 LALGeneratePPNAmpCorInspiral(
-                              LALStatus     *stat,
-                              CoherentGW    *output,
-                              PPNParamStruc *params
+                             LALStatus     *stat,	/**< UNDOCUMENTED */
+                             CoherentGW    *output,	/**< UNDOCUMENTED */
+                             PPNParamStruc *params	/**< UNDOCUMENTED */
                             )
 {
 

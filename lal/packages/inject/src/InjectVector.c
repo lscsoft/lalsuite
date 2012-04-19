@@ -64,7 +64,7 @@ LALUniformDeviate()
 @{
 */
 
-/** See documentation in \ref InjectVector_c */
+/** \see See documentation in \ref InjectVector_c */
 void
 LALSI2InjectVector( LALStatus    *stat,
 		    INT2Vector   *output,
@@ -132,7 +132,7 @@ LALSI2InjectVector( LALStatus    *stat,
 }
 
 
-/** See documentation in \ref InjectVector_c */
+/** \see See documentation in \ref InjectVector_c */
 void
 LALSSInjectVector( LALStatus    *stat,
 		   REAL4Vector  *output,

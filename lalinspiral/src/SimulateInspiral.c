@@ -17,10 +17,26 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <math.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALError.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/Units.h>
+#include <lal/Inject.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/SimulateInspiral.h>
+
+/* The lower cutoff frequency, if not specified as an input paramster,
+   is defined as the point where the sensitivity is reduced by a
+   factor of SIMULATEINSPIRALC_CUTOFF: */
+#define SIMULATEINSPIRALC_CUTOFF (0.000001)
+
 /**
 \author Creighton, T. D.
-\file
-\ingroup SimulateInspiral_h
 
 \brief Injects inspiral waveforms into detector output.
 
@@ -150,36 +166,7 @@ of the characteristic detection amplitude, then the signal is injected
 with that effective distance and is not rescaled.  The characteristic
 detection amplitude field is set to the measured value.
 
-\heading{Uses}
-\code
-LALWarning()
-LALDDestroyVector()           LALFree()
-LALSDestroyVector()           LALSDestroyVectorSequence()
-LALGeneratePPNInspiral()      LALSSInjectTimeSeries()
-\endcode
-
-\heading{Notes}
-
 */
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <math.h>
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALError.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/Units.h>
-#include <lal/Inject.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/GeneratePPNInspiral.h>
-#include <lal/SimulateInspiral.h>
-
-/* The lower cutoff frequency, if not specified as an input paramster,
-   is defined as the point where the sensitivity is reduced by a
-   factor of SIMULATEINSPIRALC_CUTOFF: */
-#define SIMULATEINSPIRALC_CUTOFF (0.000001)
-
 void
 LALSimulateInspiral( LALStatus                  *stat,
 		     REAL4TimeSeries            *output,

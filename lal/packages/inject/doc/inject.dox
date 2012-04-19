@@ -5,24 +5,30 @@
 /** \addtogroup pkg_inject
 @{
 \defgroup Inject_h 		Header Inject.h
+\defgroup SkyCoordinates_h 	Header SkyCoordinates.h
 \defgroup SimulateCoherentGW_h 	Header SimulateCoherentGW.h
-\defgroup SimulateInspiral_h 	Header SimulateInspiral.h
+
 \defgroup SimulateSB_h 		Header SimulateSB.h
 \defgroup SimulatePopcorn_h 	Header SimulatePopcorn.h
+
 \defgroup GenerateBurst_h 	Header GenerateBurst.h
+
+\defgroup SimulateInspiral_h 	Header SimulateInspiral.h
 \defgroup GenerateInspiral_h 	Header GenerateInspiral.h
 \defgroup GeneratePPNInspiral_h Header GeneratePPNInspiral.h
 \defgroup GenerateTaylorCW_h 	Header GenerateTaylorCW.h
 \defgroup GenerateSpinOrbitCW_h Header GenerateSpinOrbitCW.h
+\defgroup GenerateRing_h	Header GenerateRing.h
+\defgroup GenerateInspRing_h	Header GenerateInspRing.h
+\defgroup InspiralInjectionParams_h Header InspiralInjectionParams.h
+\defgroup NRWaveInject_h	Header NRWaveInject.h
+
 \defgroup GeneratePulsarSignal_h Header GeneratePulsarSignal.h
-\defgroup SkyCoordinates_h 	Header SkyCoordinates.h
 @}
 */
 
 
 /** \addtogroup pkg_inject
-
-Testing ref \ref GeneratePPNInspiral_h alone.
 
 This package provides routines to simulate gravitational waves and
 their effect on a detector.  Conceptually, this can be divided into

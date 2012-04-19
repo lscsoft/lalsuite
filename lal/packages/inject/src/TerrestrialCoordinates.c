@@ -336,9 +336,9 @@ XLALGreenwichMeanSiderealTime()
 \endcode
 
 */
-/** @{ */
+/*@{*/
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALEquatorialToGeographic( LALStatus   *stat,
 			   SkyPosition *output,
@@ -372,7 +372,7 @@ LALEquatorialToGeographic( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALGeographicToEquatorial( LALStatus   *stat,
 			   SkyPosition *output,
@@ -406,7 +406,7 @@ LALGeographicToEquatorial( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALSystemToHorizon( LALStatus   *stat,
 		    SkyPosition *output,
@@ -461,7 +461,7 @@ LALSystemToHorizon( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALHorizonToSystem( LALStatus   *stat,
 		    SkyPosition *output,
@@ -515,7 +515,7 @@ LALHorizonToSystem( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
 {
@@ -570,7 +570,7 @@ LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
 {
@@ -683,4 +683,4 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
   /* Transformation complete. */
   RETURN( stat );
 }
-/** @} */
+/*@}*/

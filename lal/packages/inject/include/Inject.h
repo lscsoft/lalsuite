@@ -30,8 +30,8 @@ extern "C" {
 #endif
 
 /**
-\author Creighton, T. D.
 \addtogroup Inject_h
+\author Creighton, T. D.
 
 \brief Provides routines to inject a signal into detector output.
 

@@ -34,9 +34,9 @@ extern "C" {
 
 /**
  \addtogroup GeneratePPNInspiral_h
-\author Creighton, T. D.
+ \author Creighton, T. D.
 
-\brief Provides routines to generate restricted parametrized
+ \brief Provides routines to generate restricted parametrized
 post\f${}^{5/2}\f$-Newtonian inspiral waveforms.
 
 \heading{Synopsis}
@@ -297,32 +297,38 @@ description (above).</dd>
 
 */
 typedef struct tagPPNParamStruc {
-  /* Passed parameters. */
-  SkyPosition position; /* location of source on sky */
-  REAL4 psi;            /* polarization angle (radians) */
-  LIGOTimeGPS epoch;    /* start time of output time series */
+  /** \name Passed parameters. */
+  /*@{*/
+  SkyPosition position; /**<location of source on sky */
+  REAL4 psi;            /**<polarization angle (radians) */
+  LIGOTimeGPS epoch;    /**<start time of output time series */
+  /*@}*/
 
-  /* Input parameters. */
-  REAL4 mTot;       /* total system mass (Msun) */
-  REAL4 eta;        /* mass ratio */
-  REAL4 d;          /* distance (metres) */
-  REAL4 inc;        /* inclination angle (radians) */
-  REAL4 phi;        /* coalescence phase (radians) */
-  REAL8 deltaT;     /* requested sampling interval (s) */
-  REAL4 fStartIn;   /* requested start frequency (Hz) */
-  REAL4 fStopIn;    /* requested stop frequency (Hz) */
-  UINT4 lengthIn;   /* maximum length of waveform */
-  REAL4Vector *ppn; /* post-Newtonian selection parameters */
-  INT4 ampOrder;    /* PN amplitude selection 0-5 */
+  /**\name Input parameters. */
+  /*@{*/
+  REAL4 mTot;       /**<total system mass (Msun) */
+  REAL4 eta;        /**<mass ratio */
+  REAL4 d;          /**<distance (metres) */
+  REAL4 inc;        /**<inclination angle (radians) */
+  REAL4 phi;        /**<coalescence phase (radians) */
+  REAL8 deltaT;     /**<requested sampling interval (s) */
+  REAL4 fStartIn;   /**<requested start frequency (Hz) */
+  REAL4 fStopIn;    /**<requested stop frequency (Hz) */
+  UINT4 lengthIn;   /**<maximum length of waveform */
+  REAL4Vector *ppn; /**<post-Newtonian selection parameters */
+  INT4 ampOrder;    /**<PN amplitude selection 0-5 */
+  /*@}*/
 
-  /* Output parameters. */
-  REAL8 tc;         /* time to coalescence from start of waveform */
-  REAL4 dfdt;       /* maximum value of df*dt over any timestep */
-  REAL4 fStart;     /* actual start frequency (Hz) */
-  REAL4 fStop;      /* actual stop frequency (Hz) */
-  UINT4 length;     /* length of signal generated */
-  INT4 termCode;    /* termination code */
-  const CHAR *termDescription; /* description of termination code */
+  /** \name Output parameters. */
+  /*@{*/
+  REAL8 tc;         /**<time to coalescence from start of waveform */
+  REAL4 dfdt;       /**<maximum value of df*dt over any timestep */
+  REAL4 fStart;     /**<actual start frequency (Hz) */
+  REAL4 fStop;      /**<actual stop frequency (Hz) */
+  UINT4 length;     /**<length of signal generated */
+  INT4 termCode;    /**<termination code */
+  const CHAR *termDescription; /**<description of termination code */
+  /*@}*/
 } PPNParamStruc;
 
 /** This structure stores the position and mass parameters of a galactic
@@ -349,14 +355,14 @@ the inspiral event.</dd>
 
 */
 typedef struct tagGalacticInspiralParamStruc {
-  REAL4 rho;    /* Galactocentric axial radius (kpc) */
-  REAL4 z;      /* Galactocentric axial height (kpc) */
-  REAL4 lGal;   /* Galactocentric longitude (radians) */
-  REAL4 m1, m2; /* system masses (solar masses) */
-  LIGOTimeGPS geocentEndTime; /* geocentric end time */
+  REAL4 rho;    /**<Galactocentric axial radius (kpc) */
+  REAL4 z;      /**<Galactocentric axial height (kpc) */
+  REAL4 lGal;   /**<Galactocentric longitude (radians) */
+  REAL4 m1, m2; /**<system masses (solar masses) */
+  LIGOTimeGPS geocentEndTime; /**<geocentric end time */
 } GalacticInspiralParamStruc;
 
-
+/** UNDOCUMENTED */
 typedef struct tagAmpSwitchStruc {
 	UINT4 q0, q1, q2, q3, q4, q5;
 } AmpSwitchStruc;

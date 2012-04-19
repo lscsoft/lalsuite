@@ -17,33 +17,39 @@
 *  MA  02111-1307  USA
 */
 
+
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/Units.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GenerateSpinOrbitCW.h>
+
 /**
 \author Creighton, T. D.
-\file
-\ingroup pulsarTODO
 
 \brief Computes a continuous waveform with frequency drift and Doppler
 modulation from a hyperbolic orbital trajectory.
-
-\heading{Description}
 
 This function computes a quaiperiodic waveform using the spindown and
 orbital parameters in <tt>*params</tt>, storing the result in
 <tt>*output</tt>.
 
 In the <tt>*params</tt> structure, the routine uses all the "input"
-fields specified in \ref GenerateSpinOrbitCW.h, and sets all of the
-"output" fields.  If <tt>params->f</tt>=\c NULL, no spindown
-modulation is performed.  If <tt>params->oneMinusEcc</tt>\f$\not<0\f$ (a
+fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
+"output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
+modulation is performed.  If <tt>params-\>oneMinusEcc</tt>\f$\not<0\f$ (a
 non-hyperbolic orbit), or if
-<tt>params->rPeriNorm</tt>\f$\times\f$<tt>params->angularSpeed</tt>\f$\geq1\f$
+<tt>params-\>rPeriNorm</tt>\f$\times\f$<tt>params-\>angularSpeed</tt>\f$\geq1\f$
 (faster-than-light speed at periapsis), an error is returned.
 
-In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
 ignored, but all other pointer fields must be set to \c NULL.  The
-function will create and allocate space for <tt>output->a</tt>,
-<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
-<tt>output->shift</tt> field will remain set to \c NULL.
+function will create and allocate space for <tt>output-\>a</tt>,
+<tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
+<tt>output-\>shift</tt> field will remain set to \c NULL.
 
 \heading{Algorithm}
 
@@ -134,28 +140,8 @@ well-designed.
 
 This routine does not account for relativistic timing variations, and
 issues warnings or errors based on the criterea of
-Eq.\eqref{eq_relativistic-orbit} in \ref GenerateEllipticSpinOrbitCW.c.
-
-\heading{Uses}
-\code
-LALMalloc()                   LALFree()
-LALSCreateVectorSequence()    LALSDestroyVectorSequence()
-LALSCreateVector()            LALSDestroyVector()
-LALDCreateVector()            LALDDestroyVector()
-snprintf()                 LALWarning()
-\endcode
-
+Eq.\eqref{eq_relativistic-orbit} in \ref LALGenerateEllipticSpinOrbitCW().
 */
-
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/Units.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/GenerateSpinOrbitCW.h>
-
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *stat,
 				  CoherentGW            *output,

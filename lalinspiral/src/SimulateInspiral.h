@@ -257,10 +257,10 @@ probability of a noise sample \f$n(t_k)\f$ lying in an infinitesimal range
 
 /** \name Error Codes */
 /*@{*/
-#define SIMULATEINSPIRALH_ENUL 1
-#define SIMULATEINSPIRALH_EMEM 2
-#define SIMULATEINSPIRALH_EDF  3
-#define SIMULATEINSPIRALH_EBAD 4
+#define SIMULATEINSPIRALH_ENUL 1	/**< Unexpected null pointer in arguments */
+#define SIMULATEINSPIRALH_EMEM 2	/**< Memory allocation error */
+#define SIMULATEINSPIRALH_EDF  3	/**< Transfer frequency interval is zero */
+#define SIMULATEINSPIRALH_EBAD 4	/**< Bad parameters: ac and dEff are negative */
 /*@}*/
 
 /** \cond DONT_DOXYGEN */
@@ -302,13 +302,13 @@ only) injection.</dd>
 </dl>
 */
 typedef struct tagSimulateInspiralParamStruc {
-  LIGOTimeGPS timeC;      /* time of coalescence */
-  REAL4 phiC;             /* phase at coalescence */
-  REAL4 mass1, mass2;     /* binary masses (solar masses) */
-  REAL4 signalAmplitude;  /* characteristic amplitude (counts) */
-  REAL4 effDist;          /* effective distance (Mpc) */
-  REAL4 fStart;           /* waveform start frequency (Hz) */
-  struct tagSimulateInspiralParamStruc *next; /* next node in list */
+  LIGOTimeGPS timeC;      /**< time of coalescence */
+  REAL4 phiC;             /**< phase at coalescence */
+  REAL4 mass1, mass2;     /**< binary masses (solar masses) */
+  REAL4 signalAmplitude;  /**< characteristic amplitude (counts) */
+  REAL4 effDist;          /**< effective distance (Mpc) */
+  REAL4 fStart;           /**< waveform start frequency (Hz) */
+  struct tagSimulateInspiralParamStruc *next; /**< next node in list */
 } SimulateInspiralParamStruc;
 
 

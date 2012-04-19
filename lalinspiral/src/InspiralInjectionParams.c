@@ -741,4 +741,3 @@ COMPLEX8FrequencySeries *generateActuation(
   return( resp );
 
 }
-

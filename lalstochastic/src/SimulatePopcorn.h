@@ -17,21 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Tania Regimbau
-\addtogroup SimulatePopcorn_h
-
-\brief Provides prototype for simulating whitened time-domain signals in a pair
-of detectors that arises from low duty cycle astrophysical backgrounds.
-
-\heading{Synopsis}
-\code
-#include <lal/SimulatePopcorn.h>
-\endcode
-
-@{
-*/
-
 #ifndef _SIMULATEPOPCOR_H
 #define _SIMULATEPOPCOR_H
 
@@ -55,7 +40,23 @@ of detectors that arises from low duty cycle astrophysical backgrounds.
 extern "C" {
 #endif
 
-/** \name Error Codes *//*@{*/
+/**
+\addtogroup SimulatePopcorn_h
+\author Tania Regimbau
+
+\brief Provides prototype for simulating whitened time-domain signals in a pair
+of detectors that arises from low duty cycle astrophysical backgrounds.
+
+\heading{Synopsis}
+\code
+#include <lal/SimulatePopcorn.h>
+\endcode
+
+*/
+/*@{*/
+
+/** \name Error Codes */
+/*@{*/
 #define SIMULATEPOPCORNH_ENULLP          1	/**< Null pointer */
 #define SIMULATEPOPCORNH_ENONNULLFMIN    2	/**< Non zero start frequency */
 #define SIMULATEPOPCORNH_EMMDELTA        3	/**< Mismatch in sequence spacings */
@@ -71,13 +72,12 @@ extern "C" {
 #define SIMULATEPOPCORNH_MSGEBV            "Bad input or parameter"
 /** \endcond */
 
-/** \name These constants define the cosmological model
- * @{
-*/
+/** \name These constants define the cosmological model */
+/*@{*/
 #define SIMULATEPOPCORN_ho 0.7
 #define SIMULATEPOPCORN_OMEGAMATTER 0.3
 #define SIMULATEPOPCORN_OMEGAVACUUM 0.7
-/** @} */
+/*@}*/
 
 /** These are function pointers to functions that model burst waveforms.
  */
@@ -110,10 +110,10 @@ typedef struct tagSimPopcornParamsStruc {
 /** This structure contains the simulated pair time series and \f$\Omega\f$ spectrum
  */
 typedef struct tagSimPopcornOutputStruc {
-  REAL4TimeSeries   *SimPopcorn0;
-  REAL4TimeSeries   *SimPopcorn1;
-  REAL4FrequencySeries   *omega0;
-  REAL4FrequencySeries   *omega1;
+  REAL4TimeSeries   *SimPopcorn0;	/**< UNDOCUMENTED */
+  REAL4TimeSeries   *SimPopcorn1;	/**< UNDOCUMENTED */
+  REAL4FrequencySeries   *omega0;	/**< UNDOCUMENTED */
+  REAL4FrequencySeries   *omega1;	/**< UNDOCUMENTED */
   } SimPopcornOutputStruc;
 
 
@@ -122,7 +122,7 @@ LALSimPopcornTimeSeries (LALStatus *status,SimPopcornOutputStruc *output,
     SimPopcornInputStruc *input,SimPopcornParamsStruc *params);
 
 
-/** @} */
+/*@}*/
 
 #ifdef  __cplusplus
 }
