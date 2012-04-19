@@ -125,6 +125,18 @@ int global_argc;
 #define REARTH_GCT = 6.378140e06;
 #define C_GCT      = 299792458;
 
+/**
+ * Pre-factors for frequency and spindown spacings:
+ * $\delta f^{(s)} = \text{COARSE_DFsDOT} \frac{\sqrt{\mu}}{T^{s+1}}$
+ * Derived from diagonal elements of basic frequency/spindown metric:
+ * $\delta f^{(s)} = 2 \frac{\sqrt{\mu}}{\gamma_{ii}}$
+ * where
+ * $\gamma_{ii} = \frac{4 (1+i)^2 \pi^2 T^{2+2i}}{(3+2i) ((2+i)!)^2}$
+ */
+#define COARSE_DF0DOT   1.10266
+#define COARSE_DF1DOT   2.13529
+#define COARSE_DF2DOT   6.73735
+
 /* ---------- Macros -------------------- */
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
@@ -169,7 +181,7 @@ typedef struct {
 /* ------------------------ Functions -------------------------------- */
 void SetUpSFTs( LALStatus *status, MultiSFTVectorSequence *stackMultiSFT,
                 MultiNoiseWeightsSequence *stackMultiNoiseWeights,
-                MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in, BOOLEAN useWholeSFTs );
+                MultiDetectorStateSeriesSequence *stackMultiDetStates, UsefulStageVariables *in, BOOLEAN useWholeSFTs, REAL8 mismatch1);
 void PrintFstatVec( LALStatus *status, REAL4FrequencySeries *in, FILE *fp, PulsarDopplerParams *thisPoint,
                     LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
@@ -459,13 +471,13 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterREALUserVar(   &status, "dAlpha",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dAlpha), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dDelta",       0,  UVAR_OPTIONAL, "Resolution for flat or isotropic coarse grid", &uvar_dDelta), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "Freq",        'f', UVAR_OPTIONAL, "Start search frequency", &uvar_Freq), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default=1/Tstack)", &uvar_dFreq), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "dFreq",        0,  UVAR_OPTIONAL, "Frequency resolution (default \\propto 1/Tstack)", &uvar_dFreq), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "FreqBand",    'b', UVAR_OPTIONAL, "Search frequency band", &uvar_FreqBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dot",        0,  UVAR_OPTIONAL, "Spindown parameter", &uvar_f1dot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default=1/Tstack^2)", &uvar_df1dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df1dot",       0,  UVAR_OPTIONAL, "Spindown resolution (default \\propto 1/Tstack^2)", &uvar_df1dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f1dotBand",    0,  UVAR_OPTIONAL, "Spindown Range", &uvar_f1dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f2dot",        0,  UVAR_OPTIONAL, "2nd spindown parameter", &uvar_f2dot), &status);
-  LAL_CALL( LALRegisterREALUserVar(   &status, "df2dot",       0,  UVAR_OPTIONAL, "2nd spindown resolution (default=1/Tstack^2)", &uvar_df2dot), &status);
+  LAL_CALL( LALRegisterREALUserVar(   &status, "df2dot",       0,  UVAR_OPTIONAL, "2nd spindown resolution (default \\propto 1/Tstack^3)", &uvar_df2dot), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "f2dotBand",    0,  UVAR_OPTIONAL, "2nd spindown Range", &uvar_f2dotBand), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "peakThrF",     0,  UVAR_OPTIONAL, "Fstat Threshold", &uvar_ThrF), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "mismatch1",   'm', UVAR_OPTIONAL, "1st stage mismatch", &uvar_mismatch1), &status);
@@ -779,7 +791,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* for 1st stage: read sfts, calculate detector states */
   LogPrintf( LOG_NORMAL,"Reading input data ... ");
-  LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams, uvar_useWholeSFTs), &status);
+  LAL_CALL( SetUpSFTs( &status, &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &usefulParams, uvar_useWholeSFTs, uvar_mismatch1), &status);
   LogPrintfVerbatim ( LOG_NORMAL, " done.\n");
 
   /* some useful params computed by SetUpSFTs */
@@ -1935,7 +1947,8 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
                 MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
                 MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
                 UsefulStageVariables *in, /**< input params */
-                BOOLEAN useWholeSFTs)
+                BOOLEAN useWholeSFTs,
+                REAL8 mismatch1)
 {
   SFTCatalog *catalog = NULL;
   static SFTConstraints constraints;
@@ -2081,17 +2094,17 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
   /* set Fstat calculation frequency resolution (coarse grid) */
   if ( in->dFreqStack < 0 ) {
-    in->dFreqStack = 1.0 / in->tStack;
+    in->dFreqStack = COARSE_DF0DOT * sqrt(mismatch1) / in->tStack;
   }
 
   /* set Fstat spindown resolution (coarse grid) */
   if ( in->df1dot < 0 ) {
-    in->df1dot = 1.0 / ( in->tStack * in->tStack );
+    in->df1dot = COARSE_DF1DOT * sqrt(mismatch1) / ( in->tStack * in->tStack );
   }
 
   /* set Fstat 2nd spindown resolution (coarse grid) */
   if ( in->df2dot < 0 ) {
-    in->df2dot = 1.0 / ( in->tStack * in->tStack * in->tStack );
+    in->df2dot = COARSE_DF2DOT * sqrt(mismatch1) / ( in->tStack * in->tStack * in->tStack );
   }
 
   /* calculate number of bins for Fstat overhead due to residual spin-down */
