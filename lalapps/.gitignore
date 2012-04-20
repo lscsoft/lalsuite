@@ -1,6 +1,7 @@
 *.aux
 *.la
 *.lo
+*.log
 *.o
 .deps
 .libs
@@ -23,12 +24,13 @@ doc/lalapps.log
 doc/lalapps.out
 doc/lalapps.pdf
 doc/lalapps.toc
+git_version.py
 lalapps-*.tar.gz
 lalapps.spec
 libtool
-misc/lalapps-user-env.shell
 misc/lalapps-user-env.csh
 misc/lalapps-user-env.sh
+misc/lalapps-user-env.shell
 src/*/python_config.sed
 src/calibration/lalapps_ComputeFactors
 src/calibration/lalapps_ComputeStrainDriver

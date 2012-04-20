@@ -465,6 +465,8 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
         numFields ++;
       } /* while xmlChildNode */
 
+    /* parse format-string if given */
+    TokenList *fmtList = NULL;
 
     /* ---------- prepare column writing from varargs input list ---------- */
     if ( (dataColumns = XLALCalloc ( numFields, sizeof(*dataColumns) )) == NULL ) {
@@ -483,8 +485,6 @@ XLALCreateVOTTabledataNode ( xmlNode *fieldNodeList, 	/**< [in] linked list of F
       goto failed;
     }
 
-    /* parse format-string if given */
-    TokenList *fmtList = NULL;
     if ( fmt )
       {
         if ( XLALCreateTokenList(&fmtList, fmt, "," ) != XLAL_SUCCESS ) {

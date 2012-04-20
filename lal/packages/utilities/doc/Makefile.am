@@ -1,23 +1,16 @@
 DOCSOURCEFILES = \
-	utilities.tex \
-	utilitiesDirichletFig1.eps \
+	utilities.dox \
+	utilitiesDirichletFig1.png \
 	utilitiesDirichletFig1.pdf \
-	utilitiesDirichletFig2.eps \
+	utilitiesDirichletFig2.png \
 	utilitiesDirichletFig2.pdf \
-	utilitiesDirichletFig3.eps \
-	utilitiesDirichletFig3.pdf
+	utilitiesDirichletFig3.png \
+	utilitiesDirichletFig3.pdf \
+	utilitiesCoarseGrain.png utilitiesCoarseGrain.pdf
 
-MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = \
-	main.dvi \
-	main.pdf \
-	main.ps
+MOSTLYCLEANFILES =
+CLEANFILES =
 
 EXTRA_DIST = $(DOCSOURCEFILES)
 
-dvi-local: .dvi-dep
-
 distclean-local:
-	-rm -fr .adoc
-
-@DOCMKFILE@

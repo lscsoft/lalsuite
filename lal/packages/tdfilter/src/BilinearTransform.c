@@ -32,8 +32,8 @@
 #endif
 
 /**
-   \author Creighton, T. D.
    \addtogroup BilinearTransform_c
+   \author Creighton, T. D.
 
    \brief Transforms the complex frequency coordinate of a ZPG filter.
 

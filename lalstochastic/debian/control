@@ -2,15 +2,15 @@ Source: lalstochastic
 Section: lscsoft
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-Build-Depends: debhelper (>= 5), pkg-config, python (>= 2.4),
-  zlib1g-dev, libmetaio-dev (>= 8.2), lal-dev (>= 6.6.0),
-  lalmetaio-dev (>= 1.0.2)
+Build-Depends: debhelper (>= 5), pkg-config, python (>= 2.6),
+  zlib1g-dev, libmetaio-dev (>= 8.2), lal-dev (>= 6.7.0),
+  lalmetaio-dev (>= 1.0.4)
 Standards-Version: 3.7.2
 
 Package: lalstochastic
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libmetaio1 (>= 8.2), lal (>= 6.6.0), lalmetaio (>= 1.0.2)
+  libmetaio1 (>= 8.2), lal (>= 6.7.0), lalmetaio (>= 1.0.4)
 Description: LSC Algorithm Library Stochastic
  The LSC Algorithm Stochastic Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -19,8 +19,8 @@ Description: LSC Algorithm Library Stochastic
 Package: lalstochastic-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libmetaio-dev (>= 8.2), lal-dev (>= 6.6.0),
-  lalmetaio-dev (>= 1.0.2), lalstochastic (= ${binary:Version})
+  libmetaio-dev (>= 8.2), lal-dev (>= 6.7.0),
+  lalmetaio-dev (>= 1.0.4), lalstochastic (= ${binary:Version})
 Description: LSC Algorithm Library Stochastic Developers
  The LSC Algorithm Stochastic Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL

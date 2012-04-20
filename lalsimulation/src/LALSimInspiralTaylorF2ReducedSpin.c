@@ -74,11 +74,11 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinComputeChi(
  * The difference between F2 and F2ReducedSpin is that F2ReducedSpin always
  * keeps only the leading-order TD amplitude multiplying the 2nd harmonic (
  * A_(2,0)(t) in Eq. 2.3 of the first paper OR alpha/beta_2^(0)(t) in Eq. 6.7
- * of the second paper) but expands out the 1/\sqrt{\dot{F}} ( Eq. 5.3 OR Eq.
+ * of the second paper) but expands out the \f$1/\sqrt{\dot{F}}\f$ ( Eq. 5.3 OR Eq.
  * 6.10-6.11 resp.) to whichever order is given as 'ampO' in the code.
  *
  * On the other hand, the F2 model in the papers above will PN expand BOTH the
- * TD amplitude and the factor 1/\sqrt{\dot{F}}, take their product, and keep
+ * TD amplitude and the factor \f$1/\sqrt{\dot{F}}\f$, take their product, and keep
  * all terms up to the desired amplitude order, as in Eq. 6.13-6.14 of the
  * second paper.
  *

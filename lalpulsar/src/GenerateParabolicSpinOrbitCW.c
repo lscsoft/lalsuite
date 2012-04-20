@@ -17,32 +17,38 @@
 *  MA  02111-1307  USA
 */
 
+
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/Units.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GenerateSpinOrbitCW.h>
+
 /**
 \author Creighton, T. D.
-\file
-\ingroup pulsarTODO
 
 \brief Computes a continuous waveform with frequency drift and Doppler
 modulation from a parabolic orbital trajectory.
-
-\heading{Description}
 
 This function computes a quaiperiodic waveform using the spindown and
 orbital parameters in <tt>*params</tt>, storing the result in
 <tt>*output</tt>.
 
 In the <tt>*params</tt> structure, the routine uses all the "input"
-fields specified in \ref GenerateSpinOrbitCW.h, and sets all of the
-"output" fields.  If <tt>params->f</tt>=\c NULL, no spindown
-modulation is performed.  If <tt>params->oneMinusEcc</tt>\f$\neq0\f$, or if
-<tt>params->rPeriNorm</tt>\f$\times\f$<tt>params->angularSpeed</tt>\f$\geq1\f$
+fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
+"output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
+modulation is performed.  If <tt>params-\>oneMinusEcc</tt>\f$\neq0\f$, or if
+<tt>params-\>rPeriNorm</tt>\f$\times\f$<tt>params-\>angularSpeed</tt>\f$\geq1\f$
 (faster-than-light speed at periapsis), an error is returned.
 
-In the <tt>*output</tt> structure, the field <tt>output->h</tt> is
+In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
 ignored, but all other pointer fields must be set to \c NULL.  The
-function will create and allocate space for <tt>output->a</tt>,
-<tt>output->f</tt>, and <tt>output->phi</tt> as necessary.  The
-<tt>output->shift</tt> field will remain set to \c NULL.
+function will create and allocate space for <tt>output-\>a</tt>,
+<tt>output-\>f</tt>, and <tt>output-\>phi</tt> as necessary.  The
+<tt>output-\>shift</tt> field will remain set to \c NULL.
 
 \heading{Algorithm}
 
@@ -88,7 +94,7 @@ Using the triple-angle hyperbolic identity
 original cubic equation is then:
 \f{equation}{
 E = 3v_p\sin\omega + 2\sqrt{\frac{p}{3}}
-	\sinh\left(\mbox{\f$\frac{1}{3}\f$}\sinh^{-1}C\right) \;.
+	\sinh\left(\frac{1}{3}\sinh^{-1}C\right) \;.
 \f}
 To ease the calculation of \f$E\f$, we precompute the constant part
 \f$E_0=3v_p\sin\omega\f$ and the coefficient \f$\Delta E=2\sqrt{p/3}\f$.
@@ -108,7 +114,7 @@ E & = & E_0 + \Delta E\times\left\{\begin{array}{l@{\qquad}c}
 	\end{array}\right. \nonumber
 \f}
 where we have explicitly written \f$\sinh^{-1}\f$ in terms of functions in
-math.h.  Once \f$E\f$ is found, we can compute
+\c math.h.  Once \f$E\f$ is found, we can compute
 \f$t=E(12+E^2)/(12\dot{\upsilon}_p)\f$ (where again \f$1/12\dot{\upsilon}_p\f$
 can be precomputed), and hence \f$f\f$ and \f$\phi\f$ via
 Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi}.  The
@@ -121,13 +127,13 @@ frequency \f$f\f$ must then be divided by the Doppler factor:
 
 This routine does not account for relativistic timing variations, and
 issues warnings or errors based on the criterea of
-Eq.\eqref{eq_relativistic-orbit} in
-\ref GenerateEllipticSpinOrbitCW.c.  The routine will also warn if
+Eq.\eqref{eq_relativistic-orbit} in GenerateEllipticSpinOrbitCW().
+The routine will also warn if
 it seems likely that \c REAL8 precision may not be sufficient to
 track the orbit accurately.  We estimate that numerical errors could
 cause the number of computed wave cycles to vary by
 \f[
-\Delta N \lessim f_0 T\epsilon\left[
+\Delta N \lesssim f_0 T\epsilon\left[
 	\sim6+\ln\left(|C|+\sqrt{|C|^2+1}\right)\right] \;,
 \f]
 where \f$|C|\f$ is the maximum magnitude of the variable \f$C\f$ over the
@@ -135,31 +141,7 @@ course of the computation, \f$f_0T\f$ is the approximate total number of
 wave cycles over the computation, and \f$\epsilon\approx2\times10^{-16}\f$
 is the fractional precision of \c REAL8 arithmetic.  If this
 estimate exceeds 0.01 cycles, a warning is issued.
-
-\heading{Uses}
-\code
-LALMalloc()                   LALFree()
-LALSCreateVectorSequence()    LALSDestroyVectorSequence()
-LALSCreateVector()            LALSDestroyVector()
-LALDCreateVector()            LALDDestroyVector()
-snprintf()                 LALWarning()
-\endcode
-
-\heading{Notes}
-
-
-
 */
-
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/Units.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/GenerateSpinOrbitCW.h>
-
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
 				 CoherentGW            *output,

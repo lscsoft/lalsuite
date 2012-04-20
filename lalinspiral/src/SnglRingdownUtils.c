@@ -185,7 +185,7 @@ XLALFreeSnglRingdown (
     if( (thisCoinc = eventId->coincRingdownTable) )
     {
       /* this Sngl is still part of a coinc, set pointer to NULL */
-      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if ( *eventHead == thisCoinc->snglRingdown[ifoNumber] )
         {
@@ -326,8 +326,8 @@ LALCompareRingdowns (
   const LALDetector *aDet;
   const LALDetector *bDet;
 
-  ifoaNum = XLALIFONumber( aPtr->ifo );
-  ifobNum = XLALIFONumber( bPtr->ifo );
+  ifoaNum = (InterferometerNumber) XLALIFONumber( aPtr->ifo );
+  ifobNum = (InterferometerNumber) XLALIFONumber( bPtr->ifo );
   aAcc = params->ifoAccuracy[ifoaNum];
   bAcc = params->ifoAccuracy[ifobNum];
   ta = XLALGPSToINT8NS( &(aPtr->start_time) );

@@ -17,82 +17,48 @@
 *  MA  02111-1307  USA
 */
 
-/******************************** <lalVerbatim file="DirichletTestCV">
-Author: UTB Relativity Group; contact whelan@phys.utb.edu
-********************************* </lalVerbatim> */
+/**
+   \file
+   \ingroup Dirichlet_h
+   \author UTB Relativity Group; contact whelan@phys.utb.edu
 
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{DirichletTest.c}}
-\label{utilities:ss:DirichletTest.c}
+   \brief Test suite for LALDirichlet().
 
-Test suite for LALDirichlet().
+   \heading{Usage}
+   \code
+   ./DirichletTest
+   \endcode
 
-\subsubsection*{Usage}
-\begin{verbatim}
-./DirichletTest
-\end{verbatim}
+\heading{Description}
 
-\subsubsection*{Description}
-
-This program tests the function {\tt LALDirichlet()}.
+This program tests the function <tt>LALDirichlet()</tt>.
 It tests all error conditions listed in the Error codes table.
 It also writes to files the values of the Dirichlet kernel for three
 different valid test cases.
-See Figs.~\ref{utilities:f:dirichlet_fig1}-\ref{utilities:f:dirichlet_fig3}.
+See Figs.\figref{utilities_f_dirichlet_fig1}-\figref{utilities_f_dirichlet_fig3}.
 
-% figures %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\floatfig{htbp!,utilities_f_dirichlet_fig1}
+\image html  utilitiesDirichletFig1.png "Fig. [utilities_f_dirichlet_fig1]: Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1."
+\image latex utilitiesDirichletFig1.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0 \<= x \<= 1." width=4in
 
-\begin{figure}[htbp!]
-\begin{center}
-\noindent\includegraphics[angle=-90,width=4in]{utilitiesDirichletFig1}
-\caption{\label{utilities:f:dirichlet_fig1}
-Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 1$.}
-\end{center}
-\end{figure}
-%
-\begin{figure}[htbp!]
-\begin{center}
-\noindent\includegraphics[angle=-90,width=4in]{utilitiesDirichletFig2}
-\caption{\label{utilities:f:dirichlet_fig2}
-Dirichlet kernel for $N=11$, $\Delta x =.01$, and $0\le x\le 1$.}
-\end{center}
-\end{figure}
-%
-\begin{figure}[htbp!]
-\begin{center}
-\noindent\includegraphics[angle=-90,width=4in]{utilitiesDirichletFig3}
-\caption{\label{utilities:f:dirichlet_fig3}
-Dirichlet kernel for $N=10$, $\Delta x =.01$, and $0\le x\le 2$.}
-\end{center}
-\end{figure}
-%
 
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
+\floatfig{htbp!,utilities_f_dirichlet_fig2}
+\image html  utilitiesDirichletFig2.png "Fig. [utilities_f_dirichlet_fig2]: Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1."
+\image latex utilitiesDirichletFig2.pdf "Dirichlet kernel for N=11, Delta x =0.01, and 0\<= x \<= 1." width=4in
 
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALDirichlet()
-LALPrintVector()
-LALSCreateVector()
-LALSDestroyVector()
-LALCheckMemoryLeaks()
-\end{verbatim}
+\floatfig{htbp!,utilities_f_dirichlet_fig3}
+\image html  utilitiesDirichletFig3.png "Fig. [utilities_f_dirichlet_fig3]: Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2."
+\image latex utilitiesDirichletFig3.pdf "Dirichlet kernel for N=10, Delta x =0.01, and 0\<= x \<= 2." width=4in
 
-\subsubsection*{Notes}
-None.
+\heading{Exit codes}
+<table><tr><th>Code</th><th>Explanation</th></tr>
+<tr><td>0</td><td>Success, normal exit.</td></tr>
+<tr><td>1</td><td>Subroutine failed.</td></tr>
+</table>
 
-\vfill{\footnotesize\input{DirichletTestCV}}
+*/
 
-******************************************************* </lalLaTeX> */
+/** \cond DONT_DOXYGEN */
 
 #include <lal/LALStdlib.h>
 #include <math.h>
@@ -352,3 +318,4 @@ check( LALStatus* status, INT4 code, const CHAR* message )
 
   return 0;
 }
+/** \endcond */

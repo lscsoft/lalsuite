@@ -404,4 +404,14 @@ J.G. Proakis and D.G. Manolakis, <em>Digital Signal Processing: principles, algo
 I. Stakgold, <em>Green's Functions and Boundary Value Problems</em>, 1979.
 Wiley Interscience
 
+\anchor tftb <b>[tftb]</b>
+F. Auger, P. Flandrin, P. Gonçalvèes, O. Lemoine,
+<em>Time-frequency toolbox for Matlab, user's guide and reference guide</em>.
+Available on the Internet at the URL
+http://iut-saint-nazaire.univ-nantes.fr/~auger/tftb.html
+
+\anchor flandrin99_tf_ts
+P. Flandrin, <em>Time-Frequency/Time-Scale Analysis</em>.
+Academic Press, San Diego (CA), 1999.
+
 */

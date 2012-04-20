@@ -18,6 +18,35 @@ extern "C" {
 #define SWIGLAL_STRUCT(...)
 #endif
 
+/**
+\addtogroup LALAdaptiveRungeKutta4_h
+\author Vallisneri, M.
+\brief Adaptive Runge-Kutta4
+
+<ul>
+<li> \c integrator Integration structure (quasi-class). Created using <tt>XLALAdaptiveRungeKutta4Init()</tt>.
+...</li>
+</ul>
+
+\heading{Description}
+The code \ref LALAdaptiveRungeKutta4.c evolves a system of \f$n\f$ coupled first--order differential equations.
+Internally, it uses GSL routines to perform adaptive-step evolution, and then interpolates the resulting
+trajectories to a fixed step size.
+
+Prior to evolving a system using <tt>XLALAdaptiveRungeKutta4()</tt>, it is necessary to create an integrator structure using
+<tt>XLALAdaptiveRungeKutta4Init()</tt>. Once you are done with the integrator, free it with <tt>XLALAdaptiveRungeKutta4Free()</tt>.
+\heading{Algorithm}
+TBF.
+
+\heading{Uses}
+For updated SpinTaylor waveforms.
+
+\heading{Notes}
+None so far...
+
+*/
+/*@{*/
+
 #define XLAL_BEGINGSL \
         { \
           gsl_error_handler_t *saveGSLErrorHandler_; \
@@ -50,9 +79,6 @@ tagark4GSLIntegrator
 } ark4GSLIntegrator;
 
 
-/**
-\c ark4GSLIntegrator
-*/
 ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
                              int (* dydt) (double t, const double y[], double dydt[], void * params),
                              int (* stop) (double t, const double y[], double dydt[], void * params),
@@ -67,35 +93,16 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
                          REAL8 tinit, REAL8 tend, REAL8 deltat,
                          REAL8Array **yout
                          );
-/**
- * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
- * steps with adaptive step size control.  Intended for use in various 
- * waveform generation routines such as SpinTaylorT4 and various EOB models.
- * 
- * The method is described in
- *
- * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing, 
- * National Bureau of Standards, Washington, DC, 1972 
- * (available online at http://people.math.sfu.ca/~cbm/aands/ )
- * 
- * This function also includes "on-the-fly" interpolation of the
- * differential equations at regular intervals in-between integration
- * steps. This "on-the-fly" interpolation method is derived and
- * described in the Mathematica notebook "RKF_with_interpolation.nb";
- * see
- * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/120312111836InspiralPipelineDevelopmentImproved%20Adaptive%20Runge-Kutta%20integrator
- *
- * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
- * but is nearly always faster due to the improved interpolation.
- */
-int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator, /**< struct holding dydt, stopping test, stepper, etc. */
-                                    void *params, /**< params struct used to compute dydt and stopping test */
-                                    REAL8 *yinit, /**< pass in initial values of all variables - overwritten to final values */
-                                    REAL8 tinit, /**< integration start time */
-                                    REAL8 tend_in, /**< maximum integration time */
-                                    REAL8 deltat, /**< step size for evenly sampled output */
-                                    REAL8Array **yout /**< array holding the evenly sampled output */
+int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
+                                    void *params,
+                                    REAL8 *yinit,
+                                    REAL8 tinit,
+                                    REAL8 tend_in,
+                                    REAL8 deltat,
+                                    REAL8Array **yout
                                     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

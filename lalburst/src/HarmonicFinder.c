@@ -45,20 +45,26 @@
  *-----------------------------------------------------------------------
  */
 
+#include <math.h>
+#include <lal/LALConstants.h>
+#include <lal/CLR.h>
+
+#define MIN(A, B)       ((A) < (B) ? (A) : (B))
+#define MAX(A, B)       ((A) > (B) ? (A) : (B))
+
+#define log2( x )       ( log( x ) / LAL_LN2 )
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /**
 \author Sintes, A. M.
-\file
-\ingroup clremoval
 
-\heading{Module \ref HarmonicFinder.c}
-\latexonly\label{ss_HarmonicFinder_c}\endlatexonly
- Given certain harmonic indices \f$\{ k\} \f$  finds the frequency interval
+\brief  Given certain harmonic indices \f$\{ k\} \f$  finds the frequency interval
    location (in bins) of the interference (around \f$k\times f_0\f$).
-
-\heading{Prototypes}
-
-
-
 
 \heading{Description}
 This routine determines the lower and upper frequency limit (in bins)
@@ -90,9 +96,6 @@ The  output  <tt>*out</tt> is a vector whose length is
 <dt><tt>out->data</tt></dt><dd>    \f$\{ k,\nu_{ik}, \nu_{fk} \} \f$,       e.g.,  \f$\{3, 9868, 9894, 5, 16449, 16487, 9, 29607, 29675 \ldots\}\f$.</dd>
 </dl>
 
-
-
-
 \heading{Algorithm}
 
 It looks for the location of interference harmonics assuming that
@@ -107,40 +110,11 @@ The limits of the lines are set initially  at 1 or 2 sigma from the
 central bin location and, later, they are moved until they hit a local
  minimum in a selected interval.
 See the code for details.
-
-\heading{Uses}
-\code
-LALSCreateVector()
-LALSDestroyVector()
-\endcode
-
-\heading{Notes}
-
-
-
 */
-
-
-
-#include <math.h>
-#include <lal/LALConstants.h>
-#include <lal/CLR.h>
-
-#define MIN(A, B)       ((A) < (B) ? (A) : (B))
-#define MAX(A, B)       ((A) > (B) ? (A) : (B))
-
-#define log2( x )       ( log( x ) / LAL_LN2 )
-
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
-void LALHarmonicFinder (LALStatus  *status,
-         INT4Vector         *out,   /* harmonic index and location, size 3*l */
-         REAL4FVectorCLR    *in2,   /* |x(f)|^2, data + information */
-         INT4Vector         *in1)   /* the harmonic index, size l */
+void LALHarmonicFinder (LALStatus  *status,	/**< LAL status structure */
+         INT4Vector         *out,   /**< harmonic index and location, size 3*l */
+         REAL4FVectorCLR    *in2,   /**< |x(f)|^2, data + information */
+         INT4Vector         *in1)   /**< the harmonic index, size l */
 {
 
   INT4    n,l;

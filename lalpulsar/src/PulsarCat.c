@@ -149,7 +149,7 @@ periapsis passage near the desired time, and the epoch of this passage
 is determined by inverting the formula (and again expanding only to
 first order):
 \f[
-t = nP_0\left(1+\mbox{\f$\frac{1}{2}\f$}n\dot{P}\right) \;.
+t = nP_0\left(1+\frac{1}{2}n\dot{P}\right) \;.
 \f]
 Once the new epoch is determined, the period and longitude of
 periapsis will be updated using their first derivatives.

@@ -25,7 +25,7 @@
  * \ingroup pulsarHough
  *
  * History:   Created by Sintes June 22, 2001
- *            Modified    "    August 6, 2001
+ *            Modified August 6, 2001
  *
 
 \heading{Description}

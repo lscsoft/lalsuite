@@ -1,30 +1,3 @@
-/**
-
-\file
-\ingroup AVFactories_h
-
-\brief Create/destroy \<datatype\>Array objects.
-
-\heading{Description}
-
-The \c CreateArray family of functions create a
-\<datatype\>Array of the appropriate dimensions.
-
-The \c DestroyArray family of functions return the storage allocated by
-the \c CreateArray functions to the system.
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-LALMalloc()
-LALFree()
-\endcode
-
-\heading{Notes}
-
-*/
-
 #include <string.h>
 #include "LALStdlib.h"
 #include "AVFactories.h"

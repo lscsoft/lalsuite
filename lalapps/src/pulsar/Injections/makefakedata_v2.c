@@ -69,7 +69,7 @@ initial phase                        (phi0)
 intrinsic emission frequency
     at the beginning of observation   (f0)
 position of source (eq. coordinates)  (latitude_in_degrees)
-                      "               (longitude_in_degrees)
+                                     (longitude_in_degrees)
 maximum spin-down order               (max_spin-down_param_order)
 name of time-stamps file              (name_of_time-stamps_file)
 The information in parenthesis above shows what appears in the In.data

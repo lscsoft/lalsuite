@@ -22,8 +22,8 @@
 #include <lal/ZPGFilter.h>
 
 /**
-   \author Creighton, T. D.
    \addtogroup CreateZPGFilter_c
+   \author Creighton, T. D.
 
    \brief Creates ZPG filter objects.
 

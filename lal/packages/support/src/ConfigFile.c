@@ -485,7 +485,7 @@ XLALReadConfigINT4Variable (INT4 *varp,
 			    const CHAR *varName,
                             BOOLEAN *wasRead)
 {
-  LALConfigVar param = { 0, 0, 0, 0 };
+  LALConfigVar param = { 0, 0, 0, CONFIGFILE_IGNORE };
 
   param.varName    = varName;
   param.fmt        = "%" LAL_INT4_FORMAT;
@@ -506,7 +506,7 @@ XLALReadConfigREAL8Variable (REAL8 *varp,
 			    const CHAR *varName,
 			    BOOLEAN *wasRead)
 {
-  LALConfigVar param = {0,0,0,0};
+  LALConfigVar param = {0,0,0, CONFIGFILE_IGNORE };
 
   param.secName = secName;
   param.varName = varName;
@@ -532,7 +532,7 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
 			      const CHAR * varName,	/**< [in] variable-name to be read */
 			      BOOLEAN * wasRead)	/**< [out] did we succeed in reading? */
 {
-  LALConfigVar param = { 0, 0, 0, 0 };
+  LALConfigVar param = { 0, 0, 0, CONFIGFILE_IGNORE };
   CHAR *str = NULL;
   CHAR *ret = NULL;
 

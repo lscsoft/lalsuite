@@ -82,7 +82,7 @@ noise are generated for a simple test case:
 <ol>
 <li> \f$\tilde{R}(f)=(1+i)f^2\f$, \f$P(f)=f^3\f$.  The
   expected results are \f$1/P^{\mathrm{C}}(f)=2f\f$,
-  \f$1/P^{\mathrm{HC}(f)=(1-i)f^{-1}\f$.</li>
+  \f$1/P^{\mathrm{HC}}(f)=(1-i)f^{-1}\f$.</li>
 </ol>
 
 For each successful test (both of these valid data and the invalid ones

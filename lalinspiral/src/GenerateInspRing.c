@@ -16,16 +16,6 @@
 *  MA  02111-1307  USA
 */
 
-/** \file GenerateInspRing.c
- *  \ingroup GenerateInspRing
- *  \author S.Fairhurst
- *
- *  \brief Functions for adding a (realistic?) merger ringdown to the end of
- *  and inspiral waveform
- *
- *
- */
-
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>

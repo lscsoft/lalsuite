@@ -34,9 +34,9 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**
+/** \addtogroup Calibration_h
  * \author P. R. Brady, J. D. E. Creighton
- * \addtogroup Calibration_h
+ * \brief Calibration API
  *
  * \heading{Synopsis}
  * \code
@@ -44,9 +44,10 @@ extern "C" {
  * \endcode
  *
  */
-/** @{ */
+/*@{*/
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define CALIBRATIONH_ENULL 001	/**< Null pointer */
 #define CALIBRATIONH_ESIZE 002	/**< Invalid size */
 #define CALIBRATIONH_ESZMM 004	/**< Size mismatch */
@@ -237,7 +238,7 @@ struct tagMyIIRFilter {
   REAL8 xhist[20];
 } MyIIRFilter;
 
-/** @} */
+/*@}*/
 
 /* ----- Prototypes ----- */
 

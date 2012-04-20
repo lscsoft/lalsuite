@@ -17,12 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Karl Wette
- * \file
- * \brief Support routines for GSL
- */
-
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>

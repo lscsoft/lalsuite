@@ -17,25 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \defgroup GenerateRing_h GenerateRing_h
- * \ingroup inject
- */
-
-/**
-\author Goggin, L., and Brown, D. A.
-\file
-\ingroup GenerateRing_h
-
-\brief Provides routines to generate ringdown waveforms.
-
-\heading{Synopsis}
-\code
-#include <lal/GenerateRing.h>
-\endcode
-
-*/
-
 #ifndef _GENERATERING_H
 #define _GENERATERING_H
 
@@ -50,21 +31,40 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+/**
+ * \addtogroup GenerateRing_h
+ \author Goggin, L., and Brown, D. A.
 
-/**  \name Error Codes */ /*@{*/
-#define GENERATERINGH_ENUL 1
-#define GENERATERINGH_EOUT 2
-#define GENERATERINGH_EMEM 3
-#define GENERATERINGH_ETYP 4
-#define GENERATERINGH_ELEN 5
+ \brief Provides routines to generate ringdown waveforms.
 
+\heading{Synopsis}
+\code
+#include <lal/GenerateRing.h>
+\endcode
+
+Computes the ringdown waveform with specified \f$h_{rss}\f$.
+
+*/
+/*@{*/
+
+/** \name Error Codes */
+/*@{*/
+#define GENERATERINGH_ENUL 1	/**< Unexpected null pointer in arguments */
+#define GENERATERINGH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
+#define GENERATERINGH_EMEM 3	/**< Out of memory */
+#define GENERATERINGH_ETYP 4	/**< Waveform type not implemented */
+#define GENERATERINGH_ELEN 5	/**< Waveform length not correctly specified */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define GENERATERINGH_MSGENUL "Unexpected null pointer in arguments"
 #define GENERATERINGH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATERINGH_MSGEMEM "Out of memory"
 #define GENERATERINGH_MSGETYP "Waveform type not implemented"
 #define GENERATERINGH_MSGELEN "Waveform length not correctly specified"
-/*@}*/
+/** \endcond */
 
+/** UNDOCUMENTED */
 typedef enum{
   Ringdown
 } SimRingType;
@@ -74,21 +74,29 @@ typedef enum{
     waveform
 */
 typedef struct tagRingParamStruc {
-  REAL8 deltaT;             /* requested sampling interval (s) */
-  CoordinateSystem system;  /* coordinate system to assume for simRingdown */
+  REAL8 deltaT;             /**< requested sampling interval (s) */
+  CoordinateSystem system;  /**< coordinate system to assume for simRingdown */
 } RingParamStruc;
 
-/* Function prototypes. */
+/* ---------- Function prototypes. ---------- */
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
+/** \see See \ref GenerateRing_h for documentation */
 void
 LALGenerateRing(
     LALStatus          *status,
     CoherentGW         *output,
-    REAL4TimeSeries    *series,
+    REAL4TimeSeries    UNUSED *series,
     SimRingdownTable   *simRingdown,
     RingParamStruc     *params
     );
 
+/** \see See \ref GenerateRing_h for documentation */
 void
 LALRingInjectSignals(
     LALStatus               *status,
@@ -97,6 +105,8 @@ LALRingInjectSignals(
     COMPLEX8FrequencySeries *resp,
     INT4                     calType
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

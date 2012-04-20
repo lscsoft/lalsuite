@@ -26,28 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \defgroup FindChirpSP_h FindChirpSP_h
- * \ingroup CBC_findchirp
- */
-
-/**
-
-\author Brown, D. A.
-\file
-\ingroup FindChirpSP_h
-
-\brief Provides structures and functions to condition interferometer data
-and generate binary inspiral chirps using the stationary phase approximation.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpSP.h>
-\endcode
-
-*/
-
-
 #ifndef _FINDCHIRPSPH_H
 #define _FINDCHIRPSPH_H
 
@@ -63,21 +41,40 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**\name Error Codes */ /*@{*/
-#define FINDCHIRPSPH_ENULL 1
-#define FINDCHIRPSPH_ENNUL 2
-#define FINDCHIRPSPH_EALOC 3
-#define FINDCHIRPSPH_ENUMZ 4
-#define FINDCHIRPSPH_ESEGZ 5
-#define FINDCHIRPSPH_EMISM 6
-#define FINDCHIRPSPH_EDELT 7
-#define FINDCHIRPSPH_EFLOW 8
-#define FINDCHIRPSPH_EDYNR 9
-#define FINDCHIRPSPH_EISTN 10
-#define FINDCHIRPSPH_EDIVZ 11
-#define FINDCHIRPSPH_EMAPX 12
-#define FINDCHIRPSPH_EUAPX 13
-#define FINDCHIRPSPH_EORDR 14
+/**
+ * \addtogroup FindChirpSP_h
+\author Brown, D. A.
+
+\brief Provides structures and functions to condition interferometer data
+and generate binary inspiral chirps using the stationary phase approximation.
+
+\heading{Synopsis}
+\code
+#include <lal/FindChirpSP.h>
+\endcode
+
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define FINDCHIRPSPH_ENULL 1	/**< Null pointer */
+#define FINDCHIRPSPH_ENNUL 2	/**< Non-null pointer */
+#define FINDCHIRPSPH_EALOC 3	/**< Memory allocation error */
+#define FINDCHIRPSPH_ENUMZ 4	/**< Invalid number of segments */
+#define FINDCHIRPSPH_ESEGZ 5	/**< Invalid number of points in segments */
+#define FINDCHIRPSPH_EMISM 6	/**< Mismatch between number of points in segments */
+#define FINDCHIRPSPH_EDELT 7	/**< deltaT is zero or negative */
+#define FINDCHIRPSPH_EFLOW 8	/**< Low frequency cutoff is negative */
+#define FINDCHIRPSPH_EDYNR 9	/**< Dynamic range scaling is zero or negative */
+#define FINDCHIRPSPH_EISTN 10	/**< Truncation of inverse power spectrum is negative */
+#define FINDCHIRPSPH_EDIVZ 11	/**< Attempting to divide by zero */
+#define FINDCHIRPSPH_EMAPX 12	/**< Mismatch in waveform approximant */
+#define FINDCHIRPSPH_EUAPX 13	/**< Unknown approximant */
+#define FINDCHIRPSPH_EORDR 14	/**< Invalid post-Newtonian order */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define FINDCHIRPSPH_MSGENULL "Null pointer"
 #define FINDCHIRPSPH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPSPH_MSGEALOC "Memory allocation error"
@@ -92,7 +89,7 @@ extern "C" {
 #define FINDCHIRPSPH_MSGEMAPX "Mismatch in waveform approximant"
 #define FINDCHIRPSPH_MSGEUAPX "Unknown approximant"
 #define FINDCHIRPSPH_MSGEORDR "Invalid post-Newtonian order"
-/*@}*/
+/** \endcond */
 
 void
 LALFindChirpSPData (
@@ -102,19 +99,11 @@ LALFindChirpSPData (
     FindChirpDataParams        *params
     );
 
-
-
-
-
-
-
 double
 XLALFindChirpChirpTime (double m1,
 			double m2,
 			double fLower,
 			int order);
-
-
 
 void
 LALFindChirpSPTemplate (
@@ -123,6 +112,8 @@ LALFindChirpSPTemplate (
     InspiralTemplate           *tmplt,
     FindChirpTmpltParams       *params
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -17,16 +17,24 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \defgroup SimulateInspiral_h SimulateInspiral_h
- * \ingroup inject
- */
+#ifndef _SIMULATEINSPIRAL_H
+#define _SIMULATEINSPIRAL_H
+
+#include <lal/LALStdlib.h>
+#include <lal/DetectorSite.h>
+#include <lal/SkyCoordinates.h>
+#include <lal/LALBarycenter.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 
 /**
-\author Creighton, T. D.
-\file
-\ingroup SimulateInspiral_h
+   \addtogroup SimulateInspiral_h
+   \author Creighton, T. D.
 
 \brief Provides a routine to inject inspirals into time series data.
 
@@ -35,8 +43,8 @@
 #include <lal/SimulateInspiral.h>
 \endcode
 
-The routines in \ref GeneratePPNInspiral.h, \ref SimulateCoherentGW.h,
-and \ref Inject.h provide a powerful
+The routines in \ref GeneratePPNInspiral_h, \ref SimulateCoherentGW_h,
+and \ref Inject_h provide a powerful
 mechanism for simulating the instrumental response to a physical
 inspiral event, including such considerations as the polarization
 response and propagation delay for a particular instrument, which are
@@ -101,12 +109,12 @@ specifications.
 We define here the conventions we use when talking about
 signal-to-noise ratios in coloured and white noise.  You may also want
 to read the signal processing conventions in Secs.\ \ref ss_conventions and \ref ss_psdconv of
-\ref CBC_findchirp, since this section is esentially a summary and extension of those conventions.
+\ref pkg_findchirp, since this section is esentially a summary and extension of those conventions.
 
 \subsection sec_si_SNR Signal-to-noise definitions
 
 We first reiterate the standard definitions (given in the
-\ref CBC_findchirp package) of the Fourier transform pair:
+\ref pkg_findchirp) of the Fourier transform pair:
 \anchor eq_SimulateInspiralH_fourier_transforms \f{equation}{
 \label{eq_SimulateInspiralH_fourier_transforms}
 \tilde{a}(f) = \int_{-\infty}^\infty dt\,a(t)e^{-2\pi ift}
@@ -157,7 +165,7 @@ one does not know in advance the phase of the waveform, and so one
 must filter the data using two orthogonal waveforms \f$\{a_s,a_c\}\f$ (the
 sine and cosine quadratures) that are \f$90^\circ\f$ out of phase.  As
 described in the
-\ref FindChirp.h header, the optimal statistic in this case is:
+\ref FindChirp_h, the optimal statistic in this case is:
 \anchor eq_SimulateInspiralH_rhosq \f{equation}{
 \label{eq_SimulateInspiralH_rhosq}
 \rho^2 = \frac{(o|a_s)^2}{(a_s|a_s)} + \frac{(o|a_c)^2}{(a_c|a_c)}
@@ -245,32 +253,22 @@ probability of a noise sample \f$n(t_k)\f$ lying in an infinitesimal range
 \f}
 
 */
+/*@{*/
 
-#ifndef _SIMULATEINSPIRAL_H
-#define _SIMULATEINSPIRAL_H
+/** \name Error Codes */
+/*@{*/
+#define SIMULATEINSPIRALH_ENUL 1	/**< Unexpected null pointer in arguments */
+#define SIMULATEINSPIRALH_EMEM 2	/**< Memory allocation error */
+#define SIMULATEINSPIRALH_EDF  3	/**< Transfer frequency interval is zero */
+#define SIMULATEINSPIRALH_EBAD 4	/**< Bad parameters: ac and dEff are negative */
+/*@}*/
 
-#include <lal/LALStdlib.h>
-#include <lal/DetectorSite.h>
-#include <lal/SkyCoordinates.h>
-#include <lal/LALBarycenter.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/** \name Error Codes */ /*@{*/
-#define SIMULATEINSPIRALH_ENUL 1
-#define SIMULATEINSPIRALH_EMEM 2
-#define SIMULATEINSPIRALH_EDF  3
-#define SIMULATEINSPIRALH_EBAD 4
-
+/** \cond DONT_DOXYGEN */
 #define SIMULATEINSPIRALH_MSGENUL "Unexpected null pointer in arguments"
 #define SIMULATEINSPIRALH_MSGEMEM "Memory allocation error"
 #define SIMULATEINSPIRALH_MSGEDF  "Transfer frequency interval is zero"
 #define SIMULATEINSPIRALH_MSGEBAD "Bad parameters: ac and dEff are negative"
-/*@}*/
+/** \endcond */
 
 /** This structure stores the parameters required to simulate a
 set of inspiral signal in white Gaussian noise.  It can be part of a
@@ -304,13 +302,13 @@ only) injection.</dd>
 </dl>
 */
 typedef struct tagSimulateInspiralParamStruc {
-  LIGOTimeGPS timeC;      /* time of coalescence */
-  REAL4 phiC;             /* phase at coalescence */
-  REAL4 mass1, mass2;     /* binary masses (solar masses) */
-  REAL4 signalAmplitude;  /* characteristic amplitude (counts) */
-  REAL4 effDist;          /* effective distance (Mpc) */
-  REAL4 fStart;           /* waveform start frequency (Hz) */
-  struct tagSimulateInspiralParamStruc *next; /* next node in list */
+  LIGOTimeGPS timeC;      /**< time of coalescence */
+  REAL4 phiC;             /**< phase at coalescence */
+  REAL4 mass1, mass2;     /**< binary masses (solar masses) */
+  REAL4 signalAmplitude;  /**< characteristic amplitude (counts) */
+  REAL4 effDist;          /**< effective distance (Mpc) */
+  REAL4 fStart;           /**< waveform start frequency (Hz) */
+  struct tagSimulateInspiralParamStruc *next; /**< next node in list */
 } SimulateInspiralParamStruc;
 
 
@@ -321,6 +319,8 @@ LALSimulateInspiral( LALStatus                  *,
 		     REAL4TimeSeries            *output,
 		     COMPLEX8FrequencySeries    *transfer,
 		     SimulateInspiralParamStruc *params );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -26,16 +26,25 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \defgroup FindChirpBCV_h FindChirpBCV_h
- * \ingroup CBC_findchirp
- */
+#ifndef _FINDCHIRPBCVH_H
+#define _FINDCHIRPBCVH_H
+
+#include <lal/LALDatatypes.h>
+#include <lal/RealFFT.h>
+#include <lal/LALInspiral.h>
+#include <lal/FindChirp.h>
+#include <lal/FindChirpChisq.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 
 /**
-
-\author Brown, D. A. and Messaritaki, E.
-\file
-\ingroup FindChirpBCV_h
+   \addtogroup FindChirpBCV_h
+   \author Brown, D. A. and Messaritaki, E.
 
 \brief Provides structures and functions to condition interferometer data
 and generate binary inspiral chirps using the BCV detection template
@@ -149,19 +158,6 @@ Then, Eq.\eqref{OrthonormBasis} becomes:
 \label{OrthonormA}
 \f}
 So we choose:
-%\f{equation}{
-%\begin{pmatrix}A_1(f) \cr A_2(f) \cr
-%\end{pmatrix}
-%=
-%\begin{pmatrix}
-%a_1 &0 \cr b_1 &b_2 \cr
-%\end{pmatrix}
-%\begin{pmatrix}
-%f^{-7/6} \cr
-%f^{-1/2} \cr
-%\end{pmatrix}
-%\Rightarrow
-%\f}
 
 \f{eqnarray}{
 A_1(f) &=& a_1 f^{-7/6} \\
@@ -427,23 +423,11 @@ up to the appropriate normalization factors, namely \f$(\mathtt{tmpltNorm})
 </ol>
 
 */
+/*@{*/
 
-#ifndef _FINDCHIRPBCVH_H
-#define _FINDCHIRPBCVH_H
 
-#include <lal/LALDatatypes.h>
-#include <lal/RealFFT.h>
-#include <lal/LALInspiral.h>
-#include <lal/FindChirp.h>
-#include <lal/FindChirpChisq.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define FINDCHIRPBCVH_ENULL 1
 #define FINDCHIRPBCVH_ENNUL 2
 #define FINDCHIRPBCVH_EALOC 3
@@ -460,6 +444,9 @@ extern "C" {
 #define FINDCHIRPBCVH_EZNRM 14
 #define FINDCHIRPBCVH_EQLEN 15
 #define FINDCHIRPBCVH_ECLUW 16
+/*@}*/
+/*@}*/
+
 #define FINDCHIRPBCVH_MSGENULL "Null pointer"
 #define FINDCHIRPBCVH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPBCVH_MSGEALOC "Memory allocation error"
@@ -476,7 +463,7 @@ extern "C" {
 #define FINDCHIRPBCVH_MSGEZNRM "No non-zero value assigned to one of a1, b1, b2"
 #define FINDCHIRPBCVH_MSGEQLEN "params->qVec->length not equal to params->qVecBCV->length"
 #define FINDCHIRPBCVH_MSGECLUW "Unacceptable max-over-chirp clustering method for BCV"
-/*@}*/
+
 
 void
 LALFindChirpBCVData (

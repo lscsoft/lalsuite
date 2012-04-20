@@ -46,21 +46,14 @@
  *-----------------------------------------------------------------------
  */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/CLR.h>
+
 
 /**
 \author Sintes, A. M.
-\file
-\ingroup clremoval
 
-\heading{Module \ref RefInterference.c}
-\latexonly\label{ss_RefInterference_c}\endlatexonly
-Generates a reference interference signal.
-
-
-\heading{Prototypes}
-
-
-
+\brief Generates a reference interference signal.
 
 \heading{Description}
 Given the complex vector  <tt>*in1</tt> of length \f$n/2+1\f$, containing
@@ -95,19 +88,6 @@ given in <tt>*par</tt>.
 \heading{Algorithm}
 Described before.
 
-\heading{Uses}
-\code
-LALSCreateVector()
-LALCCreateVector()
-LALZCreateVector()
-LALCreateReverseComplexFFTPlan()
-LALCOMPLEX8VectorFFT()
-LALSDestroyVector()
-LALCDestroyVector()
-LALZDestroyVector()
-LALDestroyComplexFFTPlan()
-\endcode
-
 \heading{Notes}
 
 The harmonics selected to construct the reference signal
@@ -115,18 +95,11 @@ should not be (if possible) buried with other strong lines,
  such as violin modes. Choose the strongest harmonics, those
 that clearly stand over the noise level.
 
-
-
 */
-
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/CLR.h>
-
-void LALRefInterference (LALStatus    *status,
-		   COMPLEX8Vector     *out,   /*  M(t), size n */
-		   COMPLEX8Vector     *in1,   /*  x(f), size n/2+1 */
-		   INT4Vector         *par)
+void LALRefInterference (LALStatus    *status,/**< LAL status pointer */
+		   COMPLEX8Vector     *out,   /**<  M(t), size n */
+		   COMPLEX8Vector     *in1,   /**<  x(f), size n/2+1 */
+                   INT4Vector         *par)   /**< UNDOCUMENTED */
 {
 
   INT4    i,j;

@@ -36,8 +36,8 @@ int XLALStringVector_TEST ( void );
 
 /**
  * \author Reinhard Prix
- * \addtogroup StringVector
  * \file
+ * \ingroup StringVector_h
  */
 
 /*==================== FUNCTION DEFINITIONS ====================*/

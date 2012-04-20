@@ -37,8 +37,8 @@
  * This function reads command line arguments and returns a \c LALInferenceIFOData linked
  * list.
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
- * \return Pointer to a new \LALInferenceIFOData linked list containing the data, or NULL upon error.
- * \author John Veitch\n
+ * \return Pointer to a new \c LALInferenceIFOData linked list containing the data, or NULL upon error.
+ * \author John Veitch
  */
 struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * commandLine);
 

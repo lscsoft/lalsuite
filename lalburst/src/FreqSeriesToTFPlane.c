@@ -27,6 +27,7 @@
  */
 
 
+#include <complex.h>
 #include <math.h>
 
 
@@ -34,7 +35,6 @@
 #include <gsl/gsl_blas.h>
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Date.h>
 #include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
@@ -98,7 +98,7 @@ static COMPLEX16Sequence *apply_filter(
 		/* output = inputseries * conj(filter) */
 		memset(outputseq->data, 0, (output - outputseq->data) * sizeof(*outputseq->data));
 		for(; output < last; output++, input++, filter++)
-			*output = XLALCOMPLEX16Mul(*input, XLALCOMPLEX16Conjugate(*filter));
+			*output = *input * conj(*filter);
 		memset(last, 0, (outputseq->length - (last - outputseq->data)) * sizeof(*outputseq->data));
 	}
 
@@ -106,11 +106,9 @@ static COMPLEX16Sequence *apply_filter(
 }
 
 
-/*
+/**
  * Project a frequency series onto the comb of channel filters
  */
-
-
 int XLALFreqSeriesToTFPlane(
 	REAL8TimeFrequencyPlane *plane,
 	const LALExcessPowerFilterBank *filter_bank,

@@ -121,7 +121,7 @@ static struct FrVect *loadFrVect( FrStream *stream, const char *channel )
   {
     if ( FrTOCReadFull( stream->file ) == 0 )
     {
-      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      stream->state = (FrState)(stream->state| LAL_FR_ERR | LAL_FR_TOC);
       return NULL;
     }
   }
@@ -363,7 +363,7 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
   return v;
 }
 
-LALTYPECODE XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
+int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 {
   FrChanType chantype;
   FrTOCts    *ts   = NULL;
@@ -385,7 +385,7 @@ LALTYPECODE XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
     {
       XLALPrintError( "XLAL Error - %s: could not open frame TOC %s\n",
           __func__, stream->file );
-      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      stream->state = (FrState) ( stream->state |LAL_FR_ERR | LAL_FR_TOC );
       XLAL_ERROR( XLAL_EIO );
     }
   }
@@ -549,7 +549,7 @@ LALFrGetTimeSeriesType(
     }
   }
 
-  *output = type;
+  *output = (LALTYPECODE) type;
   RETURN( status );
 }
 

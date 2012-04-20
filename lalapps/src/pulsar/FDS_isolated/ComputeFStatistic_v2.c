@@ -74,6 +74,7 @@ int finite(double);
 #include "HeapToplist.h"
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
+#include "../GCT/LineVeto.h"
 
 /*---------- DEFINES ----------*/
 
@@ -120,6 +121,7 @@ typedef struct {
   PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
   Fcomponents  Fstat;			/**< the Fstat-value (plus Fa,Fb) for this candidate */
   CmplxAntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix Mmunu = Sinv*Tsft * [ Ad, Cd; Cd; Bd ] */
+  REAL4 LVstat;				/**< Line Veto statistic */
 } FstatCandidate;
 
 /** moving 'Scanline window' of candidates on the scan-line,
@@ -174,6 +176,8 @@ typedef struct {
   CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
+  REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
+  REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
 } ConfigVariables;
 
 
@@ -276,7 +280,14 @@ typedef struct {
   BOOLEAN version;		/**< output version information */
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
-  BOOLEAN outputSingleFstats;   /**< in multi-detector case, also output single-detector F-stats */
+
+  BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
+  BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
+  BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
+  REAL8   LVrho;		/**< Prior parameter rho_max_line for LineVeto statistic */
+  LALStringVector *LVlX;	/**< Line-to-gauss prior ratios lX for LineVeto statistic */
+  REAL8 LVthreshold;		/**< output threshold on LV */
+
   CHAR *outputTransientStats;	/**< output file for transient B-stat values */
   CHAR *transient_WindowType;	/**< name of transient window ('none', 'rect', 'exp',...) */
   REAL8 transient_t0Days;	/**< earliest GPS start-time for transient window search, as offset in days from dataStartGPS */
@@ -313,6 +324,7 @@ int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
+int compareFstatCandidates_LV ( const void *candA, const void *candB );
 
 void WriteFStatLog ( LALStatus *status, const CHAR *log_fname, const CHAR *logstr );
 void getLogString ( LALStatus *status, CHAR **logstr, const ConfigVariables *cfg );
@@ -325,7 +337,7 @@ int write_TimingInfo_to_fp ( FILE * fp, const timingInfo_t *ti );
 scanlineWindow_t *XLALCreateScanlineWindow ( UINT4 windowWings );
 void XLALDestroyScanlineWindow ( scanlineWindow_t *scanlineWindow );
 int XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *scanWindow );
-BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow );
+BOOLEAN XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingStatistic );
 
 /*---------- empty initializers ---------- */
 static const ConfigVariables empty_ConfigVariables;
@@ -639,22 +651,56 @@ int main(int argc,char *argv[])
 	} /* if SignalOnly */
       thisFCand.Fstat   = Fstat;
 
+      if ( uvar.computeLV )
+        {
+          REAL4 TwoFX[Fstat.numDetectors];
+          for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
+            TwoFX[X] = 2.0*Fstat.FX[X];
+          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, GV.LVloglX->data, uvar.LVuseAllTerms );
+          if ( xlalErrno ) {
+            XLALPrintError ("%s: XLALComputeLineVetoArray() failed with errno=%d\n", __func__, xlalErrno );
+            return xlalErrno;
+          }
+        }
+      else
+       thisFCand.LVstat = NAN; /* in non-LV case, block field with NAN, needed for output checking in write_PulsarCandidate_to_fp() */
+
       /* push new value onto scan-line buffer */
       XLALAdvanceScanlineWindow ( &thisFCand, GV.scanlineWindow );
 
       /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
-      if ( XLALCenterIsLocalMax ( GV.scanlineWindow ) 					/* must be 1D local maximum */
-	   && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold) )	/* fixed threshold */
-	{
+      BOOLEAN acceptCandidate = FALSE;
+      if ( uvar.computeLV )
+        {
+          if ( XLALCenterIsLocalMax ( GV.scanlineWindow, 2 )			/* must be 1D local maximum */
+               && ( GV.scanlineWindow->center->LVstat >= uvar.LVthreshold) ) {	/* fixed threshold */
+            acceptCandidate = TRUE;
+          }
+        }
+     else
+        {
+          if ( XLALCenterIsLocalMax ( GV.scanlineWindow, 1 )				/* must be 1D local maximum */
+               && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold) )	/* fixed threshold */
+            acceptCandidate = TRUE;
+        }
+      if ( acceptCandidate )
+        {
 	  FstatCandidate *writeCand = GV.scanlineWindow->center;
 
 	  /* insert this into toplist if requested */
 	  if ( GV.FstatToplist  )			/* dynamic threshold */
 	    {
-	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) )
-		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f\n", 2.0 * writeCand->Fstat.F );
-	      else
-		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f\n", 2 * writeCand->Fstat.F );
+	      if ( insert_into_toplist(GV.FstatToplist, (void*)writeCand ) ) {
+		LogPrintf ( LOG_DETAIL, "Added new candidate into toplist: 2F = %f", 2.0 * writeCand->Fstat.F );
+		if ( uvar.computeLV )
+		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LV = %f", 2.0 * writeCand->Fstat.FX[0], 2.0 * writeCand->Fstat.FX[1], writeCand->LVstat );
+	      }
+	      else {
+		LogPrintf ( LOG_DETAIL, "NOT added the candidate into toplist: 2F = %f", 2 * writeCand->Fstat.F );
+		if ( uvar.computeLV )
+		  LogPrintfVerbatim ( LOG_DETAIL, ", 2F_H1 = %f, 2F_L1 = %f, LV = %f", 2.0 * writeCand->Fstat.FX[0], 2.0 * writeCand->Fstat.FX[1], writeCand->LVstat );
+	      }
+	      LogPrintfVerbatim ( LOG_DETAIL, "\n" );
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
@@ -665,11 +711,19 @@ int main(int argc,char *argv[])
 		}
 	    } /* if outputFstat */
 
-	} /* if 2F > threshold */
+	} /* if candidate is local maximum and over threshold */
 
       /* separately keep track of loudest candidate (for --outputLoudest) */
-      if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
-	loudestFCand = thisFCand;
+      if ( uvar.computeLV )
+        {
+          if ( thisFCand.LVstat > loudestFCand.LVstat )
+            loudestFCand = thisFCand;
+        }
+      else
+        {
+          if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
+            loudestFCand = thisFCand;
+        }
 
       /* add Fstatistic to histogram if needed */
       if (uvar.outputFstatHist) {
@@ -1063,6 +1117,13 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->GPUready = 0;
 
+  uvar->outputSingleFstats = FALSE;
+  uvar->computeLV = FALSE;
+  uvar->LVuseAllTerms = TRUE;
+  uvar->LVrho = 0.0;
+  uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
+  uvar->LVthreshold = 0.0;
+
 #define DEFAULT_TRANSIENT "none"
   uvar->transient_WindowType = LALMalloc(strlen(DEFAULT_TRANSIENT)+1);
   strcpy ( uvar->transient_WindowType, DEFAULT_TRANSIENT );
@@ -1135,7 +1196,11 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
-  LALregBOOLUserStruct(status,outputSingleFstats,0, UVAR_OPTIONAL,  "In multi-detector case, also output single-detector F-stats?");
+  LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
+  LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
+  LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
+  LALregLISTUserStruct(status,  LVlX,		0,  UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
+  LALregREALUserStruct(status, 	LVthreshold,	0,  UVAR_OPTIONAL, "Set the threshold for selection of LV");
 
   LALregSTRINGUserStruct(status,outputTransientStats,0,  UVAR_OPTIONAL, "Output filename for outputting transient-CW statistics.");
   LALregSTRINGUserStruct(status, transient_WindowType,0,UVAR_OPTIONAL, "Type of transient signal window to use. ('none', 'rect', 'exp').");
@@ -1177,6 +1242,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   XLALregBOOLUserStruct ( transient_useFReg,   	 0,  UVAR_DEVELOPER, "FALSE: use 'standard' e^F for marginalization, if TRUE: use e^FReg = (1/D)*e^F (BAD)");
 
   XLALregSTRINGUserStruct( outputTiming,         0,  UVAR_DEVELOPER, "Append timing measurements and parameters into this file");
+
+  LALregBOOLUserStruct(status,LVuseAllTerms	,0,  UVAR_DEVELOPER, "Use only leading term or all terms in Line Veto computation?");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1594,10 +1661,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* ----- set up toplist if requested ----- */
-  if ( toplist_length > 0 )
-    if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates) != 0 ) {
-      ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+  if ( toplist_length > 0 ) {
+    if ( uvar->computeLV ) {
+      if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LV) != 0 )
+        ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
     }
+    else {
+      if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates) != 0 )
+        ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
+    }
+  }
 
 
   /* ----- transient-window related parameters ----- */
@@ -1646,8 +1719,47 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
-  if ( uvar->outputSingleFstats )
+  if ( uvar->outputSingleFstats || uvar->computeLV )
     cfg->CFparams.returnSingleF = TRUE;
+
+  /* ---------- prepare Line Veto statistics parameters ---------- */
+  if ( uvar->LVrho < 0.0 ) {
+    XLALPrintError("Invalid LV prior rho (given rho=%f, need rho>=0)!\n", uvar->LVrho);
+    ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+  }
+  else if ( uvar->LVrho > 0.0 )
+    cfg->LVlogRhoTerm = 4.0 * log(uvar->LVrho) - log(70.0);
+  else /* if uvar.LVrho == 0.0, logRhoTerm should become irrelevant in summation */
+    cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
+  UINT4 numDetectors = cfg->multiSFTs->length;
+
+  if ( uvar->computeLV && uvar->LVlX )
+    {
+      if (  uvar->LVlX->length != numDetectors ) {
+        XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      for (UINT4 X = 0; X < numDetectors; X++)
+        {
+          REAL4 LVlX;
+          if ( 1 != sscanf ( uvar->LVlX->data[X], "%" LAL_REAL4_FORMAT, &LVlX ) ) {
+            XLALPrintError ( "Illegal REAL4 commandline argument to --LVlX[%d]: '%s'\n", X, uvar->LVlX->data[X]);
+            ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+          }
+          if ( LVlX < 0.0 ) {
+            XLALPrintError ( "Negative input prior-ratio for detector X=%d lX[X]=%f\n", X, LVlX );
+            ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+          }
+          else if ( LVlX > 0.0 )
+            cfg->LVloglX->data[X] = log ( LVlX );
+          else /* if zero prior ratio, approximate log(0)=-inf by -LAL_REA4_MAX to avoid raising underflow exceptions */
+            cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
+        } /* for X < numDetectors */
+    } /* if ( uvar.computeLV && uvar.LVlX ) */
 
   // ----- if user compiled special SSE-tuned code, check that SSE is actually available, otherwise fail!
   // in order to avoid 'unexpected' behaviour, ie the 'SSE-code' falling back on the non-SSE hotloop functions
@@ -1655,7 +1767,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   XLALPrintError ( "\n\nThis code was compiled for use of SSE-optimized LALDemod-hotloop, but no SSE extension present!\n\n");
   ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
 #endif
-
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -1807,6 +1918,9 @@ Freemem(LALStatus *status,  ConfigVariables *cfg)
     XLALFree ( cfg->VCSInfoString );
   if ( cfg->logstring )
     LALFree ( cfg->logstring );
+
+  if ( cfg->LVloglX )
+    XLALDestroyREAL4Vector ( cfg->LVloglX );
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -2125,6 +2239,9 @@ write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, co
   UINT4 X, numDet = Fcand->Fstat.numDetectors;
   for ( X = 0; X < numDet ; X ++ )
     fprintf (fp, "twoF%d    = % .6g;\n", X, 2.0 * Fcand->Fstat.FX[X] );
+  /* LVstat */
+  if ( !isnan(Fcand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+    fprintf (fp, "LV       = % .6g;\n", Fcand->LVstat );
 
   fprintf (fp, "\nAmpFisher = \\\n" );
   XLALfprintfGSLmatrix ( fp, "%.9g",pulsarParams->AmpFisherMatrix );
@@ -2147,6 +2264,21 @@ compareFstatCandidates ( const void *candA, const void *candB )
     return 0;
 
 } /* compareFstatCandidates() */
+
+/** comparison function for our candidates toplist with alternate LV sorting statistic */
+int
+compareFstatCandidates_LV ( const void *candA, const void *candB )
+{
+  REAL8 LV1 = ((const FstatCandidate *)candA)->LVstat;
+  REAL8 LV2 = ((const FstatCandidate *)candB)->LVstat;
+  if ( LV1 < LV2 )
+    return 1;
+  else if ( LV1 > LV2 )
+    return -1;
+  else
+    return 0;
+
+} /* compareFstatCandidates_LV() */
 
 /** write one 'FstatCandidate' (i.e. only Doppler-params + Fstat) into file 'fp'.
  * Return: 0 = OK, -1 = ERROR
@@ -2176,6 +2308,16 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
           }
           strcat ( singleFstr, buf0 );
         } /* for X < numDet */
+      /* LVstat */
+      if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+        {
+          snprintf ( buf0, sizeof(buf0), " %.9g", thisFCand->LVstat );
+          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( singleFstr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
+          }
+          strcat ( singleFstr, buf0 );
+        }
 
     } /* if FX */
 
@@ -2258,19 +2400,39 @@ XLALAdvanceScanlineWindow ( const FstatCandidate *nextCand, scanlineWindow_t *sc
 /** check wether central candidate in Scanline-window is a local maximum
  */
 BOOLEAN
-XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow )
+XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingStatistic )
 {
-  UINT4 i;
-  REAL8 F0;
 
   if ( !scanWindow || !scanWindow->center )
     return FALSE;
 
-  F0 = scanWindow->center->Fstat.F;
+  if ( sortingStatistic == 1 ) /* F statistic */
+    {
 
-  for ( i=0; i < scanWindow->length; i ++ )
-    if ( scanWindow->window[i].Fstat.F > F0 )
+      REAL8 F0 = scanWindow->center->Fstat.F;
+
+      for ( UINT4 i=0; i < scanWindow->length; i ++ )
+        if ( scanWindow->window[i].Fstat.F > F0 )
+         return FALSE;
+
+    }
+
+  else if ( sortingStatistic == 2 ) /* LV statistic */
+    {
+
+      REAL8 LV0 = scanWindow->center->LVstat;
+
+      for ( UINT4 i=0; i < scanWindow->length; i ++ )
+        if ( scanWindow->window[i].LVstat > LV0 )
+         return FALSE;
+
+    }
+
+  else
+    {
+      XLALPrintError ("Unsupported sorting statistic! Supported values are 1 (F-statistic) and 2 (LV statistic).\n");
       return FALSE;
+    }
 
   return TRUE;
 

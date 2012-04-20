@@ -118,8 +118,7 @@ EXTRA_DIST = \
 LALSimulationVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALSimulationConfig.h
-	@echo "creating LALSimulationVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALSimulation $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALSimulation $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
 

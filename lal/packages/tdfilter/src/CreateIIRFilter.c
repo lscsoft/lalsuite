@@ -28,9 +28,8 @@ extern INT4 lalDebugLevel;
 
 
 /**
-   \author Creighton, T. D.
    \addtogroup CreateIIRFilter_c
-
+   \author Creighton, T. D.
 
    \brief Creates IIR filter objects.
 

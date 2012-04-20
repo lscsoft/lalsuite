@@ -29,8 +29,7 @@ static INT4 toeplz(REAL4 r[], REAL4 x[], REAL4 y[], INT4 n);
 static INT4 zrhqr(REAL4 a[], INT4 m, REAL4 rtr[], REAL4 rti[]);
 static INT4 hqr(REAL4 **a, INT4 n, REAL4 wr[], REAL4 wi[]);
 
-/** \ingroup LPC_h
- * \brief Compute the coefficients of a linear predictor filter;
+/** Compute the coefficients of a linear predictor filter;
  * Train a FIR filter aout of order p on the data x.
  */
 void LALLPC(LALStatus *status,	/**< LAL status pointer */
@@ -155,8 +154,7 @@ void LALLPC(LALStatus *status,	/**< LAL status pointer */
   RETURN (status);
 }
 
-/** \ingroup LPC_h
- * \brief Stabilizes a polynomial; Reflects poles and zeroes of a inside the complex unit circle.
+/** Stabilizes a polynomial; Reflects poles and zeroes of a inside the complex unit circle.
 */
 void LALPolystab(LALStatus *status,
 		 REAL4Vector *a
@@ -541,4 +539,3 @@ static INT4 balanc(REAL4 **a, INT4 n)
 	return 0;
 }
 #undef RADIX
-

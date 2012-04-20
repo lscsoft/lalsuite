@@ -17,90 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/****************** <lalVerbatim file="MersenneRandomTestCV">
-Author: Tibbits, M. M.
-********************************* </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-\subsection{Program \texttt{MersenneRandomTest.c}}
-\label{s:MersenneRandomTest.c}
-
-A program to test \texttt{LALMersenneRandom()} and \texttt{LALMersenneRandomVector()}
-\subsubsection*{Usage}
-
-\begin{verbatim}
-./MersenneRandomTest [options]
-Options:
-  -h             print usage message
-  -q             quiet: run silently
-  -v             verbose: print extra information
-  -d level       set lalDebugLevel to level
-\end{verbatim}
-
-This program tests the function
-\texttt{LALMersenneRandom()},which generates a random
-number based on the Mersenne Twister algorithm.
-
-First, it tests that the correct error codes
-are generated for the following error conditions passed
-to the function LALMersenneRandom() (tests in \textit{italics}
-are not performed if \verb+LAL_NEDEBUG+ is set, as the
-corresponding checks in the code are made using the ASSERT macro):
-
-\begin{itemize}
-\item \textit{null pointer to output structure}
-\item \textit{null pointer to params structure}
-\item \textit{params not initialized}
-\end{itemize}
-
-Second, it tests that the correct error codes
-are generated for the following error conditions passed
-to the function LALMersenneRandomVector() (tests in \textit{italics}
-are not performed if \verb+LAL_NEDEBUG+ is set, as the
-corresponding checks in the code are made using the ASSERT macro):
-
-\begin{itemize}
-\item \textit{null pointer to output structure}
-\item \textit{null pointer to params structure}
-\item \textit{params not initialized}
-\item \textit{outputVector-$>$length = 0}
-\end{itemize}
-
-Third, it verifies the output of the generator
-for each of the following simple test cases:
-\begin{enumerate}
-\item given a certain seed, does the output match the expected?
-\item does calling the function again reinitialize it to the new seed properly?
-\item does it create a vector of random numbers correctly?
-\end{enumerate}
-
-For each successful test
-(both of these valid data and the invalid ones described above), it
-prints ``\texttt{PASS}'' to standard output; if a test fails, it
-prints ``\texttt{FAIL}''.
-
-\subsubsection*{Exit codes}
-
-\input{MersenneRandomTestCE}
-
-\subsubsection*{Uses}
-
-\begin{verbatim}
-LALMersenneRandom()
-LALMersenneRandomVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\begin{itemize}
-\item{Vector must come in allocated}
-\item{params must be initialized before calls can be made.}
-\end{itemize}
-
-\vfill{\footnotesize\input{MersenneRandomTestCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 
@@ -118,6 +34,77 @@ LALMersenneRandomVector()
 #endif
 
 #include <lal/Random.h>
+
+/**
+   \author Tibbits, M. M.
+   \file
+   \ingroup Random_h
+
+   \brief A program to test <tt>LALMersenneRandom()</tt> and <tt>LALMersenneRandomVector()</tt>
+
+\heading{Usage}
+
+\code
+./MersenneRandomTest [options]
+Options:
+  -h             print usage message
+  -q             quiet: run silently
+  -v             verbose: print extra information
+  -d level       set lalDebugLevel to level
+\endcode
+
+This program tests the function
+<tt>LALMersenneRandom()</tt>,which generates a random
+number based on the Mersenne Twister algorithm.
+
+First, it tests that the correct error codes
+are generated for the following error conditions passed
+to the function LALMersenneRandom() (tests in \e italics
+are not performed if \c LAL_NEDEBUG is set, as the
+corresponding checks in the code are made using the ASSERT macro):
+
+<ul>
+<li> <em>null pointer to output structure</em></li>
+<li> <em>null pointer to params structure</em></li>
+<li> <em>params not initialized</em></li>
+</ul>
+
+Second, it tests that the correct error codes
+are generated for the following error conditions passed
+to the function LALMersenneRandomVector() (tests in \e italics
+are not performed if \c LAL_NEDEBUG is set, as the
+corresponding checks in the code are made using the ASSERT macro):
+
+<ul>
+<li> <em>null pointer to output structure</em></li>
+<li> <em>null pointer to params structure</em></li>
+<li> <em>params not initialized</em></li>
+<li> <em>outputVector-\f$>\f$length = 0</em></li>
+</ul>
+
+Third, it verifies the output of the generator
+for each of the following simple test cases:
+<ol>
+<li> given a certain seed, does the output match the expected?</li>
+<li> does calling the function again reinitialize it to the new seed properly?</li>
+<li> does it create a vector of random numbers correctly?</li>
+</ol>
+
+For each successful test
+(both of these valid data and the invalid ones described above), it
+prints "\c PASS" to standard output; if a test fails, it
+prints "\c FAIL".
+
+\heading{Notes}
+
+<ul>
+<li>Vector must come in allocated</li>
+<li>params must be initialized before calls can be made.</li>
+</ul>
+
+*/
+
+/** \cond DONT_DOXYGEN */
 
 /* bogus type */
 struct
@@ -163,7 +150,7 @@ static void ParseOptions
 );
 
 
-/*************** <lalErrTable file="MersenneRandomTestCE"> */
+/**\name Error Codes */ /*@{*/
 #define	MERSENNERANDOMTESTC_ENOM     0
 #define	MERSENNERANDOMTESTC_EARG     1
 #define	MERSENNERANDOMTESTC_ECHK     2
@@ -180,7 +167,7 @@ static void ParseOptions
 #define	MERSENNERANDOMTESTC_MSGENULL "Null Pointer."
 #define MERSENNERANDOMTESTC_MSGEALOC "Memory Allocation Error"
 #define	MERSENNERANDOMTESTC_MSGENMM  "Randeom Number Mismatch"
-/***************************** </lalErrTable> */
+/*@}*/
 
 
 
@@ -463,3 +450,4 @@ CheckStatus(LALStatus *status, const INT4 code, const CHAR *message,
   return 0;
 }
 
+/** \endcond */

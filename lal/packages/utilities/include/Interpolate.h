@@ -17,29 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
-
-<lalVerbatim file="InterpolateHV">
-</lalVerbatim>
-
-<lalLaTeX>
-
-\section{Header \texttt{Interpolate.h}}
-\label{s:Interpolate.h}
-
-Generates random numbers.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/Interpolate.h>
-\end{verbatim}
-
-\noindent This header covers the routines for interpolation.
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
 
@@ -54,137 +31,123 @@ Generates random numbers.
 extern "C" {
 #endif
 
-#if 0 /* autodoc block */
+/**
+   \addtogroup Interpolate_h
 
-<lalLaTeX>
-\subsection*{Error conditions}
-\input{InterpolateHErrTab}
-</lalLaTeX>
+   \brief This header covers the routines for interpolation.
 
-<lalErrTable file="InterpolateHErrTab">
+\heading{Synopsis}
+\code
+#include <lal/Interpolate.h>
+\endcode
 
-#endif /* autodoc block */
 
-#define INTERPOLATEH_ENULL 1
-#define INTERPOLATEH_ESIZE 2
-#define INTERPOLATEH_EZERO 4
+\heading{Description}
 
+The routine <tt>LALSPolynomialInterpolation()</tt> computes the interpolated \f$y\f$
+value \c output at the \f$x\f$ value \c target by fitting a polynomial of
+order <tt>params.n-1</tt> to the data.  The result \c output is of type
+\c SInterpolateOut, which contains the value <tt>output.y</tt> as well as
+an estimate of the error <tt>output.dy</tt>.  The routine
+<tt>LALDPolynomialInterpolation()</tt> is the same but for double precision.
+
+
+\heading{Operating Instructions}
+
+The following program fits a fourth-order polynomial to the five data points
+\f$\{(0,0),(1,1),(2,3),(3,4),(4,3)\}\f$, and interpolates the value at \f$x=2.4\f$.
+
+\code
+#include <lal/LALStdlib.h>
+#include <lal/Interpolate.h>
+
+int main ()
+{
+  enum { ArraySize = 5 };
+  static LALStatus status;
+  REAL4            x[ArraySize] = {0,1,2,3,4};
+  REAL4            y[ArraySize] = {0,1,3,4,3};
+  REAL4            target       = 2.4;
+  SInterpolatePar  intpar       = {ArraySize, x, y};
+  SInterpolateOut  intout;
+
+  LALSPolynomialInterpolation( &status, &intout, target, &intpar );
+
+  return 0;
+}
+\endcode
+
+\heading{Algorithm}
+
+This is an implementation of the Neville algroithm, see \c polint in
+Numerical Recipes [\ref ptvf1992].
+
+*/
+/*@{*/
+
+/** \name Error Codes */
+/*@{*/
+#define INTERPOLATEH_ENULL 1		/**< Null pointer */
+#define INTERPOLATEH_ESIZE 2		/**< Invalid size */
+#define INTERPOLATEH_EZERO 4		/**< Zero divide */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define INTERPOLATEH_MSGENULL "Null pointer"
 #define INTERPOLATEH_MSGESIZE "Invalid size"
 #define INTERPOLATEH_MSGEZERO "Zero divide"
+/** \endcond */
 
-#if 0 /* autodoc block */
-
-</lalErrTable>
-
-<lalLaTeX>
-
-\subsection*{Structures}
-
-\begin{verbatim}
-typedef struct
-tagSInterpolateOut
-{
-  REAL4  y;
-  REAL4 dy;
-}
-SInterpolateOut;
-
-typedef struct
-tagDInterpolateOut
-{
-  REAL8  y;
-  REAL8 dy;
-}
-DInterpolateOut;
-\end{verbatim}
-
-These structures contain the output of the interpolation.  The two fields are:
-\begin{description}
-\item[\texttt{y}] The interpolated value.
-\item[\texttt{dy}] The estimated error in the interpolated value.
-\end{description}
-
-\begin{verbatim}
-typedef struct
-tagSInterpolatePar
-{
-  UINT4  n;
-  REAL4 *x;
-  REAL4 *y;
-}
-SInterpolatePar;
-
-typedef struct
-tagDInterpolatePar
-{
-  UINT4  n;
-  REAL8 *x;
-  REAL8 *y;
-}
-DInterpolatePar;
-\end{verbatim}
-
-These structures contain the interpolation parameters.  These are the arrays
-of \verb+n+ domain values \verb+x[0]+\ldots\verb+x[n-1]+ and their
-corresponding values \verb+y[0]+\ldots\verb+y[n-1]+.  The fields are:
-\begin{description}
-\item[\texttt{n}] The number of points in the arrays to use in the
-  interpolation.
-\item[\texttt{x}] The array of domain values.
-\item[\texttt{y}] The array of values to interpolate.
-\end{description}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
+/** These structures contain the output of the interpolation */
 typedef struct
 tagSInterpolateOut
 {
   SWIGLAL_STRUCT(SInterpolateOut);
-  REAL4  y;
-  REAL4 dy;
+  REAL4  y;	/**< The interpolated value */
+  REAL4 dy;	/**< The estimated error in the interpolated value */
 }
 SInterpolateOut;
 
+/** These structures contain the output of the interpolation */
 typedef struct
 tagDInterpolateOut
 {
   SWIGLAL_STRUCT(DInterpolateOut);
-  REAL8  y;
-  REAL8 dy;
+  REAL8  y;	/**< The interpolated value */
+  REAL8 dy;	/**< The estimated error in the interpolated value */
 }
 DInterpolateOut;
 
+/** These structures contain the interpolation parameters; These are the arrays
+ * of \c n domain values \f$x[0] \ldots x[n-1]\f$ and their
+ * corresponding values \f$y[0] \ldots y[n-1]\f$
+ */
 typedef struct
 tagSInterpolatePar
 {
   SWIGLAL_STRUCT(SInterpolatePar);
-  UINT4  n;
-  REAL4 *x;
-  REAL4 *y;
+  UINT4  n;	/**< The number of points in the arrays to use in the interpolation */
+  REAL4 *x;	/**< The array of domain values */
+  REAL4 *y;	/**< The array of values to interpolate */
 }
 SInterpolatePar;
 
+/** These structures contain the interpolation parameters; These are the arrays
+ * of \c n domain values \f$x[0]\ldots x[n-1]\f$ and their
+ * corresponding values \f$y[0]\ldots y[n-1]\f$
+ */
 typedef struct
 tagDInterpolatePar
 {
   SWIGLAL_STRUCT(DInterpolatePar);
-  UINT4  n;
-  REAL8 *x;
-  REAL8 *y;
+  UINT4  n;	/**< The number of points in the arrays to use in the interpolation */
+  REAL8 *x;	/**< The array of domain values */
+  REAL8 *y;	/**< The array of values to interpolate */
 }
 DInterpolatePar;
 
-#if 0 /* autodoc block */
-
-<lalLaTeX>
-\newpage\input{InterpolateC}
-</lalLaTeX>
-
-#endif /* autodoc block */
-
+/* ----- Interpolate.c ----- */
+/** \see See \ref Interpolate_h for documentation */
 void
 LALSPolynomialInterpolation (
     LALStatus          *status,
@@ -193,6 +156,7 @@ LALSPolynomialInterpolation (
     SInterpolatePar *params
     );
 
+/** \see See \ref Interpolate_h for documentation */
 void
 LALDPolynomialInterpolation (
     LALStatus          *status,
@@ -201,6 +165,7 @@ LALDPolynomialInterpolation (
     DInterpolatePar *params
     );
 
+/** \see See \ref Interpolate_h for documentation */
 REAL8
 XLALREAL8PolynomialInterpolation (
     REAL8 *yout,
@@ -210,13 +175,8 @@ XLALREAL8PolynomialInterpolation (
     UINT4  n
     );
 
-#if 0 /* autodoc block */
 
-<lalLaTeX>
-\newpage\input{InterpolateTestC}
-</lalLaTeX>
-
-#endif /* autodoc block */
+/*@}*/
 
 #ifdef __cplusplus
 }

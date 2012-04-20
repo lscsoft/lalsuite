@@ -28,7 +28,6 @@
 
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 
 #include "vectormath.h"
@@ -644,12 +643,13 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
       cosresult = (__m128d*)(void*)alignedoutput2;
    }
    
-   INT4 *I = (INT4*)XLALMalloc(2*sizeof(INT4)+15);
-   if (I==NULL) {
+   INT4 *intgerVect = (INT4*)XLALMalloc(2*sizeof(INT4)+15);
+   if (intgerVect==NULL) {
       fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*sizeof(INT4)+15);
       XLAL_ERROR(XLAL_ENOMEM);
    }
-   INT4 *I0 = (void*)(((UINT8)I+15) & ~15);
+   INT4 *I0 = (void*)(((UINT8)intgerVect+15) & ~15);
+   memset(I0, 0, sizeof(INT4)*2);
    
    __m128d lutresf = _mm_set1_pd(LUT_RES_F);
    __m128d onehalf = _mm_set1_pd(0.5);
@@ -713,7 +713,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *c
    if (!outputaligned2) XLALFree(allocoutput2);
    
    //Free memory
-   XLALFree(I);
+   XLALFree(intgerVect);
    
    return XLAL_SUCCESS;
 #else
@@ -793,12 +793,12 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
       cosresult = (__m128*)(void*)alignedoutput2;
    }
    
-   INT4 *I = (INT4*)XLALMalloc(4*sizeof(INT4)+15);
-   if (I==NULL) {
+   INT4 *intgerVect = (INT4*)XLALMalloc(4*sizeof(INT4)+15);
+   if (intgerVect==NULL) {
       fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 4*sizeof(INT4)+15);
       XLAL_ERROR(XLAL_ENOMEM);
    }
-   INT4 *I0 = (void*)(((UINT8)I+15) & ~15);
+   INT4 *I0 = (void*)(((UINT8)intgerVect+15) & ~15);
    memset(I0, 0, sizeof(INT4)*4);
    
    __m128 lutresf = _mm_set1_ps((REAL4)LUT_RES_F);
@@ -867,7 +867,7 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
    if (!outputaligned2) XLALFree(allocoutput2);
    
    //Free memory
-   XLALFree(I);
+   XLALFree(intgerVect);
    
    return XLAL_SUCCESS;
 #else
@@ -881,7 +881,6 @@ INT4 sse_sin_cos_2PI_LUT_REAL4Vector(REAL4Vector *sin2pix_vector, REAL4Vector *c
 
 //Exponential of input vector is computed using SSE
 //Cephes library based
-//!!!!! only 0 and negative input values allowed !!!!!
 void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 {
    
@@ -951,9 +950,15 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       __m128d log2etimesx = _mm_mul_pd(log2e, *x);
       
       //Round
-      __m128d log2etimesxsubhalf = _mm_sub_pd(log2etimesx, onehalf);
-      __m128i log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesxsubhalf);
+      //__m128d log2etimesxsubhalf = _mm_sub_pd(log2etimesx, onehalf);
+      //__m128i log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesxsubhalf);
+      //__m128d log2etimesx_rounded = _mm_cvtepi32_pd(log2etimesx_rounded_i);
+      __m128d log2etimesxplushalf = _mm_add_pd(log2etimesx, onehalf);
+      __m128i log2etimesx_rounded_i = _mm_cvttpd_epi32(log2etimesxplushalf);
       __m128d log2etimesx_rounded = _mm_cvtepi32_pd(log2etimesx_rounded_i);
+      __m128d mask = _mm_cmpgt_pd(log2etimesx_rounded, log2etimesxplushalf);
+      mask = _mm_and_pd(mask, one);
+      log2etimesx_rounded = _mm_sub_pd(log2etimesx_rounded, mask);
       
       //multiply and subtract as in the cephes code
       __m128d log2etimesx_rounded_times_c1 = _mm_mul_pd(log2etimesx_rounded, cephes_c1);
@@ -1031,7 +1036,6 @@ void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 
 //Exponential of input vector is computed using SSE
 //Cephes library based
-//!!!!! only 0 and negative input values allowed !!!!!
 void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 {
    
@@ -1099,9 +1103,15 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       __m128 log2etimesx = _mm_mul_ps(log2e, *x);
       
       //Round
-      __m128 log2etimesxsubhalf = _mm_sub_ps(log2etimesx, onehalf);
-      __m128i log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesxsubhalf);
+      //__m128 log2etimesxsubhalf = _mm_sub_ps(log2etimesx, onehalf);
+      //__m128i log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesxsubhalf);
+      //__m128 log2etimesx_rounded = _mm_cvtepi32_ps(log2etimesx_rounded_i);
+      __m128 log2etimesxplushalf = _mm_add_ps(log2etimesx, onehalf);
+      __m128i log2etimesx_rounded_i = _mm_cvttps_epi32(log2etimesxplushalf);
       __m128 log2etimesx_rounded = _mm_cvtepi32_ps(log2etimesx_rounded_i);
+      __m128 mask = _mm_cmpgt_ps(log2etimesx_rounded, log2etimesxplushalf);
+      mask = _mm_and_ps(mask, one);
+      log2etimesx_rounded = _mm_sub_ps(log2etimesx_rounded, mask);
       
       //multiply and subtract as in the cephes code
       __m128 log2etimesx_rounded_times_c1 = _mm_mul_ps(log2etimesx_rounded, cephes_c1);

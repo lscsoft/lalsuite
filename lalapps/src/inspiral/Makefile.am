@@ -158,6 +158,7 @@ dist_bin_SCRIPTS = \
 	lalapps_makeblindinj \
 	lalapps_makeblindinj_himass \
 	lalapps_cbc_code_compare \
+        lalapps_inspiral_ckpttest \
 	followup/followup_InspiralDataMover.sh
 
 python_config.sed: Makefile

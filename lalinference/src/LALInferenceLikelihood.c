@@ -1471,26 +1471,34 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
   }
 
 
-  if (LALInferenceCheckVariable(currentParams, "chirpmass")) {
-    Mc = *(REAL8 *)LALInferenceGetVariable(currentParams, "chirpmass");
-  } else if (LALInferenceCheckVariable(currentParams, "logmc")) {
-    Mc = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logmc"));
-  } else {
-    fprintf(stderr, "Could not find chirpmass or logmc in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n", 
-            __FILE__, __LINE__);
-    exit(1);
+  if (LALInferenceCheckVariable(currentParams,"m1")&&LALInferenceCheckVariable(currentParams,"m2"))
+  {
+    m1=*(REAL8 *)LALInferenceGetVariable(currentParams,"m1");
+    m2=*(REAL8 *)LALInferenceGetVariable(currentParams,"m2");
   }
+  else
+  {
+  	if (LALInferenceCheckVariable(currentParams, "chirpmass")) {
+    	Mc = *(REAL8 *)LALInferenceGetVariable(currentParams, "chirpmass");
+  	} else if (LALInferenceCheckVariable(currentParams, "logmc")) {
+    	Mc = exp(*(REAL8 *)LALInferenceGetVariable(currentParams, "logmc"));
+  	} else {
+    	fprintf(stderr, "Could not find chirpmass or logmc in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n", 
+        	    __FILE__, __LINE__);
+    	exit(1);
+  	}
 
-  if (LALInferenceCheckVariable(currentParams, "massratio")) {
-    REAL8 eta = *(REAL8 *)LALInferenceGetVariable(currentParams, "massratio");
-    LALInferenceMcEta2Masses(Mc, eta, &m1, &m2);
-  } else if (LALInferenceCheckVariable(currentParams, "asym_massratio")) {
-    REAL8 q = *(REAL8 *)LALInferenceGetVariable(currentParams, "asym_massratio");
-    LALInferenceMcQ2Masses(Mc, q, &m1, &m2);
-  } else {
-    fprintf(stderr, "Could not find eta or q in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
-            __FILE__, __LINE__);
-    exit(1);
+  	if (LALInferenceCheckVariable(currentParams, "massratio")) {
+    	REAL8 eta = *(REAL8 *)LALInferenceGetVariable(currentParams, "massratio");
+    	LALInferenceMcEta2Masses(Mc, eta, &m1, &m2);
+  	} else if (LALInferenceCheckVariable(currentParams, "asym_massratio")) {
+    	REAL8 q = *(REAL8 *)LALInferenceGetVariable(currentParams, "asym_massratio");
+    	LALInferenceMcQ2Masses(Mc, q, &m1, &m2);
+  	} else {
+    	fprintf(stderr, "Could not find eta or q in LALInferenceCorrelatedAnalyticLogLikelihood (in %s, line %d)\n",
+        	    __FILE__, __LINE__);
+    	exit(1);
+  	}
   }
 
   if (LALInferenceCheckVariable(currentParams, "distance")) {
@@ -1599,7 +1607,8 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
   for (i = 0; i < DIM; i++) {
     sum += xOrig[i]*x[i];
   }
-
+  gsl_matrix_free(LUCM);
+  gsl_permutation_free(LUCMPerm);
   return -sum/2.0;
 }
 
@@ -1655,6 +1664,8 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     a = exps[1];
     b = exps[0];
   }
+  gsl_matrix_free(LUCM);
+  gsl_permutation_free(LUCMPerm);
 
   /* attempt to keep returned values finite */
   return a + log1p(exp(b-a));

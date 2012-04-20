@@ -30,11 +30,10 @@
 #include <lal/XLALError.h>
 
 
-/**
-\author Brown D. A.
-\ingroup Date_h
+/** \ingroup Date_h
+    \author Brown D. A.
 
-\brief Determines if a given time is playground data.
+    \brief Determines if a given time is playground data.
 
 \heading{Algorithm}
 

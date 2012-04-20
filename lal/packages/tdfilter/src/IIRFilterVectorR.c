@@ -22,8 +22,8 @@
 
 
 /**
-   \author Creighton, T. D.
    \addtogroup IIRFilterVectorR_c
+   \author Creighton, T. D.
 
    \brief Applies a time-reversed IIR filter to a data stream.
 

@@ -17,20 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-
-/** \defgroup NRWaveInject Numerical-relativity waveforms
- * \ingroup inject
- * \author S.Fairhurst, B. Krishnan, L.Santamaria
- *
- * \brief Module for generating h(t) from Numrel waveforms
- *
- */
-
-/** \file NRWaveInject.h
- *  \ingroup NRWaveInject
- *
- */
-
 #ifndef _NRWAVEINJECT_H
 #define _NRWAVEINJECT_H
 
@@ -54,25 +40,37 @@
 extern "C" {
 #endif
 
-#define NRWAVEINJECT_ENULL    1
-#define NRWAVEINJECT_EFILE    2
-#define NRWAVEINJECT_ENONULL  3
-#define NRWAVEINJECT_ENOMEM   4
-#define NRWAVEINJECT_EVAL     5
-#define NRWAVEINJECT_EFORMAT  6
+/** \addtogroup NRWaveInject_h
+ * \author S.Fairhurst, B. Krishnan, L.Santamaria
+ *
+ * \brief Module for generating h(t) from Numrel waveforms
+ *
+ */
+/*@{*/
 
+/** \name Error codes */
+/*@{*/
+#define NRWAVEINJECT_ENULL    1	/**< Null pointer */
+#define NRWAVEINJECT_EFILE    2	/**< Error in file-IO */
+#define NRWAVEINJECT_ENONULL  3	/**< Not a Null pointer */
+#define NRWAVEINJECT_ENOMEM   4	/**< Memory ellocation error */
+#define NRWAVEINJECT_EVAL     5	/**< Invalid value */
+#define NRWAVEINJECT_EFORMAT  6	/**< Meta data file format incorrect */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define NRWAVEINJECT_MSGENULL   "Null pointer"
 #define NRWAVEINJECT_MSGEFILE   "Error in file-IO"
 #define NRWAVEINJECT_MSGENONULL "Not a Null pointer"
 #define NRWAVEINJECT_MSGENOMEM  "Memory ellocation error"
 #define NRWAVEINJECT_MSGEVAL    "Invalid value"
 #define NRWAVEINJECT_MSGEFORMAT "Meta data file format incorrect"
-
+/** \endcond */
 
 #define NINJA_MIN_MODE 2
 #define NINJA_MAX_MODE 5
 
-/* enum for list of numrel groups */
+/** enum for list of numrel groups */
 typedef enum{
   NINJA_GROUP_AEI = 0,
   NINJA_GROUP_CIT,
@@ -191,6 +189,9 @@ CHAR* XLALGetNinjaChannelName(const CHAR *polarisation, /**< either plus or cros
                               INT4 m /**< polar mode index */);
 
 NumRelGroup XLALParseNumRelGroupName( CHAR *name);
+
+
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

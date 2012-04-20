@@ -55,7 +55,7 @@ where
 
 In writing the previous equation we have assumed that there is a total of \f$M\cdot N\f$ data
 samples and \f$0\leq a<MN\f$.  \f$\Phi_{ab}\f$ is the expected phase at time \f$a\f$ for an
-intrinsic emission frequency \f$b\over T_{DeFT}\f$ (where the denominator is the DeFT time
+intrinsic emission frequency \f$\frac{b}{T_{DeFT}}\f$ (where the denominator is the DeFT time
 baseline). \f$\Phi\f$ depends on \f$\vec\lambda\f$, a vector of parameters that defines the phase
 model.  Typically these are the source location and the spin-down parameter values of the template
 source for which one is demodulating.  For simplicity, we will focus only on \f$F_{a}\f$; the
@@ -92,7 +92,7 @@ expressed in closed form, thus saving computations, and Eq.\eqref{eq_e4} can be 
 with
 \anchor DeFT_defs \f{eqnarray}{
 \label{DeFT_defs}
-P_{\alpha k}(b,\vec{\lambda})={\sin{x'}\over x'}-i{1-\cos{x'}\over x'}\\
+P_{\alpha k}(b,\vec{\lambda})= \frac{\sin{x'}}{x'}-i \frac{1-\cos{x'}}{x'}\\
 x'=\sum_{s} f_s B_{s\alpha} - k\\
 y_\alpha=\sum_{s} f_s A_{s\alpha}.
 \f}

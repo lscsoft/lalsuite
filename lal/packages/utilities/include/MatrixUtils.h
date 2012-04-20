@@ -17,29 +17,38 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _MATRIXUTILS_H
+#define _MATRIXUTILS_H
+
+#include <lal/LALStdlib.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 /**
-\author Creighton, T. D.
-\file
+   \addtogroup MatrixUtils_h
+   \author Creighton, T. D.
 
-\brief Provides routines to solve linear systems.
+   \brief Provides routines to solve linear systems.
 
-\heading{Synopsis}
-\code
-#include <lal/MatrixUtils.h>
-\endcode
+   \heading{Synopsis}
+   \code
+   #include <lal/MatrixUtils.h>
+   \endcode
 
 This header covers routines to solve linear systems of equations and
 eigensystems, using algorithms adapted from Chapters~2 and~11 of
-Numerical Recipes~[\ref ptvf1992].  The only routines at present are
+Numerical Recipes [\ref ptvf1992].  The only routines at present are
 for computing eigenvalues and eigenvectors of real symmetric matrices.
 Routines for inverting or computing the determinant of arbitrary
 square matrices will likely follow.
 
-\section TODOref Notation
+\heading{Notation}
 
 A \e matrix is represented in LAL by a <tt>\<datatype\>Array</tt>
-structure with a <tt>dimLength->length</tt> field of 2; the
-<tt>dimLength->data</tt> field gives the dimensions \f$[M,N]\f$ of the
+structure with a <tt>dimLength-\>length</tt> field of 2; the
+<tt>dimLength-\>data</tt> field gives the dimensions \f$[M,N]\f$ of the
 matrix.  Using the place-index notation common in tensor calculus, a
 matrix is a two-index tensor:
 \f{equation}{
@@ -76,7 +85,7 @@ vector structure.  Whether the object is to be used as a row or column
 vector must be determined from context; it is not specified by the
 datatype.
 
-\section TODOref Properties
+\heading{Properties}
 
 The basic matrix operations are addition, scalar multiplication, and
 vector multiplication.  We assume the reader is familiar with these.
@@ -85,8 +94,8 @@ In addition, we will refer to the following unary operations on
 
 \e Inversion: The inverse \f$(\mathsf{A}^{-1}){}^a{}_b\f$ of a
 matrix \f$\mathsf{A}^a{}_b\f$ is one such that their matrix product is the
-identity matrix \f$\bd^a{}_b\f$ (whose elements \f$\delta^i{}_j\f$ are just
-the Kr\"onecker delta function).
+identity matrix \f$\delta^a{}_b\f$ (whose elements \f$\delta^i{}_j\f$ are just
+the Kronecker delta function).
 
 \e Transposition: The transpose \f$(\mathsf{A}^T){}^a{}_b\f$ of a
 matrix \f$\mathsf{A}^a{}_b\f$ is given by interchanging the indecies on
@@ -109,44 +118,30 @@ matrices (i.e.\ matrices, vectors, and scalars whose components are
 all real).  In this case, symmetric is equivalent to Hermitian, and
 orthogonal is equivalent to unitary.
 
-%"
-
 */
+/*@{*/
 
-#ifndef _MATRIXUTILS_H
-#define _MATRIXUTILS_H
+/** \name Error Codes */
+/*@{*/
+#define MATRIXUTILSH_ENUL  1		/**< Unexpected null pointer in arguments */
+#define MATRIXUTILSH_EDIM  2		/**< Bad matrix dimensions */
+#define MATRIXUTILSH_EITER 3		/**< Did not converge after maximum iterations */
+#define MATRIXUTILSH_ESING 4		/**< Singular matrix */
+#define MATRIXUTILSH_EMEM  5		/**< Memory allocation error */
+/*@}*/
 
-#include <lal/LALStdlib.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/** \name Error Codes */ /*@{*/
-#define MATRIXUTILSH_ENUL  1
-#define MATRIXUTILSH_EDIM  2
-#define MATRIXUTILSH_EITER 3
-#define MATRIXUTILSH_ESING 4
-#define MATRIXUTILSH_EMEM  5
+/*@}*/
 
 #define MATRIXUTILSH_MSGENUL  "Unexpected null pointer in arguments"
 #define MATRIXUTILSH_MSGEDIM  "Bad matrix dimensions"
 #define MATRIXUTILSH_MSGEITER "Did not converge after maximum iterations"
 #define MATRIXUTILSH_MSGESING "Singular matrix"
 #define MATRIXUTILSH_MSGEMEM  "Memory allocation error"
-/*@}*/
 
 
-
-
-
-
-/* Function prototypes. */
-
-
-
-
-
+/* ---------- Function prototypes. ---------- */
+/** \addtogroup MatrixOps_c */
+/*@{*/
 void
 LALI2MatrixAdd( LALStatus *, INT2Array *out, INT2Array *in1, INT2Array *in2 );
 void
@@ -214,8 +209,7 @@ void
 LALCMatrixAdjoint( LALStatus *, COMPLEX8Array *out, COMPLEX8Array *in1 );
 void
 LALZMatrixAdjoint( LALStatus *, COMPLEX16Array *out, COMPLEX16Array *in1 );
-
-
+/*@}*/
 
 
 void
@@ -235,7 +229,6 @@ LALDMatrixInverse( LALStatus *, REAL8 *det, REAL8Array *matrix, REAL8Array *inve
 
 void
 LALDMatrixDeterminantErr( LALStatus *, REAL8 det[2], REAL8Array *matrix, REAL8Array *matrixErr );
-
 
 
 

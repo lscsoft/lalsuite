@@ -577,7 +577,7 @@ XLALCoincSimRingdownTest (
      thisSim = NULL;
      /* loop over the interferometers to get the event_id*/
 
-     for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+     for ( ifoInCoinc = (InterferometerNumber) 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
      {
        if ( (thisSngl = thisCoinc->snglRingdown[ifoInCoinc]) )
        {

@@ -17,9 +17,23 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <math.h>
+#include <string.h>
+#include <stdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/StochasticCrossCorrelation.h>
+#include <lal/AVFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
+#include <lal/Units.h>
+#include <lal/Random.h>
+#include <lal/SimulateSB.h>
+#include <lal/DetectorSite.h>
+
 /**
 \author Sukanta Bose (Adapted from a non-LAL code written by Bruce Allen)
-\addtogroup SimulateSB_h
 
 \brief Simulates whitened time-domain signal in a pair of detectors.
 
@@ -63,7 +77,7 @@ and \f$B\f$. Above, \f$\widetilde{h}_1(f_i)\f$ and
 The Fourier components that
 obey the above relations are
   \f{equation}{
-    \widetilde{h}_1(f_i) = \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
+    \widetilde{h}_1(f_i) = \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
     \Omega^{1/2}_{\mathrm{GW}}(|f_i|) \sqrt{\gamma_{11}(f_i)}
 (x_{1i} + i y_{1i})
     \,
@@ -72,7 +86,7 @@ obey the above relations are
   \f{equation}{
     \widetilde{h}_2(f_i) = \widetilde{h}_1(f_i)\frac{\gamma_{12}(f_i)}
 {\gamma_{11}(f_i)} +
-    \sqrt{3H_0^2T \over 40\pi^2}f_i^{-3/2}
+    \sqrt{\frac{3H_0^2T}{40\pi^2}}f_i^{-3/2}
     \Omega^{1/2}_{\mathrm{GW}}(|f_i|)
     \sqrt{\gamma_{22}(f_i)-\frac{\gamma^2_{12}(f_i)}{\gamma_{11}(f_i)}}
 (x_{2i} + i y_{2i})
@@ -127,37 +141,11 @@ response functions of the two detectors are then used to whiten the two
 strains in the Fourier domain. Their inverse transform is then taken to obtain
 at each detector the whitened simulated signal in the time domain.
 
-\heading{Uses}
-
-\code
-LALStochasticOmegaGW()
-LALReverseRealFFT()
-LALNormalDeviates()
-\endcode
-
 \heading{Notes}
 
-<ul>
-<li> This routine does not yet support non-zero heterodyning frequencies.</li>
-</ul>
+This routine does not yet support non-zero heterodyning frequencies.
 
 */
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <math.h>
-#include <string.h>
-#include <stdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/StochasticCrossCorrelation.h>
-#include <lal/AVFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
-#include <lal/Units.h>
-#include <lal/Random.h>
-#include <lal/SimulateSB.h>
-#include <lal/DetectorSite.h>
-
 void
 LALSSSimStochBGTimeSeries( LALStatus                    *status,
 			   SSSimStochBGOutput           *output,
@@ -809,6 +797,9 @@ LALSSSimStochBGTimeSeries( LALStatus                    *status,
 
 /* ***************************************************************************/
 
+/** UNDOCUMENTED.
+ *\see See \ref SimulateSB_h and LALSSSimStochBGTimeSeries() for documentation
+ */
 void
 LALSSSimStochBGStrainTimeSeries( LALStatus              *status,
 			         SSSimStochBGOutput           *output,

@@ -61,7 +61,7 @@
 typedef struct tagXLALSimInspiralSpinTaylorT4Coeffs
 {
 	REAL8 eta; 			// symmetric mass ratio
-	REAL8 wdotnewt; // leading order coefficient of wdot = \dot{\omega}
+	REAL8 wdotnewt; // leading order coefficient of wdot = \f$\dot{\omega}\f$
 	REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; // coeffs. of PN corrections to wdot
 	REAL8 wdotlogcoeff; 		// coefficient of log term in wdot
 	REAL8 Ecoeff[LAL_MAX_PN_ORDER]; // coeffs. of PN corrections to energy
@@ -93,11 +93,11 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
 
 /**
  * This function evolves the orbital equations for a precessing binary using 
- * the "TaylorT4" approximant for solving the orbital dynamics 
+ * the \"TaylorT4\" approximant for solving the orbital dynamics 
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
- * It returns time series of the "orbital velocity", orbital phase, 
- * and components for both individual spin vectors, the "Newtonian"
+ * It returns time series of the \"orbital velocity\", orbital phase, 
+ * and components for both individual spin vectors, the \"Newtonian\"
  * orbital angular momentum (which defines the instantaneous plane)
  * and "E1", a basis vector in the instantaneous orbital plane.
  * Note that LNhat and E1 completely specify the instantaneous orbital plane.
@@ -182,17 +182,17 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     /** 
      * Set coefficients up to PN order phaseO. 
      * epnorb is the binary energy and
-     * wdotorb is the derivative of the orbital frequency \dot{\omega}.
+     * wdotorb is the derivative of the orbital frequency \f$\dot{\omega}\f$.
      * These are just the non-spinning contributions.
      * Spin corrections must be recomputed at every step
      * because the relative orientations of S, L can change
      *
      * The values can be found in Buonanno, Iyer, Ochsner, Pan and Sathyaprakash
-     * Phys. Rev. D 80, 084043 (2009) arXiv:0907.0700 (aka "BIOPS")
-     * Eq. 3.1 for the energy and Eq. 3.6 for \dot{\omega}
+     * Phys. Rev. D 80, 084043 (2009) arXiv:0907.0700 (aka \"BIOPS\")
+     * Eq. 3.1 for the energy and Eq. 3.6 for \f$\dot{\omega}\f$
      *
-     * Note that Eq. 3.6 actually gives dv/dt, but this relates to \omega by
-     * d (M \omega)/dt = d (v^3)/dt = 3 v^2 dv/dt
+     * Note that Eq. 3.6 actually gives dv/dt, but this relates to \f$\omega\f$ by
+     * \f$d (M \omega)/dt = d (v^3)/dt = 3 v^2 dv/dt\f$
      * so the PN corrections are the same 
      * but the leading order is 3 v^2 times Eq. 3.6
      */
@@ -522,12 +522,12 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
     }
 
     /**
-     * We are testing if the orbital energy increases with \omega. 
+     * We are testing if the orbital energy increases with \f$\omega\f$. 
      * We should be losing energy to GW flux, so if E increases 
      * we stop integration because the dynamics are becoming unphysical. 
-     * 'test' is the PN expansion of dE/d\omega without the prefactor, 
-     * i.e. dE/d\omega = dE/dv * dv/d\omega = - (M^2*eta/6) * test
-     * Therefore, the energy is increasing with \omega iff. test < 0.
+     * 'test' is the PN expansion of \f$dE/d\omega\f$ without the prefactor, 
+     * i.e. \f$dE/d\omega = dE/dv * dv/d\omega = - (M^2*eta/6) * test\f$
+     * Therefore, the energy is increasing with \f$\omega\f$ iff. test < 0.
      */
     test = 2. + v * v * ( 4. * params->Ecoeff[2] 
             + v * ( 5. * (params->Ecoeff[3] + Espin15) 
@@ -553,9 +553,9 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
  * Given the values of all the dynamical variables 'values' at time 't',
  * This function computes their derivatives 'dvalues'
  * so the ODE integrator can take a step
- * All non-dynamical quantities (masses, etc.) are passed in "mparams"
+ * All non-dynamical quantities (masses, etc.) are passed in \"mparams\"
  *
- * The derivatives for \omega, L_N, S1, S2 can be found 
+ * The derivatives for \f$\omega\f$, L_N, S1, S2 can be found 
  * as Eqs. (1), (8) - (10) of gr-qc/0405090
  * The derivative of E1 is Eq. (15)-(16) of gr-qc/0310034
  */
@@ -608,15 +608,15 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     /** 
      * domega
      * 
-     * Note we are actually computing d \hat{\omega} / d \hat{t}
-     * where \hat{\omega} = M \omega and \hat{t} = t / M
-     * Therefore 'domega' = M^2 * d\omega / dt
+     * Note we are actually computing \f$d \hat{\omega} / d \hat{t}\f$
+     * where \f$\hat{\omega} = M \omega\f$ and \f$\hat{t} = t / M\f$
+     * Therefore \f$domega = M^2 * d\omega / dt\f$
      *
      * See Eqs. (1)-(7) of gr-qc/0405090 But note that our spin variables 
      * are scaled by component masses relative to that paper.
-     * i.e. S_i = (m_i/M)^2 * \hat{S_i}
+     * i.e. \f$S_i = (m_i/M)^2 * \hat{S_i}\f$
      *
-     * non-spinning coefficients of \dot{\omega} (params->wdotcoeff[i])
+     * non-spinning coefficients of \f$\dot{\omega}\f$ (params->wdotcoeff[i])
      * should have been set before this function was called
      */
     if( params->wdotSO15s1 != 0. || params->wdotSO15s2 != 0. )
@@ -650,8 +650,8 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     /**
      * dLN
      * 
-     * d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}
-     * This is Eq. (10) of gr-qc/0405090 ( times M b/c we use \hat{t})
+     * \f$d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}\f$
+     * This is Eq. (10) of gr-qc/0405090 ( times M b/c we use \f$\hat{t}\f$)
      */
     omega2 = omega * omega;
     /* \Omega_L vector */
@@ -743,7 +743,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
- * with phasing computed from energy balance using the so-called "T4" method.
+ * with phasing computed from energy balance using the so-called \"T4\" method.
  *
  * This routine allows the user to specify different pN orders
  * for phasing calcuation vs. amplitude calculations.
@@ -819,7 +819,7 @@ int XLALSimInspiralSpinTaylorT4(
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
- * with phasing computed from energy balance using the so-called "T4" method.
+ * with phasing computed from energy balance using the so-called \"T4\" method.
  *
  * This routine assumes leading-order amplitude dependence (restricted waveform)
  * but allows the user to specify the phase PN order

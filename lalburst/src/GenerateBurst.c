@@ -67,8 +67,6 @@
  * interval for the time series.  The return value is 0 in success, non-0
  * on failure.
  */
-
-
 int XLALGenerateSimBurst(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
@@ -132,8 +130,6 @@ int XLALGenerateSimBurst(
  * inject them into a time series.  Passing NULL for the response disables
  * it (input time series is strain).
  */
-
-
 int XLALBurstInjectSignals(
 	REAL8TimeSeries *series,
 	const SimBurst *sim_burst,

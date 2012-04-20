@@ -17,21 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2008
- * \defgroup StringVector StringVector
- * \ingroup factories
- * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
- *  which are just LAL 'vectors' of CHAR * pointers.
- *
- * \heading{Synopsis}
- * \code
- * #include <lal/StringVector.h>
- * \endcode
- *
- */
-
 #ifndef _STRINGVECTOR_H  /* Double-include protection. */
 #define _STRINGVECTOR_H
 
@@ -44,6 +29,22 @@ extern "C" {
 #include <stdarg.h>
 
 #include <lal/LALDatatypes.h>
+
+/**
+ * \author Reinhard Prix
+ * \date 2008
+ * \addtogroup StringVector_h
+ *
+ * \brief Creation/destruction/manipulation API for ::LALStringVector objects,
+ *  which are just LAL-type vectors of CHAR * pointers.
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/StringVector.h>
+ * \endcode
+ *
+ */
+/*@{*/
 
 /*---------- DEFINES ----------*/
 
@@ -80,6 +81,8 @@ void XLALDestroyStringVector ( LALStringVector *vect );
 int XLALSortStringVector (LALStringVector *strings);
 LALStringVector *XLALParseCSV2StringVector ( const CHAR *CSVlist );
 INT4 XLALFindStringInVector ( const char *needle, const LALStringVector *haystack );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

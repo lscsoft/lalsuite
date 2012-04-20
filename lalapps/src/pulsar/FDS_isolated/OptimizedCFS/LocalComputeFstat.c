@@ -194,16 +194,16 @@ void LocalComputeFStatFreqBand ( LALStatus *status, 		/**< pointer to LALStatus 
 
 
 
-/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::psPoint,
+/** Function to compute (multi-IFO) F-statistic for given parameter-space point ::doppler,
  *  normalized SFT-data (normalized by <em>double-sided</em> PSD Sn), noise-weights
- *  and detector state-series 
+ *  and detector state-series
  *
- * NOTE: for better efficiency some quantities that need to be recomputed only for different 
- * sky-positions are buffered in \a cfBuffer if given. 
+ * NOTE: for better efficiency some quantities that need to be recomputed only for different
+ * sky-positions are buffered in \a cfBuffer if given.
  * - In order to 'empty' this buffer (at the end) use XLALEmptyComputeFBuffer()
  * - You CAN pass NULL for the \a cfBuffer if you don't want to use buffering (slower).
  *
- * NOTE2: there's a spaceholder for binary-pulsar parameters in \a psPoint, but this 
+ * NOTE2: there's a spaceholder for binary-pulsar parameters in \a doppler, but this
  * it not implemented yet.
  *
  */
@@ -219,7 +219,7 @@ LocalComputeFStat ( LALStatus *status, 		/**< pointer to LALStatus structure */
 		    )
 {
   Fcomponents retF = empty_Fcomponents;
-  UINT4 X, numDetectors;	
+  UINT4 X, numDetectors;
   MultiSSBtimes *multiSSB = NULL;
   MultiAMCoeffs *multiAMcoef = NULL;
   REAL8 Ad, Bd, Cd, Dd_inv;

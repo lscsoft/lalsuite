@@ -165,7 +165,7 @@ consecutively.
 
 \heading{\ref LALGeneratePPNInspiral():} Most arguments are parsed
 from the corresponding tokens using the functions in
-\ref StringConvert_c.  However, two input parameters require some
+\ref StringConvert.c.  However, two input parameters require some
 nontrivial computation.  First, the generator requires a start time,
 while \c sourcefile specifies a coalescence time.  The solution is
 to generate a waveform with an arbitrary start time (in this case zero
@@ -179,9 +179,9 @@ specified (either positive or negative), then the maximum rate of
 change of frequency in the (post\f${}^0\f$-)Newtonian approximation is
 \f$\dot{f}_\mathrm{max}=1.8\pi^{8/3}\tau^{5/3}f^{11/3}\f$, where
 \f$\tau=Gm_\mathrm{tot}/c^3\f$ is the relativistic minimum timescale of
-the system.  As explained in \ref GeneratePPNInspiral_c, for linear
+the system.  As explained in \ref GeneratePPNInspiral.c, for linear
 interpolation of the waveform to be accurate to within \f$\pi/2\f$
-radians, we would like \f$\Delta f\Delta t\lessim2\f$ over any sampling
+radians, we would like \f$\Delta f\Delta t\lesssim2\f$ over any sampling
 interval.  This implies that \f$\Delta
 t\approx\sqrt{2/\dot{f}_\mathrm{max}}\f$, or:
 \f[
@@ -202,14 +202,14 @@ accordingly and the waveform regenerated.
 
 \heading{\ref LALGenerateTaylorCW():} Most arguments are parsed
 from the corresponding tokens using the routines in
-\ref StringConvert_c.  However, two input parameters require
+\ref StringConvert.c.  However, two input parameters require
 computation.  First, the base frequency \f$f_0\f$ and spindown terms
 \f$f_1,\ldots f_N\f$ need to be transformed from the reference time to the
 start time, by the following formula:
 \f{eqnarray}{
 f_{0\mathrm{(start)}} & = & f_0\left( 1+\sum_{k=1}^N f_k t^k \right)
 	\;,\nonumber\\
-f_{j\mathrm{(start)}} & = & \frac{\sum_{k=j}^N{j \choose k}f_k t^{k-j}}
+f_{j\mathrm{(start)}} & = & \frac{\sum_{k=j}^N \binom{j}{k}f_k t^{k-j}}
 	{1+\sum_{k=1}^N f_k t^k} \;,\nonumber
 \f}
 where \f$t=t_\mathrm{start}-t_\mathrm{ref}\f$ is the time shift.  These
@@ -235,7 +235,7 @@ spindown terms), then \f$\Delta t\f$ is set equal to \f$T\f$.
 
 \heading{\ref LALGenerateSpinOrbitCW():} Most arguments are parsed
 from the corresponding tokens using the routines in
-\ref StringConvert_c.  The reference time is assumed to correspond
+\ref StringConvert.c.  The reference time is assumed to correspond
 to the orbital epoch of the system, and the conversion from reference
 time to start time discussed above is performed automatically within
 the LALGenerateSpinOrbitCW() function.  However, the program
@@ -252,30 +252,6 @@ where \f$\dot{\upsilon}_p\f$ is the angular speed at periapsis, \f$r_p\sin
 i/c\f$ is the projected, normalized periapsis distance, and
 \f$T=t_\mathrm{stop}-t_\mathrm{start}\f$ is the total signal length.  If
 this gives \f$\Delta t>T\f$ then \f$\Delta t\f$ is set equal to \f$T\f$.
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALMalloc()                     LALFree()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALCreateTokenList()            LALDestroyTokenList()
-LALCHARCreateVector()           LALCHARDestroyVector()
-LALCCreateVector()              LALCDestroyVector()
-LALDCreateVector()              LALDDestroyVector()
-LALSDestroyVector()             LALSDestroyVectorSequence()
-LALCReadFSeries()               LALSReadTSeries()
-LALCHARReadVector()             LALSWriteTSeries()
-LALCCVectorDivide()             LALNormalDeviates()
-LALUnitRaise()                  LALUnitMultiply()
-LALUnitCompare()                LALStringToI8()
-LALStringToS()                  LALStringToD()
-LALGeneratePPNInspiral()        LALGenerateTaylorCW()
-LALGenerateSpinOrbitCW()        LALSimulateCoherentGW()
-LALSSInjectTimeSeries()         LALInitBarycenter()
-snprintf()                   LALPrintError()
-LALCheckMemoryLeaks()
-\endcode
-
 
 \name Error Codes */ /*@{*/
 #define INJECTTESTC_ENORM 0	/**< Normal exit */

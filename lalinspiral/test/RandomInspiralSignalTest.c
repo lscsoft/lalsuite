@@ -41,11 +41,11 @@ results of the correlation.
 If <tt>TimeDomain=1</tt> then the code outputs the time-domain
 signal/noise/signal+noise
 
-The parameter
-{\texttt randIn.type=0} generates only signal
-{\texttt randIn.type=1} generates only noise
-{\texttt randIn.type=2} generates {\texttt randIn.SignalAmp * signal(t)
-+ randIn.NoiseAmp * noise(t)}
+The parameter<br>
+<tt>randIn.type=0</tt> generates only signal<br>
+<tt>randIn.type=1</tt> generates only noise<br>
+<tt>randIn.type=2</tt> generates <tt>randIn.SignalAmp * signal(t) + randIn.NoiseAmp * noise(t)</tt><br>
+
 Note that one must calculate the length of the waveform and allocate memory for it
 \e before calling \c InspiralWave. The length of the waveform can
 be calculated by calling the function \c InspiralWaveLength beforehand, as shown.
@@ -56,22 +56,6 @@ which will return a \e single waveform, and \c InspiralWaveTemplates, which
 returns a \e pair
 of waveforms which have phases that differ by \f$\pi/2\f$.
 
-\heading{Uses}
-This code directly uses the following functions and macros (see those functions
-to find out what they call in turn):
-\code
-lalDebugLevel
-LALCreateForwardRealFFTPlan
-LALCreateReverseRealFFTPlan
-LALInspiralParameterCalc
-LALInspiralWaveLength
-LALInspiralWaveOverlap
-LALInspiralFindEventsCluster
-LALNoiseSpectralDensity
-LALRandomInspiralSignal
-\endcode
-
-\heading{Notes}
 */
 
 #include <stdio.h>

@@ -21,8 +21,8 @@
 #include <lal/IIRFilter.h>
 
 /**
-   \author Creighton, T. D.
    \addtogroup IIRFilterVector_c
+   \author Creighton, T. D.
 
    \brief Applies an IIR filter to a data stream.
 

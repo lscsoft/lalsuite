@@ -33,7 +33,15 @@
 extern "C" {
 #endif
 
-/*
+  /** \defgroup EPSearch_h Header EPSearch.h
+   * \ingroup pkg_burstsearch
+   *
+   * \brief UNDOCUMENTED
+   */
+  /*@{*/
+
+
+/**
  * liblal.so can't resolve symbols from liblalsupport.so, so to call
  * diagnostics dump functions from lal, they have to be passed in as
  * pointers.  The prototypes here must match those in LIGOLwXMLArray.h or
@@ -42,8 +50,6 @@ extern "C" {
  * Note, also that the LIGOLwXMLStream structure is defined in a header
  * from liblalsupport, so here it has to be refered to as a void *.
  */
-
-
 struct XLALEPSearchDiagnostics {
 	void *LIGOLwXMLStream;
 	int (*XLALWriteLIGOLwXMLArrayREAL8FrequencySeries)(void *, const char *, const REAL8FrequencySeries *);
@@ -65,6 +71,7 @@ SnglBurst *XLALEPSearch(
 	REAL8 maxTileDuration
 );
 
+  /*@}*/
 
 #ifdef  __cplusplus
 }

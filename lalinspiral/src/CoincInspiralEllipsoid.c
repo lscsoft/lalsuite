@@ -361,8 +361,8 @@ INT2 XLALCompareInspiralsEllipsoid(
 
     memset( &minimizer, 0, sizeof(EThincaMinimizer) );
 
-    ifoaNum = XLALIFONumber( aPtr->trigger->ifo );
-    ifobNum = XLALIFONumber( bPtr->trigger->ifo );
+    ifoaNum = (InterferometerNumber) XLALIFONumber( aPtr->trigger->ifo );
+    ifobNum = (InterferometerNumber) XLALIFONumber( bPtr->trigger->ifo );
 
     travelTime = params->lightTravelTime[ifoaNum][ifobNum] * 1.0e-9;
 

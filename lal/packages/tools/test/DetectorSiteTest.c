@@ -493,8 +493,10 @@ ParseOptions (int argc, char *argv[])
         break;
 
       case 'q': /* quiet: run silently (ignore error messages) */
-        freopen ("/dev/null", "w", stderr);
-        freopen ("/dev/null", "w", stdout);
+        if ( freopen ("/dev/null", "w", stderr) == NULL )
+          printf ("Failed call: freopen(/dev/null, 'w', stderr)\n");
+        if ( freopen ("/dev/null", "w", stdout) == NULL )
+          printf ("Failed call: freopen(/dev/null, 'w', stdout)\n");
         break;
 
       case 'h':

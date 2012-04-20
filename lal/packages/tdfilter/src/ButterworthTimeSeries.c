@@ -29,9 +29,10 @@ extern INT4 lalDebugLevel;
 
 
 /**
- \author Creighton, T. D.
  \defgroup ButterworthTimeSeries_c Module ButterworthTimeSeries.c
  \ingroup BandPassTimeSeries_h
+
+ \author Creighton, T. D.
 
  \brief Applies a low- or high-pass Butterworth filter to a time series.
 

@@ -456,7 +456,7 @@ int XLALFrRewind( FrStream *stream )
   stream->state = LAL_FR_OK;
   if ( ! stream->file )
   {
-    stream->state |= LAL_FR_ERR | LAL_FR_URL;
+    stream->state =  (FrState) ( stream->state |LAL_FR_ERR | LAL_FR_URL);
     XLAL_ERROR( XLAL_EIO );
   }
   if ( FrTOCReadFull( stream->file ) == NULL )
@@ -465,7 +465,7 @@ int XLALFrRewind( FrStream *stream )
         __func__, stream->flist->url );
     FrFileIEnd( stream->file );
     stream->file   = NULL;
-    stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+    stream->state =(FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
     XLAL_ERROR( XLAL_EIO );
   }
   stream->epoch.gpsSeconds     = stream->file->toc->GTimeS[0];
@@ -493,7 +493,7 @@ int XLALFrNext( FrStream *stream )
     return 1; /* end code */
 
   /* turn off gap bit */
-  stream->state &= ~LAL_FR_GAP;
+  stream->state = (FrState) (stream->state & ~LAL_FR_GAP );
 
   url2 = url1 = stream->flist[stream->fnum].url;
   pos2 = pos1 = stream->pos;
@@ -524,7 +524,7 @@ int XLALFrNext( FrStream *stream )
     stream->pos = 0;
     if ( stream->fnum >= stream->nfile )
     {
-      stream->state |= LAL_FR_END;
+      stream->state = (FrState) ( stream->state | LAL_FR_END );
       return 1;
     }
     stream->pos  = 0;
@@ -532,7 +532,7 @@ int XLALFrNext( FrStream *stream )
     url2 = stream->flist[stream->fnum].url;
     if ( ! stream->file )
     {
-      stream->state |= LAL_FR_ERR | LAL_FR_URL;
+      stream->state = (FrState) ( stream->state |LAL_FR_ERR | LAL_FR_URL );
       XLAL_ERROR( XLAL_EIO );
     }
     pos2 = stream->pos;
@@ -547,7 +547,7 @@ int XLALFrNext( FrStream *stream )
           __func__, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
-      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
       XLAL_ERROR( XLAL_EIO );
     }
   }
@@ -560,7 +560,7 @@ int XLALFrNext( FrStream *stream )
 
   if ( abs( texp - tact ) > tacc ) /* there is a gap */
   {
-    stream->state |= LAL_FR_GAP;
+    stream->state = (FrState) ( stream->state | LAL_FR_GAP );
     if ( stream->mode & LAL_FR_GAPINFO_MODE )
     {
       XLALPrintInfo( "XLAL Info - %s: gap in frame data between times "
@@ -605,7 +605,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
   if ( epoch->gpsSeconds < stream->flist->t0 )
   {
     XLALFrRewind( stream );
-    stream->state |= LAL_FR_GAP;
+    stream->state = (FrState) ( stream->state | LAL_FR_GAP );
     /* is this reported as an error? */
     if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
     {
@@ -635,7 +635,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     {
       /* end of file list, time not yet found */
       stream->fnum   = stream->nfile;
-      stream->state |= LAL_FR_END;
+      stream->state = ( FrState) ( stream->state |  LAL_FR_END );
       /* is this reported as an error? */
       if ( ! ( stream->mode & LAL_FR_IGNORETIME_MODE ) )
       {
@@ -656,7 +656,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
       stream->file = URLFrFileINew( fileinfo, stream->mode & LAL_FR_CHECKSUM_MODE );
       if ( ! stream->file )
       {
-        stream->state |= LAL_FR_ERR | LAL_FR_URL;
+        stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_URL );
         XLAL_ERROR( XLAL_EIO );
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
@@ -666,7 +666,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
             __func__, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
-        stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+        stream->state =  (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
         XLAL_ERROR( XLAL_EIO );
       }
       /* loop over frames */
@@ -681,7 +681,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
         }
         if ( XLALGPSCmp( epoch, &tbeg ) < 0 ) /* detect a gap */
         {
-          stream->state |= LAL_FR_GAP;
+          stream->state = (FrState) ( stream->state | LAL_FR_GAP );
           goto found;
         }
       }
@@ -692,13 +692,13 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
     }
     else if ( epoch->gpsSeconds < fileinfo->t0 ) /* detect a gap */
     {
-      stream->state |= LAL_FR_GAP;
+      stream->state = (FrState) ( stream->state | LAL_FR_GAP );
       stream->fnum   = fileinfo - stream->flist;
       stream->file   = URLFrFileINew( fileinfo, stream->mode & LAL_FR_CHECKSUM_MODE );
       stream->pos    = 0;
       if ( ! stream->file )
       {
-        stream->state |= LAL_FR_ERR | LAL_FR_URL;
+        stream->state = (FrState)  ( stream->state | LAL_FR_ERR | LAL_FR_URL );
         XLAL_ERROR( XLAL_EIO );
       }
       if ( FrTOCReadFull( stream->file ) == NULL )
@@ -708,7 +708,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch )
             __func__, fileinfo->url );
         FrFileIEnd( stream->file );
         stream->file   = NULL;
-        stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+        stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
         XLAL_ERROR( XLAL_EIO );
       }
       goto found;
@@ -775,14 +775,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
     if ( position->fnum >= stream->fnum )
     {
       stream->fnum  = stream->nfile;
-      stream->state |= LAL_FR_END;
+      stream->state = (FrState) ( stream->state | LAL_FR_END );
       XLAL_ERROR( XLAL_EINVAL );
     }
     stream->fnum = position->fnum;
     stream->file = URLFrFileINew( stream->flist + stream->fnum, stream->mode & LAL_FR_CHECKSUM_MODE );
     if ( ! stream->file )
     {
-      stream->state |= LAL_FR_ERR | LAL_FR_URL;
+      stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_URL );
       XLAL_ERROR( XLAL_EIO );
     }
   }
@@ -794,14 +794,14 @@ int XLALFrSetpos( FrStream *stream, FrPos *position )
           __func__, stream->flist[stream->fnum].url );
       FrFileIEnd( stream->file );
       stream->file   = NULL;
-      stream->state |= LAL_FR_ERR | LAL_FR_TOC;
+      stream->state = (FrState) ( stream->state | LAL_FR_ERR | LAL_FR_TOC );
       XLAL_ERROR( XLAL_EIO );
     }
   }
   stream->pos = position->pos;
   if ( stream->pos > stream->file->toc->nFrame )
   {
-    stream->state |= LAL_FR_ERR;
+    stream->state = (FrState) (stream->state | LAL_FR_ERR );
     XLAL_ERROR( XLAL_EINVAL );
   }
   return 0;

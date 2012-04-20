@@ -9,18 +9,18 @@
 
 #include "ppe_testing.h"
 
-/******************************************************************************/
+/* *****************************************************************************/
 /*                          TESTING FUNCTIONS                                 */
-/******************************************************************************/
+/* *****************************************************************************/
 
 /** \brief A test function to calculate a 1D posterior on a grid
- * 
+ *
  * This function is only to be used as a check/test of the code and will be run
  * if the \c grid command line argument is present. It will calculate the
- * posterior for one parameter (given by \c gridpar), between the ranges given 
+ * posterior for one parameter (given by \c gridpar), between the ranges given
  * by \c gridmin and \c gridmax (which default to 0 and 1) at a number of points
  * given by \c gridsteps (which default to 100).
- * 
+ *
  * \param runState [in] The analysis information structure
  */
 void gridOutput( LALInferenceRunState *runState ){
@@ -161,17 +161,18 @@ void gridOutput( LALInferenceRunState *runState ){
 }
 
 /** \brief Test the sampler using a Gaussian likelihood
- * 
- * This is a testing function that can be substituted for the standard 
+ *
+ * This is a testing function that can be substituted for the standard
  * likelihood function. It calculates only the \c h0 parameter posterior based
- * on a Gaussian likelihood with mean of 0.5 and standard deviation of 0.025 - 
+ * on a Gaussian likelihood with mean of 0.5 and standard deviation of 0.025 -
  * these values can be changed if required. It is just to be used to test the
  * sampling routine (e.g. Nested Sampling) with a well defined likelihood
  * function.
- * 
+ *
  * \param vars [in] A set of pulsar parameters
  * \param data [in] A data structure
- * 
+ * \param get_model UNDOCUMENTED
+ *
  * \return Natural logarithm of the likelihood
  */
 REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,

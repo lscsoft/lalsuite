@@ -31,6 +31,9 @@
 extern "C" {
 #endif
 
+/** \addtogroup Calibration_h */
+/*@{*/
+
 /** Structure containing calibration information (reference spectra and
  * factors for updating calibraiton to a particular time). */
 typedef struct tagLALCalData
@@ -93,6 +96,8 @@ int XLALUpdateResponse(
     REAL8 duration,                     /**< duration for averaging factors */
     LALCalData *caldata                 /**< calibration reference data */
     );
+
+/*@}*/
 
 #ifdef __cplusplus
 }

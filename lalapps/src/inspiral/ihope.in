@@ -170,7 +170,10 @@ parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 
 parser.add_option("-g", "--grid-site",action="store",type="string",\
-     metavar="SITE", help="Specify remote site in conjunction with --dax option")
+    metavar="SITE", help="Specify remote site in conjunction with --dax option")
+
+parser.add_option("--data-checkpoint", action="store_true",default=False,\
+    help="checkpoint the inspiral code")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -597,7 +600,8 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
-         tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+         tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir, \
+         data_checkpoint = opts.data_checkpoint)
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
@@ -609,7 +613,8 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
         opts.log_path, dax=opts.dax, \
-        tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+        tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir, \
+        data_checkpoint = opts.data_checkpoint)
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
@@ -623,7 +628,8 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir, \
+           data_checkpoint = opts.data_checkpoint)
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
@@ -1082,6 +1088,7 @@ fi
 
 export X509_USER_PROXY=/tmp/x509up_u${ID}
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+export _CONDOR_DAGMAN_COPY_TO_SPOOL=False
 
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
   pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties --nodatabase ${TMP_EXEC_DIR}/.

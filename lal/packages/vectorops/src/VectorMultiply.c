@@ -17,9 +17,15 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <math.h>
+#include <lal/LALStdlib.h>
+#include <lal/VectorOps.h>
+
 /**
- * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
  * \addtogroup VectorMultiply_c
+ * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
+
  *
  * \brief Multiply two vectors.
  *
@@ -56,17 +62,9 @@
  * \end{array}
  * \right.
  * \f]
- *
- * @{
-*/
+ */
 
-
-
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/VectorOps.h>
+/*@{*/
 
 COMPLEX8Vector * XLALCCVectorDivide(
     COMPLEX8Vector       *out,
@@ -1052,5 +1050,4 @@ LALDDVectorMultiply (
 
   RETURN (status);
 }
-
-/** @} */
+/*@}*/

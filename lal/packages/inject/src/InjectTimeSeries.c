@@ -66,18 +66,10 @@ low-pass filter with an attenuation factor of \f$\sim0.8\f$ at frequencies
 near their Nyquist frequencies, this would represent an unacceptable
 level of attenuation.  For this reason, the current version of the
 algorithm eliminates the interpolation procedure.
-
-\heading{Uses}
-\code
-LALCreateRandomParams()
-LALDestroyRandomParams()
-LALUniformDeviate()
-\endcode
-
-@{
 */
+/*@{*/
 
-/** See documentation in \ref InjectTimeSeries_c */
+/** \see See documentation in \ref InjectTimeSeries_c */
 void
 LALSI2InjectTimeSeries( LALStatus       *stat,
 			INT2TimeSeries  *output,
@@ -210,7 +202,7 @@ LALSI2InjectTimeSeries( LALStatus       *stat,
 }
 
 
-/** See documentation in \ref InjectTimeSeries_c */
+/** \see See documentation in \ref InjectTimeSeries_c */
 void
 LALSSInjectTimeSeries( LALStatus       *stat,
 		       REAL4TimeSeries *output,
@@ -309,4 +301,5 @@ LALSSInjectTimeSeries( LALStatus       *stat,
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }
-/** @} */
+
+/*@}*/

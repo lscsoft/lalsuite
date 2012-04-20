@@ -36,7 +36,7 @@ of gravitational wave detectors.
 XLALOverlapReductionFunction() calculates the values of the overlap reduction:
 
 \anchor stochastic_e_gamma \f{equation}{
-\gamma(f):={5\over 8\pi}\sum_A\int_{S^2}d\hat\Omega\
+\gamma(f):=\frac{5}{8\pi}\sum_A\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 F_1^A(\hat\Omega)F_2^A(\hat\Omega)\ ,
 \label{stochastic_e_gamma}
@@ -48,9 +48,6 @@ between the two detectors, and
 
 \anchor stochastic_e_F_i \f{equation}{
 F_i^A(\hat\Omega):=e_{ab}^A(\hat\Omega)\ d_i^{ab}
-% :=
-% e_{ab}^A(\hat\Omega)\ {1\over 2}\left(\hat X_i^a\hat X_i^b-
-% \hat Y_i^a\hat Y_i^b\right)\
 \label{stochastic_e_F_i}
 \f}
 
@@ -71,7 +68,7 @@ polarization states, normalized so that \f$e_{ab}^A e^{Bab}=2\delta^{AB}\f$.
 With this definition,
 
 \f{equation}{
-\gamma(f)=d_{1ab}d_2^{cd}{5\over 4\pi}\int_{S^2}d\hat\Omega\
+\gamma(f)=d_{1ab}d_2^{cd}\frac{5}{4\pi}\int_{S^2}d\hat\Omega\
 e^{i2\pi f\hat\Omega\cdot\Delta \vec x/c}\
 P^{ab}_{cd}(\hat\Omega)
 \f}
@@ -119,7 +116,7 @@ where
 \end{array}
 \right]
 =
-{1\over 2\alpha^2}
+\frac{1}{2\alpha^2}
 \left[
 \begin{array}{rrr}
  10\alpha^2 & -20\alpha   & 10\\
@@ -140,11 +137,9 @@ j_2
 \f$j_0\f$, \f$j_1\f$, and \f$j_2\f$ are the standard spherical Bessel functions:
 
 \f{eqnarray*}{
-j_0(\alpha)&=&{\sin\alpha\over\alpha} ,\\
-j_1(\alpha)&=&{\sin\alpha\over\alpha^2}-{\cos\alpha\over\alpha}\ ,
-\\
-j_2(\alpha)&=&3\ {\sin\alpha\over\alpha^3}-3\ {\cos\alpha\over\alpha^2}
--{\sin\alpha\over\alpha}\ ,
+j_0(\alpha)&=&\frac{\sin\alpha}{\alpha} ,\\
+j_1(\alpha)&=&\frac{\sin\alpha}{\alpha^2}-\frac{\cos\alpha}{\alpha}\ ,\\
+j_2(\alpha)&=&3\ \frac{\sin\alpha}{\alpha^3}-3\ \frac{\cos\alpha}{\alpha^2} -\frac{\sin\alpha}{\alpha}\ ,
 \f}
 
 \f$\vec s\f$ is a unit vector pointing in the direction of
@@ -171,14 +166,9 @@ as follows:
   \f$f_i:=f_0+i\Delta f\f$, \f$i=0,1,\cdots N-1\f$, using the power series
   expansion
   \f{eqnarray}{
-    j_0(\alpha)&=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120}
-    + \mathcal{O}(\alpha^6) \\
-    \frac{j_1(\alpha)}{\alpha}
-    &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{840}
-    + \mathcal{O}(\alpha^6) \\
-    \frac{j_2(\alpha)}{\alpha^2}
-    &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560}
-    + \mathcal{O}(\alpha^6)
+    j_0(\alpha) &=& 1 - \frac{\alpha^2}{6} + \frac{\alpha^4}{120} + \mathcal{O}(\alpha^6) \\
+    \frac{j_1(\alpha)}{\alpha} &=& \frac{1}{3} - \frac{\alpha^2}{30} + \frac{\alpha^4}{840} + \mathcal{O}(\alpha^6) \\
+    \frac{j_2(\alpha)}{\alpha^2} &=& \frac{1}{15} - \frac{\alpha^2}{210} + \frac{\alpha^4}{7560} + \mathcal{O}(\alpha^6)
   \f}
   for the spherical Bessel functions \f$j_0(\alpha_i)\f$,
   \f$j_a(\alpha_i)\f$, \f$j_2(\alpha_i)\f$ when \f$\alpha_i=2\pi f_i

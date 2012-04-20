@@ -44,7 +44,7 @@ the critical energy density to close the Universe today.
 
 For a given cosmological model, a stochastic background of
 astrophysical origin is fully determined by the source formation rate as a function of redshift,
-\f$dR(z)\f$ and the gravitational spectral density of a single source, \f${dE_{gw}}\over{d\nu}\f$.
+\f$dR(z)\f$ and the gravitational spectral density of a single source, \f$\frac{dE_{gw}}{d\nu}\f$.
 Following Ferrari et al. (1999):
 \f{equation}{
 \Omega _{gw}(\nu _{o})=\frac{1}{c^{3} \rho _{c}}{\nu _{o}}F_{\nu _{o}}
@@ -71,7 +71,7 @@ term (1 +z) in the denominator accounts for the time dilatation by cosmic expans
 observed rate.
 The element of the comoving volume is
 \f{equation}{
-dV = 4\pi r^2{{c}\over{H_o}}{{dz}\over{E(\Omega_i,z)}}
+dV = 4\pi r^2 \frac{{c}}{{H_o}} \frac{{dz}}{{E(\Omega_i,z)}}
 \f}
 where the function E\f$(\Omega_i,z)\f$ is
 defined by the equation:

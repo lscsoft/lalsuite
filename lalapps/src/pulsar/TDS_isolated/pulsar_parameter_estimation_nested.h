@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ******************************************************************************
   Matt Pitkin, John Veitch - 2011
 
   pulsar_parameter_estimation_nested.h
@@ -87,8 +87,7 @@ extern "C" {
 /** Macro to round a value to the nearest integer. */
 #define ROUND(x) (floor(x+0.5))
 
-/** Macro to perform addition of two values within logarithm space \f$ \log{(e^x
-+ e^y)}\f$. */
+/** Macro to perform addition of two values within logarithm space \f$ \log{(e^x + e^y)}\f$. */
 #define LOGPLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
 
 /** Macro that gives the integer number of times that \c x goes in to \c y. */
@@ -119,9 +118,9 @@ extern "C" {
  * the inclination angle \f$ \cos{\iota} \f$.  For the pinSf model, extra pars include
  \f$ I_{31}, I_{21}\f$ the equivalents of \f$ h_0 \f$, and the extra orientation parameters
  \f$ \theta \f$ and \f$ \lambda \f$.
- * 
+ *
  * Note: These should be increased if additional model parameters are added.
- */ 
+ */
 #define NUMAMPPARS 8
 
 /** The total number of frequency parameters that can defined a signal e.g.
@@ -130,9 +129,9 @@ extern "C" {
 #define NUMFREQPARS 7
 
 /** The total number of sky position parameters that can define a signal e.g.
- * right ascension, declination, proper motion and the positional epoch. */ 
+ * right ascension, declination, proper motion and the positional epoch. */
 #define NUMSKYPARS 5
-     
+
 /** The total number of binary system parameters that can define a signal e.g.
  * binary period, orbital eccentricity, projected semi-major axis, time of
  * periastron and angle of periastron. */
@@ -152,7 +151,7 @@ static const CHAR freqpars[NUMFREQPARS][VARNAME_MAX] = { "f0", "f1", "f2", "f3",
  * are recognised within the code. */
 static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "ra", "pmra", "dec",
 "pmdec", "posepoch" };
-    
+
 /** A list of the binary system parameters. The names given here are those that
  * are recognised within the code. */
 static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
@@ -162,18 +161,18 @@ static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "Pb", "e", "eps1",
 
 /** A flag to specify if phase parameters are being searched over and
  * therefore the pulsar model requires phase evolution to be re-calculated (0 =
- * no, 1 = yes). */ 
-extern UINT4 varyphase; 
+ * no, 1 = yes). */
+extern UINT4 varyphase;
 
 /** A flag to specify if the sky position will be searched over, and therefore
  * whether the solar system barycentring needs recalculating (0 = no, 1 = yes).
 */
-extern UINT4 varyskypos; 
+extern UINT4 varyskypos;
 
 /** A flag to specify if the binary system parameters will be searched over,
  * and therefore whether the binary system barycentring needs recalculating (0 =
  * no, 1 = yes) */
-extern UINT4 varybinary; 
+extern UINT4 varybinary;
 
 extern LALStringVector *corlist;
 

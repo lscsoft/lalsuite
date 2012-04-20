@@ -33,8 +33,7 @@ constructing an optimal filter are the inverse half-calibrated power
 spectral density
 \anchor stochastic_e_halfCalibratedPSD \f{equation}{
   \label{stochastic_e_halfCalibratedPSD}
-  \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)
-  \,P^{\mathrm{C}}(f)}
+  \frac{1}{P^{\mathrm{HC}}(f)}=\frac{1}{\widetilde{R}(f)\,P^{\mathrm{C}}(f)}
   =\frac{\widetilde{R}(f)^*}{P(f)}
 \f}
 and the inverse calibrated PSD
@@ -75,14 +74,10 @@ strncpy()
 <li> The output units are constructed by combining the input units,
   but under normal circumstances the units will be as follows:
   \f{eqnarray}{
-    {} [P] &=& \textrm{count}^{2}\, \textrm{Hz}^{-1}\\
-    {} [\widetilde{R}] &=& 10^{18}\,\textrm{strain}^{-1}\,\textrm{count} \\
-    {} [1/P^{\mathrm{C}}]
-    &:=& [\widetilde{R}]^2 [P]
-    = 10^{36}\,\textrm{Hz}\,\textrm{strain}^{-2} \\
-    {} [1/P^\mathrm{HC}}]
-    &:=&  [\widetilde{R}] [P]
-    = 10^{18}\,\textrm{Hz}\,\textrm{strain}^{-1}\,\textrm{count}^{-1}
+    {} [P] &=& \mathrm{count}^{2}\, \mathrm{Hz}^{-1}\\
+    {} [\widetilde{R}] &=& 10^{18}\,\mathrm{strain}^{-1}\,\mathrm{count} \\
+    {} [1/P^{\mathrm{C}}] &:=& [\widetilde{R}]^2 [P] = 10^{36}\,\mathrm{Hz}\,\mathrm{strain}^{-2} \\
+    {} [1/P^{\mathrm{HC}}] &:=&  [\widetilde{R}] [P] = 10^{18}\,\mathrm{Hz}\,\mathrm{strain}^{-1}\,\mathrm{count}^{-1}
   \f}</li>
 </ul>
 

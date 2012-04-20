@@ -30,69 +30,30 @@
  *-----------------------------------------------------------------------
  */
 
-/************************************ <lalVerbatim file="RngMedBiasCV">
-Author: Krishnan, B., Itoh, Y.
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>  *******************************************************
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{MOdule \texttt{RngMedBias.c}}
-\label{ss:RngMedBias.c}
-Routine for finding bias in median for exponential distribution
-To be used with any code which uses the running median to estimate PSD.
-
-For the exponential distribution with unit mean and variance, the value of the
-median is $\log(2.0)$ in the limit of infinite sample size. Thus, if we are
-using the running median to estimate the PSD, there is a correction factor
-of $\log(2.0)$.  However, for finite sample sizes (i.e. for finite block size
-values), there is a bias in the estimator of the median and the correction
-factor is different.  This program returns the correct normalization factor
-for block sizes from 1 to 1000.  For larger values it returns $\log(2.0)$ and
-returns and error for smaller values.
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{RngMedBiasD}
-\index{\verb&LALRngMedBias()&}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Description}
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Uses}
-\begin{verbatim}
-LALHO()
-\end{verbatim}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection*{Notes}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\vfill{\footnotesize\input{RngMedBiasCV}}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-*********************************************** </lalLaTeX> */
-
-
 #include <lal/RngMedBias.h>
 
 /*
  * The functions that make up the guts of this module
  */
 
+/** Routine for finding bias in median for exponential distribution
+ to be used with any code which uses the running median to estimate PSD.
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
+For the exponential distribution with unit mean and variance, the value of the
+median is \f$\log(2.0)\f$ in the limit of infinite sample size. Thus, if we are
+using the running median to estimate the PSD, there is a correction factor
+of \f$\log(2.0)\f$.  However, for finite sample sizes (i.e. for finite block size
+values), there is a bias in the estimator of the median and the correction
+factor is different.  This program returns the correct normalization factor
+for block sizes from 1 to 1000.  For larger values it returns \f$\log(2.0)\f$ and
+returns and error for smaller values.
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-/* *******************************  <lalVerbatim file="RngMedBiasD"> */
+*/
 void LALRngMedBias (LALStatus   *status,
 		 REAL8       *biasFactor,
 		 INT4        blkSize
                  )
-{/*   *********************************************  </lalVerbatim> */
+{
 
   REAL8 temp;
   INT4 plusminus, count;
@@ -126,11 +87,3 @@ void LALRngMedBias (LALStatus   *status,
   /* normal exit */
   RETURN (status);
 }
-
-
-
-
-
-
-
-

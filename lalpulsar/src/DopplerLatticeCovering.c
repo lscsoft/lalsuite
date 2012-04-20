@@ -1028,12 +1028,12 @@ onWhichHemisphere ( const vect3Dlist_t *skypoints )
   hemisphere_t our_hemi = HEMI_BOTH;
 
   if ( !skypoints || (skypoints->length == 0) )
-    return FALSE;
+    return (hemisphere_t) FALSE;
 
   for ( i=0; i < skypoints->length; i ++ )
     {
       vect3D_t *thisPoint = &(skypoints->data[i]);
-      hemisphere_t this_hemi = VECT_HEMI ( *thisPoint );
+      hemisphere_t this_hemi = (hemisphere_t) VECT_HEMI ( *thisPoint );
       if ( (our_hemi == HEMI_BOTH) && (this_hemi != HEMI_BOTH) ) /* set our_hemi to first non-zero hemisphere */
 	our_hemi = this_hemi;
       if ( (this_hemi != HEMI_BOTH) && (this_hemi != our_hemi ) )

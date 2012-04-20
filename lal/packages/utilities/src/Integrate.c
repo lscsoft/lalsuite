@@ -17,94 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#if 0  /* autodoc block */
-
-<lalVerbatim file="IntegrateCV">
-</lalVerbatim>
-
-<lalLaTeX>
-\subsection{Module \texttt{Integrate.c}}
-\label{ss:Integrate.c}
-
-Functions for generating random numbers.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{IntegrateCP}
-\idx{LALSRombergIntegrate()}
-\idx{LALDRombergIntegrate()}
-
-\subsubsection*{Description}
-
-The routine \verb+LALSRombergIntegrate+ performs the integral specified by the
-structure \verb+input+ and the result is returned as \verb+result+.  Any
-additional parameters (other than the integration variable $x$) can be passed
-as \verb+params+.  The routine \verb+LALSRombergIntegrate+ does not use
-\verb+params+ but just passes it to the integrand.  The routine
-\verb+LALDRombergIntegrate+ is the same but for double precision.
-
-\subsubsection*{Operating Instructions}
-
-The following program performs the integral $\int_0^2F(x)dx$ where
-$F(x)=x^4\log(x+\sqrt{x^2+1})$.
-
-\begin{verbatim}
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/Integrate.h>
-
-static void F( LALStatus *s, REAL4 *y, REAL4 x, void *p )
-{
-  REAL4 x2 = x*x;
-  REAL4 x4 = x2*x2;
-  INITSTATUS(s);
-  ASSERT( !p, s, 1, "Non-null pointer" );
-  *y = x4 * log( x + sqrt( x2 + 1 ) );
-  RETURN( s );
-}
-
-int main ()
-{
-  const REAL4       epsilon = 1e-6;
-  const long double expect  = 8.153364119811650205L;
-  static LALStatus  status;
-  SIntegrateIn      intinp;
-  REAL4             result;
-
-  intinp.function = F;
-  intinp.xmin     = 0;
-  intinp.xmax     = 2;
-  intinp.type     = ClosedInterval;
-
-  LALSRombergIntegrate( &status, &result, &intinp, NULL );
-  if ( fabs( result - expect ) > epsilon * fabs( expect ) )
-  {
-    /* integration did not achieve desired accuracy --- exit failure */
-    return 1;
-  }
-
-  return 0;
-}
-\end{verbatim}
-
-\subsubsection*{Algorithm}
-
-This is an implementation of the Romberg integrating function \verb+qromb+ in
-Numerical Recipes~\cite{ptvf:1992}.
-
-\subsubsection*{Uses}
-
-These routines use the functions \verb+LALSPolynomialInterpolation()+ and
-\verb+LALDPolynomialInterpolation()+.
-
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{IntegrateCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
-
+/* ---------- see Integrate.h for doxygen documentation ---------- */
 #include <math.h>
 #include <string.h>
 #include <lal/LALStdlib.h>
@@ -653,7 +566,7 @@ XLALREAL8Midpoint (
 }
 
 
-/* <lalVerbatim file="IntegrateCP"> */
+
 void
 LALSRombergIntegrate (
     LALStatus    *status,
@@ -661,7 +574,7 @@ LALSRombergIntegrate (
     SIntegrateIn *input,
     void         *params
     )
-{ /* </lalVerbatim> */
+{
   const REAL4 epsilon = 1e-6;
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
@@ -739,7 +652,7 @@ LALSRombergIntegrate (
 }
 
 
-/* <lalVerbatim file="IntegrateCP"> */
+
 void
 LALDRombergIntegrate (
     LALStatus    *status,
@@ -747,7 +660,7 @@ LALDRombergIntegrate (
     DIntegrateIn *input,
     void         *params
     )
-{ /* </lalVerbatim> */
+{
   const REAL8 epsilon = 1e-15;
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };
@@ -825,7 +738,7 @@ LALDRombergIntegrate (
 }
 
 
-/* <lalVerbatim file="IntegrateCP"> */
+
 REAL8
 XLALREAL8RombergIntegrate (
     REAL8 (*f)(REAL8 x, void *params),
@@ -834,7 +747,7 @@ XLALREAL8RombergIntegrate (
     REAL8 xmax,
     IntegralType type
     )
-{ /* </lalVerbatim> */
+{
   const REAL8 epsilon = 1e-15;
   enum { MaxSteps     = 20 };
   enum { Order        = 4  };

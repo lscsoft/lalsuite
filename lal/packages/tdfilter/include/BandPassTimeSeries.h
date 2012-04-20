@@ -36,8 +36,8 @@ extern "C" {
 #endif
 
 /**
-   \author Creighton, T. D.
    \addtogroup BandPassTimeSeries_h
+   \author Creighton, T. D.
 
    \brief Provides routines to low- or high-pass filter a time series.
 

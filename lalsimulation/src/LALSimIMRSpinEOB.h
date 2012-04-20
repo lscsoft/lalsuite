@@ -16,14 +16,14 @@
  * Parameters for the spinning EOB model, used in calculating the Hamiltonian.
  * The Hamiltonian is given in Barausse and Buonanno (http://arxiv.org/pdf/0912.3517)
  * The parameters correspond to the following as found in the paper:
- * KK - K found in the equations for \Delta_is (Eqn 5.77-5.81)
- * k0 - \Delta_0 given in Eqn 5.77
- * k1 - \Delta_1 given in Eqn 5.78
- * k2 - \Delta_2 given in Eqn 5.79
- * k3 - \Delta_3 given in Eqn 5.80
- * k4 - \Delta_4 given in Eqn 5.81
- * b3 - \omega^{fd}_2 given in Eqn 5.40
- * bb3 - \omega^{fd}_1 given in Eqn 5.40
+ * KK - K found in the equations for \f$\Delta_i\f$ (Eqn 5.77-5.81)
+ * k0 - \f$\Delta_0\f$ given in Eqn 5.77
+ * k1 - \f$\Delta_1\f$ given in Eqn 5.78
+ * k2 - \f$\Delta_2\f$ given in Eqn 5.79
+ * k3 - \f$\Delta_3\f$ given in Eqn 5.80
+ * k4 - \f$\Delta_4\f$ given in Eqn 5.81
+ * b3 - \f$\omega^{fd}_2\f$ given in Eqn 5.40
+ * bb3 - \f$\omega^{fd}_1\f$ given in Eqn 5.40
  */
 
 typedef struct

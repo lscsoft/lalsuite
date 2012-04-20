@@ -313,7 +313,7 @@ LALCreateNIFOCoincList(
     if ( thisCoinc->numIfos == N - 1 )
     {
       /* look up the first single inspiral */
-      for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
+      for ( firstEntry = (InterferometerNumber) 0; firstEntry < LAL_NUM_IFO; firstEntry++)
       {
         if ( thisCoinc->snglInspiral[firstEntry] )
         {
@@ -335,7 +335,7 @@ LALCreateNIFOCoincList(
         {
           /* loop over all singles which are alphabetically before the
            * first one in thisCoinc */
-          for( ifoNumber = 0; ifoNumber < firstEntry; ifoNumber++ )
+          for( ifoNumber = (InterferometerNumber) 0; ifoNumber < firstEntry; ifoNumber++ )
           {
             /* test whether we have an N ifo coincidence */
             accuracyParams->match = 0;
@@ -371,7 +371,7 @@ LALCreateNIFOCoincList(
 	      } ENDFAIL (status);
 
               /* add the triggers from the (N-1) coinc to the new N coinc */
-              for( ifoNum = 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
+              for( ifoNum = (InterferometerNumber) 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
               {
                 if( thisCoinc->snglInspiral[ifoNum] )
                 {
@@ -426,7 +426,7 @@ LALRemoveRepeatedCoincs(
   while( thisCoinc )
   {
     /* look up the first single inspiral */
-    for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
+    for ( firstEntry = (InterferometerNumber) 0; firstEntry < LAL_NUM_IFO; firstEntry++)
     {
       if ( thisCoinc->snglInspiral[firstEntry] )
       {
@@ -453,7 +453,7 @@ LALRemoveRepeatedCoincs(
         /* we have a higher (or equal) coinc, thisCoinc could be a subset
          * test whether all sngls in thisCoinc are also in otherCoinc */
 
-        for( ifoNumber = firstEntry + 1; ifoNumber < LAL_NUM_IFO;
+        for( ifoNumber = (InterferometerNumber) (firstEntry + 1); ifoNumber < LAL_NUM_IFO;
             ifoNumber++ )
         {
           if ( thisCoinc->snglInspiral[ifoNumber] &&
@@ -536,7 +536,7 @@ XLALFreeCoincInspiral(
   SnglInspiralTable            *thisSngl   = NULL;
   SimInspiralTable             *thisSim    = NULL;
 
-  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( (thisSngl = (*coincPtr)->snglInspiral[ifoNumber]) )
     {
@@ -1114,7 +1114,7 @@ XLALRecreateCoincFromSngls(
   /* loop over the linked list of sngl inspirals */
   for( thisSngl = *snglInspiral; thisSngl; thisSngl = thisSngl->next )
   {
-    ifoNumber = XLALIFONumber( thisSngl->ifo );
+    ifoNumber = (InterferometerNumber) XLALIFONumber( thisSngl->ifo );
     if ( thisSngl->event_id->id == eventId )
     {
       /* thisSngl is part of the coinc, so add it */
@@ -1252,7 +1252,7 @@ XLALGenerateCoherentBank(
   {
     REAL4 max_snr = 0;
     /* loop over the interferometers to get the highest snr*/
-    for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+    for ( ifoInCoinc = (InterferometerNumber) 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
     {
       if (( thisCoinc->snglInspiral[ifoInCoinc] ) &&
         (thisCoinc->snglInspiral[ifoInCoinc]->snr > max_snr) )
@@ -1264,7 +1264,7 @@ XLALGenerateCoherentBank(
 
     eventID = thisCoinc->snglInspiral[ifoMax]->event_id->id;
 
-    for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
+    for (ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO ; ++ifoNumber )
     {
 
       CHAR ifo[LIGOMETA_IFO_MAX];
@@ -1476,9 +1476,9 @@ XLALInspiralPsi0Psi3CutBCVC(
 
 
     /* loop over all IFO combinations */
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    for ( ifoA = (InterferometerNumber) 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      for ( ifoB = (InterferometerNumber) (ifoA + 1); ifoB < LAL_NUM_IFO; ifoB++ )
       {
         if( tmpCoinc->snglInspiral[ifoA]
             && tmpCoinc->snglInspiral[ifoB]  )
@@ -1573,9 +1573,9 @@ InspiralAccuracyList       *accuracyParams
     iotaCutH1L1=accuracyParams->iotaCutH1L1;
 
     /* loop over all IFO combinations */
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    for ( ifoA = (InterferometerNumber) 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      for ( ifoB = (InterferometerNumber) (ifoA + 1); ifoB < LAL_NUM_IFO; ifoB++ )
       {
         /*epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;*/
 
@@ -1784,12 +1784,12 @@ XLALInspiralDistanceCutBCVC(
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
 
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    for ( ifoA = (InterferometerNumber) 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
       kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
       epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
 
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      for ( ifoB = (InterferometerNumber) (ifoA + 1); ifoB < LAL_NUM_IFO; ifoB++ )
       {
         kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
         epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;
@@ -1870,12 +1870,12 @@ XLALInspiralDistanceCut(
     CoincInspiralTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
 
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    for ( ifoA = (InterferometerNumber) 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
       kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
       epsilonA = accuracyParams->ifoAccuracy[ifoA].epsilon;
 
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      for ( ifoB = (InterferometerNumber) (ifoA + 1); ifoB < LAL_NUM_IFO; ifoB++ )
       {
         kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
         epsilonB = accuracyParams->ifoAccuracy[ifoB].epsilon;
@@ -2020,7 +2020,7 @@ XLALCoincInspiralTimeNS (
   InterferometerNumber  ifoNumber;
   INT8 endTime = 0;
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( coincInspiral->snglInspiral[ifoNumber] )
     {
@@ -2064,7 +2064,7 @@ XLALCoincInspiralStat(
   }
 
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
     {
@@ -2131,7 +2131,7 @@ XLALCoincInspiralStat(
     statValue = sqrt(statValue);
 
     if (coincStat == bitten_l || ifoCounter<3) {
-      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( (snglInspiral = coincInspiral->snglInspiral[ifoNumber]) )
         {
@@ -2460,7 +2460,7 @@ XLALCoincInspiralIfos (
     return ( 0 );
   }
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     XLALReturnIFO( ifo, ifoNumber);
 
@@ -2580,7 +2580,7 @@ XLALCoincInspiralIdNumber (
     XLAL_ERROR(XLAL_EIO);
   }
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     EventIDColumn *thisID = NULL;
     if ( (thisSngl = coincInspiral->snglInspiral[ifoNumber]) )
@@ -2873,7 +2873,7 @@ XLALRateCalcCoincInspiral (
 
       thisRate = fitA * exp(fitB * thisStat);
 
-      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( thisEvent->snglInspiral[ifoNumber] )
           thisEvent->snglInspiral[ifoNumber]->alpha = thisRate/timeAnalyzed;
@@ -2904,7 +2904,7 @@ XLALRateCalcCoincInspiral (
        * FIXME in the future */
       InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
 
-      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( thisEvent->snglInspiral[ifoNumber] )
           thisEvent->snglInspiral[ifoNumber]->alpha = thisRate;
@@ -2973,7 +2973,7 @@ XLALRateErrorCalcCoincInspiral (
 
       thisRate = fitA * exp(fitB * thisStat);
       thisRateError = pow(thisRate, 0.5);
-      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( thisEvent->snglInspiral[ifoNumber] )
         {
@@ -3041,7 +3041,7 @@ XLALRateErrorCalcCoincInspiral (
          * FIXME in the future */
         InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
 
-        for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+        for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
         {
           if ( thisEvent->snglInspiral[ifoNumber] )
           {
@@ -3106,7 +3106,7 @@ XLALRateStatCutCoincInspiral (
        * FIXME in the future */
       InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
 
-      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( thisEvent->snglInspiral[ifoNumber] )
         {
@@ -3173,7 +3173,7 @@ XLALCompleteCoincInspiral (
 
   for ( thisCoinc = eventHead; thisCoinc; thisCoinc = thisCoinc->next )
   {
-    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
     {
       if ( ifoList[ifoNumber] && !thisCoinc->snglInspiral[ifoNumber] )
       {
@@ -3206,7 +3206,7 @@ XLALCompleteCoincInspiral (
         XLALPrintInfo( "Appending a zero snr trigger for %s\n", thisSngl->ifo);
 
         /* obtain the end time */
-        ifoNum = 0;
+        ifoNum = (InterferometerNumber) 0;
         while (!thisCoinc->snglInspiral[ifoNum]) ifoNum++;
         thisSngl->end_time = thisCoinc->snglInspiral[ifoNum]->end_time;
 
@@ -3312,7 +3312,7 @@ XLALMeanMassCut(
   CoincInspiralTable    *thisEvent = NULL;
   CoincInspiralTable    *prevEvent = NULL;
 
-  InterferometerNumber ifoNumber = 0;
+  InterferometerNumber ifoNumber = (InterferometerNumber) 0;
   REAL4 meanMass = 0;
   REAL4 meanMass2 = 0;
   INT4 numIfos = 0;
@@ -3332,7 +3332,7 @@ XLALMeanMassCut(
     meanMass = 0;
     meanMass2 = 0;
 
-    for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
     {
       if( tmpEvent->snglInspiral[ifoNumber] )
       {
@@ -3427,11 +3427,11 @@ XLALPopulateAccuracyParams(
   /* Populate the lightTravel matrix */
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
-    XLALReturnDetector( &aDet, ifoNumber );
+    XLALReturnDetector( &aDet, (InterferometerNumber) ifoNumber );
 
     for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
     {
-      XLALReturnDetector( &bDet, ifoTwo );
+      XLALReturnDetector( &bDet, (InterferometerNumber) ifoTwo );
 
       /* compute maximum light travel time */
       accuracyParams->lightTravelTime[ ifoNumber][ ifoTwo ] =
@@ -3486,11 +3486,11 @@ XLALPopulateAccuracyParamsExt(
   /* Populate the lightTravel matrix */
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
-    XLALReturnDetector( &aDet, ifoNumber );
+    XLALReturnDetector( &aDet, (InterferometerNumber) ifoNumber );
 
     for ( ifoTwo = 0; ifoTwo < LAL_NUM_IFO; ifoTwo++)
     {
-      XLALReturnDetector( &bDet, ifoTwo );
+      XLALReturnDetector( &bDet, (InterferometerNumber) ifoTwo );
 
       /* compute signal travel time  */
       timeDelay=-XLALArrivalTimeDiff( aDet.location, bDet.location,

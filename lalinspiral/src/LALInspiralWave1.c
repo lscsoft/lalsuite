@@ -291,7 +291,7 @@ XLALInspiralWave1ForInjection(
   if (waveform->shift != NULL)
     XLAL_ERROR(XLAL_EFAULT);
 
-  params->ampOrder = 0;
+  params->ampOrder = (LALPNOrder) 0;
   sprintf(message, "WARNING: Amp Order has been reset to %d", params->ampOrder);
   XLALPrintInfo(message);
   /* Compute some parameters*/

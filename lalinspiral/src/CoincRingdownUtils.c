@@ -317,7 +317,7 @@ LALCreateNIFORingdownCoincList(
     if ( thisCoinc->numIfos == N - 1 )
     {
       /* look up the first single ringdown */
-      for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
+      for ( firstEntry = (InterferometerNumber) 0; firstEntry < LAL_NUM_IFO; firstEntry++)
       {
         if ( thisCoinc->snglRingdown[firstEntry] )
         {
@@ -339,7 +339,7 @@ LALCreateNIFORingdownCoincList(
         {
           /* loop over all singles which are alphabetically before the
            * first one in thisCoinc */
-          for( ifoNumber = 0; ifoNumber < firstEntry; ifoNumber++ )
+          for( ifoNumber = (InterferometerNumber) 0; ifoNumber < firstEntry; ifoNumber++ )
           {
             /* test whether we have an N ifo coincidence */
             accuracyParams->match = 0;
@@ -372,7 +372,7 @@ LALCreateNIFORingdownCoincList(
                   otherCoinc->snglRingdown[ifoNumber] );
 
               /* add the triggers from the (N-1) coinc to the new N coinc */
-              for( ifoNum = 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
+              for( ifoNum = (InterferometerNumber) 0; ifoNum < LAL_NUM_IFO; ifoNum++ )
               {
                 if( thisCoinc->snglRingdown[ifoNum] )
                 {
@@ -424,7 +424,7 @@ LALRemoveRepeatedRingdownCoincs(
   while( thisCoinc )
   {
     /* look up the first single ringdown */
-    for ( firstEntry = 0; firstEntry < LAL_NUM_IFO; firstEntry++)
+    for ( firstEntry = (InterferometerNumber) 0; firstEntry < LAL_NUM_IFO; firstEntry++)
     {
       if ( thisCoinc->snglRingdown[firstEntry] )
       {
@@ -451,7 +451,7 @@ LALRemoveRepeatedRingdownCoincs(
         /* we have a higher (or equal) coinc, thisCoinc could be a subset
          * test whether all sngls in thisCoinc are also in otherCoinc */
 
-        for( ifoNumber = firstEntry + 1; ifoNumber < LAL_NUM_IFO;
+        for( ifoNumber = (InterferometerNumber) ( firstEntry + 1 ); ifoNumber < LAL_NUM_IFO;
             ifoNumber++ )
         {
           if ( thisCoinc->snglRingdown[ifoNumber] &&
@@ -527,7 +527,7 @@ XLALFreeCoincRingdown(
   EventIDColumn                *thisID     = NULL;
   SnglRingdownTable            *thisSngl   = NULL;
 
-  for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+  for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if ( (thisSngl = (*coincPtr)->snglRingdown[ifoNumber]) )
     {
@@ -867,7 +867,7 @@ XLALCoincRingdownIfos (
     return ( 0 );
   }
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     XLALReturnIFO( ifo, ifoNumber);
 
@@ -942,7 +942,7 @@ XLALCoincRingdownIdNumber (
     XLAL_ERROR(XLAL_EIO);
   }
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     EventIDColumn *thisID = NULL;
     if ( (thisSngl = coincRingdown->snglRingdown[ifoNumber]) )
@@ -1116,7 +1116,7 @@ XLALCompleteCoincRingdown (
 
   for ( thisCoinc = eventHead; thisCoinc; thisCoinc = thisCoinc->next )
   {
-    for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+    for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
     {
       if ( ifoList[ifoNumber] && !thisCoinc->snglRingdown[ifoNumber] )
       {
@@ -1149,7 +1149,7 @@ XLALCompleteCoincRingdown (
         XLALPrintInfo( "Appending a zero snr trigger for %s\n", thisSngl->ifo);
 
         /* obtain the end time */
-        ifoNum = 0;
+        ifoNum = (InterferometerNumber) 0;
         while (!thisCoinc->snglRingdown[ifoNum]) ifoNum++;
         thisSngl->start_time = thisCoinc->snglRingdown[ifoNum]->start_time;
 
@@ -1269,12 +1269,12 @@ XLALRecreateRingdownCoincFromSngls(
   /* loop over the linked list of sngl ringdowns */
   for( thisSngl = snglRingdown; thisSngl; thisSngl = thisSngl->next )
   {
-    ifoNumber = XLALIFONumber( thisSngl->ifo );
+    ifoNumber = (InterferometerNumber) XLALIFONumber( thisSngl->ifo );
     thisCoinc = coincHead;
     while ( thisCoinc )
     {
       /* loop over the interferometers to get the event_id*/
-      for ( ifoInCoinc = 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
+      for ( ifoInCoinc = (InterferometerNumber) 0; ifoInCoinc < LAL_NUM_IFO; ifoInCoinc++)
       {
         if ( thisCoinc->snglRingdown[ifoInCoinc] )
         {
@@ -1483,10 +1483,10 @@ XLALRingdownDistanceCut(
     CoincRingdownTable *tmpCoinc = thisCoinc;
     thisCoinc = thisCoinc->next;
 
-    for ( ifoA = 0; ifoA < LAL_NUM_IFO; ifoA++ )
+    for ( ifoA = (InterferometerNumber) 0; ifoA < LAL_NUM_IFO; ifoA++ )
     {
       kappaA = accuracyParams->ifoAccuracy[ifoA].kappa;
-      for ( ifoB = ifoA + 1; ifoB < LAL_NUM_IFO; ifoB++ )
+      for ( ifoB = (InterferometerNumber) ( ifoA + 1 ); ifoB < LAL_NUM_IFO; ifoB++ )
       {
         kappaB = accuracyParams->ifoAccuracy[ifoB].kappa;
 
@@ -1625,7 +1625,7 @@ XLALCoincRingdownTimeNS (
   InterferometerNumber  ifoNumber;
   INT8 startTime = 0;
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( coincRingdown->snglRingdown[ifoNumber] )
     {
@@ -1667,7 +1667,7 @@ XLALCoincRingdownStat(
   }
 
 
-  for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+  for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
   {
     if ( (snglRingdown = coincRingdown->snglRingdown[ifoNumber]) )
     {
@@ -1695,7 +1695,7 @@ XLALCoincRingdownStat(
   if ( coincStat == bitten_l )
   {
     if (coincStat == bitten_l || ifoCounter<3) {
-      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( (snglRingdown = coincRingdown->snglRingdown[ifoNumber]) )
         {
@@ -1776,7 +1776,7 @@ XLALClusterCoincRingdownTable (
         nextStat = XLALCoincRingdownStat( nextCoinc, coincStat, bittenLParams );
       }
 
-      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( (snglRingdown = thisCoinc->snglRingdown[ifoNumber]) )
         {
@@ -1823,7 +1823,7 @@ XLALClusterCoincRingdownTable (
         thisStat = XLALCoincRingdownStat( thisCoinc, coincStat, bittenLParams );
       }
 
-      for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
+      for( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++ )
       {
         if ( (snglRingdown = thisCoinc->snglRingdown[ifoNumber]) )
         {

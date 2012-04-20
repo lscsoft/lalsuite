@@ -26,67 +26,41 @@
  *
  *-----------------------------------------------------------------------*/
 
-/*
+/**
+   \file
+   \ingroup Sort_h
 
-<lalVerbatim file="SortTestCV">
-</lalVerbatim>
+   \brief A program to test sorting routines.
 
-<lalLaTeX>
+   \heading{Usage}
+   \code
+   SortTest [-s seed] [-d [debug-level]] [-v]
+   \endcode
 
-\subsection{Program \texttt{SortTest.c}}
-\label{ss:SortTest.c}
-
-A program to test sorting routines.
-
-\subsubsection*{Usage}
-\begin{verbatim}
-SortTest [-s seed] [-d [debug-level]] [-v]
-\end{verbatim}
-
-\subsubsection*{Description}
+\heading{Description}
 
 This test program creates rank and index arrays for an unordered list
 of numbers, and then sorts the list.  The data for the list are
-generated randomly, and the output is to \verb@stdout@ if \verb@-v@ is
-specified (unless redirected).  \verb@SortTest@ returns 0 if it executes
+generated randomly, and the output is to \c stdout if <tt>-v</tt> is
+specified (unless redirected).  \c SortTest returns 0 if it executes
 successfully, and 1 if any of the subroutines fail.
 
-The \verb@-s@ option sets the seed for the random number generator; if
-\verb@seed@ is set to zero (or if no \verb@-s@ option is given) then
-the seed is taken from the processor clock.  The \verb@-d@ option
+The <tt>-s</tt> option sets the seed for the random number generator; if
+\c seed is set to zero (or if no <tt>-s</tt> option is given) then
+the seed is taken from the processor clock.  The <tt>-d</tt> option
 increases the default debug level from 0 to 1, or sets it to the
-specified value \verb@debug-level@.
+specified value <tt>debug-level</tt>.
 
-\subsubsection*{Exit codes}
-\begin{tabular}{|c|l|}
-\hline
- Code & Explanation                   \\
-\hline
-\tt 0 & Success, normal exit.         \\
-\tt 1 & Subroutine failed.            \\
-\hline
-\end{tabular}
+\heading{Exit codes}
 
-\subsubsection*{Algorithm}
+<table><tr><th>Code</th><th>Explanation</th></tr>
+<tr><td>0</td><td>Success, normal exit.</td></tr>
+<tr><td>1</td><td>Subroutine failed.</td></tr>
+</table>
 
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-CreateI4Vector()
-CreateSVector()
-DestroyI4Vector()
-DestroySVector()
-LALCreateRandomParams()
-LALDestroyRandomParams()
-LALUniformDeviate()
-LALPrintError()
-\end{verbatim}
+*/
 
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{SortTestCV}}
-
-</lalLaTeX> */
+/** \cond DONT_DOXYGEN */
 
 #include <stdlib.h>
 #include <string.h>
@@ -337,3 +311,4 @@ void test_xlal_routines( void )
   return;
 }
 
+/** \endcond */

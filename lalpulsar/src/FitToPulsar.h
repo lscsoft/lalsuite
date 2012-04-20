@@ -32,7 +32,7 @@ non-precessing pulsar.
 
 The model to be fitted to the data after \c LALFineHeterodyneToPulsar has been applied is
 \f{equation}{
-y(t;\textrm{\c a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
+y(t;\mathrm{a}) = F_{+}(t;\psi)h_{0} (1 + \cos^{2}\iota)e^{i2\phi_{0}} - 2iF_{\times}(t;\psi) h_{0} \cos\iota e^{i2\phi_{0}}
 \f}
 
 
@@ -40,7 +40,7 @@ The reduced set of data points is fitted to this model by minimizing
  \f$\chi^2\f$ over \f$h_{0}\f$, \f$\phi_{0}\f$, \f$\iota\f$, and \f$\psi\f$.
 
 \f{equation}{
-\chi^2(\textrm{\c a}) = \sum_{k}\left|\frac{B_{k} - y(t;\textrm{\c a})}{\sigma_{k}^{2}}\right|^2
+\chi^2(\mathrm{a}) = \sum_{k}\left|\frac{B_{k} - y(t;\mathrm{a})}{\sigma_{k}^{2}}\right|^2
 \f}
 
 The minimization of \f$\chi^2\f$ is done in two steps <tt>LALCoarseFitToPulsar()</tt> and <tt>LALFineFitToPulsar()</tt>.

@@ -21,8 +21,8 @@
 #include <lal/IIRFilter.h>
 
 /**
-   \author Creighton, T. D.
    \addtogroup IIRFilter_c
+   \author Creighton, T. D.
 
    \brief Computes an instant-by-instant IIR filter response.
 

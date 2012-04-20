@@ -17,6 +17,17 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _VECTOROPS_H
+#define _VECTOROPS_H
+
+#include <lal/LALDatatypes.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
  * \addtogroup VectorOps_h
  * \author J. D. E. Creighton, T. D. Creighton, A. M. Sintes
@@ -31,34 +42,23 @@
  * @{
  * \defgroup VectorMultiply_c Module VectorMultiply.c
  * \defgroup VectorPolar_c    Module VectorPolar.c
- *
  */
 
-#ifndef _VECTOROPS_H
-#define _VECTOROPS_H
-
-#include <lal/LALDatatypes.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/** \name Error Codes
- * @{*/
+/** \name Error Codes */
+/*@{*/
 #define VECTOROPSH_ENULL 1	/**< Null pointer */
 #define VECTOROPSH_ESIZE 2	/**< Invalid input size */
 #define VECTOROPSH_ESZMM 4	/**< Size mismatch */
 #define VECTOROPSH_ESAME 8	/**< Input/Output data vectors are the same */
-/** @}*/
-/** @}*/
-
+/*@}*/
+/*@}*/
 
 #define VECTOROPSH_MSGENULL "Null pointer"
 #define VECTOROPSH_MSGESIZE "Invalid input size"
 #define VECTOROPSH_MSGESZMM "Size mismatch"
 #define VECTOROPSH_MSGESAME "Input/Output data vectors are the same"
+
+/* ---------- Function prototypes ---------- */
 
 /*
  *

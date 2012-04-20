@@ -53,9 +53,8 @@ def get_timeslides_pipedown(database_connection):
 		if d not in db_segments:
 			db_segments.append(d)
 	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
-	print seglist
 	db_out_saved=[]
-	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset\
+	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset,coinc_event.coinc_event_id\
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		== sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id == coinc_event_map.coinc_event_id) join time_slide on \
 		(time_slide.instrument == sngl_inspiral.ifo and time_slide.time_slide_id == coinc_event.time_slide_id)"
@@ -63,11 +62,12 @@ def get_timeslides_pipedown(database_connection):
 	for d in db_out:
 		db_out_saved.append(d)
 	output={}
-	ts_ids=set([tup[0] for tup in db_out_saved])
-	for ts in ts_ids:
-		print ts
-		events=[tup for tup in db_out_saved if tup[0]==ts]
+	co_ids=set([tup[4] for tup in db_out_saved])
+        print 'Found %i coinc events from %i events in pipedown database'%(len(co_ids),len(db_out_saved))
+	for co in co_ids:
+		events=[tup for tup in db_out_saved if tup[4]==co]
 		d={}
+		# print ' Processing %i events for coinc ID %s'%(len(events),str(co))
 		for e in events:
 			segfilt=filter(lambda seg:e[1] in seg, seglist)
 			if len(segfilt)!=1:
@@ -76,15 +76,18 @@ def get_timeslides_pipedown(database_connection):
 				seg=segfilt[0]
 			deltat=e[3]
 			while (e[1]+deltat) not in seg:
-				print ' adjusting timeslide for '+str(e[1])+' + '+str(deltat)
+				#print ' adjusting timeslide for '+str(e[1])+' + '+str(deltat)
 				if deltat<0:
 					deltat=deltat+(seg[1]-seg[0])
 				else:
 					deltat=deltat-(seg[1]-seg[0])
 			d[e[2]]=deltat
 		t=events[0][1]+events[0][3]
-		output[t]=d
-	print output
+		if t in output.keys():
+			print 'Already found event at time %f, skipping'%(t)
+		else:
+			output[t]=d
+	print 'Found a total of %i useable timeslides'%(len(output))
 	return output
 
 # Read command line options

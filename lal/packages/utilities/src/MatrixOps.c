@@ -1,14 +1,9 @@
 /**
-\author Creighton, T. D.
-\file
-*/
+   \defgroup MatrixOps_c Module MatrixOps.c
+   \ingroup MatrixUtils_h
+   \author Creighton, T. D.
 
-/**
-
-\heading{Module \ref MatrixOps.c}
-\latexonly\label{ss_MatrixOps_c}\endlatexonly
-
-Routines to perform basic matrix operations.
+   \brief Routines to perform basic matrix operations.
 
 \heading{Prototypes}
 
@@ -31,59 +26,22 @@ LAL<typecode>MatrixTranspose( LALStatus *stat,
                               <datatype>Array *in )
 \endcode
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 \heading{Description}
 
-The routines <tt>LAL<datatype>MatrixAdd()</tt> add the matrices
+The routines <tt>LAL\<datatype\>MatrixAdd()</tt> add the matrices
 <tt>*in1</tt> and <tt>*in2</tt> element-by-element, storing the result in
 <tt>*out</tt>.  All of these matrices must have the same dimensionality.
 The addition may be performed in-place by pointing \c out to the
 same structure as either \c in1 or \c in2.
 
-The routines <tt>LAL<datatype>MatrixMultiply()</tt> perform matrix
+The routines <tt>LAL\<datatype\>MatrixMultiply()</tt> perform matrix
 multiplication, contracting the columns of <tt>*in1</tt> against the
 rows of <tt>*in2</tt>, and storing the result in <tt>*out</tt>.  The
 number of columns of <tt>*in1</tt> must equal the number of rows of
 <tt>*in2</tt>, and <tt>*out</tt> must have the same number of columns as
 <tt>*in1</tt> and the same number of rows as <tt>*in2</tt>.
 
-The routines <tt>LAL<datatype>MatrixTranspose()</tt> take the transpose
+The routines <tt>LAL\<datatype\>MatrixTranspose()</tt> take the transpose
 of the matrix <tt>*in</tt> and store the result in <tt>*out</tt>.  The
 number of rows of <tt>*out</tt> must equal the number of columns of
 <tt>*in</tt>, and vice-versa.
@@ -96,20 +54,15 @@ must equal the number of columns of <tt>*in</tt>, and vice-versa.
 
 Except for the adjoint routines, the prototype templates above in fact
 refer to 10 separate routines each, corresponding to all the numerical
-atomic datatypes <tt><datatype></tt> referred to by <tt><typecode></tt>:
+atomic datatypes <tt>\<datatype\></tt> referred to by <tt>\<typecode\></tt>:
 
-<table><tr><td>
-
-\tt <typecode></td><td>\tt <datatype></td><td>\tt <typecode></td><td>\tt <datatype></td></tr>
-<tr><td>
-\tt I2</td><td>\tt  INT2</td><td>\tt U2</td><td>\tt    UINT2</td></tr>
-<tr><td>\tt I4</td><td>\tt  INT4</td><td>\tt U4</td><td>\tt    UINT4</td></tr>
-<tr><td>\tt I8</td><td>\tt  INT8</td><td>\tt U8</td><td>\tt    UINT8</td></tr>
-<tr><td>\tt  S</td><td>\tt REAL4</td><td>\tt  C</td><td>\tt COMPLEX8</td></tr>
-<tr><td>\tt  D</td><td>\tt REAL8</td><td>\tt  Z</td><td>\tt COMPLEX16</td></tr>
-<tr><td>
-</td></tr></table>
-
+<table><tr><th>\<typecode\></th><th>\<datatype\></th><th>\<typecode\></th><th>\<datatype\></th></tr>
+<tr><td>I2</td><td> INT2</td><td> U2</td><td>   UINT2</td></tr>
+<tr><td>I4</td><td> INT4</td><td> U4</td><td>   UINT4</td></tr>
+<tr><td>I8</td><td> INT8</td><td> U8</td><td>   UINT8</td></tr>
+<tr><td> S</td><td>REAL4</td><td>  C</td><td>COMPLEX8</td></tr>
+<tr><td> D</td><td>REAL8</td><td>  Z</td><td>COMPLEX16</td></tr>
+</table>
 
 \heading{Algorithm}
 
@@ -137,12 +90,6 @@ given by \f$(X^\dag){}^i{}_j=X^j{}_i{}^*\f$, where \f${}^*\f$ denotes complex
 conjugation.  Transposition involves no arithmetic operations, just
 one assignment per element of the output.  Conjugation involves one
 multiplication (negating the sign of the imaginary part) per element.
-
-\heading{Uses}
-
-\heading{Notes}
-
-
 
 */
 
@@ -254,7 +201,7 @@ multiplication (negating the sign of the imaginary part) per element.
 
 void
 LALCMatrixAdjoint( LALStatus *stat, COMPLEX8Array *out, COMPLEX8Array *in1 )
-{ 
+{
   UINT4 n;        /* number of elements */
   COMPLEX8 *data; /* pointer to elements */
 
@@ -279,7 +226,7 @@ LALCMatrixAdjoint( LALStatus *stat, COMPLEX8Array *out, COMPLEX8Array *in1 )
 
 void
 LALZMatrixAdjoint( LALStatus *stat, COMPLEX16Array *out, COMPLEX16Array *in1 )
-{ 
+{
   UINT4 n;         /* number of elements */
   COMPLEX16 *data; /* pointer to elements */
 

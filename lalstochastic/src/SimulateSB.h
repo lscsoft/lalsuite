@@ -17,9 +17,22 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _SIMULATESB_H
+#define _SIMULATESB_H
+
+
+#include <lal/LALStdlib.h>
+#include <lal/DetectorSite.h>
+#include <lal/Units.h>
+#include <lal/RealFFT.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 /**
-\author Sukanta Bose
 \addtogroup SimulateSB_h
+\author Sukanta Bose
 
 \brief Provides prototype and error code information for the modules needed
 to simulate a stochastic background signal.
@@ -34,23 +47,11 @@ detector transfer function in each detector.
 #include <lal/SimulateSB.h>
 \endcode
 
-@{
 */
+/*@{*/
 
-#ifndef _SIMULATESB_H
-#define _SIMULATESB_H
-
-
-#include <lal/LALStdlib.h>
-#include <lal/DetectorSite.h>
-#include <lal/Units.h>
-#include <lal/RealFFT.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define SIMULATESBH_ENULLP          1	/**< Null pointer */
 #define SIMULATESBH_ENONPOSLEN      2	/**< Negative or zero length for data member of time series */
 #define SIMULATESBH_ENONPOSDELTAF   3	/**< Negative or zero frequency spacing */
@@ -98,103 +99,54 @@ extern "C" {
    *************************************************************/
 
 /** Contains the output data produced by
-<tt>LALSSSimStochBGTimeSeries()</tt>. It comprises of a pair of
-(real) time-series simulated stochastic background signal in the outputs of
-a given pair of detectors. The fields are:
-
-<dl>
-<dt><tt>REAL4TimeSeries *SSimStochBG1</tt></dt><dd>
-Simulated stochastic background signal in the output of
-the first detector.</dd>
-<dt><tt>REAL4TimeSeries *SSimStochBG2</tt></dt><dd>
-Simulated stochastic background signal in the output of
-the second detector.</dd>
-</dl>
-
-*/
+ * <tt>LALSSSimStochBGTimeSeries()</tt>. It comprises of a pair of
+ * (real) time-series simulated stochastic background signal in the outputs of
+ * a given pair of detectors.
+ */
   typedef struct tagSSSimStochBGOutput {
-    REAL4TimeSeries    *SSimStochBG1;
-    REAL4TimeSeries    *SSimStochBG2;
+    REAL4TimeSeries    *SSimStochBG1;	/**< Simulated stochastic background signal in the output of the first detector */
+    REAL4TimeSeries    *SSimStochBG2;	/**< Simulated stochastic background signal in the output of the second detector */
   } SSSimStochBGOutput;
 
-/** Contains the input data needed by
-<tt>LALSSSimStochBGTimeSeries()</tt>
-to calculate the whitened stochastic background signal in the output of
-a detector.
-The fields are:
-
-<dl>
-<dt><tt>REAL4FrequencySeries *omegaGW</tt></dt><dd> The spectrum
-\f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave
-background.</dd>
-<dt><tt>COMPLEX8FrequencySeries *whiteningFilter1</tt></dt><dd>
-The frequency-domain response function \f$\tilde{R}_1(f)\f$ for the first detector.</dd>
-<dt><tt>COMPLEX8FrequencySeries *whiteningFilter2</tt></dt><dd>
-The frequency-domain response function \f$\tilde{R}_2(f)\f$ for the second detector.</dd>
-</dl>
-
-*/
+/** Contains the input data needed by <tt>LALSSSimStochBGTimeSeries()</tt>
+ * to calculate the whitened stochastic background signal in the output of
+ * a detector.
+ */
   typedef struct tagSSSimStochBGInput {
-    REAL4FrequencySeries     *omegaGW;
-    COMPLEX8FrequencySeries  *whiteningFilter1;
-    COMPLEX8FrequencySeries  *whiteningFilter2;
+    REAL4FrequencySeries     *omegaGW;		/**< The spectrum \f$\Omega_{\mathrm{GW}}(f)\f$ of the stochastic gravitational-wave background */
+    COMPLEX8FrequencySeries  *whiteningFilter1;	/**< The frequency-domain response function \f$\tilde{R}_1(f)\f$ for the first detector */
+    COMPLEX8FrequencySeries  *whiteningFilter2;	/**< The frequency-domain response function \f$\tilde{R}_2(f)\f$ for the second detector */
   } SSSimStochBGInput;
 
+  /** UNDOCUMENTED */
   typedef struct tagSSSimStochBGStrainInput {
-    REAL4FrequencySeries     *omegaGW;
+    REAL4FrequencySeries     *omegaGW;	/**< UNDOCUMENTED */
   } SSSimStochBGStrainInput;
 
 
 /** Contains the parameters used by <tt>LALSSSimStochBGTimeSeries()</tt>
-to compute the whitened stochastic background signal in the output of an
-interferometric detector. The fields are:
-
-<dl>
-<dt><tt>UINT4 length</tt></dt><dd>
-The number of points in the output time series.</dd>
-
-<dt><tt>REAL8 deltaT</tt></dt><dd>
-The temporal spacing of the output time series.</dd>
-
-<dt><tt>INT4 seed</tt></dt><dd>
-The random number seed for the stochastic simulation.</dd>
-
-<dt><tt>LALDetector *detector1</tt></dt><dd>
-The site location and orientation information of first detector involved in
-the stochastic background search.</dd>
-
-<dt><tt>LALDetector *detector2</tt></dt><dd>
-The site location and orientation information of second detector involved in
-the stochastic background search.</dd>
-
-<dt><tt>LALUnit SSimStochBGTimeSeries1Unit</tt></dt><dd>
-The unit field of the stochastic background, expressed as a Real4
-time series, in detector 1.</dd>
-
-<dt><tt>LALUnit SSimStochBGTimeSeries2Unit</tt></dt><dd>
-The unit field of the stochastic background, expressed as a Real4
-time series, in detector 2.
-</dd>
-</dl>
-*/
+ * to compute the whitened stochastic background signal in the output of an
+ * interferometric detector.
+ */
   typedef struct tagSSSimStochBGParams {
-    UINT4        length;   /* time length of output vector data samples */
-    REAL8        deltaT;   /* time spacing */
-    INT4         seed;     /* for random numbers x, y */
-    LALDetector  detectorOne;
-    LALDetector  detectorTwo;
-    LALUnit      SSimStochBGTimeSeries1Unit;
-    LALUnit      SSimStochBGTimeSeries2Unit;
+    UINT4        length;   			/**< The number of points in the output time series */
+    REAL8        deltaT;			/**< The temporal spacing of the output time series */
+    INT4         seed;				/**< The random number seed for the stochastic simulation */
+    LALDetector  detectorOne;			/**< The site location and orientation information of first detector involved in the stochastic background search */
+    LALDetector  detectorTwo;			/**< The site location and orientation information of second detector involved in the stochastic background search */
+    LALUnit      SSimStochBGTimeSeries1Unit;	/**< The unit field of the stochastic background, expressed as a Real4 time series, in detector 1 */
+    LALUnit      SSimStochBGTimeSeries2Unit;	/**< The unit field of the stochastic background, expressed as a Real4 time series, in detector 2 */
   } SSSimStochBGParams;
 
+  /** UNDOCUMENTED */
   typedef struct tagSSSimStochBGStrainParams {
-    UINT4        length1,length2;   /* time length of output vector data samples */
-    REAL8        deltaT1, deltaT2;   /* time spacing */
-    INT4         seed;     /* for random numbers x, y */
-    LALDetector  detectorOne;
-    LALDetector  detectorTwo;
-    LALUnit      SSimStochBGTimeSeries1Unit;
-    LALUnit      SSimStochBGTimeSeries2Unit;
+    UINT4        length1,length2;   		/**< time length of output vector data samples */
+    REAL8        deltaT1, deltaT2;   		/**< time spacing */
+    INT4         seed;     			/**< for random numbers x, y */
+    LALDetector  detectorOne;		  	/**< UNDOCUMENTED */
+    LALDetector  detectorTwo;			/**< UNDOCUMENTED */
+    LALUnit      SSimStochBGTimeSeries1Unit;	/**< UNDOCUMENTED */
+    LALUnit      SSimStochBGTimeSeries2Unit;	/**< UNDOCUMENTED */
   } SSSimStochBGStrainParams;
 
 
@@ -211,7 +163,7 @@ time series, in detector 2.
 			     SSSimStochBGStrainParams           *params );
 
 
-/** @} */
+/*@}*/
 
 #ifdef  __cplusplus
 }

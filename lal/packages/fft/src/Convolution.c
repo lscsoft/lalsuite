@@ -31,11 +31,11 @@
 #include <lal/FrequencySeries.h>
 
 /**
- * \addtogroup Convolution
+ * \addtogroup Convolution_c
  * \brief Convolutions of time-series
- *
- * @{
  */
+
+/*@{*/
 
 /**
  *
@@ -169,4 +169,4 @@ REAL4TimeSeries *XLALREAL4Convolution(
   return strain;
 }
 
-/** @} */
+/*@}*/

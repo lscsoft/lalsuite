@@ -22,7 +22,7 @@
 \file
 \ingroup LALInspiral_h
 
-\brief Interface routine needed to generate all waveforms in the \ref CBC_inspiral package.
+\brief Interface routine needed to generate all waveforms in the \ref pkg_inspiral package.
 
 To generate a waveform
 a user is noramlly required to (a) choose the binary parameters, starting frequency, number of

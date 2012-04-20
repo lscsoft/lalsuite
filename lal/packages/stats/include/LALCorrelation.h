@@ -33,8 +33,8 @@ extern "C" {
 #endif
 
 /**
-\author Yakushin, Igor
 \addtogroup LALCorrelation_h
+\author Yakushin, Igor
 
 \brief [One sentence briefly defining scope of the header]
 
@@ -47,9 +47,10 @@ extern "C" {
 document any stuff not specific to the module]
 
 */
-/** @{ */
+/*@{*/
 
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define LALCORRELATIONH_ENULLP        1		/**< Null pointer */
 #define LALCORRELATIONH_ESTART        2		/**< Time series do not start simultaneously */
 #define LALCORRELATIONH_ESAMPLING     3		/**< Time series are not sampled with the same rate */
@@ -66,6 +67,7 @@ document any stuff not specific to the module]
 
 /* ***** DEFINE NEW STRUCTURES AND TYPES ************/
 
+/** UNDOCUMENTED */
 typedef struct
 tagCorrelationParams
 {
@@ -74,6 +76,7 @@ tagCorrelationParams
 }
 CorrelationParams;
 
+/** UNDOCUMENTED */
 typedef struct
 tagInputCorrelation
 {
@@ -112,7 +115,7 @@ LALCorrelation( LALStatus                      *status,
 		const InputCorrelation         *input,
 		const CorrelationParams        *params);
 
-/** @} */
+/*@}*/
 
 #ifdef  __cplusplus
 }

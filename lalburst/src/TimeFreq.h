@@ -26,21 +26,7 @@
  *
  *
  *-----------------------------------------------------------------------
- *
- * NAME
- * TimeFreq.h
- *
- * SYNOPSIS
- * #include <lal/TimeFreq.h>
- *
- * DESCRIPTION
- * Header file for the TFR package (computation of time-frequency
- * representation for the detection of gravitational waves from
- * unmodeled astrophysical sources)
- *
- * DIAGNOSTICS
- * ??
- *----------------------------------------------------------------------- */
+ */
 
  /*
  * 2. include-loop protection (see below). Note the naming convention!
@@ -70,6 +56,22 @@
 extern "C" {
 #endif
 
+/**
+ * \defgroup TimeFreq_h Header TimeFreq.h
+ * \ingroup pkg_TFR
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/TimeFreq.h>
+ * \endcode
+ *
+ * %Header file for the TFR package (computation of time-frequency
+ * representation for the detection of gravitational waves from
+ * unmodeled astrophysical sources)
+ *
+ */
+/*@{*/
+
 /*
  * 5. Macros. But, note that macros are deprecated.
  */
@@ -78,6 +80,7 @@ extern "C" {
  * 8. Structure, enum, union, etc., typdefs.
  */
 
+/** \cond DONT_DOXYGEN */
 #define CREATETFR_ENULL 1
 #define CREATETFR_ENNUL 2
 #define CREATETFR_EFROW 4
@@ -125,42 +128,41 @@ extern "C" {
 #define TFR_MSGEWSIZ "Invalid window length" /* EWSIZ */
 #define TFR_MSGESAME "Input/Output data vectors are the same" /* ESAME */
 #define TFR_MSGEBADT "Invalid time instant" /* ETBAD */
+/** \endcond */
 
-/* Available TFR types */
 
+/** Available TFR types */
 #define TIME_FREQ_REP_NAMELIST {"Undefined","Spectrogram","WignerVille", "PSWignerVille","RSpectrogram"}
 
+/** Available TFR types */
 typedef enum tagTimeFreqRepType {
 Undefined, Spectrogram, WignerVille, PSWignerVille, RSpectrogram
 } TimeFreqRepType;
 
-/* Time-Frequency Representation structure */
-
+/** Time-Frequency Representation structure */
 typedef struct tagTimeFreqRep {
-  TimeFreqRepType type;             /* type of the TFR */
-  INT4 fRow;                        /* number of freq bins in the TFR matrix */
-  INT4 tCol;                        /* number of time bins in the TFR matrix */
-  REAL4 *freqBin;	            /* freqs for each row of the matrix */
-  INT4 *timeInstant;                /* time instants for each column of the TFR */
-  REAL4 **map;                      /* TFR */
+  TimeFreqRepType type;             /**< type of the TFR */
+  INT4 fRow;                        /**< number of freq bins in the TFR matrix */
+  INT4 tCol;                        /**< number of time bins in the TFR matrix */
+  REAL4 *freqBin;	            /**< freqs for each row of the matrix */
+  INT4 *timeInstant;                /**< time instants for each column of the TFR */
+  REAL4 **map;                      /**< TFR */
 } TimeFreqRep;
 
-/* TFR parameter structure */
-
+/** TFR parameter structure */
 typedef struct tagTimeFreqParam {
-  TimeFreqRepType type;                   /* type of the TFR */
-  REAL4Vector *windowT;                   /* (Sp, Rsp and Pswv) Window */
-  REAL4Vector *windowF;                   /* (Pswv) Window */
+  TimeFreqRepType type;                   /**< type of the TFR */
+  REAL4Vector *windowT;                   /**< (Sp, Rsp and Pswv) Window */
+  REAL4Vector *windowF;                   /**< (Pswv) Window */
 } TimeFreqParam;
 
-/* For memory allocation of the TFR and parameter structure */
-
+/** For memory allocation of the TFR and parameter structure */
 typedef struct tagCreateTimeFreqIn {
-  TimeFreqRepType type;             /* type of the TFR */
-  INT4 fRow;                        /* number of freq bins in the TFR matrix */
-  INT4 tCol;                        /* number of time bins in the TFR matrix */
-  INT4 wlengthT;                    /* (Sp, Pswv and Rsp) Window length */
-  INT4 wlengthF;                    /* (Pswv) Window */
+  TimeFreqRepType type;             /**< type of the TFR */
+  INT4 fRow;                        /**< number of freq bins in the TFR matrix */
+  INT4 tCol;                        /**< number of time bins in the TFR matrix */
+  INT4 wlengthT;                    /**< (Sp, Pswv and Rsp) Window length */
+  INT4 wlengthF;                    /**< (Pswv) Window */
 } CreateTimeFreqIn;
 
 /*
@@ -176,6 +178,9 @@ void LALTfrWv (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
 void LALTfrPswv (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
 void LALTfrRsp (LALStatus*, REAL4Vector*, TimeFreqRep*, TimeFreqParam*);
 void LALDwindow (LALStatus*, REAL4Vector*, REAL4Vector*);
+
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

@@ -1291,7 +1291,7 @@ check_and_mark_as_set ( LALUserVariable *varp )
   if ( (varp->state & UVAR_WAS_SET) )
     LogPrintf ( LOG_NORMAL, "Warning: user-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
 
-  varp->state |= UVAR_WAS_SET;
+  varp->state = (UserVarState)( varp->state |  UVAR_WAS_SET );
 
   return;
 } /* check_and_mark_as_set() */

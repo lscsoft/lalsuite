@@ -64,7 +64,7 @@ initial phase                        (phi0)
 intrinsic emission frequency
     at the beginning of observation   (f0)
 position of source (eq. coordinates)  (latitude_in_degrees)
-                      "               (longitude_in_degrees)
+                                     (longitude_in_degrees)
 
 Orbital Semi-major axis(sec)
 Orbital Period(sec)

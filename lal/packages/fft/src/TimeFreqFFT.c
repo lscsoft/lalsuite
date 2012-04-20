@@ -17,137 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \addtogroup TimeFreqFFT_h
- *
- * \heading{Description}
- *
- * The routines LALTimeFreqRealFFT() and LALTimeFreqComplexFFT()
- * transform time series \f$h_j\f$, \f$0\le j<n\f$, into a frequency series
- * \f$\tilde{h}_k\f$.  For LALTimeFreqRealFFT(),
- * \f[
- *    \tilde{h}_k = \Delta t \times H_k \;
- *    \mbox{for \f$0\le k\le\lfloor n/2\rfloor\f$.}
- * \f]
- * The packing covers the range from dc (inclusive) to Nyquist (inclusive if
- * \f$n\f$ is even).
- * For LALTimeFreqComplexFFT(),
- * \f[
- *    \tilde{h}_k = \Delta t \left\{
- *    \begin{array}{ll}
- *      H_{k+\lfloor(n+1)/2\rfloor} &
- *        \mbox{for \f$0\le k<\lfloor n/2\rfloor\f$}, \\
- *      H_{k-\lfloor n/2\rfloor} &
- *        \mbox{for \f$\lfloor n/2\rfloor\le k<n\f$}. \\
- *    \end{array}
- *    \right.
- * \f]
- * The packing covers the range from negative Nyquist (inclusive if \f$n\f$ is
- * even) up to (but not including) positive Nyquist.
- * Here \f$H_k\f$ is the DFT of \f$h_j\f$:
- * \f[
- *   H_k = \sum_{j=0}^{n-1} h_j e^{-2\pi ijk/n}.
- * \f]
- * The units of \f$\tilde{h}_k\f$ are equal to the units of \f$h_j\f$ times seconds.
- *
- * The routines LALFreqTimeRealFFT() and LALFreqTimeComplexFFT()
- * perform the inverse transforms from \f$\tilde{h}_k\f$ back to \f$h_j\f$.  This is
- * done by shuffling the data, performing the reverse DFT, and multiplying by
- * \f$\Delta f\f$.
- *
- * The routine LALREAL4AverageSpectrum() uses Welch's method to compute
- * the average power spectrum of the time series stored in the input structure
- * \c tSeries and return it in the output structure \c fSeries.  A
- * Welch PSD estimate is defined by an FFT length, overlap length, choice of
- * window function and averaging method. These are specified in the
- * parameter structure; the FFT length is obtained from the length of the
- * \c REAL4Window in the parameters.
- *
- * On entry the parameter structure \c params must contain a valid
- * \c REAL4Window, an integer that determines the overlap as described
- * below and a forward FFT plan for transforming data of the specified
- * window length into the time domain. The method used to compute the
- * average must also be set.
- *
- * If the length of the window is \f$N\f$, then the FFT length is defined to be
- * \f$N/2-1\f$. The input data of length \f$M\f$ is divided into \f$i\f$ segments which
- * overlap by \f$o\f$, where
- * \f{equation}{
- * i = \frac{M-o}{N-o}.
- * \f}
- *
- * The PSD of each segment is obtained. The Welch PSD estimate is the average
- * of these \f$i\f$ sub-estimates.  The average is computed using the mean or
- * median method, as specified in the parameter structure.
- *
- * Note: the return PSD estimate is a one-sided power spectral density
- * normalized as defined in the conventions document. When the averaging
- * method is choosen to be mean and the window type Hann, the result is the
- * same as returned by the LDAS datacondAPI <tt>psd()</tt> action for a real
- * sequence without detrending.
- *
- * \heading{Operating Instructions}
- *
- * \code
- * const UINT4 n  = 65536;
- * const REAL4 dt = 1.0 / 16384.0;
- * static LALStatus status; compute average power spectrum
- * static REAL4TimeSeries         x;
- * static COMPLEX8FrequencySeries X;
- * static COMPLEX8TimeSeries      z;
- * static COMPLEX8FrequencySeries Z;
- * RealFFTPlan    *fwdRealPlan    = NULL;
- * RealFFTPlan    *revRealPlan    = NULL;
- * ComplexFFTPlan *fwdComplexPlan = NULL;
- * ComplexFFTPlan *revComplexPlan = NULL;
- *
- * LALSCreateVector( &status, &x.data, n );
- * LALCCreateVector( &status, &X.data, n / 2 + 1 );
- * LALCCreateVector( &status, &z.data, n );
- * LALCCreateVector( &status, &Z.data, n );
- * LALCreateForwardRealFFTPlan( &status, &fwdRealPlan, n, 0 );
- * LALCreateReverseRealFFTPlan( &status, &revRealPlan, n, 0 );
- * LALCreateForwardComplexFFTPlan( &status, &fwdComplexPlan, n, 0 );
- * LALCreateReverseComplexFFTPlan( &status, &revComplexPlan, n, 0 );
- *
- * x.f0 = 0;
- * x.deltaT = dt;
- * x.sampleUnits = lalMeterUnit;
- * strncpy( x.name, "x", sizeof( x.name ) );
- *
- * z.f0 = 0;
- * z.deltaT = dt;
- * z.sampleUnits = lalVoltUnit;
- * strncpy( z.name, "z", sizeof( z.name ) );
- *
- * <assign data>
- *
- * LALTimeFreqRealFFT( &status, &X, &x, fwdRealPlan );
- * LALFreqTimeRealFFT( &status, &x, &X, revRealPlan );
- * LALTimeFreqComplexFFT( &status, &Z, &z, fwdComplexPlan );
- * LALFreqTimeComplexFFT( &status, &z, &Z, revComplexPlan );
- *
- * LALDestroyRealFFTPlan( &status, &fwdRealPlan );
- * LALDestroyRealFFTPlan( &status, &revRealPlan );
- * LALDestroyComplexFFTPlan( &status, &fwdComplexPlan );
- * LALDestroyComplexFFTPlan( &status, &revComplexPlan );
- * LALCDestroyVector( &status, &Z.data );
- * LALCDestroyVector( &status, &z.data );
- * LALCDestroyVector( &status, &X.data );
- * LALSDestroyVector( &status, &x.data );
- * \endcode
- *
- * \heading{Notes}
- *
- * <ol>
- * <li> The routines do not presently work properly with heterodyned data,
- * i.e., the original time series data should have \c f0 equal to zero.
- * </li></ol>
- *
- *
- *
-*/
-
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
@@ -157,6 +26,8 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/LALConstants.h>
 #include <lal/RngMedBias.h>
+
+/* ---------- see TimeFreqFFT.h for doxygen documentation */
 
 /*
  *

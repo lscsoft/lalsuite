@@ -17,9 +17,17 @@
 *  MA  02111-1307  USA
 */
 
+#include <math.h>
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#define LAL_USE_COMPLEX_SHORT_MACROS 1
+#include <lal/LALComplex.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/VectorOps.h>
+
 /**
- * \author T. D. Creighton, A. M. Sintes
  * \addtogroup VectorPolar_c
+ * \author T. D. Creighton, A. M. Sintes
  *
  * \brief Convert complex vector components from rectangular coordinates to polar coordinates.
  *
@@ -79,20 +87,8 @@
  *
  * For the LALUnwrapREAL4Angle() and LALUnwrapREAL8Angle() functions, \c a,
  * and \c b should  not point to the same memory location (<tt>a != b</tt>).
- *
- * @{
-*/
-
-/** \cond DONT_DOXYGEN */
-#include <math.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#define LAL_USE_COMPLEX_SHORT_MACROS 1
-#include <lal/LALComplex.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/VectorOps.h>
-
-/** \endcond */
+ */
+/*@{*/
 
 /** computes the magnitudes of a vector of complex numbers */
 int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
@@ -397,5 +393,4 @@ LALUnwrapREAL8Angle (
 
   RETURN (status);
 }
-
-/** @} */
+/*@}*/

@@ -23,11 +23,10 @@
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 
-/**
-\author J. T. Whelan <john.whelan@ligo.org>
-\addtogroup UnitRaise_c
+/** \addtogroup UnitRaise_c
+    \author J. T. Whelan <john.whelan@ligo.org>
 
-\brief Raises an \c LALUnit structure to a specified rational power.
+    \brief Raises an \c LALUnit structure to a specified rational power.
 
 This function raises the \c LALUnit structure <tt>*input</tt> to
 the rational power <tt>*power</tt>.  In this way, units such as
@@ -36,7 +35,7 @@ the rational power <tt>*power</tt>.  In this way, units such as
 \heading{Algorithm}
 
 The function first multiplies the overall power of ten
-<tt>input->powerOfTen</tt> by the rational number <tt>*power</tt>,
+<tt>input-\>powerOfTen</tt> by the rational number <tt>*power</tt>,
 checking to make sure that the resulting power is still an integer.
 It then multiplies each of the rational powers in <tt>*input</tt> by
 <tt>*power</tt> by naïve multiplication of rational numbers
@@ -47,11 +46,8 @@ It then multiplies each of the rational powers in <tt>*input</tt> by
 and then calls <tt>LALUnitNormalize()</tt> to bring the result into
 standard form.
 
-\heading{Uses}
-
-<tt>LALUnitNormalize()</tt>
-
 */
+/*@{*/
 
 /** Raises a ::LALUnit structure to a rational power given by the ::RAT4 structure \c power.
  */
@@ -139,7 +135,7 @@ LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input )
   return output;
 }
 
-
+/** UNDOCUMENTED */
 LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
 {
   RAT4 pow;
@@ -150,9 +146,7 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input )
   return output;
 }
 
-
-/** \ingroup UnitRaise_c
- * This function raises the \c LALUnit structure <tt>*input</tt> to
+/** This function raises the \c LALUnit structure <tt>*input</tt> to
  * the rational power <tt>*power</tt>.  In this way, units such as
  * \f$\mathrm{s}^{1/2}\f$ and \f$\mathrm{m}^{-1}\f$ can be created using existing units.
  *
@@ -190,3 +184,4 @@ LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RA
 
   RETURN(status);
 }
+/*@}*/

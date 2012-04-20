@@ -19,8 +19,8 @@
 #include <math.h>
 #include <lal/Date.h>
 
-/** \defgroup SideralTime SideralTime
- * \ingroup date
+/** \defgroup XLALSideralTime_c SideralTime
+ * \ingroup Date_h
  * \author Creighton, J., and Cannon, K.
  * \brief XLAL routines for computing the sidereal time.
  *
@@ -55,8 +55,6 @@
  * idea for LAL to simply link to the NOVAS-C library directly.  Something
  * to do when we have some spare time.
  */
-
-
 REAL8 XLALGreenwichSiderealTime(
 	const LIGOTimeGPS *gpstime,
 	REAL8 equation_of_equinoxes
@@ -129,8 +127,6 @@ REAL8 XLALGreenwichSiderealTime(
  * Convenience wrapper, calling XLALGreenwichSiderealTime() with the
  * equation of equinoxes set to 0.
  */
-
-
 REAL8 XLALGreenwichMeanSiderealTime(
 	const LIGOTimeGPS *gpstime
 )
@@ -145,8 +141,6 @@ REAL8 XLALGreenwichMeanSiderealTime(
  * output is the corresponding GPS time.  The algorithm uses a naive
  * iterative root-finder, so it's slow.
  */
-
-
 LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
 	REAL8 gmst,
 	LIGOTimeGPS *gps
@@ -173,8 +167,6 @@ LIGOTimeGPS *XLALGreenwichMeanSiderealTimeToGPS(
  * Convenience wrapper of XLALGreenwichMeanSiderealTimeToGPS(), adjusting
  * the input by the equation of equinoxes.
  */
-
-
 LIGOTimeGPS *XLALGreenwichSiderealTimeToGPS(
 	REAL8 gmst,
 	REAL8 equation_of_equinoxes,

@@ -26,8 +26,6 @@
  * Read the sngl_burst table from a LIGO Light Weight XML file into a
  * linked list of SnglBurst structures.
  */
-
-
 SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	const char *filename
 )
@@ -166,11 +164,9 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 /**
  * Read the sim_burst table from a LIGO Light Weight XML file into a linked
  * list of SimBurst structures.  If start is not NULL, then only rows whose
- * geocentre peak times are >= the given GPS time will be loaded, similarly
+ * geocentre peak times are \f$\ge\f$ the given GPS time will be loaded, similarly
  * if end is not NULL.
  */
-
-
 SimBurst *XLALSimBurstTableFromLIGOLw(
 	const char *filename,
 	const LIGOTimeGPS *start,
