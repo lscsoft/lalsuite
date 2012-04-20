@@ -265,6 +265,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 verbose=0;
 	UINT4 displayprogress=0;
 	LALInferenceVariableItem *param_ptr;
+	LALInferenceVariables currentVars;
+	memset(&currentVars,0,sizeof(currentVars));
 	
 	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
@@ -403,11 +405,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
 	  runState->evolve(runState);
-	  logLikelihoods[i]=runState->likelihood(runState->currentParams,runState->data,runState->template);
+	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
           LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
-	
+	runState->currentParams=&currentVars;
 	/* re-calculate the k-D tree from the new points if required */
 	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
           LALInferenceSetupkDTreeNSLivePoints( runState );
@@ -440,11 +442,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[minpos]);
 		
 		UINT4 itercounter=0;
+		
 		/* Generate a new live point */
 		do{ /* This loop is here in case it is necessary to find a different sample */
 			/* Clone an old live point and evolve it */
                         while((j=gsl_rng_uniform_int(runState->GSLrandom,Nlive))==minpos){};
 			LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
+			runState->currentLikelihood = logLikelihoods[j];
 			LALInferenceSetVariable(runState->algorithmParams,"logLmin",(void *)&logLmin);
                         runState->evolve(runState);
                         itercounter++;
@@ -460,7 +464,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	//fprintf(fpout,"chirpmass\tdistance\tLAL_APPROXIMANT\tLAL_PNORDER\tlogmc\tmassratio\ttime\tphase\tlogdistance\trightascension\tdeclination\tpolarisation\tinclination\ta_spin1\ta_spin2\ttheta_spin1\ttheta_spin2\tphi_spin1\tphi_spin2\t logL\n"); 
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
-
 		for(j=0;j<Nruns;j++) logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		logw=mean(logwarray,Nruns);
 		LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -648,7 +651,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 		}
 	} while(mcmc_iter<Nmcmc);
 	/* Update information to pass back out */
-	if(logLnew==DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+	logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
 	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
 		tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
