@@ -17,23 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author C. Torres
-\ingroup tracksearch
-\file
-
-\heading{Header \ref TSData.h}
-\latexonly\label{s_TSData_h}\endlatexonly
-
-Provides an intermediate level of functions and structures for testing
-and production use of the tracksearch libraries.
-
-\code
-#include <lal/TSData.h>
-\endcode
-
-*/
-
 #ifndef _TSDATA_H
 #define _TSDATA_H
 
@@ -52,18 +35,37 @@ and production use of the tracksearch libraries.
 extern "C" {
 #endif
 
-/**\name Error Codes */ /*@{*/
-#define TSDATA_ENULL    1
-#define TSDATA_ENNUL    2
-#define TSDATA_EALOC    4
-#define TSDATA_ESEGZ    8
-#define TSDATA_ENUMZ    16
-#define TSDATA_ESUBR    32
-#define TSDATA_EWHIT    64
-#define TSDATA_ERESP    128
-#define TSDATA_EINTP    256
-#define TSDATA_EINVA    512
 
+/**
+   \defgroup TSData_h Header TSData.h
+   \ingroup pkg_tracksearch
+   \author C. Torres
+
+   \brief Provides an intermediate level of functions and structures for testing
+   and production use of the tracksearch libraries.
+
+   \code
+   #include <lal/TSData.h>
+   \endcode
+
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define TSDATA_ENULL    1	/**< Null pointer */
+#define TSDATA_ENNUL    2	/**< Non-null pointer */
+#define TSDATA_EALOC    4	/**< Memory allocation error */
+#define TSDATA_ESEGZ    8	/**< Invalid number of segments */
+#define TSDATA_ENUMZ    16	/**< Invalid number of points in segment */
+#define TSDATA_ESUBR    32	/**< Condition Data Internal Subroutine Failure */
+#define TSDATA_EWHIT    64	/**< Response function does not have enough frequency information to whiten data */
+#define TSDATA_ERESP    128	/**< Response function start frequency not equal to 0 */
+#define TSDATA_EINTP    256	/**< Not enough points for interpolate function. */
+#define TSDATA_EINVA    512	/**< Inconsistent Argument(s) */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define TSDATA_MSGENULL "Null pointer"
 #define TSDATA_MSGENNUL "Non-null pointer"
 #define TSDATA_MSGEALOC "Memory allocation error"
@@ -74,25 +76,25 @@ extern "C" {
 #define TSDATA_MSGERESP "Response function start frequency not equal to 0"
 #define TSDATA_MSGEINTP "Not enough points for interpolate function."
 #define TSDATA_MSGEINVA "Inconsistent Argument(s)"
-/*@}*/
+/** \endcond */
 
-/*
+/**
  * All fields are depricated minus dataSegmentPoints and numberDataSegments
  */
 typedef struct
 tagTSCreateParams
 {
-  UINT4      dataSegmentPoints;     /* Fixed Length Varies Values  */
-  UINT4      responseSegmentPoints; /* Fixed Copy for each segment */
-  UINT4      spectraSegmentPoints;  /* Fixed Copy for each segment */
-  UINT4      numberDataSegments;    /* Number of data segments to analyze */
-  UINT4      SegBufferPoints; /*Number of data points to buffer seg with*/
+  UINT4      dataSegmentPoints;     /**< Fixed Length Varies Values  */
+  UINT4      responseSegmentPoints; /**< Fixed Copy for each segment */
+  UINT4      spectraSegmentPoints;  /**< Fixed Copy for each segment */
+  UINT4      numberDataSegments;    /**< Number of data segments to analyze */
+  UINT4      SegBufferPoints;       /**< Number of data points to buffer seg with */
 }TSCreateParams;
 
 
-  /*
-   * Struture to allow TSDatagen to make fake signals files/frames
-   */
+/**
+ * Struture to allow TSDatagen to make fake signals files/frames
+ */
 typedef struct
 tagTSDatagen
 {
@@ -105,7 +107,7 @@ tagTSDatagen
 }TSDatagen;
 
 
-/*
+/**
  * Struture used by the line connection subroutine
  * we want to take all event candidates and match them via param SIGMA
  */
@@ -117,7 +119,7 @@ tagTSConnectParams
 }TSConnectParams;
 
 
-/*
+/**
  * Struture to whiten the data including renormalization information
  * we plan on following EPSearch definition
  * This structure might be dropped
@@ -131,7 +133,7 @@ tagTSWhitenParams
   UINT4           whitenLevel;
 }TSWhitenParams;
 
-/*
+/**
  * Routine to determine the best Lh and set Ll given Lrelative.
  */
 void
@@ -146,7 +148,7 @@ LALTracksearchFindLambdaMedian(
 			       TimeFreqRep               map,
 			       TSSearchParams           *searchParams
 			       );
-/*
+/**
  * Routine to break up time series input and make a collection of
  * segments which overlap by the overlap(points) parameter
  */
@@ -157,7 +159,7 @@ LALCreateTSDataSegmentVector (
 			      TSCreateParams             *params
 			      );
 
-/*
+/**
  * Routine to deallocate this collection of segments
  */
 void
@@ -166,7 +168,7 @@ LALDestroyTSDataSegmentVector (
 			       TSSegmentVector            *vector
 			       );
 
-/*
+/**
  * This routine will handle a great deal of data conditioning
  * Whitening and calibration will occur in this function
  */
@@ -178,7 +180,7 @@ void TrackSearchPrep(
 		     TSSegmentVector                *PreparedData,
 		     TSSearchParams                  params
 		     );
-/*
+/**
  * This is a less functional version of TrackSearchPrep which is
  * greatly simplified in light of analysis pipeline design
  */
@@ -187,7 +189,8 @@ void LALTrackSearchDataSegmenter(
 				 REAL4TimeSeries     *TSSearchData,
 				 TSSegmentVector     *PreparedData,
 				 TSSearchParams       params);
-/*
+
+/**
  * This routine applies our thresholds on length and power
  * It expects to allocate a thresholded candidate list
  */
@@ -199,7 +202,7 @@ LALTrackSearchApplyThreshold(
 			     TSSearchParams     params
 			     );
 
-/*
+/**
  * Routine connects candidates who begin or end within SIGMA of
  * one another
  */
@@ -210,7 +213,7 @@ LALTrackSearchConnectSigma(
 			   TimeFreqRep                  map,
 			   TrackSearchParams            params
 			   );
-/*
+/**
  * This routine can be run alone but is called via TrackSearchPrep to
  * whiten the time series signal as done in Power
  */
@@ -222,11 +225,10 @@ LALTrackSearchWhitenREAL4TimeSeries(
 				    TSWhitenParams          params
 				    );
 
-/*
+/**
  * This function does simple manipulation to avoid
  * wasting CPU time on FFTs
  */
-
 void
 LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 					    LALStatus                *status,
@@ -236,7 +238,7 @@ LALTrackSearchWhitenCOMPLEX8FrequencySeries(
 					    );
 
 
-/*
+/**
  * This routine can be run alone but is called via TrackSearchPrep to
  * use a response curve for the segment epoch and calibrate that
  * time series segment DEAD FUNCTION
@@ -246,7 +248,7 @@ LALTrackSearchCalibrateREAL4TimeSeries(LALStatus               *status,
 				       REAL4TimeSeries         *signalvec,
 				       COMPLEX8FrequencySeries *response);
 
-/*
+/**
  * This routine will calibrate the fourier data given a corresponding
  * transfer function working just in fourier domain
  */
@@ -257,7 +259,7 @@ LALTrackSearchCalibrateCOMPLEX8FrequencySeries(
 					       COMPLEX8FrequencySeries   *response
 					       );
 
-/*
+/**
  * This routine is unfinished it was an attempt to mimic
  * Matlab's interp1 routine
  */
@@ -269,7 +271,7 @@ LALSVectorPolynomialInterpolation(
 				  REAL4Sequence    *Domain,
 				  REAL4Sequence    *Range
 				  );
-/*
+/**
  * Noncompliant code
  * Local function not meant for general use
  */
@@ -284,10 +286,10 @@ void cleanLinkedList(
 		     TrackSearchOut      *outList
 		     );
 
+/*@}*/
+
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
 
 #endif
-
-

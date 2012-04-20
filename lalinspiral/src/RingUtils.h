@@ -30,11 +30,11 @@ extern "C" {
 
 
 /**
- * \defgroup RingUtils_h RingUtils_h
+ * \defgroup RingUtils_h Header RingUtils_h
  * \ingroup pkg_ring
  * \author Jolien Creighton
  *
- * Black hole ringdown waveform generation.
+ * \brief Black hole ringdown waveform generation.
  *
  * \heading{Synopsis}
  * \code
@@ -54,7 +54,7 @@ extern "C" {
  * \f}
  * where \f$f\f$ is the central frequency of the ringdown waveform, \f$Q\f$ is
  * the quality factor, and \f$\phi_0\f$ is the initial phase of the waveform.
- * Note that Ref.\ [\ref JDECreighton99] adopted the
+ * Note that Ref. [\ref JDECreighton99] adopted the
  * normalization convention \f$q(t)=(2\pi)^{1/2}r(t)\f$.
  *
  * For a black hole ringdown, the gravitational waveform produced, averaged
@@ -64,7 +64,7 @@ extern "C" {
  * \f}
  * where the central frequency and quality of the ringdown are determined from
  * the mass and spin of the black holes.  An analytic approximation
- * yields\ [\ref EWLeaver85,\ref FEcheverria89]
+ * yields [\ref EWLeaver85,\ref FEcheverria89]
  * \f{equation}{
  *   f \simeq 32\,\textrm{kHz}\times[1-0.63(1-{\hat{a}})^{3/10}](M_\odot/M)
  * \f}
@@ -78,7 +78,7 @@ extern "C" {
  * Schwarzschild black hole) and unity (for an extreme Kerr black hole).
  * The amplitude of the waveform depends on these quantities as well as the
  * distance \f$r\f$ to the source and the fractional mass loss \f$\epsilon\f$ radiated
- * in gravitational waves\ [\ref JDECreighton99]:
+ * in gravitational waves [\ref JDECreighton99]:
  * \f{equation}{
  *   A_q = 2.415\times10^{-21}Q^{-1/2}[1-0.63(1-{\hat{a}})^{3/10}]^{-1/2}
  *   \left(\frac{\textrm{Mpc}}{r}\right)
@@ -90,7 +90,7 @@ extern "C" {
  *
  * The mismatch between two nearby templates is given by \f$ds^2\f$, which can be
  * thought of as the line interval for a mismatch-based metric on the \f$(f,Q)\f$
- * parameter space\ [\ref Owen_96,\ref JDECreighton99]:
+ * parameter space [\ref Owen_96,\ref JDECreighton99]:
  * \f{equation}{
  *   ds^2 = \frac{1}{8} \biggl\{ \frac{3+16Q^4}{Q^2(1+4Q^2)^2}\,dQ^2
  *   - 2\frac{3+4Q^2}{fQ(1+4Q^2)}\,dQ\,df + \frac{3+8Q^2}{f^2}\,df^2 \biggr\}.
@@ -98,17 +98,25 @@ extern "C" {
  * When expressed in terms of \f$\log f\f$ rather than \f$f\f$, the metric coefficients
  * depend on \f$Q\f$ alone.  We can exploit this property for the task of template
  * placement.  The method is the following:  First, choose a "surface" of
- * constant\ \f$Q=Q_{\mathrm{\scriptstyle min}}\f$, and on this surface place
- * templates at intervals in \f$\phi=\log f\f$ of\ \f$d\phi=d\ell/\surd g_{\phi\phi}\f$
- * for the entire range of\ \f$\phi\f$.  Here,
+ * constant \f$Q=Q_{\mathrm{\scriptstyle min}}\f$, and on this surface place
+ * templates at intervals in \f$\phi=\log f\f$ of \f$d\phi=d\ell/\surd g_{\phi\phi}\f$
+ * for the entire range of \f$\phi\f$.  Here,
  * \f$d\ell=\surd(2ds^2_{\mathrm{\scriptstyle threshold}})\f$.  Then choose the
- * next surface of constant \f$Q\f$ with\ \f$dQ=d\ell/\surd g_{QQ}\f$ and repeat the
+ * next surface of constant \f$Q\f$ with \f$dQ=d\ell/\surd g_{QQ}\f$ and repeat the
  * placement of templates on this surface.  This can be iterated until the
- * entire range of\ \f$Q\f$ has been covered; the collection of templates should now
+ * entire range of \f$Q\f$ has been covered; the collection of templates should now
  * cover the entire parameter region with no point in the region being farther
- * than\ \f$ds^2_{\mathrm{\scriptstyle threshold}}\f$ from the nearest template.
+ * than \f$ds^2_{\mathrm{\scriptstyle threshold}}\f$ from the nearest template.
  *
-*/
+ * \heading{Algorithm}
+ *
+ * The waveform generation routines use recurrance relations for both the
+ * exponentially-decaying envelope and for the co-sinusoid.
+ *
+ * The template placement algorithm is described above.
+ *
+ *
+ */
 /*@{*/
 
 /**\name Error Codes */
@@ -124,50 +132,35 @@ extern "C" {
 #define RINGH_MSGEALOC "Memory allocation error"
 /** \endcond */
 
-/** This structure contains a bank of ringdown waveforms.  The fields are:
- * <dl>
- * <dt>numTmplt</dt><dd> The number of templates in the bank.</dd>
- * <dt>tmplt</dt><dd> Array of ringdown templates.</dd>
- * </dl>
- *
-*/
+/** This structure contains a bank of ringdown waveforms.
+ */
 typedef struct
 tagRingTemplateBank
 {
-  UINT4              numTmplt;
-  SnglRingdownTable *tmplt;
+  UINT4              numTmplt;	/**< The number of templates in the bank */
+  SnglRingdownTable *tmplt;	/**< Array of ringdown templates */
 }
 RingTemplateBank;
 
 /** This structure contains the parameters required for generating a ringdown
- * template bank.  The fields are:
- * <dl>
- * <dt>minQuality</dt><dd> The minimum quality factor in the bank.</dd>
- * <dt>maxQuality</dt><dd> The maximum quality factor in the bank.</dd>
- * <dt>minFrequency</dt><dd> The minimum central frequency in the bank (in Hz).</dd>
- * <dt>maxFrequency</dt><dd> The minimum central frequency in the bank (in Hz).</dd>
- * <dt>maxMismatch</dt><dd> The maximum mismatch allowed between templates in the bank.</dd>
- * <dt>templatePhase</dt><dd> The phase of the ringdown templates, in
- *     radians.  Zero is a cosine-phase template; \f$-\pi/2\f$ is a sine-phase
- *     template.
- * </dd></dl>
- *
-*/
+ * template bank.
+ */
 typedef struct
 tagRingTemplateBankInput
 {
-  REAL4 minQuality;
-  REAL4 maxQuality;
-  REAL4 minFrequency;
-  REAL4 maxFrequency;
-  REAL4 maxMismatch;
-  REAL4 templatePhase;
-  REAL4 templateDistance;
-  REAL4 templateEpsilon;
+  REAL4 minQuality;		/**< The minimum quality factor in the bank */
+  REAL4 maxQuality;		/**< The maximum quality factor in the bank */
+  REAL4 minFrequency;		/**< The minimum central frequency in the bank (in Hz) */
+  REAL4 maxFrequency;		/**< The minimum central frequency in the bank (in Hz) */
+  REAL4 maxMismatch;		/**< The maximum mismatch allowed between templates in the bank */
+  REAL4 templatePhase;		/**< The phase of the ringdown templates, in radians;
+                                 * Zero is a cosine-phase template;
+                                 * \f$-\pi/2\f$ is a sine-phase template.
+                                 */
+  REAL4 templateDistance;	/**< UNDOCUMENTED */
+  REAL4 templateEpsilon;	/**< UNDOCUMENTED */
 }
 RingTemplateBankInput;
-
-/*@}*/
 
 /* ---------- Function prototypes ---------- */
 
@@ -193,6 +186,9 @@ int XLALComputeBlackHoleRing(
     REAL4TimeSeries *output, SnglRingdownTable *input, REAL4 dynRange );
 RingTemplateBank *XLALCreateRingTemplateBank( RingTemplateBankInput *input );
 void XLALDestroyRingTemplateBank( RingTemplateBank *bank );
+
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

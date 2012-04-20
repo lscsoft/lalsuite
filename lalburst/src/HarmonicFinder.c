@@ -110,13 +110,6 @@ The limits of the lines are set initially  at 1 or 2 sigma from the
 central bin location and, later, they are moved until they hit a local
  minimum in a selected interval.
 See the code for details.
-
-\heading{Uses}
-\code
-LALSCreateVector()
-LALSDestroyVector()
-\endcode
-
 */
 void LALHarmonicFinder (LALStatus  *status,	/**< LAL status structure */
          INT4Vector         *out,   /**< harmonic index and location, size 3*l */

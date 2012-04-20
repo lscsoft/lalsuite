@@ -36,11 +36,9 @@
 #include <lal/XLALError.h>
 #include <lal/Window.h>
 
-/*
+/**
  * Generate a linked list of burst events from a time series.
  */
-
-
 SnglBurst *XLALEPSearch(
 	struct XLALEPSearchDiagnostics *diagnostics,
 	const REAL8TimeSeries *tseries,

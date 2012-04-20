@@ -106,11 +106,9 @@ static COMPLEX16Sequence *apply_filter(
 }
 
 
-/*
+/**
  * Project a frequency series onto the comb of channel filters
  */
-
-
 int XLALFreqSeriesToTFPlane(
 	REAL8TimeFrequencyPlane *plane,
 	const LALExcessPowerFilterBank *filter_bank,
