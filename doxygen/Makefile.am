@@ -1,12 +1,10 @@
 DOXY_HTML_FILES = \
 	doxy-html-config.cfg \
-	doxy-html-aliases.cfg \
 	doxy-html-eqns.sty \
 	doxy-html-layout.xml
 
 DOXY_PDF_FILES = \
 	doxy-pdf-config.cfg  \
-	doxy-pdf-aliases.cfg \
 	doxy-pdf-header.tex \
 	doxy-pdf-layout.xml
 
