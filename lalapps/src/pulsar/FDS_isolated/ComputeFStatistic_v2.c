@@ -285,6 +285,7 @@ typedef struct {
 
   BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
   BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
+  INT4 SortToplist;		/**< sort toplist by F or LV */
   BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
   REAL8   LVrho;		/**< Prior parameter rho_max_line for LineVeto statistic */
   LALStringVector *LVlX;	/**< Line-to-gauss prior ratios lX for LineVeto statistic */
@@ -713,22 +714,17 @@ int main(int argc,char *argv[])
       /* push new value onto scan-line buffer */
       XLALAdvanceScanlineWindow ( &thisFCand, GV.scanlineWindow );
 
-      /* two types of threshold: fixed (TwoFThreshold) and dynamic (NumCandidatesToKeep) */
-      BOOLEAN acceptCandidate = FALSE;
-      if ( uvar.computeLV )
-        {
-          if ( XLALCenterIsLocalMax ( GV.scanlineWindow, 2 )			/* must be 1D local maximum */
-               && ( GV.scanlineWindow->center->LVstat >= uvar.LVthreshold) ) {	/* fixed threshold */
-            acceptCandidate = TRUE;
-          }
-        }
-     else
-        {
-          if ( XLALCenterIsLocalMax ( GV.scanlineWindow, 1 )				/* must be 1D local maximum */
-               && (2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold) )	/* fixed threshold */
-            acceptCandidate = TRUE;
-        }
-      if ( acceptCandidate )
+      /* two types of threshold: fixed (TwoF- and/or LV-threshold) and dynamic (NumCandidatesToKeep) */
+      BOOLEAN is1DlocalMax = FALSE;
+      if ( XLALCenterIsLocalMax ( GV.scanlineWindow, uvar.SortToplist ) ) /* must be 1D local maximum */
+        is1DlocalMax = TRUE;
+      BOOLEAN isOver2FThreshold = FALSE; /* will always be checked, so start at 'FALSE' */
+      if ( 2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold ) /* fixed 2F threshold */
+        isOver2FThreshold = TRUE;
+      BOOLEAN isOverLVThreshold = TRUE;  /* will not be checked in non-LV case, so start at 'TRUE' */
+      if ( uvar.computeLV && ( GV.scanlineWindow->center->LVstat < uvar.LVthreshold ) ) /* fixed LV threshold */
+        isOverLVThreshold = FALSE;
+      if ( is1DlocalMax && isOver2FThreshold && isOverLVThreshold )
         {
 	  FstatCandidate *writeCand = GV.scanlineWindow->center;
 
@@ -956,7 +952,10 @@ int main(int argc,char *argv[])
 
       /* sort toplist */
       LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
-      qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
+      if ( uvar.SortToplist == 0 )
+        qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
+      else if ( uvar.SortToplist == 2 )
+        qsort_toplist ( GV.FstatToplist, compareFstatCandidates_LV );
       LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
@@ -1177,6 +1176,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
+  uvar->SortToplist = 0;
   uvar->LVuseAllTerms = TRUE;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
@@ -1256,6 +1256,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
   LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
+  LALregINTUserStruct(status,   SortToplist,	0,  UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 2=LV-stat");
   LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
   LALregLISTUserStruct(status,  LVlX,		0,  UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
   LALregREALUserStruct(status, 	LVthreshold,	0,  UVAR_OPTIONAL, "Set the threshold for selection of LV");
@@ -1736,7 +1737,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- set up toplist if requested ----- */
   if ( toplist_length > 0 ) {
-    if ( uvar->computeLV ) {
+    if ( uvar->computeLV && ( uvar->SortToplist == 2 ) ) {
       if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LV) != 0 )
         ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
     }
@@ -2221,6 +2222,16 @@ checkUserInputConsistency (LALStatus *status, const UserInput_t *uvar)
     ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT);
   }
 
+  /* check for valid toplist sorting statistic */
+  if ( ( uvar->SortToplist != 0 ) && ( uvar->SortToplist != 2 ) ) {
+   XLALPrintError ("\nERROR: Invalid value specified for toplist sorting - supported are 0 (F-stat) and 2 (LV-stat).\n\n");
+   ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+  }
+  if ( ( uvar->SortToplist == 2 ) && !uvar->computeLV ) {
+    XLALPrintError ("\nERROR: Toplist sorting by LV-stat only possible if --computeLV given.\n\n");
+    ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
+  }
+
   RETURN (status);
 } /* checkUserInputConsistency() */
 
@@ -2491,7 +2502,7 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 sortingSt
   if ( !scanWindow || !scanWindow->center )
     return FALSE;
 
-  if ( sortingStatistic == 1 ) /* F statistic */
+  if ( sortingStatistic == 0 ) /* F statistic */
     {
 
       REAL8 F0 = scanWindow->center->Fstat.F;
