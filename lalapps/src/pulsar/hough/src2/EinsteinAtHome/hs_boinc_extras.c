@@ -60,6 +60,8 @@
 /* probably already included by previous headers, but make sure they are included */
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 
 /* for finding out and logging the glibc version */
 #ifdef __GLIBC__
@@ -174,6 +176,35 @@ static char* myltoa(long n, char*buf, size_t size) {
   if (i > 0)
     return buf + i;
   return buf;
+}
+
+void mytime(void) {
+  char buf[64];
+  struct timeval tv;
+  struct tm *tmv;
+  if(gettimeofday(&tv,NULL))
+    return;
+  tmv=localtime(&tv.tv_sec);
+  myultoa(tmv->tm_year,buf,sizeof(buf));
+  fputs(buf,stderr);
+  fputs("-",stderr);
+  myultoa(tmv->tm_mon,buf,sizeof(buf));
+  fputs(buf,stderr);
+  fputs("-",stderr);
+  myultoa(tmv->tm_mday,buf,sizeof(buf));
+  fputs(buf,stderr);
+  fputs(" ",stderr);
+  myultoa(tmv->tm_hour,buf,sizeof(buf));
+  fputs(buf,stderr);
+  fputs(":",stderr);
+  myultoa(tmv->tm_min,buf,sizeof(buf));
+  fputs(buf,stderr);
+  fputs(":",stderr);
+  myultoa(tmv->tm_sec,buf,sizeof(buf));
+  fputs(buf,stderr);
+  fputs(".",stderr);
+  myultoa(tv.tv_usec,buf,sizeof(buf));
+  fputs(buf,stderr);
 }
 
 /*^* global VARIABLES *^*/
@@ -376,6 +407,8 @@ static void sighandler(int sig)
 
   /* lets start by ignoring ANY further occurences of this signal
      (hopefully just in THIS thread, if truly implementing POSIX threads */
+  fputs("\n",stderr);
+  mytime();
   fputs("\n-- signal handler called: signal ",stderr);
   fputs(myultoa(sig, buf, sizeof(buf)), stderr);
   fputs("\n",stderr);
