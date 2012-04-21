@@ -20,7 +20,6 @@
 #ifndef __TEMPLATES_H__
 #define __TEMPLATES_H__
 
-#include "TwoSpectTypes.h"
 #include "TwoSpect.h"
 
 struct gsl_probR_pars {
