@@ -12,13 +12,14 @@ for my $texfname (@ARGV) {
 
     # check that LaTeX file exists
     die "'$texfname' is not a file!" if !(-f $texfname);
+    die "'$texfname' is not a LaTeX file!" if !($texfname =~ /\.tex$/);
 
     # generate output Doxygen filename
     my $doxyfname = $texfname;
-    $doxyfname =~ s/\.tex/.dox/;
+    $doxyfname =~ s/\.tex$/.dox/;
 
     # check that Doxygen file does not exist
-    ######die "File '$doxyfname' already exists!" if (-f $doxyfname);
+    die "File '$doxyfname' already exists!" if (-f $doxyfname);
 
     # open files
     open TEX, "<$texfname" or die "Could not open '$texfname'!: $!";
