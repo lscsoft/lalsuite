@@ -197,7 +197,7 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
   INT4 nPoints = end - start + 1;
   REAL8** DEarray;
   REAL8*  temp;
-  REAL8 mean, ACL, max=0;
+  REAL8 mean, ACL, ACF, max=0;
   INT4 par=0, lag=0, i=0, p=0;
   int MPIrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -214,20 +214,33 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
     DEbuffer2array(runState, startCycle, endCycle, DEarray);
 
     for (par=0; par<nPar; par++) {
-      ACL=0;
       mean = gsl_stats_mean(&DEarray[0][par], nPar, nPoints);
       for (i=0; i<nPoints; i++)
         DEarray[i][par] -= mean;
-      for (lag=0; lag<nPoints/4; lag++)
-        ACL += fabs(gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag));
+
+      lag=1;
+      ACL=1;
+      ACF=1;
+      while (ACF > 0.0005) {
+        ACF = gsl_stats_correlation(&DEarray[0][par], nPar, &DEarray[lag][par], nPar, nPoints-lag);
+        ACL += 2.0*ACF;
+        lag++;
+        /* If ACF[nPoints/2] > 0.0005 then assume ACL calculation will be inaccurate */
+        if (lag > nPoints/2) {
+          ACL=(REAL8)Niter/(REAL8)Nskip;
+          break;
+        }
+      }
       ACL *= Nskip;
       if (ACL>max)
         max=ACL;
       if (MPIrank==0) {
         p=0;
+        ptr=runState->currentParams->head;
         while(ptr!=NULL) {
           if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-            printf("Chain %i:%s\t=>\t%i\n",MPIrank,LALInferenceTranslateInternalToExternalParamName(ptr->name),(INT4)ACL);
+            if (p==par)
+              printf("Chain %i:%s(%f)\t=>\t%i\n",MPIrank,LALInferenceTranslateInternalToExternalParamName(ptr->name),mean,(INT4)ACL);
             p++;
           }
           ptr=ptr->next;
@@ -251,12 +264,15 @@ updateMaxAutoCorrLen(LALInferenceRunState *runState, INT4 currentCycle) {
   INT4 adaptLength = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptLength");
   INT4 iEffStart = adaptStart+adaptLength;
   INT4 acl=Niter;
+  INT4 goodACL=0;
 
   if (iEffStart<currentCycle)
     computeMaxAutoCorrLen(runState, iEffStart, currentCycle, &proposedACL);
 
   if (proposedACL < aclThreshold*(currentCycle-iEffStart) && proposedACL != 0)
     acl = proposedACL;
+  else if (LALInferenceCheckVariable(runState->algorithmParams, "goodACL"))
+    LALInferenceSetVariable(runState->algorithmParams, "goodACL", &goodACL);
 
   LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
 }
@@ -353,6 +369,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   LALInferenceAddVariable(runState->proposalArgs, "adaptStart", &adaptStart, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->proposalArgs, "logLAtAdaptStart", &logLAtAdaptStart, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
   LALInferenceAddVariable(runState->algorithmParams, "acl", &acl,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(runState->algorithmParams, "goodACL", &goodACL,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
 
   /* Temperature ladder settings */
   REAL8 tempMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temperature in ladder
@@ -600,12 +617,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
     if (runPhase < 2) {
       /* Parallel Tempering */
-      adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
-      adaptStart = *((INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart"));
-      iEffStart = adaptStart+adaptLength;
-      acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
+      if (i % (100*Nskip) == 0) {
+        adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
 
-      if (i % (100*Tskip) == 0) {
         MPI_Gather(&adapting,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
         if (MPIrank==0) {
           adapting=0;
@@ -620,52 +634,42 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
         /* Check if cold chain ACL has been calculated */
         if (!adapting) {
-          MPI_Gather(&acl,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-          if (MPIrank==0) {
-            for (p=0; p<nChain; p++) {
-              if (intVec[p]>acl)
-                acl=intVec[p];
-            }
-          }
-          MPI_Bcast(&acl, 1, MPI_INT, 0, MPI_COMM_WORLD);
+          acl = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl"));
 
-          if (acl == Niter) {
-            updateMaxAutoCorrLen(runState, i);
-          }
-          acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-          iEff = (i - iEffStart)/acl;
-          MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-          if (MPIrank==0) {
-            for (p=0; p<nChain; p++) {
-              if (intVec[p]<iEff)
-                iEff=intVec[p];
-            }
-          }
-          MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-          if ( (runPhase==0 && iEff >= Neff) || (runPhase==1 && iEff >= annealStart) ) {
-            /* Double check ACL before changing phase */
+          goodACL = *((INT4*) LALInferenceGetVariable(runState->algorithmParams, "goodACL"));
+          if (!goodACL) {
             oldACL = acl;
             updateMaxAutoCorrLen(runState, i);
             acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
+            if (acl != Niter && acl<=oldACL) {
+              goodACL=1;
+              LALInferenceSetVariable(runState->algorithmParams, "goodACL", &goodACL);
+            }
+          }
 
-            if (!goodACL) {
-              if (MPIrank==0){
-                if (acl<=oldACL)
-                  goodACL=1;
+          MPI_Gather(&goodACL,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
+          if (MPIrank==0) {
+            goodACL=1;
+            for (p=0; p<nChain; p++) {
+              if (intVec[p]==0){
+                goodACL=0;
+                break;
               }
-              MPI_Bcast(&goodACL, 1, MPI_INT, 0, MPI_COMM_WORLD);
-            } else {
+            }
+          }
+          MPI_Bcast(&goodACL, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+          if (goodACL) {
+            adaptStart = *((INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart"));
+            iEffStart = adaptStart+adaptLength;
+            iEff = (i - iEffStart)/acl;
+            MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+            if ( (runPhase==0 && iEff >= Neff) || (runPhase==1 && iEff >= annealStart) ) {
+              /* Double check ACL before changing phase */
+              updateMaxAutoCorrLen(runState, i);
+              acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
               iEff = (i - iEffStart)/acl;
-              printf("Chain %i => %i:\tACL=%i(%i)\tiEff=%i\n",MPIrank,i,acl,i-(adaptStart+adaptLength),iEff);
-              MPI_Gather(&iEff,1,MPI_INT,intVec,1,MPI_INT,0,MPI_COMM_WORLD);
-              if (MPIrank==0) {
-                for (p=0; p<nChain; p++) {
-                  if (intVec[p]<iEff){
-                    iEff=intVec[p];
-                  }
-                }
-              }
               MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
               if (runPhase==0 && iEff >= Neff) {
@@ -697,7 +701,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
                 /* Reset effective sample size and ACL */
                 iEff=0;
-                acl = Niter;
+                acl = PTacl;
                 LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
               }
             }
@@ -720,27 +724,21 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       }
     } //if (runState==2)
 
+
     if (runPhase==3) {
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
       iEffStart = adaptStart+adaptLength;
       if (!adapting) {
-        if (iEff==0) {
-          if ((i-iEffStart)%PTacl == 0) {
-            updateMaxAutoCorrLen(runState, i);
-            acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            iEff = (i-iEffStart)/acl;
-          }
-        } else {
+        iEff = (i-iEffStart)/acl;
+        if (iEff >= Neff/nChain) {
+          /* Double check ACL before ending */
+          updateMaxAutoCorrLen(runState, i);
+          acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
+          iEff = (i-iEffStart)/acl;
           if (iEff >= Neff/nChain) {
-            /* Double check ACL before ending */
-            updateMaxAutoCorrLen(runState, i);
-            acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-            iEff = (i-iEffStart)/acl;
-            if (iEff >= Neff/nChain) {
-              fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
-              break;                                 // Sampling is done for this chain!
-            }
+            fprintf(stdout,"Chain %i has %i effective samples. Stopping...\n", MPIrank, iEff);
+            break;                                 // Sampling is done for this chain!
           }
         }
       }
@@ -1121,6 +1119,7 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   REAL8Vector *PproposeCount = NULL;
   INT4 adapting=1;
   INT4 p=0;
+  INT4 goodACL=0;
 
   for (p=0; p<nPar; ++p) {
     PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
@@ -1133,6 +1132,7 @@ void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
   LALInferenceSetVariable(runState->proposalArgs, "adaptStart", &cycle);
   LALInferenceSetVariable(runState->proposalArgs, "logLAtAdaptStart", &(runState->currentLikelihood));
   LALInferenceSetVariable(runState->algorithmParams, "acl", &Niter);
+  LALInferenceSetVariable(runState->algorithmParams, "goodACL", &goodACL);
   LALInferenceAdaptationEnvelope(runState, cycle);
 }
 
