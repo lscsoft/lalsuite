@@ -1163,8 +1163,6 @@ pegasus.catalog.replica.file=%s
 
 pegasus.catalog.site=XML3
 
-pegasus.gridstart.kickstart.stat=false
-
 pegasus.transfer.force=true
 pegasus.transfer.links=true
 pegasus.transfer.refiner=Bundle
@@ -1183,6 +1181,19 @@ pegasus.dir.submit.logs=%s
 
 pegasus.catalog.site.file=%s/site-local.xml
 """ % (os.path.join(os.getcwd(),peg_frame_cache),opts.log_path,os.getcwd())
+
+if opts.dax:
+  print >> pegprop_fh, """\
+
+# pegasus 4.x variables
+pegasus.data.configuration=condorio"""
+else:
+  print >> pegprop_fh, """\
+
+# pegasus 3.x variables
+pegasus.gridstart.kickstart.stat=false
+pegasus.transfer.symlink.impl=Symlink"""
+
 pegprop_fh.close()
 
 ##############################################################################
