@@ -1,4 +1,5 @@
-%!PS-Adobe-2.0 EPSF-2.0
+%!PS-Adobe-3.0 EPSF-3.0
+%%LanguageLevel: 3
 %%Title: merger.ps
 %%Creator: timeline.c
 %%CreationDate: Tue Jul 11 15:32:01 2000
@@ -120,6 +121,12 @@ grestore
 /titlewidth { title stringwidth pop } def
 0 titlewidth sub 2 div 380 moveto
 title false charpath
+gsave
+clip <<
+/ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 380 0 380 72 add]
+/Function << /FunctionType 2 /Domain [0 1] /C0 [1 1 1] /C1 [0 0.8 1] /N 1 >>
+>> shfill
+grestore
 gsave
 1 0 0 setrgbcolor
 clip 400 -20 shear
