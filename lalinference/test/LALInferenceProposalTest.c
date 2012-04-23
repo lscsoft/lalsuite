@@ -249,7 +249,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 logDmax=log(100.0);
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
-	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0;
+	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0,MTotMax=35.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
@@ -347,6 +347,9 @@ void initVariables(LALInferenceRunState *state)
 	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
 	if(ppt)	mMax=atof(ppt->value);
 	LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+  ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
+  if(ppt)	MTotMax=atof(ppt->value);
+  LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	
 	printf("Read end time %f\n",endtime);

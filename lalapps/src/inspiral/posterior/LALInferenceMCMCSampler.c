@@ -777,8 +777,11 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   else
     logLikelihoodProposed = -DBL_MAX;
 
+  //REAL8 nullLikelihood = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "nullLikelihood");
+  //printf("%10.10f\t%10.10f\t%10.10f\n", logPriorProposed-logPriorCurrent, logLikelihoodProposed-nullLikelihood, logProposalRatio);
+  //LALInferencePrintVariables(&proposedParams);
+  
   // determine acceptance probability:
-  //printf("%f\t%f\n",logPriorProposed, logLikelihoodProposed);
   logAcceptanceProbability = (1.0/temperature)*(logLikelihoodProposed - logLikelihoodCurrent)
     + (logPriorProposed - logPriorCurrent)
     + logProposalRatio;
