@@ -228,7 +228,7 @@ for ifo,channel in channels.items():
 	cp.set('data',ifo.lower()+'-channel',channel)
 
 if cp.has_option('analysis','time-slide-dump'):
-	timeslidefiledump= cp.get('analysis','time-slide-dump'):
+	timeslidefiledump= cp.get('analysis','time-slide-dump')
 else:
 	timeslidefiledump=None
 
