@@ -1944,3 +1944,138 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
     fclose(snrout);
 }
 
+
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
+{
+    ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
+    LALInferenceVariables backup;
+    LALInferenceVariables injparams;
+    memset(&injparams,0,sizeof(LALInferenceVariables));
+    memset(&backup,0,sizeof(LALInferenceVariables));
+    char *fname=NULL;
+    char defaultname[]="injection_params.dat";
+    FILE *outfile=NULL;
+    if(!ppt) return;
+    SimInspiralTable *injTable=NULL,*theEventTable=NULL;
+    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
+
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
+    if(ppt) {
+      fname = XLALCalloc((strlen(ppt->value)+255)*sizeof(char),1);
+      sprintf(fname,"%s.injection",ppt->value);
+    }
+    else fname=defaultname;
+
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--event");
+    if (ppt) {
+      UINT4 event = atoi(ppt->value);
+      UINT4 i;
+      theEventTable = injTable;
+      for (i = 0; i < event; i++) {
+        theEventTable = theEventTable->next;
+      }
+      theEventTable->next = NULL;
+    } else {
+      theEventTable=injTable;
+      theEventTable->next = NULL;
+    }
+
+    /* Save old variables */
+    LALInferenceCopyVariables(runState->currentParams,&backup);
+
+    REAL8 q = theEventTable->mass2 / theEventTable->mass1;
+    if (q > 1.0) q = 1.0/q;
+
+    REAL8 sx = theEventTable->spin1x;
+    REAL8 sy = theEventTable->spin1y;
+    REAL8 sz = theEventTable->spin1z;
+
+    REAL8 a_spin1 = sqrt(sx*sx + sy*sy + sz*sz);
+
+    REAL8 theta_spin1, phi_spin1;
+    if (a_spin1 == 0.0) {
+      theta_spin1 = 0.0;
+      phi_spin1 = 0.0;
+    } else {
+      theta_spin1 = acos(sz / a_spin1);
+      phi_spin1 = atan2(sy, sx);
+      if (phi_spin1 < 0.0) phi_spin1 += 2.0*M_PI;
+    }
+
+    sx = theEventTable->spin2x;
+    sy = theEventTable->spin2y;
+    sz = theEventTable->spin2z;
+
+    REAL8 a_spin2 = sqrt(sx*sx + sy*sy + sz*sz), theta_spin2, phi_spin2;
+    if (a_spin2 == 0.0) {
+      theta_spin2 = 0.0;
+      phi_spin2 = 0.0;
+    } else {
+      theta_spin2 = acos(sz / a_spin2);
+      phi_spin2 = atan2(sy, sx);
+      if (phi_spin2 < 0.0) phi_spin2 += 2.0*M_PI;
+    }
+
+    REAL8 psi = theEventTable->polarization;
+    if (psi>=M_PI) psi -= M_PI;
+
+    REAL8 injGPSTime = XLALGPSGetREAL8(&(theEventTable->geocent_end_time));
+
+    REAL8 chirpmass = theEventTable->mchirp;
+
+    REAL8 dist = theEventTable->distance;
+    REAL8 inclination = theEventTable->inclination;
+    REAL8 phase = theEventTable->coa_phase;
+    REAL8 dec = theEventTable->latitude;
+    REAL8 ra = theEventTable->longitude;
+
+    LALInferenceAddVariable(runState->currentParams, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
+
+    REAL8 injPrior = runState->prior(runState,runState->currentParams);
+    LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    LALInferenceAddVariable(runState->currentParams,"logL",(void *)&injL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
+        REAL8 tmp=injL-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
+        LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    }
+    LALInferenceIFOData *data=runState->data;
+    while(data)
+    {
+        char tmpName[50];
+        REAL8 tmp=data->loglikelihood - data->nullloglikelihood;
+        sprintf(tmpName,"deltalogl%s",data->name);
+        LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+        data=data->next;
+    }
+    /* Save to file */
+    outfile=fopen(fname,"w");
+    if(!outfile) {fprintf(stderr,"ERROR: Unable to open file %s for injection saving\n",fname); exit(1);}
+    LALInferenceSortVariablesByName(runState->currentParams);
+    for(LALInferenceVariableItem *this=runState->currentParams->head; this; this=this->next)
+        fprintf(outfile,"%s\t",this->name);
+    fprintf(outfile,"\n");
+    LALInferencePrintSample(outfile,runState->currentParams);
+    fclose(outfile);
+    
+    /* Set things back the way they were */    
+    LALInferenceCopyVariables(&backup,runState->currentParams);
+    if(runState->currentParams) runState->likelihood(runState->currentParams,runState->data,runState->template);
+    return;
+}
+

@@ -843,6 +843,9 @@ Arguments for each section follow:\n\n";
 	/* Call nested sampling algorithm */
 	state->algorithm(state);
 
+	/* write injection with noise evidence information from algorithm */
+        LALInferencePrintInjectionSample(state);
+
 	/* end */
 	return(0);
 }
