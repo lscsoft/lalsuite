@@ -2481,17 +2481,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    INT4 ii;
    
    //Defaults given or option passed
-   params->Tcoh = args_info.Tcoh_arg;                                            //SFT coherence time (s)
-   params->SFToverlap = args_info.SFToverlap_arg;                                //SFT overlap (s)
    params->blksize = args_info.blksize_arg;                                      //Block size of SFT running median (bins)
    params->dopplerMultiplier = args_info.dopplerMultiplier_arg;                  //Velocity of Earth multiplier
    params->mintemplatelength = args_info.minTemplateLength_arg;                  //Minimum number of template weights (pixels)
    params->maxtemplatelength = args_info.maxTemplateLength_arg;                  //Maximum number of template weights (pixels)
-   params->ihsfar = args_info.ihsfar_arg;                                        //IHS false alarm rate
-   params->templatefar = args_info.tmplfar_arg;                                  //Template false alarm rate
-   params->log10templatefar = log10(params->templatefar);                        //log_10(template FAR)
-   params->ULmindf = args_info.ULminimumDeltaf_arg;                              //Upper limit minimum modulation depth (Hz)
-   params->ULmaxdf = args_info.ULmaximumDeltaf_arg;                              //Upper limit maximum modulation depth (Hz)
    params->ihsfactor = args_info.ihsfactor_arg;                                  //IHS folding factor
    params->rootFindingMethod = args_info.BrentsMethod_given;                     //Use Brent's method (default = 0)
    params->antennaOff = args_info.antennaOff_given;                              //Antenna pattern off (default = 0)
@@ -2507,6 +2500,16 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    
    
    //Non-default arguments
+   if (args_info.Tcoh_given) params->Tcoh = args_info.Tcoh_arg;                  //SFT coherence time (s)
+   else {
+      fprintf(stderr, "%s: a SFT coherence time must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (args_info.SFToverlap_given) params->SFToverlap = args_info.SFToverlap_arg; //SFT overlap (s)
+   else {
+      fprintf(stderr, "%s: the SFT overlap time must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)
    else {
       fprintf(stderr, "%s: an observation time must be specified.\n", __func__);
@@ -2547,14 +2550,31 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr, "%s: a maximum modulation depth to search must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
+   if (args_info.ihsfar_given) params->ihsfar = args_info.ihsfar_arg;            //Incoherent harmonic sum false alarm rate
+   else {
+      fprintf(stderr, "%s: the IHS FAR must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (args_info.tmplfar_given) params->templatefar = args_info.tmplfar_arg;     //Template false alarm rate
+   else {
+      fprintf(stderr, "%s: the template FAR must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
    else params->ULfmin = params->fmin;
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)
    else params->ULfspan = params->fspan;
+   if (args_info.ULminimumDeltaf_given) params->ULmindf = args_info.ULminimumDeltaf_arg;     //Upper limit minimum modulation depth (Hz)
+   else params->ULmindf = params->dfmin;
+   if (args_info.ULmaximumDeltaf_given) params->ULmaxdf = args_info.ULmaximumDeltaf_arg;     //Upper limit maximum modulation depth (Hz)
+   else params->ULmaxdf = params->dfmax;
    if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;         //Keep only top X IHS candidates
    else params->keepOnlyTopNumIHS = -1;
    if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;  //Simple band rejection (default off)
    if (args_info.lineDetection_given) params->lineDetection = args_info.lineDetection_arg;                     //Line detection
+   
+   
+   params->log10templatefar = log10(params->templatefar);                        //log_10(template FAR)
    
    //Settings for IHS FOM
    //Exit with error if neither is chosen
@@ -2715,6 +2735,14 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    
    
    //Allocate memory for files and directory
+   if (!args_info.ephemDir_given) {
+      fprintf(stderr, "%s: An ephemeris directory path must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (!args_info.ephemYear_given) {
+      fprintf(stderr, "%s: An ephemeris year/type suffix must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
    sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
    sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
