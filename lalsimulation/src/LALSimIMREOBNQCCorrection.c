@@ -71,7 +71,7 @@
       }
       else if ( m == 1 )
       {
-        return 10.67 - 41.41 * eta + 76.1 * eta*eta;
+        return 10.67 - 2.5 + 9.0*eta - 41.41 * eta + 76.1 * eta*eta;
       }
       else
       {
