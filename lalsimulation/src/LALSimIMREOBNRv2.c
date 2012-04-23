@@ -411,7 +411,7 @@ XLALHighSRStoppingCondition(double UNUSED t,       /**<< Current time (required 
   }
   else
   {
-    rstop = 2.15 - 0.05 - 10.0 * params->eta;
+    rstop = 2.1 - 10.0 * params->eta;
   }
 
   if ( values[0] <= rstop || isnan(dvalues[3]) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
