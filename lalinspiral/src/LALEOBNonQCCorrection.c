@@ -492,7 +492,6 @@ int XLALCalculateNQCCoefficients(
     XLALDestroyREAL8Vector( q3LM );
     XLALDestroyREAL8Vector( time );
     XLAL_ERROR( XLAL_ENOMEM );
-    XLAL_ERROR( XLAL_ENOMEM );
   }
 
   /* The time we want to take as the peak time depends on l and m */
