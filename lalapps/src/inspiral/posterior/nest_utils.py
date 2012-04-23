@@ -53,7 +53,7 @@ class LALInferenceNode(pipeline.CondorDAGNode):
     def set_seed(self,seed):
         self.add_var_opt('randomseed',seed)
     def set_dataseed(self,seed):
-        self.add_var_opt('seed',seed)
+        self.add_var_opt('dataseed',seed)
     def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
