@@ -72,28 +72,23 @@ python_config.sed: Makefile
 	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
 lalapps_combine_evidence: $(srcdir)/combine_evidence.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/combine_evidence.in > lalapps_combine_evidence
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/combine_evidence.in > lalapps_combine_evidence
 	@chmod a+x lalapps_combine_evidence
 
 lalapps_coherence_test: $(srcdir)/coherence_test.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/coherence_test.in > lalapps_coherence_test
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/coherence_test.in > lalapps_coherence_test
 	@chmod a+x lalapps_coherence_test
 
 lalapps_merge_nested_sampling_runs: $(srcdir)/merge_nested_sampling_runs.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/merge_nested_sampling_runs.in >lalapps_merge_nested_sampling_runs
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/merge_nested_sampling_runs.in >lalapps_merge_nested_sampling_runs
 	@chmod a+x lalapps_merge_nested_sampling_runs
 
 lalapps_nest_pipe: $(srcdir)/nest_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/nest_pipe.in >lalapps_nest_pipe
 	@chmod a+x lalapps_nest_pipe
 
 lalapps_vo_nest2pos: $(srcdir)/lalapps_vo_nest2pos.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/lalapps_vo_nest2pos.in >lalapps_vo_nest2pos
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/lalapps_vo_nest2pos.in >lalapps_vo_nest2pos
 	@chmod a+x lalapps_vo_nest2pos
 
 

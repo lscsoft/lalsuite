@@ -110,13 +110,11 @@ python_config.sed:
 	@echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
 lalapps_ring_pipe: $(srcdir)/ring_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/ring_pipe.in > lalapps_ring_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ring_pipe.in > lalapps_ring_pipe
 	@chmod +x lalapps_ring_pipe
 
 lalapps_ringcorse: $(srcdir)/ringcorse.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/ringcorse.in > lalapps_ringcorse
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ringcorse.in > lalapps_ringcorse
 	@chmod +x lalapps_ringcorse
 
 BUILT_SOURCES =
