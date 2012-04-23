@@ -343,6 +343,8 @@ int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
     XLAL_ERROR( XLAL_EINVAL );
   }
 
+  /* All NQC coefficients are set to zero here */ 
+  /* including coeffs->a4 that is not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( *coeffs ) );
 
   coeffs->a1 = -4.55919 + 18.761 * eta - 24.226 * eta*eta;
@@ -374,6 +376,9 @@ int  XLALEOBNonQCCorrection(
   rOmega = r * omega;
   rOmegaSq = rOmega*rOmega;
 
+  /* In EOBNRv2, coeffs->a4 is set to zero */
+  /* through XLALSimIMREOBGetCalibratedNQCCoeffs() */
+  /* and XLALSimIMREOBCalculateNQCCoefficients() */
   mag = 1. + (p*p / rOmegaSq) * ( coeffs->a1
      + coeffs->a2 / r + coeffs->a3 / (r*sqrt(r))
      + coeffs->a4 / (r*r) );
@@ -406,7 +411,7 @@ int XLALCalculateNQCCoefficients(
 
   UINT4 i;
 
-  /* For gsl perutation stuff */
+  /* For gsl permutation stuff */
 
   int signum;
 
@@ -437,6 +442,8 @@ int XLALCalculateNQCCoefficients(
 
   gsl_permutation *perm1 = NULL, *perm2 = NULL;
 
+  /* All NQC coefficients are set to zero here */ 
+  /* including coeffs->a4 that is not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( EOBNonQCCoeffs ) );
 
   /* Populate the time vector */
@@ -472,7 +479,19 @@ int XLALCalculateNQCCoefficients(
 
   if ( !qMatrix || !aCoeff || !amps || !pMatrix || !bCoeff || !omegaVec )
   {
-    /* TODO : Free memory */
+    gsl_matrix_free( qMatrix );
+    gsl_vector_free( amps );
+    gsl_vector_free( aCoeff );
+    gsl_permutation_free( perm1 );
+    gsl_matrix_free( pMatrix );
+    gsl_vector_free( omegaVec );
+    gsl_vector_free( bCoeff );
+    gsl_permutation_free( perm2 );
+    XLALDestroyREAL8Vector( q1LM );
+    XLALDestroyREAL8Vector( q2LM );
+    XLALDestroyREAL8Vector( q3LM );
+    XLALDestroyREAL8Vector( time );
+    XLAL_ERROR( XLAL_ENOMEM );
     XLAL_ERROR( XLAL_ENOMEM );
   }
 
