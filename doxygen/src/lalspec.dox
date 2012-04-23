@@ -4,12 +4,12 @@
 
 \section s_intro Introduction
 
-\subsection TODOref The LSC Algorithm Library
+\subsection TODO_lalspec_7 The LSC Algorithm Library
 
 The LSC Algorithm Library, hereafter LAL, is a library of routines for use in
 gravitational wave data analysis.
 
-\subsection TODOref The goal of the LAL software specification
+\subsection TODO_lalspec_12 The goal of the LAL software specification
 
 From the first edition of this guide: The defining purpose of this
 document is to establish a software specification that fosters widespread-use
@@ -51,7 +51,7 @@ consultation with the LSC Software Change Control Board.
 </b></p>
 
 
-\subsection TODOref The elements of the library specification
+\subsection TODO_lalspec_54 The elements of the library specification
 
 The library specification has the following elements:
 <ol>
@@ -66,7 +66,7 @@ desired) and collaborative development.</li>
 </ol>
 
 
-\subsection TODOref The LAL and XLAL interfaces
+\subsection TODO_lalspec_69 The LAL and XLAL interfaces
 
 Because the original LAL specification was relatively "heavy-weight,"
 (in that there was significant overhead required for new functions), LAL
@@ -92,9 +92,9 @@ the rules specific to XLAL functions.
 </b></p>
 
 
-\section TODOref Coding style guidelines
+\section TODO_lalspec_95 Coding style guidelines
 
-\subsection TODOref Atomic data types
+\subsection TODO_lalspec_97 Atomic data types
 
 For historical reasons more than anything I can think of, LAL routines should
 use the LAL-specific atomic data types (\c REAL4 rather than
@@ -121,7 +121,7 @@ to type \c double, e.g., \c modf, can receive a pointer to type
 equivalent to the type \c double.
 
 
-\subsection TODOref Names of functions, variables, etc.
+\subsection TODO_lalspec_124 Names of functions, variables, etc.
 
 These rules are to define a standard namespace scheme.  They apply to all
 functions with external linkage (i.e., those functions not preceded by the
@@ -166,7 +166,7 @@ LALMyType;
 Note that the structure name is \c tagLALMyType.
 
 
-\subsection TODOref Header and source file conventions
+\subsection TODO_lalspec_169 Header and source file conventions
 
 The LAL API is defined by the \e installed header files (there may be
 additional header files that are used when compiling LAL that are not
@@ -229,7 +229,7 @@ NRCSID( LALTHISSOURCEFILEC, "\f$Id\f$" );
 \endcode
 
 
-\subsection TODOref Language requirements
+\subsection TODO_lalspec_232 Language requirements
 LAL code should all be in "clean C," i.e., that language that is a
 subset of both C and C++.  This is not quite the same as just the C
 programming language.  Only C-style comments should be used and avoid
@@ -243,7 +243,7 @@ A list of keywords and reserved names, along with those standard C library
 functions that can be used, is found in appendix \ref a_language.
 
 
-\subsection TODOref Filename conventions
+\subsection TODO_lalspec_246 Filename conventions
 
 Purely for the sanity of the Librarian, LAL has a rigid directory structure.
 LAL is composed of directories called packages whose names consist of entirely
@@ -262,10 +262,10 @@ single \c .c file.  Thus, all the functions with external linkage in a
 \c .c file must be prototyped in the same header file in the same package.
 
 
-\section TODOref Common rules for both the LAL and the XLAL functions
+\section TODO_lalspec_265 Common rules for both the LAL and the XLAL functions
 
 
-\subsection TODOref Function arguments
+\subsection TODO_lalspec_268 Function arguments
 
 Function arguments must be one of the following (atomic) types:
 \c CHAR, \c UCHAR, \c INT2, \c UINT2, \c INT4,
@@ -284,7 +284,7 @@ of the above types (...).
 </b></p>
 
 
-\subsection TODOref Functions should not have any dependence on system environment
+\subsection TODO_lalspec_287 Functions should not have any dependence on system environment
 
 The first part of this rule is that functions should not do any file I/O
 since there should be no assumptions about the nature of the filesystem.
@@ -306,7 +306,7 @@ used.
 </b></p>
 
 
-\subsection TODOref Memory management
+\subsection TODO_lalspec_309 Memory management
 
 Memory should always be allocated or freed with one of the LAL custom
 memory managers: \c LALMalloc, \c LALCalloc, \c LALRealloc,
@@ -344,7 +344,7 @@ the storage in \c foo.</li>
 </ul>
 
 
-\subsection TODOref Functions must be reentrant and thread-safe
+\subsection TODO_lalspec_347 Functions must be reentrant and thread-safe
 
 This rule essentially requires a functions behavior to depend only on its
 arguments.  There should be no state saved in static storage within the
@@ -369,7 +369,7 @@ reentrant and threadsafe.
 </b></p>
 
 
-\subsection TODOref Functions should always return control to the calling program
+\subsection TODO_lalspec_372 Functions should always return control to the calling program
 
 That is, routines should never explicitly raise signals, abort, or call the
 \c exit function, nor should they call functions that might do so.  Also,
@@ -388,7 +388,7 @@ shall not be used.  Long-jumps shall not be used.
 
 
 
-\section TODOref Rules for LAL functions
+\section TODO_lalspec_391 Rules for LAL functions
 
 All LAL functions must return \c void and have as their first argument
 a pointer to a \c LALStatus structure type.  Any number of arguments may
@@ -491,7 +491,7 @@ used must always be one atta(t)ched to the provided status structure (so that
 the function call trace is maintained).
 
 
-\section TODOref Rules for XLAL functions
+\section TODO_lalspec_494 Rules for XLAL functions
 
 The goal is to have XLAL functions be as flexible as possible in their
 interface while still requiring strict rules on error reporting.  The
@@ -541,7 +541,7 @@ return XLAL functions); a pointer (pointer-type return XLAL functions);
 or no return type (type \c void return XLAL functions).
 </b></p>
 
-\subsection TODOref Four kinds of XLAL functions
+\subsection TODO_lalspec_544 Four kinds of XLAL functions
 
 XLAL functions will be one of four types based principally on their return
 type, though this is also largely determined by their functional nature.  The
@@ -657,7 +657,7 @@ XLAL_ERROR_VOID( func, errnum ) where \c func is the function name
 string and \c errnum is the XLAL error number (see below).</li>
 </ol>
 
-\subsection TODOref XLAL error numbers and error handlers
+\subsection TODO_lalspec_660 XLAL error numbers and error handlers
 
 XLAL functions use the modifiable lvalue \c xlalErrno (think of it as
 a global \c int-type variable) to codify the nature of a failure.  It
@@ -749,7 +749,7 @@ number.  They also return from the function with the appropriate failure
 return code (depending on which macro was used).
 
 
-\section TODOref Documentation and unit tests
+\section TODO_lalspec_752 Documentation and unit tests
 
 The conventions for these are not within the scope of this specification;
 they are described in the LAL Software Documentation.  It is a good guide
@@ -757,7 +757,7 @@ that every function with external linkage should have a unit test that can
 be run automatically to make sure it is (and continues to be) sane.
 
 
-\section TODOref Other libraries required for LAL
+\section TODO_lalspec_760 Other libraries required for LAL
 
 LAL is not a stand-alone library.  Two other libraries are required to build
 and use LAL.  These are the "Fastest Fourier Transform in the West (version
@@ -783,7 +783,7 @@ any error conditions reported by the \c gsl function in the LAL
 status structure \c status.
 
 
-\section TODOref Notable exceptions
+\section TODO_lalspec_786 Notable exceptions
 
 <p><b>
 There will be exceptions to (nearly) all of these rules.  Exceptions are
@@ -800,7 +800,7 @@ are occasions when violations must be allowed.  In such cases, the violations
 are under strict control of the LAL Librarian.
 
 
-\section TODOref Beyond LAL... LALSupport, LALMetaIo, LALFrame
+\section TODO_lalspec_803 Beyond LAL... LALSupport, LALMetaIo, LALFrame
 
 Of the LAL requirements, the most \e functionally limiting is the
 requirement that no I/O is allowed.  This requirement is in place to
@@ -832,20 +832,20 @@ or "Frame" format.  Libraries with routines that are specialized for I/O
 with these formats are also available.
 
 
-\subsection TODOref The \c LALSupport library
+\subsection TODO_lalspec_835 The \c LALSupport library
 
 This library provides the basic file I/O routines that are used in conjunction
 with the LAL library.  It is always built and installed along with the LAL
 library.
 
-\subsection TODOref The \c LALMetaIo library
+\subsection TODO_lalspec_841 The \c LALMetaIo library
 
 This library provides I/O routines that are used to read/write the LIGO
 lightweight data format.  These routines use the \c metaio library
 routines as their engine.  This library is conditionally built and installed
 by LAL if the \c metaio library is available.
 
-\subsection TODOref The \c LALFrame library
+\subsection TODO_lalspec_848 The \c LALFrame library
 
 This library provides I/O routines that are used to read/write the Frame
 data format.  These routines use the \c Frame library
@@ -860,14 +860,14 @@ Only a subset of these are suitable for LAL functions.  However, for maximum
 portability, one should avoid various extensions to the C99 keywords and
 functions.  Here are some guidelines on writing portable LAL code.
 
-\subsection TODOref Namespace requirements
+\subsection TODO_lalspec_863 Namespace requirements
 
 Here is a list of keywords and reserved names.  These should be avoided
 when choosing names of LAL variables, functions, etc.  The LAL namespace
 will help avoid namespace collisions.  The LAL namespace conventions are
 also given.
 
-\subsubsection TODOref Keywords
+\subsubsection TODO_lalspec_870 Keywords
 
 The code should avoid any of the following
 keywords that are present in C++ as symbol names:
@@ -904,7 +904,7 @@ Of these there is (almost) no need to use \c auto, \c char,
 \c double, \c float, \c long, \c register, \c short,
 \c signed, \c unsigned, or \c volatile.
 
-\subsubsection TODOref Reserved names
+\subsubsection TODO_lalspec_907 Reserved names
 
 According to the GNU C library, the following names are reserved (or may be
 reserved in the future) by the C library:
@@ -949,7 +949,7 @@ in \c signal.h.</li>
 in \c termios.h.</li>
 </ul>
 
-\subsubsection TODOref LAL namespace
+\subsubsection TODO_lalspec_952 LAL namespace
 
 The LAL namespace will assist in avoiding namespace conflicts.  LAL reserves
 any name that is prefixed with \c LAL, \c LAL_, \c XLAL,
@@ -960,7 +960,7 @@ letter.  In addition LAL reserves names that begin with
 \c COMPLEX8, \c COMPLEX16, and \c LIGO followed by an
 uppercase letter.
 
-\subsection TODOref Allowed functions from standard C
+\subsection TODO_lalspec_963 Allowed functions from standard C
 
 C libraries often have various extensions from the C99 standard C library,
 but for portability purposes only those functions that are specified by the
@@ -1034,9 +1034,9 @@ it in a LAL function.
 \endcode
 
 
-\section TODOref LAL Datatypes
+\section TODO_lalspec_1037 LAL Datatypes
 
-\subsection TODOref Primitive Datatypes
+\subsection TODO_lalspec_1039 Primitive Datatypes
 
 The primitive datatypes are defined in a separate header
 \ref LALAtomicDatatypes.h, which is included by
@@ -1050,7 +1050,7 @@ Primitive datatypes are those that conceptually store a single number
 or quantity.  They include both the \e atomic datatypes and the
 complex datatypes.
 
-\subsubsection TODOref Atomic Datatypes
+\subsubsection TODO_lalspec_1053 Atomic Datatypes
 
 Atomic LAL datatypes are platform-independent datatypes corresponding
 to the basic types in the C/C++ language.  However, since the C/C++
@@ -1121,7 +1121,7 @@ the maximum number of digits that are guaranteed not to change upon
 conversion to binary, the second is the number of digits required to
 represent a unique binary quantity.
 
-\subsubsection TODOref Complex datatypes
+\subsubsection TODO_lalspec_1124 Complex datatypes
 
 LAL represents complex numbers as structures with two floating-point
 fields, storing the real and imaginary parts.  These are considered
@@ -1409,7 +1409,7 @@ sequence.</dd>
 </dl>
 
 
-\section TODOref The \c LALStatus structure
+\section TODO_lalspec_1412 The \c LALStatus structure
 
 LAL routines store their current execution status in a linked list of
 structures of type \c LALStatus, with each node in the list
@@ -1487,7 +1487,7 @@ to \c NULL.</td></tr>
 
 
 
-\section TODOref The \c lalDebugLevel
+\section TODO_lalspec_1490 The \c lalDebugLevel
 
 The \c lalDebugLevel is a global variable, set at runtime, that
 determines how much and what kind of debugging information will be
@@ -1573,9 +1573,9 @@ Switching on only the most significant bit with
 \c LALMEMDBG activates this code without turning on any other
 error reporting.
 
-\section TODOref LAL Constants
+\section TODO_lalspec_1576 LAL Constants
 
-\subsection TODOref Mathematical Constants
+\subsection TODO_lalspec_1578 Mathematical Constants
 
 The following constants define the precision and range of
 floating-point arithmetic in LAL.  They are taken from the IEEE
@@ -1645,7 +1645,7 @@ Name</td><td>Value</td><td>Expression</td></tr>
 </td></tr></table>
 
 
-\subsection TODOref Physical Constants
+\subsection TODO_lalspec_1648 Physical Constants
 
 The following physical constants are defined to have exact values.
 The values of \f$c\f$ and \f$g\f$ are taken from [\ref Barnet_1996],
@@ -1723,7 +1723,7 @@ Name</td><td>Value</td><td>Description</td></tr>
 
 
 
-\subsection TODOref Astrophysical Parameters
+\subsection TODO_lalspec_1726 Astrophysical Parameters
 
 The following parameters are derived from measured properties of the
 Earth and Sun.  The values are taken from [\ref Barnet_1996], except
