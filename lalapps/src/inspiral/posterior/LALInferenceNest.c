@@ -840,13 +840,10 @@ Arguments for each section follow:\n\n";
 	/* Call setupLivePointsArray() to populate live points structures */
 	LALInferenceSetupLivePointsArray(state);
 
-	/* write injection */
-        LALInferencePrintInjectionSample(state);
-
 	/* Call nested sampling algorithm */
 	state->algorithm(state);
 
-	/* write injection again with noise evidence information from algorithm */
+	/* write injection with noise evidence information from algorithm */
         LALInferencePrintInjectionSample(state);
 
 	/* end */

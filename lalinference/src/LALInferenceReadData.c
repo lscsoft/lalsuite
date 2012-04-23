@@ -1948,9 +1948,10 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
 void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
 {
     ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
-    LALInferenceVariables *backup=runState->currentParams;
+    LALInferenceVariables backup;
     LALInferenceVariables injparams;
     memset(&injparams,0,sizeof(LALInferenceVariables));
+    memset(&backup,0,sizeof(LALInferenceVariables));
     char *fname=NULL;
     char defaultname[]="injection_params.dat";
     FILE *outfile=NULL;
@@ -1979,7 +1980,8 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
       theEventTable->next = NULL;
     }
 
-    runState->currentParams = &injparams;    
+    /* Save old variables */
+    LALInferenceCopyVariables(runState->currentParams,&backup);
 
     REAL8 q = theEventTable->mass2 / theEventTable->mass1;
     if (q > 1.0) q = 1.0/q;
@@ -2027,33 +2029,21 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     REAL8 dec = theEventTable->latitude;
     REAL8 ra = theEventTable->longitude;
 
-    LALInferenceSetVariable(runState->currentParams, "chirpmass", &chirpmass);
-    LALInferenceSetVariable(runState->currentParams, "asym_massratio", &q);
-    LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
-    LALInferenceSetVariable(runState->currentParams, "distance", &dist);
-    LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
-    LALInferenceSetVariable(runState->currentParams, "polarisation", &(psi));
-    LALInferenceSetVariable(runState->currentParams, "phase", &phase);
-    LALInferenceSetVariable(runState->currentParams, "declination", &dec);
-    LALInferenceSetVariable(runState->currentParams, "rightascension", &ra);
-    if (LALInferenceCheckVariable(runState->currentParams, "a_spin1")) {
-      LALInferenceSetVariable(runState->currentParams, "a_spin1", &a_spin1);
-    }
-    if(LALInferenceCheckVariable(runState->currentParams, "a_spin2")) {
-      LALInferenceSetVariable(runState->currentParams, "a_spin2", &a_spin2);
-    }
-    if (LALInferenceCheckVariable(runState->currentParams, "theta_spin1")) {
-      LALInferenceSetVariable(runState->currentParams, "theta_spin1", &theta_spin1);
-    }
-    if (LALInferenceCheckVariable(runState->currentParams, "theta_spin2")) {
-      LALInferenceSetVariable(runState->currentParams, "theta_spin2", &theta_spin2);
-    }
-    if (LALInferenceCheckVariable(runState->currentParams, "phi_spin1")) {
-      LALInferenceSetVariable(runState->currentParams, "phi_spin1", &phi_spin1);
-    }
-    if (LALInferenceCheckVariable(runState->currentParams, "phi_spin2")) {
-      LALInferenceSetVariable(runState->currentParams, "phi_spin2", &phi_spin2);
-    }
+    LALInferenceAddVariable(runState->currentParams, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
     REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->template);
     LALInferenceAddVariable(runState->currentParams,"logL",(void *)&injL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -2081,7 +2071,7 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     fclose(outfile);
     
     /* Set things back the way they were */    
-    runState->currentParams=backup;
+    LALInferenceCopyVariables(&backup,runState->currentParams);
     if(runState->currentParams) runState->likelihood(runState->currentParams,runState->data,runState->template);
     return;
 }
