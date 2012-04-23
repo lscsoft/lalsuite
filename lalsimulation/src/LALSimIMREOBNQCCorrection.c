@@ -400,6 +400,8 @@ UNUSED static int XLALSimIMREOBGetCalibratedNQCCoeffs(
     XLAL_ERROR( XLAL_EINVAL );
   }
 
+  /* All NQC coefficients are set to zero here */
+  /* including coeffs->a4 that is not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( *coeffs ) );
 
   coeffs->a1 = -4.55919 + 18.761 * eta - 24.226 * eta*eta;
@@ -508,6 +510,8 @@ UNUSED static int XLALSimIMREOBCalculateNQCCoefficients(
 
   gsl_permutation *perm1 = NULL, *perm2 = NULL;
 
+  /* All NQC coefficients are set to zero here */ 
+  /* including coeffs->a4 that is not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( EOBNonQCCoeffs ) );
 
   /* Populate the time vector */
@@ -543,7 +547,6 @@ UNUSED static int XLALSimIMREOBCalculateNQCCoefficients(
 
   if ( !qMatrix || !aCoeff || !amps || !pMatrix || !bCoeff || !omegaVec )
   {
-    /* TODO : Free memory */
     gsl_matrix_free( qMatrix );
     gsl_vector_free( amps );
     gsl_vector_free( aCoeff );
@@ -892,7 +895,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
                  EOBNonQCCoeffs * restrict coeffs )
 {
 
-  /* For gsl perutation stuff */
+  /* For gsl permutation stuff */
 
   int signum;
 
@@ -1051,8 +1054,6 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
 
   /* The time we want to take as the peak time depends on l and m */
   /* Calculate the adjustment we need to make here */
-  /* TODO : Replace with spinning values once available */
-  //nrDeltaT = XLALGetNRPeakDeltaT( l, m, eta );
   nrDeltaT   = XLALSimIMREOBGetNRSpinPeakDeltaT( l, m, eta, a );
   if ( XLAL_IS_REAL8_FAIL_NAN( nrDeltaT ) )
   {
@@ -1112,9 +1113,6 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   qNSLMDot  = gsl_spline_eval_deriv( spline, nrTimePeak, acc );
   qNSLMDDot = gsl_spline_eval_deriv2( spline, nrTimePeak, acc );
 
-  /* TODO : Replace with spinning values once available */
-  //nra = GetNRPeakAmplitude( l, m, eta );
-  //nraDDot = GetNRPeakADDot( l, m, eta );
   nra = GetNRSpinPeakAmplitude( l, m, eta, a );
   nraDDot = - GetNRSpinPeakADDot( l, m, eta, a );
 
