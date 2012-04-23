@@ -19,7 +19,7 @@ sys.path.append('@PYTHONLIBDIR@')
 
 #Presets
 ifos=['H1','L1','V1']
-fakeTypes=["LALVirgo","LALLIGO"]
+fakeTypes=["LALVirgo","LALLIGO","LALAdLIGO"]
 timeslides=None
 
 def open_pipedown_database(database_filename,tmp_space):
@@ -133,7 +133,8 @@ parser.add_option("--timeslides",action="store_true",default=False,help="Analyse
 (opts,args)=parser.parse_args()
 
 cp=ConfigParser.ConfigParser()
-cp.read(opts.ini_file)
+cp.optionxform = str
+cp.readfp(open(opts.ini_file))
 #Get ifos from string list
 ifos=eval(cp.get('analysis','ifos'))
 
@@ -187,6 +188,7 @@ checkDir(opts.jobs_log_path)
 # Read the ini file using ConfigParser
 
 cp = ConfigParser.ConfigParser()
+cp.optionxform = str
 cp.readfp(open(opts.ini_file))
 dt=float(cp.get('inspnest','dt'))
 
