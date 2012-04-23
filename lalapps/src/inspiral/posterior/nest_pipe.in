@@ -19,7 +19,7 @@ sys.path.append('@PYTHONLIBDIR@')
 
 #Presets
 ifos=['H1','L1','V1']
-fakeTypes=["LALVirgo","LALLIGO"]
+fakeTypes=["LALVirgo","LALLIGO","LALAdLIGO"]
 timeslides=None
 
 def open_pipedown_database(database_filename,tmp_space):
@@ -41,11 +41,16 @@ def open_pipedown_database(database_filename,tmp_space):
     dbtables.DBTable_set_connection(connection)
     return (connection,working_filename) 
 
-def get_timeslides_pipedown(database_connection):
+def get_timeslides_pipedown(database_connection, dumpfile=None):
 	"""
 	returns a dict of dicts { trigtime: {'H1':0,'L1':5,'V1':10}) , ... }
-	of times and timeslide offsets
+	of times and timeslide offsets.
+	Optionally dumps times, SNR, chi-squared statistics to a file
 	"""
+	if dumpfile is not None:
+		outfile=open(dumpfile,'w')
+	else:
+		outfile=None
 	db_segments=[]
 	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
 	db_out = database_connection.cursor().execute(sql_seg_query)
@@ -54,7 +59,7 @@ def get_timeslides_pipedown(database_connection):
 			db_segments.append(d)
 	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
 	db_out_saved=[]
-	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset,coinc_event.coinc_event_id\
+	sql_query="SELECT time_slide.time_slide_id,sngl_inspiral.end_time + sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,time_slide.offset,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq\
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		== sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id == coinc_event_map.coinc_event_id) join time_slide on \
 		(time_slide.instrument == sngl_inspiral.ifo and time_slide.time_slide_id == coinc_event.time_slide_id)"
@@ -67,6 +72,10 @@ def get_timeslides_pipedown(database_connection):
 	for co in co_ids:
 		events=[tup for tup in db_out_saved if tup[4]==co]
 		d={}
+		if outfile is not None:
+			for ev in events:
+				print >>outfile,'%s %f %f %f %f'%(ev[2],ev[1],ev[3],ev[5],ev[6])
+			print >>outfile,'\n'
 		# print ' Processing %i events for coinc ID %s'%(len(events),str(co))
 		for e in events:
 			segfilt=filter(lambda seg:e[1] in seg, seglist)
@@ -88,6 +97,8 @@ def get_timeslides_pipedown(database_connection):
 		else:
 			output[t]=d
 	print 'Found a total of %i useable timeslides'%(len(output))
+	if outfile is not None:
+		outfile.close()
 	return output
 
 # Read command line options
@@ -133,7 +144,8 @@ parser.add_option("--timeslides",action="store_true",default=False,help="Analyse
 (opts,args)=parser.parse_args()
 
 cp=ConfigParser.ConfigParser()
-cp.read(opts.ini_file)
+cp.optionxform = str
+cp.readfp(open(opts.ini_file))
 #Get ifos from string list
 ifos=eval(cp.get('analysis','ifos'))
 
@@ -187,6 +199,7 @@ checkDir(opts.jobs_log_path)
 # Read the ini file using ConfigParser
 
 cp = ConfigParser.ConfigParser()
+cp.optionxform = str
 cp.readfp(open(opts.ini_file))
 dt=float(cp.get('inspnest','dt'))
 
@@ -214,7 +227,11 @@ for ifo,type,channel in zip(ifos,types_list,channels_list):
 for ifo,channel in channels.items():
 	cp.set('data',ifo.lower()+'-channel',channel)
 
-    
+if cp.has_option('analysis','time-slide-dump'):
+	timeslidefiledump= cp.get('analysis','time-slide-dump')
+else:
+	timeslidefiledump=None
+
 time_event=None
 if opts.inj and cp.has_option('analysis','events'):
     time_event={}
@@ -310,7 +327,7 @@ if opts.coinc_triggers:
 if opts.pipedown_db:
 	print 'establishing connection to pipedown database'
 	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
-	timeslides=get_timeslides_pipedown(db_connection)
+	timeslides=get_timeslides_pipedown(db_connection,dumpfile=timeslidefiledump)
 	times=timeslides.keys()
 	starttime=min(times)
 	endtime=max(times)

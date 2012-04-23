@@ -1,11 +1,9 @@
 // -*- mode: html -*-
 
 /**
-	\mainpage notitle
-
-	\image 	html	title.png
-	\image	html 	merger.png
-
-        Contact: Adam Mercer (Librarian)
-
+\mainpage notitle
+\image html merger.png
+\htmlonly
+<a href="https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html">LALSuite project page</a>
+\endhtmlonly
 */

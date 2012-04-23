@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2007 Duncan Brown, Jolien Creighton, Kipp Cannon, Reinhard
- * Prix
+ * Copyright (C) 2007-2012 Duncan Brown, Jolien Creighton, Kipp Cannon,
+ * Reinhard Prix, Bernd Machenschalk
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,6 +17,8 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307  USA
  */
+
+#ifndef _WIN32
 
 #define _GNU_SOURCE
 
@@ -242,3 +244,21 @@ int XLALPopulateProcessTable(
 
 	return 0;
 }
+
+#else /* _WIN32 */
+
+#include <stdio.h>
+
+int XLALPopulateProcessTable(
+	ProcessTable *ptable,
+	const char *program_name,
+	const char *cvs_revision,
+	const char *cvs_source,
+	const char *cvs_date,
+	long process_id
+) {
+  fprintf(stderr, "XLALPopulateProcessTable() not implemented for WIN32\n");
+  return 1;
+}
+
+#endif /* __WIN32 */

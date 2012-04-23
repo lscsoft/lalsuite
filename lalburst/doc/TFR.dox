@@ -132,7 +132,7 @@ Notes:
 integers (so that the window time center is on the time grid).</li>
 </ol>
 
-\subsubsection TODOref TFR computation
+\heading{TFR computation}
 Next, the user needs to specify in \c timeInstant the time
 instants at which the TFR will be computed and the window(s)
 (\c windowT and \c windowF) if required.

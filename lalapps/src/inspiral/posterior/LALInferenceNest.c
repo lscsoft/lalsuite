@@ -82,7 +82,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 {
 	char help[]="\
 Initialisation arguments:\n\
-(--seed seed           Random seed for Nested Sampling)\n\n";
+(--randomseed seed           Random seed for Nested Sampling)\n\n";
 	LALInferenceRunState *irs=NULL;
 	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
@@ -842,6 +842,9 @@ Arguments for each section follow:\n\n";
 
 	/* Call nested sampling algorithm */
 	state->algorithm(state);
+
+	/* write injection with noise evidence information from algorithm */
+        LALInferencePrintInjectionSample(state);
 
 	/* end */
 	return(0);

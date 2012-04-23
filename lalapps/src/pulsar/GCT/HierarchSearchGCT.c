@@ -1335,6 +1335,9 @@ int MAIN( int argc, char *argv[]) {
           }
 
           /* reference time for finegrid is midtime */
+          /* WARNING: if you ever change the assignement below, make sure you change the
+             tMidGPS argument in the XLALExtrapolateToplistPulsarSpins() call below accordingly
+             (search for "finegrid.refTime = tMidGPS" mentioned below in comment) */
           finegrid.refTime = tMidGPS;
 
           /* number of detectors, needed for sumTwoFX array */
@@ -1755,9 +1758,14 @@ int MAIN( int argc, char *argv[]) {
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
   /*---------------------------------------------------------------------------------*/
 
-  /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
+  /* now that we have the final toplist, translate all pulsar parameters to correct reftime
+     WARNING: The second argument should in principle be finegrid.refTime .
+     However, we pass tMidGPS, since earlier on we set finegrid.refTime = tMidGPS ,
+     and tMidGPS is properly reinitialised when continuing from a checkpoint, whereas finegrid.refTime is not.
+     However, when at any time finegrid.refTime = tMidGPS gets changed, this call will lead to wrongly extrapolated pulsar spins
+     and wrong final results, also possibly failures in XLALComputeExtraStatsForToplist.*/
   xlalErrno = 0;
-  XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
+  XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, tMidGPS );
   if ( xlalErrno != 0 ) {
     XLALPrintError ("%s line %d : XLALExtrapolateToplistPulsarSpins() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
     return(HIERARCHICALSEARCH_EXLAL);
@@ -1774,7 +1782,7 @@ int MAIN( int argc, char *argv[]) {
   /* Also compute F, FX (for line veto statistics) for all candidates in final toplist */
   if ( uvar_recalcToplistStats ) {
 
-    LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist... ");
+    LogPrintf( LOG_NORMAL, "Recalculating statistics for the final toplist...\n");
 
     /* timing */
     if ( uvar_outputTiming )
@@ -1787,7 +1795,7 @@ int MAIN( int argc, char *argv[]) {
     xlalErrno = 0;
     XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, uvar_SignalOnly, uvar_outputSingleSegStats );
     if ( xlalErrno != 0 ) {
-      XLALPrintError ("%s line %d : XLALComputeLineVetoForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
+      XLALPrintError ("%s line %d : XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
       return(HIERARCHICALSEARCH_EXLAL);
     }
 
@@ -1797,7 +1805,7 @@ int MAIN( int argc, char *argv[]) {
       vetoTime = timeStamp2 - timeStamp1;
     }
 
-    LogPrintfVerbatim( LOG_NORMAL, "done.\n");
+    LogPrintf( LOG_NORMAL, "Finished recalculating toplist statistics.\n");
 
   }
 

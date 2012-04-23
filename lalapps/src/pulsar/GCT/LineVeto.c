@@ -43,9 +43,6 @@
    These are defined to do nothing special in the standalone case
    and will be set in boinc_extras.h if EAH_BOINC is set
 */
-#ifdef EAH_BOINC
-#include "hs_boinc_extras.h"
-#else
 #ifdef HS_OPTIMIZATION
 extern void
 LocalComputeFStat ( LALStatus *status,
@@ -60,7 +57,6 @@ LocalComputeFStat ( LALStatus *status,
 #else
 #define COMPUTEFSTAT ComputeFStat
 #endif
-#endif /* EAH_BOINC */
 
 /*----- Macros ----- */
 #define INIT_MEM(x) memset(&(x), 0, sizeof((x)))

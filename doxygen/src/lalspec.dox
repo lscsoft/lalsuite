@@ -1,0 +1,1827 @@
+/**
+\page lalspec LAL Specification and Style Guide
+\authors Bruce Allen, Kent Blackburn, Duncan Brown, Jolien Creighton, Teviet Creighton, Sam Finn, Albert Lazzarini, Adam Mercer, and Alan Wiseman
+
+\section s_intro Introduction
+
+\subsection TODO_lalspec_7 The LSC Algorithm Library
+
+The LSC Algorithm Library, hereafter LAL, is a library of routines for use in
+gravitational wave data analysis.
+
+\subsection TODO_lalspec_12 The goal of the LAL software specification
+
+From the first edition of this guide: The defining purpose of this
+document is to establish a software specification that fosters widespread-use
+and collaborative-development of a well-tested analysis library.  The goal is
+to develop a \e portable and \e convenient library, both for users and
+developers.
+
+To achieve portability, the library is a library of routines written in a
+subset of C99, which is well supported on nearly every modern computing
+environment, and the routines can easily be used by programs written in
+other languages (C++, Fortran, Python, etc.).
+
+The first edition of this specification contained several highly restrictive
+rules that were conceived to give LAL routines a standard "look and feel"
+to promote their ease of use and also to promote good programming practice.
+Unfortunately, some of these rules turned out to be counterproductive, making
+some routines have an awkward interface and encouraging large, monolithic
+functions, i.e., promoting poor programming practices.
+
+This second edition makes several significant changes to the original
+specification in an attempt to alleviate the most egregious over-restrictive
+rules.  However, since there is already a large existing code-base, it is
+not possible to completely re-write the specification.  The new specification
+must be consistent with the old conventions.  Therefore this new specification
+still retains many of the elements of the old specification.
+
+And sometimes for good reason!  Many of the rules in the original
+specification, while perhaps being somewhat restrictive and burdensome on the
+developer, were nevertheless very important for the concept of a portable data
+analysis algorithm library (and did represent good programming practices).
+
+The more rigid rules in this document are set aside in boxes with red type.
+Here is the first rigid rule:
+<p><b>
+The rules in this specification may need to be periodically reexamined.
+Therefore, this is a living document.  The librarian will amend this
+document as needed.  Significant changes to the document will be made in
+consultation with the LSC Software Change Control Board.
+</b></p>
+
+
+\subsection TODO_lalspec_54 The elements of the library specification
+
+The library specification has the following elements:
+<ol>
+<li> A coding style, which is needed in order to establish a library namespace
+(so that routines in the LAL library can be used in conjunction with other
+libraries), and to maintain a (somewhat) uniform look-and-feel.</li>
+<li> Function requirements, which are needed in order to maintain portability
+and to establish a (relatively) standard API.</li>
+<li> Standard data structures, macros, and functions, which assist in
+providing a common set of tools for developers to promote uniformity (where
+desired) and collaborative development.</li>
+</ol>
+
+
+\subsection TODO_lalspec_69 The LAL and XLAL interfaces
+
+Because the original LAL specification was relatively "heavy-weight,"
+(in that there was significant overhead required for new functions), LAL
+functions tended to be large and monolithic, and often a particular "routine"
+was re-written many times in-line in many different functions.  It is not
+possible to simultaneously maintain the semblance of the original LAL
+requirements on functions and completely remedy this deficiency.  Instead,
+this specification introduces a second, parallel interface, called the XLAL
+interface, specifically for writing small, light-weight, helper routines.  The
+intent is for the LAL interface to be the primary interface for users of the
+LAL library, but for the XLAL interface to be a convenient interface for use
+within the LAL library.  (Think of the "X" being an underscore.)
+
+There are some rules that apply to both the LAL and the XLAL interfaces, and
+these will be described first.  Then the rules that are specific to the two
+interfaces will be described in separate sections.
+<p><b>
+All functions in the LAL library that have external linkage shall be either
+LAL functions or XLAL functions.  The LAL functions shall conform to the
+general rules for functions and to the rules specific to LAL functions.
+The XLAL functions shall conform to the general rules for functions and to
+the rules specific to XLAL functions.
+</b></p>
+
+
+\section TODO_lalspec_95 Coding style guidelines
+
+\subsection TODO_lalspec_97 Atomic data types
+
+For historical reasons more than anything I can think of, LAL routines should
+use the LAL-specific atomic data types (\c REAL4 rather than
+\c float, \c REAL8 rather than \c double, \c CHAR rather than
+\c char, \c UCHAR rather than unsigned char) and should use
+\c INT2, \c UINT2, \c INT4, \c UINT4, \c INT8, and
+\c UINT8, which have a platform-independent size, rather than
+short int, unsigned short int, \c int, unsigned int,
+long int, and unsigned long int (and especially not
+long long or long double) which do not.  LAL makes certain
+requirements on these types.  For example, \c REAL4 and \c REAL8 must
+be single and double precision IEEE-754 floating-point variables.  Invariably
+they are equivalent to \c float or \c double on a given system (or
+else LAL won't work at all on that system).  Similarly, a \c INT4 is a
+four-byte integer (and it is assumed that each byte is eight bits on any
+system that LAL is installed), so it will be valid over the expected range.
+
+Sometimes when the size of an integer variable is not crucial (e.g., for
+return codes from \c XLAL functions), \c int is used.  It is also
+necessary to allow the \c int type in LAL for functions such as
+\c frexp.  Standard C functions that have arguments that are pointers
+to type \c double, e.g., \c modf, can receive a pointer to type
+\c REAL8 instead.  That is, the type \c REAL8 can be assumed to be
+equivalent to the type \c double.
+
+
+\subsection TODO_lalspec_124 Names of functions, variables, etc.
+
+These rules are to define a standard namespace scheme.  They apply to all
+functions with external linkage (i.e., those functions not preceded by the
+\c static keyword), as well as types, macros, etc., in header files.
+
+<ol>
+<li> All function names use StudlyCaps and begin with either \c LAL
+or \c XLAL, e.g., \c LALExampleFunction, \c LALDoICare, etc.
+Underscores are not used.</li>
+<li> All types also use StudlyCaps and begin with a capital letter,
+e.g., \c LALMyType.  Custom data structures must be given names that try
+to avoid namespace conflicts; we suggest simply prefixing the name with
+\c LAL or \c XLAL or with the name of one of the LAL atomic data
+types, e.g., \c REAL4.</li>
+<li> Global variables of which there are NONE (except those
+specifically allowed by the Librarian), and fields within a structure or
+a union, are in studlyCaps beginning with a lower case letter.  Global
+variables will begin with either \c lal or \c xlal, e.g.,
+\c lalDebugLevel.</li>
+<li> Macros are generally all in UPPERCASE and compound macro names may
+use underscores.  As with the types, to avoid namespace collisions, it is
+recommended that the macro begin with \c LAL_ or  \c XLAL_.</li>
+<li> Local variables can have any name that does not shadow a standard
+global symbol name (whether in LAL or in a standard C library or other likely
+names).  Thus, do not call a variable \c exit or \c LALMalloc or
+even \c pow.  And don't declare the variable \c i at the top level
+of a function and then shadow it in a block within that function.  This is
+just good programming practice.</li>
+</ol>
+
+New data types will be declared as shown in this example for the data type
+\c LALMyType:
+\code
+typedef struct
+tagLALMyType
+{
+  INT4  firstField;
+  REAL4 secondField;
+}
+LALMyType;
+\endcode
+Note that the structure name is \c tagLALMyType.
+
+
+\subsection TODO_lalspec_169 Header and source file conventions
+
+The LAL API is defined by the \e installed header files (there may be
+additional header files that are used when compiling LAL that are not
+installed, but these then do not form part of the API as they are not made
+available to the user).  All functions and variables with external linkage
+as well as any datatypes, enumeration constants, macros, etc., that form
+part of the API must be defined in these installed header files.
+These installed header files will be installed in the location where header
+files normally reside on a system in a subdirectory called \c lal.  All
+header files should include other LAL header files as follows: suppose
+that \c LALThisHeader.h needs to include \c LALAnotherHeader.h, then it
+should do so as follows:
+\code
+#include <lal/LALAnotherHeader.h>
+\endcode
+
+All header files should be idempotent.  This means they need to have include
+guards.  To do so, the first two lines of \c LALThisHeader.h should be
+something like:
+\code
+#ifndef LALTHISHEADER_H
+#define LALTHISHEADER_H
+\endcode
+and the last line of the file should be
+\code
+#endif /\* LALTHISHEADER_H *\/
+\endcode
+
+To be compatible with C++, all declarations should be wrapped as follows:
+\code
+#ifdef __cplusplus
+extern "C" {
+#endif
+\endcode
+declarations
+\code
+#ifdef __cplusplus
+}
+#endif
+\endcode
+
+It is important that all source files (header files, whether installed or not,
+and the C source files) contain the RCS ID information, which is then put into
+the LAL library so that it can be examined later.  The convention for this
+is to have all \c .h have lines similar to these (for
+\c LALThisHeader.h):
+\code
+#include <lal/LALRCSID.h> /\* if no other LAL header has been included *\/
+NRCSID( LALTHISHEADERH, "\f$Id\f$" );
+\endcode
+near the top.  Since all LAL header files will ultimately include
+\c lal/LALRCSID.h, it only explicitly needs to be included if no other
+LAL header has yet been included.  Note that the string "\f$Id\f$" will
+be expanded by CVS into some string describing the current version of the file.
+Similarly, a \c .c file such as \c LALThisSourceFile.c would have
+the following
+\code
+#include <lal/LALRCSID.h> /\* if no other LAL header has been included *\/
+NRCSID( LALTHISSOURCEFILEC, "\f$Id\f$" );
+\endcode
+
+
+\subsection TODO_lalspec_232 Language requirements
+LAL code should all be in "clean C," i.e., that language that is a
+subset of both C and C++.  This is not quite the same as just the C
+programming language.  Only C-style comments should be used and avoid
+any constructs that would behave differently with C++-style comments.
+Names of variables, functions, etc., should not be any of the reserved
+keywords or names for the library.  Some of the keywords and reserved
+names are listed here.  The LAL namespace will assist in making sure
+that no conflicts arise.  But even local variables names must be chosen
+carefully (e.g., so that they aren't the same as a C++ keyword).
+A list of keywords and reserved names, along with those standard C library
+functions that can be used, is found in appendix \ref a_language.
+
+
+\subsection TODO_lalspec_246 Filename conventions
+
+Purely for the sanity of the Librarian, LAL has a rigid directory structure.
+LAL is composed of directories called packages whose names consist of entirely
+lower-case letters with no underscores.  Within each package are four
+sub-directories called \c doc, \c include (which contains all the
+header files that are installed), \c src (which contains all the source
+files other than the installed header files but including those header files
+that are not installed), and \c test.  Source files within these
+directories will be named with StudlyCaps (starting with a capital letter, no
+underscores).  Refer to the LAL Software Documentation [\ref lsd].
+
+For documentation purposes, a \e package contains a set of \e headers
+(the installed headers), which contain prototypes for functions that are
+organized in \e modules of one or more functions, each module being a
+single \c .c file.  Thus, all the functions with external linkage in a
+\c .c file must be prototyped in the same header file in the same package.
+
+
+\section TODO_lalspec_265 Common rules for both the LAL and the XLAL functions
+
+
+\subsection TODO_lalspec_268 Function arguments
+
+Function arguments must be one of the following (atomic) types:
+\c CHAR, \c UCHAR, \c INT2, \c UINT2, \c INT4,
+\c UINT4, \c INT8, \c UINT8, \c int, \c REAL4,
+\c REAL8.  In addition, functions may take a pointer as an argument.
+Structures or unions (including \c COMPLEX8 and \c COMPLEX16) must not
+be passed directly to a function as an argument; pass a pointer instead.
+Arguments may be qualified with \c const if desired.
+<p><b>
+All arguments to functions must be of one of the following types:
+\c CHAR, \c UCHAR, \c INT2, \c UINT2, \c INT4,
+\c UINT4, \c INT8, \c UINT8, \c int, \c REAL4,
+\c REAL8, or a pointer to any object.  XLAL functions may also
+have no arguments (\c void), or a variable number of arguments
+of the above types (...).
+</b></p>
+
+
+\subsection TODO_lalspec_287 Functions should not have any dependence on system environment
+
+The first part of this rule is that functions should not do any file I/O
+since there should be no assumptions about the nature of the filesystem.
+LAL is not supposed to assume POSIX.  Furthermore, there should be no
+assumptions about (or dependence on) the environment under which a LAL
+function is called.  This will allow LAL routines to be integrated into
+a wide variety of programming environments: they may be used in
+stand-alone programs or in loadable modules integrated into other run
+environments.  Specifically this means that routines in \c stdio.h
+are not allowed (except for \c snprintf), several routines in
+\c stdlib.h including \c rand and \c srand (there are LAL
+replacements for these), \c system, and \c getenv.
+
+<p><b>
+Functions will not perform any file I/O or have any dependence on the
+system environment.  Specifically the latter means that functions such
+as \c system, \c getenv, \c rand, \c srand will not be
+used.
+</b></p>
+
+
+\subsection TODO_lalspec_309 Memory management
+
+Memory should always be allocated or freed with one of the LAL custom
+memory managers: \c LALMalloc, \c LALCalloc, \c LALRealloc,
+and \c LALFree, and \e not with \c malloc, \c calloc,
+\c realloc, and \c free.  The LAL memory managers have additional
+memory leak checking ability that will assist in debugging if the debug
+level is set appropriately.
+
+<p><b>
+All memory allocation shall be done with the functions \c LALMalloc,
+\c LALCalloc, or \c LALRealloc, and shall be freed with the functions
+\c LALFree or \c LALRealloc; the functions \c malloc,
+\c calloc, \c realloc, and \c free shall not be used.
+</b></p>
+
+Also, routines should free all memory allocated in that routine \e except
+for the memory that is explicitly created by that routine, <em>even if the
+routine exits with a failure code</em>.  This will prevent memory leaks.  LAL
+provides a routine \c LALCheckMemoryLeaks (which should not be called from
+any LAL function---instead it is for users of LAL to put at the end of
+\c main) which will make sure that all memory allocated by \c LALMalloc
+(etc.) has been freed with \c LALFree.
+
+In fact, it is a good idea not to allocate any temporary memory within a
+routine.  All temporary memory needed for a routine should be allocated by LAL
+functions that are designed for that purpose.  Hence there are usually
+three classes of LAL functions:
+<ul>
+<li> \c LALCreateFoo or \c LALInitFoo functions which create and
+initialize storage \c foo that the use will pass to...</li>
+<li> \c LALBar functions which uses the storage \c foo, and then
+the user calls...</li>
+<li> \c LALDestroyFoo or \c LALFinalizeFoo functions which destroys
+the storage in \c foo.</li>
+</ul>
+
+
+\subsection TODO_lalspec_347 Functions must be reentrant and thread-safe
+
+This rule essentially requires a functions behavior to depend only on its
+arguments.  There should be no state saved in static storage within the
+function.  That is, never use the \c static keyword within a function.
+In addition, all variables used by a function must be local to the function.
+That is, no global variables are allowed.  (There are a few exceptions to this,
+e.g., the \e reading of the global \c lalDebugLevel variable, but these
+types of exceptions are under the control of the LAL librarian.)
+
+Furthermore, use of routines that would cause a function to fail to be
+reentrant and thread-safe are not allowed.  For example, many of the
+\c time.h routines (\c asctime, \c ctime, \c gmtime,
+\c localtime), some of the \c string.h routines (\c strerror and
+\c strtok), and other routines that are prohibited elsewhere for
+additional reasons.
+<p><b>
+All functions will be reentrant and thread-safe.  All local variables
+must be automatic.  No global variables will be used.  Routines such as
+\c asctime, \c ctime, \c gmtime, \c localtime,
+\c strerror, and \c strtok shall not be used as they are not
+reentrant and threadsafe.
+</b></p>
+
+
+\subsection TODO_lalspec_372 Functions should always return control to the calling program
+
+That is, routines should never explicitly raise signals, abort, or call the
+\c exit function, nor should they call functions that might do so.  Also,
+since LAL is a library, don't change the behavior of \c exit or signals.
+Thus the routines \c exit, \c atexit, and routines in \c signal.h
+and \c assert.h should not be used.  (But note the exception that XLAL
+functions do call an error handler, which can be set outside of the library to
+abort or exit.)  Also, long-jumps are not allowed, so any routine in
+\c setjmp.h is not allowed.
+<p><b>
+All functions will return control to the calling function.  Functions such
+as \c exit, \c atexit, \c raise, \c assert, \c abort
+shall not be used.  Long-jumps shall not be used.
+</b></p>
+
+
+
+
+\section TODO_lalspec_391 Rules for LAL functions
+
+All LAL functions must return \c void and have as their first argument
+a pointer to a \c LALStatus structure type.  Any number of arguments may
+follow the status structure, though it is good style to be economical and to
+group miscellaneous data into structures where useful.  The general convention
+is to have the first argument following the status structure to be the primary
+output from the function (i.e., a pointer to the result that is not used as
+input to the function).  This general convention is for the convenience of the
+user who will come to appreciate that arguments are typically ordered in LAL as
+\code
+void LALREAL4Divide( LALStatus *status, REAL4 *result, REAL4 numerator,
+    REAL4 denominator )
+\endcode
+rather than the following
+\code
+void LALREAL4Divide( LALStatus *status, REAL4 numerator, REAL4 denominator,
+    REAL4 *result )
+REAL4)
+\endcode
+<p><b>
+All LAL functions shall have names that begin with \c LAL followed by
+an uppercase letter.
+</b></p>
+<p><b>
+All LAL functions shall have no return value (type \c void return).
+</b></p>
+<p><b>
+All LAL functions shall have a pointer to a \c LALStatus structure
+as their first argument.  The contents of the \c LALStatus structure
+will be populated appropriately to indicate success or failure of the
+function call.  The \c LALStatus structure is a linked list.  If
+a LAL function (the <em>sub-function</em>) that is called from within a LAL
+function fails (the <em>top-function</em>), the status structure returned
+by the sub-function shall be the next element in the linked list of status
+structures returned by the top-function.
+</b></p>
+
+The status structure is maintained from the calling program and keeps a trace
+of all levels of LAL functions being called (it is a linked list of status
+structures).  If a failure occurs, the status structure can be used to identify
+where and which sequence of functions have been called.  The status structure
+is central to the "LAL interface."  The status structure is not typically
+manipulated by hand - LAL provides several status handling macros for
+manipulating the status structure and reporting errors.  The use of these
+macros imposes additional conventions on writing LAL functions.  See the LAL
+Software Documentation [\ref lsd] for a complete description of these
+conventions.  As a brief synopsis, this is what a the source code for a simple
+LAL function such as \c LALREAL4Divide (in file \ref LALDivide.c) might
+be:
+\code
+#include <lal/LALDivide.h>
+NRCSID( LALDIVIDEC, "\f$Id\f$" );
+
+void
+LALREAL4Divide(
+    LALStatus *status,
+    REAL4     *result,
+    REAL4      numerator,
+    REAL4      denominator
+    )
+{
+   INITSTATUS( status, "LALREAL4Divide", LALDIVIDEC );
+   ASSERT( result != NULL, status, LALDIVIDEH_ENULL, LALDIVIDEH_MSGENULL );
+   if ( denominator == 0.0 )
+     ABORT( status, LALDIVIDEH_EDIV0, LALDIVIDEH_MSGEDIV0 );
+   *result = numerator / denominator;
+   RETURN( status );
+}
+\endcode
+Here the error codes \c LALDIVIDEH_ENULL and \c LALDIVIDEH_EDIV0
+and the corresponding error messages \c LALDIVIDEH_MSGENULL and
+\c LALDIVIDEH_MSGEDIV0 would be defined in \ref LALDivide.h.  The
+\c INITSTATUS structure is the first line of a LAL function.  It populates
+the status structure with useful information such as the function name and
+RCS ID (which are the macro arguments).  The \c RETURN macro prepares the
+status structure to indicate a nominal completion of the function; it should
+be used with any successful return.  Error handling in this example is
+accomplished using either the \c ASSERT or \c ABORT macros.  The
+\c ASSERT macros are usually used to check the sanity of arguments;
+the first macro argument is the result of a test that should be true otherwise
+the \c ASSERT macro will populate the status structure with an error
+code and message (specified by the third and fourth macro arguments) and
+will return from the function.  The \c ASSERT functions are useful
+during debugging and development of code, and they are removed when LAL
+is compiled in production mode, so they can be used liberally.  Thus true
+failures are captured instead with the \c ABORT macro.  Like \c ASSERT,
+\c ABORT populates the status structure with an error code and message and
+returns, but it does not get removed when LAL is compiled in production mode.
+The \c ABORT macro is the normal way of dealing with error conditions.
+
+There are several other status structure macros that are needed when
+preparing a status structure within a LAL function for calling another
+LAL function, for checking the result of that function call, and for handling
+situations when memory needs to be cleaned up before the function exits.
+The conventions for these situations are all described in the LAL Software
+Documentation.  Here we will just note that these macros should always be
+used, and that a LAL function should never declare its own \c LALStatus
+structure for use when calling other LAL functions... the status structure
+used must always be one atta(t)ched to the provided status structure (so that
+the function call trace is maintained).
+
+
+\section TODO_lalspec_494 Rules for XLAL functions
+
+The goal is to have XLAL functions be as flexible as possible in their
+interface while still requiring strict rules on error reporting.  The
+XLAL functions are intended to be "lightweight" functions that can
+be used internally within the LAL library.  They don't have some of the
+burdens of LAL functions.  In particular, they do not have a status structure.
+This immediately implies to the following:
+<ol>
+<li> XLAL functions cannot call LAL functions.  Since LAL functions
+require a status structure, and since this status structure must initiate in
+the top-level program that interfaces with the LAL library (so that a trace of
+function calls is returned), XLAL functions cannot call LAL functions, even
+by having a local status structure.  If you need to call a LAL function
+internally, the function must be a LAL function.</li>
+<li> XLAL functions can be "lightweight."  Initializing the status
+structure, atta(t)ching new structures to the list, setting the various fields
+of the status structure to indicate successes or failures, etc., can be
+somewhat burdensome for both the programmer and for the computer.  The lack
+of a status structure in XLAL functions will relieve some of this burden and
+will hopefully allow for some of the tasks that are now done in large,
+monolithic code blocks to be divided into smaller and more modular XLAL
+functions.  Compilers can then easily optimize code either by inlining the
+XLAL function or not depending on issues that the compiler understands
+(e.g., costs of a function call vs. cache misses, etc.).</li>
+<li> XLAL functions must report success or failure in other ways.
+This puts some more burden on the developers to (i) make sure that the XLAL
+function correctly reports errors and (ii) understand how particular XLAL
+functions report their errors and deal with these appropriately.  The goal
+is to design some rules for the XLAL functions that try to approach some
+degree of uniformity without overly hampering their interface.</li>
+</ol>
+For the purpose of providing a relatively uniform error reporting system, it
+is necessary to categorize XLAL functions into four likely types, which are
+based on their return types.
+<p><b>
+All XLAL functions shall have a name beginning with \c XLAL followed by
+an uppercase letter.
+</b></p>
+<p><b>
+XLAL functions shall not call LAL functions.
+</b></p>
+<p><b>
+The return type of XLAL functions shall be one of:
+\c int, \c CHAR, \c INT2, \c INT4, or \c INT8 (integer-type
+return XLAL functions); \c REAL4 or \c REAL8 (floating-point-type
+return XLAL functions); a pointer (pointer-type return XLAL functions);
+or no return type (type \c void return XLAL functions).
+</b></p>
+
+\subsection TODO_lalspec_544 Four kinds of XLAL functions
+
+XLAL functions will be one of four types based principally on their return
+type, though this is also largely determined by their functional nature.  The
+way that the XLAL functions report an error through their return value depends
+on which type it is.  In addition, all XLAL functions will report errors by
+setting an XLAL error number, \c xlalErrno, and invoking the XLAL error
+handler (described below).  For each type of function there is a macro that
+will perform all of these tasks.
+
+<ol>
+<li> XLAL functions that return an integer.
+These are XLAL functions that
+return one of \c CHAR, \c INT2, \c INT4, \c INT8, or \c int.
+
+Simple XLAL functions will return type \c int that will either be \c 0
+to indicate success or -1 to indicate failure.  However, sometimes it is
+useful to have an XLAL function that counts things (e.g., nodes in a linked
+list).  For these functions it is useful for the count to be the return value.
+Therefore the rule for XLAL functions in this category is:
+<p><b>
+All XLAL functions that return an integer type shall return a negative result
+to indicate a failure.
+In addition, the \c xlalErrno shall be set to the appropriate error number
+and the XLAL error handler shall be invoked.
+</b></p>
+This means that there cannot be an XLAL function that returns an unsigned
+integer type (including \c size_t).
+
+To report an error from this type of function, use the macro
+XLAL_ERROR( func, errnum ) where \c func is the function name
+string and \c errnum is the XLAL error number (see below).</li>
+
+<li> XLAL functions that return a floating-point number.  These are
+XLAL functions that return either \c REAL4 or \c REAL8.
+
+Such functions are quite useful for providing extended mathematical functions
+to do things such as compute the value of a distribution at a certain point,
+etc.  The value returned must still be checked to see if there was an error.
+To flag an error, these functions should return a particular value that would
+be impossible to obtain.  The value is given by the constants
+\c XLAL_REAL4_FAIL_NAN which has the same bit pattern as the 32 bit
+hexadecimal integer constant \c 0x7fc001a1, or \c XLAL_REAL8_FAIL_NAN
+which has the same bit pattern as the 64 bit hexadecimal integer constant
+\c 0x7ff80000000001a1 respectively.  These constants are known as "quiet"
+(as opposed to "signaling") NaN (not-a-number) values.  However, owing to the
+\c 1a1 at the end of the hexadecimal representation, they are not likely to
+occur as a result of any calculation (e.g., 0.0/0.0) as it is unlikely
+that any C library will use these particular NaN values.  Thus these values are
+identifiable as failures arising from XLAL functions and represent impossible
+results.
+
+To summarize:
+<p><b>
+All XLAL functions that return a \c REAL4 floating-point type shall return
+the \c REAL4 floating-point constant \c XLAL_REAL4_FAIL_NAN to indicate
+a failure.  All XLAL functions that return a \c REAL8 floating-point type
+shall return the \c REAL8 floating-point constant
+\c XLAL_REAL8_FAIL_NAN to indicate a failure.
+In addition, the \c xlalErrno shall be set to the appropriate error number
+and the XLAL error handler shall be invoked.
+</b></p>
+To report an error from these types of functions, use one of the macros
+XLAL_ERROR_REAL4( func, errnum ) or
+XLAL_ERROR_REAL8( func, errnum ) where \c func is the function name
+string and \c errnum is the XLAL error number (see below).  The result from
+a function call must be checked to see if one of these constants has been
+returned.  This can be done with the macros XLAL_IS_REAL4_FAIL_NAN(val)
+and XLAL_IS_REAL8_FAIL_NAN(val).</li>
+
+<li> XLAL functions that return a pointer.  These are often XLAL
+functions that are used to create structures, but can also be functions that
+return a pointer to the output structure.  An example of the latter, imagine
+the function:
+\code
+COMPLEX8 *XLALCOMPLEX8Add( COMPLEX8 *result, COMPLEX8 *val1, COMPLEX8 *val2 )
+{
+  if ( ! result || ! val1 || ! val2 ) /\* NULL argument *\/
+    XLAL_ERROR_NULL( "XLALCOMPLEX8Add", XLAL_EFAULT );
+  result->re = val1->re + val2->re;
+  result->im = val1->im + val2->im;
+  return result;
+}
+\endcode
+The XLAL_ERROR_NULL( func, errnum ) macro prints out the function name
+\c func, sets the XLAL errno to \c errnum (in this case the
+error number is \c XLAL_EFAULT) and invokes the XLAL error handler
+(see below).  It then returns \c NULL.  All functions of this type will
+indicate an error by returning \c NULL:
+<p><b>
+All XLAL functions that return a pointer type shall return the result
+\c NULL to indicate a failure.
+In addition, the \c xlalErrno shall be set to the appropriate error number
+and the XLAL error handler shall be invoked.
+</b></p>
+To report an error from this type of function, use the macro
+XLAL_ERROR_NULL( func, errnum ) where \c func is the function name
+string and \c errnum is the XLAL error number (see below).</li>
+
+<li> XLAL functions that do not have a return value (return
+\c void.  These are functions that <em>really shouldn't</em> fail.  In
+practice, they are almost always free-type functions that destroy memory
+created by the create-type functions of the previous function type.  There is
+no way to return a success/failure flag via the return value so all
+success/failure information must be returned through the XLAL error number
+\c xlalErrno.
+<p><b>
+All XLAL functions that do not return a result (i.e., they return \c void)
+shall set the \c xlalErrno to the appropriate error number and shall
+invoke the XLAL error handler.
+</b></p>
+To report an error from this type of function, use the macro
+XLAL_ERROR_VOID( func, errnum ) where \c func is the function name
+string and \c errnum is the XLAL error number (see below).</li>
+</ol>
+
+\subsection TODO_lalspec_660 XLAL error numbers and error handlers
+
+XLAL functions use the modifiable lvalue \c xlalErrno (think of it as
+a global \c int-type variable) to codify the nature of a failure.  It
+should not be used for any other purpose.  The values that \c xlalErrno
+is allowed to have are controlled.  It is quite analogous to the standard
+C \c errno.
+
+To use \c xlalErrno, set it to zero (no error) before calling an XLAL
+function; call the function; and then check the value of \c xlalErrno.
+If it is non-zero, an error has occurred, and the value can be used to
+determine the nature of the error.  The following table contains the XLAL
+return codes and error numbers.  Note that \c xlalErrno should only be
+set to one of the error numbers (or zero if there is no error).
+
+<table><tr><td>
+
+Code</td><td>Value</td><td>Meaning</td></tr>
+<tr><td>
+Return codes (for XLAL functions that return \c int)</td></tr>
+<tr><td>::XLAL_SUCCESS</td><td>0</td><td>Success</td></tr>
+<tr><td>::XLAL_FAILURE</td><td>\f$-\f$1</td><td>Failure</td></tr>
+<tr><td>
+Error numbers</td></tr>
+<tr><td><em>Standard error numbers</em></td></tr>
+<tr><td>::XLAL_EIO</td><td>5</td><td>I/O error</td></tr>
+<tr><td>::XLAL_ENOMEM</td><td>12</td><td>Memory allocation error</td></tr>
+<tr><td>::XLAL_EFAULT</td><td>14</td><td>Invalid pointer</td></tr>
+<tr><td>::XLAL_EINVAL</td><td>22</td><td>Invalid argument</td></tr>
+<tr><td>::XLAL_EDOM</td><td>33</td><td>Input domain error</td></tr>
+<tr><td>::XLAL_ERANGE</td><td>34</td><td>Output range error</td></tr>
+<tr><td>Extended error numbers begin at 128</td></tr>
+<tr><td><em>Common error numbers for XLAL functions</em></td></tr>
+<tr><td>::XLAL_EFAILED</td><td>128</td><td>Generic failure</td></tr>
+<tr><td>::XLAL_EBADLEN</td><td>129</td><td>Inconsistent or invalid vector length</td></tr>
+<tr><td>Specific mathematical and numerical error numbers begin at 256</td></tr>
+<tr><td><em>IEEE floating point error numbers</em></td></tr>
+<tr><td>::XLAL_EFPINVAL</td><td>256</td><td>Invalid floating point operation</td></tr>
+<tr><td>::XLAL_EFPDIV0</td><td>257</td><td>Division by zero floating point error</td></tr>
+<tr><td>::XLAL_EFPOVRFLW</td><td>258</td><td>Floating point overflow error</td></tr>
+<tr><td>::XLAL_EFPUNDFLW</td><td>259</td><td>Floating point underflow error</td></tr>
+<tr><td>::XLAL_EFPINEXCT</td><td>260</td><td>Floating point inexact error</td></tr>
+<tr><td><em>Numerical algorithm error numbers</em></td></tr>
+<tr><td>::XLAL_EMAXITER</td><td>261</td><td>Exceeded maximum number of iterations</td></tr>
+<tr><td>::XLAL_EDIVERGE</td><td>262</td><td>Series is diverging</td></tr>
+<tr><td>::XLAL_ESING</td><td>263</td><td>Apparent singularity detected</td></tr>
+<tr><td>::XLAL_ETOL</td><td>264</td><td>Failed to reach specified tolerance</td></tr>
+<tr><td>::XLAL_ELOSS</td><td>265</td><td>Loss of accuracy</td></tr>
+<tr><td>Failure from within a function call: "or" error number with this</td></tr>
+<tr><td>::XLAL_EFUNC</td><td>1024</td><td>Internal function call failed</td></tr>
+<tr><td>
+</td></tr></table>
+
+Note that the last error number, \c XLAL_EFUNC, corresponds to a bit that
+can be set on the current error number (using a bitwise-or) to indicate that
+the this error occurred from within an internal function call, thereby
+preserving some information about the error.
+
+In addition to setting \c xlalErrno a failure condition should also invoke
+the XLAL error handler \c XLALErrorHandler.  This is a function pointer
+(actually it can be a macro that results in a function pointer) to a function;
+its type is
+\code
+typedef void XLALErrorHandlerType( const char *func, const char *file, int line, int errnum );
+\endcode
+Thus the error handler takes the name of the function from which it is
+invoked, \c func, the file name of the source, \c file, the
+line number where it is called, \c line, and the XLAL error number
+\c errnum.  The default error handler, \c XLALDefaultErrorHandler,
+will print an error message when it is invoked.  The user may set the error
+handler to a different error handler, e.g., one that aborts when a failure
+occurs.  <em>However, the error handler should not be changed within a
+LAL or an XLAL function.</em>  Replacing the error handler should always be
+done in the top-level program.
+
+To assist in setting \c xlalErrno and invoking the error handler,
+the function
+\code
+void XLALError( const char *func, const char *file, int line, int errnum );
+\endcode
+is provided which will perform both of these tasks.  The arguments are the same
+as those of the error handler.  This function is called as part of the
+actions of the macros \c XLAL_ERROR, \c XLAL_ERROR_NULL,
+\c XLAL_ERROR_VOID, \c XLAL_ERROR_REAL4, and \c XLAL_ERROR_REAL8,
+all of which take two argument: a character string containing the name of
+the current function and the integer error number.  These macros call
+\c XLALError with the filename given by \c __FILE__, the line number
+\c __LINE__ where the macro occurs, and with the function name and error
+number.  They also return from the function with the appropriate failure
+return code (depending on which macro was used).
+
+
+\section TODO_lalspec_752 Documentation and unit tests
+
+The conventions for these are not within the scope of this specification;
+they are described in the LAL Software Documentation.  It is a good guide
+that every function with external linkage should have a unit test that can
+be run automatically to make sure it is (and continues to be) sane.
+
+
+\section TODO_lalspec_760 Other libraries required for LAL
+
+LAL is not a stand-alone library.  Two other libraries are required to build
+and use LAL.  These are the "Fastest Fourier Transform in the West (version
+3)" \c fftw3 library (compiled in both single and double precision
+formats) and the "GNU Scientific Library" \c gsl library.  The way
+these libraries are integrated into LAL is different.
+
+The \c fftw3 library is integrated by wrapping certain \c fftw3
+routines within LAL functions.  Other LAL functions should then use these
+wrapping functions rather than make direct calls to the \c fftw3 API.
+This is possible because only a few functions in \c fftw3 are needed
+in LAL.
+
+The \c gsl library provides many more functions than \c fftw3.
+Some of these functions, e.g., those involving file I/O, are not suitable
+for use within LAL.  However, the vast majority of the functions in
+\c gsl are useful.  To facilitate their use within LAL, the macros
+CALLGSL( statement, status ) and TRYGSL( statement, status )
+are provided.  These macros wrap the statement \c statement within a
+set of code designed to (i) ensure the thread-safety and standard behavior of
+the error handler used by the \c gsl function call, and (ii) report
+any error conditions reported by the \c gsl function in the LAL
+status structure \c status.
+
+
+\section TODO_lalspec_786 Notable exceptions
+
+<p><b>
+There will be exceptions to (nearly) all of these rules.  Exceptions are
+under the strict control of the LAL librarian.
+</b></p>
+
+Some parts of LAL must necessarily fail to conform to the above specifications.
+Clear examples include \c LALMalloc and their kin routines which do not
+use a LAL status structure and do not have \c void return (apart from
+\c LALFree) --- indeed, since they must manage a heap, they are not really
+reentrant either.  The LAL Librarian will endeavor to make LAL conform to
+the specification outlined in this document as much as is practical, but there
+are occasions when violations must be allowed.  In such cases, the violations
+are under strict control of the LAL Librarian.
+
+
+\section TODO_lalspec_803 Beyond LAL... LALSupport, LALMetaIo, LALFrame
+
+Of the LAL requirements, the most \e functionally limiting is the
+requirement that no I/O is allowed.  This requirement is in place to
+insulate the bulk of the library from requirements about the nature of
+the system on which a program is being run.  The philosophy is that since
+the library must always be integrated somehow into an executable program,
+assumptions about the system should be made by the program rather than
+by the library; hence the I/O should be contained within the program.
+
+To assist a program with various I/O tasks and their integration with LAL,
+several libraries associated with LAL are provided.  These libraries do not
+need to conform to all of the LAL standards; in particular, their purpose
+is to provide the I/O functions that are missing from LAL.
+
+<p><b>
+The \c LALSupport, \c LALMetaIo, and \c LALFrame libraries
+contain routines that need not conform to all of the LAL specifications;
+in particular, they contain routines that perform file I/O and/or
+require additional libraries.  Routines from these libraries are
+intended to be used along with LAL routines, but LAL routines shall not
+call any routine from (or in any other way be dependent upon) these
+libraries.
+</b></p>
+
+Note that there are currently two official exchange data formats within
+the LSC: the XML-based "LIGO Lightweight" \c LIGOlw format, and the
+binary "Interferometric Gravitational Wave Detector Data Frame Format"
+or "Frame" format.  Libraries with routines that are specialized for I/O
+with these formats are also available.
+
+
+\subsection TODO_lalspec_835 The \c LALSupport library
+
+This library provides the basic file I/O routines that are used in conjunction
+with the LAL library.  It is always built and installed along with the LAL
+library.
+
+\subsection TODO_lalspec_841 The \c LALMetaIo library
+
+This library provides I/O routines that are used to read/write the LIGO
+lightweight data format.  These routines use the \c metaio library
+routines as their engine.  This library is conditionally built and installed
+by LAL if the \c metaio library is available.
+
+\subsection TODO_lalspec_848 The \c LALFrame library
+
+This library provides I/O routines that are used to read/write the Frame
+data format.  These routines use the \c Frame library
+routines as their engine.  This library is conditionally built and installed
+by LAL if the \c Frame library is available.
+
+\section a_language Language issues
+
+
+The C99 standard specifies certain keywords and standard library functions.
+Only a subset of these are suitable for LAL functions.  However, for maximum
+portability, one should avoid various extensions to the C99 keywords and
+functions.  Here are some guidelines on writing portable LAL code.
+
+\subsection TODO_lalspec_863 Namespace requirements
+
+Here is a list of keywords and reserved names.  These should be avoided
+when choosing names of LAL variables, functions, etc.  The LAL namespace
+will help avoid namespace collisions.  The LAL namespace conventions are
+also given.
+
+\subsubsection TODO_lalspec_870 Keywords
+
+The code should avoid any of the following
+keywords that are present in C++ as symbol names:
+\code
+and          and_eq       asm          auto         bitand         bitor
+bool         break        case         catch        char           class
+compl        const        const_cast   continue     default        delete
+do           double       dynamic_cast else         enum           explicit
+export       extern       false        float        for            friend
+goto         if           inline       int          long           mutable
+namespace    new          not          not_eq       operator       or
+or_eq        private      protected    public       register       reinterpret_cast
+return       short        signed       sizeof       static         static_cast
+struct       switch       template     this         throw          true
+try          typedef      typeid       typename     union          unsigned
+using        virtual      void         volatile     wchar_t        while
+xor          xor_eq
+\endcode
+It is not a good idea to use \c fortran or \c entry either as these
+are sometimes reserved.  Of these keywords, the ones that are C99 keywords are
+\code
+_Bool           _Complex        _Imaginary      auto
+break           case            char            const
+continue        default         do              double
+else            enum            extern          float
+for             goto            if              inline
+int             long            register        restrict
+return          short           signed          sizeof
+static          struct          switch          typedef
+union           unsigned        void            volatile
+while
+\endcode
+Of these there is (almost) no need to use \c auto, \c char,
+\c double, \c float, \c long, \c register, \c short,
+\c signed, \c unsigned, or \c volatile.
+
+\subsubsection TODO_lalspec_907 Reserved names
+
+According to the GNU C library, the following names are reserved (or may be
+reserved in the future) by the C library:
+<ul>
+<li> All global functions or variables that begin with an underscore,
+e.g., \c _whatever, are reserved.</li>
+<li> All identifiers that begin with two underscores or with an underscore
+followed by an uppercase letter
+e.g., \c __whatever, \c _Whatever, are reserved.</li>
+<li> Names beginning with the capital \c E and followed by a digit
+or uppercase letter are reserved (for error codes).</li>
+<li> Names beginning with \c is or \c to and followed by a
+lowercase letter are reserved.</li>
+<li> Names beginning with \c LC_ are reserved.</li>
+<li> Names of all existing mathematical functions but suffixed with either
+an \c f or an \c l are reserved.</li>
+<li> Names of all existing mathematical functions but suffixed with either
+an \c f or an \c l are reserved.</li>
+<li> Names beginning with \c SIG or \c SIG_ and followed by
+an uppercase letter are reserved.</li>
+<li> Names beginning with \c str, \c mem, or \c wcs and
+followed by a lowercase letter are reserved.</li>
+<li> Names ending with \c _t are reserved.</li>
+</ul>
+
+Certain headers reserve names too.  Since LAL is a library to be used by
+others, it is important to respect these when coding the interface.
+<ul>
+<li> Names prefixed with \c d_ are reserved in \c dirent.h.</li>
+<li> Names prefixed with \c l_, \c F_, \c O_ and
+\c S_ are reserved in \c fcntl.h.</li>
+<li> Names prefixed with \c gr_ are reserved in \c grp.h.</li>
+<li> Names suffixed with \c _MAX are reserved in \c limits.h.</li>
+<li> Names prefixed with \c pw_ are reserved in \c pwd.h.</li>
+<li> Names prefixed with \c sa_ and \c SA_ are reserved
+in \c signal.h.</li>
+<li> Names prefixed with \c st_ and \c S_ are reserved in
+\c sys/stat.h.</li>
+<li> Names prefixed with \c tms_ are reserved in \c sys/times.h.</li>
+<li> Names prefixed with \c c_, \c V, \c I, \c O,
+\c TC and names prefixed with \c B followed by a digit are reserved
+in \c termios.h.</li>
+</ul>
+
+\subsubsection TODO_lalspec_952 LAL namespace
+
+The LAL namespace will assist in avoiding namespace conflicts.  LAL reserves
+any name that is prefixed with \c LAL, \c LAL_, \c XLAL,
+\c XLAL_, \c lal, or \c xlal followed by an uppercase
+letter.  In addition LAL reserves names that begin with
+\c CHAR, \c UCHAR, \c INT2, \c INT4, \c INT8,
+\c UINT2, \c UINT4, \c UINT8, \c REAL4, \c REAL8,
+\c COMPLEX8, \c COMPLEX16, and \c LIGO followed by an
+uppercase letter.
+
+\subsection TODO_lalspec_963 Allowed functions from standard C
+
+C libraries often have various extensions from the C99 standard C library,
+but for portability purposes only those functions that are specified by the
+C99 standard should be used (note: LAL does require a \e hosted rather
+than \e freestanding environment).  Also, many of these should \e not
+be used in LAL because they would cause the LAL functions to violate one of the
+above rules (e.g., would be used for file I/O, would cause a function to not
+be reenterant, etc.).  For completeness, these are the allowed standard C
+functions.  There are a few others that could be allowed, but are not
+recommended (e.g., \c sprintf, but \c LALSprintf is provided as a
+preferred alternative) and are not listed here for that reason.  Also listed
+here are macros and types that are defined in these headers.  If a function
+or macro or type is not somewhere on this list, you should probably not use
+it in a LAL function.
+\code
+<stdio.h>
+        sscanf
+        EOF
+
+<ctype.h>
+        isalnum         isalpha         iscntrl         isdigit
+        isgraph         islower         isprint         ispunct
+        isspace         isupper         isxdigit
+        tolower         toupper
+
+<string.h>
+        strcpy          strncpy         strcat          strncat
+        strcmp          strncmp         strchr          strrchr
+        strspn          strcspn         strpbrk         strstr
+        strlen
+        memcpy          memmove         memcmp          memchr
+        memset
+        NULL            size_t
+
+<math.h>
+        sin             cos             tan
+        asin            acos            atan            atan2
+        sinh            cosh            tanh
+        exp             log             log10           pow
+        sqrt            ceil            floor           fabs
+        ldexp           frexp            modf           fmod
+        HUGE_VAL
+
+<stdlib.h>
+        atof            atoi            atol
+        strtod          strtol          strtoul
+        bsearch         qsort
+        abs             labs            div             ldiv
+        NULL            size_t          div_t           ldiv_t
+
+<errno.h>
+        errno
+        EDOM            ERANGE
+
+<assert.h> NONE
+
+<stdarg.h>
+        va_start        va_arg          va_end
+
+<setjmp.h> NONE
+
+<signal.h> NONE
+
+<time.h>
+        difftime        mktime          strftime
+        NULL            size_t          time_t          struct tm
+
+<limits.h> NONE
+
+<float.h> NONE
+\endcode
+
+
+\section TODO_lalspec_1037 LAL Datatypes
+
+\subsection TODO_lalspec_1039 Primitive Datatypes
+
+The primitive datatypes are defined in a separate header
+\ref LALAtomicDatatypes.h, which is included by
+\ref LALDatatypes.h.  This is done in order to facilitate the
+interface between LAL and non-LAL modules.  By including just
+\ref LALAtomicDatatypes.h, a non-LAL module can ensure that it is
+using the same arithmetic standard as LAL, without being burdened by
+LAL's more specialized structures.
+
+Primitive datatypes are those that conceptually store a single number
+or quantity.  They include both the \e atomic datatypes and the
+complex datatypes.
+
+\subsubsection TODO_lalspec_1053 Atomic Datatypes
+
+Atomic LAL datatypes are platform-independent datatypes corresponding
+to the basic types in the C/C++ language.  However, since the C/C++
+types are not necessarily the same across platforms, the actual
+mapping between LAL and C/C++ datatypes may be different on different
+platforms.  The following table lists the LAL atomic datatypes, their
+size and range, and the C/C++ datatype to which they \e usually
+correspond.
+
+
+<table><tr><td>
+
+  Type</td><td>Bits</td><td>Range</td><td>Usual C/C++ type</td></tr>
+<tr><td>
+::CHAR</td><td>8</td><td>'\0' to '\255'</td><td>\c char</td></tr>
+<tr><td>::UCHAR</td><td>8</td><td>'\0' to '\255'</td><td>\c unsigned char</td></tr>
+<tr><td>
+::INT2</td><td>16</td><td>\f$-2^{-15}\f$ to \f$2^{15}-1\f$</td><td>\c short</td></tr>
+<tr><td>::INT4</td><td>32</td><td>\f$-2^{-31}\f$ to \f$2^{31}-1\f$</td><td>\c int or
+                                                \c long</td></tr>
+<tr><td>::INT8</td><td>64</td><td>\f$-2^{-63}\f$ to \f$2^{63}-1\f$</td><td>\c long long</td></tr>
+<tr><td>::UINT2</td><td>16</td><td>0 to \f$2^{16}-1\f$</td><td>\c unsigned short</td></tr>
+<tr><td>::UINT4</td><td>32</td><td>0 to \f$2^{32}-1\f$</td><td>unsigned int or
+                                                \c long</td></tr>
+<tr><td>::UINT8</td><td>64</td><td>0 to \f$2^{64}-1\f$</td><td>\c unsigned long long</td></tr>
+<tr><td>
+::REAL4</td><td>32</td><td>\f$-3.4\times10^{38}\f$ to \f$3.4\times10^{38}\f$</td><td>\c float</td></tr>
+<tr><td>::REAL8</td><td>64</td><td>\f$-1.8\times10^{308}\f$ to \f$1.8\times10^{308}\f$</td><td>\c double</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+
+The unsigned character and integer datatypes store their values
+according to the usual binary system.  For signed characters and
+integers, setting the most-significant bit indicates that the number
+formed from the remaining bits should be added to the lower value of
+the range.  The \c REAL4 and \c REAL8 datatypes should store
+values according to the IEEE Standard 754 for Binary Floating-Point
+Arithmetic, which gives them the following precisions and dynamic
+ranges:
+
+
+<table><tr><td>
+
+</td><td>::    REAL4</td><td>::    REAL8</td></tr>
+<tr><td>
+Minimum positive subnormal</td><td>\f$1.4\times10^{-45}\f$</td><td>\f$4.9\times10^{-324}\f$</td></tr>
+<tr><td>Minimum positive normal</td><td>\f$1.2\times10^{-38}\f$</td><td>\f$2.2\times10^{-308}\f$</td></tr>
+<tr><td>Maximum finite normal</td><td>\f$3.4\times10^{38}\f$</td><td>\f$1.8\times10^{308}\f$</td></tr>
+<tr><td>Minimum fractional difference</td><td>\f$6.0\times10^{-8}\f$</td><td>\f$1.1\times10^{-16}\f$</td></tr>
+<tr><td>Significant decimal digits</td><td>6--9</td><td>15--17</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+The minimum positive subnormal is the smallest positive representable
+number.  The minimum positive normal is the smallest positive number
+that can be represented with full precision; that is, one whose
+mantissa lies in the range [0.5,1).  The maximum finite normal is the
+largest representable number other than the reserved code for
+\f$+\infty\f$.  The minimum fractional difference is the smallest
+fractional difference between consecutive representable numbers, or
+\e half the difference between 1 and the next representable
+number.  Significant decimal digits gives the number of decimal digits
+used to represent the binary number in decimal notation: the first is
+the maximum number of digits that are guaranteed not to change upon
+conversion to binary, the second is the number of digits required to
+represent a unique binary quantity.
+
+\subsubsection TODO_lalspec_1124 Complex datatypes
+
+LAL represents complex numbers as structures with two floating-point
+fields, storing the real and imaginary parts.  These are considered
+primitive datatypes (rather than aggregate or structured datatypes)
+because they conceptually represent a single number.  Furthermore,
+atomic and complex datatypes are treated equivalently by LAL aggregate
+and structured datatypes.
+
+\heading{\c COMPLEX8:}
+This structure stores a single-precision complex number in 8 bytes of
+memory.  The fields are:
+<dl>
+<dt> REAL4 re</dt><dd> The real part.</dd>
+<dt> REAL4 im</dt><dd> The imaginary part.</dd>
+</dl>
+
+\heading{\c COMPLEX16:}
+This structure stores a double-precision complex number in 16 bytes of
+memory.  The fields are:
+<dl>
+<dt> REAL8 re</dt><dd> The real part.</dd>
+<dt> REAL8 im</dt><dd> The imaginary part.</dd>
+</dl>
+
+\subsection ss_aggregate_datatypes Aggregate datatypes
+
+
+These datatypes store arbitrarily large sets or collections of
+primitive datatypes.  At this level there is no physical
+interpretation assigned to the objects (such as names or units); the
+aggregate datatypes simply collect and arrange the primitive
+datatypes.  The following types of aggregate datatypes are defines:
+vectors, arrays, sequences, vector sequences, and array sequences.
+
+\heading{datatype\c Vector:}
+This structure stores an ordered set of \f$n\f$ elements of type
+datatype, which can be any primitive datatype.  The
+data are to be interpreted as being a point in an \f$n\f$-dimensional vector space.
+The fields are:
+<dl>
+<dt> UINT4 length</dt><dd> The number of data \f$n\f$.</dd>
+<dt> datatype *data</dt><dd> Pointer to the data array.  The data
+are stored sequentially as data[\f$0,\ldots,n-1\f$].</dd>
+</dl>
+
+\heading{datatype\c Array:}
+This structure stores a set of elements of type datatype,
+which can be any primitive datatype, arranged as an \f$m\f$-dimensional
+array.  That is, each element can be thought of as having \f$m\f$
+indices, \f$\mathsf{A}_{i_0\cdots i_{m-1}}\f$, where each index \f$i_k\f$
+runs over its own range \f$0,\ldots,n_k-1\f$.  The total number of
+elements is then \f$N=n_0\times\cdots\times n_{m-1}\f$.  In memory the
+array is "flattened" so that the elements are stored sequentially in
+a contiguous block.  The fields are:
+<dl>
+<dt> UINT4Vector *dimLength</dt><dd> Pointer to a vector of length
+\f$m\f$, storing the index ranges \f$(n_0,\ldots,n_{m-1})\f$.</dd>
+<dt> datatype *data</dt><dd> Pointer to the data array.  The data
+element \f$\mathsf{A}_{i_0\cdots i_{m-1}}\f$ is stored as
+data[\f$i_{m-1} + n_{m-2}\times(i_{m-2} +
+n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))\f$]; that is,
+the index of data[] runs over the entire range of an index
+\f$i_{k+1}\f$ before incrementing \f$i_k\f$.</dd>
+</dl>
+
+\heading{datatype\c Sequence:}
+This structure stores an ordered set of \f$l\f$ elements of type
+datatype, which can be any primitive datatype.  It is
+identical to datatype\c Vector and is retained for historical
+purposes only.
+
+\heading{datatype\c VectorSequence:}
+This structure stores an ordered set of \f$l\f$ elements of type
+datatype\c Vector, where datatype can be any primitive
+datatype.  Mathematically the sequence can be written as
+\f$\{\vec{v}^{(0)},\ldots,\vec{v}^{(l-1)}\}\f$, where each element
+\f$\vec{v}^{(j)}=(v^{(j)}_0,\ldots,v^{(i)}_{n-1})\f$ is a vector of length
+\f$n\f$.  In memory the elements are "flattened"; that is, they are
+stored sequentially in a contiguous block of memory.  The fields are:
+<dl>
+<dt> UINT4 length</dt><dd> The number of vectors \f$l\f$.</dd>
+<dt> UINT4 vectorLength</dt><dd> The length \f$n\f$ of each vector.</dd>
+<dt> datatype *data</dt><dd> Pointer to the data array.  The data
+element \f$v^{(j)}_i\f$ is stored as data[\f$j\times n + i\f$];
+that is, the index of data[] runs over the internal index of
+each vector element before incrementing to the next vector element.</dd>
+</dl>
+
+
+\heading{datatype\c ArraySequence:}
+This structure stores an ordered set of \f$l\f$ elements of type
+datatype\c Array, where datatype can be any primitive
+datatype.  The indexing of an array sequence can get quite
+complicated; it helps to read first the documentation for data arrays,
+above.  Mathematically the data can be written as a set
+\f$\{\mathsf{A}^{(j)}_{i_0\cdots i_{m-1}}\f$, where the sequence number
+\f$j\f$ runs from 0 to \f$l-1\f$, and each array index \f$i_k\f$ runs over its own
+range \f$0,\ldots,n_k-1\f$.  The total number of data in a given array
+element is then \f$N=n_0\times\cdots\times n_{m-1}\f$, and the total
+number of data in the sequence is \f$N\times l\f$.  In memory the array is
+"flattened" so that the elements are stored sequentially in a
+contiguous block.  The fields are:
+<dl>
+<dt> UINT4 length</dt><dd> The number \f$l\f$ of array elements in the
+sequence.</dd>
+<dt> UINT4 arrayDim</dt><dd> The number of data \f$N\f$ (\e not the
+number of indecies \f$m\f$) in each array element of the sequence.</dd>
+<dt> UINT4Vector *dimLength</dt><dd> Pointer to a vector of length
+\f$m\f$, storing the index ranges \f$(n_0,\ldots,n_{m-1})\f$.</dd>
+<dt> datatype *data</dt><dd> Pointer to the data.  The element
+\f$\mathsf{A}^{(j)}_{i_0\cdots i_{m-1}}\f$ is stored as
+data[\f$j\times N + i_{m-1} + n_{m-2}\times(i_{m-2} +
+n_{m-3}\times(\cdots(i_1 + n_0\times i_0)\cdots))\f$]; that is,
+the index of data[] runs over the internal indecies of each
+array element before incrementing to the next array element.</dd>
+</dl>
+
+\subsection ss_structured_datatypes Structured datatypes
+
+
+These datatypes embed primitive and aggregate datatypes inside
+structures that define their physical meaning.  Most of these
+structures are wrappers for aggregate datatypes that store a physical
+quantity as a function of time or frequency.  Other structures store
+specific physical information, such as the GPS time, or the factored
+response function of a filter.
+
+\heading{\c LIGOTimeGPS:}
+This structure stores the time, to nanosecond precision, synchronized
+to the Global Positioning System time reference.  The zero time for
+the GPS standard is the moment of midnight beginning January 6, 1980,
+UTC.  The \c LIGOTimeGPS structure can represent times up to
+68 years on either side of this epoch.  (Note that this is better than
+an equivalently-sized \c REAL8 representation of time, which can
+maintain nanosecond precision only for times within 104 days of its
+reference point.  However, the \c REAL8 representation does allow
+one to cover arbitrarily long timescales at correspondingly lower
+precision.)  The fields are:
+<dl>
+<dt> INT4 gpsSeconds</dt><dd> The number of seconds since the GPS
+reference time.</dd>
+<dt> INT4 gpsNanoSeconds</dt><dd> The number of nanoseconds since
+the last GPS second.</dd>
+</dl>
+
+
+\heading{\c LALUnit:}
+This structure stores units in the mksA system (plus Kelvin, Strain,
+and ADC Count).  It also stores an overall power-of-ten scaling factor.
+The fields are:
+<dl>
+<dt> INT2 powerOfTen</dt><dd> The power \f$p\f$ of ten scaling factor.</dd>
+<dt> INT2 unitNumerator[LALNumUnits]</dt><dd> Array of unit numerators,
+  \f$N_i\f$, \f$i=0\ldots\textrm{LALNumUnits}-1\f$.</dd>
+<dt> INT2 unitDenominatorMinusOne[LALNumUnits]</dt><dd> Array of unit
+  denominators-minus-one, \f$D_i\f$, \f$i=0\ldots\textrm{LALNumUnits}-1\f$.</dd>
+</dl>
+Thus, the units are given by
+\f{equation}{
+  10^p\times\textrm{m}^{N_0/(1+D_0)}\times\textrm{kg}^{N_1/(1+D_1)}
+  \times\textrm{s}^{N_2/(1+D_2)}\times\textrm{A}^{N_3/(1+D_3)}
+  \times\textrm{K}^{N_4/(1+D_4)}\times\textrm{strain}^{N_5/(1+D_5)}
+  \times\textrm{count}^{N_6/(1+D_6)}
+\f}
+The indexes of the units can be specified using the constants
+\c LALUnitIndexMeter,
+\c LALUnitIndexKiloGram,
+\c LALUnitIndexSecond,
+\c LALUnitIndexAmpere,
+\c LALUnitIndexKelvin,
+\c LALUnitIndexStrain,
+\c LALUnitIndexADCCount,
+while \c LALNumUnits is the total number of units.
+
+\heading{datatype\c TimeSeries:}
+This structure represents a sequence of data of type datatype
+(where datatype can be any primitive datatype), sampled over
+uniform time intervals \f$t_0, t_0+\Delta t, \ldots , t_0+l\Delta t\f$.
+Essentially this is a datatype\c Sequence with extra fields
+defining the sample times and the type of data being sampled.  The raw
+data may also have been \e heterodyned; that is, multiplied by a
+sinusoid of some frequency \f$f_0\f$, low-pass filtered, and resampled, in
+order to extract the behavior in a small bandwidth about \f$f_0\f$.  The
+fields are:
+<dl>
+<dt> CHAR name[LALNameLength]</dt><dd> The name of the data series (i.e.\
+the type of data being sampled).</dd>
+<dt> LIGOTimeGPS epoch</dt><dd> The start time \f$t_0\f$ of the data
+series.</dd>
+<dt> REAL8 deltaT</dt><dd> The sampling interval \f$\Delta t\f$, in
+seconds.</dd>
+<dt> REAL8 f0</dt><dd> The heterodyning frequency \f$f_0\f$, in hertz.</dd>
+<dt> LALUnit sampleUnits</dt><dd> The physical units of the
+quantity being sampled.</dd>
+<dt> datatypeSequence *data</dt><dd> The sequence of sampled data.</dd>
+</dl>
+
+
+\heading{datatype\c FrequencySeries:}
+This structure represents a frequency spectrum of data of type
+datatype (where datatype can be any primitive
+datatype), sampled over uniform frequency intervals \f$f_0, f_0+\Delta
+f, \ldots , f_0+l\Delta f\f$.  Essentially this is a
+datatype\c Sequence with extra fields defining the sample
+frequencies, the timestamp of the spectrum, and the type of data being
+sampled.  The fields are:
+<dl>
+<dt> CHAR name[LALNameLength]</dt><dd> The name of the data series (i.e. the type of data being sampled).</dd>
+<dt> LIGOTimeGPS epoch</dt><dd> The start time of the \e time series from which the spectrum was calculated.</dd>
+<dt> REAL8 f0</dt><dd> The lowest frequency \f$f_0\f$ being sampled, in hertz.</dd>
+<dt> REAL8 deltaF</dt><dd> The frequency sampling interval \f$\Delta f\f$, in hertz.</dd>
+<dt> LALUnit sampleUnits</dt><dd> The physical units of the quantity being sampled.</dd>
+<dt> datatypeSequence *data</dt><dd> The sequence of sampled data.</dd>
+</dl>
+
+
+\heading{datatype\c ZPGFilter:}
+This structure stores the complex frequency response of a filter or
+transfer function in a factored form, where datatype can be
+either \c COMPLEX8 or \c COMPLEX16.  One defines a
+(dimensionless) complex frequency variable \f$\zeta(f\Delta t)\f$, where
+\f$\Delta t\f$ is the time sampling interval of the data to which the
+filter will be applied (in the case of a digital filter), or some
+other reference timescale (in the case of an analog filter).  The
+complex response function can then be given (or approximated) as
+\f$H(f)=g\times\prod_k(\zeta-z_k)/\prod_l(\zeta-p_l)\f$, where \f$z_k\f$ are
+the complex \e zeros, \f$p_l\f$ are the complex \e poles, and \f$g\f$
+is the complex \e gain of the response function.  Some common
+complex frequency representations are the \f$z\f$-plane representation
+\f$\zeta(f\Delta t)=\exp(2\pi if\Delta t)\f$, which maps the Nyquist
+interval \f$f\in[0,1/2\Delta t)\f$ onto the upper-half unit circle in
+\f$\zeta\f$, and the \f$w\f$-plane representation \f$\zeta(f\Delta t)=\tan(\pi
+f\Delta t)\f$, which maps the Nyquist interval onto the positive real
+axis in \f$\zeta\f$.  The fields of datatype\c ZPGFilter are:
+<dl>
+<dt> CHAR name[LALNameLength]</dt><dd> The name of the filter or transfer
+function.  This should also mention its complex frequency
+representation.</dd>
+<dt> REAL8 deltaT</dt><dd> The sampling time or reference timescale
+\f$\Delta t\f$ for the filter, in seconds.  If zero, it will be treated as
+being equal to the sampling interval of the data being filtered.</dd>
+<dt> datatypeVector *zeros</dt><dd> Pointer to a vector storing
+the zeros \f$z_k\f$ of the filter.</dd>
+<dt> datatypeVector *poles</dt><dd> Pointer to a vector storing
+the poles \f$p_k\f$ of the filter.</dd>
+<dt> datatype \c gain</dt><dd> The gain \f$g\f$ of the filter.</dd>
+</dl>
+
+
+\subsection ss_status_structure The LAL universal status structure \c LALStatus
+
+
+This structure is the means by which LAL functions report their
+success or failure; it provides a useful mechanism for tracking
+progress and errors through nested function calls.  The error
+reporting structure is a linked list of \c LALStatus structures, with
+each node corresponding to a given function in the current calling
+sequence.  When a function terminates successfully, its node is
+dropped from the list.  If a function encounters an error, it must
+still return control to the calling routine, reporting the error
+through its \c LALStatus.  The calling routine must either deal with
+the error (pruning the linked list if it succeeds), or else return an
+error itself.  A fatal error will thus return a linked list of
+\c LALStatus structures to the top-level routine, where the tail of
+the list identifies the source of the error, and the intermediate
+nodes identify the sequence of nested function calls that led to the
+error.  The fields of the \c LALStatus are as follows:
+<dl>
+<dt> INT4 statusCode</dt><dd> A numerical code identifying the type
+of error, or 0 for nominal status.</dd>
+<dt> const CHAR *statusDescription</dt><dd> A description of the
+current status or error.</dd>
+<dt> volatile const CHAR *Id</dt><dd> The RCS ID string of the
+source file of the current function.</dd>
+<dt> const CHAR *function</dt><dd> The name of the current function.</dd>
+<dt> const CHAR *file</dt><dd> The name of the source file of the
+current function.</dd>
+<dt> INT4 line</dt><dd> The line number in the source file where the
+current \c statusCode was set.</dd>
+<dt> LALStatus *statusPtr</dt><dd> Pointer to the next node in the
+list; \c NULL if this function is not reporting a subroutine
+error.</dd>
+<dt> INT4 level</dt><dd> The current level in the nested calling
+sequence.</dd>
+</dl>
+
+
+\section TODO_lalspec_1412 The \c LALStatus structure
+
+LAL routines store their current execution status in a linked list of
+structures of type \c LALStatus, with each node in the list
+representing a subroutine in the current calling sequence.  The
+\c LALStatus structure is described in Sec.\ref ss_status_structure
+of the header \ref LALDatatypes.h, but for completeness, we explain
+its fields below:
+<dl>
+<dt> INT4 statusCode</dt><dd> A code indicating the exit status of a
+function.  0 represents a normal exit.  Negative values are reserved
+for certain standard error types.  The authors of individual functions
+should assign positive values to the various ways in which their code
+can fail.</dd>
+<dt> const CHAR *statusDescription</dt><dd> An explanatory string
+corresponding to the numerical status code.</dd>
+<dt> volatile const CHAR *Id</dt><dd> A character string identifying
+the source file and version number of the function being reported on.</dd>
+<dt> const CHAR *function</dt><dd> The name of the function.</dd>
+<dt> \ref const CHAR *file</dt><dd> The file name of the .c file
+containing the function code.</dd>
+<dt> \ref INT4 line</dt><dd> The line number in the .c file of the
+instruction where any error was reported.</dd>
+<dt> LALStatus *statusPtr</dt><dd> A recursive pointer to another
+status pointer.  This structure is used to report an error in a
+subroutine of the current function.  Thus if an error occurs in a
+deeply-nested routine, the status structure returned to the main
+program will be the head of a linked list of status structures, one
+for each nested level, with the tail structure reporting the actual
+error that caused the overlying routines to fail.</dd>
+<dt> INT4 level</dt><dd> The nested-function level where any error
+was reported.</dd>
+</dl>
+In almost all circumstances the programmer will \e not have to
+access this structure directly, relying instead on the macros defined
+in the header \ref LALStatusMacros.h.  The exception is the \c statusCode
+field, which the programmer may want to query directly.
+
+The \c statusCode field is set to a nonzero value any time an
+error condition arises that would lead to abnormal termination of the
+current function.  Programmers can assign positive error codes to the
+various types of error that may be encountered in their routines.
+Additionally, the following following status codes are reserved to
+report certain standard conditions:
+
+
+<table><tr><td>
+
+Code</td><td>Message</td><td>Explanation</td></tr>
+<tr><td>
+
+0</td><td></td><td>Nominal execution; the function returned
+successfully.</td></tr>
+<tr><td>
+-1</td><td>Recursive error</td><td>The function aborted due
+to failure of a subroutine.</td></tr>
+<tr><td>
+-2</td><td>::INITSTATUS: non-null status pointer</td><td>The
+status structure passed to the function had a non-\c NULL
+\c statusPtr field, which blocks the function from calling
+subroutines (it is symptomatic of something screwy going on in the
+calling routine).</td></tr>
+<tr><td>
+-4</td><td>::ATTATCHSTATUSPTR: memory allocation error
+</td><td>The function was unable to allocate a \c statusPtr field to pass
+down to a subroutine.</td></tr>
+<tr><td>
+-8</td><td>::DETATCHSTATUSPTR: null status pointer</td><td>
+
+The \c statusPtr field could not be deallocated at the end of all
+subroutine calls; one of the subroutines must have lost it or set it
+to \c NULL.</td></tr>
+<tr><td>
+
+</td></tr></table>
+
+
+
+\section TODO_lalspec_1490 The \c lalDebugLevel
+
+The \c lalDebugLevel is a global variable, set at runtime, that
+determines how much and what kind of debugging information will be
+reported.  It is declared as an extern int in the header
+\ref LALStatusMacros.h, and is therefore accessible in any standard
+LAL module that includes this header.  Note, however, that it is
+declared to be of the C type \c int, which is usually but not
+always a 32-bit integer (on some systems it may only be 16 bits).
+
+The value of \c lalDebugLevel should be thought of not as a number,
+but as a <em>bit mask</em>, wherein each bit in the binary
+representation turns on or off a specific type of status reporting.
+At present, there are five types of status reporting, each associated
+with a bit in \c lalDebugLevel.
+
+\heading{Error messages} tell the operator that a computation has
+terminated abnormally, and has failed to produce an acceptable result.
+Normally this is associated with assigning a non-zero
+\c statusCode; an error message is printed automatically whenever
+a function exits with non-zero \c statusCode.
+
+\heading{Warning messages} tell the user that a computation is
+working, but with unusual behavior that might indicate an unreliable
+or meaningless result.  Warnings do not normally result in a non-zero
+\c statusCode.
+
+\heading{Information messages} tell the operator that the
+computation is proceeding as expected, and simply provide additional
+information about its progress.
+
+\heading{Tracing messages} are printed automatically a subroutine
+is called or returned; they simply track the current sequence of
+function calls.
+
+\heading{Memory information messages} are a special type of
+information message; they tell the operator when and how much memory
+is allocated or freed from the memory heap.
+
+The module \ref LALError.c defines functions for
+printing each of these types of status message.  Each type of message
+is turned on by setting the corresponding bit in \c lalDebugLevel to
+1, and is suppressed by setting the bit to 0.  This header file
+\c \#defines flags with numerical values designed to switch on the
+appropriate bits.  Combinations of bits can be switched on by
+combining these flags using the bitwise-\e or operator,
+|.  The flags are defined as follows:
+
+
+<table><tr><td>
+
+Flag</td><td>Octal</td><td>Decimal</td><td>Meaning</td></tr>
+<tr><td>
+<em>Primitive flags</em></td></tr>
+<tr><td>::LALNDEBUG</td><td>000000</td><td>0</td><td>No debugging or status messages</td></tr>
+<tr><td>::LALERROR</td><td>000001</td><td>1</td><td>Turn on error messages</td></tr>
+<tr><td>::LALWARNING</td><td>000002</td><td>2</td><td>Turn on warning messages</td></tr>
+<tr><td>::LALINFO</td><td>000004</td><td>4</td><td>Turn on info messages</td></tr>
+<tr><td>::LALTRACE</td><td>000010</td><td>8</td><td>Turn on tracing messages</td></tr>
+<tr><td>::LALMEMINFO</td><td>000020</td><td>16</td><td>Turn on memory messages</td></tr>
+<tr><td>::LALNMEMDBG</td><td>000040</td><td>32</td><td>Turn off all memory debugging</td></tr>
+<tr><td>::LALNMEMPAD</td><td>000100</td><td>64</td><td>Turn off memory padding</td></tr>
+<tr><td>::LALNMEMTRK</td><td>000200</td><td>128</td><td>Turn off memory tracking</td></tr>
+<tr><td>::LALMEMDBG</td><td>040000</td><td>16384</td><td>Turn on memory debugging without messages</td></tr>
+<tr><td><em>Combination flags</em></td></tr>
+<tr><td>::LALMSGLVL1</td><td>000001</td><td>1</td><td>Error messages only</td></tr>
+<tr><td>::LALMSGLVL2</td><td>000003</td><td>3</td><td>Error and warning messages</td></tr>
+<tr><td>::LALMSGLVL3</td><td>000007</td><td>7</td><td>Error, warning, and info messages</td></tr>
+<tr><td>::LALMEMTRACE</td><td>000030</td><td>24</td><td>Memory and tracing messages</td></tr>
+<tr><td>::LALALLDBG</td><td>077437</td><td>32543</td><td>All messages and debugging</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+The most significant bit
+of \c lalDebugLevel has a special meaning in that it is not
+associated with any type of status message.  However, certain pieces
+of debugging or error-tracking code --- such as the memory leak
+detection code in \ref LALMalloc.c --- do not write status messages
+and are not associated with a \c lalDebugLevel bit; instead, these
+pieces of code are turned on for \e any nonzero value of
+\c lalDebugLevel, unless the \c LALNMEMDBG bit is set.
+Switching on only the most significant bit with
+\c LALMEMDBG activates this code without turning on any other
+error reporting.
+
+\section TODO_lalspec_1576 LAL Constants
+
+\subsection TODO_lalspec_1578 Mathematical Constants
+
+The following constants define the precision and range of
+floating-point arithmetic in LAL.  They are taken from the IEEE
+standard 754 for binary arithmetic.  All numbers are dimensionless.
+
+
+<table><tr><td>
+
+Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>
+::LAL_REAL4_MANT</td><td>24</td><td>
+        Bits in \c REAL4 mantissa</td></tr>
+<tr><td>::LAL_REAL4_MAX</td><td>\f$3.40282347\times10^{38}\f$</td><td>
+        Largest \c REAL4</td></tr>
+<tr><td>::LAL_REAL4_MIN</td><td>\f$1.17549435\times10^{-38}\f$</td><td>
+        Smallest positive \c REAL4</td></tr>
+<tr><td>::LAL_REAL4_EPS</td><td>\f$1.19209290\times10^{-7}\f$</td><td>
+        \f$2^{-(\mathtt{LAL_REAL4_MANT}-1)}\f$</td></tr>
+<tr><td>
+::LAL_REAL8_MANT</td><td>53</td><td>
+        Bits in \c REAL8 mantissa</td></tr>
+<tr><td>::LAL_REAL8_MAX</td><td>\f$1.7976931348623157\times10^{308}\f$</td><td>
+        Largest \c REAL8</td></tr>
+<tr><td>::LAL_REAL8_MIN</td><td>\f$2.2250738585072014\times10^{-308}\f$</td><td>
+        Smallest positive \c REAL8</td></tr>
+<tr><td>::LAL_REAL8_EPS</td><td>\f$2.2204460492503131\times10^{-16}\f$</td><td>
+        \f$2^{-(\mathtt{LAL_REAL8_MANT}-1)}\f$</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+\c LAL_REAL4_EPS and \c LAL_REAL8_EPS can be thought
+of as the difference between 1 and the next representable \c REAL4
+or \c REAL8 number.
+
+
+
+The following are fundamental mathematical constants.  They are mostly
+taken from the GNU C \ref math.h header (with the exception of
+\c LAL_TWOPI, which was computed using Maple).  All numbers are
+dimensionless.
+
+
+<table><tr><td>
+
+Name</td><td>Value</td><td>Expression</td></tr>
+<tr><td>
+::LAL_E</td><td>2.7182818284590452353602874713526625</td><td>\f$e\f$</td></tr>
+<tr><td>::LAL_LOG2E</td><td>1.4426950408889634073599246810018922</td><td>\f$\log_2 e\f$</td></tr>
+<tr><td>::LAL_LOG10E</td><td>0.4342944819032518276511289189166051</td><td>\f$\log_{10} e\f$</td></tr>
+<tr><td>::LAL_LN2</td><td>0.6931471805599453094172321214581766</td><td>\f$\log_e 2\f$</td></tr>
+<tr><td>::LAL_LN10</td><td>2.3025850929940456840179914546843642</td><td>\f$\log_e 10\f$</td></tr>
+<tr><td>::LAL_SQRT2</td><td>1.4142135623730950488016887242096981</td><td>\f$\sqrt{2}\f$</td></tr>
+<tr><td>::LAL_SQRT1_2</td><td>0.7071067811865475244008443621048490</td><td>\f$1/\sqrt{2}\f$</td></tr>
+<tr><td>::LAL_GAMMA</td><td>0.5772156649015328606065120900824024</td><td>\f$\gamma\f$</td></tr>
+<tr><td>::LAL_PI</td><td>3.1415926535897932384626433832795029</td><td>\f$\pi\f$</td></tr>
+<tr><td>::LAL_TWOPI</td><td>6.2831853071795864769252867665590058</td><td>\f$2\pi\f$</td></tr>
+<tr><td>::LAL_PI_2</td><td>1.5707963267948966192313216916397514</td><td>\f$\pi/2\f$</td></tr>
+<tr><td>::LAL_PI_4</td><td>0.7853981633974483096156608458198757</td><td>\f$\pi/4\f$</td></tr>
+<tr><td>::LAL_1_PI</td><td>0.3183098861837906715377675267450287</td><td>\f$1/\pi\f$</td></tr>
+<tr><td>::LAL_2_PI</td><td>0.6366197723675813430755350534900574</td><td>\f$2/\pi\f$</td></tr>
+<tr><td>::LAL_2_SQRTPI</td><td>1.1283791670955125738961589031215452</td><td>\f$2/\sqrt{\pi}\f$</td></tr>
+<tr><td>::LAL_PI_180</td><td>1.7453292519943295769236907684886127\f$\times10^{-2}\f$</td><td>
+  \f$\pi/180\f$</td></tr>
+<tr><td>::LAL_180_PI</td><td>57.295779513082320876798154814105170</td><td>\f$180/\pi\f$</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+\subsection TODO_lalspec_1648 Physical Constants
+
+The following physical constants are defined to have exact values.
+The values of \f$c\f$ and \f$g\f$ are taken from [\ref Barnet_1996],
+\f$p_\mathrm{atm}\f$ is from [\ref Lang_1992], while \f$\epsilon_0\f$ and
+\f$\mu_0\f$ are computed from \f$c\f$ using exact formulae.  They are given in
+the SI units shown.
+
+
+<table><tr><td>
+
+Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>
+::LAL_C_SI</td><td>\f$299\,792\,458\,\mathrm{m}\,\mathrm{s}^{-1}\f$</td><td>
+        Speed of light \f$c\f$ in free space</td></tr>
+<tr><td>::LAL_EPSILON0_SI</td><td>
+        \f$8.8541878176203898505365630317107503\times10^{-12}\,
+        \mathrm{C}^2\mathrm{N}^{-1}\mathrm{m}^{-2}\f$</td></tr>
+<tr><td></td><td></td><td>Permittivity \f$\epsilon_0\f$ of free space</td></tr>
+<tr><td>::LAL_MU0_SI</td><td>
+        \f$1.2566370614359172953850573533118012\times10^{-6}\,
+        \mathrm{N}\,\mathrm{A}^{-2}\f$</td></tr>
+<tr><td></td><td></td><td>Permeability \f$\mu_0\f$ of free space</td></tr>
+<tr><td>::LAL_GEARTH_SI</td><td>\f$9.80665\,\mathrm{m}\,\mathrm{s}^{-2}\f$</td><td>
+        Standard gravity \f$g\f$</td></tr>
+<tr><td>::LAL_PATM_SI</td><td>\f$101\,325\,\mathrm{Pa}\f$</td><td>
+        Standard atmospheric pressure \f$p_\mathrm{atm}\f$</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+The following are measured fundamental physical constants, with values
+given in [\ref Barnet_1996].  When not dimensionless, they are given
+in the SI units shown.
+
+
+<table><tr><td>
+
+Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>
+::LAL_G_SI</td><td>\f$6.67259\times10^{-11}\,\mathrm{N}\,\mathrm{m}^{2}
+        \mathrm{kg}^{-2}\f$</td><td>Gravitational constant \f$G\f$</td></tr>
+<tr><td>::LAL_H_SI</td><td>\f$6.6260755\times10^{-34}\,\mathrm{J}\,\mathrm{s}\f$</td><td>
+        Planck constant \f$h\f$</td></tr>
+<tr><td>::LAL_HBAR_SI</td><td>\f$1.05457266\times10^{-34}\,\mathrm{J}\,\mathrm{s}\f$</td><td>
+        Reduced Planck constant \f$\hbar\f$</td></tr>
+<tr><td>::LAL_MPL_SI</td><td>\f$2.17671\times10^{-8}\,\mathrm{kg}\f$</td><td>Planck mass</td></tr>
+<tr><td>::LAL_LPL_SI</td><td>\f$1.61605\times10^{-35}\,\mathrm{m}\f$</td><td>Planck length</td></tr>
+<tr><td>::LAL_TPL_SI</td><td>\f$5.39056\times10^{-44}\,\mathrm{s}\f$</td><td>Planck time</td></tr>
+<tr><td>::LAL_K_SI</td><td>\f$1.380658\times10^{-23}\,\mathrm{J}\,\mathrm{K}^{-1}\f$</td><td>
+        Boltzmann constant \f$k\f$</td></tr>
+<tr><td>::LAL_R_SI</td><td>\f$8.314511\,\mathrm{J}\,\mathrm{K}^{-1}\f$</td><td>
+        Ideal gas constant \f$R\f$</td></tr>
+<tr><td>::LAL_MOL</td><td>\f$6.0221367\times10^{23}\f$</td><td>Avogadro constant</td></tr>
+<tr><td>::LAL_BWIEN_SI</td><td>\f$2.897756\times10^{-3}\,\mathrm{m}\,\mathrm{K}\f$</td><td>
+        Wien displacement law constant \f$b\f$</td></tr>
+<tr><td>::LAL_SIGMA_SI</td><td>\f$5.67051\times10^{-8}\,\mathrm{W}\,\mathrm{m}^{-2}
+        \mathrm{K}^{-4}\f$</td><td>Stefan-Boltzmann constant \f$\sigma\f$</td></tr>
+<tr><td>::LAL_AMU_SI</td><td>\f$1.6605402\times10^{-27}\,\mathrm{kg}\f$</td><td>
+        Atomic mass unit</td></tr>
+<tr><td>::LAL_MP_SI</td><td>\f$1.6726231\times10^{-27}\,\mathrm{kg}\f$</td><td>Proton mass</td></tr>
+<tr><td>::LAL_ME_SI</td><td>\f$9.1093897\times10^{-31}\,\mathrm{kg}\f$</td><td>Electron mass</td></tr>
+<tr><td>LAL_QP_SI</td><td>\f$1.60217733\times10^{-19}\,\mathrm{C}\f$</td><td>Proton charge</td></tr>
+<tr><td>::LAL_ALPHA</td><td>\f$7.297354677\times10^{-3}\f$</td><td>Fine structure constant</td></tr>
+<tr><td>::LAL_RE_SI</td><td>\f$2.81794092\times10^{-15}\,\mathrm{m}\f$</td><td>
+        Classical electron radius \f$r_e\f$</td></tr>
+<tr><td>::LAL_LAMBDAE_SI</td><td>\f$3.86159323\times10^{-13}\,\mathrm{m}\f$</td><td>
+        Electron Compton wavelength \f$\lambda_e\f$</td></tr>
+<tr><td>::LAL_AB_SI</td><td>\f$5.29177249\times10^{-11}\,\mathrm{m}\f$</td><td>Bohr radius \f$a\f$</td></tr>
+<tr><td>::LAL_MUB_SI</td><td>\f$9.27401543\times10^{-24}\,\mathrm{J}\,\mathrm{T}^{-1}\f$</td><td>
+        Bohr magneton \f$\mu_B\f$</td></tr>
+<tr><td>::LAL_MUN_SI</td><td>\f$5.05078658\times10^{-27}\,\mathrm{J}\,\mathrm{T}^{-1}\f$</td><td>
+        Nuclear magneton \f$\mu_N\f$</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+
+\subsection TODO_lalspec_1726 Astrophysical Parameters
+
+The following parameters are derived from measured properties of the
+Earth and Sun.  The values are taken from [\ref Barnet_1996], except
+for the obliquity of the ecliptic plane and the eccentricity of
+Earth's orbit, which are taken from [\ref Lang_1992].  All values are
+given in the SI units shown.
+
+
+<table><tr><td>
+
+Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>
+::LAL_REARTH_SI</td><td>\f$6.378140\times10^6\,\mathrm{m}\f$</td><td>
+        Earth equatorial radius</td></tr>
+<tr><td>::LAL_AWGS84_SI</td><td>\f$6.378137\times10^6\,\mathrm{m}\f$</td><td>
+        Semimajor axis of WGS-84 Reference Ellipsoid</td></tr>
+<tr><td>::LAL_BWGS84_SI</td><td>\f$6.356752314\times10^6\,\mathrm{m}\f$</td><td>
+        Semiminor axis of WGS-84 Reference Ellipsoid</td></tr>
+<tr><td>::LAL_MEARTH_SI</td><td>\f$5.97370\times10^{24}\,\mathrm{kg}\f$</td><td>Earth mass</td></tr>
+<tr><td>::LAL_IEARTH</td><td>\f$0.409092804\,\mathrm{rad}\f$</td><td>
+        Obliquity of the ecliptic (2000)</td></tr>
+<tr><td>::LAL_EEARTH</td><td>0.0167</td><td>Earth orbital eccentricity</td></tr>
+<tr><td>::LAL_RSUN_SI</td><td>\f$6.960\times10^8\,\mathrm{m}\f$</td><td>Solar equatorial radius</td></tr>
+<tr><td>::LAL_MSUN_SI</td><td>\f$1.98892\times10^{30}\,\mathrm{kg}\f$</td><td>Solar mass</td></tr>
+<tr><td>::LAL_MRSUN_SI</td><td>\f$1.47662504\times10^3\,\mathrm{m}\f$</td><td>
+        Geometrized solar mass (length)</td></tr>
+<tr><td>::LAL_MTSUN_SI</td><td>\f$4.92549095\times10^{-6}\,\mathrm{s}\f$</td><td>
+        Geometrized solar mass (time)</td></tr>
+<tr><td>::LAL_LSUN_SI</td><td>\f$3.846\times10^{26}\,\mathrm{W}\f$</td><td>Solar luminosity</td></tr>
+<tr><td>::LAL_AU_SI</td><td>\f$1.4959787066\times10^{11}\,\mathrm{m}\f$</td><td>
+        Astronomical unit</td></tr>
+<tr><td>::LAL_PC_SI</td><td>\f$3.0856775807\times10^{16}\,\mathrm{m}\f$</td><td>Parsec</td></tr>
+<tr><td>::LAL_YRTROP_SI</td><td>\f$31\,556\,925.2\,\mathrm{s}\f$</td><td>Tropical year (1994)</td></tr>
+<tr><td>::LAL_YRSID_SI</td><td>\f$31\,558\,149.8\,\mathrm{s}\f$</td><td>Sidereal year (1994)</td></tr>
+<tr><td>::LAL_DAYSID_SI</td><td>\f$86\,164.09053\,\mathrm{s}\f$</td><td>Mean sidereal day</td></tr>
+<tr><td>::LAL_LYR_SI</td><td>\f$9.46052817\times10^{15}\,\mathrm{m}\f$</td><td>
+        \f$c\times\f$tropical year (1994)</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+The following cosmological parameters are derived from measurements of
+the Hubble expansion rate and of the cosmic background radiation
+(CBR).  Data are taken from [\ref Barnet_1996].  In what follows, the
+normalized Hubble constant \f$h_0\f$ is equal to the actual Hubble
+constant \f$H_0\f$ divided by \f$\langle H
+\rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$.  Thus the
+Hubble constant can be written as:
+\f[
+H_0 = \langle H \rangle h_0 \; .
+\f]
+Similarly, the critical energy density \f$\rho_c\f$ required for spatial
+flatness is given by:
+\f[
+\rho_c = \langle\rho\rangle h_0^2 \; .
+\f]
+Current estimates give \f$h_0\f$ a value of around 0.65, which is what is
+assumed below.  All values are in the SI units shown.
+
+
+<table><tr><td>
+
+Name</td><td>Value</td><td>Description</td></tr>
+<tr><td>
+::LAL_H0_SI</td><td>\f$2\times10^{-18}\,\mathrm{s}^{-1}\f$</td><td>
+        Approx.\ Hubble constant \f$H_0\f$</td></tr>
+<tr><td>::LAL_H0FAC_SI</td><td>\f$3.2407792903\times10^{-18}\,\mathrm{s}^{-1}\f$</td><td>
+        \f$H_0/h_0\f$</td></tr>
+<tr><td>::LAL_RHOC_SI</td><td>\f$7\times10^{-10}\,\mathrm{J}\,\mathrm{m}^{-3}\f$</td><td>
+        Approx.\ critical energy density \f$\rho_c\f$</td></tr>
+<tr><td>::LAL_RHOCFAC_SI</td><td>\f$1.68860\times10^{-9}\,\mathrm{J}\,\mathrm{m}^{-3}\f$</td><td>
+        \f$\rho_c/h_0^2\f$</td></tr>
+<tr><td>::LAL_TCBR_SI</td><td>\f$2.726 \mathrm{K}\f$</td><td>
+        CBR temperature</td></tr>
+<tr><td>::LAL_VCBR_SI</td><td>\f$3.695\times10^5\,\mathrm{m}\,\mathrm{s}^{-1}\f$</td><td>
+        Solar velocity with respect to CBR</td></tr>
+<tr><td>::LAL_RHOCBR_SI</td><td>\f$4.177\times10^{-14}\,\mathrm{J}\,\mathrm{m}^{-3}\f$</td><td>
+        Energy density of CBR</td></tr>
+<tr><td>::LAL_NCBR_SI</td><td>\f$4.109\times10^8\,\mathrm{m}^{-3}\f$</td><td>
+        Number density of CBR photons</td></tr>
+<tr><td>::LAL_SCBR_SI</td><td>\f$3.993\times10^{-14}\,\mathrm{J}\,\mathrm{K}^{-1}
+        \mathrm{m}^{-3}\f$</td><td>Entropy density of CBR</td></tr>
+<tr><td>
+</td></tr></table>
+
+
+(MANUAL INTERVENTION begin bibliography)
+\anchor lsd <b>[lsd]</b>
+  LAL Software Documentation,
+  <tt>http://www.lsc-group.phys.uwm.edu/lal/lsd.pdf</tt>
+\anchor Barnet_1996 <b>[Barnet_1996]</b>
+  Particle Data Group, R. M. Barnett et al., Phys. Rev. D\c 54,
+  1 (1996)
+\anchor Lang_1992 <b>[Lang_1992]</b>
+  K. R. Lang, <em>Astrophysical Data: Planets and Stars</em>.
+  Springer-Verlag, New York (1992)
+(MANUAL INTERVENTION end bibliography)
+
+
+
+*/

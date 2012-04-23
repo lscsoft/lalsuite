@@ -50,4 +50,11 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
+
+/** \brief Function to output a sample with logL values etc for the injection, if one is made.
+  * Requires --inj, --outfile and optionally --event (if not 0).
+  */
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState);
+
+
 #endif
