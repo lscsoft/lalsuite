@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.19"
+version "1.1.20"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -29,7 +29,7 @@ option "ephemDir"       - "Path to ephemeris files" string typestr="directory" d
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string default="08-11" optional
 
 section "TwoSpect search parameters"
-option "Pmin"  - "Minimum period to be searched (in seconds)" double default="7200.0" optional
+option "Pmin"  - "Minimum period to be searched (in seconds)" double optional
 option "Pmax"  - "Maximum period to be searched (in seconds)" double optional
 option "dfmin" - "Minimum modulation depth to search (Hz)" double optional
 option "dfmax" - "Maximum modulation depth to search (Hz)" double optional

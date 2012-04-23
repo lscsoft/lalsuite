@@ -2483,7 +2483,6 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    //Defaults given or option passed
    params->Tcoh = args_info.Tcoh_arg;                                            //SFT coherence time (s)
    params->SFToverlap = args_info.SFToverlap_arg;                                //SFT overlap (s)
-   params->Pmin = args_info.Pmin_arg;                                            //Minimum period to search (s)
    params->blksize = args_info.blksize_arg;                                      //Block size of SFT running median (bins)
    params->dopplerMultiplier = args_info.dopplerMultiplier_arg;                  //Velocity of Earth multiplier
    params->mintemplatelength = args_info.minTemplateLength_arg;                  //Minimum number of template weights (pixels)
@@ -2509,19 +2508,45 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)
-   else params->Tobs = 10*168*3600;
+   else {
+      fprintf(stderr, "%s: an observation time must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.fmin_given) params->fmin = args_info.fmin_arg;                  //Minimum frequency to search (Hz)
-   else params->fmin = 99.9;
+   else {
+      fprintf(stderr, "%s: a minimum frequency to search must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.fspan_given) params->fspan = args_info.fspan_arg;               //Maximum frequency to search (Hz)
-   else params->fspan = 0.2;
+   else {
+      fprintf(stderr, "%s: a frequency span must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.t0_given) params->searchstarttime = args_info.t0_arg;           //GPS start time of the search (s)
-   else params->searchstarttime = 900000000.0;
+   else {
+      fprintf(stderr, "%s: a search start time must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
+   if (args_info.Pmin_given) params->Pmin = args_info.Pmin_arg;                  //Minimum period to search (s)
+   else {
+      fprintf(stderr, "%s: a minimum period to search must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.Pmax_given) params->Pmax = args_info.Pmax_arg;                  //Maximum period to search (s)
-   else params->Pmax = 0.2*(params->Tobs);
+   else {
+      fprintf(stderr, "%s: a maximum period to search must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.dfmin_given) params->dfmin = args_info.dfmin_arg;               //Minimum modulation depth to search (Hz)
-   else params->dfmin = 0.5/(params->Tcoh);
+   else {
+      fprintf(stderr, "%s: a minimum modulation depth to search must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.dfmax_given) params->dfmax = args_info.dfmax_arg;               //Maximum modulation depth to search (Hz)
-   else params->dfmax = maxModDepth(params->Pmax, params->Tcoh);
+   else {
+      fprintf(stderr, "%s: a maximum modulation depth to search must be specified.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
    else params->ULfmin = params->fmin;
    if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)

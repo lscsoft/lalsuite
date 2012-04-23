@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.19"
+#define CMDLINE_PARSER_VERSION "1.1.20"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -99,7 +99,7 @@ struct gengetopt_args_info
   char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files (default='08-11').  */
   char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
   const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
-  double Pmin_arg;	/**< @brief Minimum period to be searched (in seconds) (default='7200.0').  */
+  double Pmin_arg;	/**< @brief Minimum period to be searched (in seconds).  */
   char * Pmin_orig;	/**< @brief Minimum period to be searched (in seconds) original value given at command line.  */
   const char *Pmin_help; /**< @brief Minimum period to be searched (in seconds) help description.  */
   double Pmax_arg;	/**< @brief Maximum period to be searched (in seconds).  */

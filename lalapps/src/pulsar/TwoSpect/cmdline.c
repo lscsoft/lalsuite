@@ -57,7 +57,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ephemDir=directory      Path to ephemeris files  \n                                  (default=`/opt/lscsoft/lalpulsar/share/lalpulsar')",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files  (default=`08-11')",
   "\nTwoSpect search parameters:",
-  "      --Pmin=DOUBLE             Minimum period to be searched (in seconds)  \n                                  (default=`7200.0')",
+  "      --Pmin=DOUBLE             Minimum period to be searched (in seconds)",
   "      --Pmax=DOUBLE             Maximum period to be searched (in seconds)",
   "      --dfmin=DOUBLE            Minimum modulation depth to search (Hz)",
   "      --dfmax=DOUBLE            Maximum modulation depth to search (Hz)",
@@ -325,7 +325,6 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ephemDir_orig = NULL;
   args_info->ephemYear_arg = gengetopt_strdup ("08-11");
   args_info->ephemYear_orig = NULL;
-  args_info->Pmin_arg = 7200.0;
   args_info->Pmin_orig = NULL;
   args_info->Pmax_orig = NULL;
   args_info->dfmin_orig = NULL;
@@ -1769,7 +1768,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->Pmin_arg), 
                  &(args_info->Pmin_orig), &(args_info->Pmin_given),
-                &(local_args_info.Pmin_given), optarg, 0, "7200.0", ARG_DOUBLE,
+                &(local_args_info.Pmin_given), optarg, 0, 0, ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "Pmin", '-',
                 additional_error))
