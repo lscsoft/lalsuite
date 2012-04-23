@@ -198,9 +198,11 @@ struct gengetopt_args_info
   const char *printSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs help description.  */
   int printUsedSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests (default=off).  */
   const char *printUsedSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests help description.  */
-  int randSeed_arg;	/**< @brief Random seed value (default='0').  */
+  int randSeed_arg;	/**< @brief Random seed value.  */
   char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
   const char *randSeed_help; /**< @brief Random seed value help description.  */
+  int chooseSeed_flag;	/**< @brief The random seed value is chosen based on the input search parameters (default=off).  */
+  const char *chooseSeed_help; /**< @brief The random seed value is chosen based on the input search parameters help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
@@ -263,6 +265,7 @@ struct gengetopt_args_info
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
   unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
+  unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
 
 } ;
 

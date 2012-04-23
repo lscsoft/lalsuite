@@ -211,6 +211,21 @@ int main(int argc, char *argv[])
       XLAL_ERROR(XLAL_EFUNC);
    }
    
+   
+   //Random seed value settings for random number generator
+   //If the chooseSeed option was given, then:
+   //seed = (IFO multiplier)*fabs(round(fmin + fspan + Pmin + Pmax + dfmin + dfmax + alpha + delta))
+   UINT8 IFOmultiplier = 0;
+   if (strcmp(inputParams->det[0].frDetector.prefix, "H1")==0) IFOmultiplier = 1;            //H1 gets multiplier 1
+   else if (strcmp(inputParams->det[0].frDetector.prefix, "L1")==0) IFOmultiplier = 2;       //L1 gets multiplier 2
+   else IFOmultiplier = 3;                                                                   //V1 gets multiplier 3
+   if (args_info.randSeed_given && args_info.chooseSeed_given) inputParams->randSeed = args_info.randSeed_arg;
+   else if (!args_info.randSeed_given && args_info.chooseSeed_given) inputParams->randSeed = IFOmultiplier*(UINT8)fabs(round(inputParams->fmin + inputParams->fspan + inputParams->Pmin + inputParams->Pmax + inputParams->dfmin + inputParams->dfmax + dopplerpos.Alpha + dopplerpos.Delta));
+   else if (args_info.randSeed_given && !args_info.chooseSeed_given) inputParams->randSeed = args_info.randSeed_arg;
+   else inputParams->randSeed = 0;
+   gsl_rng_set(inputParams->rng, inputParams->randSeed);     //Set the random number generator with the given seed
+   
+   
    //Basic units
    REAL4 tempfspan = inputParams->fspan + (inputParams->blksize-1)/inputParams->Tcoh;
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;
@@ -842,9 +857,9 @@ int main(int argc, char *argv[])
                   XLAL_ERROR(XLAL_EFUNC);
                }
             }
-            //efficientTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh, 0.125/inputParams->Tcoh, 5, gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh, 0.125/inputParams->Tcoh, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             //bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh, 11, 5, gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh, 11, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
-            bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-1.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+1.5/inputParams->Tcoh, 7, 5, gaussCandidates2->data[ii].moddepth-1.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+1.5/inputParams->Tcoh, 7, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+            //bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-1.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+1.5/inputParams->Tcoh, 7, 5, gaussCandidates2->data[ii].moddepth-1.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+1.5/inputParams->Tcoh, 7, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+            bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-1.0/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, gaussCandidates2->data[ii].moddepth-1.0/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             if (xlalErrno!=0) {
                fprintf(stderr, "%s: bruteForceTemplateSearch() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
@@ -2250,18 +2265,6 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    numffts = (INT4)antweights->length;                      //Number of FFTs
    numfprbins = (INT4)floor(numffts*0.5)+1;                 //number of 2nd fft frequency bins
    
-   //Initialize the random number generator
-   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed); */
-   //gsl_rng_set(rng, 0); //comment this out
-   gsl_rng *rng = input->rng;
-   
    //Set up for making the PSD
    memset(aveNoise->data, 0, sizeof(REAL4)*aveNoise->length);
    
@@ -2365,7 +2368,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
             }
             prevnoiseval = noiseval; */
             
-            noiseval = expRandNum(aveNoiseInTime->data[jj], rng);
+            noiseval = expRandNum(aveNoiseInTime->data[jj], input->rng);
             if (jj>0 && aveNoiseInTime->data[jj-1]!=0.0) {
                noiseval *= (1.0-corrfactorsquared);
                noiseval += corrfactorsquared*prevnoiseval;
@@ -2422,7 +2425,6 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    XLALDestroyREAL4Vector(aveNoiseInTime);
    XLALDestroyREAL4Vector(rngMeansOverBand);
    XLALDestroyREAL8Vector(multiplicativeFactor);
-   //gsl_rng_free(rng);
 
 } /* ffPlaneNoise() */
 
@@ -2503,10 +2505,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->useSSE = args_info.useSSE_given;                                      //Use SSE optimized functions (dafualt = 0)
    params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;      //Follow up outliers outside of UL range (default = 0)
    params->validateSSE = args_info.validateSSE_given;                            //Validate SSE functions (default = 0)
-   params->randSeed = args_info.randSeed_arg;                                    //Seed value for random number generator
    
-   //Set the random number generator with the given seed
-   gsl_rng_set(params->rng, params->randSeed);
    
    //Non-default arguments
    if (args_info.Tobs_given) params->Tobs = args_info.Tobs_arg;                  //Total observation time (s)

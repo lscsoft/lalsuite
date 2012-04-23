@@ -100,7 +100,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ULoff                   Turn off upper limits computation  \n                                  (default=off)",
   "      --printSFTtimes           Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of input SFTs  (default=off)",
   "      --printUsedSFTtimes       Output a list <GPS sec> <GPS nanosec> of SFT \n                                  start times of the SFTs passing tests  \n                                  (default=off)",
-  "      --randSeed=INT            Random seed value  (default=`0')",
+  "      --randSeed=INT            Random seed value",
+  "      --chooseSeed              The random seed value is chosen based on the \n                                  input search parameters  (default=off)",
     0
 };
 
@@ -283,6 +284,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_given = 0 ;
   args_info->printUsedSFTtimes_given = 0 ;
   args_info->randSeed_given = 0 ;
+  args_info->chooseSeed_given = 0 ;
 }
 
 static
@@ -373,8 +375,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ULoff_flag = 0;
   args_info->printSFTtimes_flag = 0;
   args_info->printUsedSFTtimes_flag = 0;
-  args_info->randSeed_arg = 0;
   args_info->randSeed_orig = NULL;
+  args_info->chooseSeed_flag = 0;
   
 }
 
@@ -446,6 +448,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->printSFTtimes_help = gengetopt_args_info_full_help[66] ;
   args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[67] ;
   args_info->randSeed_help = gengetopt_args_info_full_help[68] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[69] ;
   
 }
 
@@ -835,6 +838,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "printUsedSFTtimes", 0, 0 );
   if (args_info->randSeed_given)
     write_into_file(outfile, "randSeed", args_info->randSeed_orig, 0);
+  if (args_info->chooseSeed_given)
+    write_into_file(outfile, "chooseSeed", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -1468,6 +1473,7 @@ cmdline_parser_internal (
         { "printSFTtimes",	0, NULL, 0 },
         { "printUsedSFTtimes",	0, NULL, 0 },
         { "randSeed",	1, NULL, 0 },
+        { "chooseSeed",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -2265,9 +2271,21 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->randSeed_arg), 
                  &(args_info->randSeed_orig), &(args_info->randSeed_given),
-                &(local_args_info.randSeed_given), optarg, 0, "0", ARG_INT,
+                &(local_args_info.randSeed_given), optarg, 0, 0, ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "randSeed", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* The random seed value is chosen based on the input search parameters.  */
+          else if (strcmp (long_options[option_index].name, "chooseSeed") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->chooseSeed_flag), 0, &(args_info->chooseSeed_given),
+                &(local_args_info.chooseSeed_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "chooseSeed", '-',
                 additional_error))
               goto failure;
           

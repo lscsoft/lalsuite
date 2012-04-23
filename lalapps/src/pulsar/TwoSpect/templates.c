@@ -200,18 +200,6 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
       } 
    }
    
-   
-   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_VOID(XLAL_ENOMEM);
-   }
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed); */
-   gsl_rng *rng = inputParams->rng;
-   
-   
    //And now find the root
    ii = 0;
    INT4 max_iter = 100, jj = 0, max_retries = 10;
@@ -255,7 +243,7 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
             ii = 0;
             jj++;
             status = GSL_CONTINUE;
-            if ( (gsl_root_fdfsolver_set(s0, &FDF, gsl_rng_uniform_pos(rng)*Rhigh)) != 0 ) {
+            if ( (gsl_root_fdfsolver_set(s0, &FDF, gsl_rng_uniform_pos(inputParams->rng)*Rhigh)) != 0 ) {
                fprintf(stderr,"%s: Unable to initialize root solver to first guess.\n", __func__);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
@@ -304,7 +292,6 @@ void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh,
    //Cleanup
    gsl_root_fsolver_free(s1);
    gsl_root_fdfsolver_free(s0);
-   //gsl_rng_free(rng);
    
    
 } /* numericFAR() */
@@ -806,7 +793,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       REAL4 s = sigmas->data[ii];      //sigma
       
-      //Scaling factor
+      //Scaling factor for leakage
       REAL4 scale1 = 1.0/(1.0+expf((REAL4)(-phi_actual->data[ii+fnumstart]*phi_actual->data[ii+fnumstart]*0.5/(s*s))));
       
       //pre-factor
@@ -817,6 +804,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       
       if (params->useSSE) {
          //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
+         //We neglect the 4*pi because it's just a normalization factor and we are going to normalize anyway
          sseScaleREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, omegapr_squared, -s*s);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);

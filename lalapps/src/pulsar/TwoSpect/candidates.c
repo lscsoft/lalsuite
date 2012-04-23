@@ -405,7 +405,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            //TODO: remove this
+            //remove this
             /* for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
             for (jj=0; jj<50; jj++) {
                REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.3*jj-2.0, inputParams, &proberrcode);
