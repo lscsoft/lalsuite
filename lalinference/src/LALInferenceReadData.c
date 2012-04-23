@@ -2045,6 +2045,9 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
       LALInferenceAddVariable(runState->currentParams, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
       LALInferenceAddVariable(runState->currentParams, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
+
+    REAL8 injPrior = runState->prior(runState,runState->currentParams);
+    LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->template);
     LALInferenceAddVariable(runState->currentParams,"logL",(void *)&injL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
