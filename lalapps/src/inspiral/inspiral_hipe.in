@@ -299,10 +299,12 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                  # additional requirements to launch jon on remote pool
                  insp_ckpt_job.set_universe("grid")
                  insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','remote-site'))
+                 insp_ckpt.add_pegasus_profile("condor","transfer_input_files",os.path.join(os.getcwd(),insp.get_checkpoint_image()))
                  insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
                  insp_ckpt.add_pegasus_profile("condor","+remote_requirements","True")
                  insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
                  insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_transfer_input_files",insp.get_checkpoint_image())
                else:
                  insp_ckpt_job.set_universe("vanilla")
 
