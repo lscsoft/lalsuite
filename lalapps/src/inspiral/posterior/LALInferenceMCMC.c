@@ -1684,7 +1684,7 @@ void initVariables(LALInferenceRunState *state)
     LALInferenceSetVariable(state->proposalArgs, "adaptTau", &tau);
   }
 
-  INT4 Neff = *(INT4*) LALInferenceGetVariable(state->algorithmParams, "Nskip");
+  INT4 Neff = 0;
   ppt = LALInferenceGetProcParamVal(commandLine, "--Neffective");
   if (ppt)
     Neff = atoi(ppt->value);

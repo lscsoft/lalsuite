@@ -346,6 +346,12 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     ptr=ptr->next;
   }
 
+  /* If not specified otherwise, set effective sample size to total number of iterations */
+  if (!Neff) {
+    Neff = Niter;
+    LALInferenceSetVariable(runState->algorithmParams, "Neffective", &Neff);
+  }
+
   /* Determine network SNR if injection was done */
   REAL8 networkSNRsqrd = 0.0;
   LALInferenceIFOData *IFO = runState->data;
@@ -413,22 +419,23 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSwaps"))
     tempSwaps = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSwaps")->value);
 
-  INT4  annealStart     = Neff/nChain    ;                // Length (in autocorrelation lengths) after ending adaptation before annealing
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--annealStart"))
-    annealStart = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealStart")->value);
-
-  INT4  annealLength    = 5;                                  // Number of auto correlation lenghts to cool temperatures to ~1.0
-  if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
-    annealLength = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealLength")->value);
-
   INT4 Tskip            = 100;                                // Number of iterations between proposed temperature swaps 
   if (LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip"))
     Tskip = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--tempSkip")->value);
+
+  INT4  annealStart     = 500;                                // # of autocorrelation lengths after adaptation before annealing
+  INT4  annealLength    = 100;                                // # of autocorrelation lenghts to cool temperatures to ~1.0
 
   ppt=LALInferenceGetProcParamVal(runState->commandLine, "--anneal");
   if (ppt) {
     annealingOn = 1;                                          // Flag to indicate annealing is being used during the run
     runPhase=1;
+
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--annealStart"))
+      annealStart = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealStart")->value);
+
+    if (LALInferenceGetProcParamVal(runState->commandLine,"--annealLength"))
+      annealLength = atoi(LALInferenceGetProcParamVal(runState->commandLine,"--annealLength")->value);
   }
 
   for (t=0; t<nChain; ++t) {
