@@ -459,7 +459,7 @@ if test "x${osx_version_check}" = "xtrue"; then
       10.0*|10.1*|10.2*|10.3*)
         AC_MSG_ERROR([This version of Mac OS X is not supported])
         ;;
-      10.4*|10.5*|10.6*|10.7*)
+      10.4*|10.5*|10.6*|10.7*|10.8*)
         # supported version
         ;;
       *)
