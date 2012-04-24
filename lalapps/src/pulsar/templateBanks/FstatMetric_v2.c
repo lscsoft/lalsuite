@@ -162,6 +162,8 @@ typedef struct
   LALStringVector* coords; /**< list of Doppler-coordinates to compute metric in, see --coordsHelp for possible values */
   BOOLEAN coordsHelp;	/**< output help-string explaining all the possible Doppler-coordinate names for --cords */
 
+  BOOLEAN approxPhase;	/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
+
   BOOLEAN version;	/**< output code versions */
 
 } UserVariables_t;
@@ -267,6 +269,7 @@ main(int argc, char *argv[])
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
+  metricParams.approxPhase   = uvar.approxPhase;
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
   if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
@@ -346,6 +349,8 @@ initUserVars (UserVariables_t *uvar)
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
+  uvar->approxPhase = FALSE;
+
   /* register all our user-variables */
 
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
@@ -376,6 +381,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
   XLALregINTUserStruct(detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
+  XLALregBOOLUserStruct(approxPhase,     0,  UVAR_DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
 
   XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
 

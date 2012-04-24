@@ -103,6 +103,7 @@ typedef struct
   const LALDetector *site;		/**< detector site to compute metric for */
   const EphemerisData *edat;		/**< ephemeris data */
   vect3Dlist_t *rOrb_n;			/**< list of orbital-radius derivatives at refTime of order n = 0, 1, ... */
+  BOOLEAN approxPhase;			/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders \>= 1) */
 } intparams_t;
 
 
@@ -356,12 +357,17 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
-  /* correct for time-delay from SSB to detector, neglecting relativistic effects */
-  REAL8 dTRoemerSI = SCALAR(nn_equ, posvel.pos );
-  REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
-
   /* barycentric time-delay since reference time, measured in units of Tspan */
-  REAL8 tau = tau0 + tt + dTRoemer;
+  REAL8 tau = tau0 + tt;
+
+  /* correct for time-delay from SSB to detector (Roemer delay), neglecting relativistic effects */
+  if ( !par->approxPhase )
+    {
+      REAL8 dTRoemerSI = SCALAR(nn_equ, posvel.pos );
+      REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
+
+      tau += dTRoemer;
+    }
 
   REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
 
@@ -869,6 +875,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
   intparams.site = ifo;
+  intparams.approxPhase = metricParams->approxPhase;
   /* deactivate antenna-patterns for phase-metric */
   intparams.amcomp1 = AMCOMP_NONE;
   intparams.amcomp2 = AMCOMP_NONE;

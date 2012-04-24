@@ -290,11 +290,22 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                insp.set_data_checkpoint()
                insp.set_post_script(cp.get('condor','checkpoint-post-script'))
                insp.add_post_script_arg(os.path.join(os.getcwd(),insp.get_checkpoint_image()))
-               insp_ckpt_job.set_universe("vanilla")
                insp_ckpt = inspiral.InspiralCkptNode(insp_ckpt_job)
                insp_ckpt.set_output(insp.get_output())
                insp_ckpt.set_injections(insp.get_injections())
                insp_ckpt.set_checkpoint_image(insp.get_checkpoint_image())
+
+               if cp.has_option('pipeline','remote-site'):
+                 # additional requirements to launch jon on remote pool
+                 insp_ckpt_job.set_universe("grid")
+                 insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','remote-site'))
+                 insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_requirements","True")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
+               else:
+                 insp_ckpt_job.set_universe("vanilla")
+
                insp_ckpt.add_parent(insp)
                if opts.inspiral: dag.add_node(insp_ckpt)
 
