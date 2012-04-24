@@ -171,11 +171,23 @@ typedef enum {
   DOPPLERCOORD_N3Y_ECL,			/**< unconstrained sky-vector n3: ecliptic-y coordinate */
   DOPPLERCOORD_N3Z_ECL,			/**< unconstrained sky-vector n3: ecliptic-z coordinate */
 
-
   DOPPLERCOORD_NU0,			/**< 'global correlation' frequency coordinate nu_0 */
   DOPPLERCOORD_NU1,			/**< 'global correlation' f1dot coordinate nu_1 */
   DOPPLERCOORD_NU2,			/**< 'global correlation' f2dot coordinate nu_2 */
   DOPPLERCOORD_NU3,			/**< 'global correlation' f3dot coordinate nu_3 */
+
+  /** \name Karl's super-duper-sky coordinates */
+  /*@{*/
+  DOPPLERCOORD_KAPPA_S,			/**< Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate */
+  DOPPLERCOORD_SIGMA_S,			/**< Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate */
+  DOPPLERCOORD_KAPPA_O,			/**< Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
+  DOPPLERCOORD_SIGMA_O,			/**< Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate */
+
+  DOPPLERCOORD_OMEGA_0,			/**< Karl's coordinates 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
+  DOPPLERCOORD_OMEGA_1,			/**< Karl's coordinates 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
+  DOPPLERCOORD_OMEGA_2,			/**< Karl's coordinates 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
+  DOPPLERCOORD_OMEGA_3,			/**< Karl's coordinates 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
+  /*@}*/
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
@@ -220,6 +232,16 @@ const CHAR *DopplerCoordinateNames[] = {
   "nu1",
   "nu2",
   "nu3",
+
+  /* Karl's coordinates */
+  "kappa_s",
+  "sigma_s",
+  "kappa_o",
+  "sigma_o",
+  "omega_0",
+  "omega_1",
+  "omega_2",
+  "omega_3",
 
   "NONE"
 };
@@ -267,6 +289,15 @@ const CHAR *DopplerCoordinateNamesHelp[] = {
   "'global correlation' f1dot coordinate nu_1",
   "'global correlation' f2dot coordinate nu_2",
   "'global correlation' f3dot coordinate nu_3",
+
+  "Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate",
+  "Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate",
+  "Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate",
+  "Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate",
+  "Karl's coordinates 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3))",
+  "Karl's coordinates 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5))",
+  "Karl's coordinates 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7))",
+  "Karl's coordinates 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9))",
 
   "NONE"
 };
