@@ -298,10 +298,10 @@ if __name__ == "__main__":
     if project == 'LALApps':
       os.remove(module_tmpfile)
   else:
-    print('creating %s' % header_basename)
+    print('  GEN    %s' % header_basename)
     os.rename(header_tmpfile, header_dstfile)
     if project == 'LALApps':
-      print('creating %s' % module_basename)
+      print('  GEN    %s' % module_basename)
       os.rename(module_tmpfile, module_dstfile)
 
 # vim: syntax=python tw=72 ts=2 et
