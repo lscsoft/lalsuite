@@ -127,6 +127,7 @@ typedef struct {
 
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
+  BOOLEAN printFstat;	/**< print F-stat estimation results to terminal? */
   INT4 minStartTime;	/**< limit start-time of input SFTs to use */
   INT4 maxEndTime;	/**< limit end-time of input SFTs to use */
 
@@ -212,7 +213,8 @@ int main(int argc,char *argv[])
     rho2 = GV.Mmunu.Sinv_Tsft * (GV.Mmunu.Ad * al1 + GV.Mmunu.Bd * al2 + 2.0 * GV.Mmunu.Cd * al3 );
   }
 
-  fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
+  if (uvar.printFstat)
+    fprintf(stdout, "\n%.1f\n", 4.0 + rho2);
 
   /* output predicted Fstat-value into file, if requested */
   if (uvar.outputFstat)
@@ -290,6 +292,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
 
   uvar->help = FALSE;
   uvar->outputFstat = NULL;
+  uvar->printFstat = TRUE;
 
   uvar->minStartTime = 0;
   uvar->maxEndTime = LAL_INT4_MAX;
@@ -320,6 +323,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar )
   LALregSTRINGUserStruct(status,ephemDir, 	'E', UVAR_OPTIONAL, "Directory where Ephemeris files are located");
   LALregSTRINGUserStruct(status,ephemYear, 	'y', UVAR_OPTIONAL, "Year (or range of years) of ephemeris files to be used");
   LALregSTRINGUserStruct(status,outputFstat,     0,  UVAR_OPTIONAL, "Output-file for predicted F-stat value" );
+  LALregBOOLUserStruct(status,printFstat,	 0,  UVAR_OPTIONAL, "Print predicted F-stat value to terminal" );
 
   LALregINTUserStruct ( status,	minStartTime, 	 0,  UVAR_OPTIONAL, "Earliest SFT-timestamp to include");
   LALregINTUserStruct ( status,	maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
