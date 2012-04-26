@@ -137,7 +137,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if gpstime in seg: return seg
     raise pipeline.CondorDAGError('Unable to find time in segments')
   
-  def add_science_segments(self)
+  def add_science_segments(self):
     # Query the segment database for science segments and
     # add them to the pool of segments
     for ifo in self.ifos:
@@ -200,21 +200,7 @@ class EngineJob(pipeline.CondorDAGJob):
     self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process).err'))
 
-class LALInferenceNestNode(EngineNode):
-  def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
-    self.engine='lalinferencenest'
-    
-  def set_output_file(self,filename):
-    self.add_file_opt(self.outfilearg,filename,file_is_output_file=True)
-    self.paramsfile=filename+'_params.txt'
-    self.Bfilename=filename+'_B.txt'
-
-class LALInferenceMCMCNode(EngineNode):
-  def __init__(self,li_job):
-    EngineNode.__init__(self,li_job)
-    self.engine='lalinferencemcmc'
-    
+   
 class EngineNode(pipeline.CondorDAGNode):
   def __init__(self,li_job):
     pipeline.CondorDAGNode.__init__(self,li_job)
@@ -257,66 +243,81 @@ class EngineNode(pipeline.CondorDAGNode):
     pipeline.CondorDAGNode.finalize()
     
   def _finalize_ifo_data(self):
-  """
-  Add list of IFOs and data to analyse to command line arguments.
-  """
-  cp = self.job().get_cp()
-  ifostring='['
-  cachestring='['
-  channelstring='['
-  first=True
-  for ifo in self.ifos:
-	if first:
-	  delim=''
-	  first=False
-	else: delim=','
-	cache=self.scisegs[ifo].get_df_node().get_output_files()[0]
-	self.add_parent(self.scisegs[ifo].get_df_node())
-	ifostring=ifostring+delim+ifo
-	cachestring=cachestring+delim+cache
-	channelstring=channelstring+delim+self.job().get_cp().get('data',ifo.lower()+'-channel')
-  ifostring=ifostring+']'
-  cachestring=cachestring+']'
-  channelstring=channelstring+']'
-  self.add_var_arg('--IFO '+ifostring)
-  self.add_var_arg('--channel '+channelstring)
-  self.add_var_arg('--cache '+cachestring)
-  # Start at earliest common time
-  # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
-  # Used when we are running the coherence test.
-  # Otherwise the noise evidence will differ.
-  starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
-  endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
-  self.__GPSstart=starttime
-  self.__GPSend=endtime
-  length=endtime-starttime
-  
-  # Now we need to adjust the start time and length to make sure the maximum data length
-  # is not exceeded.
-  trig_time=self.get_trig_time()
-  maxLength=float(cp.get('analysis','analysis-chunk-length'))
-  if(length > maxLength):
-    while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
-	  self.__GPSstart+=maxLength/2.0
-  # Override calculated start time if requested by user in ini file
-  if self.job().get_cp().has_option(self.engine,'psdstart'):
-    self.__GPSstart=self.job().get_cp().getfloat(self.engine,'psdstart')
-    print 'Over-riding start time to user-specified value %f'%(self.__GPSstart)
-    if self.__GPSstart<starttime or self.__GPSstart>endtime:
-      print 'ERROR: Over-ridden time lies outside of science segment!'
-      raise Exception('Bad psdstart specified')
-  else: 
-    self.add_var_opt('psdstart',str(self.__GPSstart))
-  if self.job().get_cp().has_option(self.engine,'psdlength'):
-    length=self.job().get_cp().getfloat(self.engine,'psdlength')
-    print 'Over-riding PSD length to user-specified value %f'%(length)
-  else:
-    length=self.__GPSend-self.__GPSstart
-    if(length>maxLength):
-      length=maxLength
-  self.add_var_opt('PSDlength',str(int(length)))
-  self.add_var_opt('seglen',self.job().get_cp().get('analysis','psd-chunk-length'))
+      """
+      Add list of IFOs and data to analyse to command line arguments.
+      """
+      cp = self.job().get_cp()
+      ifostring='['
+      cachestring='['
+      channelstring='['
+      first=True
+      for ifo in self.ifos:
+        if first:
+          delim=''
+          first=False
+        else: delim=','
+        cache=self.scisegs[ifo].get_df_node().get_output_files()[0]
+        self.add_parent(self.scisegs[ifo].get_df_node())
+        ifostring=ifostring+delim+ifo
+        cachestring=cachestring+delim+cache
+        channelstring=channelstring+delim+self.job().get_cp().get('data',ifo.lower()+'-channel')
+      ifostring=ifostring+']'
+      cachestring=cachestring+']'
+      channelstring=channelstring+']'
+      self.add_var_arg('--IFO '+ifostring)
+      self.add_var_arg('--channel '+channelstring)
+      self.add_var_arg('--cache '+cachestring)
+      # Start at earliest common time
+      # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
+      # Used when we are running the coherence test.
+      # Otherwise the noise evidence will differ.
+      starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
+      endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
+      self.__GPSstart=starttime
+      self.__GPSend=endtime
+      length=endtime-starttime
+      
+      # Now we need to adjust the start time and length to make sure the maximum data length
+      # is not exceeded.
+      trig_time=self.get_trig_time()
+      maxLength=float(cp.get('analysis','analysis-chunk-length'))
+      if(length > maxLength):
+        while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
+          self.__GPSstart+=maxLength/2.0
+      # Override calculated start time if requested by user in ini file
+      if self.job().get_cp().has_option(self.engine,'psdstart'):
+        self.__GPSstart=self.job().get_cp().getfloat(self.engine,'psdstart')
+        print 'Over-riding start time to user-specified value %f'%(self.__GPSstart)
+        if self.__GPSstart<starttime or self.__GPSstart>endtime:
+          print 'ERROR: Over-ridden time lies outside of science segment!'
+          raise Exception('Bad psdstart specified')
+      else: 
+        self.add_var_opt('psdstart',str(self.__GPSstart))
+      if self.job().get_cp().has_option(self.engine,'psdlength'):
+        length=self.job().get_cp().getfloat(self.engine,'psdlength')
+        print 'Over-riding PSD length to user-specified value %f'%(length)
+      else:
+        length=self.__GPSend-self.__GPSstart
+        if(length>maxLength):
+          length=maxLength
+      self.add_var_opt('PSDlength',str(int(length)))
+      self.add_var_opt('seglen',self.job().get_cp().get('analysis','psd-chunk-length'))
 
+class LALInferenceNestNode(EngineNode):
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
+    self.engine='lalinferencenest'
+    
+  def set_output_file(self,filename):
+    self.add_file_opt(self.outfilearg,filename,file_is_output_file=True)
+    self.paramsfile=filename+'_params.txt'
+    self.Bfilename=filename+'_B.txt'
+
+class LALInferenceMCMCNode(EngineNode):
+  def __init__(self,li_job):
+    EngineNode.__init__(self,li_job)
+    self.engine='lalinferencemcmc'
+ 
 class ResultsPageJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     exe=cp.get('condor','resultspage')
@@ -328,7 +329,7 @@ class ResultsPageJob(pipeline.CondorDAGJob):
     # self.add_opt('Nlive',cp.get('analysis','nlive'))
     
     if cp.has_option('results','skyres'):
-    self.add_opt('skyres',cp.get('results','skyres'))
+        self.add_opt('skyres',cp.get('results','skyres'))
 
 class ResultsPageNode(pipeline.CondorDAGNode):
     def __init__(self,results_page_job):
@@ -348,12 +349,12 @@ class ResultsPageNode(pipeline.CondorDAGNode):
       """
       self.add_parent(node)
       for infile in node.get_output_files():
-	self.add_file_arg(infile)
-      if node isinstance(LALInferenceNestNode):
-	self.add_var_opt('ns','')
+	    self.add_file_arg(infile)
+      if isinstance(node, LALInferenceNestNode):
+	    self.add_var_opt('ns','')
 	
-      if node isinstance(LALInferenceMCMCNode):
-	self.add_var_opt('lalinfmcmc','')
+      if isinstance(node,LALInferenceMCMCNode):
+	    self.add_var_opt('lalinfmcmc','')
     def set_output_dir(self,dir):
         self.add_var_opt('outpath',dir)
         inspiralutils.mkdir(dir)
