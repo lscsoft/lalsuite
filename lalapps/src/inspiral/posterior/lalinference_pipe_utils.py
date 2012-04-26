@@ -19,6 +19,22 @@ def chooseEngineNode(name):
     return LALInferenceMCMCNode
   return EngineNode
 
+def scan_timefile(self,timefile):
+    import re
+    p=re.compile('[\d.]+')
+    times=[]
+    timefilehandle=open(timefile,'r')
+    for time in timefilehandle:
+      if not p.match(time):
+	continue
+      if float(time) in times:
+	print 'Skipping duplicate time %s'%(time)
+	continue
+      print 'Read time %s'%(time)
+      times.append(float(time))
+      timefilehandle.close()
+      return times
+  
 class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False):
     self.subfiles=[]
@@ -61,7 +77,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Process the input to build list of analyses to do
     self.times=[]
     if cp.has_option('input','gps-time-file'):
-      times=self.scan_timefile(cp.get('input','gps-time-file'))
+      times=scan_timefile(cp.get('input','gps-time-file'))
       for time in times:
 	self.times.append(time)
     # SimInspiral Table
@@ -79,6 +95,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     
     # Pipedown database
 
+    # Sanity checking
+    if len(self.times)==0:
+      print 'No input times found, please check your config. Generating an empty DAG'
     
     # Set up the segments
     if not self.config.has_option('input','gps-start-time'):
@@ -87,22 +106,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.config.set('input','gps-end-time',str(max(self.times)))
     self.add_science_segments()
     
-  
-  def scan_timefile(self,timefile):
-    import re
-    p=re.compile('[\d.]+')
-    times=[]
-    timefilehandle=open(timefile,'r')
-    for time in timefilehandle:
-        if not p.match(time):
-            continue
-        if float(time) in times:
-            print 'Skipping duplicate time %s'%(time)
-            continue
-        print 'Read time %s'%(time)
-        times.append(float(time))
-    timefilehandle.close()
-    return times
+    # Save the final configuration that is being used
+    conffilename=os.path.join(self.basepath,'config.ini')
+    with open(conffilename,'wb') as conffile:
+      self.cp.write(conffile)
+    
+    # Generate the DAG according to the config given
+    
   
   def setup_from_times(self,times):
     """
