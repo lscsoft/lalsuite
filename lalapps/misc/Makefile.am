@@ -5,6 +5,7 @@ EXTRA_DIST = \
 	config.sub \
 	cuda.common \
 	depcomp \
+	generate_user_env.awk \
 	install-sh \
 	lalapps.m4 \
 	lalsuite_build.m4 \
@@ -18,7 +19,6 @@ EXTRA_DIST = \
 	missing \
 	mkinstalldirs \
 	py-compile \
-	generate_user_env.awk \
 	vcsID.common
 
 CLEANFILES = \

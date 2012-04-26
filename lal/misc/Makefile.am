@@ -6,6 +6,7 @@ EXTRA_DIST = \
 	depcomp \
 	doc.mk \
 	dvi.mk \
+	generate_user_env.awk \
 	include.mk \
 	install-sh \
 	lal.m4 \
@@ -19,8 +20,7 @@ EXTRA_DIST = \
 	lt~obsolete.m4 \
 	main.tex.in \
 	missing \
-	mkinstalldirs \
-	generate_user_env.awk
+	mkinstalldirs
 
 CLEANFILES = \
 	lal-user-env.shell \
