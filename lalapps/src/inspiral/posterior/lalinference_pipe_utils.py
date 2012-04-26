@@ -39,32 +39,32 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False):
     self.subfiles=[]
     self.config=cp
-    self.engine=cp.get_option('analysis','engine')
+    self.engine=cp.get('analysis','engine')
     self.EngineNode=chooseEngineNode(self.engine)
     if cp.has_option('paths','basedir'):
-      self.basepath=cp.get_option('paths','basedir')
+      self.basepath=cp.get('paths','basedir')
     else:
       self.basepath=os.getcwd()
       print 'No basepath specified, using current directory: %s'%(self.basepath)
-    self.daglogfile=os.path.join(cp.get_option('paths','daglogdir'),'lalinference_pipeline-'+id(self)+'.log')
+    self.daglogfile=os.path.join(cp.get('paths','daglogdir'),'lalinference_pipeline-'+id(self)+'.log')
     pipeline.CondorDAG.__init__(self,log,dax)
     if cp.has_option('paths','cachedir'):
-      self.cachepath=cp.get_option('paths','cachedir')
+      self.cachepath=cp.get('paths','cachedir')
     else:
       self.cachepath=os.path.join(self.basepath,'caches')
     if cp.has_option('paths','logdir'):
-      self.logpath=cp.get_option('paths','logdir')
+      self.logpath=cp.get('paths','logdir')
     else:
       self.logpath=os.path.join(self.basepath,'log')
     if cp.has_option('analysis','ifos'):
-      self.ifos=cp.get_option('analysis','ifos')
+      self.ifos=cp.get('analysis','ifos')
     else:
       self.ifos=['H1','L1','V1']
     self.segments={}
     for ifo in ifos:
       self.segments[ifo]=[]
     self.dq={}
-    self.frtypes=cp.get_option('datafind','types')
+    self.frtypes=cp.get('datafind','types')
     self.use_available_data=False
     self.webdir=cp.get('paths','webdir')
     # Set up necessary job files.

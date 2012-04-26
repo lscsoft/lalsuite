@@ -54,7 +54,7 @@ bin_SCRIPTS = \
 pkgpython_DATA = \
 	nest_utils.py \
 	combine_evidence.py \
-    lalinference_pipe_utils
+    lalinference_pipe_utils.py
 endif
 
 EXTRA_DIST = \
