@@ -577,11 +577,15 @@ for tag in user_tags:
   print "\tsetting up cluster nodes to cluster coincs in the database..."
   
   # set node options
+  # for the first clustering job, we want the input to be the raw_result_db,
+  # and in the odd case that someone doesn't want any clustering (bad idea!)
+  # the result_db is just the raw_result db
+  result_db = raw_result_db
   for cluster_coincs_tag, cluster_coincs_job in cluster_coincs_jobs:
       cluster_coincs_node = inspiral.ClusterCoincsNode( cluster_coincs_job )
       cluster_coincs_node.set_category('cluster_coincs')
       cluster_coincs_node.set_tmp_space( tmp_space )
-      cluster_coincs_node.set_input( raw_result_db )
+      cluster_coincs_node.set_input( result_db )
       # output database name has form:
       # distinct_ifos-CBC_TRIGDB_CLUSTERED-USER_TAG-gps_start_time-durations.sqlite
       db_type = tag + '_CLUSTERED_CBC_RESULTS'
@@ -762,8 +766,6 @@ for result_db in result_dbs_cache:
   
   # set parent node
   veto2sql_node.add_parent( last_node )
-  if 'FULL_DATA' in tag and veto_cat in sim_caches:
-    veto2sql_node.add_parent( dbsimplify2_node )
   
   dag.add_node( veto2sql_node )
   
