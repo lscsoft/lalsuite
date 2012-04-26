@@ -18,6 +18,7 @@ EXTRA_DIST = \
 	lt~obsolete.m4 \
 	missing \
 	mkinstalldirs \
+	test-driver \
 	py-compile \
 	vcsID.common
 
