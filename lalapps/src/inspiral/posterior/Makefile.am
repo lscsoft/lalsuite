@@ -94,8 +94,8 @@ lalapps_vo_nest2pos: $(srcdir)/lalapps_vo_nest2pos.in python_config.sed
 	@chmod a+x lalapps_vo_nest2pos
 
 lalinference_pipe: $(srcdir)/lalinference_pipe.in python_config.sed
-    $(AM_V_GEN)sed -f python_config.sed $(srcdir)/lalinference_pipe.in > lalinference_pipe
-    @chmod a+x lalinference_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/lalinference_pipe.in > lalinference_pipe
+	@chmod a+x lalinference_pipe
 
 
 CLEANFILES = \
