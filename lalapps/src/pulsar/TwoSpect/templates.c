@@ -427,7 +427,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.dofs = NULL;
    vars.noncentrality = NULL;
    vars.ndtsrt = 0;           //Set because we do the sorting outside of Davies' algorithm with qsort
-   vars.lim = 1000000;
+   vars.lim = 50000000;
    vars.c = Rpr;
    vars.useSSE = params->useSSE;
    REAL8 sigma = 0.0;

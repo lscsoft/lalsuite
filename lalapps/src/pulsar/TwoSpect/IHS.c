@@ -460,14 +460,19 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   //For each of the IHS vectors, find the maximum value of each vector and the location of the maximum in the vector
-   for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
-      ihslocations->data[ii] = max_index_from_vector_in_REAL4VectorSequence(ihsvectorsequence, ii) + 5;
-      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
-   }
-   
    //Reset the expectation vector, just in case
    memset(outputfar->expectedIHSVector->data, 0, sizeof(REAL4)*outputfar->expectedIHSVector->length);
+   
+   //Vectors for values above the noise and scaling the noise
+   REAL4Vector *excessabovenoise = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
+   REAL4Vector *scaledExpectedIHSVectorValues = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
+   if (excessabovenoise==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   } else if (scaledExpectedIHSVectorValues==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   }
    
    //get the expected IHS vector value (the mean value)
    for (ii=0; ii<(INT4)ihsvectorsequence->vectorLength; ii++) {
@@ -475,7 +480,17 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          outputfar->expectedIHSVector->data[ii] += ihsvectorsequence->data[jj*tworows->vectorLength + ii];
       }
       outputfar->expectedIHSVector->data[ii] /= (REAL4)jj;
-   }   
+   }
+   
+   //Finding the maximum for each IHS vector and the location
+   for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
+      if (params->useSSE) {
+         sseScaleREAL4Vector(scaledExpectedIHSVectorValues, outputfar->expectedIHSVector, FbinMean->data[ii]); //Scale the expected IHS vector
+         sseSSVectorSequenceSubtract(excessabovenoise, ihsvectorsequence, scaledExpectedIHSVectorValues, ii);  //subtract the noise from the data
+      }
+      ihslocations->data[ii] = max_index(excessabovenoise) + 5;
+      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
+   }
    
    //Some useful variables
    REAL4Vector *rowsequencemaxima = NULL;
@@ -518,6 +533,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             }
          }
          
+         //TODO: comment this
+         FILE *IHSFOM2ROW = fopen("./output/ihsfom2rows.dat","w");
+         
          //Now we are going to loop through the input ihsvectorsequence up to the number of rows-1
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //Sum IHS values across SFT frequency bins if we didn't do it with SSE above
@@ -528,7 +546,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
+            fprintf(IHSFOM2ROW, "%f\n", foms->data[jj]);
          } /* for jj < ihsvectorsequence->length-(ii-1) */
+         
+         fclose(IHSFOM2ROW);
          
          //Sample the IHS values that have been summed to compute mean, standard deviation, and FAR threshold values.
          //We have an if-else statement for when there are fewer than 10000 entries that will be in the tworows varaible
@@ -679,6 +700,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             }
          }
          
+         //TODO: comment this
+         FILE *IHSFOM = NULL;
+         if (ii==360) IHSFOM = fopen("./output/ihsfom360rows.dat","w");
+         
          //Loop through the sequence
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             //If not using SSE
@@ -688,8 +713,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             foms->data[jj] = ihsFOM(rowsequencemaxima, rowsequencelocs, fbinmeanvals, locationnormfactor);
+            if (ii==360) fprintf(IHSFOM, "%f\n", foms->data[jj]);
          } /* for jj< ihsvectorsequence->length - (ii-1) */
          
+         if (ii==360) fclose(IHSFOM);
          
          REAL4Vector *sampledtempihsvals = NULL;
          REAL8 averageval = 0.0, farave = 0.0;
@@ -792,6 +819,8 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    
    XLALDestroyREAL4VectorSequence(tworows);
    XLALDestroyREAL4Vector(ihsvalues);
+   XLALDestroyREAL4Vector(excessabovenoise);
+   XLALDestroyREAL4Vector(scaledExpectedIHSVectorValues);
    XLALDestroyINT4Vector(ihslocations);
    
 } /*sumIHSSequenceFAR() */
@@ -823,12 +852,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   //Finding the maximum for each IHS vector and the location
-   for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
-      ihslocations->data[ii] = max_index_from_vector_in_REAL4VectorSequence(ihsvectorsequence, ii) + 5;
-      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
-   }
-   
    //Vectors for values above the noise and scaling the noise
    REAL4Vector *excessabovenoise = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
    REAL4Vector *scaledExpectedIHSVectorValues = XLALCreateREAL4Vector(ihsvectorsequence->vectorLength);
@@ -840,6 +863,15 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
+   //Finding the maximum for each IHS vector and the location
+   for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
+      if (params->useSSE) {
+         sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, FbinMean->data[ii]);  //Scale the expected IHS vector
+         sseSSVectorSequenceSubtract(excessabovenoise, ihsvectorsequence, scaledExpectedIHSVectorValues, ii);  //subtract the noise from the data
+      }
+      ihslocations->data[ii] = max_index(excessabovenoise) + 5;
+      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
+   }
    
    //Useful variables
    REAL4Vector *rowsequencemaxima = NULL;
