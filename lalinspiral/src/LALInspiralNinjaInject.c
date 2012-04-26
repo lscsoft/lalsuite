@@ -49,7 +49,12 @@
 #include <lal/LALSimulation.h>
 #include <lal/NRWaveInject.h>
 #include <lal/LALInspiral.h>
+#include <lal/LALFrameIO.h>
 
+int XLALCheckFrameHasChannel(
+        CHAR *name,
+        FrStream *stream
+);
 
 void AddNumRelStrainModesREAL8(
         LALStatus *status,
@@ -70,7 +75,34 @@ void XLALSimInjectNinjaSignals(
         SimInspiralTable* events
 );
 
-
+int XLALCheckFrameHasChannel( CHAR *channel, FrStream *stream )
+{
+  FrChanType  type;
+  FrTOCts    *ts;
+  ts = stream->file->toc->adc;
+  type = LAL_ADC_CHAN;
+  while ( ts && strcmp( channel, ts->name ) )
+    ts = ts->next;
+  if ( ! ts )
+  {
+    /* scan sim data channels */
+    type = LAL_SIM_CHAN;
+    ts = stream->file->toc->sim;
+    while ( ts && strcmp( channel, ts->name ) )
+      ts = ts->next;
+  }
+  if ( ! ts )
+  {
+    /* scan proc data channels */
+    type = LAL_PROC_CHAN;
+    ts = stream->file->toc->proc;
+    while ( ts && strcmp( channel, ts->name ) )
+      ts = ts->next;
+  }
+  if ( ! ts )
+    return 0;
+  return 1;
+}
 void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatus structure */
                             REAL8TimeSeries   **seriesPlus, /**< [out]  h+, hx data    */
                             REAL8TimeSeries   **seriesCross, /**< [out]  h+, hx data    */
@@ -117,12 +149,26 @@ void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatu
       /* first the plus polarization */
       channel_name_plus = XLALGetNinjaChannelName("plus", modeL, modeM);
       /*get number of data points */
-      lenPlus = XLALFrGetVectorLength ( channel_name_plus, frStream );
+      if (XLALCheckFrameHasChannel(channel_name_plus, frStream ) )
+      {
+        lenPlus = XLALFrGetVectorLength ( channel_name_plus, frStream );
+      }
+      else
+      {
+        lenPlus = -1;
+      }
 
       /* now the cross polarization */
       channel_name_cross = XLALGetNinjaChannelName("cross", modeL, modeM);
       /*get number of data points */
-      lenCross = XLALFrGetVectorLength ( channel_name_cross, frStream );
+      if (XLALCheckFrameHasChannel(channel_name_cross, frStream ) )
+      {
+        lenCross = XLALFrGetVectorLength ( channel_name_cross, frStream );
+      }
+      else
+      {
+        lenCross = -1;
+      }
 
       /* skip on to next mode if mode doesn't exist */
       if ( (lenPlus <= 0) || (lenCross <= 0) || (lenPlus != lenCross) ) {
