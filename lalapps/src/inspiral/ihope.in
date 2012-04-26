@@ -1186,7 +1186,7 @@ if opts.dax:
   print >> pegprop_fh, """\
 
 # pegasus 4.x variables
-#pegasus.data.configuration=condorio
+pegasus.data.configuration=condorio
 """
 else:
   print >> pegprop_fh, """\
