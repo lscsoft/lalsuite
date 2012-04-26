@@ -154,6 +154,14 @@ INT4 main( INT4 argc, CHAR *argv[] )
    * using as standalone code */
   REAL4 dynRange = 1.0;
 
+  /* PSDs and low-frequency cutoffs for SNR calculations */
+  CHAR *ligoPsdFile     = NULL;
+  CHAR *virgoPsdFile    = NULL;
+  REAL8FrequencySeries *ligoPsd  = NULL;
+  REAL8FrequencySeries *virgoPsd = NULL;
+  REAL8 ligoSnrLowFreq  = 0;
+  REAL8 virgoSnrLowFreq = 0;
+        
   /* getopt arguments */
   struct option long_options[] =
   {
@@ -179,6 +187,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
     {"strain-lowpass-freq",     required_argument, 0,                'L'},
     {"snr-low",                 required_argument, 0,                's'},
     {"snr-high",                required_argument, 0,                'S'},
+    {"ligo-psd-file",           required_argument, 0,                'c'},
+    {"ligo-low-freq-cutoff",    required_argument, 0,                'e'},
+    {"virgo-psd-file",          required_argument, 0,                'g'},
+    {"virgo-low-freq-cutoff",   required_argument, 0,                'j'},
     {"out-xml-file",            required_argument, 0,                'O'},
     {"fr-out-dir",              required_argument, 0,                'd'},
     {"help",                    no_argument,       0,                'h'},
@@ -200,7 +212,7 @@ INT4 main( INT4 argc, CHAR *argv[] )
     size_t optarg_len;
 
     /* parse command line arguments */
-    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:O:d:hV",
+    c = getopt_long_only( argc, argv, "D:T:a:b:f:r:i:t:n:o:l:L:s:S:c:e:f:g:O:d:hV",
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -363,6 +375,44 @@ INT4 main( INT4 argc, CHAR *argv[] )
       case 'S':
         /* set low-pass cutoff frequency for producing noise */
         snrHigh = atof(optarg);
+        break;
+
+      case 'c':
+        /* Specify a file to use as the LIGO psd */
+        optarg_len = strlen( optarg ) + 1;
+        ligoPsdFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( ligoPsdFile, optarg, optarg_len );
+        break;
+      case 'e':
+        /* Specify the low-frequency cutoff for LIGO SNR integrals */
+        ligoSnrLowFreq = atof(optarg);
+        if (ligoSnrLowFreq < 0 )
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+              "LIGO low frequency must be positive: "
+              "(%f specified) \n",
+              long_options[option_index].name, ligoSnrLowFreq);
+          exit(1);
+        }
+        break;
+      case 'g':
+        /* Specify a file to use as the Virgo psd */
+        optarg_len = strlen( optarg ) + 1;
+        virgoPsdFile = (CHAR *) calloc( optarg_len, sizeof(CHAR));
+        memcpy( virgoPsdFile, optarg, optarg_len );
+        break;
+      case 'j':
+        /* Specify the low-frequency cutoff for Virgo SNR integrals */
+        virgoSnrLowFreq = atof(optarg);
+        if (virgoSnrLowFreq < 0 )
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+              "Virgo low frequency must be positive: "
+              "(%f specified) \n",
+              long_options[option_index].name, virgoSnrLowFreq);
+          exit(1);
+        }
+        break;
         break;
 
       case 'O':
@@ -545,6 +595,28 @@ INT4 main( INT4 argc, CHAR *argv[] )
     }
   }
 
+  /* PSD options */
+  if ( ligoPsdFile != NULL || ligoSnrLowFreq != 0.0 )
+  {
+      if ( ligoPsdFile == NULL || ligoSnrLowFreq == 0.0 )
+      {
+        fprintf( stderr, "ERROR: both --ligo-psd-file and --ligo-low-freq-cutoff must be specified if either is\n" );
+        exit( 1 );
+      }
+
+      XLALPsdFromFile(&ligoPsd, ligoPsdFile);
+  }
+
+  if ( virgoPsdFile != NULL || virgoSnrLowFreq != 0.0 )
+  {
+      if ( virgoPsdFile == NULL || virgoSnrLowFreq == 0.0 )
+      {
+        fprintf( stderr, "ERROR: both --virgo-psd-file and --virgo-low-freq-cutoff must be specified if either is\n" );
+        exit( 1 );
+      }
+      XLALPsdFromFile(&virgoPsd, virgoPsdFile);
+  }
+
   /* mdc log options */
   if ( mdcFlag )
   {
@@ -608,16 +680,16 @@ INT4 main( INT4 argc, CHAR *argv[] )
     /* setup the injection time series to be zeros of the correct length */
     if (doingREAL8)
     {
+      if (addNoise)  {
+        fprintf( stderr, "ERROR: --simulate-noise is only available for single-precision" );
+        exit( 1 );
+      }
+
       for ( i = 0; i < num_ifos; i++ )
       {
         injDataREAL8[i] = XLALCreateREAL8TimeSeries( "", &gpsStartTime, 0, 1./sampleRate,
             &lalADCCountUnit, sampleRate * (gpsEndSec - gpsStartSec) );
         memset( injDataREAL8[i]->data->data, 0.0, injDataREAL8[i]->data->length * sizeof(REAL8) );
-
-        if (addNoise)  {
-          fprintf( stderr, "ERROR: --simulate-noise is only available for single-precision" );
-          exit( 1 );
-        }
       }
     }
     else
@@ -701,8 +773,10 @@ INT4 main( INT4 argc, CHAR *argv[] )
         /* inject the numerical waveforms */
         if (doingREAL8)
         {
-          LAL_CALL( InjectNumRelWaveformsREAL8 ( &status, injDataREAL8[i], injections, ifo,
+          LAL_CALL( InjectNumRelWaveformsUsingPSDREAL8 ( &status, injDataREAL8[i], injections, ifo,
                 freqLowCutoff, snrLow, snrHigh,
+                ligoPsd, ligoSnrLowFreq,
+                virgoPsd, virgoSnrLowFreq,
                 fnameOutXML), &status);
         }
         else
@@ -773,6 +847,14 @@ INT4 main( INT4 argc, CHAR *argv[] )
 
   if (fnameOutXML) {
     free(fnameOutXML);
+  }
+
+  if (ligoPsd) {
+    XLALDestroyREAL8FrequencySeries( ligoPsd );
+  }
+
+  if (virgoPsd) {
+    XLALDestroyREAL8FrequencySeries( virgoPsd );
   }
 
   LALCheckMemoryLeaks();
