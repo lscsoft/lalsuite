@@ -55,7 +55,7 @@ if opts.single_triggers is not None:
   cp.set('input','sngl-inspiral-file',opts.single_triggers)
 
 if opts.injections is not None:
-  cp.set('input','injection-file')
+  cp.set('input','injection-file',opts.injections)
 
 # Create the DAG from the configparser object
 dag=pipe_utils.LALInferencePipelineDAG(cp)

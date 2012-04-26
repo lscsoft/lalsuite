@@ -2,9 +2,11 @@
 # (C) 2012 John Veitch, Kiersten Ruisard, Kan Wang
 
 import glue
-from glue import pipeline
+from glue import pipeline,segmentsUtils
 import os
 from lalapps import inspiralutils
+import uuid
+import ast
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -46,8 +48,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       self.basepath=os.getcwd()
       print 'No basepath specified, using current directory: %s'%(self.basepath)
-    self.daglogfile=os.path.join(cp.get('paths','daglogdir'),'lalinference_pipeline-'+id(self)+'.log')
-    pipeline.CondorDAG.__init__(self,log,dax)
+    daglogdir=cp.get('paths','daglogdir')
+    self.daglogfile=os.path.join(daglogdir,'lalinference_pipeline-'+str(uuid.uuid1())+'.log')
+    pipeline.CondorDAG.__init__(self,self.daglogfile,dax)
     if cp.has_option('paths','cachedir'):
       self.cachepath=cp.get('paths','cachedir')
     else:
@@ -57,14 +60,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       self.logpath=os.path.join(self.basepath,'log')
     if cp.has_option('analysis','ifos'):
-      self.ifos=cp.get('analysis','ifos')
+      self.ifos=ast.literal_eval(cp.get('analysis','ifos'))
     else:
       self.ifos=['H1','L1','V1']
     self.segments={}
-    for ifo in ifos:
+    if cp.has_option('datafind','veto-categories'):
+      self.veto_categories=cp.get('datafind','veto-categories')
+    else: self.veto_categories=[]
+    for ifo in self.ifos:
       self.segments[ifo]=[]
     self.dq={}
-    self.frtypes=cp.get('datafind','types')
+    self.frtypes=ast.literal_eval(cp.get('datafind','types'))
     self.use_available_data=False
     self.webdir=cp.get('paths','webdir')
     # Set up necessary job files.
@@ -73,6 +79,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
     self.engine_job = EngineJob(self.config, os.path.join(self.basepath,'lalinference.sub'),self.logpath)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
+
 
     # Process the input to build list of analyses to do
     self.times=[]
@@ -141,8 +148,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Query the segment database for science segments and
     # add them to the pool of segments
     for ifo in self.ifos:
-      segFileName=inspiralutils.findSegmentsToAnalyze(self.config, ifo, self.veto_categories, generate_segments=True,\
+      (segFileName,dqVetoes)=inspiralutils.findSegmentsToAnalyze(self.config, ifo, self.veto_categories, generate_segments=True,\
 	use_available_data=self.use_available_data , data_quality_vetoes=False)
+      self.dqVetoes=dqVetoes
       segfile=open(segFileName)
       (segs,self.dq[ifo])=segmentsUtils.fromsegwizard(segfile)
       segs.coalesce()
