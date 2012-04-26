@@ -116,6 +116,8 @@ int finite(double);
 
 #define LAL_INT4_MAX 2147483647
 
+#define INIT_MEM(x) memset(&(x), 0, sizeof((x)))
+
 /*---------- internal types ----------*/
 
 /** What info do we want to store in our toplist? */
@@ -466,6 +468,45 @@ int main(int argc,char *argv[])
 	}
 
       fprintf (fpFstat, "%s", GV.logstring );
+
+      /* for column headings string, get number of detectors and detector name vector */
+      UINT4 numDetectors = GV.multiSFTs->length;
+      LALStringVector *detectorIDs = NULL;
+      for (UINT4 X = 0; X < numDetectors; X++) {
+        if ( (detectorIDs = XLALAppendString2Vector ( detectorIDs, GV.multiSFTs->data[X]->data[0].name )) == NULL ) {
+          XLALPrintError ("%s: XLALAppendString2Vector() failed with errno=%d\n", __func__, xlalErrno );
+          return (COMPUTEFSTATISTIC_EXLAL);
+        }
+      } /* for X < numDetectors */
+      /* NOTE: we do not actively sort this vector here, but rather keep the sorting of GV.multiSFTs,
+       * as this is the same used by the actual F-stat computation, and should already be alphabetical.
+       */
+
+      /* assemble column headings string */
+      char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
+      UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
+      if ( uvar.computeLV || uvar.outputSingleFstats ) {
+        column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
+      }
+      if ( uvar.computeLV ) {
+        column_headings_string_length += 3; /* 3 for " LV"*/
+      }
+      char column_headings_string[column_headings_string_length];
+      INIT_MEM( column_headings_string );
+      strcat ( column_headings_string, colum_headings_string_base );
+      if ( uvar.computeLV || uvar.outputSingleFstats ) {
+        for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
+          char headingX[7];
+          snprintf ( headingX, sizeof(headingX), " 2F_%s", detectorIDs->data[X] );
+          strcat ( column_headings_string, headingX );
+        } /* for X < numDet */
+      }
+      if ( uvar.computeLV )
+        strcat ( column_headings_string, " LV" );
+
+      fprintf (fpFstat, "%%%% columns:\n%%%% %s\n", column_headings_string );
+
+      XLALDestroyStringVector ( detectorIDs );
     } /* if outputFstat */
 
   if ( uvar.outputTransientStats )
