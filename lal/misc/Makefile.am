@@ -20,7 +20,8 @@ EXTRA_DIST = \
 	lt~obsolete.m4 \
 	main.tex.in \
 	missing \
-	mkinstalldirs
+	mkinstalldirs \
+	test-driver
 
 CLEANFILES = \
 	lal-user-env.shell \
