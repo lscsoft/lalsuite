@@ -4,6 +4,7 @@
 import glue
 from glue import pipeline
 import os
+from lalapps import inspiralutils
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -19,8 +20,7 @@ def chooseEngineNode(name):
   return EngineNode
 
 class LALInferencePipelineDAG(pipeline.CondorDAG):
-  def __init__(self,log,cp,dax=False):
-    pipeline.CondorDAG.__init__(self,log,dax)
+  def __init__(self,cp,dax=False):
     self.subfiles=[]
     self.config=cp
     self.engine=cp.get_option('analysis','engine')
@@ -30,6 +30,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else:
       self.basepath=os.getcwd()
       print 'No basepath specified, using current directory: %s'%(self.basepath)
+    self.daglogfile=os.path.join(cp.get_option('paths','daglogdir'),'lalinference_pipeline-'+id(self)+'.log')
+    pipeline.CondorDAG.__init__(self,log,dax)
     if cp.has_option('paths','cachedir'):
       self.cachepath=cp.get_option('paths','cachedir')
     else:
@@ -48,11 +50,66 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.dq={}
     self.frtypes=cp.get_option('datafind','types')
     self.use_available_data=False
+    self.webdir=cp.get('paths','webdir')
     # Set up necessary job files.
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config)
     self.datafind_job.add_opt('url-type','file')
     self.datafind_job.set_sub_file(os.path.join(self.basepath,'datafind.sub'))
     self.engine_job = EngineJob(self.config, os.path.join(self.basepath,'lalinference.sub'),self.logpath)
+    self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
+
+    # Process the input to build list of analyses to do
+    self.times=[]
+    if cp.has_option('input','gps-time-file'):
+      times=self.scan_timefile(cp.get('input','gps-time-file'))
+      for time in times:
+	self.times.append(time)
+    # SimInspiral Table
+    if cp.has_option('input','injection-file'):
+      from pylal import SimInspiralUtils
+      injTable=SimInspiralUtils.ReadSimInspiralFromFiles([cp.get('input','injection-file')])
+      map(self.times.append, [inj.get_end() for inj in injTable])
+    # SnglInspiral Table
+    if cp.has_option('input','sngl-inspiral-file'):
+      from pylal import SnglInspiralUtils
+      trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([opts.single_triggers])
+      map(self.times.append,[trig.get_end() for trig in trigTable])
+
+    # CoincInspiralTable
+    
+    # Pipedown database
+
+    
+    # Set up the segments
+    if not self.config.has_option('input','gps-start-time'):
+      self.config.set('input','gps-start-time',str(min(self.times)))
+    if not self.config.has_option('input','gps-end-time'):
+      self.config.set('input','gps-end-time',str(max(self.times)))
+    self.add_science_segments()
+    
+  
+  def scan_timefile(self,timefile):
+    import re
+    p=re.compile('[\d.]+')
+    times=[]
+    timefilehandle=open(timefile,'r')
+    for time in timefilehandle:
+        if not p.match(time):
+            continue
+        if float(time) in times:
+            print 'Skipping duplicate time %s'%(time)
+            continue
+        print 'Read time %s'%(time)
+        times.append(float(time))
+    timefilehandle.close()
+    return times
+  
+  def setup_from_times(self,times):
+    """
+    Generate a DAG from a list of times
+    """
+    for time in self.times:
+      self.add_full_analysis_time(str(time))
   
   def add_full_analysis_time(self,gpstime):
     """
@@ -60,7 +117,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     datafindnode=self.add_datafind(gpstime)
     enginenode=self.add_engine(gpstime)
-    self.add_resultspage(enginenode.posteriorfile)
+    ifos=reduce(lambda a,b:a+b,enginenode.ifos)
+    pagedir=os.path.join(ifos,str(gpstime)+'-'+str(id(enginenode)))
+    self.add_results_page_node(outdir=pagedir,parent=enginenode)
   
   def get_science_segment(self,ifo,gpstime):
     # Check if time is in existing segment
@@ -107,6 +166,17 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       if df_node not in self.__nodes:
 	self.add_node(dfnode)
     self.add_node(node)
+    return node
+    
+  def add_results_page_node(self,outdir=None,parent=None,extra_options=None):
+    node=ResultsPageNode(self.results_page_job)
+    if parent is not None:
+      node.add_parent(parent)
+      infiles=parent.get_output_files()
+      for infile in infiles:
+	node.add_var_arg(infile)
+    node.set_output_dir(outdir)
+    self.add_node(node)
     
 
 class EngineJob(pipeline.CondorDAGJob):
@@ -124,6 +194,11 @@ class LALInferenceNestNode(EngineNode):
   def __init__(self,li_job):
     EngineNode.__init__(self,li_job)
     self.engine='lalinferencenest'
+    
+  def set_output_file(self,filename):
+    self.add_file_opt(self.outfilearg,filename,file_is_output_file=True)
+    self.paramsfile=filename+'_params.txt'
+    self.Bfilename=filename+'_B.txt'
 
 class LALInferenceMCMCNode(EngineNode):
   def __init__(self,li_job):
@@ -133,7 +208,7 @@ class LALInferenceMCMCNode(EngineNode):
 class EngineNode(pipeline.CondorDAGNode):
   def __init__(self,li_job):
     pipeline.CondorDAGNode.__init__(self,li_job)
-  
+
   def set_seed(self,seed):
     self.add_var_opt('randomseed',seed)
   
@@ -244,3 +319,32 @@ class ResultsPageJob(pipeline.CondorDAGJob):
     
     if cp.has_option('results','skyres'):
     self.add_opt('skyres',cp.get('results','skyres'))
+
+class ResultsPageNode(pipeline.CondorDAGNode):
+    def __init__(self,results_page_job):
+        pipeline.CondorDAGNode.__init__(self,results_page_job)
+        self.webpath=self.job().get_cp().get('paths','webdir')
+    def set_event_number(self,event):
+        """
+        Set the event number in the injection XML.
+        """
+        if event is not None:
+            self.__event=int(event)
+            self.add_var_arg('--eventnum '+str(event))
+    def add_engine_parent(self,node):
+      """
+      Add a parent node which is one of the engine nodes
+      And automatically set options accordingly
+      """
+      self.add_parent(node)
+      for infile in node.get_output_files():
+	self.add_file_arg(infile)
+      if node isinstance(LALInferenceNestNode):
+	self.add_var_opt('ns','')
+	
+      if node isinstance(LALInferenceMCMCNode):
+	self.add_var_opt('lalinfmcmc','')
+    def set_output_dir(self,dir):
+        self.add_var_opt('outpath',dir)
+        inspiralutils.mkdir(dir)
+         

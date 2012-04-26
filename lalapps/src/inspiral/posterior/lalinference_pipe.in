@@ -3,3 +3,44 @@
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch
 
+from lalapps import lalinference_pipe_utils as pipe_utils
+import ConfigParser
+from optparse import OptionParser,OptionValueError
+
+usage=""" %prog [options]
+Setup a Condor DAG file to run the LALInference pipeline
+
+The user must specify either an injection file to analyse, with the --inj option,
+a list of SnglInspiralTable or CoincInspiralTable triggers with the --<x>-triggers options,
+or an ASCII list of GPS times with the --gps-time-file option.
+
+The user must also specify and ini file which will contain the main analysis config.
+
+"""
+
+parser=OptionParser(usage)
+parser.add_option("-i","--ini-file",default=None,action="store",type="string",help="ini-file for pipeline",metavar="CONFIG.ini")
+parser.add_option("-r","--run-path",default=None,action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
+parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
+parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
+
+
+(opts,args)=parser.parse_args()
+
+cp=ConfigParser.ConfigParser()
+cp.readfp(open(opts.ini_file))
+
+if opts.run_path is not None:
+  cp.set('paths','basedir',opts.run_path)
+
+if opts.daglog_path is not None:
+  cp.set('paths','daglogdir',opts.daglog_path)
+else:
+  cp.set('paths','daglogdir',opts.run_path)
+
+
+if opts.gps_time_file is not None:
+  cp.set('input','gps-time-file',opts.gps_time_file)
+
+# Create the DAG from the configparser object
+dag=pipe_utils.LALInferencePipelineDAG(cp)
