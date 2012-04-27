@@ -1015,10 +1015,10 @@ FILE *LALInferencePrintPTMCMCHeader(LALInferenceRunState *runState) {
   int MPIrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--output");
+  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
   if (ppt) {
     outFileName = (char*)XLALCalloc(strlen(ppt->value)+255,sizeof(char*));
-    sprintf(outFileName,"%s//PTMCMC.output.%u.%2.2d",ppt->value,randomseed,MPIrank);
+    sprintf(outFileName,"%s.%2.2d",ppt->value,MPIrank);
   } else {
     outFileName = (char*)XLALCalloc(255,sizeof(char*));
     sprintf(outFileName,"PTMCMC.output.%u.%2.2d",randomseed,MPIrank);
@@ -1140,7 +1140,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
 
   ppt = LALInferenceGetProcParamVal(runState->commandLine, "--inj");
   if (ppt) {
-    ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--output");
+    ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
     UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
     FILE *out = NULL;
     char *fname = NULL;
@@ -1150,7 +1150,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
 
     if (ppt2) {
       fname = (char *) XLALCalloc((strlen(ppt2->value)+255)*sizeof(char), 1);
-      sprintf(fname, "%s//PTMCMC.output.%u.injection", ppt2->value, randomseed);
+      sprintf(fname, "%s.injection", ppt2->value);
     } else {
       fname = (char *) XLALCalloc(255*sizeof(char), 1);
       sprintf(fname, "PTMCMC.output.%u.injection", randomseed);
