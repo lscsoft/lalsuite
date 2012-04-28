@@ -497,8 +497,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    //REAL4 ihssigma = calcStddevVectorSequence(ihsvectorsequence);
    
    //Some useful variables
-   //REAL4Vector *rowsequencemaxima = NULL;
-   //REAL4Vector *fbinmeanvals = NULL;
    INT4Vector *rowsequencelocs = NULL;
    REAL4Vector *foms = NULL;
    
@@ -509,17 +507,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
       //We start with the nearest neighbors
       if (ii==2) {
          //First allocate the necessary vectors
-         //rowsequencemaxima = XLALCreateREAL4Vector(ii);
-         //fbinmeanvals = XLALCreateREAL4Vector(ii);
          rowsequencelocs = XLALCreateINT4Vector(ii);
          foms = XLALCreateREAL4Vector(ihsvectorsequence->length-(ii-1));
-         /* if (rowsequencemaxima==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (fbinmeanvals==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else */ if (rowsequencelocs==NULL) {
+         if (rowsequencelocs==NULL) {
             fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          } else if (foms==NULL) {
@@ -546,8 +536,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             
             //Compute IHS FOM value
-            //memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
-            //memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             foms->data[jj] = ihsFOM(rowsequencelocs, (INT4)outputfar->expectedIHSVector->length);
             fprintf(IHSFOM2ROW, "%f\n", foms->data[jj]);
@@ -665,10 +653,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             outputfar->fomfarthresh->data[ii-2] = -1.0;
          }
          
-         /* XLALDestroyREAL4Vector(rowsequencemaxima);
-         rowsequencemaxima = NULL;
-         XLALDestroyREAL4Vector(fbinmeanvals);
-         fbinmeanvals = NULL; */
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
          XLALDestroyREAL4Vector(foms);
@@ -677,17 +661,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          
          //This is exactly the same as above, so read the comments above
          
-         //rowsequencemaxima = XLALCreateREAL4Vector(ii);
-         //fbinmeanvals = XLALCreateREAL4Vector(ii);
          rowsequencelocs = XLALCreateINT4Vector(ii);
          foms = XLALCreateREAL4Vector(ihsvectorsequence->length-(ii-1));
-         /* if (rowsequencemaxima==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (fbinmeanvals==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else */ if (rowsequencelocs==NULL) {
+         if (rowsequencelocs==NULL) {
             fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          } else if (foms==NULL) {
@@ -713,8 +689,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             //If not using SSE
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
             
-            //memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
-            //memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             foms->data[jj] = ihsFOM(rowsequencelocs, (INT4)outputfar->expectedIHSVector->length);
             if (ii==360) fprintf(IHSFOM, "%f\n", foms->data[jj]);
@@ -809,10 +783,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             outputfar->fomfarthresh->data[ii-2] = -1.0;
          }
          
-         /* XLALDestroyREAL4Vector(rowsequencemaxima);
-         rowsequencemaxima = NULL;
-         XLALDestroyREAL4Vector(fbinmeanvals);
-         fbinmeanvals = NULL; */
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
          XLALDestroyREAL4Vector(foms);
@@ -878,8 +848,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    }
    
    //Useful variables
-   REAL4Vector *rowsequencemaxima = NULL;
-   REAL4Vector *fbinmeanvals = NULL;
    INT4Vector *rowsequencelocs = NULL;
    
    //Start with the single IHS vector and march up with nearest neighbor sums up to the total number of row sums
@@ -889,17 +857,9 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          memcpy(output->maximaForEachFbin->data, ihsvalues->data, sizeof(REAL4)*ihsvalues->length);
          memcpy(output->locationsForEachFbin->data, ihslocations->data, sizeof(INT4)*ihslocations->length);
       } else if (ii==2) {
-         //Allocate for useful vectors
-         //rowsequencemaxima = XLALCreateREAL4Vector(ii);
-         //fbinmeanvals = XLALCreateREAL4Vector(ii);
+         //Allocate for useful vector
          rowsequencelocs = XLALCreateINT4Vector(ii);
-         /* if (rowsequencemaxima==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (fbinmeanvals==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else */ if (rowsequencelocs==NULL) {
+         if (rowsequencelocs==NULL) {
             fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
@@ -945,13 +905,10 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             //Sum IHS values across SFT frequency bins if the SSE function wasn't used
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             
-            //Copy a subset of the mean Fbin noise values
-            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
-            
             //To scale the background efficiently
             if (jj==0) {
                INT4 kk;
-               for (kk=0; kk<ii; kk++) sumofnoise += fbinmeanvals->data[kk];
+               for (kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
             } else {
                sumofnoise -= FbinMean->data[jj-1];
                sumofnoise += FbinMean->data[jj+(ii-1)];
@@ -1025,7 +982,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             output->maxima->data[jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[jj]-5)];
             
             //Compute IHS FOM value
-            //memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[jj] = ihsFOM(rowsequencelocs, (INT4)inputfar->expectedIHSVector->length);
             fprintf(IHSFOM2ROWREAL, "%f\n", output->foms->data[jj]);
@@ -1033,24 +989,12 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          
          fclose(IHSFOM2ROWREAL);
          
-         /* XLALDestroyREAL4Vector(rowsequencemaxima);
-         rowsequencemaxima = NULL;
-         XLALDestroyREAL4Vector(fbinmeanvals);
-         fbinmeanvals = NULL; */
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
       } else {
          //For everything above 2 nearest neighbors summed
-         //rowsequencemaxima = XLALCreateREAL4Vector(ii);
-         //fbinmeanvals = XLALCreateREAL4Vector(ii);
          rowsequencelocs = XLALCreateINT4Vector(ii);
-         /* if (rowsequencemaxima==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else if (fbinmeanvals==NULL) {
-            fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ii);
-            XLAL_ERROR_VOID(XLAL_EFUNC);
-         } else */ if (rowsequencelocs==NULL) {
+         if (rowsequencelocs==NULL) {
             fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, ii);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
@@ -1078,12 +1022,10 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
             
-            memcpy(fbinmeanvals->data, &(FbinMean->data[jj]), sizeof(REAL4)*ii);
-            
             //To scale the background efficiently
             if (jj==0) {
                INT4 kk;
-               for (kk=0; kk<ii; kk++) sumofnoise += fbinmeanvals->data[kk];
+               for (kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
             } else {
                sumofnoise -= FbinMean->data[jj-1];
                sumofnoise += FbinMean->data[jj+(ii-1)];
@@ -1111,7 +1053,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index(excessabovenoise) + 5;
             output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
             
-            memcpy(rowsequencemaxima->data, &(ihsvalues->data[jj]), sizeof(REAL4)*ii);
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsFOM(rowsequencelocs, (INT4)inputfar->expectedIHSVector->length);
             if (ii==360) fprintf(IHSFOM360ROWSREAL, "%f\n", output->foms->data[(ii-2)*ihsvalues->length-endloc+jj]);
@@ -1119,10 +1060,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          
          if (ii==360) fclose(IHSFOM360ROWSREAL);
          
-         /* XLALDestroyREAL4Vector(rowsequencemaxima);
-         rowsequencemaxima = NULL;
-         XLALDestroyREAL4Vector(fbinmeanvals);
-         fbinmeanvals = NULL; */
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
       }
@@ -1194,42 +1131,6 @@ REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm)
 
 } /* ihsFOM() */
 
-
-//////////////////////////////////////////////////////////////
-// Calculate a guess for the location of the brightest pixels
-REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4Vector *sigma)
-//REAL4 ihsLoc(REAL4Vector *ihss, INT4Vector *locs, REAL4 sigma)
-{
-   
-   INT4 ii, maxsnrloc;
-   REAL4 maxsnr;
-   
-   //Find which pair has the best combined SNR (RMS) and the location
-   maxsnr = sqrtf(ihss->data[0]*ihss->data[0]/(sigma->data[0]*sigma->data[0]) + ihss->data[ihss->length-1]*ihss->data[ihss->length-1]/(sigma->data[sigma->length-1]*sigma->data[sigma->length-1]));
-   maxsnrloc = 0;
-   for (ii=1; ii<(INT4)(ihss->length*0.5); ii++) {
-      REAL4 snr = sqrtf(ihss->data[ii]*ihss->data[ii]/(sigma->data[ii]*sigma->data[ii]) + ihss->data[ihss->length-ii-1]*ihss->data[ihss->length-ii-1]/(sigma->data[sigma->length-ii-1]*sigma->data[sigma->length-ii-1]));
-      if (snr>maxsnr) {
-         maxsnr = snr;
-         maxsnrloc = ii;
-      }
-   }
-   //For the highest SNR pair, compute the location
-   REAL4 location = 0.5*(locs->data[maxsnrloc] + locs->data[locs->length-maxsnrloc-1]);
-   
-   /* INT4 ii, mindiff = -1, minloc = 0;
-   for (ii=0; ii<(INT4)(ihss->length*0.5); ii++) {
-      INT4 diff = abs(locs->data[ii]-locs->data[locs->length-1-ii]);
-      if (mindiff==-1 || (mindiff>-1 && diff<mindiff)) {
-         mindiff = diff;
-         minloc = ii;
-      }
-   }
-   REAL4 location = 0.5*(locs->data[minloc] + locs->data[locs->length-minloc-1]); */
-   
-   return location;
-
-} /* ihsLoc() */
 
 
 
