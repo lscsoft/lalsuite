@@ -1671,9 +1671,12 @@ void LALLoadMultiSFTs ( LALStatus *status,		/**< pointer to LALStatus structure 
       LALFree(numsfts);
       LALFree(name);
 
+#ifdef USEXLALLOADSFTS
+      ABORT ( status, SFTFILEIO_EFILE, SFTFILEIO_MSGEFILE );
+#endif
     }
 #ifndef USEXLALLOADSFTS
-      ENDFAIL(status);
+    ENDFAIL ( status );
 #endif
   }
 
