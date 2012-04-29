@@ -527,8 +527,8 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             }
          }
          
-         //TODO: comment this
-         FILE *IHSFOM2ROW = fopen("./output/ihsfom2rows.dat","w");
+         //comment this
+         //FILE *IHSFOM2ROW = fopen("./output/ihsfom2rows.dat","w");
          
          //Now we are going to loop through the input ihsvectorsequence up to the number of rows-1
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
@@ -538,10 +538,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             //Compute IHS FOM value
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             foms->data[jj] = ihsFOM(rowsequencelocs, (INT4)outputfar->expectedIHSVector->length);
-            fprintf(IHSFOM2ROW, "%f\n", foms->data[jj]);
+            //fprintf(IHSFOM2ROW, "%f\n", foms->data[jj]);
          } /* for jj < ihsvectorsequence->length-(ii-1) */
          
-         fclose(IHSFOM2ROW);
+         //fclose(IHSFOM2ROW);
          
          //Sample the IHS values that have been summed to compute mean, standard deviation, and FAR threshold values.
          //We have an if-else statement for when there are fewer than 10000 entries that will be in the tworows varaible
@@ -680,9 +680,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             }
          }
          
-         //TODO: comment this
-         FILE *IHSFOM = NULL;
-         if (ii==360) IHSFOM = fopen("./output/ihsfom360rows.dat","w");
+         //comment this
+         //FILE *IHSFOM = NULL;
+         //if (ii==360) IHSFOM = fopen("./output/ihsfom360rows.dat","w");
          
          //Loop through the sequence
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
@@ -691,10 +691,10 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
             
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             foms->data[jj] = ihsFOM(rowsequencelocs, (INT4)outputfar->expectedIHSVector->length);
-            if (ii==360) fprintf(IHSFOM, "%f\n", foms->data[jj]);
+            //if (ii==360) fprintf(IHSFOM, "%f\n", foms->data[jj]);
          } /* for jj< ihsvectorsequence->length - (ii-1) */
          
-         if (ii==360) fclose(IHSFOM);
+         //if (ii==360) fclose(IHSFOM);
          
          REAL4Vector *sampledtempihsvals = NULL;
          REAL8 averageval = 0.0, farave = 0.0;
@@ -897,8 +897,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             } /* validate SSE code */
          } /* use or validate SSE code */
          
-         //TODO: comment this
-         FILE *IHSFOM2ROWREAL = fopen("./output/ihsfom2rowsreal.dat","w");
+         //comment this
+         //FILE *IHSFOM2ROWREAL = fopen("./output/ihsfom2rowsreal.dat","w");
          
          //Loop through the IHS vector neighbor sums
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
@@ -984,10 +984,10 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             //Compute IHS FOM value
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[jj] = ihsFOM(rowsequencelocs, (INT4)inputfar->expectedIHSVector->length);
-            fprintf(IHSFOM2ROWREAL, "%f\n", output->foms->data[jj]);
+            //fprintf(IHSFOM2ROWREAL, "%f\n", output->foms->data[jj]);
          } /* for jj < ihsvectorsequence->length-(ii-1) */
          
-         fclose(IHSFOM2ROWREAL);
+         //fclose(IHSFOM2ROWREAL);
          
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
@@ -1016,8 +1016,9 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             } */
          } /* use SSE code */
          
-         FILE *IHSFOM360ROWSREAL = NULL;
-         if (ii==360) IHSFOM360ROWSREAL = fopen("./output/ihsfom360rowsreal.dat","w");
+         //comment this
+         //FILE *IHSFOM360ROWSREAL = NULL;
+         //if (ii==360) IHSFOM360ROWSREAL = fopen("./output/ihsfom360rowsreal.dat","w");
          
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
@@ -1055,10 +1056,10 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsFOM(rowsequencelocs, (INT4)inputfar->expectedIHSVector->length);
-            if (ii==360) fprintf(IHSFOM360ROWSREAL, "%f\n", output->foms->data[(ii-2)*ihsvalues->length-endloc+jj]);
+            //if (ii==360) fprintf(IHSFOM360ROWSREAL, "%f\n", output->foms->data[(ii-2)*ihsvalues->length-endloc+jj]);
          } /* for jj< ihsvectorsequence->length - (ii-1) */
          
-         if (ii==360) fclose(IHSFOM360ROWSREAL);
+         //if (ii==360) fclose(IHSFOM360ROWSREAL);
          
          XLALDestroyINT4Vector(rowsequencelocs);
          rowsequencelocs = NULL;
