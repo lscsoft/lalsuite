@@ -107,20 +107,29 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       print 'No input times found, please check your config. Generating an empty DAG'
     
     # Set up the segments
+    (mintime,maxtime)=self.get_required_data(self.times)
     if not self.config.has_option('input','gps-start-time'):
-      self.config.set('input','gps-start-time',str(min(self.times)))
+      self.config.set('input','gps-start-time',str(mintime))
     if not self.config.has_option('input','gps-end-time'):
-      self.config.set('input','gps-end-time',str(max(self.times)))
+      self.config.set('input','gps-end-time',str(maxtime))
     self.add_science_segments()
     
     # Save the final configuration that is being used
     conffilename=os.path.join(self.basepath,'config.ini')
     with open(conffilename,'wb') as conffile:
-      self.cp.write(conffile)
+      self.config.write(conffile)
     
     # Generate the DAG according to the config given
     
-  
+  def get_required_data(self,times):
+    """
+    Calculate teh data that will be needed to process all events
+    """
+    psdlength=self.config.getint('input','psd-length')
+    buffer=self.config.getint('input','buffer')
+    # Assume that the PSD is estimated from the interval (end_time+ buffer , psdlength)
+    return (min(times),max(times)+buffer+psdlength)
+
   def setup_from_times(self,times):
     """
     Generate a DAG from a list of times
@@ -152,14 +161,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 	use_available_data=self.use_available_data , data_quality_vetoes=False)
       self.dqVetoes=dqVetoes
       segfile=open(segFileName)
-      (segs,self.dq[ifo])=segmentsUtils.fromsegwizard(segfile)
+      segs=segmentsUtils.fromsegwizard(segfile)
       segs.coalesce()
       segfile.close()
       for seg in segs:
-	sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
-	df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
-	sciseg.set_df_node(df_node)
-	self.segments[ifo].append(sciseg)
+	    sciseg=pipeline.ScienceSegment((segs.index(seg),seg[0],seg[1],seg[1]-seg[0]))
+	    df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
+	    sciseg.set_df_node(df_node)
+	    self.segments[ifo].append(sciseg)
   
   def get_datafind_node(self,ifo,frtype,gpsstart,gpsend):
     node=pipeline.LSCDataFindNode(self.datafind_job)
