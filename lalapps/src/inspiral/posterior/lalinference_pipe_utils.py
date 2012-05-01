@@ -120,6 +120,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.config.write(conffile)
     
     # Generate the DAG according to the config given
+    self.setup_from_times(self.times)
+    self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
+    self.set_dag_file(os.path.join(self.basepath,self.dagfilename))
     
   def get_required_data(self,times):
     """
@@ -141,8 +144,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     Analyse a given GPS time
     """
-    datafindnode=self.add_datafind(gpstime)
-    enginenode=self.add_engine(gpstime)
+    datafindnode=self.get_datafind_node(gpstime)
+    enginenode=self.add_engine_node(gpstime)
     ifos=reduce(lambda a,b:a+b,enginenode.ifos)
     pagedir=os.path.join(ifos,str(gpstime)+'-'+str(id(enginenode)))
     self.add_results_page_node(outdir=pagedir,parent=enginenode)
