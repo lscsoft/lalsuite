@@ -41,13 +41,15 @@ def open_pipedown_database(database_filename,tmp_space):
     dbtables.DBTable_set_connection(connection)
     return (connection,working_filename) 
 
-def get_timeslides_pipedown(database_connection, dumpfile=None):
+def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
 	"""
 	returns a dict of dicts { trigtime: {'H1':0,'L1':5,'V1':10}) , ... }
 	of times and timeslide offsets.
 	Optionally dumps times, SNR, chi-squared statistics to a file
 	"""
-	if dumpfile is not None:
+	if gpsstart is not None: gpsstart=float(gpsstart)
+        if gpsend is not None: gpsend=float(gpsend)
+        if dumpfile is not None:
 		outfile=open(dumpfile,'w')
 	else:
 		outfile=None
@@ -63,6 +65,13 @@ def get_timeslides_pipedown(database_connection, dumpfile=None):
 		from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		== sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id == coinc_event_map.coinc_event_id) join time_slide on \
 		(time_slide.instrument == sngl_inspiral.ifo and time_slide.time_slide_id == coinc_event.time_slide_id)"
+        if gpsstart is not None:
+		sql_query=sql_query + ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
+		if gpsend is not None:
+			sql_query=sql_query+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 < %f'%(gpsend)
+	else:
+		if gpsend is not None:
+			sql_query=sql_query+' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 < %f'%(gpsend)
 	db_out = database_connection.cursor().execute(sql_query)
 	for d in db_out:
 		db_out_saved.append(d)
@@ -327,7 +336,7 @@ if opts.coinc_triggers:
 if opts.pipedown_db:
 	print 'establishing connection to pipedown database'
 	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
-	timeslides=get_timeslides_pipedown(db_connection,dumpfile=timeslidefiledump)
+	timeslides=get_timeslides_pipedown(db_connection,dumpfile=timeslidefiledump,gpsstart=opts.gps_start_time,gpsend=opts.gps_end_time)
 	times=timeslides.keys()
 	starttime=min(times)
 	endtime=max(times)
