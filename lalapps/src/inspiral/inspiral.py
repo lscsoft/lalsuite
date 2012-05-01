@@ -3387,3 +3387,38 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
       self.open_box = True
       self.add_var_arg("--open-box")
 
+class MVSCDagGenerationJob(InspiralAnalysisJob):
+  """
+  a job that generatest the mvsc_dag, which will be run as an external subdag
+  """
+  def __init__(self, cp, dax = False):
+    """
+    @cp: ConfigParser object from which options are read.
+    """
+    exec_name = "mvsc_dag"
+    universe = "vanilla"
+    sections = "[mvsc_dag]"
+    executable = cp.get('condor',exec_name)
+    pipeline.CondorDAGJob.__init__(self, universe, executable)
+    pipeline.AnalysisJob.__init__(self, cp, dax)
+    self.add_condor_cmd('getenv','True')
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+    self.set_sub_file(exec_name + '.sub')
+
+class MVSCDagGenerationNode(InspiralAnalysisNode):
+  """
+  the node that runs the mvsc dag generation script
+  """
+  def __init__(self, job):
+    """
+    @job: A HWinjPageJob.
+    """
+    InspiralAnalysisNode.__init__(self, job)
+  def set_database(self, database):
+    """
+    Sets the extract-to-xml option.
+    """
+    self.add_var_arg(database)
+  def set_user_tag(self, tag):
+    self.add_var_opt("user-tag",tag)

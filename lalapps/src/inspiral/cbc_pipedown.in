@@ -320,6 +320,7 @@ plotifar_job = inspiral.PlotIfarJob(cp)
 search_volume_job = inspiral.SearchVolumeJob(cp)
 search_upper_limit_job = inspiral.SearchUpperLimitJob(cp)
 
+
 # set submit file names
 t2c_job.set_sub_file( '.'.join([ basename, 'thinca_to_coinc', 'sub' ]) )
 t2c_sim_job.set_sub_file( '.'.join([ basename, 'simulation', 'thinca_to_coinc', 'sub' ]) )
@@ -466,6 +467,7 @@ for tag in user_tags:
       if not simulation:
         slide_entry = lal.CacheEntry(re.sub(coinc_zero_lag_tag, coinc_slide_tag, str(entry)))
         this_cache.append(slide_entry)
+      
       # if n*20th entry or last remainder, write to cache
       if (entry_num + 1) % 20 == 0 or (entry_num + 1) == len(instrument_cache):
         # set duration to be end of this entry - start of first entry in cache
@@ -790,20 +792,19 @@ for result_db in result_dbs_cache:
 
   if 'FULL_DATA' in tag and veto_cat in sim_caches:
     print "\tsetting up MVSC dag..."
-    # first, run command to generate mvscdag, then add a node to run mvsc dag
-    cmd_opts = []
-    for key,val in cp.items("mvsc_dag"):
-      cmd_opts.append("--"+key)
-      cmd_opts.append(val)
-    cmd_opts.append("--ini-file")
-    cmd_opts.append(options.config_file)
-    cmd_opts.append("--user-tag")
-    cmd_opts.append(tag)
-    inspiralutils.make_external_call([cp.get("condor","mvsc_dag")] + cmd_opts + [result_db.path()])
     mvsc_dag_name = options.config_file.replace('.ini','')+'_mvsc_'+tag+'_n'+cp.get("mvsc_dag","number-of-trees")+'_l'+cp.get("mvsc_dag","leaf-size")+'_s'+cp.get("mvsc_dag","sampled-parameters")+'_c'+cp.get("mvsc_dag","criterion-for-optimization")+'.dag'
+    mvsc_dag_generator_job = inspiral.MVSCDagGenerationJob(cp)
+    for key,val in cp.items("mvsc_dag"):
+      mvsc_dag_generator_job.add_opt(key,val)
+    mvsc_dag_generator_job.add_opt("ini-file", options.config_file)
+    mvsc_dag_generator_node = inspiral.MVSCDagGenerationNode(mvsc_dag_generator_job)
+    mvsc_dag_generator_node.set_user_tag(tag)
+    mvsc_dag_generator_node.set_database(result_db.path())
+    mvsc_dag_generator_node.add_parent(comp_durs_node)
+    dag.add_node(mvsc_dag_generator_node)
     mvsc_dag_job = pipeline.CondorDAGManJob(mvsc_dag_name, os.getcwd(), None)
     mvsc_dag_node = pipeline.CondorDAGManNode(mvsc_dag_job)
-    mvsc_dag_node.add_parent(comp_durs_node)
+    mvsc_dag_node.add_parent(mvsc_dag_generator_node)
     dag.add_node(mvsc_dag_node)
 
   ############################################################################
