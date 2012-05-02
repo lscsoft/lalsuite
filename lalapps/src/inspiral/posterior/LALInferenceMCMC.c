@@ -247,7 +247,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   }else{
     ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
     if(ppt){
-      if(strstr(ppt->value,"TaylorF2")) {
+      if(strstr(ppt->value,"TaylorF2") || strstr(ppt->value,"TaylorF2RedSpin")) {
         runState->template=&LALInferenceTemplateLAL;
         fprintf(stdout,"Template function called is \"LALInferenceTemplateLAL\"\n");
       }else if(strstr(ppt->value,"35phase_25amp")) {
@@ -638,6 +638,10 @@ void initVariables(LALInferenceRunState *state)
       {
         approx = TaylorF2;
       }
+    else if ( ! strcmp( "TaylorF2RedSpin", ppt->value ) )
+    {
+      approx = TaylorF2RedSpin;
+    }
     else if ( ! strcmp( "EOB", ppt->value ) )
       {
         approx = EOB;
@@ -691,7 +695,7 @@ void initVariables(LALInferenceRunState *state)
         fprintf( stderr, "invalid argument to --approximant\n"
                  "unknown approximant %s specified: "
                  "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
-                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
+                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2, TaylorF2RedSpin,  EOB, EOBNR, EOBNRv2, \n"
                  "EOBNRv2HM, SpinTaylor, SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4\n"
                  "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
         exit( 1 );
@@ -1266,7 +1270,7 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
-  if(approx==TaylorF2 && ppt){
+  if(approx==TaylorF2RedSpin && ppt){
 
     tmpMin=-1.0; tmpMax=1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");
