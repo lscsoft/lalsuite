@@ -279,8 +279,10 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->prior=&LALInferenceInspiralSkyLocPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
              LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
-             LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
+             LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
     runState->prior=&LALInferenceAnalyticNullPrior;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
+    runState->prior=&LALInferenceNullPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }
