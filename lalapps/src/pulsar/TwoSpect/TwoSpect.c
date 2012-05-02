@@ -2560,14 +2560,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr, "%s: the template FAR must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
-   else params->ULfmin = params->fmin;
-   if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)
-   else params->ULfspan = params->fspan;
-   if (args_info.ULminimumDeltaf_given) params->ULmindf = args_info.ULminimumDeltaf_arg;     //Upper limit minimum modulation depth (Hz)
-   else params->ULmindf = params->dfmin;
-   if (args_info.ULmaximumDeltaf_given) params->ULmaxdf = args_info.ULmaximumDeltaf_arg;     //Upper limit maximum modulation depth (Hz)
-   else params->ULmaxdf = params->dfmax;
+   
    if (args_info.keepOnlyTopNumIHS_given) params->keepOnlyTopNumIHS = args_info.keepOnlyTopNumIHS_arg;         //Keep only top X IHS candidates
    else params->keepOnlyTopNumIHS = -1;
    if (args_info.simpleBandRejection_given) params->simpleSigmaExclusion = args_info.simpleBandRejection_arg;  //Simple band rejection (default off)
@@ -2652,6 +2645,20 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(LOG,"WARNING! Adjusting input minimum modulation depth to 1/2 a frequency bin!\n");
       fprintf(stderr,"WARNING! Adjusting input minimum modulation depth to 1/2 a frequency bin!\n");
    }
+   
+   //Adjustments for improper modulation depth inputs
+   params->dfmin = 0.5*round(2.0*params->dfmin*params->Tcoh)/params->Tcoh;
+   params->dfmax = 0.5*round(2.0*params->dfmax*params->Tcoh)/params->Tcoh;
+   
+   //Upper limit settings
+   if (args_info.ULfmin_given) params->ULfmin = args_info.ULfmin_arg;            //Upper limit minimum frequency (Hz)
+   else params->ULfmin = params->fmin;
+   if (args_info.ULfspan_given) params->ULfspan = args_info.ULfspan_arg;         //Upper limit maximum frequency (Hz)
+   else params->ULfspan = params->fspan;
+   if (args_info.ULminimumDeltaf_given) params->ULmindf = args_info.ULminimumDeltaf_arg;     //Upper limit minimum modulation depth (Hz)
+   else params->ULmindf = params->dfmin;
+   if (args_info.ULmaximumDeltaf_given) params->ULmaxdf = args_info.ULmaximumDeltaf_arg;     //Upper limit maximum modulation depth (Hz)
+   else params->ULmaxdf = params->dfmax;
    
    //Print to stderr the parameters of the search
    fprintf(stderr,"Tobs = %f sec\n",params->Tobs);
