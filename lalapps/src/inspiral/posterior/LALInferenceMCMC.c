@@ -163,6 +163,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
                (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
                (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
+               (--analyticnullprior)            Use analytic null prior.\n\
+               (--nullprior)                    Use null prior in the sampled parameters.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Proposals  ---------------------------------------------------------------------------------------------------\n\
