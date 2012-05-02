@@ -218,7 +218,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_max_psdlength(self.config.getint('input','max-psd-length'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
-    node.set_output_file(os.path.join(out_dir,node.engine+'-'+node.get_ifos()+'-'+str(node.get_trig_time)+str(id(self))))
+    node.set_output_file(os.path.join(out_dir,node.engine+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+str(id(self))))
     return node
     
   def add_results_page_node(self,outdir=None,parent=None,extra_options=None):
