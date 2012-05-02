@@ -162,7 +162,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # datafindnode=self.get_datafind_node(gpstime)
     enginenode=self.add_engine_node(gpstime)
     ifos=reduce(lambda a,b:a+b,enginenode.ifos)
-    pagedir=os.path.join(self.basepath,str(gpstime)+'-'+str(enginenode.uuid),ifos)
+    pagedir=os.path.join(self.basepath,str(gpstime)+'-'+'%x'%(id(enginenode)),ifos)
     mkdirs(pagedir)
     self.add_results_page_node(outdir=pagedir,parent=enginenode)
   
@@ -254,7 +254,6 @@ class EngineNode(pipeline.CondorDAGNode):
     self.psdlength=None
     self.maxlength=None
     self.psdstart=None
-    self.uuid=uuid.uuid1()
 
   def set_seglen(self,seglen):
     self.seglen=seglen
