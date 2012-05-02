@@ -587,12 +587,10 @@ LocalXLALComputeFaFb ( Fcomponents *FaFb,
 #include "hotloop_autovect.ci"
 #elif __ALTIVEC__
 #include "hotloop_altivec.ci"
-#elif __SSE__
-#ifdef _MSC_VER
+#elif __SSE__ && defined(_MSC_VER)
 #include "hotloop_sse_msc.ci"
-#else
+#elif __SSE__ && defined(__OPTIMIZE__)
 #include "hotloop_precalc.ci"
-#endif /* MSC_VER */
 #else
 #include "hotloop_generic.ci"
 #endif
