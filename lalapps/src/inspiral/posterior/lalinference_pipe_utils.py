@@ -7,6 +7,7 @@ import os
 from lalapps import inspiralutils
 import uuid
 import ast
+import pdb
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -161,7 +162,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # datafindnode=self.get_datafind_node(gpstime)
     enginenode=self.add_engine_node(gpstime)
     ifos=reduce(lambda a,b:a+b,enginenode.ifos)
-    pagedir=os.path.join(str(gpstime)+'-'+str(id(enginenode)),ifos)
+    pagedir=os.path.join(self.basepath,str(gpstime)+'-'+str(enginenode.uuid),ifos)
     mkdirs(pagedir)
     self.add_results_page_node(outdir=pagedir,parent=enginenode)
   
@@ -218,7 +219,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_max_psdlength(self.config.getint('input','max-psd-length'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
-    node.set_output_file(os.path.join(out_dir,node.engine+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+str(id(self))))
+    node.set_output_file(os.path.join(out_dir,node.engine+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+'%x'%(id(node))))
     return node
     
   def add_results_page_node(self,outdir=None,parent=None,extra_options=None):
@@ -253,6 +254,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.psdlength=None
     self.maxlength=None
     self.psdstart=None
+    self.uuid=uuid.uuid1()
 
   def set_seglen(self,seglen):
     self.seglen=seglen
@@ -317,6 +319,7 @@ class EngineNode(pipeline.CondorDAGNode):
           first=False
         else: delim=','
         cache=self.scisegs[ifo].get_df_node().get_output_files()[0]
+        self.add_input_file(cache)
         self.add_parent(self.scisegs[ifo].get_df_node())
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+cache
@@ -324,9 +327,9 @@ class EngineNode(pipeline.CondorDAGNode):
       ifostring=ifostring+']'
       cachestring=cachestring+']'
       channelstring=channelstring+']'
-      self.add_var_arg('--IFO '+ifostring)
-      self.add_var_arg('--channel '+channelstring)
-      self.add_var_arg('--cache '+cachestring)
+      self.add_var_opt('IFO',ifostring)
+      self.add_var_opt('channel',channelstring)
+      self.add_var_opt('cache',cachestring)
       # Start at earliest common time
       # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
       # Used when we are running the coherence test.
@@ -367,7 +370,7 @@ class LALInferenceNestNode(EngineNode):
     self.outfilearg='outfile'
     
   def set_output_file(self,filename):
-    self.add_file_opt(self.outfilearg+'.dat',filename,file_is_output_file=True)
+    self.add_file_opt(self.outfilearg,filename+'.dat',file_is_output_file=True)
     self.paramsfile=filename+'_params.txt'
     self.Bfilename=filename+'_B.txt'
 
