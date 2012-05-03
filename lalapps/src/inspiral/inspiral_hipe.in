@@ -305,8 +305,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                  insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
                  insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
                  insp_ckpt.add_pegasus_profile("condor","+remote_TransferInputFiles",'"' + insp.get_checkpoint_image() + '"')
-                 insp_ckpt.add_pegasus_profile("condor","+remote_periodic_release","False")
-                 insp_ckpt.add_pegasus_profile("condor","+remote_periodic_remove",'"(JobStatus==5)"')
                else:
                  insp_ckpt_job.set_universe("vanilla")
 
