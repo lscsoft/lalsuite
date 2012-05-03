@@ -243,7 +243,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
           bank.set_end(chunk.end())
           bank.set_ifo(ifo_name)
           bank.set_vds_group(ifo_name[0] + str(chunk.start()))
-          bank.add_pegasus_profile("pegasus","gridstart","none")
           if not opts.read_cache: bank.set_cache(df.get_output())
           else: bank.set_cache(cp.get('datafind',ifo_name+"-cache"))
           if not calibrated: bank.calibration()
@@ -273,7 +272,6 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
              insp.set_ifo(ifo_name)
              insp.set_ifo_tag("FIRST")
              insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-             insp.add_pegasus_profile("pegasus","gridstart","none")
              if not opts.read_cache: insp.set_cache(df.get_output())
              else:  insp.set_cache(cp.get('datafind',ifo_name+"-cache"))
              if not calibrated: insp.calibration()
@@ -300,12 +298,15 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                if cp.has_option('pipeline','remote-site'):
                  # additional requirements to launch jon on remote pool
                  insp_ckpt_job.set_universe("grid")
+                 insp_ckpt.set_grid_start("pegasuslite")
                  insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','remote-site'))
                  insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
                  insp_ckpt.add_pegasus_profile("condor","+remote_requirements","True")
                  insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
                  insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
                  insp_ckpt.add_pegasus_profile("condor","+remote_TransferInputFiles",'"' + insp.get_checkpoint_image() + '"')
+                 insp_ckpt.add_pegasus_profile("condor","+remote_periodic_release","False")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_periodic_remove",'"(JobStatus==5)"')
                else:
                  insp_ckpt_job.set_universe("vanilla")
 
@@ -564,7 +565,6 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               insp.set_ifo(ifo_name)
               insp.set_ifo_tag("SECOND_" + coinc_ifos)
               insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-              insp.add_pegasus_profile("pegasus","gridstart","none")
               if not opts.read_cache: 
                 insp.set_cache(seg.get_df_node().get_output())
               else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
@@ -735,7 +735,6 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             insp.set_ifo(ifo_name)
             insp.set_ifo_tag(coinc_ifos+"_"+approximant)
             insp.set_vds_group(ifo_name[0] + str(chunk.start()))
-            insp.add_pegasus_profile("pegasus","gridstart","none")
             if not opts.read_cache: 
               insp.set_cache(seg.get_df_node().get_output())
             else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
@@ -1714,6 +1713,12 @@ if usertag:
 else:
   subsuffix = '.sub'
 
+# set the worker package if neccesssary
+try:
+  dag.set_pegasus_worker(cp.get('pipeline','pegasus-worker'))
+except:
+  pass
+
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
 
@@ -1784,6 +1789,8 @@ for ifo in ifo_list:
 
 # create inspiral checkpoint job
 insp_ckpt_job = inspiral.InspiralCkptJob(cp,opts.dax)
+if cp.has_option('pipeline','remote-site'):
+  insp_ckpt_job.set_executable_installed(False)
 
 # single_inca:
 single_inca_job = inspiral.IncaJob(cp)
