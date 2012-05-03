@@ -80,7 +80,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.basepath=os.getcwd()
       print 'No basepath specified, using current directory: %s'%(self.basepath)
     mkdirs(self.basepath)
-    self.posteriorpath=os.path.join(self.basepath,'posteriors')
+    self.posteriorpath=os.path.join(self.basepath,'posterior_samples')
     mkdirs(self.posteriorpath)
     daglogdir=cp.get('paths','daglogdir')
     mkdirs(daglogdir)
@@ -111,6 +111,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.channels=ast.literal_eval(cp.get('data','channels'))
     self.use_available_data=False
     self.webdir=cp.get('paths','webdir')
+    if cp.has_option('analysis','dataseed'):
+      self.dataseed=cp.getint('analysis','dataseed')
+    else:
+      self.dataseed=None
     # Set up necessary job files.
     self.datafind_job = pipeline.LSCDataFindJob(self.cachepath,self.logpath,self.config)
     self.datafind_job.add_opt('url-type','file')
@@ -118,6 +122,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.engine_job = EngineJob(self.config, os.path.join(self.basepath,'lalinference.sub'),self.logpath)
     self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
     self.merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath)
+    self.coherence_test_job = CoherenceTestJob(self.config,os.path.join(self.basepath,'coherence_test.sub'),self.logpath)
     # Process the input to build list of analyses to do
     self.times=[]
     self.events=[]
@@ -193,15 +198,35 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     enginenodes=[]
     for i in range(Npar):
       enginenodes.append(self.add_engine_node(event))
+    myifos=enginenodes[0].get_ifos()
     # Merge the results together
+    pagedir=os.path.join(self.webdir,evstring,myifos)
+    mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
     mergedir=os.path.join(self.basepath,'nested_samples')
-    mergenode.set_output_file(os.path.join(mergedir,'outfile_%s.dat'%(evstring)))
-    mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s.dat'%(evstring)))
+    mergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(myifos,evstring)))
+    mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
-    pagedir=os.path.join(self.webdir,evstring,enginenodes[0].get_ifos())
-    mkdirs(pagedir)
-    self.add_results_page_node(outdir=pagedir,parent=mergenode)
+    respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
+    respagenode.set_bayes_coherent_noise(mergenode.get_ns_file())
+    if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
+        par_mergenodes=[]
+        for ifo in enginenodes[0].ifos:
+            cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
+            pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
+            pmergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(ifo,evstring)))
+            pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
+            self.add_node(pmergenode)
+            par_mergenodes.append(pmergenode)
+            presultsdir=os.path.join(pagedir,ifo)
+            mkdirs(presultsdir)
+            self.add_results_page_node(outdir=presultsdir,parent=pmergenode)
+        coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
+        coherence_node.add_coherent_parent(mergenode)
+        map(coherence_node.add_incoherent_parent, par_mergenodes)
+        self.add_node(coherence_node)
+        respagenode.add_parent(coherence_node)
+        respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
 
   def add_science_segments(self):
     # Query the segment database for science segments and
@@ -255,6 +280,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node=self.EngineNode(self.engine_job)
     end_time=event.trig_time
     node.set_trig_time(end_time)
+    node.set_dataseed(self.dataseed+event.event_id)
     for ifo in ifos:
       for seg in self.segments[ifo]:
         if end_time >= seg.start() and end_time < seg.end():
@@ -292,6 +318,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       node.add_var_arg(infile)
     node.set_output_dir(outdir)
     self.add_node(node)
+    return node
 
 class EngineJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
@@ -332,10 +359,10 @@ class EngineNode(pipeline.CondorDAGNode):
     self.psdstart=psdstart
 
   def set_seed(self,seed):
-    self.add_var_opt('randomseed',seed)
+    self.add_var_opt('randomseed',str(seed))
   
   def set_dataseed(self,seed):
-    self.add_var_opt('dataseed',seed)
+    self.add_var_opt('dataseed',str(seed))
 
   def get_ifos(self):
     return ''.join(map(str,self.ifos))
@@ -443,14 +470,18 @@ class LALInferenceNestNode(EngineNode):
   def set_output_file(self,filename):
     self.nsfile=filename+'.dat'
     self.add_file_opt(self.outfilearg,self.nsfile,file_is_output_file=True)
-    self.paramsfile=filename+'_params.txt'
-    self.Bfilename=filename+'_B.txt'
+    self.paramsfile=self.nsfile+'_params.txt'
+    self.Bfilename=self.nsfile+'_B.txt'
+    self.headerfile=self.nsfile+'_params.txt'
 
   def get_B_file(self):
     return self.Bfilename
 
   def get_ns_file(self):
     return self.nsfile
+
+  def get_header_file(self):
+    return self.headerfile
 
 class LALInferenceMCMCNode(EngineNode):
   def __init__(self,li_job):
@@ -508,6 +539,10 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.add_var_opt('outpath',dir)
         mkdirs(dir)
     def get_pos_file(self): return self.posfile
+    def set_bayes_coherent_incoherent(self,bcifile):
+        self.add_var_arg('--bci '+bcifile)
+    def set_bayes_coherent_noise(self,bsnfile):
+        self.add_var_arg('--bsn '+bsnfile)
         
 class CoherenceTestJob(pipeline.CondorDAGJob):
     """
@@ -530,8 +565,9 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
       pipeline.CondorDAGNode.__init__(self,coherencetest_job)
       self.incoherent_parents=[]
       self.coherent_parent=None
+      self.finalized=False
       if outfile is not None:
-        self.set_output_file(outfile)
+        self.add_file_opt('outfile',outfile,file_is_output_file=True)
 
     def add_coherent_parent(self,node):
       """
@@ -549,23 +585,11 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
       """
       Construct command line
       """
+      if self.finalized==True: return
+      self.finalized=True
       self.add_file_arg(self.coherent_parent.get_B_file())
       for inco in self.incoherent_parents:
         self.add_file_arg(inco.get_B_file())
-    def set_output_file(self,file):
-      """
-      Set the output file
-      """
-      self.add_file_opt('outsamp',file,file_is_output_file=True)
-      self.nsfile=file
-    def set_pos_output_file(self,file):
-      """
-      Set the posterior output file
-      """
-      self.add_file_opt('outpos',file,file_is_output_file=True)
-      self.posfile=file
-    def get_pos_file(self): return self.posfile
-    def get_ns_file(self): return self.nsfile
 
 class CombineZJob(pipeline.CondorDAGJob):
     """
@@ -644,6 +668,7 @@ class MergeNSNode(pipeline.CondorDAGNode):
     def add_engine_parent(self,parent):
         self.add_parent(parent)
         self.add_file_arg(parent.get_ns_file())
+        self.add_file_opt('headers',parent.get_header_file())
 
     def set_output_file(self,file):
         self.add_file_opt('out',file,file_is_output_file=True)
@@ -655,3 +680,4 @@ class MergeNSNode(pipeline.CondorDAGNode):
     
     def get_pos_file(self): return self.posfile
     def get_ns_file(self): return self.nsfile
+    def get_B_file(self): return self.nsfile+'_B.txt'
