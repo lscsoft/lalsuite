@@ -29,6 +29,7 @@ void sseSSVectorSequenceSubtract(REAL4Vector *output, REAL4VectorSequence *input
 void fastSSVectorSequenceScale(REAL4VectorSequence *output, REAL4Vector *input1, REAL4Vector *input2);
 void sse_exp_REAL8Vector(REAL8Vector *output, REAL8Vector *input);
 void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input);
+void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input);
 
 REAL4Vector * fastSSVectorMultiply_with_stride_and_offset(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2, INT4 stride1, INT4 stride2, INT4 offset1, INT4 offset2);
 REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL4Vector *input2);
