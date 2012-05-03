@@ -538,11 +538,11 @@ void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq
       fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, vars->weights->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   REAL8Vector *atanscaledweightvector = XLALCreateREAL8Vector(vars->weights->length);
+   /* REAL8Vector *atanscaledweightvector = XLALCreateREAL8Vector(vars->weights->length);
    if (atanscaledweightvector==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, vars->weights->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   }
+   } */
    
    for (ii=nterm; ii>=0; ii--) {
       REAL8 u = (ii + 0.5)*interv;
@@ -554,15 +554,15 @@ void sse_integrate_twospect2(qfvars *vars, INT4 nterm, REAL8 interv, REAL8 tausq
          fprintf(stderr, "%s: sseScaleREAL8Vector() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      sse_atan_REAL8Vector(atanscaledweightvector, scaledweightvector);
+      /* sse_atan_REAL8Vector(atanscaledweightvector, scaledweightvector);
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: sse_atan_REAL8Vector() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
+      } */
       
       for (jj=(INT4)vars->weights->length-1; jj>=0; jj--) {
          REAL8 twoUtimesWeight = scaledweightvector->data[jj];
-         REAL8 atanTwoUtimesWeight = atan(twoUtimesWeight);       //TODO: need to remove this
+         REAL8 atanTwoUtimesWeight = atan(twoUtimesWeight);
          
          logofproductterm += -0.5*log1p(twoUtimesWeight*twoUtimesWeight);
          sinetermargumentsum += atanTwoUtimesWeight;

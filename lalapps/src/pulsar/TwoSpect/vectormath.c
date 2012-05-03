@@ -1188,7 +1188,8 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 
 //Arctangent of input vector is computed using SSE
 //Cephes library based
-void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
+// !!!!!!!! NOT READY TO BE USED!!!!!!!!!
+/* void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 {
    
 #ifdef __SSE2__
@@ -1249,16 +1250,17 @@ void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    __m128d small = _mm_set1_pd(1.0e-50);
    __m128d morebits = _mm_set1_pd(6.123233995736765886130e-17);
    __m128d halfmorebits = _mm_set1_pd(3.061616997868382943065e-17);
-   __m128d signbit = _mm_set1_pd(0x8000000000000000);      //mask for the sign bit
+   //__m128d signbit = _mm_set1_pd(_mm_set_epi32(0x80000000, 0x00000000, 0x80000000, 0x00000000));      //mask for the sign bit
    __m128d allbits = minusOne;
    
    for (ii=0; ii<roundedvectorlength; ii++) {
       
       //Save sign values
-      __m128d signs = _mm_and_pd(*x, signbit);
+      //__m128d signs = _mm_and_pd(*x, signbit);
       
       //Make values positive
-      __m128d intx = _mm_xor_pd(*x, signs);
+      //__m128d intx = _mm_xor_pd(*x, signs);
+      __m128d intx = *x;
       
       //Reduce range
       __m128d greaterThanAlmostTwoThirds = _mm_cmpgt_pd(intx, almostTwoThirds);
@@ -1309,7 +1311,8 @@ void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
       
       y = _mm_add_pd(y, z);
       
-      *result = _mm_xor_pd(y, signs);
+      // *result = _mm_xor_pd(y, signs);
+      *result = y;
       
       x++;
       result++;
@@ -1332,7 +1335,7 @@ void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
-}
+} */
 
 
 
