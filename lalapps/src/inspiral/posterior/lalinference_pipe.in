@@ -40,6 +40,7 @@ if len(args)!=1:
 inifile=args[0]
 
 cp=ConfigParser.ConfigParser()
+cp.optionxform = str
 cp.readfp(open(inifile))
 
 if opts.run_path is not None:

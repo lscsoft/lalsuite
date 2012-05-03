@@ -124,31 +124,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.merge_job = MergeNSJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath)
     self.coherence_test_job = CoherenceTestJob(self.config,os.path.join(self.basepath,'coherence_test.sub'),self.logpath)
     # Process the input to build list of analyses to do
-    self.times=[]
-    self.events=[]
-    if cp.has_option('input','gps-time-file'):
-      times=scan_timefile(cp.get('input','gps-time-file'))
-      for time in times:
-        self.times.append(float(time))
-        self.events.append(Event(trig_time=float(time)))
-    # SimInspiral Table
-    if cp.has_option('input','injection-file'):
-      from pylal import SimInspiralUtils
-      injTable=SimInspiralUtils.ReadSimInspiralFromFiles([cp.get('input','injection-file')])
-      map(self.times.append, [inj.get_end() for inj in injTable])
-    # SnglInspiral Table
-    if cp.has_option('input','sngl-inspiral-file'):
-      from pylal import SnglInspiralUtils
-      trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([opts.single_triggers])
-      map(self.times.append,[trig.get_end() for trig in trigTable])
-
-    # CoincInspiralTable
-    
-    # Pipedown database
+    self.events=self.setup_from_inputs()
+    self.times=[e.trig_time for e in self.events]
 
     # Sanity checking
-    if len(self.times)==0:
-      print 'No input times found, please check your config. Generating an empty DAG'
+    if len(self.events)==0:
+      print 'No input events found, please check your config. Will generate an empty DAG'
     
     # Set up the segments
     (mintime,maxtime)=self.get_required_data(self.times)
@@ -164,7 +145,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       self.config.write(conffile)
     
     # Generate the DAG according to the config given
-    self.setup_from_times(self.times)
+    if self.engine=='lalinferencenest':
+      for event in self.events: self.add_full_analysis_lalinferencenest(event)
+    elif self.engine=='lalinferencemcmc':
+      for event in self.event: self.add_full_analysis_lalinferencemcmc(event)
+
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(os.path.join(self.basepath,self.dagfilename))
     
@@ -184,7 +169,36 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     for time in self.times:
       self.add_full_analysis_lalinferencenest(Event(trig_time=time))
-  
+ 
+  def setup_from_inputs(self):
+    """
+    Scan the list of inputs, i.e.
+    gps-time-file, injection-file, sngl-inspiral-file, coinc-inspiral-file, pipedown-database
+    in the [input] section of the ini file.
+    And process the events found therein
+    """
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-database']
+    if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
+        print 'Plese specify only one input file'
+        sys.exit(1)
+    # ASCII list of GPS times
+    if self.config.has_option('input','gps-time-file'):
+      times=scan_time_file(cp.get('input','gps-time-file'))
+      events=[Event(trig_time=time) for time in times]
+    # Siminspiral Table
+    if self.config.has_option('input','injection-file'):
+      from pylal import SimInspiralUtils
+      injTable=SimInspiralUtils.ReadSimInspiralFromFiles([self.config.get('input','injection-file')])
+      events=[Event(trig_time=inj.get_end(),SimInspiral=inj) for inj in injTable]
+    # SnglInspiral Table
+    if self.config.has_option('input','sngl-inspiral-file'):
+      from pylal import SnglInspiralUtils
+      trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
+      events=[Event(trig_time=trig.get_end(),SnglInspiral=trig) for trig in trigTable]
+    # TODO: pipedown-database 
+    # TODO: timeslides
+    return events
+
   def add_full_analysis_lalinferencenest(self,event):
     """
     Generate an end-to-end analysis of a given event (Event class)
@@ -227,6 +241,24 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         self.add_node(coherence_node)
         respagenode.add_parent(coherence_node)
         respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
+
+  def add_full_analysis_lalinferencemcmc(self,event):
+    """
+    Generate an end-to-end analysis of a given event
+    For LALInferenceMCMC.
+    """
+    evstring=str(event.event_id)
+    if event.trig_time is not None:
+        evstring=str(event.trig_time)+'-'+str(event.event_id)
+    Npar=self.config.getint('analysis','nparallel')
+    enginenodes=[]
+    for i in range(Npar):
+        enginenodes.append(self.add_engine_node(event))
+    myifos=enginenodes[0].get_ifos()
+    pagedir=os.path.join(self.webdir,evstring,myifos)
+    mkdirs(pagedir)
+    respagenode=self.add_results_page_node(outdir=pagedir)
+    map(respagenode.add_engine_parent, enginenodes)
 
   def add_science_segments(self):
     # Query the segment database for science segments and
@@ -295,6 +327,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     	self.add_node(dfnode)
     self.add_node(node)
     # Add control options
+    if self.config.has_option('input','injection-file'):
+       node.set_injection(self.config.get('input','injection-file'),event.event_id)
     node.set_seglen(self.config.getint('lalinference','seglen'))
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
@@ -306,8 +340,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
-    if event.injection is not None:
-      node.set_injection(event.injections,event.event_id)
     return node
     
   def add_results_page_node(self,outdir=None,parent=None,extra_options=None):
