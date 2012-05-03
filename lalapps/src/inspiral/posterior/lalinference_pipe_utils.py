@@ -9,6 +9,7 @@ from lalapps import inspiralutils
 import uuid
 import ast
 import pdb
+import string
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -30,10 +31,10 @@ class Event():
         self.event_id=Event.new_id()
     if self.injection is not None:
         self.trig_time=self.injection.get_end()
-        self.event_id=self.injection.simulation_id
+        self.event_id=int(str(self.injection.simulation_id).split(':')[2])
     if self.sngltrigger is not None:
         self.trig_time=sngltrigger.get_end()
-        self.event_id=sngltrigger.event_id
+        self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
@@ -148,7 +149,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.engine=='lalinferencenest':
       for event in self.events: self.add_full_analysis_lalinferencenest(event)
     elif self.engine=='lalinferencemcmc':
-      for event in self.event: self.add_full_analysis_lalinferencemcmc(event)
+      for event in self.events: self.add_full_analysis_lalinferencemcmc(event)
 
     self.dagfilename="lalinference_%s-%s"%(self.config.get('input','gps-start-time'),self.config.get('input','gps-end-time'))
     self.set_dag_file(os.path.join(self.basepath,self.dagfilename))
@@ -189,12 +190,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','injection-file'):
       from pylal import SimInspiralUtils
       injTable=SimInspiralUtils.ReadSimInspiralFromFiles([self.config.get('input','injection-file')])
-      events=[Event(trig_time=inj.get_end(),SimInspiral=inj) for inj in injTable]
+      events=[Event(SimInspiral=inj) for inj in injTable]
     # SnglInspiral Table
     if self.config.has_option('input','sngl-inspiral-file'):
       from pylal import SnglInspiralUtils
       trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
-      events=[Event(trig_time=trig.get_end(),SnglInspiral=trig) for trig in trigTable]
+      events=[Event(SnglInspiral=trig) for trig in trigTable]
     # TODO: pipedown-database 
     # TODO: timeslides
     return events
