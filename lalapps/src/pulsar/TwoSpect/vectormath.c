@@ -1250,7 +1250,7 @@ void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    __m128d morebits = _mm_set1_pd(6.123233995736765886130e-17);
    __m128d halfmorebits = _mm_set1_pd(3.061616997868382943065e-17);
    __m128d signbit = _mm_set1_pd(0x8000000000000000);      //mask for the sign bit
-   __m128d allbits = _mm_set1_pd(0xffffffffffffffff);
+   __m128d allbits = minusOne;
    
    for (ii=0; ii<roundedvectorlength; ii++) {
       
