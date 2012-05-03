@@ -807,9 +807,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   for cp_opt in config.options('condor-max-jobs'):
     hipeNode.add_maxjobs_category(cp_opt,config.getint('condor-max-jobs',cp_opt))
 
-  # collapse the short running jobs in the veto sub-dags
-  if vetoCat:
-    hipeNode.set_cluster_jobs('horizontal')
+  # collapse the short running jobs in all of the dags
+  hipeNode.set_cluster_jobs('horizontal')
 
   # tell pegasus where ihope wants us to run the jobs
   hipeJob.set_pegasus_exec_dir(os.path.join(
