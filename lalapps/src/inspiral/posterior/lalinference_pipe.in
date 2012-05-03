@@ -1,0 +1,82 @@
+#!/usr/bin/env @PYTHONPROG@
+
+# DAG generation code for running LALInference pipeline
+# (C) 2012 John Veitch
+
+from lalapps import lalinference_pipe_utils as pipe_utils
+import ConfigParser
+from optparse import OptionParser,OptionValueError
+
+usage=""" %prog [options] config.ini
+Setup a Condor DAG file to run the LALInference pipeline based on
+the config.ini file.
+
+The user must specify either an injection file to analyse, with the --inj option,
+a list of SnglInspiralTable or CoincInspiralTable triggers with the --<x>-triggers options,
+or an ASCII list of GPS times with the --gps-time-file option.
+
+The user must also specify and ini file which will contain the main analysis config.
+
+"""
+
+parser=OptionParser(usage)
+parser.add_option("-r","--run-path",default=None,action="store",type="string",help="Directory to run pipeline in (default: $PWD)",metavar="RUNDIR")
+parser.add_option("-p","--daglog-path",default=None,action="store",type="string",help="Path to directory to contain DAG log file. SHOULD BE LOCAL TO SUBMIT NODE",metavar="LOGDIR")
+parser.add_option("-g","--gps-time-file",action="store",type="string",default=None,help="Text file containing list of GPS times to analyse",metavar="TIMES.txt")
+parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
+parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
+parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
+
+
+
+
+(opts,args)=parser.parse_args()
+
+if len(args)!=1:
+  print 'Error: must specify one ini file'
+  parser.print_help()
+  sys.exit(1)
+
+inifile=args[0]
+
+cp=ConfigParser.ConfigParser()
+cp.optionxform = str
+cp.readfp(open(inifile))
+
+if opts.run_path is not None:
+  cp.set('paths','basedir',opts.run_path)
+
+if opts.daglog_path is not None:
+  cp.set('paths','daglogdir',opts.daglog_path)
+else:
+  cp.set('paths','daglogdir',opts.run_path)
+
+if opts.gps_time_file is not None:
+  cp.set('input','gps-time-file',opts.gps_time_file)
+
+if opts.single_triggers is not None:
+  cp.set('input','sngl-inspiral-file',opts.single_triggers)
+
+if opts.injections is not None:
+  cp.set('input','injection-file',opts.injections)
+
+# Create the DAG from the configparser object
+dag=pipe_utils.LALInferencePipelineDAG(cp)
+dag.write_sub_files()
+dag.write_dag()
+dag.write_script()
+# End of program
+print 'Successfully created DAG file.'
+print 'Now run condor_submit_dag %s\n'%(dag.get_dag_file())
+
+if opts.condor_submit:
+    import subprocess
+    from subprocess import Popen
+           
+    x = subprocess.Popen(['condor_submit_dag',dag.get_dag_file()])
+    x.wait()
+    if x.returncode==0:
+      print 'Submitted DAG file'
+    else:
+      print 'Unable to submit DAG file'
+
