@@ -353,7 +353,7 @@ Nested sampling arguments:\n\
 	  exit(1);
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
-				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 	
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
