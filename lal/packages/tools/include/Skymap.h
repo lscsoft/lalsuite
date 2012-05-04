@@ -87,7 +87,7 @@ typedef struct tagXLALSkymapDirectionPropertiesType
 
 void XLALSkymapDirectionPropertiesConstruct(
     XLALSkymapPlanType* plan,
-    double* direction,
+    double direction[2],
     XLALSkymapDirectionPropertiesType* properties
     );
 
