@@ -431,7 +431,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.c = Rpr;
    vars.useSSE = params->useSSE;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 1.0e-13;   //(1e-5) old value
+   REAL8 accuracy = 1.0e-10;   //(1e-5) old value
    
    //sort the weights here so we don't have to do it later (qsort)
    sort_double_ascend(newweights);
@@ -444,7 +444,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    //Use slope to extend the computation and then compute the exponential of the found log10 probability.
    REAL8 logprobest = 0.0;
    INT4 estimatedTheProb = 0;
-   if (prob<=1.0e-9) {
+   if (prob<=1.0e-8 || *errcode!=0) {
       estimatedTheProb = 1;
       
       INT4 errcode1 = 0;
@@ -465,9 +465,9 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
          c1 = gsl_rng_uniform_pos(params->rng)*(upperend-lowerend)+lowerend;
          vars.c = c1;
          tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
-         while (tempprob<=1.0e-11 || tempprob>=1.0e-9) {
-            if (tempprob<=1.0e-11) upperend = c1;
-            else if (tempprob>=1.0e-9) lowerend = c1;
+         while (tempprob<=1.0e-8 || tempprob>=1.0e-6) {
+            if (tempprob<=1.0e-8) upperend = c1;
+            else if (tempprob>=1.0e-6) lowerend = c1;
             c1 = gsl_rng_uniform_pos(params->rng)*(upperend-lowerend)+lowerend;
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);

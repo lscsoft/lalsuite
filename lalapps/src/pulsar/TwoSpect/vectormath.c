@@ -1189,7 +1189,7 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 //Arctangent of input vector is computed using SSE
 //Cephes library based
 // !!!!!!!! NOT READY TO BE USED!!!!!!!!!
-/* void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
+void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 {
    
 #ifdef __SSE2__
@@ -1250,8 +1250,6 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
    __m128d small = _mm_set1_pd(1.0e-50);
    __m128d morebits = _mm_set1_pd(6.123233995736765886130e-17);
    __m128d halfmorebits = _mm_set1_pd(3.061616997868382943065e-17);
-   //__m128d signbit = _mm_set1_pd(_mm_set_epi32(0x80000000, 0x00000000, 0x80000000, 0x00000000));      //mask for the sign bit
-   __m128d allbits = minusOne;
    
    for (ii=0; ii<roundedvectorlength; ii++) {
       
@@ -1260,13 +1258,15 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
       
       //Make values positive
       //__m128d intx = _mm_xor_pd(*x, signs);
+      
+      //Assume positive
       __m128d intx = *x;
       
       //Reduce range
       __m128d greaterThanAlmostTwoThirds = _mm_cmpgt_pd(intx, almostTwoThirds);
       __m128d greaterThanTan3pO8 = _mm_cmpgt_pd(intx, tan3pO8);
       __m128d inBetween = _mm_and_pd( _mm_cmple_pd(intx, tan3pO8), greaterThanAlmostTwoThirds);
-      __m128d lessThanAlmostTwoThirds = _mm_xor_pd( _mm_or_pd(greaterThanAlmostTwoThirds, greaterThanTan3pO8), allbits);
+      __m128d lessThanAlmostTwoThirds = _mm_cmple_pd(intx, almostTwoThirds);
       __m128d y = zero;
       __m128d x1 = _mm_and_pd( _mm_div_pd(minusOne, _mm_add_pd(intx, small)), greaterThanTan3pO8);
       __m128d y_1 = _mm_and_pd(piOverTwo, greaterThanTan3pO8);
@@ -1335,7 +1335,7 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
-} */
+}
 
 
 
