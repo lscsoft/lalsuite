@@ -61,6 +61,9 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 /** A single iteration of the NS algorithm */
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
+/** Compute the autocorrelation length from the sampler at the current global iteration */
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations);
+
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
 REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);

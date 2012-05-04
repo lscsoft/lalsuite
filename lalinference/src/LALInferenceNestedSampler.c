@@ -478,33 +478,38 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Update the proposal */
 		if(!(iter%(Nlive/4))) {                  
                   /* Update the covariance matrix */
-                  if ( LALInferenceCheckVariable( runState->proposalArgs,
-                                                  "covarianceMatrix" ) ){
-                  
-                  LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
-		  gsl_matrix_memcpy(covCopy, *cvm);
-		  
-		  if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
-		    XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-		    XLAL_ERROR_VOID(XLAL_EFAILED);
-		  }
-		  
-		  for (i = 0; i < N; i++) {
-		    eigenValues->data[i] = gsl_vector_get(eValues,i);
-		  }
-		  
-		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
-		  LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-		  
-		  LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",
-                                        (void *)cvm);
+                  if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
+		    LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
+		    gsl_matrix_memcpy(covCopy, *cvm);
+		    if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+		      XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+		      XLAL_ERROR_VOID(XLAL_EFAILED);
+		    }
+		    for (i = 0; i < N; i++) {
+		      eigenValues->data[i] = gsl_vector_get(eValues,i);
+		    }
+		    LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+		    LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+		    LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",(void *)cvm);
                   }
                   
                   /* update k-d tree */
-                  if ( LALInferenceCheckVariable( runState->proposalArgs,
-                                                  "kDTree" ) )
+                if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" ) )
                     LALInferenceSetupkDTreeNSLivePoints( runState ); 
-                }
+		
+		/* Measure Autocorrelations if asked */
+		if(LALInferenceGetProcParamVal(runState->commandLine,"--auto-chain-length")){
+		  LALInferenceAddVariable(runState->algorithmParams,"current_iteration",&iter,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+		  LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, 10000);
+		  INT4 max=0;
+		  LALInferenceVariableItem *this;
+		  for(this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=*(REAL8 *)this->value;}
+		  LALInferenceDestroyVariables(acls);
+		  free(acls);
+		  LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
+		}
+	      }
+		
 	}
 	while( iter <= Nlive ||  dZ> TOLERANCE ); 
 
@@ -597,6 +602,147 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	fclose(lout);
 	
+}
+
+/* Calculate the autocorrelation function of the sampler (runState->evolve) for each parameter
+ * Evolves the sample starting with the value passed in temp, with a maximum of max_iterations steps.
+ Return the ACL for each parameter as a LALInferenceVariables */
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations)
+{
+  ProcessParamsTable *ppt=NULL;
+  char chainfilename[128]="";
+  char acf_file_name[128]="";
+  FILE *chainfile=NULL;
+  FILE *acffile=NULL;
+  INT4 global_iter,temp;
+  UINT4 i,j;
+  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  REAL8 **data_array=NULL;
+  REAL8 **acf_array=NULL;
+  LALInferenceVariableItem *this;
+
+
+  REAL8 ACF,ACL,max=0;
+  LALInferenceVariables *acls=NULL;
+
+  global_iter=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"current_iteration");
+  /* Back up the algorithm state and replace with a clean version for logSampletoarray */
+  LALInferenceVariables myAlgParams,*oldAlgParams=runState->algorithmParams;
+  LALInferenceVariables myCurrentParams,*oldCurrentParams=runState->currentParams;
+  LALInferenceLogFunction *oldLogSample=runState->logsample;
+  memset(&myAlgParams,0,sizeof(LALInferenceVariables));
+  memset(&myCurrentParams,0,sizeof(LALInferenceVariables));
+  LALInferenceCopyVariables(runState->currentParams,&myCurrentParams);
+  LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
+  LALInferenceRemoveVariable(&myAlgParams,"outputarray");
+  LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
+  LALInferenceRemoveVariable(&myAlgParams,"outfile");
+  temp=1; /* Set MCMC chain length to 1 so as to record all samples */
+  LALInferenceSetVariable(&myAlgParams,"Nmcmc",&temp);
+  runState->algorithmParams=&myAlgParams;
+  runState->currentParams=&myCurrentParams;
+  runState->logsample=LALInferenceLogSampleToArray;
+  /* We can record write the MCMC chain to a file too */
+  ppt=LALInferenceGetProcParamVal(runState->commandLine,"--acf-chainfile");
+  if(ppt){
+    sprintf(chainfilename,"%s.%i",ppt->value,global_iter);
+    chainfile=fopen(chainfilename,"w");
+    LALInferenceAddVariable(&myAlgParams,"outfile",&chainfile,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
+  }
+  ppt=LALInferenceGetProcParamVal(runState->commandLine,"--acf-file");
+  if(ppt){
+    sprintf(acf_file_name,"%s.%i",ppt->value,global_iter);
+    acffile=fopen(acf_file_name,"w");
+  }
+  
+  /* Evolve the initial sample */
+  for(i=0;i<max_iterations;i++)
+  {
+   runState->evolve(runState);
+  }
+  
+  /* Get the location of the sample array */
+  LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+  
+  /* Convert to a 2D array for ACF calculation */
+  data_array=calloc(nPar,sizeof(REAL8 *));
+  acf_array=calloc(nPar,sizeof(REAL8 *));
+  for (i=0;i<(UINT4)nPar;i++){
+    data_array[i]=calloc(max_iterations,sizeof(REAL8));
+    acf_array[i]=calloc(max_iterations,sizeof(REAL8));
+  }
+
+  for (i=0;i<max_iterations;i++){
+    j=0;
+    for(this=variables_array[i].head;this;this=this->next)
+    {
+      switch(this->vary){
+	case LALINFERENCE_PARAM_CIRCULAR:
+	case LALINFERENCE_PARAM_LINEAR:
+	case LALINFERENCE_PARAM_OUTPUT:
+	{
+	  if(this->type!=LALINFERENCE_REAL8_t) continue;
+	  else {
+	    data_array[i][j]=*(REAL8 *)this->value;
+	    j++;
+	  } 
+	}
+	default:
+	  continue;
+      }
+    }
+  }
+  this=myCurrentParams.head;
+  for(i=0;i<(UINT4)nPar;i++){
+   /* Subtract the mean */
+   REAL8 this_mean = gsl_stats_mean(&data_array[i][0], 1, max_iterations);
+   for(j=0;j<max_iterations;j++) data_array[i][j]-=this_mean;
+   ACL=1;
+   int startflag=1;
+   
+   /* Use GSL to compute the ACF */
+   for(UINT4 lag=0;lag<max_iterations;lag++){
+      ACF= gsl_stats_correlation(&data_array[i][0], 1, &data_array[i][lag], 1, max_iterations-lag);
+      acf_array[i][lag]=ACF;
+      ACL+=2.0*ACF;
+      if((ACF<0.0005 && startflag) || lag==max_iterations-1){
+	startflag=0;
+	if(ACL>max) max=ACL;
+	LALInferenceAddVariable(acls,this->name,&ACL,LALINFERENCE_PARAM_OUTPUT,LALINFERENCE_REAL8_t);
+      }
+   }   
+   do{this=this->next;}while(this && (this->vary==LALINFERENCE_PARAM_FIXED || this->type!=LALINFERENCE_REAL8_t));
+  }
+  
+  /* Write out the ACF */
+  for(i=0;i<max_iterations;i++){
+    for(j=0;j<(UINT4)nPar;j++) fprintf(acffile,"%f ",acf_array[j][i]);
+    fprintf(acffile,"\n");
+  }
+  
+  FILE *aclfile=fopen("acl.dat","a");
+  FILE *aclfile_header=fopen("acl_params.txt","w");
+  fprintf(aclfile,"%i ",global_iter);
+  for(this=acls->head;this;this=this->next) {
+    fprintf(aclfile,"%f ",*(REAL8 *)this->value);
+    fprintf(aclfile_header,"%s ",this->name);
+  }
+  fprintf(aclfile,"\n");
+  fprintf(aclfile_header,"\n");
+  fclose(aclfile_header);
+  fclose(aclfile);
+  
+  /* Clean up */
+  for(i=0;i<(UINT4)nPar;i++) {free(data_array[i]); free(acf_array[i]);}
+  free(data_array); free(acf_array);
+  LALInferenceDestroyVariables(&myAlgParams);
+  LALInferenceDestroyVariables(&myCurrentParams);
+  runState->currentParams=oldCurrentParams;
+  runState->algorithmParams=oldAlgParams;
+  runState->logsample=oldLogSample;
+  if(chainfile) fclose(chainfile);
+  if(acffile) fclose(acffile);
+  return(acls);
 }
 
 /* Evolve nested sampling algorithm by one step, i.e.
