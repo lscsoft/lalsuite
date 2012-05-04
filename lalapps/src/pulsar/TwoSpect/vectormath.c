@@ -1189,7 +1189,7 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 //Arctangent of input vector is computed using SSE
 //Cephes library based
 // !!!!!!!! NOT READY TO BE USED!!!!!!!!!
-void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
+/* void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
 {
    
 #ifdef __SSE2__
@@ -1335,7 +1335,7 @@ void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
    XLAL_ERROR_VOID(XLAL_EFAILED);
 #endif
    
-}
+} */
 
 
 
