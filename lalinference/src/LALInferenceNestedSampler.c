@@ -476,7 +476,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the proposal */
-		if(!(iter%(Nlive/4))) {                  
+		if(!(iter%(Nlive))) {                  
                   /* Update the covariance matrix */
                   if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
 		    LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
@@ -496,7 +496,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                   /* update k-d tree */
                 if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" ) )
                     LALInferenceSetupkDTreeNSLivePoints( runState ); 
-		
+		}
+        if(!(iter%Nlive)){
 		/* Measure Autocorrelations if asked */
 		if(LALInferenceGetProcParamVal(runState->commandLine,"--auto-chain-length")){
 		  printf("Calculating ACF");
@@ -622,7 +623,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   REAL8 **data_array=NULL;
   REAL8 **acf_array=NULL;
   LALInferenceVariableItem *this;
-  REAL8 tolerance=1.0/sqrt(max_iterations);
+  REAL8 tolerance=0.01;
   
   for(this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) nPar++;
 
