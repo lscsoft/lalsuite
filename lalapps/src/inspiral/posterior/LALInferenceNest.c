@@ -247,6 +247,7 @@ void initializeNS(LALInferenceRunState *runState)
 Nested sampling arguments:\n\
  --Nlive N\tNumber of live points to use\n\
  --Nmcmc M\tNumber of MCMC point to use when evolving live points\n\
+(--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
@@ -279,7 +280,7 @@ Nested sampling arguments:\n\
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
-	runState->evolve=&LALInferenceNestedSamplingOneStep;
+	runState->evolve=&LALInferenceNestedSamplingSloppySample;
 	if(LALInferenceGetProcParamVal(commandLine,"--mcmcprop")){
 	  /* Use the PTMCMC proposal to sample prior */
 	  runState->proposal=&NSWrapMCMCLALProposal;
@@ -354,7 +355,12 @@ Nested sampling arguments:\n\
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
 				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-	
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyratio")))
+        tmpi=atoi(ppt->value);
+    else tmpi=1;
+    LALInferenceAddVariable(runState->algorithmParams,"sloppyratio",&tmpi,
+                    LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
