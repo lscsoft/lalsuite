@@ -263,9 +263,6 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   REAL8 chiS = 0;
   REAL8 chiA = 0;
 
-  //REAL8 chiAPlusChiSdM;
-  REAL8 chiSPlusChiAdM;
-
   /* Combination which appears a lot */
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
@@ -280,9 +277,6 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
 
   dM  = sqrt( dM2 );
   //dM3 = dM2 * dM;
-
-  //chiAPlusChiSdM = chiA + chiS*dM;
-  chiSPlusChiAdM = chiS + chiA*dM;
 
   m1Plus3eta  = - 1. + 3.*eta;
   m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
@@ -325,7 +319,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
     coeffs->delta21vh9 = -272./81. + (214.*LAL_PI*LAL_PI)/315.;
     coeffs->delta21v5  = - 493. * eta /42.;
 
-    coeffs->rho21v1   = (-3.*chiSPlusChiAdM)/(4.);
+    coeffs->rho21v1   = (-3.*(chiS+chiA/dM))/(4.);
     //coeffs->rho21v2   = -59./56 - (9.*chiAPlusChiSdM*chiAPlusChiSdM)/(32.*dM2) + (23.*eta)/84.;
     /*coeffs->rho21v3   = (-567.*chiA*chiA*chiA - 1701.*chiA*chiA*chiS*dM
                         + chiA*(-4708. + 1701.*chiS*chiS - 2648.*eta)*(-1. + 4.*eta)
@@ -1117,9 +1111,6 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   REAL8 dM, dM2; //dM3;
   REAL8 a2, a3;
 
-  //REAL8 chiAPlusChiSdM;
-  REAL8 chiSPlusChiAdM;
-
   /* Combination which appears a lot */
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
@@ -1139,9 +1130,6 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
 
   a2 = a*a;
   a3 = a2*a;
-
-  //chiAPlusChiSdM = chiA + chiS*dM;
-  chiSPlusChiAdM = chiS + chiA*dM;
 
   m1Plus3eta  = - 1. + 3.*eta;
   m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
@@ -1189,7 +1177,7 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->delta21vh9 = -272./81. + (214.*LAL_PI*LAL_PI)/315.;
     coeffs->delta21v5  = - 493. * eta /42.;
 
-    coeffs->rho21v1   = (-3.*chiSPlusChiAdM)/(4.);
+    coeffs->rho21v1   = (-3.*(chiS+chiA/dM))/(4.);
     //coeffs->rho21v2   = -59./56 - (9.*chiAPlusChiSdM*chiAPlusChiSdM)/(32.*dM2) + (23.*eta)/84.;
     coeffs->rho21v2   = -59./56 + (23.*eta)/84. - 9./32.*a2;
     /*coeffs->rho21v3   = (-567.*chiA*chiA*chiA - 1701.*chiA*chiA*chiS*dM
