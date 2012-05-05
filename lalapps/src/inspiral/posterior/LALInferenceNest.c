@@ -286,7 +286,7 @@ Nested sampling arguments:\n\
         runState->evolve=&LALInferenceNestedSamplingOneStep;
 	
     /* use the ptmcmc proposal to sample prior */
-    runstate->proposal=&nswrapmcmclalproposal;
+    runState->proposal=&nswrapmcmclalproposal;
     real8 temp=1.0;
     uint4 dummy=0;
     lalinferenceaddvariable(runstate->proposalargs, "adaptablestep", &dummy, lalinference_int4_t, lalinference_param_output);
