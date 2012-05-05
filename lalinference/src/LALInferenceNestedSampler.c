@@ -409,11 +409,11 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
-	runState->currentParams=&currentVars;
 	/* re-calculate the k-D tree from the new points if required */
 	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
           LALInferenceSetupkDTreeNSLivePoints( runState );
 
+	runState->currentParams=&currentVars;
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
