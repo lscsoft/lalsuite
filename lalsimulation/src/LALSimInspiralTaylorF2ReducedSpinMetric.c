@@ -29,6 +29,8 @@
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_permutation.h>
 
+#define pip2 9.8696044010893586188344909998761511
+#define cbrt_pi 1.4645918875615232630201425272637904
 
 /**
  * Function to compute the metric elements using waveform derivatives
@@ -58,15 +60,13 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
     const REAL8 etap3 = etap2*eta;
     const REAL8 chip2 = chi*chi;
     const REAL8 mcp2  = mc*mc;
-    const REAL8 pip2 = LAL_PI * LAL_PI;
-    REAL8 cbrt_pi = cbrt(LAL_PI);
 
     REAL8 eta_three_fifths = pow(eta, 0.6);
     REAL8 f_mc_eta = (f*mc)/eta_three_fifths;
     REAL8 f_mc_eta_one_third = cbrt(f_mc_eta);
 
     return (sqrt(0.8333333333333334)*pow(mc/eta_three_fifths,0.8333333333333334)*
-        sqrt(eta)*(1 + (cbrt(pip2)*
+        sqrt(eta)*(1 + (cbrt_pi*cbrt_pi*
          f_mc_eta_one_third * f_mc_eta_one_third *
          (743 + 924*eta))/672. -
         (pip2 * LAL_PI * cbrt_pi *
@@ -105,7 +105,6 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
     const REAL8 mc = mc_msun * LAL_MTSUN_SI;
     const REAL8 etap2 = eta*eta;
     REAL8 etap35 = pow(eta, 0.6);
-    REAL8 cbrt_pi = cbrt(LAL_PI);
 
     return (113*sqrt(0.8333333333333334)*cbrt_pi*
         pow(mc/etap35,0.8333333333333334)*sqrt(eta)*
@@ -135,9 +134,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
     const REAL8 etap5 = etap4*eta;
     const REAL8 chip2 = chi*chi;
     const REAL8 mcp2  = mc*mc;
-    const REAL8 pip2 = LAL_PI * LAL_PI;
     const REAL8 eta_fac = (-113 + 76 * eta) * (-113 + 76 * eta) * (-113 + 76 * eta);
-    REAL8 cbrt_pi = cbrt(LAL_PI);
     REAL8 eta_three_fifths = pow(eta, 0.6);
     REAL8 f_mc_eta_one_third = cbrt((f*mc)/eta_three_fifths);
 
@@ -193,41 +190,41 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
     const REAL8 chip2 = chi*chi;
     const REAL8 mcp2  = mc*mc;
     REAL8 eta_three_fifths = pow(eta, 0.6);
-    REAL8 cbrt_pi = cbrt(LAL_PI);
+    REAL8 f_mc_eta_one_third = cbrt((f*mc)/eta_three_fifths);
 
     return (sqrt(0.8333333333333334)*(5 -
-      (17*f*f*mcp2*LAL_PI*LAL_PI*LAL_PI*LAL_PI*(-320 + 451*eta))/
+      (17*f*f*mcp2*pip2*pip2*(-320 + 451*eta))/
        (96.*eta_three_fifths*eta_three_fifths) +
       (3*LAL_PI/cbrt_pi*
-         pow((f*mc)/eta_three_fifths,0.6666666666666666)*
+         f_mc_eta_one_third*f_mc_eta_one_third*
          (743 + 924*eta))/224. +
-      (5*LAL_PI*LAL_PI*LAL_PI/cbrt_pi*
-         pow((f*mc)/eta_three_fifths,1.6666666666666667)*
+      (5*pip2*LAL_PI/cbrt_pi*
+         f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*
          (-4757 + 4788*eta))/448. -
       (19*pow(LAL_PI,3.3333333333333335)*
          pow((f*mc)/eta_three_fifths,2.3333333333333335)*
          (5111593 + 8088752*eta + 151088*etap2))/2.709504e6 +
-      (f*mc*LAL_PI*LAL_PI*(-33047278387200*eta_three_fifths +
+      (f*mc*pip2*(-33047278387200*eta_three_fifths +
            f*mc*(-1471974996766431 + 208183547658240*LAL_GAMMA +
               3231619441873900*eta - 103072897342800*etap2 +
               20935314523200*etap3)))/
        (1.5021490176e12*eta_three_fifths*eta_three_fifths) +
       (1243*f*mc*LAL_PI*chi)/(24.*eta_three_fifths) -
-      (565*LAL_PI*LAL_PI/cbrt_pi*
-         pow((f*mc)/eta_three_fifths,1.6666666666666667)*
+      (565*pip2/cbrt_pi*
+         f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*
          (502429 - 591368*eta + 1680*etap2)*chi)/
        (5376.*(-113 + 76*eta)) +
       (13*LAL_PI*cbrt_pi*
-         pow((f*mc)/eta_three_fifths,1.3333333333333333)*
+         f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*f_mc_eta_one_third*
          (2490853280*etap2 - 112068617472*etap3 +
            56201773824*etap4 +
            1808*eta*(-1708561 + 7175952*chip2) -
            12769*(-7266251 + 20575296*chip2)))/
        (8.128512e6*pow(113 - 76*eta,2)) +
-      (14552*f*f*mcp2*LAL_PI*LAL_PI*
+      (14552*f*f*mcp2*pip2*
          log((64*f*mc*LAL_PI)/eta_three_fifths))/(315.*eta_three_fifths*eta_three_fifths)))/
-    (12.*pow(f,1.1666666666666667)*LAL_PI/cbrt_pi*
-    pow(mc/eta_three_fifths,0.16666666666666666)*pow(eta,0.1));
+    (12.*f*LAL_PI/cbrt_pi*
+    sqrt(f_mc_eta_one_third)*pow(eta,0.1));
 }
 
 /**
@@ -242,7 +239,6 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
     const REAL8 mc = mc_msun * LAL_MTSUN_SI;
     const REAL8 etap2 = eta*eta;
     REAL8 eta_three_fifths = pow(eta, 0.6);
-    REAL8 cbrt_pi = cbrt(LAL_PI);
 
     return (113*((756*f*mc)/eta_three_fifths +
       (320355*cbrt_pi*
@@ -274,46 +270,48 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
     const REAL8 chip2 = chi*chi;
     const REAL8 mcp2  = mc*mc;
     REAL8 eta_three_fifths = pow(eta, 0.6);
+    const REAL8 eta_fac = -113 + 76 * eta;
+    const REAL8 fmc_fac = cbrt(f * mc / eta_three_fifths);
 
-    return (-77616000*f*mc*LAL_PI*(-113 + 76*eta)*
-     (23187*LAL_PI*pow(113 - 76*eta,2) -
+    return (-77616000*f*mc*LAL_PI*eta_fac*
+     (23187*LAL_PI*eta_fac*eta_fac -
        113*(16565461 - 22282744*eta + 12261424*etap2)*chi)*
-     log(cbrt((f*mc)/pow(eta,0.6))/
+     log(fmc_fac/
        (2.*cbrt(5)*
-         cbrt(mc/pow(eta,0.6)))) +
-    (31046400*pow((f*mc)/eta_three_fifths,0.6666666666666666)*
-        pow(eta,1.2)*pow(-113 + 76*eta,3)*(-743 + 1386*eta) -
-       f*f*mcp2*pow(LAL_PI,1.3333333333333333)*
-        pow(-113 + 76*eta,3)*
+         cbrt(mc/eta_three_fifths))) +
+    (31046400*fmc_fac*fmc_fac*
+        eta_three_fifths * eta_three_fifths *eta_fac*eta_fac*eta_fac*(-743 + 1386*eta) -
+       f*f*mcp2*LAL_PI * cbrt_pi *
+        eta_fac * eta_fac * eta_fac *
         (33984313019673 - 4592284139520*LAL_GAMMA -
           12118079538950*eta - 413215941600*etap2 +
           2083465692000*etap3 +
-          977961600*LAL_PI*LAL_PI*(-3072 + 451*eta) +
-          323400*pow(LAL_PI,1.3333333333333333)*
-           cbrt((f*mc)/eta_three_fifths)*
+          977961600*pip2*(-3072 + 451*eta) +
+          323400*LAL_PI*cbrt_pi*
+           fmc_fac*
            (15419335 + 3633744*eta + 2132496*etap2)) -
-       18480*f*mc*cbrt(LAL_PI)*eta_three_fifths*
-        (-6096384*LAL_PI*pow(-113 + 76*eta,3) +
-          32461800*pow(LAL_PI,1.6666666666666667)*
-           pow((f*mc)/pow(eta,0.6),0.6666666666666666)*
-           pow(-113 + 76*eta,3) +
-          14351904*pow(-113 + 76*eta,3)*chi -
-          158200*pow(LAL_PI,0.6666666666666666)*
-           pow((f*mc)/eta_three_fifths,0.6666666666666666)*
+       18480*f*mc*cbrt_pi*eta_three_fifths*
+        (-6096384*LAL_PI*eta_fac * eta_fac * eta_fac +
+          32461800*pip2/cbrt_pi*
+           fmc_fac*fmc_fac*
+           eta_fac * eta_fac * eta_fac +
+          14351904*eta_fac * eta_fac * eta_fac*chi -
+          158200*LAL_PI/cbrt_pi*
+           fmc_fac*fmc_fac*
            (-1871897093 + 3776925108*eta -
              3079029456*etap2 + 931868224*etap3)*
-           chi - 5*cbrt(LAL_PI)*
-           cbrt((f*mc)/eta_three_fifths)*
+           chi - 5*cbrt_pi*
+           fmc_fac*
            (14990425815136*etap3 -
              12186233587584*etap4 +
              2866657264128*etap5 -
              1442897*(-3058673 + 5143824*chip2) +
              612912*eta*(-17749451 + 28355859*chip2) -
              2712*etap2*(-202619251 + 204514632*chip2)))
-        + 1530761379840*f*f*mcp2*pow(LAL_PI,1.3333333333333333)*
-        pow(-113 + 76*eta,3)*log((64*f*mc*LAL_PI)/eta_three_fifths))/
-     (pow((f*mc)/pow(eta,0.6),0.6666666666666666)*eta_three_fifths))/
-    (5.007163392e11*f*mc*LAL_PI*etap2*pow(-113 + 76*eta,3));
+        + 1530761379840*f*f*mcp2*LAL_PI*cbrt_pi*
+        eta_fac * eta_fac * eta_fac*log((64*f*mc*LAL_PI)/eta_three_fifths))/
+     (fmc_fac * fmc_fac *eta_three_fifths))/
+    (5.007163392e11*f*mc*LAL_PI*etap2*eta_fac * eta_fac * eta_fac);
 }
 
 /**
@@ -336,7 +334,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiMChirp(
 
     return (cbrt((f*mc)/eta_three_fifths)*
     (-93139200*pow(113 - 76*eta,2)*eta_three_fifths * eta_three_fifths *
-       (252 + cbrt(LAL_PI*LAL_PI)*
+       (252 + cbrt_pi * cbrt_pi*
           pow((f*mc)/eta_three_fifths,0.6666666666666666)*
           (743 + 924*eta)) +
       f*f*mcp2*LAL_PI*LAL_PI*pow(113 - 76*eta,2)*
@@ -389,7 +387,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
     int s = 0;
 
     /* compute the Schwarzschild ISCO frequency */
-    REAL8 fCut = pow(1./6., 1.5)/(LAL_PI*mc*pow(eta, -3./5.)*LAL_MTSUN_SI);
+    REAL8 fCut = 1. / (LAL_PI*mc*pow(eta, -0.6) * sqrt(6 * 6 * 6) * LAL_MTSUN_SI);
 
     /* create a view of the PSD between fLow and fCut */
     size_t nBins = (fCut - fLow) / df;
