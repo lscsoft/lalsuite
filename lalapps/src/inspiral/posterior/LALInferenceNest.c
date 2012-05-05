@@ -252,7 +252,7 @@ Nested sampling arguments:\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
 (--verbose)\tProduce progress information\n\
-(--mcmcprop)\tUse PTMCMC proposal engine\n\
+(--auto-chain-length)\tAutomatically tune the MCMC chains\n\
 \t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 \t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
 \t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
@@ -280,19 +280,20 @@ Nested sampling arguments:\n\
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
-	runState->evolve=&LALInferenceNestedSamplingSloppySample;
-	if(LALInferenceGetProcParamVal(commandLine,"--mcmcprop")){
-	  /* Use the PTMCMC proposal to sample prior */
-	  runState->proposal=&NSWrapMCMCLALProposal;
-	  REAL8 temp=1.0;
-	  UINT4 dummy=0;
-	  LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	  LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	  LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	  LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	}
-	else
-	  runState->proposal=&LALInferenceProposalNS;
+    if(LALInferenceGetProcParamVal(commandLine,"--auto-chain-length"))
+    	runState->evolve=&LALInferenceNestedSamplingSloppySample;
+    else
+        runState->evolve=&LALInferenceNestedSamplingOneStep;
+	
+    /* use the ptmcmc proposal to sample prior */
+    runstate->proposal=&nswrapmcmclalproposal;
+    real8 temp=1.0;
+    uint4 dummy=0;
+    lalinferenceaddvariable(runstate->proposalargs, "adaptablestep", &dummy, lalinference_int4_t, lalinference_param_output);
+    lalinferenceaddvariable(runstate->proposalargs, "proposedvariablenumber", &dummy, lalinference_int4_t, lalinference_param_output);
+    lalinferenceaddvariable(runstate->proposalargs, "proposedarraynumber", &dummy, lalinference_int4_t, lalinference_param_output);
+    LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 
