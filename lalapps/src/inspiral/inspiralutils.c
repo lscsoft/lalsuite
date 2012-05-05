@@ -80,6 +80,14 @@
 
 #include "inspiral.h"
 
+/**
+#include <lal/AVFactories.h>
+#include <lal/FrequencySeries.h>
+#include <lal/LALNoiseModels.h>
+#include <lal/ConfigFile.h>
+#include <lal/Units.h>
+*/
+
 REAL4 compute_candle_distance(REAL4 candleM1, REAL4 candleM2,
     REAL4 thissnr, REAL8 chanDeltaT, INT4 nPoints,
     REAL8FrequencySeries *spec, UINT4 cut)
@@ -455,6 +463,129 @@ void AddNumRelStrainModesREAL8(LALStatus      *status,  /**< pointer to LALStatu
 /** Main function for injecting numetrical relativity waveforms.
     Takes as input a list of injections, and adds h(t) to a given
     timeseries for a specified ifo and a dynamic range factor.
+    Updated/generalized version of InjectNumRelWaveforms that allows
+    arbitrary LIGO and Virgo PSDs and integration starting frequencies
+*/
+void InjectNumRelWaveformsUsingPSDREAL8(LALStatus *status,         /**< pointer to LALStatus structure */
+                            REAL8TimeSeries      *chan,         /**< [out] the output time series */
+                            SimInspiralTable     *injections,   /**< [in] list of injections */
+                            CHAR                 ifo[3],        /**< [in] 2 char code for interferometer */
+                            REAL8                freqLowCutoff, /**< [in] Lower cutoff frequency */
+                            REAL8                snrLow,        /**< [in] lower cutoff value of snr */
+                            REAL8                snrHigh,       /**< TO BE DOCUMENTED */
+                            REAL8FrequencySeries *ligoPSD,        /**< [in] PSD to use for LIGO SNRs.  If NULL, use initial PSD */
+                            REAL8                ligoSnrLowFreq,  /**< [in] Frequency at which to start integration for LIGO SNRs */
+                            REAL8FrequencySeries *virgoPSD,       /**< [in] PSD to use for Virgo SNRs.  If NULL, use initial PSD */
+                            REAL8                virgoSnrLowFreq, /**< [in] Frequency at which to start integration for Virgo SNRs */
+                            CHAR                 *fname)       /**< [in] higher cutoff value of snr */
+{
+  SimInspiralTable *thisInj = NULL;
+  REAL8 startFreq, startFreqHz, massTotal;
+  REAL8 thisSNR;
+  SimInspiralTable *simTableOut=NULL;
+  SimInspiralTable *thisInjOut=NULL;
+
+  INITSTATUS(status);
+  ATTATCHSTATUSPTR (status);
+  ASSERT( chan, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
+  ASSERT( ifo, status, INSPIRALH_ENULL, INSPIRALH_MSGENULL );
+
+
+  /* loop over injections */
+  for ( thisInj = injections; thisInj; thisInj = thisInj->next )
+    {
+
+      startFreq = start_freq_from_frame_url(thisInj->numrel_data);
+      massTotal = (thisInj->mass1 + thisInj->mass2) * LAL_MTSUN_SI;
+      startFreqHz = startFreq / ( LAL_TWOPI * massTotal);
+
+      if (startFreqHz < freqLowCutoff)
+        {
+          REAL8TimeSeries *strain = NULL;
+          strain  = XLALNRInjectionStrain(ifo, thisInj);
+          
+          if (ifo[0] == 'V')
+            thisSNR = calculate_snr_from_strain_and_psd_real8( strain, virgoPSD, virgoSnrLowFreq, ifo );
+          else
+            thisSNR = calculate_snr_from_strain_and_psd_real8( strain, ligoPSD, ligoSnrLowFreq, ifo );
+
+           /* set channel name */
+           snprintf( chan->name, LALNameLength * sizeof( CHAR ),
+                    "%s:STRAIN", ifo );
+
+          printf("Injection at %d.%d in ifo %s has SNR %f\n",
+                   thisInj->geocent_end_time.gpsSeconds,
+                   thisInj->geocent_end_time.gpsNanoSeconds,
+                   ifo,
+                   thisSNR);
+
+          if ((thisSNR < snrHigh) && (thisSNR > snrLow))
+            {
+              /* simTableOut will be null only the first time */
+              if ( simTableOut == NULL) {
+                simTableOut = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+                memcpy(simTableOut, thisInj, sizeof(*thisInj));
+                simTableOut->next = NULL;
+                thisInjOut = simTableOut;
+              }
+              else {
+                thisInjOut->next = (SimInspiralTable *)LALCalloc( 1, sizeof(SimInspiralTable) );
+                memcpy(thisInjOut->next, thisInj, sizeof(*thisInj));
+                thisInjOut->next->next = NULL;
+                thisInjOut = thisInjOut->next;
+              }
+
+              XLALSimAddInjectionREAL8TimeSeries( chan, strain, NULL);
+            }
+
+          XLALDestroyREAL8TimeSeries (strain);
+        }
+      else
+        {
+           fprintf( stderr, "Skipping injection at %d because it turns on at %f Hz, "
+                            "but the low frequency cutoff is %f\n",
+                            thisInj->geocent_end_time.gpsSeconds, startFreqHz, freqLowCutoff);
+        }
+    } /* loop over injectionsj */
+
+
+  /* write and free the output simInspiral table */
+  if ( simTableOut ) {
+
+    LIGOLwXMLStream xmlfp;
+    MetadataTable dummyTable;
+    dummyTable.simInspiralTable = simTableOut;
+
+    /* write the xml table of actual injections */
+    if (fname) {
+      memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
+      TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );
+      TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ),
+                status );
+
+      TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable,
+                                        sim_inspiral_table ), status );
+
+      TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );
+      TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );
+    }
+  }
+
+  while (simTableOut) {
+    thisInjOut = simTableOut;
+    simTableOut = simTableOut->next;
+    LALFree(thisInjOut);
+  }
+
+  DETATCHSTATUSPTR(status);
+  RETURN(status);
+
+}
+
+
+/** Main function for injecting numetrical relativity waveforms.
+    Takes as input a list of injections, and adds h(t) to a given
+    timeseries for a specified ifo and a dynamic range factor.
 */
 void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to LALStatus structure */
                             REAL4TimeSeries     *chan,         /**< [out] the output time series */
@@ -753,6 +884,86 @@ REAL8 calculate_ligo_snr_from_strain_real8(  REAL8TimeSeries *strain,
 }
 
 
+REAL8 calculate_snr_from_strain_and_psd_real8(  REAL8TimeSeries *strain,
+                                       REAL8FrequencySeries  *psd,
+                                       REAL8                 startFreq,
+                                       const CHAR            ifo[3])
+{
+
+  REAL8 ret = -1, snrSq, freq, psdValue;
+  REAL8 deltaF;
+  REAL8FFTPlan *pfwd;
+  COMPLEX16FrequencySeries *fftData;
+  UINT4 k;
+
+  /* create the time series */
+  deltaF  = strain->deltaT * strain->data->length;
+  fftData = XLALCreateCOMPLEX16FrequencySeries( strain->name,  &(strain->epoch),
+                                               0, deltaF, &lalDimensionlessUnit,
+                                               strain->data->length/2 + 1 );
+
+  /* perform the fft */
+  pfwd = XLALCreateForwardREAL8FFTPlan( strain->data->length, 0 );
+  XLALREAL8TimeFreqFFT( fftData, strain, pfwd );
+
+  /* The PSD, if provided, comes in as it was in the original file  */
+  /* since we don't know deltaF until we get here.  Interpolate now */
+  if ( psd )
+    {
+      psd = XLALInterpolatePSD(psd, 1.0 / deltaF);
+    }
+
+  /* compute the SNR for initial LIGO at design */
+  for ( snrSq = 0, k = 0; k < fftData->data->length; k++ )
+    {
+      freq = fftData->deltaF * k;
+
+      if ( psd )
+        {
+            if ( freq < startFreq || k > psd->data->length )
+              continue;
+            psdValue  = psd->data->data[k];
+            psdValue /= 9e-46;
+        }
+      else if ( ifo[0] == 'V' )
+        {
+          if (freq < 35)
+            continue;
+
+          LALVIRGOPsd( NULL, &psdValue, freq );
+          psdValue /= 9e-46;
+        }
+      else
+        {
+          if (freq < 40)
+            continue;
+
+          LALLIGOIPsd( NULL, &psdValue, freq );
+        }
+
+      fftData->data->data[k].re /= 3e-23;
+      fftData->data->data[k].im /= 3e-23;
+
+      snrSq += fftData->data->data[k].re * fftData->data->data[k].re / psdValue;
+      snrSq += fftData->data->data[k].im * fftData->data->data[k].im / psdValue;
+    }
+
+  snrSq *= 4*fftData->deltaF;
+
+  XLALDestroyREAL8FFTPlan( pfwd );
+  XLALDestroyCOMPLEX16FrequencySeries( fftData );
+  
+  if ( psd )
+    XLALDestroyREAL8FrequencySeries( psd );
+
+  ret = sqrt(snrSq);
+
+  printf("Obtained snr=%f\n", ret);
+  return ret;
+}
+
+
+
 REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
                                        SimInspiralTable      *thisInj,
                                        const CHAR            ifo[3])
@@ -810,8 +1021,8 @@ REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
   XLALDestroyREAL4Vector ( chan->data);
   LALFree(chan);
 
-  ret = sqrt(snrSq);     return ret;
-
+  ret = sqrt(snrSq);
+  return ret;
 }
 
 REAL8TimeSeries *
@@ -866,3 +1077,128 @@ XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj)
 
   return strain;
 }
+
+
+
+int
+XLALPsdFromFile(REAL8FrequencySeries **psd,  /**< [out] The PSD */
+                const CHAR *filename)        /**< [in] name of the file to be read */
+{
+  REAL8FrequencySeries *ret;
+  LALParsedDataFile *cfgdata=NULL;
+  LIGOTimeGPS stubEpoch;
+  UINT4 length, k, r;
+  REAL8 freq, value;
+  REAL8 step1=0, deltaF=0;
+  int retval;
+  
+  /* XLALParseDataFile checks that filename is not null for us */
+  retval = XLALParseDataFile(&cfgdata, filename);
+  if ( retval != XLAL_SUCCESS ) {
+    XLAL_ERROR ( retval );
+  }
+
+  /*number of data points */
+  length = cfgdata->lines->nTokens; 
+  
+  /* allocate memory */
+  ret = XLALCreateREAL8FrequencySeries("PSD", &stubEpoch, 0, 0, &lalHertzUnit, length);
+  if (ret == NULL) {
+    XLALDestroyParsedDataFile( &cfgdata );
+    XLALPrintError ("%s: XLALPsdFromFile() failed.\n", __func__ );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
+
+  /* now get the data */
+  for (k = 0; k < length; k++) {
+    r = sscanf(cfgdata->lines->tokens[k], "%lf%lf", &freq, &value);
+
+    /* Check the data file format */
+    if ( r != 2 ) {
+      XLALDestroyParsedDataFile( &cfgdata );
+      XLALPrintError ("%s: XLALPsdFromFile() failed on bad line in psd file.\n", __func__ );
+      XLAL_ERROR ( XLAL_EFUNC );
+    }
+
+    if (deltaF == 0) {
+      if (step1 == 0) {
+        step1 = freq;
+      } else {
+        deltaF = (freq - step1);
+        ret->deltaF = deltaF;
+      }
+    }
+
+    ret->data->data[k] = value;
+  }
+
+  (*psd) = ret;
+
+  XLALDestroyParsedDataFile( &cfgdata );
+
+  return XLAL_SUCCESS;
+} 
+
+
+/** Function for interpolating PSD to a given sample rate
+  */
+REAL8FrequencySeries *
+XLALInterpolatePSD( REAL8FrequencySeries *in,      /**< input strain time series */
+                    REAL8                deltaFout /**< sample rate of time series */)
+{
+  REAL8FrequencySeries *ret=NULL;
+  REAL8 deltaFin, r, y_1, y_2;
+  UINT4 k, lo, numPoints;
+
+  deltaFin = in->deltaF;
+
+  /* length of output vector */
+  numPoints = (UINT4) (in->data->length * deltaFin / deltaFout);
+
+  /* allocate memory */
+  ret = LALCalloc(1, sizeof(*ret));
+  if (!ret)
+  {
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  ret->data = XLALCreateREAL8Vector( numPoints );
+  if (! ret->data)
+  {
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  ret->deltaF = deltaFout;
+
+  /* copy values from in which should be the same */
+  ret->epoch       = in->epoch;
+  ret->f0          = in->f0;
+  ret->sampleUnits = in->sampleUnits;
+  strcpy(ret->name, in->name);
+
+  /* go over points of output vector and interpolate linearly
+     using closest points of input */
+  for (k = 0; k < numPoints; k++) {
+    lo = (UINT4)( k*deltaFout / deltaFin);
+
+    /* y_1 and y_2 are the input values at x1 and x2 */
+    /* here we need to make sure that we don't exceed
+       bounds of input vector */
+    if ( lo < in->data->length - 1) {
+      y_1 = in->data->data[lo];
+      y_2 = in->data->data[lo+1];
+
+      /* we want to calculate y_2*r + y_1*(1-r) where
+         r = (x-x1)/(x2-x1) */
+      r = k*deltaFout / deltaFin - lo;
+
+      ret->data->data[k] = y_2 * r + y_1 * (1 - r);
+    }
+    else {
+      ret->data->data[k] = 0.0;
+    }
+  }
+
+  return ret;
+}
+

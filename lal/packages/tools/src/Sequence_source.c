@@ -165,7 +165,10 @@ SQUAREDATATYPE TYPESUMSQ (
 	SQUAREDATATYPE sum = 0;
 
 	for(data += first; count-- > 0; data++)
-		sum += *data * *data;
+		/* clang cannot compile complex compound assignments yet
+		 * radr://11224126 */
+		/* sum += *data * *data; */
+		sum = sum + (*data * *data);
 
 	return sum;
 }

@@ -834,7 +834,7 @@ cleanConfig (CHARSequence *text)
 
       /* clean away all trailing whitespace of last line*/
       ptr2 = ptr - 1;
-      while ( *ptr2 == ' ' )
+      while ( ptr2 >= text->data && ( strspn ( ptr2, WHITESPACE ) != 0 ) )
 	*ptr2-- = '\n';
 
       /* step to next line */

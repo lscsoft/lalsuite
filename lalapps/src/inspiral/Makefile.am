@@ -167,123 +167,99 @@ python_config.sed: Makefile
 	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
 
 lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/inspiral_pipe.in > lalapps_inspiral_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_pipe.in > lalapps_inspiral_pipe
 	@chmod +x lalapps_inspiral_pipe
 
 lalapps_inspiral_hipe: $(srcdir)/inspiral_hipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/inspiral_hipe.in > lalapps_inspiral_hipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_hipe.in > lalapps_inspiral_hipe
 	@chmod +x lalapps_inspiral_hipe
 
 lalapps_inspiral_ssipe: $(srcdir)/inspiral_ssipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/inspiral_ssipe.in > lalapps_inspiral_ssipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_ssipe.in > lalapps_inspiral_ssipe
 	@chmod +x lalapps_inspiral_ssipe
 
 lalapps_plot_hipe: $(srcdir)/plot_hipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/plot_hipe.in > lalapps_plot_hipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/plot_hipe.in > lalapps_plot_hipe
 	@chmod +x lalapps_plot_hipe
 
 lalapps_ihope: $(srcdir)/ihope.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/ihope.in > lalapps_ihope
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ihope.in > lalapps_ihope
 	@chmod +x lalapps_ihope
 
 lalapps_ihope_status: $(srcdir)/ihope_status.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/ihope_status.in > lalapps_ihope_status
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ihope_status.in > lalapps_ihope_status
 	@chmod +x lalapps_ihope_status
 
 lalapps_write_ihope_page: $(srcdir)/write_ihope_page.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/write_ihope_page.in > lalapps_write_ihope_page
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/write_ihope_page.in > lalapps_write_ihope_page
 	@chmod +x lalapps_write_ihope_page
 
 lalapps_link_old_ihope: $(srcdir)/link_old_ihope.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/link_old_ihope.in > lalapps_link_old_ihope
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/link_old_ihope.in > lalapps_link_old_ihope
 	@chmod +x lalapps_link_old_ihope
 
 lalapps_compare_ini: $(srcdir)/compare_ini.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/compare_ini.in > lalapps_compare_ini
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/compare_ini.in > lalapps_compare_ini
 	@chmod +x lalapps_compare_ini
 
 lalapps_followup0_pipe: $(srcdir)/followup0_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/followup0_pipe.in > lalapps_followup0_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/followup0_pipe.in > lalapps_followup0_pipe
 	@chmod +x lalapps_followup0_pipe
 
 lalapps_multi_hipe: $(srcdir)/multi_hipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/multi_hipe.in > lalapps_multi_hipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/multi_hipe.in > lalapps_multi_hipe
 	@chmod +x lalapps_multi_hipe
 
 lalapps_trigger_hipe: $(srcdir)/trigger_hipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/trigger_hipe.in > lalapps_trigger_hipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/trigger_hipe.in > lalapps_trigger_hipe
 	@chmod +x lalapps_trigger_hipe
 
 lalapps_cohPTF_hipe: $(srcdir)/cohPTF_hipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/cohPTF_hipe.in > lalapps_cohPTF_hipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cohPTF_hipe.in > lalapps_cohPTF_hipe
 	@chmod +x lalapps_cohPTF_hipe
 
 lalapps_check_hipe_times: $(srcdir)/check_hipe_times.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/check_hipe_times.in > lalapps_check_hipe_times
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/check_hipe_times.in > lalapps_check_hipe_times
 	@chmod +x lalapps_check_hipe_times
 
 lalapps_inspiral_online_pipe: $(srcdir)/inspiral_online_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/inspiral_online_pipe.in > lalapps_inspiral_online_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_online_pipe.in > lalapps_inspiral_online_pipe
 	@chmod +x lalapps_inspiral_online_pipe
 
 lalapps_ihope_daily_page: $(srcdir)/ihope_daily_page.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/ihope_daily_page.in > lalapps_ihope_daily_page
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/ihope_daily_page.in > lalapps_ihope_daily_page
 	@chmod +x lalapps_ihope_daily_page
 
 lalapps_flag_triggers: $(srcdir)/flag_triggers.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/flag_triggers.in > lalapps_flag_triggers
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/flag_triggers.in > lalapps_flag_triggers
 	@chmod +x lalapps_flag_triggers
 
 lalapps_check_flag: $(srcdir)/check_flag.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/check_flag.in > lalapps_check_flag
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/check_flag.in > lalapps_check_flag
 	@chmod +x lalapps_check_flag
 
 lalapps_glitch_probe: $(srcdir)/glitch_probe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/glitch_probe.in > lalapps_glitch_probe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/glitch_probe.in > lalapps_glitch_probe
 	@chmod +x lalapps_glitch_probe
 
 lalapps_inspiral_online_pipe_inject: $(srcdir)/inspiral_online_pipe_inject.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_online_pipe_inject.in > lalapps_inspiral_online_pipe_inject
 	@chmod +x lalapps_inspiral_online_pipe_inject
 
 lalapps_generate_upper_limits: $(srcdir)/generate_upper_limits.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/generate_upper_limits.in > lalapps_generate_upper_limits
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/generate_upper_limits.in > lalapps_generate_upper_limits
 	@chmod +x lalapps_generate_upper_limits
 
 lalapps_followup0_page: $(srcdir)/followup0_page.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/followup0_page.in > lalapps_followup0_page
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/followup0_page.in > lalapps_followup0_page
 	@chmod +x lalapps_followup0_page
 
 lalapps_cbc_pipedown: $(srcdir)/cbc_pipedown.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_pipedown.in > lalapps_cbc_pipedown
 	@chmod +x lalapps_cbc_pipedown
 
 lalapps_coh_PTF_post_processing: $(srcdir)/coh_PTF_post_processing.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/coh_PTF_post_processing.in > lalapps_coh_PTF_post_processing
 	@chmod +x lalapps_coh_PTF_post_processing
 
 

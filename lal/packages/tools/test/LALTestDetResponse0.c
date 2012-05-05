@@ -1277,8 +1277,9 @@ int main(int argc, char *argv[])
   utcDate.tm_mday = 17;
   utcDate.tm_mon  = 4;	/* may */
   utcDate.tm_year = 1994 - 1900;
-  utcDate.tm_isdst = 1;
-  mktime(&utcDate);
+  utcDate.tm_wday = 2;
+  utcDate.tm_yday = 136;
+  utcDate.tm_isdst = 0;
 
   XLALGPSSet(&gps, XLALUTCToGPS(&utcDate), 0);
 
@@ -1322,8 +1323,9 @@ int main(int argc, char *argv[])
   utcDate.tm_mday = 17;
   utcDate.tm_mon  = 4;	/* may */
   utcDate.tm_year = 1994 - 1900;
-  utcDate.tm_isdst = 1;
-  mktime(&utcDate);
+  utcDate.tm_wday = 2;
+  utcDate.tm_yday = 136;
+  utcDate.tm_isdst = 0;
 
   XLALGPSSet(&gps, XLALUTCToGPS(&utcDate), 0);
 

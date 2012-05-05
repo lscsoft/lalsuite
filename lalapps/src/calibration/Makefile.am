@@ -43,13 +43,11 @@ python_config.sed:
 	@echo "s+@RINGEXECPATH@+${bindir}+g" >> python_config.sed
 
 lalapps_strain_pipe: $(srcdir)/strain_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/strain_pipe.in > lalapps_strain_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/strain_pipe.in > lalapps_strain_pipe
 	@chmod +x lalapps_strain_pipe
 
 lalapps_noise_comp_pipe: $(srcdir)/noise_comp_pipe.in python_config.sed
-	@echo "creating $@"
-	@sed -f python_config.sed $(srcdir)/noise_comp_pipe.in > lalapps_noise_comp_pipe
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/noise_comp_pipe.in > lalapps_noise_comp_pipe
 	@chmod +x lalapps_noise_comp_pipe
 
 BUILT_SOURCES =

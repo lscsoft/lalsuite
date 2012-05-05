@@ -1148,9 +1148,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 S2S2;
   REAL8 omegaMatch;
   REAL8 c1,c2;
-	
-  INT4 errcode;
-		
+
   REAL8 *yin = (REAL8 *) LALMalloc(sizeof(REAL8) * neqs);
 	
   /* allocate the integrator */
@@ -1233,9 +1231,11 @@ fprintf(stderr, "%i\n", mparams->length);
   mparams->polarization=2.*atan2(LNhy[1],LNhx[1])-atan2(LNhy[2],LNhx[2]);
 	
   if (mparams->inspiralOnly!=1) {
-	
+
+    INT4 errcode=XLAL_SUCCESS;
+
     j=intlen;
-		
+	
     do {
       j--;
       LNhS1=(LNhx[j]*S1x[j]+LNhy[j]*S1y[j]+LNhz[j]*S1z[j])/mparams->m1msq;
@@ -1462,7 +1462,7 @@ fprintf(stderr, "%i\n", mparams->length);
     }
     else alpha = alphaold;
 		
-    errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
+    XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
 		
     /*if (j>2) {
 		 if ((alphaold*alphaoold)<0.) {
@@ -1475,9 +1475,9 @@ fprintf(stderr, "%i\n", mparams->length);
 		 }
 		 }*/
 		
-    errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
+    XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
 		
-    errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,j,amp44,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
+    XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,j,amp44,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
 		
   }
 	
@@ -1486,7 +1486,7 @@ fprintf(stderr, "%i\n", mparams->length);
 	
   phenPars->alpha=alpha;
 	
-  return errcode;
+  return XLAL_SUCCESS;
 	
 } /* End of the inspiral part created via the adaptive integration method */
 

@@ -103,6 +103,7 @@ extern const char *rotateSpinsName;
 extern const char *polarizationPhaseJumpName;
 extern const char *distanceQuasiGibbsProposalName;
 extern const char *orbitalPhaseQuasiGibbsProposalName;
+extern const char *extrinsicParamProposalName;
 extern const char *KDNeighborhoodProposalName;
 
 /** The name of the variable that holds the vector of single-parameter
@@ -137,6 +138,7 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState);
 /** A reasonable default proposal.  Uses adaptation if the --adapt
     command-line flag active. */
 void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Proposal for rapid sky localization.  Used when --rapidSkyLoc
     is specified. */
@@ -232,5 +234,10 @@ void LALInferenceOrbitalPhaseQuasiGibbsProposal(LALInferenceRunState *runState, 
     box of the points contained in this sell. */
 void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
+/** Proposal for the extrinsic parameters. Uses the sky reflection for 3
+ independent detector locations, then computes the corresponding values
+ of polarisation, inclination and distance for the proposed sky location.
+ See Vivien's thesis for the details of the equations implemented.*/
+void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 #endif
 

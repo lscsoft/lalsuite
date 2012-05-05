@@ -83,7 +83,7 @@ extern void qsort_toplist_r(toplist_t*list, int (*compare)(const void *, const v
 
 /* access a certain element of the toplist (shouldn't be done by fiddling in toplist_t)
    returns a NULL pointer on error (i.e. index out of bounds) */
-extern void* toplist_elem(toplist_t*list, size_t index);
+extern void* toplist_elem(toplist_t*list, size_t idx);
 
 
 /* compare two toplists

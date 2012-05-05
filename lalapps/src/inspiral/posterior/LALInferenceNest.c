@@ -333,6 +333,7 @@ Nested sampling arguments:\n\
 	printf("set number of live points.\n");
 	/* Number of live points */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nlive");
+    if (!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nlive");
 	if(ppt)
 		tmpi=atoi(ppt->value);
 	else {
@@ -344,6 +345,7 @@ Nested sampling arguments:\n\
 	printf("set number of MCMC points.\n");
 	/* Number of points in MCMC chain */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nmcmc");
+    if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
 	if(ppt)
 	  tmpi=atoi(ppt->value);
 	else {

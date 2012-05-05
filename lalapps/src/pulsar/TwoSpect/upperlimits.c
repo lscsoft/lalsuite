@@ -186,9 +186,10 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = -1;
       INT4 startpositioninmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2;
+      REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;                             //"Signal" modulation depth
+      
       //loop over frequency bins
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
-         
          INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
          INT4 location = ihsmaxima->locations->data[locationinmaximavector];  //Location of maximum value
          REAL8 noise = ihsfar->expectedIHSVector->data[location-5];           //Expected noise at the location of the maximum value
@@ -199,8 +200,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          
          REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;    //IHS value minus noise
          
-         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;  //"Signal" frequency
-         REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;                    //"Signal" modulation depth
+         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;        //"Signal" frequency
          
          if (ihsminusnoise>loudestoutlierminusnoise && 
              (fsig>=params->ULfmin && fsig<=params->ULfmin+params->ULfspan) && 

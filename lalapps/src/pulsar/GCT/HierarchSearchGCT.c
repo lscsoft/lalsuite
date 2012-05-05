@@ -958,7 +958,10 @@ int MAIN( int argc, char *argv[]) {
   /*---------- set up stuff for semi-coherent part ---------*/
   /* set up some semiCoherent parameters */
   semiCohPar.tsMid = midTstack;
-  semiCohPar.refTime = tMidGPS;
+  semiCohPar.refTime = tMidGPS;	// unused??
+
+  /* reference time for finegrid is midtime */
+  finegrid.refTime = tMidGPS;
 
   /* allocate memory for pos vel acc vectors */
   posStack = XLALCreateREAL8VectorSequence( nStacks, 3 );
@@ -1333,12 +1336,6 @@ int MAIN( int argc, char *argv[]) {
                               oldcg,oldfg,coarsegrid.length,finegrid.length);
             return(HIERARCHICALSEARCH_EVAL);
           }
-
-          /* reference time for finegrid is midtime */
-          /* WARNING: if you ever change the assignement below, make sure you change the
-             tMidGPS argument in the XLALExtrapolateToplistPulsarSpins() call below accordingly
-             (search for "finegrid.refTime = tMidGPS" mentioned below in comment) */
-          finegrid.refTime = tMidGPS;
 
           /* number of detectors, needed for sumTwoFX array */
           finegrid.numDetectors = coarsegrid.numDetectors;
@@ -1758,14 +1755,9 @@ int MAIN( int argc, char *argv[]) {
     } /* ######## End of while loop over 1st stage SKY coarse-grid points ############ */
   /*---------------------------------------------------------------------------------*/
 
-  /* now that we have the final toplist, translate all pulsar parameters to correct reftime
-     WARNING: The second argument should in principle be finegrid.refTime .
-     However, we pass tMidGPS, since earlier on we set finegrid.refTime = tMidGPS ,
-     and tMidGPS is properly reinitialised when continuing from a checkpoint, whereas finegrid.refTime is not.
-     However, when at any time finegrid.refTime = tMidGPS gets changed, this call will lead to wrongly extrapolated pulsar spins
-     and wrong final results, also possibly failures in XLALComputeExtraStatsForToplist.*/
+  /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
   xlalErrno = 0;
-  XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, tMidGPS );
+  XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
   if ( xlalErrno != 0 ) {
     XLALPrintError ("%s line %d : XLALExtrapolateToplistPulsarSpins() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
     return(HIERARCHICALSEARCH_EXLAL);

@@ -543,6 +543,7 @@ static int XLALSimInspiralTaylorT2Setup(
   ak->f0 = f_min;
   ak->samplinginterval = deltaT;
   ak->fn = 1. / (2. * ak->samplinginterval);
+  ak->vn = cbrt(LAL_PI * ak->totalmass * ak->fn);
   ak->v0 = cbrt(LAL_PI * ak->totalmass * f_min);
 
   ak->tvaN = XLALSimInspiralTaylorT2Timing_0PNCoeff(m1+m2, eta);
@@ -636,6 +637,8 @@ static int XLALSimInspiralTaylorT2Setup(
         XLAL_ERROR(XLAL_EINVAL);
   }
 
+  ak->flso = pow(ak->vlso, 3.0) / (LAL_PI * ak->totalmass);
+
   return XLAL_SUCCESS;
 }
 
@@ -706,7 +709,7 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 
 	/* If flso is less than the user inputted upper frequency cutoff fu */
 
-	fLso = ak.fn;
+	fLso = (ak.flso < ak.fn) ? ak.flso : ak.fn;
 
 	/* Is the sampling rate large enough? */
 

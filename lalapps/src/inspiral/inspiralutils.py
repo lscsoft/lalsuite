@@ -807,9 +807,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   for cp_opt in config.options('condor-max-jobs'):
     hipeNode.add_maxjobs_category(cp_opt,config.getint('condor-max-jobs',cp_opt))
 
-  # collapse the short running jobs in the veto sub-dags
-  if vetoCat:
-    hipeNode.set_cluster_jobs('horizontal')
+  # collapse the short running jobs in all of the dags
+  hipeNode.set_cluster_jobs('horizontal')
 
   # tell pegasus where ihope wants us to run the jobs
   hipeJob.set_pegasus_exec_dir(os.path.join(
@@ -1557,10 +1556,10 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 	# Calls ligo_data_find and passes the output to a the file gwfname.
 	# The output from this will be returned and used to create the Pegasus
 	# cache file in the function create_pegasus_cache_file.
-	for v in ifos.values():
+	for v in ifos.keys():
 		# Calls a system command to create the file.
 		ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
-		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
+		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ ifos[v] + \
 		" --url-type=file >> "+ gwfname
 		make_external_call(ldfcommand)
 

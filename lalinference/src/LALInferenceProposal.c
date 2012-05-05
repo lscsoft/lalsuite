@@ -65,6 +65,7 @@ const char *rotateSpinsName = "RotateSpins";
 const char *polarizationPhaseJumpName = "PolarizationPhase";
 const char *distanceQuasiGibbsProposalName = "DistanceQuasiGibbs";
 const char *orbitalPhaseQuasiGibbsProposalName = "OrbitalPhaseQuasiGibbs";
+const char *extrinsicParamProposalName = "ExtrinsicParamProposal";
 const char *KDNeighborhoodProposalName = "KDNeighborhood";
 
 /* Mode hopping fraction for the differential evoultion proposals. */
@@ -101,6 +102,18 @@ numDetectorsUniquePositions(LALInferenceRunState *runState) {
   return nIFO - nCollision;
 }
 
+/*
+static void 
+getDetectorsLikelihoods(LALInferenceRunState *runState, REAL8 *L) {
+  LALInferenceIFOData *dataPtr = runState->data;
+  INT4 i=0;
+  while (dataPtr != NULL) {
+    L[i] = dataPtr->loglikelihood;
+    dataPtr = dataPtr->next;
+    i++;
+  }
+}
+*/
 
 static void
 LALInferenceSetLogProposalRatio(LALInferenceRunState *runState, REAL8 logP) {
@@ -370,6 +383,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     UINT4 nDet = numDetectorsUniquePositions(runState);
     if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+      LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
     }
 
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
@@ -450,6 +464,22 @@ SetupRapidSkyLocProposal(LALInferenceRunState *runState, LALInferenceVariables *
   LALInferenceRandomizeProposalCycle(runState);
 }
 
+/*static void
+SetuptempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  if(LALInferenceGetProcParamVal(runState->commandLine,"--extrinsicparamproposal")){
+    LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, 10);
+  }else{
+    LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, 5);
+    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, 5);
+  }
+  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, 10);
+  LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, 1);
+  
+  LALInferenceRandomizeProposalCycle(runState);
+}*/
+
+
 static void
 SetupPTTempTestProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
@@ -527,6 +557,19 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
 
   LALInferenceCyclicProposal(runState, proposedParams);
 }
+
+/*void LALInferencetempProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+  LALInferenceVariables *propArgs = runState->proposalArgs;
+  
+  if (!LALInferenceCheckVariable(propArgs, cycleArrayName) || !LALInferenceCheckVariable(propArgs, cycleArrayLengthName)) {
+    LALInferenceDeleteProposalCycle(runState);
+    SetuptempProposal(runState, proposedParams);
+  }
+  
+  LALInferenceCyclicProposal(runState, proposedParams);
+}*/
+
 
 void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = singleAdaptProposalName;
@@ -1748,3 +1791,246 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
   /* Cleanup the allocated storage for currentPt. */
   XLALFree(pt);
 }
+
+
+static void
+reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, const REAL8 dec, const REAL8 baryTime, 
+                               const REAL8 dist, const REAL8 iota, const REAL8 psi,
+                               REAL8 *newRA, REAL8 *newDec, REAL8 *newTime,
+                               REAL8 *newDist, REAL8 *newIota, REAL8 *newPsi) {
+  
+//This proposal needs to be called with exactly 3 independent detector locations.  
+
+  LIGOTimeGPS GPSlal;
+  REAL8 R2[4];
+  REAL8 newGmst;
+  REAL8 dist2;
+  
+  XLALGPSSetREAL8(&GPSlal, baryTime);
+  REAL8 gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
+
+  reflected_position_and_time(runState, ra, dec, baryTime, newRA, newDec, newTime);
+  
+  XLALGPSSetREAL8(&GPSlal, *newTime);
+  newGmst = XLALGreenwichMeanSiderealTime(&GPSlal);
+  
+  dist2=dist*dist;
+  
+  REAL8 cosIota = cos(iota);
+  REAL8 cosIota2 = cosIota*cosIota;
+  
+  double Fplus, Fcross, psi_temp;
+  double x[4],y[4],x2[4],y2[4];
+  int i=1,j=0;
+  LALInferenceIFOData *dataPtr;
+  
+  dataPtr = runState->data;
+  
+  /* Loop over interferometers */
+  while (dataPtr != NULL) {
+    
+    psi_temp = 0.0;
+    XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
+    j=i-1;
+    while (j>=0){
+      if(Fplus==x[j]){
+        dataPtr = dataPtr->next;
+        XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
+      }
+      j--;
+    }
+    x[i]=Fplus;
+    x2[i]=Fplus*Fplus;
+    y[i]=Fcross;
+    y2[i]=Fcross*Fcross;
+    
+    XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, ra, dec, psi, gmst);
+    R2[i] = (((1.0+cosIota2)*(1.0+cosIota2))/(4.0*dist2))*Fplus*Fplus
+    + ((cosIota2)/(dist2))*Fcross*Fcross;
+    
+    dataPtr = dataPtr->next;
+    i++;
+  }
+  
+  REAL8 a,a2,b;
+  
+  a=(R2[3]*x2[2]*y2[1] - R2[2]*x2[3]*y2[1] - R2[3]*x2[1]*y2[2] + R2[1]*x2[3]*y2[2] + R2[2]*x2[1]*y2[3] - 
+     R2[1]*x2[2]*y2[3]);
+  a2=a*a;
+  b=(-(R2[3]*x[1]*x2[2]*y[1]) + R2[2]*x[1]*x2[3]*y[1] + R2[3]*x2[1]*x[2]*y[2] - R2[1]*x[2]*x2[3]*y[2] + 
+     R2[3]*x[2]*y2[1]*y[2] - R2[3]*x[1]*y[1]*y2[2] - R2[2]*x2[1]*x[3]*y[3] + R2[1]*x2[2]*x[3]*y[3] - R2[2]*x[3]*y2[1]*y[3] + R2[1]*x[3]*y2[2]*y[3] + 
+     R2[2]*x[1]*y[1]*y2[3] - R2[1]*x[2]*y[2]*y2[3]);
+  
+  (*newPsi)=(2.*atan((b - a*sqrt((a2 + b*b)/(a2)))/a))/4.;
+  
+  while((*newPsi)<0){
+    (*newPsi)=(*newPsi)+LAL_PI/4.0;
+  }
+  while((*newPsi)>LAL_PI/4.0){
+    (*newPsi)=(*newPsi)-LAL_PI/4.0;
+  }
+  
+  REAL8 newFplus[4], newFplus2[4], newFcross[4], newFcross2[4];
+  
+  for (i = 1; i < 4; i++){
+    
+    newFplus[i]=x[i]*cos(2.0*(*newPsi))+y[i]*sin(2.0*(*newPsi));
+    newFplus2[i]=newFplus[i]*newFplus[i];
+    
+    newFcross[i]=y[i]*cos(2.0*(*newPsi))-x[i]*sin(2.0*(*newPsi));
+    newFcross2[i]=newFcross[i]*newFcross[i];
+    
+  }
+  
+  REAL8 c12;
+  
+  c12 = -2.0*((R2[1]*(newFcross2[2])-R2[2]*(newFcross2[1]))
+              /(R2[1]*(newFplus2[2])-R2[2]*(newFplus2[1])))-1.0;
+  
+  if(c12<1.0){
+    c12 = (3.0-c12)/(1.0+c12);
+    (*newPsi)=(*newPsi)+LAL_PI/4.0;
+    
+    for (i = 1; i < 4; i++){
+      
+      newFplus[i]=x[i]*cos(2.0*(*newPsi))+y[i]*sin(2.0*(*newPsi));
+      newFplus2[i]=newFplus[i]*newFplus[i];
+      
+      newFcross[i]=y[i]*cos(2.0*(*newPsi))-x[i]*sin(2.0*(*newPsi));
+      newFcross2[i]=newFcross[i]*newFcross[i];
+      
+    }
+  }
+  
+  if(c12<1){
+    return;
+  }
+  
+  REAL8 cosnewIota, cosnewIota2;
+  cosnewIota2 = c12-sqrt(c12*c12-1.0);
+  cosnewIota = sqrt(cosnewIota2);
+  *newIota = acos(cosnewIota);
+  
+  *newDist = sqrt((
+                  ((((1.0+cosnewIota2)*(1.0+cosnewIota2))/(4.0))*newFplus2[1]
+                   + (cosnewIota2)*newFcross2[1])
+                  )/ R2[1]);
+  
+  if(Fplus*newFplus[3]<0){
+    (*newPsi)=(*newPsi)+LAL_PI/2.;
+    newFcross[3]=-newFcross[3];
+  }
+  
+  if(Fcross*cosIota*cosnewIota*newFcross[3]<0){
+    (*newIota)=LAL_PI-(*newIota);
+  }
+  
+}
+
+
+void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const char *propName = extrinsicParamProposalName;
+  LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+  
+  /* Find the number of distinct-position detectors. */
+  /* Exit with same parameters (with a warning the first time) if
+   there are not EXACTLY three unique detector locations. */
+  static UINT4 warningDelivered = 0;
+  if (numDetectorsUniquePositions(runState) != 3) {
+    if (warningDelivered) {
+      /* Do nothing. */
+    } else {
+      fprintf(stderr, "WARNING: trying to reflect through the decector plane with %d\n", numDetectorsUniquePositions(runState));
+      fprintf(stderr, "WARNING: geometrically independent locations,\n");
+      fprintf(stderr, "WARNING: but this proposal should only be used with exactly 3 independent detectors.\n");
+      fprintf(stderr, "WARNING: %s, line %d\n", __FILE__, __LINE__);
+      warningDelivered = 1;
+    }
+    
+    return; 
+  }
+  
+  DistanceParam distParam;
+  
+  if (LALInferenceCheckVariable(proposedParams, "distance")) {
+    distParam = USES_DISTANCE_VARIABLE;
+  } else if (LALInferenceCheckVariable(proposedParams, "logdistance")) {
+    distParam = USES_LOG_DISTANCE_VARIABLE;
+  } else {
+    XLAL_ERROR_VOID(XLAL_FAILURE, "could not find 'distance' or 'logdistance' in current params");
+  }  
+  
+  REAL8 ra = *(REAL8 *)LALInferenceGetVariable(proposedParams, "rightascension");
+  REAL8 dec = *(REAL8 *)LALInferenceGetVariable(proposedParams, "declination");
+  REAL8 baryTime = *(REAL8 *)LALInferenceGetVariable(proposedParams, "time");
+  REAL8 iota = *(REAL8 *)LALInferenceGetVariable(proposedParams, "inclination");
+  REAL8 psi = *(REAL8 *)LALInferenceGetVariable(proposedParams, "polarisation");
+  REAL8 dist;
+  if (distParam == USES_DISTANCE_VARIABLE) {
+    dist = *(REAL8 *)LALInferenceGetVariable(proposedParams, "distance");
+  } else {
+    dist = exp(*(REAL8 *)LALInferenceGetVariable(proposedParams, "logdistance"));
+  }
+  
+  REAL8 newRA, newDec, newTime, newDist, newIota, newPsi;
+  
+  reflected_extrinsic_parameters(runState, ra, dec, baryTime, dist, iota, psi, &newRA, &newDec, &newTime, &newDist, &newIota, &newPsi);
+  
+  /* Unit normal deviates, used to "fuzz" the state. */
+  REAL8 nRA, nDec, nTime, nDist, nIota, nPsi;
+  const REAL8 epsDist = 1e-8;
+  const REAL8 epsTime = 1e-8;
+  const REAL8 epsAngle = 1e-8;
+  
+  nRA = gsl_ran_ugaussian(runState->GSLrandom);
+  nDec = gsl_ran_ugaussian(runState->GSLrandom);
+  nTime = gsl_ran_ugaussian(runState->GSLrandom);
+  nDist = gsl_ran_ugaussian(runState->GSLrandom);
+  nIota = gsl_ran_ugaussian(runState->GSLrandom);
+  nPsi = gsl_ran_ugaussian(runState->GSLrandom);
+   
+  newRA += epsAngle*nRA;
+  newDec += epsAngle*nDec;
+  newTime += epsTime*nTime;
+  newDist += epsDist*nDist;
+  newIota += epsAngle*nIota;
+  newPsi += epsAngle*nPsi;
+  
+  /* And the doubly-reflected position (near the original, but not
+   exactly due to the fuzzing). */
+  REAL8 refRA, refDec, refTime, refDist, refIota, refPsi;
+  reflected_extrinsic_parameters(runState, newRA, newDec, newTime, newDist, newIota, newPsi, &refRA, &refDec, &refTime, &refDist, &refIota, &refPsi);
+  
+  /* The Gaussian increments required to shift us back to the original
+   position from the doubly-reflected position. */
+  REAL8 nRefRA, nRefDec, nRefTime, nRefDist, nRefIota, nRefPsi;
+  nRefRA = (ra - refRA)/epsAngle;
+  nRefDec = (dec - refDec)/epsAngle;
+  nRefTime = (baryTime - refTime)/epsTime;
+  nRefDist = (dist - refDist)/epsDist;
+  nRefIota = (iota - refIota)/epsAngle;
+  nRefPsi = (psi - refPsi)/epsAngle;
+  
+  REAL8 pForward, pReverse;
+  REAL8 cst = log(1./(sqrt(2.*LAL_PI)));
+  pReverse = 6*cst-0.5*(nRefRA*nRefRA+nRefDec*nRefDec+nRefTime*nRefTime+nRefDist*nRefDist+nRefIota*nRefIota+nRefPsi*nRefPsi);
+  pForward = 6*cst-0.5*(nRA*nRA+nDec*nDec+nTime*nTime+nDist*nDist+nIota*nIota+nPsi*nPsi);
+  
+  LALInferenceSetVariable(proposedParams, "rightascension", &newRA);
+  LALInferenceSetVariable(proposedParams, "declination", &newDec);
+  LALInferenceSetVariable(proposedParams, "time", &newTime);
+  if (distParam == USES_DISTANCE_VARIABLE) {
+    LALInferenceSetVariable(proposedParams, "distance", &newDist);
+  } else {
+    REAL8 logNewDist = log(newDist);
+    LALInferenceSetVariable(proposedParams, "logdistance", &logNewDist);
+  }
+  LALInferenceSetVariable(proposedParams, "inclination", &newIota);
+  LALInferenceSetVariable(proposedParams, "polarisation", &newPsi);
+  
+  LALInferenceSetLogProposalRatio(runState, pReverse-pForward);
+  
+  return;
+}
+

@@ -68,6 +68,12 @@
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
+/** shortcuts for integer powers */
+#define POW2(a)  ( (a) * (a) )
+#define POW3(a)  ( (a) * (a) * (a) )
+#define POW4(a)  ( (a) * (a) * (a) * (a) )
+#define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
+
 /* highest supported spindown-order */
 #define MAX_SPDNORDER 4
 
@@ -103,6 +109,7 @@ typedef struct
   const LALDetector *site;		/**< detector site to compute metric for */
   const EphemerisData *edat;		/**< ephemeris data */
   vect3Dlist_t *rOrb_n;			/**< list of orbital-radius derivatives at refTime of order n = 0, 1, ... */
+  BOOLEAN approxPhase;			/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders \>= 1) */
 } intparams_t;
 
 
@@ -125,6 +132,9 @@ BOOLEAN outputIntegrand = 0;
 #define rOrb_c  (LAL_AU_SI / LAL_C_SI)
 #define rEarth_c (LAL_REARTH_SI / LAL_C_SI)
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
+#define Omega_s	(LAL_TWOPI / LAL_DAYSID_SI)
+#define Omega_o	(LAL_TWOPI / LAL_YRSID_SI)
+
 // sin,cos(LAL_IEARTH);
 #define cosiEcl 0.917482062157619
 #define siniEcl 0.397777155727931
@@ -356,14 +366,25 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
-  /* correct for time-delay from SSB to detector, neglecting relativistic effects */
-  REAL8 dTRoemerSI = SCALAR(nn_equ, posvel.pos );
-  REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
-
   /* barycentric time-delay since reference time, measured in units of Tspan */
-  REAL8 tau = tau0 + tt + dTRoemer;
+  REAL8 tau = tau0 + tt;
+
+  /* correct for time-delay from SSB to detector (Roemer delay), neglecting relativistic effects */
+  if ( !par->approxPhase )
+    {
+      REAL8 dTRoemerSI = SCALAR(nn_equ, posvel.pos );
+      REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
+
+      tau += dTRoemer;
+    }
 
   REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
+
+  /* ----- orbital and rotational phase-angle since mid-time (used in Karl's coordinates) ----- */
+  REAL8 tSinceMid = (tt - 0.5);
+  REAL8 tSinceMidSI = tSinceMid * Tspan;
+  REAL8 phi_s = Omega_s * tSinceMidSI;
+  REAL8 phi_o = Omega_o * tSinceMidSI;
 
   /* get 'reduced' detector position of order 'n': r_n(t) [passed in as argument]
    * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
@@ -459,25 +480,51 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_F1DOT_SI:
     case DOPPLERCOORD_F1DOT_NAT:			/* om1 = 2pi f/2! (T/2)^2 */
     case DOPPLERCOORD_NU1:
-      ret = 2*tau * 2*tau;				/* in natural units: dPhi/dom1 = tau^2 */
+      ret = POW2 ( 2*tau );				/* in natural units: dPhi/dom1 = tau^2 */
       if ( par->deriv == DOPPLERCOORD_F1DOT_SI )
-        ret *= 0.5*0.5 * LAL_TWOPI * (Tspan*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
+        ret *= LAL_TWOPI * POW2(0.5*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
       break;
 
     case DOPPLERCOORD_F2DOT_SI:
     case DOPPLERCOORD_F2DOT_NAT:			/* om2 = 2pi f/3! (T/2)^3 */
     case DOPPLERCOORD_NU2:
-      ret =  2*tau * 2*tau * 2*tau;			/* in natural units: dPhi/dom2 = tau^3 */
+      ret =  POW3 ( 2*tau );			/* in natural units: dPhi/dom2 = tau^3 */
       if ( par->deriv == DOPPLERCOORD_F2DOT_SI )
-        ret *= 0.5*0.5*0.5 * LAL_TWOPI * (Tspan*Tspan*Tspan) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
+        ret *= LAL_TWOPI * POW3 ( 0.5*Tspan ) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
       break;
 
     case DOPPLERCOORD_F3DOT_SI:
     case DOPPLERCOORD_F3DOT_NAT:			/* om3 = 2pi f/4! (T/2)^4 */
     case DOPPLERCOORD_NU3:
-      ret = 2*tau * 2*tau * 2*tau * 2*tau;		/* in natural units: dPhi/dom3 = tau^4 */
+      ret = POW4 ( 2*tau );			/* in natural units: dPhi/dom3 = tau^4 */
       if ( par->deriv == DOPPLERCOORD_F3DOT_SI )
-        ret *= 0.5*0.5*0.5*0.5 * LAL_TWOPI * (Tspan*Tspan*Tspan*Tspan) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
+        ret *= LAL_TWOPI * POW4 ( 0.5 * Tspan ) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
+      break;
+
+    /* ---------- Karl's super-duper-sky coordinates ---------- */
+    case DOPPLERCOORD_KAPPA_S:			/* 'kappa_s': cosine-part of Earth-spin sky-coordinate */
+      ret = LAL_TWOPI * Freq * rEarth_c * cos ( phi_s );
+      break;
+    case DOPPLERCOORD_SIGMA_S:			/* 'sigma_s': sine-part of Earth-spin sky-coordinate */
+      ret = LAL_TWOPI * Freq * rEarth_c * sin ( phi_s );
+      break;
+    case DOPPLERCOORD_KAPPA_O:			/* 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
+      ret = LAL_TWOPI * Freq * rOrb_c * cos ( phi_o );
+      break;
+    case DOPPLERCOORD_SIGMA_O:			/* 'sigma_o': sine-part of Earth-orbit sky-coordinate */
+      ret = LAL_TWOPI * Freq * rOrb_c * sin ( phi_o );
+      break;
+    case DOPPLERCOORD_OMEGA_0:			/* 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
+      ret = LAL_TWOPI * tSinceMid * kfactinv[0];
+      break;
+    case DOPPLERCOORD_OMEGA_1:			/* 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
+      ret = LAL_TWOPI * POW2 ( tSinceMid ) * kfactinv[1];
+      break;
+    case DOPPLERCOORD_OMEGA_2:			/* 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
+      ret = LAL_TWOPI * POW3 ( tSinceMid ) * kfactinv[2];
+      break;
+    case DOPPLERCOORD_OMEGA_3:			/* 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
+      ret = LAL_TWOPI * POW4 ( tSinceMid ) * kfactinv[3];
       break;
 
     default:
@@ -869,6 +916,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
   intparams.site = ifo;
+  intparams.approxPhase = metricParams->approxPhase;
   /* deactivate antenna-patterns for phase-metric */
   intparams.amcomp1 = AMCOMP_NONE;
   intparams.amcomp2 = AMCOMP_NONE;

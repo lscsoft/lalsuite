@@ -163,6 +163,8 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
                (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
                (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
+               (--analyticnullprior)            Use analytic null prior.\n\
+               (--nullprior)                    Use null prior in the sampled parameters.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Proposals  ---------------------------------------------------------------------------------------------------\n\
@@ -192,7 +194,7 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
                (--propVerbose)                  Output proposal stats to file.\n\
-               (--output dir)                   Write output files PTMCMC.output.*.* in directory dir.\n";
+               (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<chain_number>).\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -235,6 +237,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->proposal=&LALInferenceRapidSkyLocProposal;
   else
     runState->proposal=&LALInferenceDefaultProposal;
+    //runState->proposal=&LALInferencetempProposal;
 
   /* Choose the template generator for inspiral signals */
   runState->template=&LALInferenceTemplateLAL;
@@ -244,7 +247,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   }else{
     ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
     if(ppt){
-      if(strstr(ppt->value,"TaylorF2")) {
+      if(strstr(ppt->value,"TaylorF2") || strstr(ppt->value,"TaylorF2RedSpin")) {
         runState->template=&LALInferenceTemplateLAL;
         fprintf(stdout,"Template function called is \"LALInferenceTemplateLAL\"\n");
       }else if(strstr(ppt->value,"35phase_25amp")) {
@@ -277,8 +280,11 @@ void initializeMCMC(LALInferenceRunState *runState)
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
-              LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
+             LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
+             LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
     runState->prior=&LALInferenceAnalyticNullPrior;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
+    runState->prior=&LALInferenceNullPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
   }
@@ -632,6 +638,10 @@ void initVariables(LALInferenceRunState *state)
       {
         approx = TaylorF2;
       }
+    else if ( ! strcmp( "TaylorF2RedSpin", ppt->value ) )
+    {
+      approx = TaylorF2RedSpin;
+    }
     else if ( ! strcmp( "EOB", ppt->value ) )
       {
         approx = EOB;
@@ -685,7 +695,7 @@ void initVariables(LALInferenceRunState *state)
         fprintf( stderr, "invalid argument to --approximant\n"
                  "unknown approximant %s specified: "
                  "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
-                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
+                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2, TaylorF2RedSpin,  EOB, EOBNR, EOBNRv2, \n"
                  "EOBNRv2HM, SpinTaylor, SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4\n"
                  "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
         exit( 1 );
@@ -1260,7 +1270,7 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
-  if(approx==TaylorF2 && ppt){
+  if(approx==TaylorF2RedSpin && ppt){
 
     tmpMin=-1.0; tmpMax=1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");

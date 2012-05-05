@@ -1186,7 +1186,156 @@ void sse_exp_REAL4Vector(REAL4Vector *output, REAL4Vector *input)
 
 
 
-
+//Arctangent of input vector is computed using SSE
+//Cephes library based
+// !!!!!!!! NOT READY TO BE USED!!!!!!!!!
+/* void sse_atan_REAL8Vector(REAL8Vector *output, REAL8Vector *input)
+{
+   
+#ifdef __SSE2__
+   INT4 roundedvectorlength = (INT4)input->length / 2;
+   INT4 ii;
+   
+   REAL8 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
+   INT4 vecaligned = 0, outputaligned = 0;
+   
+   __m128d *x, *result;
+   
+   //Allocate memory for aligning input vector if necessary
+   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
+      vecaligned = 1;
+      x = (__m128d*)(void*)input->data;
+   } else {
+      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
+      if (allocinput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
+      memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
+      x = (__m128d*)(void*)alignedinput;
+   }
+   
+   //Allocate memory for aligning output vector 1 if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128d*)(void*)output->data;
+   } else {
+      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
+         XLAL_ERROR_VOID(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128d*)(void*)alignedoutput;
+   }
+   
+   //Define values
+   __m128d cephes_p0 = _mm_set1_pd(-8.750608600031904122785e-1);
+   __m128d cephes_p1 = _mm_set1_pd(-1.615753718733365076637e1);
+   __m128d cephes_p2 = _mm_set1_pd(-7.500855792314704667340e1);
+   __m128d cephes_p3 = _mm_set1_pd(-1.228866684490136173410e2);
+   __m128d cephes_p4 = _mm_set1_pd(-6.485021904942025371773e1);
+   __m128d cephes_q0 = _mm_set1_pd(2.485846490142306297962e1);
+   __m128d cephes_q1 = _mm_set1_pd(1.650270098316988542046e2);
+   __m128d cephes_q2 = _mm_set1_pd(4.328810604912902668951e2);
+   __m128d cephes_q3 = _mm_set1_pd(4.853903996359136964868e2);
+   __m128d cephes_q4 = _mm_set1_pd(1.945506571482613964425e2);
+   __m128d tan3pO8 = _mm_set1_pd(2.41421356237309504880);
+   __m128d almostTwoThirds = _mm_set1_pd(0.66);
+   __m128d piOverTwo = _mm_set1_pd(LAL_PI_2);
+   __m128d piOverFour = _mm_set1_pd(LAL_PI_4);
+   __m128d zero = _mm_set1_pd(0.0);
+   __m128d minusOne = _mm_set1_pd(-1.0);
+   __m128d small = _mm_set1_pd(1.0e-50);
+   __m128d morebits = _mm_set1_pd(6.123233995736765886130e-17);
+   __m128d halfmorebits = _mm_set1_pd(3.061616997868382943065e-17);
+   
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      
+      //Save sign values
+      //__m128d signs = _mm_and_pd(*x, signbit);
+      
+      //Make values positive
+      //__m128d intx = _mm_xor_pd(*x, signs);
+      
+      //Assume positive
+      __m128d intx = *x;
+      
+      //Reduce range
+      __m128d greaterThanAlmostTwoThirds = _mm_cmpgt_pd(intx, almostTwoThirds);
+      __m128d greaterThanTan3pO8 = _mm_cmpgt_pd(intx, tan3pO8);
+      __m128d inBetween = _mm_and_pd( _mm_cmple_pd(intx, tan3pO8), greaterThanAlmostTwoThirds);
+      __m128d lessThanAlmostTwoThirds = _mm_cmple_pd(intx, almostTwoThirds);
+      __m128d y = zero;
+      __m128d x1 = _mm_and_pd( _mm_div_pd(minusOne, _mm_add_pd(intx, small)), greaterThanTan3pO8);
+      __m128d y_1 = _mm_and_pd(piOverTwo, greaterThanTan3pO8);
+      __m128d x2 = _mm_and_pd( _mm_div_pd( _mm_add_pd(intx, minusOne), _mm_sub_pd(intx, minusOne)), inBetween);
+      __m128d y_2 = _mm_and_pd(piOverFour, inBetween);
+      y = _mm_add_pd(y, y_1);
+      y = _mm_add_pd(y, y_2);
+      intx = _mm_and_pd(intx, lessThanAlmostTwoThirds);
+      intx = _mm_add_pd(intx, x1);
+      intx = _mm_add_pd(intx, x2);
+      
+      __m128d z = _mm_mul_pd(intx, intx);
+      __m128d polevlresult = cephes_p0;
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_p1);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_p2);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_p3);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_p4);
+      __m128d zTimesPolEvlResult = _mm_mul_pd(z, polevlresult);
+      
+      polevlresult = z;
+      polevlresult = _mm_add_pd(polevlresult, cephes_q0);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_q1);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_q2);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_q3);
+      polevlresult = _mm_mul_pd(polevlresult, z);
+      polevlresult = _mm_add_pd(polevlresult, cephes_q4);
+      z = _mm_div_pd(zTimesPolEvlResult, polevlresult);
+      
+      z = _mm_add_pd( _mm_mul_pd(intx, z), intx);
+      
+      __m128d addextrabits = zero;
+      addextrabits = _mm_add_pd(addextrabits, _mm_and_pd(morebits, greaterThanTan3pO8) );
+      addextrabits = _mm_add_pd(addextrabits, _mm_and_pd(halfmorebits, inBetween) );
+      z = _mm_add_pd(z, addextrabits);
+      
+      y = _mm_add_pd(y, z);
+      
+      // *result = _mm_xor_pd(y, signs);
+      *result = y;
+      
+      x++;
+      result++;
+      
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(output->data, alignedoutput, 2*roundedvectorlength*sizeof(REAL8));
+   
+   //Finish up the remaining part
+   for (ii=2*roundedvectorlength; ii<(INT4)input->length; ii++) {
+      output->data[ii] = atan(input->data[ii]);
+   }
+   
+   //Free memory if necessary
+   if (!vecaligned) XLALFree(allocinput);
+   if (!outputaligned) XLALFree(allocoutput);
+#else
+   fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_VOID(XLAL_EFAILED);
+#endif
+   
+} */
 
 
 

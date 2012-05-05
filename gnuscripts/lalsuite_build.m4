@@ -1,11 +1,44 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 33
+# serial 35
+
+AC_DEFUN([LALSUITE_REQUIRE_CXX],[
+  # require a C++ compiler
+  lalsuite_require_cxx=true
+])
+
+# because we want to decide whether to run AC_PROG_CXX/AC_PROG_CXXCPP
+# at ./configure run time, we must erase the following macros, which
+# (in autoconf 2.64 and later) require AC_PROG_CXX/AC_PROG_CXXCPP to
+# be AC_REQUIRE'd at ./configure build time, regardless of whether
+# they're needed or not (which is only decided later at run time).
+m4_defun([AC_LANG_COMPILER(C++)],[])
+m4_defun([AC_LANG_PREPROC(C++)],[])
+
+AC_DEFUN([LALSUITE_PROG_CC_CXX],[
+  # check for C99 compiler
+  AC_REQUIRE([AC_PROG_CC])
+  AC_REQUIRE([AC_PROG_CC_C99])
+  AC_REQUIRE([AC_PROG_CPP])
+  # check for C++ compiler, if needed
+  AS_IF([test "${lalsuite_require_cxx}" = true],[
+    AC_PROG_CXX
+    AC_PROG_CXXCPP
+  ],[
+    CXX=
+    CXXCPP=
+    AM_CONDITIONAL([am__fastdepCXX],[test 1 == 0])
+  ])
+  # check complex numbers
+  LALSUITE_CHECK_C99_COMPLEX_NUMBERS
+  AS_IF([test "${lalsuite_require_cxx}" = true],[
+    LALSUITE_CHECK_CXX_COMPLEX_NUMBERS
+  ])
+])
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
-AC_PROVIDE_IFELSE([LT_INIT], ,
-                  [m4_fatal([$0: requires libtool])])[]dnl
+AC_REQUIRE([LT_INIT])
 LT_OUTPUT
 m4_append([AC_LANG(C)],
 [ac_link="./libtool --mode=link --tag=CC $ac_link"
@@ -355,7 +388,8 @@ AC_DEFUN([LALSUITE_ENABLE_BOINC],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
     esac
   ], [ boinc=false ] )
-AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+  AS_IF([test "${boinc}" = true],[LALSUITE_REQUIRE_CXX])
+  AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_BOINC],
@@ -412,6 +446,7 @@ AC_DEFUN([LALSUITE_WITH_CUDA],
       ;;
     esac
   ], [ cuda=false ])
+  AS_IF([test "${cuda}" = true],[LALSUITE_REQUIRE_CXX])
   LALSUITE_ENABLE_MODULE([CUDA],[cuda])
 ])
 
@@ -459,7 +494,7 @@ if test "x${osx_version_check}" = "xtrue"; then
       10.0*|10.1*|10.2*|10.3*)
         AC_MSG_ERROR([This version of Mac OS X is not supported])
         ;;
-      10.4*|10.5*|10.6*|10.7*)
+      10.4*|10.5*|10.6*|10.7*|10.8*)
         # supported version
         ;;
       *)
@@ -590,14 +625,17 @@ int Function2($3 pz);
   ])
 ])
 
-AC_DEFUN([LALSUITE_CHECK_COMPLEX_NUMBER_TYPES],[
-  # check C99 complex number datatypes
+AC_DEFUN([LALSUITE_CHECK_C99_COMPLEX_NUMBERS],[
+  # check C99 complex numbers
   AC_LANG_PUSH([C])
   AC_CHECK_HEADERS([complex.h],[],[AC_MSG_ERROR([could not find 'complex.h'])])
   LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex.h],[float],[float complex],[crealf],[cimagf])
   LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex.h],[double],[double complex],[creal],[cimag])
   AC_LANG_POP([C])
-  # check C++ complex number datatypes
+])
+
+AC_DEFUN([LALSUITE_CHECK_CXX_COMPLEX_NUMBERS],[
+  # check C++ complex numbers
   AC_LANG_PUSH([C++])
   AC_CHECK_HEADERS([complex],[],[AC_MSG_ERROR([could not find 'complex'])])
   LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex],[float],[std::complex<float>],[real],[imag])

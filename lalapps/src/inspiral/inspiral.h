@@ -121,17 +121,44 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,
                             REAL8               snrHigh,
                             CHAR                *fname);
 
+void InjectNumRelWaveformsUsingPSDREAL8(LALStatus *status,
+                            REAL8TimeSeries      *chan,
+                            SimInspiralTable     *injections,
+                            CHAR                 ifo[3],
+                            REAL8                freqLowCutoff,
+                            REAL8                snrLow,
+                            REAL8                snrHigh,
+                            REAL8FrequencySeries *ligoPSD,
+                            REAL8                ligoSnrLowFreq,
+                            REAL8FrequencySeries *virgoPSD,
+                            REAL8                virgoSnrLowFreq,
+                            CHAR                 *fname);
+
+
 REAL8 start_freq_from_frame_url(CHAR  *url);
 
-REAL8 calculate_ligo_snr_from_strain(  REAL4TimeVectorSeries *strain,
-                                       SimInspiralTable      *thisInj,
+REAL8 calculate_ligo_snr_from_strain(REAL4TimeVectorSeries *strain,
+                                     SimInspiralTable      *thisInj,
+                                     const CHAR            ifo[3]);
+
+REAL8 calculate_ligo_snr_from_strain_real8(REAL8TimeSeries *strain,
                                        const CHAR            ifo[3]);
 
-REAL8 calculate_ligo_snr_from_strain_real8( REAL8TimeSeries *strain,
+REAL8 calculate_snr_from_strain_and_psd_real8(REAL8TimeSeries *strain,
+                                       REAL8FrequencySeries  *psd,
+                                       REAL8                 startFreq,
                                        const CHAR            ifo[3]);
 
-REAL8TimeSeries *
-XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj);
+REAL8TimeSeries *XLALNRInjectionStrain(const char *ifo,
+                                       SimInspiralTable *inj);
+
+int XLALPsdFromFile (REAL8FrequencySeries **psd, const CHAR *filename);
+
+REAL8FrequencySeries *XLALInterpolatePSD(
+              REAL8FrequencySeries *in,
+              REAL8 deltaFout
+            );
+
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
