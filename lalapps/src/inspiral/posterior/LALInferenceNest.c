@@ -286,12 +286,12 @@ Nested sampling arguments:\n\
         runState->evolve=&LALInferenceNestedSamplingOneStep;
 	
     /* use the ptmcmc proposal to sample prior */
-    runState->proposal=&nswrapmcmclalproposal;
-    real8 temp=1.0;
-    uint4 dummy=0;
-    lalinferenceaddvariable(runstate->proposalargs, "adaptablestep", &dummy, lalinference_int4_t, lalinference_param_output);
-    lalinferenceaddvariable(runstate->proposalargs, "proposedvariablenumber", &dummy, lalinference_int4_t, lalinference_param_output);
-    lalinferenceaddvariable(runstate->proposalargs, "proposedarraynumber", &dummy, lalinference_int4_t, lalinference_param_output);
+    runState->proposal=&NSWrapMCMCLALProposal;
+    REAL8 temp=1.0;
+    UINT4 dummy=0;
+    LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 
@@ -356,11 +356,11 @@ Nested sampling arguments:\n\
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
 				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-    if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyratio")))
-        tmpi=atoi(ppt->value);
-    else tmpi=1;
-    LALInferenceAddVariable(runState->algorithmParams,"sloppyratio",&tmpi,
-                    LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppylogit")))
+        tmp=atof(ppt->value);
+    else tmp=0.0;
+    LALInferenceAddVariable(runState->algorithmParams,"sloppylogit",&tmp,
+                    LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
