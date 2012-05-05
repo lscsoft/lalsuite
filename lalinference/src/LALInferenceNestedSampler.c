@@ -254,7 +254,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 iter=0,i,j,minpos;
 	UINT4 Nlive=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
 	UINT4 Nruns=100;
-	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray,*logtarray;
+	REAL8 *logZarray,*oldZarray,*Harray,*logwarray,*Wtarray,*logtarray,*logt2array;
 	REAL8 TOLERANCE=0.1;
 	REAL8 logZ,logZnew,logLmin,logLmax=-DBL_MAX,logLtmp,logw,H,logZnoise,dZ=0;//deltaZ - set but not used
 	LALInferenceVariables *temp;
@@ -356,12 +356,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	Harray = calloc(Nruns,sizeof(REAL8));
 	logwarray = calloc(Nruns,sizeof(REAL8));
 	logtarray=calloc(Nruns,sizeof(REAL8));
+    logt2array=calloc(Nruns,sizeof(REAL8));
 	Wtarray = calloc(Nruns,sizeof(REAL8));
 	if(logZarray==NULL || Harray==NULL || oldZarray==NULL || logwarray==NULL || Wtarray==NULL)
 		{fprintf(stderr,"Unable to allocate RAM\n"); exit(-1);}
 
 	logw=log(1.0-exp(-1.0/Nlive));
-	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;logtarray[i]=-1.0/Nlive;}
+	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;logtarray[i]=-1.0/Nlive; logt2array[i]=-1.0/Nlive; }
 	i=0;
 	/* Find maximum likelihood */
 	for(i=0;i<Nlive;i++)
@@ -432,7 +433,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	
 		/* Update evidence array */
 		for(j=0;j<Nruns;j++){
-			Wtarray[j]=logwarray[j]+logLikelihoods[minpos]+logadd(0,2.0*logtarray[j])-log(2.0);
+			Wtarray[j]=logwarray[j]+logLikelihoods[minpos]+logadd(0,logt2array[j]*logtarray[j])-log(2.0);
 			logZarray[j]=logadd(logZarray[j],Wtarray[j]);
 			Harray[j]= exp(Wtarray[j]-logZarray[j])*logLikelihoods[minpos]
 			+ exp(oldZarray[j]-logZarray[j])*(Harray[j]+oldZarray[j])-logZarray[j];
@@ -469,6 +470,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if (runState->currentLikelihood>logLmax)
 			logLmax=runState->currentLikelihood;
 		for(j=0;j<Nruns;j++) {
+          REAL8 *tmp=logtarray;
+          logtarray=logt2array;
+          logt2array=tmp;
 		  logtarray[j]=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
 		  logwarray[j]+=logtarray[j];
 		}
@@ -540,7 +544,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                 /* Measure ACF of Actual evolution function */
 		
 		/* Reset the sloppy fraction as we have updated our proposal */
-		LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&zero);
+		//LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&zero);
 		
                 INT4 max=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 10* last ACL */
                 LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
@@ -861,7 +865,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 sloppynumber=(UINT4) (sloppyfraction*(REAL8)Nmcmc);
     UINT4 testnumber=Nmcmc-sloppynumber;
     /* +1 for the last iteration which we do check */
-    UINT4 subchain_length=(sloppynumber/Nmcmc) +1;
+    UINT4 subchain_length=(sloppynumber/testnumber) +1;
     //sloppynumber=sloppynumber<1?1:sloppynumber;
     REAL8 logLnew;
     UINT4 total_iter=0;
@@ -877,11 +881,13 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
 	  tries++;
 	  total_iter+=subchain_length;
 	  mcmc_iter++;
+      LALInferenceCopyVariables(&oldParams,runState->currentParams);
+      runState->currentLikelihood=logLold;
 	  continue;
         }
         tries=0;
         mcmc_iter++;
-	total_iter+=subchain_length;
+    	total_iter+=subchain_length;
         logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
