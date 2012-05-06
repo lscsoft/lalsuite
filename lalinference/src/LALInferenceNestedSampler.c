@@ -545,8 +545,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		
 		/* Reset the sloppy fraction as we have updated our proposal */
 		//LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&zero);
-		
-                INT4 max=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
+					 INT4 MAX_MCMC=20000; /* Maximum chain length, set to be higher than expected from a reasonable run */
+                INT4 max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
+                if(max>MAX_MCMC) max=MAX_MCMC;
                 LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
                 max=1;
                 for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
