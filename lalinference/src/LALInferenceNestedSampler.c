@@ -500,7 +500,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the proposal */
-		if(!(iter%(Nlive/4))) {                  
+		if(!(iter%(Nlive))) {                  
             /* Update the covariance matrix */
             if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
 		        LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
@@ -849,7 +849,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceVariables oldParams;
     LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
-    REAL8 Target=0.35;
+    REAL8 Target=0.5;
     char tmpName[32];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(runState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
