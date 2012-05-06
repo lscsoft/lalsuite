@@ -25,6 +25,8 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+
+ static void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 /* Prototypes for private "helper" functions. */
 //static void SamplePriorDiscardAcceptance(LALInferenceRunState *runState);
 static void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
@@ -74,6 +76,7 @@ static void getMinMaxLivePointValue( LALInferenceVariables **livepoints,
   return;
 }
   
+
  
 /* Calculate the variance of a modulo-2pi distribution */
 REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N){
@@ -687,6 +690,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"outfile");
   LALInferenceSetVariable(&myAlgParams,"Nmcmc",&thinning);
+
+  REAL8Vector *projection=NULL;
+  gsl_matrix *eigenvectors = *((gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs, "covarianceEigenvectors"));
   runState->algorithmParams=&myAlgParams;
   runState->currentParams=&myCurrentParams;
   /* We can record write the MCMC chain to a file too */
@@ -722,24 +728,27 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 
   for (i=0;i<max_iterations;i++){
     j=0;
-    for(this=variables_array[i].head;this;this=this->next)
-    {
-      switch(this->vary){
-	case LALINFERENCE_PARAM_CIRCULAR:
-	case LALINFERENCE_PARAM_LINEAR:
-	{
-	  if(this->type!=LALINFERENCE_REAL8_t) continue;
-	  else {
-	    data_array[j][i]=*(REAL8 *)this->value;
+    LALInferenceProjectSampleOntoEigenvectors( & variables_array[i], eigenvectors, &projection );
+    data_array[j][i]=projection->data[j];
+    //for(this=variables_array[i].head;this;this=this->next)
+    //{
+    //  switch(this->vary){
+	//case LALINFERENCE_PARAM_CIRCULAR:
+	//case LALINFERENCE_PARAM_LINEAR:
+	//{
+	 // if(this->type!=LALINFERENCE_REAL8_t) continue;
+	 // else {
+	 //   data_array[j][i]=*(REAL8 *)this->value;
 	    j++;
-	  }
-	}
-	default:
-	  continue;
-      }
-    }
+	 // }
+	//}
+	//default:
+	 // continue;
+    //  }
+    //}
     LALInferenceDestroyVariables(&variables_array[i]);
   }
+	XLALDestroyREAL8Vector(projection);
   free(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
@@ -838,6 +847,31 @@ UINT4 LALInferenceMCMCSamplePriorNTimes(LALInferenceRunState *runState, UINT4 N)
     for(i=0;i<N;i++) Naccepted+=LALInferenceMCMCSamplePrior(runState);
     return(Naccepted);
 }
+
+void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection)
+{
+	  LALInferenceVariableItem *proposeIterator = params->head;
+	  UINT4 j=0;
+	  UINT4 N=eigenvectors->size1;
+
+     if(!*projection) *projection=XLALCreateREAL8Vector(N);
+	  if(**projection->length==0) *projection=XLALCreateREAL8Vector(N);
+
+
+	if (proposeIterator == NULL) {
+    fprintf(stderr, "Bad proposed params in %s, line %d\n",
+            __FILE__, __LINE__);
+    exit(1);
+  }
+  do {
+    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
+      (*projection)->data[j]= *((REAL8 *)proposeIterator->value) * gsl_matrix_get(eigenvectors, j, 0);
+      j++;
+    }
+  } while ((proposeIterator = proposeIterator->next) != NULL && j < N);
+	
+}
+
 
 /* Sample the limited prior distribution using the MCMC method as usual, but
    only check the likelihood bound x fraction of the time. Always returns a fulled checked sample.
