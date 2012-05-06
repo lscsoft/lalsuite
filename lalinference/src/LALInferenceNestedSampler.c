@@ -855,7 +855,7 @@ void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gs
 	  UINT4 N=eigenvectors->size1;
 
      if(!*projection) *projection=XLALCreateREAL8Vector(N);
-	  if(**projection->length==0) *projection=XLALCreateREAL8Vector(N);
+	  if((*projection)->length==0) *projection=XLALCreateREAL8Vector(N);
 
 
 	if (proposeIterator == NULL) {
