@@ -1015,7 +1015,7 @@ draw_distance(LALInferenceRunState *runState) {
 
   REAL8 x = gsl_rng_uniform(runState->GSLrandom);
 
-  return pow(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin, 1.0/3.0);
+  return cbrt(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin);
 }
 
 static REAL8 
@@ -1058,8 +1058,8 @@ draw_chirp(LALInferenceRunState *runState) {
   LALInferenceGetMinMaxPrior(runState->priorArgs, "chirpmass", &min, &max);
 
   REAL8 x = gsl_rng_uniform(runState->GSLrandom);
-
-  return pow(pow(min, -5.0/6.0) - x*(pow(min, -5.0/6.0) - pow(max, -5.0/6.0)), -6.0/5.0);
+  REAL8 temp=pow(min, -5.0/6.0);
+  return pow(temp - x*(temp - pow(max, -5.0/6.0)), -6.0/5.0);
 }
 
 static REAL8
