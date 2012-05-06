@@ -845,7 +845,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceVariables oldParams;
     LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
-    REAL8 Target=0.05;
+    REAL8 Target=0.35;
     char tmpName[32];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(runState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
