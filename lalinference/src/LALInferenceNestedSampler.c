@@ -552,7 +552,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                 INT4 max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
                 if(max>MAX_MCMC) max=MAX_MCMC;
                 LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
-                max=1;
+                max=10;
                 for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
                 LALInferenceDestroyVariables(acls);
                 free(acls);
@@ -692,7 +692,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceSetVariable(&myAlgParams,"Nmcmc",&thinning);
 
   REAL8Vector *projection=NULL;
-  gsl_matrix *eigenvectors = *((gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs, "covarianceEigenvectors"));
+
+  gsl_matrix *covarianceMatrix=NULL;
   runState->algorithmParams=&myAlgParams;
   runState->currentParams=&myCurrentParams;
   /* We can record write the MCMC chain to a file too */
@@ -717,7 +718,32 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   
   /* Get the location of the sample array */
   LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
+  LALInferenceVariables **pointer_array=calloc(max_iterations,sizeof(LALInferenceVariables *));
+  for(i=0;i<max_iterations;i++) pointer_array[i]=&(variables_array[i]);
   
+   	/* Calculate the eigenvectors of the correlation matrix*/
+	LALInferenceNScalcCVM(&covarianceMatrix, pointer_array,max_iterations);
+
+   free(pointer_array);
+	/* Set up eigenvectors and eigenvalues. */
+	UINT4 N=covarianceMatrix->size1;
+	gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
+	gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
+	gsl_vector *eValues = gsl_vector_alloc(N);
+
+	gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
+	int gsl_status;
+	gsl_matrix_memcpy(covCopy, covarianceMatrix);
+	
+	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+	  XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+	  return ((LALInferenceVariables *)NULL);
+	}
+	
+	gsl_matrix_free(covarianceMatrix);
+	gsl_matrix_free(covCopy);
+	gsl_vector_free(eValues);
+
   /* Convert to a 2D array for ACF calculation */
   data_array=calloc(nPar,sizeof(REAL8 *));
   acf_array=calloc(nPar,sizeof(REAL8 *));
@@ -728,7 +754,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 
   for (i=0;i<max_iterations;i++){
     j=0;
-    LALInferenceProjectSampleOntoEigenvectors( & variables_array[i], eigenvectors, &projection );
+    LALInferenceProjectSampleOntoEigenvectors( &variables_array[i], eVectors, &projection );
     data_array[j][i]=projection->data[j];
     //for(this=variables_array[i].head;this;this=this->next)
     //{
@@ -748,6 +774,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     //}
     LALInferenceDestroyVariables(&variables_array[i]);
   }
+  	gsl_matrix_free(eVectors);
 	XLALDestroyREAL8Vector(projection);
   free(variables_array);
   this=myCurrentParams.head;
@@ -851,7 +878,7 @@ UINT4 LALInferenceMCMCSamplePriorNTimes(LALInferenceRunState *runState, UINT4 N)
 void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection)
 {
 	  LALInferenceVariableItem *proposeIterator = params->head;
-	  UINT4 j=0;
+	  UINT4 j=0,i=0;
 	  UINT4 N=eigenvectors->size1;
 
      if(!*projection) *projection=XLALCreateREAL8Vector(N);
@@ -863,12 +890,17 @@ void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gs
             __FILE__, __LINE__);
     exit(1);
   }
-  do {
-    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
-      (*projection)->data[j]= *((REAL8 *)proposeIterator->value) * gsl_matrix_get(eigenvectors, j, 0);
-      j++;
-    }
-  } while ((proposeIterator = proposeIterator->next) != NULL && j < N);
+  for(i=0;i<N;i++){
+  	j=0;
+  	proposeIterator = params->head;
+  	(*projection)->data[i]=0.0;
+		do { 
+		    if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
+     			 	(*projection)->data[i]+= *((REAL8 *)proposeIterator->value) * gsl_matrix_get(eigenvectors, j, i);
+      			j++;
+    		 }
+ 		}while ((proposeIterator = proposeIterator->next) != NULL && j < N);
+  } 
 	
 }
 
