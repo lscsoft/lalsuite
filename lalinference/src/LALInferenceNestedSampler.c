@@ -737,7 +737,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 	  continue;
       }
     }
+    LALInferenceDestroyVariables(&variables_array[i]);
   }
+  free(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
    /* Subtract the mean */
@@ -823,6 +825,7 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
         LALInferenceSetVariable(runState->currentParams,"logPrior",&logPriorNew);
     }
     LALInferenceDestroyVariables(oldParams);
+
     return(accepted);
 }
 
