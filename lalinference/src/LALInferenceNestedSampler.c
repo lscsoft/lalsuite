@@ -269,6 +269,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceVariables currentVars;
 	memset(&currentVars,0,sizeof(currentVars));
 	
+
 	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
   	char *outVOTable=NULL;
@@ -495,7 +496,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		  logZ,\
 		  dZ,\
 		  10.0*LAL_LOG10E*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
-
 		/* Flush output file */
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
@@ -546,7 +546,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		/* Reset the sloppy fraction as we have updated our proposal */
 		//LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&zero);
 		
-                INT4 max=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 10* last ACL */
+                INT4 max=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
                 LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
                 max=1;
                 for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
@@ -554,7 +554,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                 free(acls);
                 LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
 		    }
-
 	      }
 		
 	}
@@ -661,14 +660,15 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   char acf_file_name[128]="";
   FILE *chainfile=NULL;
   FILE *acffile=NULL;
-  INT4 global_iter,temp;
+  INT4 global_iter;
   UINT4 i,j;
   INT4 nPar=0; // = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   REAL8 **data_array=NULL;
   REAL8 **acf_array=NULL;
   LALInferenceVariableItem *this;
   REAL8 tolerance=0.01;
-  
+  INT4 thinning=10;
+  max_iterations/=thinning;
   for(this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) nPar++;
 
   REAL8 ACF,ACL,max=0;
@@ -685,8 +685,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"outfile");
-  temp=1; /* Set MCMC chain length to 1 so as to record all samples */
-  LALInferenceSetVariable(&myAlgParams,"Nmcmc",&temp);
+  LALInferenceSetVariable(&myAlgParams,"Nmcmc",&thinning);
   runState->algorithmParams=&myAlgParams;
   runState->currentParams=&myCurrentParams;
   /* We can record write the MCMC chain to a file too */
@@ -754,8 +753,10 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
       ACL+=2.0*ACF;
       if((ACF<tolerance && startflag) || lag==max_iterations/2-1){
 	    startflag=0;
+        ACL*=(REAL8)thinning;
 	    if(ACL>max) max=ACL;
 	    LALInferenceAddVariable(acls,this->name,&ACL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+        break;
       }
    }   
    do{this=this->next;}while(this && (this->vary==LALINFERENCE_PARAM_FIXED || this->vary==LALINFERENCE_PARAM_OUTPUT || this->type!=LALINFERENCE_REAL8_t));
@@ -844,7 +845,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceVariables oldParams;
     LALInferenceIFOData *data=runState->data;
     REAL8 tmp;
-    REAL8 Target=0.35;
+    REAL8 Target=0.05;
     char tmpName[32];
     REAL8 logLold=*(REAL8 *)LALInferenceGetVariable(runState->currentParams,"logL");
     memset(&oldParams,0,sizeof(oldParams));
