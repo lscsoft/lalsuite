@@ -279,9 +279,9 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
   if(oldlogdist!=-1.0)
     if(oldlogdist==*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"))
       {
-	newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
-	newdist=log(newdist);
-	LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
+		newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
+		newdist=log(newdist);
+		LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
       }
   if(oldlogmc!=-1.0)
     if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))

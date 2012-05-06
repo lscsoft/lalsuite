@@ -503,7 +503,8 @@ Parameter arguments:\n\
 (--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
 (--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
 (--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n\
-(--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n";
+(--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n\
+(--no-logdistance)\tUse distance, not logdistance, as the sampling variable\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -679,10 +680,20 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
-	tmpVal=logDmin+(logDmax-logDmin)/2.0;
-	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
-	
+	if(LALInferenceGetProcParamVal(commandLine,"--no-logdistance"))
+	{
+		REAL8 Dmin=exp(logDmin);
+		REAL8 Dmax=exp(logDmax);
+		tmpVal=Dmin+(Dmax-Dmin)/2.;
+		LALInferenceAddVariable(currentParams,"distance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   LALINFERENCE_REAL8_t);		
+	}
+	else 
+	{
+		tmpVal=logDmin+(logDmax-logDmin)/2.0;
+		LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
+	}
 	tmpVal=1.0;
 	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
