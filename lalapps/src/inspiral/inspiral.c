@@ -4183,13 +4183,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 #ifdef LALAPPS_CUDA_ENABLED
       case '+':
         gpuDeviceID = (INT4) atoi( optarg );
-	cudaError = cudaSetDevice( gpuDeviceID );
+        cudaError = cudaSetDevice( gpuDeviceID );
         if ( cudaError != cudaSuccess )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
 		           "could not associate thread to GPU %d\n"
 		           "CudaError: %s\n",
-		   long_options[option_index].name, gpuDeviceID,
+                   long_options[option_index].name, gpuDeviceID,
                    cudaGetErrorString(cudaError));
           exit( 1 );
         }
