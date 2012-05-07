@@ -21,7 +21,7 @@
 #include <lal/LIGOLwXMLStochasticRead.h>
 
 #define CLOBBER_STOCH_VAL \
-  while (*stochHead); \
+  while (*stochHead) \
 { \
   thisValue = *stochHead; \
   *stochHead = (*stochHead)->next; \
@@ -200,7 +200,7 @@ LALStochasticTableFromLIGOLw (
 #undef CLOBBER_STOCH_VAL
 
 #define CLOBBER_STOCH_SUMM_VAL \
-  while (*stochSummHead); \
+  while (*stochSummHead) \
 { \
   thisValue = *stochSummHead; \
   *stochSummHead = (*stochSummHead)->next; \
