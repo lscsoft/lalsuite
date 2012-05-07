@@ -1,4 +1,5 @@
 *.swp
+*.trs
 *~
 .DS_Store
 /_inst/
