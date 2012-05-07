@@ -241,7 +241,7 @@ class InspiralCkptJob(InspiralAnalysisJob):
     sections = []
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_short_opt('_condor_relocatable')
+    self.add_short_opt('_condor_relocatable', '')
 
 
 class PTFInspiralJob(InspiralAnalysisJob):

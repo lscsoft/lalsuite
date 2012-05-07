@@ -4,34 +4,4 @@ set -e
 
 test -f ${1}
 
-# Make a backup of ckpt file
-mv ${1} ${1}.orig
-
-# First, find second instance of the string in the file name.
-# After this, replace the bits and pieces of the string with the
-# .///////////////////////////////////// equal to the length of
-# the filepath. Then, save the file and exit.
-
-# Look at the file path + name in ${1} and keep the first part
-# as a variable to use for the text replace.
-
-argument=${1}
-pathname=`echo ${argument%\/*t}` # Strips off the end of the string
-filename=`basename $argument`
-
-# Counts number of characters in pathname for the future replacement
-number_of_chars=`/bin/echo -n $pathname | wc -m`
-number_of_chars=$(( ${number_of_chars} - 1 ))
-
-# Creates a string ./ with charpathfile - 1 slashes.
-replacement_path=`printf "%s" "."; for((i=0;i<${number_of_chars};i++)); do printf "%s" "/"; done`
-
-# Open the .ckpt file for editing & locate the string we want to replace. The
-# occurrence we are trying to replace is the
-# /home/username/users_run/hyphenated-times/full-data path, which only appears
-# once in the file. We cannot use / as the delimiter because the filenames
-# contain slashes themselves.
-#perl -pe '$foo = 0; $foo < 2 and #'$pathname'# and $foo++ and $foo == 2 and s#'$pathname'#'$replacement_path'# and exit(0);' ${1}.orig > ${1}
-perl -pe 's#'$pathname'(.*?)'$pathname'#'$pathname'$1'$replacement_path'#' ${1}.orig > ${1}
-
 exit 0
