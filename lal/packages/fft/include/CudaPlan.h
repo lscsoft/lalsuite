@@ -13,6 +13,8 @@
  * FFT plan structure.
  */
 
+#ifndef SWIG /* exclude from SWIG interface */
+
 struct tagCOMPLEX8FFTPlan
 {
   INT4       sign;
@@ -28,5 +30,7 @@ struct tagCOMPLEX16FFTPlan
   UINT4      size;
   fftw_plan  plan;
 };
+
+#endif /* SWIG */
 
 #endif	/* _CUDAPLAN_H */
