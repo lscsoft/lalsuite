@@ -752,7 +752,9 @@ int main(int argc, char *argv[])
       
       //If requested, keep only the most significant IHS candidates
       candidateVector *ihsCandidates_reduced = NULL;
-      if (args_info.keepOnlyTopNumIHS_given) {
+      if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
+         fprintf(stderr, "Reducing total number of IHS candidates %d to user input %d\n", ihsCandidates->numofcandidates, args_info.keepOnlyTopNumIHS_arg);
+         fprintf(LOG, "Reducing total number of IHS candidates %d to user input %d\n", ihsCandidates->numofcandidates, args_info.keepOnlyTopNumIHS_arg);
          ihsCandidates_reduced = keepMostSignificantCandidates(ihsCandidates, inputParams);
          if (ihsCandidates_reduced==NULL) {
             fprintf(stderr,"%s: keepMostSignificantCandidates() failed.\n", __func__);

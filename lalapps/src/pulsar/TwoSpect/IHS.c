@@ -330,6 +330,8 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       fprintf(stderr, "Warning: number of trials may be insufficient given the number of rows to sum\n");
       trials = 5000;
    }
+   //comment this
+   //trials = 20000;
    
    /* INT4 trials = (INT4)round(1.0e-11/params->ihsfar);    //Number of trials to determine FAR value
    if (params->ihsfomfar!=0.0 && trials<(INT4)round(1.0e-11/params->ihsfomfar)) {
@@ -898,7 +900,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          } /* use or validate SSE code */
          
          //comment this
-         //FILE *IHSFOM2ROWREAL = fopen("./output/ihsfom2rowsreal.dat","w");
+         //FILE *IHSFOM2ROWREAL = fopen("./output/ihsfom2rowsreal.dat","a");
          
          //Loop through the IHS vector neighbor sums
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
@@ -1018,7 +1020,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          
          //comment this
          //FILE *IHSFOM360ROWSREAL = NULL;
-         //if (ii==360) IHSFOM360ROWSREAL = fopen("./output/ihsfom360rowsreal.dat","w");
+         //if (ii==360) IHSFOM360ROWSREAL = fopen("./output/ihsfom360rowsreal.dat","a");
          
          for (jj=0; jj<(INT4)ihsvectorsequence->length-(ii-1); jj++) {
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
