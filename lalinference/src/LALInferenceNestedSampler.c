@@ -816,7 +816,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     fprintf(acffile,"\n");
   }
   }
-  
+/*  
   FILE *aclfile=fopen("acl.dat","a");
   FILE *aclfile_header=fopen("acl_params.txt","w");
   fprintf(aclfile,"%i ",global_iter);
@@ -828,7 +828,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   fprintf(aclfile_header,"\n");
   fclose(aclfile_header);
   fclose(aclfile);
-  
+*/  
   /* Clean up */
   for(i=0;i<(UINT4)nPar;i++) {free(data_array[i]); free(acf_array[i]);}
   free(data_array); free(acf_array);
