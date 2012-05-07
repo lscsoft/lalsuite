@@ -708,9 +708,18 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     sprintf(acf_file_name,"%s.%i",ppt->value,global_iter);
     acffile=fopen(acf_file_name,"w");
   }
-  
-  /* Evolve the initial sample */
-  for(i=0;i<max_iterations;i++)
+  LALInferenceVariables **livePoints=runState->livePoints;
+  UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  do{ /* Pick a random sample that isn't trapped in some corner*/
+	UINT4 idx=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
+	runState->currentParams=livePoints[idx];
+  	evolve(runState);
+  }
+  while(0.==*(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate"));
+	/* log the first sample*/ 
+  LALInferenceLogSampleToArray(runState,runState->currentParams);
+  /* Evolve the initial sample (i starts at 1)*/
+  for(i=1;i<max_iterations;i++)
   {
    evolve(runState);
    LALInferenceLogSampleToArray(runState,runState->currentParams);
