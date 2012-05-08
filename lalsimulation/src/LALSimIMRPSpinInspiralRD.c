@@ -49,7 +49,6 @@
 #define LALPSIRDPN_TEST_OMEGANAN	1028
 #define LALPSIRDPN_TEST_OMEGAMATCH      1029
 #define LALPSIRDPN_TEST_OMEGANONPOS     1031
-#define LALPSIRDPN_TEST_OMEGACUT        1032
 
 typedef struct LALPSpinInspiralRDstructparams {
   REAL8 dt;
@@ -91,7 +90,6 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 epnspin20S2S2dotLNh;
   REAL8 epnspin25S1dotLNh;
   REAL8 epnspin25S2dotLNh;
-  REAL8 OmCutoff;
   REAL8 lengths;
   REAL8 omOffset;
   REAL8 polarization;
@@ -280,7 +278,6 @@ static int XLALPSpinInspiralRDparamsSetup(
     UINT4 inspiralOnly,                 /** Only generate inspiral */
     REAL8 deltaT,                       /** sampling interval */
     REAL8 fLow,                         /** Starting frequency */
-    REAL8 fCutoff,                      /** CHECKME: Cutoff frequency? */
     REAL8 m1,                           /** Mass 1 */
     REAL8 m2,                           /** Mass 2 */
     LALSimInspiralInteraction interaction, /** Spin interaction */
@@ -296,7 +293,6 @@ static int XLALPSpinInspiralRDparamsSetup(
   
   mparams->inspiralOnly = inspiralOnly;
   mparams->dt           = deltaT;
-  mparams->OmCutoff     = fCutoff*totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
   mparams->lengths      = (5.0 / 256.0) / LAL_PI * pow(LAL_PI * chirpMass * LAL_MTSUN_SI * fLow,-5.0 / 3.0) / fLow;
   mparams->omOffset     = 0.006;
 
@@ -757,9 +753,6 @@ static int XLALSpinInspiralTest(UNUSED double t, const double values[], double d
     /* omega is nan */
     return LALPSIRDPN_TEST_OMEGANAN;
   } 
-  else if ((params->inspiralOnly==1)&&(omega>params->OmCutoff)) {
-    return LALPSIRDPN_TEST_OMEGACUT;
-  }
   else if ((params->inspiralOnly!=1)&&(omega>omegaMatch)) {
     return LALPSIRDPN_TEST_OMEGAMATCH;
   }
@@ -1203,9 +1196,11 @@ static int XLALSpinInspiralAdaptiveEngine(
 	
   /* if we have enough space, compute the waveform components; otherwise abort */
   if ( intlen >= mparams->length ) {
-fprintf(stderr, "%i\n", intlen);
-fprintf(stderr, "%i\n", mparams->length);
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
+    XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating second derivatives\n");
+    XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
+    XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
+    XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
     XLAL_ERROR(XLAL_ESIZE);
   }
 	
@@ -1328,7 +1323,7 @@ fprintf(stderr, "%i\n", mparams->length);
 		
     if (ddomega->data[kMatch]<0.) {
       fprintf(stdout,"*** LALPSpinInspiralRD WARNING: the attach of the phenom. phase has been shifted back: m1 %12.6f  m2 %12.6f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
-      fprintf(stdout,"  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n   1032: Omega > OmegaCut %12.6e\n",intreturn,mparams->OmCutoff); 
+      fprintf(stdout,"  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n",intreturn); 
       while ((kMatch>0)&&(ddomega->data[kMatch]<0.)) {
 				kMatch--;
 				jMatch--;
@@ -2107,7 +2102,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    InputAxis axisChoice        /**< Choice of axis for input spin params */
+    InputAxis axisChoice,       /**< Choice of axis for input spin params */
+    int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     )
 {
 
@@ -2207,7 +2203,6 @@ int XLALSimIMRPSpinInspiralRDGenerator(
   REAL8 energy=0.;
   REAL8 omegaMatch;
   REAL8 frOmRD,omegaRD;
-  REAL8 fCutoff = 0.0; /* Set only for inspiral only waveforms */
   REAL8 mass1 = m1 / LAL_MSUN_SI; /* mass of object 1 in solar masses */
   REAL8 mass2 = m2 / LAL_MSUN_SI; /* mass of object 2 in solar masses */
   REAL8 totalMass = mass1 + mass2;
@@ -2226,12 +2221,11 @@ int XLALSimIMRPSpinInspiralRDGenerator(
 
   /* setup coefficients for PN equations */
   if(XLALPSpinInspiralRDparamsSetup(&mparams, /** Output: RDparams structure */
-			     0, 	/** Do not Only generate inspiral */
+			     inspiralOnly, 	/** Do not Only generate inspiral */
 			     deltaT, 		/** sampling interval */
 			     f_min,		/** Starting frequency */
-			     fCutoff,		/** CHECKME: Cutoff frequency? */
-			     mass1,			/** Mass 1 */
-			     mass2,			/** Mass 2 */
+			     mass1,		/** Mass 1 */
+			     mass2,		/** Mass 2 */
 			     LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN,	/** Spin interaction */
 			     phaseO		/** PN Order in Phase */ ))
     XLAL_ERROR(XLAL_EFUNC);
@@ -2539,10 +2533,10 @@ int XLALSimIMRPSpinInspiralRDGenerator(
      Termination is fine if omegamatch is passed or if energy starts 
      increasing  */
 
-  if ( (intreturn!=LALPSIRDPN_TEST_OMEGACUT) && (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )
+  if ( (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )
     {
       XLALPrintWarning("** LALPSpinInspiralRD WARNING **: integration terminated with code %d.\n",intreturn);
-      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1031: Omega -ve\n  1032: Omega > OmegaCut %12.6e\n",mparams.OmCutoff);
+      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1031: Omega -ve\n");
       XLALPrintWarning("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", mass1, mass2, iota);
       XLALPrintWarning("                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
       XLALPrintWarning("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);

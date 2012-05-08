@@ -243,7 +243,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    InputAxis axisChoice       	/**< Choice of axis for input spin params */
+    InputAxis axisChoice,      	/**< Choice of axis for input spin params */
+    int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     );
 
 #if 0

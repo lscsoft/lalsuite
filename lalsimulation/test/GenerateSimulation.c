@@ -78,6 +78,7 @@ typedef struct tagGSParams {
     REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
   LALSimInspiralInteraction interactionFlags;    /**< flag to control spin and tidal effects */
   int axisChoice;            /**< flag to choose reference frame for spin coordinates */
+  int inspiralOnly;          /**< flag to choose if generating only the the inspiral 1 or also merger and ring-down*/
     char outname[256];        /**< file to which output should be written */
     int verbose;
 } GSParams;
@@ -127,6 +128,7 @@ const char * usage =
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc\n"
 "--axis                     Ref. frame for PhenSpin (0: L, 1: J, 2: N default)\n"
+"--inspiralOnly             generate only inspiral, for PhenSpin\n"
 "--outname FNAME            File to which output should be written (overwrites)\n"
 "--verbose                  Provide this flag to add verbose output\n"
 ;
@@ -260,6 +262,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->inclination = atof(argv[++i]);
         } else if (strcmp(argv[i], "--axis") == 0) {
             params->axisChoice = atof(argv[++i]);
+        } else if (strcmp(argv[i], "--inspiralOnly") == 0) {
+	    params->inspiralOnly = 1;
         } else if (strcmp(argv[i], "--outname") == 0) {
             strncpy(params->outname, argv[++i], 256);
         } else if (strcmp(argv[i], "--verbose") == 0) {
@@ -509,7 +513,7 @@ int main (int argc , char **argv) {
                         params->interactionFlags, params->phaseO, params->ampO);
                     break;
 	    case GSApproximant_PhenSpinTaylorRD:
-	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice);
+	      XLALSimIMRPSpinInspiralRDGenerator(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->fRef, params->distance, params->inclination, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->phaseO, params->axisChoice, params->inspiralOnly);
                     break;
                 case GSApproximant_SEOBNRv1:
                     XLALSimIMRSpinAlignedEOBWaveform( &hplus, &hcross,
