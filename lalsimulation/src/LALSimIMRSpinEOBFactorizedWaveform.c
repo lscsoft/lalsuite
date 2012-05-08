@@ -80,6 +80,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
     REAL8 eta;	
 	REAL8 r, pp, Omega, v2, vh, vh3, k, hathatk, eulerlogxabs; //pr
 	REAL8 Slm, deltalm, rholm, rholmPwrl;
+        REAL8 auxflm = 0.0;
 	COMPLEX16 Tlm;
     COMPLEX16 hNewton;
 	gsl_sf_result lnr1, arg1, z2;
@@ -104,12 +105,12 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
           XLALPrintError("XLAL Error - %s: Eta seems to be > 0.25 - this isn't allowed!\n", __func__ );
           XLAL_ERROR( XLAL_EINVAL );
         }
-        else if ( eta == 0.25 && m % 2 )
+        /*else if ( eta == 0.25 && m % 2 )
         {
-          /* If m is odd and dM = 0, hLM will be zero */
+          // If m is odd and dM = 0, hLM will be zero 
           memset( hlm, 0, sizeof( COMPLEX16 ) );
           return XLAL_SUCCESS;
-        }
+        }*/
         
 	r	= values->data[0];
 	//pr	= values->data[2];
@@ -208,6 +209,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 			+ v*(hCoeffs->rho21v7 + hCoeffs->rho21v7l * eulerlogxabs 
 			+ v*(hCoeffs->rho21v8 + hCoeffs->rho21v8l * eulerlogxabs 
 			+ (hCoeffs->rho21v10 + hCoeffs->rho21v10l * eulerlogxabs)*v2))))))));
+                auxflm = v*hCoeffs->f21v1;
                 }
 	        break;
 	      default:
@@ -224,6 +226,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 		rholm	= 1. + v2*(hCoeffs->rho33v2 + v*(hCoeffs->rho33v3 + v*(hCoeffs->rho33v4 
 			+ v*(hCoeffs->rho33v5 + v*(hCoeffs->rho33v6 + hCoeffs->rho33v6l*eulerlogxabs
 			+ v*(hCoeffs->rho33v7 + (hCoeffs->rho33v8 + hCoeffs->rho33v8l*eulerlogxabs)*v))))));
+                auxflm = v*v2*hCoeffs->f33v3;
 	        break;
 	      case 2:
 		deltalm = vh3*(hCoeffs->delta32vh3 + vh*(hCoeffs->delta32vh4 + vh*vh*(hCoeffs->delta32vh6
@@ -240,6 +243,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 		rholm	= 1. + v2*(hCoeffs->rho31v2 + v*(hCoeffs->rho31v3 + v*(hCoeffs->rho31v4 
 			+ v*(hCoeffs->rho31v5 + v*(hCoeffs->rho31v6 + hCoeffs->rho31v6l*eulerlogxabs 
 			+ v*(hCoeffs->rho31v7 + (hCoeffs->rho31v8 + hCoeffs->rho31v8l*eulerlogxabs)*v))))));
+                auxflm = v*v2*hCoeffs->f31v3;
 		break;
               default:
                 XLAL_ERROR( XLAL_EINVAL );
@@ -265,6 +269,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 			+ v*(hCoeffs->rho43v2
 			+ v2*(hCoeffs->rho43v4 + v*(hCoeffs->rho43v5
 			+ (hCoeffs->rho43v6 + hCoeffs->rho43v6l*eulerlogxabs)*v))));
+                auxflm = v*hCoeffs->f43v;
 	        break;
 	      case 2:
 		deltalm = vh3*(hCoeffs->delta42vh3 + hCoeffs->delta42vh6*vh3);
@@ -279,6 +284,7 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
 			+ v*(hCoeffs->rho41v2
 			+ v2*(hCoeffs->rho41v4 + v*(hCoeffs->rho41v5 
 			+ (hCoeffs->rho41v6 +  hCoeffs->rho41v6l*eulerlogxabs)*v))));
+                auxflm = v*hCoeffs->f41v;
 		break;
 	      default:
                 XLAL_ERROR( XLAL_EINVAL );
@@ -442,10 +448,18 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform( COMPLEX16         * rest
         {
           rholmPwrl *= rholm;
         }
+        if (eta == 0.25 && m % 2)
+        {
+          rholmPwrl = auxflm;
+        }
+        else
+        {
+          rholmPwrl += auxflm;
+        }
 
         /*if (r > 8.5)
 	{
-	  printf("YP::dynamics variables in waveform: %i, %i, %e, %e, %e\n",l,m,r,pr,pp); 
+	  printf("YP::dynamics variables in waveform: %i, %i, %e, %e\n",l,m,r,pp); 
 	  printf( "rholm^l = %.16e, Tlm = %.16e + i %.16e, \nSlm = %.16e, hNewton = %.16e + i %.16e, delta = %.16e\n", rholmPwrl, Tlm.re, Tlm.im, Slm, hNewton.re, hNewton.im, deltalm );}*/
 
 	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
