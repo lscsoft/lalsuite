@@ -853,10 +853,6 @@ for grb in ext_trigs:
 
       new_injfiles = [injFile]
 
-      # XXX: hack since glue is having trouble with empty columns
-      #  Removing hack as it should no longer be needed!
-#      fix_numrel_columns(sims)
-
       # split the injections
       if opts.verbose: print "  Splitting injections..."
       safetyInterval = 800 # safety time in seconds between two injections
