@@ -171,9 +171,17 @@ echo
 outfile_v2NWon="Fstat_v2NWon.dat";
 timingfile="timing_v2NWon.dat";
 cmdlineNoiseWeightsOn="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true --outputTiming=$timingfile"
-
 echo $cmdlineNoiseWeightsOn;
 if ! eval "$cmdlineNoiseWeightsOn &> /dev/null"; then
+    echo "Error.. something failed when running '$cfs_code' ..."
+    exit 1;
+fi
+
+outfile_v2NWon_RS="Fstat_v2NWon_RS.dat";
+timingfile="timing_v2NWon_RS.dat";
+cmdlineNoiseWeightsOn_RS="$cfsv2_code $cfs_CL --outputFstat=$outfile_v2NWon_RS --TwoFthreshold=0 --FreqBand=$cfs_FreqBand --UseNoiseWeights=true --outputTiming=$timingfile --useResamp"
+echo $cmdlineNoiseWeightsOn_RS;
+if ! eval "$cmdlineNoiseWeightsOn_RS &> /dev/null"; then
     echo "Error.. something failed when running '$cfs_code' ..."
     exit 1;
 fi
@@ -186,6 +194,7 @@ if ! eval "$cmdlineNoiseWeightsOff &> /dev/null"; then
     exit 1;
 fi
 
+
 echo
 echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
@@ -195,6 +204,7 @@ echo "----------------------------------------"
 sort $outfile_v1 > __tmp_sorted && mv __tmp_sorted $outfile_v1
 sort $outfile_v2NWoff > __tmp_sorted && mv __tmp_sorted $outfile_v2NWoff
 sort $outfile_v2NWon > __tmp_sorted && mv __tmp_sorted $outfile_v2NWon
+sort $outfile_v2NWon_RS > __tmp_sorted && mv __tmp_sorted $outfile_v2NWon_RS
 
 echo
 cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWoff --clusterFiles=0 --Ftolerance=$Ftolerance_NWoff -v${debug}"
@@ -207,6 +217,16 @@ else
 fi
 
 cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon --clusterFiles=0 --Ftolerance=$Ftolerance_NWon -v${debug}"
+echo -n $cmdline
+if ! eval $cmdline; then
+    echo "==> OUCH... files differ. Something might be wrong..."
+    exit 2
+else
+    echo "	==> OK."
+fi
+echo
+
+cmdline="$cmp_code -1 ./$outfile_v1 -2 ./$outfile_v2NWon_RS --clusterFiles=0 --Ftolerance=$Ftolerance_NWon -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

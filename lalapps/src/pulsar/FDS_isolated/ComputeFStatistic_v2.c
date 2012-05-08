@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 David Keitel, Santiago Caride, Reinhard Prix
  * Copyright (C) 2008 Karl Wette
  * Copyright (C) 2007 Chris Messenger
  * Copyright (C) 2004, 2007, 2010 Reinhard Prix
@@ -75,6 +76,7 @@ int finite(double);
 
 #include "OptimizedCFS/ComputeFstatREAL4.h"
 #include "../GCT/LineVeto.h"
+#include "../GCT/ComputeFstat_RS.h"
 
 /*---------- DEFINES ----------*/
 
@@ -300,6 +302,7 @@ typedef struct {
 
   CHAR *outputTiming;		/**< output timing measurements and parameters into this file [append!]*/
 
+  BOOLEAN useResamp;		/**< use FFT-resampling method instead of LALDemod() */
 } UserInput_t;
 
 /*---------- Global variables ----------*/
@@ -524,6 +527,17 @@ int main(int argc,char *argv[])
   /* fixed time-offset between internalRefTime and refTime */
   REAL8 DeltaTRefInt = XLALGPSDiff ( &(GV.internalRefTime), &(GV.searchRegion.refTime) ); // tRefInt - tRef
 
+  REAL4FrequencySeries *fstatVector = NULL;
+  UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not --useResamp)
+  if ( uvar.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
+    {
+      numFreqBins_FBand = (UINT4) ceil ( uvar.FreqBand / uvar.dFreq );
+      if ( ( fstatVector = XLALCalloc ( 1, sizeof ( *fstatVector ) )) == NULL )
+        XLAL_ERROR ( XLAL_EFAILED, "Failed to XLALCalloc ( 1, %d )\n", sizeof ( *fstatVector ) );
+      if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
+        XLAL_ERROR ( XLAL_EFAILED, "XLALCreateREAL4Vector(%d) failed.\n", numFreqBins_FBand );
+    }
+
   /* skip search if user supplied --countTemplates */
   while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) )
     {
@@ -535,12 +549,25 @@ int main(int argc,char *argv[])
       PulsarDopplerParams internalDopplerpos = dopplerpos;
       XLALExtrapolatePulsarSpins ( internalDopplerpos.fkdot, dopplerpos.fkdot, DeltaTRefInt );	// can't fail
       internalDopplerpos.refTime = GV.internalRefTime;
+      // we set these for future-compatibility with XLALComputeFstatFreqBand(), even if currently unused
+      internalDopplerpos.dFreq = uvar.dFreq;
+      internalDopplerpos.numFreqBins = numFreqBins_FBand;
 
       /* main function call: compute F-statistic for this template */
       if ( ! uvar.GPUready )
         {
-          LAL_CALL( COMPUTEFSTAT (&status, &Fstat, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights,
-                                 GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+          if ( uvar.useResamp )
+            {
+              fstatVector->epoch = GV.internalRefTime;
+              fstatVector->f0 = internalDopplerpos.fkdot[0];	// set to the fixed lowest-frequency bin
+              fstatVector->deltaF = uvar.dFreq;
+
+              LAL_CALL ( ComputeFStatFreqBand_RS ( &status, fstatVector, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, &GV.CFparams ), &status );
+            }
+          else
+            {
+              LAL_CALL( COMPUTEFSTAT (&status, &Fstat, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, GV.multiDetStates, &GV.CFparams, &cfBuffer ), &status );
+            }
         }
       else
         {
@@ -556,9 +583,17 @@ int main(int argc,char *argv[])
           Fstat.F = F;
 
         } /* if GPUready==true */
+
+      // here we use Santiago's trick to hack the ComputeFStatFreqBand_RS() Fstat(f) into the single-F rest of the main -loop:
+      // we simply loop the remaining body over all frequency-bins in the Fstat-vector, this way nothing needs to be changed!
+      // in the non-resampling case, this loop iterates only once, so nothing is changed ...
+      for ( UINT4 iFreq = 0; iFreq < numFreqBins_FBand; iFreq ++ )
+      {
+        if ( uvar.useResamp )
+          Fstat.F = fstatVector->data->data[iFreq];
+
       toc = GETTIME();
       timing.tauFstat += (toc - tic);	// pure Fstat-calculation time
-
 
       /* Progress meter */
       templateCounter += 1.0;
@@ -592,7 +627,21 @@ int main(int argc,char *argv[])
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
-      if ( !uvar.GPUready )
+      thisFCand.doppler.fkdot[0] += iFreq * uvar.dFreq;	// this only does something for the resampling post-loop over frequency-bins ...
+
+      if ( uvar.GPUready )
+        {
+          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
+          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
+          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
+          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
+          thisFCand.Mmunu.Ed = 0.0;
+        }
+      else if ( uvar.useResamp )
+        {
+          ;; // currently CFS_RS() doesnt report back antenna-pattern factors, so we leave this empty
+        }
+      else // standard LALDemod() case
         {
           if ( cfBuffer.multiCmplxAMcoef ) {
             thisFCand.Mmunu = cfBuffer.multiCmplxAMcoef->Mmunu;
@@ -603,14 +652,6 @@ int main(int argc,char *argv[])
             thisFCand.Mmunu.Sinv_Tsft = cfBuffer.multiAMcoef->Mmunu.Sinv_Tsft;
             thisFCand.Mmunu.Ed = 0.0;
           }
-        }
-      else
-        {
-          thisFCand.Mmunu.Ad = cfBuffer4.multiAMcoef->Mmunu.Ad;
-          thisFCand.Mmunu.Bd = cfBuffer4.multiAMcoef->Mmunu.Bd;
-          thisFCand.Mmunu.Cd = cfBuffer4.multiAMcoef->Mmunu.Cd;
-          thisFCand.Mmunu.Sinv_Tsft = cfBuffer4.multiAMcoef->Mmunu.Sinv_Tsft;
-          thisFCand.Mmunu.Ed = 0.0;
         }
 
       /* correct normalization in --SignalOnly case:
@@ -869,6 +910,8 @@ int main(int argc,char *argv[])
       toc = GETTIME();
       timing.tauTemplate += (toc - tic0);
 
+      } // for ( iFreq < numFreqBins_FBand )
+
     } /* while more Doppler positions to scan */
 
 
@@ -1002,6 +1045,11 @@ int main(int argc,char *argv[])
   /* free memory allocated for binary parameters */
   if (orbitalParams) LALFree(orbitalParams);
 
+  if ( fstatVector ) {
+    if ( fstatVector->data ) XLALDestroyREAL4Vector ( fstatVector->data );
+    XLALFree ( fstatVector );
+  }
+
   LAL_CALL ( Freemem(&status, &GV), &status);
 
   if (Fstat_histogram)
@@ -1116,6 +1164,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->maxBraking = 0.0;
 
   uvar->GPUready = 0;
+  uvar->useResamp = FALSE;
 
   uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
@@ -1213,7 +1262,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregBOOLUserStruct( status, version,	'V', UVAR_SPECIAL,  "Output version information");
 
-  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_OPTIONAL,  "Use single-precision 'GPU-ready' core routines");
+  LALregBOOLUserStruct(status,  GPUready,        0,  UVAR_DEVELOPER, "Use single-precision 'GPU-ready' core routines");
+  LALregBOOLUserStruct(status,  useResamp,       0,  UVAR_OPTIONAL,  "Use FFT-resampling method instead of LALDemod()");
 
   /* ----- more experimental/expert options ----- */
   LALregINTUserStruct (status, 	SSBprecision,	 0,  UVAR_DEVELOPER, "Precision to use for time-transformation to SSB: 0=Newtonian 1=relativistic");
@@ -1499,6 +1549,9 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
 
     scanInit.searchRegion = cfg->searchRegion;
+    if ( uvar->useResamp )	// in the resampling-case, we take the frequency-dimension out of the Doppler template bank
+      scanInit.searchRegion.fkdotBand[0] = 0;
+
     scanInit.gridType = uvar->gridType;
     scanInit.gridFile = uvar->gridFile;
     scanInit.metricType = uvar->metricType;
@@ -1637,7 +1690,7 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.useRAA = uvar->useRAA;
   cfg->CFparams.bufferedRAA = uvar->bufferedRAA;
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
-
+  cfg->CFparams.edat = cfg->ephemeris;	// this will be used by ComputeFStatFreqBand_RS() to internally compute the multiDetState series
 
   /* internal refTime is used for computing the F-statistic at, to avoid large (tRef - tStart) values */
   if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
@@ -1760,6 +1813,21 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
             cfg->LVloglX->data[X] = - LAL_REAL4_MAX;
         } /* for X < numDetectors */
     } /* if ( uvar.computeLV && uvar.LVlX ) */
+
+  // ----- check that resampling option was used sensibly ...
+  if ( uvar->useResamp )
+    {
+      if ( !XLALUserVarWasSet ( &uvar->dFreq ) && (uvar->dFreq > 0) ) {
+        XLALPrintError ("Resampling (--useResamp) requires an explicit frequency-spacing --dFreq > 0\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      if ( uvar->GPUready ) {
+        XLALPrintError ("--useResamp cannot be used with --GPUready\n");
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      // FIXME: probably should check a few more things, can't think of any right now ...
+      // let's hope users are sensible
+    }
 
   // ----- if user compiled special SSE-tuned code, check that SSE is actually available, otherwise fail!
   // in order to avoid 'unexpected' behaviour, ie the 'SSE-code' falling back on the non-SSE hotloop functions
