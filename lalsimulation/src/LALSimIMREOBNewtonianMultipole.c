@@ -457,7 +457,28 @@ CalculateThisMultipolePrefix(
      sign = -1;
    }
 
-   c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );
+   if  ( m1 != m2 || sign == 1 )
+   {
+     c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );
+   }
+   else
+   {
+     switch( l )
+     {
+       case 2:
+         c = -1.0;
+         break;
+       case 3:
+         c = -1.0;
+         break;
+       case 4:
+         c = -0.5;
+         break;
+       default:
+         c = 0.0;
+         break;
+     }
+   }
 
    /* Dependent on the value of epsilon, we get different n */
    if ( epsilon == 0 )
