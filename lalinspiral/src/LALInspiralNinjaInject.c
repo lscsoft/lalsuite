@@ -77,16 +77,13 @@ void XLALSimInjectNinjaSignals(
 
 int XLALCheckFrameHasChannel( CHAR *channel, FrStream *stream )
 {
-  FrChanType  type;
   FrTOCts    *ts;
   ts = stream->file->toc->adc;
-  type = LAL_ADC_CHAN;
   while ( ts && strcmp( channel, ts->name ) )
     ts = ts->next;
   if ( ! ts )
   {
     /* scan sim data channels */
-    type = LAL_SIM_CHAN;
     ts = stream->file->toc->sim;
     while ( ts && strcmp( channel, ts->name ) )
       ts = ts->next;
@@ -94,7 +91,6 @@ int XLALCheckFrameHasChannel( CHAR *channel, FrStream *stream )
   if ( ! ts )
   {
     /* scan proc data channels */
-    type = LAL_PROC_CHAN;
     ts = stream->file->toc->proc;
     while ( ts && strcmp( channel, ts->name ) )
       ts = ts->next;
