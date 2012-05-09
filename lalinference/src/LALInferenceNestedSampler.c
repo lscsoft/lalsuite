@@ -503,7 +503,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the proposal */
-		if(!(iter%(Nlive))) {                  
+		if(!(iter%(Nlive/2))) {                  
             /* Update the covariance matrix */
             if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
 		        LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
@@ -548,7 +548,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		
 		/* Reset the sloppy fraction as we have updated our proposal */
 		//LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&zero);
-					 INT4 MAX_MCMC=20000; /* Maximum chain length, set to be higher than expected from a reasonable run */
+			    INT4 MAX_MCMC=20000; /* Maximum chain length, set to be higher than expected from a reasonable run */
                 INT4 max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
                 if(max>MAX_MCMC) max=MAX_MCMC;
                 LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
@@ -585,7 +585,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logZ=logadd(logZ,logLikelihoods[i]+logw);
 		for(j=0;j<Nruns;j++){
 			//logwarray[j]+=LALInferenceNSSample_logt(Nlive,runState->GSLrandom);
-			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]);
+			logZarray[j]=logadd(logZarray[j],logLikelihoods[i]+logwarray[j]-log(Nlive));
 		}
 
 		if(runState->logsample) runState->logsample(runState,runState->livePoints[i]);
@@ -710,12 +710,20 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   }
   LALInferenceVariables **livePoints=runState->livePoints;
   UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  UINT4 BAILOUT=100; /* this should be the same as the bailout in the sampler */
+  REAL8 accept=0.0;
   do{ /* Pick a random sample that isn't trapped in some corner*/
 	UINT4 idx=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
 	runState->currentParams=livePoints[idx];
-  	evolve(runState);
+    i=0;
+  	do {
+        evolve(runState);
+        i++;
+        accept=*(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate");
+        }
+        while(accept==0.0 && i<BAILOUT);
   }
-  while(0.==*(REAL8*)LALInferenceGetVariable(runState->algorithmParams,"accept_rate"));
+  while(0.==accept);
 	/* log the first sample*/ 
   LALInferenceLogSampleToArray(runState,runState->currentParams);
   /* Evolve the initial sample (i starts at 1)*/
@@ -948,19 +956,19 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 subchain_length=(sloppynumber/testnumber) +1;
     //sloppynumber=sloppynumber<1?1:sloppynumber;
     REAL8 logLnew;
-    UINT4 total_iter=0;
+    UINT4 sub_iter=0;
     UINT4 tries=0;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
     //REAL8 *logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
     do{
         /* Draw an independent sample from the prior */
         sub_accepted+=LALInferenceMCMCSamplePriorNTimes(runState,subchain_length);
-	if(sub_accepted==0) {
+	if(sub_accepted==0.) {
         //    INT4 j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
         //    LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
         //    runState->currentLikelihood = logLikelihoods[j];
 	  tries++;
-	  total_iter+=subchain_length;
+	  sub_iter+=subchain_length-1;
 	  mcmc_iter++;
       LALInferenceCopyVariables(&oldParams,runState->currentParams);
       runState->currentLikelihood=logLold;
@@ -968,7 +976,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         }
         tries=0;
         mcmc_iter++;
-    	  total_iter+=subchain_length;
+    	  sub_iter+=subchain_length-1;
         logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
@@ -996,7 +1004,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             runState->currentLikelihood=logLold;
         }
     }while((mcmc_iter<testnumber||logLnew<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
-    REAL8 sub_accept_rate=(REAL8)sub_accepted/(REAL8)total_iter;
+    REAL8 sub_accept_rate=(REAL8)sub_accepted/(REAL8)sub_iter;
     REAL8 accept_rate=(REAL8)Naccepted/(REAL8)testnumber;
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
