@@ -808,7 +808,7 @@ candidateVector * keepMostSignificantCandidates(candidateVector *input, inputPar
          REAL8 highestsignificance = 0.0;
          INT4 candidateWithHighestSignificance = 0;
          for (jj=0; jj<(INT4)input->numofcandidates; jj++) {
-            if (input->data[jj].prob<highestsignificance) {
+            if (input->data[jj].prob>highestsignificance) {
                highestsignificance = input->data[jj].prob;
                candidateWithHighestSignificance = jj;
             }

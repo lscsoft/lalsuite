@@ -48,7 +48,6 @@ REAL4 ihsFOM(INT4Vector *locs, INT4 fomnorm);
 
 REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfrequencybin, INT4 rows, inputParamsStruct *params, REAL4Vector *aveNoise, REAL4Vector *fbinavgs);
 REAL8 ihs2h0(REAL8 ihsval, inputParamsStruct *params);
-REAL8 significance_of_IHSval(REAL8 ihsval, REAL8 noise);
 
 #endif
 

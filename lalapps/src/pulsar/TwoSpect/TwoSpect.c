@@ -301,9 +301,12 @@ int main(int argc, char *argv[])
    }
    fprintf(LOG, "done\n");
    fprintf(stderr, "done\n");
+   //TODO: comment this
    /* FILE *rawtfdata = fopen("./output/rawtfdata.dat","w");
    for (ii=0; ii<(INT4)tfdata->length; ii++) fprintf(rawtfdata, "%f\n", tfdata->data[ii]);
    fclose(rawtfdata); */
+   
+   //Print SFT times, if requested by user
    if (args_info.printSFTtimes_given) {
       char w[1000];
       snprintf(w, 1000, "%s/%s", args_info.outdirectory_arg, "inputSFTtimes.dat");
@@ -624,14 +627,16 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       } */
       XLALDestroyREAL4Vector(TFdata_slided);
-      XLALDestroyREAL4Vector(background_slided);
+      //XLALDestroyREAL4Vector(background_slided);    //TODO: uncomment this
       XLALDestroyREAL4Vector(antweights);
       /* FILE *TFDATA = fopen("./output/tfdata.dat","w");
       for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%.6f\n",TFdata_weighted->data[jj]);
       fclose(TFDATA); */
       
       //Calculation of average TF noise per frequency bin ratio to total mean
-      /* REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
+      //TODO: this block of code does not avoid lines when computing the average F-bin ratio. Upper limits remain unchanged
+      //when comaring runs that have line finding enabled or disabled
+      REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
       if (aveTFnoisePerFbinRatio==NULL) {
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins);
@@ -641,7 +646,8 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
-         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
+         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
+         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];    //TODO: change this back
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
@@ -650,9 +656,12 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
-      XLALDestroyREAL4Vector(TSofPowers); */
+      XLALDestroyREAL4Vector(TSofPowers);
+      XLALDestroyREAL4Vector(background_slided);   //TODO: uncomment above and remove this
       
-      REAL4 aveTFave = 0.0;
+      //TODO: Code below avoids lines when computing the average F-bin ratio. This can change upper limits slightly when comparing
+      //runs that have line finding enabled or disabled
+      /* REAL4 aveTFave = 0.0;
       INT4 numinave = 0;
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
@@ -688,7 +697,7 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
-      XLALDestroyREAL4Vector(TSofPowers);
+      XLALDestroyREAL4Vector(TSofPowers); */
       
       //Do the second FFT
       makeSecondFFT(ffdata, TFdata_weighted, secondFFTplan);
@@ -702,7 +711,7 @@ int main(int argc, char *argv[])
       
       XLALDestroyREAL4Vector(TFdata_weighted);
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
-      //comment this out
+      //TODO: comment this out
       /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
       fclose(FFDATA); */
@@ -713,10 +722,6 @@ int main(int argc, char *argv[])
          fprintf(LOG, "%s: Average second FFT power is 0.0. Perhaps no SFTs are remaining? Program exiting with failure.\n", __func__);
          XLAL_ERROR(XLAL_FAILURE);
       }
-      
-      //if (fabs(secFFTsigma-1.0)>=2.0) {
-         //fprintf(stderr, "%s: Background noise estimate is ", __func__);
-      //}
       
       
 ////////Start of the IHS step!
@@ -767,7 +772,7 @@ int main(int argc, char *argv[])
 ////////Start of the Gaussian template search!
       if (args_info.IHSonly_given) {
          
-         if (args_info.keepOnlyTopNumIHS_given) {
+         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
             if (exactCandidates2->length < exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates) {
                exactCandidates2 = resize_candidateVector(exactCandidates2, exactCandidates2->numofcandidates+ihsCandidates_reduced->numofcandidates);
                if (exactCandidates2->data==NULL) {
@@ -803,7 +808,7 @@ int main(int argc, char *argv[])
          
       } else if ((!args_info.simpleBandRejection_given || (args_info.simpleBandRejection_given && secFFTsigma<inputParams->simpleSigmaExclusion))) {
          
-         if (args_info.keepOnlyTopNumIHS_given) {
+         if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) {
             //Test the IHS candidates against Gaussian templates in this function
             if ( testIHScandidates(gaussCandidates1, ihsCandidates_reduced, ffdata, aveNoise, aveTFnoisePerFbinRatio, (REAL4)dopplerpos.Alpha, (REAL4)dopplerpos.Delta, inputParams) != 0 ) {
                fprintf(stderr, "%s: testIHScandidates() failed.\n", __func__);
@@ -823,7 +828,7 @@ int main(int argc, char *argv[])
          for (ii=0; ii<(INT4)gaussCandidates1->numofcandidates; ii++) fprintf(stderr, "Candidate %d: f0=%g, P=%g, df=%g\n", ii, gaussCandidates1->data[ii].fsig, gaussCandidates1->data[ii].period, gaussCandidates1->data[ii].moddepth);
       } /* if IHSonly is not given */
       
-      if (args_info.keepOnlyTopNumIHS_given) free_candidateVector(ihsCandidates_reduced);
+      if (args_info.keepOnlyTopNumIHS_given && (INT4)ihsCandidates->numofcandidates>args_info.keepOnlyTopNumIHS_arg) free_candidateVector(ihsCandidates_reduced);
       
 ////////End of the Gaussian template search
 
@@ -1286,7 +1291,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    XLALDestroySFTCatalog(catalog);
    XLALDestroySFTVector(sfts);
    
-   fprintf(stderr,"TF before weighting, mean subtraction = %g\n",calcMean(tfdata));
+   fprintf(stderr,"TF before weighting, mean subtraction: mean = %g, std. dev. = %g\n", calcMean(tfdata), calcStddev(tfdata));
    
    return tfdata;
 
@@ -1969,8 +1974,8 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   memset(output->data, 0, sizeof(REAL4)*output->length);
-   memset(rngMeanssq->data, 0, sizeof(REAL4)*rngMeanssq->length);
+   //memset(output->data, 0, sizeof(REAL4)*output->length);
+   //memset(rngMeanssq->data, 0, sizeof(REAL4)*rngMeanssq->length);
    
    if (!input->useSSE) {
       //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
