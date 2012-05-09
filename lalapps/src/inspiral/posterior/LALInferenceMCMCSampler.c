@@ -79,7 +79,7 @@ accumulateKDTreeSample(LALInferenceRunState *runState) {
   LALInferenceVariables *proposalParams = runState->proposalArgs;
 
   if (!LALInferenceCheckVariable(proposalParams, "kDTree") || !LALInferenceCheckVariable(proposalParams, "kDTreeVariableTemplate")) {
-    /* Improper setup---bail! */
+    /* Not setup correctly. */
     return;
   }
 
@@ -600,11 +600,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     }
 
     if ((i % Nskip) == 0) {
-      if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution")) {
+      if (!LALInferenceGetProcParamVal(runState->commandLine, "--noDifferentialEvolution") && !LALInferenceGetProcParamVal(runState->commandLine, "--nodifferentialevolution")) {
         accumulateDifferentialEvolutionSample(runState);
       }
 
-      if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree")) {
+      if (LALInferenceGetProcParamVal(runState->commandLine, "--kDTree") || LALInferenceGetProcParamVal(runState->commandLine, "--kdtree")) {
         accumulateKDTreeSample(runState);
       }
 
