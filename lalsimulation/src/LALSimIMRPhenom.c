@@ -728,15 +728,10 @@ static int IMRPhenomBGenerateFD(
     /* compute the amplitude */
     if (f <= fMerg)
       ampEff = pow(f / fMerg, -7./6.)*(1. + alpha2 * v2 + alpha3 * v3);
-    else if ((f > fMerg) & (f <= fRing))
-      ampEff = w1 * pow(f / fMerg, mergPower) * (1. + epsilon_1 * v + epsilon_2 * v2);
     else if (f > fRing)
       ampEff = w2 * LorentzianFn(f, fRing, sigma);
-    else {
-      XLALDestroyCOMPLEX16FrequencySeries(*htilde);
-      *htilde = NULL;
-      XLAL_ERROR(XLAL_EDOM);
-    }
+    else /* fMerg < f <= fRing */
+      ampEff = w1 * pow(f / fMerg, mergPower) * (1. + epsilon_1 * v + epsilon_2 * v2);
 
     /* now compute the phase */
     psiEff = -phi0  /* phi is flipped relative to IMRPhenomA */
