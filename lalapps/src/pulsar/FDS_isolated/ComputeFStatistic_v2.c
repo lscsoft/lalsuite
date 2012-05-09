@@ -1049,6 +1049,10 @@ int main(int argc,char *argv[])
     if ( fstatVector->data ) XLALDestroyREAL4Vector ( fstatVector->data );
     XLALFree ( fstatVector );
   }
+  if ( GV.CFparams.buffer ) {
+    XLALEmptyComputeFBuffer_RS( GV.CFparams.buffer );
+    XLALFree ( GV.CFparams.buffer );
+  }
 
   LAL_CALL ( Freemem(&status, &GV), &status);
 
