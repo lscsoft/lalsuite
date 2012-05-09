@@ -1,4 +1,4 @@
-AMCFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalstochastic.la
 
 if LALSUPPORT
