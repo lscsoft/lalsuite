@@ -588,6 +588,7 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
                 if cp.has_option('pipeline','remote-site'):
                   # additional requirements to launch jon on remote pool
                   insp_ckpt_job.set_universe("grid")
+                  insp_ckpt.set_grid_start("pegasuslite")
                   insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','remote-site'))
                   insp_ckpt.add_pegasus_profile("condor","transfer_executable","True")
                   insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
