@@ -1272,7 +1272,6 @@ if opts.dax:
 
 # pegasus 4.x variables
 pegasus.data.configuration=condorio
-pegasus.transfer.worker.package=false
 """
 else:
   print >> pegprop_fh, """\
