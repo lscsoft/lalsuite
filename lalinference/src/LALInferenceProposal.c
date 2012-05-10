@@ -1756,20 +1756,6 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
 
   LALInferenceSetLogProposalRatio(runState, logPropRatio);
 
-  /* If zero-temperature, print output. */
-  REAL8 temperature = *(REAL8 *)LALInferenceGetVariable(runState->proposalArgs, "temperature");
-  if (fabs(temperature - 1.0) < 1e-8) {
-    FILE *out = fopen("kdproposed.dat", "a");
-    size_t i;
-    
-    for (i = 0; i < tree->dim; i++) {
-      fprintf(out, "%g ", proposedPt[i]);
-    }
-    fprintf(out, "\n");
-  
-    fclose(out);
-  }
-
   /* Cleanup the allocated storage for currentPt. */
   XLALFree(currentPt);
   XLALFree(proposedPt);
