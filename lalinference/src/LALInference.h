@@ -491,7 +491,7 @@ void LALInferenceQ2Eta(double q, double *eta);
     be set to a non-zero value until the next re-computation of the
     principal axes.
  */
-typedef struct tagLALInferenceKDCell {
+typedef struct tagLALInferenceKDTree {
   size_t npts; /** Stores the number of tree points that lie in the cell. */
   size_t ptsSize; /** Size of the pts buffer. */
   size_t dim; /** Dimension of the system. */
@@ -509,17 +509,14 @@ typedef struct tagLALInferenceKDCell {
   int eigenFrameStale; /** == 1 when the mean, covariance, and
                            eigenvectors are out of date (i.e. more
                            points added). */
-  struct tagLALInferenceKDCell *left; /** Left (i.e. lower-coordinate)
+  struct tagLALInferenceKDTree *left; /** Left (i.e. lower-coordinate)
                                           sub-tree, may be NULL if
                                           empty.*/
-  struct tagLALInferenceKDCell *right; /** Right
+  struct tagLALInferenceKDTree *right; /** Right
                                            (i.e. upper-coordinate)
                                            sub-tree, may be NULL if
                                            empty. */
-} LALInferenceKDCell;
-
-/** A kD-tree is just a single kD cell. */
-typedef LALInferenceKDCell LALInferenceKDTree;
+} LALInferenceKDTree;
 
 /** Delete a kD-tree.  Also deletes all contained cells, and points. */
 void LALInferenceKDTreeDelete(LALInferenceKDTree *tree);
@@ -529,7 +526,9 @@ void LALInferenceKDTreeDelete(LALInferenceKDTree *tree);
     LALInferenceKDAddPoint(). */
 LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim);
 
-/** Adds a point to the kD-tree, returns 0 on successful exit. */
+/** Adds a point to the kD-tree, returns 0 on successful exit.  The
+    memory for pt is owned by the tree, so should not be deallocated
+    or modified except by LALInferenceKDTreeDelete(). */
 int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
 
 /** Returns the first cell that contains the given point that also
@@ -538,16 +537,16 @@ int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
     returns the cell containing the fewest number of points and the
     given point.  Non-positive Npts will give the fewest-point cell in
     the tree containing the given point.  Returns NULL on error. */
-LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
+LALInferenceKDTree *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
 
 /** Returns the log of the volume of the given cell, which is part of
     the given tree. */
-double LALInferenceKDLogCellVolume(LALInferenceKDCell *cell);
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *cell);
 
 /** Returns the log of the volume of the box aligned with the
     principal axes of the points in the given cell that tightly
     encloses those points. */
-double LALInferenceKDLogCellEigenVolume(LALInferenceKDCell *cell);
+double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell);
 
 /** Fills in the given REAL8 array with the parameter values from
     params; the ordering of the variables is taken from the order of

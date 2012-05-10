@@ -92,7 +92,7 @@ accumulateKDTreeSample(LALInferenceRunState *runState) {
 
   LALInferenceKDAddPoint(tree, pt);
 
-  XLALFree(pt);
+  /* Don't free pt, since it is now stored in tree. */
 }
 
 static void DEbuffer2array(LALInferenceRunState *runState, INT4 startCycle, INT4 endCycle, REAL8** DEarray) {

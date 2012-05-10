@@ -1245,7 +1245,7 @@ void LALInferenceQ2Eta(double q, double *eta)
   return;
 }
 
-static void deleteCell(LALInferenceKDCell *cell) {
+static void deleteCell(LALInferenceKDTree *cell) {
   if (cell == NULL) {
     return; /* Our work here is done. */
   } else {
@@ -1286,7 +1286,7 @@ static void deleteCell(LALInferenceKDCell *cell) {
 }
 
 void LALInferenceKDTreeDelete(LALInferenceKDTree *tree) {
-  deleteCell((LALInferenceKDCell *)tree);
+  deleteCell(tree);
 }
 
 typedef enum {
@@ -1295,8 +1295,8 @@ typedef enum {
   TOP
 } cellType;
 
-static LALInferenceKDCell *newCell(size_t ndim, REAL8 *lowerLeft, REAL8 *upperRight, size_t level, cellType type) {
-  LALInferenceKDCell *cell = XLALCalloc(1, sizeof(LALInferenceKDCell));
+static LALInferenceKDTree *newCell(size_t ndim, REAL8 *lowerLeft, REAL8 *upperRight, size_t level, cellType type) {
+  LALInferenceKDTree *cell = XLALCalloc(1, sizeof(LALInferenceKDTree));
   size_t i;
 
   cell->lowerLeft = XLALCalloc(ndim, sizeof(REAL8));
@@ -1331,8 +1331,8 @@ static LALInferenceKDCell *newCell(size_t ndim, REAL8 *lowerLeft, REAL8 *upperRi
 }
 
 LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim) {
-  LALInferenceKDCell *cell = newCell(ndim, lowerLeft, upperRight, 0, TOP);
-  return (LALInferenceKDTree *)cell;
+  LALInferenceKDTree *cell = newCell(ndim, lowerLeft, upperRight, 0, TOP);
+  return cell;
 }
 
 static int equalPoints(REAL8 *a, REAL8 *b, size_t n) {
@@ -1343,7 +1343,7 @@ static int equalPoints(REAL8 *a, REAL8 *b, size_t n) {
   return 1;
 }
 
-static int cellAllEqualPoints(LALInferenceKDCell *cell) {
+static int cellAllEqualPoints(LALInferenceKDTree *cell) {
   if (cell->npts <= 1) {
     return 1;
   } else {
@@ -1358,19 +1358,21 @@ static int cellAllEqualPoints(LALInferenceKDCell *cell) {
   }
 }
 
-static void addPtToCellPts(LALInferenceKDCell *cell, REAL8 *pt) {
-  if (cell->npts == cell->ptsSize) {
-    REAL8 **newPts = XLALCalloc(2*cell->ptsSize, sizeof(REAL8 *));
+static void addPtToCellPts(LALInferenceKDTree *cell, REAL8 *pt) {
+  size_t ptsSize = cell->ptsSize;
+  size_t npts = cell->npts;
 
-    memcpy(newPts, cell->pts, cell->ptsSize*sizeof(REAL8 *));
+  if (npts == ptsSize) {
+    REAL8 **newPts = XLALCalloc(2*ptsSize, sizeof(REAL8 *));
 
-    free(cell->pts);
+    memcpy(newPts, cell->pts, npts*sizeof(REAL8 *));
+
+    XLALFree(cell->pts);
     cell->pts=newPts;
     cell->ptsSize *= 2;
   }
 
-  cell->pts[cell->npts] = XLALCalloc(cell->dim, sizeof(REAL8));
-  memcpy(cell->pts[cell->npts], pt, cell->dim*sizeof(REAL8));
+  cell->pts[npts] = pt;
   cell->npts += 1;
   cell->eigenFrameStale = 1;
 }
@@ -1392,7 +1394,7 @@ static void addPtToCellPts(LALInferenceKDCell *cell, REAL8 *pt) {
    appropriate sub-cell.
 
 */
-static int insertIntoCell(LALInferenceKDCell *cell, REAL8 *pt, size_t level) {
+static int insertIntoCell(LALInferenceKDTree *cell, REAL8 *pt, size_t level) {
   size_t dim = cell->dim;
   size_t nextLevel = (level+1)%dim;
   level = level%dim;
@@ -1454,18 +1456,16 @@ static int inBounds(REAL8 *pt, REAL8 *low, REAL8 *high, size_t n) {
   return 1;
 }
 
-static void computeMean(LALInferenceKDCell *cell) {
+static void computeMean(LALInferenceKDTree *cell) {
   REAL8 **pts = cell->pts;
   REAL8 *mean = cell->ptsMean;
   size_t dim = cell->dim;
   size_t npts = cell->npts;
   size_t i;
 
-  if (pts == NULL) {
-    return;
+  for (i = 0; i < dim; i++) {
+    mean[i] = 0.0;
   }
-
-  if (mean == NULL) XLAL_ERROR_VOID(XLAL_EINVAL, "given improperly initialized cell");
 
   for (i = 0; i < npts; i++) {
     size_t j;
@@ -1479,7 +1479,7 @@ static void computeMean(LALInferenceKDCell *cell) {
   }
 }
 
-static void computeCovariance(LALInferenceKDCell *cell) {
+static void computeCovariance(LALInferenceKDTree *cell) {
   REAL8 **cov = cell->ptsCov;
   REAL8 **pts = cell->pts;
   REAL8 *mu = cell->ptsMean;
@@ -1487,13 +1487,12 @@ static void computeCovariance(LALInferenceKDCell *cell) {
   size_t dim = cell->dim;
   size_t i;
 
-  if (pts == NULL) return;
-
-  if (mu == NULL) {
-    XLAL_ERROR_VOID(XLAL_EINVAL, "given cell with NULL mean");
+  for (i = 0; i < dim; i++) {
+    size_t j;
+    for (j = 0; j < dim; j++) {
+      cov[i][j] = 0.0;
+    }
   }
-
-  if (cov == NULL) XLAL_ERROR_VOID(XLAL_EINVAL, "given improperly initialized cell");
 
   for (i = 0; i < npts; i++) {
     size_t j;
@@ -1530,7 +1529,7 @@ static void computeEigenVectorsCleanup(gsl_matrix *A, gsl_matrix *evects, gsl_ve
   if (ws != NULL) gsl_eigen_symmv_free(ws);
 }
 
-static void computeEigenVectors(LALInferenceKDCell *cell) {
+static void computeEigenVectors(LALInferenceKDTree *cell) {
   size_t dim = cell->dim;
   gsl_matrix *A = gsl_matrix_alloc(dim, dim);
   gsl_matrix *evects = gsl_matrix_alloc(dim, dim);
@@ -1547,13 +1546,6 @@ static void computeEigenVectors(LALInferenceKDCell *cell) {
     computeEigenVectorsCleanup(A, evects, evals, ws);
     XLAL_ERROR_VOID(XLAL_ENOMEM);
   }
-
-  if (cov == NULL) {
-    computeEigenVectorsCleanup(A, evects, evals, ws);
-    return;
-  }
-
-  if (covEVs == NULL) XLAL_ERROR_VOID(XLAL_EINVAL, "given improperly initialized cell");
 
   /* Copy covariance matrix into A. */
   for (i = 0; i < dim; i++) {
@@ -1591,8 +1583,8 @@ static void toEigenFrame( size_t dim,  REAL8 **eigenvs,  REAL8 *x, REAL8 *xe) {
 
   for (j = 0; j < dim; j++) {
     size_t i;
-     REAL8 xj = x[j];
-     REAL8 *evj = eigenvs[j];
+    REAL8 xj = x[j];
+    REAL8 *evj = eigenvs[j];
     for (i = 0; i < dim; i++) {
       xe[i] += evj[i]*xj;
     }
@@ -1614,7 +1606,7 @@ static void fromEigenFrame( size_t dim,  REAL8 **eigenvs,  REAL8 *xe, REAL8 *x) 
   }
 }
 
-static void computeEigenMinMax(LALInferenceKDCell *cell) {
+static void computeEigenMinMax(LALInferenceKDTree *cell) {
   REAL8 **pts = cell->pts;
   size_t dim = cell->dim;
   size_t npts = cell->npts;
@@ -1637,22 +1629,6 @@ static void computeEigenMinMax(LALInferenceKDCell *cell) {
     XLAL_ERROR_VOID(XLAL_ENOMEM);
   }
 
-  if (pts==NULL) {
-    XLALFree(x);
-    XLALFree(xe);
-    return;
-  }
-
-  if (eigenvs == NULL || mu == NULL) {
-    XLALFree(x);
-    XLALFree(xe);
-    XLAL_ERROR_VOID(XLAL_EINVAL, "NULL cell components");
-  }
-
-  if (min == NULL) XLAL_ERROR_VOID(XLAL_EINVAL, "given improperly initialized cell");
-
-  if (max == NULL) XLAL_ERROR_VOID(XLAL_EINVAL, "given improperly initialized cell");
-
   for (i = 0; i < dim; i++) {
     min[i] = 1.0/0.0;
     max[i] = -1.0/0.0;
@@ -1672,9 +1648,12 @@ static void computeEigenMinMax(LALInferenceKDCell *cell) {
       if (xe[j] > max[j]) max[j] = xe[j];
     }
   }
+
+  XLALFree(x);
+  XLALFree(xe);
 }
 
-static void updateEigenSystem(LALInferenceKDCell *cell) {
+static void updateEigenSystem(LALInferenceKDTree *cell) {
   computeMean(cell);
   computeCovariance(cell);
   computeEigenVectors(cell);
@@ -1684,29 +1663,27 @@ static void updateEigenSystem(LALInferenceKDCell *cell) {
 }
 
 int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt) {
-  LALInferenceKDCell *cell = (LALInferenceKDCell *)tree;
-
   if (tree == NULL) XLAL_ERROR(XLAL_EINVAL, "given NULL tree");
 
-  if (!inBounds(pt, cell->lowerLeft, cell->upperRight, cell->dim))
+  if (!inBounds(pt, tree->lowerLeft, tree->upperRight, tree->dim))
     XLAL_ERROR(XLAL_EINVAL, "given point that is not in global tree bounds");
 
-  return insertIntoCell(cell, pt, 0);
+  return insertIntoCell(tree, pt, 0);
 }
 
-static LALInferenceKDCell *doFindCell(LALInferenceKDCell *cell, REAL8 *pt, size_t dim, size_t Npts, size_t level) {
+static LALInferenceKDTree *doFindCell(LALInferenceKDTree *cell, REAL8 *pt, size_t dim, size_t Npts, size_t level) {
   if (cell == NULL) {
     /* If we encounter a NULL cell, then pass it up the chain. */
     return cell;
   } else if (cell->npts == 0) {
-    XLAL_ERROR_NULL(XLAL_FAILURE, "could not find cell containing point");
+    return NULL;
   } else if (cell->npts == 1 || cell->npts < Npts) {
     return cell;
   } else {
     REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
 
     if (pt[level] <= mid) {
-      LALInferenceKDCell *maybeCell = doFindCell(cell->left, pt, dim, Npts, (level+1)%dim);
+      LALInferenceKDTree *maybeCell = doFindCell(cell->left, pt, dim, Npts, (level+1)%dim);
       if (maybeCell == NULL) {
         return cell; /* If a NULL comes up from below, then this cell
                         is the one with the fewest points containing
@@ -1715,7 +1692,7 @@ static LALInferenceKDCell *doFindCell(LALInferenceKDCell *cell, REAL8 *pt, size_
         return maybeCell;
       }
     } else {
-      LALInferenceKDCell *maybeCell = doFindCell(cell->right, pt, dim, Npts, (level+1)%dim);
+      LALInferenceKDTree *maybeCell = doFindCell(cell->right, pt, dim, Npts, (level+1)%dim);
       if (maybeCell == NULL) {
         return cell;
       } else {
@@ -1725,12 +1702,11 @@ static LALInferenceKDCell *doFindCell(LALInferenceKDCell *cell, REAL8 *pt, size_
   }
 }
 
-LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts) {
-  LALInferenceKDCell *cell = (LALInferenceKDCell *)tree;
-  return doFindCell(cell, pt, cell->dim, Npts, 0);
+LALInferenceKDTree *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts) {
+  return doFindCell(tree, pt, tree->dim, Npts, 0);
 }
 
-double LALInferenceKDLogCellVolume(LALInferenceKDCell *cell) {
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *cell) {
   size_t ndim = cell->dim;
   size_t i;
   REAL8 logVol = 0.0;
@@ -1741,7 +1717,7 @@ double LALInferenceKDLogCellVolume(LALInferenceKDCell *cell) {
   return logVol;
 }
 
-double LALInferenceKDLogCellEigenVolume(LALInferenceKDCell *cell) {
+double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell) {
   double logVol = 0.0;
   size_t ndim = cell->dim;
   size_t i;
@@ -1784,11 +1760,11 @@ void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LA
 }
 
 void LALInferenceKDDrawEigenFrame(gsl_rng *rng, LALInferenceKDTree *tree, REAL8 *pt, size_t Npts) {
-  LALInferenceKDCell *topCell = (LALInferenceKDCell *)tree;
+  LALInferenceKDTree *topCell = tree;
 
   if (topCell == NULL || topCell->npts == 0) XLAL_ERROR_VOID(XLAL_EINVAL, "cannot draw from empty cell");
 
-  LALInferenceKDCell *cell = LALInferenceKDFindCell(tree, topCell->pts[gsl_rng_uniform_int(rng, topCell->npts)], Npts);
+  LALInferenceKDTree *cell = LALInferenceKDFindCell(tree, topCell->pts[gsl_rng_uniform_int(rng, topCell->npts)], Npts);
 
   if (cell->npts == 1) {
     /* If there is one point, then the covariance matrix is undefined,
@@ -1822,7 +1798,7 @@ void LALInferenceKDDrawEigenFrame(gsl_rng *rng, LALInferenceKDTree *tree, REAL8 
   }
 }
 
-static int inEigenBox(LALInferenceKDCell *cell,  REAL8 *pt) {
+static int inEigenBox(LALInferenceKDTree *cell,  REAL8 *pt) {
   REAL8 *shiftedPt, *ept;
   size_t i;
 
@@ -1854,10 +1830,10 @@ static int inEigenBox(LALInferenceKDCell *cell,  REAL8 *pt) {
 
 REAL8 LALInferenceKDLogProposalRatio(LALInferenceKDTree *tree, REAL8 *current, 
                                      REAL8 *proposed, size_t Npts) {
-  LALInferenceKDCell *currentCell = LALInferenceKDFindCell(tree, current, Npts);
-  LALInferenceKDCell *proposedCell = LALInferenceKDFindCell(tree, proposed, Npts);
+  LALInferenceKDTree *currentCell = LALInferenceKDFindCell(tree, current, Npts);
+  LALInferenceKDTree *proposedCell = LALInferenceKDFindCell(tree, proposed, Npts);
 
-  LALInferenceKDCell *topCell = (LALInferenceKDCell *)tree;
+  LALInferenceKDTree *topCell = tree;
 
   size_t npts = topCell->npts;
 
