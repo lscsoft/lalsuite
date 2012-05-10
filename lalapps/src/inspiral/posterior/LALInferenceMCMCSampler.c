@@ -1178,7 +1178,11 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
       theEventTable->next = NULL;
     }
 
-    REAL8 q = theEventTable->mass2 / theEventTable->mass1;
+    REAL8 m1 = theEventTable->mass1;
+    REAL8 m2 = theEventTable->mass2;
+    REAL8 q = m2/m1;
+    REAL8 eta = m1*m2/(m1+m2)/(m1+m2);
+
     if (q > 1.0) q = 1.0/q;
 
     REAL8 sx = theEventTable->spin1x;
@@ -1225,7 +1229,18 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     REAL8 ra = theEventTable->longitude;
 
     LALInferenceSetVariable(runState->currentParams, "chirpmass", &chirpmass);
-    LALInferenceSetVariable(runState->currentParams, "asym_massratio", &q);
+    if (LALInferenceCheckVariable(runState->currentParams, "asym_massratio")) {
+      LALInferenceSetVariable(runState->currentParams, "asym_massratio", &q);
+    } else if (LALInferenceCheckVariable(runState->currentParams, "massratio")) {
+      LALInferenceSetVariable(runState->currentParams, "massratio", &eta);
+    } else {
+      /* Restore state, cleanup, and throw error */
+      LALInferenceCopyVariables(saveParams, runState->currentParams);
+      XLALFree(fname);
+      LALInferenceDestroyVariables(saveParams);
+      XLALFree(saveParams);
+      XLAL_ERROR_VOID(XLAL_EINVAL, "unknown mass ratio parameter name (allowed are 'massratio' or 'asym_massratio')");
+    }
     LALInferenceSetVariable(runState->currentParams, "time", &injGPSTime);
     LALInferenceSetVariable(runState->currentParams, "distance", &dist);
     LALInferenceSetVariable(runState->currentParams, "inclination", &inclination);
