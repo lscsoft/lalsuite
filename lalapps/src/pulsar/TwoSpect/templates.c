@@ -83,7 +83,7 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    for (ii=0; ii<numofweights; ii++) sumofsqweights += (templatestruct->templatedata->data[ii]*templatestruct->templatedata->data[ii]);
    REAL8 sumofsqweightsinv = 1.0/sumofsqweights;
    
-   REAL4Vector *Rs = XLALCreateREAL4Vector((UINT4)trials);
+   REAL4Vector *Rs = XLALCreateREAL4Vector(trials);
    if (Rs==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, trials);
       XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -120,7 +120,7 @@ void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials,
    
    //Do an insertion sort. At best this is O(thresh*trials), at worst this is O(thresh*trials*trials).
    if (output->topRvalues == NULL) {
-      output->topRvalues = XLALCreateREAL4Vector((UINT4)roundf(thresh*trials)+1);
+      output->topRvalues = XLALCreateREAL4Vector((INT4)round(thresh*trials)+1);
       if (output->topRvalues==NULL) {
          fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf(thresh*trials)+1);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -404,8 +404,8 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       }
    }
    
-   REAL8Vector *newweights = XLALCreateREAL8Vector((UINT4)numweights);
-   INT4Vector *sorting = XLALCreateINT4Vector((UINT4)numweights);
+   REAL8Vector *newweights = XLALCreateREAL8Vector(numweights);
+   INT4Vector *sorting = XLALCreateINT4Vector(numweights);
    if (newweights==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numweights);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
@@ -867,14 +867,25 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       if (!params->useSSE || (params->useSSE && params->validateSSE) || (params->useSSE && needtocomputecos==1)) {
          if (!params->useSSE) {
             for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
-               //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
+               /* //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
                if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
                else exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = 0.0;
                
                twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
                cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
                
-               datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0);
+               datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0); */
+               
+               //Do all or nothing if the exponential is too negative
+               if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) {
+                  exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
+                  twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
+                  cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
+                  datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0);
+               } else {
+                  datavector->data[jj] = 0.0;
+               }
+               
             }
          } else if (params->useSSE && params->validateSSE) {
             for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {

@@ -488,7 +488,20 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
       if (params->useSSE) {
          sseScaleREAL4Vector(scaledExpectedIHSVectorValues, outputfar->expectedIHSVector, FbinMean->data[ii]); //Scale the expected IHS vector
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
          sseSSVectorSequenceSubtract(excessabovenoise, ihsvectorsequence, scaledExpectedIHSVectorValues, ii);  //subtract the noise from the data
+         if (xlalErrno!=0) {
+            fprintf(stderr, "%s: sseSSVectorSequenceSubtract() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      } else {
+         for (jj=0; jj<(INT4)scaledExpectedIHSVectorValues->length; jj++) {
+            scaledExpectedIHSVectorValues->data[jj] = FbinMean->data[ii]*outputfar->expectedIHSVector->data[jj];
+            excessabovenoise->data[jj] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + jj] - scaledExpectedIHSVectorValues->data[jj];
+         }
       }
       ihslocations->data[ii] = max_index(excessabovenoise) + 5;
       ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
@@ -637,9 +650,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          outputfar->ihsfomdistMean->data[ii-2] = calcMean(foms);
          outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(foms);
          if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-            REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihsvalues->length-ii+1)*params->ihsfomfar)+1);
+            REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((INT4)round((ihsvalues->length-ii+1)*params->ihsfomfar)+1);
             if (smallestfomvals==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihsvalues->length-ii)*params->ihsfomfar)+1);
+               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)round((ihsvalues->length-ii)*params->ihsfomfar)+1);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
             sort_float_smallest(smallestfomvals, foms);
@@ -767,9 +780,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          outputfar->ihsfomdistMean->data[ii-2] = calcMean(foms);
          outputfar->ihsfomdistSigma->data[ii-2] = calcStddev(foms);
          if (params->ihsfomfar!=1.0 && params->ihsfom==0.0) {
-            REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((UINT4)roundf((ihsvalues->length-ii+1)*params->ihsfomfar)+1);
+            REAL4Vector *smallestfomvals = XLALCreateREAL4Vector((INT4)round((ihsvalues->length-ii+1)*params->ihsfomfar)+1);
             if (smallestfomvals==NULL) {
-               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)roundf((ihsvalues->length-ii)*params->ihsfomfar)+1);
+               fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)round((ihsvalues->length-ii)*params->ihsfomfar)+1);
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
             sort_float_smallest(smallestfomvals, foms);
@@ -881,8 +894,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          
-         //If user has specified using SSE or validate SSE functions
-         if (params->useSSE || params->validateSSE) {
+         //If user has specified using SSE
+         if (params->useSSE) {
             //Sum up the IHS vectors using SSE function
             sseSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, 0, 1, 0, (INT4)ihsvectorsequence->length-(ii-1));
             if (xlalErrno!=0) {
@@ -930,7 +943,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             }
             
             //If using SSE or if the user has specified to validate the SSE functions
-            if (params->useSSE || (params->validateSSE && jj==0)) {
+            if (params->useSSE) {
                //Scale the expected IHS vector
                sseScaleREAL4Vector(scaledExpectedIHSVectorValues, inputfar->expectedIHSVector, sumofnoise);
                if (xlalErrno!=0) {

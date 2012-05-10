@@ -559,9 +559,9 @@ int main(int argc, char *argv[])
       }
       
       //Slide SFTs here -- need to slide the data and the estimated background
-      REAL4Vector *TFdata_slided = XLALCreateREAL4Vector((UINT4)(ffdata->numffts*ffdata->numfbins));
+      REAL4Vector *TFdata_slided = XLALCreateREAL4Vector(ffdata->numffts*ffdata->numfbins);
       if (TFdata_slided==NULL) {
-         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (UINT4)(ffdata->numffts*ffdata->numfbins));
+         fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts*ffdata->numfbins);
          XLAL_ERROR(XLAL_EFUNC);
       }
       REAL4Vector *background_slided = XLALCreateREAL4Vector(TFdata_slided->length);
@@ -710,6 +710,8 @@ int main(int argc, char *argv[])
       REAL4 secFFTsigma = calcStddev(ffdata->ffdata);
       
       XLALDestroyREAL4Vector(TFdata_weighted);
+      TFdata_weighted = NULL;
+      
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
       //TODO: comment this out
       /* FILE *FFDATA = fopen("./output/ffdata.dat","w");
@@ -1250,7 +1252,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    if (sfts->length == 0) sftlength = (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
    else sftlength = sfts->data->data->length;
    INT4 nonexistantsft = 0;
-   REAL4Vector *tfdata = XLALCreateREAL4Vector((UINT4)(numffts*sftlength));
+   REAL4Vector *tfdata = XLALCreateREAL4Vector(numffts*sftlength);
    if (tfdata==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts*sftlength);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1977,17 +1979,18 @@ void tfWeight(REAL4Vector *output, REAL4Vector *tfdata, REAL4Vector *rngMeans, R
    //memset(output->data, 0, sizeof(REAL4)*output->length);
    //memset(rngMeanssq->data, 0, sizeof(REAL4)*rngMeanssq->length);
    
-   if (!input->useSSE) {
+   //User specifies whether to use SSE to do the multiplication or not
+   if (input->useSSE) {
+      antweightssq = sseSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   } else {
       //for (ii=0; ii<numffts; ii++) antweightssq->data[ii] = antPatternWeights->data[ii]*antPatternWeights->data[ii];
       antweightssq = XLALSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: XLALSSVectorMultiply() failed.\n", __func__);
-         XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
-   } else {
-      antweightssq = sseSSVectorMultiply(antweightssq, antPatternWeights, antPatternWeights);
-      if (xlalErrno!=0) {
-         fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
    }
@@ -2187,7 +2190,7 @@ REAL4 avgTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 {
    
    INT4 ii;
-   REAL4Vector *aveNoiseInTime = XLALCreateREAL4Vector((UINT4)numffts);
+   REAL4Vector *aveNoiseInTime = XLALCreateREAL4Vector(numffts);
    REAL4Vector *rngMeansOverBand = XLALCreateREAL4Vector((UINT4)(binmax-binmin));
    if (aveNoiseInTime==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
@@ -2226,7 +2229,7 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 {
    
    INT4 ii;
-   REAL4Vector *aveNoiseInTime = XLALCreateREAL4Vector((UINT4)numffts);
+   REAL4Vector *aveNoiseInTime = XLALCreateREAL4Vector(numffts);
    REAL4Vector *rngMeansOverBand = XLALCreateREAL4Vector((UINT4)(binmax-binmin));
    if (aveNoiseInTime==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numffts);
