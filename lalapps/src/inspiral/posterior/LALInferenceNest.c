@@ -356,10 +356,10 @@ Nested sampling arguments:\n\
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
 				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-    if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppylogit")))
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyfraction")))
         tmp=atof(ppt->value);
     else tmp=0.0;
-    LALInferenceAddVariable(runState->algorithmParams,"sloppylogit",&tmp,
+    LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
                     LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 	printf("set number of parallel runs.\n");

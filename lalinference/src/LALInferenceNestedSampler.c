@@ -267,6 +267,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	REAL8 zero=0.0;
 	REAL8 *logLikelihoods=NULL;
 	UINT4 verbose=0;
+    REAL8 sloppyfrac;
 	UINT4 displayprogress=0;
 	LALInferenceVariableItem *param_ptr;
 	LALInferenceVariables currentVars;
@@ -483,8 +484,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logw=mean(logwarray,Nruns);
 		LALInferenceAddVariable(runState->livePoints[minpos],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 		dZ=logadd(logZ,logLmax-((double) iter)/((double)Nlive))-logZ;
-		REAL8 sloppylogit=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppylogit");
-		REAL8 sloppyfrac=exp(sloppylogit)/(1.0+exp(sloppylogit));
+		sloppyfrac=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppyfraction");
 		if(displayprogress) fprintf(stderr,"%i: (%2.1lf%%) accpt: %1.3f Nmcmc: %i sub_accpt: %1.3f slpy: %2.1f%% H: %3.3lf nats (%3.3lf b) logL:%lf ->%lf logZ: %lf dZ: %lf Zratio: %lf db\n",\
 		  iter,\
 		  100.0*((REAL8)iter)/(((REAL8) Nlive)*H),\
@@ -503,7 +503,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the proposal */
-		if(!(iter%(Nlive/2))) {                  
+		if(!(iter%(Nlive/4))) {
             /* Update the covariance matrix */
             if ( LALInferenceCheckVariable( runState->proposalArgs,"covarianceMatrix" ) ){
 		        LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
@@ -556,6 +556,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                 for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
                 LALInferenceDestroyVariables(acls);
                 free(acls);
+                max*=2;
                 LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
 		    }
 	      }
@@ -939,15 +940,12 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceCopyVariables(runState->currentParams,&oldParams);
     REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
     UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
-    REAL8 sloppylogit;
-    REAL8 maxSloppyLogit=log(((float)Nmcmc-1.0)/1.0);
-    REAL8 minSloppyLogit=log(1.0/((float)Nmcmc-1.0));
-    if(Nmcmc==1) maxSloppyLogit=minSloppyLogit=0.0;
-    if (LALInferenceCheckVariable(runState->algorithmParams,"sloppylogit"))
-      sloppylogit=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppylogit");
-    else
-      sloppylogit=0.0;
-    REAL8 sloppyfraction = exp(sloppylogit)/(1+exp(sloppylogit));
+    REAL8 sloppyfraction=0.;
+    REAL8 maxsloppyfraction=((REAL8)Nmcmc-1)/(REAL8)Nmcmc ;
+    REAL8 minsloppyfraction=0.;
+    if(Nmcmc==1) maxsloppyfraction=minsloppyfraction=0.0;
+    if (LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
+      sloppyfraction=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppyfraction");
     UINT4 mcmc_iter=0,Naccepted=0,sub_accepted=0;
     //INT4 Nlive=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
     UINT4 sloppynumber=(UINT4) (sloppyfraction*(REAL8)Nmcmc);
@@ -963,20 +961,20 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     do{
         /* Draw an independent sample from the prior */
         sub_accepted+=LALInferenceMCMCSamplePriorNTimes(runState,subchain_length);
-	if(sub_accepted==0.) {
-        //    INT4 j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
-        //    LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
-        //    runState->currentLikelihood = logLikelihoods[j];
-	  tries++;
-	  sub_iter+=subchain_length-1;
-	  mcmc_iter++;
-      LALInferenceCopyVariables(&oldParams,runState->currentParams);
-      runState->currentLikelihood=logLold;
-	  continue;
+	    if(sub_accepted==0.) {
+            //    INT4 j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
+            //    LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
+            //    runState->currentLikelihood = logLikelihoods[j];
+	        tries++;
+	        sub_iter+=subchain_length;
+	        mcmc_iter++;
+            LALInferenceCopyVariables(&oldParams,runState->currentParams);
+            runState->currentLikelihood=logLold;
+	        continue;
         }
         tries=0;
         mcmc_iter++;
-    	  sub_iter+=subchain_length-1;
+    	sub_iter+=subchain_length;
         logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
@@ -1009,13 +1007,13 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
     if(logLmin!=-DBL_MAX){
-        if((REAL8)accept_rate>Target) { sloppylogit+=0.1;}
-        else { sloppylogit-=.1;}
-        if(sloppylogit>maxSloppyLogit) sloppylogit=maxSloppyLogit;
-	if(sloppylogit<minSloppyLogit) sloppylogit=minSloppyLogit;
+        if((REAL8)accept_rate>Target) { sloppyfraction+=1.0/(REAL8)Nmcmc;}
+        else { sloppyfraction-=1.0/(REAL8)Nmcmc;}
+        if(sloppyfraction>maxsloppyfraction) sloppyfraction=maxsloppyfraction;
+	if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
         //if(sloppylogit<1) sloppy=1;
 	
-	LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&sloppylogit);
+	LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
         //LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&Nmcmc);
     }
     LALInferenceDestroyVariables(&oldParams);
