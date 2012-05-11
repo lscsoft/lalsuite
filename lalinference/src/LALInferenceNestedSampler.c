@@ -556,7 +556,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
                 for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
                 LALInferenceDestroyVariables(acls);
                 free(acls);
-                max*=2;
                 LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
 		    }
 	      }
@@ -956,11 +955,19 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     REAL8 logLnew;
     UINT4 sub_iter=0;
     UINT4 tries=0;
+    REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
     //REAL8 *logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
     do{
+        counter=counter-1.;
+        subchain_length=0;
         /* Draw an independent sample from the prior */
-        sub_accepted+=LALInferenceMCMCSamplePriorNTimes(runState,subchain_length);
+        do{
+            sub_accepted+=LALInferenceMCMCSamplePrior(runState);
+            subchain_length++;
+            counter+=(1.-sloppyfraction);
+        }while(counter<1);
+
 	    if(sub_accepted==0.) {
             //    INT4 j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
             //    LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
@@ -1007,8 +1014,8 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
     if(logLmin!=-DBL_MAX){
-        if((REAL8)accept_rate>Target) { sloppyfraction+=1.0/(REAL8)Nmcmc;}
-        else { sloppyfraction-=1.0/(REAL8)Nmcmc;}
+        if((REAL8)accept_rate>Target) { sloppyfraction+=5.0/(REAL8)Nmcmc;}
+        else { sloppyfraction-=5.0/(REAL8)Nmcmc;}
         if(sloppyfraction>maxsloppyfraction) sloppyfraction=maxsloppyfraction;
 	if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
         //if(sloppylogit<1) sloppy=1;
