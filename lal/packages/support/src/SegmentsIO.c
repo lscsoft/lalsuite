@@ -85,7 +85,7 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
   }
 
   /*-- Open the file for reading --*/
-  fp = LALOpenDataFile( fileName );
+  fp = fopen( fileName, "r" );
   if ( fp == NULL ) {
     ABORT( status, SEGMENTSIOH_EOPENR, SEGMENTSIOH_MSGEOPENR );
   }

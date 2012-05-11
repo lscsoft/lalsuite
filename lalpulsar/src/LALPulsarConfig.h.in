@@ -24,7 +24,4 @@
 /* LALPulsar Configure Date */
 #undef LALPULSAR_CONFIGURE_DATE
 
-/* Define to 1 if you have the LALXML library */
-#undef HAVE_LIBLALXML
-
 #endif /* _LALPULSARCONFIG_H */

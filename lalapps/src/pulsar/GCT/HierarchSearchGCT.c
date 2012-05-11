@@ -1489,7 +1489,6 @@ int MAIN( int argc, char *argv[]) {
 
                     /* point the params buffer to the current segment buffer */
                     CFparams.buffer = resampbuffers.data[k];
-                    printf("k = %d\n",k);
                     /* Resampling method implementation to compute the F-statistic */
                     LAL_CALL( COMPUTEFSTATFREQBAND_RS ( &status, &fstatVector.data[k], &thisPoint,
                                                         stackMultiSFT.data[k], stackMultiNoiseWeights.data[k],

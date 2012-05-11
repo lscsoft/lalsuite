@@ -1443,46 +1443,7 @@ int main( int argc, char *argv[] )
       }
       else if (injApproximant == NumRelNinja2)
       {
-        /* New REAL8, NINJA-2 code */
-        REAL8TimeSeries *tempStrain = NULL;
-        REAL8TimeSeries *tempChan   = NULL;
-
-        /* Make a REAL8 version of the channel data    */
-        /* so we can call Jolien's new inject function */
-        tempChan = XLALCreateREAL8TimeSeries(
-                                chan.name,
-                                &(chan.epoch),
-                                chan.f0,
-                                chan.deltaT,
-                                &(chan.sampleUnits),
-                                chan.data->length);
-
-        for ( j = 0 ; j < tempChan->data->length ; ++j )
-          {
-            tempChan->data->data[j] = (REAL8) ( chan.data->data[j] );
-          }
-
-        /* loop over injections */
-        for ( thisInj = injections; thisInj; thisInj = thisInj->next )
-          {
-            tempStrain = XLALNRInjectionStrain(ifo, thisInj);
-
-            for ( j = 0 ; j < tempStrain->data->length ; ++j )
-              {
-                tempStrain->data->data[j] *= dynRange;
-              }
-
-            XLALSimAddInjectionREAL8TimeSeries( tempChan, tempStrain, NULL);
-            XLALDestroyREAL8TimeSeries(tempStrain);
-          } /* loop over injections */
-
-        /* Back to REAL4 */
-        for ( j = 0 ; j < tempChan->data->length ; ++j )
-          {
-            chan.data->data[j] = (REAL4) ( tempChan->data->data[j] );
-          }
-
-        XLALDestroyREAL8TimeSeries(tempChan);
+        XLALSimInjectNinjaSignals(&chan,ifo,dynRange,injections);
       }
       else
       {

@@ -1533,6 +1533,9 @@ void initVariables(LALInferenceRunState *state)
 
   /* KD Tree propsal. */
   ppt=LALInferenceGetProcParamVal(commandLine, "--kDTree");
+  if (!ppt) {
+    ppt = LALInferenceGetProcParamVal(commandLine, "--kdtree");
+  }
   if (ppt) {
     LALInferenceKDTree *tree;
     REAL8 *low, *high;

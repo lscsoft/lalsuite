@@ -303,6 +303,7 @@ int main(INT4 argc, CHAR *argv[])
       this_inj->spin2x = metaData.spin2[0];
       this_inj->spin2y = metaData.spin2[1];
       this_inj->spin2z = metaData.spin2[2];
+      this_inj->f_lower = metaData.freqStart22;
 
       strcpy(this_inj->numrel_data, frInCache->frameFiles[k].url);
 

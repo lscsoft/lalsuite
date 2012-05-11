@@ -237,7 +237,7 @@ void XLALSkymapPlanConstruct(int sampleFrequency, int n, int* detectors, XLALSky
 
 void XLALSkymapDirectionPropertiesConstruct(
         XLALSkymapPlanType* plan,
-        double* directions,
+        double directions[2],
         XLALSkymapDirectionPropertiesType* properties
         )
 {

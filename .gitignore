@@ -1,9 +1,13 @@
 *.swp
+*.trs
 *~
 .DS_Store
+/_inst/
 Makefile
 Makefile.in
+TAGS
 aclocal.m4
+auto/
 autom4te.cache/
 config.log
 config.status
@@ -11,6 +15,3 @@ configure
 lalsuite-*.tar.gz
 lalsuite.spec
 libtool
-TAGS
-auto/
-/_inst/

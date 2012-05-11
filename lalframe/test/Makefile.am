@@ -1,4 +1,4 @@
-AMCFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CFLAGS = $(LALSUPPORT_CFLAGS)
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalframe.la
 
 FRAMEFILES = \
@@ -10,6 +10,25 @@ FRAMEFILES = \
 	L-CAL_FAC_V03-729273600-5094000.gwf \
 	L-CAL_REF_V03-731488397-64.gwf
 
+if PTHREAD
+PTHREADPRGS = \
+	TestLowLatencyData1 \
+	TestLowLatencyData2 \
+	TestLowLatencyData3
+
+# FIXME: technically codes that link against libpthread need to build
+# using the PTHREAD_CC compiler and not CC, this is only a different
+# compiler on AIX
+
+# set appropriate pthread flags
+TestLowLatencyData1_LDADD = $(PTHREAD_LIBS) $(LDADD)
+TestLowLatencyData1_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+TestLowLatencyData2_LDADD = $(PTHREAD_LIBS) $(LDADD)
+TestLowLatencyData2_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+TestLowLatencyData3_LDADD = $(PTHREAD_LIBS) $(LDADD)
+TestLowLatencyData3_CFLAGS = $(PTHREAD_CFLAGS) $(AM_CFLAGS)
+endif
+
 if LALSUPPORT
 check_PROGRAMS = \
 	AggregationTest \
@@ -17,21 +36,14 @@ check_PROGRAMS = \
 	FrameDataTest \
 	FrameStreamTest \
 	MakeFrames \
-	TestLowLatencyData1 \
-	TestLowLatencyData2 \
-	TestLowLatencyData3 \
 	Read40mData \
 	ReadGEOData \
-	ReadLHOData
+	ReadLHOData \
+	$(PTHREADPRGS)
 TESTS = \
-	TestLowLatencyData1 \
-	TestLowLatencyData2 \
-	TestLowLatencyData3 \
 	FrameCacheTest.sh \
-	FrameStreamTest
-else
-check_PROGRAMS =
-TESTS =
+	FrameStreamTest \
+	$(PTHREADPRGS)
 endif
 
 TESTS_ENVIRONMENT = LAL_FRAME_PATH=$(srcdir)

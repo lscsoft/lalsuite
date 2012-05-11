@@ -524,53 +524,10 @@ void adjust_snr_with_psds_real8(SimInspiralTable *inj, REAL8 target_snr, int num
 {
   /* Vars for calculating SNRs */
   REAL8 this_snr;
-  REAL8 low_snr, high_snr;
-  REAL8 low_dist,high_dist;
-  REAL8 slope, intercept;
 
   this_snr = network_snr_with_psds_real8(num_ifos, ifo_list, psds, start_freqs, inj);
+  inj->distance = inj->distance * (this_snr/target_snr);
 
-  if (this_snr > target_snr)
-  {
-    high_snr  = this_snr;
-    high_dist = inj->distance;
-
-    while (this_snr > target_snr)
-    {
-      inj-> distance = inj->distance * 3.0;
-      this_snr       = network_snr_with_psds_real8(num_ifos, ifo_list, psds, start_freqs, inj);
-    }
-    low_snr  = this_snr;
-    low_dist = inj->distance;
-  } else {
-    low_snr  = this_snr;
-    low_dist = inj->distance;
-
-    while (this_snr < target_snr)
-    {
-      inj->distance = (inj->distance) / 3.0;
-      this_snr      = network_snr_with_psds_real8(num_ifos, ifo_list, psds, start_freqs, inj);
-    }
-    high_snr  = this_snr;
-    high_dist = inj->distance;
-  }
-
-  while ( abs(target_snr - this_snr) > 1.0 )
-  {
-    slope         = (high_snr - low_snr) / (high_dist - low_dist);
-    intercept     = this_snr - slope * inj->distance;
-    inj->distance = (target_snr - intercept) / slope;
-    this_snr      = network_snr_with_psds_real8(num_ifos, ifo_list, psds, start_freqs, inj);
-
-    if (this_snr > target_snr)
-    {
-      high_snr  = this_snr;
-      high_dist = inj->distance;
-    } else {
-      low_snr  = this_snr;
-      low_dist = inj->distance;
-    }
-  }
 }
 
 
@@ -1307,9 +1264,11 @@ void drawMassSpinFromNRNinja2( SimInspiralTable* inj )
   for ( j = 0; j < num_nr; j++ )
   {
     k           = indicies[j];
-    startFreq   = start_freq_from_frame_url(nrSimArray[k]->numrel_data);
+    if (nrSimArray[k]->f_lower > 0.0000001)
+      startFreq = nrSimArray[k]->f_lower;
+    else
+      startFreq   = start_freq_from_frame_url(nrSimArray[k]->numrel_data);
     startFreqHz = startFreq / (LAL_TWOPI * massTotal * LAL_MTSUN_SI);
-
     /* if this startFreqHz makes us happy, inject it */
     if (startFreqHz <= inj->f_lower)
     {

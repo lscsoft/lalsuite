@@ -232,10 +232,14 @@ int XLALPopulateProcessTable(
 		XLAL_ERROR(XLAL_ESYS);
 	}
 	uid = geteuid();
+#if 0
 	if(!(pw = getpwuid(uid)))
+#endif
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%d", uid);
+#if 0
 	else
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%s", pw->pw_name);
+#endif
 	ptable->process_id = process_id;
 
 	/*
