@@ -494,6 +494,8 @@ int main(int argc,char *argv[])
       char column_headings_string[column_headings_string_length];
       INIT_MEM( column_headings_string );
       strcat ( column_headings_string, colum_headings_string_base );
+      if ( uvar.computeLV )
+        strcat ( column_headings_string, " LV" );
       if ( uvar.computeLV || uvar.outputSingleFstats ) {
         for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
           char headingX[7];
@@ -501,8 +503,6 @@ int main(int argc,char *argv[])
           strcat ( column_headings_string, headingX );
         } /* for X < numDet */
       }
-      if ( uvar.computeLV )
-        strcat ( column_headings_string, " LV" );
 
       fprintf (fpFstat, "%%%% columns:\n%%%% %s\n", column_headings_string );
 
@@ -2445,40 +2445,29 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
     return -1;
 
   /* add extra output-field containing per-detector FX if non-NULL */
-  char singleFstr[256] = "";     /* defaults to empty */
+  char extraStatsStr[256] = "";     /* defaults to empty */
   char buf0[256];
+  /* LVstat */
+  if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
+      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->LVstat );
   if ( thisFCand->Fstat.numDetectors > 0 )
     {
-      snprintf ( singleFstr, sizeof(singleFstr), " %.9g", 2.0*thisFCand->Fstat.FX[0] );
-      UINT4 numDet = thisFCand->Fstat.numDetectors;
-      UINT4 X;
-      for ( X = 1; X < numDet ; X ++ )
+      for ( UINT4 X = 0; X < thisFCand->Fstat.numDetectors; X ++ )
         {
           snprintf ( buf0, sizeof(buf0), " %.9g", 2.0*thisFCand->Fstat.FX[X] );
-          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( singleFstr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
+          UINT4 len1 = strlen ( extraStatsStr ) + strlen ( buf0 ) + 1;
+          if ( len1 > sizeof ( extraStatsStr ) ) {
+            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(extraStatsStr ));
             break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
           }
-          strcat ( singleFstr, buf0 );
+          strcat ( extraStatsStr, buf0 );
         } /* for X < numDet */
-      /* LVstat */
-      if ( !isnan(thisFCand->LVstat) ) /* if --computeLV=FALSE, the LV field was initialised to NAN - do not output LV */
-        {
-          snprintf ( buf0, sizeof(buf0), " %.9g", thisFCand->LVstat );
-          UINT4 len1 = strlen ( singleFstr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( singleFstr ) ) {
-            XLALPrintError ("%s: assembled output string too long! (%d > %d)\n", __func__, len1, sizeof(singleFstr ));
-          }
-          strcat ( singleFstr, buf0 );
-        }
-
     } /* if FX */
 
   fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g %.9g%s\n",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
-	   2.0 * thisFCand->Fstat.F, singleFstr );
+	   2.0 * thisFCand->Fstat.F, extraStatsStr );
 
   return 0;
 
