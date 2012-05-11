@@ -1693,6 +1693,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       REAL8 mTot; /* In geometric units */
       REAL8 spin1[3] = { spin1x, spin1y, spin1z };
       REAL8 spin2[3] = { spin2x, spin2y, spin2z };
+      REAL8 finalMass, finalSpin;
 
       mTot  = (mass1 + mass2) * LAL_MTSUN_SI;
       eta       = mass1 * mass2 / ( (mass1 + mass2) * (mass1 + mass2) );
@@ -1711,6 +1712,12 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_EFUNC );
       }
 
+      /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
+      if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
+      {
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+
       if ( approximant == SEOBNRv1 )
       {
           /* Replace the last QNM with pQNM */
@@ -1719,7 +1726,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
           /*printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
                  mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);*/
-          modefreqs->data[7].re = (NRPeakOmega22 + modefreqs->data[0].re) / 2.;
+          modefreqs->data[7].re = (NRPeakOmega22/finalMass + modefreqs->data[0].re) / 2.;
           modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
       }
 
