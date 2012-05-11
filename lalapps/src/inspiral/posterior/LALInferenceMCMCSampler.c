@@ -1268,12 +1268,14 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
     }
 
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    runState->currentPrior = runState->prior(runState, runState->currentParams);
     setIFOAcceptedLikelihoods(runState);
     LALInferencePrintPTMCMCHeaderFile(runState, out);
     fclose(out);
     
     LALInferenceCopyVariables(saveParams, runState->currentParams);
     runState->currentLikelihood = runState->likelihood(runState->currentParams, runState->data, runState->template);
+    runState->currentPrior = runState->prior(runState, runState->currentParams);
     setIFOAcceptedLikelihoods(runState);    
 
     XLALFree(fname);
