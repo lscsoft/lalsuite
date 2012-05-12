@@ -1,3 +1,9 @@
+lal (6.7.1-1) unstable; urgency=low
+
+  * LAL 6.7.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 May 2012 11:42:53 -0500
+
 lal (6.7.0-1) unstable; urgency=low
 
   * LAL 6.7.0

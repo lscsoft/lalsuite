@@ -1,3 +1,9 @@
+lalapps (6.8.0-1) unstable; urgency=low
+
+  * LALApps 6.8.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 May 2012 12:09:04 -0500
+
 lalapps (6.7.0-1) unstable; urgency=low
 
   * LALApps 6.7.0
