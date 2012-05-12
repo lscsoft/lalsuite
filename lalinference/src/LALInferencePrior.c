@@ -375,13 +375,15 @@ LALInferenceVariableItem *item=params->head;
 				            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
 				                norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
 				            }else{
-				              	if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
-					                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
-					                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
-					                exit(1);
-              					}
-				             	norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
-				             	//printf("norm@%s=%f\n",item->name,norm);
+				              	if( MTotMax > component_max && MTotMax < 2.0*component_max - component_min ) {
+				             	    norm = -log( (pow(MTotMax-2.0*component_min,2)/4.0) - (pow(MTotMax-component_max-component_min,2)/2.0) );
+                        }else if(MTotMax >= component_max - component_min){
+                          norm = -log( pow(MTotMax-2.0*component_min,2)/4.0 );
+                        }else if(2.0*MTotMax < component_max){
+                          norm = -log( pow(component_max-component_min,2)/2.0 );
+                        }else{
+                          norm = 0.0; //no prior area for the masses !!
+                        }
 				    	     	LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
             				}
 				        logPrior+=norm;
