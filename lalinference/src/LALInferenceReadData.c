@@ -1944,45 +1944,16 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
     fclose(snrout);
 }
 
-
-void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
+/** Fill the variables passed in vars with the parameters of the injection passed in event
+    will over-write and destroy any existing parameters. Param vary type will be fixed */
+void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars)
 {
-    ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
-    LALInferenceVariables backup;
-    LALInferenceVariables injparams;
-    memset(&injparams,0,sizeof(LALInferenceVariables));
-    memset(&backup,0,sizeof(LALInferenceVariables));
-    char *fname=NULL;
-    char defaultname[]="injection_params.dat";
-    FILE *outfile=NULL;
-    if(!ppt) return;
-    SimInspiralTable *injTable=NULL,*theEventTable=NULL;
-    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
-
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
-    if(ppt) {
-      fname = XLALCalloc((strlen(ppt->value)+255)*sizeof(char),1);
-      sprintf(fname,"%s.injection",ppt->value);
-    }
-    else fname=defaultname;
-
-    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--event");
-    if (ppt) {
-      UINT4 event = atoi(ppt->value);
-      UINT4 i;
-      theEventTable = injTable;
-      for (i = 0; i < event; i++) {
-        theEventTable = theEventTable->next;
-      }
-      theEventTable->next = NULL;
-    } else {
-      theEventTable=injTable;
-      theEventTable->next = NULL;
-    }
-
-    /* Save old variables */
-    LALInferenceCopyVariables(runState->currentParams,&backup);
-
+    if(!vars) {
+	XLALPrintError("Encountered NULL variables pointer");
+   	XLAL_ERROR_VOID(XLAL_EINVAL);
+	}
+    /* Destroy existing parameters */
+    if(vars->head!=NULL) LALInferenceDestroyVariables(vars);
     REAL8 q = theEventTable->mass2 / theEventTable->mass1;
     if (q > 1.0) q = 1.0/q;
 
@@ -2029,22 +2000,64 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     REAL8 dec = theEventTable->latitude;
     REAL8 ra = theEventTable->longitude;
 
-    LALInferenceAddVariable(runState->currentParams, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-      LALInferenceAddVariable(runState->currentParams, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
+}
+
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
+{
+    ProcessParamsTable *ppt=LALInferenceGetProcParamVal(runState->commandLine,"--inj");
+    LALInferenceVariables backup;
+    LALInferenceVariables injparams;
+    memset(&injparams,0,sizeof(LALInferenceVariables));
+    memset(&backup,0,sizeof(LALInferenceVariables));
+    char *fname=NULL;
+    char defaultname[]="injection_params.dat";
+    FILE *outfile=NULL;
+    if(!ppt) return;
+    SimInspiralTable *injTable=NULL,*theEventTable=NULL;
+    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
+
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--outfile");
+    if(ppt) {
+      fname = XLALCalloc((strlen(ppt->value)+255)*sizeof(char),1);
+      sprintf(fname,"%s.injection",ppt->value);
+    }
+    else fname=defaultname;
+
+    ppt=LALInferenceGetProcParamVal(runState->commandLine,"--event");
+    if (ppt) {
+      UINT4 event = atoi(ppt->value);
+      UINT4 i;
+      theEventTable = injTable;
+      for (i = 0; i < event; i++) {
+        theEventTable = theEventTable->next;
+      }
+      theEventTable->next = NULL;
+    } else {
+      theEventTable=injTable;
+      theEventTable->next = NULL;
+    }
+
+    /* Save old variables */
+    LALInferenceCopyVariables(runState->currentParams,&backup);
+
+    /* Fill named variables */
+    LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
 
     REAL8 injPrior = runState->prior(runState,runState->currentParams);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
