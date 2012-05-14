@@ -62,7 +62,19 @@ void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState);
 
 /** Compute the autocorrelation length from the sampler at the current global iteration */
-LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations);
+LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *runState, UINT4 max_iterations, LALInferenceEvolveOneStepFunction *evolve);
+
+/** Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
+UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState);
+
+/** Sample the prior N times, returns number of acceptances */
+UINT4 LALInferenceMCMCSamplePriorNTimes(LALInferenceRunState *runState, UINT4 N);
+
+/** Sample the limited prior distribution using the MCMC method as usual, but
+   run a sub-chain of x iterations which doesn't check the likelihood bound.
+   x=LALInferenceGetVariable(runState->algorithmParams,"sloppyratio")
+*/
+void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
