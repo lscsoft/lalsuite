@@ -50,6 +50,9 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
 
+/** \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of
+    vars. vars cannot be NULL. Resulting variables are LALINFERENCE_PARAM_FIXED. */
+void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars);
 
 /** \brief Function to output a sample with logL values etc for the injection, if one is made.
   * Requires --inj, --outfile and optionally --event (if not 0).
