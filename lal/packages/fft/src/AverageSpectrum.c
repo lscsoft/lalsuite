@@ -368,7 +368,9 @@ int XLALREAL8AverageSpectrumWelch(
  *
  */
 
-/** compute the median bias */
+/** compute the median bias *
+ * See arXiv: gr-qc/0509116 appendix B for details */
+
 REAL8 XLALMedianBias( UINT4 nn )
 {
   const UINT4 nmax = 1000;
