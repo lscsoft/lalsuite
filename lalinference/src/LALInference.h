@@ -598,5 +598,10 @@ XLALMultiStudentDeviates(
                          );
 
 
+/** Calculate shortest angular distance between a1 and a2 (modulo 2PI) */
+REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
+
+/** Calculate the variance of a distribution on an angle (modulo 2PI) */
+REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
 
 #endif

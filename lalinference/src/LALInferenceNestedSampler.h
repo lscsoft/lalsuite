@@ -47,9 +47,6 @@
  see e.g. Sivia "Data Analysis: A Bayesian Tutorial, 2nd edition */
 void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState);
 
-/** A differential evolution proposal for nested sampling algorithm */
-void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState, LALInferenceVariables *parameter);
-
 /** Calculate covariance matrix from a collection of live points */
 void LALInferenceNScalcCVM(gsl_matrix **cvm, LALInferenceVariables **Live, UINT4 Nlive);
 /** This should be moved */
@@ -75,8 +72,6 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
-REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
-REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
 
 /** Setup the live points */
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);

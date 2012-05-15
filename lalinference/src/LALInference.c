@@ -2016,3 +2016,28 @@ XLALMultiStudentDeviates(
 
 }
 
+/* Calculate shortest angular distance between a1 and a2 */
+REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
+    double raw = (a2>a1 ? a2-a1 : a1-a2);
+    return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
+}
+
+/* Calculate the variance of a modulo-2pi distribution */
+REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N){
+        int i=0;
+        REAL8 ang_mean=0.0;
+        REAL8 var=0.0;
+        REAL8 ms,mc;
+        /* Calc mean */
+        for(i=0,ms=0.0,mc=0.0;i<N;i++) {
+                ms+=sin(*(REAL8 *)LALInferenceGetVariable(list[i],pname));
+                mc+=cos(*(REAL8 *)LALInferenceGetVariable(list[i],pname));
+        }
+        ms/=N; mc/=N;
+        ang_mean=atan2(ms,mc);
+        ang_mean = ang_mean<0? 2.0*LAL_PI + ang_mean : ang_mean;
+        /* calc variance */
+        for(i=0;i<N;i++) var+=LALInferenceAngularDistance(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean)*LALInferenceAngularDistance(*(REAL8 *)LALInferenceGetVariable(list[i],pname),ang_mean);
+        return(var/(REAL8)N);
+}
+
