@@ -886,7 +886,7 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
   LALInferenceVariableItem *proposeIterator;
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
+  
   j = 0;
   proposeIterator = proposedParams->head;
   if (proposeIterator == NULL) {
@@ -898,15 +898,15 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
     if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
       REAL8 tmp = *((REAL8 *)proposeIterator->value);
       REAL8 inc = jumpSize*gsl_matrix_get(eigenvectors, j, i);
-
+      
       tmp += inc;
-
+      
       memcpy(proposeIterator->value, &tmp, sizeof(REAL8));
-
+      
       j++;
     }
   } while ((proposeIterator = proposeIterator->next) != NULL && j < N);
-
+  
   LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
@@ -1755,7 +1755,7 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
     /* NCell default value. */
     NCell = 64;
   }
-
+  
   const char *propName = KDNeighborhoodProposalName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
