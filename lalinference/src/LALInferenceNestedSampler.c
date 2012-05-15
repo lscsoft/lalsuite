@@ -29,9 +29,6 @@
  static void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 /* Prototypes for private "helper" functions. */
 //static void SamplePriorDiscardAcceptance(LALInferenceRunState *runState);
-static void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3]);
-static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude);
-static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude);
 static double logadd(double a,double b);
 static REAL8 mean(REAL8 *array,int N);
 static void getMinMaxLivePointValue( LALInferenceVariables **livepoints, 
@@ -49,12 +46,6 @@ static REAL8 mean(REAL8 *array,int N){
 	int i;
 	for(i=0;i<N;i++) sum+=array[i];
 	return sum/((REAL8) N);
-}
-
-/* Calculate shortest angular distance between a1 and a2 */
-REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2){
-	double raw = (a2>a1 ? a2-a1 : a1-a2);
-	return(raw>LAL_PI ? 2.0*LAL_PI - raw : raw);
 }
 
 /** Get the maximum value of a parameter from a set of live points */
@@ -849,12 +840,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   return(acls);
 }
 
-//void SamplePriorDiscardAcceptance(LALInferenceRunState *runState)
-//{
-//    LALInferenceMCMCSamplePrior(runState);
-//    return;
-//}
-
 /* Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 {
@@ -946,18 +931,15 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     if (LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
       sloppyfraction=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"sloppyfraction");
     UINT4 mcmc_iter=0,Naccepted=0,sub_accepted=0;
-    //INT4 Nlive=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
     UINT4 sloppynumber=(UINT4) (sloppyfraction*(REAL8)Nmcmc);
     UINT4 testnumber=Nmcmc-sloppynumber;
     /* +1 for the last iteration which we do check */
     UINT4 subchain_length=(sloppynumber/testnumber) +1;
-    //sloppynumber=sloppynumber<1?1:sloppynumber;
     REAL8 logLnew;
     UINT4 sub_iter=0;
     UINT4 tries=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
-    //REAL8 *logLikelihoods=(REAL8 *)(*(REAL8Vector **)LALInferenceGetVariable(runState->algorithmParams,"logLikelihoods"))->data;
     do{
         counter=counter-1.;
         subchain_length=0;
@@ -967,17 +949,14 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             subchain_length++;
             counter+=(1.-sloppyfraction);
         }while(counter<1);
-
-	    if(sub_accepted==0.) {
-            //    INT4 j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
-            //    LALInferenceCopyVariables(runState->livePoints[j],runState->currentParams);
-            //    runState->currentLikelihood = logLikelihoods[j];
-	        tries++;
-	        sub_iter+=subchain_length;
-	        mcmc_iter++;
+	/* Check that there was at least one accepted point */
+	if(sub_accepted==0.) {
+	    tries++;
+	    sub_iter+=subchain_length;
+	    mcmc_iter++;
             LALInferenceCopyVariables(&oldParams,runState->currentParams);
             runState->currentLikelihood=logLold;
-	        continue;
+	    continue;
         }
         tries=0;
         mcmc_iter++;
@@ -1009,672 +988,33 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             runState->currentLikelihood=logLold;
         }
     }while((mcmc_iter<testnumber||logLnew<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
+    /* Compute some statistics for information */
     REAL8 sub_accept_rate=(REAL8)sub_accepted/(REAL8)sub_iter;
     REAL8 accept_rate=(REAL8)Naccepted/(REAL8)testnumber;
     LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
     LALInferenceSetVariable(runState->algorithmParams,"sub_accept_rate",&sub_accept_rate);
+    /* Adapt the sloppy fraction toward target acceptance of outer chain */
     if(logLmin!=-DBL_MAX){
         if((REAL8)accept_rate>Target) { sloppyfraction+=5.0/(REAL8)Nmcmc;}
         else { sloppyfraction-=5.0/(REAL8)Nmcmc;}
         if(sloppyfraction>maxsloppyfraction) sloppyfraction=maxsloppyfraction;
 	if(sloppyfraction<minsloppyfraction) sloppyfraction=minsloppyfraction;
-        //if(sloppylogit<1) sloppy=1;
 	
 	LALInferenceSetVariable(runState->algorithmParams,"sloppyfraction",&sloppyfraction);
-        //LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&Nmcmc);
     }
+    /* Cleanup */
     LALInferenceDestroyVariables(&oldParams);
 }
 
 
 /* Evolve nested sampling algorithm by one step, i.e.
  evolve runState->currentParams to a new point with higher
- likelihood than currentLikelihood. Uses the MCMC method.
+ likelihood than currentLikelihood. Uses the MCMC method with sloppy sampling.
  */
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
-	LALInferenceVariables *newParams=NULL,*lastAcceptedWithLikelihood=NULL;
-	LALInferenceIFOData *data=runState->data;
-	char tmpName[32];
-	UINT4 mcmc_iter=0,Naccepted=0;
-	UINT4 Nmcmc=*(UINT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc");
-	REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
-        REAL8 logPriorOld,logPriorNew,logLnew=DBL_MAX,logPriorlastAccepted;
-	REAL8 logProposalRatio,tmp=0.0;
-	newParams=calloc(1,sizeof(LALInferenceVariables));
-	lastAcceptedWithLikelihood=calloc(1,sizeof(LALInferenceVariables));
-	INT4 thin_factor=1;
-	/* Evolve the sample until it is accepted */
-	logPriorOld=runState->prior(runState,runState->currentParams);
-	logPriorlastAccepted=logPriorOld;
-	LALInferenceCopyVariables(runState->currentParams,lastAcceptedWithLikelihood);
-	do{
-		mcmc_iter++;
-		/* Make a copy of the parameters passed through currentParams */
-                LALInferenceCopyVariables(runState->currentParams,newParams);
-                runState->proposal(runState,newParams);
-		logPriorNew=runState->prior(runState,newParams);
-		LALInferenceSetVariable(newParams,"logPrior",&logPriorNew);
-		if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
-		  logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
-		else logProposalRatio=0.0;
-                
-		/* If rejected, continue to next iteration */
-		if(logPriorNew==-DBL_MAX || isnan(logPriorNew)) continue;
-                if(log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio)
-			continue;
-		if(mcmc_iter%thin_factor==0||mcmc_iter==(UINT4)(Nmcmc*thin_factor)-1){
-		  /* Otherwise, check that logL is OK */
-		  if(logLmin!=-DBL_MAX ){
-		    logLnew=runState->likelihood(newParams,runState->data,runState->template);
-		  }
-		  if(logLnew > logLmin){
-			Naccepted++;
-			logPriorOld=logPriorNew;
-			LALInferenceCopyVariables(newParams,runState->currentParams);
-			logPriorlastAccepted=logPriorNew;
-			LALInferenceCopyVariables(newParams,lastAcceptedWithLikelihood);
-		  }
-		  else{
-		   LALInferenceCopyVariables(lastAcceptedWithLikelihood,runState->currentParams);
-		   logPriorOld=logPriorlastAccepted;
-		  }
-		}
-		else{
-		  logPriorOld=logPriorNew;
-		  LALInferenceCopyVariables(newParams,runState->currentParams);
-		}
-		if(isnan(logPriorNew)){
-		  XLALPrintError("Caught NaN prior slipping through sampler\n");
-		  XLAL_ERROR_VOID(XLAL_EINVAL);
-		}
-		if(logPriorNew==-DBL_MAX || logPriorNew==DBL_MAX){
-		  XLALPrintError("Caught log prior %lf slipping through sampler\n");
-		  XLAL_ERROR_VOID(XLAL_EINVAL);
-		}
-	} while(mcmc_iter<Nmcmc*thin_factor);
-	/* Update information to pass back out */
-	LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
-		tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
-		LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-	}
-	while(data)
-	{
-		tmp=data->loglikelihood - data->nullloglikelihood;
-		sprintf(tmpName,"deltalogl%s",data->name);
-		LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-		data=data->next;
-	}
-	runState->currentLikelihood=logLnew;
-	LALInferenceDestroyVariables(lastAcceptedWithLikelihood);
-	LALInferenceDestroyVariables(newParams);
-	free(newParams);
-	free(lastAcceptedWithLikelihood);
-	REAL8 accept_rate=(REAL8)Naccepted/(REAL8)Nmcmc;
-	LALInferenceSetVariable(runState->algorithmParams,"accept_rate",&accept_rate);
-	return;
+     LALInferenceNestedSamplingSloppySample(runState);
 }
-
-
-void LALInferenceProposalNS(LALInferenceRunState *runState, LALInferenceVariables *parameter)
-{
-	
-	UINT4 nIFO=0;
-	LALInferenceIFOData *ifo=runState->data;
-	REAL8 randnum;
-	REAL8 STUDENTTFRAC=0.8,
-	      DIFFEVFRAC=0.1,
-	      SKYFRAC=0.1;
-	top:
-	randnum=gsl_rng_uniform(runState->GSLrandom);
-	/* Choose a random type of jump to propose */
-	if(randnum<STUDENTTFRAC)
-		LALInferenceProposalMultiStudentT(runState, parameter);
-	else if(randnum<STUDENTTFRAC+DIFFEVFRAC)
-		LALInferenceProposalDifferentialEvolution(runState,parameter);
-	else if(randnum<STUDENTTFRAC + DIFFEVFRAC + SKYFRAC){
-		/* Check number of detectors */
-		while(ifo){ifo=ifo->next; nIFO++;}
-		
-		if(nIFO<2) goto top;
-		if(nIFO<3) 
-			LALInferenceRotateSky(runState, parameter);
-		else {
-			/* Choose to rotate or reflect */
-			if(randnum- (STUDENTTFRAC + DIFFEVFRAC)>SKYFRAC/2.0)
-				LALInferenceRotateSky(runState, parameter);
-			else{
-				/* Have to call the diff ev too, in case the reflection happens twice */
-				LALInferenceReflectDetPlane(runState, parameter);
-				LALInferenceProposalDifferentialEvolution(runState,parameter);
-			}
-		}
-	}
-	return;	
-}
-
-UINT4 LALInferenceCheckPositiveDefinite( 
-						  gsl_matrix       *matrix,
-						  UINT4            dim
-						  )
-{
-	gsl_matrix  *m     = NULL;
-	gsl_vector  *eigen = NULL;
-	gsl_eigen_symm_workspace *workspace = NULL;
-	UINT4 i;
-	
-	/* copy input matrix */
-	m =  gsl_matrix_alloc( dim,dim ); 
-	gsl_matrix_memcpy( m, matrix);  
-	
-	/* prepare variables */
-	eigen = gsl_vector_alloc ( dim );
-	workspace = gsl_eigen_symm_alloc ( dim );
-	
-	/* compute the eigen values */
-	gsl_eigen_symm ( m,  eigen, workspace );
-	
-	/* test the result */
-	for (i = 0; i < dim; i++)
-    {
-		/* printf("diag: %f | eigen[%d]= %f\n", gsl_matrix_get( matrix,i,i), i, eigen->data[i]);*/
-		if (eigen->data[i]<0) 
-		{
-			printf("NEGATIVE EIGEN VALUE!!! PANIC\n");
-			return 0;
-		}
-	}
-	
-	/* freeing unused stuff */
-	gsl_eigen_symm_free( workspace);
-	gsl_matrix_free(m);
-	gsl_vector_free(eigen);
-	
-	return 1;
-}
-
-/* Reference: http://www.mail-archive.com/help-gsl@gnu.org/msg00631.html*/
-void
-XLALMultiNormalDeviates( 
-						REAL4Vector *vector, 
-						gsl_matrix *matrix, 
-						UINT4 dim, 
-						RandomParams *randParam
-						)
-{
-	UINT4 i=0;
-	gsl_matrix *work=NULL;
-	gsl_vector *result = NULL;
-	
-	/* check input arguments */
-	if (!vector || !matrix || !randParam)
-		XLAL_ERROR_VOID( XLAL_EFAULT );
-	
-	if (dim<1)
-		XLAL_ERROR_VOID( XLAL_EINVAL );
-	
-	/* copy matrix into workspace */
-	work =  gsl_matrix_alloc(dim,dim); 
-	gsl_matrix_memcpy( work, matrix );
-	
-	/* compute the cholesky decomposition */
-	gsl_linalg_cholesky_decomp(work);
-	
-	/* retrieve the normal distributed random numbers (LAL procedure) */
-	XLALNormalDeviates( vector, randParam );
-	
-	/* store this into a gsl vector */
-	result = gsl_vector_alloc ( (int)dim );
-	for (i = 0; i < dim; i++)
-	{
-		gsl_vector_set (result, i, vector->data[i]);
-	}
-	
-	/* compute the matrix-vector multiplication */
-	gsl_blas_dtrmv(CblasLower, CblasNoTrans, CblasNonUnit, work, result);
-	
-	/* recopy the results */
-	for (i = 0; i < dim; i++)
-	{
-		vector->data[i]=gsl_vector_get (result, i);
-	}
-	
-	/* free unused stuff */
-	gsl_matrix_free(work);
-	gsl_vector_free(result);
-	
-}
-
-
-void
-XLALMultiStudentDeviates( 
-						 REAL4Vector  *vector,
-						 gsl_matrix   *matrix,
-						 UINT4         dim,
-						 UINT4         n,
-						 RandomParams *randParam
-						 )
-{
-	REAL4Vector *dummy=NULL;
-	REAL4 chi=0.0, factor;
-	UINT4 i;
-	
-	/* check input arguments */
-	if (!vector || !matrix || !randParam)
-		XLAL_ERROR_VOID( XLAL_EFAULT );
-	
-	if (dim<1)
-		XLAL_ERROR_VOID( XLAL_EINVAL );
-	
-	if (n<1)
-		XLAL_ERROR_VOID( XLAL_EINVAL );
-	
-	
-	/* first draw from MVN */
-        XLALMultiNormalDeviates( vector, matrix, dim, randParam);
-       
-	/* then draw from chi-square with n degrees of freedom;
-     this is the sum d_i*d_i with d_i drawn from a normal 
-     distribution. */
-        dummy = XLALCreateREAL4Vector( n );
-        XLALNormalDeviates( dummy, randParam );
-
-	/* calculate the chisquare distributed value */
-	for (i=0; i<n; i++) 
-	{
-		chi+=dummy->data[i]*dummy->data[i];
-	}
-	
-	/* destroy the helping vector */
-        XLALDestroyREAL4Vector( dummy );
-	
-	/* now, finally, calculate the distribution value */
-	factor=sqrt(n/chi);
-	for (i=0; i<dim; i++) 
-	{
-		vector->data[i]*=factor;
-	}
-	
-}
-
-
-void LALInferenceProposalMultiStudentT(LALInferenceRunState *runState, LALInferenceVariables *parameter)
-{
-	gsl_matrix *covMat=*(gsl_matrix **)LALInferenceGetVariable(runState->proposalArgs,"covarianceMatrix");
-	
-	LALInferenceVariableItem *paraHead=NULL;
-	REAL4Vector  *step=NULL;
-	gsl_matrix *work=NULL; 
-	REAL8 aii, aij, ajj;
-	INT4 i, j, dim;
-	RandomParams *randParam;
-	UINT4 randomseed = gsl_rng_get(runState->GSLrandom);
-	
-	REAL8 proposal_scale=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"proposal_scale");
-	randParam=XLALCreateRandomParams(randomseed);
-	
-	/* set some values */
-	dim=covMat->size1;
-	
-	/* draw the mutinormal deviates */
-	step = XLALCreateREAL4Vector(dim);
-	
-	/* copy matrix into workspace and scale it appriopriately */
-	work =  gsl_matrix_alloc(dim,dim); 
-
-	gsl_matrix_memcpy( work, covMat );
-	gsl_matrix_scale( work, proposal_scale);
-
-	/* check if the matrix if positive definite */
-	while ( !LALInferenceCheckPositiveDefinite( work, dim) ) {
-		printf("WARNING: Matrix not positive definite!\n");
-		/* downweight the off-axis elements */
-		for (i=0; i<dim; ++i)
-		{
-			for (j=0; j<i; ++j)
-			{
-				aij=gsl_matrix_get( work, i, j);
-				aii=gsl_matrix_get( work, i, i);
-				ajj=gsl_matrix_get( work, j, j);  
-				
-				if ( fabs(aij) > 0.95* sqrt( aii*ajj ) )
-				{
-					aij=aij/fabs(aij)*0.95*sqrt( aii*ajj );
-				}
-				gsl_matrix_set( work, i, j, aij);
-				gsl_matrix_set( work, j, i, aij);
-				printf(" %f", gsl_matrix_get( work, i, j));
-			}
-			printf("\n");
-		}
-		exit(0);
-	}
-
-	/* draw multivariate student distribution with n=2 */
-	XLALMultiStudentDeviates( step, work, dim, 2, randParam);
-
-        /* loop over all parameters */
-        for (paraHead=parameter->head,i=0; paraHead; paraHead=paraHead->next)
-	{ 
-		/*  if (inputMCMC->verbose)
-		 printf("MCMCJUMP: %10s: value: %8.3f  step: %8.3f newVal: %8.3f\n", 
-		 paraHead->core->name, paraHead->value, step->data[i] , paraHead->value + step->data[i]);*/
-		/* only increment the varying parameters, and only increment the data pointer if it's been done*/
-		if((paraHead->vary==LALINFERENCE_PARAM_LINEAR || paraHead->vary==LALINFERENCE_PARAM_CIRCULAR) && strcmp(paraHead->name,"rightascension") && strcmp(paraHead->name,"declination") && strcmp(paraHead->name,"time") ){
-                  *(REAL8 *)paraHead->value += step->data[i];
-			i++;
-		}
-	}
-
-	/* LALInferenceRotateInitialPhase(parameter); */
-        LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
-        
-        /* destroy the vectors */
-	XLALDestroyREAL4Vector(step);
-	gsl_matrix_free(work);
-	
-	XLALDestroyRandomParams(randParam);
-	/* Check boundary condition */
-
-	return;
-}
-
-
-void LALInferenceProposalDifferentialEvolution(LALInferenceRunState *runState,
-									   LALInferenceVariables *parameter)
-	{
-		LALInferenceVariables **Live=runState->livePoints;
-		int i=0,j=0,same=1;//dim=0 - set but not used
-		INT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-		LALInferenceVariableItem *paraHead=NULL;
-		LALInferenceVariableItem *paraA=NULL;
-		LALInferenceVariableItem *paraB=NULL;
-		
-		//dim = parameter->dimension; - set but not used
-		/* Select two other samples A and B*/
-		i=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
-		/* Draw two different samples from the basket. Will loop back here if the original sample is chosen*/
-	drawtwo:
-		do {j=gsl_rng_uniform_int(runState->GSLrandom,Nlive);} while(j==i);
-		paraHead=parameter->head;
-		paraA=Live[i]->head; paraB=Live[j]->head;
-		/* Add the vector B-A */
-		same=1;
-		for(paraHead=parameter->head,paraA=Live[i]->head,paraB=Live[j]->head;paraHead&&paraA&&paraB;paraHead=paraHead->next,paraB=paraB->next,paraA=paraA->next)
-		{
-			if(paraHead->vary!=LALINFERENCE_PARAM_LINEAR && paraHead->vary!=LALINFERENCE_PARAM_CIRCULAR) continue;
-			*(REAL8 *)paraHead->value+=*(REAL8 *)paraB->value;
-			*(REAL8 *)paraHead->value-=*(REAL8 *)paraA->value;
-			if(*(REAL8 *)paraHead->value!=*(REAL8 *)paraA->value &&
-			   *(REAL8 *)paraHead->value!=*(REAL8 *)paraB->value &&
-			   *(REAL8 *)paraA->value!=*(REAL8 *)paraB->value) same=0;
-		}
-		if(same==1) goto drawtwo;
-		/* Bring the sample back into bounds */
-                /* LALInferenceRotateInitialPhase(parameter); */
-		LALInferenceCyclicReflectiveBound(parameter,runState->priorArgs);
-		return;
-	}
-	
-static void GetCartesianPos(REAL8 vec[3],REAL8 longitude, REAL8 latitude)
-{
-	vec[0]=cos(longitude)*cos(latitude);
-	vec[1]=sin(longitude)*cos(latitude);
-	vec[2]=sin(latitude);
-	return;
-}
-
-static void CartesianToSkyPos(REAL8 pos[3],REAL8 *longitude, REAL8 *latitude)
-{
-	REAL8 longi,lat,dist;
-	dist=sqrt(pos[0]*pos[0]+pos[1]*pos[1]+pos[2]*pos[2]);
-	/*XLALMCMCSetParameter(parameter,"distMpc",dist);*/
-	longi=atan2(pos[1]/dist,pos[0]/dist);
-	if(longi<0.0) longi=LAL_TWOPI+longi;
-	lat=asin(pos[2]/dist);
-	*longitude=longi;
-	*latitude=lat;	
-	return;
-}
-
-static void crossProduct(REAL8 out[3],REAL8 x[3],REAL8 y[3])
-{
-	out[0]=x[1]*y[2] - x[2]*y[1];
-	out[1]=y[0]*x[2] - x[0]*y[2];
-	out[2]=x[0]*y[1] - x[1]*y[0];
-	return;
-}
-
-static void normalise(REAL8 vec[3]);
-static void normalise(REAL8 vec[3]){
-	REAL8 my_abs=0.0;
-	my_abs=sqrt(vec[0]*vec[0]+vec[1]*vec[1]+vec[2]*vec[2]);
-	vec[0]/=my_abs;
-	vec[1]/=my_abs;
-	vec[2]/=my_abs;
-	return;
-}
-
-void LALInferenceRotateSky(
-					   LALInferenceRunState *state,
-					   LALInferenceVariables *parameter
-					   )
-{ /* Function to rotate the current sample around the vector between two random detectors */
-	static LALStatus status;
-	INT4 IFO1,IFO2;
-	REAL4 randnum;
-	REAL8 vec[3];
-	REAL8 cur[3];
-	REAL8 longi,lat;
-	REAL8 vec_abs=0.0,theta,c,s;
-	UINT4 i,j;
-	
-	UINT4 nIFO=0;
-	LALInferenceIFOData *ifodata1=state->data;
-	while(ifodata1){
-		nIFO++;
-		ifodata1=ifodata1->next;
-	}
-	
-	LALInferenceIFOData **IFOs=calloc(nIFO,sizeof(LALInferenceIFOData *));
-	for(i=0,ifodata1=state->data;i<nIFO;i++){
-		IFOs[i]=ifodata1;
-		ifodata1=ifodata1->next;
-	}
-	
-	
-	if(nIFO<2) return;
-	if(nIFO==2 && IFOs[0]==IFOs[1]) return;
-	
-	longi = *(REAL8 *)LALInferenceGetVariable(parameter,"rightascension");
-	lat = *(REAL8 *)LALInferenceGetVariable(parameter,"declination");
-	
-	/* Convert the RA/dec to geodetic coordinates, as the detectors use these */
-	SkyPosition geodetic,equatorial;
-	equatorial.longitude=longi;
-	equatorial.latitude=lat;
-	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
-	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
-	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(IFOs[0]->epoch));
-	longi=geodetic.longitude;
-	lat=geodetic.latitude;
-	cur[0]=cos(lat)*cos(longi);
-	cur[1]=cos(lat)*sin(longi);
-	cur[2]=sin(lat);
-	
-	IFO1 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
-	do{ /* Pick random interferometer other than the first one */
-		IFO2 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
-	}while(IFO2==IFO1 || IFOs[IFO1]->detector==IFOs[IFO2]->detector);
-	
-	/*	fprintf(stderr,"Rotating around %s-%s vector\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2]);*/
-	/* Calc normalised direction vector */
-	for(i=0;i<3;i++) vec[i]=IFOs[IFO2]->detector->location[i]-IFOs[IFO1]->detector->location[i];
-	for(i=0;i<3;i++) vec_abs+=vec[i]*vec[i];
-	vec_abs=sqrt(vec_abs);
-	for(i=0;i<3;i++) vec[i]/=vec_abs;
-	
-	/* Chose random rotation angle */
-	randnum=gsl_rng_uniform(state->GSLrandom);
-	theta=LAL_TWOPI*randnum;
-	c=cos(-theta); s=sin(-theta);
-	/* Set up rotation matrix */
-	double R[3][3] = {{c+vec[0]*vec[0]*(1.0-c), 
-		vec[0]*vec[1]*(1.0-c)-vec[2]*s,
-		vec[0]*vec[2]*(1.0-c)+vec[1]*s},
-		{vec[1]*vec[0]*(1.0-c)+vec[2]*s,
-			c+vec[1]*vec[1]*(1.0-c),
-			vec[1]*vec[2]*(1.0-c)-vec[0]*s},
-		{vec[2]*vec[0]*(1.0-c)-vec[1]*s,
-			vec[2]*vec[1]*(1.0-c)+vec[0]*s,
-			c+vec[2]*vec[2]*(1.0-c)}};
-	REAL8 new[3]={0.0,0.0,0.0};
-	for (i=0; i<3; ++i)
-		for (j=0; j<3; ++j)
-			new[i] += R[i][j]*cur[j];
-	double newlong = atan2(new[1],new[0]);
-	if(newlong<0.0) newlong=LAL_TWOPI+newlong;
-	
-	geodetic.longitude=newlong;
-	geodetic.latitude=asin(new[2]);
-	/* Convert back into equatorial (sky) coordinates */
-	LALGeographicToEquatorial(&status,&equatorial,&geodetic,&(IFOs[0]->epoch));
-	newlong=equatorial.longitude;
-	double newlat=equatorial.latitude;
-	
-	/* Compute change in tgeocentre for this change in sky location */
-	REAL8 dtold,dtnew,deltat;
-	dtold = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, longi, lat, &(IFOs[0]->epoch)); /* Compute time delay */
-	dtnew = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, newlong, newlat, &(IFOs[0]->epoch)); /* Compute time delay */
-	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
-	deltat+=*(REAL8 *)LALInferenceGetVariable(parameter,"time");
-	LALInferenceSetVariable(parameter,"time",&deltat);	
-	LALInferenceSetVariable(parameter,"declination",&newlat);
-	LALInferenceSetVariable(parameter,"rightascension",&newlong);
-	/*fprintf(stderr,"Skyrotate: new pos = %lf %lf %lf => %lf %lf\n",new[0],new[1],new[2],newlong,asin(new[2]));*/
-	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
-	free(IFOs);
-	return;
-}
-
-
-INT4 LALInferenceReflectDetPlane(
-							 LALInferenceRunState *state,
-							 LALInferenceVariables *parameter
-							 )
-{ /* Function to reflect a point on the sky about the plane of 3 detectors */
-	/* Returns -1 if not possible */
-	static LALStatus status;
-	UINT4 i;
-	int DetCollision=0;
-	//REAL4 randnum; - set but not used
-	REAL8 longi,lat;
-	REAL8 dist;
-	REAL8 pos[3];
-	REAL8 normal[3];
-	REAL8 w1[3]; /* work vectors */
-	REAL8 w2[3];
-	INT4 IFO1,IFO2,IFO3;
-	REAL8 detvec[3];
-	
-	UINT4 nIFO=0;
-	LALInferenceIFOData *ifodata1=state->data;
-	LALInferenceIFOData *ifodata2=NULL;
-	while(ifodata1){
-		nIFO++;
-		ifodata1=ifodata1->next;
-	}
-	
-	LALInferenceIFOData **IFOs=calloc(nIFO,sizeof(LALInferenceIFOData *));
-	if(!IFOs) {
-		printf("Unable to allocate memory for %i LALInferenceIFOData *s\n",nIFO);
-		exit(1);
-	}
-	for(i=0,ifodata1=state->data;i<nIFO;i++){
-		IFOs[i]=ifodata1;
-		ifodata1=ifodata1->next;
-	}
-	
-	if(nIFO<3) return(-1) ; /* not enough IFOs to construct a plane */
-	for(ifodata1=state->data;ifodata1;ifodata1=ifodata1->next)
-		for(ifodata2=ifodata1->next;ifodata2;ifodata2=ifodata2->next)
-			if(ifodata1->detector==ifodata2->detector) DetCollision+=1;
-	
-	if(nIFO-DetCollision<3) return(-1); /* Not enough independent IFOs */
-	
-	/* Select IFOs to use */
-	IFO1=gsl_rng_uniform_int(state->GSLrandom,nIFO);
-	do {
-		IFO2=gsl_rng_uniform_int(state->GSLrandom,nIFO);
-	}while(IFO1==IFO2 || IFOs[IFO1]==IFOs[IFO2]);
-	//randnum=gsl_rng_uniform(state->GSLrandom); - set but not used
-	do {
-		IFO3 = gsl_rng_uniform_int(state->GSLrandom,nIFO);
-	}while(IFO3==IFO1
-		  || IFO3==IFO2
-		  || IFOs[IFO3]==IFOs[IFO1]
-		  || IFOs[IFO3]==IFOs[IFO2]);
-	/*fprintf(stderr,"Using %s, %s and %s for plane\n",inputMCMC->ifoID[IFO1],inputMCMC->ifoID[IFO2],inputMCMC->ifoID[IFO3]);*/
-	
-	longi = *(REAL8 *)LALInferenceGetVariable(parameter,"rightascension");
-	lat = *(REAL8 *)LALInferenceGetVariable(parameter,"declination");
-	
-	double deltalong=0;
-	
-	/* Convert to earth coordinates */
-	SkyPosition geodetic,equatorial;
-	equatorial.longitude=longi;
-	equatorial.latitude=lat;
-	equatorial.system=COORDINATESYSTEM_EQUATORIAL;
-	geodetic.system=COORDINATESYSTEM_GEOGRAPHIC;
-	LALEquatorialToGeographic(&status,&geodetic,&equatorial,&(state->data->epoch));
-	deltalong=geodetic.longitude-equatorial.longitude;
-	
-	/* Add offset to RA to convert to earth-fixed */
-	
-	/* Calculate cartesian version of earth-fixed sky position */
-	GetCartesianPos(pos,geodetic.longitude,lat); /* Get sky position in cartesian coords */
-	
-	
-	/* calculate the unit normal vector of the detector plane */
-	for(i=0;i<3;i++){ /* Two vectors in the plane */
-		w1[i]=IFOs[IFO2]->detector->location[i] - IFOs[IFO1]->detector->location[i];
-		w2[i]=IFOs[IFO3]->detector->location[i] - IFOs[IFO1]->detector->location[i];
-		detvec[i]=IFOs[IFO1]->detector->location[i];
-	}
-	crossProduct(normal,w1,w2);
-	normalise(normal);
-	normalise(detvec);
-	
-    /* Calculate the signed distance between the point and the plane n.(point-IFO1) */
-    for(dist=0.0,i=0;i<3;i++) dist+=normal[i]*pos[i];
-
-    /* Reflect the point pos across the plane */
-    for(i=0;i<3;i++) pos[i]=pos[i]-2.0*dist*normal[i];
-    
-	REAL8 newLongGeo,newLat;
-	CartesianToSkyPos(pos,&newLongGeo,&newLat);
-	REAL8 newLongSky=newLongGeo-deltalong;
-	
-	
-	LALInferenceSetVariable(parameter,"rightascension",&newLongSky);
-	LALInferenceSetVariable(parameter,"declination",&newLat);
-		
-	/* Compute change in tgeocentre for this change in sky location */
-	REAL8 dtold,dtnew,deltat;
-	dtold = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, longi, lat, &(IFOs[0]->epoch)); /* Compute time delay */
-	dtnew = XLALTimeDelayFromEarthCenter(IFOs[0]->detector->location, newLongSky, newLat, &(IFOs[0]->epoch)); /* Compute time delay */
-	deltat=dtold-dtnew; /* deltat is change in arrival time at geocentre */
-	deltat+=*(REAL8 *)LALInferenceGetVariable(parameter,"time");
-	LALInferenceSetVariable(parameter,"time",&deltat);
-	
-	LALInferenceCyclicReflectiveBound(parameter,state->priorArgs);
-	free(IFOs);
-	
-	return(0);
-}
-
 
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
 	/* Set up initial basket of live points, drawn from prior,

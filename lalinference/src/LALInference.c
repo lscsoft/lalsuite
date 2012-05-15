@@ -1872,3 +1872,147 @@ REAL8 LALInferenceKDLogProposalRatio(LALInferenceKDTree *tree, REAL8 *current,
 
   return logCurrentCellFactor + logCurrentVolume - logProposedCellFactor - logProposedVolume;
 }
+
+UINT4 LALInferenceCheckPositiveDefinite( 
+                          gsl_matrix       *matrix,
+                          UINT4            dim
+                          )
+{
+    gsl_matrix  *m     = NULL;
+    gsl_vector  *eigen = NULL;
+    gsl_eigen_symm_workspace *workspace = NULL;
+    UINT4 i;
+    
+    /* copy input matrix */
+    m =  gsl_matrix_alloc( dim,dim ); 
+    gsl_matrix_memcpy( m, matrix);  
+    
+    /* prepare variables */
+    eigen = gsl_vector_alloc ( dim );
+    workspace = gsl_eigen_symm_alloc ( dim );
+    
+    /* compute the eigen values */
+    gsl_eigen_symm ( m,  eigen, workspace );
+    
+    /* test the result */
+    for (i = 0; i < dim; i++)
+    {
+        /* printf("diag: %f | eigen[%d]= %f\n", gsl_matrix_get( matrix,i,i), i, eigen->data[i]);*/
+        if (eigen->data[i]<0) 
+        {
+            printf("NEGATIVE EIGEN VALUE!!! PANIC\n");
+            return 0;
+        }
+    }
+    
+    /* freeing unused stuff */
+    gsl_eigen_symm_free( workspace);
+    gsl_matrix_free(m);
+    gsl_vector_free(eigen);
+    
+    return 1;
+}
+
+/* Reference: http://www.mail-archive.com/help-gsl@gnu.org/msg00631.html*/
+void
+XLALMultiNormalDeviates(
+                        REAL4Vector *vector,
+                        gsl_matrix *matrix,
+                        UINT4 dim,
+                        RandomParams *randParam
+                        )
+{
+    UINT4 i=0;
+    gsl_matrix *work=NULL;
+    gsl_vector *result = NULL;
+
+    /* check input arguments */
+    if (!vector || !matrix || !randParam)
+        XLAL_ERROR_VOID( XLAL_EFAULT );
+
+    if (dim<1)
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+
+    /* copy matrix into workspace */
+    work =  gsl_matrix_alloc(dim,dim);
+    gsl_matrix_memcpy( work, matrix );
+
+    /* compute the cholesky decomposition */
+    gsl_linalg_cholesky_decomp(work);
+
+    /* retrieve the normal distributed random numbers (LAL procedure) */
+    XLALNormalDeviates( vector, randParam );
+
+    /* store this into a gsl vector */
+    result = gsl_vector_alloc ( (int)dim );
+    for (i = 0; i < dim; i++)
+    {
+        gsl_vector_set (result, i, vector->data[i]);
+    }
+
+    /* compute the matrix-vector multiplication */
+    gsl_blas_dtrmv(CblasLower, CblasNoTrans, CblasNonUnit, work, result);
+
+    /* recopy the results */
+    for (i = 0; i < dim; i++)
+    {
+        vector->data[i]=gsl_vector_get (result, i);
+    }
+
+    /* free unused stuff */
+    gsl_matrix_free(work);
+    gsl_vector_free(result);
+
+}
+
+void
+XLALMultiStudentDeviates(
+                         REAL4Vector  *vector,
+                         gsl_matrix   *matrix,
+                         UINT4         dim,
+                         UINT4         n,
+                         RandomParams *randParam
+                         )
+{
+    REAL4Vector *dummy=NULL;
+    REAL4 chi=0.0, factor;
+    UINT4 i;
+
+    /* check input arguments */
+    if (!vector || !matrix || !randParam)
+        XLAL_ERROR_VOID( XLAL_EFAULT );
+
+    if (dim<1)
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+
+    if (n<1)
+        XLAL_ERROR_VOID( XLAL_EINVAL );
+
+
+    /* first draw from MVN */
+        XLALMultiNormalDeviates( vector, matrix, dim, randParam);
+
+    /* then draw from chi-square with n degrees of freedom;
+     this is the sum d_i*d_i with d_i drawn from a normal 
+     distribution. */
+        dummy = XLALCreateREAL4Vector( n );
+        XLALNormalDeviates( dummy, randParam );
+
+    /* calculate the chisquare distributed value */
+    for (i=0; i<n; i++)
+    {
+        chi+=dummy->data[i]*dummy->data[i];
+    }
+
+    /* destroy the helping vector */
+        XLALDestroyREAL4Vector( dummy );
+
+    /* now, finally, calculate the distribution value */
+    factor=sqrt(n/chi);
+    for (i=0; i<dim; i++)
+    {
+        vector->data[i]*=factor;
+    }
+
+}
+

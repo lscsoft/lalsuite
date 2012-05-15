@@ -573,4 +573,30 @@ void LALInferenceKDDrawEigenFrame(gsl_rng * rng, LALInferenceKDTree *tree, REAL8
 REAL8 LALInferenceKDLogProposalRatio(LALInferenceKDTree *tree, REAL8 *current,
                                      REAL8 *proposed, size_t Npts);
 
+/** Check matrix is positive definite. dim is matrix dimensions */
+UINT4 LALInferenceCheckPositiveDefinite(
+                          gsl_matrix       *matrix,
+                          UINT4            dim
+                          );
+
+/** Draw a random multivariate vector from Gaussian distr given covariance matrix */
+void
+XLALMultiNormalDeviates(
+                        REAL4Vector *vector,
+                        gsl_matrix *matrix,
+                        UINT4 dim,
+                        RandomParams *randParam
+                        );
+/** Draw a random multivariate vector from student-t distr given covariance matrix */
+void
+XLALMultiStudentDeviates(
+                         REAL4Vector  *vector,
+                         gsl_matrix   *matrix,
+                         UINT4         dim,
+                         UINT4         n,
+                         RandomParams *randParam
+                         );
+
+
+
 #endif

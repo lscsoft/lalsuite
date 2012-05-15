@@ -700,12 +700,6 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
-<<<<<<< HEAD
-	tmpVal=logDmin+(logDmax-logDmin)/2.0;
-	if(!LALInferenceCheckVariable(currentParams,"logdistance")) LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
-	
-=======
 	if(LALInferenceGetProcParamVal(commandLine,"--no-logdistance"))
 	{
 		REAL8 Dmin=exp(logDmin);
@@ -717,10 +711,9 @@ Parameter arguments:\n\
 	else 
 	{
 		tmpVal=logDmin+(logDmax-logDmin)/2.0;
-		LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		if(!LALInferenceCheckVariable(currentParams,"logdistance")) LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
 	}
->>>>>>> 80e1254660e5c5688242100b61db7b7070a1e750
 	tmpVal=1.0;
 	if(!LALInferenceCheckVariable(currentParams,"rightascension")) LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
