@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 13
+# serial 14
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -317,7 +317,7 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
   LALSUITE_SWIG_LANGUAGE([Octave],[
 
     # minimum required octave version
-    OCTAVE_MIN_VERSION=3.2.4
+    OCTAVE_MIN_VERSION=3.2.0
 
     # check for octave-config binary
     AC_PATH_PROGS(OCTAVE_CONFIG,[octave-config],[])
