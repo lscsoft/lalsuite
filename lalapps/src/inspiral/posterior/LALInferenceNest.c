@@ -246,12 +246,12 @@ void initializeNS(LALInferenceRunState *runState)
 	char help[]="\
 Nested sampling arguments:\n\
  --Nlive N\tNumber of live points to use\n\
- --Nmcmc M\tNumber of MCMC point to use when evolving live points\n\
+(--Nmcmc M)\tOver-ride auto chain length determination and use this number of MCMC samples.\n\
+(--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
 (--verbose)\tProduce progress information\n\
-(--mcmcprop)\tUse PTMCMC proposal engine\n\
 \t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 \t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
 \t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
@@ -279,19 +279,17 @@ Nested sampling arguments:\n\
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
-	runState->evolve=&LALInferenceNestedSamplingOneStep;
-	if(LALInferenceGetProcParamVal(commandLine,"--mcmcprop")){
-	  /* Use the PTMCMC proposal to sample prior */
-	  runState->proposal=&NSWrapMCMCLALProposal;
-	  REAL8 temp=1.0;
-	  UINT4 dummy=0;
-	  LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	  LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	  LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	  LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	}
-	else
-	  runState->proposal=&LALInferenceProposalNS;
+        runState->evolve=&LALInferenceNestedSamplingOneStep;
+	
+    /* use the ptmcmc proposal to sample prior */
+    runState->proposal=&NSWrapMCMCLALProposal;
+    REAL8 temp=1.0;
+    UINT4 dummy=0;
+    LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
+    LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	
 
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 
@@ -342,19 +340,21 @@ Nested sampling arguments:\n\
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	
-	printf("set number of MCMC points.\n");
 	/* Number of points in MCMC chain */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nmcmc");
-    if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
-	if(ppt)
+    	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
+	if(ppt){
 	  tmpi=atoi(ppt->value);
-	else {
-	  fprintf(stderr,"Error, must specify number of MCMC points\n");
-	  exit(1);
-	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
-				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-	
+				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+	printf("set number of MCMC points, over-riding auto-determination!\n");
+	}
+	if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyfraction")))
+        	tmp=atof(ppt->value);
+    	else tmp=0.0;
+    	LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
+                    LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nruns");
@@ -498,7 +498,8 @@ Parameter arguments:\n\
 (--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
 (--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n\
 (--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n\
-(--pinparams [mchirp,asym_massratio,etc])\n\tList of parameters to set to injected values";
+(--pinparams [mchirp,asym_massratio,etc])\n\tList of parameters to set to injected values\n\
+(--no-logdistance)\tUse distance, not logdistance, as the sampling variable\n";
 
 	/* Print command line arguments if help requested */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
@@ -692,10 +693,20 @@ Parameter arguments:\n\
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
-	tmpVal=logDmin+(logDmax-logDmin)/2.0;
-	if(!LALInferenceCheckVariable(currentParams,"logdistance")) LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
-	
+	if(LALInferenceGetProcParamVal(commandLine,"--no-logdistance"))
+	{
+		REAL8 Dmin=exp(logDmin);
+		REAL8 Dmax=exp(logDmax);
+		tmpVal=Dmin+(Dmax-Dmin)/2.;
+		LALInferenceAddVariable(currentParams,"distance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   LALINFERENCE_REAL8_t);		
+	}
+	else 
+	{
+		tmpVal=logDmin+(logDmax-logDmin)/2.0;
+		if(!LALInferenceCheckVariable(currentParams,"logdistance")) LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
+	}
 	tmpVal=1.0;
 	if(!LALInferenceCheckVariable(currentParams,"rightascension")) LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
