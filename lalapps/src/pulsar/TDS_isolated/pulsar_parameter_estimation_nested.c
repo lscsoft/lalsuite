@@ -196,7 +196,8 @@ LALStringVector *corlist = NULL;
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
-" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n"\
+" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n\
+                     (if not specified an adaptive number of points is used)\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
@@ -398,10 +399,6 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
     tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nmcmc")->value );
     LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi,
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-  }
-  else{
-    XLALPrintError("Error... Number of MCMC iterations must be specified.\n");
-    XLAL_ERROR_VOID(XLAL_EIO);
   }
 
   /* Optionally specify number of parallel runs */
