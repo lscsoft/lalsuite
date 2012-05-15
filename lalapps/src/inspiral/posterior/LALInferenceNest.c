@@ -246,13 +246,12 @@ void initializeNS(LALInferenceRunState *runState)
 	char help[]="\
 Nested sampling arguments:\n\
  --Nlive N\tNumber of live points to use\n\
- --Nmcmc M\tNumber of MCMC point to use when evolving live points\n\
+(--Nmcmc M)\tOver-ride auto chain length determination and use this number of MCMC samples.\n\
 (--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
 (--verbose)\tProduce progress information\n\
-(--auto-chain-length)\tAutomatically tune the MCMC chains\n\
 \t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
 \t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
 \t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
@@ -280,9 +279,6 @@ Nested sampling arguments:\n\
 	
 	/* Set up the appropriate functions for the nested sampling algorithm */
 	runState->algorithm=&LALInferenceNestedSamplingAlgorithm;
-    if(LALInferenceGetProcParamVal(commandLine,"--auto-chain-length"))
-    	runState->evolve=&LALInferenceNestedSamplingSloppySample;
-    else
         runState->evolve=&LALInferenceNestedSamplingOneStep;
 	
     /* use the ptmcmc proposal to sample prior */
@@ -344,22 +340,19 @@ Nested sampling arguments:\n\
 	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nlive",&tmpi, LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	
-	printf("set number of MCMC points.\n");
 	/* Number of points in MCMC chain */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Nmcmc");
-    if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
-	if(ppt)
+    	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--nmcmc");
+	if(ppt){
 	  tmpi=atoi(ppt->value);
-	else {
-	  fprintf(stderr,"Error, must specify number of MCMC points\n");
-	  exit(1);
-	}
 	LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmpi,
 				LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-    if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyfraction")))
-        tmp=atof(ppt->value);
-    else tmp=0.0;
-    LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
+	printf("set number of MCMC points, over-riding auto-determination!\n");
+	}
+	if((ppt=LALInferenceGetProcParamVal(commandLine,"--sloppyfraction")))
+        	tmp=atof(ppt->value);
+    	else tmp=0.0;
+    	LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
                     LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 	printf("set number of parallel runs.\n");

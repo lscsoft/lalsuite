@@ -25,8 +25,11 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
+#define MAX_MCMC 20000 /* Maximum chain length, set to be higher than expected from a reasonable run */
 
- static void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
+static INT4 __chainfile_iter=0;
+static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
+static void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 /* Prototypes for private "helper" functions. */
 //static void SamplePriorDiscardAcceptance(LALInferenceRunState *runState);
 static double logadd(double a,double b);
@@ -72,6 +75,24 @@ REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG){
 	REAL8 a=0.0;
 	while((Nlive--)>1) {a=gsl_rng_uniform(RNG); t = t>a ? t : a;}
 	return(log(t));
+}
+
+static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
+	INT4 max;
+	/* Measure Autocorrelations if the Nmcmc is not over-ridden */
+	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc")){
+		  if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
+			  max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
+		  else max=MAX_MCMC; /* otherwise use the MAX_MCMC */
+                  if(max>MAX_MCMC) max=MAX_MCMC;
+                  LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
+                  max=10;
+                  for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
+                  LALInferenceDestroyVariables(acls);
+                  free(acls);
+                  LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
+	}
+        return(max);
 }
 
 /* estimateCovarianceMatrix reads the list of live points,
@@ -380,6 +401,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           LALInferenceSetupkDTreeNSLivePoints( runState );
         }
         
+	if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
+	  INT4 tmp=200;
+	  LALInferenceAddVariable(runState->algorithmParams,"Nmcmc",&tmp,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+	}
 	/* Sprinkle points */
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
@@ -393,6 +418,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
           LALInferenceSetupkDTreeNSLivePoints( runState );
 
+	/* Set the number of MCMC points */
+	UpdateNMCMC(runState);
+	
 	runState->currentParams=&currentVars;
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
@@ -493,45 +521,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
             /* update k-d tree */
             if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" ) )
                 LALInferenceSetupkDTreeNSLivePoints( runState ); 
-		
-            /* Measure Autocorrelations if asked */
-		    if(LALInferenceGetProcParamVal(runState->commandLine,"--auto-chain-length")){
-                LALInferenceAddVariable(runState->algorithmParams,"current_iteration",&iter,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
-                //INT4 meanmax=0.;
-                //int Ntries=5;
-                /* Calculate ACF of Prior MCMC sampler */
-                //INT4 sloppyratio;
-                //for (int try=0;try<Ntries;try++){
-                //    sloppyratio=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"sloppyratio");
-                //    LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, sloppyratio*10, SamplePriorDiscardAcceptance);
-                //    INT4 max=1;
-                //    for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
-                //    LALInferenceDestroyVariables(acls);
-                //    free(acls);
-                //    meanmax+=max;
-                //}
-                //meanmax/=Ntries;
-                //if(sloppyratio>meanmax)
-                 //   LALInferenceSetVariable(runState->algorithmParams,"sloppyratio",&meanmax);
-              
-                /* Measure ACF of Actual evolution function */
-		
-		/* Reset the sloppy fraction as we have updated our proposal */
-		//LALInferenceSetVariable(runState->algorithmParams,"sloppylogit",&zero);
-			    INT4 MAX_MCMC=20000; /* Maximum chain length, set to be higher than expected from a reasonable run */
-                INT4 max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
-                if(max>MAX_MCMC) max=MAX_MCMC;
-                LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
-                max=10;
-                for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
-                LALInferenceDestroyVariables(acls);
-                free(acls);
-                LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
-		    }
+
+	    /* Update NMCMC from ACF */
+	    UpdateNMCMC(runState);
+	
 	      }
-		
 	}
-	while( iter <= Nlive ||  dZ> TOLERANCE ); 
+	while( iter <= Nlive ||  dZ> TOLERANCE ); /* End of NS loop! */
 
 	/* Sort the remaining points (not essential, just nice)*/
 		for(i=0;i<Nlive-1;i++){
@@ -634,7 +630,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   char acf_file_name[128]="";
   FILE *chainfile=NULL;
   FILE *acffile=NULL;
-  INT4 global_iter;
   UINT4 i,j;
   INT4 nPar=0; // = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   REAL8 **data_array=NULL;
@@ -648,7 +643,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   REAL8 ACF,ACL,max=0;
   LALInferenceVariables *acls=calloc(1,sizeof(LALInferenceVariables));
 
-  global_iter=*(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"current_iteration");
   /* Back up the algorithm state and replace with a clean version for logSampletoarray */
   LALInferenceVariables myAlgParams,*oldAlgParams=runState->algorithmParams;
   LALInferenceVariables myCurrentParams,*oldCurrentParams=runState->currentParams;
@@ -659,7 +653,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"outfile");
-  LALInferenceSetVariable(&myAlgParams,"Nmcmc",&thinning);
+  LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
+  LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
   REAL8Vector *projection=NULL;
 
@@ -669,15 +664,16 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   /* We can record write the MCMC chain to a file too */
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--acf-chainfile");
   if(ppt){
-    sprintf(chainfilename,"%s.%i",ppt->value,global_iter);
+    sprintf(chainfilename,"%s.%i",ppt->value,__chainfile_iter);
     chainfile=fopen(chainfilename,"w");
     LALInferenceAddVariable(&myAlgParams,"outfile",&chainfile,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
   }
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--acf-file");
   if(ppt){
-    sprintf(acf_file_name,"%s.%i",ppt->value,global_iter);
+    sprintf(acf_file_name,"%s.%i",ppt->value,__chainfile_iter);
     acffile=fopen(acf_file_name,"w");
   }
+  __chainfile_iter++;
   LALInferenceVariables **livePoints=runState->livePoints;
   UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
   UINT4 BAILOUT=100; /* this should be the same as the bailout in the sampler */
@@ -929,7 +925,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             counter+=(1.-sloppyfraction);
         }while(counter<1);
 	/* Check that there was at least one accepted point */
-	if(sub_accepted==0.) {
+	if(sub_accepted==0) {
 	    tries++;
 	    sub_iter+=subchain_length;
 	    mcmc_iter++;
