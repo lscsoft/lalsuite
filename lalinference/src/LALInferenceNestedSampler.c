@@ -304,6 +304,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		LALInferenceAddVariable(runState->algorithmParams,"accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     if(!LALInferenceCheckVariable(runState->algorithmParams,"sub_accept_rate"))
         LALInferenceAddVariable(runState->algorithmParams,"sub_accept_rate",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    if(!LALInferenceCheckVariable(runState->algorithmParams,"sloppyfraction"))
+        LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 
 	/* Set up the proposal scale factor, for use in the multi-student jump step */
 	REAL8 propScale = 0.1;
