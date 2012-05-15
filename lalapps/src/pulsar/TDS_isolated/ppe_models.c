@@ -243,7 +243,10 @@ through the loop.*/
           /* heterodyne */
           data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
           data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
-					if(i<1)fprintf(stderr,"dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
+          /*
+          if(i<1)
+            fprintf(stderr, "dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
+          */
         }
       }
     }
@@ -605,10 +608,12 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   Xpcosphi = Xplus*cosphi;
   Xccosphi = Xcross*cosphi;
   
-  /* set the psi bin for the lookup table */
-  psv = LAL_PI_2 / ( psteps - 1. );
-  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
-  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  /* set the psi bin for the lookup table - the lookup table runs from -pi/2
+     to pi/2, but for the triaxial case we only require psi values from -pi/4
+     to pi/4 (the grid will be twice as coarse) */
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
+  psiMin = -(LAL_PI_2) + psibinMin*psv;
   psibinMax = psibinMin + 1;
   psiMax = psiMin + psv;
   
@@ -732,10 +737,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
   
-  /* set the psi bin for the lookup table */
+  /* set the psi bin for the lookup table (look-up table cover that fill -pi/2
+     to pi/2 range) */
   psv = LAL_PI / ( psteps - 1. );
-  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/2. )/psv );
-  psiMin = -(LAL_PI/2.) + psibinMin*psv;
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
+  psiMin = -(LAL_PI_2) + psibinMin*psv;
   psibinMax = psibinMin + 1;
   psiMax = psiMin + psv;
   
@@ -835,7 +841,6 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
     data->next->compModelData->data->data[i].im =
       (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-
       ( cross*Xcross2f*((B1*cos2phi)+(B2*sin2phi)) );
-		
   }
   /*--------------------------------------------------------------------------*/
 }
@@ -855,30 +860,30 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
  * \return The natural logarithm of the noise only evidence
  */
 REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
-	
   LALInferenceIFOData *data = runState->data;
   
   REAL8 logL = 0.0;
   UINT4 i = 0;
-	INT4 k = 0;
-	
-	REAL8Vector *freqFactors = NULL;
-	FILE *fp = NULL;
-	CHAR *Znoisefile = NULL;
-	ProcessParamsTable *ppt;
-	ProcessParamsTable *commandLine = runState->commandLine;
-	/*-----------------------------*/
-	
-	ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );/*get the outfile name*/
-	
-	freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,                                                        "freqfactors" );
+  INT4 k = 0;
 
-	/*set the Znoise filename to the outfile name with "_Znoise" appended*/
-	Znoisefile = XLALStringDuplicate( ppt->value );
+  REAL8Vector *freqFactors = NULL;
+  FILE *fp = NULL;
+  CHAR *Znoisefile = NULL;
+  ProcessParamsTable *ppt;
+  ProcessParamsTable *commandLine = runState->commandLine;
+  /*-----------------------------*/
+  /*get the outfile name*/
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,     
+                                                          "freqfactors" );
+
+  /*set the Znoise filename to the outfile name with "_Znoise" appended*/
+  Znoisefile = XLALStringDuplicate( ppt->value );
   Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
 
-	/*Open the Znoise file for writing*/
-	if( (fp = fopen(Znoisefile, "w")) == NULL ){
+  /*Open the Znoise file for writing*/
+  if( (fp = fopen(Znoisefile, "w")) == NULL ){
     fprintf(stderr, "Error... cannot open output Znoise file!\n");
     exit(0);
   }
@@ -889,32 +894,37 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
     REAL8Vector *sumDat = NULL;
   
     REAL8 chunkLength = 0.;
-		
   
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams, 
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                        "sumData" );
-		/*Sum the logL over the datachunks*/
+    /*Sum the logL over the datachunks*/
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
    
       logL -= chunkLength * log(sumDat->data[i]);
     }
-		
-		/*if I am dealing with any model with more than one datastream, I will have more than one freq factor
-		and I want to output the evidence for the data being gaussian noise seperately for each datastream*/
-		if((INT4)freqFactors->length > 1) fprintf(fp,"Datastream at freq factor: %f, Z: %f\n",freqFactors->data[k],logL);
-		
-		k+=1;/* advance counter now, as freqfactors array index starts at zero.*/
-		
-		/*reset k, freqfactor counter once all datastreamns for a detector are done*/
-		if(k >= (INT4)freqFactors->length) k=0;
-		
-		data = data->next;
-		
+
+    /* if I am dealing with any model with more than one datastream, I will
+       have more than one freq factor and I want to output the evidence for the
+       data being gaussian noise seperately for each datastream */
+    if((INT4)freqFactors->length > 1){ 
+      fprintf(fp, "Datastream at freq factor: %f, Z: %f\n",
+              freqFactors->data[k], logL);
+    }
+
+    k += 1; /* advance counter now, as freqfactors array index starts at zero.*/
+
+    /* reset k, freqfactor counter once all datastreamns for a detector are
+       done */
+    if(k >= (INT4)freqFactors->length) k = 0;
+
+    data = data->next;
   }
+  
   fclose(fp);
+  
   return logL;
 }
 

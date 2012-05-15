@@ -107,7 +107,7 @@ extern "C" {
 #define CHUNKMAX 0
 /** Default number of bins in polarisation angle \f$ \psi \f$ for the time vs.
  * \f$ \psi \f$ antenna pattern lookup table. */
-#define PSIBINS 500
+#define PSIBINS 1000
 /** Default number of bins in time (over one sidereal day) for the time vs.
  * \f$ \psi \f$ antenna pattern lookup table. */
 #define TIMEBINS 2880

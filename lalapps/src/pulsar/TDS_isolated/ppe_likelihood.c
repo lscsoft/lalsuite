@@ -62,13 +62,13 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
   LALInferenceIFOData *datatemp1 = data, *datatemp2 = data;
-  
+ 
   /* copy model parameters to data parameters */
   while( datatemp1 ){
     LALInferenceCopyVariables( vars, datatemp1->modelParams );
     datatemp1 = datatemp1->next;
   }
-  
+ 
   /* get pulsar model */
   while( datatemp2 ){
     /*fprintf(bugtest,"getting model in log like func\n");*/
@@ -78,7 +78,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
      runs once if there is only 1 det*/
     if ( !strcmp( modeltype, "pinsf" ) ) datatemp2 = datatemp2->next;
   }
-  
+
   while ( data ){
     UINT4 j = 0, count = 0, cl = 0;
     UINT4 length = 0, chunkMin;
@@ -144,7 +144,7 @@ M.re, M.im);*/
     loglike += logliketmp;
     data = data->next;
   }
-  
+
   return loglike;
 }
 
@@ -171,7 +171,7 @@ REAL8 priorFunction( LALInferenceRunState *runState,
 
   REAL8Vector *corVals = NULL;
   UINT4 cori = 0;
-  
+
   /* if some correlated priors exist allocate corVals */
   if ( corlist ) corVals = XLALCreateREAL8Vector( corlist->length );
   
@@ -291,7 +291,7 @@ REAL8 priorFunction( LALInferenceRunState *runState,
     prior -= ptmp;
   }
   
-  return prior; 
+  return prior;
 }
 
 /*--------------- END OF LIKELIHOOD AND PRIOR FUNCTIONS ----------------------*/
