@@ -414,6 +414,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
+	
 	/* re-calculate the k-D tree from the new points if required */
 	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
           LALInferenceSetupkDTreeNSLivePoints( runState );
@@ -1047,11 +1048,12 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
     XLALCalloc(1,sizeof(LALInferenceVariables));
   UINT4 Nlive = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
                                                    "Nlive" );
-  
+ 
   /* if a current tree exists remove it */
   if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
   {
-    LALInferenceKDTreeDelete(*(LALInferenceKDTree **)LALInferenceGetVariable(runState->proposalArgs,"kDTree"));
+    LALInferenceKDTreeDelete( *(LALInferenceKDTree
+      **)LALInferenceGetVariable(runState->proposalArgs, "kDTree"));
     LALInferenceRemoveVariable( runState->proposalArgs, "kDTree" );
   }
   /* get the upper and lower bounds for each parameter */
@@ -1065,7 +1067,6 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
          
         low = XLALRealloc(low, sizeof(REAL8)*cnt);
         high = XLALRealloc(high, sizeof(REAL8)*cnt);
-        pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
                 
         LALInferenceGetMinMaxPrior( runState->priorArgs, currentItem->name,
                                     &(low[cnt-1]), &(high[cnt-1]) );
@@ -1079,7 +1080,6 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
         
         low = XLALRealloc(low, sizeof(REAL8)*cnt);
         high = XLALRealloc(high, sizeof(REAL8)*cnt);
-        pt = XLALRealloc(pt, sizeof(REAL8)*cnt);
         
         LALInferenceGetGaussianPrior( runState->priorArgs, currentItem->name,
                                       &mn, &stddiv );
@@ -1099,7 +1099,8 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   }
 
   ndim = (size_t)cnt;
-          
+  pt = XLALMalloc(cnt*sizeof(REAL8));
+  
   /* set up tree */
   tree = LALInferenceKDEmpty( low, high, ndim );
   LALInferenceCopyVariables( runState->currentParams, template );
@@ -1107,6 +1108,7 @@ void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState ){
   /* add points to tree */
   for( cnt = 0; cnt < Nlive; cnt++ ){
     LALInferenceKDVariablesToREAL8( runState->livePoints[cnt], pt, template );
+    
     LALInferenceKDAddPoint( tree, pt );
   }
                   
