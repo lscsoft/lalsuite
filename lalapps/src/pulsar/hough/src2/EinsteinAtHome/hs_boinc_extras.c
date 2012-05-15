@@ -1043,6 +1043,9 @@ static void worker (void) {
 #else
 	  "LAL_DEBUG"
 #endif
+#if __OPTIMIZE__
+	  ", OPTIMIZE"
+#endif
 #ifdef HS_OPTIMIZATION
 	  ", HS_OPTIMIZATION"
 #endif
