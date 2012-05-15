@@ -950,10 +950,10 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
     norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
     
      for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
-      IFOdata->freqModelhPlus->data->data[i].re*=norm;
-      IFOdata->freqModelhPlus->data->data[i].im*=norm;
-      IFOdata->freqModelhCross->data->data[i].re*=norm;
-      IFOdata->freqModelhCross->data->data[i].im*=norm;
+      IFOdata->freqModelhPlus->data->data[i].re/=norm;
+      IFOdata->freqModelhPlus->data->data[i].im/=norm;
+      IFOdata->freqModelhCross->data->data[i].re/=norm;
+      IFOdata->freqModelhCross->data->data[i].im/=norm;
   }
  }
 }
