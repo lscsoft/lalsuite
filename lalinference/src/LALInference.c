@@ -1361,18 +1361,45 @@ static int cellAllEqualPoints(LALInferenceKDTree *cell) {
 static void addPtToCellPts(LALInferenceKDTree *cell, REAL8 *pt) {
   size_t ptsSize = cell->ptsSize;
   size_t npts = cell->npts;
-
-  if (npts == ptsSize) {
-    REAL8 **newPts = XLALCalloc(2*ptsSize, sizeof(REAL8 *));
-
-    memcpy(newPts, cell->pts, npts*sizeof(REAL8 *));
-
+  size_t dim = cell->dim;
+  
+  /* copy previous points */
+  if ( npts == ptsSize ){
+    REAL8 tmpArr[npts][dim];
+    
+    /* copy points from cell */
+    for( UINT4 i=0; i < npts; i++ ){
+      for( UINT4 j=0; j < dim; j++ ){
+        tmpArr[i][j] = cell->pts[i][j];
+      }
+      XLALFree(cell->pts[i]); /* free column */
+    }
+    
+    /* free array */
     XLALFree(cell->pts);
-    cell->pts=newPts;
+  
+    /* expand array */
+    cell->pts = XLALCalloc(2*ptsSize, sizeof(REAL8 *));
+  
+    /* copy vector into array */
+    for( UINT4 i=0; i < 2*ptsSize; i++ ){
+      cell->pts[i] = XLALCalloc(dim, sizeof(REAL8));
+      
+      if (i < npts){
+        for( UINT4 j=0; j < dim; j++ )
+          cell->pts[i][j] = tmpArr[i][j];
+      } 
+    }
+    
     cell->ptsSize *= 2;
   }
-
-  cell->pts[npts] = pt;
+  
+  if ( npts == 0 ) cell->pts[npts] = XLALCalloc(dim, sizeof(REAL8));
+  
+  /* add new point */
+  for( UINT4 i = 0; i < dim; i++ )
+    cell->pts[npts][i] = pt[i];
+  
   cell->npts += 1;
   cell->eigenFrameStale = 1;
 }
@@ -1403,7 +1430,7 @@ static int insertIntoCell(LALInferenceKDTree *cell, REAL8 *pt, size_t level) {
     /* Insert this point into the cell, and quit. */
     addPtToCellPts(cell, pt);
     return XLAL_SUCCESS;
-  } else if (cell->left == NULL && cell->right == NULL) {
+  } else if (cell->left == NULL && cell->right == NULL) {    
     /* This cell is a leaf node.  Insert the point, then (unless the
        cell stores many copies of the same point), push everything
        down a level. */
@@ -1432,7 +1459,7 @@ static int insertIntoCell(LALInferenceKDTree *cell, REAL8 *pt, size_t level) {
 
       return XLAL_SUCCESS;
     }
-  } else {
+  } else {    
     /* This is not a leaf cell, so insert, and then move down the tree. */
     REAL8 mid = 0.5*(cell->lowerLeft[level] + cell->upperRight[level]);
 
@@ -1667,7 +1694,7 @@ int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt) {
 
   if (!inBounds(pt, tree->lowerLeft, tree->upperRight, tree->dim))
     XLAL_ERROR(XLAL_EINVAL, "given point that is not in global tree bounds");
-
+  
   return insertIntoCell(tree, pt, 0);
 }
 
