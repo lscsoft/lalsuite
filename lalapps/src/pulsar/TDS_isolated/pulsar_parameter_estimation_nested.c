@@ -1843,8 +1843,8 @@ set.\n", propfile, tempPar);
   }
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
-     of their range (for a triaxial star) then remove them and add the phi0'
-and psi' coordinates */
+     of their range (for a triaxial star, so -pi/4 <= psi <= pi/4 and 0 <= phi0
+     <= 2pi) then remove them and add the phi0' and psi' coordinates */
   if( phidef && psidef && !strcmp( "triaxial",
       *(CHAR **)LALInferenceGetVariable( runState->data->dataParams, 
                                          "modeltype" ) ) ){
