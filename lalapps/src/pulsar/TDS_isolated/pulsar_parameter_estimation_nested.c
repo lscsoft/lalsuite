@@ -401,12 +401,19 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
 
+  /* set sloppiness! */
+  ppt = LALInferenceGetProcParamVal(commandLine,"--sloppyfraction");
+  if( ppt ) tmp = atof(ppt->value);
+  else tmp = 0.0;
+  LALInferenceAddVariable( runState->algorithmParams, "sloppyfraction", &tmp,
+                           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT );
+  
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
   if( ppt ) {
     tmpi = atoi( ppt->value );
-    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, LALINFERENCE_INT4_t,
-                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, 
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
         
   /* Tolerance of the Nested sampling integrator */
