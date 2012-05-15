@@ -435,6 +435,7 @@ void initVariables(LALInferenceRunState *state)
                (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
+               (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -613,89 +614,114 @@ void initVariables(LALInferenceRunState *state)
     if ( ! strcmp( "GeneratePPN", ppt->value ) )
       {
         approx = GeneratePPN;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT1", ppt->value ) )
       {
         approx = TaylorT1;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT2", ppt->value ) )
       {
         approx = TaylorT2;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT3", ppt->value ) )
       {
         approx = TaylorT3;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT4", ppt->value ) )
       {
         approx = TaylorT4;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorF1", ppt->value ) )
       {
         approx = TaylorF1;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "TaylorF2", ppt->value ) )
       {
         approx = TaylorF2;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "TaylorF2RedSpin", ppt->value ) )
-    {
-      approx = TaylorF2RedSpin;
-    }
+      {
+        approx = TaylorF2RedSpin;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      }
+      else if ( ! strcmp( "TaylorF2RedSpinTidal", ppt->value ) )
+      {
+        approx = TaylorF2RedSpinTidal;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      }
     else if ( ! strcmp( "EOB", ppt->value ) )
       {
         approx = EOB;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNR", ppt->value ) )
       {
         approx = EOBNR;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNRv2", ppt->value ) )
       {
         approx = EOBNRv2;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
       {
         approx = EOBNRv2HM;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylor", ppt->value ) )
       {
         approx = SpinTaylor;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylorT4", ppt->value ) )
       {
         approx = SpinTaylorT4;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
       {
         approx = SpinQuadTaylor;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylorFrameless", ppt->value ) )
       {
         approx = SpinTaylorFrameless;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
       {
         approx = PhenSpinTaylorRD;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "NumRel", ppt->value ) )
       {
         approx = NumRel;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
       {
         approx = IMRPhenomA;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
       {
         approx = IMRPhenomB;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else
       {
         fprintf( stderr, "invalid argument to --approximant\n"
                  "unknown approximant %s specified: "
                  "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
-                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2, TaylorF2RedSpin,  EOB, EOBNR, EOBNRv2, \n"
+                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2, TaylorF2RedSpin, TaylorF2RedSpinTidal, EOB, EOBNR, EOBNRv2, \n"
                  "EOBNRv2HM, SpinTaylor, SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4\n"
                  "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
         exit( 1 );
@@ -803,6 +829,25 @@ void initVariables(LALInferenceRunState *state)
         exit( 1 );
       }
     fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(AmpOrder))/2.0);
+  }
+  
+  ppt=LALInferenceGetProcParamVal(commandLine,"--modeldomain");
+  if(ppt){
+    if ( ! strcmp( "time", ppt->value ) )
+    {
+      state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+    }
+    else if ( ! strcmp( "frequency", ppt->value ) )
+    {
+      state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+    }
+    else
+    {
+      fprintf( stderr, "invalid argument to --modeldomain:\n"
+              "unknown domain specified: "
+              "domain must be one of: time, frequency\n");
+      exit( 1 );
+    }
   }
   
   /* This flag was added to account for the broken Big Dog

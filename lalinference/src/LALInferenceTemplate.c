@@ -1819,9 +1819,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   
   REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
   UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
-  	
-	IFOdata->modelDomain = LALINFERENCE_DOMAIN_TIME;
-  //IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
 	
 	if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
 		approximant = *(Approximant*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
@@ -1912,27 +1909,35 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
                                                  inclination, lambda1, lambda2, interactionFlags, 
                                                  amporder, order, approximant), errnum);
     
-    
+    COMPLEX16 *dataPtr = htilde->data->data;
     /* copy over: */
     //IFOdata->freqModelhPlus->data->data[0] = ((REAL8) htilde->data->data[0]);
     //IFOdata->freqModelhPlus->data->data[0].im = 0.0;
     for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-      IFOdata->freqModelhPlus->data->data[i] = htilde->data->data[i];
+      dataPtr = htilde->data->data;
+      if(i < htilde->data->length){
+        IFOdata->freqModelhPlus->data->data[i] = dataPtr[i];
+      }else{
+        IFOdata->freqModelhPlus->data->data[i].re = 0.0; 
+        IFOdata->freqModelhPlus->data->data[i].im = 0.0;
+      }
+      //printf("%e %e %e\n", htilde->f0 + i * htilde->deltaF, IFOdata->freqModelhPlus->data->data[i].re, IFOdata->freqModelhPlus->data->data[i].im);
       //IFOdata->freqModelhPlus->data->data[i].im = ((REAL8) htilde->data->data[IFOdata->timeData->data->length-i]);
     }
     //IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1] = htilde->data->data[IFOdata->freqModelhPlus->data->length-1];
     //IFOdata->freqModelhPlus->data->data[IFOdata->freqModelhPlus->data->length-1].im = 0.0;
     /* nomalise (apply same scaling as in XLALREAL8TimeFreqFFT()") : */
-    for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
-      IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
-      IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
-    }
+    //for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
+      //IFOdata->freqModelhPlus->data->data[i].re *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
+      //IFOdata->freqModelhPlus->data->data[i].im *= ((REAL8) IFOdata->timeData->data->length) * deltaT;
+    //}
     
-    double plusCoef  = -0.5 * (1.0 + pow(cos(inclination),2.0));
-    double crossCoef = cos(inclination);
+    double cosi = cos(inclination);
+    double plusCoef  = -0.5 * (1.0 + cosi*cosi);
+    double crossCoef = cosi;
     
     /*  cross waveform is "i x plus" :  */
-    for (i=1; i<IFOdata->freqModelhCross->data->length-1; ++i) {
+    for (i=0; i<IFOdata->freqModelhCross->data->length; ++i) {
       IFOdata->freqModelhCross->data->data[i].re = -IFOdata->freqModelhPlus->data->data[i].im;
       IFOdata->freqModelhCross->data->data[i].im = IFOdata->freqModelhPlus->data->data[i].re;
       // consider inclination angle's effect:
