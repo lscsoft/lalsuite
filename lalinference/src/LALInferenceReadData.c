@@ -208,7 +208,8 @@ static REAL8TimeSeries *readTseries(CHAR *cachefile, CHAR *channel, LIGOTimeGPS 
 (--inj-lambda1)                 value of lambda1 to be injected, LALSimulation only (0)\n\
 (--inj-lambda2)                 value of lambda1 to be injected, LALSimulation only (0)\n\
 (--inj-interactionFlags)        value of the interaction flag to be injected, LALSimulation only (LAL_SIM_INSPIRAL_INTERACTION_ALL)\n\
-(--snrpath) 			Set a folder where to write a file with the SNRs being injected\n"
+(--snrpath) 			Set a folder where to write a file with the SNRs being injected\n\
+(--0noise)                      Sets the noise realisation to be identically zero (for the fake caches above only)\n"
 
 
 LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
@@ -645,9 +646,15 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 
 			/* Create the fake data */
 			int j_Lo = (int) IFOdata[i].fLow/IFOdata[i].freqData->deltaF;
-			for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
-				IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
-				IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
+			if(LALInferenceGetProcParamVal(commandLine,"--0noise")){
+				for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
+                                IFOdata[i].freqData->data->data[j].re=IFOdata[i].freqData->data->data[j].im=0.0;
+				}
+			} else {
+				for(j=j_Lo;j<IFOdata[i].freqData->data->length;j++){
+					IFOdata[i].freqData->data->data[j].re=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
+					IFOdata[i].freqData->data->data[j].im=XLALNormalDeviate(datarandparam)*(0.5*sqrt(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]/IFOdata[i].freqData->deltaF));
+				}
 			}
 			IFOdata[i].freqData->data->data[0].re=0; 			IFOdata[i].freqData->data->data[0].im=0;
 			const char timename[]="timeData";
