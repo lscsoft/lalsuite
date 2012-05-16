@@ -33,14 +33,17 @@ override doxy_inputdirs = $(abs_srcdir)/src \
 	$(addprefix $(abs_top_srcdir)/,$(DOXYINPUT))
 
 override lalsuite_version = $(shell \
-	cd $(abs_top_srcdir) || exit 1; \
-	lsv=$(PACKAGE_VERSION); \
-	if test "x$(GIT)" != x && test -d .git; then \
-		lsv="$$lsv-"`$(GIT) log -1 --pretty="format:%h"`; \
-		if $(GIT) diff --quiet HEAD; then \
-			: ; \
-		else \
-			lsv="$$lsv-unclean"; \
+	if test 0$(RELEASE) -eq 1; then \
+		lsv=$(PACKAGE_VERSION); \
+	else \
+		cd $(abs_top_srcdir) || exit 1; \
+		if test "x$(GIT)" != x && test -d .git; then \
+			lsv=`$(GIT) log -1 --pretty="format:%h"`; \
+			if $(GIT) diff --quiet HEAD; then \
+				: ; \
+			else \
+				lsv="$$lsv-UNCLEAN"; \
+			fi; \
 		fi; \
 	fi; \
 	echo $$lsv )
