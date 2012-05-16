@@ -80,7 +80,7 @@ REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG){
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 	INT4 max;
 	/* Measure Autocorrelations if the Nmcmc is not over-ridden */
-	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") || !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
+	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") && !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
 		  if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
 			  max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
 		  else max=MAX_MCMC; /* otherwise use the MAX_MCMC */
