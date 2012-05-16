@@ -619,8 +619,9 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
 
     const REAL8 fLowmSevenBythree = pow(fLow, -7./3.);
     const REAL8 fLowFac = fLowmSevenBythree * df;
+    const size_t ilow = (size_t) (fLow / df);  /* PSD starts at 0 Hz; others start at fLow */
     for (i=1; i<Sh->length; i++) {
-         const REAL8 psdfac = Sh->data[i];
+         const REAL8 psdfac = Sh->data[i + ilow];
          if (psdfac) {
              const REAL8 fbyfLow = (i*df+fLow)/fLow;
              const REAL8 logfbyfLow = log(fbyfLow);
