@@ -4,4 +4,5 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	docs \
+	pyversions \
 	rules
