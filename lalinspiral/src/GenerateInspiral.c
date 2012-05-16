@@ -373,6 +373,14 @@ XLALGetApproximantFromString(
   {
     *approximant = TaylorT2;
   }
+  else if ( strstr(thisEvent, "TaylorF2RedSpinTidal") )
+  {
+    *approximant = TaylorF2RedSpinTidal;
+  }
+  else if (strstr(thisEvent, "TaylorF2RedSpin") )
+  {
+    *approximant = TaylorF2RedSpin;
+  }
   else if ( strstr(thisEvent, "TaylorF2" ) )
   {
     *approximant = TaylorF2;
