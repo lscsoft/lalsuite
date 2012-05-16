@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 36
+# serial 37
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -438,7 +438,7 @@ AC_ARG_WITH(
     CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
     CUDA_CPPFLAGS="-I${with_cuda}/include"
     LIBS="$LIBS $CUDA_LIBS"
-    CPPFLAGS="$CFLAGS $CUDA_CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CPPFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
