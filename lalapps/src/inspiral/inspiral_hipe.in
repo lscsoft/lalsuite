@@ -1497,6 +1497,9 @@ parser.add_option("--summary-first-coinc-triggers", action='store_true', default
 parser.add_option("--data-checkpoint", action="store_true", default=False,\
     help="checkpoint the inspiral code")
 
+parser.add_option("--use-gpus", action="store_true", default=False,\
+    help="run inspiral jobs on GPU nodes")
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -1685,6 +1688,22 @@ else:
     usertag = string.strip(cp.get('pipeline','user-tag'))
   except:
     usertag = None
+
+##############################################################################
+# if --use-gpus was specified, override the config file
+
+if opts.use_gpus:
+  cp.set('condor', 'use-gpus', '')
+
+# pick up CUDA path specified at build time
+if cp.has_option('condor', 'use-gpus'):
+  cuda_path = '@_CUDA_PATH_@'
+  if cuda_path == '':
+    raise RuntimeError, "No CUDA path was specified at build time. " + \
+      "Please drop --use-gpus or use a CUDA-enabled build."
+  cp.set('condor', 'cuda-environment', \
+    'CUDA_INSTALL_PATH=%s;LD_LIBRARY_PATH=%s/lib64:%s/lib' % \
+    (cuda_path, cuda_path, cuda_path))
   
 ##############################################################################
 # create a log file that the Condor jobs will write to

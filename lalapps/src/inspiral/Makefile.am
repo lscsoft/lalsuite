@@ -166,6 +166,7 @@ python_config.sed: Makefile
 	@-rm -f python_config.sed
 	@echo "s+@PYTHONLIBDIR@+@pkgpythondir@+g" > python_config.sed
 	@echo "s+@PYTHONPROG@+@PYTHON@+g" >> python_config.sed
+	@echo "s+@_CUDA_PATH_@+@CUDA_PATH@+g" >> python_config.sed
 
 lalapps_inspiral_pipe: $(srcdir)/inspiral_pipe.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/inspiral_pipe.in > lalapps_inspiral_pipe
