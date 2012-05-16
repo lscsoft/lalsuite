@@ -252,12 +252,13 @@ Nested sampling arguments:\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
 (--randomseed seed)\tRandom seed of sampling distribution\n\
 (--verbose)\tProduce progress information\n\
-\t(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
-\t(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
-\t(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
-\t(--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\
-\t(--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
-\t(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n";
+(--iotaDistance FRAC)\tPTMCMC: Use iota-distance jump FRAC of the time\n\
+(--covarianceMatrix)\tPTMCMC: Propose jumps from covariance matrix of current live points\n\
+(--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
+(--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\
+(--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
+(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n\
+(--tdlike)\tUse time domain likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
@@ -290,7 +291,7 @@ Nested sampling arguments:\n\
     LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
-
+	/* Default likelihood is the frequency domain one */
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
 
         /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPriorNormalised. That should probably be replaced with a swhich over the possible priors. */
@@ -311,7 +312,10 @@ Nested sampling arguments:\n\
         	runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
 		runState->prior=LALInferenceAnalyticNullPrior;
 	}
-    
+	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
+		fprintf(stderr, "Computing likelihood in the time domain.\n");
+		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
+    	}
     
 	#ifdef HAVE_LIBLALXML
 	runState->logsample=LogNSSampleAsMCMCSampleToArray;
@@ -551,13 +555,46 @@ Parameter arguments:\n\
 
 	/* Over-ride approximant if user specifies */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
+	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
-		else
-		    XLALGetApproximantFromString(ppt->value,&approx);
-        XLALGetOrderFromString(ppt->value,&PhaseOrder);
+		XLALGetApproximantFromString(ppt->value,&approx);
+        	XLALGetOrderFromString(ppt->value,&PhaseOrder);
 	}
 	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+
+	/* Set the modeldomain appropriately */
+	switch(approx)
+	{
+		case GeneratePPN:
+		case TaylorT1:
+		case TaylorT2:
+		case TaylorT3:
+		case TaylorT4:
+		case EOB:
+		case EOBNR:
+		case EOBNRv2:
+		case EOBNRv2HM:
+		case SpinTaylor:
+		case SpinTaylorT4:
+		case SpinQuadTaylor:
+		case SpinTaylorFrameless:
+		case PhenSpinTaylorRD:
+		case NumRel:
+			state->data->modelDomain=LALINFERENCE_DOMAIN_TIME;
+			break;
+		case TaylorF1:
+		case TaylorF2:
+		case TaylorF2RedSpin:
+		case TaylorF2RedSpinTidal:
+		case IMRPhenomA:
+		case IMRPhenomB:
+			state->data->modelDomain=LALINFERENCE_DOMAIN_FREQUENCY;
+			break;
+		default:
+			fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
+			exit(1);
+			break;
+	}
 
 	/* Over-ride end time if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
