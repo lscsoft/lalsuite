@@ -150,7 +150,9 @@ int XLALPopulateProcessTable(
 {
 	char *cvs_keyword_value;
 	uid_t uid;
+#if 0
 	struct passwd *pw;
+#endif
 	struct tm utc;
 
 	/*
