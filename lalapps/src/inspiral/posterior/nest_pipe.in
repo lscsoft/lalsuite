@@ -41,7 +41,7 @@ def open_pipedown_database(database_filename,tmp_space):
     dbtables.DBTable_set_connection(connection)
     return (connection,working_filename) 
 
-def get_timeslides_pipedown2(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
+def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
 	"""
 	Returns a dict of dicts {trigtime: {'H1':0,'L1':5,'V1':10},...}
 	of times and timeslide offsets
@@ -54,7 +54,7 @@ def get_timeslides_pipedown2(database_connection, dumpfile=None, gpsstart=None, 
 	else:
 		outfile=None
 	db_segments=[]
-	sql_seg-query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
+	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
 	db_out = database_connection.cursor().execute(sql_seg_query)
 	for d in db_out:
 		if d not in db_segments:
@@ -63,35 +63,35 @@ def get_timeslides_pipedown2(database_connection, dumpfile=None, gpsstart=None, 
 	db_out_saved=[]
 	# Get coincidences
 	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,coinc_event.coinc_event_id \
-		    FROM sngl_inspiral join coinc_event_map on (coind_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
+		    FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id)"
 	if gpsstart is not None:
-		sql_query=sql_query+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > $f'%(gpsstart)
+		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
 		joinstr=' and '
 	else:
 		joinstr=' where '
 	if gpsend is not None:
-		sql_query=sql_query+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
+		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
 	db_out=database_connection.cursor().execute(get_coincs)
 	co_ids=set([d[1] for d in db_out])
 	print 'Found %i coinc events in pipedown database'%(len(co_ids))
 	for co_id in co_ids:
 		sql_query="SELECT time_slide.instrument,time_slide.offset from coinc_event join time_slide on \
-			   (time_slide.time_slide_id==coinc_event.time_slide_id) where coinc_event.coinc_event_id == %s"%(str(co_id))
+			   (time_slide.time_slide_id==coinc_event.time_slide_id) where coinc_event.coinc_event_id == '%s' "%(str(co_id))
 		db_out=database_connection.cursor().execute(sql_query)
 		offsets={}
 		for event in db_out:
 			offsets[event[0]]=event[1]
 		initialkey=offsets.keys()[0]
-		sql_query="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=='sngl_inspiral' and coinc_event_map.event_id == sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == %s and sngl_inspiral.instrument==%s"%(str(co_id),str(initialkey))
+		sql_query='SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=="sngl_inspiral" and coinc_event_map.event_id == sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == "%s" and sngl_inspiral.ifo=="%s"'%(str(co_id),str(initialkey))
 		db_out=database_connection.cursor().execute(sql_query)
-		shifted_time=db_out[0][0]
+		shifted_time=[t for t in db_out][0][0]
 		for ifo in offsets.keys():
 			deltat=offsets[ifo]
 			# The shifted time is also in the same segment as the original time
 			segfilt=filter(lambda seg:shifted_time in seg, seglist)
 			if(len(segfilt)!=1):
-				print 'ERROR: time must appear in only one segment'%(e[3])
+				print 'ERROR: time %f must appear in only one segment'%(shifted_time)
 			else:
 				seg=segfilt[0]
 			# Original time is shifted_time-deltat
@@ -105,12 +105,13 @@ def get_timeslides_pipedown2(database_connection, dumpfile=None, gpsstart=None, 
 		output[realtime]=offsets
 		if outfile is not None:
 			# Get the SNR and chi-squared to dump
-			sql_query = "SELECT sngl_inspiral.instrument,sngl_inspiral.snr,sngl_inspiral.chisq FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id==sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == %s"%(str(co_id))
+			sql_query = 'SELECT sngl_inspiral.ifo,sngl_inspiral.snr,sngl_inspiral.chisq FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == "sngl_inspiral" and coinc_event_map.event_id==sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == "%s"'%(str(co_id))
 			db_out=database_connection.cursor().execute(sql_query)	
 			for (ifo,snr,chisq) in db_out:
 				print >>outfile,"%s %f %f %f %f"%(ifo,realtime-offsets[ifo],snr,chisq,offsets[ifo])
 	if outfile is not None:
 		outfile.close()
+	print 'Found %i time slide coincs to run on'%(len(output))
 	return output
 
 def get_timeslides_pipedown_broken(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
