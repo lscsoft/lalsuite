@@ -529,9 +529,15 @@ int main(int argc,char *argv[])
 
   REAL4FrequencySeries *fstatVector = NULL;
   UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not --useResamp)
+  REAL8 dFreqResamp; // frequency resolution used to allocate vector of F-stat values for resampling
   if ( uvar.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
     {
-      numFreqBins_FBand = (UINT4) ceil ( uvar.FreqBand / uvar.dFreq );
+	if ( LALUserVarWasSet(&uvar.dFreq) ) {
+		dFreqResamp = uvar.dFreq;
+	} else {
+		dFreqResamp = 1.0/(2*GV.multiDetStates->Tspan);
+	}
+      numFreqBins_FBand = (UINT4) ceil ( uvar.FreqBand / dFreqResamp );
       if ( ( fstatVector = XLALCalloc ( 1, sizeof ( *fstatVector ) )) == NULL )
         XLAL_ERROR ( XLAL_EFAILED, "Failed to XLALCalloc ( 1, %d )\n", sizeof ( *fstatVector ) );
       if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
@@ -560,7 +566,7 @@ int main(int argc,char *argv[])
             {
               fstatVector->epoch = GV.internalRefTime;
               fstatVector->f0 = internalDopplerpos.fkdot[0];	// set to the fixed lowest-frequency bin
-              fstatVector->deltaF = uvar.dFreq;
+              fstatVector->deltaF = dFreqResamp;
 
               LAL_CALL ( ComputeFStatFreqBand_RS ( &status, fstatVector, &internalDopplerpos, GV.multiSFTs, GV.multiNoiseWeights, &GV.CFparams ), &status );
             }
