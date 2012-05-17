@@ -149,7 +149,8 @@ bin_SCRIPTS = \
 	lalapps_glitch_probe \
 	lalapps_cohPTF_hipe \
 	lalapps_coh_PTF_post_processing
-pkgpython_DATA = \
+
+pkgpython_PYTHON = \
 	inspiral.py \
 	inspiralutils.py
 endif

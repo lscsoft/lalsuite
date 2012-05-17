@@ -52,7 +52,7 @@ bin_SCRIPTS = \
 	lalapps_tracksearch_tune_pipe \
 	lalapps_tracksearch_cutpipe \
 	lalapps_tracksearch_mapcachebuilder
-pkgpython_DATA = \
+pkgpython_PYTHON = \
 	tracksearchutils.py \
 	tracksearch.py
 endif

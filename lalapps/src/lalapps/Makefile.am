@@ -57,7 +57,7 @@ LDADD = liblalapps.la @LAL_LIBS@
 INCLUDES = -I$(top_srcdir)/src
 
 if HAVE_PYTHON
-pkgpython_DATA = \
+pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
 endif
