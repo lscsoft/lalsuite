@@ -529,7 +529,7 @@ int main(int argc,char *argv[])
 
   REAL4FrequencySeries *fstatVector = NULL;
   UINT4 numFreqBins_FBand = 1;	// number of frequency-bins in the frequency-band used for resampling (1 if not --useResamp)
-  REAL8 dFreqResamp; // frequency resolution used to allocate vector of F-stat values for resampling
+  REAL8 dFreqResamp = 0; // frequency resolution used to allocate vector of F-stat values for resampling
   if ( uvar.useResamp )	// handle special resampling case, where we deal with a vector of F-stat values instead of one
     {
 	if ( LALUserVarWasSet(&uvar.dFreq) ) {
@@ -556,7 +556,7 @@ int main(int argc,char *argv[])
       XLALExtrapolatePulsarSpins ( internalDopplerpos.fkdot, dopplerpos.fkdot, DeltaTRefInt );	// can't fail
       internalDopplerpos.refTime = GV.internalRefTime;
       // we set these for future-compatibility with XLALComputeFstatFreqBand(), even if currently unused
-      internalDopplerpos.dFreq = uvar.dFreq;
+      internalDopplerpos.dFreq = dFreqResamp;
       internalDopplerpos.numFreqBins = numFreqBins_FBand;
 
       /* main function call: compute F-statistic for this template */
@@ -633,7 +633,7 @@ int main(int argc,char *argv[])
 
       /* collect data on current 'Fstat-candidate' */
       thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
-      thisFCand.doppler.fkdot[0] += iFreq * uvar.dFreq;	// this only does something for the resampling post-loop over frequency-bins ...
+      thisFCand.doppler.fkdot[0] += iFreq * dFreqResamp;	// this only does something for the resampling post-loop over frequency-bins, 0 otherwise ...
 
       if ( uvar.GPUready )
         {
@@ -1827,10 +1827,6 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   // ----- check that resampling option was used sensibly ...
   if ( uvar->useResamp )
     {
-      if ( !XLALUserVarWasSet ( &uvar->dFreq ) && (uvar->dFreq > 0) ) {
-        XLALPrintError ("Resampling (--useResamp) requires an explicit frequency-spacing --dFreq > 0\n");
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      }
       if ( uvar->GPUready ) {
         XLALPrintError ("--useResamp cannot be used with --GPUready\n");
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
