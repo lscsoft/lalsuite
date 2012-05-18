@@ -83,9 +83,13 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		for event in db_out:
 			offsets[event[0]]=event[1]
 		initialkey=offsets.keys()[0]
-		sql_query='SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=="sngl_inspiral" and coinc_event_map.event_id == sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == "%s" and sngl_inspiral.ifo=="%s"'%(str(co_id),str(initialkey))
+		sql_query='SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 from sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=="sngl_inspiral" and coinc_event_map.event_id == sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == "%s"'%(str(co_id))
 		db_out=database_connection.cursor().execute(sql_query)
-		shifted_time=[t for t in db_out][0][0]
+		db_out_saved=[d for d in db_out]
+		if(len(db_out_saved)==0):
+			print ' Error! No events found for IFO %s for coinc %s'%(str(initialkey),str(co_id))
+			continue
+		shifted_time=db_out_saved[0][0]
 		for ifo in offsets.keys():
 			deltat=offsets[ifo]
 			# The shifted time is also in the same segment as the original time
