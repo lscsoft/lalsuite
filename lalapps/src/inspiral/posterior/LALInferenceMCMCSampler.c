@@ -312,7 +312,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
   INT4 acl=Niter, PTacl=Niter, oldACL=0, goodACL=0;
-  INT4 aclChecked=0;
+  INT4 quarterAclChecked=0;
+  INT4 halfAclChecked=0;
   INT4 iEff=0;
 
   ProcessParamsTable *ppt;
@@ -674,13 +675,22 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
             /* Check ACL half-way through to limit effect of over-estimation of ACL early in the run */
-            if (!aclChecked &&
-                ((runPhase==0 && iEff >= Neff/2) || (runPhase==1 && iEff >= annealStart/2))) {
-              updateMaxAutoCorrLen(runState, i);
-              acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
-              iEff = (i - iEffStart)/acl;
-              MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
-              aclChecked=1;
+            if (!quarterAclChecked) {
+              if ((runPhase==0 && iEff >= Neff/4) || (runPhase==1 && iEff >= annealStart/4)) {
+                updateMaxAutoCorrLen(runState, i);
+                acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
+                iEff = (i - iEffStart)/acl;
+                MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                if (iEff >= Neff/4) quarterAclChecked=1;
+              }
+            } else if (!halfAclChecked) {
+              if ((runPhase==0 && iEff >= Neff/2) || (runPhase==1 && iEff >= annealStart/2)) {
+                updateMaxAutoCorrLen(runState, i);
+                acl = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "acl");
+                iEff = (i - iEffStart)/acl;
+                MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                if (iEff >= Neff/2) quarterAclChecked=1;
+              }
             }
 
             if ( (runPhase==0 && iEff >= Neff) || (runPhase==1 && iEff >= annealStart) ) {
