@@ -113,7 +113,7 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 			sql_query = 'SELECT sngl_inspiral.ifo,sngl_inspiral.snr,sngl_inspiral.chisq FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == "sngl_inspiral" and coinc_event_map.event_id==sngl_inspiral.event_id) where coinc_event_map.coinc_event_id == "%s"'%(str(co_id))
 			db_out=database_connection.cursor().execute(sql_query)	
 			for (ifo,snr,chisq) in db_out:
-				print >>outfile,"%i %s %f %f %f %f"%(coinc_number,ifo,realtime-offsets[ifo],snr,chisq,offsets[ifo])
+				print >>outfile,"%s %s %f %f %f %f"%(coinc_number,ifo,realtime-offsets[ifo],snr,chisq,offsets[ifo])
 	if outfile is not None:
 		outfile.close()
 	print 'Found %i time slide coincs to run on'%(len(output))
