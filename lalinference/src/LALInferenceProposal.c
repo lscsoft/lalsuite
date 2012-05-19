@@ -424,7 +424,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
-    if(LALInferenceCheckVariable(proposedParams,"phase")) {
+    if(LALInferenceCheckVariableNonFixed(proposedParams,"phase")) {
       LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
     }
   }
@@ -610,9 +610,9 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   const char *propName = singleAdaptProposalName;
   LALInferenceVariables *args = runState->proposalArgs;
   LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
-  ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
-  
-  if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || !ppt) {
+  ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--noAdapt");
+
+  if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || ppt) {
     /* We are not adaptive, or for some reason don't have a sigma
        vector---fall back on old proposal. */
     LALInferenceSingleProposal(runState, proposedParams);
