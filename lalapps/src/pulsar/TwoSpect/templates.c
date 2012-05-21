@@ -472,15 +472,15 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
             
-            INT4 try = 1;
-            while (try<10 && errcode1 != 0) {
-               try++;
+            INT4 tries = 1;
+            while (tries<10 && errcode1 != 0) {
+               tries++;
                c1 = gsl_rng_uniform_pos(params->rng)*(upperend-lowerend)+lowerend;
                vars.c = c1;
                tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
             }
-            if (try>=10 && errcode1!=0) {
-               fprintf(stderr,"%s: cdfwchisq_twospect() failed with code %d after making %d tries.\n", __func__, errcode1, try);
+            if (tries>=10 && errcode1!=0) {
+               fprintf(stderr,"%s: cdfwchisq_twospect() failed with code %d after making %d tries.\n", __func__, errcode1, tries);
                XLAL_ERROR_REAL8(XLAL_EFUNC);
             }
             
