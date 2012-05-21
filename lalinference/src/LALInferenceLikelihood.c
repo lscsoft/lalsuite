@@ -1576,7 +1576,7 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
                                                   LALInferenceTemplateFunction UNUSED *template) {
   const INT4 DIM = 15;
   static gsl_matrix *LUCM = NULL;
-  gsl_permutation *LUCMPerm = NULL;
+  static gsl_permutation *LUCMPerm = NULL;
   INT4 mode = 0;
   
   REAL8 x[DIM];
@@ -1607,8 +1607,8 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
   for (i = 0; i < DIM; i++) {
     sum += xOrig[i]*x[i];
   }
-  gsl_matrix_free(LUCM);
-  gsl_permutation_free(LUCMPerm);
+  //gsl_matrix_free(LUCM);
+  //gsl_permutation_free(LUCMPerm);
   return -sum/2.0;
 }
 
