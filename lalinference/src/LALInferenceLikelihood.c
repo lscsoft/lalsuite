@@ -1575,7 +1575,7 @@ REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *current
                                                   LALInferenceIFOData UNUSED *data, 
                                                   LALInferenceTemplateFunction UNUSED *template) {
   const INT4 DIM = 15;
-  gsl_matrix *LUCM = NULL;
+  static gsl_matrix *LUCM = NULL;
   gsl_permutation *LUCMPerm = NULL;
   INT4 mode = 0;
   
