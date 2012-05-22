@@ -257,8 +257,8 @@ Nested sampling arguments:\n\
 (--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
 (--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\
 (--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
-(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n\
-(--tdlike)\tUse time domain likelihood.\n";
+(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n";
+//(--tdlike)\tUse time domain likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
 	ProcessParamsTable *commandLine=runState->commandLine;
@@ -312,10 +312,10 @@ Nested sampling arguments:\n\
         	runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
 		runState->prior=LALInferenceAnalyticNullPrior;
 	}
-	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
-		fprintf(stderr, "Computing likelihood in the time domain.\n");
-		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
-    	}
+//	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
+//		fprintf(stderr, "Computing likelihood in the time domain.\n");
+//		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
+//    	}
     
 	#ifdef HAVE_LIBLALXML
 	runState->logsample=LogNSSampleAsMCMCSampleToArray;

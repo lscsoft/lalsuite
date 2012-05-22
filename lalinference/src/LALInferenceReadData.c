@@ -712,17 +712,17 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			}
 		} /* End of data reading process */
 
-		/* Now that the PSD is set up, make the TDW. */
-    IFOdata[i].timeDomainNoiseWeights = 
-                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("time domain weights", 
-                                                               &(IFOdata[i].oneSidedNoisePowerSpectrum->epoch),
-                                                               0.0,
-                                                               1.0/SampleRate,
-                                                               &lalDimensionlessUnit,
-                                                               seglen);
-		if(!IFOdata[i].timeDomainNoiseWeights) XLAL_ERROR_NULL(XLAL_EFUNC);
-		LALInferencePSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
-                         IFOdata[i].fLow, IFOdata[i].fHigh);
+//		/* Now that the PSD is set up, make the TDW. */
+//    IFOdata[i].timeDomainNoiseWeights = 
+//                  (REAL8TimeSeries *)XLALCreateREAL8TimeSeries("time domain weights", 
+//                                                               &(IFOdata[i].oneSidedNoisePowerSpectrum->epoch),
+//                                                               0.0,
+//                                                               1.0/SampleRate,
+//                                                               &lalDimensionlessUnit,
+//                                                               seglen);
+//		if(!IFOdata[i].timeDomainNoiseWeights) XLAL_ERROR_NULL(XLAL_EFUNC);
+//		LALInferencePSDToTDW(IFOdata[i].timeDomainNoiseWeights, IFOdata[i].oneSidedNoisePowerSpectrum, IFOdata[i].freqToTimeFFTPlan,
+//                         IFOdata[i].fLow, IFOdata[i].fHigh);
 
     makeWhiteData(&(IFOdata[i]));
     

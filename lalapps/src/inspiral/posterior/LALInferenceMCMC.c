@@ -260,10 +260,11 @@ void initializeMCMC(LALInferenceRunState *runState)
     }
   }
 
-  if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
-    fprintf(stderr, "Computing likelihood in the time domain.\n");
-    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
+//  if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
+//    fprintf(stderr, "Computing likelihood in the time domain.\n");
+//    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
+//  } else 
+  if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
     /* Use zero log(L) */
     runState->likelihood=&LALInferenceZeroLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {

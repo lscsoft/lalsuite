@@ -140,8 +140,8 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
  *   - "distance"        (REAL8, Mpc, >0)                      
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/
-REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
-                              LALInferenceTemplateFunction *template);
+//REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData * data,
+//                              LALInferenceTemplateFunction *template);
 
 /***********************************************************//**
  * Based on ComputeFreqDomainResponse above.                   
@@ -162,8 +162,8 @@ REAL8 LALInferenceTimeDomainLogLikelihood(LALInferenceVariables *currentParams, 
  *   - "distance"        (REAL8, Mpc, >0)                      
  *   - "time"            (REAL8, GPS sec.)                     
  ***************************************************************/		
-void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
-                               LALInferenceTemplateFunction *template, REAL8TimeSeries *timeWaveform);
+//void LALInferenceComputeTimeDomainResponse(LALInferenceVariables *currentParams, LALInferenceIFOData * dataPtr,
+//                               LALInferenceTemplateFunction *template, REAL8TimeSeries *timeWaveform);
 
 /**
  * Computes the <x|y> overlap in the Fourrier domain.
@@ -181,19 +181,19 @@ REAL8 LALInferenceNullLogLikelihood(LALInferenceIFOData *data);
  * Identical to LALInferenceTimeDomainLogLikelihood, but returns the likelihood of a null template.
  * Used for normalising.
  */
-REAL8 LALInferenceTimeDomainNullLogLikelihood(LALInferenceIFOData *data);
+//REAL8 LALInferenceTimeDomainNullLogLikelihood(LALInferenceIFOData *data);
 
 /**
  * Computes the whitened <x|y> overlap in the time domain.
  * For overlaps in time domain including IFO data.
  */
-REAL8 LALInferenceWhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
+//REAL8 LALInferenceWhitenedTimeDomainOverlap(const REAL8TimeSeries *whitenedData, const REAL8TimeSeries *data);
 
 /**
  * Takes a Power Spectrum Density and transforms it to the equivalent Time Domain Weights.
  */
-void LALInferencePSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
-              const REAL8 fMin, const REAL8 fMax); 
+//void LALInferencePSDToTDW(REAL8TimeSeries *TDW, const REAL8FrequencySeries *PSD, const REAL8FFTPlan *plan,
+//              const REAL8 fMin, const REAL8 fMax); 
 
 /* UINT4 nextPowerOfTwo(const UINT4 n);
 void padREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data);
@@ -203,29 +203,29 @@ void padWrappedREAL8Sequence(REAL8Sequence *padded, const REAL8Sequence *data); 
 /**
  * Integrate (in the time-domain) the product of two series.
  */
-REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
+//REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2);
 
 /**
  * Convolves a time serie and the data (equivalent to product in the Fourrier domain).
  */
-void LALInferenceConvolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response);
+//void LALInferenceConvolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response);
 /* UINT4 NTDWFromNPSD(const UINT4 NPSD); */
 
 /**
  * Transform a wrapped time serie into a linear time serie. UNUSED.
  */
-void LALInferenceWrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
+//void LALInferenceWrappedTimeSeriesToLinearTimeSeries(REAL8TimeSeries *linear, const REAL8TimeSeries *wrapped);
 
 /**
  * Transform a linear time serie into a wrapped time serie. UNUSED.
  */
-void LALInferenceLinearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
+//void LALInferenceLinearTimeSeriesToWrappedTimeSeries(REAL8TimeSeries *wrapped, const REAL8TimeSeries *linear);
 
 /**
  * Computes the <x|y> overlap in the time domain.
  * For template overlaps in time domain.
  */
-REAL8 LALInferenceTimeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
+//REAL8 LALInferenceTimeDomainOverlap(const REAL8TimeSeries *TDW, const REAL8TimeSeries *A, const REAL8TimeSeries *B);
 
 /***********************************************************//**
  * Student-t (log-) likelihood function                        

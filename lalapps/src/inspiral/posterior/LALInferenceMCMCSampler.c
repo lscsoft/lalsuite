@@ -376,10 +376,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
 
-  if (runState->likelihood==&LALInferenceTimeDomainLogLikelihood) {
-    fprintf(stderr, "Computing null likelihood in time domain.\n");
-    nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
-  } else if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
+//  if (runState->likelihood==&LALInferenceTimeDomainLogLikelihood) {
+//    fprintf(stderr, "Computing null likelihood in time domain.\n");
+//    nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
+//  } else 
+  if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood) {
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
