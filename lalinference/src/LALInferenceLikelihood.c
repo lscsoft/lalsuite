@@ -1208,6 +1208,9 @@ REAL8 LALInferenceTimeDomainNullLogLikelihood(LALInferenceIFOData *data) {
 
 
 REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8TimeSeries *s2) {
+  if (s1 == NULL || s2 == NULL)
+      XLAL_ERROR_REAL8(XLAL_EFAULT, "Null arguments received.");
+
   LIGOTimeGPS start, stop;
   LIGOTimeGPS stopS1, stopS2;
   UINT4 i1, i2;
@@ -1265,6 +1268,9 @@ REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8T
 }
 
 void LALInferenceConvolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response) {
+  if (conv == NULL || data == NULL || response == NULL)
+    XLAL_ERROR(XLAL_EFAULT, "Null arguments received.");
+
   UINT4 responseSpan = (response->data->length + 1)/2;
   UINT4 paddedLength = nextPowerOfTwo(data->data->length + responseSpan);
   REAL8FFTPlan *fwdPlan = XLALCreateForwardREAL8FFTPlan(paddedLength, 1); /* Actually measure---rely on FFTW to store the best plan for a given length. */
