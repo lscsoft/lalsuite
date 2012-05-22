@@ -1269,7 +1269,7 @@ REAL8 LALInferenceIntegrateSeriesProduct(const REAL8TimeSeries *s1, const REAL8T
 
 void LALInferenceConvolveTimeSeries(REAL8TimeSeries *conv, const REAL8TimeSeries *data, const REAL8TimeSeries *response) {
   if (conv == NULL || data == NULL || response == NULL)
-    XLAL_ERROR(XLAL_EFAULT, "Null arguments received.");
+    XLAL_ERROR_VOID(XLAL_EFAULT, "Null arguments received.");
 
   UINT4 responseSpan = (response->data->length + 1)/2;
   UINT4 paddedLength = nextPowerOfTwo(data->data->length + responseSpan);
