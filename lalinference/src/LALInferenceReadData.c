@@ -1161,7 +1161,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     }
     /* Window the data */
     REAL4 WinNorm = sqrt(thisData->window->sumofsquares/thisData->window->data->length);
-    for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=thisData->window->data->data[j]/WinNorm;
+        for(j=0;j<inj8Wave->data->length;j++) inj8Wave->data->data[j]*=thisData->window->data->data[j]; /* /WinNorm; */ /* Window normalisation applied only in freq domain */
     XLALREAL8TimeFreqFFT(injF,inj8Wave,thisData->timeToFreqFFTPlan);
     /*for(j=0;j<injF->data->length;j++) printf("%lf\n",injF->data->data[j].re);*/
     if(thisData->oneSidedNoisePowerSpectrum){
@@ -1180,12 +1180,13 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     /* Actually inject the waveform */
     for(j=0;j<inj8Wave->data->length;j++) thisData->timeData->data->data[j]+=inj8Wave->data->data[j];
 
+    /* Inject the wave into the F-domain data buffer. Apply normalisation by RMS of the window here for consistency with PSD estimation */
     FILE* file=fopen("InjSignal.dat", "w");
     //FILE* file2=fopen("Noise.dat", "w");
     for(j=0;j<injF->data->length;j++){
       //fprintf(file2, "%lg %lg \t %lg\n", thisData->freqData->deltaF*j, thisData->freqData->data->data[j].re, thisData->freqData->data->data[j].im);
-      thisData->freqData->data->data[j].re+=injF->data->data[j].re;
-      thisData->freqData->data->data[j].im+=injF->data->data[j].im;
+      thisData->freqData->data->data[j].re+=injF->data->data[j].re/WinNorm;
+      thisData->freqData->data->data[j].im+=injF->data->data[j].im/WinNorm;
       fprintf(file, "%lg %lg \t %lg\n", thisData->freqData->deltaF*j, injF->data->data[j].re, injF->data->data[j].im);
     }
     fprintf(stdout,"Injected SNR in detector %s = %g\n",thisData->detector->frDetector.name,thisData->SNR);

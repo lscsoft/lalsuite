@@ -903,7 +903,15 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
       XLAL_ERROR_VOID(XLAL_EFAULT);
     }
     XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus, IFOdata->timeModelhPlus, IFOdata->timeToFreqFFTPlan);
-  }  else {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
+    /* Normalise by RMS of window (same as injections and data) */
+    REAL8 WinNorm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
+      for(i=0;i<IFOdata->freqModelhPlus->data->length;i++) {
+          IFOdata->freqModelhPlus->data->data[i].re/=WinNorm;
+          IFOdata->freqModelhPlus->data->data[i].im/=WinNorm;
+      }
+  }  
+  else
+  {             /*  (LAL function returns FREQUENCY-DOMAIN template)  */
     IFOdata->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
 
     /* copy over: */
