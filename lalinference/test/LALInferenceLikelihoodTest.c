@@ -161,13 +161,13 @@ int LALInferenceConvolveTimeSeriesNullTest(){
 
 int main(void){
 
-	//LALInferenceComputeFrequencyDomainOverlapNullTest();
+	LALInferenceComputeFrequencyDomainOverlapNullTest();
 	LALInferenceComputeFrequencyDomainOverlapTest();
-	//LALInferenceNullLogLikelihoodNullTest();
-	//LALInferenceWhitenedTimeDomainOverlapNullTest();
-	//LALInferenceTimeDomainNullLogLikelihoodNullTest();
-	//LALInferenceIntegrateSeriesProductNullTest();
-	// LALInferenceConvolveTimeSeriesNullTest();
+	LALInferenceNullLogLikelihoodNullTest();
+	LALInferenceWhitenedTimeDomainOverlapNullTest();
+	LALInferenceTimeDomainNullLogLikelihoodNullTest();
+	LALInferenceIntegrateSeriesProductNullTest();
+	LALInferenceConvolveTimeSeriesNullTest();
 	return 0;                                
 }                                    
 
