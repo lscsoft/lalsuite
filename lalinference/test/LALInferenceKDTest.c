@@ -57,14 +57,14 @@ static int checkNumberInCell(LALInferenceKDTree *cell) {
   if (cell->npts != 1 && subCount != cell->npts) {
     fprintf(stderr, "Failure: number of points in sub-cells (%d) is not equal\
  to this cell's number of points (%d).\n",
-            subCount, cell->npts);
+            (int)subCount, (int)cell->npts);
     return 0;
   }
   
   if (count != cell->npts) {
     fprintf(stderr, "Failure: number of points actually in cell (%d) differs\
  from cell's count (%d).\n",
-            count, cell->npts);
+            (int)count, (int)cell->npts);
     return 0;
   }
 

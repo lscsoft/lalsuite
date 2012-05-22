@@ -42,11 +42,11 @@
 /* functions to check that likelihood tests return cleanly for NULL inputs */
 int LALInferenceComputeFrequencyDomainOverlapNullTest(void);
 int LALInferenceNullLogLikelihoodNullTest(void);
-int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
-int LALInferenceWhitenedTimeDomainOverlapNullTest(void);
-int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
-int LALInferenceIntegrateSeriesProductNullTest(void);
-int LALInferenceConvolveTimeSeriesNullTest(void);
+//int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
+//int LALInferenceWhitenedTimeDomainOverlapNullTest(void);
+//int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
+//int LALInferenceIntegrateSeriesProductNullTest(void);
+//int LALInferenceConvolveTimeSeriesNullTest(void);
 
 int LALInferenceComputeFrequencyDomainOverlapNullTest(void){
 	REAL8 answer;
@@ -67,48 +67,48 @@ int LALInferenceNullLogLikelihoodNullTest(void){
 }
 
 
-int LALInferenceWhitenedTimeDomainOverlapNullTest(void){
-	REAL8 answer;
-	fprintf(stdout, " Testing LALInferenceWhitenedTimeDomainOverlap...\n");
-	fprintf(stdout, "...with NULL \n");
-	answer=LALInferenceWhitenedTimeDomainOverlap(NULL, NULL);
-	//return 0;
-        return answer;
-}
-
-int LALInferenceTimeDomainNullLogLikelihoodNullTest(void){
-	REAL8 answer;
-	fprintf(stdout, " Testing LALInferenceTimeDomainNullLogLikelihood...\n");
-	fprintf(stdout, "...with NULL \n");
-	answer = LALInferenceTimeDomainNullLogLikelihood(NULL);
-	//return 0;
-        return answer;
-}
-
-int LALInferenceIntegrateSeriesProductNullTest(void){
-	REAL8 answer;
-	fprintf(stdout, " Testing LALInferenceIntegrateSeriesProduct...\n");
-	fprintf(stdout, "...with NULL \n");
-	answer = LALInferenceIntegrateSeriesProduct(NULL, NULL);
-	//return 0;
-        return answer;
-}
-
-int LALInferenceConvolveTimeSeriesNullTest(){
-	fprintf(stdout, " Testing LALInferenceConvolveTimeSeries...\n");
-	fprintf(stdout, "...with NULL \n");
- 	LALInferenceConvolveTimeSeries(NULL, NULL, NULL);
-	return 0;
-}
+//int LALInferenceWhitenedTimeDomainOverlapNullTest(void){
+//	REAL8 answer;
+//	fprintf(stdout, " Testing LALInferenceWhitenedTimeDomainOverlap...\n");
+//	fprintf(stdout, "...with NULL \n");
+//	answer=LALInferenceWhitenedTimeDomainOverlap(NULL, NULL);
+//	//return 0;
+//        return answer;
+//}
+//
+//int LALInferenceTimeDomainNullLogLikelihoodNullTest(void){
+//	REAL8 answer;
+//	fprintf(stdout, " Testing LALInferenceTimeDomainNullLogLikelihood...\n");
+//	fprintf(stdout, "...with NULL \n");
+//	answer = LALInferenceTimeDomainNullLogLikelihood(NULL);
+//	//return 0;
+//        return answer;
+//}
+//
+//int LALInferenceIntegrateSeriesProductNullTest(void){
+//	REAL8 answer;
+//	fprintf(stdout, " Testing LALInferenceIntegrateSeriesProduct...\n");
+//	fprintf(stdout, "...with NULL \n");
+//	answer = LALInferenceIntegrateSeriesProduct(NULL, NULL);
+//	//return 0;
+//        return answer;
+//}
+//
+//int LALInferenceConvolveTimeSeriesNullTest(){
+//	fprintf(stdout, " Testing LALInferenceConvolveTimeSeries...\n");
+//	fprintf(stdout, "...with NULL \n");
+// 	LALInferenceConvolveTimeSeries(NULL, NULL, NULL);
+//	return 0;
+//}
 
 int main(void){
 
 	LALInferenceComputeFrequencyDomainOverlapNullTest();
-	LALInferenceComputeFrequencyDomainOverlapTest();
+//	LALInferenceComputeFrequencyDomainOverlapTest();
 	LALInferenceNullLogLikelihoodNullTest();
-	LALInferenceWhitenedTimeDomainOverlapNullTest();
-	LALInferenceTimeDomainNullLogLikelihoodNullTest();
-	LALInferenceIntegrateSeriesProductNullTest();
-	LALInferenceConvolveTimeSeriesNullTest();
+//	LALInferenceWhitenedTimeDomainOverlapNullTest();
+//	LALInferenceTimeDomainNullLogLikelihoodNullTest();
+//	LALInferenceIntegrateSeriesProductNullTest();
+//	LALInferenceConvolveTimeSeriesNullTest();
 	return 0;                                
 }                                    
