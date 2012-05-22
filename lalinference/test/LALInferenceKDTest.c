@@ -1,4 +1,4 @@
-#include "../src/LALInference.h"
+#include <lal/LALInference.h>
 #include <gsl/gsl_rng.h>
 
 #define NDIM 9

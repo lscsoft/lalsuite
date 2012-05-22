@@ -1,14 +1,14 @@
-#include <lal/LALInference.h>
-#include <lal/LALInferenceXML.h>
-#include <lal/LALXML.h>
-#include <lal/LALXMLVOTableCommon.h>
-#include <lal/LALXMLVOTableSerializers.h>
 #include <string.h>
 
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+#include <lal/LALInference.h>
+#include <lal/LALInferenceXML.h>
+#include <lal/LALXML.h>
+#include <lal/LALXMLVOTableCommon.h>
+#include <lal/LALXMLVOTableSerializers.h>
 
 int testLALInferenceVariables(void);
 

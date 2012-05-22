@@ -20,21 +20,23 @@
  *  MA  02111-1307  USA
  */
 
-#include<lal/LALInferenceProposal.h>
-#include<lal/LALInference.h>
-#include<lal/XLALError.h>
-#include<lal/LALInferenceReadData.h>
-#include<lal/LALInferenceLikelihood.h>
-#include<lal/Units.h>
+#include <math.h>
+
+#include <stdlib.h>
+
+#include <lal/LALInferenceProposal.h>
+#include <lal/LALInference.h>
+#include <lal/XLALError.h>
+#include <lal/LALInferenceReadData.h>
+#include <lal/LALInferenceLikelihood.h>
+#include <lal/Units.h>
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceNestedSampler.h>
 
-#include<math.h>
 
-#include<stdlib.h>
 
 /* Comparison function for qsorting the arrays later */
 static int cmpREAL8p(const void *p1, const void *p2);
