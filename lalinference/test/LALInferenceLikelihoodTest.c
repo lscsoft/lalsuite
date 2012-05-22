@@ -39,8 +39,8 @@
 #define UNUSED
 #endif
 
+/* functions to check that likelihood tests return cleanly for NULL inputs */
 int LALInferenceComputeFrequencyDomainOverlapNullTest(void);
-int LALInferenceComputeFrequencyDomainOverlapTest(void);
 int LALInferenceNullLogLikelihoodNullTest(void);
 int LALInferenceTimeDomainNullLogLikelihoodNullTest(void);
 int LALInferenceWhitenedTimeDomainOverlapNullTest(void);
@@ -57,61 +57,6 @@ int LALInferenceComputeFrequencyDomainOverlapNullTest(void){
         return answer;
 }
 
-int LALInferenceComputeFrequencyDomainOverlapTest(void){
-/*
-Parameters used in this function are:
-	dataPtr->timeData->deltaT
-	dataPtr->timeData->data->length
-	dataPtr->fLow
-	dataPtr->fHigh
-	freqData1->data[i].re
-	freqData2->data[i].re
-	freqData1->data[i].im
-	freqData2->data[i].im
-	dataPtr->oneSidedNoisePowerSpectrum->data->data[i]
-*/
-	REAL8 answer;
-	LALInferenceIFOData * test_data = XLALMalloc(sizeof(LALInferenceIFOData));
-	COMPLEX16Vector * test_freq1 = XLALMalloc(sizeof(COMPLEX16Vector));
-	COMPLEX16Vector * test_freq2 = XLALMalloc(sizeof(COMPLEX16Vector));
-	COMPLEX16 * test_freq_data1 = XLALMalloc(sizeof(COMPLEX16));
-	COMPLEX16 * test_freq_data2 = XLALMalloc(sizeof(COMPLEX16));
-	/*REAL8TimeSeries * test_data_time_data = XLALMalloc(sizeof(REAL8TimeSeries));*/
-	/*REAL8Sequence * test_data_time_data_data = XLALMalloc(sizeof(REAL8Sequence));*/
-	/*REAL8FrequencySeries *test_data_noise = XLALMalloc(sizeof(REAL8FrequencySeries));*/
-	/*REAL8Sequence * test_data_noise_data = XLALMalloc(sizeof(REAL8Sequence));*/
-	
-	REAL8 deltaT = 1;
-	UINT4 length = 2;
-	
-	test_freq1->length=length;
-	test_freq2->length=length;
-	
-	for (UINT4 i=1; i<length; i++){
-	    test_freq_data1[i] = CX16rect(1, 1);
-	}
-	
-	for (UINT4 i=1; i<length; i++){
-	    test_freq_data2[i] = CX16rect(1, 1);
-	}	
-
-	test_freq1->data=test_freq_data1;
-	test_freq2->data=test_freq_data2;
-
-	test_data->timeData=XLALMalloc(sizeof(REAL8TimeSeries));
-	test_data->timeData->deltaT= deltaT;
-	test_data->timeData->data=XLALMalloc(sizeof(REAL8Sequence));
-	test_data->timeData->data->length=2;
-	test_data->fLow=10;
-	test_data->fHigh=1000;	
-
-	fprintf(stdout, " Testing LALInferenceComputeFrequencyDomainOverlap...\n");
-	fprintf(stdout, "...with test variables \n");
-	answer=LALInferenceComputeFrequencyDomainOverlap(NULL,NULL, NULL);
-	//return 0;
-        return answer;
-}
-
 int LALInferenceNullLogLikelihoodNullTest(void){
 	REAL8 answer;
 	fprintf(stdout, " Testing LALInferenceNullLogLikelihood...\n");
@@ -121,9 +66,6 @@ int LALInferenceNullLogLikelihoodNullTest(void){
         return answer;
 }
 
-
-	
-	
 
 int LALInferenceWhitenedTimeDomainOverlapNullTest(void){
 	REAL8 answer;
@@ -170,32 +112,3 @@ int main(void){
 	LALInferenceConvolveTimeSeriesNullTest();
 	return 0;                                
 }                                    
-
-REAL8 FreqDomainNullLogLikelihood(LALInferenceIFOData *data);
-
-REAL8 FreqDomainNullLogLikelihood(LALInferenceIFOData *data)
-/* calls the `FreqDomainLogLikelihood()' function in conjunction   */
-/* with the `templateNullFreqdomain()' template in order to return */
-/* the "Null likelihood" without having to bother specifying       */
-/* parameters or template while ensuring computations are exactly  */
-/* the same as in usual likelihood calculations.                   */
-{
-	LALInferenceVariables dummyParams;
-	double dummyValue;
-	double loglikeli;
-	/* set some (basically arbitrary) dummy values for intrinsic parameters */
-	/* (these shouldn't make a difference, but need to be present):         */
-	dummyParams.head      = NULL;
-	dummyParams.dimension = 0;
-	dummyValue = 0.5;
-	LALInferenceAddVariable(&dummyParams, "rightascension", &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_CIRCULAR);
-	LALInferenceAddVariable(&dummyParams, "declination",    &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddVariable(&dummyParams, "polarisation",   &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddVariable(&dummyParams, "distance",       &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	dummyValue = XLALGPSGetREAL8(&data->timeData->epoch) 
-	+ (((double) data->timeData->data->length) / 2.0) * data->timeData->deltaT;
-	LALInferenceAddVariable(&dummyParams, "time",           &dummyValue, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
-	loglikeli = LALInferenceFreqDomainLogLikelihood(&dummyParams, data, &LALInferenceTemplateNullFreqdomain);
-	LALInferenceDestroyVariables(&dummyParams);
-	return(loglikeli);
-}
