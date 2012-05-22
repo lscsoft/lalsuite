@@ -170,8 +170,8 @@ int LALInferenceParseCommandLineTEST_DASHINPUT(void){
     }
     
     strcpy(list[0],"foo");
-    strcpy(list[1],"bar");
-    strcpy(list[2],"baz");
+    strcpy(list[1],"-bar");
+    strcpy(list[2],"-baz");
    
     XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
     if (errnum == XLAL_SUCCESS||answer!=NULL)
