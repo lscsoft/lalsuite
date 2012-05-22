@@ -1620,8 +1620,8 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
   INT4 i, mode;
   REAL8 sum = 0.0;
   REAL8 a, b;
-  gsl_matrix *LUCM = NULL;
-  gsl_permutation *LUCMPerm = NULL;
+  static gsl_matrix *LUCM = NULL;
+  static gsl_permutation *LUCMPerm = NULL;
   gsl_vector_view xView;
 
   REAL8 x[DIM];
@@ -1664,8 +1664,8 @@ REAL8 LALInferenceBimodalCorrelatedAnalyticLogLikelihood(LALInferenceVariables *
     a = exps[1];
     b = exps[0];
   }
-  gsl_matrix_free(LUCM);
-  gsl_permutation_free(LUCMPerm);
+  //gsl_matrix_free(LUCM);
+  //gsl_permutation_free(LUCMPerm);
 
   /* attempt to keep returned values finite */
   return a + log1p(exp(b-a));
