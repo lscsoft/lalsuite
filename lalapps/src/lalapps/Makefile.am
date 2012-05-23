@@ -61,7 +61,8 @@ pkgpython_PYTHON = \
 	__init__.py \
 	git_version.py
 dist_bin_SCRIPTS = \
-	lalapps_path2cache
+	lalapps_path2cache \
+	lalapps_searchsum2cache
 endif
 
 EXTRA_DIST = \
