@@ -97,15 +97,25 @@ def parse_command_line():
 #
 
 
+def element_filter(name, attrs):
+	"""
+	Return True if name & attrs describe a search summary table or a
+	process table.
+	"""
+	return lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs) or lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs)
+
+
 class ContentHandler(ligolw.PartialLIGOLWContentHandler):
 	def __init__(self, xmldoc):
-		def element_filter(name, attrs):
-			"""
-			Return True if name & attrs describe a search summary table or a
-			process table.
-			"""
-			return lsctables.IsTableProperties(lsctables.SearchSummaryTable, name, attrs) or lsctables.IsTableProperties(lsctables.ProcessTable, name, attrs)
 		ligolw.PartialLIGOLWContentHandler.__init__(self, xmldoc, element_filter)
+
+
+try:
+	lsctables.use_in(ContentHandler)
+except AttributeError:
+	# old glue did not allow .use_in().
+	# FIXME:  remove when we can require the latest version of glue
+	pass
 
 
 #
