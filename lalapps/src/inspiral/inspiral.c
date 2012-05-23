@@ -517,7 +517,8 @@ int main( int argc, char *argv[] )
 
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
-      this_proc_param = this_proc_param->next );
+      this_proc_param = this_proc_param->next )
+    ;
 
   /* Import system wide FFTW wisdom file, if it exists.  Only single precision used. */
 
