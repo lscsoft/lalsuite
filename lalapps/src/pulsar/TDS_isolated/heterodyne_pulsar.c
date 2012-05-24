@@ -731,7 +731,7 @@ the pulsar parameter file */
     int option_index = 0;
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
