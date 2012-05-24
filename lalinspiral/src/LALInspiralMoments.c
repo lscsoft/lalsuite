@@ -100,7 +100,7 @@ XLALGetInspiralMoments (
     REAL8FrequencySeries *psd
     )
 {
-  UINT4 k;
+  size_t k;
   REAL8 xmin;
   REAL8 xmax;
   REAL8 ndx;
@@ -312,108 +312,59 @@ XLALInspiralMoments(
     )
 
 {
-  REAL8 f;
-  REAL8 moment;
-  REAL8 momentTmp;
-  REAL8 fMin;
-  REAL8 fMax;
-  REAL8 deltaF;
-  UINT4 k;
-  UINT4 kMin;
-  UINT4 kMax;
+  REAL8 moment = 0;
+  REAL8 f0, deltaF;
+  size_t k, kMin, kMax;
 
   /* Check inputs */
-  if (!shf || !(shf->data) || !(shf->data->data)){
+  if (!shf || !(shf->data) || !(shf->data->data)) {
     XLALPrintError("PSD or its data are NULL\n");
     XLAL_ERROR_REAL8(XLAL_EFAULT);
   }
 
-  if (xmin <= 0 || xmax <= 0 || xmax <= xmin || norm <= 0){
+  if (xmin <= 0 || xmax <= 0 || xmax <= xmin || norm <= 0) {
     XLALPrintError("xmin, xmax, and norm must be positive and xmax must be greater than xmin\n");
     XLAL_ERROR_REAL8(XLAL_EDOM);
   }
 
-  /* make sure that the minimum and maximum of the integral are within */
-  /* the frequency series                                              */
-  fMax = shf->f0 + shf->data->length * shf->deltaF;
-  if ( xmin < shf->f0 || xmax > fMax+LAL_REAL4_EPS )
-  {
-    XLALPrintError("PSD does not cover domain of integration\n");
-    XLAL_ERROR_REAL8(XLAL_EDOM);
-  }
-
-  /* the minimum and maximum frequency where we have four points */
+  /* set up and check domain of integration */
+  /* NB: Although these are called f0 and deltaF, they are really supposed to
+         be x0 and deltaX (x = f / f0). That is, you either need to have hacked
+         the PSD's f0 and deltaF values before calling this function or be
+         prepared to rescale the outputs. */
+  f0 = shf->f0;
   deltaF = shf->deltaF;
-  fMin = shf->f0 + deltaF;
-  fMax = shf->f0 + ((REAL8) shf->data->length - 2 ) * deltaF;
+  {
+      const REAL8 fMax = f0 + (shf->data->length - 1) * deltaF;
+      if ( xmin < f0 || xmax > fMax+LAL_REAL4_EPS ) {
+        XLALPrintError("PSD does not cover domain of integration\n");
+        XLAL_ERROR_REAL8(XLAL_EDOM);
+      }
+  }
+  kMin = floor((xmin - f0) / deltaF);
+  kMax = floor((xmax - f0) / deltaF);
 
-  if ( xmin <= fMin )
-  {
-    kMin = 1;
+  /* do the first point of the integral */
+  if( shf->data->data[kMin] ) {
+    const REAL8 f = f0 + kMin * deltaF;
+    moment += pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMin] );
   }
-  else
-  {
-    kMin = (UINT8) floor( (xmin - shf->f0) / deltaF );
-  }
-
-  if ( xmax >= fMax )
-  {
-    kMax = shf->data->length - 1;
-  }
-  else
-  {
-    kMax = (UINT8) floor( (xmax - shf->f0) / deltaF );
-  }
-
-  /* the first and last points of the integral */
-  momentTmp = 0.;
-  f = shf->f0 + (REAL8) kMin * deltaF;
-  if( shf->data->data[kMin] )
-  {
-    momentTmp = pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMin] );
-  }
-  moment = momentTmp;
-
-  momentTmp = 0.;
-  f = shf->f0 + (REAL8) kMax * deltaF;
-  if( shf->data->data[kMin] )
-  {
-    momentTmp = pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMin] );
-  }
-  moment += momentTmp;
-#if 0
-  In the following line we should have kMax
-  Changed by Sathya on June 30, 2002
-  moment += pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMin] );
-#endif
-  momentTmp = 0.;
-  if ( shf->data->data[kMax] )
-  {
-    momentTmp = pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMax] );
-  }
-  moment += momentTmp;
-  kMin++;
-  kMax--;
-
-  if (kMax<=kMin){
-    XLALPrintError("kMin must be less than kMax\n");
-    XLAL_ERROR_REAL8(XLAL_EDOM);
-  };
-
-  for ( k = kMin; k < kMax; ++k )
-  {
-    momentTmp = 0.;
-    f = shf->f0 + (REAL8) k * deltaF;
-    if ( shf->data->data[k] )
-    {
-      momentTmp = pow( f, -(ndx) ) / shf->data->data[k];
+  /* do the bulk of the integral */
+  for ( k = kMin + 1; k < kMax; ++k ) {
+    const REAL8 psd_val = shf->data->data[k];
+    if ( psd_val ) {
+      const REAL8 f = f0 + k * deltaF;
+      moment += pow( f, -(ndx) ) / psd_val;
     }
-    moment += momentTmp;
   }
-
+  /* do the last point of the integral */
+  if ( shf->data->data[kMax] ) {
+    const REAL8 f = f0 + kMax * deltaF;
+    moment += pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMax] );
+  }
   moment *= deltaF;
 
-  /* now divide the moment by the specified norm */
+  /* now divide the moment by the user-specified norm */
   moment /= norm;
 
   return moment;
