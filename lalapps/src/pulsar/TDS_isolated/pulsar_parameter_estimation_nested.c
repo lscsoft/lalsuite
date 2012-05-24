@@ -196,7 +196,8 @@ LALStringVector *corlist = NULL;
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
-" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n"\
+" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n\
+                     (if not specified an adaptive number of points is used)\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
@@ -303,18 +304,18 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   initialisePrior( &runState );
   
   gridOutput( &runState );
-  
+
   /* get noise likelihood and add as variable to runState */
   logZnoise = noise_only_model( &runState );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, 
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
-               
+         
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
-  
+
   /* Initialise the MCMC proposal distribution */
   initialiseProposal( &runState );
-  
+
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
 
@@ -399,17 +400,20 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi,
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
-  else{
-    XLALPrintError("Error... Number of MCMC iterations must be specified.\n");
-    XLAL_ERROR_VOID(XLAL_EIO);
-  }
 
+  /* set sloppiness! */
+  ppt = LALInferenceGetProcParamVal(commandLine,"--sloppyfraction");
+  if( ppt ) tmp = atof(ppt->value);
+  else tmp = 0.0;
+  LALInferenceAddVariable( runState->algorithmParams, "sloppyfraction", &tmp,
+                           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT );
+  
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
   if( ppt ) {
     tmpi = atoi( ppt->value );
-    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, LALINFERENCE_INT4_t,
-                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, 
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
         
   /* Tolerance of the Nested sampling integrator */
@@ -1741,26 +1745,22 @@ set.\n", propfile, tempPar);
         high = LAL_PI/4.; /* make sure range spans exactly pi/2 */
         psidef = 1;
       }
-    }
-    
-    /* if psi is covering the range -pi/2 to pi/2 scale it, so that it covers
-       the 0 to 2pi range of a circular parameter */
-    if( !strcmp(tempPar, "psi") ){
-      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
+      /* if psi is covering the range -pi/2 to pi/2 scale it, so that it covers
+         the 0 to 2pi range of a circular parameter */
+      else if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = -LAL_PI/2.;
         high = LAL_PI/2.;
-        psidef = 1;
       }
     }
-    
+  
     /* if theta is covering the range 0 to pi scale it, so that it covers
     the 0 to 2pi range of a circular parameter */
     if( !strcmp(tempPar, "theta") ){
       if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
         scale = 1.;
         scaleMin = 0.;
-				high = 2.*LAL_PI;
+        high = 2.*LAL_PI;
       }
     }
     
@@ -1770,7 +1770,7 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = 0;
-				high = LAL_PI;
+        high = LAL_PI;
       }
     }
     
@@ -1800,7 +1800,7 @@ set.\n", propfile, tempPar);
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
-		else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
+    else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "theta") && scale == 1.0 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
@@ -1843,9 +1843,12 @@ set.\n", propfile, tempPar);
   }
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
-     of their range the remove them and add the phi0' and psi' coordinates */
-  if( phidef && psidef && !LALInferenceCheckVariable(runState->currentParams,"lambda") && !LALInferenceCheckVariable(runState->currentParams,"theta")){
-		fprintf(stderr,"Do phi and psi transform\n");
+     of their range (for a triaxial star, so -pi/4 <= psi <= pi/4 and 0 <= phi0
+     <= 2pi) then remove them and add the phi0' and psi' coordinates */
+  if( phidef && psidef && !strcmp( "triaxial",
+      *(CHAR **)LALInferenceGetVariable( runState->data->dataParams, 
+                                         "modeltype" ) ) ){
+    fprintf(stderr,"Do phi and psi transform\n");
     LALInferenceIFOData *datatemp = data;
     
     REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
@@ -2070,13 +2073,11 @@ void initialiseProposal( LALInferenceRunState *runState ){
   }
   
   if( kdfrac ){
-    INT4 kdncells = 0;
-    
     /* set the maximum number of points in a kd-tree cell if given */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, 
                                        "--kDNCell" );
     if( ppt ){
-      kdncells = atoi( ppt->value );
+      INT4 kdncells = atoi( ppt->value );
 
       LALInferenceAddVariable( runState->proposalArgs, "KDNCell", 
                                &kdncells, LALINFERENCE_INT4_t,
@@ -2090,7 +2091,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
 
     LALInferenceSetupkDTreeNSLivePoints( runState );
   }
-
+      
   LALInferenceRandomizeProposalCycle( runState );
   /* set temperature */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
@@ -2098,7 +2099,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
   else temperature = 0.1;
  
   LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, 
-                           LALINFERENCE_REAL8Vector_t,
+                           LALINFERENCE_REAL8_t,
                            LALINFERENCE_PARAM_FIXED );
   
   /* add default proposal name */
@@ -2248,10 +2249,11 @@ void injectSignal( LALInferenceRunState *runState ){
   BinaryPulsarParams injpars;
  
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1, ml=1;
+  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1, ml = 1;
   
   REAL8Vector *freqFactors = NULL;
-  REAL8 *snrmulti = NULL, *snrscale = NULL;
+  REAL8 snrmulti = 0.;
+  REAL8 *snrscale = NULL;
   
   CHAR *modeltype = NULL;/*need to check model type in this function*/
   
@@ -2259,7 +2261,6 @@ void injectSignal( LALInferenceRunState *runState ){
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
-
     injectfile = XLALStringDuplicate( ppt->value );
     
     /* check that the file exists */
@@ -2296,28 +2297,26 @@ parameter file %s is wrong.\n", injectfile);
       
     /* count the number of SNRs (comma seperated values) */
     numSNRs = count_csv( snrscales );
-		fprintf(stderr,"Number of snrs: %d\n",numSNRs);
-		
-		ml=(INT4)freqFactors->length;
+    fprintf(stderr,"Number of snrs: %d\n",numSNRs);
+
+    ml = (INT4)freqFactors->length;
     
     if(numSNRs != ml){
       fprintf(stderr, "Error... number of SNR values must equal\
-			the number of data streams required for your model!\n");
+ the number of data streams required for your model!\n");
       exit(0);
     }
     
     snrscale = XLALRealloc(snrscale, sizeof(REAL8)*numSNRs);
-		
-    /*goes through the input scale snr string and adds the values to the snrscale vector.*/
+
+    /* goes through the input scale snr string and adds the values to the 
+       snrscale vector. */
     for( k = 0; k < numSNRs; k++ ){
       tmpsnr = strsep( &tmpsnrs, "," );
       XLALStringCopy( snrval, tmpsnr, strlen(tmpsnr)+1 );
       snrscale[k] = atof(snrval);
     }
   }
-
-
-  snrmulti = XLALCalloc(sizeof(REAL8), 1);
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if( !ppt ){
@@ -2363,12 +2362,13 @@ parameter file %s is wrong.\n", injectfile);
     for ( k = 0; k < numSNRs; k++ ){
       REAL8 snrval = calculate_time_domain_snr( data );
 
-      snrmulti[0] += SQUARE(snrval);
-			
+      snrmulti += SQUARE(snrval);
+      
       fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\t",
               freqFactors->data[k], snrval);
-			fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\t",freqFactors->data[k], snrval);
-			fprintf(stderr, "SNR multi %le\n",snrmulti[0]);
+      fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\t",
+              freqFactors->data[k], snrval);
+      fprintf(stderr, "SNR multi %le\n", snrmulti);
 
       data = data->next;
     }
@@ -2376,17 +2376,17 @@ parameter file %s is wrong.\n", injectfile);
   }
   
   /* get overall multi-detector SNR */
-  snrmulti[0] = sqrt(snrmulti[0]);
+  snrmulti = sqrt(snrmulti);
   
   /* only need to print out multi-detector snr if the were multiple detectors */
   if( numSNRs == 1 && snrscale[0] == 0 ){
-    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti[0]);
+    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
     else fprintf(fpsnr, "\n");
   }
   else{
     /* rescale the signal and calculate the SNRs */
     data = runState->data;
-    snrscale[0] /= snrmulti[0];
+    snrscale[0] /= snrmulti;
 
     /* rescale the h0 for triaxial mode only) */
     if ( !strcmp(modeltype, "triaxial")  ){
@@ -2403,8 +2403,7 @@ parameter file %s is wrong.\n", injectfile);
       /*if ( freqFactors->data[k] == 1. ) injpars.I21 *= snrscale[k];*/
       fprintf(stderr,"inj par r: %le\n",injpars.r);
     }
-    
-    
+   
     /* recreate the signal with scale amplitude */
     while( data ){
       UINT4 varyphasetmp = varyphase;
@@ -2423,7 +2422,7 @@ parameter file %s is wrong.\n", injectfile);
     data = runState->data;
     
     /* get new snrs */
-    snrmulti[0] = 0;
+    snrmulti = 0;
     
     while( data ){
       for ( k = 0; k < numSNRs; k++ ){
@@ -2432,7 +2431,7 @@ parameter file %s is wrong.\n", injectfile);
         /* recalculate the SNR */
         snrval = calculate_time_domain_snr( data );
       
-        snrmulti[0] += SQUARE(snrval);
+        snrmulti += SQUARE(snrval);
       
         fprintf(fpsnr, "scaled snr: %le\t", snrval);
       
@@ -2440,12 +2439,12 @@ parameter file %s is wrong.\n", injectfile);
       }
     }
     
-    snrmulti[0] = sqrt( snrmulti[0] );
-		fprintf(stderr, "scaled multi data snr: %le\n", snrmulti[0]);
+    snrmulti = sqrt( snrmulti );
+    fprintf(stderr, "scaled multi data snr: %le\n", snrmulti);
     
     if( ndets > 1 ){
       for ( k = 0; k < numSNRs; k++ ){
-        fprintf(fpsnr, "%le\t", snrmulti[0]);
+        fprintf(fpsnr, "%le\t", snrmulti);
       }
       fprintf(fpsnr, "\n"); 
     }
@@ -2529,8 +2528,7 @@ injection\n", signalonly);
     data = data->next;
     j++;
   }
-  
-  XLALFree(snrmulti);
+ 
   XLALFree(snrscale);
 }
 
@@ -3204,8 +3202,9 @@ void sumData( LALInferenceRunState *runState ){
  * This function creates a 2D lookup table of the 'plus' and 'cross' antenna 
  * patterns for a given detector orientation and source sky position. The 
  * lookup table spans one sidereal day in time (this being the period over which
- * the antenna pattern changes) and goes between \f$\pm\pi/4\f$ radians in
- * \f$\psi\f$.
+ * the antenna pattern changes) and goes between \f$\pm\pi/2\f$ radians in
+ * \f$\psi\f$ (this is the full range of \f$\psi\f$ that should be required for
+ * and model).
  * 
  * Note: the may want to be converted into an XLAL function and moved into LAL 
  * at some point.
@@ -3234,8 +3233,8 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource,
   INT4 i = 0, j = 0;
   
   for( i = 0 ; i < psiSteps ; i++ ){
-    detNSource.pSource->orientation = -(LAL_PI/4.) +
-        (REAL8)i*(LAL_PI/2.) / ( psteps - 1. );
+    detNSource.pSource->orientation = -(LAL_PI_2) +
+        (REAL8)i*(LAL_PI) / ( psteps - 1. );
 
     for( j = 0 ; j < timeSteps ; j++ ){
       T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
@@ -3321,12 +3320,13 @@ void rescaleOutput( LALInferenceRunState *runState ){
     
       /* re-output everything but the "model" value to a temporary file */
       if( strcmp(v, "model") != 0 && strcmp(v, "logL")!=0 
-        && strcmp(v, "logPrior") != 0 )
+        && strcmp(v, "logPrior") != 0 && strcmp(v, "logw") != 0
+        && strcmp(v, "deltalogl") != 0 && strcmp(v, "deltalogL") != 0 )
         fprintf(fpparstmp, "%s\t", v);
     }
   
     /* we will put the logPrior and logLikelihood at the end of the lines */
-    fprintf(fpparstmp, "logPrior\tlogL\n");
+    fprintf(fpparstmp, "deltalogl\tdeltalogL\tlogw\tlogPrior\tlogL\n");
   
     fclose(fppars);
     fclose(fpparstmp);
@@ -3337,7 +3337,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
     while ( 1 ){
       UINT4 i = 0;
     
-      REAL8 logPrior = 0., logL = 0.;
+      REAL8 logPrior = 0., logL = 0., logw = 0., dlogl=0., dlogL = 0.;
     
       /* scan through line, get value and reprint out scaled value to temporary
         file */
@@ -3369,6 +3369,12 @@ void rescaleOutput( LALInferenceRunState *runState ){
           logL = atof(value);
         else if( !strcmp(paramsStr->data[i], "logPrior") )
           logPrior = atof(value);
+        else if( !strcmp(paramsStr->data[i], "logw") )
+          logw = atof(value);
+        else if( !strcmp(paramsStr->data[i], "deltalogl") )
+          dlogl = atof(value);
+        else if( !strcmp(paramsStr->data[i], "deltalogL") )
+          dlogl = atof(value);
         
         fprintf(fptemp, "\t");
       }
@@ -3376,7 +3382,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
       if( feof(fp) ) break;
     
       /* print out the last two items to be the logPrior and logLikelihood */
-      fprintf(fptemp, "%lf\t%lf\n", logPrior, logL);
+      fprintf(fptemp, "%lf\t%lf\t%lf\t%lf\t%lf\n", dlogl, dlogL, logw, logPrior,
+              logL);
     }
   
     fclose(fp);

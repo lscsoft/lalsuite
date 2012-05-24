@@ -235,22 +235,26 @@ void LALInferenceTemplateASinOmegaT(LALInferenceIFOData *IFOdata);
  */
 void LALInferenceTemplateLALGenerateInspiral(LALInferenceIFOData *IFOdata);
 
-/** "XLALSimInspiralChooseWaveform" wrapper.
+/** "XLALSimInspiralChooseWaveform{TD,FD}" wrapper.
  *
  *  Required ( \c IFOdata->modelParams ) parameters are:
  *    - \c "m1"           (REAL8, mass of object 1, solar masses)
  *    - \c "m2"           (REAL8, mass of object 1, solar masses)
  *    - \c "inclination"  (REAL8, inclination angle, radians)
  *    - \c "coa_phase"    (REAL8, phase angle, radians)
- *    - \c "spin1x"       (REAL8, x component of the spin of object 1) (if "SpinTaylor" approx.)
- *    - \c "spin1y"       (REAL8, y component of the spin of object 1) (if "SpinTaylor" approx.)
- *    - \c "spin1z"       (REAL8, z component of the spin of object 1) (if "SpinTaylor" approx.)
- *    - \c "spin2x"       (REAL8, x component of the spin of object 2) (if "SpinTaylor" approx.)
- *    - \c "spin2y"       (REAL8, y component of the spin of object 2) (if "SpinTaylor" approx.)
- *    - \c "spin2z"       (REAL8, z component of the spin of object 2) (if "SpinTaylor" approx.)
+ *    - \c "spin1x"       (REAL8, x component of the spin of object 1)
+ *    - \c "spin1y"       (REAL8, y component of the spin of object 1)
+ *    - \c "spin1z"       (REAL8, z component of the spin of object 1)
+ *    - \c "spin2x"       (REAL8, x component of the spin of object 2)
+ *    - \c "spin2y"       (REAL8, y component of the spin of object 2)
+ *    - \c "spin2z"       (REAL8, z component of the spin of object 2)
  *    - \c "shift0"       (REAL8, shift offset, radians)
  *    - \c "time"         (REAL8, coalescence time, or equivalent/analog/similar, GPS seconds)
  *    - \c "PNorder"      (REAL8, Phase PN order)
+ *    - \c "
+ *
+ *    THIS IMPLEMENTATION IS NOT THREAD SAFE !!! (previous inclination value is stored as a static)
+ *
  */
 void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOdata);
 

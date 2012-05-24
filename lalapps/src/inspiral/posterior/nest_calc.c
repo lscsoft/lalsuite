@@ -269,7 +269,12 @@ REAL8 nestZ(UINT4 Nruns, UINT4 Nlive, LALMCMCParameter **Live, LALMCMCInput *MCM
 
 	/* open outfile */
 	fpout=fopen(outfile,"w");
-	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s\n",outfile);
+	if(fpout==NULL) {
+		fprintf(stderr,"Unable to open output file %s\n",outfile);
+		exit(1);
+	}
+	if(setvbuf(fpout,NULL,_IOFBF, 0x10000)) /* set output buffer to avoid NFS thrashing */
+		fprintf(stderr,"Warning: unable to set output file buffer size\n");
 	
 	/* =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- Nested sampling loop -=-=-=-=--=-=-=-=-==-=-=-=-=-=-= */
 	/*	while(((REAL8)i)<=((REAL8)Nlive)*infosafe*H || i<3*Nlive) */

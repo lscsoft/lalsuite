@@ -252,46 +252,6 @@ void NSFillMCMCVariables(LALInferenceVariables *proposedParams, LALInferenceVari
   return;
 }
 
-void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-{
-  /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
-   to be modified by the proposal. Back up currentParams and then restore it after
-   calling the MCMC proposal function. */
-  REAL8 oldlogdist=-1.0,oldlogmc=-1.0;
-  REAL8 newdist,newmc;
-  LALInferenceVariables *currentParamsBackup=runState->currentParams;
-  
-  /* PTMCMC expects some variables that NS doesn't use by default, so create them */
-  
-  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
-    oldlogdist=*(REAL8 *)LALInferenceGetVariable(proposedParams,"logdistance");
-  if(LALInferenceCheckVariable(proposedParams,"logmc"))
-    oldlogmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc");
-  
-  NSFillMCMCVariables(proposedParams,runState->priorArgs);
-
-  runState->currentParams=proposedParams; 
-  LALInferenceDefaultProposal(runState,proposedParams);
-  /* Restore currentParams */
-  runState->currentParams=currentParamsBackup;
-  
-  /* If the remapped variables are not updated do it here */
-  if(oldlogdist!=-1.0)
-    if(oldlogdist==*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"))
-      {
-	newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
-	newdist=log(newdist);
-	LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
-      }
-  if(oldlogmc!=-1.0)
-    if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))
-    {
-      newmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"chirpmass");
-      newmc=log(newmc);
-      LALInferenceSetVariable(proposedParams,"logmc",&newmc);
-    }
-  
-}
 
 void 
 LALInferenceCyclicProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
@@ -351,6 +311,81 @@ LALInferenceDeleteProposalCycle(LALInferenceRunState *runState) {
 }
 
 static void
+SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
+  const UINT4 BIGWEIGHT = 20;
+  const UINT4 SMALLWEIGHT = 5;
+  const UINT4 TINYWEIGHT = 1;
+  const char defaultPropName[]="none";
+  UINT4 fullProp = 1;
+
+  if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
+      LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, (void*)&defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+
+  LALInferenceCopyVariables(runState->currentParams, proposedParams);
+
+  /* The default, single-parameter updates. */
+  /* Disable until adaptive step is turned on*/
+  //if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
+  //  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
+    LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
+
+  if (fullProp) {
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
+      LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
+
+    UINT4 nDet = numDetectorsUniquePositions(runState);
+    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
+      LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+      LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
+    }
+
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
+      LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
+
+    if(LALInferenceCheckVariable(proposedParams,"phase")) {
+      LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
+    }
+  }
+
+  /* Now add various special proposals that are conditional on
+     command-line arguments or variables in the params. */
+  /*
+  if(LALInferenceCheckVariable(proposedParams,"inclination")) {
+    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
+  }
+  */
+
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+  	if(LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_CIRCULAR 
+  		|| LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_LINEAR )
+	    LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
+  }
+
+  /* Always use the covariance method */
+    LALInferenceAddProposalToCycle(runState, covarianceEigenvectorJumpName, &LALInferenceCovarianceEigenvectorJump, BIGWEIGHT);
+
+  /* Use differential evolution unless turned off */
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-differentialevolution")) {
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionFullName, &LALInferenceDifferentialEvolutionFull, BIGWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionMassesName, &LALInferenceDifferentialEvolutionMasses, SMALLWEIGHT);
+    LALInferenceAddProposalToCycle(runState, differentialEvolutionExtrinsicName, &LALInferenceDifferentialEvolutionExtrinsic, SMALLWEIGHT);
+    if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
+      LALInferenceAddProposalToCycle(runState, differentialEvolutionSpinsName, &LALInferenceDifferentialEvolutionSpins, SMALLWEIGHT);
+    }
+  }
+
+  if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
+    LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
+  }
+ 
+  LALInferenceRandomizeProposalCycle(runState);
+}
+
+
+
+static void
 SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const UINT4 BIGWEIGHT = 20;
   const UINT4 SMALLWEIGHT = 5;
@@ -389,7 +424,7 @@ SetupDefaultProposal(LALInferenceRunState *runState, LALInferenceVariables *prop
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
 
-    if(LALInferenceCheckVariable(proposedParams,"phase")) {
+    if(LALInferenceCheckVariableNonFixed(proposedParams,"phase")) {
       LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
     }
   }
@@ -575,9 +610,9 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   const char *propName = singleAdaptProposalName;
   LALInferenceVariables *args = runState->proposalArgs;
   LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
-  ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--adapt");
-  
-  if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || !ppt) {
+  ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--noAdapt");
+
+  if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || ppt) {
     /* We are not adaptive, or for some reason don't have a sigma
        vector---fall back on old proposal. */
     LALInferenceSingleProposal(runState, proposedParams);
@@ -851,7 +886,7 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
   LALInferenceVariableItem *proposeIterator;
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
-
+  
   j = 0;
   proposeIterator = proposedParams->head;
   if (proposeIterator == NULL) {
@@ -863,15 +898,15 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
     if (proposeIterator->vary != LALINFERENCE_PARAM_FIXED && proposeIterator->vary != LALINFERENCE_PARAM_OUTPUT) {
       REAL8 tmp = *((REAL8 *)proposeIterator->value);
       REAL8 inc = jumpSize*gsl_matrix_get(eigenvectors, j, i);
-
+      
       tmp += inc;
-
+      
       memcpy(proposeIterator->value, &tmp, sizeof(REAL8));
-
+      
       j++;
     }
   } while ((proposeIterator = proposeIterator->next) != NULL && j < N);
-
+  
   LALInferenceSetLogProposalRatio(runState, 0.0);
 }
 
@@ -1015,7 +1050,7 @@ draw_distance(LALInferenceRunState *runState) {
 
   REAL8 x = gsl_rng_uniform(runState->GSLrandom);
 
-  return pow(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin, 1.0/3.0);
+  return cbrt(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin);
 }
 
 static REAL8 
@@ -1058,8 +1093,8 @@ draw_chirp(LALInferenceRunState *runState) {
   LALInferenceGetMinMaxPrior(runState->priorArgs, "chirpmass", &min, &max);
 
   REAL8 x = gsl_rng_uniform(runState->GSLrandom);
-
-  return pow(pow(min, -5.0/6.0) - x*(pow(min, -5.0/6.0) - pow(max, -5.0/6.0)), -6.0/5.0);
+  REAL8 temp=pow(min, -5.0/6.0);
+  return pow(temp - x*(temp - pow(max, -5.0/6.0)), -6.0/5.0);
 }
 
 static REAL8
@@ -1720,7 +1755,7 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
     /* NCell default value. */
     NCell = 64;
   }
-
+  
   const char *propName = KDNeighborhoodProposalName;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
 
@@ -2003,3 +2038,55 @@ void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInfer
   return;
 }
 
+
+void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
+{
+  /* PTMCMC likes to read currentParams directly, whereas NS expects proposedParams
+   to be modified by the proposal. Back up currentParams and then restore it after
+   calling the MCMC proposal function. */
+  REAL8 oldlogdist=-1.0,oldlogmc=-1.0;
+  REAL8 newdist,newmc;
+  LALInferenceVariables *currentParamsBackup=runState->currentParams;
+  /* Create the proposal if none exists */
+  if (!LALInferenceCheckVariable(runState->proposalArgs, cycleArrayName) || !LALInferenceCheckVariable(runState->proposalArgs, cycleArrayLengthName))
+   {
+    /* In case there is a partial cycle set up already, delete it. */
+    LALInferenceDeleteProposalCycle(runState);
+    if(LALInferenceGetProcParamVal(runState->commandLine,"--mcmcprop")) 
+	   { SetupDefaultProposal(runState, proposedParams); }
+	 else {
+	 	SetupDefaultNSProposal(runState,proposedParams);
+	 }
+  }  
+  
+  /* PTMCMC expects some variables that NS doesn't use by default, so create them */
+  
+  if(LALInferenceCheckVariable(proposedParams,"logdistance"))
+    oldlogdist=*(REAL8 *)LALInferenceGetVariable(proposedParams,"logdistance");
+  if(LALInferenceCheckVariable(proposedParams,"logmc"))
+    oldlogmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc");
+  
+  NSFillMCMCVariables(proposedParams,runState->priorArgs);
+
+  runState->currentParams=proposedParams; 
+	  LALInferenceCyclicProposal(runState,proposedParams);
+  /* Restore currentParams */
+  runState->currentParams=currentParamsBackup;
+  
+  /* If the remapped variables are not updated do it here */
+  if(oldlogdist!=-1.0)
+    if(oldlogdist==*(REAL8*)LALInferenceGetVariable(proposedParams,"logdistance"))
+      {
+		newdist=*(REAL8*)LALInferenceGetVariable(proposedParams,"distance");
+		newdist=log(newdist);
+		LALInferenceSetVariable(proposedParams,"logdistance",&newdist);
+      }
+  if(oldlogmc!=-1.0)
+    if(oldlogmc==*(REAL8*)LALInferenceGetVariable(proposedParams,"logmc"))
+    {
+      newmc=*(REAL8*)LALInferenceGetVariable(proposedParams,"chirpmass");
+      newmc=log(newmc);
+      LALInferenceSetVariable(proposedParams,"logmc",&newmc);
+    }
+  
+}

@@ -376,10 +376,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   }
 
 
-  if (runState->likelihood==&LALInferenceTimeDomainLogLikelihood) {
-    fprintf(stderr, "Computing null likelihood in time domain.\n");
-    nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
-  } else if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
+//  if (runState->likelihood==&LALInferenceTimeDomainLogLikelihood) {
+//    fprintf(stderr, "Computing null likelihood in time domain.\n");
+//    nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
+//  } else 
+  if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood) {
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
@@ -628,9 +629,10 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           fprintf(statfile,"%d\t",i);
 
           if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
+            s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
             fprintf(statfile,"%f\t",s_gamma);
             for (p=0; p<nPar; ++p) {
-              fprintf(statfile,"%f\t",sigmas->data[p]);
+              fprintf(statfile,"%g\t",sigmas->data[p]);
             }
             for (p=0; p<nPar; ++p) {
               fprintf(statfile,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
@@ -865,7 +867,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
       }
 
       sigma = (sigma > dprior ? dprior : sigma);
-      sigma = (sigma < 0 ? 0 : sigma);
+      sigma = (sigma < DBL_MIN ? DBL_MIN : sigma);
 
       sigmas->data[i] = sigma;
 

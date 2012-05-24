@@ -12,7 +12,7 @@ endif
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_cosmicstring_pipe
-pkgpython_DATA = cosmicstring.py
+pkgpython_PYTHON = cosmicstring.py
 endif
 
 #pkgdata_DATA = S3_H1_StringDag.ini S3_StringDag.ini S4_StringDag.ini

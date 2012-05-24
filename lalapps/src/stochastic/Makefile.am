@@ -51,7 +51,7 @@ bin_PROGRAMS      = ${STOCHASTICPROGRAMS} ${FRAMEPROGRAMS} ${METAIOPROGRAMS}
 if LALSTOCHASTIC
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_stochastic_pipe lalapps_stochastic_bayes
-pkgpython_DATA = stochastic.py
+pkgpython_PYTHON = stochastic.py
 endif
 endif
 

@@ -471,9 +471,22 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
             c1 = gsl_rng_uniform_pos(params->rng)*(upperend-lowerend)+lowerend;
             vars.c = c1;
             tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+            
+            INT4 tries = 1;
+            while (tries<10 && errcode1 != 0) {
+               tries++;
+               c1 = gsl_rng_uniform_pos(params->rng)*(upperend-lowerend)+lowerend;
+               vars.c = c1;
+               tempprob = 1.0-cdfwchisq_twospect(&vars, sigma, accuracy, &errcode1);
+            }
+            if (tries>=10 && errcode1!=0) {
+               fprintf(stderr,"%s: cdfwchisq_twospect() failed with code %d after making %d tries.\n", __func__, errcode1, tries);
+               XLAL_ERROR_REAL8(XLAL_EFUNC);
+            }
+            
          }
          if (errcode1!=0) {
-            fprintf(stderr,"%s: cdfwchisq() failed with code %d.\n", __func__, errcode1);
+            fprintf(stderr,"%s: cdfwchisq_twospect() failed with code %d.\n", __func__, errcode1);
             XLAL_ERROR_REAL8(XLAL_EFUNC);
          }
          probvals->data[ii] = log10(tempprob);
@@ -500,7 +513,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    
    //If errcode is still != 0, better fail
    if (*errcode!=0) {
-      fprintf(stderr,"%s: cdfwchisq() failed at the end with code %d.\n", __func__, *errcode);
+      fprintf(stderr,"%s: cdfwchisq_twospect() failed at the end with code %d.\n", __func__, *errcode);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
@@ -646,7 +659,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    REAL4Vector *omegapr_squared = XLALCreateREAL4Vector(fpr->length);
    REAL8Vector *cos_omegapr_times_period = XLALCreateREAL8Vector(fpr->length);
    REAL8Vector *cos_N_times_omegapr_times_period = XLALCreateREAL8Vector(fpr->length);
-   REAL8Vector *exp_log_1_minus_cos_N_times_omegapr_times_period_minus_log_1_minus_cos_omegapr_times_period = XLALCreateREAL8Vector(fpr->length);
+   REAL8Vector *cos_ratio = XLALCreateREAL8Vector(fpr->length);
    INT4Vector *whichIfStatementToUse = XLALCreateINT4Vector(fpr->length);
    if (omegapr==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
@@ -660,7 +673,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    } else if (cos_N_times_omegapr_times_period==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, fpr->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
-   } else if (exp_log_1_minus_cos_N_times_omegapr_times_period_minus_log_1_minus_cos_omegapr_times_period==NULL) {
+   } else if (cos_ratio==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, fpr->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (whichIfStatementToUse==NULL) {
@@ -686,9 +699,14 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       for (ii=0; ii<(INT4)fpr->length; ii++) {
          cos_omegapr_times_period->data[ii] = cos(input.period*omegapr->data[ii]);
          cos_N_times_omegapr_times_period->data[ii] = cos(N*input.period*omegapr->data[ii]);
-         exp_log_1_minus_cos_N_times_omegapr_times_period_minus_log_1_minus_cos_omegapr_times_period->data[ii] = exp(log(1.0-cos_N_times_omegapr_times_period->data[ii]) - log(1.0-cos_omegapr_times_period->data[ii]));
-         if (cos_N_times_omegapr_times_period->data[ii]<=(1.0-10.0*LAL_REAL8_EPS) && cos_omegapr_times_period->data[ii]<=(1.0-10.0*LAL_REAL8_EPS)) whichIfStatementToUse->data[ii] = 1;
-         else if (cos_N_times_omegapr_times_period->data[ii]>(1.0-10.0*LAL_REAL8_EPS)) whichIfStatementToUse->data[ii] = 2;
+         if (cos_N_times_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS) && cos_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS)) {
+            whichIfStatementToUse->data[ii] = 1;
+            cos_ratio->data[ii] = (1.0 - cos_N_times_omegapr_times_period->data[ii])/(1.0 - cos_omegapr_times_period->data[ii]);
+         }
+         else if (cos_N_times_omegapr_times_period->data[ii]>(1.0-100.0*LAL_REAL8_EPS)) {
+            whichIfStatementToUse->data[ii] = 2;
+            cos_ratio->data[ii] = 1.0;
+         }
       }
    } else {
       for (ii=0; ii<(INT4)fpr->length; ii++) {
@@ -696,9 +714,14 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          omegapr_squared->data[ii] = omegapr->data[ii]*omegapr->data[ii];
          cos_omegapr_times_period->data[ii] = cos(input.period*omegapr->data[ii]);
          cos_N_times_omegapr_times_period->data[ii] = cos(N*input.period*omegapr->data[ii]);
-         exp_log_1_minus_cos_N_times_omegapr_times_period_minus_log_1_minus_cos_omegapr_times_period->data[ii] = exp(log(1.0-cos_N_times_omegapr_times_period->data[ii]) - log(1.0-cos_omegapr_times_period->data[ii]));
-         if (cos_N_times_omegapr_times_period->data[ii]<=(1.0-10.0*LAL_REAL8_EPS) && cos_omegapr_times_period->data[ii]<=(1.0-10.0*LAL_REAL8_EPS)) whichIfStatementToUse->data[ii] = 1;
-         else if (cos_N_times_omegapr_times_period->data[ii]>(1.0-10.0*LAL_REAL8_EPS)) whichIfStatementToUse->data[ii] = 2;
+         if (cos_N_times_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS) && cos_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS)) {
+            whichIfStatementToUse->data[ii] = 1;
+            cos_ratio->data[ii] = (1.0 - cos_N_times_omegapr_times_period->data[ii])/(1.0 - cos_omegapr_times_period->data[ii]);
+         }
+         else if (cos_N_times_omegapr_times_period->data[ii]>(1.0-100.0*LAL_REAL8_EPS)) {
+            whichIfStatementToUse->data[ii] = 2;
+            cos_ratio->data[ii] = 1.0;
+         }
       }
    }
    
@@ -944,10 +967,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          //4) both numerator and denominator approach zero, so, again, the fraction approaches 1.0 (second if)
          dataval = 0.0;
          if (whichIfStatementToUse->data[jj]==1) {
-            //dataval = scale->data[ii+fnumstart] * prefact0 * exp_neg_sigma_sq_times_omega_pr_sq->data[jj] * (cos_phi_times_omega_pr->data[jj] + 1.0) * (cos_N_times_omegapr_times_period->data[jj] - 1.0) / (cos_omegapr_times_period->data[jj] - 1.0);
-            dataval = (REAL4)(datavector->data[jj]*exp_log_1_minus_cos_N_times_omegapr_times_period_minus_log_1_minus_cos_omegapr_times_period->data[jj]);
+            dataval = (REAL4)(datavector->data[jj]*cos_ratio->data[jj]);
          } else if (whichIfStatementToUse->data[jj]==2) {
-            //dataval = scale->data[ii+fnumstart] * prefact0 * exp_neg_sigma_sq_times_omega_pr_sq->data[jj] * (cos_phi_times_omega_pr->data[jj] + 1.0);
             dataval = datavector->data[jj];
          }
          
@@ -995,7 +1016,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    XLALDestroyREAL4Vector(omegapr_squared);
    XLALDestroyREAL8Vector(cos_omegapr_times_period);
    XLALDestroyREAL8Vector(cos_N_times_omegapr_times_period);
-   XLALDestroyREAL8Vector(exp_log_1_minus_cos_N_times_omegapr_times_period_minus_log_1_minus_cos_omegapr_times_period);
+   XLALDestroyREAL8Vector(cos_ratio);
    XLALDestroyREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq);
    XLALDestroyREAL4Vector(phi_times_fpr);
    XLALDestroyREAL4Vector(sin_phi_times_omega_pr);

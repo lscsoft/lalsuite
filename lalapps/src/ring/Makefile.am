@@ -91,7 +91,7 @@ lalapps_ringdown_waveform_SOURCES = ringdown_waveform.c
 endif
 
 if HAVE_PYTHON
-pkgpython_DATA = ring.py
+pkgpython_PYTHON = ring.py
 bin_SCRIPTS = \
 	lalapps_ring_pipe \
 	lalapps_ringcorse

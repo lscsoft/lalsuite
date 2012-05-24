@@ -23,7 +23,7 @@ Package: lalinspiral-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libgsl0-dev (>= 1.9), libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
-  lal-dev (>= 6.7.0), lalframe-dev <>= 1.0.5), lalmetaio-dev (>= 1.0.4),
+  lal-dev (>= 6.7.0), lalframe-dev (>= 1.0.5), lalmetaio-dev (>= 1.0.4),
   lalsimulation-dev (>= 0.3.0), lalinspiral (= ${binary:Version})
 Description: LSC Algorithm Library Inspiral Developers
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.

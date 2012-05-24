@@ -627,14 +627,14 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       } */
       XLALDestroyREAL4Vector(TFdata_slided);
-      //XLALDestroyREAL4Vector(background_slided);    //TODO: uncomment this
+      XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(antweights);
       /* FILE *TFDATA = fopen("./output/tfdata.dat","w");
       for (jj=0; jj<(INT4)TFdata_weighted->length; jj++) fprintf(TFDATA,"%.6f\n",TFdata_weighted->data[jj]);
       fclose(TFDATA); */
       
       //Calculation of average TF noise per frequency bin ratio to total mean
-      //TODO: this block of code does not avoid lines when computing the average F-bin ratio. Upper limits remain unchanged
+      //TODO: this block of code does not avoid lines when computing the average F-bin ratio. Upper limits remain virtually unchanged
       //when comaring runs that have line finding enabled or disabled
       REAL4Vector *aveTFnoisePerFbinRatio = XLALCreateREAL4Vector(ffdata->numfbins);
       REAL4Vector *TSofPowers = XLALCreateREAL4Vector(ffdata->numffts);
@@ -646,18 +646,16 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
-         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];    //TODO: change this back
+         for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
          aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      //REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //Better in case of strong lines (approaches mean value)
+      //REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //TODO: check--better in case of strong lines (approaches mean value)
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
       }
       XLALDestroyREAL4Vector(TSofPowers);
-      XLALDestroyREAL4Vector(background_slided);   //TODO: uncomment above and remove this
       
       //TODO: Code below avoids lines when computing the average F-bin ratio. This can change upper limits slightly when comparing
       //runs that have line finding enabled or disabled

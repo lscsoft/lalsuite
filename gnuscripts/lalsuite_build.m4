@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 35
+# serial 37
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -410,43 +410,42 @@ AC_MSG_RESULT([unknown])
 [boinc=false])
 ])
 
-AC_DEFUN([LALSUITE_WITH_CUDA],
-[AC_ARG_WITH(
+AC_DEFUN([LALSUITE_WITH_CUDA],[
+AC_ARG_WITH(
   [cuda],
-  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
-  [ case "$with_cuda" in
-    no)
-      cuda=false
-      ;;
-    yes)
-      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
-      cuda=true
-      AS_CASE([$build_os],
-          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
-          [CLIBS="lib"])
-      CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
-      CUDA_CFLAGS="-I/opt/cuda/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
-      ;;
-    *)
-      AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
-      cuda=true
-      AS_CASE([$build_os],
-          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
-          [CLIBS="lib"])
-      CUDA_LIBS="-L${with_cuda}/$CLIBS -lcufft -lcudart"
-      CUDA_CFLAGS="-I${with_cuda}/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
-      ;;
-    esac
-  ], [ cuda=false ])
-  AS_IF([test "${cuda}" = true],[LALSUITE_REQUIRE_CXX])
+  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),[
+    AS_CASE([${with_cuda}],
+      [no],[cuda=false],
+      [yes],[cuda=true; cuda_path=/opt/cuda],
+      [cuda=true; cuda_path=${with_cuda}]
+    )
+  ],[
+    cuda=false
+  ])
+  AS_IF([test "${cuda}" = true],[
+    LALSUITE_REQUIRE_CXX
+    AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
+    AS_CASE([$build_os],
+      [linux*],[
+        AS_IF([test "x$build_cpu" = "xx86_64"],[
+          cuda_libdir=lib64
+        ],[
+          cuda_libdir=lib
+        ])
+      ],
+      [cuda_libdir=lib]
+    )
+    CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
+    CUDA_CPPFLAGS="-I${with_cuda}/include"
+    LIBS="$LIBS $CUDA_LIBS"
+    CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
+    AC_SUBST(CUDA_LIBS)
+    AC_SUBST(CUDA_CPPFLAGS)
+    AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
+    AS_IF([test "x${NVCC}" = x],[
+      AC_MSG_ERROR([could not find 'nvcc' in path])
+    ])
+  ])
   LALSUITE_ENABLE_MODULE([CUDA],[cuda])
 ])
 

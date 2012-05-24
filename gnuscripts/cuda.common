@@ -5,5 +5,5 @@ nvcc_verbose_0 = @echo "  NVCC  " $<;
 if CUDA
 SUFFIXES = .cu .cpp
 .cu.cpp:
-	$(nvcc_verbose)nvcc --cuda $(INCLUDES) $(CPPFLAGS) $(NVCC_CFLAGS) --output-file $@ $<
+	$(nvcc_verbose)${NVCC} --cuda $(INCLUDES) $(CPPFLAGS) $(NVCC_CFLAGS) --output-file $@ $<
 endif
