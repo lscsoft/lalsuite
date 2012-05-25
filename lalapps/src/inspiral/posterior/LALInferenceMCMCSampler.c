@@ -234,18 +234,6 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
       ACL *= Nskip;
       if (ACL>max)
         max=ACL;
-      if (MPIrank==0) {
-        p=0;
-        ptr=runState->currentParams->head;
-        while(ptr!=NULL) {
-          if (ptr->vary != LALINFERENCE_PARAM_FIXED) {
-            if (p==par)
-              printf("Chain %i:%s(%f)\t=>\t%i\n",MPIrank,LALInferenceTranslateInternalToExternalParamName(ptr->name),mean,(INT4)ACL);
-            p++;
-          }
-          ptr=ptr->next;
-        }
-      }
     }
     XLALFree(temp);
   } else {
