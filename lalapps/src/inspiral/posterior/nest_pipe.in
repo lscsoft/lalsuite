@@ -90,23 +90,23 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		if(len(db_out_saved)==0):
 			print ' Error! No events found for IFO %s for coinc %s'%(str(initialkey),str(co_id))
 			continue
-		shifted_time=db_out_saved[0][0]
+		true_time=db_out_saved[0][0]
 		for ifo in offsets.keys():
 			deltat=offsets[ifo]
 			# The shifted time is also in the same segment as the original time
-			segfilt=filter(lambda seg:shifted_time in seg, seglist)
+			segfilt=filter(lambda seg:true_time in seg, seglist)
 			if(len(segfilt)!=1):
 				print 'ERROR: time %f must appear in only one segment'%(shifted_time)
 			else:
 				seg=segfilt[0]
 			# Original time is shifted_time-deltat
-			while (shifted_time-deltat) not in seg:
+			while (true_time+deltat) not in seg:
 				if deltat<0:
 					deltat=deltat+(seg[1]-seg[0])
 				else:
 					deltat=deltat-(seg[1]-seg[0])
 			offsets[ifo]=deltat
-		realtime=shifted_time-offsets[initialkey]
+		realtime=true_time-offsets[initialkey]
 		output[realtime]=offsets
 		if outfile is not None:
 			# Get the SNR and chi-squared to dump
