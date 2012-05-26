@@ -261,8 +261,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
     REAL8 sloppyfrac;
 	UINT4 displayprogress=0;
 	LALInferenceVariableItem *param_ptr;
-	LALInferenceVariables currentVars;
-	memset(&currentVars,0,sizeof(currentVars));
+	LALInferenceVariables *currentVars=calloc(1,sizeof(LALInferenceVariables));
 	
 
 	/* Default sample logging functions with and without XML */
@@ -426,7 +425,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	/* Set the number of MCMC points */
 	UpdateNMCMC(runState);
 	
-	runState->currentParams=&currentVars;
+	runState->currentParams=currentVars;
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
 	do {
