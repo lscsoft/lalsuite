@@ -187,7 +187,7 @@ tagBinaryPulsarParams
   REAL8 r;      /**< parameter for pinsf model.**/
   REAL8 lambda; /**< this is a longitude like angle between pinning axis and
                      line of sight */
-  REAL8 theta;  /**< angle between rotation axis and pinning axis */
+  REAL8 costheta;  /**< angle between rotation axis and pinning axis */
   
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -254,7 +254,7 @@ tagBinaryPulsarParams
   REAL8 I31Err;
   REAL8 rErr;
   REAL8 lambdaErr;
-  REAL8 thetaErr;
+  REAL8 costhetaErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */
