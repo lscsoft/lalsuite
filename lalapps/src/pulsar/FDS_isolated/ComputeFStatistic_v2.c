@@ -590,6 +590,21 @@ int main(int argc,char *argv[])
 
         } /* if GPUready==true */
 
+      toc = GETTIME();
+      timing.tauFstat += (toc - tic);   // pure Fstat-calculation time
+
+      /* Progress meter */
+      templateCounter += 1.0;
+      if ( lalDebugLevel && ( ++tickCounter > uvar.timerCount) )
+        {
+          REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
+          REAL8 taup = diffSec / templateCounter ;
+          REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
+          tickCounter = 0.0;
+          LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
+                     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
+        }
+
       // here we use Santiago's trick to hack the ComputeFStatFreqBand_RS() Fstat(f) into the single-F rest of the main -loop:
       // we simply loop the remaining body over all frequency-bins in the Fstat-vector, this way nothing needs to be changed!
       // in the non-resampling case, this loop iterates only once, so nothing is changed ...
@@ -597,21 +612,6 @@ int main(int argc,char *argv[])
       {
         if ( uvar.useResamp )
           Fstat.F = fstatVector->data->data[iFreq];
-
-      toc = GETTIME();
-      timing.tauFstat += (toc - tic);	// pure Fstat-calculation time
-
-      /* Progress meter */
-      templateCounter += 1.0;
-      if ( lalDebugLevel && ( ++tickCounter > uvar.timerCount) )
-	{
-	  REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
-	  REAL8 taup = diffSec / templateCounter ;
-	  REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
-	  tickCounter = 0.0;
-	  LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
-		     templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
-	}
 
       /* sanity check on the result */
       if ( !finite(Fstat.F) )
