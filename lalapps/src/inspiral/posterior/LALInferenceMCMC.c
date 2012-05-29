@@ -431,7 +431,13 @@ void initVariables(LALInferenceRunState *state)
                ------------------------------------------------------------------------------------------------------------------\n\
                (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
                (--LALSimulation)               Interface with the LALSimulation package for template generation.\n\
-               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2).\n\
+               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2). Possible values are: \n\
+                                               default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4, \n\
+                                                                           EOB, EOBNR, EOBNRv2, EOBNRv2HM, SpinTaylor, \n\
+                                                                           SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4, \n\
+                                                                           PhenSpinTaylorRD, NumRel.\n\
+                                               default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
+                                                                                TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
                (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
