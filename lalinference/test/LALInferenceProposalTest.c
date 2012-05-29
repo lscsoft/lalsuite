@@ -37,7 +37,6 @@
 #include <lal/LALInferenceNestedSampler.h>
 
 
-
 /* Comparison function for qsorting the arrays later */
 static int cmpREAL8p(const void *p1, const void *p2);
 REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs);
@@ -262,6 +261,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax,tmpVal;
+    REAL8 one=1.0;
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	memset(&status,0,sizeof(LALStatus));
 	INT4 enable_spin=0;
@@ -449,6 +449,10 @@ void initVariables(LALInferenceRunState *state)
 			LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
 		}
 	}
+    
+    LALInferenceAddVariable(currentParams,"logL",&one,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+    REAL8 prior=state->prior(state,currentParams);
+    LALInferenceAddVariable(currentParams,"logPrior",&prior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	return;
 }
 
@@ -470,6 +474,8 @@ int main(int argc, char *argv[]) {
 	char *filename=NULL;
 	LALInferenceVariableItem *param=NULL;
 	LALInferenceVariables *varArray=NULL;
+    /* Number of points to sprinkle in prior to get covariance matrix, differential evolution steps */
+    UINT4 NCOV=100;
 
 
 	/* Read command line and parse */
@@ -506,7 +512,48 @@ int main(int argc, char *argv[]) {
 	state->proposal=&NSWrapMCMCLALProposal;
 	
 	/* Set up a sample to evolve */
-	initVariables(state);
+    LALInferenceVariables **samples=calloc(sizeof(LALInferenceVariables *),NCOV);
+    state->livePoints=samples;
+    LALInferenceAddVariable(state->algorithmParams,"Nlive",&NCOV,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    
+    for(i=0;i<NCOV;i++){
+        initVariables(state);
+        samples[i]=calloc(1,sizeof(LALInferenceVariables));
+        LALInferenceCopyVariables(state->currentParams,samples[i]);
+    }
+    gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
+    /* Add the covariance matrix for proposal distribution */
+	LALInferenceNScalcCVM(cvm,state->livePoints,NCOV);
+	state->differentialPoints=state->livePoints;
+	state->differentialPointsLength=(size_t) NCOV;
+	/* Set up eigenvectors and eigenvalues. */
+	UINT4 N=(*cvm)->size1;
+	gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
+	gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
+	gsl_vector *eValues = gsl_vector_alloc(N);
+	REAL8Vector *eigenValues = XLALCreateREAL8Vector(N);
+	gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
+	int gsl_status;
+	gsl_matrix_memcpy(covCopy, *cvm);
+	
+	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
+        XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
+        XLAL_ERROR(XLAL_EFAILED);
+	}
+	
+	for (i = 0; i < N; i++) {
+        eigenValues->data[i] = gsl_vector_get(eValues,i);
+	}
+	
+	LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvectors", &eVectors, LALINFERENCE_gslMatrix_t, LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+	
+	LALInferenceAddVariable(state->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
+    
+    /* set up k-D tree if required and not already set */
+    LALInferenceSetupkDTreeNSLivePoints( state );
+    
+
 	
 	/* Set up the proposal function requirements */
 	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&thinfac,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
@@ -555,7 +602,7 @@ int main(int argc, char *argv[]) {
     /* For each parameter */
     for(param=state->currentParams->head; param; param=param->next)
     {
-        if(param->type!=LALINFERENCE_REAL8_t) continue;
+        if(param->type!=LALINFERENCE_REAL8_t && (param->vary==LALINFERENCE_PARAM_CIRCULAR ||param->vary==LALINFERENCE_PARAM_LINEAR )) continue;
         /* Create sorted parameter vector */
         REAL8Vector *sampvec=XLALCreateREAL8Vector(Nmcmc);
         for(i=0;i<NvarArray;i++)
