@@ -334,15 +334,12 @@ XLALInspiralMoments(
          prepared to rescale the outputs. */
   f0 = shf->f0;
   deltaF = shf->deltaF;
-  {
-      const REAL8 fMax = f0 + (shf->data->length - 1) * deltaF;
-      if ( xmin < f0 || xmax > fMax+LAL_REAL4_EPS ) {
-        XLALPrintError("PSD does not cover domain of integration\n");
-        XLAL_ERROR_REAL8(XLAL_EDOM);
-      }
+  kMax = floor((xmax - f0) / deltaF);
+  if ( (xmin < f0) || (kMax > shf->data->length) ) {
+    XLALPrintError("PSD does not cover domain of integration\n");
+    XLAL_ERROR_REAL8(XLAL_EDOM);
   }
   kMin = floor((xmin - f0) / deltaF);
-  kMax = floor((xmax - f0) / deltaF);
 
   /* do the first point of the integral */
   if( shf->data->data[kMin] ) {
@@ -357,8 +354,9 @@ XLALInspiralMoments(
       moment += pow( f, -(ndx) ) / psd_val;
     }
   }
-  /* do the last point of the integral */
-  if ( shf->data->data[kMax] ) {
+  /* Do the last point of the integral, but allow the integration domain
+     to be open on the right if necessary. */
+  if ( kMax < shf->data->length && shf->data->data[kMax] ) {
     const REAL8 f = f0 + kMax * deltaF;
     moment += pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMax] );
   }
