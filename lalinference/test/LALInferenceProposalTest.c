@@ -266,6 +266,7 @@ void initVariables(LALInferenceRunState *state)
 	memset(&status,0,sizeof(LALStatus));
 	INT4 enable_spin=0;
 	INT4 aligned_spin=0;
+    gsl_rng *RNG=state->GSLrandom;
 	char help[]="\
 	Parameter arguments:\n\
 	(--etamin eta)\tMinimum eta\n\
@@ -299,7 +300,7 @@ void initVariables(LALInferenceRunState *state)
 			XLALGetApproximantFromString(ppt->value,&approx);
 		XLALGetOrderFromString(ppt->value,&PhaseOrder);
 	}
-	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+	//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	
 	/* Over-ride end time if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
@@ -360,51 +361,48 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	
 	/* Set up the variable parameters */
-	tmpVal=log(mcMin+(mcMax-mcMin)/2.0);
+	tmpVal=log(mcMin+gsl_rng_uniform(RNG)*(mcMax-mcMin));
 	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
 	 LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t); */
 	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	logmcMin=log(mcMin); logmcMax=log(mcMax);
 	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		LALINFERENCE_REAL8_t);
 	
-	tmpVal=0.24;
+	tmpVal=gsl_rng_uniform(RNG)*0.25;
 	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
-	
+	endtime=gsl_rng_uniform(RNG)*dt+endtime-0.5*dt;
 	LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
 	LALInferenceAddMinMaxPrior(priorArgs, "time",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);	
 	
-	tmpVal=1.0;
+	tmpVal=gsl_rng_uniform(RNG)*LAL_TWOPI;
 	LALInferenceAddVariable(currentParams, "phase",           &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
-	tmpVal=logDmin+(logDmax-logDmin)/2.0;
+	tmpVal=logDmin+(logDmax-logDmin)*gsl_rng_uniform(RNG);
 	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
 	
-	tmpVal=1.0;
+	tmpVal=gsl_rng_uniform(RNG)*LAL_TWOPI;
 	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "rightascension",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
-	
+	tmpVal=gsl_rng_uniform(RNG)*LAL_PI -LAL_PI/2.;
 	LALInferenceAddVariable(currentParams, "declination",     &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=-LAL_PI/2.0; tmpMax=LAL_PI/2.0;
 	LALInferenceAddMinMaxPrior(priorArgs, "declination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
-	
+	tmpVal=gsl_rng_uniform(RNG)*LAL_PI;
 	LALInferenceAddVariable(currentParams, "polarisation",    &tmpVal,     LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "polarisation",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
-	
+	tmpVal=gsl_rng_uniform(RNG)*LAL_PI;
  	LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
 	/* Additional parameters for spinning waveforms */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
-	if(ppt) if(!strcmp("PhenSpin",ppt->value)){ enable_spin=1;}
-	
 	if(LALInferenceGetProcParamVal(commandLine,"--enable-spin")) enable_spin=1;
 	
 	/* If aligned spins use magnitude in (-1,1) */
@@ -412,17 +410,17 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt) {enable_spin=1; aligned_spin=1; a_spin1_min=-1; a_spin2_min=-1;}
 	
 	if(enable_spin){
-		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)/2.0;
+		tmpVal=a_spin1_min+(a_spin1_max-a_spin1_min)*gsl_rng_uniform(RNG);
 		LALInferenceAddVariable(currentParams, "a_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin1",     &a_spin1_min, &a_spin1_max,   LALINFERENCE_REAL8_t); 
 		
-		tmpVal=a_spin2_min+(a_spin2_max-a_spin2_min)/2.0;
+		tmpVal=a_spin2_min+(a_spin2_max-a_spin2_min)*gsl_rng_uniform(RNG);
 		LALInferenceAddVariable(currentParams, "a_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 		LALInferenceAddMinMaxPrior(priorArgs, "a_spin2",     &a_spin2_min, &a_spin2_max,   LALINFERENCE_REAL8_t); 
 		
 		
 		if(aligned_spin){ /* Set the spin angles to be parallel to orbital */
-			tmpVal=LAL_PI/2;
+			tmpVal=0;
 			LALInferenceAddVariable(currentParams,"theta_spin1",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 			LALInferenceAddVariable(currentParams,"theta_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 			tmpVal=0;
@@ -430,26 +428,25 @@ void initVariables(LALInferenceRunState *state)
 			LALInferenceAddVariable(currentParams,"phi_spin2",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 		}
 		else{ /* Use full spinning parameters */
-			tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
+			tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)*gsl_rng_uniform(RNG);
 			
 			LALInferenceAddVariable(currentParams,"theta_spin1",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 			LALInferenceAddMinMaxPrior(priorArgs, "theta_spin1",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
 			
-			tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)/2.0;
+			tmpVal=theta_spin1_min+(theta_spin1_max - theta_spin1_min)*gsl_rng_uniform(RNG);
 			LALInferenceAddVariable(currentParams,"theta_spin2",	&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 			LALInferenceAddMinMaxPrior(priorArgs, "theta_spin2",     &theta_spin1_min, &theta_spin1_max,   LALINFERENCE_REAL8_t); 
 			
-			tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
+			tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)*gsl_rng_uniform(RNG);
 			
 			LALInferenceAddVariable(currentParams,"phi_spin1",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 			LALInferenceAddMinMaxPrior(priorArgs, "phi_spin1",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t); 
 			
-			tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)/2.0;
+			tmpVal=phi_spin1_min+(phi_spin1_max - phi_spin1_min)*gsl_rng_uniform(RNG);
 			LALInferenceAddVariable(currentParams,"phi_spin2",		&tmpVal,	LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
 			LALInferenceAddMinMaxPrior(priorArgs, "phi_spin2",     &phi_spin1_min, &phi_spin1_max,   LALINFERENCE_REAL8_t);
 		}
 	}
-    
     LALInferenceAddVariable(currentParams,"logL",&one,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     REAL8 prior=state->prior(state,currentParams);
     LALInferenceAddVariable(currentParams,"logPrior",&prior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
@@ -461,13 +458,13 @@ int main(int argc, char *argv[]) {
 	char help[]="\
 	LALInferenceProposalTest:\n\
 	Test jump proposal distributions\n\
-	--Nprop N\t: Number of jumps to perform\n\
+	--Nprop N\t: Number of jumps to perform (1000)\n\
 	--outfile file.dat\t: Optional output file for samples\n\
-	--thin N\t:Thin MCMC chain by factor N (default 1)\
+	--thin N\t:Thin MCMC chain by factor N (default 1000)\
 	";
 	LALInferenceRunState *state=NULL;
 	ProcessParamsTable *procParams=NULL;
-	UINT4 Nmcmc=0,i=1,NvarArray=0,thinfac=1;
+	UINT4 Nmcmc=1000,i=1,NvarArray=0,thinfac=1000;
 	REAL8 logLmin=-DBL_MAX;
 	ProcessParamsTable *ppt=NULL;
 	FILE *outfile=NULL;
@@ -515,12 +512,15 @@ int main(int argc, char *argv[]) {
     LALInferenceVariables **samples=calloc(sizeof(LALInferenceVariables *),NCOV);
     state->livePoints=samples;
     LALInferenceAddVariable(state->algorithmParams,"Nlive",&NCOV,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-    
+    //LALInferenceVariables *backup=state->currentParams;
+    initVariables(state);
     for(i=0;i<NCOV;i++){
-        initVariables(state);
         samples[i]=calloc(1,sizeof(LALInferenceVariables));
         LALInferenceCopyVariables(state->currentParams,samples[i]);
+        LALInferenceDrawFromPrior(samples[i], state->priorArgs, state->GSLrandom );
+        /* scatter points for CVM calculation */
     }
+    state->currentParams=samples[0];
     gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
     /* Add the covariance matrix for proposal distribution */
 	LALInferenceNScalcCVM(cvm,state->livePoints,NCOV);
@@ -577,11 +577,13 @@ int main(int argc, char *argv[]) {
 	
 	
 	/* Evolve with fixed likelihood */
-	for(i=0;i<Nmcmc;i++){
-	  LALInferenceNestedSamplingOneStep(state);
+	for(i=0;i<Nmcmc*thinfac;i++){
+	  LALInferenceMCMCSamplePrior(state);
 	  /* output sample */
-	  if(state->logsample) state->logsample(state,state->currentParams);
-	  LALInferencePrintSample(outfile,state->currentParams);
+      if(!(i%thinfac)){
+        if(state->logsample) state->logsample(state,state->currentParams);
+        LALInferencePrintSample(outfile,state->currentParams);
+      }
 	  fprintf(outfile,"\n");
 	  
 	}
@@ -624,121 +626,6 @@ int main(int argc, char *argv[]) {
     return(0);
 }
 
-/******************************************
- * 
- * Old tests
- * 
- ******************************************/
- 
-//Test LALInferenceProposalFunction
-void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
-
-//Test LALProposalFunction
-void BasicMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-/****************************************/
-/* Assumes the following parameters		*/
-/* exist (e.g., for TaylorT1):			*/
-/* chirpmass, massratio, inclination,	*/
-/* phase, time, rightascension,			*/
-/* desclination, polarisation, distance.*/
-/* Simply picks a new value based on	*/
-/* fixed Gaussian;						*/
-/* need smarter wall bounces in future.	*/
-/****************************************/
-{
-  REAL8 mc, eta, iota, phi, tc, ra, dec, psi, dist;
-  REAL8 mc_proposed, eta_proposed, iota_proposed, phi_proposed, tc_proposed, 
-        ra_proposed, dec_proposed, psi_proposed, dist_proposed;
-  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
-  gsl_rng * GSLrandom=runState->GSLrandom;
-  LALInferenceVariables * currentParams_local = runState->currentParams;
-
-  mc   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "chirpmass");		/* solar masses*/
-  eta  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "massratio");		/* dim-less    */
-  iota = *(REAL8*) LALInferenceGetVariable(currentParams_local, "inclination");		/* radian      */
-  tc   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "time");				/* GPS seconds */
-  phi  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "phase");			/* radian      */
-  ra   = *(REAL8*) LALInferenceGetVariable(currentParams_local, "rightascension");	/* radian      */
-  dec  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "declination");		/* radian      */
-  psi  = *(REAL8*) LALInferenceGetVariable(currentParams_local, "polarisation");		/* radian      */
-  dist = *(REAL8*) LALInferenceGetVariable(currentParams_local, "distance");			/* Mpc         */
-
-  //mc_proposed   = mc*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*mc changed by 1% */
-  // (above proposal is not symmetric!)
-  //mc_proposed   = mc   + gsl_ran_ugaussian(GSLrandom)*0.0001;	/*mc changed by 0.0001 */
-  mc_proposed   = mc * exp(gsl_ran_ugaussian(GSLrandom)*0.001);          /* mc changed by ~0.1% */
-  logProposalRatio *= mc_proposed / mc;   // (proposal ratio for above "scaled log-normal" proposal)
-  eta_proposed  = eta  + gsl_ran_ugaussian(GSLrandom)*0.01; /*eta changed by 0.01*/
-  //TODO: if(eta_proposed>0.25) eta_proposed=0.25-(eta_proposed-0.25); etc.
-  iota_proposed = iota + gsl_ran_ugaussian(GSLrandom)*0.1;
-  tc_proposed   = tc   + gsl_ran_ugaussian(GSLrandom)*0.005; /*time changed by 5 ms*/
-  phi_proposed  = phi  + gsl_ran_ugaussian(GSLrandom)*0.5;
-  ra_proposed   = ra   + gsl_ran_ugaussian(GSLrandom)*0.05;
-  dec_proposed  = dec  + gsl_ran_ugaussian(GSLrandom)*0.05;
-  psi_proposed  = psi  + gsl_ran_ugaussian(GSLrandom)*0.1;
-  //dist_proposed = dist + gsl_ran_ugaussian(GSLrandom)*0.5;
-  dist_proposed = dist * exp(gsl_ran_ugaussian(GSLrandom)*0.1); // ~10% change
-  logProposalRatio *= dist_proposed / dist;
-		
-  LALInferenceCopyVariables(currentParams_local, proposedParams);
-  LALInferenceSetVariable(proposedParams, "chirpmass",      &mc_proposed);		
-  LALInferenceSetVariable(proposedParams, "massratio",      &eta_proposed);
-  LALInferenceSetVariable(proposedParams, "inclination",    &iota_proposed);
-  LALInferenceSetVariable(proposedParams, "phase",          &phi_proposed);
-  LALInferenceSetVariable(proposedParams, "time",           &tc_proposed); 
-  LALInferenceSetVariable(proposedParams, "rightascension", &ra_proposed);
-  LALInferenceSetVariable(proposedParams, "declination",    &dec_proposed);
-  LALInferenceSetVariable(proposedParams, "polarisation",   &psi_proposed);
-  LALInferenceSetVariable(proposedParams, "distance",       &dist_proposed);
-
-  // return ratio of proposal densities (for back & forth jumps) 
-  // in "runstate->proposalArgs" vector:
-  if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
-    LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
-  else
-    LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT);
-}
-
-//Test LALProposalFunction
-void ASinOmegaTProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams)
-/****************************************/
-/* Assumes the following parameters		*/
-/* exist:	A, Omega					*/
-/* Simply picks a new value based on	*/
-/* fixed Gaussian						*/
-/****************************************/
-{
-  REAL8 A, Omega;
-  REAL8 A_proposed, Omega_proposed;
-  REAL8 logProposalRatio = 0.0;  // = log(P(backward)/P(forward))
-  gsl_rng * GSLrandom=runState->GSLrandom;
-  LALInferenceVariables * currentParams_local = runState->currentParams;	
-
-  A     = *(REAL8*) LALInferenceGetVariable(currentParams_local, "A");				/* dim-less	   */
-  Omega = *(REAL8*) LALInferenceGetVariable(currentParams_local, "Omega");			/* rad/sec     */	
-
-  //A_proposed=A*(1.0+gsl_ran_ugaussian(GSLrandom)*0.1);			/*mc changed by 10% */
-  //Omega_proposed=Omega*(1.0+gsl_ran_ugaussian(GSLrandom)*0.01);	/*Omega changed by 0.01*/
-  // (above proposals not symmetric!)
-  //A_proposed     = A     + gsl_ran_ugaussian(GSLrandom) * 1e-20;   // (insert some sensible number here)
-  //Omega_proposed = Omega + gsl_ran_ugaussian(GSLrandom) * 0.01;
-  A_proposed     = A     * exp(gsl_ran_ugaussian(GSLrandom)*0.1);   // ~ 10% change
-  logProposalRatio *= A_proposed / A;
-  Omega_proposed = Omega * exp(gsl_ran_ugaussian(GSLrandom)*0.01);  // ~ 1% change
-  logProposalRatio *= Omega_proposed / Omega;
-  
-  LALInferenceCopyVariables(currentParams_local, proposedParams);
-  LALInferenceSetVariable(proposedParams, "A",     &A_proposed);		
-  LALInferenceSetVariable(proposedParams, "Omega", &Omega_proposed);
-
-  // return ratio of proposal densities (for back & forth jumps) 
-  // in "runstate->proposalArgs" vector:
-  if (LALInferenceCheckVariable(runState->proposalArgs, "logProposalRatio"))
-    LALInferenceSetVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio);
-  else
-    LALInferenceAddVariable(runState->proposalArgs, "logProposalRatio", &logProposalRatio, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
-}
 
 static int cmpREAL8p(const void *p1, const void *p2)
 {
