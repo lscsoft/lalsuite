@@ -591,7 +591,7 @@ int main(int argc, char *argv[]) {
     fclose(outfile);
     
     /* Perform K-S test for parameters with analytic distributions */
-    varArray = (LALInferenceVariables*)LALInferenceGetVariable(state->algorithmParams,"outputarray");
+    varArray = *(LALInferenceVariables**)LALInferenceGetVariable(state->algorithmParams,"outputarray");
     UINT4* pNvarArray = (UINT4 *)LALInferenceGetVariable(state->algorithmParams,"N_outputarray");
     int exists=LALInferenceCheckVariable(state->algorithmParams,"N_outputarray");
     printf("%d\n",exists);    
@@ -602,7 +602,7 @@ int main(int argc, char *argv[]) {
     /* For each parameter */
     for(param=state->currentParams->head; param; param=param->next)
     {
-        if(param->type!=LALINFERENCE_REAL8_t && (param->vary==LALINFERENCE_PARAM_CIRCULAR ||param->vary==LALINFERENCE_PARAM_LINEAR )) continue;
+        if(param->type!=LALINFERENCE_REAL8_t && !(param->vary==LALINFERENCE_PARAM_CIRCULAR ||param->vary==LALINFERENCE_PARAM_LINEAR )) continue;
         /* Create sorted parameter vector */
         REAL8Vector *sampvec=XLALCreateREAL8Vector(Nmcmc);
         for(i=0;i<NvarArray;i++)
