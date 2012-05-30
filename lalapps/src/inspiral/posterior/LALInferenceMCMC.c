@@ -534,7 +534,7 @@ void initVariables(LALInferenceRunState *state)
   ProcessParamsTable *ppt=NULL;
   //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-  LALPNOrder AmpOrder=LAL_PNORDER_NEWTONIAN;
+  LALPNOrder AmpOrder=-1;//LAL_PNORDER_THREE_POINT_FIVE;//LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
