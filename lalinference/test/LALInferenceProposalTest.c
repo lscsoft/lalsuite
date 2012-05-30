@@ -40,6 +40,7 @@
 /* Comparison function for qsorting the arrays later */
 static int cmpREAL8p(const void *p1, const void *p2);
 REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs);
+REAL8 mchirpminmax(const REAL8 x, const REAL8 min, const REAL8 max);
 
 REAL8 rSquaredCDF(const REAL8 x, const REAL8 min, const REAL8 max);
 REAL8 FlatInSine(const REAL8 x,const REAL8 min,const REAL8 max);
@@ -250,15 +251,15 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 logDmax=log(100.0);
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
-	REAL8 logmcMax,logmcMin,mMin=1.0,mMax=30.0,MTotMax=35.0;
+//	REAL8 mMin=1.0,mMax=30.0,MTotMax=35.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
 	REAL8 phi_spin1_max=LAL_PI;
 	REAL8 theta_spin1_min=-LAL_PI/2.0;
 	REAL8 theta_spin1_max=LAL_PI/2.0;	
-	REAL8 etaMin=0.01;
-	REAL8 etaMax=0.25;
+	REAL8 qMin=0.0;
+	REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax,tmpVal;
     REAL8 one=1.0;
@@ -269,15 +270,13 @@ void initVariables(LALInferenceRunState *state)
     gsl_rng *RNG=state->GSLrandom;
 	char help[]="\
 	Parameter arguments:\n\
-	(--etamin eta)\tMinimum eta\n\
-	(--etamax eta)\tMaximum eta\n\
+	(--qmin eta)\tMinimum eta\n\
+	(--qmax eta)\tMaximum eta\n\
 	(--dt time)\tWidth of time prior, centred around trigger (0.1s)\n\
 	(--trigtime time)\tTrigger time to use\n\
 	(--Dmin dist)\tMinimum distance in Mpc (1)\n\
 	(--Dmax dist)\tMaximum distance in Mpc (100)\n\
 	(--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2threePointFivePN)\n\
-	(--compmin min)\tMinimum component mass (1.0)\n\
-	(--compmax max)\tMaximum component mass (30.0)\n\
 	(--enable-spin)\tEnable spin parameters\n\
 	(--aligned-spin)\tUse only aligned spin parameters (uses spins between -1 and 1)\n\
 	(--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
@@ -325,11 +324,12 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		logDmax=log(atof(ppt->value));
 	}
-	ppt=LALInferenceGetProcParamVal(commandLine,"--etamin");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--qmin");
 	if(ppt)
-		etaMin=atof(ppt->value);
+		qMin=atof(ppt->value);
 	
-	ppt=LALInferenceGetProcParamVal(commandLine,"--etamax");
+	ppt=LALInferenceGetProcParamVal(commandLine,"--qmax");
+    if(ppt) qMax=atof(ppt->value);
 	/* Over-ride Spin prior if specified*/
 	
 	ppt=LALInferenceGetProcParamVal(commandLine,"--s1max");
@@ -343,34 +343,32 @@ void initVariables(LALInferenceRunState *state)
 		a_spin1_min=atof(ppt->value);
 	}
 	/* Over-ride component masses */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
-	if(ppt)	mMin=atof(ppt->value);
+	//ppt=LALInferenceGetProcParamVal(commandLine,"--compmin");
+	//if(ppt)	mMin=atof(ppt->value);
 	//fprintf(stderr,"Mmin %f, Mmax %f\n",mMin,mMax);
-	LALInferenceAddVariable(priorArgs,"component_min",&mMin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
-	if(ppt)	mMax=atof(ppt->value);
-	LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-  ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
-  if(ppt)	MTotMax=atof(ppt->value);
-  LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    //REAL8 zero=0.;
+	//LALInferenceAddVariable(priorArgs,"component_min",&zero,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+	//ppt=LALInferenceGetProcParamVal(commandLine,"--compmax");
+	//if(ppt)	mMax=atof(ppt->value);
+	//LALInferenceAddVariable(priorArgs,"component_max",&mMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
+    //ppt=LALInferenceGetProcParamVal(commandLine,"--MTotMax");
+    //if(ppt)	MTotMax=atof(ppt->value);
+    //LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
-	
+	endtime=10.;
 	printf("Read end time %f\n",endtime);
 	
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	
 	/* Set up the variable parameters */
-	tmpVal=log(mcMin+gsl_rng_uniform(RNG)*(mcMax-mcMin));
-	/*LALInferenceAddVariable(currentParams, "chirpmass",    &tmpVal,    LALINFERENCE_REAL8_t,	LALINFERENCE_PARAM_LINEAR);
-	 LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t); */
-	LALInferenceAddVariable(currentParams,"logmc",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	logmcMin=log(mcMin); logmcMax=log(mcMax);
-	LALInferenceAddMinMaxPrior(priorArgs,	"logmc",	&logmcMin,	&logmcMax,		LALINFERENCE_REAL8_t);
+	tmpVal=(mcMin+gsl_rng_uniform(RNG)*(mcMax-mcMin));
+	LALInferenceAddVariable(currentParams,"chirpmass",&tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddMinMaxPrior(priorArgs,	"chirpmass",	&mcMin,	&mcMax,		LALINFERENCE_REAL8_t);
 	
-	tmpVal=gsl_rng_uniform(RNG)*0.25;
-	LALInferenceAddVariable(currentParams, "massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs,	"massratio",	&etaMin,	&etaMax,	LALINFERENCE_REAL8_t);
+	tmpVal=gsl_rng_uniform(RNG);
+	LALInferenceAddVariable(currentParams, "asym_massratio",       &tmpVal,             LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddMinMaxPrior(priorArgs,	"asym_massratio",	&qMin,	&qMax,	LALINFERENCE_REAL8_t);
 	endtime=gsl_rng_uniform(RNG)*dt+endtime-0.5*dt;
 	LALInferenceAddVariable(currentParams, "time",            &endtime   ,           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR); 
 	tmpMin=endtime-0.5*dt; tmpMax=endtime+0.5*dt;
@@ -504,7 +502,8 @@ int main(int argc, char *argv[]) {
 	state->priorArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
-	state->prior=LALInferenceInspiralPriorNormalised;
+	//state->prior=LALInferenceInspiralPriorNormalised;
+    state->prior=LALInferenceInspiralPrior;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	state->proposal=&NSWrapMCMCLALProposal;
 	
@@ -604,7 +603,7 @@ int main(int argc, char *argv[]) {
     /* For each parameter */
     for(param=state->currentParams->head; param; param=param->next)
     {
-        if(param->type!=LALINFERENCE_REAL8_t && !(param->vary==LALINFERENCE_PARAM_CIRCULAR ||param->vary==LALINFERENCE_PARAM_LINEAR )) continue;
+        if(param->type!=LALINFERENCE_REAL8_t || !(param->vary==LALINFERENCE_PARAM_CIRCULAR ||param->vary==LALINFERENCE_PARAM_LINEAR )) continue;
         /* Create sorted parameter vector */
         REAL8Vector *sampvec=XLALCreateREAL8Vector(Nmcmc);
         for(i=0;i<NvarArray;i++)
@@ -645,8 +644,14 @@ REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs
     if(!strcmp(name,"declination")) return(FlatInSine(x,min,max));
     if(!strcmp(name,"distance")) return(rSquaredCDF(x,min,max));
     if(!strcmp(name,"logdistance")) return(rSquaredCDF(exp(x),exp(min),exp(max)));
+    if(!strcmp(name,"chirpmass")) return(mchirpminmax(x,min,max));
     else return(UniformMinMax(x,min,max));
 
+}
+
+REAL8 mchirpminmax(const REAL8 x, const REAL8 min, const REAL8 max)
+{
+    return ( (pow(x,-5./6.) -pow(min,-5./6.) )/(pow(max,-5./6.)-pow(min,-5./6.)));
 }
 
 REAL8 UniformMinMax(const REAL8 x,const REAL8 min,const REAL8 max)
