@@ -336,7 +336,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 #endif	
 	fpout=fopen(outfile,"w");
 
-	if(fpout==NULL) fprintf(stderr,"Unable to open output file %s!\n",outfile);
+	if(fpout==NULL) {fprintf(stderr,"Unable to open output file %s!\n",outfile); exit(1);}
 	else{
 		if(setvbuf(fpout,NULL,_IOFBF,0x100000)) /* Set buffer to 1MB so as to not thrash NFS */
 			fprintf(stderr,"Warning: Unable to set output file buffer!");
