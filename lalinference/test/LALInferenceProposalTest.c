@@ -141,11 +141,12 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 /* calls the "ReadData()" function to gather data & PSD from files, */
 /* and initializes other variables accordingly.                     */
 {
-	char help[]="\
+/*	char help[]="\
 	Initialisation arguments:\n\
 	(--randomseed seed           Random seed for Nested Sampling)\n\n";
+ */
 	LALInferenceRunState *irs=NULL;
-	LALInferenceIFOData *ifoPtr, *ifoListStart;
+//	LALInferenceIFOData *ifoPtr, *ifoListStart;
 	ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
@@ -155,54 +156,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	/* read data from files: */
 	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
-	irs->data = LALInferenceReadData(commandLine);
-	/* (this will already initialise each LALIFOData's following elements:  */
-	ppt=LALInferenceGetProcParamVal(commandLine,"--help");
-	if(ppt)
-	{
-		fprintf(stdout,"%s",help);
-		return(irs);
-	}
-	
-	/*     fLow, fHigh, detector, timeToFreqFFTPlan, freqToTimeFFTPlan,     */
-	/*     window, oneSidedNoisePowerSpectrum, timeDate, freqData         ) */
-	fprintf(stdout, " LALInferenceReadData(): finished.\n");
-	if (irs->data != NULL) {
-		
-		ifoPtr = irs->data;
-		ifoListStart = irs->data;
-		while (ifoPtr != NULL) {
-			/*If two IFOs have the same sampling rate, they should have the same timeModelh*,
-			 freqModelh*, and modelParams variables to avoid excess computation 
-			 in model waveform generation in the future*/
-			LALInferenceIFOData * ifoPtrCompare=ifoListStart;
-			int foundIFOwithSameSampleRate=0;
-			while(ifoPtrCompare != NULL && ifoPtrCompare!=ifoPtr) {
-				if(ifoPtrCompare->timeData->deltaT == ifoPtr->timeData->deltaT){
-					ifoPtr->timeModelhPlus=ifoPtrCompare->timeModelhPlus;
-					ifoPtr->freqModelhPlus=ifoPtrCompare->freqModelhPlus;
-					ifoPtr->timeModelhCross=ifoPtrCompare->timeModelhCross;                         
-					ifoPtr->freqModelhCross=ifoPtrCompare->freqModelhCross;                         
-					ifoPtr->modelParams=ifoPtrCompare->modelParams; 
-					foundIFOwithSameSampleRate=1;   
-					break;
-				}
-			}
-			if(!foundIFOwithSameSampleRate){
-				ifoPtr->timeModelhPlus  = XLALCreateREAL8TimeSeries("timeModelhPlus",&(ifoPtr->timeData->epoch),0.0,ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
-				ifoPtr->timeModelhCross = XLALCreateREAL8TimeSeries("timeModelhCross",&(ifoPtr->timeData->epoch),0.0,ifoPtr->timeData->deltaT,&lalDimensionlessUnit,ifoPtr->timeData->data->length);
-				ifoPtr->freqModelhPlus = XLALCreateCOMPLEX16FrequencySeries("freqModelhPlus",&(ifoPtr->freqData->epoch),0.0,ifoPtr->freqData->deltaF,&lalDimensionlessUnit,ifoPtr->freqData->data->length);
-				ifoPtr->freqModelhCross = XLALCreateCOMPLEX16FrequencySeries("freqModelhCross",&(ifoPtr->freqData->epoch),0.0,ifoPtr->freqData->deltaF,&lalDimensionlessUnit,ifoPtr->freqData->data->length);
-				ifoPtr->modelParams = calloc(1, sizeof(LALInferenceVariables));
-			}
-			ifoPtr = ifoPtr->next;
-		}
-		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
-		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
-	}
-	else
-		fprintf(stdout, " initialize(): no data read.\n");
-	
+
 	/* set up GSL random number generator: */
 	gsl_rng_env_setup();
 	irs->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
@@ -247,8 +201,8 @@ void initVariables(LALInferenceRunState *state)
 	ProcessParamsTable *ppt=NULL;
 	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
 	Approximant approx=TaylorF2;
-	REAL8 logDmin=log(1.0);
-	REAL8 logDmax=log(100.0);
+	REAL8 Dmin=1.0;
+	REAL8 Dmax=100.0;
 	REAL8 mcMin=1.0;
 	REAL8 mcMax=20.5;
 //	REAL8 mMin=1.0,mMax=30.0,MTotMax=35.0;
@@ -316,13 +270,13 @@ void initVariables(LALInferenceRunState *state)
 	/* Over-ride Distance min if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Dmin");
 	if(ppt){
-		logDmin=log(atof(ppt->value));
+		Dmin=(atof(ppt->value));
 	}
 	
 	/* Over-ride Distance max if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--Dmax");
 	if(ppt){
-		logDmax=log(atof(ppt->value));
+		Dmax=(atof(ppt->value));
 	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--qmin");
 	if(ppt)
@@ -379,9 +333,9 @@ void initVariables(LALInferenceRunState *state)
 	tmpMin=0.0; tmpMax=LAL_TWOPI;
 	LALInferenceAddMinMaxPrior(priorArgs, "phase",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 	
-	tmpVal=logDmin+(logDmax-logDmin)*gsl_rng_uniform(RNG);
-	LALInferenceAddVariable(currentParams,"logdistance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
-	LALInferenceAddMinMaxPrior(priorArgs, "logdistance",     &logDmin, &logDmax,   LALINFERENCE_REAL8_t);
+	tmpVal=Dmin+(Dmax-Dmin)*gsl_rng_uniform(RNG);
+	LALInferenceAddVariable(currentParams,"distance", &tmpVal, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddMinMaxPrior(priorArgs, "distance",     &Dmin, &Dmax,   LALINFERENCE_REAL8_t);
 	
 	tmpVal=gsl_rng_uniform(RNG)*LAL_TWOPI;
 	LALInferenceAddVariable(currentParams, "rightascension",  &tmpVal,      LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_CIRCULAR);
@@ -581,9 +535,9 @@ int main(int argc, char *argv[]) {
 	  /* output sample */
       if(!(i%thinfac)){
         if(state->logsample) state->logsample(state,state->currentParams);
-        LALInferencePrintSample(outfile,state->currentParams);
+        if(outfile) LALInferencePrintSample(outfile,state->currentParams);
       }
-	  fprintf(outfile,"\n");
+	  if(outfile) fprintf(outfile,"\n");
 	  
 	}
     if(outfile) fclose(outfile);
