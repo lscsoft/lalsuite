@@ -443,6 +443,10 @@ void initVariables(LALInferenceRunState *state)
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
                (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
+               (--spinAligned)                 template will assume spins aligned with the orbital angular momentum.\n\
+                                               *Enables* spins for TaylorF2, TaylorF2RedSpin, TaylorF2RedSpinTidal, IMRPhenomB.\n\
+               (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
+               (--noSpin)                      template will assume no spins.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Starting Parameters ------------------------------------------------------------------------------------------\n\
