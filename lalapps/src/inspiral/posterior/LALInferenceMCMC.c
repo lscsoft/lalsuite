@@ -1326,7 +1326,7 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
-  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx=IMRPhenomB) && ppt){
+  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB) && ppt){
 
     tmpMin=-1.0; tmpMax=1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");
