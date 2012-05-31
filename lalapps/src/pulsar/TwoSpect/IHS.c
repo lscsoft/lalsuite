@@ -133,12 +133,14 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
    
    //Loop through the rows, 1 frequency at a time
    REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+   REAL8 siderealharmonic = params->Tobs/86164.0905;
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
+   REAL8 siderealharmonic2 = siderealharmonic*2.0, siderealharmonic3 = siderealharmonic*3.0, siderealharmonic4 = siderealharmonic*4.0;
    for (ii=0; ii<(INT4)ihss->length; ii++) {
    
       //For each row, populate it with the data for that frequency bin, excluding harmonics of antenna pattern modulation
       memcpy(row->data, &(input->ffdata->data[ii*numfprbins]), sizeof(REAL4)*numfprbins);
-      for (jj=0; jj<(INT4)row->length; jj++) if (fabs(dailyharmonic-(REAL8)jj)<=1.0 || fabs(dailyharmonic2-(REAL8)jj)<=1.0 || fabs(dailyharmonic3-(REAL8)jj)<=1.0 || fabs(dailyharmonic4-(REAL8)jj)<=1.0) row->data[jj] = 0.0;
+      for (jj=0; jj<(INT4)row->length; jj++) if (fabs(dailyharmonic-(REAL8)jj)<=1.0 || fabs(dailyharmonic2-(REAL8)jj)<=1.0 || fabs(dailyharmonic3-(REAL8)jj)<=1.0 || fabs(dailyharmonic4-(REAL8)jj)<=1.0 || fabs(siderealharmonic-(REAL8)jj)<=1.0 || fabs(siderealharmonic2-(REAL8)jj)<=1.0 || fabs(siderealharmonic3-(REAL8)jj)<=1.0 || fabs(siderealharmonic4-(REAL8)jj)<=1.0) row->data[jj] = 0.0;
       
       //Run the IHS algorithm on the row
       incHarmSumVector(ihsvector, row, params->ihsfactor);
@@ -290,6 +292,7 @@ ihsfarStruct * new_ihsfarStruct(INT4 rows, inputParamsStruct *params)
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, (INT4)floor((1.0/(REAL8)params->ihsfactor)*((INT4)floor(floor(params->Tobs/(params->Tcoh-params->SFToverlap)-1)*0.5)+1))-5);
       XLAL_ERROR_NULL(XLAL_EFUNC);
    }
+   
    memset(ihsfarstruct->expectedIHSVector->data, 0, sizeof(REAL4)*ihsfarstruct->expectedIHSVector->length);
    
    return ihsfarstruct;
@@ -370,7 +373,9 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    //Determine the locations of the harmonics of the earth's rotation in the IHS vector
    //Amplitude modulations caused by the varying antenna pattern can sometimes cause excess power, so we ignore these harmonics
    REAL8 dailyharmonic = Tobs/(24.0*3600.0);
+   REAL8 siderealharmonic = Tobs/86164.0905;
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
+   REAL8 siderealharmonic2 = siderealharmonic*2.0, siderealharmonic3 = siderealharmonic*3.0, siderealharmonic4 = siderealharmonic*4.0;
    INT4Vector *markedharmonics = XLALCreateINT4Vector(aveNoise->length);
    if (markedharmonics==NULL) {
       fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, aveNoise->length);
@@ -378,7 +383,7 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    }
    memset(markedharmonics->data, 0, sizeof(INT4)*markedharmonics->length);
    for (ii=0; ii<(INT4)markedharmonics->length; ii++) {
-      if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0) markedharmonics->data[ii] = 1;
+      if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0 || fabs(siderealharmonic-(REAL8)ii)<=1.0 || fabs(siderealharmonic2-(REAL8)ii)<=1.0 || fabs(siderealharmonic3-(REAL8)ii)<=1.0 || fabs(siderealharmonic4-(REAL8)ii)<=1.0) markedharmonics->data[ii] = 1;
    }
    
    //Now do a number of trials
@@ -1475,10 +1480,12 @@ REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfreque
    INT4 ii;
    
    REAL8 dailyharmonic = params->Tobs/(24.0*3600.0);
+   REAL8 siderealharmonic = params->Tobs/86164.0905;
    REAL8 dailyharmonic2 = dailyharmonic*2.0, dailyharmonic3 = dailyharmonic*3.0, dailyharmonic4 = dailyharmonic*4.0;
+   REAL8 siderealharmonic2 = siderealharmonic*2.0, siderealharmonic3 = siderealharmonic*3.0, siderealharmonic4 = siderealharmonic*4.0;
    REAL8 noise = 0.0;
    for (ii=1; ii<=params->ihsfactor; ii++) {
-      if (!(fabs(dailyharmonic-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic2-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic3-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic4-(REAL8)(ii*location))<=1.0)) {
+      if (!(fabs(dailyharmonic-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic2-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic3-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic4-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic2-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic3-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic4-(REAL8)(ii*location))<=1.0)) {
          noise += aveNoise->data[ii*location];
       }
    }
