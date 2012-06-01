@@ -1084,7 +1084,7 @@ int main(int argc, char *argv[])
     memmove(chan.data->data, chan.data->data + padData * sampleRate,
             (chan.data->length -
              2 * padData * sampleRate) * sizeof(REAL4));
-    LALRealloc(chan.data->data,
+    XLALRealloc(chan.data->data,
                (chan.data->length -
                 2 * padData * sampleRate) * sizeof(REAL4));
     chan.data->length -= 2 * padData * sampleRate;
