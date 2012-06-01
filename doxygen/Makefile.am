@@ -37,7 +37,7 @@ override lalsuite_version = $(shell \
 	if test "x$(GIT)" != x; then \
 		hash=`cd $(abs_top_srcdir) && $(GIT) rev-parse --quiet HEAD 2>/dev/null`; \
 		if test "x$${hash}" != x; then \
-			taghash=`cd $(abs_top_srcdir) && $(GIT) rev-parse --quiet lalsuite-v$(PACKAGE_VERSION) 2>/dev/null`; \
+			taghash=`cd $(abs_top_srcdir) && $(GIT) rev-parse lalsuite-v${PACKAGE_VERSION}^{commit} 2>/dev/null`; \
 			unclean=`cd $(abs_top_srcdir) && ( $(GIT) diff --quiet HEAD || printf %s -UNCLEAN )`; \
 			if test "x$${hash}" != "x$${taghash}" || test "x$${unclean}" != x; then \
 				version="$${version}-$${hash}$${unclean}"; \
