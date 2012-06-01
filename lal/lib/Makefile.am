@@ -40,7 +40,7 @@ MOSTLYCLEANFILES = LALBuildDate.c
 TESTS = lal-version
 
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
-	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
+	$(AM_V_GEN)echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 
 LALVCSInfo.h: ._vcsinfo
 
