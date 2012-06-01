@@ -714,7 +714,7 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
       F = newF;
    }
    
-   fprintf(stderr, "%s: Warning! ncx2inv() failed to converge!\n", __func__);
+   fprintf(stderr, "%s: Warning! ncx2inv_float() failed to converge!\n", __func__);
    return xk;
    
 }

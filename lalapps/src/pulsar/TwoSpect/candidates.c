@@ -471,9 +471,9 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             } /* if prob<log10templatefar || R > farval->far */
             
             //Try shifting period by harmonics and fractions, if no candidate was initially found
-            if (bestProb == 0.0) {
+            //if (bestProb == 0.0) {
                //Shift period by harmonics
-               for (jj=2; jj<6; jj++) {
+               for (jj=2; jj<11; jj++) {
                   if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
                      makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
@@ -538,9 +538,9 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      }
                      ihsCandidates->data[ii].period /= (REAL8)jj;
                   } // longer period harmonics
-               } // shift by harmonics for jj < 6 (harmonics)
+               //} // shift by harmonics for jj < 6 (harmonics)
                
-               if (bestProb==0.0) {
+               //if (bestProb==0.0) {
                   //Shift by fractions
                   for (jj=1; jj<5; jj++) {
                      //for (jj=1; jj<3; jj++) {
@@ -617,11 +617,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                         ihsCandidates->data[ii].period /= periodfact;
                      } // shift longer period
                   } // for jj < 5 (fractions of period)
-               } // else if a better candidate period was not found
+               //} // else if a better candidate period was not found
             } // if a best probability was not found
             
             //If a potentially interesting candidate has been found (exceeding the FAR threshold) then try some new periods
-            if (bestProb != 0.0) {
+            /* if (bestProb != 0.0) {
                ihsCandidates->data[ii].period = bestPeriod;
                
                //Shift period by harmonics
@@ -735,7 +735,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      ihsCandidates->data[ii].period /= periodfact;
                   } // shift to longer period
                } // for jj < 10 (period fractions)
-            } // if bestR != 0.0
+            } */ // if bestR != 0.0
             
             if (bestProb != 0.0) {
                besth0 = 2.7426*sqrt(sqrt(bestR/(inputParams->Tcoh*inputParams->Tobs)));

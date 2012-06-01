@@ -373,7 +373,7 @@ int main(int argc, char *argv[])
    if (frac_tobs_complete<0.1) {
       fprintf(stderr, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
       fprintf(LOG, "%s: The useable SFTs cover less than 10 percent of the total observation time\n", __func__);
-      XLAL_ERROR(XLAL_EFAILED);
+      return 0;
    }
    
    //Index values of existing SFTs
