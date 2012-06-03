@@ -191,7 +191,8 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       //loop over frequency bins
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
-         REAL8 noise = ihsfar->ihsdistMean->data[ii-2];                       //Expected noise
+         //REAL8 noise = ihsfar->ihsdistMean->data[ii-2];                       //Expected noise
+         REAL8 noise = ihsfar->expectedIHSVector->data[ihsmaxima->locations->data[locationinmaximavector] - 5];  //Expected noise
          
          //Sum across multiple frequency bins scaling noise each time with average noise floor
          REAL8 totalnoise = 0.0;
