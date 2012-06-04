@@ -1932,8 +1932,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
                                                  inclination, lambda1, lambda2, interactionFlags, 
                                                  amporder, order, approximant), errnum);
       
-      printf("Waveform computed !\n");
-      
       previous_m1 = m1;
       previous_m2 = m2;
       previous_spin1z = spin1z;
