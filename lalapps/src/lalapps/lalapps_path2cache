@@ -53,7 +53,7 @@ __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 
 def parse_command_line():
 	parser = OptionParser(
-		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		#version = "Name: %%prog\n%s" % git_version.verbose_msg,
 		usage = "usage: %prog [options]\n\nExample:\n\tls *.xml | %prog"
 	)
 	parser.add_option("-a", "--include-all", action = "store_true", help = "Include all files in output.  Unparseable file names are assigned empty metadata.")
