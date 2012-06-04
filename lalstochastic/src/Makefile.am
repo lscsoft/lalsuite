@@ -53,8 +53,7 @@ lalstochastic-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalstochastic-user-env.csh lalstochastic-user-env.sh: lalstochastic-user-env.shell $(srcdir)/generate_user_env.awk
-	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \

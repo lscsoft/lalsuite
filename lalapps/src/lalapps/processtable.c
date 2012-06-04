@@ -213,7 +213,7 @@ int XLALPopulateProcessTable(
 	 * comment
 	 */
 
-	snprintf(ptable->comment, LIGOMETA_COMMENT_MAX, "");
+	snprintf(ptable->comment, LIGOMETA_COMMENT_MAX, " ");
 
 	/*
 	 * online flag and domain

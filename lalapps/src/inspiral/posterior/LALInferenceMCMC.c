@@ -431,12 +431,22 @@ void initVariables(LALInferenceRunState *state)
                ------------------------------------------------------------------------------------------------------------------\n\
                (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
                (--LALSimulation)               Interface with the LALSimulation package for template generation.\n\
-               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2).\n\
+               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2). Possible values are: \n\
+                                               default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4, \n\
+                                                                           EOB, EOBNR, EOBNRv2, EOBNRv2HM, SpinTaylor, \n\
+                                                                           SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4, \n\
+                                                                           PhenSpinTaylorRD, NumRel.\n\
+                                               default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
+                                                                                TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
                (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
                (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
+               (--spinAligned)                 template will assume spins aligned with the orbital angular momentum.\n\
+                                               *Enables* spins for TaylorF2, TaylorF2RedSpin, TaylorF2RedSpinTidal, IMRPhenomB.\n\
+               (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
+               (--noSpin)                      template will assume no spins.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -528,7 +538,7 @@ void initVariables(LALInferenceRunState *state)
   ProcessParamsTable *ppt=NULL;
   //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-  LALPNOrder AmpOrder=LAL_PNORDER_NEWTONIAN;
+  LALPNOrder AmpOrder=-1;//LAL_PNORDER_THREE_POINT_FIVE;//LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
@@ -1316,7 +1326,7 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
-  if(approx==TaylorF2RedSpin && ppt){
+  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB) && ppt){
 
     tmpMin=-1.0; tmpMax=1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");

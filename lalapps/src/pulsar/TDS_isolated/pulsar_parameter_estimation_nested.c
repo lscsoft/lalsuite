@@ -33,7 +33,8 @@ heterodyned data, e.g.
 ...
 
 Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth
-of the same amount.
+of the same amount, but the code can accept any rate, or downsample data by a
+given factor.
 
 The code also requires that you specify which parameters are to be searched
 over, and the prior ranges over these. Any of the signal parameters can be
@@ -178,6 +179,9 @@ LALStringVector *corlist = NULL;
                      detector in the list (must be in the same order)\n\
                      delimited by commas. If not set you can generate fake\n\
                      data (see --fake-data below)\n"\
+" --downsample-factor (INT4) factor by which to downsample the input data\n\
+                     (default is for no downsampling and this is NOT\n\
+                     applied to fake data)\n"\
 " --outfile           name of output data file [required]\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
@@ -512,7 +516,9 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
  * If using real data the files must be specified in the \c input-files command
  * line argument - these should be comma separated for mulitple files and be in
  * the same order at the associated detector from which they came given by the
- * \c detectors command.
+ * \c detectors command. The data can be downsampled by a factor given by the \c
+ * downsample-factor command line argument, but by default no down-sampling is
+ * applied.
  * 
  * The function also check that valid Earth and Sun ephemeris files (from the
  * lalpulsar suite) are set with the \c ephem-earth and \c ephem-sun arguments,
@@ -557,7 +563,7 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *modeltype = NULL;
   REAL8Vector *modelFreqFactors = NULL;
-  INT4 ml = 1;
+  INT4 ml = 1, downs = 1;
   
   runState->data = NULL;
   
@@ -874,7 +880,12 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
   if ( ppt != NULL ) seed = atoi( ppt->value );
   else seed = 0; /* will be set from system clock */
-      
+  
+  /* check if we want to down-sample the input data by a given factor */
+  ppt = LALInferenceGetProcParamVal( commandLine, "--downsample-factor" );
+  if ( ppt != NULL ) downs = atoi( ppt->value );
+  else downs = 1; /* no downsampling */
+  
   /* reset filestr if using real data (i.e. not fake) */
   if ( !ppt2 ) filestr = XLALStringDuplicate( inputfile );
  
@@ -940,6 +951,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
+      UINT4 counter = 0;
+      
       datafile = strsep(&filestr, ",");
    
       /* open data file */
@@ -955,32 +968,37 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
 
       /* read in data */
       while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
+        j++;
+        
+        /* downsample if required */
+        if ( j%downs != 0 ) continue;
+        
+        counter++;
+        
         /* dynamically allocate more memory */
         ifodata->compTimeData =
-          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j+1 );
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, counter );
 
         ifodata->compModelData = 
-          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j+1 );
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, counter );
           
-        temptimes = XLALResizeREAL8Vector( temptimes, j+1 );
+        temptimes = XLALResizeREAL8Vector( temptimes, counter );
 
-        temptimes->data[j] = times;
-        ifodata->compTimeData->data->data[j].re = dataVals.re;
-        ifodata->compTimeData->data->data[j].im = dataVals.im;
-      
-        j++;
+        temptimes->data[counter-1] = times;
+        ifodata->compTimeData->data->data[counter-1].re = dataVals.re;
+        ifodata->compTimeData->data->data[counter-1].im = dataVals.im;
       }
-    
+
       fclose(fp);
-    
-      datalength = j;
-      
+
+      datalength = counter;
+
       /* allocate data time stamps */
       ifodata->dataTimes = NULL;
       ifodata->dataTimes = XLALCreateTimestampVector( datalength );
-    
+
       /* fill in time stamps as LIGO Time GPS Vector */
-      for ( k = 0; k<j; k++ )
+      for ( k = 0; k < datalength; k++ )
         XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
       
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];

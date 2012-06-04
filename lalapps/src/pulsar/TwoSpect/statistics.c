@@ -714,7 +714,7 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
       F = newF;
    }
    
-   fprintf(stderr, "%s: Warning! ncx2inv() failed to converge!\n", __func__);
+   fprintf(stderr, "%s: Warning! ncx2inv_float() failed to converge!\n", __func__);
    return xk;
    
 }
@@ -1164,6 +1164,34 @@ INT4 max_index_double(REAL8Vector *vector)
    return indexval;
    
 }
+
+
+//Return the index value of the maximum value in a REAL4Vector
+INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation)
+{
+   
+   if (startlocation<0) {
+      startlocation = 0;
+   }
+   
+   INT4 ii = startlocation, indexval = ii;
+   REAL4 maxval = vector->data[ii];
+   
+   if (lastlocation>=(INT4)vector->length) {
+      lastlocation = (INT4)vector->length-1;
+   }
+   
+   for (ii=startlocation+1; ii<=lastlocation; ii++) {
+      if (vector->data[ii]>maxval) {
+         maxval = vector->data[ii];
+         indexval = ii;
+      }
+   }
+   
+   return indexval;
+   
+}
+
 
 //Return the index value of the maximum value from a vector (vectornum) in a REAL4VectorSequence
 INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum)

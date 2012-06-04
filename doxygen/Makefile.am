@@ -33,20 +33,18 @@ override doxy_inputdirs = $(abs_srcdir)/src \
 	$(addprefix $(abs_top_srcdir)/,$(DOXYINPUT))
 
 override lalsuite_version = $(shell \
-	if test 0$(RELEASE) -eq 1; then \
-		lsv=$(PACKAGE_VERSION); \
-	else \
-		cd $(abs_top_srcdir) || exit 1; \
-		if test "x$(GIT)" != x && test -d .git; then \
-			lsv=`$(GIT) log -1 --pretty="format:%h"`; \
-			if $(GIT) diff --quiet HEAD; then \
-				: ; \
-			else \
-				lsv="$$lsv-UNCLEAN"; \
+	version="$(PACKAGE_VERSION)"; \
+	if test "x$(GIT)" != x; then \
+		hash=`cd $(abs_top_srcdir) && $(GIT) rev-parse --quiet HEAD 2>/dev/null`; \
+		if test "x$${hash}" != x; then \
+			taghash=`cd $(abs_top_srcdir) && $(GIT) rev-parse lalsuite-v${PACKAGE_VERSION}^{commit} 2>/dev/null`; \
+			unclean=`cd $(abs_top_srcdir) && ( $(GIT) diff --quiet HEAD || printf %s -UNCLEAN )`; \
+			if test "x$${hash}" != "x$${taghash}" || test "x$${unclean}" != x; then \
+				version="$${version}-$${hash}$${unclean}"; \
 			fi; \
 		fi; \
 	fi; \
-	echo $$lsv )
+	echo "$${version}" )
 
 override TEXINPUTS = .:$(abs_srcdir):
 override pool_size = 4000000
