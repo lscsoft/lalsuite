@@ -113,7 +113,7 @@ static
 REAL8 XLALvrP4PN(const REAL8 r, const REAL8 omega, pr3In *params);
 
 static 
-size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start);
+size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start, const int fsign);
 
 /*-------------------------------------------------------------------*/
 /*                      pseudo-4PN functions                         */
@@ -702,7 +702,7 @@ XLALSimIMREOBNRv2SetupFlux(
 }
 
 /* return the index before the instantaneous frequency rises past target */
-static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start) {
+static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start, const int fsign) {
   size_t k = start + 1;
   const size_t n = hp->data->length - 1;
 
@@ -714,6 +714,7 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
     REAL8 f = hcDot * hp->data->data[k] - hpDot * hc->data->data[k];
     f /= LAL_TWOPI;
     f /= hp->data->data[k] * hp->data->data[k] + hc->data->data[k] * hc->data->data[k];
+    if (fsign != 0) f = -f;
 //printf("this f: %f\n",f);
     if (f >= target) return k - 1;
   }
@@ -1569,7 +1570,14 @@ XLALSimIMREOBNRv2Generator(
   size_t cut_ind = 0.;
   if (flag_fLower_extend == 1)
   {
-    cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1); 
+    if ( cos(inclination) < 0.0 )
+    {
+      cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 1); 
+    }
+    else
+    {
+      cut_ind = find_instant_freq(*hplus, *hcross, fLower, 1, 0); 
+    }
     *hplus = XLALResizeREAL8TimeSeries(*hplus, cut_ind, (*hplus)->data->length - cut_ind);
     *hcross = XLALResizeREAL8TimeSeries(*hcross, cut_ind, (*hcross)->data->length - cut_ind);
     if (!(*hplus) || !(*hcross))
