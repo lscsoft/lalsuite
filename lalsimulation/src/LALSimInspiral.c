@@ -808,6 +808,166 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 }
 
 /**
+ * Compute the physical template family "Q" vectors for a spinning, precessing
+ * binary when provided time series of all the dynamical quantities.
+ * These vectors always supplied to dominant order.
+ *
+ * Based on Pan, Buonanno, Chan and Vallisneri PRD69 104017, (see also theses
+ * of Diego Fazi and Ian Harry)
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ */
+
+
+int XLALSimInspiralPrecessingPTFQWaveforms(
+        REAL8TimeSeries **Q1,     /**< PTF-Q1 waveform [returned] */
+        REAL8TimeSeries **Q2,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q3,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q4,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q5,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries *V,       /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi,     /**< orbital phase */
+        REAL8TimeSeries *S1x,     /**< Spin1 vector x component */
+        REAL8TimeSeries *S1y,     /**< Spin1 vector y component */
+        REAL8TimeSeries *S1z,     /**< Spin1 vector z component */
+        REAL8TimeSeries *S2x,     /**< Spin2 vector x component */
+        REAL8TimeSeries *S2y,     /**< Spin2 vector y component */
+        REAL8TimeSeries *S2z,     /**< Spin2 vector z component */
+        REAL8TimeSeries *LNhatx,  /**< unit orbital ang. mom. x comp. */
+        REAL8TimeSeries *LNhaty,  /**< unit orbital ang. mom. y comp. */
+        REAL8TimeSeries *LNhatz,  /**< unit orbital ang. mom. z comp. */
+        REAL8TimeSeries *E1x,     /**< orbital plane basis vector x comp. */
+        REAL8TimeSeries *E1y,     /**< orbital plane basis vector y comp. */
+        REAL8TimeSeries *E1z,     /**< orbital plane basis vector z comp. */
+        REAL8 m1,                 /**< mass of companion 1 (kg) */
+        REAL8 m2,                 /**< mass of companion 2 (kg) */
+        REAL8 r                  /**< distance of source (m) */
+        )
+{
+    REAL8 s1x, s1y, s1z, s2x, s2y, s2z, lnhx, lnhy, lnhz;
+    REAL8 e1x, e1y, e1z, e2x, e2y, e2z, nx, ny, nz, lx, ly, lz;
+    REAL8 nx2, ny2, nz2, lx2, ly2, lz2;
+    REAL8 q1tmp, q2tmp, q3tmp, q4tmp, q5tmp;
+    REAL8 M, eta, dm, phi, v, v2, dist, ampfac;
+    INT4 idx, len;
+    REAL8 sqrt_three = pow(3,0.5);
+
+    /* Macros to check time series vectors */
+    LAL_CHECK_VALID_SERIES(V,                   XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(Phi,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1z,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2z,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhatx,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhaty,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhatz,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1z,                 XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, Phi,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1z,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2z,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhatx, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhaty, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhatz, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1z,    XLAL_FAILURE);
+
+
+    /* Allocate polarization vectors and set to 0 */
+    *Q1 = XLALCreateREAL8TimeSeries( "PTF_Q_1", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q2 = XLALCreateREAL8TimeSeries( "PTF_Q_2", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q3 = XLALCreateREAL8TimeSeries( "PTF_Q_3", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q4 = XLALCreateREAL8TimeSeries( "PTF_Q_4", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q5 = XLALCreateREAL8TimeSeries( "PTF_Q_5", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+
+    if ( ! Q1 || ! Q2 || !Q3 || !Q4 || !Q5 )
+        XLAL_ERROR(XLAL_EFUNC);
+    memset((*Q1)->data->data, 0,
+            (*Q1)->data->length*sizeof(*(*Q1)->data->data));
+    memset((*Q2)->data->data, 0,
+            (*Q2)->data->length*sizeof(*(*Q2)->data->data));
+    memset((*Q3)->data->data, 0,
+            (*Q3)->data->length*sizeof(*(*Q3)->data->data));
+    memset((*Q4)->data->data, 0,
+            (*Q4)->data->length*sizeof(*(*Q4)->data->data));
+    memset((*Q5)->data->data, 0,
+            (*Q5)->data->length*sizeof(*(*Q5)->data->data));
+
+    M = m1 + m2;
+    eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
+    dm = (m1 - m2) / M;    // frac. mass difference - \delta m/m in the paper
+    dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
+    /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
+    ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
+
+    /* loop over time steps and compute polarizations h+ and hx */
+    len = V->data->length;
+    for(idx = 0; idx < len; idx++)
+    {
+        /* Abbreviated names in lower case for time series at this sample */
+        phi  = Phi->data->data[idx];    v = V->data->data[idx];     v2 = v * v;
+        lnhx = LNhatx->data->data[idx]; e1x = E1x->data->data[idx];
+        lnhy = LNhaty->data->data[idx]; e1y = E1y->data->data[idx];
+        lnhz = LNhatz->data->data[idx]; e1z = E1z->data->data[idx];
+        s1x  = S1x->data->data[idx];    s2x = S2x->data->data[idx];
+        s1y  = S1y->data->data[idx];    s2y = S2y->data->data[idx];
+        s1z  = S1z->data->data[idx];    s2z = S2z->data->data[idx];
+
+        /* E2 = LNhat x E1 */
+        e2x = lnhy*e1z - lnhz*e1y;
+        e2y = lnhz*e1x - lnhx*e1z;
+        e2z = lnhx*e1y - lnhy*e1x;
+
+        /* Unit orbital separation vector */
+        nx = e1x*cos(phi) + e2x*sin(phi);
+        ny = e1y*cos(phi) + e2y*sin(phi);
+        nz = e1z*cos(phi) + e2z*sin(phi);
+
+        /* Unit inst. orbital velocity vector */
+        lx = e2x*cos(phi) - e1x*sin(phi);
+        ly = e2y*cos(phi) - e1y*sin(phi);
+        lz = e2z*cos(phi) - e1z*sin(phi);
+
+        /* Powers of vector components */
+        nx2 = nx*nx;    ny2 = ny*ny;    nz2 = nz*nz;
+        lx2 = lx*lx;    ly2 = ly*ly;    lz2 = lz*lz;
+
+        /* 
+         * NOTE: For PTF waveforms, we must use only the dominant amplitude
+         */
+
+        q1tmp = lx2 - ly2 - nx2 + ny2;
+        q2tmp = 2*lx*ly - 2*nx*ny;
+        q3tmp = 2*lx*lz - 2*nx*nz;
+        q4tmp = 2*ly*lz - 2*ny*nz;
+        q5tmp = sqrt_three * (nz2 - lz2);
+
+        /* Fill the output vectors */
+        (*Q1)->data->data[idx] = ampfac * v2 * q1tmp;
+        (*Q2)->data->data[idx] = ampfac * v2 * q2tmp;
+        (*Q3)->data->data[idx] = ampfac * v2 * q3tmp;
+        (*Q4)->data->data[idx] = ampfac * v2 * q4tmp;
+        (*Q5)->data->data[idx] = ampfac * v2 * q5tmp;
+    }
+    return XLAL_SUCCESS;
+}
+
+/**
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
  * \"radiation frame\" (with the z-axis along the direction of propagation) as

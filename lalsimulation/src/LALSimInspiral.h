@@ -376,6 +376,44 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 	);
 
 /**
+ * Compute the physical template family "Q" vectors for a spinning, precessing
+ * binary when provided time series of all the dynamical quantities.
+ * These vectors always supplied to dominant order.
+ *
+ * Based on Pan, Buonanno, Chan and Vallisneri PRD69 104017, (see also theses
+ * of Diego Fazi and Ian Harry)
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ */
+
+
+int XLALSimInspiralPrecessingPTFQWaveforms(
+	REAL8TimeSeries **Q1,     /**< PTF-Q1 waveform [returned] */
+	REAL8TimeSeries **Q2,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries **Q3,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries **Q4,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries **Q5,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries *V,       /**< post-Newtonian parameter */
+	REAL8TimeSeries *Phi,     /**< orbital phase */
+	REAL8TimeSeries *S1x,     /**< Spin1 vector x component */
+	REAL8TimeSeries *S1y,     /**< Spin1 vector y component */
+	REAL8TimeSeries *S1z,     /**< Spin1 vector z component */
+	REAL8TimeSeries *S2x,     /**< Spin2 vector x component */
+	REAL8TimeSeries *S2y,     /**< Spin2 vector y component */
+	REAL8TimeSeries *S2z,     /**< Spin2 vector z component */
+	REAL8TimeSeries *LNhatx,  /**< unit orbital ang. mom. x comp. */
+	REAL8TimeSeries *LNhaty,  /**< unit orbital ang. mom. y comp. */
+	REAL8TimeSeries *LNhatz,  /**< unit orbital ang. mom. z comp. */
+	REAL8TimeSeries *E1x,     /**< orbital plane basis vector x comp. */
+	REAL8TimeSeries *E1y,     /**< orbital plane basis vector y comp. */
+	REAL8TimeSeries *E1z,     /**< orbital plane basis vector z comp. */
+	REAL8 m1,                 /**< mass of companion 1 (kg) */
+	REAL8 m2,                 /**< mass of companion 2 (kg) */
+	REAL8 r                  /**< distance of source (m) */
+	);
+
+/**
  * Compute the length of an inspiral waveform assuming the Taylor dEnergy and Flux equations
  */
 REAL8
@@ -1052,6 +1090,32 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 	    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 		int phaseO                /**< twice PN phase order */
 		);
+
+/**
+ * Driver routine to compute the physical template family "Q" vectors using
+ * the \"T4\" method. Note that PTF describes single spin systems
+ *
+ * This routine requires leading-order amplitude dependence
+ * but allows the user to specify the phase PN order
+ */
+
+int XLALSimInspiralSpinTaylorT4PTFQVecs(
+        REAL8TimeSeries **Q1,            /**< Q1 output vector */
+        REAL8TimeSeries **Q2,            /**< Q2 output vector */
+        REAL8TimeSeries **Q3,            /**< Q3 output vector */
+        REAL8TimeSeries **Q4,            /**< Q4 output vector */
+        REAL8TimeSeries **Q5,            /**< Q5 output vector */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 chi1,                     /**< spin magnitude (|S1|) */
+        REAL8 kappa,                    /**< L . S (1 if they are aligned) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+        LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+        int phaseO                      /**< twice PN phase order */
+        );
 
 /**
  * Function to specify the desired orientation of a precessing binary in terms

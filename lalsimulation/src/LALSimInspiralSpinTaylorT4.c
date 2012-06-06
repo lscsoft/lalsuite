@@ -892,3 +892,78 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
     return n;
 }
 
+/**
+ * Driver routine to compute the physical template family "Q" vectors using
+ * the \"T4\" method. Note that PTF describes single spin systems
+ *
+ * This routine requires leading-order amplitude dependence
+ * but allows the user to specify the phase PN order
+ */
+int XLALSimInspiralSpinTaylorT4PTFQVecs(
+        REAL8TimeSeries **Q1,            /**< Q1 output vector */
+        REAL8TimeSeries **Q2,            /**< Q2 output vector */
+        REAL8TimeSeries **Q3,            /**< Q3 output vector */
+        REAL8TimeSeries **Q4,            /**< Q4 output vector */
+        REAL8TimeSeries **Q5,            /**< Q5 output vector */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 chi1,                     /**< spin magnitude (|S1|) */
+        REAL8 kappa1,                    /**< L . S1 (1 if they are aligned) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+        LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+        int phaseO                      /**< twice PN phase order */
+        )
+{
+    /* To generate the QVecs we need to choose a specific frame */
+    REAL8 phi_end = 0;
+    REAL8 r = 10E6 * LAL_PC_SI; /* Setting an arbitrary distance of 10 MPc */
+    REAL8 s1x = chi1 * pow((1 - kappa1*kappa1),0.5);
+    REAL8 s1z = chi1 * kappa1;
+    REAL8 s1y,s2x,s2y,s2z,lnhatx,lnhaty,lnhatz,e1x,e1y,e1z;
+    s1y = s2x = s2y = s2z = lnhatx = lnhaty = e1y = e1z = 0;     
+    lnhatz = e1x = 1.;
+
+    REAL8TimeSeries *V, *Phi, *S1x, *S1y, *S1z, *S2x, *S2y, *S2z;
+    REAL8TimeSeries *LNhatx, *LNhaty, *LNhatz, *E1x, *E1y, *E1z;
+    int status, n;
+
+    /* Evolve the dynamical variables */
+    /* Note we use phi_end/2 b/c the orbit evolver wants an orbital phase */
+    /* but this waveform driver is supplied a reference GW phase */
+    n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z,
+            &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
+            phi_end/2., deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, interactionFlags, phaseO);
+    if( n < 0 )
+        XLAL_ERROR(XLAL_EFUNC);
+
+    /* Use the dynamical variables to build the polarizations */
+    status = XLALSimInspiralPrecessingPTFQWaveforms(Q1, Q2, Q3, Q4, Q5,
+            V, Phi, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz,
+            E1x, E1y, E1z, m1, m2, r);
+
+    /* Destroy vectors of dynamical variables, check for errors then exit */
+    XLALDestroyREAL8TimeSeries(V);
+    XLALDestroyREAL8TimeSeries(Phi);
+    XLALDestroyREAL8TimeSeries(S1x);
+    XLALDestroyREAL8TimeSeries(S1y);
+    XLALDestroyREAL8TimeSeries(S1z);
+    XLALDestroyREAL8TimeSeries(S2x);
+    XLALDestroyREAL8TimeSeries(S2y);
+    XLALDestroyREAL8TimeSeries(S2z);
+    XLALDestroyREAL8TimeSeries(LNhatx);
+    XLALDestroyREAL8TimeSeries(LNhaty);
+    XLALDestroyREAL8TimeSeries(LNhatz);
+    XLALDestroyREAL8TimeSeries(E1x);
+    XLALDestroyREAL8TimeSeries(E1y);
+    XLALDestroyREAL8TimeSeries(E1z);
+    if( status < 0 )
+        XLAL_ERROR(XLAL_EFUNC);
+
+    return n;
+}
+
+
