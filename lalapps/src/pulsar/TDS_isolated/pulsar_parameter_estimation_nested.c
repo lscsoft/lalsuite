@@ -1459,8 +1459,8 @@ void add_initial_variables( LALInferenceVariables *ini,
                             pars.rErr );
   add_variable_scale_prior( ini, scaleFac, priorArgs, "lambda", pars.lambda,  
                             pars.lambdaErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "theta", pars.theta,  
-                            pars.thetaErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "costheta", pars.costheta,  
+                            pars.costhetaErr );
     
   /* phase model parameters */
   
@@ -1810,16 +1810,6 @@ set.\n", propfile, tempPar);
         high = LAL_PI/2.;
       }
     }
-  
-    /* if theta is covering the range 0 to pi scale it, so that it covers
-    the 0 to 2pi range of a circular parameter */
-    if( !strcmp(tempPar, "theta") ){
-      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
-        scale = 1.;
-        scaleMin = 0.;
-        high = 2.*LAL_PI;
-      }
-    }
     
     /* if lambda is covering the range 0 to pi scale it, so that it covers
     the 0 to pi range of a circular parameter */
@@ -1858,8 +1848,6 @@ set.\n", propfile, tempPar);
     else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
-      varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "theta") && scale == 1.0 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
       varyType = LALINFERENCE_PARAM_CIRCULAR;
