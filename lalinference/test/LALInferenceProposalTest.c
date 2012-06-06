@@ -153,8 +153,6 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	FILE *devrandom;
 	
 	irs = calloc(1, sizeof(LALInferenceRunState));
-	/* read data from files: */
-	fprintf(stdout, " readData(): started.\n");
 	irs->commandLine=commandLine;
 
 	/* set up GSL random number generator: */
@@ -310,7 +308,6 @@ void initVariables(LALInferenceRunState *state)
     //LALInferenceAddVariable(priorArgs,"MTotMax",&MTotMax,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	endtime=10.;
-	printf("Read end time %f\n",endtime);
 	
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
