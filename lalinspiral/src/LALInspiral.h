@@ -159,29 +159,6 @@ tagEtaTau04In
 /** @} */
 
 
-/** Enum that tells which post-Newtonian order is being used.
- * In all cases, the gravitational wave phase (also frequency and time)
- * as an expansion of the gauge invariant parameter \f$v\f$ is given up to
- * the order specified by flux.  Note that there are certain undetermined
- * parameters at \c LAL_PNORDER_THREE and
- * \c LAL_PNORDER_THREE_POINT_FIVE. The waveform generation codes use
- * a specific value of those parameters while generating the wave.
- */
-typedef enum {
-  LAL_PNORDER_NEWTONIAN,	/**< Newtonain order, flux and enrgy both to the lowest order */
-  LAL_PNORDER_HALF,		/**< same as befor */
-  LAL_PNORDER_ONE,		/**< Both energy and flux to order \f$O(v^2)\f$ beyond the Newtonian order */
-  LAL_PNORDER_ONE_POINT_FIVE,	/**< Energy to order \f$O(v^2)\f$ and flux to order \f$O(v^3)\f$ */
-  LAL_PNORDER_TWO,		/**< Both energy and flux to order \f$O(v^4)\f$ */
-  LAL_PNORDER_TWO_POINT_FIVE,	/**< Energy to order \f$O(v^4)\f$ and flux to order \f$O(v^5)\f$ */
-  LAL_PNORDER_THREE,		/**< Both energy and flux to order \f$O(v^6)\f$ */
-  LAL_PNORDER_THREE_POINT_FIVE,	/**< Energy to order \f$O(v^6)\f$ and flux to order \f$O(v^7)\f$ */
-  LAL_PNORDER_PSEUDO_FOUR,	/**< Need to describe */
-  LAL_PNORDER_NUM_ORDER		/**< MISSING DOCUMENTATION */
- } LALPNOrder;
-
-
-
 /** This structure is one of the members of the \c InspiralTemplate structure.
  * A user can specify the parameters of a binary using any of the following combination of \e masses:
  * m1Andm2, totalMassAndEta, totalMassUAndEta, totalMassAndMu, t01, t02, t03, t04, psi0Andpsi3
@@ -396,7 +373,7 @@ tagInspiralTemplate
   REAL4  qmParameter[2];
   LALSimInspiralInteraction	interaction;
 
-  InputAxis axisChoice;
+  FrameAxis axisChoice;
   UINT4 fixedStep;
   UINT4 inspiralOnly;
 

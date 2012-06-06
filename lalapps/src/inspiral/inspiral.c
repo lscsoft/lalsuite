@@ -1415,8 +1415,8 @@ int main( int argc, char *argv[] )
 
       /* read the event waveform approximant to see if we've been asked to
        perform NumRel injections */
-      if (XLALGetApproximantFromString( injections->waveform,
-                                  &injApproximant ) == XLAL_FAILURE)
+      injApproximant = XLALGetApproximantFromString(injections->waveform);
+      if ( (int) injApproximant == XLAL_FAILURE)
       {
         fprintf( stderr, "could not parse approximant from sim_inspiral.waveform\n" );
         exit( 1 );

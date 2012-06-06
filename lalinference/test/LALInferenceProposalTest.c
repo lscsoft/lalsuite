@@ -248,8 +248,14 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
 		else
-			XLALGetApproximantFromString(ppt->value,&approx);
-		XLALGetOrderFromString(ppt->value,&PhaseOrder);
+		{
+			approx = XLALGetApproximantFromString(ppt->value);
+			if( (int) approx == XLAL_FAILURE)
+				ABORTXLAL(&status); 
+		}
+                PhaseOrder = XLALGetOrderFromString(ppt->value);
+                if ( (int) PhaseOrder == XLAL_FAILURE)
+                        ABORTXLAL(&status);
 	}
 	//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	

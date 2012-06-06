@@ -981,7 +981,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	
 	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
-	XLALGetApproximantFromString(injTable->waveform,&injapprox);
+	injapprox = XLALGetApproximantFromString(injTable->waveform);
+        if( (int) injapprox == XLAL_FAILURE)
+          ABORTXLAL(&status);
 	printf("Injecting approximant %i: %s\n", injapprox, injTable->waveform);
 	REPORTSTATUS(&status);
 	//LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
@@ -1043,8 +1045,12 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       Approximant       approximant;        /* And its approximant value      */
       INT4              amporder=0;         /* Amplitude order of the model   */
 
-      XLALGetApproximantFromString(injEvent->waveform, &approximant);
-      XLALGetOrderFromString(injEvent->waveform, &order);
+      approximant = XLALGetApproximantFromString(injEvent->waveform);
+      if( (int) approximant == XLAL_FAILURE)
+        ABORTXLAL(&status);
+      order = XLALGetOrderFromString(injEvent->waveform);
+      if ( (int) order == XLAL_FAILURE)
+        ABORTXLAL(&status);
       amporder = injEvent->amp_order;
       //if(amporder<0) amporder=0;
       /* FIXME - tidal lambda's and interactionFlag are just set to command line values here.
@@ -1727,15 +1733,18 @@ static int FindTimeSeriesStartAndEnd (
 void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine)
 ///*-------------- Inject in Frequency domain -----------------*/
 {
-        /* Inject a gravitational wave into the data in the frequency domain */
-        
-	LALStatus status;
-	memset(&status,0,sizeof(LALStatus));
+    /* Inject a gravitational wave into the data in the frequency domain */ 
+    LALStatus status;
+    memset(&status,0,sizeof(LALStatus));
     REAL8 mc=0.0;
-	Approximant injapprox;
-	LALPNOrder phase_order;
-	XLALGetApproximantFromString(inj_table->waveform,&injapprox);
-	XLALGetOrderFromString(inj_table->waveform,&phase_order);
+    Approximant injapprox;
+    LALPNOrder phase_order;
+    injapprox = XLALGetApproximantFromString(inj_table->waveform);
+    if( (int) injapprox == XLAL_FAILURE)
+        ABORTXLAL(&status);
+    phase_order = XLALGetOrderFromString(inj_table->waveform);
+    if ( (int) phase_order == XLAL_FAILURE)
+        ABORTXLAL(&status);
     LALInferenceVariables *modelParams=NULL;
     LALInferenceIFOData * tmpdata=IFOdata;
     REAL8 eta =0.0;

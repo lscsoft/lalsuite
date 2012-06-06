@@ -146,8 +146,8 @@ int ring_inject_signal(
         break;
       case LALRINGDOWN_EOBNR_INJECT: case LALRINGDOWN_PHENOM_INJECT:
         // Check if these are NINJA injections
-        if (XLALGetApproximantFromString( injectList->waveform,
-                                   &injApproximant ) == XLAL_FAILURE)
+        injApproximant = XLALGetApproximantFromString(injectList->waveform);
+        if ( (int) injApproximant == XLAL_FAILURE)
         {
           fprintf( stderr, "could not parse approximant from sim_inspiral.waveform\n" );
           exit( 1 );
