@@ -56,7 +56,7 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.I31 = rescale_parameter( data, "I31" );
   pars.r = rescale_parameter( data, "r" );
   pars.lambda = rescale_parameter( data, "lambda" );
-  pars.theta = rescale_parameter( data, "theta" );
+  pars.costheta = rescale_parameter( data, "costheta" );
  
   /* set the potentially variable parameters */
   pars.pepoch = rescale_parameter( data, "pepoch" );
@@ -792,11 +792,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   Xplus2f = ((pars.f0*pars.f0)/pars.r) * (1.+(pars.cosiota*pars.cosiota));
   Xcross2f = ((2*pars.f0*pars.f0)/pars.r) * pars.cosiota;
   
-  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( (2*pars.theta));
-  A2=pars.I21*sin(2*pars.lambda)*sin(pars.theta);
-  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) -(sin(pars.lambda)*sin(pars.lambda))) ) 
-    + ( pars.I31*(sin(pars.theta)*sin(pars.theta)) );
-  B2=pars.I21*sin(2*pars.lambda)*cos(pars.theta);
+  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( 2*(acos(pars.costheta)) );
+  A2=pars.I21*sin(2*pars.lambda)*sin( acos(pars.costheta) );
+  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(pars.costheta*pars.costheta) -(sin(pars.lambda)*sin(pars.lambda))) ) 
+    + ( pars.I31*(sin(acos(pars.costheta))*sin(acos(pars.costheta))) );
+  B2=pars.I21*sin(2*pars.lambda)*(pars.costheta);
   
   /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
