@@ -198,10 +198,9 @@ computeMaxAutoCorrLen(LALInferenceRunState *runState, INT4 startCycle, INT4 endC
   REAL8** DEarray;
   REAL8*  temp;
   REAL8 mean, ACL, ACF, max=0;
-  INT4 par=0, lag=0, i=0, p=0;
+  INT4 par=0, lag=0, i=0;
   int MPIrank;
   MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-  LALInferenceVariableItem *ptr=runState->currentParams->head;
 
   if (nPoints > 1) {
     /* Prepare 2D array for DE points */
