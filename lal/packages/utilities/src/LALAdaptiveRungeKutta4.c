@@ -174,7 +174,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
                                     void *params,			/**< params struct used to compute dydt and stopping test */
                                     REAL8 *yinit,			/**< pass in initial values of all variables - overwritten to final values */
                                     REAL8 tinit,			/**< integration start time */
-                                    REAL8 tend,				/**< maximum integration time */
+                                    REAL8 tend_in,			/**< maximum integration time */
                                     REAL8 deltat,			/**< step size for evenly sampled output */
                                     REAL8Array **yout			/**< array holding the evenly sampled output */
                                     )
@@ -189,6 +189,8 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
 
   REAL8 *ytemp = NULL;
 
+  REAL8 tend = tend_in;
+
   /* If want to stop only on test, then tend = +/-infinity; otherwise
      tend_in */
   if (integrator->stopontestonly) {
@@ -198,13 +200,9 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
 
   dim = integrator->sys->dimension;
 
-  if (integrator->stopontestonly) {
-    /* Allocate enough space for two samples; will allocate more
-       later. */
-    outputlen = 2;
-  } else {
-    outputlen = ((int)(tend - tinit)/deltat) + 2;
-  }
+  outputlen = ((int)(tend_in - tinit)/deltat) + 2;
+  if (outputlen < 0) outputlen = -outputlen;
+  
   output = XLALCreateREAL8ArrayL(2, (dim+1), outputlen);
 
   if (!output) {
