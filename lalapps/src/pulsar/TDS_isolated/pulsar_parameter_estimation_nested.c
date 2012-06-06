@@ -256,8 +256,14 @@ LALStringVector *corlist = NULL;
 " --oldChunks         set if using fixed chunk sizes for dividing the data as\n\
                      in the old code, rather than the calculating chunks\n\
                      using the change point method.\n"\
+"\n"\
+" Phase parameter search speed-up factors:\n"\
+" --mismatch          Maximum allowed phase mismatch between consecutive\n\
+                     models (if phase mismatch is small do not update phase\n\
+                     correction)\n"\
+" --mm-factor         (INT4) Downsampling factor for the phase models used\n\
+                     to calculate the mismatch\n"\
 "\n"
-
 
 INT4 main( INT4 argc, CHAR *argv[] ){
   ProcessParamsTable *param_table;
@@ -1166,10 +1172,20 @@ void setupFromParFile( LALInferenceRunState *runState )
   LALInferenceIFOData *data = runState->data;
   LALInferenceVariables *scaletemp;
   ProcessParamsTable *ppt = NULL;
+  UINT4 mmfactor = 0;
+  REAL8 mm = 0;
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
   CHAR *parFile = ppt->value;
+  
+  /* check if we needed a downsampled time stamp series */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--mm-factor" );
+  if( ppt != NULL ) mmfactor = atoi( ppt->value );
+  
+  /* get mismatch value if required */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--mismatch" );
+  if( ppt != NULL ) mm = atof( ppt->value );
   
   /* get the pulsar parameters */
   XLALReadTEMPOParFile( &pulsar, parFile );
@@ -1215,7 +1231,7 @@ void setupFromParFile( LALInferenceRunState *runState )
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
 
-      phase_vector = get_phase_model( pulsar, data, freqFactors->data[j] );
+      phase_vector = get_phase_model( pulsar, data, freqFactors->data[j], 0 );
   
       data->timeData = NULL;
       data->timeData = XLALCreateREAL8TimeSeries( "",
@@ -1232,6 +1248,29 @@ void setupFromParFile( LALInferenceRunState *runState )
         LALInferenceAddVariable( data->dataParams, scaleitem->name, 
                                  scaleitem->value, scaleitem->type,
                                  scaleitem->vary );
+      }
+    
+      /* get down sampled time stamps if required and set mismatch */
+      if ( mmfactor != 0 && mm != 0. ){
+        LIGOTimeGPSVector *downst = 
+          XLALCreateTimestampVector( floor(phase_vector->length/mmfactor) );
+        UINT4 k = 0;
+        
+        if ( downst->length < 2 ){
+          XLALPrintError("Error, downsampled time stamp factor to high!\n");
+          XLAL_ERROR_VOID(XLAL_EFAILED);
+        }
+        
+        for( k = 1; k < downst->length+1; k++ )
+          downst->data[k-1] = data->dataTimes->data[(k-1)*mmfactor];
+          
+        LALInferenceAddVariable( data->dataParams, "downsampled_times",
+                                 &downst, LALINFERENCE_void_ptr_t,
+                                 LALINFERENCE_PARAM_FIXED );
+        
+        LALInferenceAddVariable( data->dataParams, "mismatch",
+                                 &mm, LALINFERENCE_REAL8_t,
+                                 LALINFERENCE_PARAM_FIXED );
       }
     
       data = data->next;
@@ -1420,8 +1459,8 @@ void add_initial_variables( LALInferenceVariables *ini,
                             pars.rErr );
   add_variable_scale_prior( ini, scaleFac, priorArgs, "lambda", pars.lambda,  
                             pars.lambdaErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "costheta", pars.costheta,  
-                            pars.costhetaErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "theta", pars.theta,  
+                            pars.thetaErr );
     
   /* phase model parameters */
   
@@ -1771,6 +1810,16 @@ set.\n", propfile, tempPar);
         high = LAL_PI/2.;
       }
     }
+  
+    /* if theta is covering the range 0 to pi scale it, so that it covers
+    the 0 to 2pi range of a circular parameter */
+    if( !strcmp(tempPar, "theta") ){
+      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
+        scale = 1.;
+        scaleMin = 0.;
+        high = 2.*LAL_PI;
+      }
+    }
     
     /* if lambda is covering the range 0 to pi scale it, so that it covers
     the 0 to pi range of a circular parameter */
@@ -1809,6 +1858,8 @@ set.\n", propfile, tempPar);
     else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
+      varyType = LALINFERENCE_PARAM_CIRCULAR;
+    else if ( !strcmp(tempPar, "theta") && scale == 1.0 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
       varyType = LALINFERENCE_PARAM_CIRCULAR;

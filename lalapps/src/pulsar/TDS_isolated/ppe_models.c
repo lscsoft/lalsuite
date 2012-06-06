@@ -56,7 +56,7 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.I31 = rescale_parameter( data, "I31" );
   pars.r = rescale_parameter( data, "r" );
   pars.lambda = rescale_parameter( data, "lambda" );
-  pars.costheta = rescale_parameter( data, "costheta" );
+  pars.theta = rescale_parameter( data, "theta" );
  
   /* set the potentially variable parameters */
   pars.pepoch = rescale_parameter( data, "pepoch" );
@@ -190,6 +190,7 @@ void pulsar_model( BinaryPulsarParams params,
   INT4 i = 0, length = 0;
   UINT4 j = 0;
   CHAR *modeltype = NULL;
+  REAL8 mm = 0.;
   
   /* check model type to get amplitude model */
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
@@ -211,8 +212,12 @@ void pulsar_model( BinaryPulsarParams params,
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                           "freqfactors" );
   
+  if( LALInferenceCheckVariable( data->dataParams, "mismatch" ) )
+    mm = *(REAL8 *)LALInferenceGetVariable( data->dataParams, "mismatch" );
+  
   for( j = 0; j < freqFactors->length; j++ ){
-    REAL8Vector *dphi = NULL;
+    REAL8Vector *dphi = NULL, *dsdphi2 = NULL;
+    UINT4 nohet = 0; /* set if extra phase heterodyne is not required */
     
     /* move data pointer along one as one iteration of the model is held over
     j data structures, moved this from bottom of loop so actioned for 2nd run
@@ -226,32 +231,77 @@ through the loop.*/
      phase calculated using the initial (heterodyne) values of the phase
      parameters */
     if ( varyphase ){
-      if ( (dphi = get_phase_model( params, data, 
-        freqFactors->data[j] )) != NULL ){
-        for( i=0; i<length; i++ ){
-          COMPLEX16 M;
-          REAL8 dphit;
-          REAL4 sp, cp;
-    
-          dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+      /* check whether to recompute the full phase or not */
+      if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
+        REAL8Vector *dsdphi1 = NULL;
+        LIGOTimeGPSVector *downst = 
+          *(LIGOTimeGPSVector **)LALInferenceGetVariable( data->dataParams,
+          "downsampled_times" );
+        
+        /* get the previous downsampled phase if it exists */
+        if ( LALInferenceCheckVariable( data->dataParams, 
+                                        "previous_ds_phase" ) ){
+          dsdphi1 = *(REAL8Vector **)LALInferenceGetVariable( 
+            data->dataParams, "previous_ds_phase" );
+        }
+        
+        /* get the downsampled phase for the current parameters */
+        dsdphi2 = get_phase_model( params, data, freqFactors->data[j], 1 );
+        
+        /* work out phase mismatch */
+        if( dsdphi1 && dsdphi2 ){
+          REAL8 mmcalc = get_phase_mismatch( dsdphi1, dsdphi2, downst );
           
-          sin_cos_2PI_LUT( &sp, &cp, dphit );
-    
-          M.re = data->compModelData->data->data[i].re;
-          M.im = data->compModelData->data->data[i].im;
-    
-          /* heterodyne */
-          data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
-          data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
-          /*
-          if(i<1)
-            fprintf(stderr, "dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
-          */
+          /* if small mismatch then just use previous phase if available */
+          if ( mmcalc < mm ){
+            nohet = 1;
+          
+            XLALDestroyREAL8Vector( dsdphi2 );
+          }
         }
       }
+        
+      /* reheterodyne with the phase */
+      if ( !nohet ){
+        /* make sure the "previous" down sampled phase is the right
+           one for comparison */
+        if ( !LALInferenceCheckVariable( data->dataParams, 
+                                         "previous_ds_phase" ) ){
+          LALInferenceAddVariable( data->dataParams, "previous_ds_phase", 
+                                   &dsdphi2, LALINFERENCE_REAL8Vector_t,
+                                   LALINFERENCE_PARAM_FIXED );                        
+        }
+        else{
+          LALInferenceSetVariable( data->dataParams, "previous_ds_phase",
+                                   &dsdphi2 );
+        }
+        
+        XLALDestroyREAL8Vector( dsdphi2 );
+        
+        if ( (dphi = get_phase_model( params, data, 
+              freqFactors->data[j], 0 )) != NULL ){
+          for( i=0; i<length; i++ ){
+            COMPLEX16 M;
+            REAL8 dphit;
+            REAL4 sp, cp;
+    
+            dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+          
+            sin_cos_2PI_LUT( &sp, &cp, dphit );
+    
+            M.re = data->compModelData->data->data[i].re;
+            M.im = data->compModelData->data->data[i].im;
+    
+            /* heterodyne */
+            data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
+            data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+          }
+        
+          XLALDestroyREAL8Vector( dphi );      
+        } 
+      }       
     }
-    XLALDestroyREAL8Vector( dphi );
-  }
+  } 
 }
 
 
@@ -294,36 +344,51 @@ through the loop.*/
  */
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
                               LALInferenceIFOData *data,
-                              REAL8 freqFactor ){
+                              REAL8 freqFactor,
+                              UINT4 downsampled ){
   INT4 i = 0, length = 0;
 
   REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
-
+  LIGOTimeGPSVector *datatimes = NULL;
+ 
+  /* check if we want to calculate the phase at a the downsampled rate */
+  if ( downsampled ){
+    if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
+      datatimes = *(LIGOTimeGPSVector **)LALInferenceGetVariable( 
+        data->dataParams, "downsampled_times" );
+    }
+    else{
+      fprintf(stderr, "Error, no downsampled time series available\n");
+      exit(1);
+    }
+  }
+  else datatimes = data->dataTimes;
+  
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
-	
-  length = data->dataTimes->length;
+
+  length = datatimes->length;
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
   
   /* get time delays */ 
-	/*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
+  /*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){
     /* get time delays with an interpolation of interptime (30 mins) */
-    dts = get_ssb_delay( params, data->dataTimes, data->ephem, data->detector,
+    dts = get_ssb_delay( params, datatimes, data->ephem, data->detector,
                          interptime );
   }
   
   if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "bsb_delays" )) == NULL || varybinary == 1 ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, data->dataTimes, dts );
+    bdts = get_bsb_delay( params, datatimes, dts );
   }
   
   for( i=0; i<length; i++){
@@ -346,7 +411,6 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
       inv_fact[4]*params.f3*deltat*deltat2 +
       inv_fact[5]*params.f4*deltat2*deltat2 +
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
-
   }
   
   /* free memory */
@@ -728,11 +792,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   Xplus2f = ((pars.f0*pars.f0)/pars.r) * (1.+(pars.cosiota*pars.cosiota));
   Xcross2f = ((2*pars.f0*pars.f0)/pars.r) * pars.cosiota;
   
-  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( 2*(acos(pars.costheta)) );
-  A2=pars.I21*sin(2*pars.lambda)*sin( acos(pars.costheta) );
-  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(pars.costheta*pars.costheta) -(sin(pars.lambda)*sin(pars.lambda))) ) 
-    + ( pars.I31*(sin(acos(pars.costheta))*sin(acos(pars.costheta))) );
-  B2=pars.I21*sin(2*pars.lambda)*(pars.costheta);
+  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( (2*pars.theta));
+  A2=pars.I21*sin(2*pars.lambda)*sin(pars.theta);
+  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) -(sin(pars.lambda)*sin(pars.lambda))) ) 
+    + ( pars.I31*(sin(pars.theta)*sin(pars.theta)) );
+  B2=pars.I21*sin(2*pars.lambda)*cos(pars.theta);
   
   /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
@@ -926,6 +990,55 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
   fclose(fp);
   
   return logL;
+}
+
+
+/** \brief Calculate the phase mismatch between two vectors of phases
+ * 
+ * The function will calculate phase mismatch between two vectors of phases 
+ * (with phases given in cycles rather than radians).
+ * 
+ * The mismatch is calculated as:
+ * \f[
+   M = 1-\frac{1}{T}\int_0^T \cos{2\pi(\phi_1 - \phi_2)} dt.
+ \f]
+ * In the function the integral is performed using the trapezium rule.
+ * 
+ * PARAM phi1 [in] First phase vector
+ * PARAM phi2 [in] Second phase vector
+ * PARAM t [in] The time stamps of the phase points
+ * 
+ * \return The natural logarithm of the noise only evidence
+ */
+REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVector *t ){
+  REAL8 mismatch = 0., dp1 = 0., dp2 = 0.;
+  REAL4 sp, cp1, cp2;
+  UINT4 i = 0;
+ 
+  REAL8 T = 0., dt = 0.;
+  
+  /* data time span */
+  T = XLALGPSGetREAL8(&t->data[t->length-1]) - XLALGPSGetREAL8(&t->data[0]);
+  
+  if ( phi1->length != phi2->length ){
+    XLALPrintError("Phase lengths should be equal!\n");
+    XLAL_ERROR_REAL8(XLAL_EFAILED);
+  }
+  
+  /* calculate mismatch - integrate with trapezium rule */
+  for( i = 0; i < phi1->length-1; i++ ){
+    dp1 = fmod( phi1->data[i] - phi2->data[i], 1. );
+    dp2 = fmod( phi1->data[i+1] - phi2->data[i+1], 1. );
+    
+    dt = XLALGPSGetREAL8(&t->data[i+1]) - XLALGPSGetREAL8(&t->data[i]);
+    
+    sin_cos_2PI_LUT( &sp, &cp1, dp1 );
+    sin_cos_2PI_LUT( &sp, &cp2, dp2 );
+    
+    mismatch += (cp1 + cp2) * dt;
+  }
+  
+  return fabs(1. - mismatch/(2.*T));
 }
 
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/
