@@ -158,6 +158,7 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
    REAL8 S2y = thisRow->spin2y;
    REAL8 S2z = thisRow->spin2z;
    REAL8 f_min = thisRow->f_lower;
+   REAL8 f_ref = 0.;
    REAL8 r = thisRow->distance * LAL_PC_SI * 1e6;
    REAL8 i = thisRow->inclination;
    REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
@@ -181,7 +182,7 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
       XLAL_ERROR(XLAL_EFUNC);
 
    /* generate +,x waveforms */
-   if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+   if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
    /* taper the waveforms */
@@ -219,6 +220,7 @@ XLALSimInspiralChooseWaveformFromInspiralTemplate(
   REAL8 S2y = params->spin2[1];
   REAL8 S2z = params->spin2[2];
   REAL8 f_min = params->fLower;
+  REAL8 f_ref = 0.;
   REAL8 r = params->distance; /* stored as Mpc in InspiralTemplate */
   REAL8 i = params->inclination;
   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
@@ -229,7 +231,7 @@ XLALSimInspiralChooseWaveformFromInspiralTemplate(
   Approximant approximant = params->approximant;
 
   /* generate +,x waveforms */
-  if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+  if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
     XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;

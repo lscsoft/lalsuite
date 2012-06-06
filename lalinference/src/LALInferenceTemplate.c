@@ -1812,7 +1812,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /*	 - "shift0"			(shift offset; REAL8, radians)			                            */
 /*   - "time"			(coalescence time, or equivalent/analog/similar; REAL8, GPS sec.)	*/
 /*	 - "PNorder"		(Phase PN order)												*/
-/*   - "Amporder"   (Amplitude PN order)                                                    */
+/*   - "Amporder"   (Amplitude PN order) */
+/*   - "fRef"            (Optional; frequency at which the above parameters are defined (useful for fixing values 'in the bucket'). Defaults to 0.)                                                 */
 /********************************************************************************************/
 {
 	
@@ -1831,7 +1832,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   COMPLEX16FrequencySeries *htilde=NULL;
   
 	REAL8 mc;
-  REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
+        REAL8 phi0, deltaT, m1, m2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, inclination;
   
   static REAL8 previous_m1;
   static REAL8 previous_m2;
@@ -1929,6 +1930,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "interactionFlags")) interactionFlags = *(LALSimInspiralInteraction*) LALInferenceGetVariable(IFOdata->modelParams, "interactionFlags");
   
+  REAL8 fRef = 0.0;
+  if (LALInferenceCheckVariable(IFOdata->modelParams, "fRef")) fRef = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams, "fRef");
+
   if (IFOdata->timeData==NULL) {
     XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'timeData'.\n");
     XLAL_ERROR_VOID(XLAL_EFAULT);
@@ -2016,7 +2020,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     }
     
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
-                                                 spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, distance, 
+                                                 spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, fRef, distance, 
                                                  inclination, lambda1, lambda2, interactionFlags, 
                                                  amporder, order, approximant), errnum);
     

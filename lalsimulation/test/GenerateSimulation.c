@@ -97,7 +97,7 @@ const char * usage =
 "--amp-order ORD            Twice PN order of amplitude (default 0 <==> Newt./restricted)\n"
 "--phiRef                   Phase at the reference frequency (default 0)\n"
 "--fRef FREF                Reference frequency in Hz\n"
-"                           (default: FMIN)\n"
+"                           (default: 0)\n"
 "--sample-rate SRATE        Sampling rate of TD approximants in Hz (default 4096)\n"
 "--deltaF DF                Frequency bin size for FD approximants in Hz (default 1/8)\n"
 "--m1 M1                    Mass of the first object in solar masses (default 10)\n"
@@ -120,7 +120,7 @@ const char * usage =
 "--distance D               Distance in Mpc (default 100)\n"
 "--axis AXIS                for PhenSpin: 'View' (default), 'TotalJ', 'OrbitalL'\n"
 "--inspiralOnly             for PhenSpin: if included, generate only inspiral\n"
-"--outname FNAME            (Over)write to file FNAME (default 'wave.dat')\n"
+"--outname FNAME            Output to file FNAME (default 'simulation.dat')\n"
 "--verbose                  If included, add verbose output\n"
 ;
 
@@ -142,7 +142,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->deltaF = 0.125;
     params->m1 = 10. * LAL_MSUN_SI;
     params->m2 = 1.4 * LAL_MSUN_SI;
-    params->f_min = params->fRef = 40.;
+    params->f_min = 40.;
+    params->fRef = 0.;
     params->f_max = 0.; /* Generate as much as possible */
     params->distance = 100. * 1e6 * LAL_PC_SI;
     params->inclination = 0.;
@@ -259,7 +260,8 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
     fprintf(f, "# f htilde.re htilde.im\n");
     dataPtr = htilde->data->data;
     for (i=0; i < htilde->data->length; i++)
-      fprintf(f, "%e %e %e\n", htilde->f0 + i * htilde->deltaF, dataPtr[i].re, dataPtr[i].im);
+        fprintf(f, "%e %e %e\n", htilde->f0 + i * htilde->deltaF, 
+                dataPtr[i].re, dataPtr[i].im);
     return 0;
 }
 
@@ -276,7 +278,8 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-      fprintf(f, "%e %e %e\n", t0 + i * hplus->deltaT, hplus->data->data[i], hcross->data->data[i]);
+        fprintf(f, "%e %e %e\n", t0 + i * hplus->deltaT, 
+                hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }
 /*
@@ -302,16 +305,29 @@ int main (int argc , char **argv) {
     start_time = time(NULL);
     switch (params->domain) {
         case GSDomain_FD:
-            XLALSimInspiralChooseFDWaveform(&htilde, params->phiRef, params->deltaF, params->m1, params->m2, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->f_min, params->f_max, params->distance, params->inclination, params->lambda1, params->lambda2, params->interaction, params->ampO, params->phaseO, params->approximant);
+            XLALSimInspiralChooseFDWaveform(&htilde, params->phiRef, 
+                    params->deltaF, params->m1, params->m2, params->s1x, 
+                    params->s1y, params->s1z, params->s2x, params->s2y, 
+                    params->s2z, params->f_min, params->f_max, 
+                    params->distance, params->inclination, params->lambda1, 
+                    params->lambda2, params->interaction, params->ampO, 
+                    params->phaseO, params->approximant);
             break;
         case GSDomain_TD:
-            XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, params->deltaT, params->m1, params->m2, params->s1x, params->s1y, params->s1z, params->s2x, params->s2y, params->s2z, params->f_min, params->distance, params->inclination, params->lambda1, params->lambda2, params->interaction, params->ampO, params->phaseO, params->approximant);
+            XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, 
+                    params->deltaT, params->m1, params->m2, params->s1x, 
+                    params->s1y, params->s1z, params->s2x, params->s2y, 
+                    params->s2z, params->f_min, params->fRef, 
+                    params->distance, params->inclination, params->lambda1, 
+                    params->lambda2, params->interaction, params->ampO, 
+                    params->phaseO, params->approximant);
             break;
         default:
             XLALPrintError("Error: domain must be either TD or FD\n");
     }
     if (params->verbose)
-        XLALPrintInfo("Generation took %.0f seconds\n", difftime(time(NULL), start_time));
+        XLALPrintInfo("Generation took %.0f seconds\n", 
+                difftime(time(NULL), start_time));
     if (((params->domain == GSDomain_FD) && !htilde) ||
         ((params->domain == GSDomain_TD) && (!hplus || !hcross))) {
         XLALPrintError("Error: waveform generation failed\n");

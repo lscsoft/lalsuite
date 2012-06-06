@@ -473,6 +473,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 phi_spin1_max=2.0*LAL_PI;
 	REAL8 theta_spin1_min=0.0;
 	REAL8 theta_spin1_max=LAL_PI;
+	REAL8 fRef=0.; /* freq. at which precessing "initial" cond. specified */
 	REAL8 etaMin=0.01;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -512,6 +513,7 @@ Parameter arguments:\n\
 (--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
 (--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
 (--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
+(--fref fRef)\tSpecify a reference frequency at which parameters are defined (default 0).\n\
 (--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n\
 (--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n\
 (--pinparams [mchirp,asym_massratio,etc])\n\tList of parameters to set to injected values\n\
@@ -783,7 +785,21 @@ Parameter arguments:\n\
  	if(!LALInferenceCheckVariable(currentParams,"inclination")) LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
-	
+
+	/* 
+	 * fRef used by SpinTaylorT4 to determine which frequency the reference
+	 * phase and "initial" values of spin components refer to.
+	 * fRef=0 is the standard behavior consistent with other approximants.
+	 * it means the spin components are at the initial frequency and phiRef
+	 * is the "phase at coalescence" (the last sample)
+	 * fRef > 0 means the provided phiRef and spin components will be the
+	 * values when the binary has GW frequency fRef.
+	 */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--fref");
+	if(ppt) fRef = atof(ppt->value);
+	else fRef = 0.;
+	LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
 	/* Additional parameters for spinning waveforms */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) if(!strcmp("PhenSpin",ppt->value)){ enable_spin=1;}

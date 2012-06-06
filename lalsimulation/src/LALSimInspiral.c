@@ -1144,7 +1144,8 @@ int XLALSimInspiralChooseWaveform(
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_min,                                /**< start frequency (Hz) */
+    REAL8 f_ref,                                /**< reference frequency (Hz) */
     REAL8 r,                                    /**< distance of source */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
@@ -1155,9 +1156,12 @@ int XLALSimInspiralChooseWaveform(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", "XLALSimInspiralChooseTDWaveform");
+    XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", 
+            "XLALSimInspiralChooseTDWaveform");
 
-    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, phaseO, approximant);
+    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2,
+            S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,
+            interactionFlags, amplitudeO, phaseO, approximant);
 }
 
 /**
@@ -1180,7 +1184,8 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_min,                                /**< start frequency (Hz) */
+    REAL8 f_ref,                                /**< reference frequency (Hz) */
     REAL8 r,                                    /**< distance of source */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
@@ -1251,10 +1256,10 @@ int XLALSimInspiralChooseTDWaveform(
 
         // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
         // proposal: TotalJ frame of PSpinInspiralRD
-        // inclination denotes the angle between the view directoin 
+        // inclination denotes the angle between the view direction 
         // and J (J is constant during the evolution, J//z, both N and initial 
-		// L are in the x-z plane) and the spin coordinates are given wrt 
-		// initial ** L **.
+        // L are in the x-z plane) and the spin coordinates are given wrt 
+        // initial ** L **.
         case SpinTaylorT4:
             LNhatx = sin(i);
             LNhaty = 0.;
@@ -1262,9 +1267,14 @@ int XLALSimInspiralChooseTDWaveform(
             E1x = cos(i);
             E1y = 0.;
             E1z = - sin(i);
-            /* Maximum PN amplitude order for precessing waveforms is MAX_PRECESSING_AMP_PN_ORDER */
-            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
-            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, interactionFlags, phaseO, amplitudeO);
+            /* Maximum PN amplitude order for precessing waveforms is 
+             * MAX_PRECESSING_AMP_PN_ORDER */
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+                    amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, v0, deltaT, 
+                    m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, 
+                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 
+                    lambda1, lambda2, interactionFlags, phaseO, amplitudeO);
             break;
 
         /* spinning inspiral-merger-ringdown models */

@@ -440,6 +440,7 @@ void initVariables(LALInferenceRunState *state)
                                                                                 TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
                (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
+               (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 0).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
                (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
@@ -540,6 +541,7 @@ void initVariables(LALInferenceRunState *state)
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
   LALPNOrder AmpOrder=-1;//LAL_PNORDER_THREE_POINT_FIVE;//LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
+  REAL8 fRef = 0.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
   UINT4 i=0;
@@ -837,6 +839,9 @@ void initVariables(LALInferenceRunState *state)
     fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(AmpOrder))/2.0);
   }
   
+  ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
+  if (ppt) fRef = atof(ppt->value);
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--modeldomain");
   if(ppt){
     if ( ! strcmp( "time", ppt->value ) )
@@ -1108,6 +1113,9 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   if(LALInferenceGetProcParamVal(commandLine,"--ampOrder")) 
     LALInferenceAddVariable(currentParams, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
+
+  if (LALInferenceGetProcParamVal(commandLine, "--fref"))
+    LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
 
   ppt=LALInferenceGetProcParamVal(commandLine,"--taper");
   if(ppt){
