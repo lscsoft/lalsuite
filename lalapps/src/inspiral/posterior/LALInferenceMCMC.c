@@ -486,9 +486,9 @@ void initVariables(LALInferenceRunState *state)
                (--Dmin dist)                   Minimum distance in Mpc (1).\n\
                (--Dmax dist)                   Maximum distance in Mpc (100).\n\
                (--lambda1-min)                 Minimum lambda1 (0).\n\
-               (--lambda1-max)                 Maximum lambda1 (80).\n\
+               (--lambda1-max)                 Maximum lambda1 (3000).\n\
                (--lambda2-min)                 Minimum lambda2 (0).\n\
-               (--lambda2-max)                 Maximum lambda2 (80).\n\
+               (--lambda2-max)                 Maximum lambda2 (3000).\n\
                (--dt time)                     Width of time prior, centred around trigger (0.1s).\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
@@ -559,9 +559,9 @@ void initVariables(LALInferenceRunState *state)
   REAL8 qMax=1.0;
   REAL8 dt=0.1;            /* Width of time prior */
   REAL8 lambda1Min=0.0;
-  REAL8 lambda1Max=80.0;
+  REAL8 lambda1Max=3000.0;
   REAL8 lambda2Min=0.0;
-  REAL8 lambda2Max=80.0;  
+  REAL8 lambda2Max=3000.0;  
   REAL8 tmpMin,tmpMax;//,tmpVal;
   gsl_rng * GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
