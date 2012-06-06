@@ -1447,6 +1447,14 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return TaylorT2;
   }
+  else if ( strstr(inString, "TaylorF2RedSpinTidal" ) )
+  {
+    return TaylorF2RedSpinTidal;
+  }
+  else if ( strstr(inString, "TaylorF2RedSpin" ) )
+  {
+    return TaylorF2RedSpin;
+  }
   else if ( strstr(inString, "TaylorF2" ) )
   {
     return TaylorF2;
@@ -1454,6 +1462,30 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "TaylorT3" ) )
   {
     return TaylorT3;
+  }
+  else if ( strstr(inString, "TaylorT4" ) )
+  {
+    return TaylorT4;
+  }
+  else if ( strstr(inString, "IMRPhenomA" ) )
+  {
+    return IMRPhenomA;
+  }
+  else if ( strstr(inString, "IMRPhenomB" ) )
+  {
+    return IMRPhenomB;
+  }
+  else if ( strstr(inString, "IMRPhenomFA" ) )
+  {
+    return IMRPhenomFA;
+  }
+  else if ( strstr(inString, "IMRPhenomFB" ) )
+  {
+    return IMRPhenomFB;
+  }
+  else if ( strstr(inString, "SEOBNRv1" ) )
+  {
+    return SEOBNRv1;
   }
   else if ( strstr(inString, "EOBNRv2HM" ) )
   {
@@ -1470,6 +1502,10 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "EOB" ) )
   {
     return EOB;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
+  {
+    return PhenSpinTaylorRDF;
   }
   else if ( strstr(inString, "PhenSpinTaylorRD" ) )
   {
@@ -1495,10 +1531,6 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return SpinQuadTaylor;
   }
-  else if ( strstr(inString, "PadeT1" ) )
-  {
-    return PadeT1;
-  }
   else if ( strstr(inString, "AmpCorPPN" ) )
   {
     return AmpCorPPN;
@@ -1507,9 +1539,9 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return GeneratePPN;
   }
-  else if ( strstr(inString, "TaylorT4" ) )
+  else if ( strstr(inString, "NumRelNinja2" ) )
   {
-    return TaylorT4;
+    return NumRelNinja2;
   }
   else if ( strstr(inString, "NumRel" ) )
   {
@@ -1519,13 +1551,53 @@ int XLALGetApproximantFromString(const CHAR *inString)
   {
     return NumRelNinja2;
   }
-  else if ( strstr(inString, "IMRPhenomA" ) )
+  else if ( strstr(inString, "FindChirpSP" ) )
   {
-    return IMRPhenomA;
+    return FindChirpSP;
   }
-  else if ( strstr(inString, "IMRPhenomB" ) )
+  else if ( strstr(inString, "FindChirpPTF" ) )
   {
-    return IMRPhenomB;
+    return FindChirpPTF;
+  }
+  else if ( strstr(inString, "TaylorEt" ) )
+  {
+    return TaylorEt;
+  }
+  else if ( strstr(inString, "TaylorN" ) )
+  {
+    return TaylorN;
+  }
+  else if ( strstr(inString, "TaylorF1" ) )
+  {
+    return TaylorF1;
+  }
+  else if ( strstr(inString, "PadeT1" ) )
+  {
+    return PadeT1;
+  }
+  else if ( strstr(inString, "PadeF1" ) )
+  {
+    return PadeF1;
+  }
+  else if ( strstr(inString, "BCVSpin" ) )
+  {
+    return BCVSpin;
+  }
+  else if ( strstr(inString, "BCVC" ) )
+  {
+    return BCVC;
+  }
+  else if ( strstr(inString, "BCV" ) )
+  {
+    return BCV;
+  }
+  else if ( strstr(inString, "FrameFile" ) )
+  {
+    return FrameFile;
+  }
+  else if ( strstr(inString, "Eccentricity" ) )
+  {
+    return Eccentricity;
   }
   else
   {
