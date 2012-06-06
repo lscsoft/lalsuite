@@ -68,20 +68,30 @@ typedef struct tagGSParams {
 } GSParams;
 
 const char * usage =
-"Generate a simulation using the lalsimulation library\n"
-"\n"
-"Various options are required depending on the approximant\n"
-"--approximant APPROX       Supported approximants:\n"
-"                             IMRPhenomA (default)\n"
-"                             IMRPhenomB\n"
-"                             SpinTaylorT4\n"
-"                             TaylorF2RedSpin\n"
-"                             PhenSpinTaylorRD\n"
-"                             SEOBNRv1\n"
-"                             EOBNRv2\n"
-"                             EOBNRv2HM\n"
+"Generate a simulation using the lalsimulation library\n\n"
+"The following options can be given (will assume a default value if omitted):\n"
 "--domain DOM               'TD' for time domain (default) or 'FD' for frequency\n"
 "                           domain; not all approximants support all domains\n"
+"--approximant APPROX       Supported TD approximants:\n"
+"                             TaylorT1 (default)\n"
+"                             TaylorT2\n"
+"                             TaylorT3\n"
+"                             TaylorT4\n"
+"                             TaylorEt\n"
+"                             IMRPhenomA\n"
+"                             IMRPhenomB\n"
+"                             EOBNRv2\n"
+"                             EOBNRv2HM\n"
+"                             SEOBNRv1\n"
+"                             SpinTaylorT4\n"
+"                             PhenSpinTaylorRD\n"
+"                           Supported FD approximants:\n"
+"                             IMRPhenomA\n"
+"                             IMRPhenomB\n"
+"                             TaylorF2RedSpin\n"
+"                             TaylorF2RedSpinTidal\n"
+"                           NOTE: Other approximants may be available if the\n"
+"                           developer forgot to edit this help message\n"
 "--phase-order ORD          Twice PN order of phase (default ORD=7 <==> 3.5PN)\n"
 "--amp-order ORD            Twice PN order of amplitude (default 0 <==> Newt./restricted)\n"
 "--phiRef                   Phase at the reference frequency (default 0)\n"
@@ -122,7 +132,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     memset(params, 0, sizeof(GSParams));
 
     /* Set default values to the arguments */
-    params->approximant = IMRPhenomA;
+    params->approximant = TaylorT1;
     params->domain = GSDomain_TD;
     params->phaseO = 7;
     params->ampO = 0;
