@@ -1104,7 +1104,7 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
   REAL8 logLAtAdaptStart = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "logLAtAdaptStart");
 
   /* if maximum logL has increased by more than nParam/2, restart it */
-  if (runState->currentLikelihood > logLAtAdaptStart+nPar/2) {
+  if (runState->currentLikelihood > logLAtAdaptStart+(REAL8)nPar/2) {
     if (!adapting)
       fprintf(stdout,"Turning on adaptation for chain %u at iteration %u.\n",MPIrank,cycle);
     LALInferenceAdaptationRestart(runState, cycle);
