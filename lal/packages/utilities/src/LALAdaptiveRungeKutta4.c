@@ -200,8 +200,9 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
 
   dim = integrator->sys->dimension;
 
-  outputlen = ((int)(tend_in - tinit)/deltat) + 2;
+  outputlen = ((int)(tend_in - tinit)/deltat);
   if (outputlen < 0) outputlen = -outputlen;
+  outputlen += 2;
   
   output = XLALCreateREAL8ArrayL(2, (dim+1), outputlen);
 
