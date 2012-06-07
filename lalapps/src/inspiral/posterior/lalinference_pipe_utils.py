@@ -736,7 +736,7 @@ class MergeNSNode(pipeline.CondorDAGNode):
         self.nsfile=file
     
     def set_pos_output_file(self,file):
-        self.add_file_opt('posterior',file,file_is_output_file=True)
+        self.add_file_opt('pos',file,file_is_output_file=True)
         self.posfile=file
     
     def get_pos_file(self): return self.posfile
