@@ -418,7 +418,7 @@ if test -n "$build_binutils"; then
     log_and_show "compiling binutils"
     log_and_do mkdir -p "$BUILD/$binutils"
     log_and_do cd "$BUILD/$binutils"
-    log_and_do "$SOURCE/$binutils/configure" "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$binutils/configure" --disable-werror "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
         log_and_dont_fail make -k
