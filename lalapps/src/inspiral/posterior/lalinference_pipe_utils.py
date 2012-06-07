@@ -244,6 +244,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
     mergedir=os.path.join(self.basepath,'nested_samples')
+    mkdirs(mergedir)
     mergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(myifos,evstring)))
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
@@ -742,3 +743,26 @@ class MergeNSNode(pipeline.CondorDAGNode):
     def get_pos_file(self): return self.posfile
     def get_ns_file(self): return self.nsfile
     def get_B_file(self): return self.nsfile+'_B.txt'
+
+class GraceDBJob(pipeline.CondorDAGJob):
+    """
+    Class for a gracedb job
+    """
+    def __init__(self,cp,submitFile,logdir):
+      exe=cp.get('condor','gracedb')
+      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      self.set_sub_file(submitFile)
+      self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
+      self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
+      self.add_condor_cmd('getenv','True')
+      self.baseurl=cp.get('paths','baseurl')
+
+class GraceDBNode(pipeline.CondorDAGNode):
+    """
+    Run the gracedb executable to report the results
+    """
+    def __init__(self,gracedb_job,pagepath,parents=None):
+	pipeline.CondorDAGNode.__init__(self,gracedb_job)
+        self.resultsurl=os.path.join(gracedb_job.baseurl,pagepath)
+        # TODO: Add the command line arguments for gracedb to update the event
+
