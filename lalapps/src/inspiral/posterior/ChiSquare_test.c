@@ -162,7 +162,7 @@ void initVariables(LALInferenceRunState *state)
 	//REAL8 MTotMax=35.0;
 	REAL8 etaMin=0.0312;
 	REAL8 etaMax=0.25;
-	REAL8 dt=0.1;            /* Width of time prior */
+	//REAL8 dt=0.1;            /* Width of time prior */
 	//REAL8 tmpMin,tmpMax,tmpVal;
   
   FILE *devrandom;
