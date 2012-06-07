@@ -10,6 +10,7 @@ import uuid
 import ast
 import pdb
 import string
+from math import floor,ceil
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -20,11 +21,13 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,event_id=None,timeslide_dict=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
     self.timeslides=timeslide_dict
+    self.GID=GID
+    self.coinctrigger=CoincInspiral
     if event_id is not None:
         self.event_id=event_id
     else:
@@ -33,10 +36,29 @@ class Event():
         self.trig_time=self.injection.get_end()
         self.event_id=int(str(self.injection.simulation_id).split(':')[2])
     if self.sngltrigger is not None:
-        self.trig_time=sngltrigger.get_end()
+        self.trig_time=self.sngltrigger.get_end()
         self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
+    if self.coinctrigger is not None:
+        self.trig_time=self.coinctrigger.end_time + 1.0e-9 * self.coinctrigger.end_time_ns
+    if self.GID is not None:
+        self.event_id=int(''.join(i for i in self.GID if i.isdigit()))
 
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
+
+def readLValert(lvalertfile,SNRthreshold=0,GID=None):
+  """
+  Parse LV alert file, continaing coinc, sngl, coinc_event_map.
+  and create a list of Events as input for pipeline
+  Based on Chris Pankow's script
+  """ 
+  from glue.ligolw import utils
+  from glue.ligolw import lsctables
+  xmldoc=utils.load_filename(lvalertfile)
+  coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
+  coinc_events = [event for event in coinctable]
+  print "Found %d coinc events in table." % len(coinc_events)
+  output=[Event(CoincInspiral=cevent,GID=GID) for cevent in coinc_events if cevent.snr>=SNRthreshold ]
+  return output
 
 def mkdirs(path):
   """
@@ -135,9 +157,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Set up the segments
     (mintime,maxtime)=self.get_required_data(self.times)
     if not self.config.has_option('input','gps-start-time'):
-      self.config.set('input','gps-start-time',str(mintime))
+      self.config.set('input','gps-start-time',str(int(floor(mintime))))
     if not self.config.has_option('input','gps-end-time'):
-      self.config.set('input','gps-end-time',str(maxtime))
+      self.config.set('input','gps-end-time',str(int(ceil(maxtime))))
     self.add_science_segments()
     
     # Save the final configuration that is being used
@@ -178,7 +200,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     in the [input] section of the ini file.
     And process the events found therein
     """
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-database']
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-database','lvalert-file']
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
@@ -196,6 +218,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       from pylal import SnglInspiralUtils
       trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
       events=[Event(SnglInspiral=trig) for trig in trigTable]
+    # CoincInspiral Table
+    if self.config.has_option('input','coinc-inspiral-file'):
+      events = readLValert(self.config.get('input','coinc-inspiral-file'))
     # TODO: pipedown-database 
     # TODO: timeslides
     return events
