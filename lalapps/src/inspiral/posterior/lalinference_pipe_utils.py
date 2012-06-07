@@ -255,7 +255,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
             pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
             pmergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(ifo,evstring)))
-            pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
+            pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(ifo,evstring)))
             self.add_node(pmergenode)
             par_mergenodes.append(pmergenode)
             presultsdir=os.path.join(pagedir,ifo)
