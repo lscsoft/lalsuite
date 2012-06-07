@@ -215,7 +215,7 @@ int main( int argc, char *argv[] )
   CHAR   framename[FILENAME_MAX];
   CHAR   xmlname[FILENAME_MAX];
   CHAR   cohdataStr[LALNameLength];
-  CHAR  *ifo = NULL;
+  /* CHAR  *ifo = NULL; */
 
   UINT4  numPoints        = 0;
   UINT4  numSegments      = 1;
@@ -1229,7 +1229,7 @@ int main( int argc, char *argv[] )
           }
         j=0;
         while( !(caseID[j]) ) {
-          ifo = caseIDChars[j];
+          /* ifo = caseIDChars[j]; */
           j++;
         }
      }
