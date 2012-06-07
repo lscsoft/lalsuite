@@ -915,7 +915,7 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
 
-    /* loop over time steps and compute polarizations h+ and hx */
+    /* loop over time steps and compute the Qi */
     len = V->data->length;
     for(idx = 0; idx < len; idx++)
     {
@@ -949,6 +949,11 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
 
         /* 
          * NOTE: For PTF waveforms, we must use only the dominant amplitude
+         * The Q values are computed from equations 13,14,17, 46 + 47 in PBCV or
+         * more simply from equations (3.10) in Diego Fazi's thesis.
+         * Note that Q5 is simplified from that shown in Fazi's thsis
+         * by using traceless condition. As demonstrated in (6.29)
+         * in Ian Harry's thesis.
          */
 
         q1tmp = lx2 - ly2 - nx2 + ny2;

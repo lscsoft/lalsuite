@@ -917,7 +917,11 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
         int phaseO                      /**< twice PN phase order */
         )
 {
-    /* To generate the QVecs we need to choose a specific frame */
+    /* To generate the QVecs we need to choose a specific frame 
+     * This frame is set so that inclination, and most other extrinsic
+     * angles are 0. This does not lead to loss in generality as PTF maximizes
+     * over these angles. This follows the PBCV convention
+     */
     REAL8 phi_end = 0;
     REAL8 r = 10E6 * LAL_PC_SI; /* Setting an arbitrary distance of 10 MPc */
     REAL8 s1x = chi1 * pow((1 - kappa1*kappa1),0.5);
@@ -931,11 +935,9 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
     int status, n;
 
     /* Evolve the dynamical variables */
-    /* Note we use phi_end/2 b/c the orbit evolver wants an orbital phase */
-    /* but this waveform driver is supplied a reference GW phase */
     n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z,
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
-            phi_end/2., deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            phi_end, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
             s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, interactionFlags, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
