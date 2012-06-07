@@ -17,21 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-
-/** \defgroup GenerateInspRing Inspiral plus Ringdown
- * \ingroup inject
- * \author S.Fairhurst
- *
- * \brief Module for pasting a (realistic) ringdown on the end of an inspiral
- *
- */
-
-/** \file GenerateInspRing.h
- *  \ingroup GenerateInspRing
- *
- */
-
-
 /* includes */
 #include <stdlib.h>
 #include <math.h>
@@ -49,6 +34,15 @@
 extern "C" {
 #endif
 
+/** \addtogroup GenerateInspRing_h
+ * \author S.Fairhurst
+ *
+ * \brief Module for pasting a (realistic) ringdown on the end of an inspiral
+ *
+ *
+ */
+/*@{*/
+
 CoherentGW *
 XLALGenerateInspRing(
     CoherentGW        *waveform,
@@ -56,6 +50,8 @@ XLALGenerateInspRing(
     SimRingdownTable  *thisRingEvent,
     int                injectSignalType
     );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

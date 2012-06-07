@@ -17,68 +17,45 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="IIRFilterCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{IIRFilter.c}}
-\label{ss:IIRFilter.c}
-
-Computes an instant-by-instant IIR filter response.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{IIRFilterCP}
-\idx{LALIIRFilterREAL4()}
-\idx{LALIIRFilterREAL8()}
-\idx{LALSIIRFilter()}
-\idx{LALDIIRFilter()}
-
-\subsubsection*{Description}
-
-These functions pass a time-domain datum to an object \verb@*filter@
-of type \verb@REAL4IIRFilter@ or \verb@REAL8IIRFilter@, and return the
-filter response.  This is done using the auxiliary data series
-formalism described in the header \verb@IIRFilter.h@.
-
-There are two pairs of routines in this module.  The functions
-\verb@IIRFilterReal4()@ and \verb@LALIIRFilterREAL8()@ conform to the LAL
-standard, with status handling and error trapping; the input datum is
-passed in as \verb@input@ and the response is returned in
-\verb@*output@.  The functions \verb@LALSIIRFilter()@ and
-\verb@LALDIIRFilter()@ are non-standard lightweight routines, which may
-be more suitable for multiple callings from the inner loops of
-programs; they have no status handling or error trapping.  The input
-datum is passed in by the variable \verb@x@, and the response is
-returned through the function's return statement.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{IIRFilterCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 
-/*
- *
- * WARNING: THIS FUNCTION IS OBSOLETE
- *
+/**
+   \addtogroup IIRFilter_c
+   \author Creighton, T. D.
+
+   \brief Computes an instant-by-instant IIR filter response.
+
+\heading{Description}
+
+These functions pass a time-domain datum to an object <tt>*filter</tt>
+of type \c REAL4IIRFilter or \c REAL8IIRFilter, and return the
+filter response.  This is done using the auxiliary data series
+formalism described in \ref IIRFilter_h.
+
+There are two pairs of routines in this module.  The functions
+<tt>LALIIRFilterREAL4()</tt> and <tt>LALIIRFilterREAL8()</tt> conform to the LAL
+standard, with status handling and error trapping; the input datum is
+passed in as \c input and the response is returned in
+<tt>*output</tt>.  The functions <tt>LALSIIRFilter()</tt> and
+<tt>LALDIIRFilter()</tt> are non-standard lightweight routines, which may
+be more suitable for multiple callings from the inner loops of
+programs; they have no status handling or error trapping.  The input
+datum is passed in by the variable \c x, and the response is
+returned through the function's return statement.
+
+*/
+/*@{*/
+
+/** WARNING: THIS FUNCTION IS OBSOLETE.
+ * \deprecated
  */
-/* <lalVerbatim file="IIRFilterCP"> */
 void
 LALIIRFilterREAL4( LALStatus      *stat,
 		   REAL4          *output,
 		   REAL4          input,
 		   REAL4IIRFilter *filter )
-{ /* </lalVerbatim> */
+{
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
   REAL4 *coef; /* Values of filter coefficients. */
@@ -126,13 +103,15 @@ LALIIRFilterREAL4( LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="IIRFilterCP"> */
+/** WARNING: THIS FUNCTION IS OBSOLETE.
+ * \deprecated
+ */
 void
 LALIIRFilterREAL8( LALStatus      *stat,
 		   REAL8          *output,
 		   REAL8          input,
 		   REAL8IIRFilter *filter )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   /* Check all the passed parameters for null pointers. */
@@ -154,15 +133,12 @@ LALIIRFilterREAL8( LALStatus      *stat,
 }
 
 
-/*
- *
- * WARNING: THIS FUNCTION IS OBSOLETE
- *
+/** WARNING: THIS FUNCTION IS OBSOLETE.
+ * \deprecated
  */
-/* <lalVerbatim file="IIRFilterCP"> */
 REAL4
 LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter )
-{ /* </lalVerbatim> */
+{
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
   REAL4 *coef; /* Values of filter coefficients. */
@@ -199,9 +175,9 @@ LALSIIRFilter( REAL4 x, REAL4IIRFilter *filter )
 }
 
 
-/* <lalVerbatim file="IIRFilterCP"> */
+/** \see See \ref IIRFilter_c for documentation */
 REAL8 XLALIIRFilterREAL8( REAL8 x, REAL8IIRFilter *filter )
-{ /* </lalVerbatim> */
+{
   INT4 j;      /* Index for filter coefficients. */
   INT4 jmax;   /* Number of filter coefficients. */
   REAL8 *coef; /* Values of filter coefficients. */
@@ -237,8 +213,9 @@ REAL8 XLALIIRFilterREAL8( REAL8 x, REAL8IIRFilter *filter )
   return y;
 }
 
-/* <lalVerbatim file="IIRFilterCP"> */
+/** \see See \ref IIRFilter_c for documentation */
 REAL4 XLALIIRFilterREAL4( REAL4 x, REAL8IIRFilter *filter )
-{ /* </lalVerbatim> */
+{
   return (REAL4)XLALIIRFilterREAL8((REAL8)x,filter);
 }
+/*@}*/

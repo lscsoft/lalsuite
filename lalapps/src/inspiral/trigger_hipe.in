@@ -198,18 +198,6 @@ def createInjectionFile(hipe_dir, cp, cpinj, injrun, injection_segment,
 
   return sims, injInterval, numberInjections, new_injFile
 
-def fix_numrel_columns(sims):
-   """
-   Due to a mismatch between our LAL tag and the LAL HEAD, against which
-   we compile pylal, there are missing columns that cannot be missing.
-   Just put in nonsense values so that glue.ligolw code won't barf.
-   """
-   for sim in sims:
-       sim.numrel_data="nan"
-       sim.numrel_mode_max = 0
-       sim.numrel_mode_min = 0
-       #sim.amp_order = -1
-
 ##############################################################################
 # inspiral_hipe wrapper
 
@@ -852,9 +840,6 @@ for grb in ext_trigs:
                               source_file, ipnstart, usertag, opts.verbose)
 
       new_injfiles = [injFile]
-
-      # XXX: hack since glue is having trouble with empty columns
-      fix_numrel_columns(sims)
 
       # split the injections
       if opts.verbose: print "  Splitting injections..."

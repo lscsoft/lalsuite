@@ -38,30 +38,50 @@
  *-----------------------------------------------------------------------
  */
 
+/*
+ * 2. include-loop protection (see below). Note the naming convention!
+ */
 
+#ifndef _CLR_H
+#define _CLR_H
 
+/*
+ * 3. Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
+ *    a. Standard library includes
+ *    b. LDAS includes
+ *    c. LAL includes
+ */
+
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/ComplexFFT.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /**
 \author Sintes, A. M.
-\file
-\ingroup clremoval
-
-\heading{Header \ref CLR.h}
-\latexonly\label{s_CLR_h}\endlatexonly
+\defgroup CLR_h		Header CLR.h
+\ingroup pkg_clremoval
 
 Provides routines for finding line harmonics,
 generating a reference interference signal, and removing
 all the interference harmonics.
 
-
-
 \heading{Synopsis}
-
 
 \code
 #include "CLR.h"
 \endcode
-
 
 The principal of  \c clr is the following:
 
@@ -128,7 +148,7 @@ B_k(t)\equiv \left[ z_k(t)\right]^{1/k}\ ,\label{e10a}
 that can be rewritten as
 \anchor e10 \f{equation}{
 B_k(t)= (a_k)^{1/k}m(t) \beta_k(t) \ , \qquad
-\beta_k(t)=\left[ 1+ {n_k(t) \over a_k m(t)^k}\right]^{1/k} \ .
+\beta_k(t)=\left[ 1+ \frac{n_k(t)}{a_k m(t)^k}\right]^{1/k} \ .
 \label{e10}
 \f}
 All these  functions, \f$\{B_k(t)\}\f$, are almost monochromatic around the
@@ -145,13 +165,13 @@ that it has the same mean and minimum variance.
 If
 \f$M(t)\f$ is linear with \f$\{b_k(t)\}\f$, the statistically the best is
 \f{equation}{
- M(t)=\left(\sum_k {b_k(t) \over \textrm{Var}[\beta_k(t)]} \right) {\Big
+ M(t)=\left(\sum_k \frac{b_k(t)}{\textrm{Var}[\beta_k(t)]} \right) {\Big
  { /}}
-\left( \sum_k {1 \over \textrm{Var}[\beta_k(t)]}\right) \ ,
+\left( \sum_k \frac{1}{\mathrm{Var}[\beta_k(t)]}\right) \ ,
 \f}
 where
 \f{equation}{
-\textrm{Var}[\beta_k(t)]= {\langle n_k(t) n_k(t)^*\rangle\over  k^2
+\textrm{Var}[\beta_k(t)]= \frac{\langle n_k(t) n_k(t)^*\rangle}{k^2
 \vert a_k m(t)^k\vert^2}+ \mbox{corrections} \ .
 \f}
 In practice,
@@ -167,40 +187,10 @@ where \f$S(\nu)\f$ is the power spectral density of the noise.
 
 Finally, it only remains to determine the amplitude of the different
 harmonics, which can be obtained applying a least square method.
-
-
 */
 
+/*@{*/
 
-/*
- * 2. include-loop protection (see below). Note the naming convention!
- */
-
-#ifndef _CLR_H
-#define _CLR_H
-
-/*
- * 3. Includes. This header may include others; if so, they go immediately
- *    after include-loop protection. Includes should appear in the following
- *    order:
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- */
-
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
 
 /*
  * 5. Macros. But, note that macros are deprecated.
@@ -210,35 +200,27 @@ extern "C" {
  * 8. Structure, enum, union, etc., typdefs.
  */
 
+/**\name Error Codes */
+/*@{*/
+#define CLRH_ENULL 1	/**< Null pointer */
+#define CLRH_ESIZE 2	/**< Invalid input size */
+#define CLRH_ESZMM 4	/**< Size mismatch */
+#define CLRH_EINT  6	/**< Invalid interval */
+#define CLRH_ESAME 8	/**< Input/Output data vectors are the same */
+#define CLRH_EFREQ 10	/**< Invalid frequency */
+/*@}*/
 
-/**
-\heading{Error conditions}
-
-
-
-*/
-
-
-
-/**\name Error Codes */ /*@{*/
-
-#define CLRH_ENULL 1
-#define CLRH_ESIZE 2
-#define CLRH_ESZMM 4
-#define CLRH_EINT  6
-#define CLRH_ESAME 8
-#define CLRH_EFREQ 10
-
+/** \cond DONT_DOXYGEN */
 #define CLRH_MSGENULL "Null pointer"
 #define CLRH_MSGESIZE "Invalid input size"
 #define CLRH_MSGESZMM "Size mismatch"
 #define CLRH_MSGEINT  "Invalid interval"
 #define CLRH_MSGESAME "Input/Output data vectors are the same"
 #define CLRH_MSGEFREQ "Invalid frequency"
+/** \endcond */
 
-/*@}*/
 
-  /* Available CLR Time Vector  */
+/* Available CLR Time Vector  */
 
 /** This structure stores the time domain data and other
 information needed in order to remove all the line interference
@@ -253,10 +235,10 @@ harmonics.  The fields are:
 </dl>
 */
 typedef struct tagREAL4TVectorCLR{
-  UINT4   length;  /* number of elements in data */
-  REAL4   *data;   /* time domain data */
-  REAL4   deltaT;  /* sample spacing in time (in seconds) */
-  REAL4   fLine;   /* interference fundamental frequency (e.g., 50 Hz) */
+  UINT4   length;  /**< number of elements in data */
+  REAL4   *data;   /**< time domain data */
+  REAL4   deltaT;  /**< sample spacing in time (in seconds) */
+  REAL4   fLine;   /**< interference fundamental frequency (e.g., 50 Hz) */
 } REAL4TVectorCLR;
 
 
@@ -278,31 +260,16 @@ typedef struct tagREAL4TVectorCLR{
 
 */
 typedef struct tagREAL4FVectorCLR{
-  UINT4   length;  /* number of elements in data */
-  REAL4   *data;   /* frequency domain data */
-  REAL4   deltaF;  /* delta F offset between samples (in Hz)*/
-  REAL4   fLine;   /* interference fundamental frequency (e.g., 50 Hz) */
+  UINT4   length;  /**< number of elements in data */
+  REAL4   *data;   /**< frequency domain data */
+  REAL4   deltaF;  /**< delta F offset between samples (in Hz)*/
+  REAL4   fLine;   /**< interference fundamental frequency (e.g., 50 Hz) */
 } REAL4FVectorCLR;
-
-
-
-
-
-
-
 
 
   /*
    * 9. Functions Declarations (i.e., prototypes).
    */
-
-
-
-
-
-
-
-
 
 void LALRefInterference ( LALStatus          *status,
 			  COMPLEX8Vector     *out, /*  M(t), size n */
@@ -324,13 +291,7 @@ void LALHarmonicFinder (
          INT4Vector         *in1    /* the harmonic index (l) */
 		 );
 
-
-
-/* Test program. */
-
-
-
-
+/*@}*/
 
 #ifdef  __cplusplus
 }

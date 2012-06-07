@@ -17,6 +17,15 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
+#include <fftw3.h>
+
+#include <lal/LALStdlib.h>
+#include <lal/AVFactories.h>
+#include <lal/ComplexFFT.h>
+#include <lal/FFTWMutex.h>
+
 /**
  * \addtogroup ComplexFFT_h
  *
@@ -104,36 +113,26 @@
  *
  *
 */
-
-#include <config.h>
-
-#include <fftw3.h>
-
-#include <lal/LALStdlib.h>
-#include <lal/AVFactories.h>
-#include <lal/ComplexFFT.h>
-#include <lal/FFTWMutex.h>
+/*@{*/
 
 /** Plan to perform an FFT of COMPLEX8 data
- * \ingroup ComplexFFT_h
  */
 struct
 tagCOMPLEX8FFTPlan
 {
-  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
-  UINT4      size; /*< length of the complex data vector for this plan */
-  fftwf_plan plan; /*< the FFTW plan */
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the complex data vector for this plan */
+  fftwf_plan plan; /**< the FFTW plan */
 };
 
 /** Plan to perform an FFT of COMPLEX16 data
- * \ingroup ComplexFFT_h
  */
 struct
 tagCOMPLEX16FFTPlan
 {
-  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
-  UINT4      size; /*< length of the complex data vector for this plan */
-  fftw_plan  plan; /*< the FFTW plan */
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the complex data vector for this plan */
+  fftw_plan  plan; /**< the FFTW plan */
 };
 
 
@@ -747,3 +746,4 @@ LALCOMPLEX16VectorFFT (
 
   RETURN( status );
 }
+/*@}*/

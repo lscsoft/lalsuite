@@ -17,41 +17,35 @@
 *  MA  02111-1307  USA
 */
 
-#if 0  /* autodoc block */
+#include <time.h>
+#include <math.h>
+#include <lal/LALStdlib.h>
+#include <lal/Random.h>
+#include <lal/Sequence.h>
+#include <lal/XLALError.h>
 
-<lalVerbatim file="RandomCV">
-</lalVerbatim>
+/**
+ * \defgroup Random_c Module Random.c
+ * \ingroup Random_h
+ *
+ * \brief Functions for generating random numbers.
 
-<lalLaTeX>
-\subsection{Module \texttt{Random.c}}
-\label{ss:Random.c}
+\heading{Description}
 
-Functions for generating random numbers.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{RandomCP}
-\idx{LALCreateRandomParams()}
-\idx{LALDestroyRandomParams()}
-\idx{LALUniformDeviate()}
-\idx{LALNormalDeviates()}
-
-\subsubsection*{Description}
-
-The routines \verb+LALCreateRandomParams()+ and \verb+LALDestroyRandomParams()+
+The routines <tt>LALCreateRandomParams()</tt> and <tt>LALDestroyRandomParams()</tt>
 create and destroy a parameter structure for the generation of random
-variables.  The creation routine requires a random number seed \verb+seed+.
+variables.  The creation routine requires a random number seed \c seed.
 If the seed is zero then a seed is generated using the current time.
 
-The routine \verb+LALUniformDeviate()+ returns a single random deviate
+The routine <tt>LALUniformDeviate()</tt> returns a single random deviate
 distributed uniformly between zero and unity.
 
-The routine \verb+LALNormalDeviates()+ fills a vector with normal (Gaussian)
-     deviates with zero mean and unit variance, whereas the function\verb+XLALNormalDeviate+ just returns one normal distributed random number.
+The routine <tt>LALNormalDeviates()</tt> fills a vector with normal (Gaussian)
+     deviates with zero mean and unit variance, whereas the function\c XLALNormalDeviate just returns one normal distributed random number.
 
-\subsubsection*{Operating Instructions}
+\heading{Operating Instructions}
 
-\begin{verbatim}
+\code
 static LALStatus     status;
 static RandomParams *params;
 static REAL4Vector  *vector;
@@ -61,40 +55,26 @@ INT4 seed = 0;
 LALCreateVector( &status, &vector, 9999 );
 LALCreateRandomParams( &status, &params, seed );
 
-/* fill vector with uniform deviates */
+/\* fill vector with uniform deviates *\/
 for ( i = 0; i < vector->length; ++i )
 {
   LALUniformDeviate( &status, vector->data + i, params );
 }
 
-/* fill vector with normal deviates */
+/\* fill vector with normal deviates *\/
 LALNormalDeviates( &status, vector, params );
 
 LALDestroyRandomParams( &status, &params );
 LALDestroyVector( &status, &vector );
-\end{verbatim}
+\endcode
 
-\subsubsection*{Algorithm}
+\heading{Algorithm}
 
-This is an implementation of the random number generators \verb+ran1+ and
-\verb+gasdev+ described in Numerical Recipes~\cite{ptvf:1992}.
+This is an implementation of the random number generators \c ran1 and
+\c gasdev described in Numerical Recipes [\ref ptvf1992].
 
-\subsubsection*{Uses}
-
-\subsubsection*{Notes}
-\vfill{\footnotesize\input{RandomCV}}
-
-</lalLaTeX>
-
-#endif /* autodoc block */
-
-
-#include <time.h>
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/Random.h>
-#include <lal/Sequence.h>
-#include <lal/XLALError.h>
+*/
+/*@{*/
 
 static const INT4 a = 16807;
 static const INT4 m = 2147483647;
@@ -281,14 +261,14 @@ REAL4 XLALNormalDeviate( RandomParams *params )
  */
 
 
-/* <lalVerbatim file="RandomCP"> */
+
 void
 LALCreateRandomParams (
     LALStatus     *status,
     RandomParams **params,
     INT4           seed
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -305,13 +285,13 @@ LALCreateRandomParams (
 }
 
 
-/* <lalVerbatim file="RandomCP"> */
+
 void
 LALDestroyRandomParams (
     LALStatus     *status,
     RandomParams **params
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -324,14 +304,14 @@ LALDestroyRandomParams (
 }
 
 
-/* <lalVerbatim file="RandomCP"> */
+
 void
 LALUniformDeviate (
     LALStatus    *status,
     REAL4        *deviate,
     RandomParams *params
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(status);
 
   ASSERT (deviate, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -348,14 +328,14 @@ LALUniformDeviate (
 }
 
 
-/* <lalVerbatim file="RandomCP"> */
+
 void
 LALNormalDeviates (
     LALStatus    *status,
     REAL4Vector  *deviates,
     RandomParams *params
     )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(status);
 
   ASSERT (params, status, RANDOMH_ENULL, RANDOMH_MSGENULL);
@@ -380,3 +360,4 @@ LALNormalDeviates (
 
   RETURN (status);
 }
+/*@}*/

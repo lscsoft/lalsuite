@@ -223,6 +223,27 @@ class InspiralJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
+
+class InspiralCkptJob(InspiralAnalysisJob):
+  """
+  A lalapps_inspiral job used by the inspiral pipeline. The static options
+  are read from the sections [data] and [inspiral] in the ini file. The
+  stdout and stderr from the job are directed to the logs directory. The job
+  runs in the universe specfied in the ini file. The path to the executable
+  is determined from the ini file.
+  This one checkpoints.
+  """
+  def __init__(self,cp,dax=False):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    exec_name = 'inspiral'
+    sections = []
+    extension = 'xml'
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    self.add_short_opt('_condor_relocatable', '')
+
+
 class PTFInspiralJob(InspiralAnalysisJob):
   """
   A lalapps_inspiral job used by the inspiral pipeline. The static options
@@ -599,6 +620,7 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
       self.set_pad_data(int(opts['pad-data']))
 
     self.__zip_output = ("write-compress" in opts)
+    self.__data_checkpoint = False
 
   def set_zip_output(self,zip):
     """
@@ -645,9 +667,35 @@ class InspiralAnalysisNode(pipeline.AnalysisNode, pipeline.CondorDAGNode):
     if self.get_zip_output():
       filename += '.gz'
 
+    if self.__data_checkpoint is False:
+      self.add_output_file(filename)
+
+    return filename
+
+  def get_checkpoint_image(self):
+    """
+    Returns the file name of condor checkpoint from the inspiral code. This is
+    obtained from the get_output_base() method, with the correct extension added.
+    """
+    filename = self.get_output_base()
+    filename += '.ckpt'
+
     self.add_output_file(filename)
 
     return filename
+
+  def set_data_checkpoint(self):
+    """
+    Lets it be known that data checkpointing exists
+    """
+    self.add_var_opt('data-checkpoint','')
+    self.__data_checkpoint = True
+
+  def get_data_checkpoint(self):
+    """
+    Lets it be known that data checkpointing exists
+    """
+    return self.__data_checkpoint
 
   def get_output_cache(self):
     """
@@ -906,6 +954,58 @@ class InspiralNode(InspiralAnalysisNode):
     Returns the injection file
     """
     return self.__injections
+
+
+class InspiralCkptNode(InspiralAnalysisNode):
+  """
+  An InspiralCkptNode runs an instance of the inspiral code in a Condor DAG.
+  It then checkpoints to a file. This sets the file.
+  """
+  def __init__(self,job):
+    """
+    job = A CondorDAGJob that can run an instance of lalapps_inspiral.
+    """
+    InspiralAnalysisNode.__init__(self,job)
+    self.__outfile = None
+    self.__injections = None
+
+  def set_output(self, outfile):
+    """
+    Sets a placeholder output name which we can use to pass through the
+    name of the output file from the original inspiral job.
+    """
+    self.__outfile = outfile
+
+  def get_output(self):
+    """
+    Returns the filename from set_output().
+    """ 
+    if self.__outfile:
+      self.add_output_file(self.__outfile)
+    return self.__outfile
+
+  def set_injections(self, injections):
+    """
+    Set the injection file for this node
+    """
+    self.__injections = injections
+
+  def get_injections(self):
+    """
+    Returns the injection file
+    """
+    return self.__injections
+
+  def set_checkpoint_image(self, ckptin):
+    """
+    Adds the argument -_condor_restart for the
+    cases in which we want to checkpoint and grabs the
+    checkpoint image name from get_checkpoint_image in
+    the InspiralAnalysisCode section.
+    """
+    self.add_input_file(ckptin)
+    self.add_var_opt('_condor_restart', ckptin, short=True)
+
 
 class PTFInspiralNode(InspiralAnalysisNode):
   """
@@ -3394,7 +3494,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
     self.add_var_opt("output-cache", file)
 
   def set_output_tag(self, tag):
-    self.add_var_opt("output-tag",tag)
+    self.add_var_opt("user-tag",tag)
 
   def set_veto_segments_name(self, name):
     self.add_var_opt("veto-segments-name", name)

@@ -17,100 +17,83 @@
 *  MA  02111-1307  USA
 */
 
-/*************************** <lalVerbatim file="DetInverseInternalCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{DetInverseInternal.c}}
-\label{ss:DetInverseInternal.c}
-
-Internal routines used to compute matrix determinants and inverses.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DetInverseInternalCP}
-\idx{LALSLUDecomp()}
-\idx{LALSLUBackSub()}
-\idx{LALDLUDecomp()}
-\idx{LALDLUBackSub()}
-
-\subsubsection*{Description}
-
-These functions are called by the routines in \verb@DetInverse.c@ to
-compute the determinant and inverse of a nondegenerate square matrix
-\verb@*matrix@.  They are useful routines in their own right, though,
-so they are made publically available.
-
-\verb@LALSLUDecomp()@ and \verb@LALDLUDecomp()@ replace \verb@*matrix@
-with an LU decomposition of a \emph{row-wise permutation} of itself.
-The output parameter \verb@*indx@ stores the permutation, and the
-output \verb@*sgn@ records the sign of the permutation.
-
-\verb@LALSLUBackSub()@ and \verb@LALDLUBackSub()@ take the permuted
-LU-decomposed matrix returned by the above routine, and
-back-substitute the vector \verb@*vector@ representing $\mathsf{v}^a$
-in Eq.~(\ref{eq:linear-system}), to compute the vector $\mathsf{x}^b$.
-This is returned in-place in \verb@*vector@.  The input parameter
-\verb@*indx@ is the list of row permutations returned by the above
-routines.
-
-\subsubsection*{Algorithm}
-
-LU decomposition is performed by Crout's algorithm, described in
-Sec.~2.3 of~\cite{ptvf:1992}; the routines in this module are
-essentially re-implementations of the Numerical Recipes routines
-\verb@ludcmp()@ and \verb@lubksub()@.  For large $N$, their operation
-counts are approximately $N^3/3$ and $N^2$, respectively.
-
-One difference between \verb@ludcmp()@ in~\cite{ptvf:1992} and the
-routines \verb@LALSLUDecomp()@ and \verb@LALDLUDecomp()@ in this
-module is the way in which singular matrices are handled.
-In~\cite{ptvf:1992}, there is a distinction between between a
-manifestly singular matrix (where an entire row of the matrix is zero)
-and a numerically singular matrix (if a diagonal element in the
-decomposed matrix turns out to be zero).  In the former case, they
-raise an error signal; in the latter, they replace the offending
-element with a ``tiny'' but nonzero number and continue.  This
-treatment does not strike the present author as satisfactory.
-
-Instead, the routines \verb@LALSLUDecomp()@ and \verb@LALDLUDecomp()@
-will \emph{always} return successfully, even with a singular matrix,
-but will \emph{not} ``adjust away'' a numerical singularity.  Instead,
-they will signal the presence of the singularity in two ways: First,
-they will set the permutation sign \verb@*sgn@ to zero; second, they
-will set \emph{all} elements of the \verb@*indx@ vector yo zero.  This
-ensures that routines computing the determinant (whose sign depends on
-\verb@*sgn@) will correctly give a zero determinant, while the
-meaningless \verb@*indx@ provides a simple sanity check for routines
-such as \verb@LALSLUBackSub()@ and \verb@LALDLUBackSub()@ that attempt
-to invert the linear system.  Note that the returned value of
-\verb@*matrix@ will be meaningless garbage.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALMalloc()                     LALFree()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DetInverseInternalCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/MatrixUtils.h>
 
-/* <lalVerbatim file="DetInverseInternalCP"> */
+
+
+/**
+\defgroup \DetInverseInternal_c Module DetInverseInternal.c
+\ingroup MatrixUtils_h
+\author Creighton, T. D.
+
+\brief Internal routines used to compute matrix determinants and inverses.
+
+\heading{Description}
+
+These functions are called by the routines in \ref DetInverse_c to
+compute the determinant and inverse of a nondegenerate square matrix
+<tt>*matrix</tt>.  They are useful routines in their own right, though,
+so they are made publically available.
+
+<tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> replace <tt>*matrix</tt>
+with an LU decomposition of a <em>row-wise permutation</em> of itself.
+The output parameter <tt>*indx</tt> stores the permutation, and the
+output <tt>*sgn</tt> records the sign of the permutation.
+
+<tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> take the permuted
+LU-decomposed matrix returned by the above routine, and
+back-substitute the vector <tt>*vector</tt> representing \f$\mathsf{v}^a\f$
+in Eq.\eqref{eq_linear_system}, to compute the vector \f$\mathsf{x}^b\f$.
+This is returned in-place in <tt>*vector</tt>.  The input parameter
+<tt>*indx</tt> is the list of row permutations returned by the above
+routines.
+
+\heading{Algorithm}
+
+LU decomposition is performed by Crout's algorithm, described in
+Sec. 2.3 of [\ref ptvf1992]; the routines in this module are
+essentially re-implementations of the Numerical Recipes routines
+<tt>ludcmp()</tt> and <tt>lubksub()</tt>.  For large \f$N\f$, their operation
+counts are approximately \f$N^3/3\f$ and \f$N^2\f$, respectively.
+
+One difference between <tt>ludcmp()</tt> in [\ref ptvf1992] and the
+routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt> in this
+module is the way in which singular matrices are handled.
+In [\ref ptvf1992], there is a distinction between between a
+manifestly singular matrix (where an entire row of the matrix is zero)
+and a numerically singular matrix (if a diagonal element in the
+decomposed matrix turns out to be zero).  In the former case, they
+raise an error signal; in the latter, they replace the offending
+element with a tiny but nonzero number and continue.  This
+treatment does not strike the present author as satisfactory.
+
+Instead, the routines <tt>LALSLUDecomp()</tt> and <tt>LALDLUDecomp()</tt>
+will \e always return successfully, even with a singular matrix,
+but will \e not adjust away a numerical singularity.  Instead,
+they will signal the presence of the singularity in two ways: First,
+they will set the permutation sign <tt>*sgn</tt> to zero; second, they
+will set \e all elements of the <tt>*indx</tt> vector yo zero.  This
+ensures that routines computing the determinant (whose sign depends on
+<tt>*sgn</tt>) will correctly give a zero determinant, while the
+meaningless <tt>*indx</tt> provides a simple sanity check for routines
+such as <tt>LALSLUBackSub()</tt> and <tt>LALDLUBackSub()</tt> that attempt
+to invert the linear system.  Note that the returned value of
+<tt>*matrix</tt> will be meaningless garbage.
+
+*/
+/*@{*/
+
+
+/** \see See \ref DetInverseInternal_c for documentation */
 void
 LALSLUDecomp( LALStatus   *stat,
 	      INT2        *sgn,
 	      REAL4Array  *matrix,
 	      UINT4Vector *indx )
-{ /* </lalVerbatim> */
+{
   UINT4 n, imax = 0;    /* matrix dimension and pivot index */
   UINT4 i, j, k;        /* dimension indecies */
   UINT4 ij, ik, kj, jk; /* matrix array indecies */
@@ -217,13 +200,13 @@ LALSLUDecomp( LALStatus   *stat,
 }
 
 
-/* <lalVerbatim file="DetInverseInternalCP"> */
+/** \see See \ref DetInverseInternal_c for documentation */
 void
 LALSLUBackSub( LALStatus   *stat,
 	       REAL4Vector *vector,
 	       REAL4Array  *matrix,
 	       UINT4Vector *indx )
-{ /* </lalVerbatim> */
+{
   INT4 n;             /* matrix dimension */
   INT4 i, j;          /* dimension indecies */
   INT4 ii, ij;        /* matrix array indecies */
@@ -290,13 +273,13 @@ LALSLUBackSub( LALStatus   *stat,
 }
 
 
-/* <lalVerbatim file="DetInverseInternalCP"> */
+/** \see See \ref DetInverseInternal_c for documentation */
 void
 LALDLUDecomp( LALStatus   *stat,
 	      INT2        *sgn,
 	      REAL8Array  *matrix,
 	      UINT4Vector *indx )
-{ /* </lalVerbatim> */
+{
   UINT4 n, imax = 0;    /* matrix dimension and pivot index */
   UINT4 i, j, k;        /* dimension indecies */
   UINT4 ij, ik, kj, jk; /* matrix array indecies */
@@ -403,13 +386,13 @@ LALDLUDecomp( LALStatus   *stat,
 }
 
 
-/* <lalVerbatim file="DetInverseInternalCP"> */
+/** \see See \ref DetInverseInternal_c for documentation */
 void
 LALDLUBackSub( LALStatus   *stat,
 	       REAL8Vector *vector,
 	       REAL8Array  *matrix,
 	       UINT4Vector *indx )
-{ /* </lalVerbatim> */
+{
   INT4 n;             /* matrix dimension */
   INT4 i, j;          /* dimension indecies */
   INT4 ii, ij;        /* matrix array indecies */
@@ -474,3 +457,4 @@ LALDLUBackSub( LALStatus   *stat,
   }
   RETURN( stat );
 }
+/*@}*/

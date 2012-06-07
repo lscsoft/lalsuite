@@ -5,7 +5,5 @@ libtdfilter_la_SOURCES = \
         ButterworthTimeSeries.c  DestroyIIRFilter.c       IIRFilterVector.c \
         CreateIIRFilter.c        DestroyZPGFilter.c       IIRFilterVectorR.c
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-dvi-local: .dvi-dep
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =

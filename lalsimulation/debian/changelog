@@ -1,3 +1,15 @@
+lalsimulation (0.3.0-1) unstable; urgency=low
+
+  * LALSimulation 0.3.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 11 May 2012 11:52:29 -0500
+
+lalsimulation (0.2.0-1) unstable; urgency=low
+
+  * LALSimulation 0.2.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 10 Apr 2012 11:29:57 -0500
+
 lalsimulation (0.1.1-1) unstable; urgency=low
 
   * LALSimulation 0.1.1

@@ -353,7 +353,7 @@ int XFUNC ( STYPE *series, FrStream *stream )
   }
 
   if ( gap ) /* there was a gap in the data */
-    stream->state |= LAL_FR_GAP;
+    stream->state = (FrState)( stream->state | LAL_FR_GAP);
   /* FIXME: does this need to cause a failure if mode is set to fail on gaps? */
 
   if ( stream->state & LAL_FR_ERR )
@@ -556,7 +556,7 @@ FUNC (
 
   if ( gap ) /* there was a gap in the data */
   {
-    stream->state |= LAL_FR_GAP;
+    stream->state = (FrState)( stream->state | LAL_FR_GAP );
   }
 
   if ( stream->state & LAL_FR_ERR )

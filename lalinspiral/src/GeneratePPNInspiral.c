@@ -17,10 +17,130 @@
 *  MA  02111-1307  USA
 */
 
+/*********************************************************************
+ * PREAMBLE                                                          *
+ *********************************************************************/
+
+#include <math.h>
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/Units.h>
+#include <lal/FindRoot.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GeneratePPNInspiral.h>
+
+/* Define some constants used in this module. */
+#define MAXORDER 6        /* Maximum number of N and PN terms */
+#define BUFFSIZE 1024     /* Number of timesteps buffered */
+#define ACCURACY (1.0e-6) /* Accuracy of root finder */
+#define TWOTHIRDS (0.6666666667) /* 2/3 */
+#define ONEMINUSEPS (0.99999)    /* Something close to 1 */
+
+/* A macro to computing the (normalized) frequency.  It appears in
+   many places, including in the main loop, and I don't want the
+   overhead of a function call.  The following variables are required
+   to be defined and set outside of the macro:
+
+   REAL4 c0, c1, c2, c3, c4, c5;   PN frequency coefficients
+   BOOLEAN b0, b1, b2, b3, b4, b5; whether to include each PN term
+
+   The following variables must be defined outside the macro, but are
+   set inside it:
+
+   REAL4 x2, x3, x4, x5;  the input x raised to power 2, 3, 4, and 5 */
+#define FREQ( f, x )                                                 \
+do {                                                                 \
+  x2 = (x)*(x);                                                      \
+  x3 = x2*(x);                                                       \
+  x4 = x3*(x);                                                       \
+  x5 = x4*(x);                                                       \
+  (f) = 0;                                                           \
+  if ( b0 )                                                          \
+    (f) += c0;                                                       \
+  if ( b1 )                                                          \
+    (f) += c1*(x);                                                   \
+  if ( b2 )                                                          \
+    (f) += c2*x2;                                                    \
+  if ( b3 )                                                          \
+    (f) += c3*x3;                                                    \
+  if ( b4 )                                                          \
+    (f) += c4*x4;                                                    \
+  if ( b5 )                                                          \
+    (f) += c5*x5;                                                    \
+  (f) *= x3;                                                         \
+} while (0)
+
+/* Definition of a data structure used by FreqDiff() below. */
+typedef struct tagFreqDiffParamStruc {
+  REAL4 *c;   /* PN coefficients of frequency series */
+  BOOLEAN *b; /* whether to include each PN term */
+  REAL4 y0;   /* normalized frequency being sought */
+} FreqDiffParamStruc;
+
+/* A function to compute the difference between the current and
+   requested normalized frequency, used by the root bisector. */
+static void
+FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
+{
+  FreqDiffParamStruc *par;        /* *p cast to its proper type */
+  REAL4 c0, c1, c2, c3, c4, c5;   /* PN frequency coefficients */
+  BOOLEAN b0, b1, b2, b3, b4, b5; /* whether each order is nonzero */
+  REAL4 x2, x3, x4, x5;           /* x^2, x^3, x^4, and x^5 */
+
+  INITSTATUS(stat);
+  ASSERT( p, stat, 1, "Null pointer" );
+
+  /* Set constants used by FREQ() macro. */
+  par = (FreqDiffParamStruc *)( p );
+  c0 = par->c[0];
+  c1 = par->c[1];
+  c2 = par->c[2];
+  c3 = par->c[3];
+  c4 = par->c[4];
+  c5 = par->c[5];
+  b0 = par->b[0];
+  b1 = par->b[1];
+  b2 = par->b[2];
+  b3 = par->b[3];
+  b4 = par->b[4];
+  b5 = par->b[5];
+
+  /* Evaluate frequency and compare with reference. */
+  FREQ( *y, x );
+  *y -= par->y0;
+  RETURN( stat );
+}
+
+/* Definition of a data buffer list for storing the waveform. */
+typedef struct tagPPNInspiralBuffer {
+  REAL4 a[2*BUFFSIZE];               /* amplitude data */
+  REAL8 phi[BUFFSIZE];               /* phase data */
+  REAL4 f[BUFFSIZE];                 /* frequency data */
+  struct tagPPNInspiralBuffer *next; /* next buffer in list */
+} PPNInspiralBuffer;
+
+/* Definition of a macro to free the tail of said list, from a given
+   node onward. */
+#define FREELIST( node )                                             \
+do {                                                                 \
+  PPNInspiralBuffer *herePtr = (node);                               \
+  while ( herePtr ) {                                                \
+    PPNInspiralBuffer *lastPtr = herePtr;                            \
+    herePtr = herePtr->next;                                         \
+    LALFree( lastPtr );                                              \
+  }                                                                  \
+} while (0)
+
+
+/*********************************************************************
+ * MAIN FUNCTION                                                     *
+ *********************************************************************/
+
 /**
 \author Creighton, T. D.
-\file
-\ingroup GeneratePPNInspiral_h
 
 \brief Computes a parametrized post-Newtonian inspiral waveform.
 
@@ -210,155 +330,18 @@ t/2)^2\approx(\pi/4)\Delta f\Delta t\f$, where \f$\Delta f\f$ is the
 frequency shift over the timestep.  Thus in general we would like to
 have
 \f[
-\Delta f \Delta t \lessim 2
+\Delta f \Delta t \lesssim 2
 \f]
 for our linear interpolation to be valid.  This routine helps out by
 setting the output parameter field <tt>params->dfdt</tt> equal to the
 maximum value of \f$\Delta f\Delta t\f$ encountered during the
 integration.
-
-\heading{Uses}
-\code
-LALMalloc()                   LALFree()
-LALSCreateVectorSequence()    LALSDestroyVectorSequence()
-LALSCreateVector()            LALSDestroyVector()
-LALDCreateVector()            LALDDestroyVector()
-LALSBisectionFindRoot()       snprintf()
-\endcode
-
-\heading{Notes}
-
-
-
 */
-
-/*********************************************************************
- * PREAMBLE                                                          *
- *********************************************************************/
-
-#include <math.h>
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/Units.h>
-#include <lal/FindRoot.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/GeneratePPNInspiral.h>
-
-/* Define some constants used in this module. */
-#define MAXORDER 6        /* Maximum number of N and PN terms */
-#define BUFFSIZE 1024     /* Number of timesteps buffered */
-#define ACCURACY (1.0e-6) /* Accuracy of root finder */
-#define TWOTHIRDS (0.6666666667) /* 2/3 */
-#define ONEMINUSEPS (0.99999)    /* Something close to 1 */
-
-/* A macro to computing the (normalized) frequency.  It appears in
-   many places, including in the main loop, and I don't want the
-   overhead of a function call.  The following variables are required
-   to be defined and set outside of the macro:
-
-   REAL4 c0, c1, c2, c3, c4, c5;   PN frequency coefficients
-   BOOLEAN b0, b1, b2, b3, b4, b5; whether to include each PN term
-
-   The following variables must be defined outside the macro, but are
-   set inside it:
-
-   REAL4 x2, x3, x4, x5;  the input x raised to power 2, 3, 4, and 5 */
-#define FREQ( f, x )                                                 \
-do {                                                                 \
-  x2 = (x)*(x);                                                      \
-  x3 = x2*(x);                                                       \
-  x4 = x3*(x);                                                       \
-  x5 = x4*(x);                                                       \
-  (f) = 0;                                                           \
-  if ( b0 )                                                          \
-    (f) += c0;                                                       \
-  if ( b1 )                                                          \
-    (f) += c1*(x);                                                   \
-  if ( b2 )                                                          \
-    (f) += c2*x2;                                                    \
-  if ( b3 )                                                          \
-    (f) += c3*x3;                                                    \
-  if ( b4 )                                                          \
-    (f) += c4*x4;                                                    \
-  if ( b5 )                                                          \
-    (f) += c5*x5;                                                    \
-  (f) *= x3;                                                         \
-} while (0)
-
-/* Definition of a data structure used by FreqDiff() below. */
-typedef struct tagFreqDiffParamStruc {
-  REAL4 *c;   /* PN coefficients of frequency series */
-  BOOLEAN *b; /* whether to include each PN term */
-  REAL4 y0;   /* normalized frequency being sought */
-} FreqDiffParamStruc;
-
-/* A function to compute the difference between the current and
-   requested normalized frequency, used by the root bisector. */
-static void
-FreqDiff( LALStatus *stat, REAL4 *y, REAL4 x, void *p )
-{
-  FreqDiffParamStruc *par;        /* *p cast to its proper type */
-  REAL4 c0, c1, c2, c3, c4, c5;   /* PN frequency coefficients */
-  BOOLEAN b0, b1, b2, b3, b4, b5; /* whether each order is nonzero */
-  REAL4 x2, x3, x4, x5;           /* x^2, x^3, x^4, and x^5 */
-
-  INITSTATUS(stat);
-  ASSERT( p, stat, 1, "Null pointer" );
-
-  /* Set constants used by FREQ() macro. */
-  par = (FreqDiffParamStruc *)( p );
-  c0 = par->c[0];
-  c1 = par->c[1];
-  c2 = par->c[2];
-  c3 = par->c[3];
-  c4 = par->c[4];
-  c5 = par->c[5];
-  b0 = par->b[0];
-  b1 = par->b[1];
-  b2 = par->b[2];
-  b3 = par->b[3];
-  b4 = par->b[4];
-  b5 = par->b[5];
-
-  /* Evaluate frequency and compare with reference. */
-  FREQ( *y, x );
-  *y -= par->y0;
-  RETURN( stat );
-}
-
-/* Definition of a data buffer list for storing the waveform. */
-typedef struct tagPPNInspiralBuffer {
-  REAL4 a[2*BUFFSIZE];               /* amplitude data */
-  REAL8 phi[BUFFSIZE];               /* phase data */
-  REAL4 f[BUFFSIZE];                 /* frequency data */
-  struct tagPPNInspiralBuffer *next; /* next buffer in list */
-} PPNInspiralBuffer;
-
-/* Definition of a macro to free the tail of said list, from a given
-   node onward. */
-#define FREELIST( node )                                             \
-do {                                                                 \
-  PPNInspiralBuffer *herePtr = (node);                               \
-  while ( herePtr ) {                                                \
-    PPNInspiralBuffer *lastPtr = herePtr;                            \
-    herePtr = herePtr->next;                                         \
-    LALFree( lastPtr );                                              \
-  }                                                                  \
-} while (0)
-
-
-/*********************************************************************
- * MAIN FUNCTION                                                     *
- *********************************************************************/
-
-
 void
-LALGeneratePPNInspiral( LALStatus     *stat,
-			CoherentGW    *output,
-		        PPNParamStruc *params )
+LALGeneratePPNInspiral( LALStatus     *stat,	/**< UNDOCUMENTED */
+			CoherentGW    *output,	/**< UNDOCUMENTED */
+		        PPNParamStruc *params 	/**< UNDOCUMENTED */
+                        )
 {
 
   /* System-derived constants. */

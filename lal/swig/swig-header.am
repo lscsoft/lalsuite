@@ -8,7 +8,7 @@ swig_iface_header = $(top_builddir)/swig/swig-iface-header-$(subst /,-,$(subdir)
 
 # generate SWIG interface header include file
 all install : $(swig_iface_header)
-$(swig_iface_header) : $(swig_headers)
+$(swig_iface_header) : $(swig_headers) Makefile
 	@echo "// $(subdir)" > $@
 	@for file in $(swig_headers); do echo 'swiglal_include(lal/'"$$file"')' >> $@; done
 

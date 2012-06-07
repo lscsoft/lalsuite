@@ -170,7 +170,10 @@ parser.add_option("-x", "--dax",action="store_true",\
     default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX")
 
 parser.add_option("-g", "--grid-site",action="store",type="string",\
-     metavar="SITE", help="Specify remote site in conjunction with --dax option")
+    metavar="SITE", help="Specify remote site in conjunction with --dax option")
+
+parser.add_option("--data-checkpoint", action="store_true",default=False,\
+    help="checkpoint the inspiral code")
 
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
@@ -367,7 +370,7 @@ fh.close()
 
 ##############################################################################
 # create the DAG writing the log to the specified directory
-dag = pipeline.CondorDAG(logfile)
+dag = pipeline.CondorDAG(logfile,dax=opts.dax)
 dag.set_dag_file(basename)
 dag.set_dax_file(basename)
 
@@ -538,7 +541,8 @@ if opts.complete_cache:
       print "Running inspiral hipe for analysis run"
       hipeAnalysisNode = inspiralutils.hipe_setup(fullDir, cp, ifos, \
           opts.log_path,dax=opts.dax, \
-          tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+          tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir,
+          data_checkpoint = opts.data_checkpoint)
       for cacheFile in hipeAnalysisNode.get_output_files():
         cachelist.append(fullDir + "/" + cacheFile)
       dag.add_node(hipeAnalysisNode)
@@ -566,7 +570,8 @@ if opts.complete_cache:
       if opts.run_search:
         hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
              opts.log_path, injSeed, dax=opts.dax, \
-             tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+             tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir,
+             data_checkpoint = opts.data_checkpoint)
         for cacheFile in hipeInjNode[injDir].get_output_files():
           cachelist.append(injDir + "/" + cacheFile)
         dag.add_node(hipeInjNode[injDir])
@@ -597,7 +602,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse playground run"
     hipePlayNode = inspiralutils.hipe_setup("playground_reverse", cp, ifos, \
          opts.log_path, playOnly = True, dax = opts.dax, \
-         tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+         tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir )
     for cacheFile in hipePlayNode.get_output_files():
       cachelist.append("playground_reverse/" + cacheFile)
     dag.add_node(hipePlayNode)
@@ -609,7 +614,7 @@ if opts.reverse_analysis:
     print "Running inspiral hipe for reverse analysis run"
     hipeAnalysisNode = inspiralutils.hipe_setup("full_data_reverse", cp, ifos, \
         opts.log_path, dax=opts.dax, \
-        tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+        tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir )
     for cacheFile in hipeAnalysisNode.get_output_files():
       cachelist.append("full_data_reverse/" + cacheFile)
     dag.add_node(hipeAnalysisNode)
@@ -623,7 +628,7 @@ if opts.reverse_analysis:
     for (injDir, injSeed) in cp.items("injections_reverse"):
       hipeInjNode[injDir] = inspiralutils.hipe_setup(injDir, cp, ifos, \
            opts.log_path, injSeed, dax=opts.dax, \
-           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir)
+           tmpltbankCache = tmpltbank_cache, local_exec_dir=tmp_exec_dir )
       for cacheFile in hipeInjNode[injDir].get_output_files():
         cachelist.append(injDir + "/" + cacheFile)
       dag.add_node(hipeInjNode[injDir])
@@ -677,7 +682,8 @@ if opts.complete_cache:
         print "Running inspiral hipe for full data with vetoes"
         hipeAnalysisVetoNode[category] = inspiralutils.hipe_setup(fullDir, \
             cp, ifos, opts.log_path, vetoCat = category, vetoFiles = dqVetoes, \
-            dax = opts.dax, local_exec_dir=tmp_exec_dir)
+            dax = opts.dax, local_exec_dir=tmp_exec_dir,
+            data_checkpoint = opts.data_checkpoint)
         for cacheFile in hipeAnalysisVetoNode[category].get_output_files():
           cachelist.append(fullDir + "/" + cacheFile)
         dag.add_node(hipeAnalysisVetoNode[category])
@@ -708,7 +714,8 @@ if opts.complete_cache:
           hipeInjVetoNode[category][injDir] = inspiralutils.hipe_setup(injDir, \
               cp, ifos, opts.log_path, \
               injSeed= injSeed, vetoCat = category, vetoFiles = dqVetoes, \
-              dax=opts.dax, local_exec_dir=tmp_exec_dir )
+              dax=opts.dax, local_exec_dir=tmp_exec_dir,
+              data_checkpoint = opts.data_checkpoint)
           for cacheFile in hipeInjVetoNode[category][injDir].get_output_files():
             cachelist.append(injDir + "/" + cacheFile)
           dag.add_node(hipeInjVetoNode[category][injDir])
@@ -1074,14 +1081,99 @@ if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG}.lock ] ; then
   exit 1
 fi
 
-ID=`id -u`
+# The theory here is to find the longest living
+# proxy certificate and copy it into the default
+# location so that workflows can find it even after
+# the user has logged out. This is necessary because
+# Condor and condor_dagman do not yet properly cache
+# and manage credentials to make them available to all
+# jobs in the workflow, and other tools make assumptions
+# about where a proxy, service, or user certificate is located 
+# on the file system and do not properly find valid 
+# existing credentials using the proper GSI search algorithm.
+#
+# This is not a great solution because there can be quite
+# valid reasons to have multiple credentials with different
+# lifetimes, and it presents a security risk to circumvent
+# the state and move files around without knowing why the
+# state is the way it is.
+#
+# But to support LIGO users we are doing it at this time
+# until better tooling is available.
+#
+# Assumes grid-proxy-info is in PATH
 
-if [ -n "$X509_USER_PROXY" ] && [ ! -e /tmp/x509up_u"$ID" ] ; then
-   cp $X509_USER_PROXY /tmp/x509up_u${ID}
+if ! `/usr/bin/which grid-proxy-info > /dev/null 2>&1` ; then
+    echo "ERROR: cannot find grid-proxy-info in PATH";
+    exit 1
 fi
 
-export X509_USER_PROXY=/tmp/x509up_u${ID}
+# default location for proxy certificates based on uid
+x509_default="/tmp/x509up_u`id -u`"
+
+# if X509_USER_PROXY is defined and has a lifetime of > 1 hour
+# compare to any existing default and copy it into place if 
+# and only if its lifetime is greater than the default
+if [ -n "$X509_USER_PROXY" ] ; then
+    echo "X509_USER_PROXY=${X509_USER_PROXY}"
+    if `grid-proxy-info -file ${X509_USER_PROXY} -exists -valid 1:0` ; then
+        nsec=`grid-proxy-info -file ${X509_USER_PROXY} -timeleft`
+        echo "Lifetime of ${X509_USER_PROXY} ${nsec} seconds"
+        if [ -e ${x509_default} ] ; then
+            echo "Proxy exists at default location"
+            if `grid-proxy-info -file ${x509_default} -exists -valid 1:0` ; then
+                nsec=`grid-proxy-info -file ${X509_USER_PROXY} -timeleft`
+                echo "Lifetime of default ${nsec} seconds"
+                env_life=`grid-proxy-info -file ${X509_USER_PROXY} -timeleft`
+                def_life=`grid-proxy-info -file ${x509_default} -timeleft`
+                if [ ${env_life} -gt ${def_life} ] ; then
+                    cp ${X509_USER_PROXY} ${x509_default}
+                    echo "Lifetime of ${X509_USER_PROXY} > default"
+                    echo "Copied ${X509_USER_PROXY} into default location"
+                else
+                    echo "Lifetime of default > ${X509_USER_PROXY}"
+                    echo "Leaving default in place"
+                fi
+            else
+                echo "Lifetime of default < 1 hour"
+                cp ${X509_USER_PROXY} ${x509_default}
+                echo "Lifetime of ${X509_USER_PROXY} > default"
+                echo "Copied ${X509_USER_PROXY} into default location"
+            fi
+        else
+            echo "No proxy at default location"
+            cp ${X509_USER_PROXY} $x509_default
+            echo "Copied ${X509_USER_PROXY} into default location"
+        fi
+    else
+        echo "Lifetime of ${X509_USER_PROXY} < 1 hour"
+        echo "Ignoring ${X509_USER_PROXY}"
+        echo "Assuming default location for proxy"
+    fi
+else
+    echo "X509_USER_PROXY not set"
+    echo "Assuming default location for proxy"
+fi
+
+# when we get here we can assume that if a valid proxy with lifetime > 1 exists
+# then it is in the default location, so test for it now
+valid=`grid-proxy-info -file ${x509_default} -exists -valid 1:0 > /dev/null 2>&1`
+if ! ${valid} ; then
+    echo "ERROR: could not find proxy with lifetime > 1 hour"
+    exit 1
+fi
+
+# if we get here valid proxy with lifetime > 1 hour was 
+# found so print out details for the record
+grid-proxy-info -file ${x509_default} -all
+
+# set X509_USER_PROXY to the default now
+X509_USER_PROXY=${x509_default}
+export X509_USER_PROXY
+
+# set specific condor variables needed by pegasus
 export _CONDOR_DAGMAN_LOG_ON_NFS_IS_ERROR=FALSE
+export _CONDOR_DAGMAN_COPY_TO_SPOOL=False
 
 if [ -f ${TMP_EXEC_DIR}/${UEBER_CONCRETE_DAG} ] ; then
   pegasus-run --conf ${IHOPE_RUN_DIR}/pegasus.properties --nodatabase ${TMP_EXEC_DIR}/.
@@ -1156,15 +1248,12 @@ pegasus.catalog.replica.file=%s
 
 pegasus.catalog.site=XML3
 
-pegasus.gridstart.kickstart.stat=false
-
 pegasus.transfer.force=true
 pegasus.transfer.links=true
 pegasus.transfer.refiner=Bundle
-pegasus.transfer.symlink.impl=Symlink
 
-pegasus.dagman.retry=3
-pegasus.dagman.maxpre=1
+dagman.retry=3
+dagman.maxpre=1
 pegasus.condor.arguments.quote=true
 
 pegasus.selector.site=RoundRobin
@@ -1177,6 +1266,20 @@ pegasus.dir.submit.logs=%s
 
 pegasus.catalog.site.file=%s/site-local.xml
 """ % (os.path.join(os.getcwd(),peg_frame_cache),opts.log_path,os.getcwd())
+
+if opts.dax:
+  print >> pegprop_fh, """\
+
+# pegasus 4.x variables
+pegasus.data.configuration=condorio
+"""
+else:
+  print >> pegprop_fh, """\
+
+# pegasus 3.x variables
+pegasus.gridstart.kickstart.stat=false
+pegasus.transfer.symlink.impl=Symlink"""
+
 pegprop_fh.close()
 
 ##############################################################################

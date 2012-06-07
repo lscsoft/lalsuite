@@ -11,7 +11,7 @@ mfd_code="${injectdir}lalapps_Makefakedata_v4"
 saf_code="${builddir}lalapps_SemiAnalyticF"
 pfs_code="${builddir}lalapps_PredictFStat"
 
-SFTdir="./testSFTs"
+SFTdir="./testPredictFStat_sfts"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then

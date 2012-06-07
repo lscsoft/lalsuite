@@ -17,74 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-#if 0 /* autodoc block */
-<lalVerbatim file="SegmentsIOCV">
-Author: Peter Shawhan
-</lalVerbatim>
-
-<lalLaTeX>
-\subsection{Module \texttt{SegmentsIO.c}}
-
-Segment list input/output routines in the \texttt{lalsupport} library.
-
-\subsection*{Prototypes}
-\idx{LALSegListRead()}
-\idx{LALSegListWrite()}
-\input{SegmentsIOCP}
-
-\subsection*{Description}
-
-\subsubsection*{Reading a segment list file}
-
-The function \verb+LALSegListRead()+ reads a segment list from a file and
-appends the segments to the specified segment list.  The segment list must
-previously have been initialized.  If it already has some segments in it,
-then they are retained.
-
-If the segment read from the file includes the optional 'id' at the
-beginning of the line, that is recorded in the segment list.  Otherwise,
-an 'id' of $0$ is recorded.  Any additional information about the segment
-(appearing on the line after the stop time) is ignored.
-
-The function syntax includes an 'options' argument,
-but no reading options are currently implemented.  In the meantime, the
-user may pass either a null pointer or a CHAR pointer to a null string.
-
-\subsubsection*{Writing a segment list file}
-
-The function \verb+LALSegListWrite()+ writes a segment list to a file with
-the specified file name, following the standard format described at \newline
-\texttt{http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/seglist\_format.html}
-.  If the file already exists, it is overwritten.
-
-The function syntax includes an 'options' argument which determines how
-the segments are written out.  This argument must be a non-null CHAR
-pointer to a string.  The string must contain one or more of the following
-lowercase letters:
-
-\begin{tabular}{|c|l|}
-\hline
-Character  & Effect \\ \hline
-  \texttt{a} & \parbox[t]{4.5in}{\sloppy
-        Causes the segment list to be written out in ASCII format.
-        {\bf Currently, this is the only format supported, so \texttt{a}
-        \emph{must} appear in the options string.}  In the future,
-        some other format ({\it e.g.}\ XML) could be supported.} \\ \hline
-  \texttt{i} & \parbox[t]{4.5in}{\sloppy
-        Write the 'id' of each segment to the file, appearing before the
-        GPS start and end times on the line.  If this option is not requested,
-        then the GPS start and end times will be the first things on the
-        line.} \\ \hline
-  \texttt{d} & \parbox[t]{4.5in}{\sloppy
-    Include the duration (in seconds) of the segment on each line of the file,
-        appearing after the GPS start and end times on the line.} \\ \hline
-\end{tabular}
-
-\vfill{\footnotesize\input{SegmentsIOCV}}
-
-</lalLaTeX>
-#endif /* autodoc block */
-
 #include <stdlib.h>
 #include <errno.h>
 #include <ctype.h>
@@ -95,10 +27,27 @@ Character  & Effect \\ \hline
 #include <lal/SegmentsIO.h>
 #include <lal/StringInput.h>
 
-/* <lalVerbatim file="SegmentsIOCP"> */
+/** \brief Reads a segment list file.
+ * \ingroup SegmentsIO_h
+ * \author Peter Shawhan
+ *
+ * This function reads a segment list from a file and
+ * appends the segments to the specified segment list.  The segment list must
+ * previously have been initialized.  If it already has some segments in it,
+ * then they are retained.
+ *
+ * If the segment read from the file includes the optional 'id' at the
+ * beginning of the line, that is recorded in the segment list.  Otherwise,
+ * an 'id' of 0 is recorded.  Any additional information about the segment
+ * (appearing on the line after the stop time) is ignored.
+ *
+ * The function syntax includes an 'options' argument,
+ * but no reading options are currently implemented.  In the meantime, the
+ * user may pass either a null pointer or a CHAR pointer to a null string.
+ */
 void
 LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )
-{ /* </lalVerbatim> */
+{
   const CHAR *optc;
   FILE *fp;
   CHAR line[4096];
@@ -136,7 +85,7 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
   }
 
   /*-- Open the file for reading --*/
-  fp = LALOpenDataFile( fileName );
+  fp = fopen( fileName, "r" );
   if ( fp == NULL ) {
     ABORT( status, SEGMENTSIOH_EOPENR, SEGMENTSIOH_MSGEOPENR );
   }
@@ -272,10 +221,41 @@ LALSegListRead( LALStatus *status, LALSegList *seglist, const CHAR *fileName, co
 }
 
 
-/* <lalVerbatim file="SegmentsIOCP"> */
+/** \brief Writes a segment list file.
+ * \ingroup SegmentsIO_h
+ * \author Peter Shawhan
+ *
+ * This function writes a segment list to a file with
+ * the specified file name, following the standard format described at
+ * <p><tt>http://www.lsc-group.phys.uwm.edu/daswg/docs/technical/seglist_format.html</tt>.
+ *
+ * If the file already exists, it is overwritten.
+ *
+ * The function syntax includes an 'options' argument which determines how
+ * the segments are written out.  This argument must be a non-null CHAR
+ * pointer to a string.  The string must contain one or more of the following
+ * lowercase letters:
+ *
+ * <table>
+ * <tr><th>Character</th><th>Effect</th></tr>
+ * <tr><td>  \c a</td><td>
+ *      Causes the segment list to be written out in ASCII format.
+ *       Currently, this is the only format supported, so \c 'a'
+ *       \e must appear in the options string. In the future,
+ *       some other format (<em>e.g.</em> XML) could be supported.</td></tr>
+ * <tr><td>  \c i</td><td>
+ *        Write the 'id' of each segment to the file, appearing before the
+ *        GPS start and end times on the line.  If this option is not requested,
+ *        then the GPS start and end times will be the first things on the
+ *        line.</td></tr>
+ * <tr><td>  \c d</td><td>
+ *      Include the duration (in seconds) of the segment on each line of the file,
+ *      appearing after the GPS start and end times on the line.</td></tr>
+ * </table>
+*/
 void
 LALSegListWrite( LALStatus *status, LALSegList *seglist, const CHAR *fileName, const CHAR *options )
-{ /* </lalVerbatim> */
+{
   const CHAR *optc;
   /* Option flags */
   INT4 ascii=0, includeID=0, includeDuration=0;

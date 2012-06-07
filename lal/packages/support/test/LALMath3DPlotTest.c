@@ -23,63 +23,32 @@
  *
  * Author: Hanna C. R.
  *
- *
  *_______________________________________________________________________________________
  */
 
-
-/* ------------------------------------ AUTO-DOC ------------------------------------- */
-/* ----------------------------------------------------------------------------------- */
-
-/*<lalVerbatim file="LALMath3DPlotTestCV">
-  Author: Hanna, C.R.
-  </lalVerbatim>*/
-
-/*SUBSECTION - PROGRAM - "LALMath3DPlotTest.c" ------------------------------- <lalLaTeX>
-  \subsection{Program \texttt{LALMath3DPlotTest.c}}
-  \label{s:LALMath3DPlotTest.c}
-  \providecommand{\MATHEMATICA}{$M\scriptstyle{ATHEMATICA}^{\textrm{{\small\textregistered} }}$}
-* Tests LALMath3DPlot().
-  </lalLaTeX>*/
-
-  /*SUBSUBSECTION - USAGE - "LALMath3DPlotTest.c" ---------------------------- <lalLaTeX>
-    \begin{verbatim}
-    LALMath3DPlotTest
-    \end{verbatim}
-    </lalLaTeX>
-    END SUBSUBSECTION - USAGE - "LALMath3DPlotTest.c" -------------------------------- */
-
-  /*SUBSUBSECTION - DESCRIPTION - "LALMath3DPlotTest.c" ---------------------- <lalLaTeX>
-    \subsubsection{Description}
+/**
+ *
+ * \author Hanna, C.R.
+ * \file
+ * \ingroup LALMathematica_h
+ *
+ * \brief Tests LALMath3DPlot().
+ *
+ * \code
+ * LALMath3DPlotTest
+ * \endcode
+ *
+ * \heading{Description}
   * This program generates a set of points simulating a template bank and calls
-  * LALMath3DPlot() to generate a \MATHEMATICA notebook to display a 3D image of the
+ * LALMath3DPlot() to generate a MATHEMATICA notebook to display a 3D image of the
   * bank.  Instructions on how to evaluate the notebook appear when it is opened.
-    </lalLaTeX>
-    END SUBSUBSECTION - DESCRIPTION - "LALMath3DPlotTest.c" -------------------------- */
-
-  /*SUBSUBSECTION - EXIT CODES ------------------------------------------------------- */
-    /* <lalLaTeX>
-    \subsubsection*{Exit codes}
-    \input{LALMath3DPlotTestCE}
-    </lalLaTeX>
-    END - SUBSUBSECTION - EXIT CODES ------------------------------------------------- */
-
-  /*SUBSUBSECTION - NOTES - "LALMath3DPlotTest.c" ------------------------- <lalLaTeX>
-    \subsubsection{Notes}
-    \begin{itemize}
-  * \item For a more interesting test of LALMath3DPlot() see InspiralSpinBankTest.c in
+ *
+ *
+ * \heading{Notes}
+ * For a more interesting test of LALMath3DPlot() see \ref InspiralSpinBankTest.c in
   * the bank package.
-    \end{itemize}
-    </lalLaTeX>
-    END - SUBSUBSECTION - NOTES - "LALMath3DPlotTest.c" --------------------------- */
-
-/*<lalLaTeX>
-  \vfill{\footnotesize\input{LALMath3DPlotTestCV}}
-  </lalLaTeX>
-  END SUBSECTION - PROGRAM - "LALMath3DPlotTest.c" -------------------------------- */
-
-/* ----------------------------------------------------------------------------------- */
-/* ----------------------------------- END AUTO-DOC ---------------------------------- */
+ *
+ */
 
 #include <math.h>
 #include <stdio.h>
@@ -95,15 +64,17 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALMathematica.h>
 
-/*<lalErrTable file="LALMath3DPlotTestCE">*/
-#define LALMATH3DPLOTTESTC_ENORM	0
-#define LALMATH3DPLOTTESTC_EMEM		1
-#define LALMATH3DPLOTTESTC_ESUB         2
+/**\name Error Codes */ /*@{*/
+#define LALMATH3DPLOTTESTC_ENORM        0       /**< Normal exit */
+#define LALMATH3DPLOTTESTC_EMEM         1       /**< Memory allocation error */
+#define LALMATH3DPLOTTESTC_ESUB         2       /**< Subroutine error */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define LALMATH3DPLOTTESTC_MSGENORM     "Normal exit"
 #define LALMATH3DPLOTTESTC_MSGEMEM      "Memory allocation error"
 #define LALMATH3DPLOTTESTC_MSGESUB      "Subroutine error"
-/*</lalErrTable>*/
+
 
 int main(void){
   static LALStatus status;
@@ -206,4 +177,4 @@ int main(void){
     return LALMATH3DPLOTTESTC_ENORM;
 
 }
-
+/** \endcond */

@@ -67,7 +67,7 @@
      combines the different stacks following the \e master equation
      \f[ f(t) - F_0(t) = \xi(t).(\hat{n} - \hat{n}_0) \f]
      where
-     \f[ F_0 = f_0 + \sum \Delta f_k {(\Delta t)^k \over k!}  \f]
+     \f[ F_0 = f_0 + \sum \Delta f_k \frac{(\Delta t)^k}{k!}  \f]
      Here \f$ \hat{n}_0 \f$ is the sky-point at which the F-statistic is
      calculated and \f$ \Delta f_k \f$ is the \e residual spindown
      parameter.  For details see Phys.Rev.D 70, 082001 (2004).  The
@@ -1357,7 +1357,7 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
 
 
 /** Function for calculating Hough Maps and candidates.
- *
+
     This function takes a peakgram as input. This peakgram was constructed
     by setting a threshold on a sequence of Fstatistic vectors.  The function
     produces a Hough map in the sky for each value of the frequency and spindown.
@@ -1371,7 +1371,7 @@ RCComputeFstatHoughMap(LALStatus *status,		/**< pointer to LALStatus structure *
                        SemiCohCandidateList  *out,   /**< Candidates from thresholding Hough number counts */
                        HOUGHPeakGramVector *pgV, 	/**< HOUGHPeakGramVector obtained after thresholding Fstatistic vectors */
                        SemiCoherentParams *params,	/**< pointer to HoughParams -- parameters for calculating Hough maps */
-                       INT8 fBin0
+                       INT8 fBin0			/**< UNDOCUMENTED */
                      )
 {
 
@@ -3441,7 +3441,7 @@ XLALLoadHoughCandidateList ( const char *fname,	/**< input candidate-list file '
 
     } /* for i < nLines */
 
-  XLALDestroyParsedDataFile ( &data );
+  XLALDestroyParsedDataFile ( data );
 
   /* set frequency/f1dot search-space boundaries */
   out->FreqMin  = candMin.Freq;

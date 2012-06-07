@@ -517,7 +517,8 @@ int main( int argc, char *argv[] )
 
   /* wind to the end of the process params table */
   for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
-      this_proc_param = this_proc_param->next );
+      this_proc_param = this_proc_param->next )
+    ;
 
   /* Import system wide FFTW wisdom file, if it exists.  Only single precision used. */
 
@@ -1443,46 +1444,7 @@ int main( int argc, char *argv[] )
       }
       else if (injApproximant == NumRelNinja2)
       {
-        /* New REAL8, NINJA-2 code */
-        REAL8TimeSeries *tempStrain = NULL;
-        REAL8TimeSeries *tempChan   = NULL;
-
-        /* Make a REAL8 version of the channel data    */
-        /* so we can call Jolien's new inject function */
-        tempChan = XLALCreateREAL8TimeSeries(
-                                chan.name,
-                                &(chan.epoch),
-                                chan.f0,
-                                chan.deltaT,
-                                &(chan.sampleUnits),
-                                chan.data->length);
-
-        for ( j = 0 ; j < tempChan->data->length ; ++j )
-          {
-            tempChan->data->data[j] = (REAL8) ( chan.data->data[j] );
-          }
-
-        /* loop over injections */
-        for ( thisInj = injections; thisInj; thisInj = thisInj->next )
-          {
-            tempStrain = XLALNRInjectionStrain(ifo, thisInj);
-
-            for ( j = 0 ; j < tempStrain->data->length ; ++j )
-              {
-                tempStrain->data->data[j] *= dynRange;
-              }
-
-            XLALSimAddInjectionREAL8TimeSeries( tempChan, tempStrain, NULL);
-            XLALDestroyREAL8TimeSeries(tempStrain);
-          } /* loop over injections */
-
-        /* Back to REAL4 */
-        for ( j = 0 ; j < tempChan->data->length ; ++j )
-          {
-            chan.data->data[j] = (REAL4) ( tempChan->data->data[j] );
-          }
-
-        XLALDestroyREAL8TimeSeries(tempChan);
+        XLALSimInjectNinjaSignals(&chan,ifo,dynRange,injections);
       }
       else
       {
@@ -1561,9 +1523,22 @@ int main( int argc, char *argv[] )
     {
       snprintf( fname, FILENAME_MAX, "%s.ckpt", fileName );
     }
+
     if ( vrbflg ) fprintf( stdout, "checkpointing to file %s\n", fname );
     init_image_with_file_name( fname );
+
+    /* flush stdout before we checkpoint as otherwise we may not see any */
+    /* output from the verbose messages in the job before the checkpoint */
+    fflush( stdout );
+    
+    /* now create a memory image and exit with SIGUSR2 (signal 12)       */
+    /* if doing this, we must run in the vanilla universe or condor will */
+    /* just resubmit the job as it thinks it is a regular checkpoint     */
     ckpt_and_exit();
+
+    /* say that we are back and flush stdout so we see the message */
+    if ( vrbflg ) fprintf( stdout, "resuming from checkpoint file\n" );
+    fflush( stdout );
 #else
     fprintf( stderr, "--data-checkpoint cannot be used unless "
         "lalapps is condor compiled\n" );
@@ -2087,7 +2062,6 @@ int main( int argc, char *argv[] )
               m, mu, candle.rhosq, chan.deltaT, numPoints,
               fcSegVec->data->segNorm->data[fcSegVec->data->segNorm->length-1],
               candleTmpltNorm, candle.distance, candle.sigmasq );
-          fflush( stdout );
         }
       }
       else if ( approximant == BCV )
@@ -2127,7 +2101,6 @@ int main( int argc, char *argv[] )
               m,mu,candle.rhosq,chan.deltaT,
               numPoints,fcSegVec->data->segNorm->data[kmax],kmax,
               candleTmpltNorm,candle.distance,candle.sigmasq);
-          fflush(stdout);
         }
       }
       else
@@ -2137,7 +2110,6 @@ int main( int argc, char *argv[] )
           fprintf( stdout, "standard candle not calculated;\n"
               "chan.deltaT = %e\nnumPoints = %d\n",
               chan.deltaT, numPoints );
-          fflush( stdout );
         }
       }
     }
@@ -2250,6 +2222,10 @@ int main( int argc, char *argv[] )
     }
     /* set the workspace vectors to null before they are allocated later */
     XLALInitBankVetoData(&bankVetoData);
+
+    /* flush stdout before we start the computationally intensive loop */
+    fflush( stdout );
+
 
     /*
      *
@@ -2593,7 +2569,7 @@ int main( int argc, char *argv[] )
         if (ccFlag && (subBankCurrent->subBankSize >= 1) && analyseTag)
         {
 
-          if (vrbflg) fprintf(stderr, "doing ccmat\n");
+          if (vrbflg) fprintf(stdout, "doing ccmat\n");
           XLALBankVetoCCMat( &bankVetoData,
 			     fcDataParams->ampVec,
 			     subBankCurrent->subBankSize,
@@ -3617,9 +3593,6 @@ int main( int argc, char *argv[] )
   cudaThreadExit();
 #endif
 
-  /* print a success message to stdout for parsing by exitcode */
-  fprintf( stdout, "%s: EXITCODE0\n", argv[0] );
-
   exit( 0 );
 }
 
@@ -4211,13 +4184,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
 #ifdef LALAPPS_CUDA_ENABLED
       case '+':
         gpuDeviceID = (INT4) atoi( optarg );
-	cudaError = cudaSetDevice( gpuDeviceID );
+        cudaError = cudaSetDevice( gpuDeviceID );
         if ( cudaError != cudaSuccess )
         {
           fprintf( stderr, "invalid argument to --%s:\n"
 		           "could not associate thread to GPU %d\n"
 		           "CudaError: %s\n",
-		   long_options[option_index].name, gpuDeviceID,
+                   long_options[option_index].name, gpuDeviceID,
                    cudaGetErrorString(cudaError));
           exit( 1 );
         }

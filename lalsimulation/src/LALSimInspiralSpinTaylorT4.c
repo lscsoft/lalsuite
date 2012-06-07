@@ -61,7 +61,7 @@
 typedef struct tagXLALSimInspiralSpinTaylorT4Coeffs
 {
 	REAL8 eta; 			// symmetric mass ratio
-	REAL8 wdotnewt; // leading order coefficient of wdot = \dot{\omega}
+	REAL8 wdotnewt; // leading order coefficient of wdot = \f$\dot{\omega}\f$
 	REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; // coeffs. of PN corrections to wdot
 	REAL8 wdotlogcoeff; 		// coefficient of log term in wdot
 	REAL8 Ecoeff[LAL_MAX_PN_ORDER]; // coeffs. of PN corrections to energy
@@ -93,11 +93,11 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
 
 /**
  * This function evolves the orbital equations for a precessing binary using 
- * the "TaylorT4" approximant for solving the orbital dynamics 
+ * the \"TaylorT4\" approximant for solving the orbital dynamics 
  * (see arXiv:0907.0700 for a review of the various PN approximants).
  *
- * It returns time series of the "orbital velocity", orbital phase, 
- * and components for both individual spin vectors, the "Newtonian"
+ * It returns time series of the \"orbital velocity\", orbital phase, 
+ * and components for both individual spin vectors, the \"Newtonian\"
  * orbital angular momentum (which defines the instantaneous plane)
  * and "E1", a basis vector in the instantaneous orbital plane.
  * Note that LNhat and E1 completely specify the instantaneous orbital plane.
@@ -182,17 +182,17 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     /** 
      * Set coefficients up to PN order phaseO. 
      * epnorb is the binary energy and
-     * wdotorb is the derivative of the orbital frequency \dot{\omega}.
+     * wdotorb is the derivative of the orbital frequency \f$\dot{\omega}\f$.
      * These are just the non-spinning contributions.
      * Spin corrections must be recomputed at every step
      * because the relative orientations of S, L can change
      *
      * The values can be found in Buonanno, Iyer, Ochsner, Pan and Sathyaprakash
-     * Phys. Rev. D 80, 084043 (2009) arXiv:0907.0700 (aka "BIOPS")
-     * Eq. 3.1 for the energy and Eq. 3.6 for \dot{\omega}
+     * Phys. Rev. D 80, 084043 (2009) arXiv:0907.0700 (aka \"BIOPS\")
+     * Eq. 3.1 for the energy and Eq. 3.6 for \f$\dot{\omega}\f$
      *
-     * Note that Eq. 3.6 actually gives dv/dt, but this relates to \omega by
-     * d (M \omega)/dt = d (v^3)/dt = 3 v^2 dv/dt
+     * Note that Eq. 3.6 actually gives dv/dt, but this relates to \f$\omega\f$ by
+     * \f$d (M \omega)/dt = d (v^3)/dt = 3 v^2 dv/dt\f$
      * so the PN corrections are the same 
      * but the leading order is 3 v^2 times Eq. 3.6
      */
@@ -374,7 +374,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     integrator->stopontestonly = 1;
 
     /* run the integration; note: time is measured in \hat{t} = t / M */
-    len = XLALAdaptiveRungeKutta4(integrator, (void *) &params, yinit,
+    len = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yinit,
             0.0, lengths/M, deltaT/M, &yout);
 
     intreturn = integrator->returncode;
@@ -522,12 +522,12 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
     }
 
     /**
-     * We are testing if the orbital energy increases with \omega. 
+     * We are testing if the orbital energy increases with \f$\omega\f$. 
      * We should be losing energy to GW flux, so if E increases 
      * we stop integration because the dynamics are becoming unphysical. 
-     * 'test' is the PN expansion of dE/d\omega without the prefactor, 
-     * i.e. dE/d\omega = dE/dv * dv/d\omega = - (M^2*eta/6) * test
-     * Therefore, the energy is increasing with \omega iff. test < 0.
+     * 'test' is the PN expansion of \f$dE/d\omega\f$ without the prefactor, 
+     * i.e. \f$dE/d\omega = dE/dv * dv/d\omega = - (M^2*eta/6) * test\f$
+     * Therefore, the energy is increasing with \f$\omega\f$ iff. test < 0.
      */
     test = 2. + v * v * ( 4. * params->Ecoeff[2] 
             + v * ( 5. * (params->Ecoeff[3] + Espin15) 
@@ -553,9 +553,9 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
  * Given the values of all the dynamical variables 'values' at time 't',
  * This function computes their derivatives 'dvalues'
  * so the ODE integrator can take a step
- * All non-dynamical quantities (masses, etc.) are passed in "mparams"
+ * All non-dynamical quantities (masses, etc.) are passed in \"mparams\"
  *
- * The derivatives for \omega, L_N, S1, S2 can be found 
+ * The derivatives for \f$\omega\f$, L_N, S1, S2 can be found 
  * as Eqs. (1), (8) - (10) of gr-qc/0405090
  * The derivative of E1 is Eq. (15)-(16) of gr-qc/0310034
  */
@@ -572,7 +572,9 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     REAL8 dS1x, dS1y, dS1z, dS2x, dS2y, dS2z, dE1x, dE1y, dE1z;
 
     /* auxiliary variables */
-    REAL8 v, v2, v3, v4, v5, v7, v11, omega2, LNdotS1, LNdotS2, S1dotS2;
+    REAL8 v, v2, v3, v4, v5, v7, v11, omega2, omega2by2;
+    REAL8 LNdotS1, LNdotS2, threeLNdotS1, threeLNdotS2, S1dotS2;
+    REAL8 v5etaLNhatSO15s1, v5etaLNhatSO15s2;
     REAL8 OmegaLx, OmegaLy, OmegaLz, OmegaLdotLN;
     REAL8 OmegaEx, OmegaEy, OmegaEz, OmegaSx, OmegaSy, OmegaSz;
     REAL8 wspin15 = 0., wspin2 = 0., wspin25 = 0.;
@@ -595,7 +597,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
         return LALSIMINSPIRAL_ST4_DERIVATIVE_OMEGANONPOS;
     }
 
-    v = pow(omega,1./3.);
+    v = cbrt(omega);
     v2  = v * v; v3 = v2 * v; v4 = v3 * v; 
     v5 = v * v4; v7 = v4 * v3; v11 = v7 * v4;
 
@@ -606,15 +608,15 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     /** 
      * domega
      * 
-     * Note we are actually computing d \hat{\omega} / d \hat{t}
-     * where \hat{\omega} = M \omega and \hat{t} = t / M
-     * Therefore 'domega' = M^2 * d\omega / dt
+     * Note we are actually computing \f$d \hat{\omega} / d \hat{t}\f$
+     * where \f$\hat{\omega} = M \omega\f$ and \f$\hat{t} = t / M\f$
+     * Therefore \f$domega = M^2 * d\omega / dt\f$
      *
      * See Eqs. (1)-(7) of gr-qc/0405090 But note that our spin variables 
      * are scaled by component masses relative to that paper.
-     * i.e. S_i = (m_i/M)^2 * \hat{S_i}
+     * i.e. \f$S_i = (m_i/M)^2 * \hat{S_i}\f$
      *
-     * non-spinning coefficients of \dot{\omega} (params->wdotcoeff[i])
+     * non-spinning coefficients of \f$\dot{\omega}\f$ (params->wdotcoeff[i])
      * should have been set before this function was called
      */
     if( params->wdotSO15s1 != 0. || params->wdotSO15s2 != 0. )
@@ -636,20 +638,20 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 
     domega  = params->wdotnewt * v11 * ( params->wdotcoeff[0] 
             + v * ( params->wdotcoeff[1] 
-			+ v * ( params->wdotcoeff[2]
+            + v * ( params->wdotcoeff[2]
             + v * ( params->wdotcoeff[3] + wspin15 
             + v * ( params->wdotcoeff[4] + wspin2 
             + v * ( params->wdotcoeff[5] + wspin25 
             + v * ( params->wdotcoeff[6] + params->wdotlogcoeff * log(omega)
             + v * ( params->wdotcoeff[7] 
-			+ v3 * ( params->wdottidal5pn
-			+ v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
+            + v3 * ( params->wdottidal5pn
+            + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
 
     /**
      * dLN
      * 
-     * d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}
-     * This is Eq. (10) of gr-qc/0405090 ( times M b/c we use \hat{t})
+     * \f$d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}\f$
+     * This is Eq. (10) of gr-qc/0405090 ( times M b/c we use \f$\hat{t}\f$)
      */
     omega2 = omega * omega;
     /* \Omega_L vector */
@@ -690,12 +692,15 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      * However, that paper uses spin variables which are M^2 times our spins
      */
     /* \Omega_{S1} vector */
-    OmegaSx = v5 * params->eta * params->LNhatSO15s1 * LNhx
-            + omega2 * 0.5 * (S2x - 3. * LNdotS2 * LNhx);
-    OmegaSy = v5 * params->eta * params->LNhatSO15s1 * LNhy
-            + omega2 * 0.5 * (S2y - 3. * LNdotS2 * LNhy);
-    OmegaSz = v5 * params->eta * params->LNhatSO15s1 * LNhz
-            + omega2 * 0.5 * (S2z - 3. * LNdotS2 * LNhz);
+    omega2by2 = omega2 * 0.5;
+    threeLNdotS2 = 3. * LNdotS2;
+    v5etaLNhatSO15s1 = v5 * params->eta * params->LNhatSO15s1;
+    OmegaSx = v5etaLNhatSO15s1 * LNhx
+            + omega2by2 * (S2x - threeLNdotS2 * LNhx);
+    OmegaSy = v5etaLNhatSO15s1 * LNhy
+            + omega2by2 * (S2y - threeLNdotS2 * LNhy);
+    OmegaSz = v5etaLNhatSO15s1 * LNhz
+            + omega2by2 * (S2z - threeLNdotS2 * LNhz);
 
     /* Take cross product of \Omega_{S1} with S_1 */
     dS1x = (-OmegaSz*S1y + OmegaSy*S1z);
@@ -710,12 +715,14 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
      * However, that paper uses spin variables which are M^2 times our spins
      */
     /* \Omega_{S2} vector */
-    OmegaSx = v5 * params->eta * params->LNhatSO15s2 * LNhx
-            + omega2 * 0.5 * (S1x - 3. * LNdotS1 * LNhx);
-    OmegaSy = v5 * params->eta * params->LNhatSO15s2 * LNhy
-            + omega2 * 0.5 * (S1y - 3. * LNdotS1 * LNhy);
-    OmegaSz = v5 * params->eta * params->LNhatSO15s2 * LNhz
-            + omega2 * 0.5 * (S1z - 3. * LNdotS1 * LNhz);
+    threeLNdotS1 = 3. * LNdotS1;
+    v5etaLNhatSO15s2 = v5 * params->eta * params->LNhatSO15s2;
+    OmegaSx = v5etaLNhatSO15s2 * LNhx
+            + omega2by2 * (S1x - threeLNdotS1 * LNhx);
+    OmegaSy = v5etaLNhatSO15s2 * LNhy
+            + omega2by2 * (S1y - threeLNdotS1 * LNhy);
+    OmegaSz = v5etaLNhatSO15s2 * LNhz
+            + omega2by2 * (S1z - threeLNdotS1 * LNhz);
 
     /* Take cross product of \Omega_{S2} with S_2 */
     dS2x = (-OmegaSz*S2y + OmegaSy*S2z);
@@ -736,7 +743,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
- * with phasing computed from energy balance using the so-called "T4" method.
+ * with phasing computed from energy balance using the so-called \"T4\" method.
  *
  * This routine allows the user to specify different pN orders
  * for phasing calcuation vs. amplitude calculations.
@@ -812,7 +819,7 @@ int XLALSimInspiralSpinTaylorT4(
 
 /**
  * Driver routine to compute a precessing post-Newtonian inspiral waveform
- * with phasing computed from energy balance using the so-called "T4" method.
+ * with phasing computed from energy balance using the so-called \"T4\" method.
  *
  * This routine assumes leading-order amplitude dependence (restricted waveform)
  * but allows the user to specify the phase PN order
@@ -884,4 +891,81 @@ int XLALSimInspiralRestrictedSpinTaylorT4(
 
     return n;
 }
+
+/**
+ * Driver routine to compute the physical template family "Q" vectors using
+ * the \"T4\" method. Note that PTF describes single spin systems
+ *
+ * This routine requires leading-order amplitude dependence
+ * but allows the user to specify the phase PN order
+ */
+int XLALSimInspiralSpinTaylorT4PTFQVecs(
+        REAL8TimeSeries **Q1,            /**< Q1 output vector */
+        REAL8TimeSeries **Q2,            /**< Q2 output vector */
+        REAL8TimeSeries **Q3,            /**< Q3 output vector */
+        REAL8TimeSeries **Q4,            /**< Q4 output vector */
+        REAL8TimeSeries **Q5,            /**< Q5 output vector */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 chi1,                     /**< spin magnitude (|S1|) */
+        REAL8 kappa1,                    /**< L . S1 (1 if they are aligned) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+        LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+        int phaseO                      /**< twice PN phase order */
+        )
+{
+    /* To generate the QVecs we need to choose a specific frame 
+     * This frame is set so that inclination, and most other extrinsic
+     * angles are 0. This does not lead to loss in generality as PTF maximizes
+     * over these angles. This follows the PBCV convention
+     */
+    REAL8 phi_end = 0;
+    REAL8 r = 10E6 * LAL_PC_SI; /* Setting an arbitrary distance of 10 MPc */
+    REAL8 s1x = chi1 * pow((1 - kappa1*kappa1),0.5);
+    REAL8 s1z = chi1 * kappa1;
+    REAL8 s1y,s2x,s2y,s2z,lnhatx,lnhaty,lnhatz,e1x,e1y,e1z;
+    s1y = s2x = s2y = s2z = lnhatx = lnhaty = e1y = e1z = 0;     
+    lnhatz = e1x = 1.;
+
+    REAL8TimeSeries *V, *Phi, *S1x, *S1y, *S1z, *S2x, *S2y, *S2z;
+    REAL8TimeSeries *LNhatx, *LNhaty, *LNhatz, *E1x, *E1y, *E1z;
+    int status, n;
+
+    /* Evolve the dynamical variables */
+    n = XLALSimInspiralPNEvolveOrbitSpinTaylorT4(&V, &Phi, &S1x, &S1y, &S1z,
+            &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
+            phi_end, deltaT, m1, m2, fStart, s1x, s1y, s1z, s2x, s2y,
+            s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, lambda1, lambda2, interactionFlags, phaseO);
+    if( n < 0 )
+        XLAL_ERROR(XLAL_EFUNC);
+
+    /* Use the dynamical variables to build the polarizations */
+    status = XLALSimInspiralPrecessingPTFQWaveforms(Q1, Q2, Q3, Q4, Q5,
+            V, Phi, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz,
+            E1x, E1y, E1z, m1, m2, r);
+
+    /* Destroy vectors of dynamical variables, check for errors then exit */
+    XLALDestroyREAL8TimeSeries(V);
+    XLALDestroyREAL8TimeSeries(Phi);
+    XLALDestroyREAL8TimeSeries(S1x);
+    XLALDestroyREAL8TimeSeries(S1y);
+    XLALDestroyREAL8TimeSeries(S1z);
+    XLALDestroyREAL8TimeSeries(S2x);
+    XLALDestroyREAL8TimeSeries(S2y);
+    XLALDestroyREAL8TimeSeries(S2z);
+    XLALDestroyREAL8TimeSeries(LNhatx);
+    XLALDestroyREAL8TimeSeries(LNhaty);
+    XLALDestroyREAL8TimeSeries(LNhatz);
+    XLALDestroyREAL8TimeSeries(E1x);
+    XLALDestroyREAL8TimeSeries(E1y);
+    XLALDestroyREAL8TimeSeries(E1z);
+    if( status < 0 )
+        XLAL_ERROR(XLAL_EFUNC);
+
+    return n;
+}
+
 

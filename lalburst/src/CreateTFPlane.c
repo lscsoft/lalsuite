@@ -34,7 +34,6 @@
 #include <gsl/gsl_matrix.h>
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FrequencySeries.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALMalloc.h>
@@ -42,6 +41,7 @@
 #include <lal/RealFFT.h>
 #include <lal/Sequence.h>
 #include <lal/TFTransform.h>
+#include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/XLALError.h>
@@ -59,13 +59,11 @@ static double max(double a, double b) { return a > b ? a : b; }
  */
 
 
-/*
+/**
  * Round target_length down so that an integer number of intervals of
  * length segment_length, each shifted by segment_shift with respect to the
  * interval preceding it, fits into the result.
  */
-
-
 INT4 XLALOverlappedSegmentsCommensurate(
 	INT4 target_length,
 	INT4 segment_length,
@@ -104,7 +102,7 @@ INT4 XLALOverlappedSegmentsCommensurate(
 }
 
 
-/*
+/**
  * Compute and return the timing parameters for an excess power analysis.
  * Pass NULL for any optional pointer to not compute and return that
  * parameter.
@@ -154,8 +152,6 @@ INT4 XLALOverlappedSegmentsCommensurate(
  * Python-based DAG construction scripts how the search code's internal
  * timing works.  If you change this function, you need to update pyLAL.
  */
-
-
 INT4 XLALEPGetTimingParameters(
 	INT4 window_length,
 	INT4 max_tile_length,
@@ -295,20 +291,20 @@ INT4 XLALEPGetTimingParameters(
  * Compute the two-point spectral correlation function for a whitened
  * frequency series from the window applied to the original time series.
  *
- * If x_{j} is a stationary process then the components of its Fourier
- * transform, X_{k}, are independent random variables, and let their mean
- * square be <|X_{k}|^{2}> = 1.  If x_{j} is multiplied by the window
- * function w_{j} then it is no longer stationary and the components of its
+ * If \f$x_{j}\f$ is a stationary process then the components of its Fourier
+ * transform, \f$X_{k}\f$, are independent random variables, and let their mean
+ * square be \f$\langle|X_{k}|^{2}\rangle = 1\f$.  If \f$x_{j}\f$ is multiplied by the window
+ * function \f$w_{j}\f$ then it is no longer stationary and the components of its
  * Fourier transform are no longer independent.  Their correlations are
  *
- *	<X_{k} X*_{k'}>
+ *	\f[\langle X_{k} X*_{k'}\rangle\f]
  *
- * and depend only on |k - k'|.
+ * and depend only on \f$|k - k'|\f$.
  *
- * Given the window function w_{j}, this function computes and returns a
- * sequence containing <X_{k} X*_{k'}>.  The sequence's indices are |k -
- * k'|.  A straight-forward normalization factor can be applied to convert
- * this for use with a sequence x_{j} whose Fourier transform does not have
+ * Given the window function \f$w_{j}\f$, this function computes and returns a
+ * sequence containing \f$\langle X_{k} X*_{k'}\rangle\f$.  The sequence's indices are
+ * \f$|k - k'|\f$.  A straight-forward normalization factor can be applied to convert
+ * this for use with a sequence \f$x_{j}\f$ whose Fourier transform does not have
  * bins with equal mean square.
  *
  * The FFT plan argument must be a forward plan (time to frequency) whose
@@ -318,11 +314,9 @@ INT4 XLALEPGetTimingParameters(
  * about its midpoint (is an even function of the sample index if the
  * midpoint is index 0), so that its Fourier transform is real-valued.
  */
-
-
 REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
-	const REAL8Window *window,	/*< window function used to prevent leakage when measuring PSD.  see XLALCreateHannREAL8Window() and friends. */
-	const REAL8FFTPlan *plan	/*< forward FFT plan.  see XLALCreateREAL8FFTPlan(). */
+	const REAL8Window *window,	/**< window function used to prevent leakage when measuring PSD.  see XLALCreateHannREAL8Window() and friends. */
+	const REAL8FFTPlan *plan	/**< forward FFT plan.  see XLALCreateREAL8FFTPlan(). */
 )
 {
 	REAL8Sequence *wsquared;
@@ -379,7 +373,7 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 	 */
 
 	for(i = 0; i < correlation->length; i++)
-		correlation->data[i] = tilde_wsquared->data[i].re;
+		correlation->data[i] = creal(tilde_wsquared->data[i]);
 	XLALDestroyCOMPLEX16Sequence(tilde_wsquared);
 
 	/*
@@ -390,28 +384,18 @@ REAL8Sequence *XLALREAL8WindowTwoPointSpectralCorrelation(
 }
 
 
-/*
+/**
  * Create and initialize a time-frequency plane object.
  */
-
-
 REAL8TimeFrequencyPlane *XLALCreateTFPlane(
-	/* length of time series from which TF plane will be computed */
-	UINT4 tseries_length,
-	/* sample rate of time series */
-	REAL8 tseries_deltaT,
-	/* minimum frequency to search for */
-	REAL8 flow,
-	/* bandwidth of TF plane */
-	REAL8 bandwidth,
-	/* overlap of adjacent tiles */
-	REAL8 tiling_fractional_stride,
-	/* largest tile's bandwidth */
-	REAL8 max_tile_bandwidth,
-	/* largest tile's duration */
-	REAL8 max_tile_duration,
-	/* forward plan whose length is tseries_length */
-	const REAL8FFTPlan *plan
+	UINT4 tseries_length,		/**< length of time series from which TF plane will be computed */
+	REAL8 tseries_deltaT,		/**< sample rate of time series */
+	REAL8 flow,			/**< minimum frequency to search for */
+	REAL8 bandwidth,		/**< bandwidth of TF plane */
+	REAL8 tiling_fractional_stride,	/**< overlap of adjacent tiles */
+	REAL8 max_tile_bandwidth,	/**< largest tile's bandwidth */
+	REAL8 max_tile_duration,	/**< largest tile's duration */
+	const REAL8FFTPlan *plan	/**< forward plan whose length is tseries_length */
 )
 {
 	REAL8TimeFrequencyPlane *plane;
@@ -569,11 +553,9 @@ REAL8TimeFrequencyPlane *XLALCreateTFPlane(
 }
 
 
-/*
+/**
  * Free a time-frequency plane object.
  */
-
-
 void XLALDestroyTFPlane(
 	REAL8TimeFrequencyPlane *plane
 )
@@ -615,13 +597,11 @@ void XLALDestroyTFPlane(
  * left as an excercise for the calling code to ensure the two-point
  * spectral correlation is appropriate.
  */
-
-
 double XLALExcessPowerFilterInnerProduct(
-	const COMPLEX16FrequencySeries *filter1,	/*< frequency-domain filter */
-	const COMPLEX16FrequencySeries *filter2,	/*< frequency-domain filter */
-	const REAL8Sequence *correlation,	/*< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
-	const REAL8FrequencySeries *psd	/*< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
+	const COMPLEX16FrequencySeries *filter1,	/**< frequency-domain filter */
+	const COMPLEX16FrequencySeries *filter2,	/**< frequency-domain filter */
+	const REAL8Sequence *correlation,		/**< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
+	const REAL8FrequencySeries *psd			/**< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
 )
 {
 	const int k10 = round(filter1->f0 / filter1->deltaF);
@@ -692,19 +672,16 @@ double XLALExcessPowerFilterInnerProduct(
  * understood --- it's easy to say "the channel filter is a Tukey window of
  * variable central width".
  */
-
-
 COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
-	REAL8 channel_flow,	/*< Hz */
-	REAL8 channel_width,	/*< Hz */
-	const REAL8FrequencySeries *psd,	/*< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
-	const REAL8Sequence *correlation	/*< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
+	REAL8 channel_flow,			/**< Hz */
+	REAL8 channel_width,			/**< Hz */
+	const REAL8FrequencySeries *psd,	/**< power spectral density function.  see XLALREAL8AverageSpectrumWelch() and friends. */
+	const REAL8Sequence *correlation	/**< two-point spectral correlation function.  see XLALREAL8WindowTwoPointSpectralCorrelation(). */
 )
 {
 	char filter_name[100];
 	REAL8Window *hann;
 	COMPLEX16FrequencySeries *filter;
-	const REAL8 *pdata;
 	unsigned i;
 	REAL8 norm;
 
@@ -732,25 +709,17 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 		XLALDestroyREAL8Window(hann);
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
-	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re = hann->data->data[i];
-		filter->data->data[i].im = 0.0;
-	}
+	for(i = 0; i < filter->data->length; i++)
+		filter->data->data[i] = hann->data->data[i];
 	XLALDestroyREAL8Window(hann);
 
 	/*
 	 * divide by square root of PSD to whiten
 	 */
 
-	if(filter->f0 < psd->f0 || filter->f0 + filter->data->length * filter->deltaF > psd->f0 + psd->data->length * psd->deltaF) {
-		XLALPrintError("%s(): psd does not span filter's frequency range", __func__);
+	if(!XLALWhitenCOMPLEX16FrequencySeries(filter, psd)) {
 		XLALDestroyCOMPLEX16FrequencySeries(filter);
-		XLAL_ERROR_NULL(XLAL_EINVAL);
-	}
-	pdata = psd->data->data + (int) round((filter->f0 - psd->f0) / psd->deltaF);
-	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re /= sqrt(pdata[i]);
-		filter->data->data[i].im /= sqrt(pdata[i]);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 
 	/*
@@ -765,10 +734,8 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	}
 	norm = sqrt(channel_width / filter->deltaF / norm);
-	for(i = 0; i < filter->data->length; i++) {
-		filter->data->data[i].re *= norm;
-		filter->data->data[i].im *= norm;
-	}
+	for(i = 0; i < filter->data->length; i++)
+		filter->data->data[i] *= norm;
 
 	/*
 	 * success
@@ -782,8 +749,6 @@ COMPLEX16FrequencySeries *XLALCreateExcessPowerFilter(
  * From the power spectral density function, generate the comb of channel
  * filters for the time-frequency plane --- an excess power filter bank.
  */
-
-
 LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 	double filter_deltaF,
 	double flow,
@@ -845,8 +810,6 @@ LALExcessPowerFilterBank *XLALCreateExcessPowerFilterBank(
 /**
  * Destroy and excess power filter bank.
  */
-
-
 void XLALDestroyExcessPowerFilterBank(
 	LALExcessPowerFilterBank *bank
 )

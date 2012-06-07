@@ -32,10 +32,6 @@
 #include <lal/Window.h>
 #include <lal/Date.h>
 
-/** \ingroup TimeFreqFFT_h */
-/*@{*/
-
-
 /**
  *
  * Compute a "modified periodogram," i.e., the power spectrum of a windowed
@@ -372,7 +368,9 @@ int XLALREAL8AverageSpectrumWelch(
  *
  */
 
-/* compute the median bias */
+/** compute the median bias *
+ * See arXiv: gr-qc/0509116 appendix B for details */
+
 REAL8 XLALMedianBias( UINT4 nn )
 {
   const UINT4 nmax = 1000;
@@ -1071,7 +1069,7 @@ int XLALREAL8AverageSpectrumMedianMean(
   return 0;
 }
 
-
+/** UNDOCUMENTED */
 int XLALREAL4SpectrumInvertTruncate(
     REAL4FrequencySeries        *spectrum,
     REAL4                        lowfreq,
@@ -1175,6 +1173,7 @@ int XLALREAL4SpectrumInvertTruncate(
   return 0;
 }
 
+/** UNDOCUMENTED */
 int XLALREAL8SpectrumInvertTruncate(
     REAL8FrequencySeries        *spectrum,
     REAL8                        lowfreq,
@@ -1305,7 +1304,6 @@ int XLALREAL8SpectrumInvertTruncate(
  * an error occurs, the contents of the input frequency series are
  * undefined.
  */
-
 COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeries *fseries, const REAL4FrequencySeries *psd)
 {
   COMPLEX8 *fdata = fseries->data->data;
@@ -1357,7 +1355,6 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
 /**
  * Double-precision version of XLALWhitenCOMPLEX8FrequencySeries().
  */
-
 COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *fseries, const REAL8FrequencySeries *psd)
 {
   COMPLEX16 *fdata = fseries->data->data;
@@ -1406,18 +1403,18 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
 }
 
 
-/**
+/*
  * PSD regression functions.
  */
 
 
-/* compute the median bias */
+/** compute the median bias */
 REAL8 XLALLogMedianBiasGeometric( UINT4 nn )
 {
   return log(XLALMedianBias(nn)) - nn * (gsl_sf_lngamma(1.0 / nn) - log(nn));
 }
 
-
+/** UNDOCUMENTED */
 LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_samples)
 {
   LALPSDRegressor *new;
@@ -1447,7 +1444,7 @@ LALPSDRegressor *XLALPSDRegressorNew(unsigned average_samples, unsigned median_s
   return new;
 }
 
-
+/** UNDOCUMENTED */
 void XLALPSDRegressorReset(LALPSDRegressor *r)
 {
   if(r->history)
@@ -1465,7 +1462,7 @@ void XLALPSDRegressorReset(LALPSDRegressor *r)
   r->n_samples = 0;
 }
 
-
+/** UNDOCUMENTED */
 void XLALPSDRegressorFree(LALPSDRegressor *r)
 {
   if(r)
@@ -1477,7 +1474,7 @@ void XLALPSDRegressorFree(LALPSDRegressor *r)
   free(r);
 }
 
-
+/** UNDOCUMENTED */
 int XLALPSDRegressorSetAverageSamples(LALPSDRegressor *r, unsigned average_samples)
 {
   /* require the number of samples used for the average to be positive */
@@ -1487,13 +1484,13 @@ int XLALPSDRegressorSetAverageSamples(LALPSDRegressor *r, unsigned average_sampl
   return 0;
 }
 
-
+/** UNDOCUMENTED */
 unsigned XLALPSDRegressorGetAverageSamples(const LALPSDRegressor *r)
 {
   return r->average_samples;
 }
 
-
+/** UNDOCUMENTED */
 int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples)
 {
   unsigned i;
@@ -1535,13 +1532,13 @@ int XLALPSDRegressorSetMedianSamples(LALPSDRegressor *r, unsigned median_samples
   return 0;
 }
 
-
+/** UNDOCUMENTED */
 unsigned XLALPSDRegressorGetMedianSamples(const LALPSDRegressor *r)
 {
   return r->median_samples;
 }
 
-
+/** UNDOCUMENTED */
 int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *sample)
 {
   double *bin_history;
@@ -1678,7 +1675,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   return 0;
 }
 
-
+/** UNDOCUMENTED */
 REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
 {
   REAL8FrequencySeries *psd;
@@ -1729,7 +1726,7 @@ REAL8FrequencySeries *XLALPSDRegressorGetPSD(const LALPSDRegressor *r)
   return psd;
 }
 
-
+/** UNDOCUMENTED */
 int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, unsigned weight)
 {
   /* arbitrary constant to remove from LAL definition of PSD */
@@ -1798,5 +1795,3 @@ int XLALPSDRegressorSetPSD(LALPSDRegressor *r, const REAL8FrequencySeries *psd, 
 
   return 0;
 }
-
-/*@}*/

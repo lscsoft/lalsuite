@@ -136,6 +136,8 @@ typedef struct
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */
   REAL8 Delta;		/**< skyposition Delta: radians, equatorial coords. */
   REAL8 f1dot;		/**< target 1. spindown-value df/dt */
+  REAL8 f2dot;		/**< target 2. spindown-value d2f/dt2 */
+  REAL8 f3dot;		/**< target 3. spindown-value d3f/dt3 */
 
   CHAR *ephemDir;	/**< directory to look for ephemeris files */
   CHAR *ephemYear;	/**< date-range string on ephemeris-files to use */
@@ -159,6 +161,8 @@ typedef struct
 
   LALStringVector* coords; /**< list of Doppler-coordinates to compute metric in, see --coordsHelp for possible values */
   BOOLEAN coordsHelp;	/**< output help-string explaining all the possible Doppler-coordinate names for --cords */
+
+  BOOLEAN approxPhase;	/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates */
 
   BOOLEAN version;	/**< output code versions */
 
@@ -265,6 +269,7 @@ main(int argc, char *argv[])
   metricParams.detInfo       = config.detInfo;
   metricParams.signalParams  = config.signalParams;
   metricParams.projectCoord  = uvar.projection - 1;	/* user-input counts from 1, but interally we count 0=1st coord. (-1==no projection) */
+  metricParams.approxPhase   = uvar.approxPhase;
 
   /* ----- compute metric full metric + Fisher matrix ---------- */
   if ( (metric = XLALDopplerFstatMetric ( &metricParams, config.edat )) == NULL ) {
@@ -319,6 +324,8 @@ initUserVars (UserVariables_t *uvar)
 
   uvar->Freq = 100;
   uvar->f1dot = 0.0;
+  uvar->f2dot = 0.0;
+  uvar->f3dot = 0.0;
   uvar->h0 = 1;
   uvar->phi0 = 0;
 
@@ -342,6 +349,8 @@ initUserVars (UserVariables_t *uvar)
     XLAL_ERROR ( XLAL_ENOMEM );
   }
 
+  uvar->approxPhase = FALSE;
+
   /* register all our user-variables */
 
   XLALregBOOLUserStruct(help,		'h', UVAR_HELP,		"Print this help/usage message");
@@ -351,6 +360,8 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(Delta, 		'd', UVAR_OPTIONAL,	"skyposition Delta in radians, equatorial coords.");
   XLALregREALUserStruct(Freq, 		'f', UVAR_OPTIONAL, 	"target frequency");
   XLALregREALUserStruct(f1dot, 		's', UVAR_OPTIONAL, 	"first spindown-value df/dt");
+  XLALregREALUserStruct(f2dot, 		 0 , UVAR_OPTIONAL, 	"second spindown-value d2f/dt2");
+  XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
   XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
   XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
@@ -370,6 +381,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregBOOLUserStruct(coordsHelp,      0,  UVAR_OPTIONAL,     "output help-string explaining all the possible Doppler-coordinate names for --coords");
 
   XLALregINTUserStruct(detMotionType,	 0,  UVAR_DEVELOPER,	"Detector-motion: 0=spin+orbit, 1=orbit, 2=spin, 3=spin+ptoleorbit, 4=ptoleorbit, 5=orbit+spin_z, 6=orbit+spin_xy");
+  XLALregBOOLUserStruct(approxPhase,     0,  UVAR_DEVELOPER,	"Use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders >= 1)");
 
   XLALregBOOLUserStruct(version,        'V', UVAR_SPECIAL,      "Output code version");
 
@@ -423,6 +435,8 @@ XLALInitCode ( ConfigVariables *cfg, const UserVariables_t *uvar, const char *ap
     dop->Delta = uvar->Delta;
     dop->fkdot[0] = uvar->Freq;
     dop->fkdot[1] = uvar->f1dot;
+    dop->fkdot[2] = uvar->f2dot;
+    dop->fkdot[3] = uvar->f3dot;
     dop->orbit = NULL;
   }
 
@@ -636,6 +650,14 @@ XLALOutputDopplerMetric ( FILE *fp, const DopplerMetric *metric, const ResultHis
     {
       fprintf ( fp, "\ng_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  metric->g_ij );
       fprintf ( fp, "maxrelerr_gPh = %.2e;\n", metric->maxrelerr_gPh );
+
+      gsl_matrix *gDN_ij;
+      if ( (gDN_ij = XLALDiagNormalizeMetric ( metric->g_ij )) == NULL ) {
+        XLALPrintError ("%s: something failed NormDiagonalizing phase metric g_ij!\n", __func__ );
+        XLAL_ERROR ( XLAL_EFUNC );
+      }
+      fprintf ( fp, "\ngDN_ij = \\\n" ); XLALfprintfGSLmatrix ( fp, METRIC_FORMAT,  gDN_ij );
+      gsl_matrix_free ( gDN_ij );
     }
 
   /* ----- output F-metric (and related matrices ---------- */

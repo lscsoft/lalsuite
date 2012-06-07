@@ -24,9 +24,5 @@ libutilities_la_SOURCES = \
 
 noinst_HEADERS = MatrixOps_source.c
 
-MOSTLYCLEANFILES = .dvi-dep
-DISTCLEANFILES = *.tex
-
-dvi-local: .dvi-dep
-
-@DVIMKFILE@
+MOSTLYCLEANFILES =
+DISTCLEANFILES =

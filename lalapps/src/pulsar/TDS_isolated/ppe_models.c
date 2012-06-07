@@ -56,7 +56,7 @@ void get_pulsar_model( LALInferenceIFOData *data ){
   pars.I31 = rescale_parameter( data, "I31" );
   pars.r = rescale_parameter( data, "r" );
   pars.lambda = rescale_parameter( data, "lambda" );
-  pars.theta = rescale_parameter( data, "theta" );
+  pars.costheta = rescale_parameter( data, "costheta" );
  
   /* set the potentially variable parameters */
   pars.pepoch = rescale_parameter( data, "pepoch" );
@@ -190,6 +190,7 @@ void pulsar_model( BinaryPulsarParams params,
   INT4 i = 0, length = 0;
   UINT4 j = 0;
   CHAR *modeltype = NULL;
+  REAL8 mm = 0.;
   
   /* check model type to get amplitude model */
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
@@ -211,8 +212,12 @@ void pulsar_model( BinaryPulsarParams params,
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                           "freqfactors" );
   
+  if( LALInferenceCheckVariable( data->dataParams, "mismatch" ) )
+    mm = *(REAL8 *)LALInferenceGetVariable( data->dataParams, "mismatch" );
+  
   for( j = 0; j < freqFactors->length; j++ ){
-    REAL8Vector *dphi = NULL;
+    REAL8Vector *dphi = NULL, *dsdphi2 = NULL;
+    UINT4 nohet = 0; /* set if extra phase heterodyne is not required */
     
     /* move data pointer along one as one iteration of the model is held over
     j data structures, moved this from bottom of loop so actioned for 2nd run
@@ -226,29 +231,77 @@ through the loop.*/
      phase calculated using the initial (heterodyne) values of the phase
      parameters */
     if ( varyphase ){
-      if ( (dphi = get_phase_model( params, data, 
-        freqFactors->data[j] )) != NULL ){
-        for( i=0; i<length; i++ ){
-          COMPLEX16 M;
-          REAL8 dphit;
-          REAL4 sp, cp;
-    
-          dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+      /* check whether to recompute the full phase or not */
+      if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
+        REAL8Vector *dsdphi1 = NULL;
+        LIGOTimeGPSVector *downst = 
+          *(LIGOTimeGPSVector **)LALInferenceGetVariable( data->dataParams,
+          "downsampled_times" );
+        
+        /* get the previous downsampled phase if it exists */
+        if ( LALInferenceCheckVariable( data->dataParams, 
+                                        "previous_ds_phase" ) ){
+          dsdphi1 = *(REAL8Vector **)LALInferenceGetVariable( 
+            data->dataParams, "previous_ds_phase" );
+        }
+        
+        /* get the downsampled phase for the current parameters */
+        dsdphi2 = get_phase_model( params, data, freqFactors->data[j], 1 );
+        
+        /* work out phase mismatch */
+        if( dsdphi1 && dsdphi2 ){
+          REAL8 mmcalc = get_phase_mismatch( dsdphi1, dsdphi2, downst );
           
-          sin_cos_2PI_LUT( &sp, &cp, dphit );
-    
-          M.re = data->compModelData->data->data[i].re;
-          M.im = data->compModelData->data->data[i].im;
-    
-          /* heterodyne */
-          data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
-          data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
-					if(i<1)fprintf(stderr,"dphi not equal to zero, cp: %f, sp: %f\n",cp-1,sp);
+          /* if small mismatch then just use previous phase if available */
+          if ( mmcalc < mm ){
+            nohet = 1;
+          
+            XLALDestroyREAL8Vector( dsdphi2 );
+          }
         }
       }
+        
+      /* reheterodyne with the phase */
+      if ( !nohet ){
+        /* make sure the "previous" down sampled phase is the right
+           one for comparison */
+        if ( !LALInferenceCheckVariable( data->dataParams, 
+                                         "previous_ds_phase" ) ){
+          LALInferenceAddVariable( data->dataParams, "previous_ds_phase", 
+                                   &dsdphi2, LALINFERENCE_REAL8Vector_t,
+                                   LALINFERENCE_PARAM_FIXED );                        
+        }
+        else{
+          LALInferenceSetVariable( data->dataParams, "previous_ds_phase",
+                                   &dsdphi2 );
+        }
+        
+        XLALDestroyREAL8Vector( dsdphi2 );
+        
+        if ( (dphi = get_phase_model( params, data, 
+              freqFactors->data[j], 0 )) != NULL ){
+          for( i=0; i<length; i++ ){
+            COMPLEX16 M;
+            REAL8 dphit;
+            REAL4 sp, cp;
+    
+            dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+          
+            sin_cos_2PI_LUT( &sp, &cp, dphit );
+    
+            M.re = data->compModelData->data->data[i].re;
+            M.im = data->compModelData->data->data[i].im;
+    
+            /* heterodyne */
+            data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
+            data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+          }
+        
+          XLALDestroyREAL8Vector( dphi );      
+        } 
+      }       
     }
-    XLALDestroyREAL8Vector( dphi );
-  }
+  } 
 }
 
 
@@ -291,36 +344,51 @@ through the loop.*/
  */
 REAL8Vector *get_phase_model( BinaryPulsarParams params, 
                               LALInferenceIFOData *data,
-                              REAL8 freqFactor ){
+                              REAL8 freqFactor,
+                              UINT4 downsampled ){
   INT4 i = 0, length = 0;
 
   REAL8 T0 = 0., DT = 0., deltat = 0., deltat2 = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
   
   REAL8Vector *phis = NULL, *dts = NULL, *bdts = NULL;
-
+  LIGOTimeGPSVector *datatimes = NULL;
+ 
+  /* check if we want to calculate the phase at a the downsampled rate */
+  if ( downsampled ){
+    if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
+      datatimes = *(LIGOTimeGPSVector **)LALInferenceGetVariable( 
+        data->dataParams, "downsampled_times" );
+    }
+    else{
+      fprintf(stderr, "Error, no downsampled time series available\n");
+      exit(1);
+    }
+  }
+  else datatimes = data->dataTimes;
+  
   /* if edat is NULL then return a NULL pointer */
   if( data->ephem == NULL )
     return NULL;
-	
-  length = data->dataTimes->length;
+
+  length = datatimes->length;
   
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( length );
   
   /* get time delays */ 
-	/*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
+  /*Why ==NULL, surely it will equal null if not set to get ssb delays?*/
   if( (dts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "ssb_delays" )) == NULL || varyskypos == 1 ){
     /* get time delays with an interpolation of interptime (30 mins) */
-    dts = get_ssb_delay( params, data->dataTimes, data->ephem, data->detector,
+    dts = get_ssb_delay( params, datatimes, data->ephem, data->detector,
                          interptime );
   }
   
   if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "bsb_delays" )) == NULL || varybinary == 1 ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, data->dataTimes, dts );
+    bdts = get_bsb_delay( params, datatimes, dts );
   }
   
   for( i=0; i<length; i++){
@@ -343,7 +411,6 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
       inv_fact[4]*params.f3*deltat*deltat2 +
       inv_fact[5]*params.f4*deltat2*deltat2 +
       inv_fact[6]*params.f5*deltat2*deltat2*deltat);
-
   }
   
   /* free memory */
@@ -523,7 +590,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
 }
 
 
-/** \brief The amplitude model of a complex heterodyned traxial neutron star
+/** \brief The amplitude model of a complex heterodyned triaxial neutron star
  * 
  * This function calculates the complex heterodyned time series model for a 
  * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
@@ -605,10 +672,12 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   Xpcosphi = Xplus*cosphi;
   Xccosphi = Xcross*cosphi;
   
-  /* set the psi bin for the lookup table */
-  psv = LAL_PI_2 / ( psteps - 1. );
-  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
-  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  /* set the psi bin for the lookup table - the lookup table runs from -pi/2
+     to pi/2, but for the triaxial case we only require psi values from -pi/4
+     to pi/4 (the grid will be twice as coarse) */
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
+  psiMin = -(LAL_PI_2) + psibinMin*psv;
   psibinMax = psibinMin + 1;
   psiMax = psiMin + psv;
   
@@ -653,7 +722,31 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   }
 }
 
-
+/** \brief The amplitude model of a complex heterodyned signal from a NS rotating
+ * about the pinning axis of its pinned superfluid component.
+ * 
+ * This function calculates the complex heterodyned time series model for a 
+ * triaxial neutron star rotating about the pinning axis of its pinned superfluid component.
+ * 
+ * Unlike the standard triaxial model, this model has emission at f and 2f, therefore
+ * this model function processes two sets of data per detector.
+ * 
+ * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within
+ * this function the correct value for the given time and \f$\psi\f$ are
+ * interpolated from this lookup table using bilinear interpolation (e.g.):
+ * \f{eqnarray*}{
+ * F_+(\psi, t) = F_+(\psi_i, t_j)(1-\psi)(1-t) + F_+(\psi_{i+1}, t_j)\psi(1-t)
+ * + F_+(\psi_i, t_{j+1})(1-\psi)t + F_+(\psi_{i+1}, t_{j+1})\psi{}t,
+ * \f}
+ * where \f$\psi\f$ and \f$t\f$ have been scaled to be within a unit square,
+ * and \f$\psi_i\f$ and \f$t_j\f$ are the closest points within the lookup
+ * table to the required values.
+ * 
+ * \param pars [in] A set of pulsar parameters
+ * \param data [in] The data parameters giving information on the data and
+ * detector
+ * 
+ */
 void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
 *data ){
   INT4 i = 0, length;
@@ -699,19 +792,20 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   Xplus2f = ((pars.f0*pars.f0)/pars.r) * (1.+(pars.cosiota*pars.cosiota));
   Xcross2f = ((2*pars.f0*pars.f0)/pars.r) * pars.cosiota;
   
-  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( (2*pars.theta));
-  A2=pars.I21*sin(2*pars.lambda)*sin(pars.theta);
-  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(cos(pars.theta)*cos(pars.theta)) -(sin(pars.lambda)*sin(pars.lambda))) ) 
-    + ( pars.I31*(sin(pars.theta)*sin(pars.theta)) );
-  B2=pars.I21*sin(2*pars.lambda)*cos(pars.theta);
+  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( 2*(acos(pars.costheta)) );
+  A2=pars.I21*sin(2*pars.lambda)*sin( acos(pars.costheta) );
+  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(pars.costheta*pars.costheta) -(sin(pars.lambda)*sin(pars.lambda))) ) 
+    + ( pars.I31*(sin(acos(pars.costheta))*sin(acos(pars.costheta))) );
+  B2=pars.I21*sin(2*pars.lambda)*(pars.costheta);
   
   /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
   
-  /* set the psi bin for the lookup table */
-  psv = LAL_PI_2 / ( psteps - 1. );
-  psibinMin = (INT4)floor( ( pars.psi + LAL_PI/4. )/psv );
-  psiMin = -(LAL_PI/4.) + psibinMin*psv;
+  /* set the psi bin for the lookup table (look-up table cover that fill -pi/2
+     to pi/2 range) */
+  psv = LAL_PI / ( psteps - 1. );
+  psibinMin = (INT4)floor( ( pars.psi + LAL_PI_2 )/psv );
+  psiMin = -(LAL_PI_2) + psibinMin*psv;
   psibinMax = psibinMin + 1;
   psiMax = psiMin + psv;
   
@@ -811,11 +905,9 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
     data->next->compModelData->data->data[i].im =
       (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-
       ( cross*Xcross2f*((B1*cos2phi)+(B2*sin2phi)) );
-		
   }
   /*--------------------------------------------------------------------------*/
 }
-
 
 /** \brief Calculate the natural logarithm of the evidence that the data
  * consists of only Gaussian noise
@@ -827,17 +919,41 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
  * The evidence is obtained from the joint likelihood given in \c
  * pulsar_log_likelihood with the model term \f$y\f$ set to zero.
  * 
- * \param data [in] Structure containing detector data
+ * PARAM data [in] Structure containing detector data
  * 
  * \return The natural logarithm of the noise only evidence
  */
-REAL8 noise_only_model( LALInferenceIFOData *data ){
-  LALInferenceIFOData *datatemp = data;
+REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
+  LALInferenceIFOData *data = runState->data;
   
   REAL8 logL = 0.0;
   UINT4 i = 0;
+  INT4 k = 0;
+
+  REAL8Vector *freqFactors = NULL;
+  FILE *fp = NULL;
+  CHAR *Znoisefile = NULL;
+  ProcessParamsTable *ppt;
+  ProcessParamsTable *commandLine = runState->commandLine;
+  /*-----------------------------*/
+  /*get the outfile name*/
+  ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
+
+  freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,     
+                                                          "freqfactors" );
+
+  /*set the Znoise filename to the outfile name with "_Znoise" appended*/
+  Znoisefile = XLALStringDuplicate( ppt->value );
+  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+
+  /*Open the Znoise file for writing*/
+  if( (fp = fopen(Znoisefile, "w")) == NULL ){
+    fprintf(stderr, "Error... cannot open output Znoise file!\n");
+    exit(0);
+  }
   
-  while ( datatemp ){
+  /*calculate the evidence */
+  while ( data ){
     UINT4Vector *chunkLengths = NULL;
     REAL8Vector *sumDat = NULL;
   
@@ -847,17 +963,82 @@ REAL8 noise_only_model( LALInferenceIFOData *data ){
                                                              "chunkLength" );
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
                                                        "sumData" );
-  
+    /*Sum the logL over the datachunks*/
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
    
       logL -= chunkLength * log(sumDat->data[i]);
     }
-  
-    datatemp = datatemp->next;
+
+    /* if I am dealing with any model with more than one datastream, I will
+       have more than one freq factor and I want to output the evidence for the
+       data being gaussian noise seperately for each datastream */
+    if((INT4)freqFactors->length > 1){ 
+      fprintf(fp, "Datastream at freq factor: %f, Z: %f\n",
+              freqFactors->data[k], logL);
+    }
+
+    k += 1; /* advance counter now, as freqfactors array index starts at zero.*/
+
+    /* reset k, freqfactor counter once all datastreamns for a detector are
+       done */
+    if(k >= (INT4)freqFactors->length) k = 0;
+
+    data = data->next;
   }
   
+  fclose(fp);
+  
   return logL;
+}
+
+
+/** \brief Calculate the phase mismatch between two vectors of phases
+ * 
+ * The function will calculate phase mismatch between two vectors of phases 
+ * (with phases given in cycles rather than radians).
+ * 
+ * The mismatch is calculated as:
+ * \f[
+   M = 1-\frac{1}{T}\int_0^T \cos{2\pi(\phi_1 - \phi_2)} dt.
+ \f]
+ * In the function the integral is performed using the trapezium rule.
+ * 
+ * PARAM phi1 [in] First phase vector
+ * PARAM phi2 [in] Second phase vector
+ * PARAM t [in] The time stamps of the phase points
+ * 
+ * \return The natural logarithm of the noise only evidence
+ */
+REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVector *t ){
+  REAL8 mismatch = 0., dp1 = 0., dp2 = 0.;
+  REAL4 sp, cp1, cp2;
+  UINT4 i = 0;
+ 
+  REAL8 T = 0., dt = 0.;
+  
+  /* data time span */
+  T = XLALGPSGetREAL8(&t->data[t->length-1]) - XLALGPSGetREAL8(&t->data[0]);
+  
+  if ( phi1->length != phi2->length ){
+    XLALPrintError("Phase lengths should be equal!\n");
+    XLAL_ERROR_REAL8(XLAL_EFAILED);
+  }
+  
+  /* calculate mismatch - integrate with trapezium rule */
+  for( i = 0; i < phi1->length-1; i++ ){
+    dp1 = fmod( phi1->data[i] - phi2->data[i], 1. );
+    dp2 = fmod( phi1->data[i+1] - phi2->data[i+1], 1. );
+    
+    dt = XLALGPSGetREAL8(&t->data[i+1]) - XLALGPSGetREAL8(&t->data[i]);
+    
+    sin_cos_2PI_LUT( &sp, &cp1, dp1 );
+    sin_cos_2PI_LUT( &sp, &cp2, dp2 );
+    
+    mismatch += (cp1 + cp2) * dt;
+  }
+  
+  return fabs(1. - mismatch/(2.*T));
 }
 
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/

@@ -731,7 +731,7 @@ the pulsar parameter file */
     int option_index = 0;
     int c;
 
-    c = getopt_long_only( argc, argv, args, long_options, &option_index );
+    c = getopt_long( argc, argv, args, long_options, &option_index );
     if ( c == -1 ) /* end of options */
       break;
 
@@ -1288,10 +1288,8 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
 
   FrFileIEnd(frfile);
 
-  /* fill into REAL8 vector */
-  if((strstr(channel, "STRAIN") == NULL && strstr(channel, "DER_DATA") == NULL)
-    && strstr(channel, ":LSC") != NULL){ 
-
+  /* fill in vector - checking for frame data type */
+  if( frvect->type == FR_VECT_4R ){ /* data is float */
     /* check that data doesn't contain NaNs */
     if(isnan(frvect->dataF[0]) != 0){
       XLALDestroyREAL8Vector(dblseries->data);
@@ -1300,62 +1298,39 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
       return NULL; /* couldn't read frame data */
     }
 
-    /* data is uncalibrated single precision - not neccesarily from DARM_ERR
-      or AS_Q though - might be analysing an enviromental channel */
     for(i=0;i<(INT4)length;i++)
       dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
   }
-  else if(strstr(channel, "STRAIN") != NULL || strstr(channel, "DER_DATA") !=
-    NULL || strstr(channel, "h_16384Hz") != NULL || strstr(channel, 
-    "h_20000Hz") != NULL || strstr(channel, "LDAS_C02") != NULL){ 
-    /* data is calibrated h(t) */
-    /* calibrated Virgo data has the channel h_16384/20000Hz and is single
-       precision */
-    if( strstr(channel, "h_16384Hz") == NULL && strstr(channel, "h_20000Hz")
-      == NULL){
-      /* check that data doesn't contain NaNs */
-      if(isnan(frvect->dataD[0]) != 0){
-        XLALDestroyREAL8Vector(dblseries->data);
-        XLALFree(dblseries);
-        FrVectFree(frvect);
-        return NULL; /* couldn't read frame data */
-      }
-
-      for(i=0;i<(INT4)length;i++)
-        dblseries->data->data[i] = scalefac*frvect->dataD[i];
-
-    }
-    else{ /* Virgo data */
-      /* check that data doesn't contain NaNs */
-      if(isnan(frvect->dataF[0]) != 0){
-        XLALDestroyREAL8Vector(dblseries->data);
-        XLALFree(dblseries);
-        FrVectFree(frvect);
-        return NULL; /* couldn't read frame data */
-      }
-
-      for(i=0;i<(INT4)length;i++)
-        dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
+  else if( frvect->type == FR_VECT_8R ){ /* data is double */
+    /* check that data doesn't contain NaNs */
+    if(isnan(frvect->dataD[0]) != 0){
+      XLALDestroyREAL8Vector(dblseries->data);
+      XLALFree(dblseries);
+      FrVectFree(frvect);
+      return NULL; /* couldn't read frame data */
     }
 
-    /* if a high-pass filter is specified (>0) then filter data */
-    if(highpass > 0.){
-      PassBandParamStruc highpasspar;
-
-      /* uses 8th order Butterworth, with 10% attenuation */
-      highpasspar.nMax = 8;
-      highpasspar.f1   = -1;
-      highpasspar.a1   = -1;
-      highpasspar.f2   = highpass;
-      highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
-
-      XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
-    }
+    for(i=0;i<(INT4)length;i++)
+      dblseries->data->data[i] = scalefac*(REAL8)frvect->dataD[i];
   }
   else{ /* channel name is not recognised */
     fprintf(stderr, "Error... Channel name %s is not recognised as a proper \
 channel.\n", channel);
     exit(1); /* abort code */
+  }
+
+  /* if a high-pass filter is specified (>0) then filter data */
+  if(highpass > 0.){
+    PassBandParamStruc highpasspar;
+
+    /* uses 8th order Butterworth, with 10% attenuation */
+    highpasspar.nMax = 8;
+    highpasspar.f1   = -1;
+    highpasspar.a1   = -1;
+    highpasspar.f2   = highpass;
+    highpasspar.a2   = 0.9; /* this means 10% attenuation at f2 */
+
+    XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
   }
 
   FrVectFree(frvect);

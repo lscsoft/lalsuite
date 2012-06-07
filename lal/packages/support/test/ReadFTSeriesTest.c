@@ -17,96 +17,44 @@
 *  MA  02111-1307  USA
 */
 
-/*************** <lalVerbatim file="ReadFTSeriesTestCV"> *******
-Author: Torres, C. W.
-**************** </lalVerbatim> ***********************************/
+/**
+   \file
+   \ingroup ReadFTSeries_h
+   \author Torres, C. W.
 
-/* <lalLaTeX>
+   \brief Tests the routines in \ref ReadTimeSeries_c and \ref ReadFrequencySeries_c.
 
-\subsection{Program \texttt{ReadFTSeriesTest.c}}
-\label{s:ReadFTSeriesTest.c}
-
-Tests the routines in \verb@ReadTimeSeries.c@ and
-\verb@ReadFrequenceSeries.c@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+   \heading{Usage}
+   \code
 ReadFTSeriesTest
-\end{verbatim}
+   \endcode
 
-\subsubsection*{Description}
+   \heading{Description}
 
 For each of the real and complex datatypes (single and double
 precision), this program fills a Time- and FrequencySeries, prints
 them to disk with the appropriate
-\texttt{LALPrint}$\langle$datatype$\rangle$\texttt{FrequencySeries()}
-and \texttt{LALPrint}$\langle$datatype$\rangle$\texttt{TimeSeries()}
+   \c LALPrint<datatype><tt>FrequencySeries()</tt>
+   and \c LALPrint<datatype><tt>TimeSeries()</tt>
 routines, then reads them back in with the appropriate
-\texttt{LALRead}$\langle$datatype$\rangle$\texttt{FrequencySeries()}
-and \texttt{LALRead}$\langle$datatype$\rangle$\texttt{TimeSeries()}
+   \c LALRead<datatype><tt>FrequencySeries()</tt>
+   and \c LALRead<datatype><tt>TimeSeries()</tt>
 routines and checks to make sure the resulting series agree, printing the results to standard error.
+*/
 
-\subsubsection*{Exit codes}
-\input{ReadFTSeriesTestCE}
+/**\name Error Codes */ /*@{*/
+#define READFTSERIESTESTC_ENOM 0        /**< Nominal exit */
+#define READFTSERIESTESTC_ECHK 1        /**< Error checking failed to catch bad data */
+#define READFTSERIESTESTC_EFUN 2        /**< Subroutine returned error for valid data */
+#define READFTSERIESTESTC_EFLS 3        /**< Subroutine returned unexpected results */
+/*@}*/
 
-\subsubsection*{Uses}
-\begin{verbatim}
-LALSCreateVector()
-LALDCreateVector()
-LALCCreateVector()
-LALZCreateVector()
-LALSDestroyVector()
-LALDDestroyVector()
-LALCDestroyVector()
-LALZDestroyVector()
-LALSPrintFrequencySeries()
-LALDPrintFrequencySeries()
-LALCPrintFrequencySeries()
-LALZPrintFrequencySeries()
-LALSReadFrequencySeries()
-LALDReadFrequencySeries()
-LALCReadFrequencySeries()
-LALZReadFrequencySeries()
-LALSPrintTimeSeries()
-LALDPrintTimeSeries()
-LALCPrintTimeSeries()
-LALZPrintTimeSeries()
-LALSReadTimeSeries()
-LALDReadTimeSeries()
-LALCReadTimeSeries()
-LALZReadTimeSeries()
-LALUnitRaise()
-LALUnitCompare()
-LALUnitMultiply()
-LALCheckMemoryLeaks()
-LALNameLength
-lalDebugLevel
-lalHertzUnit
-lalStrainUnit
-lalADCCountUnit
-LALStatus
-LALUnit
-LALUnitPair
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{ReadFTSeriesTestCV}}
-
-</lalLaTeX> */
-
-
-/********************** <lalErrTable file="ReadFTSeriesTestCE"> */
-#define READFTSERIESTESTC_ENOM 0
-#define READFTSERIESTESTC_ECHK 1
-#define READFTSERIESTESTC_EFUN 2
-#define READFTSERIESTESTC_EFLS 3
-
+/** \cond DONT_DOXYGEN */
 #define READFTSERIESTESTC_MSGENOM "Nominal exit"
 #define READFTSERIESTESTC_MSGECHK "Error checking failed to catch bad data"
 #define READFTSERIESTESTC_MSGEFUN "Subroutine returned error for valid data"
 #define READFTSERIESTESTC_MSGEFLS "Subroutine returned unexpected results"
-/********************** </lalErrTable> */
+
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
@@ -1599,3 +1547,4 @@ int main( void )
   return READFTSERIESTESTC_ENOM;
 
 }
+/** \endcond */

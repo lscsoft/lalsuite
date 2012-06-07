@@ -26,21 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
-
-\author Brown, D. A.
-\file
-\ingroup CBC_findchirp
-
-\brief Provides core protypes for the core datatypes using in findchirp.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpDatatypes.h>
-\endcode
-
-*/
-
 #ifndef _FINDCHIRPDATATYPESH_H
 #define _FINDCHIRPDATATYPESH_H
 
@@ -52,6 +37,21 @@ extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
 #endif
+
+/**
+
+\author Brown, D. A.
+\addtogroup FindChirpDatatypes_h
+
+\brief Provides core protypes for the core datatypes using in findchirp.
+
+\heading{Synopsis}
+\code
+#include <lal/FindChirpDatatypes.h>
+\endcode
+
+*/
+/*@{*/
 
 /*
  *
@@ -450,6 +450,8 @@ tagFindChirpTemplate
   REAL8Vector                  *A3BCVSpin;
 }
 FindChirpTemplate;
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

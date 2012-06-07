@@ -20,7 +20,7 @@ sense_compare_SOURCES = sense_compare.c
 
 if HAVE_PYTHON
 bin_SCRIPTS = lalapps_power_pipe lalapps_power_online_pipe lalapps_power_likelihood_pipe
-pkgpython_DATA = power.py
+pkgpython_PYTHON = power.py
 endif
 
 pkgdata_DATA = power_pipe.ini power_online_pipe.ini

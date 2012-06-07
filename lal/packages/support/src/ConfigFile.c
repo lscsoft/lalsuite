@@ -18,99 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \file
- * \ingroup ConfigFile
- * \author Reinhard Prix
- *
- * \brief General-purpose routines for config-file reading.
- */
-
-/**
- * \addtogroup ConfigFile
-
-   \par Description
-
-This module provides routines for reading formatted
-config-files containing definitions of the form <tt>variable = value</tt>.
-The general syntax is somewhat similar to the one provided by the
-perl-module <tt>ConfigParser</tt> (cf.
-http://www.python.org/doc/current/lib/module-ConfigParser.html)
-
-Comments are allowed using either '<tt>\#</tt>', '<tt>;</tt>' or <tt>\%</tt>.
-You can also use line-continuation  using a '<tt>\\\\</tt>' at the end of the line.
-Also note that comment-signs '<tt>\#;\%</tt>' within double-quotes '<tt>\"...\"</tt>'
-are <em>not</em> treated as comment-characters.  The general syntax is best illustrated
-using a simple example:
-\code
-# comment line
-var1 = 1.0    ; you can also comment using semi-colons
-somevar = some text.\
-        You can also use\
-        line-continuation
-   var3 = 4      # whatever that means
-note = "this is also possible, and # here does nothing"
-a_switch = true	 #possible values: 0,1,true,false,yes,no, case insensitive
-...
-\endcode
-
-Note that TABS generally get replaced by a single space, which can be
-useful in the case of line-continuation (see example). All leading and
-trailing spaces in are ignore (except within double-quotes).
-
-The general approach of reading from such a config-file, is to first
-call XLALParseDataFile() which loads and pre-parses the contents of the
-config-file into the structure LALParsedDataFile. Then one can read in
-config-variables either using one of the type-strict custom-wrappers
-<tt>XLALReadConfig<TYPE>Variable()</tt> or the general-purpose reading function
-XLALReadConfigVariable().
-
-
-A boolean variable read by XLALReadConfigBOOLVariable() can have any of the values
-<tt>{\"1\", \"0\", \"yes\", \"no\", \"true\", \"false\"}</tt>, where the comparison is done
-<em>case-insensitively</em>, i.e. you can also use \"True\" or \"FALSE\"....
-
-
-If one wishes a tight sytnax for the config-file, one can check
-that there are no illegal entries in the config-file. This is done
-by checking at the end that all config-file entries have been
-successfully parsed, using:
-XLALCheckConfigReadComplete(), where \a strictness is either
-CONFIGFILE_WARN or CONFIGFILE_ERROR.
-In the first case only a warning is issued, while in the second it is
-treated as a LAL-error if some config-file entries have not been
-read-in. (The use of this function is optional).
-
-
-The configfile-data should be freed at the end using
-XLALDestroyParsedDataFile().
-
-\par Uses
-\code
-XLALCHARReadSequence()
-XLALCreateTokenList()       XLALDestroyTokenList()
-XLALCalloc()                XLALMalloc()             XLALFree()
-XLALPrintError()            LALOpenDataFile()        fclose()
-\endcode
-
-\par Notes
-
-XLALReadConfigSTRINGVariable() and XLALReadConfigSTRINGVariable() are not
-the same as using <tt>\"\%s\"</tt> as a format string, as they read the
-<em>rest</em> of the logical line (excluding comments) as a string.
-
-
-In the case of XLALReadConfigSTRINGVariable(), the required
-memory is allocated and has to be freed by the caller, while for
-XLALReadConfigSTRINGVariable() the caller has to provide a
-CHARVector of length \f$N\f$, which defines the maximum length of
-string to be read.
-
-
-\note instead of using these functions directly, it might be
-more convenient to use the UserInput.c infrastructure
-
-*/
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -251,25 +158,20 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
 
 /** Free memory associated with a LALParsedDataFile structure.
  */
-int
-XLALDestroyParsedDataFile (LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
+void
+XLALDestroyParsedDataFile (LALParsedDataFile *cfgdata)	/**< [in] config-file data */
 {
 
-  if ( ! cfgdata || ! *cfgdata || ! (*cfgdata)->lines ) {
-    XLALPrintError( "%s:" CONFIGFILEH_MSGENULL, __func__ );
-    XLAL_ERROR ( XLAL_EINVAL );
-  }
+  if ( cfgdata ) {
 
-  XLALDestroyTokenList ( (*cfgdata)->lines );
+    XLALDestroyTokenList ( cfgdata->lines );
 
-  if ( (*cfgdata)->wasRead )
-    XLALFree ( (*cfgdata)->wasRead );
+    if ( cfgdata->wasRead )
+      XLALFree ( cfgdata->wasRead );
 
-  XLALFree ( *cfgdata );
+    XLALFree ( cfgdata );
 
-  *cfgdata = NULL;
-
-  return XLAL_SUCCESS;
+  }  
 
 } /* XLALDestroyParsedDataFile() */
 
@@ -578,7 +480,7 @@ XLALReadConfigINT4Variable (INT4 *varp,
 			    const CHAR *varName,
                             BOOLEAN *wasRead)
 {
-  LALConfigVar param = { 0, 0, 0, 0 };
+  LALConfigVar param = { 0, 0, 0, CONFIGFILE_IGNORE };
 
   param.varName    = varName;
   param.fmt        = "%" LAL_INT4_FORMAT;
@@ -599,7 +501,7 @@ XLALReadConfigREAL8Variable (REAL8 *varp,
 			    const CHAR *varName,
 			    BOOLEAN *wasRead)
 {
-  LALConfigVar param = {0,0,0,0};
+  LALConfigVar param = {0,0,0, CONFIGFILE_IGNORE };
 
   param.secName = secName;
   param.varName = varName;
@@ -625,7 +527,7 @@ XLALReadConfigSTRINGVariable (CHAR ** varp,		/**< [out] string, allocated here! 
 			      const CHAR * varName,	/**< [in] variable-name to be read */
 			      BOOLEAN * wasRead)	/**< [out] did we succeed in reading? */
 {
-  LALConfigVar param = { 0, 0, 0, 0 };
+  LALConfigVar param = { 0, 0, 0, CONFIGFILE_IGNORE };
   CHAR *str = NULL;
   CHAR *ret = NULL;
 
@@ -927,7 +829,7 @@ cleanConfig (CHARSequence *text)
 
       /* clean away all trailing whitespace of last line*/
       ptr2 = ptr - 1;
-      while ( *ptr2 == ' ' )
+      while ( ptr2 >= text->data && ( strspn ( ptr2, WHITESPACE ) != 0 ) )
 	*ptr2-- = '\n';
 
       /* step to next line */
@@ -943,8 +845,7 @@ cleanConfig (CHARSequence *text)
  * These functions are just wrappers around the XLAL functions
  */
 
-/** Deprecated LAL interface wrapper to XLALParseDataFile()
- *
+/** \deprecated use XLALParseDataFile() instead
  */
 void
 LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -965,19 +866,16 @@ LALParseDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 } /* LALLoadConfigFile() */
 
 
-/** Deprecated LAL interface wrapper to XLALDestroyParsedDataFile()
+/** \deprecated used XLALDestroyParsedDataFile() instead
  */
 void
 LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structure */
 			  LALParsedDataFile **cfgdata)	/**< [in/out] config-file data */
 {
-  const char *fn = __func__;
   INITSTATUS(status);
 
-  if ( XLALDestroyParsedDataFile (cfgdata) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: call to XLALDestroyParsedDataFile() failed with code %d\n", fn, xlalErrno );
-    ABORT ( status, CONFIGFILEH_EXLAL, CONFIGFILEH_MSGEXLAL );
-  }
+  XLALDestroyParsedDataFile (*cfgdata);
+  *cfgdata = NULL;
 
   RETURN (status);
 
@@ -986,7 +884,7 @@ LALDestroyParsedDataFile (LALStatus *status,		/**< pointer to LALStatus structur
 
 
 
-/** Deprecated LAL interface wrapper to XLALReadConfigVariable()
+/** \deprecated use XLALReadConfigVariable() instead
  */
 void
 LALReadConfigVariable (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -1009,7 +907,7 @@ LALReadConfigVariable (LALStatus *status,		/**< pointer to LALStatus structure *
 } /* LALReadConfigVariable() */
 
 
-/** Deprecated LAL interface wrapper to XLALReadConfigBOOLVariable()
+/** \deprecated use XLALReadConfigBOOLVariable() instead
  */
 void
 LALReadConfigBOOLVariable (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -1031,7 +929,7 @@ LALReadConfigBOOLVariable (LALStatus *status,		/**< pointer to LALStatus structu
 } /* LALReadConfigBOOLVariable() */
 
 
-/** Deprecated LAL interface wrapper to XLALReadConfigINT4Variable()
+/** \deprecated use XLALReadConfigINT4Variable() instead
  */
 void
 LALReadConfigINT4Variable (LALStatus *status,
@@ -1053,7 +951,7 @@ LALReadConfigINT4Variable (LALStatus *status,
 
 } /* LALReadConfigINT4Variable() */
 
-/** Deprecated LAL interface wrapper to XLALReadConfigREAL8Variable()
+/** \deprecated use XLALReadConfigREAL8Variable() instead
  */
 void
 LALReadConfigREAL8Variable (LALStatus *status,
@@ -1075,7 +973,7 @@ LALReadConfigREAL8Variable (LALStatus *status,
 
 } /* LALReadConfigREAL8Variable() */
 
-/** Deprecated LAL interface wrapper to XLALReadConfigSTRINGVariable()
+/** \deprecated use XLALReadConfigSTRINGVariable() instead
  */
 void
 LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -1098,7 +996,7 @@ LALReadConfigSTRINGVariable (LALStatus *status,		/**< pointer to LALStatus struc
 } /* LALReadConfigSTRINGVariable() */
 
 
-/** Deprecated LAL interface wrapper to XLALReadConfigSTRINGNVariable()
+/** \deprecated use XLALReadConfigSTRINGNVariable() instead
  */
 void
 LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -1120,7 +1018,7 @@ LALReadConfigSTRINGNVariable (LALStatus *status,	/**< pointer to LALStatus struc
 
 } /* LALReadConfigSTRINGNVariable() */
 
-/** Deprecated LAL interface wrapper to XLALCheckConfigReadComplete()
+/** \deprecated use XLALCheckConfigReadComplete() instead
  */
 void
 LALCheckConfigReadComplete (LALStatus *status,			/**< pointer to LALStatus structure */

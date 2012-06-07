@@ -40,10 +40,11 @@
  * \c RESOURCE %node identified by the given name. The returned \c xmlNode can then be
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  * A VOTable Table element is returned, with fixed variables as PARAMs and the varying ones as FIELDs.
- * 
+ *
  * \param varsArray [in] Pointer to an array of \c LALInferenceVariables structures to be serialized
  * \param N [in] Number of items in the array
- * 
+ * \param tablename UNDOCUMENTED
+ *
  * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
  * the \c LALInferenceVariables array.
  * In case of an error, a null-pointer is returned.\n
@@ -54,8 +55,8 @@
  * \sa XLALCreateVOTParamNode
  * \sa XLALCreateVOTResourceNode
  *
- * \author John Veitch\n
- * 
+ * \author John Veitch
+ *
  */
 
 
@@ -253,7 +254,6 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
  * embedded into an existing %node hierarchy or turned into a full VOTable document.
  *
  * \param vars [in] Pointer to the \c LALInferenceVariables structure to be serialized
- * \param name [in] Unique identifier of this particular \c LALInferenceVariables structure instance
  *
  * \return A pointer to a \c xmlNode that holds the VOTable fragment that represents
  * the \c LALInferenceVariables structure.
@@ -264,7 +264,7 @@ xmlNodePtr XLALInferenceStateVariables2VOTResource(const LALInferenceRunState *s
  *
  * \sa LALInferenceVariableItem2VOTParamNode
  *
- * \author John Veitch\n
+ * \author John Veitch
  * 
  */
 xmlNodePtr XLALInferenceVariables2VOTParamNode (const LALInferenceVariables *const vars)

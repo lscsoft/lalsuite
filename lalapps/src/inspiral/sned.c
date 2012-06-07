@@ -1429,9 +1429,5 @@ int main( int argc, char *argv[] )
   /*check for memory leaks */
   LALCheckMemoryLeaks(); 
 
-  /*print a success message to stdout for parsing by exitcode */
-  fprintf( stdout, "\n%s: EXITCODE0\n", argv[0] );
-  fflush( stdout );
-
   exit( 0 ); 
 }

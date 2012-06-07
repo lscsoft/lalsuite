@@ -24,7 +24,4 @@
 /* LALInference Configure Date */
 #undef LALINFERENCE_CONFIGURE_DATE
 
-/* Define to 1 if you have the LALXML library */
-#undef HAVE_LIBLALXML
-
 #endif /* _LALINFERENCECONFIG_H */

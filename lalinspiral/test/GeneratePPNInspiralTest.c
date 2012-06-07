@@ -69,34 +69,25 @@ If the <tt>-w</tt> \e and <tt>-o</tt> options are given, the
 amplitude, phase, and frequency are generated as above, but are then
 resampled at intervals \c deltat to generate actual wave output.
 
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALSCreateVector()              LALSDestroyVector()
-LALGeneratePPNInspiral()        LALSDestroyVectorSequence()
-\endcode
-
-\heading{Notes}
-
 */
 
-/** \name Error Codes */ /*@{*/
-#define GENERATEPPNINSPIRALTESTC_ENORM  0
-#define GENERATEPPNINSPIRALTESTC_ESUB   1
-#define GENERATEPPNINSPIRALTESTC_EARG   2
-#define GENERATEPPNINSPIRALTESTC_EVAL   3
-#define GENERATEPPNINSPIRALTESTC_EFILE  4
-#define GENERATEPPNINSPIRALTESTC_EPRINT 5
+/** \name Error Codes */
+/*@{*/
+#define GENERATEPPNINSPIRALTESTC_ENORM  0	/**< Normal exit */
+#define GENERATEPPNINSPIRALTESTC_ESUB   1	/**< Subroutine failed */
+#define GENERATEPPNINSPIRALTESTC_EARG   2	/**< Error parsing arguments */
+#define GENERATEPPNINSPIRALTESTC_EVAL   3	/**< Input argument out of valid range */
+#define GENERATEPPNINSPIRALTESTC_EFILE  4	/**< Could not open file */
+#define GENERATEPPNINSPIRALTESTC_EPRINT 5	/**< Wrote past end of message string */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define GENERATEPPNINSPIRALTESTC_MSGENORM  "Normal exit"
 #define GENERATEPPNINSPIRALTESTC_MSGESUB   "Subroutine failed"
 #define GENERATEPPNINSPIRALTESTC_MSGEARG   "Error parsing arguments"
 #define GENERATEPPNINSPIRALTESTC_MSGEVAL   "Input argument out of valid range"
 #define GENERATEPPNINSPIRALTESTC_MSGEFILE  "Could not open file"
 #define GENERATEPPNINSPIRALTESTC_MSGEPRINT "Wrote past end of message string"
-/*@}*/
-
 
 #include <math.h>
 #include <stdlib.h>
@@ -502,3 +493,4 @@ I8ToLIGOTimeGPS( LIGOTimeGPS *output, INT8 input )
   output->gpsNanoSeconds = (INT4)( input - 1000000000LL*s );
   return;
 }
+/** \endcond */

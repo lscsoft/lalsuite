@@ -17,26 +17,19 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ODETestCV">
- * Author: J. D. E. Creighton
- **** </lalVerbatim> */
-/**** <lalLaTeX>
+/**
+ * \file
+ * \ingroup ODE_h
+ * \author J. D. E. Creighton
  *
- * \subsection{Program \texttt{ODETest.c}}
- *
- * Tests the routines in \verb+ODE.h+ by integrating Keplerian orbits.
+ * \brief Tests the routines in \ref ODE_h by integrating Keplerian orbits.
  * The orbits so integrated are output to files containing the integrated
  * and expected orbits.
  *
- * \subsubsection*{Usage}
- * \begin{verbatim}
- * ODETest
- * \end{verbatim}
  *
- * \vfill{\footnotesize\input{ODETestCV}}
- *
- **** </lalLaTeX> */
+*/
 
+/** \cond DONT_DOXYGEN */
 
 #include <math.h>
 #include <stdio.h>
@@ -236,3 +229,4 @@ int main( void )
   LALCheckMemoryLeaks();
   return 0;
 }
+/** \endcond */

@@ -49,7 +49,6 @@
 #define LALPSIRDPN_TEST_OMEGANAN	1028
 #define LALPSIRDPN_TEST_OMEGAMATCH      1029
 #define LALPSIRDPN_TEST_OMEGANONPOS     1031
-#define LALPSIRDPN_TEST_OMEGACUT        1032
 
 typedef struct LALPSpinInspiralRDstructparams {
   REAL8 dt;
@@ -62,7 +61,7 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 m1msq;
   REAL8 m2msq;
   REAL8 m;
-  REAL8 wdotorb[8];           ///< Coefficients of the analytic PN expansion of \f$ \dot\omega_orb\f $
+  REAL8 wdotorb[8];           ///< Coefficients of the analytic PN expansion of \f$ \dot\omega_orb\f$
   REAL8 wdotorblog;           ///< Log coefficient of the PN expansion of of \f$\dot\omega_orb\f$
   REAL8 wdotspin15S1LNh;
   REAL8 wdotspin15S2LNh;
@@ -91,7 +90,6 @@ typedef struct LALPSpinInspiralRDstructparams {
   REAL8 epnspin20S2S2dotLNh;
   REAL8 epnspin25S1dotLNh;
   REAL8 epnspin25S2dotLNh;
-  REAL8 OmCutoff;
   REAL8 lengths;
   REAL8 omOffset;
   REAL8 polarization;
@@ -280,7 +278,6 @@ static int XLALPSpinInspiralRDparamsSetup(
     UINT4 inspiralOnly,                 /** Only generate inspiral */
     REAL8 deltaT,                       /** sampling interval */
     REAL8 fLow,                         /** Starting frequency */
-    REAL8 fCutoff,                      /** CHECKME: Cutoff frequency? */
     REAL8 m1,                           /** Mass 1 */
     REAL8 m2,                           /** Mass 2 */
     LALSimInspiralInteraction interaction, /** Spin interaction */
@@ -296,7 +293,6 @@ static int XLALPSpinInspiralRDparamsSetup(
   
   mparams->inspiralOnly = inspiralOnly;
   mparams->dt           = deltaT;
-  mparams->OmCutoff     = fCutoff*totalMass * LAL_MTSUN_SI * (REAL8) LAL_PI;
   mparams->lengths      = (5.0 / 256.0) / LAL_PI * pow(LAL_PI * chirpMass * LAL_MTSUN_SI * fLow,-5.0 / 3.0) / fLow;
   mparams->omOffset     = 0.006;
 
@@ -757,9 +753,6 @@ static int XLALSpinInspiralTest(UNUSED double t, const double values[], double d
     /* omega is nan */
     return LALPSIRDPN_TEST_OMEGANAN;
   } 
-  else if ((params->inspiralOnly==1)&&(omega>params->OmCutoff)) {
-    return LALPSIRDPN_TEST_OMEGACUT;
-  }
   else if ((params->inspiralOnly!=1)&&(omega>omegaMatch)) {
     return LALPSIRDPN_TEST_OMEGAMATCH;
   }
@@ -1117,12 +1110,13 @@ static int XLALSpinInspiralAdaptiveEngine(
     )
 {
 	
-  UINT4 j;
+  INT4 j;
   INT4 k;
-  INT4 kend=0;
-  INT4 jend=0;
+  INT4 kMatch=0;
+  INT4 jMatch=0;
+  INT4 Npoints=10;
   INT4 intlen;
-  UINT4 intreturn;
+  INT4 intreturn;
 	
   LALSpinInspiralAngle trigAngle;
 
@@ -1147,9 +1141,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 S2S2;
   REAL8 omegaMatch;
   REAL8 c1,c2;
-	
-  INT4 errcode;
-		
+
   REAL8 *yin = (REAL8 *) LALMalloc(sizeof(REAL8) * neqs);
 	
   /* allocate the integrator */
@@ -1170,7 +1162,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   Mass = mparams->m * LAL_MTSUN_SI;
   dt   = mparams->dt;
 	
-  for (j=0; j<neqs; j++) yin[j]=yinit[j];
+  for (UINT4 jeq=0; jeq<neqs; jeq++) yin[jeq]=yinit[jeq];
 
   REAL8 S1x0=yinit[5];
   REAL8 S1y0=yinit[6];
@@ -1179,7 +1171,7 @@ static int XLALSpinInspiralAdaptiveEngine(
   REAL8 S2y0=yinit[9];
   REAL8 S2z0=yinit[10];
 	
-  intlen = XLALAdaptiveRungeKutta4(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
+  intlen = XLALAdaptiveRungeKutta4Hermite(integrator,(void *)mparams,yin,0.0,mparams->lengths/Mass,dt/Mass,&yout);
 
   intreturn = integrator->returncode;
   XLALAdaptiveRungeKutta4Free(integrator);
@@ -1204,9 +1196,11 @@ static int XLALSpinInspiralAdaptiveEngine(
 	
   /* if we have enough space, compute the waveform components; otherwise abort */
   if ( intlen >= mparams->length ) {
-fprintf(stderr, "%i\n", intlen);
-fprintf(stderr, "%i\n", mparams->length);
     fprintf(stderr,"**** LALPSpinInspiralRD ERROR ****: no space to write in waveforms: %d vs. %d\n",intlen,mparams->length);
+    XLALPrintError("**** LALPSpinInspiralRD ERROR ****: error generating second derivatives\n");
+    XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
+    XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
+    XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
     XLAL_ERROR(XLAL_ESIZE);
   }
 	
@@ -1232,12 +1226,11 @@ fprintf(stderr, "%i\n", mparams->length);
   mparams->polarization=2.*atan2(LNhy[1],LNhx[1])-atan2(LNhy[2],LNhx[2]);
 	
   if (mparams->inspiralOnly!=1) {
-		
+
+    INT4 errcode=XLAL_SUCCESS;
+
     j=intlen;
-    jend=0;
-		
-    INT4 Npoints=10;
-		
+	
     do {
       j--;
       LNhS1=(LNhx[j]*S1x[j]+LNhy[j]*S1y[j]+LNhz[j]*S1z[j])/mparams->m1msq;
@@ -1247,28 +1240,29 @@ fprintf(stderr, "%i\n", mparams->length);
       S2S2=(S2x[j]*S2x[j]+S2y[j]*S2y[j]+S2z[j]*S2z[j])/mparams->m2msq/mparams->m2msq;
       omegaMatch=OmMatch(LNhS1,LNhS2,S1S1,S1S2,S2S2);
       if (omegaMatch>omega[j]) {
-				if (omega[j-1]<omega[j]) jend=j;
+				if (omega[j-1]<omega[j]) jMatch=j;
 				// The numerical integrator sometimes stops and stores twice the last
 				// omega value, this 'if' instruction avoids keeping two identical 
 				// values of omega at the end of the integration.
       }
-    } while ((j>0)&&(jend==0));
+    } while ((j>0)&&(jMatch==0));
 		
-    if (omegaMatch<omega[jend]) {
+    if (omegaMatch<omega[jMatch]) {
       fprintf(stderr,"*** LALPSpinInspiralRD ERROR ***: Impossible to attach phenom. part\n");
       XLAL_ERROR(XLAL_EFAILED);
     }
-		
-    kend=Npoints-1;
-    if (omega[jend+1]>omega[jend]) {
-      jend++;
-      kend--;
-    }
+
+    // Data structure are copied into Npoints-long
+    // REAL8Array for interpolation and derivative computation
+    if ( ((INT4)Npoints) > intlen) Npoints = intlen;
+
+    if ( (omega[jMatch+1]>omega[jMatch]) && ((jMatch+1)<intlen) )
+      kMatch=Npoints-2;
+    else
+      kMatch=Npoints-1;
     //We keep until the point where omega > omegaMatch for better derivative
-    // computation, but do the matching at the last point at which 
+    //computation, but do the matching at the last point at which 
     // omega < omegaMatch
-		
-    if (Npoints > jend) Npoints = jend+1;
 		
     REAL8Vector *omega_s   = XLALCreateREAL8Vector(Npoints);
     REAL8Vector *LNhx_s    = XLALCreateREAL8Vector(Npoints);
@@ -1288,7 +1282,7 @@ fprintf(stderr, "%i\n", mparams->length);
     REAL8Vector *ddalpha   = XLALCreateREAL8Vector(Npoints);
 		
     for (k=0;k<Npoints;k++) {
-      j=k+jend-Npoints+1;
+      j=k+jMatch-kMatch;
       omega_s->data[k]  = omega[j];
       LNhx_s->data[k]   = LNhx[j];
       LNhy_s->data[k]   = LNhy[j];
@@ -1323,32 +1317,32 @@ fprintf(stderr, "%i\n", mparams->length);
       XLALPrintError("                     m:           : %12.5f  %12.5f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
       XLALPrintError("              S1:                 : %12.5f  %12.5f  %12.5f\n",S1x0,S1y0,S1z0);
       XLALPrintError("              S2:                 : %12.5f  %12.5f  %12.5f\n",S2x0,S2y0,S2z0);
-      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jend,omega);
+      XLALPrintError("     omM %12.5f   om[%d] %12.5f\n",omegaMatch,jMatch,omega);
       XLAL_ERROR(XLAL_EFAILED);
     }
 		
-    if (ddomega->data[kend]<0.) {
+    if (ddomega->data[kMatch]<0.) {
       fprintf(stdout,"*** LALPSpinInspiralRD WARNING: the attach of the phenom. phase has been shifted back: m1 %12.6f  m2 %12.6f\n",mparams->m1m*mparams->m,mparams->m2m*mparams->m);
-      fprintf(stdout,"  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n   1032: Omega > OmegaCut %12.6e\n",intreturn,mparams->OmCutoff); 
-      while ((kend>0)&&(ddomega->data[kend]<0.)) {
-				kend--;
-				jend--;
+      fprintf(stdout,"  Integration returned %d\n   1025: Energy increases\n   1026: Omegadot -ve\n   1028: Omega NAN\n   1029: Omega > Omegamatch\n   1031: Omega -ve\n",intreturn); 
+      while ((kMatch>0)&&(ddomega->data[kMatch]<0.)) {
+				kMatch--;
+				jMatch--;
       } 
     }
 
     phenPars->intreturn = intreturn;
-    phenPars->energy    = energy[jend];
-    phenPars->omega     = omega_s->data[kend];
-    phenPars->domega    = domega->data[kend];
-    phenPars->ddomega   = ddomega->data[kend];
-    phenPars->diota     = diota->data[kend];
-    phenPars->ddiota    = ddiota->data[kend];
-    phenPars->dalpha    = dalpha->data[kend];
-    phenPars->ddalpha   = ddalpha->data[kend];
-    phenPars->countback = jend;
-    phenPars->Psi       = Phi[jend];
-    phenPars->endtime   = ((REAL8) jend)*dt;
-    phenPars->ci        = LNhz[jend];
+    phenPars->energy    = energy[jMatch];
+    phenPars->omega     = omega_s->data[kMatch];
+    phenPars->domega    = domega->data[kMatch];
+    phenPars->ddomega   = ddomega->data[kMatch];
+    phenPars->diota     = diota->data[kMatch];
+    phenPars->ddiota    = ddiota->data[kMatch];
+    phenPars->dalpha    = dalpha->data[kMatch];
+    phenPars->ddalpha   = ddalpha->data[kMatch];
+    phenPars->countback = jMatch;
+    phenPars->Psi       = Phi[jMatch];
+    phenPars->endtime   = ((REAL8) jMatch)*dt;
+    phenPars->ci        = LNhz[jMatch];
     phenPars->LNhS1     = LNhS1;
     phenPars->LNhS2     = LNhS2;
     phenPars->S1S2      = S1S2;
@@ -1371,7 +1365,7 @@ fprintf(stderr, "%i\n", mparams->length);
     XLALDestroyREAL8Vector(ddalpha);
   }
   else {
-    jend=intlen-1;
+    jMatch=intlen-1;
     phenPars->intreturn = intreturn;
     phenPars->energy    = 0.;
     phenPars->omega     = 0.;
@@ -1417,7 +1411,7 @@ fprintf(stderr, "%i\n", mparams->length);
       alpha=0.;  
   }
 
-  for (j=0;j<=(UINT4)jend;j++) {
+  for (j=0;j<=jMatch;j++) {
 		
     freq->data[j]=omega[j];
     v=cbrt(omega[j]);
@@ -1463,7 +1457,7 @@ fprintf(stderr, "%i\n", mparams->length);
     }
     else alpha = alphaold;
 		
-    errcode  = XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
+    XLALSpinInspiralFillH2Modes(h2P2,h2M2,h2P1,h2M1,h20,j,amp22,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
 		
     /*if (j>2) {
 		 if ((alphaold*alphaoold)<0.) {
@@ -1476,9 +1470,9 @@ fprintf(stderr, "%i\n", mparams->length);
 		 }
 		 }*/
 		
-    errcode += XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
+    XLALSpinInspiralFillH3Modes(h3P3,h3M3,h3P2,h3M2,h3P1,h3M1,h30,j,amp33,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
 		
-    errcode += XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,j,amp44,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
+    XLALSpinInspiralFillH4Modes(h4P4,h4M4,h4P3,h4M3,h4P2,h4M2,h4P1,h4M1,h40,j,amp44,v,mparams->eta,mparams->dm,Psi,alpha,&trigAngle);
 		
   }
 	
@@ -1487,7 +1481,7 @@ fprintf(stderr, "%i\n", mparams->length);
 	
   phenPars->alpha=alpha;
 	
-  return errcode;
+  return XLAL_SUCCESS;
 	
 } /* End of the inspiral part created via the adaptive integration method */
 
@@ -2108,7 +2102,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    InputAxis axisChoice        /**< Choice of axis for input spin params */
+    InputAxis axisChoice,       /**< Choice of axis for input spin params */
+    int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     )
 {
 
@@ -2208,7 +2203,6 @@ int XLALSimIMRPSpinInspiralRDGenerator(
   REAL8 energy=0.;
   REAL8 omegaMatch;
   REAL8 frOmRD,omegaRD;
-  REAL8 fCutoff = 0.0; /* Set only for inspiral only waveforms */
   REAL8 mass1 = m1 / LAL_MSUN_SI; /* mass of object 1 in solar masses */
   REAL8 mass2 = m2 / LAL_MSUN_SI; /* mass of object 2 in solar masses */
   REAL8 totalMass = mass1 + mass2;
@@ -2227,12 +2221,11 @@ int XLALSimIMRPSpinInspiralRDGenerator(
 
   /* setup coefficients for PN equations */
   if(XLALPSpinInspiralRDparamsSetup(&mparams, /** Output: RDparams structure */
-			     0, 	/** Do not Only generate inspiral */
+			     inspiralOnly, 	/** Do not Only generate inspiral */
 			     deltaT, 		/** sampling interval */
 			     f_min,		/** Starting frequency */
-			     fCutoff,		/** CHECKME: Cutoff frequency? */
-			     mass1,			/** Mass 1 */
-			     mass2,			/** Mass 2 */
+			     mass1,		/** Mass 1 */
+			     mass2,		/** Mass 2 */
 			     LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN,	/** Spin interaction */
 			     phaseO		/** PN Order in Phase */ ))
     XLAL_ERROR(XLAL_EFUNC);
@@ -2259,7 +2252,8 @@ int XLALSimIMRPSpinInspiralRDGenerator(
       fprintf(stdout,"*** LALPSpinInspiralRD WARNING ***: Initial frequency reset from %12.6e to %12.6e Hz, m:(%12.4e,%12.4e)\n",params->fLower,initomega/unitHz,params->mass1,params->mass2);
       }*/
     /*else {*/
-    XLALPrintError("**** LALPSpinInspiralRD ERROR ****: Initial frequency too high: %11.5e for omM ~ %11.5e and m:(%8.3f, %8.3f)\n",f_min,omegaMatch/unitHz,mass1,mass2);
+    XLALPrintError("**** LALPSpinInspiralRD ERROR ****: the product of initial frequency times masses is too high: %11.5e for omM ~ %11.5e\n",f_min*mass*LAL_PI,omegaMatch);
+    XLALPrintError("                                    please consider decreasing initial freq %8.3f Hz or m:(%8.3f, %8.3f) Msun\n",f_min,mass1,mass2);
     XLAL_ERROR(XLAL_EFAILED);
     /*}*/
   }
@@ -2539,10 +2533,10 @@ int XLALSimIMRPSpinInspiralRDGenerator(
      Termination is fine if omegamatch is passed or if energy starts 
      increasing  */
 
-  if ( (intreturn!=LALPSIRDPN_TEST_OMEGACUT) && (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )
+  if ( (intreturn != LALPSIRDPN_TEST_OMEGAMATCH) && (intreturn != LALPSIRDPN_TEST_ENERGY) )
     {
       XLALPrintWarning("** LALPSpinInspiralRD WARNING **: integration terminated with code %d.\n",intreturn);
-      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1031: Omega -ve\n  1032: Omega > OmegaCut %12.6e\n",mparams.OmCutoff);
+      fprintf(stderr,"  1025: Energy increases\n  1026: Omegadot -ve\n  1028: Omega NAN\n  1029: Omega > Omegamatch\n  1031: Omega -ve\n");
       XLALPrintWarning("  Waveform parameters were m1 = %14.6e, m2 = %14.6e, inc = %10.6f,\n", mass1, mass2, iota);
       XLALPrintWarning("                           S1 = (%10.6f,%10.6f,%10.6f)\n", s1x, s1y, s1z);
       XLALPrintWarning("                           S2 = (%10.6f,%10.6f,%10.6f)\n", s2x, s2y, s2z);

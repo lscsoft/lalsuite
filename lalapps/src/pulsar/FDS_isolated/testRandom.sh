@@ -32,7 +32,7 @@ cfsv2_code="lalapps_ComputeFStatistic_v2"
 cmp_code="lalapps_compareFstats"
 pfs_code="lalapps_PredictFStat"
 
-SFTdir="./testSFTs"
+SFTdir="./testRandom_sfts"
 
 maxiter=1;
 echo "maxiter=$maxiter"
@@ -43,13 +43,13 @@ Band=950.0
 f1min=-1e-7
 f1max=1e-7
 
-## ---------- some derived input params 
+## ---------- some derived input params
 f0min=$(echo $fmin | awk '{printf "%.8f", $1 + 1}');
 f0max=$(echo $fmin $Band | awk '{printf "%.8f", $1 + $2 - 1}');
 
 Tsft=1800;
 startTime=711595933
-refTime=711595933     ##$startTime 
+refTime=711595933     ##$startTime
 duration=144000	      ## 27.7777 hours
 
 mfd_FreqBand=1.0;
@@ -90,9 +90,9 @@ convToRange()
     local numin=$1
     local mini=$2
     local maxi=$3
-    
+
     local numout=$(echo $numin $mini $maxi | awk '{printf "%g",($3-$2)*$1+$2}');
-    
+
     ##'return' result in global variable
     convToRangeOut=$numout
 
@@ -114,7 +114,7 @@ while [ $iteration -le $maxiter ]; do
 echo "Iter = $iteration"
 #echo "--------------------------------------"
 ## ----------------------------------------------------------------------
-## generate random-values for the variable params: 
+## generate random-values for the variable params:
 ## delta, alpha, IFO, aPlus, aCross, psi, phi0, f0
 
 ## generate deterministic random-seed:
@@ -135,7 +135,7 @@ echo "Iter = $iteration"
     #---------- aCross
     randval=$(echo $randvals | awk '{print $5}');
     convToRange $randval $acrossmin $acrossmax
-    aCross=$convToRangeOut   
+    aCross=$convToRangeOut
     #---------- psi
     randval=$(echo $randvals | awk '{print $6}');
     convToRange $randval 0 $pi
@@ -304,14 +304,14 @@ res2PFSH1H2L1G1=`echo $resPFSH1H2L1G1 | awk '{printf "%.1f", $1}'`
 
 ############################################################
 
-#echo 
+#echo
 #echo "-------------------------------------------------------------------------"
 #echo " STEP 3: run CFS_v2 with perfect match, for single detector ($IFO1 and $IFO3)"
 #echo "-------------------------------------------------------------------------"
 
-## common cmdline-options for v2   
+## common cmdline-options for v2
 cfs_CL="--Freq=$f0 --Alpha=$Alpha --Delta=$Delta --f1dot=$f1dot --TwoFthreshold=0 --refTime=$refTime"
-    
+
 
 ############################################################
 cmdline="$cfsv2_code $cfs_CL --DataFiles='$SFTdir/H-1_H1*'";

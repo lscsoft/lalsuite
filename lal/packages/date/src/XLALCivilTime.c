@@ -29,8 +29,8 @@
 /* in case this is not prototyped ... */
 struct tm * gmtime_r(const time_t *, struct tm *);
 
-/** \defgroup CivilTime CivilTime
- * \ingroup date
+/** \defgroup XLALCivilTime_c CivilTime
+ * \ingroup Date_h
  * \author Chin, D. W. and Creighton, J. D. E.
  *
  * \brief XLAL routines for converting civil time structures to GPS times.
@@ -80,7 +80,7 @@ struct tm * gmtime_r(const time_t *, struct tm *);
  * The inverse conversion is not attempted.
  *
  */
-
+/*@{*/
 
 /* change in TAI-UTC from previous second:
  *
@@ -115,7 +115,6 @@ static int delta_tai_utc( INT4 gpssec )
   return 0;
 }
 
-/** \ingroup CivilTime *//*@{*/
 /** Returns the leap seconds TAI-UTC at a given GPS second. */
 int XLALLeapSeconds( INT4 gpssec /**< [In] Seconds relative to GPS epoch.*/ )
 {
@@ -342,42 +341,42 @@ int XLALFillBrokenDownTime(struct tm *tm /**< Broken-down time struct. */) {
 
   /* Set timezone. */
   tzset();
-  
+
   /* Set daylight savings flag to zero, since we want to get the timezone
      difference against UTC. We save its initial value for use later. */
   int isdst = tm->tm_isdst;
   tm->tm_isdst = 0;
-  
+
   /* Call mktime() to get a time 't1', adjusted for the timezone. */
   time_t t1 = mktime(tm);
   XLAL_CHECK( t1 >= 0, XLAL_ESYS );
-  
+
   /* If original daylight savings flag was -1 (i.e. daylight savings unknown),
      save the current value of the flag for use later. */
   if (isdst < 0) {
     isdst = tm->tm_isdst;
   }
-  
+
   /* Convert 't2' back into a 'tm' struct. gmtime() will preserve the timezone. */
   XLAL_CHECK( gmtime_r(&t1, tm) != NULL, XLAL_ESYS );
-  
+
   /* Now call mktime() again to get time 't2', *twice* adjusted for the timezone. */
   time_t t2 = mktime(tm);
   XLAL_CHECK( t2 >= 0, XLAL_ESYS );
-  
+
   /* Since 't1' has been adjusted for the timezone once, and 't2' twice, their
      difference is precisely the correct timezone difference! We substract this
      from 't1', which is now the desired time in UTC. */
   t1 -= t2 - t1;
-  
+
   /* Call gmtime() to convert the desired time 't1' back into a 'tm' struct. */
   XLAL_CHECK( gmtime_r(&t1, tm) != NULL, XLAL_ESYS );
-  
+
   /* Restore the daylight savings flag. */
   tm->tm_isdst = isdst;
-  
+
   return XLAL_SUCCESS;
-  
+
 }
 
 /*@}*/

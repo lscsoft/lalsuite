@@ -250,7 +250,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch );
 int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream );
 int XLALFrGetpos( FrPos *position, FrStream *stream );
 int XLALFrSetpos( FrStream *stream, FrPos *position );
-LALTYPECODE XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
+int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
 int XLALFrGetINT2TimeSeries( INT2TimeSeries *series, FrStream *stream );
 int XLALFrGetINT4TimeSeries( INT4TimeSeries *series, FrStream *stream );
 int XLALFrGetINT8TimeSeries( INT8TimeSeries *series, FrStream *stream );

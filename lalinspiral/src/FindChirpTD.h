@@ -26,28 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \defgroup FindChirpTD_h FindChirpTD_h
- * \ingroup CBC_findchirp
- */
-
-/**
-\author Brown, D. A., and Creighton, J. D. E.
-\file
-\ingroup FindChirpTD_h
-
-\brief Provides structures and functions to condition interferometer data
-and generate binary inspiral chirps using time domain waveforms.
-
-\heading{Synopsis}
-\code
-#include <lal/FindChirpTD.h>
-\endcode
-
-
-*/
-
-
 #ifndef _FINDCHIRPTDH_H
 #define _FINDCHIRPTDH_H
 
@@ -63,7 +41,23 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**\name Error Codes */ /*@{*/
+/**
+   \addtogroup FindChirpTD_h
+ \author Brown, D. A., and Creighton, J. D. E.
+
+\brief Provides structures and functions to condition interferometer data
+and generate binary inspiral chirps using time domain waveforms.
+
+\heading{Synopsis}
+\code
+#include <lal/FindChirpTD.h>
+\endcode
+
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
 #define FINDCHIRPTDH_ENULL 1
 #define FINDCHIRPTDH_ENNUL 2
 #define FINDCHIRPTDH_EALOC 3
@@ -79,6 +73,9 @@ extern "C" {
 #define FINDCHIRPTDH_ELONG 13
 #define FINDCHIRPTDH_EEMTY 14
 #define FINDCHIRPTDH_ESMPL 15
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define FINDCHIRPTDH_MSGENULL "Null pointer"
 #define FINDCHIRPTDH_MSGENNUL "Non-null pointer"
 #define FINDCHIRPTDH_MSGEALOC "Memory allocation error"
@@ -94,7 +91,7 @@ extern "C" {
 #define FINDCHIRPTDH_MSGELONG "Time domain template too long"
 #define FINDCHIRPTDH_MSGEEMTY "Could not find end of chirp in xfacVec"
 #define FINDCHIRPTDH_MSGESMPL "Waveform sampling interval is too large"
-/*@}*/
+/** \endcond */
 
 void
 LALFindChirpTDData (
@@ -103,12 +100,6 @@ LALFindChirpTDData (
     DataSegmentVector          *dataSegVec,
     FindChirpDataParams        *params
     );
-
-
-
-
-
-
 
 void
 LALFindChirpTDTemplate (
@@ -126,6 +117,8 @@ LALFindChirpTDNormalize(
     FindChirpDataParams        *params
     );
 
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -39,7 +39,7 @@ static int check_checksum(const char *filterfile, const char *claimed_chksum);
             fprintf(stderr,                                             \
                     "ERROR: Line (%s) of file %s is not properly terminated " \
                     "by '%s' marker!\n\n", thisline, filterfile, NAME); \
-            XLALDestroyParsedDataFile(&Filters);                        \
+            XLALDestroyParsedDataFile(Filters);                         \
             return -1;                                                  \
         }                                                               \
     } while (0)
@@ -75,7 +75,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     /* Check that file is not empty */
     if (numlines == 0) {
         fprintf(stderr, "File %s has no contents!\n", filterfile);
-        XLALDestroyParsedDataFile(&Filters);
+        XLALDestroyParsedDataFile(Filters);
         return -2;
     }
 
@@ -87,7 +87,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     if (strncmp(thisline, "SHA-1 checksum", 14) != 0) {
         fprintf(stderr, "ERROR: file %s does not contain a checksum.\n",
                 filterfile);
-        XLALDestroyParsedDataFile(&Filters);
+        XLALDestroyParsedDataFile(Filters);
         return -1;
     }
 
@@ -99,7 +99,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
                 sizeof InputData->filter_chksum);
         if (check_checksum(filterfile, claimed_chksum) != 0) {
             fprintf(stderr, "ERROR: bad checksum for file %s\n", filterfile);
-            XLALDestroyParsedDataFile(&Filters);
+            XLALDestroyParsedDataFile(Filters);
             return -1;
         }
     }
@@ -159,7 +159,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     if (! (InputData->CinvUSF == 1 ||
            (InputData->CinvUSF > 1 && InputData->CinvUSF % 2 == 0)) ) {
         fprintf(stderr, "ERROR: bad upsampling factor %d", InputData->CinvUSF);
-        XLALDestroyParsedDataFile(&Filters);
+        XLALDestroyParsedDataFile(Filters);
         return -1;
     }
 
@@ -275,11 +275,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
     }
 
     /**--------------------------------------------------------------------**/
-    err = XLALDestroyParsedDataFile(&Filters);
-    if (err) {
-        fprintf(stderr, "Error freeing parsed data file %s\n", filterfile);
-        return err;
-    }
+    XLALDestroyParsedDataFile(Filters);
 
     return 0;
 }
@@ -288,7 +284,7 @@ int XLALReadFiltersFile(const char *filterfile, StrainIn *InputData)
 /*
  * Free memory reserved for the filters.
  */
-int XLALDestroyFiltersFile(StrainIn* InputData)
+void XLALDestroyFiltersFile(StrainIn* InputData)
 {
     int i;
 
@@ -306,7 +302,6 @@ int XLALDestroyFiltersFile(StrainIn* InputData)
         LALFree(filters[i]);
     }
 
-    return 0;
 }
 
 

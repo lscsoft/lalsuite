@@ -383,7 +383,7 @@ LALTaylorT4WaveformForInjection(
   ASSERT( !( waveform->f ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
   ASSERT( !( waveform->phi ), status, LALINSPIRALH_ENULL, LALINSPIRALH_MSGENULL );
 
-  params->ampOrder = 0;
+  params->ampOrder = (LALPNOrder) 0;
   XLALPrintInfo( "WARNING: Amp Order has been reset to %d", params->ampOrder);
 
   /* Compute some parameters*/

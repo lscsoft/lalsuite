@@ -17,6 +17,16 @@
 *  MA  02111-1307  USA
 */
 
+#include <config.h>
+
+#include <fftw3.h>
+
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/LALStdlib.h>
+#include <lal/SeqFactories.h>
+#include <lal/RealFFT.h>
+#include <lal/FFTWMutex.h>
+
 /**
  * \addtogroup RealFFT_h
  *
@@ -109,58 +119,52 @@
  * <li> The sign convention used here is the opposite of
  * <em>Numerical Recipes</em> [\ref ptvf1992], but agrees with the one used
  * by FFTW [\ref fj_1998] and the other LIGO software components.
- * </li><li> The result of the reverse FFT must be multiplied by \f$1/n\f$ to recover
+ * </li>
+ * <li> The result of the reverse FFT must be multiplied by \f$1/n\f$ to recover
  * the original vector.  This is unlike the <em>Numerical
  * Recipes</em> [\ref ptvf1992] convension where the factor is \f$2/n\f$ for real
  * FFTs.  This is different from the \c datacondAPI where the
  * normalization constant is applied by default.
- * </li><li> The size \f$n\f$ of the transform can be any positive integer; the
+ * </li>
+ * <li> The size \f$n\f$ of the transform can be any positive integer; the
  * performance is \f$O(n\log n)\f$.  However, better performance is obtained if \f$n\f$
  * is the product of powers of 2, 3, 5, 7, and zero or one power of either 11
  * or 13.  Transforms when \f$n\f$ is a power of 2 are especially fast.  See
- * Ref. [\ref fj_1998].
- * </li><li> All of these routines leave the input array undamaged.  (Except for
- * LALREAL4VectorFFT().)
- * </li><li> LALMalloc() is used by all the fftw routines.
- * </li></ol>
+ * [\ref fj_1998].
+ * </li>
+ * <li> All of these routines leave the input array undamaged.  (Except for LALREAL4VectorFFT().)
+ * </li>
+ * <li> LALMalloc() is used by all the fftw routines.
+ * </li>
+ * </ol>
  *
  *
  *
 */
-
-
-#include <config.h>
-
-#include <fftw3.h>
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALStdlib.h>
-#include <lal/SeqFactories.h>
-#include <lal/RealFFT.h>
-#include <lal/FFTWMutex.h>
+/*@{*/
 
 /** \brief Plan to perform FFT of REAL4 data.
- * \ingroup RealFFT_h */
+ */
 struct
 tagREAL4FFTPlan
 {
-  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
-  UINT4      size; /*< length of the real data vector for this plan */
-  fftwf_plan plan; /*< the FFTW plan */
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the real data vector for this plan */
+  fftwf_plan plan; /**< the FFTW plan */
 };
 
 /** \brief Plan to perform FFT of REAL8 data.
- * \ingroup RealFFT_h
  */
 struct
 tagREAL8FFTPlan
 {
-  INT4       sign; /*< sign in transform exponential, -1 for forward, +1 for reverse */
-  UINT4      size; /*< length of the real data vector for this plan */
-  fftw_plan  plan; /*< the FFTW plan */
+  INT4       sign; /**< sign in transform exponential, -1 for forward, +1 for reverse */
+  UINT4      size; /**< length of the real data vector for this plan */
+  fftw_plan  plan; /**< the FFTW plan */
 };
 
 
+/* ---------- Function prototypes ---------- */
 /*
  *
  * REAL4 XLAL Functions
@@ -1431,3 +1435,4 @@ LALREAL8VectorFFT(
 
   RETURN( status );
 }
+/*@}*/

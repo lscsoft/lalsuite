@@ -17,105 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**************************** <lalVerbatim file="BilinearTransformCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{BilinearTransform.c}}
-\label{ss:BilinearTransform.c}
-
-Transforms the complex frequency coordinate of a ZPG filter.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{BilinearTransformCP}
-\idx{LALWToZCOMPLEX8ZPGFilter()}
-\idx{LALWToZCOMPLEX16ZPGFilter()}
-
-\subsubsection*{Description}
-
-These functions perform an in-place bilinear transformation on an
-object \verb@*filter@ of type \verb@<datatype>ZPGFilter@, transforming
-from $w$ to $z=(1+iw)/(1-iw)$.  Care is taken to ensure that zeros and
-poles at $w=\infty$ are correctly transformed to $z=-1$, and zeros and
-poles at $w=-i$ are correctly transformed to $z=\infty$.  In addition
-to simply relocating the zeros and poles, residual factors are also
-incorporated into the gain of the filter (i.e.\ the leading
-coefficient of the rational function).
-
-\subsubsection*{Algorithm}
-
-The vectors \verb@filter->zeros@ and \verb@filter->poles@ only record
-those zeros and poles that have finite value.  If one includes the
-point $\infty$ on the complex plane, then a rational function always
-has the same number of zeros and poles: a number \verb@num@ that is
-the larger of \verb@z->zeros->length@ or \verb@z->poles->length@.  If
-one or the other vector has a smaller length, then after the
-transformation that vector will receive additional elements, with a
-complex value of $z=-1$, to bring its length up to \verb@num@.
-However, each vector will then \emph{lose} those elements that
-previously had values $w=-i$, (which are sent to $z=\infty$,) thus
-possibly decreasing the length of the vector.  These routines handle
-this by simply allocating a new vector for the transformed data, and
-freeing the old vector after the transformation.
-
-When transforming a zero $w_k$ on the complex plane, one makes use of
-the identity:
-$$
-(w - w_k) = -(w_k + i)\times\frac{z-z_k}{z+1} \; ,
-$$
-and similarly, when transforming a pole at $w_k$,
-$$
-(w - w_k)^{-1} = -(w_k + i)^{-1}\times\frac{z+1}{z-z_k} \; ,
-$$
-where $z=(1+iw)/(1-iw)$ and $z_k=(1+iw_k)/(1-iw_k)$.  If there are an
-equal number of poles and zeros being transformed, then the factors of
-$z+1$ will cancel; otherwise, the remaining factors correspond to the
-zeros or poles at $z=-1$ brought in from $w=\infty$.  The factor
-$(z-z_k)$ represents the new position of the transformed zero or pole.
-The important factor to note, though, is the factor $-(w_k+i)^{\pm1}$.
-This factor represents the change in the gain \verb@filter->gain@.
-When $w_k=-i$, the transformation is slightly different:
-$$
-(w + i) = \frac{2i}{z+1} \; ;
-$$
-thus the gain correction factor is $2i$ (rather than 0) in this case.
-
-The algorithm in this module computes and stores all the gain
-correction factors before applying them to the gain.  The correction
-factors are sorted in order of absolute magnitude, and are multiplied
-together in small- and large-magnitude pairs.  In this way one reduces
-the risk of overrunning the floating-point dynamical range during
-intermediate calculations.
-
-As a similar precaution, the routines in this module use the algorithm
-discussed in the \verb@VectorOps@ package whenever they perform
-complex division, to avoid intermediate results that may be the
-product of two large numbers.  When transforming $z=(1+iw)/(1-iw)$,
-these routines also test for special cases (such as $w$ purely
-imaginary) that have qualitatively significant results ($z$ purely
-real), so that one doesn't end up with, for instance, an imaginary
-part of $10^{-12}$ instead of 0.
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALI4CreateVector()             LALI4DestroyVector()
-LALSCreateVector()              LALDCreateVector()
-LALSDestroyVector()             LALDDestroyVector()
-LALCCreateVector()              LALZCreateVector()
-LALCDestroyVector()             LALZDestroyVector()
-LALCVectorAbs()                 LALZVectorAbs()
-LALSHeapIndex()                 LALDHeapIndex()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{BilinearTransformCV}}
-
-******************************************************* </lalLaTeX> */
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
@@ -129,6 +30,79 @@ LALSHeapIndex()                 LALDHeapIndex()
 #else
 #define UNUSED
 #endif
+
+/**
+   \addtogroup BilinearTransform_c
+   \author Creighton, T. D.
+
+   \brief Transforms the complex frequency coordinate of a ZPG filter.
+
+\heading{Description}
+
+These functions perform an in-place bilinear transformation on an
+object <tt>*filter</tt> of type <tt>\<datatype\>ZPGFilter</tt>, transforming
+from \f$w\f$ to \f$z=(1+iw)/(1-iw)\f$.  Care is taken to ensure that zeros and
+poles at \f$w=\infty\f$ are correctly transformed to \f$z=-1\f$, and zeros and
+poles at \f$w=-i\f$ are correctly transformed to \f$z=\infty\f$.  In addition
+to simply relocating the zeros and poles, residual factors are also
+incorporated into the gain of the filter (i.e.\ the leading
+coefficient of the rational function).
+
+\heading{Algorithm}
+
+The vectors <tt>filter->zeros</tt> and <tt>filter->poles</tt> only record
+those zeros and poles that have finite value.  If one includes the
+point \f$\infty\f$ on the complex plane, then a rational function always
+has the same number of zeros and poles: a number \c num that is
+the larger of <tt>z->zeros->length</tt> or <tt>z->poles->length</tt>.  If
+one or the other vector has a smaller length, then after the
+transformation that vector will receive additional elements, with a
+complex value of \f$z=-1\f$, to bring its length up to \c num.
+However, each vector will then \e lose those elements that
+previously had values \f$w=-i\f$, (which are sent to \f$z=\infty\f$,) thus
+possibly decreasing the length of the vector.  These routines handle
+this by simply allocating a new vector for the transformed data, and
+freeing the old vector after the transformation.
+
+When transforming a zero \f$w_k\f$ on the complex plane, one makes use of
+the identity:
+\f[
+(w - w_k) = -(w_k + i)\times\frac{z-z_k}{z+1} \; ,
+\f]
+and similarly, when transforming a pole at \f$w_k\f$,
+\f[
+(w - w_k)^{-1} = -(w_k + i)^{-1}\times\frac{z+1}{z-z_k} \; ,
+\f]
+where \f$z=(1+iw)/(1-iw)\f$ and \f$z_k=(1+iw_k)/(1-iw_k)\f$.  If there are an
+equal number of poles and zeros being transformed, then the factors of
+\f$z+1\f$ will cancel; otherwise, the remaining factors correspond to the
+zeros or poles at \f$z=-1\f$ brought in from \f$w=\infty\f$.  The factor
+\f$(z-z_k)\f$ represents the new position of the transformed zero or pole.
+The important factor to note, though, is the factor \f$-(w_k+i)^{\pm1}\f$.
+This factor represents the change in the gain <tt>filter->gain</tt>.
+When \f$w_k=-i\f$, the transformation is slightly different:
+\f[
+(w + i) = \frac{2i}{z+1} \; ;
+\f]
+thus the gain correction factor is \f$2i\f$ (rather than 0) in this case.
+
+The algorithm in this module computes and stores all the gain
+correction factors before applying them to the gain.  The correction
+factors are sorted in order of absolute magnitude, and are multiplied
+together in small- and large-magnitude pairs.  In this way one reduces
+the risk of overrunning the floating-point dynamical range during
+intermediate calculations.
+
+As a similar precaution, the routines in this module use the algorithm
+discussed in the \c VectorOps package whenever they perform
+complex division, to avoid intermediate results that may be the
+product of two large numbers.  When transforming \f$z=(1+iw)/(1-iw)\f$,
+these routines also test for special cases (such as \f$w\f$ purely
+imaginary) that have qualitatively significant results (\f$z\f$ purely
+real), so that one doesn't end up with, for instance, an imaginary
+part of \f$10^{-12}\f$ instead of 0.
+*/
+/*@{*/
 
 /*
  * WARNING: NOT A PROPER COMPARE FUNCTION
@@ -162,6 +136,7 @@ static int CompareCOMPLEX16Abs( void UNUSED *p, const void *a, const void *b )
   return 1;
 }
 
+/** \see See \ref BilinearTransform_c for documentation */
 int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 {
   INT4 i;        /* A counter. */
@@ -404,7 +379,7 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
   return 0;
 }
 
-
+/** \see See \ref BilinearTransform_c for documentation */
 int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
 {
   INT4 i;        /* A counter. */
@@ -648,11 +623,13 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
 }
 
 
-/* <lalVerbatim file="BilinearTransformCP"> */
+/** Deprecated.
+ * \deprecated Use XLALWToZCOMPLEX8ZPGFilter() instead
+ */
 void
 LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
 			  COMPLEX8ZPGFilter *filter )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   if(XLALWToZCOMPLEX8ZPGFilter(filter)<0)
@@ -673,11 +650,13 @@ LALWToZCOMPLEX8ZPGFilter( LALStatus         *stat,
 }
 
 
-/* <lalVerbatim file="BilinearTransformCP"> */
+/** Deprecated.
+ * \deprecated Use XLALWToZCOMPLEX16ZPGFilter() instead
+ */
 void
 LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
 			   COMPLEX16ZPGFilter *filter )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   if(XLALWToZCOMPLEX16ZPGFilter(filter)<0)
@@ -696,3 +675,4 @@ LALWToZCOMPLEX16ZPGFilter( LALStatus          *stat,
 
   RETURN(stat);
 }
+/*@}*/

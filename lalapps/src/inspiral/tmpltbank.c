@@ -45,6 +45,10 @@
 #include <processtable.h>
 #include <lalappsfrutils.h>
 
+#ifdef LALAPPS_CUDA_ENABLED
+#include <cuda_runtime_api.h>
+#endif
+
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -1272,8 +1276,10 @@ cleanExit:
   if ( fqChanName ) free( fqChanName );
   LALCheckMemoryLeaks();
 
-  /* print a success message to stdout for parsing by exitcode */
-  fprintf( stdout, "%s: EXITCODE0\n", argv[0] );
+#ifdef LALAPPS_CUDA_ENABLED
+  cudaThreadExit();
+#endif
+
   exit( 0 );
 }
 
@@ -1409,6 +1415,9 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {"segment-length",          required_argument, 0,                'd'},
     {"number-of-segments",      required_argument, 0,                'e'},
     {"sample-rate",             required_argument, 0,                'g'},
+#ifdef LALAPPS_CUDA_ENABLED
+    {"gpu-device-id",           required_argument, 0,                '+'},
+#endif
     {"calibrated-data",         required_argument, 0,                'M'},
     {"strain-high-pass-freq",   required_argument, 0,                'J'},
     {"strain-high-pass-order",  required_argument, 0,                'K'},
@@ -1478,6 +1487,10 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   };
 
   int c;
+#ifdef LALAPPS_CUDA_ENABLED
+  INT4 gpuDeviceID = 0;
+  cudaError_t cudaError = cudaSuccess;
+#endif
   ProcessParamsTable *this_proc_param = procparams.processParamsTable;
   UINT4   haveOrder       = 0;
   UINT4   haveApprox      = 0;
@@ -1504,8 +1517,13 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     size_t optarg_len;
 
     c = getopt_long_only( argc, argv,
+#ifdef LALAPPS_CUDA_ENABLED
+        "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
+        "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:+:",
+#else
         "a:b:c:d:e:f:g:hi:j:k:l:m:n:o:p:r:s:t:u:v:x:yz:X:0:"
         "A:B:C:D:E:F:G:H:I:J:K:L:M:O:P:Q:R:S:T:U:VZ:1:2:3:4:5:6:7:8:9:",
+#endif
         long_options, &option_index );
 
     /* detect the end of the options */
@@ -1632,6 +1650,23 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         }
         ADD_PROCESS_PARAM( "int", "%d", sampleRate );
         break;
+
+#ifdef LALAPPS_CUDA_ENABLED
+      case '+':
+        gpuDeviceID = (INT4) atoi( optarg );
+        cudaError = cudaSetDevice( gpuDeviceID );
+        if ( cudaError != cudaSuccess )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+                   "could not associate thread to GPU %d\n"
+                   "CudaError: %s\n",
+                   long_options[option_index].name, gpuDeviceID,
+                   cudaGetErrorString(cudaError));
+          exit( 1 );
+        }
+        ADD_PROCESS_PARAM( "int", "%d", gpuDeviceID );
+        break;
+#endif
 
       case 'M':
         /* specify which type of calibrated data */

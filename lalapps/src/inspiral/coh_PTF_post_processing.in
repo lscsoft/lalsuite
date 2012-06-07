@@ -572,6 +572,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
     fmcache.tofile(open(fmcachefile, 'w'))
 
     for injpattern in injpatterns:
+      if injpattern =='NONE':
+        continue
       for inc in inclinations:
         node = injcombiner_setup(job, tag, outdir, fmcachefile, injpattern, inc)
         dag.add_node(node)
@@ -602,6 +604,8 @@ def main(rundir, outdir, ifotag, grb, inifile, injfile, verbose=False,\
 
     # and append the runs that have been split
     for injpattern in injpatterns:
+      if injpattern == 'NONE':
+        continue
       distRun = None
       for run in injruns:
         if injpattern in run:

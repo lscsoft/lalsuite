@@ -50,8 +50,6 @@ static REAL4 lo_freq(const SnglBurst *x)
 /**
  * Free a sngl_burst
  */
-
-
 void XLALDestroySnglBurst(SnglBurst *event)
 {
 	XLALFree(event);
@@ -61,8 +59,6 @@ void XLALDestroySnglBurst(SnglBurst *event)
 /**
  * Free a SnglBurst linked list.
  */
-
-
 void XLALDestroySnglBurstTable(SnglBurst *head)
 {
 	while(head) {
@@ -80,8 +76,6 @@ void XLALDestroySnglBurstTable(SnglBurst *head)
  * return value is the next event_id after the last one assigned to a row
  * in the list.
  */
-
-
 long XLALSnglBurstAssignIDs(
 	SnglBurst *head,
 	long process_id,
@@ -99,8 +93,6 @@ long XLALSnglBurstAssignIDs(
 /**
  * Compute the length of a linked list of SnglBurst objects.
  */
-
-
 int XLALSnglBurstTableLength(SnglBurst *head)
 {
 	int length;
@@ -116,8 +108,6 @@ int XLALSnglBurstTableLength(SnglBurst *head)
  * Sort a list of SnglBurst events into increasing order according to the
  * supplied comparison function.
  */
-
-
 SnglBurst **XLALSortSnglBurst(
 	SnglBurst **head,
 	int (*comparefunc)(const SnglBurst * const *, const SnglBurst * const *)
@@ -161,8 +151,6 @@ SnglBurst **XLALSortSnglBurst(
 /**
  * Compare the start times of two SnglBurst events.
  */
-
-
 int XLALCompareSnglBurstByStartTime(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
@@ -207,8 +195,6 @@ int XLALCompareSnglBurstByExactPeakTime(
 /**
  * Compare the SNRs of two SnglBurst events.
  */
-
-
 int XLALCompareSnglBurstBySNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
@@ -228,8 +214,6 @@ int XLALCompareSnglBurstBySNR(
 /**
  * Compare the peak times and SNRs of two SnglBurst events.
  */
-
-
 int XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
@@ -248,8 +232,6 @@ int XLALCompareSnglBurstByPeakTimeAndSNR(
 /**
  * Compare the low frequency limits of two SnglBurst events.
  */
-
-
 int XLALCompareSnglBurstByLowFreq(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
@@ -272,8 +254,6 @@ int XLALCompareSnglBurstByLowFreq(
  * Compare two events first by start time, then by lowest frequency to break
  * ties.
  */
-
-
 int XLALCompareSnglBurstByStartTimeAndLowFreq(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
@@ -291,8 +271,6 @@ int XLALCompareSnglBurstByStartTimeAndLowFreq(
 /**
  * cluster events a and b, storing result in a; takes one with largest snr
  */
-
-
 void XLALStringBurstCluster(
 	SnglBurst *a,
 	const SnglBurst *b
@@ -314,8 +292,6 @@ void XLALStringBurstCluster(
  * the SnglBurst event pointed to by its first argument with the cluster
  * of that event and the event pointed to by the second argument.
  */
-
-
 void XLALClusterSnglBurstTable (
 	SnglBurst **list,
 	int (*bailoutfunc)(const SnglBurst * const *, const SnglBurst * const *),
@@ -352,8 +328,6 @@ void XLALClusterSnglBurstTable (
 /**
  * Create a SnglBurst structure.
  */
-
-
 SnglBurst *XLALCreateSnglBurst(void)
 {
 	SnglBurst *new = XLALMalloc(sizeof(*new));
@@ -384,8 +358,6 @@ SnglBurst *XLALCreateSnglBurst(void)
 /**
  * Create a SimBurst structure.
  */
-
-
 SimBurst *XLALCreateSimBurst(void)
 {
 	SimBurst *new = XLALMalloc(sizeof(*new));
@@ -419,8 +391,6 @@ SimBurst *XLALCreateSimBurst(void)
 /**
  * Destroy a SimBurst structure.
  */
-
-
 void XLALDestroySimBurst(SimBurst *sim_burst)
 {
 	XLALFree(sim_burst);
@@ -430,8 +400,6 @@ void XLALDestroySimBurst(SimBurst *sim_burst)
 /**
  * Destroy a SimBurst linked list.
  */
-
-
 void XLALDestroySimBurstTable(SimBurst *head)
 {
 	while(head) {
@@ -445,8 +413,6 @@ void XLALDestroySimBurstTable(SimBurst *head)
 /**
  * Compare the geocentre times of two SimBurst events.
  */
-
-
 int XLALCompareSimBurstByGeocentTimeGPS(
 	const SimBurst * const *a,
 	const SimBurst * const *b
@@ -468,8 +434,6 @@ int XLALCompareSimBurstByGeocentTimeGPS(
 /**
  * Compute the length of a linked list of SimBurst objects.
  */
-
-
 int XLALSimBurstTableLength(SimBurst *head)
 {
 	int length;
@@ -485,8 +449,6 @@ int XLALSimBurstTableLength(SimBurst *head)
  * Sort a list of SimBurst events into increasing order according to the
  * supplied comparison function.
  */
-
-
 SimBurst **XLALSortSimBurst(
 	SimBurst **head,
 	int (*comparefunc)(const SimBurst * const *, const SimBurst * const *)
@@ -534,8 +496,6 @@ SimBurst **XLALSortSimBurst(
  * simulation_id.  The return value is the next simulation_id after the
  * last one assigned to a row in the list.
  */
-
-
 long XLALSimBurstAssignIDs(
 	SimBurst *sim_burst,
 	long process_id,

@@ -233,7 +233,7 @@ XLALFreeSnglInspiral (
     if( (thisCoinc = eventId->coincInspiralTable) )
     {
       /* this Sngl is still part of a coinc, set pointer to NULL */
-      for ( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      for ( ifoNumber = (InterferometerNumber) 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
       {
         if ( *eventHead == thisCoinc->snglInspiral[ifoNumber] )
         {
@@ -623,8 +623,8 @@ XLALCompareInspirals (
     return params->match;
   }
 
-  ifoaNum = XLALIFONumber( aPtr->ifo );
-  ifobNum = XLALIFONumber( bPtr->ifo );
+  ifoaNum = (InterferometerNumber) XLALIFONumber( aPtr->ifo );
+  ifobNum = (InterferometerNumber) XLALIFONumber( bPtr->ifo );
 
   ta = XLALGPSToINT8NS( &(aPtr->end_time) );
   tb = XLALGPSToINT8NS( &(bPtr->end_time) );

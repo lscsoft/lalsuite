@@ -27,6 +27,8 @@
 #include "statistics.h"
 #include "IHS.h"
 
+
+//Allocate memory for a new upperLimitVector of specified length
 UpperLimitVector * new_UpperLimitVector(UINT4 length)
 {
    
@@ -55,7 +57,8 @@ UpperLimitVector * new_UpperLimitVector(UINT4 length)
 } /* new_UpperLimitVector() */
 
 
-
+//Resize the upperLimitVector to specified length
+//length = 0 frees the upperLimitVector and returns NULL
 UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 length)
 {
    
@@ -82,7 +85,7 @@ UpperLimitVector * resize_UpperLimitVector(UpperLimitVector *vector, UINT4 lengt
 } /* resize_UpperLimitVector() */
 
 
-
+//Free memory allocated to the upperLimitVector
 void free_UpperLimitVector(UpperLimitVector *vector)
 {
    
@@ -101,7 +104,7 @@ void free_UpperLimitVector(UpperLimitVector *vector)
 } /* free_UpperLimitVector() */
 
 
-
+// Reset the upperLimitStruct
 void reset_UpperLimitStruct(UpperLimit *ul)
 {
    
@@ -112,6 +115,8 @@ void reset_UpperLimitStruct(UpperLimit *ul)
    ul->effSNRval = NULL;
    
 }
+
+//Free an upperLimitStruct
 void free_UpperLimitStruct(UpperLimit *ul)
 {
    
@@ -139,7 +144,7 @@ void free_UpperLimitStruct(UpperLimit *ul)
 }
 
 
-
+//Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
 void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdata, ihsMaximaStruct *ihsmaxima, ihsfarStruct *ihsfar, REAL4Vector *fbinavgs)
 {
    
@@ -181,21 +186,22 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       REAL8 loudestoutlier = 0.0, loudestoutlierminusnoise = 0.0, loudestoutliernoise = 0.0;
       INT4 jjbinofloudestoutlier = 0, locationofloudestoutlier = -1;
       INT4 startpositioninmaximavector = (ii-2)*ffdata->numfbins - ((ii-1)*(ii-1)-(ii-1))/2;
+      REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;                             //"Signal" modulation depth
+      
       //loop over frequency bins
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
-         
          INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
-         INT4 location = ihsmaxima->locations->data[locationinmaximavector];  //Location of maximum value
-         REAL8 noise = ihsfar->expectedIHSVector->data[location-5];           //Expected noise at the location of the maximum value
+         //REAL8 noise = ihsfar->ihsdistMean->data[ii-2];                       //Expected noise
+         REAL8 noise = ihsfar->expectedIHSVector->data[ihsmaxima->locations->data[locationinmaximavector] - 5];  //Expected noise
          
          //Sum across multiple frequency bins scaling noise each time with average noise floor
          REAL8 totalnoise = 0.0;
-         for (kk=0; kk<ii; kk++) totalnoise += noise*fbinavgs->data[jj+kk];
+         for (kk=0; kk<ii; kk++) totalnoise += fbinavgs->data[jj+kk];
+         totalnoise = noise*totalnoise/(REAL8)ii;
          
          REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;    //IHS value minus noise
          
-         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;  //"Signal" frequency
-         REAL8 moddepth = 0.5*(ii-1.0)/params->Tcoh;                    //"Signal" modulation depth
+         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;        //"Signal" frequency
          
          if (ihsminusnoise>loudestoutlierminusnoise && 
              (fsig>=params->ULfmin && fsig<=params->ULfmin+params->ULfspan) && 
@@ -219,7 +225,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       
       //We do a root finding algorithm to find the delta value required so that only 5% of a non-central chi-square
       //distribution lies below the maximum value.
-      REAL8 initialguess = ncx2inv(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
+      REAL8 initialguess = ncx2inv_float(0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
       if (XLAL_IS_REAL8_FAIL_NAN(initialguess)) {
          fprintf(stderr, "%s: ncx2inv(%f,%f,%f) failed.\n", __func__, 0.95, 2.0*loudestoutliernoise, 2.0*loudestoutlierminusnoise);
          XLAL_ERROR_VOID(XLAL_EFUNC);
@@ -280,6 +286,10 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    gsl_root_fsolver_free(s);
    
 }
+
+
+//The non-central chi-square CDF solver used in the GSL root finding algorithm
+//Double precision
 REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
 {
    
@@ -292,6 +302,9 @@ REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p)
    return val - (1.0-params->ULpercent);
    
 }
+
+//The non-central chi-square CDF solver used in the GSL root finding algorithm
+//Float precision (although output is in double precision for GSL)
 REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
 {
    
@@ -304,6 +317,9 @@ REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p)
    return (REAL8)val - (1.0-params->ULpercent);
    
 }
+
+//The non-central chi-square CDF solver used in the GSL root finding algorithm
+//Double precision, without the tiny probability
 REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
 {
    
@@ -316,6 +332,9 @@ REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p)
    else return val - (1.0-params->ULpercent);
    
 }
+
+//The non-central chi-square CDF solver used in the GSL root finding algorithm
+//Float precision (although output is in double precision for GSL), without the tiny probability 
 REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
 {
    
@@ -330,7 +349,7 @@ REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p)
 }
 
 
-
+//Output the highest upper limit to a file unless printAllULvalues==1 in which case, all UL values are printed to a file
 void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, INT4 printAllULvalues)
 {
    

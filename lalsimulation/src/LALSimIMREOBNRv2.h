@@ -116,6 +116,8 @@ tagFacWaveformCoeffs
   REAL8 rho21v10;
   REAL8 rho21v10l;
 
+  REAL8 f21v1;
+
   REAL8 delta33vh3;
   REAL8 delta33vh6;
   REAL8 delta33vh9;
@@ -131,6 +133,8 @@ tagFacWaveformCoeffs
   REAL8 rho33v7;
   REAL8 rho33v8;
   REAL8 rho33v8l;
+
+  REAL8 f33v3;
 
   REAL8 delta32vh3;
   REAL8 delta32vh4;
@@ -163,6 +167,8 @@ tagFacWaveformCoeffs
   REAL8 rho31v8;
   REAL8 rho31v8l;
 
+  REAL8 f31v3;
+
   REAL8 delta44vh3;
   REAL8 delta44vh6;
   REAL8 delta44v5;
@@ -185,6 +191,8 @@ tagFacWaveformCoeffs
   REAL8 rho43v6;
   REAL8 rho43v6l;
 
+  REAL8 f43v;
+
   REAL8 delta42vh3;
   REAL8 delta42vh6;
 
@@ -205,6 +213,8 @@ tagFacWaveformCoeffs
   REAL8 rho41v5;
   REAL8 rho41v6;
   REAL8 rho41v6l;
+
+  REAL8 f41v;
 
   REAL8 delta55vh3;
   REAL8 delta55v5;

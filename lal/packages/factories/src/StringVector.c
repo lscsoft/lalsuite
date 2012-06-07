@@ -36,13 +36,6 @@ const LALStringVector empty_LALStringVector;
 /*---------- Global variables ----------*/
 /*---------- internal prototypes ----------*/
 
-
-/**
- * \author Reinhard Prix
- * \addtogroup StringVector
- *
- * @{ */
-
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /** Append the given string to the string-vector (XLAL interface), return
@@ -352,6 +345,3 @@ XLALFindStringInVector ( const char *needle, const LALStringVector *haystack )
   return -1;	// didn't find matching entry
 
 } /* XLALFindStringInVector() */
-
-
-/** @}*/

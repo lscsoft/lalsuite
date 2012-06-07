@@ -51,6 +51,7 @@ REAL8 expRandNum(REAL8 mu, gsl_rng *ptrToGenerator)
 } /* expRandNum() */
 
 
+//Compute the CDF P value at value x of a chi squared PDF with nu degrees of freedom
 //Rougly REAL4 precision
 REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
 {
@@ -66,6 +67,8 @@ REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
    }
    return val;
 }
+
+//Compute the CDF P value at value x of a chi squared PDF with nu degrees of freedom using the Matlab-based function
 REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
 {
    
@@ -83,16 +86,20 @@ REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
 }
 
 
-//Matlab's version
+//Matlab's version of the non-central chih squared CDF with nu degrees of freedom and non-centrality delta at value x.
 REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -118,6 +125,7 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
+   //This part computes small probabilities
    INT4 fromzero = 0;
    if (prob==0.0) fromzero = 1;
    if (fromzero==1) {
@@ -133,7 +141,6 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
          dp = P*C;
          pk += dp;
          if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
-         //if ((REAL8)counter>=halfdelta || dp<err*pk || ok!=1) ok = 0;
       }
       prob = pk;
    }
@@ -141,6 +148,8 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
    return fmin(prob, 1.0);
    
 }
+
+//Matlab's sumseries function
 void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
 {
    
@@ -184,15 +193,71 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REA
    }
    
 }
+
+
+//Evan's sumseries function based on matlab's version above
+void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
+{
+   
+   REAL8 Pint = P, Cint = C, Eint = E;
+   INT8 counterint = counter;
+   REAL8 oneoverhalfdelta = 1.0/halfdelta;   //pre-compute
+   REAL8 halfdof = 0.5*dof;                  //pre-compute
+   REAL8 halfx = 0.5*x;                      //pre-compute
+   
+   if (countdown!=0) {
+      if (counterint>=0) {
+         Pint *= (counterint+1.0)*oneoverhalfdelta;
+         Cint += E;
+      } else {
+         counterint = -1;
+      }
+   }
+   
+   if (counterint==-1) return;
+   else if (countdown!=0) {
+      REAL8 oneoverhalfx = 1.0/halfx;
+      while (counterint!=-1) {
+         REAL8 pplus = Pint*Cint;
+         *(computedprob) += pplus;
+         
+         if (pplus<=*(computedprob)*err || counterint<0) return;
+         
+         Pint *= counterint*oneoverhalfdelta;
+         Eint *= (halfdof + counterint)*oneoverhalfx;
+         Cint += Eint;
+         counterint--;
+      }
+   } else {
+      while (counterint!=-1) {
+         REAL8 pplus = Pint*Cint;
+         *(computedprob) += pplus;
+         
+         if (pplus<=*(computedprob)*err) return;
+         
+         Pint *= halfdelta/counterint;
+         Eint *= halfx/(halfdof+counterint);
+         Cint -= Eint;
+         counterint++;
+      }
+   }
+   
+}
+
+//Matlab's non-central chi square CDF up to REAL4 precision
 REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
-   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL4(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return (REAL4)prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -218,6 +283,7 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
       XLAL_ERROR_REAL4(XLAL_EFUNC);
    }
    
+   //This part computes small probabilities
    INT4 fromzero = 0;
    if (prob==0.0) fromzero = 1;
    if (fromzero==1) {
@@ -240,15 +306,22 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    return (REAL4)fmin(prob, 1.0);
    
 }
+
+//Matlab's non-central chi-square tries to compute very small probabilities. We don't normally need this,
+//so this function leaves out the last part to compute small probabilities.
 REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -277,15 +350,21 @@ REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
    return fmin(prob, 1.0);
    
 }
+
+//Without small probabilities up to REAL4 precision
 REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
-   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL4(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return (REAL4)prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -297,32 +376,41 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   if (xlalErrno!=0) {
+   //sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   /* if (xlalErrno!=0) {
       fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
-   }
+   } */
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    counter--;
    if (counter<0) return (REAL4)fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   if (xlalErrno!=0) {
+   //sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   /* if (xlalErrno!=0) {
       fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
-   }
+   } */
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    
    return (REAL4)fmin(prob, 1.0);
    
 }
+
+
+//This is just a test function to use the Matlab version of the central chi square calculation
 REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
-   if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = LAL_REAL8_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -351,15 +439,21 @@ REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
    return fmin(prob, 1.0);
    
 }
+
+//This is just a test function to use the Matlab version of the central chi square calculation up to REAL4 precision
 REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 delta)
 {
    
-   if (XLAL_IS_REAL4_FAIL_NAN(x) || XLAL_IS_REAL4_FAIL_NAN(dof) || XLAL_IS_REAL4_FAIL_NAN(delta)) {
+   REAL8 prob = 0.0;
+   
+   //Fail for bad inputs or return 0 if x<=0
+   if (dof<0.0 || delta<0.0) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
-      XLAL_ERROR_REAL4(XLAL_EINVAL);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   } else if (x<=0.0) {
+      return (REAL4)prob;
    }
    
-   REAL8 prob = 0.0;
    REAL8 err = (REAL8)LAL_REAL4_EPS;
    REAL8 halfdelta = 0.5*delta;
    INT8 counter = (INT8)floor(halfdelta);
@@ -394,6 +488,7 @@ REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 
 REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
 {
    
+   //Fail if bad inputs
    if (XLAL_IS_REAL8_FAIL_NAN(x) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
       fprintf(stderr,"%s: Invalid arguments x=%f, dof=%f, delta=%f.\n", __func__, x, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
@@ -460,6 +555,8 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta)
    return 0.5*exp(lntK + log(sumK));
    
 }
+
+//Matlab's binodeviance
 REAL8 binodeviance(REAL8 x, REAL8 np)
 {
    
@@ -492,6 +589,8 @@ REAL8 binodeviance(REAL8 x, REAL8 np)
    }
 
 }
+
+//Matlab's eps function but written in C
 REAL8 epsval(REAL8 val)
 {
    
@@ -507,6 +606,8 @@ REAL8 epsval(REAL8 val)
    return ldexp(1.0, exponentval);
    
 }
+
+//Matlab's eps function but written in C
 REAL4 epsval_float(REAL4 val)
 {
    
@@ -527,6 +628,7 @@ REAL4 epsval_float(REAL4 val)
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
 {
    
+   //Fail if bad input
    if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
       fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EINVAL);
@@ -559,7 +661,6 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
          }
       }
       h = xk-xnew;
-      // unused: REAL8 x = xnew;
       if (!(fabs(h)>crit*fabs(xk) && fabs(h)>crit)) return xk;
       xk = xnew;
       F = newF;
@@ -569,6 +670,57 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
    return xk;
    
 }
+
+
+//Matlab's ncx2inv() function to REAL4 precision
+REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
+{
+   
+   //Fail if bad input
+   if (XLAL_IS_REAL8_FAIL_NAN(p) || XLAL_IS_REAL8_FAIL_NAN(dof) || XLAL_IS_REAL8_FAIL_NAN(delta)) {
+      fprintf(stderr,"%s: Invalid arguments p=%f, dof=%f, delta=%f.\n", __func__, p, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EINVAL);
+   }
+   
+   REAL8 pk = p;
+   INT4 count_limit = 100;
+   INT4 count = 0;
+   REAL8 crit = sqrt(LAL_REAL4_EPS);
+   REAL8 mn = dof + delta;
+   REAL8 variance = 2.0*(dof + 2.0*delta);
+   REAL8 temp = log(variance + mn*mn);
+   REAL8 mu = 2.0*log(mn) - 0.5*temp;
+   REAL8 sigma = -2.0*log(mn) + temp;
+   REAL8 xk = exp(norminv(pk, mu, sigma));
+   REAL8 h = 0.0;
+   REAL8 F = ncx2cdf_float_withouttinyprob(xk, dof, delta);
+   while (count < count_limit) {
+      count++;
+      REAL8 f = ncx2pdf(xk, dof, delta);
+      h = (F-pk)/f;
+      REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
+      REAL8 newF = ncx2cdf_float_withouttinyprob(xnew, dof, delta);
+      INT4 worse = 0;
+      while (worse==0) {
+         if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
+         else {
+            xnew = 0.5*(xnew + xk);
+            newF = ncx2cdf_float_withouttinyprob(xnew, dof, delta);
+         }
+      }
+      h = xk-xnew;
+      if (!(fabs(h)>crit*fabs(xk) && fabs(h)>crit)) return xk;
+      xk = xnew;
+      F = newF;
+   }
+   
+   fprintf(stderr, "%s: Warning! ncx2inv_float() failed to converge!\n", __func__);
+   return xk;
+   
+}
+
+
+//Matlab's norminv function
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
 {
    
@@ -581,7 +733,7 @@ REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma)
 }
 
 
-
+//For the normal distribution, what is the SNR of a given value
 REAL8 unitGaussianSNR(REAL8 value, REAL8 dof)
 {
    
@@ -607,23 +759,20 @@ REAL8 ks_test_exp(REAL4Vector *vector)
    
    INT4 ii;
    
+   //First the mean value needs to be calculated from the median value
    REAL4Vector *tempvect = XLALCreateREAL4Vector(vector->length);
    if (tempvect==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, vector->length);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
-   
    memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
-   //for (ii=0; ii<(INT4)tempvect->length; ii++) fprintf(stderr, "%f\n", tempvect->data[ii]);  //TODO: remove this!
-   
-   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
-   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);   //tempvect becomes sorted
    REAL4 vector_median = 0.0;
    if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
    else vector_median = tempvect->data[(INT4)(0.5*tempvect->length)];
-   
    REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
    
+   //Now start doing the K-S testing
    REAL8 ksvalue = 0.0, testval1, testval2, testval;
    REAL8 oneoverlength = 1.0/tempvect->length;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
@@ -633,6 +782,7 @@ REAL8 ks_test_exp(REAL4Vector *vector)
       if (testval>ksvalue) ksvalue = testval;
    }
    
+   //Destroy stuff
    XLALDestroyREAL4Vector(tempvect);
    
    return ksvalue;
@@ -669,6 +819,7 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
    
    REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
    
+   //Now the Kuiper's test calculation is made
    REAL8 loval = 0.0, hival = 0.0;
    REAL8 oneoverlength = 1.0/tempvect->length;
    for (ii=0; ii<(INT4)tempvect->length; ii++) {
@@ -685,7 +836,7 @@ REAL8 kuipers_test_exp(REAL4Vector *vector)
    
 }
 
-
+//Sort a REAL4Vector, keeping the largest of the values in the output vector
 void sort_float_largest(REAL4Vector *output, REAL4Vector *input)
 {
    
@@ -705,6 +856,8 @@ void sort_float_largest(REAL4Vector *output, REAL4Vector *input)
    XLALDestroyREAL4Vector(tempvect);
    
 }
+
+//Sort a REAL4Vector, keeping the smallest of the values in the output vector
 void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
 {
    
@@ -724,6 +877,7 @@ void sort_float_smallest(REAL4Vector *output, REAL4Vector *input)
    
 }
 
+//Sort a REAL8Vector from highest to lowest
 /* !!!!This modifies the input vector!!!! */
 void sort_double_descend(REAL8Vector *vector)
 {
@@ -747,6 +901,8 @@ void sort_double_descend(REAL8Vector *vector)
    XLALDestroyREAL8Vector(tempvect);
    
 }
+
+//Sort a REAL8Vector from lowest to highest
 /* !!!!This modifies the input vector!!!! */
 void sort_double_ascend(REAL8Vector *vector)
 {
@@ -754,6 +910,8 @@ void sort_double_ascend(REAL8Vector *vector)
    qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
    
 }
+
+//Sort a REAL4Vector from lowest to highest
 /* !!!!This modifies the input vector!!!! */
 void sort_float_ascend(REAL4Vector *vector)
 {
@@ -763,18 +921,18 @@ void sort_float_ascend(REAL4Vector *vector)
 }
 
 
-REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
+//Sample a number (sampleSize) of values from a REAL4Vector (input) randomly
+REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rng)
 {
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
-   //gsl_rng_set(rng, 0);
+   gsl_rng_set(rng, randseed); */
    
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
    if (output==NULL) {
@@ -785,22 +943,25 @@ REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize)
    INT4 ii;
    for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*input->length)];
    
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return output;
    
 }
-REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize)
+
+//Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
+//Needs this numberofvectors limit because of the IHS algorithm
+REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    //gsl_rng_set(rng, 0);
    
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
@@ -812,22 +973,26 @@ REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numbero
    INT4 ii;
    for (ii=0; ii<sampleSize; ii++) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
    
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return output;
    
 }
-REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize)
+
+//Sample a number (sampleSize) of values from a REAL4VectorSequence (input) randomly from vector 0 up to numberofvectors
+//Needs this numberofvectors limit because of the IHS algorithm
+//This function doesn't accept zeros in the samples
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
    
-   gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
+   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
    if (rng==NULL) {
       fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
       XLAL_ERROR_NULL(XLAL_ENOMEM);
    }
    srand(time(NULL));
    UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed);
+   gsl_rng_set(rng, randseed); */
    //gsl_rng_set(rng, 0);
    
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
@@ -844,7 +1009,7 @@ REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *inp
       }
    }
    
-   gsl_rng_free(rng);
+   //gsl_rng_free(rng);
    
    return output;
    
@@ -962,6 +1127,7 @@ REAL8 calcStddevD(REAL8Vector *vector)
 } /* calcStddevD */
 
 
+//Return the index value of the maximum value in a REAL4Vector
 INT4 max_index(REAL4Vector *vector)
 {
    
@@ -988,6 +1154,8 @@ INT4 max_index(REAL4Vector *vector)
    return indexval;
    
 }
+
+//Return the index value of the maximum value in a REAL8Vector
 INT4 max_index_double(REAL8Vector *vector)
 {
    
@@ -996,6 +1164,36 @@ INT4 max_index_double(REAL8Vector *vector)
    return indexval;
    
 }
+
+
+//Return the index value of the maximum value in a REAL4Vector
+INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation)
+{
+   
+   if (startlocation<0) {
+      startlocation = 0;
+   }
+   
+   INT4 ii = startlocation, indexval = ii;
+   REAL4 maxval = vector->data[ii];
+   
+   if (lastlocation>=(INT4)vector->length) {
+      lastlocation = (INT4)vector->length-1;
+   }
+   
+   for (ii=startlocation+1; ii<=lastlocation; ii++) {
+      if (vector->data[ii]>maxval) {
+         maxval = vector->data[ii];
+         indexval = ii;
+      }
+   }
+   
+   return indexval;
+   
+}
+
+
+//Return the index value of the maximum value from a vector (vectornum) in a REAL4VectorSequence
 INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum)
 {
    
@@ -1014,6 +1212,7 @@ INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorseq
 }
 
 
+//Return the index value of the maximum value and the minimum value from a vector (vectornum) in a REAL4VectorSequence
 void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out)
 {
    
@@ -1036,6 +1235,7 @@ void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4
 }
 
 
+//Calculate the median of a REAL4 vector
 REAL4 calcMedian(REAL4Vector *vector)
 {
    
@@ -1059,7 +1259,7 @@ REAL4 calcMedian(REAL4Vector *vector)
    
 }
 
-
+//Comparison functions for qsort
 INT4 qsort_REAL4_compar(const void *a, const void *b)
 {
    const REAL4 *y = a;

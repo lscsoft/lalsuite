@@ -42,7 +42,7 @@ the number of templates in the \c fCut direction,
 \e minimalMatch, noise spectral density, upper and
 lower frequency cutoffs (all in the input structure \c coarseIn)
 this routine outputs the list of templates in the BCV bank
-for the parameters \f$(\psi_0, \psi_3, f_\textrm{cut}).\f$
+for the parameters \f$(\psi_0, \psi_3, f_{\mathrm{cut}}).\f$
 \heading{Algorithm}
 A flat signal manifold is assumed and templates are laid
 uniform in the three dimensions.  See below for an explanation
@@ -75,10 +75,10 @@ or a similar function, that gives a grid in \f$(\psi_0, \psi_3)\f$ space.
 
 A lattice of templates for BCV models should include,
 in addition to the values of \f$(\psi_0, \psi_3)\f$
-a range of \f$f_\textrm{cut}\f$ -- the cutoff frequency.
+a range of \f$f_{\mathrm{cut}}\f$ -- the cutoff frequency.
 The right approach would be
 to compute the metric in the three-dimensional space of
-\f$(\psi_0, \psi_3, f_\textrm{cut})\f$ and to choose templates as
+\f$(\psi_0, \psi_3, f_{\mathrm{cut}})\f$ and to choose templates as
 dictated by the metric. However, analytic computation of the
 metric has not been easy. Therefore, it has become necessary
 (at least for the time being) to make alternate choice of
@@ -88,10 +88,10 @@ In this routine we implement a simple
 choice based on physical grounds: The post-Newtonian models
 predict an ending frequency that is larger than, but close to,
 the Schwarzschild last-stable orbit frequency
-\f$f_\textrm{lso} = (6^{3/2} \pi M )^{-1}\f$ where \f$M\f$ is the total mass,
+\f$f_{\mathrm{lso}} = (6^{3/2} \pi M )^{-1}\f$ where \f$M\f$ is the total mass,
 while the effective one-body model has an ending frequency close
 to the light-ring, whose Schwarzschild value is
-\f$f_\textrm{lr} = (3^{3/2} \pi M )^{-1}.\f$ It is necessary to know
+\f$f_{\mathrm{lr}} = (3^{3/2} \pi M )^{-1}.\f$ It is necessary to know
 the total mass of the system in both cases.  However, not all
 pairs of \f$(\psi_0, \psi_3)\f$ can be inverted to get a positive
 \f$M\f$ but only when \f$\psi_0 > 0\f$ and \f$\psi_3 < 0.\f$ Even then
@@ -99,10 +99,10 @@ it is not guaranteed that the symmetric mass ratio will be
 less than \f$1/4,\f$ a necessary condition so that the component
 masses are found to be real. However, we do not demand that the
 symmetric mass ratio is less than a quarter. If the total mass
-is non-negative then we compute the \f$(f_\textrm{lso}, f_\textrm{lr})\f$
+is non-negative then we compute the \f$(f_{\mathrm{lso}}, f_{\mathrm{lr}})\f$
 and choose a user specified \c numFcutTemplates number of
 templates with their cutoff frequency <tt>list->fFinal</tt> defined
-uniformly spaced in the range \f$[f_\textrm{lso},\ f_\textrm{lr}].\f$
+uniformly spaced in the range \f$[f_{\mathrm{lso}},\ f_{\mathrm{lr}}].\f$
 
 Furthermore, this routine discards all templates for which
 either the mass is not defined or, when defined, <tt>list->fFinal</tt> is
@@ -118,17 +118,17 @@ M = \frac{-\psi_3}{16 \pi^2 \psi_0},\ \ \eta = \frac{3}{128 \psi_0 (\pi M)^{5/3}
 \f}
 Given the total mass compute the last stable orbit and light-ring frequencies using
 \f{equation}{
-f_\textrm{lso} = (6^{3/2} \pi M)^{-1},\ \  f_\textrm{lr} = (3^{3/2} \pi M)^{-1}.
+f_{\mathrm{lso}} = (6^{3/2} \pi M)^{-1},\ \  f_{\mathrm{lr}} = (3^{3/2} \pi M)^{-1}.
 \f}
-Divide the range \f$(f_\textrm{lso}, f_\textrm{lr})\f$ so as to have \f$n_\textrm{cut}=\c numFcutTemplates\f$
+Divide the range \f$(f_{\mathrm{lso}}, f_{\mathrm{lr}})\f$ so as to have \f$n_{\mathrm{cut}}= \mathtt{numFcutTemplates}\f$
 templates over this range:
 \f{equation}{
-df = f_\textrm{lr} \frac {\left ( 1 - 2^{-3/2} \right ) }{ (n_\textrm{cut} -1) }.
+df = f_{\mathrm{lr}} \frac {\left( 1 - 2^{-3/2} \right) }{ (n_{\mathrm{cut}} -1) }.
 \f}
-Next, choose templates at \f$f_k = f_\textrm{lr} - k \times df,\f$ where \f$k=0, \ldots, n_\textrm{cut}-1.\f$
-Note that by definition \f$f_0 = f_\textrm{lr}\f$ and \f$f_{n_\textrm{cut}-1} = f_\textrm{lso};\f$
-there are exatly \f$n_\textrm{cut}\f$ templates in the range \f$(f_\textrm{lso}, f_\textrm{lr}).\f$
-We discard a template if either \f$M\f$ is not defined or if \f$f_\textrm{cut}\f$ is smaller
+Next, choose templates at \f$f_k = f_\mathrm{lr} - k \times df,\f$ where \f$k=0, \ldots, n_\mathrm{cut}-1.\f$
+Note that by definition \f$f_0 = f_\mathrm{lr}\f$ and \f$f_{n_\mathrm{cut}-1} = f_\mathrm{lso};\f$
+there are exatly \f$n_\mathrm{cut}\f$ templates in the range \f$(f_\mathrm{lso}, f_\mathrm{lr}).\f$
+We discard a template if either \f$M\f$ is not defined or if \f$f_\mathrm{cut}\f$ is smaller
 than the lower frequency cutoff specified in  <tt>list[j]->fLower.</tt>
 
 \heading{Uses}

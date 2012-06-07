@@ -60,7 +60,6 @@
 )
 
 /**
-\ingroup SimulateCoherentGW_h
 \author Creighton, T. D.
 
 \brief Computes the response of a detector to a coherent gravitational wave.
@@ -71,17 +70,17 @@ detector whose position, orientation, and transfer function are
 specified in <tt>*detector</tt>.  The result is stored in
 <tt>*output</tt>.
 
-The fields <tt>output->epoch</tt>, <tt>output->deltaT</tt>, and
-<tt>output->data</tt> must already be set, in order to specify the time
+The fields <tt>output-\>epoch</tt>, <tt>output->deltaT</tt>, and
+<tt>output-\>data</tt> must already be set, in order to specify the time
 period and sampling rate for which the response is required.  If
-<tt>output->f0</tt> is nonzero, idealized heterodyning is performed (an
+<tt>output-\>f0</tt> is nonzero, idealized heterodyning is performed (an
 amount \f$2\pi f_0(t-t_0)\f$ is subtracted from the phase before computing
 the sinusoid, where \f$t_0\f$ is the heterodyning epoch defined in
-\c detector).  For the input signal, <tt>signal->h</tt> is ignored,
+\c detector).  For the input signal, <tt>signal-\>h</tt> is ignored,
 and the signal is treated as zero at any time for which either
-<tt>signal->a</tt> or <tt>signal->phi</tt> is not defined.
+<tt>signal-\>a</tt> or <tt>signal-\>phi</tt> is not defined.
 
-This routine will convert <tt>signal->position</tt> to equatorial
+This routine will convert <tt>signal-\>position</tt> to equatorial
 coordinates, if necessary.
 
 \heading{Algorithm}
@@ -123,14 +122,14 @@ quasiperiodic limit as follows:
 computed and added to the sample time, and the instantaneous
 amplitudes \f$A_1\f$, \f$A_2\f$, frequency \f$f\f$, phase \f$\phi\f$, and polarization
 shift \f$\Phi\f$ are found by interpolating the nearest values in
-<tt>signal->a</tt>, <tt>signal->f</tt>, <tt>signal->phi</tt>, and
-<tt>signal->shift</tt>, respectively.  If <tt>signal->f</tt> is not
+<tt>signal-\>a</tt>, <tt>signal-\>f</tt>, <tt>signal-\>phi</tt>, and
+<tt>signal-\>shift</tt>, respectively.  If <tt>signal-\>f</tt> is not
 defined at that point in time, then \f$f\f$ is estimated by differencing
 the two nearest values of \f$\phi\f$, as \f$f\approx\Delta\phi/2\pi\Delta
-t\f$.  If <tt>signal->shift</tt> is not defined, then \f$\Phi\f$ is treated as
+t\f$.  If <tt>signal-\>shift</tt> is not defined, then \f$\Phi\f$ is treated as
 zero.</li>
 <li> The complex transfer function of the detector the frequency \f$f\f$
-is found by interpolating <tt>detector->transfer</tt>.  The amplitude of
+is found by interpolating <tt>detector-\>transfer</tt>.  The amplitude of
 the transfer function is multiplied with \f$A_1\f$ and \f$A_2\f$, and the
 phase of the transfer function is added to \f$\phi\f$,</li>
 <li> The plus and cross contributions \f$o_+\f$, \f$o_\times\f$ to the
@@ -164,16 +163,6 @@ integer \f$\leq x\f$.  The time series sampled at the new time is then:
 \f[
 A(t_k) = f \times A_{j+1} + (1-f) \times A_j \; .
 \f]
-
-\heading{Uses}
-\code
-LALWarning()                    LALInfo()
-LALSCreateVector()              LALSDestroyVector()
-LALDCreateVector()              LALDDestroyVector()
-LALConvertSkyCoordinates()      LALGeocentricToGeodetic()
-LALCVectorAbs()                 LALCVectorAngle()
-LALUnwrapREAL4Angle()
-\endcode
 
 \heading{Notes}
 
@@ -948,4 +937,3 @@ LALSimulateCoherentGW( LALStatus        *stat,
   RETURN( stat );
 
 } /* LALSimulateCoherentGW() */
-

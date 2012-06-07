@@ -42,8 +42,7 @@ lalxml-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "$(SWIG_USER_ENV)" | $(SED) 's|~E~O~L~|\n|g' >>$@
 
 lalxml-user-env.csh lalxml-user-env.sh: lalxml-user-env.shell $(srcdir)/generate_user_env.awk
-	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	generate_user_env.awk \
@@ -54,8 +53,7 @@ EXTRA_DIST = \
 LALXMLVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALXMLConfig.h
-	@echo "creating LALXMLVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALXML $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALXML $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
 

@@ -17,28 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \defgroup LALInspiralBank_h LALInspiralBank_h
- * \ingroup CBC_bank
- */
-
-/**
-
-\author Churches, D.K. and Sathyaprakash, B.S., Cokelaer, T.
-\file
-\ingroup LALInspiralBank_h
-
-\brief %Header file for the template placement codes.
-
-\heading{Synopsis}
-\code
-#include <lal/LALInspiralBank.h>
-\endcode
-
-This header file covers routines that are used in template placement.
-
-*/
-
 #ifndef _LALINSPIRALBANK_H
 #define _LALINSPIRALBANK_H
 
@@ -56,20 +34,39 @@ This header file covers routines that are used in template placement.
 extern "C" {
 #endif
 
-/**\name Error Codes */ /*@{*/
-#define LALINSPIRALBANKH_ENULL      1
-#define LALINSPIRALBANKH_EMEM       2
-#define LALINSPIRALBANKH_ECHOICE    3
-#define LALINSPIRALBANKH_EDIV0      4
-#define LALINSPIRALBANKH_ESIZE      8
-#define LALINSPIRALBANKH_EFRANGE    16
-#define LALINSPIRALBANKH_EORDER     32
-#define LALINSPIRALBANKH_EGRIDSPACING 64
-#define LALINSPIRALBANKH_EHEXAINIT 128
-#define LALINSPIRALBANKH_EFCUT      5
-#define LALINSPIRALBANKH_EFHIGH     6
-#define LALINSPIRALBANKH_ENUMFCUT   7
+/**
+ * \addtogroup LALInspiralBank_h
+ \author Churches, D.K. and Sathyaprakash, B.S., Cokelaer, T.
 
+\brief %Header file for the template placement codes.
+
+\heading{Synopsis}
+\code
+#include <lal/LALInspiralBank.h>
+\endcode
+
+This header file covers routines that are used in template placement.
+
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define LALINSPIRALBANKH_ENULL      1	/**< Null pointer */
+#define LALINSPIRALBANKH_EMEM       2	/**< Memory allocation failure */
+#define LALINSPIRALBANKH_ECHOICE    3	/**< Invalid choice for an input parameter */
+#define LALINSPIRALBANKH_EDIV0      4	/**< Division by zero */
+#define LALINSPIRALBANKH_ESIZE      8	/**< Invalid input range */
+#define LALINSPIRALBANKH_EFRANGE    16	/**< Limits outside range of frequency series */
+#define LALINSPIRALBANKH_EORDER     32	/**< Inappropriate PN order */
+#define LALINSPIRALBANKH_EGRIDSPACING 64	/**< Inappropriate grid spacing parameter [SquareNotOriented or Hexagonal] */
+#define LALINSPIRALBANKH_EHEXAINIT 128	/**< Empty bank. abnormal behaviour in HexaBank generation. */
+#define LALINSPIRALBANKH_EFCUT      5	/**< Inappropriate cutoff frequency [SchwarzISCO, BKLISCO, LightRing, ERD, FRD or LRD] */
+#define LALINSPIRALBANKH_EFHIGH     6	/**< Final frequency is less than the low frequency cutoff. */
+#define LALINSPIRALBANKH_ENUMFCUT   7	/**< Number of fcut must be greater or equal to 1 */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define LALINSPIRALBANKH_MSGENULL   "Null pointer"
 #define LALINSPIRALBANKH_MSGEMEM    "Memory allocation failure"
 #define LALINSPIRALBANKH_MSGECHOICE "Invalid choice for an input parameter"
@@ -82,7 +79,7 @@ extern "C" {
 #define LALINSPIRALBANKH_MSGEFCUT   "Inappropriate cutoff frequency [SchwarzISCO, BKLISCO, LightRing, ERD, FRD or LRD]"
 #define LALINSPIRALBANKH_MSGEFHIGH  "Final frequency is less than the low frequency cutoff."
 #define LALINSPIRALBANKH_MSGENUMFCUT "Number of fcut must be greater or equal to 1"
-/*@}*/
+/** \endcond */
 
 typedef enum
 {
@@ -697,7 +694,9 @@ REAL4 b;
 }
 PRIN;
 
-/* Function prototypes */
+/*@}*/
+
+/* ---------- Function prototypes ---------- */
 
 void
 LALInspiralCreateCoarseBank (
@@ -836,10 +835,6 @@ XLALInspiralMFromTau0AndNonEqualMass(
   REAL8 extremMass,
   REAL8 fL);
 
-
-
-
-
 void
 LALInspiralSpinBank(
     LALStatus         	 *status,
@@ -888,10 +883,6 @@ LALInspiralCreateFlatBank (
     InspiralBankParams   *bankParams
     );
 
-
-
-
-
 void
 LALInspiralCreateFineBank (
     LALStatus              *status,
@@ -900,17 +891,24 @@ LALInspiralCreateFineBank (
     InspiralFineBankIn     fineIn
     );
 
-
-
-
 void
 LALInspiralComputeMetric (
     LALStatus           *status,
     InspiralMetric      *metric,
     InspiralTemplate    *params,
     InspiralMomentsEtc  *moments
-
     );
+
+int
+XLALInspiralComputeMetric (
+    InspiralMetric     *metric,
+    InspiralMomentsEtc *moments,
+    REAL8 fLower,
+    LALPNOrder order,
+    REAL8 t0,
+    REAL8 t3
+    );
+
 void
 LALInspiralComputeMetricBCV
 (
@@ -920,9 +918,6 @@ LALInspiralComputeMetricBCV
  InspiralTemplate      *params
 );
 
-
-
-
 void
 LALInspiralLongestTemplateInBank (
     LALStatus            *status,
@@ -930,15 +925,20 @@ LALInspiralLongestTemplateInBank (
     InspiralCoarseBankIn *coarseIn
     );
 
-
-
-
 void
 LALGetInspiralMoments (
     LALStatus            *status,
     InspiralMomentsEtc   *moments,
     REAL8FrequencySeries *psd,
     InspiralTemplate     *params
+    );
+
+int
+XLALGetInspiralMoments (
+    InspiralMomentsEtc   *moments,
+    REAL8 fLower,
+    REAL8 fCutoff,
+    REAL8FrequencySeries *psd
     );
 
 void
@@ -956,8 +956,14 @@ LALInspiralMoments (
     InspiralMomentsIn pars
     );
 
-
-
+REAL8
+XLALInspiralMoments(
+    REAL8 xmin,
+    REAL8 xmax,
+    REAL8 ndx,
+    REAL8 norm,
+    REAL8FrequencySeries *shf
+    );
 
 void
 LALInspiralMomentsIntegrand
@@ -968,9 +974,6 @@ LALInspiralMomentsIntegrand
    void   *pars
    );
 
-
-
-
 void
 LALInspiralSetSearchLimits (
     LALStatus            *status,
@@ -978,18 +981,12 @@ LALInspiralSetSearchLimits (
     InspiralCoarseBankIn coarseIn
     );
 
-
-
-
 void
 LALInspiralNextTemplate (
     LALStatus          *status,
     InspiralBankParams *bankPars,
     InspiralMetric      metric
     );
-
-
-
 
 void
 LALInspiralComputeParams (
@@ -999,9 +996,6 @@ LALInspiralComputeParams (
     InspiralCoarseBankIn coarseIn
     );
 
-
-
-
 void
 LALInspiralValidParams (
     LALStatus            *status,
@@ -1009,9 +1003,6 @@ LALInspiralValidParams (
     InspiralBankParams   bankParams,
     InspiralCoarseBankIn coarseIn
     );
-
-
-
 
 void
 LALInspiralValidTemplate(
@@ -1021,9 +1012,6 @@ LALInspiralValidTemplate(
    InspiralCoarseBankIn coarseIn
    );
 
-
-
-
 void
 LALInspiralUpdateParams (
     LALStatus          *status,
@@ -1031,9 +1019,6 @@ LALInspiralUpdateParams (
     InspiralMetric     metric,
     REAL8              minimalMatch
     );
-
-
-
 
 void
 LALMatrixTransform (
@@ -1044,18 +1029,12 @@ LALMatrixTransform (
     REAL8     **mm3
     );
 
-
-
-
 void
 LALDeterminant3 (
     LALStatus *status,
     REAL8  *determinant,
     REAL8  **matrix
     );
-
-
-
 
 void
 LALInverse3(
@@ -1064,19 +1043,12 @@ LALInverse3(
         REAL8     **matrix
 );
 
-
-
-
 void
 LALInspiralSetParams (
     LALStatus            *status,
     InspiralTemplate     *tempPars,
     InspiralCoarseBankIn coarseIn
     );
-
-
-
-
 
 void
 LALRectangleVertices(
@@ -1106,9 +1078,6 @@ LALInsidePolygon(
    REAL4                y,
    INT4                 *valid
    );
-
-
-
 
 void
 LALInspiralCreatePNCoarseBankHexa(
@@ -1216,33 +1185,6 @@ LALSPAF(
 	REAL4 		x,
 	void 		*t3
 );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 INT4 XLALInspiralComputePTFIntrinsicMetric (
     InspiralMetric             *metric,

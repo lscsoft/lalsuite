@@ -517,7 +517,7 @@ XLALInitUserVars ( UserInput_t *uvar )
   uvar->psi = 0;
 
   uvar->dataStartGPS = 814838413;	/* 1 Nov 2005, ~ start of S5 */
-  uvar->dataDuration = LAL_YRSID_SI;	/* 1 year of data */
+  uvar->dataDuration = (INT4) round ( LAL_YRSID_SI );	/* 1 year of data */
 
   uvar->ephemYear = XLALCalloc (1, strlen(EPHEM_YEARS)+1);
   strcpy (uvar->ephemYear, EPHEM_YEARS);

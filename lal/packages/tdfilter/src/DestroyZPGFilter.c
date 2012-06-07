@@ -17,48 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="DestroyZPGFilterCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{DestroyZPGFilter.c}}
-\label{ss:DestroyZPGFilter.c}
-
-Destroys ZPG filter objects.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DestroyZPGFilterCP}
-\idx{LALDestroyCOMPLEX8ZPGFilter()}
-\idx{LALDestroyCOMPLEX16ZPGFilter()}
-
-\subsubsection*{Description}
-
-These functions destroy an object \verb@**output@ of type
-\verb@COMPLEX8ZPGFilter@ or \verb@COMPLEX16ZPGFilter@, and set
-\verb@*output@ to \verb@NULL@.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALFree()
-LALCDestroyVector()
-LALZDestroyVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DestroyZPGFilterCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ZPGFilter.h>
 
+
+/**
+   \addtogroup DestroyZPGFilter_c
+   \author Creighton, T. D.
+
+   \brief Destroys ZPG filter objects.
+
+\heading{Description}
+
+These functions destroy an object <tt>**output</tt> of type
+\c COMPLEX8ZPGFilter or \c COMPLEX16ZPGFilter, and set
+<tt>*output</tt> to \c NULL.
+
+*/
+/*@{*/
+
+/** \see See \ref DestroyZPGFilter_c for documentation */
 void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
 {
   if ( filter )
@@ -70,6 +49,7 @@ void XLALDestroyCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
   return;
 }
 
+/** \see See \ref DestroyZPGFilter_c for documentation */
 void XLALDestroyCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
 {
   if ( filter )
@@ -81,11 +61,11 @@ void XLALDestroyCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
   return;
 }
 
-/* <lalVerbatim file="DestroyZPGFilterCP"> */
+/** \see See \ref DestroyZPGFilter_c for documentation */
 void
 LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
 			     COMPLEX8ZPGFilter **input )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null
@@ -100,12 +80,11 @@ LALDestroyCOMPLEX8ZPGFilter( LALStatus         *stat,
   RETURN(stat);
 }
 
-
-/* <lalVerbatim file="DestroyZPGFilterCP"> */
+/** \see See \ref DestroyZPGFilter_c for documentation */
 void
 LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
 			      COMPLEX16ZPGFilter **input )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null
@@ -119,3 +98,4 @@ LALDestroyCOMPLEX16ZPGFilter( LALStatus          *stat,
   /* Normal exit */
   RETURN(stat);
 }
+/*@}*/

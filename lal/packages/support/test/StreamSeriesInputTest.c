@@ -17,90 +17,65 @@
 *  MA  02111-1307  USA
 */
 
-/************************ <lalVerbatim file="StreamSeriesInputTestCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
+/**
+   \file
+   \ingroup StreamInput_h
+   \author Creighton, T. D.
 
-/********************************************************** <lalLaTeX>
+   \brief Reads a time or frequency series from a file, and writes it to another file.
 
-\subsection{Program \texttt{StreamSeriesInputTest.c}}
-\label{ss:StreamSeriesInputTest.c}
-
-Reads a time or frequency series from a file, and writes it to another
-file.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 StreamSeriesInputTest [-o outfile] [-i infile stype dtype] [-d debuglevel]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
-This test program parses data from an input file or from \verb@stdin@,
-using the routines in \verb@StreamSeriesInput.c@, and possibly
-generating output using the routines in \verb@StreamSeriesOutput.c@.
+This test program parses data from an input file or from \c stdin,
+using the routines in \ref StreamSeriesInput.c, and possibly
+generating output using the routines in \ref StreamSeriesOutput.c.
 The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-o}] Writes the output to \verb@outfile@.  If
-\verb@outfile@ is given as \verb@stdout@, the data is written to
-standard output (\emph{not} to a file named \verb@stdout@).  If the
-\verb@-o@ flag is not given, the input routines are exercised, but no
-output is written.
-\item[\texttt{-i}] Specifies the input file name \verb@infile@, series
-type \verb@stype@, and base datatype \verb@dtype@.  Series type is a
-single character: either \verb@t@ (time series), \verb@v@ (time vector
-series), \verb@a@ (time array series), or \verb@f@ (frequency series).
-Base datatype may be \verb@i2@ (\verb@INT2@), \verb@i4@ (\verb@INT4@),
-\verb@i8@ (\verb@INT8@), \verb@u2@ (\verb@UINT2@), \verb@u4@
-(\verb@UINT4@), \verb@u8@ (\verb@UINT8@), \verb@s@ (\verb@REAL4@),
-\verb@d@ (\verb@REAL8@), \verb@c@ (\verb@COMPLEX8@), or \verb@z@
-(\verb@COMPLEX16@).  If the \verb@-i@ flag is not given,
-\verb@-i StreamSeriesInput.dat f s@ is assumed (this file is provided
+<ul>
+<li>[<tt>-o</tt>] Writes the output to \c outfile.  If
+\c outfile is given as \c stdout, the data is written to
+standard output (\e not to a file named \c stdout).  If the
+<tt>-o</tt> flag is not given, the input routines are exercised, but no
+output is written.</li>
+<li>[<tt>-i</tt>] Specifies the input file name \c infile, series
+type \c stype, and base datatype \c dtype.  Series type is a
+single character: either \c t (time series), \c v (time vector
+series), \c a (time array series), or \c f (frequency series).
+Base datatype may be \c i2 (\c INT2), \c i4 (\c INT4),
+\c i8 (\c INT8), \c u2 (\c UINT2), \c u4
+(\c UINT4), \c u8 (\c UINT8), \c s (\c REAL4),
+\c d (\c REAL8), \c c (\c COMPLEX8), or \c z
+(\c COMPLEX16).  If the <tt>-i</tt> flag is not given,
+<tt>-i StreamSeriesInput.dat f s</tt> is assumed (this file is provided
 with the distribution so that running the code with no arguments, \'a
-la \verb@make check@, will perform a nontrivial test of the
-algorithm).
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@; if
-absent, \verb@-d 0@ is assumed.
-\end{itemize}
+la <tt>make check</tt>, will perform a nontrivial test of the
+algorithm).</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel; if
+absent, <tt>-d 0</tt> is assumed.</li>
+</ul>
 
-See the documentation in \verb@StreamSeriesInput.c@ and
-\verb@StreamSeriesOutput.c@ for discussion of the input and output
+See the documentation in \ref StreamSeriesInput_c and
+\ref StreamSeriesOutput_c for discussion of the input and output
 data file formats.
+*/
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define STREAMSERIESINPUTTESTC_ENORM 0
-#define STREAMSERIESINPUTTESTC_ESUB  1
-#define STREAMSERIESINPUTTESTC_EARG  2
-#define STREAMSERIESINPUTTESTC_EFILE 3
+/** \name Error Codes */ /*@{*/
+#define STREAMSERIESINPUTTESTC_ENORM 0  /**< Normal exit */
+#define STREAMSERIESINPUTTESTC_ESUB  1  /**< Subroutine failed */
+#define STREAMSERIESINPUTTESTC_EARG  2  /**< Error parsing arguments */
+#define STREAMSERIESINPUTTESTC_EFILE 3  /**< Could not open file */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define STREAMSERIESINPUTTESTC_MSGENORM "Normal exit"
 #define STREAMSERIESINPUTTESTC_MSGESUB  "Subroutine failed"
 #define STREAMSERIESINPUTTESTC_MSGEARG  "Error parsing arguments"
 #define STREAMSERIESINPUTTESTC_MSGEFILE "Could not open file"
-/******************************************** </lalErrTable><lalLaTeX>
 
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel                           LALPrintError()
-LALOpenDataFile()                       LALCheckMemoryLeaks()
-LAL<typecode>ReadTSeries()              LAL<typecode>WriteTSeries()
-LAL<typecode>ReadTVectorSeries()        LAL<typecode>WriteTVectorSeries()
-LAL<typecode>ReadTArraySeries()         LAL<typecode>WriteTArraySeries()
-LAL<typecode>ReadFSeries()              LAL<typecode>WriteFSeries()
-LAL<typecode>DestroyVector()
-LAL<typecode>DestroyVectorSequence()
-LAL<typecode>DestroyArraySequence()
-\end{verbatim}
-where \verb@<typecode>@ is any of \verb@I2@, \verb@I4@, \verb@I8@,
-\verb@U2@, \verb@U4@, \verb@U8@, \verb@S@, \verb@D@, \verb@C@,
-\verb@Z@.
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{StreamSeriesInputTestCV}}
-
-******************************************************* </lalLaTeX> */
 
 #include <stdlib.h>
 #include <lal/LALStdio.h>
@@ -574,3 +549,4 @@ main(int argc, char **argv)
   INFO( STREAMSERIESINPUTTESTC_MSGENORM );
   return STREAMSERIESINPUTTESTC_ENORM;
 }
+/** \endcond */

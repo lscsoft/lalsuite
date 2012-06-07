@@ -79,6 +79,7 @@
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <gsl/gsl_statistics.h>
 #include <sys/time.h>
 
 //...other includes
@@ -180,22 +181,22 @@ INT4 LALInferenceFprintParameterNonFixedHeaders(FILE *out, LALInferenceVariables
 /** Prints a variable item to a string (must be pre-allocated!) */
 void LALInferencePrintVariableItem(char *out, LALInferenceVariableItem *ptr);
 
-/** Return a pointer to the memory the variable is stored in specified by \param name
+/** Return a pointer to the memory the variable \param vars is stored in specified by \param name
  * User must cast this pointer to the expected type before dereferencing
  * it to get the value of the variable.
  */
 void *LALInferenceGetVariable(const LALInferenceVariables * vars, const char * name);
 
-/** Get number of dimensions in this variable */
+/** Get number of dimensions in variable \param vars */
 INT4 LALInferenceGetVariableDimension(LALInferenceVariables *vars);
 
-/** Get number of dimensions which are not fixed to a certain value */
+/** Get number of dimensions in \param vars which are not fixed to a certain value */
 INT4 LALInferenceGetVariableDimensionNonFixed(LALInferenceVariables *vars);
 
 /** Get the LALInferenceVariableType of the \param idx -th item in the \param vars
  * Indexing starts at 1
  */
-LALInferenceVariableType LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx);
+INT4 LALInferenceGetVariableTypeByIndex(LALInferenceVariables *vars, int idx);
 
 /** Get the LALInferenceVariableType of the parameter named \param name in \param vars */
 LALInferenceVariableType LALInferenceGetVariableType(const LALInferenceVariables *vars, const char *name);
@@ -224,12 +225,12 @@ void LALInferenceSetVariable(LALInferenceVariables * vars, const char * name, vo
 void LALInferenceAddVariable(LALInferenceVariables * vars, const char * name, void * value, 
 	LALInferenceVariableType type, LALInferenceParamVaryType vary);
 
-/** Remove \param name from \param vars.
+/** Remove \param name from \param vars
  * Frees the memory for the \param name structure and its contents
  */
 void LALInferenceRemoveVariable(LALInferenceVariables *vars,const char *name);
 
-/** Checks for \param name being present in \param vars.
+/** Checks for \param name being present in \param vars
  *  returns 1(==true) or 0
  */
 int  LALInferenceCheckVariable(LALInferenceVariables *vars,const char *name);
@@ -379,7 +380,7 @@ tagLALInferenceIFOData
   LALInferenceVariables		    *dataParams; /* Optional data parameters */
   LALInferenceDomain                 modelDomain;         /** Domain of model */
   REAL8FrequencySeries      *oneSidedNoisePowerSpectrum;  /** one-sided Noise Power Spectrum */
-  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
+//  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;                 /** A window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
@@ -396,25 +397,27 @@ tagLALInferenceIFOData
 /** Returns the element of the process params table with "name" */
 ProcessParamsTable *LALInferenceGetProcParamVal(ProcessParamsTable *procparams,const char *name);
 
-/** parses a character string (passed as one of the options) and decomposes   
+/** parses a character string (passed as one of the options) and decomposes
  it into individual parameter character strings. \param input is of the form
-   input   :  "[one,two,three]"
- and the resulting \param output is
-   strings :  {"one", "two", "three"}   
- length of parameter names is for now limited to 512 characters. 
+   input   :  \"[one,two,three]\"
+ and the resulting output \param strings is
+   strings :  {\"one\", \"two\", \"three\"}
+ length of parameter names is for now limited to 512 characters.
  (should 'theoretically' (untested) be able to digest white space as well.
- Irrelevant for command line options, though.)                             */
+ Irrelevant for command line options, though.)
+\param n UNDOCUMENTED
+*/
 void LALInferenceParseCharacterOptionString(char *input, char **strings[], UINT4 *n);
 
 /** Return a ProcessParamsTable from the command line arguments */
 ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 
-/** Output the command line to \param str based on the ProcessParamsTable */
+/** Output the command line based on the ProcessParamsTable \param procparams */
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
-/** Execute FFT for data in \param data */
+/** Execute FFT for data in \param IFOdata */
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
-/** Execute Inverse FFT for data in \param data */
+/** Execute Inverse FFT for data in \param IFOdata */
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
 /** Return the list node for "name" - do not rely on this */
@@ -469,47 +472,50 @@ void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
 /** Convert from q to eta (q = m2/m1, with m1 > m2). */
 void LALInferenceQ2Eta(double q, double *eta);
 
-/** A kD tree cell contains some points (npts), a bounding box
-    enclosing the cell (lowerLeft to upperRight), a bounding box
-    tightly enclosing all the points currently in the cell
-    (pointsLowerLeft to pointsUpperRight), and two sub-cells, left and
-    right, which split the bounding box in half along one coordinate
-    dimension (in N dimensions, the coordinate dimension that splits
-    is given by the level of the cell in the tree mod N). */
-typedef struct tagLALInferenceKDCell {
+/** The kD trees in LALInference are composed of cells.  Each cell
+    represents a rectangular region in parameter space, defined by
+    \f$\mathrm{lowerLeft} <= x <= \mathrm{upperRight}\f$.  It also
+    contains two sub-cells, each of which represents rectangular
+    regions of half the size. The dimension along which a cell at a
+    particular level in the tree is split in half is given by its
+    level (mod the dimension of the space).
+
+    Each cell contains some number (which may be zero) of points.
+    Periodically, the cell will compute the mean and covariance of its
+    points, and the eigenvectors of the covariance matrix (principal
+    axes) of an ellipse fitting the the points.  It will also compute
+    the (tight) bounds of a box enclosing the points in a coordinate
+    system aligned with the principal axes.  When this has been done,
+    the \c eigenFrameStale element will be set to zero.  If points are
+    subsequently added to the cell, the \c eigenFrameStale flag will
+    be set to a non-zero value until the next re-computation of the
+    principal axes.
+ */
+typedef struct tagLALInferenceKDTree {
   size_t npts; /** Stores the number of tree points that lie in the cell. */
+  size_t ptsSize; /** Size of the pts buffer. */
+  size_t dim; /** Dimension of the system. */
+  REAL8 **pts;
+  REAL8 *ptsMean; /** Mean of pts. */
   REAL8 *lowerLeft; /** Lower left (i.e. coordinate minimum) bound;
                          length is ndim from LALInferenceKDTree. */
   REAL8 *upperRight; /** Upper right (i.e. coordinate maximum) bound. */
-  REAL8 *pointsLowerLeft; /** Lower left for the contained points. */
-  REAL8 *pointsUpperRight; /** Upper right for contained points. */
-  struct tagLALInferenceKDCell *left; /** Left (i.e. lower-coordinate)
+  REAL8 **ptsCov; /** dim-by-dim covariance matrix. */
+  REAL8 **ptsCovEigenVects; /** Eigenvectors of the covariance matrix:
+                                [i][j] is the jth component of the ith
+                                eigenvector. */
+  REAL8 *eigenMin; /** Minimum coordinates of points in the eigen-frame. */
+  REAL8 *eigenMax; /** Maximum coordinates of points in the eigen-frame. */
+  int eigenFrameStale; /** == 1 when the mean, covariance, and
+                           eigenvectors are out of date (i.e. more
+                           points added). */
+  struct tagLALInferenceKDTree *left; /** Left (i.e. lower-coordinate)
                                           sub-tree, may be NULL if
                                           empty.*/
-  struct tagLALInferenceKDCell *right; /** Right
+  struct tagLALInferenceKDTree *right; /** Right
                                            (i.e. upper-coordinate)
                                            sub-tree, may be NULL if
                                            empty. */
-} LALInferenceKDCell;
-
-/** The kD trees used in LALInference are not quite the standard kD
-    trees.  Our kD trees split the domain exactly in half along
-    successive dimensions (at level i, in N dimensions, the dimension
-    that is split is i%N), producing left- and right-sub-cells until
-    each cell contains either zero or one point.  The advantage of
-    this structure over the standard kD tree that splits the domain
-    along the median coordinate of the points at each level is that
-    this structure can be updated incrementally by the
-    LALInferenceKDAddPoint() function. 
-
-    To produce a kD tree from a set of points, add them one-at-a-time
-    using LALInferenceKDAddPoint() and starting with an empty tree
-    produced by LALInferenceKDEmpty().*/
-typedef struct {
-  size_t npts; /** The number of points. */
-  size_t ndim; /** Each point is ndim long. */
-  REAL8 **pts; /** Array of points. */
-  LALInferenceKDCell *topCell; /** The top-level cell in the tree. */
 } LALInferenceKDTree;
 
 /** Delete a kD-tree.  Also deletes all contained cells, and points. */
@@ -520,7 +526,9 @@ void LALInferenceKDTreeDelete(LALInferenceKDTree *tree);
     LALInferenceKDAddPoint(). */
 LALInferenceKDTree *LALInferenceKDEmpty(REAL8 *lowerLeft, REAL8 *upperRight, size_t ndim);
 
-/** Adds a point to the kD-tree, returns 0 on successful exit. */
+/** Adds a point to the kD-tree, returns 0 on successful exit.  The
+    memory for pt is owned by the tree, so should not be deallocated
+    or modified except by LALInferenceKDTreeDelete(). */
 int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
 
 /** Returns the first cell that contains the given point that also
@@ -529,15 +537,16 @@ int LALInferenceKDAddPoint(LALInferenceKDTree *tree, REAL8 *pt);
     returns the cell containing the fewest number of points and the
     given point.  Non-positive Npts will give the fewest-point cell in
     the tree containing the given point.  Returns NULL on error. */
-LALInferenceKDCell *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
+LALInferenceKDTree *LALInferenceKDFindCell(LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
 
-/** Returns the volume of the given cell, which is part of the given
-    tree. */
-double LALInferenceKDLogCellVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell);
+/** Returns the log of the volume of the given cell, which is part of
+    the given tree. */
+double LALInferenceKDLogCellVolume(LALInferenceKDTree *cell);
 
-/** Returns the volume of a box that tightly encloses the points in
-    the given cell, which is part of the given tree. */
-double LALInferenceKDLogPointsVolume(LALInferenceKDTree *tree, LALInferenceKDCell *cell);
+/** Returns the log of the volume of the box aligned with the
+    principal axes of the points in the given cell that tightly
+    encloses those points. */
+double LALInferenceKDLogCellEigenVolume(LALInferenceKDTree *cell);
 
 /** Fills in the given REAL8 array with the parameter values from
     params; the ordering of the variables is taken from the order of
@@ -550,5 +559,49 @@ void LALInferenceKDVariablesToREAL8(LALInferenceVariables *params, REAL8 *pt, LA
     array.  The ordering of variables is given by the order of the
     non-fixed variables in template. */
 void LALInferenceKDREAL8ToVariables(LALInferenceVariables *params, REAL8 *pt, LALInferenceVariables *template);
+
+/** Draws a \c pt uniformly from a randomly chosen cell of \c
+    tree. The chosen cell will be chosen to have (as nearly as
+    possible) \c Npts in it. */
+void LALInferenceKDDrawEigenFrame(gsl_rng * rng, LALInferenceKDTree *tree, REAL8 *pt, size_t Npts);
+
+/** Returns the log of the jump proposal probability ratio for the
+    LALInferenceKDDrawEigenFrame() proposal to propose the point \c
+    proposed given the current position \c current , where \c Npts is
+    the parameter used to select the box to draw from in
+    LALInferenceKDDrawEigenFrame().  */
+REAL8 LALInferenceKDLogProposalRatio(LALInferenceKDTree *tree, REAL8 *current,
+                                     REAL8 *proposed, size_t Npts);
+
+/** Check matrix is positive definite. dim is matrix dimensions */
+UINT4 LALInferenceCheckPositiveDefinite(
+                          gsl_matrix       *matrix,
+                          UINT4            dim
+                          );
+
+/** Draw a random multivariate vector from Gaussian distr given covariance matrix */
+void
+XLALMultiNormalDeviates(
+                        REAL4Vector *vector,
+                        gsl_matrix *matrix,
+                        UINT4 dim,
+                        RandomParams *randParam
+                        );
+/** Draw a random multivariate vector from student-t distr given covariance matrix */
+void
+XLALMultiStudentDeviates(
+                         REAL4Vector  *vector,
+                         gsl_matrix   *matrix,
+                         UINT4         dim,
+                         UINT4         n,
+                         RandomParams *randParam
+                         );
+
+
+/** Calculate shortest angular distance between a1 and a2 (modulo 2PI) */
+REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
+
+/** Calculate the variance of a distribution on an angle (modulo 2PI) */
+REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
 
 #endif

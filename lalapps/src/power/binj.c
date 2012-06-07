@@ -916,16 +916,6 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 
 	sim_burst->egw_over_rsquared = ran_flat_log(rng, minEoverr2, maxEoverr2) * pow(sim_burst->frequency / 100.0, 4.0);
 
-	/* populate the hrss column for convenience later */
-	/* FIXME:  sample rate is hard-coded to 8192 Hz, which is what the
-	 * excess power pipeline's .ini file is configured for in CVS, but
-	 * because it can be easily changed this is not good */
-
-	XLALGenerateSimBurst(&hplus, &hcross, sim_burst, 1.0 / 8192);
-	sim_burst->hrss = XLALMeasureHrss(hplus, hcross);
-	XLALDestroyREAL8TimeSeries(hplus);
-	XLALDestroyREAL8TimeSeries(hcross);
-
 	/* not sure if this makes sense.  these parameters are ignored by
 	 * the injection code, but post-processing tools sometimes wish to
 	 * know with what amplitude an injection should've been seen in an
@@ -937,6 +927,16 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 
 	sim_burst->pol_ellipse_e = 0.0;
 	sim_burst->pol_ellipse_angle = 0.0;
+
+	/* populate the hrss column for convenience later */
+	/* FIXME:  sample rate is hard-coded to 8192 Hz, which is what the
+	 * excess power pipeline's .ini file is configured for in CVS, but
+	 * because it can be easily changed this is not good */
+
+	XLALGenerateSimBurst(&hplus, &hcross, sim_burst, 1.0 / 8192);
+	sim_burst->hrss = XLALMeasureHrss(hplus, hcross);
+	XLALDestroyREAL8TimeSeries(hplus);
+	XLALDestroyREAL8TimeSeries(hcross);
 
 	/* done */
 

@@ -33,7 +33,6 @@ void LALSQTPNWaveformTemplates (LALStatus *status, REAL4Vector *signalvec1,
 		REAL4Vector *signalvec2, InspiralTemplate *params);
 
 /** The function returns the generated waveform.
- * @param[in,out]	status	: LAL universal status structure
  * @param[out]	signalvec	: array containing the waveform \f$(h_+, h_\times)\f$
  * @param[in]	params		: structure containing the inspiral parameters
  */
@@ -45,7 +44,6 @@ void LALSQTPNWaveform (LALStatus *status, REAL4Vector *signalvec,
 		InspiralTemplate *params);
 
 /** The function returns the generated waveform for injection.
- * @param[in,out]	status	: LAL universal status structure
  * @param[out]	wave_out	: structure containing the waveform \f$(a_1,
  * a_2, \Phi, \alpha)\f$
  * @param[in]	params		: structure containing the inspiral parameters

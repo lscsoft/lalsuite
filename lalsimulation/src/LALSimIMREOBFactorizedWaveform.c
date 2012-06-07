@@ -263,9 +263,6 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
   REAL8 chiS = 0;
   REAL8 chiA = 0;
 
-  //REAL8 chiAPlusChiSdM;
-  REAL8 chiSPlusChiAdM;
-
   /* Combination which appears a lot */
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
@@ -280,9 +277,6 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
 
   dM  = sqrt( dM2 );
   //dM3 = dM2 * dM;
-
-  //chiAPlusChiSdM = chiA + chiS*dM;
-  chiSPlusChiAdM = chiS + chiA*dM;
 
   m1Plus3eta  = - 1. + 3.*eta;
   m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
@@ -325,7 +319,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
     coeffs->delta21vh9 = -272./81. + (214.*LAL_PI*LAL_PI)/315.;
     coeffs->delta21v5  = - 493. * eta /42.;
 
-    coeffs->rho21v1   = (-3.*chiSPlusChiAdM)/(4.);
+    coeffs->rho21v1   = (-3.*(chiS+chiA/dM))/(4.);
     //coeffs->rho21v2   = -59./56 - (9.*chiAPlusChiSdM*chiAPlusChiSdM)/(32.*dM2) + (23.*eta)/84.;
     /*coeffs->rho21v3   = (-567.*chiA*chiA*chiA - 1701.*chiA*chiA*chiS*dM
                         + chiA*(-4708. + 1701.*chiS*chiS - 2648.*eta)*(-1. + 4.*eta)
@@ -1117,9 +1111,6 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   REAL8 dM, dM2; //dM3;
   REAL8 a2, a3;
 
-  //REAL8 chiAPlusChiSdM;
-  REAL8 chiSPlusChiAdM;
-
   /* Combination which appears a lot */
   REAL8 m1Plus3eta, m1Plus3eta2, m1Plus3eta3;
 
@@ -1139,9 +1130,6 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
 
   a2 = a*a;
   a3 = a2*a;
-
-  //chiAPlusChiSdM = chiA + chiS*dM;
-  chiSPlusChiAdM = chiS + chiA*dM;
 
   m1Plus3eta  = - 1. + 3.*eta;
   m1Plus3eta2 = m1Plus3eta * m1Plus3eta;
@@ -1189,7 +1177,8 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->delta21vh9 = -272./81. + (214.*LAL_PI*LAL_PI)/315.;
     coeffs->delta21v5  = - 493. * eta /42.;
 
-    coeffs->rho21v1   = (-3.*chiSPlusChiAdM)/(4.);
+    //coeffs->rho21v1   = (-3.*(chiS+chiA/dM))/(4.);
+    coeffs->rho21v1   = 0.0;
     //coeffs->rho21v2   = -59./56 - (9.*chiAPlusChiSdM*chiAPlusChiSdM)/(32.*dM2) + (23.*eta)/84.;
     coeffs->rho21v2   = -59./56 + (23.*eta)/84. - 9./32.*a2;
     /*coeffs->rho21v3   = (-567.*chiA*chiA*chiA - 1701.*chiA*chiA*chiS*dM
@@ -1210,6 +1199,12 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->rho21v8l  = 6313./5880.;
     coeffs->rho21v10  = -63735873771463./16569158860800.; 
     coeffs->rho21v10l = 5029963./5927040.;
+
+    coeffs->f21v1     = (-3.*(chiS+chiA/dM))/(2.);
+  }
+  else
+  {
+    coeffs->f21v1     = -3.*chiA/2.;
   }
 
   /* l = 3 */
@@ -1221,7 +1216,8 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->delta33v5  = - 80897.*eta / 2430.;
 
     coeffs->rho33v2 = -7./6. + (2.*eta)/3.;
-    coeffs->rho33v3 = (chiS*dM*(-4. + 5.*eta) + chiA*(-4. + 19.*eta))/(6.*dM);
+    //coeffs->rho33v3 = (chiS*dM*(-4. + 5.*eta) + chiA*(-4. + 19.*eta))/(6.*dM);
+    coeffs->rho33v3 = 0.0;
     coeffs->rho33v4 = -6719./3960. + a2/2. - (1861.*eta)/990. + (149.*eta2)/330.;
     coeffs->rho33v5 = (-4.*a)/3.;
     coeffs->rho33v6 = 3203101567./227026800. + (5.*a2)/36.;
@@ -1229,6 +1225,12 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->rho33v7 = (5297.*a)/2970. + a*a2/3.;
     coeffs->rho33v8 = -57566572157./8562153600.;
     coeffs->rho33v8l = 13./3.;
+
+    coeffs->f33v3 = (chiS*dM*(-4. + 5.*eta) + chiA*(-4. + 19.*eta))/(2.*dM);
+  }
+  else
+  {
+    coeffs->f33v3 = chiA * 3./8.;
   }
 
   coeffs->delta32vh3 = (10. + 33.*eta)/(-15.*m1Plus3eta);
@@ -1260,7 +1262,8 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->delta31v5  = - 17.*eta/10.; 
  
     coeffs->rho31v2  = -13./18. - (2.*eta)/9.;
-    coeffs->rho31v3  = (chiA*(-4. + 11.*eta) + chiS*dM*(-4. + 13.*eta))/(6.*dM);
+    //coeffs->rho31v3  = (chiA*(-4. + 11.*eta) + chiS*dM*(-4. + 13.*eta))/(6.*dM);
+    coeffs->rho31v3  = 0.0;
     coeffs->rho31v4  = 101./7128.
                         - (5.*a2)/6. - (1685.*eta)/1782. - (829.*eta2)/1782.;
     coeffs->rho31v5  = (4.*a)/9.;
@@ -1269,6 +1272,12 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->rho31v7  = (-2579.*a)/5346. + a*a2/9.;
     coeffs->rho31v8  = 2606097992581./4854741091200.;
     coeffs->rho31v8l = 169./567.;
+
+    coeffs->f31v3  = (chiA*(-4. + 11.*eta) + chiS*dM*(-4. + 13.*eta))/(2.*dM);
+  }
+  else
+  {
+    coeffs->f31v3  = - chiA * 5./8.;
   }
 
   /* l = 4 */
@@ -1292,12 +1301,19 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->delta43vh4 = (11.*a)/4.;
     coeffs->delta43vh6 = 1571.*LAL_PI/385.;
 
-    coeffs->rho43v   = (5.*(chiA - chiS*dM)*eta)/(8.*dM*(-1. + 2.*eta));
+    //coeffs->rho43v   = (5.*(chiA - chiS*dM)*eta)/(8.*dM*(-1. + 2.*eta));
+    coeffs->rho43v   = 0.0;
     coeffs->rho43v2  = (222. - 547.*eta + 160.*eta2)/(176.*(-1. + 2.*eta));
     coeffs->rho43v4  = -6894273./7047040. + (3.*a2)/8.;
     coeffs->rho43v5  = (-12113.*a)/6160.;
     coeffs->rho43v6  = 1664224207351./195343948800.;
     coeffs->rho43v6l = - 1571./770.;
+
+    coeffs->f43v   = (5.*(chiA - chiS*dM)*eta)/(2.*dM*(-1. + 2.*eta));
+  }
+  else
+  {
+    coeffs->f43v   = - 5.*chiA/4.;
   }
 
   coeffs->delta42vh3 = (7.*(1. + 6.*eta))/(-15.*m1Plus3eta);
@@ -1318,12 +1334,19 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
     coeffs->delta41vh4 = (11.*a)/12.;
     coeffs->delta41vh6 = 1571.*LAL_PI/3465.;
 
-    coeffs->rho41v   = (5.*(chiA - chiS*dM)*eta)/(8.*dM*(-1. + 2.*eta));
+    //coeffs->rho41v   = (5.*(chiA - chiS*dM)*eta)/(8.*dM*(-1. + 2.*eta));
+    coeffs->rho41v   = 0.0;
     coeffs->rho41v2  = (602. - 1385.*eta + 288.*eta2)/(528.*(-1. + 2.*eta));
     coeffs->rho41v4  = -7775491./21141120. + (3.*a2)/8.;
     coeffs->rho41v5  = (-20033.*a)/55440. - (5*a*a2)/6.;
     coeffs->rho41v6  = 1227423222031./1758095539200.;
     coeffs->rho41v6l = - 1571./6930.;
+
+    coeffs->f41v = (5.*(chiA - chiS*dM)*eta)/(2.*dM*(-1. + 2.*eta));
+  }
+  else
+  {
+    coeffs->f41v = - 5.*chiA/4.;
   }
 
   /* l = 5 */

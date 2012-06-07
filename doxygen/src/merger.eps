@@ -1,10 +1,11 @@
-%!PS-Adobe-2.0 EPSF-2.0
+%!PS-Adobe-3.0 EPSF-3.0
+%%LanguageLevel: 3
 %%Title: merger.ps
 %%Creator: timeline.c
 %%CreationDate: Tue Jul 11 15:32:01 2000
-%%Pages: 1
 %%Orientation: Portrait
-%%BoundingBox: 79 40 533 550
+%%BoundingBox: 69 49 543 557
+%%HiResBoundingBox: 69.930 49.991 542.910 556.911
 %%BeginSetup
 %%EndSetup
 %%EndComments
@@ -51,7 +52,9 @@ exch cos -3 mul 1.5 sub currentlinewidth mul rlineto
 
 /shear { % Draws arrows indicating tidal shear.  Takes two arguments:
 % a vertical offset, and a rotation angle.
-gsave exch 0 exch translate 1 0.389418 scale rotate
+gsave exch dup 0 exch translate
+600 div 1 add dup scale
+1 0.389418 scale rotate
 120 120 112 180 270 inarrowarc
 -120 120 112 360 270 inarrowarcn
 -120 -120 112 0 90 inarrowarc
@@ -111,5 +114,25 @@ gsave 1 0.389418 scale
 0 0 276 -70 20 outarrowarc
 0 0 276 110 200 outarrowarc
 grestore
+
+% Draw title
+/title (LALSuite Doxygen) def
+/Helvetica-Bold findfont 72 scalefont setfont
+/titlewidth { title stringwidth pop } def
+0 titlewidth sub 2 div 380 moveto
+title false charpath
+gsave
+clip <<
+/ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 380 0 380 72 add]
+/Function << /FunctionType 2 /Domain [0 1] /C0 [1 1 1] /C1 [0 0.8 1] /N 1 >>
+>> shfill
+grestore
+gsave
+1 0 0 setrgbcolor
+clip 400 -20 shear
+grestore
+0 0 0 setrgbcolor
+1 setlinewidth
+stroke
 
 showpage

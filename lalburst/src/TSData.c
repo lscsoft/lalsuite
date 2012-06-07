@@ -1129,7 +1129,7 @@ void cleanLinkedList(
   /* Count up number of useful curves to keep */
   for(i=0;i<inList->numberOfCurves;i++)
     {
-      if ((inList->curves[i].trash = 'K'))
+      if (inList->curves[i].trash == 'K')
 	{
 	  UsefulCurves++;
 	  /* Expand the structure to take in another curve */

@@ -2,7 +2,7 @@
 #
 # Based on generateGitID.sh by Reinhard Prix
 #
-# Copyright (C) 2009,2010, Adam Mercer <adam.mercer@ligo.org>
+# Copyright (C) 2009,2010,2012, Adam Mercer <adam.mercer@ligo.org>
 # Copyright (C) 2009,2010, Nickolas Fotopoulos <nvf@gravity.phys.uwm.edu>
 # Copyright (C) 2008,2009, John T. Whelan <john.whelan@ligo.org>
 # Copyright (C) 2008, Reinhard Prix <reinhard.ligo.org>
@@ -28,17 +28,13 @@
 __author__ = 'Adam Mercer <adam.mercer@ligo.org>'
 
 # import required system modules
-import exceptions
 import os
 import sys
 import time
 import optparse
 import filecmp
 import shutil
-try:
-  import subprocess
-except ImportError:
-  sys.exit("Python-2.4, or higher is required")
+import subprocess
 
 #
 # class definitions
@@ -54,9 +50,11 @@ class git_info(object):
     author = None
     committer = None
     status = None
+    builder = None
+    build_date = None
 
 # git invocation error exception handler
-class GitInvocationError(exceptions.LookupError):
+class GitInvocationError(LookupError):
   pass
 
 #
@@ -66,14 +64,10 @@ class GitInvocationError(exceptions.LookupError):
 # command line option parsing
 def parse_args():
   # usage information
-  usage = '%prog [options] project src_dir build_dir'
+  usage = '%prog project src_dir build_dir'
 
   # define option parser
   parser = optparse.OptionParser(usage=usage)
-  parser.add_option('--sed', action='store_true', default=False,
-      help='output sed commands for version replacement')
-  parser.add_option('--sed-file', action='store_true', default=False,
-      help='output sed file for version replacement')
 
   # parse command line options
   opts, args = parser.parse_args()
@@ -82,11 +76,7 @@ def parse_args():
   if (len(args) != 3):
     parser.error('incorrect number of command line options specified')
 
-  # check that both --sed and --file are not specified
-  if opts.sed and opts.sed_file:
-    parser.error('cannot specify both --sed and --sed-file')
-
-  return opts, args[0], args[1], args[2]
+  return args[0], args[1], args[2]
 
 #
 # process management methods
@@ -120,7 +110,11 @@ def check_call_out(command):
 
   # throw exception if process failed
   if p.returncode != 0:
-    raise GitInvocationError, 'failed to run "%s"' % " ".join(command)
+    raise GitInvocationError('failed to run "%s"' % " ".join(command))
+
+  # convert byte objects to strings, if appropriate
+  if not isinstance(out, str) and sys.version_info >= (3,):
+    out = str(out, encoding='utf8')
 
   return out.strip()
 
@@ -157,7 +151,7 @@ def generate_git_version_info():
   git_id, git_udate, git_author_name, git_author_email, \
     git_committer_name, git_committer_email = \
     check_call_out((git_path, 'log', '-1',
-    '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(",")
+      '--pretty=format:%H,%ct,%an,%ae,%cn,%ce')).split(",")
 
   git_date = time.strftime('%Y-%m-%d %H:%M:%S +0000',
     time.gmtime(float(git_udate)))
@@ -194,6 +188,18 @@ def generate_git_version_info():
     else:
       git_status = 'CLEAN: All modifications committed'
 
+  # get builder
+  retcode, builder_name = call_out((git_path, 'config', 'user.name'))
+  if retcode:
+    builder_name = 'Unknown User'
+  retcode, builder_email = call_out((git_path, 'config', 'user.email'))
+  if retcode:
+    builder_email = ''
+  git_builder = '%s <%s>' % (builder_name, builder_email)
+
+  # determine current time and treat it as the build time
+  git_build_date = time.strftime('%Y-%m-%d %H:%M:%S +0000', time.gmtime())
+
   # determine version strings
   info.id = git_id
   info.date = git_date
@@ -202,6 +208,8 @@ def generate_git_version_info():
   info.author = git_author
   info.committer = git_committer
   info.status = git_status
+  info.builder = git_builder
+  info.build_date = git_build_date
 
   return info
 
@@ -211,18 +219,31 @@ def generate_git_version_info():
 
 if __name__ == "__main__":
   # parse command line options
-  options, project, src_dir, build_dir = parse_args()
+  project, src_dir, build_dir = parse_args()
 
-  # filenames
-  basename = '%sVCSInfo.h' % project
-  infile = '%s.in' % basename  # used after chdir to src_dir
-  tmpfile= '%s/%s.tmp' % (build_dir, basename)
-  srcfile = '%s/%s' % (src_dir, basename)
-  dstfile = '%s/%s' % (build_dir, basename)
+  # filenames, header
+  header_basename = '%sVCSInfo.h' % project
+  header_infile = '%s.in' % header_basename  # used after chdir to src_dir
+  header_tmpfile= '%s/%s.tmp' % (build_dir, header_basename)
+  header_srcfile = '%s/%s' % (src_dir, header_basename)
+  header_dstfile = '%s/%s' % (build_dir, header_basename)
+
+  # filename, module
+  if project == 'LALApps':
+    module_basename = 'git_version.py'
+    module_infile = '%s.in' % module_basename
+    module_tmpfile = '%s/%s.tmp' % (build_dir, module_infile)
+    module_srcfile = '%s/%s' % (src_dir, module_basename)
+    module_dstfile = '%s/%s' % (build_dir, module_basename)
 
   # copy vcs header to build_dir, if appropriate
-  if os.access(srcfile, os.F_OK) and not os.access(dstfile, os.F_OK):
-    shutil.copy(srcfile, dstfile)
+  if os.access(header_srcfile, os.F_OK) and not os.access(header_dstfile, os.F_OK):
+    shutil.copy(header_srcfile, header_dstfile)
+
+  # copy vcs module to build_dir, if appropriate
+  if project == 'LALApps':
+    if os.access(module_srcfile, os.F_OK) and not os.access(module_dstfile, os.F_OK):
+      shutil.copy(module_srcfile, module_dstfile)
 
   # change to src_dir
   os.chdir(src_dir)
@@ -241,47 +262,46 @@ if __name__ == "__main__":
     else:
         sys.exit("Unexpected failure in discovering the git version")
 
-  if options.sed_file:
-    # output sed command file to stdout
-    print 's/@ID@/%s/g' % info.id
-    print 's/@DATE@/%s/g' % info.date
-    print 's/@BRANCH@/%s/g' % info.branch
-    print 's/@TAG@/%s/g' % info.tag
-    print 's/@AUTHOR@/%s/g' % info.author
-    print 's/@COMMITTER@/%s/g' % info.committer
-    print 's/@STATUS@/%s/g' % info.status
-  elif options.sed:
-    # generate sed command line options
-    sed_cmd = ('sed',
-               '-e', 's/@ID@/%s/' % info.id,
-               '-e', 's/@DATE@/%s/' % info.date,
-               '-e', 's/@BRANCH@/%s/' % info.branch,
-               '-e', 's/@TAG@/%s/' % info.tag,
-               '-e', 's/@AUTHOR@/%s/' % info.author,
-               '-e', 's/@COMMITTER@/%s/' % info.committer,
-               '-e', 's/@STATUS@/%s/' % info.status,
-               infile)
+  # construct sed command options
+  sed_opts = ['sed',
+             '-e', 's/@ID@/%s/' % info.id,
+             '-e', 's/@DATE@/%s/' % info.date,
+             '-e', 's/@BRANCH@/%s/' % info.branch,
+             '-e', 's/@TAG@/%s/' % info.tag,
+             '-e', 's/@AUTHOR@/%s/' % info.author,
+             '-e', 's/@COMMITTER@/%s/' % info.committer,
+             '-e', 's/@STATUS@/%s/' % info.status,
+             '-e', 's/@BUILDER@/%s/' % info.builder,
+             '-e', 's/@BUILD_DATE@/%s/' % info.build_date]
 
-    # create tmp file
-    # FIXME: subprocess.check_call becomes available in Python 2.5
-    sed_retcode = subprocess.call(sed_cmd, stdout=open(tmpfile, "w"))
-    if sed_retcode:
-      raise GitInvocationError, "Failed call (modulo quoting): " \
-          + " ".join(sed_cmd) + " > " + tmpfile
+  # construct sed command for vcs header
+  header_sed_cmd = list(sed_opts)
+  header_sed_cmd.append(header_infile)
 
-    # only update vcs header if appropriate
-    if os.access(dstfile, os.F_OK) and filecmp.cmp(dstfile, tmpfile):
-      os.remove(tmpfile)
-    else:
-      os.rename(tmpfile, dstfile)
+  # construct sed command for vcs module
+  if project == 'LALApps':
+    module_sed_cmd = list(sed_opts)
+    module_sed_cmd.append(module_infile)
+
+  # create tmp files
+  try:
+    subprocess.check_call(header_sed_cmd, stdout=open(header_tmpfile, 'w'))
+    if project == 'LALApps':
+      subprocess.check_call(module_sed_cmd, stdout=open(module_tmpfile, 'w'))
+  except CalledProcessError:
+    raise GitInvocationError("Failed call (modulo quoting): " \
+        + " ".join(sed_cmd) + " > " + tmpfile)
+
+  # update if appropriate
+  if os.access(header_dstfile, os.F_OK) and filecmp.cmp(header_dstfile, header_tmpfile):
+    os.remove(header_tmpfile)
+    if project == 'LALApps':
+      os.remove(module_tmpfile)
   else:
-    # output version info
-    print 'Id: %s' % info.id
-    print 'Date: %s' % info.date
-    print 'Branch: %s' % info.branch
-    print 'Tag: %s' % info.tag
-    print 'Author: %s' % info.author
-    print 'Committer: %s' % info.committer
-    print 'Status: %s' % info.status
+    print('  GEN    %s' % header_basename)
+    os.rename(header_tmpfile, header_dstfile)
+    if project == 'LALApps':
+      print('  GEN    %s' % module_basename)
+      os.rename(module_tmpfile, module_dstfile)
 
 # vim: syntax=python tw=72 ts=2 et

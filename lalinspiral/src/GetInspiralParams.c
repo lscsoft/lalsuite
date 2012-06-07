@@ -17,10 +17,16 @@
 *  MA  02111-1307  USA
 */
 
+#include <math.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/GeneratePPNInspiral.h>
+#include <lal/SkyCoordinates.h>
+
+#define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
+
 /**
 \author Creighton, T. D.
-\file
-\ingroup GeneratePPNInspiral_h
 
 \brief Computes the input parameters for a PPN inspiral.
 
@@ -69,25 +75,7 @@ in case the location lies on top of the Earth.  The angular
 coordinates are then transformed to equatorial celestial coordinates
 \f$\alpha\f$ and \f$\delta\f$ using the routines in \ref SkyCoordinates.h.
 
-\heading{Uses}
-\code
-LALGalacticToEquatorial()       LALUniformDeviate()
-LALCreateRandomParams()         LALDestroyRandomParams()
-\endcode
-
-\heading{Notes}
-
 */
-
-#include <math.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/GeneratePPNInspiral.h>
-#include <lal/SkyCoordinates.h>
-
-#define LAL_DGALCORE_SI (2.62e20) /* Galactic core distance (metres) */
-
-
 void
 LALGetInspiralParams( LALStatus                  *stat,
 		      PPNParamStruc              *output,

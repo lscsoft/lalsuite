@@ -1,9 +1,5 @@
 ## Process this file with automake to produce Makefile.in
-DOCSOURCEFILES = window.tex window_t.pdf window_f.pdf
-MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = main.dvi main.pdf main.ps
+DOCSOURCEFILES = window.dox window_t.pdf window_f.pdf window_t.png window_f.png
+MOSTLYCLEANFILES =
+CLEANFILES =
 EXTRA_DIST = $(DOCSOURCEFILES)
-dvi-local: .dvi-dep
-distclean-local:
-	-rm -fr .adoc
-@DOCMKFILE@

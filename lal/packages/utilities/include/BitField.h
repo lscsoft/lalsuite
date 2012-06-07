@@ -17,16 +17,17 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Karl Wette
- * \file
- * \brief Macros for manipulating integers as bit fields
- */
-
 #ifndef _BITFIELD_H
 #define _BITFIELD_H
 
 #include <lal/LALAtomicDatatypes.h>
+
+/**
+ * \addtogroup BitField_h
+ * \author Karl Wette
+ * \brief Macros for manipulating integers as bit fields
+ */
+/*@{*/
 
 /**
  * Return a mask where the (zero-based) ith bit is set
@@ -57,5 +58,7 @@
  * Sets all bits from 0 to n of x to the truth of v
  */
 #define SET_ALL(T, x, n, v) x = ((v) ? x | ALL_BITS(T, n) : x & ~ALL_BITS(T, n))
+
+/*@}*/
 
 #endif

@@ -17,18 +17,34 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _GENERATESPINORBITCW_H
+#define _GENERATESPINORBITCW_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
+#include <lal/LALStdlib.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/SkyCoordinates.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
-\author Creighton, T. D.
-\file
-\ingroup pulsarTODO
+   \addtogroup GenerateSpinOrbitCW_h
+   \author Creighton, T. D.
 
-\brief Provides routines to generate continuous waveforms with spindown and
-orbital modulation.
+   \brief Provides routines to generate continuous waveforms with spindown and orbital modulation.
 
-\heading{Synopsis}
-\code
-#include <lal/GenerateSpinOrbitCW.h>
-\endcode
+   \heading{Synopsis}
+   \code
+   #include <lal/GenerateSpinOrbitCW.h>
+   \endcode
 
 This header covers routines to generate continuous quasiperiodic
 waveforms with a smoothly-varying intrinsic frequency modulated by
@@ -41,7 +57,7 @@ simply Doppler-modulate a polynomial frequency function.
 
 The frequency and phase of the wave in the source's rest frame are
 given by Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi} of
-\ref GenerateTaylorCW.h, where \f$t\f$ is the proper time in this rest
+\ref GenerateTaylorCW_h, where \f$t\f$ is the proper time in this rest
 frame.  The frequency and phase of the wave fronts crossing a
 reference point in an inertial frame (e.g.\ the Solar system
 barycentre) are simply \f$f[t(t_r)]\f$ and \f$\phi[t(t_r)]\f$, where
@@ -208,128 +224,33 @@ near-parabolic orbits, we specify the value of \f$1-e\f$ rather than the
 value of \f$e\f$.  We note that \f$1-e\f$ has a maximum value of \f$1\f$ for a
 circular orbit, positive for closed elliptical orbits, zero for
 parabolic orbits, and negative (unbounded) for hyperbolic orbits.
-
-
-
-\heading{Types}
-
-\heading{Structure \c SpinOrbitCWParamStruc}
-
-This structure stores the parameters for constructing a gravitational
-waveform with both a Taylor-polynomial intrinsic frequency and phase,
-and a binary-orbit modulation.  As with the \c PPNParamStruc type
-in \ref GeneratePPNInspiral.h, we divide the fields into passed
-fields (which are supplied to the final \c CoherentGW structure
-but not used in any calculations), input fields (that are used by the
-waveform generator), and output fields (that are set by the waveform
-generator).  They are:
-
-<em>Passed fields:</em>
-<dl>
-<dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
-sky, normally in equatorial coordinates.</dd>
-
-<dt><tt>REAL4 psi</tt></dt><dd> The polarization angle of the source, in
-radians.</dd>
-</dl>
-
-<em>Input fields:</em>
-<dl>
-<dt><tt>LIGOTimeGPS epoch</tt></dt><dd> The start time of the output series.</dd>
-
-<dt><tt>LIGOTimeGPS spinEpoch</tt></dt><dd> A reference time
-\f$t_\mathrm{ref}\f$ (in the barycentric frame) at which the rotational
-properties of the source are specified.</dd>
-
-<dt><tt>LIGOTimeGPS orbitEpoch</tt></dt><dd> A time \f$t_\mathrm{peri}\f$ (in
-the barycentric frame) at which the source passes through periapsis.
-Note that this is the proper or "true" time of passage; the
-\e observed periapsis passage occurs at time
-\f$t_\mathrm{peri}+r(t_\mathrm{peri})/c\f$.</dd>
-
-<dt><tt>REAL8 deltaT</tt></dt><dd> The requested sampling interval of the
-waveform, in s.</dd>
-
-<dt><tt>UINT4 length</tt></dt><dd> The number of samples in the generated
-waveform.</dd>
-
-<dt><tt>REAL4 aPlus, aCross</tt></dt><dd> The polarization amplitudes \f$A_+\f$,
-\f$A_\times\f$, in dimensionless strain units.</dd>
-
-<dt><tt>REAL8 phi0</tt></dt><dd> The phase of the wave emitted at time
-\f$t_\mathrm{ref}\f$, in radians.</dd>
-
-<dt><tt>REAL8 f0</tt></dt><dd> The frequency of the wave emitted at time
-\f$t_\mathrm{ref}\f$ (and incorporating any Doppler shift due to
-\f$\dot{R}_0\f$), in Hz.</dd>
-
-<dt><tt>REAL8Vector *f</tt></dt><dd> The spin-normalized Taylor parameters
-\f$f_k\f$, as defined in Eq.\eqref{eq_taylorcw-freq} of
-\ref GenerateTaylorCW.h.  If \c f=\c NULL, the (proper) spin
-of the source is assumed to be constant.</dd>
-
-<dt><tt>REAL8 omega</tt></dt><dd> The argument of the periapsis, \f$\omega\f$,
-in radians.</dd>
-
-<dt><tt>REAL8 rPeriNorm</tt></dt><dd> The projected,
-speed-of-light-normalized periapsis separation of the orbit,
-\f$(r_p/c)\sin i\f$, in s.</dd>
-
-<dt><tt>REAL8 oneMinusEcc</tt></dt><dd> The value of \f$1-e\f$.</dd>
-
-<dt><tt>REAL8 angularSpeed</tt></dt><dd> The angular speed at periapsis,
-\f$\dot{\upsilon}_p\f$, in Hz.</dd>
-</dl>
-
-<em>Output fields:</em>
-<dl>
-<dt><tt>REAL4 dfdt</tt></dt><dd> The maximum value of \f$\Delta f\Delta t\f$
-encountered over any timestep \f$\Delta t\f$ used in generating the
-waveform.</dd>
-</dl>
-
 */
+/*@{*/
 
-#ifndef _GENERATESPINORBITCW_H
-#define _GENERATESPINORBITCW_H
+/** \name Error Codes */
+/*@{*/
+#define GENERATESPINORBITCWH_ENUL 1	/**< Unexpected null pointer in arguments */
+#define GENERATESPINORBITCWH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
+#define GENERATESPINORBITCWH_EMEM 3	/**< Out of memory */
+#define GENERATESPINORBITCWH_EECC 4	/**< Eccentricity out of range */
+#define GENERATESPINORBITCWH_EFTL 5	/**< Periapsis motion is faster than light */
+#define GENERATESPINORBITCWH_ESGN 6	/**< Sign error: positive parameter expected */
+/*@}*/
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-#include <lal/LALStdlib.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/SkyCoordinates.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**
- \name Error Codes */ /*@{*/
-#define GENERATESPINORBITCWH_ENUL 1
-#define GENERATESPINORBITCWH_EOUT 2
-#define GENERATESPINORBITCWH_EMEM 3
-#define GENERATESPINORBITCWH_EECC 4
-#define GENERATESPINORBITCWH_EFTL 5
-#define GENERATESPINORBITCWH_ESGN 6
-
+/** \cond DONT_DOXYGEN */
 #define GENERATESPINORBITCWH_MSGENUL "Unexpected null pointer in arguments"
 #define GENERATESPINORBITCWH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATESPINORBITCWH_MSGEMEM "Out of memory"
 #define GENERATESPINORBITCWH_MSGEECC "Eccentricity out of range"
 #define GENERATESPINORBITCWH_MSGEFTL "Periapsis motion is faster than light"
 #define GENERATESPINORBITCWH_MSGESGN "Sign error: positive parameter expected"
-/*@}*/
+/** \endcond */
 
 /**
  * This structure stores the parameters for constructing a gravitational
  * waveform with both a Taylor-polynomial intrinsic frequency and phase,
- * and a binary-orbit modulation.  As with the PPNParamStruc type
- * in GeneratePPNInspiral.h, we divide the fields into passed
+ * and a binary-orbit modulation.  As with the ::PPNParamStruc type
+ * in \ref GeneratePPNInspiral_h, we divide the fields into passed
  * fields (which are supplied to the final CoherentGW structure
  * but not used in any calculations), input fields (that are used by the
  * waveform generator), and output fields (that are set by the waveform
@@ -337,72 +258,61 @@ extern "C" {
  */
 typedef struct tagSpinOrbitCWParamStruc {
   SWIGLAL_STRUCT(SpinOrbitCWParamStruc);
-  /* Passed parameters. */
-  SkyPosition position;   /**< location of source on sky */
-  REAL4 psi;              /**< polarization angle (radians) */
+  /** \name Passed parameters. */
+  /*@{*/
+  SkyPosition position;   /**< The location of the source on the sky, normally in equatorial coordinates */
+  REAL4 psi;              /**< The polarization angle of the source, in radians */
+  /*@}*/
 
-  /* Input parameters. */
-  LIGOTimeGPS epoch;      /**< start time of output time series */
-  LIGOTimeGPS spinEpoch;  /**< reference time for rotational parameters */
-  LIGOTimeGPS orbitEpoch; /**< time of a periapsis passage */
-  REAL8 deltaT;           /**< requested sampling interval (s) */
-  UINT4 length;           /**< length of time series */
-  REAL4 aPlus, aCross;    /**< polarization amplitudes */
-  REAL8 phi0;             /**< initial phase (radians) */
-  REAL8 f0;               /**< initial frequency (Hz) */
-  REAL8Vector *f;         /**< f0-normalized Taylor parameters */
-  REAL8 omega;            /**< argument of periapsis (radians) */
-  REAL8 rPeriNorm;        /**< projected, normalized periapsis (s) */
-  REAL8 oneMinusEcc;      /**< 1 - orbital eccentricity */
-  REAL8 angularSpeed;     /**< angular speed at periapsis (Hz) */
+  /** \name Input parameters. */
+  /*@{*/
+  LIGOTimeGPS epoch;      /**< The start time of the output series */
+  LIGOTimeGPS spinEpoch;  /**< A reference time \f$t_\mathrm{ref}\f$ (in the barycentric frame) at which the rotational properties of the source are specified */
+  LIGOTimeGPS orbitEpoch; /**< A time \f$t_\mathrm{peri}\f$ (in the barycentric frame) at which the source passes through periapsis.
+                           * Note that this is the proper or "true" time of passage; the \e observed periapsis passage occurs at
+                           * time \f$t_\mathrm{peri}+r(t_\mathrm{peri})/c\f$ */
+  REAL8 deltaT;           /**< The requested sampling interval of the waveform, in s */
+  UINT4 length;           /**< The number of samples in the generated waveform */
+  REAL4 aPlus, aCross;    /**< The polarization amplitudes \f$A_+\f$, \f$A_\times\f$, in dimensionless strain units */
+  REAL8 phi0;             /**< The phase of the wave emitted at time \f$t_\mathrm{ref}\f$, in radians */
+  REAL8 f0;               /**< The frequency of the wave emitted at time \f$t_\mathrm{ref}\f$ (and incorporating any Doppler shift due to \f$\dot{R}_0\f$), in Hz */
+  REAL8Vector *f;         /**< The spin-normalized Taylor parameters \f$f_k\f$, as defined in Eq.\eqref{eq_taylorcw-freq} of \ref GenerateTaylorCW_h.
+                           * If \c f=\c NULL, the (proper) spin of the source is assumed to be constant */
+  REAL8 omega;            /**< The argument of the periapsis, \f$\omega\f$, in radians */
+  REAL8 rPeriNorm;        /**< The projected, speed-of-light-normalized periapsis separation of the orbit, \f$(r_p/c)\sin i\f$, in s */
+  REAL8 oneMinusEcc;      /**< The value of \f$1-e\f$ */
+  REAL8 angularSpeed;     /**< The angular speed at periapsis, \f$\dot{\upsilon}_p\f$, in Hz */
+  /*@}*/
 
-  /* Output parameters. */
-  REAL4 dfdt;             /**< [OUT:] maximum value of df*dt over any timestep */
+  /** \name Output parameters. */
+  /*@{*/
+  REAL4 dfdt;             /**< The maximum value of \f$\Delta f\Delta t\f$ encountered over any timestep \f$\Delta t\f$ used in generating the waveform */
+  /*@}*/
 } SpinOrbitCWParamStruc;
 
 
-
-
-
-
-
-/* Function prototypes. */
-
-
-
-
+/* ---------- Function prototypes. ---------- */
 void
 LALGenerateSpinOrbitCW( LALStatus             *,
 			CoherentGW            *output,
 			SpinOrbitCWParamStruc *params );
-
-
-
 
 void
 LALGenerateEllipticSpinOrbitCW( LALStatus             *,
 				CoherentGW            *output,
 				SpinOrbitCWParamStruc *params );
 
-
-
-
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *,
 				 CoherentGW            *output,
 				 SpinOrbitCWParamStruc *params );
-
-
-
 
 void
 LALGenerateHyperbolicSpinOrbitCW( LALStatus             *,
 				  CoherentGW            *output,
 				  SpinOrbitCWParamStruc *params );
 
-
-
-
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

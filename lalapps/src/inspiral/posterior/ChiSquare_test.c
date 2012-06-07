@@ -177,7 +177,12 @@ void initVariables(LALInferenceRunState *state)
 				randomseed = tv.tv_sec + tv.tv_usec;
 		} 
 		else {
-				fread(&randomseed, sizeof(randomseed), 1, devrandom);
+				size_t fread_ret = fread(&randomseed, sizeof(randomseed), 1, devrandom);
+				if (fread_ret != 1) {
+					fprintf(stdout, "could not read a random seed from /dev/urandom, using time of day.");
+					gettimeofday(&tv, 0);
+					randomseed = tv.tv_sec + tv.tv_usec;
+				}
 				fclose(devrandom);
 		}
 	

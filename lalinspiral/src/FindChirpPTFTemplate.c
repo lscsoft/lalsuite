@@ -29,8 +29,8 @@
 /**
 
 \author Brown, D. A., and Fazi, D.
-\file
 \ingroup FindChirpPTF_h
+\file
 
 \brief Provides functions to create physical template family templates in a
 form that can be used by the <tt>FindChirpPTFFilter()</tt> function.
@@ -43,16 +43,6 @@ family template as described by the algorithm below.
 \heading{Algorithm}
 
 Blah.
-
-\heading{Uses}
-\code
-LALCalloc()
-LALFree()
-LALCreateVector()
-LALDestroyVector()
-\endcode
-
-\heading{Notes}
 
 */
 

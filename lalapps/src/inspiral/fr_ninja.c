@@ -546,6 +546,11 @@ INT4 main(INT4 argc, CHAR **argv)
             hplusREAL8[l][m]->data->data[i] = waveformsREAL8[l][m]->data->data[i];
             hcrossREAL8[l][m]->data->data[i] = waveformsREAL8[l][m]->data->data[wf_length + i];
           }
+
+          /* Done with waveformsREAL8, clean up here to limit memory usage */
+          LALFree(waveformsREAL8[l][m]->data->data);
+          LALFree(waveformsREAL8[l][m]->data);
+          LALFree(waveformsREAL8[l][m]);
         }
       }
       else /* REAL4 */
@@ -606,42 +611,42 @@ INT4 main(INT4 argc, CHAR **argv)
    */
 
   /* strings */
-  free(nrMetaFile);
-  free(nrDataDir);
-  free(frame_name);
-  free(metadata_format);
+  if(nrMetaFile) free(nrMetaFile);
+  if(nrDataDir)  free(nrDataDir);
+  if(frame_name) free(frame_name);
+  if(metadata_format) free(metadata_format);
 
   /* common metadata */
-  LALFree(md_mass_ratio);
-  LALFree(md_spin1x);
-  LALFree(md_spin1y);
-  LALFree(md_spin1z);
-  LALFree(md_spin2x);
-  LALFree(md_spin2y);
-  LALFree(md_spin2z);
-  LALFree(md_freq_start_22);
+  if(md_mass_ratio) LALFree(md_mass_ratio);
+  if(md_spin1x) LALFree(md_spin1x);
+  if(md_spin1y) LALFree(md_spin1y);
+  if(md_spin1z) LALFree(md_spin1z);
+  if(md_spin2x) LALFree(md_spin2x);
+  if(md_spin2y) LALFree(md_spin2y);
+  if(md_spin2z) LALFree(md_spin2z);
+  if(md_freq_start_22) LALFree(md_freq_start_22);
 
   /* NINJA1 metadata */
-  LALFree(md_simulation_details);
-  LALFree(md_nr_group);
-  LALFree(md_email);
+  if(md_simulation_details) LALFree(md_simulation_details);
+  if(md_nr_group)           LALFree(md_nr_group);
+  if(md_email)              LALFree(md_email);
 
   /* NINJA2 metadata */
-  LALFree(md_waveform_name);
-  LALFree(md_initial_separation);
-  LALFree(md_eccentricity);
-  LALFree(md_number_of_cycles_22);
-  LALFree(md_code);
-  LALFree(md_submitter_email);
-  LALFree(md_authors_emails);
+  if(md_waveform_name)       LALFree(md_waveform_name);
+  if(md_initial_separation)  LALFree(md_initial_separation);
+  if(md_eccentricity)        LALFree(md_eccentricity);
+  if(md_number_of_cycles_22) LALFree(md_number_of_cycles_22);
+  if(md_code)                LALFree(md_code);
+  if(md_submitter_email)     LALFree(md_submitter_email);
+  if(md_authors_emails)      LALFree(md_authors_emails);
 
   /* config file */
-  LALFree(meta_file->lines->list->data);
-  LALFree(meta_file->lines->list);
-  LALFree(meta_file->lines->tokens);
-  LALFree(meta_file->lines);
-  LALFree(meta_file->wasRead);
-  LALFree(meta_file);
+  if(meta_file->lines->list->data) LALFree(meta_file->lines->list->data);
+  if(meta_file->lines->list)   LALFree(meta_file->lines->list);
+  if(meta_file->lines->tokens) LALFree(meta_file->lines->tokens);
+  if(meta_file->lines)   LALFree(meta_file->lines);
+  if(meta_file->wasRead) LALFree(meta_file->wasRead);
+  if(meta_file)          LALFree(meta_file);
 
   /* waveforms */
   if (generatingREAL8)
@@ -659,13 +664,6 @@ INT4 main(INT4 argc, CHAR **argv)
 
         if (wf_name[l][m])
           LALFree(wf_name[l][m]);
-
-        /* raw waveforms */
-        if (waveformsREAL8[l][m]) {
-          LALFree(waveformsREAL8[l][m]->data->data);
-          LALFree(waveformsREAL8[l][m]->data);
-          LALFree(waveformsREAL8[l][m]);
-        }
 
         /* hplus */
         if (hplusREAL8[l][m])
@@ -731,6 +729,7 @@ static void print_usage(FILE *ptr, CHAR *program)
       "[--verbose                 display progress information]\n"\
       "[--debug-level    LEVEL    set the debug level]\n"\
       "[--format         FORMAT   metadata format, defaults to NINJA1]\n"\
+      "[--double-precision        generate REAL8 files, default is REAL4]\n"\
       " --nr-meta-file   FILE     file containing the details of the available\n"\
       "                           numerical relativity waveforms\n"\
       " --nr-data-dir    DIR      directory containing the numerical relativity\n"\

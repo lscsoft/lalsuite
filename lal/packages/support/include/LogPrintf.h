@@ -21,14 +21,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Reinhard Prix
- * \date 2005
- * \file
- * \brief General-purpose log-message handling, controlled by lalDebugLevel
- *
- */
-
 #ifndef _LOGPRINTF_H  /* Double-include protection. */
 #define _LOGPRINTF_H
 
@@ -44,17 +36,27 @@ extern "C" {
 
 #include <gsl/gsl_matrix.h>
 
+/**
+ * \addtogroup LogPrintf_h
+ * \author Reinhard Prix
+ * \date 2005
+ * \brief General-purpose log-message handling, controlled by lalDebugLevel independent of lalDebugLevel,
+ *        mostly modelled after the MSG_LOG class in BOINC.
+ *
+ */
+/*@{*/
+
 /*---------- DEFINES ----------*/
 /*---------- TYPES ----------*/
 
 /** Argument-type for LogPrintf(): determines log-level of this message */
 typedef enum
   {
-    LOG_CRITICAL = -1,
-    LOG_NORMAL = 0,
-    LOG_DEBUG  = 1,
-    LOG_DETAIL = 2,
-    LOG_LAST		/* don't use */
+    LOG_CRITICAL = -1,  /**< log-level for critical errors */
+    LOG_NORMAL = 0,     /**< 'normal' log-level */
+    LOG_DEBUG  = 1,     /**< debug log-level */
+    LOG_DETAIL = 2,     /**< detailed log-level */
+    LOG_LAST            /**< internal: don't use */
   } LogLevel_t;
 
 /*---------- GLOBALs ----------*/
@@ -73,6 +75,8 @@ int XLALfprintfGSLvector_int ( FILE *fp, const char *fmt, const gsl_vector_int *
 REAL8 XLALGetTimeOfDay(void);
 
 char * XLALClearLinebreaks ( const char *str );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

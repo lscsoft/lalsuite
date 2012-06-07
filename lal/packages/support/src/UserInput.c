@@ -18,14 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \file
- * \ingroup UserInput
- * \author Reinhard Prix
- *
- * \brief Convenient unified handling of user-input via config-file and/or command-line.
- *
- */
-
 #include "getopt.h"
 
 #include <lal/LALStdio.h>
@@ -38,15 +30,15 @@ extern INT4 lalDebugLevel;
 #define TRUE  (1==1)
 #define FALSE (1==0)
 
-/** Defines the type of a "user-variable": bool, int, real or string.
+/* Defines the type of a "user-variable": bool, int, real or string.
  * Should be used only internally !!
  */
 typedef enum {
-  UVAR_BOOL,	/**< boolean */
-  UVAR_INT4,	/**< integer */
-  UVAR_REAL8,	/**< float */
-  UVAR_STRING,	/**< string */
-  UVAR_CSVLIST,	/**< list of comma-separated values */
+  UVAR_BOOL,    /* boolean */
+  UVAR_INT4,    /* integer */
+  UVAR_REAL8,   /* float */
+  UVAR_STRING,  /* string */
+  UVAR_CSVLIST, /* list of comma-separated values */
   UVAR_LAST
 } UserVarType;
 
@@ -89,27 +81,35 @@ static void RegisterUserVar (LALStatus *, const CHAR *name, UserVarType type, CH
 /*---------- Function definitions ---------- */
 
 /* these are type-specific wrappers to allow tighter type-checking! */
+/** Register a user-variable of type REAL8, see XLALRegisterUserVar() for API documentation */
 int
 XLALRegisterREALUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, REAL8 *cvar )
 {
   return XLALRegisterUserVar (name, UVAR_REAL8, optchar, flag, helpstr, cvar);
 }
 
+/** Register a user-variable of type INT4, see XLALRegisterUserVar() for API documentation */
 int
 XLALRegisterINTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, INT4 *cvar )
 {
   return XLALRegisterUserVar (name, UVAR_INT4, optchar, flag, helpstr, cvar);
 }
+
+/** Register a user-variable of type BOOLEAN, see XLALRegisterUserVar() for API documentation */
 int
 XLALRegisterBOOLUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, BOOLEAN *cvar )
 {
   return XLALRegisterUserVar (name, UVAR_BOOL, optchar, flag, helpstr, cvar);
 }
+
+/** Register a user-variable of type CHAR*, see XLALRegisterUserVar() for API documentation */
 int
 XLALRegisterSTRINGUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, CHAR **cvar )
 {
   return XLALRegisterUserVar (name, UVAR_STRING, optchar, flag, helpstr, cvar);
 }
+
+/** Register a user-variable of 'list' type LALStringVector, see XLALRegisterUserVar() for API documentation */
 int
 XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, const CHAR *helpstr, LALStringVector **cvar)
 {
@@ -117,13 +117,14 @@ XLALRegisterLISTUserVar ( const CHAR *name, CHAR optchar, UserVarState flag, con
 }
 
 
-/** Register a user-variable with the module.
+/** \ingroup UserInput_h
+ * Internal function: Register a user-variable with the module.
  *  Effectively put an appropriate entry into UVAR_vars
  *
  * Checks that long- and short-options are unique, an error is returned
  * if a previous option name collides.
  *
- *  \note don't use this directly, as it's not type-safe!!
+ * \note don't use this function directly, as it is not type-safe!!
  *      ==> use one of the 4 wrappers: XLALRegisterREALUserVar(),
  *    XLALRegisterINTUserVar(), XLALRegisterBOOLUserVar(), XLALRegisterSTRINGUserVar().
  *
@@ -560,10 +561,7 @@ XLALUserVarReadCfgfile ( const CHAR *cfgfile ) 	   /**< [in] name of config-file
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
-  if ( XLALDestroyParsedDataFile (&cfg) != XLAL_SUCCESS ) {
-    XLALPrintError ("%s: XLALDestroyParsedDataFile() failed, code = %d\n", __func__, xlalErrno );
-    XLAL_ERROR ( XLAL_EFUNC );
-  }
+  XLALDestroyParsedDataFile(cfg);
 
   return XLAL_SUCCESS;
 } /* XLALUserVarReadCfgfile() */
@@ -1290,7 +1288,7 @@ check_and_mark_as_set ( LALUserVariable *varp )
   if ( (varp->state & UVAR_WAS_SET) )
     LogPrintf ( LOG_NORMAL, "Warning: user-variable '%s' was set more than once!\n", varp->name ? varp->name : "(NULL)" );
 
-  varp->state |= UVAR_WAS_SET;
+  varp->state = (UserVarState)( varp->state |  UVAR_WAS_SET );
 
   return;
 } /* check_and_mark_as_set() */
@@ -1302,8 +1300,7 @@ check_and_mark_as_set ( LALUserVariable *varp )
  */
 
 
-/** LAL Interface [deprecated] to XLALRegisterUserVar(), see its documentation for details.
- */
+/** \deprecated use XLALRegisterUserVar() instead */
 static void
 RegisterUserVar (LALStatus *status,
 		 const CHAR *name,
@@ -1330,9 +1327,7 @@ RegisterUserVar (LALStatus *status,
 } /* LALRegisterUserVar() */
 
 
-/** Free all memory associated with user-variable linked list
- * [deprecated LAL interface, see XLALDestroyUserVars()]
- */
+/** \deprecated us XLALDestroyUserVars() instead */
 void
 LALDestroyUserVars (LALStatus *status)
 {
@@ -1346,8 +1341,7 @@ LALDestroyUserVars (LALStatus *status)
 } /* LALDestroyUserVars() */
 
 
-/** Parse command-line into UserVariable array [deprecated LAL interface, see XLALUserVarReadCmdline()]
- */
+/** \deprecated use XLALUserVarReadCmdline() instead */
 void
 LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 {
@@ -1368,7 +1362,7 @@ LALUserVarReadCmdline (LALStatus *status, int argc, char *argv[])
 
 } /* LALUserVarReadCmdline() */
 
-/** Deprecated LAL interface to XLALUserVarCheckRequired() */
+/** \deprecated use XLALUserVarCheckRequired() instead */
 void
 LALUserVarCheckRequired (LALStatus *status)
 {
@@ -1383,8 +1377,7 @@ LALUserVarCheckRequired (LALStatus *status)
 } /* LALUserVarCheckRequired() */
 
 
-/** Deprecated LAL-interfaced to XLALUserVarReadAllInput()
- */
+/** \deprecated use XLALUserVarReadAllInput() instead */
 void
 LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 {
@@ -1404,14 +1397,14 @@ LALUserVarReadAllInput (LALStatus *status, int argc, char *argv[])
 
 } /* LALReadUserInput() */
 
-/** Deprecated LAL-name interface to XLALUserVarWasSet() */
+/** \deprecated use XLALUserVarWasSet() instead */
 INT4
 LALUserVarWasSet (const void *cvar)
 {
   return (XLALUserVarWasSet(cvar));
 }
 
-/** Deprecated LAL interface to XLALGetDebugLevel() */
+/** \deprecated use XLALGetDebugLevel() instead */
 void
 LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 {
@@ -1433,7 +1426,7 @@ LALGetDebugLevel (LALStatus *status, int argc, char *argv[], CHAR optchar)
 } /* LALGetDebugLevel() */
 
 
-/** deprecated LAL interface wrapper to XLALUserVarGetLog() */
+/** \deprecated use XLALUserVarGetLog() instead */
 void
 LALUserVarGetLog (LALStatus *status, CHAR **logstr,  UserVarLogFormat format)
 {
@@ -1515,7 +1508,7 @@ LALUserVarGetProcParamsTable (LALStatus *status, ProcessParamsTable **out, CHAR 
 #endif
 
 
-/** Deprecated LAL interface wrapper to XLALUserVarHelpString()
+/** \deprecated use XLALUserVarHelpString() instead
  */
 void
 LALUserVarHelpString (LALStatus *status,
@@ -1540,6 +1533,7 @@ LALUserVarHelpString (LALStatus *status,
 
 } /* LALUserVarHelpString() */
 
+/** \deprecated use XLALRegisterREALUserVar() instead */
 void
 LALRegisterREALUserVar (LALStatus *status,
 			const CHAR *name,
@@ -1551,6 +1545,7 @@ LALRegisterREALUserVar (LALStatus *status,
   RegisterUserVar (status, name, UVAR_REAL8, optchar, flag, helpstr, cvar);
 }
 
+/** \deprecated use XLALRegisterINTUserVar() instead */
 void
 LALRegisterINTUserVar (LALStatus *status,
 		       const CHAR *name,
@@ -1562,6 +1557,7 @@ LALRegisterINTUserVar (LALStatus *status,
   RegisterUserVar (status, name, UVAR_INT4, optchar, flag, helpstr, cvar);
 }
 
+/** \deprecated use XLALRegisterBOOLUserVar() instead */
 void
 LALRegisterBOOLUserVar (LALStatus *status,
 			const CHAR *name,
@@ -1573,6 +1569,7 @@ LALRegisterBOOLUserVar (LALStatus *status,
   RegisterUserVar (status, name, UVAR_BOOL, optchar, flag, helpstr, cvar);
 }
 
+/** \deprecated use XLALRegisterSTRINGUserVar() instead */
 void
 LALRegisterSTRINGUserVar (LALStatus *status,
 			  const CHAR *name,
@@ -1584,6 +1581,7 @@ LALRegisterSTRINGUserVar (LALStatus *status,
   RegisterUserVar (status, name, UVAR_STRING, optchar, flag, helpstr, cvar);
 }
 
+/** \deprecated use XLALRegisterLISTUserVar() instead */
 void
 LALRegisterLISTUserVar (LALStatus *status,
 			const CHAR *name,
@@ -1595,8 +1593,7 @@ LALRegisterLISTUserVar (LALStatus *status,
   RegisterUserVar ( status, name, UVAR_CSVLIST, optchar, flag, helpstr, cvar );
 }
 
-/** Deprecated LAL-wrapper to XLALUserVarReadCfgfile()
- */
+/** \deprecated use XLALUserVarReadCfgfile() instead */
 void
 LALUserVarReadCfgfile (LALStatus *status,
 		       const CHAR *cfgfile) 	   /* name of config-file */
@@ -1613,4 +1610,3 @@ LALUserVarReadCfgfile (LALStatus *status,
   RETURN (status);
 
 } /* LALUserVarReadCfgfile() */
-

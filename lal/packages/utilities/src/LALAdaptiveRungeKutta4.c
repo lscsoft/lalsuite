@@ -17,34 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Vallisneri, M.
-\file
-\brief Adaptive Runge-Kutta4
-
-<ul>
-<li> \c integrator Integration structure (quasi-class). Created using <tt>XLALAdaptiveRungeKutta4Init()</tt>.
-...</li>
-</ul>
-
-\heading{Description}
-The code \ref LALAdaptiveRungeKutta4.c evolves a system of \f$n\f$ coupled first--order differential equations.
-Internally, it uses GSL routines to perform adaptive-step evolution, and then interpolates the resulting
-trajectories to a fixed step size.
-
-Prior to evolving a system using <tt>XLALAdaptiveRungeKutta4()</tt>, it is necessary to create an integrator structure using
-<tt>XLALAdaptiveRungeKutta4Init()</tt>. Once you are done with the integrator, free it with <tt>XLALAdaptiveRungeKutta4Free()</tt>.
-\heading{Algorithm}
-TBF.
-
-\heading{Uses}
-For updated SpinTaylor waveforms.
-
-\heading{Notes}
-None so far...
-
-*/
-
 #include <lal/LALAdaptiveRungeKutta4.h>
 
 ark4GSLIntegrator *XLALAdaptiveRungeKutta4Init( int dim,
@@ -179,15 +151,15 @@ rkf45_state_t;
 
 /**
  * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
- * steps with adaptive step size control.  Intended for use in various 
+ * steps with adaptive step size control.  Intended for use in various
  * waveform generation routines such as SpinTaylorT4 and various EOB models.
- * 
+ *
  * The method is described in
  *
- * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing, 
- * National Bureau of Standards, Washington, DC, 1972 
+ * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing,
+ * National Bureau of Standards, Washington, DC, 1972
  * (available online at http://people.math.sfu.ca/~cbm/aands/ )
- * 
+ *
  * This function also includes "on-the-fly" interpolation of the
  * differential equations at regular intervals in-between integration
  * steps. This "on-the-fly" interpolation method is derived and
@@ -198,11 +170,15 @@ rkf45_state_t;
  * This method is functionally equivalent to XLALAdaptiveRungeKutta4,
  * but is nearly always faster due to the improved interpolation.
  */
-int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
-                                    void *params,
-                                    REAL8 *yinit,
-                                    REAL8 tinit, REAL8 tend, REAL8 deltat,
-                                    REAL8Array **yout ) {
+int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct holding dydt, stopping test, stepper, etc. */
+                                    void *params,			/**< params struct used to compute dydt and stopping test */
+                                    REAL8 *yinit,			/**< pass in initial values of all variables - overwritten to final values */
+                                    REAL8 tinit,			/**< integration start time */
+                                    REAL8 tend_in,			/**< maximum integration time */
+                                    REAL8 deltat,			/**< step size for evenly sampled output */
+                                    REAL8Array **yout			/**< array holding the evenly sampled output */
+                                    )
+{
   int status;
   size_t dim, retries, i;
   int outputlen = 0, count = 0;
@@ -213,6 +189,8 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
 
   REAL8 *ytemp = NULL;
 
+  REAL8 tend = tend_in;
+
   /* If want to stop only on test, then tend = +/-infinity; otherwise
      tend_in */
   if (integrator->stopontestonly) {
@@ -222,13 +200,10 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
 
   dim = integrator->sys->dimension;
 
-  if (integrator->stopontestonly) {
-    /* Allocate enough space for two samples; will allocate more
-       later. */
-    outputlen = 2;
-  } else {
-    outputlen = ((int)(tend - tinit)/deltat) + 2;
-  }
+  outputlen = ((int)(tend_in - tinit)/deltat);
+  if (outputlen < 0) outputlen = -outputlen;
+  outputlen += 2;
+  
   output = XLALCreateREAL8ArrayL(2, (dim+1), outputlen);
 
   if (!output) {
@@ -286,7 +261,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
       /* Successful step, reset retry counter. */
       retries = integrator->retries;
     }
-    
+
     /* Now interpolate until we would go past the current integrator time, t. */
     while (tintp + deltat < t) {
       tintp += deltat;
@@ -308,7 +283,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
       rkf45_state_t *rkfState = integrator->step->state;
       REAL8 *k1 = rkfState->k1;
       REAL8 *k6 = rkfState->k6;
-      REAL8 *y0 = rkfState->y0;      
+      REAL8 *y0 = rkfState->y0;
 
       for (i = 0; i < dim; i++) {
         ytemp[i] = i0*y0[i] + iend*yinit[i] + hUsed*i1*k1[i] + hUsed*i6*k6[i];
@@ -322,7 +297,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,
     /* Now that we have recorded the last interpolated step that we
        could, check for termination criteria. */
     if (!integrator->stopontestonly && t >= tend) break;
-    
+
     /* If there is a stopping function in integrator, call it with the
        last value of y and dydt from the integrator. */
     if (integrator->stop) {
@@ -473,7 +448,7 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 																						 GSL_ODEIV_HADJ_NIL if it was unchanged */
     if (status == GSL_ODEIV_HADJ_DEC) {
       memcpy(y,      y0,      dim*sizeof(REAL8));	/* if so, undo the step, and try again */
-			memcpy(dydt_in,dydt_in0,dim*sizeof(REAL8));      
+			memcpy(dydt_in,dydt_in0,dim*sizeof(REAL8));
 			goto try_step;
     }
 
@@ -554,4 +529,3 @@ int XLALAdaptiveRungeKutta4( ark4GSLIntegrator *integrator,
 	*yout = output;
   return outputlen; /* TO DO: check XLAL error reporting conventions */
 }
-

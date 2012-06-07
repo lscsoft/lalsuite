@@ -328,7 +328,7 @@ fi
 log_and_do cd "$SOURCE"
 
 if test -z "$rebuild" && pkg-config --exists gsl; then
-    log_and_show "using existing gsl"
+    log_and_show "using existing gsl source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $gsl"
     download http://www.aei.mpg.de/~repr/EaH_packages $gsl.tar.gz
@@ -336,7 +336,7 @@ elif test -z "$noupdate"; then
 fi
 
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
-    log_and_show "using existing fftw"
+    log_and_show "using existing fftw source"
 elif test -z "$noupdate"; then
     log_and_show "retrieving $fftw"
     download ftp://ftp.fftw.org/pub/fftw $fftw.tar.gz
@@ -413,7 +413,7 @@ fi
 
 if test -n "$build_binutils"; then
   if test -z "$rebuild_binutils"; then
-    log_and_show "using existing gsl"
+    log_and_show "using existing binutils"
   else
     log_and_show "compiling binutils"
     log_and_do mkdir -p "$BUILD/$binutils"
@@ -555,10 +555,6 @@ log_and_do "$SOURCE/lalsuite/lalapps/configure" $lalsuite_copts
 log_and_show "building Apps"
 
 log_and_do cd "$BUILD/lalapps/src/lalapps"
-# Windows needs a bit of a hack here
-if [ ."$build_win32" = ."true" ] ; then
-    echo '/**/' > processtable.c
-fi
 if [ ".$MACOSX_DEPLOYMENT_TARGET" = ".10.3" ] ; then
     log_and_do make LALAppsVCSInfo.h LALAppsVCSInfo.o lalapps.o
     log_and_do ar cru liblalapps.la lalapps.o LALAppsVCSInfo.o

@@ -17,79 +17,44 @@
 *  MA  02111-1307  USA
 */
 
-/*************** <lalVerbatim file="PrintFTSeriesTestCV"> *******
-Author: J. T. Whelan <jtwhelan@loyno.edu>
-**************** </lalVerbatim> ***********************************/
+/**
+   \file
+   \ingroup PrintFTSeries_h
+   \author J. T. Whelan <jtwhelan@loyno.edu>
 
-/* <lalLaTeX>
+   \brief Tests the routines in \ref PrintTimeSeries_c and \ref PrintFrequencySeries_c.
 
-\subsection{Program \texttt{PrintFTSeriesTest.c}}
-\label{s:PrintFTSeriesTest.c}
-
-Tests the routines in \verb@PrintTimeSeries.c@ and
-\verb@PrintFrequenceSeries.c@.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+   \heading{Usage}
+   \code
 PrintFTSeriesTest
-\end{verbatim}
+   \endcode
 
-\subsubsection*{Description}
+   \heading{Description}
 
 This program generates and prints a sequence of frequency and time
 series; the program only detects errors coming from other LAL
 functions, so more in-depth testing requires  examinaton of
-the output files.  (The program \texttt{ReadFTSeriesTest} also tests
-the routines in \texttt{PrintFrequencySeries.c} and
-\texttt{ReadFrequencySeries.c}.)
+   the output files.  (The program \c ReadFTSeriesTest also tests
+   the routines in \ref PrintFrequencySeries_c and
+   \ref ReadFrequencySeries_c.)
 
-\subsubsection*{Exit codes}
-\input{PrintFTSeriesTestCE}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-LALSCreateVector()
-LALDCreateVector()
-LALCCreateVector()
-LALZCreateVector()
-LALSDestroyVector()
-LALDDestroyVector()
-LALCDestroyVector()
-LALZDestroyVector()
-LALSPrintFrequencySeries()
-LALDPrintFrequencySeries()
-LALCPrintFrequencySeries()
-LALZPrintFrequencySeries()
-LALSPrintTimeSeries()
-LALDPrintTimeSeries()
-LALCPrintTimeSeries()
-LALZPrintTimeSeries()
-LALCheckMemoryLeaks()
-LALNameLength
-lalDebugLevel
-lalDimensionlessUnit
-LALStatus
-\end{verbatim}
-
-\subsubsection*{Notes}
+   \heading{Notes}
 
 The program as written generates and prints single and double
 precision real and complex time and frequency series.  The routines
 for integers are not tested.
+*/
 
-\vfill{\footnotesize\input{PrintFTSeriesTestCV}}
+/**\name Error Codes */ /*@{*/
+#define PRINTFTSERIESTESTC_ENOM 0       /**< Nominal exit */
+#define PRINTFTSERIESTESTC_EFUN 1       /**< Error from LAL function */
+/*@}*/
 
-</lalLaTeX> */
-
-
-
-/********************** <lalErrTable file="PrintFTSeriesTestCE"> */
-#define PRINTFTSERIESTESTC_ENOM 0
-#define PRINTFTSERIESTESTC_EFUN 1
+/** \cond DONT_DOXYGEN */
 
 #define PRINTFTSERIESTESTC_MSGENOM "Nominal exit"
 #define PRINTFTSERIESTESTC_MSGEFUN "Error from LAL function"
-/********************** </lalErrTable> */
+
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Units.h>
@@ -425,3 +390,4 @@ int main( void )
 
   return 0;
 }
+/** \endcond */

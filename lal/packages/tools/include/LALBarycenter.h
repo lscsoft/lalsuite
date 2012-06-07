@@ -36,26 +36,12 @@
 extern "C" {
 #endif
 
-/** \name Error codes */
-/*@{*/ /** \ingroup Barycenter_h */
-#define LALBARYCENTERH_ENULL  2
-#define LALBARYCENTERH_EOUTOFRANGEE  4
-#define LALBARYCENTERH_EOUTOFRANGES  8
-#define LALBARYCENTERH_EBADSOURCEPOS 16
-#define LALBARYCENTERH_EXLAL 	     32
-
-#define LALBARYCENTERH_MSGENULL  "Null input to Barycenter routine."
-#define LALBARYCENTERH_MSGEOUTOFRANGEE  "tgps not in range of earth.dat file"
-#define LALBARYCENTERH_MSGEOUTOFRANGES  "tgps not in range of sun.dat file"
-#define LALBARYCENTERH_MSGEBADSOURCEPOS "source position not in standard range"
-#define LALBARYCENTERH_MSGEXLAL 	"XLAL function failed."
-/*@}*/
-
 /**
  * \defgroup LALBarycenter_h Barycentering
+ * \ingroup pulsarCommon
  * \author Curt Cutler
  * \date 2001
- * \ingroup pulsarCommon
+ *
  * \brief Provides routines for transforming from arrival time at detector (GPS) to pulse emission time (TDB); ie
  * for ``barycentering'' the measured astronomical time series.
  *
@@ -67,6 +53,24 @@ extern "C" {
  *
  */
 /*@{*/
+
+/** \name Error codes */
+/*@{*/
+#define LALBARYCENTERH_ENULL  2	/**< Null input to Barycenter routine. */
+#define LALBARYCENTERH_EOUTOFRANGEE  4	/**< tgps not in range of earth.dat file */
+#define LALBARYCENTERH_EOUTOFRANGES  8	/**< tgps not in range of sun.dat file */
+#define LALBARYCENTERH_EBADSOURCEPOS 16	/**< source position not in standard range */
+#define LALBARYCENTERH_EXLAL 	     32	/**< XLAL function failed. */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
+#define LALBARYCENTERH_MSGENULL  "Null input to Barycenter routine."
+#define LALBARYCENTERH_MSGEOUTOFRANGEE  "tgps not in range of earth.dat file"
+#define LALBARYCENTERH_MSGEOUTOFRANGES  "tgps not in range of sun.dat file"
+#define LALBARYCENTERH_MSGEBADSOURCEPOS "source position not in standard range"
+#define LALBARYCENTERH_MSGEXLAL 	"XLAL function failed."
+/** \endcond */
+
 
 /** \brief [DEPRECATED] Used as input for LALInitBarycenter(), this structure contains
  * two pointers to the ephemeris data files containing arrays
@@ -203,8 +207,6 @@ typedef struct tagEmissionTime
 }
 EmissionTime;
 
-/*@}*/
-
 /*Curt: probably best to take 1.0 OUT of tDot--ie., output tDot-1.
 But most users would immediately add back the one anyway.
 */
@@ -222,6 +224,9 @@ int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const
 
 void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
+
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

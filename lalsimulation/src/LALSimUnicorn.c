@@ -44,7 +44,7 @@ static double strtolum(const char *s)
 	width /= 3;
 	snprintf(fmt, sizeof(fmt), "#%%%dx%%%dx%%%dx", width, width, width);
 	sscanf(s, fmt, &R, &G, &B);
-	for (max = 16; width > 1; --width);
+	for (max = 16; width > 1; --width)
 		max *= 16;
 	return RGB2Y((double)R/(double)max, (double)G/(double)max, (double)B/(double)max);
 }

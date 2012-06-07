@@ -167,7 +167,6 @@ static void Fscalfunc (REAL4 *result, REAL4 Fp, REAL4 Fm)
 
 /**
 \author Tania Regimbau
-\ingroup SimulatePopcorn_h
 
 \brief Routine for simulating whitened time-domain signals in a pair
 of detectors that arises from low duty cycle astrophysical backgrounds.
@@ -202,15 +201,6 @@ In the second equation,  \f$\gamma\f$ is the overlap reduction function.
 
 Then the inverse %FFTs give the whitened time series \f$o_{1}\f$ and \f$o_{2}\f$.
 
-\heading{Uses}
-\code
-LALForwardRealFFT()
-LALReverseRealFFT()
-LALOverlapReductionFunction()
-LALUniformDeviate()
-LALSRombergIntegrate()
-\endcode
-
 \heading{Notes}
 
 The cosmological model considered here corresponds to a flat Einstein de Sitter Universe with \f$\Omega_{matter}=0.3\f$,
@@ -219,10 +209,10 @@ The same for the cosmic star formation rate (Madau \& Porciani, 2001, ApJ, 548, 
 
 */
 void
-LALSimPopcornTimeSeries (  LALStatus                *status,
-                           SimPopcornOutputStruc    *output,
-                           SimPopcornInputStruc     *input,
-                           SimPopcornParamsStruc     *params
+LALSimPopcornTimeSeries (  LALStatus                *status,	/**< UNDOCUMENTED */
+                           SimPopcornOutputStruc    *output,	/**< UNDOCUMENTED */
+                           SimPopcornInputStruc     *input,	/**< UNDOCUMENTED */
+                           SimPopcornParamsStruc     *params	/**< UNDOCUMENTED */
                            )
 
 {

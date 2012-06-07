@@ -172,12 +172,12 @@ int XLALBBHPhenWaveAFreqDomTemplates(
   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
   /* generate one waveform with startPhase specified by the user */
-  if (!XLALBBHPhenWaveAFreqDom(signalvec1, params))
+  if (XLALBBHPhenWaveAFreqDom(signalvec1, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   /* generate another waveform orthogonal to it */
   params->startPhase += LAL_PI_2;
-  if (!XLALBBHPhenWaveAFreqDom(signalvec2, params))
+  if (XLALBBHPhenWaveAFreqDom(signalvec2, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
@@ -200,12 +200,12 @@ int XLALBBHPhenWaveBFreqDomTemplates(
   memset(signalvec2->data, 0, signalvec2->length * sizeof(REAL4));
 
   /* generate one waveform with startPhase specified by the user */
-  if (!XLALBBHPhenWaveBFreqDom(signalvec1, params))
+  if (XLALBBHPhenWaveBFreqDom(signalvec1, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   /* generate another waveform orthogonal to it */
   params->startPhase += LAL_PI_2;
-  if (!XLALBBHPhenWaveBFreqDom(signalvec2, params))
+  if (XLALBBHPhenWaveBFreqDom(signalvec2, params))
     XLAL_ERROR(XLAL_EFUNC);
 
   return 0;
@@ -267,7 +267,7 @@ int XLALBBHPhenTimeDomEngine(
     REAL4Vector      *freqVec,  /**< optional output instant. freq */
     REAL8Vector      *phiVec,  /**< optional output phase evolution */
     UINT4            *countback,  /**< output number of non-zero samples */
-    InspiralTemplate *params) {
+    InspiralTemplate *params) /**< UNDOCUMENTED */ {
   REAL8 dt, cosI, fLower, peakAmp, fCut, fRes, f, totalMass, softWin, z1, z2;
   REAL8 fLowerOrig, eta, tau0, winFLo, sigLo, sigHi, tF0, expectedAmplRatio;
   REAL8 phaseShift, sig1, sig2, startPhaseOrig, phiC;
@@ -545,8 +545,8 @@ int XLALBBHPhenTimeDomEngine(
 
 int XLALBBHPhenWaveTimeDomForInjection (
                                         CoherentGW       *waveform,  /**< allocated, but completely zeroed CoherentGW structure; this function allocates sub-structures that you must free */
-                                        InspiralTemplate *params,
-                                        PPNParamStruc    *ppnParams) {
+                                        InspiralTemplate *params,	/**< UNDOCUMENTED */
+                                        PPNParamStruc    *ppnParams) /**< UNDOCUMENTED */ {
   REAL4Vector *a=NULL;      /* amplitude  data */
   REAL4Vector *h=NULL;      /* polarization data */
   REAL4Vector *ff=NULL;     /* frequency data */
@@ -578,7 +578,7 @@ int XLALBBHPhenWaveTimeDomForInjection (
   }
 
   if (params->ampOrder) {
-    params->ampOrder = 0;
+    params->ampOrder = (LALPNOrder) 0;
     snprintf(message, 256, "WARNING: Amp Order has been reset to %d", params->ampOrder);
     XLALPrintInfo(message);
   }

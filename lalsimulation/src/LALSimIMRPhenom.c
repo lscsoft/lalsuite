@@ -445,7 +445,7 @@ static BBHPhenomParams *ComputeIMRPhenomAParams(const REAL8 m1, const REAL8 m2) 
 /* Takes solar masses. Populates and returns a new BBHPhenomParams   */
 /* structure.                                                        */
 /*********************************************************************/
-static BBHPhenomParams *ComputeIMRPhenomBParams(const REAL8 m1, const REAL8 const m2, const REAL8 chi) {
+static BBHPhenomParams *ComputeIMRPhenomBParams(const REAL8 m1, const REAL8 m2, const REAL8 chi) {
   /* calculate the total mass and symmetric mass ratio */
   const REAL8 totalMass = m1 + m2;
   const REAL8 eta = m1 * m2 / (totalMass * totalMass);
@@ -667,7 +667,7 @@ static int IMRPhenomBGenerateFD(
     const REAL8 distance,              /**< distance of source */
     const BBHPhenomParams *params      /**< from ComputeIMRPhenomBParams */
 ) {
-  const LIGOTimeGPS ligotimegps_zero = {0, 0};
+  static LIGOTimeGPS ligotimegps_zero = {0, 0};
   size_t i;
 
   const REAL8 fMerg = params->fMerger;
@@ -675,6 +675,7 @@ static int IMRPhenomBGenerateFD(
   const REAL8 sigma = params->sigma;
   const REAL8 totalMass = m1 + m2;
   const REAL8 eta = m1 * m2 / (totalMass * totalMass);
+  const REAL8 piM = LAL_PI * totalMass * LAL_MTSUN_SI;
 
   /* compute the amplitude pre-factor */
   REAL8 amp0 = pow(LAL_MTSUN_SI*totalMass, 5./6.) * pow(fMerg, -7./6.)
@@ -690,17 +691,17 @@ static int IMRPhenomBGenerateFD(
   const REAL8 alpha3   = (27./8. - 11.*eta/6.)*chi;
 
   /* leading order power law of the merger amplitude */
-  const REAL8 mergPower = -2./3.;
+  static REAL8 mergPower = -2./3.;
 
   /* spin-dependent corrections to the merger amplitude */
   const REAL8 epsilon_1 =  1.4547*chi - 1.8897;
   const REAL8 epsilon_2 = -1.8153*chi + 1.6557;
 
   /* normalisation constant of the inspiral amplitude */
-  REAL8 vMerg = cbrt(LAL_PI * totalMass * LAL_MTSUN_SI * fMerg);
-  REAL8 vRing = cbrt(LAL_PI * totalMass * LAL_MTSUN_SI * fRing);
+  const REAL8 vMerg = cbrt(piM * fMerg);
+  const REAL8 vRing = cbrt(piM * fRing);
 
-  REAL8 w1 = (1. + alpha2 * vMerg * vMerg + alpha3 * vMerg * vMerg * vMerg) / (1. + epsilon_1 * vMerg + epsilon_2 * vMerg * vMerg);
+  REAL8 w1 = (1. + alpha2 * vMerg * vMerg + alpha3 * piM * fMerg) / (1. + epsilon_1 * vMerg + epsilon_2 * vMerg * vMerg);
   REAL8 w2 = w1 * (LAL_PI * sigma / 2.) * pow(fRing / fMerg, mergPower)
           * (1. + epsilon_1 * vRing + epsilon_2 * vRing * vRing);
 
@@ -711,33 +712,26 @@ static int IMRPhenomBGenerateFD(
   XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
-  /* now generate the waveform at all frequency bins except DC and Nyquist */
-  for (i=1; i < n - 1; i++) {
+  /* now generate the waveform */
+  size_t ind_max = (size_t) (f_max / deltaF);
+  for (i = (size_t) (f_min / deltaF); i < ind_max; i++) {
     REAL8 ampEff, psiEff;
     REAL8 v, v2, v3, v4, v5, v6, v7, v8;
 
     /* Fourier frequency corresponding to this bin */
     REAL8 f = i * deltaF;
-    REAL8 fNorm = f / fMerg;
 
     /* PN expansion parameter */
-    v = cbrt(LAL_PI * totalMass * LAL_MTSUN_SI * f);
+    v = cbrt(piM * f);
     v2 = v*v; v3 = v2*v; v4 = v2*v2; v5 = v4*v; v6 = v3*v3; v7 = v6*v, v8 = v7*v;
 
     /* compute the amplitude */
-    if ((f < f_min) || (f > f_max))
-      continue;
-    else if (f <= fMerg)
-      ampEff = pow(fNorm, -7./6.)*(1. + alpha2 * v2 + alpha3 * v3);
-    else if ((f > fMerg) & (f <= fRing))
-      ampEff = w1 * pow(fNorm, mergPower) * (1. + epsilon_1 * v + epsilon_2 * v2);
+    if (f <= fMerg)
+      ampEff = pow(f / fMerg, -7./6.)*(1. + alpha2 * v2 + alpha3 * v3);
     else if (f > fRing)
       ampEff = w2 * LorentzianFn(f, fRing, sigma);
-    else {
-      XLALDestroyCOMPLEX16FrequencySeries(*htilde);
-      *htilde = NULL;
-      XLAL_ERROR(XLAL_EDOM);
-    }
+    else /* fMerg < f <= fRing */
+      ampEff = w1 * pow(f / fMerg, mergPower) * (1. + epsilon_1 * v + epsilon_2 * v2);
 
     /* now compute the phase */
     psiEff = -phi0  /* phi is flipped relative to IMRPhenomA */
@@ -903,10 +897,12 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
     REAL8 *hpdata = hp->data->data;
     REAL8 *hcdata = hc->data->data;
     size_t k = hp->data->length;
+    const double cs = cos(shift);
+    const double ss = sin(shift);
 
     for (;k--;) {
-        const REAL8 temp_hpdata = hpdata[k] * cos(shift) - hcdata[k] * sin(shift);
-        hcdata[k] = hpdata[k] * sin(shift) + hcdata[k] * cos(shift);
+        const REAL8 temp_hpdata = hpdata[k] * cs - hcdata[k] * ss;
+        hcdata[k] = hpdata[k] * ss + hcdata[k] * cs;
         hpdata[k] = temp_hpdata;
     }
     return 0;

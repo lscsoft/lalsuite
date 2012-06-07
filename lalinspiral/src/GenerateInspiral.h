@@ -17,17 +17,29 @@
 *  MA  02111-1307  USA
 */
 
-/**
- * \defgroup GenerateInspiral_h GenerateInspiral_h
- * \ingroup inject
- */
+#ifndef _GENERATEINSPIRAL_H
+#define _GENERATEINSPIRAL_H
+
+#include <lal/LALStdlib.h>
+#include <lal/LALInspiral.h>
+#include <lal/GeneratePPNInspiral.h>
+
+#include <lal/LIGOMetadataTables.h>
+#include <lal/SeqFactories.h>
+
+#include <lal/Units.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 /**
-\author Cokelaer, T.
-\file
-\ingroup GenerateInspiral_h
+   \addtogroup GenerateInspiral_h
+   \author Cokelaer, T.
 
-\brief %Header file for the inspiral injection interface code.
+   \brief %Header file for the inspiral injection interface code.
 
 The code contained in GenerateInspiral.c is an interface between the
 injection package and the inspiral package. More precisely, the
@@ -47,50 +59,85 @@ code. It is called InjectionInterfaceTest.c
 #include <lal/GenerateInspiral.h>
 \endcode
 
+<dl>
+<dt><tt>LALGenerateInspiral()</tt></dt><dd> create an inspiral binary
+waveform generated either by the \ref pkg_inspiral (#EOB,
+#EOBNR, #PadeT1, #TaylorT1, #TaylorT2, #TaylorT3, #SpinTaylor, #PhenSpinTaylorRD, #SpinQuadTaylor)
+or the \c inject package (#GeneratePPN).  It is used in the module
+\c FindChirpSimulation in \ref pkg_findchirp.
+
+There are three  parsed arguments
+<ul>
+<li> a ::CoherentGW  structure which stores amplitude,
+frequency and phase of the  waveform (output)</li>
+<li> a \c thisEvent  structure which provides some
+waveform parameters (input)</li>
+<li> a \c PPNParamStruc which gives some input
+parameters needed by the GeneratePPN waveform  generation. That
+arguments is also used as an output by all the different
+approximant  (output/input).</li>
+</ul>
+
+The input must be composed of a valid thisEvent structure as well as
+the  variable deltaT of the PPNParamStruc. All others variables
+of the PPNParamStruc are populated within that function.</dd>
+
+<dt><tt>XLALGetOrderFromString()</tt></dt><dd> convert a string
+provided by the \c CoherentGW structure in order to retrieve the
+order of the waveform to generate.</dd>
+
+<dt><tt>XLALGetApproximantFromString()</tt></dt><dd> convert a string
+provided by the \c CoherentGW structure in order to retrieve the
+approximant of the waveform to generate.</dd>
+
+<dt><tt>XLALGenerateInspiralPopulatePPN()</tt></dt><dd> Populate the
+PPNParamsStruc with the input argument \c thisEvent. That
+structure is used by both inspiral waveforms inject waveforms.</dd>
+
+<dt><tt>XLALGenerateInspiralPopulateInspiral()</tt></dt><dd>  Populate the
+InspiralTemplate structure if the model chosen belongs to the
+inspiral package.
+</dd>
+</dl>
+
+\heading{Notes}
+Inject only time-domain waveforms for the time being such as GeneratePPN,
+  TaylorT1, TaylorT2, TaylorT3, PadeT1 and EOB , SpinTaylor, PhenSpinTaylorRD.
+
 */
+/*@{*/
 
-#ifndef _GENERATEINSPIRAL_H
-#define _GENERATEINSPIRAL_H
+/**\name Error Codes */
+/*@{*/
+#define GENERATEINSPIRALH_ENORM 0	/**< Normal exit */
+#define GENERATEINSPIRALH_ENULL 1	/**< Null pointer */
+#define GENERATEINSPIRALH_EDFDT 2	/**< Waveform sampling interval is too large */
+#define GENERATEINSPIRALH_EZERO 3	/**< inclination zero for SpinTaylor waveform */
+/*@}*/
 
-#include <lal/LALStdlib.h>
-#include <lal/LALInspiral.h>
-#include <lal/GeneratePPNInspiral.h>
-
-#include <lal/LIGOMetadataTables.h>
-#include <lal/SeqFactories.h>
-
-#include <lal/Units.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**\name Error Codes */ /*@{*/
-#define GENERATEINSPIRALH_ENORM 0
-#define GENERATEINSPIRALH_ENULL 1
-#define GENERATEINSPIRALH_EDFDT 2
-#define GENERATEINSPIRALH_EZERO 3
+/** \cond DONT_DOXYGEN */
 #define GENERATEINSPIRALH_MSGENORM "Normal exit"
 #define GENERATEINSPIRALH_MSGENULL "Null pointer"
 #define GENERATEINSPIRALH_MSGEDFDT "Waveform sampling interval is too large"
 #define GENERATEINSPIRALH_MSGEZERO "inclination zero for SpinTaylor waveform"
-/*@}*/
+/** \endcond */
 
 
-/* parameter for the EOB at 3PN. In principle, the three */
-/* following parameter should be set to zero.            */
+/** \name Parameter for the EOB at 3PN.
+ * In principle, the three following parameter should be set to zero. */
+/*@{*/
 #define GENERATEINSPIRAL_ZETA2       0.
 #define GENERATEINSPIRAL_OMEGAS      0.
 #define GENERATEINSPIRAL_THETA       0.
+/*@}*/
 
-/* For the spinning case. might be changed later or include */
-/* in the injection itself                                  */
+/** \name For the spinning case, might be changed later or include in the injection itself */
+/*@{*/
 #define GENERATEINSPIRAL_SOURCETHETA 1.
 #define GENERATEINSPIRAL_SOURCEPHI   2.
+/*@}*/
 
-/* Default low freqnecy cutoff for injections */
+/** Default low freqnecy cutoff for injections */
 #define GENERATEINSPIRAL_DEFAULT_FLOWER 40
 
 
@@ -102,12 +149,6 @@ LALGenerateInspiral(
     PPNParamStruc    *ppnParamsInputOutput
     );
 
-/**	Convert a string provided by the #CoherentGW structure in order to retrieve
- *	the approximant of the waveform to generate.
- *	@param[out]	inter	: the level of the spin interaction
- *	@param[in]	thisEvent	: string containing the spin interaction
- *	@return error code
- */
 int XLALGetInteractionFromString(LALSimInspiralInteraction *inter, CHAR *thisEvent);
 
 int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent);
@@ -148,6 +189,8 @@ XLALGenerateInspiralPopulateInspiral(
     SimInspiralTable * restrict thisEvent,
     PPNParamStruc    * restrict ppnParams
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

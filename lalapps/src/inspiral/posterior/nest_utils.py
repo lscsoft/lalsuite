@@ -52,6 +52,8 @@ class LALInferenceNode(pipeline.CondorDAGNode):
         pipeline.CondorDAGNode.__init__(self,li_job)
     def set_seed(self,seed):
         self.add_var_opt('randomseed',seed)
+    def set_dataseed(self,seed):
+        self.add_var_opt('dataseed',seed)
     def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
@@ -159,7 +161,7 @@ class InspNestNode(pipeline.CondorDAGNode):
     """
     Class defining a Condor DAG node for inspnest jobs.
     Input arguments:
-        inspnest_job - A InspNestJob object
+    inspnest_job - A InspNestJob object
     """
     def __init__(self,inspnest_job):
         pipeline.CondorDAGNode.__init__(self,inspnest_job)
@@ -183,6 +185,8 @@ class InspNestNode(pipeline.CondorDAGNode):
         self.add_var_opt('Nsegs',str(int(length/float(self.job().get_cp().get('analysis','psd-chunk-length')))))
     def set_seed(self,seed):
         self.add_var_opt('seed',seed)
+    def set_dataseed(self,seed):
+        self.add_var_opt('dataseed',seed)
     def add_ifo_data(self,data_tuples,ifos=None,shift_time_dict=None):
         """
         Add list of IFOs and data to analyse.
@@ -375,6 +379,14 @@ def setup_single_nest(cp,nest_job,end_time,data,path,ifos=None,event=None,nodecl
     nest_node=nodeclass(nest_job)
     nest_node.set_trig_time(end_time)
     nest_node.set_event_number(event)
+    if cp.has_option('analysis','seed'):
+        ini_chain_seed=int(cp.get('analysis','seed'))
+    else:
+        ini_chain_seed=100
+    if cp.has_option('analysis','dataseed') and event is not None:
+        ini_noise_seed=int(cp.get('analysis','dataseed'))
+    nest_node.set_seed(str(ini_chain_seed))
+    nest_node.set_dataseed(str(event+ini_noise_seed))
     nest_node.add_ifo_data(data,ifos,shift_time_dict=timeslides)
     outfile_name=os.path.join(path,'outfile_%f_%s.dat'%(end_time,nest_node.get_ifos()))
     nest_node.set_output(outfile_name)
@@ -398,6 +410,14 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
     merge_node=MergeNode(merge_job)
     merge_node.add_var_opt('Nlive',cp.get('analysis','nlive'))
     nest_nodes=[]
+    if cp.has_option('analysis','seed'):
+        ini_chain_seed=int(cp.get('analysis','seed'))
+    else:
+        ini_chain_seed=100
+    if cp.has_option('analysis','dataseed') and event is not None:
+        noise_seed=str(int(event)+int(cp.get('analysis','dataseed')))
+    else: 
+        noise_seed=0
     for i in range(nparallel):
         nest_node=nodeclass(nest_job)
         nest_node.set_trig_time(end_time)
@@ -405,7 +425,8 @@ def setup_parallel_nest(cp,nest_job,merge_job,end_time,data,path,ifos=None,event
         nest_node.add_ifo_data(data,ifos,shift_time_dict=timeslides)
         nest_node.set_event_number(event)
         p_outfile_name=os.path.join(path,'outfile_%f_%i_%s.dat'%(end_time,i,nest_node.get_ifos()))
-        nest_node.set_seed(str(i+100))
+        nest_node.set_seed(str(i+ini_chain_seed))
+        nest_node.set_dataseed(str(noise_seed))
         merge_node.add_parent(nest_node)
         merge_node.add_file_arg(p_outfile_name)
         nest_node.set_output(p_outfile_name)

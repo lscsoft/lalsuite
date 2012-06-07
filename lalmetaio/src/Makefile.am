@@ -54,13 +54,11 @@ lalmetaio-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalmetaio-user-env.csh lalmetaio-user-env.sh: lalmetaio-user-env.shell $(srcdir)/generate_user_env.awk
-	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 LALMetaIOVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALMetaIOConfig.h
-	@echo "creating LALMetaIOVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALMetaIO $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALMetaIO $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

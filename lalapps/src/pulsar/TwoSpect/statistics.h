@@ -25,9 +25,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 
-REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize);
-REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
-REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize);
+REAL4Vector * sampleREAL4Vector(REAL4Vector *input, INT4 sampleSize, gsl_rng *rng);
+REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng);
+REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng);
 
 REAL8 calcMeanD(REAL8Vector *vector);
 REAL8 calcStddevD(REAL8Vector *vector);
@@ -39,6 +39,7 @@ REAL8 ncx2pdf(REAL8 x, REAL8 dof, REAL8 delta);
 REAL8 binodeviance(REAL8 x, REAL8 np);
 REAL8 epsval(REAL8 val);
 REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta);
+REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta);
 REAL8 norminv(REAL8 p, REAL8 mu, REAL8 sigma);
 REAL8 ks_test_exp(REAL4Vector *vector);
 REAL8 kuipers_test_exp(REAL4Vector *vector);
@@ -61,10 +62,12 @@ void sort_double_descend(REAL8Vector *vector);
 void sort_double_ascend(REAL8Vector *vector);
 void sort_float_ascend(REAL4Vector *vector);
 void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
+void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown);
 void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4 *max_index_out);
 
 INT4 max_index(REAL4Vector *vector);
 INT4 max_index_double(REAL8Vector *vector);
+INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation);
 INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum);
 
 INT4 qsort_REAL4_compar(const void *a, const void *b);

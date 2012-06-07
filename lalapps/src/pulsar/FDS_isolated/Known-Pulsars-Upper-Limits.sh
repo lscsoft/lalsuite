@@ -14,7 +14,7 @@ randCode=makerandparam
 mfd_code="lalapps_Makefakedata_v4"
 cfsv2_code="lalapps_ComputeFStatistic_v2"
 
-SFTdir="./Real-Fake-SFTs"
+SFTdir="./Known-Pulsars-Upper-Limits_sfts"
 
 maxiter=100;
 echo "maxiter=$maxiter"
@@ -28,13 +28,13 @@ mfd_FreqBand=0.12;
 f1min=-4.24E-16
 f1max=-4.20E-16
 
-## ---------- some derived input params 
+## ---------- some derived input params
 f0min=$(echo $fmin | awk '{printf "%.5f", $1 + 0.001}');
 f0max=$(echo $fmin $Band | awk '{printf "%.5f", $1 + $2 - 0.001}');
 
 #Tsft=1800;
 #startTime=711595933
-#refTime=711595933     ##$startTime 
+#refTime=711595933     ##$startTime
 #duration=144000	      ## 27.7777 hours
 
 IFO=H1
@@ -55,9 +55,9 @@ convToRange()
     local numin=$1
     local mini=$2
     local maxi=$3
-    
+
     local numout=$(echo $numin $mini $maxi | awk '{printf "%g",($3-$2)*$1+$2}');
-    
+
     ##'return' result in global variable
     convToRangeOut=$numout
 
@@ -78,7 +78,7 @@ while [ $iteration -le $maxiter ]; do
 echo "Iter = $iteration"
 #echo "--------------------------------------"
 ## ----------------------------------------------------------------------
-## generate random-values for the variable params: 
+## generate random-values for the variable params:
 ## delta, alpha, IFO, aPlus, aCross, psi, phi0, f0
 
 ## generate deterministic random-seed:

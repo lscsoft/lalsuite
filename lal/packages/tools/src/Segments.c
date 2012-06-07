@@ -71,12 +71,8 @@ to differentiate between failure and non-failure.
 
 */
 
-
 /*---------------------------------------------------------------------------*/
-/** \ingroup Segments_h *//* @{ */
-
-/**
- * \brief This function sets the start time, the end time, and the \a id of a segment.
+/** This function sets the start time, the end time, and the \a id of a segment.
  * The \a id can be any integer and is
  * solely for the use of the user, e.g. to store a segment ID code
  * or an index into some array containing additional information about the
@@ -857,7 +853,7 @@ XLALSegListSearch( LALSegList *seglist, const LIGOTimeGPS *gps )
 
 
 /*---------------------------------------------------------------------------*/
-/** MISSING DOCUMENTATION!
+/** UNDOCUMENTED
  */
 INT4
 XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
@@ -894,7 +890,7 @@ XLALSegListShift(  LALSegList *seglist, const LIGOTimeGPS *shift )
 }
 
 
-/** MISSING DOCUMENTATION!
+/** UNDOCUMENTED
  */
 INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end )
@@ -969,6 +965,3 @@ XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeG
   /* done */
   return 0;
 }
-
-
-/*@}*/

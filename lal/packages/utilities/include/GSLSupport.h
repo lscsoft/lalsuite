@@ -17,12 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \author Karl Wette
- * \file
- * \brief Support routines for GSL
- */
-
 #ifndef _GSLSUPPORT_H
 #define _GSLSUPPORT_H
 
@@ -35,7 +29,14 @@
 extern "C" {
 #endif
 
-  /**
+/**
+ * \addtogroup GSLSupport_h
+ * \author Karl Wette
+ * \brief Support routines for GSL
+ */
+/*@{*/
+
+  /*
    * Functions
    */
   gsl_vector *XLALGSLVectorFromVAList(INT4, REAL8, ...);
@@ -50,11 +51,12 @@ extern "C" {
 
 #endif
 
-/**
+/*
  * Macros
  */
 
-/* Allocate, print, and free 1D things */
+/** \name Allocate, print, and free 1D things */
+/*@{*/
 #define ALLOC_GSL_1D(type, var, n, errval)                                        \
   if ((var = gsl_ ## type ## _alloc(n)) == NULL) {                                \
     XLALPrintError("%s: Could not allocate '%s'", __func__, #var);                \
@@ -74,8 +76,10 @@ extern "C" {
 #define FREE_GSL_1D(type, var)                                                    \
   if (var != NULL)                                                                \
     gsl_ ## type ## _free(var);
+/*@}*/
 
-/* Allocate, print, and free 2D things */
+/** \name Allocate, print, and free 2D things */
+/*@{*/
 #define ALLOC_GSL_2D(type, var, m, n, errval)                                     \
   if ((var = gsl_ ## type ## _alloc(m, n)) == NULL) {                             \
     XLALPrintError("%s: Could not allocate '%s'", __func__, #var);                \
@@ -98,32 +102,48 @@ extern "C" {
   if (var != NULL)                                                                \
     gsl_ ## type ## _free(var);
 
-/* Allocate, print, and free gsl_vector */
+/*@}*/
+
+/** \name Allocate, print, and free gsl_vector */
+/*@{*/
 #define ALLOC_GSL_VECTOR(var, n, errval) ALLOC_GSL_1D(vector, var, n, errval)
 #define PRINT_GSL_VECTOR(var)            PRINT_GSL_1D(vector, var, "%g ")
 #define FREE_GSL_VECTOR(var)             FREE_GSL_1D(vector, var)
+/*@}*/
 
-/* Allocate, print, and free gsl_vector_int */
+/** \name Allocate, print, and free gsl_vector_int */
+/*@{*/
 #define ALLOC_GSL_VECTOR_INT(var, n, errval) ALLOC_GSL_1D(vector_int, var, n, errval)
 #define PRINT_GSL_VECTOR_INT(var)            PRINT_GSL_1D(vector_int, var, "%i ")
 #define FREE_GSL_VECTOR_INT(var)             FREE_GSL_1D(vector_int, var)
+/*@}*/
 
-/* Allocate, print, and free gsl_matrix */
+/** \name Allocate, print, and free gsl_matrix */
+/*@{*/
 #define ALLOC_GSL_MATRIX(var, m, n, errval) ALLOC_GSL_2D(matrix, var, m, n, errval)
 #define PRINT_GSL_MATRIX(var)               PRINT_GSL_2D(matrix, var, "%g ")
 #define FREE_GSL_MATRIX(var)                FREE_GSL_2D(matrix, var)
+/*@}*/
 
-/* Allocate, print, and free gsl_matrix_int */
+/** \name Allocate, print, and free gsl_matrix_int */
+/*@{*/
 #define ALLOC_GSL_MATRIX_INT(var, m, n, errval) ALLOC_GSL_2D(matrix_int, var, m, n, errval)
 #define PRINT_GSL_MATRIX_INT(var)               PRINT_GSL_2D(matrix_int, var, "%i ")
 #define FREE_GSL_MATRIX_INT(var)                FREE_GSL_2D(matrix_int, var)
+/*@}*/
 
-/* Allocate, print, and free gsl_combination */
+/** \name Allocate, print, and free gsl_combination */
+/*@{*/
 #define ALLOC_GSL_COMBINATION(var, n, errval) ALLOC_GSL_1D(combination, var, n, errval)
 #define PRINT_GSL_COMBINATION(var)            PRINT_GSL_1D(combination, var, "%i ")
 #define FREE_GSL_COMBINATION(var)             FREE_GSL_1D(combination, var)
+/*@}*/
 
-/* Allocate, print, and free gsl_permutation */
+/** \name Allocate, print, and free gsl_permutation */
+/*@{*/
 #define ALLOC_GSL_PERMUTATION(var, n, errval) ALLOC_GSL_1D(permutation, var, n, errval)
 #define PRINT_GSL_PERMUTATION(var)            PRINT_GSL_1D(permutation, var, "%i ")
 #define FREE_GSL_PERMUTATION(var)             FREE_GSL_1D(permutation, var)
+/*@}*/
+
+/*@}*/

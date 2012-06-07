@@ -155,6 +155,7 @@ int main(void)
     if (!bytes)
     {
       perror("XLALLowLatencyDataNextBuffer");
+      pthread_join(thread, NULL);
       exit(1);
     }
     double expected_gps_time = 1000000000 + i;
@@ -162,11 +163,13 @@ int main(void)
     if (expected_gps_time != gps_time)
     {
       fprintf(stderr, "Expected GPS time %f, got GPS time %f\n", expected_gps_time, gps_time);
+      pthread_join(thread, NULL);
       exit(1);
     }
   }
 
   XLALLowLatencyDataClose(reader);
+  pthread_join(thread, NULL);
 
   exit(0);
 }

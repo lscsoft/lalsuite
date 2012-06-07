@@ -5,7 +5,7 @@ bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
 	lalsim-bh-sphwf \
-	lalsim-ligo-noise \
+	lalsim-detector-noise \
 	lalsim-sgwb \
 	lalsim-unicorn
 
@@ -76,9 +76,9 @@ liblalsimulation_la_LDFLAGS = -version-info $(LIBVERSION)
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
 lalsim_bh_ringdown_SOURCES = bh_ringdown.c
-lalsim_ligo_noise_SOURCES = ligo_noise.c
 lalsim_sgwb_SOURCES = sgwb.c
 lalsim_unicorn_SOURCES = unicorn.c
+lalsim_detector_noise_SOURCES = detector_noise.c
 
 CLEANFILES = \
 	lalsimulation-user-env.shell \
@@ -106,8 +106,7 @@ lalsimulation-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "$(SWIG_USER_ENV)" | $(SED) 's|~E~O~L~|\n|g' >>$@
 
 lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.shell $(srcdir)/generate_user_env.awk
-	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	generate_user_env.awk \
@@ -118,8 +117,7 @@ EXTRA_DIST = \
 LALSimulationVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALSimulationConfig.h
-	@echo "creating LALSimulationVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALSimulation $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALSimulation $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
 

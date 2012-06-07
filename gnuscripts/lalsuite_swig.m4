@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011
 #
-# serial 12
+# serial 14
 
 # basic version string comparison
 # can only handle numeric versions separated by periods
@@ -14,6 +14,16 @@ AC_DEFUN([LALSUITE_VERSION_COMPARE],[
   AS_IF([test ${vcmp_v1} -lt ${vcmp_v2}],[$3])
   AS_IF([test ${vcmp_v1} -eq ${vcmp_v2}],[$4])
   AS_IF([test ${vcmp_v1} -gt ${vcmp_v2}],[$5])
+])
+
+# workaround to check whether SWIG modules are going to be
+# built (and therefore a C++ compiler is required) before
+# calling LALSUITE_PROG_CC_CXX, since LALSUITE_ENABLE_SWIG
+# must appear after LALSUITE_PROG_CC_CXX. to be fixed!
+AC_DEFUN([LALSUITE_SWIG_REQUIRE_CXX],[
+  AS_IF([test "${enable_swig}" = yes],[LALSUITE_REQUIRE_CXX])
+  AS_IF([test "${enable_swig_octave}" = yes],[LALSUITE_REQUIRE_CXX])
+  AS_IF([test "${enable_swig_python}" = yes],[LALSUITE_REQUIRE_CXX])
 ])
 
 # SWIG setup and configuration
@@ -307,7 +317,7 @@ AC_DEFUN([LALSUITE_SWIG_LANGUAGE_OCTAVE],[
   LALSUITE_SWIG_LANGUAGE([Octave],[
 
     # minimum required octave version
-    OCTAVE_MIN_VERSION=3.2.4
+    OCTAVE_MIN_VERSION=3.2.0
 
     # check for octave-config binary
     AC_PATH_PROGS(OCTAVE_CONFIG,[octave-config],[])

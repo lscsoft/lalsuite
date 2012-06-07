@@ -17,11 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author Peter Shawhan
-\defgroup Segments_h Segments
-\ingroup tools
-\brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).
+#ifndef _SEGMENTS_H
+#define _SEGMENTS_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
+#include <lal/LALDatatypes.h>
+#include <lal/XLALError.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+/** \addtogroup Segments_h
+    \author Peter Shawhan
+
+    \brief Provides data types and functions for manipulating lists of ``segments'' (GPS time intervals).
 
 \heading{Synopsis}
 \code
@@ -118,26 +134,9 @@ structure specifically means that the list is sorted \e and disjoint.
 Also all segments in a segment list can be time-shifted using \c XLALSegListShift().
 
 */
-
-#ifndef _SEGMENTS_H
-#define _SEGMENTS_H
-
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-#include <lal/LALDatatypes.h>
-#include <lal/XLALError.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
+/*@{*/
 
 /*------------------- Compile-time parameters -------------------*/
-/** \ingroup Segments_h */ /*@{*/
 #define SEGMENTSH_ALLOCBLOCK 64  /**< Initial number of LALSeg spaces to
 				  * allocate in memory at one time; this is
 				  * intended to reduce the number of memory
@@ -165,8 +164,6 @@ tagLALSeg
 }
 LALSeg;
 
-
-
 /** Struct holding a segment list */
 typedef struct
 tagLALSegList
@@ -183,11 +180,7 @@ tagLALSegList
 }
 LALSegList;
 
-/*@}*/
-
 /*----------------------- Function prototypes ----------------------*/
-/** \cond DONT_DOXYGEN */
-
 INT4
 XLALSegSet( LALSeg *seg, const LIGOTimeGPS *start, const LIGOTimeGPS *end,
 	    const INT4 id );
@@ -226,8 +219,7 @@ XLALSegListShift( LALSegList *seglist, const LIGOTimeGPS *shift );
 INT4
 XLALSegListKeep(  LALSegList *seglist, const LIGOTimeGPS *start, const LIGOTimeGPS *end );
 
-/** \endcond */
-/*----------------------- Trailer stuff ----------------------------*/
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

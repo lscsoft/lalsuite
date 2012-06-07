@@ -71,7 +71,7 @@ int LALInferenceProcessParamLine_TEST_EMPTYFILE(void);
 int LALInferenceProcessParamLine_TEST_CHARFILE(void);
 
 /*  LALInferenceExecuteFT tests */
-int LALInferenceExecuteFTTEST_SOMETHING(void);
+int LALInferenceExecuteFTTEST_NULLPLAN(void);
 
 int main(void){
     lalDebugLevel |= LALERROR;
@@ -90,7 +90,7 @@ int main(void){
 	printf("\n");
 	failureCount += LALInferenceProcessParamLine_TEST_CHARFILE();
 	printf("\n");
-	failureCount += LALInferenceExecuteFTTEST_SOMETHING();
+	failureCount += LALInferenceExecuteFTTEST_NULLPLAN();
 	printf("\n");
 	printf("Test results: %i failure(s).\n", failureCount);
 
@@ -170,8 +170,8 @@ int LALInferenceParseCommandLineTEST_DASHINPUT(void){
     }
     
     strcpy(list[0],"foo");
-    strcpy(list[1],"bar");
-    strcpy(list[2],"baz");
+    strcpy(list[1],"-bar");
+    strcpy(list[2],"-baz");
    
     XLAL_TRY(answer=LALInferenceParseCommandLine(number,list), errnum);
     if (errnum == XLAL_SUCCESS||answer!=NULL)
@@ -298,14 +298,15 @@ int LALInferenceProcessParamLine_TEST_CHARFILE(void){
 
 
 /*****************     TEST CODE for LALInferenceExecuteFT     *****************/
-/* This doesn't do any testing....*/
+/* Test that LALInferenceExecuteFT fails if the FFT plan is NULL .*/
 
-int LALInferenceExecuteFTTEST_SOMETHING(void){
+int LALInferenceExecuteFTTEST_NULLPLAN(void){
     
     TEST_HEADER();
     
     UINT4 i,deltaF,length;
     LIGOTimeGPS epoch;
+    int errnum;
     
     length = 1;
     
@@ -357,7 +358,11 @@ int LALInferenceExecuteFTTEST_SOMETHING(void){
     }
 
     if (testIFOData!=NULL){            
-        LALInferenceExecuteFT(testIFOData);
+        XLAL_TRY(LALInferenceExecuteFT(testIFOData), errnum);
+        
+        if( errnum == XLAL_SUCCESS ){
+          TEST_FAIL("Should not pass; timeToFreqFFTPlan is NULL!");
+        }
     }
     
     TEST_FOOTER();

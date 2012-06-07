@@ -17,14 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-/** \file NRWaveInject.c
- *  \ingroup NRWaveInject
- *  \author S.Fairhurst, B.Krishnan, L.Santamaria
- *
- *  \brief Functions for reading/writing numerical relativity waveforms
- *
- */
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -232,7 +224,7 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
 
   /* get the detector information */
   memset( &det, 0, sizeof(LALDetector) );
-  ifoNumber = XLALIFONumber( ifo );
+  ifoNumber = (InterferometerNumber) XLALIFONumber( ifo );
   XLALReturnDetector( &det, ifoNumber );
 
   if( ifoNumber == LAL_UNKNOWN_IFO )
@@ -788,7 +780,7 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
 
   /* get the detector information */
   memset( &det, 0, sizeof(LALDetector) );
-  ifoNumber = XLALIFONumber( ifo );
+  ifoNumber = (InterferometerNumber) XLALIFONumber( ifo );
   XLALReturnDetector( &det, ifoNumber );
 
   /* Band-passing and tapering not yet implemented for REAL8 data */

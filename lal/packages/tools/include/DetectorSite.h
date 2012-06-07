@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-/** Legacy code: should now use data in LALDetectors.h */
+/* Legacy code: should now use data in LALDetectors.h */
 enum
 {
   LALDetectorIndexLHODIFF = LAL_LHO_4K_DETECTOR,

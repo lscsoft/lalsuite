@@ -17,21 +17,34 @@
 *  MA  02111-1307  USA
 */
 
+#ifndef _GENERATETAYLORCW_H
+#define _GENERATETAYLORCW_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
+#include <lal/LALStdlib.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/SkyCoordinates.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 /**
-\author Creighton, T. D.
-\file
-\ingroup pulsarTODO
+   \addtogroup GenerateTaylorCW_h
+   \author Creighton, T. D.
 
-\heading{Header \ref GenerateTaylorCW.h}
-\latexonly\label{s_GenerateTaylorCW_h}\endlatexonly
+   \brief Provides routines to generate Taylor-parameterized continuous waveforms.
 
-Provides routines to generate Taylor-parameterized continuous
-waveforms.
-
-\heading{Synopsis}
-\code
-#include <lal/GenerateTaylorCW.h>
-\endcode
+   \heading{Synopsis}
+   \code
+   #include <lal/GenerateTaylorCW.h>
+   \endcode
 
 This header covers routines to generate continuous quasiperiodic
 waveforms whose frequency varies slowly and smoothly with time.  For
@@ -64,7 +77,7 @@ gravitational wave, which are typically some constant multiple of
 The \c CoherentGW structure allows for a very general
 description of waveforms with modulations in the amplitudes or
 relative phases of the wave polarizations, as described in
-\ref SimulateCoherentGW.h.  However, in this simplest model of
+\ref SimulateCoherentGW_h.  However, in this simplest model of
 quasiperiodic waveforms, we neglect such phenomena as precession that
 would produce these effects.  Thus for any given source one can choose
 a polarization basis (described by some polarization angle \f$\psi\f$) in
@@ -75,120 +88,63 @@ h_+(t)      & = & A_+      \cos\phi(t) \;, \\
 \label{eq_taylorcw-hcross}
 h_\times(t) & = & A_\times \sin\phi(t) \;.
 \f}
-
-
-
-\heading{Types}
-
-\heading{Structure \c TaylorCWParamStruc}
-
-
-This structure stores the parameters for constructing a gravitational
-waveform with a Taylor-polynomial frequency and phase.  As with the
-\c PPNParamStruc type in \ref GeneratePPNInspiral.h, we divide
-the fields into passed fields (which are supplied to the final
-\c CoherentGW structure but not used in any calculations), input
-fields (that are used by the waveform generator), and output fields
-(that are set by the waveform generator).  They are:
-
-<em>Passed fields:</em>
-<dl>
-<dt><tt>SkyPosition position</tt></dt><dd> The location of the source on the
-sky, normally in equatorial coordinates.</dd>
-
-<dt><tt>REAL4 psi</tt></dt><dd> The polarization angle of the source, in
-radians.</dd>
-
-<dt><tt>LIGOTimeGPS epoch</tt></dt><dd> The start time \f$t_0\f$ of the output
-series.</dd>
-</dl>
-
-<em>Input fields:</em>
-<dl>
-<dt><tt>REAL8 deltaT</tt></dt><dd> The requested sampling interval of the
-waveform, in s.</dd>
-
-<dt><tt>UINT4 length</tt></dt><dd> The number of samples in the generated
-waveform.</dd>
-
-<dt><tt>REAL4 aPlus, aCross</tt></dt><dd> The polarization amplitudes \f$A_+\f$,
-\f$A_\times\f$, in dimensionless strain units.</dd>
-
-<dt><tt>REAL8 phi0</tt></dt><dd> The wave phase at time \f$t_0\f$, in radians.</dd>
-
-<dt><tt>REAL8 f0</tt></dt><dd> The wave frequency at time \f$t_0\f$, in Hz.</dd>
-
-<dt><tt>REAL8Vector *f</tt></dt><dd> The spin-normalized Taylor parameters
-\f$f_k\f$, as defined in Eq.\eqref{eq_taylorcw-freq}, above.  If
-\c f=\c NULL, a monochromatic wave is generated.</dd>
-</dl>
-
-<em>Output fields:</em>
-<dl>
-<dt><tt>REAL4 dfdt</tt></dt><dd> The maximum value of \f$\Delta f\Delta t\f$
-encountered over any timestep \f$\Delta t\f$ used in generating the
-waveform.</dd>
-</dl>
-
 */
+/*@{*/
 
-#ifndef _GENERATETAYLORCW_H
-#define _GENERATETAYLORCW_H
+/** \name Error Codes */
+/*@{*/
+#define GENERATETAYLORCWH_ENUL 1	/**< Unexpected null pointer in arguments */
+#define GENERATETAYLORCWH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
+#define GENERATETAYLORCWH_EMEM 3	/**< Out of memory */
+/*@}*/
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-#include <lal/LALStdlib.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/SkyCoordinates.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
-/**
- \name Error Codes */ /*@{*/
-#define GENERATETAYLORCWH_ENUL 1
-#define GENERATETAYLORCWH_EOUT 2
-#define GENERATETAYLORCWH_EMEM 3
-
+/** \cond DONT_DOXYGEN */
 #define GENERATETAYLORCWH_MSGENUL "Unexpected null pointer in arguments"
 #define GENERATETAYLORCWH_MSGEOUT "Output field a, f, phi, or shift already exists"
 #define GENERATETAYLORCWH_MSGEMEM "Out of memory"
-/*@}*/
+/** \endcond */
 
-
+/** This structure stores the parameters for constructing a gravitational
+ * waveform with a Taylor-polynomial frequency and phase.  As with the
+ * \c PPNParamStruc type in \ref GeneratePPNInspiral_h, we divide
+ * the fields into passed fields (which are supplied to the final
+ * \c CoherentGW structure but not used in any calculations), input
+ * fields (that are used by the waveform generator), and output fields
+ * (that are set by the waveform generator).
+ */
 typedef struct tagTaylorCWParamStruc {
   SWIGLAL_STRUCT(TaylorCWParamStruc);
-  /* Passed parameters. */
-  SkyPosition position; /* location of source on sky */
-  REAL4 psi;            /* polarization angle (radians) */
-  LIGOTimeGPS epoch;    /* start time of output time series */
+  /** \name Passed parameters. */
+  /*@{*/
+  SkyPosition position; /**< The location of the source on the sky, normally in equatorial coordinates */
+  REAL4 psi;            /**< The polarization angle of the source, in radians */
+  LIGOTimeGPS epoch;    /**< The start time \f$t_0\f$ of the output series */
+  /*@}*/
 
-  /* Input parameters. */
-  REAL8 deltaT;         /* requested sampling interval (s) */
-  UINT4 length;         /* length of time series */
-  REAL4 aPlus, aCross;  /* polarization amplitudes */
-  REAL8 phi0;           /* initial phase */
-  REAL8 f0;             /* initial frequency */
-  REAL8Vector *f;       /* f0-normalized Taylor parameters */
+  /** \name Input parameters. */
+  /*@{*/
+  REAL8 deltaT;         /**< The requested sampling interval of the waveform, in s */
+  UINT4 length;         /**< The number of samples in the generated waveform */
+  REAL4 aPlus, aCross;  /**<  The polarization amplitudes \f$A_+\f$, \f$A_\times\f$, in dimensionless strain units */
+  REAL8 phi0;           /**< The wave phase at time \f$t_0\f$, in radians */
+  REAL8 f0;             /**< The wave frequency at time \f$t_0\f$, in Hz */
+  REAL8Vector *f;       /**< The spin-normalized Taylor parameters \f$f_k\f$, as defined in Eq.\eqref{eq_taylorcw-freq}; If \c f=\c NULL, a monochromatic wave is generated */
+  /*@}*/
 
-  /* Output parameters. */
-  REAL4 dfdt;           /* maximum value of df*dt over any timestep */
+  /** \name Output parameters. */
+  /*@{*/
+  REAL4 dfdt;           /**< The maximum value of \f$\Delta f\Delta t\f$ encountered over any timestep \f$\Delta t\f$ used in generating the waveform */
+  /*@}*/
 } TaylorCWParamStruc;
 
 
-/* Function prototypes. */
-
+/* ---------- Function prototypes. ---------- */
 void
 LALGenerateTaylorCW( LALStatus          *,
 		     CoherentGW         *output,
 		     TaylorCWParamStruc *params );
 
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -20,7 +20,6 @@
 #ifndef __TEMPLATES_H__
 #define __TEMPLATES_H__
 
-#include "TwoSpectTypes.h"
 #include "TwoSpect.h"
 
 struct gsl_probR_pars {
@@ -35,7 +34,7 @@ struct gsl_probR_pars {
 farStruct * new_farStruct(void);
 void free_farStruct(farStruct *farstruct);
 void estimateFAR(farStruct *output, templateStruct *templatestruct, INT4 trials, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios);
-void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inpuParams, INT4 method);
+void numericFAR(farStruct *output, templateStruct *templatestruct, REAL8 thresh, REAL4Vector *ffplanenoise, REAL4Vector *fbinaveratios, inputParamsStruct *inputParams, INT4 method);
 REAL8 gsl_probR(REAL8 R, void *pars);
 REAL8 gsl_dprobRdR(REAL8 R, void *pars);
 void gsl_probRandDprobRdR(REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);

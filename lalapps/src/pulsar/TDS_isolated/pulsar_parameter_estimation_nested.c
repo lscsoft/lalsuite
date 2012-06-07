@@ -33,7 +33,8 @@ heterodyned data, e.g.
 ...
 
 Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth
-of the same amount.
+of the same amount, but the code can accept any rate, or downsample data by a
+given factor.
 
 The code also requires that you specify which parameters are to be searched
 over, and the prior ranges over these. Any of the signal parameters can be
@@ -45,8 +46,7 @@ The 'Nested Sampling' algorithm (developed by [\ref Skilling2006]) used is that
 defined in LALinferenceNestedSampler (see [\ref VeitchVecchio2010]). It is
 essentially an efficient way to perform the integral
 \f[
-Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) {\rm
-d}\mathbf{\theta},
+Z = \int^{\mathbf{\theta}} p(d|\mathbf{\theta}) p(\mathbf{\theta}) \mathrm{d}\mathbf{\theta},
 \f]
 where \f$ \mathbf{\theta} \f$ is a vector of parameters, \f$
 p(d|\mathbf{\theta}) \f$ is the likelihood of the data given the parameters,
@@ -54,7 +54,7 @@ and \f$ p(\mathbf{\theta}) \f$ is the prior on the parameters. It does this by
 changing the multi-dimensional integral over N parameters into a
 one-dimensional integral
 \f[
-Z = \int^X L(X) {\rm d}X \approx \sum_i L(X_i) \Delta{}X_i,
+Z = \int^X L(X) \mathrm{d}X \approx \sum_i L(X_i) \Delta{}X_i,
 \f]
 where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The
 algorithm will draw a number (\f$ N \f$) of samples (live points) from the
@@ -179,6 +179,9 @@ LALStringVector *corlist = NULL;
                      detector in the list (must be in the same order)\n\
                      delimited by commas. If not set you can generate fake\n\
                      data (see --fake-data below)\n"\
+" --downsample-factor (INT4) factor by which to downsample the input data\n\
+                     (default is for no downsampling and this is NOT\n\
+                     applied to fake data)\n"\
 " --outfile           name of output data file [required]\n"\
 " --outXML            name of output XML file [not required]\n"\
 " --chunk-min         (INT4) minimum stationary length of data to be used in\n\
@@ -197,7 +200,8 @@ LALStringVector *corlist = NULL;
 "\n"\
 " Nested sampling parameters:\n"\
 " --Nlive             (INT4) no. of live points for nested sampling\n"\
-" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n"\
+" --Nmcmc             (INT4) no. of for MCMC used to find new live points\n\
+                     (if not specified an adaptive number of points is used)\n"\
 " --Nruns             (INT4) no. of parallel runs\n"\
 " --tolerance         (REAL8) tolerance of nested sampling integrator\n"\
 " --randomseed        seed for random number generator\n"\
@@ -252,8 +256,14 @@ LALStringVector *corlist = NULL;
 " --oldChunks         set if using fixed chunk sizes for dividing the data as\n\
                      in the old code, rather than the calculating chunks\n\
                      using the change point method.\n"\
+"\n"\
+" Phase parameter search speed-up factors:\n"\
+" --mismatch          Maximum allowed phase mismatch between consecutive\n\
+                     models (if phase mismatch is small do not update phase\n\
+                     correction)\n"\
+" --mm-factor         (INT4) Downsampling factor for the phase models used\n\
+                     to calculate the mismatch\n"\
 "\n"
-
 
 INT4 main( INT4 argc, CHAR *argv[] ){
   ProcessParamsTable *param_table;
@@ -304,18 +314,18 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   initialisePrior( &runState );
   
   gridOutput( &runState );
-  
+
   /* get noise likelihood and add as variable to runState */
-  logZnoise = noise_only_model( runState.data );
+  logZnoise = noise_only_model( &runState );
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, 
                            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
-               
+         
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
-  
+
   /* Initialise the MCMC proposal distribution */
   initialiseProposal( &runState );
-  
+
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
 
@@ -400,17 +410,20 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
     LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi,
                              LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
-  else{
-    XLALPrintError("Error... Number of MCMC iterations must be specified.\n");
-    XLAL_ERROR_VOID(XLAL_EIO);
-  }
 
+  /* set sloppiness! */
+  ppt = LALInferenceGetProcParamVal(commandLine,"--sloppyfraction");
+  if( ppt ) tmp = atof(ppt->value);
+  else tmp = 0.0;
+  LALInferenceAddVariable( runState->algorithmParams, "sloppyfraction", &tmp,
+                           LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT );
+  
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
   if( ppt ) {
     tmpi = atoi( ppt->value );
-    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, LALINFERENCE_INT4_t,
-                             LALINFERENCE_PARAM_FIXED );
+    LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, 
+                             LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
         
   /* Tolerance of the Nested sampling integrator */
@@ -509,7 +522,9 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
  * If using real data the files must be specified in the \c input-files command
  * line argument - these should be comma separated for mulitple files and be in
  * the same order at the associated detector from which they came given by the
- * \c detectors command.
+ * \c detectors command. The data can be downsampled by a factor given by the \c
+ * downsample-factor command line argument, but by default no down-sampling is
+ * applied.
  * 
  * The function also check that valid Earth and Sun ephemeris files (from the
  * lalpulsar suite) are set with the \c ephem-earth and \c ephem-sun arguments,
@@ -554,7 +569,7 @@ void readPulsarData( LALInferenceRunState *runState ){
   
   CHAR *modeltype = NULL;
   REAL8Vector *modelFreqFactors = NULL;
-  INT4 ml = 1;
+  INT4 ml = 1, downs = 1;
   
   runState->data = NULL;
   
@@ -687,8 +702,6 @@ void readPulsarData( LALInferenceRunState *runState ){
       tempdets = XLALStringDuplicate( detectors );
       
       for( i = 0; i < ml*numDets; i++ ){
-        LALStatus status;
-	
         CHAR *tmpstr = NULL;
         REAL8 psdvalf = 0.;
         
@@ -701,14 +714,13 @@ void readPulsarData( LALInferenceRunState *runState ){
           
           if( !strcmp(dets[FACTOR(i,ml)], "H1") || 
               !strcmp(dets[FACTOR(i,ml)], "L1") ||  
-              !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* ALIGO */
-            LALAdvLIGOPsd( &status, &psdvalf, 
-                           pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-            psdvalf *= 1.e-49; /* scale factor in LALAdvLIGOPsd.c */
+              !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* ALIGO */            
+            psdvalf = XLALSimNoisePSDaLIGOZeroDetHighPower(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "V1") ){ /* AVirgo */
-            LALEGOPsd( &status, &psdvalf,
-                       pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
+            psdvalf = XLALSimNoisePSDAdvVirgo(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else{
             fprintf(stderr, "Error... trying to use Advanced detector that is\
@@ -722,27 +734,25 @@ void readPulsarData( LALInferenceRunState *runState ){
           if( !strcmp(dets[FACTOR(i,ml)], "H1") || 
               !strcmp(dets[FACTOR(i,ml)], "L1") ||  
               !strcmp(dets[FACTOR(i,ml)], "H2") ){ /* Initial LIGO */
-            psdvalf = 
-              XLALLIGOIPsd( pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-          
+            psdvalf = XLALSimNoisePSDiLIGOSRD(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
+            
             /* divide H2 psds by 2 */
             if( !strcmp(dets[FACTOR(i,ml)], "H2") ){
               psdvalf /= 2.;
             }
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "V1") ){ /* Initial Virgo */
-            LALVIRGOPsd( &status, &psdvalf,
-                         pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
+            psdvalf = XLALSimNoisePSDVirgo(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "G1") ){ /* GEO 600 */
-            LALGEOPsd( &status, &psdvalf,
-                       pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-            psdvalf *= 1.e-46; /* scale factor in LALGEOPsd.c */
+            psdvalf = XLALSimNoisePSDGEO(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else if( !strcmp(dets[FACTOR(i,ml)], "T1") ){ /* TAMA300 */
-            LALTAMAPsd( &status, &psdvalf,
-                        pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
-            psdvalf *= 75. * 1.e-46; /* scale factor in LALTAMAPsd.c */
+            psdvalf = XLALSimNoisePSDTAMA(
+              pfreq*modelFreqFactors->data[(INT4)(fmod(i,ml))] );
           }
           else{
             fprintf(stderr, "Error... trying to use detector that is\
@@ -876,7 +886,12 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
   ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
   if ( ppt != NULL ) seed = atoi( ppt->value );
   else seed = 0; /* will be set from system clock */
-      
+  
+  /* check if we want to down-sample the input data by a given factor */
+  ppt = LALInferenceGetProcParamVal( commandLine, "--downsample-factor" );
+  if ( ppt != NULL ) downs = atoi( ppt->value );
+  else downs = 1; /* no downsampling */
+  
   /* reset filestr if using real data (i.e. not fake) */
   if ( !ppt2 ) filestr = XLALStringDuplicate( inputfile );
  
@@ -942,6 +957,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     /*============================ GET DATA ==================================*/
     /* get i'th filename from the comma separated list */
     if ( !ppt2 ){ /* if using real data read in from the file */
+      UINT4 counter = 0;
+      
       datafile = strsep(&filestr, ",");
    
       /* open data file */
@@ -957,32 +974,37 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
 
       /* read in data */
       while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
+        j++;
+        
+        /* downsample if required */
+        if ( j%downs != 0 ) continue;
+        
+        counter++;
+        
         /* dynamically allocate more memory */
         ifodata->compTimeData =
-          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, j+1 );
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compTimeData, 0, counter );
 
         ifodata->compModelData = 
-          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, j+1 );
+          XLALResizeCOMPLEX16TimeSeries( ifodata->compModelData, 0, counter );
           
-        temptimes = XLALResizeREAL8Vector( temptimes, j+1 );
+        temptimes = XLALResizeREAL8Vector( temptimes, counter );
 
-        temptimes->data[j] = times;
-        ifodata->compTimeData->data->data[j].re = dataVals.re;
-        ifodata->compTimeData->data->data[j].im = dataVals.im;
-      
-        j++;
+        temptimes->data[counter-1] = times;
+        ifodata->compTimeData->data->data[counter-1].re = dataVals.re;
+        ifodata->compTimeData->data->data[counter-1].im = dataVals.im;
       }
-    
+
       fclose(fp);
-    
-      datalength = j;
-      
+
+      datalength = counter;
+
       /* allocate data time stamps */
       ifodata->dataTimes = NULL;
       ifodata->dataTimes = XLALCreateTimestampVector( datalength );
-    
+
       /* fill in time stamps as LIGO Time GPS Vector */
-      for ( k = 0; k<j; k++ )
+      for ( k = 0; k < datalength; k++ )
         XLALGPSSetREAL8( &ifodata->dataTimes->data[k], temptimes->data[k] );
       
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
@@ -1150,10 +1172,20 @@ void setupFromParFile( LALInferenceRunState *runState )
   LALInferenceIFOData *data = runState->data;
   LALInferenceVariables *scaletemp;
   ProcessParamsTable *ppt = NULL;
+  UINT4 mmfactor = 0;
+  REAL8 mm = 0;
   
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--par-file" );
   if( ppt == NULL ) { fprintf(stderr,"Must specify --par-file!\n"); exit(1); }
   CHAR *parFile = ppt->value;
+  
+  /* check if we needed a downsampled time stamp series */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--mm-factor" );
+  if( ppt != NULL ) mmfactor = atoi( ppt->value );
+  
+  /* get mismatch value if required */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--mismatch" );
+  if( ppt != NULL ) mm = atof( ppt->value );
   
   /* get the pulsar parameters */
   XLALReadTEMPOParFile( &pulsar, parFile );
@@ -1199,7 +1231,7 @@ void setupFromParFile( LALInferenceRunState *runState )
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
 
-      phase_vector = get_phase_model( pulsar, data, freqFactors->data[j] );
+      phase_vector = get_phase_model( pulsar, data, freqFactors->data[j], 0 );
   
       data->timeData = NULL;
       data->timeData = XLALCreateREAL8TimeSeries( "",
@@ -1216,6 +1248,29 @@ void setupFromParFile( LALInferenceRunState *runState )
         LALInferenceAddVariable( data->dataParams, scaleitem->name, 
                                  scaleitem->value, scaleitem->type,
                                  scaleitem->vary );
+      }
+    
+      /* get down sampled time stamps if required and set mismatch */
+      if ( mmfactor != 0 && mm != 0. ){
+        LIGOTimeGPSVector *downst = 
+          XLALCreateTimestampVector( floor(phase_vector->length/mmfactor) );
+        UINT4 k = 0;
+        
+        if ( downst->length < 2 ){
+          XLALPrintError("Error, downsampled time stamp factor to high!\n");
+          XLAL_ERROR_VOID(XLAL_EFAILED);
+        }
+        
+        for( k = 1; k < downst->length+1; k++ )
+          downst->data[k-1] = data->dataTimes->data[(k-1)*mmfactor];
+          
+        LALInferenceAddVariable( data->dataParams, "downsampled_times",
+                                 &downst, LALINFERENCE_void_ptr_t,
+                                 LALINFERENCE_PARAM_FIXED );
+        
+        LALInferenceAddVariable( data->dataParams, "mismatch",
+                                 &mm, LALINFERENCE_REAL8_t,
+                                 LALINFERENCE_PARAM_FIXED );
       }
     
       data = data->next;
@@ -1404,8 +1459,8 @@ void add_initial_variables( LALInferenceVariables *ini,
                             pars.rErr );
   add_variable_scale_prior( ini, scaleFac, priorArgs, "lambda", pars.lambda,  
                             pars.lambdaErr );
-  add_variable_scale_prior( ini, scaleFac, priorArgs, "theta", pars.theta,  
-                            pars.thetaErr );
+  add_variable_scale_prior( ini, scaleFac, priorArgs, "costheta", pars.costheta,  
+                            pars.costhetaErr );
     
   /* phase model parameters */
   
@@ -1747,15 +1802,12 @@ set.\n", propfile, tempPar);
         high = LAL_PI/4.; /* make sure range spans exactly pi/2 */
         psidef = 1;
       }
-    }
-    
-    /* if theta is covering the range 0 to pi scale it, so that it covers
-    the 0 to 2pi range of a circular parameter */
-    if( !strcmp(tempPar, "theta") ){
-      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
+      /* if psi is covering the range -pi/2 to pi/2 scale it, so that it covers
+         the 0 to 2pi range of a circular parameter */
+      else if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
-        scaleMin = 0;
-				high = LAL_PI;/* make sure range spans exactly pi*/
+        scaleMin = -LAL_PI/2.;
+        high = LAL_PI/2.;
       }
     }
     
@@ -1765,7 +1817,7 @@ set.\n", propfile, tempPar);
       if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
         scale = 0.5;
         scaleMin = 0;
-				high = LAL_PI; /* make sure range spans exactly pi*/
+        high = LAL_PI;
       }
     }
     
@@ -1795,7 +1847,7 @@ set.\n", propfile, tempPar);
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "theta") && scale == 0.5 ) 
+    else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
       varyType = LALINFERENCE_PARAM_CIRCULAR;
     else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
       varyType = LALINFERENCE_PARAM_CIRCULAR;
@@ -1836,9 +1888,12 @@ set.\n", propfile, tempPar);
   }
   
   /* if phi0 and psi have been given in the prop-file and defined at the limits
-     of their range the remove them and add the phi0' and psi' coordinates */
-  if( phidef && psidef && !LALInferenceCheckVariable(runState->currentParams,"lambda") && !LALInferenceCheckVariable(runState->currentParams,"theta")){
-		fprintf(stderr,"Do phi and psi transform\n");
+     of their range (for a triaxial star, so -pi/4 <= psi <= pi/4 and 0 <= phi0
+     <= 2pi) then remove them and add the phi0' and psi' coordinates */
+  if( phidef && psidef && !strcmp( "triaxial",
+      *(CHAR **)LALInferenceGetVariable( runState->data->dataParams, 
+                                         "modeltype" ) ) ){
+    fprintf(stderr,"Do phi and psi transform\n");
     LALInferenceIFOData *datatemp = data;
     
     REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
@@ -2063,13 +2118,11 @@ void initialiseProposal( LALInferenceRunState *runState ){
   }
   
   if( kdfrac ){
-    INT4 kdncells = 0;
-    
     /* set the maximum number of points in a kd-tree cell if given */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, 
                                        "--kDNCell" );
     if( ppt ){
-      kdncells = atoi( ppt->value );
+      INT4 kdncells = atoi( ppt->value );
 
       LALInferenceAddVariable( runState->proposalArgs, "KDNCell", 
                                &kdncells, LALINFERENCE_INT4_t,
@@ -2083,7 +2136,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
 
     LALInferenceSetupkDTreeNSLivePoints( runState );
   }
-
+      
   LALInferenceRandomizeProposalCycle( runState );
   /* set temperature */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--temperature" );
@@ -2091,7 +2144,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
   else temperature = 0.1;
  
   LALInferenceAddVariable( runState->proposalArgs, "temperature", &temperature, 
-                           LALINFERENCE_REAL8Vector_t,
+                           LALINFERENCE_REAL8_t,
                            LALINFERENCE_PARAM_FIXED );
   
   /* add default proposal name */
@@ -2241,10 +2294,11 @@ void injectSignal( LALInferenceRunState *runState ){
   BinaryPulsarParams injpars;
  
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1;
+  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1, ml = 1;
   
   REAL8Vector *freqFactors = NULL;
-  REAL8 *snrmulti = NULL, *snrscale = NULL;
+  REAL8 snrmulti = 0.;
+  REAL8 *snrscale = NULL;
   
   CHAR *modeltype = NULL;/*need to check model type in this function*/
   
@@ -2252,7 +2306,6 @@ void injectSignal( LALInferenceRunState *runState ){
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--inject-file" );
   if( ppt ){
-
     injectfile = XLALStringDuplicate( ppt->value );
     
     /* check that the file exists */
@@ -2271,7 +2324,6 @@ parameter file %s is wrong.\n", injectfile);
  
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
                                                           "freqfactors" );
- 
   snrscale = XLALCalloc(sizeof(REAL8), numSNRs);
   
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
@@ -2279,7 +2331,7 @@ parameter file %s is wrong.\n", injectfile);
     /* if there are more than one data streams (i.e. a stream at twice the 
        pulsar frequency and one at the pulsar frequency) the SNRs for the 
        individual (multi-detector) streams can be set, rather than having a 
-       combined SNR. The SNR vales are set as comma separated values to 
+       combined SNR. The SNR values are set as comma separated values to 
        --scale-snr. If only one value is given, but the data has multiple 
        streams then the combined multi-stream SNR will still be used. */
     CHAR *snrscales = NULL, *tmpsnrs = NULL, *tmpsnr = NULL, snrval[256];
@@ -2290,24 +2342,27 @@ parameter file %s is wrong.\n", injectfile);
       
     /* count the number of SNRs (comma seperated values) */
     numSNRs = count_csv( snrscales );
+    fprintf(stderr,"Number of snrs: %d\n",numSNRs);
+
+    ml = (INT4)freqFactors->length;
     
-    if( (numSNRs != 1) && (numSNRs != (INT4)freqFactors->length) ){
-      fprintf(stderr, "Error... number of SNR values must either be 1, or equal\
- to the number of data streams required for your model!\n");
+    if(numSNRs != ml){
+      fprintf(stderr, "Error... number of SNR values must equal\
+ the number of data streams required for your model!\n");
       exit(0);
     }
     
     snrscale = XLALRealloc(snrscale, sizeof(REAL8)*numSNRs);
-    
+
+    /* goes through the input scale snr string and adds the values to the 
+       snrscale vector. */
     for( k = 0; k < numSNRs; k++ ){
       tmpsnr = strsep( &tmpsnrs, "," );
       XLALStringCopy( snrval, tmpsnr, strlen(tmpsnr)+1 );
       snrscale[k] = atof(snrval);
     }
   }
- 
-  snrmulti = XLALCalloc(sizeof(REAL8), numSNRs);
- 
+
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
   if( !ppt ){
     fprintf(stderr, "Error... no output file specified!\n");
@@ -2351,38 +2406,37 @@ parameter file %s is wrong.\n", injectfile);
   while ( data ){
     for ( k = 0; k < numSNRs; k++ ){
       REAL8 snrval = calculate_time_domain_snr( data );
-   
-      snrmulti[k] += SQUARE(snrval);
+
+      snrmulti += SQUARE(snrval);
       
-      /*if ( snrscale[k] == 0 ) */
       fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\t",
               freqFactors->data[k], snrval);
-                             
+      fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\t",
+              freqFactors->data[k], snrval);
+      fprintf(stderr, "SNR multi %le\n", snrmulti);
+
       data = data->next;
     }
     ndets++;
   }
   
   /* get overall multi-detector SNR */
-  for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
+  snrmulti = sqrt(snrmulti);
   
   /* only need to print out multi-detector snr if the were multiple detectors */
   if( numSNRs == 1 && snrscale[0] == 0 ){
-    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti[0]);
+    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
     else fprintf(fpsnr, "\n");
   }
   else{
     /* rescale the signal and calculate the SNRs */
     data = runState->data;
-   
-    for ( k = 0; k < numSNRs; k++ ){
-      snrscale[k] /= snrmulti[k];
-    }
-    
+    snrscale[0] /= snrmulti;
+
     /* rescale the h0 for triaxial mode only) */
     if ( !strcmp(modeltype, "triaxial")  ){
       for ( k = 0; k < numSNRs; k++ ){
-        if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[k];
+        if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[0];
       }
     }
     
@@ -2394,8 +2448,7 @@ parameter file %s is wrong.\n", injectfile);
       /*if ( freqFactors->data[k] == 1. ) injpars.I21 *= snrscale[k];*/
       fprintf(stderr,"inj par r: %le\n",injpars.r);
     }
-    
-    
+   
     /* recreate the signal with scale amplitude */
     while( data ){
       UINT4 varyphasetmp = varyphase;
@@ -2414,7 +2467,7 @@ parameter file %s is wrong.\n", injectfile);
     data = runState->data;
     
     /* get new snrs */
-    for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = 0;
+    snrmulti = 0;
     
     while( data ){
       for ( k = 0; k < numSNRs; k++ ){
@@ -2423,7 +2476,7 @@ parameter file %s is wrong.\n", injectfile);
         /* recalculate the SNR */
         snrval = calculate_time_domain_snr( data );
       
-        snrmulti[k] += SQUARE(snrval);
+        snrmulti += SQUARE(snrval);
       
         fprintf(fpsnr, "scaled snr: %le\t", snrval);
       
@@ -2431,11 +2484,12 @@ parameter file %s is wrong.\n", injectfile);
       }
     }
     
-    for ( k = 0; k < numSNRs; k++ ) snrmulti[k] = sqrt( snrmulti[k] );
+    snrmulti = sqrt( snrmulti );
+    fprintf(stderr, "scaled multi data snr: %le\n", snrmulti);
     
     if( ndets > 1 ){
       for ( k = 0; k < numSNRs; k++ ){
-        fprintf(fpsnr, "%le\t", snrmulti[k]);
+        fprintf(fpsnr, "%le\t", snrmulti);
       }
       fprintf(fpsnr, "\n"); 
     }
@@ -2519,8 +2573,7 @@ injection\n", signalonly);
     data = data->next;
     j++;
   }
-  
-  XLALFree(snrmulti);
+ 
   XLALFree(snrscale);
 }
 
@@ -3194,8 +3247,9 @@ void sumData( LALInferenceRunState *runState ){
  * This function creates a 2D lookup table of the 'plus' and 'cross' antenna 
  * patterns for a given detector orientation and source sky position. The 
  * lookup table spans one sidereal day in time (this being the period over which
- * the antenna pattern changes) and goes between \f$\pm\pi/4\f$ radians in
- * \f$\psi\f$.
+ * the antenna pattern changes) and goes between \f$\pm\pi/2\f$ radians in
+ * \f$\psi\f$ (this is the full range of \f$\psi\f$ that should be required for
+ * and model).
  * 
  * Note: the may want to be converted into an XLAL function and moved into LAL 
  * at some point.
@@ -3224,8 +3278,8 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource,
   INT4 i = 0, j = 0;
   
   for( i = 0 ; i < psiSteps ; i++ ){
-    detNSource.pSource->orientation = -(LAL_PI/4.) +
-        (REAL8)i*(LAL_PI/2.) / ( psteps - 1. );
+    detNSource.pSource->orientation = -(LAL_PI_2) +
+        (REAL8)i*(LAL_PI) / ( psteps - 1. );
 
     for( j = 0 ; j < timeSteps ; j++ ){
       T = t0 + (REAL8)j*LAL_DAYSID_SI / tsteps;
@@ -3311,12 +3365,13 @@ void rescaleOutput( LALInferenceRunState *runState ){
     
       /* re-output everything but the "model" value to a temporary file */
       if( strcmp(v, "model") != 0 && strcmp(v, "logL")!=0 
-        && strcmp(v, "logPrior") != 0 )
+        && strcmp(v, "logPrior") != 0 && strcmp(v, "logw") != 0
+        && strcmp(v, "deltalogl") != 0 && strcmp(v, "deltalogL") != 0 )
         fprintf(fpparstmp, "%s\t", v);
     }
   
     /* we will put the logPrior and logLikelihood at the end of the lines */
-    fprintf(fpparstmp, "logPrior\tlogL\n");
+    fprintf(fpparstmp, "deltalogl\tdeltalogL\tlogw\tlogPrior\tlogL\n");
   
     fclose(fppars);
     fclose(fpparstmp);
@@ -3327,7 +3382,7 @@ void rescaleOutput( LALInferenceRunState *runState ){
     while ( 1 ){
       UINT4 i = 0;
     
-      REAL8 logPrior = 0., logL = 0.;
+      REAL8 logPrior = 0., logL = 0., logw = 0., dlogl=0., dlogL = 0.;
     
       /* scan through line, get value and reprint out scaled value to temporary
         file */
@@ -3359,6 +3414,12 @@ void rescaleOutput( LALInferenceRunState *runState ){
           logL = atof(value);
         else if( !strcmp(paramsStr->data[i], "logPrior") )
           logPrior = atof(value);
+        else if( !strcmp(paramsStr->data[i], "logw") )
+          logw = atof(value);
+        else if( !strcmp(paramsStr->data[i], "deltalogl") )
+          dlogl = atof(value);
+        else if( !strcmp(paramsStr->data[i], "deltalogL") )
+          dlogl = atof(value);
         
         fprintf(fptemp, "\t");
       }
@@ -3366,7 +3427,8 @@ void rescaleOutput( LALInferenceRunState *runState ){
       if( feof(fp) ) break;
     
       /* print out the last two items to be the logPrior and logLikelihood */
-      fprintf(fptemp, "%lf\t%lf\n", logPrior, logL);
+      fprintf(fptemp, "%lf\t%lf\t%lf\t%lf\t%lf\n", dlogl, dlogL, logw, logPrior,
+              logL);
     }
   
     fclose(fp);
@@ -3905,7 +3967,7 @@ void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
  * transform:
  \f{eqnarray*}{
  \left( \begin{array}{c} {\phi}_0 \\ {\psi} \end{array} \right) & = &
- \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta} &
+ \left( \begin{array}{cc} \sin{\theta} & \cos{\theta} \\ -\sin(\theta) &
 \cos{\theta} \end{array} \right)^{-1}
  \left( \begin{array}{c} {\phi'}_0 \\ {\psi'} \end{array} \right), \\
  & = & \left( \begin{array}{cc} \frac{1}{2\sin{\theta}} &

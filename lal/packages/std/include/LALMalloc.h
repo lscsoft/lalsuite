@@ -17,36 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="LALMallocHV">
-************************************* </lalVerbatim> */
-
-/* <lalLaTeX>
-
-\section{Header \texttt{LALMalloc.h}}
-\label{s:LALMalloc.h}
-
-Provides standard LAL memory allocation/deallocation routines.
-
-\subsection*{Synopsis}
-\begin{verbatim}
-#include <lal/LALMalloc.h>
-\end{verbatim}
-
-\noindent This header covers routines that replace the standard
-\verb+malloc()+, \verb+calloc()+, \verb+realloc()+, and \verb+free()+.
-All memory allocation and deallocation in LAL should use these
-replacement functions.  If the \verb+NDEBUG+ flag is set at compile
-time, the LAL routines are \verb+#define+d to be the same as the
-standard C routines.
-
-\vfill{\footnotesize\input{LALMallocHV}}
-\newpage\input{LALMallocC}
-\newpage\input{LALMallocTestC}
-
-</lalLaTeX> */
-
-
-
 #ifndef _LALMALLOC_H
 #define _LALMALLOC_H
 
@@ -57,6 +27,7 @@ standard C routines.
 extern "C" {
 #endif
 
+/** \addtogroup LALMalloc_h */ /*@{*/
 void *XLALMalloc( size_t n );
 void *XLALMallocLong( size_t n, const char *file, int line );
 void *XLALCalloc( size_t m, size_t n );
@@ -67,6 +38,8 @@ void  XLALFree( void *p );
 #define XLALMalloc( n )        XLALMallocLong( n, __FILE__, __LINE__ )
 #define XLALCalloc( m, n )     XLALCallocLong( m, n, __FILE__, __LINE__ )
 #define XLALRealloc( p, n )    XLALReallocLong( p, n, __FILE__, __LINE__ )
+/*@}*/
+
 
 #if defined NDEBUG || defined LAL_NDEBUG
 
@@ -102,29 +75,17 @@ extern int    lalIsMemDbgPtr;    /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
 #endif /* SWIG */
 
 
-void *
-LALMallocShort( size_t n );
-
-void *
-LALMallocLong( size_t n, const char *file, int line );
-
-void
-LALFree( void *p );
-
-void *
-LALCallocShort( size_t m, size_t n );
-
-void *
-LALCallocLong( size_t m, size_t n, const char *file, int line );
-
-void *
-LALReallocShort( void *p, size_t n );
-
-void *
-LALReallocLong( void *p, size_t n, const char *file, int line );
-
-void
-LALCheckMemoryLeaks( void );
+// ----- Prototypes
+/** \addtogroup LALMalloc_h */ /*@{*/
+void *LALMallocShort( size_t n );
+void *LALMallocLong( size_t n, const char *file, int line );
+void *LALCallocShort( size_t m, size_t n );
+void LALFree( void *p );
+void *LALCallocLong( size_t m, size_t n, const char *file, int line );
+void *LALReallocShort( void *p, size_t n );
+void *LALReallocLong( void *p, size_t n, const char *file, int line );
+void LALCheckMemoryLeaks( void );
+/*@}*/
 
 #endif /* NDEBUG || LAL_NDEBUG */
 

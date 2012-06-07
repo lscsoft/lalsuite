@@ -24,6 +24,8 @@
 #include <lal/AVFactories.h>
 #include <lal/LALDetectors.h>
 
+#include <gsl/gsl_rng.h>
+
 typedef struct
 {
    REAL4Vector *ffdata;    //Doubly Fourier transformed data
@@ -78,6 +80,8 @@ typedef struct
    INT4 useSSE;
    INT4 followUpOutsideULrange;
    INT4 validateSSE;
+   INT4 randSeed;
+   gsl_rng *rng;
 } inputParamsStruct;
 
 typedef struct

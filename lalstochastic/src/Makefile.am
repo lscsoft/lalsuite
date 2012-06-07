@@ -53,8 +53,7 @@ lalstochastic-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalstochastic-user-env.csh lalstochastic-user-env.sh: lalstochastic-user-env.shell $(srcdir)/generate_user_env.awk
-	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	LALStochasticConfig.h.in \
@@ -65,7 +64,6 @@ EXTRA_DIST = \
 LALStochasticVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALStochasticConfig.h
-	@echo "creating LALStochasticVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALStochastic $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALStochastic $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

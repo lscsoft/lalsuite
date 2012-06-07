@@ -26,7 +26,7 @@ else
     cfsv2_code="$@"
 fi
 
-SFTdir="./testSFTs"
+SFTdir="./testCFSv2_sfts"
 
 # test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
 if [ -z "$LAL_DATA_PATH" ]; then

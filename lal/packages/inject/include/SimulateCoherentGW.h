@@ -37,8 +37,8 @@ extern "C" {
 #endif
 
 /**
-\author Creighton, T. D.
 \addtogroup SimulateCoherentGW_h
+\author Creighton, T. D.
 
 \brief Provides routines to simulate generic gravitational waveforms
 originating from a particular source.
@@ -130,8 +130,8 @@ the function \f$\Phi(t)\f$ as distinct quantities.
 The advantage of this quasiperiodic representation of a gravitational
 wave is that a physical sampling of the parameters \f$A_1\f$, \f$A_2\f$,
 \f$\phi\f$, and \f$\Phi\f$ need only be done on timescales \f$\Delta
-t\lessim\tau\f$, whereas the actual wave functions \f$h_{+,\times}\f$ need
-to be sampled on timescales \f$\Delta t\lessim1/f\f$.
+t\lesssim\tau\f$, whereas the actual wave functions \f$h_{+,\times}\f$ need
+to be sampled on timescales \f$\Delta t\lesssim1/f\f$.
 
 The following coordinate conventions are assumed:
 <ol>
@@ -250,16 +250,18 @@ smoothly-varying waveforms one has \f$t_\mathrm{coh}\sim\dot{f}^{-1/2}\f$,
 which is much shorter than the evolution timescale \f$\tau\sim
 f/\dot{f}\f$ (provided \f$\tau\gg1/f\f$, as we have assumed).
 
-*/ /**@{ */
-/** \name Error Codes */ /*@{*/
+*/
+/*@{*/
+
+/** \name Error Codes */
+/*@{*/
 #define SIMULATECOHERENTGWH_ENUL  1	/**< Unexpected null pointer in arguments */
 #define SIMULATECOHERENTGWH_EBAD  2	/**< A sampling interval is (effectively) zero */
 #define SIMULATECOHERENTGWH_ESIG  3	/**< Input signal must specify amplitude and phase functions */
 #define SIMULATECOHERENTGWH_EDIM  4	/**< Amplitude must be a 2-dimensional vector */
 #define SIMULATECOHERENTGWH_EMEM  5	/**< Memory allocation error */
 #define SIMULATECOHERENTGWH_EUNIT 6	/**< Bad input units */
-/** @} */
-/** @} */
+/*@} */
 
 /** \cond DONT_DOXYGEN */
 #define SIMULATECOHERENTGWH_MSGENUL  "Unexpected null pointer in arguments"
@@ -270,8 +272,7 @@ f/\dot{f}\f$ (provided \f$\tau\gg1/f\f$, as we have assumed).
 #define SIMULATECOHERENTGWH_MSGEUNIT "Bad input units"
 /** \endcond */
 
-/** \ingroup SimulateCoherentGW_h
- * This structure stores a representation of a plane
+/** This structure stores a representation of a plane
  * gravitational wave propagating from a particular point on the sky.
  * Several alternate representations are permitted to allow a more
  * natural characterization of quasiperiodic waveforms.
@@ -298,8 +299,7 @@ typedef struct tagCoherentGW {
   REAL4TimeSeries *shift;   /**< A time-sampled sequence storing the polarization shift \f$\Phi(t)\f$, in radians */
 } CoherentGW;
 
-/** \ingroup SimulateCoherentGW_h
- * This structure contains information required to determine the response
+/** This structure contains information required to determine the response
  * of a detector to a gravitational waveform.
  */
 typedef struct tagDetectorResponse {
@@ -325,6 +325,8 @@ LALSimulateCoherentGW( LALStatus        *status,
 		       REAL4TimeSeries  *output,
 		       CoherentGW       *input,
 		       DetectorResponse *detector );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

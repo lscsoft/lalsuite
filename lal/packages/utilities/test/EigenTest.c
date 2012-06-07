@@ -17,114 +17,93 @@
 *  MA  02111-1307  USA
 */
 
-/************************************ <lalVerbatim file="EigenTestCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
+/**
+\file
+\ingroup MatrixUtils_h
+\author Creighton, T. D.
 
-/********************************************************** <lalLaTeX>
+\brief Computes the eigenvalues and eigenvectors of a matrix.
 
-\subsection{Program \texttt{EigenTest.c}}
-\label{ss:EigenTest.c}
-
-Computes the eigenvalues and eigenvectors of a matrix.
-
-\subsubsection*{Usage}
-\begin{verbatim}
+\heading{Usage}
+\code
 EigenTest [-n size | -i infile] [-o outfile] [-v] [-t] [-s] [-d debuglevel]
-\end{verbatim}
+\endcode
 
-\subsubsection*{Description}
+\heading{Description}
 
 This program computes the eigenvalues and eigenvectors of a symmetric
-real matrix using the routines in \verb@Eigen.c@ and
-\verb@EigenInternal.c@.  The following option flags are accepted:
-\begin{itemize}
-\item[\texttt{-n}] Generates a random symmetric
-\verb@size@$\times$\verb@size@ metric.  If this option is not given,
-\verb@-n 3@ is assumed.  This option (or its default) is
-\emph{overridden} by the \verb@-i@ option, below.
-\item[\texttt{-i}] Reads a matrix from an input file \verb@infile@
-using the function \verb@LALSReadVector()@.  If the input file is
-specified as \verb@stdin@, the data is read from standard input (not a
-file named \verb@stdin@).
-\item[\texttt{-o}] Writes the eigenvalues (and eigenvectors, if
-\verb@-v@ is specified below) to an output file \verb@outfile@.  If
-the output file is specified as \verb@stdout@ or \verb@stderr@, the
+real matrix using the routines in \ref Eigen_c and
+\ref EigenInternal_c.  The following option flags are accepted:
+<ul>
+<li>[<tt>-n</tt>] Generates a random symmetric
+\c size\f$\times\f$\c size metric.  If this option is not given,
+<tt>-n 3</tt> is assumed.  This option (or its default) is
+\e overridden by the <tt>-i</tt> option, below.</li>
+<li>[<tt>-i</tt>] Reads a matrix from an input file \c infile
+using the function <tt>LALSReadVector()</tt>.  If the input file is
+specified as \c stdin, the data is read from standard input (not a
+file named \c stdin).</li>
+<li>[<tt>-o</tt>] Writes the eigenvalues (and eigenvectors, if
+<tt>-v</tt> is specified below) to an output file \c outfile.  If
+the output file is specified as \c stdout or \c stderr, the
 data is written to standard output or standard error (not to files
-named \verb@stdout@ or \verb@stderr@).  The eigenvalues are written
+named \c stdout or \c stderr).  The eigenvalues are written
 as a single row of whitespace-separated numbers, and the eigenvectors
 as a square matrix where each column is the eigenvector of the
 corresponding eigenvalue.  If this option is not specified, no output
-is written.
-\item[\texttt{-v}] Specifies that eigenvectors are to be computed as
-well as eigenvalues.
-\item[\texttt{-t}] Specifies that the computation is to be timed;
-timing information is written to \verb@stderr@.
-\item[\texttt{-s}] Specifies that the calculations are to be done to
-single-precision (\verb@REAL4@) rather than double-precision
-(\verb@REAL8@).
-\item[\texttt{-d}] Sets the debug level to \verb@debuglevel@.  If not
-specified, level 0 is assumed.
-\end{itemize}
+is written.</li>
+<li>[<tt>-v</tt>] Specifies that eigenvectors are to be computed as
+well as eigenvalues.</li>
+<li>[<tt>-t</tt>] Specifies that the computation is to be timed;
+timing information is written to \c stderr.</li>
+<li>[<tt>-s</tt>] Specifies that the calculations are to be done to
+single-precision (\c REAL4) rather than double-precision
+(\c REAL8).</li>
+<li>[<tt>-d</tt>] Sets the debug level to \c debuglevel.  If not
+specified, level 0 is assumed.</li>
+</ul>
 
-\paragraph{Input format:} If an input file or stream is specified, it
-should consist of $N$ consecutive lines of $N$ whitespace-separated
-numbers, that will be parsed using \verb@LALDReadVector()@, or
-\verb@LALSReadVector()@ if the \verb@-s@ option was given.  The data
+\heading{Input format:} If an input file or stream is specified, it
+should consist of \f$N\f$ consecutive lines of \f$N\f$ whitespace-separated
+numbers, that will be parsed using <tt>LALDReadVector()</tt>, or
+<tt>LALSReadVector()</tt> if the <tt>-s</tt> option was given.  The data
 block may be preceded by blank or comment lines (lines containing no
 parseable numbers), but once a parseable number is found, the rest
 should follow in a contiguous block.  If the lines contain different
 numbers of data columns, or if there are fewer lines than columns,
-then an error is returned; if there are \emph{more} lines than
+then an error is returned; if there are \e more lines than
 columns, then the extra lines are ignored.
 
-\paragraph{Output format:} If an output file or stream is specified,
-the input matrix is first written as $N$ consecutive lines of $N$
+\heading{Output format:} If an output file or stream is specified,
+the input matrix is first written as \f$N\f$ consecutive lines of \f$N\f$
 whitespace-separated numbers.  This will be followed with a blank
-line, then a single line of $N$ whitespace-separated numbers
-representing the eigenvalues.  If the \verb@-v@ option is specified,
-another blank line will be appended to the output, followed by $N$
-lines of $N$ columns specifying the eigenvectors: the column under
+line, then a single line of \f$N\f$ whitespace-separated numbers
+representing the eigenvalues.  If the <tt>-v</tt> option is specified,
+another blank line will be appended to the output, followed by \f$N\f$
+lines of \f$N\f$ columns specifying the eigenvectors: the column under
 each eigenvalue is the corresponding eigenvector.
 
-\subsubsection*{Exit codes}
-****************************************** </lalLaTeX><lalErrTable> */
-#define EIGENTESTC_ENORM 0
-#define EIGENTESTC_ESUB  1
-#define EIGENTESTC_EARG  2
-#define EIGENTESTC_EMEM  3
-#define EIGENTESTC_EFILE 4
-#define EIGENTESTC_EFMT  5
+*/
 
+/** \name Error Codes */
+/*@{*/
+#define EIGENTESTC_ENORM 0		/**< Normal exit */
+#define EIGENTESTC_ESUB  1		/**< Subroutine failed */
+#define EIGENTESTC_EARG  2		/**< Error parsing arguments */
+#define EIGENTESTC_EMEM  3		/**< Out of memory */
+#define EIGENTESTC_EFILE 4		/**< Could not open file */
+#define EIGENTESTC_EFMT  5		/**< Bad input file format */
+/*@}*/
+
+
+/** \cond DONT_DOXYGEN */
 #define EIGENTESTC_MSGENORM "Normal exit"
 #define EIGENTESTC_MSGESUB  "Subroutine failed"
 #define EIGENTESTC_MSGEARG  "Error parsing arguments"
 #define EIGENTESTC_MSGEMEM  "Out of memory"
 #define EIGENTESTC_MSGEFILE "Could not open file"
 #define EIGENTESTC_MSGEFMT  "Bad input file format"
-/******************************************** </lalErrTable><lalLaTeX>
 
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALSCreateVector()              LALSDestroyVector()
-LALDCreateVector()              LALDDestroyVector()
-LALSCreateArray()               LALSDestroyArray()
-LALDCreateArray()               LALDDestroyArray()
-LALSSymmetricEigenValues()      LALSSymmetricEigenVectors()
-LALDSymmetricEigenValues()      LALDSymmetricEigenVectors()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALUniformDeviate()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{EigenTestCV}}
-
-******************************************************* </lalLaTeX> */
 
 #include <math.h>
 #include <time.h>
@@ -530,3 +509,4 @@ main( int argc, char **argv )
   INFO( EIGENTESTC_MSGENORM );
   return EIGENTESTC_ENORM;
 }
+/** \endcond */

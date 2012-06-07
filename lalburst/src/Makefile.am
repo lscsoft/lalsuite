@@ -71,8 +71,7 @@ lalburst-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/generate_user_env.awk
-	@echo "creating $@"
-	@$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
+	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
@@ -83,7 +82,6 @@ EXTRA_DIST = \
 LALBurstVCSInfo.h: ._vcsinfo
 
 ._vcsinfo: $(srcdir)/generate_vcs_info.py LALBurstConfig.h
-	@echo "creating LALBurstVCSInfo.h"
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py --sed LALBurst $(srcdir) $$PWD
+	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALBurst $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@

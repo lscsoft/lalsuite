@@ -68,7 +68,7 @@ static INT4 factorial(
  * and will be converted on output to
  * \f$f_0,\alpha,\delta,f_1,f_2,...\f$
  * using the conversions
- * \f$f_k = \omega_k {(k+1)! \over {2\pi T^{k+1}}}\f$
+ * \f$f_k = \omega_k \frac{(k+1)!}{{2\pi T^{k+1}}}\f$
  */
 int XLALSetFlatLatticeTilingSpindownFstatMetric(
 						FlatLatticeTiling *tiling, /**< Tiling structure */

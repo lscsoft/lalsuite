@@ -26,23 +26,6 @@
  *
  *
  *-----------------------------------------------------------------------
-
- *
- * NAME
- * TrackSearch.h
- *
- * SYNOPSIS
- * #include <lal/TrackSearch.h>
- *
- * DESCRIPTION
- * Defines Structures function prototypes and macros for use by the
- * curve tracking algorithm to find curves in time frequency maps.
- * This header file and the other source files for curve tracking are adapted
- * from Carsten Steger's detect-lines package.
- *
- * DIAGNOSTICS
- *
- *-----------------------------------------------------------------------
  */
 
 #ifndef _TRACKSEARCH_H
@@ -59,35 +42,55 @@
 extern "C" {
 #endif
 
-/* Mathematical constants */
+/** \defgroup TrackSearch_h Header TrackSearch.h
+ * \ingroup pkg_tracksearch
+ *
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/TrackSearch.h>
+ * \endcode
+ *
+ * \brief Defines Structures function prototypes and macros for use by the
+ * curve tracking algorithm to find curves in time frequency maps.
+ *
+ * This header file and the other source files for curve tracking are adapted
+ * from Carsten Steger's detect-lines package.
+ *
+ */
+/*@{*/
+
+/** \name Mathematical constants */
+/*@{*/
 #ifndef SQRT_2_PI_INV
-#define SQRT_2_PI_INV 0.39894228040143272L  /* (1.0 / sqrt(2.0 * pi))  */
+#define SQRT_2_PI_INV 0.39894228040143272L  	/**< (1.0 / sqrt(2.0 * pi))  */
 #endif
-#define MAX_ANGLE_DIFFERENCE (LAL_PI/6.0) /* the max angle differene between 2 adjacent line points */
-#define MASK_SIZE 4      /* size of the Gaussian mask in units of sigma (std. deviation) */
+#define MAX_ANGLE_DIFFERENCE (LAL_PI/6.0) 	/**< the max angle differene between 2 adjacent line points */
+#define MASK_SIZE 4      			/**< size of the Gaussian mask in units of sigma (std. deviation) */
 #define PIXEL_BOUNDARY (0.6)
-#define MAX_ANGLE_DIFF (LAL_PI/6.0) /* maximum one sided angle within which to search for a continuation of the line */
-#define LENGTH_THRESHOLD 3  /* A LOWER threshold on the length of the curves in pixels to process*/
-#define MAX_CURVE_LENGTH 16384 /* the maximum length allowed */
-#define MAX_NUMBER_OF_CURVES 65536 /* the maximum number of curves allowed */
+#define MAX_ANGLE_DIFF (LAL_PI/6.0) 		/**< maximum one sided angle within which to search for a continuation of the line */
+#define LENGTH_THRESHOLD 3  			/**< A LOWER threshold on the length of the curves in pixels to process*/
+#define MAX_CURVE_LENGTH 16384 			/**< the maximum length allowed */
+#define MAX_NUMBER_OF_CURVES 65536 		/**< the maximum number of curves allowed */
+/*@}*/
 
+/** \name Error Codes */
+/*@{*/
+#define TS_NULL_POINTER 1	/**< Allocation of memory to Non null pointer */
+#define TS_NON_NULL_POINTER 2	/**< Null pointer passed when non NUll pointer expected */
+#define TS_ALLOC 3	/**< flag for allocating storage space does not contain a valid value (0,1,2) */
+#define TS_UNITIALIZED_MASKS 4	/**< Gaussian masks appear not to have been initialized */
+#define TS_MAP_DIMENSION 5	/**< Dimensions of Map have to be each greater than 8 */
+#define TS_ILLEGAL_PARAMS 6	/**< Illegal parameter values ( high and low should be positive and high>low) */
+#define TS_LINE_START 7	/**< The number of line start points is not consistent with previous module */
+#define TS_ARRAY_OVERFLOW 8	/**< Array bounds can be crossed  */
+#define TS_TOO_MANY_CURVES 9	/**<  Too many curves found in map  */
+#define TS_OCTANT 10	/**< octant cannot be greater than 4  */
+#define TS_MASKSIZE 11	/**< maskSize too small */
+#define TS_SIGMASIZE 12	/**< sigma value to small to be useful */
+#define TS_ALLOC_ERROR 13	/**< error trying to allocate or deallocate memory */
+/*@}*/
 
-/* Error codes and strings */
-
-#define TS_NULL_POINTER 1
-#define TS_NON_NULL_POINTER 2
-#define TS_ALLOC 3
-#define TS_UNITIALIZED_MASKS 4
-#define TS_MAP_DIMENSION 5
-#define TS_ILLEGAL_PARAMS 6
-#define TS_LINE_START 7
-#define TS_ARRAY_OVERFLOW 8
-#define TS_TOO_MANY_CURVES 9
-#define TS_OCTANT 10
-#define TS_MASKSIZE 11
-#define TS_SIGMASIZE 12
-#define TS_ALLOC_ERROR 13
-
+/** \cond DONT_DOXYGEN */
 #define TS_MSGNON_NULL_POINTER  "Allocation of memory to Non null pointer"
 #define TS_MSG_NULL_POINTER     "Null pointer passed when non NUll pointer expected"
 #define TS_MSG_ALLOC            "flag for allocating storage space does not contain a valid value (0,1,2)"
@@ -101,39 +104,41 @@ extern "C" {
 #define MSG_TS_MASKSIZE "maskSize too small"
 #define MSG_TS_SIGMASIZE "sigma value to small to be useful"
 #define MSG_TS_ALLOC_ERROR "error trying to allocate or deallocate memory"
-/* structures */
+/** \endcond */
 
+
+/* ---------- structures ---------- */
+
+/** UNDOCUMENTED */
 typedef struct tagCurve
 {
-  INT4 n; /* number of points in the curve */
-  CHAR junction; /* =1 if the curve has a junction */
-  CHAR trash; /* Linked list postprocessing K-keep D-drop */
-  INT4 *row; /* the row coordinates of the n points */
-  INT4 *col; /* the column coordinates of the n points */
-  LIGOTimeGPS *gpsStamp;  /* real gps timestate variable*/
-  REAL4 *fBinHz; /* frequency value not bin label */
-  REAL4 *depth; /* the "height" of the pixel in the TF map corresponding
-		  to (col[i],row[i]) */
-  REAL4 totalPower; /* resulting numerical intergration along ridge */
-  REAL4 snrEstimate; /*estimate of trigger SNR */
+  INT4 n; 		/**< number of points in the curve */
+  CHAR junction; 	/**< =1 if the curve has a junction */
+  CHAR trash; 		/**< Linked list postprocessing K-keep D-drop */
+  INT4 *row; 		/**< the row coordinates of the n points */
+  INT4 *col; 		/**< the column coordinates of the n points */
+  LIGOTimeGPS *gpsStamp; /**< real gps timestate variable*/
+  REAL4 *fBinHz; 	/**< frequency value not bin label */
+  REAL4 *depth; 	/**< the "height" of the pixel in the TF map corresponding to (col[i],row[i]) */
+  REAL4 totalPower; 	/**< resulting numerical intergration along ridge */
+  REAL4 snrEstimate; 	/**< estimate of trigger SNR */
 } Curve;
 
-typedef struct tagTrackSearchStore  /* Structure for storage space for the algorithm */
+/** Structure for storage space for the algorithm */
+typedef struct tagTrackSearchStore
 {
-  INT4 height;            /* height of the TF map (increasing frequency direction) */
-  INT4 width;             /* width of the TF map (increasing time direction ) */
-  CHAR **isLine;          /* 2D map used to flag potential line points */
-  REAL4 **k[5];           /* arrays used to store the image convolved with the first
-			     and second derivatives of the Gaussian kernel */
-  REAL4 **imageTemp;      /* A temporary 2D array to contain intermediate transformed images;
-			   Also used to store the maximum eigenValue*/
-  REAL8 *gaussMask[3];    /* The Gaussian mask and its first and second derivatives. */
-  REAL4 *eigenVec;        /* Array to store vector in maximal direction each point at each pixel point*/
-  INT4  numLStartPoints; /* a variable which contains the number of possible starting points for curves */
-  INT4  numLPoints;      /* A variable which contains the number of possible line points */
+  INT4 height;            /**< height of the TF map (increasing frequency direction) */
+  INT4 width;             /**< width of the TF map (increasing time direction ) */
+  CHAR **isLine;          /**< 2D map used to flag potential line points */
+  REAL4 **k[5];           /**< arrays used to store the image convolved with the first and second derivatives of the Gaussian kernel */
+  REAL4 **imageTemp;      /**< A temporary 2D array to contain intermediate transformed images; Also used to store the maximum eigenValue*/
+  REAL8 *gaussMask[3];    /**< The Gaussian mask and its first and second derivatives. */
+  REAL4 *eigenVec;        /**< Array to store vector in maximal direction each point at each pixel point*/
+  INT4  numLStartPoints;  /**< a variable which contains the number of possible starting points for curves */
+  INT4  numLPoints;       /**< A variable which contains the number of possible line points */
 } TrackSearchStore;
 
-/*
+  /**
  * Enum type for the possible operations for curve cutting
  */
 typedef enum tagTrackSearchCut
@@ -141,62 +146,62 @@ typedef enum tagTrackSearchCut
     none, PandL, nPandnL, PandnL, nPandL
   }TrackSearchCut;
 
-/*
+/**
  * Output structure for the tracksearch algorithm
  */
 typedef struct tagTrackSearchOut
 {
-  INT4 numberOfCurves;          /* the number of curves found*/
-  Curve *curves;                /* a pointer to a array of numberOfCurves curves */
-  TrackSearchStore store;       /* a pointer to the temporary storage space */
-  REAL4 minPowerCut;            /* copy of applied threshold value */
-  REAL4 minSNRCut;              /* copy of applied min SNR value */
-  REAL4 minLengthCut;           /* copy of applied threshold value */
-  REAL4 startThreshCut;         /* copy of applied Lh threshold */
-  REAL4 linePThreshCut;         /* copy of applied Ll threshold */
-  TrackSearchCut thresholdLogic;/* Logic operation to apply with mPC and mLC*/
+  INT4 numberOfCurves;          /**< the number of curves found*/
+  Curve *curves;                /**< a pointer to a array of numberOfCurves curves */
+  TrackSearchStore store;       /**< a pointer to the temporary storage space */
+  REAL4 minPowerCut;            /**< copy of applied threshold value */
+  REAL4 minSNRCut;              /**< copy of applied min SNR value */
+  REAL4 minLengthCut;           /**< copy of applied threshold value */
+  REAL4 startThreshCut;         /**< copy of applied Lh threshold */
+  REAL4 linePThreshCut;         /**< copy of applied Ll threshold */
+  TrackSearchCut thresholdLogic;/**< Logic operation to apply with mPC and mLC*/
 } TrackSearchOut;
 
-/*
+/**
  * Structure to help determine the correlation of integer map indices
  * and real gps times and frequencies
  */
 typedef struct tagTrackSearchMapMarkingParams
 {
-  REAL4 deltaT;/*The time bin resolution dur/#bins */
-  REAL4 dataDeltaT;/*Sampling rate of data used*/
-  REAL4 f0;/*An offset induced by heterodyning(norm f0=0)*/
+  REAL4 deltaT;			/**< The time bin resolution dur/\#bins */
+  REAL4 dataDeltaT;		/**< Sampling rate of data used*/
+  REAL4 f0;			/**< An offset induced by heterodyning(norm f0=0)*/
   LIGOTimeGPS mapStartGPS;
   LIGOTimeGPS mapStopGPS;
   INT4 mapTimeBins;
   INT4 mapFreqBins;
 } TrackSearchMapMarkingParams;
 
-/*
+/**
  * Structure with params specific to the LAL library function
  */
 typedef struct tagTrackSearchParams
 {
-  INT4  height;   /* height of Map */
-  INT4  width;    /* width of map */
-  INT4  allocFlag;/* flag for allocating/deallocating the temporary storage structure
-		  flag must be = 1 the first time the function is called
-		  flag=0 -- no allocation of space
-		  flag=1 -- allocate memory and initialize store
-		  flag=2 -- free store and exit the function
-		  */
-  REAL4 sigma; /* the width of the lines to search for (in pixels) */
-  REAL4 high;  /* the upper threshold on the 2nd derivative (along maximal direction)*/
-  REAL4 low;   /* the lower threshold on the 2nd derivative (along maximal direction)*/
-  BOOLEAN autoL; /* Bool flag to call auto Lambda code if needed */
-  REAL4 rLow;  /* the lower threshold relative to upper threshold
-		*  (only used if using auto threshold adjustments)
-		*/
-  REAL4 autoLambda; /* given Z score value determine best auto lambda for run */
+  INT4  height;   	/**< height of Map */
+  INT4  width;    	/**< width of map */
+  INT4  allocFlag;	/**< flag for allocating/deallocating the temporary storage structure
+                           flag must be = 1 the first time the function is called
+                           flag=0 -- no allocation of space
+                           flag=1 -- allocate memory and initialize store
+                           flag=2 -- free store and exit the function
+                        */
+  REAL4 sigma; 		/**< the width of the lines to search for (in pixels) */
+  REAL4 high;  		/**< the upper threshold on the 2nd derivative (along maximal direction)*/
+  REAL4 low;   		/**< the lower threshold on the 2nd derivative (along maximal direction)*/
+  BOOLEAN autoL; 	/**< Bool flag to call auto Lambda code if needed */
+  REAL4 rLow;  		/**< the lower threshold relative to upper threshold
+                         *  (only used if using auto threshold adjustments)
+                         */
+  REAL4 autoLambda; 	/**< given Z score value determine best auto lambda for run */
 } TrackSearchParams;
 
 /*
- * Function Prototypes
+ * ---------- Function Prototypes ----------
  */
 void
 LALSignalTrackSearch(LALStatus *,
@@ -210,14 +215,10 @@ LALTrackSearchInsertMarkers(LALStatus *,
 			    TrackSearchMapMarkingParams *);
 
 
+/*@}*/
+
 #ifdef  __cplusplus
 }
 #endif  /* C++ protection. */
 
 #endif
-
-
-
-
-
-

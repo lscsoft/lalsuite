@@ -32,7 +32,8 @@ The default version of the function, for handling non-heterodyned
 data, calculates the value of the standard optimally-filtered
 cross-correlation statistic
 
-\anchor stochastic_e_ymax \f{eqnarray}{
+\anchor stochastic_e_ymax
+\f{eqnarray}{
 Y
 &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
 w_1(t_1)\, h_1(t_1)\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
@@ -78,7 +79,8 @@ the values for \f$\ell=0,\ldots,P-1\f$ (where
 in the frequency series) with the elements corresponding to negative
 frequencies determined by complex conjugation.  This allows \f$Y\f$ to be
 computed as
-\anchor stochastic_e_shortcut \f{equation}{
+\anchor stochastic_e_shortcut
+\f{equation}{
 Y=\
 \delta f\
 \left(
@@ -102,23 +104,18 @@ of frequencies \f$f_0\le f< f_0 + (P-1)\delta f\f$, it is assumed that
 they were produced by discarding frequencies below \f$f_0\f$ from a longer
 frequency series, which was still the Fourier transform of a real time
 series.  In this case the cross-correlation statistic is calculated
-as\latexonly\footnote{Note that the $P$th frequency bin is not treated
-  specially, as would be expected for the Nyquist frequency.  This is
-  the appropriate behavior if $M$ is an odd number (so that there is
-  no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
-  bin has been removed from $\widetilde{Q}$.  At any rate, if there's
-  a significant contribution to the cross-correlation statistic from
-  the Nyquist frequency, something is wrong.}\endlatexonly
-\if HTML
-[Note that the \f$P\f$th frequency bin is not treated
+as
+[Note that the \f$P\f$-th frequency bin is not treated
   specially, as would be expected for the Nyquist frequency.  This is
   the appropriate behavior if \f$M\f$ is an odd number (so that there is
   no Nyquist bin) or if, as a result of coarse-graining, the Nyquist
   bin has been removed from \f$\widetilde{Q}\f$.  At any rate, if there's
   a significant contribution to the cross-correlation statistic from
-  the Nyquist frequency, something is wrong.]
-\endif
-\anchor stochastic_e_bandlimited \f{eqnarray}{
+  the Nyquist frequency, something is wrong.
+  ]
+
+\anchor stochastic_e_bandlimited
+\f{eqnarray}{
 Y&=&\
 \delta f\
 2\sum_{\ell=0}^{P-1}\
@@ -155,7 +152,8 @@ time-shifted data as a control case.
 
 In the case of heterodyned data, one wishes to calculate
 
-\anchor stochastic_e_ymaxhet \f{eqnarray}{
+\anchor stochastic_e_ymaxhet
+\f{eqnarray}{
 Y
 &:=&\int_{t_0}^{t_0+T} dt_1\int_{t_0}^{t_0+T} dt_2\,
 w_1(t_1)\, h_1(t_1)^*\, Q(t_1-t_2)\, w_2(t_2)\, h_2(t_2) \nonumber \\
@@ -170,7 +168,8 @@ w_1[k]\, h_1[j]^*\, Q[j-k]\, w_2[k]\, h_2[k] \nonumber \\
 In this case, the Fourier transforms of the zero-padded data streams
 have \f$M\f$ independent elements, which must all be included in the sum,
 which is calculated as
-\anchor stochastic_e_heterodyned \f{equation}{
+\anchor stochastic_e_heterodyned
+\f{equation}{
 Y=\
 \sum_{\ell=0}^{M-1}\
 \widetilde{\bar{h}}_{1}[\ell]^* \
@@ -188,7 +187,8 @@ be complex, so the output is returned as \c COMPLEX8WithUnits.
 
 For diagnostic purposes, this function calculates the integrand of
 \eqref{stochastic_e_ymax} or\eqref{stochastic_e_ymaxhet}, i.e.
-\anchor stochastic_e_ccspec \f{equation}{
+\anchor stochastic_e_ccspec
+\f{equation}{
   \label{stochastic_e_ccspec}
 Y(f)=
 \widetilde{\bar{h}}_{1}(f)^* \

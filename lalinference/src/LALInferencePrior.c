@@ -237,13 +237,18 @@ void LALInferenceRotateInitialPhase( LALInferenceVariables *parameter){
 REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
 {
   REAL8 logPrior=0.0;
-
+  static int SkyLocPriorWarning = 0;
   (void)runState;
   LALInferenceVariableItem *item=params->head;
   LALInferenceVariables *priorParams=runState->priorArgs;
   REAL8 min, max;
   REAL8 logmc=0.0,mc=0.0;
   REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
+
+  if (!SkyLocPriorWarning ) {
+    SkyLocPriorWarning  = 1;
+    fprintf(stderr, "SkyLocalization priors are being used. (in %s, line %d)\n", __FILE__, __LINE__);
+  }
   /* Check boundaries */
   for(;item;item=item->next)
   {
@@ -370,13 +375,15 @@ LALInferenceVariableItem *item=params->head;
 				            if(LALInferenceCheckVariable(priorParams,"mass_norm")) {
 				                norm = *(REAL8 *)LALInferenceGetVariable(priorParams,"mass_norm");
 				            }else{
-				              	if( MTotMax < component_max || MTotMax > 2.0*component_max - component_min ) {
-					                fprintf(stderr,"ERROR; MTotMax < component_max || MTotMax > 2.0*component_max - component_min\n");
-					                fprintf(stderr,"MTotMax = %lf, component_max=%lf, component_min=%lf\n",MTotMax,component_min,component_max);
-					                exit(1);
-              					}
-				             	norm = -log( (pow(MTotMax-component_min,2.0)/4.0) - (pow(MTotMax-component_max,2.0)/2.0) );
-				             	//printf("norm@%s=%f\n",item->name,norm);
+				              	if( MTotMax > component_max && MTotMax < 2.0*component_max - component_min ) {
+				             	    norm = -log( (pow(MTotMax-2.0*component_min,2)/4.0) - (pow(MTotMax-component_max-component_min,2)/2.0) );
+                        }else if(MTotMax >= component_max - component_min){
+                          norm = -log( pow(MTotMax-2.0*component_min,2)/4.0 );
+                        }else if(2.0*MTotMax < component_max){
+                          norm = -log( pow(component_max-component_min,2)/2.0 );
+                        }else{
+                          norm = 0.0; //no prior area for the masses !!
+                        }
 				    	     	LALInferenceAddVariable(priorParams, "mass_norm", &norm, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
             				}
 				        logPrior+=norm;
@@ -1057,6 +1064,59 @@ void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,
       XLAL_ERROR_VOID(XLAL_EINVAL, "Trying to randomise a non-numeric parameter!");
       break;
   }
+}
+
+REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables *params) {
+  REAL8 logPrior=0.0;
+  REAL8 logmc=0.0,mc=0.0;
+  REAL8 m1=0.0,m2=0.0,q=0.0,eta=0.0;
+
+  if(LALInferenceCheckVariable(params,"massratio")||LALInferenceCheckVariable(params,"asym_massratio")) {
+    if(LALInferenceCheckVariable(params,"logmc")) {
+      logmc=*(REAL8 *)LALInferenceGetVariable(params,"logmc");
+      if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        LALInferenceMcQ2Masses(exp(logmc),q,&m1,&m2);
+        logPrior+=log(m1*m1);
+      } else {
+        eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+        LALInferenceMcEta2Masses(exp(logmc),eta,&m1,&m2);
+        logPrior+=log(((m1+m2)*(m1+m2)*(m1+m2))/(m1-m2));
+      }
+      /*careful using LALInferenceMcEta2Masses, it returns m1>=m2*/
+    } else if(LALInferenceCheckVariable(params,"chirpmass")) {
+      mc=*(REAL8 *)LALInferenceGetVariable(params,"chirpmass");
+      if(LALInferenceCheckVariable(params,"asym_massratio")) {
+        q=*(REAL8 *)LALInferenceGetVariable(params,"asym_massratio");
+        LALInferenceMcQ2Masses(mc,q,&m1,&m2);
+        logPrior+=log(m1*m1/mc);
+      } else {
+        eta=*(REAL8 *)LALInferenceGetVariable(params,"massratio");
+        LALInferenceMcEta2Masses(mc,eta,&m1,&m2);
+        logPrior+=log(((m1+m2)*(m1+m2))/((m1-m2)*pow(eta,3.0/5.0)));
+      }
+    }
+  }
+  logPrior+=LALInferenceFlatBoundedPrior(runState, params);
+  return(logPrior);
+}
+
+REAL8 LALInferenceFlatBoundedPrior(LALInferenceRunState *runState, LALInferenceVariables *params)
+{
+  LALInferenceVariableItem *cur;
+  REAL8 min,max;
+  if(!params||!runState) XLAL_ERROR(XLAL_EFAULT, "Encountered NULL pointer in prior");
+  if(!runState->priorArgs) return 0.0; /* no prior ranges specified */
+  for(cur=params->head;cur;cur=cur->next)
+  {
+    if(cur->type!=LALINFERENCE_REAL8_t) continue;
+    if(LALInferenceCheckMinMaxPrior(runState->priorArgs, cur->name))
+    {
+      LALInferenceGetMinMaxPrior(runState->priorArgs, cur->name, &min, &max);
+      if (min>*(REAL8 *)cur->value || max<*(REAL8 *)cur->value) return -DBL_MAX;
+    }
+  }
+  return 0.0;
 }
 
 REAL8 LALInferenceNullPrior(LALInferenceRunState UNUSED *runState, LALInferenceVariables UNUSED *params) {

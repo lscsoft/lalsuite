@@ -76,25 +76,9 @@ If no option flags are specified at all, then the routine will
 randomly generate a sky position in Galactic coordinates, convert it
 to ecliptic coordinates and back again, and return an error if the
 result disagrees by more than a milliradian.
-
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel
-LALPrintError()                 LALCheckMemoryLeaks()
-LALMalloc()                     LALFree()
-LALGeocentricToGeodetic()       LALGeodeticToGeocentric()
-LALGPStoGMST1()
-LALCHARCreateVector()           LALCHARDestroyVector()
-LALCreateRandomParams()         LALDestroyRandomParams()
-LALUniformDeviate()             LALConvertSkyCoordinates()
-LALNormalizeSkyPosition()
-\endcode
-
-\heading{Notes}
-
-\name Error Codes */ /**@{*/
+*/
+/** \name Error Codes */
+/*@{*/
 #define SKYCOORDINATESTESTC_ENORM 0	/**< Normal exit */
 #define SKYCOORDINATESTESTC_ESUB  1	/**< Subroutine failed */
 #define SKYCOORDINATESTESTC_EARG  2	/**< Error parsing arguments */

@@ -1,4 +1,5 @@
-AC_INIT([lalsuite],[6.6.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_PREREQ([2.63])
+AC_INIT([lalsuite],[6.9.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -8,7 +9,7 @@ AC_CONFIG_FILES([
   doxygen/Makefile \
   doxygen/src/Makefile
 ])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 

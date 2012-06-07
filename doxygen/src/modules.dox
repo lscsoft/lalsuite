@@ -1,98 +1,76 @@
-// -*- mode: html -*-
+// -*- mode: c -*-
 
 /* use this file for global structuring, i.e. for defining
- * the global classes of "packages"
+ * the global 'chapters' and 'packages'
  */
 
+/**
+\defgroup ch_std	LAL Standard Package
+   @{
+   \defgroup pkg_std		Package 'std'
+   @}
 
-/*----- top level chapters ----- */
-/** \defgroup standard LAL Standard Packages */
+\defgroup ch_gen	General Packages
+   @{
+   \defgroup pkg_date		Package 'date'
+   \defgroup pkg_factories	Package 'factories'
+   \defgroup pkg_tools		Package 'tools'
+   \defgroup pkg_vectorops	Package 'vectorops'
+   @}
 
-/** \defgroup general General Packages */
+\defgroup ch_genMath	General Mathematical and Signal Analysis Packages
+   @{
+   \defgroup pkg_clremoval	Package 'clremoval'
+   \defgroup pkg_fft		Package 'fft'
+   \defgroup pkg_stats		Package 'stats'
+   \defgroup pkg_tdfilter	Package 'tdfilter'
+   \defgroup pkg_utilities	Package 'utilities'
+   \defgroup pkg_window		Package 'window'
+   @}
 
-/** \defgroup genMath General Mathematical and Signal Analysis Packages */
-/** @{
-   \defgroup fft fft
-   \defgroup stats stats
-   \defgroup tdfilter tdfilter
-   \defgroup utilities utilities
-   \defgroup window window
-@} */
+\defgroup ch_coreDA	Core Data Analysis Packages
+   @{
+   \defgroup pkg_inject		Package 'inject'
+   @}
 
-/** \defgroup coreDA Core Data Analysis Packages  */
+\defgroup ch_burst	Burst Packages
+   @{
+   \defgroup pkg_burstsearch	Package 'burstsearch'
+   \defgroup pkg_tracksearch	Package 'tracksearch'
+   \defgroup pkg_TFR		Package 'TFR'
+   \defgroup pkg_ring		Package 'ring'
+   @}
 
-/** \defgroup burst Burst Packages  */
+\defgroup ch_inspiral	Inspiral Packages
+   @{
+   \defgroup pkg_bank		Package 'bank'
+   \defgroup pkg_findchirp	Package 'findchirp'
+   \defgroup pkg_inspiral	Package 'inspiral'
+   \defgroup pkg_noisemodels	Package 'noisemodels'
+   @}
 
-/** \defgroup inspiral Inspiral Packages */
+\defgroup ch_pulsar	Pulsar Packages
+   @{
+   \defgroup pkg_houghpulsar	Package 'houghpulsar': The Hough transform
+   \defgroup pkg_pulsarCommon	Package 'pulsar': common routines
+   \defgroup pkg_pulsarFold	Package 'pulsar': amplitude folding routines
+   \defgroup pkg_pulsarCoh	Package 'pulsar': Coherent search routines
+   \defgroup pkg_pulsarKnown	Package 'pulsar': known pulsar time-domain search routines
+   @}
 
-/** \defgroup pulsar Pulsar Packages */
+\defgroup ch_stoch	Stochastic Packages
+   @{
+   \defgroup pkg_stochastic	Package 'stochastic'
+   @}
 
-/** \defgroup stochastic Stochastic Packages */
+\defgroup ch_support	LAL Support Interface
+   @{
+   \defgroup pkg_support	Package 'support'
+   @}
 
-/** \defgroup support LAL Support Interface */
-
-/** \defgroup lalmetaio LAL Metaio (optional) */
-
-/** \defgroup lalframe LAL Framedata Interface (optional) */
-
-/** \defgroup LALInference LAL Bayesian Inference */
-
-
-/***************************************************************/
-/* the original sectioning from lsd.tex is given here:
-\part{LAL Standard Package}
-\include{std}
-\include{sample}
-
-\part{General Packages}
-\include{date}
-%\include{hello}
-\include{factories}
-\include{tools}
-\include{vectorops}
-
-\part{General Mathematical and Signal Analysis Packages}
-\include{clremoval}
-\include{fft}
-\include{stats}
-\include{tdfilter}
-%\include{timefreq}
-\include{utilities}
-\include{window}
-
-\part{Core Data Analysis Packages}
-\include{inject}
-
-\part{Burst Packages}
-\include{block}
-\include{burstsearch}
-\include{ring}
-\include{slopefilters}
-\include{tfclusters}
-%\include{tracksearch}
-\include{waveburst}
-
-\part{Inspiral Packages}
-\include{bank}
-\include{fct}
-\include{findchirp}
-\include{inspiral}
-\include{noisemodels}
-
-\part{Pulsar Packages}
-\include{houghpulsar}
-\include{pulsar}
-
-\part{Stochastic Packages}
-\include{stochastic}
-
-\part{LAL Support Interface}
-\include{support}
-
-\part{LAL Framedata Interface (optional)}
-\include{framedata}
-
-\part{LAL MPI Interface (optional)}
-\include{comm}
+\defgroup ch_lalframe	LAL Framedata Interface (optional)
+   @{
+   \defgroup pkg_framedata	Package 'framedata'
+   @}
 
 */

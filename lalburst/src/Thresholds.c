@@ -40,8 +40,6 @@
  * Gamma(n/2), where n = dof = number of degrees of freedom.  note chi2 = 2
  * * cal E, calE = variable used in paper.
  */
-
-
 REAL8 XLALChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
@@ -74,8 +72,6 @@ REAL8 XLALChisqCdf(
  * e^(-x) / Gamma(n/2)\f$, where n = dof = number of degrees of freedom.  note
  * chi2 = 2 * cal E, calE = variable used in paper.
  */
-
-
 REAL8 XLALOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
@@ -101,8 +97,6 @@ REAL8 XLALOneMinusChisqCdf(
  * This function returns the natural logarithm of the result returned by
  * XLALOneMinusChisqCdf(), i.e. ln(Q(chi^2, dof))
  */
-
-
 REAL8 XLALlnOneMinusChisqCdf(
 	REAL8 chi2,
 	REAL8 dof
@@ -177,8 +171,6 @@ static REAL8 Factorial(INT4 n)
  * We use the series formula to evaluate the probability.  Each term in the
  * series involves a call to XLALChisqCdf().
  */
-
-
 REAL8 XLALNoncChisqCdf(
 	REAL8 chi2,
 	REAL8 dof,
@@ -224,8 +216,6 @@ REAL8 XLALNoncChisqCdf(
  *
  * 	falseAlarm = 1 - chisqCdf(chi2,dof)
  */
-
-
 REAL8 XLALChi2Threshold(
 	REAL8 dof,
 	REAL8 falseAlarm
@@ -272,8 +262,6 @@ static REAL8 NoncChisqCdf(REAL8 lnrho, void *data)
  *
  * note that rho^2 is the same as nonCentral.
  */
-
-
 REAL8 XLALRhoThreshold(
 	REAL8 chi2,
 	REAL8 dof,

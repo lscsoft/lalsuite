@@ -17,48 +17,27 @@
 *  MA  02111-1307  USA
 */
 
-/***************************** <lalVerbatim file="DestroyIIRFilterCV">
-Author: Creighton, T. D.
-**************************************************** </lalVerbatim> */
-
-/********************************************************** <lalLaTeX>
-
-\subsection{Module \texttt{DestroyIIRFilter.c}}
-\label{ss:DestroyIIRFilter.c}
-
-Destroys IIR filter objects.
-
-\subsubsection*{Prototypes}
-\vspace{0.1in}
-\input{DestroyIIRFilterCP}
-\idx{LALDestroyREAL4IIRFilter()}
-\idx{LALDestroyREAL8IIRFilter()}
-
-\subsubsection*{Description}
-
-These functions destroy an object \verb@**input@ of type
-\texttt{REAL4IIRFilter} or \texttt{REAL8IIRFilter}, and set
-\verb@*input@ to \verb@NULL@.
-
-\subsubsection*{Algorithm}
-
-\subsubsection*{Uses}
-\begin{verbatim}
-void LALFree()
-void LALSDestroyVector()
-void LALDDestroyVector()
-\end{verbatim}
-
-\subsubsection*{Notes}
-
-\vfill{\footnotesize\input{DestroyIIRFilterCV}}
-
-******************************************************* </lalLaTeX> */
-
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/IIRFilter.h>
 
+
+/**
+   \addtogroup DestroyIIRFilter_c
+   \author Creighton, T. D.
+
+   \brief Destroys IIR filter objects.
+
+   \heading{Description}
+
+   These functions destroy an object <tt>**input</tt> of type
+   \c REAL4IIRFilter or \c REAL8IIRFilter, and set
+   <tt>*input</tt> to \c NULL.
+
+*/
+/*@{*/
+
+/** \see See \ref DestroyIIRFilter_c for documentation */
 void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter )
 {
   if ( filter )
@@ -71,6 +50,7 @@ void XLALDestroyREAL4IIRFilter( REAL4IIRFilter *filter )
   return;
 }
 
+/** \see See \ref DestroyIIRFilter_c for documentation */
 void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter )
 {
   if ( filter )
@@ -83,11 +63,12 @@ void XLALDestroyREAL8IIRFilter( REAL8IIRFilter *filter )
   return;
 }
 
-/* <lalVerbatim file="DestroyIIRFilterCP"> */
+/** Deprecated.
+ * \deprecated Use XLALDestroyREAL4IIRFilter() instead */
 void
 LALDestroyREAL4IIRFilter( LALStatus      *stat,
 			  REAL4IIRFilter **input )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
@@ -105,11 +86,12 @@ LALDestroyREAL4IIRFilter( LALStatus      *stat,
 }
 
 
-/* <lalVerbatim file="DestroyIIRFilterCP"> */
+/** Deprecated.
+ * \deprecated Use XLALDestroyREAL8IIRFilter() instead */
 void
 LALDestroyREAL8IIRFilter( LALStatus      *stat,
 			  REAL8IIRFilter **input )
-{ /* </lalVerbatim> */
+{
   INITSTATUS(stat);
 
   /* Make sure handle is non-null, and points to a non-null pointer.
@@ -124,3 +106,5 @@ LALDestroyREAL8IIRFilter( LALStatus      *stat,
   /* Normal exit */
   RETURN(stat);
 }
+
+/*@}*/

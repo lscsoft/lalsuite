@@ -187,7 +187,7 @@ tagBinaryPulsarParams
   REAL8 r;      /**< parameter for pinsf model.**/
   REAL8 lambda; /**< this is a longitude like angle between pinning axis and
                      line of sight */
-  REAL8 theta;  /**< angle between rotation axis and pinning axis */
+  REAL8 costheta;  /**< angle between rotation axis and pinning axis */
   
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -254,7 +254,7 @@ tagBinaryPulsarParams
   REAL8 I31Err;
   REAL8 rErr;
   REAL8 lambdaErr;
-  REAL8 thetaErr;
+  REAL8 costhetaErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */
@@ -299,30 +299,27 @@ LALReadTEMPOParFile( LALStatus              *status,
                      CHAR                  *pulsarAndPath );
 
 /** \brief This function will read in a TEMPO-style parameter correlation matrix
- * 
+ *
  * This function will read in a TEMPO-style parameter correlation matrix file,
  * which contains the correlations between parameters as fit by TEMPO. An
  * example the format would be:
 \verbatim
      RA     DEC    F0
-RA   1.000  
+RA   1.000
 DEC  0.954  1.000
 F0   -0.007 0.124  1.000
 \endverbatim
- * 
+ *
  * In the output all parameter names will sometimes be
  * converted to a more convenient naming convention. If non-diagonal parameter
  * correlation values are +/-1 then they will be converted to be +/-0.99999 to
  * avoid some problems of the matrix becoming singular. The output matrix will
  * have both the upper and lower triangle completed.
- * 
- * \param cormat [out] A REAL8 array into which the correlation matrix will be
- * output
- * \param params [out] A vector of strings containing the parameter names of
- * those within the correlation matrix in the order that they are present
+ *
+ * \param cormat [out] A REAL8 array into which the correlation matrix will be output
  * \param corfile [in] A string containing the path and filename of the
- * TEMPO-style correlation matrix file
- */ 
+ * 			TEMPO-style correlation matrix file
+ */
 LALStringVector *XLALReadTEMPOCorFile( REAL8Array *cormat, CHAR *corfile );
 
 /** A function to convert RA and Dec in format dd:mm:ss.ss or ddmmss.ss into the

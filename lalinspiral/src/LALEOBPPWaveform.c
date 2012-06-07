@@ -976,8 +976,17 @@ XLALHighSRStoppingCondition(double UNUSED t,
                           )
 {
   EOBParams *params = (EOBParams *)funcParams;
+  REAL8 rstop;
+  if ( params->eta > 0.1 )
+  {
+    rstop = 1.25 - params->eta;
+  }
+  else
+  {
+    rstop = 2.1 - 10.0 * params->eta;
+  }
 
-  if ( values[0] <= 2.5 - 6.0 * params->eta || isnan(dvalues[3]) || isnan(dvalues[2]) || isnan(dvalues[1]) || isnan(dvalues[0]) )
+  if ( values[0] <= rstop || isnan(dvalues[3]) || isnan(dvalues[2]) || isnan(dvalues[1]) || isnan(dvalues[0]) )
   {
     return 1;
   }
@@ -1141,6 +1150,8 @@ XLALEOBPPWaveform(
     InspiralTemplate *params
     )
 {
+   XLALPrintDeprecationWarning( "lalinspiral/XLALEOBPPWaveform", "lalsimulation/XLALSimIMREOBNRv2AllModes or lalsimulation/XLALSimIMREOBNRv2DominantMode" );
+   XLALPrintWarning( "WARNING: The lalinspiral version of EOBNRv2 and EOBNRv2HM are not reviewed or maintained and will be removed in the future. The lalsimulation versions of these waveforms should be used.\n" );
 
    UINT4 count;
    InspiralInit paramsInit;
@@ -1380,7 +1391,7 @@ XLALEOBPPWaveformForInjection (
   }
 #endif
 
-  params->ampOrder = 0;
+  params->ampOrder = (LALPNOrder) 0;
   XLALPrintWarning( "WARNING: Amp Order has been reset to %d\n", params->ampOrder);
 
   /* Compute some parameters*/

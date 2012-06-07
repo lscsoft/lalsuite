@@ -1,11 +1,44 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 33
+# serial 37
+
+AC_DEFUN([LALSUITE_REQUIRE_CXX],[
+  # require a C++ compiler
+  lalsuite_require_cxx=true
+])
+
+# because we want to decide whether to run AC_PROG_CXX/AC_PROG_CXXCPP
+# at ./configure run time, we must erase the following macros, which
+# (in autoconf 2.64 and later) require AC_PROG_CXX/AC_PROG_CXXCPP to
+# be AC_REQUIRE'd at ./configure build time, regardless of whether
+# they're needed or not (which is only decided later at run time).
+m4_defun([AC_LANG_COMPILER(C++)],[])
+m4_defun([AC_LANG_PREPROC(C++)],[])
+
+AC_DEFUN([LALSUITE_PROG_CC_CXX],[
+  # check for C99 compiler
+  AC_REQUIRE([AC_PROG_CC])
+  AC_REQUIRE([AC_PROG_CC_C99])
+  AC_REQUIRE([AC_PROG_CPP])
+  # check for C++ compiler, if needed
+  AS_IF([test "${lalsuite_require_cxx}" = true],[
+    AC_PROG_CXX
+    AC_PROG_CXXCPP
+  ],[
+    CXX=
+    CXXCPP=
+    AM_CONDITIONAL([am__fastdepCXX],[test 1 == 0])
+  ])
+  # check complex numbers
+  LALSUITE_CHECK_C99_COMPLEX_NUMBERS
+  AS_IF([test "${lalsuite_require_cxx}" = true],[
+    LALSUITE_CHECK_CXX_COMPLEX_NUMBERS
+  ])
+])
 
 AC_DEFUN([LALSUITE_USE_LIBTOOL],
 [## $0: Generate a libtool script for use in configure tests
-AC_PROVIDE_IFELSE([LT_INIT], ,
-                  [m4_fatal([$0: requires libtool])])[]dnl
+AC_REQUIRE([LT_INIT])
 LT_OUTPUT
 m4_append([AC_LANG(C)],
 [ac_link="./libtool --mode=link --tag=CC $ac_link"
@@ -355,7 +388,8 @@ AC_DEFUN([LALSUITE_ENABLE_BOINC],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-boinc);;
     esac
   ], [ boinc=false ] )
-AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
+  AS_IF([test "${boinc}" = true],[LALSUITE_REQUIRE_CXX])
+  AC_ARG_VAR([BOINC_PREFIX],[BOINC installation directory (optional)])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_BOINC],
@@ -376,42 +410,42 @@ AC_MSG_RESULT([unknown])
 [boinc=false])
 ])
 
-AC_DEFUN([LALSUITE_WITH_CUDA],
-[AC_ARG_WITH(
+AC_DEFUN([LALSUITE_WITH_CUDA],[
+AC_ARG_WITH(
   [cuda],
-  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
-  [ case "$with_cuda" in
-    no)
-      cuda=false
-      ;;
-    yes)
-      AC_MSG_WARN([No path for CUDA specifed, using /opt/cuda])
-      cuda=true
-      AS_CASE([$build_os],
-          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
-          [CLIBS="lib"])
-      CUDA_LIBS="-L/opt/cuda/$CLIBS -lcufft -lcudart"
-      CUDA_CFLAGS="-I/opt/cuda/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
-      ;;
-    *)
-      AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
-      cuda=true
-      AS_CASE([$build_os],
-          [linux*],[AS_IF([test "x$build_cpu" = "xx86_64"],[CLIBS="lib64"],[CLIBS="lib"])],
-          [CLIBS="lib"])
-      CUDA_LIBS="-L${with_cuda}/$CLIBS -lcufft -lcudart"
-      CUDA_CFLAGS="-I${with_cuda}/include"
-      LIBS="$LIBS $CUDA_LIBS"
-      CFLAGS="$CFLAGS $CUDA_CFLAGS"
-      AC_SUBST(CUDA_LIBS)
-      AC_SUBST(CUDA_CFLAGS)
-      ;;
-    esac
-  ], [ cuda=false ])
+  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),[
+    AS_CASE([${with_cuda}],
+      [no],[cuda=false],
+      [yes],[cuda=true; cuda_path=/opt/cuda],
+      [cuda=true; cuda_path=${with_cuda}]
+    )
+  ],[
+    cuda=false
+  ])
+  AS_IF([test "${cuda}" = true],[
+    LALSUITE_REQUIRE_CXX
+    AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
+    AS_CASE([$build_os],
+      [linux*],[
+        AS_IF([test "x$build_cpu" = "xx86_64"],[
+          cuda_libdir=lib64
+        ],[
+          cuda_libdir=lib
+        ])
+      ],
+      [cuda_libdir=lib]
+    )
+    CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
+    CUDA_CPPFLAGS="-I${with_cuda}/include"
+    LIBS="$LIBS $CUDA_LIBS"
+    CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
+    AC_SUBST(CUDA_LIBS)
+    AC_SUBST(CUDA_CPPFLAGS)
+    AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
+    AS_IF([test "x${NVCC}" = x],[
+      AC_MSG_ERROR([could not find 'nvcc' in path])
+    ])
+  ])
   LALSUITE_ENABLE_MODULE([CUDA],[cuda])
 ])
 
@@ -459,7 +493,7 @@ if test "x${osx_version_check}" = "xtrue"; then
       10.0*|10.1*|10.2*|10.3*)
         AC_MSG_ERROR([This version of Mac OS X is not supported])
         ;;
-      10.4*|10.5*|10.6*|10.7*)
+      10.4*|10.5*|10.6*|10.7*|10.8*)
         # supported version
         ;;
       *)
@@ -590,14 +624,17 @@ int Function2($3 pz);
   ])
 ])
 
-AC_DEFUN([LALSUITE_CHECK_COMPLEX_NUMBER_TYPES],[
-  # check C99 complex number datatypes
+AC_DEFUN([LALSUITE_CHECK_C99_COMPLEX_NUMBERS],[
+  # check C99 complex numbers
   AC_LANG_PUSH([C])
   AC_CHECK_HEADERS([complex.h],[],[AC_MSG_ERROR([could not find 'complex.h'])])
   LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex.h],[float],[float complex],[crealf],[cimagf])
   LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex.h],[double],[double complex],[creal],[cimag])
   AC_LANG_POP([C])
-  # check C++ complex number datatypes
+])
+
+AC_DEFUN([LALSUITE_CHECK_CXX_COMPLEX_NUMBERS],[
+  # check C++ complex numbers
   AC_LANG_PUSH([C++])
   AC_CHECK_HEADERS([complex],[],[AC_MSG_ERROR([could not find 'complex'])])
   LALSUITE_CHECK_COMPLEX_NUMBER_MEMORY_LAYOUT([complex],[float],[std::complex<float>],[real],[imag])

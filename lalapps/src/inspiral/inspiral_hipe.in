@@ -121,7 +121,8 @@ def generate_segments(ifo1_data, ifo2_data, ifo3_data, ifo4_data):
 ##############################################################################
 # function to set up datafind, template bank and inspiral jobs for an ifo  
 def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
-  prev_df,dag, exttrigInjections, usertag=None, inspinjNode = None):
+  prev_df,dag, exttrigInjections, usertag=None, inspinjNode = None,
+  insp_ckpt_job = None):
   """
   Analyze the data from a single IFO.  Since the way we treat all this data is
   the same, this function is the same for all interferometers. Returns the last
@@ -278,15 +279,50 @@ def analyze_ifo(ifo_name,ifo_data,ifo_to_do,tmplt_job,insp_job,df_job,\
                 insp.set_bank(GeoBank)
              else:
                 insp.set_bank(bank.get_output())
-             # XXX: ensure output is added to list of output files
-             output = insp.get_output()
              if opts.datafind: insp.add_parent(df)
              if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode) 
              if (opts.template_bank and not GeoBank): insp.add_parent(bank)
              if opts.inspiral: dag.add_node(insp)
 
-             # store this chunk in the list of filtered data
-             chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))         
+             # make an inspiral checkpoint restore job
+             if opts.data_checkpoint:  
+               insp_job.set_universe("vanilla")
+               insp.set_data_checkpoint()
+               insp.set_post_script(cp.get('condor','checkpoint-post-script'))
+               insp.add_post_script_arg(os.path.join(os.getcwd(),insp.get_checkpoint_image()))
+               insp_ckpt = inspiral.InspiralCkptNode(insp_ckpt_job)
+               insp_ckpt.set_output(insp.get_output())
+               insp_ckpt.set_injections(insp.get_injections())
+               insp_ckpt.set_checkpoint_image(insp.get_checkpoint_image())
+
+               if cp.has_option('pipeline','remote-site'):
+                 # additional requirements to launch jon on remote pool
+                 insp_ckpt_job.set_universe("grid")
+                 insp_ckpt.set_grid_start("pegasuslite")
+                 insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','remote-site'))
+                 insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_requirements","True")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
+                 insp_ckpt.add_pegasus_profile("condor","+remote_TransferInputFiles",'"' + insp.get_checkpoint_image() + '"')
+                 insp_ckpt.add_pegasus_profile("condor","+remote_PeriodicRelease",'( JobStatus == 5 && HoldReasonCode == 13 && NumSystemHolds < 3 )')
+               else:
+                 insp_ckpt_job.set_universe("vanilla")
+
+               insp_ckpt.add_parent(insp)
+               if opts.inspiral: dag.add_node(insp_ckpt)
+
+               # ensure output is added to list of output files
+               output = insp_ckpt.get_output()
+
+               # store this chunk in the list of filtered data
+               chunks_analyzed.append(AnalyzedIFOData(chunk,insp_ckpt,inj))
+             else:
+               # ensure output is added to list of output files
+               output = insp.get_output()
+
+               # store this chunk in the list of filtered data
+               chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
 
   return tuple([prev_df,chunks_analyzed])
 
@@ -419,7 +455,7 @@ def thinca_coinc(ifos,single_data_analyzed,coinc_segs,coinc_job,
 # function to set up trigbank and inspiral jobs for an ifo  
 def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
                   insp_veto_job,dag, exttrigInjections, usertag=None,\
-                  inspinjNode=None):
+                  inspinjNode=None,insp_ckpt_job=None):
 
   """
   Perform the trigbank and second inspiral steps for the single ifo data.  
@@ -533,15 +569,51 @@ def trig_inspiral(ifo_data,ifo_name,coinc_data,coinc_ifos,trig_job,\
               else: insp.set_cache(cp.get('datafind',ifo_name+'-cache')) 
               if not calibrated: insp.calibration()
               insp.set_bank(trigbank.get_output())
-              # XXX: ensure output is added to list of output files
-              output = insp.get_output()
               if opts.datafind: insp.add_parent(seg.get_df_node())
               if opts.trigbank: insp.add_parent(trigbank)
               if inspinjNode and opts.inspinj: insp.add_parent(inspinjNode)
               if opts.inspiral_veto: dag.add_node(insp)
 
-              # store this chunk in the list of filtered data
-              trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
+              # make an inspiral checkpoint restore job
+              if opts.data_checkpoint:  
+                insp_veto_job.set_universe("vanilla")
+                insp.set_data_checkpoint()
+                insp.set_post_script(cp.get('condor','checkpoint-post-script'))
+                insp.add_post_script_arg(os.path.join(os.getcwd(),insp.get_checkpoint_image()))
+                insp_ckpt = inspiral.InspiralCkptNode(insp_ckpt_job)
+                insp_ckpt.set_output(insp.get_output())
+                insp_ckpt.set_injections(insp.get_injections())
+                insp_ckpt.set_checkpoint_image(insp.get_checkpoint_image())
+
+                if cp.has_option('pipeline','remote-site'):
+                  # additional requirements to launch jon on remote pool
+                  insp_ckpt_job.set_universe("grid")
+                  insp_ckpt.set_grid_start("pegasuslite")
+                  insp_ckpt.add_pegasus_profile("condor","grid_resource","condor %s" % cp.get('pipeline','remote-site'))
+                  insp_ckpt.add_pegasus_profile("condor","transfer_executable","True")
+                  insp_ckpt.add_pegasus_profile("condor","+remote_jobuniverse","5")
+                  insp_ckpt.add_pegasus_profile("condor","+remote_requirements","True")
+                  insp_ckpt.add_pegasus_profile("condor","+remote_ShouldTransferFiles","True")
+                  insp_ckpt.add_pegasus_profile("condor","+remote_WhenToTransferOutput","ON_EXIT")
+                  insp_ckpt.add_pegasus_profile("condor","+remote_TransferInputFiles",'"' + insp.get_checkpoint_image() + '"')
+                  insp_ckpt.add_pegasus_profile("condor","+remote_PeriodicRelease",'( JobStatus == 5 && HoldReasonCode == 13 && NumSystemHolds < 3 )')
+                else:
+                  insp_ckpt_job.set_universe("vanilla")
+
+                insp_ckpt.add_parent(insp)
+                if opts.inspiral_veto: dag.add_node(insp_ckpt)
+
+                # ensure output is added to list of output files
+                output = insp_ckpt.get_output()
+
+                # store this chunk in the list of filtered data (ckpt version)
+                trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp_ckpt,inj))
+              else:
+                # ensure output is added to list of output files
+                output = insp.get_output()
+
+                # store this chunk in the list of filtered data (ckpt version)
+                trig_chunks_analyzed.append(AnalyzedIFOData(chunk,insp,inj))
 
             # jobs already set up, just add the var_arg and parent to trigbank
             trigbank.add_file_arg(coinc_done.get_dag_node().get_output())
@@ -676,7 +748,7 @@ def follow_up(ifo_data,ifo_name,coinc_data,coinc_ifos,tmplt_follow_job,\
             if opts.td_follow_bank: insp.add_parent(bank)
             if opts.td_follow_inspiral: dag.add_node(insp)
 
-            # store this chunk in the list of filtered data
+            # store this chunk in the list of filtered data -- old version
             follow_chunks_analyzed.append(AnalyzedIFOData(chunk,insp))
 
             # jobs already set up, just add the var_arg and parent to trigbank
@@ -1422,6 +1494,9 @@ parser.add_option("--summary-first-coinc-triggers", action='store_true', default
     help="coire (first coincidence) files containing triggers from the whole run. "
     "Use with care, as files can become very large.")
 
+parser.add_option("--data-checkpoint", action="store_true", default=False,\
+    help="checkpoint the inspiral code")
+
 command_line = sys.argv[1:]
 (opts,args) = parser.parse_args()
 
@@ -1639,6 +1714,12 @@ if usertag:
 else:
   subsuffix = '.sub'
 
+# set the worker package if neccesssary
+try:
+  dag.set_pegasus_worker(cp.get('pipeline','pegasus-worker'))
+except:
+  pass
+
 ##############################################################################
 # create the Condor jobs that will be used in the DAG
 
@@ -1706,6 +1787,11 @@ for ifo in ifo_list:
   else:
     insp_jobs[ifo] = inspiral.InspiralJob(cp,opts.dax)
   insp_jobs[ifo].set_sub_file( basename + '.inspiral_' + ifo + subsuffix )
+
+# create inspiral checkpoint job
+insp_ckpt_job = inspiral.InspiralCkptJob(cp,opts.dax)
+if cp.has_option('pipeline','remote-site'):
+  insp_ckpt_job.set_executable_installed(False)
 
 # single_inca:
 single_inca_job = inspiral.IncaJob(cp)
@@ -1878,7 +1964,7 @@ cohire_slide_summary_job.set_sub_file( basename + '.cohire_slide_summary' +
 all_jobs = [inspinj_job, single_inca_job, trig_job, cb_job, sire_job, 
   sire_summary_job, coire_job, coire_slide_job, coire_summary_job,
   coire_slide_summary_job, coire2_job, coire2_slide_job, coire2_summary_job, 
-  coire2_slide_summary_job, cohinspbank_job, cohire_job, cohire_summary_job]
+  coire2_slide_summary_job, cohinspbank_job, cohire_job, cohire_summary_job ]
 all_jobs.extend(tmplt_jobs.values())
 all_jobs.extend(insp_jobs.values())
 all_jobs.extend(thinca_jobs.values())
@@ -1899,6 +1985,7 @@ if usertag:
       job.add_opt('user-tag',usertag)
 
 all_jobs.append(df_job)
+all_jobs.append(insp_ckpt_job)
 #all_jobs.append(frjoin_job)
 
 ##############################################################################
@@ -2212,7 +2299,7 @@ for ifo in ifo_list:
 
   (prev_df,chunks_analyzed[ifo]) = analyze_ifo(ifo,data[ifo],data_to_do[ifo],  
       tmplt_jobs[ifo],insp_jobs[ifo],df_job,prev_df,dag,exttrigInjections,
-      usertag,inspinj)
+      usertag,inspinj,insp_ckpt_job)
 
   # Step 4S: Run sire on the single ifo triggers
   sire_nodes = sire_segments_individually(chunks_analyzed[ifo], sire_job, 
@@ -2367,7 +2454,8 @@ for ifos in ifo_coincs:
       else:
         analyzed_coinc_data[ifos][ifo] = trig_inspiral(data[ifo],ifo,
             coinc_nodes[ifos],ifos,trig_job,insp_veto_jobs[ifo],dag,
-            exttrigInjections,usertag,inspinjNode=inspinj)
+            exttrigInjections,usertag,inspinjNode=inspinj,
+            insp_ckpt_job=insp_ckpt_job)
       
         sire_segments_individually(analyzed_coinc_data[ifos][ifo], sire_job, 
               dag, opts.sire_inspiral_veto, opts.inspiral_veto, ifo, 

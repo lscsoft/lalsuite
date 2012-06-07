@@ -66,18 +66,10 @@ geographic coordinates.  Other than this, error checking is left to
 the secondary function call; if a parameter is absent or poorly
 formatted, the called function will return an error.
 
-\heading{Uses}
-\code
-LALHorizonToSystem()            LALSystemToHorizon()
-LALGeographicToEquatorial()     LALEquatorialToGeographic()
-LALEquatorialToEcliptic()       LALEclipticToEquatorial()
-LALEquatorialToGalactic()       LALGalacticToEquatorial()
-\endcode
-
 */
-/** @{ */
+/*@{*/
 
-/** See documentation in \ref SkyCoordinates_c */
+/** \see See documentation in \ref SkyCoordinates_c */
 void
 LALConvertSkyCoordinates( LALStatus        *stat,
 			  SkyPosition      *output,
@@ -256,4 +248,5 @@ XLALNormalizeSkyPosition ( SkyPosition *posInOut ) /**< [in,out] sky-position to
   return 0;
 
 } /* XLALNormalizeSkyPosition() */
-/** @} */
+
+/*@}*/

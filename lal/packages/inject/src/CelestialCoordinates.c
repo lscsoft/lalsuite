@@ -150,9 +150,9 @@ which varies over time; at epoch J200 it has a mean value of:
 \f]
 
 */
-/** @{ */
+/*@{*/
 
-/** See documentation in  \ref CelestialCoordinates_c */
+/** \see See documentation in  \ref CelestialCoordinates_c */
 void
 LALGalacticToEquatorial( LALStatus   *stat,
 			 SkyPosition *output,
@@ -200,7 +200,7 @@ LALGalacticToEquatorial( LALStatus   *stat,
   RETURN( stat );
 }
 
-/** See documentation in  \ref CelestialCoordinates_c */
+/** \see See documentation in  \ref CelestialCoordinates_c */
 void
 LALEquatorialToGalactic( LALStatus   *stat,
 			 SkyPosition *output,
@@ -248,7 +248,7 @@ LALEquatorialToGalactic( LALStatus   *stat,
   RETURN( stat );
 }
 
-/** See documentation in  \ref CelestialCoordinates_c */
+/** \see See documentation in  \ref CelestialCoordinates_c */
 void
 LALEclipticToEquatorial( LALStatus   *stat,
 			 SkyPosition *output,
@@ -293,7 +293,7 @@ LALEclipticToEquatorial( LALStatus   *stat,
   RETURN( stat );
 }
 
-/** See documentation in  \ref CelestialCoordinates_c */
+/** \see See documentation in  \ref CelestialCoordinates_c */
 void
 LALEquatorialToEcliptic( LALStatus   *stat,
 			 SkyPosition *output,
@@ -337,4 +337,4 @@ LALEquatorialToEcliptic( LALStatus   *stat,
 
   RETURN( stat );
 }
-/** @} */
+/*@}*/

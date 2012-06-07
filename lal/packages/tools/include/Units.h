@@ -17,24 +17,37 @@
 *  MA  02111-1307  USA
 */
 
-/**
-\author J. T. Whelan <john.whelan@ligo.org>
-\addtogroup Units_h
+#ifndef _UNITS_H
+#define _UNITS_H
 
-\brief Provides prototypes for manipulation of units and declares
-\c extern constants for the basic and derived SI units.
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
 
-\heading{Synopsis}
-\code
-#include <lal/Units.h>
-\endcode
+#include <lal/LALStdlib.h>
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+/** \addtogroup Units_h
+    \author J. T. Whelan <john.whelan@ligo.org>
+
+    \brief Provides prototypes for manipulation of units and declares
+    \c extern constants for the basic and derived SI units.
+
+    \heading{Synopsis}
+    \code
+    #include <lal/Units.h>
+    \endcode
 
 This header provides prototypes for functions to manipulate
 the \c LALUnit structure.  It also defines \c extern
 constants for a set of predefined units, which are designed to make
 the structure easier to use.  For instance, to determine whether a
 quantity has units of strain per root hertz, one constructs the unit
-"strain per root hertz" from the predefined \c lalStrainUnit and
+&quot;strain per root hertz&quot; from the predefined \c lalStrainUnit and
 \c lalHertzUnit constant structures using the
 LALUnitRaise() and LALUnitMultiply() functions, then
 compares that to the unit structure in question using the
@@ -46,26 +59,7 @@ power of ten multiplier along with rational powers of the basic SI
 units (meters, kilograms, seconds, Amperes, and Kelvins) and two
 custom units (strain and ADC counts).
 
-@{
-\defgroup UnitDefs_c Module UnitDefs.c
-\defgroup UnitNormalize_c Module UnitNormalize.c
-\defgroup UnitRaise_c Module UnitRaise.c
-\defgroup UnitMultiply_c Module UnitMultiply.c
-\defgroup UnitCompare_c Module UnitCompare.c
-\defgroup UnitXLALFunctions XLAL Functions
-@}
-*/
-
-/**
-\addtogroup UnitXLALFunctions
-\brief XLAL interface to Unit.h functions
-
-\heading{Synopsis}
-\code
-#include <lal/Units.h>
-\endcode
-
-\heading{Description}
+\heading{XLAL interface to Units.h functions}
 
 XLALUnitAsString() converts a ::LALUnit structure into a character
 string of maximum length \c length (including NUL termination)
@@ -112,7 +106,7 @@ if the input pointer is \c NULL, in which case \c xlalErrno
 is set to \c #XLAL_EFAULT
 
 XLALUnitCompare() returns 0 if the the normal form of the two unit
-structures are the same or > 0 if they are different.  It returns
+structures are the same or \> 0 if they are different.  It returns
 \c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
 one of the input pointers is \c NULL.
 
@@ -124,26 +118,19 @@ a failure, \c ::xlalErrno is set to one of the following values:
 \c #XLAL_ERANGE if one of the unit powers exceeds the allowed range,
 or \c #XLAL_EINVAL (for the raise functions only) if the unit power
 would not be an integer.
+
+@{
+\defgroup UnitDefs_c 		Module UnitDefs.c
+\defgroup UnitNormalize_c 	Module UnitNormalize.c
+\defgroup UnitRaise_c 		Module UnitRaise.c
+\defgroup UnitMultiply_c 	Module UnitMultiply.c
+\defgroup UnitCompare_c 	Module UnitCompare.c
+@}
 */
+/*@{*/
 
-#ifndef _UNITS_H
-#define _UNITS_H
-
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-#include <lal/LALStdlib.h>
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/** \ingroup Units_h
- * @{
- */
-/**\name Error Codes */ /*@{*/
+/** \name Error Codes */
+/*@{*/
 #define UNITSH_ENULLPIN         1	/**< Null pointer to input */
 #define UNITSH_ENULLPOUT        2	/**< Null pointer to output */
 #define UNITSH_ENULLPD          3	/**< Null pointer to data member of vector */
@@ -176,7 +163,20 @@ tagRAT4
   UINT2 denominatorMinusOne;	/**< One less than the denominator */
 } RAT4;
 
-/** @} */
+/** Consists of a pair of unit structures; used as an input structure for
+ * the LALUnitCompare() and LALUnitMultiply() functions.
+ */
+typedef struct
+tagLALUnitPair
+{
+  SWIGLAL_STRUCT(LALUnitPair);
+  const LALUnit   *unitOne;	/**< The first unit */
+  const LALUnit   *unitTwo;	/**< The second unit */
+}
+LALUnitPair;
+
+/*@}*/
+/* end: Units_h */
 
 /*********************************************************
  *                                                       *
@@ -184,12 +184,7 @@ tagRAT4
  *                                                       *
  *********************************************************/
 
-
 /* XLAL routines */
-
-/** \addtogroup UnitXLALFunctions
- * @{
- */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input );
 LALUnit * XLALParseUnitString( LALUnit *output, const char *string );
 int XLALUnitNormalize( LALUnit *unit );
@@ -208,68 +203,20 @@ LALUnit * XLALUnitInvert( LALUnit *output, const LALUnit *input );
 REAL8 XLALUnitPrefactor(const LALUnit *unit);
 int XLALUnitIsDimensionless(const LALUnit *unit);
 REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2);
-/** @} */
 
-
-/* LALUnitNormalize() will reduce the rational powers in the basic unit
- * exponents, e.g. converting 2/2 to 1/1 and 3/6 to 1/2.
- */
-void LALUnitNormalize (LALStatus *status, LALUnit *output,
-		       const LALUnit *input);
-
-/* Several functions take two Unit variables as input, so need the
- * following structure.
- */
-
-/* Consists of a pair of unit structures; used as an input structure for
- * the LALUnitCompare() and LALUnitMultiply() functions.
- */
-typedef struct
-tagLALUnitPair
-{
-  SWIGLAL_STRUCT(LALUnitPair);
-  const LALUnit   *unitOne;	/**< The first unit */
-  const LALUnit   *unitTwo;	/**< The second unit */
-}
-LALUnitPair;
-
-/* LALUnitMultiply will multiply together two Unit variables and
- * output their product; it will call LALUnitNormalize.
- */
-void LALUnitMultiply (LALStatus *status, LALUnit *output,
-		      const LALUnitPair *input);
-
-/* LALUnitCompare will compare two Unit variables and return true if
- * they are the equivalent (the same power of ten offset as well as
- * equivalent ratioanl powers of the base units).
- */
-void LALUnitCompare (LALStatus *status, BOOLEAN *output,
-		      const LALUnitPair *input);
-
-/* LALUnitRaise() will raise a unit structure to a rational power; the
- * most common choices will presumably be -1, 2, and 1/2.  An error
- * occurs if input->powerOfTen is not evenly divisible by the
- * denominator of the specified power
- */
-void LALUnitRaise (LALStatus *status, LALUnit *output,
-		   const LALUnit *input, const RAT4 *power);
-
-/** Converts a LALUnit structure into a human-readable text form.
- */
-void LALUnitAsString (LALStatus *status, CHARVector *output,
-		      const LALUnit *input);
-
-void
-LALParseUnitString ( LALStatus *status,
-		     LALUnit *output,
-		     const CHARVector *input );
-
+/* Obsolete LAL-interface functions */
+void LALUnitNormalize (LALStatus *status, LALUnit *output, const LALUnit *input);
+void LALUnitMultiply (LALStatus *status, LALUnit *output, const LALUnitPair *input);
+void LALUnitCompare (LALStatus *status, BOOLEAN *output, const LALUnitPair *input);
+void LALUnitRaise (LALStatus *status, LALUnit *output, const LALUnit *input, const RAT4 *power);
+void LALUnitAsString (LALStatus *status, CHARVector *output, const LALUnit *input);
+void LALParseUnitString ( LALStatus *status, LALUnit *output, const CHARVector *input );
 
 #ifndef SWIG /* exclude from SWIG interface */
 enum enumLALUnitNameSize {
   LALUnitNameSize = sizeof("strain")
 };
-enum enumLALUnitTextSize { 
+enum enumLALUnitTextSize {
   LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
                            "s^-32768/32767 A^-32768/32767 "
                            "K^-32768/32767 strain^-32768/32767 "
@@ -388,4 +335,3 @@ void LALU2TARescaleUnits (LALStatus *status, UINT2TimeArraySeries *output,
 #endif
 
 #endif /* _UNITS_H */
-

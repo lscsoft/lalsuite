@@ -18,12 +18,42 @@
  *  MA  02111-1307  USA
  */
 
+/* NOTES: */
+/* 07/14/04 gam; add functions LALFastGeneratePulsarSFTs and LALComputeSkyAndZeroPsiAMResponse */
+/* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
+/* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
+
+#ifndef _GENERATEPULSARSIGNAL_H  /* Double-include protection. */
+#define _GENERATEPULSARSIGNAL_H
+
+/* remove SWIG interface directives */
+#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
+#define SWIGLAL_STRUCT(...)
+#endif
+
+#include <lal/LALDatatypes.h>
+#include <lal/DetResponse.h>
+#include <lal/DetectorSite.h>
+#include <lal/GenerateSpinOrbitCW.h>
+#include <lal/Date.h>
+#include <lal/LALBarycenter.h>
+#include <lal/PulsarDataTypes.h>
+#include <lal/ComputeSky.h>
+#include <lal/ComputeSkyBinary.h>
+#include <lal/Window.h>
+
+/* C++ protection. */
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
 /**
- * \defgroup moduleGeneratePulsarSignal Pulsar-signal generation
- * \ingroup inject
+ * \addtogroup GeneratePulsarSignal_h
+ * \author Reinhard Prix, Greg Mendell
+ * \date 2005
+ *
  * \brief Pulsar signal-generation routines for hardware- and software-injections.
  *
-
  * \heading{Description}
  *
  * - The main function LALGeneratePulsarSignal() generates a fake
@@ -42,9 +72,9 @@
  * - Namely, LALConvertSSB2GPS() and LALConvertGPS2SSB()
  * which convert arrival times for a given source (not necessarily a
  * pulsar!) the detector ("GPS") and the solar-system barycenter ("SSB").
- * NOTE: only the source-location (<tt>params->pulsar.position</tt>), the
- * detector-site (<tt>params->site</tt>) and the ephemeris-data
- * (<tt>params->ephemerides</tt>)are used from the
+ * NOTE: only the source-location (<tt>params-\>pulsar.position</tt>), the
+ * detector-site (<tt>params-\>site</tt>) and the ephemeris-data
+ * (<tt>params-\>ephemerides</tt>)are used from the
  * PulsarSignalParams structure.
  *
  *
@@ -131,11 +161,11 @@ Note that these are the same approximations used by LALDemod().
 
 One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
 \f[
-\tilde{h}_k = e^{i\Phi_0}  { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 }
-{ 1 - e^{2\pi i (\kappa - k)} \over 1 - e^{2\pi i (\kappa - k)/N} }
+\tilde{h}_k = e^{i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
+\frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} }
 \\
-+ e^{-i\Phi_0}  { ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times) \over 2 }
-{ 1 - e^{-2\pi i (\kappa + k)} \over 1 - e^{-2\pi i (\kappa + k)/N} }
++ e^{-i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times)
+\frac{ 1 - e^{-2\pi i (\kappa + k)}}{ 1 - e^{-2\pi i (\kappa + k)/N} }
 \f]
 where \f$N\f$ is the number of time samples used to find the
 DFT (i.e., the sample rate times \f$T_{\rm sft}\f$), and
@@ -148,24 +178,24 @@ Note that the factor \f$e^{\pm 2\pi i k}\f$ in the numerators of the equation fo
 equals 1.  Furthermore, for \f$0 < \kappa < N/2\f$ and \f$|\kappa - k| << N\f$ the first term
 dominates and can be Taylor expanded to give:
 \f[
-\tilde{h}_k = N e^{i\Phi_0} { ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times) \over 2 }
-\left [ \, { {\rm sin} (2\pi\kappa) \over 2 \pi (\kappa - k) } \,
-+ \, i { 1 - {\rm cos} (2\pi\kappa) \over 2 \pi (\kappa - k) } \, \right ]
+\tilde{h}_k = N e^{i\Phi_0} \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
+\left [ \, \frac{ {\rm sin} (2\pi\kappa)}{2 \pi (\kappa - k) } \,
++ \, i \frac{ 1 - {\rm cos} (2\pi\kappa)}{2 \pi (\kappa - k) } \, \right ]
 \f]
 Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
 \f$e^{i\Phi_0} = Q_{\alpha}^*\f$ used by LALDemod.
 
 \heading{Example pseudocode}
 
-The structs used by LALComputeSkyAndZeroPsiAMResponse and LALFastGeneratePulsarSFTs
+The structs used by LALComputeSkyAndZeroPsiAMResponse() and LALFastGeneratePulsarSFTs()
 are given in previous sections, and make use of those used by
-LALGeneratePulsarSignal and LALSignalToSFTs plus a small number of
+LALGeneratePulsarSignal() and LALSignalToSFTs() plus a small number of
 additional parameters.  Thus it is fairly easy to change between the above
 approximate routines the exact routines. See GeneratePulsarSignalTest.c for
 an example implementation of the code.
 
-Note that one needs to call LALComputeSkyAndZeroPsiAMResponse once per sky position,
-and then call LALFastGeneratePulsarSFTs for each set of signal parameters at that
+Note that one needs to call LALComputeSkyAndZeroPsiAMResponse() once per sky position,
+and then call LALFastGeneratePulsarSFTs() for each set of signal parameters at that
 sky position.  Thus, one could perform a Monte Carlo simulation, as shown
 by the pseudo code:
 
@@ -210,66 +240,30 @@ Dterms is used the same way here as it is in LALDemod(). Nothing is done to the 
 not in the <tt>2*Dterms</tt> band are initialized to zero.
 
 */
-
-
-/**
- * \author Reinhard Prix, Greg Mendell
- * \date 2005
- * \file
- * \ingroup moduleGeneratePulsarSignal
- * \brief API for GeneratePulsarSignal.c
- *
- */
-
-/* NOTES: */
-/* 07/14/04 gam; add functions LALFastGeneratePulsarSFTs and LALComputeSkyAndZeroPsiAMResponse */
-/* 10/08/04 gam; fix indexing into trig lookup tables (LUTs) by having table go from -2*pi to 2*pi */
-/* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
-
-#ifndef _GENERATEPULSARSIGNAL_H  /* Double-include protection. */
-#define _GENERATEPULSARSIGNAL_H
-
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-#include <lal/LALDatatypes.h>
-#include <lal/DetResponse.h>
-#include <lal/DetectorSite.h>
-#include <lal/GenerateSpinOrbitCW.h>
-#include <lal/Date.h>
-#include <lal/LALBarycenter.h>
-#include <lal/PulsarDataTypes.h>
-#include <lal/ComputeSky.h>
-#include <lal/ComputeSkyBinary.h>
-#include <lal/Window.h>
-
-/* C++ protection. */
-#ifdef  __cplusplus
-extern "C" {
-#endif
+/*@{*/
 
 /** \name Error codes */
 /*@{*/
-#define GENERATEPULSARSIGNALH_ENULL 		1
-#define GENERATEPULSARSIGNALH_ENONULL		2
-#define GENERATEPULSARSIGNALH_EMEM		3
-#define GENERATEPULSARSIGNALH_ESAMPLING		4
-#define GENERATEPULSARSIGNALH_ESSBCONVERT	5
-#define GENERATEPULSARSIGNALH_ESYS		6
-#define GENERATEPULSARSIGNALH_ETIMEBOUND	7
-#define GENERATEPULSARSIGNALH_ENUMSFTS		8
-#define GENERATEPULSARSIGNALH_EINCONSBAND	9
-#define GENERATEPULSARSIGNALH_ENOISEDELTAF	10
-#define GENERATEPULSARSIGNALH_ENOISEBAND	11
-#define GENERATEPULSARSIGNALH_ENOISEBINS	12
-#define GENERATEPULSARSIGNALH_EBADCOORDS	13
-#define GENERATEPULSARSIGNALH_ELUTS		14
-#define GENERATEPULSARSIGNALH_EDTERMS		15
-#define GENERATEPULSARSIGNALH_EINPUT		16
-#define GENERATEPULSARSIGNALH_EDETECTOR		17
+#define GENERATEPULSARSIGNALH_ENULL 		1	/**< Arguments contained an unexpected null pointer */
+#define GENERATEPULSARSIGNALH_ENONULL		2	/**< Output pointer is not NULL */
+#define GENERATEPULSARSIGNALH_EMEM		3	/**< Out of memory */
+#define GENERATEPULSARSIGNALH_ESAMPLING		4	/**< Waveform sampling interval too large. */
+#define GENERATEPULSARSIGNALH_ESSBCONVERT	5	/**< SSB-\>GPS iterative conversion failed */
+#define GENERATEPULSARSIGNALH_ESYS		6	/**< System error, probably while File I/O */
+#define GENERATEPULSARSIGNALH_ETIMEBOUND	7	/**< Timestamp outside of allowed time-interval */
+#define GENERATEPULSARSIGNALH_ENUMSFTS		8	/**< Inconsistent number of SFTs in timestamps and noise-SFTs */
+#define GENERATEPULSARSIGNALH_EINCONSBAND	9	/**< Inconsistent values of sampling-rate and Tsft */
+#define GENERATEPULSARSIGNALH_ENOISEDELTAF	10	/**< Frequency resolution of noise-SFTs inconsistent with signal */
+#define GENERATEPULSARSIGNALH_ENOISEBAND	11	/**< Frequency band of noise-SFTs inconsistent with signal */
+#define GENERATEPULSARSIGNALH_ENOISEBINS	12	/**< Frequency bins of noise-SFTs inconsistent with signal */
+#define GENERATEPULSARSIGNALH_EBADCOORDS	13	/**< Current code requires sky position in equatorial coordinates */
+#define GENERATEPULSARSIGNALH_ELUTS		14	/**< Lookup tables (LUTs) for trig functions must be defined on domain -2pi to 2pi inclusive */
+#define GENERATEPULSARSIGNALH_EDTERMS		15	/**< Dterms must be greater than zero and less than or equal to half the number of SFT bins */
+#define GENERATEPULSARSIGNALH_EINPUT		16	/**< Invalid input-arguments to function */
+#define GENERATEPULSARSIGNALH_EDETECTOR		17	/**< Unknown detector-name */
+/*@}*/
 
+/** \cond DONT_DOXYGEN */
 #define GENERATEPULSARSIGNALH_MSGENULL 		"Arguments contained an unexpected null pointer"
 #define GENERATEPULSARSIGNALH_MSGENONULL	"Output pointer is not NULL"
 #define GENERATEPULSARSIGNALH_MSGEMEM		"Out of memory"
@@ -287,8 +281,7 @@ extern "C" {
 #define GENERATEPULSARSIGNALH_MSGEDTERMS	"Dterms must be greater than zero and less than or equal to half the number of SFT bins"
 #define GENERATEPULSARSIGNALH_MSGEINPUT		"Invalid input-arguments to function"
 #define GENERATEPULSARSIGNALH_MSGEDETECTOR	"Unknown detector-name"
-/*@}*/
-
+/** \endcond */
 
 /** Input parameters to GeneratePulsarSignal(), defining the source and the time-series
  */
@@ -349,13 +342,14 @@ typedef struct tagSkyConstAndZeroPsiAMResponse {
 } SkyConstAndZeroPsiAMResponse;
 
 /*---------- Global variables ----------*/
-/* empty init-structs for the types defined in here */
+/** \name Empty init-structs for the types defined in here */
+/*@{*/
 extern const PulsarSignalParams empty_PulsarSignalParams;
 extern const SFTParams empty_SFTParams;
 extern const SFTandSignalParams empty_SFTandSignalParams;
+/*@}*/
 
-
-/* Function prototypes */
+/* ---------- Function prototypes ---------- */
 void LALGeneratePulsarSignal (LALStatus *, REAL4TimeSeries **signalvec, const PulsarSignalParams *params);
 void LALSimulateExactPulsarSignal (LALStatus *, REAL4TimeSeries **timeSeries, const PulsarSignalParams *params);
 
@@ -366,6 +360,8 @@ void LALFastGeneratePulsarSFTs (LALStatus *, SFTVector **outputSFTs, const SkyCo
 
 void LALConvertGPS2SSB (LALStatus* , LIGOTimeGPS *SSBout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
 void LALConvertSSB2GPS (LALStatus *, LIGOTimeGPS *GPSout, LIGOTimeGPS GPSin, const PulsarSignalParams *params);
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

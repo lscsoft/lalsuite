@@ -17,14 +17,28 @@
 *  MA  02111-1307  USA
 */
 
-/** \file XLALError.h
- * \ingroup std
+#ifndef XLALERROR_H
+#define XLALERROR_H
+
+#include <stdarg.h>
+#include <stddef.h>
+#include <lal/LALAtomicDatatypes.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+
+/**
+ * \addtogroup XLALError_h
  * \author Creighton, J. D. E.
  * \date 2005
  * \brief This header covers routines to provide the XLAL interface error
  * handling.
  *
- * \par XLAL Errors
+ * \heading{XLAL Errors}
  *
  * When an XLAL routine fails, the routine should set the <tt>xlalErrno</tt> to
  * an appropriate error number and return with the appropriate error code.  The
@@ -39,23 +53,23 @@
  * string) to provide additional information about the nature of the failure.
  * The error macros that should be used are:
  *
- * <tt>XLAL_ERROR(errnum [, fmt [, ...]])</tt> for XLAL routines returning an
+ * <tt> #XLAL_ERROR(errnum [, fmt [, ...]])</tt> for XLAL routines returning an
  * integer type.
  *
- * <tt>XLAL_ERROR_VOID(errnum [, fmt [, ...]])</tt> for XLAL routines with no
+ * <tt> #XLAL_ERROR_VOID(errnum [, fmt [, ...]])</tt> for XLAL routines with no
  * return value.
  *
- * <tt>XLAL_ERROR_NULL(errnum [, fmt [, ...]])</tt> for XLAL routines returning
+ * <tt> #XLAL_ERROR_NULL(errnum [, fmt [, ...]])</tt> for XLAL routines returning
  * a pointer.
  *
- * <tt>XLAL_ERROR_REAL4(errnum [, fmt [, ...]])</tt> for XLAL routines
+ * <tt> #XLAL_ERROR_REAL4(errnum [, fmt [, ...]])</tt> for XLAL routines
  * returning a <tt>REAL4</tt> floating-point value.
  *
- * <tt>XLAL_ERROR_REAL8(errnum [, fmt [, ...]])</tt> for XLAL routines
+ * <tt> #XLAL_ERROR_REAL8(errnum [, fmt [, ...]])</tt> for XLAL routines
  * returning a <tt>REAL8</tt> floating-point value.
  *
- * Assert-like error checking can be performed with <tt>XLAL_CHECK</tt>-style
- * macros.  Unlike <tt>assert()</tt> statements, <tt>XLAL_CHECK</tt> macros
+ * Assert-like error checking can be performed with <tt>#XLAL_CHECK</tt>-style
+ * macros.  Unlike <tt>assert()</tt> statements, <tt>#XLAL_CHECK</tt> macros
  * do <i>not</i> get removed when the code is not compiled with
  * <tt>NDEBUG</tt> defined.
  *
@@ -65,14 +79,14 @@
  * <tt>printf()</tt>) print or suppress the message depending on the value of
  * <tt>lalDebugLevel</tt>.  To print error/warning/info messages with a
  * standard format, use the macros
- * <tt>XLAL_PRINT_ERROR(fmt [, ...])</tt>
- * <tt>XLAL_PRINT_WARNING(fmt [, ...])</tt>
- * <tt>XLAL_PRINT_INFO(fmt [, ...])</tt>
+ * <tt>#XLAL_PRINT_ERROR(fmt [, ...])</tt>
+ * <tt>#XLAL_PRINT_WARNING(fmt [, ...])</tt>
+ * <tt>#XLAL_PRINT_INFO(fmt [, ...])</tt>
  *
  * On rare occations, you may be prepared for an XLAL routine to fail, and may
  * want to handle the failure immediately.  In these circumstances, the XLAL
  * error handler needs to be disabled before the routine is called so that the
- * failure can be caught.  The <tt>XLAL_TRY(statement,errnum)</tt> macro is
+ * failure can be caught.  The <tt>#XLAL_TRY(statement,errnum)</tt> macro is
  * designed to be used in these situations.  Here is an example:
  * \code
  * REAL8 XLALLogFactorial(INT4 n)
@@ -94,51 +108,38 @@
  * }
  * \endcode
  *
- * \par XLAL Function Return Codes
+ * \heading{XLAL Function Return Codes}
  *
- * XLAL functions that return an integer-type will return <tt>XLAL_FAILURE</tt>
+ * XLAL functions that return an integer-type will return <tt>#XLAL_FAILURE</tt>
  * on failure.  XLAL functions that return a pointer will return <tt>NULL</tt>
  * on failure.
  *
  * The LAL specification requires that XLAL functions that return a
- * floating-point type (either <tt>REAL4</tt> or <tt>REAL8</tt>) should return
+ * floating-point type (either <tt>::REAL4</tt> or <tt>::REAL8</tt>) should return
  * a particular value to indicate an error.  These values are given by the
- * macros <tt>XLAL_REAL4_FAIL_NAN</tt> and <tt>XLAL_REAL8_FAIL_NAN</tt> (they
+ * macros <tt>#XLAL_REAL4_FAIL_NAN</tt> and <tt>#XLAL_REAL8_FAIL_NAN</tt> (they
  * are Not a Number or NaN values).  To implement these we choose hexadecimal
  * representations and then provide static functions that return the equivalent
- * <tt>REAL4</tt> or <tt>REAL8</tt> values.  The macros then invoke these
+ * <tt>::REAL4</tt> or <tt>::REAL8</tt> values.  The macros then invoke these
  * functions.  This is done so that the compiler can easily inline the
  * functions (or eliminate them if they are not used).  Conversion from the
  * hexadecimal representation to the floating-point representation is done
  * using a union.
  *
  * The LAL specification also requires that there be two macros,
- * <tt>XLAL_IS_REAL4_FAIL_NAN(val)</tt> and
- * <tt>XLAL_IS_REAL8_FAIL_NAN(val)</tt> that will test if val is one of these
+ * <tt>#XLAL_IS_REAL4_FAIL_NAN(val)</tt> and
+ * <tt>#XLAL_IS_REAL8_FAIL_NAN(val)</tt> that will test if val is one of these
  * XLAL-specific fail NaNs.  Again these macros invoke static functions that
  * return the result of the comparison.  The cmparison itself is done with the
  * hexadecimal representation.
  *
- * \par XLAL Error Codes
+ * \heading{XLAL Error Codes}
  *
  * The LAL specification requires particular return code and error values.
  * These are implemented here as enumeration constants in the
- * <tt>XLALErrorValue</tt> enumeration.
+ * <tt>::XLALErrorValue</tt> enumeration.
  */
-
-#ifndef XLALERROR_H
-#define XLALERROR_H
-
-#include <stdarg.h>
-#include <stddef.h>
-#include <lal/LALAtomicDatatypes.h>
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
-
+/*@{*/
 
 /*
  *
@@ -216,26 +217,38 @@ int XLALPrintDeprecationWarning(const char *old, const char *replacement);
  *
  */
 
-/** \def XLAL_PRINT_ERROR(fmt [, ...])
- * \brief Macro that will print an error message with a standard format.
- * \params fmt A printf-like format string.
- * \params ... (Optional) Arguments to the format string.
+/** \brief Macro that will print an error message with a standard format.
+ *
+ * Prototype: <b>XLAL_PRINT_ERROR(fmt [, ...])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b fmt A printf-like format string.
+ * <li> \b ... (Optional) Arguments to the format string.
+ * </ul>
  */
 #define XLAL_PRINT_ERROR(...) \
 	XLALPrintErrorMessage(__func__, __FILE__, __LINE__, __VA_ARGS__)
 
-/** \def XLAL_PRINT_WARNING(fmt [, ...])
- * \brief Macro that will print a warning message with a standard format.
- * \params fmt A printf-like format string.
- * \params ... (Optional) Arguments to the format string.
+/** \brief Macro that will print a warning message with a standard format.
+ *
+ * Prototype: <b>XLAL_PRINT_WARNING(fmt [, ...])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b fmt A printf-like format string.
+ * <li> \b ... (Optional) Arguments to the format string.
+ * </ul>
  */
 #define XLAL_PRINT_WARNING(...) \
 	XLALPrintWarningMessage(__func__, __FILE__, __LINE__, __VA_ARGS__)
 
-/** \def XLAL_PRINT_INFO(fmt [, ...])
- * \brief Macro that will print an info message with a standard format.
- * \params fmt A printf-like format string.
- * \params ... (Optional) Arguments to the format string.
+/** \brief Macro that will print an info message with a standard format.
+ *
+ * Prototype: <b>XLAL_PRINT_INFO(fmt [, ...])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b fmt A printf-like format string.
+ * <li> \b ... (Optional) Arguments to the format string.
+ * </ul>
  */
 #define XLAL_PRINT_INFO(...) \
 	XLALPrintInfoMessage(__func__, __FILE__, __LINE__, __VA_ARGS__)
@@ -534,15 +547,18 @@ void XLALError(
 	int errnum        /**< error code */
 	);
 
-/** \def XLAL_ERROR_VAL(val, errnum [, fmt [, ...]])
- * \brief Macro to invoke the <tt>XLALError()</tt> function and return
+/** \brief Macro to invoke the <tt>XLALError()</tt> function and return
  * with code val (it should not really be used itself, but forms the basis for
  * other macros).
  *
- * \param val The value to return.
- * \param errnum The XLAL error number to set.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_ERROR_VAL(val, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b val The value to return.
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_ERROR_VAL(val, ...) XLAL_ERROR_VAL_(val, __VA_ARGS__, NULL, NULL)
 
@@ -554,65 +570,80 @@ void XLALError(
 		return val; \
 	} while (0)
 
-/** \def XLAL_ERROR(errnum [, fmt [, ...]])
- * \brief Macro to invoke a failure from a XLAL routine returning an integer.
+/** Macro to invoke a failure from a XLAL routine returning an integer.
  *
- * \param errnum The XLAL error number to set.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_ERROR(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt     (Optional) Format string for additional error information.
+ * <li> \b ...     (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_ERROR(...) XLAL_ERROR_VAL(XLAL_FAILURE, __VA_ARGS__)
 
-/** \def XLAL_ERROR_NULL(errnum [, fmt [, ...]])
- * \brief Macro to invoke a failure from a XLAL routine returning a pointer.
+/** Macro to invoke a failure from a XLAL routine returning a pointer.
  *
- * \param errnum The XLAL error number to set.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_ERROR_NULL(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_ERROR_NULL(...) XLAL_ERROR_VAL(NULL, __VA_ARGS__)
 
-/** \def XLAL_ERROR_VOID(errnum [, fmt [, ...]])
- * \brief Macro to invoke a failure from a XLAL routine returning void.
+/** \brief Macro to invoke a failure from a XLAL routine returning void.
  *
- * \param errnum The XLAL error number to set.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_ERROR_VOID(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_ERROR_VOID(...) XLAL_ERROR_VAL(/* void */, __VA_ARGS__)
 
-/** \def XLAL_ERROR_REAL4(errnum [, fmt [, ...]])
- * \brief Macro to invoke a failure from a XLAL routine returning a
- * <tt>REAL4</tt>.
+/** \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL4</tt>.
  *
- * \param errnum The XLAL error number to set.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_ERROR_REAL4(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_ERROR_REAL4(...) XLAL_ERROR_VAL(XLAL_REAL4_FAIL_NAN, __VA_ARGS__)
 
-/** \def XLAL_ERROR_REAL8(errnum [, fmt [, ...]])
- * \brief Macro to invoke a failure from a XLAL routine returning a
- * <tt>REAL8</tt>.
+/**  * \brief Macro to invoke a failure from a XLAL routine returning a <tt>REAL8</tt>.
  *
- * \param errnum The XLAL error number to set.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype <b>XLAL_ERROR_REAL8(errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b errnum The XLAL error number to set.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_ERROR_REAL8(...) XLAL_ERROR_VAL(XLAL_REAL8_FAIL_NAN, __VA_ARGS__)
 
 
-
-/** \def XLAL_CHECK_VAL(val, assertion, errnum [, fmt [, ...]])
- * \brief Macro to test an assertion; if it is not true, invoke the
+/** \brief Macro to test an assertion; if it is not true, invoke the
  * <tt>XLALError()</tt> function and return with code val (it should not really
  * be used itself, but forms the basis for other macros).
  *
- * \param val The value to return.
- * \param assertion The assertion to test.
- * \param errnum The XLAL error number to set if the assertion is false.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_CHECK_VAL(val, assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b val The value to return.
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_CHECK_VAL(val, assertion, ...) \
 	do { \
@@ -622,65 +653,83 @@ void XLALError(
 		} \
 	} while (0)
 
-/** \def XLAL_CHECK(assertion, errnum [, fmt [, ...]])
- * \brief Macro to test an assertion and invoke a failure if it is not true
+/**  * \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns an integer.
  *
- * \param assertion The assertion to test.
- * \param errnum The XLAL error number to set if the assertion is false.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_CHECK(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_CHECK(assertion, ...) \
 	XLAL_CHECK_VAL(XLAL_FAILURE, assertion, __VA_ARGS__)
 
-/** \def XLAL_CHECK_NULL(assertion, errnum [, fmt [, ...]])
- * \brief Macro to test an assertion and invoke a failure if it is not true
+/** \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns a pointer.
  *
- * \param assertion The assertion to test.
- * \param errnum The XLAL error number to set if the assertion is false.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_CHECK_NULL(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_CHECK_NULL(assertion, ...) \
 	XLAL_CHECK_VAL(NULL, assertion, __VA_ARGS__)
 
-/** \def XLAL_CHECK_VOID(assertion, errnum [, fmt [, ...]])
- * \brief Macro to test an assertion and invoke a failure if it is not true
+/** \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns void.
  *
- * \param assertion The assertion to test.
- * \param errnum The XLAL error number to set if the assertion is false.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_CHECK_VOID(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_CHECK_VOID(assertion, ...) \
 	XLAL_CHECK_VAL(/* void */, assertion, __VA_ARGS__)
 
-/** \def XLAL_CHECK_REAL4(assertion, errnum [, fmt [, ...]])
- * \brief Macro to test an assertion and invoke a failure if it is not true
+/** \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns a <tt>REAL4</tt>.
  *
- * \param assertion The assertion to test.
- * \param errnum The XLAL error number to set if the assertion is false.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_CHECK_REAL4(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_CHECK_REAL4(assertion, ...) \
 	XLAL_CHECK_VAL(XLAL_REAL4_FAIL_NAN, assertion, __VA_ARGS__)
 
-/** \def XLAL_CHECK_REAL8(assertion, errnum [, fmt [, ...]])
- * \brief Macro to test an assertion and invoke a failure if it is not true
+/** \brief Macro to test an assertion and invoke a failure if it is not true
  * in a function that returns a <tt>REAL8</tt>.
  *
- * \param assertion The assertion to test.
- * \param errnum The XLAL error number to set if the assertion is false.
- * \param fmt (Optional) Format string for additional error information.
- * \param ... (Optional) Additional arguments for printf-like format.
+ * Prototype: <b>XLAL_CHECK_REAL8(assertion, errnum [, fmt [, ...]])</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * <li> \b errnum The XLAL error number to set if the assertion is false.
+ * <li> \b fmt (Optional) Format string for additional error information.
+ * <li> \b ... (Optional) Additional arguments for printf-like format.
+ * </ul>
  */
 #define XLAL_CHECK_REAL8(assertion, ...) \
 	XLAL_CHECK_VAL(XLAL_REAL4_FAIL_NAN, assertion, __VA_ARGS__)
+
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

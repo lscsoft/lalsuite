@@ -551,7 +551,8 @@ def slide_sanity(config, playOnly = False):
 # Function to set up lalapps_inspiral_hipe
 def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
     tmpltBank = False, playOnly = False, vetoCat = None, vetoFiles = None, \
-    dax = False, tmpltbankCache = None, local_exec_dir = None):
+    dax = False, tmpltbankCache = None, local_exec_dir = None, \
+    data_checkpoint = False):
   """
   run lalapps_inspiral_hipe and add job to dag
   hipeDir   = directory in which to run inspiral hipe
@@ -600,7 +601,7 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
         "l1-inspiral", "g1-inspiral", "v1-inspiral", "ligolw_add", \
         "ligolw_cafe", "thinca", "thinca-1", "thinca-2", "thinca-slide", \
         "trigbank", "sire", "sire-inj", "coire", "coire-1", "coire-2", \
-        "coire-inj", "condor-max-jobs"]
+        "coire-inj", "condor-max-jobs"] 
 
   for seg in hipecp.sections():
     if not seg in hipeSections: hipecp.remove_section(seg)
@@ -722,6 +723,9 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   if playOnly: hipeCommand += " --priority 10"
   for item in config.items("ifo-details"):
     hipeCommand += " --" + item[0] + " " + item[1]
+  # describes the ckpt if statement
+  if data_checkpoint: 
+    hipeCommand += " --data-checkpoint "
 
   def test_and_add_hipe_arg(hipeCommand, hipe_arg):
     if config.has_option("hipe-arguments",hipe_arg):
@@ -803,9 +807,8 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
   for cp_opt in config.options('condor-max-jobs'):
     hipeNode.add_maxjobs_category(cp_opt,config.getint('condor-max-jobs',cp_opt))
 
-  # collapse the short running jobs in the veto sub-dags
-  if vetoCat:
-    hipeNode.set_cluster_jobs('horizontal')
+  # collapse the short running jobs in all of the dags
+  hipeNode.set_cluster_jobs('horizontal')
 
   # tell pegasus where ihope wants us to run the jobs
   hipeJob.set_pegasus_exec_dir(os.path.join(
@@ -1553,10 +1556,10 @@ def create_frame_pfn_file(ifos, gpsstart, gpsend):
 	# Calls ligo_data_find and passes the output to a the file gwfname.
 	# The output from this will be returned and used to create the Pegasus
 	# cache file in the function create_pegasus_cache_file.
-	for v in ifos.values():
+	for v in ifos.keys():
 		# Calls a system command to create the file.
 		ldfcommand = "ligo_data_find --gps-start-time "+str(gpsstart)+ \
-		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ v+ \
+		" --gps-end-time "+str(gpsend)+" --observatory "+v[0]+" --type "+ ifos[v] + \
 		" --url-type=file >> "+ gwfname
 		make_external_call(ldfcommand)
 
@@ -1605,8 +1608,11 @@ def get_data_options(cp,ifo_name):
     data_opts = 'ligo-data'
     try:
       type = cp.get('input','ligo-type')
-      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type):
+      if (type == 'RDS_R_L4') or ('RDS_C' in type) or ('DMT_C' in type) or ('LDAS_C' in type) or ('NINJA' in type) or ('ER_' in type):
         type = ifo_name + '_' + type
+      if ("DMT_ERHOFT" in type):
+        if (ifo_name == 'L1'): type = ifo_name + '_' + type
+        else: type = 'H1H2_' + type
     except: type = None
     channel = cp.get('input','ligo-channel')
 

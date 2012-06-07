@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.17"
+#define CMDLINE_PARSER_VERSION "1.1.21"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -49,10 +49,10 @@ struct gengetopt_args_info
   double Tobs_arg;	/**< @brief Total observation time (in seconds).  */
   char * Tobs_orig;	/**< @brief Total observation time (in seconds) original value given at command line.  */
   const char *Tobs_help; /**< @brief Total observation time (in seconds) help description.  */
-  double Tcoh_arg;	/**< @brief SFT coherence time (in seconds) (default='1800').  */
+  double Tcoh_arg;	/**< @brief SFT coherence time (in seconds).  */
   char * Tcoh_orig;	/**< @brief SFT coherence time (in seconds) original value given at command line.  */
   const char *Tcoh_help; /**< @brief SFT coherence time (in seconds) help description.  */
-  double SFToverlap_arg;	/**< @brief SFT overlap (in seconds), usually Tcoh/2 (default='900').  */
+  double SFToverlap_arg;	/**< @brief SFT overlap (in seconds), usually Tcoh/2.  */
   char * SFToverlap_orig;	/**< @brief SFT overlap (in seconds), usually Tcoh/2 original value given at command line.  */
   const char *SFToverlap_help; /**< @brief SFT overlap (in seconds), usually Tcoh/2 help description.  */
   double t0_arg;	/**< @brief Start time of the search (in GPS seconds).  */
@@ -64,12 +64,12 @@ struct gengetopt_args_info
   double fspan_arg;	/**< @brief Frequency span of band (Hz).  */
   char * fspan_orig;	/**< @brief Frequency span of band (Hz) original value given at command line.  */
   const char *fspan_help; /**< @brief Frequency span of band (Hz) help description.  */
-  char ** IFO_arg;	/**< @brief Interferometer of whose data is being analyzed (default='H1').  */
+  char ** IFO_arg;	/**< @brief Interferometer of whose data is being analyzed.  */
   char ** IFO_orig;	/**< @brief Interferometer of whose data is being analyzed original value given at command line.  */
   unsigned int IFO_min; /**< @brief Interferometer of whose data is being analyzed's minimum occurreces */
   unsigned int IFO_max; /**< @brief Interferometer of whose data is being analyzed's maximum occurreces */
   const char *IFO_help; /**< @brief Interferometer of whose data is being analyzed help description.  */
-  double avesqrtSh_arg;	/**< @brief Expected average of square root of Sh (default='1.0').  */
+  double avesqrtSh_arg;	/**< @brief Expected average of square root of Sh.  */
   char * avesqrtSh_orig;	/**< @brief Expected average of square root of Sh original value given at command line.  */
   const char *avesqrtSh_help; /**< @brief Expected average of square root of Sh help description.  */
   int blksize_arg;	/**< @brief Blocksize for running median to determine expected noise of input SFTs (default='101').  */
@@ -93,13 +93,13 @@ struct gengetopt_args_info
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files (default='/opt/lscsoft/lalpulsar/share/lalpulsar').  */
+  char * ephemDir_arg;	/**< @brief Path to ephemeris files.  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
-  char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files (default='08-11').  */
+  char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files.  */
   char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
   const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
-  double Pmin_arg;	/**< @brief Minimum period to be searched (in seconds) (default='7200.0').  */
+  double Pmin_arg;	/**< @brief Minimum period to be searched (in seconds).  */
   char * Pmin_orig;	/**< @brief Minimum period to be searched (in seconds) original value given at command line.  */
   const char *Pmin_help; /**< @brief Minimum period to be searched (in seconds) help description.  */
   double Pmax_arg;	/**< @brief Maximum period to be searched (in seconds).  */
@@ -123,7 +123,7 @@ struct gengetopt_args_info
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
   char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
   const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */
-  double ihsfar_arg;	/**< @brief IHS FAR threshold (default='0.01').  */
+  double ihsfar_arg;	/**< @brief IHS FAR threshold.  */
   char * ihsfar_orig;	/**< @brief IHS FAR threshold original value given at command line.  */
   const char *ihsfar_help; /**< @brief IHS FAR threshold help description.  */
   double ihsfom_arg;	/**< @brief IHS FOM = 12*(L_IHS_loc - U_IHS_loc)^2.  */
@@ -135,7 +135,7 @@ struct gengetopt_args_info
   int keepOnlyTopNumIHS_arg;	/**< @brief Keep the top <number> of IHS candidates based on significance.  */
   char * keepOnlyTopNumIHS_orig;	/**< @brief Keep the top <number> of IHS candidates based on significance original value given at command line.  */
   const char *keepOnlyTopNumIHS_help; /**< @brief Keep the top <number> of IHS candidates based on significance help description.  */
-  double tmplfar_arg;	/**< @brief Template FAR threshold (default='0.01').  */
+  double tmplfar_arg;	/**< @brief Template FAR threshold.  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
   int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
@@ -150,10 +150,10 @@ struct gengetopt_args_info
   double ULfspan_arg;	/**< @brief Span of signal frequencies considered for the upper limit value (Hz).  */
   char * ULfspan_orig;	/**< @brief Span of signal frequencies considered for the upper limit value (Hz) original value given at command line.  */
   const char *ULfspan_help; /**< @brief Span of signal frequencies considered for the upper limit value (Hz) help description.  */
-  double ULminimumDeltaf_arg;	/**< @brief Minimum modulation depth counted in the upper limit value (Hz) (default='0.0').  */
+  double ULminimumDeltaf_arg;	/**< @brief Minimum modulation depth counted in the upper limit value (Hz).  */
   char * ULminimumDeltaf_orig;	/**< @brief Minimum modulation depth counted in the upper limit value (Hz) original value given at command line.  */
   const char *ULminimumDeltaf_help; /**< @brief Minimum modulation depth counted in the upper limit value (Hz) help description.  */
-  double ULmaximumDeltaf_arg;	/**< @brief Maximum modulation depth counted in the upper limit value (Hz) (default='0.1').  */
+  double ULmaximumDeltaf_arg;	/**< @brief Maximum modulation depth counted in the upper limit value (Hz).  */
   char * ULmaximumDeltaf_orig;	/**< @brief Maximum modulation depth counted in the upper limit value (Hz) original value given at command line.  */
   const char *ULmaximumDeltaf_help; /**< @brief Maximum modulation depth counted in the upper limit value (Hz) help description.  */
   int allULvalsPerSkyLoc_flag;	/**< @brief Print all UL values in the band specified by ULminimumDeltaf and ULmaximumDeltaf (default is to print only the maximum UL value in the band) (default=off).  */
@@ -166,7 +166,7 @@ struct gengetopt_args_info
   double lineDetection_arg;	/**< @brief Detect stationary lines above threshold, and, if any present, set upper limit only, no template follow-up.  */
   char * lineDetection_orig;	/**< @brief Detect stationary lines above threshold, and, if any present, set upper limit only, no template follow-up original value given at command line.  */
   const char *lineDetection_help; /**< @brief Detect stationary lines above threshold, and, if any present, set upper limit only, no template follow-up help description.  */
-  int FFTplanFlag_arg;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive (default='3').  */
+  int FFTplanFlag_arg;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive (default='1').  */
   char * FFTplanFlag_orig;	/**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive original value given at command line.  */
   const char *FFTplanFlag_help; /**< @brief 0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive help description.  */
   int fastchisqinv_flag;	/**< @brief Use a faster central chi-sq inversion function (roughly float precision instead of double) (default=off).  */
@@ -198,6 +198,11 @@ struct gengetopt_args_info
   const char *printSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of input SFTs help description.  */
   int printUsedSFTtimes_flag;	/**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests (default=off).  */
   const char *printUsedSFTtimes_help; /**< @brief Output a list <GPS sec> <GPS nanosec> of SFT start times of the SFTs passing tests help description.  */
+  int randSeed_arg;	/**< @brief Random seed value.  */
+  char * randSeed_orig;	/**< @brief Random seed value original value given at command line.  */
+  const char *randSeed_help; /**< @brief Random seed value help description.  */
+  int chooseSeed_flag;	/**< @brief The random seed value is chosen based on the input search parameters (default=off).  */
+  const char *chooseSeed_help; /**< @brief The random seed value is chosen based on the input search parameters help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int full_help_given ;	/**< @brief Whether full-help was given.  */
@@ -259,6 +264,8 @@ struct gengetopt_args_info
   unsigned int ULoff_given ;	/**< @brief Whether ULoff was given.  */
   unsigned int printSFTtimes_given ;	/**< @brief Whether printSFTtimes was given.  */
   unsigned int printUsedSFTtimes_given ;	/**< @brief Whether printUsedSFTtimes was given.  */
+  unsigned int randSeed_given ;	/**< @brief Whether randSeed was given.  */
+  unsigned int chooseSeed_given ;	/**< @brief Whether chooseSeed was given.  */
 
 } ;
 

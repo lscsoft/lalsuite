@@ -1,16 +1,7 @@
-DOCSOURCEFILES = std.tex
+DOCSOURCEFILES = std.dox
 
-MOSTLYCLEANFILES = .dvi-dep
-CLEANFILES = \
-	main.dvi \
-	main.pdf \
-	main.ps
+MOSTLYCLEANFILES =
+CLEANFILES =
 
 EXTRA_DIST = $(DOCSOURCEFILES)
 
-dvi-local: .dvi-dep
-
-distclean-local:
-	-rm -fr .adoc
-
-@DOCMKFILE@

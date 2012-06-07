@@ -37,8 +37,8 @@
  * This function reads command line arguments and returns a \c LALInferenceIFOData linked
  * list.
  * \param commandLine [in] Pointer to a ProcessParamsTable containing command line arguments
- * \return Pointer to a new \LALInferenceIFOData linked list containing the data, or NULL upon error.
- * \author John Veitch\n
+ * \return Pointer to a new \c LALInferenceIFOData linked list containing the data, or NULL upon error.
+ * \author John Veitch
  */
 struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * commandLine);
 
@@ -49,5 +49,15 @@ struct tagLALInferenceIFOData * LALInferenceReadData (ProcessParamsTable * comma
  * \param IFOdata [in] Pointer to an already existing IFOdata structure.
  */
 void LALInferenceInjectInspiralSignal(struct tagLALInferenceIFOData *IFOdata, ProcessParamsTable *commandLine);
+
+/** \brief Fills the variable in vars with the injection values from theEventTable. Destroys contents of
+    vars. vars cannot be NULL. Resulting variables are LALINFERENCE_PARAM_FIXED. */
+void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInferenceVariables *vars);
+
+/** \brief Function to output a sample with logL values etc for the injection, if one is made.
+  * Requires --inj, --outfile and optionally --event (if not 0).
+  */
+void LALInferencePrintInjectionSample(LALInferenceRunState *runState);
+
 
 #endif

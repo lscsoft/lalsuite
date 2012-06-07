@@ -1,6 +1,7 @@
 /**
+   \defgroup StreamGridOutput_c Module StreamGridOutput.c
+   \ingroup StreamOutput_h
 \author Creighton, T. D.
-\file
 
 \brief Writes a LAL grid structure to an output stream.
 
@@ -33,11 +34,12 @@ routines corresponding to all the numeric atomic datatypes
 
 \heading{Format for <tt>*stream</tt>:} The data written to the
 output stream will be formatted in a manner consistent with the input
-routines in \ref StreamGridInput.c.  That is, it will begin with a
+routines in \ref StreamGridInput_c.  That is, it will begin with a
 metadata header, consisting of multiple lines of the form:
 
-
-<table><tr><td><tt>\# </tt>fieldname<tt> = </tt>value </td></tr></table>
+\code
+# fieldname = value
+\endcode
 
 where \e fieldname is the name of a field in
 <tt>*series</tt> and \e value is the value of that metadata field,
@@ -49,49 +51,49 @@ be written, one per line:
 surrounded by quotes) corresponding to the type of <tt>*grid</tt>;
 e.g.\  COMPLEX8Grid.</dd>
 
-<dt> name:</dt><dd> \e value is a string surrounded by quotes
-<tt>\"</tt> representing <tt>grid->name</tt>.  Standard C-language string
+<dt> name:</dt><dd> \e value is a string surrounded by double-quotes
+representing <tt>grid-\>name</tt>.  Standard C-language string
 literal notation is used: printable characters are written directly
-except for <tt>\"</tt> and <tt>\\</tt> (rendered as <tt>\\\"</tt> and <tt>\\\\</tt>,
-respectively), characters with special C escape sequences are written
+except for double-quotes and <tt>\\</tt>,
+characters with special C escape sequences are written
 as those sequences (e.g.\ <tt>\\t</tt> for tab and <tt>\\n</tt> for
 newline), and all other character bytes are written as three-digit
 octal codes <tt>\\</tt>ooo.  Writing stops at the first null byte
 <tt>\\0</tt>.</dd>
 
 <dt> sampleUnits:</dt><dd> \e value is string surrounded by
-quotes <tt>\"</tt>; inside the quotes is a unit string corresponding to
-<tt>grid->sampleUnits</tt> as converted by the routine
+double-quotes; inside the quotes is a unit string corresponding to
+<tt>grid-\>sampleUnits</tt> as converted by the routine
 <tt>LALUnitAsString()</tt>.</dd>
 
 <dt> dimUnits:</dt><dd> \e value is a sequence of \f$m\f$ strings,
-surrounded by quotes <tt>"</tt> and separated by a space, where \f$m\f$ is
+surrounded by double-quotes and separated by a space, where \f$m\f$ is
 the grid dimension (number of grid axes); inside the quotes is a unit
-string corresponding to the elements of the <tt>grid->dimUnits</tt>
+string corresponding to the elements of the <tt>grid-\>dimUnits</tt>
 array as converted by the routine <tt>LALUnitAsString()</tt>.</dd>
 
 <dt> offset:</dt><dd> \e value is a sequence of \f$m\f$
  REAL8 numbers separated by single spaces, representing the
-elements of the <tt>grid->offset->data</tt>; the number of data \f$m\f$ is
+elements of the <tt>grid-\>offset-\>data</tt>; the number of data \f$m\f$ is
 the grid dimension and corresponds to the value of
-<tt>grid->offset->length</tt>.</dd>
+<tt>grid-\>offset-\>length</tt>.</dd>
 
 <dt> interval:</dt><dd> \e value is a sequence of \f$m\f$
  REAL8 numbers separated by single spaces, representing the
-elements of the <tt>grid->interval->data</tt>; the number of data \f$m\f$ is
+elements of the <tt>grid-\>interval-\>data</tt>; the number of data \f$m\f$ is
 the grid dimension and corresponds to the value of
-<tt>grid->interval->length</tt>.</dd>
+<tt>grid-\>interval-\>length</tt>.</dd>
 
 <dt> dimLength:</dt><dd> \e value is a sequence of \f$M\f$
  REAL8 numbers separated by single spaces, representing the
-elements of the <tt>grid->data->dimLength->data</tt>; the number of data
+elements of the <tt>grid-\>data-\>dimLength-\>data</tt>; the number of data
 \f$M\f$ is the data dimension and corresponds to the value of
-<tt>grid->data->dimLength->length</tt>, which must be greater than or
+<tt>grid-\>data-\>dimLength-\>length</tt>, which must be greater than or
 equal to the grid dimension \f$m\f$, above.</dd>
 </dl>
 
 After all metadata have been written, the contents of
-<tt>grid->data->data</tt> will be written in standard integer or
+<tt>grid-\>data-\>data</tt> will be written in standard integer or
 floating-point notation, according to <tt>\<datatype\></tt>: integers will
 be written to full precision, while floating-point numbers will be
 written in exponential notation with sufficient digits to ensure that
@@ -99,7 +101,7 @@ they represent a unique binary floating-point number under the IEEE
 Standard 754 (this means 9 digits for  REAL4s and 17 digits for
  REAL8s).
 
-The input format in \ref StreamGridInput.c does not specify how the
+The input format in \ref StreamGridInput_c does not specify how the
 numerical data is to be arranged, other than that the numbers be
 separated by whitespace, and that complex datatypes be represented by
 alternating real and imaginary components.  These routines adopt the
@@ -109,26 +111,13 @@ single datum (either a single number, or, for complex datatypes, a
 pair of numbers separated by whitespace), followed by a newline
 <tt>'\\n'</tt>.  If the data dimension is greater than the grid
 dimension, then each line will consist of a number of data equal to
-the length of the last dimension in <tt>grid->data->dimLength</tt>.  If
+the length of the last dimension in <tt>grid-\>data-\>dimLength</tt>.  If
 the data dimension is at least two greater than the grid dimension,
 and the dimension lengths are such that a single grid point comprises
 multiple lines of data, then an additional blank line <tt>'\\n'</tt> is
 inserted to separate subsequent grid points.
 
-\heading{Algorithm}
-
-\heading{Uses}
-\code
-lalDebugLevel                           LALPrintError()
-LALCHARCreateVector()                   LALCHARDestroyVector()
-LALUnitAsString()
-\endcode
-
-\heading{Notes}
-
 */
-
-/* % a " to fix C prettyprinting */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>

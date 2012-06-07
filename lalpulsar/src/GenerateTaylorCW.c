@@ -17,10 +17,17 @@
 *  MA  02111-1307  USA
 */
 
+#include <lal/LALStdio.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/Units.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/SimulateCoherentGW.h>
+#include <lal/GenerateTaylorCW.h>
+
 /**
 \author Creighton, T. D.
-\file
-\ingroup pulsarTODO
 
 \brief Computes a Taylor-parametrized continuous waveform.
 
@@ -30,7 +37,7 @@ This function computes a quaiperiodic waveform using the parameters in
 <tt>*params</tt>, storing the result in <tt>*output</tt>.
 
 In the <tt>*params</tt> structure, the routine uses all the "input"
-fields specified in \ref GenerateTaylorCW.h, and sets all of the
+fields specified in ::TaylorCWParamStruc, and sets all of the
 "output" fields.  If <tt>params->f=NULL</tt>, a precisely periodic
 (monochromatic) waveform is generated.
 
@@ -44,19 +51,19 @@ function will create and allocate space for <tt>output->a</tt>,
 
 This function is a fairly straightforward calculation of
 Eqs.\eqref{eq_taylorcw-freq} and\eqref{eq_taylorcw-phi} in
-\ref GenerateTaylorCW.h.  There are no real tricks involved, except
+\ref GenerateTaylorCW_h.  There are no real tricks involved, except
 to note that the phase \f$\phi\f$ and the time elapsed \f$t-t_0\f$ are
 computed and stored as \c REAL8s in order to provide waveforms
 that are accurate to small fractions of a cycle over many years.
 
 Since the waveform does not include any effects such as precession,
 the amplitudes \f$A_+\f$, \f$A_\times\f$ and the shift angle \f$\Phi\f$, as
-defined in \ref SimulateCoherentGW.h, are constant.  This is dealt
+defined in \ref SimulateCoherentGW_h, are constant.  This is dealt
 with by setting <tt>output->a</tt> to be a
 \c REAL4TimeVectorSequence of two identical vectors
 \f$(A_+,A_\times)\f$ spanning the requested time of the waveform, under
 the assumption that any routine using this output data (such as the
-routines in \ref SimulateCoherentGW.h) will interpolate these two
+routines in \ref SimulateCoherentGW_h) will interpolate these two
 endpoints to get the instantaneous values of \f$A_+\f$, \f$A_\times\f$.  The
 field <tt>output->shift</tt> is left as \c NULL, so the constant
 value of \f$\Phi\f$ must be subsumed into the polarization angle \f$\psi\f$.
@@ -68,7 +75,7 @@ reasonable.  As a guideline, we want to be able to determine the
 instantaneous wave phase accurately to within a fraction of a cycle.
 For functions that compute the phase by linear interpolation of
 <tt>output->phi</tt>, this means sampling on timescales \f$\Delta
-t\lessim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}\f$, where \f$T\f$ is
+t\lesssim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}\f$, where \f$T\f$ is
 the duration of the waveform.  More precisely, the largest deviation
 from linear phase evolution will typically be on the order of
 \f$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta t/2)^2\approx(\pi/4)\Delta
@@ -76,36 +83,13 @@ f\Delta t\f$, where \f$\Delta f\f$ is the frequency shift over the timestep.
 So if we want our interpolated phase to agree with the true phase to
 within, say, \f$\pi/2\f$ radians, then we would like to have
 \f[
-\Delta f \Delta t \lessim 2 \;.
+\Delta f \Delta t \lesssim 2 \;.
 \f]
 This routine provides a check by setting the output parameter field
 <tt>params->dfdt</tt> equal to the maximum value of \f$\Delta f\Delta t\f$
 encountered during the integration.
 
-\heading{Uses}
-\code
-LALMalloc()                   LALFree()
-LALSCreateVectorSequence()    LALSDestroyVectorSequence()
-LALSCreateVector()            LALSDestroyVector()
-LALDCreateVector()            LALDDestroyVector()
-snprintf()
-\endcode
-
-\heading{Notes}
-
-
-
 */
-
-#include <lal/LALStdio.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/Units.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/SimulateCoherentGW.h>
-#include <lal/GenerateTaylorCW.h>
-
 void
 LALGenerateTaylorCW( LALStatus          *stat,
 		     CoherentGW         *output,

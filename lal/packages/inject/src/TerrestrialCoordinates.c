@@ -224,7 +224,7 @@ v & = & \left\{\begin{array}{lr}
 		\arccos\left[\frac{Q}{-P\sqrt{-P}}\right]\right) &
 		D\leq0 \end{array}\right.\nonumber\\
 W & = & \sqrt{E^2 + \varpi v} \nonumber\\
-G & = & \mbox{\f$\frac{1}{2}\f$}\left(E+W\right)\;,\nonumber\\
+G & = & \frac{1}{2}\left(E+W\right)\;,\nonumber\\
 t & = & \sqrt{G^2+\frac{\varpi^2 F - \varpi vG}{W}}-G \;.\nonumber
 \f}
 Once we have \f$t\f$ and \f$\varpi\f$, we can compute the geodetic longitude
@@ -296,8 +296,8 @@ we have \f$E<0\f$ and the expression for \f$G\f$ becomes of this form.
 </ol>
 In each case, we expand in the small parameter \f$H=b/a^2\f$, giving:
 \f[
-\sqrt{a^2+b}-a \;\;\approx\;\; a\left(\mbox{\f$\frac{1}{2}\f$}H
--\mbox{\f$\frac{1}{8}\f$}H^2+\mbox{\f$\frac{1}{16}\f$}H^3\right)
+\sqrt{a^2+b}-a \;\;\approx\;\; a\left(\frac{1}{2} H
+- \frac{1}{8} H^2 + \frac{1}{16} H^3\right)
 \qquad\mbox{for}\qquad |H| = \left|\frac{b}{a^2}\right| \ll 1
 \f]
 
@@ -336,9 +336,9 @@ XLALGreenwichMeanSiderealTime()
 \endcode
 
 */
-/** @{ */
+/*@{*/
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALEquatorialToGeographic( LALStatus   *stat,
 			   SkyPosition *output,
@@ -372,7 +372,7 @@ LALEquatorialToGeographic( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALGeographicToEquatorial( LALStatus   *stat,
 			   SkyPosition *output,
@@ -406,7 +406,7 @@ LALGeographicToEquatorial( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALSystemToHorizon( LALStatus   *stat,
 		    SkyPosition *output,
@@ -461,7 +461,7 @@ LALSystemToHorizon( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALHorizonToSystem( LALStatus   *stat,
 		    SkyPosition *output,
@@ -515,7 +515,7 @@ LALHorizonToSystem( LALStatus   *stat,
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
 {
@@ -570,7 +570,7 @@ LALGeodeticToGeocentric( LALStatus *stat, EarthPosition *location )
 }
 
 
-/** See documentation in \ref TerrestrialCoordinates_c */
+/** \see See documentation in \ref TerrestrialCoordinates_c */
 void
 LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
 {
@@ -683,4 +683,4 @@ LALGeocentricToGeodetic( LALStatus *stat, EarthPosition *location )
   /* Transformation complete. */
   RETURN( stat );
 }
-/** @} */
+/*@}*/

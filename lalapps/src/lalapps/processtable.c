@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2007 Duncan Brown, Jolien Creighton, Kipp Cannon, Reinhard
- * Prix
+ * Copyright (C) 2007-2012 Duncan Brown, Jolien Creighton, Kipp Cannon,
+ * Reinhard Prix, Bernd Machenschalk
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,6 +17,8 @@
  * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307  USA
  */
+
+#ifndef _WIN32
 
 #define _GNU_SOURCE
 
@@ -148,7 +150,9 @@ int XLALPopulateProcessTable(
 {
 	char *cvs_keyword_value;
 	uid_t uid;
+#if 0
 	struct passwd *pw;
+#endif
 	struct tm utc;
 
 	/*
@@ -209,7 +213,7 @@ int XLALPopulateProcessTable(
 	 * comment
 	 */
 
-	snprintf(ptable->comment, LIGOMETA_COMMENT_MAX, "");
+	snprintf(ptable->comment, LIGOMETA_COMMENT_MAX, " ");
 
 	/*
 	 * online flag and domain
@@ -230,10 +234,14 @@ int XLALPopulateProcessTable(
 		XLAL_ERROR(XLAL_ESYS);
 	}
 	uid = geteuid();
+#if 0
 	if(!(pw = getpwuid(uid)))
+#endif
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%d", uid);
+#if 0
 	else
 		snprintf(ptable->username, LIGOMETA_USERNAME_MAX, "%s", pw->pw_name);
+#endif
 	ptable->process_id = process_id;
 
 	/*
@@ -242,3 +250,21 @@ int XLALPopulateProcessTable(
 
 	return 0;
 }
+
+#else /* _WIN32 */
+
+#include <stdio.h>
+
+int XLALPopulateProcessTable(
+	ProcessTable *ptable,
+	const char *program_name,
+	const char *cvs_revision,
+	const char *cvs_source,
+	const char *cvs_date,
+	long process_id
+) {
+  fprintf(stderr, "XLALPopulateProcessTable() not implemented for WIN32\n");
+  return 1;
+}
+
+#endif /* __WIN32 */

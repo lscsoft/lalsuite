@@ -8,15 +8,18 @@
  *-----------------------------------------------------------------------
  */
 
-/**
- * \defgroup FindChirpACTD_h FindChirpACTD_h
- * \ingroup CBC_findchirp
- */
+#ifndef _FINDCHIRPACTDH_H
+#define _FINDCHIRPACTDH_H
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
 
 /**
-\author McKechan, D. J. A.
-\file
-\ingroup FindChirpACTD_h
+ * \addtogroup FindChirpACTD_h
+ \author McKechan, D. J. A.
 
 \brief Provides structures and functions for amplitude corrected time domain
 templates using AmpCorPPN.
@@ -27,21 +30,13 @@ templates using AmpCorPPN.
 \endcode
 
 */
-
-
-#ifndef _FINDCHIRPACTDH_H
-#define _FINDCHIRPACTDH_H
-
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
-#endif
+/*@{*/
 
 /**\name Error Codes */ /*@{*/
 #define FINDCHIRPACTDH_EQMAS 1
 #define FINDCHIRPACTDH_MSGEQMAS "AmpCorPPN template equal mass"
 /*@}*/
+
 
 /** Define number of vectors, 6 for 0.5PN. */
 #define NACTDVECS (3)
@@ -78,6 +73,9 @@ REAL4  XLALFindChirpACTDInnerProduct(
     REAL4           deltaT,
     UINT4           numPoints
     );
+
+
+/*@}*/
 
 
 #if 0

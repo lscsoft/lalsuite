@@ -178,10 +178,10 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   /* check if there is an not existing timeseries and if the start time in the buffer does not match the start time of the SFTs */
   if ( !cfBuffer->multiTimeseries || ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) != 0) ) {
 
-    fprintf(stdout,"*** New segment : recomputing timeseries and detstates\n");
-    if ( !cfBuffer->multiTimeseries) fprintf(stdout,"timeseries pointer was null\n");
+    XLALPrintInfo ("*** New segment : recomputing timeseries and detstates\n");
+    if ( !cfBuffer->multiTimeseries) XLALPrintInfo("timeseries pointer was null\n");
     if ( XLALGPSCmp(&cfBuffer->segstart,&multiSFTs->data[0]->data[0].epoch) != 0)
-      fprintf(stdout,"segstart changed from %d to %d\n",cfBuffer->segstart.gpsSeconds,multiSFTs->data[0]->data[0].epoch.gpsSeconds);
+      XLALPrintInfo("segstart changed from %d to %d\n",cfBuffer->segstart.gpsSeconds,multiSFTs->data[0]->data[0].epoch.gpsSeconds);
 
     /* if there was no existing timeseries we need to recompute the timeseries from the SFTs */
     /* generate multiple coincident timeseries - one for each detector spanning start -> end */
@@ -250,13 +250,13 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
        )
     {
 
-      fprintf(stdout,"*** New sky position : recomputing SSB times, AM coefficients and Fa and Fb\n");
+      XLALPrintInfo("*** New sky position : recomputing SSB times, AM coefficients and Fa and Fb\n");
 
       /* temporary timeseries used to store the unbarycentred antenna weighted Fa and Fb timeseries */
       MultiCOMPLEX8TimeSeries *multiFa = NULL;
       MultiCOMPLEX8TimeSeries *multiFb = NULL;
 
-      fprintf(stderr,"freeing all of the sky dependent buffered quantities\n");
+      XLALPrintInfo("freeing all of the sky dependent buffered quantities\n");
       /* free all of the non-null quantities we're about to regenerate and point them to NULL */
       /* if ( cfBuffer->multiAMcoef ) XLALDestroyMultiAMCoeffs( cfBuffer->multiAMcoef ); */
 /*       if ( cfBuffer->multiSSB ) XLALDestroyMultiSSBtimes( cfBuffer->multiSSB ); */

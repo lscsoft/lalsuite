@@ -66,12 +66,12 @@
  * to obtain hplus - i hcross, which is added to the time series.
  *
  * Implements the sum of a single term of Eq. (11) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  *
  * If sym is non-zero, symmetrically add the m and -m terms assuming
- * that h(l,-m) = (-1)^l h(l,m)*; see Eq. (78) ibid.
+ * that \f$h(l,-m) = (-1)^l h(l,m)*\f$; see Eq. (78) ibid.
  */
 int XLALSimAddMode(
 		REAL8TimeSeries *hplus,      /**< +-polarization waveform */
@@ -120,9 +120,9 @@ int XLALSimAddMode(
  * the post-Newtonian inspiral waveform.
  *
  * See Eqns. (79)-(116) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
@@ -174,15 +174,15 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 
 
 /**
- * Given time series for a binary's orbital dynamical variables, 
- * construct the waveform polarizations h+ and hx as a sum of 
+ * Given time series for a binary's orbital dynamical variables,
+ * construct the waveform polarizations h+ and hx as a sum of
  * -2 spin-weighted spherical harmonic modes, h_lm.
  * NB: Valid only for non-precessing systems!
  *
  * Implements Equation (11) of:
- * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Lawrence E. Kidder, \"Using Full Information When Computing Modes of
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
- * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
 int XLALSimInspiralPNPolarizationWaveformsFromModes(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
@@ -222,18 +222,18 @@ int XLALSimInspiralPNPolarizationWaveformsFromModes(
 }
 
 /**
- * Given time series for a binary's orbital dynamical variables, 
+ * Given time series for a binary's orbital dynamical variables,
  * construct the waveform polarizations h+ and hx directly.
  * NB: Valid only for non-precessing binaries!
  *
  * Implements Equations (8.8) - (8.10) of:
- * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha, 
- * "The third post-Newtonian gravitational wave polarisations 
- * and associated spherical harmonic modes for inspiralling compact binaries 
- * in quasi-circular orbits", Class. Quant. Grav. 25 165003 (2008);
+ * Luc Blanchet, Guillaume Faye, Bala R. Iyer and Siddhartha Sinha,
+ * \"The third post-Newtonian gravitational wave polarisations
+ * and associated spherical harmonic modes for inspiralling compact binaries
+ * in quasi-circular orbits\", Class. Quant. Grav. 25 165003 (2008);
  * arXiv:0802.1249
- * 
- * Note however, that we do not include the constant "memory" terms
+ *
+ * Note however, that we do not include the constant \"memory\" terms
  */
 int XLALSimInspiralPNPolarizationWaveforms(
 	REAL8TimeSeries **hplus,  /**< +-polarization waveform [returned] */
@@ -279,7 +279,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
     
-    /** 
+    /* 
      * cosines and sines of inclination between 
      * line of sight (N) and binary orbital angular momentum (L_N)
      */
@@ -295,7 +295,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
         phi = Phi->data->data[idx]; 	v = V->data->data[idx];   
         v2 = v * v; 	v3 = v * v2;
 
-        /** 
+        /* 
          * As explained in Blanchet et al, a phase shift can be applied 
          * to make log terms vanish which would appear in the amplitude 
          * at 1.5PN and 2.5PN orders. This shift is given in Eq. (8.8)
@@ -310,7 +310,7 @@ int XLALSimInspiralPNPolarizationWaveforms(
 
         phi = phi - phiShift;
 
-        /** 
+        /*
          * First set all h+/x coefficients to 0. Then use a switch to
          * set proper non-zero values up to order ampO. Note we
          * fall through the PN orders and break only after Newt. order
@@ -537,18 +537,18 @@ int XLALSimInspiralPNPolarizationWaveforms(
  * Computes polarizations h+ and hx for a spinning, precessing binary
  * when provided time series of all the dynamical quantities.
  * Amplitude can be chosen between 1.5PN and Newtonian orders (inclusive).
- * 
+ *
  * Based on K.G. Arun, Alesssandra Buonanno, Guillaume Faye and Evan Ochsner
- * "Higher-order spin effects in the amplitude and phase of gravitational 
- * waveforms emitted by inspiraling compact binaries: Ready-to-use 
- * gravitational waveforms", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
- * 
+ * \"Higher-order spin effects in the amplitude and phase of gravitational
+ * waveforms emitted by inspiraling compact binaries: Ready-to-use
+ * gravitational waveforms\", Phys Rev. D 79, 104023 (2009), arXiv:0810.5336
+ *
  * HOWEVER, the formulae have been adapted to use the output of the so-called
- * "Frameless" convention for evolving precessing binary dynamics, 
+ * \"Frameless\" convention for evolving precessing binary dynamics,
  * which is not susceptible to hitting coordinate singularities.
  *
  * FIXME: Clean up and commit Mathematica NB Showing correctness. Cite here.
- * 
+ *
  * NOTE: The vectors MUST be given in the so-called radiation frame where
  * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
  */
@@ -665,7 +665,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
         nx2 = nx*nx;	ny2 = ny*ny;	nz2 = nz*nz;	nz3 = nz*nz2;
         lx2 = lx*lx;	ly2 = ly*ly;	lz2 = lz*lz;	lz3 = lz*lz2;
 
-        /** 
+        /* 
          * First set all h+/x coefficients to 0. Then use a switch to
          * set proper non-zero values up to order ampO. Note we
          * fall through the PN orders and break only after Newt. order
@@ -676,7 +676,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 
         switch( ampO )
         {
-            /**
+            /*
              * case LAL_PNORDER_THREE_POINT_FIVE:
              * case LAL_PNORDER_THREE:
              * case LAL_PNORDER_TWO_POINT_FIVE:
@@ -808,35 +808,200 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 }
 
 /**
+ * Compute the physical template family "Q" vectors for a spinning, precessing
+ * binary when provided time series of all the dynamical quantities.
+ * These vectors always supplied to dominant order.
+ *
+ * Based on Pan, Buonanno, Chan and Vallisneri PRD69 104017, (see also theses
+ * of Diego Fazi and Ian Harry)
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ */
+
+
+int XLALSimInspiralPrecessingPTFQWaveforms(
+        REAL8TimeSeries **Q1,     /**< PTF-Q1 waveform [returned] */
+        REAL8TimeSeries **Q2,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q3,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q4,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q5,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries *V,       /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi,     /**< orbital phase */
+        REAL8TimeSeries *S1x,     /**< Spin1 vector x component */
+        REAL8TimeSeries *S1y,     /**< Spin1 vector y component */
+        REAL8TimeSeries *S1z,     /**< Spin1 vector z component */
+        REAL8TimeSeries *S2x,     /**< Spin2 vector x component */
+        REAL8TimeSeries *S2y,     /**< Spin2 vector y component */
+        REAL8TimeSeries *S2z,     /**< Spin2 vector z component */
+        REAL8TimeSeries *LNhatx,  /**< unit orbital ang. mom. x comp. */
+        REAL8TimeSeries *LNhaty,  /**< unit orbital ang. mom. y comp. */
+        REAL8TimeSeries *LNhatz,  /**< unit orbital ang. mom. z comp. */
+        REAL8TimeSeries *E1x,     /**< orbital plane basis vector x comp. */
+        REAL8TimeSeries *E1y,     /**< orbital plane basis vector y comp. */
+        REAL8TimeSeries *E1z,     /**< orbital plane basis vector z comp. */
+        REAL8 m1,                 /**< mass of companion 1 (kg) */
+        REAL8 m2,                 /**< mass of companion 2 (kg) */
+        REAL8 r                  /**< distance of source (m) */
+        )
+{
+    REAL8 s1x, s1y, s1z, s2x, s2y, s2z, lnhx, lnhy, lnhz;
+    REAL8 e1x, e1y, e1z, e2x, e2y, e2z, nx, ny, nz, lx, ly, lz;
+    REAL8 nx2, ny2, nz2, lx2, ly2, lz2;
+    REAL8 q1tmp, q2tmp, q3tmp, q4tmp, q5tmp;
+    REAL8 M, eta, dm, phi, v, v2, dist, ampfac;
+    INT4 idx, len;
+    REAL8 sqrt_three = pow(3,0.5);
+
+    /* Macros to check time series vectors */
+    LAL_CHECK_VALID_SERIES(V,                   XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(Phi,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1z,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2z,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhatx,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhaty,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhatz,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1z,                 XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, Phi,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1z,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2z,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhatx, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhaty, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhatz, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1z,    XLAL_FAILURE);
+
+
+    /* Allocate polarization vectors and set to 0 */
+    *Q1 = XLALCreateREAL8TimeSeries( "PTF_Q_1", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q2 = XLALCreateREAL8TimeSeries( "PTF_Q_2", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q3 = XLALCreateREAL8TimeSeries( "PTF_Q_3", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q4 = XLALCreateREAL8TimeSeries( "PTF_Q_4", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q5 = XLALCreateREAL8TimeSeries( "PTF_Q_5", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+
+    if ( ! Q1 || ! Q2 || !Q3 || !Q4 || !Q5 )
+        XLAL_ERROR(XLAL_EFUNC);
+    memset((*Q1)->data->data, 0,
+            (*Q1)->data->length*sizeof(*(*Q1)->data->data));
+    memset((*Q2)->data->data, 0,
+            (*Q2)->data->length*sizeof(*(*Q2)->data->data));
+    memset((*Q3)->data->data, 0,
+            (*Q3)->data->length*sizeof(*(*Q3)->data->data));
+    memset((*Q4)->data->data, 0,
+            (*Q4)->data->length*sizeof(*(*Q4)->data->data));
+    memset((*Q5)->data->data, 0,
+            (*Q5)->data->length*sizeof(*(*Q5)->data->data));
+
+    M = m1 + m2;
+    eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
+    dm = (m1 - m2) / M;    // frac. mass difference - \delta m/m in the paper
+    dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
+    /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
+    ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
+
+    /* loop over time steps and compute the Qi */
+    len = V->data->length;
+    for(idx = 0; idx < len; idx++)
+    {
+        /* Abbreviated names in lower case for time series at this sample */
+        phi  = Phi->data->data[idx];    v = V->data->data[idx];     v2 = v * v;
+        lnhx = LNhatx->data->data[idx]; e1x = E1x->data->data[idx];
+        lnhy = LNhaty->data->data[idx]; e1y = E1y->data->data[idx];
+        lnhz = LNhatz->data->data[idx]; e1z = E1z->data->data[idx];
+        s1x  = S1x->data->data[idx];    s2x = S2x->data->data[idx];
+        s1y  = S1y->data->data[idx];    s2y = S2y->data->data[idx];
+        s1z  = S1z->data->data[idx];    s2z = S2z->data->data[idx];
+
+        /* E2 = LNhat x E1 */
+        e2x = lnhy*e1z - lnhz*e1y;
+        e2y = lnhz*e1x - lnhx*e1z;
+        e2z = lnhx*e1y - lnhy*e1x;
+
+        /* Unit orbital separation vector */
+        nx = e1x*cos(phi) + e2x*sin(phi);
+        ny = e1y*cos(phi) + e2y*sin(phi);
+        nz = e1z*cos(phi) + e2z*sin(phi);
+
+        /* Unit inst. orbital velocity vector */
+        lx = e2x*cos(phi) - e1x*sin(phi);
+        ly = e2y*cos(phi) - e1y*sin(phi);
+        lz = e2z*cos(phi) - e1z*sin(phi);
+
+        /* Powers of vector components */
+        nx2 = nx*nx;    ny2 = ny*ny;    nz2 = nz*nz;
+        lx2 = lx*lx;    ly2 = ly*ly;    lz2 = lz*lz;
+
+        /* 
+         * NOTE: For PTF waveforms, we must use only the dominant amplitude
+         * The Q values are computed from equations 13,14,17, 46 + 47 in PBCV or
+         * more simply from equations (3.10) in Diego Fazi's thesis.
+         * Note that Q5 is simplified from that shown in Fazi's thsis
+         * by using traceless condition. As demonstrated in (6.29)
+         * in Ian Harry's thesis.
+         */
+
+        q1tmp = lx2 - ly2 - nx2 + ny2;
+        q2tmp = 2*lx*ly - 2*nx*ny;
+        q3tmp = 2*lx*lz - 2*nx*nz;
+        q4tmp = 2*ly*lz - 2*ny*nz;
+        q5tmp = sqrt_three * (nz2 - lz2);
+
+        /* Fill the output vectors */
+        (*Q1)->data->data[idx] = ampfac * v2 * q1tmp;
+        (*Q2)->data->data[idx] = ampfac * v2 * q2tmp;
+        (*Q3)->data->data[idx] = ampfac * v2 * q3tmp;
+        (*Q4)->data->data[idx] = ampfac * v2 * q4tmp;
+        (*Q5)->data->data[idx] = ampfac * v2 * q5tmp;
+    }
+    return XLAL_SUCCESS;
+}
+
+/**
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
- * "radiation frame" (with the z-axis along the direction of propagation) as
+ * \"radiation frame\" (with the z-axis along the direction of propagation) as
  * needed for initial conditions for the SpinTaylorT4 waveform routines.
- * 
- * Input: 
- *     thetaJN, phiJN are angles describing the desired orientation of the 
+ *
+ * Input:
+ *     thetaJN, phiJN are angles describing the desired orientation of the
  * total angular momentum (J) relative to direction of propagation (N)
  *     theta1, phi1, theta2, phi2 are angles describing the desired orientation
  * of spin 1 and 2 relative to the Newtonian orbital angular momentum (L_N)
- *     m1, m2, f0 are the component masses and initial GW frequency, 
+ *     m1, m2, f0 are the component masses and initial GW frequency,
  * they are needed to compute the magnitude of L_N, and thus J
- *     chi1, chi2 are the dimensionless spin magnitudes ( 0 <= chi1,2 <= 1),
+ *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$),
  * they are needed to compute the magnitude of S1 and S2, and thus J
- * 
- * Output: 
+ *
+ * Output:
  *     x, y, z components of LNhat (unit vector along orbital angular momentum),
  *     x, y, z components of E1 (unit vector in the initial orbital plane)
- *     x, y, z components S1 and S2 (unit spin vectors times their 
- * dimensionless spin magnitudes - i.e. they have unit magnitude for 
+ *     x, y, z components S1 and S2 (unit spin vectors times their
+ * dimensionless spin magnitudes - i.e. they have unit magnitude for
  * extremal BHs and smaller magnitude for slower spins)
  *
- * NOTE: Here the "total" angular momentum is computed as
+ * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
- * where L_N is the Newtonian orbital angular momentum. In fact, there are 
- * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR 
- * in this function. This is done so the function does not need to know about 
- * the PN order of the system and to avoid subtleties with spin-orbit 
- * contributions to L. Also, it is believed that the difference in Jhat 
+ * where L_N is the Newtonian orbital angular momentum. In fact, there are
+ * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR
+ * in this function. This is done so the function does not need to know about
+ * the PN order of the system and to avoid subtleties with spin-orbit
+ * contributions to L. Also, it is believed that the difference in Jhat
  * with or without these PN corrections to L is quite small.
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
@@ -1092,7 +1257,7 @@ int XLALSimInspiralChooseTDWaveform(
             break;
         case PhenSpinTaylorRD:
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
-            ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z, phaseO, TotalJ);
+	  ret = XLALSimIMRPSpinInspiralRDGenerator(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1x, S1y, S1z, S2x, S2y, S2z, phaseO, TotalJ, 0);
             break;
         case SEOBNRv1:
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phi0, deltaT, m1, m2, f_min, r, i, S1z, S2z);
@@ -1177,7 +1342,7 @@ int XLALSimInspiralChooseFDWaveform(
 
 /**
  * Checks whether the given approximant is implemented in lalsimulation's XLALSimInspiralChooseTDWaveform().
- * 
+ *
  * returns 1 if the approximant is implemented, 0 otherwise.
  */
 int XLALSimInspiralImplementedTDApproximants(

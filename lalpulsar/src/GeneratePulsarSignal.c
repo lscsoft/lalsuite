@@ -24,15 +24,6 @@
 /* 10/12/04 gam; When computing fCross and fPlus need to use 2.0*psi. */
 /* 09/07/05 gam; Add Dterms parameter to LALFastGeneratePulsarSFTs; use this to fill in SFT bins with fake data as per LALDemod else fill in bin with zero */
 
-/**
- * \author Reinhard Prix, Greg Mendell
- * \date 2005
- * \file
- * \ingroup moduleGeneratePulsarSignal
- *
- * \brief Module to generate simulated pulsar-signals.
- *
- */
 #include <math.h>
 #include <gsl/gsl_math.h>
 
@@ -1023,16 +1014,16 @@ LALConvertSSB2GPS (LALStatus *status,		/**< pointer to LALStatus structure */
 } /* LALConvertSSB2GPS() */
 
 
-/************************************************************************
+/* ***********************************************************************
  * the following are INTERNAL FUNCTIONS not to be called outside of this
  * module
  ************************************************************************/
 
 #define oneBillion 1000000000;
-/*----------------------------------------------------------------------
- *   check that all timestamps given lie within the range [t0, t1]
- *    return: 0 if ok, -1 if not
- *----------------------------------------------------------------------*/
+/** Check that all timestamps given lie within the range [t0, t1]
+ *
+ *  return: 0 if ok, -1 if not
+ */
 int
 check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIGOTimeGPS t1)
 {
@@ -1070,11 +1061,9 @@ check_timestamp_bounds (const LIGOTimeGPSVector *timestamps, LIGOTimeGPS t0, LIG
 
 } /* check_timestamp_bounds() */
 
-/*----------------------------------------------------------------------
- * check if frequency-range and resolution of noiseSFTs is consistent with signal-band [f0, f1]
- * Note: all frequencies f are required to correspond to integer *bins* f/dFreq
- * ABORT if not
- *----------------------------------------------------------------------*/
+/** Check if frequency-range and resolution of noiseSFTs is consistent with signal-band [f0, f1]
+ * \note All frequencies f are required to correspond to integer *bins* f/dFreq, ABORT if not
+ */
 void
 checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, REAL8 deltaF)
 {
@@ -1128,9 +1117,8 @@ checkNoiseSFTs (LALStatus *status, const SFTVector *sfts, REAL8 f0, REAL8 f1, RE
 
 
 
-/*----------------------------------------------------------------------
- * Yousuke's phase-correction function, taken from makefakedata_v2
- *----------------------------------------------------------------------*/
+/** Yousuke's phase-correction function, taken from makefakedata_v2
+ */
 void
 correct_phase (LALStatus* status, SFTtype *sft, LIGOTimeGPS tHeterodyne)
 {

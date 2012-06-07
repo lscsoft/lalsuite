@@ -153,14 +153,18 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--Nskip N)                      Number of iterations between disk save (100).\n\
                (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
                (--randomseed seed)              Random seed of sampling distribution (random).\n\
+               (--adaptTau)                     Adaptation decay power, results in adapt length of 10^tau (5).\n\
+               (--noAdapt)                      Do not adapt run.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Likelihood Functions -----------------------------------------------------------------------------------------\n\
                ------------------------------------------------------------------------------------------------------------------\n\
-               (--tdlike)                       Compute likelihood in the time domain.\n\
+               (--zeroLogLike)                  Use flat, null likelihood.\n\
                (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
                (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
                (--bimodalGaussianLikelihood)    Use analytic, bimodal correlated Gaussian for Likelihood.\n\
+               (--analyticnullprior)            Use analytic null prior.\n\
+               (--nullprior)                    Use null prior in the sampled parameters.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Proposals  ---------------------------------------------------------------------------------------------------\n\
@@ -190,7 +194,7 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
                (--propVerbose)                  Output proposal stats to file.\n\
-               (--output dir)                   Write output files PTMCMC.output.*.* in directory dir.\n";
+               (--outfile file)                 Write output files <file>.<chain_number> (PTMCMC.output.<random_seed>.<chain_number>).\n";
 
   /* Print command line arguments if runState was not allocated */
   if(runState==NULL)
@@ -233,6 +237,7 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->proposal=&LALInferenceRapidSkyLocProposal;
   else
     runState->proposal=&LALInferenceDefaultProposal;
+    //runState->proposal=&LALInferencetempProposal;
 
   /* Choose the template generator for inspiral signals */
   runState->template=&LALInferenceTemplateLAL;
@@ -242,7 +247,7 @@ void initializeMCMC(LALInferenceRunState *runState)
   }else{
     ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
     if(ppt){
-      if(strstr(ppt->value,"TaylorF2")) {
+      if(strstr(ppt->value,"TaylorF2") || strstr(ppt->value,"TaylorF2RedSpin")) {
         runState->template=&LALInferenceTemplateLAL;
         fprintf(stdout,"Template function called is \"LALInferenceTemplateLAL\"\n");
       }else if(strstr(ppt->value,"35phase_25amp")) {
@@ -255,10 +260,11 @@ void initializeMCMC(LALInferenceRunState *runState)
     }
   }
 
-  if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
-    fprintf(stderr, "Computing likelihood in the time domain.\n");
-    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
-  } else if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
+//  if (LALInferenceGetProcParamVal(commandLine,"--tdlike")) {
+//    fprintf(stderr, "Computing likelihood in the time domain.\n");
+//    runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
+//  } else 
+  if (LALInferenceGetProcParamVal(commandLine, "--zeroLogLike")) {
     /* Use zero log(L) */
     runState->likelihood=&LALInferenceZeroLogLikelihood;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
@@ -275,7 +281,10 @@ void initializeMCMC(LALInferenceRunState *runState)
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
     runState->prior=&LALInferenceInspiralSkyLocPrior;
   } else if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood") || 
-              LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
+             LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood") ||
+             LALInferenceGetProcParamVal(commandLine, "--analyticnullprior")) {
+    runState->prior=&LALInferenceAnalyticNullPrior;
+  } else if (LALInferenceGetProcParamVal(commandLine, "--nullprior")) {
     runState->prior=&LALInferenceNullPrior;
   } else {
     runState->prior=&LALInferenceInspiralPriorNormalised;
@@ -422,11 +431,22 @@ void initVariables(LALInferenceRunState *state)
                ------------------------------------------------------------------------------------------------------------------\n\
                (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
                (--LALSimulation)               Interface with the LALSimulation package for template generation.\n\
-               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2).\n\
+               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2). Possible values are: \n\
+                                               default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4, \n\
+                                                                           EOB, EOBNR, EOBNRv2, EOBNRv2HM, SpinTaylor, \n\
+                                                                           SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4, \n\
+                                                                           PhenSpinTaylorRD, NumRel.\n\
+                                               default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
+                                                                                TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
                (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
+               (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
+               (--spinAligned)                 template will assume spins aligned with the orbital angular momentum.\n\
+                                               *Enables* spins for TaylorF2, TaylorF2RedSpin, TaylorF2RedSpinTidal, IMRPhenomB.\n\
+               (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
+               (--noSpin)                      template will assume no spins.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -466,9 +486,9 @@ void initVariables(LALInferenceRunState *state)
                (--Dmin dist)                   Minimum distance in Mpc (1).\n\
                (--Dmax dist)                   Maximum distance in Mpc (100).\n\
                (--lambda1-min)                 Minimum lambda1 (0).\n\
-               (--lambda1-max)                 Maximum lambda1 (80).\n\
+               (--lambda1-max)                 Maximum lambda1 (3000).\n\
                (--lambda2-min)                 Minimum lambda2 (0).\n\
-               (--lambda2-max)                 Maximum lambda2 (80).\n\
+               (--lambda2-max)                 Maximum lambda2 (3000).\n\
                (--dt time)                     Width of time prior, centred around trigger (0.1s).\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
@@ -518,7 +538,7 @@ void initVariables(LALInferenceRunState *state)
   ProcessParamsTable *ppt=NULL;
   //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-  LALPNOrder AmpOrder=LAL_PNORDER_NEWTONIAN;
+  LALPNOrder AmpOrder=-1;//LAL_PNORDER_THREE_POINT_FIVE;//LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
@@ -539,9 +559,9 @@ void initVariables(LALInferenceRunState *state)
   REAL8 qMax=1.0;
   REAL8 dt=0.1;            /* Width of time prior */
   REAL8 lambda1Min=0.0;
-  REAL8 lambda1Max=80.0;
+  REAL8 lambda1Max=3000.0;
   REAL8 lambda2Min=0.0;
-  REAL8 lambda2Max=80.0;  
+  REAL8 lambda2Max=3000.0;  
   REAL8 tmpMin,tmpMax;//,tmpVal;
   gsl_rng * GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
@@ -605,86 +625,115 @@ void initVariables(LALInferenceRunState *state)
     if ( ! strcmp( "GeneratePPN", ppt->value ) )
       {
         approx = GeneratePPN;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT1", ppt->value ) )
       {
         approx = TaylorT1;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT2", ppt->value ) )
       {
         approx = TaylorT2;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT3", ppt->value ) )
       {
         approx = TaylorT3;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorT4", ppt->value ) )
       {
         approx = TaylorT4;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "TaylorF1", ppt->value ) )
       {
         approx = TaylorF1;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "TaylorF2", ppt->value ) )
       {
         approx = TaylorF2;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      }
+    else if ( ! strcmp( "TaylorF2RedSpin", ppt->value ) )
+      {
+        approx = TaylorF2RedSpin;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+      }
+      else if ( ! strcmp( "TaylorF2RedSpinTidal", ppt->value ) )
+      {
+        approx = TaylorF2RedSpinTidal;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "EOB", ppt->value ) )
       {
         approx = EOB;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNR", ppt->value ) )
       {
         approx = EOBNR;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNRv2", ppt->value ) )
       {
         approx = EOBNRv2;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "EOBNRv2HM", ppt->value ) )
       {
         approx = EOBNRv2HM;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylor", ppt->value ) )
       {
         approx = SpinTaylor;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
-    else if ( ! strcmp( "SpinTaylorT3", ppt->value ) )
+    else if ( ! strcmp( "SpinTaylorT4", ppt->value ) )
       {
-        approx = SpinTaylorT3;
+        approx = SpinTaylorT4;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinQuadTaylor", ppt->value ) )
       {
         approx = SpinQuadTaylor;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "SpinTaylorFrameless", ppt->value ) )
       {
         approx = SpinTaylorFrameless;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "PhenSpinTaylorRD", ppt->value ) )
       {
         approx = PhenSpinTaylorRD;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "NumRel", ppt->value ) )
       {
         approx = NumRel;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
       }
     else if ( ! strcmp( "IMRPhenomA", ppt->value ) )
       {
         approx = IMRPhenomA;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else if ( ! strcmp( "IMRPhenomB", ppt->value ) )
       {
         approx = IMRPhenomB;
+        state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
       }
     else
       {
         fprintf( stderr, "invalid argument to --approximant\n"
                  "unknown approximant %s specified: "
                  "Approximant must be one of: GeneratePPN, TaylorT1, TaylorT2,\n"
-                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2,  EOB, EOBNR, EOBNRv2, \n"
-                 "EOBNRv2HM, SpinTaylor, SpinTaylorT3, SpinQuadTaylor, SpinTaylorFrameless,\n"
+                 "TaylorT3, TaylorT4, TaylorF1, TaylorF2, TaylorF2RedSpin, TaylorF2RedSpinTidal, EOB, EOBNR, EOBNRv2, \n"
+                 "EOBNRv2HM, SpinTaylor, SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4\n"
                  "PhenSpinTaylorRD, NumRel, IMRPhenomA, IMRPhenomB \n", ppt->value);
         exit( 1 );
       }
@@ -791,6 +840,25 @@ void initVariables(LALInferenceRunState *state)
         exit( 1 );
       }
     fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(AmpOrder))/2.0);
+  }
+  
+  ppt=LALInferenceGetProcParamVal(commandLine,"--modeldomain");
+  if(ppt){
+    if ( ! strcmp( "time", ppt->value ) )
+    {
+      state->data->modelDomain = LALINFERENCE_DOMAIN_TIME;
+    }
+    else if ( ! strcmp( "frequency", ppt->value ) )
+    {
+      state->data->modelDomain = LALINFERENCE_DOMAIN_FREQUENCY;
+    }
+    else
+    {
+      fprintf( stderr, "invalid argument to --modeldomain:\n"
+              "unknown domain specified: "
+              "domain must be one of: time, frequency\n");
+      exit( 1 );
+    }
   }
   
   /* This flag was added to account for the broken Big Dog
@@ -1177,7 +1245,7 @@ void initVariables(LALInferenceRunState *state)
   LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
 
   ppt=LALInferenceGetProcParamVal(commandLine, "--noSpin");
-  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD) && !ppt){
+  if((approx==SpinTaylor || approx==SpinTaylorFrameless || approx==PhenSpinTaylorRD || approx==SpinTaylorT4) && !ppt){
 
 
     ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
@@ -1258,7 +1326,7 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
-  if(approx==TaylorF2 && ppt){
+  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB) && ppt){
 
     tmpMin=-1.0; tmpMax=1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");
@@ -1521,6 +1589,9 @@ void initVariables(LALInferenceRunState *state)
 
   /* KD Tree propsal. */
   ppt=LALInferenceGetProcParamVal(commandLine, "--kDTree");
+  if (!ppt) {
+    ppt = LALInferenceGetProcParamVal(commandLine, "--kdtree");
+  }
   if (ppt) {
     LALInferenceKDTree *tree;
     REAL8 *low, *high;

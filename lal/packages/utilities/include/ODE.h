@@ -17,29 +17,6 @@
 *  MA  02111-1307  USA
 */
 
-/**** <lalVerbatim file="ODEHV">
- * Author: J. D. E. Creighton
- **** </lalVerbatim> */
-
-/**** <lalLaTeX>
- *
- * \section{Header \texttt{ODE.h}}
- *
- * Routines for solving ordinary differential equations (ODEs).
- *
- * \subsection*{Synopsis}
- * \begin{verbatim}
- * #include <lal/ODE.h>
- * \end{verbatim}
- *
- * These routines solve ordinary differential equations (ODEs) of the form:
- * \begin{displaymath}
- *   \dot{\mathbf{x}} = {\mathbf{f}}({\mathbf{x}},t,\ldots)
- * \end{displaymath}
- * where $\mathbf{f}$ is a specified vector-valued function.
- *
- **** </lalLaTeX> */
-
 #ifndef _ODE_H
 #define _ODE_H
 
@@ -56,88 +33,70 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/**** <lalLaTeX>
+
+/**
+ * \addtogroup ODE_h
+ * \author J. D. E. Creighton
  *
- * \subsection*{Error conditions}
+ * \brief Routines for solving ordinary differential equations (ODEs).
  *
- **** </lalLaTeX> */
-/**** <lalErrTable> */
-#define ODEH_ENULL 001
-#define ODEH_ESAME 002
-#define ODEH_ESIZE 004
-#define ODEH_ESZMM 010
-#define ODEH_ENSTP 020
+ * \heading{Synopsis}
+ * \code
+ * #include <lal/ODE.h>
+ * \endcode
+ *
+ * These routines solve ordinary differential equations (ODEs) of the form:
+ * \f[
+ *   \dot{\mathbf{x}} = {\mathbf{f}}({\mathbf{x}},t,\ldots)
+ * \f]
+ * where \f$\mathbf{f}\f$ is a specified vector-valued function.
+ *
+*/
+/*@{*/
+
+/**\name Error Codes */
+/*@{*/
+#define ODEH_ENULL 001		/**< Null pointer. */
+#define ODEH_ESAME 002		/**< Same data pointer. */
+#define ODEH_ESIZE 004		/**< Invalid size. */
+#define ODEH_ESZMM 010		/**< Size mismatch. */
+#define ODEH_ENSTP 020		/**< Step number mismatch. */
+/*@}*/
+
+/** \cond DONT_DOXYGEN */
 #define ODEH_MSGENULL "Null pointer."
 #define ODEH_MSGESAME "Same data pointer."
 #define ODEH_MSGESIZE "Invalid size."
 #define ODEH_MSGESZMM "Size mismatch."
 #define ODEH_MSGENSTP "Step number mismatch."
-/**** </lalErrTable> */
+/** \endcond */
 
-/**** <lalLaTeX>
- *
- * \subsection*{Structures}
- * \idx[Type]{REAL4ODEIndep}
- * \idx[Type]{REAL4ODEParams}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+/** The independent variables of the ODE (parameters to the ODE function) */
 typedef struct
 tagREAL4ODEIndep
 {
   SWIGLAL_STRUCT(REAL4ODEIndep);
-  REAL4  t;
-  void  *aux;
+  REAL4  t;	/**< The independent parameter (e.g., time) that is evolved */
+  void  *aux;	/**< Storage for auxiliary variables used internally in the ODE routine */
 }
 REAL4ODEIndep;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * The independent variables of the ODE (parameters to the ODE function).
- * The fields are:
- * \begin{description}
- * \item[\texttt{t}] The independent parameter (e.g., time) that is evolved.
- * \item[\texttt{aux}] Storage for auxiliary variables used internally in the
- *   ODE routine.
- * \end{description}
- *
- **** </lalLaTeX> */
-/**** <lalVerbatim> */
+
+/** The parameters for the ODE step integrator */
 typedef struct
 tagREAL4ODEParams
 {
   SWIGLAL_STRUCT(REAL4ODEParams);
-  void ( *ode )( LALStatus *, REAL4Vector *, REAL4Vector *, REAL4ODEIndep * );
-  REAL4ODEIndep       *indep;
-  REAL4                tstep;
-  REAL4Vector         *xdot;
-  REAL4Vector         *xerr;
-  REAL4                eps;
-  REAL4VectorSequence *dx;
+  void ( *ode )( LALStatus *, REAL4Vector *, REAL4Vector *, REAL4ODEIndep * );	/**< Pointer to the function that computes the RHS of the ODE */
+  REAL4ODEIndep       *indep;	/**< The independent variables of used by this function */
+  REAL4                tstep;	/**< The suggested time step to use */
+  REAL4Vector         *xdot;	/**< The value of the LHS of the ODE at the current time */
+  REAL4Vector         *xerr;	/**< The estimated errors from the last ODE step */
+  REAL4                eps;	/**< The allowed fractional error per step; if \c eps is \< \c LAL_REAL4_EPS, then the latter is used */
+  REAL4VectorSequence *dx;	/**< Workspace storage for use in the the step integrator; the length of the sequence depends on which integrator is used */
 }
 REAL4ODEParams;
-/**** </lalVerbatim> */
-/**** <lalLaTeX>
- *
- * The parameters for the ODE step integrator.  The fields are:
- * \begin{description}
- * \item[\texttt{ode}] Pointer to the function that computes the RHS of the ODE.
- * \item[\texttt{indep}] The independent variables of used by this function.
- * \item[\texttt{tstep}] The suggested time step to use.
- * \item[\texttt{xdot}] The value of the LHS of the ODE at the current time.
- * \item[\texttt{xerr}] The estimated errors from the last ODE step.
- * \item[\texttt{eps}] The allowed fractional error per step.  If \verb+eps+ is
- *   less than \verb+LAL_REAL4_EPS+, then the latter is used instead.
- * \item[\texttt{dx}] Workspace storage for use in the the step integrator.
- *   The length of the sequence depends on which integrator is used.
- * \end{description}
- *
- * \vfill{\footnotesize\input{ODEHV}}
- * \newpage\input{ODEC}
- * \newpage\input{ODETestC}
- *
- **** </lalLaTeX> */
 
+/** See ODE_h for documentation */
 void LALSRungeKutta4(
     LALStatus      *status,
     REAL4Vector    *output,
@@ -145,6 +104,7 @@ void LALSRungeKutta4(
     REAL4ODEParams *params
     );
 
+/** See ODE_h for documentation */
 void LALSRungeKutta5(
     LALStatus      *status,
     REAL4Vector    *output,
@@ -152,12 +112,15 @@ void LALSRungeKutta5(
     REAL4ODEParams *params
     );
 
+/** See ODE_h for documentation */
 void LALSRungeKutta5Adapt(
     LALStatus      *status,
     REAL4Vector    *output,
     REAL4Vector    *input,
     REAL4ODEParams *params
     );
+
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

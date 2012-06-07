@@ -65,7 +65,7 @@ Functions in the Metaio library:
 
 
 #define XLAL_CLOBBER_EVENTS \
-  while ( eventHead ); \
+  while ( eventHead ) \
 { \
   thisEvent = eventHead; \
   eventHead = (eventHead)->next; \

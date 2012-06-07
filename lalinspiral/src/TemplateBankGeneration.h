@@ -26,15 +26,21 @@
  *________________________________________________________________________
  */
 
-/**
- * \defgroup TemplateBankGeneration_h TemplateBankGeneration_h
- * \ingroup CBC_bank
- */
+#ifndef _TEMPLATEBANKGENERATION_H
+#define _TEMPLATEBANKGENERATION_H
+
+#include<lal/LALStdlib.h>
+#include<lal/LALStatusMacros.h>
+#if 0
+#include<lal/LALInspiral.h>
+#include<lal/LALInspiralBank.h>
+#endif
+#include<lal/LALDatatypes.h>
+#include<lal/LIGOMetadataTables.h>
 
 /**
+   \addtogroup TemplateBankGeneration_h
   \author Hanna, C. R.
-  \file
-  \ingroup TemplateBankGeneration_h
 
   \brief This header file includes all the necessary types and
   function prototypes for LALNDTemplateBank() and LALMakeTemplateBank().
@@ -50,20 +56,10 @@
   generate a template bank with suitable I/O.
 
 */
+/*@{*/
 
-#ifndef _TEMPLATEBANKGENERATION_H
-#define _TEMPLATEBANKGENERATION_H
-
-#include<lal/LALStdlib.h>
-#include<lal/LALStatusMacros.h>
-#if 0
-#include<lal/LALInspiral.h>
-#include<lal/LALInspiralBank.h>
-#endif
-#include<lal/LALDatatypes.h>
-#include<lal/LIGOMetadataTables.h>
-
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define TEMPLATEBANKGENERATIONH_ENULL 1
 #define TEMPLATEBANKGENERATIONH_MSGENULL "Unexpected NULL pointer to an input type"
 /*@}*/
@@ -118,6 +114,8 @@ LALNDTemplateBank(
    	NDTemplateBankInput *,
         NDTemplateBankFunctionPtrs *,
        	NDTemplateBankOutput **);
+
+/*@}*/
 
 
 #if 0
