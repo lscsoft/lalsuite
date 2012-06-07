@@ -431,7 +431,7 @@ int main( int argc, char *argv[] )
         REAL4  chisq[4]         = {1.0,1.0,1.0,1.0};
         REAL4  chisq_dof[4]     = {1.0,1.0,1.0,1.0};
         REAL4  sigmasq[4]         = {1.0,1.0,1.0,1.0};
-        REAL4  lightTravelTimeMS[4] = {0.0,0.0,0.0,0.0};
+        /* REAL4  lightTravelTimeMS[4] = {0.0,0.0,0.0,0.0}; */
         LALDetector  refDetector;
         LALDetector  nextDetector;
         InterferometerNumber  firstIfoNumber = LAL_UNKNOWN_IFO;
@@ -504,8 +504,8 @@ int main( int argc, char *argv[] )
                   }
 
                 /* XLALLightTravelTime outputs in nano-seconds */
-                lightTravelTimeMS[l] = 1.e-6 * ( (REAL8) XLALLightTravelTime(&nextDetector,
-                                                &refDetector) ) ;
+                /* lightTravelTimeMS[l] = 1.e-6 * ( (REAL8) XLALLightTravelTime(&nextDetector,
+                                                &refDetector) ) ; */
 
                 l++;
               }
