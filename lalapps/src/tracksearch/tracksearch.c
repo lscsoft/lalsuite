@@ -26,6 +26,12 @@
 
 #define PROGRAM_NAME "tracksearch"
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 typedef struct
 {
   INT4    argc;
@@ -3275,7 +3281,7 @@ void LALappsTrackSearchBandPassing(
  * Variation that removes harmonics from individual data segments
  */ 
 void LALappsTracksearchRemoveHarmonicsFromSegments(
-						   REAL4TimeSeries *dataSet,
+						   REAL4TimeSeries UNUSED *dataSet,
 						   TSSegmentVector *dataSegments,
 						   TSSearchParams   params)
 {
@@ -3623,7 +3629,7 @@ void LALappsTrackSearchWhitenSegments( REAL4TimeSeries  *dataSet,
   UINT4                    planLength=0;
   REAL4TimeSeries          *tmpSignalPtr=NULL;
   LALUnit                   originalFrequecyUnits;
-  AverageSpectrumParams     avgPSDParams;
+  AverageSpectrumParams    UNUSED avgPSDParams;
   CHARVector               *dataLabel=NULL;
   COMPLEX8FrequencySeries  *signalFFT=NULL;
   REAL4FFTPlan             *reversePlan=NULL;
