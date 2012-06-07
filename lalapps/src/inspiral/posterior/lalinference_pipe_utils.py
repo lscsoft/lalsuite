@@ -295,7 +295,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         end=self.config.getfloat('input','gps-end-time')
         i=0
         for ifo in self.ifos:
-          self.segments[ifo].append(pipeline.ScienceSegment((i,start,end,end-start)))
+          sciseg=pipeline.ScienceSegment((i,start,end,end-start))
+          df_node=self.get_datafind_node(ifo,self.frtypes[ifo],int(sciseg.start()),int(sciseg.end()))
+          sciseg.set_df_node(df_node)
+          self.segments[ifo].append(sciseg)
           i+=1
         return
     # Look up science segments as required
