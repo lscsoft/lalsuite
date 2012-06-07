@@ -655,7 +655,7 @@ int main( int argc, char *argv[])
 	REAL8FFTPlan *revplan = NULL;
 	REAL8Window  *windowplan = NULL;
 	INT4 stride=0;
-	REAL8 strideDur=0.0;
+	/* REAL8 strideDur=0.0; */
 	REAL8 evidence=0;
 	INT4 UNUSED segnum=0;
 	RandomParams *randparam=NULL;
@@ -699,7 +699,7 @@ int main( int argc, char *argv[])
 	fprintf(stderr,"Choosing %i segments length %i, (%f s)\n",nSegs,seglen,segDur);
 
 	stride = seglen; /* Overlap the padding */
-	strideDur = stride / SampleRate;
+	/* strideDur = stride / SampleRate; */
 
 
 	if(segDur<=2.0*padding){fprintf(stderr,"ERROR: Seg length %lf s too small for padding %lf s\n",segDur,padding);exit(-1);}
