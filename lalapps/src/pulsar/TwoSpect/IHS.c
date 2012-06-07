@@ -1216,7 +1216,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
       
-      REAL8 highestval = 0.0, highestvalnoise = 0.0, highestsignificance = 0.0;
+      REAL8 highestval = 0.0, highestsignificance = 0.0; //highestvalnoise = 0.0
       INT4 highestvalloc = -1, jjloc = 0;
       for (jj=0; jj<(INT4)numfbins-(ii-1); jj++) {
       
@@ -1284,7 +1284,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   if ( significance > highestsignificance && (params->followUpOutsideULrange || (!params->followUpOutsideULrange && fsig>=params->ULfmin && fsig<=(params->ULfmin+params->ULfspan) && B>=params->ULmindf && B<=params->ULmaxdf)) ) {
                      //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
-                     highestvalnoise = totalnoise;
+                     //highestvalnoise = totalnoise;
                      highestvalloc = locationinmaximastruct;
                      highestsignificance = significance;
                      jjloc = jj;
@@ -1348,7 +1348,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
    
    //The outer loop is over "frequency" (the order in the ihs maxima vector, first 2 row sums, then three, and so on)
    for (ii=0; ii<(INT4)numfbins; ii++) {
-      REAL8 highestval = 0.0, highestvalnoise = 0.0, highestsignificance = 0.0;
+      REAL8 highestval = 0.0, highestsignificance = 0.0; //highestvalnoise = 0.0
       INT4 highestvalloc = -1, jjloc = 0;
       
       //This controls the maximum modulation depth to search which depends on the position in the "frequency" loop
@@ -1438,7 +1438,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                       B>=params->ULmindf && B<=params->ULmaxdf)) ) {
                      //highestval = ihsmaxima->maxima->data[locationinmaximastruct];
                      highestval = ihsmaxima->maxima->data[locationinmaximastruct]-totalnoise;
-                     highestvalnoise = totalnoise;
+                     //highestvalnoise = totalnoise;
                      highestvalloc = locationinmaximastruct;
                      highestsignificance = significance;
                      jjloc = jj;
