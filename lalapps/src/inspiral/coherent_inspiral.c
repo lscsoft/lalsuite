@@ -243,7 +243,7 @@ int main( int argc, char *argv[] )
   INT4   numChiaTriggers  = 0;
   INT4   numCoincs        = 0;
   UINT4  numCohFiles      = 1;
-  UINT4  cohFileID        = 1;
+  /* UINT4  cohFileID        = 1; */
   MultiInspiralTable   *chiaTrigList = NULL;
   MultiInspiralTable   *thisChiaTrigger  = NULL;
 
@@ -1445,7 +1445,7 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "number of coherent trigger files is: %d\n", numCohFiles );
   if ( (numCohFiles == 1) && eventsOut) {
-    cohFileID = 1;
+    /* cohFileID = 1; */
     if ( userTag )          {
       snprintf( fileName, FILENAME_MAX, "%s-CHIA_%s-%d-%d", ifos,
                 userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
