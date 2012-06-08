@@ -249,7 +249,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
-    respagenode.set_bayes_coherent_noise(mergenode.get_ns_file())
+    respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
