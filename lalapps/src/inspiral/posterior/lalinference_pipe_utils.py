@@ -251,6 +251,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
     respagenode.set_bayes_coherent_noise(mergenode.get_ns_file())
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
+        mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
             cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
