@@ -278,8 +278,13 @@ class Client:
             rv = response.read()
         except Exception, e:
             return { 'error':  "client send exception: " + str(e) }
-        # XXX Bad!  Should be JSON conversion
+
+        # XXX ridiculous hack to deal with downloaded ligolw search results.
+        if response.getheader('content-type') == 'application/xml':
+            return rv
+
         try:
+            # XXX Bad!  Should be JSON conversion
             return eval(rv)
         except Exception, e:
             if "Authorization Required" in rv:
@@ -327,10 +332,13 @@ class Client:
     def ping(self, msg=""):
         return self._send('ping', ack=msg)
 
-    def search(self, query, columns=None):
+    def search(self, query, columns=None, ligolw=False):
+        terms = { "query" : query }
         if columns:
-            return self._send('search', query=query, columns=columns)
-        return self._send('search', query=query)
+            terms['columns'] = columns
+        if ligolw:
+            terms['ligolw'] = 1
+        return self._send('search', **terms)
 
     def log(self, graceid, message, alert=False):
         return self._send('log', graceid=graceid, message=message, alert=alert)
@@ -467,6 +475,11 @@ Longer strings will be truncated.""" % {
                   default=None
                  )
 
+    op.add_option("-l", "--ligolw", dest="ligolw",
+                  help="Download ligolw file of combined search results (not meaningful outside of search)",
+                  action="store_true", default=False
+                 )
+
     options, args = op.parse_args()
 
     proxy = options.proxy or os.environ.get('HTTP_PROXY', None)
@@ -533,7 +546,7 @@ Longer strings will be truncated.""" % {
         label = args[2]
         response = client.label(graceid, label, alert=options.alert)
     elif args[0] == 'search':
-        response = client.search(" ".join(args[1:]), options.columns)
+        response = client.search(" ".join(args[1:]), options.columns, options.ligolw)
     elif len(args) == 3:
         group = args[0]
         type = args[1]
@@ -555,13 +568,17 @@ Longer strings will be truncated.""" % {
     # Output the response.
 
     exitCode = 0
-    if ('error' in response) and response['error']:
-        error(response['error'])
-        exitCode = 1
-    if ('warning' in response) and response['warning']:
-        warning(response['warning'])
-    if ('output' in response) and response['output']:
-        output(response['output'])
+    # XXX oddball exception for ligolw query responses.
+    if isinstance(response, str):
+        print(response)
+    else:
+        if ('error' in response) and response['error']:
+            error(response['error'])
+            exitCode = 1
+        if ('warning' in response) and response['warning']:
+            warning(response['warning'])
+        if ('output' in response) and response['output']:
+            output(response['output'])
 
     return exitCode
 
