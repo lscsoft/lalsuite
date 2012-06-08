@@ -91,6 +91,7 @@ const char *gengetopt_args_info_full_help[] = {
   "\nHidden options:",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
+  "      --noNotchHarmonics        Do not notch the daily/sidereal harmonics in \n                                  the IHS step.  (default=off)",
   "      --calcRthreshold          Calculate the threshold value for R given the \n                                  template false alarm rate  (default=off)",
   "      --BrentsMethod            Use Brent's method in the root finding \n                                  algorithm.  (default=off)",
   "      --antennaOff              Antenna pattern weights are /NOT/ used if this \n                                  flag is used  (default=off)",
@@ -274,6 +275,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->followUpOutsideULrange_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->IHSonly_given = 0 ;
+  args_info->noNotchHarmonics_given = 0 ;
   args_info->calcRthreshold_given = 0 ;
   args_info->BrentsMethod_given = 0 ;
   args_info->antennaOff_given = 0 ;
@@ -358,6 +360,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->dopplerMultiplier_arg = 1.0;
   args_info->dopplerMultiplier_orig = NULL;
   args_info->IHSonly_flag = 0;
+  args_info->noNotchHarmonics_flag = 0;
   args_info->calcRthreshold_flag = 0;
   args_info->BrentsMethod_flag = 0;
   args_info->antennaOff_flag = 0;
@@ -430,17 +433,18 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[55] ;
   args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[57] ;
   args_info->IHSonly_help = gengetopt_args_info_full_help[58] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[59] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[60] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[61] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[62] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[63] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[64] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[65] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[66] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[67] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[68] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[69] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[59] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[60] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[61] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[62] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[63] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[64] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[65] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[66] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[67] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[68] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[69] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[70] ;
   
 }
 
@@ -810,6 +814,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "dopplerMultiplier", args_info->dopplerMultiplier_orig, 0);
   if (args_info->IHSonly_given)
     write_into_file(outfile, "IHSonly", 0, 0 );
+  if (args_info->noNotchHarmonics_given)
+    write_into_file(outfile, "noNotchHarmonics", 0, 0 );
   if (args_info->calcRthreshold_given)
     write_into_file(outfile, "calcRthreshold", 0, 0 );
   if (args_info->BrentsMethod_given)
@@ -1454,6 +1460,7 @@ cmdline_parser_internal (
         { "followUpOutsideULrange",	0, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
+        { "noNotchHarmonics",	0, NULL, 0 },
         { "calcRthreshold",	0, NULL, 0 },
         { "BrentsMethod",	0, NULL, 0 },
         { "antennaOff",	0, NULL, 0 },
@@ -2143,6 +2150,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->IHSonly_flag), 0, &(args_info->IHSonly_given),
                 &(local_args_info.IHSonly_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "IHSonly", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Do not notch the daily/sidereal harmonics in the IHS step..  */
+          else if (strcmp (long_options[option_index].name, "noNotchHarmonics") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->noNotchHarmonics_flag), 0, &(args_info->noNotchHarmonics_given),
+                &(local_args_info.noNotchHarmonics_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "noNotchHarmonics", '-',
                 additional_error))
               goto failure;
           
