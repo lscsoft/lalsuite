@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (C) 2011  LIGO Scientific Collaboration
+# Copyright (C) 2012  LIGO Scientific Collaboration
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -21,7 +21,7 @@ __all__ = ["utils"]
 
 import httplib, mimetypes, urllib
 import socket
-import os, sys
+import os, sys, shutil
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
@@ -256,6 +256,11 @@ class Client:
             self.connector = lambda: httplib.HTTPSConnection(host, port,
                                                              key_file=key, cert_file=cert)
         self.url = url
+        # XXX sad sad hack for transition from our somewhat ad hoc to rest api.
+        if url.endswith('cli'):
+            self.rest_url = url[:url.rindex('cli')]+"api"
+        else:
+            self.rest_url = url
 
     def _connect(self):
         self._conn = self.connector()
@@ -280,6 +285,15 @@ class Client:
             if "Authorization Required" in rv:
                 return { 'error': 'Credentials not accepted' }
             return {'error': "while parsing:%s\nclient send exception: %s" % (rv, str(e))}
+
+    def rest(self, resource, method="GET", **kw):
+        headers = {'connection' : 'keep-alive'}
+        headers = {}
+        url = "%s%s" % (self.rest_url, resource)
+        kw = urllib.urlencode(kw)
+        self._connect()
+        self._conn.request(method, url, kw, headers)
+        return self._conn.getresponse()
 
     def _upload(self, method, fields, files, alert=False):
         # Do an tiny GET request to get SSL primed.
@@ -313,7 +327,9 @@ class Client:
     def ping(self, msg=""):
         return self._send('ping', ack=msg)
 
-    def search(self, query):
+    def search(self, query, columns=None):
+        if columns:
+            return self._send('search', query=query, columns=columns)
         return self._send('search', query=query)
 
     def log(self, graceid, message, alert=False):
@@ -354,6 +370,25 @@ class Client:
         files = [ ('upload', filename, filecontents) ]
         return self._upload('upload', fields, files, alert)
 
+    def download(self, graceid, filename, destfile):
+        # Check that we *could* write the file before we
+        # go to the trouble of getting it.  Also, try not
+        # to open a file until we know we have data.
+        if not isinstance(destfile, file) and destfile != "-":
+            if not os.access(os.path.dirname(os.path.abspath(destfile)), os.W_OK):
+                raise IOError("%s: Permission denied" % destfile)
+        response = self.rest('/event/%s/files/%s' % (graceid, filename))
+        if response.status == 200:
+            if not isinstance(destfile, file):
+                if destfile == '-':
+                    destfile = sys.stdout
+                else:
+                    destfile = open(destfile, "w")
+            shutil.copyfileobj(response, destfile)
+            return 0
+        else:
+            return "Error. (%d) %s" % (response.status, response.reason)
+
 #-----------------------------------------------------------------
 # Main 
 
@@ -372,6 +407,13 @@ def main():
          FILE    is the name of the file to upload. '-' indicates stdin.
          COMMENT is an optional annotation to enter into the log
    Upload FILE to the private data area for a candidate event
+
+%%prog [options] download GRACEID FILE [DESTINATION]
+   where GRACEID      is the id of an existing candidate event in GraCEDb
+         FILE         is the name of the file previosuly uploaded.
+         DESTINATION  is the download destination.  '-' indicates stdout.
+                      default is same file name as FILE
+    Download FILE from private data area of a candidate event
 
 %%prog [options] log GRACEID COMMENT
    where GRACEID  is the id of an existing candidate event in GraCEDb
@@ -420,6 +462,11 @@ Longer strings will be truncated.""" % {
                   action="store_true", default=False
                  )
 
+    op.add_option("-c", "--columns", dest="columns",
+                  help="Comma separated list of event attributes to include in results (only meaningful in search)",
+                  default=None
+                 )
+
     options, args = op.parse_args()
 
     proxy = options.proxy or os.environ.get('HTTP_PROXY', None)
@@ -453,6 +500,20 @@ Longer strings will be truncated.""" % {
         filename = args[2]
         comment = " ".join(args[3:])
         response = client.upload(graceid, filename, comment=comment, alert=options.alert)
+    elif args[0] == 'download':
+        if len(args) not in [3,4]:
+            op.error("not enough arguments for upload")
+        graceid = args[1]
+        filename = args[2]
+        if len(args) == 4:
+            outfile = args[3]
+        else:
+            outfile = os.path.basename(filename)
+        response = client.download(graceid, filename, outfile)
+        if response:
+            print response
+            exit(1)
+        exit(0)
     elif args[0] == 'log':
         if len(args) < 3:
             op.error("not enough arguments for log")
@@ -472,7 +533,7 @@ Longer strings will be truncated.""" % {
         label = args[2]
         response = client.label(graceid, label, alert=options.alert)
     elif args[0] == 'search':
-        response = client.search(" ".join(args[1:]))
+        response = client.search(" ".join(args[1:]), options.columns)
     elif len(args) == 3:
         group = args[0]
         type = args[1]
