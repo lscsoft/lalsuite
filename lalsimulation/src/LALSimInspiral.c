@@ -845,11 +845,11 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
         REAL8 r                  /**< distance of source (m) */
         )
 {
-    REAL8 s1x, s1y, s1z, s2x, s2y, s2z, lnhx, lnhy, lnhz;
+    REAL8 lnhx, lnhy, lnhz;
     REAL8 e1x, e1y, e1z, e2x, e2y, e2z, nx, ny, nz, lx, ly, lz;
     REAL8 nx2, ny2, nz2, lx2, ly2, lz2;
     REAL8 q1tmp, q2tmp, q3tmp, q4tmp, q5tmp;
-    REAL8 M, eta, dm, phi, v, v2, dist, ampfac;
+    REAL8 M, eta, phi, v, v2, dist, ampfac;
     INT4 idx, len;
     REAL8 sqrt_three = pow(3,0.5);
 
@@ -910,7 +910,6 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
 
     M = m1 + m2;
     eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
-    dm = (m1 - m2) / M;    // frac. mass difference - \delta m/m in the paper
     dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
     /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
     ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
@@ -924,9 +923,6 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
         lnhx = LNhatx->data->data[idx]; e1x = E1x->data->data[idx];
         lnhy = LNhaty->data->data[idx]; e1y = E1y->data->data[idx];
         lnhz = LNhatz->data->data[idx]; e1z = E1z->data->data[idx];
-        s1x  = S1x->data->data[idx];    s2x = S2x->data->data[idx];
-        s1y  = S1y->data->data[idx];    s2y = S2y->data->data[idx];
-        s1z  = S1z->data->data[idx];    s2z = S2z->data->data[idx];
 
         /* E2 = LNhat x E1 */
         e2x = lnhy*e1z - lnhz*e1y;
