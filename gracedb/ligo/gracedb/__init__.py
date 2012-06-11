@@ -22,10 +22,11 @@ __all__ = ["utils"]
 import httplib, mimetypes, urllib
 import socket
 import os, sys, shutil
+import simplejson
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.1-1'
+GIT_TAG = 'gracedb-1.2-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -378,6 +379,10 @@ class Client:
         files = [ ('upload', filename, filecontents) ]
         return self._upload('upload', fields, files, alert)
 
+    def listfiles(self, graceid):
+        response = self.rest('/event/%s/files/' % graceid)
+        return response
+
     def download(self, graceid, filename, destfile):
         # Check that we *could* write the file before we
         # go to the trouble of getting it.  Also, try not
@@ -514,9 +519,18 @@ Longer strings will be truncated.""" % {
         comment = " ".join(args[3:])
         response = client.upload(graceid, filename, comment=comment, alert=options.alert)
     elif args[0] == 'download':
-        if len(args) not in [3,4]:
-            op.error("not enough arguments for upload")
+        if len(args) not in [2,3,4]:
+            op.error("not enough arguments for download")
         graceid = args[1]
+        if len(args) == 2:
+            # get/print listing.
+            response = client.listfiles(graceid)
+            if response and response.status == 200:
+                for fname in simplejson.loads(response.read()):
+                    print(fname)
+                exit(0)
+            print(response.reason)
+            exit(1)
         filename = args[2]
         if len(args) == 4:
             outfile = args[3]
@@ -524,6 +538,7 @@ Longer strings will be truncated.""" % {
             outfile = os.path.basename(filename)
         response = client.download(graceid, filename, outfile)
         if response:
+            # no response means file saved.  any other response is an error message.
             print response
             exit(1)
         exit(0)
