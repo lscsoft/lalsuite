@@ -198,9 +198,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     psdlength=self.config.getint('input','max-psd-length')
     padding=self.config.getint('input','padding')
-    # Assume that the PSD is estimated from the interval (end_time+ buffer , psdlength)
+    seglen = self.config.getint('lalinference','seglen')
+    # Assume that the data interval is (end_time - seglen -padding , end_time + psdlength +padding )
     # Also require padding before start time
-    return (min(times)-padding,max(times)+padding+psdlength)
+    return (min(times)-padding-seglen,max(times)+padding+psdlength)
 
   def setup_from_times(self,times):
     """
