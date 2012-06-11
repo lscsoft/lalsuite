@@ -2017,7 +2017,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	//XLALGPSAdd(&(hplus->epoch), start_time);
 	//XLALGPSAdd(&(hcross->epoch), start_time);
 
-	instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)+hplus->data->length*deltaT;
+	instant= (IFOdata->timeData->epoch.gpsSeconds-hplus->epoch.gpsSeconds + 1e-9*(IFOdata->timeData->epoch.gpsNanoSeconds-hplus->epoch.gpsNanoSeconds));
 	
     /* write template (time axis) location in "->modelParams" so that     */
     /* template corresponds to stored parameter values                    */
