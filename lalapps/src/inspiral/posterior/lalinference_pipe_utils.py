@@ -410,14 +410,51 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
 class EngineJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     self.engine=cp.get('analysis','engine')
-    exe=cp.get('condor',self.engine)
-    pipeline.CondorDAGJob.__init__(self,"standard",exe)
+    if self.engine=='lalinferencemcmc':
+      exe=cp.get('condor','mpirun')
+      self.binary=cp.get('condor',self.engine)
+      universe="parallel"
+      self.write_sub_file=self.__write_sub_file_mcmc_mpi
+    else:
+      exe=cp.get('condor',self.engine)
+      universe="standard"
+    pipeline.CondorDAGJob.__init__(self,universe,exe)
     # Set the options which are always used
     self.set_sub_file(submitFile)
+    if self.engine=='lalinferencemcmc':
+      openmpipath=cp.get('condor','openmpi')
+      machine_count=cp.get('mpi','machine-count')
+      self.add_condor_cmd('machine_count',machine_count)
+      self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      self.add_condor_cmd('getenv','true')
+      
     self.add_ini_opts(cp,self.engine)
-    self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process).out'))
-    self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process).err'))
-   
+    self.set_stdout_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).out'))
+    self.set_stderr_file(os.path.join(logdir,'lalinference-$(cluster)-$(process)-$(node).err'))
+  
+  def __write_sub_file_mcmc_mpi(self):
+    """
+    Nasty hack to insert the MPI stuff into the arguments
+    when write_sub_file is called
+    """
+    # First write the standard sub file
+    pipeline.CondorDAGJob.write_sub_file(self)
+    # Then read it back in to mangle the arguments line
+    outstring=""
+    MPIextraargs='--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
+    subfilepath=self.get_sub_file()
+    subfile=open(subfilepath,'r')
+    for line in subfile:
+       if line.startswith('arguments = "'):
+          print 'Hacking sub file for MPI'
+          line=line.replace('arguments = "','arguments = "'+MPIextraargs,1)
+       outstring=outstring+line
+    subfile.close()
+    subfile=open(subfilepath,'w')
+    subfile.write(outstring)
+    subfile.close()
+      
+ 
 class EngineNode(pipeline.CondorDAGNode):
   new_id = itertools.count().next
   def __init__(self,li_job):
@@ -583,7 +620,7 @@ class LALInferenceMCMCNode(EngineNode):
 
   def get_pos_file(self):
     return self.posfile
- 
+
 class ResultsPageJob(pipeline.CondorDAGJob):
   def __init__(self,cp,submitFile,logdir):
     exe=cp.get('condor','resultspage')
