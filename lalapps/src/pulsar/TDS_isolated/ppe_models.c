@@ -216,12 +216,12 @@ void pulsar_model( BinaryPulsarParams params,
     mm = *(REAL8 *)LALInferenceGetVariable( data->dataParams, "mismatch" );
   
   for( j = 0; j < freqFactors->length; j++ ){
-    REAL8Vector *dphi = NULL, *dsdphi2 = NULL;
+    REAL8Vector *dphi = NULL;
     UINT4 nohet = 0; /* set if extra phase heterodyne is not required */
     
     /* move data pointer along one as one iteration of the model is held over
-    j data structures, moved this from bottom of loop so actioned for 2nd run
-through the loop.*/
+      j data structures, moved this from bottom of loop so actioned for 2nd run
+      through the loop.*/
     if ( j > 0 ){ 
       data = data->next;
     }
@@ -233,51 +233,44 @@ through the loop.*/
     if ( varyphase ){
       /* check whether to recompute the full phase or not */
       if( LALInferenceCheckVariable( data->dataParams, "downsampled_times" ) ){
-        REAL8Vector *dsdphi1 = NULL;
+        REAL8Vector *dsdphi1 = NULL, *dsdphi2 = NULL;
         LIGOTimeGPSVector *downst = 
           *(LIGOTimeGPSVector **)LALInferenceGetVariable( data->dataParams,
           "downsampled_times" );
         
         /* get the previous downsampled phase if it exists */
         if ( LALInferenceCheckVariable( data->dataParams, 
-                                        "previous_ds_phase" ) ){
+                                        "ds_phase" ) ){
           dsdphi1 = *(REAL8Vector **)LALInferenceGetVariable( 
-            data->dataParams, "previous_ds_phase" );
+            data->dataParams, "ds_phase" );
+        }
+        else{
+          XLALPrintError("Error, downsampled phase does not exist\n");
+          XLAL_ERROR_VOID(XLAL_EFAILED);
         }
         
         /* get the downsampled phase for the current parameters */
         dsdphi2 = get_phase_model( params, data, freqFactors->data[j], 1 );
         
-        /* work out phase mismatch */
-        if( dsdphi1 && dsdphi2 ){
+        /* work out phase mismatch (if any value in dsdphi1 is not zero it means
+           ds_phase has been set) */
+        if( dsdphi1->data[dsdphi1->length-1] != 0. && dsdphi2 ){
           REAL8 mmcalc = get_phase_mismatch( dsdphi1, dsdphi2, downst );
           
           /* if small mismatch then just use previous phase if available */
-          if ( mmcalc < mm ){
-            nohet = 1;
-          
-            XLALDestroyREAL8Vector( dsdphi2 );
-          }
+          if ( mmcalc < mm ) nohet = 1;
         }
+        
+        /* make sure the "previous" down sampled phase is the right
+           one for comparison */
+        if ( !nohet )
+          memcpy(dsdphi1->data, dsdphi2->data, sizeof(REAL8)*dsdphi1->length );
+        
+        XLALDestroyREAL8Vector( dsdphi2 );
       }
         
       /* reheterodyne with the phase */
       if ( !nohet ){
-        /* make sure the "previous" down sampled phase is the right
-           one for comparison */
-        if ( !LALInferenceCheckVariable( data->dataParams, 
-                                         "previous_ds_phase" ) ){
-          LALInferenceAddVariable( data->dataParams, "previous_ds_phase", 
-                                   &dsdphi2, LALINFERENCE_REAL8Vector_t,
-                                   LALINFERENCE_PARAM_FIXED );                        
-        }
-        else{
-          LALInferenceSetVariable( data->dataParams, "previous_ds_phase",
-                                   &dsdphi2 );
-        }
-        
-        XLALDestroyREAL8Vector( dsdphi2 );
-        
         if ( (dphi = get_phase_model( params, data, 
               freqFactors->data[j], 0 )) != NULL ){
           for( i=0; i<length; i++ ){
@@ -1038,7 +1031,7 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
     mismatch += (cp1 + cp2) * dt;
   }
   
-  return fabs(1. - mismatch/(2.*T));
+  return (1. - fabs(mismatch)/(2.*T));
 }
 
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/

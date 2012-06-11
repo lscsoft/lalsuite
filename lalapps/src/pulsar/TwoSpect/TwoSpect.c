@@ -2490,10 +2490,10 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    
    //Defaults given or option passed
    params->blksize = args_info.blksize_arg;                                      //Block size of SFT running median (bins)
-   params->dopplerMultiplier = args_info.dopplerMultiplier_arg;                  //Velocity of Earth multiplier
+   params->dopplerMultiplier = args_info.dopplerMultiplier_arg;                  //Velocity of Earth multiplier (default = 1.0)
    params->mintemplatelength = args_info.minTemplateLength_arg;                  //Minimum number of template weights (pixels)
    params->maxtemplatelength = args_info.maxTemplateLength_arg;                  //Maximum number of template weights (pixels)
-   params->ihsfactor = args_info.ihsfactor_arg;                                  //IHS folding factor
+   params->ihsfactor = args_info.ihsfactor_arg;                                  //IHS folding factor (default = 5)
    params->rootFindingMethod = args_info.BrentsMethod_given;                     //Use Brent's method (default = 0)
    params->antennaOff = args_info.antennaOff_given;                              //Antenna pattern off (default = 0)
    params->noiseWeightOff = args_info.noiseWeightOff_given;                      //Noise weighting off (default = 0)
@@ -2505,7 +2505,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->useSSE = args_info.useSSE_given;                                      //Use SSE optimized functions (dafualt = 0)
    params->followUpOutsideULrange = args_info.followUpOutsideULrange_given;      //Follow up outliers outside of UL range (default = 0)
    params->validateSSE = args_info.validateSSE_given;                            //Validate SSE functions (default = 0)
-   
+   params->noNotchHarmonics = args_info.noNotchHarmonics_given;                  //Do not notch the daily/sidereal harmonics (default = 0)
    
    //Non-default arguments
    if (args_info.Tcoh_given) params->Tcoh = args_info.Tcoh_arg;                  //SFT coherence time (s)

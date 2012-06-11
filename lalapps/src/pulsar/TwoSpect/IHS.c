@@ -140,7 +140,9 @@ void runIHS(ihsMaximaStruct *output, ffdataStruct *input, ihsfarStruct *ihsfarin
    
       //For each row, populate it with the data for that frequency bin, excluding harmonics of antenna pattern modulation
       memcpy(row->data, &(input->ffdata->data[ii*numfprbins]), sizeof(REAL4)*numfprbins);
-      for (jj=0; jj<(INT4)row->length; jj++) if (fabs(dailyharmonic-(REAL8)jj)<=1.0 || fabs(dailyharmonic2-(REAL8)jj)<=1.0 || fabs(dailyharmonic3-(REAL8)jj)<=1.0 || fabs(dailyharmonic4-(REAL8)jj)<=1.0 || fabs(siderealharmonic-(REAL8)jj)<=1.0 || fabs(siderealharmonic2-(REAL8)jj)<=1.0 || fabs(siderealharmonic3-(REAL8)jj)<=1.0 || fabs(siderealharmonic4-(REAL8)jj)<=1.0) row->data[jj] = 0.0;
+      if (!params->noNotchHarmonics) {
+         for (jj=0; jj<(INT4)row->length; jj++) if (fabs(dailyharmonic-(REAL8)jj)<=1.0 || fabs(dailyharmonic2-(REAL8)jj)<=1.0 || fabs(dailyharmonic3-(REAL8)jj)<=1.0 || fabs(dailyharmonic4-(REAL8)jj)<=1.0 || fabs(siderealharmonic-(REAL8)jj)<=1.0 || fabs(siderealharmonic2-(REAL8)jj)<=1.0 || fabs(siderealharmonic3-(REAL8)jj)<=1.0 || fabs(siderealharmonic4-(REAL8)jj)<=1.0) row->data[jj] = 0.0;
+      }
       
       //Run the IHS algorithm on the row
       incHarmSumVector(ihsvector, row, params->ihsfactor);
@@ -382,8 +384,10 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    memset(markedharmonics->data, 0, sizeof(INT4)*markedharmonics->length);
-   for (ii=0; ii<(INT4)markedharmonics->length; ii++) {
-      if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0 || fabs(siderealharmonic-(REAL8)ii)<=1.0 || fabs(siderealharmonic2-(REAL8)ii)<=1.0 || fabs(siderealharmonic3-(REAL8)ii)<=1.0 || fabs(siderealharmonic4-(REAL8)ii)<=1.0) markedharmonics->data[ii] = 1;
+   if (!params->noNotchHarmonics) {
+      for (ii=0; ii<(INT4)markedharmonics->length; ii++) {
+         if (fabs(dailyharmonic-(REAL8)ii)<=1.0 || fabs(dailyharmonic2-(REAL8)ii)<=1.0 || fabs(dailyharmonic3-(REAL8)ii)<=1.0 || fabs(dailyharmonic4-(REAL8)ii)<=1.0 || fabs(siderealharmonic-(REAL8)ii)<=1.0 || fabs(siderealharmonic2-(REAL8)ii)<=1.0 || fabs(siderealharmonic3-(REAL8)ii)<=1.0 || fabs(siderealharmonic4-(REAL8)ii)<=1.0) markedharmonics->data[ii] = 1;
+      }
    }
    
    //Now do a number of trials
@@ -858,7 +862,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    }
    
    //The maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)floor(params->Tobs/7200.0);
+   INT4 maxIndexForIHS = (INT4)floor(params->Tobs/7200.0)-5;
    
    //Finding the maximum for each IHS vector and the location
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
@@ -902,7 +906,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
          
          //The maximum index to search in the IHS vector
-         maxIndexForIHS = (INT4)floor(fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh) , params->Tobs/7200.0));
+         maxIndexForIHS = (INT4)floor(fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh) , params->Tobs/7200.0))-5;
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          
@@ -1040,7 +1044,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
          
          //The maximum index to search in the IHS vector
-         maxIndexForIHS = (INT4)floor(fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh) , params->Tobs/7200.0));
+         maxIndexForIHS = (INT4)floor(fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh) , params->Tobs/7200.0))-5;
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
@@ -1497,7 +1501,7 @@ REAL8 ihs2h0_withNoiseSubtraction(REAL8 ihsval, INT4 location, INT4 lowestfreque
    REAL8 siderealharmonic2 = siderealharmonic*2.0, siderealharmonic3 = siderealharmonic*3.0, siderealharmonic4 = siderealharmonic*4.0;
    REAL8 noise = 0.0;
    for (ii=1; ii<=params->ihsfactor; ii++) {
-      if (!(fabs(dailyharmonic-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic2-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic3-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic4-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic2-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic3-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic4-(REAL8)(ii*location))<=1.0)) {
+      if (!params->noNotchHarmonics || !(fabs(dailyharmonic-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic2-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic3-(REAL8)(ii*location))<=1.0 || fabs(dailyharmonic4-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic2-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic3-(REAL8)(ii*location))<=1.0 || fabs(siderealharmonic4-(REAL8)(ii*location))<=1.0)) {
          noise += aveNoise->data[ii*location];
       }
    }

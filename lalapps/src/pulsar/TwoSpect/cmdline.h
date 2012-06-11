@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.21"
+#define CMDLINE_PARSER_VERSION "1.1.22"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -180,6 +180,8 @@ struct gengetopt_args_info
   const char *dopplerMultiplier_help; /**< @brief Multiplier for the Doppler velocity help description.  */
   int IHSonly_flag;	/**< @brief IHS stage only is run. Output statistic is the IHS statistic. (default=off).  */
   const char *IHSonly_help; /**< @brief IHS stage only is run. Output statistic is the IHS statistic. help description.  */
+  int noNotchHarmonics_flag;	/**< @brief Do not notch the daily/sidereal harmonics in the IHS step. (default=off).  */
+  const char *noNotchHarmonics_help; /**< @brief Do not notch the daily/sidereal harmonics in the IHS step. help description.  */
   int calcRthreshold_flag;	/**< @brief Calculate the threshold value for R given the template false alarm rate (default=off).  */
   const char *calcRthreshold_help; /**< @brief Calculate the threshold value for R given the template false alarm rate help description.  */
   int BrentsMethod_flag;	/**< @brief Use Brent's method in the root finding algorithm. (default=off).  */
@@ -255,6 +257,7 @@ struct gengetopt_args_info
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */
+  unsigned int noNotchHarmonics_given ;	/**< @brief Whether noNotchHarmonics was given.  */
   unsigned int calcRthreshold_given ;	/**< @brief Whether calcRthreshold was given.  */
   unsigned int BrentsMethod_given ;	/**< @brief Whether BrentsMethod was given.  */
   unsigned int antennaOff_given ;	/**< @brief Whether antennaOff was given.  */

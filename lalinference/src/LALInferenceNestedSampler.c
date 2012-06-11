@@ -914,7 +914,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 testnumber=Nmcmc-sloppynumber;
     /* +1 for the last iteration which we do check */
     UINT4 subchain_length=(sloppynumber/testnumber) +1;
-    REAL8 logLnew;
+    REAL8 logLnew=0.0;
     UINT4 sub_iter=0;
     UINT4 tries=0;
     REAL8 counter=1.;
@@ -940,7 +940,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         tries=0;
         mcmc_iter++;
     	sub_iter+=subchain_length;
-        logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+        if(logLmin!=-DBL_MAX) logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
         if(logLnew>logLmin || logLmin==-DBL_MAX) /* Accept */
         {
             Naccepted++;
@@ -967,6 +967,22 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             runState->currentLikelihood=logLold;
         }
     }while((mcmc_iter<testnumber||logLnew<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
+    /* Make sure likelihood is filled in if it wasn't done during sampling */
+    if(logLnew==0.0){
+            logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+            LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+            if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
+               tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
+               LALInferenceAddVariable(runState->currentParams,"deltalogL",(void *)&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+            }
+            while(data)
+            {
+               tmp=data->loglikelihood - data->nullloglikelihood;
+               sprintf(tmpName,"deltalogl%s",data->name);
+               LALInferenceAddVariable(runState->currentParams,tmpName,&tmp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+               data=data->next;
+            }
+    }
     /* Compute some statistics for information */
     REAL8 sub_accept_rate=(REAL8)sub_accepted/(REAL8)sub_iter;
     REAL8 accept_rate=(REAL8)Naccepted/(REAL8)testnumber;

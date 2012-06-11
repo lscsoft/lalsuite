@@ -1256,16 +1256,26 @@ void setupFromParFile( LALInferenceRunState *runState )
           XLALCreateTimestampVector( floor(phase_vector->length/mmfactor) );
         UINT4 k = 0;
         
+        /* array to contain down-sampled phases */
+        REAL8Vector *dsphase = 
+          XLALCreateREAL8Vector( floor(phase_vector->length/mmfactor) );
+        
         if ( downst->length < 2 ){
           XLALPrintError("Error, downsampled time stamp factor to high!\n");
           XLAL_ERROR_VOID(XLAL_EFAILED);
         }
         
-        for( k = 1; k < downst->length+1; k++ )
+        for( k = 1; k < downst->length+1; k++ ){
           downst->data[k-1] = data->dataTimes->data[(k-1)*mmfactor];
+          dsphase->data[k-1] = 0.;
+        }
           
         LALInferenceAddVariable( data->dataParams, "downsampled_times",
                                  &downst, LALINFERENCE_void_ptr_t,
+                                 LALINFERENCE_PARAM_FIXED );
+        
+        LALInferenceAddVariable( data->dataParams, "ds_phase",
+                                 &dsphase, LALINFERENCE_REAL8Vector_t,
                                  LALINFERENCE_PARAM_FIXED );
         
         LALInferenceAddVariable( data->dataParams, "mismatch",
