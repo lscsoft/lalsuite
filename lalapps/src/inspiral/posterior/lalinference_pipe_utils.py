@@ -10,7 +10,7 @@ import uuid
 import ast
 import pdb
 import string
-from math import floor,ceil
+from math import floor,ceil,log,pow
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -21,13 +21,16 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
     self.timeslides=timeslide_dict
     self.GID=GID
     self.coinctrigger=CoincInspiral
+    self.ifos = ifos
+    self.duration = duration
+    self.srate = srate
     if event_id is not None:
         self.event_id=event_id
     else:
@@ -51,13 +54,26 @@ def readLValert(lvalertfile,SNRthreshold=0,GID=None):
   and create a list of Events as input for pipeline
   Based on Chris Pankow's script
   """ 
+  output=[]
   from glue.ligolw import utils
   from glue.ligolw import lsctables
   xmldoc=utils.load_filename(lvalertfile)
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
+  sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
+  sngl_events = [event for event in sngltable]
+  search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
+  ifos = search_summary[0].ifos.split(",")
+  # Logic for template duration and sample rate disabled
+  coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
+  for coinc in coinc_events:
+    these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
+    dur = min([e.template_duration for e in these_sngls]) + 2 # Add 2s padding
+    srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
+    ev=Event(CoincInspiral=coinc, GID=GID, ifos = ifos, duration = dur, srate = srate)
+    if(coinc.snr>SNRthreshold): output.append(ev)
+  
   print "Found %d coinc events in table." % len(coinc_events)
-  output=[Event(CoincInspiral=cevent,GID=GID) for cevent in coinc_events if cevent.snr>=SNRthreshold ]
   return output
 
 def mkdirs(path):
@@ -218,9 +234,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       from pylal import SnglInspiralUtils
       trigTable=SnglInspiralUtils.ReadSnglInspiralFromFiles([self.config.get('input','sngl-inspiral-file')])
       events=[Event(SnglInspiral=trig) for trig in trigTable]
-    # CoincInspiral Table
     if self.config.has_option('input','coinc-inspiral-file'):
-      events = readLValert(self.config.get('input','coinc-inspiral-file'))
+      from pylal import CoincInspiralUtils
+      coincTable = CoincInspiralUtils.ReadCoincInspiralFromFiles([self.config.get('input','coinc-inspiral-file')])
+      events = [Event(CoincInspiral=coinc) for coinc in coincTable]
+    # LVAlert CoincInspiral Table
+    if self.config.has_option('input','lvalert-file'):
+      events = readLValert(self.config.get('input','lvalert-file'))
     # TODO: pipedown-database 
     # TODO: timeslides
     return events
@@ -341,6 +361,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     if ifos is None:
       ifos=self.ifos
+    if event.ifos is not None:
+      ifos = event.ifos
     node=self.EngineNode(self.engine_job)
     end_time=event.trig_time
     node.set_trig_time(end_time)
