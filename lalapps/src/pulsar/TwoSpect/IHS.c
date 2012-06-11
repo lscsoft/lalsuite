@@ -883,8 +883,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             excessabovenoise->data[jj] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + jj] - scaledExpectedIHSVectorValues->data[jj];
          }
       }
-      ihslocations->data[ii] = max_index(excessabovenoise) + 5;
-      //ihslocations->data[ii] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
+      //ihslocations->data[ii] = max_index(excessabovenoise) + 5;
+      ihslocations->data[ii] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
       ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
    }
    
@@ -1021,8 +1021,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             }
             
             //Compute the maximum IHS value in the second FFT frequency direction
-            output->locations->data[jj] = max_index(excessabovenoise) + 5;
-            //output->locations->data[jj] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
+            //output->locations->data[jj] = max_index(excessabovenoise) + 5;
+            output->locations->data[jj] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
             output->maxima->data[jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[jj]-5)];
             
             //Compute IHS FOM value
@@ -1098,8 +1098,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
             }
             
-            output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index(excessabovenoise) + 5;
-            //output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
+            //output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index(excessabovenoise) + 5;
+            output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
             output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
             
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
