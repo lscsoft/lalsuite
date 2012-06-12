@@ -295,7 +295,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4 adapting = 0;
   INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  INT4 Neff = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Neffective");
+  INT4 Neff = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Neff");
   INT4 Nskip = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Nskip");
   UINT4 randomseed = *(UINT4*) LALInferenceGetVariable(runState->algorithmParams,"random_seed");
   INT4 acl=Niter, PTacl=Niter, oldACL=0, goodACL=0;
@@ -337,7 +337,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   /* If not specified otherwise, set effective sample size to total number of iterations */
   if (!Neff) {
     Neff = Niter;
-    LALInferenceSetVariable(runState->algorithmParams, "Neffective", &Neff);
+    LALInferenceSetVariable(runState->algorithmParams, "Neff", &Neff);
   }
 
   /* Determine network SNR if injection was done */
@@ -612,7 +612,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       LALInferenceAdaptation(runState, i);
 
     if (runPhase < 2) {
-      /* Parallel Tempering */
+      //ACL calculation during parallel tempering
       if (i % (100*Nskip) == 0) {
         adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
 
@@ -661,7 +661,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
             iEff = (i - iEffStart)/acl;
             MPI_Bcast(&iEff, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-            /* Check ACL half-way through to limit effect of over-estimation of ACL early in the run */
+            /* Check ACL at quarter and half way through to limit effect of over-estimation of ACL early in the run */
             if (!quarterAclChecked) {
               if ((runPhase==0 && iEff >= Neff/4) || (runPhase==1 && iEff >= annealStart/4)) {
                 updateMaxAutoCorrLen(runState, i);
@@ -718,15 +718,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
                 iEff=0;
                 acl = PTacl;
                 LALInferenceSetVariable(runState->algorithmParams, "acl", &acl);
-              }
-            }
-          }
-        }
-      }
+              } //else if (runPhase==1 && iEff >= annealStart)
+            } //if ( (runPhase==0 && iEff >= Neff) || (runPhase==1 && iEff >= annealStart) )
+          } //if (goodACL)
+        } //if (!adapting)
+      } //if (i % (100*Nskip) == 0)
     } //if (runPhase < 2)
 
 
     if (runPhase==2) {
+    // Annealing phase
       if (i-annealStartIter < PTacl*annealLength) {
         for (t=0;t<nChain; ++t) {
           tempLadder[t] = tempLadder[t] - annealDecay[t];
@@ -741,6 +742,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
 
     if (runPhase==3) {
+    //Post-annealing single-chain sampling
       adapting = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
       adaptStart = *(INT4*) LALInferenceGetVariable(runState->proposalArgs, "adaptStart");
       iEffStart = adaptStart+adaptLength;
@@ -881,7 +883,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
         MPI_Barrier(MPI_COMM_WORLD);
       }// if ((i % Tskip) == 0)
-    }// if (runPhase > 2)
+    }// if (runPhase < 3)
   }// for (i=1; i<=Niter; i++)
 
   MPI_Barrier(MPI_COMM_WORLD);
