@@ -1,5 +1,6 @@
 /**
-\page lalspec LAL Specification and Style Guide
+\addtogroup ch_spec
+
 \authors Bruce Allen, Kent Blackburn, Duncan Brown, Jolien Creighton, Teviet Creighton, Sam Finn, Albert Lazzarini, Adam Mercer, and Alan Wiseman
 
 \section s_intro Introduction
