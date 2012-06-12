@@ -27,10 +27,9 @@ parser.add_option("-g","--gps-time-file",action="store",type="string",default=No
 parser.add_option("-t","--single-triggers",action="store",type="string",default=None,help="SnglInspiralTable trigger list",metavar="SNGL_FILE.xml")
 parser.add_option("-C","--coinc-triggers",action="store",type="string",default=None,help="CoinInspiralTable trigger list",metavar="COINC_FILE.xml")
 parser.add_option("-L","--lvalert",action="store",type="string",default=None,help="LVAlert coinc file",metavar="coinc_G0000.xml")
+parser.add_option("--gid",action="store",type="string",default=None,help="Optional GraceDB ID for submitting results")
 parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
 parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
-
-
 
 
 (opts,args)=parser.parse_args()
@@ -68,6 +67,9 @@ if opts.coinc_triggers is not None:
 
 if opts.lvalert is not None:
   cp.set('input','lvalert-file',opts.lvalert)
+
+if opts.gid is not None:
+  cp.set('input','gid',opts.gid)
 
 # Create the DAG from the configparser object
 dag=pipe_utils.LALInferencePipelineDAG(cp)
