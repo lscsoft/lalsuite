@@ -6,7 +6,8 @@ LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 if LALFRAME
 frame_progs = \
 	lalapps_heterodyne_pulsar \
-	lalapps_pulsar_parameter_estimation
+	lalapps_pulsar_parameter_estimation \
+	lalapps_create_pulsar_signal_frame
 
 TESTS = test_heterodyne_pulsar.sh
 
@@ -37,6 +38,9 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_likelihood.h \
 	ppe_testing.c \
 	ppe_testing.h
+
+lalapps_create_pulsar_signal_frame_SOURCES = \
+	create_pulsar_signal_frame.c
 
 if HAVE_PYTHON
 pkgpython_DATA = \
