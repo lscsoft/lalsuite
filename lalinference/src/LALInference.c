@@ -2075,6 +2075,7 @@ REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname
 /* Sanity check the data structures and print any encountered errors */
 INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
 {
+  INT4 retcode=0;
   if(!state) {
 	fprintf(stderr,"NULL state pointer!\n");
 	return(1);
@@ -2089,47 +2090,47 @@ INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
     fprintf(stderr,"Checking %s:\n",data->name);
     if(data->timeData) {
       fprintf(stderr,"Checking timeData: ");
-      if(!checkREAL8TimeSeries(data->timeData)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkREAL8TimeSeries(data->timeData))) fprintf(stderr," OK\n");
     }
     if(data->timeModelhPlus) {
       fprintf(stderr,"Checking timeModelhPlus: ");
-      if(!checkREAL8TimeSeries(data->timeModelhPlus)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhPlus))) fprintf(stderr," OK\n");
     }
     if(data->timeModelhCross) {
       fprintf(stderr,"Checking timeModelhCross: ");
-      if(!checkREAL8TimeSeries(data->timeModelhCross)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhCross))) fprintf(stderr," OK\n");
     }
     if(data->whiteTimeData) {
       fprintf(stderr,"Checking whiteTimeData: ");
-      if(!checkREAL8TimeSeries(data->whiteTimeData)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkREAL8TimeSeries(data->whiteTimeData))) fprintf(stderr," OK\n");
     }
     if(data->windowedTimeData) {
       fprintf(stderr,"Checking windowedTimeData: ");
-      if(!checkREAL8TimeSeries(data->windowedTimeData)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkREAL8TimeSeries(data->windowedTimeData))) fprintf(stderr," OK\n");
     }
     if(data->freqData) {
       fprintf(stderr,"Checking freqData: ");
-      if(!checkCOMPLEX16FrequencySeries(data->freqData)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqData))) fprintf(stderr," OK\n");
     }
     if(data->freqModelhPlus) {
       fprintf(stderr,"Checking freqModelhPlus: ");
-      if(!checkCOMPLEX16FrequencySeries(data->freqModelhPlus)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhPlus))) fprintf(stderr," OK\n");
     }
     if(data->freqModelhCross) {
       fprintf(stderr,"Checking freqModelhCross: ");
-      if(!checkCOMPLEX16FrequencySeries(data->freqModelhCross)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhCross))) fprintf(stderr," OK\n");
     }
     if(data->whiteFreqData) {
       fprintf(stderr,"Checking whiteFreqData: ");
-      if(!checkCOMPLEX16FrequencySeries(data->whiteFreqData)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->whiteFreqData))) fprintf(stderr," OK\n");
     }
     if(data->oneSidedNoisePowerSpectrum) {
       fprintf(stderr,"Checking oneSidedNoisePowerSpectrum: ");
-      if(!checkREAL8FrequencySeries(data->oneSidedNoisePowerSpectrum)) fprintf(stderr," OK\n");
+      if(!(retcode|=checkREAL8FrequencySeries(data->oneSidedNoisePowerSpectrum))) fprintf(stderr," OK\n");
     }
     data=data->next;
   }
-  return(0);
+  return(retcode);
 }
 
 static INT4 checkREAL8Value(REAL8 val);

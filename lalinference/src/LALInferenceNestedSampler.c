@@ -370,7 +370,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
                 if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
                    fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
-                   LALInferenceSanityCheck(runState);
+                   if(LALInferenceSanityCheck(runState))
+                     exit(1);
 		}
 	}
 	/* Add the covariance matrix for proposal distribution */
