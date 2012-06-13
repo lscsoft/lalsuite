@@ -79,7 +79,7 @@ const InputParams empty_InputParams;
 void ReadInput(InputParams *inputParams, int argc, char *argv[]);
 
 /*function to read ephemeris files*/
-EphemerisData * InitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir);
+EphemerisData * XLALInitEphemeris (const CHAR *ephemYear, const CHAR *ephemDir);
 
 /*--------------main function---------------*/
 int main(int argc, char **argv)
@@ -94,7 +94,8 @@ int main(int argc, char **argv)
   LALStatus status = empty_LALStatus;
   
   EphemerisData *edat;
-  if ( (edat = InitEphemeris ( inputs.ephemYr, inputs.ephemDir)) == NULL ){
+  if ( (edat = XLALInitEphemeris ( inputs.ephemYr, inputs.ephemDir)) == NULL )
+{
     XLALPrintError ( "%s: Failed to init ephemeris data for year-span \
 '%s'\n", fn, inputs.ephemYr );
     XLAL_ERROR ( XLAL_EFUNC );
