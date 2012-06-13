@@ -2145,10 +2145,11 @@ static INT4 checkREAL8TimeSeries(REAL8TimeSeries *series)
     else {
       if(!series->data->data) fprintf(stderr,"NULL REAL8[] in REAL8Sequence\n");
       else {
-       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i])) {fprintf(stderr,"Found value %lf at index %i\n",series->data->data[i],i); retcode=1;}}
+       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i])) {if(!retcode) fprintf(stderr,"Found value %lf at index %i\n",series->data->data[i],i); retcode+=1;}}
       }
     }
   }
+  if(retcode>1) fprintf(stderr,"and %i more times\n",retcode);
   return(retcode);
 }
 
@@ -2162,10 +2163,11 @@ static INT4 checkREAL8FrequencySeries(REAL8FrequencySeries *series)
     else {
       if(!series->data->data) fprintf(stderr,"NULL REAL8[] in REAL8Sequence\n");
       else {
-       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i])) {fprintf(stderr,"Found value %lf at index %i\n",series->data->data[i],i); retcode=1;}}
+       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i])) {if(!retcode) fprintf(stderr,"Found value %lf at index %i\n",series->data->data[i],i); retcode+=1;}}
       }
     }
   }
+  if(retcode>1) fprintf(stderr,"and %i more times\n",retcode);
   return(retcode);
 }
 
@@ -2179,11 +2181,12 @@ static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series)
     else {
       if(!series->data->data) fprintf(stderr,"NULL REAL8[] in COMPLEX16Sequence\n");
       else {
-       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i].re)) {fprintf(stderr,"Found real value %lf at index %i\n",series->data->data[i].re,i); retcode=1;}
-					if(checkREAL8Value(series->data->data[i].im)) {fprintf(stderr,"Found imag value %lf at index %i\n",series->data->data[i].im,i); retcode=1;} }
+       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i].re)) {if(!retcode) fprintf(stderr,"Found real value %lf at index %i\n",series->data->data[i].re,i); retcode+=1;}
+					if(checkREAL8Value(series->data->data[i].im)) {if(!retcode) fprintf(stderr,"Found imag value %lf at index %i\n",series->data->data[i].im,i); retcode+=1;} }
       }
     }
   }
+  if(retcode>1) fprintf(stderr,"and %i more times\n",retcode);
   return(retcode);
 }
 

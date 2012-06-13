@@ -670,7 +670,10 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
 			XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
 			PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
-			if(!PSDtimeSeries) XLAL_ERROR_NULL(XLAL_EFUNC);
+			if(!PSDtimeSeries) {
+                            fprintf(stderr,"ERROR while estimating PSD for %s\n",IFOnames[i]);
+                            XLAL_ERROR_NULL(XLAL_EFUNC);
+                        }
 			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
 			if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
 			if (LALInferenceGetProcParamVal(commandLine, "--PSDwelch"))
