@@ -134,8 +134,6 @@ int main(int argc, char **argv)
       fprintf(stderr, "%s\n", parname);      
       FILE *inject;
 
-      int i=0;
-
       if (( inject = fopen ( parname, "r" )) == NULL ){
 	fprintf(stderr,"Error opening file: %s\n", parname);
 	XLAL_ERROR ( XLAL_EIO );
@@ -148,7 +146,6 @@ int main(int argc, char **argv)
   LIGOTimeGPS epoch;
 
   UINT4 ndata;
-  size_t filelength;
 
   epoch.gpsSeconds = inputs.epoch;
   epoch.gpsNanoSeconds = 0;
@@ -158,7 +155,8 @@ int main(int argc, char **argv)
   REAL8TimeSeries *series=NULL;
   
   CHAR out_file[256];
-  sprintf(out_file, "%s-%d-%d.gwf", inputs.outStr, epoch.gpsSeconds, ndata );
+  sprintf(out_file, "%s-%s-%d-%d.gwf", inputs.det, inputs.outStr,
+          epoch.gpsSeconds, ndata );
 
   struct FrameH *outFrame = NULL;
 
