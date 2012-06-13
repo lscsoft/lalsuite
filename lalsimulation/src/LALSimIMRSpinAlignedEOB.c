@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2011 Craig Robinson, Enrico Barausse
+*  Copyright (C) 2011 Craig Robinson, Enrico Barausse, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,12 +18,12 @@
 */
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
  * \file 
  *
- * \brief Functions for producing EOB waveforms for 
- * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
+ * \brief Functions for producing SEOBNRv1 waveforms for 
+ * spinning binaries, as described in Taracchini ( arXiv 1202.0790 ).
  */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
@@ -56,6 +56,10 @@
 #define UNUSED
 #endif
 
+/**
+ * Stopping condition for the regular resolution EOB orbital evolution
+ * -- stop when reaching max orbital frequency in strong field.
+ */
 static int
 XLALEOBSpinAlignedStopCondition(double UNUSED t,
                            const double values[],
@@ -80,6 +84,11 @@ XLALEOBSpinAlignedStopCondition(double UNUSED t,
   return GSL_SUCCESS;
 }
 
+/**
+ * Stopping condition for the high resolution EOB orbital evolution
+ * -- stop when reaching a minimum radius 0.3M out of the EOB horizon
+ *    or when getting nan in any of the four ODE equations
+ */
 static int
 XLALSpinAlignedHiSRStopCondition(double UNUSED t,
                            const double UNUSED values[],
