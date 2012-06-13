@@ -604,4 +604,8 @@ REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
 /** Calculate the variance of a distribution on an angle (modulo 2PI) */
 REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
 
+/** Sanity check the structures in the given state. Will scan data for infinities and nans, and look for null pointers. */
+INT4 LALInferenceSanityCheck(LALInferenceRunState *state);
+
+
 #endif

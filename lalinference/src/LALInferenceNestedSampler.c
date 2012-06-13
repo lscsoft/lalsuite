@@ -363,11 +363,15 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	logw=log(1.0-exp(-1.0/Nlive));
 	for(i=0;i<Nruns;i++)  {logwarray[i]=logw; logZarray[i]=-DBL_MAX; oldZarray[i]=-DBL_MAX; Harray[i]=0.0;logtarray[i]=-1.0/Nlive; logt2array[i]=-1.0/Nlive; }
 	i=0;
-	/* Find maximum likelihood */
+	/* Find maximum likelihood and sanity check */
 	for(i=0;i<Nlive;i++)
 	{
 		logLtmp=logLikelihoods[i];
 		logLmax=logLtmp>logLmax? logLtmp : logLmax;
+                if(isnan(logLikelihoods[i]) || isinf(logLikelihoods[i])) {
+                   fprintf(stderr,"Detected logL[%i]=%lf! Sanity checking...\n",i,logLikelihoods[i]);
+                   LALInferenceSanityCheck(runState);
+		}
 	}
 	/* Add the covariance matrix for proposal distribution */
 	LALInferenceNScalcCVM(cvm,runState->livePoints,Nlive);
