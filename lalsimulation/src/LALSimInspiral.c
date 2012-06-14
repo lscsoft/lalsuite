@@ -1439,15 +1439,7 @@ int XLALGetApproximantFromString(const CHAR *inString)
     XLAL_ERROR( XLAL_EFAULT );
 #endif
 
-  if ( strstr(inString, "TaylorT1" ) )
-  {
-    return TaylorT1;
-  }
-  else if ( strstr(inString, "TaylorT2" ) )
-  {
-    return TaylorT2;
-  }
-  else if ( strstr(inString, "TaylorF2RedSpinTidal" ) )
+  if ( strstr(inString, "TaylorF2RedSpinTidal" ) )
   {
     return TaylorF2RedSpinTidal;
   }
@@ -1458,6 +1450,42 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "TaylorF2" ) )
   {
     return TaylorF2;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
+  {
+    return PhenSpinTaylorRDF;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRD" ) )
+  {
+    return PhenSpinTaylorRD;
+  }
+  else if ( strstr(inString, "SpinTaylorT4" ) )
+  {
+    return SpinTaylorT4;
+  }
+  else if ( strstr(inString, "SpinTaylorFrameless" ) )
+  {
+    return SpinTaylorFrameless;
+  }
+  else if ( strstr(inString, "SpinTaylorT3" ) )
+  {
+    return SpinTaylorT3;
+  }
+  else if ( strstr(inString, "SpinTaylor" ) )
+  {
+    return SpinTaylor;
+  }
+  else if ( strstr(inString, "SpinQuadTaylor" ) )
+  {
+    return SpinQuadTaylor;
+  }
+  else if ( strstr(inString, "TaylorT1" ) )
+  {
+    return TaylorT1;
+  }
+  else if ( strstr(inString, "TaylorT2" ) )
+  {
+    return TaylorT2;
   }
   else if ( strstr(inString, "TaylorT3" ) )
   {
@@ -1502,34 +1530,6 @@ int XLALGetApproximantFromString(const CHAR *inString)
   else if ( strstr(inString, "EOB" ) )
   {
     return EOB;
-  }
-  else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
-  {
-    return PhenSpinTaylorRDF;
-  }
-  else if ( strstr(inString, "PhenSpinTaylorRD" ) )
-  {
-    return PhenSpinTaylorRD;
-  }
-  else if ( strstr(inString, "SpinTaylorT4" ) )
-  {
-    return SpinTaylorT4;
-  }
-  else if ( strstr(inString, "SpinTaylorFrameless" ) )
-  {
-    return SpinTaylorFrameless;
-  }
-  else if ( strstr(inString, "SpinTaylorT3" ) )
-  {
-    return SpinTaylorT3;
-  }
-  else if ( strstr(inString, "SpinTaylor" ) )
-  {
-    return SpinTaylor;
-  }
-  else if ( strstr(inString, "SpinQuadTaylor" ) )
-  {
-    return SpinQuadTaylor;
   }
   else if ( strstr(inString, "AmpCorPPN" ) )
   {
