@@ -1,3 +1,10 @@
+ligo-gracedb (1.3-1) unstable; urgency=low
+
+  * Replaced simplejson with cjson.
+  * simplejson not available everywhere in the LSC.
+
+ -- Brian Moe <brian.moe@ligo.org>  Thu, 14 Jun 2012 11:40:06 -0600
+
 ligo-gracedb (1.2-1) unstable; urgency=low
 
   * Added file download command.
