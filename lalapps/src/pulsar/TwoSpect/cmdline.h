@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.22"
+#define CMDLINE_PARSER_VERSION "1.1.23"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -120,6 +120,9 @@ struct gengetopt_args_info
   double linPolAngle_arg;	/**< @brief Polarization angle to search using linear polarization (when unspecified default is circular polarization.  */
   char * linPolAngle_orig;	/**< @brief Polarization angle to search using linear polarization (when unspecified default is circular polarization original value given at command line.  */
   const char *linPolAngle_help; /**< @brief Polarization angle to search using linear polarization (when unspecified default is circular polarization help description.  */
+  int harmonicNumToSearch_arg;	/**< @brief Number of harmonics of the Pmin to Pmax range to search (default='1').  */
+  char * harmonicNumToSearch_orig;	/**< @brief Number of harmonics of the Pmin to Pmax range to search original value given at command line.  */
+  const char *harmonicNumToSearch_help; /**< @brief Number of harmonics of the Pmin to Pmax range to search help description.  */
   int ihsfactor_arg;	/**< @brief Number of harmonics to sum in IHS algorithm (default='5').  */
   char * ihsfactor_orig;	/**< @brief Number of harmonics to sum in IHS algorithm original value given at command line.  */
   const char *ihsfactor_help; /**< @brief Number of harmonics to sum in IHS algorithm help description.  */
@@ -235,6 +238,7 @@ struct gengetopt_args_info
   unsigned int skyRegion_given ;	/**< @brief Whether skyRegion was given.  */
   unsigned int skyRegionFile_given ;	/**< @brief Whether skyRegionFile was given.  */
   unsigned int linPolAngle_given ;	/**< @brief Whether linPolAngle was given.  */
+  unsigned int harmonicNumToSearch_given ;	/**< @brief Whether harmonicNumToSearch was given.  */
   unsigned int ihsfactor_given ;	/**< @brief Whether ihsfactor was given.  */
   unsigned int ihsfar_given ;	/**< @brief Whether ihsfar was given.  */
   unsigned int ihsfom_given ;	/**< @brief Whether ihsfom was given.  */

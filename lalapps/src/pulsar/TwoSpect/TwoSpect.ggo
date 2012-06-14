@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.22"
+version "1.1.23"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -36,6 +36,7 @@ option "dfmax" - "Maximum modulation depth to search (Hz)" double optional
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string optional
 option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
 option "linPolAngle"    - "Polarization angle to search using linear polarization (when unspecified default is circular polarization" double optional
+option "harmonicNumToSearch"  - "Number of harmonics of the Pmin to Pmax range to search" int default="1" optional
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
