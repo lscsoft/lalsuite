@@ -243,6 +243,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char **caches=NULL;
 	char **IFOnames=NULL;
 	char **fLows=NULL,**fHighs=NULL;
+	char **timeslides=NULL;
+	UINT4 Ntimeslides=0;
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
   REAL8 AIGOang=0.0; //orientation angle for the proposed Australian detector.
@@ -319,7 +321,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		procparam=LALInferenceGetProcParamVal(commandLine,"--dataseed");
 		dataseed=atoi(procparam->value);
 	}
-								   
+	if((ppt=LALInferenceGetProcParamVal(commandLine,"--timeslide"))) LALInferenceParseCharacterOptionString(ppt->value,&timeslides,&Ntimeslides);
+	  
 	if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
 	if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
 	
@@ -684,8 +687,15 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			XLALDestroyREAL8TimeSeries(PSDtimeSeries);
 
 			/* Read the data segment */
+			LIGOTimeGPS truesegstart=segStart;
+			if(Ntimeslides) {
+			  REAL4 deltaT=-atof(timeslides[i]);
+			  XLALGPSAdd(&segStart, deltaT);
+			  fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,truesegstart.gpsSeconds+1e-9*truesegstart.gpsNanoSeconds,segStart.gpsSeconds+1e-9*segStart.gpsNanoSeconds);
+			}
 			IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
-
+			segStart=truesegstart;
+ 			if(Ntimeslides) IFOdata[i].timeData->epoch=truesegstart;
                         /* FILE *out; */
                         /* char fileName[256]; */
                         /* snprintf(fileName, 256, "readTimeData-%d.dat", i); */

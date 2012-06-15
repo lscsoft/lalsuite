@@ -29,6 +29,7 @@ parser.add_option("-C","--coinc-triggers",action="store",type="string",default=N
 parser.add_option("-L","--lvalert",action="store",type="string",default=None,help="LVAlert coinc file",metavar="coinc_G0000.xml")
 parser.add_option("--gid",action="store",type="string",default=None,help="Optional GraceDB ID for submitting results")
 parser.add_option("-I","--injections",action="store",type="string",default=None,help="List of injections to perform and analyse",metavar="INJFILE.xml")
+parser.add_option("-P","--pipedown-db",action="store",type="string",default=None,help="Pipedown database to read and analyse",metavar="pipedown.sqlite")
 parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
 
 
@@ -70,6 +71,9 @@ if opts.lvalert is not None:
 
 if opts.gid is not None:
   cp.set('input','gid',opts.gid)
+
+if opts.pipedown_db is not None:
+  cp.set('input','pipedown-db',opts.pipedown_db)
 
 # Create the DAG from the configparser object
 dag=pipe_utils.LALInferencePipelineDAG(cp)
