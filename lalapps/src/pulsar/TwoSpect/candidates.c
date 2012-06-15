@@ -233,9 +233,12 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             REAL8 bestProb = 0.0;
             INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
-               avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
+               /* avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
                aveperiod += input->data[locs2->data[kk]].period*(-input->data[locs2->data[kk]].prob);
-               weight += -input->data[locs2->data[kk]].prob;
+               weight += -input->data[locs2->data[kk]].prob; */
+               avefsig += input->data[locs2->data[kk]].fsig*(input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob);
+               aveperiod += input->data[locs2->data[kk]].period*(input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob);
+               weight += input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob;
                if (mindf > input->data[locs2->data[kk]].moddepth || mindf == 0.0) mindf = input->data[locs2->data[kk]].moddepth;
                if (maxdf < input->data[locs2->data[kk]].moddepth) maxdf = input->data[locs2->data[kk]].moddepth;
                
@@ -470,7 +473,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                //Shift period by harmonics
                for (jj=2; jj<6; jj++) {
                   //if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
-                  if (ihsCandidates->data[ii].period/jj>=(2.0*3600.0) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period/jj, inputParams->Tcoh)) {
+                  if (ihsCandidates->data[ii].period/jj>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs)) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
                      makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
@@ -503,7 +506,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      ihsCandidates->data[ii].period *= (REAL8)jj;
                   } // shorter period harmonics
                   //if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
-                  if (ihsCandidates->data[ii].period*jj>=(2.0*3600.0) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period*jj, inputParams->Tcoh)) {
+                  if (ihsCandidates->data[ii].period*jj>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs)) {
                      ihsCandidates->data[ii].period *= (REAL8)jj;
                      makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
@@ -539,11 +542,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                
                //if (bestProb==0.0) {
                   //Shift by fractions
-                  for (jj=1; jj<5; jj++) {
+                  for (jj=1; jj<4; jj++) {
                      //for (jj=1; jj<3; jj++) {
                      REAL8 periodfact = (jj+1.0)/(jj+2.0);
                      //if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
-                     if (ihsCandidates->data[ii].period*periodfact>=(2.0*3600.0) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period*periodfact, inputParams->Tcoh)) {
+                     if (ihsCandidates->data[ii].period*periodfact>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
                         
                         ihsCandidates->data[ii].period *= periodfact;   //Shift period
                         
@@ -583,7 +586,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      } // shift shorter period
                      periodfact = 1.0/periodfact;
                      //if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
-                     if (ihsCandidates->data[ii].period*periodfact>=(2.0*3600.0) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period*periodfact, inputParams->Tcoh)) {
+                     if (ihsCandidates->data[ii].period*periodfact>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
                         ihsCandidates->data[ii].period *= periodfact;
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {
