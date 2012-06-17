@@ -699,13 +699,12 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       for (ii=0; ii<(INT4)fpr->length; ii++) {
          cos_omegapr_times_period->data[ii] = cos(input.period*omegapr->data[ii]);
          cos_N_times_omegapr_times_period->data[ii] = cos(N*input.period*omegapr->data[ii]);
-         if (cos_N_times_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS) && cos_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS)) {
+         if (cos_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS)) {
             whichIfStatementToUse->data[ii] = 1;
             cos_ratio->data[ii] = (1.0 - cos_N_times_omegapr_times_period->data[ii])/(1.0 - cos_omegapr_times_period->data[ii]);
-         }
-         else if (cos_N_times_omegapr_times_period->data[ii]>(1.0-100.0*LAL_REAL8_EPS)) {
+         } else {
             whichIfStatementToUse->data[ii] = 2;
-            cos_ratio->data[ii] = 1.0;
+            cos_ratio->data[ii] = (REAL8)N*(REAL8)N;
          }
       }
    } else {
@@ -714,13 +713,12 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          omegapr_squared->data[ii] = omegapr->data[ii]*omegapr->data[ii];
          cos_omegapr_times_period->data[ii] = cos(input.period*omegapr->data[ii]);
          cos_N_times_omegapr_times_period->data[ii] = cos(N*input.period*omegapr->data[ii]);
-         if (cos_N_times_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS) && cos_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS)) {
+         if (cos_omegapr_times_period->data[ii]<=(1.0-100.0*LAL_REAL8_EPS)) {
             whichIfStatementToUse->data[ii] = 1;
             cos_ratio->data[ii] = (1.0 - cos_N_times_omegapr_times_period->data[ii])/(1.0 - cos_omegapr_times_period->data[ii]);
-         }
-         else if (cos_N_times_omegapr_times_period->data[ii]>(1.0-100.0*LAL_REAL8_EPS)) {
+         } else {
             whichIfStatementToUse->data[ii] = 2;
-            cos_ratio->data[ii] = 1.0;
+            cos_ratio->data[ii] = (REAL8)N*(REAL8)N;
          }
       }
    }
@@ -754,7 +752,11 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    REAL4Vector *allsigmas = XLALCreateREAL4Vector(wvals->length * sigmas->length);
+   REAL4Vector *weightvals = XLALCreateREAL4Vector(wvals->length * sigmas->length);
    if (allsigmas==NULL) {
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, wvals->length * sigmas->length);
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+   } else if (weightvals==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, wvals->length * sigmas->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
@@ -764,22 +766,32 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    for (ii=0; ii<(INT4)wvals->length; ii++) {
       //calculate sin and cos of 2*pi*t/P and then the bin the signal is in and the signal velocity
       twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*((ii+1)*params->Tcoh*0.5));
-      REAL8 sigbin = (input.moddepth*cos2pix+input.fsig)*params->Tcoh;
-      REAL8 sigbinvelocity = fabs(-input.moddepth*sin2pix*params->Tcoh*params->Tcoh*LAL_PI*periodf);
+      REAL4 sigbin = (input.moddepth*cos2pix+input.fsig)*params->Tcoh;
+      REAL4 sigbinvelocity = fabs(-input.moddepth*sin2pix*params->Tcoh*params->Tcoh*LAL_PI*periodf);
       
       //if the velocity approaches zero, the sigma calculation will diverge (which it should do) but this is bad numerically, so we cap it
       if (sigbinvelocity<1.0e-4) sigbinvelocity = 1.0e-4;
       
       //REAL8 sigma = 0.5 * params->Tcoh * ((383.85*LAL_1_PI)*(0.5*6.1e-3) / ((sigbinvelocity+0.1769)*(sigbinvelocity+0.1769)+(0.5*6.1e-3)*(0.5*6.1e-3)) + 0.3736);   //Old, derived fit from simulation
-      REAL8 sigma = 0.5*params->Tcoh * (0.5774 * pow(sigbinvelocity, -1.0177) + 0.0380);   //Derived fit from simulation
+      REAL4 sigma = 0.5*params->Tcoh * (0.5774 * powf(sigbinvelocity, -1.0177f) + 0.0380);   //Derived fit from simulation
       
-      for (jj=0; jj<(INT4)sigmas->length; jj++) allsigmas->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(sigbin-(bin0+jj+fnumstart))*sigma;
+      for (jj=0; jj<(INT4)sigmas->length; jj++) {
+         weightvals->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(sigbin-(bin0+jj+fnumstart));
+         allsigmas->data[ii*sigmas->length + jj] = weightvals->data[ii*sigmas->length + jj]*sigma;
+      }
       
    } /* for ii < wvals->length */
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
-      for (jj=0; jj<(INT4)wvals->length; jj++) wvals->data[jj] = allsigmas->data[ii + jj*sigmas->length];
+      /* for (jj=0; jj<(INT4)wvals->length; jj++) wvals->data[jj] = allsigmas->data[ii + jj*sigmas->length];
       INT4 indexval = max_index(wvals);
-      sigmas->data[ii] = wvals->data[indexval];
+      sigmas->data[ii] = wvals->data[indexval]; */
+      REAL8 wavesigma = 0.0;
+      REAL8 totalw = 0.0;
+      for (jj=0; jj<(INT4)wvals->length; jj++) {
+         wavesigma += allsigmas->data[ii + jj*sigmas->length];
+         totalw += weightvals->data[ii + jj*sigmas->length];
+      }
+      sigmas->data[ii] = (REAL4)(wavesigma/totalw);
    }
    
    
@@ -813,21 +825,22 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    //Create template. We are going to do exp(log(Eq. 18))
    REAL8 sum = 0.0;
    REAL4 dataval = 0.0;
+   REAL4 log4pi = 2.53102424697f;
    for (ii=0; ii<(INT4)sigmas->length; ii++) {
       REAL4 s = sigmas->data[ii];      //sigma
       
       //Scaling factor for leakage
-      REAL4 scale1 = 1.0/(1.0+expf((REAL4)(-phi_actual->data[ii+fnumstart]*phi_actual->data[ii+fnumstart]*0.5/(s*s))));
+      REAL4 scale1 = sqrtf((REAL4)(1.0/(1.0+expf((REAL4)(-phi_actual->data[ii+fnumstart]*phi_actual->data[ii+fnumstart]*0.5/(s*s))))));
       
       //pre-factor
       //REAL8 prefact0 = scale1 * 2.0 * LAL_TWOPI * s * s;
-      REAL4 prefact0 = log(scale1 * s * s);     //We are going to do exp(log(Eq. 18))
+      //REAL4 prefact0 = log(scale1 * 2.0 * LAL_TWOPI * s * s);     //We are going to do exp(log(Eq. 18))
+      REAL4 prefact0 = log4pi + 2.0*logf((REAL4)(scale1*s));
       
       INT4 needtocomputecos = 0;    //Do we need to compute the cosine not from a look up table? 1 = !LUT, 0 = LUT
       
       if (params->useSSE) {
          //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
-         //We neglect the 4*pi because it's just a normalization factor and we are going to normalize anyway
          sseScaleREAL4Vector(exp_neg_sigma_sq_times_omega_pr_sq, omegapr_squared, -s*s);
          if (xlalErrno!=0) {
             fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
@@ -963,13 +976,11 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          //Four cases of final fraction in E. Goetz and K. Riles 2011, eq. 18 (for numerical stability and accuracy considerations)
          //1) numerator approaches zero then dataval = 0.0 (set)
          //2) Neither numerator nor denominator approaches zero (first if)
-         //3) denominator approaches zero, then the numerator is also approaching zero, so this fraction approaches 1.0 (second if)
-         //4) both numerator and denominator approach zero, so, again, the fraction approaches 1.0 (second if)
+         //3) denominator approaches zero, then the numerator is also approaching zero, so this fraction approaches N*N (second if)
+         //4) both numerator and denominator approach zero, so, again, the fraction approaches N*N (second if)
          dataval = 0.0;
-         if (whichIfStatementToUse->data[jj]==1) {
+         if (whichIfStatementToUse->data[jj]!=0) {
             dataval = (REAL4)(datavector->data[jj]*cos_ratio->data[jj]);
-         } else if (whichIfStatementToUse->data[jj]==2) {
-            dataval = datavector->data[jj];
          }
          
          //Sum up the weights in total
@@ -1010,6 +1021,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    XLALDestroyREAL4Vector(scale);
    XLALDestroyREAL4Vector(sigmas);
    XLALDestroyREAL4Vector(allsigmas);
+   XLALDestroyREAL4Vector(weightvals);
    XLALDestroyREAL4Vector(wvals);
    XLALDestroyREAL4Vector(fpr);
    XLALDestroyREAL4Vector(omegapr);
