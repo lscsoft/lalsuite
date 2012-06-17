@@ -3,7 +3,7 @@
 
 import itertools
 import glue
-from glue import pipeline,segmentsUtils
+from glue import pipeline,segmentsUtils,segments
 import os
 from lalapps import inspiralutils
 import uuid
@@ -11,6 +11,7 @@ import ast
 import pdb
 import string
 from math import floor,ceil,log,pow
+import sys
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -21,7 +22,7 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict={},GID=None,ifos=[], duration=None,srate=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
@@ -83,11 +84,7 @@ def open_pipedown_database(database_filename,tmp_space):
     if not os.access(database_filename,os.R_OK):
 	raise Exception('Unable to open input file: %s'%(database_filename))
     from glue.ligolw import dbtables
-    try:
-        import sqlite3
-    except ImportError:
-        # Pre-2.5
-        from pysqlite2 import dbapi2 as sqlite3
+    import sqlite3
     working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
     connection = sqlite3.connect(working_filename)
     if tmp_space:
@@ -128,16 +125,17 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	if gpsend is not None:
 		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
 	db_out=database_connection.cursor().execute(get_coincs)
+        from pylal import SnglInspiralUtils
 	for (sngl_time, slide, ifo, coinc_id) in db_out:
-	  seg=filter(lambda seg:slid_time in seg,seglist)[0]
-	  slid_time = snglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
-	  if not output.haskey(coinc_id):
-	    output[coinc_id]=Event(trig_time=slid_time)
-	  output[coinc_id].timeslide_dict[ifo]=slide
+	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
+	  if not output.has_key(coinc_id):
+	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
+	  output[coinc_id].timeslides[ifo]=slide
 	  output[coinc_id].ifos.append(ifo)
 	  
 	print 'Found %i time slide coincs to run on'%(len(output))
-	return output
+	return output.values()
 
 def mkdirs(path):
   """
@@ -283,13 +281,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     gpsstart=None
     gpsend=None
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-database','lvalert-file']
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','lvalert-file']
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
-    if(self.config.has_option('input','gps-start-time'):
+    if self.config.has_option('input','gps-start-time'):
       gpsstart=self.config.getfloat('input','gps-start-time')
-    if(self.config.has_option('input','gps-end-time'):
+    if self.config.has_option('input','gps-end-time'):
       gpsend=self.config.getfloat('input','gps-end-time')
     # ASCII list of GPS times
     if self.config.has_option('input','gps-time-file'):
@@ -315,8 +313,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','lvalert-file'):
       events = readLValert(self.config.get('input','lvalert-file'),gid=gid)
     # pipedown-database
-    if(self.config.has_option('input','pipedown-db'):
-      db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)
+    if self.config.has_option('input','pipedown-db'):
+      db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
       # Timeslides
       if self.config.get('input','timeslides').lower()=='true':
 	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend)
@@ -637,7 +635,7 @@ class EngineNode(pipeline.CondorDAGNode):
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
-        slidestring=slidestring+delim+self.timeslides[ifo]
+        slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
       channelstring=channelstring+']'

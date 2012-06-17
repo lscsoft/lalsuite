@@ -413,7 +413,7 @@ if opts.coinc_triggers:
 # Read pipedown database
 if opts.pipedown_db:
 	print 'establishing connection to pipedown database'
-	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
+	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)[0]
 	timeslides=get_timeslides_pipedown(db_connection,dumpfile=timeslidefiledump,gpsstart=opts.gps_start_time,gpsend=opts.gps_end_time)
 	times=timeslides.keys()
 	starttime=min(times)
