@@ -22,14 +22,20 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict={},GID=None,ifos=[], duration=None,srate=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
-    self.timeslides=timeslide_dict
+    if timeslide_dict is None:
+      self.timeslides={}
+    else:
+      self.timeslides=timeslide_dict
     self.GID=GID
     self.coinctrigger=CoincInspiral
-    self.ifos = ifos
+    if ifos is None:
+      self.ifos = []
+    else:
+      self.ifos = ifos
     self.duration = duration
     self.srate = srate
     if event_id is not None:
@@ -127,14 +133,14 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	db_out=database_connection.cursor().execute(get_coincs)
         from pylal import SnglInspiralUtils
 	for (sngl_time, slide, ifo, coinc_id) in db_out:
+          coinc_id=int(coinc_id.split(":")[-1])
 	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
-	  if not output.has_key(coinc_id):
+	  if not coinc_id in output.keys():
 	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
 	  output[coinc_id].timeslides[ifo]=slide
 	  output[coinc_id].ifos.append(ifo)
 	  
-	print 'Found %i time slide coincs to run on'%(len(output))
 	return output.values()
 
 def mkdirs(path):
