@@ -829,7 +829,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
 void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4VectorSequence *ihsvectorsequence, INT4 rows, REAL4Vector *FbinMean, inputParamsStruct *params)
 {
    
-   INT4 ii, jj;
+   INT4 ii, jj, kk;
    
    //Again, we start off by allocating a "towrows" vector sequence of IHS nearest neighbor sums
    REAL4VectorSequence *tworows = XLALCreateREAL4VectorSequence(ihsvectorsequence->length-1, ihsvectorsequence->vectorLength);
@@ -861,8 +861,9 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   //The maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)floor(params->Tobs/7200.0)-5;
+   //The minimum and maximum index to search in the IHS vector
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/7200.0, params->Tobs/params->Pmin)) - 5;
+   INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
    
    //Finding the maximum for each IHS vector and the location
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
@@ -884,8 +885,22 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
       }
       //ihslocations->data[ii] = max_index(excessabovenoise) + 5;
-      ihslocations->data[ii] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
-      ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
+      //ihslocations->data[ii] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+      //ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
+      //search over the range of Pmin-->Pmax harmonics the user has specified
+      for (jj=0; jj<params->harmonicNumToSearch; jj++) {
+         if (jj==0) {
+            ihslocations->data[ii] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+            ihsvalues->data[ii] = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + ihslocations->data[ii]-5];
+         } else {
+            INT4 newIHSlocation = max_index_in_range(excessabovenoise, (jj+1)*minIndexForIHS, (jj+1)*maxIndexForIHS) + 5;
+            REAL4 newIHSvalue = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + newIHSlocation-5];
+            if (newIHSvalue > ihsvalues->data[ii]) {
+               ihslocations->data[ii] = newIHSlocation;
+               ihsvalues->data[ii] = newIHSvalue;
+            } /* if the new value is better than the previous value */
+         }
+      } /* for jj=0 --> jj<harmonicNumToSearch */
    }
    
    //Useful variables
@@ -906,7 +921,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
          
          //The maximum index to search in the IHS vector
-         maxIndexForIHS = (INT4)floor(fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh) , params->Tobs/7200.0))-5;
+         maxIndexForIHS = (INT4)ceil(fmin( 2.0*params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), 2.0*params->Tobs/7200.0)) - 5;
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          
@@ -950,10 +965,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, ihsvectorsequence, ihsvectorsequence, jj, jj+1, jj);
             
             //To scale the background efficiently
-            if (jj==0) {
-               INT4 kk;
-               for (kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
-            } else {
+            if (jj==0) for (kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
+            else {
                sumofnoise -= FbinMean->data[jj-1];
                sumofnoise += FbinMean->data[jj+(ii-1)];
             }
@@ -974,7 +987,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, scaledExpectedIHSVectorValues->length);
                      XLAL_ERROR_VOID(XLAL_EFUNC);
                   }
-                  INT4 kk;
                   REAL4 scaleval = sumofnoise;
                   for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) {
                      scaledExpectedIHSVectorValues_valid->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
@@ -1001,7 +1013,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                      XLAL_ERROR_VOID(XLAL_EFUNC);
                   }
                   fastSSVectorSequenceSubtract(excessabovenoise_valid, tworows, scaledExpectedIHSVectorValues, jj);
-                  INT4 kk;
                   for (kk=0; kk<(INT4)excessabovenoise->length; kk++) {
                      if (excessabovenoise_valid->data[kk] != excessabovenoise->data[kk]) {
                         fprintf(stderr,"%s: sseSSVectorSequenceSubtract() failed to produce valid results.\n", __func__);
@@ -1014,7 +1025,6 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             } else {
                //If the SSE code wasn't used above or we didn't validate, then we have to do it here manually;
                //the scaling and subtraction.
-               INT4 kk;
                REAL4 scaleval = sumofnoise;
                for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
                fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
@@ -1022,8 +1032,22 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             
             //Compute the maximum IHS value in the second FFT frequency direction
             //output->locations->data[jj] = max_index(excessabovenoise) + 5;
-            output->locations->data[jj] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
-            output->maxima->data[jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[jj]-5)];
+            //output->locations->data[jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+            //output->maxima->data[jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[jj]-5)];
+            //search over the range of Pmin-->Pmax harmonics the user has specified
+            for (kk=0; kk<params->harmonicNumToSearch; kk++) {
+               if (kk==0) {
+                  output->locations->data[jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+                  output->maxima->data[jj] = ihsvectorsequence->data[jj*tworows->vectorLength + output->locations->data[jj]-5];
+               } else {
+                  INT4 newIHSlocation = max_index_in_range(excessabovenoise, (kk+1)*minIndexForIHS, (kk+1)*maxIndexForIHS) + 5;
+                  REAL4 newIHSvalue = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + newIHSlocation-5];
+                  if (newIHSvalue > output->maxima->data[jj]) {
+                     output->locations->data[jj] = newIHSlocation;
+                     output->maxima->data[jj] = newIHSvalue;
+                  } /* if the new value is better than the previous value */
+               }
+            } /* for kk=0 --> kk<harmonicNumToSearch */
             
             //Compute IHS FOM value
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
@@ -1044,7 +1068,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
          }
          
          //The maximum index to search in the IHS vector
-         maxIndexForIHS = (INT4)floor(fmin(params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh) , params->Tobs/7200.0))-5;
+         maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/minPeriod(0.5*(ii-1)/params->Tcoh, params->Tcoh), 2.0*params->Tobs/7200.0)) - 5;
          
          REAL4 sumofnoise = 0.0;    //To scale the expected IHS background
          INT4 endloc = ((ii-1)*(ii-1)-(ii-1))/2;
@@ -1071,10 +1095,8 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             if (!params->useSSE) fastSSVectorSequenceSum(tworows, tworows, ihsvectorsequence, jj, ii-1+jj, jj); //If we didn't use SSE to sum the vector sequence (see lines above)
             
             //To scale the background efficiently
-            if (jj==0) {
-               INT4 kk;
-               for (kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
-            } else {
+            if (jj==0) for (kk=0; kk<ii; kk++) sumofnoise += FbinMean->data[kk];
+            else {
                sumofnoise -= FbinMean->data[jj-1];
                sumofnoise += FbinMean->data[jj+(ii-1)];
             }
@@ -1092,15 +1114,28 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
             } else {
-               INT4 kk;
                REAL4 scaleval = sumofnoise;
                for (kk=0; kk<(INT4)inputfar->expectedIHSVector->length; kk++) scaledExpectedIHSVectorValues->data[kk] = scaleval*inputfar->expectedIHSVector->data[kk];
                fastSSVectorSequenceSubtract(excessabovenoise, tworows, scaledExpectedIHSVectorValues, jj);
             }
             
             //output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index(excessabovenoise) + 5;
-            output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, 0, maxIndexForIHS) + 5;
-            output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
+            //output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+            //output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
+            //search over the range of Pmin-->Pmax harmonics the user has specified
+            for (kk=0; kk<params->harmonicNumToSearch; kk++) {
+               if (kk==0) {
+                  output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
+                  output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsvectorsequence->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
+               } else {
+                  INT4 newIHSlocation = max_index_in_range(excessabovenoise, (kk+1)*minIndexForIHS, (kk+1)*maxIndexForIHS) + 5;
+                  REAL4 newIHSvalue = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + newIHSlocation-5];
+                  if (newIHSvalue > output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj]) {
+                     output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = newIHSlocation;
+                     output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = newIHSvalue;
+                  } /* if the new value is better than the previous value */
+               }
+            } /* for kk=0 --> kk<harmonicNumToSearch */
             
             memcpy(rowsequencelocs->data, &(ihslocations->data[jj]), sizeof(INT4)*ii);
             output->foms->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsFOM(rowsequencelocs, (INT4)inputfar->expectedIHSVector->length);

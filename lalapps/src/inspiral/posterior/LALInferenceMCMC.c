@@ -614,8 +614,12 @@ void initVariables(LALInferenceRunState *state)
 
       endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
       AmpOrder=injTable->amp_order;
-      XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
-      XLALGetApproximantFromString(injTable->waveform,&approx);
+      PhaseOrder = XLALGetOrderFromString(injTable->waveform);
+      if( (int) PhaseOrder == XLAL_FAILURE)
+        ABORTXLAL(&status);
+      approx = XLALGetApproximantFromString(injTable->waveform);
+      if( (int) approx == XLAL_FAILURE)
+        ABORTXLAL(&status);
     }
   }
 

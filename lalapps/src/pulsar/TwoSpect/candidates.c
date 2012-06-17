@@ -233,9 +233,12 @@ void clusterCandidates(candidateVector *output, candidateVector *input, ffdataSt
             REAL8 bestProb = 0.0;
             INT4 bestproberrcode = 0;
             for (kk=0; kk<loc2; kk++) {
-               avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
+               /* avefsig += input->data[locs2->data[kk]].fsig*(-input->data[locs2->data[kk]].prob);
                aveperiod += input->data[locs2->data[kk]].period*(-input->data[locs2->data[kk]].prob);
-               weight += -input->data[locs2->data[kk]].prob;
+               weight += -input->data[locs2->data[kk]].prob; */
+               avefsig += input->data[locs2->data[kk]].fsig*(input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob);
+               aveperiod += input->data[locs2->data[kk]].period*(input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob);
+               weight += input->data[locs2->data[kk]].prob*input->data[locs2->data[kk]].prob;
                if (mindf > input->data[locs2->data[kk]].moddepth || mindf == 0.0) mindf = input->data[locs2->data[kk]].moddepth;
                if (maxdf < input->data[locs2->data[kk]].moddepth) maxdf = input->data[locs2->data[kk]].moddepth;
                
@@ -394,7 +397,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
             REAL8 R, prob, bestPeriod = 0.0, bestR = 0.0, bestProb = 0.0;
             INT4 bestproberrcode = 0;
             
-            if (ihsCandidates->data[ii].period>=(2.0*3600.0) && ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period,inputParams->Tcoh)) {
+            if (ihsCandidates->data[ii].period>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period<=(0.2*inputParams->Tobs)) {
                //Make a Gaussian train template
                makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                if (xlalErrno!=0) {
@@ -402,28 +405,28 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                   XLAL_ERROR(XLAL_EFUNC);
                }
                //remove this
-               /* for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
-                for (jj=0; jj<50; jj++) {
-                REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.3*jj-2.0, inputParams, &proberrcode);
-                fprintf(stderr, "%f %g\n", 0.3*jj-2.0, pow(10.0, probval));
-                }
-                resetTemplateStruct(template);
-                REAL4FFTPlan *FFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, inputParams->FFTplanFlag);
-                INT4Vector *sftexist = XLALCreateINT4Vector(ffdata->numffts);
-                for (jj=0; jj<(INT4)ffdata->numffts; jj++) sftexist->data[jj] = 1;
-                makeTemplate(template, ihsCandidates->data[ii], inputParams, sftexist, FFTplan);
-                if (xlalErrno!=0) {
-                fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
-                XLAL_ERROR(XLAL_EFUNC);
-                }
-                fprintf(stderr, "\n");
-                for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
-                for (jj=0; jj<50; jj++) {
-                REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.75*jj-8.0, inputParams, &proberrcode);
-                fprintf(stderr, "%f %g\n", 0.75*jj-8.0, pow(10.0, probval));
-                }
-                XLALDestroyREAL4FFTPlan(FFTplan);
-                XLALDestroyINT4Vector(sftexist); */
+               //for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
+               /* for (jj=0; jj<50; jj++) {
+                  REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.3*jj-2.0, inputParams, &proberrcode);
+                  fprintf(stderr, "%f %g\n", 0.3*jj-2.0, pow(10.0, probval));
+               } */
+               /* resetTemplateStruct(template);
+               REAL4FFTPlan *FFTplan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, inputParams->FFTplanFlag);
+               INT4Vector *sftexist = XLALCreateINT4Vector(ffdata->numffts);
+               for (jj=0; jj<(INT4)ffdata->numffts; jj++) sftexist->data[jj] = 1;
+               makeTemplate(template, ihsCandidates->data[ii], inputParams, sftexist, FFTplan);
+               if (xlalErrno!=0) {
+                  fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
+               fprintf(stderr, "\n"); */
+               //for (jj=0; jj<(INT4)template->templatedata->length; jj++) fprintf(stderr, "%g %d %d %d %g\n", template->templatedata->data[jj], template->pixellocations->data[jj], template->firstfftfrequenciesofpixels->data[jj], template->secondfftfrequencies->data[jj], aveNoise->data[template->secondfftfrequencies->data[jj]]*aveTFnoisePerFbinRatio->data[template->firstfftfrequenciesofpixels->data[jj]]);
+               /* for (jj=0; jj<50; jj++) {
+                  REAL8 probval = probR(template, aveNoise, aveTFnoisePerFbinRatio, 0.75*jj-8.0, inputParams, &proberrcode);
+                  fprintf(stderr, "%f %g\n", 0.75*jj-8.0, pow(10.0, probval));
+               } */
+               /* XLALDestroyREAL4FFTPlan(FFTplan);
+               XLALDestroyINT4Vector(sftexist); */
                
                //Estimate the FAR for these bin weights if the option was given
                if (inputParams->calcRthreshold) {
@@ -470,7 +473,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                //Shift period by harmonics
                for (jj=2; jj<6; jj++) {
                   //if (ihsCandidates->data[ii].period/jj > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && ihsCandidates->data[ii].period/jj >= 2.0*3600.0) {
-                  if (ihsCandidates->data[ii].period/jj>=(2.0*3600.0) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period/jj, inputParams->Tcoh)) {
+                  if (ihsCandidates->data[ii].period/jj>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period/jj<=(0.2*inputParams->Tobs)) {
                      ihsCandidates->data[ii].period /= (REAL8)jj;
                      makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
@@ -503,7 +506,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      ihsCandidates->data[ii].period *= (REAL8)jj;
                   } // shorter period harmonics
                   //if (ihsCandidates->data[ii].period*jj <= 0.2*inputParams->Tobs) {
-                  if (ihsCandidates->data[ii].period*jj>=(2.0*3600.0) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period*jj, inputParams->Tcoh)) {
+                  if (ihsCandidates->data[ii].period*jj>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*jj<=(0.2*inputParams->Tobs)) {
                      ihsCandidates->data[ii].period *= (REAL8)jj;
                      makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                      if (xlalErrno!=0) {
@@ -539,11 +542,11 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                
                //if (bestProb==0.0) {
                   //Shift by fractions
-                  for (jj=1; jj<5; jj++) {
+                  for (jj=1; jj<4; jj++) {
                      //for (jj=1; jj<3; jj++) {
                      REAL8 periodfact = (jj+1.0)/(jj+2.0);
                      //if ( periodfact*ihsCandidates->data[ii].period > minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh) && periodfact*ihsCandidates->data[ii].period>=2.0*3600.0) {
-                     if (ihsCandidates->data[ii].period*periodfact>=(2.0*3600.0) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period*periodfact, inputParams->Tcoh)) {
+                     if (ihsCandidates->data[ii].period*periodfact>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
                         
                         ihsCandidates->data[ii].period *= periodfact;   //Shift period
                         
@@ -583,7 +586,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
                      } // shift shorter period
                      periodfact = 1.0/periodfact;
                      //if ( periodfact*ihsCandidates->data[ii].period <= 0.2*inputParams->Tobs ) {
-                     if (ihsCandidates->data[ii].period*periodfact>=(2.0*3600.0) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs) && ihsCandidates->data[ii].moddepth<maxModDepth(ihsCandidates->data[ii].period*periodfact, inputParams->Tcoh)) {
+                     if (ihsCandidates->data[ii].period*periodfact>=fmax(2.0*3600.0, minPeriod(ihsCandidates->data[ii].moddepth, inputParams->Tcoh)) && ihsCandidates->data[ii].period*periodfact<=(0.2*inputParams->Tobs)) {
                         ihsCandidates->data[ii].period *= periodfact;
                         makeTemplateGaussians(template, ihsCandidates->data[ii], inputParams, ffdata->numfbins, ffdata->numfprbins);
                         if (xlalErrno!=0) {

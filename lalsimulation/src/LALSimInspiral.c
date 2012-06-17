@@ -1195,6 +1195,26 @@ int XLALSimInspiralChooseTDWaveform(
     int ret;
     REAL8 v0 = 1.;
 
+    /* Sanity check the input parameters */
+    if( deltaT > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaT = %e requested.\nPerhaps sample rate and time step size were swapped?\n", __func__, deltaT);
+    if( deltaT < 1./16385. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaT = %e requested.\nCheck for errors, this could create very large time series.\n", __func__, deltaT);
+    if( m1 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+    if( m2 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+    if( m1 + m2 > 1000. * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+    if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
+
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -1301,6 +1321,26 @@ int XLALSimInspiralChooseFDWaveform(
 {
     int ret;
 
+    /* Sanity check the input parameters */
+    if( deltaF > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested.\nThis corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
+    if( deltaF < 1./4096. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested.\nThis corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
+    if( m1 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+    if( m2 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+    if( m1 + m2 > 1000. * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+    if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
+
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
@@ -1387,3 +1427,344 @@ int XLALSimInspiralImplementedFDApproximants(
             return 0;
     }
 }
+
+/** 
+ * XLAL function to determine approximant from a string.  The string need not 
+ * match exactly, only contain a member of the Approximant enum.
+ */
+int XLALGetApproximantFromString(const CHAR *inString)
+{
+#ifndef LAL_NDEBUG
+  if ( !inString )
+    XLAL_ERROR( XLAL_EFAULT );
+#endif
+
+  if ( strstr(inString, "TaylorF2RedSpinTidal" ) )
+  {
+    return TaylorF2RedSpinTidal;
+  }
+  else if ( strstr(inString, "TaylorF2RedSpin" ) )
+  {
+    return TaylorF2RedSpin;
+  }
+  else if ( strstr(inString, "TaylorF2" ) )
+  {
+    return TaylorF2;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
+  {
+    return PhenSpinTaylorRDF;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRD" ) )
+  {
+    return PhenSpinTaylorRD;
+  }
+  else if ( strstr(inString, "SpinTaylorT4" ) )
+  {
+    return SpinTaylorT4;
+  }
+  else if ( strstr(inString, "SpinTaylorFrameless" ) )
+  {
+    return SpinTaylorFrameless;
+  }
+  else if ( strstr(inString, "SpinTaylorT3" ) )
+  {
+    return SpinTaylorT3;
+  }
+  else if ( strstr(inString, "SpinTaylor" ) )
+  {
+    return SpinTaylor;
+  }
+  else if ( strstr(inString, "SpinQuadTaylor" ) )
+  {
+    return SpinQuadTaylor;
+  }
+  else if ( strstr(inString, "TaylorT1" ) )
+  {
+    return TaylorT1;
+  }
+  else if ( strstr(inString, "TaylorT2" ) )
+  {
+    return TaylorT2;
+  }
+  else if ( strstr(inString, "TaylorT3" ) )
+  {
+    return TaylorT3;
+  }
+  else if ( strstr(inString, "TaylorT4" ) )
+  {
+    return TaylorT4;
+  }
+  else if ( strstr(inString, "IMRPhenomA" ) )
+  {
+    return IMRPhenomA;
+  }
+  else if ( strstr(inString, "IMRPhenomB" ) )
+  {
+    return IMRPhenomB;
+  }
+  else if ( strstr(inString, "IMRPhenomFA" ) )
+  {
+    return IMRPhenomFA;
+  }
+  else if ( strstr(inString, "IMRPhenomFB" ) )
+  {
+    return IMRPhenomFB;
+  }
+  else if ( strstr(inString, "SEOBNRv1" ) )
+  {
+    return SEOBNRv1;
+  }
+  else if ( strstr(inString, "EOBNRv2HM" ) )
+  {
+    return EOBNRv2HM;
+  }
+  else if ( strstr(inString, "EOBNRv2" ) )
+  {
+    return EOBNRv2;
+  }
+  else if ( strstr(inString, "EOBNR" ) )
+  {
+    return EOBNR;
+  }
+  else if ( strstr(inString, "EOB" ) )
+  {
+    return EOB;
+  }
+  else if ( strstr(inString, "AmpCorPPN" ) )
+  {
+    return AmpCorPPN;
+  }
+  else if ( strstr(inString, "GeneratePPN" ) )
+  {
+    return GeneratePPN;
+  }
+  else if ( strstr(inString, "NumRelNinja2" ) )
+  {
+    return NumRelNinja2;
+  }
+  else if ( strstr(inString, "NumRel" ) )
+  {
+    return NumRel;
+  }
+  else if ( strstr(inString, "Ninja2" ) )
+  {
+    return NumRelNinja2;
+  }
+  else if ( strstr(inString, "FindChirpSP" ) )
+  {
+    return FindChirpSP;
+  }
+  else if ( strstr(inString, "FindChirpPTF" ) )
+  {
+    return FindChirpPTF;
+  }
+  else if ( strstr(inString, "TaylorEt" ) )
+  {
+    return TaylorEt;
+  }
+  else if ( strstr(inString, "TaylorN" ) )
+  {
+    return TaylorN;
+  }
+  else if ( strstr(inString, "TaylorF1" ) )
+  {
+    return TaylorF1;
+  }
+  else if ( strstr(inString, "PadeT1" ) )
+  {
+    return PadeT1;
+  }
+  else if ( strstr(inString, "PadeF1" ) )
+  {
+    return PadeF1;
+  }
+  else if ( strstr(inString, "BCVSpin" ) )
+  {
+    return BCVSpin;
+  }
+  else if ( strstr(inString, "BCVC" ) )
+  {
+    return BCVC;
+  }
+  else if ( strstr(inString, "BCV" ) )
+  {
+    return BCV;
+  }
+  else if ( strstr(inString, "FrameFile" ) )
+  {
+    return FrameFile;
+  }
+  else if ( strstr(inString, "Eccentricity" ) )
+  {
+    return Eccentricity;
+  }
+  else
+  {
+    XLALPrintError( "Cannot parse approximant from string: %s \n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine PN order from a string.  The string need not 
+ * match exactly, only contain a member of the LALPNOrder enum.
+ */
+int XLALGetOrderFromString(const CHAR *inString)
+{
+
+#ifndef LAL_NDEBUG
+  if ( !inString )
+    XLAL_ERROR( XLAL_EFAULT );
+#endif
+
+  if ( strstr(inString, "newtonian") )
+  {
+    return LAL_PNORDER_NEWTONIAN;
+  }
+  else if ( strstr(inString, "oneHalfPN") )
+  {
+    return LAL_PNORDER_HALF;
+  }
+  else if ( strstr(inString, "onePN") )
+  {
+    return LAL_PNORDER_ONE;
+  }
+  else if ( strstr(inString, "onePointFivePN") )
+  {
+    return LAL_PNORDER_ONE_POINT_FIVE;
+  }
+  else if ( strstr(inString, "twoPN") )
+  {
+    return LAL_PNORDER_TWO;
+  }
+  else if ( strstr(inString, "twoPointFivePN") )
+  {
+    return LAL_PNORDER_TWO_POINT_FIVE;
+  }
+  else if (strstr(inString, "threePN") )
+  {
+    return LAL_PNORDER_THREE;
+  }
+  else if ( strstr(inString, "threePointFivePN") )
+  {
+    return LAL_PNORDER_THREE_POINT_FIVE;
+  }
+  else if ( strstr(inString, "pseudoFourPN") )
+  {
+    return LAL_PNORDER_PSEUDO_FOUR;
+  }
+  else
+  {
+    XLALPrintError( "Cannot parse order from string: %s\n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine tapering flag from a string.  The string must 
+ * match exactly with a member of the LALSimInspiralApplyTaper enum. 
+ */
+int XLALGetTaperFromString(const CHAR *inString)
+{
+  if ( ! strcmp( "TAPER_NONE", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_NONE;
+  }
+  else if ( ! strcmp( "TAPER_START", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_START;
+  }
+  else if ( ! strcmp( "TAPER_END", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_END;
+  }
+  else if ( ! strcmp( "TAPER_STARTEND", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_STARTEND;
+  }
+  else
+  {
+    XLALPrintError( "Invalid injection tapering option specified: %s\n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine LALSimInspiralInteraction from a string.
+ *
+ * TODO: return the bit sum if the string is a concatenation of several 
+ * interaction terms. Also make names match cases of enum.
+ */
+int XLALGetInteractionFromString(const CHAR *inString) 
+{
+  if (strstr(inString, "NO")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_NONE;
+  } else if (strstr(inString, "SO15")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN;
+  } else if (strstr(inString,"SS")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
+  } else if (strstr(inString,"SELF")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
+  } else if (strstr(inString, "QM")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
+  } else if (strstr(inString, "SO25")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
+  } else if (strstr(inString, "SO")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN;
+  } else if (strstr(inString, "ALL_SPIN")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
+  } else if (strstr(inString, "TIDAL5PN")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
+  } else if (strstr(inString, "TIDAL")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
+  } else if (strstr(inString, "ALL")){
+    return LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  } else {
+    XLALPrintError( "Cannot parse LALSimInspiralInteraction from string: %s\n Please add 'ALL' to the above string for including all spin interactions\n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine axis choice flag from a string.  The string need 
+ * not match exactly, only contain a member of the FrameAxis enum.  Will return
+ * default case 'View' (line of sight) if the string contains no match.
+ */
+int XLALGetFrameAxisFromString(const CHAR *inString) 
+{
+  if (strstr(inString, "TotalJ"))
+    return TotalJ;
+  else if (strstr(inString, "OrbitalL"))
+    return OrbitalL;
+  else
+    return View;
+}
+
+/** 
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString) 
+{
+  if (strstr(inString, "fixedStep"))
+    return 1;
+  else 
+    return 0;
+}
+
+/** 
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal 
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString)
+{
+  if (strstr(inString, "inspiralOnly"))
+    return 1;
+  else
+    return 0;
+}
+
+

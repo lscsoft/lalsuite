@@ -243,6 +243,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char **caches=NULL;
 	char **IFOnames=NULL;
 	char **fLows=NULL,**fHighs=NULL;
+	char **timeslides=NULL;
+	UINT4 Ntimeslides=0;
 	LIGOTimeGPS GPSstart,GPStrig,segStart;
 	REAL8 PSDdatalength=0;
   REAL8 AIGOang=0.0; //orientation angle for the proposed Australian detector.
@@ -319,7 +321,8 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		procparam=LALInferenceGetProcParamVal(commandLine,"--dataseed");
 		dataseed=atoi(procparam->value);
 	}
-								   
+	if((ppt=LALInferenceGetProcParamVal(commandLine,"--timeslide"))) LALInferenceParseCharacterOptionString(ppt->value,&timeslides,&Ntimeslides);
+	  
 	if(Nifo!=Ncache) {fprintf(stderr,"ERROR: Must specify equal number of IFOs and Cache files\n"); exit(1);}
 	if(Nchannel!=0 && Nchannel!=Nifo) {fprintf(stderr,"ERROR: Please specify a channel for all caches, or omit to use the defaults\n"); exit(1);}
 	
@@ -684,8 +687,15 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			XLALDestroyREAL8TimeSeries(PSDtimeSeries);
 
 			/* Read the data segment */
+			LIGOTimeGPS truesegstart=segStart;
+			if(Ntimeslides) {
+			  REAL4 deltaT=-atof(timeslides[i]);
+			  XLALGPSAdd(&segStart, deltaT);
+			  fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],deltaT,truesegstart.gpsSeconds+1e-9*truesegstart.gpsNanoSeconds,segStart.gpsSeconds+1e-9*segStart.gpsNanoSeconds);
+			}
 			IFOdata[i].timeData=readTseries(caches[i],channels[i],segStart,SegmentLength);
-
+			segStart=truesegstart;
+ 			if(Ntimeslides) IFOdata[i].timeData->epoch=truesegstart;
                         /* FILE *out; */
                         /* char fileName[256]; */
                         /* snprintf(fileName, 256, "readTimeData-%d.dat", i); */
@@ -971,7 +981,9 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	
 	//memset(&InjectGW,0,sizeof(InjectGW));
 	Approximant injapprox;
-	XLALGetApproximantFromString(injTable->waveform,&injapprox);
+	injapprox = XLALGetApproximantFromString(injTable->waveform);
+        if( (int) injapprox == XLAL_FAILURE)
+          ABORTXLAL(&status);
 	printf("Injecting approximant %i: %s\n", injapprox, injTable->waveform);
 	REPORTSTATUS(&status);
 	//LALGenerateInspiral(&status,&InjectGW,injTable,&InjParams);
@@ -1033,8 +1045,12 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       Approximant       approximant;        /* And its approximant value      */
       INT4              amporder=0;         /* Amplitude order of the model   */
 
-      XLALGetApproximantFromString(injEvent->waveform, &approximant);
-      XLALGetOrderFromString(injEvent->waveform, &order);
+      approximant = XLALGetApproximantFromString(injEvent->waveform);
+      if( (int) approximant == XLAL_FAILURE)
+        ABORTXLAL(&status);
+      order = XLALGetOrderFromString(injEvent->waveform);
+      if ( (int) order == XLAL_FAILURE)
+        ABORTXLAL(&status);
       amporder = injEvent->amp_order;
       //if(amporder<0) amporder=0;
       /* FIXME - tidal lambda's and interactionFlag are just set to command line values here.
@@ -1717,15 +1733,18 @@ static int FindTimeSeriesStartAndEnd (
 void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, ProcessParamsTable *commandLine)
 ///*-------------- Inject in Frequency domain -----------------*/
 {
-        /* Inject a gravitational wave into the data in the frequency domain */
-        
-	LALStatus status;
-	memset(&status,0,sizeof(LALStatus));
+    /* Inject a gravitational wave into the data in the frequency domain */ 
+    LALStatus status;
+    memset(&status,0,sizeof(LALStatus));
     REAL8 mc=0.0;
-	Approximant injapprox;
-	LALPNOrder phase_order;
-	XLALGetApproximantFromString(inj_table->waveform,&injapprox);
-	XLALGetOrderFromString(inj_table->waveform,&phase_order);
+    Approximant injapprox;
+    LALPNOrder phase_order;
+    injapprox = XLALGetApproximantFromString(inj_table->waveform);
+    if( (int) injapprox == XLAL_FAILURE)
+        ABORTXLAL(&status);
+    phase_order = XLALGetOrderFromString(inj_table->waveform);
+    if ( (int) phase_order == XLAL_FAILURE)
+        ABORTXLAL(&status);
     LALInferenceVariables *modelParams=NULL;
     LALInferenceIFOData * tmpdata=IFOdata;
     REAL8 eta =0.0;

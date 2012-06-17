@@ -166,15 +166,18 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
    int amplitudeO = thisRow->amp_order;
 
    /* get approximant */
-   if (XLALGetApproximantFromString(thisRow->waveform, &approximant) == XLAL_FAILURE)
+   approximant = XLALGetApproximantFromString(thisRow->waveform);
+   if ( (int) approximant == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
    /* get phase PN order; this is an enum such that the value is twice the PN order */
-   if (XLALGetOrderFromString(thisRow->waveform, &order) == XLAL_FAILURE)
+   order = XLALGetOrderFromString(thisRow->waveform);
+   if ( (int) order == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
    /* get taper option */
-   if (XLALGetTaperFromString(&taper, thisRow->taper) == XLAL_FAILURE)
+   taper = XLALGetTaperFromString(thisRow->taper);
+   if ( (int) taper == XLAL_FAILURE)
       XLAL_ERROR(XLAL_EFUNC);
 
    /* generate +,x waveforms */

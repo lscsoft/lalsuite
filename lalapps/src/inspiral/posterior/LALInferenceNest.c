@@ -463,7 +463,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
 	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-	//int AmpOrder=0;
+	int AmpOrder=0;
 	Approximant approx=TaylorF2;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
@@ -544,9 +544,13 @@ Parameter arguments:\n\
 		}
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
         fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
-		//AmpOrder=injTable->amp_order;
-		XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
-		XLALGetApproximantFromString(injTable->waveform,&approx);
+		AmpOrder=injTable->amp_order;
+		PhaseOrder = XLALGetOrderFromString(injTable->waveform);
+		if( (int) PhaseOrder == XLAL_FAILURE)
+		  ABORTXLAL(&status);
+		approx = XLALGetApproximantFromString(injTable->waveform);
+		if( (int) approx == XLAL_FAILURE)
+		  ABORTXLAL(&status);
 		/* See if there are any parameters pinned to injection values */
 		if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
 			pinned_params=ppt->value;
@@ -571,8 +575,12 @@ Parameter arguments:\n\
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		XLALGetApproximantFromString(ppt->value,&approx);
-        	XLALGetOrderFromString(ppt->value,&PhaseOrder);
+		approx = XLALGetApproximantFromString(ppt->value);
+		if( (int) approx == XLAL_FAILURE)
+			ABORTXLAL(&status);
+        	PhaseOrder = XLALGetOrderFromString(ppt->value);
+	        if( (int) PhaseOrder == XLAL_FAILURE)
+	                ABORTXLAL(&status);
 	}
 	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 

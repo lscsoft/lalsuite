@@ -3,7 +3,7 @@
 
 import itertools
 import glue
-from glue import pipeline,segmentsUtils
+from glue import pipeline,segmentsUtils,segments
 import os
 from lalapps import inspiralutils
 import uuid
@@ -11,6 +11,7 @@ import ast
 import pdb
 import string
 from math import floor,ceil,log,pow
+import sys
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -25,10 +26,16 @@ class Event():
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
-    self.timeslides=timeslide_dict
+    if timeslide_dict is None:
+      self.timeslides={}
+    else:
+      self.timeslides=timeslide_dict
     self.GID=GID
     self.coinctrigger=CoincInspiral
-    self.ifos = ifos
+    if ifos is None:
+      self.ifos = []
+    else:
+      self.ifos = ifos
     self.duration = duration
     self.srate = srate
     if event_id is not None:
@@ -75,6 +82,66 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   
   print "Found %d coinc events in table." % len(coinc_events)
   return output
+
+def open_pipedown_database(database_filename,tmp_space):
+    """
+    Open the connection to the pipedown database
+    """
+    if not os.access(database_filename,os.R_OK):
+	raise Exception('Unable to open input file: %s'%(database_filename))
+    from glue.ligolw import dbtables
+    import sqlite3
+    working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
+    connection = sqlite3.connect(working_filename)
+    if tmp_space:
+	dbtables.set_temp_store_directory(connection,tmp_space)
+    dbtables.DBTable_set_connection(connection)
+    return (connection,working_filename) 
+
+  
+def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
+	"""
+	Returns a list of Event objects
+	with times and timeslide offsets
+	"""
+	output={}
+	if gpsstart is not None: gpsstart=float(gpsstart)
+	if gpsend is not None: gpsend=float(gpsend)
+	if dumpfile is not None:
+		outfile=open(dumpfile,'w')
+	else:
+		outfile=None
+	db_segments=[]
+	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
+	db_out = database_connection.cursor().execute(sql_seg_query)
+	for d in db_out:
+		if d not in db_segments:
+			db_segments.append(d)
+	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
+	db_out_saved=[]
+	# Get coincidences
+	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id \
+		    FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
+		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)"
+	if gpsstart is not None:
+		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
+		joinstr=' and '
+	else:
+		joinstr=' where '
+	if gpsend is not None:
+		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
+	db_out=database_connection.cursor().execute(get_coincs)
+        from pylal import SnglInspiralUtils
+	for (sngl_time, slide, ifo, coinc_id) in db_out:
+          coinc_id=int(coinc_id.split(":")[-1])
+	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
+	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
+	  if not coinc_id in output.keys():
+	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
+	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
+	  output[coinc_id].ifos.append(ifo)
+	  
+	return output.values()
 
 def mkdirs(path):
   """
@@ -218,10 +285,16 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     in the [input] section of the ini file.
     And process the events found therein
     """
-    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-database','lvalert-file']
+    gpsstart=None
+    gpsend=None
+    inputnames=['gps-time-file','injection-file','sngl-inspiral-file','coinc-inspiral-file','pipedown-db','lvalert-file']
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
+    if self.config.has_option('input','gps-start-time'):
+      gpsstart=self.config.getfloat('input','gps-start-time')
+    if self.config.has_option('input','gps-end-time'):
+      gpsend=self.config.getfloat('input','gps-end-time')
     # ASCII list of GPS times
     if self.config.has_option('input','gps-time-file'):
       times=scan_time_file(cp.get('input','gps-time-file'))
@@ -245,8 +318,16 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     else: gid=None
     if self.config.has_option('input','lvalert-file'):
       events = readLValert(self.config.get('input','lvalert-file'),gid=gid)
-    # TODO: pipedown-database 
-    # TODO: timeslides
+    # pipedown-database
+    if self.config.has_option('input','pipedown-db'):
+      db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
+      # Timeslides
+      if self.config.get('input','timeslides').lower()=='true':
+	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend)
+      else:
+	print 'Reading non-slid triggers from pipedown not implemented yet'
+	sys.exit(1)
+    
     return events
 
   def add_full_analysis_lalinferencenest(self,event):
@@ -376,9 +457,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_trig_time(end_time)
     node.set_dataseed(self.dataseed+event.event_id)
     for ifo in ifos:
+      if event.timeslides.has_key(ifo):
+        slide=event.timeslides[ifo]
+      else:
+        slide=0
       for seg in self.segments[ifo]:
         if end_time >= seg.start() and end_time < seg.end():
-          node.add_ifo_data(ifo,seg,self.channels[ifo])
+          node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
     if extra_options is not None:
       for opt in extra_options.keys():
 	    node.add_var_arg('--'+opt+' '+extra_options[opt])
@@ -550,6 +635,7 @@ class EngineNode(pipeline.CondorDAGNode):
       ifostring='['
       cachestring='['
       channelstring='['
+      slidestring='['
       first=True
       for ifo in self.ifos:
         if first:
@@ -559,12 +645,16 @@ class EngineNode(pipeline.CondorDAGNode):
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
+        slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
       channelstring=channelstring+']'
+      slidestring=slidestring+']'
       self.add_var_opt('IFO',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
+      if any(self.timeslides):
+	self.add_var_opt('timeslides',slidestring)
       # Start at earliest common time
       # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
       # Used when we are running the coherence test.
