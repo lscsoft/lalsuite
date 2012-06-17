@@ -138,7 +138,7 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
 	  if not coinc_id in output.keys():
 	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
-	  output[coinc_id].timeslides[ifo]=slide
+	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
 	  output[coinc_id].ifos.append(ifo)
 	  
 	return output.values()
@@ -457,9 +457,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_trig_time(end_time)
     node.set_dataseed(self.dataseed+event.event_id)
     for ifo in ifos:
+      if event.timeslides.has_key(ifo):
+        slide=event.timeslides[ifo]
+      else:
+        slide=0
       for seg in self.segments[ifo]:
         if end_time >= seg.start() and end_time < seg.end():
-          node.add_ifo_data(ifo,seg,self.channels[ifo])
+          node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
     if extra_options is not None:
       for opt in extra_options.keys():
 	    node.add_var_arg('--'+opt+' '+extra_options[opt])
