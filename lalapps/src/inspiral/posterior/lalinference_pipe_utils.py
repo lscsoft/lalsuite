@@ -458,7 +458,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
     node.set_dataseed(self.dataseed+event.event_id)
-    print ' adding node for event %s with ifos %s'%(end_time,ifos)
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
         slide=event.timeslides[ifo]
