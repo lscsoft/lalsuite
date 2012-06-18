@@ -789,7 +789,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   /* convert all epochs given in MJD in .par files to secs in TDB  */
   while(1){
     j=i;
-    if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
+    if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name") || !strcmp(val[i], "PSR")){
       output->name = XLALStringDuplicate(val[i+1]);
       j++;
     }
