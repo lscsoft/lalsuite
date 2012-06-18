@@ -777,7 +777,7 @@ class CoherenceTestJob(pipeline.CondorDAGJob):
     def __init__(self,cp,submitFile,logdir):
       exe=cp.get('condor','coherencetest')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      self.add_opt('coherent-incoherent-noise','')
+      self.add_opt('coherent-incoherent','')
       self.add_condor_cmd('getenv','True')
       self.set_stdout_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'coherencetest-$(cluster)-$(process).err'))
