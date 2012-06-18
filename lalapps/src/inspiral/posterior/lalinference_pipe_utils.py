@@ -12,6 +12,7 @@ import pdb
 import string
 from math import floor,ceil,log,pow
 import sys
+import random
 
 # We use the GLUE pipeline utilities to construct classes for each
 # type of job. Each class has inputs and outputs, which are used to
@@ -455,7 +456,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node=self.EngineNode(self.engine_job)
     end_time=event.trig_time
     node.set_trig_time(end_time)
+    node.set_seed(random.randint(1,2**31))
     node.set_dataseed(self.dataseed+event.event_id)
+    print ' adding node for event %s with ifos %s'%(end_time,ifos)
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
         slide=event.timeslides[ifo]
