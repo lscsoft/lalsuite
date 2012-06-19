@@ -25,6 +25,7 @@ option "outfilename"    - "Output file name" string typestr="filename" default="
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
 option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
+option "sftFile"        - "Path and filename of SFTs" string typestr="path/filename" default="*.sft" optional
 option "ephemDir"       - "Path to ephemeris files" string typestr="directory" optional
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string optional
 

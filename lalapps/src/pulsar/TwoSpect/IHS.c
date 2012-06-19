@@ -862,7 +862,7 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
    }
    
    //The minimum and maximum index to search in the IHS vector
-   INT4 maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/7200.0, params->Tobs/params->Pmin)) - 5;
+   INT4 maxIndexForIHS = (INT4)ceil(fmin(2.0*params->Tobs/7200.0, 2.0*params->Tobs/params->Pmin)) - 5;
    INT4 minIndexForIHS = (INT4)floor(fmax(5.0, params->Tobs/params->Pmax)) - 5;
    
    //Finding the maximum for each IHS vector and the location
@@ -1038,10 +1038,10 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             for (kk=0; kk<params->harmonicNumToSearch; kk++) {
                if (kk==0) {
                   output->locations->data[jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
-                  output->maxima->data[jj] = ihsvectorsequence->data[jj*tworows->vectorLength + output->locations->data[jj]-5];
+                  output->maxima->data[jj] = tworows->data[jj*tworows->vectorLength + output->locations->data[jj]-5];
                } else {
                   INT4 newIHSlocation = max_index_in_range(excessabovenoise, (kk+1)*minIndexForIHS, (kk+1)*maxIndexForIHS) + 5;
-                  REAL4 newIHSvalue = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + newIHSlocation-5];
+                  REAL4 newIHSvalue = tworows->data[ii*tworows->vectorLength + newIHSlocation-5];
                   if (newIHSvalue > output->maxima->data[jj]) {
                      output->locations->data[jj] = newIHSlocation;
                      output->maxima->data[jj] = newIHSvalue;
@@ -1126,10 +1126,10 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
             for (kk=0; kk<params->harmonicNumToSearch; kk++) {
                if (kk==0) {
                   output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = max_index_in_range(excessabovenoise, minIndexForIHS, maxIndexForIHS) + 5;
-                  output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = ihsvectorsequence->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
+                  output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = tworows->data[jj*tworows->vectorLength + (output->locations->data[(ii-2)*ihsvalues->length-endloc+jj]-5)];
                } else {
                   INT4 newIHSlocation = max_index_in_range(excessabovenoise, (kk+1)*minIndexForIHS, (kk+1)*maxIndexForIHS) + 5;
-                  REAL4 newIHSvalue = ihsvectorsequence->data[ii*ihsvectorsequence->vectorLength + newIHSlocation-5];
+                  REAL4 newIHSvalue = tworows->data[ii*tworows->vectorLength + newIHSlocation-5];
                   if (newIHSvalue > output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj]) {
                      output->locations->data[(ii-2)*ihsvalues->length-endloc+jj] = newIHSlocation;
                      output->maxima->data[(ii-2)*ihsvalues->length-endloc+jj] = newIHSvalue;

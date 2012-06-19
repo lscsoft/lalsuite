@@ -724,22 +724,29 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
    }
    
    //Scale used for "spillover" into bins outside of phi_actual
-   REAL4 k = input.moddepth*params->Tcoh;    //amplitude of modulation in units of bins
+   //REAL4 k = input.moddepth*params->Tcoh;    //amplitude of modulation in units of bins
    REAL4Vector *scale = XLALCreateREAL4Vector(numfbins);      //the scaling factor
    if (scale==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    INT4 bin0 = (INT4)round(params->fmin*params->Tcoh);      //bin number of fmin
-   INT4 m0 = (INT4)round(input.fsig*params->Tcoh) - bin0;   //central frequency bin
-   INT4 mextent = (INT4)floor(input.moddepth*params->Tcoh); //Bins filled by modulation
-   REAL4 overage = (k-(REAL4)mextent)-1.0;                  //spillage
-   INT4 fnumstart = m0-mextent-2, fnumend = m0+mextent+2;   //start and end bins
+   //INT4 m0 = (INT4)round(input.fsig*params->Tcoh) - bin0;   //central frequency bin
+   REAL4 m0 = input.fsig*params->Tcoh - bin0;
+   //INT4 mextent = (INT4)floor(input.moddepth*params->Tcoh); //Bins filled by modulation
+   REAL4 mextent = input.moddepth*params->Tcoh;
+   //REAL4 overage = (k-(REAL4)mextent)-1.0;                  //spillage
+   REAL4 overage = 1.0;
+   //INT4 fnumstart = m0-mextent-2, fnumend = m0+mextent+2;   //start and end bins
+   INT4 fnumstart = (INT4)round(m0-mextent-overage), fnumend = (INT4)round(m0+mextent+overage);
    memset(scale->data, 0, numfbins*sizeof(*scale->data));
-   for (ii=m0-mextent; ii<=m0+mextent; ii++) scale->data[ii] = 1.0;
-   scale->data[m0-mextent-2] = scale->data[m0+mextent+2] = sqsincxoverxsqminusone(overage-1.0);
-   scale->data[m0-mextent-1] = scale->data[m0+mextent+1] = sqsincxoverxsqminusone(overage);
-   
+   //for (ii=m0-mextent; ii<=m0+mextent; ii++) scale->data[ii] = 1.0;
+   //scale->data[m0-mextent-2] = scale->data[m0+mextent+2] = sqsincxoverxsqminusone(overage-1.0);
+   //scale->data[m0-mextent-1] = scale->data[m0+mextent+1] = sqsincxoverxsqminusone(overage);
+   for (ii=fnumstart; ii<=fnumend; ii++) {
+      if ((REAL4)ii>=(m0-mextent) && (REAL4)ii<=(m0+mextent)) scale->data[ii] = 1.0;
+      else scale->data[ii] = sqsincxoverxsqminusone(fmin(fabs((REAL4)ii-(m0-mextent)), fabs((REAL4)ii-(m0+mextent))));
+   }
    
    //Make sigmas for each frequency
    REAL4Vector *sigmas = XLALCreateREAL4Vector((UINT4)(fnumend-fnumstart+1));
@@ -773,7 +780,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       if (sigbinvelocity<1.0e-4) sigbinvelocity = 1.0e-4;
       
       //REAL8 sigma = 0.5 * params->Tcoh * ((383.85*LAL_1_PI)*(0.5*6.1e-3) / ((sigbinvelocity+0.1769)*(sigbinvelocity+0.1769)+(0.5*6.1e-3)*(0.5*6.1e-3)) + 0.3736);   //Old, derived fit from simulation
-      REAL4 sigma = 0.5*params->Tcoh * (0.5774 * powf(sigbinvelocity, -1.0177f) + 0.0380);   //Derived fit from simulation
+      REAL4 sigma = 0.5*params->Tcoh * (0.5346 * powf(sigbinvelocity, -1.0213f));   //Derived fit from simulation
       
       for (jj=0; jj<(INT4)sigmas->length; jj++) {
          weightvals->data[ii*sigmas->length + jj] = sqsincxoverxsqminusone(sigbin-(bin0+jj+fnumstart));

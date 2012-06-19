@@ -93,6 +93,9 @@ struct gengetopt_args_info
   char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
   char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
   const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
+  char * sftFile_arg;	/**< @brief Path and filename of SFTs (default='*.sft').  */
+  char * sftFile_orig;	/**< @brief Path and filename of SFTs original value given at command line.  */
+  const char *sftFile_help; /**< @brief Path and filename of SFTs help description.  */
   char * ephemDir_arg;	/**< @brief Path to ephemeris files.  */
   char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
   const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
@@ -229,6 +232,7 @@ struct gengetopt_args_info
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
   unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
+  unsigned int sftFile_given ;	/**< @brief Whether sftFile was given.  */
   unsigned int ephemDir_given ;	/**< @brief Whether ephemDir was given.  */
   unsigned int ephemYear_given ;	/**< @brief Whether ephemYear was given.  */
   unsigned int Pmin_given ;	/**< @brief Whether Pmin was given.  */

@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
       }
       fprintf(LOG, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
       fprintf(stderr, "Candidates found in IHS step = %d\n", ihsCandidates->numofcandidates);
-      //for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].h0);
+      //for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates->data[ii].fsig, ihsCandidates->data[ii].period, ihsCandidates->data[ii].moddepth, ihsCandidates->data[ii].prob);  //comment this
       
       //If requested, keep only the most significant IHS candidates
       candidateVector *ihsCandidates_reduced = NULL;
@@ -2774,7 +2774,12 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    }
    sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
-   sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
+   if (args_info.sftDir_given && !args_info.sftFile_given) sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
+   else if (!args_info.sftDir_given && args_info.sftFile_given) sprintf(sft_dir, "%s", args_info.sftFile_arg);
+   else if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
+      fprintf(stderr, "%s: One of either sftDir or sftFile must be given but not both or neither.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
+   }
    
    return 0;
    
