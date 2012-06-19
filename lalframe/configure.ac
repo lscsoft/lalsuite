@@ -93,6 +93,9 @@ LALSUITE_PROG_CC_CXX
 AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
+# ignore unused flags with clang/clang++
+AS_IF([test -n "$CLANG_CC"],[CFLAGS="-Qunused-arguments ${CFLAGS}"])
+
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
