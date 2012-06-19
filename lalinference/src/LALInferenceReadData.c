@@ -2036,6 +2036,9 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
     REAL8 dec = theEventTable->latitude;
     REAL8 ra = theEventTable->longitude;
 
+    Approximant injapprox = XLALGetApproximantFromString(theEventTable->waveform);
+    LALPNOrder order = XLALGetOrderFromString(theEventTable->waveform);
+
     LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
@@ -2051,6 +2054,8 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
     LALInferenceAddVariable(vars, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "LAL_APPROXIMANT", &injapprox, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "LAL_PNORDER",&order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 
 }
 
@@ -2091,9 +2096,16 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
 
     /* Save old variables */
     LALInferenceCopyVariables(runState->currentParams,&backup);
-
+    LALPNOrder order=*(INT4 *)LALInferenceGetVariable(&backup,"LAL_PNORDER");
+    Approximant approx=*(INT4 *)LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
+
+    /* Set the waveform to the one used in the analysis */
+    LALInferenceRemoveVariable(runState->currentParams,"LAL_APPROXIMANT");
+    LALInferenceRemoveVariable(runState->currentParams,"LAL_PNORDER");
+    LALInferenceAddVariable(runState->currentParams,"LAL_PNORDER",&order,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(runState->currentParams,"LAL_APPROXIMANT",&approx,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 
     REAL8 injPrior = runState->prior(runState,runState->currentParams);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
