@@ -199,7 +199,7 @@ int XLALSimInspiralTaylorF2(
 
         phasing += shft * f + phi0;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
-        data[i] = amp * cos(phasing + LAL_PI_4) - amp * sin(phasing + LAL_PI_4) * 1j;
+        data[i] = amp * cos(phasing + LAL_PI_4) - amp * sin(phasing + LAL_PI_4) * 1.0j;
     }
 
     return XLAL_SUCCESS;
