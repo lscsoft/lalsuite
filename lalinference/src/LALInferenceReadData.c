@@ -1952,7 +1952,7 @@ static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj
     char SnrName[200];
     char ListOfIFOs[10];
     REAL8 NetSNR=0.0;
-    sprintf(ListOfIFOs,"");   
+    sprintf(ListOfIFOs," ");   
     LALInferenceIFOData *thisData=IFOdata;
     int nIFO=0;
 
