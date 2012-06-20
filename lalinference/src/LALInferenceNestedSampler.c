@@ -829,7 +829,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
         LALInferenceVariables *queue=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"sample_queue");
            Nqueued_p=(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nqueued");
            queue_size_p=(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"queue_size");
-           if(*queue_size_p<=*Nqueued_p) LALInferenceExtendQueue(runState->algorithmParams,*queue_size_p+(size_t)(max_iterations/max)+10);
+           if((*queue_size_p +(size_t)(max_iterations/max) )  <= (UINT4)*Nqueued_p) LALInferenceExtendQueue(runState->algorithmParams,*queue_size_p+(size_t)(max_iterations/max)+10);
            
            for(i=max;i<max_iterations;i+=max,(*Nqueued_p)++) LALInferenceCopyVariables(&(variables_array[i]),&(queue[*Nqueued_p]));
            //printf("Used %i of %i queue buffer\n",*Nqueued_p,*queue_size_p);
@@ -1052,7 +1052,7 @@ static LALInferenceVariables *popQueue(LALInferenceVariables *algParams){
     INT4 *nq_p=(INT4 *)LALInferenceGetVariable(algParams,"Nqueued");
     if(*nq_p>0){
         (*nq_p)--;
-        return ( queue_p[(*nq_p) +1] );
+        return ( queue_p[ (*nq_p) ] );
         }
     else
         return NULL;
@@ -1070,6 +1070,7 @@ void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
     REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
     /* If there are any samples queued try them first */
     do {
+        logL=-DBL_MAX;
         var=popQueue(runState->algorithmParams);
         if(var) logL_p=(REAL8 *)LALInferenceGetVariable(var,"logL");
         if(logL_p) logL=*logL_p;
