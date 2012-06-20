@@ -121,7 +121,7 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
 	db_out_saved=[]
 	# Get coincidences
-	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id \
+	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq \
 		    FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
 		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)"
 	if gpsstart is not None:
@@ -133,15 +133,25 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
 	db_out=database_connection.cursor().execute(get_coincs)
         from pylal import SnglInspiralUtils
-	for (sngl_time, slide, ifo, coinc_id) in db_out:
+        extra={}
+	for (sngl_time, slide, ifo, coinc_id, snr, chisq) in db_out:
           coinc_id=int(coinc_id.split(":")[-1])
 	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
 	  if not coinc_id in output.keys():
 	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
+            extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
 	  output[coinc_id].ifos.append(ifo)
-	  
+          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq}
+        if dumpfile is not None:
+          fh=open(dumpfile,'w')
+          for co in output.keys():
+            fh.write('%s '%(str(co)))
+            for ifo in output[co].ifos:
+              fh.write('%s %s %s %s %s '%(ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
+            fh.write('\n')
+          fh.close()
 	return output.values()
 
 def mkdirs(path):
@@ -324,7 +334,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
       # Timeslides
       if self.config.get('input','timeslides').lower()=='true':
-	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend)
+        if self.config.has_option('input','time-slide-dump'):
+          timeslidedump=self.config.get('input','time-slide-dump')
+        else:
+          timeslidedump=None
+	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump)
       else:
 	print 'Reading non-slid triggers from pipedown not implemented yet'
 	sys.exit(1)
