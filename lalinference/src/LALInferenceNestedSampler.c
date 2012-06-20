@@ -37,6 +37,8 @@ static REAL8 mean(REAL8 *array,int N);
 static void getMinMaxLivePointValue( LALInferenceVariables **livepoints, 
                                      const CHAR *pname, UINT4 Nlive, 
                                      REAL8 *minval, REAL8 *maxval );
+static void LALInferenceExtendQueue(LALInferenceVariables *algParams,size_t size);
+
 
 static double logadd(double a,double b){
 	if(a>b) return(a+log(1.0+exp(b-a)));
@@ -49,6 +51,24 @@ static REAL8 mean(REAL8 *array,int N){
 	int i;
 	for(i=0;i<N;i++) sum+=array[i];
 	return sum/((REAL8) N);
+}
+
+static void LALInferenceExtendQueue(LALInferenceVariables *algParams,size_t size)
+{
+    INT4 zero=0;
+    //printf("extending queue to size %i\n",(int)size);
+    if(LALInferenceCheckVariable(algParams,"sample_queue")){
+        LALInferenceVariables **queue_ptr=(LALInferenceVariables **)LALInferenceGetVariable(algParams,"sample_queue");
+        *queue_ptr=realloc(*queue_ptr,size*(sizeof(LALInferenceVariables *)));
+        LALInferenceSetVariable(algParams,"queue_size",&size);
+    }
+    else
+       {
+           LALInferenceVariables *queue=calloc(size,sizeof(LALInferenceVariables *));
+           LALInferenceAddVariable(algParams,"sample_queue",&queue,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_OUTPUT);
+           LALInferenceAddVariable(algParams,"Nqueued",&zero,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+           LALInferenceAddVariable(algParams,"queue_size",&size,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
+       }
 }
 
 /** Get the maximum value of a parameter from a set of live points */
@@ -350,6 +370,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         fprintf(fpout,"%s\t",param_ptr->name);
     }	
 	fprintf(fpout,"logL\n");*/
+    
+    /* Set up a sample queue */
+    LALInferenceExtendQueue(runState->algorithmParams,10);
+    
 	logZarray = calloc(Nruns,sizeof(REAL8));
 	oldZarray = calloc(Nruns,sizeof(REAL8));
 	Harray = calloc(Nruns,sizeof(REAL8));
@@ -764,11 +788,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 	 // continue;
     //  }
     //}
-    LALInferenceDestroyVariables(&variables_array[i]);
   }
   	gsl_matrix_free(eVectors);
 	XLALDestroyREAL8Vector(projection);
-  free(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
    /* Subtract the mean */
@@ -799,6 +821,20 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     fprintf(acffile,"\n");
   }
   }
+  /* Save independent samples for re-use */
+    INT4 *queue_size_p=NULL;
+    INT4 *Nqueued_p=NULL;
+  if(LALInferenceCheckVariable(runState->algorithmParams,"sample_queue"))
+       {
+        LALInferenceVariables *queue=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"sample_queue");
+           Nqueued_p=(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nqueued");
+           queue_size_p=(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"queue_size");
+           if(*queue_size_p<=*Nqueued_p) LALInferenceExtendQueue(runState->algorithmParams,*queue_size_p+(size_t)(max_iterations/max)+10);
+           
+           for(i=max;i<max_iterations;i+=max,(*Nqueued_p)++) LALInferenceCopyVariables(&(variables_array[i]),&(queue[*Nqueued_p]));
+           //printf("Used %i of %i queue buffer\n",*Nqueued_p,*queue_size_p);
+       }
+    
 /*  
   FILE *aclfile=fopen("acl.dat","a");
   FILE *aclfile_header=fopen("acl_params.txt","w");
@@ -813,6 +849,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   fclose(aclfile);
 */  
   /* Clean up */
+  for(i=0;i<max_iterations;i++) LALInferenceDestroyVariables(&variables_array[i]);
+  free(variables_array);
+    
   for(i=0;i<(UINT4)nPar;i++) {free(data_array[i]); free(acf_array[i]);}
   free(data_array); free(acf_array);
   LALInferenceDestroyVariables(&myAlgParams);
@@ -1006,6 +1045,18 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     LALInferenceDestroyVariables(&oldParams);
 }
 
+static LALInferenceVariables *popQueue(LALInferenceVariables *algParams);
+static LALInferenceVariables *popQueue(LALInferenceVariables *algParams){
+    LALInferenceVariables **queue_p=(LALInferenceVariables **)LALInferenceGetVariable(algParams,"sample_queue");
+    if(!queue_p) return NULL;
+    INT4 *nq_p=(INT4 *)LALInferenceGetVariable(algParams,"Nqueued");
+    if(*nq_p>0){
+        (*nq_p)--;
+        return ( queue_p[(*nq_p) +1] );
+        }
+    else
+        return NULL;
+}
 
 /* Evolve nested sampling algorithm by one step, i.e.
  evolve runState->currentParams to a new point with higher
@@ -1013,7 +1064,22 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
  */
 void LALInferenceNestedSamplingOneStep(LALInferenceRunState *runState)
 {
-     LALInferenceNestedSamplingSloppySample(runState);
+    LALInferenceVariables *var=NULL;
+    REAL8 *logL_p=NULL;
+    REAL8 logL=-DBL_MAX;
+    REAL8 logLmin=*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logLmin");
+    /* If there are any samples queued try them first */
+    do {
+        var=popQueue(runState->algorithmParams);
+        if(var) logL_p=(REAL8 *)LALInferenceGetVariable(var,"logL");
+        if(logL_p) logL=*logL_p;
+    }while(var && logL<logLmin);
+    if(var) {
+                LALInferenceCopyVariables(var,runState->currentParams);
+                LALInferenceDestroyVariables(var);
+                return;
+            }
+    else LALInferenceNestedSamplingSloppySample(runState);
 }
 
 void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState){
