@@ -362,7 +362,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
+            print 'adding coherence node for ifo %s'%(ifo)
             cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
+            enginenodes[0].finalize()
+            for co in cotest_nodes:
+              co.set_psdstart(enginenodes[0].GPSstart)
+              co.set_psdlength(enginenodes[0].psdlength)
             pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
             pmergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(ifo,evstring)))
             pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(ifo,evstring)))
@@ -449,10 +454,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     Will determine the data to be read and the output file.
     Will use all IFOs known to the DAG, unless otherwise specified as a list of strings
     """
+    if ifos is None and event.ifos is not None:
+      ifos=event.ifos
     if ifos is None:
       ifos=self.ifos
-    if event.ifos is not None:
-      ifos = event.ifos
     node=self.EngineNode(self.engine_job)
     end_time=event.trig_time
     node.set_trig_time(end_time)
@@ -569,6 +574,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.psdstart=None
     self.cachefiles={}
     self.id=EngineNode.new_id()
+    self.__finaldata=False
 
   def set_seglen(self,seglen):
     self.seglen=seglen
@@ -579,7 +585,7 @@ class EngineNode(pipeline.CondorDAGNode):
   def set_max_psdlength(self,psdlength):
     self.maxlength=psdlength
 
-  def set_psd_start(self,psdstart):
+  def set_psdstart(self,psdstart):
     self.psdstart=psdstart
 
   def set_seed(self,seed):
@@ -627,7 +633,8 @@ class EngineNode(pipeline.CondorDAGNode):
     self.channels[ifo]=channelname
   
   def finalize(self):
-    self._finalize_ifo_data()
+    if not self.__finaldata:
+      self._finalize_ifo_data()
     pipeline.CondorDAGNode.finalize(self)
     
   def _finalize_ifo_data(self):
@@ -663,7 +670,7 @@ class EngineNode(pipeline.CondorDAGNode):
       # Otherwise the noise evidence will differ.
       starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
       endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
-      self.__GPSstart=starttime
+      self.GPSstart=starttime
       self.__GPSend=endtime
       length=endtime-starttime
       
@@ -672,23 +679,23 @@ class EngineNode(pipeline.CondorDAGNode):
       trig_time=self.get_trig_time()
       maxLength=self.maxlength
       if(length > maxLength):
-        while(self.__GPSstart+maxLength<trig_time and self.__GPSstart+maxLength<self.__GPSend):
-          self.__GPSstart+=maxLength/2.0
+        while(self.GPSstart+maxLength<trig_time and self.GPSstart+maxLength<self.__GPSend):
+          self.GPSstart+=maxLength/2.0
       # Override calculated start time if requested by user in ini file
       if self.psdstart is not None:
-        self.__GPSstart=self.psdstart
-        print 'Over-riding start time to user-specified value %f'%(self.__GPSstart)
-        if self.__GPSstart<starttime or self.__GPSstart>endtime:
+        self.GPSstart=self.psdstart
+        print 'Over-riding start time to user-specified value %f'%(self.GPSstart)
+        if self.GPSstart<starttime or self.GPSstart>endtime:
           print 'ERROR: Over-ridden time lies outside of science segment!'
-          raise Exception('Bad psdstart specified')
-      else: 
-        self.add_var_opt('psdstart',str(self.__GPSstart))
+          raise Exception('Bad psdstart specified') 
+      self.add_var_opt('psdstart',str(self.GPSstart))
       if self.psdlength is None:
-        self.psdlength=self.__GPSend-self.__GPSstart
+        self.psdlength=self.__GPSend-self.GPSstart
         if(self.psdlength>self.maxlength):
           self.psdlength=self.maxlength
       self.add_var_opt('psdlength',self.psdlength)
       self.add_var_opt('seglen',self.seglen)
+      self.__finaldata=True
 
 class LALInferenceNestNode(EngineNode):
   def __init__(self,li_job):
