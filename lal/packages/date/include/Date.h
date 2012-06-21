@@ -125,6 +125,10 @@ LALPlaceAndGPS;
 
 /* ---------- Function prototypes : see respective source.c files for doxygen documentation ---------- */
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURN_VOID(LIGOTimeGPS*, XLALINT8NSToGPS, XLALGPSSet, XLALGPSSetREAL8, XLALGPSAdd, XLALGPSAddGPS, XLALGPSMultiply, XLALGPSDivide, XLALGreenwichMeanSiderealTimeToGPS, XLALGreenwichSiderealTimeToGPS, XLALGPSTimeNow));
+#endif
+
 /* Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch );
 
