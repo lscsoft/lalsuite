@@ -765,6 +765,7 @@ int main(int argc, char *argv[])
             fprintf(stderr,"%s: keepMostSignificantCandidates() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
+         //for (ii=0; ii<(INT4)ihsCandidates_reduced->numofcandidates; ii++) fprintf(stderr, "%d %g %g %g %g\n", ii, ihsCandidates_reduced->data[ii].fsig, ihsCandidates_reduced->data[ii].period, ihsCandidates_reduced->data[ii].moddepth, ihsCandidates_reduced->data[ii].prob);  //comment this
       }
       
 ////////End of the IHS step

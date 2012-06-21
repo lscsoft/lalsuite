@@ -1615,7 +1615,7 @@ REAL8 sincxoverxsqminusone(REAL8 x)
 {
    
    if (fabs(x*x-1.0)<1.0e-8) return -0.5;
-   if (x==0.0) return -1.0;
+   if (fabs(x)<1.0e-8) return -1.0;
    
    /* REAL8 sinpix, cospix, pix = LAL_PI*x;
    twospect_sin_cos_LUT(&sinpix, &cospix, pix);
