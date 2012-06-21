@@ -20,11 +20,6 @@
 #ifndef _ODE_H
 #define _ODE_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 
 #if defined(__cplusplus)
@@ -75,7 +70,6 @@ extern "C" {
 typedef struct
 tagREAL4ODEIndep
 {
-  SWIGLAL_STRUCT(REAL4ODEIndep);
   REAL4  t;	/**< The independent parameter (e.g., time) that is evolved */
   void  *aux;	/**< Storage for auxiliary variables used internally in the ODE routine */
 }
@@ -85,7 +79,6 @@ REAL4ODEIndep;
 typedef struct
 tagREAL4ODEParams
 {
-  SWIGLAL_STRUCT(REAL4ODEParams);
   void ( *ode )( LALStatus *, REAL4Vector *, REAL4Vector *, REAL4ODEIndep * );	/**< Pointer to the function that computes the RHS of the ODE */
   REAL4ODEIndep       *indep;	/**< The independent variables of used by this function */
   REAL4                tstep;	/**< The suggested time step to use */

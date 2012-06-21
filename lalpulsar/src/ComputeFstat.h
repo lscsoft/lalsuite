@@ -35,11 +35,6 @@
 #ifndef _COMPUTEFSTAT_H  /* Double-include protection. */
 #define _COMPUTEFSTAT_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -79,7 +74,6 @@ extern "C" {
  * We also store the SSB reference-time tau0.
  */
 typedef struct tagSSBtimes {
-  SWIGLAL_STRUCT(SSBtimes);
   LIGOTimeGPS refTime;
   REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha - tau0 in SSB-frame */
   REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
@@ -87,14 +81,12 @@ typedef struct tagSSBtimes {
 
 /** Multi-IFO container for SSB timings */
 typedef struct tagMultiSSBtimes {
-  SWIGLAL_STRUCT(MultiSSBtimes);
   UINT4 length;		/**< number of IFOs */
   SSBtimes **data;	/**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
 /** one F-statistic 'atom', ie the elementary per-SFT quantities required to compute F, for one detector X */
 typedef struct tagFstatAtom {
-  SWIGLAL_STRUCT(FstatAtom);
   UINT4 timestamp;		/**< SFT GPS timestamp t_i in seconds */
   REAL8 a2_alpha;		/**< antenna-pattern factor a^2(X,t_i) */
   REAL8 b2_alpha;		/**< antenna-pattern factor b^2(X,t_i) */
@@ -105,7 +97,6 @@ typedef struct tagFstatAtom {
 
 /** vector of F-statistic 'atoms', ie all per-SFT quantities required to compute F, for one detector X */
 typedef struct tagFstatAtomVector {
-  SWIGLAL_STRUCT(FstatAtomVector);
   UINT4 length;			/**< number of per-SFT 'atoms' */
   FstatAtom *data;		/** FstatAtoms array of given length */
   UINT4 TAtom;			/**< time-baseline of F-stat atoms (typically Tsft) */
@@ -113,7 +104,6 @@ typedef struct tagFstatAtomVector {
 
 /** multi-detector version of FstatAtoms type */
 typedef struct tagMultiFstatAtomVector {
-  SWIGLAL_STRUCT(MultiFstatAtomVector);
   UINT4 length;			/**< number of detectors */
   FstatAtomVector **data;	/**< array of FstatAtom (pointers), one for each detector X */
 } MultiFstatAtomVector;
@@ -121,7 +111,6 @@ typedef struct tagMultiFstatAtomVector {
 #define CFS_MAX_IFOS 10
 /** Type containing F-statistic proper plus the two complex amplitudes Fa and Fb (for ML-estimators) */
 typedef struct tagFcomponents {
-  SWIGLAL_STRUCT(Fcomponents);
   REAL8 F;				/**< F-statistic value */
   REAL8 FX[CFS_MAX_IFOS];		/**< vector of single-detector F-statistic values (array of fixed size) */
   UINT4 numDetectors;			/**< number of detectors = effective vector length. numDetectors=0 should make all code ignore the FX field. */
@@ -143,7 +132,6 @@ typedef struct tagComputeFBuffer_RS ComputeFBuffer_RS;
 
 /** Extra parameters controlling the actual computation of F */
 typedef struct tagComputeFParams {
-  SWIGLAL_STRUCT(ComputeFParams);
   UINT4 Dterms;		/**< how many terms to keep in the Dirichlet kernel (~16 is usually fine) */
   REAL8 upsampling;	/**< frequency-upsampling applied to SFTs ==> dFreq != 1/Tsft ... */
   SSBprecision SSBprec; /**< whether to use full relativist SSB-timing, or just simple Newtonian */
@@ -161,7 +149,6 @@ typedef struct tagComputeFParams {
  * For the first call of ComputeFStat() the pointer-entries should all be NULL.
  */
 typedef struct tagComputeFBuffer {
-  SWIGLAL_STRUCT(ComputeFBuffer);
   const MultiDetectorStateSeries *multiDetStates;/**< buffer for each detStates (store pointer) and skypos */
   REAL8 Alpha, Delta;				/**< skyposition of candidate */
   MultiSSBtimes *multiSSB;
@@ -172,7 +159,6 @@ typedef struct tagComputeFBuffer {
 
   /** Struct containing vectors of multi- and single-IFO F-stats over a frequency range and full search parameter info in dopplerParams */
 typedef struct tagMultiFstatFrequencySeries {
-  SWIGLAL_STRUCT(MultiFstatFrequencySeries);
   PulsarDopplerParams doppler;	/**< full info about {sky position, fkdot, refTime, .. and *frequency band*} for which these F values are computed */
   REAL4Vector *F;		/**< 1D array of multi-IFO  F-stat values over {frequencies} */
   REAL4VectorSequence *FX;	/**< 2D array of single-IFO F-stat values over {detectors, frequencies}, ordered as (det1bin1,det1bin2,..,det1binN,det2bin1,...detMbinN) */

@@ -121,11 +121,6 @@ on the celestial sphere to circles on the projected plane.
 #ifndef _LUT_H
 #define _LUT_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /*
  * 5. Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -234,7 +229,6 @@ typedef INT2 COORType;  /* typedef INT4 COORType; */ /* typedef  UCHAR COORType;
 
 /** This structure stores the border of a circle clipped on the projected plane. */
 typedef struct tagHOUGHBorder{
-  SWIGLAL_STRUCT(HOUGHBorder);
   INT4  yUpper;		/**< upper y pixel affected by this border */
   INT4  yLower;    	/**< lower y pixel affected by this border and yUpper<yLower or yUpper<0 are possible */
   INT4  yCenter;   	/**< y pixel value of the center of the circle */
@@ -246,7 +240,6 @@ typedef struct tagHOUGHBorder{
 /** This structure stores the border indexes corresponding to one frequency
  * bin plus the corrections to be added to the first column of the patch. */
 typedef struct tagHOUGHBin2Border{
-  SWIGLAL_STRUCT(HOUGHBin2Border);
   INT2   leftB1;     	/**< Border index to be used (<em>start-border</em> `\f$+1\f$') */
   INT2   rightB1;    	/**< Border index to be used (<em>stop-border</em> `\f$-1\f$') */
   INT2   leftB2;     	/**< Border index  to be used (<em>start-border</em> `\f$+1\f$') */
@@ -259,7 +252,6 @@ typedef struct tagHOUGHBin2Border{
 
 /** This structure stores the patch-time-frequency <em>look up table</em>. */
 typedef struct tagHOUGHptfLUT{
-  SWIGLAL_STRUCT(HOUGHptfLUT);
   INT2    timeIndex;  /**< time index of the \c lut */
   INT8    f0Bin;      /**< Frequency bin for which it has been constructed. */
   REAL8   deltaF;     /**< Frequency resolution <tt>df=1/TCOH</tt>, where <tt>1/TCOH</tt>
@@ -278,7 +270,6 @@ typedef struct tagHOUGHptfLUT{
 
 /** This structure stores patch-frequency \e grid information. */
 typedef struct tagHOUGHPatchGrid{
-  SWIGLAL_STRUCT(HOUGHPatchGrid);
   REAL8   f0;         	/**< Frequency to construct grid */
   REAL8   deltaF;     	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8   deltaX;	/**< Longitudinal space resolution, x-direction */
@@ -297,7 +288,6 @@ typedef struct tagHOUGHPatchGrid{
 
 /** parameters needed for gridding the patch */
 typedef struct tagHOUGHResolutionPar{
-  SWIGLAL_STRUCT(HOUGHResolutionPar);
   INT8    f0Bin; 	/**< Frequency bin at which construct the grid */
   REAL8   deltaF;	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8   patchSkySizeX;/**< Patch size in radians along x-axis */
@@ -310,7 +300,6 @@ typedef struct tagHOUGHResolutionPar{
 
 /** required for constructing patch */
 typedef struct tagHOUGHSizePar{
-  SWIGLAL_STRUCT(HOUGHSizePar);
   INT8    f0Bin; 	/**< corresponding freq bin  */
   REAL8   deltaF;       /**< df=1/TCOH */
   REAL8   deltaX; 	/**< pixel size in the projected plane */
@@ -325,7 +314,6 @@ typedef struct tagHOUGHSizePar{
 
 /** Three dimensional Cartessian coordinates */
 typedef struct tagREAL8Cart3Coor{
-  SWIGLAL_STRUCT(REAL8Cart3Coor);
   REAL8  x;
   REAL8  y;
   REAL8  z;
@@ -333,28 +321,24 @@ typedef struct tagREAL8Cart3Coor{
 
 /** Two dimensional Cartessian coordinates */
 typedef struct tagREAL8Cart2Coor{
-  SWIGLAL_STRUCT(REAL8Cart2Coor);
   REAL8  x;
   REAL8  y;
 } REAL8Cart2Coor;
 
 /** Two dimensional polar coordinates. */
 typedef struct tagREAL8Polar2Coor{
-  SWIGLAL_STRUCT(REAL8Polar2Coor);
   REAL8  alpha;
   REAL8  radius;
 } REAL8Polar2Coor;
 
 /** Polar coordinates of a unitary vector on the sphere */
 typedef struct tagREAL8UnitPolarCoor{
-  SWIGLAL_STRUCT(REAL8UnitPolarCoor);
   REAL8  alpha;  	/**< any value */
   REAL8  delta;  	/**< In the interval [\f$-\pi/2, \,  \pi/2\f$] */
 } REAL8UnitPolarCoor;
 
 /** Parameters needed to construct the partial look up table */
 typedef struct tagHOUGHParamPLUT{
-  SWIGLAL_STRUCT(HOUGHParamPLUT);
   INT8             f0Bin;   	/**< freq. bin for which it has been constructed */
   REAL8            deltaF;  	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8UnitPolarCoor xi;  	/**< Center of the circle on the celestial sphere,
@@ -374,7 +358,6 @@ typedef struct tagHOUGHParamPLUT{
  * coordinates are assumed to be with respect to the same reference system.
  */
 typedef struct tagHOUGHDemodPar{
-  SWIGLAL_STRUCT(HOUGHDemodPar);
   REAL8               deltaF;   /**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8UnitPolarCoor  skyPatch; /**< \f$N_{center}\f$ (alpha, delta): position of the center of the patch */
   REAL8Cart3Coor      veloC;    /**< \f$v(t)/c\f$ (x,y,z): Relative detector velocity */

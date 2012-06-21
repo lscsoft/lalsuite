@@ -20,11 +20,6 @@
 #ifndef _PTOLEMETRIC_H
 #define _PTOLEMETRIC_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <gsl/gsl_matrix.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALConstants.h>
@@ -111,7 +106,6 @@ typedef enum
 typedef struct
 tagPtoleMetricIn
 {
-  SWIGLAL_STRUCT(PtoleMetricIn);
   SkyPosition    position;	/**< The equatorial coordinates at which the metric components are evaluated. */
   REAL4Vector   *spindown;	/**< The (dimensionless) spindown parameters for which the metric components are evaluated. */
   LIGOTimeGPS    epoch;		/**< When the coherent integration begins */

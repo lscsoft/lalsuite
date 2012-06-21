@@ -20,11 +20,6 @@
 #ifndef _PULSARDATATYPES_H  /* Double-include protection. */
 #define _PULSARDATATYPES_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALDatatypes.h>
@@ -59,7 +54,6 @@ extern "C" {
 
 /** Type defining the orbital parameters of a binary pulsar */
 typedef struct tagBinaryOrbitParams {
-  SWIGLAL_STRUCT(BinaryOrbitParams);
   LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
   REAL8 argp;            /**< argument of periapsis (radians) */
   REAL8 asini;            /**< projected, normalized orbital semi-major axis (s) */
@@ -69,7 +63,6 @@ typedef struct tagBinaryOrbitParams {
 
 /** Type containing the JKS 'amplitude parameters' {h0, cosi, phi0, psi} */
 typedef struct tagPulsarAmplitudeParams {
-  SWIGLAL_STRUCT(PulsarAmplitudeParams);
   REAL8 h0;	/**< overall signal amplitude */
   REAL8 cosi;	/**< cos(iota) of inclination angle iota of spin-axis wrt line of sight */
   REAL8 psi;	/**< polarization angle psi */
@@ -96,7 +89,6 @@ typedef const REAL8 constPulsarSpins[PULSAR_MAX_SPINS];
  */
 typedef struct tagPulsarSpinRange
 {
-  SWIGLAL_STRUCT(PulsarSpinRange);
   LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spin-range is defined */
   PulsarSpins fkdot;		/**< Vector of spin-values \f$f^{(k)}\f$ */
   PulsarSpins fkdotBand;	/**< Vector of spin-bands \f$\Delta f^{(k)}\f$, MUST be same length as fkdot */
@@ -104,7 +96,6 @@ typedef struct tagPulsarSpinRange
 
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */
 typedef struct tagPulsarDopplerParams {
-  SWIGLAL_STRUCT(PulsarDopplerParams);
   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
   REAL8 Alpha;		/**< skyposition: RA (longitude) in equatorial coords and radians */
   REAL8 Delta;		/**< skyposition: DEC (latitude) in equatorial coords and radians */
@@ -116,14 +107,12 @@ typedef struct tagPulsarDopplerParams {
 
 /** Type defining the parameters of a pulsar-source of Gravitational waves */
 typedef struct tagPulsarParams {
-  SWIGLAL_STRUCT(PulsarParams);
   PulsarAmplitudeParams Amp;	/**< 'Amplitude-parameters': h0, cosi, phi0, psi */
   PulsarDopplerParams Doppler;	/**< 'Doppler-parameters': {skypos, fkdot, orbital params } */
 } PulsarParams;
 
 /** Type containing a "candidate": parameter-space point with estimated errors and Fstat-value/significance */
 typedef struct tagPulsarCandidate {
-  SWIGLAL_STRUCT(PulsarCandidate);
   PulsarAmplitudeParams Amp, dAmp;	/**< amplitude-parameters and error-estimates */
   PulsarDopplerParams Doppler, dDoppler;/**< Doppler-parameters and error-bars */
   REAL8 significance;			/**< a (user-chosen) measure of 'significance': Fstat, Hough-count,... */
@@ -138,7 +127,6 @@ typedef struct tagPulsarCandidate {
  * \deprecated Use #PulsarParams instead.
  */
 typedef struct tagPulsarSourceParams {
-   SWIGLAL_STRUCT(PulsarSourceParams);
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
    SkyPosition position; /**< source location (in radians) */
    REAL4 psi;            /**< polarization angle (radians) at tRef */

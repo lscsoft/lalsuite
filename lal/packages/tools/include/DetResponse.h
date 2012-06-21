@@ -21,11 +21,6 @@
 #ifndef _DETRESPONSE_H
 #define _DETRESPONSE_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALConstants.h>
@@ -105,7 +100,6 @@ For examples of usage, please see the test programs in the \c test directory.
 typedef struct
 tagLALSource
 {
-  SWIGLAL_STRUCT(LALSource);
   CHAR         name[LALNameLength];  /**< name of source, eg catalog number */
   SkyPosition  equatorialCoords;     /**< equatorial coordinates of source, in decimal RADIANS */
   REAL8        orientation;          /**< Orientation angle (\f$\psi\f$) of source:
@@ -125,7 +119,6 @@ LALSource;
 typedef struct
 tagLALDetAndSource
 {
-  SWIGLAL_STRUCT(LALDetAndSource);
   LALDetector  *pDetector;	/**< Pointer to ::LALDetector object containing information about the detector */
   LALSource    *pSource;	/**< Pointer to ::LALSource object containing information about the source */
 }
@@ -137,7 +130,6 @@ LALDetAndSource;
 typedef struct
 tagLALDetAMResponse
 {
-  SWIGLAL_STRUCT(LALDetAMResponse);
   REAL4 plus;	/**< Detector response to \f$+\f$-polarized gravitational radiation  */
   REAL4 cross;	/**< Detector response to \f$\times\f$-polarized gravitational radiation */
   REAL4 scalar;	/**< Detector response to scalar gravitational radiation (NB: ignored at present -- scalar response computation not yet implemented) */
@@ -150,7 +142,6 @@ LALDetAMResponse;
 typedef struct
 tagLALDetAMResponseSeries
 {
-  SWIGLAL_STRUCT(LALDetAMResponseSeries);
   REAL4TimeSeries *pPlus;	/**< timeseries of detector response to \f$+\f$-polarized gravitational radiation */
   REAL4TimeSeries *pCross;	/**< timeseries of detector response to \f$\times\f$-polarized gravitational radiation */
   REAL4TimeSeries *pScalar;	/**< timeseries of detector response to scalar gravitational radiation (NB: not yet implemented.) */
@@ -165,7 +156,6 @@ LALDetAMResponseSeries;
 typedef struct
 tagLALTimeIntervalAndNSample
 {
-  SWIGLAL_STRUCT(LALTimeIntervalAndNSample);
   LIGOTimeGPS     epoch;	/**< The start time \f$t_0\f$ of the time series */
   REAL8           deltaT;	/**< The sampling interval \f$\Delta t\f$, in seconds */
   UINT4           nSample;	/**< The total number of samples to be computed */

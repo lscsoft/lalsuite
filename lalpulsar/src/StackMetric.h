@@ -112,11 +112,6 @@
 #ifndef _STACKMETRIC_H
 #define _STACKMETRIC_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 #include <lal/PulsarTimes.h>
 
@@ -143,7 +138,6 @@ extern "C" {
     coherent or divided into stacks which are summed in power.
 */
 typedef struct tagMetricParamStruc{
-  SWIGLAL_STRUCT(MetricParamStruc);
   void (*dtCanon)(LALStatus *, REAL8Vector *, REAL8Vector *, PulsarTimesParamStruc * ); /**< The function to compute the canonical
 											  * time coordinate and its derivatives. */
   PulsarTimesParamStruc *constants; 	/**< The constant parameters used by *dt(). */
