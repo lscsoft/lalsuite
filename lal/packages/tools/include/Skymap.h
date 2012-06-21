@@ -53,6 +53,7 @@
 %typemap(freearg, noblock=1) (int n, int *detectors) {
     free($2);
 }
+%typemap(argout, noblock=1) (int n, int *detectors) "";
 
 // special typemaps for XLALSkymapKernelConstruct
 // and XLALSkymapUncertainKernelConstruct
@@ -86,6 +87,7 @@
 %typemap(freearg, noblock=1) double *wSw {
     free($1);
 }
+%typemap(argout, noblock=1) double *wSw "";
 %apply double *wSw { double *error };
 
 // special typemaps for XLALSkymapApply
