@@ -999,7 +999,7 @@ CohPTFSkyPositions *coh_PTF_circular_grid(
       skyPoints->data[p].longitude  = phi;
       skyPoints->data[p].latitude = LAL_PI_2 - theta;
       skyPoints->data[p].system = COORDINATESYSTEM_EQUATORIAL;
-      XLALNormalizeSkyPosition(&skyPoints->data[p]);
+      XLALNormalizeSkyPosition(&skyPoints->data[p].longitude, &skyPoints->data[p].latitude);
 
       p++;
     }
@@ -1178,7 +1178,7 @@ void coh_PTF_rotate_SkyPosition(
   //verbose("theta2 = %e, phi2 = %e\n", theta, phi);
   skyPoint->longitude = phi;
   skyPoint->latitude  = LAL_PI_2 - theta;
-  XLALNormalizeSkyPosition(skyPoint);
+  XLALNormalizeSkyPosition(&skyPoint->longitude, &skyPoint->latitude);
 
   /* free memory */
   FREE_GSL_VECTOR(pos);
@@ -1403,7 +1403,7 @@ CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
     //verbose("%f\n", XLALArrivalTimeDiff(detectors[0]->location, detectors[1]->location, geoSkyPoints->data[i].longitude, geoSkyPoints->data[i].latitude, &params->trigTime));
     LALGeographicToEquatorial(&status, &skyPoints->data[i],
                               &geoSkyPoints->data[i], &params->trigTime);
-    XLALNormalizeSkyPosition(&skyPoints->data[i]);
+    XLALNormalizeSkyPosition(&skyPoints->data[i].longitude, &skyPoints->data[i].latitude);
     //verbose("%f\n", XLALArrivalTimeDiff(detectors[0]->location, detectors[1]->location, skyPoints->data[i].longitude, skyPoints->data[i].latitude, &params->trigTime));
   }
 
@@ -1573,7 +1573,7 @@ CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
         skyPoints->data[p].longitude = nphi;
         skyPoints->data[p].latitude  = ntheta-LAL_PI_2;
         skyPoints->data[p].system    = COORDINATESYSTEM_EQUATORIAL;
-        XLALNormalizeSkyPosition(&skyPoints->data[p]);
+        XLALNormalizeSkyPosition(&skyPoints->data[p].longitude, &skyPoints->data[p].latitude);
         coh_PTF_rotate_SkyPosition(&skyPoints->data[i], matrix);
         skyPoints->data[p].longitude -= xphi;
 
