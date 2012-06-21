@@ -34,9 +34,6 @@ const LALDetector *XLALInstrumentNameToLALDetector(
 );
 
 
-#ifdef SWIG
-%newobject XLALSimDetectorStrainREAL8TimeSeries;
-#endif
 REAL8TimeSeries *XLALSimDetectorStrainREAL8TimeSeries(
 	const REAL8TimeSeries *hplus,
 	const REAL8TimeSeries *hcross,
