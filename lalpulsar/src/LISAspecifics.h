@@ -73,8 +73,8 @@ int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
 
 int XLALprecomputeLISAarms ( DetectorState *detState );
 
-int XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, constDetector3Arms detArms, CHAR channelNum );
-int XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, constDetector3Arms detArms, CHAR channelNum, const FreqSkypos_t *freq_skypos );
+int XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, const Detector3Arms detArms, CHAR channelNum );
+int XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, const Detector3Arms detArms, CHAR channelNum, const FreqSkypos_t *freq_skypos );
 
 #ifdef  __cplusplus
 }

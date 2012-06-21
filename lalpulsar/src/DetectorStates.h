@@ -92,10 +92,6 @@ typedef struct tagDetectorArm
 } DetectorArm;
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
-/* Work around a bug in SWIG (fixed in version 2.0.4):
-   SWIG mishandles constants whose types are fixed-length arrays, e.g. const Detector3Arms.
-   The work-around is to use a separate typedef for a const version of Detector3Arms. */
-typedef const DetectorArm constDetector3Arms[4];
 
 /** simple multi-IFO array of detector-information, standard LAL-vector
  */

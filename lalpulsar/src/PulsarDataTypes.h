@@ -71,17 +71,9 @@ typedef struct tagPulsarAmplitudeParams {
 
 /** Struct for 'canonical' coordinates in amplitude-params space A^mu = {A1, A2, A3, A4} */
 typedef REAL8 PulsarAmplitudeVect[4];
-/* Work around a bug in SWIG (fixed in version 2.0.4):
-   SWIG mishandles constants whose types are fixed-length arrays, e.g. const PulsarAmplitudeVect.
-   The work-around is to use a separate typedef for a const version of PulsarAmplitudeVect. */
-typedef const REAL8 constPulsarAmplitudeVect[4];
 
 /** Typedef for fixed-size array holding GW frequency and derivatives fk = d^k Freq/dt^k|(tau_ref) */
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
-/* Work around a bug in SWIG (fixed in version 2.0.4):
-   SWIG mishandles constants whose types are fixed-length arrays, e.g. const PulsarSpins.
-   The work-around is to use a separate typedef for a const version of PulsarSpins. */
-typedef const REAL8 constPulsarSpins[PULSAR_MAX_SPINS];
 
 /** Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
  *  at a given (SSB) reference GPS-time \f$\tau\f$.
