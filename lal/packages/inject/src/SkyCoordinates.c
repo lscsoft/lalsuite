@@ -199,16 +199,12 @@ XLALNormalizeSkyPosition ( double *RESTRICT longitude,   /**< [in,out] sky-posit
   /* FIRST STEP: completely "unwind" positions, i.e. make sure that
    * [0 <= alpha < 2pi] and [-pi < delta <= pi] */
   /* normalize longitude */
-  while (*longitude < 0)
-    *longitude += LAL_TWOPI;
-  while (*longitude >= LAL_TWOPI)
-    *longitude -= LAL_TWOPI;
+  *longitude -= floor(*longitude / LAL_TWOPI) * LAL_TWOPI;
 
   /* pre-normalize (unwind) latitude */
-  while (*latitude <= -LAL_PI)
-    *latitude += LAL_TWOPI;
-  while (*latitude > LAL_TWOPI)
-    *latitude -= LAL_TWOPI;
+  *latitude += LAL_PI;
+  *latitude -= floor(*latitude / LAL_TWOPI) * LAL_TWOPI;
+  *latitude -= LAL_PI;
 
   /* SECOND STEP: get latitude into canonical interval [-pi/2 <= delta <= pi/2 ] */
   /* this requires also a change in longitude by adding/subtracting PI */
