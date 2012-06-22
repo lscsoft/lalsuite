@@ -2096,17 +2096,17 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
 
     /* Save old variables */
     LALInferenceCopyVariables(runState->currentParams,&backup);
-    LALPNOrder order=*(INT4 *)LALInferenceGetVariable(&backup,"LAL_PNORDER");
-    Approximant approx=*(INT4 *)LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
+    LALPNOrder *order=LALInferenceGetVariable(&backup,"LAL_PNORDER");
+    Approximant *approx=LALInferenceGetVariable(&backup,"LAL_APPROXIMANT");
     /* Fill named variables */
     LALInferenceInjectionToVariables(theEventTable,runState->currentParams);
-
-    /* Set the waveform to the one used in the analysis */
-    LALInferenceRemoveVariable(runState->currentParams,"LAL_APPROXIMANT");
-    LALInferenceRemoveVariable(runState->currentParams,"LAL_PNORDER");
-    LALInferenceAddVariable(runState->currentParams,"LAL_PNORDER",&order,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(runState->currentParams,"LAL_APPROXIMANT",&approx,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
-
+    if(order && approx){
+      /* Set the waveform to the one used in the analysis */
+      LALInferenceRemoveVariable(runState->currentParams,"LAL_APPROXIMANT");
+      LALInferenceRemoveVariable(runState->currentParams,"LAL_PNORDER");
+      LALInferenceAddVariable(runState->currentParams,"LAL_PNORDER",order,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+      LALInferenceAddVariable(runState->currentParams,"LAL_APPROXIMANT",approx,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+    }
     REAL8 injPrior = runState->prior(runState,runState->currentParams);
     LALInferenceAddVariable(runState->currentParams,"logPrior",&injPrior,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
     REAL8 injL = runState->likelihood(runState->currentParams, runState->data, runState->template);
@@ -2135,8 +2135,8 @@ void LALInferencePrintInjectionSample(LALInferenceRunState *runState)
     fclose(outfile);
     
     /* Set things back the way they were */    
-    LALInferenceCopyVariables(&backup,runState->currentParams);
-    if(runState->currentParams) runState->likelihood(runState->currentParams,runState->data,runState->template);
+    //LALInferenceCopyVariables(&backup,runState->currentParams);
+    //if(runState->currentParams && runState->currentParams->head) runState->likelihood(runState->currentParams,runState->data,runState->template);
     return;
 }
 
