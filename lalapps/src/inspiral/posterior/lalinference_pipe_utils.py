@@ -147,10 +147,8 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
         if dumpfile is not None:
           fh=open(dumpfile,'w')
           for co in output.keys():
-            fh.write('%s '%(str(co)))
             for ifo in output[co].ifos:
-              fh.write('%s %s %s %s %s '%(ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
-            fh.write('\n')
+              fh.write('%s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
           fh.close()
 	return output.values()
 
