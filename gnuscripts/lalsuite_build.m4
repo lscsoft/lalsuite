@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 37
+# serial 38
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -20,15 +20,29 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
   AC_REQUIRE([AC_PROG_CC])
   AC_REQUIRE([AC_PROG_CC_C99])
   AC_REQUIRE([AC_PROG_CPP])
+
+  # check for clang
+  AS_IF([test "x$GCC" = xyes],
+    [AS_IF([test "`$CC -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CC=1])],
+    [CLANG_CC=])
+  AC_SUBST(CLANG_CC)
+
   # check for C++ compiler, if needed
   AS_IF([test "${lalsuite_require_cxx}" = true],[
     AC_PROG_CXX
     AC_PROG_CXXCPP
+
+    # check for clang++
+    AS_IF([test "x$GXX" = xyes],
+      [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CXX=1])],
+      [CLANG_CC=])
+    AC_SUBST(CLANG_CXX)
   ],[
     CXX=
     CXXCPP=
     AM_CONDITIONAL([am__fastdepCXX],[test 1 == 0])
   ])
+
   # check complex numbers
   LALSUITE_CHECK_C99_COMPLEX_NUMBERS
   AS_IF([test "${lalsuite_require_cxx}" = true],[
