@@ -893,15 +893,6 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       if (!params->useSSE || (params->useSSE && params->validateSSE) || (params->useSSE && needtocomputecos==1)) {
          if (!params->useSSE) {
             for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
-               /* //Compute exp(log(4*pi*s*s*exp(-s*s*omegapr_squared))) = exp(log(4*pi*s*s)-s*s*omegapr_squared)
-               if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
-               else exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = 0.0;
-               
-               twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_actual->data[ii+fnumstart]*fpr->data[jj]);
-               cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
-               
-               datavector->data[jj] = scale->data[ii+fnumstart]*exp_neg_sigma_sq_times_omega_pr_sq->data[jj]*(cos_phi_times_omega_pr->data[jj]+1.0); */
-               
                //Do all or nothing if the exponential is too negative
                if ((prefact0-s*s*omegapr_squared->data[jj])>-88.0) {
                   exp_neg_sigma_sq_times_omega_pr_sq->data[jj] = expf((REAL4)(prefact0-s*s*omegapr_squared->data[jj]));
@@ -941,43 +932,32 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
             for (jj=0; jj<(INT4)omegapr_squared->length; jj++) {
                twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, phi_times_fpr->data[jj]);
                cos_phi_times_omega_pr->data[jj] = (REAL4)cos2pix;
-               
-               sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sseScaleREAL4Vector(datavector, datavector, scale->data[ii+fnumstart]);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
-               sseSSVectorMultiply(datavector, datavector, cos_ratio);
-               if (xlalErrno!=0) {
-                  fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
-               }
+            }
+            sseAddScalarToREAL4Vector(datavector, cos_phi_times_omega_pr, 1.0);
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseAddScalarToREAL4Vector() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            sseSSVectorMultiply(datavector, datavector, exp_neg_sigma_sq_times_omega_pr_sq);
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            sseScaleREAL4Vector(datavector, datavector, scale->data[ii+fnumstart]);
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseScaleREAL4Vector() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            sseSSVectorMultiply(datavector, datavector, cos_ratio);
+            if (xlalErrno!=0) {
+               fprintf(stderr, "%s: sseSSVectorMultiply() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
             }
          }
       } /* If no sse, if sse and validate sse, or if cosine needs to be computed */
       
       //Now loop through the second FFT frequencies, starting with index 4
       for (jj=4; jj<(INT4)omegapr->length; jj++) {
-         //Four cases of final fraction in E. Goetz and K. Riles 2011, eq. 18 (for numerical stability and accuracy considerations)
-         //1) numerator approaches zero then dataval = 0.0 (set)
-         //2) Neither numerator nor denominator approaches zero (first if)
-         //3) denominator approaches zero, then the numerator is also approaching zero, so this fraction approaches N*N (second if)
-         //4) both numerator and denominator approach zero, so, again, the fraction approaches N*N (second if)
-         /* dataval = 0.0;
-         if (whichIfStatementToUse->data[jj]!=0) {
-            dataval = (REAL4)(datavector->data[jj]*cos_ratio->data[jj]);
-         } */
-         
          //Sum up the weights in total
          //sum += (REAL8)dataval;
          sum += (REAL8)(datavector->data[jj]);
