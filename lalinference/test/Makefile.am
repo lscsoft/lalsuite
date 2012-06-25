@@ -40,7 +40,7 @@ check_PROGRAMS = \
 	LALInferenceLikelihoodTest \
 	LALInferenceProposalTest \
 	LALInferenceKDTest \
-        LALInferenceInjectionTest \
+    LALInferenceInjectionTest \
 	$(XMLPRG)
 
 TESTS = \
