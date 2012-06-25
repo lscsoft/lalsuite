@@ -927,6 +927,7 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	UINT4 Ninj=0;
 	UINT4 event=0;
 	UINT4 i=0,j=0;
+  REAL8 responseScale=1.0;
 	//CoherentGW InjectGW;
 	//PPNParamStruc InjParams;
 	LIGOTimeGPS injstart;
@@ -1036,18 +1037,20 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
     //LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
+
+    Approximant       approximant;        /* Get approximant value      */
+    approximant = XLALGetApproximantFromString(injEvent->waveform);
+    if( (int) approximant == XLAL_FAILURE)
+      ABORTXLAL(&status);
+
     if(LALInferenceGetProcParamVal(commandLine,"--lalsimulationinjection")){
       
       REAL8TimeSeries *hplus=NULL;  /**< +-polarization waveform */
       REAL8TimeSeries *hcross=NULL; /**< x-polarization waveform */
       REAL8TimeSeries       *signalvecREAL8=NULL;
       LALPNOrder        order;              /* Order of the model             */
-      Approximant       approximant;        /* And its approximant value      */
       INT4              amporder=0;         /* Amplitude order of the model   */
 
-      approximant = XLALGetApproximantFromString(injEvent->waveform);
-      if( (int) approximant == XLAL_FAILURE)
-        ABORTXLAL(&status);
       order = XLALGetOrderFromString(injEvent->waveform);
       if ( (int) order == XLAL_FAILURE)
         ABORTXLAL(&status);
@@ -1123,7 +1126,12 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
       
     }else{
-      LALInferenceLALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp,det.site);
+      if ( approximant == NumRelNinja2) {
+        XLALSimInjectNinjaSignals(injectionBuffer, thisData->name, 1./responseScale, injEvent);
+      } else {
+        LALInferenceLALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp,det.site);
+      }
+
       XLALResampleREAL4TimeSeries(injectionBuffer,thisData->timeData->deltaT); //downsample to analysis sampling rate.
       if(status.statusCode) REPORTSTATUS(&status);
     
