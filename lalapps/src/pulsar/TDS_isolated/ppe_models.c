@@ -875,7 +875,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
   
   for( i=0; i<length; i++ ){
     /* set the time bin for the lookup table */
-    /* sidereal day in secs*/    
+    /* sidereal day in secs*/
     T = sidDayFrac2->data[i];
     timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
     timeMin = timebinMin*tsv;
@@ -911,6 +911,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
     data->next->compModelData->data->data[i].im =
       plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
       cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi );
+
   }
   /*--------------------------------------------------------------------------*/
 }

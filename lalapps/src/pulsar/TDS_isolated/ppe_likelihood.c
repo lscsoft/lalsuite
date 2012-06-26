@@ -54,7 +54,7 @@
  */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_model ){
+                             LALInferenceTemplateFunction *get_model){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
   CHAR *modeltype = NULL; /*need to check model type in this function*/
@@ -74,6 +74,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     /*fprintf(bugtest,"getting model in log like func\n");*/
     get_model( datatemp2 );
     datatemp2 = datatemp2->next;
+		
     /* If modeltype is pinsf need to advance data on to next, so this loop only
      runs once if there is only 1 det*/
     if ( !strcmp( modeltype, "pinsf" ) ) datatemp2 = datatemp2->next;
@@ -129,22 +130,20 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
         
         /* sum over that data and model */
         sumDataModel += B.re*M.re + B.im*M.im;
-        /*fprintf(bugtest,"B.re= %e, B.im= %e, M.re: %e, M.im: %e\n",B.re, B.im,
-M.re, M.im);*/
+        /*fprintf(bugtest,"B.re= %e, B.im= %e, M.re: %e, M.im: %e\n",B.re, B.im,M.re, M.im);*/
       }
  
       chiSquare = sumDat->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
       
-      logliketmp -= chunkLength*log(chiSquare);
+      logliketmp -= chunkLength*log(chiSquare) + LAL_LN2 + (chunkLength-1) + gsl_sf_lnfact(chunkLength);
       
       count++;
     }
     loglike += logliketmp;
     datatemp3 = datatemp3->next;
   }
-  
   return loglike;
 }
 
