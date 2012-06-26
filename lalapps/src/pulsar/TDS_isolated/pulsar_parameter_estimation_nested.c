@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2012 Matthew Pitkin, Colin Gill, John Veitch
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+*  MA  02111-1307  USA
+*/
+
 /* functions to create the likelihood for a pulsar search to be used with the
 LALInference tools */
 
@@ -252,10 +271,20 @@ LALStringVector *corlist = NULL;
 " --scale-snr         give a (multi-detector) SNR value to which you want to\n\
                      scale the injection. This is 1 by default.\n"\
 "\n"\
-" Legacy code flags:\n"\
-" --oldChunks         set if using fixed chunk sizes for dividing the data as\n\
-                     in the old code, rather than the calculating chunks\n\
-                     using the change point method.\n"\
+" Flags for using a Nested sampling file as a prior:\n"\
+" --sample-file      a file containing the nested samples from a previous run\n\
+                    of the code (this should contain samples in ascending\n\
+                    likelihood order and be accompanied by a file containg a\n\
+                    list of the parameter names for each column with the\n\
+                    suffix _params.txt). If this is set this WILL be used as\n\
+                    the only prior, but the prior ranges set in the\n\
+                    --prior-file and --par-file are still needed (and\n\
+                    should be consistent with variable parameters in the\n\
+                    nested sample file).\n"\
+" --sample-nlive     The number of live point that where used when creating\n\
+                    the nested sample file.\n"\
+" --prior-cell       The number of samples to use in a k-d tree cell for the\n\
+                    prior (the default will be 32).\n"\
 "\n"\
 " Phase parameter search speed-up factors:\n"\
 " --mismatch          Maximum allowed phase mismatch between consecutive\n\
@@ -263,6 +292,11 @@ LALStringVector *corlist = NULL;
                      correction)\n"\
 " --mm-factor         (INT4) Downsampling factor for the phase models used\n\
                      to calculate the mismatch\n"\
+ "\n"\
+" Legacy code flags:\n"\
+" --oldChunks         set if using fixed chunk sizes for dividing the data as\n\
+                     in the old code, rather than the calculating chunks\n\
+                     using the change point method.\n"\
 "\n"
 
 INT4 main( INT4 argc, CHAR *argv[] ){
@@ -271,7 +305,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   REAL8 logZnoise = 0.;
   
   /* set error handler to abort in main function */
-  /* lalDebugLevel = 7; */
+  //lalDebugLevel = 7;
   XLALSetErrorHandler(XLALAbortErrorHandler);
   
   /* Get ProcParamsTable from input arguments */
@@ -325,7 +359,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
 
   /* Initialise the MCMC proposal distribution */
   initialiseProposal( &runState );
-
+  
   /* Call the nested sampling algorithm */
   runState.algorithm( &runState );
 
@@ -1083,7 +1117,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     }
 
     /* check ephemeris files exist and if not output an error message */
-    if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
+    if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
       fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
 defined!\n");
       exit(3);
@@ -1791,45 +1825,15 @@ set.\n", propfile, tempPar);
     scale = high - low;
     scaleMin = low;
     
-    /* don't rescale phi0, so that it varies over 0-2*pi - required by the 
-       LALInferenceAngularVariance function when calculating the covariance 
-       (unless the prior-file contains a phi0 range that is not 2*pi) */
-    if( !strcmp(tempPar, "phi0") ){
-      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ){
-        scale = 1.;
-        scaleMin = 0.;
-        high = 2.*LAL_PI; /* make sure range spans exactly 2pi */
-        phidef = 1;
-      }
-    }
+    /* if phi0 is defined and covers the 2pi range set phidef so
+     * re-parameterisation can take place  */
+    if( !strcmp(tempPar, "phi0") )
+      if ( scale/LAL_TWOPI > 0.99 && scale/LAL_TWOPI < 1.01 ) phidef = 1;
     
-    /* if psi is covering the range -pi/4 to pi/4 scale it, so that it covers
-       the 0 to 2pi range of a circular parameter */
-    if( !strcmp(tempPar, "psi") ){
-      if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ){ 
-        scale = 0.25;
-        scaleMin = -LAL_PI/4.;
-        high = LAL_PI/4.; /* make sure range spans exactly pi/2 */
-        psidef = 1;
-      }
-      /* if psi is covering the range -pi/2 to pi/2 scale it, so that it covers
-         the 0 to 2pi range of a circular parameter */
-      else if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
-        scale = 0.5;
-        scaleMin = -LAL_PI/2.;
-        high = LAL_PI/2.;
-      }
-    }
-    
-    /* if lambda is covering the range 0 to pi scale it, so that it covers
-    the 0 to pi range of a circular parameter */
-    if( !strcmp(tempPar, "lambda") ){
-      if ( scale/LAL_PI > 0.99 && scale/LAL_PI < 1.01 ){
-        scale = 0.5;
-        scaleMin = 0;
-        high = LAL_PI;
-      }
-    }
+    /* if psi is covering the range -pi/4 to pi/4, i.e. as used in the triaxial 
+     * model, set psidef, so re-parameterisation can take place */
+    if( !strcmp(tempPar, "psi") )
+      if ( scale/LAL_PI_2 > 0.99 && scale/LAL_PI_2 < 1.01 ) psidef = 1;
     
     /* set the scale factor to be the width of the prior */
     while( datatemp ){
@@ -1853,15 +1857,10 @@ set.\n", propfile, tempPar);
     high = (high - scaleMin) / scale;
     
     /* re-add variable */    
-    if( !strcmp(tempPar, "phi0") && scale == 1. ) 
+    if( !strcmp(tempPar, "phi0") && phidef )
       varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "psi") && scale == 0.25 ) 
-      varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "psi") && scale == 0.5 ) 
-      varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else if ( !strcmp(tempPar, "lambda") && scale == 0.5 )
-      varyType = LALINFERENCE_PARAM_CIRCULAR;
-    else varyType = LALINFERENCE_PARAM_LINEAR;
+    else 
+      varyType = LALINFERENCE_PARAM_LINEAR;
     
     LALInferenceAddVariable( runState->currentParams, tempPar, &tempVar, type,
                              varyType );
@@ -1903,7 +1902,6 @@ set.\n", propfile, tempPar);
   if( phidef && psidef && !strcmp( "triaxial",
       *(CHAR **)LALInferenceGetVariable( runState->data->dataParams, 
                                          "modeltype" ) ) ){
-    fprintf(stderr,"Do phi and psi transform\n");
     LALInferenceIFOData *datatemp = data;
     
     REAL8 phi0 = *(REAL8*)LALInferenceGetVariable( runState->currentParams, 
@@ -1919,7 +1917,9 @@ set.\n", propfile, tempPar);
     REAL8 psimin = *(REAL8*)LALInferenceGetVariable( data->dataParams, 
                                                      "psi_scale_min" );
     REAL8 theta = atan2(1,2);
-    REAL8 primescale = 0.5*cos(theta), primemin = -LAL_PI_2*cos(theta);
+    //REAL8 primescale = 0.5*cos(theta), primemin = -LAL_PI_2*cos(theta);
+    REAL8 primemin = -LAL_PI_2*cos(theta);
+    REAL8 primescale = 2.*fabs(primemin);
     REAL8 phi0prime = 0., psiprime = 0.;
     
     phi0 = phi0*phi0scale + phi0min;
@@ -1938,10 +1938,11 @@ set.\n", propfile, tempPar);
     
     /* add new variables */
     LALInferenceAddVariable( runState->currentParams, "phi0prime", &phi0prime,
-                             LALINFERENCE_REAL8_t, 
+                             LALINFERENCE_REAL8_t,
                              LALINFERENCE_PARAM_CIRCULAR );
+    
     LALInferenceAddVariable( runState->currentParams, "psiprime", &psiprime,
-                             LALINFERENCE_REAL8_t, 
+                             LALINFERENCE_REAL8_t,
                              LALINFERENCE_PARAM_CIRCULAR );
     
     /* remove old scale factors and add new ones */
@@ -1970,7 +1971,7 @@ set.\n", propfile, tempPar);
     
     /* change prior */
     low = 0.;
-    high = LAL_TWOPI;
+    high = 1.;
     LALInferenceRemoveMinMaxPrior( runState->priorArgs, "phi0" );
     LALInferenceAddMinMaxPrior( runState->priorArgs, "phi0prime", &low, 
                                 &high, LALINFERENCE_REAL8_t );
@@ -2046,7 +2047,7 @@ set.\n", propfile, tempPar);
   /* now check for a parameter correlation coefficient matrix file */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--cor-file" );
   if( ppt ){
-    CHAR *corFile = ppt->value;
+    CHAR *corFile = XLALStringDuplicate( ppt->value );
     UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
     dims->data[0] = 1;
     dims->data[1] = 1;
@@ -2062,6 +2063,9 @@ set.\n", propfile, tempPar);
 
     XLALDestroyUINT4Vector( dims );
   }
+  
+  /* check if using a previous nested sampling file as a prior */
+  samples_prior( runState );
   
   return;
 }
@@ -2137,7 +2141,7 @@ void initialiseProposal( LALInferenceRunState *runState ){
       LALInferenceAddVariable( runState->proposalArgs, "KDNCell", 
                                &kdncells, LALINFERENCE_INT4_t,
                                LALINFERENCE_PARAM_FIXED );
-    } 
+    }
 
     LALInferenceAddProposalToCycle( runState, KDNeighborhoodProposalName,
                                     &LALInferenceKDNeighborhoodProposal,
@@ -2304,11 +2308,11 @@ void injectSignal( LALInferenceRunState *runState ){
   BinaryPulsarParams injpars;
  
   FILE *fpsnr = NULL; /* output file for SNRs */
-  INT4 ndets = 0, j = 1, k = 0, numSNRs = 1, ml = 1;
+  INT4 ndats = 0, j = 1, k = 0;
   
   REAL8Vector *freqFactors = NULL;
   REAL8 snrmulti = 0.;
-  REAL8 *snrscale = NULL;
+  REAL8 snrscale = 0;
   
   CHAR *modeltype = NULL;/*need to check model type in this function*/
   
@@ -2319,7 +2323,7 @@ void injectSignal( LALInferenceRunState *runState ){
     injectfile = XLALStringDuplicate( ppt->value );
     
     /* check that the file exists */
-    if ( access(injectfile, F_OK) != 0 ){
+    if ( fopen(injectfile, "r") == NULL ){
       fprintf(stderr, "Error... Injection specified, but the injection \
 parameter file %s is wrong.\n", injectfile);
       exit(3);
@@ -2334,43 +2338,11 @@ parameter file %s is wrong.\n", injectfile);
  
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
                                                           "freqfactors" );
-  snrscale = XLALCalloc(sizeof(REAL8), numSNRs);
   
+  /* get the SNR scale factor if required */
   ppt = LALInferenceGetProcParamVal( commandLine, "--scale-snr" );
   if ( ppt ){
-    /* if there are more than one data streams (i.e. a stream at twice the 
-       pulsar frequency and one at the pulsar frequency) the SNRs for the 
-       individual (multi-detector) streams can be set, rather than having a 
-       combined SNR. The SNR values are set as comma separated values to 
-       --scale-snr. If only one value is given, but the data has multiple 
-       streams then the combined multi-stream SNR will still be used. */
-    CHAR *snrscales = NULL, *tmpsnrs = NULL, *tmpsnr = NULL, snrval[256];
-    
-    snrscales = XLALStringDuplicate( ppt->value );
-      
-    tmpsnrs = XLALStringDuplicate( snrscales );
-      
-    /* count the number of SNRs (comma seperated values) */
-    numSNRs = count_csv( snrscales );
-    fprintf(stderr,"Number of snrs: %d\n",numSNRs);
-
-    ml = (INT4)freqFactors->length;
-    
-    if(numSNRs != ml){
-      fprintf(stderr, "Error... number of SNR values must equal\
- the number of data streams required for your model!\n");
-      exit(0);
-    }
-    
-    snrscale = XLALRealloc(snrscale, sizeof(REAL8)*numSNRs);
-
-    /* goes through the input scale snr string and adds the values to the 
-       snrscale vector. */
-    for( k = 0; k < numSNRs; k++ ){
-      tmpsnr = strsep( &tmpsnrs, "," );
-      XLALStringCopy( snrval, tmpsnr, strlen(tmpsnr)+1 );
-      snrscale[k] = atof(snrval);
-    }
+    snrscale = atof( ppt->value );
   }
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
@@ -2414,52 +2386,47 @@ parameter file %s is wrong.\n", injectfile);
   
   /* calculate SNRs */
   while ( data ){
-    for ( k = 0; k < numSNRs; k++ ){
-      REAL8 snrval = calculate_time_domain_snr( data );
+    REAL8 snrval = calculate_time_domain_snr( data );
 
-      snrmulti += SQUARE(snrval);
+    snrmulti += SQUARE(snrval);
       
-      fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\t",
-              freqFactors->data[k], snrval);
-      fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\t",
-              freqFactors->data[k], snrval);
-      fprintf(stderr, "SNR multi %le\n", snrmulti);
-
-      data = data->next;
-    }
-    ndets++;
+    fprintf(fpsnr, "freq_factor: %lf, non-scaled snr: %le\n",
+            freqFactors->data[ndats%(INT4)freqFactors->length], snrval);
+    fprintf(stderr, "freq_factor: %lf, non-scaled snr: %le\n",
+            freqFactors->data[ndats%(INT4)freqFactors->length], snrval); 
+      
+    data = data->next;
+    
+    ndats++;
   }
   
   /* get overall multi-detector SNR */
   snrmulti = sqrt(snrmulti);
   
-  /* only need to print out multi-detector snr if the were multiple detectors */
-  if( numSNRs == 1 && snrscale[0] == 0 ){
-    if ( ndets > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
+  fprintf(stderr, "SNR multi %le\n", snrmulti);
+  
+  /* only need to print out multi-detector snr if the were multiple detectors or
+   data streams */
+  if ( snrscale == 0. ){
+    if ( ndats > 1 ) fprintf(fpsnr, "%le\n", snrmulti);
     else fprintf(fpsnr, "\n");
   }
   else{
     /* rescale the signal and calculate the SNRs */
     data = runState->data;
-    snrscale[0] /= snrmulti;
-
-    /* rescale the h0 for triaxial mode only) */
-    if ( !strcmp(modeltype, "triaxial")  ){
-      for ( k = 0; k < numSNRs; k++ ){
-        if ( freqFactors->data[k] == 2. ) injpars.h0 *= snrscale[0];
-      }
-    }
+    snrscale /= snrmulti;
+    
+    if ( !strcmp(modeltype, "triaxial")  ) injpars.h0 *= snrscale;
     
     /* rescale the r parameter for pinsf mode only. note, strcmp returns 0 for a match.*/
     if (!strcmp(modeltype, "pinsf") ){
       fprintf(stderr,"inj par r: %le\n",injpars.r);
-      fprintf(stderr,"snrscale: %le\n",snrscale[0]);
-      injpars.r /= snrscale[0];
-      /*if ( freqFactors->data[k] == 1. ) injpars.I21 *= snrscale[k];*/
+      fprintf(stderr,"snrscale: %le\n",snrscale);
+      injpars.r /= snrscale;
       fprintf(stderr,"inj par r: %le\n",injpars.r);
     }
    
-    /* recreate the signal with scale amplitude */
+    /* recreate the signal with scaled amplitude */
     while( data ){
       UINT4 varyphasetmp = varyphase;
       varyphase = 1;
@@ -2480,27 +2447,23 @@ parameter file %s is wrong.\n", injectfile);
     snrmulti = 0;
     
     while( data ){
-      for ( k = 0; k < numSNRs; k++ ){
-        REAL8 snrval = 0.;
+      REAL8 snrval = 0.;
 
-        /* recalculate the SNR */
-        snrval = calculate_time_domain_snr( data );
+      /* recalculate the SNR */
+      snrval = calculate_time_domain_snr( data );
       
-        snrmulti += SQUARE(snrval);
+      snrmulti += SQUARE(snrval);
       
-        fprintf(fpsnr, "scaled snr: %le\t", snrval);
+      fprintf(fpsnr, "scaled snr: %le\t", snrval);
       
-        data = data->next;
-      }
+      data = data->next;
     }
     
     snrmulti = sqrt( snrmulti );
     fprintf(stderr, "scaled multi data snr: %le\n", snrmulti);
     
-    if( ndets > 1 ){
-      for ( k = 0; k < numSNRs; k++ ){
-        fprintf(fpsnr, "%le\t", snrmulti);
-      }
+    if( ndats > 1 ){
+      fprintf(fpsnr, "%le\t", snrmulti);
       fprintf(fpsnr, "\n"); 
     }
     else fprintf(fpsnr, "\n");
@@ -2583,8 +2546,6 @@ injection\n", signalonly);
     data = data->next;
     j++;
   }
- 
-  XLALFree(snrscale);
 }
 
 /*-------------------- END OF SOFTWARE INJECTION FUNCTIONS -------------------*/
@@ -3498,10 +3459,10 @@ void rescaleOutput( LALInferenceRunState *runState ){
          ){
           scalefac = 
             *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
-                                              scalename );
+                                               scalename );
           scalemin = 
             *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams, 
-                                                scaleminname );
+                                               scaleminname );
           
           /* get the value and scale it */
           value = *(REAL8 *)LALInferenceGetVariable( &output_array[i],
@@ -3660,7 +3621,6 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
   
   length = data->compTimeData->data->length;
   
-  /* add the signal to the data */
   for ( i = 0; i < length; i+=chunkLength ){
     COMPLEX16 snrc = {0., 0.}, vari = {0., 0.};
     
@@ -3715,7 +3675,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
  * \sa calculate_time_domain_snr
  */
 void get_loudest_snr( LALInferenceRunState *runState ){
-  INT4 ndets = 0;
+  INT4 ndats = 0;
   INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams,
                                                  "Nlive" );
   REAL8 snrmulti = 0.;
@@ -3733,7 +3693,18 @@ void get_loudest_snr( LALInferenceRunState *runState ){
  
   /* max likelihood point should have been sorted to be the final value */
   LALInferenceCopyVariables( runState->livePoints[Nlive-1], loudestParams );
- 
+  
+  /* make sure that the signal model in runState->data is that of the loudest 
+   * signal */
+  REAL8 logLnew = runState->likelihood( loudestParams, runState->data, 
+                                        runState->template);
+  
+  if ( logLnew != *(REAL8 *)LALInferenceGetVariable( 
+    runState->livePoints[Nlive-1], "logL" ) ){
+    fprintf(stderr, "Error... maximum log likelihood problem!\n");
+    exit(0);
+  }
+  
   LALInferenceDestroyVariables( loudestParams );
   
   /* setup output file */
@@ -3755,10 +3726,23 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   /* get SNR of loudest point and print out to file */
   data = runState->data;
   
+  FILE *fp = NULL;
+  fp = fopen("max_like_signal.txt", "w");
+  
   while( data ){
     REAL8 snrval = calculate_time_domain_snr( data );
     
-    ndets++;
+    UINT4 length = data->compModelData->data->length;
+    
+    /* print out maxlikelihood template */
+    for ( UINT4 j=0; j < length; j++ ){
+      fprintf(fp, "%lf\t%le\t%le\n",
+              XLALGPSGetREAL8( &data->dataTimes->data[j] ),
+              data->compModelData->data->data[j].re,
+              data->compModelData->data->data[j].im );
+    }
+    
+    ndats++;
     
     snrmulti += SQUARE( snrval );
     
@@ -3768,8 +3752,10 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     data = data->next;
   }
  
-  /* print out multi-detector SNR value */
-  if ( ndets > 1 ) fprintf(fpsnr, "%le\n", sqrt(snrmulti));
+  fclose(fp);
+ 
+  /* print out multi-detector/multi-datastream SNR value */
+  if ( ndats > 1 ) fprintf(fpsnr, "%le\n", sqrt(snrmulti));
   else fprintf(fpsnr, "\n");
   
   fclose( fpsnr );
@@ -3914,7 +3900,7 @@ NULL )
   XLALStringCopy( sfile, sftmp, 1024 );
   
   /* double check that the files exist */
-  if( access(sfile, F_OK) != 0 || access(efile, F_OK) != 0 ){
+  if( fopen(sfile, "r") == NULL || fopen(efile, "r") == NULL ){
     XLALPrintError("Error... ephemeris files not, or incorrectly, defined!\n");
     XLAL_ERROR(XLAL_EFUNC);
   }
@@ -4002,13 +3988,14 @@ void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
 void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime, 
                                  REAL8 *phi0, REAL8 *psi ){
   REAL8 theta = atan2(1., 2.);
-  REAL8 o2st = 1./(2*sin(theta));
-  REAL8 o2ct = 1./(2*cos(theta));
   REAL8 ct = cos(theta);
+  REAL8 o2st = 1./(2*sin(theta));
+  REAL8 o2ct = 1./(2*ct);
   REAL8 phitmp = 0., psitmp = 0.;
   
   /* check psiprime and phi0prime is in range +/- (pi/2)cos(theta) */
   if ( fabs(phi0prime) > LAL_PI_2*ct || fabs(psiprime) > LAL_PI_2*ct ){
+    fprintf(stderr, "phi0prime = %le, psiprime = %le\n", phi0prime, psiprime);
     XLALPrintError("Error... phi0prime or psiprime are not in range\n");
     XLAL_ERROR_VOID(XLAL_EFUNC);
   }
@@ -4038,3 +4025,164 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
 
 /*----------------------- END OF HELPER FUNCTIONS ----------------------------*/
 
+/** \brief Read in an ascii text file of nested samples, convert to posterior
+ * samples and create k-d tree
+ *
+ * This function reads in an ascii file of nested samples, converted them into
+ * posterior samples and them add them to a k-d tree. The file name containing
+ * the samples must have been given as the command line argument \c sample-file
+ * and there must be an accompanying file with the names of each column with
+ * the same file name with _params.txt appended.
+ * 
+ * It is assumed that the samples are in ascending log likelihood order. It is
+ * also assumed that variable values in the file (and are not likelihood-like
+ * values) are consistent with those given that have prior ranges defined in
+ * the prior file/par file (as these ranges will be used as bounds in a k-d tree
+ * created from this data).
+ * 
+ * As it is assumed that the points read in are from a previous nested sampling
+ * run the number of live points used for that run are also required to be
+ * given with the \c sample-nlive argument. This will be used during the
+ * conversion to posterior samples.
+ * 
+ * If given the k-d tree cell size for using the posterior as a prior can be
+ * set with the \c prior-cell argument, if not set this defaults to 32.
+ * 
+ * In the future this will be altered so as to also read in an XML file of
+ * samples.
+ * 
+ * NOTE: add the ability to read in multiple files and combine the posterior
+ * samples
+ * 
+ * \param runState [in] A pointer to the LALInferenceRunState
+ */
+void samples_prior( LALInferenceRunState *runState ){
+  ProcessParamsTable *ppt = NULL;
+  
+  UINT4 Ncell = 32; /* default prior cell size */
+  
+  UINT4 i = 0, k = 0, nlive = 0;
+  
+  CHAR *sampfile = NULL, *namefile = NULL, name[256];
+  LALStringVector *paramNames = NULL;
+  
+  LALInferenceVariables **params = NULL;
+  
+  FILE *fp = NULL;
+  
+  const CHAR *fn = __func__;
+  
+  /* get names of nested sample file columns */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-file" );
+  if ( ppt != NULL ) sampfile = XLALStringDuplicate( ppt->value );
+  else return; /* no file so we don't use this function */
+    
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-nlive" );
+  if ( ppt != NULL ){
+    nlive = atoi( ppt->value );
+    LALInferenceAddVariable( runState->algorithmParams, "numberlive", &nlive,
+                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+  }
+  else{
+    fprintf(stderr, "Must set the number of live points used in the input \
+nested samples file.\n\n");
+    fprintf(stderr, USAGE, runState->commandLine->program);
+    exit(0);
+  }
+  
+  namefile = XLALStringDuplicate( sampfile );
+  namefile = XLALStringAppend( namefile, "_params.txt" );
+    
+  /* check file exists */
+  if ( fopen(namefile, "r") == NULL || fopen(sampfile, "r") == NULL ){
+    XLALPrintError("%s: Cannot access either %s or %s!\n", fn, namefile,
+                   sampfile);
+    XLAL_ERROR_VOID(XLAL_EIO);
+  }
+  
+  /* read in parameter names */
+  fp = fopen( namefile, "r" );
+  while( fscanf(fp, "%s", name) != EOF )
+    paramNames = XLALAppendString2Vector( paramNames, name );
+
+  fclose(fp);
+  
+  /* read in parameter values */
+  fp = fopen( sampfile, "r" );
+  while( !feof(fp) ){
+    REAL8 ps[paramNames->length];
+    UINT4 j = 0;
+    
+    for( j=0; j<paramNames->length; j++ )
+      if( fscanf(fp, "%lf", &ps[j]) == EOF ) break;
+   
+    if( feof(fp) ) break;
+
+    /* dynamically alloacte memory */
+    params = XLALRealloc( params, (i+1)*sizeof(LALInferenceVariables*) );
+    params[i] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+    
+    /* add variables */
+    for( j=0; j<paramNames->length; j++ ){
+      /* use vary type of this analyses parameters i.e. those set by the prior
+         and par file, otherwise set the parameter to fixed */
+      LALInferenceParamVaryType vary;
+      
+      if ( LALInferenceCheckVariable( runState->currentParams,
+                                      paramNames->data[j] ) ){
+        vary = LALInferenceGetVariableVaryType( runState->currentParams,
+                                                paramNames->data[j] );
+      }
+      else vary = LALINFERENCE_PARAM_FIXED;
+
+      LALInferenceAddVariable( params[i], paramNames->data[j], &ps[j],
+        LALINFERENCE_REAL8_t, vary );
+    }
+    
+    i++;
+  }
+  
+  LALInferenceAddVariable( runState->algorithmParams, "nestedsamples", &params,
+                           LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
+  LALInferenceAddVariable( runState->algorithmParams, "Nsamp", &i,
+                           LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+  
+  /* check that non-fixed, or output parameters actually do vary, otherwise
+     complain */
+  LALInferenceVariableItem *item1 = params[0]->head;
+  
+  while ( item1 ){
+    UINT4 allsame = 0;
+     
+    for ( k=1; k<i; k++ ){
+      LALInferenceVariableItem *item2 = LALInferenceGetItem( params[k],
+                                                             item1->name );
+      
+      if( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary !=
+        LALINFERENCE_PARAM_OUTPUT )
+        if ( *(REAL8*)item1->value != *(REAL8*)item2->value ) allsame++;
+    }
+    
+    if( ( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary !=
+      LALINFERENCE_PARAM_OUTPUT ) && allsame == 0 ){
+      XLALPrintError("%s: Apparently variable parameter %s does not vary!\n",
+                     fn, item1->name );
+      XLAL_ERROR_VOID(XLAL_EFUNC);
+    }
+
+    item1 = item1->next;
+  }
+  
+  /* get cell size */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--prior-cell" );
+  if ( ppt != NULL ) Ncell = atoi( ppt->value );
+
+  LALInferenceAddVariable( runState->priorArgs, "kDTreePriorNcell", &Ncell,
+                           LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+  
+  /* convert samples to posterior */
+  ns_to_posterior( runState );
+  
+  /* create k-d tree of the samples for use as a prior */
+  create_kdtree_prior( runState );
+}

@@ -279,7 +279,7 @@ void pulsar_model( BinaryPulsarParams params,
             REAL4 sp, cp;
     
             dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
-          
+            
             sin_cos_2PI_LUT( &sp, &cp, dphit );
     
             M.re = data->compModelData->data->data[i].re;
@@ -722,7 +722,9 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
  * triaxial neutron star rotating about the pinning axis of its pinned superfluid component.
  * 
  * Unlike the standard triaxial model, this model has emission at f and 2f, therefore
- * this model function processes two sets of data per detector.
+ * this model function processes two sets of data per detector. In this model the
+ * \f$\phi_0\f$ parameter is the initial rotational phase, rather than the GW 
+ * phase as in the triaxial model.
  * 
  * As for the standard triaxial model, the antenna pattern functions are contained in a 2D lookup table, so within
  * this function the correct value for the given time and \f$\psi\f$ are
@@ -740,8 +742,8 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
  * detector
  * 
  */
-void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
-*data ){
+void get_pinsf_amplitude_model( BinaryPulsarParams pars, 
+                                LALInferenceIFOData *data ){
   INT4 i = 0, length;
   
   REAL8 psteps, tsteps, psv, tsv;
@@ -754,10 +756,16 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   REAL8 Xplusf, Xcrossf, Xplus2f, Xcross2f;
   REAL8 A1, A2, B1, B2;
   REAL4 sinphi, cosphi, sin2phi, cos2phi;
+  REAL8 iota = acos(pars.cosiota), theta = acos(pars.costheta);
+  REAL8 siniota = sin(iota);
+  REAL8 sintheta = sin(theta), sin2theta = sin( 2.*theta );
+  REAL4 coslambda, sinlambda;
+  REAL8 sin2lambda = sin( 2.*pars.lambda );
+  REAL8 f2_r;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
   REAL8Vector *sidDayFrac1 = NULL;
-	REAL8Vector *sidDayFrac2 = NULL;
+  REAL8Vector *sidDayFrac2 = NULL;
   
   /* set lookup table parameters */
   psteps = *(INT4*)LALInferenceGetVariable( data->dataParams, "psiSteps" );
@@ -770,26 +778,32 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
   /* get the sidereal time since the initial data point % sidereal day */
   sidDayFrac1 = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
                                                         "siderealDay" );
-  /*how do I handle phi0?*/
-  sin_cos_LUT( &sinphi, &cosphi, 0.5*pars.phi0 );
-  sin_cos_LUT( &sin2phi, &cos2phi, pars.phi0 );
+
+  /* phi0 here is rotational phase not GW phase */
+  sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
+  sin_cos_LUT( &sin2phi, &cos2phi, 2.*pars.phi0 );
+  
+  sin_cos_LUT( &sinlambda, &coslambda, pars.lambda );
+  
+  /* f^2 / r */
+  f2_r = pars.f0 * pars.f0 / pars.r;
   
   /************************* CREATE MODEL *************************************/
   /* This model is a complex heterodyned time series for a pinned superfluid neutron
-	star emitting at its roation frequency and twice its rotation frequency 
-	(as defined in Jones 2009):
+     star emitting at its roation frequency and twice its rotation frequency 
+     (as defined in Jones 2009):
 
    ****************************************************************************/
-  Xplusf = ((pars.f0*pars.f0)/(2*pars.r)) * sin(acos(pars.cosiota))*pars.cosiota;
-  Xcrossf =((pars.f0*pars.f0)/(2*pars.r)) * sin(acos(pars.cosiota));
-  Xplus2f = ((pars.f0*pars.f0)/pars.r) * (1.+(pars.cosiota*pars.cosiota));
-  Xcross2f = ((2*pars.f0*pars.f0)/pars.r) * pars.cosiota;
+  Xplusf = -( f2_r / 2. ) * siniota * pars.cosiota;
+  Xcrossf = -( f2_r / 2. ) * siniota;
+  Xplus2f = -f2_r * ( 1. + pars.cosiota * pars.cosiota );
+  Xcross2f = -f2_r * 2. * pars.cosiota;
   
-  A1=(pars.I21*(cos(pars.lambda)*cos(pars.lambda)) - pars.I31 )* sin( 2*(acos(pars.costheta)) );
-  A2=pars.I21*sin(2*pars.lambda)*sin( acos(pars.costheta) );
-  B1=(pars.I21*((cos(pars.lambda)*cos(pars.lambda))*(pars.costheta*pars.costheta) -(sin(pars.lambda)*sin(pars.lambda))) ) 
-    + ( pars.I31*(sin(acos(pars.costheta))*sin(acos(pars.costheta))) );
-  B2=pars.I21*sin(2*pars.lambda)*(pars.costheta);
+  A1 = ( pars.I21 * coslambda * coslambda - pars.I31 ) * sin2theta;
+  A2 = pars.I21 * sin2lambda * sin( theta );
+  B1 = pars.I21 * ( coslambda * coslambda * pars.costheta * pars.costheta 
+    - sinlambda * sinlambda ) + pars.I31 * sintheta * sintheta;
+  B2 = pars.I21 * sin2lambda * pars.costheta;
   
   /*fprintf(stderr,"A1: %e, A2: %e, B1: %e, B2: %e\n", A1, A2, B1, B2);
   fprintf(stderr,"theta: %e, I31: %e\n", pars.theta, pars.I31);*/
@@ -845,13 +859,12 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
     /* create the complex signal amplitude model */
     /*at f*/
     data->compModelData->data->data[i].re =
-    ( plus*Xplusf*((A1*cosphi)-(A2*sinphi)) ) + 
-    ( cross*Xcrossf*((A2*cosphi)+(A1*sinphi)) );
+      plus * Xplusf * ( A1 * cosphi - A2 * sinphi ) + 
+      cross * Xcrossf * ( A2 * cosphi + A1 * sinphi );
     
     data->compModelData->data->data[i].im =
-    ( plus*Xplusf*((A2*cosphi)+(A1*sinphi)) ) + 
-    ( cross*Xcrossf*((A2*sinphi)-(A1*cosphi)) );
-
+      plus * Xplusf * ( A2 * cosphi + A1 * sinphi ) + 
+      cross * Xcrossf * ( A2 * sinphi - A1 * cosphi );
   }
   /*--------------------------------------------------------------------------*/
   /* set model for 2f component */
@@ -892,12 +905,12 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars, LALInferenceIFOData
     
     /* create the complex signal amplitude model at 2f*/
     data->next->compModelData->data->data[i].re =
-      (plus*Xplus2f*((B1*cos2phi)-(B2*sin2phi)) ) +
-      (cross*Xcross2f*((B2*cos2phi)+(B1*sin2phi)) );
+      plus * Xplus2f * ( B1 * cos2phi - B2 * sin2phi ) +
+      cross * Xcross2f * ( B2 * cos2phi + B1 * sin2phi );
     
     data->next->compModelData->data->data[i].im =
-      (plus*Xplus2f*((B2*cos2phi)+(B1*sin2phi)) )-
-      ( cross*Xcross2f*((B1*cos2phi)+(B2*sin2phi)) );
+      plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
+      cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi );
   }
   /*--------------------------------------------------------------------------*/
 }
