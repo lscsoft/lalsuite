@@ -147,10 +147,8 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
         if dumpfile is not None:
           fh=open(dumpfile,'w')
           for co in output.keys():
-            fh.write('%s '%(str(co)))
             for ifo in output[co].ifos:
-              fh.write('%s %s %s %s %s '%(ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
-            fh.write('\n')
+              fh.write('%s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
           fh.close()
 	return output.values()
 
@@ -357,7 +355,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     # Set up the parallel engine nodes
     enginenodes=[]
     for i in range(Npar):
-      enginenodes.append(self.add_engine_node(event))
+      n=self.add_engine_node(event)
+      if n is not None: enginenodes.append(n)
+    if len(enginenodes)==0:
+      return False
     myifos=enginenodes[0].get_ifos()
     # Merge the results together
     pagedir=os.path.join(self.webdir,evstring,myifos)
@@ -397,6 +398,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         self.add_node(coherence_node)
         respagenode.add_parent(coherence_node)
         respagenode.set_bayes_coherent_incoherent(coherence_node.get_output_files()[0])
+    return True
 	
   def add_full_analysis_lalinferencemcmc(self,event):
     """
@@ -477,6 +479,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
     node.set_dataseed(self.dataseed+event.event_id)
+    gotdata=0
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
         slide=event.timeslides[ifo]
@@ -484,7 +487,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         slide=0
       for seg in self.segments[ifo]:
         if end_time >= seg.start() and end_time < seg.end():
-          node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+          gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+    if gotdata==0:
+      'Print no data found for time %f'%(end_time)
+      return None
     if extra_options is not None:
       for opt in extra_options.keys():
 	    node.add_var_arg('--'+opt+' '+extra_options[opt])
@@ -643,8 +649,10 @@ class EngineNode(pipeline.CondorDAGNode):
         self.add_parent(parent)
         self.cachefiles[ifo]=parent.get_output_files()[0]
         self.add_input_file(self.cachefiles[ifo])
-    self.timeslides[ifo]=timeslide
-    self.channels[ifo]=channelname
+        self.timeslides[ifo]=timeslide
+        self.channels[ifo]=channelname
+        return 1
+    else: return 0
   
   def finalize(self):
     if not self.__finaldata:

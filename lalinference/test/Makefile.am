@@ -46,7 +46,6 @@ check_PROGRAMS = \
 TESTS = \
 	LALInferenceTest \
 	LALInferencePriorTest \
-	LALInferenceLikelihoodTest \
 	LALInferenceKDTest \
 	$(XMLPRG)
 
