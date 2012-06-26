@@ -191,6 +191,21 @@ void XLALComputeDetAMResponse(
 	const double gmst
 );
 
+
+void XLALComputeDetAMResponseMetric(
+  double *fplus,
+  double *fcross,
+  double *fb,
+  double *fl,
+  double *fx,
+  double *fy,
+  REAL4 D[3][3],
+  const double ra,
+  const double dec,
+  const double psi,
+  const double gmst
+);
+
 /*
  * Gives a time series of the detector's response to plus and cross
  * polarization
@@ -211,6 +226,22 @@ int XLALComputeDetAMResponseSeries(
 	const LIGOTimeGPS *start,
 	const double deltaT,
 	const int n
+);
+
+int XLALComputeDetAMResponseMetricSeries(
+  REAL4TimeSeries **fplus,
+  REAL4TimeSeries **fcross,
+  REAL4TimeSeries **fb,
+  REAL4TimeSeries **fl,
+  REAL4TimeSeries **fx,
+  REAL4TimeSeries **fy,
+  REAL4 D[3][3],
+  const double ra,
+  const double dec,
+  const double psi,
+  const LIGOTimeGPS *start,
+  const double deltaT,
+  const int n  
 );
 
 /*@}*/

@@ -91,6 +91,96 @@ void XLALComputeDetAMResponse(
 }
 
 
+/**
+ *
+ * An implementation of the detector response for all six tensor, vector and
+ * scalar polarisation modes of general metric theories of gravity. We follow
+ * the convention of [\ref Blaut2012] (this is also equivalent to the
+ * Equations in [\ref ABCF2001] and  [\ref Nishizawa2009] in albeit with a
+ * rotated set of coordinates), but with [\ref Blaut]'s \f$\theta = \pi/2 -
+ * dec\f$ and \f$\phi = ra-GMST\f$ rather than the gha = gmst - ra used here.
+ *
+ * The values computed are the tensor mode response, F+ and Fx ("cross"), the
+ * scalar breathing and longitudinal modes, Fb and Fl, and the vector "x" and
+ * "y" modes, Fx ("x") and Fy, for a source at a specified sky position,
+ * polarization angle, and sidereal time.  Also requires the detector's
+ * response matrix which is defined by Eq. (B6) of [ABCF] using either
+ * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
+ * direction unit vectors.
+ */
+void XLALComputeDetAMResponseMetric(
+  double *fplus,          /**< Returned value of F+ */
+  double *fcross,         /**< Returned value of Fx (cross) */
+  double *fb,             /**< Returned value of Fb (breathing mode) */
+  double *fl,             /**< Returned value of Fl (scalar longitudinal */
+  double *fx,             /**< Returned value of Fx ("x" vector mode) */
+  double *fy,             /**< Returned value of Fy (y vector mode) */
+
+  REAL4 D[3][3],          /**< Detector response 3x3 matrix */
+  const double ra,        /**< Right ascention of source (radians) */
+  const double dec,       /**< Declination of source (radians) */
+  const double psi,       /**< Polarization angle of source (radians) */
+  const double gmst       /**< Greenwich mean sidereal time (radians) */
+)
+{
+  int i;
+  double X[3];
+  double Y[3];
+  double Z[3];
+
+  /* Greenwich hour angle of source (radians). */
+  const double gha = gmst - ra;
+
+  /* pre-compute trig functions */
+  const double cosgha = cos(gha);
+  const double singha = sin(gha);
+  const double cosdec = cos(dec);
+  const double sindec = sin(dec);
+  const double cospsi = cos(psi);
+  const double sinpsi = sin(psi);
+
+  /* Eq. (B4) of [ABCF].  Note that dec = pi/2 - theta, and gha =
+   * -phi where theta and phi are the standard spherical coordinates
+   * used in that paper. */
+  X[0] = -cospsi * singha - sinpsi * cosgha * sindec;
+  X[1] = -cospsi * cosgha + sinpsi * singha * sindec;
+  X[2] =  sinpsi * cosdec;
+
+  /* Eq. (B5) of [ABCF].  Note that dec = pi/2 - theta, and gha =
+   * -phi where theta and phi are the standard spherical coordinates
+   * used in that paper. */
+  Y[0] =  sinpsi * singha - cospsi * cosgha * sindec;
+  Y[1] =  sinpsi * cosgha + cospsi * singha * sindec;
+  Y[2] =  cospsi * cosdec; 
+  
+  /* Eqns from [Blaut2012] - but converted from Blaut's theta = pi/2 - dec
+   * given cos(dec) = sin(theta) and cos(theta) = sin(dec), and Blaut's phi = ra
+   * - gmst, so cos(phi) = cos(gha) and sin(phi) = -sin(gha). This is consistent
+   * with the convention in XLALComputeDetAMResponse.
+   */
+  Z[0] = -cosdec * cosgha;
+  Z[1] = cosdec * singha;
+  Z[2] = -sindec;
+
+  /* Now compute Eq. (B7) of [ABCF] for each polarization state, i.e.,
+   * with s+=1 and sx=0 to get F+, with s+=0 and sx=1 to get Fx */
+  *fplus = *fcross = *fb = *fl = *fx = *fy = 0.0;
+  for(i = 0; i < 3; i++) {
+    const double DX = D[i][0] * X[0] + D[i][1] * X[1] + D[i][2] * X[2];
+    const double DY = D[i][0] * Y[0] + D[i][1] * Y[1] + D[i][2] * Y[2];
+    const double DZ = D[i][0] * Z[0] + D[i][1] * Z[1] + D[i][2] * Z[2];
+
+    *fplus  += X[i] * DX - Y[i] * DY;
+    *fcross += X[i] * DY + Y[i] * DX;
+
+    /* scalar and vector modes from [Nishizawa2009] */
+    *fb += X[i] * DX + Y[i] * DY;
+    *fl += LAL_SQRT2 * Z[i] * DZ;
+    *fx += X[i] * DZ + Z[i] * DX;
+    *fy += Y[i] * DZ + Z[i] * DY;
+  }
+}
+
 /** \deprecated Use XLALComputeDetAMResponse() instead.
  */
 void LALComputeDetAMResponse(LALStatus * status, LALDetAMResponse * pResponse, const LALDetAndSource * pDetAndSrc, const LIGOTimeGPS * gps)
@@ -166,6 +256,82 @@ int XLALComputeDetAMResponseSeries(
 	return 0;
 }
 
+/** Computes REAL4TimeSeries containing time series of the full general
+ * metric theory of gravity response amplitudes.
+ * \see XLALComputeDetAMResponseMetric() for more details.
+ */   
+int XLALComputeDetAMResponseMetricSeries(
+  REAL4TimeSeries **fplus,
+  REAL4TimeSeries **fcross,
+  REAL4TimeSeries **fb,
+  REAL4TimeSeries **fl,
+  REAL4TimeSeries **fx,
+  REAL4TimeSeries **fy,
+  REAL4 D[3][3],
+  const double ra,
+  const double dec,
+  const double psi,
+  const LIGOTimeGPS *start,
+  const double deltaT,
+  const int n
+)
+{
+  LIGOTimeGPS t;
+  double gmst;
+  int i;
+  double p, c, b, l, x, y;
+
+  *fplus = XLALCreateREAL4TimeSeries("plus", start, 0.0, deltaT,
+                                     &lalDimensionlessUnit, n);
+  *fcross = XLALCreateREAL4TimeSeries("cross", start, 0.0, deltaT,
+                                      &lalDimensionlessUnit, n);
+  *fb = XLALCreateREAL4TimeSeries("b", start, 0.0, deltaT,
+                                  &lalDimensionlessUnit, n);
+  *fl = XLALCreateREAL4TimeSeries("l", start, 0.0, deltaT,
+                                  &lalDimensionlessUnit, n);
+  *fx = XLALCreateREAL4TimeSeries("x", start, 0.0, deltaT,
+                                  &lalDimensionlessUnit, n);
+  *fy = XLALCreateREAL4TimeSeries("y", start, 0.0, deltaT,
+                                  &lalDimensionlessUnit, n);
+  
+  if(!*fplus || !*fcross || !*fb || !*fl || !*fx || !*fy) {
+    XLALDestroyREAL4TimeSeries(*fplus);
+    XLALDestroyREAL4TimeSeries(*fcross);
+    XLALDestroyREAL4TimeSeries(*fb);
+    XLALDestroyREAL4TimeSeries(*fl);
+    XLALDestroyREAL4TimeSeries(*fx);
+    XLALDestroyREAL4TimeSeries(*fy);
+
+    *fplus = *fcross = *fb = *fl = *fx = *fy = NULL;
+    XLAL_ERROR(XLAL_EFUNC);
+  }
+
+  for(i = 0; i < n; i++) {
+    t = *start;
+    gmst = XLALGreenwichMeanSiderealTime(XLALGPSAdd(&t, i * deltaT));
+    if(XLAL_IS_REAL8_FAIL_NAN(gmst)) {
+      XLALDestroyREAL4TimeSeries(*fplus);
+      XLALDestroyREAL4TimeSeries(*fcross);
+      XLALDestroyREAL4TimeSeries(*fb);
+      XLALDestroyREAL4TimeSeries(*fl);
+      XLALDestroyREAL4TimeSeries(*fx);
+      XLALDestroyREAL4TimeSeries(*fy);
+   
+      *fplus = *fcross = *fb = *fl = *fx = *fy = NULL;
+      XLAL_ERROR(XLAL_EFUNC);
+    }
+    XLALComputeDetAMResponseMetric(&p, &c, &b, &l, &x, &y, D, ra, dec, psi,
+                                   gmst);
+    (*fplus)->data->data[i] = p;
+    (*fcross)->data->data[i] = c;
+    (*fb)->data->data[i] = b;
+    (*fl)->data->data[i] = l;
+    (*fx)->data->data[i] = x;
+    (*fy)->data->data[i] = y;
+  }
+
+  return 0;
+}
 
 /** Computes REAL4TimeSeries containing time series of response amplitudes.
  * \deprecated Use XLALComputeDetAMResponseSeries() instead.
