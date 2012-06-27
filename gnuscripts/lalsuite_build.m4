@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 38
+# serial 39
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -87,7 +87,17 @@ AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
   DISTCHECK_CONFIGURE_FLAGS=
   for arg in ${ac_configure_args}; do
     case ${arg} in
-      (\'--enable-*\'|\'--disable-*\'|\'--with-*\'|\'--without-*\')
+      (\'--enable-*\'|\'--disable-*\')
+        # save any --enable/--disable arguments
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+      (\'--with-*\'|\'--without-*\')
+        # save any --with/--without arguments
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
+      (\'--*\')
+        # skip all other ./configure arguments
+       : ;;
+      (\'*=*\')
+        # save any environment variables given to ./configure
         DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
     esac
   done
