@@ -137,7 +137,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
       
-      logliketmp -= chunkLength*log(chiSquare) + LAL_LN2 + (chunkLength-1) + gsl_sf_lnfact(chunkLength);
+      logliketmp -= chunkLength*log(chiSquare) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);
       
       count++;
     }
