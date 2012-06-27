@@ -1227,25 +1227,25 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     /* Output waveform raw h-plus mode */
     if( (ppt=LALInferenceGetProcParamVal(commandLine,"--rawwaveform")) )
     {
-	rawWaveform=fopen(ppt->value,"w");
-	bufferN = (UINT4) (bufferLength/IFOdata->timeData->deltaT);
-	memcpy(&bufferStart,&IFOdata->timeData->epoch,sizeof(LIGOTimeGPS));
-	XLALGPSAdd(&bufferStart,(REAL8) IFOdata->timeData->data->length * IFOdata->timeData->deltaT);
-	XLALGPSAdd(&bufferStart,-bufferLength);
-	COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&IFOdata->timeData->epoch,0.0,IFOdata->freqData->deltaF,&strainPerCount,IFOdata->freqData->data->length);
-	if(!resp) XLAL_ERROR_VOID(XLAL_EFUNC);
-	injectionBuffer=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("None",&bufferStart, 0.0, IFOdata->timeData->deltaT,&lalADCCountUnit, bufferN);
-	if(!injectionBuffer) XLAL_ERROR_VOID(XLAL_EFUNC);
-	/* This marks the sample in which the real segment starts, within the buffer */
-	INT4 realStartSample=(INT4)((IFOdata->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/IFOdata->timeData->deltaT);
-	realStartSample+=(INT4)((IFOdata->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/IFOdata->timeData->deltaT);
-	LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
-	if(status.statusCode) REPORTSTATUS(&status);
-	XLALDestroyCOMPLEX8FrequencySeries(resp);
-	injectionBuffer=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injectionBuffer,realStartSample,IFOdata->timeData->data->length);
-	for(j=0;j<injectionBuffer->data->length;j++) fprintf(rawWaveform,"%.6f\t%g\n", XLALGPSGetREAL8(&IFOdata->timeData->epoch) + IFOdata->timeData->deltaT*j, injectionBuffer->data->data[j]);
-	fclose(rawWaveform);
-	XLALDestroyREAL4TimeSeries(injectionBuffer);
+        rawWaveform=fopen(ppt->value,"w");
+        bufferN = (UINT4) (bufferLength/IFOdata->timeData->deltaT);
+        memcpy(&bufferStart,&IFOdata->timeData->epoch,sizeof(LIGOTimeGPS));
+        XLALGPSAdd(&bufferStart,(REAL8) IFOdata->timeData->data->length * IFOdata->timeData->deltaT);
+        XLALGPSAdd(&bufferStart,-bufferLength);
+        COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&IFOdata->timeData->epoch,0.0,IFOdata->freqData->deltaF,&strainPerCount,IFOdata->freqData->data->length);
+        if(!resp) XLAL_ERROR_VOID(XLAL_EFUNC);
+        injectionBuffer=(REAL4TimeSeries *)XLALCreateREAL4TimeSeries("None",&bufferStart, 0.0, IFOdata->timeData->deltaT,&lalADCCountUnit, bufferN);
+        if(!injectionBuffer) XLAL_ERROR_VOID(XLAL_EFUNC);
+        /* This marks the sample in which the real segment starts, within the buffer */
+        INT4 realStartSample=(INT4)((IFOdata->timeData->epoch.gpsSeconds - injectionBuffer->epoch.gpsSeconds)/IFOdata->timeData->deltaT);
+        realStartSample+=(INT4)((IFOdata->timeData->epoch.gpsNanoSeconds - injectionBuffer->epoch.gpsNanoSeconds)*1e-9/IFOdata->timeData->deltaT);
+        LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
+        if(status.statusCode) REPORTSTATUS(&status);
+        XLALDestroyCOMPLEX8FrequencySeries(resp);
+        injectionBuffer=(REAL4TimeSeries *)XLALCutREAL4TimeSeries(injectionBuffer,realStartSample,IFOdata->timeData->data->length);
+        for(j=0;j<injectionBuffer->data->length;j++) fprintf(rawWaveform,"%.6f\t%g\n", XLALGPSGetREAL8(&IFOdata->timeData->epoch) + IFOdata->timeData->deltaT*j, injectionBuffer->data->data[j]);
+        fclose(rawWaveform);
+        XLALDestroyREAL4TimeSeries(injectionBuffer);
     }
     return;
 }

@@ -2196,3 +2196,37 @@ static INT4 checkREAL8Value(REAL8 val)
   if(isnan(val)) return 1;
   return 0;
 }
+
+void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename)
+{
+    UINT4 i;
+    FILE *dumpfile=NULL;
+    char basename[1024]="template_dump";
+    char filename[1024]="";
+    if(basefilename!=NULL)
+    {
+        sprintf(basename,"%s",basefilename);
+    }
+    LALInferenceIFOData *data=state->data;
+    while(data){
+        if(data->timeModelhPlus && data->timeModelhCross){
+            sprintf(filename,"%s_%s_time.txt",basename,data->name);
+            dumpfile=fopen(filename,"w");
+            REAL8 epoch = data->timeModelhPlus->epoch.gpsSeconds + 1e-9*data->timeModelhPlus->epoch.gpsNanoSeconds;
+            REAL8 dt=data->timeModelhPlus->deltaT;
+            for(i=0;i<data->timeModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e\n",epoch+i*dt,data->timeModelhPlus->data->data[i],data->timeModelhCross->data->data[i]);
+            fclose(dumpfile);
+            fprintf(stdout,"Dumped file %s\n",filename);
+        }
+        if(data->freqModelhPlus && data->freqModelhCross){
+            sprintf(filename,"%s_%s_freq.txt",basename,data->name);
+            dumpfile=fopen(filename,"w");
+            REAL8 fLow=data->freqModelhPlus->f0;
+            REAL8 df=data->freqModelhPlus->deltaF;
+            for(i=0;i<data->freqModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,data->freqModelhPlus->data->data[i].re, data->freqModelhPlus->data->data[i].im,data->freqModelhCross->data->data[i].re, data->freqModelhCross->data->data[i].im);
+            fclose(dumpfile);
+            fprintf(stdout,"Dumped file %s\n",filename);
+        }
+        data=data->next;
+    }
+}

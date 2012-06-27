@@ -195,6 +195,7 @@ int main(int argc, char *argv[])
  state->prior=&LALInferenceAnalyticNullPrior;
  state->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
  LALInferencePrintInjectionSample(state);
+ LALInferenceDumpWaveforms(state,"injection_likelihood");
  REAL8 *logL=LALInferenceGetVariable(state->currentParams,"logL");
  fprintf(stdout,"injection log likelihood = %lf\n",*logL);
  if(*logL<1e-4) return(0);

@@ -607,5 +607,10 @@ REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname
 /** Sanity check the structures in the given state. Will scan data for infinities and nans, and look for null pointers. */
 INT4 LALInferenceSanityCheck(LALInferenceRunState *state);
 
+/** Dump all waveforms from the ifodata structure. (currently: timeData, freqData)
+ basefilename is optional text to append to file names
+ */
+void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename);
+
 
 #endif

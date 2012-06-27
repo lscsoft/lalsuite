@@ -260,8 +260,14 @@ LALSSInjectTimeSeries( LALStatus       *stat,
   /* Compute initial value of i, and correct to ensure we will never
      index either array out of its bounds. */
   i = (INT4)( -offset / dt );
+  /* Remainder of the offset that is not integer
+     Is a fraction of dt */
+  REAL8 off_remainder = (REAL8)i - (REAL8)(-offset)/(REAL8)dt;
+
+  /* Check that i is inside the vector */
   if ( i < 0 )
     i = 0;
+  /* Checks that i is positive (because of definition of i which rounds towards 0) */
   while ( offset + i*dt < 0.0 )
     i++;
   if ( i >= (INT4)( output->data->length ) )
@@ -273,7 +279,7 @@ LALSSInjectTimeSeries( LALStatus       *stat,
   n = (INT4)( ( signalvec->data->length - offset ) / dt );
   if ( n > (INT4)( output->data->length ) )
     n = output->data->length;
-  while ( offset + n*dt > signalvec->data->length )
+  while ( offset + n*dt +off_remainder*dt > signalvec->data->length )
     n--;
   if ( n <= 0 )
     LALWarning( stat, "Signal ends before the start of the output"
@@ -290,7 +296,7 @@ LALSSInjectTimeSeries( LALStatus       *stat,
       ( 1.0 - frac )*(signalvec->data->data[j]);     value */
 
     /* Extract the nearest signal sample. */
-    INT4 j = (INT4)floor( offset + i*dt + 0.5 );
+    INT4 j = (INT4)floor( offset + i*dt + off_remainder*dt  );
     REAL4 y = signalvec->data->data[j];
 
     /* Add the signal to the output. */
