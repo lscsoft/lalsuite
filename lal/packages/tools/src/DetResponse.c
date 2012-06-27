@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2007 David Chin, Jolien Creighton, Kipp Cannon, Peter Shawhan
+*  Copyright (C) 2012 Matthew Pitkin
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -108,7 +109,7 @@ void XLALComputeDetAMResponse(
  * Table 1 of [\ref ABCF2001] or Eqs. (B11)--(B17) to compute the arm
  * direction unit vectors.
  */
-void XLALComputeDetAMResponseMetric(
+void XLALComputeDetAMResponseExtraModes(
   double *fplus,          /**< Returned value of F+ */
   double *fcross,         /**< Returned value of Fx (cross) */
   double *fb,             /**< Returned value of Fb (breathing mode) */
@@ -258,9 +259,9 @@ int XLALComputeDetAMResponseSeries(
 
 /** Computes REAL4TimeSeries containing time series of the full general
  * metric theory of gravity response amplitudes.
- * \see XLALComputeDetAMResponseMetric() for more details.
+ * \see XLALComputeDetAMResponseExtraModes() for more details.
  */   
-int XLALComputeDetAMResponseMetricSeries(
+int XLALComputeDetAMResponseExtraModesSeries(
   REAL4TimeSeries **fplus,
   REAL4TimeSeries **fcross,
   REAL4TimeSeries **fb,
@@ -320,8 +321,8 @@ int XLALComputeDetAMResponseMetricSeries(
       *fplus = *fcross = *fb = *fl = *fx = *fy = NULL;
       XLAL_ERROR(XLAL_EFUNC);
     }
-    XLALComputeDetAMResponseMetric(&p, &c, &b, &l, &x, &y, D, ra, dec, psi,
-                                   gmst);
+    XLALComputeDetAMResponseExtraModes( &p, &c, &b, &l, &x, &y, D, ra, dec, psi,
+                                        gmst );
     (*fplus)->data->data[i] = p;
     (*fcross)->data->data[i] = c;
     (*fb)->data->data[i] = b;

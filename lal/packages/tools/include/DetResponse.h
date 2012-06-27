@@ -1,5 +1,6 @@
 /*
 *  Copyright (C) 2007 David Chin, Jolien Creighton, Kipp Cannon, Teviet Creighton
+*  Copyright (C) 2012 Matthew Pitkin
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -192,7 +193,7 @@ void XLALComputeDetAMResponse(
 );
 
 
-void XLALComputeDetAMResponseMetric(
+void XLALComputeDetAMResponseExtraModes(
   double *fplus,
   double *fcross,
   double *fb,
@@ -228,7 +229,7 @@ int XLALComputeDetAMResponseSeries(
 	const int n
 );
 
-int XLALComputeDetAMResponseMetricSeries(
+int XLALComputeDetAMResponseExtraModesSeries(
   REAL4TimeSeries **fplus,
   REAL4TimeSeries **fcross,
   REAL4TimeSeries **fb,
