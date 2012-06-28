@@ -52,8 +52,8 @@ heterodyned data, e.g.
 ...
 
 Most commonly such data will have a sample rate of 1/60 Hz, giving a bandwidth
-of the same amount, but the code can accept any rate, or downsample data by a
-given factor.
+of the same amount, but the code can accept any rate, or downsample data (by
+averaging) by a given factor.
 
 The code also requires that you specify which parameters are to be searched
 over, and the prior ranges over these. Any of the signal parameters can be
@@ -558,7 +558,7 @@ void initialiseAlgorithm( LALInferenceRunState *runState )
  * the same order at the associated detector from which they came given by the
  * \c detectors command. The data can be downsampled by a factor given by the \c
  * downsample-factor command line argument, but by default no down-sampling is
- * applied.
+ * applied. The downsampling is performed by averaging points.
  * 
  * The function also check that valid Earth and Sun ephemeris files (from the
  * lalpulsar suite) are set with the \c ephem-earth and \c ephem-sun arguments,
@@ -1006,12 +1006,66 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       /* read in data */
       temptimes = XLALCreateREAL8Vector( 1 );
 
+      /* variables to aid downsampling of data */
+      REAL8 tmpre = 0., tmpim = 0., timetmp = 0., dtcur = 0., dtprev = 0.;
+      REAL8 tnow = 0., tprev = 0.;
+      
       /* read in data */
       while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
         j++;
         
-        /* downsample if required */
-        if ( j%downs != 0 ) continue;
+        tnow = times;
+        
+        /* downsample by averaging if required */
+        if ( j%downs != 0 ){
+          if ( j > 1 ) dtcur = tnow - tprev;
+
+          tmpre += dataVals.re;
+          tmpim += dataVals.im;
+          timetmp += times;
+          tprev = tnow;
+          
+          /* if timesteps between points aren't equal then reset and move on
+             i.e. we only want to use contiguous data segments with equal time
+             spacings */
+          if ( j > 2 && dtcur != dtprev ){
+            timetmp = times;
+            tmpre = dataVals.re;
+            tmpim = dataVals.im;
+            dtcur = dtprev = 0.;
+            j = 1;
+          }
+          
+          dtprev = dtcur;
+          
+          continue;
+        }
+        else{
+          /* if downsampling is not occuring just set individual values */
+          if ( !tmpre && !tmpim && !timetmp ){
+            tmpre = dataVals.re;
+            tmpim = dataVals.im;
+            timetmp = times;
+          }
+          else{ /* if downsampling get averages */
+            if( j > 1 ) dtcur = tnow - tprev;
+            
+            /* check for contiguous segments */
+            if( j > 2 && dtcur != dtprev ){
+              timetmp = times;
+              tmpre = dataVals.re;
+              tmpim = dataVals.im;
+              dtcur = dtprev = 0.;
+              j = 1;
+              continue;
+            }
+            
+            /* add on final point and average */
+            tmpre = (tmpre + dataVals.re) / (REAL8)downs;
+            tmpim = (tmpim + dataVals.im ) / (REAL8)downs;
+            timetmp = (timetmp + times) / (REAL8)downs;
+          }
+        }
         
         counter++;
         
@@ -1024,11 +1078,15 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
           
         temptimes = XLALResizeREAL8Vector( temptimes, counter );
 
-        temptimes->data[counter-1] = times;
-        ifodata->compTimeData->data->data[counter-1].re = dataVals.re;
-        ifodata->compTimeData->data->data[counter-1].im = dataVals.im;
+        temptimes->data[counter-1] = timetmp;
+        ifodata->compTimeData->data->data[counter-1].re = tmpre;
+        ifodata->compTimeData->data->data[counter-1].im = tmpim;
+        
+        tmpre = tmpim = timetmp = 0.;
+        dtcur = dtprev = 0.;
+        j = 0;
       }
-
+      
       fclose(fp);
 
       datalength = counter;
@@ -3726,21 +3784,21 @@ void get_loudest_snr( LALInferenceRunState *runState ){
   /* get SNR of loudest point and print out to file */
   data = runState->data;
   
-  FILE *fp = NULL;
-  fp = fopen("max_like_signal.txt", "w");
+  //FILE *fp = NULL;
+  //fp = fopen("max_like_signal.txt", "w");
   
   while( data ){
     REAL8 snrval = calculate_time_domain_snr( data );
     
-    UINT4 length = data->compModelData->data->length;
+    //UINT4 length = data->compModelData->data->length;
     
     /* print out maxlikelihood template */
-    for ( UINT4 j=0; j < length; j++ ){
-      fprintf(fp, "%lf\t%le\t%le\n",
-              XLALGPSGetREAL8( &data->dataTimes->data[j] ),
-              data->compModelData->data->data[j].re,
-              data->compModelData->data->data[j].im );
-    }
+    //for ( UINT4 j=0; j < length; j++ ){
+    //  fprintf(fp, "%lf\t%le\t%le\n",
+    //          XLALGPSGetREAL8( &data->dataTimes->data[j] ),
+    //          data->compModelData->data->data[j].re,
+    //          data->compModelData->data->data[j].im );
+    //}
     
     ndats++;
     
@@ -3752,7 +3810,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     data = data->next;
   }
  
-  fclose(fp);
+  //fclose(fp);
  
   /* print out multi-detector/multi-datastream SNR value */
   if ( ndats > 1 ) fprintf(fpsnr, "%le\n", sqrt(snrmulti));
