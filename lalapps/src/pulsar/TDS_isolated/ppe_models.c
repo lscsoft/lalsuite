@@ -973,8 +973,8 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
     /*Sum the logL over the datachunks*/
     for (i=0; i<chunkLengths->length; i++){
       chunkLength = (REAL8)chunkLengths->data[i];
-   
-      logL -= chunkLength * log(sumDat->data[i]);
+
+      logL -= chunkLength * log(sumDat->data[i]) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);
     }
 
     /* if I am dealing with any model with more than one datastream, I will
