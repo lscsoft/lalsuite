@@ -258,7 +258,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
    * otherwise the gsl-integration fails to converge in some cases.
    */
   double epsabs = 0;
-  size_t neval;
+  const size_t limit = 64;
+  gsl_integration_workspace *wksp = NULL;
   int stat;
 
   integrand.params = (void*)&par;
@@ -279,6 +280,10 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
   REAL8 res = 0;
   REAL8 abserr2 = 0;
 
+  /* allocate workspace for adaptive integration */
+  wksp = gsl_integration_workspace_alloc(limit);
+  XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
+
   integrand.function = &CW_am1_am2_Phi_i_Phi_j;
   for (n=0; n < Nseg; n ++ )
     {
@@ -286,14 +291,14 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
       REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
       REAL8 err_n, res_n;
 
-      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &err_n, &neval) );
+      XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &err_n) );
       /* NOTE: we don't fail if the requested level of accuracy was not reached, rather we only output a warning
        * and try to estimate the final accuracy of the integral
        */
       if ( stat != 0 )
         {
-          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qng()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", __func__ );
-          XLALPrintWarning ("Segment n=%d, neval=%d: Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n", n, neval, res_n, err_n, fabs(err_n/res_n), epsrel);
+          XLALPrintWarning ( "\n%s: GSL-integration 'gsl_integration_qag()' of <am1_am2_Phi_i Phi_j> did not reach requested precision!\n", __func__ );
+          XLALPrintWarning ("Segment n=%d, Result = %g, abserr=%g ==> relerr = %.2e > %.2e\n", n, res_n, err_n, fabs(err_n/res_n), epsrel);
           /* XLAL_ERROR_REAL8( XLAL_EFUNC ); */
         }
 
@@ -305,6 +310,8 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
   REAL8 relerr = sqrt(abserr2) / fabs(res);
   if ( relerr_max )
     (*relerr_max) = relerr;
+
+  gsl_integration_workspace_free(wksp);
 
   return res;
 
@@ -869,9 +876,14 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 
   double epsabs = 1e-3; 	/* we need an abs-cutoff as well, as epsrel can be too restrictive for small integrals */
   double abserr, maxrelerr = 0;
-  size_t neval;
+  const size_t limit = 64;
+  gsl_integration_workspace *wksp = NULL;
   double av_ij = 0, av_i = 0, av_j = 0;
   double av_ij_err = 0, av_i_err = 0, av_j_err = 0;
+
+  /* allocate workspace for adaptive integration */
+  wksp = gsl_integration_workspace_alloc(limit);
+  XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
 
   for (n=0; n < Nseg; n ++ )
     {
@@ -881,11 +893,11 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 
       /* compute <phi_i phi_j> */
       integrand.function = &CW_am1_am2_Phi_i_Phi_j;
-      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
+      XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( outputIntegrand ) printf ("\n");
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i Phi_j> failed! seg=%d, av_ij_n=%g, abserr=%g, neval=%d\n",
-                         __func__, n, res_n, abserr, neval);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i Phi_j> failed! seg=%d, av_ij_n=%g, abserr=%g\n",
+                         __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       av_ij += res_n;
@@ -895,10 +907,10 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
       /* compute <phi_i> */
       integrand.function = &CWPhaseDeriv_i;
       par.deriv = par.deriv1;
-      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
+      XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_i> failed! seg=%d, av_i_n=%g, abserr=%g, neval=%d\n",
-                         __func__, n, res_n, abserr, neval);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_i> failed! seg=%d, av_i_n=%g, abserr=%g\n",
+                         __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       av_i += res_n;
@@ -907,10 +919,10 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
       /* compute <phi_j> */
       integrand.function = &CWPhaseDeriv_i;
       par.deriv = par.deriv2;
-      XLAL_CALLGSL ( stat = gsl_integration_qng (&integrand, ti, tf, epsabs, epsrel, &res_n, &abserr, &neval) );
+      XLAL_CALLGSL ( stat = gsl_integration_qag (&integrand, ti, tf, epsabs, epsrel, limit, GSL_INTEG_GAUSS61, wksp, &res_n, &abserr) );
       if ( stat != 0 ) {
-        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qng()' of <Phi_j> failed! seg=%d, av_j_n=%g, abserr=%g, neval=%d\n",
-                         __func__, n, res_n, abserr, neval);
+        XLALPrintError ( "\n%s: GSL-integration 'gsl_integration_qag()' of <Phi_j> failed! seg=%d, av_j_n=%g, abserr=%g\n",
+                         __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
       av_j += res_n;
@@ -929,6 +941,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
     (*relerr_max) = maxrelerr;
 
   ret = av_ij - av_i * av_j;
+
+  gsl_integration_workspace_free(wksp);
 
   return ret;	/* return covariance */
 
