@@ -1279,7 +1279,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                
                INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
                per0 = params->Tobs/loc;                                          //Candidate period
-               fsig = params->fmin + (0.5*(ii-1) + jj)/params->Tcoh;             //Candidate frequency
+               fsig = params->fmin - params->dfmax + ((0.5*(ii-1) + jj) - 6.0)/params->Tcoh;             //Candidate frequency
                B = 0.5*(ii-1)/params->Tcoh;                                      //Candidate modulation depth
                
                //Test to see if any tracked lines are overlapping the candidate signal
@@ -1348,7 +1348,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
       if (highestvalloc != -1) {
          INT4 loc = ihsmaxima->locations->data[highestvalloc];
          //Candidate frequency
-         fsig = params->fmin + (0.5*(ii-1) + jjloc)/params->Tcoh;
+         fsig = params->fmin - params->dfmax + (0.5*(ii-1) + jjloc - 6.0)/params->Tcoh;
          //Candidate modulation depth
          B = 0.5*(ii-1)/params->Tcoh;
          //Candidate period
@@ -1429,7 +1429,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                
                INT4 loc = ihsmaxima->locations->data[locationinmaximastruct];
                per0 = params->Tobs/loc;                                          //Candidate period
-               fsig = params->fmin + (0.5*(jj-1) + ii)/params->Tcoh;             //Candidate frequency
+               fsig = params->fmin - params->dfmax + (0.5*(jj-1) + ii - 6.0)/params->Tcoh;             //Candidate frequency
                B = 0.5*(jj-1)/params->Tcoh;                                      //Candidate modulation depth
                
                //Test to see if any tracked lines are overlapping the candidate signal
@@ -1493,7 +1493,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
       if (highestvalloc != -1) {
          INT4 loc = ihsmaxima->locations->data[highestvalloc];
          //Candidate frequency
-         fsig = params->fmin + (0.5*(jjloc-1) + ii)/params->Tcoh;
+         fsig = params->fmin - params->dfmax + (0.5*(jjloc-1) + ii - 6.0)/params->Tcoh;
          //Candidate modulation depth
          B = 0.5*(jjloc-1)/params->Tcoh;
          //Candidate period

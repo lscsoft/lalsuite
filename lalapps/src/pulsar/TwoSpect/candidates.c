@@ -389,7 +389,7 @@ INT4 testIHScandidates(candidateVector *output, candidateVector *ihsCandidates, 
    
    for (ii=0; ii<(INT4)ihsCandidates->numofcandidates; ii++) {
       //Assess the IHS candidate if the signal is away from the band edges, the modulation depth is greater or equal to minimum allowed and less than or equal to the maximum allowed, and if the period/modulation depth combo is within allowable limits for a template to be made. We will cut the period space in the next step.
-      if ( (ihsCandidates->data[ii].fsig-ihsCandidates->data[ii].moddepth-6.0/inputParams->Tcoh)>inputParams->fmin && (ihsCandidates->data[ii].fsig+ihsCandidates->data[ii].moddepth+6.0/inputParams->Tcoh)<(inputParams->fmin+inputParams->fspan) ) {
+      if ( ihsCandidates->data[ii].fsig>=inputParams->fmin && ihsCandidates->data[ii].fsig<(inputParams->fmin+inputParams->fspan) ) {
          if ( inputParams->followUpOutsideULrange || (ihsCandidates->data[ii].fsig>=inputParams->ULfmin && ihsCandidates->data[ii].fsig<=(inputParams->ULfmin + inputParams->ULfspan) && ihsCandidates->data[ii].moddepth>=inputParams->ULmindf && ihsCandidates->data[ii].moddepth<=inputParams->ULmaxdf) ) {
             
             resetTemplateStruct(template);

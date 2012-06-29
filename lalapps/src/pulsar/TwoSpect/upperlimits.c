@@ -201,7 +201,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          
          REAL8 ihsminusnoise = ihsmaxima->maxima->data[locationinmaximavector] - totalnoise;    //IHS value minus noise
          
-         REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;        //"Signal" frequency
+         REAL8 fsig = params->fmin - params->dfmax + (0.5*(ii-1.0) + jj - 6.0)/params->Tcoh;        //"Signal" frequency
          
          if (ihsminusnoise>loudestoutlierminusnoise && 
              (fsig>=params->ULfmin && fsig<params->ULfmin+params->ULfspan) && 
@@ -271,7 +271,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          }
          
          //Store values in the upper limit struct
-         ul->fsig->data[ii-minrows] = params->fmin + (0.5*(ii-1.0) + jjbinofloudestoutlier)/params->Tcoh;
+         ul->fsig->data[ii-minrows] = params->fmin - params->dfmax + (0.5*(ii-1.0) + jjbinofloudestoutlier - 6.0)/params->Tcoh;
          ul->period->data[ii-minrows] = params->Tobs/locationofloudestoutlier;
          ul->moddepth->data[ii-minrows] = 0.5*(ii-1.0)/params->Tcoh;
          ul->ULval->data[ii-minrows] = h0;

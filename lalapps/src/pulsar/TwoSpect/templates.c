@@ -641,7 +641,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    for (ii=0; ii<(INT4)phi_actual->length; ii++) {
-      if ( fabs(params->fmin*params->Tcoh + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh)-1.0e-14 <= 1.0 ) phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin*params->Tcoh + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh)-1.0e-14)*LAL_1_PI*input.period;
+      if ( fabs(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh)-1.0e-14 <= 1.0 ) phi_actual->data[ii] = 0.5*input.period - asin(fabs(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0 + ii - input.fsig*params->Tcoh)/(input.moddepth*params->Tcoh)-1.0e-14)*LAL_1_PI*input.period;
       else phi_actual->data[ii] = 0.0;
    } /* for ii < phi_actual->length */
    
@@ -707,7 +707,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   INT4 bin0 = (INT4)round(params->fmin*params->Tcoh);      //bin number of fmin
+   INT4 bin0 = (INT4)round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0);      //bin number of fmin
    //INT4 m0 = (INT4)round(input.fsig*params->Tcoh) - bin0;   //central frequency bin
    REAL4 m0 = input.fsig*params->Tcoh - bin0;
    //INT4 mextent = (INT4)floor(input.moddepth*params->Tcoh); //Bins filled by modulation
@@ -1029,7 +1029,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //for (ii=0; ii<(INT4)output->templatedata->length; ii++) output->templatedata->data[ii] = 0.0;
    memset(output->templatedata->data, 0, sizeof(REAL4)*output->templatedata->length);
    
-   numfbins = (INT4)(round(params->fspan*params->Tcoh)+1);   //Number of frequency bins
+   numfbins = (INT4)(round(params->fspan*params->Tcoh+2.0*params->dfmax*params->Tcoh)+12+1);   //Number of frequency bins
    numffts = (INT4)sftexist->length;   //Number of FFTs
    
    REAL4Vector *psd1 = XLALCreateREAL4Vector(numfbins*numffts);
@@ -1047,7 +1047,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    REAL4 B = input.moddepth*params->Tcoh;
    
    //Bin numbers of the frequencies
-   for (ii=0; ii<numfbins; ii++) freqbins->data[ii] = (INT4)round(params->fmin*params->Tcoh) + ii;
+   for (ii=0; ii<numfbins; ii++) freqbins->data[ii] = (INT4)round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0) + ii;
    
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
@@ -1261,8 +1261,8 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
          //Search over period
          for (kk=0; kk<(INT4)trialp->length; kk++) {
             //Within boundaries?
-            if ( (trialf->data[ii]-trialb->data[jj]-6.0/params->Tcoh)>params->fmin && 
-                (trialf->data[ii]+trialb->data[jj]+6.0/params->Tcoh)<(params->fmin+params->fspan) && 
+            if ( trialf->data[ii]>=params->fmin && 
+                trialf->data[ii]<(params->fmin+params->fspan) && 
                 trialb->data[jj]<maxModDepth(trialp->data[kk], params->Tcoh) && 
                 trialp->data[kk]>minPeriod(trialb->data[jj], params->Tcoh) && 
                 trialp->data[kk]<=(0.2*params->Tobs) && 
