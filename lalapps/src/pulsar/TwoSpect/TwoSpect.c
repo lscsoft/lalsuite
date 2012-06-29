@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
    }
    
    //Existing SFTs listed in this vector
-   INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins + 2*inputParams->maxbinshift, ffdata->numffts);
+   INT4Vector *sftexist = existingSFTs(tfdata, inputParams, ffdata->numfbins, ffdata->numffts);
    if (sftexist==NULL) {
       fprintf(stderr, "\n%s: existingSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
