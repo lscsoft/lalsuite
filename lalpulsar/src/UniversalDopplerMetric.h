@@ -276,7 +276,8 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,
 
 
 int
-XLALDetectorPosVel ( PosVel3D_t *pos_vel3D,
+XLALDetectorPosVel (PosVel3D_t *spin_posvel,
+		    PosVel3D_t *orbit_posvel,
 		    const LIGOTimeGPS *tGPS,
 		    const LALDetector *site,
 		    const EphemerisData *edat,
