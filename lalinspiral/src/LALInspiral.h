@@ -373,7 +373,7 @@ tagInspiralTemplate
   REAL4  qmParameter[2];
   LALSimInspiralInteraction	interaction;
 
-  FrameAxis axisChoice;
+  LALSimInspiralFrameAxis axisChoice;
   UINT4 fixedStep;
   UINT4 inspiralOnly;
 

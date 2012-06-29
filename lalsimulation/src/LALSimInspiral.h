@@ -22,6 +22,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimIMR.h>
+#include  <lal/LALSimInspiralWaveformFlags.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -99,27 +100,6 @@ typedef enum {
   LAL_PNORDER_PSEUDO_FOUR,	/**< pseudo-4PN tuning coefficients included, true 4PN terms currently unknown */
   LAL_PNORDER_NUM_ORDER		/**< Number of elements in enum, useful for checking bounds */
  } LALPNOrder;
-
-
-
-
-/** Enumeration to specify which interaction will be used in the waveform
- * generation. Their combination also can be used by the bitwise or.
- **/
-typedef enum {
-	LAL_SIM_INSPIRAL_INTERACTION_NONE = 0, /**< No spin, tidal or other interactions */
-	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN = 1, /**< Leading order spin-orbit interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN = 1 << 1,  /**< Spin-spin interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN = 1 << 2,     /**<  Spin-spin-self interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN = 1 << 3,     /**< Quadrupole-monopole interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN = 1 << 4,     /**<  Next-to-leading-order spin-orbit interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN = 1 << 5,  /**< Spin-spin interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN = 1 << 6, /**< Leading-order tidal interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN = 1 << 7, /**< Next-to-leading-order tidal interaction */
-	LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN = (1 << 6) - 1, /**< all spin interactions, no tidal interactions */
-	LAL_SIM_INSPIRAL_INTERACTION_ALL = (1 << 8) - 1 /**< all spin and tidal interactions */
-} LALSimInspiralInteraction;
-
 
 /** Enumeration to specify the tapering method to apply to the waveform */
 typedef enum
@@ -527,7 +507,7 @@ int XLALSimInspiralChooseWaveform(
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -559,7 +539,7 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 i,                    /**< inclination of source (rad) */
     REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    LALSimInspiralWaveformFlags *waveFlags, /**< Set of flags to control special behavior of some waveform families */
     int amplitudeO,             /**< twice post-Newtonian amplitude order */
     int phaseO,                 /**< twice post-Newtonian phase order */
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
@@ -591,7 +571,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */

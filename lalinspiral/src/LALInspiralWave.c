@@ -144,6 +144,7 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
     REAL8 deltaT		/**< time step */
     )
 {
+   int ret;
    LALPNOrder order;
    Approximant approximant;
    LALSimInspiralApplyTaper taper;
@@ -163,7 +164,7 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
    REAL8 i = thisRow->inclination;
    REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
    REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
-   LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+   LALSimInspiralWaveformFlags *waveFlags=XLALSimInspiralCreateWaveformFlags();
    int amplitudeO = thisRow->amp_order;
 
    /* get approximant */
@@ -191,7 +192,11 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
          break;
 
       default:
-         if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+         ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT,
+               m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i,
+               lambda1, lambda2, waveFlags, amplitudeO, order, approximant);
+         XLALSimInspiralDestroyWaveformFlags(waveFlags);
+         if( ret == XLAL_FAILURE )
             XLAL_ERROR(XLAL_EFUNC);
    }
 
@@ -219,6 +224,7 @@ XLALSimInspiralChooseWaveformFromInspiralTemplate(
    InspiralTemplate *params	/**< stucture containing waveform parameters */
    )
 {
+  int ret;
   REAL8 deltaT = 1./params->tSampling;
   REAL8 phi0 = params->startPhase; /* startPhase is used as the peak amplitude phase here */
   REAL8 m1 = params->mass1 * LAL_MSUN_SI;
@@ -235,13 +241,15 @@ XLALSimInspiralChooseWaveformFromInspiralTemplate(
   REAL8 i = params->inclination;
   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
   REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
-  LALSimInspiralInteraction interactionFlags = LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
   LALPNOrder amplitudeO = params->ampOrder;
   LALPNOrder order = params->order;
   Approximant approximant = params->approximant;
 
   /* generate +,x waveforms */
-  if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+  ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, amplitudeO, order, approximant);
+  XLALSimInspiralDestroyWaveformFlags(waveFlags);
+  if( ret == XLAL_FAILURE)
     XLAL_ERROR(XLAL_EFUNC);
 
   return XLAL_SUCCESS;
