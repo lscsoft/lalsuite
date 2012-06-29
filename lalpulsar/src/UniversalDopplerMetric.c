@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -55,7 +56,18 @@
 #define COPY_VECT(dst,src) do { (dst)[0] = (src)[0]; (dst)[1] = (src)[1]; (dst)[2] = (src)[2]; } while(0)
 
 /** Simple Euklidean scalar product for two 3-dim vectors in cartesian coords */
-#define SCALAR(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
+#define DOT_VECT(u,v) ((u)[0]*(v)[0] + (u)[1]*(v)[1] + (u)[2]*(v)[2])
+
+/** Vector product of two 3-dim vectors in cartesian coords */
+#define CROSS_VECT_0(u,v) ((u)[1]*(v)[2] - (u)[2]*(v)[1])
+#define CROSS_VECT_1(u,v) ((u)[2]*(v)[0] - (u)[0]*(v)[2])
+#define CROSS_VECT_2(u,v) ((u)[0]*(v)[1] - (u)[1]*(v)[0])
+#define CROSS_VECT(x,u,v) do { (x)[0] = CROSS_VECT_0(u,v); (x)[1] = CROSS_VECT_1(u,v); (x)[2] = CROSS_VECT_2(u,v); } while (0)
+
+/** Operations on 3-dim vectors  */
+#define ZERO_VECT(v) do{ (v)[0] = 0; (v)[1] = 0; (v)[2] = 0; } while(0)
+#define NORMSQ_VECT(v) DOT_VECT(v,v)
+#define NORM_VECT(v) sqrt(NORMSQ_VECT(v))
 #define MULT_VECT(v,lam) do{ (v)[0] *= (lam); (v)[1] *= (lam); (v)[2] *= (lam); } while(0)
 #define ADD_VECT(dst,src) do { (dst)[0] += (src)[0]; (dst)[1] += (src)[1]; (dst)[2] += (src)[2]; } while(0)
 #define SUB_VECT(dst,src) do { (dst)[0] -= (src)[0]; (dst)[1] -= (src)[1]; (dst)[2] -= (src)[2]; } while(0)
@@ -372,7 +384,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   /* correct for time-delay from SSB to detector (Roemer delay), neglecting relativistic effects */
   if ( !par->approxPhase )
     {
-      REAL8 dTRoemerSI = SCALAR(nn_equ, posvel.pos );
+      REAL8 dTRoemerSI = DOT_VECT(nn_equ, posvel.pos );
       REAL8 dTRoemer = dTRoemerSI / Tspan;		/* SSB time-delay in 'natural units' */
 
       tau += dTRoemer;
@@ -415,7 +427,7 @@ CWPhaseDeriv_i ( double tt, void *params )
       nDeriv_i[1] =   cosd * cosa;
       nDeriv_i[2] =   0;
 
-      ret = LAL_TWOPI * Freq * SCALAR(rr_ord_Equ, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
+      ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);	/* dPhi/dAlpha = 2 pi f (r/c) . (dn/dAlpha) */
       if ( par->deriv == DOPPLERCOORD_ALPHA_NAT )
         ret *= nNat;
       break;
@@ -426,7 +438,7 @@ CWPhaseDeriv_i ( double tt, void *params )
       nDeriv_i[1] = - sind * sina;
       nDeriv_i[2] =   cosd;
 
-      ret = LAL_TWOPI * Freq * SCALAR(rr_ord_Equ, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
+      ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);	/* dPhi/dDelta = 2 pi f (r/c) . (dn/dDelta) */
       if ( par->deriv == DOPPLERCOORD_DELTA_NAT )
         ret *= nNat;
       break;
@@ -595,8 +607,8 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
 
   eZ[0] = 0; eZ[1] = -siniEcl; eZ[2] = cosiEcl; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
-  REAL8 pz = SCALAR ( Det_wrt_Earth.pos, eZ );
-  REAL8 vz = SCALAR ( Det_wrt_Earth.vel, eZ );
+  REAL8 pz = DOT_VECT ( Det_wrt_Earth.pos, eZ );
+  REAL8 vz = DOT_VECT ( Det_wrt_Earth.vel, eZ );
 
   COPY_VECT ( Spin_z.pos, eZ );
   MULT_VECT ( Spin_z.pos, pz );
