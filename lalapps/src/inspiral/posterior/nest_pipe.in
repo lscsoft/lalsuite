@@ -674,7 +674,7 @@ if opts.coherence_test:
             print 'Unable to setup coherence test for time %.3f, only %s data available.\n'%(time,ifos[0])
             continue
         coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
-        coherence_test_node.add_var_arg(nest_files[time])
+        coherence_test_node.add_var_arg(nest_files[time]+'_B.txt')
         coherence_test_files[time]={}
         coherence_test_posfiles[time]={}
         coherence_test_bfiles[time]={}
