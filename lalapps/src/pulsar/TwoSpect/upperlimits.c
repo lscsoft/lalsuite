@@ -204,7 +204,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
          REAL8 fsig = params->fmin + (0.5*(ii-1.0) + jj)/params->Tcoh;        //"Signal" frequency
          
          if (ihsminusnoise>loudestoutlierminusnoise && 
-             (fsig>=params->ULfmin && fsig<=params->ULfmin+params->ULfspan) && 
+             (fsig>=params->ULfmin && fsig<params->ULfmin+params->ULfspan) && 
              (moddepth>=params->ULmindf && moddepth<=params->ULmaxdf)) {
             loudestoutlier = ihsmaxima->maxima->data[locationinmaximavector];
             loudestoutliernoise = totalnoise;

@@ -1303,10 +1303,13 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
                   fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                   XLAL_ERROR_VOID(XLAL_EFUNC);
                }
-               REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
-               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-                  fprintf(stderr,"%s: probR() failed.\n", __func__);
-                  XLAL_ERROR_VOID(XLAL_EFUNC);
+               REAL8 prob = 0.0;
+               if ( R > 0.0 ) {
+                  prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, params, &proberrcode);
+                  if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                     fprintf(stderr,"%s: probR() failed.\n", __func__);
+                     XLAL_ERROR_VOID(XLAL_EFUNC);
+                  }
                }
                
                REAL8 h0 = 2.7426*pow(R/(params->Tcoh*params->Tobs),0.25);
