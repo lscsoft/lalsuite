@@ -633,7 +633,6 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
 {
   EarthState earth;
   BarycenterInput baryinput = empty_BarycenterInput;
-  LALStatus status = empty_status;
   EmissionTime emit = empty_EmissionTime;
   PosVel3D_t Det_wrt_Earth;
   PosVel3D_t PtoleOrbit;
@@ -646,9 +645,8 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
   }
 
   /* ----- find ephemeris-based position of Earth wrt to SSB at this moment */
-  LALBarycenterEarth( &status, &earth, tGPS, edat );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+  if ( XLALBarycenterEarth( &earth, tGPS, edat ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
     XLAL_ERROR( XLAL_EFUNC );
   }
   /* ----- find ephemeris-based position of detector wrt to SSB */
@@ -656,11 +654,9 @@ XLALDetectorPosVel ( PosVel3D_t *posvel,	/**< [out] instantaneous position and v
   baryinput.site = *site;
   baryinput.site.location[0] /= LAL_C_SI; baryinput.site.location[1] /= LAL_C_SI; baryinput.site.location[2] /= LAL_C_SI;
   baryinput.alpha = 0; baryinput.delta = 0; baryinput.dInv = 0;
-  status = empty_status;
-  LALBarycenter ( &status, &emit, &baryinput, &earth );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenter() failed!\n\n", __func__);
-    XLAL_ERROR( XLAL_EFAILED );
+  if ( XLALBarycenter ( &emit, &baryinput, &earth ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenter() failed!\n\n", __func__);
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* ----- determine position-vector of detector wrt center of Earth */
@@ -2183,7 +2179,6 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
                                 )
 {
   EarthState earth;
-  LALStatus status;
   LIGOTimeGPS ti;
   REAL8 h = 0.5 * 86400.0;	/* finite-differencing step-size for rOrb. Before CAREFUL before changing this! */
   vect3D_t r0m2h, r0mh, r0, r0_h, r0_2h;
@@ -2209,50 +2204,40 @@ XLALComputeOrbitalDerivatives ( UINT4 maxorder,			/**< [in] highest derivative-o
 
   /* t = t0 */
   ti = (*tGPS);
-  status = empty_status;
-  LALBarycenterEarth( &status, &earth, &ti, edat );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+  if ( XLALBarycenterEarth( &earth, &ti, edat ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0, earth.posNow );
 
   /* t = t0 - h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds - h;
-  status = empty_status;
-  LALBarycenterEarth( &status, &earth, &ti, edat );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+  if ( XLALBarycenterEarth( &earth, &ti, edat ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0mh, earth.posNow );
 
   /* t = t0 - 2h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds - 2 * h;
-  status = empty_status;
-  LALBarycenterEarth( &status, &earth, &ti, edat );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+  if ( XLALBarycenterEarth( &earth, &ti, edat ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0m2h, earth.posNow );
 
   /* t = t0 + h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds + h;
-  status = empty_status;
-  LALBarycenterEarth( &status, &earth, &ti, edat );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+  if ( XLALBarycenterEarth( &earth, &ti, edat ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0_h, earth.posNow );
 
   /* t = t0 + 2h*/
   ti.gpsSeconds = (*tGPS).gpsSeconds + 2 * h;
-  status = empty_status;
-  LALBarycenterEarth( &status, &earth, &ti, edat );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ( "%s: call to LALBarycenterEarth() failed!\n\n", __func__);
+  if ( XLALBarycenterEarth( &earth, &ti, edat ) != XLAL_SUCCESS ) {
+    XLALPrintError ( "%s: call to XLALBarycenterEarth() failed!\n\n", __func__);
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   COPY_VECT ( r0_2h, earth.posNow );
