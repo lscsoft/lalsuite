@@ -997,9 +997,18 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	}
 	/* Begin loop over interferometers */
 	while(thisData){
+		Approximant       approximant;        /* Get approximant value      */
+		approximant = XLALGetApproximantFromString(injEvent->waveform);
+		if( (int) approximant == XLAL_FAILURE)
+			ABORTXLAL(&status);
+
 		InjSampleRate=1.0/thisData->timeData->deltaT;
 		if(LALInferenceGetProcParamVal(commandLine,"--injectionsrate")) InjSampleRate=atof(LALInferenceGetProcParamVal(commandLine,"--injectionsrate")->value);
-    
+		if(approximant == NumRelNinja2 && InjSampleRate != 16384) {
+			fprintf(stderr, "WARNING: NINJA2 injections only work with 16384 Hz sampling rates.  Generating injection in %s at this rate, then downsample to the run's sampling rate.\n", thisData->name);
+			InjSampleRate = 16384;
+		}
+			
 		memset(&det,0,sizeof(det));
 		det.site=thisData->detector;
 		COMPLEX8FrequencySeries *resp = XLALCreateCOMPLEX8FrequencySeries("response",&thisData->timeData->epoch,
@@ -1037,11 +1046,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 
 		/*LALSimulateCoherentGW(&status,injWave,&InjectGW,&det);*/
     //LALFindChirpInjectSignals(&status,injectionBuffer,injEvent,resp);
-
-    Approximant       approximant;        /* Get approximant value      */
-    approximant = XLALGetApproximantFromString(injEvent->waveform);
-    if( (int) approximant == XLAL_FAILURE)
-      ABORTXLAL(&status);
 
     if(LALInferenceGetProcParamVal(commandLine,"--lalsimulationinjection")){
       
@@ -1137,35 +1141,37 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     
       XLALDestroyCOMPLEX8FrequencySeries(resp);
 
-      /* Checking the lenght of the injection waveform with respect of thisData->timeData->data->length */
-      CoherentGW            waveform;
-      PPNParamStruc         ppnParams;
-      memset( &waveform, 0, sizeof(CoherentGW) );
-      memset( &ppnParams, 0, sizeof(PPNParamStruc) );
-      ppnParams.deltaT   = 1.0/InjSampleRate;//thisData->timeData->deltaT;
-      ppnParams.lengthIn = 0;
-      ppnParams.ppn      = NULL;
-      unsigned lengthTest = 0;
+      if ( approximant != NumRelNinja2 ) {
+        /* Checking the lenght of the injection waveform with respect of thisData->timeData->data->length */
+        CoherentGW            waveform;
+        PPNParamStruc         ppnParams;
+        memset( &waveform, 0, sizeof(CoherentGW) );
+        memset( &ppnParams, 0, sizeof(PPNParamStruc) );
+        ppnParams.deltaT   = 1.0/InjSampleRate;//thisData->timeData->deltaT;
+        ppnParams.lengthIn = 0;
+        ppnParams.ppn      = NULL;
+        unsigned lengthTest = 0;
     
-      LALGenerateInspiral(&status, &waveform, injEvent, &ppnParams ); //Recompute the waveform just to get access to ppnParams.tc and waveform.h->data->length or waveform.phi->data->length
-      if(status.statusCode) REPORTSTATUS(&status);
-
-      if(waveform.h){
-        lengthTest = waveform.h->data->length*(thisData->timeData->deltaT*InjSampleRate);
-      }
-      if(waveform.phi){
-        XLALResampleREAL8TimeSeries(waveform.phi,thisData->timeData->deltaT);
-        lengthTest = waveform.phi->data->length;
-      }
-    
-    
-      if(lengthTest>thisData->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT)){
-        fprintf(stderr, "WARNING: waveform length = %u is longer than thisData->timeData->data->length = %d minus the window width = %d and the 2.0 seconds after tc (total of %d points available).\n", lengthTest, thisData->timeData->data->length, (INT4)ceil((2.0*padding)/thisData->timeData->deltaT) , thisData->timeData->data->length-(INT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT));
-        fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen) to be greater than %f. (in %s, line %d)\n",ppnParams.tc , thisData->timeData->data->length * thisData->timeData->deltaT, ppnParams.tc + 2.0*padding + 2.0, __FILE__, __LINE__);
-      }
-      if(ppnParams.tc>bufferLength){
-        fprintf(stderr, "ERROR: The waveform injected is %f seconds long and the buffer for FindChirpInjectSignal is %f seconds long. The end of the waveform will be cut ! (in %s, line %d)\n",ppnParams.tc , bufferLength, __FILE__, __LINE__);
-        exit(1);
+        LALGenerateInspiral(&status, &waveform, injEvent, &ppnParams ); //Recompute the waveform just to get access to ppnParams.tc and waveform.h->data->length or waveform.phi->data->length
+        if(status.statusCode) REPORTSTATUS(&status);
+  
+        if(waveform.h){
+          lengthTest = waveform.h->data->length*(thisData->timeData->deltaT*InjSampleRate);
+        }
+        if(waveform.phi){
+          XLALResampleREAL8TimeSeries(waveform.phi,thisData->timeData->deltaT);
+          lengthTest = waveform.phi->data->length;
+        }
+      
+      
+        if(lengthTest>thisData->timeData->data->length-(UINT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT)){
+          fprintf(stderr, "WARNING: waveform length = %u is longer than thisData->timeData->data->length = %d minus the window width = %d and the 2.0 seconds after tc (total of %d points available).\n", lengthTest, thisData->timeData->data->length, (INT4)ceil((2.0*padding)/thisData->timeData->deltaT) , thisData->timeData->data->length-(INT4)ceil((2.0*padding+2.0)/thisData->timeData->deltaT));
+          fprintf(stderr, "The waveform injected is %f seconds long. Consider increasing the %f seconds segment length (--seglen) to be greater than %f. (in %s, line %d)\n",ppnParams.tc , thisData->timeData->data->length * thisData->timeData->deltaT, ppnParams.tc + 2.0*padding + 2.0, __FILE__, __LINE__);
+        }
+        if(ppnParams.tc>bufferLength){
+          fprintf(stderr, "ERROR: The waveform injected is %f seconds long and the buffer for FindChirpInjectSignal is %f seconds long. The end of the waveform will be cut ! (in %s, line %d)\n",ppnParams.tc , bufferLength, __FILE__, __LINE__);
+          exit(1);
+        }
       }
       
       /* Now we cut the injection buffer down to match the time domain wave size */
