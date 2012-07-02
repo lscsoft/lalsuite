@@ -26,6 +26,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
+#include <lal/StringInput.h>
 #include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
@@ -147,7 +148,7 @@ int XLALSimIMRPhenomAGenerateTD(
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
     const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency */
+    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,           /**< distance of source (m) */
     const REAL8 inclination         /**< inclination of source */
 ) {
@@ -244,7 +245,7 @@ int XLALSimIMRPhenomBGenerateTD(
     const REAL8 m2_SI,        /**< mass of companion 2 (kg) */
     const REAL8 chi,          /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,        /**< start frequency */
-    const REAL8 f_max,        /**< end frequency */
+    const REAL8 f_max,        /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,     /**< distance of source (m) */
     const REAL8 inclination   /**< inclination of source */
 ) {
@@ -328,7 +329,7 @@ int XLALSimIMRPhenomBGenerateFD(
     const REAL8 m2_SI,                 /**< mass of companion 2 (kg) */
     const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,                 /**< start frequency */
-    const REAL8 f_max,                 /**< end frequency */
+    const REAL8 f_max,                 /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance               /**< distance of source (m) */
 ) {
   BBHPhenomParams *params;
@@ -663,7 +664,7 @@ static int IMRPhenomBGenerateFD(
     const REAL8 m2,                    /**< mass of companion 2 [solar masses] */
     const REAL8 chi,                   /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,                 /**< start frequency */
-    const REAL8 f_max,                 /**< end frequency; if 0 */
+    const REAL8 f_max,                 /**< end frequency */
     const REAL8 distance,              /**< distance of source */
     const BBHPhenomParams *params      /**< from ComputeIMRPhenomBParams */
 ) {
@@ -789,7 +790,7 @@ static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, const REAL8 phi0, const REA
   REAL8 f_min_wide = EstimateSafeFMinForTD(m1, m2, f_min, deltaT);
   const REAL8 f_max_wide = 0.5 / deltaT;
   if (EstimateSafeFMaxForTD(f_max, deltaT) > f_max_wide)
-    XLALPrintWarning("Warning: sampling rate too low for expected spectral content\n");
+    XLALPrintWarning("Warning: sampling rate (%" LAL_REAL8_FORMAT " Hz) too low for expected spectral content (%" LAL_REAL8_FORMAT " Hz) \n", deltaT, EstimateSafeFMaxForTD(f_max, deltaT));
   deltaF = 1. / (deltaT * NextPow2(EstimateIMRLength(m1, m2, f_min_wide, deltaT)));
 
   /* generate in frequency domain */

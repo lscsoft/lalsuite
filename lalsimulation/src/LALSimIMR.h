@@ -68,7 +68,7 @@ int XLALSimIMRPhenomAGenerateFD(
     const REAL8 m1_SI,                       /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
     const REAL8 f_min,                       /**< start frequency */
-    const REAL8 f_max,                       /**< end frequency */
+    const REAL8 f_max,                       /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance                     /**< distance of source (m) */
 );
 
@@ -91,7 +91,7 @@ int XLALSimIMRPhenomAGenerateTD(
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
     const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency */
+    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,           /**< distance of source (m) */
     const REAL8 inclination         /**< inclination of source */
 );
@@ -126,7 +126,7 @@ int XLALSimIMRPhenomBGenerateFD(
     const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
     const REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,                       /**< start frequency */
-    const REAL8 f_max,                       /**< end frequency */
+    const REAL8 f_max,                       /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance                     /**< distance of source (m) */
 );
 
@@ -149,7 +149,7 @@ int XLALSimIMRPhenomBGenerateTD(
     const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
     const REAL8 chi,                /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency */
+    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,           /**< distance of source (m) */
     const REAL8 inclination         /**< inclination of source */
 );

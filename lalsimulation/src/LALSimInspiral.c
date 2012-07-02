@@ -1236,8 +1236,8 @@ int XLALSimInspiralChooseTDWaveform(
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
-            // FIXME: decide proper f_max to pass here
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            // NB: f_max = 0 will generate up to the ringdown cut-off frequency
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, 0., r, i);
             break;
         case EOBNRv2HM:
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
@@ -1269,7 +1269,8 @@ int XLALSimInspiralChooseTDWaveform(
 
         /* spinning inspiral-merger-ringdown models */
         case IMRPhenomB:
-            ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, .5/deltaT, r, i);
+            // NB: f_max = 0 will generate up to the ringdown cut-off frequency
+            ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, 0., r, i);
             break;
         case PhenSpinTaylorRD:
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
@@ -1350,7 +1351,6 @@ int XLALSimInspiralChooseFDWaveform(
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
-            // FIXME: decide proper f_max to pass here
             ret = XLALSimIMRPhenomAGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max, r);
             break;
 
