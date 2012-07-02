@@ -1207,9 +1207,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
     }
     thisData->SNR=sqrt(SNR);
     NetworkSNR+=SNR;
-    UINT4 Nnonzero=0;
-    for(i=0,Nnonzero=0;i<inj8Wave->data->length;i++){if(inj8Wave->data->data[i]!=0.0) Nnonzero++;}
-    fprintf(stderr,"%i/%i non-zero bins in injection waveform\n",Nnonzero,inj8Wave->data->length);
 
     if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
       PrintSNRsToFile(IFOdata , injTable);

@@ -2075,10 +2075,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       fprintf( stderr, " ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): no generated waveform.\n");
     }
 }
-      UINT4 Nnonzero=0;
-      for(i=0,Nnonzero=0;i<IFOdata->timeModelhPlus->data->length;i++){if(IFOdata->timeModelhPlus->data->data[i]!=0.0) Nnonzero++;}
-      fprintf(stderr,"%i non-zero bins in template waveform\n",Nnonzero);
-
 		if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
 		if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
   if ( htilde ) XLALDestroyCOMPLEX16FrequencySeries(htilde);
