@@ -621,11 +621,6 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      /* tfWeight(background_slided, background_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      } */
       XLALDestroyREAL4Vector(TFdata_slided);
       XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(antweights);
