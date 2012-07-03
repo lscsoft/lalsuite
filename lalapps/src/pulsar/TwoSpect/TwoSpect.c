@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
    
    
    //Basic units
-   REAL4 tempfspan = inputParams->fspan + 2.0*inputParams->dfmax + 12.0 + (inputParams->blksize-1)/inputParams->Tcoh;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
+   REAL4 tempfspan = inputParams->fspan + 2.0*inputParams->dfmax + (inputParams->blksize-1 + 12)/inputParams->Tcoh;     //= fspan+2*dfmax+extrabins + running median blocksize-1 (Hz)
    INT4 tempnumfbins = (INT4)round(tempfspan*inputParams->Tcoh)+1;                        //= number of bins in tempfspan
    REAL8 templatefarthresh = args_info.tmplfar_arg;
    fprintf(LOG, "FAR for templates = %g\n", templatefarthresh);
