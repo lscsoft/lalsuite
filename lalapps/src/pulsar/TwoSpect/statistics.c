@@ -1259,6 +1259,39 @@ REAL4 calcMedian(REAL4Vector *vector)
    
 }
 
+
+REAL4 calcMedian_ignoreZeros(REAL4Vector *vector)
+{
+   
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(vector->length);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, vector->length);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+   INT4 firstnonzeroelement = -1, ii = 0;
+   while (firstnonzeroelement<0) {
+      if (tempvect->data[ii]!=0.0) {
+         firstnonzeroelement = ii;
+      } else {
+         ii++;
+      }
+   }
+   
+   REAL4 ffdata_median = 0.0;
+   if ((tempvect->length-firstnonzeroelement) % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))-1+firstnonzeroelement] + tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement]);
+   else ffdata_median = tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement];
+   
+   XLALDestroyREAL4Vector(tempvect);
+   
+   return ffdata_median;
+   
+}
+
 //Comparison functions for qsort
 INT4 qsort_REAL4_compar(const void *a, const void *b)
 {
