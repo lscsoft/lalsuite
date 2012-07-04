@@ -262,7 +262,7 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	UINT4 displayprogress=0;
 	LALInferenceVariableItem *param_ptr;
 	LALInferenceVariables *currentVars=calloc(1,sizeof(LALInferenceVariables));
-	
+	REAL8 kdupdate=0.;
 
 	/* Default sample logging functions with and without XML */
 #ifdef HAVE_LIBLALXML
@@ -405,9 +405,8 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
         /* set up k-D tree if required and not already set */
         if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
              LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
-         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
+         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
           LALInferenceSetupkDTreeNSLivePoints( runState );
-        }
         
 	if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
 	  INT4 tmp=200;
@@ -424,9 +423,19 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	}
 	
 	/* re-calculate the k-D tree from the new points if required */
-	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ) 
+	if ( LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) ){
           LALInferenceSetupkDTreeNSLivePoints( runState );
-
+          
+          /* get k-d tree update rate (this is how often the tree gets updated
+           * as a factor the number of live points - default is 4 */
+          if( LALInferenceGetProcParamVal( runState->commandLine, 
+                                           "--kDTreeUpdateFactor") ){
+            kdupdate = atof( LALInferenceGetProcParamVal( runState->commandLine,
+                             "--kDTreeUpdateFactor")->value );
+          }else
+            kdupdate = 4.;
+        }
+          
 	/* Set the number of MCMC points */
 	UpdateNMCMC(runState);
 	
@@ -526,15 +535,17 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		        LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 		        LALInferenceSetVariable(runState->proposalArgs,"covarianceMatrix",(void *)cvm);
             }
-                  
-            /* update k-d tree */
-            if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" ) )
-                LALInferenceSetupkDTreeNSLivePoints( runState ); 
 
 	    /* Update NMCMC from ACF */
 	    UpdateNMCMC(runState);
 	
 	      }
+	      
+	    if(!(iter%(UINT4)floor(Nlive*kdupdate))){
+              /* update k-d tree */
+              if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" ))
+                LALInferenceSetupkDTreeNSLivePoints( runState ); 
+            }
 	}
 	while( iter <= Nlive ||  dZ> TOLERANCE ); /* End of NS loop! */
 
