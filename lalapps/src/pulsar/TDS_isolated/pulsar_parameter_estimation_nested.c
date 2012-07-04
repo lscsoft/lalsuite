@@ -234,6 +234,8 @@ LALStringVector *corlist = NULL;
 " --kDTree            (REAL8) relative weigth of using a k-D tree of the live\n\
                      points to use as a proposal (DEFAULT = 3, e.g. 15%%)\n"\
 " --kDNCell           (INT4) maximum number of samples in a k-D tree cell\n"\
+" --kDUpdateFactor    (REAL8) how often the k-D tree gets updated as a\n\
+                     factor of the number of live points\n"\
 " --diffev            (REAL8) relative weight of using differential evolution\n\
                      of the live points as the proposal (DEFAULT = 3, e.g.\n\
                      15%%)\n"\
@@ -272,19 +274,19 @@ LALStringVector *corlist = NULL;
                      scale the injection. This is 1 by default.\n"\
 "\n"\
 " Flags for using a Nested sampling file as a prior:\n"\
-" --sample-file      a file containing the nested samples from a previous run\n\
-                    of the code (this should contain samples in ascending\n\
-                    likelihood order and be accompanied by a file containg a\n\
-                    list of the parameter names for each column with the\n\
-                    suffix _params.txt). If this is set this WILL be used as\n\
-                    the only prior, but the prior ranges set in the\n\
-                    --prior-file and --par-file are still needed (and\n\
-                    should be consistent with variable parameters in the\n\
-                    nested sample file).\n"\
-" --sample-nlive     The number of live point that where used when creating\n\
-                    the nested sample file.\n"\
+" --sample-files     a list of (comma separated) file containing the nested\n\
+                    samples from a previous run of the code (these should\n\
+                    contain samples in ascending likelihood order and be\n\
+                    accompanied by a file containg a list of the parameter\n\
+                    names for each column with the suffix _params.txt). If\n\
+                    this is set this WILL be used as the only prior, but the\n\
+                    prior ranges set in the --prior-file and --par-file are\n\
+                    still needed (and should be consistent with the variable\n\
+                    parameters in the nested sample file).\n"\
+" --sample-nlives    a list (comma separated) of the number of live point\n\
+                    that where used when creating each nested sample file.\n"\
 " --prior-cell       The number of samples to use in a k-d tree cell for the\n\
-                    prior (the default will be 32).\n"\
+                    prior (the default will be 8).\n"\
 "\n"\
 " Phase parameter search speed-up factors:\n"\
 " --mismatch          Maximum allowed phase mismatch between consecutive\n\
@@ -306,7 +308,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   
   /* set error handler to abort in main function */
   //lalDebugLevel = 7;
-  XLALSetErrorHandler(XLALAbortErrorHandler);
+  XLALSetErrorHandler( XLALExitErrorHandler );
   
   /* Get ProcParamsTable from input arguments */
   param_table = LALInferenceParseCommandLine( argc, argv );
@@ -644,7 +646,7 @@ void readPulsarData( LALInferenceRunState *runState ){
   ppt = LALInferenceGetProcParamVal( commandLine, "--detectors" );
   ppt2 = LALInferenceGetProcParamVal( commandLine, "--fake-data" );
   if( ppt && !ppt2 ){
-   detectors = XLALStringDuplicate( ppt->value );
+    detectors = XLALStringDuplicate( ppt->value );
       
     /* count the number of detectors from command line argument of comma
        separated vales and set their names */
@@ -4117,29 +4119,64 @@ void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
 void samples_prior( LALInferenceRunState *runState ){
   ProcessParamsTable *ppt = NULL;
   
-  UINT4 Ncell = 32; /* default prior cell size */
+  UINT4 Ncell = 8; /* default prior cell size */
   
-  UINT4 i = 0, k = 0, nlive = 0;
+  UINT4 i = 0, k = 0, nsamps = 0, nnlive = 0, n = 0;
+  UINT4Vector *nlive = NULL, *Nsamps = NULL;
+  CHAR *nlivevals = NULL, *templives = NULL, *templive = NULL;
   
-  CHAR *sampfile = NULL, *namefile = NULL, name[256];
-  LALStringVector *paramNames = NULL;
+  CHAR *sampfile = NULL;
+  CHAR *tempsamps = NULL, *tempsamp = NULL;
   
-  LALInferenceVariables **params = NULL;
+  LALStringVector *sampfilenames = NULL;
+  
+  LALInferenceVariables ***params = NULL;
   
   FILE *fp = NULL;
   
   const CHAR *fn = __func__;
   
   /* get names of nested sample file columns */
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-file" );
-  if ( ppt != NULL ) sampfile = XLALStringDuplicate( ppt->value );
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-files" );
+  if ( ppt != NULL ){ 
+    sampfile = XLALStringDuplicate( ppt->value );
+       
+    /* count the number of sample files from the comma
+       separated vales and set their names */
+    tempsamps = XLALStringDuplicate( sampfile );
+    
+    nsamps = count_csv( tempsamps );
+    
+    for( i = 0; i < nsamps; i++ ){
+      tempsamp = strsep( &tempsamps, "," );
+      sampfilenames = XLALAppendString2Vector( sampfilenames, tempsamp );
+    }
+  }
   else return; /* no file so we don't use this function */
     
-  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-nlive" );
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--sample-nlives" );
   if ( ppt != NULL ){
-    nlive = atoi( ppt->value );
+    nlivevals = XLALStringDuplicate( ppt->value );
+    
+    templives = XLALStringDuplicate( nlivevals );
+    
+    nnlive = count_csv( templives );
+    
+    if( nnlive != nsamps ){
+      XLALPrintError("%s: Number of live points not equal to number of \
+posterior files!\n", fn, sampfile);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
+    
+    for( i = 0; i < nnlive; i++ ){
+      templive = strsep( &templives, "," );
+      nlive = XLALResizeUINT4Vector( nlive, i+1 );
+      nlive->data[i] = atoi( templive );
+    }
+    
     LALInferenceAddVariable( runState->algorithmParams, "numberlive", &nlive,
-                             LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+                             LALINFERENCE_UINT4Vector_t,
+                             LALINFERENCE_PARAM_FIXED );
   }
   else{
     fprintf(stderr, "Must set the number of live points used in the input \
@@ -4148,88 +4185,106 @@ nested samples file.\n\n");
     exit(0);
   }
   
-  namefile = XLALStringDuplicate( sampfile );
-  namefile = XLALStringAppend( namefile, "_params.txt" );
+  /* loop over files, convert to posterior samples and combine them */
+  for ( n = 0; n < nsamps; n++ ){
+    CHAR *namefile = NULL, name[256];
+    LALStringVector *paramNames = NULL;
     
-  /* check file exists */
-  if ( fopen(namefile, "r") == NULL || fopen(sampfile, "r") == NULL ){
-    XLALPrintError("%s: Cannot access either %s or %s!\n", fn, namefile,
-                   sampfile);
-    XLAL_ERROR_VOID(XLAL_EIO);
-  }
+    i = 0;
+    
+    params = XLALRealloc( params, (n+1)*sizeof(LALInferenceVariables**) );
+    
+    namefile = XLALStringDuplicate( sampfilenames->data[n] );
+    namefile = XLALStringAppend( namefile, "_params.txt" );
+    
+    /* check file exists */
+    if ( fopen(namefile, "r") == NULL || 
+         fopen(sampfilenames->data[n], "r") == NULL ){
+      XLALPrintError("%s: Cannot access either %s or %s!\n", fn, namefile,
+                     sampfilenames->data[n]);
+      XLAL_ERROR_VOID(XLAL_EIO);
+    }
   
-  /* read in parameter names */
-  fp = fopen( namefile, "r" );
-  while( fscanf(fp, "%s", name) != EOF )
-    paramNames = XLALAppendString2Vector( paramNames, name );
+    /* read in parameter names */
+    fp = fopen( namefile, "r" );
+    while( fscanf(fp, "%s", name) != EOF )
+      paramNames = XLALAppendString2Vector( paramNames, name );
 
-  fclose(fp);
+    fclose(fp);
   
-  /* read in parameter values */
-  fp = fopen( sampfile, "r" );
-  while( !feof(fp) ){
-    REAL8 ps[paramNames->length];
-    UINT4 j = 0;
+    /* read in parameter values */
+    fp = fopen( sampfilenames->data[n], "r" );
+    while( !feof(fp) ){
+      REAL8 ps[paramNames->length];
+      UINT4 j = 0;
     
-    for( j=0; j<paramNames->length; j++ )
-      if( fscanf(fp, "%lf", &ps[j]) == EOF ) break;
+      for( j=0; j<paramNames->length; j++ )
+        if( fscanf(fp, "%lf", &ps[j]) == EOF ) break;
    
-    if( feof(fp) ) break;
+      if( feof(fp) ) break;
 
-    /* dynamically alloacte memory */
-    params = XLALRealloc( params, (i+1)*sizeof(LALInferenceVariables*) );
-    params[i] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-    
-    /* add variables */
-    for( j=0; j<paramNames->length; j++ ){
-      /* use vary type of this analyses parameters i.e. those set by the prior
-         and par file, otherwise set the parameter to fixed */
-      LALInferenceParamVaryType vary;
+      /* dynamically allocate memory */
       
-      if ( LALInferenceCheckVariable( runState->currentParams,
-                                      paramNames->data[j] ) ){
-        vary = LALInferenceGetVariableVaryType( runState->currentParams,
-                                                paramNames->data[j] );
+      params[n] = XLALRealloc( params[n], 
+                               (i+1)*sizeof(LALInferenceVariables*) );
+      params[n][i] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+    
+      /* add variables */
+      for( j=0; j<paramNames->length; j++ ){
+        /* use vary type of this analyses parameters i.e. those set by the prior
+           and par file, otherwise set the parameter to fixed */
+        LALInferenceParamVaryType vary;
+      
+        if ( LALInferenceCheckVariable( runState->currentParams,
+                                        paramNames->data[j] ) ){
+          vary = LALInferenceGetVariableVaryType( runState->currentParams,
+                                                  paramNames->data[j] );
+        }
+        else vary = LALINFERENCE_PARAM_FIXED;
+
+        LALInferenceAddVariable( params[n][i], paramNames->data[j], &ps[j],
+                                 LALINFERENCE_REAL8_t, vary );
       }
-      else vary = LALINFERENCE_PARAM_FIXED;
-
-      LALInferenceAddVariable( params[i], paramNames->data[j], &ps[j],
-        LALINFERENCE_REAL8_t, vary );
-    }
     
-    i++;
-  }
+      i++;
+    }
   
-  LALInferenceAddVariable( runState->algorithmParams, "nestedsamples", &params,
-                           LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
-  LALInferenceAddVariable( runState->algorithmParams, "Nsamp", &i,
-                           LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+    /* check that non-fixed, or output parameters actually do vary, otherwise
+      complain */
+    LALInferenceVariableItem *item1 = params[n][0]->head;
   
-  /* check that non-fixed, or output parameters actually do vary, otherwise
-     complain */
-  LALInferenceVariableItem *item1 = params[0]->head;
-  
-  while ( item1 ){
-    UINT4 allsame = 0;
+    while ( item1 ){
+      UINT4 allsame = 0;
      
-    for ( k=1; k<i; k++ ){
-      LALInferenceVariableItem *item2 = LALInferenceGetItem( params[k],
-                                                             item1->name );
+      for ( k=1; k<i; k++ ){
+        LALInferenceVariableItem *item2 = LALInferenceGetItem( params[n][k],
+                                                               item1->name );
       
-      if( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary !=
-        LALINFERENCE_PARAM_OUTPUT )
-        if ( *(REAL8*)item1->value != *(REAL8*)item2->value ) allsame++;
-    }
+        if( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary !=
+          LALINFERENCE_PARAM_OUTPUT )
+          if ( *(REAL8*)item1->value != *(REAL8*)item2->value ) allsame++;
+      }
     
-    if( ( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary !=
-      LALINFERENCE_PARAM_OUTPUT ) && allsame == 0 ){
-      XLALPrintError("%s: Apparently variable parameter %s does not vary!\n",
-                     fn, item1->name );
-      XLAL_ERROR_VOID(XLAL_EFUNC);
-    }
+      if( ( item1->vary != LALINFERENCE_PARAM_FIXED && item1->vary !=
+        LALINFERENCE_PARAM_OUTPUT ) && allsame == 0 ){
+        XLALPrintError("%s: Apparently variable parameter %s does not vary!\n",
+                      fn, item1->name );
+        XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
 
-    item1 = item1->next;
+      item1 = item1->next;
+    }
+  
+    Nsamps = XLALResizeUINT4Vector( Nsamps, n+1 );
+    Nsamps->data[n] = i;
   }
+  
+  LALInferenceAddVariable( runState->algorithmParams, "nestedsamples",
+                           &params, LALINFERENCE_void_ptr_t,
+                           LALINFERENCE_PARAM_FIXED );
+  LALInferenceAddVariable( runState->algorithmParams, "Nsamps", &Nsamps,
+                           LALINFERENCE_UINT4Vector_t, 
+                           LALINFERENCE_PARAM_FIXED );
   
   /* get cell size */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--prior-cell" );
@@ -4240,7 +4295,7 @@ nested samples file.\n\n");
   
   /* convert samples to posterior */
   ns_to_posterior( runState );
-  
+   
   /* create k-d tree of the samples for use as a prior */
   create_kdtree_prior( runState );
 }

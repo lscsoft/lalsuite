@@ -360,48 +360,61 @@ REAL8 priorFunction( LALInferenceRunState *runState,
  * \param runState [in]
  */
 void ns_to_posterior( LALInferenceRunState *runState ){
-  UINT4 i = 0, count = 0, Nsamp = 0, Nlive = 0;
+  UINT4 i = 0, count = 0, k = 0;
+  UINT4Vector *Nsamp = NULL, *Nlive = NULL;
   REAL8 maxlogw = -INFINITY; /* maximum log weight */ 
   
   LALInferenceVariables **psamples = NULL;
-  LALInferenceVariables **nsamples = 
-    *(LALInferenceVariables ***)LALInferenceGetVariable(
+  LALInferenceVariables ***nsamples = 
+    *(LALInferenceVariables ****)LALInferenceGetVariable(
     runState->algorithmParams, "nestedsamples" );
     
   /* get number of samples and live points */ 
-  Nsamp = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
-                                             "Nsamp" );
-  Nlive = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
-                                             "numberlive" );
+  Nsamp = *(UINT4Vector **)LALInferenceGetVariable( runState->algorithmParams,
+                                                    "Nsamps" );
+  Nlive = *(UINT4Vector **)LALInferenceGetVariable( runState->algorithmParams,
+                                                    "numberlive" );
 
-  /* vector of prior weights */
-  REAL8Vector *logw = XLALCreateREAL8Vector( Nsamp );
-  
-  /* fill in sample weights */
-  for ( i=0; i<Nsamp; i++ ){
-    REAL8 logL = *(REAL8 *)LALInferenceGetVariable( nsamples[i], "logL" );
-    
-    if( i < Nsamp-Nlive ) logw->data[i] = (i+1);
-    else logw->data[i] = Nsamp-Nlive;
-    
-    logw->data[i] = -(logw->data[i]/(REAL8)Nlive) + logL;
-    
-    if ( logw->data[i] > maxlogw ) maxlogw = logw->data[i];
+  if ( Nsamp->length != Nlive->length ){
+    XLALPrintError("%s: Number of nested sample arrays not equal to number of \
+live point for each array!", __func__);
+    XLAL_ERROR_VOID( XLAL_EBADLEN );
   }
-
-  /* get posterior samples */
-  for ( i=0; i<Nsamp; i++ ){
-    logw->data[i] -= maxlogw; /* normalise weights */
+  
+  for( k = 0; k < Nsamp->length; k++ ){
+    /* vector of prior weights */
+    REAL8Vector *logw = XLALCreateREAL8Vector( Nsamp->data[k] );
+  
+    maxlogw = -INFINITY;
     
-    /* if log weight is greater than a uniform random number then accept as
-       a posterior sample */
-    if ( logw->data[i] > log( gsl_rng_uniform( runState->GSLrandom ) ) ){
-      psamples = XLALRealloc( psamples, 
-                              (count+1)*sizeof(LALInferenceVariables*) );
-      psamples[count] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-      LALInferenceCopyVariables( nsamples[i], psamples[count] );
-      count++;
+    /* fill in sample weights */
+    for ( i = 0; i < Nsamp->data[k]; i++ ){
+      REAL8 logL = *(REAL8 *)LALInferenceGetVariable( nsamples[k][i], "logL" );
+    
+      if( i < Nsamp->data[k]-Nlive->data[k] ) logw->data[i] = (REAL8)(i+1);
+      else logw->data[i] = (REAL8)(Nsamp->data[k] - Nlive->data[k]);
+    
+      logw->data[i] = -(logw->data[i]/(REAL8)Nlive->data[k]) + logL;
+    
+      if ( logw->data[i] > maxlogw ) maxlogw = logw->data[i];
     }
+
+    /* get posterior samples */
+    for ( i = 0; i < Nsamp->data[k]; i++ ){
+      logw->data[i] -= maxlogw; /* normalise weights */
+    
+      /* if log weight is greater than a uniform random number then accept as
+         a posterior sample */
+      if ( logw->data[i] > log( gsl_rng_uniform( runState->GSLrandom ) ) ){
+        psamples = XLALRealloc( psamples, 
+                                (count+1)*sizeof(LALInferenceVariables*) );
+        psamples[count] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+        LALInferenceCopyVariables( nsamples[k][i], psamples[count] );
+        count++;
+      }
+    }
+    
+    XLALDestroyREAL8Vector( logw );
   }
   
   LALInferenceAddVariable( runState->algorithmParams, "posteriorsamples",
