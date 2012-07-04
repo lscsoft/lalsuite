@@ -190,6 +190,8 @@ typedef struct
   const EphemerisData *edat;		/**< ephemeris data */
   vect3Dlist_t *rOrb_n;			/**< list of orbital-radius derivatives at refTime of order n = 0, 1, ... */
   BOOLEAN approxPhase;			/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders \>= 1) */
+  PosVel3D_t spin_posvel_ref;           /**< spin position of (average) detector at refTime */
+  PosVel3D_t orbit_posvel_ref;          /**< orbital position of (average) detector at refTime */
 } intparams_t;
 
 
@@ -425,6 +427,14 @@ CWPhaseDeriv_i ( double tt, void *params )
   PosVel3D_t orbit_posvel = empty_PosVel3D_t;
   PosVel3D_t posvel = empty_PosVel3D_t;
 
+  /* spin position in equatorial plane */
+  vect3D_t equ_spin_pos = empty_vect3D_t;
+  vect3D_t equ_spin_pos_ref = empty_vect3D_t;
+
+  /* orbit position in ecliptic plane */
+  vect3D_t ecl_orbit_pos = empty_vect3D_t;
+  vect3D_t ecl_orbit_pos_ref = empty_vect3D_t;
+
   REAL8 Freq = par->dopplerPoint->fkdot[0];
 
   REAL8 Tspan = par->Tspan;
@@ -458,6 +468,18 @@ CWPhaseDeriv_i ( double tt, void *params )
   COPY_VECT(posvel.vel, spin_posvel.vel);
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
+  /* compute spin detector positions projected onto equatorial plane */
+  COPY_VECT(equ_spin_pos, spin_posvel.pos);
+  equ_spin_pos[2] = 0;
+  COPY_VECT(equ_spin_pos_ref, par->spin_posvel_ref.pos);
+  equ_spin_pos_ref[2] = 0;
+
+  /* compute orbital detector positions projected onto ecliptic plane */
+  equatorialVect2ecliptic(&ecl_orbit_pos, &orbit_posvel.pos);
+  ecl_orbit_pos[2] = 0;
+  equatorialVect2ecliptic(&ecl_orbit_pos_ref, &(par->orbit_posvel_ref.pos));
+  ecl_orbit_pos_ref[2] = 0;
+
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
 
@@ -474,12 +496,6 @@ CWPhaseDeriv_i ( double tt, void *params )
     }
 
   REAL8 nNat = Freq * Tspan * 1e-4;	/* 'natural sky-units': Freq * Tspan * V/c */
-
-  /* ----- orbital and rotational phase-angle since mid-time (used in Karl's coordinates) ----- */
-  REAL8 tSinceMid = (tt - 0.5);
-  REAL8 tSinceMidSI = tSinceMid * Tspan;
-  REAL8 phi_s = Omega_s * tSinceMidSI;
-  REAL8 phi_o = Omega_o * tSinceMidSI;
 
   /* get 'reduced' detector position of order 'n': r_n(t) [passed in as argument]
    * defined as: r_n(t) = r(t) - dot{r_orb}(tau_ref) tau - 1/2! ddot{r_orb}(tau_re) tau^2 - ....
@@ -598,28 +614,32 @@ CWPhaseDeriv_i ( double tt, void *params )
 
     /* ---------- Karl's super-duper-sky coordinates ---------- */
     case DOPPLERCOORD_KAPPA_S:			/* 'kappa_s': cosine-part of Earth-spin sky-coordinate */
-      ret = LAL_TWOPI * Freq * rEarth_c * cos ( phi_s );
+      ret = DOT_VECT(equ_spin_pos_ref, equ_spin_pos);
+      ret /= NORMSQ_VECT(equ_spin_pos_ref);
       break;
     case DOPPLERCOORD_SIGMA_S:			/* 'sigma_s': sine-part of Earth-spin sky-coordinate */
-      ret = LAL_TWOPI * Freq * rEarth_c * sin ( phi_s );
+      ret = CROSS_VECT_2(equ_spin_pos_ref, equ_spin_pos);
+      ret /= NORMSQ_VECT(equ_spin_pos_ref);
       break;
     case DOPPLERCOORD_KAPPA_O:			/* 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
-      ret = LAL_TWOPI * Freq * rOrb_c * cos ( phi_o );
+      ret = DOT_VECT(ecl_orbit_pos_ref, ecl_orbit_pos);
+      ret /= NORMSQ_VECT(ecl_orbit_pos_ref);
       break;
     case DOPPLERCOORD_SIGMA_O:			/* 'sigma_o': sine-part of Earth-orbit sky-coordinate */
-      ret = LAL_TWOPI * Freq * rOrb_c * sin ( phi_o );
+      ret = CROSS_VECT_2(ecl_orbit_pos_ref, ecl_orbit_pos);
+      ret /= NORMSQ_VECT(ecl_orbit_pos_ref);
       break;
     case DOPPLERCOORD_OMEGA_0:			/* 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
-      ret = LAL_TWOPI * tSinceMid * LAL_FACT_INV[0];
+      ret = tau * LAL_FACT_INV[1];
       break;
     case DOPPLERCOORD_OMEGA_1:			/* 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
-      ret = LAL_TWOPI * POW2 ( tSinceMid ) * LAL_FACT_INV[1];
+      ret = POW2 ( tau ) * LAL_FACT_INV[2];
       break;
     case DOPPLERCOORD_OMEGA_2:			/* 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
-      ret = LAL_TWOPI * POW3 ( tSinceMid ) * LAL_FACT_INV[2];
+      ret = POW3 ( tau ) * LAL_FACT_INV[3];
       break;
     case DOPPLERCOORD_OMEGA_3:			/* 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
-      ret = LAL_TWOPI * POW4 ( tSinceMid ) * LAL_FACT_INV[3];
+      ret = POW4 ( tau ) * LAL_FACT_INV[4];
       break;
 
     default:
@@ -1062,6 +1082,11 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
             (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
 #endif
 
+  // compute spin and orbital position of detector at reference time
+  XLAL_CHECK_NULL( XLALAverageDetectorPosVel(&intparams.spin_posvel_ref, &intparams.orbit_posvel_ref,
+                                             &intparams.dopplerPoint->refTime,
+                                             &metricParams->detInfo, edat, metricParams->detMotionType) == XLAL_SUCCESS, XLAL_EFUNC );
+
   /* ---------- compute components of the phase-metric ---------- */
   double maxrelerr = 0, err;
   for ( i=0; i < dim; i ++ )
@@ -1291,6 +1316,11 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
     XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
     XLAL_ERROR_NULL( XLAL_EFUNC );
   }
+
+  // compute spin and orbital position of detector at reference time
+  XLAL_CHECK_NULL( XLALAverageDetectorPosVel(&intparams.spin_posvel_ref, &intparams.orbit_posvel_ref,
+                                             &intparams.dopplerPoint->refTime,
+                                             &metricParams->detInfo, edat, metricParams->detMotionType) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
   A = B = C = 0;
