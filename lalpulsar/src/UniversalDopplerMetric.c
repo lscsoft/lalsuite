@@ -227,7 +227,7 @@ double CW_am1_am2_Phi_i_Phi_j ( double tt, void *params );
 double CWPhaseDeriv_i ( double tt, void *params );
 
 double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
-double CWPhase_cov_Phi_ij ( const intparams_t *params, double *relerr_max );
+double CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params, double *relerr_max );
 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
 gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
@@ -840,7 +840,7 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
  * which gives a component of the "phase metric"
  */
 double
-CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
+CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params, double* relerr_max )
 {
   gsl_function integrand;
 
@@ -885,8 +885,19 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
   wksp = gsl_integration_workspace_alloc(limit);
   XLAL_CHECK_REAL8(wksp != NULL, XLAL_EFAULT);
 
-  for (n=0; n < Nseg; n ++ )
-    {
+  // loop over detectors
+  REAL8 total_weight = 0;
+  for (UINT4 det = 0; det < detInfo->length; ++det) {
+
+    // set detector for phase integrals
+    par.site = &detInfo->sites[det];
+
+    // accumulate detector weights
+    const REAL8 weight = detInfo->detWeights[det];
+    total_weight += weight;
+
+    for (n=0; n < Nseg; n ++ ) {
+
       REAL8 ti = 1.0 * n * dT;
       REAL8 tf = MYMIN( (n+1.0) * dT, 1.0 );
       double res_n;
@@ -900,8 +911,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
                          __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
-      av_ij += res_n;
-      av_ij_err += SQUARE (abserr);
+      av_ij += weight * res_n;
+      av_ij_err += weight * SQUARE (abserr);
 
 
       /* compute <phi_i> */
@@ -913,8 +924,8 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
                          __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
-      av_i += res_n;
-      av_i_err += SQUARE (abserr);
+      av_i += weight * res_n;
+      av_i_err += weight * SQUARE (abserr);
 
       /* compute <phi_j> */
       integrand.function = &CWPhaseDeriv_i;
@@ -925,10 +936,26 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
                          __func__, n, res_n, abserr);
         XLAL_ERROR_REAL8( XLAL_EFUNC );
       }
-      av_j += res_n;
-      av_j_err += SQUARE (abserr);
+      av_j += weight * res_n;
+      av_j_err += weight * SQUARE (abserr);
 
     } /* for i < Nseg */
+
+  } // for det < detInfo->length
+
+  // raise error if no detector weights were given
+  if (total_weight == 0) {
+    XLAL_ERROR( XLAL_EDOM, "Detectors weights are all zero!" );
+  }
+
+  // normalise by total weight
+  const REAL8 inv_total_weight = 1.0 / total_weight;
+  av_ij *= inv_total_weight;
+  av_i *= inv_total_weight;
+  av_j *= inv_total_weight;
+  av_ij_err *= inv_total_weight;
+  av_i_err *= inv_total_weight;
+  av_j_err *= inv_total_weight;
 
   av_ij_err = sqrt(av_ij_err) / fabs(av_ij);
   av_i_err = sqrt(av_i_err) / fabs (av_i);
@@ -951,13 +978,10 @@ CWPhase_cov_Phi_ij ( const intparams_t *params, double* relerr_max )
 
 /** Calculate an approximate "phase-metric" with the specified parameters.
  *
- * The phase metric can only be computed for a single detector, if you want a
- * multi-detector metric you need to use the full Fstat-metric, as computed
- * by XLALDopplerFstatMetric().
- *
- * Note: if this function is called with multiple detectors, we compute the
- * phase metric using the *first* detector in the list!
- *
+ * Note: if this function is called with multiple detectors, the phase components
+ * are averaged over detectors as well as time. This is a somewhat ad-hoc approach;
+ * if you want a more rigorous multi-detector metric you need to use the full
+ * Fstat-metric, as computed by XLALDopplerFstatMetric().
  *
  * Return NULL on error.
  */
@@ -971,7 +995,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams_t intparams = empty_intparams;
   UINT4 i, j;
   REAL8 gg;
-  const LALDetector *ifo;
   UINT4 dim;
   const LIGOTimeGPS *refTime, *startTime;
   const DopplerCoordinateSystem *coordSys;
@@ -994,9 +1017,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
-  /* always use first dector in list */
-  ifo = &(metricParams->detInfo.sites[0]);
-
   /* ---------- set up integration parameters ---------- */
   intparams.edat = edat;
   intparams.startTime = XLALGPSGetREAL8 ( startTime );
@@ -1004,7 +1024,7 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
   intparams.Tspan     = metricParams->Tspan;
   intparams.dopplerPoint = &(metricParams->signalParams.Doppler);
   intparams.detMotionType = metricParams->detMotionType;
-  intparams.site = ifo;
+  intparams.site = NULL;
   intparams.approxPhase = metricParams->approxPhase;
   /* deactivate antenna-patterns for phase-metric */
   intparams.amcomp1 = AMCOMP_NONE;
@@ -1037,14 +1057,14 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
 	  /* g_ij */
 	  intparams.deriv1 = coordSys->coordIDs[i];
 	  intparams.deriv2 = coordSys->coordIDs[j];
-	  gg = CWPhase_cov_Phi_ij ( &intparams, &err );	/* [Phi_i, Phi_j] */
+	  gg = CWPhase_cov_Phi_ij ( &metricParams->detInfo, &intparams, &err );	/* [Phi_i, Phi_j] */
           maxrelerr = MYMAX ( maxrelerr, err );
 	  if ( xlalErrno ) {
 	    XLALPrintError ("\n%s: Integration of g_ij (i=%d, j=%d) failed. errno = %d\n", __func__, i, j, xlalErrno );
             xlalErrno = 0;
             BOOLEAN sav = outputIntegrand;
             outputIntegrand = 1;
-            gg = CWPhase_cov_Phi_ij ( &intparams, &maxrelerr );	/* [Phi_i, Phi_j] */
+            gg = CWPhase_cov_Phi_ij ( &metricParams->detInfo, &intparams, &maxrelerr );	/* [Phi_i, Phi_j] */
             outputIntegrand = sav;
 
 	    XLAL_ERROR_NULL( XLAL_EFUNC );
