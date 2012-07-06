@@ -1470,7 +1470,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
 
   while (headData != NULL) {
 
-    snprintf(filename, nameLength, "%s-freqModelhPlus.dat", headData->name);
+    snprintf(filename, nameLength, "%s-freqTemplatehPlus.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->freqModelhPlus->data->length; ui++) {
       REAL8 f = headData->freqModelhPlus->deltaF * ui;
@@ -1480,7 +1480,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-freqModelhCross.dat", headData->name);
+    snprintf(filename, nameLength, "%s-freqTemplatehCross.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
       REAL8 f = headData->freqModelhCross->deltaF * ui;
@@ -1490,7 +1490,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-freqModel.dat", headData->name);
+    snprintf(filename, nameLength, "%s-freqTemplateStrain.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->freqModelhCross->data->length; ui++) {
       REAL8 f = headData->freqModelhCross->deltaF * ui;
@@ -1502,7 +1502,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeModelhPlus.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplatehPlus.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->timeModelhPlus->data->length; ui++) {
       REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhPlus->epoch)) +
@@ -1513,7 +1513,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeModelhCross.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplatehCross.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
       REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) +
@@ -1524,7 +1524,7 @@ void LALInferenceDataDump(LALInferenceRunState *runState){
     }
     fclose(out);
 
-    snprintf(filename, nameLength, "%s-timeModel.dat", headData->name);
+    snprintf(filename, nameLength, "%s-timeTemplateStrain.dat", headData->name);
     out = fopen(filename, "w");
     for (ui = 0; ui < headData->timeModelhCross->data->length; ui++) {
       REAL8 tt = XLALGPSGetREAL8(&(headData->timeModelhCross->epoch)) +
