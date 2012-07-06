@@ -38,6 +38,12 @@ from matplotlib.mlab import specgram, find
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
+# pylal stuff
+from pylal import date
+from pylal.xlal import inject
+from pylal.xlal import tools
+from pylal.xlal.datatypes.ligotimegps import LIGOTimeGPS
+
 from types import StringType, FloatType
 
 # some common constants taken from psr_constants.py in PRESTO
@@ -738,4 +744,219 @@ def plot_Bks_ASDs( Bkdata, ifos ):
     psdfigs.append(psdfig)
       
   return Bkfigs, psdfigs
+
+# a function to create the signal model for a heterodyned triaxial pulsar given
+# a signal GPS start time, signal duration (in seconds), sample interval
+# (seconds), detector, h0, cos(iota), psi (rads), initial phase phi0 (rads),
+# right ascension (rads) and declination (rads). The list of time stamps, and
+# the real and imaginary parts of the signal are returned
+def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, h0, cosiota,
+                                psi, phi0, ra, dec):                           
+  # create a list of times stamps
+  ts = []
+  tmpts = starttime
   
+  # create real and imaginary parts of the signal
+  sr = []
+  si = []
+  
+  i = 0
+  while tmpts < starttime + duration:
+    ts.append(starttime+(dt*i))
+    
+    # get the antenna response
+    fp, fc = antenna_response(ts[i], ra, dec, psi, detector)
+    
+    Xplus = 0.25*(1.+cosiota*cosiota)*h0
+    Xcross = 0.5*cosiota*h0
+    Xpsinphi = Xplus*np.sin(phi0)
+    Xcsinphi = Xcross*np.sin(phi0)
+    Xpcosphi = Xplus*np.cos(phi0)
+    Xccosphi = Xcross*np.cos(phi0)
+    
+    # create real part of signal
+    sr.append(fp*Xpcosphi + fc*Xcsinphi)
+    si.append(fp*Xpsinphi - fc*Xccosphi)
+    
+    tmpts = ts[i]+dt
+    
+    i = i+1;
+  
+  return ts, sr, si
+
+
+# function to get the antenna response for a given detector. This is based on
+# the response function in pylal/antenna.py. It takes in a GPS time, right
+# ascension (rads), declination (rads), polarisation angle (rads) and a
+# detector name e.g. H1, L1, V1. The plus and cross polarisations are returned.
+def antenna_response( gpsTime, ra, dec, psi, det ):
+  gps = LIGOTimeGPS( gpsTime )
+  gmst_rad = date.XLALGreenwichMeanSiderealTime(gps)
+
+  # create detector-name map
+  detMap = {'H1': 'LHO_4k', 'H2': 'LHO_2k', 'L1': 'LLO_4k',
+            'G1': 'GEO_600', 'V1': 'VIRGO', 'T1': 'TAMA_300'}
+  try:
+    detector=detMap[det]
+  except KeyError:
+    raise ValueError, "ERROR. Key %s is not a valid detector name."\
+          % (det)
+
+  # get detector
+  if detector not in tools.cached_detector.keys():
+    raise ValueError, "%s is not a cached detector.  "\
+          "Cached detectors are: %s" \
+          % (det, tools.cached_detector.keys())
+
+  # get the correct response data
+  response = tools.cached_detector[detector].response
+
+  # actual computation of antenna factors
+  fp, fc = inject.XLALComputeDetAMResponse(response, ra, dec,
+                                                    psi, gmst_rad)
+  
+  return fp, fc
+
+# a function to inject a heterodyned triaxial pulsar signal into noise of a
+# given level for detectors. it will return the signal + noise and the optimal
+# SNR. If an snrscale value is passed to the function the signal will be scaled
+# to that SNR
+def inject_pulsar_signal(starttime, duration, dt, detectors, h0, cosiota,
+                         psi, phi0, ra, dec, f0, nsigs=None, snrscale=None):
+  # if detectors is just a string (i.e. one detector) then make it a list
+  if isinstance(detectors, basestring):
+    detectors = [detectors]
+  
+  # if not noise sigma's are given then generate a noise level from the given
+  # detector noise curves
+  if nsigs is None:
+    nsigs = []
+    
+    for det in detectors:
+      psd = detector_noise( det, f0 )
+      
+      # convert to time domain standard devaition shared between real and
+      # imaginary signal
+      ns = np.sqrt( (psd/2)/(2*dt) )
+      
+      nsigs.append(ns)
+  
+  if len(detectors) != len(nsigs):
+    raise ValueError, "Number of detectors %d not the same as number of "\
+                      "noises %d" % (len(detectors), len(nsigs))
+  
+  tss = np.array([])
+  srs = np.array([])
+  sis = np.array([])
+  
+  j = 0
+  snrtot = 0
+  for det in detectors:
+    # create the pulsar signal
+    ts, sr, si = heterodyned_triaxial_pulsar(starttime, duration, dt, det,
+                                             h0, cosiota, psi, phi0, ra, dec)
+    
+    if j == 0:
+      tss = np.append(tss, ts)
+      srs = np.append(srs, sr)
+      sis = np.append(sis, si)
+    else:
+      tss = np.vstack([tss, ts])
+      srs = np.vstack([srs, sr])
+      sis = np.vstack([sis, si])
+    
+    # get SNR
+    snrtmp = get_optimal_snr( sr, si, nsigs[j] )
+    
+    snrtot = snrtot + snrtmp*snrtmp
+    
+    j = j+1
+    
+  # total multidetector snr
+  snrtot = np.sqrt(snrtot)
+  
+  # add noise and rescale signals if necessary
+  if snrscale is not None:
+    snrscale = snrscale / snrtot
+  else:
+    snrscale = 1
+    
+  i = 0
+  for det in detectors:
+    j = 0
+    
+    # generate random numbers
+    rs = np.random.randn(len(ts), 2)
+    
+    for t in ts:
+      if len(tss.shape) == 1:
+        srs[j] = snrscale*srs[j] + nsigs[i]*rs[j][0]
+        sis[j] = snrscale*sis[j] + nsigs[i]*rs[j][1]
+      else:
+        srs[i][j] = snrscale*srs[i][j] + nsigs[i]*rs[j][0]
+        sis[i][j] = snrscale*sis[i][j] + nsigs[i]*rs[j][1]
+      
+      j = j+1
+      
+    i = i+1
+  
+  snrtot = snrtot*snrscale 
+  
+  return tss, srs, sis, snrtot
+  
+# function to create a time domain PSD from theoretical
+# detector noise curves. It takes in the detector name and the frequency at
+# which to generate the noise.
+#
+# The noise models are taken from those in lalsimulation/src/LALSimNoisePSD.c
+def detector_noise( det, f ):
+  if det == 'AV1': # Advanced Virgo
+    x = np.log(f / 300.);
+    x2 = x*x;
+
+    asd = 1.259e-24 * ( 0.07*np.exp(-0.142 - 1.437*x + 0.407*x2)
+                       + 3.1*np.exp(-0.466 - 1.043*x - 0.548*x2)
+                       + 0.4*np.exp(-0.304 + 2.896*x - 0.293*x2)
+                       + 0.09*np.exp(1.466 + 3.722*x - 0.984*x2) )
+
+    return asd*asd;
+  elif det == 'H1' or det == 'L1': # iLIGO SRD
+    aseis = 1.57271;
+    pseis = -14.0;
+    athrm = 3.80591e-19;
+    pthrm = -2.0;
+    ashot = 1.12277e-23;
+    fshot = 89.3676;
+    seis = aseis * aseis * np.power(f, 2.0*pseis);
+    thrm = athrm * athrm * np.power(f, 2.0*pthrm);
+    shot = ashot * ashot * (1.0 + np.power(f / fshot, 2.0));
+    
+    return seis + thrm + shot;
+  elif det == 'G1': # GEO_600
+    x = f/150.
+    seismic = np.power(10.,-16.) * np.power(x,-30.)
+    thermal = 34. / x
+    shot = 20. * (1 - np.power(x,2.) + 0.5 * np.power(x,4.)) / \
+           (1. + 0.5 * np.power(x,2.))
+
+    return 1e-46*(seismic + thermal + shot)
+  elif det == 'V1': # initial Virgo
+    x = f/500.;
+    s0 = 10.2e-46;
+
+    return s0*( np.power(7.87*x,-4.8) + 6./17./x + 1. + x*x)
+  else:
+    raise ValueError, "%s is not a recognised detector" % (det)
+
+# function to calculate the optimal SNR of a heterodyned pulsar signal - it
+# takes in a complex signal model and noise standard deviation
+def get_optimal_snr( sr, si, sig ):
+  i = 0
+  
+  ss = 0
+  # sum square of signal
+  for s in sr:
+    ss = ss + sr[i]*sr[i] + si[i]*si[i]
+    i = i+1
+   
+  return np.sqrt( ss / (sig*sig) )
