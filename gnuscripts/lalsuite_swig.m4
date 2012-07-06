@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 15
+# serial 16
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -353,7 +353,9 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     ])
 
     # check that wrappings are being compiled with the same C++ compiler used to compile Octave itself
+    AC_MSG_CHECKING([C++ compiler used for building ${OCTAVE}])
     octave_CXX=`${OCTAVE} -qfH --eval "mkoctfile -p CXX"`
+    AC_MSG_RESULT([${octave_CXX}])
     AS_IF([test "x${CXX}" != "x${octave_CXX}"],[
       AC_MSG_ERROR([configured C++ compiler "${CXX}" differs from ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
