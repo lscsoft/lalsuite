@@ -45,10 +45,13 @@
 
 ////////// Public macros //////////
 
-// Public macros (i.e. those used in headers) are contained
-// inside the SWIGLAL() macro, so that they can be easily
-// removed from the proprocessing interface.
+// Public macros (i.e. those used in headers) are contained inside
+// the SWIGLAL() macro, so that they can be easily removed from the
+// proprocessing interface. The SWIGLAL_CLEAR() macro is used to
+// clear any effects of a public macro. Calls to SWIGLAL_CLEAR()
+// are generated from the preprocessing interface.
 #define SWIGLAL(...) %swiglal_public_##__VA_ARGS__
+#define SWIGLAL_CLEAR(...) %swiglal_public_clear_##__VA_ARGS__
 
 ////////// Utility macros and typemaps //////////
 
@@ -239,6 +242,7 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 %define %swiglal_public_NO_NEW_OBJECT(...)
 %swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
 %enddef
+#define %swiglal_public_clear_NO_NEW_OBJECT(...)
 
 // Process a typedef to an interface struct TAGNAME: rename it to RENAME.
 %define %swiglal_process_tdstruct(TAGNAME, RENAME)
@@ -644,6 +648,7 @@ if (swiglal_release_parent(PTR)) {
 %ignore DATA;
 %ignore NI;
 %enddef
+#define %swiglal_public_clear_1D_ARRAY(TYPE, DATA, SIZET, NI)
 // 2-D arrays:
 %define %swiglal_public_2D_ARRAY(TYPE, DATA, SIZET, NI, NJ)
 %swiglal_array_dynamic_2D(TYPE, SIZET, DATA, NI, NJ, arg1->NJ, 1);
@@ -651,6 +656,7 @@ if (swiglal_release_parent(PTR)) {
 %ignore NI;
 %ignore NJ;
 %enddef
+#define %swiglal_public_clear_2D_ARRAY(TYPE, DATA, SIZET, NI, NJ)
 
 ////////// Include scripting-language-specific interface headers //////////
 
@@ -830,6 +836,9 @@ if (swiglal_release_parent(PTR)) {
 %define %swiglal_public_INOUT_SCALARS(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, TYPE INOUT, TYPE, __VA_ARGS__);
 %enddef
+%define %swiglal_public_clear_INOUT_SCALARS(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
 
 // Typemaps for double pointers. By default, treat arguments of type TYPE**
 // as output-only arguments, which do not require a scripting-language input
@@ -855,6 +864,9 @@ if (swiglal_release_parent(PTR)) {
 %typemap(freearg) SWIGTYPE ** "";
 %define %swiglal_public_INOUT_STRUCTS(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INOUT_STRUCTS(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
 // Typemap which ignores the XLAL error code returned by some XLAL functions.
@@ -888,6 +900,7 @@ if (swiglal_release_parent(PTR)) {
 %inline %{
 typedef int _int;
 %}
+#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(FUNCTION)
 
 // The SWIGLAL(RETURN_VOID(TYPE,...)) public macro can be used to ignore
 // the return values of a list of functions of the same type. This might
@@ -899,6 +912,7 @@ typedef int _int;
 %define %swiglal_public_RETURN_VOID(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE SWIGLAL_RETURN_VOID, TYPE, __VA_ARGS__);
 %enddef
+#define %swiglal_public_clear_RETURN_VOID(TYPE, ...)
 
 // Make the wrapping of printf-style LAL functions a little safer, as suggested in
 // the SWIG 2.0 documentation (section 13.5). These functions should now be safely
@@ -938,3 +952,4 @@ require:
   arg11 == ENDVALUE;
 }
 %enddef
+#define %swiglal_public_clear_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)

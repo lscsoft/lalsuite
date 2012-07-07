@@ -182,8 +182,9 @@ for header in headers:
 header_files = sorted(headers, key=lambda h : headers[h]['index'])
 
 # process symbols from interface header parse trees
-symbols = { 'function' : {}, 'struct' : {}, 'tdstruct' : {} }
+symbols = { 'swiglal' : {}, 'function' : {}, 'struct' : {}, 'tdstruct' : {} }
 for header in headers:
+    symbols['swiglal'][header] = set()
 
     # C declarations
     for cdecl in headers[header]['cdecl']:
@@ -194,8 +195,24 @@ for header in headers:
         if not 'type' in cdecl or cdecl['type'] == '':
             fail("cdecl '%s' in header '%s' has no type" % (cdecl['name'], header))
 
+        # SWIGLAL() and SWIGLAL_CLEAR() macros
+        if cdecl['name'] in ['__swiglal__', '__swiglal_clear__']:
+            if not 'value' in cdecl:
+                fail("cdecl '%s' in header '%s' has no value" % (cdecl['name'], header))
+            swiglalmacro = re.sub(r'\s', '', cdecl['value'])
+            if cdecl['name'] == '__swiglal__':
+                if swiglalmacro in symbols['swiglal'][header]:
+                    fail("duplicate definition of SWIGLAL(%s)", swiglalmacro)
+                else:
+                    symbols['swiglal'][header].add(swiglalmacro)
+            else:
+                if swiglalmacro in symbols['swiglal'][header]:
+                    symbols['swiglal'][header].remove(swiglalmacro)
+                else:
+                    fail("cannot clear undefined macro SWIGLAL(%s)", swiglalmacro)
+
         # functions
-        if cdecl['kind'] == 'function':
+        elif cdecl['kind'] == 'function':
             if cdecl['name'] in symbols['function']:
                 fail("duplicate function '%s' in header '%s'" % (cdecl['name'], header))
             symbols['function'][cdecl['name']] = cdecl
@@ -303,9 +320,11 @@ for (symbol_type, symbol_name_key) in (('function', 'name'), ('tdstruct', 'tagna
         # write to interface file
         iface_file.write('%%swiglal_process_%s(%s, %s);\n' % (symbol_type, symbol_name, symbol_rename))
 
-# include interface headers
+# include interface headers, and clear SWIGLAL() macros afterwards
 for header in header_files:
     iface_file.write('%%include <%s>\n' % header)
+    for swiglalmacro in symbols['swiglal'][header]:
+        iface_file.write('SWIGLAL_CLEAR(%s);\n' % swiglalmacro)
 
 # generate constructors and destructors for structs
 for struct_name in sorted(symbols['tdstruct']):
