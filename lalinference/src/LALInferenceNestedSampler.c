@@ -540,10 +540,10 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	    UpdateNMCMC(runState);
 	
 	      }
-	      
-	    if(!(iter%(UINT4)floor(Nlive*kdupdate))){
-              /* update k-d tree */
-              if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" ))
+	    
+	    if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" )){
+	      /* update k-d tree */
+              if(!(iter%((int)floor((REAL8)Nlive * kdupdate))))
                 LALInferenceSetupkDTreeNSLivePoints( runState ); 
             }
 	}
