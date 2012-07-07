@@ -167,6 +167,8 @@ REAL4 maxMassRatio=-1.0;
 REAL4 inclStd=-1.0;
 REAL4 fixed_inc=-1.0;
 REAL4 max_inc=LAL_PI/2.0;
+int coaPhaseFixed = 0;
+REAL4 fixedCoaPhase = 0;
 REAL4 psi=-1.0;
 REAL4 longitude=181.0;
 REAL4 latitude=91.0;
@@ -677,6 +679,11 @@ static void print_usage(char *program)
       " [--incl-std]  inclStd     std dev for gaussian inclination dist\n"\
       " [--fixed-inc]  fixed_inc  value for the fixed inclination angle (in degrees) if '--i-distr fixed' is chosen.\n"\
       " [--max-inc]  max_inc      value for the maximum inclination angle (in degrees) if '--i-distr uniform' is chosen. \n"\
+      " [--coa-phase-distr] cDist set the coalescence phase distribution,\n"\
+      "                           cDist must be one of:\n"\
+      "                           uniform: use random, uniformly distributed coalescence phase [default]\n"\
+      "                           fixed: set fixed coalescence phase\n"\
+      " [--fixed-coa-phase] phase set the coalescence phase (in degrees) for all injections if --coa-phase-distr=fixed\n"\
       " [--ipn-file] ipnskypoints read IPN sky points from file\n"\
       " [--exttrig-file] exttrig  XML file containing external trigger\n\n");
   fprintf(stderr,
@@ -1568,6 +1575,8 @@ int main( int argc, char *argv[] )
     {"fixed-inc",               required_argument, 0,                'C'},
     {"max-inc",                 required_argument, 0,               1001},
     {"polarization",            required_argument, 0,                'S'},
+    {"coa-phase-distr",         required_argument, 0,               1007},
+    {"fixed-coa-phase",         required_argument, 0,               1008},
     {"sourcecomplete",          required_argument, 0,                'H'},
     {"make-catalog",            no_argument,       0,                '.'},
     {"enable-milkyway",         required_argument, 0,                'M'},
@@ -2444,6 +2453,44 @@ int main( int argc, char *argv[] )
         this_proc_param = this_proc_param->next =
           next_process_param( long_options[option_index].name,
               "float", "%e", max_inc );
+        break;
+
+      case 1007:
+        /* coalescence phase distribution */
+        if ( strcmp( optarg, "uniform" ) == 0)
+          coaPhaseFixed = 0;
+        else if ( strcmp( optarg, "fixed" ) == 0)
+          coaPhaseFixed = 1;
+        else {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "must either uniform or fixed (%s specified)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next = (ProcessParamsTable *)
+          calloc( 1, sizeof(ProcessParamsTable) );
+        snprintf( this_proc_param->program, LIGOMETA_PROGRAM_MAX, "%s",
+            PROGRAM_NAME );
+        snprintf( this_proc_param->param, LIGOMETA_PARAM_MAX, "--coa-phase-distr" );
+        snprintf( this_proc_param->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( this_proc_param->value, LIGOMETA_VALUE_MAX, "%s",
+            optarg );
+        break;
+
+     case 1008:
+        /* fixed coalescence phase */
+        fixedCoaPhase = (REAL4) atof( optarg );
+        if ( (fixedCoaPhase < 0.) || (fixedCoaPhase >= 360.) ) {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "fixed coalescence phase must be between 0 and 360 degrees:"
+              "(%s specified)\n",
+              long_options[option_index].name, optarg );
+          exit( 1 );
+        }
+        this_proc_param = this_proc_param->next =
+          next_process_param( long_options[option_index].name,
+              "float", "%e", fixedCoaPhase );
+        fixedCoaPhase *= LAL_PI / 180.;
         break;
 
       case 'S':
@@ -3473,6 +3520,12 @@ int main( int argc, char *argv[] )
     if ( psi != -1.0 )
     {
       simTable->polarization = psi;
+    }
+
+    /* override coalescence phase */
+    if ( coaPhaseFixed )
+    {
+      simTable->coa_phase = fixedCoaPhase;
     }
 
     /* populate spins, if required */
