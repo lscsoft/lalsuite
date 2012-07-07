@@ -150,10 +150,9 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
 			       COMPLEX8FrequencySeries  *sft2,
 			       REAL8FrequencySeries     *psd1,
 			       REAL8FrequencySeries     *psd2,
-			       REAL8                    freq1,
-			       REAL8                    freq2)
+			       UINT4                    bin1,
+			       UINT4                    bin2)
 {
-  INT4 bin1, bin2;
   REAL8 deltaF;
   REAL8 re1, re2, im1, im2;
 
@@ -168,18 +167,13 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   deltaF = sft1->deltaF;
 
   /* check that frequencies are in the right range */
-  if ((freq1 < sft1->f0) || (freq1 > (sft1->f0 + deltaF*sft1->data->length)) ) {
+  if ( bin1 >= (sft1->data->length) ) {
 	ABORT(status, PULSARCROSSCORR_EVAL, PULSARCROSSCORR_MSGEVAL);
   }
   /* check that frequencies are in the right range */
-  if ((freq2 < sft2->f0) || (freq2 > (sft2->f0 + deltaF*sft2->data->length)) ) {
+  if ( bin2 >= (sft2->data->length) ) {
 	ABORT(status, PULSARCROSSCORR_EVAL, PULSARCROSSCORR_MSGEVAL);
   }
-
-
-
-  bin1 = (INT4)ceil( ((freq1 - sft1->f0) / (deltaF)) - 0.5);
-  bin2 = (INT4)ceil( ((freq2 - sft2->f0)/ (deltaF)) - 0.5);
 
   re1 = crealf(sft1->data->data[bin1]);
   im1 = cimagf(sft1->data->data[bin1]);
@@ -190,6 +184,7 @@ void LALCorrelateSingleSFTPair(LALStatus                *status,
   out->imag_FIXME = (deltaF * deltaF * sqrt(psd1->data->data[bin1] * psd2->data->data[bin2])) * (re1*im2 - re2*im1);
 
 /*
+printf("bin1 bin2 %d %d\n", bin1, bin2);
 printf("psd1 psd2 %1.15g %1.15g\n", psd1->data->data[bin1], psd2->data->data[bin2]);
 printf("sft1.re sft1.im %1.15g %1.15g\n", re1*sqrt(psd1->data->data[bin1]), im1*sqrt(psd1->data->data[bin1]));
 printf("sft2.re sft2.im %1.15g %1.15g\n\n", re2*sqrt(psd2->data->data[bin2]), im2*sqrt(psd2->data->data[bin2]));
@@ -316,12 +311,11 @@ void LALGetSignalPhaseInSFT(LALStatus               *status,
  * where the factor of DeltaT^2/4 is absorbed in psd1 and psd2*/
 void LALCalculateSigmaAlphaSq(LALStatus            *status,
 			      REAL8                *out,
-			      REAL8                freq1,
-			      REAL8                freq2,
+			      UINT4                bin1,
+			      UINT4                bin2,
 			      REAL8FrequencySeries *psd1,
 			      REAL8FrequencySeries *psd2)
 {
-  INT8 bin1, bin2;
   REAL8 deltaF;
 
   INITSTATUS(status);
@@ -332,8 +326,6 @@ void LALCalculateSigmaAlphaSq(LALStatus            *status,
 
   deltaF = psd1->deltaF;
 
-  bin1 = (INT8)ceil( ((freq1 - psd1->f0) / (deltaF)) - 0.5);
-  bin2 = (INT8)ceil( ((freq2 - psd2->f0)/ (deltaF)) - 0.5);
   *out = SQUARE(deltaF)*SQUARE(deltaF) * psd1->data->data[bin1] * psd2->data->data[bin2];
   DETATCHSTATUSPTR (status);
   /* normal exit */
