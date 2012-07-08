@@ -352,7 +352,7 @@ void LALCalculateAveUalpha(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
+  deltaPhi = phiI - phiJ - LAL_PI*(freqI - freqJ)/deltaF;
   /*calculate G_IJ. In this case, we have <G_IJ> = 0.1*(exp^(-i delta phi)) * (aIaJ + bIbJ)*/
   re = 0.1 * cos(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
   im = - 0.1 * sin(deltaPhi) * ((beamfnsI.a * beamfnsJ.a) + (beamfnsI.b * beamfnsJ.b));
@@ -396,7 +396,7 @@ void LALCalculateUalpha(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  deltaPhi = phiI - phiJ + LAL_PI*(freqI - freqJ)/deltaF;
+  deltaPhi = phiI - phiJ - LAL_PI*(freqI - freqJ)/deltaF;
 
  
   /*if not averaging over psi, calculate F+, Fx exactly*/
