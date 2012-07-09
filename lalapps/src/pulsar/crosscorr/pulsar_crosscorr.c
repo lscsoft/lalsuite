@@ -187,7 +187,7 @@ int main(int argc, char *argv[]){
   REAL8Vector  *sigmasq;
   PulsarDopplerParams thisPoint;
   static REAL8Vector *rho, *variance;
-  REAL8 tmpstat, freq1, phase1, freq2, phase2;
+  REAL8 tmpstat, freq1, fbin1, phase1, freq2, fbin2, phase2;
   UINT4 bin1, bin2;
   REAL8 tmpstat2, tmpstat3, tmpstat4;
 
@@ -814,6 +814,7 @@ int main(int argc, char *argv[]){
          psd1 = &(psdList->psd);
          freq1 = freqList->val;
 	 bin1 = (UINT4)ceil( ((freq1 - psd1->f0) / (deltaF_SFT)) - 0.5);
+	 fbin1 = psd1->f0 + (REAL8)bin1 * deltaF_SFT;
          phase1 = phaseList->val;
          beamfns1 = &(beamList->beamfn);
 
@@ -829,6 +830,7 @@ int main(int argc, char *argv[]){
 	     psd2 = &(psdList->psd);
   	     freq2 = freqList->val;
 	     bin2 = (UINT4)ceil( ((freq2 - psd2->f0) / (deltaF_SFT)) - 0.5);
+	     fbin2 = psd2->f0 + (REAL8)bin2 * deltaF_SFT;
 	     phase2 = phaseList->val;
 	     beamfns2 = &(beamList->beamfn);
  
@@ -850,6 +852,7 @@ int main(int argc, char *argv[]){
 	     psd2 = &(psdList->psd);
   	     freq2 = freqList->val;
 	     bin2 = (UINT4)ceil( ((freq2 - psd2->f0) / (deltaF_SFT)) - 0.5);
+	     fbin2 = psd2->f0 + (REAL8)bin2 * deltaF_SFT;
 	     phase2 = phaseList->val;
 	     beamfns2 = &(beamList->beamfn);
 	   }
@@ -883,13 +886,13 @@ int main(int argc, char *argv[]){
  	   	    Ualpha function*/
 	     if (uvar_averagePsi && uvar_averageIota) {
 		    LAL_CALL( LALCalculateAveUalpha ( &status, &ualpha->data[ualphacounter], 
-						    phase1, phase2, freq1, freq2, deltaF_SFT, *beamfns1, *beamfns2, 
+						    phase1, phase2, fbin1, fbin2, deltaF_SFT, *beamfns1, *beamfns2, 
 						    sigmasq->data[ualphacounter]),
 			       &status);
 
 	     } else {
 		    LAL_CALL( LALCalculateUalpha ( &status, &ualpha->data[ualphacounter], amplitudes,
-						 phase1, phase2, freq1, freq2, deltaF_SFT, *beamfns1, *beamfns2,
+						 phase1, phase2, fbin1, fbin2, deltaF_SFT, *beamfns1, *beamfns2,
 						 sigmasq->data[ualphacounter], psi, &gplus->data[ualphacounter], &gcross->data[ualphacounter]),
 			      &status);
 	     }
