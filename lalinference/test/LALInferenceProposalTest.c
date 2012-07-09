@@ -214,12 +214,12 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax,tmpVal;
-    REAL8 one=1.0;
+	REAL8 one=1.0;
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	memset(&status,0,sizeof(LALStatus));
 	INT4 enable_spin=0;
 	INT4 aligned_spin=0;
-    gsl_rng *RNG=state->GSLrandom;
+	gsl_rng *RNG=state->GSLrandom;
 	char help[]="\
 	Parameter arguments:\n\
 	(--qmin eta)\tMinimum eta\n\
@@ -509,21 +509,25 @@ int main(int argc, char *argv[]) {
 	/* set up k-D tree if required and not already set */
 	LALInferenceSetupkDTreeNSLivePoints( state );
     
-	UINT4 N=LALInferenceGetVariableDimensionNonFixed(state->currentParams);
-	REAL8 *sigmaVec=XLALCreateREAL8Vector(
+	REAL8Vector *sigmaVec=XLALCreateREAL8Vector(N);
 	for (i = 0; i < N; i++) {
-	  sigmaVec->data[i] = sqrt(gsl_matrix_get(cvm, i, i)); /* Single-parameter sigma. */
+	  sigmaVec->data[i] = sqrt(gsl_matrix_get(*cvm, i, i)); /* Single-parameter sigma. */
 	}
 	LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	  /* Adaptation settings */
-	INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(state->proposalArgs, "adaptationOn")); // Run adapts
+	INT4 adapting,adaptationOn;
+	adapting = adaptationOn = 1 ;      // Indicates if current iteration is being adapted
+	INT4 tau = 5;
+	LALInferenceAddVariable(state->proposalArgs, "adaptationOn", &adaptationOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+	LALInferenceAddVariable(state->proposalArgs, "adapting", &adapting, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+        LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+
 	INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(state->proposalArgs, "adaptTau"));     // Sets decay of adaption function
 	INT4  adaptLength       = pow(10,adaptTau);   // Number of iterations to adapt before turning off
 	INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
 	REAL8 s_gamma           = 1.0;                // Sets the size of changes to jump size during adaptation
 	INT4  adaptStart        = 0;                  // Keeps track of last iteration adaptation was restarted
 	REAL8 logLAtAdaptStart  = 0.0;                // max log likelihood as of last adaptation restart
-	INT4  runPhase          = 0;                  // Phase of run. (0=PT-only run, 1=temporary PT, 2=annealing, 3=single-chain sampling)
 
 	LALInferenceAddVariable(state->proposalArgs, "adaptLength", &adaptLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
 	LALInferenceAddVariable(state->proposalArgs, "adaptResetBuffer", &adaptResetBuffer,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
