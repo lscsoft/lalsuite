@@ -325,8 +325,8 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
 
   /* The default, single-parameter updates. */
   /* Disable until adaptive step is turned on*/
-  //if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
-  //  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
+    LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);

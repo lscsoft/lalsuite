@@ -460,7 +460,7 @@ int main(int argc, char *argv[]) {
 	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	//state->prior=LALInferenceInspiralPriorNormalised;
-    state->prior=LALInferenceInspiralPrior;
+	state->prior=LALInferenceInspiralPrior;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	state->proposal=&NSWrapMCMCLALProposal;
 	
@@ -506,11 +506,31 @@ int main(int argc, char *argv[]) {
 	
 	LALInferenceAddVariable(state->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
     
-    /* set up k-D tree if required and not already set */
-    LALInferenceSetupkDTreeNSLivePoints( state );
+	/* set up k-D tree if required and not already set */
+	LALInferenceSetupkDTreeNSLivePoints( state );
     
+	UINT4 N=LALInferenceGetVariableDimensionNonFixed(state->currentParams);
+	REAL8 *sigmaVec=XLALCreateREAL8Vector(
+	for (i = 0; i < N; i++) {
+	  sigmaVec->data[i] = sqrt(gsl_matrix_get(cvm, i, i)); /* Single-parameter sigma. */
+	}
+	LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+	  /* Adaptation settings */
+	INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(state->proposalArgs, "adaptationOn")); // Run adapts
+	INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(state->proposalArgs, "adaptTau"));     // Sets decay of adaption function
+	INT4  adaptLength       = pow(10,adaptTau);   // Number of iterations to adapt before turning off
+	INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
+	REAL8 s_gamma           = 1.0;                // Sets the size of changes to jump size during adaptation
+	INT4  adaptStart        = 0;                  // Keeps track of last iteration adaptation was restarted
+	REAL8 logLAtAdaptStart  = 0.0;                // max log likelihood as of last adaptation restart
+	INT4  runPhase          = 0;                  // Phase of run. (0=PT-only run, 1=temporary PT, 2=annealing, 3=single-chain sampling)
 
-	
+	LALInferenceAddVariable(state->proposalArgs, "adaptLength", &adaptLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddVariable(state->proposalArgs, "adaptResetBuffer", &adaptResetBuffer,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddVariable(state->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddVariable(state->proposalArgs, "adaptStart", &adaptStart, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+	LALInferenceAddVariable(state->proposalArgs, "logLAtAdaptStart", &logLAtAdaptStart, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  
 	/* Set up the proposal function requirements */
 	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&thinfac,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
