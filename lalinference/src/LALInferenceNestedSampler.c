@@ -859,6 +859,8 @@ UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
         LALInferenceSetVariable(runState->currentParams,"logPrior",&logPriorNew);
     }
     LALInferenceDestroyVariables(oldParams);
+    
+    LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
 
     return(accepted);
 }
