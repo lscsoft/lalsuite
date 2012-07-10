@@ -306,7 +306,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       gpsend=self.config.getfloat('input','gps-end-time')
     # ASCII list of GPS times
     if self.config.has_option('input','gps-time-file'):
-      times=scan_time_file(self.config.get('input','gps-time-file'))
+      times=scan_timefile(self.config.get('input','gps-time-file'))
       events=[Event(trig_time=time) for time in times]
     # Siminspiral Table
     if self.config.has_option('input','injection-file'):
