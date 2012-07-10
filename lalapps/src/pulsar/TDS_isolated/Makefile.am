@@ -44,14 +44,16 @@ lalapps_create_pulsar_signal_frame_SOURCES = \
 
 if HAVE_PYTHON
 pkgpython_DATA = \
-	pulsarpputils.py
+	pulsarpputils.py \
+	pulsar_pipeline_utils.py
 endif
 
 EXTRA_DIST = \
 	test_heterodyne_pulsar.sh \
 	make_frame_cache H1response.txt \
 	H-CW_Injection-875206560-120.gwf \
-	pulsarpputils.py
+	pulsarpputils.py \
+	pulsar_pipeline_utils.py
 
 TESTS_ENVIRONMENT = >&/dev/null \
 LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
