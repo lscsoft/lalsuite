@@ -502,7 +502,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         dfnode=seg.get_df_node()
         if dfnode is not None and dfnode not in self.get_nodes():
     	  self.add_node(dfnode)
-      self.add_node(node)
+    self.add_node(node)
     if gotdata==0:
       'Print no data found for time %f'%(end_time)
       return None
