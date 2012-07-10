@@ -131,6 +131,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     /* check inputs for sanity */
     if (*htilde) XLAL_ERROR(XLAL_EFAULT);
     if (phiStart < 0) XLAL_ERROR(XLAL_EDOM);
+    if (deltaF <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
