@@ -488,6 +488,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       for seg in self.segments[ifo]:
         if end_time >= seg.start() and end_time < seg.end():
           gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
+    if self.config.has_option('lalinference','fake-cache'):
+      node.cachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
+      gotdata=1
     if gotdata==0:
       'Print no data found for time %f'%(end_time)
       return None
@@ -509,8 +512,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','psd-start-time'):
       node.set_psdstart(self.config.getint('input','psd-start-time'))
     node.set_max_psdlength(self.config.getint('input','max-psd-length'))
-    if self.config.has_option('lalinference','fake-cache'):
-      node.cachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
     node.set_output_file(os.path.join(out_dir,node.engine+'-'+str(event.event_id)+'-'+node.get_ifos()+'-'+str(node.get_trig_time())+'-'+str(node.id)))
