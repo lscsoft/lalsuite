@@ -286,9 +286,6 @@ Nested sampling arguments:\n\
     runState->proposal=&NSWrapMCMCLALProposal;
     REAL8 temp=1.0;
     UINT4 dummy=0;
-    LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	/* Default likelihood is the frequency domain one */

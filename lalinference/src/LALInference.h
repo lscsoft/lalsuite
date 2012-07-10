@@ -93,7 +93,7 @@ struct tagLALInferenceIFOData;
  * types are supported as well as others.
 */
 typedef enum {
-  LALINFERENCE_INT4_t, 		
+  LALINFERENCE_INT4_t,
   LALINFERENCE_INT8_t,
   LALINFERENCE_UINT4_t,
   LALINFERENCE_REAL4_t, 
