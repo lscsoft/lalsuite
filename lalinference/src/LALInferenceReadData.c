@@ -1550,7 +1550,7 @@ LALInferenceLALFindChirpInjectSignals (
       for (i=0; i<signalvec.data->length; i++){
         if(i<offset || i>=signalvecREAL8->data->length+offset || isnan(signalvecREAL8->data->data[i-offset])) signalvec.data->data[i]=0.0; //The isnan() condition should not be necessary. To be investigated.
 	else signalvec.data->data[i]=(REAL4) signalvecREAL8->data->data[i-offset];
-	if(isnan(signalvecREAL8->data->data[i-offset])) Nnans++;
+	if((i>=offset)&&(i<signalvecREAL8->data->length+offset) && isnan(signalvecREAL8->data->data[i-offset])) Nnans++;
       }
       if(Nnans>0) fprintf(stderr,"Trimmed %i NaNs from the injection waveform!\n",Nnans);
       }
