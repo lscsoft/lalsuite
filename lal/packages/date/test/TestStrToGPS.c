@@ -179,8 +179,9 @@ int main(int argc, char *argv[])
 		failures += runtest(testcase);
 
 	/* do extra tests if ints > 32 bits overflow strtol() */
+	long int rc;
 	errno = 0;
-	strtol("7323456785", NULL, 0);
+	rc = strtol("7323456785", NULL, 0);
 	if(errno == ERANGE)
 		for(testcase = overflow_testcases; testcase->string; testcase++)
 			failures += runtest(testcase);
