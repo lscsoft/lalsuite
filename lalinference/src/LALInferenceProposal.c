@@ -345,9 +345,12 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
       LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
     }
 
+    /* Turned off - seems to violate detailed balance */
+    /*
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
-
+    */
+    
     if(LALInferenceCheckVariable(proposedParams,"phase")) {
       LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
     }
