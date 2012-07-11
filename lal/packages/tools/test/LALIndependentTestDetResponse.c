@@ -122,6 +122,7 @@ int main( int argc, char *argv[] )
   INT4 opt;
   UINT4 i;
   char *s;
+  int rc;
 
   /* For reading Config File */
   UINT4 lineSize = 80, valueSize  = 25;
@@ -294,18 +295,18 @@ int main( int argc, char *argv[] )
   if(valueString->data[0] == 'D') {
       fprintf( stdout,  "Enter Properties of test detector\n" );
       /* fprintf( stderr, "Detector Longitude (deg): " );
-      scanf( "%lf", &testFrDetector.vertexLongitudeDegrees ); */ /* 05/14/03 gam */
+      rc = scanf( "%lf", &testFrDetector.vertexLongitudeDegrees ); */ /* 05/14/03 gam */
       fprintf( stdout, "Detector Longitude (radians): " );
-      scanf( "%lf", &testFrDetector.vertexLongitudeRadians );
+      rc = scanf( "%lf", &testFrDetector.vertexLongitudeRadians );
 
       /* fprintf( stderr, "Detector Latitude (deg): " );
-      scanf( "%lf" , &testFrDetector.vertexLatitudeDegrees ); */ /* 05/14/03 gam */
+      rc = scanf( "%lf" , &testFrDetector.vertexLatitudeDegrees ); */ /* 05/14/03 gam */
       fprintf( stdout, "Detector Latitude (radians): " );
-      scanf( "%lf" , &testFrDetector.vertexLatitudeRadians );
+      rc = scanf( "%lf" , &testFrDetector.vertexLatitudeRadians );
 
       /* fprintf( stderr, "Detector xArmAzimuth (deg): " ); */ /* 05/14/03 gam */
       fprintf( stdout, "Detector xArmAzimuth (radians): " );
-      scanf( "%f", &testFrDetector.xArmAzimuthRadians );
+      rc = scanf( "%f", &testFrDetector.xArmAzimuthRadians );
 
       /* testFrDetector.xArmAzimuthRadians *= LAL_PI_180; */ /* 05/14/03 gam */
       /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians + LAL_PI_2; */ /* 05/15/03 gam */
