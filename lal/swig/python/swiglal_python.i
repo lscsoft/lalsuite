@@ -233,17 +233,22 @@
       assert(parent_tuple != NULL);
       ecode = PyDict_SetItem(parent_map, key, parent_tuple);
       assert(ecode == 0);
+      Py_CLEAR(parent_tuple);
     }
     else {
+      Py_INCREF(parent_tuple);
       PyObject* stored_parent = NULL;
       long ref_count = 0;
       ecode = PyArg_ParseTuple(parent_tuple, "Ol", &stored_parent, &ref_count);
       assert(ecode);
       ++ref_count;
+      Py_INCREF(stored_parent);
+      Py_CLEAR(parent_tuple);
       parent_tuple = Py_BuildValue("Nl", stored_parent, ref_count);
       assert(parent_tuple != NULL);
       ecode = PyDict_SetItem(parent_map, key, parent_tuple);
       assert(ecode == 0);
+      Py_CLEAR(parent_tuple);
     }
     Py_CLEAR(key);
     assert(PyErr_Occurred() == NULL);
@@ -265,21 +270,25 @@
     assert(key != NULL);
     PyObject* parent_tuple = PyDict_GetItem(parent_map, key);
     if (parent_tuple != NULL) {
+      Py_INCREF(parent_tuple);
       retn = false;
       PyObject* stored_parent = NULL;
       long ref_count = 0;
       ecode = PyArg_ParseTuple(parent_tuple, "Ol", &stored_parent, &ref_count);
       assert(ecode);
+      Py_INCREF(stored_parent);
+      Py_CLEAR(parent_tuple);
       if (--ref_count == 0) {
         ecode = PyDict_DelItem(parent_map, key);
         assert(ecode == 0);
-        Py_CLEAR(parent_tuple);
       }
       else {
-        parent_tuple = Py_BuildValue("Nl", stored_parent, ref_count);
+        parent_tuple = Py_BuildValue("Ol", stored_parent, ref_count);
         ecode = PyDict_SetItem(parent_map, key, parent_tuple);
         assert(ecode == 0);
+        Py_CLEAR(parent_tuple);
       }
+      Py_CLEAR(stored_parent);
     }
     Py_CLEAR(key);
     assert(PyErr_Occurred() == NULL);
