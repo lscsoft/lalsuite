@@ -2161,6 +2161,7 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
   LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   char *nameBuffer=calloc(MAX_STRLEN,sizeof(char));
+  sprintf(nameBuffer,"none");
   LALInferenceAddVariable(state->proposalArgs, "proposedVariableName", &nameBuffer, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
 
   INT4 sigmasNumber = 0;
@@ -2235,7 +2236,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
       REAL8Vector *sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceSigmaJumpName));
 
       REAL8 sigma = sigmas->data[i];
-      char *name = LALInferenceGetVariable(runState->proposalArgs, "proposedVariableName");
+      char *name = *(char **)LALInferenceGetVariable(runState->proposalArgs, "proposedVariableName");
 
       REAL8 priorMin, priorMax, dprior;
 
