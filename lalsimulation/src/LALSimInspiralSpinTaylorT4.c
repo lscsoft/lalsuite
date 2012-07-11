@@ -985,10 +985,10 @@ int XLALSimInspiralSpinTaylorT4(
     }
     else /* Start in middle, integrate backward and forward, stitch together */
     {
-        REAL8TimeSeries *V1, *Phi1, *S1x1, *S1y1, *S1z1, *S2x1, *S2y1, *S2z1;
-        REAL8TimeSeries *LNhatx1, *LNhaty1, *LNhatz1, *E1x1, *E1y1, *E1z1;
-        REAL8TimeSeries *V2, *Phi2, *S1x2, *S1y2, *S1z2, *S2x2, *S2y2, *S2z2;
-        REAL8TimeSeries *LNhatx2, *LNhaty2, *LNhatz2, *E1x2, *E1y2, *E1z2;
+        REAL8TimeSeries *V1=NULL, *Phi1=NULL, *S1x1=NULL, *S1y1=NULL, *S1z1=NULL, *S2x1=NULL, *S2y1=NULL, *S2z1=NULL;
+        REAL8TimeSeries *LNhatx1=NULL, *LNhaty1=NULL, *LNhatz1=NULL, *E1x1=NULL, *E1y1=NULL, *E1z1=NULL;
+        REAL8TimeSeries *V2=NULL, *Phi2=NULL, *S1x2=NULL, *S1y2=NULL, *S1z2=NULL, *S2x2=NULL, *S2y2=NULL, *S2z2=NULL;
+        REAL8TimeSeries *LNhatx2=NULL, *LNhaty2=NULL, *LNhatz2=NULL, *E1x2=NULL, *E1y2=NULL, *E1z2=NULL;
 
         /* Integrate backward to fStart */
         fS = fRef;
