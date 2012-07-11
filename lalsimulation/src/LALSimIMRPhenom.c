@@ -609,7 +609,7 @@ static int IMRPhenomAGenerateFD(
   size_t n = NextPow2(f_max / deltaF) + 1;
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
-  XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
+  XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
   /* now generate the waveform at all frequency bins except DC and Nyquist */
@@ -710,7 +710,7 @@ static int IMRPhenomBGenerateFD(
   size_t n = NextPow2(f_max / deltaF) + 1;
   *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
   memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
-  XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
+  XLALUnitMultiply(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
   if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
 
   /* now generate the waveform */
@@ -753,7 +753,7 @@ static int IMRPhenomBGenerateFD(
  * Private function to generate time-domain waveforms given coefficients
  */
 static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, const REAL8 phi0, const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomParams *params) {
-  COMPLEX16FrequencySeries *htilde;
+  COMPLEX16FrequencySeries *htilde=NULL;
   /* We will generate the waveform from a frequency which is lower than the
    * f_min chosen. Also the cutoff frequency may be higher than the f_max. We
    * will later apply a window function, and truncate the time-domain waveform
@@ -782,7 +782,7 @@ static int IMRPhenomAGenerateTD(REAL8TimeSeries **h, const REAL8 phi0, const REA
  */
 static int IMRPhenomBGenerateTD(REAL8TimeSeries **h, const REAL8 phi0, const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 chi, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomParams *params) {
   REAL8 deltaF;
-  COMPLEX16FrequencySeries *htilde;
+  COMPLEX16FrequencySeries *htilde=NULL;
   /* We will generate the waveform from a frequency which is lower than the
    * f_min chosen. Also the cutoff frequency is higher than the f_max. We
    * will later apply a window function, and truncate the time-domain waveform
