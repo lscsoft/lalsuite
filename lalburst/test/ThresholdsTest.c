@@ -91,6 +91,7 @@ static void Usage(const char *program, int exitcode)
 
 static void ParseOptions(int argc, char *argv[])
 {
+	FILE *fp;
 	int c;
 
 	while(1) {
@@ -107,8 +108,8 @@ static void ParseOptions(int argc, char *argv[])
 			break;
 
 		case 'q':
-			freopen("/dev/null", "w", stderr);
-			freopen("/dev/null", "w", stdout);
+			fp = freopen("/dev/null", "w", stderr);
+			fp = freopen("/dev/null", "w", stdout);
 			break;
 
 		case 'h':
