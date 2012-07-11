@@ -41,6 +41,8 @@
 
 #include <lal/LALStdlib.h>
 
+#define MAX_STRLEN 512
+
 const char *cycleArrayName = "Proposal Cycle";
 const char *cycleArrayLengthName = "Proposal Cycle Length";
 const char *cycleArrayCounterName = "Proposal Cycle Counter";
@@ -622,6 +624,7 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--noAdapt");
 
+
   if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || ppt) {
     /* We are not adaptive, or for some reason don't have a sigma
        vector---fall back on old proposal. */
@@ -671,6 +674,10 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
               i,sigmas->length,__FILE__, __LINE__);
       exit(1);
     }
+
+    /* Save the name of the proposed variable */
+    char *nameBuffer=*(char **)LALInferenceGetVariable(args,"proposedVariableName");
+    strncpy(nameBuffer, param->name, MAX_STRLEN-1);
 
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
 
@@ -2153,6 +2160,9 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
   INT4 varNumber = 0;
   LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
+  char *nameBuffer=calloc(MAX_STRLEN,sizeof(char));
+  LALInferenceAddVariable(state->proposalArgs, "proposedVariableName", &nameBuffer, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+
   INT4 sigmasNumber = 0;
   LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &sigmasNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
@@ -2213,7 +2223,7 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 
   /* Adapt if desired. */
   if (LALInferenceCheckVariable(runState->proposalArgs, "proposedArrayNumber") &&
-      LALInferenceCheckVariable(runState->proposalArgs, "proposedVariableNumber") &&
+      LALInferenceCheckVariable(runState->proposalArgs, "proposedVariableName") &&
       LALInferenceCheckVariable(runState->proposalArgs, "s_gamma") &&
       LALInferenceCheckVariable(runState->proposalArgs, LALInferenceSigmaJumpName) &&
       LALInferenceCheckVariable(runState->proposalArgs, "adapting") &&
@@ -2221,12 +2231,11 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
 
     if (*adaptableStep) {
       i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
-      INT4 varNr = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedVariableNumber"));
       REAL8 s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
       REAL8Vector *sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceSigmaJumpName));
 
       REAL8 sigma = sigmas->data[i];
-      char *name = LALInferenceGetVariableName(runState->currentParams, varNr);
+      char *name = LALInferenceGetVariable(runState->proposalArgs, "proposedVariableName");
 
       REAL8 priorMin, priorMax, dprior;
 
