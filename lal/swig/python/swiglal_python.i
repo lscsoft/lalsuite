@@ -219,6 +219,8 @@
   // If there is already such a reference, increment the internal
   // reference count instead.
   SWIGINTERN void swiglal_store_parent(void* ptr, PyObject* parent) {
+    PyObject *pyerr_type = NULL, *pyerr_value = NULL, *pyerr_traceback = NULL;
+    PyErr_Fetch(&pyerr_type, &pyerr_value, &pyerr_traceback);
     int ecode;
     assert(ptr != NULL);
     PyObject* key = PyLong_FromVoidPtr(ptr);
@@ -244,6 +246,8 @@
       assert(ecode == 0);
     }
     Py_CLEAR(key);
+    assert(PyErr_Occurred() == NULL);
+    PyErr_Restore(pyerr_type, pyerr_value, pyerr_traceback);
   }
 
   // Check if ptr stored a reference to a parent struct. If there is
@@ -252,6 +256,8 @@
   // internal reference count, erase the parent map entry if it reaches
   // zero, and return false to prevent any destructors being called.
   SWIGINTERN bool swiglal_release_parent(void *ptr) {
+    PyObject *pyerr_type = NULL, *pyerr_value = NULL, *pyerr_traceback = NULL;
+    PyErr_Fetch(&pyerr_type, &pyerr_value, &pyerr_traceback);
     int ecode;
     bool retn = true;
     assert(ptr != NULL);
@@ -276,6 +282,8 @@
       }
     }
     Py_CLEAR(key);
+    assert(PyErr_Occurred() == NULL);
+    PyErr_Restore(pyerr_type, pyerr_value, pyerr_traceback);
     return retn;
   }
 
