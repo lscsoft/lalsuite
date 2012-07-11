@@ -28,6 +28,7 @@ src/lalinference-user-env.sh
 src/lalinference-user-env.shell
 src/LALInferenceVCSInfo.h
 src/stamp-h2
+test/LALInferenceInjectionTest
 test/LALInferenceKDTest
 test/LALInferenceLikelihoodTest
 test/LALInferencePriorTest
