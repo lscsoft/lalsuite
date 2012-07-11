@@ -199,7 +199,8 @@ void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInfe
 
 /** Draws from an approximation to the true prior.  Flat in all
     variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
-    in sin(dec), dist^2*/
+    in sin(dec), dist^2.
+    WARNING: This seems to break detailed balance for the LALInferenceProposalTest */
 void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Reflects the sky location through the plane formed by three

@@ -146,7 +146,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	(--randomseed seed           Random seed for Nested Sampling)\n\n";
  */
 	LALInferenceRunState *irs=NULL;
-//	LALInferenceIFOData *ifoPtr, *ifoListStart;
+	LALInferenceIFOData *ifoPtr;
 	ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
@@ -181,6 +181,11 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
 	gsl_rng_set(irs->GSLrandom, randomseed);
 	
+	/* Add a site for the inclination-distance jump */
+	ifoPtr=calloc(1,sizeof(LALInferenceIFOData));
+	ifoPtr->detector=calloc(1,sizeof(LALDetector));
+	memcpy(ifoPtr->detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
+	irs->data=ifoPtr;
 	return(irs);
 }
 

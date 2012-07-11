@@ -358,11 +358,11 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  /*
-  if(LALInferenceCheckVariable(proposedParams,"inclination")) {
+  
+  if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
     LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
   }
-  */
+  
 
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
   	if(LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_CIRCULAR 
@@ -869,7 +869,7 @@ void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenc
   /* This is the constant that describes the curve. */
   REAL8 C = (fPlus*(1 + cosI*cosI) + 2.0*fCross*cosI)/d;
 
-  REAL8 dNew = (fPlus*(1 + cosINew*cosINew) + 2.0*fCross*cosI) / C;
+  REAL8 dNew = (fPlus*(1 + cosINew*cosINew) + 2.0*fCross*cosINew) / C;
 
   REAL8 incNew = acos(cosINew);
 
