@@ -109,7 +109,17 @@ static void ParseOptions(int argc, char *argv[])
 
 		case 'q':
 			fp = freopen("/dev/null", "w", stderr);
+			if (fp == NULL)
+			{
+				fprintf(stderr, "Error: Unable to open /dev/null\n");
+				 exit(1);
+			}
 			fp = freopen("/dev/null", "w", stdout);
+			if (fp == NULL)
+			{
+				fprintf(stderr, "Error: Unable to open /dev/null\n");
+				 exit(1);
+			}
 			break;
 
 		case 'h':
