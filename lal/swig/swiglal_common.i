@@ -883,14 +883,14 @@ if (swiglal_release_parent(PTR)) {
 %header %{
 #define swiglal_ignore_xlal_error_code_return_type_int
 %}
-%typemap(out, noblock=1) int {
+%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int {
 %#ifdef swiglal_ignore_xlal_error_code_return_type_$type
   %set_output(VOID_Object);
 %#else
   %set_output(SWIG_From(int)($1));
 %#endif
 }
-%typemap(out, noblock=1) int SWIGLAL_XLAL_ERROR_CODE {
+%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_XLAL_ERROR_CODE {
   %set_output(SWIG_From(int)($1));
 }
 %define %swiglal_public_RETURN_XLAL_ERROR_CODE(FUNCTION)
