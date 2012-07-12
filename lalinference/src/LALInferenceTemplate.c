@@ -1964,6 +1964,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       previous_phi0 = phi0;
       previous_inclination = inclination;
     
+      if (htilde==NULL || htilde->data==NULL || htilde->data->data==NULL ) {
+        XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'htilde'.\n");
+        XLAL_ERROR_VOID(XLAL_EFAULT);
+      }
+      
       COMPLEX16 *dataPtr = htilde->data->data;
 
       for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {
