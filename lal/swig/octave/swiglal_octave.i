@@ -22,6 +22,16 @@
 
 ////////// General SWIG directives and interface code //////////
 
+// SWIG v2.0.7 may use the _exit() function, which is POSIX (unistd.h)
+// and might not be available, whereas the equivalent _Exit() function
+// is in C99 (stdlib.h) and so it more likely to be supported in C++
+#if SWIGVERSION < 0x020008
+%begin %{
+#include <cstdlib>
+#define _exit _Exit
+%}
+#endif
+
 // Include SWIG Octave headers.
 %include <octcomplex.swg>
 
