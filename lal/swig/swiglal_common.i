@@ -810,16 +810,13 @@ if (swiglal_release_parent(PTR)) {
   %set_output(SWIG_NewPointerObj(copy, $&descriptor, (%newpointer_flags) | SWIG_POINTER_OWN));
 }
 %typemap(varout, noblock=1) SWIGTYPE *, SWIGTYPE [] {
-  %swiglal_store_parent($1, 0);
-  %set_varoutput(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, SWIG_POINTER_OWN | %newpointer_flags));
+  %set_varoutput(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, (%newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 %typemap(varout, noblock=1) SWIGTYPE & {
-  %swiglal_store_parent(&$1, 0);
-  %set_varoutput(SWIG_NewPointerObj(%as_voidptr(&$1), $descriptor, SWIG_POINTER_OWN | %newpointer_flags));
+  %set_varoutput(SWIG_NewPointerObj(%as_voidptr(&$1), $descriptor, (%newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 %typemap(varout, noblock=1) SWIGTYPE {
-  %swiglal_store_parent(&$1, 0);
-  %set_varoutput(SWIG_NewPointerObj(%as_voidptr(&$1), $&descriptor, SWIG_POINTER_OWN | %newpointer_flags));
+  %set_varoutput(SWIG_NewPointerObj(%as_voidptr(&$1), $&descriptor, (%newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 
 // Typemaps for pointers to primitive scalars. These are treated as output-only
