@@ -103,8 +103,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     const REAL8 chi,                 /**< dimensionless aligned-spin param */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
-    const UINT4 phaseO,              /**< twice PN phase order */
-    const UINT4 ampO                 /**< twice PN amplitude order */
+    const INT4 phaseO,              /**< twice PN phase order */
+    const INT4 ampO                 /**< twice PN amplitude order */
     ) {
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -269,7 +269,7 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
     const REAL8 chi,     /**< dimensionless aligned-spin param */
-    const UINT4 O        /**< twice PN phase order */
+    const INT4 O        /**< twice PN phase order */
     ) {
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
     const REAL8 m2 = m2_SI / LAL_MSUN_SI;
@@ -285,12 +285,14 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     REAL8 tau = 1.;  /* chirp time */
     REAL8 tk[8];  /* chirp time coefficients up to 3.5 PN */
     size_t k;
+    UINT4 order = (UINT4) O;
 
     if (fStart <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
     if (O > 7) XLAL_ERROR(XLAL_EDOM); /* only implemented to pN 3.5 */
+    if (O == -1) order = 7; /* to be changed to use #define MAX_PHASE_ORDER in LALSimInspiral.h */
 
     /* chirp time coefficients up to 3.5PN  */
     tk[0] = (5.*m*LAL_MTSUN_SI)/(256.*pow(v,8)*eta);
@@ -304,7 +306,7 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
     tk[7] = (-15419335*LAL_PI)/127008. - (75703*LAL_PI*eta)/756. + (14809*LAL_PI*eta2)/378.;
 
     /* compute chirp time */
-    for (k = 2; k <= O; k++) {
+    for (k = 2; k <= order; k++) {
         vk *= v;
         tau += tk[k] * vk;
     }
