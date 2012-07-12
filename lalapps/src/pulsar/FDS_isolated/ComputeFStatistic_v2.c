@@ -273,7 +273,7 @@ typedef struct {
   INT4 minStartTime;		/**< earliest start-time to use data from */
   INT4 maxEndTime;		/**< latest end-time to use data from */
   CHAR *workingDir;		/**< directory to use for output files */
-  REAL8 timerCount;		/**< output progress-meter every timerCount templates */
+  REAL8 timerCount;		/**< output progress-meter every timerCount seconds */
 
   INT4 upsampleSFTs;		/**< use SFT-upsampling by this factor */
 
@@ -383,7 +383,6 @@ int main(int argc,char *argv[])
   ComputeFBuffer cfBuffer = empty_ComputeFBuffer;
   ComputeFBufferREAL4 cfBuffer4 = empty_ComputeFBufferREAL4;
   REAL8 numTemplates, templateCounter;
-  REAL8 tickCounter;
   time_t clock0;
   Fcomponents Fstat = empty_Fcomponents;
   PulsarDopplerParams dopplerpos = empty_PulsarDopplerParams;		/* current search-parameters */
@@ -517,10 +516,9 @@ int main(int argc,char *argv[])
    * and for each value of the frequency-spindown
    */
   templateCounter = 0.0;
-  tickCounter = 0;
   clock0 = time(NULL);
 
-  REAL8 tic0, tic, toc;	// high-precision timing counters
+  REAL8 tic0, tic, toc, timeOfLastProgressUpdate = 0;	// high-precision timing counters
   timingInfo_t timing = empty_timingInfo;	// timings of Fstatistic computation, transient Fstat-map, transient Bayes factor
   timing.NSFTs = GV.NSFTs;
 
@@ -595,14 +593,14 @@ int main(int argc,char *argv[])
 
       /* Progress meter */
       templateCounter += 1.0;
-      if ( lalDebugLevel && ( ++tickCounter > uvar.timerCount) )
+      if ( lalDebugLevel && ( (toc - timeOfLastProgressUpdate) > uvar.timerCount) )
         {
           REAL8 diffSec = time(NULL) - clock0 ;  /* seconds since start of loop*/
           REAL8 taup = diffSec / templateCounter ;
           REAL8 timeLeft = (numTemplates - templateCounter) *  taup;
-          tickCounter = 0.0;
           LogPrintf (LOG_DEBUG, "Progress: %g/%g = %.2f %% done, Estimated time left: %.0f s\n",
                      templateCounter, numTemplates, templateCounter/numTemplates * 100.0, timeLeft);
+          timeOfLastProgressUpdate = toc;
         }
 
       // here we use Santiago's trick to hack the ComputeFStatFreqBand_RS() Fstat(f) into the single-F rest of the main -loop:
@@ -912,11 +910,11 @@ int main(int argc,char *argv[])
       if ( Fstat.multiFstatAtoms ) XLALDestroyMultiFstatAtomVector ( Fstat.multiFstatAtoms );
       Fstat.multiFstatAtoms = NULL;
 
+      } // for ( iFreq < numFreqBins_FBand )
+
       /* now measure total loop time per template */
       toc = GETTIME();
       timing.tauTemplate += (toc - tic0);
-
-      } // for ( iFreq < numFreqBins_FBand )
 
     } /* while more Doppler positions to scan */
 
@@ -925,12 +923,12 @@ int main(int argc,char *argv[])
   if ( uvar.outputTiming )
     {
       FILE *fpTiming = NULL;
-
+      REAL8 num_templates = templateCounter * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' of FBand
       // compute averages:
-      timing.tauFstat         /= templateCounter;
-      timing.tauTemplate      /= templateCounter;
-      timing.tauTransFstatMap /= templateCounter;
-      timing.tauTransMarg     /= templateCounter;
+      timing.tauFstat         /= num_templates;
+      timing.tauTemplate      /= num_templates;
+      timing.tauTransFstatMap /= num_templates;
+      timing.tauTransMarg     /= num_templates;
 
       if ( ( fpTiming = fopen ( uvar.outputTiming, "ab" )) == NULL ) {
         XLALPrintError ("%s: failed to open timing file '%s' for writing \n", __func__, uvar.outputTiming );
@@ -1167,7 +1165,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->workingDir = (CHAR*)LALMalloc(512);
   strcpy(uvar->workingDir, ".");
 
-  uvar->timerCount = 1e5;	/* output a timer/progress count every N templates */
+  uvar->timerCount = 10;	/* output a timer/progress count every N seconds */
 
   uvar->spindownAge = 0.0;
   uvar->minBraking = 0.0;
@@ -1285,7 +1283,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct(status,	Dterms,		't', UVAR_DEVELOPER, "Number of terms to keep in Dirichlet kernel sum");
 
   LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
-  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N templates");
+  LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
   LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
 
   LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
