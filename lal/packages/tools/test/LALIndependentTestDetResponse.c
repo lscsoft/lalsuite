@@ -298,15 +298,35 @@ int main( int argc, char *argv[] )
       rc = scanf( "%lf", &testFrDetector.vertexLongitudeDegrees ); */ /* 05/14/03 gam */
       fprintf( stdout, "Detector Longitude (radians): " );
       rc = scanf( "%lf", &testFrDetector.vertexLongitudeRadians );
+      if (rc != 1)
+      {
+        fprintf(stderr, "Error: Unable to read input\n");
+        exit(1);
+      }
 
       /* fprintf( stderr, "Detector Latitude (deg): " );
       rc = scanf( "%lf" , &testFrDetector.vertexLatitudeDegrees ); */ /* 05/14/03 gam */
+      /* if (rc != 1)
+      {
+        fprintf(stderr, "Error: Unable to read input\n");
+        exit(1);
+      } */
       fprintf( stdout, "Detector Latitude (radians): " );
       rc = scanf( "%lf" , &testFrDetector.vertexLatitudeRadians );
+      if (rc != 1)
+      {
+        fprintf(stderr, "Error: Unable to read input\n");
+        exit(1);
+      }
 
       /* fprintf( stderr, "Detector xArmAzimuth (deg): " ); */ /* 05/14/03 gam */
       fprintf( stdout, "Detector xArmAzimuth (radians): " );
       rc = scanf( "%f", &testFrDetector.xArmAzimuthRadians );
+      if (rc != 1)
+      {
+        fprintf(stderr, "Error: Unable to read input\n");
+        exit(1);
+      }
 
       /* testFrDetector.xArmAzimuthRadians *= LAL_PI_180; */ /* 05/14/03 gam */
       /* testFrDetector.yArmAzimuthRadians = testFrDetector.xArmAzimuthRadians + LAL_PI_2; */ /* 05/15/03 gam */
