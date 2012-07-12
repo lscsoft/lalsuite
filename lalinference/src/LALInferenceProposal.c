@@ -676,9 +676,11 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
     }
 
     /* Save the name of the proposed variable */
-    char *nameBuffer=*(char **)LALInferenceGetVariable(args,"proposedVariableName");
-    strncpy(nameBuffer, param->name, MAX_STRLEN-1);
-
+    if(LALInferenceCheckVariable(args,"proposedVariableName")){
+      char *nameBuffer=*(char **)LALInferenceGetVariable(args,"proposedVariableName");
+      strncpy(nameBuffer, param->name, MAX_STRLEN-1);
+    }
+    
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
 
     LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
