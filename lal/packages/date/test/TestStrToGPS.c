@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 	long int rc;
 	errno = 0;
 	rc = strtol("7323456785", NULL, 0);
-	if(errno == ERANGE)
+	if ((rc == 0) && (errno == ERANGE))
 		for(testcase = overflow_testcases; testcase->string; testcase++)
 			failures += runtest(testcase);
 	else
