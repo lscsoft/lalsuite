@@ -223,6 +223,11 @@ int main( int argc, char *argv[] )
 
   /* Throw Away First Line Comment */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
 
   /* Test Name */
   strcpy(pulsar.name, "TEST");
@@ -230,24 +235,44 @@ int main( int argc, char *argv[] )
 
   /* R.A. of the Source */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   /* pulsar.equatorialCoords.longitude = LAL_PI_180*(atof( valueString->data )); */
   pulsar.equatorialCoords.longitude = atof( valueString->data ); /* 10/14/04 gam; input needs to be in radians already */
 
   /* Declination of the Source */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   /* pulsar.equatorialCoords.latitude = LAL_PI_180*(atof( valueString->data )); */
   pulsar.equatorialCoords.latitude = atof( valueString->data ); /* 10/14/04 gam; input needs to be in radians already */
 
   /* Polarization Angle */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   /* pulsar.orientation = LAL_PI_180*atof( valueString->data ); */
   pulsar.orientation = atof( valueString->data ); /* 10/14/04 gam; input needs to be in radians already */
 
   /* Start Time */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   /* gpsTime.gpsSeconds = atoi( valueString->data ); */
   gpsTime.gpsSeconds = atol( valueString->data ); /* 09/30/03 gam */
@@ -255,11 +280,21 @@ int main( int argc, char *argv[] )
 
   /* Sample Rate */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   sampleRate = atof( valueString->data );
 
   /* Duration */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   duration = atof( valueString->data );
 
@@ -268,6 +303,11 @@ int main( int argc, char *argv[] )
 
   /* Detector Site */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   if(valueString->data[0] == 'H') {
     detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
@@ -344,18 +384,33 @@ int main( int argc, char *argv[] )
 
   /* tolerance */
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   tolerance = atof( valueString->data );
 
   /* Open Various Output Files */
 
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   outputIndependentFPlusFCross = atoi( valueString->data );
 
   if (outputIndependentFPlusFCross) {
     /*  F_Plus Filename */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
@@ -369,6 +424,11 @@ int main( int argc, char *argv[] )
 
     /* F_Cross Filename */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
@@ -382,16 +442,36 @@ int main( int argc, char *argv[] )
  } else {
     /* 10/13/03 gam; still need to get filenames */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
  }
 
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   outputLALFPlusFCross = atoi( valueString->data );
 
   if (outputLALFPlusFCross) {
     /*  F_Plus LAL Filename */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
@@ -405,6 +485,11 @@ int main( int argc, char *argv[] )
 
     /* F_Cross LAL Filename */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
@@ -418,11 +503,25 @@ int main( int argc, char *argv[] )
  } else {
     /* 10/13/03 gam; still need to get filenames */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
  }
 
-
   s = fgets(lineString->data, lineSize, configFile);
+  if (s == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read ConfigFile\n");
+    exit(1);
+  }
   strncpy(valueString->data, lineString->data, valueSize);
   outputFPlusFCrossDiffs = atoi( valueString->data );
 
@@ -430,6 +529,11 @@ int main( int argc, char *argv[] )
 
     /*  F_Plus LAL Filename */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
@@ -443,6 +547,11 @@ int main( int argc, char *argv[] )
 
     /* F_Cross LAL Filename */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     strncpy(valueString->data, lineString->data, valueSize);
     i=0; checkFileName = 0;
     while( !checkFileName ) {
@@ -456,7 +565,17 @@ int main( int argc, char *argv[] )
  } else {
     /* 10/13/03 gam; still need to get filenames */
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
     s = fgets(lineString->data, lineSize, configFile);
+    if (s == NULL)
+    {
+      fprintf(stderr, "Error: Unable to read ConfigFile\n");
+      exit(1);
+    }
  }
 
  fclose(configFile);
