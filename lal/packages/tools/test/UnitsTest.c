@@ -973,7 +973,17 @@ ParseOptions (int argc, char *argv[])
 
       case 'q': /* quiet: run silently (ignore error messages) */
         fp = freopen ("/dev/null", "w", stderr);
+        if (fp == NULL)
+        {
+          fprintf(stderr, "Error: unable to open /dev/null\n");
+          exit(1);
+        }
         fp = freopen ("/dev/null", "w", stdout);
+        if (fp == NULL)
+        {
+          fprintf(stderr, "Error: unable to open /dev/null\n");
+          exit(1);
+        }
         break;
 
       case 'h':
