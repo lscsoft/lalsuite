@@ -191,6 +191,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 
     /* select the terms according to the PN order chosen */
     switch (ampO) {
+        case 0:
         case 1:
             alpha2 = 0.;
         case 2:
@@ -209,6 +210,7 @@ int XLALSimInspiralTaylorF2ReducedSpin(
     }
 
     switch (phaseO) {
+        case 0:
         case 1:
             psi2 = 0.;
         case 2:
