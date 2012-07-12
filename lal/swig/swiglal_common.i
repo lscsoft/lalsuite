@@ -800,9 +800,15 @@ if (swiglal_release_parent(PTR)) {
   %swiglal_store_parent($1, $owner);
   %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
 }
+%typemap(out,noblock=1) const SWIGTYPE *, const SWIGTYPE &, const SWIGTYPE[] {
+  %set_output(SWIG_NewPointerObj(%as_voidptr($1), $descriptor, ($owner | %newpointer_flags) & ~SWIG_POINTER_OWN));
+}
 %typemap(out, noblock=1) SWIGTYPE *const& {
   %swiglal_store_parent(*$1, $owner);
   %set_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, ($owner | %newpointer_flags) | SWIG_POINTER_OWN));
+}
+%typemap(out, noblock=1) const SWIGTYPE *const& {
+  %set_output(SWIG_NewPointerObj(%as_voidptr(*$1), $*descriptor, ($owner | %newpointer_flags) & ~SWIG_POINTER_OWN));
 }
 %typemap(out, noblock=1) SWIGTYPE (void* copy = NULL) {
   copy = %swiglal_new_copy($1, $ltype);
