@@ -188,6 +188,8 @@
   // If there is already such a reference, increment the internal
   // reference count instead.
   SWIGINTERN void swiglal_store_parent(void* ptr, octave_value parent) {
+    assert(ptr != NULL);
+    assert(parent.is_defined());
     swiglal_oct_parent_map::iterator i = parent_map->find(ptr);
     if (i == parent_map->end()) {
       parent_map->insert(swiglal_oct_parent_pair(ptr, swiglal_oct_parent(parent, 1)));
@@ -204,6 +206,7 @@
   // zero, and return false to prevent any destructors being called.
   SWIGINTERN bool swiglal_release_parent(void *ptr) {
     bool retn = true;
+    assert(ptr != NULL);
     swiglal_oct_parent_map::iterator i = parent_map->find(ptr);
     if (i != parent_map->end()) {
       retn = false;
