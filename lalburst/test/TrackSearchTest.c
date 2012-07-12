@@ -49,7 +49,17 @@ int main( void )
   /* open an input pgm file */
   fp = LALOpenDataFile("a.pgm");
   str = fgets(stringd,255,fp);
+  if (str == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   str = fgets(stringd,255,fp);
+  if (str == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   /* read the height and width of the image */
   rc = fscanf(fp,"%d ",&params.height);
   if (rc != 1)
