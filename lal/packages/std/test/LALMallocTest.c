@@ -334,6 +334,7 @@ int main( void )
   /* get rid of annoying messages from elsewhere */
   setvbuf( mystderr = stdout, NULL, _IONBF, 0 );
   fp = freopen( "/dev/null", "w", stderr );
+  if (fp == NULL) die ( unable to open /dev/null );
 
   lalRaiseHook = TestRaise;
 
