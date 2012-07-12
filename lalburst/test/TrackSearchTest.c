@@ -52,8 +52,23 @@ int main( void )
   str = fgets(stringd,255,fp);
   /* read the height and width of the image */
   rc = fscanf(fp,"%d ",&params.height);
+  if (rc != 1)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   rc = fscanf(fp,"%d ",&params.width);
+  if (rc != 1)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   rc = fscanf(fp,"%d ",&maxVal);
+  if (rc != 1)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   /* Allocate space for the input array */
   in.map=LALMalloc(params.height*sizeof(REAL4 *));
   for(i=0;i<params.height;i++)
@@ -62,8 +77,13 @@ int main( void )
   for(j=0;j<params.width;j++){
     for(i=0;i<params.height;i++){
       rc = fscanf(fp,"%c",&dummy);
+      if (rc != 1)
+      {
+        fprintf(stderr, "Error: Unable to read input\n");
+        exit(1);
+      }
       /* bright parts of the image should have higer values
-	 hence the inversion */
+      hence the inversion */
       *(in.map[i] + j) = maxVal - dummy;
     }
   }
