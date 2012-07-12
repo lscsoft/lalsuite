@@ -285,7 +285,6 @@ Nested sampling arguments:\n\
     /* use the ptmcmc proposal to sample prior */
     runState->proposal=&NSWrapMCMCLALProposal;
     REAL8 temp=1.0;
-    UINT4 dummy=0;
     LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	/* Default likelihood is the frequency domain one */
