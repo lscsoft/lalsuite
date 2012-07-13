@@ -78,7 +78,7 @@ REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG){
 }
 
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
-	INT4 max;
+	INT4 max = 0;
 	/* Measure Autocorrelations if the Nmcmc is not over-ridden */
 	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") && !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
 		  if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
