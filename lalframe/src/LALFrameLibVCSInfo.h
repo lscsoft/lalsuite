@@ -29,6 +29,16 @@
 extern "C" {
 #endif
 
+/* global variables for vcs information, defined in LALFrameVCSInfo.c */
+extern const char *const lalFrameVCSVersion;
+extern const char *const lalFrameVCSId;
+extern const char *const lalFrameVCSDate;
+extern const char *const lalFrameVCSBranch;
+extern const char *const lalFrameVCSTag;
+extern const char *const lalFrameVCSAuthor;
+extern const char *const lalFrameVCSCommitter;
+extern const char *const lalFrameVCSStatus;
+
 /* vcs information structures */
 extern const struct tagLALVCSInfo lalFrameVCSInfo;
 

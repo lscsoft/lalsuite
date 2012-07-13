@@ -29,6 +29,16 @@
 extern "C" {
 #endif
 
+/* global variables for vcs information, defined in LALPulsarVCSInfo.c */
+extern const char *const lalPulsarVCSVersion;
+extern const char *const lalPulsarVCSId;
+extern const char *const lalPulsarVCSDate;
+extern const char *const lalPulsarVCSBranch;
+extern const char *const lalPulsarVCSTag;
+extern const char *const lalPulsarVCSAuthor;
+extern const char *const lalPulsarVCSCommitter;
+extern const char *const lalPulsarVCSStatus;
+
 /* vcs information structures */
 extern const struct tagLALVCSInfo lalPulsarVCSInfo;
 

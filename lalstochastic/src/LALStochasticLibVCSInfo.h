@@ -29,6 +29,16 @@
 extern "C" {
 #endif
 
+/* global variables for vcs information, defined in LALStochasticVCSInfo.c */
+extern const char *const lalStochasticVCSVersion;
+extern const char *const lalStochasticVCSId;
+extern const char *const lalStochasticVCSDate;
+extern const char *const lalStochasticVCSBranch;
+extern const char *const lalStochasticVCSTag;
+extern const char *const lalStochasticVCSAuthor;
+extern const char *const lalStochasticVCSCommitter;
+extern const char *const lalStochasticVCSStatus;
+
 /* vcs information structures */
 extern const struct tagLALVCSInfo lalStochasticVCSInfo;
 

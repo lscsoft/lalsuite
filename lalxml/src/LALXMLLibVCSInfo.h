@@ -29,6 +29,16 @@
 extern "C" {
 #endif
 
+/* global variables for vcs information, defined in LALXMLVCSInfo.c */
+extern const char *const lalXMLVCSVersion;
+extern const char *const lalXMLVCSId;
+extern const char *const lalXMLVCSDate;
+extern const char *const lalXMLVCSBranch;
+extern const char *const lalXMLVCSTag;
+extern const char *const lalXMLVCSAuthor;
+extern const char *const lalXMLVCSCommitter;
+extern const char *const lalXMLVCSStatus;
+
 /* vcs information structures */
 extern const struct tagLALVCSInfo lalXMLVCSInfo;
 
