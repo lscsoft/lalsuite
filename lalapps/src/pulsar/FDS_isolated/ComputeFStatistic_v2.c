@@ -1069,7 +1069,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   /* define default orbital semi-major axis */
   uvar->orbitasini = 0.0;
 
-  uvar->TwoFthreshold = 10.0;
+  uvar->TwoFthreshold = 0.0;
   uvar->NumCandidatesToKeep = 0;
   uvar->FracCandidatesToKeep = 0.0;
   uvar->clusterOnScanline = 0;
