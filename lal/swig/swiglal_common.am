@@ -36,8 +36,6 @@ EXTRA_DIST =
 # clean files
 CLEANFILES = \
 	$(swig_modl_src)
-DISTCLEANFILES = \
-	$(swig_iface_deps)
 
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }

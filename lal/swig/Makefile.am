@@ -47,12 +47,10 @@ EXTRA_DIST = $(swig_generate_iface)
 
 # clean files
 CLEANFILES = \
+	$(swig_iface_headers) \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
 	$(swig_iface)
-DISTCLEANFILES = \
-	$(swig_iface_preproc_deps) \
-	$(swig_iface_headers)
 
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }
