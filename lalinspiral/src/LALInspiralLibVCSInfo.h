@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalInspiralVCSInfo;
+extern const struct tagLALVCSInfo lalInspiralVCSInfo;
 
 #ifdef __cplusplus
 }

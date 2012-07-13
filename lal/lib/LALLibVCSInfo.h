@@ -39,24 +39,21 @@ extern const char *const lalVCSCommitter;
 extern const char *const lalVCSStatus;
 
 /* define vcs information structure */
-#ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALVCSInfo;
-#endif /* SWIG */
 typedef struct tagLALVCSInfo
 {
-  const char *name;
-  const char *version;
-  const char *vcsId;
-  const char *vcsDate;
-  const char *vcsBranch;
-  const char *vcsTag;
-  const char *vcsAuthor;
-  const char *vcsCommitter;
-  const char *vcsStatus;
+  const char *const name;
+  const char *const version;
+  const char *const vcsId;
+  const char *const vcsDate;
+  const char *const vcsBranch;
+  const char *const vcsTag;
+  const char *const vcsAuthor;
+  const char *const vcsCommitter;
+  const char *const vcsStatus;
 } LALVCSInfo;
 
 /* library vcs information structure */
-extern struct tagLALVCSInfo lalVCSInfo;
+extern const struct tagLALVCSInfo lalVCSInfo;
 
 #ifdef __cplusplus
 }

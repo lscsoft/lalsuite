@@ -50,7 +50,7 @@ extern "C" {
 #define LALAPPS_VCS_IDENT_STATUS "$" "LALAppsStatus: @STATUS@ " "$"
 
 /* vcs information structure */
-extern struct tagLALVCSInfo lalAppsVCSInfo;
+extern const struct tagLALVCSInfo lalAppsVCSInfo;
 
 #ifdef __cplusplus
 }
