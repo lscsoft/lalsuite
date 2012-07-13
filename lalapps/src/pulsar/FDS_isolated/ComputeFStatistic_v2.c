@@ -535,7 +535,7 @@ int main(int argc,char *argv[])
 	} else {
 		dFreqResamp = 1.0/(2*GV.multiDetStates->Tspan);
 	}
-      numFreqBins_FBand = (UINT4) ceil ( uvar.FreqBand / dFreqResamp );
+      numFreqBins_FBand = (UINT4) ( 1 + floor ( GV.searchRegion.fkdotBand[0] / dFreqResamp ) );
       if ( ( fstatVector = XLALCalloc ( 1, sizeof ( *fstatVector ) )) == NULL )
         XLAL_ERROR ( XLAL_EFAILED, "Failed to XLALCalloc ( 1, %d )\n", sizeof ( *fstatVector ) );
       if ( (fstatVector->data = XLALCreateREAL4Vector ( numFreqBins_FBand )) == NULL )
@@ -923,7 +923,8 @@ int main(int argc,char *argv[])
   if ( uvar.outputTiming )
     {
       FILE *fpTiming = NULL;
-      REAL8 num_templates = templateCounter * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' of FBand
+      REAL8 num_templates = numTemplates * numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
+
       // compute averages:
       timing.tauFstat         /= num_templates;
       timing.tauTemplate      /= num_templates;
@@ -1552,12 +1553,14 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->stepSizes.orbit = NULL;
 
 
+  REAL8 tmpFreqBandRef = cfg->searchRegion.fkdotBand[0];
+
   /* initialize full multi-dimensional Doppler-scanner */
   {
     DopplerFullScanInit scanInit;			/* init-structure for DopperScanner */
 
     scanInit.searchRegion = cfg->searchRegion;
-    if ( uvar->useResamp )	// in the resampling-case, we take the frequency-dimension out of the Doppler template bank
+    if ( uvar->useResamp )	// in the resampling-case, temporarily take out frequency-dimension of the Doppler template bank
       scanInit.searchRegion.fkdotBand[0] = 0;
 
     scanInit.gridType = uvar->gridType;
@@ -1604,6 +1607,12 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
       LogPrintf ( LOG_CRITICAL, "\nXLALGetDopplerSpinRange() failed\n" );
       ABORT ( status, COMPUTEFSTATISTIC_EXLAL, COMPUTEFSTATISTIC_MSGEXLAL );
     }
+
+    // in the resampling case, we need to restore the frequency-band info now, which we set to 0
+    // before calling the DopplerInit template bank construction
+    if ( uvar->useResamp )
+      spinRangeRef.fkdotBand[0] = tmpFreqBandRef;
+
     // write this search spin-range@refTime back into 'cfg' struct for users' reference
     cfg->searchRegion.refTime = spinRangeRef.refTime;
     memcpy ( cfg->searchRegion.fkdot, spinRangeRef.fkdot, sizeof(cfg->searchRegion.fkdot) );
