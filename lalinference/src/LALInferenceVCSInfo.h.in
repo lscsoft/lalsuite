@@ -23,7 +23,7 @@
 #define _LALINFERENCEVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALInferenceConfig.h>
+#include <lal/LALInferenceLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALINFERENCE_VCS_IDENT_STATUS "$" "LALInferenceStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalInferenceVCSInfo;
 static const struct tagLALVCSInfo lalInferenceHeaderVCSInfo = { \
   LALINFERENCE_VCS_NAME, \
   LALINFERENCE_VERSION, \
