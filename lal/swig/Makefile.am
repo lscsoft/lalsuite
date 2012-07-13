@@ -83,7 +83,10 @@ $(swig_iface_preproc) : $(swig_iface_headers) Makefile
 	echo "#define SWIGLAL_CLEAR(...) const char __swiglal_clear__[] = #__VA_ARGS__" >> $@; \
 	headers=`cat $(swig_iface_headers) | $(SED) 's|^.*:||'`; \
 	for header in $$headers $(swig_extra_headers); do \
-		echo "%include <lal/$${header}>" >> $@; \
+		header=`echo $$header | $(SED) '\|LibVCSInfo.h$$|p;\|VCSInfo.h$$|d'`; \
+		if test "x$$header" != x; then \
+			echo "%include <lal/$${header}>" >> $@; \
+		fi; \
 	done
 
 # generate SWIG parse tree of preprocessing interface file
