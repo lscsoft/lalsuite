@@ -48,8 +48,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 lam2,                /**< dimensionless deformability of 2 */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
-    const UINT4 phaseO,              /**< twice PN phase order */
-    const UINT4 ampO                 /**< twice PN amplitude order */
+    const INT4 phaseO,              /**< twice PN phase order */
+    const INT4 ampO                 /**< twice PN amplitude order */
     ) {
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -141,6 +141,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 
     /* select the terms according to the PN order chosen */
     switch (ampO) {
+        case 0:
         case 1:
             alpha2 = 0.;
         case 2:
@@ -159,6 +160,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     }
 
     switch (phaseO) {
+        case 0:
         case 1:
             psi2 = 0.;
         case 2:

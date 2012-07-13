@@ -20,11 +20,6 @@
 #ifndef _LALBARYCENTER_H    /* Protect against double-inclusion */
 #define _LALBARYCENTER_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <stdio.h>
 #include <math.h>
 #include <lal/LALStdio.h>
@@ -91,7 +86,6 @@ extern "C" {
  */
 typedef struct tagEphemerisFilenames
 {
-  SWIGLAL_STRUCT(EphemerisFilenames);
   CHAR *earthEphemeris;         /**< File containing Earth's position.  */
   CHAR *sunEphemeris;           /**< File containing Sun's position. */
 }
@@ -101,7 +95,6 @@ EphemerisFilenames;
  * acceleration vector. */
 typedef struct tagPosVelAcc
 {
-  SWIGLAL_STRUCT(PosVelAcc);
   REAL8 gps;            /**< REAL8 timestamp */
   REAL8 pos[3];         /**< position-vector */
   REAL8 vel[3];         /**< velocity-vector */
@@ -115,7 +108,6 @@ PosVelAcc;
  */
 typedef struct tagEphemerisData
 {
-  SWIGLAL_STRUCT(EphemerisData);
   EphemerisFilenames ephiles; /**< Names of the two files containing positions of
                                * Earth and Sun, respectively at evenly spaced times. */
   INT4  nentriesE;      /**< The number of entries in Earth ephemeris table. */
@@ -132,7 +124,6 @@ EphemerisData;
  */
 typedef struct tagEarthState
 {
-  SWIGLAL_STRUCT(EarthState);
   REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT */
   REAL8 deinstein;      /**< d(einstein)/d(tgps) */
 
@@ -165,7 +156,6 @@ EarthState;
  */
 typedef struct tagBarycenterInput
 {
-  SWIGLAL_STRUCT(BarycenterInput);
   LIGOTimeGPS  tgps;    /**< input GPS arrival time. I use tgps (lower case)
                          * to remind that here the LAL structure is a
                          * field in the larger structure BarycenterInput.
@@ -191,7 +181,6 @@ BarycenterInput;
  */
 typedef struct tagEmissionTime
 {
-  SWIGLAL_STRUCT(EmissionTime);
   REAL8 deltaT;         /**< \f$t_e\f$(TDB) - \f$t_a\f$(GPS)
                          * + (light-travel-time from source to SSB) */
 

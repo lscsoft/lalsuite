@@ -174,10 +174,17 @@ int XLALInspiralGetApproximantString( CHAR        *output,
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "EOBNR" );
       break;
+
+    case EOBNRv2:
+      snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
+          "EOBNRv2" );
+      break;
+
     case TaylorEt:
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "TaylorEt" );
       break;
+
     case TaylorT4:
       snprintf( approxString, LIGOMETA_SEARCH_MAX * sizeof(CHAR),
           "TaylorT4" );

@@ -21,11 +21,6 @@
 #ifndef _DATE_H
 #define _DATE_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* the following two preprocessor defines are to include the prototypes for
  * gmtime_r() and asctime_r() from /usr/include/time.h
  * HOWEVER, they do no good if -ansi is used in gcc: warnings are generated
@@ -121,7 +116,6 @@ information.  The various time systems are discussed in [\ref esaa1992].
 typedef struct
 tagLALPlaceAndGPS
 {
-    SWIGLAL_STRUCT(LALPlaceAndGPS);
     LALDetector *p_detector;   /**< pointer to a detector */
     LIGOTimeGPS *p_gps;        /**< Pointer to a GPS time structure */
 }
@@ -130,6 +124,10 @@ LALPlaceAndGPS;
 /*@}*/
 
 /* ---------- Function prototypes : see respective source.c files for doxygen documentation ---------- */
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURN_VOID(LIGOTimeGPS*, XLALINT8NSToGPS, XLALGPSSet, XLALGPSSetREAL8, XLALGPSAdd, XLALGPSAddGPS, XLALGPSMultiply, XLALGPSDivide, XLALGreenwichMeanSiderealTimeToGPS, XLALGreenwichSiderealTimeToGPS, XLALGPSTimeNow));
+#endif
 
 /* Converts GPS time to nano seconds stored as an INT8. */
 INT8 XLALGPSToINT8NS( const LIGOTimeGPS *epoch );

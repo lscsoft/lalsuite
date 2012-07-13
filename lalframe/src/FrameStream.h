@@ -43,11 +43,6 @@
 #ifndef _FRAMESTREAM_H
 #define _FRAMESTREAM_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
@@ -111,7 +106,6 @@ FrMode;
 struct FrFile;
 typedef struct tagFrFileInfo
 {
-  SWIGLAL_STRUCT(FrFileInfo);
   INT4  ind;
   CHAR *url;
   INT4  t0;
@@ -120,7 +114,6 @@ typedef struct tagFrFileInfo
 FrFileInfo;
 typedef struct tagFrStream
 {
-  SWIGLAL_STRUCT(FrStream);
   FrState        state;
   INT4           mode;
   LIGOTimeGPS    epoch;
@@ -142,7 +135,6 @@ FrStream;
 typedef struct
 tagFrPos
 {
-  SWIGLAL_STRUCT(FrPos);
   LIGOTimeGPS epoch;
   UINT4       fnum;
   INT4        pos;
@@ -185,7 +177,6 @@ FrChanType;
 typedef struct
 tagFrChanIn
 {
-  SWIGLAL_STRUCT(FrChanIn);
   const CHAR *name;
   ChannelType type;
 }
@@ -209,7 +200,6 @@ FrChanIn;
 typedef struct
 tagFrOutPar
 {
-  SWIGLAL_STRUCT(FrOutPar);
   const CHAR *source;
   const CHAR *description;
   ChannelType type;

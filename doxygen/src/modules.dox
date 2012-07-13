@@ -5,6 +5,8 @@
  */
 
 /**
+\defgroup ch_spec	LAL Specification and Style Guide
+
 \defgroup ch_std	LAL Standard Package
    @{
    \defgroup pkg_std		Package 'std'

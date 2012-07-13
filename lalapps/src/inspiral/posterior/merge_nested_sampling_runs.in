@@ -28,7 +28,8 @@ else:
     headerstr=headerfile.readline()
     headerfile.close()
 
-logLcol=headerstr.lower().split().index('logl')
+headers=headerstr.lower().split()
+logLcol=headers.index('logl')
 
 if opts.Nlive is None:
 	parser.error('You must specify a number of live points using --Nlive')
@@ -134,6 +135,9 @@ Bfile.close()
 if opts.pos is not None:
 	pos=nest2pos_par(d_sorted,weights)
 	posfile=open(opts.pos,'w')
+	for h in headers:
+		posfile.write('%s\t'%(h))
+	posfile.write('\n')
 	for row in pos:
 		for i in row:
 			posfile.write('%f\t'%(i))

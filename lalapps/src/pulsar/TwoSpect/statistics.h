@@ -55,6 +55,7 @@ REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);
 REAL4 calcMedian(REAL4Vector *vector);
+REAL4 calcMedian_ignoreZeros(REAL4Vector *vector);
 
 void sort_float_largest(REAL4Vector *output, REAL4Vector *input);
 void sort_float_smallest(REAL4Vector *output, REAL4Vector *input);
@@ -67,6 +68,7 @@ void min_max_index_INT4Vector(INT4Vector *inputvector, INT4 *min_index_out, INT4
 
 INT4 max_index(REAL4Vector *vector);
 INT4 max_index_double(REAL8Vector *vector);
+INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation);
 INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum);
 
 INT4 qsort_REAL4_compar(const void *a, const void *b);

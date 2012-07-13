@@ -391,6 +391,8 @@ Usage( const char *program, int exitcode )
 static void
 ParseOptions( int argc, char *argv[] )
 {
+  FILE *fp;
+
   while ( 1 )
   {
     int c = -1;
@@ -412,8 +414,18 @@ ParseOptions( int argc, char *argv[] )
         break;
 
       case 'q': /* quiet: run silently (ignore error messages) */
-        freopen( "/dev/null", "w", stderr );
-        freopen( "/dev/null", "w", stdout );
+        fp = freopen( "/dev/null", "w", stderr );
+        if (fp == NULL)
+        {
+          fprintf(stderr, "Error: Unable to open /dev/null\n");
+          exit(1);
+        }
+        fp = freopen( "/dev/null", "w", stdout );
+        if (fp == NULL)
+        {
+          fprintf(stderr, "Error: Unable to open /dev/null\n");
+          exit(1);
+        }
         break;
 
       case 'h':

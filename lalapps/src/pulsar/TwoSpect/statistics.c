@@ -714,7 +714,7 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
       F = newF;
    }
    
-   fprintf(stderr, "%s: Warning! ncx2inv() failed to converge!\n", __func__);
+   fprintf(stderr, "%s: Warning! ncx2inv_float() failed to converge!\n", __func__);
    return xk;
    
 }
@@ -1165,6 +1165,34 @@ INT4 max_index_double(REAL8Vector *vector)
    
 }
 
+
+//Return the index value of the maximum value in a REAL4Vector
+INT4 max_index_in_range(REAL4Vector *vector, INT4 startlocation, INT4 lastlocation)
+{
+   
+   if (startlocation<0) {
+      startlocation = 0;
+   }
+   
+   INT4 ii = startlocation, indexval = ii;
+   REAL4 maxval = vector->data[ii];
+   
+   if (lastlocation>=(INT4)vector->length) {
+      lastlocation = (INT4)vector->length-1;
+   }
+   
+   for (ii=startlocation+1; ii<=lastlocation; ii++) {
+      if (vector->data[ii]>maxval) {
+         maxval = vector->data[ii];
+         indexval = ii;
+      }
+   }
+   
+   return indexval;
+   
+}
+
+
 //Return the index value of the maximum value from a vector (vectornum) in a REAL4VectorSequence
 INT4 max_index_from_vector_in_REAL4VectorSequence(REAL4VectorSequence *vectorsequence, INT4 vectornum)
 {
@@ -1224,6 +1252,39 @@ REAL4 calcMedian(REAL4Vector *vector)
    REAL4 ffdata_median = 0.0;
    if (tempvect->length % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
    else ffdata_median = tempvect->data[(INT4)(0.5*tempvect->length)];
+   
+   XLALDestroyREAL4Vector(tempvect);
+   
+   return ffdata_median;
+   
+}
+
+
+REAL4 calcMedian_ignoreZeros(REAL4Vector *vector)
+{
+   
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(vector->length);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, vector->length);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+   INT4 firstnonzeroelement = -1, ii = 0;
+   while (firstnonzeroelement<0) {
+      if (tempvect->data[ii]!=0.0) {
+         firstnonzeroelement = ii;
+      } else {
+         ii++;
+      }
+   }
+   
+   REAL4 ffdata_median = 0.0;
+   if ((tempvect->length-firstnonzeroelement) % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))-1+firstnonzeroelement] + tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement]);
+   else ffdata_median = tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement];
    
    XLALDestroyREAL4Vector(tempvect);
    

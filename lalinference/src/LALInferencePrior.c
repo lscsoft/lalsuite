@@ -948,14 +948,41 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
 
   LALInferenceVariableItem *item = output->head;
 
-  for(;item;item=item->next){
-    if(item->vary==LALINFERENCE_PARAM_CIRCULAR || item->vary==LALINFERENCE_PARAM_LINEAR)
-      LALInferenceDrawNameFromPrior( output, priorArgs, item->name, item->type, rdm );
-  }
+  /* check if using a k-D tree as the prior */
+  if( LALInferenceCheckVariable( priorArgs, "kDTreePrior" ) ){
+    LALInferenceKDTree *tree =
+      *(LALInferenceKDTree **)LALInferenceGetVariable(priorArgs, "kDTreePrior");
+    
+    /* get parameter template */
+    LALInferenceVariables *template = 
+      *(LALInferenceVariables **)LALInferenceGetVariable(priorArgs,
+                                                         "kDTreePriorTemplate");
+    
+    UINT4 Ncell = 16; /* number of points in a prior cell - i.e. controls
+                         how fine or coarse the prior looks (default to 16) */ 
+      
+    if( LALInferenceCheckVariable( priorArgs, "kDTreePriorNcell" ) )
+      Ncell = *(UINT4 *)LALInferenceGetVariable( priorArgs,"kDTreePriorNcell");
+    
+    /* draw all points from the prior distribution */
+    REAL8 *proposedPt = XLALCalloc(tree->dim, sizeof(REAL8));
 
-  /* remove multivariate deviates value if set */
-  if ( LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )
-    LALInferenceRemoveVariable( priorArgs, "multivariate_deviates" );
+    /* A randomly-chosen point from those in the tree. */
+    LALInferenceKDDrawEigenFrame(rdm, tree, proposedPt, Ncell);
+    LALInferenceKDREAL8ToVariables(output, proposedPt, template);
+  }
+  else{
+    for(;item;item=item->next){
+      if(item->vary==LALINFERENCE_PARAM_CIRCULAR ||
+         item->vary==LALINFERENCE_PARAM_LINEAR)
+        LALInferenceDrawNameFromPrior( output, priorArgs, item->name,
+                                       item->type, rdm );
+    }
+
+    /* remove multivariate deviates value if set */
+    if ( LALInferenceCheckVariable( priorArgs, "multivariate_deviates" ) )
+      LALInferenceRemoveVariable( priorArgs, "multivariate_deviates" );
+  }
 }
 
 void LALInferenceDrawNameFromPrior( LALInferenceVariables *output,

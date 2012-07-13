@@ -38,7 +38,8 @@ int main( void )
   FILE *fp;
   unsigned char dummy;
   char stringd[256];
-
+  char *str;
+  int rc;
 
   /* set the parameters */
   params.sigma=2;  /* 2 */
@@ -47,12 +48,37 @@ int main( void )
   params.low = params.high/3; /* ? */
   /* open an input pgm file */
   fp = LALOpenDataFile("a.pgm");
-  fgets(stringd,255,fp);
-  fgets(stringd,255,fp);
+  str = fgets(stringd,255,fp);
+  if (str == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
+  str = fgets(stringd,255,fp);
+  if (str == NULL)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   /* read the height and width of the image */
-  fscanf(fp,"%d ",&params.height);
-  fscanf(fp,"%d ",&params.width);
-  fscanf(fp,"%d ",&maxVal);
+  rc = fscanf(fp,"%d ",&params.height);
+  if (rc != 1)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
+  rc = fscanf(fp,"%d ",&params.width);
+  if (rc != 1)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
+  rc = fscanf(fp,"%d ",&maxVal);
+  if (rc != 1)
+  {
+    fprintf(stderr, "Error: Unable to read input\n");
+    exit(1);
+  }
   /* Allocate space for the input array */
   in.map=LALMalloc(params.height*sizeof(REAL4 *));
   for(i=0;i<params.height;i++)
@@ -60,9 +86,14 @@ int main( void )
   /* Read the image */
   for(j=0;j<params.width;j++){
     for(i=0;i<params.height;i++){
-      fscanf(fp,"%c",&dummy);
+      rc = fscanf(fp,"%c",&dummy);
+      if (rc != 1)
+      {
+        fprintf(stderr, "Error: Unable to read input\n");
+        exit(1);
+      }
       /* bright parts of the image should have higer values
-	 hence the inversion */
+      hence the inversion */
       *(in.map[i] + j) = maxVal - dummy;
     }
   }

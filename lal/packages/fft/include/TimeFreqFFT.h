@@ -20,11 +20,6 @@
 #ifndef _TIMEFREQFFT_H
 #define _TIMEFREQFFT_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
@@ -239,7 +234,6 @@ AvgSpecMethod;
 typedef struct
 tagAverageSpectrumParams
 {
-  SWIGLAL_STRUCT(AverageSpectrumParams);
   REAL4Window          *window;	/**< The windowing function to use when computing the individual power spectra from the input time series.
                                  * The input time series is broken into smaller time series to compute power spectra
                                  * for the estimate. The length of these time series is determined by the \c length parameter of the window vector.
@@ -254,7 +248,6 @@ AverageSpectrumParams;
 typedef struct
 tagLALPSDRegressor
 {
-  SWIGLAL_STRUCT(LALPSDRegressor);
   unsigned average_samples;
   unsigned median_samples;
   unsigned n_samples;

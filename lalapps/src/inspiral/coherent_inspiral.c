@@ -215,7 +215,7 @@ int main( int argc, char *argv[] )
   CHAR   framename[FILENAME_MAX];
   CHAR   xmlname[FILENAME_MAX];
   CHAR   cohdataStr[LALNameLength];
-  CHAR  *ifo = NULL;
+  /* CHAR  *ifo = NULL; */
 
   UINT4  numPoints        = 0;
   UINT4  numSegments      = 1;
@@ -243,7 +243,7 @@ int main( int argc, char *argv[] )
   INT4   numChiaTriggers  = 0;
   INT4   numCoincs        = 0;
   UINT4  numCohFiles      = 1;
-  UINT4  cohFileID        = 1;
+  /* UINT4  cohFileID        = 1; */
   MultiInspiralTable   *chiaTrigList = NULL;
   MultiInspiralTable   *thisChiaTrigger  = NULL;
 
@@ -431,7 +431,7 @@ int main( int argc, char *argv[] )
         REAL4  chisq[4]         = {1.0,1.0,1.0,1.0};
         REAL4  chisq_dof[4]     = {1.0,1.0,1.0,1.0};
         REAL4  sigmasq[4]         = {1.0,1.0,1.0,1.0};
-        REAL4  lightTravelTimeMS[4] = {0.0,0.0,0.0,0.0};
+        /* REAL4  lightTravelTimeMS[4] = {0.0,0.0,0.0,0.0}; */
         LALDetector  refDetector;
         LALDetector  nextDetector;
         InterferometerNumber  firstIfoNumber = LAL_UNKNOWN_IFO;
@@ -504,8 +504,8 @@ int main( int argc, char *argv[] )
                   }
 
                 /* XLALLightTravelTime outputs in nano-seconds */
-                lightTravelTimeMS[l] = 1.e-6 * ( (REAL8) XLALLightTravelTime(&nextDetector,
-                                                &refDetector) ) ;
+                /* lightTravelTimeMS[l] = 1.e-6 * ( (REAL8) XLALLightTravelTime(&nextDetector,
+                                                &refDetector) ) ; */
 
                 l++;
               }
@@ -1229,7 +1229,7 @@ int main( int argc, char *argv[] )
           }
         j=0;
         while( !(caseID[j]) ) {
-          ifo = caseIDChars[j];
+          /* ifo = caseIDChars[j]; */
           j++;
         }
      }
@@ -1445,7 +1445,7 @@ int main( int argc, char *argv[] )
 
   if ( vrbflg ) fprintf( stdout, "number of coherent trigger files is: %d\n", numCohFiles );
   if ( (numCohFiles == 1) && eventsOut) {
-    cohFileID = 1;
+    /* cohFileID = 1; */
     if ( userTag )          {
       snprintf( fileName, FILENAME_MAX, "%s-CHIA_%s-%d-%d", ifos,
                 userTag, gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );

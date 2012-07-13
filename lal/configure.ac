@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lal],[6.7.1.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.7.2.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -116,7 +116,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[3])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBREVISION],[2])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -160,7 +160,8 @@ LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LALSUITE_ENABLE_NIGHTLY
 
-LALSUITE_SWIG_REQUIRE_CXX
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # get version
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -363,8 +364,8 @@ if test "${boinc}" = "true"; then
   AC_SUBST(BOINC_LIBS)
 fi
 
-# check for SWIG wrapping
-LALSUITE_ENABLE_SWIG
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
 
 # record the libraries needed for linking lal
 LAL_LIBADD="$LIBS"
@@ -420,8 +421,8 @@ echo "
 
             CUDA support is $CUDA_ENABLE_VAL
             BOINC support is $BOINC_ENABLE_VAL
-            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 

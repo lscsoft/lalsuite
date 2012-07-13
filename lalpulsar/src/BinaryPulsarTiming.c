@@ -749,7 +749,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->I31=0.;
   output->r=0.;
   output->lambda=0.;
-  output->theta=0.;
+  output->costheta=0.;
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
@@ -761,7 +761,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->I31Err=0.;
   output->rErr=0.;
   output->lambdaErr=0.;
-  output->thetaErr=0.;
+  output->costhetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
@@ -789,7 +789,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   /* convert all epochs given in MJD in .par files to secs in TDB  */
   while(1){
     j=i;
-    if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
+    if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name") || !strcmp(val[i], "PSR")){
       output->name = XLALStringDuplicate(val[i+1]);
       j++;
     }
@@ -1735,12 +1735,12 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"theta") || !strcmp(val[i],"THETA") ) {
-      output->theta = atof(val[i+1]);
+    else if( !strcmp(val[i],"costheta") || !strcmp(val[i],"COSTHETA") ) {
+      output->costheta = atof(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->thetaErr = atof(val[i+3]);
+        output->costhetaErr = atof(val[i+3]);
         j+=2;
       }
     }

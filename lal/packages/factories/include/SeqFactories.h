@@ -1,11 +1,6 @@
 #ifndef _SEQFACTORIES_H
 #define _SEQFACTORIES_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 
@@ -104,7 +99,6 @@ has zero length, vector length, or \c NULL data pointer then
  * vectors) and the length of each vector.
  */
 typedef struct tagCreateVectorSequenceIn {
-  SWIGLAL_STRUCT(CreateVectorSequenceIn);
   UINT4 length; 	/**< The sequence length */
   UINT4 vectorLength;	/**< The length of each vector in the sequence */
 } CreateVectorSequenceIn;
@@ -115,7 +109,6 @@ typedef struct tagCreateVectorSequenceIn {
  * array) and the dimensions of each array index.
  */
 typedef struct tagCreateArraySequenceIn {
-  SWIGLAL_STRUCT(CreateArraySequenceIn);
   UINT4 length;			/**< The sequence length */
   UINT4Vector *dimLength;	/**< The dimensions of each array index (the same for every array in the sequence) */
 } CreateArraySequenceIn;

@@ -431,12 +431,23 @@ void initVariables(LALInferenceRunState *state)
                ------------------------------------------------------------------------------------------------------------------\n\
                (--symMassRatio)                Jump in symmetric mass ratio eta, instead of q=m2/m1.\n\
                (--LALSimulation)               Interface with the LALSimulation package for template generation.\n\
-               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2).\n\
+               (--approximant Approximant)     Specify a template approximant to use (default TaylorF2). Possible values are: \n\
+                                               default modeldomain=\"time\": GeneratePPN, TaylorT1, TaylorT2, TaylorT3, TaylorT4, \n\
+                                                                           EOB, EOBNR, EOBNRv2, EOBNRv2HM, SpinTaylor, \n\
+                                                                           SpinQuadTaylor, SpinTaylorFrameless, SpinTaylorT4, \n\
+                                                                           PhenSpinTaylorRD, NumRel.\n\
+                                               default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
+                                                                                TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
                (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
+               (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 0).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
                (--modeldomain)                 domain the waveform template will be computed in (\"time\" or \"frequency\").\n\
+               (--spinAligned)                 template will assume spins aligned with the orbital angular momentum.\n\
+                                               *Enables* spins for TaylorF2, TaylorF2RedSpin, TaylorF2RedSpinTidal, IMRPhenomB.\n\
+               (--singleSpin)                  template will assume only the spin of the most massive binary component exists.\n\
+               (--noSpin)                      template will assume no spins.\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
                --- Starting Parameters ------------------------------------------------------------------------------------------\n\
@@ -476,9 +487,9 @@ void initVariables(LALInferenceRunState *state)
                (--Dmin dist)                   Minimum distance in Mpc (1).\n\
                (--Dmax dist)                   Maximum distance in Mpc (100).\n\
                (--lambda1-min)                 Minimum lambda1 (0).\n\
-               (--lambda1-max)                 Maximum lambda1 (80).\n\
+               (--lambda1-max)                 Maximum lambda1 (3000).\n\
                (--lambda2-min)                 Minimum lambda2 (0).\n\
-               (--lambda2-max)                 Maximum lambda2 (80).\n\
+               (--lambda2-max)                 Maximum lambda2 (3000).\n\
                (--dt time)                     Width of time prior, centred around trigger (0.1s).\n\
                \n\
                ------------------------------------------------------------------------------------------------------------------\n\
@@ -528,8 +539,9 @@ void initVariables(LALInferenceRunState *state)
   ProcessParamsTable *ppt=NULL;
   //INT4 AmpOrder=0;
   LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-  LALPNOrder AmpOrder=LAL_PNORDER_NEWTONIAN;
+  LALPNOrder AmpOrder=-1;//LAL_PNORDER_THREE_POINT_FIVE;//LAL_PNORDER_NEWTONIAN;
   Approximant approx=TaylorF2;
+  REAL8 fRef = 0.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
   UINT4 event=0;
   UINT4 i=0;
@@ -549,9 +561,9 @@ void initVariables(LALInferenceRunState *state)
   REAL8 qMax=1.0;
   REAL8 dt=0.1;            /* Width of time prior */
   REAL8 lambda1Min=0.0;
-  REAL8 lambda1Max=80.0;
+  REAL8 lambda1Max=3000.0;
   REAL8 lambda2Min=0.0;
-  REAL8 lambda2Max=80.0;  
+  REAL8 lambda2Max=3000.0;  
   REAL8 tmpMin,tmpMax;//,tmpVal;
   gsl_rng * GSLrandom=state->GSLrandom;
   REAL8 endtime=0.0, timeParam=0.0;
@@ -601,11 +613,6 @@ void initVariables(LALInferenceRunState *state)
       fprintf(stderr,"Reading event %d from file\n",event);
       i=0;
       while(i<event) {i++; injTable=injTable->next;} /* select event */
-
-      endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
-      AmpOrder=injTable->amp_order;
-      XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
-      XLALGetApproximantFromString(injTable->waveform,&approx);
     }
   }
 
@@ -832,6 +839,9 @@ void initVariables(LALInferenceRunState *state)
     fprintf(stdout,"Templates will be generated at %.1f PN order in amplitude\n",((float)(AmpOrder))/2.0);
   }
   
+  ppt=LALInferenceGetProcParamVal(commandLine, "--fref");
+  if (ppt) fRef = atof(ppt->value);
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--modeldomain");
   if(ppt){
     if ( ! strcmp( "time", ppt->value ) )
@@ -1104,6 +1114,9 @@ void initVariables(LALInferenceRunState *state)
   if(LALInferenceGetProcParamVal(commandLine,"--ampOrder")) 
     LALInferenceAddVariable(currentParams, "LAL_AMPORDER",     &AmpOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
 
+  if (LALInferenceGetProcParamVal(commandLine, "--fref"))
+    LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
   ppt=LALInferenceGetProcParamVal(commandLine,"--taper");
   if(ppt){
     LALInferenceAddVariable(currentParams, "LALINFERENCE_TAPER",     &bookends,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
@@ -1316,7 +1329,7 @@ void initVariables(LALInferenceRunState *state)
     }
   }
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinAligned");
-  if(approx==TaylorF2RedSpin && ppt){
+  if((approx==TaylorF2 || approx==TaylorF2RedSpin || approx==TaylorF2RedSpinTidal || approx==IMRPhenomB) && ppt){
 
     tmpMin=-1.0; tmpMax=1.0;
     ppt=LALInferenceGetProcParamVal(commandLine,"--fixA1");
@@ -1673,6 +1686,12 @@ void initVariables(LALInferenceRunState *state)
     fprintf(stdout, "Setting adapt tau = %i.\n", tau);
     LALInferenceSetVariable(state->proposalArgs, "adaptTau", &tau);
   }
+
+  INT4 Neff = 0;
+  ppt = LALInferenceGetProcParamVal(commandLine, "--Neff");
+  if (ppt)
+    Neff = atoi(ppt->value);
+  LALInferenceAddVariable(state->algorithmParams, "Neff", &Neff, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
 
   return;
 }

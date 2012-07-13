@@ -82,14 +82,6 @@ The input must be composed of a valid thisEvent structure as well as
 the  variable deltaT of the PPNParamStruc. All others variables
 of the PPNParamStruc are populated within that function.</dd>
 
-<dt><tt>XLALGetOrderFromString()</tt></dt><dd> convert a string
-provided by the \c CoherentGW structure in order to retrieve the
-order of the waveform to generate.</dd>
-
-<dt><tt>XLALGetApproximantFromString()</tt></dt><dd> convert a string
-provided by the \c CoherentGW structure in order to retrieve the
-approximant of the waveform to generate.</dd>
-
 <dt><tt>XLALGenerateInspiralPopulatePPN()</tt></dt><dd> Populate the
 PPNParamsStruc with the input argument \c thisEvent. That
 structure is used by both inspiral waveforms inject waveforms.</dd>
@@ -147,34 +139,6 @@ LALGenerateInspiral(
     CoherentGW       *waveform,
     SimInspiralTable *params,
     PPNParamStruc    *ppnParamsInputOutput
-    );
-
-int XLALGetInteractionFromString(LALSimInspiralInteraction *inter, CHAR *thisEvent);
-
-int XLALGetAxisChoiceFromString(InputAxis *axisChoice, CHAR *thisEvent);
-
-int XLALGetAdaptiveIntFromString(UINT4 *fixedStep, CHAR *thisEvent);
-
-int XLALGetInspiralOnlyFromString(UINT4 *inspiralOnly, CHAR *thisEvent);
-
-/* XLAL functions for parsing approximants and orders */
-/* and also for populating structures */
-int
-XLALGetOrderFromString(
-    CHAR       * restrict message,
-    LALPNOrder * restrict result
-    );
-
-int
-XLALGetApproximantFromString(
-    CHAR        * restrict message,
-    Approximant * restrict result
-    );
-
-int
-XLALGetTaperFromString(
-    LALSimInspiralApplyTaper * restrict taper,
-    CHAR                     * restrict thisEvent
     );
 
 int

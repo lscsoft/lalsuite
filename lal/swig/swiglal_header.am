@@ -1,0 +1,28 @@
+# SWIG makefile rules for generating header lists.
+# Author: Karl Wette, 2011, 2012
+
+if SWIG_BUILD
+
+# SWIG interface header list
+swig_iface_headers = $(top_builddir)/swig/@PACKAGE_NAME@swig_headers.list
+
+# generate SWIG interface header list
+all install .PHONY : swig_iface_headers
+swig_iface_headers :
+	@if test -f $(swig_iface_headers); then \
+		patt=`echo '^$(subdir):' | $(SED) 's|\.|\\.|g'`; \
+		match=`$(SED) -n "\\|$$patt|p" $(swig_iface_headers)`; \
+		if test "x$$match" = x; then \
+			echo '$(subdir): $(swig_headers)' >> $(swig_iface_headers); \
+		else \
+			patt=`echo '^$(subdir): $(swig_headers)$$' | $(SED) 's|\.|\\.|g'`; \
+			match=`$(SED) -n "\\|$$patt|p" $(swig_iface_headers)`; \
+			if test "x$$match" = x; then \
+				$(SED) -i 's|^$(subdir):.*$$|$(subdir): $(swig_headers)|' $(swig_iface_headers); \
+			fi; \
+		fi; \
+	else \
+		echo '$(subdir): $(swig_headers)' > $(swig_iface_headers); \
+	fi
+
+endif # SWIG_BUILD

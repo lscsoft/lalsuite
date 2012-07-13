@@ -26,11 +26,11 @@ import ConfigParser
 import exceptions
 
 # append the lalapps python path
-sys.path.append('/home/matthew/lscsoft/lib/python')
+# sys.path.append('/home/matthew/lscsoft/lib/python')
 
 # import the lalapps pipeline modules
 from glue import pipeline
-import heterodyne_pulsar
+from lalapps import pulsar_pipeline_utils as ppu
 
 # program usage
 def usage():
@@ -172,10 +172,11 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # create Condor Jobds that will be used in the dag
-df_job = heterodyne_pulsar.LSCDataFindJob('cache','logs',cp) # data find job
-coarse_job = heterodyne_pulsar.heterodyneJob(cp)
-fine_job = heterodyne_pulsar.heterodyneJob(cp)
-update_job = heterodyne_pulsar.heterodyneJob(cp)
+df_job = pipeline.LSCDataFindJob('cache','logs') # data find job
+univ = cp.get('condor', 'universe')
+coarse_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+fine_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+update_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
 
 # set Condor .sub submit file names
 subsuffix = '.sub'
@@ -239,7 +240,7 @@ except: pass
 
 # make DAGs
 if do_datafind:
-  df = heterodyne_pulsar.LSCDataFindNode(df_job)
+  df = pipeline.LSCDataFindNode(df_job)
   
   # set observatory for LSCdataFind
   if (detector.find('H1') > -1) | (detector.find('H2') > -1):
@@ -283,11 +284,12 @@ if do_coarse:
   j = 0
   while i < len(param_files):
     if ".par" in param_files[i]:
-      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+      pulsar = re.sub(r'\.par', r'', param_files[i])
       param_file = pulsar_param_dir + '/' + param_files[i]
       
       # add heterodyneNode for DAG
-      coarse.append(heterodyne_pulsar.heterodyneNode(coarse_job))
+      coarse.append(ppu.heterodyneNode(coarse_job))
       coarse[j].set_het_flag(het_flag)
       coarse[j].set_ifo(detector)
       coarse[j].set_pulsar(pulsar)
@@ -387,7 +389,7 @@ if do_fine or do_update:
         continue 
       
       # add heterodyneNode for DAG
-      fine.append(heterodyne_pulsar.heterodyneNode(fine_job))
+      fine.append(ppu.heterodyneNode(fine_job))
       
       """ 
       if updating parameters check that an updated .par file exists - else just 

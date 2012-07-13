@@ -29,11 +29,6 @@
 #ifndef _DOPPLERSCAN_H  /* Double-include protection. */
 #define _DOPPLERSCAN_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -113,7 +108,6 @@ typedef enum
 
 /** structure describing a polygon-region in the sky */
 typedef struct tagSkyRegion {
-  SWIGLAL_STRUCT(SkyRegion);
   UINT4 numVertices;		/**< number of polygon-vertices */
   SkyPosition *vertices;	/**< array of vertices */
   SkyPosition lowerLeft;	/**< lower-left point of bounding square */
@@ -121,7 +115,6 @@ typedef struct tagSkyRegion {
 } SkyRegion;
 
 typedef struct tagDopplerRegion {
-  SWIGLAL_STRUCT(DopplerRegion);
   CHAR *skyRegionString;	/**< sky-region string '(a1,d1), (a2,d2), ..' */
   LIGOTimeGPS refTime;		/** reference time of definition of Doppler parameters */
   PulsarSpins fkdot;		/**< first points of spin-intervals */
@@ -131,7 +124,6 @@ typedef struct tagDopplerRegion {
 /* ==================== SKYGRID-ONLY types ==================== */
 /** sky grid */
 typedef struct tagDopplerSkyGrid {
-  SWIGLAL_STRUCT(DopplerSkyGrid);
   REAL8 Alpha;
   REAL8 Delta;
   struct tagDopplerSkyGrid *next;
@@ -142,7 +134,6 @@ typedef struct tagDopplerSkyGrid {
 %warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagDopplerSkyScanInit::skyGridFile;
 #endif /* SWIG */
 typedef struct tagDopplerSkyScanInit {
-  SWIGLAL_STRUCT(DopplerSkyScanInit);
   CHAR *skyRegionString;	/**< sky-region to search: format polygon '(a1,d1), (a2,d2), ..' */
   REAL8 Freq;			/**< Frequency for which to build the skyGrid */
   DopplerGridType gridType;	/**< which type of skygrid to generate */
@@ -161,7 +152,6 @@ typedef struct tagDopplerSkyScanInit {
 
 /** this structure reflects the current state of a DopplerSkyScan */
 typedef struct tagDopplerSkyScanState {
-  SWIGLAL_STRUCT(DopplerSkyScanState);
   scan_state_t state;  			/**< idle, ready or finished */
   SkyRegion skyRegion; 		/**< polygon (and bounding square) defining sky-region  */
   UINT4 numSkyGridPoints;	/**< how many skygrid-points */
@@ -172,7 +162,6 @@ typedef struct tagDopplerSkyScanState {
 
 /** a "sky-ellipse", described by the two major axes and it's angle wrt x-axis */
 typedef struct tagMetricEllipse {
-  SWIGLAL_STRUCT(MetricEllipse);
   REAL8 smajor;
   REAL8 sminor;
   REAL8 angle;

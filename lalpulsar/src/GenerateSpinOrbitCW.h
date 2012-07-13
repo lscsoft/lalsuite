@@ -20,11 +20,6 @@
 #ifndef _GENERATESPINORBITCW_H
 #define _GENERATESPINORBITCW_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
@@ -257,7 +252,6 @@ parabolic orbits, and negative (unbounded) for hyperbolic orbits.
  * generator).
  */
 typedef struct tagSpinOrbitCWParamStruc {
-  SWIGLAL_STRUCT(SpinOrbitCWParamStruc);
   /** \name Passed parameters. */
   /*@{*/
   SkyPosition position;   /**< The location of the source on the sky, normally in equatorial coordinates */

@@ -76,42 +76,46 @@ extern "C" {
 /* Usage format string. */
 #define USAGE \
 "Usage: %s [options]\n\n"\
-" --help              display this message\n"\
-" --verbose           display all error messages\n"\
-" --ifo               name of ifo e.g. L1, H1, H2, G1\n"\
-" --pulsar            name of pulsar e.g. J0534+2200\n"\
-" --heterodyne-flag   (int) coarse heterodyne 0, fine heterodyne 1,\n\
-                     parameter update 2, full heterodyne in one go 3,\n\
-                     re-heterodyne an already fine heterodyned file 4\n"\
-" --param-file        name of file containing initial pulsar parameters\n\
-                     (.par file)\n"\
-" --param-file-update name of file containing updated pulsar parameters\n"\
-" --manual-epoch      a hardwired epoch for the pulsar frequency and position\n\
-                     (for use when dealing with hardware injections when this\n\
-                     should be set to 751680013.0)\n"\
-" --ephem-earth-file  name of file containing the earth ephemeris\n"\
-" --ephem-sun-file    name of file containing the sun ephemeris\n"\
-" --filter-knee       knee frequency of low-pass filter (don't filter if = 0)\n"\
-" --sample-rate       sample rate of input data\n"\
-" --resample-rate     sample rate for output data (i.e. 1, 1/60, 8192 etc) \n"\
-" --data-file         file containing list of frame files (in frame cache format)\n\
-                     or previously heterodyned data file\n"\
-" --channel           frame data channel (i.e. LSC-DARM_ERR)\n"\
-" --output-dir        directory for output data files\n"\
-" --seg-file          name of file containing science segment list\n"\
-" --calibrate         if specified calibrate data (no argument)\n"\
-" --response-file     name of file containing the response function\n"\
-" --coefficient-file  name of file containing the calibration coefficients\n"\
-" --sensing-function  name of sensing function file (CAV_GAIN)\n"\
-" --open-loop-gain    name of open loop gain file(OLOOP_GAIN)\n"\
-" --stddev-thresh     standard deviation threshold veto for outliers\n"\
-" --freq-factor       factor which mulitplies the pulsar spin frequency\n\
-                     (default 2.0 i.e. a signal from a triaxial pulsar)\n"\
-" --scale-factor      factor to scale the calibrated h(t) data by\n"\
-" --high-pass-freq    high-pass frequency for calibrated h(t) data\n"\
-" --binary-input      read in input data from binary file (for fine and\n\
-                     update heterodynes only)\n"\
-" --binary-output     output data to a binary file\n"\
+" --help (-h)              display this message\n"\
+" --verbose (-v)           display all error messages\n"\
+" --ifo (-i)               name of ifo e.g. L1, H1, H2, G1\n"\
+" --pulsar (-p)            name of pulsar e.g. J0534+2200\n"\
+" --heterodyne-flag (-z)   (int) coarse heterodyne 0, fine heterodyne 1,\n\
+                          parameter update 2, full heterodyne in one go 3,\n\
+                          re-heterodyne an already fine heterodyned file 4\n"\
+" --param-file (-f)        name of file containing initial pulsar parameters\n\
+                          (.par file)\n"\
+" --param-file-update (-g) name of file containing updated pulsar parameters\n"\
+" --manual-epoch (-M)      a hardwired epoch for the pulsar frequency and\n\
+                          position (for use when dealing with hardware\n\
+                          injections when this should be set to 751680013.0)\n"\
+" --ephem-earth-file (-e)  name of file containing the earth ephemeris\n"\
+" --ephem-sun-file (-S)    name of file containing the sun ephemeris\n"\
+" --filter-knee (-k)       knee frequency of low-pass filter (don't filter\n\
+                          if = 0)\n"\
+" --sample-rate (-s)       sample rate of input data\n"\
+" --resample-rate (-r)     sample rate for output data (i.e. 1, 1/60,\n\
+                          8192 etc) \n"\
+" --data-file (-d)         file containing list of frame files (in frame\n\
+                          cache format) or previously heterodyned data\n\
+                          file\n"\
+" --channel (-c)           frame data channel (i.e. LSC-DARM_ERR)\n"\
+" --output-dir (-o)        directory for output data files\n"\
+" --seg-file (-l)          name of file containing science segment list\n"\
+" --calibrate (-A)         if specified calibrate data (no argument)\n"\
+" --response-file (-R)     name of file containing the response function\n"\
+" --coefficient-file (-C)  name of file containing the calibration\n\
+                          coefficients\n"\
+" --sensing-function (-F)  name of sensing function file (CAV_GAIN)\n"\
+" --open-loop-gain (-O)    name of open loop gain file(OLOOP_GAIN)\n"\
+" --stddev-thresh (-T)     standard deviation threshold veto for outliers\n"\
+" --freq-factor (-m)       factor which mulitplies the pulsar spin frequency\n\
+                          (default 2.0 i.e. a signal from a triaxial pulsar)\n"\
+" --scale-factor (-G)      factor to scale the calibrated h(t) data by\n"\
+" --high-pass-freq (-H)    high-pass frequency for calibrated h(t) data\n"\
+" --binary-input (-B)      read in input data from binary file (for fine and\n\
+                          update heterodynes only)\n"\
+" --binary-output (-b)     output data to a binary file\n"\
 "\n"
 
 #define MAXDATALENGTH 256 /* maximum length of data to be read from frames */

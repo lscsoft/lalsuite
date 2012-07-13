@@ -13,11 +13,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /**
 \addtogroup LALAdaptiveRungeKutta4_h
 \author Vallisneri, M.
@@ -62,7 +57,6 @@ None so far...
 typedef struct
 tagark4GSLIntegrator
 {
-  SWIGLAL_STRUCT(ark4GSLIntegrator);
   gsl_odeiv_step    *step;
   gsl_odeiv_control *control;
   gsl_odeiv_evolve  *evolve;

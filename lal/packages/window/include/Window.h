@@ -21,11 +21,6 @@
 #ifndef _WINDOW_H
 #define _WINDOW_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
@@ -209,7 +204,6 @@ a Papoulis window).
  * as well as metadata about the window such as the sum-of-squarse of the samples
  */
 typedef struct tagREAL4Window {
-	SWIGLAL_STRUCT(REAL4Window);
         REAL4Sequence *data;		/**< The window function samples */
 	REAL8          sumofsquares;	/**< The sum of the squares of the window function samples */
         REAL8          sum;		/**< The sum of the window function samples */
@@ -220,7 +214,6 @@ typedef struct tagREAL4Window {
  * as well as metadata about the window such as the sum-of-squarse of the samples
  */
 typedef struct tagREAL8Window {
-	SWIGLAL_STRUCT(REAL8Window);
 	REAL8Sequence *data;		/**< The window function samples */
 	REAL8          sumofsquares;	/**< The sum of the squares of the window function samples */
 	REAL8          sum;		/**< The sum of the window function samples */

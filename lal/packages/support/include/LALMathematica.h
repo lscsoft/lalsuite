@@ -20,12 +20,6 @@
 #ifndef _LALMATHEMATICA_H
 #define _LALMATHEMATICA_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -175,7 +169,6 @@ extern "C" {
  * shade of the points may convey additional information.
  */
 typedef struct tagMath3DPointList{
-  SWIGLAL_STRUCT(Math3DPointList);
   struct tagMath3DPointList *next;
   REAL4 x;
   REAL4 y;
@@ -187,7 +180,6 @@ typedef struct tagMath3DPointList{
  * stored as data in the REAL4Vector \c coordinates.
  */
 typedef struct tagMathNDPointList{
-  SWIGLAL_STRUCT(MathNDPointList);
   struct tagMathNDPointList *next;
   REAL4Vector *coordinates;
   INT4 dimension;

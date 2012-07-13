@@ -20,11 +20,6 @@
 #ifndef _LALSIMINSPIRAL_H
 #define _LALSIMINSPIRAL_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimIMR.h>
 
@@ -88,8 +83,24 @@ typedef enum {
    TaylorEt,		/**< UNDOCUMENTED */
    TaylorT4,		/**< UNDOCUMENTED */
    TaylorN,		/**< UNDOCUMENTED */
-   NumApproximants	/**< UNDOCUMENTED */
+   NumApproximants	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
+
+/** Enum of possible values to use for post-Newtonian order. */
+typedef enum {
+  LAL_PNORDER_NEWTONIAN,	/**< Newtonain (leading) order */
+  LAL_PNORDER_HALF,		/**< 0.5PN <==> O(v) */
+  LAL_PNORDER_ONE,		/**< 1PN <==> O(v^2) */
+  LAL_PNORDER_ONE_POINT_FIVE,	/**< 1.5PN <==> O(v^3) */
+  LAL_PNORDER_TWO,		/**< 2PN <==> O(v^4) */
+  LAL_PNORDER_TWO_POINT_FIVE,	/**< 2.5PN <==> O(v^5) */
+  LAL_PNORDER_THREE,		/**< 3PN <==> O(v^6) */
+  LAL_PNORDER_THREE_POINT_FIVE,	/**< 3.5PN <==> O(v^7)  */
+  LAL_PNORDER_PSEUDO_FOUR,	/**< pseudo-4PN tuning coefficients included, true 4PN terms currently unknown */
+  LAL_PNORDER_NUM_ORDER		/**< Number of elements in enum, useful for checking bounds */
+ } LALPNOrder;
+
+
 
 
 /** Enumeration to specify which interaction will be used in the waveform
@@ -117,7 +128,7 @@ typedef enum
   LAL_SIM_INSPIRAL_TAPER_START,		/**< Taper the start of the waveform */
   LAL_SIM_INSPIRAL_TAPER_END,		/**< Taper the end of the waveform */
   LAL_SIM_INSPIRAL_TAPER_STARTEND,	/**< Taper the start and the end of the waveform */
-  LAL_SIM_INSPIRAL_TAPER_NUM_OPTS	/**< UNDOCUMENTED */
+  LAL_SIM_INSPIRAL_TAPER_NUM_OPTS	/**< Number of elements in enum, useful for checking bounds */
 }  LALSimInspiralApplyTaper;
 
 
@@ -376,6 +387,44 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 	);
 
 /**
+ * Compute the physical template family "Q" vectors for a spinning, precessing
+ * binary when provided time series of all the dynamical quantities.
+ * These vectors always supplied to dominant order.
+ *
+ * Based on Pan, Buonanno, Chan and Vallisneri PRD69 104017, (see also theses
+ * of Diego Fazi and Ian Harry)
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ */
+
+
+int XLALSimInspiralPrecessingPTFQWaveforms(
+	REAL8TimeSeries **Q1,     /**< PTF-Q1 waveform [returned] */
+	REAL8TimeSeries **Q2,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries **Q3,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries **Q4,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries **Q5,     /**< PTF-Q2 waveform [returned] */
+	REAL8TimeSeries *V,       /**< post-Newtonian parameter */
+	REAL8TimeSeries *Phi,     /**< orbital phase */
+	REAL8TimeSeries *S1x,     /**< Spin1 vector x component */
+	REAL8TimeSeries *S1y,     /**< Spin1 vector y component */
+	REAL8TimeSeries *S1z,     /**< Spin1 vector z component */
+	REAL8TimeSeries *S2x,     /**< Spin2 vector x component */
+	REAL8TimeSeries *S2y,     /**< Spin2 vector y component */
+	REAL8TimeSeries *S2z,     /**< Spin2 vector z component */
+	REAL8TimeSeries *LNhatx,  /**< unit orbital ang. mom. x comp. */
+	REAL8TimeSeries *LNhaty,  /**< unit orbital ang. mom. y comp. */
+	REAL8TimeSeries *LNhatz,  /**< unit orbital ang. mom. z comp. */
+	REAL8TimeSeries *E1x,     /**< orbital plane basis vector x comp. */
+	REAL8TimeSeries *E1y,     /**< orbital plane basis vector y comp. */
+	REAL8TimeSeries *E1z,     /**< orbital plane basis vector z comp. */
+	REAL8 m1,                 /**< mass of companion 1 (kg) */
+	REAL8 m2,                 /**< mass of companion 2 (kg) */
+	REAL8 r                  /**< distance of source (m) */
+	);
+
+/**
  * Compute the length of an inspiral waveform assuming the Taylor dEnergy and Flux equations
  */
 REAL8
@@ -407,6 +456,50 @@ int XLALSimInspiralImplementedFDApproximants(
     Approximant approximant /**< post-Newtonian approximant for use in waveform production */
     );
 
+/** 
+ * XLAL function to determine approximant from a string.  The string need not 
+ * match exactly, only contain a member of the Approximant enum.
+ */
+int XLALGetApproximantFromString(const CHAR *inString);
+
+/** 
+ * XLAL function to determine PN order from a string.  The string need not 
+ * match exactly, only contain a member of the LALPNOrder enum.
+ */
+int XLALGetOrderFromString(const CHAR *inString);
+
+/** 
+ * XLAL function to determine tapering flag from a string.  The string must 
+ * match exactly with a member of the LALSimInspiralApplyTaper enum. 
+ */
+int XLALGetTaperFromString(const CHAR *inString);
+
+/** 
+ * XLAL function to determine LALSimInspiralInteraction from a string.
+ *
+ * TODO: return the bit sum if the string is a concatenation of several 
+ * interaction terms. Also make names match cases of enum.
+ */
+int XLALGetInteractionFromString(const CHAR *inString);
+
+/** XLAL function to determine axis choice flag from a string */
+int XLALGetFrameAxisFromString(const CHAR *inString);
+
+/** 
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString);
+
+/** 
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal 
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString);
+
+
 /**
  * DEPRECATED: USE XLALSimInspiralChooseTDWaveform() INSTEAD
  *
@@ -428,7 +521,8 @@ int XLALSimInspiralChooseWaveform(
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_min,                                /**< start frequency (Hz) */
+    REAL8 f_ref,                                /**< reference frequency (Hz) */
     REAL8 r,                                    /**< distance of source */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
@@ -459,7 +553,8 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 s2x,                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 s2y,                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 s2z,                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                /**< start frequency */
+    REAL8 f_min,                /**< start frequency (Hz) */
+    REAL8 f_ref,                /**< reference frequency (Hz) */
     REAL8 r,                    /**< distance of source */
     REAL8 i,                    /**< inclination of source (rad) */
     REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
@@ -913,6 +1008,23 @@ int XLALSimInspiralTaylorEtPNRestricted(
 	       	int O                     /**< twice post-Newtonian phase order */
 		);
 
+/**
+ * Computes the stationary phase approximation to the Fourier transform of
+ * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
+ * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$ to the same order as
+ * the phase.
+ */
+int XLALSimInspiralTaylorF2(
+		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+		const REAL8 phic,                /**< coalescence GW phase (rad) */
+		const REAL8 deltaF,              /**< frequency resolution */
+		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
+		const REAL8 fStart,              /**< start GW frequency (Hz) */
+		const REAL8 r,                   /**< distance of source (m) */
+		const INT4 O                    /**< twice PN phase order */
+		);
+
 
 /**
  * Functions for generic spinning waveforms. 
@@ -957,11 +1069,11 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8TimeSeries **E1x,    /**< orb. plane basis vector x[returned]*/
 	REAL8TimeSeries **E1y,    /**< -- y component [returned]*/
 	REAL8TimeSeries **E1z,    /**< -- z component [returned]*/
-	REAL8 phi_end,            /**< orbital phase at last sample */
 	REAL8 deltaT,          	  /**< sampling interval (s) */
 	REAL8 m1,              	  /**< mass of companion 1 (kg) */
 	REAL8 m2,              	  /**< mass of companion 2 (kg) */
-	REAL8 fStart,             /**< start frequency */
+	REAL8 fStart,             /**< starting GW frequency */
+	REAL8 fEnd,               /**< ending GW frequency, fEnd=0 means integrate as far forward as possible */
 	REAL8 s1x,                /**< initial value of S1x */
 	REAL8 s1y,                /**< initial value of S1y */
 	REAL8 s1z,                /**< initial value of S1z */
@@ -985,73 +1097,82 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
  * with phasing computed from energy balance using the so-called \"T4\" method.
  *
  * This routine allows the user to specify different pN orders
- * for phasing calcuation vs. amplitude calculations.
+ * for the phasing and amplitude of the waveform.
+ * 
+ * The reference frequency fRef is used as follows:
+ * 1) if fRef = 0: The initial values of s1, s2, lnhat and e1 will be the
+ *    values at frequency fStart. The orbital phase of the last sample is set
+ *    to phiRef (i.e. phiRef is the "coalescence phase", roughly speaking).
+ *    THIS IS THE DEFAULT BEHAVIOR CONSISTENT WITH OTHER APPROXIMANTS
+ * 
+ * 2) If fRef = fStart: The initial values of s1, s2, lnhat and e1 will be the 
+ *    values at frequency fStart. phiRef is used to set the orbital phase
+ *    of the first sample at fStart.
+ * 
+ * 3) If fRef > fStart: The initial values of s1, s2, lnhat and e1 will be the
+ *    values at frequency fRef. phiRef is used to set the orbital phase at fRef.
+ *    The code will integrate forwards and backwards from fRef and stitch the
+ *    two together to create a complete waveform. This allows one to specify
+ *    the orientation of the binary in-band (or at any arbitrary point).
+ *    Otherwise, the user can only directly control the initial orientation.
+ *
+ * 4) fRef < 0 or fRef >= Schwarz. ISCO are forbidden and the code will abort.
  */
 int XLALSimInspiralSpinTaylorT4(
-		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-		REAL8TimeSeries **hcross, /**< x-polarization waveform */
-		REAL8 phi_end,            /**< GW phase of final sample (rad) */
-		REAL8 v0,                 /**< tail gauge term (default = 1) */
-		REAL8 deltaT,             /**< sampling interval (s) */
-		REAL8 m1,                 /**< mass of companion 1 (kg) */
-		REAL8 m2,                 /**< mass of companion 2 (kg) */
-		REAL8 fStart,             /**< start GW frequency (Hz) */
-		REAL8 r,                  /**< distance of source (m) */
-		REAL8 s1x,                /**< initial value of S1x */
-		REAL8 s1y,                /**< initial value of S1y */
-		REAL8 s1z,                /**< initial value of S1z */
-		REAL8 s2x,                /**< initial value of S2x */
-		REAL8 s2y,                /**< initial value of S2y */
-		REAL8 s2z,                /**< initial value of S2z */
-		REAL8 lnhatx,             /**< initial value of LNhatx */
-		REAL8 lnhaty,             /**< initial value of LNhaty */
-		REAL8 lnhatz,             /**< initial value of LNhatz */
-		REAL8 e1x,                /**< initial value of E1x */
-		REAL8 e1y,                /**< initial value of E1y */
-		REAL8 e1z,                /**< initial value of E1z */
-		REAL8 lambda1,            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-		REAL8 lambda2,            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int phaseO,               /**< twice PN phase order */
-		int amplitudeO            /**< twice PN amplitude order */
-		);
-
-
+	REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+	REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+	REAL8 phiRef,                   /**< orbital phase at reference pt. */
+	REAL8 v0,                       /**< tail gauge term (default = 1) */
+	REAL8 deltaT,                   /**< sampling interval (s) */
+	REAL8 m1,                       /**< mass of companion 1 (kg) */
+	REAL8 m2,                       /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< start GW frequency (Hz) */
+	REAL8 fRef,                     /**< reference GW frequency (Hz) */
+	REAL8 r,                        /**< distance of source (m) */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 s2x,                      /**< initial value of S2x */
+	REAL8 s2y,                      /**< initial value of S2y */
+	REAL8 s2z,                      /**< initial value of S2z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	REAL8 e1x,                      /**< initial value of E1x */
+	REAL8 e1y,                      /**< initial value of E1y */
+	REAL8 e1z,                      /**< initial value of E1z */
+	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+	int phaseO,                     /**< twice PN phase order */
+	int amplitudeO                  /**< twice PN amplitude order */
+	);
 
 /**
- * Driver routine to compute a precessing post-Newtonian inspiral waveform
- * with phasing computed from energy balance using the so-called \"T4\" method.
+ * Driver routine to compute the physical template family "Q" vectors using
+ * the \"T4\" method. Note that PTF describes single spin systems
  *
- * This routine assumes leading-order amplitude dependence (restricted waveform)
- * but allows hte user to specify the phase PN order
+ * This routine requires leading-order amplitude dependence
+ * but allows the user to specify the phase PN order
  */
-int XLALSimInspiralRestrictedSpinTaylorT4(
-		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-		REAL8TimeSeries **hcross, /**< x-polarization waveform */
-		REAL8 phi_end,            /**< GW phase of final sample (rad) */
-		REAL8 v0,                 /**< tail gauge term (default = 1) */
-		REAL8 deltaT,             /**< sampling interval (s) */
-		REAL8 m1,                 /**< mass of companion 1 (kg) */
-		REAL8 m2,                 /**< mass of companion 2 (kg) */
-		REAL8 fStart,             /**< start GW frequency (Hz) */
-		REAL8 r,                  /**< distance of source (m) */
-		REAL8 s1x,                /**< initial value of S1x */
-		REAL8 s1y,                /**< initial value of S1y */
-		REAL8 s1z,                /**< initial value of S1z */
-		REAL8 s2x,                /**< initial value of S2x */
-		REAL8 s2y,                /**< initial value of S2y */
-		REAL8 s2z,                /**< initial value of S2z */
-		REAL8 lnhatx,             /**< initial value of LNhatx */
-		REAL8 lnhaty,             /**< initial value of LNhaty */
-		REAL8 lnhatz,             /**< initial value of LNhatz */
-		REAL8 e1x,                /**< initial value of E1x */
-		REAL8 e1y,                /**< initial value of E1y */
-		REAL8 e1z,                /**< initial value of E1z */
-		REAL8 lambda1,            /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-		REAL8 lambda2,            /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-	    LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int phaseO                /**< twice PN phase order */
-		);
+
+int XLALSimInspiralSpinTaylorT4PTFQVecs(
+        REAL8TimeSeries **Q1,            /**< Q1 output vector */
+        REAL8TimeSeries **Q2,            /**< Q2 output vector */
+        REAL8TimeSeries **Q3,            /**< Q3 output vector */
+        REAL8TimeSeries **Q4,            /**< Q4 output vector */
+        REAL8TimeSeries **Q5,            /**< Q5 output vector */
+        REAL8 deltaT,                   /**< sampling interval (s) */
+        REAL8 m1,                       /**< mass of companion 1 (kg) */
+        REAL8 m2,                       /**< mass of companion 2 (kg) */
+        REAL8 chi1,                     /**< spin magnitude (|S1|) */
+        REAL8 kappa,                    /**< L . S (1 if they are aligned) */
+        REAL8 fStart,                   /**< start GW frequency (Hz) */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+        LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+        int phaseO                      /**< twice PN phase order */
+        );
 
 /**
  * Function to specify the desired orientation of a precessing binary in terms
@@ -1152,8 +1273,8 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 		const REAL8 chi,                 /**< dimensionless aligned-spin param */
 		const REAL8 fStart,              /**< start GW frequency (Hz) */
 		const REAL8 r,                   /**< distance of source (m) */
-		const UINT4 phaseO,              /**< twice PN phase order */
-		const UINT4 ampO                 /**< twice PN amplitude order */
+		const INT4 phaseO,              /**< twice PN phase order */
+		const INT4 ampO                 /**< twice PN amplitude order */
 		);
 
 /**
@@ -1172,8 +1293,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		const REAL8 lam2,                /**< dimensionless deformability of 2 */
 		const REAL8 fStart,              /**< start GW frequency (Hz) */
 		const REAL8 r,                   /**< distance of source (m) */
-		const UINT4 phaseO,              /**< twice PN phase order */
-		const UINT4 ampO                 /**< twice PN amplitude order */
+		const INT4 phaseO,              /**< twice PN phase order */
+		const INT4 ampO                 /**< twice PN amplitude order */
 		);
 /**
  * Compute the chirp time of the \"reduced-spin\" templates, described in
@@ -1184,7 +1305,7 @@ REAL8 XLALSimInspiralTaylorF2ReducedSpinChirpTime(
 		const REAL8 m1_SI,   /**< mass of companion 1 (kg) */
 		const REAL8 m2_SI,   /**< mass of companion 2 (kg) */
 		const REAL8 chi,     /**< dimensionless aligned-spin param */
-		const UINT4 O        /**< twice PN phase order */
+		const INT4 O        /**< twice PN phase order */
 		);
 
 /**

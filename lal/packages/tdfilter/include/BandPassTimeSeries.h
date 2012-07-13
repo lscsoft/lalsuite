@@ -20,11 +20,6 @@
 #ifndef _BANDPASSTIMESERIES_H
 #define _BANDPASSTIMESERIES_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 #include <lal/IIRFilter.h>
 #include <lal/ZPGFilter.h>
@@ -71,7 +66,6 @@ Further documentation is given in the individual routines' modules.
  * \c n indicates a maximum allowed order
  */
 typedef struct tagPassBandParamStruc{
-  SWIGLAL_STRUCT(PassBandParamStruc);
   CHAR *name;	/**< A user-assigned name */
   INT4 nMax;	/**< The maximum desired filter order (actual order may be less if specified attenuations do not require a high order) */
   REAL8 f1;	/**< The reference frequencies of the transition band */

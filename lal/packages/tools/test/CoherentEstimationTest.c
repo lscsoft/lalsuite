@@ -147,7 +147,7 @@ main(void)
   */
 
   /* run code */
-  LALCoherentEstimation(&stat, &output, &params, &in);
+  LALDoCoherentEstimation(&stat, &output, &params, &in);
 
   for(i=0;i<length;i++)
     printf("%g\n",output.data->data[i]);

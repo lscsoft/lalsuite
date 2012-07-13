@@ -350,8 +350,10 @@ LALFree
 static void
 InspiralComputeMetricGetPsiCoefficients (
     REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER],
-    InspiralTemplate   *params,
-    InspiralMomentsEtc *moments
+    InspiralMomentsEtc *moments,
+    REAL8 fLower,
+    REAL8 t0,
+    REAL8 t3
     );
 
 void
@@ -363,43 +365,72 @@ LALInspiralComputeMetric (
     )
 
 {
+  INITSTATUS(status);
+
+  XLALPrintDeprecationWarning("LALInspiralComputeMetric", "XLALInspiralComputeMetric");
+
+  if (XLALInspiralComputeMetric(metric, moments, params->fLower, params->order, params->t0, params->t3) == XLAL_FAILURE){
+    ABORTXLAL( status );
+  };
+
+  RETURN( status );
+}
+
+int
+XLALInspiralComputeMetric (
+    InspiralMetric     *metric,
+    InspiralMomentsEtc *moments,
+    REAL8 fLower,
+    LALPNOrder order,
+    REAL8 t0,
+    REAL8 t3
+    )
+
+{
   static REAL8 Psi[METRIC_DIMENSION][METRIC_ORDER];
   static REAL8 g[METRIC_DIMENSION][METRIC_DIMENSION];
 
   REAL8 a, b, c, q;
   UINT4 PNorder, m, n;
 
-  INITSTATUS(status);
+  const REAL8 two_pi_flower = LAL_TWOPI * fLower;
+  const REAL8 two_pi_flower_sq = two_pi_flower * two_pi_flower;
 
-  ASSERT( metric, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( params, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( moments, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( params->t0 > 0.L, status,
-      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE);
-  ASSERT( params->t3 > 0.L, status,
-      LALINSPIRALBANKH_ESIZE, LALINSPIRALBANKH_MSGESIZE );
+  /* check inputs */
+  if (!metric || !moments){
+    XLALPrintError(LALINSPIRALH_MSGENULL);
+    XLAL_ERROR(XLAL_EFAULT);
+  };
+
+  if (t0 <= 0.L || t3 <= 0.L){
+    XLALPrintError("t0 and t3 must be positive");
+    XLAL_ERROR(XLAL_EDOM);
+  };
+
+  if (fLower <= 0){
+    XLALPrintError("fLower must be positive");
+    XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* use the order of the waveform to compute the metric */
   /* summation below will be carried out up to PNorder   */
-  if ( params->order != LAL_PNORDER_ONE &&
-      params->order != LAL_PNORDER_ONE_POINT_FIVE &&
-      params->order != LAL_PNORDER_TWO )
+  if ( order != LAL_PNORDER_ONE &&
+      order != LAL_PNORDER_ONE_POINT_FIVE &&
+      order != LAL_PNORDER_TWO )
   {
     /* Let us force the order to be twoPN because that is the only order
      * available for the template bank anyway. */
+    XLALPrintWarning("forcing LAL_PNORDER_TWO");
     PNorder = LAL_PNORDER_TWO;
   }
   else
   {
-    PNorder = (UINT4) params->order;
+    PNorder = (UINT4) order;
   }
 
 
   /* Setting up \Psi_{mn} coefficients  */
-  InspiralComputeMetricGetPsiCoefficients( Psi, params, moments );
+  InspiralComputeMetricGetPsiCoefficients( Psi, moments, fLower, t0, t3 );
 
   for ( m = 0; m < METRIC_DIMENSION; m++ )
   {
@@ -435,9 +466,9 @@ LALInspiralComputeMetric (
   /* The calculation above gives the metric in coordinates   */
   /* (t0=2\pi f_0 \tau0, t3=2\pi f_0 \tau3). Re-scale metric */
   /* coefficients to get metric in (tau0, tau3) coordinates  */
-  a = g[0][0] * pow(2.*LAL_PI*params->fLower,2.);
-  b = g[0][1] * pow(2.*LAL_PI*params->fLower,2.);
-  c = g[1][1] * pow(2.*LAL_PI*params->fLower,2.);
+  a = g[0][0] * two_pi_flower_sq;
+  b = g[0][1] * two_pi_flower_sq;
+  c = g[1][1] * two_pi_flower_sq;
 
 
   /* The metric in tau0-tau2,3 space. */
@@ -470,15 +501,15 @@ LALInspiralComputeMetric (
 
   /* Now we compute the 3d metric in tc,\tau_0,\tau_3 co-ordinates */
   /* We only need metric->Gamma[0,...,5].                          */
-  metric->Gamma[0] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
+  metric->Gamma[0] = 0.5*two_pi_flower_sq*
           ( moments->j[1] - (moments->j[4]*moments->j[4]) );
 
-  metric->Gamma[1] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
+  metric->Gamma[1] = 0.5*two_pi_flower_sq*
           ( Psi[0][0]*(moments->j[9] - (moments->j[4]*moments->j[12]) )
           + Psi[0][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) )
           + Psi[0][4]*(moments->j[5] - (moments->j[4]*moments->j[8]) ));
 
-  metric->Gamma[2] = 0.5*pow(2.*LAL_PI*params->fLower,2.)*
+  metric->Gamma[2] = 0.5*two_pi_flower_sq*
           ( Psi[1][2]*(moments->j[7] - (moments->j[4]*moments->j[10]) )
           + Psi[1][3]*(moments->j[6] - (moments->j[4]*moments->j[9])  )
           + Psi[1][4]*(moments->j[5] - (moments->j[4]*moments->j[8])  ));
@@ -489,34 +520,36 @@ LALInspiralComputeMetric (
   metric->Gamma[5] = metric->G11 + metric->Gamma[2]*metric->Gamma[2]/metric->Gamma[0];
 
 
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 static void
 InspiralComputeMetricGetPsiCoefficients (
     REAL8              Psi[METRIC_DIMENSION][METRIC_ORDER],
-    InspiralTemplate   *params,
-    InspiralMomentsEtc *moments
+    InspiralMomentsEtc *moments,
+    REAL8 fLower,
+    REAL8 t0,
+    REAL8 t3
     )
 {
-  REAL8 t1 = 2.L * LAL_PI * params->fLower * params->t0;
-  REAL8 t2 = 2.L * LAL_PI * params->fLower * params->t3;
+  REAL8 t1 = LAL_TWOPI * fLower * t0;
+  REAL8 t2 = LAL_TWOPI * fLower * t3;
 
   Psi[0][0] = moments->a01;
   Psi[0][1] = 0.L;
-  Psi[0][2] = moments->a21/t2 + moments->a22/3.L * pow(t2/t1,2.L/3.L);
+  Psi[0][2] = moments->a21/t2 + moments->a22/3.L * cbrt(t2 * t2 / (t1 * t1));
   Psi[0][3] = 0.L;
-  Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* pow(t1*t1*t2,1.L/3.L))
-    - moments->a43/3.L * pow(t2/t1,4.L/3.L);
+  Psi[0][4] = moments->a41/(t2*t2) + moments->a42/(3.L* cbrt(t1*t1*t2))
+    - moments->a43/3.L * t2 / t1 * cbrt(t2 / t1);
 
   Psi[1][0] = 0.L;
   Psi[1][1] = 0.L;
-  Psi[1][2] = -moments->a21*t1/pow(t2,2.L) + 2.L *
-    moments->a22/3.L * pow(t1/t2,1.L/3.L);
+  Psi[1][2] = -moments->a21*t1/(t2*t2) + 2.L *
+    moments->a22/3.L * cbrt(t1/t2);
   Psi[1][3] =  moments->a31;
-  Psi[1][4] = - 2.L * moments->a41*t1 / pow(t2,3.L) -
-    moments->a42/3.L * pow(t1/pow(t2,4.L),1.L/3.L) +
-    4.L * moments->a43/3.L * pow(t2/t1,1.L/3.L);
+  Psi[1][4] = - 2.L * moments->a41*t1 / (t2*t2*t2) -
+    moments->a42/3.L * cbrt(t1/(t2*t2*t2*t2)) +
+    4.L * moments->a43/3.L * cbrt(t2/t1);
 }
 
 

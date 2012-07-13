@@ -808,6 +808,167 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
 }
 
 /**
+ * Compute the physical template family "Q" vectors for a spinning, precessing
+ * binary when provided time series of all the dynamical quantities.
+ * These vectors always supplied to dominant order.
+ *
+ * Based on Pan, Buonanno, Chan and Vallisneri PRD69 104017, (see also theses
+ * of Diego Fazi and Ian Harry)
+ *
+ * NOTE: The vectors MUST be given in the so-called radiation frame where
+ * Z is the direction of propagation, X is the principal '+' axis and Y = Z x X
+ */
+
+
+int XLALSimInspiralPrecessingPTFQWaveforms(
+        REAL8TimeSeries **Q1,     /**< PTF-Q1 waveform [returned] */
+        REAL8TimeSeries **Q2,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q3,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q4,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries **Q5,     /**< PTF-Q2 waveform [returned] */
+        REAL8TimeSeries *V,       /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi,     /**< orbital phase */
+        REAL8TimeSeries *S1x,     /**< Spin1 vector x component */
+        REAL8TimeSeries *S1y,     /**< Spin1 vector y component */
+        REAL8TimeSeries *S1z,     /**< Spin1 vector z component */
+        REAL8TimeSeries *S2x,     /**< Spin2 vector x component */
+        REAL8TimeSeries *S2y,     /**< Spin2 vector y component */
+        REAL8TimeSeries *S2z,     /**< Spin2 vector z component */
+        REAL8TimeSeries *LNhatx,  /**< unit orbital ang. mom. x comp. */
+        REAL8TimeSeries *LNhaty,  /**< unit orbital ang. mom. y comp. */
+        REAL8TimeSeries *LNhatz,  /**< unit orbital ang. mom. z comp. */
+        REAL8TimeSeries *E1x,     /**< orbital plane basis vector x comp. */
+        REAL8TimeSeries *E1y,     /**< orbital plane basis vector y comp. */
+        REAL8TimeSeries *E1z,     /**< orbital plane basis vector z comp. */
+        REAL8 m1,                 /**< mass of companion 1 (kg) */
+        REAL8 m2,                 /**< mass of companion 2 (kg) */
+        REAL8 r                  /**< distance of source (m) */
+        )
+{
+    REAL8 lnhx, lnhy, lnhz;
+    REAL8 e1x, e1y, e1z, e2x, e2y, e2z, nx, ny, nz, lx, ly, lz;
+    REAL8 nx2, ny2, nz2, lx2, ly2, lz2;
+    REAL8 q1tmp, q2tmp, q3tmp, q4tmp, q5tmp;
+    REAL8 M, eta, phi, v, v2, dist, ampfac;
+    INT4 idx, len;
+    REAL8 sqrt_three = pow(3,0.5);
+
+    /* Macros to check time series vectors */
+    LAL_CHECK_VALID_SERIES(V,                   XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(Phi,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S1z,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(S2z,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhatx,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhaty,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(LNhatz,              XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1x,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1y,                 XLAL_FAILURE);
+    LAL_CHECK_VALID_SERIES(E1z,                 XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, Phi,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S1z,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, S2z,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhatx, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhaty, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, LNhatz, XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1x,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1y,    XLAL_FAILURE);
+    LAL_CHECK_CONSISTENT_TIME_SERIES(V, E1z,    XLAL_FAILURE);
+
+
+    /* Allocate polarization vectors and set to 0 */
+    *Q1 = XLALCreateREAL8TimeSeries( "PTF_Q_1", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q2 = XLALCreateREAL8TimeSeries( "PTF_Q_2", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q3 = XLALCreateREAL8TimeSeries( "PTF_Q_3", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q4 = XLALCreateREAL8TimeSeries( "PTF_Q_4", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+    *Q5 = XLALCreateREAL8TimeSeries( "PTF_Q_5", &V->epoch,
+            0.0, V->deltaT, &lalStrainUnit, V->data->length );
+
+    if ( ! Q1 || ! Q2 || !Q3 || !Q4 || !Q5 )
+        XLAL_ERROR(XLAL_EFUNC);
+    memset((*Q1)->data->data, 0,
+            (*Q1)->data->length*sizeof(*(*Q1)->data->data));
+    memset((*Q2)->data->data, 0,
+            (*Q2)->data->length*sizeof(*(*Q2)->data->data));
+    memset((*Q3)->data->data, 0,
+            (*Q3)->data->length*sizeof(*(*Q3)->data->data));
+    memset((*Q4)->data->data, 0,
+            (*Q4)->data->length*sizeof(*(*Q4)->data->data));
+    memset((*Q5)->data->data, 0,
+            (*Q5)->data->length*sizeof(*(*Q5)->data->data));
+
+    M = m1 + m2;
+    eta = m1 * m2 / M / M; // symmetric mass ratio - '\nu' in the paper
+    dist = r / LAL_C_SI;   // r (m) / c (m/s) --> dist in units of seconds
+    /* convert mass from kg to s, so ampfac ~ M/dist is dimensionless */
+    ampfac = 2. * M * LAL_G_SI * pow(LAL_C_SI, -3) * eta / dist;
+
+    /* loop over time steps and compute the Qi */
+    len = V->data->length;
+    for(idx = 0; idx < len; idx++)
+    {
+        /* Abbreviated names in lower case for time series at this sample */
+        phi  = Phi->data->data[idx];    v = V->data->data[idx];     v2 = v * v;
+        lnhx = LNhatx->data->data[idx]; e1x = E1x->data->data[idx];
+        lnhy = LNhaty->data->data[idx]; e1y = E1y->data->data[idx];
+        lnhz = LNhatz->data->data[idx]; e1z = E1z->data->data[idx];
+
+        /* E2 = LNhat x E1 */
+        e2x = lnhy*e1z - lnhz*e1y;
+        e2y = lnhz*e1x - lnhx*e1z;
+        e2z = lnhx*e1y - lnhy*e1x;
+
+        /* Unit orbital separation vector */
+        nx = e1x*cos(phi) + e2x*sin(phi);
+        ny = e1y*cos(phi) + e2y*sin(phi);
+        nz = e1z*cos(phi) + e2z*sin(phi);
+
+        /* Unit inst. orbital velocity vector */
+        lx = e2x*cos(phi) - e1x*sin(phi);
+        ly = e2y*cos(phi) - e1y*sin(phi);
+        lz = e2z*cos(phi) - e1z*sin(phi);
+
+        /* Powers of vector components */
+        nx2 = nx*nx;    ny2 = ny*ny;    nz2 = nz*nz;
+        lx2 = lx*lx;    ly2 = ly*ly;    lz2 = lz*lz;
+
+        /* 
+         * NOTE: For PTF waveforms, we must use only the dominant amplitude
+         * The Q values are computed from equations 13,14,17, 46 + 47 in PBCV or
+         * more simply from equations (3.10) in Diego Fazi's thesis.
+         * Note that Q5 is simplified from that shown in Fazi's thsis
+         * by using traceless condition. As demonstrated in (6.29)
+         * in Ian Harry's thesis.
+         */
+
+        q1tmp = lx2 - ly2 - nx2 + ny2;
+        q2tmp = 2*lx*ly - 2*nx*ny;
+        q3tmp = 2*lx*lz - 2*nx*nz;
+        q4tmp = 2*ly*lz - 2*ny*nz;
+        q5tmp = sqrt_three * (nz2 - lz2);
+
+        /* Fill the output vectors */
+        (*Q1)->data->data[idx] = ampfac * v2 * q1tmp;
+        (*Q2)->data->data[idx] = ampfac * v2 * q2tmp;
+        (*Q3)->data->data[idx] = ampfac * v2 * q3tmp;
+        (*Q4)->data->data[idx] = ampfac * v2 * q4tmp;
+        (*Q5)->data->data[idx] = ampfac * v2 * q5tmp;
+    }
+    return XLAL_SUCCESS;
+}
+
+/**
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
  * \"radiation frame\" (with the z-axis along the direction of propagation) as
@@ -983,7 +1144,8 @@ int XLALSimInspiralChooseWaveform(
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_min,                                /**< start frequency (Hz) */
+    REAL8 f_ref,                                /**< reference frequency (Hz) */
     REAL8 r,                                    /**< distance of source */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
@@ -994,9 +1156,12 @@ int XLALSimInspiralChooseWaveform(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
-    XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", "XLALSimInspiralChooseTDWaveform");
+    XLALPrintDeprecationWarning("XLALSimInspiralChooseWaveform", 
+            "XLALSimInspiralChooseTDWaveform");
 
-    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, r, i, lambda1, lambda2, interactionFlags, amplitudeO, phaseO, approximant);
+    return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2,
+            S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,
+            interactionFlags, amplitudeO, phaseO, approximant);
 }
 
 /**
@@ -1019,7 +1184,8 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
     REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
     REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
-    REAL8 f_min,                                /**< start frequency */
+    REAL8 f_min,                                /**< start frequency (Hz) */
+    REAL8 f_ref,                                /**< reference frequency (Hz) */
     REAL8 r,                                    /**< distance of source */
     REAL8 i,                                    /**< inclination of source (rad) */
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
@@ -1033,6 +1199,26 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     int ret;
     REAL8 v0 = 1.;
+
+    /* Sanity check the input parameters */
+    if( deltaT > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaT = %e requested.\nPerhaps sample rate and time step size were swapped?\n", __func__, deltaT);
+    if( deltaT < 1./16385. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaT = %e requested.\nCheck for errors, this could create very large time series.\n", __func__, deltaT);
+    if( m1 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+    if( m2 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+    if( m1 + m2 > 1000. * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+    if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
 
     switch (approximant)
     {
@@ -1055,8 +1241,8 @@ int XLALSimInspiralChooseTDWaveform(
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
-            // FIXME: decide proper f_max to pass here
-            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, .5/deltaT, r, i);
+            // NB: f_max = 0 will generate up to the ringdown cut-off frequency
+            ret = XLALSimIMRPhenomAGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, f_min, 0., r, i);
             break;
         case EOBNRv2HM:
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
@@ -1070,10 +1256,10 @@ int XLALSimInspiralChooseTDWaveform(
 
         // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
         // proposal: TotalJ frame of PSpinInspiralRD
-        // inclination denotes the angle between the view directoin 
+        // inclination denotes the angle between the view direction 
         // and J (J is constant during the evolution, J//z, both N and initial 
-		// L are in the x-z plane) and the spin coordinates are given wrt 
-		// initial ** L **.
+        // L are in the x-z plane) and the spin coordinates are given wrt 
+        // initial ** L **.
         case SpinTaylorT4:
             LNhatx = sin(i);
             LNhaty = 0.;
@@ -1081,14 +1267,20 @@ int XLALSimInspiralChooseTDWaveform(
             E1x = cos(i);
             E1y = 0.;
             E1z = - sin(i);
-            /* Maximum PN amplitude order for precessing waveforms is MAX_PRECESSING_AMP_PN_ORDER */
-            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
-            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, v0, deltaT, m1, m2, f_min, r, S1x, S1y, S1z, S2x, S2y, S2z, LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, lambda1, lambda2, interactionFlags, phaseO, amplitudeO);
+            /* Maximum PN amplitude order for precessing waveforms is 
+             * MAX_PRECESSING_AMP_PN_ORDER */
+            amplitudeO = amplitudeO <= MAX_PRECESSING_AMP_PN_ORDER ? 
+                    amplitudeO : MAX_PRECESSING_AMP_PN_ORDER;
+            ret = XLALSimInspiralSpinTaylorT4(hplus, hcross, phi0, v0, deltaT, 
+                    m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, 
+                    LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, 
+                    lambda1, lambda2, interactionFlags, phaseO, amplitudeO);
             break;
 
         /* spinning inspiral-merger-ringdown models */
         case IMRPhenomB:
-            ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, .5/deltaT, r, i);
+            // NB: f_max = 0 will generate up to the ringdown cut-off frequency
+            ret = XLALSimIMRPhenomBGenerateTD(hplus, hcross, phi0, deltaT, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z), f_min, 0., r, i);
             break;
         case PhenSpinTaylorRD:
             // FIXME: need to create a function to take in different modes or produce an error if all modes not given
@@ -1140,13 +1332,35 @@ int XLALSimInspiralChooseFDWaveform(
 {
     int ret;
 
+    /* Sanity check the input parameters */
+    if( deltaF > 1. )
+        XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested.\nThis corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
+    if( deltaF < 1./4096. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested.\nThis corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
+    if( m1 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+    if( m2 < 0.09 * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested.\nPerhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+    if( m1 + m2 > 1000. * LAL_MSUN_SI )
+        XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested.\nSignal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+    if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+    if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
+        XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested.\nAre you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
+    if( f_min < 1. )
+        XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested.\nCheck for errors, this could create a very long waveform.\n", __func__, f_min);
+    if( f_min > 40.000001 )
+        XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested.\nCheck for errors, the signal will start in band.\n", __func__, f_min);
+
     switch (approximant)
     {
         /* non-spinning inspiral-only models */
+        case TaylorF2:
+            ret = XLALSimInspiralTaylorF2(htilde, phi0, deltaF, m1, m2, f_min, r, phaseO);
+            break;
 
         /* non-spinning inspiral-merger-ringdown models */
         case IMRPhenomA:
-            // FIXME: decide proper f_max to pass here
             ret = XLALSimIMRPhenomAGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max, r);
             break;
 
@@ -1218,6 +1432,7 @@ int XLALSimInspiralImplementedFDApproximants(
     {
         case IMRPhenomA:
         case IMRPhenomB:
+        case TaylorF2:
         case TaylorF2RedSpin:
         case TaylorF2RedSpinTidal:
             return 1;
@@ -1226,3 +1441,344 @@ int XLALSimInspiralImplementedFDApproximants(
             return 0;
     }
 }
+
+/** 
+ * XLAL function to determine approximant from a string.  The string need not 
+ * match exactly, only contain a member of the Approximant enum.
+ */
+int XLALGetApproximantFromString(const CHAR *inString)
+{
+#ifndef LAL_NDEBUG
+  if ( !inString )
+    XLAL_ERROR( XLAL_EFAULT );
+#endif
+
+  if ( strstr(inString, "TaylorF2RedSpinTidal" ) )
+  {
+    return TaylorF2RedSpinTidal;
+  }
+  else if ( strstr(inString, "TaylorF2RedSpin" ) )
+  {
+    return TaylorF2RedSpin;
+  }
+  else if ( strstr(inString, "TaylorF2" ) )
+  {
+    return TaylorF2;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRDF" ) )
+  {
+    return PhenSpinTaylorRDF;
+  }
+  else if ( strstr(inString, "PhenSpinTaylorRD" ) )
+  {
+    return PhenSpinTaylorRD;
+  }
+  else if ( strstr(inString, "SpinTaylorT4" ) )
+  {
+    return SpinTaylorT4;
+  }
+  else if ( strstr(inString, "SpinTaylorFrameless" ) )
+  {
+    return SpinTaylorFrameless;
+  }
+  else if ( strstr(inString, "SpinTaylorT3" ) )
+  {
+    return SpinTaylorT3;
+  }
+  else if ( strstr(inString, "SpinTaylor" ) )
+  {
+    return SpinTaylor;
+  }
+  else if ( strstr(inString, "SpinQuadTaylor" ) )
+  {
+    return SpinQuadTaylor;
+  }
+  else if ( strstr(inString, "TaylorT1" ) )
+  {
+    return TaylorT1;
+  }
+  else if ( strstr(inString, "TaylorT2" ) )
+  {
+    return TaylorT2;
+  }
+  else if ( strstr(inString, "TaylorT3" ) )
+  {
+    return TaylorT3;
+  }
+  else if ( strstr(inString, "TaylorT4" ) )
+  {
+    return TaylorT4;
+  }
+  else if ( strstr(inString, "IMRPhenomA" ) )
+  {
+    return IMRPhenomA;
+  }
+  else if ( strstr(inString, "IMRPhenomB" ) )
+  {
+    return IMRPhenomB;
+  }
+  else if ( strstr(inString, "IMRPhenomFA" ) )
+  {
+    return IMRPhenomFA;
+  }
+  else if ( strstr(inString, "IMRPhenomFB" ) )
+  {
+    return IMRPhenomFB;
+  }
+  else if ( strstr(inString, "SEOBNRv1" ) )
+  {
+    return SEOBNRv1;
+  }
+  else if ( strstr(inString, "EOBNRv2HM" ) )
+  {
+    return EOBNRv2HM;
+  }
+  else if ( strstr(inString, "EOBNRv2" ) )
+  {
+    return EOBNRv2;
+  }
+  else if ( strstr(inString, "EOBNR" ) )
+  {
+    return EOBNR;
+  }
+  else if ( strstr(inString, "EOB" ) )
+  {
+    return EOB;
+  }
+  else if ( strstr(inString, "AmpCorPPN" ) )
+  {
+    return AmpCorPPN;
+  }
+  else if ( strstr(inString, "GeneratePPN" ) )
+  {
+    return GeneratePPN;
+  }
+  else if ( strstr(inString, "NumRelNinja2" ) )
+  {
+    return NumRelNinja2;
+  }
+  else if ( strstr(inString, "NumRel" ) )
+  {
+    return NumRel;
+  }
+  else if ( strstr(inString, "Ninja2" ) )
+  {
+    return NumRelNinja2;
+  }
+  else if ( strstr(inString, "FindChirpSP" ) )
+  {
+    return FindChirpSP;
+  }
+  else if ( strstr(inString, "FindChirpPTF" ) )
+  {
+    return FindChirpPTF;
+  }
+  else if ( strstr(inString, "TaylorEt" ) )
+  {
+    return TaylorEt;
+  }
+  else if ( strstr(inString, "TaylorN" ) )
+  {
+    return TaylorN;
+  }
+  else if ( strstr(inString, "TaylorF1" ) )
+  {
+    return TaylorF1;
+  }
+  else if ( strstr(inString, "PadeT1" ) )
+  {
+    return PadeT1;
+  }
+  else if ( strstr(inString, "PadeF1" ) )
+  {
+    return PadeF1;
+  }
+  else if ( strstr(inString, "BCVSpin" ) )
+  {
+    return BCVSpin;
+  }
+  else if ( strstr(inString, "BCVC" ) )
+  {
+    return BCVC;
+  }
+  else if ( strstr(inString, "BCV" ) )
+  {
+    return BCV;
+  }
+  else if ( strstr(inString, "FrameFile" ) )
+  {
+    return FrameFile;
+  }
+  else if ( strstr(inString, "Eccentricity" ) )
+  {
+    return Eccentricity;
+  }
+  else
+  {
+    XLALPrintError( "Cannot parse approximant from string: %s \n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine PN order from a string.  The string need not 
+ * match exactly, only contain a member of the LALPNOrder enum.
+ */
+int XLALGetOrderFromString(const CHAR *inString)
+{
+
+#ifndef LAL_NDEBUG
+  if ( !inString )
+    XLAL_ERROR( XLAL_EFAULT );
+#endif
+
+  if ( strstr(inString, "newtonian") )
+  {
+    return LAL_PNORDER_NEWTONIAN;
+  }
+  else if ( strstr(inString, "oneHalfPN") )
+  {
+    return LAL_PNORDER_HALF;
+  }
+  else if ( strstr(inString, "onePN") )
+  {
+    return LAL_PNORDER_ONE;
+  }
+  else if ( strstr(inString, "onePointFivePN") )
+  {
+    return LAL_PNORDER_ONE_POINT_FIVE;
+  }
+  else if ( strstr(inString, "twoPN") )
+  {
+    return LAL_PNORDER_TWO;
+  }
+  else if ( strstr(inString, "twoPointFivePN") )
+  {
+    return LAL_PNORDER_TWO_POINT_FIVE;
+  }
+  else if (strstr(inString, "threePN") )
+  {
+    return LAL_PNORDER_THREE;
+  }
+  else if ( strstr(inString, "threePointFivePN") )
+  {
+    return LAL_PNORDER_THREE_POINT_FIVE;
+  }
+  else if ( strstr(inString, "pseudoFourPN") )
+  {
+    return LAL_PNORDER_PSEUDO_FOUR;
+  }
+  else
+  {
+    XLALPrintError( "Cannot parse order from string: %s\n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine tapering flag from a string.  The string must 
+ * match exactly with a member of the LALSimInspiralApplyTaper enum. 
+ */
+int XLALGetTaperFromString(const CHAR *inString)
+{
+  if ( ! strcmp( "TAPER_NONE", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_NONE;
+  }
+  else if ( ! strcmp( "TAPER_START", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_START;
+  }
+  else if ( ! strcmp( "TAPER_END", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_END;
+  }
+  else if ( ! strcmp( "TAPER_STARTEND", inString ) )
+  {
+    return LAL_SIM_INSPIRAL_TAPER_STARTEND;
+  }
+  else
+  {
+    XLALPrintError( "Invalid injection tapering option specified: %s\n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine LALSimInspiralInteraction from a string.
+ *
+ * TODO: return the bit sum if the string is a concatenation of several 
+ * interaction terms. Also make names match cases of enum.
+ */
+int XLALGetInteractionFromString(const CHAR *inString) 
+{
+  if (strstr(inString, "NO")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_NONE;
+  } else if (strstr(inString, "SO15")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN;
+  } else if (strstr(inString,"SS")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN;
+  } else if (strstr(inString,"SELF")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN;
+  } else if (strstr(inString, "QM")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN;
+  } else if (strstr(inString, "SO25")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN;
+  } else if (strstr(inString, "SO")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN;
+  } else if (strstr(inString, "ALL_SPIN")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN;
+  } else if (strstr(inString, "TIDAL5PN")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN;
+  } else if (strstr(inString, "TIDAL")) {
+    return LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN;
+  } else if (strstr(inString, "ALL")){
+    return LAL_SIM_INSPIRAL_INTERACTION_ALL;
+  } else {
+    XLALPrintError( "Cannot parse LALSimInspiralInteraction from string: %s\n Please add 'ALL' to the above string for including all spin interactions\n", inString );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+}
+
+/** 
+ * XLAL function to determine axis choice flag from a string.  The string need 
+ * not match exactly, only contain a member of the FrameAxis enum.  Will return
+ * default case 'View' (line of sight) if the string contains no match.
+ */
+int XLALGetFrameAxisFromString(const CHAR *inString) 
+{
+  if (strstr(inString, "TotalJ"))
+    return TotalJ;
+  else if (strstr(inString, "OrbitalL"))
+    return OrbitalL;
+  else
+    return View;
+}
+
+/** 
+ * XLAL function to determine adaptive integration flag from a string.  Returns
+ * 1 if string contains 'fixedStep', otherwise returns 0 to signal 
+ * adaptive integration should be used.
+ */
+int XLALGetAdaptiveIntFromString(const CHAR *inString) 
+{
+  if (strstr(inString, "fixedStep"))
+    return 1;
+  else 
+    return 0;
+}
+
+/** 
+ * XLAL function to determine inspiral-only flag from a string.  Returns
+ * 1 if string contains 'inspiralOnly', otherwise returns 0 to signal 
+ * full inspiral-merger-ringdown waveform should be generated.
+ */
+int XLALGetInspiralOnlyFromString(const CHAR *inString)
+{
+  if (strstr(inString, "inspiralOnly"))
+    return 1;
+  else
+    return 0;
+}
+
+

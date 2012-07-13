@@ -54,14 +54,14 @@
  */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
-                             LALInferenceTemplateFunction *get_model ){
+                             LALInferenceTemplateFunction *get_model){
   REAL8 loglike = 0.; /* the log likelihood */
   UINT4 i = 0;
-  CHAR *modeltype = NULL;/*need to check model type in this function*/
+  CHAR *modeltype = NULL; /*need to check model type in this function*/
   
   modeltype = *(CHAR**)LALInferenceGetVariable( data->dataParams, "modeltype" );
   
-  LALInferenceIFOData *datatemp1 = data, *datatemp2 = data;
+  LALInferenceIFOData *datatemp1 = data, *datatemp2 = data, *datatemp3 = data;
  
   /* copy model parameters to data parameters */
   while( datatemp1 ){
@@ -74,12 +74,13 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     /*fprintf(bugtest,"getting model in log like func\n");*/
     get_model( datatemp2 );
     datatemp2 = datatemp2->next;
+		
     /* If modeltype is pinsf need to advance data on to next, so this loop only
      runs once if there is only 1 det*/
     if ( !strcmp( modeltype, "pinsf" ) ) datatemp2 = datatemp2->next;
   }
-
-  while ( data ){
+  
+  while ( datatemp3 ){
     UINT4 j = 0, count = 0, cl = 0;
     UINT4 length = 0, chunkMin;
     REAL8 chunkLength = 0.;
@@ -94,13 +95,13 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     
     /*fprintf(bugtest,"calc log like for one set of data\n");*/
     
-    sumDat = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams, 
+    sumDat = *(REAL8Vector **)LALInferenceGetVariable( datatemp3->dataParams, 
                                                        "sumData" );
-    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( data->dataParams,
+    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( datatemp3->dataParams,
                                                              "chunkLength" );
-    chunkMin = *(INT4*)LALInferenceGetVariable( data->dataParams, "chunkMin" );
+    chunkMin = *(INT4*)LALInferenceGetVariable( datatemp3->dataParams, "chunkMin" );
   
-    length = data->compTimeData->data->length;
+    length = datatemp3->compTimeData->data->length;
   
     for( i = 0 ; i < length ; i += chunkLength ){
       chunkLength = (REAL8)chunkLengths->data[count];
@@ -118,36 +119,33 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
       cl = i + (INT4)chunkLength;
     
       for( j = i ; j < cl ; j++ ){
-        B.re = data->compTimeData->data->data[j].re;
-        B.im = data->compTimeData->data->data[j].im;
+        B.re = datatemp3->compTimeData->data->data[j].re;
+        B.im = datatemp3->compTimeData->data->data[j].im;
 
-        M.re = data->compModelData->data->data[j].re;
-        M.im = data->compModelData->data->data[j].im;
-      
+        M.re = datatemp3->compModelData->data->data[j].re;
+        M.im = datatemp3->compModelData->data->data[j].im;
+        
         /* sum over the model */
         sumModel += M.re*M.re + M.im*M.im;
         
         /* sum over that data and model */
         sumDataModel += B.re*M.re + B.im*M.im;
-        /*fprintf(bugtest,"B.re= %e, B.im= %e, M.re: %e, M.im: %e\n",B.re, B.im,
-M.re, M.im);*/
+        /*fprintf(bugtest,"B.re= %e, B.im= %e, M.re: %e, M.im: %e\n",B.re, B.im,M.re, M.im);*/
       }
  
       chiSquare = sumDat->data[count];
       chiSquare -= 2.*sumDataModel;
       chiSquare += sumModel;
       
-      logliketmp -= chunkLength*log(chiSquare);
+      logliketmp -= chunkLength*log(chiSquare) + LAL_LN2 * (chunkLength-1.) + gsl_sf_lnfact(chunkLength);
       
       count++;
     }
     loglike += logliketmp;
-    data = data->next;
+    datatemp3 = datatemp3->next;
   }
-
   return loglike;
 }
-
 
 /** \brief The prior function
  *
@@ -171,7 +169,58 @@ REAL8 priorFunction( LALInferenceRunState *runState,
 
   REAL8Vector *corVals = NULL;
   UINT4 cori = 0;
+  
+  const CHAR *fn = __func__;
+  
+  /* check that parameters are with their prior ranges */
+  if( !in_range( runState->priorArgs, params ) ) return -INFINITY;
+  //LALInferenceCyclicReflectiveBound( params, runState->priorArgs );
+  
+  /* if a k-d tree prior exists ONLY use that */
+  if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePrior" ) &&
+      LALInferenceCheckVariable( runState->priorArgs, "kDTreePriorTemplate" ) ){
+    /* get tree */
+    LALInferenceKDTree *tree =
+      *(LALInferenceKDTree **)LALInferenceGetVariable(runState->priorArgs,
+                                                      "kDTreePrior");
+    
+    /* get parameter template */
+    LALInferenceVariables *template = 
+      *(LALInferenceVariables **)LALInferenceGetVariable(runState->priorArgs,
+                                                         "kDTreePriorTemplate");
+    
+    UINT4 Ncell = 16; /* number of points in a prior cell - i.e. controls
+                         how fine or coarse the prior looks (default to 16) */ 
+      
+    if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePriorNcell" ) ){
+      Ncell = *(UINT4 *)LALInferenceGetVariable( runState->priorArgs,
+                                                 "kDTreePriorNcell" );
+    }
+    
+    if ( tree->npts == 0 ) {
+      XLALPrintError("%s: no points in prior k-d tree.\n", fn);
+      XLAL_ERROR_REAL8( XLAL_EFUNC );
+    }
 
+    REAL8 *pt = XLALCalloc(tree->dim, sizeof(REAL8));
+
+    /* Get the coordinates of the current point - points in the tree are
+       already scaled, so there's no need to rescale the current point */
+    LALInferenceKDVariablesToREAL8(params, pt, template);
+    
+    /* find cell of current point */
+    LALInferenceKDTree *currentCell = LALInferenceKDFindCell(tree, pt, Ncell);
+    
+    /* get log probability of current point - taken from the function
+       LALInferenceKDLogProposalRatio() in LALInference.c */
+    REAL8 logVolume = LALInferenceKDLogCellEigenVolume(currentCell);
+    REAL8 logCellFactor = log((REAL8)currentCell->npts / (REAL8)tree->npts);
+    
+    prior = logVolume + logCellFactor;
+    
+    return prior;
+  }
+ 
   /* if some correlated priors exist allocate corVals */
   if ( corlist ) corVals = XLALCreateREAL8Vector( corlist->length );
   
@@ -208,11 +257,7 @@ REAL8 priorFunction( LALInferenceRunState *runState,
       else if( LALInferenceCheckMinMaxPrior(runState->priorArgs, item->name) ){
         LALInferenceGetMinMaxPrior( runState->priorArgs, item->name, 
                                     &min, &max );
-      
-        if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max ){
-          return -INFINITY;
-        }
-        else prior -= log( (max - min) * scale );
+        prior -= log( (max - min) * scale );
       }
       else if( LALInferenceCheckCorrelatedPrior(runState->priorArgs,
         item->name) && corlist ){      
@@ -293,5 +338,300 @@ REAL8 priorFunction( LALInferenceRunState *runState,
   
   return prior;
 }
+
+/** \brief Convert an array of nested samples to posterior samples
+ *
+ * This function generates an array of posterior samples from the nested samples
+ * by drawing points from the nested samples weighted by their prior weighting.
+ * This assumes that the nested samples are in the array in ascending
+ * likelihood order (which should be the case for the output of the
+ * \c LALInferenceNestedSampler() function.
+ * 
+ * Within the input runstate->algorthimParams there needs to be: an array of
+ * LALInferenceVariables called "nestedsamples" containing nested samples to be
+ * converted in to the posterior; a value of "Nsamp" giving the number of
+ * nested samples; and, a value of "numberlive" giving the number live points
+ * used to generate the posterior samples.
+ * 
+ * The posterior samples will be output in runstate->algorthimParams as an
+ * array of LALInferenceVariables called "posteriorsamples", and the number of
+ * these in a value called "Nposterior".
+ *
+ * \param runState [in]
+ */
+void ns_to_posterior( LALInferenceRunState *runState ){
+  UINT4 i = 0, count = 0, k = 0;
+  UINT4Vector *Nsamp = NULL, *Nlive = NULL;
+  REAL8 maxlogw = -INFINITY; /* maximum log weight */ 
+  
+  LALInferenceVariables **psamples = NULL;
+  LALInferenceVariables ***nsamples = 
+    *(LALInferenceVariables ****)LALInferenceGetVariable(
+    runState->algorithmParams, "nestedsamples" );
+    
+  /* get number of samples and live points */ 
+  Nsamp = *(UINT4Vector **)LALInferenceGetVariable( runState->algorithmParams,
+                                                    "Nsamps" );
+  Nlive = *(UINT4Vector **)LALInferenceGetVariable( runState->algorithmParams,
+                                                    "numberlive" );
+
+  if ( Nsamp->length != Nlive->length ){
+    XLALPrintError("%s: Number of nested sample arrays not equal to number of \
+live point for each array!", __func__);
+    XLAL_ERROR_VOID( XLAL_EBADLEN );
+  }
+  
+  for( k = 0; k < Nsamp->length; k++ ){
+    /* vector of prior weights */
+    REAL8Vector *logw = XLALCreateREAL8Vector( Nsamp->data[k] );
+  
+    maxlogw = -INFINITY;
+    
+    /* fill in sample weights */
+    for ( i = 0; i < Nsamp->data[k]; i++ ){
+      REAL8 logL = *(REAL8 *)LALInferenceGetVariable( nsamples[k][i], "logL" );
+    
+      if( i < Nsamp->data[k]-Nlive->data[k] ) logw->data[i] = (REAL8)(i+1);
+      else logw->data[i] = (REAL8)(Nsamp->data[k] - Nlive->data[k]);
+    
+      logw->data[i] = -(logw->data[i]/(REAL8)Nlive->data[k]) + logL;
+    
+      if ( logw->data[i] > maxlogw ) maxlogw = logw->data[i];
+    }
+
+    /* get posterior samples */
+    for ( i = 0; i < Nsamp->data[k]; i++ ){
+      logw->data[i] -= maxlogw; /* normalise weights */
+    
+      /* if log weight is greater than a uniform random number then accept as
+         a posterior sample */
+      if ( logw->data[i] > log( gsl_rng_uniform( runState->GSLrandom ) ) ){
+        psamples = XLALRealloc( psamples, 
+                                (count+1)*sizeof(LALInferenceVariables*) );
+        psamples[count] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+        LALInferenceCopyVariables( nsamples[k][i], psamples[count] );
+        count++;
+      }
+    }
+    
+    XLALDestroyREAL8Vector( logw );
+  }
+  
+  LALInferenceAddVariable( runState->algorithmParams, "posteriorsamples",
+                           &psamples, LALINFERENCE_void_ptr_t,
+                           LALINFERENCE_PARAM_FIXED );
+  LALInferenceAddVariable( runState->algorithmParams, "Nposterior",
+                           &count, LALINFERENCE_UINT4_t,
+                           LALINFERENCE_PARAM_FIXED );
+}
+
+/** \brief Create a k-d tree from prior samples
+ *
+ * This function creates a k-d tree from prior samples for use as a prior
+ * distribution in the algorithm. The points in the output tree are scaled to
+ * the prior ranges specified on the command line.
+ * 
+ * \param runState [in] A pointer to the LALInferenceRunState
+ */
+void create_kdtree_prior( LALInferenceRunState *runState ){
+  LALInferenceKDTree *priortree = NULL;
+  LALInferenceVariables **posterior = NULL; /* use these samples as prior */
+  UINT4 nsamp = 0, i = 0, cnt = 0;
+  
+  LALInferenceVariableItem *samp = NULL; /* a single sample */
+  REAL8 *low = NULL, *high = NULL; /* upper and lower bounds of tree */
+  REAL8 *pt = NULL;
+  size_t ndim = 0;
+  
+  LALInferenceVariables *template =
+    XLALCalloc(1,sizeof(LALInferenceVariables));
+  
+  const CHAR *fn = __func__;
+  
+  /* get posterior samples to use as prior */
+  if ( LALInferenceCheckVariable( runState->algorithmParams, 
+    "posteriorsamples" ) ){
+    posterior = *(LALInferenceVariables ***)LALInferenceGetVariable(
+      runState->algorithmParams, "posteriorsamples" );
+  }
+  else{
+    XLALPrintError("%s: No posterior samples set to use as prior.\n", fn);
+    XLAL_ERROR_VOID( XLAL_EFUNC );
+  }
+  
+  /* get the number of posterior samples */
+  if ( LALInferenceCheckVariable( runState->algorithmParams, 
+    "Nposterior" ) ){
+    nsamp = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams,
+                                               "Nposterior" );
+  }
+  else{
+    XLALPrintError("%s: Number of posterior samples not set.\n", fn);
+    XLAL_ERROR_VOID( XLAL_EFUNC );
+  }
+  
+  /* get the upper and lower bounds for each variable parameter i.e. we won't
+     be adding log likelihood, or log prior values */
+  samp = posterior[0]->head;
+  while ( samp ){
+    if ( samp->vary != LALINFERENCE_PARAM_FIXED &&
+         samp->vary != LALINFERENCE_PARAM_OUTPUT ) {
+      if( LALInferenceCheckMinMaxPrior( runState->priorArgs,
+                                        samp->name ) ){
+        cnt++;
+         
+        low = XLALRealloc(low, sizeof(REAL8)*cnt);
+        high = XLALRealloc(high, sizeof(REAL8)*cnt);
+      
+        LALInferenceGetMinMaxPrior( runState->priorArgs, samp->name,
+                                    &(low[cnt-1]), &(high[cnt-1]) );
+      }
+      else if( LALInferenceCheckGaussianPrior( runState->priorArgs,
+                                               samp->name ) ){
+        /* REAL8 mn, stddiv; */
+        REAL8 postlow, posthigh, difflh;
+        
+        cnt++;
+        
+        low = XLALRealloc(low, sizeof(REAL8)*cnt);
+        high = XLALRealloc(high, sizeof(REAL8)*cnt);
+
+        /* LALInferenceGetGaussianPrior( runState->priorArgs, currentItem->name,
+                                      &mn, &stddiv ); */
+
+        /* find the maximum and minimum posterior point values */
+        REAL8 maxvaltmp = -INFINITY, minvaltmp = INFINITY;
+  
+        for ( UINT4 k = 0; k < nsamp; k++ ){
+          REAL8 val = *(REAL8 *)LALInferenceGetVariable( posterior[k], 
+                                                         samp->name );
+    
+          if ( val < minvaltmp ) minvaltmp = val;
+          if ( val > maxvaltmp ) maxvaltmp = val;
+        }
+  
+        posthigh = maxvaltmp;
+        postlow = minvaltmp;
+        
+        difflh = posthigh - postlow;
+
+        /* to add a bit of room at either side add on half the difference */
+        low[cnt-1] = postlow - difflh/2.;
+        high[cnt-1] = posthigh + difflh/2.;
+      }
+    }
+    
+    samp = samp->next;
+  }
+
+  ndim = (size_t)cnt;
+  pt = XLALMalloc(cnt*sizeof(REAL8));
+
+  /* set up tree */
+  priortree = LALInferenceKDEmpty( low, high, ndim );
+  
+  /* get template */
+  LALInferenceCopyVariables( posterior[0], template );
+  
+  /* add points to tree */
+  for( i = 0; i < nsamp; i++ ){
+    samp = posterior[i]->head;
+    
+    /* rescale sample */
+    CHAR scalePar[VARNAME_MAX] = "";
+    CHAR scaleMinPar[VARNAME_MAX] = "";
+    REAL8 scale = 0., scaleMin = 0.;
+    
+    while( samp ){
+      if ( samp->vary != LALINFERENCE_PARAM_FIXED &&
+         samp->vary != LALINFERENCE_PARAM_OUTPUT ) {
+        
+        sprintf(scalePar, "%s_scale", samp->name);
+        scale = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams,
+                                                   scalePar );
+    
+        sprintf(scaleMinPar, "%s_scale_min", samp->name);
+        scaleMin = *(REAL8 *)LALInferenceGetVariable(
+          runState->data->dataParams, scaleMinPar );
+        
+        REAL8 val = *(REAL8 *)samp->value;
+        val = (val - scaleMin)/scale;
+       
+        LALInferenceSetVariable( posterior[i], samp->name, &val );
+      }
+      
+      samp = samp->next;
+    }
+
+    LALInferenceKDVariablesToREAL8( posterior[i], pt, template );
+   
+    LALInferenceKDAddPoint( priortree, pt );
+  }
+  
+  /* add tree */
+  LALInferenceAddVariable( runState->priorArgs, "kDTreePrior", &priortree,
+                           LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
+
+  LALInferenceAddVariable( runState->priorArgs, "kDTreePriorTemplate",
+                           &template, LALINFERENCE_void_ptr_t,
+                           LALINFERENCE_PARAM_FIXED );
+
+  XLALFree( high );
+  XLALFree( low );
+  XLALFree( pt );
+}
+
+
+/** \brief Check that any parameters with minimum and maximum ranges are within
+ * that range
+ *
+ * This function performs any cylcic/reflective transform and then makes sure
+ * that all parameters in \c params, that have a defined minimum and maximum 
+ * value, are within their allowed prior ranges.
+ * 
+ * \param priors [in] A pointer to the prior args LALInferenceVariables
+ * \param params [in] The current parameters
+ * 
+ * \return 0 if out of range and 1 if in range
+ */
+UINT4 in_range( LALInferenceVariables *priors, LALInferenceVariables *params ){
+  LALInferenceVariableItem *item = params->head;
+  REAL8 min, max;
+  
+  /* loop over variables */
+  for(; item; item = item->next ){
+    if( item->vary == LALINFERENCE_PARAM_FIXED || 
+      item->vary == LALINFERENCE_PARAM_OUTPUT ){ continue; }
+    
+    if( LALInferenceCheckMinMaxPrior( priors, item->name ) ){
+      LALInferenceGetMinMaxPrior( priors, item->name, &min, &max );
+      
+      /* For cyclic boundaries, mod out by range. */
+      if( item->vary == LALINFERENCE_PARAM_CIRCULAR ) {
+        REAL8 val = *(REAL8 *)item->value;
+        REAL8 delta = max - min;
+
+        if (val > max) {
+          REAL8 offset = val - min;
+
+          *(REAL8 *)item->value = min + fmod(offset, delta);
+        } 
+        else {
+          REAL8 offset = max - val;
+
+          *(REAL8 *)item->value = max - fmod(offset, delta);
+        }
+        
+        continue;
+      }
+      
+      if( (*(REAL8 *) item->value) < min || (*(REAL8 *)item->value) > max )
+        return 0;
+    }
+  }
+  
+  return 1;
+}
+  
 
 /*--------------- END OF LIKELIHOOD AND PRIOR FUNCTIONS ----------------------*/

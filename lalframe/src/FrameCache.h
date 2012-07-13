@@ -40,11 +40,6 @@
 #ifndef _FRAMECACHE_H
 #define _FRAMECACHE_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
@@ -74,7 +69,6 @@ extern "C" {
 typedef struct
 tagFrStat
 {
-  SWIGLAL_STRUCT(FrStat);
   CHAR *source;
   CHAR *description;
   INT4  startTime;
@@ -104,7 +98,6 @@ FrStat;
 typedef struct
 tagFrCache
 {
-  SWIGLAL_STRUCT(FrCache);
   UINT4   numFrameFiles;
   FrStat *frameFiles;
 }
@@ -128,7 +121,6 @@ FrCache;
 typedef struct
 tagFrCacheSieve
 {
-  SWIGLAL_STRUCT(FrCacheSieve);
   const CHAR *srcRegEx;
   const CHAR *dscRegEx;
   const CHAR *urlRegEx;
@@ -184,7 +176,7 @@ void LALDestroyFrCache(
     );
 
 void
-LALFrCacheSieve(
+LALFrSieveCache(
     LALStatus     *status,
     FrCache      **output,
     FrCache       *input,

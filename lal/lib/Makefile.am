@@ -40,7 +40,7 @@ MOSTLYCLEANFILES = LALBuildDate.c
 TESTS = lal-version
 
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
-	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
+	$(AM_V_GEN)echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 
 LALVCSInfo.h: ._vcsinfo
 
@@ -57,4 +57,4 @@ include-link: LALVCSInfo.h
 		fi
 
 swig_headers = $(pkginclude_HEADERS)
-include $(top_srcdir)/swig/swig-header.am
+include $(top_srcdir)/swig/swiglal_header.am
