@@ -325,7 +325,6 @@ static int stressTestRealloc( void )
 
 int main( void )
 {
-  FILE *fp;
 #if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
   return 77; /* don't do any testing */
 #else
@@ -333,7 +332,7 @@ int main( void )
 
   /* get rid of annoying messages from elsewhere */
   setvbuf( mystderr = stdout, NULL, _IONBF, 0 );
-  fp = freopen( "/dev/null", "w", stderr );
+  FILE *fp = freopen( "/dev/null", "w", stderr );
   if (fp == NULL) die ( unable to open /dev/null );
 
   lalRaiseHook = TestRaise;
