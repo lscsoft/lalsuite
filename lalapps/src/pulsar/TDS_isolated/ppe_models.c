@@ -800,7 +800,7 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
   Xcross2f = -f2_r * 2. * pars.cosiota;
   
   A1 = ( pars.I21 * coslambda * coslambda - pars.I31 ) * sin2theta;
-  A2 = pars.I21 * sin2lambda * sin( theta );
+  A2 = pars.I21 * sin2lambda * sintheta;
   B1 = pars.I21 * ( coslambda * coslambda * pars.costheta * pars.costheta 
     - sinlambda * sinlambda ) + pars.I31 * sintheta * sintheta;
   B2 = pars.I21 * sin2lambda * pars.costheta;

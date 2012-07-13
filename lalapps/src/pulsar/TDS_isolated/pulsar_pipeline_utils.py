@@ -27,12 +27,11 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
   A lalapps_heterodyne_pulsar job to coarse heterodyne the data.
   """
-  def __init__(self,cp):
-    # cp = ConfigParser object from which options are read.
-    self.__executable = cp.get('exec', 'heterodyne') # gets the executable from .ini
-    self.__universe = cp.get('condor', 'universe')
+  def __init__(self,execu,univ='standard'):
+    self.__executable = execu # gets the executable from .ini
+    self.__universe = univ
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
-    pipeline.AnalysisJob.__init__(self, cp)
+    pipeline.AnalysisJob.__init__(self, None)
        
     # set log files for job
     self.set_stdout_file('logs/heterodyne_pulsar-$(cluster).out')
@@ -270,11 +269,18 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     
     self.__oldChunks = None
     
+    self.__verbose = False
+    
   def set_detectors(self,detectors):
     # set detectors
     self.add_var_opt('detectors',detectors)
     self.__detectors = detectors
-    
+  
+  def set_verbose(self):
+    # set to run code in verbose mode
+    self.add_var_opt('verbose', '')
+    self.__verbose = True
+  
   def set_par_file(self,parfile):
     # set pulsar parameter file
     self.add_var_opt('par-file',parfile)

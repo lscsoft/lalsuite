@@ -173,9 +173,10 @@ dag.set_dag_file(basename)
 
 # create Condor Jobds that will be used in the dag
 df_job = pipeline.LSCDataFindJob('cache','logs') # data find job
-coarse_job = ppu.heterodyneJob(cp)
-fine_job = ppu.heterodyneJob(cp)
-update_job = ppu.heterodyneJob(cp)
+univ = cp.get('condor', 'universe')
+coarse_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+fine_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+update_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
 
 # set Condor .sub submit file names
 subsuffix = '.sub'
