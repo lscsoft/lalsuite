@@ -2123,6 +2123,9 @@ void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
    UINT4 N = LALInferenceGetVariableDimensionNonFixed(state->currentParams);
    UINT4 i;
    INT4 adaptationOn=1;
+   if (LALInferenceGetProcParamVal(state->commandLine, "--noAdapt"))
+       adaptationOn=0;
+
    if (!LALInferenceCheckVariable(state->proposalArgs, LALInferenceSigmaJumpName)) {
       /* We need a sigma vector for adaptable jumps. */
       char *name = NULL;
