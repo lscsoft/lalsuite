@@ -451,6 +451,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     nullLikelihood = 0.0;
   } else if (runState->likelihood==&LALInferenceBimodalCorrelatedAnalyticLogLikelihood) {
     nullLikelihood = 0.0;
+  } else if (runState->likelihood==&LALInferenceRosenbrockLogLikelihood) {
+    nullLikelihood = 0.0;
   } else {
     fprintf(stderr, "Unrecognized log(L) function (in %s, line %d)\n",
         __FILE__, __LINE__);
