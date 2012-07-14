@@ -803,7 +803,11 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           fprintf(statfile,"%d\t",i);
 
           if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
-            s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
+            if (LALInferenceCheckVariable(runState->proposalArgs, "s_gamma")) {
+              s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
+            } else {
+              s_gamma = 0.0;
+            }
             fprintf(statfile,"%f\t",s_gamma);
             for (p=0; p<nPar; ++p) {
               fprintf(statfile,"%g\t",sigmas->data[p]);
