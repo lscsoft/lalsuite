@@ -23,6 +23,7 @@ lalxml_la_CFLAGS = $(swig_lt_cflags)
 lalxml_la_CXXFLAGS = $(swig_lt_cxxflags)
 lalxml_la_LDFLAGS = $(swig_lt_ldflags)
 lalxml_la_LIBADD = $(swig_lt_libadd)
+lalxml_la_LIBTOOLFLAGS = $(swig_lt_libtoolflags)
 
 endif # SWIG_BUILD_OCTAVE
 endif # SWIG_BUILD

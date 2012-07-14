@@ -23,6 +23,7 @@ lalpulsar_la_CFLAGS = $(swig_lt_cflags)
 lalpulsar_la_CXXFLAGS = $(swig_lt_cxxflags)
 lalpulsar_la_LDFLAGS = $(swig_lt_ldflags)
 lalpulsar_la_LIBADD = $(swig_lt_libadd)
+lalpulsar_la_LIBTOOLFLAGS = $(swig_lt_libtoolflags)
 
 endif # SWIG_BUILD_OCTAVE
 endif # SWIG_BUILD

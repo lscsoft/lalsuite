@@ -23,6 +23,7 @@ lalsimulation_la_CFLAGS = $(swig_lt_cflags)
 lalsimulation_la_CXXFLAGS = $(swig_lt_cxxflags)
 lalsimulation_la_LDFLAGS = $(swig_lt_ldflags)
 lalsimulation_la_LIBADD = $(swig_lt_libadd)
+lalsimulation_la_LIBTOOLFLAGS = $(swig_lt_libtoolflags)
 
 endif # SWIG_BUILD_OCTAVE
 endif # SWIG_BUILD

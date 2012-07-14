@@ -23,6 +23,7 @@ _lalxml_la_CFLAGS = $(swig_lt_cflags)
 _lalxml_la_CXXFLAGS = $(swig_lt_cxxflags)
 _lalxml_la_LDFLAGS = $(swig_lt_ldflags)
 _lalxml_la_LIBADD = $(swig_lt_libadd)
+_lalxml_la_LIBTOOLFLAGS = $(swig_lt_libtoolflags)
 
 endif # SWIG_BUILD_PYTHON
 endif # SWIG_BUILD

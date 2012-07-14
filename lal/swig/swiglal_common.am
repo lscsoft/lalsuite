@@ -21,6 +21,7 @@ swig_lt_cflags = $(AM_CFLAGS)
 swig_lt_cxxflags = $(AM_CXXFLAGS)
 swig_lt_ldflags = $(AM_LDFLAGS) -module -version-info $(LIBVERSION)
 swig_lt_libadd =
+swig_lt_libtoolflags = --tag=disable-static
 
 # installation location for SWIG interfaces
 swigincludedir = $(includedir)/lal
