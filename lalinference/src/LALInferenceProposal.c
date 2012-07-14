@@ -1050,6 +1050,9 @@ void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LAL
   const char *names[] = {"chirpmass", "asym_massratio", NULL};
   if (LALInferenceCheckVariable(pp, "massratio")) {
     names[1] = "massratio";
+  } else if (LALInferenceCheckVariable(pp, "m1")) {
+    names[0] = "m1";
+    names[1] = "m2";
   }
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
@@ -1159,78 +1162,113 @@ approxLogPrior(LALInferenceVariables *params) {
 void 
 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = drawApproxPriorName;
+  UINT4 analyticTest = 0;
   UINT4 goodProp = 0;
+  REAL8 tmp = 0.0;
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
+  if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood ||
+      runState->likelihood==&LALInferenceBimodalCorrelatedAnalyticLogLikelihood ||
+      runState->likelihood==&LALInferenceRosenbrockLogLikelihood) {
+    analyticTest = 1;
+  }
+
   while (goodProp == 0) {
-    REAL8 Mc = draw_chirp(runState);
-    LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
+    if (analyticTest) {
+      LALInferenceVariableItem *ptr = runState->currentParams->head;
+      while(ptr!=NULL) {
+        if(ptr->vary != LALINFERENCE_PARAM_FIXED) {
+          tmp = draw_flat(runState, ptr->name);
+          LALInferenceSetVariable(proposedParams, ptr->name, &tmp);
+        }
+        ptr=ptr->next;
+      }
+    } else {
+      if (LALInferenceCheckVariableNonFixed(runState->currentParams, "chirpmass")) {
+        REAL8 Mc = draw_chirp(runState);
+        LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
+      }
 
-    if (LALInferenceCheckVariableNonFixed(runState->currentParams, "asym_massratio")) {
-      REAL8 q = draw_flat(runState, "asym_massratio");
-      LALInferenceSetVariable(proposedParams, "asym_massratio", &q);
-    }
-    else if (LALInferenceCheckVariableNonFixed(runState->currentParams, "massratio")) {
-      REAL8 eta = draw_flat(runState, "massratio");
-      LALInferenceSetVariable(proposedParams, "massratio", &eta);
-    }
+      if (LALInferenceCheckVariableNonFixed(runState->currentParams, "asym_massratio")) {
+        REAL8 q = draw_flat(runState, "asym_massratio");
+        LALInferenceSetVariable(proposedParams, "asym_massratio", &q);
+      }
+      else if (LALInferenceCheckVariableNonFixed(runState->currentParams, "massratio")) {
+        REAL8 eta = draw_flat(runState, "massratio");
+        LALInferenceSetVariable(proposedParams, "massratio", &eta);
+      }
 
-    REAL8 theTime = draw_flat(runState, "time");
-    LALInferenceSetVariable(proposedParams, "time", &theTime);
+      if (LALInferenceCheckVariableNonFixed(runState->currentParams, "m1")) {
+        REAL8 m1 = draw_flat(runState, "m1");
+        LALInferenceSetVariable(proposedParams, "m1", &m1);
+      }
 
-    REAL8 phase = draw_flat(runState, "phase");
-    LALInferenceSetVariable(proposedParams, "phase", &phase);
+      if (LALInferenceCheckVariableNonFixed(runState->currentParams, "m2")) {
+        REAL8 m2 = draw_flat(runState, "m2");
+        LALInferenceSetVariable(proposedParams, "m2", &m2);
+      }
 
-    REAL8 inc = draw_colatitude(runState, "inclination");
-    LALInferenceSetVariable(proposedParams, "inclination", &inc);
+      REAL8 theTime = draw_flat(runState, "time");
+      LALInferenceSetVariable(proposedParams, "time", &theTime);
 
-    REAL8 pol = draw_flat(runState, "polarisation");
-    LALInferenceSetVariable(proposedParams, "polarisation", &pol);
+      REAL8 phase = draw_flat(runState, "phase");
+      LALInferenceSetVariable(proposedParams, "phase", &phase);
 
-    REAL8 dist = draw_distance(runState);
-    LALInferenceSetVariable(proposedParams, "distance", &dist);
+      REAL8 inc = draw_colatitude(runState, "inclination");
+      LALInferenceSetVariable(proposedParams, "inclination", &inc);
 
-    REAL8 ra = draw_flat(runState, "rightascension");
-    LALInferenceSetVariable(proposedParams, "rightascension", &ra);
+      REAL8 pol = draw_flat(runState, "polarisation");
+      LALInferenceSetVariable(proposedParams, "polarisation", &pol);
 
-    REAL8 dec = draw_dec(runState);
-    LALInferenceSetVariable(proposedParams, "declination", &dec);
+      REAL8 dist = draw_distance(runState);
+      LALInferenceSetVariable(proposedParams, "distance", &dist);
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin1")) {
-      REAL8 a1 = draw_flat(runState, "a_spin1");
-      LALInferenceSetVariable(proposedParams, "a_spin1", &a1);
-    }
+      REAL8 ra = draw_flat(runState, "rightascension");
+      LALInferenceSetVariable(proposedParams, "rightascension", &ra);
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin2")) {
-      REAL8 a2 = draw_flat(runState, "a_spin2");
-      LALInferenceSetVariable(proposedParams, "a_spin2", &a2);
-    }
+      REAL8 dec = draw_dec(runState);
+      LALInferenceSetVariable(proposedParams, "declination", &dec);
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_spin1")) {
-      REAL8 phi1 = draw_flat(runState, "phi_spin1");
-      LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
-    }
+      if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin1")) {
+        REAL8 a1 = draw_flat(runState, "a_spin1");
+        LALInferenceSetVariable(proposedParams, "a_spin1", &a1);
+      }
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_spin2")) {
-      REAL8 phi2 = draw_flat(runState, "phi_spin2");
-      LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
-    }
+      if (LALInferenceCheckVariableNonFixed(proposedParams, "a_spin2")) {
+        REAL8 a2 = draw_flat(runState, "a_spin2");
+        LALInferenceSetVariable(proposedParams, "a_spin2", &a2);
+      }
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "theta_spin1")) {
-      REAL8 theta1 = draw_colatitude(runState, "theta_spin1");
-      LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
-    }
+      if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_spin1")) {
+        REAL8 phi1 = draw_flat(runState, "phi_spin1");
+        LALInferenceSetVariable(proposedParams, "phi_spin1", &phi1);
+      }
 
-    if (LALInferenceCheckVariableNonFixed(proposedParams, "theta_spin2")) {
-      REAL8 theta2 = draw_colatitude(runState, "theta_spin2");
-      LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
+      if (LALInferenceCheckVariableNonFixed(proposedParams, "phi_spin2")) {
+        REAL8 phi2 = draw_flat(runState, "phi_spin2");
+        LALInferenceSetVariable(proposedParams, "phi_spin2", &phi2);
+      }
+
+      if (LALInferenceCheckVariableNonFixed(proposedParams, "theta_spin1")) {
+        REAL8 theta1 = draw_colatitude(runState, "theta_spin1");
+        LALInferenceSetVariable(proposedParams, "theta_spin1", &theta1);
+      }
+
+      if (LALInferenceCheckVariableNonFixed(proposedParams, "theta_spin2")) {
+        REAL8 theta2 = draw_colatitude(runState, "theta_spin2");
+        LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
+      }
     }
     if (runState->prior(runState, proposedParams) > -DBL_MAX)
       goodProp = 1;
   }
 
-  LALInferenceSetLogProposalRatio(runState, approxLogPrior(runState->currentParams) - approxLogPrior(proposedParams));
+  if (analyticTest) {
+    LALInferenceSetLogProposalRatio(runState, runState->prior(runState, runState->currentParams) - runState->prior(runState, proposedParams));
+  } else {
+    LALInferenceSetLogProposalRatio(runState, approxLogPrior(runState->currentParams) - approxLogPrior(proposedParams));
+  }
 }
 
 static void
