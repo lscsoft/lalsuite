@@ -170,19 +170,6 @@ should use the "Resize" variants.
 
 */
 /*@{*/
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8FrequencySeries*, XLALResizeCOMPLEX8FrequencySeries));
-SWIGLAL(RETURN_VOID(COMPLEX16FrequencySeries*, XLALResizeCOMPLEX16FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL4FrequencySeries*, XLALResizeREAL4FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL8FrequencySeries*, XLALResizeREAL8FrequencySeries));
-SWIGLAL(RETURN_VOID(INT2FrequencySeries*, XLALResizeINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(INT4FrequencySeries*, XLALResizeINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(INT8FrequencySeries*, XLALResizeINT8FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT2FrequencySeries*, XLALResizeUINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT4FrequencySeries*, XLALResizeUINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT8FrequencySeries*, XLALResizeUINT8FrequencySeries));
-#endif
-
 COMPLEX8FrequencySeries *XLALResizeCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *series, int first, size_t length );
 COMPLEX16FrequencySeries *XLALResizeCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *series, int first, size_t length );
 REAL4FrequencySeries *XLALResizeREAL4FrequencySeries ( REAL4FrequencySeries *series, int first, size_t length );
@@ -193,19 +180,6 @@ INT8FrequencySeries *XLALResizeINT8FrequencySeries ( INT8FrequencySeries *series
 UINT2FrequencySeries *XLALResizeUINT2FrequencySeries ( UINT2FrequencySeries *series, int first, size_t length );
 UINT4FrequencySeries *XLALResizeUINT4FrequencySeries ( UINT4FrequencySeries *series, int first, size_t length );
 UINT8FrequencySeries *XLALResizeUINT8FrequencySeries ( UINT8FrequencySeries *series, int first, size_t length );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8FrequencySeries*, XLALShrinkCOMPLEX8FrequencySeries));
-SWIGLAL(RETURN_VOID(COMPLEX16FrequencySeries*, XLALShrinkCOMPLEX16FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL4FrequencySeries*, XLALShrinkREAL4FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL8FrequencySeries*, XLALShrinkREAL8FrequencySeries));
-SWIGLAL(RETURN_VOID(INT2FrequencySeries*, XLALShrinkINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(INT4FrequencySeries*, XLALShrinkINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(INT8FrequencySeries*, XLALShrinkINT8FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT2FrequencySeries*, XLALShrinkUINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT4FrequencySeries*, XLALShrinkUINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT8FrequencySeries*, XLALShrinkUINT8FrequencySeries));
-#endif
 
 COMPLEX8FrequencySeries *XLALShrinkCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *series, size_t first, size_t length );
 COMPLEX16FrequencySeries *XLALShrinkCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *series, size_t first, size_t length );
@@ -239,19 +213,6 @@ that differ only by a dimensionless factor.
 
 */
 /*@{*/
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8FrequencySeries*, XLALAddCOMPLEX8FrequencySeries));
-SWIGLAL(RETURN_VOID(COMPLEX16FrequencySeries*, XLALAddCOMPLEX16FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL4FrequencySeries*, XLALAddREAL4FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL8FrequencySeries*, XLALAddREAL8FrequencySeries));
-SWIGLAL(RETURN_VOID(INT2FrequencySeries*, XLALAddINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(INT4FrequencySeries*, XLALAddINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(INT8FrequencySeries*, XLALAddINT8FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT2FrequencySeries*, XLALAddUINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT4FrequencySeries*, XLALAddUINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT8FrequencySeries*, XLALAddUINT8FrequencySeries));
-#endif
-
 COMPLEX8FrequencySeries *XLALAddCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *arg1, const COMPLEX8FrequencySeries *arg2 );
 COMPLEX16FrequencySeries *XLALAddCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *arg1, const COMPLEX16FrequencySeries *arg2 );
 REAL4FrequencySeries *XLALAddREAL4FrequencySeries ( REAL4FrequencySeries *arg1, const REAL4FrequencySeries *arg2 );
@@ -280,11 +241,6 @@ These functions replace a frequency series with its complex conjugate.
 
 */
 /*@{*/
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8FrequencySeries*, XLALConjugateCOMPLEX8FrequencySeries));
-SWIGLAL(RETURN_VOID(COMPLEX16FrequencySeries*, XLALConjugateCOMPLEX16FrequencySeries));
-#endif
-
 COMPLEX8FrequencySeries *XLALConjugateCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *series );
 COMPLEX16FrequencySeries *XLALConjugateCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *series );
 /*@}*/
@@ -308,19 +264,6 @@ units that differ only by a dimensionless factor.
 
 */
 /*@{*/
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8FrequencySeries*, XLALMultiplyCOMPLEX8FrequencySeries));
-SWIGLAL(RETURN_VOID(COMPLEX16FrequencySeries*, XLALMultiplyCOMPLEX16FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL4FrequencySeries*, XLALMultiplyREAL4FrequencySeries));
-SWIGLAL(RETURN_VOID(REAL8FrequencySeries*, XLALMultiplyREAL8FrequencySeries));
-SWIGLAL(RETURN_VOID(INT2FrequencySeries*, XLALMultiplyINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(INT4FrequencySeries*, XLALMultiplyINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(INT8FrequencySeries*, XLALMultiplyINT8FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT2FrequencySeries*, XLALMultiplyUINT2FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT4FrequencySeries*, XLALMultiplyUINT4FrequencySeries));
-SWIGLAL(RETURN_VOID(UINT8FrequencySeries*, XLALMultiplyUINT8FrequencySeries));
-#endif
-
 COMPLEX8FrequencySeries *XLALMultiplyCOMPLEX8FrequencySeries ( COMPLEX8FrequencySeries *arg1, const COMPLEX8FrequencySeries *arg2 );
 COMPLEX16FrequencySeries *XLALMultiplyCOMPLEX16FrequencySeries ( COMPLEX16FrequencySeries *arg1, const COMPLEX16FrequencySeries *arg2 );
 REAL4FrequencySeries *XLALMultiplyREAL4FrequencySeries ( REAL4FrequencySeries *arg1, const REAL4FrequencySeries *arg2 );

@@ -161,19 +161,6 @@ then the new time series is padded at the start by that many samples.  The
 time series' epoch is adjusted appropriately.
 */
 /*@{*/
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8TimeSeries*, XLALResizeCOMPLEX8TimeSeries));
-SWIGLAL(RETURN_VOID(COMPLEX16TimeSeries*, XLALResizeCOMPLEX16TimeSeries));
-SWIGLAL(RETURN_VOID(REAL4TimeSeries*, XLALResizeREAL4TimeSeries));
-SWIGLAL(RETURN_VOID(REAL8TimeSeries*, XLALResizeREAL8TimeSeries));
-SWIGLAL(RETURN_VOID(INT2TimeSeries*, XLALResizeINT2TimeSeries));
-SWIGLAL(RETURN_VOID(INT4TimeSeries*, XLALResizeINT4TimeSeries));
-SWIGLAL(RETURN_VOID(INT8TimeSeries*, XLALResizeINT8TimeSeries));
-SWIGLAL(RETURN_VOID(UINT2TimeSeries*, XLALResizeUINT2TimeSeries));
-SWIGLAL(RETURN_VOID(UINT4TimeSeries*, XLALResizeUINT4TimeSeries));
-SWIGLAL(RETURN_VOID(UINT8TimeSeries*, XLALResizeUINT8TimeSeries));
-#endif
-
 COMPLEX8TimeSeries *XLALResizeCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *series, int first, size_t length );
 COMPLEX16TimeSeries *XLALResizeCOMPLEX16TimeSeries ( COMPLEX16TimeSeries *series, int first, size_t length );
 REAL4TimeSeries *XLALResizeREAL4TimeSeries ( REAL4TimeSeries *series, int first, size_t length );
@@ -184,19 +171,6 @@ INT8TimeSeries *XLALResizeINT8TimeSeries ( INT8TimeSeries *series, int first, si
 UINT2TimeSeries *XLALResizeUINT2TimeSeries ( UINT2TimeSeries *series, int first, size_t length );
 UINT4TimeSeries *XLALResizeUINT4TimeSeries ( UINT4TimeSeries *series, int first, size_t length );
 UINT8TimeSeries *XLALResizeUINT8TimeSeries ( UINT8TimeSeries *series, int first, size_t length );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8TimeSeries*, XLALShrinkCOMPLEX8TimeSeries));
-SWIGLAL(RETURN_VOID(COMPLEX16TimeSeries*, XLALShrinkCOMPLEX16TimeSeries));
-SWIGLAL(RETURN_VOID(REAL4TimeSeries*, XLALShrinkREAL4TimeSeries));
-SWIGLAL(RETURN_VOID(REAL8TimeSeries*, XLALShrinkREAL8TimeSeries));
-SWIGLAL(RETURN_VOID(INT2TimeSeries*, XLALShrinkINT2TimeSeries));
-SWIGLAL(RETURN_VOID(INT4TimeSeries*, XLALShrinkINT4TimeSeries));
-SWIGLAL(RETURN_VOID(INT8TimeSeries*, XLALShrinkINT8TimeSeries));
-SWIGLAL(RETURN_VOID(UINT2TimeSeries*, XLALShrinkUINT2TimeSeries));
-SWIGLAL(RETURN_VOID(UINT4TimeSeries*, XLALShrinkUINT4TimeSeries));
-SWIGLAL(RETURN_VOID(UINT8TimeSeries*, XLALShrinkUINT8TimeSeries));
-#endif
 
 COMPLEX8TimeSeries *XLALShrinkCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *series, size_t first, size_t length );
 COMPLEX16TimeSeries *XLALShrinkCOMPLEX16TimeSeries ( COMPLEX16TimeSeries *series, size_t first, size_t length );
@@ -228,19 +202,6 @@ have units that differ only by a dimensionless factor.
 
 */
 /*@{*/
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(RETURN_VOID(COMPLEX8TimeSeries*, XLALAddCOMPLEX8TimeSeries));
-SWIGLAL(RETURN_VOID(COMPLEX16TimeSeries*, XLALAddCOMPLEX16TimeSeries));
-SWIGLAL(RETURN_VOID(REAL4TimeSeries*, XLALAddREAL4TimeSeries));
-SWIGLAL(RETURN_VOID(REAL8TimeSeries*, XLALAddREAL8TimeSeries));
-SWIGLAL(RETURN_VOID(INT2TimeSeries*, XLALAddINT2TimeSeries));
-SWIGLAL(RETURN_VOID(INT4TimeSeries*, XLALAddINT4TimeSeries));
-SWIGLAL(RETURN_VOID(INT8TimeSeries*, XLALAddINT8TimeSeries));
-SWIGLAL(RETURN_VOID(UINT2TimeSeries*, XLALAddUINT2TimeSeries));
-SWIGLAL(RETURN_VOID(UINT4TimeSeries*, XLALAddUINT4TimeSeries));
-SWIGLAL(RETURN_VOID(UINT8TimeSeries*, XLALAddUINT8TimeSeries));
-#endif
-
 COMPLEX8TimeSeries *XLALAddCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *arg1, const COMPLEX8TimeSeries *arg2 );
 COMPLEX16TimeSeries *XLALAddCOMPLEX16TimeSeries ( COMPLEX16TimeSeries *arg1, const COMPLEX16TimeSeries *arg2 );
 REAL4TimeSeries *XLALAddREAL4TimeSeries ( REAL4TimeSeries *arg1, const REAL4TimeSeries *arg2 );
