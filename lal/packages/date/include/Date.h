@@ -170,6 +170,10 @@ int XLALLeapSecondsUTC( const struct tm *utc );
 /* Returns the GPS seconds since the GPS epoch for a specified UTC time structure. */
   INT4 XLALUTCToGPS( const struct tm *utc );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(RETURN_VALUE(struct tm*, XLALGPSToUTC));
+#endif
+
 /* Returns a pointer to a tm structure representing the time
  * specified in seconds since the GPS epoch.  */
 struct tm * XLALGPSToUTC(
