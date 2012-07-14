@@ -207,6 +207,14 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 #undef swiglal_check_LALStatus
 %}
 
+// Functions whose return type is 'int' will have their return values ignored,
+// since 'int' is interpreted as an XLAL error code. The '_int' typedef is for
+// use by functions defined in the SWIG interface, to make sure their return
+// values are not ignored.
+%inline %{
+typedef int _int;
+%}
+
 ////////// General fragments //////////
 
 // Empty fragment, for fragment-generating macros.
@@ -241,15 +249,42 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 // following macros:
 
 // Process an interface function NAME: rename it to RENAME,
-// and set it to always return SWIG-owned wrapping objects.
-// The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn
-// off SWIG ownership for certain functions.
-%define %swiglal_process_function(NAME, RENAME)
+// and set it to always return SWIG-owned wrapping objects
+// (unless the function is being ignored). If TYPE is given,
+// ignore the return value of the function.
+%typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
+  %set_output(VOID_Object);
+}
+%define %swiglal_process_function(NAME, RENAME, TYPE)
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
 %feature("new", "1") NAME;
 #endif
+#if #TYPE != ""
+%apply SWIGTYPE SWIGLAL_RETURN_VOID { TYPE NAME };
+#endif
 %enddef
+
+// The SWIGLAL(RETURN_VALUE(TYPE,...)) public macro can be used to ensure
+// that the return value of a function is not ignored, if the return value
+// has previously been ignored in the generated wrappings.
+%define %swiglal_public_RETURN_VALUE(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
+
+// The SWIGLAL(RETURN_XLAL_ERROR_CODE(...)) public macro is useful for
+// functions which manipulate XLAL error codes. These functions not
+// only need the return value not to be ignored, but also require
+// an XLAL exception handling to be disabled.
+%define %swiglal_public_RETURN_XLAL_ERROR_CODE(...)
+%swiglal_map_a(%swiglal_clear, int, __VA_ARGS__);
+%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(...)
+
+// The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn
+// off SWIG ownership for certain functions.
 %define %swiglal_public_NO_NEW_OBJECT(...)
 %swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
 %enddef
@@ -880,51 +915,6 @@ if (swiglal_release_parent(PTR)) {
 %define %swiglal_public_clear_INOUT_STRUCTS(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
-
-// Typemap which ignores the XLAL error code returned by some XLAL functions.
-// These error codes will be translated into scripting-language exceptions, so
-// the extra returned error code will not generally needed. Additionally, the
-// extra return value can be inconvenient if the function also has input/output
-// arguments. The typemap ignores the return value of the function only if the
-// preprocessor symbol 'swiglal_ignore_integer_return_type_$type' is defined, where
-// $type is the literal (non-typedef) return type. The only such preprocessor symbol
-// that will be defined in 'swiglal_ignore_integer_return_type_int'. This behaviour
-// can be turned off using the SWIGLAL(RETURN_XLAL_ERROR_CODE()) public macro
-// for selected functions. The '_int' typedef is for use by functions defined in
-// the SWIG interface, to make sure their return values are not ignored.
-%header %{
-#define swiglal_ignore_xlal_error_code_return_type_int
-%}
-%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int {
-%#ifdef swiglal_ignore_xlal_error_code_return_type_$type
-  %set_output(VOID_Object);
-%#else
-  %set_output(SWIG_From(int)($1));
-%#endif
-}
-%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_XLAL_ERROR_CODE {
-  %set_output(SWIG_From(int)($1));
-}
-%define %swiglal_public_RETURN_XLAL_ERROR_CODE(FUNCTION)
-%exception FUNCTION "$action";
-%apply int SWIGLAL_XLAL_ERROR_CODE { int FUNCTION };
-%enddef
-%inline %{
-typedef int _int;
-%}
-#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(FUNCTION)
-
-// The SWIGLAL(RETURN_VOID(TYPE,...)) public macro can be used to ignore
-// the return values of a list of functions of the same type. This might
-// be useful for some functions which simply return one of their input
-// arguments, the return value is therefore not needed.
-%typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
-  %set_output(VOID_Object);
-}
-%define %swiglal_public_RETURN_VOID(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE SWIGLAL_RETURN_VOID, TYPE, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_RETURN_VOID(TYPE, ...)
 
 // Make the wrapping of printf-style LAL functions a little safer, as suggested in
 // the SWIG 2.0 documentation (section 13.5). These functions should now be safely

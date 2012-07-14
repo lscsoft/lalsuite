@@ -477,9 +477,7 @@ XLALErrorHandlerType * XLALSetSilentErrorHandler(void);
  */
 
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(RETURN_XLAL_ERROR_CODE(XLALSetErrno));
-SWIGLAL(RETURN_XLAL_ERROR_CODE(XLALGetBaseErrno));
-SWIGLAL(RETURN_XLAL_ERROR_CODE(XLALClearErrno));
+SWIGLAL(RETURN_XLAL_ERROR_CODE(XLALSetErrno, XLALGetBaseErrno, XLALClearErrno));
 #endif /* SWIG */
 
 /** Sets the XLAL error number to errnum, returns the new value. */

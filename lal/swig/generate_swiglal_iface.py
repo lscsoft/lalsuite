@@ -194,6 +194,7 @@ for header in headers:
             fail("cdecl '%s' in header '%s' has no kind" % (cdecl['name'], header))
         if not 'type' in cdecl or cdecl['type'] == '':
             fail("cdecl '%s' in header '%s' has no type" % (cdecl['name'], header))
+        cdecl['extra_process_args'] = []
 
         # SWIGLAL() and SWIGLAL_CLEAR() macros
         if cdecl['name'] in ['__swiglal__', '__swiglal_clear__']:
@@ -232,6 +233,7 @@ for header in headers:
             fail("struct '%s' in header '%s' has no tag-name" % (struct['name'], header))
         if struct['name'] in symbols['struct']:
             fail("duplicate struct '%s' in header %s" % (struct['name'], header))
+        struct['extra_process_args'] = []
         symbols['struct'][struct['name']] = struct
 
 # look for a destructor function for each struct
@@ -260,6 +262,39 @@ for function_name in symbols['function']:
 
     # remove destructor function from interface
     symbols['function'][function_name]['feature_ignore'] = '1'
+
+# determine whether return value of functions should be ignored
+func_arg1_ptype_regexp = re.compile('^f\(p\.([^,]*)')
+for function_name in symbols['function']:
+
+    # get function declaration and return type
+    func_decl = symbols['function'][function_name]['decl']
+    func_retn_type = symbols['function'][function_name]['type']
+
+    # return function values by default
+    func_ignore_retn = ''
+
+    # ignore function return values whose type is 'int',
+    # since this is interpreted as a XLAL error code
+    if func_decl.endswith(').') and func_retn_type == 'int':
+        func_ignore_retn = func_retn_type
+
+    else:
+
+        # extract the pointer type of the function's first argument
+        func_arg1_ptype_match = func_arg1_ptype_regexp.match(func_decl)
+        if not func_arg1_ptype_match is None:
+            func_arg1_ptype = func_arg1_ptype_match.group(1)
+
+            # ignore function return values whose type is a pointer and which
+            # matches the type of the first argument, since it is common for
+            # XLAL functions to return the value of the first argument
+            if func_decl.endswith(').p.') and func_retn_type == func_arg1_ptype:
+                func_ignore_retn = func_retn_type + '*'
+                func_ignore_retn = func_ignore_retn.replace('q(const).', 'const ')
+
+    # add extra argument to swiglal_process_function() macro specifying whether return value is ignored
+    symbols['function'][function_name]['extra_process_args'].append(func_ignore_retn)
 
 # open SWIG interface file
 iface_file = open(iface_filename, 'w')
@@ -317,8 +352,12 @@ for (symbol_type, symbol_name_key) in (('function', 'name'), ('tdstruct', 'tagna
         if 'feature_ignore' in symbols[symbol_type][symbol_key]:
             symbol_rename = '$ignore'
 
+        # get macro arguments
+        macro_args = [symbol_name, symbol_rename]
+        macro_args.extend(symbols[symbol_type][symbol_key]['extra_process_args'])
+
         # write to interface file
-        iface_file.write('%%swiglal_process_%s(%s, %s);\n' % (symbol_type, symbol_name, symbol_rename))
+        iface_file.write('%%swiglal_process_%s(%s);\n' % (symbol_type, ', '.join(macro_args)))
 
 # include interface headers, and clear SWIGLAL() macros afterwards
 for header in header_files:
