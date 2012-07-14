@@ -22,6 +22,16 @@
 
 ////////// General SWIG directives and interface code //////////
 
+// SWIG v2.0.7 may use the _exit() function, which is POSIX (unistd.h)
+// and might not be available, whereas the equivalent _Exit() function
+// is in C99 (stdlib.h) and so it more likely to be supported in C++
+#if SWIGVERSION < 0x020008
+%begin %{
+#include <cstdlib>
+#define _exit _Exit
+%}
+#endif
+
 // Include SWIG Octave headers.
 %include <octcomplex.swg>
 
@@ -188,6 +198,8 @@
   // If there is already such a reference, increment the internal
   // reference count instead.
   SWIGINTERN void swiglal_store_parent(void* ptr, octave_value parent) {
+    assert(ptr != NULL);
+    assert(parent.is_defined());
     swiglal_oct_parent_map::iterator i = parent_map->find(ptr);
     if (i == parent_map->end()) {
       parent_map->insert(swiglal_oct_parent_pair(ptr, swiglal_oct_parent(parent, 1)));
@@ -204,6 +216,7 @@
   // zero, and return false to prevent any destructors being called.
   SWIGINTERN bool swiglal_release_parent(void *ptr) {
     bool retn = true;
+    assert(ptr != NULL);
     swiglal_oct_parent_map::iterator i = parent_map->find(ptr);
     if (i != parent_map->end()) {
       retn = false;

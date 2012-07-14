@@ -29,10 +29,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(NO_NEW_OBJECT(XLALInstrumentNameToLALDetector));
-#endif
-
 const LALDetector *XLALInstrumentNameToLALDetector(
 	const char *string
 );

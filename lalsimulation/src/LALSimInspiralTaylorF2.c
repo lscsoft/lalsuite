@@ -65,7 +65,7 @@ int XLALSimInspiralTaylorF2(
         const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
         const REAL8 fStart,              /**< start GW frequency (Hz) */
         const REAL8 r,                   /**< distance of source (m) */
-        const UINT4 O                    /**< twice PN phase order */
+        const INT4 O                    /**< twice PN phase order */
         )
 {
     const REAL8 lambda = -1987./3080.;

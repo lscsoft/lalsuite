@@ -144,7 +144,7 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceVariables *currentParams=state->currentParams;
 	ProcessParamsTable *commandLine=state->commandLine;
 	ProcessParamsTable *ppt=NULL;
-	INT4 AmpOrder=0;
+	//INT4 AmpOrder=0;
 	LALPNOrder PhaseOrder=LAL_PNORDER_TWO;
 	Approximant approx=TaylorF2;
 	//INT4 numberI4 = TaylorF2;
@@ -257,7 +257,7 @@ void initVariables(LALInferenceRunState *state)
 			exit(1);
 		}
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
-		AmpOrder=injTable->amp_order;
+		//AmpOrder=injTable->amp_order;
 		PhaseOrder = XLALGetOrderFromString(injTable->waveform);
 		if( (int) PhaseOrder == XLAL_FAILURE)
 			ABORTXLAL(&status);

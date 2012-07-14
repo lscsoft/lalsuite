@@ -660,18 +660,29 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   UINT4 n;
   unsigned long i,j, jmax=0;
   double pj, pmax, pleft, pright;
-	
-  double mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+  double m1,m2,mc,eta,q;
+  /* Prefer m1 and m2 if available (i.e. for injection template) */
+  if(LALInferenceCheckVariable(IFOdata->modelParams,"mass1")&&LALInferenceCheckVariable(IFOdata->modelParams,"mass2"))
+  {
+    m1=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"mass1");
+    m2=*(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"mass2");
+    eta=m1*m2/((m1+m2)*(m1+m2));
+    mc=pow(eta , 0.6)*(m1+m2);
+  }
+  else
+  {
+    if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
+        q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
+        q2eta(q, &eta);
+    }
+    else
+        eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
+    mc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "chirpmass");
+    mc2masses(mc, eta, &m1, &m2);
+  }
   double phi      = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "phase");       /* here: startPhase !! */
   double tc       = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time");
   double iota     = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "inclination");
-  double eta;	
-  if (LALInferenceCheckVariable(IFOdata->modelParams,"asym_massratio")) {
-    double q = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams,"asym_massratio");
-    q2eta(q, &eta);
-  }
-  else
-    eta = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "massratio");
   double spin1    = 0.0;
   double spin2    = 0.0;
   /* Just two spins specified - assume they are the z-components */
@@ -706,7 +717,7 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
 
   int approximant=0, order=0;
   int FDomain;    /* (denotes domain of the _LAL_ template!) */
-  double m1, m2, chirptime, deltaT;
+  double chirptime, deltaT;
   double plusCoef  = -0.5 * (1.0 + pow(cos(iota),2.0));
   double crossCoef = cos(iota);//was   crossCoef = (-1.0*cos(iota));, change iota to -iota+Pi to match HW injection definitions.
   double instant;
@@ -745,7 +756,6 @@ void LALInferenceTemplateLAL(LALInferenceIFOData *IFOdata)
   }
   deltaT = IFOdata->timeData->deltaT;
 
-  mc2masses(mc, eta, &m1, &m2);
   
   params.OmegaS      = 0.0;     /* (?) */
   params.Theta       = 0.0;     /* (?) */
@@ -1964,6 +1974,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       previous_phi0 = phi0;
       previous_inclination = inclination;
     
+      if (htilde==NULL || htilde->data==NULL || htilde->data->data==NULL ) {
+        XLALPrintError(" ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): encountered unallocated 'htilde'.\n");
+        XLAL_ERROR_VOID(XLAL_EFAULT);
+      }
+      
       COMPLEX16 *dataPtr = htilde->data->data;
 
       for (i=0; i<IFOdata->freqModelhPlus->data->length; ++i) {

@@ -223,13 +223,13 @@
     PyErr_Fetch(&pyerr_type, &pyerr_value, &pyerr_traceback);
     int ecode;
     assert(ptr != NULL);
+    assert(parent != NULL);
     PyObject* key = PyLong_FromVoidPtr(ptr);
     assert(key != NULL);
     PyObject* parent_tuple = PyDict_GetItem(parent_map, key);
     if (parent_tuple == NULL) {
-      PyObject* stored_parent = (parent == NULL) ? Py_None : parent;
       const long ref_count = 1;
-      parent_tuple = Py_BuildValue("Ol", stored_parent, ref_count);
+      parent_tuple = Py_BuildValue("Ol", parent, ref_count);
       assert(parent_tuple != NULL);
       ecode = PyDict_SetItem(parent_map, key, parent_tuple);
       assert(ecode == 0);
