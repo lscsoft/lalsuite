@@ -53,8 +53,8 @@ static size_t CeilPow2(double n) {
 /**
  * Computes the stationary phase approximation to the Fourier transform of
  * a chirp waveform with phase given by Eq.\eqref{eq_InspiralFourierPhase_f2}
- * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$ to the same order as
- * the phase.
+ * and amplitude given by expanding \f$1/\sqrt{\dot{F}}\f$. If the PN order is
+ * set to -1, then the highest implemented order is used.
  * \author B.S. Sathyaprakash
  */
 int XLALSimInspiralTaylorF2(
@@ -65,7 +65,8 @@ int XLALSimInspiralTaylorF2(
         const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
         const REAL8 fStart,              /**< start GW frequency (Hz) */
         const REAL8 r,                   /**< distance of source (m) */
-        const INT4 O                    /**< twice PN phase order */
+        const INT4 phaseO,               /**< twice PN phase order */
+        const INT4 amplitudeO            /**< twice PN amplitude order */
         )
 {
     const REAL8 lambda = -1987./3080.;
@@ -162,31 +163,46 @@ int XLALSimInspiralTaylorF2(
         REAL8 flux = 0.;
         REAL8 amp;
 
-        switch (O)
+        switch (phaseO)
         {
+            case -1:
             case 7:
                 phasing += pfa7 * v7;
-                flux += FTa7 * v7;
             case 6:
                 phasing += (pfa6 + pfl6 * log(4.*v) ) * v6;
+            case 5:
+                phasing += (pfa5 + pfl5 * log(v/v0)) * v5;
+            case 4:
+                phasing += pfa4 * v4;
+            case 3:
+                phasing += pfa3 * v3;
+            case 2:
+                phasing += pfa2 * v2;
+            case 0:
+                phasing += 1.;
+                break;
+            default:
+                XLAL_ERROR(XLAL_ETYPE);
+        }
+        switch (amplitudeO)
+        {
+            case -1:
+            case 7:
+                flux += FTa7 * v7;
+            case 6:
                 flux += (FTa6 + FTl6*log(16.*v2)) * v6;
                 dEnergy += dETa3 * v6;
             case 5:
-                phasing += (pfa5 + pfl5 * log(v/v0)) * v5;
                 flux += FTa5 * v5;
             case 4:
-                phasing += pfa4 * v4;
                 flux += FTa4 * v4;
                 dEnergy += dETa2 * v4;
             case 3:
-                phasing += pfa3 * v3;
                 flux += FTa3 * v3;
             case 2:
-                phasing += pfa2 * v2;
                 flux += FTa2 * v2;
                 dEnergy += dETa1 * v2;
             case 0:
-                phasing += 1.;
                 flux += 1.;
                 dEnergy += 1.;
                 break;
