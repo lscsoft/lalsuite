@@ -80,7 +80,8 @@ int main(int argc, char *argv[]){
 
   CHAR outputfile[256]="";
   CHAR channel[128]="";
-
+  CHAR *psrname = NULL;
+  
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
 
@@ -106,6 +107,21 @@ int main(int argc, char *argv[]){
   /* read in pulsar data */
   XLALReadTEMPOParFile( &hetParams.het, inputParams.paramfile );
 
+  /* set pulsar name - take from par file if available, or if not get from
+     command line args */
+  if( hetParams.het.jname )
+    psrname = XLALStringDuplicate( hetParams.het.jname );
+  else if ( hetParams.het.bname )
+    psrname = XLALStringDuplicate( hetParams.het.bname );
+  else if ( hetParams.het.name )
+    psrname = XLALStringDuplicate( hetParams.het.name );
+  else if ( inputParams.pulsar )
+    psrname = XLALStringDuplicate( inputParams.pulsar );
+  else{
+    fprintf(stderr, "No pulsar name specified!\n");
+    exit(0);
+  }
+  
   /* if there is an epoch given manually (i.e. not from the pulsar parameter
      file) then set it here and overwrite any other value - this is used, for
      example, with the pulsar hardware injections in which this should be set
@@ -116,8 +132,7 @@ int main(int argc, char *argv[]){
   }
 
   if(verbose){
-    fprintf(stderr, "I've read in the pulsar parameters for %s.\n",
-      inputParams.pulsar);
+    fprintf(stderr, "I've read in the pulsar parameters for %s.\n", psrname);
     fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n", hetParams.het.ra,
       hetParams.het.dec);
     fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n",
@@ -156,8 +171,7 @@ pulsars spin frequency.\n", inputParams.freqfactor);
     }
 
     if(verbose){
-      fprintf(stderr, "I've read the updated parameters for %s.\n",
-        inputParams.pulsar);
+      fprintf(stderr, "I've read the updated parameters for %s.\n", psrname);
       fprintf(stderr, "alpha = %lf rads, delta = %lf rads.\n",
         hetParams.hetUpdate.ra, hetParams.hetUpdate.dec);
       fprintf(stderr, "f0 = %.1lf Hz, f1 = %.1e Hz/s, epoch = %.1lf.\n",
@@ -273,13 +287,13 @@ directory of the form /GPS_START_TIME-GPS_END_TIME!\n");
   
   if(inputParams.heterodyneflag == 0){
     snprintf(outputfile, sizeof(outputfile), "%s/coarsehet_%s_%s_%s",
-      inputParams.outputdir, inputParams.pulsar, inputParams.ifo, pos+1);
+      inputParams.outputdir, psrname, inputParams.ifo, pos+1);
     if(verbose){  fprintf(stderr, "I'm performing a coarse \
 heterodyne.\n");  }
   }
   else{
     snprintf(outputfile, sizeof(outputfile), "%s/finehet_%s_%s",
-      inputParams.outputdir, inputParams.pulsar, inputParams.ifo);
+      inputParams.outputdir, psrname, inputParams.ifo);
     if(verbose){  fprintf(stderr, "I'm performing a fine \
 heterodyne.\n");  }
   }
@@ -701,6 +715,7 @@ void get_input_args(InputParams *inputParams, int argc, char *argv[]){
   char *program = argv[0];
 
   /* set defaults */
+  inputParams->pulsar = NULL;
   inputParams->filterknee = 0.; /* default is not to filter */
   inputParams->resamplerate = 0.; /* resample to 1 Hz */
   inputParams->samplerate = 0.;
@@ -756,8 +771,7 @@ the pulsar parameter file */
         inputParams->heterodyneflag = atoi(optarg);
         break;
       case 'p': /* pulsar name */
-        snprintf(inputParams->pulsar, sizeof(inputParams->pulsar), "%s",
-          optarg);
+        inputParams->pulsar = XLALStringDuplicate( optarg );
         break;
       case 'A': /* calibration flag */
         inputParams->calibrate = 1;

@@ -87,7 +87,9 @@ typedef struct
 tagBinaryPulsarParams
 {
   CHAR *name;   /**< pulsar name */
-
+  CHAR *jname;  /**< pulsar J name */
+  CHAR *bname;  /**< pulsar B name */
+  
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
 
   REAL8 f0;     /**< spin frequency (Hz) */
