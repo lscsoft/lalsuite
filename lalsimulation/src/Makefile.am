@@ -14,6 +14,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimInspiralWaveformFlags.h \
+	LALSimInspiralTestGRParams.h \
 	LALSimIMR.h \
 	LALSimInspiral.h \
 	LALSimulation.h \
@@ -51,6 +52,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenom.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiralWaveformFlags.c \
+	LALSimInspiralTestGRParams.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylorT4.c \

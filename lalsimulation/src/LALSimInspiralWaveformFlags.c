@@ -70,7 +70,8 @@ void XLALSimInspiralDestroyWaveformFlags(
         LALSimInspiralWaveformFlags *waveFlags
         )
 {
-    XLALFree(waveFlags);
+    if( waveFlags )
+        XLALFree(waveFlags);
     return;
 }
 

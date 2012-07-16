@@ -61,6 +61,7 @@ typedef struct tagGSParams {
     REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags; /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams; /**< Linked list of non-GR parameters. Pass in NULL for standard GR waveforms */
     int axisChoice;           /**< flag to choose reference frame for spin coordinates */
     int inspiralOnly;         /**< flag to choose if generating only the the inspiral 1 or also merger and ring-down*/
     char outname[256];        /**< file to which output should be written */
@@ -133,6 +134,7 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
 
     /* Set default values to the arguments */
     params->waveFlags = XLALSimInspiralCreateWaveformFlags();
+    params->nonGRparams = NULL;
     params->approximant = TaylorT1;
     params->domain = GSDomain_TD;
     params->phaseO = 7;
@@ -311,8 +313,8 @@ int main (int argc , char **argv) {
                     params->s1y, params->s1z, params->s2x, params->s2y, 
                     params->s2z, params->f_min, params->f_max, 
                     params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->waveFlags, params->ampO, 
-                    params->phaseO, params->approximant);
+                    params->lambda2, params->waveFlags, params->nonGRparams,
+                    params->ampO, params->phaseO, params->approximant);
             break;
         case GSDomain_TD:
             XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, 
@@ -320,8 +322,8 @@ int main (int argc , char **argv) {
                     params->s1y, params->s1z, params->s2x, params->s2y, 
                     params->s2z, params->f_min, params->fRef, 
                     params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->waveFlags, params->ampO, 
-                    params->phaseO, params->approximant);
+                    params->lambda2, params->waveFlags, params->nonGRparams,
+                    params->ampO, params->phaseO, params->approximant);
             break;
         default:
             XLALPrintError("Error: domain must be either TD or FD\n");
@@ -346,12 +348,14 @@ int main (int argc , char **argv) {
 
     /* clean up */
     XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
+    XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
     XLALDestroyCOMPLEX16FrequencySeries(htilde);
     return 0;
 
     fail:
     XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
+    XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
     XLALDestroyCOMPLEX16FrequencySeries(htilde);
     return 1;

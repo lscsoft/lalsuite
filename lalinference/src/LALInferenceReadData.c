@@ -1110,14 +1110,16 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN);
         if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_ALL);
       }
+      LALSimInspiralTestGRParam *nonGRparams = NULL;
 
-        XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
+      XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,
                                                 injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI, injEvent->spin1x,
                                                 injEvent->spin1y, injEvent->spin1z, injEvent->spin2x, injEvent->spin2y,
                                                 injEvent->spin2z, injEvent->f_lower, 0., injEvent->distance*LAL_PC_SI * 1.0e6,
                                                 injEvent->inclination, lambda1, lambda2, waveFlags,
-                                                amporder, order, approximant);
+                                                nonGRparams, amporder, order, approximant);
       XLALSimInspiralDestroyWaveformFlags(waveFlags);
+      XLALSimInspiralDestroyTestGRParam(nonGRparams);
       XLALResampleREAL8TimeSeries(hplus,thisData->timeData->deltaT);
       XLALResampleREAL8TimeSeries(hcross,thisData->timeData->deltaT);
       if(!hplus || !hcross) {

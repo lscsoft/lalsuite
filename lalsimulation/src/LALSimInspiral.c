@@ -1307,6 +1307,7 @@ int XLALSimInspiralChooseWaveform(
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -1317,7 +1318,7 @@ int XLALSimInspiralChooseWaveform(
 
     return XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2,
             S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2,
-            waveFlags, amplitudeO, phaseO, approximant);
+            waveFlags, nonGRparams, amplitudeO, phaseO, approximant);
 }
 
 /**
@@ -1347,6 +1348,7 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -1355,6 +1357,17 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 LNhatx, LNhaty, LNhatz, E1x, E1y, E1z;
     int ret;
     REAL8 v0 = 1.;
+
+    /* General sanity checks that will abort */
+    /*
+     * If non-GR approximants are added, change the below to
+     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+     */
+    if( nonGRparams )
+    {
+        XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
 
     /* General sanity check the input parameters - only give warnings! */
     if( deltaT > 1. )
@@ -1596,12 +1609,24 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
     int ret;
+
+    /* General sanity checks that will abort */
+    /*
+     * If non-GR approximants are added, change the below to
+     * if( nonGRparams && approximant != nonGR1 && approximant != nonGR2 )
+     */
+    if( nonGRparams )
+    {
+        XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+    }
 
     /* General sanity check the input parameters - only give warnings! */
     if( deltaF > 1. )

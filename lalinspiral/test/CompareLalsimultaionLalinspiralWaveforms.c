@@ -101,6 +101,7 @@ int main(int argc , char **argv)
 	 */  
 	REAL8 lambda1 = 0., lambda2 = 0., fRef = 0.;
 	LALSimInspiralWaveformFlags *waveFlags=XLALSimInspiralCreateWaveformFlags();
+	LALSimInspiralTestGRParam *nonGRparams = NULL;
 
 	memset( &mystatus, 0, sizeof(LALStatus) );
 	memset( &params, 0, sizeof(InspiralTemplate) );
@@ -177,8 +178,9 @@ int main(int argc , char **argv)
 
 	start = clock();
 	/* --- now we can call the lalsimulation function --- */
-	length = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, fRef, params.distance, params.inclination, lambda1, lambda2, waveFlags, 0, otherIn.order, params.approximant);
+	length = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, fRef, params.distance, params.inclination, lambda1, lambda2, waveFlags, nonGRparams, 0, otherIn.order, params.approximant);
 	XLALSimInspiralDestroyWaveformFlags(waveFlags);
+	XLALSimInspiralDestroyTestGRParam(nonGRparams);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

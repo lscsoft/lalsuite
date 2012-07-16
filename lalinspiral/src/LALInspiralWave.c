@@ -165,6 +165,7 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
    REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
    REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
    LALSimInspiralWaveformFlags *waveFlags=XLALSimInspiralCreateWaveformFlags();
+   LALSimInspiralTestGRParam *nonGRparams = NULL;
    int amplitudeO = thisRow->amp_order;
 
    /* get approximant */
@@ -194,8 +195,10 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
       default:
          ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT,
                m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i,
-               lambda1, lambda2, waveFlags, amplitudeO, order, approximant);
+               lambda1, lambda2, waveFlags, nonGRparams, amplitudeO,
+               order, approximant);
          XLALSimInspiralDestroyWaveformFlags(waveFlags);
+         XLALSimInspiralDestroyTestGRParam(nonGRparams);
          if( ret == XLAL_FAILURE )
             XLAL_ERROR(XLAL_EFUNC);
    }
@@ -242,13 +245,15 @@ XLALSimInspiralChooseWaveformFromInspiralTemplate(
   REAL8 lambda1 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
   REAL8 lambda2 = 0.; /* FIXME:0 turns these terms off, these should be obtained by some other means */
   LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
+  LALSimInspiralTestGRParam *nonGRparams = NULL;
   LALPNOrder amplitudeO = params->ampOrder;
   LALPNOrder order = params->order;
   Approximant approximant = params->approximant;
 
   /* generate +,x waveforms */
-  ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, amplitudeO, order, approximant);
+  ret = XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, waveFlags, nonGRparams, amplitudeO, order, approximant);
   XLALSimInspiralDestroyWaveformFlags(waveFlags);
+  XLALSimInspiralDestroyTestGRParam(nonGRparams);
   if( ret == XLAL_FAILURE)
     XLAL_ERROR(XLAL_EFUNC);
 

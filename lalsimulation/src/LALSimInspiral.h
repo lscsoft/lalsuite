@@ -23,6 +23,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/LALSimIMR.h>
 #include  <lal/LALSimInspiralWaveformFlags.h>
+#include  <lal/LALSimInspiralTestGRParams.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -508,6 +509,7 @@ int XLALSimInspiralChooseWaveform(
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
@@ -540,6 +542,7 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 lambda1,              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags, /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams, /**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,             /**< twice post-Newtonian amplitude order */
     int phaseO,                 /**< twice post-Newtonian phase order */
     Approximant approximant     /**< post-Newtonian approximant to use for waveform production */
@@ -572,6 +575,7 @@ int XLALSimInspiralChooseFDWaveform(
     REAL8 lambda1,                              /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2,                              /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
     LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
