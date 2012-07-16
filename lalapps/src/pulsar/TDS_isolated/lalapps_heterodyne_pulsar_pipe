@@ -183,7 +183,7 @@ update_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
 
 # set Condor .sub submit file names
 subsuffix = '.sub'
-df_job.set_sub_file(basename + '.datafind' + subsuffix)
+# df_job.set_sub_file(basename + '.datafind' + subsuffix)
 coarse_job.set_sub_file(basename + subsuffix)
 fine_job.set_sub_file(basename +  subsuffix)
 update_job.set_sub_file(basename + subsuffix)
