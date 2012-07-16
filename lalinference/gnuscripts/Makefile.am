@@ -1,6 +1,7 @@
 EXTRA_DIST = \
 	config.guess \
 	config.sub \
+	cuda.common \
 	depcomp \
 	header-link.mk \
 	install-sh \

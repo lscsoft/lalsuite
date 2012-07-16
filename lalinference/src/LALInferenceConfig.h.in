@@ -24,4 +24,7 @@
 /* LALInference Configure Date */
 #undef LALINFERENCE_CONFIGURE_DATE
 
+/* Define if using CUDA library */
+#undef LALINFERENCE_CUDA_ENABLED
+
 #endif /* _LALINFERENCECONFIG_H */

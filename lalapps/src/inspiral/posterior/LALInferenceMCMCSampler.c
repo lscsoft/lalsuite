@@ -41,8 +41,12 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
 
+#include <lal/LALInferenceConfig.h>
+
 #include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
+
+#include <time.h>
 
 #define PROGRAM_NAME "LALInferenceMCMCSampler.c"
 #define CVS_ID_STRING "$Id$"
@@ -266,6 +270,9 @@ updateMaxAutoCorrLen(LALInferenceRunState *runState, INT4 currentCycle) {
 
 void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 {
+  float startTime, endTime, elapsedTime;
+  startTime = (float)clock()/CLOCKS_PER_SEC;
+
   int i,t,p,lowerRank,upperRank; //indexes for for() loops
   int nChain;
   int MPIrank, MPIsize;
@@ -436,6 +443,9 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 //    nullLikelihood = LALInferenceTimeDomainNullLogLikelihood(runState->data);
 //  } else 
   if (runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood ||
+#ifdef LALINFERENCE_CUDA_ENABLED 
+      runState->likelihood==&LALInferenceUndecomposedFreqDomainLogLikelihood_GPU ||
+#endif
       runState->likelihood==&LALInferenceFreqDomainLogLikelihood) {
     nullLikelihood = LALInferenceNullLogLikelihood(runState->data);
   } else if (runState->likelihood==&LALInferenceFreqDomainStudentTLogLikelihood) {
@@ -896,6 +906,16 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       fclose(propstatfile);
     }
   }
+
+  endTime = (float)clock()/CLOCKS_PER_SEC;
+
+  elapsedTime = endTime - startTime;
+
+#ifdef LALINFERENCE_CUDA_ENABLED
+  printf("Total Elapsed GPU time: %f ms\n", elapsedTime);
+#else
+  printf("Total Elapsed CPU time: %f ms\n", elapsedTime);
+#endif
 
   free(tempLadder);
   free(acceptanceCountLadder);

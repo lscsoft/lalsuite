@@ -82,6 +82,8 @@
 #include <gsl/gsl_statistics.h>
 #include <sys/time.h>
 
+#define template _template
+
 //...other includes
 
 struct tagLALInferenceRunState;

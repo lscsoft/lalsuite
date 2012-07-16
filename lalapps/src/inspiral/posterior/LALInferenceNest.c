@@ -37,6 +37,7 @@
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
+#include <lal/LALInferenceConfig.h>
 
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
@@ -289,6 +290,10 @@ Nested sampling arguments:\n\
 	
 	/* Default likelihood is the frequency domain one */
 	runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
+
+#ifdef LALINFERENCE_CUDA_ENABLED
+        runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood_GPU;
+#endif
 
         /* Check whether to use the SkyLocalization prior. Otherwise uses the default LALInferenceInspiralPriorNormalised. That should probably be replaced with a swhich over the possible priors. */
         ppt=LALInferenceGetProcParamVal(commandLine,"--prior_distr");
