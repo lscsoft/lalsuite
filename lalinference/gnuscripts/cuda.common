@@ -1,0 +1,9 @@
+nvcc_verbose = $(nvcc_verbose_$(V))
+nvcc_verbose_ = $(nvcc_verbose_$(AM_DEFAULT_VERBOSITY))
+nvcc_verbose_0 = @echo "  NVCC  " $<;
+
+if CUDA
+SUFFIXES = .cu .cpp
+.cu.cpp:
+	$(nvcc_verbose)${NVCC} -arch=sm_20 --cuda $(INCLUDES) $(CPPFLAGS) $(NVCC_CFLAGS) --output-file $@ $<
+endif
