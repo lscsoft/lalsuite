@@ -163,7 +163,7 @@ typedef struct {
   REAL8 Alpha;                              /**< sky position alpha in radians */
   REAL8 Delta;                              /**< sky position delta in radians */
   REAL8 Tsft;                               /**< length of one SFT in seconds */
-  LIGOTimeGPS internalRefTime;	            /**< internal reference time used purely for F-stat computation (defaults to startTime) */
+  LIGOTimeGPS internalRefTime;	            /**< internal reference time used purely for F-stat computation (defaults to midTime) */
   DopplerRegion searchRegion;		    /**< parameter-space region to search over */
   DopplerFullScanState *scanState;          /**< current state of the Doppler-scan */
   PulsarDopplerParams stepSizes;	    /**< user-preferences on Doppler-param step-sizes */
@@ -549,7 +549,7 @@ int main(int argc,char *argv[])
 
       tic0 = tic = GETTIME();
 
-      /* use internalRefTime in order to safely computing F-statistic (avoid large |tRef - tStart|) */
+      /* use internalRefTime in order to safely computing F-statistic (avoid large |t - tRef|^s) */
       PulsarDopplerParams internalDopplerpos = dopplerpos;
       XLALExtrapolatePulsarSpins ( internalDopplerpos.fkdot, dopplerpos.fkdot, DeltaTRefInt );	// can't fail
       internalDopplerpos.refTime = GV.internalRefTime;
@@ -1285,7 +1285,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,workingDir,     'w', UVAR_DEVELOPER, "Directory to use as work directory.");
   LALregREALUserStruct(status, 	timerCount, 	 0,  UVAR_DEVELOPER, "N: Output progress/timer info every N seconds");
-  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: startTime]");
+  LALregREALUserStruct(status,	internalRefTime, 0,  UVAR_DEVELOPER, "internal reference time to use for Fstat-computation [Default: midTime]");
 
   LALregINTUserStruct(status,	upsampleSFTs,	 0,  UVAR_DEVELOPER, "(integer) Factor to up-sample SFTs by");
   LALregBOOLUserStruct(status, 	projectMetric, 	 0,  UVAR_DEVELOPER, "Use projected metric on Freq=const subspact");
@@ -1709,12 +1709,16 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   cfg->CFparams.upsampling = 1.0 * uvar->upsampleSFTs;
   cfg->CFparams.edat = cfg->ephemeris;	// this will be used by ComputeFStatFreqBand_RS() to internally compute the multiDetState series
 
-  /* internal refTime is used for computing the F-statistic at, to avoid large (tRef - tStart) values */
+  /* internal refTime is used for computing the F-statistic at, to avoid large (t - tRef)^2 values */
   if ( LALUserVarWasSet ( &uvar->internalRefTime ) ) {
     XLALGPSSetREAL8 ( &(cfg->internalRefTime), uvar->internalRefTime);
   }
   else
-    cfg->internalRefTime = startTime;
+    {
+      LIGOTimeGPS midTime = startTime;
+      XLALGPSAdd ( &midTime, 0.5 * XLALGPSDiff( &endTime, &startTime ) );	// mid-time of observation
+      cfg->internalRefTime = midTime;
+    }
 
   /* ----- set up scanline-window if requested for 1D local-maximum clustering on scanline ----- */
   if ( (cfg->scanlineWindow = XLALCreateScanlineWindow ( uvar->clusterOnScanline )) == NULL ) {
