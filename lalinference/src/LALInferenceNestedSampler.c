@@ -838,27 +838,32 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 /* Perform one MCMC iteration on runState->currentParams. Return 1 if accepted or 0 if not */
 UINT4 LALInferenceMCMCSamplePrior(LALInferenceRunState *runState)
 {
-    LALInferenceVariables tempParams;
+    //LALInferenceVariables tempParams;
     REAL8 logProposalRatio=0.0;
-    memset(&tempParams,0,sizeof(tempParams));
-    LALInferenceVariables *oldParams=&tempParams;
+    //LALInferenceVariables *oldParams=&tempParams;
+    LALInferenceVariables proposedParams;
+    memset(&proposedParams,0,sizeof(proposedParams));
+
     UINT4 accepted=0;
 
     REAL8 logPriorOld=*(REAL8 *)LALInferenceGetVariable(runState->currentParams,"logPrior");
-    LALInferenceCopyVariables(runState->currentParams,oldParams);
-    runState->proposal(runState,runState->currentParams);
-    REAL8 logPriorNew=runState->prior(runState,runState->currentParams);
+    //LALInferenceCopyVariables(runState->currentParams,oldParams);
+    LALInferenceCopyVariables(runState->currentParams,&proposedParams);
+    runState->proposal(runState,&proposedParams);
+    REAL8 logPriorNew=runState->prior(runState,&proposedParams);
     if(LALInferenceCheckVariable(runState->proposalArgs,"logProposalRatio"))
        logProposalRatio=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,"logProposalRatio");
     if(logPriorNew==-DBL_MAX || isnan(logPriorNew) || log(gsl_rng_uniform(runState->GSLrandom)) > (logPriorNew-logPriorOld) + logProposalRatio) 
     {
-        LALInferenceCopyVariables(oldParams,runState->currentParams);
+	/* Reject - don't need to copy new params back to currentParams */
+        /*LALInferenceCopyVariables(oldParams,runState->currentParams); */
     } 
     else {
         accepted=1;
+	LALInferenceCopyVariables(&proposedParams,runState->currentParams);
         LALInferenceSetVariable(runState->currentParams,"logPrior",&logPriorNew);
     }
-    LALInferenceDestroyVariables(oldParams);
+    LALInferenceDestroyVariables(&proposedParams);
     
     LALInferenceUpdateAdaptiveJumps(runState, accepted, 0.35);
 
