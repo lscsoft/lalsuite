@@ -794,8 +794,8 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
 # dictionary. The list of time stamps, and the real and imaginary parts of the
 # 1f and 2f signals are returned in an array
 def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
-  iota = math.arccos(pardist['cosiota'])
-  theta = math.arccos(pardict['costheta'])
+  iota = np.arccos(pardict['cosiota'])
+  theta = np.arccos(pardict['costheta'])
   siniota = math.sin(iota)
   sintheta = math.sin(theta)
   sin2theta = math.sin( 2.0*theta )
@@ -815,7 +815,7 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
     frequency (as defined in Jones 2009)
   """
   
-  Xplusf = -( f2_r / 2.0 ) * siniota * pars.cosiota;
+  Xplusf = -( f2_r / 2.0 ) * siniota * pardict['cosiota'];
   Xcrossf = -( f2_r / 2.0 ) * siniota;
   Xplus2f = -f2_r * ( 1.0 + pardict['cosiota'] * pardict['cosiota'] );
   Xcross2f = -f2_r * 2.0 * pardict['cosiota'];
@@ -829,11 +829,14 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
   
   # create a list of times stamps
   ts1 = []
+  ts2 = []
   tmpts = starttime
   
   # create real and imaginary parts of the 1f signal
   sr1 = []
   si1 = []
+  sr2 = []
+  si2 = []
   
   i = 0
   while tmpts < starttime + duration:
@@ -841,7 +844,7 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
     ts2.append(starttime+(dt*i))
     
     # get the antenna response
-    fp, fc = antenna_response(ts[i], pardict['ra'], pardict['dec'], \
+    fp, fc = antenna_response(ts1[i], pardict['ra'], pardict['dec'], \
                               pardict['psi'], detector)
     
     # create the complex signal amplitude model at 1f
@@ -867,7 +870,7 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
   ts = np.vstack([ts1, ts2])
   sr = np.vstack([sr1, sr2])
   si = np.vstack([si1, si2])
-  
+    
   return ts, sr, si
   
 # function to get the antenna response for a given detector. This is based on
@@ -950,8 +953,12 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
         
     npsds = tmpnpsds
   
-  if len(detectors) != len(npsds):
+  if model == 'triaxial' and len(detectors) != len(npsds):
     raise ValueError, "Number of detectors %d not the same as number of "\
+                      "noises %d" % (len(detectors), len(npsds))
+  
+  if model == 'pinsf' and 2*len(detectors) != len(npsds):
+    raise ValueError, "Number of detectors %d not half the number of "\
                       "noises %d" % (len(detectors), len(npsds))
   
   tss = np.array([])
@@ -979,14 +986,26 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
     elif model == 'pinsf':
       ts, sr, si = heterodyned_pinsf_pulsar(starttime, duration, dt, det, \
                                             pardict)
-                                            
-      tss = np.vstack([tss, ts])
-      srs = np.vstack([srs, sr])
-      sis = np.vstack([sis, si])
+      
+      snrtmp = 0
+      for k, frf in enumerate(freqfac):
+        if j == 0 and k == 0:
+          tss = np.append(tss, ts[k][:])
+          srs = np.append(srs, sr[k][:])
+          sis = np.append(sis, si[k][:])
+        else:
+          tss = np.vstack([tss, ts[k][:]])
+          srs = np.vstack([srs, sr[k][:]])
+          sis = np.vstack([sis, si[k][:]])
+        
+        snrtmp2 = get_optimal_snr( sr[k][:], si[k][:], npsds[2*j+k] )
+        snrtmp = snrtmp + snrtmp2*snrtmp2
+        
+      snrtmp = np.sqrt(snrtmp)
     
     snrtot = snrtot + snrtmp*snrtmp
     
-  # total multidetector snr
+  # total multidetector/data stream snr
   snrtot = np.sqrt(snrtot)
   
   # add noise and rescale signals if necessary
@@ -998,7 +1017,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
   i = 0
   for det in detectors:
     # for triaxial model
-    if len(ts.shape) == 1 and len(freqfac) == 1 and model == 'triaxial':
+    if len(freqfac) == 1 and model == 'triaxial':
       # generate random numbers
       rs = np.random.randn(len(ts), 2)
       
@@ -1011,7 +1030,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
           sis[i][j] = snrscale*sis[i][j] + npsds[i]*rs[j][1]
 
       i = i+1
-    elif len(ts.shape) == 2 and len(freqfac) == 2 and model == 'pinsf':
+    elif len(freqfac) == 2 and model == 'pinsf':
       # generate random numbers
       rs = np.random.randn(len(ts[0][:]), 4)
       
@@ -1076,13 +1095,10 @@ def detector_noise( det, f ):
 
 # function to calculate the optimal SNR of a heterodyned pulsar signal - it
 # takes in a complex signal model and noise standard deviation
-def get_optimal_snr( sr, si, sig ):
-  i = 0
-  
+def get_optimal_snr( sr, si, sig ):  
   ss = 0
   # sum square of signal
-  for s in sr:
+  for i, s in enumerate(sr):
     ss = ss + sr[i]*sr[i] + si[i]*si[i]
-    i = i+1
    
   return np.sqrt( ss / (sig*sig) )
