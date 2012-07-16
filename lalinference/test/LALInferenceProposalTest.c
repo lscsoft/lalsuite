@@ -213,8 +213,8 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
 	REAL8 phi_spin1_min=-LAL_PI;
 	REAL8 phi_spin1_max=LAL_PI;
-	REAL8 theta_spin1_min=-LAL_PI/2.0;
-	REAL8 theta_spin1_max=LAL_PI/2.0;	
+	REAL8 theta_spin1_min=0.;
+	REAL8 theta_spin1_max=LAL_PI;	
 	REAL8 qMin=0.0;
 	REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -481,6 +481,8 @@ int main(int argc, char *argv[]) {
         LALInferenceCopyVariables(state->currentParams,samples[i]);
         LALInferenceDrawFromPrior(samples[i], state->priorArgs, state->GSLrandom );
         /* scatter points for CVM calculation */
+        REAL8 prior = state->prior(state,samples[i]);
+	LALInferenceSetVariable(samples[i],"logPrior",&prior);
     }
     state->currentParams=samples[0];
     gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
@@ -592,6 +594,8 @@ REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs
     REAL8 min=0,max=0;
     LALInferenceGetMinMaxPrior(priorArgs,name,&min,&max);
     if(!strcmp(name,"inclination")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"theta_spin1")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"theta_spin2")) return(FlatInCosine(x,min,max));
     if(!strcmp(name,"declination")) return(FlatInSine(x,min,max));
     if(!strcmp(name,"distance")) return(rSquaredCDF(x,min,max));
     if(!strcmp(name,"logdistance")) return(rSquaredCDF(exp(x),exp(min),exp(max)));
