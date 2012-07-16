@@ -73,8 +73,8 @@ CHAR *uvar_Fname1;
 CHAR *uvar_Fname2;
 BOOLEAN uvar_help;
 BOOLEAN uvar_clusterFiles;
-BOOLEAN uvar_compareSumF;
 REAL8 uvar_Ftolerance;
+BOOLEAN uvar_absFtolerance;
 
 #define max(x,y) ( (x) > (y) ? (x) : (y) )
 
@@ -156,7 +156,7 @@ initUserVars (LALStatus *status)
 
   uvar_clusterFiles = TRUE;	/* default: compare output-files from "cluster" */
   uvar_Ftolerance = 100.0 * LAL_REAL4_EPS;
-  uvar_compareSumF = FALSE;
+  uvar_absFtolerance = FALSE;
 
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, Fname1,	'1', UVAR_REQUIRED, "Path and basefilename for first Fstats file");
@@ -164,8 +164,8 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
   LALregBOOLUserVar(status,   clusterFiles, 0,UVAR_OPTIONAL,"Comparing cluster results-files or pure Fstat-files");
-  LALregBOOLUserVar(status,   compareSumF, 0,UVAR_OPTIONAL, "Check relative error on (sum_i F_i) instead of individual Fs");
-  LALregREALUserVar(status,   Ftolerance, 0, UVAR_OPTIONAL, "tolerance of relative-error in F" );
+  LALregREALUserVar(status,   Ftolerance, 0, UVAR_OPTIONAL, "tolerance of error in 2F (relative or absolute, depending on --absFtolerance)" );
+  LALregBOOLUserVar(status,   absFtolerance, 0,UVAR_OPTIONAL, "Use *absolute* error in 2F instead of relative error");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -270,8 +270,7 @@ compareClusterFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALP
 /** comparison specific to pure Fstat-output files (5 entries )
  */
 void
-compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2,
-		   REAL8 Ftol)
+compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALParsedDataFile *f2, REAL8 Ftol)
 {
   const CHAR *line1, *line2;
   UINT4 nlines1, nlines2, minlines;
@@ -291,8 +290,6 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 
   /* step through the two files and compare (trying to avoid stumbling on roundoff-errors ) */
   minlines = (nlines1 < nlines2) ? nlines1 : nlines2;
-
-  REAL8 sumF1 = 0, sumF2 = 0;
 
   for (i=0; i < minlines ; i++)
     {
@@ -340,28 +337,19 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 	  printf ("Relative error %g in f3dot ecceeds %g in line %d\n", relErr, eps4, i+1);
 	  (*diff) ++;
 	}
-      if ( uvar_compareSumF )
-        {
-          sumF1 += parsed1.TwoF;
-          sumF2 += parsed2.TwoF;
-        }
-      else if ( (relErr = relError( parsed1.TwoF, parsed2.TwoF)) > Ftol )
+      REAL8 err2F;
+      if ( uvar_absFtolerance )
+        err2F = fabs ( parsed1.TwoF - parsed2.TwoF );
+      else
+        err2F = relError( parsed1.TwoF, parsed2.TwoF );
+
+      if ( err2F > Ftol )
 	{
-	  printf ("Relative error %g in 2F ecceeds %g in line %d\n", relErr, Ftol, i+1);
+	  printf ("%s Error %g in 2F ecceeds threshold %g in line %d\n", ( uvar_absFtolerance ? "Absolute" : "Relative" ) , err2F, Ftol, i+1);
 	  (*diff) ++;
 	}
 
     } /* for i < minlines */
-
-  if ( uvar_compareSumF )
-    {
-      if ( (relErr = fabs ( relError( sumF1, sumF2))) > Ftol )
-        {
-          printf ("Relative error %g in sum(2F) ecceeds %g\n", relErr, Ftol );
-	  (*diff) ++;
-        }
-      XLALPrintInfo ( "Relative error sum(2F)=%g is %g\n", sumF1, relErr );
-    }
 
   RETURN (status);
 
