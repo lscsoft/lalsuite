@@ -39,9 +39,11 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
-
+  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   -d, --datafind           run ligo_data_find to create frame cache files
                            (required for coarse heterodyne)
+  THIS OPTION IS NO LONGER USABLE - CREATE YOUR OWN FRAME CACHE (E.G. USING 
+  ligo_data_find) AND ADD TO THE CONFIGURATION FILE
   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   -s, --seglist            run LSCsegFind to create a segment list (otherwise
                            attempt to read the segment filename from the
@@ -89,7 +91,7 @@ except getopt.GetoptError:
   
 # default options
 config_file = None
-do_datafind = None
+# do_datafind = None
 do_fine = None
 do_coarse = None
 do_update = None
@@ -109,6 +111,7 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-d", "--datafind"):
+    print "The -d (--datafind) flag is no longer valid (see --help)"
     do_datafind = 1
   elif o in ("-s", "--seglist"):
     print "The -s (--segment) flag is no longer valid (see --help)"
@@ -148,9 +151,9 @@ if not log_path:
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
-if do_datafind:
-  try: os.mkdir('cache')
-  except: pass
+#if do_datafind:
+#  try: os.mkdir('cache')
+#  except: pass
 
 try: os.mkdir('logs')
 except: pass
@@ -172,7 +175,7 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # create Condor Jobds that will be used in the dag
-df_job = pipeline.LSCDataFindJob('cache','logs') # data find job
+# df_job = pipeline.LSCDataFindJob('cache','logs') # data find job
 univ = cp.get('condor', 'universe')
 coarse_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
 fine_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
@@ -208,7 +211,7 @@ except:
 
 # check that if you're performing a coarse heterodyne, but you're not doing a
 # datafind that you have instead supplied a frame cache file
-if ((do_coarse) and (do_datafind == None)):
+if do_coarse: # and (do_datafind == None)):
   try:
     data_cache = cp.get('data','data_cache')
   
@@ -239,29 +242,29 @@ try: os.mkdir(output_dir) # create output directory using start and end time of 
 except: pass
 
 # make DAGs
-if do_datafind:
-  df = pipeline.LSCDataFindNode(df_job)
+#if do_datafind:
+#  df = pipeline.LSCDataFindNode(df_job)
   
   # set observatory for LSCdataFind
-  if (detector.find('H1') > -1) | (detector.find('H2') > -1):
-    obs = 'H'
-  elif (detector.find('L1') > -1):
-    obs = 'L'
-  elif (detector.find('G1') > -1) | (detector.find('GEO') > -1):
-    obs = 'G'
-  elif (detector.find('V1') > -1) | (detector.find('Virgo') > -1):
-    obs = 'V'
-  else:
-    print >> sys.stderr, """Detector not set in .ini file or not recognised, should be either H1,
-H2, L1, V1, G1 or GEO."""
-    sys.exit(1)
+#  if (detector.find('H1') > -1) | (detector.find('H2') > -1):
+#    obs = 'H'
+#  elif (detector.find('L1') > -1):
+#    obs = 'L'
+#  elif (detector.find('G1') > -1) | (detector.find('GEO') > -1):
+#    obs = 'G'
+#  elif (detector.find('V1') > -1) | (detector.find('Virgo') > -1):
+#    obs = 'V'
+#  else:
+#    print >> sys.stderr, """Detector not set in .ini file or not recognised, should be either H1,
+#H2, L1, V1, G1 or GEO."""
+#    sys.exit(1)
     
-  df.set_observatory(obs)
-  df.set_start(tstart)
-  df.set_end(tend)
+#  df.set_observatory(obs)
+#  df.set_start(tstart)
+#  df.set_end(tend)
  
   # add DAG
-  dag.add_node(df)
+#  dag.add_node(df)
 
 # set seglist file from value in the config file
 seg_list_file = cp.get('data','seg_list')
@@ -306,11 +309,11 @@ if do_coarse:
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
       
-      if do_datafind:
-        coarse[j].set_data_file(df.get_output()) # get frame cache from here!
-      else:
-        coarse[j].set_data_file(data_cache) # set frame cache to that given in
-                                            # config the file
+      #if do_datafind:
+      #  coarse[j].set_data_file(df.get_output()) # get frame cache from here!
+      #else:
+      coarse[j].set_data_file(data_cache) # set frame cache to that given in
+                                          # config the file
       
       coarse[j].set_seg_list(seg_list_file)
       coarse[j].set_channel(channel)
@@ -329,8 +332,8 @@ if do_coarse:
       if do_binoutput:
         coarse[j].set_binoutput()
      
-      if do_datafind:
-        coarse[j].add_parent(df)
+      #if do_datafind:
+      #  coarse[j].add_parent(df)
       
       dag.add_node(coarse[j])
       j = j+1
