@@ -355,9 +355,11 @@ CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
       ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
       XLALGPSSetREAL8( &ttGPS, ttSI );
 
-      if ( XLALComputeAntennaPatternCoeffs ( &ai, &bi, &skypos, &ttGPS, par->site, par->edat ) ) {
+      int errnum;
+      XLAL_TRY( XLALComputeAntennaPatternCoeffs ( &ai, &bi, &skypos, &ttGPS, par->site, par->edat ), errnum );
+      if ( errnum ) {
 	XLALPrintError ( "%s: Call to XLALComputeAntennaPatternCoeffs() failed!\n", __func__);
-	XLAL_ERROR( XLAL_EFUNC );
+	GSL_ERROR_VAL( "Failure in CW_am1_am2_Phi_i_Phi_j", GSL_EFAILED, GSL_NAN );
       }
 
       /* first antenna-pattern component */
@@ -458,9 +460,11 @@ CWPhaseDeriv_i ( double tt, void *params )
   LIGOTimeGPS ttGPS;
   XLALGPSSetREAL8( &ttGPS, ttSI );
 
-  if ( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ) ) {
+  int errnum;
+  XLAL_TRY( XLALDetectorPosVel ( &spin_posvel, &orbit_posvel, &ttGPS, par->site, par->edat, par->detMotionType ), errnum );
+  if ( errnum ) {
     XLALPrintError ( "%s: Call to XLALDetectorPosVel() failed!\n", __func__);
-    XLAL_ERROR( XLAL_EFUNC );
+    GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
   }
   /* calculate detector total motion = spin motion + orbital motion */
   COPY_VECT(posvel.pos, spin_posvel.pos);
@@ -644,7 +648,7 @@ CWPhaseDeriv_i ( double tt, void *params )
 
     default:
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
-      XLAL_ERROR( XLAL_EINVAL );
+      GSL_ERROR_VAL( "Failure in CWPhaseDeriv_i", GSL_EFAILED, GSL_NAN );
       break;
     } /* switch phderiv */
 
