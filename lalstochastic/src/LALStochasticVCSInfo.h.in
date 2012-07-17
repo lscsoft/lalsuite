@@ -23,7 +23,7 @@
 #define _LALSTOCHASTICVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALStochasticConfig.h>
+#include <lal/LALStochasticLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALSTOCHASTIC_VCS_IDENT_STATUS "$" "LALStochasticStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalStochasticVCSInfo;
 static const struct tagLALVCSInfo lalStochasticHeaderVCSInfo = { \
   LALSTOCHASTIC_VCS_NAME, \
   LALSTOCHASTIC_VERSION, \

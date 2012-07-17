@@ -16,6 +16,7 @@ lalinferenceinclude_HEADERS = \
 	LALInferenceReadData.h \
 	LALInferenceTemplate.h \
 	LALInferenceProposal.h \
+	LALInferenceLibVCSInfo.h \
 	LALInferenceVCSInfo.h \
 	$(XMLHDR)
 

@@ -348,10 +348,11 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
     if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam")) {
       LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
     }
-    else if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
+    /*
+      else if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
       LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
     }
-    
+    */
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
     
@@ -385,10 +386,13 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
     }
   }
 
+  /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
+  /*
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
- 
+  */
+
   LALInferenceRandomizeProposalCycle(runState);
 }
 
@@ -1168,9 +1172,9 @@ void
 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = drawApproxPriorName;
 
-  REAL8 logBackwardJump = approxLogPrior(runState->currentParams);
   REAL8 tmp = 0.0;
   UINT4 analyticTest = 0;
+  REAL8 logBackwardJump;
 
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
@@ -1191,6 +1195,8 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
       ptr=ptr->next;
     }
   } else {
+    logBackwardJump = approxLogPrior(runState->currentParams);
+
     REAL8 Mc = draw_chirp(runState);
     LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
 

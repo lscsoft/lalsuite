@@ -6,6 +6,7 @@ lalburstinclude_HEADERS = \
 	EPSearch.h \
 	GenerateBurst.h \
 	LALBurstConfig.h \
+	LALBurstLibVCSInfo.h \
 	LALBurstVCSInfo.h \
 	LIGOLwXMLBurstRead.h \
 	LIGOMetadataBurstUtils.h \

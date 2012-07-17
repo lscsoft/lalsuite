@@ -19,6 +19,7 @@ lalsimulationinclude_HEADERS = \
 	LALSimNoise.h \
 	LALSimSGWB.h \
 	LALSimulationConfig.h \
+	LALSimulationLibVCSInfo.h \
 	LALSimulationVCSInfo.h
 
 noinst_HEADERS = \

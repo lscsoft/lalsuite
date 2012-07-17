@@ -23,7 +23,7 @@
 #define _LALFRAMEVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALFrameConfig.h>
+#include <lal/LALFrameLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALFRAME_VCS_IDENT_STATUS "$" "LALFrameStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalFrameVCSInfo;
 static const struct tagLALVCSInfo lalFrameHeaderVCSInfo = { \
   LALFRAME_VCS_NAME, \
   LALFRAME_VERSION, \

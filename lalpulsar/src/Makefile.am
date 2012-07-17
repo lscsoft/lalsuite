@@ -30,6 +30,7 @@ lalpulsarinclude_HEADERS = \
 	LALDemod.h \
 	LALHough.h \
 	LALPulsarConfig.h \
+	LALPulsarLibVCSInfo.h \
 	LALPulsarVCSInfo.h \
 	LALXMGRInterface.h \
 	LISAspecifics.h \

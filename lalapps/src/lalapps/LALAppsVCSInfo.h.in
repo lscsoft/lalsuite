@@ -49,8 +49,18 @@ extern "C" {
 #define LALAPPS_VCS_IDENT_COMMITTER "$" "LALAppsCommitter: @COMMITTER@ " "$"
 #define LALAPPS_VCS_IDENT_STATUS "$" "LALAppsStatus: @STATUS@ " "$"
 
+/* global variables for vcs information, defined in LALAppsVCSInfo.c */
+extern const char *const lalAppsVCSVersion;
+extern const char *const lalAppsVCSId;
+extern const char *const lalAppsVCSDate;
+extern const char *const lalAppsVCSBranch;
+extern const char *const lalAppsVCSTag;
+extern const char *const lalAppsVCSAuthor;
+extern const char *const lalAppsVCSCommitter;
+extern const char *const lalAppsVCSStatus;
+
 /* vcs information structure */
-extern struct tagLALVCSInfo lalAppsVCSInfo;
+extern const struct tagLALVCSInfo lalAppsVCSInfo;
 
 #ifdef __cplusplus
 }

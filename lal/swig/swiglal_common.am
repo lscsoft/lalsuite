@@ -6,9 +6,6 @@ swig_iface = @PACKAGE_NAME@swig.i
 
 # SWIG interface dependencies file
 swig_iface_deps = ./$(DEPDIR)/@PACKAGE_NAME@swig.deps
-$(swig_iface_deps) : ../$(swig_iface) Makefile
-	@echo '#dummy' > $@
-@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
 
 # test script for the SWIG wrapping module
 swig_modl_check = check_@PACKAGE_NAME@swig
@@ -60,7 +57,11 @@ swig_iface_links :
 
 # generate SWIG interface file
 ../$(swig_iface) :
+	@echo '#dummy' > $(swig_iface_deps)
 	@cd .. && $(MAKE) $(swig_iface)
+
+# include SWIG interface dependencies file
+@am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
 
 # generate SWIG wrapping module source
 $(swig_modl_src) : ../$(swig_iface) Makefile

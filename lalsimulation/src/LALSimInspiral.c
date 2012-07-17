@@ -1356,7 +1356,7 @@ int XLALSimInspiralChooseFDWaveform(
     {
         /* non-spinning inspiral-only models */
         case TaylorF2:
-            ret = XLALSimInspiralTaylorF2(htilde, phi0, deltaF, m1, m2, f_min, r, phaseO);
+            ret = XLALSimInspiralTaylorF2(htilde, phi0, deltaF, m1, m2, f_min, r, phaseO, amplitudeO);
             break;
 
         /* non-spinning inspiral-merger-ringdown models */

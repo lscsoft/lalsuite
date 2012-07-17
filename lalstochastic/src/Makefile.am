@@ -4,6 +4,7 @@ lalstochasticincludedir = $(includedir)/lal
 lalstochasticinclude_HEADERS = \
 	AstroOmega.h \
 	LALStochasticConfig.h \
+	LALStochasticLibVCSInfo.h \
 	LALStochasticVCSInfo.h \
 	LIGOLwXMLStochasticRead.h \
 	SimulatePopcorn.h \

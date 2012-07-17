@@ -23,7 +23,7 @@
 #define _LALINSPIRALVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALInspiralConfig.h>
+#include <lal/LALInspiralLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALINSPIRAL_VCS_IDENT_STATUS "$" "LALInspiralStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalInspiralVCSInfo;
 static const struct tagLALVCSInfo lalInspiralHeaderVCSInfo = { \
   LALINSPIRAL_VCS_NAME, \
   LALINSPIRAL_VERSION, \

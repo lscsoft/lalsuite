@@ -4,6 +4,7 @@ lalxmlincludedir = $(includedir)/lal
 lalxmlinclude_HEADERS = \
 	LALXML.h \
 	LALXMLConfig.h \
+	LALXMLLibVCSInfo.h \
 	LALXMLVCSInfo.h \
 	LALXMLVOTableCommon.h \
 	LALXMLVOTableSerializers.h

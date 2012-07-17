@@ -16,6 +16,7 @@ lalframeinclude_HEADERS = \
 	LALFrameConfig.h \
 	LALFrameIO.h \
 	LALFrameL.h \
+	LALFrameLibVCSInfo.h \
 	LALFrameVCSInfo.h \
 	LowLatencyData.h
 

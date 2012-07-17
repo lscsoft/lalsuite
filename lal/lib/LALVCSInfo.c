@@ -43,7 +43,7 @@ const char *const lalVCSIdentCommitter = LAL_VCS_IDENT_COMMITTER;
 const char *const lalVCSIdentStatus = LAL_VCS_IDENT_STATUS;
 
 /* library vcs information structure */
-struct tagLALVCSInfo lalVCSInfo = { \
+const struct tagLALVCSInfo lalVCSInfo = { \
   LAL_NAME, \
   LAL_VERSION, \
   LAL_VCS_ID, \

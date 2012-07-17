@@ -23,7 +23,7 @@
 #define _LALPULSARVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALPulsarConfig.h>
+#include <lal/LALPulsarLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALPULSAR_VCS_IDENT_STATUS "$" "LALPulsarStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalPulsarVCSInfo;
 static const struct tagLALVCSInfo lalPulsarHeaderVCSInfo = { \
   LALPULSAR_VCS_NAME, \
   LALPULSAR_VERSION, \
