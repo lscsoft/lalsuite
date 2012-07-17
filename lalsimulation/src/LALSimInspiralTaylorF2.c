@@ -58,7 +58,7 @@ static size_t CeilPow2(double n) {
  * \author B.S. Sathyaprakash
  */
 int XLALSimInspiralTaylorF2(
-        COMPLEX16FrequencySeries **htilde, /**< FD waveform */
+        COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
         const REAL8 phic,                /**< coalescence GW phase (rad) */
         const REAL8 deltaF,              /**< frequency resolution */
         const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
@@ -119,9 +119,11 @@ int XLALSimInspiralTaylorF2(
     const REAL8 dETa2 = 3. * XLALSimInspiralPNEnergy_4PNCoeff(eta);
     const REAL8 dETa3 = 4. * XLALSimInspiralPNEnergy_6PNCoeff(eta);
 
+    COMPLEX16FrequencySeries *htilde;
+
     /* Perform some initial checks */
-    if (!htilde) XLAL_ERROR(XLAL_EFAULT);
-    if (*htilde) XLAL_ERROR(XLAL_EFAULT);
+    if (!htilde_out) XLAL_ERROR(XLAL_EFAULT);
+    if (*htilde_out) XLAL_ERROR(XLAL_EFAULT);
     if (phic < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
@@ -132,10 +134,10 @@ int XLALSimInspiralTaylorF2(
     f_max = CeilPow2(fISCO);
     n = f_max / deltaF + 1;
     XLALGPSAdd(&tC, -1 / deltaF);  /* coalesce at t=0 */
-    *htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
-    if (!(*htilde)) XLAL_ERROR(XLAL_EFUNC);
-    memset((*htilde)->data->data, 0, n * sizeof(COMPLEX16));
-    XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
+    htilde = XLALCreateCOMPLEX16FrequencySeries("htilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, n);
+    if (!htilde) XLAL_ERROR(XLAL_EFUNC);
+    memset(htilde->data->data, 0, n * sizeof(COMPLEX16));
+    XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* extrinsic parameters */
     phi0 = phic;
@@ -145,7 +147,7 @@ int XLALSimInspiralTaylorF2(
     iStart = (size_t) ceil(fStart / deltaF);
     iISCO = (size_t) (fISCO / deltaF);
     iISCO = (iISCO < n) ? iISCO : n;  /* overflow protection; should we warn? */
-    data = (*htilde)->data->data;
+    data = htilde->data->data;
     for (i = iStart; i < iISCO; i++) {
         const REAL8 f = i * deltaF;
         const REAL8 v = cbrt(piM*f);
@@ -182,6 +184,7 @@ int XLALSimInspiralTaylorF2(
                 phasing += 1.;
                 break;
             default:
+                XLALDestroyCOMPLEX16FrequencySeries(htilde);
                 XLAL_ERROR(XLAL_ETYPE);
         }
         switch (amplitudeO)
@@ -207,6 +210,7 @@ int XLALSimInspiralTaylorF2(
                 dEnergy += 1.;
                 break;
             default:
+                XLALDestroyCOMPLEX16FrequencySeries(htilde);
                 XLAL_ERROR(XLAL_ETYPE);
         }
         phasing *= pfaN / v5;
@@ -218,5 +222,6 @@ int XLALSimInspiralTaylorF2(
         data[i] = amp * cos(phasing + LAL_PI_4) - amp * sin(phasing + LAL_PI_4) * 1.0j;
     }
 
+    *htilde_out = htilde;
     return XLAL_SUCCESS;
 }
