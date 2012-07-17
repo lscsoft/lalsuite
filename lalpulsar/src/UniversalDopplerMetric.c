@@ -44,6 +44,7 @@
 #include <lal/PulsarTimes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/XLALGSL.h>
+#include <lal/Factorial.h>
 
 #include <lal/UniversalDopplerMetric.h>
 
@@ -414,7 +415,6 @@ CWPhaseDeriv_i ( double tt, void *params )
   PosVel3D_t posvel = empty_PosVel3D_t;
 
   REAL8 Freq = par->dopplerPoint->fkdot[0];
-  static REAL8 kfactinv[] = { 1.0, 1.0/1.0, 1.0/2.0, 1.0/6.0, 1.0/24.0, 1.0/120.0 };	/* 1/k! */
 
   REAL8 Tspan = par->Tspan;
 
@@ -477,7 +477,7 @@ CWPhaseDeriv_i ( double tt, void *params )
     {
       for (n=0; n < par->rOrb_n->length; n ++ )
         {
-          REAL8 pre_n = kfactinv[n] * pow(tauSec,n);
+          REAL8 pre_n = LAL_FACT_INV[n] * pow(tauSec,n);
           for (i=0; i<3; i++)
             rr_ord_Equ[i] -=  pre_n * par->rOrb_n->data[n][i];
         }
@@ -553,7 +553,7 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_NU0:
       ret = 2*tau;					/* in natural units: dPhi/dom0 = tau */
       if ( par->deriv == DOPPLERCOORD_FREQ_SI )
-        ret *= 0.5 * LAL_TWOPI * Tspan * kfactinv[1];	/* dPhi/dFreq = 2 * pi * tSSB_i */
+        ret *= 0.5 * LAL_TWOPI * Tspan * LAL_FACT_INV[1];	/* dPhi/dFreq = 2 * pi * tSSB_i */
       break;
 
     case DOPPLERCOORD_F1DOT_SI:
@@ -561,7 +561,7 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_NU1:
       ret = POW2 ( 2*tau );				/* in natural units: dPhi/dom1 = tau^2 */
       if ( par->deriv == DOPPLERCOORD_F1DOT_SI )
-        ret *= LAL_TWOPI * POW2(0.5*Tspan) * kfactinv[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
+        ret *= LAL_TWOPI * POW2(0.5*Tspan) * LAL_FACT_INV[2];/* dPhi/df1dot = 2pi * (tSSB_i)^2/2! */
       break;
 
     case DOPPLERCOORD_F2DOT_SI:
@@ -569,7 +569,7 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_NU2:
       ret =  POW3 ( 2*tau );			/* in natural units: dPhi/dom2 = tau^3 */
       if ( par->deriv == DOPPLERCOORD_F2DOT_SI )
-        ret *= LAL_TWOPI * POW3 ( 0.5*Tspan ) * kfactinv[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
+        ret *= LAL_TWOPI * POW3 ( 0.5*Tspan ) * LAL_FACT_INV[3];/* dPhi/f2dot = 2pi * (tSSB_i)^3/3! */
       break;
 
     case DOPPLERCOORD_F3DOT_SI:
@@ -577,7 +577,7 @@ CWPhaseDeriv_i ( double tt, void *params )
     case DOPPLERCOORD_NU3:
       ret = POW4 ( 2*tau );			/* in natural units: dPhi/dom3 = tau^4 */
       if ( par->deriv == DOPPLERCOORD_F3DOT_SI )
-        ret *= LAL_TWOPI * POW4 ( 0.5 * Tspan ) * kfactinv[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
+        ret *= LAL_TWOPI * POW4 ( 0.5 * Tspan ) * LAL_FACT_INV[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
       break;
 
     /* ---------- Karl's super-duper-sky coordinates ---------- */
@@ -594,16 +594,16 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * rOrb_c * sin ( phi_o );
       break;
     case DOPPLERCOORD_OMEGA_0:			/* 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
-      ret = LAL_TWOPI * tSinceMid * kfactinv[0];
+      ret = LAL_TWOPI * tSinceMid * LAL_FACT_INV[0];
       break;
     case DOPPLERCOORD_OMEGA_1:			/* 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
-      ret = LAL_TWOPI * POW2 ( tSinceMid ) * kfactinv[1];
+      ret = LAL_TWOPI * POW2 ( tSinceMid ) * LAL_FACT_INV[1];
       break;
     case DOPPLERCOORD_OMEGA_2:			/* 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
-      ret = LAL_TWOPI * POW3 ( tSinceMid ) * kfactinv[2];
+      ret = LAL_TWOPI * POW3 ( tSinceMid ) * LAL_FACT_INV[2];
       break;
     case DOPPLERCOORD_OMEGA_3:			/* 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
-      ret = LAL_TWOPI * POW4 ( tSinceMid ) * kfactinv[3];
+      ret = LAL_TWOPI * POW4 ( tSinceMid ) * LAL_FACT_INV[3];
       break;
 
     default:
