@@ -1172,9 +1172,9 @@ void
 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = drawApproxPriorName;
 
-  REAL8 logBackwardJump = approxLogPrior(runState->currentParams);
   REAL8 tmp = 0.0;
   UINT4 analyticTest = 0;
+  REAL8 logBackwardJump;
 
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
@@ -1195,6 +1195,8 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
       ptr=ptr->next;
     }
   } else {
+    logBackwardJump = approxLogPrior(runState->currentParams);
+
     REAL8 Mc = draw_chirp(runState);
     LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
 
