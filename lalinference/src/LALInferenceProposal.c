@@ -348,10 +348,11 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
     if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam")) {
       LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
     }
-    else if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
+    /*
+      else if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
       LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
     }
-    
+    */
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
     
@@ -385,10 +386,13 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
     }
   }
 
+  /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
+  /*
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
- 
+  */
+
   LALInferenceRandomizeProposalCycle(runState);
 }
 
