@@ -949,14 +949,16 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
   freqFactors = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,     
                                                           "freqfactors" );
 
-  /*set the Znoise filename to the outfile name with "_Znoise" appended*/
-  Znoisefile = XLALStringDuplicate( ppt->value );
-  Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
-
   /*Open the Znoise file for writing*/
-  if( (fp = fopen(Znoisefile, "w")) == NULL ){
-    fprintf(stderr, "Error... cannot open output Znoise file!\n");
-    exit(0);
+  if ( (INT4)freqFactors->length > 1 ){
+    /*set the Znoise filename to the outfile name with "_Znoise" appended*/
+    Znoisefile = XLALStringDuplicate( ppt->value );
+    Znoisefile = XLALStringAppend( Znoisefile, "_Znoise" );
+    
+    if( (fp = fopen(Znoisefile, "w")) == NULL ){
+      fprintf(stderr, "Error... cannot open output Znoise file!\n");
+      exit(0);
+    }
   }
   
   /*calculate the evidence */
@@ -994,7 +996,7 @@ REAL8 noise_only_model( LALInferenceRunState *runState /**< UNDOCUMENTED */ ){
     data = data->next;
   }
   
-  fclose(fp);
+  if( (INT4)freqFactors->length > 1 ) fclose(fp);
   
   return logL;
 }
