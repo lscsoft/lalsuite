@@ -129,9 +129,9 @@ typedef struct
 static const LALStatus empty_status;
 static const EmissionTime empty_EmissionTime;
 static const intparams_t empty_intparams;
-static const PosVel3D_t empty_PosVel3D_t;
 static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 
+const PosVel3D_t empty_PosVel3D_t;
 const DopplerMetricParams empty_DopplerMetricParams;
 const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
 const MultiDetectorInfo empty_MultiDetectorInfo;

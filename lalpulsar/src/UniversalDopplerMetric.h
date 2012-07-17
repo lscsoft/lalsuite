@@ -380,9 +380,11 @@ typedef struct tagDopplerMetric
 
 
 /*---------- Global variables ----------*/
+extern const PosVel3D_t empty_PosVel3D_t;
 extern const DopplerMetricParams empty_DopplerMetricParams;
 extern const MultiDetectorInfo empty_MultiDetectorInfo;
 extern const DopplerCoordinateSystem empty_DopplerCoordinateSystem;
+#define empty_vect3D_t {0,0,0}
 
 /*---------- exported prototypes [API] ----------*/
 gsl_matrix *
