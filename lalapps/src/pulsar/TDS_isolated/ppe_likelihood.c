@@ -213,7 +213,8 @@ REAL8 priorFunction( LALInferenceRunState *runState,
     
     /* get log probability of current point - taken from the function
        LALInferenceKDLogProposalRatio() in LALInference.c */
-    REAL8 logVolume = LALInferenceKDLogCellEigenVolume(currentCell);
+    //REAL8 logVolume = LALInferenceKDLogCellEigenVolume(currentCell);
+    REAL8 logVolume = LALInferenceKDLogCellVolume(currentCell);
     REAL8 logCellFactor = log((REAL8)currentCell->npts / (REAL8)tree->npts);
     
     prior = logVolume + logCellFactor;
