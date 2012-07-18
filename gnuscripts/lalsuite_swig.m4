@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 16
+# serial 17
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -488,8 +488,8 @@ import distutils.sysconfig as cfg
 sys.stdout.write(cfg.get_config_var('LINKFORSHARED'))
 sys.stdout.write(' -L' + cfg.get_python_lib())
 sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
-stdlibdir = cfg.get_python_lib(plat_specific=1,standard_lib=1)
-sys.stdout.write(' ' + os.path.join(stdlibdir, cfg.get_config_var('LDLIBRARY')))
+sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
+sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine ${PYTHON} module LDFLAGS])
