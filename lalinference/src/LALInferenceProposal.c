@@ -2239,10 +2239,14 @@ void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accept
   INT4 i = 0;
   LALInferenceProposalStatistics *propStat;
   
-  adaptableStep = ((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptableStep"));
-  adapting = ((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
+  if( LALInferenceCheckVariable(runState->proposalArgs, "adaptableStep" ) && 
+      LALInferenceCheckVariable(runState->proposalArgs, "adapting" ) ){
+    adaptableStep = ((INT4 *)LALInferenceGetVariable(runState->proposalArgs,
+                                                     "adaptableStep"));
+    adapting = ((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
+  }
   /* Don't do anything if these are not found */
-  if(!adaptableStep || !adapting) return;
+  else return;
   
   if (*adaptableStep && *adapting) {
     i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
