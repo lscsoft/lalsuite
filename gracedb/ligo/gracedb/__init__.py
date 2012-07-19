@@ -26,7 +26,7 @@ import cjson
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.3-1'
+GIT_TAG = 'gracedb-1.4-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -318,7 +318,6 @@ class Client:
                 'connection': 'keep-alive',
             }
             url = "%s/%s" % (self.url, method)
-            self._connect()
             self._conn.request("POST", url, body, headers)
             response = self._conn.getresponse()
             rv = response.read()
