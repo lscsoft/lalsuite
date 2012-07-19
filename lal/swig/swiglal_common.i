@@ -715,6 +715,21 @@ if (swiglal_release_parent(PTR)) {
 
 ////////// General typemaps //////////
 
+// Typemap for empty arguments. This typemap are useful when no input from the
+// scripting language is required, and an empty struct needs to be supplied to
+// the C function. The SWIGLAL(EMPTY_ARGUMENT()) macro applies the typemap.
+%define %swiglal_public_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT ($*ltype emptyarg) {
+  memset(&emptyarg, 0, sizeof($*type));
+  $1 = &emptyarg;
+}
+%typemap(freearg) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT "";
+
 // SWIG conversion functions for C99 integer types.
 // These are mapped to the corresponding basic C types,
 // conversion functions for which are supplied by SWIG.
