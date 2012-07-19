@@ -184,7 +184,7 @@ print("passed dynamic vector/matrix conversions (GSL)")
 # check 'tm' struct conversions
 gps = 989168284
 utc = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
-assert(lal.GPSToUTC(None, gps) == utc)
+assert(lal.GPSToUTC(gps) == utc)
 assert(lal.UTCToGPS(utc) == gps)
 assert(lal.UTCToGPS(utc[0:6]) == gps)
 utc[6] = utc[7] = 0
@@ -194,7 +194,7 @@ for i in [-1, 0, 1]:
 utcd = utc
 for i in range(0, 10):
     utcd[2] = utc[2] + i
-    utcd = lal.GPSToUTC(None, lal.UTCToGPS(utcd))
+    utcd = lal.GPSToUTC(lal.UTCToGPS(utcd))
     dt = datetime.datetime(*utcd[0:6])
     assert(utcd[6] == dt.weekday())
 if lalcvar.swig_debug:

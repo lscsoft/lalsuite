@@ -171,6 +171,7 @@ int XLALLeapSecondsUTC( const struct tm *utc );
   INT4 XLALUTCToGPS( const struct tm *utc );
 
 #ifdef SWIG // SWIG interface directives
+SWIGLAL(EMPTY_ARGUMENT(struct tm*, utc));
 SWIGLAL(RETURN_VALUE(struct tm*, XLALGPSToUTC));
 #endif
 
@@ -180,6 +181,10 @@ struct tm * XLALGPSToUTC(
     struct tm *utc,
     INT4 gpssec
     );
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL_CLEAR(EMPTY_ARGUMENT(struct tm*, utc));
+#endif
 
 /* Returns the Julian Day (JD) corresponding to the date given in a broken
  * down time structure. */
