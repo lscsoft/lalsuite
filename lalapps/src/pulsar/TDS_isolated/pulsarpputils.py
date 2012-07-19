@@ -32,6 +32,9 @@ import os
 import numpy as np
 #import matplotlib
 
+import matplotlib
+matplotlib.use("Agg")
+
 from matplotlib import pyplot as plt
 from matplotlib import rc
 from matplotlib.mlab import specgram, find
