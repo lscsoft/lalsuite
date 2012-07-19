@@ -22,13 +22,14 @@
 
 ////////// General SWIG directives and interface code //////////
 
-// SWIG v2.0.7 may use the _exit() function, which is POSIX (unistd.h)
-// and might not be available, whereas the equivalent _Exit() function
-// is in C99 (stdlib.h) and so it more likely to be supported in C++
+// Improved version of segfault-on-exit prevention hack.
 #if SWIGVERSION < 0x020008
 %begin %{
 #include <cstdlib>
-#define _exit _Exit
+#define SWIG_OCTAVE_NO_SEGFAULT_HACK
+%}
+%init %{
+  octave_exit = ::_Exit;
 %}
 #endif
 
