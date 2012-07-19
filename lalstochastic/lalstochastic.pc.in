@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALStochastic
 Description: LAL Stochastic Library
 Version: @VERSION@
-Requires: lal libmetaio lalmetaio
+Requires.private: lal libmetaio lalmetaio
 Libs: -L${libdir} -llalstochastic
 Cflags: -I${includedir}

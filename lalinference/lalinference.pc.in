@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALInference
 Description: LAL Inference Library Support
 Version: @VERSION@
-Requires: gsl lal libmetaio lalmetaio lalinspiral lalpulsar
+Requires.private: gsl lal libmetaio lalmetaio lalinspiral lalpulsar
 Libs: -L${libdir} -llalinference
 Cflags: -I${includedir} -std=gnu99

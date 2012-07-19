@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LAL
 Description: LSC Algorithm Library
 Version: @VERSION@
-Requires: gsl fftw3 fftw3f
+Requires.private: gsl fftw3 fftw3f
 Libs: -L${libdir} -llal @CUDA_LIBS@ @BOINC_LIBS@
 Cflags: -I${includedir} @CUDA_CPPFLAGS@ @BOINC_CFLAGS@

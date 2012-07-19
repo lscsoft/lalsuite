@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALMetaIO
 Description: LAL MetaIO Library Support
 Version: @VERSION@
-Requires: lal libmetaio
+Requires.private: lal libmetaio
 Libs: -L${libdir} -llalmetaio
 Cflags: -I${includedir}
