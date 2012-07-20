@@ -195,22 +195,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
 
-    /* compute the fractional bin offset between the user requested initial frequency */
-    /* and the closest output frequency bin */
-    {
-      REAL8 diff = multiTimeseries->data[0]->f0 - fstatVector->f0;         /* the difference between the new timeseries heterodyne frequency and the user requested frequency */
-      UINT4 bins = (UINT4)floor(0.5 + diff/fstatVector->deltaF);           /* the rounded number of output frequency bins difference */
-      REAL8 shift = diff - fstatVector->deltaF*bins;                       /* the fractional bin frequency offset */
-
-      /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
-      if (shift != 0.0) {
-        if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
-          XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-          ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-        }
-      }
-    }
-
     /* recompute the multidetector states for the possibly time shifted SFTs */
     /* the function XLALMultiSFTVectorToCOMPLEX8TimeSeries may have shifted the SFT start times around */
     /* and since these times will be used later on for the resampling we also need to recompute the */
@@ -342,6 +326,25 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   if ( ( multiFb_spin = XLALDuplicateMultiCOMPLEX8TimeSeries ( cfBuffer->multiFb_resampled ) ) == NULL )
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+
+
+  /* compute the fractional bin offset between the user requested initial frequency */
+  /* and the closest output frequency bin */
+  REAL8 diff = cfBuffer->multiTimeseries->data[0]->f0 - fstatVector->f0;         /* the difference between the new timeseries heterodyne frequency and the user requested frequency */
+  UINT4 bins = (UINT4)round( diff / fstatVector->deltaF );           /* the rounded number of output frequency bins difference */
+  REAL8 shift = diff - fstatVector->deltaF * bins;                       /* the fractional bin frequency offset */
+
+  /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
+  if (shift != 0.0) {
+    if ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( &multiFa_spin, shift ) != XLAL_SUCCESS ) {
+      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+    }
+    if ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( &multiFb_spin, shift ) != XLAL_SUCCESS ) {
+      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+    }
+  }
 
   /* apply spin derivitive correction to resampled timeseries */
   /* this function only applies a correction if there are any non-zero spin derivitives */
