@@ -371,6 +371,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     self.add_node(mergenode)
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
     respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
+    if self.config.has_option('input','injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
         self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
@@ -392,6 +394,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             mkdirs(presultsdir)
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode)
             subresnode.set_bayes_coherent_noise(pmergenode.get_ns_file()+'_B.txt')
+            if self.config.has_option('input','injection-file') and event.event_id is not None:
+                subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
         coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
         coherence_node.add_coherent_parent(mergenode)
         map(coherence_node.add_incoherent_parent, par_mergenodes)
@@ -791,6 +795,10 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.add_var_opt('outpath',path)
         mkdirs(path)
         self.posfile=os.path.join(path,'posterior_samples.dat')
+    def set_injection(self,injfile,eventnumber):
+        self.injfile=injfile
+        self.add_var_arg('--inj '+injfile)
+        self.set_event_number(eventnumber)
     def set_event_number(self,event):
         """
         Set the event number in the injection XML.
