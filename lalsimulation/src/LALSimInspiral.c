@@ -998,7 +998,10 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
  * the PN order of the system and to avoid subtleties with spin-orbit
  * contributions to L. Also, it is believed that the difference in Jhat
  * with or without these PN corrections to L is quite small.
- * 
+ *
+ * NOTE: fRef = 0 is not a valid choice. If you will pass fRef=0 into
+ * ChooseWaveform, then here pass in f_min, the starting GW frequency
+ *
  * The various rotations in this transformation are described in more detail
  * in a Mathematica notebook available here:
  * ADD WIKI PAGE CONTAINING NOTEBOOK
@@ -1020,9 +1023,16 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 		REAL8 chi2,	/**< dimensionless spin of body 2 */
 		REAL8 m1,	/**< mass of body 1 (kg) */
 		REAL8 m2,	/**< mass of body 2 (kg) */
-		REAL8 fRef	/**< initial GW frequency (Hz) */
+		REAL8 fRef	/**< reference GW frequency (Hz) */
 		)
 {
+	/* Check that fRef is sane */
+	if( fRef == 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
 	REAL8 omega0, M, eta, theta0, phi0, Jnorm, tmp1, tmp2;
 	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNmag;
 	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
