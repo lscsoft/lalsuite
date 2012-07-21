@@ -155,7 +155,7 @@ sort $outfile_RS > __tmp_sorted && mv __tmp_sorted $outfile_RS
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
-cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --absFtolerance --Ftolerance=2.8 -v${debug}"
+cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --sigFtolerance --Ftolerance=0.5 -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."
