@@ -482,7 +482,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
-    node.set_dataseed(self.dataseed+event.event_id)
+    if self.dataseed:
+      node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
@@ -494,6 +495,14 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
           gotdata+=node.add_ifo_data(ifo,seg,self.channels[ifo],timeslide=slide)
     if self.config.has_option('lalinference','fake-cache'):
       node.cachefiles=ast.literal_eval(self.config.get('lalinference','fake-cache'))
+      node.channels=ast.literal_eval(self.config.get('data','channels'))
+      if len(ifos)==0: node.ifos=node.cachefiles.keys()
+      else: node.ifos=ifos
+      print 'added ifos %s'%(str(ifos))
+      node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
+      gotdata=1
+    if self.config.has_option('lalinference','ER2-cache'):
+      node.cachefiles=ast.literal_eval(self.config.get('lalinference','ER2-cache'))
       node.channels=ast.literal_eval(self.config.get('data','channels'))
       if len(ifos)==0: node.ifos=node.cachefiles.keys()
       else: node.ifos=ifos
@@ -549,7 +558,8 @@ class EngineJob(pipeline.CondorDAGJob):
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
       self.binary=cp.get('condor',self.engine)
-      universe="parallel"
+      #universe="parallel"
+      universe="vanilla"
       self.write_sub_file=self.__write_sub_file_mcmc_mpi
     else:
       exe=cp.get('condor',self.engine)
@@ -558,10 +568,13 @@ class EngineJob(pipeline.CondorDAGJob):
     # Set the options which are always used
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc':
-      openmpipath=cp.get('condor','openmpi')
+      #openmpipath=cp.get('condor','openmpi')
       machine_count=cp.get('mpi','machine-count')
-      self.add_condor_cmd('machine_count',machine_count)
-      self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      #self.add_condor_cmd('machine_count',machine_count)
+      #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
+      self.add_condor_cmd('+RequiresMultipleCores','True')
+      self.add_condor_cmd('request_cpus',machine_count)
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
@@ -577,7 +590,7 @@ class EngineJob(pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.write_sub_file(self)
     # Then read it back in to mangle the arguments line
     outstring=""
-    MPIextraargs='--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
+    MPIextraargs= ' -np 8 '+self.binary+' -- --LALSimulation' #'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
     subfilepath=self.get_sub_file()
     subfile=open(subfilepath,'r')
     for line in subfile:
