@@ -68,12 +68,12 @@ cfs_dFreq=$(echo $duration | awk '{printf "%.16g", 1.0 / ( 2.0 * $1 ) }');		## 1
 cfs_FreqBand=$(echo $Nfreq $cfs_dFreq | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of frequency bins
 cfs_Freq=$(echo $Freq $cfs_FreqBand | awk '{printf "%.16g", $1 - $2 / 2.0}');		## center search band on signal frequency
 
-Nf1dot=1
-cfs_df1dot=$(echo $duration | awk '{printf "%g", 0.1 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
+Nf1dot=100
+cfs_df1dot=$(echo $duration | awk '{printf "%g", 0.005 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
 cfs_f1dotBand=$(echo $Nf1dot $cfs_df1dot | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of f1dot bins
 cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');	## center f1dot band on signal f1dot
 
-cfs_nCands=10000	## toplist length: keep N cands
+cfs_nCands=100000	## toplist length: keep N cands
 
 noiseSqrtSh=5
 ## ------------------------------------------------------------
@@ -145,7 +145,6 @@ if ! eval "$cmdline &> /dev/null"; then
     exit 1;
 fi
 
-echo
 echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
