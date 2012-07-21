@@ -2406,7 +2406,7 @@ write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand )
 
     } /* if FX */
 
-  fprintf (fp, "%.16g %.16g %.16g %.6g %.5g %.5g %.9g%s\n",
+  fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g %.9g%s\n",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
 	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
 	   2.0 * thisFCand->Fstat.F, singleFstr );
