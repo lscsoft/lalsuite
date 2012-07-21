@@ -331,7 +331,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   /* compute the fractional bin offset between the user requested initial frequency */
   /* and the closest output frequency bin */
   REAL8 diff = cfBuffer->multiTimeseries->data[0]->f0 - fstatVector->f0;         /* the difference between the new timeseries heterodyne frequency and the user requested frequency */
-  UINT4 bins = (UINT4)round( diff / fstatVector->deltaF );           /* the rounded number of output frequency bins difference */
+  INT4 bins = (INT4)round( diff / fstatVector->deltaF );           /* the rounded number of output frequency bins difference */
   REAL8 shift = diff - fstatVector->deltaF * bins;                       /* the fractional bin frequency offset */
 
   /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
