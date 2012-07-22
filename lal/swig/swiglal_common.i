@@ -450,8 +450,11 @@ if (swiglal_release_parent(PTR)) {
 #define %swiglal_array_copyout(TYPE) %swiglal_array_copyout_func($typemap(swiglal_array_typeid, TYPE))
 #define %swiglal_array_viewout(TYPE) %swiglal_array_viewout_func($typemap(swiglal_array_typeid, TYPE))
 
-// Typemaps which convert to/from fixed-size arrays for functions and structs.
-// 1-D arrays:
+//
+// Typemaps which convert to/from fixed-size arrays.
+//
+
+// Input typemaps for functions and structs:
 %typemap(in) SWIGTYPE[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
@@ -466,6 +469,48 @@ if (swiglal_release_parent(PTR)) {
     %argument_fail(ecode, "$type", $symname, $argnum);
   }
 }
+%typemap(in) SWIGTYPE[ANY][ANY] {
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
+  $1 = &temp[0];
+  // swiglal_array_typeid input type: $1_type
+  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                             sizeof($1[0][0]), 2, dims, strides,
+                                             $typemap(swiglal_fixarr_pdesc, $1_type),
+                                             $disown | %convertptr_flags);
+  if (!SWIG_IsOK(ecode)) {
+    %argument_fail(ecode, "$type", $symname, $argnum);
+  }
+}
+
+// Input typemaps for global variables:
+%typemap(varin) SWIGTYPE[ANY] {
+  const size_t dims[] = {$1_dim0};
+  const size_t strides[] = {1};
+  // swiglal_array_typeid input type: $1_type
+  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                             sizeof($1[0]), 1, dims, strides,
+                                             $typemap(swiglal_fixarr_pdesc, $1_type),
+                                             %convertptr_flags);
+  if (!SWIG_IsOK(ecode)) {
+    %variable_fail(ecode, "$type", $symname);
+  }
+}
+%typemap(varin) SWIGTYPE[ANY][ANY] {
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  // swiglal_array_typeid input type: $1_type
+  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                             sizeof($1[0][0]), 2, dims, strides,
+                                             $typemap(swiglal_fixarr_pdesc, $1_type),
+                                             %convertptr_flags);
+  if (!SWIG_IsOK(ecode)) {
+    %variable_fail(ecode, "$type", $symname);
+  }
+}
+
+// Output typemaps for functions and structs:
 %typemap(out) SWIGTYPE[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
@@ -481,21 +526,6 @@ if (swiglal_release_parent(PTR)) {
                                               $typemap(swiglal_fixarr_pdesc, $1_type),
                                               $owner | %newpointer_flags));
 %#endif
-}
-// 2-D arrays:
-%typemap(in) SWIGTYPE[ANY][ANY] {
-  const size_t dims[] = {$1_dim0, $1_dim1};
-  const size_t strides[] = {$1_dim1, 1};
-  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
-  $1 = &temp[0];
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0][0]), 2, dims, strides,
-                                             $typemap(swiglal_fixarr_pdesc, $1_type),
-                                             $disown | %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %argument_fail(ecode, "$type", $symname, $argnum);
-  }
 }
 %typemap(out) SWIGTYPE[ANY][ANY] {
   const size_t dims[] = {$1_dim0, $1_dim1};
@@ -514,20 +544,7 @@ if (swiglal_release_parent(PTR)) {
 %#endif
 }
 
-// Typemaps which convert to/from fixed-size arrays for global variables.
-// 1-D arrays:
-%typemap(varin) SWIGTYPE[ANY] {
-  const size_t dims[] = {$1_dim0};
-  const size_t strides[] = {1};
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0]), 1, dims, strides,
-                                             $typemap(swiglal_fixarr_pdesc, $1_type),
-                                             %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %variable_fail(ecode, "$type", $symname);
-  }
-}
+// Output typemaps for global variables:
 %typemap(varout) SWIGTYPE[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
@@ -536,19 +553,6 @@ if (swiglal_release_parent(PTR)) {
                                               sizeof($1[0]), 1, dims, strides,
                                               $typemap(swiglal_fixarr_pdesc, $1_type),
                                               %newpointer_flags));
-}
-// 2-D arrays:
-%typemap(varin) SWIGTYPE[ANY][ANY] {
-  const size_t dims[] = {$1_dim0, $1_dim1};
-  const size_t strides[] = {$1_dim1, 1};
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0][0]), 2, dims, strides,
-                                             $typemap(swiglal_fixarr_pdesc, $1_type),
-                                             %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %variable_fail(ecode, "$type", $symname);
-  }
 }
 %typemap(varout) SWIGTYPE[ANY][ANY] {
   const size_t dims[] = {$1_dim0, $1_dim1};
