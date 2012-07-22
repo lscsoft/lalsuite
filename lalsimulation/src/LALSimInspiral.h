@@ -1213,7 +1213,7 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
  *
  * The various rotations in this transformation are described in more detail
  * in a Mathematica notebook available here:
- * ADD WIKI PAGE CONTAINING NOTEBOOK
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Waveforms/TransformPrecessingInitialConditions
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
 		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
