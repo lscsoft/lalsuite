@@ -444,7 +444,7 @@ void initVariables(LALInferenceRunState *state)
                                                default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
                                                                                 TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
-               (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
+               (--ampOrder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
                (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 0).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\
