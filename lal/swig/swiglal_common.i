@@ -455,7 +455,7 @@ if (swiglal_release_parent(PTR)) {
 //
 
 // Input typemaps for functions and structs:
-%typemap(in) SWIGTYPE[ANY] {
+%typemap(in) SWIGTYPE[ANY], SWIGTYPE INOUT[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
   $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
@@ -469,7 +469,7 @@ if (swiglal_release_parent(PTR)) {
     %argument_fail(ecode, "$type", $symname, $argnum);
   }
 }
-%typemap(in) SWIGTYPE[ANY][ANY] {
+%typemap(in) SWIGTYPE[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
   const size_t dims[] = {$1_dim0, $1_dim1};
   const size_t strides[] = {$1_dim1, 1};
   $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
@@ -563,6 +563,62 @@ if (swiglal_release_parent(PTR)) {
                                               $typemap(swiglal_fixarr_pdesc, $1_type),
                                               %newpointer_flags));
 }
+
+// Argument-output typemaps for functions:
+%typemap(in, numinputs=0) SWIGTYPE OUTPUT[ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
+  $1 = &temp[0];
+}
+%typemap(argout) SWIGTYPE OUTPUT[ANY], SWIGTYPE INOUT[ANY] {
+  const size_t dims[] = {$1_dim0};
+  const size_t strides[] = {1};
+  // swiglal_array_typeid input type: $1_type
+  %append_output(%swiglal_array_copyout($1_type)(swiglal_no_self(), %as_voidptr($1),
+                                                 sizeof($1[0]), 1, dims, strides,
+                                                 $typemap(swiglal_fixarr_pdesc, $1_type),
+                                                 SWIG_POINTER_OWN | %newpointer_flags));
+}
+%typemap(in, numinputs=0) SWIGTYPE OUTPUT[ANY][ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
+  $1 = &temp[0];
+}
+%typemap(argout) SWIGTYPE OUTPUT[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  // swiglal_array_typeid input type: $1_type
+  %append_output(%swiglal_array_copyout($1_type)(swiglal_no_self(), %as_voidptr($1),
+                                                 sizeof($1[0][0]), 2, dims, strides,
+                                                 $typemap(swiglal_fixarr_pdesc, $1_type),
+                                                 SWIG_POINTER_OWN | %newpointer_flags));
+}
+
+// Public macros to make fixed nD arrays:
+// * output-only arguments: SWIGLAL(OUTPUT_nDARRAY(TYPE, ...))
+%define %swiglal_public_OUTPUT_1DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE OUTPUT[ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_OUTPUT_1DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_OUTPUT_2DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE OUTPUT[ANY][ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_OUTPUT_2DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+// * input-output arguments: SWIGLAL(INOUT_nDARRAY(TYPE, ...))
+%define %swiglal_public_INOUT_1DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT[ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INOUT_1DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_INOUT_2DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT[ANY][ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INOUT_2DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
 
 // The %swiglal_array_dynamic_<n>D() macros create typemaps which convert
 // <n>-D dynamically-allocated arrays in structs. The macros must be
