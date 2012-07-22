@@ -300,6 +300,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
+    if self.config.has_option('input','events'):
+      selected_events=ast.literal_eval(self.config.get('input','events'))
+      if selected_events=='all':
+          selected_events=None
+    else:
+        selected_events=None
     if self.config.has_option('input','gps-start-time'):
       gpsstart=self.config.getfloat('input','gps-start-time')
     if self.config.has_option('input','gps-end-time'):
@@ -340,7 +346,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
 	print 'Reading non-slid triggers from pipedown not implemented yet'
 	sys.exit(1)
-    
+    if(selected_events is not None):
+        used_events=[]
+        for i in selected_events:
+            used_events.append(events[i])
+        events=used_events
     return events
 
   def add_full_analysis_lalinferencenest(self,event):
