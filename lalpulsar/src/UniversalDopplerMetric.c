@@ -45,8 +45,75 @@
 #include <lal/ComputeFstat.h>
 #include <lal/XLALGSL.h>
 
-#define IN_UNIVERSALDOPPLERMETRICC
 #include <lal/UniversalDopplerMetric.h>
+
+/*---------- HELP STRING LOOKUP ARRAYS ----------*/
+
+/** Array of symbolic 'names' for various detector-motions
+ */
+static const CHAR *const DetectorMotionNames[DETMOTION_LAST] = {
+  [DETMOTION_SPIN_ORBIT] = "spin+orbit",
+  [DETMOTION_ORBIT] = "orbit",
+  [DETMOTION_SPIN] = "spin",
+
+  [DETMOTION_SPIN_PTOLEORBIT] = "spin+ptoleorbit",
+  [DETMOTION_PTOLEORBIT] = "ptoleorbit",
+
+  [DETMOTION_ORBIT_SPINZ] = "orbit+spin_Z",
+  [DETMOTION_ORBIT_SPINXY] = "orbit+spin_XY",
+};
+
+/** Array of Doppler coordinate names, and help-strings explaining the meaning/conventions of the Doppler coordinate names
+ *
+ * NOTE: It's important to also specify the "coordinate-set" this coordinate is meant to belong to,
+ * in the sense of which other coordinates need to be held constant in partial derivatives wrt to this coordinate!
+ */
+const CHAR *const DopplerCoordinateNames[DOPPLERCOORD_LAST][2] = {
+  [DOPPLERCOORD_FREQ_SI] = {"Freq", "Signal frequency in SSB [Units:Hz]. Coordinate-set: {fkdot, sky}."},
+  [DOPPLERCOORD_F1DOT_SI] = {"f1dot", "First frequency-derivative dFreq/dtau in SSB [Units:Hz/s]. Coordinate-set: {fkdot, sky}."},
+  [DOPPLERCOORD_F2DOT_SI] = {"f2dot", "Second frequency-derivative d2Freq/dtau^2 in SSB [Units:Hz/s^2]. Coordinate-set: {fkdot, sky}."},
+  [DOPPLERCOORD_F3DOT_SI] = {"f3dot", "Third frequency-derivative d3Freq/dtau^3 in SSB [Units:Hz/s^3]. Coordinate-set: {fkdot, sky}."},
+
+  [DOPPLERCOORD_ALPHA_RAD] = {"Alpha", "Sky-position: Right-ascension (longitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}."},
+  [DOPPLERCOORD_DELTA_RAD] = {"Delta", "Sky-position: Declination (latitude) wrt ephemeris coord-system [Units:rad]. Coordinate-set: {fkdot, Alpha, Delta}."},
+
+  [DOPPLERCOORD_FREQ_NAT] = {"Freq_Nat", "Same as Freq, but in 'natural units': Freq_Nat = 2 pi Freq (Tspan/2) [Units:1]"},
+  [DOPPLERCOORD_F1DOT_NAT] = {"f1dot_Nat", "Same as f1dot, but in 'natural units': f1dot_Nat = 2 pi f1dot/2! (Tspan/2)^2 [Units:1]"},
+  [DOPPLERCOORD_F2DOT_NAT] = {"f2dot_Nat", "Same as f2dot, but in 'natural units': f2dot_Nat = 2 pi f2dot/3! (Tspan/2)^3 [Units:1]"},
+  [DOPPLERCOORD_F3DOT_NAT] = {"f3dot_Nat", "Same as f3dot, but in 'natural units': f3dot_Nat = 2 pi f3dot/4! (Tspan/2)^4 [Units:1]"},
+
+  [DOPPLERCOORD_ALPHA_NAT] = {"Alpha_Nat", "Sky-position: Right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) )"},
+  [DOPPLERCOORD_DELTA_NAT] = {"Delta_Nat", "Sky-position: Declination (longitude) in 'natural units' dDelta * (f * T / (Vorb/c) )"},
+
+  [DOPPLERCOORD_NECL_X_NAT] = {"nEcl_x_Nat", "Sky-position: x-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const"},
+  [DOPPLERCOORD_NECL_Y_NAT] = {"nEcl_y_Nat", "Sky-position: y-component of sky-position vector n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const"},
+
+  [DOPPLERCOORD_NEQU_X_NAT] = {"nEqu_x_Nat", "Sky-position: x-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdot const"},
+  [DOPPLERCOORD_NEQU_Y_NAT] = {"nEqu_y_Nat", "Sky-position: y-component of sky-position vector n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f). Holding fkdoo const"},
+
+  [DOPPLERCOORD_N3X_EQU] = {"n3Equ_x", "experimental: unconstrained sky-vector n3: equatorial-x coordinate"},
+  [DOPPLERCOORD_N3Y_EQU] = {"n3Equ_y", "experimental: unconstrained sky-vector n3: equatorial-y coordinate"},
+  [DOPPLERCOORD_N3Z_EQU] = {"n3Equ_z", "experimental: unconstrained sky-vector n3: equatorial-z coordinate"},
+
+  [DOPPLERCOORD_N3X_ECL] = {"n3Ecl_x", "experimental: unconstrained sky-vector n3: ecliptic-x coordinate"},
+  [DOPPLERCOORD_N3Y_ECL] = {"n3Ecl_y", "experimental: unconstrained sky-vector n3: ecliptic-y coordinate"},
+  [DOPPLERCOORD_N3Z_ECL] = {"n3Ecl_z", "experimental: unconstrained sky-vector n3: ecliptic-z coordinate"},
+
+  [DOPPLERCOORD_NU0] = {"nu0", "'global correlation' frequency coordinate nu_0"},
+  [DOPPLERCOORD_NU1] = {"nu1", "'global correlation' f1dot coordinate nu_1"},
+  [DOPPLERCOORD_NU2] = {"nu2", "'global correlation' f2dot coordinate nu_2"},
+  [DOPPLERCOORD_NU3] = {"nu3", "'global correlation' f3dot coordinate nu_3"},
+
+  /* Karl's coordinates */
+  [DOPPLERCOORD_KAPPA_S] = {"kappa_s", "Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate"},
+  [DOPPLERCOORD_SIGMA_S] = {"sigma_s", "Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate"},
+  [DOPPLERCOORD_KAPPA_O] = {"kappa_o", "Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate"},
+  [DOPPLERCOORD_SIGMA_O] = {"sigma_o", "Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate"},
+  [DOPPLERCOORD_OMEGA_0] = {"omega_0", "Karl's coordinates 'omega_0': rescaled natural frequency"},
+  [DOPPLERCOORD_OMEGA_1] = {"omega_1", "Karl's coordinates 'omega_1': rescaled natural 1st spindown"},
+  [DOPPLERCOORD_OMEGA_2] = {"omega_2", "Karl's coordinates 'omega_2': rescaled natural 2nd spindown"},
+  [DOPPLERCOORD_OMEGA_3] = {"omega_3", "Karl's coordinates 'omega_3': rescaled natural 3rd spindown"},
+};
 
 /*---------- DEFINES ----------*/
 #define TRUE  (1==1)
@@ -1366,7 +1433,9 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
  failed:
   XLALDestroyFmetricAtoms ( ret );
   XLALPrintError ( "%s: XLALAverage_am1_am2_Phi_i_Phi_j() FAILED with errno = %d: am1 = %d, am2 = %d, i = %d : '%s', j = %d : '%s'\n",
-		   __func__, xlalErrno, intparams.amcomp1,intparams.amcomp2, i, DopplerCoordinateNames[i], j, DopplerCoordinateNames[j] );
+		   __func__, xlalErrno, intparams.amcomp1, intparams.amcomp2,
+                   i, XLALDopplerCoordinateName(intparams.deriv1),
+                   j, XLALDopplerCoordinateName(intparams.deriv2) );
   XLAL_ERROR_NULL( XLAL_EFUNC );
 
 } /* XLALComputeAtomsForFmetric() */
@@ -1406,7 +1475,7 @@ XLALParseDetectorMotionString ( const CHAR *detMotionString )
 
   for ( i=0; i < DETMOTION_LAST; i ++ )
     {
-      if ( strcmp ( detMotionString, DetectorMotionNames[i] ) )
+      if ( DetectorMotionNames[i] && strcmp ( detMotionString, DetectorMotionNames[i] ) )
 	continue;
       return i;	/* found the right entry */
     }
@@ -1424,8 +1493,11 @@ const CHAR *
 XLALDetectorMotionName ( DetectorMotionType detType )
 {
   if ( detType >= DETMOTION_LAST ) {
-    XLALPrintError ( "%s: detector-motion type '%d' outside valid range [0, %d]\n\n", detType, DETMOTION_LAST - 1 );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "detector-motion type '%d' outside valid range [0, %d]\n\n", detType, DETMOTION_LAST - 1 );
+  }
+
+  if ( !DetectorMotionNames[detType] ) {
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "detector-motion type '%d' has no associated name\n\n", detType );
   }
 
   return ( DetectorMotionNames[detType] );
@@ -1446,7 +1518,7 @@ XLALParseDopplerCoordinateString ( const CHAR *coordName )
 
   for ( i=0; i < DOPPLERCOORD_LAST; i ++ )
     {
-      if ( strcmp ( coordName, DopplerCoordinateNames[i] ) )
+      if ( DopplerCoordinateNames[i][0] && strcmp ( coordName, DopplerCoordinateNames[i][0] ) )
 	continue;
       return i;	/* found the right entry */
     }
@@ -1490,11 +1562,14 @@ const CHAR *
 XLALDopplerCoordinateName ( DopplerCoordinateID coordID )
 {
   if ( coordID >= DOPPLERCOORD_LAST ) {
-    XLALPrintError ( "%s: coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
   }
 
-  return ( DopplerCoordinateNames[coordID] );
+  if ( !DopplerCoordinateNames[coordID][0] ) {
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' has no associated name\n\n", coordID );
+  }
+
+  return ( DopplerCoordinateNames[coordID][0] );
 
 } /* XLALDopplerCoordinateName() */
 
@@ -1506,11 +1581,14 @@ const CHAR *
 XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID )
 {
   if ( coordID >= DOPPLERCOORD_LAST ) {
-    XLALPrintError ( "%s: coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' outside valid range [0, %d]\n\n", coordID, DOPPLERCOORD_LAST - 1 );
   }
 
-  return ( DopplerCoordinateNamesHelp[coordID] );
+  if ( !DopplerCoordinateNames[coordID][1] ) {
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "coordID '%d' has no associated help text\n\n", coordID );
+  }
+
+  return ( DopplerCoordinateNames[coordID][1] );
 
 } /* XLALDopplerCoordinateHelp() */
 
