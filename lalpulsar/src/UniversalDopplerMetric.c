@@ -234,9 +234,9 @@ double CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t 
 int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
 gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
 
-int equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in );
-int eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in );
-int matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in );
+void equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
+void eclipticVect2equatorial ( vect3D_t out, const vect3D_t in );
+void matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in );
 
 UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
@@ -453,7 +453,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( &nn_ecl, (vect3D_t * const )&nn_equ );
+  equatorialVect2ecliptic ( nn_ecl, nn_equ );
 
   /* get current detector position r(t) */
   REAL8 ttSI = par->startTime + tt * Tspan;	/* current GPS time in seconds */
@@ -479,9 +479,9 @@ CWPhaseDeriv_i ( double tt, void *params )
   equ_spin_pos_ref[2] = 0;
 
   /* compute orbital detector positions projected onto ecliptic plane */
-  equatorialVect2ecliptic(&ecl_orbit_pos, &orbit_posvel.pos);
+  equatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
   ecl_orbit_pos[2] = 0;
-  equatorialVect2ecliptic(&ecl_orbit_pos_ref, &(par->orbit_posvel_ref.pos));
+  equatorialVect2ecliptic(ecl_orbit_pos_ref, par->orbit_posvel_ref.pos);
   ecl_orbit_pos_ref[2] = 0;
 
   /* account for referenceTime != startTime */
@@ -518,7 +518,7 @@ CWPhaseDeriv_i ( double tt, void *params )
             rr_ord_Equ[i] -=  pre_n * par->rOrb_n->data[n][i];
         }
     } /* if rOrb_n */
-  equatorialVect2ecliptic ( &rr_ord_Ecl, &rr_ord_Equ );	  /* convert into ecliptic coordinates */
+  equatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
   /* now compute the requested phase derivative */
   switch ( par->deriv )
@@ -2188,59 +2188,44 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
 
 } /* XLALProjectMetric() */
 
-/** Convert 3-D vector from equatorial into ecliptic coordinates
- * return: 0 = OK, -1 = ERROR
- */
-int
-equatorialVect2ecliptic ( vect3D_t *out, vect3D_t * const in )
+/** Convert 3-D vector from equatorial into ecliptic coordinates */
+void
+equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
                                 { 0.0,  cosiEcl, siniEcl },
                                 { 0.0, -siniEcl, cosiEcl } };
-  if (!out || !in )
-    return -1;
 
-  return matrix33_in_vect3 ( out, &rotEqu2Ecl, in );
+  matrix33_in_vect3 ( out, rotEqu2Ecl, in );
 
 } /* equatorialVect2ecliptic() */
 
-/** Convert 3-D vector from ecliptic into equatorial coordinates
- * return: 0 = OK, -1 = ERROR
- */
-int
-eclipticVect2equatorial ( vect3D_t *out, vect3D_t * const in )
+/** Convert 3-D vector from ecliptic into equatorial coordinates */
+void
+eclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
                                  { 0.0,  cosiEcl, -siniEcl },
                                  { 0.0,  siniEcl,  cosiEcl } };
 
-  if (!out || !in )
-    return -1;
-
-  return matrix33_in_vect3 ( out, &rotEcl2Equ, in );
+  matrix33_in_vect3 ( out, rotEcl2Equ, in );
 
 } /* eclipticVect2equatorial() */
 
-/** compute matrix product mat . vect
- * return: 0 = OK, -1 = ERROR
- */
-int
-matrix33_in_vect3 ( vect3D_t *out, mat33_t * mat, vect3D_t * const in )
+/** compute matrix product mat . vect */
+void
+matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
 {
-  if ( !out || !mat || !in )
-    return -1;
 
   UINT4 i,j;
   for ( i=0; i < 3; i ++ )
     {
-      (*out)[i] = 0;
+      out[i] = 0;
       for ( j=0; j < 3; j ++ )
         {
-          (*out)[i] += (*mat)[i][j] * (*in)[j];
+          out[i] += mat[i][j] * in[j];
         }
     }
-
-  return 0;
 
 } /* matrix33_in_vect3() */
 
