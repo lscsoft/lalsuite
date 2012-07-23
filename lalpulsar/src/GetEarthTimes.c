@@ -25,6 +25,9 @@
 #include <lal/Date.h>
 #include <lal/PulsarTimes.h>
 
+/** \addtogroup PulsarTimes_h */
+/*@{*/
+
 #define NEQUINOXES 29
 /** Define a list of GPS times of autumnal equinoxes (1992 to 2020). */
 static const INT4 equinoxes[NEQUINOXES] = {
@@ -36,16 +39,15 @@ static const INT4 equinoxes[NEQUINOXES] = {
   1284816613 };
 
 
-/** \file
-    \author Creighton, T. D.
-    \ingroup PulsarTimes_h
-    \brief Computes the next sidereal midnight and autumnal equinox.
+/**
+\author Creighton, T. D.
+\brief Computes the next sidereal midnight and autumnal equinox.
 
-This function takes a GPS time from the parameter field
-<tt>times->epoch</tt> and uses it to assign the fields
-<tt>times->tAutumn</tt> and <tt>times->tMidnight</tt>, which are
+This function takes a GPS time from
+<tt>tepoch</tt> and uses it to assign
+<tt>tAutumn</tt> and <tt>tMidnight</tt>, which are
 REAL8 representations of the time in seconds from
-<tt>times->epoch</tt> to the next autumnal equinox or sidereal midnight,
+<tt>tepoch</tt> to the next autumnal equinox or sidereal midnight,
 respectively.  This routine was written under the \ref PulsarTimes_h
 module because these quantities are vital for performing pulsar
 timing: they characterize the Earth's orbital and rotational phase,
@@ -56,7 +58,7 @@ PulsarTimesParamStruc structure.
 \heading{Algorithm}
 
 The routine first computes the Greenwich mean sidereal time at
-<tt>times->epoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
+<tt>tepoch</tt> using XLALGreenwichMeanSiderealTime(). The next sidereal
 midnight (at the Prime Meridian) is simply 86400 seconds minus that
 sidereal time.
 
@@ -64,41 +66,39 @@ Next the routine computes the time of the next autumnal equinox.  The
 module contains an internal list of GPS times of autumnal equinoxes
 from 1992 to 2020, given to the nearest minute; this is certainly
 enough accuracy for use with the routines in LALTBaryPtolemaic().
-If the specified time <tt>times->epoch</tt> is after the 2020 autumnal
+If the specified time <tt>tepoch</tt> is after the 2020 autumnal
 equinox, or more than a year before the 1992 equinox, then the next
 equinox is extrapolated assuming exact periods of length
 \ref LAL_YRSID_SI.
 
 When assigning the fields of <tt>*times</tt>, it is up to the user to
-choose a <tt>times->epoch</tt> that is close to the actual times that
+choose a <tt>tepoch</tt> that is close to the actual times that
 are being considered.  This is important, since many computations use
 a REAL8 time variable whose origin is the time
-<tt>times->epoch</tt>.  If this is too far from the times of interest,
+<tt>tepoch</tt>.  If this is too far from the times of interest,
 the REAL8 time variables may suffer loss of precision.
 
 \heading{Uses}
 \code
 XLALGreenwichMeanSiderealTime()
 \endcode
-*/ /*@{*/
-
-void
-LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
+*/
+int
+XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn )
 {
   LIGOTimeGPS epoch;   /* local copy of times->epoch */
   REAL8 t;             /* time as a floating-point number (s) */
 
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR( stat );
-
   /* Make sure the parameters exist. */
-  ASSERT( times, stat, PULSARTIMESH_ENUL, PULSARTIMESH_MSGENUL );
-  epoch = times->epoch;
+  XLAL_CHECK( tepoch != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tAutumn != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tMidnight != NULL, XLAL_EFAULT );
+  epoch = *tepoch;
 
   /* Find the next sidereal midnight. */
   t = fmod(XLALGreenwichMeanSiderealTime(&epoch), LAL_TWOPI) * 86400.0 / LAL_TWOPI;
-  ASSERT( !XLAL_IS_REAL8_FAIL_NAN(t), stat, LAL_FAIL_ERR, LAL_FAIL_MSG );
-  times->tMidnight = 86400.0 - t;
+  XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN(t), XLAL_ETIME );
+  *tMidnight = 86400.0 - t;
 
   /* Find the next autumnal equinox. */
   while ( epoch.gpsNanoSeconds > 0 ) {
@@ -108,7 +108,7 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
   if ( equinoxes[0] - epoch.gpsSeconds > LAL_YRSID_SI ) {
     t = (REAL8)( equinoxes[0] - epoch.gpsSeconds )
       - (1.0e-9)*epoch.gpsNanoSeconds;
-    times->tAutumn = fmod( t, LAL_YRSID_SI );
+    *tAutumn = fmod( t, LAL_YRSID_SI );
   } else {
     UINT4 i = 0; /* index over equinox list */
     while ( i < NEQUINOXES && equinoxes[i] <= epoch.gpsSeconds )
@@ -116,14 +116,23 @@ LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
     if ( i == NEQUINOXES ) {
       t = (REAL8)( equinoxes[i-1] - epoch.gpsSeconds )
 	- (1.0e-9)*epoch.gpsNanoSeconds;
-      times->tAutumn = fmod( t, LAL_YRSID_SI ) + LAL_YRSID_SI;
+      *tAutumn = fmod( t, LAL_YRSID_SI ) + LAL_YRSID_SI;
     } else
-      times->tAutumn = (REAL8)( equinoxes[i] - epoch.gpsSeconds )
+      *tAutumn = (REAL8)( equinoxes[i] - epoch.gpsSeconds )
 	- (1.0e-9)*epoch.gpsNanoSeconds;
   }
 
   /* Done. */
-  DETATCHSTATUSPTR( stat );
-  RETURN(stat);
+  return XLAL_SUCCESS;
 }
+
+/*** \deprecated use XLALGetEarthTimes() instead.
+ */
+void
+LALGetEarthTimes( LALStatus *status, PulsarTimesParamStruc *times )
+{
+  if ( XLALGetEarthTimes ( &times->epoch, &times->tMidnight, &times->tAutumn ) != XLAL_SUCCESS )
+    ABORT ( status, LAL_FAIL_ERR, LAL_FAIL_MSG );
+}
+
 /*@}*/

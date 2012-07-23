@@ -203,6 +203,8 @@ typedef struct tagPulsarTimesParamStruc {
   /*@} */
 } PulsarTimesParamStruc;
 
+int XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn );
+
 /** \cond DONT_DOXYGEN */
 
 /* Function prototypes. */
