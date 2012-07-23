@@ -380,6 +380,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
+    # Call finalize to build final list of available data
+    enginenodes[0].finalize()
     respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
@@ -389,9 +391,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
-            print 'adding coherence node for ifo %s'%(ifo)
             cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
-            enginenodes[0].finalize()
             for co in cotest_nodes:
               co.set_psdstart(enginenodes[0].GPSstart)
               co.set_psdlength(enginenodes[0].psdlength)
@@ -508,7 +508,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       node.channels=ast.literal_eval(self.config.get('data','channels'))
       if len(ifos)==0: node.ifos=node.cachefiles.keys()
       else: node.ifos=ifos
-      print 'added ifos %s'%(str(ifos))
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
     if self.config.has_option('lalinference','ER2-cache'):
@@ -516,7 +515,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       node.channels=ast.literal_eval(self.config.get('data','channels'))
       if len(ifos)==0: node.ifos=node.cachefiles.keys()
       else: node.ifos=ifos
-      print 'added ifos %s'%(str(ifos))
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
     else:
@@ -525,8 +523,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         dfnode=seg.get_df_node()
         if dfnode is not None and dfnode not in self.get_nodes():
     	  self.add_node(dfnode)
-    self.add_node(node)
-    if gotdata==0:
+    if gotdata:
+      self.add_node(node)
+    else:
       'Print no data found for time %f'%(end_time)
       return None
     if extra_options is not None:
@@ -725,7 +724,6 @@ class EngineNode(pipeline.CondorDAGNode):
       # Used when we are running the coherence test.
       # Otherwise the noise evidence will differ.
       if self.scisegs!={}:
-        print self.scisegs
         starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
         endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
       else:
