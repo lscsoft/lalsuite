@@ -127,7 +127,7 @@ int main(int argc, char **argv){
 
   InputParams inputs = empty_InputParams;
 
-  REAL8 srate = 16384; /*sample rate defaulted to 16384 */
+  REAL8 srate = 16384.0; /*sample rate defaulted to 16384 */
 
   /* read in command line input args */
   ReadInput( &inputs, argc, argv );
