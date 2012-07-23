@@ -599,7 +599,7 @@ class EngineJob(pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.write_sub_file(self)
     # Then read it back in to mangle the arguments line
     outstring=""
-    MPIextraargs= ' -np 8 '+self.binary+' -- --LALSimulation' #'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
+    MPIextraargs= ' -np 8 '+self.binary+' -- ' #'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
     subfilepath=self.get_sub_file()
     subfile=open(subfilepath,'r')
     for line in subfile:
@@ -1022,10 +1022,11 @@ class GraceDBNode(pipeline.CondorDAGNode):
         Setup to log the results from the given parent results page node
         """
         res=respagenode
-        self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
+        #self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
+        self.resultsurl=res.webpath.replace(self.job().basepath,self.job().baseurl)
         self.set_gid(gid)
     def finalize(self):
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        self.add_var_arg('parameter estimation finished. '+self.resultsurl)
+        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
         
