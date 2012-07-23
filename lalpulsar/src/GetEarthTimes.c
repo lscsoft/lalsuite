@@ -126,11 +126,13 @@ XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn )
   return XLAL_SUCCESS;
 }
 
+/*** \deprecated use XLALGetEarthTimes() instead.
+ */
 void
-LALGetEarthTimes( LALStatus *stat, PulsarTimesParamStruc *times )
+LALGetEarthTimes( LALStatus *status, PulsarTimesParamStruc *times )
 {
-  ASSERT( XLALGetEarthTimes(&times->epoch, &times->tMidnight, &times->tAutumn)
-          == XLAL_SUCCESS, stat, LAL_FAIL_ERR, LAL_FAIL_MSG );
-};
+  if ( XLALGetEarthTimes ( &times->epoch, &times->tMidnight, &times->tAutumn ) != XLAL_SUCCESS )
+    ABORT ( status, LAL_FAIL_ERR, LAL_FAIL_MSG );
+}
 
 /*@}*/
