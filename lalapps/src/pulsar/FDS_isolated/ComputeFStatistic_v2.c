@@ -292,7 +292,6 @@ typedef struct {
 
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
-  BOOLEAN outputSingleFstats;	/**< in multi-detector case, also output single-detector F-stats */
   BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
   CHAR *ToplistRanking;/**< rank toplist candidates according to F or LV */
   BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
@@ -485,25 +484,21 @@ int main(int argc,char *argv[])
       /* assemble column headings string */
       char colum_headings_string_base[] = "freq alpha delta f1dot f2dot f3dot 2F";
       UINT4 column_headings_string_length = sizeof(colum_headings_string_base);
-      if ( uvar.computeLV || uvar.outputSingleFstats ) {
-        column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
-      }
-      if ( uvar.computeLV ) {
-        column_headings_string_length += 3; /* 3 for " LV"*/
-      }
       char column_headings_string[column_headings_string_length];
       INIT_MEM( column_headings_string );
       strcat ( column_headings_string, colum_headings_string_base );
       if ( uvar.computeLV )
-        strcat ( column_headings_string, " LV" );
-      if ( uvar.computeLV || uvar.outputSingleFstats ) {
-        for ( UINT4 X = 0; X < numDetectors ; X ++ ) {
-          char headingX[7];
-          snprintf ( headingX, sizeof(headingX), " 2F_%s", detectorIDs->data[X] );
-          strcat ( column_headings_string, headingX );
-        } /* for X < numDet */
-      }
-
+        {
+          column_headings_string_length += numDetectors*6; /* 6 per detector for " 2F_XY" */
+          column_headings_string_length += 3; /* 3 for " LV"*/
+          strcat ( column_headings_string, " LV" );
+          for ( UINT4 X = 0; X < numDetectors ; X ++ )
+            {
+              char headingX[7];
+              snprintf ( headingX, sizeof(headingX), " 2F_%s", detectorIDs->data[X] );
+              strcat ( column_headings_string, headingX );
+            } /* for X < numDet */
+        }
       fprintf (fpFstat, "%%%% columns:\n%%%% %s\n", column_headings_string );
 
       XLALDestroyStringVector ( detectorIDs );
@@ -1222,7 +1217,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->GPUready = 0;
   uvar->useResamp = FALSE;
 
-  uvar->outputSingleFstats = FALSE;
   uvar->computeLV = FALSE;
   #define DEFAULT_RANKTOPLIST "F"
   uvar->ToplistRanking = LALCalloc (1, strlen(DEFAULT_RANKTOPLIST)+1);
@@ -1304,7 +1298,6 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   LALregINTUserStruct ( status, maxEndTime, 	 0,  UVAR_OPTIONAL, "Latest SFT-timestamps to include");
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
-  LALregBOOLUserStruct(status,  outputSingleFstats,0,  UVAR_OPTIONAL, "In multi-detector case, also output single-detector F-stats?");
   LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
   LALregSTRINGUserStruct(status,ToplistRanking,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
   LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
@@ -1862,11 +1855,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
-  if ( uvar->outputSingleFstats || uvar->computeLV )
+
+  /* return single-IFO Fstat values for Line-veto statistic */
+  if ( uvar->computeLV )
     {
       cfg->CFparams.returnSingleF = TRUE;
       if ( uvar->useResamp ) {
-        XLALPrintError ("Sorry, resampling is not yet compatible with --computeLV or --outputSingleFstats\n" );
+        XLALPrintError ("Sorry, resampling is not yet compatible with --computeLV\n" );
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
     }
