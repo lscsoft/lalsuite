@@ -4185,6 +4185,9 @@ nested samples file.\n\n");
     exit(0);
   }
   
+  /* allocate memory for nested samples */
+  params = XLALCalloc( nsamps, sizeof(LALInferenceVariables**) );
+  
   /* loop over files, convert to posterior samples and combine them */
   for ( n = 0; n < nsamps; n++ ){
     CHAR *namefile = NULL, name[256];
@@ -4192,7 +4195,8 @@ nested samples file.\n\n");
     
     i = 0;
     
-    params = XLALRealloc( params, (n+1)*sizeof(LALInferenceVariables**) );
+    /* initialise array as NULL */
+    params[n] = NULL;
     
     namefile = XLALStringDuplicate( sampfilenames->data[n] );
     namefile = XLALStringAppend( namefile, "_params.txt" );
@@ -4224,9 +4228,9 @@ nested samples file.\n\n");
       if( feof(fp) ) break;
 
       /* dynamically allocate memory */
-      
       params[n] = XLALRealloc( params[n], 
                                (i+1)*sizeof(LALInferenceVariables*) );
+      params[n][i] = NULL;
       params[n][i] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
     
       /* add variables */
