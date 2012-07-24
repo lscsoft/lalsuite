@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
@@ -83,7 +83,6 @@ else
     haveNoise=false;
 fi
 
-IFO=LHO
 ##--------------------------------------------------
 ## test starts here
 ##--------------------------------------------------
@@ -99,13 +98,20 @@ else
     rm -f $SFTdir/*;
 fi
 
-mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
+mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot -v${debug}"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$noiseSqrtSh";
 fi
 
-cmdline="$mfd_code $mfd_CL --randSeed=1"
+cmdline="$mfd_code $mfd_CL --randSeed=1 --IFO=H1"
+echo $cmdline;
+if ! eval "$cmdline &> /dev/null"; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
+cmdline="$mfd_code $mfd_CL --randSeed=2 --IFO=L1"
 echo $cmdline;
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$mfd_code' ..."
