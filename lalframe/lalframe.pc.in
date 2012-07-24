@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALFrame
 Description: LAL Frame Library Support
 Version: @VERSION@
-Requires.private: lal libframe
+Requires: lal libframe
 Libs: -L${libdir} -llalframe
 Cflags: -I${includedir}

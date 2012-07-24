@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALSimulation
 Description: LAL Simulation Library Support
 Version: @VERSION@
-Requires.private: lal
+Requires: lal
 Libs: -L${libdir} -llalsimulation
 Cflags: -I${includedir}

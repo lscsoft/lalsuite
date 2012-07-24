@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALSupport
 Description: LSC Algorithm Support Library (useful but non-conforming routines)
 Version: @VERSION@
-Requires.private: lal
+Requires: lal
 Libs: -L${libdir} -llalsupport @LALSUPPORT_LIBADD@
 Cflags: -I${includedir}
