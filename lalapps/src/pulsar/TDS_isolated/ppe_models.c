@@ -441,16 +441,14 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
  * 
  * \return A vector of time delays in seconds
  *
- * \sa LALBarycenter
- * \sa LALBarycenterEarth
+ * \sa XLALBarycenter
+ * \sa XLALBarycenterEarth
  */
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
                             EphemerisData *ephem,
                             LALDetector *detector,
                             REAL8 interptime ){
-  static LALStatus status;
-
   INT4 i = 0, length = 0;
 
   REAL8 T0 = 0., DT = 0., DTplus = 0.;
@@ -509,10 +507,10 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
          pars.pmra/cos(bary->delta);
      
       /* call barycentring routines */
-      LAL_CALL( LALBarycenterEarth( &status, &earth, &bary->tgps, ephem ),
-                &status );
-      
-      LAL_CALL( LALBarycenter( &status, &emit, bary, &earth ), &status );
+      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth, &bary->tgps, ephem ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC ); 
+      XLAL_CHECK_NULL( XLALBarycenter( &emit, bary, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* add interptime to the time */
       if ( interptime > 0 ){
@@ -520,9 +518,10 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
         XLALGPSAdd( &bary->tgps, interptime );
 
         /* No point in updating the positions as difference will be tiny */
-        LAL_CALL( LALBarycenterEarth( &status, &earth2, &bary->tgps, ephem ),
-                  &status );
-        LAL_CALL( LALBarycenter( &status, &emit2, bary, &earth2), &status );
+        XLAL_CHECK_NULL( XLALBarycenterEarth( &earth2, &bary->tgps, ephem ) ==
+                         XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_NULL( XLALBarycenter( &emit2, bary, &earth2 ) ==
+                         XLAL_SUCCESS, XLAL_EFUNC );
       }
     }
 
