@@ -745,7 +745,9 @@ int main(int argc,char *argv[])
           REAL4 TwoFX[Fstat.numDetectors];
           for ( UINT4 X=0; X < Fstat.numDetectors; X++ )
             TwoFX[X] = 2.0*Fstat.FX[X];
-          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, GV.LVloglX->data, uvar.LVuseAllTerms );
+          REAL4* LVlogLX = NULL;
+          if ( GV.LVloglX ) LVlogLX = GV.LVloglX->data;
+          thisFCand.LVstat = XLALComputeLineVetoArray ( 2.0*Fstat.F, Fstat.numDetectors, TwoFX, GV.LVlogRhoTerm, LVlogLX, uvar.LVuseAllTerms );
           if ( xlalErrno ) {
             XLALPrintError ("%s: XLALComputeLineVetoArray() failed with errno=%d\n", __func__, xlalErrno );
             return xlalErrno;
