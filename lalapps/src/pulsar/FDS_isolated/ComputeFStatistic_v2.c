@@ -1877,19 +1877,14 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
     cfg->LVlogRhoTerm = - LAL_REAL4_MAX;
   UINT4 numDetectors = cfg->multiSFTs->length;
 
-  if ( uvar->computeLV )
-    {
-      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
-        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
-        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
-      }
-      memset ( cfg->LVloglX->data, 0, numDetectors * sizeof(*cfg->LVloglX->data) );
-    }
-
   if ( uvar->computeLV && uvar->LVlX )
     {
       if (  uvar->LVlX->length != numDetectors ) {
         XLALPrintError( "Length of LV prior ratio vector does not match number of detectors! (%d != %d)\n", uvar->LVlX->length, numDetectors);
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+      if ( (cfg->LVloglX = XLALCreateREAL4Vector ( numDetectors )) == NULL ) {
+        XLALPrintError ("Failed to XLALCreateREAL4Vector ( %d )\n", numDetectors );
         ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
       }
       for (UINT4 X = 0; X < numDetectors; X++)
