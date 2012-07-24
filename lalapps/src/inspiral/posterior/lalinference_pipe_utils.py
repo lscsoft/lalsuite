@@ -1000,10 +1000,11 @@ class GraceDBNode(pipeline.CondorDAGNode):
     Run the gracedb executable to report the results
     """
     def __init__(self,gracedb_job,gid=None,parent=None):
-	pipeline.CondorDAGNode.__init__(self,gracedb_job)
+        pipeline.CondorDAGNode.__init__(self,gracedb_job)
         self.resultsurl=""
         if gid: self.set_gid(gid)
         if parent: self.set_parent_resultspage(parent,gid)
+        self.__finalized=False
         
     def set_page_path(self,path):
         """
@@ -1026,7 +1027,9 @@ class GraceDBNode(pipeline.CondorDAGNode):
         self.resultsurl=res.webpath.replace(self.job().basepath,self.job().baseurl)
         self.set_gid(gid)
     def finalize(self):
+        if self.__finalized:
+            return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
         self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
-        
+        self.__finalized=True
