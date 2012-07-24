@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 17
+# serial 18
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -280,7 +280,7 @@ AC_DEFUN([LALSUITE_SWIG_DEPENDS],[
     SWIG_MODULE_DEPENDS="${SWIG_MODULE_DEPENDS} $1"
 
     # add to scripting-language path to search for pre-installed SWIG modules
-    AS_IF([test ${LALSUITE_BUILD} = true],[
+    AS_IF([test "x${LALSUITE_BUILD}" = xtrue],[
       SWIG_PREINST_PATH="${SWIG_PREINST_PATH}:\$(abs_top_builddir)/../$1/\$(subdir)/${objdir}"
     ])
 
