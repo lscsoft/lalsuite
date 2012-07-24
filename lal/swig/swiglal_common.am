@@ -56,7 +56,7 @@ swig_iface_links :
 	done
 
 # generate SWIG interface file
-../$(swig_iface) :
+../$(swig_iface) : Makefile
 	@echo '#dummy' > $(swig_iface_deps)
 	@cd .. && $(MAKE) $(swig_iface)
 
@@ -64,7 +64,7 @@ swig_iface_links :
 @am__include@ @am__quote@./$(DEPDIR)/@PACKAGE_NAME@swig.deps@am__quote@
 
 # generate SWIG wrapping module source
-$(swig_modl_src) : ../$(swig_iface) Makefile
+$(swig_modl_src) : ../$(swig_iface)
 	@$(MAKE) swig_iface_links
 	@$(MKDIR_P) $(SWIG_OUTDIR)
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
