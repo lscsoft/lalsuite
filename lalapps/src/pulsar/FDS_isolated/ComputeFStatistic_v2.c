@@ -1863,7 +1863,13 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
   /* get atoms back from Fstat-computing, either if atoms-output or transient-Bstat output was requested */
   cfg->CFparams.returnAtoms = ( uvar->outputFstatAtoms != NULL ) || ( uvar->outputTransientStats != NULL );
   if ( uvar->outputSingleFstats || uvar->computeLV )
-    cfg->CFparams.returnSingleF = TRUE;
+    {
+      cfg->CFparams.returnSingleF = TRUE;
+      if ( uvar->useResamp ) {
+        XLALPrintError ("Sorry, resampling is not yet compatible with --computeLV or --outputSingleFstats\n" );
+        ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
+      }
+    }
 
   /* ---------- prepare Line Veto statistics parameters ---------- */
   if ( uvar->LVrho < 0.0 ) {
