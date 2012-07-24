@@ -22,11 +22,19 @@ logLcol=-1 # default to last column for inspnest
 (opts,args)=parser.parse_args()
 
 if opts.headers is None:
-    headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
+    # Look for a standard headers file
+    defaultparamfilename=args[0]+'_params.txt'
+    if os.access(defaultparamfilename,os.R_OK):
+        headerfilename=defaultparamfilename
 else:
-    headerfile=open(opts.headers,'r')
+    headerfilename=opts.headers
+
+if headerfilename is not None:
+    headerfile=open(headerfilename,'r')
     headerstr=headerfile.readline()
     headerfile.close()
+else: # old inspnest defaults
+    headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
 
 headers=headerstr.lower().split()
 logLcol=headers.index('logl')
