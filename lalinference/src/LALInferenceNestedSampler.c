@@ -515,8 +515,6 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 		  logZ,\
 		  dZ,\
 		  10.0*LAL_LOG10E*( logZ-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise")));
-		/* Flush output file */
-		if(fpout && !(iter%100)) fflush(fpout);
 		iter++;
 		/* Update the proposal */
 		if(!(iter%(Nlive/4))) {
