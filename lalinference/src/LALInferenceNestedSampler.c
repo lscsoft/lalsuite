@@ -989,10 +989,11 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
             LALInferenceCopyVariables(&oldParams,runState->currentParams);
             runState->currentLikelihood=logLold;
         }
-    }while((mcmc_iter<testnumber||logLnew<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
+    }while((mcmc_iter<testnumber||runState->currentLikelihood<=logLmin||Naccepted==0)&&(mcmc_iter<BAILOUT));
     /* Make sure likelihood is filled in if it wasn't done during sampling */
     if(logLnew==0.0){
             logLnew=runState->likelihood(runState->currentParams,runState->data,runState->template);
+            runState->currentLikelihood=logLnew;
             LALInferenceAddVariable(runState->currentParams,"logL",(void *)&logLnew,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
             if(LALInferenceCheckVariable(runState->algorithmParams,"logZnoise")){
                tmp=logLnew-*(REAL8 *)LALInferenceGetVariable(runState->algorithmParams,"logZnoise");
@@ -1006,6 +1007,7 @@ void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
                data=data->next;
             }
     }
+    
     /* Compute some statistics for information */
     REAL8 sub_accept_rate=(REAL8)sub_accepted/(REAL8)sub_iter;
     REAL8 accept_rate=(REAL8)Naccepted/(REAL8)testnumber;
