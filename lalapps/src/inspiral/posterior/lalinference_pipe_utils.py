@@ -987,7 +987,8 @@ class GraceDBJob(pipeline.CondorDAGJob):
     """
     def __init__(self,cp,submitFile,logdir):
       exe=cp.get('condor','gracedb')
-      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
