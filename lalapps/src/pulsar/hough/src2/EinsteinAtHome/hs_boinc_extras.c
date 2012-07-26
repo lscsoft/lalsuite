@@ -476,31 +476,40 @@ static void sighandler(int sig)
 #endif /* __X86__ */
   /* now get TRUE stacktrace */
   nostackframes = backtrace (stackframes, 64);
-  fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
-  fputs(" stack frames obtained for this thread:\n", stderr);
-#if defined(__i386__) && defined(EXT_STACKTRACE)
-  /* overwrite sigaction with caller's address */
-  // stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
-  backtracesymbols = backtrace_symbols(stackframes, nostackframes);
-  if(backtracesymbols != NULL) {
-    backtrace_symbols_fd_plus(backtracesymbols, nostackframes, fileno(stderr));
-    free(backtracesymbols);
-  } else
-#endif /* __X86__ */
-  {
+  if (nostackframes == 0) {
+    fputs("no stack frames obtained for this thread:\n", stderr);
+  } else {
+    fputs(myltoa(nostackframes, buf, sizeof(buf)), stderr);
+    fputs(" stack frames obtained for this thread:\n", stderr);
+    /* overwrite sigaction with caller's address */
+    stackframes[1] = (void *) uc->uc_mcontext.gregs[REG_EIP];
     fputs("Use gdb command: 'info line *0xADDRESS' to print corresponding line numbers.\n",stderr);
     backtrace_symbols_fd(stackframes, nostackframes, fileno(stderr));
+#if defined(__i386__) && defined(EXT_STACKTRACE)
+    fputs("Trying extended stacktrace:\n", stderr);
+    backtracesymbols = backtrace_symbols(stackframes, nostackframes);
+    if(backtracesymbols != NULL) {
+      backtrace_symbols_fd_plus((const char *const *)(void**)backtracesymbols, nostackframes, fileno(stderr));
+      free(backtracesymbols);
+    }
+#endif /* EXT_STACKTRACE */
+    fputs("\nEnd of stcaktrace\n",stderr);
   }
-  fputs("\nEnd of stcaktrace\n",stderr);
 #endif /* __GLIBC__ */
 
   if (global_status)
     fputs("Stack trace of LAL functions in worker thread:\n", stderr);
   while (global_status) {
-    fputs(global_status->function, stderr);
+    if(global_status->function)
+      fputs(global_status->function, stderr);
+    else
+      fputs("global_status->function=NULL", stderr);
     fputs(" at ", stderr);
-    fputs(global_status->file, stderr);
-    fputs(":", stderr);
+    if(global_status->file)
+      fputs(global_status->file, stderr);
+    else
+      fputs("global_status->file=NULL", stderr);
+    fputc(':', stderr);
     fputs(myultoa(global_status->line, buf, sizeof(buf)), stderr);
     fputc('\n', stderr);
     if (!(global_status->statusPtr)) {
