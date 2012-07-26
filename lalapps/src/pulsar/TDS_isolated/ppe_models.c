@@ -7,7 +7,6 @@
  * targeted pulsar searches.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_models.h"
 
 static BinaryPulsarParams empty_BinaryPulsarParams;
@@ -276,18 +275,16 @@ void pulsar_model( BinaryPulsarParams params,
           for( i=0; i<length; i++ ){
             COMPLEX16 M;
             REAL8 dphit;
-            REAL4 sp, cp;
+            COMPLEX16 expp;
     
             dphit = -fmod(dphi->data[i] - data->timeData->data->data[i], 1.);
+           
+            expp = cexp( dphit );
             
-            sin_cos_2PI_LUT( &sp, &cp, dphit );
-    
-            M.re = data->compModelData->data->data[i].re;
-            M.im = data->compModelData->data->data[i].im;
+            M = data->compModelData->data->data[i];
     
             /* heterodyne */
-            data->compModelData->data->data[i].re = M.re*cp - M.im*sp;
-            data->compModelData->data->data[i].im = M.im*cp + M.re*sp;
+            data->compModelData->data->data[i] = M * expp;
           }
         
           XLALDestroyREAL8Vector( dphi );      
@@ -588,10 +585,7 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
  * triaxial neutron star (see [\ref DupuisWoan2005]). It is defined as:
  * \f{eqnarray*}{
  * y(t) & = & \frac{h_0}{2} \left( \frac{1}{2}F_+(t,\psi)
- * (1+\cos^2\iota)\cos{\phi_0} + F_{\times}(t,\psi)\cos{\iota}\sin{\phi_0}
- * \right) + \\
- *  & & i\frac{h_0}{2}\left( \frac{1}{2}F_+(t,\psi)
- * (1+\cos^2\iota)\sin{\phi_0} - F_{\times}(t,\psi)\cos{\iota}\cos{\phi_0}
+ * (1+\cos^2\iota)\exp{i\phi_0} - iF_{\times}(t,\psi)\cos{\iota}\exp{i\phi_0}
  * \right),
  * \f}
  * where \f$F_+\f$ and \f$F_{\times}\f$ are the antenna response functions for
@@ -625,8 +619,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   REAL8 psiMin, psiMax, timeMin, timeMax;
   REAL8 T;
   REAL8 Xplus, Xcross;
-  REAL8 Xpcosphi, Xccosphi, Xpsinphi, Xcsinphi;
-  REAL4 sinphi, cosphi;
+  COMPLEX16 expiphi, Xpexpphi, Xcexpphi;
   
   gsl_matrix *LU_Fplus, *LU_Fcross;
   REAL8Vector *sidDayFrac = NULL;
@@ -644,25 +637,22 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
   /* get the sidereal time since the initial data point % sidereal day */
   sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( data->dataParams,
                                                         "siderealDay" );
-  
-  sin_cos_LUT( &sinphi, &cosphi, pars.phi0 );
+ 
+  expiphi = cexp( I * pars.phi0 );
   
   /************************* CREATE MODEL *************************************/
   /* This model is a complex heterodyned time series for a triaxial neutron
      star emitting at twice its rotation frequency (as defined in Dupuis and
      Woan, PRD, 2005):
-       real = (h0/2) * ((1/2)*F+*(1+cos(iota)^2)*cos(phi0) 
-         + Fx*cos(iota)*sin(phi0))
-       imag = (h0/2) * ((1/2)*F+*(1+cos(iota)^2)*sin(phi0)
-         - Fx*cos(iota)*cos(phi0))
+       h(t) = (h0/2) * ((1/2)*F+(t)*(1+cos(iota)^2)*exp(i*phi0) 
+         - i*Fx(t)*cos(iota)*exp(i*phi0))
    ****************************************************************************/
+  
   
   Xplus = 0.25*(1.+pars.cosiota*pars.cosiota)*pars.h0;
   Xcross = 0.5*pars.cosiota*pars.h0;
-  Xpsinphi = Xplus*sinphi;
-  Xcsinphi = Xcross*sinphi;
-  Xpcosphi = Xplus*cosphi;
-  Xccosphi = Xcross*cosphi;
+  Xpexpphi = Xplus*expiphi;
+  Xcexpphi = Xcross*expiphi;
   
   /* set the psi bin for the lookup table - the lookup table runs from -pi/2
      to pi/2, but for the triaxial case we only require psi values from -pi/4
@@ -709,8 +699,7 @@ void get_triaxial_amplitude_model( BinaryPulsarParams pars,
       + cross11*psiScaled*timeScaled;
     
     /* create the complex signal amplitude model */
-    data->compModelData->data->data[i].re = plus*Xpcosphi + cross*Xcsinphi;
-    data->compModelData->data->data[i].im = plus*Xpsinphi - cross*Xccosphi;
+    data->compModelData->data->data[i] = plus*Xpexpphi - I*cross*Xcexpphi;
   }
 }
 
@@ -857,13 +846,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
     
     /* create the complex signal amplitude model */
     /*at f*/
-    data->compModelData->data->data[i].re =
-      plus * Xplusf * ( A1 * cosphi - A2 * sinphi ) + 
-      cross * Xcrossf * ( A2 * cosphi + A1 * sinphi );
-    
-    data->compModelData->data->data[i].im =
-      plus * Xplusf * ( A2 * cosphi + A1 * sinphi ) + 
-      cross * Xcrossf * ( A2 * sinphi - A1 * cosphi );
+    data->compModelData->data->data[i] =
+      ( plus * Xplusf * ( A1 * cosphi - A2 * sinphi ) + 
+      cross * Xcrossf * ( A2 * cosphi + A1 * sinphi ) ) +
+      I * ( plus * Xplusf * ( A2 * cosphi + A1 * sinphi ) + 
+      cross * Xcrossf * ( A2 * sinphi - A1 * cosphi ) );
   }
   /*--------------------------------------------------------------------------*/
   /* set model for 2f component */
@@ -903,13 +890,11 @@ void get_pinsf_amplitude_model( BinaryPulsarParams pars,
       + cross11*psiScaled*timeScaled;
     
     /* create the complex signal amplitude model at 2f*/
-    data->next->compModelData->data->data[i].re =
-      plus * Xplus2f * ( B1 * cos2phi - B2 * sin2phi ) +
-      cross * Xcross2f * ( B2 * cos2phi + B1 * sin2phi );
-    
-    data->next->compModelData->data->data[i].im =
-      plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
-      cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi );
+    data->next->compModelData->data->data[i] =
+      ( plus * Xplus2f * ( B1 * cos2phi - B2 * sin2phi ) +
+      cross * Xcross2f * ( B2 * cos2phi + B1 * sin2phi ) ) +
+      I * ( plus * Xplus2f * ( B2 * cos2phi + B1 * sin2phi ) +
+      cross * Xcross2f * ( B2 * sin2phi - B1 * cos2phi ) );
 
   }
   /*--------------------------------------------------------------------------*/

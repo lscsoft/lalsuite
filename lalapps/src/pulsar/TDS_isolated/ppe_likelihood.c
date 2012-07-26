@@ -7,7 +7,6 @@
  * codes for targeted pulsar searches.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "ppe_likelihood.h"
 
 /******************************************************************************/
@@ -119,18 +118,15 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
       cl = i + (INT4)chunkLength;
     
       for( j = i ; j < cl ; j++ ){
-        B.re = datatemp3->compTimeData->data->data[j].re;
-        B.im = datatemp3->compTimeData->data->data[j].im;
+        B = datatemp3->compTimeData->data->data[j];
 
-        M.re = datatemp3->compModelData->data->data[j].re;
-        M.im = datatemp3->compModelData->data->data[j].im;
+        M = datatemp3->compModelData->data->data[j];
         
         /* sum over the model */
-        sumModel += M.re*M.re + M.im*M.im;
+        sumModel += creal(M)*creal(M) + cimag(M)*cimag(M);
         
         /* sum over that data and model */
-        sumDataModel += B.re*M.re + B.im*M.im;
-        /*fprintf(bugtest,"B.re= %e, B.im= %e, M.re: %e, M.im: %e\n",B.re, B.im,M.re, M.im);*/
+        sumDataModel += creal(B)*creal(M) + cimag(B)*cimag(M);
       }
  
       chiSquare = sumDat->data[count];
