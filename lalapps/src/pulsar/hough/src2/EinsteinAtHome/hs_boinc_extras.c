@@ -69,6 +69,11 @@
 #include <gnu/libc-version.h>
 #endif
 
+/* try to dlopen("libgcc_s.so.1") */
+#ifdef DLOPEN_LIBGCC
+#include <dlfcn.h>
+#endif
+
 /* our own exception handler / runtime debugger */
 #if HAVE_EXCHNDL
 #include "exchndl.h"
@@ -251,6 +256,13 @@ static UINT4 last_count, last_total;      /**< last template count, see last_rac
 static BOOLEAN do_sync = -1;              /**< sync checkpoint file to disk, default: yes */
 
 
+/** record whether loading libgcc_s.so.1 succeeded */
+static int libgcc_s_loaded = 0;
+
+
+/** record the status of the last boinc_finish call in case boinc_finish() throws a signal */
+static int boinc_finish_status = 0;
+
 
 /*^* LOCAL FUNCTION PROTOTYPES *^*/
 #ifdef __GLIBC__
@@ -368,7 +380,7 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
             id, func, file, line );
     ReportStatus(status);
     LogPrintf (LOG_CRITICAL, "BOINC_LAL_ErrHand(): now calling boinc_finish()\n");
-    boinc_finish( COMPUTEFSTAT_EXIT_LALCALLERROR+status->statusCode );
+    boinc_finish(boinc_finish_status= COMPUTEFSTAT_EXIT_LALCALLERROR+status->statusCode );
   }
   /* should this call boinc_finish too?? */
   return 0;
@@ -395,6 +407,12 @@ int BOINC_LAL_ErrHand (LALStatus  *status,
 #endif /*  __x86_64__ */
 #endif /* __GLIBC__ */
 
+/* Use thread-local storage only where needed & supported */
+#if defined(__GLIBC__) && defined(__GNUC__)
+#define THREAD_LOCAL static __thread
+#else
+#define THREAD_LOCAL static
+#endif
 
 #ifdef __GLIBC__
 static void sighandler(int sig,
@@ -413,6 +431,7 @@ static void sighandler(int sig)
   static char **backtracesymbols = NULL;
   ucontext_t *uc = (ucontext_t *)secret;
 #endif
+  THREAD_LOCAL int boinc_finish_in_sighabdler = 0;
 
   fputc('\n',stderr);
   mytime();
@@ -420,16 +439,28 @@ static void sighandler(int sig)
   fputs(myultoa(sig, buf, sizeof(buf)), stderr);
   fputc('\n',stderr);
 
-  /* ignore TERM interrupts once  */
-  if ( sig == SIGTERM || sig == SIGINT ) {
+  /* ignore INT interrupts once  */
+  if ( sig == SIGINT ) {
     killcounter ++;
     if ( killcounter >= 4 ) {
-      fputs("App got 4th kill-signal, guess you mean it. Exiting.\n",stderr);
-      boinc_finish(COMPUTEFSTAT_EXIT_USER);
+      fputs("App got 4th SIGINT, guess you mean it.\nCalling boinc_finish().\n",stderr);
+      boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_USER);
     }
     else
       return;
   } /* termination signals */
+
+  /* A SIGABRT most likely came from a failure to load libgcc_s.so.1,
+     which is required for boinc_finish() (calling pthread_exit() calling
+     pthread_cancel()) to work properly. In this case take the "emergency
+     exit" with exit status 0 - the worst that can happen is that
+     the tasks ends up with "too many exits" error. */
+  if ( ( libgcc_s_loaded == -1 ) && ( sig == 6 ) ) {
+    fputs("Program received SIGABRT probably because libgcc_s.so.1 wasn't loaded - trying exit(0)\n", stderr);
+    /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
+    sleep(5);
+    exit(boinc_finish_status);
+  }
 
 #ifdef __GLIBC__
 #ifdef __X86__
@@ -485,7 +516,15 @@ static void sighandler(int sig)
   
   /* sleep a few seconds to let the OTHER thread(s) catch the signal too... */
   sleep(5);
-  boinc_finish(COMPUTEFSTAT_EXIT_SIGNAL + sig);
+  /* if boinc_finish() was already called from the signal handler and we end up
+     here again, then boinc_finish() itself causes a signal. Prevent an endless
+     loop by callin plain exit() */
+  if(boinc_finish_in_sighabdler) {
+    fputs("boinc_finish already called from signal handler, trying exit()\n", stderr);
+    exit(boinc_finish_status);
+  }
+  boinc_finish_in_sighabdler = 1;
+  boinc_finish(boinc_finish_status=COMPUTEFSTAT_EXIT_SIGNAL + sig);
   return;
 } /* sighandler */
 
@@ -770,7 +809,7 @@ static void worker (void) {
   rargv = (char**)calloc(1,argc*sizeof(char*));
   if(!rargv){
     LogPrintf(LOG_CRITICAL, "Out of memory\n");
-    boinc_finish(HIERARCHICALSEARCH_EMEM);
+    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
   }
 
   /* the program name (argv[0]) remains the same in any case */
@@ -785,7 +824,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       rargv[rarg][0] = '@';
       if (boinc_resolve_filename(argv[arg]+1,rargv[rarg]+1,MAX_PATH_LEN-1)) {
@@ -798,7 +837,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -810,7 +849,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -822,7 +861,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -832,7 +871,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN,sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
       strncpy(rargv[rarg],argv[arg],l);
       if (resolve_and_unzip(argv[arg]+l, rargv[rarg]+l, MAX_PATH_LEN-l) < 0)
@@ -847,7 +886,7 @@ static void worker (void) {
       rargv[rarg] = (char*)calloc(MAX_PATH_LEN + chars, sizeof(char));
       if(!rargv[rarg]){
 	LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	boinc_finish(HIERARCHICALSEARCH_EMEM);
+	boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
       }
 
       /* copy & skip the "[1|2]=" characters, too */
@@ -877,7 +916,7 @@ static void worker (void) {
 	rargv[rarg] = (char*)realloc(rargv[rarg], (MAX_PATH_LEN + chars) * sizeof(char));
 	if(!rargv[rarg]){
 	  LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	  boinc_finish(HIERARCHICALSEARCH_EMEM);
+	  boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	}
 
 	/* put back the ';' in the original string and skip it for next iteration */
@@ -932,7 +971,7 @@ static void worker (void) {
 	  rargv[rarg] = (char*)calloc(s,sizeof(char));
 	  if(!rargv[rarg]){
 	    LogPrintf(LOG_CRITICAL, "Out of memory\n");
-	    boinc_finish(HIERARCHICALSEARCH_EMEM);
+	    boinc_finish(boinc_finish_status=HIERARCHICALSEARCH_EMEM);
 	  }
 	  strncpy(rargv[rarg],argv[arg], (startc - argv[arg]));
 	  strncat(rargv[rarg],resultfile,s);
@@ -1109,7 +1148,7 @@ static void worker (void) {
   /* if there already was an error, there is no use in continuing */
   if (res) {
     LogPrintf (LOG_CRITICAL, "ERROR: error %d in command-line parsing\n", res);
-    boinc_finish(res);
+    boinc_finish(boinc_finish_status=res);
   }
 
   /* test the debugger (and symbol loading) here if we were told to */
@@ -1192,7 +1231,7 @@ static void worker (void) {
       printf("      --CrashFPU         -       drain the FPU stack to test FPE\n");
       printf("      --TestNaN          -       raise a NaN to test FPE\n");
       printf("      --TestSQRT         -       try to calculate sqrt(-1) to test FPE\n");
-      boinc_finish(0);
+      boinc_finish(boinc_finish_status=0);
     }
 
   }
@@ -1228,7 +1267,7 @@ static void worker (void) {
 #endif
 
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
-  boinc_finish(res);
+  boinc_finish(boinc_finish_status=res);
 } /* worker() */
 
 
@@ -1430,12 +1469,24 @@ int main(int argc, char**argv) {
   } /* if !skipsighandler */
 #endif /* WIN32 */
 
+#ifdef DLOPEN_LIBGCC
+  {
+    void *lib_handle = dlopen("libgcc_s.so.1", RTLD_LAZY);
+    if(lib_handle) {
+      LogPrintf (LOG_DEBUG, "Successfully loaded libgcc_s.so.1\n");
+      libgcc_s_loaded = 1;
+    } else {
+      LogPrintf (LOG_DEBUG, "Couldn't load libgcc_s.so.1: %s\n", dlerror());
+      libgcc_s_loaded = -1;
+    }
+  }
+#endif
 
 #ifdef _NO_MSC_VER
   if (try_load_dlls(delayload_dlls, "ERROR: Failed to load %s - terminating\n")) {
     LogPrintf(LOG_NORMAL,"ERROR: Loading of mandantory DLLs failed\n");
     boinc_init();
-    boinc_finish(29);
+    boinc_finish(boinc_finish_status=29);
   }
 #endif
 
@@ -1448,7 +1499,7 @@ int main(int argc, char**argv) {
   boinc_init();
   worker();
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",0);
-  boinc_finish(0);
+  boinc_finish(boinc_finish_status=0);
   /* boinc_finish() ends the program, we never get here */
   return(0);
 }
