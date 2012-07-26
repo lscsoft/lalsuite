@@ -142,18 +142,27 @@ typedef enum gdbcmd { gdb_dump_core, gdb_attach } gdb_cmd;
     fputs(" STACK_FAULT",stderr);      \
   PRINT_FPU_EXCEPTION_MASK(fpstat)
 
-static char* myultoa(unsigned long n, char*buf, size_t size) {
+#ifndef MIN
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
+static char* myultoa2(unsigned long n, char*buf, size_t size, size_t mindig) {
   int i;
-  memset(buf,'\0',size);
-  for(i=size-1; i>=0; i++) {
+  memset(buf,'0',size);
+  buf[size-1] = '\0';
+  for(i=size-2; i>=0; i--) {
     buf[i] = n % 10 + '0';
     n /= 10;
     if (!n)
       break;
   }
   if (i > 0)
-    return buf + i;
+    return MIN(buf + i, buf + (size - mindig - 1));
   return buf;
+}
+
+static char* myultoa(unsigned long n, char*buf, size_t size) {
+  return myultoa2(n, buf, size, 1);
 }
 
 static char* myltoa(long n, char*buf, size_t size) {
@@ -163,7 +172,7 @@ static char* myltoa(long n, char*buf, size_t size) {
     n = -n;
     m = -1;
   }
-  for(i=size-1; i>=0; i++) {
+  for(i=size-2; i>=0; i--) {
     buf[i] = n % 10 + '0';
     n /= 10;
     if (!n)
@@ -178,33 +187,33 @@ static char* myltoa(long n, char*buf, size_t size) {
   return buf;
 }
 
+/* my own time function - not using vnprintf() */
 void mytime(void) {
   char buf[64];
   struct timeval tv;
   struct tm *tmv;
-  if(gettimeofday(&tv,NULL))
+  if(gettimeofday(&tv,NULL)) {
+    fputs("Couldn't gettimeofday()", stderr);
     return;
+  }
   tmv=localtime(&tv.tv_sec);
-  myultoa(tmv->tm_year,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs("-",stderr);
-  myultoa(tmv->tm_mon,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs("-",stderr);
-  myultoa(tmv->tm_mday,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(" ",stderr);
-  myultoa(tmv->tm_hour,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(":",stderr);
-  myultoa(tmv->tm_min,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(":",stderr);
-  myultoa(tmv->tm_sec,buf,sizeof(buf));
-  fputs(buf,stderr);
-  fputs(".",stderr);
-  myultoa(tv.tv_usec,buf,sizeof(buf));
-  fputs(buf,stderr);
+  if (!tmv) {
+    fputs("Couldn't get localtime(gettimeofday))", stderr);
+    return;
+  }
+  fputs(myultoa(tmv->tm_year+1900, buf, sizeof(buf)), stderr);
+  fputc('-', stderr);
+  fputs(myultoa2(tmv->tm_mon+1, buf, sizeof(buf), 2), stderr);
+  fputc('-', stderr);
+  fputs(myultoa2(tmv->tm_mday, buf, sizeof(buf), 2), stderr);
+  fputc(' ', stderr);
+  fputs(myultoa2(tmv->tm_hour, buf, sizeof(buf), 2), stderr);
+  fputc(':', stderr);
+  fputs(myultoa2(tmv->tm_min, buf, sizeof(buf), 2), stderr);
+  fputc(':', stderr);
+  fputs(myultoa2(tmv->tm_sec, buf, sizeof(buf), 2), stderr);
+  fputc('.', stderr);
+  fputs(myultoa(tv.tv_usec, buf, sizeof(buf)), stderr);
 }
 
 /*^* global VARIABLES *^*/
@@ -405,13 +414,11 @@ static void sighandler(int sig)
   ucontext_t *uc = (ucontext_t *)secret;
 #endif
 
-  /* lets start by ignoring ANY further occurences of this signal
-     (hopefully just in THIS thread, if truly implementing POSIX threads */
-  fputs("\n",stderr);
+  fputc('\n',stderr);
   mytime();
   fputs("\n-- signal handler called: signal ",stderr);
   fputs(myultoa(sig, buf, sizeof(buf)), stderr);
-  fputs("\n",stderr);
+  fputc('\n',stderr);
 
   /* ignore TERM interrupts once  */
   if ( sig == SIGTERM || sig == SIGINT ) {
@@ -464,14 +471,14 @@ static void sighandler(int sig)
     fputs(global_status->file, stderr);
     fputs(":", stderr);
     fputs(myultoa(global_status->line, buf, sizeof(buf)), stderr);
-    fputs("\n", stderr);
+    fputc('\n', stderr);
     if (!(global_status->statusPtr)) {
       const char *p=global_status->statusDescription;
       fputs("At lowest level status code = ", stderr);
       fputs(myltoa(global_status->statusCode, buf, sizeof(buf)), stderr);
       fputs(": ", stderr);
       fputs(p?p:"NO LAL ERROR REGISTERED", stderr);
-      fputs("\n", stderr);
+      fputc('\n', stderr);
     }
     global_status=global_status->statusPtr;
   }
@@ -1094,6 +1101,9 @@ static void worker (void) {
 #ifdef __GLIBC__
   /* log the glibc version */
   LogPrintf (LOG_DEBUG, "glibc version/release: %s/%s\n", gnu_get_libc_version(), gnu_get_libc_release());
+  /* test mytime() */
+  mytime();
+  fputs(" - mytime()\n",stderr);
 #endif
 
   /* if there already was an error, there is no use in continuing */
