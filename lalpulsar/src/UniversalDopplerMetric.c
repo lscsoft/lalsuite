@@ -676,7 +676,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   PosVel3D_t Spin_z, Spin_xy;
   REAL8 eZ[3];
 
-  if ( !spin_posvel || !orbit_posvel || !tGPS || !site || !edat ) {
+  if ( !tGPS || !site || !edat ) {
     XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
     XLAL_ERROR( XLAL_EINVAL );
   }
@@ -735,47 +735,67 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
     {
       /* full detector-motion: ephemeris-orbital + Earth-spin */
     case DETMOTION_SPIN_ORBIT:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
       break;
 
       /* full ephemeris orbital detector-motion, neglecting Earth-spin */
     case DETMOTION_ORBIT:
-      ZERO_VECT(spin_posvel->pos);
-      ZERO_VECT(spin_posvel->vel);
+      if ( spin_posvel ) {
+        ZERO_VECT(spin_posvel->pos);
+        ZERO_VECT(spin_posvel->vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
       break;
 
       /* detector-motion including only Earth-spin, no orbital motion */
     case DETMOTION_SPIN:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      ZERO_VECT(orbit_posvel->pos);
-      ZERO_VECT(orbit_posvel->vel);
+      if ( orbit_posvel ) {
+        ZERO_VECT(orbit_posvel->pos);
+        ZERO_VECT(orbit_posvel->vel);
+      }
       break;
 
       /* pure orbital detector motion, using "Ptolemaic" (ie. circular) approximation */
     case DETMOTION_PTOLEORBIT:
-      ZERO_VECT(spin_posvel->pos);
-      ZERO_VECT(spin_posvel->vel);
+      if ( spin_posvel ) {
+        ZERO_VECT(spin_posvel->pos);
+        ZERO_VECT(spin_posvel->vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      }
       break;
 
       /* Ptolemaic-orbital motion, plus Earth spin */
     case DETMOTION_SPIN_PTOLEORBIT:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      }
       /*
       printf ("\nPtole = [ %f, %f, %f ], Ephem = [%f, %f, %f]\n",
 	      posvel->pos[0], posvel->pos[1], posvel->pos[2],
@@ -785,21 +805,29 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
 
       /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
     case DETMOTION_ORBIT_SPINZ:
-      COPY_VECT ( spin_posvel->pos, Spin_z.pos );
-      COPY_VECT ( spin_posvel->vel, Spin_z.vel );
+      if ( spin_posvel ) {
+        COPY_VECT ( spin_posvel->pos, Spin_z.pos );
+        COPY_VECT ( spin_posvel->vel, Spin_z.vel );
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
 
       break;
 
       /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
     case DETMOTION_ORBIT_SPINXY:
-      COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
-      COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
+      if ( spin_posvel ) {
+        COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
+        COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
 
       break;
 
