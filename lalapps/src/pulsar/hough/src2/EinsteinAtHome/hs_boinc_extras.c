@@ -51,6 +51,9 @@
 #include "boinc/boinc_zip.h"
 #endif
 #include "boinc/svn_version.h"
+/* this ultimately needs to be fixed in boinc_api.h,
+   #include "app_ipc.h" must be moved outside the C++ section */
+extern int boinc_resolve_filename(const char*, char*, int len);
 
 /* our own win_lib includes patches for chdir() and sleep() */
 #ifdef _WIN32
@@ -226,13 +229,16 @@ void mytime(void) {
 /** the cpu type, see cpu_type_features.h */
 int global_cpu_type;
 
+
 /** output filename - probably not needed to be public anymore */
 static char resultfile[MAX_PATH_LEN]; /**< the name of the file / zip archive to return */
+
 
 /** GPU (CUDA or OpenCL) device id */
 #if USE_OPENCL_KERNEL || defined(USE_CUDA)
 extern int gpu_device_id;
 #endif
+
 
 /** FLOPS estimation - may be set by command line option --WUfpops=.
     When set, ((skypoint_counter / total_skypoints) * estimated_flops) is periodically
