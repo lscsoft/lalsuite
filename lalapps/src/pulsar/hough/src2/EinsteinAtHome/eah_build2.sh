@@ -252,9 +252,9 @@ else
 		WITH_SSL="--with-ssl=$ssldir"
 	    fi
 	    if [ ".$release" = ".true" ]; then
-		CPPFLAGS="-DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
+		CPPFLAGS="-DDLOPEN_LIBGCC -DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
 		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
-		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty"
+		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty -ldl"
 		build_binutils=true
 		enable_linux_compatibility_workarounds=true
 	    fi ;;
@@ -418,7 +418,7 @@ if test -n "$build_binutils"; then
     log_and_show "compiling binutils"
     log_and_do mkdir -p "$BUILD/$binutils"
     log_and_do cd "$BUILD/$binutils"
-    log_and_do "$SOURCE/$binutils/configure" "$shared_copt" "$cross_copt" --prefix="$INSTALL"
+    log_and_do "$SOURCE/$binutils/configure" --disable-werror "$shared_copt" "$cross_copt" --prefix="$INSTALL"
     log_and_dont_fail make uninstall
     if [ ".$enable_linux_compatibility_workarounds" = ".true" ]; then
         log_and_dont_fail make -k
