@@ -358,6 +358,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
 
+  /* output the live points sampled from the prior */
+  outputPriorSamples( &runState );
+  
   /* Initialise the MCMC proposal distribution */
   initialiseProposal( &runState );
   
