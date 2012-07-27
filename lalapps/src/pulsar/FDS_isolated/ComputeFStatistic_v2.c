@@ -1228,9 +1228,9 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
   uvar->useResamp = FALSE;
 
   uvar->computeLV = FALSE;
-  #define DEFAULT_RANKTOPLIST "F"
-  uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKTOPLIST)+1);
-  strcpy (uvar->RankingStatistic, DEFAULT_RANKTOPLIST);
+  #define DEFAULT_RANKINGSTATISTIC "F"
+  uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKINGSTATISTIC)+1);
+  strcpy (uvar->RankingStatistic, DEFAULT_RANKINGSTATISTIC);
   uvar->LVuseAllTerms = TRUE;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
