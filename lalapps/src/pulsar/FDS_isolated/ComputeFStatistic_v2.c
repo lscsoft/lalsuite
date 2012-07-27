@@ -157,11 +157,13 @@ typedef struct
   REAL8 tauTransMarg;		/**< time to marginalize the Fstat-map to compute transient-search Bayes [s] */
 } timingInfo_t;
 
+/** Enum for which statistic is used to "rank" significance of candidates
+ */
 typedef enum {
   RANKBY_F  = 0, 	/**< rank candidates by F-statistic */
   RANKBY_NC = 1,	/**< HierarchSearchGCT also has RANKBY_NC = 1, not applicable here */
   RANKBY_LV = 2  	/**< rank candidates by LV-statistic */
-} toplistRankingStat;
+} RankingStat_t;
 
 
 /** Configuration settings required for and defining a coherent pulsar search.
@@ -188,7 +190,7 @@ typedef struct {
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
   REAL4 LVlogRhoTerm;                       /**< log(rho^4/70) of LV line-prior amplitude 'rho' */
   REAL4Vector *LVloglX;                     /**< vector of line-prior ratios per detector {l1, l2, ... } */
-  toplistRankingStat ToplistRanking;  /**< rank toplist candidates according to F or LV */
+  RankingStat_t RankingStatistic;           /**< rank candidates according to F or LV */
 } ConfigVariables;
 
 
@@ -293,7 +295,7 @@ typedef struct {
   CHAR *outputFstatAtoms;	/**< output per-SFT, per-IFO 'atoms', ie quantities required to compute F-stat */
 
   BOOLEAN computeLV;		/**< get single-IFO F-stats and compute Line Veto stat */
-  CHAR *ToplistRanking;/**< rank toplist candidates according to F or LV */
+  CHAR *RankingStatistic;	/**< rank candidates according to F or LV */
   BOOLEAN LVuseAllTerms;	/**< Use only leading term or all terms in Line Veto computation */
   REAL8   LVrho;		/**< Prior parameter rho_max_line for LineVeto statistic */
   LALStringVector *LVlX;	/**< Line-to-gauss prior ratios lX for LineVeto statistic */
@@ -761,7 +763,7 @@ int main(int argc,char *argv[])
 
       /* two types of threshold: fixed (TwoF- and/or LV-threshold) and dynamic (NumCandidatesToKeep) */
       BOOLEAN is1DlocalMax = FALSE;
-      if ( XLALCenterIsLocalMax ( GV.scanlineWindow, GV.ToplistRanking ) ) /* must be 1D local maximum */
+      if ( XLALCenterIsLocalMax ( GV.scanlineWindow, GV.RankingStatistic ) ) /* must be 1D local maximum */
         is1DlocalMax = TRUE;
       BOOLEAN isOver2FThreshold = FALSE; /* will always be checked, so start at 'FALSE' */
       if ( 2.0 * GV.scanlineWindow->center->Fstat.F >= uvar.TwoFthreshold ) /* fixed 2F threshold */
@@ -800,15 +802,19 @@ int main(int argc,char *argv[])
 	} /* if candidate is local maximum and over threshold */
 
       /* separately keep track of loudest candidate (for --outputLoudest) */
-      if ( uvar.computeLV )
+      switch ( GV.RankingStatistic )
         {
-          if ( thisFCand.LVstat > loudestFCand.LVstat )
-            loudestFCand = thisFCand;
-        }
-      else
-        {
+        case RANKBY_F:
           if ( thisFCand.Fstat.F > loudestFCand.Fstat.F )
             loudestFCand = thisFCand;
+          break;
+        case RANKBY_LV:
+          if ( thisFCand.LVstat > loudestFCand.LVstat )
+            loudestFCand = thisFCand;
+          break;
+        default:
+          XLAL_ERROR ( XLAL_EINVAL, "Invalid ranking statistic '%d', supported are 'F=0', and 'LV=2'\n", GV.RankingStatistic );
+          break;
         }
 
       /* add Fstatistic to histogram if needed */
@@ -997,10 +1003,12 @@ int main(int argc,char *argv[])
 
       /* sort toplist */
       LogPrintf ( LOG_DEBUG, "Sorting toplist ... ");
-      if ( GV.ToplistRanking == RANKBY_F )
+      if ( GV.RankingStatistic == RANKBY_F )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates );
-      else if ( GV.ToplistRanking == RANKBY_LV )
+      else if ( GV.RankingStatistic == RANKBY_LV )
         qsort_toplist ( GV.FstatToplist, compareFstatCandidates_LV );
+      else
+        XLAL_ERROR ( XLAL_EINVAL, "Ranking statistic '%d' undefined here, allowed are 'F=0' and 'LV=2'\n", GV.RankingStatistic );
       LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
       for ( el=0; el < GV.FstatToplist->elems; el ++ )
@@ -1221,8 +1229,8 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   uvar->computeLV = FALSE;
   #define DEFAULT_RANKTOPLIST "F"
-  uvar->ToplistRanking = LALCalloc (1, strlen(DEFAULT_RANKTOPLIST)+1);
-  strcpy (uvar->ToplistRanking, DEFAULT_RANKTOPLIST);
+  uvar->RankingStatistic = LALCalloc (1, strlen(DEFAULT_RANKTOPLIST)+1);
+  strcpy (uvar->RankingStatistic, DEFAULT_RANKTOPLIST);
   uvar->LVuseAllTerms = TRUE;
   uvar->LVrho = 0.0;
   uvar->LVlX = NULL;       /* NULL is intepreted as LVlX[X] = 1.0 for all X by XLALComputeLineVeto(Array) */
@@ -1301,7 +1309,7 @@ initUserVars (LALStatus *status, UserInput_t *uvar)
 
   LALregSTRINGUserStruct(status,outputFstatAtoms,0,  UVAR_OPTIONAL, "Output filename *base* for F-statistic 'atoms' {a,b,Fa,Fb}_alpha. One file per doppler-point.");
   LALregBOOLUserStruct(status,  computeLV,	0,  UVAR_OPTIONAL, "Get single-detector F-stats and compute Line Veto statistic.");
-  LALregSTRINGUserStruct(status,ToplistRanking,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
+  LALregSTRINGUserStruct(status,RankingStatistic,0,  UVAR_DEVELOPER, "Rank toplist candidates according to 'F' or 'LV' statistic");
   LALregREALUserStruct(status,  LVrho,		0,  UVAR_OPTIONAL, "LineVeto: Prior rho_max_line, must be >=0");
   LALregLISTUserStruct(status,  LVlX,		0,  UVAR_OPTIONAL, "LineVeto: line-to-gauss prior ratios lX for different detectors X, length must be numDetectors. Defaults to lX=1,1,..");
   LALregREALUserStruct(status, 	LVthreshold,	0,  UVAR_OPTIONAL, "Set the threshold for selection of LV");
@@ -1782,23 +1790,23 @@ InitFStat ( LALStatus *status, ConfigVariables *cfg, const UserInput_t *uvar )
 
   /* ----- set up toplist if requested ----- */
   if ( toplist_length > 0 ) {
-    if ( strcmp(uvar->ToplistRanking, "F") == 0 )
-     cfg->ToplistRanking = RANKBY_F;
-    else if ( strcmp(uvar->ToplistRanking, "LV") == 0 )
+    if ( strcmp(uvar->RankingStatistic, "F") == 0 )
+     cfg->RankingStatistic = RANKBY_F;
+    else if ( strcmp(uvar->RankingStatistic, "LV") == 0 )
       {
         if ( !uvar->computeLV ) {
-          XLALPrintError ("\nERROR: Toplist ranking by LV-stat only possible if --computeLV given.\n\n");
+          XLALPrintError ("\nERROR: Ranking by LV-stat only possible if --computeLV given.\n\n");
           ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
         }
-        cfg->ToplistRanking = RANKBY_LV;
+        cfg->RankingStatistic = RANKBY_LV;
       }
     else
       {
-        XLALPrintError ("\nERROR: Invalid value specified for toplist ranking - supported are 'F' and 'LV'.\n\n");
+        XLALPrintError ("\nERROR: Invalid value specified for candidate ranking - supported are 'F' and 'LV'.\n\n");
         ABORT (status, COMPUTEFSTATISTIC_EINPUT, COMPUTEFSTATISTIC_MSGEINPUT );
       }
 
-    if ( cfg->ToplistRanking == RANKBY_LV )
+    if ( cfg->RankingStatistic == RANKBY_LV )
       {
         if ( create_toplist( &(cfg->FstatToplist), toplist_length, sizeof(FstatCandidate), compareFstatCandidates_LV) != 0 )
           ABORT (status, COMPUTEFSTATISTIC_EMEM, COMPUTEFSTATISTIC_MSGEMEM );
@@ -2573,10 +2581,9 @@ XLALCenterIsLocalMax ( const scanlineWindow_t *scanWindow, const UINT4 rankingSt
          return FALSE;
 
     }
-
   else
     {
-      XLALPrintError ("Unsupported ranking statistic! Supported: 'F' and 'LV'.\n");
+      XLALPrintError ("Unsupported ranking statistic '%d' ! Supported: 'F=0' and 'LV=2'.\n", rankingStatistic );
       return FALSE;
     }
 
