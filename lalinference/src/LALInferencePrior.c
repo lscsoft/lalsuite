@@ -958,8 +958,8 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
       *(LALInferenceVariables **)LALInferenceGetVariable(priorArgs,
                                                          "kDTreePriorTemplate");
     
-    UINT4 Ncell = 16; /* number of points in a prior cell - i.e. controls
-                         how fine or coarse the prior looks (default to 16) */ 
+    UINT4 Ncell = 8; /* number of points in a prior cell - i.e. controls
+                        how fine or coarse the prior looks (default to 8) */ 
       
     if( LALInferenceCheckVariable( priorArgs, "kDTreePriorNcell" ) )
       Ncell = *(UINT4 *)LALInferenceGetVariable( priorArgs,"kDTreePriorNcell");
@@ -968,6 +968,7 @@ void LALInferenceDrawFromPrior( LALInferenceVariables *output,
     REAL8 *proposedPt = XLALCalloc(tree->dim, sizeof(REAL8));
 
     /* A randomly-chosen point from those in the tree. */
+    //LALInferenceKDDrawFromBox(rdm, tree, proposedPt, Ncell);
     LALInferenceKDDrawEigenFrame(rdm, tree, proposedPt, Ncell);
     LALInferenceKDREAL8ToVariables(output, proposedPt, template);
   }

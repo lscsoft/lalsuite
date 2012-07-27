@@ -73,7 +73,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
     /*fprintf(bugtest,"getting model in log like func\n");*/
     get_model( datatemp2 );
     datatemp2 = datatemp2->next;
-		
+
     /* If modeltype is pinsf need to advance data on to next, so this loop only
      runs once if there is only 1 det*/
     if ( !strcmp( modeltype, "pinsf" ) ) datatemp2 = datatemp2->next;
@@ -91,8 +91,6 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars,
   
     REAL8Vector *sumDat = NULL;
     UINT4Vector *chunkLengths = NULL;
-    
-    /*fprintf(bugtest,"calc log like for one set of data\n");*/
     
     sumDat = *(REAL8Vector **)LALInferenceGetVariable( datatemp3->dataParams, 
                                                        "sumData" );
@@ -170,7 +168,6 @@ REAL8 priorFunction( LALInferenceRunState *runState,
   
   /* check that parameters are with their prior ranges */
   if( !in_range( runState->priorArgs, params ) ) return -INFINITY;
-  //LALInferenceCyclicReflectiveBound( params, runState->priorArgs );
   
   /* if a k-d tree prior exists ONLY use that */
   if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePrior" ) &&
@@ -185,8 +182,8 @@ REAL8 priorFunction( LALInferenceRunState *runState,
       *(LALInferenceVariables **)LALInferenceGetVariable(runState->priorArgs,
                                                          "kDTreePriorTemplate");
     
-    UINT4 Ncell = 16; /* number of points in a prior cell - i.e. controls
-                         how fine or coarse the prior looks (default to 16) */ 
+    UINT4 Ncell = 8; /* number of points in a prior cell - i.e. controls
+                         how fine or coarse the prior looks (default to 8) */ 
       
     if( LALInferenceCheckVariable( runState->priorArgs, "kDTreePriorNcell" ) ){
       Ncell = *(UINT4 *)LALInferenceGetVariable( runState->priorArgs,
@@ -209,8 +206,8 @@ REAL8 priorFunction( LALInferenceRunState *runState,
     
     /* get log probability of current point - taken from the function
        LALInferenceKDLogProposalRatio() in LALInference.c */
-    //REAL8 logVolume = LALInferenceKDLogCellEigenVolume(currentCell);
-    REAL8 logVolume = LALInferenceKDLogCellVolume(currentCell);
+    REAL8 logVolume = LALInferenceKDLogCellEigenVolume(currentCell);
+    // REAL8 logVolume = LALInferenceKDLogCellVolume(currentCell);
     REAL8 logCellFactor = log((REAL8)currentCell->npts / (REAL8)tree->npts);
     
     prior = logVolume + logCellFactor;
@@ -425,8 +422,24 @@ live point for each array!", __func__);
 /** \brief Create a k-d tree from prior samples
  *
  * This function creates a k-d tree from prior samples for use as a prior
- * distribution in the algorithm. The points in the output tree are scaled to
- * the prior ranges specified on the command line.
+ * distribution in the algorithm. The ranges of the tree dimensions (parameters)
+ * are calculated from the maximum and minimum values of the parameter. If the
+ * the lower and upper values are closer than half of there overall range to
+ * those specified in the prior file then the prior file values are used.
+ * Otherwise the upper/lower value + half the overall range is used. In this
+ * case the prior ranges set in priorArgs, and scale factors, will need to be
+ * replaced. [NOTE: This case will mean that the whole prior range specified
+ * may not be searched, however the prior samples would suggest that there is
+ * very little probability of information existing in the excluded areas]. The
+ * reason for not just using the full prior ranges is that if the prior samples
+ * are tightly peaked in a small area of the prior space the k-D tree
+ * resolution is poor and can cause an unwanted broadening of the prior e.g. if
+ * the h0 samples are peaked at zero with a distribution width of ~1e-24, but
+ * the prior range is set from 0 to 1e-22 then new samples drawn from a k-D tree
+ * produced with the full range in h0 yields a broader distribution than
+ * required.
+ * 
+ * [NOTE: it is not obvious how this would affect evidence comparisons!] 
  * 
  * \param runState [in] A pointer to the LALInferenceRunState
  */
@@ -436,7 +449,8 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
   UINT4 nsamp = 0, i = 0, cnt = 0;
   
   LALInferenceVariableItem *samp = NULL; /* a single sample */
-  REAL8 *low = NULL, *high = NULL; /* upper and lower bounds of tree */
+  REAL8 *low = NULL, *high = NULL;
+  REAL8 *lownew = NULL, *highnew = NULL; /* upper and lower bounds of tree */
   REAL8 *pt = NULL;
   size_t ndim = 0;
   
@@ -471,61 +485,156 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
      be adding log likelihood, or log prior values */
   samp = posterior[0]->head;
   while ( samp ){
+    UINT4 change = 0; /* set it a range has changed */
+    
     if ( samp->vary != LALINFERENCE_PARAM_FIXED &&
          samp->vary != LALINFERENCE_PARAM_OUTPUT ) {
+      /* get the minimum and maximum prior sample and the range */
+      REAL8 maxvaltmp = -INFINITY, minvaltmp = INFINITY;
+      REAL8 posthigh = 0., postlow = 0., difflh = 0.;
+      REAL8 lowr = 0., highr = 0.;
+      
+      /* get the original scale factors */
+      CHAR scalePar[VARNAME_MAX] = "";
+      CHAR scaleMinPar[VARNAME_MAX] = "";
+      REAL8 scale = 0., scaleMin = 0.;
+        
+      sprintf(scalePar, "%s_scale", samp->name);
+      scale = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams,
+                                                 scalePar );
+      sprintf(scaleMinPar, "%s_scale_min", samp->name);
+      scaleMin = *(REAL8 *)LALInferenceGetVariable(
+          runState->data->dataParams, scaleMinPar );
+    
+      for ( UINT4 k = 0; k < nsamp; k++ ){
+        REAL8 val = *(REAL8 *)LALInferenceGetVariable( posterior[k], 
+                                                       samp->name );
+    
+        if ( val < minvaltmp ) minvaltmp = val;
+        if ( val > maxvaltmp ) maxvaltmp = val;
+      }
+      
+      /* max and min of the prior samples */
+      posthigh = maxvaltmp;
+      postlow = minvaltmp;
+
+      difflh = posthigh - postlow; /* range of the samples */
+      
+      /* dynamically allocate memory for the k-D tree ranges */
+      low = XLALRealloc(low, sizeof(REAL8)*(cnt+1));
+      high = XLALRealloc(high, sizeof(REAL8)*(cnt+1));
+      lownew = XLALRealloc(lownew, sizeof(REAL8)*(cnt+1));
+      highnew = XLALRealloc(highnew, sizeof(REAL8)*(cnt+1));
+      
+      /* if there's a minmax prior check the ranges */
       if( LALInferenceCheckMinMaxPrior( runState->priorArgs,
                                         samp->name ) ){
-        cnt++;
-         
-        low = XLALRealloc(low, sizeof(REAL8)*cnt);
-        high = XLALRealloc(high, sizeof(REAL8)*cnt);
-      
         LALInferenceGetMinMaxPrior( runState->priorArgs, samp->name,
-                                    &(low[cnt-1]), &(high[cnt-1]) );
+                                    &lowr, &highr );
+       
+        highr = scaleMin + highr*scale;
+        lowr = scaleMin;
+        
+        /* check how far min and max samples are from the prior ranges */
+        if( posthigh > highr || posthigh < lowr ){
+          fprintf(stderr, "Error... prior samples are out of range!\n");
+          exit(1);
+        }
+        else if( posthigh + difflh/2. > highr )
+          high[cnt] = highr; /* just stick with prior range */
+        else{
+          high[cnt] = posthigh + difflh/2.; /* use max from samples+diff/2 */
+          change++; /* we have changed the range */
+        }
+        
+        if( postlow > highr || postlow < lowr ){
+          fprintf(stderr, "Error... prior samples are out of range!\n");
+          exit(1);
+        }
+        else if( postlow - difflh/2. < lowr )
+          low[cnt] = lowr; /* just stick with prior range */
+        else{
+          low[cnt] = postlow - difflh/2.; /* use min from samples-diff/2 */
+          change++; /* we have changed the range */
+        }
       }
       else if( LALInferenceCheckGaussianPrior( runState->priorArgs,
                                                samp->name ) ){
-        /* REAL8 mn, stddiv; */
-        REAL8 postlow, posthigh, difflh;
-        
-        cnt++;
-        
-        low = XLALRealloc(low, sizeof(REAL8)*cnt);
-        high = XLALRealloc(high, sizeof(REAL8)*cnt);
-
-        /* LALInferenceGetGaussianPrior( runState->priorArgs, currentItem->name,
-                                      &mn, &stddiv ); */
-
-        /* find the maximum and minimum posterior point values */
-        REAL8 maxvaltmp = -INFINITY, minvaltmp = INFINITY;
-  
-        for ( UINT4 k = 0; k < nsamp; k++ ){
-          REAL8 val = *(REAL8 *)LALInferenceGetVariable( posterior[k], 
-                                                         samp->name );
-    
-          if ( val < minvaltmp ) minvaltmp = val;
-          if ( val > maxvaltmp ) maxvaltmp = val;
-        }
-  
-        posthigh = maxvaltmp;
-        postlow = minvaltmp;
-        
-        difflh = posthigh - postlow;
-
         /* to add a bit of room at either side add on half the difference */
-        low[cnt-1] = postlow - difflh/2.;
-        high[cnt-1] = posthigh + difflh/2.;
+        low[cnt] = postlow - difflh/2.;
+        high[cnt] = posthigh + difflh/2.;
+      
+        /* remove the Gaussian prior and replace with min/max range */
+        LALInferenceRemoveGaussianPrior( runState->priorArgs, samp->name );
+      
+        change++; /* the range will change */
       }
+      else{
+        fprintf(stderr, "Error... Prior type not specified!\n");
+        exit(1);
+      }
+      
+      /* change the prior ranges, the scale factors and the current params */
+      if( change != 0 ){
+        LALInferenceIFOData *data = runState->data;
+        fprintf(stderr, "Here\n");
+        REAL8 newscale = high[cnt] - low[cnt], newscaleMin = low[cnt];
+        
+        /* with the scaled parameters the k-D tree ranges will be between 0 and
+           1 */
+        lownew[cnt] = 0.;
+        highnew[cnt] = 1.;
+
+        INT4 ii = 0;
+             
+        /* now change the current param to reflect new ranges */
+        REAL8 var = *(REAL8 *)LALInferenceGetVariable( runState->currentParams,
+                                                       samp->name );
+        while( data ){          
+          /* rescale current parameter value */
+          if ( ii == 0 ){
+            ii++;
+
+            var = scaleMin + var*scale;
+            var = (var-newscaleMin)/newscale;
+           
+            LALInferenceSetVariable( runState->currentParams, samp->name, 
+                                     &var );
+          }
+          
+          /* change the scale factors */
+          LALInferenceRemoveVariable( data->dataParams, scalePar );
+          LALInferenceRemoveVariable( data->dataParams, scaleMinPar );
+
+          LALInferenceAddVariable( data->dataParams, scalePar, &newscale,
+LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+          LALInferenceAddVariable( data->dataParams, scaleMinPar, &newscaleMin,
+LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
+          
+          data = data->next;
+        }
+        
+        /* reset (or add) priorArgs */
+        LALInferenceAddMinMaxPrior( runState->priorArgs, samp->name,
+                                    &(lownew[cnt]), &(highnew[cnt]),
+                                    LALINFERENCE_REAL8_t );
+      }
+      else{
+        lownew[cnt] = (low[cnt] - scaleMin)/scale;
+        highnew[cnt] = (high[cnt] - scaleMin)/scale;
+      }
+      
+      cnt++;
     }
-    
+
     samp = samp->next;
   }
-
+  
   ndim = (size_t)cnt;
   pt = XLALMalloc(cnt*sizeof(REAL8));
-
+  
   /* set up tree */
-  priortree = LALInferenceKDEmpty( low, high, ndim );
+  priortree = LALInferenceKDEmpty( lownew, highnew, ndim );
   
   /* get template */
   LALInferenceCopyVariables( posterior[0], template );
@@ -534,34 +643,25 @@ void create_kdtree_prior( LALInferenceRunState *runState ){
   for( i = 0; i < nsamp; i++ ){
     samp = posterior[i]->head;
     
-    /* rescale sample */
-    CHAR scalePar[VARNAME_MAX] = "";
-    CHAR scaleMinPar[VARNAME_MAX] = "";
-    REAL8 scale = 0., scaleMin = 0.;
+    cnt = 0;
     
+    /* rescale samples with new scales */
     while( samp ){
       if ( samp->vary != LALINFERENCE_PARAM_FIXED &&
-         samp->vary != LALINFERENCE_PARAM_OUTPUT ) {
-        
-        sprintf(scalePar, "%s_scale", samp->name);
-        scale = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams,
-                                                   scalePar );
-    
-        sprintf(scaleMinPar, "%s_scale_min", samp->name);
-        scaleMin = *(REAL8 *)LALInferenceGetVariable(
-          runState->data->dataParams, scaleMinPar );
-        
+           samp->vary != LALINFERENCE_PARAM_OUTPUT ) {
+        REAL8 newscale = high[cnt] - low[cnt], newscaleMin = low[cnt];
         REAL8 val = *(REAL8 *)samp->value;
-        val = (val - scaleMin)/scale;
-       
+        val = (val - newscaleMin)/newscale;
+
         LALInferenceSetVariable( posterior[i], samp->name, &val );
+        
+        cnt++;
       }
       
       samp = samp->next;
     }
 
     LALInferenceKDVariablesToREAL8( posterior[i], pt, template );
-   
     LALInferenceKDAddPoint( priortree, pt );
   }
   
