@@ -389,7 +389,6 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
   UINT2        i;
   INT2         sign;
   CHAR         temp[20];
-  const CHAR   *charPtr, *charStopPtr;
   int outputAllocated = 0;
 
   if ( ! output )
@@ -407,31 +406,25 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
   if ( ! string )
     return output;
 
-  charPtr = string;
-  charStopPtr = string + strlen(string);
-
-  /* Strip whitespace */
-  while(charPtr < charStopPtr && isspace(*charPtr))
-    charPtr++;
-  while(charPtr < charStopPtr && isspace(*(charStopPtr - 1)))
-    charStopPtr--;
+  /* Strip leading whitespace */
+  string += strspn(string, "\t\n\v\f\r ");
 
   /* If the string is empty, it represents dimensionless */
-  if (charPtr == charStopPtr)
+  if ( ! *string )
     return output;
 
   /* Look for power of ten; note LALUnitsAsString is set up to say
    * "10^1" rather than "10", so need not allow for missing '^'
    */
-  if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^')
+  if (*string == '1' && *(string+1) == '0' && *(string+2) == '^')
   {
-    charPtr += 3;
+    string += 3;
     /* now pointing at first digit of power of ten (or minus sign) */
 
-    if ( *charPtr == '-'  )
+    if ( *string == '-'  )
     {
       sign = -1;
-      ++charPtr;
+      ++string;
     }
     else
     {
@@ -439,44 +432,44 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     }
 
     /* read power of ten into temp[]; return value of 1 means failure */
-    if ( readNumber( temp, &charPtr ) )
+    if ( readNumber( temp, &string ) )
     {
       if ( outputAllocated )
         LALFree( output );
       XLAL_ERROR_NULL( XLAL_EFAILED );
     }
-    /* charPtr now points to one after end of power of ten */
+    /* string now points to one after end of power of ten */
 
     output->powerOfTen = sign*atoi(temp);
 
     /* If the power of ten was all there was, return */
-    if (*charPtr == '\0')
+    if (*string == '\0')
       return output;
 
-    if ( *charPtr != ' ')
+    if ( *string != ' ')
     {
       if ( outputAllocated )
         LALFree( output );
       XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
-    ++charPtr;
-  } /* if (*charPtr == '1' && *(charPtr+1) == '0' && *(charPtr+2) == '^') */
+    ++string;
+  } /* if (*string == '1' && *(string+1) == '0' && *(string+2) == '^') */
 
-  /* charPtr now points to start of first unit */
+  /* string now points to start of first unit */
 
   /* Read units and exponents, one unit per pass of the following do loop */
   do
   {
     /* read unit name into temp[]; return value of 1 means failure */
-    if ( readString( temp, &charPtr ) )
+    if ( readString( temp, &string ) )
     {
       if ( outputAllocated )
         LALFree( output );
       XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
-    /* charPtr now points to one after end of unit name */
+    /* string now points to one after end of unit name */
 
     /* find which unit name this matches */
     for (i=0; strcmp(temp,lalUnitName[i]); ++i)
@@ -497,19 +490,19 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
-    if ( *charPtr == ' ' || *charPtr == '\0' )
+    if ( *string == ' ' || *string == '\0' )
     { /* We have only one power of the unit */
       output->unitNumerator[i] = 1;
     }
-    else if ( *charPtr == '^' )
+    else if ( *string == '^' )
     {
-      ++charPtr;
+      ++string;
       /* now points to the first digit of the exponent, or minus sign */
 
-      if ( *charPtr == '-'  )
+      if ( *string == '-'  )
       {
 	sign = -1;
-	++charPtr;
+	++string;
       }
       else
       {
@@ -518,7 +511,7 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
 
       /* read exponent numerator into temp[];
 	 return value of 1 means failure */
-      if ( readNumber( temp, &charPtr ) )
+      if ( readNumber( temp, &string ) )
       {
         if ( outputAllocated )
           LALFree( output );
@@ -526,22 +519,22 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       }
       output->unitNumerator[i] = sign * atoi(temp);
 
-      if ( *charPtr == '/' )
+      if ( *string == '/' )
       {
-	++charPtr;
+	++string;
 	/* now points to first digit of denominator */
 
 	/* read exponent denominator into temp[];
 	   return value of 1 means failure */
-	if ( readNumber( temp, &charPtr ) || temp[0] == '0')
+	if ( readNumber( temp, &string ) || temp[0] == '0')
         {
           if ( outputAllocated )
             LALFree( output );
           XLAL_ERROR_NULL( XLAL_EFAILED );
         }
 	output->unitDenominatorMinusOne[i] = atoi(temp) - 1;
-      } /* if ( *charPtr == '/' ) */
-    } /* else if ( *charPtr == '^' ) */
+      } /* if ( *string == '/' ) */
+    } /* else if ( *string == '^' ) */
     else
     {
       if ( outputAllocated )
@@ -549,10 +542,10 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
       XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
-    if ( *charPtr == ' ') ++charPtr;
+    if ( *string == ' ') ++string;
 
   }
-  while ( *charPtr != '\0' );
+  while ( *string != '\0' );
 
   return output;
 }
