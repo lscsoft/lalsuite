@@ -1773,7 +1773,6 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     REAL8 injtime=0.0;
    
     
-    while (tmpdata){
     tmpdata->modelParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	modelParams=tmpdata->modelParams;
     memset(modelParams,0,sizeof(LALInferenceVariables));
@@ -1826,9 +1825,6 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
         LALInferenceTemplateLAL(tmpdata);
       }
 
-    tmpdata=tmpdata->next;
-    
-    }
      
     LALInferenceVariables *currentParams=IFOdata->modelParams;
        
@@ -1888,7 +1884,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
   
   while (dataPtr != NULL) {
      
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (IFOdata->modelDomain == LALINFERENCE_DOMAIN_TIME) {
 	  printf("There is a problem. You seem to be using a time domain model into the frequency domain injection function!. Exiting....\n"); 
       exit(1);
     }
@@ -1903,7 +1899,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
                                              ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    timeshift =  (injtime - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
+    timeshift =  (injtime - (*(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * (timeshift);
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
@@ -1925,10 +1921,10 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
      chisquared = 0.0;
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
-      plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
+      plainTemplateReal = FplusScaled * IFOdata->freqModelhPlus->data->data[i].re  
+                          +  FcrossScaled * IFOdata->freqModelhCross->data->data[i].re;
+      plainTemplateImag = FplusScaled * IFOdata->freqModelhPlus->data->data[i].im  
+                          +  FcrossScaled * IFOdata->freqModelhCross->data->data[i].im;
 
       /* do time-shifting...             */
       /* (also un-do 1/deltaT scaling): */
