@@ -3,6 +3,7 @@ INCLUDES = -I$(top_builddir)/include
 lalmetaioincludedir = $(includedir)/lal
 lalmetaioinclude_HEADERS = \
 	LALMetaIOConfig.h \
+	LALMetaIOLibVCSInfo.h \
 	LALMetaIOVCSInfo.h \
 	LIGOLwXML.h \
 	LIGOLwXMLArray.h \

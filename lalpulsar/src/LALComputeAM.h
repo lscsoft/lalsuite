@@ -36,11 +36,6 @@
 #ifndef _LALCOMPUTEAM_H
 #define _LALCOMPUTEAM_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -92,7 +87,6 @@ extern "C" {
  */
 typedef struct tagAMCoeffs
 {
-  SWIGLAL_STRUCT(AMCoeffs);
   REAL4Vector     *a;          /**< (weighted) per-SFT \f$X\alpha\f$ antenna-pattern function \f$\widehat{a}_{X\alpha}\f$ */
   REAL4Vector     *b;          /**< (weighted) per-SFT \f$X\alpha\f$ antenna-pattern function \f$\widehat{b}_{X\alpha}\f$ */
   REAL4           A;           /**< summed antenna-pattern matrix coefficient: \f$\widehat{A}_X = \sum_{\alpha} \widehat{a}^2_{X\alpha}\f$ */
@@ -105,7 +99,6 @@ typedef struct tagAMCoeffs
  */
 typedef struct tagAMCoeffsParams
 {
-  SWIGLAL_STRUCT(AMCoeffsParams);
   BarycenterInput      *baryinput;  /**< data from Barycentring routine */
   EarthState           *earth;      /**< from LALBarycenter()           */
   EphemerisData        *edat;       /**< the ephemerides                */
@@ -141,7 +134,6 @@ typedef struct tagAMCoeffsParams
  * to use that fact.
  */
 typedef struct tagAntennaPatternMatrix {
-  SWIGLAL_STRUCT(AntennaPatternMatrix);
   REAL8 Ad; 		/**<  \f$\widehat{A} \equiv \sum_{X,\alpha} \widehat{a}^2_{X\alpha} \f$ */
   REAL8 Bd; 		/**<  \f$\widehat{B} \equiv \sum_{X,\alpha} \widehat{b}^2_{X\alpha} \f$ */
   REAL8 Cd; 		/**<  \f$\widehat{C} \equiv \sum_{X,\alpha} \widehat{a}_{X\alpha} \widehat{b}_{X\alpha}\f$ */
@@ -151,7 +143,6 @@ typedef struct tagAntennaPatternMatrix {
 
 /** Multi-IFO container for antenna-pattern coefficients \f$a_{X\alpha}, b_{X\alpha}\f$ and atenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */
 typedef struct tagMultiAMCoeffs {
-  SWIGLAL_STRUCT(MultiAMCoeffs);
   UINT4 length;			/**< number of IFOs */
   AMCoeffs **data;		/**< noise-weighted AM-coeffs \f$\widehat{a}_{X\alpha}\f$, and \f$\widehat{b}_{X\alpha}\f$ */
   AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$\mathcal{M}_{\mu\nu}\f$ */

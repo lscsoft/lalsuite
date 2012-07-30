@@ -199,7 +199,8 @@ void LALInferenceDifferentialEvolutionSpins(LALInferenceRunState *state, LALInfe
 
 /** Draws from an approximation to the true prior.  Flat in all
     variables except for: Mc^(-11/6), flat in cos(co-latitudes), flat
-    in sin(dec), dist^2*/
+    in sin(dec), dist^2.
+    WARNING: This seems to break detailed balance for the LALInferenceProposalTest */
 void LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
 
 /** Reflects the sky location through the plane formed by three
@@ -239,5 +240,11 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
  of polarisation, inclination and distance for the proposed sky location.
  See Vivien's thesis for the details of the equations implemented.*/
 void LALInferenceExtrinsicParamProposal(LALInferenceRunState *runState, LALInferenceVariables *proposedParams);
+
+/** Helper function to update the adaptive steps after each jump. Set accepted=1 if accepted, 0 otherwise */
+void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance);
+/** Helper function to setup the adaptive step proposals before the run */
+void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state);
+
 #endif
 

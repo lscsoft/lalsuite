@@ -20,11 +20,6 @@
 #ifndef _GENERATETAYLORCW_H
 #define _GENERATETAYLORCW_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 #include <lal/SimulateCoherentGW.h>
 #include <lal/SkyCoordinates.h>
@@ -113,7 +108,6 @@ h_\times(t) & = & A_\times \sin\phi(t) \;.
  * (that are set by the waveform generator).
  */
 typedef struct tagTaylorCWParamStruc {
-  SWIGLAL_STRUCT(TaylorCWParamStruc);
   /** \name Passed parameters. */
   /*@{*/
   SkyPosition position; /**< The location of the source on the sky, normally in equatorial coordinates */

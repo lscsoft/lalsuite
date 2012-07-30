@@ -43,7 +43,7 @@ void initializeNS(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
 void initStudentt(LALInferenceRunState *state);
 void initializeTemplate(LALInferenceRunState *runState);
-static void mc2masses(double mc, double eta, double *m1, double *m2);
+// static void mc2masses(double mc, double eta, double *m1, double *m2);
 void LogNSSampleAsMCMCSampleToArray(LALInferenceRunState *state, LALInferenceVariables *vars);                             
 void LogNSSampleAsMCMCSampleToFile(LALInferenceRunState *state, LALInferenceVariables *vars);                              
  
@@ -285,10 +285,6 @@ Nested sampling arguments:\n\
     /* use the ptmcmc proposal to sample prior */
     runState->proposal=&NSWrapMCMCLALProposal;
     REAL8 temp=1.0;
-    UINT4 dummy=0;
-    LALInferenceAddVariable(runState->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddVariable(runState->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-    LALInferenceAddVariable(runState->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
     LALInferenceAddVariable(runState->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 	
 	/* Default likelihood is the frequency domain one */
@@ -463,7 +459,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
 	LALPNOrder PhaseOrder=LAL_PNORDER_THREE_POINT_FIVE;
-	//int AmpOrder=0;
+	INT4 AmpOrder=0;
 	Approximant approx=TaylorF2;
 	REAL8 logDmin=log(1.0);
 	REAL8 logDmax=log(100.0);
@@ -476,6 +472,7 @@ void initVariables(LALInferenceRunState *state)
 	REAL8 phi_spin1_max=2.0*LAL_PI;
 	REAL8 theta_spin1_min=0.0;
 	REAL8 theta_spin1_max=LAL_PI;
+	REAL8 fRef=0.; /* freq. at which precessing "initial" cond. specified */
 	REAL8 etaMin=0.01;
 	REAL8 etaMax=0.25;
 	REAL8 dt=0.1;            /* Width of time prior */
@@ -505,6 +502,7 @@ Parameter arguments:\n\
 (--Dmin dist)\tMinimum distance in Mpc (1)\n\
 (--Dmax dist)\tMaximum distance in Mpc (100)\n\
 (--approx ApproximantorderPN)\tSpecify a waveform to use, (default TaylorF2threePointFivePN)\n\
+(--amporder INT)\tSpecify post-Newtonian amplitude order to use (defaults to 0. -1 will use highest available)\n\
 (--compmin min)\tMinimum component mass (1.0)\n\
 (--compmax max)\tMaximum component mass (30.0)\n\
 (--mtotalmin)\tMinimum total mass (2*compmin)\n\
@@ -514,6 +512,7 @@ Parameter arguments:\n\
 (--approx ApproximantphaseOrderPN)\tSet approximant (PhenSpin implicitly enables spin)\n\
 (--s1max SPIN)\tMax magnitude of spin (on both bodies!)\n\
 (--s1min SPIN)\tMin magnitude of spin (on both bodies!)\n\
+(--fref fRef)\tSpecify a reference frequency at which parameters are defined (default 0).\n\
 (--mcq)\tUse chirp mass and asymmetric mass ratio (m1/m2) as variables\n\
 (--crazyinjectionhlsign)\tFlip the sign of HL signal in likelihood function\n\
 (--pinparams [mchirp,asym_massratio,etc])\n\tList of parameters to set to injected values\n\
@@ -544,9 +543,13 @@ Parameter arguments:\n\
 		}
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
         fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
-		//AmpOrder=injTable->amp_order;
-		XLALGetOrderFromString(injTable->waveform,&PhaseOrder);
-		XLALGetApproximantFromString(injTable->waveform,&approx);
+		AmpOrder=injTable->amp_order;
+		PhaseOrder = XLALGetOrderFromString(injTable->waveform);
+		if( (int) PhaseOrder == XLAL_FAILURE)
+		  ABORTXLAL(&status);
+		approx = XLALGetApproximantFromString(injTable->waveform);
+		if( (int) approx == XLAL_FAILURE)
+		  ABORTXLAL(&status);
 		/* See if there are any parameters pinned to injection values */
 		if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
 			pinned_params=ppt->value;
@@ -571,10 +574,16 @@ Parameter arguments:\n\
 	ppt=LALInferenceGetProcParamVal(commandLine,"--approx");
 	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--approximant");
 	if(ppt){
-		XLALGetApproximantFromString(ppt->value,&approx);
-        	XLALGetOrderFromString(ppt->value,&PhaseOrder);
+		approx = XLALGetApproximantFromString(ppt->value);
+		if( (int) approx == XLAL_FAILURE)
+			ABORTXLAL(&status);
+        	PhaseOrder = XLALGetOrderFromString(ppt->value);
+	        if( (int) PhaseOrder == XLAL_FAILURE)
+	                ABORTXLAL(&status);
 	}
-	fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
+	ppt=LALInferenceGetProcParamVal(commandLine,"--amporder");
+	if(ppt) AmpOrder=atoi(ppt->value);
+	fprintf(stdout,"Templates will run using Approximant %i, phase order %i, amp order %i\n",approx,PhaseOrder,AmpOrder);
 
 	/* Set the modeldomain appropriately */
 	switch(approx)
@@ -705,6 +714,7 @@ Parameter arguments:\n\
 	
 	LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     	LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+	LALInferenceAddVariable(currentParams, "LAL_AMPORDER", &AmpOrder, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
 	
     ppt=LALInferenceGetProcParamVal(commandLine,"--mcq");
     if(ppt) /* Use MC and Q as sampling variables */
@@ -774,7 +784,21 @@ Parameter arguments:\n\
  	if(!LALInferenceCheckVariable(currentParams,"inclination")) LALInferenceAddVariable(currentParams, "inclination",     &tmpVal,            LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
 	tmpMin=0.0; tmpMax=LAL_PI;
 	LALInferenceAddMinMaxPrior(priorArgs, "inclination",     &tmpMin, &tmpMax,   LALINFERENCE_REAL8_t);
-	
+
+	/* 
+	 * fRef used by SpinTaylorT4 to determine which frequency the reference
+	 * phase and "initial" values of spin components refer to.
+	 * fRef=0 is the standard behavior consistent with other approximants.
+	 * it means the spin components are at the initial frequency and phiRef
+	 * is the "phase at coalescence" (the last sample)
+	 * fRef > 0 means the provided phiRef and spin components will be the
+	 * values when the binary has GW frequency fRef.
+	 */
+	ppt=LALInferenceGetProcParamVal(commandLine,"--fref");
+	if(ppt) fRef = atof(ppt->value);
+	else fRef = 0.;
+	LALInferenceAddVariable(currentParams, "fRef", &fRef, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+
 	/* Additional parameters for spinning waveforms */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--template");
 	if(ppt) if(!strcmp("PhenSpin",ppt->value)){ enable_spin=1;}
@@ -928,7 +952,7 @@ Arguments for each section follow:\n\n";
 	state->algorithm(state);
 
 	/* write injection with noise evidence information from algorithm */
-        LALInferencePrintInjectionSample(state);
+    LALInferencePrintInjectionSample(state);
 
 	/* end */
 	return(0);

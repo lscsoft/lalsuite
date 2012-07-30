@@ -23,7 +23,7 @@
 #define _LALMETAIOVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALMetaIOConfig.h>
+#include <lal/LALMetaIOLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALMETAIO_VCS_IDENT_STATUS "$" "LALMetaIOStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalMetaIOVCSInfo;
 static const struct tagLALVCSInfo lalMetaIOHeaderVCSInfo = { \
   LALMETAIO_VCS_NAME, \
   LALMETAIO_VERSION, \

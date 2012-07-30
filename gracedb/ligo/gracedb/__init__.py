@@ -22,11 +22,11 @@ __all__ = ["utils"]
 import httplib, mimetypes, urllib
 import socket
 import os, sys, shutil
-import simplejson
+import cjson
 
 DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/gracedb/cli"
 
-GIT_TAG = 'gracedb-1.2-1'
+GIT_TAG = 'gracedb-1.4-1'
 
 #-----------------------------------------------------------------
 # Util routines
@@ -318,7 +318,6 @@ class Client:
                 'connection': 'keep-alive',
             }
             url = "%s/%s" % (self.url, method)
-            self._connect()
             self._conn.request("POST", url, body, headers)
             response = self._conn.getresponse()
             rv = response.read()
@@ -526,7 +525,7 @@ Longer strings will be truncated.""" % {
             # get/print listing.
             response = client.listfiles(graceid)
             if response and response.status == 200:
-                for fname in simplejson.loads(response.read()):
+                for fname in cjson.decode(response.read()):
                     print(fname)
                 exit(0)
             print(response.reason)

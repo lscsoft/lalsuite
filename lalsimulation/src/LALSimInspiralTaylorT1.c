@@ -27,6 +27,7 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
 #define LAL_USE_COMPLEX_SHORT_MACROS
+#include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
@@ -43,6 +44,16 @@
 #define UNUSED
 #endif
 
+/* v at isco */
+#define LALSIMINSPIRAL_T1_VISCO 1.L/sqrt(6.L)
+/* use error codes above 1024 to avoid conflicts with GSL */
+#define LALSIMINSPIRAL_T1_TEST_ISCO 1025
+/* Number of variables used for these waveforms */
+#define LALSIMINSPIRAL_NUM_T1_VARIABLES 2
+/* absolute and relative tolerance for adaptive Runge-Kutta ODE integrator */
+#define LALSIMINSPIRAL_T1_ABSOLUTE_TOLERANCE 1.e-12
+#define LALSIMINSPIRAL_T1_RELATIVE_TOLERANCE 1.e-12
+
 /**
  * This structure contains the intrinsic parameters and post-newtonian 
  * co-efficients for the denergy/dv and flux expansions. 
@@ -58,7 +69,7 @@ typedef struct
 	expnCoeffsdEnergyFlux akdEF;
 
 	/* symmetric mass ratio and total mass */
-	REAL8 nu,m;
+	REAL8 nu,m,mchirp;
 } expnCoeffsTaylorT1;
 
 typedef REAL8 (SimInspiralTaylorT1Energy)(
@@ -98,7 +109,7 @@ typedef struct
 }XLALSimInspiralTaylorT1PNEvolveOrbitParams;
 
 /** 
- * This function is used in the call to the GSL integrator.
+ * This function is used in the call to the integrator.
  */
 static int 
 XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand(double UNUSED t, const double y[], double ydot[], void *params)
@@ -107,6 +118,19 @@ XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand(double UNUSED t, const double y[],
 	ydot[0] = -p->ak.av*p->flux(y[0],&p->ak.akdEF)/p->dEdv(y[0],&p->ak.akdEF);
 	ydot[1] = y[0]*y[0]*y[0]*p->ak.av;
 	return GSL_SUCCESS;
+}
+
+
+/**
+ * This function is used in the call to the integrator to determine the stopping condition.
+ */
+static int
+XLALSimInspiralTaylorT1StoppingTest(double UNUSED t, const double y[], double UNUSED ydot[], void UNUSED *params)
+{
+	if (y[0] >= LALSIMINSPIRAL_T1_VISCO) /* frequency above ISCO */
+		return LALSIMINSPIRAL_T1_TEST_ISCO;
+	else /* Step successful, continue integrating */
+		return GSL_SUCCESS;
 }
 
 
@@ -129,6 +153,9 @@ XLALSimInspiralTaylorT1Setup(
     ak->m = m1 + m2;
     REAL8 mu = m1 * m2 / ak->m;
     ak->nu = mu/ak->m;
+    ak->mchirp = ak->m * pow(ak->nu, 0.6);
+    /* convert mchirp from kg to s */
+    ak->mchirp *= LAL_G_SI / pow(LAL_C_SI, 3.0);
 
     /* Angular velocity co-efficient */
     ak->av = pow(LAL_C_SI, 3.0)/(LAL_G_SI*ak->m);
@@ -229,9 +256,10 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 		int O                  /**< twice post-Newtonian order */
 		)
 {
-	const UINT4 blocklen = 1024;
-	const REAL8 visco = 1./sqrt(6.);
+	double lengths;
+	int len, intreturn, idx;
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
+	ark4GSLIntegrator *integrator = NULL;
 	expnFuncTaylorT1 expnfunc;
 	expnCoeffsTaylorT1 ak;
 
@@ -242,74 +270,74 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	params.dEdv=expnfunc.dEnergy;
 	params.ak=ak;
 
-	REAL8 E;
-	UINT4 j;
 	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
-	double y[2];
-	double yerr[2];
-	const gsl_odeiv_step_type *T = gsl_odeiv_step_rk4;
-	gsl_odeiv_step *s;
-	gsl_odeiv_system sys;
+	double yinit[LALSIMINSPIRAL_NUM_T1_VARIABLES];
+	REAL8Array *yout;
 
-	/* setup ode system */
-	sys.function = XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand;
-	sys.jacobian = NULL;
-	sys.dimension = 2;
-	sys.params = &params;
+	/* length estimation (Newtonian) */
+	/* since integration is adaptive, we could use a better estimate */
+	lengths = (5.0/256.0) * pow(LAL_PI, -8.0/3.0) * pow(f_min * ak.mchirp, -5.0/3.0) / f_min;
 
-	/* allocate memory */
-	*V = XLALCreateREAL8TimeSeries( "ORBITAL_VELOCITY_PARAMETER", &tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
-	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tc, 0., deltaT, &lalDimensionlessUnit, blocklen );
-	if ( !V || !phi )
+	yinit[0] = cbrt(LAL_PI * LAL_G_SI * ak.m * f_min) / LAL_C_SI;
+	yinit[1] = 0.;
+
+	/* initialize the integrator */
+	integrator = XLALAdaptiveRungeKutta4Init(LALSIMINSPIRAL_NUM_T1_VARIABLES,
+		XLALSimInspiralTaylorT1PNEvolveOrbitIntegrand,
+		XLALSimInspiralTaylorT1StoppingTest,
+		LALSIMINSPIRAL_T1_ABSOLUTE_TOLERANCE, LALSIMINSPIRAL_T1_RELATIVE_TOLERANCE);
+	if( !integrator )
+	{
+		XLALPrintError("XLAL Error - %s: Cannot allocate integrator\n", __func__);
 		XLAL_ERROR(XLAL_EFUNC);
-
-	y[0] = (*V)->data->data[0] = cbrt(LAL_PI*LAL_G_SI*ak.m*f_min)/LAL_C_SI;
-	y[1] = (*phi)->data->data[0] = 0.;
-	E = expnfunc.energy(y[0],&(ak.akdEF));
-	if (XLALIsREAL8FailNaN(E))
-		XLAL_ERROR(XLAL_EFUNC);
-	j = 0;
-
-	s = gsl_odeiv_step_alloc(T, 2);
-	while (1) {
-		++j;
-		gsl_odeiv_step_apply(s, j*deltaT, deltaT, y, yerr, NULL, NULL, &sys);
-		if (XLALIsREAL8FailNaN(E))
-			XLAL_ERROR(XLAL_EFUNC);
-		/* ISCO termination condition */
-		if ( y[0] > visco ) {
-			XLALPrintInfo("XLAL Info - %s: PN inspiral terminated at ISCO\n", __func__);
-			break;
-		}
-		if ( j >= (*V)->data->length ) {
-			if ( ! XLALResizeREAL8TimeSeries(*V, 0, (*V)->data->length + blocklen) )
-				XLAL_ERROR(XLAL_EFUNC);
-			if ( ! XLALResizeREAL8TimeSeries(*phi, 0, (*phi)->data->length + blocklen) )
-				XLAL_ERROR(XLAL_EFUNC);
-		}
-		(*V)->data->data[j] = y[0];
-		(*phi)->data->data[j] = y[1];
 	}
-	gsl_odeiv_step_free(s);
 
-	/* make the correct length */
-	if ( ! XLALResizeREAL8TimeSeries(*V, 0, j) )
+	/* stop the integration only when the test is true */
+	integrator->stopontestonly = 1;
+
+	/* run the integration */
+	len = XLALAdaptiveRungeKutta4Hermite(integrator, (void *) &params, yinit, 0.0, lengths, deltaT, &yout);
+
+	intreturn = integrator->returncode;
+	XLALAdaptiveRungeKutta4Free(integrator);
+
+	if (!len) 
+	{
+		XLALPrintError("XLAL Error - %s: integration failed with errorcode %d.\n", __func__, intreturn);
 		XLAL_ERROR(XLAL_EFUNC);
-	if ( ! XLALResizeREAL8TimeSeries(*phi, 0, j) )
+	}
+
+	/* Adjust tStart so last sample is at time=0 */
+	XLALGPSAdd(&tc, -1.0*(len-1)*deltaT);
+
+	/* allocate memory for output vectors */
+	*V = XLALCreateREAL8TimeSeries( "ORBITAL_VELOCITY_PARAMETER", &tc, 0., deltaT, &lalDimensionlessUnit, len);
+	*phi = XLALCreateREAL8TimeSeries( "ORBITAL_PHASE", &tc, 0., deltaT, &lalDimensionlessUnit, len);
+
+	if ( !V || !phi )
+	{
+		XLALDestroyREAL8Array(yout);
 		XLAL_ERROR(XLAL_EFUNC);
+	}
 
-	/* adjust to correct time */
-	XLALGPSAdd(&(*V)->epoch, -1.0*j*deltaT);
-	XLALGPSAdd(&(*phi)->epoch, -1.0*j*deltaT);
-
+	/* Compute phase shift to get desired value phic in last sample */
 	/* phi here is the orbital phase = 1/2 * GW phase.
 	 * End GW phase specified on command line.
-	 * Adjust phase so phi = phi_end/2 at the end */
+	 * Adjust phase so phi = phic/2 at the end */
 
 	phic /= 2.;
-	phic -= (*phi)->data->data[j-1];
-	for (j = 0; j < (*phi)->data->length; ++j)
-		(*phi)->data->data[j] += phic;
+	phic -= yout->data[3*len-1];
+
+	/* Copy time series of dynamical variables */
+	/* from yout array returned by integrator to output time series */
+	/* Note the first 'len' members of yout are the time steps */
+	for( idx = 0; idx < len; idx++ )
+	{	
+		(*V)->data->data[idx]	= yout->data[len+idx];
+		(*phi)->data->data[idx]	= yout->data[2*len+idx] + phic;
+	}
+
+	XLALDestroyREAL8Array(yout);
 
 	return (int)(*V)->data->length;
 }

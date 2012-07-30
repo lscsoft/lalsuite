@@ -22,12 +22,7 @@
 #ifndef _LALVCSINFO_H
 #define _LALVCSINFO_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
-#include <lal/LALConfig.h>
+#include <lal/LALLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,36 +47,7 @@ extern "C" {
 #define LAL_VCS_IDENT_COMMITTER "$" "LALCommitter: @COMMITTER@ " "$"
 #define LAL_VCS_IDENT_STATUS "$" "LALStatus: @STATUS@ " "$"
 
-/* global variables for vcs information, defined in LALVCSInfo.c */
-extern const char *const lalVCSVersion;
-extern const char *const lalVCSId;
-extern const char *const lalVCSDate;
-extern const char *const lalVCSBranch;
-extern const char *const lalVCSTag;
-extern const char *const lalVCSAuthor;
-extern const char *const lalVCSCommitter;
-extern const char *const lalVCSStatus;
-
-/* define vcs information structure */
-#ifdef SWIG /* SWIG interface directives */
-%warnfilter(SWIGWARN_TYPEMAP_CHARLEAK) tagLALVCSInfo;
-#endif /* SWIG */
-typedef struct tagLALVCSInfo
-{
-  SWIGLAL_STRUCT(LALVCSInfo);
-  const char *name;
-  const char *version;
-  const char *vcsId;
-  const char *vcsDate;
-  const char *vcsBranch;
-  const char *vcsTag;
-  const char *vcsAuthor;
-  const char *vcsCommitter;
-  const char *vcsStatus;
-} LALVCSInfo;
-
-/* header and library vcs information structures */
-extern struct tagLALVCSInfo lalVCSInfo;
+/* header vcs information structure */
 static const struct tagLALVCSInfo lalHeaderVCSInfo = { \
   LAL_NAME, \
   LAL_VERSION, \

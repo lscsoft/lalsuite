@@ -54,6 +54,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
   "      --normRMSoutput=filename  File for the output of the normalized RMS from \n                                  the non-slided data",
   "      --sftDir=directory        Directory containing SFTs  (default=`./')",
+  "      --sftFile=path/filename   Path and filename of SFTs  (default=`*.sft')",
   "      --ephemDir=directory      Path to ephemeris files",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files",
   "\nTwoSpect search parameters:",
@@ -64,6 +65,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --skyRegion=STRING        Region of the sky to search (e.g. \n                                  (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or \n                                  allsky",
   "      --skyRegionFile=filename  File with the grid points",
   "      --linPolAngle=DOUBLE      Polarization angle to search using linear \n                                  polarization (when unspecified default is \n                                  circular polarization",
+  "      --harmonicNumToSearch=INT Number of harmonics of the Pmin to Pmax range \n                                  to search  (default=`1')",
   "\nTwoSpect threshold settings:",
   "      --ihsfactor=INT           Number of harmonics to sum in IHS algorithm  \n                                  (default=`5')",
   "      --ihsfar=DOUBLE           IHS FAR threshold",
@@ -165,11 +167,13 @@ init_help_array(void)
   gengetopt_args_info_help[53] = gengetopt_args_info_full_help[53];
   gengetopt_args_info_help[54] = gengetopt_args_info_full_help[54];
   gengetopt_args_info_help[55] = gengetopt_args_info_full_help[55];
-  gengetopt_args_info_help[56] = 0; 
+  gengetopt_args_info_help[56] = gengetopt_args_info_full_help[56];
+  gengetopt_args_info_help[57] = gengetopt_args_info_full_help[57];
+  gengetopt_args_info_help[58] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[57];
+const char *gengetopt_args_info_help[59];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -244,6 +248,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->ULfilename_given = 0 ;
   args_info->normRMSoutput_given = 0 ;
   args_info->sftDir_given = 0 ;
+  args_info->sftFile_given = 0 ;
   args_info->ephemDir_given = 0 ;
   args_info->ephemYear_given = 0 ;
   args_info->Pmin_given = 0 ;
@@ -253,6 +258,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->skyRegion_given = 0 ;
   args_info->skyRegionFile_given = 0 ;
   args_info->linPolAngle_given = 0 ;
+  args_info->harmonicNumToSearch_given = 0 ;
   args_info->ihsfactor_given = 0 ;
   args_info->ihsfar_given = 0 ;
   args_info->ihsfom_given = 0 ;
@@ -320,6 +326,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->normRMSoutput_orig = NULL;
   args_info->sftDir_arg = gengetopt_strdup ("./");
   args_info->sftDir_orig = NULL;
+  args_info->sftFile_arg = gengetopt_strdup ("*.sft");
+  args_info->sftFile_orig = NULL;
   args_info->ephemDir_arg = NULL;
   args_info->ephemDir_orig = NULL;
   args_info->ephemYear_arg = NULL;
@@ -333,6 +341,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->skyRegionFile_arg = NULL;
   args_info->skyRegionFile_orig = NULL;
   args_info->linPolAngle_orig = NULL;
+  args_info->harmonicNumToSearch_arg = 1;
+  args_info->harmonicNumToSearch_orig = NULL;
   args_info->ihsfactor_arg = 5;
   args_info->ihsfactor_orig = NULL;
   args_info->ihsfar_orig = NULL;
@@ -402,49 +412,51 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->ULfilename_help = gengetopt_args_info_full_help[19] ;
   args_info->normRMSoutput_help = gengetopt_args_info_full_help[20] ;
   args_info->sftDir_help = gengetopt_args_info_full_help[21] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[22] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[23] ;
-  args_info->Pmin_help = gengetopt_args_info_full_help[25] ;
-  args_info->Pmax_help = gengetopt_args_info_full_help[26] ;
-  args_info->dfmin_help = gengetopt_args_info_full_help[27] ;
-  args_info->dfmax_help = gengetopt_args_info_full_help[28] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[29] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[30] ;
-  args_info->linPolAngle_help = gengetopt_args_info_full_help[31] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[33] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[34] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[35] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[36] ;
-  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[37] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[38] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[39] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[40] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[42] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[43] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[44] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[45] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[46] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[48] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[49] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[50] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[52] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[53] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[54] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[55] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[57] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[58] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[59] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[60] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[61] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[62] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[63] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[64] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[65] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[66] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[67] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[68] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[69] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[70] ;
+  args_info->sftFile_help = gengetopt_args_info_full_help[22] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[23] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[24] ;
+  args_info->Pmin_help = gengetopt_args_info_full_help[26] ;
+  args_info->Pmax_help = gengetopt_args_info_full_help[27] ;
+  args_info->dfmin_help = gengetopt_args_info_full_help[28] ;
+  args_info->dfmax_help = gengetopt_args_info_full_help[29] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[30] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[31] ;
+  args_info->linPolAngle_help = gengetopt_args_info_full_help[32] ;
+  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[33] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[35] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[36] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[37] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[38] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[39] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[40] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[41] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[42] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[44] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[45] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[46] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[47] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[48] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[50] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[51] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[52] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[54] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[55] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[56] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[57] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[59] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[60] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[61] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[62] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[63] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[64] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[65] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[66] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[67] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[68] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[69] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[70] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[71] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[72] ;
   
 }
 
@@ -604,6 +616,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->normRMSoutput_orig));
   free_string_field (&(args_info->sftDir_arg));
   free_string_field (&(args_info->sftDir_orig));
+  free_string_field (&(args_info->sftFile_arg));
+  free_string_field (&(args_info->sftFile_orig));
   free_string_field (&(args_info->ephemDir_arg));
   free_string_field (&(args_info->ephemDir_orig));
   free_string_field (&(args_info->ephemYear_arg));
@@ -617,6 +631,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->skyRegionFile_arg));
   free_string_field (&(args_info->skyRegionFile_orig));
   free_string_field (&(args_info->linPolAngle_orig));
+  free_string_field (&(args_info->harmonicNumToSearch_orig));
   free_string_field (&(args_info->ihsfactor_orig));
   free_string_field (&(args_info->ihsfar_orig));
   free_string_field (&(args_info->ihsfom_orig));
@@ -752,6 +767,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "normRMSoutput", args_info->normRMSoutput_orig, 0);
   if (args_info->sftDir_given)
     write_into_file(outfile, "sftDir", args_info->sftDir_orig, 0);
+  if (args_info->sftFile_given)
+    write_into_file(outfile, "sftFile", args_info->sftFile_orig, 0);
   if (args_info->ephemDir_given)
     write_into_file(outfile, "ephemDir", args_info->ephemDir_orig, 0);
   if (args_info->ephemYear_given)
@@ -770,6 +787,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "skyRegionFile", args_info->skyRegionFile_orig, 0);
   if (args_info->linPolAngle_given)
     write_into_file(outfile, "linPolAngle", args_info->linPolAngle_orig, 0);
+  if (args_info->harmonicNumToSearch_given)
+    write_into_file(outfile, "harmonicNumToSearch", args_info->harmonicNumToSearch_orig, 0);
   if (args_info->ihsfactor_given)
     write_into_file(outfile, "ihsfactor", args_info->ihsfactor_orig, 0);
   if (args_info->ihsfar_given)
@@ -1429,6 +1448,7 @@ cmdline_parser_internal (
         { "ULfilename",	1, NULL, 0 },
         { "normRMSoutput",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
+        { "sftFile",	1, NULL, 0 },
         { "ephemDir",	1, NULL, 0 },
         { "ephemYear",	1, NULL, 0 },
         { "Pmin",	1, NULL, 0 },
@@ -1438,6 +1458,7 @@ cmdline_parser_internal (
         { "skyRegion",	1, NULL, 0 },
         { "skyRegionFile",	1, NULL, 0 },
         { "linPolAngle",	1, NULL, 0 },
+        { "harmonicNumToSearch",	1, NULL, 0 },
         { "ihsfactor",	1, NULL, 0 },
         { "ihsfar",	1, NULL, 0 },
         { "ihsfom",	1, NULL, 0 },
@@ -1732,6 +1753,20 @@ cmdline_parser_internal (
               goto failure;
           
           }
+          /* Path and filename of SFTs.  */
+          else if (strcmp (long_options[option_index].name, "sftFile") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->sftFile_arg), 
+                 &(args_info->sftFile_orig), &(args_info->sftFile_given),
+                &(local_args_info.sftFile_given), optarg, 0, "*.sft", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "sftFile", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Path to ephemeris files.  */
           else if (strcmp (long_options[option_index].name, "ephemDir") == 0)
           {
@@ -1854,6 +1889,20 @@ cmdline_parser_internal (
                 &(local_args_info.linPolAngle_given), optarg, 0, 0, ARG_DOUBLE,
                 check_ambiguity, override, 0, 0,
                 "linPolAngle", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Number of harmonics of the Pmin to Pmax range to search.  */
+          else if (strcmp (long_options[option_index].name, "harmonicNumToSearch") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->harmonicNumToSearch_arg), 
+                 &(args_info->harmonicNumToSearch_orig), &(args_info->harmonicNumToSearch_given),
+                &(local_args_info.harmonicNumToSearch_given), optarg, 0, "1", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "harmonicNumToSearch", '-',
                 additional_error))
               goto failure;
           

@@ -55,6 +55,7 @@ REAL4 calcMean(REAL4Vector *vector);
 REAL4 calcStddev(REAL4Vector *vector);
 REAL4 calcRms(REAL4Vector *vector);
 REAL4 calcMedian(REAL4Vector *vector);
+REAL4 calcMedian_ignoreZeros(REAL4Vector *vector);
 
 void sort_float_largest(REAL4Vector *output, REAL4Vector *input);
 void sort_float_smallest(REAL4Vector *output, REAL4Vector *input);

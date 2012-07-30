@@ -30,6 +30,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <complex.h>
 #include <sys/time.h>
 
 /* LAL headers */
@@ -73,6 +74,7 @@
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_sf_gamma.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -246,6 +248,8 @@ void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
 
 void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
                                  REAL8 *phi0, REAL8 *psi );
+
+void samples_prior( LALInferenceRunState *runState );
 
 #ifdef __cplusplus
 }

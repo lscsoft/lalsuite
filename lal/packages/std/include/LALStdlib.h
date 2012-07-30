@@ -59,6 +59,19 @@ by many LAL routines:
 #include <stdarg.h>
 #include <lal/LALMalloc.h>
 
+//! Define the macro ::RESTRICT for use in place of the C99
+//! <tt>restrict</tt> keyword, to retain compatibility with C++
+#undef RESTRICT
+#ifdef  __cplusplus
+#ifdef __GNUC__
+#define RESTRICT __restrict__
+#else
+#define RESTRICT
+#endif
+#else
+#define RESTRICT restrict
+#endif
+
 #ifdef  __cplusplus
 extern "C" {
 #endif

@@ -30,13 +30,23 @@
 extern "C" {
 #endif
 
-/* likelihood and prior */
+/* likelihood function */
 REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, 
                              LALInferenceIFOData *data,
                              LALInferenceTemplateFunction *get_pulsar_model );
-                             
+
+/* prior function */
 REAL8 priorFunction( LALInferenceRunState *runState, 
                      LALInferenceVariables *params );
+
+/* check params are within prior range */
+UINT4 in_range( LALInferenceVariables *priors, LALInferenceVariables *params );
+
+/* convert nested samples to posterior samples */
+void ns_to_posterior( LALInferenceRunState *runState );
+
+/* create kd-tree prior */
+void create_kdtree_prior( LALInferenceRunState *runState );
 
 #ifdef __cplusplus
 }

@@ -897,9 +897,9 @@ int main( int argc, char *argv[])
 					TSoffset=L1GPSshift;
 				else if(!strcmp(IFOnames[i],"V1"))
 					TSoffset=V1GPSshift;
-				/* datastart = realstart;
+				datastart = realstart;
 				XLALGPSAdd(&datastart, TSoffset);
-				fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);*/
+				fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realstart.gpsSeconds+1e-9*realstart.gpsNanoSeconds,datastart.gpsSeconds+1e-9*datastart.gpsNanoSeconds);
 			}
 		}
 		
@@ -959,11 +959,11 @@ int main( int argc, char *argv[])
                         	if( ( !strcmp(IFOnames[i],"H1") && H1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"L1") &&
                                         L1GPSshift != 0.0 ) || ( !strcmp(IFOnames[i],"V1") && V1GPSshift != 0.0 ) ) {
                                 if(!strcmp(IFOnames[i],"H1"))
-                                        TSoffset=H1GPSshift;
+                                        TSoffset=-H1GPSshift;
                                 else if(!strcmp(IFOnames[i],"L1"))
-                                        TSoffset=L1GPSshift;
+                                        TSoffset=-L1GPSshift;
                                 else if(!strcmp(IFOnames[i],"V1"))
-                                        TSoffset=V1GPSshift;
+                                        TSoffset=-V1GPSshift;
                                 XLALGPSAdd(&segmentStart, TSoffset);
                                 fprintf(stderr,"Slid %s by %f s from %10.10lf to %10.10lf\n",IFOnames[i],TSoffset,realsegstart.gpsSeconds+1e-9*realsegstart.gpsNanoSeconds,segmentStart.gpsSeconds+1e-9*segmentStart.gpsNanoSeconds);
                         	}

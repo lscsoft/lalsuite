@@ -1,3 +1,9 @@
+lalinference (0.4.0-1) unstable; urgency=low
+
+  * LALInference 0.4.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 13 May 2012 16:59:04 +0100
+
 lalinference (0.3.0-1) unstable; urgency=low
 
   * LALInference 0.3.0

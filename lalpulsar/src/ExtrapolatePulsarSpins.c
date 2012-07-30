@@ -180,6 +180,12 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut,		/**< output fkdot array */
   REAL8 kfact, dtauk;
   PulsarSpins inSpins;
 
+  /* if DeltaTau is zero, just copy fkdotIn to fkdotOut */
+  if ( DeltaTau == 0.0 ) {
+    memmove ( fkdotOut, fkdotIn, sizeof(PulsarSpins) );
+    return XLAL_SUCCESS;
+  }
+
   /* keep a local copy of input to allow the input- and output- pointers to be identical */
   memcpy ( inSpins, fkdotIn, sizeof(PulsarSpins) );
 

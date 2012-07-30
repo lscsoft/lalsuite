@@ -146,7 +146,7 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	(--randomseed seed           Random seed for Nested Sampling)\n\n";
  */
 	LALInferenceRunState *irs=NULL;
-//	LALInferenceIFOData *ifoPtr, *ifoListStart;
+	LALInferenceIFOData *ifoPtr;
 	ProcessParamsTable *ppt=NULL;
 	unsigned long int randomseed;
 	struct timeval tv;
@@ -181,6 +181,11 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	fprintf(stdout, " initialize(): random seed: %lu\n", randomseed);
 	gsl_rng_set(irs->GSLrandom, randomseed);
 	
+	/* Add a site for the inclination-distance jump */
+	ifoPtr=calloc(1,sizeof(LALInferenceIFOData));
+	ifoPtr->detector=calloc(1,sizeof(LALDetector));
+	memcpy(ifoPtr->detector,&lalCachedDetectors[LALDetectorIndexLHODIFF],sizeof(LALDetector));
+	irs->data=ifoPtr;
 	return(irs);
 }
 
@@ -206,20 +211,20 @@ void initVariables(LALInferenceRunState *state)
 //	REAL8 mMin=1.0,mMax=30.0,MTotMax=35.0;
 	REAL8 a_spin2_max=1.0, a_spin1_max=1.0;
 	REAL8 a_spin2_min=0.0, a_spin1_min=0.0;
-	REAL8 phi_spin1_min=-LAL_PI;
-	REAL8 phi_spin1_max=LAL_PI;
-	REAL8 theta_spin1_min=-LAL_PI/2.0;
-	REAL8 theta_spin1_max=LAL_PI/2.0;	
+	REAL8 phi_spin1_min=0;
+	REAL8 phi_spin1_max=2.0*LAL_PI;
+	REAL8 theta_spin1_min=0.;
+	REAL8 theta_spin1_max=LAL_PI;	
 	REAL8 qMin=0.0;
 	REAL8 qMax=1.0;
 	REAL8 dt=0.1;            /* Width of time prior */
 	REAL8 tmpMin,tmpMax,tmpVal;
-    REAL8 one=1.0;
+	REAL8 one=1.0;
 	memset(currentParams,0,sizeof(LALInferenceVariables));
 	memset(&status,0,sizeof(LALStatus));
 	INT4 enable_spin=0;
 	INT4 aligned_spin=0;
-    gsl_rng *RNG=state->GSLrandom;
+	gsl_rng *RNG=state->GSLrandom;
 	char help[]="\
 	Parameter arguments:\n\
 	(--qmin eta)\tMinimum eta\n\
@@ -248,8 +253,14 @@ void initVariables(LALInferenceRunState *state)
 	if(ppt){
 		if(strstr(ppt->value,"TaylorF2")) approx=TaylorF2;
 		else
-			XLALGetApproximantFromString(ppt->value,&approx);
-		XLALGetOrderFromString(ppt->value,&PhaseOrder);
+		{
+			approx = XLALGetApproximantFromString(ppt->value);
+			if( (int) approx == XLAL_FAILURE)
+				ABORTXLAL(&status); 
+		}
+                PhaseOrder = XLALGetOrderFromString(ppt->value);
+                if ( (int) PhaseOrder == XLAL_FAILURE)
+                        ABORTXLAL(&status);
 	}
 	//fprintf(stdout,"Templates will run using Approximant %i, phase order %i\n",approx,PhaseOrder);
 	
@@ -454,9 +465,10 @@ int main(int argc, char *argv[]) {
 	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	//state->prior=LALInferenceInspiralPriorNormalised;
-    state->prior=LALInferenceInspiralPrior;
+	state->prior=LALInferenceInspiralPrior;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	state->proposal=&NSWrapMCMCLALProposal;
+	state->proposalStats = calloc(1,sizeof(LALInferenceVariables));
 	
 	/* Set up a sample to evolve */
     LALInferenceVariables **samples=calloc(sizeof(LALInferenceVariables *),NCOV);
@@ -469,6 +481,8 @@ int main(int argc, char *argv[]) {
         LALInferenceCopyVariables(state->currentParams,samples[i]);
         LALInferenceDrawFromPrior(samples[i], state->priorArgs, state->GSLrandom );
         /* scatter points for CVM calculation */
+        REAL8 prior = state->prior(state,samples[i]);
+	LALInferenceSetVariable(samples[i],"logPrior",&prior);
     }
     state->currentParams=samples[0];
     gsl_matrix **cvm=calloc(1,sizeof(gsl_matrix *));
@@ -499,26 +513,15 @@ int main(int argc, char *argv[]) {
 	LALInferenceAddVariable(state->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	
 	LALInferenceAddVariable(state->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
-    
-    /* set up k-D tree if required and not already set */
-    LALInferenceSetupkDTreeNSLivePoints( state );
-    
-
 	
+	/* set up k-D tree if required and not already set */
+	LALInferenceSetupkDTreeNSLivePoints( state );
+	LALInferenceSetupAdaptiveProposals(state);
+    
 	/* Set up the proposal function requirements */
 	LALInferenceAddVariable(state->algorithmParams,"Nmcmc",&thinfac,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
 	LALInferenceAddVariable(state->algorithmParams,"logLmin",&logLmin,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	
-	/* Use the PTMCMC proposal to sample prior */
-	
-	state->proposal=&NSWrapMCMCLALProposal;
-	REAL8 temp=1.0;
-	UINT4 dummy=0;
-	LALInferenceAddVariable(state->proposalArgs, "adaptableStep", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &dummy, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_OUTPUT);
-	LALInferenceAddVariable(state->proposalArgs,"temperature",&temp,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
-	
+
 	/* Open the output file */
 	if(filename) outfile=fopen(filename,"w");
 	if(!outfile) fprintf(stdout,"No output file specified, internal testing only\n");
@@ -526,17 +529,15 @@ int main(int argc, char *argv[]) {
 	/* Burn in */
 	LALInferenceNestedSamplingOneStep(state);
 	
-	
 	/* Evolve with fixed likelihood */
 	for(i=0;i<Nmcmc*thinfac;i++){
 	  LALInferenceMCMCSamplePrior(state);
 	  /* output sample */
-      if(!(i%thinfac)){
-        if(state->logsample) state->logsample(state,state->currentParams);
-        if(outfile) LALInferencePrintSample(outfile,state->currentParams);
-	if(outfile) fprintf(outfile,"\n");
-      }
-	  
+	  if(!(i%thinfac)){
+	    if(state->logsample) state->logsample(state,state->currentParams);
+	    if(outfile) LALInferencePrintSample(outfile,state->currentParams);
+	    if(outfile) fprintf(outfile,"\n");
+	  } 
 	}
     if(outfile) fclose(outfile);
 	outfile=fopen("headers.txt","w");
@@ -593,6 +594,8 @@ REAL8 PriorCDF(const char *name, const REAL8 x, LALInferenceVariables *priorArgs
     REAL8 min=0,max=0;
     LALInferenceGetMinMaxPrior(priorArgs,name,&min,&max);
     if(!strcmp(name,"inclination")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"theta_spin1")) return(FlatInCosine(x,min,max));
+    if(!strcmp(name,"theta_spin2")) return(FlatInCosine(x,min,max));
     if(!strcmp(name,"declination")) return(FlatInSine(x,min,max));
     if(!strcmp(name,"distance")) return(rSquaredCDF(x,min,max));
     if(!strcmp(name,"logdistance")) return(rSquaredCDF(exp(x),exp(min),exp(max)));

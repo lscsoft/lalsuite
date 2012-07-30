@@ -22,19 +22,27 @@ logLcol=-1 # default to last column for inspnest
 (opts,args)=parser.parse_args()
 
 if opts.headers is None:
-    headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
+    # Look for a standard headers file
+    defaultparamfilename=args[0]+'_params.txt'
+    if os.access(defaultparamfilename,os.R_OK):
+        headerfilename=defaultparamfilename
 else:
-    headerfile=open(opts.headers,'r')
+    headerfilename=opts.headers
+
+if headerfilename is not None:
+    headerfile=open(headerfilename,'r')
     headerstr=headerfile.readline()
     headerfile.close()
+else: # old inspnest defaults
+    headerstr='mchirp\t eta\t time\t phi0\t dist\t ra\t dec\t psi\t iota\t logL'
 
 headers=headerstr.lower().split()
 logLcol=headers.index('logl')
 
 if opts.Nlive is None:
 	parser.error('You must specify a number of live points using --Nlive')
-if opts.out is None:
-	parser.error('You must specify an output file')
+#if opts.out is None:
+#	parser.error('You must specify an output file')
 
 if len(args)==0:
 	parser.error('No input files specified, exiting')
@@ -121,16 +129,16 @@ noiseZ=Bfiles[0][2]
 
 logLmax=d_sorted[-1,logLcol]
 
-outfile=open(opts.out,'w')
-for row in d_sorted:
-	for i in row:
-		outfile.write('%f\t'%(i))
-	outfile.write('\n')
-outfile.close()
-
-Bfile=open(opts.out+'_B.txt','w')
-Bfile.write('%f %f %f %f\n'%(logZ-noiseZ,logZ,noiseZ,logLmax-noiseZ))
-Bfile.close()
+if opts.out is not None:
+    outfile=open(opts.out,'w')
+    for row in d_sorted:
+        for i in row:
+            outfile.write('%f\t'%(i))
+        outfile.write('\n')
+    outfile.close()
+    Bfile=open(opts.out+'_B.txt','w')
+    Bfile.write('%f %f %f %f\n'%(logZ-noiseZ,logZ,noiseZ,logLmax-noiseZ))
+    Bfile.close()
 
 if opts.pos is not None:
 	pos=nest2pos_par(d_sorted,weights)
@@ -143,6 +151,7 @@ if opts.pos is not None:
 			posfile.write('%f\t'%(i))
 		posfile.write('\n')
 	posfile.close()
+
 if(os.access(args[0]+'_params.txt',os.R_OK)):
     import shutil
     if opts.pos:

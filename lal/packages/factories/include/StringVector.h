@@ -54,24 +54,7 @@ extern "C" {
 /*---------- exported prototypes [API] ----------*/
 
 #ifdef SWIG /* SWIG interface directives */
-/* disable keywords arguments for XLALCreateStringVector */
-%feature("kwargs", 0) XLALCreateStringVector;
-/* ensure that SWIG generates "compact" default arguments,
-   i.e. it only generates one wrapping function where all
-   missing arguments are assigned NULL (it should do this
-   anyway, since we're inside an extern "C" block and SWIG
-   doesn't do any overloading for C-linkage functions) */
-%feature("compactdefaultargs") XLALCreateStringVector;
-/* add 20 optional arguments to XLALCreateStringVector,
-   so that it can be called with up to 21 arguments */
-%varargs(20, CHAR *arg = NULL) XLALCreateStringVector;
-/* but since XLALCreateStringVector will crash if none
-   of its arguments is NULL, add a contract to require
-   that at least the final 21st argument is NULL */
-%contract XLALCreateStringVector {
-require:
-  arg21 == NULL;
-}
+SWIGLAL(VARIABLE_ARGUMENT_LIST(XLALCreateStringVector, CHAR*, NULL));
 #endif /* SWIG */
 
 LALStringVector *XLALCreateStringVector ( const CHAR *str1, ... );

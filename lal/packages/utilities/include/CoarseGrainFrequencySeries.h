@@ -22,11 +22,6 @@
 #ifndef _COARSEGRAINFREQUENCYSERIES_H
 #define _COARSEGRAINFREQUENCYSERIES_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -226,7 +221,6 @@ bins in the fine-grained series.
 typedef struct
 tagFrequencySamplingParams
 {
-  SWIGLAL_STRUCT(FrequencySamplingParams);
   REAL8         f0;		/**< The start frequency of the frequency series */
   REAL8         deltaF;		/**< The frequency spacing of the frequency series */
   UINT4         length;		/**< The number of points in the frequency series */

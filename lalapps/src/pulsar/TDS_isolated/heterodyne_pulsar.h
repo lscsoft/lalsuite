@@ -146,7 +146,7 @@ typedef struct tagFrameCache{
 
 typedef struct tagInputParams{
   CHAR ifo[3];
-  CHAR pulsar[12];
+  CHAR *pulsar;
 
   INT4 heterodyneflag;
   CHAR paramfile[256];

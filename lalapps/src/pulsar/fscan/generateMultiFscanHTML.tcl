@@ -56,7 +56,7 @@ proc makeCalender {thisFid thisYearAndMonth} {
   set thisMonthNamesAndMaxDaysList [split $::monthNamesAndMaxDays($thisMonthNum)];
   set thisMonthName [lindex $thisMonthNamesAndMaxDaysList 0];
   set maxDays [lindex $thisMonthNamesAndMaxDaysList 1];
-  if {($thisMonthNum == "02") && ([expr thisYear % 4] == 0)} {
+  if {($thisMonthNum == "02") && ([expr $thisYear % 4] == 0)} {
      set maxDays 29; # Its Februrary of a leap year.
   }
 

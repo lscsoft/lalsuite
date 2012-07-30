@@ -7,11 +7,6 @@
 #ifndef __LALVECTORINDEXRANGE_H__
 #define __LALVECTORINDEXRANGE_H__
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* C++ */
@@ -65,7 +60,6 @@ extern "C" {
 /* CHAR */
 typedef struct
 tagCHARVectorPair {
-  SWIGLAL_STRUCT(CHARVectorPair);
   CHARVector **head;
   CHARVector **tail;
 } CHARVectorPair;
@@ -73,7 +67,6 @@ tagCHARVectorPair {
 /* INT2 */
 typedef struct
 tagINT2VectorPair {
-  SWIGLAL_STRUCT(INT2VectorPair);
   INT2Vector **head;
   INT2Vector **tail;
 } INT2VectorPair;
@@ -81,7 +74,6 @@ tagINT2VectorPair {
 /* INT4 */
 typedef struct
 tagINT4VectorPair {
-  SWIGLAL_STRUCT(INT4VectorPair);
   INT4Vector **head;
   INT4Vector **tail;
 } INT4VectorPair;
@@ -89,7 +81,6 @@ tagINT4VectorPair {
 /* INT8 */
 typedef struct
 tagINT8VectorPair {
-  SWIGLAL_STRUCT(INT8VectorPair);
   INT8Vector **head;
   INT8Vector **tail;
 } INT8VectorPair;
@@ -97,7 +88,6 @@ tagINT8VectorPair {
 /* UINT2 */
 typedef struct
 tagUINT2VectorPair {
-  SWIGLAL_STRUCT(UINT2VectorPair);
   UINT2Vector **head;
   UINT2Vector **tail;
 } UINT2VectorPair;
@@ -105,7 +95,6 @@ tagUINT2VectorPair {
 /* UINT4 */
 typedef struct
 tagUINT4VectorPair {
-  SWIGLAL_STRUCT(UINT4VectorPair);
   UINT4Vector **head;
   UINT4Vector **tail;
 } UINT4VectorPair;
@@ -113,7 +102,6 @@ tagUINT4VectorPair {
 /* UINT8 */
 typedef struct
 tagUINT8VectorPair {
-  SWIGLAL_STRUCT(UINT8VectorPair);
   UINT8Vector **head;
   UINT8Vector **tail;
 } UINT8VectorPair;
@@ -121,7 +109,6 @@ tagUINT8VectorPair {
 /* REAL4 */
 typedef struct
 tagREAL4VectorPair {
-  SWIGLAL_STRUCT(REAL4VectorPair);
   REAL4Vector **head;
   REAL4Vector **tail;
 } REAL4VectorPair;
@@ -129,7 +116,6 @@ tagREAL4VectorPair {
 /* REAL8 */
 typedef struct
 tagREAL8VectorPair {
-  SWIGLAL_STRUCT(REAL8VectorPair);
   REAL8Vector **head;
   REAL8Vector **tail;
 } REAL8VectorPair;
@@ -137,7 +123,6 @@ tagREAL8VectorPair {
 /* COMPLEX8 */
 typedef struct
 tagCOMPLEX8VectorPair {
-  SWIGLAL_STRUCT(COMPLEX8VectorPair);
   COMPLEX8Vector **head;
   COMPLEX8Vector **tail;
 } COMPLEX8VectorPair;
@@ -145,7 +130,6 @@ tagCOMPLEX8VectorPair {
 /* COMPLEX16 */
 typedef struct
 tagCOMPLEX16VectorPair {
-  SWIGLAL_STRUCT(COMPLEX16VectorPair);
   COMPLEX16Vector **head;
   COMPLEX16Vector **tail;
 } COMPLEX16VectorPair;

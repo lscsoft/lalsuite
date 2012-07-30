@@ -20,11 +20,6 @@
 #ifndef _STRINGINPUT_H
 #define _STRINGINPUT_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 
@@ -136,7 +131,6 @@ type-dependent length modifiers.
  * and individual tokens are pointed to by a <tt>CHAR *[]</tt> handle.
  */
 typedef struct tagTokenList {
-  SWIGLAL_STRUCT(TokenList);
   UINT4 nTokens;    /**< The number of tokens in the list */
   CHAR **tokens;    /**< A list of pointers to the individual tokens;
                      * the elements <tt>tokens[0..nTokens-1]</tt> point to tokens, and

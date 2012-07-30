@@ -495,7 +495,10 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
     rd = sqrt( baryinput->site.location[0]*baryinput->site.location[0]
 	      +baryinput->site.location[1]*baryinput->site.location[1]
 	      +baryinput->site.location[2]*baryinput->site.location[2]);
-    latitude = LAL_PI/2.e0 - acos(baryinput->site.location[2]/rd);
+    if ( rd == 0.0 )
+      latitude = LAL_PI_2;
+    else
+      latitude = LAL_PI_2 - acos(baryinput->site.location[2]/rd);
     longitude= atan2(baryinput->site.location[1],baryinput->site.location[0]);
 
     /********************************************************************

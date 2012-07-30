@@ -25,26 +25,26 @@
 #include <lal/LALSimulationVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalSimulationVCSVersion = LALSIMULATION_VERSION;
-const char *lalSimulationVCSId = LALSIMULATION_VCS_ID;
-const char *lalSimulationVCSDate = LALSIMULATION_VCS_DATE;
-const char *lalSimulationVCSBranch = LALSIMULATION_VCS_BRANCH;
-const char *lalSimulationVCSTag = LALSIMULATION_VCS_TAG;
-const char *lalSimulationVCSAuthor = LALSIMULATION_VCS_AUTHOR;
-const char *lalSimulationVCSCommitter = LALSIMULATION_VCS_COMMITTER;
-const char *lalSimulationVCSStatus = LALSIMULATION_VCS_STATUS;
+const char *const lalSimulationVCSVersion = LALSIMULATION_VERSION;
+const char *const lalSimulationVCSId = LALSIMULATION_VCS_ID;
+const char *const lalSimulationVCSDate = LALSIMULATION_VCS_DATE;
+const char *const lalSimulationVCSBranch = LALSIMULATION_VCS_BRANCH;
+const char *const lalSimulationVCSTag = LALSIMULATION_VCS_TAG;
+const char *const lalSimulationVCSAuthor = LALSIMULATION_VCS_AUTHOR;
+const char *const lalSimulationVCSCommitter = LALSIMULATION_VCS_COMMITTER;
+const char *const lalSimulationVCSStatus = LALSIMULATION_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalSimulationVCSIdentId = LALSIMULATION_VCS_IDENT_ID;
-const char *lalSimulationVCSIdentDate = LALSIMULATION_VCS_IDENT_DATE;
-const char *lalSimulationVCSIdentBranch = LALSIMULATION_VCS_IDENT_BRANCH;
-const char *lalSimulationVCSIdentTag = LALSIMULATION_VCS_IDENT_TAG;
-const char *lalSimulationVCSIdentAuthor = LALSIMULATION_VCS_IDENT_AUTHOR;
-const char *lalSimulationVCSIdentCommitter = LALSIMULATION_VCS_IDENT_COMMITTER;
-const char *lalSimulationVCSIdentStatus = LALSIMULATION_VCS_IDENT_STATUS;
+const char *const lalSimulationVCSIdentId = LALSIMULATION_VCS_IDENT_ID;
+const char *const lalSimulationVCSIdentDate = LALSIMULATION_VCS_IDENT_DATE;
+const char *const lalSimulationVCSIdentBranch = LALSIMULATION_VCS_IDENT_BRANCH;
+const char *const lalSimulationVCSIdentTag = LALSIMULATION_VCS_IDENT_TAG;
+const char *const lalSimulationVCSIdentAuthor = LALSIMULATION_VCS_IDENT_AUTHOR;
+const char *const lalSimulationVCSIdentCommitter = LALSIMULATION_VCS_IDENT_COMMITTER;
+const char *const lalSimulationVCSIdentStatus = LALSIMULATION_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalSimulationVCSInfo = { \
+const struct tagLALVCSInfo lalSimulationVCSInfo = { \
   LALSIMULATION_VCS_NAME, \
   LALSIMULATION_VERSION, \
   LALSIMULATION_VCS_ID, \

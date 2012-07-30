@@ -23,7 +23,7 @@
 #define _LALSIMULATIONVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALSimulationConfig.h>
+#include <lal/LALSimulationLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALSIMULATION_VCS_IDENT_STATUS "$" "LALSimulationStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalSimulationVCSInfo;
 static const struct tagLALVCSInfo lalSimulationHeaderVCSInfo = { \
   LALSIMULATION_VCS_NAME, \
   LALSIMULATION_VERSION, \

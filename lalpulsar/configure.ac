@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalpulsar],[1.4.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalpulsar],[1.4.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([src/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -40,7 +40,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[4])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -59,7 +59,8 @@ LALSUITE_ENABLE_BOINC
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
-LALSUITE_SWIG_REQUIRE_CXX
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # put version/configure info in config header
 lalpulsar_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -154,11 +155,10 @@ fi
 # check for lalxml
 LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.3],[XLALXMLFilePrintElements],[lal/LALXML.h])
 
-# check for SWIG wrapping
-LALSUITE_ENABLE_SWIG
-if test "$lalxml" = "true"; then
-   LALSUITE_SWIG_USE([LALXML])
-fi
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_SWIG_DEPENDS([lal],[true])
+LALSUITE_SWIG_DEPENDS([lalxml],[$lalxml])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -181,8 +181,8 @@ echo "
         LALPulsar has now been successfully configured:
 
             LALXML library support is $LALXML_ENABLE_VAL
-            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 

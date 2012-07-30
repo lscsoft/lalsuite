@@ -38,7 +38,7 @@ int main( void )
   TESTSTATUS( &status );
 
   sieve.srcRegEx = "[F]";
-  LALFrCacheSieve( &status, &cache, input, &sieve );
+  LALFrSieveCache( &status, &cache, input, &sieve );
   TESTSTATUS( &status );
 
   LALFrCacheExport( &status, cache, "catalog.out" );

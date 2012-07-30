@@ -116,11 +116,11 @@ extern "C" {
 /*---------- exported prototypes [API] ----------*/
 void LALExtrapolatePulsarSpinRange( LALStatus *, PulsarSpinRange *range1, LIGOTimeGPS epoch1,  const PulsarSpinRange *range0 );
 
-void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, constPulsarSpins fkdot0, LIGOTimeGPS epoch0 );
+void LALExtrapolatePulsarSpins (LALStatus *, PulsarSpins fkdot1, LIGOTimeGPS epoch1, const PulsarSpins fkdot0, LIGOTimeGPS epoch0 );
 
 void LALExtrapolatePulsarPhase (LALStatus *, REAL8 *phi1, PulsarSpins fkdot1, LIGOTimeGPS epoch1, REAL8 phi0, LIGOTimeGPS epoch0 );
 
-int XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut, constPulsarSpins fkdotIn, REAL8 DeltaTau );
+int XLALExtrapolatePulsarSpins ( PulsarSpins fkdotOut, const PulsarSpins fkdotIn, REAL8 DeltaTau );
 
 #ifdef  __cplusplus
 }

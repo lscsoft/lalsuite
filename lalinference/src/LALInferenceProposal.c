@@ -41,6 +41,8 @@
 
 #include <lal/LALStdlib.h>
 
+#define MAX_STRLEN 512
+
 const char *cycleArrayName = "Proposal Cycle";
 const char *cycleArrayLengthName = "Proposal Cycle Length";
 const char *cycleArrayCounterName = "Proposal Cycle Counter";
@@ -318,15 +320,19 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
   const char defaultPropName[]="none";
   UINT4 fullProp = 1;
 
+  if(!runState->proposalStats) runState->proposalStats = calloc(1,sizeof(LALInferenceVariables));
+  
   if(!LALInferenceCheckVariable(runState->proposalArgs,LALInferenceCurrentProposalName))
       LALInferenceAddVariable(runState->proposalArgs,LALInferenceCurrentProposalName, (void*)&defaultPropName, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
 
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
   /* The default, single-parameter updates. */
-  /* Disable until adaptive step is turned on*/
-  //if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
-  //  LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+  if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-singleadapt"))
+  {
+    LALInferenceSetupAdaptiveProposals(runState);
+    LALInferenceAddProposalToCycle(runState, singleAdaptProposalName, &LALInferenceSingleAdaptProposal, BIGWEIGHT);
+  }
 
   if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-psiphi"))
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
@@ -336,14 +342,20 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
       LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
 
     UINT4 nDet = numDetectorsUniquePositions(runState);
-    if (nDet == 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
+    if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
+    }
+    if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-extrinsicparam")) {
       LALInferenceAddProposalToCycle(runState, extrinsicParamProposalName, &LALInferenceExtrinsicParamProposal, SMALLWEIGHT);
     }
-
+    /*
+      else if(LALInferenceCheckVariable(proposedParams,"inclination")&&LALInferenceCheckVariable(proposedParams,"distance")) {
+      LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
+    }
+    */
     if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-drawprior"))
       LALInferenceAddProposalToCycle(runState, drawApproxPriorName, &LALInferenceDrawApproxPrior, TINYWEIGHT);
-
+    
     if(LALInferenceCheckVariable(proposedParams,"phase")) {
       LALInferenceAddProposalToCycle(runState, orbitalPhaseJumpName, &LALInferenceOrbitalPhaseJump, TINYWEIGHT);
     }
@@ -351,11 +363,9 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  /*
-  if(LALInferenceCheckVariable(proposedParams,"inclination")) {
-    LALInferenceAddProposalToCycle(runState, inclinationDistanceName, &LALInferenceInclinationDistance, TINYWEIGHT);
-  }
-  */
+  
+  
+  
 
   if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
   	if(LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_CIRCULAR 
@@ -376,10 +386,13 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
     }
   }
 
+  /********** TURNED OFF - very small acceptance with nested sampling, slows everything down ****************/
+  /*
   if (!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-kdtree")) {
     LALInferenceAddProposalToCycle(runState, KDNeighborhoodProposalName, &LALInferenceKDNeighborhoodProposal, SMALLWEIGHT);
   }
- 
+  */
+
   LALInferenceRandomizeProposalCycle(runState);
 }
 
@@ -615,6 +628,7 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   LALInferenceSetVariable(args, LALInferenceCurrentProposalName, &propName);
   ProcessParamsTable *ppt = LALInferenceGetProcParamVal(runState->commandLine, "--noAdapt");
 
+
   if (!LALInferenceCheckVariable(args, LALInferenceSigmaJumpName) || ppt) {
     /* We are not adaptive, or for some reason don't have a sigma
        vector---fall back on old proposal. */
@@ -622,7 +636,9 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
   } else {
     gsl_rng *rng = runState->GSLrandom;
     LALInferenceVariableItem *param = NULL, *dummyParam = NULL;
-    REAL8 T = *(REAL8 *)LALInferenceGetVariable(args, "temperature");
+    REAL8 T = 1.0;
+    if(LALInferenceCheckVariable(args,"temperature"))
+      T=*(REAL8 *)LALInferenceGetVariable(args, "temperature");
     REAL8 sqrtT = sqrt(T);
     UINT4 dim;
     UINT4 i;
@@ -663,6 +679,12 @@ void LALInferenceSingleAdaptProposal(LALInferenceRunState *runState, LALInferenc
       exit(1);
     }
 
+    /* Save the name of the proposed variable */
+    if(LALInferenceCheckVariable(args,"proposedVariableName")){
+      char *nameBuffer=*(char **)LALInferenceGetVariable(args,"proposedVariableName");
+      strncpy(nameBuffer, param->name, MAX_STRLEN-1);
+    }
+    
     *((REAL8 *)param->value) += gsl_ran_ugaussian(rng)*sigmas->data[i]*sqrtT;
 
     LALInferenceCyclicReflectiveBound(proposedParams, runState->priorArgs);
@@ -688,8 +710,9 @@ void LALInferenceSingleProposal(LALInferenceRunState *runState, LALInferenceVari
   LALInferenceVariableItem *param=NULL, *dummyParam=NULL;
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
-  REAL8 T = *(REAL8 *)LALInferenceGetVariable(runState->proposalArgs, "temperature");
-	
+  REAL8 T = 1.0;
+  if(LALInferenceCheckVariable(runState->proposalArgs,"temperature")) T=*(REAL8 *)LALInferenceGetVariable(runState->proposalArgs, "temperature");
+
   REAL8 sigma = 0.1*sqrt(T); /* Adapt step to temperature. */
   REAL8 big_sigma = 1.0;
   UINT4 dim;
@@ -859,7 +882,7 @@ void LALInferenceInclinationDistance(LALInferenceRunState *runState, LALInferenc
   /* This is the constant that describes the curve. */
   REAL8 C = (fPlus*(1 + cosI*cosI) + 2.0*fCross*cosI)/d;
 
-  REAL8 dNew = (fPlus*(1 + cosINew*cosINew) + 2.0*fCross*cosI) / C;
+  REAL8 dNew = (fPlus*(1 + cosINew*cosINew) + 2.0*fCross*cosINew) / C;
 
   REAL8 incNew = acos(cosINew);
 
@@ -880,7 +903,9 @@ void LALInferenceCovarianceEigenvectorJump(LALInferenceRunState *runState, LALIn
   LALInferenceVariables *proposalArgs = runState->proposalArgs;
   gsl_matrix *eigenvectors = *((gsl_matrix **)LALInferenceGetVariable(proposalArgs, "covarianceEigenvectors"));
   REAL8Vector *eigenvalues = *((REAL8Vector **)LALInferenceGetVariable(proposalArgs, "covarianceEigenvalues"));
-  REAL8 temp = *((REAL8 *)LALInferenceGetVariable(proposalArgs, "temperature"));
+  REAL8 temp = 1.0;
+  if(LALInferenceCheckVariable(proposalArgs,"temperature"))
+    temp=*((REAL8 *)LALInferenceGetVariable(proposalArgs, "temperature"));
   UINT4 N = eigenvalues->length;
   gsl_rng *rng = runState->GSLrandom;
   UINT4 i = gsl_rng_uniform_int(rng, N);
@@ -918,7 +943,9 @@ void LALInferenceSkyLocWanderJump(LALInferenceRunState *runState, LALInferenceVa
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   gsl_rng *rng = runState->GSLrandom;
   LALInferenceVariables *proposalArgs = runState->proposalArgs;
-  REAL8 temp = *((REAL8 *)LALInferenceGetVariable(proposalArgs, "temperature"));
+  REAL8 temp = 1.0;
+  if(LALInferenceCheckVariable(proposalArgs,"temperature"))
+    temp=*((REAL8 *)LALInferenceGetVariable(proposalArgs, "temperature"));
   REAL8 one_deg = 1.0 / (2.0*M_PI);
   REAL8 sigma = sqrt(temp)*one_deg;
   REAL8 XU = gsl_ran_ugaussian(rng);
@@ -1027,6 +1054,9 @@ void LALInferenceDifferentialEvolutionMasses(LALInferenceRunState *runState, LAL
   const char *names[] = {"chirpmass", "asym_massratio", NULL};
   if (LALInferenceCheckVariable(pp, "massratio")) {
     names[1] = "massratio";
+  } else if (LALInferenceCheckVariable(pp, "m1")) {
+    names[0] = "m1";
+    names[1] = "m2";
   }
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
@@ -1045,7 +1075,7 @@ void LALInferenceDifferentialEvolutionExtrinsic(LALInferenceRunState *runState, 
   LALInferenceDifferentialEvolutionNames(runState, pp, names);
 }
 
-static REAL8 
+static REAL8
 draw_distance(LALInferenceRunState *runState) {
   REAL8 dmin, dmax;
 
@@ -1056,7 +1086,7 @@ draw_distance(LALInferenceRunState *runState) {
   return cbrt(x*(dmax*dmax*dmax - dmin*dmin*dmin) + dmin*dmin*dmin);
 }
 
-static REAL8 
+static REAL8
 draw_colatitude(LALInferenceRunState *runState, const char *name) {
   REAL8 min, max;
 
@@ -1067,7 +1097,7 @@ draw_colatitude(LALInferenceRunState *runState, const char *name) {
   return acos(cos(min) - x*(cos(min) - cos(max)));
 }
 
-static REAL8 
+static REAL8
 draw_dec(LALInferenceRunState *runState) {
   REAL8 min, max;
   
@@ -1078,7 +1108,7 @@ draw_dec(LALInferenceRunState *runState) {
   return asin(x*(sin(max) - sin(min)) + sin(min));
 }
 
-static REAL8 
+static REAL8
 draw_flat(LALInferenceRunState *runState, const char *name) {
   REAL8 min, max;
 
@@ -1089,15 +1119,20 @@ draw_flat(LALInferenceRunState *runState, const char *name) {
   return min + x*(max - min);
 }
 
-static REAL8 
+static REAL8
 draw_chirp(LALInferenceRunState *runState) {
   REAL8 min, max;
 
   LALInferenceGetMinMaxPrior(runState->priorArgs, "chirpmass", &min, &max);
 
-  REAL8 x = gsl_rng_uniform(runState->GSLrandom);
-  REAL8 temp=pow(min, -5.0/6.0);
-  return pow(temp - x*(temp - pow(max, -5.0/6.0)), -6.0/5.0);
+  REAL8 mMin56 = pow(min, 5.0/6.0);
+  REAL8 mMax56 = pow(max, 5.0/6.0);
+
+  REAL8 delta = 1.0/mMin56 - 1.0/mMax56;
+
+  REAL8 u = delta*gsl_rng_uniform(runState->GSLrandom);
+
+  return pow(1.0/(1.0/mMin56 - u), 6.0/5.0);
 }
 
 static REAL8
@@ -1136,11 +1171,32 @@ approxLogPrior(LALInferenceVariables *params) {
 void 
 LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariables *proposedParams) {
   const char *propName = drawApproxPriorName;
-  UINT4 goodProp = 0;
+
+  REAL8 tmp = 0.0;
+  UINT4 analyticTest = 0;
+  REAL8 logBackwardJump;
+
   LALInferenceSetVariable(runState->proposalArgs, LALInferenceCurrentProposalName, &propName);
   LALInferenceCopyVariables(runState->currentParams, proposedParams);
 
-  while (goodProp == 0) {
+  if (runState->likelihood==&LALInferenceCorrelatedAnalyticLogLikelihood ||
+      runState->likelihood==&LALInferenceBimodalCorrelatedAnalyticLogLikelihood ||
+      runState->likelihood==&LALInferenceRosenbrockLogLikelihood) {
+    analyticTest = 1;
+  }
+
+  if (analyticTest) {
+    LALInferenceVariableItem *ptr = runState->currentParams->head;
+    while(ptr!=NULL) {
+      if(ptr->vary != LALINFERENCE_PARAM_FIXED) {
+        tmp = draw_flat(runState, ptr->name);
+        LALInferenceSetVariable(proposedParams, ptr->name, &tmp);
+      }
+      ptr=ptr->next;
+    }
+  } else {
+    logBackwardJump = approxLogPrior(runState->currentParams);
+
     REAL8 Mc = draw_chirp(runState);
     LALInferenceSetVariable(proposedParams, "chirpmass", &Mc);
 
@@ -1203,11 +1259,14 @@ LALInferenceDrawApproxPrior(LALInferenceRunState *runState, LALInferenceVariable
       REAL8 theta2 = draw_colatitude(runState, "theta_spin2");
       LALInferenceSetVariable(proposedParams, "theta_spin2", &theta2);
     }
-    if (runState->prior(runState, proposedParams) > -DBL_MAX)
-      goodProp = 1;
   }
 
-  LALInferenceSetLogProposalRatio(runState, approxLogPrior(runState->currentParams) - approxLogPrior(proposedParams));
+  if (analyticTest) {
+    /* Flat in every variable means uniform jump probability. */
+    LALInferenceSetLogProposalRatio(runState, 0.0);
+  } else {
+    LALInferenceSetLogProposalRatio(runState, logBackwardJump - approxLogPrior(proposedParams));
+  }
 }
 
 static void
@@ -1783,12 +1842,12 @@ void LALInferenceKDNeighborhoodProposal(LALInferenceRunState *runState, LALInfer
   REAL8 *currentPt = XLALCalloc(tree->dim, sizeof(REAL8));
   REAL8 *proposedPt = XLALCalloc(tree->dim, sizeof(REAL8));
 
+  /* Get the coordinates of the current point. */
+  LALInferenceKDVariablesToREAL8(runState->currentParams, currentPt, template);
+
   /* A randomly-chosen point from those in the tree. */
   LALInferenceKDDrawEigenFrame(runState->GSLrandom, tree, proposedPt, NCell);
   LALInferenceKDREAL8ToVariables(proposedParams, proposedPt, template);
-
-  /* Get the coordinates of the current point. */
-  LALInferenceKDVariablesToREAL8(runState->currentParams, currentPt, template);
 
   REAL8 logPropRatio = LALInferenceKDLogProposalRatio(tree, currentPt, proposedPt, NCell);
 
@@ -2092,4 +2151,157 @@ void NSWrapMCMCLALProposal(LALInferenceRunState *runState, LALInferenceVariables
       LALInferenceSetVariable(proposedParams,"logmc",&newmc);
     }
   
+}
+
+/** Setup adaptive proposals. Should be called when state->currentParams is already filled with an initial sample */
+void LALInferenceSetupAdaptiveProposals(LALInferenceRunState *state)
+{
+   UINT4 N = LALInferenceGetVariableDimensionNonFixed(state->currentParams);
+   UINT4 i;
+   INT4 adaptationOn=1;
+   if (LALInferenceGetProcParamVal(state->commandLine, "--noAdapt"))
+       adaptationOn=0;
+
+   if (!LALInferenceCheckVariable(state->proposalArgs, LALInferenceSigmaJumpName)) {
+      /* We need a sigma vector for adaptable jumps. */
+      char *name = NULL;
+      REAL8Vector *sigmas = XLALCreateREAL8Vector(N);
+      for(i=0;i<N;++i){
+        name = LALInferenceGetVariableName(state->currentParams, (i+1));
+
+        if (!strcmp(name,"massratio") || !strcmp(name,"asym_massratio") || !strcmp(name,"time") || !strcmp(name,"a_spin2") || !strcmp(name,"a_spin1")){
+          sigmas->data[i] = 0.001;
+        } else if (!strcmp(name,"polarisation") || !strcmp(name,"phase") || !strcmp(name,"inclination")){
+          sigmas->data[i] = 0.1;
+        } else {
+          sigmas->data[i] = 0.01;
+        }
+      }
+      LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmas, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+    }
+
+    REAL8Vector *PacceptCount = XLALCreateREAL8Vector(N);
+    REAL8Vector *PproposeCount = XLALCreateREAL8Vector(N);
+
+    for (i = 0; i < N; i++) {
+      PacceptCount->data[i] = 0.0;
+      PproposeCount->data[i] = 0.0;
+    }
+
+    LALInferenceAddVariable(state->proposalArgs, "PacceptCount", &PacceptCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(state->proposalArgs, "PproposeCount", &PproposeCount, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
+  
+    INT4 adapting = adaptationOn;      // Indicates if current iteration is being adapted
+  LALInferenceAddVariable(state->proposalArgs, "adaptationOn", &adaptationOn, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+  LALInferenceAddVariable(state->proposalArgs, "adapting", &adapting, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+  INT4 adaptableStep = 0;
+  LALInferenceAddVariable(state->proposalArgs, "adaptableStep", &adaptableStep, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+  INT4 varNumber = 0;
+  LALInferenceAddVariable(state->proposalArgs, "proposedVariableNumber", &varNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+  char *nameBuffer=calloc(MAX_STRLEN,sizeof(char));
+  sprintf(nameBuffer,"none");
+  LALInferenceAddVariable(state->proposalArgs, "proposedVariableName", &nameBuffer, LALINFERENCE_string_t, LALINFERENCE_PARAM_OUTPUT);
+
+  INT4 sigmasNumber = 0;
+  LALInferenceAddVariable(state->proposalArgs, "proposedArrayNumber", &sigmasNumber, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+  INT4 tau = 5;
+  LALInferenceAddVariable(state->proposalArgs, "adaptTau", &tau, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_OUTPUT);
+
+  ProcessParamsTable *ppt = LALInferenceGetProcParamVal(state->commandLine, "--adaptTau");
+  if (ppt) {
+    tau = atof(ppt->value);
+    fprintf(stdout, "Setting adapt tau = %i.\n", tau);
+    LALInferenceSetVariable(state->proposalArgs, "adaptTau", &tau);
+  }
+  INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(state->proposalArgs, "adaptTau"));     // Sets decay of adaption function
+  INT4  adaptLength       = pow(10,adaptTau);   // Number of iterations to adapt before turning off
+  INT4  adaptResetBuffer  = 100;                // Number of iterations before adapting after a restart
+  REAL8 s_gamma           = 1.0;                // Sets the size of changes to jump size during adaptation
+  INT4  adaptStart        = 0;                  // Keeps track of last iteration adaptation was restarted
+  REAL8 logLAtAdaptStart  = 0.0;                // max log likelihood as of last adaptation restart
+  LALInferenceAddVariable(state->proposalArgs, "adaptLength", &adaptLength,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(state->proposalArgs, "adaptResetBuffer", &adaptResetBuffer,  LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(state->proposalArgs, "s_gamma", &s_gamma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(state->proposalArgs, "adaptStart", &adaptStart, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_LINEAR);
+  LALInferenceAddVariable(state->proposalArgs, "logLAtAdaptStart", &logLAtAdaptStart, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+  return;
+}
+
+/** Update the adaptive proposal. Whether or not a jump was accepted is passed with accepted */
+void LALInferenceUpdateAdaptiveJumps(LALInferenceRunState *runState, INT4 accepted, REAL8 targetAcceptance){
+  const char *currentProposalName;
+  INT4 *adaptableStep = NULL;
+  INT4 *adapting = NULL;
+  INT4 i = 0;
+  LALInferenceProposalStatistics *propStat;
+  
+  if( LALInferenceCheckVariable(runState->proposalArgs, "adaptableStep" ) && 
+      LALInferenceCheckVariable(runState->proposalArgs, "adapting" ) ){
+    adaptableStep = ((INT4 *)LALInferenceGetVariable(runState->proposalArgs,
+                                                     "adaptableStep"));
+    adapting = ((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adapting"));
+  }
+  /* Don't do anything if these are not found */
+  else return;
+  
+  if (*adaptableStep && *adapting) {
+    i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
+    REAL8Vector *PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
+    REAL8Vector *PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
+    PproposeCount->data[i]+=1;
+    if(accepted == 1){
+      PacceptCount->data[i]+=1;
+    }
+  }
+  /* Update proposal statistics */
+  if (runState->proposalStats){
+    currentProposalName = *((const char **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceCurrentProposalName));
+    propStat = ((LALInferenceProposalStatistics *)LALInferenceGetVariable(runState->proposalStats, currentProposalName));
+    propStat->proposed++;
+    if (accepted == 1){
+      propStat->accepted++;
+    }
+  }
+
+  /* Adapt if desired. */
+  if (LALInferenceCheckVariable(runState->proposalArgs, "proposedArrayNumber") &&
+      LALInferenceCheckVariable(runState->proposalArgs, "proposedVariableName") &&
+      LALInferenceCheckVariable(runState->proposalArgs, "s_gamma") &&
+      LALInferenceCheckVariable(runState->proposalArgs, LALInferenceSigmaJumpName) &&
+      LALInferenceCheckVariable(runState->proposalArgs, "adapting") &&
+      LALInferenceCheckVariable(runState->proposalArgs, "adaptableStep")) {
+
+    if (*adaptableStep) {
+      i = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "proposedArrayNumber"));
+      REAL8 s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
+      REAL8Vector *sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceSigmaJumpName));
+
+      REAL8 sigma = sigmas->data[i];
+      char *name = *(char **)LALInferenceGetVariable(runState->proposalArgs, "proposedVariableName");
+
+      REAL8 priorMin, priorMax, dprior;
+
+      LALInferenceGetMinMaxPrior(runState->priorArgs, name, &priorMin, &priorMax);
+      dprior = priorMax - priorMin;
+
+      if(accepted == 1){
+        sigma=sigma+s_gamma*(dprior/100.0)*(1.0-targetAcceptance);
+      }else{
+        sigma=sigma-s_gamma*(dprior/100.0)*(targetAcceptance);
+      }
+
+      sigma = (sigma > dprior ? dprior : sigma);
+      sigma = (sigma < DBL_MIN ? DBL_MIN : sigma);
+
+      sigmas->data[i] = sigma;
+      //printf("Adapting step size for %s to %lf\n", name, sigma);
+
+      /* Make sure we don't do this again until we take another adaptable step.*/
+    }
+  }
+  *adaptableStep = 0;
 }

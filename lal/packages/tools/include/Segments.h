@@ -20,11 +20,6 @@
 #ifndef _SEGMENTS_H
 #define _SEGMENTS_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 #include <lal/XLALError.h>
 
@@ -157,7 +152,6 @@ Also all segments in a segment list can be time-shifted using \c XLALSegListShif
 typedef struct
 tagLALSeg
 {
-  SWIGLAL_STRUCT(LALSeg);
   LIGOTimeGPS start; /**< Beginning time of the segment */
   LIGOTimeGPS end;   /**< Ending time of the segment */
   INT4 id;           /**< Identifier (segment ID, array index, etc.) for user */
@@ -168,7 +162,6 @@ LALSeg;
 typedef struct
 tagLALSegList
 {
-  SWIGLAL_STRUCT(LALSegList);
   LALSeg *segs;      /**< Pointer to array of segments (LALSeg structures) */
   size_t arraySize;  /**< Size of array for which memory is allocated */
   UINT4 length;      /**< Number of segments in this segment list */
