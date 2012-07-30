@@ -272,15 +272,6 @@ XLALDetectorPosVel (PosVel3D_t *spin_posvel,
 		    DetectorMotionType special
 		    );
 
-int
-XLALAverageDetectorPosVel ( PosVel3D_t *avg_spin_posvel,
-                            PosVel3D_t *avg_orbit_posvel,
-                            const LIGOTimeGPS *tGPS,
-                            const MultiDetectorInfo *detInfo,
-                            const EphemerisData *edat,
-                            DetectorMotionType special
-                            );
-
 
 vect3Dlist_t *
 XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
