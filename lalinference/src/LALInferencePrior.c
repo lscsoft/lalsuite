@@ -71,9 +71,21 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
   if(LALInferenceCheckVariable(params,"declination"))
     logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
   if(LALInferenceCheckVariable(params,"theta_spin1"))
-    logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
+  {
+    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"theta_spin1");
+    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
+    {
+     logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
+    }
+  }
   if(LALInferenceCheckVariable(params,"theta_spin2"))
-    logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
+  {
+    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"theta_spin2");
+    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
+    {
+      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
+    }
+  }
   /*if(LALInferenceCheckVariable(params,"a_spin1") && LALInferenceCheckVariable(params,"a_spin2")){
 
     if(*(REAL8 *)LALInferenceGetVariable(params,"a_spin2") > *(REAL8 *)LALInferenceGetVariable(params,"a_spin1")){
@@ -271,9 +283,21 @@ REAL8 LALInferenceInspiralSkyLocPrior(LALInferenceRunState *runState, LALInferen
   if(LALInferenceCheckVariable(params,"declination"))
     logPrior+=log(fabs(cos(*(REAL8 *)LALInferenceGetVariable(params,"declination"))));
   if(LALInferenceCheckVariable(params,"theta_spin1"))
-    logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
+  {
+    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"theta_spin1");
+    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
+    {
+      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin1"))));
+    }
+  }
   if(LALInferenceCheckVariable(params,"theta_spin2"))
-    logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
+  { 
+    LALInferenceParamVaryType vtype=LALInferenceGetVariableVaryType(params,"theta_spin2");
+    if(vtype!=LALINFERENCE_PARAM_FIXED && vtype!=LALINFERENCE_PARAM_OUTPUT)
+    {
+      logPrior+=log(fabs(sin(*(REAL8 *)LALInferenceGetVariable(params,"theta_spin2"))));
+    }
+  }
   /*priors uniform in the individual masses. Not taking into account if mtot_max < m1_max+m2_max */
   if(LALInferenceCheckVariable(params,"massratio")||LALInferenceCheckVariable(params,"asym_massratio")) {
     if(LALInferenceCheckVariable(params,"logmc")) {
