@@ -126,8 +126,6 @@ static char USAGE2[] = \
 
 
 INT4 main(INT4 argc, CHAR *argv[]){
-  static LALStatus status;
-
   REAL8 ****singleLike=NULL;
   REAL8 ****jointLike=NULL;
 
@@ -237,11 +235,6 @@ INT4 main(INT4 argc, CHAR *argv[]){
     /* if there's a covariance matrix file then set up the earth and sun
        ephemeris */
     if( inputs.matrixFile != NULL ){
-      edat = XLALMalloc(sizeof(*edat));
-
-      (*edat).ephiles.earthEphemeris = inputs.earthfile;
-      (*edat).ephiles.sunEphemeris = inputs.sunfile;
-
       /* check files exist and if not output an error message */
       if( access(inputs.earthfile, F_OK) != 0 || 
           access(inputs.earthfile, F_OK) != 0 ){
@@ -250,7 +243,8 @@ defined!\n");
         return 0;
       }
 
-      LAL_CALL( LALInitBarycenter(&status, edat), &status );
+      XLAL_CHECK( ( edat = XLALInitBarycenter( inputs.earthfile, 
+                    inputs.sunfile ) ) != NULL, XLAL_EFUNC );
     }
     else
       edat = NULL;
@@ -520,6 +514,9 @@ defined!\n");
   }
   /*=========================================================================*/ 
 
+  /* free Ephemeris data */
+  if ( edat != NULL ) XLALDestroyEphemerisData( edat );
+  
   return 0;
 }
 
@@ -2621,8 +2618,6 @@ paramData ) ) == NULL ){
 /* function to return a vector of the pulsar phase for each data point */
 REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
   BarycenterInput bary, EphemerisData *edat ){
-  static LALStatus status;
-
   INT4 i=0;
 
   REAL8 T0=0., DT=0., DTplus=0., deltat=0., deltat2=0.;
@@ -2676,9 +2671,10 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
          params.pmra/cos(bary.delta);
 
       /* call barycentring routines */
-      LAL_CALL( LALBarycenterEarth(&status, &earth, &bary.tgps, edat),
-        &status );
-      LAL_CALL( LALBarycenter(&status, &emit, &bary, &earth), &status );
+      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth, &bary.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* add interptime to the time */
       DTplus = DT + interptime;
@@ -2687,9 +2683,10 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 (UINT8)floor((fmod(data.times->data[i]+interptime,1.)*1e9));
 
       /* No point in updating the positions as difference will be tiny */
-      LAL_CALL( LALBarycenterEarth(&status, &earth2, &bary.tgps, edat),
-        &status );
-      LAL_CALL( LALBarycenter(&status, &emit2, &bary, &earth2), &status );
+      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth2, &bary.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALBarycenter( &emit2, &bary, &earth2 ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
     }
 
     /* linearly interpolate to get emitdt */

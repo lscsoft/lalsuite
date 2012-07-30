@@ -240,7 +240,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch );
 int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream );
 int XLALFrGetpos( FrPos *position, FrStream *stream );
 int XLALFrSetpos( FrStream *stream, FrPos *position );
-int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
+UINT4 XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
 int XLALFrGetINT2TimeSeries( INT2TimeSeries *series, FrStream *stream );
 int XLALFrGetINT4TimeSeries( INT4TimeSeries *series, FrStream *stream );
 int XLALFrGetINT8TimeSeries( INT8TimeSeries *series, FrStream *stream );
@@ -262,7 +262,7 @@ int XLALFrGetREAL4FrequencySeries( REAL4FrequencySeries *series, FrStream *strea
 int XLALFrGetREAL8FrequencySeries( REAL8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series, FrStream *stream );
-int XLALFrGetVectorLength ( CHAR *name, FrStream *stream );
+UINT4 XLALFrGetVectorLength ( CHAR *name, FrStream *stream );
 
 INT2TimeSeries *XLALFrReadINT2TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
 INT4TimeSeries *XLALFrReadINT4TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );

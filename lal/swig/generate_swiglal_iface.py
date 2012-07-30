@@ -264,7 +264,7 @@ for function_name in symbols['function']:
     symbols['function'][function_name]['feature_ignore'] = '1'
 
 # determine whether return value of functions should be ignored
-func_arg1_ptype_regexp = re.compile('^f\(p\.([^,]*)')
+func_arg_types_regexp = re.compile('^f\((.*)\).p.$')
 for function_name in symbols['function']:
 
     # get function declaration and return type
@@ -282,14 +282,14 @@ for function_name in symbols['function']:
     else:
 
         # extract the pointer type of the function's first argument
-        func_arg1_ptype_match = func_arg1_ptype_regexp.match(func_decl)
-        if not func_arg1_ptype_match is None:
-            func_arg1_ptype = func_arg1_ptype_match.group(1)
+        func_arg_types_match = func_arg_types_regexp.match(func_decl)
+        if not func_arg_types_match is None:
+            func_arg_types = func_arg_types_match.group(1).split(',')
 
             # ignore function return values whose type is a pointer and which
             # matches the type of the first argument, since it is common for
             # XLAL functions to return the value of the first argument
-            if func_decl.endswith(').p.') and func_retn_type == func_arg1_ptype:
+            if 'p.' + func_retn_type == func_arg_types[0]:
                 func_ignore_retn = func_retn_type + '*'
                 func_ignore_retn = func_ignore_retn.replace('q(const).', 'const ')
 

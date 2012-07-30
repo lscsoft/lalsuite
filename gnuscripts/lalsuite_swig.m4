@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 18
+# serial 19
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -141,36 +141,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AS_IF([test ${lalswig} = true],[
       AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
     ])
-
-    # try to figure out the underlying type of int64_t
-    AC_CHECK_HEADERS([stdint.h],[],[
-      AC_MSG_ERROR([could not find "stdint.h"])
-    ])
-    AC_MSG_CHECKING([underlying type of int64_t])
-    CFLAGS="-Wall -Werror"
-    AC_LANG_PUSH([C])
-    AC_COMPILE_IFELSE([
-      AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[
-        int64_t i64 = 0; long int *pli = &i64; *pli = 0 /*;*/
-      ])
-    ],[
-      AC_MSG_RESULT([long int])
-      swig_wordsize=-DSWIGWORDSIZE64
-    ],[
-      AC_COMPILE_IFELSE([
-        AC_LANG_PROGRAM([AC_INCLUDES_DEFAULT],[
-          int64_t i64 = 0; long long int *plli = &i64; *plli = 0 /*;*/
-        ])
-      ],[
-        AC_MSG_RESULT([long long int])
-        swig_wordsize=
-      ],[
-        AC_MSG_FAILURE([could not determine underlying type of int64_t])
-      ])
-    ])
-    CFLAGS=
-    AC_LANG_POP([C])
-    SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} ${swig_wordsize}"
 
     # directories SWIG should look in for interfaces and LAL headers
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"

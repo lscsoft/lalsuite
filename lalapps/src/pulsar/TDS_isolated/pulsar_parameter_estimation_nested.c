@@ -164,7 +164,6 @@ specified then the fake data containing the signal, and a fake signal-only data
 set, will be output.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include "pulsar_parameter_estimation_nested.h"
 #include "ppe_models.h"
 #include "ppe_likelihood.h"
@@ -359,6 +358,9 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Create live points array and fill initial parameters */
   LALInferenceSetupLivePointsArray( &runState );
 
+  /* output the live points sampled from the prior */
+  outputPriorSamples( &runState );
+  
   /* Initialise the MCMC proposal distribution */
   initialiseProposal( &runState );
   
@@ -936,7 +938,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
     CHAR *datafile = NULL;
     REAL8 times = 0;
     LIGOTimeGPS gpstime;
-    COMPLEX16 dataVals;
+    REAL8 dataValsRe = 0., dataValsIm = 0.;
     REAL8Vector *temptimes = NULL;
     INT4 j = 0, k = 0, datalength = 0;
     ProcessParamsTable *ppte = NULL, *ppts = NULL;
@@ -1013,7 +1015,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
       REAL8 tnow = 0., tprev = 0.;
       
       /* read in data */
-      while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
+      while(fscanf(fp, "%lf%lf%lf", &times, &dataValsRe, &dataValsIm) != EOF){
         j++;
         
         tnow = times;
@@ -1022,8 +1024,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
         if ( j%downs != 0 ){
           if ( j > 1 ) dtcur = tnow - tprev;
 
-          tmpre += dataVals.re;
-          tmpim += dataVals.im;
+          tmpre += dataValsRe;
+          tmpim += dataValsIm;
           timetmp += times;
           tprev = tnow;
           
@@ -1032,8 +1034,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
              spacings */
           if ( j > 2 && dtcur != dtprev ){
             timetmp = times;
-            tmpre = dataVals.re;
-            tmpim = dataVals.im;
+            tmpre = dataValsRe;
+            tmpim = dataValsIm;
             dtcur = dtprev = 0.;
             j = 1;
           }
@@ -1045,8 +1047,8 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
         else{
           /* if downsampling is not occuring just set individual values */
           if ( !tmpre && !tmpim && !timetmp ){
-            tmpre = dataVals.re;
-            tmpim = dataVals.im;
+            tmpre = dataValsRe;
+            tmpim = dataValsIm;
             timetmp = times;
           }
           else{ /* if downsampling get averages */
@@ -1055,16 +1057,16 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
             /* check for contiguous segments */
             if( j > 2 && dtcur != dtprev ){
               timetmp = times;
-              tmpre = dataVals.re;
-              tmpim = dataVals.im;
+              tmpre = dataValsRe;
+              tmpim = dataValsIm;
               dtcur = dtprev = 0.;
               j = 1;
               continue;
             }
             
             /* add on final point and average */
-            tmpre = (tmpre + dataVals.re) / (REAL8)downs;
-            tmpim = (tmpim + dataVals.im ) / (REAL8)downs;
+            tmpre = (tmpre + dataValsRe) / (REAL8)downs;
+            tmpim = (tmpim + dataValsIm ) / (REAL8)downs;
             timetmp = (timetmp + times) / (REAL8)downs;
           }
         }
@@ -1081,8 +1083,7 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
         temptimes = XLALResizeREAL8Vector( temptimes, counter );
 
         temptimes->data[counter-1] = timetmp;
-        ifodata->compTimeData->data->data[counter-1].re = tmpre;
-        ifodata->compTimeData->data->data[counter-1].im = tmpim;
+        ifodata->compTimeData->data->data[counter-1] = tmpre + I*tmpim;
         
         tmpre = tmpim = timetmp = 0.;
         dtcur = dtprev = 0.;
@@ -1144,10 +1145,9 @@ given must be %d times the number of detectors specified (no. dets =\%d)\n",
         XLALGPSSetREAL8( &ifodata->dataTimes->data[k], 
                          fstarts[i] + fdt[i] * (REAL8)k );
         
-        ifodata->compTimeData->data->data[k].re = (REAL8)realdata->data[k] *
-          psdscale;
-        ifodata->compTimeData->data->data[k].im = (REAL8)imagdata->data[k] *
-          psdscale;
+        ifodata->compTimeData->data->data[k] = 
+          (REAL8)realdata->data[k] * psdscale + 
+          I * (REAL8)imagdata->data[k] * psdscale;
       }
       
       ifodata->compTimeData->epoch = ifodata->dataTimes->data[0];
@@ -2577,26 +2577,23 @@ injection\n", signalonly);
     
     /* add the signal to the data */
     for ( i = 0; i < length; i++ ){
-      data->compTimeData->data->data[i].re +=
-        data->compModelData->data->data[i].re;
-      data->compTimeData->data->data[i].im +=
-        data->compModelData->data->data[i].im;
-        
+      data->compTimeData->data->data[i] += data->compModelData->data->data[i];
+
       /* write out injection to file */
       if( fp != NULL && fpso != NULL ){
         /* print out data - time stamp, real and imaginary parts of data
            (injected signal + noise) */
         fprintf(fp, "%.5lf\t%le\t%le\n", 
                 XLALGPSGetREAL8( &data->dataTimes->data[i] ),
-                data->compTimeData->data->data[i].re, 
-                data->compTimeData->data->data[i].im );
+                creal(data->compTimeData->data->data[i]), 
+                cimag(data->compTimeData->data->data[i]) );
         
         /* print signal only data - time stamp, real and imaginary parts of
            signal */
         fprintf(fpso, "%.5lf\t%le\t%le\n", 
                 XLALGPSGetREAL8( &data->dataTimes->data[i] ),
-                data->compModelData->data->data[i].re, 
-                data->compModelData->data->data[i].im );
+                creal(data->compModelData->data->data[i]), 
+                cimag(data->compModelData->data->data[i]) );
       }
     }
 
@@ -2797,8 +2794,8 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
   submed = XLALCreateCOMPLEX16Vector( length );
   
   for ( i = 1; i < length+1; i++ ){
-    double *dre = NULL;
-    double *dim = NULL;
+    REAL8 *dre = NULL;
+    REAL8 *dim = NULL;
     
     /* get median of data within RANGE */
     if ( i < N ){
@@ -2814,12 +2811,12 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
       sidx = i-N;
     }
     
-    dre = XLALCalloc( n, sizeof(double) );
-    dim = XLALCalloc( n, sizeof(double) );
+    dre = XLALCalloc( n, sizeof(REAL8) );
+    dim = XLALCalloc( n, sizeof(REAL8) );
     
     for ( j = 0; j < n; j++ ){
-      dre[j] = data->data[j+sidx].re;
-      dim[j] = data->data[j+sidx].im;
+      dre[j] = creal(data->data[j+sidx]);
+      dim[j] = cimag(data->data[j+sidx]);
     }
     
     /* sort data */
@@ -2827,10 +2824,10 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
     gsl_sort( dim, 1, n );
     
     /* get median and subtract from data*/
-    submed->data[i-1].re = data->data[i-1].re
-      - gsl_stats_median_from_sorted_data( dre, 1, n );
-    submed->data[i-1].im = data->data[i-1].im
-      - gsl_stats_median_from_sorted_data( dim, 1, n );
+    submed->data[i-1] = ( creal(data->data[i-1])
+      - gsl_stats_median_from_sorted_data( dre, 1, n ) )
+      + I * ( cimag(data->data[i-1])
+      - gsl_stats_median_from_sorted_data( dim, 1, n ) );
       
     XLALFree( dre );
     XLALFree( dim );
@@ -2983,10 +2980,7 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds,
   }
   
   /* calculate the sum of the data squared */
-  for (i = 0; i < length; i++){
-    datasum += SQUARE( data->data[i].re );
-    datasum += SQUARE( data->data[i].im );
-  }
+  for (i = 0; i < length; i++) datasum += SQUARE( cabs(data->data[i]) );
   
   /* calculate the evidence that the data consists of a Gaussian data with a
      single standard deviation */
@@ -3002,20 +2996,14 @@ UINT4 find_change_point( COMPLEX16Vector *data, REAL8 *logodds,
   
   for ( i = 0; i < length - minlength; i++ ){    
     if ( i < (UINT4)minlength ){
-      sumforward->data[0] += SQUARE( data->data[i].re );
-      sumforward->data[0] += SQUARE( data->data[i].im );
-      
-      sumback->data[0] += SQUARE( data->data[length-(i+1)].re );
-      sumback->data[0] += SQUARE( data->data[length-(i+1)].im );
+      sumforward->data[0] += SQUARE( cabs(data->data[i]) );
+      sumback->data[0] += SQUARE( cabs(data->data[length-(i+1)]) );
     }
-    else{
+    else{      
       sumforward->data[i+1-minlength] = sumforward->data[i-minlength] + 
-        SQUARE( data->data[i].re );
-      sumforward->data[i+1-minlength] += SQUARE( data->data[i].im );
-      
+        SQUARE( cabs(data->data[i]) );  
       sumback->data[i+1-minlength] = sumback->data[i-minlength] +
-        SQUARE( data->data[length-(i+1)].re );
-      sumback->data[i+1-minlength] += SQUARE( data->data[length-(i+1)].im );
+        SQUARE( cabs(data->data[length-(i+1)]) );
     }
   }
   
@@ -3175,15 +3163,11 @@ void merge_data( COMPLEX16Vector *data, UINT4Vector *segs ){
       n2 = cellends2 - cellstarts2;
       nm = cellends2 - cellstarts1;
       
-      for( i = cellstarts1; i < cellends1; i++ ){
-        sum1 += SQUARE( data->data[i].re );
-        sum1 += SQUARE( data->data[i].im );
-      }
-      
-      for( i = cellstarts2; i < cellends2; i++ ){
-        sum2 += SQUARE( data->data[i].re );
-        sum2 += SQUARE( data->data[i].im );
-      }
+      for( i = cellstarts1; i < cellends1; i++ ) 
+        sum1 += SQUARE( cabs(data->data[i]) );
+
+      for( i = cellstarts2; i < cellends2; i++ )
+        sum2 += SQUARE( cabs(data->data[i]) );
       
       summerged = sum1 + sum2;
       
@@ -3252,11 +3236,10 @@ void sumData( LALInferenceRunState *runState ){
       sumdat->data[count] = 0.;
     
       for( j = i ; j < i + chunkLength ; j++){
-        B.re = data->compTimeData->data->data[j].re;
-        B.im = data->compTimeData->data->data[j].im;
+        B = data->compTimeData->data->data[j];
 
         /* sum up the data */
-        sumdat->data[count] += (B.re*B.re + B.im*B.im);
+        sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B));
       }
 
       count++;
@@ -3682,7 +3665,7 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
   length = data->compTimeData->data->length;
   
   for ( i = 0; i < length; i+=chunkLength ){
-    COMPLEX16 snrc = {0., 0.}, vari = {0., 0.};
+    REAL8 snrcRe = 0., snrcIm = 0., variRe = 0., variIm = 0.;
     
     chunkLength = (REAL8)chunkLengths->data[count];
     
@@ -3696,19 +3679,19 @@ REAL8 calculate_time_domain_snr( LALInferenceIFOData *data ){
     cl = i + (INT4)chunkLength;
     
     for( j = i ; j < cl ; j++ ){
-      vari.re += SQUARE(meddata->data[j].re);
-      vari.im += SQUARE(meddata->data[j].im);
-      
+      variRe += SQUARE( creal(meddata->data[j]) );
+      variIm += SQUARE( cimag(meddata->data[j]) );
+
       /* calculate optimal signal power */
-      snrc.re += SQUARE(data->compModelData->data->data[j].re);
-      snrc.im += SQUARE(data->compModelData->data->data[j].im);
+      snrcRe += SQUARE( creal(data->compModelData->data->data[j]) );
+      snrcIm += SQUARE( cimag(data->compModelData->data->data[j]) );
     }
     
-    vari.re /= (chunkLength - 1.);
-    vari.im /= (chunkLength - 1.);
+    variRe /= (chunkLength - 1.);
+    variIm /= (chunkLength - 1.);
     
     /* add SNRs for each chunk in quadrature */
-    snrval += (snrc.re/vari.re) + (snrc.im/vari.im);
+    snrval += ( snrcRe/variRe ) + ( snrcIm/variIm );
     
     count++;
   }
