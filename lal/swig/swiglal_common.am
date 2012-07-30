@@ -33,7 +33,10 @@ EXTRA_DIST =
 
 # clean files
 CLEANFILES = \
+	$(swig_iface_deps) \
 	$(swig_modl_src)
+
+if SWIG_BUILD
 
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }
@@ -68,3 +71,5 @@ $(swig_modl_src) : ../$(swig_iface)
 	@$(MAKE) swig_iface_links
 	@$(MKDIR_P) $(SWIG_OUTDIR)
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
+
+endif # SWIG_BUILD

@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 19
+# serial 20
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -99,6 +99,18 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
   AC_REQUIRE([AC_PROG_MKDIR_P])
   AC_REQUIRE([AC_PROG_SED])
 
+  # if we are wrapping the LAL library (instead of one of the LAL* libraries)
+  AS_IF([test "x${PACKAGE_NAME}" = xlal],[
+    lalswig=true
+  ],[
+    lalswig=false
+  ])
+
+  # common SWIG interfaces (with LAL only)
+  AS_IF([test ${lalswig} = true],[
+    AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
+  ])
+
   # if any language was configured
   AM_CONDITIONAL(SWIG_BUILD,[test "${swig_build_any}" = true])
   AM_COND_IF(SWIG_BUILD,[
@@ -129,18 +141,6 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
 
     # flags for generating SWIG wrapping module sources
     AC_SUBST(SWIG_SWIGFLAGS,["-Wextra -Werror"])
-
-    # if we are wrapping the LAL library (instead of one of the LAL* libraries)
-    AS_IF([test "x${PACKAGE_NAME}" = xlal],[
-      lalswig=true
-    ],[
-      lalswig=false
-    ])
-
-    # common SWIG interfaces (with LAL only)
-    AS_IF([test ${lalswig} = true],[
-      AC_SUBST([SWIG_IFACES],["swiglal_common.i"])
-    ])
 
     # directories SWIG should look in for interfaces and LAL headers
     SWIG_SWIGFLAGS="${SWIG_SWIGFLAGS} -I\$(abs_top_builddir)/include"
@@ -263,6 +263,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
   m4_pushdef([uppercase],translit([$1],[a-z],[A-Z]))
   m4_pushdef([lowercase],translit([$1],[A-Z],[a-z]))
 
+  # common and language-specific SWIG interfaces (with LAL only)
+  AS_IF([test ${lalswig} = true],[
+    SWIG_]uppercase[_IFACES="swiglal_]lowercase[.i"
+    AC_SUBST(SWIG_]uppercase[_IFACES)
+  ])
+
   # check whether to configure $1
   AM_CONDITIONAL(SWIG_BUILD_[]uppercase,[test ${swig_build_]lowercase[} = true])
   AM_COND_IF(SWIG_BUILD_[]uppercase,[
@@ -272,12 +278,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_LANGUAGE],[
 
     # set message string to indicate language will be built
     SWIG_]uppercase[_ENABLE_VAL=ENABLED
-
-    # common and language-specific SWIG interfaces (with LAL only)
-    AS_IF([test ${lalswig} = true],[
-      SWIG_]uppercase[_IFACES="swiglal_]lowercase[.i"
-      AC_SUBST(SWIG_]uppercase[_IFACES)
-    ])
 
     # configure $1
     $2
