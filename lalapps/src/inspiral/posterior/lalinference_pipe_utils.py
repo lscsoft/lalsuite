@@ -65,6 +65,11 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   output=[]
   from glue.ligolw import utils
   from glue.ligolw import lsctables
+  from glue.ligolw import ligolw
+  from glue.ligolw import param
+  from glue.ligolw import array
+  from pylal import series as lalseries
+  import numpy as np
   xmldoc=utils.load_filename(lvalertfile)
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
@@ -72,6 +77,14 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   sngl_events = [event for event in sngltable]
   search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
   ifos = search_summary[0].ifos.split(",")
+  # Parse PSD
+  xmlpsd = utils.load_filename("psd.xml.gz")
+  psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
+  for instrument, psd in psddict.items():
+    combine=[]
+    for i,p in enumerate(psd.data):
+      combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
+    np.savetxt(instrument+'psd.txt',combine)
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
@@ -1032,5 +1045,5 @@ class GraceDBNode(pipeline.CondorDAGNode):
             return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
+        self.add_var_arg('Parameter estimation finished.  <a href="'+self.resultsurl+'/posplots.html">'+self.resultsurl+'/posplots.html</a>')
         self.__finalized=True
