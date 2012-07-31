@@ -118,11 +118,13 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	REAL8 a=0.0; /* fractional distance between bins */
 	REAL8 delta=0.0;
 	if(f<fvec[0].f) return(0.0);
-	while(fvec[i].f<f && (fvec[i].x!=0.0 && fvec[i].f!=0.0)){i++;};
+	while(fvec[i].f<f && (fvec[i].x!=0.0 )){i++;}; //&& fvec[i].f!=0.0)){i++;};
+  //printf("%d\t%lg\t%lg\t%lg\n",i,fvec[i].f,f,fvec[i].x);
 	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above moximum */
 	{
 		return (fvec[i-1].x);
 	}
+  //if(i==0){return (fvec[0].x);}
 	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
 	delta=fvec[i].x-fvec[i-1].x;
 	return (fvec[i-1].x + delta*a);
