@@ -42,12 +42,12 @@ from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils
-from lalapps import git_version
+#from lalapps import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+#__version__ = "git id %s" % git_version.id
+#__date__ = git_version.date
 
 
 #
