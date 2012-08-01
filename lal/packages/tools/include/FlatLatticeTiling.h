@@ -83,7 +83,6 @@ int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gs
 /**
  * Support functions
  */
-gsl_matrix* XLALMetricEllipsePrincipalAxes(gsl_matrix*, REAL8);
 gsl_vector* XLALMetricEllipseBoundingBox(gsl_matrix*, REAL8);
 int XLALOrthonormaliseWRTMetric(gsl_matrix*, gsl_matrix*);
 gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(gsl_matrix*);

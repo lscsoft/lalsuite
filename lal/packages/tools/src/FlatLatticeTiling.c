@@ -968,62 +968,6 @@ int XLALRandomPointInFlatLatticeParamSpace(
 }
 
 /**
- * Find the principal of the mismatch ellipses of a metric
- */
-gsl_matrix* XLALMetricEllipsePrincipalAxes(
-  gsl_matrix *metric, /**< Metric to bound */
-  REAL8 max_mismatch  /**< Maximum mismatch w.r.t metric */
-  )
-{
-
-  const int n = metric->size1;
-
-  int i;
-  gsl_eigen_symmv_workspace *eig_wksp = NULL;
-  gsl_matrix *temp_matrix = NULL;
-  gsl_vector *temp_vector = NULL;
-  gsl_matrix *eig_vec = NULL;
-  double inner_prod;
-
-  /* Check input */
-  if (n != (int)metric->size1 || n != (int)metric->size2)
-    XLAL_ERROR_NULL(XLAL_ESIZE);
-
-  /* Allocate memory */
-  ALLOC_GSL_1D(eigen_symmv, eig_wksp,    n, NULL);
-  ALLOC_GSL_MATRIX(temp_matrix,       n, n, NULL);
-  ALLOC_GSL_VECTOR(temp_vector,          n, NULL);
-  ALLOC_GSL_MATRIX(eig_vec,           n, n, NULL);
-
-  /* Calculate the eigenvector of the metric */
-  gsl_matrix_memcpy(temp_matrix, metric);
-  gsl_eigen_symmv(temp_matrix, temp_vector, eig_vec, eig_wksp);
-
-  /* Normalise the eigenvectors to the mismatch */
-  for (i = 0; i < n; ++i) {
-
-    /* Get view of eigenvector */
-    gsl_vector_view eig_vec_i = gsl_matrix_column(eig_vec, i);
-
-    /* Calculate inner product of eigenvector with respect to the metric */
-    gsl_blas_dgemv(CblasNoTrans, 1.0, metric, &eig_vec_i.vector, 0.0, temp_vector);
-    gsl_blas_ddot(&eig_vec_i.vector, temp_vector, &inner_prod);
-
-    /* Normalise the eigenvector */
-    gsl_vector_scale(&eig_vec_i.vector, sqrt(max_mismatch / inner_prod));
-
-  }
-
-  /* Cleanup */
-  FREE_GSL_1D(eigen_symmv, eig_wksp);
-  FREE_GSL_MATRIX(temp_matrix);
-  FREE_GSL_VECTOR(temp_vector);
-
-  return eig_vec;
-
-}
-
-/**
  * Find the bounding box of the mismatch ellipses of a metric
  */
 gsl_vector *XLALMetricEllipseBoundingBox(
