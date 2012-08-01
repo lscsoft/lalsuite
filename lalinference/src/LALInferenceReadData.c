@@ -229,7 +229,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL;
 	REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
-	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
+	UINT4 Ncache=0,Npsd=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	UINT4 i,j;
 	//int FakeFlag=0; - set but not used
 	char strainname[]="LSC-STRAIN";
@@ -243,6 +243,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char *chartmp=NULL;
 	char **channels=NULL;
 	char **caches=NULL;
+  char **psds=NULL;
 	char **IFOnames=NULL;
 	char **fLows=NULL,**fHighs=NULL;
 	char **timeslides=NULL;
@@ -305,6 +306,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--channel")->value,&channels,&Nchannel);
 	}
 	LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--cache")->value,&caches,&Ncache);
+  if(LALInferenceGetProcParamVal(commandLine,"--psd")){
+		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--psd")->value,&psds,&Npsd);
+	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--ifo");
 	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--IFO");
 	LALInferenceParseCharacterOptionString(ppt->value,&IFOnames,&Nifo);
@@ -670,23 +674,39 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			XLALDestroyRandomParams(datarandparam);
 		}
 		else{ /* Not using fake data, load the data from a cache file */
-			fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-			PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
-			if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
-			XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
-			PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
-			if(!PSDtimeSeries) {
-                            fprintf(stderr,"ERROR while estimating PSD for %s\n",IFOnames[i]);
-                            XLAL_ERROR_NULL(XLAL_EFUNC);
-                        }
-			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
-			if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
-			if (LALInferenceGetProcParamVal(commandLine, "--PSDwelch"))
-				XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
-			else
-				XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
+      if (LALInferenceGetProcParamVal(commandLine, "--psd")){
+        interp=NULL;
+        char *interpfilename=&(psds[i][0]);
+        fprintf(stderr,"Reading PSD for %s using %s\n",IFOnames[i],interpfilename);
+        printf("Looking for psd interpolation file %s\n",interpfilename);
+        interp=interpFromFile(interpfilename);
+        IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
+        XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
+                                       (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+        if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
+        for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
+        {
+          MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL);
+        }
+      }else{
+        fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
+        PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
+        if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
+        XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
+        PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
+        if(!PSDtimeSeries) {
+                              fprintf(stderr,"ERROR while estimating PSD for %s\n",IFOnames[i]);
+                              XLAL_ERROR_NULL(XLAL_EFUNC);
+                          }
+        IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+        if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
+        if (LALInferenceGetProcParamVal(commandLine, "--PSDwelch"))
+          XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
+        else
+          XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
 
-			XLALDestroyREAL8TimeSeries(PSDtimeSeries);
+        XLALDestroyREAL8TimeSeries(PSDtimeSeries);
+      }
 
 			/* Read the data segment */
 			LIGOTimeGPS truesegstart=segStart;
