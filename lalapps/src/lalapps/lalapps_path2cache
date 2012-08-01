@@ -34,12 +34,12 @@ from optparse import OptionParser
 
 from glue import lal
 from glue import segments
-#from lalapps import git_version
+from lalapps import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-#__version__ = "git id %s" % git_version.id
-#__date__ = git_version.date
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
 
 #
@@ -53,7 +53,7 @@ __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
 
 def parse_command_line():
 	parser = OptionParser(
-		#version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		version = "Name: %%prog\n%s" % git_version.verbose_msg,
 		usage = "usage: %prog [options]\n\nExample:\n\tls *.xml | %prog"
 	)
 	parser.add_option("-a", "--include-all", action = "store_true", help = "Include all files in output.  Unparseable file names are assigned empty metadata.")
