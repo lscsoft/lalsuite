@@ -443,7 +443,7 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_array_type(uint32or64_t, unsigned long);
 %define %swiglal_array_int32or64_frags(FRAG, FUNC, INT)
 %fragment(FRAG(INT##32or64_t), "header") {
-%#ifdef sizeof(long) == 64
+%#if LONG_MAX > INT_MAX
 %#define FUNC(INT##32or64_t) FUNC(INT##64_t)
 %#else
 %#define FUNC(INT##32or64_t) FUNC(INT##32_t)
