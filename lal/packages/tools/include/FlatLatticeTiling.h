@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007, 2008 Karl Wette
+ *  Copyright (C) 2007, 2008, 2012 Karl Wette
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ typedef struct tagFlatLatticeTiling {
  * Core functions
  */
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(INT4);
-void XLALFreeFlatLatticeTiling(FlatLatticeTiling*);
+void XLALDestroyFlatLatticeTiling(FlatLatticeTiling*);
 int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, UINT8, FlatLatticeTilingBoundFunc, void*, FlatLatticeTilingBoundFree);
 int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, REAL8, gsl_vector*);
 int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);

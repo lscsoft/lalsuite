@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
 
   /* Cleanup */
   LALDestroyUserVars(&status);
-  XLALFreeFlatLatticeTiling(tiling);
+  XLALDestroyFlatLatticeTiling(tiling);
   XLALDestroyRandomParams(inject_random);
   FREE_GSL_VECTOR(temp);
   FREE_GSL_VECTOR(inject_point);

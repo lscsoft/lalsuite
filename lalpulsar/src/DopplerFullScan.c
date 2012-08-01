@@ -644,7 +644,7 @@ FreeDopplerFullScan (LALStatus *status, DopplerFullScanState **scan)
   }
 
   if ((*scan)->spindownTiling) {
-    XLALFreeFlatLatticeTiling((*scan)->spindownTiling);
+    XLALDestroyFlatLatticeTiling((*scan)->spindownTiling);
   }
 
   if ( (*scan)->skyRegion.vertices)

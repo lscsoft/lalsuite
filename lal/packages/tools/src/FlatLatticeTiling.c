@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2007, 2008 Karl Wette
+ *  Copyright (C) 2007, 2008, 2012 Karl Wette
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -239,7 +239,7 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
 /**
  * Free a flat lattice tiling structure
  */
-void XLALFreeFlatLatticeTiling(
+void XLALDestroyFlatLatticeTiling(
   FlatLatticeTiling *tiling /**< Tiling structure */
   )
 {
