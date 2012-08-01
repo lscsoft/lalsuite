@@ -426,6 +426,7 @@ int
 XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
   int ret;
+  gsl_vector* current;
 
   /* This traps coding errors in the calling routine. */
   if ( pos == NULL || scan == NULL ) {
@@ -508,13 +509,15 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
 	case XLAL_SUCCESS:
 	  /* Found a point */
-	  pos->fkdot[0]   = gsl_vector_get(scan->spindownTiling->current, 0);
-	  pos->Alpha      = gsl_vector_get(scan->spindownTiling->current, 1);
-	  pos->Delta      = gsl_vector_get(scan->spindownTiling->current, 2);
-	  for (i = 1; i < PULSAR_MAX_SPINS; ++i)
-	    pos->fkdot[i] = gsl_vector_get(scan->spindownTiling->current, i + 2);
 
-	  return 0;
+          current = XLALCurrentFlatLatticePoint(scan->spindownTiling);
+          pos->fkdot[0]   = gsl_vector_get(current, 0);
+          pos->Alpha      = gsl_vector_get(current, 1);
+          pos->Delta      = gsl_vector_get(current, 2);
+          for (i = 1; i < PULSAR_MAX_SPINS; ++i)
+            pos->fkdot[i] = gsl_vector_get(current, i + 2);
+
+          return 0;
 
 	case XLAL_FAILURE:
 	  /* No more points */

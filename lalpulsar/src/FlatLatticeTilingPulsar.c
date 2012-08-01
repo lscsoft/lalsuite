@@ -77,7 +77,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   )
 {
 
-  const int n = tiling->dimensions;
+  const int n = XLALFlatLatticeTilingDimension(tiling);
 
   int i, j;
   gsl_matrix *norm_metric = NULL;
@@ -175,11 +175,11 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   UINT8 bound;
 
   /* Check tiling dimension */
-  if (tiling->dimensions < (3 + gap))
-    XLAL_ERROR(XLAL_EINVAL, "'tiling->dimensions' is too small");
+  if (XLALFlatLatticeTilingDimension(tiling) < (3 + gap))
+    XLAL_ERROR(XLAL_EINVAL, "'XLALFlatLatticeTilingDimension(tiling)' is too small");
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_FAILURE);
+  ALLOC_GSL_MATRIX(data, XLALFlatLatticeTilingDimension(tiling), 2, XLAL_FAILURE);
   gsl_matrix_set_zero(data);
 
   /* Set frequency bounds */

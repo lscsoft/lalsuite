@@ -58,7 +58,7 @@
 /**
  * Flat lattice tiling bound
  */
-struct tagFlatLatticeTilingBound {
+typedef struct tagFlatLatticeTilingBound {
 
   /* Number of bound dimensions */
   INT4 dimensions;
@@ -75,12 +75,12 @@ struct tagFlatLatticeTilingBound {
   /* Cleanup function */
   FlatLatticeTilingBoundFree free;
 
-};
+} FlatLatticeTilingBound;
 
 /**
  * Flat lattice tiling subspace
  */
-struct tagFlatLatticeTilingSubspace {
+typedef struct tagFlatLatticeTilingSubspace {
 
   /* Total number of tiled (non-flat) dimensions */
   INT4 dimensions;
@@ -94,7 +94,7 @@ struct tagFlatLatticeTilingSubspace {
   /* Increment vectors of the lattice tiling generator */
   gsl_matrix *increment;
 
-};
+} FlatLatticeTilingSubspace;
 
 /**
  * State of the flat lattice tiling algorithm
@@ -104,6 +104,64 @@ enum {
   FLT_S_NotStarted,
   FLT_S_InProgress,
   FLT_S_Finished
+};
+
+/**
+ * Flat lattice tiling state/input structure
+ */
+struct tagFlatLatticeTiling {
+
+  /* Dimension of the parameter space */
+  INT4 dimensions;
+
+  /* Parameter space bounds */
+  INT4 num_bounds;
+  FlatLatticeTilingBound **bounds;
+  gsl_vector_int *bound_map;
+  gsl_vector *bound_point;
+
+  /* Metric of the parameter space in normalised coordinates */
+  gsl_matrix *metric;
+
+  /* Normalised to real parameter coordinates scaling and offset */
+  gsl_vector *real_scale;
+  gsl_vector *real_offset;
+
+  /* Maximum metric mismatch between the templates */
+  REAL8 max_mismatch;
+
+  /* Flat tiling lattice generator */
+  FlatTilingLatticeGenerator generator;
+
+  /* Cache of generated tiling subspaces */
+  INT4 num_subspaces;
+  FlatLatticeTilingSubspace **subspaces;
+
+  /* Scaling of the padding of bounds (for testing) */
+  REAL8 scale_padding;
+
+  /* Current dimensions which are tiled (non-flat) */
+  UINT8 curr_is_tiled;
+
+  /* Current tiling subspace */
+  FlatLatticeTilingSubspace *curr_subspace;
+
+  /* Current lattice point */
+  gsl_vector *curr_point;
+
+  /* Bounds on current point */
+  gsl_vector *curr_lower;
+  gsl_vector *curr_upper;
+
+  /* Current template */
+  gsl_vector *current;
+
+  /* Total number of points generated so far */
+  UINT4 count;
+
+  /* State of the tiling */
+  int state;
+
 };
 
 /********** Functions **********/
@@ -234,6 +292,20 @@ FlatLatticeTiling *XLALCreateFlatLatticeTiling(
 
   return tiling;
 
+}
+
+INT4 XLALFlatLatticeTilingDimension(
+  FlatLatticeTiling *tiling /**< Tiling structure */
+  )
+{
+  return tiling->dimensions;
+}
+
+gsl_matrix* XLALFlatLatticeTilingMetric(
+  FlatLatticeTiling *tiling /**< Tiling structure */
+  )
+{
+  return tiling->metric;
 }
 
 /**
@@ -772,6 +844,14 @@ int XLALNextFlatLatticePoint(
 
   return XLAL_SUCCESS;
 
+}
+
+gsl_vector*
+XLALCurrentFlatLatticePoint(
+  FlatLatticeTiling *tiling /**< Tiling structure */
+  )
+{
+  return tiling->current;
 }
 
 /**

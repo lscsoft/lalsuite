@@ -189,12 +189,12 @@ int main(int argc, char *argv[]) {
   /* Check only one parameter space was specified */
   if (spaces != 1)
     LALAPPS_ERROR("Exactly one of --square or --age-braking must be specified\n", 0);
-  XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->dimensions);
+  XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", XLALFlatLatticeTilingDimension(tiling));
 
   /* Scale padding (testing only) */
-  if (LALUserVarWasSet(&scale_padding)) {
-    tiling->scale_padding = scale_padding;
-  }
+  /* if (LALUserVarWasSet(&scale_padding)) { */
+  /*   tiling->scale_padding = scale_padding; */
+  /* } */
 
   /* Set metric */
   switch (metric_type) {
@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
   case 1:
     {
       gsl_matrix *identity = NULL;
-      ALLOC_GSL_MATRIX(identity, tiling->dimensions, tiling->dimensions, EXIT_FAILURE);
+      ALLOC_GSL_MATRIX(identity, XLALFlatLatticeTilingDimension(tiling), XLALFlatLatticeTilingDimension(tiling), EXIT_FAILURE);
       gsl_matrix_set_identity(identity);
       if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL))
 	LALAPPS_ERROR("XLALSetFlatLatticeTilingMetric failed\n", 0);
@@ -215,10 +215,10 @@ int main(int argc, char *argv[]) {
   default:
     LALAPPS_ERROR("Invalid --metric\n", 0);
   }
-  XLAL_VBXMLO_gsl_matrix(&xml, "metric", "%0.12g", tiling->metric);
-  XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.12g", tiling->max_mismatch);
-  XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.12g", tiling->real_scale);
-  XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.12g", tiling->real_offset);
+  XLAL_VBXMLO_gsl_matrix(&xml, "metric", "%0.12g", XLALFlatLatticeTilingMetric(tiling));
+  XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.12g", max_mismatch);
+  /* XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.12g", tiling->real_scale); */
+  /* XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.12g", tiling->real_offset); */
 
   /* Set lattice */
   switch (lattice_type) {
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
       LALAPPS_ERROR("XLALCreateRandomParams failed", 0);
     
     /* Allocate memory */
-    ALLOC_GSL_VECTOR(inject_point, tiling->dimensions, EXIT_FAILURE);
+    ALLOC_GSL_VECTOR(inject_point, XLALFlatLatticeTilingDimension(tiling), EXIT_FAILURE);
     ALLOC_GSL_VECTOR(inject_min_mismatch, inject_count, EXIT_FAILURE);
 
     /* Initialise minimum mismatch */
@@ -262,14 +262,14 @@ int main(int argc, char *argv[]) {
   /* Generate and output templates and injections */
   fflush(xml.file);
   if (!only_count) {
-    ALLOC_GSL_VECTOR(temp, tiling->dimensions, EXIT_FAILURE);
+    ALLOC_GSL_VECTOR(temp, XLALFlatLatticeTilingDimension(tiling), EXIT_FAILURE);
     XLAL_VBXMLO_BeginTag(&xml, "tiling");
   }
   while (XLALNextFlatLatticePoint(tiling) == XLAL_SUCCESS) {
     
     /* Output template */
     if (!only_count) {
-      XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.12g", tiling->current);
+      XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.12g", XLALCurrentFlatLatticePoint(tiling));
       fflush(xml.file);
     }
 
@@ -281,9 +281,9 @@ int main(int argc, char *argv[]) {
 
       /* Generate injections */
       for (k = 0; k < inject_count; ++k) {
-	if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, tiling->current, &inject_dist))
+	if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, XLALCurrentFlatLatticePoint(tiling), &inject_dist))
 	  LALAPPS_ERROR("XLALRandomPointInFlatLatticeParamSpace failed\n", 0);
-	if (!only_count && tiling->count == 1)
+	if (!only_count /*&& tiling->count == 1*/)
 	  XLAL_VBXMLO_gsl_vector(&xml, "injection", "%0.12g", inject_point);	  
 
 	/* Update minimum mismatch */
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
   /*   XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", tiling->subspaces[i]->dimensions); */
   /*   XLAL_VBXMLO_BeginTag(&xml, "is_tiled"); */
   /*   XLAL_VBXMLO_Indent(&xml); */
-  /*   for (j = 0; j < tiling->dimensions; ++j) { */
+  /*   for (j = 0; j < XLALFlatLatticeTilingDimension(tiling); ++j) { */
   /*     XLAL_VBXMLO_Printf(&xml, "%c", GET_BIT(UINT8, tiling->subspaces[i]->is_tiled, j) ? 'Y' : 'N'); */
   /*   } */
   /*   XLAL_VBXMLO_Printf(&xml, "\n"); */
@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
     for (k = 0; k < inject_count; ++k) {
 
       /* Minimal mistmatch histogram bin */
-      const int bin = (int)floor(gsl_vector_get(inject_min_mismatch, k) / tiling->max_mismatch * inject_min_mismatch_bins);
+      const int bin = (int)floor(gsl_vector_get(inject_min_mismatch, k) / max_mismatch * inject_min_mismatch_bins);
 
       /* If within range, increase count */
       if (0 <= bin && bin < inject_min_mismatch_bins)
