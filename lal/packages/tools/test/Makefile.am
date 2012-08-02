@@ -11,6 +11,10 @@ check_PROGRAMS = \
 	SegmentsTest \
 	SequenceTest \
 	SkymapTest \
+	CubicSplineTriggerInterpolantTest \
+	LanczosTriggerInterpolantTest \
+	NearestNeighborTriggerInterpolantTest \
+	QuadraticFitTriggerInterpolantTest \
 	TimeSeriesTest \
 	UnitsTest
 
@@ -74,6 +78,22 @@ UnitsTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
+CubicSplineTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+LanczosTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+NearestNeighborTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+QuadraticFitTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
 EXTRA_DIST = \
 	ComputeCalibrationFactorsTest.c \
 	LALIndTestDetRes.sh \
@@ -94,6 +114,10 @@ TESTS = \
 	SequenceTest \
 	SkymapTest \
 	TimeSeriesTest \
+	CubicSplineTriggerInterpolantTest \
+	LanczosTriggerInterpolantTest \
+	NearestNeighborTriggerInterpolantTest \
+	QuadraticFitTriggerInterpolantTest \
 	UnitsTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
