@@ -782,11 +782,16 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set Fstat spindown resolution (coarse grid) */
-  if ( LALUserVarWasSet(&uvar_df2dot) ) {
-    usefulParams.df2dot = uvar_df2dot;
+  if ( LALUserVarWasSet(&uvar_f2dot) || LALUserVarWasSet(&uvar_f2dotBand) ) {
+    if ( LALUserVarWasSet(&uvar_df2dot) ) {
+      usefulParams.df2dot = uvar_df2dot;
+    }
+    else {
+      usefulParams.df2dot = -1;
+    }
   }
   else {
-    usefulParams.df2dot = -1;
+    usefulParams.df2dot = 0;
   }
 
   /* for 1st stage: read sfts, calculate detector states */
