@@ -526,6 +526,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('lalinference','ER2-cache'):
       node.cachefiles=ast.literal_eval(self.config.get('lalinference','ER2-cache'))
       node.channels=ast.literal_eval(self.config.get('data','channels'))
+      node.psds=ast.literal_eval(self.config.get('lalinference','psds'))
+      for ifo in ifos:
+        node.add_input_file(os.path.join(self.basepath,node.cachefiles[ifo]))
+        node.cachefiles[ifo]=os.path.join(self.basepath,node.cachefiles[ifo])
+        node.add_input_file(os.path.join(self.basepath,node.psds[ifo]))
+        node.psds[ifo]=os.path.join(self.basepath,node.psds[ifo])
       if len(ifos)==0: node.ifos=node.cachefiles.keys()
       else: node.ifos=ifos
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
@@ -633,6 +639,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.ifos=[]
     self.scisegs={}
     self.channels={}
+    self.psds={}
     self.timeslides={}
     self.seglen=None
     self.psdlength=None
@@ -711,6 +718,7 @@ class EngineNode(pipeline.CondorDAGNode):
       """
       ifostring='['
       cachestring='['
+      psdstring='['
       channelstring='['
       slidestring='['
       first=True
@@ -721,15 +729,18 @@ class EngineNode(pipeline.CondorDAGNode):
         else: delim=','
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
+        psdstring=psdstring+delim+self.psds[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
+      psdstring=psdstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
       self.add_var_opt('IFO',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
+      self.add_var_opt('psd',psdstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslides',slidestring)
       # Start at earliest common time
@@ -1045,5 +1056,6 @@ class GraceDBNode(pipeline.CondorDAGNode):
             return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        self.add_var_arg('Parameter estimation finished.  <a href="'+self.resultsurl+'/posplots.html">'+self.resultsurl+'/posplots.html</a>')
+        self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
+        #self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
         self.__finalized=True
