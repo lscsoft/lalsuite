@@ -1914,6 +1914,14 @@ int XLALInspiralCalculateIIRSetInnerProduct(
 	double             *ip
 	);
 
+int
+XLALNRInjectionFromSimInspiral(
+    REAL8TimeSeries **hplus,
+    REAL8TimeSeries **hcross,
+    SimInspiralTable *thisRow,
+    REAL8 deltaT
+);
+
 void XLALSimInjectNinjaSignals(
         REAL4TimeSeries* chan,
         const char *ifo,

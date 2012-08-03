@@ -4,8 +4,6 @@ EXTRA_DIST = \
 	config.sub \
 	cuda.common \
 	depcomp \
-	doc.mk \
-	dvi.mk \
 	generate_user_env.awk \
 	include.mk \
 	install-sh \
@@ -18,7 +16,6 @@ EXTRA_DIST = \
 	ltsugar.m4 \
 	ltversion.m4 \
 	lt~obsolete.m4 \
-	main.tex.in \
 	missing \
 	mkinstalldirs \
 	test-driver

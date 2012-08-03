@@ -147,19 +147,20 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 void initializeMCMC(LALInferenceRunState *runState)
 {
   char help[]="\
-               ------------------------------------------------------------------------------------------------------------------\n\
-               --- General Algorithm Parameters ---------------------------------------------------------------------------------\n\
-               ------------------------------------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --- General Algorithm Parameters ------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
                (--Niter N)                      Number of iterations (2*10^7).\n\
+               (--Neff N)                       Number of effective samples. (ends if chain surpasses Niter)\n\
                (--Nskip N)                      Number of iterations between disk save (100).\n\
                (--trigSNR SNR)                  Network SNR from trigger, used to calculate tempMax (injection SNR).\n\
                (--randomseed seed)              Random seed of sampling distribution (random).\n\
                (--adaptTau)                     Adaptation decay power, results in adapt length of 10^tau (5).\n\
                (--noAdapt)                      Do not adapt run.\n\
                \n\
-               ------------------------------------------------------------------------------------------------------------------\n\
-               --- Likelihood Functions -----------------------------------------------------------------------------------------\n\
-               ------------------------------------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Likelihood Functions --------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
                (--zeroLogLike)                  Use flat, null likelihood.\n\
                (--studentTLikelihood)           Use the Student-T Likelihood that marginalizes over noise.\n\
                (--correlatedGaussianLikelihood) Use analytic, correlated Gaussian for Likelihood.\n\
@@ -168,17 +169,17 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--analyticnullprior)            Use analytic null prior.\n\
                (--nullprior)                    Use null prior in the sampled parameters.\n\
                \n\
-               ------------------------------------------------------------------------------------------------------------------\n\
-               --- Proposals  ---------------------------------------------------------------------------------------------------\n\
-               ------------------------------------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Proposals  ------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
                (--rapidSkyLoc)                  Use rapid sky localization jump proposals.\n\
                (--kDTree)                       Use a kDTree proposal.\n\
                (--kDNCell N)                    Number of points per kD cell in proposal.\n\
                (--covarianceMatrix file)        Find the Cholesky decomposition of the covariance matrix for jumps in file.\n\
                \n\
-               ------------------------------------------------------------------------------------------------------------------\n\
-               --- Parallel Tempering Algorithm Parameters ----------------------------------------------------------------------\n\
-               ------------------------------------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Parallel Tempering Algorithm Parameters -------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
                (--inverseLadder)                Space temperature uniform in 1/T, rather than geometric.\n\
                (--tempSkip N)                   Number of iterations between temperature swap proposals (100).\n\
                (--tempSwaps N)                  Number of random swaps proposed every <tempSkip> iterations ((nTemps-1)nTemps/2).\n\
@@ -189,9 +190,9 @@ void initializeMCMC(LALInferenceRunState *runState)
                (--annealStart N)                Iteration number to start annealing (5*10^5).\n\
                (--annealLength N)               Number of iterations to anneal all chains to T=1.0 (1*10^5).\n\
                \n\
-               ------------------------------------------------------------------------------------------------------------------\n\
-               --- Output -------------------------------------------------------------------------------------------------------\n\
-               ------------------------------------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
+               --- Output ----------------------------------------------------------------------------------------\n\
+               ---------------------------------------------------------------------------------------------------\n\
                (--data-dump)                    Output waveforms to file.\n\
                (--adaptVerbose)                 Output parameter jump sizes and acceptance rate stats to file.\n\
                (--tempVerbose)                  Output temperature swapping stats to file.\n\
@@ -451,7 +452,7 @@ void initVariables(LALInferenceRunState *state)
                                                default modeldomain=\"frequency\": TaylorF1, TaylorF2, TaylorF2RedSpin, \n\
                                                                                 TaylorF2RedSpinTidal, IMRPhenomA, IMRPhenomB.\n\
                (--order PNorder)               Specify a PN order in phase to use (default threePointFivePN).\n\
-               (--ampOrder PNorder)            Specify a PN order in amplitude to use (default newtonian).\n\
+               (--ampOrder PNorder)            Specify a PN order in amplitude to use (defaults: LALSimulation: max available; LALInspiral: newtownian).\n\
                (--fref fRef)                   Specify a reference frequency at which parameters are defined (default 0).\n\
                (--tidal)                       Enables tidal corrections, only with LALSimulation.\n\
                (--interactionFlags)            intercation flags, only with LALSimuation (LAL_SIM_INSPIRAL_INTERACTION_ALL).\n\

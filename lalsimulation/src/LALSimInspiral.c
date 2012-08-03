@@ -45,20 +45,18 @@
 #define MAX_NONPRECESSING_AMP_PN_ORDER 5
 #define MAX_PRECESSING_AMP_PN_ORDER 3
 
-/**
- * Macro functions to rotate the components of a vector about an axis
- */
+/* Macro functions to rotate the components of a vector about an axis */
 #define ROTATEZ(angle, vx, vy, vz)\
 	tmp1 = vx*cos(angle) - vy*sin(angle);\
 	tmp2 = vx*sin(angle) + vy*cos(angle);\
 	vx = tmp1;\
-	vy = tmp2;
+	vy = tmp2
 
 #define ROTATEY(angle, vx, vy, vz)\
-	tmp1 = vx*cos(angle) - vz*sin(angle);\
-	tmp2 = vx*sin(angle) + vz*cos(angle);\
+	tmp1 = vx*cos(angle) + vz*sin(angle);\
+	tmp2 = - vx*sin(angle) + vz*cos(angle);\
 	vx = tmp1;\
-	vz = tmp2;
+	vz = tmp2
 
 
 /**
@@ -972,24 +970,25 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
  * \"radiation frame\" (with the z-axis along the direction of propagation) as
- * needed for initial conditions for the SpinTaylorT4 waveform routines.
+ * needed to specify binary configuration for ChooseTDWaveform.
  *
  * Input:
- *     thetaJN, phiJN are angles describing the desired orientation of the
- * total angular momentum (J) relative to direction of propagation (N)
- *     theta1, phi1, theta2, phi2 are angles describing the desired orientation
- * of spin 1 and 2 relative to the Newtonian orbital angular momentum (L_N)
- *     m1, m2, f0 are the component masses and initial GW frequency,
- * they are needed to compute the magnitude of L_N, and thus J
- *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$),
- * they are needed to compute the magnitude of S1 and S2, and thus J
+ *     thetaJN is the inclination between total angular momentum (J) and the
+ *         direction of propagation (N)
+ *     theta1 and theta2 are the inclinations of S1 and S2
+ *         measured from the Newtonian orbital angular momentum (L_N)
+ *     phi12 is the difference in azimuthal angles of S1 and S2.
+ *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
+ *     phiJL is the azimuthal angle of L_N on its cone about J.
+ *     m1, m2, f_ref are the component masses and reference GW frequency,
+ *         they are needed to compute the magnitude of L_N, and thus J.
  *
  * Output:
- *     x, y, z components of LNhat (unit vector along orbital angular momentum),
+ *     incl - inclination angle of L_N relative to N
  *     x, y, z components of E1 (unit vector in the initial orbital plane)
  *     x, y, z components S1 and S2 (unit spin vectors times their
- * dimensionless spin magnitudes - i.e. they have unit magnitude for
- * extremal BHs and smaller magnitude for slower spins)
+ *         dimensionless spin magnitudes - i.e. they have unit magnitude for
+ *         extremal BHs and smaller magnitude for slower spins).
  *
  * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
@@ -999,69 +998,79 @@ int XLALSimInspiralPrecessingPTFQWaveforms(
  * the PN order of the system and to avoid subtleties with spin-orbit
  * contributions to L. Also, it is believed that the difference in Jhat
  * with or without these PN corrections to L is quite small.
+ *
+ * NOTE: fRef = 0 is not a valid choice. If you will pass fRef=0 into
+ * ChooseWaveform, then here pass in f_min, the starting GW frequency
+ *
+ * The various rotations in this transformation are described in more detail
+ * in a Mathematica notebook available here:
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Waveforms/TransformPrecessingInitialConditions
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
-		REAL8 *LNhatx,	/**< LNhat x component (returned) */
-		REAL8 *LNhaty,	/**< LNhat y component (returned) */
-		REAL8 *LNhatz,	/**< LNhat z component (returned) */
-		REAL8 *E1x,	/**< E1 x component (returned) */
-		REAL8 *E1y,	/**< E1 y component (returned) */
-		REAL8 *E1z,	/**< E1 z component (returned) */
+		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
 		REAL8 *S1x,	/**< S1 x component (returned) */
 		REAL8 *S1y,	/**< S1 y component (returned) */
 		REAL8 *S1z,	/**< S1 z component (returned) */
 		REAL8 *S2x,	/**< S2 x component (returned) */
 		REAL8 *S2y,	/**< S2 y component (returned) */
 		REAL8 *S2z,	/**< S2 z component (returned) */
-		REAL8 thetaJN, 	/**< zenith angle between J and N */
-		REAL8 phiJN,  	/**< azimuth angle between J and N */
-		REAL8 theta1,  	/**< zenith angle between S1 and LNhat */
-		REAL8 phi1,  	/**< azimuth angle between S1 and LNhat */
-		REAL8 theta2,  	/**< zenith angle between S2 and LNhat */
-		REAL8 phi2,  	/**< azimuth angle between S2 and LNhat */
+		REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
+		REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
+		REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
+		REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
+		REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
+		REAL8 chi1,	/**< dimensionless spin of body 1 */
+		REAL8 chi2,	/**< dimensionless spin of body 2 */
 		REAL8 m1,	/**< mass of body 1 (kg) */
 		REAL8 m2,	/**< mass of body 2 (kg) */
-		REAL8 f0,	/**< initial GW frequency (Hz) */
-		REAL8 chi1,	/**< dimensionless spin of body 1 */
-		REAL8 chi2	/**< dimensionless spin of body 2 */
+		REAL8 fRef	/**< reference GW frequency (Hz) */
 		)
 {
-	REAL8 omega0, M, eta, theta0, phi0, thetaLN, phiLN, Jnorm, tmp1, tmp2;
-	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNx, LNy, LNz;
-	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
-	REAL8 e1x, e1y, e1z, s1x, s1y, s1z, s2x, s2y, s2z;
+	/* Check that fRef is sane */
+	if( fRef == 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef=0 is invalid. Please pass in the starting GW frequency instead.\n", __func__);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
 
-	/* Starting frame: LNhat is along the z-axis and the unit 
-	   spin vectors are defined from the angles relative to LNhat */
+	REAL8 omega0, M, eta, theta0, phi0, Jnorm, tmp1, tmp2;
+	REAL8 Jhatx, Jhaty, Jhatz, LNhx, LNhy, LNhz, Jx, Jy, Jz, LNmag;
+	REAL8 s1hatx, s1haty, s1hatz, s2hatx, s2haty, s2hatz;
+	REAL8 s1x, s1y, s1z, s2x, s2y, s2z;
+
+	/* Starting frame: LNhat is along the z-axis and the unit
+	 * spin vectors are defined from the angles relative to LNhat.
+	 * Note that we put s1hat in the x-z plane, and phi12
+	 * sets the azimuthal angle of s2hat measured from the x-axis.
+	 */
 	LNhx = 0.;
 	LNhy = 0.;
 	LNhz = 1.;
-	s1hatx = sin(theta1) * cos(phi1);
-	s1haty = sin(theta1) * sin(phi1);
+	s1hatx = sin(theta1);
+	s1haty = 0.;
 	s1hatz = cos(theta1);
-	s2hatx = sin(theta2) * cos(phi2);
-	s2haty = sin(theta2) * sin(phi2);
+	s2hatx = sin(theta2) * cos(phi12);
+	s2haty = sin(theta2) * sin(phi12);
 	s2hatz = cos(theta2);
 
 	/* Define several internal variables needed for magnitudes */
-	omega0 = LAL_PI * f0; // initial orbital angular frequency
+	omega0 = LAL_PI * fRef; // orbital angular frequency at reference point
 	m1 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
 	m2 *= LAL_G_SI / LAL_C_SI / LAL_C_SI / LAL_C_SI;
 	M = m1 + m2;
 	eta = m1 * m2 / M / M;
 	
-	/* Define LN, S1, S2, J with proper magnitudes */
-	LNx = LNy = 0.;
-	LNz = pow(M, 5./3.) * eta * pow(omega0, -1./3.) * LNhz;
+	/* Define S1, S2, J with proper magnitudes */
+	LNmag = pow(M, 5./3.) * eta * pow(omega0, -1./3.);
 	s1x = m1 * m1 * chi1 * s1hatx;
 	s1y = m1 * m1 * chi1 * s1haty;
 	s1z = m1 * m1 * chi1 * s1hatz;
 	s2x = m2 * m2 * chi2 * s2hatx;
 	s2y = m2 * m2 * chi2 * s2haty;
 	s2z = m2 * m2 * chi2 * s2hatz;
-	Jx = LNx + s1x + s2x;
-	Jy = LNy + s1y + s2y;
-	Jz = LNz + s1z + s2z;
+	Jx = s1x + s2x;
+	Jy = s1y + s2y;
+	Jz = LNmag * LNhz + s1z + s2z;
 
 	/* Normalize J to Jhat, find it's angles in starting frame */
 	Jnorm = sqrt( Jx*Jx + Jy*Jy + Jz*Jz);
@@ -1071,33 +1080,53 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 	theta0 = acos(Jhatz);
 	phi0 = atan2(Jhaty, Jhatx);
 
-	/* Rotate about z-axis by -phi0 to put Jhat in x-z plane */
+	/* Rotation 1: Rotate about z-axis by -phi0 to put Jhat in x-z plane */
 	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
 	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
 	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
 	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
 
-	/* Rotate about new y-axis by theta0 - thetaJN to put Jhat at
-	   desired inclination relative to direction of propagation */
-	ROTATEY(theta0 - thetaJN, LNhx, LNhy, LNhz);
-	ROTATEY(theta0 - thetaJN, s1hatx, s1haty, s1hatz);
-	ROTATEY(theta0 - thetaJN, s2hatx, s2haty, s2hatz);
-	ROTATEY(theta0 - thetaJN, Jhatx, Jhaty, Jhatz);
+	/* Rotation 2: Rotate about new y-axis by -theta0
+	 * to put Jhat along z-axis
+	 */
+	ROTATEY(-theta0, LNhx, LNhy, LNhz);
+	ROTATEY(-theta0, s1hatx, s1haty, s1hatz);
+	ROTATEY(-theta0, s2hatx, s2haty, s2hatz);
+	ROTATEY(-theta0, Jhatx, Jhaty, Jhatz);
 
-	/* Rotate about new z-axis by phiJN to put J at desired azimuth */
-	ROTATEZ(phiJN, LNhx, LNhy, LNhz);
-	ROTATEZ(phiJN, s1hatx, s1haty, s1hatz);
-	ROTATEZ(phiJN, s2hatx, s2haty, s2hatz);
-	ROTATEZ(phiJN, Jhatx, Jhaty, Jhatz);
+	/* Rotation 3: Rotate about new z-axis by phiJL to put L at desired
+	 * azimuth about J. Note that is currently in x-z plane towards -x
+	 * (i.e. azimuth=pi). Hence we rotate about z by phiJL - LAL_PI
+	 */
+	ROTATEZ(phiJL - LAL_PI, LNhx, LNhy, LNhz);
+	ROTATEZ(phiJL - LAL_PI, s1hatx, s1haty, s1hatz);
+	ROTATEZ(phiJL - LAL_PI, s2hatx, s2haty, s2hatz);
+	ROTATEZ(phiJL - LAL_PI, Jhatx, Jhaty, Jhatz);
 
-	/* E1 is at same azimuth as LNhat, but its zenith is an extra pi/2.
-	   Same as sin(theta) -> cos(theta), cos(theta) -> -sin(theta) */
-	thetaLN = acos(LNhz);
-	phiLN = atan2(LNhy, LNhx);
-	e1x = cos(thetaLN)*cos(phiLN);
-	e1y = cos(thetaLN)*sin(phiLN);
-	e1z = -sin(thetaLN);
+	/* Rotation 4: Let N be in x-z plane, inclined from J by thetaJN.
+	 * We don't need to explicitly construct it, but rotating the system
+	 * about the y-axis by - thetaJN will bring N onto the z-axis.
+	 */
+	ROTATEY(-thetaJN, LNhx, LNhy, LNhz);
+	ROTATEY(-thetaJN, s1hatx, s1haty, s1hatz);
+	ROTATEY(-thetaJN, s2hatx, s2haty, s2hatz);
+	ROTATEY(-thetaJN, Jhatx, Jhaty, Jhatz);
 
+	/* Rotation 5: We already have N along z. To complete the
+	 * transformation into the radiation frame we rotate s.t.
+	 * LNhat is in the x-z plane. Thus, if LNhat has azimuth phi0,
+	 * we rotate about the z-axis by -phi0.
+	 */
+	phi0 = atan2(LNhy, LNhx);
+	ROTATEZ(-phi0, LNhx, LNhy, LNhz);
+	ROTATEZ(-phi0, s1hatx, s1haty, s1hatz);
+	ROTATEZ(-phi0, s2hatx, s2haty, s2hatz);
+	ROTATEZ(-phi0, Jhatx, Jhaty, Jhatz);
+
+	/* We have completed the transformation. Now find the inclination
+	 * of LN relative to N (the final z-axis). */
+	*incl = acos(LNhz);
+	
 	/* Multiply spin unit vectors by chi magnitude (but NOT m_i^2) */
 	s1hatx *= chi1;
 	s1haty *= chi1;
@@ -1106,13 +1135,7 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
 	s2haty *= chi2;
 	s2hatz *= chi2;
 
-	/* Set pointers to rotated vector components */
-	*LNhatx = LNhx;
-	*LNhaty = LNhy;
-	*LNhatz = LNhz;
-	*E1x = e1x;
-	*E1y = e1y;
-	*E1z = e1z;
+	/* Set pointers to rotated spin vectors */
 	*S1x = s1hatx;
 	*S1y = s1haty;
 	*S1z = s1hatz;

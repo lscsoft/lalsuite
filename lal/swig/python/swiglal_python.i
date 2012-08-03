@@ -668,6 +668,7 @@
         if (!SWIG_IsOK(ecode)) {
           goto end;
         }
+        Py_CLEAR(objelem);
 
         // Increment the NumPy array index.
         swiglal_py_increment_idx(ndims, dims, idx);

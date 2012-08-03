@@ -1179,58 +1179,60 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
  * Function to specify the desired orientation of a precessing binary in terms
  * of several angles and then compute the vector components in the so-called
  * \"radiation frame\" (with the z-axis along the direction of propagation) as
- * needed for initial conditions for the SpinTaylorT4 waveform routines.
- * 
- * Input: 
- *     thetaJN, phiJN are angles describing the desired orientation of the 
- * total angular momentum (J) relative to direction of propagation (N)
- *     theta1, phi1, theta2, phi2 are angles describing the desired orientation
- * of spin 1 and 2 relative to the Newtonian orbital angular momentum (L_N)
- *     m1, m2, f0 are the component masses and initial GW frequency, 
- * they are needed to compute the magnitude of L_N, and thus J
- *     chi1, chi2 are the dimensionless spin magnitudes ( 0 <= chi1,2 <= 1),
- * they are needed to compute the magnitude of S1 and S2, and thus J
- * 
- * Output: 
- *     x, y, z components of LNhat (unit vector along orbital angular momentum),
+ * needed to specify binary configuration for ChooseTDWaveform.
+ *
+ * Input:
+ *     thetaJN is the inclination between total angular momentum (J) and the
+ *         direction of propagation (N)
+ *     theta1 and theta2 are the inclinations of S1 and S2
+ *         measured from the Newtonian orbital angular momentum (L_N)
+ *     phi12 is the difference in azimuthal angles of S1 and S2.
+ *     chi1, chi2 are the dimensionless spin magnitudes ( \f$0 \le chi1,2 \le 1\f$)
+ *     phiJL is the azimuthal angle of L_N on its cone about J.
+ *     m1, m2, f_ref are the component masses and reference GW frequency,
+ *         they are needed to compute the magnitude of L_N, and thus J.
+ *
+ * Output:
+ *     incl - inclination angle of L_N relative to N
  *     x, y, z components of E1 (unit vector in the initial orbital plane)
- *     x, y, z components S1 and S2 (unit spin vectors times their 
- * dimensionless spin magnitudes - i.e. they have unit magnitude for 
- * extremal BHs and smaller magnitude for slower spins)
+ *     x, y, z components S1 and S2 (unit spin vectors times their
+ *         dimensionless spin magnitudes - i.e. they have unit magnitude for
+ *         extremal BHs and smaller magnitude for slower spins).
  *
  * NOTE: Here the \"total\" angular momentum is computed as
  * J = L_N + S1 + S2
- * where L_N is the Newtonian orbital angular momentum. In fact, there are 
- * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR 
- * in this function. This is done so the function does not need to know about 
- * the PN order of the system and to avoid subtleties with spin-orbit 
- * contributions to L. Also, it is believed that the difference in Jhat 
+ * where L_N is the Newtonian orbital angular momentum. In fact, there are
+ * PN corrections to L which contribute to J that are NOT ACCOUNTED FOR
+ * in this function. This is done so the function does not need to know about
+ * the PN order of the system and to avoid subtleties with spin-orbit
+ * contributions to L. Also, it is believed that the difference in Jhat
  * with or without these PN corrections to L is quite small.
+ *
+ * NOTE: fRef = 0 is not a valid choice. If you will pass fRef=0 into
+ * ChooseWaveform, then here pass in f_min, the starting GW frequency
+ *
+ * The various rotations in this transformation are described in more detail
+ * in a Mathematica notebook available here:
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/Waveforms/TransformPrecessingInitialConditions
  */
 int XLALSimInspiralTransformPrecessingInitialConditions(
-		REAL8 *LNhatx,	/**< LNhat x component (returned) */
-		REAL8 *LNhaty,	/**< LNhat y component (returned) */
-		REAL8 *LNhatz,	/**< LNhat z component (returned) */
-		REAL8 *E1x,	/**< E1 x component (returned) */
-		REAL8 *E1y,	/**< E1 y component (returned) */
-		REAL8 *E1z,	/**< E1 z component (returned) */
+		REAL8 *incl,	/**< Inclination angle of L_N (returned) */
 		REAL8 *S1x,	/**< S1 x component (returned) */
 		REAL8 *S1y,	/**< S1 y component (returned) */
 		REAL8 *S1z,	/**< S1 z component (returned) */
 		REAL8 *S2x,	/**< S2 x component (returned) */
 		REAL8 *S2y,	/**< S2 y component (returned) */
 		REAL8 *S2z,	/**< S2 z component (returned) */
-		REAL8 thetaJN, 	/**< zenith angle between J and N */
-		REAL8 phiJN,  	/**< azimuth angle between J and N */
-		REAL8 theta1,  	/**< zenith angle between S1 and LNhat */
-		REAL8 phi1,  	/**< azimuth angle between S1 and LNhat */
-		REAL8 theta2,  	/**< zenith angle between S2 and LNhat */
-		REAL8 phi2,  	/**< azimuth angle between S2 and LNhat */
+		REAL8 thetaJN, 	/**< zenith angle between J and N (rad) */
+		REAL8 phiJL,  	/**< azimuthal angle of L_N on its cone about J (rad) */
+		REAL8 theta1,  	/**< zenith angle between S1 and LNhat (rad) */
+		REAL8 theta2,  	/**< zenith angle between S2 and LNhat (rad) */
+		REAL8 phi12,  	/**< difference in azimuthal angle btwn S1, S2 (rad) */
+		REAL8 chi1,	/**< dimensionless spin of body 1 */
+		REAL8 chi2,	/**< dimensionless spin of body 2 */
 		REAL8 m1,	/**< mass of body 1 (kg) */
 		REAL8 m2,	/**< mass of body 2 (kg) */
-		REAL8 f0,	/**< initial GW frequency (Hz) */
-		REAL8 chi1,	/**< dimensionless spin of body 1 */
-		REAL8 chi2	/**< dimensionless spin of body 2 */
+		REAL8 fRef	/**< reference GW frequency (Hz) */
 		);
 
 /**

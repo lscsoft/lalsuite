@@ -195,22 +195,6 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
       ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
     }
 
-    /* compute the fractional bin offset between the user requested initial frequency */
-    /* and the closest output frequency bin */
-    {
-      REAL8 diff = multiTimeseries->data[0]->f0 - fstatVector->f0;         /* the difference between the new timeseries heterodyne frequency and the user requested frequency */
-      UINT4 bins = (UINT4)floor(0.5 + diff/fstatVector->deltaF);           /* the rounded number of output frequency bins difference */
-      REAL8 shift = diff - fstatVector->deltaF*bins;                       /* the fractional bin frequency offset */
-
-      /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
-      if (shift != 0.0) {
-        if ( (XLALFrequencyShiftMultiCOMPLEX8TimeSeries(&multiTimeseries,shift)) != XLAL_SUCCESS ) {
-          XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
-          ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
-        }
-      }
-    }
-
     /* recompute the multidetector states for the possibly time shifted SFTs */
     /* the function XLALMultiSFTVectorToCOMPLEX8TimeSeries may have shifted the SFT start times around */
     /* and since these times will be used later on for the resampling we also need to recompute the */
@@ -230,7 +214,7 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
     cfBuffer->segstart.gpsSeconds = multiSFTs->data[0]->data[0].epoch.gpsSeconds;
     cfBuffer->segstart.gpsNanoSeconds = multiSFTs->data[0]->data[0].epoch.gpsNanoSeconds;
 
-  }  /* if (cfBuffer->multiTimeseries) */
+  }  /* if (!cfBuffer->multiTimeseries || (buffered-start != SFT-start) ) */
 
   /* End of the SFT -> timeseries buffering checks                                                            */
   /************************************************************************************************************/
@@ -336,9 +320,35 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
     ABORT ( status, COMPUTEFSTATRSC_ENULL, COMPUTEFSTATRSC_MSGENULL );
   }
 
+  // *copy* complete resampled multi-complex8 timeseries so we can apply spindown-corrections to it
+  MultiCOMPLEX8TimeSeries *multiFa_spin, *multiFb_spin;
+  if ( ( multiFa_spin = XLALDuplicateMultiCOMPLEX8TimeSeries ( cfBuffer->multiFa_resampled ) ) == NULL )
+    ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+  if ( ( multiFb_spin = XLALDuplicateMultiCOMPLEX8TimeSeries ( cfBuffer->multiFb_resampled ) ) == NULL )
+    ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+
+
+  /* compute the fractional bin offset between the user requested initial frequency */
+  /* and the closest output frequency bin */
+  REAL8 diff = cfBuffer->multiTimeseries->data[0]->f0 - doppler->fkdot[0]; /* the difference between the new timeseries heterodyne frequency and the user requested lowest frequency */
+  INT4 bins = (INT4)round( diff / fstatVector->deltaF );           /* the rounded number of output frequency bins difference */
+  REAL8 shift = diff - fstatVector->deltaF * bins;                       /* the fractional bin frequency offset */
+
+  /* shift the timeseries by a fraction of a frequency bin so that user requested frequency is exactly resolved */
+  if (shift != 0.0) {
+    if ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( &multiFa_spin, shift ) != XLAL_SUCCESS ) {
+      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+    }
+    if ( XLALFrequencyShiftMultiCOMPLEX8TimeSeries ( &multiFb_spin, shift ) != XLAL_SUCCESS ) {
+      XLALPrintError("\nXLALMultiSFTVectorToCOMPLEX8TimeSeries() failed with error = %d\n\n", xlalErrno );
+      ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
+    }
+  }
+
   /* apply spin derivitive correction to resampled timeseries */
   /* this function only applies a correction if there are any non-zero spin derivitives */
-  if ( XLALSpinDownCorrectionMultiFaFb(&(cfBuffer->multiFa_resampled),&(cfBuffer->multiFb_resampled),doppler) != XLAL_SUCCESS ) {
+  if ( XLALSpinDownCorrectionMultiFaFb ( &multiFa_spin, &multiFb_spin, doppler ) != XLAL_SUCCESS ) {
     XLALPrintError("\nXLALSpinDownCorrectionMultiFaFb() failed with error = %d\n\n", xlalErrno );
     ABORT ( status, COMPUTEFSTATRSC_EXLAL, COMPUTEFSTATRSC_MSGEXLAL );
   }
@@ -349,8 +359,8 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
 
   /* we use the first detector Fa time series to obtain the number of time samples and the sampling time */
   /* these should be the same for all Fa and Fb timeseries */
-  numSamples = cfBuffer->multiFa_resampled->data[0]->data->length;
-  dt = cfBuffer->multiFa_resampled->data[0]->deltaT;
+  numSamples = multiFa_spin->data[0]->data->length;
+  dt = multiFa_spin->data[0]->deltaT;
 
   /* allocate memory for Fa(f) and Fb(f) and individual detector FFT outputs */
   if ( (Faf_resampled = XLALCreateCOMPLEX8Vector(numSamples)) == NULL )
@@ -373,8 +383,8 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   /* loop over detectors */
   for (i=0;i<numDetectors;i++) {
 
-    COMPLEX8Vector *ina = (COMPLEX8Vector*)cfBuffer->multiFa_resampled->data[i]->data; /* we point the input to the current detector Fa timeseries */
-    COMPLEX8Vector *inb = (COMPLEX8Vector*)cfBuffer->multiFb_resampled->data[i]->data; /* we point the input to the current detector Fb timeseries */
+    COMPLEX8Vector *ina = multiFa_spin->data[i]->data; /* we point the input to the current detector Fa timeseries */
+    COMPLEX8Vector *inb = multiFb_spin->data[i]->data; /* we point the input to the current detector Fb timeseries */
 
     /* initialise output vectors to zero for safety */
     memset(outa->data,0,numSamples*sizeof(COMPLEX8));
@@ -406,13 +416,13 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   /* define new initial frequency of the frequency domain representations of Fa and Fb */
   /* before the shift the zero bin was the heterodyne frequency */
   /* now we've shifted it by N - NhalfPosDC(N) bins */
-  f0_shifted = cfBuffer->multiFa_resampled->data[0]->f0 - NhalfNeg(numSamples) * df_out;
+  f0_shifted = multiFa_spin->data[0]->f0 - NhalfNeg(numSamples) * df_out;
 
   /* loop over requested output frequencies and construct F *NOT* 2F */
   {
 
     /* define number of bins offset from the internal start frequency bin to the user requested bin */
-    UINT4 offset = floor(0.5 + (fstatVector->f0 - f0_shifted)/fstatVector->deltaF);
+    UINT4 offset = floor(0.5 + (doppler->fkdot[0] - f0_shifted)/fstatVector->deltaF);
     for (k=0;k<fstatVector->data->length;k++) {
 
       UINT4 idx = k + offset;
@@ -437,6 +447,9 @@ void ComputeFStatFreqBand_RS ( LALStatus *status,				/**< pointer to LALStatus s
   XLALDestroyCOMPLEX8Vector( outa );
   XLALDestroyCOMPLEX8Vector( outb );
   XLALDestroyCOMPLEX8FFTPlan ( pfwd );
+
+  XLALDestroyMultiCOMPLEX8TimeSeries ( multiFa_spin );
+  XLALDestroyMultiCOMPLEX8TimeSeries ( multiFb_spin );
 
   /* IMPORTANT - point the input buffer pointer to the buffered data */
   params->buffer = cfBuffer;
@@ -1552,6 +1565,71 @@ XLALDestroyMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
   return;
 
 } /* XLALDestroyMultiCOMPLEX8TimeSeries() */
+
+/** Duplicates a MultiCOMPLEX8TimeSeries structure.
+ * Allocates memory and copies contents.
+ */
+MultiCOMPLEX8TimeSeries *
+XLALDuplicateMultiCOMPLEX8TimeSeries ( MultiCOMPLEX8TimeSeries *multiTimes )
+{
+
+  if ( ! multiTimes )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input for multi-timeseries 'multiTimes'\n" );
+
+  if ( multiTimes->length == 0 || multiTimes->data == NULL )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid empty input timeseries, 0 detectors or data==NULL\n");
+
+
+  UINT4 numDet = multiTimes->length;
+
+  // ----- prepare memory for multicomplex8timeseries container
+  MultiCOMPLEX8TimeSeries *out;
+  if ( ( out = XLALCalloc ( 1, sizeof(*out) ) ) == NULL )
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc ( 1, %d )\n", sizeof(*out) );
+  out->length = numDet;
+  if ( ( out->data = XLALCalloc ( numDet, sizeof(*out->data) ) ) == NULL )
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc ( %d, %d )\n", numDet, sizeof(*out->data) );
+
+  // ----- copy each of the numDet complex8timeseries contents
+  for ( UINT4 X = 0; X < numDet; X ++ )
+    {
+      if ( (out->data[X] = XLALDuplicateCOMPLEX8TimeSeries ( multiTimes->data[X] )) == NULL )
+        XLAL_ERROR_NULL ( XLAL_EFUNC );
+    }
+
+  return out;
+
+} /* XLALDuplicateMultiCOMPLEX8TimeSeries() */
+
+/** Duplicates a COMPLEX8TimeSeries structure.
+ * Allocates memory and copies contents.
+ */
+COMPLEX8TimeSeries *
+XLALDuplicateCOMPLEX8TimeSeries ( COMPLEX8TimeSeries *times )
+{
+  if ( !times )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input for timeseries 'times'\n" );
+
+  if ( times->data == NULL || times->data->length == 0 || times->data->data == NULL )
+    XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid empty input timeseries, 0 bins or data==NULL\n");
+
+  COMPLEX8TimeSeries *out;
+  if ( (out = XLALCalloc ( 1, sizeof(*out) ) ) == NULL )
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc ( 1, %d )\n", sizeof(*out) );
+
+  // copy header info [including data-pointer, will be reset]
+  memcpy ( out, times, sizeof(*times) );
+
+  UINT4 numBins = times->data->length;
+  if ( ( out->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL )
+    XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALCreateCOMPLEX8Vector( %d ) failed.\n", numBins );
+
+  // copy contents of COMPLEX8 vector
+  memcpy ( out->data->data, times->data->data, numBins * sizeof(*times->data->data) );
+
+  return out;
+
+} /* XLALDuplicateCOMPLEX8TimeSeries() */
 
 /** Destruction of a ComputeFBuffer *contents*,
  * i.e. the multiSSB and multiAMcoeff, while the

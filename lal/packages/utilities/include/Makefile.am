@@ -2,6 +2,7 @@ pkginclude_HEADERS = \
 	BitField.h \
 	CoarseGrainFrequencySeries.h \
 	Dirichlet.h \
+	Factorial.h \
 	FindRoot.h \
 	GSLSupport.h \
 	Integrate.h \

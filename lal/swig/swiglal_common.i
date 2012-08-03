@@ -29,7 +29,6 @@
 
 // Include SWIG headers.
 %include <exception.i>
-%include <stdint.i>
 %include <typemaps.i>
 
 // Suppress some SWIG warnings.
@@ -402,10 +401,10 @@ if (swiglal_release_parent(PTR)) {
 #define %swiglal_array_copyout_frag(ACFTYPE) "swiglal_array_copyout_" %str(ACFTYPE)
 #define %swiglal_array_viewout_frag(ACFTYPE) "swiglal_array_viewout_" %str(ACFTYPE)
 
-// The %swiglal_array_type() macro maps TYPEs of C arrays to ACFTYPEs of the
+// The %swiglal_array_type() macro maps TYPEs of C arrays to an ACFTYPE of the
 // appropriate array conversion functions, using a special typemap. The typemap also
 // ensures that fragments containing the required conversion functions are included.
-%define %swiglal_array_type(TYPE, ACFTYPE)
+%define %_swiglal_array_type(ACFTYPE, TYPE)
 %fragment("swiglal_array_frags_" %str(ACFTYPE), "header",
           fragment=%swiglal_array_copyin_frag(ACFTYPE),
           fragment=%swiglal_array_copyout_frag(ACFTYPE),
@@ -417,27 +416,21 @@ if (swiglal_release_parent(PTR)) {
 %typemap(swiglal_array_typeid, fragment="swiglal_array_frags_" %str(ACFTYPE)) const TYPE[ANY] %str(ACFTYPE);
 %typemap(swiglal_array_typeid, fragment="swiglal_array_frags_" %str(ACFTYPE)) const TYPE[ANY][ANY] %str(ACFTYPE);
 %enddef
+%define %swiglal_array_type(ACFTYPE, ...)
+%swiglal_map_a(%_swiglal_array_type, ACFTYPE, __VA_ARGS__);
+%enddef
 
 // Map C array TYPEs to array conversion function ACFTYPEs.
 %swiglal_array_type(SWIGTYPE, SWIGTYPE);
-%swiglal_array_type(CHAR*, LALCHAR);
-%swiglal_array_type(enum SWIGTYPE, int32_t);
-%swiglal_array_type(char, int8_t);
-%swiglal_array_type(signed char, int8_t);
-%swiglal_array_type(unsigned char, uint8_t);
-%swiglal_array_type(short, int16_t);
-%swiglal_array_type(unsigned short, uint16_t);
-%swiglal_array_type(int, int32_t);
-%swiglal_array_type(unsigned int, uint32_t);
-#if defined(SWIGWORDSIZE64)
-%swiglal_array_type(long, int64_t);
-%swiglal_array_type(unsigned long, uint64_t);
-#else
-%swiglal_array_type(long, int32_t);
-%swiglal_array_type(unsigned long, uint32_t);
-#endif
-%swiglal_array_type(long long, int64_t);
-%swiglal_array_type(unsigned long long, uint64_t);
+%swiglal_array_type(LALCHAR, CHAR*);
+%swiglal_array_type(int8_t, char, signed char, int8_t);
+%swiglal_array_type(uint8_t, unsigned char, uint8_t);
+%swiglal_array_type(int16_t, short, int64_t);
+%swiglal_array_type(uint16_t, unsigned short, uint16_t);
+%swiglal_array_type(int32_t, int, int32_t, enum SWIGTYPE);
+%swiglal_array_type(uint32_t, unsigned int, uint32_t);
+%swiglal_array_type(int64_t, long long, int64_t);
+%swiglal_array_type(uint64_t, unsigned long long, uint64_t);
 %swiglal_array_type(float, float);
 %swiglal_array_type(double, double);
 %swiglal_array_type(gsl_complex_float, gsl_complex_float);
@@ -445,14 +438,36 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_array_type(COMPLEX8, COMPLEX8);
 %swiglal_array_type(COMPLEX16, COMPLEX16);
 
+// On modern systems, 'long' could be either 32- or 64-bit...
+%swiglal_array_type(int32or64_t, long);
+%swiglal_array_type(uint32or64_t, unsigned long);
+%define %swiglal_array_int32or64_frags(FRAG, FUNC, INT)
+%fragment(FRAG(INT##32or64_t), "header") {
+%#if LONG_MAX > INT_MAX
+%#define FUNC(INT##32or64_t) FUNC(INT##64_t)
+%#else
+%#define FUNC(INT##32or64_t) FUNC(INT##32_t)
+%#endif
+}
+%enddef
+%swiglal_array_int32or64_frags(%swiglal_array_copyin_frag, %swiglal_array_copyin_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_copyout_frag, %swiglal_array_copyout_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_copyin_frag, %swiglal_array_copyin_func, uint);
+%swiglal_array_int32or64_frags(%swiglal_array_copyout_frag, %swiglal_array_copyout_func, uint);
+%swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, uint);
+
 // Call the appropriate conversion function for C TYPE arrays.
 #define %swiglal_array_copyin(TYPE) %swiglal_array_copyin_func($typemap(swiglal_array_typeid, TYPE))
 #define %swiglal_array_copyout(TYPE) %swiglal_array_copyout_func($typemap(swiglal_array_typeid, TYPE))
 #define %swiglal_array_viewout(TYPE) %swiglal_array_viewout_func($typemap(swiglal_array_typeid, TYPE))
 
-// Typemaps which convert to/from fixed-size arrays for functions and structs.
-// 1-D arrays:
-%typemap(in) SWIGTYPE[ANY] {
+//
+// Typemaps which convert to/from fixed-size arrays.
+//
+
+// Input typemaps for functions and structs:
+%typemap(in) SWIGTYPE[ANY], SWIGTYPE INOUT[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
   $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
@@ -466,6 +481,48 @@ if (swiglal_release_parent(PTR)) {
     %argument_fail(ecode, "$type", $symname, $argnum);
   }
 }
+%typemap(in) SWIGTYPE[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
+  $1 = &temp[0];
+  // swiglal_array_typeid input type: $1_type
+  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                             sizeof($1[0][0]), 2, dims, strides,
+                                             $typemap(swiglal_fixarr_pdesc, $1_type),
+                                             $disown | %convertptr_flags);
+  if (!SWIG_IsOK(ecode)) {
+    %argument_fail(ecode, "$type", $symname, $argnum);
+  }
+}
+
+// Input typemaps for global variables:
+%typemap(varin) SWIGTYPE[ANY] {
+  const size_t dims[] = {$1_dim0};
+  const size_t strides[] = {1};
+  // swiglal_array_typeid input type: $1_type
+  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                             sizeof($1[0]), 1, dims, strides,
+                                             $typemap(swiglal_fixarr_pdesc, $1_type),
+                                             %convertptr_flags);
+  if (!SWIG_IsOK(ecode)) {
+    %variable_fail(ecode, "$type", $symname);
+  }
+}
+%typemap(varin) SWIGTYPE[ANY][ANY] {
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  // swiglal_array_typeid input type: $1_type
+  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
+                                             sizeof($1[0][0]), 2, dims, strides,
+                                             $typemap(swiglal_fixarr_pdesc, $1_type),
+                                             %convertptr_flags);
+  if (!SWIG_IsOK(ecode)) {
+    %variable_fail(ecode, "$type", $symname);
+  }
+}
+
+// Output typemaps for functions and structs:
 %typemap(out) SWIGTYPE[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
@@ -481,21 +538,6 @@ if (swiglal_release_parent(PTR)) {
                                               $typemap(swiglal_fixarr_pdesc, $1_type),
                                               $owner | %newpointer_flags));
 %#endif
-}
-// 2-D arrays:
-%typemap(in) SWIGTYPE[ANY][ANY] {
-  const size_t dims[] = {$1_dim0, $1_dim1};
-  const size_t strides[] = {$1_dim1, 1};
-  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
-  $1 = &temp[0];
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0][0]), 2, dims, strides,
-                                             $typemap(swiglal_fixarr_pdesc, $1_type),
-                                             $disown | %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %argument_fail(ecode, "$type", $symname, $argnum);
-  }
 }
 %typemap(out) SWIGTYPE[ANY][ANY] {
   const size_t dims[] = {$1_dim0, $1_dim1};
@@ -514,20 +556,7 @@ if (swiglal_release_parent(PTR)) {
 %#endif
 }
 
-// Typemaps which convert to/from fixed-size arrays for global variables.
-// 1-D arrays:
-%typemap(varin) SWIGTYPE[ANY] {
-  const size_t dims[] = {$1_dim0};
-  const size_t strides[] = {1};
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0]), 1, dims, strides,
-                                             $typemap(swiglal_fixarr_pdesc, $1_type),
-                                             %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %variable_fail(ecode, "$type", $symname);
-  }
-}
+// Output typemaps for global variables:
 %typemap(varout) SWIGTYPE[ANY] {
   const size_t dims[] = {$1_dim0};
   const size_t strides[] = {1};
@@ -536,19 +565,6 @@ if (swiglal_release_parent(PTR)) {
                                               sizeof($1[0]), 1, dims, strides,
                                               $typemap(swiglal_fixarr_pdesc, $1_type),
                                               %newpointer_flags));
-}
-// 2-D arrays:
-%typemap(varin) SWIGTYPE[ANY][ANY] {
-  const size_t dims[] = {$1_dim0, $1_dim1};
-  const size_t strides[] = {$1_dim1, 1};
-  // swiglal_array_typeid input type: $1_type
-  int ecode = %swiglal_array_copyin($1_type)(swiglal_no_self(), $input, %as_voidptr($1),
-                                             sizeof($1[0][0]), 2, dims, strides,
-                                             $typemap(swiglal_fixarr_pdesc, $1_type),
-                                             %convertptr_flags);
-  if (!SWIG_IsOK(ecode)) {
-    %variable_fail(ecode, "$type", $symname);
-  }
 }
 %typemap(varout) SWIGTYPE[ANY][ANY] {
   const size_t dims[] = {$1_dim0, $1_dim1};
@@ -559,6 +575,62 @@ if (swiglal_release_parent(PTR)) {
                                               $typemap(swiglal_fixarr_pdesc, $1_type),
                                               %newpointer_flags));
 }
+
+// Argument-output typemaps for functions:
+%typemap(in, numinputs=0) SWIGTYPE OUTPUT[ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0];
+  $1 = &temp[0];
+}
+%typemap(argout) SWIGTYPE OUTPUT[ANY], SWIGTYPE INOUT[ANY] {
+  const size_t dims[] = {$1_dim0};
+  const size_t strides[] = {1};
+  // swiglal_array_typeid input type: $1_type
+  %append_output(%swiglal_array_copyout($1_type)(swiglal_no_self(), %as_voidptr($1),
+                                                 sizeof($1[0]), 1, dims, strides,
+                                                 $typemap(swiglal_fixarr_pdesc, $1_type),
+                                                 SWIG_POINTER_OWN | %newpointer_flags));
+}
+%typemap(in, numinputs=0) SWIGTYPE OUTPUT[ANY][ANY] {
+  $typemap(swiglal_fixarr_ltype, $1_type) temp[$1_dim0][$1_dim1];
+  $1 = &temp[0];
+}
+%typemap(argout) SWIGTYPE OUTPUT[ANY][ANY], SWIGTYPE INOUT[ANY][ANY] {
+  const size_t dims[] = {$1_dim0, $1_dim1};
+  const size_t strides[] = {$1_dim1, 1};
+  // swiglal_array_typeid input type: $1_type
+  %append_output(%swiglal_array_copyout($1_type)(swiglal_no_self(), %as_voidptr($1),
+                                                 sizeof($1[0][0]), 2, dims, strides,
+                                                 $typemap(swiglal_fixarr_pdesc, $1_type),
+                                                 SWIG_POINTER_OWN | %newpointer_flags));
+}
+
+// Public macros to make fixed nD arrays:
+// * output-only arguments: SWIGLAL(OUTPUT_nDARRAY(TYPE, ...))
+%define %swiglal_public_OUTPUT_1DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE OUTPUT[ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_OUTPUT_1DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_OUTPUT_2DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE OUTPUT[ANY][ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_OUTPUT_2DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+// * input-output arguments: SWIGLAL(INOUT_nDARRAY(TYPE, ...))
+%define %swiglal_public_INOUT_1DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT[ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INOUT_1DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_INOUT_2DARRAY(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT[ANY][ANY], TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_INOUT_2DARRAY(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
 
 // The %swiglal_array_dynamic_<n>D() macros create typemaps which convert
 // <n>-D dynamically-allocated arrays in structs. The macros must be
@@ -715,26 +787,49 @@ if (swiglal_release_parent(PTR)) {
 
 ////////// General typemaps //////////
 
+// Typemaps for empty arguments. These typemaps are useful when no input from the
+// scripting language is required, and an empty struct needs to be supplied to
+// the C function. The SWIGLAL(EMPTY_ARGUMENT()) macro applies the typemap which
+// supplies a static struct, while the SWIGLAL(NEW_EMPTY_ARGUMENT()) macro applies
+// the typemap which supplies a dynamically-allocated struct.
+%define %swiglal_public_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT ($*ltype emptyarg) {
+  memset(&emptyarg, 0, sizeof($*type));
+  $1 = &emptyarg;
+}
+%typemap(freearg) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT "";
+%define %swiglal_public_NEW_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_NEW_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT {
+  $1 = %swiglal_new_instance($*type);
+}
+%typemap(freearg) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT "";
+
 // SWIG conversion functions for C99 integer types.
 // These are mapped to the corresponding basic C types,
 // conversion functions for which are supplied by SWIG.
-%define %swiglal_numeric_typedef(BASE, TYPE)
-%numeric_type_from(TYPE, BASE);
-%numeric_type_asval(TYPE, BASE, "swiglal_empty_frag", false);
+%define %swiglal_numeric_typedef(CHECKCODE, BASETYPE, TYPE)
+%numeric_type_from(TYPE, BASETYPE);
+%numeric_type_asval(TYPE, BASETYPE, "swiglal_empty_frag", false);
+%typemaps_primitive(%checkcode(CHECKCODE), TYPE);
 %enddef
-%swiglal_numeric_typedef(signed char, int8_t);
-%swiglal_numeric_typedef(unsigned char, uint8_t);
-%swiglal_numeric_typedef(short, int16_t);
-%swiglal_numeric_typedef(unsigned short, uint16_t);
-%swiglal_numeric_typedef(int, int32_t);
-%swiglal_numeric_typedef(unsigned int, uint32_t);
-#if defined(SWIGWORDSIZE64)
-%swiglal_numeric_typedef(long, int64_t);
-%swiglal_numeric_typedef(unsigned long, uint64_t);
-#else
-%swiglal_numeric_typedef(long long, int64_t);
-%swiglal_numeric_typedef(unsigned long long, uint64_t);
-#endif
+%swiglal_numeric_typedef(INT8, signed char, int8_t);
+%swiglal_numeric_typedef(UINT8, unsigned char, uint8_t);
+%swiglal_numeric_typedef(INT16, short, int16_t);
+%swiglal_numeric_typedef(UINT16, unsigned short, uint16_t);
+%swiglal_numeric_typedef(INT32, int, int32_t);
+%swiglal_numeric_typedef(UINT32, unsigned int, uint32_t);
+%swiglal_numeric_typedef(INT64, long long, int64_t);
+%swiglal_numeric_typedef(UINT64, unsigned long long, uint64_t);
 
 // Fragments and typemaps for the LAL BOOLEAN type. The fragments re-use
 // existing scriping-language conversion functions for the C/C++ boolean type.

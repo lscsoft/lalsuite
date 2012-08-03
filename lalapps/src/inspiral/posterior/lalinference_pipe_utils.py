@@ -65,6 +65,11 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   output=[]
   from glue.ligolw import utils
   from glue.ligolw import lsctables
+  from glue.ligolw import ligolw
+  from glue.ligolw import param
+  from glue.ligolw import array
+  from pylal import series as lalseries
+  import numpy as np
   xmldoc=utils.load_filename(lvalertfile)
   coinctable = lsctables.getTablesByType(xmldoc, lsctables.CoincInspiralTable)[0]
   coinc_events = [event for event in coinctable]
@@ -72,6 +77,14 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   sngl_events = [event for event in sngltable]
   search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
   ifos = search_summary[0].ifos.split(",")
+  # Parse PSD
+  xmlpsd = utils.load_filename("psd.xml.gz")
+  psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
+  for instrument, psd in psddict.items():
+    combine=[]
+    for i,p in enumerate(psd.data):
+      combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
+    np.savetxt(instrument+'psd.txt',combine)
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
@@ -300,6 +313,12 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if sum([ 1 if self.config.has_option('input',name) else 0 for name in inputnames])!=1:
         print 'Plese specify only one input file'
         sys.exit(1)
+    if self.config.has_option('input','events'):
+      selected_events=ast.literal_eval(self.config.get('input','events'))
+      if selected_events=='all':
+          selected_events=None
+    else:
+        selected_events=None
     if self.config.has_option('input','gps-start-time'):
       gpsstart=self.config.getfloat('input','gps-start-time')
     if self.config.has_option('input','gps-end-time'):
@@ -340,7 +359,11 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else:
 	print 'Reading non-slid triggers from pipedown not implemented yet'
 	sys.exit(1)
-    
+    if(selected_events is not None):
+        used_events=[]
+        for i in selected_events:
+            used_events.append(events[i])
+        events=used_events
     return events
 
   def add_full_analysis_lalinferencenest(self,event):
@@ -370,16 +393,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
+    # Call finalize to build final list of available data
+    enginenodes[0].finalize()
     respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
+    if self.config.has_option('input','injection-file') and event.event_id is not None:
+        respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
         self.add_gracedb_log_node(respagenode,event.GID)
     if self.config.getboolean('analysis','coherence-test') and len(enginenodes[0].ifos)>1:
         mkdirs(os.path.join(self.basepath,'coherence_test'))
         par_mergenodes=[]
         for ifo in enginenodes[0].ifos:
-            print 'adding coherence node for ifo %s'%(ifo)
             cotest_nodes=[self.add_engine_node(event,ifos=[ifo]) for i in range(Npar)]
-            enginenodes[0].finalize()
             for co in cotest_nodes:
               co.set_psdstart(enginenodes[0].GPSstart)
               co.set_psdlength(enginenodes[0].psdlength)
@@ -392,6 +417,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             mkdirs(presultsdir)
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode)
             subresnode.set_bayes_coherent_noise(pmergenode.get_ns_file()+'_B.txt')
+            if self.config.has_option('input','injection-file') and event.event_id is not None:
+                subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
         coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
         coherence_node.add_coherent_parent(mergenode)
         map(coherence_node.add_incoherent_parent, par_mergenodes)
@@ -478,7 +505,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
-    node.set_dataseed(self.dataseed+event.event_id)
+    if self.dataseed:
+      node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
     for ifo in ifos:
       if event.timeslides.has_key(ifo):
@@ -493,7 +521,19 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       node.channels=ast.literal_eval(self.config.get('data','channels'))
       if len(ifos)==0: node.ifos=node.cachefiles.keys()
       else: node.ifos=ifos
-      print 'added ifos %s'%(str(ifos))
+      node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
+      gotdata=1
+    if self.config.has_option('lalinference','ER2-cache'):
+      node.cachefiles=ast.literal_eval(self.config.get('lalinference','ER2-cache'))
+      node.channels=ast.literal_eval(self.config.get('data','channels'))
+      node.psds=ast.literal_eval(self.config.get('lalinference','psds'))
+      for ifo in ifos:
+        node.add_input_file(os.path.join(self.basepath,node.cachefiles[ifo]))
+        node.cachefiles[ifo]=os.path.join(self.basepath,node.cachefiles[ifo])
+        node.add_input_file(os.path.join(self.basepath,node.psds[ifo]))
+        node.psds[ifo]=os.path.join(self.basepath,node.psds[ifo])
+      if len(ifos)==0: node.ifos=node.cachefiles.keys()
+      else: node.ifos=ifos
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
     else:
@@ -502,8 +542,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         dfnode=seg.get_df_node()
         if dfnode is not None and dfnode not in self.get_nodes():
     	  self.add_node(dfnode)
-    self.add_node(node)
-    if gotdata==0:
+    if gotdata:
+      self.add_node(node)
+    else:
       'Print no data found for time %f'%(end_time)
       return None
     if extra_options is not None:
@@ -545,7 +586,8 @@ class EngineJob(pipeline.CondorDAGJob):
     if self.engine=='lalinferencemcmc':
       exe=cp.get('condor','mpirun')
       self.binary=cp.get('condor',self.engine)
-      universe="parallel"
+      #universe="parallel"
+      universe="vanilla"
       self.write_sub_file=self.__write_sub_file_mcmc_mpi
     else:
       exe=cp.get('condor',self.engine)
@@ -554,10 +596,13 @@ class EngineJob(pipeline.CondorDAGJob):
     # Set the options which are always used
     self.set_sub_file(submitFile)
     if self.engine=='lalinferencemcmc':
-      openmpipath=cp.get('condor','openmpi')
+      #openmpipath=cp.get('condor','openmpi')
       machine_count=cp.get('mpi','machine-count')
-      self.add_condor_cmd('machine_count',machine_count)
-      self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      #self.add_condor_cmd('machine_count',machine_count)
+      #self.add_condor_cmd('environment','CONDOR_MPI_PATH=%s'%(openmpipath))
+      self.add_condor_cmd('Requirements','CAN_RUN_MULTICORE')
+      self.add_condor_cmd('+RequiresMultipleCores','True')
+      self.add_condor_cmd('request_cpus',machine_count)
       self.add_condor_cmd('getenv','true')
       
     self.add_ini_opts(cp,self.engine)
@@ -573,7 +618,7 @@ class EngineJob(pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.write_sub_file(self)
     # Then read it back in to mangle the arguments line
     outstring=""
-    MPIextraargs='--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
+    MPIextraargs= ' -np 8 '+self.binary+' -- ' #'--verbose --stdout cluster$(CLUSTER).proc$(PROCESS).mpiout --stderr cluster$(CLUSTER).proc$(PROCESS).mpierr '+self.binary+' -- '
     subfilepath=self.get_sub_file()
     subfile=open(subfilepath,'r')
     for line in subfile:
@@ -594,6 +639,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.ifos=[]
     self.scisegs={}
     self.channels={}
+    self.psds={}
     self.timeslides={}
     self.seglen=None
     self.psdlength=None
@@ -672,6 +718,7 @@ class EngineNode(pipeline.CondorDAGNode):
       """
       ifostring='['
       cachestring='['
+      psdstring='['
       channelstring='['
       slidestring='['
       first=True
@@ -682,15 +729,18 @@ class EngineNode(pipeline.CondorDAGNode):
         else: delim=','
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
+        psdstring=psdstring+delim+self.psds[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
+      psdstring=psdstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
       self.add_var_opt('IFO',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
+      self.add_var_opt('psd',psdstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslides',slidestring)
       # Start at earliest common time
@@ -698,7 +748,6 @@ class EngineNode(pipeline.CondorDAGNode):
       # Used when we are running the coherence test.
       # Otherwise the noise evidence will differ.
       if self.scisegs!={}:
-        print self.scisegs
         starttime=max([int(self.scisegs[ifo].start()) for ifo in self.ifos])
         endtime=min([int(self.scisegs[ifo].end()) for ifo in self.ifos])
       else:
@@ -791,6 +840,10 @@ class ResultsPageNode(pipeline.CondorDAGNode):
         self.add_var_opt('outpath',path)
         mkdirs(path)
         self.posfile=os.path.join(path,'posterior_samples.dat')
+    def set_injection(self,injfile,eventnumber):
+        self.injfile=injfile
+        self.add_var_arg('--inj '+injfile)
+        self.set_event_number(eventnumber)
     def set_event_number(self,event):
         """
         Set the event number in the injection XML.
@@ -958,7 +1011,8 @@ class GraceDBJob(pipeline.CondorDAGJob):
     """
     def __init__(self,cp,submitFile,logdir):
       exe=cp.get('condor','gracedb')
-      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      #pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
+      pipeline.CondorDAGJob.__init__(self,"scheduler",exe)
       self.set_sub_file(submitFile)
       self.set_stdout_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).out'))
       self.set_stderr_file(os.path.join(logdir,'gracedb-$(cluster)-$(process).err'))
@@ -971,10 +1025,11 @@ class GraceDBNode(pipeline.CondorDAGNode):
     Run the gracedb executable to report the results
     """
     def __init__(self,gracedb_job,gid=None,parent=None):
-	pipeline.CondorDAGNode.__init__(self,gracedb_job)
+        pipeline.CondorDAGNode.__init__(self,gracedb_job)
         self.resultsurl=""
         if gid: self.set_gid(gid)
         if parent: self.set_parent_resultspage(parent,gid)
+        self.__finalized=False
         
     def set_page_path(self,path):
         """
@@ -993,10 +1048,14 @@ class GraceDBNode(pipeline.CondorDAGNode):
         Setup to log the results from the given parent results page node
         """
         res=respagenode
-        self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
+        #self.set_page_path(res.webpath.replace(self.job().basepath,self.job().baseurl))
+        self.resultsurl=res.webpath.replace(self.job().basepath,self.job().baseurl)
         self.set_gid(gid)
     def finalize(self):
+        if self.__finalized:
+            return
         self.add_var_arg('log')
         self.add_var_arg(str(self.gid))
-        self.add_var_arg('parameter estimation finished. '+self.resultsurl)
-        
+        #self.add_var_arg('"Parameter estimation finished. <a href=\"'+self.resultsurl+'/posplots.html\">'+self.resultsurl+'/posplots.html</a>"')
+        self.add_var_arg('Parameter estimation finished. '+self.resultsurl+'/posplots.html')
+        self.__finalized=True

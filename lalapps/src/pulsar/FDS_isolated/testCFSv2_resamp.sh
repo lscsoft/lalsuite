@@ -1,4 +1,4 @@
-#!/bin/bash
+!/bin/bash
 
 ## make sure we work in 'C' locale here to avoid awk sillyness
 LC_ALL_old=$LC_ALL
@@ -51,6 +51,11 @@ mfd_FreqBand=2.0;
 
 Alpha=2.0
 Delta=-0.5
+AlphaBand=0.1
+DeltaBand=0.1
+dAlpha=0.05
+dDelta=0.05
+
 h0=1
 cosi=-0.3
 psi=0.6
@@ -68,12 +73,12 @@ cfs_dFreq=$(echo $duration | awk '{printf "%.16g", 1.0 / ( 2.0 * $1 ) }');		## 1
 cfs_FreqBand=$(echo $Nfreq $cfs_dFreq | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of frequency bins
 cfs_Freq=$(echo $Freq $cfs_FreqBand | awk '{printf "%.16g", $1 - $2 / 2.0}');		## center search band on signal frequency
 
-Nf1dot=1
-cfs_df1dot=$(echo $duration | awk '{printf "%g", 0.1 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
+Nf1dot=10
+cfs_df1dot=$(echo $duration | awk '{printf "%g", 0.005 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
 cfs_f1dotBand=$(echo $Nf1dot $cfs_df1dot | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of f1dot bins
 cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');	## center f1dot band on signal f1dot
 
-cfs_nCands=10000	## toplist length: keep N cands
+cfs_nCands=100000	## toplist length: keep N cands
 
 noiseSqrtSh=5
 ## ------------------------------------------------------------
@@ -83,7 +88,6 @@ else
     haveNoise=false;
 fi
 
-IFO=LHO
 ##--------------------------------------------------
 ## test starts here
 ##--------------------------------------------------
@@ -99,13 +103,20 @@ else
     rm -f $SFTdir/*;
 fi
 
-mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
+mfd_CL1="--refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 mfd_CL="${mfd_CL1} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir --f1dot=$f1dot -v${debug}"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$noiseSqrtSh";
 fi
 
-cmdline="$mfd_code $mfd_CL --randSeed=1"
+cmdline="$mfd_code $mfd_CL --randSeed=1 --IFO=H1"
+echo $cmdline;
+if ! eval "$cmdline &> /dev/null"; then
+    echo "Error.. something failed when running '$mfd_code' ..."
+    exit 1
+fi
+
+cmdline="$mfd_code $mfd_CL --randSeed=2 --IFO=L1"
 echo $cmdline;
 if ! eval "$cmdline &> /dev/null"; then
     echo "Error.. something failed when running '$mfd_code' ..."
@@ -117,7 +128,7 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
+cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -145,7 +156,6 @@ if ! eval "$cmdline &> /dev/null"; then
     exit 1;
 fi
 
-echo
 echo "----------------------------------------"
 echo " STEP 4: Comparing results: "
 echo "----------------------------------------"
@@ -155,7 +165,7 @@ sort $outfile_RS > __tmp_sorted && mv __tmp_sorted $outfile_RS
 
 ## compare absolute differences instead of relative, allow deviations of up to sigma=sqrt(8)~2.8
 echo
-cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --absFtolerance --Ftolerance=2.8 -v${debug}"
+cmdline="$cmp_code -1 ./${outfile_LD} -2 ./${outfile_RS} --clusterFiles=0 --sigFtolerance --Ftolerance=0.5 -v${debug}"
 echo -n $cmdline
 if ! eval $cmdline; then
     echo "==> OUCH... files differ. Something might be wrong..."

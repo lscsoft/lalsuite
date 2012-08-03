@@ -5,7 +5,6 @@ SUBDIRS = \
 	misc \
 	include \
 	packages \
-	doc \
 	lib \
 	swig
 

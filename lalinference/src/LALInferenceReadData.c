@@ -118,11 +118,13 @@ REAL8 interpolate(struct fvec *fvec, REAL8 f){
 	REAL8 a=0.0; /* fractional distance between bins */
 	REAL8 delta=0.0;
 	if(f<fvec[0].f) return(0.0);
-	while(fvec[i].f<f && (fvec[i].x!=0.0 && fvec[i].f!=0.0)){i++;};
+	while(fvec[i].f<f && (fvec[i].x!=0.0 )){i++;}; //&& fvec[i].f!=0.0)){i++;};
+  //printf("%d\t%lg\t%lg\t%lg\n",i,fvec[i].f,f,fvec[i].x);
 	if (fvec[i].f==0.0 && fvec[i].x==0.0) /* Frequency above moximum */
 	{
 		return (fvec[i-1].x);
 	}
+  //if(i==0){return (fvec[0].x);}
 	a=(fvec[i].f-f)/(fvec[i].f-fvec[i-1].f);
 	delta=fvec[i].x-fvec[i-1].x;
 	return (fvec[i-1].x + delta*a);
@@ -227,7 +229,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	size_t seglen=0;
 	REAL8TimeSeries *PSDtimeSeries=NULL;
 	REAL8 padding=0.4;//Default was 1.0 second. However for The Event the Common Inputs specify a Tukey parameter of 0.1, so 0.4 second of padding for 8 seconds of data.
-	UINT4 Ncache=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
+	UINT4 Ncache=0,Npsd=0,Nifo=0,Nchannel=0,NfLow=0,NfHigh=0;
 	UINT4 i,j;
 	//int FakeFlag=0; - set but not used
 	char strainname[]="LSC-STRAIN";
@@ -241,6 +243,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 	char *chartmp=NULL;
 	char **channels=NULL;
 	char **caches=NULL;
+  char **psds=NULL;
 	char **IFOnames=NULL;
 	char **fLows=NULL,**fHighs=NULL;
 	char **timeslides=NULL;
@@ -303,6 +306,9 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--channel")->value,&channels,&Nchannel);
 	}
 	LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--cache")->value,&caches,&Ncache);
+  if(LALInferenceGetProcParamVal(commandLine,"--psd")){
+		LALInferenceParseCharacterOptionString(LALInferenceGetProcParamVal(commandLine,"--psd")->value,&psds,&Npsd);
+	}
 	ppt=LALInferenceGetProcParamVal(commandLine,"--ifo");
 	if(!ppt) ppt=LALInferenceGetProcParamVal(commandLine,"--IFO");
 	LALInferenceParseCharacterOptionString(ppt->value,&IFOnames,&Nifo);
@@ -668,23 +674,39 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			XLALDestroyRandomParams(datarandparam);
 		}
 		else{ /* Not using fake data, load the data from a cache file */
-			fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
-			PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
-			if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
-			XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
-			PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
-			if(!PSDtimeSeries) {
-                            fprintf(stderr,"ERROR while estimating PSD for %s\n",IFOnames[i]);
-                            XLAL_ERROR_NULL(XLAL_EFUNC);
-                        }
-			IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
-			if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
-			if (LALInferenceGetProcParamVal(commandLine, "--PSDwelch"))
-				XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
-			else
-				XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
+      if (LALInferenceGetProcParamVal(commandLine, "--psd")){
+        interp=NULL;
+        char *interpfilename=&(psds[i][0]);
+        fprintf(stderr,"Reading PSD for %s using %s\n",IFOnames[i],interpfilename);
+        printf("Looking for psd interpolation file %s\n",interpfilename);
+        interp=interpFromFile(interpfilename);
+        IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)
+        XLALCreateREAL8FrequencySeries("spectrum",&GPSstart,0.0,
+                                       (REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+        if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
+        for(j=0;j<IFOdata[i].oneSidedNoisePowerSpectrum->data->length;j++)
+        {
+          MetaNoiseFunc(&status,&(IFOdata[i].oneSidedNoisePowerSpectrum->data->data[j]),j*IFOdata[i].oneSidedNoisePowerSpectrum->deltaF,interp,NULL);
+        }
+      }else{
+        fprintf(stderr,"Estimating PSD for %s using %i segments of %i samples (%lfs)\n",IFOnames[i],nSegs,(int)seglen,SegmentLength);
+        PSDtimeSeries=readTseries(caches[i],channels[i],GPSstart,PSDdatalength);
+        if(!PSDtimeSeries) {XLALPrintError("Error reading PSD data for %s\n",IFOnames[i]); XLAL_ERROR_NULL(XLAL_EFUNC);}
+        XLALResampleREAL8TimeSeries(PSDtimeSeries,1.0/SampleRate);
+        PSDtimeSeries=(REAL8TimeSeries *)XLALShrinkREAL8TimeSeries(PSDtimeSeries,(size_t) 0, (size_t) seglen*nSegs);
+        if(!PSDtimeSeries) {
+                              fprintf(stderr,"ERROR while estimating PSD for %s\n",IFOnames[i]);
+                              XLAL_ERROR_NULL(XLAL_EFUNC);
+                          }
+        IFOdata[i].oneSidedNoisePowerSpectrum=(REAL8FrequencySeries *)XLALCreateREAL8FrequencySeries("spectrum",&PSDtimeSeries->epoch,0.0,(REAL8)(SampleRate)/seglen,&lalDimensionlessUnit,seglen/2 +1);
+        if(!IFOdata[i].oneSidedNoisePowerSpectrum) XLAL_ERROR_NULL(XLAL_EFUNC);
+        if (LALInferenceGetProcParamVal(commandLine, "--PSDwelch"))
+          XLALREAL8AverageSpectrumWelch(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);
+        else
+          XLALREAL8AverageSpectrumMedian(IFOdata[i].oneSidedNoisePowerSpectrum ,PSDtimeSeries, seglen, (UINT4)seglen, IFOdata[i].window, IFOdata[i].timeToFreqFFTPlan);	
 
-			XLALDestroyREAL8TimeSeries(PSDtimeSeries);
+        XLALDestroyREAL8TimeSeries(PSDtimeSeries);
+      }
 
 			/* Read the data segment */
 			LIGOTimeGPS truesegstart=segStart;
@@ -1773,7 +1795,6 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     REAL8 injtime=0.0;
    
     
-    while (tmpdata){
     tmpdata->modelParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	modelParams=tmpdata->modelParams;
     memset(modelParams,0,sizeof(LALInferenceVariables));
@@ -1826,9 +1847,6 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
         LALInferenceTemplateLAL(tmpdata);
       }
 
-    tmpdata=tmpdata->next;
-    
-    }
      
     LALInferenceVariables *currentParams=IFOdata->modelParams;
        
@@ -1888,7 +1906,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
   
   while (dataPtr != NULL) {
      
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      if (IFOdata->modelDomain == LALINFERENCE_DOMAIN_TIME) {
 	  printf("There is a problem. You seem to be using a time domain model into the frequency domain injection function!. Exiting....\n"); 
       exit(1);
     }
@@ -1903,7 +1921,7 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
                                              ra, dec, &GPSlal);
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
-    timeshift =  (injtime - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
+    timeshift =  (injtime - (*(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "time"))) + timedelay;
     twopit    = LAL_TWOPI * (timeshift);
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
     FplusScaled  = Fplus  / distMpc;
@@ -1925,10 +1943,10 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
      chisquared = 0.0;
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
-      plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].re;
-      plainTemplateImag = FplusScaled * dataPtr->freqModelhPlus->data->data[i].im  
-                          +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
+      plainTemplateReal = FplusScaled * IFOdata->freqModelhPlus->data->data[i].re  
+                          +  FcrossScaled * IFOdata->freqModelhCross->data->data[i].re;
+      plainTemplateImag = FplusScaled * IFOdata->freqModelhPlus->data->data[i].im  
+                          +  FcrossScaled * IFOdata->freqModelhCross->data->data[i].im;
 
       /* do time-shifting...             */
       /* (also un-do 1/deltaT scaling): */
@@ -2004,6 +2022,7 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 	XLALPrintError("Encountered NULL variables pointer");
    	XLAL_ERROR_VOID(XLAL_EINVAL);
 	}
+    UINT4 spinCheck=LALInferenceCheckVariableNonFixed(vars,"a_spin1");
     /* Destroy existing parameters */
     if(vars->head!=NULL) LALInferenceDestroyVariables(vars);
     REAL8 q = theEventTable->mass2 / theEventTable->mass1;
@@ -2044,8 +2063,6 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
 
     REAL8 injGPSTime = XLALGPSGetREAL8(&(theEventTable->geocent_end_time));
 
-    //REAL8 chirpmass = theEventTable->mchirp;
-
     REAL8 dist = theEventTable->distance;
     REAL8 inclination = theEventTable->inclination;
     REAL8 phase = theEventTable->coa_phase;
@@ -2055,30 +2072,31 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
     Approximant injapprox = XLALGetApproximantFromString(theEventTable->waveform);
     LALPNOrder order = XLALGetOrderFromString(theEventTable->waveform);
     
-    REAL8 m1=theEventTable->mass1;
-    REAL8 m2=theEventTable->mass2;
-    
-    LALInferenceAddVariable(vars, "mass1", &m1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "mass2", &m2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-
-    //LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    //LALInferenceAddVariable(vars, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    LALInferenceAddVariable(vars, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    //REAL8 m1=theEventTable->mass1;
+    //REAL8 m2=theEventTable->mass2;
+    //LALInferenceAddVariable(vars, "mass1", &m1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    //LALInferenceAddVariable(vars, "mass2", &m2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    REAL8 chirpmass=theEventTable->mchirp;
+    LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "distance", &dist, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "inclination", &inclination, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "polarisation", &(psi), LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "phase", &phase, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "declination", &dec, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    LALInferenceAddVariable(vars, "rightascension", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
     LALInferenceAddVariable(vars, "LAL_APPROXIMANT", &injapprox, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "LAL_PNORDER",&order,LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "LAL_AMPORDER", &(theEventTable->amp_order), LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+    if(spinCheck){
+        LALInferenceAddVariable(vars, "a_spin1", &a_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddVariable(vars, "a_spin2", &a_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddVariable(vars, "theta_spin1", &theta_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddVariable(vars, "theta_spin2", &theta_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddVariable(vars, "phi_spin1", &phi_spin1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+        LALInferenceAddVariable(vars, "phi_spin2", &phi_spin2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_LINEAR);
+    }
 
 }
 

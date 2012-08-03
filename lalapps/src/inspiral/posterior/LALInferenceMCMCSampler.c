@@ -360,7 +360,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
   INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));     // Sets decay of adaption function
   INT4  adaptLength       = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptLength"));// Number of iterations to adapt before turning off
-  INT4  adaptResetBuffer  = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptResetBuffer"));                // Number of iterations before adapting after a restart
   REAL8 s_gamma           = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "s_gamma"));                // Sets the size of changes to jump size during adaptation
   INT4  adaptStart        = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptStart"));                  // Keeps track of last iteration adaptation was restarted
   INT4  runPhase          = 0;                  // Phase of run. (0=PT-only run, 1=temporary PT, 2=annealing, 3=single-chain sampling)
@@ -940,11 +939,8 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
   REAL8 logAcceptanceProbability;
   REAL8 temperature;
   REAL8 targetAcceptance = 0.234;
-  REAL8 acceptanceRate = 0.0;
   INT4 acceptanceCount;
   INT4 accepted = 0;
-  const char *currentProposalName;
-  LALInferenceProposalStatistics *propStat;
 
   // current values:
   logPriorCurrent      = runState->currentPrior;

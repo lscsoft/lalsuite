@@ -182,8 +182,18 @@ int XLALSimInspiralChooseWaveformFromSimInspiral(
       XLAL_ERROR(XLAL_EFUNC);
 
    /* generate +,x waveforms */
-   if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
-      XLAL_ERROR(XLAL_EFUNC);
+   /* special case for NR waveforms */
+   switch(approximant)
+   {
+      case NumRelNinja2:
+         if (XLALNRInjectionFromSimInspiral(hplus, hcross, thisRow, deltaT) == XLAL_FAILURE)
+            XLAL_ERROR(XLAL_EFUNC);
+         break;
+
+      default:
+         if (XLALSimInspiralChooseTDWaveform(hplus, hcross, phi0, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, f_min, f_ref, r, i, lambda1, lambda2, interactionFlags, amplitudeO, order, approximant) == XLAL_FAILURE)
+            XLAL_ERROR(XLAL_EFUNC);
+   }
 
    /* taper the waveforms */
    if (XLALSimInspiralREAL8WaveTaper((*hplus)->data, taper) == XLAL_FAILURE)

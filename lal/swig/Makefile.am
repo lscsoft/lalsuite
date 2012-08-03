@@ -4,8 +4,6 @@
 # make subdirectories
 SUBDIRS = . octave python
 
-if SWIG_BUILD
-
 # SWIG interface file
 swig_iface = @PACKAGE_NAME@swig.i
 
@@ -36,7 +34,7 @@ swigincludedir = $(includedir)/lal
 
 # SWIG interfaces to install
 EXTRA_HEADERS =
-nodist_swiginclude_HEADERS = $(swig_iface)
+nodist_swiginclude_HEADERS =
 swiginclude_HEADERS = $(SWIG_IFACES) $(swig_iface_test)
 
 # extra distribution files
@@ -44,10 +42,16 @@ EXTRA_DIST = $(swig_generate_iface)
 
 # clean files
 CLEANFILES = \
+	$(swig_iface_preproc_deps) \
 	$(swig_iface_headers) \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
 	$(swig_iface)
+
+if SWIG_BUILD
+
+# generated SWIG interfaces to install
+nodist_swiginclude_HEADERS += $(swig_iface)
 
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }

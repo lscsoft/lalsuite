@@ -174,7 +174,7 @@ disp("passed dynamic vector/matrix conversions (GSL)");
 ## check 'tm' struct conversions
 gps = 989168284;
 utc = [2011, 5, 11, 16, 57, 49, 4, 131, 0];
-assert(all(GPSToUTC([], gps) == utc));
+assert(all(GPSToUTC(gps) == utc));
 assert(UTCToGPS(utc) == gps);
 assert(UTCToGPS(utc(1:6)) == gps);
 utc(7) = utc(8) = 0;
@@ -185,7 +185,7 @@ endfor
 utcd = utc;
 for i = 0:9
   utcd(3) = utc(3) + i;
-  utcd = GPSToUTC([], UTCToGPS(utcd));
+  utcd = GPSToUTC(UTCToGPS(utcd));
   assert(utcd(7) == weekday(datenum(utcd(1:6))));
 endfor
 if lalcvar.swig_debug

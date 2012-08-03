@@ -74,7 +74,8 @@ CHAR *uvar_Fname2;
 BOOLEAN uvar_help;
 BOOLEAN uvar_clusterFiles;
 REAL8 uvar_Ftolerance;
-BOOLEAN uvar_absFtolerance;
+BOOLEAN uvar_sigFtolerance;
+INT4 uvar_Nseg;
 
 #define max(x,y) ( (x) > (y) ? (x) : (y) )
 
@@ -156,7 +157,8 @@ initUserVars (LALStatus *status)
 
   uvar_clusterFiles = TRUE;	/* default: compare output-files from "cluster" */
   uvar_Ftolerance = 100.0 * LAL_REAL4_EPS;
-  uvar_absFtolerance = FALSE;
+  uvar_sigFtolerance = FALSE;
+  uvar_Nseg = 1;
 
   /* now register all our user-variable */
   LALregSTRINGUserVar(status, Fname1,	'1', UVAR_REQUIRED, "Path and basefilename for first Fstats file");
@@ -164,8 +166,9 @@ initUserVars (LALStatus *status)
   LALregBOOLUserVar(status,   help,	'h', UVAR_HELP,     "Print this help/usage message");
 
   LALregBOOLUserVar(status,   clusterFiles, 0,UVAR_OPTIONAL,"Comparing cluster results-files or pure Fstat-files");
-  LALregREALUserVar(status,   Ftolerance, 0, UVAR_OPTIONAL, "tolerance of error in 2F (relative or absolute, depending on --absFtolerance)" );
-  LALregBOOLUserVar(status,   absFtolerance, 0,UVAR_OPTIONAL, "Use *absolute* error in 2F instead of relative error");
+  LALregREALUserVar(status,   Ftolerance, 0, UVAR_OPTIONAL, "tolerance of error in 2F (relative or sigmas, depending on --sigFtolerance)" );
+  LALregBOOLUserVar(status,   sigFtolerance, 0,UVAR_OPTIONAL, "Use error in 2F relative to chi^2 std-deviation 'sigma' instead of relative error");
+  LALregINTUserVar(status,    Nseg,           0,UVAR_OPTIONAL, "Number of segments Fstat '2F' is averaged over");
 
   DETATCHSTATUSPTR (status);
   RETURN (status);
@@ -338,14 +341,21 @@ compareFstatFiles (LALStatus *status, UINT4 *diff, LALParsedDataFile *f1, LALPar
 	  (*diff) ++;
 	}
       REAL8 err2F;
-      if ( uvar_absFtolerance )
-        err2F = fabs ( parsed1.TwoF - parsed2.TwoF );
-      else
-        err2F = relError( parsed1.TwoF, parsed2.TwoF );
+      if ( uvar_sigFtolerance )	// measure error in Nseg*2F compared to sigmas of chi^2_(4*Nseg) distribution
+        {
+          REAL8 mean2F = 0.5 * ( parsed1.TwoF + parsed2.TwoF );
+          REAL8 noncent = fmax ( 0, uvar_Nseg * ( mean2F - 4 ) );
+          REAL8 sigma = sqrt ( 2 * ( 4*uvar_Nseg + 2 * noncent ) );	// std-dev for noncentral chi^2 distribution with dof degrees of freedom
+          err2F = uvar_Nseg * fabs ( parsed1.TwoF - parsed2.TwoF ) / sigma;
+        }
+      else	// relative error between F1 and F2
+        {
+          err2F = relError( parsed1.TwoF, parsed2.TwoF );
+        }
 
       if ( err2F > Ftol )
 	{
-	  printf ("%s Error %g in 2F ecceeds threshold %g in line %d\n", ( uvar_absFtolerance ? "Absolute" : "Relative" ) , err2F, Ftol, i+1);
+	  printf ("%s Error %g in 2F ecceeds threshold %g in line %d\n", ( uvar_sigFtolerance ? "Sigma" : "Relative" ) , err2F, Ftol, i+1);
 	  (*diff) ++;
 	}
 
