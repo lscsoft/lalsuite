@@ -101,7 +101,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  * Set a flat lattice tiling to a parameter space defined by
  * the age and possible braking index range of an object
  */
-static int AgeBrakingIndexBound(void *data, size_t dimension, gsl_vector *point, double *lower, double *upper)
+static void AgeBrakingIndexBound(void *data, size_t dimension, gsl_vector *point, double *lower, double *upper)
 {
   double x;
 
@@ -119,14 +119,12 @@ static int AgeBrakingIndexBound(void *data, size_t dimension, gsl_vector *point,
     x /= gsl_vector_get(point, 0);
     break;
   default:
-    XLAL_ERROR(XLAL_EINVAL, "invalid dimension %d input, allowed are 0-2", dimension);
+    XLAL_ERROR_VOID(XLAL_EINVAL, "invalid dimension %d input, allowed are 0-2", dimension);
   }
 
   /* Set lower and upper bound */
   *lower = x * gsl_matrix_get((gsl_matrix*)data, dimension, 0);
   *upper = x * gsl_matrix_get((gsl_matrix*)data, dimension, 1);
-
-  return 1;
 
 }
 static void AgeBrakingIndexFree(void *data)

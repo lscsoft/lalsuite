@@ -40,7 +40,7 @@ extern "C" <% // {
 /**
  * Flat lattice tiling bound
  */
-typedef int (*FlatLatticeTilingBoundFunc)(
+typedef void (*FlatLatticeTilingBoundFunc)(
   void* data,        /**< Arbitrary data describing parameter space */
   size_t dimension,    /**< Dimension on which bound applies */
   gsl_vector *point, /**< Point on which to find bounds */

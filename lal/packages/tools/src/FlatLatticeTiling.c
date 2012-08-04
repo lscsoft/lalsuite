@@ -414,7 +414,6 @@ static void GetBounds(
 {
 
   FlatLatticeTilingBound *bound = NULL;
-  int UNUSED retn;
 
   /* Get the appropriate bound dimension */
   bound = tiling->bounds[gsl_vector_int_get(tiling->bound_map, dimension)];
@@ -433,11 +432,11 @@ static void GetBounds(
 
   /* Call parameter space bounds function */
   if (ii == 0) {
-    retn = (bound->func)(bound->data, ii, NULL, lower, upper);
+    (bound->func)(bound->data, ii, NULL, lower, upper);
   }
   else {
     gsl_vector_view v = gsl_vector_subvector(tiling->bound_point, 0, ii);
-    retn = (bound->func)(bound->data, ii, &v.vector, lower, upper);
+    (bound->func)(bound->data, ii, &v.vector, lower, upper);
   }
 
   /* Normalise bounds */
@@ -1270,13 +1269,12 @@ int XLALSetFlatTilingAnstarLattice(
 /**
  * Set a flat lattice tiling to a square parameter space
  */
-static int ConstantBound(void* data, size_t dimension UNUSED, gsl_vector* point UNUSED, double* lower, double* upper)
+static void ConstantBound(void* data, size_t dimension UNUSED, gsl_vector* point UNUSED, double* lower, double* upper)
 {
+
   /* Set lower and upper bound */
   *lower = gsl_vector_get((gsl_vector*)data, 0);
   *upper = gsl_vector_get((gsl_vector*)data, 1);
-
-  return 1;
 
 }
 static void ConstantFree(void* data)
