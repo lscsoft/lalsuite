@@ -39,8 +39,8 @@ extern "C" <% // {
 /**
  * Functions
  */
-int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, REAL8, REAL8);
-int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, REAL8, REAL8, REAL8, REAL8, REAL8, INT4, INT4);
+int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, double, double);
+int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, double, double, double, double, double, size_t, size_t);
 
 #ifdef __cplusplus
 %> // }
