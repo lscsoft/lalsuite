@@ -33,25 +33,23 @@
 #include <lal/Random.h>
 #include <lal/GSLSupport.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
+#ifdef __cplusplus
+extern "C" <% // {
 #endif
 
 /**
  * Flat lattice tiling bound
  */
 typedef BOOLEAN (*FlatLatticeTilingBoundFunc)(
-                                              void *data,        /**< Arbitrary data describing parameter space */
-                                              INT4 dimension,    /**< Dimension on which bound applies */
-                                              gsl_vector *point, /**< Point on which to find bounds */
-                                              REAL8 *lower,      /**< Lower bound on point in dimension */
-                                              REAL8 *upper       /**< Upper bound on point in dimension */
-                                              );
+  void *data,        /**< Arbitrary data describing parameter space */
+  INT4 dimension,    /**< Dimension on which bound applies */
+  gsl_vector *point, /**< Point on which to find bounds */
+  REAL8 *lower,      /**< Lower bound on point in dimension */
+  REAL8 *upper       /**< Upper bound on point in dimension */
+  );
 typedef void (*FlatLatticeTilingBoundFree)(
-                                           void *data /**< Arbitrary data describing parameter space */
-                                           );
+  void *data /**< Arbitrary data describing parameter space */
+  );
 typedef struct tagFlatLatticeTilingBound FlatLatticeTilingBound;
 
 /**
@@ -63,10 +61,10 @@ typedef struct tagFlatLatticeTilingSubspace FlatLatticeTilingSubspace;
  * Flat tiling lattice generator
  */
 typedef int (*FlatTilingLatticeGenerator)(
-                                          INT4 dimensions,        /**< Number of dimensions */
-                                          gsl_matrix** generator, /**< Generator matrix */
-                                          REAL8* norm_thickness   /**< Normalised thickness */
-                                          );
+  INT4 dimensions,        /**< Number of dimensions */
+  gsl_matrix** generator, /**< Generator matrix */
+  REAL8* norm_thickness   /**< Normalised thickness */
+  );
 
 /**
  * Flat lattice tiling state/input structure
@@ -154,10 +152,8 @@ int XLALSetFlatTilingCubicLattice(FlatLatticeTiling*);
 int XLALSetFlatTilingAnstarLattice(FlatLatticeTiling*);
 int XLALAddFlatLatticeTilingConstantBound(FlatLatticeTiling*, INT4, REAL8, REAL8);
 
-#if 0
-{ /* so that editors will match succeeding brace */
-#elif defined(__cplusplus)
-}
+#ifdef __cplusplus
+%> // }
 #endif
 
 #endif

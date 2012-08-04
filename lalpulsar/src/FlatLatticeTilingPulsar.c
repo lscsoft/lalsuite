@@ -48,8 +48,8 @@
  * Calculate the factorial of an integer
  */
 static INT4 factorial(
-		      INT4 i
-		      )
+  INT4 i
+  )
 {
 
   INT4 f = 1;
@@ -71,10 +71,10 @@ static INT4 factorial(
  * \f$f_k = \omega_k \frac{(k+1)!}{{2\pi T^{k+1}}}\f$
  */
 int XLALSetFlatLatticeTilingSpindownFstatMetric(
-						FlatLatticeTiling *tiling, /**< Tiling structure */
-						REAL8 max_mismatch,        /**< Maximum mismatch */
-						REAL8 Tspan                /**< Time span of the search */
-						)
+  FlatLatticeTiling *tiling, /**< Tiling structure */
+  REAL8 max_mismatch,        /**< Maximum mismatch */
+  REAL8 Tspan                /**< Time span of the search */
+  )
 {
 
   const int n = tiling->dimensions;
@@ -160,15 +160,15 @@ static void AgeBrakingIndexFree(void *data)
 
 }
 int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
-						  FlatLatticeTiling *tiling, /**< Tiling structure */
-						  REAL8 freq,                /**< Starting frequency */
-						  REAL8 freq_band,           /**< Frequency band */
-						  REAL8 age,                 /**< Spindown age */
-						  REAL8 min_braking,         /**< Minimum braking index */
-						  REAL8 max_braking,         /**< Maximum braking index */
-						  INT4 offset,               /**< Number of dimensions offset between first dimension and frequency */
-						  INT4 gap                   /**< Number of dimensions gap netween frequency and first spindown */
-						  )
+  FlatLatticeTiling *tiling, /**< Tiling structure */
+  REAL8 freq,                /**< Starting frequency */
+  REAL8 freq_band,           /**< Frequency band */
+  REAL8 age,                 /**< Spindown age */
+  REAL8 min_braking,         /**< Minimum braking index */
+  REAL8 max_braking,         /**< Maximum braking index */
+  INT4 offset,               /**< Number of dimensions offset between first dimension and frequency */
+  INT4 gap                   /**< Number of dimensions gap netween frequency and first spindown */
+  )
 {
 
   gsl_matrix *data = NULL;
@@ -199,7 +199,7 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
 
   /* Set parameter space */
   if (XLAL_SUCCESS != XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
-						    (void*)data, AgeBrakingIndexFree))
+                                                    (void*)data, AgeBrakingIndexFree))
     XLAL_ERROR(XLAL_EFAILED);
 
   return XLAL_SUCCESS;
