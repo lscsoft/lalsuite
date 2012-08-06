@@ -1043,8 +1043,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    }
    memset(psd1->data, 0, sizeof(REAL4)*psd1->length);
    
-   REAL4 periodf = 1.0/input.period;
-   REAL4 B = input.moddepth*params->Tcoh;
+   REAL8 periodf = 1.0/input.period;
+   REAL8 B = input.moddepth*params->Tcoh;
    
    //Bin numbers of the frequencies
    for (ii=0; ii<numfbins; ii++) freqbins->data[ii] = (INT4)round(params->fmin*params->Tcoh - params->dfmax*params->Tcoh - 6.0) + ii;
@@ -1052,22 +1052,19 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //Determine the signal modulation in bins with time at center of coherence time and create
    //Hann windowed PSDs
    REAL8 sin2pix = 0.0, cos2pix = 0.0;
-   //REAL8 PSDprefact = (2.0/3.0)*params->Tcoh;
    REAL8 PSDprefact = 2.0/3.0;
    for (ii=0; ii<numffts; ii++) {
-      if (sftexist->data[ii]==1) {
-         REAL4 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
+      //if (sftexist->data[ii]==1) {
+         REAL8 t = 0.5*params->Tcoh*ii;  //Assumed 50% overlapping SFTs
          twospect_sin_cos_2PI_LUT(&sin2pix, &cos2pix, periodf*t);
-         REAL4 n0 = B*sin2pix + input.fsig*params->Tcoh;
+         REAL8 n0 = B*sin2pix + input.fsig*params->Tcoh;
          for (jj=0; jj<numfbins; jj++) {
-            //Create windowed PSD values organized by sft0 => psd1->data[0...numfbins-1], sft1 => psd1->data[numfbins...2*numfbins-1]
+            //Create PSD values organized by sft0 => psd1->data[0...numfbins-1], sft1 => psd1->data[numfbins...2*numfbins-1]
             //if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
-            //Create windowed PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
-            if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) {
-               psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
-            }
+            //Create PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
+            if ( fabs(n0-(REAL8)freqbins->data[jj]) <= 3.0 ) psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(n0-(REAL8)freqbins->data[jj])*PSDprefact;
          } /* for jj < numfbins */
-      } /* if sft exists */
+      //} /* if sft exists */
    } /* for ii < numffts */
    
    //Do the second FFT
@@ -1130,8 +1127,6 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          
          //Scale the data points by 1/N and window factor and (1/fs)
          //Order of vector is by second frequency then first frequency
-         //Ignore the DC to 3rd frequency bins in sum
-         //for (jj=4; jj<(INT4)psd->length; jj++) {
          if (params->useSSE) {
             psd = sseScaleREAL4Vector(psd, psd, secPSDfactor);
             if (xlalErrno!=0) {
@@ -1142,6 +1137,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             for (jj=0; jj<(INT4)psd->length; jj++) psd->data[jj] *= secPSDfactor;
          }
          
+         //Ignore the DC to 3rd frequency bins in sum
          for (jj=4; jj<(INT4)psd->length; jj++) {
             sum += (REAL8)psd->data[jj];     //sum up the total weight
             
@@ -1585,9 +1581,6 @@ REAL8 sincxoverxsqminusone(REAL8 x)
    if (fabs(x*x-1.0)<1.0e-8) return -0.5;
    if (fabs(x)<1.0e-8) return -1.0;
    
-   /* REAL8 sinpix, cospix, pix = LAL_PI*x;
-   twospect_sin_cos_LUT(&sinpix, &cospix, pix);
-   return sinpix/(pix*(x*x-1.0)); */
    REAL8 pix = LAL_PI*x;
    return sin(pix)/(pix*(x*x-1.0));
    
