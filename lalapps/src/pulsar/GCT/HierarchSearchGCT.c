@@ -880,7 +880,11 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* number of coarse grid 2nd spindown values */
-  nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+  if ( df2dot == 0 ) {
+    nf2dot = 1;
+  } else {
+    nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+  }
 
   /* set number of fine-grid 2nd spindowns */
   if ( LALUserVarWasSet(&uvar_gamma2Refine) ) {
