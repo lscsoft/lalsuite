@@ -22,6 +22,7 @@ option "sftType"  - "SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vlad
 section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
 option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
+option "configCopy"     - "Copy of the configuration file whose output is gengetopt format" string typestr="filename" default="input_values.conf" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
 option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional

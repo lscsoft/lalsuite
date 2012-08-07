@@ -544,8 +544,8 @@ void coh_PTF_calculate_coherent_bank_overlaps(
   {
     for (uk=0; uk<vecLengthTwo; uk++ )
     {
-      gsl_matrix_set(rotReOverlaps,uj,uk,gsl_matrix_get(rotReOverlaps,uj,uk)/(sqrt(gsl_vector_get(eigenvals,uj))*sqrt(gsl_vector_get(Bankeigenvals,uk))));
-      gsl_matrix_set(rotImOverlaps,uj,uk,gsl_matrix_get(rotImOverlaps,uj,uk)/(sqrt(gsl_vector_get(eigenvals,uj))*sqrt(gsl_vector_get(Bankeigenvals,uk))));
+      gsl_matrix_set(rotReOverlaps,uj,uk,gsl_matrix_get(rotReOverlaps,uj,uk)/(sqrt(gsl_vector_get(eigenvals,uk))*sqrt(gsl_vector_get(Bankeigenvals,uj))));
+      gsl_matrix_set(rotImOverlaps,uj,uk,gsl_matrix_get(rotImOverlaps,uj,uk)/(sqrt(gsl_vector_get(eigenvals,uk))*sqrt(gsl_vector_get(Bankeigenvals,uj))));
     }
   }
 
