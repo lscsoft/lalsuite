@@ -2299,15 +2299,15 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
    
    //Load time series of powers, normalize, mean subtract and Hann window
    REAL4Vector *x = XLALCreateREAL4Vector(aveNoiseInTime->length);
-   REAL8Vector *multiplicativeFactor = XLALCreateREAL8Vector(aveNoiseInTime->length);
+   REAL4Vector *multiplicativeFactor = XLALCreateREAL4Vector(aveNoiseInTime->length);
    if (x==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (multiplicativeFactor==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   memset(multiplicativeFactor->data, 0, sizeof(REAL8)*multiplicativeFactor->length);
+   memset(multiplicativeFactor->data, 0, sizeof(REAL4)*multiplicativeFactor->length);
    REAL4 psdfactor = winFactor;
    
    for (ii=0; ii<(INT4)x->length; ii++) {
@@ -2354,10 +2354,20 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
                noiseval *= (1.0-corrfactorsquared);
                noiseval += corrfactorsquared*prevnoiseval;
             }
-            x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0));
+            x->data[jj] = (REAL4)(noiseval/aveNoiseInTime->data[jj]-1.0);
             prevnoiseval = noiseval;
          }
       } /* for jj < x->length */
+      
+      //Window and rescale because of antenna and noise weights
+      if (input->useSSE) {
+         sseSSVectorMultiply(x, x, multiplicativeFactor);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      }
+      else for (jj=0; jj<(INT4)x->length; jj++) x->data[jj] *= multiplicativeFactor->data[jj];
       
       //Do the FFT
       if ( (XLALREAL4PowerSpectrum(psd, x, plan)) != 0) {
@@ -2366,13 +2376,25 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
       }
       
       //Sum into the bins
-      if (input->useSSE) sseSSVectorSum(aveNoise, aveNoise, psd);
+      if (input->useSSE) {
+         sseSSVectorSum(aveNoise, aveNoise, psd);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: sseSSVectorSum() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      }
       else for (jj=0; jj<(INT4)aveNoise->length; jj++) aveNoise->data[jj] += psd->data[jj];
    } /* for ii < 4000 */
    
    //Average and rescale
    REAL4 averageRescaleFactor = 2.5e-4*psdfactor*(1.0+2.0*corrfactorsquared);
-   if (input->useSSE) sseScaleREAL4Vector(aveNoise, aveNoise, averageRescaleFactor);
+   if (input->useSSE) {
+      sseScaleREAL4Vector(aveNoise, aveNoise, averageRescaleFactor);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: sseScaleREAL4Vector() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   }
    else for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= averageRescaleFactor;
    
    //Fix 0th and end bins (0 only for odd x->length, 0 and end for even x->length)
@@ -2406,7 +2428,7 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(aveNoiseInTime);
    XLALDestroyREAL4Vector(rngMeansOverBand);
-   XLALDestroyREAL8Vector(multiplicativeFactor);
+   XLALDestroyREAL4Vector(multiplicativeFactor);
 
 } /* ffPlaneNoise() */
 
