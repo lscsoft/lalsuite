@@ -395,6 +395,7 @@ int XLALAddFlatLatticeTilingBound(
 
     }
   }
+  XLAL_CHECK(bound->dimensions == 1, XLAL_EINVAL);
 
   return XLAL_SUCCESS;
 
@@ -418,25 +419,18 @@ static void GetBounds(
   /* Get the appropriate bound dimension */
   bound = tiling->bounds[gsl_vector_int_get(tiling->bound_map, dimension)];
 
-  /* Copy the relevant values of point */
-  size_t ii = 0;
-  for (size_t i = 0; i < dimension; ++i) {
-    if (GET_BIT(uint64_t, bound->is_bound, i)) {
-      double x = gsl_vector_get(point, i);
-      x *= gsl_vector_get(tiling->real_scale, i);
-      x += gsl_vector_get(tiling->real_offset, i);
-      gsl_vector_set(tiling->bound_point, ii, x);
-      ++ii;
-    }
-  }
+  /* Convert template to real parameter space coordinates */
+  gsl_vector_memcpy(tiling->bound_point, point);
+  gsl_vector_mul(tiling->bound_point, tiling->real_scale);
+  gsl_vector_add(tiling->bound_point, tiling->real_offset);
 
   /* Call parameter space bounds function */
-  if (ii == 0) {
-    (bound->func)(bound->data, ii, NULL, lower, upper);
+  if (dimension == 0) {
+    (bound->func)(bound->data, dimension, NULL, lower, upper);
   }
   else {
-    gsl_vector_view v = gsl_vector_subvector(tiling->bound_point, 0, ii);
-    (bound->func)(bound->data, ii, &v.vector, lower, upper);
+    gsl_vector_view v = gsl_vector_subvector(tiling->bound_point, 0, dimension);
+    (bound->func)(bound->data, dimension, &v.vector, lower, upper);
   }
 
   /* Normalise bounds */

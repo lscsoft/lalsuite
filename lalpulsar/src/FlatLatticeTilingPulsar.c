@@ -96,37 +96,38 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  * Set a flat lattice tiling to a parameter space defined by
  * the age and possible braking index range of an object
  */
-static void AgeBrakingIndexBound(void *data, size_t dimension, gsl_vector *point, double *lower, double *upper)
+static void AgeBraking1stSpindownBound(void *data, size_t dimension, gsl_vector *point, double *lower, double *upper)
 {
-  double x;
-
-  /* Set constant based on dimension */
-  switch (dimension) {
-  case 0:
-    x = 1.0;
-    break;
-  case 1:
-    x = gsl_vector_get(point, 0);
-    break;
-  case 2:
-    x = gsl_vector_get(point, 1);
-    x *= x;
-    x /= gsl_vector_get(point, 0);
-    break;
-  default:
-    XLAL_ERROR_VOID(XLAL_EINVAL, "invalid dimension %d input, allowed are 0-2", dimension);
-  }
 
   /* Set lower and upper bound */
-  *lower = x * gsl_matrix_get((gsl_matrix*)data, dimension, 0);
-  *upper = x * gsl_matrix_get((gsl_matrix*)data, dimension, 1);
+  double x = gsl_vector_get(point, dimension-1);
+  *lower = x * gsl_vector_get((gsl_vector*)data, 0);
+  *upper = x * gsl_vector_get((gsl_vector*)data, 1);
 
 }
-static void AgeBrakingIndexFree(void *data)
+static void AgeBraking1stSpindownFree(void *data)
 {
 
   /* Cleanup */
-  FREE_GSL_MATRIX((gsl_matrix*)data);
+  gsl_vector_free((gsl_vector*)data);
+
+}
+static void AgeBraking2ndSpindownBound(void *data, size_t dimension, gsl_vector *point, double *lower, double *upper)
+{
+
+  /* Set lower and upper bound */
+  double x = gsl_vector_get(point, dimension-1);
+  x *= x;
+  x /= gsl_vector_get(point, dimension-2);
+  *lower = x * gsl_vector_get((gsl_vector*)data, 0);
+  *upper = x * gsl_vector_get((gsl_vector*)data, 1);
+
+}
+static void AgeBraking2ndSpindownFree(void *data)
+{
+
+  /* Cleanup */
+  gsl_vector_free((gsl_vector*)data);
 
 }
 int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
@@ -144,28 +145,30 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   XLAL_CHECK(XLALFlatLatticeTilingDimension(tiling) >= 3, XLAL_EINVAL);
 
   /* Allocate memory */
-  gsl_matrix* data = gsl_matrix_alloc(XLALFlatLatticeTilingDimension(tiling), 2);
-  XLAL_CHECK(data != NULL, XLAL_ENOMEM);
-  gsl_matrix_set_zero(data);
-
-  /* Set frequency bounds */
-  gsl_matrix_set(data, 0, 0, freq);
-  gsl_matrix_set(data, 0, 1, freq + freq_band);
-
-  /* Set first spindown bounds */
-  gsl_matrix_set(data, 1, 0, -1.0 / ((min_braking - 1.0) * age));
-  gsl_matrix_set(data, 1, 1, -1.0 / ((max_braking - 1.0) * age));
-
-  /* Set second spindown bounds */
-  gsl_matrix_set(data, 2, 0, min_braking);
-  gsl_matrix_set(data, 2, 1, max_braking);
+  gsl_vector* f1dot_data = gsl_vector_alloc(2);
+  XLAL_CHECK(f1dot_data != NULL, XLAL_ENOMEM);
+  gsl_vector* f2dot_data = gsl_vector_alloc(2);
+  XLAL_CHECK(f2dot_data != NULL, XLAL_ENOMEM);
 
   /* Set bound dimensions */
-  int64_t bound = ((int64_t)7) << offset;
+  int64_t bound = ((int64_t)1) << offset;
 
-  /* Set parameter space */
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
-                                           (void*)data, AgeBrakingIndexFree) == XLAL_SUCCESS, XLAL_EFAILED);
+  /* Set frequency bounds */
+  XLAL_CHECK(XLALAddFlatLatticeTilingConstantBound(tiling, offset, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  /* Set first spindown bounds */
+  bound = bound << 1;
+  gsl_vector_set(f1dot_data, 0, -1.0 / ((min_braking - 1.0) * age));
+  gsl_vector_set(f1dot_data, 1, -1.0 / ((max_braking - 1.0) * age));
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, bound, AgeBraking1stSpindownBound,
+                                           (void*)f1dot_data, AgeBraking1stSpindownFree) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  /* Set second spindown bounds */
+  bound = bound << 1;
+  gsl_vector_set(f2dot_data, 0, min_braking);
+  gsl_vector_set(f2dot_data, 1, max_braking);
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, bound, AgeBraking2ndSpindownBound,
+                                           (void*)f2dot_data, AgeBraking2ndSpindownFree) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
