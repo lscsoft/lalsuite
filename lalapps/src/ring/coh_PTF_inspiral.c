@@ -2758,7 +2758,6 @@ UINT4 coh_PTF_accept_trig_check(
 
           if (loudTrigBefore && loudTrigAfter)
           {
-            fprintf(stderr,"Trigger failed clustering");
             return 0;
           }
         }
