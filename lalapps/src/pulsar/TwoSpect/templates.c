@@ -1088,20 +1088,17 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    INT4 doSecondFFT;
    //First loop over frequencies
    for (ii=0; ii<numfbins; ii++) {
-      //Set doSecondFFT check flag to 0. Value becomes 1 if at least one element in frequency row is non-zero
+      //Set doSecondFFT check flag to 0. Value becomes 1 if we are to do the second FFT
       doSecondFFT = 0;
    
       //Next, loop over times and check to see if we need to do second FFT
-      //We want to have at least 5 SFTs with power
-      jj = 0;
-      while (doSecondFFT<5 && jj<(INT4)x->length) {
-         //if (psd1->data[ii+jj*numfbins]>0.0) doSecondFFT++;
-         if (psd1->data[ii*numffts+jj]>0.0) doSecondFFT++;
-         jj++;
-      }
+      //Sum up the power in the row and see if it exceeds 5.0*(sinc(3.0)/(3.0^2-1))^2
+      REAL4 rowpowersum = 0.0;
+      for (jj=0; jj<(INT4)x->length; jj++) rowpowersum += psd1->data[ii*numffts+jj];
+      if (rowpowersum > 1.187167e-34) doSecondFFT = 1;
       
-      //If there was power in the frequency bin of the template, then do the FFT if 5 or more SFTs have power
-      if (doSecondFFT>=5) {
+      //If we are to do the second FFT then do it!
+      if (doSecondFFT) {
          //Obtain and window the time series
          memcpy(x->data, &(psd1->data[ii*numffts]), sizeof(REAL4)*x->length);
          if (!params->useSSE) {
