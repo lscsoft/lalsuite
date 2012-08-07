@@ -41,14 +41,10 @@ extern "C" <% // {
  * Flat lattice tiling bound
  */
 typedef void (*FlatLatticeTilingBoundFunc)(
-  void* data,        /**< Arbitrary data describing parameter space */
-  size_t dimension,    /**< Dimension on which bound applies */
-  gsl_vector *point, /**< Point on which to find bounds */
-  double* lower,      /**< Lower bound on point in dimension */
-  double* upper       /**< Upper bound on point in dimension */
-  );
-typedef void (*FlatLatticeTilingBoundFree)(
-  void* data /**< Arbitrary data describing parameter space */
+  double* lower,     /**< Lower bound on point in dimension */
+  double* upper,     /**< Upper bound on point in dimension */
+  gsl_vector* point, /**< Point on which to find bounds */
+  gsl_vector* data  /**< Arbitrary data describing parameter space */
   );
 
 /**
@@ -72,7 +68,7 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(size_t);
 size_t XLALFlatLatticeTilingDimension(FlatLatticeTiling*);
 gsl_matrix* XLALFlatLatticeTilingMetric(FlatLatticeTiling*);
 void XLALDestroyFlatLatticeTiling(FlatLatticeTiling*);
-int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, uint64_t, FlatLatticeTilingBoundFunc, void*, FlatLatticeTilingBoundFree);
+int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, uint64_t, FlatLatticeTilingBoundFunc, gsl_vector*);
 int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, double, gsl_vector*);
 int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);
 int XLALNextFlatLatticePoint(FlatLatticeTiling*);
