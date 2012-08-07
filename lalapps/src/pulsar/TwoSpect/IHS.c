@@ -630,7 +630,7 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
             
             //comment this out
-            FILE *tworowvals = fopen("./output/tworowexpectedsample.dat","w");
+            //FILE *tworowvals = fopen("./output/tworowexpectedsample.dat","w");
             
             //We sample the tworows sequence (up to the number of rows-1) without accepting any zeros.
             sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
@@ -657,9 +657,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
                      }
                   }
                   
-                  fprintf(tworowvals, "%f\n", sampledtempihsvals->data[jj]);
+                  //fprintf(tworowvals, "%f\n", sampledtempihsvals->data[jj]);
                } // for jj = 0 --> sampledtempihsvals->length
-               fclose(tworowvals);
+               //fclose(tworowvals);
             } // if params->ihsfar != 1.0
             
          } else {
@@ -784,8 +784,8 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
          REAL8 averageval = 0.0, farave = 0.0;
          if ((ihsvectorsequence->length-(ii-1))*ihsvectorsequence->vectorLength>10000) {
             //comment this out
-            FILE *row360expect = NULL;
-            if (ii==360) row360expect = fopen("./output/row360expect.dat","w");
+            //FILE *row360expect = NULL;
+            //if (ii==360) row360expect = fopen("./output/row360expect.dat","w");
             
             sampledtempihsvals = sampleREAL4VectorSequence_nozerosaccepted(tworows, ihsvectorsequence->length-(ii-1), 10000, params->rng);
             outputfar->ihsdistMean->data[ii-2] = calcMean(sampledtempihsvals);
@@ -807,9 +807,9 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
                         XLAL_ERROR_VOID(XLAL_EFUNC);
                      }
                   }
-                  if (ii==360) fprintf(row360expect, "%f\n", sampledtempihsvals->data[jj]);
+                  //if (ii==360) fprintf(row360expect, "%f\n", sampledtempihsvals->data[jj]);
                }
-               if (ii==360) fclose(row360expect);
+               //if (ii==360) fclose(row360expect);
             }
             
          } else {
@@ -997,9 +997,9 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
             //comment this out
-            FILE *tworowreal = fopen("./output/tworowsumreal.dat","w");
+            /* FILE *tworowreal = fopen("./output/tworowsumreal.dat","w");
             for (jj=0; jj<(INT4)(tworows->length*tworows->vectorLength); jj++) fprintf(tworowreal, "%f\n", tworows->data[jj]);
-            fclose(tworowreal);
+            fclose(tworowreal); */
             
             /* validate SSE code */
             if (params->validateSSE) {
@@ -1143,11 +1143,11 @@ void sumIHSSequence(ihsMaximaStruct *output, ihsfarStruct *inputfar, REAL4Vector
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
             //comment this out
-            if (ii==360) {
+            /* if (ii==360) {
                FILE *row360real = fopen("./output/row360sumreal.dat","w");
                for (jj=0; jj<(INT4)((tworows->length-(ii-2))*tworows->vectorLength); jj++) fprintf(row360real, "%f\n", tworows->data[jj]);
                fclose(row360real);
-            }
+            } */
          } /* use SSE code */
          
          //comment this
