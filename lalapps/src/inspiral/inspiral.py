@@ -230,7 +230,7 @@ class InspiralJob(InspiralAnalysisJob):
     sections = ['data','inspiral']
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    environment = 'KMP_LIBRARY=serial;MKL_SERIAL=yes'
+    self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     if self.get_use_gpus():
       # make sure the vanilla universe is being used
       universe = cp.get('condor', 'universe')
@@ -254,9 +254,6 @@ class InspiralJob(InspiralAnalysisJob):
       self.add_opt('gpu-device-id', '0')
       self.add_condor_cmd('+WantGPU', 'true')
       self.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true)')
-      if cp.has_option('condor', 'cuda-environment'):
-        environment += ';' + cp.get('condor', 'cuda-environment')
-    self.add_condor_cmd('environment', environment)
 
 
 class InspiralCkptJob(InspiralAnalysisJob):

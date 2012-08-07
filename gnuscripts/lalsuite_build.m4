@@ -435,12 +435,10 @@ AC_ARG_WITH(
       ],
       [cuda_libdir=lib]
     )
-    CUDA_PATH="${cuda_path}"
     CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
     CUDA_CPPFLAGS="-I${with_cuda}/include"
     LIBS="$LIBS $CUDA_LIBS"
     CPPFLAGS="$CPPFLAGS $CUDA_CPPFLAGS"
-    AC_SUBST(CUDA_PATH)
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CPPFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
