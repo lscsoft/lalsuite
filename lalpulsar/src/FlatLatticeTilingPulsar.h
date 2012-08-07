@@ -40,7 +40,7 @@ extern "C" <% // {
  * Functions
  */
 int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, double, double);
-int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, double, double, double, double, double, size_t, size_t);
+int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, double, double, double, double, double, size_t);
 
 #ifdef __cplusplus
 %> // }

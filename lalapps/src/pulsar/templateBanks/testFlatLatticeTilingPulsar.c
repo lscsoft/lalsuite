@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   LAL_CALL(LALRegisterREALUserVar  (&status, "time-span",        'T', UVAR_OPTIONAL, "Time-span of the data set (in seconds)", &Tspan), &status);
   LAL_CALL(LALRegisterLISTUserVar  (&status, "square",            0 , UVAR_OPTIONAL, "Square parameter space: start,width,...", &square), &status);
   LAL_CALL(LALRegisterLISTUserVar  (&status, "age-braking",       0 , UVAR_OPTIONAL, "Age/braking index parameter space: "
-				                                                     "freq,freqband,alpha,delta,age,minbrake,maxbrake", &age_brake), &status);
+				                                                     "alpha,delta,freq,freqband,age,minbrake,maxbrake", &age_brake), &status);
   LAL_CALL(LALRegisterREALUserVar  (&status, "max-mismatch",     'X', UVAR_OPTIONAL, "Maximum allowed mismatch between the templates", &max_mismatch), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "lattice",          'L', UVAR_OPTIONAL, "Lattice: 0=Anstar, 1=cubic", &lattice_type), &status);
   LAL_CALL(LALRegisterINTUserVar   (&status, "metric",           'M', UVAR_OPTIONAL, "Metric: 0=spindown, 1=eye", &metric_type), &status);
@@ -154,10 +154,10 @@ int main(int argc, char *argv[]) {
     if (values->size != 7)
       LALAPPS_ERROR("--age-braking must have exactly 7 arguments", 0);
     {
-      const double freq        = gsl_vector_get(values, 0);
-      const double freq_band   = gsl_vector_get(values, 1);
-      const double alpha       = gsl_vector_get(values, 2);
-      const double delta       = gsl_vector_get(values, 3);
+      const double alpha       = gsl_vector_get(values, 0);
+      const double delta       = gsl_vector_get(values, 1);
+      const double freq        = gsl_vector_get(values, 2);
+      const double freq_band   = gsl_vector_get(values, 3);
       const double age         = gsl_vector_get(values, 4);
       const double min_braking = gsl_vector_get(values, 5);
       const double max_braking = gsl_vector_get(values, 6);
@@ -167,13 +167,13 @@ int main(int argc, char *argv[]) {
 	LALAPPS_ERROR("XLALCreateFlatLatticeTiling failed\n", 0);
 
       /* Add sky position bounds */
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, 1, alpha, alpha))
+      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, 0, alpha, alpha))
 	LALAPPS_ERROR("XLALAddFlatLatticeTilingConstantBound failed\n", 0);
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, 2, delta, delta))
+      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, 1, delta, delta))
 	LALAPPS_ERROR("XLALAddFlatLatticeTilingConstantBound failed\n", 0);
 
       /* Add frequency and spindown bounds */
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking, 0, 2))
+      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking, 2))
 	LALAPPS_ERROR("XLALAddFlatLatticeTilingAgeBrakingIndexBounds failed\n", 0);
     
     }

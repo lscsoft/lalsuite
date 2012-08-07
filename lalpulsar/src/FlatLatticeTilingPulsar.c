@@ -44,9 +44,9 @@
 /**
  * Set a flat lattice tiling to the spindown Fstat metric
  * (so no sky position tiling). Components are in the order
- * \f$\omega_0,\alpha,\delta,\omega_1,\omega_2,...\f$
+ * \f$\alpha,\delta,\omega_0,\omega_1,\omega_2,...\f$
  * and will be converted on output to
- * \f$f_0,\alpha,\delta,f_1,f_2,...\f$
+ * \f$\alpha,\delta,f_0,f_1,f_2,...\f$
  * using the conversions
  * \f$f_k = \omega_k \frac{(k+1)!}{{2\pi T^{k+1}}}\f$
  */
@@ -80,11 +80,6 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
     gsl_vector_set(norm_to_real, i + 2, 1.0 * LAL_FACT[i + 1] / (LAL_TWOPI * pow(Tspan, i + 1)));
 
   }
-
-  /* Swap rows/columns 0 and 2 to get right order */
-  gsl_matrix_swap_rows(norm_metric, 0, 2);
-  gsl_matrix_swap_columns(norm_metric, 0, 2);
-  gsl_vector_swap_elements(norm_to_real, 0, 2);
 
   /* Set the metric of the flat lattice tiling */
   XLAL_CHECK(XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) == XLAL_SUCCESS, XLAL_EFAILED);
@@ -141,13 +136,12 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   double age,                 /**< Spindown age */
   double min_braking,         /**< Minimum braking index */
   double max_braking,         /**< Maximum braking index */
-  size_t offset,               /**< Number of dimensions offset between first dimension and frequency */
-  size_t gap                   /**< Number of dimensions gap netween frequency and first spindown */
+  size_t offset               /**< Number of dimensions offset between first dimension and frequency */
   )
 {
 
   /* Check tiling dimension */
-  XLAL_CHECK(XLALFlatLatticeTilingDimension(tiling) >= 3 + gap, XLAL_EINVAL);
+  XLAL_CHECK(XLALFlatLatticeTilingDimension(tiling) >= 3, XLAL_EINVAL);
 
   /* Allocate memory */
   gsl_matrix* data = gsl_matrix_alloc(XLALFlatLatticeTilingDimension(tiling), 2);
@@ -167,7 +161,7 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   gsl_matrix_set(data, 2, 1, max_braking);
 
   /* Set bound dimensions */
-  int64_t bound = ((int64_t)1) | (((int64_t)6) << gap) << offset;
+  int64_t bound = ((int64_t)7) << offset;
 
   /* Set parameter space */
   XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
