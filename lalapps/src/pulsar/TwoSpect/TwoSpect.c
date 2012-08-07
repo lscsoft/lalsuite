@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
    
    //Save args_info
    char v[1000];
-   snprintf(v, 1000, "%s/input_values.conf", args_info.outdirectory_arg);
+   snprintf(v, 1000, "%s/%s", args_info.outdirectory_arg, args_info.configCopy_arg);
    FILE *INPUTVALS = fopen(v, "w");
    if (INPUTVALS==NULL) {
       fprintf(stderr, "%s: Could not save input parameter values.\n", __func__);

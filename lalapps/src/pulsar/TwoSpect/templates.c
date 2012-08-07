@@ -1062,7 +1062,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
             //Create PSD values organized by sft0 => psd1->data[0...numfbins-1], sft1 => psd1->data[numfbins...2*numfbins-1]
             //if ( fabs(n0-freqbins->data[jj]) <= 3.0 ) psd1->data[ii*numfbins + jj] = sqsincxoverxsqminusone(n0-freqbins->data[jj])*PSDprefact;
             //Create PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
-            if ( fabs(n0-(REAL8)freqbins->data[jj]) <= 3.0 ) psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(n0-(REAL8)freqbins->data[jj])*PSDprefact;
+            REAL8 bindiff = n0-(REAL8)freqbins->data[jj];
+            if ( fabs(bindiff) <= 3.0 ) psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(bindiff)*PSDprefact;
          } /* for jj < numfbins */
       //} /* if sft exists */
    } /* for ii < numffts */

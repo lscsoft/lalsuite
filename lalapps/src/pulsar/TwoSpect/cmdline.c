@@ -51,6 +51,7 @@ const char *gengetopt_args_info_full_help[] = {
   "\nInput/ouput parameters:",
   "      --outdirectory=directory  Output directory  (default=`output')",
   "      --outfilename=filename    Output file name  (default=`logfile.txt')",
+  "      --configCopy=filename     Copy of the configuration file whose output is \n                                  gengetopt format  \n                                  (default=`input_values.conf')",
   "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
   "      --normRMSoutput=filename  File for the output of the normalized RMS from \n                                  the non-slided data",
   "      --sftDir=directory        Directory containing SFTs  (default=`./')",
@@ -169,11 +170,12 @@ init_help_array(void)
   gengetopt_args_info_help[55] = gengetopt_args_info_full_help[55];
   gengetopt_args_info_help[56] = gengetopt_args_info_full_help[56];
   gengetopt_args_info_help[57] = gengetopt_args_info_full_help[57];
-  gengetopt_args_info_help[58] = 0; 
+  gengetopt_args_info_help[58] = gengetopt_args_info_full_help[58];
+  gengetopt_args_info_help[59] = 0; 
   
 }
 
-const char *gengetopt_args_info_help[59];
+const char *gengetopt_args_info_help[60];
 
 typedef enum {ARG_NO
   , ARG_FLAG
@@ -245,6 +247,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->sftType_given = 0 ;
   args_info->outdirectory_given = 0 ;
   args_info->outfilename_given = 0 ;
+  args_info->configCopy_given = 0 ;
   args_info->ULfilename_given = 0 ;
   args_info->normRMSoutput_given = 0 ;
   args_info->sftDir_given = 0 ;
@@ -320,6 +323,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->outdirectory_orig = NULL;
   args_info->outfilename_arg = gengetopt_strdup ("logfile.txt");
   args_info->outfilename_orig = NULL;
+  args_info->configCopy_arg = gengetopt_strdup ("input_values.conf");
+  args_info->configCopy_orig = NULL;
   args_info->ULfilename_arg = gengetopt_strdup ("uls.dat");
   args_info->ULfilename_orig = NULL;
   args_info->normRMSoutput_arg = NULL;
@@ -409,54 +414,55 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->sftType_help = gengetopt_args_info_full_help[15] ;
   args_info->outdirectory_help = gengetopt_args_info_full_help[17] ;
   args_info->outfilename_help = gengetopt_args_info_full_help[18] ;
-  args_info->ULfilename_help = gengetopt_args_info_full_help[19] ;
-  args_info->normRMSoutput_help = gengetopt_args_info_full_help[20] ;
-  args_info->sftDir_help = gengetopt_args_info_full_help[21] ;
-  args_info->sftFile_help = gengetopt_args_info_full_help[22] ;
-  args_info->ephemDir_help = gengetopt_args_info_full_help[23] ;
-  args_info->ephemYear_help = gengetopt_args_info_full_help[24] ;
-  args_info->Pmin_help = gengetopt_args_info_full_help[26] ;
-  args_info->Pmax_help = gengetopt_args_info_full_help[27] ;
-  args_info->dfmin_help = gengetopt_args_info_full_help[28] ;
-  args_info->dfmax_help = gengetopt_args_info_full_help[29] ;
-  args_info->skyRegion_help = gengetopt_args_info_full_help[30] ;
-  args_info->skyRegionFile_help = gengetopt_args_info_full_help[31] ;
-  args_info->linPolAngle_help = gengetopt_args_info_full_help[32] ;
-  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[33] ;
-  args_info->ihsfactor_help = gengetopt_args_info_full_help[35] ;
-  args_info->ihsfar_help = gengetopt_args_info_full_help[36] ;
-  args_info->ihsfom_help = gengetopt_args_info_full_help[37] ;
-  args_info->ihsfomfar_help = gengetopt_args_info_full_help[38] ;
-  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[39] ;
-  args_info->tmplfar_help = gengetopt_args_info_full_help[40] ;
-  args_info->minTemplateLength_help = gengetopt_args_info_full_help[41] ;
-  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[42] ;
-  args_info->ULfmin_help = gengetopt_args_info_full_help[44] ;
-  args_info->ULfspan_help = gengetopt_args_info_full_help[45] ;
-  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[46] ;
-  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[47] ;
-  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[48] ;
-  args_info->markBadSFTs_help = gengetopt_args_info_full_help[50] ;
-  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[51] ;
-  args_info->lineDetection_help = gengetopt_args_info_full_help[52] ;
-  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[54] ;
-  args_info->fastchisqinv_help = gengetopt_args_info_full_help[55] ;
-  args_info->useSSE_help = gengetopt_args_info_full_help[56] ;
-  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[57] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[59] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[60] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[61] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[62] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[63] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[64] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[65] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[66] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[67] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[68] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[69] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[70] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[71] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[72] ;
+  args_info->configCopy_help = gengetopt_args_info_full_help[19] ;
+  args_info->ULfilename_help = gengetopt_args_info_full_help[20] ;
+  args_info->normRMSoutput_help = gengetopt_args_info_full_help[21] ;
+  args_info->sftDir_help = gengetopt_args_info_full_help[22] ;
+  args_info->sftFile_help = gengetopt_args_info_full_help[23] ;
+  args_info->ephemDir_help = gengetopt_args_info_full_help[24] ;
+  args_info->ephemYear_help = gengetopt_args_info_full_help[25] ;
+  args_info->Pmin_help = gengetopt_args_info_full_help[27] ;
+  args_info->Pmax_help = gengetopt_args_info_full_help[28] ;
+  args_info->dfmin_help = gengetopt_args_info_full_help[29] ;
+  args_info->dfmax_help = gengetopt_args_info_full_help[30] ;
+  args_info->skyRegion_help = gengetopt_args_info_full_help[31] ;
+  args_info->skyRegionFile_help = gengetopt_args_info_full_help[32] ;
+  args_info->linPolAngle_help = gengetopt_args_info_full_help[33] ;
+  args_info->harmonicNumToSearch_help = gengetopt_args_info_full_help[34] ;
+  args_info->ihsfactor_help = gengetopt_args_info_full_help[36] ;
+  args_info->ihsfar_help = gengetopt_args_info_full_help[37] ;
+  args_info->ihsfom_help = gengetopt_args_info_full_help[38] ;
+  args_info->ihsfomfar_help = gengetopt_args_info_full_help[39] ;
+  args_info->keepOnlyTopNumIHS_help = gengetopt_args_info_full_help[40] ;
+  args_info->tmplfar_help = gengetopt_args_info_full_help[41] ;
+  args_info->minTemplateLength_help = gengetopt_args_info_full_help[42] ;
+  args_info->maxTemplateLength_help = gengetopt_args_info_full_help[43] ;
+  args_info->ULfmin_help = gengetopt_args_info_full_help[45] ;
+  args_info->ULfspan_help = gengetopt_args_info_full_help[46] ;
+  args_info->ULminimumDeltaf_help = gengetopt_args_info_full_help[47] ;
+  args_info->ULmaximumDeltaf_help = gengetopt_args_info_full_help[48] ;
+  args_info->allULvalsPerSkyLoc_help = gengetopt_args_info_full_help[49] ;
+  args_info->markBadSFTs_help = gengetopt_args_info_full_help[51] ;
+  args_info->simpleBandRejection_help = gengetopt_args_info_full_help[52] ;
+  args_info->lineDetection_help = gengetopt_args_info_full_help[53] ;
+  args_info->FFTplanFlag_help = gengetopt_args_info_full_help[55] ;
+  args_info->fastchisqinv_help = gengetopt_args_info_full_help[56] ;
+  args_info->useSSE_help = gengetopt_args_info_full_help[57] ;
+  args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[58] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[60] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[61] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[62] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[63] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[64] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[65] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[66] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[67] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[68] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[69] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[70] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[71] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[72] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[73] ;
   
 }
 
@@ -610,6 +616,8 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
   free_string_field (&(args_info->outdirectory_orig));
   free_string_field (&(args_info->outfilename_arg));
   free_string_field (&(args_info->outfilename_orig));
+  free_string_field (&(args_info->configCopy_arg));
+  free_string_field (&(args_info->configCopy_orig));
   free_string_field (&(args_info->ULfilename_arg));
   free_string_field (&(args_info->ULfilename_orig));
   free_string_field (&(args_info->normRMSoutput_arg));
@@ -761,6 +769,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "outdirectory", args_info->outdirectory_orig, 0);
   if (args_info->outfilename_given)
     write_into_file(outfile, "outfilename", args_info->outfilename_orig, 0);
+  if (args_info->configCopy_given)
+    write_into_file(outfile, "configCopy", args_info->configCopy_orig, 0);
   if (args_info->ULfilename_given)
     write_into_file(outfile, "ULfilename", args_info->ULfilename_orig, 0);
   if (args_info->normRMSoutput_given)
@@ -1445,6 +1455,7 @@ cmdline_parser_internal (
         { "sftType",	1, NULL, 0 },
         { "outdirectory",	1, NULL, 0 },
         { "outfilename",	1, NULL, 0 },
+        { "configCopy",	1, NULL, 0 },
         { "ULfilename",	1, NULL, 0 },
         { "normRMSoutput",	1, NULL, 0 },
         { "sftDir",	1, NULL, 0 },
@@ -1707,6 +1718,20 @@ cmdline_parser_internal (
                 &(local_args_info.outfilename_given), optarg, 0, "logfile.txt", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "outfilename", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* Copy of the configuration file whose output is gengetopt format.  */
+          else if (strcmp (long_options[option_index].name, "configCopy") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->configCopy_arg), 
+                 &(args_info->configCopy_orig), &(args_info->configCopy_given),
+                &(local_args_info.configCopy_given), optarg, 0, "input_values.conf", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "configCopy", '-',
                 additional_error))
               goto failure;
           

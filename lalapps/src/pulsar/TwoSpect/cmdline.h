@@ -84,6 +84,9 @@ struct gengetopt_args_info
   char * outfilename_arg;	/**< @brief Output file name (default='logfile.txt').  */
   char * outfilename_orig;	/**< @brief Output file name original value given at command line.  */
   const char *outfilename_help; /**< @brief Output file name help description.  */
+  char * configCopy_arg;	/**< @brief Copy of the configuration file whose output is gengetopt format (default='input_values.conf').  */
+  char * configCopy_orig;	/**< @brief Copy of the configuration file whose output is gengetopt format original value given at command line.  */
+  const char *configCopy_help; /**< @brief Copy of the configuration file whose output is gengetopt format help description.  */
   char * ULfilename_arg;	/**< @brief Upper limit file name (default='uls.dat').  */
   char * ULfilename_orig;	/**< @brief Upper limit file name original value given at command line.  */
   const char *ULfilename_help; /**< @brief Upper limit file name help description.  */
@@ -229,6 +232,7 @@ struct gengetopt_args_info
   unsigned int sftType_given ;	/**< @brief Whether sftType was given.  */
   unsigned int outdirectory_given ;	/**< @brief Whether outdirectory was given.  */
   unsigned int outfilename_given ;	/**< @brief Whether outfilename was given.  */
+  unsigned int configCopy_given ;	/**< @brief Whether configCopy was given.  */
   unsigned int ULfilename_given ;	/**< @brief Whether ULfilename was given.  */
   unsigned int normRMSoutput_given ;	/**< @brief Whether normRMSoutput was given.  */
   unsigned int sftDir_given ;	/**< @brief Whether sftDir was given.  */
