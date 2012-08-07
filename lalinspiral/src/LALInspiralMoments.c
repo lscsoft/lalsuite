@@ -63,17 +63,14 @@ the power spectral density specified by the frequency series
 \frac{x^{-\mathtt{ndx}}}{S_h(x)}\, dx \, .
 \f}
 
-\heading{Uses}
-\code
-LALDRombergIntegrate
-\endcode
-
 \heading{Notes}
 
 */
 
 #include <lal/LALInspiralBank.h>
 #include <lal/Integrate.h>
+
+/* Deprecation Warning */
 
 void
 LALGetInspiralMoments (
@@ -84,74 +81,83 @@ LALGetInspiralMoments (
     )
 
 {
-  UINT4 k;
-  InspiralMomentsIn in;
-
   INITSTATUS(status);
   ATTATCHSTATUSPTR( status );
+  XLALPrintDeprecationWarning("LALGetInspiralMoments", "XLALGetInspiralMoments");
 
-  ASSERT( params, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( params->fLower>0, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( moments, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( psd, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
+  if (XLALGetInspiralMoments(moments, params->fLower, params->fCutoff, psd)!= XLAL_SUCCESS){
+     ABORTXLAL( status );
+  }
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
+}
+
+int
+XLALGetInspiralMoments (
+    InspiralMomentsEtc   *moments,
+    REAL8 fLower,
+    REAL8 fCutoff,
+    REAL8FrequencySeries *psd
+    )
+{
+  size_t k;
+  REAL8 xmin;
+  REAL8 xmax;
+  REAL8 ndx;
+  REAL8 norm;
+
+  /* Check inputs */
+  if (!moments){
+    XLALPrintError("Moments is NULL\n");
+    XLAL_ERROR(XLAL_EFAULT);
+  }
+  if (!psd){
+    XLALPrintError("PSD is NULL\n");
+    XLAL_ERROR(XLAL_EFAULT);
+  }
+
+  if (fLower <= 0 || fCutoff <= fLower){
+    XLALPrintError("fLower must be between 0 and fCutoff\n");
+    XLAL_ERROR(XLAL_EDOM);
+  };
 
   /* Constants needed in computing the moments */
   moments->a01 = 3.L/5.L;
   moments->a21 = 11.L * LAL_PI/12.L;
-  moments->a22 = 743.L/2016.L * pow(25.L/(2.L*LAL_PI*LAL_PI),1.L/3.L);
+  moments->a22 = 743.L/2016.L * cbrt(25.L/(2.L*LAL_PI*LAL_PI));
   moments->a31 = -3.L/2.L;
   moments->a41 = 617.L * LAL_PI * LAL_PI / 384.L;
-  moments->a42 = 5429.L/5376.L * pow(25.L*LAL_PI/2.L,1.L/3.L);
-  moments->a43 = 1.5293365L/1.0838016L * pow(5.L/(4.L*pow(LAL_PI,4.L)),1.L/3.L);
-
-  /* setup the input structure needed in the computation of the moments */
-  in.shf = psd;
+  moments->a42 = 5429.L/5376.L * cbrt(25.L*LAL_PI/2.L);
+  moments->a43 = 1.5293365L/1.0838016L * cbrt(5.L/(4.L*LAL_PI*LAL_PI*LAL_PI*LAL_PI));
 
   /* Divide all frequencies by fLower, a scaling that is used in solving */
   /* the moments integral                                                */
-  in.shf->f0 /= params->fLower;
-  in.shf->deltaF /= params->fLower;
-  in.xmin = params->fLower / params->fLower;
-  in.xmax = params->fCutoff / params->fLower;
+  psd->f0 /= fLower;
+  psd->deltaF /= fLower;
+  xmin = fLower / fLower;
+  xmax = fCutoff / fLower;
 
   /* First compute the norm and print if requested */
-  in.norm = 1.L;
-  in.ndx = 7.L/3.L;
-  LALInspiralMoments( status->statusPtr, &moments->j[7], in );
-  CHECKSTATUSPTR( status );
-  in.norm = moments->j[7];
-
-  if ( lalDebugLevel & LALINFO )
-  {
-    LALPrintError(
-        "a01=%e a21=%e a22=%e a31=%e a41=%e a42=%e a43=%e j7=%e\n",
-        moments->a01, moments->a21, moments->a22, moments->a31,
-        moments->a41, moments->a42, moments->a43, moments->j[7] );
+  norm = 1.L;
+  ndx = 7.L/3.L;
+  moments->j[7]=XLALInspiralMoments(xmin, xmax, ndx, norm, psd);
+  if (XLAL_IS_REAL8_FAIL_NAN(moments->j[7])){
+    XLAL_ERROR(XLAL_EFUNC);
   }
+  norm = moments->j[7];
 
   /* Then compute the normalised moments of the noise PSD from 1/3 to 17/3. */
   for ( k = 1; k <= 17; ++k )
   {
-    in.ndx = (REAL8) k / 3.L;
-    LALInspiralMoments( status->statusPtr, &moments->j[k], in );
-    CHECKSTATUSPTR( status );
-
-    if ( lalDebugLevel & LALINFO )
-    {
-      LALPrintError( "j%1i=%e\n", k, moments->j[k] );
-    }
+    ndx = (REAL8) k / 3.L;
+    moments->j[k]=XLALInspiralMoments(xmin, xmax, ndx, norm, psd);
   }
 
   /* Moments are done: Rescale deltaF and f0 back to their original values */
-  in.shf->deltaF *= params->fLower;
-  in.shf->f0 *= params->fLower;
+  psd->deltaF *= fLower;
+  psd->f0 *= fLower;
 
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
+  return XLAL_SUCCESS;
 }
 
 
@@ -276,6 +282,7 @@ LALGetInspiralMomentsBCV (
 }
 
 
+/* Deprecation Warning */
 
 void
 LALInspiralMoments(
@@ -285,100 +292,78 @@ LALInspiralMoments(
     )
 
 {
-  REAL8 f;
-  REAL8 momentTmp;
-  REAL8 fMin;
-  REAL8 fMax;
-  REAL8 deltaF;
-  UINT4 k;
-  UINT4 kMin;
-  UINT4 kMax;
-
   INITSTATUS(status);
+  XLALPrintDeprecationWarning("LALInspiralMoments", "XLALInspiralMoments");
 
-  ASSERT( pars.shf, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( pars.shf->data, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-  ASSERT( pars.shf->data->data, status,
-      LALINSPIRALBANKH_ENULL, LALINSPIRALBANKH_MSGENULL );
-
-  /* make sure that the minimum and maximum of the integral are within */
-  /* the frequency series                                              */
-  fMax = pars.shf->f0 + (REAL8) pars.shf->data->length * pars.shf->deltaF;
-  if ( pars.xmin < pars.shf->f0 || pars.xmax > fMax+LAL_REAL4_EPS )
-  {
-    ABORT( status, LALINSPIRALBANKH_EFRANGE, LALINSPIRALBANKH_MSGEFRANGE );
-  }
-
-  /* the minimum and maximum frequency where we have four points */
-  deltaF = pars.shf->deltaF;
-  fMin = pars.shf->f0 + deltaF;
-  fMax = pars.shf->f0 + ((REAL8) pars.shf->data->length - 2 ) * deltaF;
-
-  if ( pars.xmin <= fMin )
-  {
-    kMin = 1;
-  }
-  else
-  {
-    kMin = (UINT8) floor( (pars.xmin - pars.shf->f0) / deltaF );
-  }
-
-  if ( pars.xmax >= fMax )
-  {
-    kMax = pars.shf->data->length - 1;
-  }
-  else
-  {
-    kMax = (UINT8) floor( (pars.xmax - pars.shf->f0) / deltaF );
-  }
-
-  /* the first and last points of the integral */
-  momentTmp = 0.;
-  f = pars.shf->f0 + (REAL8) kMin * deltaF;
-  if( pars.shf->data->data[kMin] )
-  {
-    momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
-  }
-  *moment = momentTmp;
-
-  momentTmp = 0.;
-  f = pars.shf->f0 + (REAL8) kMax * deltaF;
-  if( pars.shf->data->data[kMin] )
-  {
-    momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
-  }
-  *moment += momentTmp;
-#if 0
-  In the following line we should have kMax
-  Changed by Sathya on June 30, 2002
-  *moment += pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMin] );
-#endif
-  momentTmp = 0.;
-  if ( pars.shf->data->data[kMax] )
-  {
-    momentTmp = pow( f, -(pars.ndx) ) / ( 2.0 * pars.shf->data->data[kMax] );
-  }
-  *moment += momentTmp;
-  kMin++;
-  kMax--;
-
-  for ( k = kMin; k < kMax; ++k )
-  {
-    momentTmp = 0.;
-    f = pars.shf->f0 + (REAL8) k * deltaF;
-    if ( pars.shf->data->data[k] )
-    {
-      momentTmp = pow( f, -(pars.ndx) ) / pars.shf->data->data[k];
-    }
-    *moment += momentTmp;
-  }
-
-  *moment *= deltaF;
-
-  /* now divide the moment by the specified norm */
-  *moment /= pars.norm;
-
+  *moment = XLALInspiralMoments(pars.xmin, pars.xmax, pars.ndx, pars.norm, pars.shf);
+  if (XLAL_IS_REAL8_FAIL_NAN(*moment)){
+    ABORTXLAL( status );
+  };
   RETURN (status);
+}
+
+REAL8
+XLALInspiralMoments(
+    REAL8 xmin,
+    REAL8 xmax,
+    REAL8 ndx,
+    REAL8 norm,
+    REAL8FrequencySeries *shf
+    )
+
+{
+  REAL8 moment = 0;
+  REAL8 f0, deltaF;
+  size_t k, kMin, kMax;
+
+  /* Check inputs */
+  if (!shf || !(shf->data) || !(shf->data->data)) {
+    XLALPrintError("PSD or its data are NULL\n");
+    XLAL_ERROR_REAL8(XLAL_EFAULT);
+  }
+
+  if (xmin <= 0 || xmax <= 0 || xmax <= xmin || norm <= 0) {
+    XLALPrintError("xmin, xmax, and norm must be positive and xmax must be greater than xmin\n");
+    XLAL_ERROR_REAL8(XLAL_EDOM);
+  }
+
+  /* set up and check domain of integration */
+  /* NB: Although these are called f0 and deltaF, they are really supposed to
+         be x0 and deltaX (x = f / f0). That is, you either need to have hacked
+         the PSD's f0 and deltaF values before calling this function or be
+         prepared to rescale the outputs. */
+  f0 = shf->f0;
+  deltaF = shf->deltaF;
+  kMax = floor((xmax - f0) / deltaF);
+  if ( (xmin < f0) || (kMax > shf->data->length) ) {
+    XLALPrintError("PSD does not cover domain of integration\n");
+    XLAL_ERROR_REAL8(XLAL_EDOM);
+  }
+  kMin = floor((xmin - f0) / deltaF);
+
+  /* do the first point of the integral */
+  if( shf->data->data[kMin] ) {
+    const REAL8 f = f0 + kMin * deltaF;
+    moment += pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMin] );
+  }
+  /* do the bulk of the integral */
+  for ( k = kMin + 1; k < kMax; ++k ) {
+    const REAL8 psd_val = shf->data->data[k];
+    if ( psd_val ) {
+      const REAL8 f = f0 + k * deltaF;
+      moment += pow( f, -(ndx) ) / psd_val;
+    }
+  }
+  /* Do the last point of the integral, but allow the integration domain
+     to be open on the right if necessary. */
+  if ( kMax < shf->data->length && shf->data->data[kMax] ) {
+    const REAL8 f = f0 + kMax * deltaF;
+    moment += pow( f, -(ndx) ) / ( 2.0 * shf->data->data[kMax] );
+  }
+  moment *= deltaF;
+
+  /* now divide the moment by the user-specified norm */
+  moment /= norm;
+
+  return moment;
 }

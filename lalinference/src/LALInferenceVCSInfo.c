@@ -25,26 +25,26 @@
 #include <lal/LALInferenceVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalInferenceVCSVersion = LALINFERENCE_VERSION;
-const char *lalInferenceVCSId = LALINFERENCE_VCS_ID;
-const char *lalInferenceVCSDate = LALINFERENCE_VCS_DATE;
-const char *lalInferenceVCSBranch = LALINFERENCE_VCS_BRANCH;
-const char *lalInferenceVCSTag = LALINFERENCE_VCS_TAG;
-const char *lalInferenceVCSAuthor = LALINFERENCE_VCS_AUTHOR;
-const char *lalInferenceVCSCommitter = LALINFERENCE_VCS_COMMITTER;
-const char *lalInferenceVCSStatus = LALINFERENCE_VCS_STATUS;
+const char *const lalInferenceVCSVersion = LALINFERENCE_VERSION;
+const char *const lalInferenceVCSId = LALINFERENCE_VCS_ID;
+const char *const lalInferenceVCSDate = LALINFERENCE_VCS_DATE;
+const char *const lalInferenceVCSBranch = LALINFERENCE_VCS_BRANCH;
+const char *const lalInferenceVCSTag = LALINFERENCE_VCS_TAG;
+const char *const lalInferenceVCSAuthor = LALINFERENCE_VCS_AUTHOR;
+const char *const lalInferenceVCSCommitter = LALINFERENCE_VCS_COMMITTER;
+const char *const lalInferenceVCSStatus = LALINFERENCE_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalInferenceVCSIdentId = LALINFERENCE_VCS_IDENT_ID;
-const char *lalInferenceVCSIdentDate = LALINFERENCE_VCS_IDENT_DATE;
-const char *lalInferenceVCSIdentBranch = LALINFERENCE_VCS_IDENT_BRANCH;
-const char *lalInferenceVCSIdentTag = LALINFERENCE_VCS_IDENT_TAG;
-const char *lalInferenceVCSIdentAuthor = LALINFERENCE_VCS_IDENT_AUTHOR;
-const char *lalInferenceVCSIdentCommitter = LALINFERENCE_VCS_IDENT_COMMITTER;
-const char *lalInferenceVCSIdentStatus = LALINFERENCE_VCS_IDENT_STATUS;
+const char *const lalInferenceVCSIdentId = LALINFERENCE_VCS_IDENT_ID;
+const char *const lalInferenceVCSIdentDate = LALINFERENCE_VCS_IDENT_DATE;
+const char *const lalInferenceVCSIdentBranch = LALINFERENCE_VCS_IDENT_BRANCH;
+const char *const lalInferenceVCSIdentTag = LALINFERENCE_VCS_IDENT_TAG;
+const char *const lalInferenceVCSIdentAuthor = LALINFERENCE_VCS_IDENT_AUTHOR;
+const char *const lalInferenceVCSIdentCommitter = LALINFERENCE_VCS_IDENT_COMMITTER;
+const char *const lalInferenceVCSIdentStatus = LALINFERENCE_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalInferenceVCSInfo = { \
+const struct tagLALVCSInfo lalInferenceVCSInfo = { \
   LALINFERENCE_VCS_NAME, \
   LALINFERENCE_VERSION, \
   LALINFERENCE_VCS_ID, \

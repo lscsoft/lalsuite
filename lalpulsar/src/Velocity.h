@@ -21,11 +21,6 @@
 #ifndef _VELOCITY_H
 #define _VELOCITY_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* *************
  *    Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -89,7 +84,6 @@ velocity  of a detector in a certain time interval.
  * Earth velocity at a given detector location.
  */
 typedef struct tagVelocityPar {
-  SWIGLAL_STRUCT(VelocityPar);
   LALDetector    detector; 	/**< the detector */
   EphemerisData  *edat;  	/**< ephemeris data pointer from LALInitBarycenter() */
   LIGOTimeGPS    startTime; 	/**< start of time interval */

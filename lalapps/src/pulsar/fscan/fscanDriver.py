@@ -467,7 +467,7 @@ if (createSFTs):
     segmentFile = 'tmpSegs%stmp.txt' % tagString
     if not segmentType:
        # set default segment type
-       segmentType = "%s:DMT-SCIENCE:1" % segIFO
+       segmentType = "%s:DMT-SCIENCE:4" % segIFO
     #segCommand = 'LSCsegFind --type Science,Injection --interferometer %s --gps-start-time %d --gps-end-time %d > %s' % (segIFO,analysisStartTime, analysisEndTime,segmentFile)
     segCommand = "ligolw_segment_query --database --query-segments --include-segments %s --gps-start-time %d --gps-end-time %d | grep -v \"0, 0\" | ligolw_print -t segment:table -c start_time -c end_time -d \" \" > %s" % (segmentType,analysisStartTime,analysisEndTime,segmentFile)
     print >> sys.stdout,"Trying: ",segCommand,"\n"

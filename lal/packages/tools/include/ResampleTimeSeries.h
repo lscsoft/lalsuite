@@ -20,11 +20,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/BandPassTimeSeries.h>
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #ifndef _RESAMPLETIMESERIES_H
 #define _RESAMPLETIMESERIES_H
 
@@ -121,7 +116,6 @@ ResampleTSFilterParams;
 typedef struct
 tagResampleTSParams
 {
-  SWIGLAL_STRUCT(ResampleTSParams);
   REAL8                   deltaT;	/**< The sample interval desired in the down sampled time series */
   ResampleTSFilter        filterType;	/**< The type of filter with which to perform the low pass filtering */
   ResampleTSFilterParams  filterParams;	/**< Filter parameters for the low pass filter (Presently ignored) */

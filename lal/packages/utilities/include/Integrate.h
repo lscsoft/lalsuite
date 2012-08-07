@@ -20,11 +20,6 @@
 #ifndef _INTEGRATE_H
 #define _INTEGRATE_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
@@ -163,7 +158,6 @@ IntegralType;
 typedef struct
 tagSIntegrateIn
 {
-  SWIGLAL_STRUCT(SIntegrateIn);
   void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);	/**<  The function to integrate */
   REAL4         xmax;	/**<  The maximum value of the domain of integration */
   REAL4         xmin;	/**< The minimum value of the domain of integration */
@@ -175,7 +169,6 @@ SIntegrateIn;
 typedef struct
 tagDIntegrateIn
 {
-  SWIGLAL_STRUCT(DIntegrateIn);
   void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);	/**<  The function to integrate */
   REAL8         xmax;	/**<  The maximum value of the domain of integration */
   REAL8         xmin;	/**< The minimum value of the domain of integration */

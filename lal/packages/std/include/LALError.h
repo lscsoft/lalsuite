@@ -53,9 +53,9 @@ enum { LALMEMTRACE = LALTRACE | LALMEMINFO };
 enum { LALALLDBG   = ~( LALNMEMDBG | LALNMEMPAD | LALNMEMTRK ) };
 
 #ifndef SWIG /* exclude from SWIG interface */
+
 extern int  ( *lalRaiseHook )( int, const char *, ... );
 extern void ( *lalAbortHook )( const char *, ... );
-#endif /* SWIG */
 
 /** \addtogroup LALError_h */ /*@{*/
 int
@@ -161,6 +161,8 @@ REPORTSTATUS( LALStatus *status );
 #endif /* NOLALMACROS */
 
 #endif /* NDEBUG */
+
+#endif /* SWIG */
 
 #ifdef  __cplusplus
 }

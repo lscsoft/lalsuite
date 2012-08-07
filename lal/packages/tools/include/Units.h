@@ -20,11 +20,6 @@
 #ifndef _UNITS_H
 #define _UNITS_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
@@ -158,7 +153,6 @@ would not be an integer.
 typedef struct
 tagRAT4
 {
-  SWIGLAL_STRUCT(RAT4);
   INT2 numerator;		/**< The numerator */
   UINT2 denominatorMinusOne;	/**< One less than the denominator */
 } RAT4;
@@ -169,7 +163,6 @@ tagRAT4
 typedef struct
 tagLALUnitPair
 {
-  SWIGLAL_STRUCT(LALUnitPair);
   const LALUnit   *unitOne;	/**< The first unit */
   const LALUnit   *unitTwo;	/**< The second unit */
 }

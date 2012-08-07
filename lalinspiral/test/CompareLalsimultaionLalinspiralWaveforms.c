@@ -98,7 +98,7 @@ int main(int argc , char **argv)
 	 * code, so to sanity check old vs new code, this is OK.
 	 * We just set the lambda's to zero and turn on all interactions.
 	 */  
-	REAL8 lambda1 = 0., lambda2 = 0.;
+	REAL8 lambda1 = 0., lambda2 = 0., fRef = 0.;
 	LALSimInspiralInteraction interaction = LAL_SIM_INSPIRAL_INTERACTION_ALL;
 
 	memset( &mystatus, 0, sizeof(LALStatus) );
@@ -176,7 +176,7 @@ int main(int argc , char **argv)
 
 	start = clock();
 	/* --- now we can call the lalsimulation function --- */
-	length = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, params.distance, params.inclination, lambda1, lambda2, interaction, 0, otherIn.order, params.approximant);
+	length = XLALSimInspiralChooseTDWaveform(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.spin1[0], params.spin1[1], params.spin1[2], params.spin2[0], params.spin2[1], params.spin2[2], params.fLower, fRef, params.distance, params.inclination, lambda1, lambda2, interaction, 0, otherIn.order, params.approximant);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

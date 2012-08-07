@@ -31,11 +31,6 @@
 #ifndef _DETECTORSTATES_H  /* Double-include protection. */
 #define _DETECTORSTATES_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -68,7 +63,6 @@ extern "C" {
  */
 typedef struct tagSymmTensor3
 {
-  SWIGLAL_STRUCT(SymmTensor3);
   REAL4 d11;   REAL4 d12;   REAL4 d13;
                REAL4 d22;   REAL4 d23;
                             REAL4 d33;
@@ -79,7 +73,6 @@ typedef struct tagSymmTensor3
  */
 typedef struct tagSymmTensor3d
 {
-  SWIGLAL_STRUCT(SymmTensor3d);
   REAL8 d11;   REAL8 d12;   REAL8 d13;
                REAL8 d22;   REAL8 d23;
                             REAL8 d33;
@@ -93,23 +86,17 @@ typedef struct tagSymmTensor3d
  */
 typedef struct tagDetectorArm
 {
-  SWIGLAL_STRUCT(DetectorArm);
   REAL4 n[3];			/**< unit vector pointing along this arm */
   SymmTensor3 basisT;		/**< arm "basis-tensor" (n x n) */
   REAL4 armlength_c;		/**< armlengths in seconds L / c */
 } DetectorArm;
 
 typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/size checking */
-/* Work around a bug in SWIG (fixed in version 2.0.4):
-   SWIG mishandles constants whose types are fixed-length arrays, e.g. const Detector3Arms.
-   The work-around is to use a separate typedef for a const version of Detector3Arms. */
-typedef const DetectorArm constDetector3Arms[4];
 
 /** simple multi-IFO array of detector-information, standard LAL-vector
  */
 typedef struct tagMultiLALDetector
 {
-  SWIGLAL_STRUCT(MultiLALDetector);
   UINT4 length;		/**< number of IFOs */
   LALDetector *data;	/**< array of LALDetector structs */
 } MultiLALDetector;
@@ -120,7 +107,6 @@ typedef struct tagMultiLALDetector
  */
 typedef struct tagDetectorState
 {
-  SWIGLAL_STRUCT(DetectorState);
   LIGOTimeGPS tGPS;		/**< GPS timestamps corresponding to this entry */
   REAL8 rDetector[3];		/**< Cartesian coords of detector position in ICRS J2000. Units=sec */
   REAL8 vDetector[3];		/**< Cart. coords. of detector velocity, in dimensionless units (v/c)*/
@@ -136,7 +122,6 @@ typedef struct tagDetectorState
  */
 typedef struct tagDetectorStateSeries
 {
-  SWIGLAL_STRUCT(DetectorStateSeries);
   UINT4 length;			/**< total number of entries */
   DetectorState *data;		/**< array of DetectorState entries */
   LALDetector detector;		/**< detector-info corresponding to this timeseries */
@@ -147,7 +132,6 @@ typedef struct tagDetectorStateSeries
 /** Multi-IFO time-series of DetectorStates */
 typedef struct tagMultiDetectorStateSeries
 {
-  SWIGLAL_STRUCT(MultiDetectorStateSeries);
   UINT4 length;			/**< number of detectors */
   DetectorStateSeries **data;	/**< vector of pointers to DetectorStateSeries */
   LIGOTimeGPS startTime;	/**< (earliest) startTime of the observation */

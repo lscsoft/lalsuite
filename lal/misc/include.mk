@@ -8,3 +8,13 @@ include-link:
 			$(LN_S) $$sourcedir/$$file $$targetdir; \
 		fi; \
 	done
+	@for file in LALVCSInfo.h ; do \
+		if [ -f $$file ]; then \
+			d=$(abs_builddir) ; \
+			targetdir=$(abs_top_builddir)/include/lal ; \
+			if test ! -r $$targetdir/$$file ; then \
+				rm -f $$targetdir/$$file; \
+				$(LN_S) $$d/$$file $$targetdir; \
+			fi; \
+		fi; \
+	done

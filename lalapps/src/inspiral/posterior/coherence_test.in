@@ -60,7 +60,7 @@ def logadd(a,b):
     return (b+log(1+exp(a-b)))
 
 def getBfile(Bfile):
-    Bfile=Bfile+'_B.txt'
+    Bfile=Bfile
     print 'Looking for '+Bfile
     if os.access(Bfile,os.R_OK):
         outstat = loadtxt(Bfile)

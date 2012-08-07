@@ -4,7 +4,9 @@ EXTRA_DIST = \
 
 lib_LTLIBRARIES = liblal.la
 
-pkginclude_HEADERS = LALVCSInfo.h
+pkginclude_HEADERS = \
+	LALLibVCSInfo.h \
+	LALVCSInfo.h
 
 liblal_la_SOURCES = \
 	LALEmpty.c \
@@ -40,7 +42,7 @@ MOSTLYCLEANFILES = LALBuildDate.c
 TESTS = lal-version
 
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
-	@echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
+	$(AM_V_GEN)echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 
 LALVCSInfo.h: ._vcsinfo
 
@@ -48,13 +50,8 @@ LALVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py LAL $(srcdir) $$PWD
 
 all-local: include-link
-include-link: LALVCSInfo.h
-	@d=`pwd`; \
-		targetdir=`cd $(top_builddir)/include/lal && pwd`; \
-		if test ! -r $$targetdir/LALVCSInfo.h ; then \
-			rm -f $$targetdir/LALVCSInfo.h; \
-			$(LN_S) $$d/LALVCSInfo.h $$targetdir; \
-		fi
+include-link: $(pkginclude_HEADERS)
+@INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
-include $(top_srcdir)/swig/swig-header.am
+include $(top_srcdir)/swig/swiglal_header.am

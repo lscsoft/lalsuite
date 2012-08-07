@@ -28,11 +28,6 @@
 #ifndef _DOPPLERLATTICECOVERING_H  /* Double-include protection. */
 #define _DOPPLERLATTICECOVERING_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -44,7 +39,6 @@ extern "C" {
 
 /*---------- external types ----------*/
 typedef struct tagDopplerLatticeInit {
-  SWIGLAL_STRUCT(DopplerLatticeInit);
   DopplerRegion searchRegion;		/**< Doppler-space region to be covered + scanned */
   REAL8 metricMismatch;			/**< for GRID_METRIC and GRID_ISOTROPIC */
   LIGOTimeGPS startTime;		/**< start-time of the observation */

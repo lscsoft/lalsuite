@@ -58,6 +58,10 @@ size_t LALInferenceTypeSize[] = {sizeof(INT4),
 /* ============ Accessor functions for the Variable structure: ========== */
 
 static char *colNameToParamName(const char *colName);
+/* Helper functions for sanity check */
+static INT4 checkREAL8TimeSeries(REAL8TimeSeries *series);
+static INT4 checkREAL8FrequencySeries(REAL8FrequencySeries *series);
+static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series);
 
 
 LALInferenceVariableItem *LALInferenceGetItem(const LALInferenceVariables *vars,const char *name)
@@ -947,13 +951,13 @@ void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
 			}   
 
 
-    norm=sqrt(IFOdata->window->sumofsquares/IFOdata->window->data->length);
+    norm=sqrt(IFOdata->window->data->length/IFOdata->window->sumofsquares);
     
      for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
-      IFOdata->freqModelhPlus->data->data[i].re/=norm;
-      IFOdata->freqModelhPlus->data->data[i].im/=norm;
-      IFOdata->freqModelhCross->data->data[i].re/=norm;
-      IFOdata->freqModelhCross->data->data[i].im/=norm;
+      IFOdata->freqModelhPlus->data->data[i].re*=norm;
+      IFOdata->freqModelhPlus->data->data[i].im*=norm;
+      IFOdata->freqModelhCross->data->data[i].re*=norm;
+      IFOdata->freqModelhCross->data->data[i].im*=norm;
   }
  }
 }
@@ -2068,3 +2072,161 @@ REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname
         return(var/(REAL8)N);
 }
 
+/* Sanity check the data structures and print any encountered errors */
+INT4 LALInferenceSanityCheck(LALInferenceRunState *state)
+{
+  INT4 retcode=0;
+  if(!state) {
+	fprintf(stderr,"NULL state pointer!\n");
+	return(1);
+  }
+  
+  LALInferenceIFOData *data=state->data;
+  if(!data) {
+	fprintf(stderr,"NULL data pointer!\n");
+        return(1);
+  }
+  while(data){
+    fprintf(stderr,"Checking %s:\n",data->name);
+    if(data->timeData) {
+      fprintf(stderr,"Checking timeData: ");
+      if(!(retcode|=checkREAL8TimeSeries(data->timeData))) fprintf(stderr," OK\n");
+    }
+    if(data->timeModelhPlus) {
+      fprintf(stderr,"Checking timeModelhPlus: ");
+      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhPlus))) fprintf(stderr," OK\n");
+    }
+    if(data->timeModelhCross) {
+      fprintf(stderr,"Checking timeModelhCross: ");
+      if(!(retcode|=checkREAL8TimeSeries(data->timeModelhCross))) fprintf(stderr," OK\n");
+    }
+    if(data->whiteTimeData) {
+      fprintf(stderr,"Checking whiteTimeData: ");
+      if(!(retcode|=checkREAL8TimeSeries(data->whiteTimeData))) fprintf(stderr," OK\n");
+    }
+    if(data->windowedTimeData) {
+      fprintf(stderr,"Checking windowedTimeData: ");
+      if(!(retcode|=checkREAL8TimeSeries(data->windowedTimeData))) fprintf(stderr," OK\n");
+    }
+    if(data->freqData) {
+      fprintf(stderr,"Checking freqData: ");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqData))) fprintf(stderr," OK\n");
+    }
+    if(data->freqModelhPlus) {
+      fprintf(stderr,"Checking freqModelhPlus: ");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhPlus))) fprintf(stderr," OK\n");
+    }
+    if(data->freqModelhCross) {
+      fprintf(stderr,"Checking freqModelhCross: ");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->freqModelhCross))) fprintf(stderr," OK\n");
+    }
+    if(data->whiteFreqData) {
+      fprintf(stderr,"Checking whiteFreqData: ");
+      if(!(retcode|=checkCOMPLEX16FrequencySeries(data->whiteFreqData))) fprintf(stderr," OK\n");
+    }
+    if(data->oneSidedNoisePowerSpectrum) {
+      fprintf(stderr,"Checking oneSidedNoisePowerSpectrum: ");
+      if(!(retcode|=checkREAL8FrequencySeries(data->oneSidedNoisePowerSpectrum))) fprintf(stderr," OK\n");
+    }
+    data=data->next;
+  }
+  return(retcode);
+}
+
+static INT4 checkREAL8Value(REAL8 val);
+
+static INT4 checkREAL8TimeSeries(REAL8TimeSeries *series)
+{
+  UINT4 i;
+  INT4 retcode=0;
+  if(!series) fprintf(stderr,"Null REAL8TimeSeries *\n");
+  else {
+    if(!series->data) fprintf(stderr,"NULL REAL8Sequence structure in REAL8TimeSeries\n");
+    else {
+      if(!series->data->data) fprintf(stderr,"NULL REAL8[] in REAL8Sequence\n");
+      else {
+       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i])) {if(!retcode) fprintf(stderr,"Found value %lf at index %i\n",series->data->data[i],i); retcode+=1;}}
+      }
+    }
+  }
+  if(retcode>1) fprintf(stderr,"and %i more times\n",retcode);
+  return(retcode);
+}
+
+static INT4 checkREAL8FrequencySeries(REAL8FrequencySeries *series)
+{
+  UINT4 i;
+  INT4 retcode=0;
+  if(!series) fprintf(stderr,"Null REAL8FrequencySeries *\n");
+  else {
+    if(!series->data) fprintf(stderr,"NULL REAL8Sequence structure in REAL8FrequencySeries\n");
+    else {
+      if(!series->data->data) fprintf(stderr,"NULL REAL8[] in REAL8Sequence\n");
+      else {
+       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i])) {if(!retcode) fprintf(stderr,"Found value %lf at index %i\n",series->data->data[i],i); retcode+=1;}}
+      }
+    }
+  }
+  if(retcode>1) fprintf(stderr,"and %i more times\n",retcode);
+  return(retcode);
+}
+
+static INT4 checkCOMPLEX16FrequencySeries(COMPLEX16FrequencySeries *series)
+{
+  UINT4 i;
+  INT4 retcode=0;
+  if(!series) fprintf(stderr,"Null COMPLEX16FrequencySeries *\n");
+  else {
+    if(!series->data) fprintf(stderr,"NULL COMPLEX16Sequence structure in COMPLEX16FrequencySeries\n");
+    else {
+      if(!series->data->data) fprintf(stderr,"NULL REAL8[] in COMPLEX16Sequence\n");
+      else {
+       for(i=0;i<series->data->length;i++) {if(checkREAL8Value(series->data->data[i].re)) {if(!retcode) fprintf(stderr,"Found real value %lf at index %i\n",series->data->data[i].re,i); retcode+=1;}
+					if(checkREAL8Value(series->data->data[i].im)) {if(!retcode) fprintf(stderr,"Found imag value %lf at index %i\n",series->data->data[i].im,i); retcode+=1;} }
+      }
+    }
+  }
+  if(retcode>1) fprintf(stderr,"and %i more times\n",retcode);
+  return(retcode);
+}
+
+static INT4 checkREAL8Value(REAL8 val)
+{
+  if(isinf(val)) return 1;
+  if(isnan(val)) return 1;
+  return 0;
+}
+
+void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename)
+{
+    UINT4 i;
+    FILE *dumpfile=NULL;
+    char basename[1024]="template_dump";
+    char filename[1024]="";
+    if(basefilename!=NULL)
+    {
+        sprintf(basename,"%s",basefilename);
+    }
+    LALInferenceIFOData *data=state->data;
+    while(data){
+        if(data->timeModelhPlus && data->timeModelhCross){
+            sprintf(filename,"%s_%s_time.txt",basename,data->name);
+            dumpfile=fopen(filename,"w");
+            REAL8 epoch = data->timeModelhPlus->epoch.gpsSeconds + 1e-9*data->timeModelhPlus->epoch.gpsNanoSeconds;
+            REAL8 dt=data->timeModelhPlus->deltaT;
+            for(i=0;i<data->timeModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e\n",epoch+i*dt,data->timeModelhPlus->data->data[i],data->timeModelhCross->data->data[i]);
+            fclose(dumpfile);
+            fprintf(stdout,"Dumped file %s\n",filename);
+        }
+        if(data->freqModelhPlus && data->freqModelhCross){
+            sprintf(filename,"%s_%s_freq.txt",basename,data->name);
+            dumpfile=fopen(filename,"w");
+            REAL8 fLow=data->freqModelhPlus->f0;
+            REAL8 df=data->freqModelhPlus->deltaF;
+            for(i=0;i<data->freqModelhPlus->data->length;i++) fprintf(dumpfile,"%10.20e %10.20e %10.20e %10.20e %10.20e\n",fLow+i*df,data->freqModelhPlus->data->data[i].re, data->freqModelhPlus->data->data[i].im,data->freqModelhCross->data->data[i].re, data->freqModelhCross->data->data[i].im);
+            fclose(dumpfile);
+            fprintf(stdout,"Dumped file %s\n",filename);
+        }
+        data=data->next;
+    }
+}

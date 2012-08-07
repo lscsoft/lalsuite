@@ -20,11 +20,6 @@
 #ifndef _INTERPOLATE_H
 #define _INTERPOLATE_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
@@ -102,7 +97,6 @@ Numerical Recipes [\ref ptvf1992].
 typedef struct
 tagSInterpolateOut
 {
-  SWIGLAL_STRUCT(SInterpolateOut);
   REAL4  y;	/**< The interpolated value */
   REAL4 dy;	/**< The estimated error in the interpolated value */
 }
@@ -112,7 +106,6 @@ SInterpolateOut;
 typedef struct
 tagDInterpolateOut
 {
-  SWIGLAL_STRUCT(DInterpolateOut);
   REAL8  y;	/**< The interpolated value */
   REAL8 dy;	/**< The estimated error in the interpolated value */
 }
@@ -125,7 +118,6 @@ DInterpolateOut;
 typedef struct
 tagSInterpolatePar
 {
-  SWIGLAL_STRUCT(SInterpolatePar);
   UINT4  n;	/**< The number of points in the arrays to use in the interpolation */
   REAL4 *x;	/**< The array of domain values */
   REAL4 *y;	/**< The array of values to interpolate */
@@ -139,7 +131,6 @@ SInterpolatePar;
 typedef struct
 tagDInterpolatePar
 {
-  SWIGLAL_STRUCT(DInterpolatePar);
   UINT4  n;	/**< The number of points in the arrays to use in the interpolation */
   REAL8 *x;	/**< The array of domain values */
   REAL8 *y;	/**< The array of values to interpolate */

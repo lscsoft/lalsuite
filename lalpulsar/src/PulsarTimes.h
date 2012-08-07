@@ -21,11 +21,6 @@
 #ifndef _PULSARTIMES_H
 #define _PULSARTIMES_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 
 #include <lal/LALBarycenter.h>
@@ -166,7 +161,6 @@ routines that place different parameters in <tt>*variables</tt> and
  * the individual modules that use those particular fields.
  */
 typedef struct tagPulsarTimesParamStruc {
-  SWIGLAL_STRUCT(PulsarTimesParamStruc);
   LIGOTimeGPS epoch; 	/**< A reference detector time; all
                          * other times in the transformation are represented as \c REAL8
                          * numbers, giving the time in seconds since #epoch.
@@ -208,6 +202,8 @@ typedef struct tagPulsarTimesParamStruc {
   UINT4 nArgs; 		/**< The number of variable parameters \f$\lambda^k\f$ to be sent to the function t1() */
   /*@} */
 } PulsarTimesParamStruc;
+
+int XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn );
 
 /** \cond DONT_DOXYGEN */
 

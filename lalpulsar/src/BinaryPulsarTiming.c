@@ -600,14 +600,18 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     XLAL_ERROR_VOID( XLAL_EFAULT );
   }
 
-  output->model = NULL; /* set binary model to null - incase not a binary */
+  output->name = NULL;
+  output->jname = NULL;
+  output->bname = NULL;
+  
+  output->model = NULL; /* set binary model to null - in case not a binary */
 
   /* set all output params to zero*/
   output->e=0.0;      /* orbital eccentricity */
   output->Pb=0.0;     /* orbital period (days) */
-  output->w0=0.0;     /* logitude of periastron (deg) */
+  output->w0=0.0;     /* longitude of periastron (deg) */
   output->x=0.0;      /* projected semi-major axis/speed of light (light secs) */
-  output->T0=0.0;     /* time of orbital perisastron as measured in TDB (MJD) */
+  output->T0=0.0;     /* time of orbital periastron as measured in TDB (MJD) */
 
   output->e2=0.0;
   output->Pb2=0.0;
@@ -749,7 +753,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->I31=0.;
   output->r=0.;
   output->lambda=0.;
-  output->theta=0.;
+  output->costheta=0.;
 
   output->h0Err=0.;
   output->cosiotaErr=0.;
@@ -761,7 +765,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->I31Err=0.;
   output->rErr=0.;
   output->lambdaErr=0.;
-  output->thetaErr=0.;
+  output->costhetaErr=0.;
 
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
@@ -791,6 +795,14 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     j=i;
     if(!strcmp(val[i], "NAME") || !strcmp(val[i], "name")){
       output->name = XLALStringDuplicate(val[i+1]);
+      j++;
+    }
+    else if(!strcmp(val[i], "PSRJ") || !strcmp(val[i], "psrj") ){
+      output->jname = XLALStringDuplicate(val[i+1]);
+      j++;
+    }
+    else if(!strcmp(val[i], "PSRB") || !strcmp(val[i], "psrb") ){
+      output->bname = XLALStringDuplicate(val[i+1]);
       j++;
     }
     else if(!strcmp(val[i],"ra") || !strcmp(val[i],"RA") || !strcmp(val[i],"RAJ")){
@@ -1735,12 +1747,12 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"theta") || !strcmp(val[i],"THETA") ) {
-      output->theta = atof(val[i+1]);
+    else if( !strcmp(val[i],"costheta") || !strcmp(val[i],"COSTHETA") ) {
+      output->costheta = atof(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->thetaErr = atof(val[i+3]);
+        output->costhetaErr = atof(val[i+3]);
         j+=2;
       }
     }

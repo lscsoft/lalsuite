@@ -30,6 +30,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <complex.h>
 #include <sys/time.h>
 
 /* LAL headers */
@@ -73,6 +74,7 @@
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_sf_gamma.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,7 +119,7 @@ extern "C" {
  * of the signal \f$ \phi_0 \f$, polarisation angle \f$ psi \f$, and cosine of
  * the inclination angle \f$ \cos{\iota} \f$.  For the pinSf model, extra pars include
  \f$ I_{31}, I_{21}\f$ the equivalents of \f$ h_0 \f$, and the extra orientation parameters
- \f$ \theta \f$ and \f$ \lambda \f$.
+ \f$ \cos(\theta) \f$ and \f$ \lambda \f$.
  *
  * Note: These should be increased if additional model parameters are added.
  */
@@ -140,7 +142,7 @@ extern "C" {
 /** A list of the amplitude parameters. The names given here are those that are
  * recognised within the code. */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "h0", "phi0", "psi",
-"cosiota", "I31", "I21", "lambda", "theta" };
+"cosiota", "I31", "I21", "lambda", "costheta" };
 
 /** A list of the frequency parameters. The names given here are those that are
  * recognised within the code. */
@@ -246,6 +248,8 @@ void phi0_psi_transform( REAL8 phi0, REAL8 psi, REAL8 *phi0prime,
 
 void inverse_phi0_psi_transform( REAL8 phi0prime, REAL8 psiprime,
                                  REAL8 *phi0, REAL8 *psi );
+
+void samples_prior( LALInferenceRunState *runState );
 
 #ifdef __cplusplus
 }

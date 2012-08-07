@@ -20,11 +20,6 @@
 #ifndef _FILEIO_H
 #define _FILEIO_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,7 +50,6 @@ FILE *
 LALOpenDataFile( const char * );
 
 typedef struct tagLALFILE {
-  SWIGLAL_STRUCT(LALFILE);
   int compression;
   void *fp;
 } LALFILE;

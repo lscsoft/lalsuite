@@ -1638,10 +1638,10 @@ void TaylorT_template(LALStatus *status,InspiralTemplate *template, LALMCMCParam
 
 void IMRPhenomB_template(LALStatus *status, InspiralTemplate *template, LALMCMCParameter *parameter, LALMCMCInput *inputMCMC)
 {
-	UINT4 NtimeModel, NfreqModel, idx;
+	UINT4 NtimeModel, idx; /*NfreqModel*/
 	/*REAL4 deltaF = inputMCMC->deltaF;*/
 	NtimeModel = 2*(inputMCMC->stilde[0]->data->length+1);
-	NfreqModel = inputMCMC->stilde[0]->data->length;
+	/*NfreqModel = inputMCMC->stilde[0]->data->length;*/
 	if(Tmodel ==NULL) LALCreateVector(status, &Tmodel, NtimeModel);
 
         /*'x' and 'y' components of spins must be set to zero.*/

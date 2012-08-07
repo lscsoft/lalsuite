@@ -356,7 +356,7 @@ initFactoredGrid (LALStatus *status,				/**< pointer to LALStatus structure */
   skypos.longitude = fscan->skyScan.skyNode->Alpha;
   skypos.latitude  = fscan->skyScan.skyNode->Delta;
   skypos.system = COORDINATESYSTEM_EQUATORIAL;
-  XLALNormalizeSkyPosition ( &skypos );
+  XLALNormalizeSkyPosition ( &skypos.longitude, &skypos.latitude );
   fscan->thisPoint.Alpha = skypos.longitude;
   fscan->thisPoint.Delta = skypos.latitude;
   /* set spins to start */
@@ -602,7 +602,7 @@ nextPointInFactoredGrid (PulsarDopplerParams *pos, DopplerFullScanState *scan)
 		      skypos.longitude = fscan->skyScan.skyNode->Alpha;
 		      skypos.latitude  = fscan->skyScan.skyNode->Delta;
 		      skypos.system = COORDINATESYSTEM_EQUATORIAL;
-		      XLALNormalizeSkyPosition ( &skypos );
+		      XLALNormalizeSkyPosition ( &skypos.longitude, &skypos.latitude );
 		      nextPos.Alpha = skypos.longitude;
 		      nextPos.Delta = skypos.latitude;
 		    }

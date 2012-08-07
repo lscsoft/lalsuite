@@ -42,12 +42,12 @@ from glue.ligolw import ligolw
 from glue.ligolw import table
 from glue.ligolw import lsctables
 from glue.ligolw import utils
-from lalapps import git_version
+#from lalapps import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-__version__ = "git id %s" % git_version.id
-__date__ = git_version.date
+#__version__ = "git id %s" % git_version.id
+#__date__ = git_version.date
 
 
 #
@@ -61,7 +61,7 @@ __date__ = git_version.date
 
 def parse_command_line():
 	parser = OptionParser(
-		version = "Name: %%prog\n%s" % git_version.verbose_msg,
+		#version = "Name: %%prog\n%s" % git_version.verbose_msg,
 		usage = "%prog [options] filenames ...",
 		description = "Generates a LAL format cache file describing a collection of LIGO light-weight XML files.  The cache is constructed by parsing the search_summary table in each file to extract the instruments and time each file spans.  To allow long file lists to be processed, the filenames are interpreted as shell patterns (wildcard expansion is performed)."
 	)

@@ -23,7 +23,7 @@
 #define _LALBURSTVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALBurstConfig.h>
+#include <lal/LALBurstLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALBURST_VCS_IDENT_STATUS "$" "LALBurstStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalBurstVCSInfo;
 static const struct tagLALVCSInfo lalBurstHeaderVCSInfo = { \
   LALBURST_VCS_NAME, \
   LALBURST_VERSION, \

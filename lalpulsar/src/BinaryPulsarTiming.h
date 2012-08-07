@@ -45,11 +45,6 @@
 #ifndef _BINARYPULSARTIMING_H
 #define _BINARYPULSARTIMING_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <ctype.h>
 #include <unistd.h>
 
@@ -91,9 +86,10 @@ not be in the binary timing routine"
 typedef struct
 tagBinaryPulsarParams
 {
-  SWIGLAL_STRUCT(BinaryPulsarParams);
   CHAR *name;   /**< pulsar name */
-
+  CHAR *jname;  /**< pulsar J name */
+  CHAR *bname;  /**< pulsar B name */
+  
   CHAR *model;  /**< TEMPO binary model e.g. BT, DD, ELL1 */
 
   REAL8 f0;     /**< spin frequency (Hz) */
@@ -187,7 +183,7 @@ tagBinaryPulsarParams
   REAL8 r;      /**< parameter for pinsf model.**/
   REAL8 lambda; /**< this is a longitude like angle between pinning axis and
                      line of sight */
-  REAL8 theta;  /**< angle between rotation axis and pinning axis */
+  REAL8 costheta;  /**< angle between rotation axis and pinning axis */
   
   /******** errors read in from a .par file **********/
   REAL8 f0Err;
@@ -254,14 +250,13 @@ tagBinaryPulsarParams
   REAL8 I31Err;
   REAL8 rErr;
   REAL8 lambdaErr;
-  REAL8 thetaErr;
+  REAL8 costhetaErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */
 typedef struct
 tagBinaryPulsarInput
 {
-  SWIGLAL_STRUCT(BinaryPulsarInput);
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
 }BinaryPulsarInput;
 
@@ -269,7 +264,6 @@ tagBinaryPulsarInput
 typedef struct
 tagBinaryPulsarOutput
 {
-  SWIGLAL_STRUCT(BinaryPulsarOutput);
   REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 

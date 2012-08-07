@@ -20,11 +20,6 @@
 #ifndef  _DIRICHLET_H
 #define  _DIRICHLET_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALStdlib.h>
 
 #ifdef  __cplusplus
@@ -71,7 +66,6 @@ extern "C" {
 
 /** Contains parameters that specify the Dirichlet kernel \f$\mathcal{D}_N(x)\f$ */
 typedef struct tagDirichletParameters{
-  SWIGLAL_STRUCT(DirichletParameters);
   UINT4	 n;       /**< Dirichlet parameter \f$N\f$ */
   UINT4	 length;  /**< Specified length of output vector */
   REAL8	 deltaX;  /**< Spacing of \f$x\f$ values */

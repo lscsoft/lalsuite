@@ -30,11 +30,6 @@
 #ifndef _LISASPECIFICS_H  /* Double-include protection. */
 #define _LISASPECIFICS_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* C++ protection. */
 #ifdef  __cplusplus
 extern "C" {
@@ -65,7 +60,6 @@ typedef enum {
  */
 typedef struct tagCmplxDetectorTensor
 {
-  SWIGLAL_STRUCT(CmplxDetectorTensor);
   SymmTensor3 re;	/**< tensor holding real-parts of all components */
   SymmTensor3 im;	/**< tensor holding imaginary-parts of all components */
 } CmplxDetectorTensor;
@@ -79,8 +73,8 @@ int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
 
 int XLALprecomputeLISAarms ( DetectorState *detState );
 
-int XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, constDetector3Arms detArms, CHAR channelNum );
-int XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, constDetector3Arms detArms, CHAR channelNum, const FreqSkypos_t *freq_skypos );
+int XLALgetLISADetectorTensorLWL ( SymmTensor3 *detT, const Detector3Arms detArms, CHAR channelNum );
+int XLALgetLISADetectorTensorRAA ( CmplxDetectorTensor *detT, const Detector3Arms detArms, CHAR channelNum, const FreqSkypos_t *freq_skypos );
 
 #ifdef  __cplusplus
 }

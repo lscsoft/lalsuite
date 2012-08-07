@@ -34,11 +34,6 @@ Author: Robinson, C. A. and Sengupta, A. S.
 #ifndef _ELLIPSOIDOVERLAPTOOLS_H
 #define _ELLIPSOIDOVERLAPTOOLS_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 
 #include    <math.h>
 #include    <lal/LALStdlib.h>
@@ -59,7 +54,6 @@ extern "C" {
 
 typedef struct tagfContactWorkSpace
 {
-    SWIGLAL_STRUCT(fContactWorkSpace);
     /* Dimension of the matrices & vectors */
     UINT4             n;
 

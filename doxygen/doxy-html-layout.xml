@@ -2,7 +2,6 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="pages" visible="yes" title=""/>
     <tab type="modules" visible="yes" title=""/>
     <tab type="namespaces" visible="yes" title="">
       <tab type="namespaces" visible="yes" title=""/>
@@ -19,6 +18,7 @@
       <tab type="globals" visible="yes" title=""/>
     </tab>
     <tab type="dirs" visible="yes" title=""/>
+    <tab type="pages" visible="yes" title=""/>
     <tab type="examples" visible="yes" title=""/>
   </navindex>
 

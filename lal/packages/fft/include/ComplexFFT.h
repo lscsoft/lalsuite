@@ -20,22 +20,13 @@
 #ifndef _COMPLEXFFT_H
 #define _COMPLEXFFT_H
 
+#include <lal/LALStdlib.h>
 #include <lal/LALDatatypes.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
 } /* so that editors will match preceding brace */
-#endif
-
-#ifdef  __cplusplus
-#ifdef __GNUC__
-#define RESTRICT __restrict__
-#else
-#define RESTRICT
-#endif
-#else
-#define RESTRICT restrict
 #endif
 
 /**
@@ -465,8 +456,6 @@ LALCOMPLEX16VectorFFT (
 
 
 /*@}*/
-
-#undef RESTRICT
 
 #if 0
 { /* so that editors will match succeeding brace */

@@ -35,11 +35,6 @@
 #ifndef _LALXML_H
 #define _LALXML_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* C++ protection */
 #ifdef __cplusplus
 extern "C" {
@@ -69,7 +64,6 @@ extern "C" {
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef struct tagXML_NAMESPACE {
-    SWIGLAL_STRUCT(XML_NAMESPACE);
     const xmlChar *prefix;
     const xmlChar *url;
 } XML_NAMESPACE;
@@ -85,7 +79,6 @@ typedef struct tagXML_NAMESPACE {
  * Albert-Einstein-Institute Hannover, Germany
  */
 typedef struct tagXML_NAMESPACE_VECTOR {
-    SWIGLAL_STRUCT(XML_NAMESPACE_VECTOR);
     const XML_NAMESPACE *items;
     const int count;
 } XML_NAMESPACE_VECTOR;

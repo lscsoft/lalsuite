@@ -193,6 +193,7 @@ REAL8 uvar_noiseSqrtSh;		/**< ALTERNATIVE: single-sided sqrt(Sh) for Gaussian no
 
 /* Window function [OPTIONAL] */
 CHAR *uvar_window;		/**< Windowing function for the time series */
+REAL8 uvar_tukeyBeta;          /**< Hann fraction of Tukey window (0.0=rect; 1,0=han; 0.5=default */
 
 /* Detector and ephemeris */
 CHAR *uvar_IFO;			/**< Detector: H1, L1, H2, V1, ... */
@@ -837,6 +838,18 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
     LALFree ( site );
   }
 
+   /* check for negative fmin and Band, which would break the fmin_eff, fBand_eff calculation below */
+   if ( uvar_fmin < 0.0 )
+     {
+       printf ( "\nNegative frequency fmin=%f!\n\n", uvar_fmin);
+       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+     }
+   if ( uvar_Band < 0.0 )
+     {
+       printf ( "\nNegative frequency band Band=%f!\n\n", uvar_Band);
+       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+     }
+
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
   if ( LALUserVarWasSet( &uvar_outSFTbname ) )
     {
@@ -934,6 +947,10 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  }
 	if ( ( cfg->timestamps = XLALReadTimestampsFile ( uvar_timestampsFile )) == NULL ) {
           XLALPrintError ("%s: failed to read timestamps from file '%s'\n", fn, uvar_timestampsFile );
+          ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+        }
+	if ( ( cfg->timestamps->length == 0 ) || ( cfg->timestamps->data == NULL ) ) {
+          XLALPrintError ("%s: XLALReadTimestampsFile returned empty timestamps from file '%s'\n", fn, uvar_timestampsFile );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
 
@@ -1089,19 +1106,49 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 
   /*--------------------- Prepare windowing of time series ---------------------*/
   cfg->window = NULL;
+
   if ( uvar_window )
     {
       XLALLowerCaseString ( uvar_window );	// get rid of case
+
+      if ( LALUserVarWasSet( &uvar_tukeyBeta ) && strcmp ( uvar_window, "tukey" ) )
+	{
+	  XLALPrintError ("%s: Tukey beta value '%f' was specified with window %s; only relevant if Tukey windowing specified.\n\n", fn, uvar_tukeyBeta, uvar_window );
+	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	}
+
       if ( !strcmp ( uvar_window, "hann") || !strcmp ( uvar_window, "hanning") )
         {
           REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
           cfg->window = win;
         }
+      else if ( !strcmp ( uvar_window, "tukey" ) )
+	{
+	  if ( !LALUserVarWasSet( &uvar_tukeyBeta ) )
+	    {
+	      uvar_tukeyBeta = 0.5;   /* If Tukey window specified, default transition fraction is 1/2 */
+	    }
+	  else if ( uvar_tukeyBeta < 0.0 || uvar_tukeyBeta > 1.0 )
+	    {
+	      XLALPrintError ("%s: Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", fn, uvar_tukeyBeta );
+	      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	    }
+	    REAL4Window *win = XLALCreateTukeyREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band), (REAL4) uvar_tukeyBeta );
+          cfg->window = win;
+	}
       else
         {
-          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann windowing is supported.\n\n", fn, uvar_window );
+          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann or Tukey windowing is supported.\n\n", fn, uvar_window );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
+    }
+  else
+    {
+      if ( LALUserVarWasSet( &uvar_tukeyBeta ) )
+	{
+	  XLALPrintError ("%s: Tukey beta value '%f' was specified; only relevant if Tukey windowing specified.\n\n", fn, uvar_tukeyBeta );
+	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
+	}
     } /* if uvar_window */
 
   /* -------------------- Prepare quantities for barycentering -------------------- */
@@ -1406,7 +1453,7 @@ InitUserVars (LALStatus *status)
   /* per default we now generate a timeseries per SFT: slower, but avoids potential confusion about sft-"nudging" */
   uvar_generationMode = GENERATE_PER_SFT;
 
-  uvar_window = NULL;	/* By default, use rectangular window */
+  uvar_window = NULL;	   /* By default, use rectangular window */
 
   uvar_refTime = 0.0;
   uvar_refTimeMJD = 0.0;
@@ -1453,7 +1500,8 @@ InitUserVars (LALStatus *status)
   /* SFT properties */
   LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
   LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs (e.g. 'Hann')");
+  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs ('Hann' or 'Tukey'; omit for rectangular)");
+  LALregREALUserVar(status,   tukeyBeta,	 0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
   LALregREALUserVar(status,   refTime, 		'S', UVAR_OPTIONAL, "Pulsar SSB reference time in GPS seconds (if 0: use startTime)");
