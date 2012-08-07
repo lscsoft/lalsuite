@@ -366,7 +366,8 @@ void coh_PTF_calculate_bmatrix(
   REAL8Array              *PTFM[LAL_NUM_IFO+1],
   UINT4 vecLength,
   UINT4 vecLengthTwo,
-  UINT4 PTFMlen
+  UINT4 PTFMlen,
+  UINT4 detectorNum
   )
 {
   // This function calculates the eigenvectors and eigenvalues of the
@@ -390,14 +391,21 @@ void coh_PTF_calculate_bmatrix(
       zh[i*vecLength+j] = 0;
       sh[i*vecLength+j] = 0;
       yu[i*vecLength+j] = 0;
-      for( k = 0; k < LAL_NUM_IFO; k++)
+      if (detectorNum == LAL_NUM_IFO)
       {
-        if ( params->haveTrig[k] )
+        for( k = 0; k < LAL_NUM_IFO; k++)
         {
-          zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
-          sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
-          yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+          if ( params->haveTrig[k] )
+          {
+            zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
+            sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+            yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+          }
         }
+      }
+      else
+      {
+        zh[i*vecLength+j] += PTFM[detectorNum]->data[i*PTFMlen+j];
       }
     }
   }
@@ -450,7 +458,8 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 numPoints,
     UINT4 position,
     UINT4 vecLength,
-    UINT4 vecLengthTwo)
+    UINT4 vecLengthTwo,
+    UINT4 detectorNum)
 {
   // This function calculates the coherent time series and rotates them into
   // the basis where the B matrix is the identity.
@@ -463,21 +472,29 @@ void coh_PTF_calculate_rotated_vectors(
   {
     v1[j] = 0.;
     v2[j] = 0.;
-    for( k = 0; k < LAL_NUM_IFO; k++)
+    if (detectorNum == LAL_NUM_IFO)
     {
-      if ( params->haveTrig[k] )
+      for( k = 0; k < LAL_NUM_IFO; k++)
       {
-        if (j < vecLength)
+        if ( params->haveTrig[k] )
         {
-          v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-          v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
-        }
-        else
-        {
-          v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
-          v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+          if (j < vecLength)
+          {
+            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+          }
+          else
+          {
+            v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
+            v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+          }
         }
       }
+    }
+    else
+    {
+      v1[j] += PTFqVec[detectorNum]->data[j*numPoints+position].re;
+      v2[j] += PTFqVec[detectorNum]->data[j*numPoints+position].im;
     }
   }
 
@@ -886,7 +903,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   }
 
   /* calculate angular resolution */
-  if (! params->singlePolFlag)
+  if (! params->singlePolFlag && (! params->numIFO == 1))
   {
     angularResolution = 2. * params->timingAccuracy / alpha;
   }
