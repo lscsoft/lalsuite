@@ -128,16 +128,9 @@ int XLALSetFlatTilingLatticeGenerator(
 
 
 ///
-/// Move to the next point in the flat lattice tiling
+/// Return the next point in the flat lattice tiling parameter space
 ///
-int XLALNextFlatLatticePoint(
-  FlatLatticeTiling* tiling		///< [in] Tiling state
-  );
-
-///
-/// Return the current point in the flat lattice tiling parameter space
-///
-gsl_vector* XLALCurrentFlatLatticePoint(
+gsl_vector* XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 

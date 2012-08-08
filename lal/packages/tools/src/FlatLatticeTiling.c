@@ -338,7 +338,7 @@ int XLALSetFlatTilingLatticeGenerator(
 
 }
 
-int XLALNextFlatLatticePoint(
+gsl_vector* XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling
   )
 {
@@ -349,20 +349,20 @@ int XLALNextFlatLatticePoint(
 
   // If finished status, nothing to be done
   if (tiling->state == FLT_S_FINISHED) {
-    return XLAL_FAILURE;
+    return NULL;
   }
 
   // If initial status, perform final initialisation
   if (tiling->state == FLT_S_INITIAL) {
 
     // Check that all parameter space dimensions are bounded
-    XLAL_CHECK(tiling->num_bounds == tiling->dimensions, XLAL_EFAILED);
+    XLAL_CHECK_NULL(tiling->num_bounds == tiling->dimensions, XLAL_EFAILED);
 
     // Check that parameter space metric has been set
-    XLAL_CHECK(tiling->metric != NULL, XLAL_EFAILED);
+    XLAL_CHECK_NULL(tiling->metric != NULL, XLAL_EFAILED);
 
     // Check that lattice generator function has been set
-    XLAL_CHECK(tiling->generator != NULL, XLAL_EFAILED);
+    XLAL_CHECK_NULL(tiling->generator != NULL, XLAL_EFAILED);
 
     // Set physical parameter space offset
     gsl_vector_set_all(tiling->phys_scale, 1.0);
@@ -394,7 +394,7 @@ int XLALNextFlatLatticePoint(
     }
 
     // Initialise subspace
-    XLAL_CHECK(UpdateSubspace(tiling) == XLAL_SUCCESS, XLAL_EFAILED);
+    XLAL_CHECK_NULL(UpdateSubspace(tiling) == XLAL_SUCCESS, XLAL_EFAILED);
 
     // Subtract padding
     gsl_vector_sub(tiling->curr_point, tiling->curr_subspace->padding);
@@ -417,7 +417,7 @@ int XLALNextFlatLatticePoint(
       /* If dimension index is less than zero, we're done! */
       if (i < 0) {
         tiling->state = FLT_S_FINISHED;
-        return XLAL_FAILURE;
+        return NULL;
       }
 
       /* If dimension is not tiled, move to lower dimension */
@@ -454,7 +454,7 @@ int XLALNextFlatLatticePoint(
 
         /* Update subspace */
         if (tiling->curr_is_tiled != tiling->curr_subspace->is_tiled) {
-          XLAL_CHECK(UpdateSubspace(tiling) == XLAL_SUCCESS, XLAL_EFAILED);
+          XLAL_CHECK_NULL(UpdateSubspace(tiling) == XLAL_SUCCESS, XLAL_EFAILED);
         }
 
         /* If dimension is tiled */
@@ -487,7 +487,7 @@ int XLALNextFlatLatticePoint(
     }
 
   } else {
-    XLAL_ERROR(XLAL_EFAILED, "Invalid tiling status!");
+    XLAL_ERROR_NULL(XLAL_EFAILED, "Invalid tiling status!");
   }
 
   /* Template was found, so increase count */
@@ -498,15 +498,8 @@ int XLALNextFlatLatticePoint(
   gsl_vector_mul(tiling->curr_phys_point, tiling->phys_scale);
   gsl_vector_add(tiling->curr_phys_point, tiling->phys_offset);
 
-  return XLAL_SUCCESS;
-
-}
-
-gsl_vector* XLALCurrentFlatLatticePoint(
-  FlatLatticeTiling* tiling
-  )
-{
   return tiling->curr_phys_point;
+
 }
 
 uint64_t XLALCountTotalFlatLatticePoints(
@@ -519,7 +512,7 @@ uint64_t XLALCountTotalFlatLatticePoints(
 
   // Iterate over all templates
   int errnum;
-  XLAL_TRY(while (XLALNextFlatLatticePoint(tiling) == XLAL_SUCCESS), errnum);
+  XLAL_TRY(while (XLALNextFlatLatticePoint(tiling) != NULL), errnum);
   XLAL_CHECK_VAL(0, errnum == 0, XLAL_EFAILED);
 
   // Save the template count

@@ -502,12 +502,15 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 	int i;
 
 	/* Advance to next tile */
-	switch (XLALNextFlatLatticePoint(scan->spindownTiling)) {
+        current = XLALNextFlatLatticePoint(scan->spindownTiling);
+        if (xlalErrno != 0) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextFlatLatticeTile failed\n");
+	  return -1;
+        }
 
-	case XLAL_SUCCESS:
+        if (current != NULL) {
+
 	  /* Found a point */
-
-          current = XLALCurrentFlatLatticePoint(scan->spindownTiling);
           pos->Alpha      = gsl_vector_get(current, 0);
           pos->Delta      = gsl_vector_get(current, 1);
           pos->fkdot[0]   = gsl_vector_get(current, 2);
@@ -516,15 +519,11 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 
           return 0;
 
-	case XLAL_FAILURE:
+        } else {
+
 	  /* No more points */
 	  scan->state = STATE_FINISHED;
 	  return 1;
-
-	default:
-	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextFlatLatticeTile failed\n");
-	  xlalErrno = XLAL_EFAILED;
-	  return -1;
 
 	}
 

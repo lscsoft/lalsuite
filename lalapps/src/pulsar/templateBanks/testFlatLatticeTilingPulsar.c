@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
   RandomParams *inject_random = NULL;
   REAL8 inject_dist = 0.0;
   gsl_vector_int *inject_min_mismatch_hist = NULL;
+  gsl_vector *current;
   
   /* Initialise LAL error handler, debug level and log level */
   lal_errhandler = LAL_ERR_EXIT;
@@ -265,11 +266,11 @@ int main(int argc, char *argv[]) {
     ALLOC_GSL_VECTOR(temp, XLALGetFlatLatticeTilingDimensions(tiling), EXIT_FAILURE);
     XLAL_VBXMLO_BeginTag(&xml, "tiling");
   }
-  while (XLALNextFlatLatticePoint(tiling) == XLAL_SUCCESS) {
+  while ((current = XLALNextFlatLatticePoint(tiling)) != NULL) {
     
     /* Output template */
     if (!only_count) {
-      XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.12g", XLALCurrentFlatLatticePoint(tiling));
+      XLAL_VBXMLO_gsl_vector(&xml, "template", "%0.12g", current);
       fflush(xml.file);
     }
 
@@ -281,7 +282,7 @@ int main(int argc, char *argv[]) {
 
       /* Generate injections */
       for (k = 0; k < inject_count; ++k) {
-	if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, XLALCurrentFlatLatticePoint(tiling), &inject_dist))
+	if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, current, &inject_dist))
 	  LALAPPS_ERROR("XLALRandomPointInFlatLatticeParamSpace failed\n", 0);
 	if (!only_count /*&& tiling->count == 1*/)
 	  XLAL_VBXMLO_gsl_vector(&xml, "injection", "%0.12g", inject_point);	  
@@ -294,6 +295,9 @@ int main(int argc, char *argv[]) {
       
     }
     
+  }
+  if (xlalErrno != 0) {
+    XLAL_ERROR(EXIT_FAILURE);
   }
   if (!only_count)
     XLAL_VBXMLO_EndTag(&xml, "tiling");
