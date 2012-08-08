@@ -18,13 +18,13 @@ for(my $ii=0; $ii<300; $ii++) {
    
    $jj = 0;
    foreach my $injection (@injections2) {
-      $injection = chomp($injection);
+      chomp($injection);
       
       open(RECOVERED, "/home/egoetz/TwoSpect/efficiency/$ii/logfile_$jj.txt") or die "Cannot open /home/egoetz/TwoSpect/efficiency/$ii/logfile_$jj.txt $!";
       my @twospectout = reverse <RECOVERED>;
       
       my $kk = 1;
-      while($twospectout[$kk] =~ /^fsig = (\d+.\d+), period = (\d+.\d+), df = (\d+.\d+), RA = (\d+.\d+), DEC = (-?\d+.\d+), R = (\d+.\d+), h0 = (\d+.\d+e-\d+), Prob = (-\d+.\d+), TF norm = (\d+.\d+e+\d+)/) {
+      while($twospectout[$kk] =~ /^fsig = (\d+.\d+), period = (\d+.\d+), df = (\d+.\d+), RA = (\d+.\d+), DEC = (-?\d+.\d+), R = (\d+.\d+), h0 = (\d+.\d+e-\d+), Prob = (-\d+.\d+), TF norm = (\d+.\d+e\+\d+)/) {
          print RESULTS "$injection $1 $2 $3 $6 $7 $8\n";
          $kk++;
       }
