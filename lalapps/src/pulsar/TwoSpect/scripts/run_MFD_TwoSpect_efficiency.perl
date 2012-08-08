@@ -90,7 +90,7 @@ skyRegion ($alpha,$delta)
 t0 931081500
 blksize 101
 avesqrtSh 1.0e-23
-minTemplateLength 50
+minTemplateLength 1
 maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
