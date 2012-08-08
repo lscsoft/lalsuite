@@ -39,9 +39,8 @@
 #include <lal/LALInferenceReadData.h>
 #include <lalapps.h>
 
-#include <lal/LALInferenceConfig.h>
-
 #include <mpi.h>
+
 
 int MPIrank, MPIsize;
 
@@ -281,12 +280,6 @@ void initializeMCMC(LALInferenceRunState *runState)
     runState->likelihood=&LALInferenceFreqDomainStudentTLogLikelihood;
   } else {
     runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood;
-#ifdef LALINFERENCE_CUDA_ENABLED
-    runState->likelihood=&LALInferenceUndecomposedFreqDomainLogLikelihood_GPU;
-    printf("Running with CUDA!\n");
-#else
-    printf("NOT Running with CUDA!\n");
-#endif
   }
 
   if(LALInferenceGetProcParamVal(commandLine,"--skyLocPrior")){
@@ -390,7 +383,6 @@ void initializeMCMC(LALInferenceRunState *runState)
      jumps!  We re-seed rank i process with the ith output of
      the RNG stream from the rank 0 process. Otherwise the
      random stream is the same across all processes. */
-
   INT4 i;
   for (i = 0; i < MPIrank; i++) {
     randomseed = gsl_rng_get(runState->GSLrandom);

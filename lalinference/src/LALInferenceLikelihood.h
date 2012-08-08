@@ -55,7 +55,6 @@
 #define LALInferenceLikelihood_h
 
 #include <lal/LALInference.h>
-#include <lal/LALInferenceConfig.h>
 
 /***********************************************************//**
  * (log-) likelihood function.                                 
@@ -70,9 +69,6 @@
  ***************************************************************/
 REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
                               LALInferenceTemplateFunction *template);
-
-REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood_GPU(LALInferenceVariables *currentParams, LALInferenceIFOData *data, 
-                              LALInferenceTemplateFunction *_template);
 
 /** For testing purposes (for instance sampling the prior), 
  * likelihood that returns 0.0 = log(1) every

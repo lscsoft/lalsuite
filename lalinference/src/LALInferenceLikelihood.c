@@ -31,8 +31,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/TimeFreqFFT.h>
 
-#include <time.h>
-
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -207,8 +205,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   /* loop over data (different interferometers): */
   dataPtr = data;
 
-  //float totalTime = 0;
-
   while (dataPtr != NULL) {
     /* The parameters the Likelihood function can handle by itself   */
     /* (and which shouldn't affect the template function) are        */
@@ -292,10 +288,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     lower = (UINT4)ceil(dataPtr->fLow / deltaF);
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
-
-    //float startTime, endTime, timeElapsed;
-    //startTime = (float)clock()/CLOCKS_PER_SEC;
-
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
@@ -325,17 +317,9 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
  //        dataPtr->freqData->data->data[i].re, dataPtr->freqData->data->data[i].im,
  //        templateReal, templateImag);
     }
-    //endTime = (float)clock()/CLOCKS_PER_SEC; 
-    //timeElapsed = endTime - startTime;
-
-    //totalTime += timeElapsed;
-
     dataPtr = dataPtr->next;
  //fclose(testout);
   }
-
-  //printf ("Time for the CPU: %f ms\n", totalTime);
-
   loglikeli = -1.0 * chisquared; // note (again): the log-likelihood is unnormalised!
   LALInferenceDestroyVariables(&intrinsicParams);
   return(loglikeli);

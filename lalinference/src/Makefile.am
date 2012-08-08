@@ -8,7 +8,6 @@ endif
 lalinferenceincludedir = $(includedir)/lal
 lalinferenceinclude_HEADERS = \
 	LALInference.h \
-	LALInferenceUndecomposedFreqDomainLogLikelihood_GPU.h \
 	LALInferenceConfig.h \
 	LALInferenceLikelihood.h \
 	LALInferenceNestedSampler.h \
@@ -32,25 +31,9 @@ liblalinference_la_SOURCES = \
 	LALInferenceVCSInfo.c \
 	$(XMLSRC)
 
-if CUDA
-INFCXXSRC =
-INFCXXGENSRC = LALInferenceUndecomposedFreqDomainLogLikelihood_GPU.cpp
-INFLIBCXX = liblalinferencecxx.la
-else
-INFCXXSRC =
-INFCXXGENSRC =
-INFLIBCXX =
-endif
-
-noinst_LTLIBRARIES = $(INFLIBCXX)
-liblalinferencecxx_la_SOURCES = $(INFCXXSRC)
-nodist_liblalinferencecxx_la_SOURCES = $(INFCXXGENSRC)
-liblalinference_la_LIBADD = $(INFLIBCXX)
-
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
-	LALInferenceUndecomposedFreqDomainLogLikelihood_GPU.cpp \
 	lalinference-user-env.shell \
 	lalinference-user-env.sh \
 	lalinference-user-env.csh
@@ -78,7 +61,6 @@ lalinference-user-env.csh lalinference-user-env.sh: lalinference-user-env.shell 
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
 
 EXTRA_DIST = \
-	LALInferenceUndecomposedFreqDomainLogLikelihood_GPU.cu \
 	LALInferenceConfig.h.in \
 	LALInferenceVCSInfo.h.in \
 	LALInferenceXML.c \
@@ -92,6 +74,3 @@ LALInferenceVCSInfo.h: ._vcsinfo
 	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALInference $(srcdir) $$PWD
 
 @LAL_HEADER_LINK@
-
-# cuda build rules
-include $(top_srcdir)/gnuscripts/cuda.common

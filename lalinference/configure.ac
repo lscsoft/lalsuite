@@ -47,12 +47,6 @@ LALSUITE_ENABLE_NIGHTLY
 # debug
 LALSUITE_ENABLE_DEBUG
 
-#enable CUDA support
-LALSUITE_WITH_CUDA 
-
-#enable NVCC gcc flags
-LALSUITE_WITH_NVCC_CFLAGS
-
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -155,23 +149,12 @@ LALSUITE_CHECK_OPT_LIB([LALXML],[1.1.3],[XLALXMLFilePrintElements],[lal/LALXML.h
 
 # add gcc specific flags
 if test "$GCC" = yes; then
-  # don't use gcc flags when cuda is enabled
-  if test "${cuda}" != "true"; then
-    CFLAGS="$CFLAGS $lal_gcc_flags"
-  else
-    AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])
-  fi
+  CFLAGS="$CFLAGS $lal_gcc_flags"
 
   # add mac os x specific flags
   if test "x$MACOSX_VERSION" != "x"; then
     CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
   fi
-fi
-
-
-# define if CUDA is enabled
-if test "${cuda}" = "true"; then
-  AC_DEFINE([LALINFERENCE_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 
 # output
@@ -183,8 +166,6 @@ echo "
 =================================================================
 
         LALInference has now been successfully configured:
-
-            CUDA support is $CUDA_ENABLE_VAL
 
             LALXML library support is $LALXML_ENABLE_VAL
 
