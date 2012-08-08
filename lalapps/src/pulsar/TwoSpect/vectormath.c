@@ -284,7 +284,7 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
 }
 
 
-//Scale a REAL4Vector with a single scale factor using SSE
+//Add a REAL4 to all REAL4Vector elements using SSE
 REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scalar)
 {
    
@@ -326,7 +326,7 @@ REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input,
       result = (__m128*)(void*)alignedoutput;
    }
    
-   //multiply the vector into the output
+   //Add the value to the vector and put in the output
    for (ii=0; ii<roundedvectorlength; ii++) {
       *result = _mm_add_ps(*arr1, scalefactor);
       arr1++;
@@ -346,6 +346,74 @@ REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input,
    return output;
 #else
    fprintf(stderr, "%s: Failed because SSE is not supported, possibly because -msse flag wasn't used for compiling.\n", __func__);
+   XLAL_ERROR_NULL(XLAL_EFAILED);
+#endif
+   
+}
+
+
+//Add a REAL8 to all REAL8Vector elements using SSE
+REAL8Vector * sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scalar)
+{
+   
+#ifdef __SSE2__
+   INT4 roundedvectorlength = (INT4)input->length / 2;
+   INT4 vecaligned = 0, outputaligned = 0, ii = 0;
+   
+   REAL8 *allocinput = NULL, *allocoutput = NULL, *alignedinput = NULL, *alignedoutput = NULL;
+   __m128d *arr1, *result;
+   
+   __m128d scalefactor = _mm_set1_pd(scalar);
+   
+   //Allocate memory for aligning input vector 1 if necessary
+   if ( input->data==(void*)(((UINT8)input->data+15) & ~15) ) {
+      vecaligned = 1;
+      arr1 = (__m128d*)(void*)input->data;
+   } else {
+      allocinput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
+      if (allocinput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedinput = (void*)(((UINT8)allocinput+15) & ~15);
+      memcpy(alignedinput, input->data, sizeof(REAL8)*2*roundedvectorlength);
+      arr1 = (__m128d*)(void*)alignedinput;
+   }
+   
+   //Allocate memory for aligning output vector if necessary
+   if ( output->data==(void*)(((UINT8)output->data+15) & ~15) ) {
+      outputaligned = 1;
+      result = (__m128d*)(void*)output->data;
+   } else {
+      allocoutput = (REAL8*)XLALMalloc(2*roundedvectorlength*sizeof(REAL8) + 15);
+      if (allocoutput==NULL) {
+         fprintf(stderr, "%s: XLALMalloc(%zu) failed.\n", __func__, 2*roundedvectorlength*sizeof(REAL8) + 15);
+         XLAL_ERROR_NULL(XLAL_ENOMEM);
+      }
+      alignedoutput = (void*)(((UINT8)allocoutput+15) & ~15);
+      result = (__m128d*)(void*)alignedoutput;
+   }
+   
+   //Add the value to the vector and put in the output
+   for (ii=0; ii<roundedvectorlength; ii++) {
+      *result = _mm_add_pd(*arr1, scalefactor);
+      arr1++;
+      result++;
+   }
+   
+   //Copy output aligned memory to non-aligned memory if necessary
+   if (!outputaligned) memcpy(output->data, alignedoutput, 2*roundedvectorlength*sizeof(REAL8));
+   
+   //Finish up the remaining part
+   for (ii=2*roundedvectorlength; ii<(INT4)input->length; ii++) output->data[ii] = input->data[ii] + scalar;
+   
+   //Free memory if necessary
+   if (!vecaligned) XLALFree(allocinput);
+   if (!outputaligned) XLALFree(allocoutput);
+   
+   return output;
+#else
+   fprintf(stderr, "%s: Failed because SSE2 is not supported, possibly because -msse2 flag wasn't used for compiling.\n", __func__);
    XLAL_ERROR_NULL(XLAL_EFAILED);
 #endif
    

@@ -1126,7 +1126,14 @@ int main(int argc, char **argv)
   } // Main loop is ended here
   /* calulate number of events */
   params->numEvents = XLALCountMultiInspiral(eventList);
-  verbose("There are %d total triggers.\n", params->numEvents);
+  fprintf(stderr,"There are %d total triggers before cluster.\n", params->numEvents);
+  if ( params->clusterFlag )
+  {
+    coh_PTF_cluster_triggers(params,&eventList,&thisEvent);
+    params->numEvents = XLALCountMultiInspiral(eventList);
+    fprintf(stderr,"There are %d total triggers after cluster.\n", params->numEvents);
+  }
+
   coh_PTF_output_events_xml(params->outputFile, eventList, procpar,\
                             time_slide_head, params);
 
@@ -1246,6 +1253,10 @@ void coh_PTF_statistic(
   else
     vecLengthTwo = 2* vecLength;
 
+  REAL4 cohSNRThreshold = params->threshold;
+  if (spinTemplate)
+    cohSNRThreshold = params->spinThreshold;
+
   UINT4 csVecLength = 1;
   UINT4 csVecLengthTwo = 2;
   if (params->numIFO == 1 || params->singlePolFlag)
@@ -1298,7 +1309,7 @@ void coh_PTF_statistic(
 
   /* FIXME: All the time series should be outputtable */
   REAL4 u1[vecLengthTwo], u2[vecLengthTwo], v1[vecLengthTwo], v2[vecLengthTwo];
-  REAL4 *v1p,*v2p;
+  REAL4 *v1p,*v2p,*snglv1p,*snglv2p;
   REAL4 u1N[vecLength], u2N[vecLength], v1N[vecLength], v2N[vecLength];
   REAL4 v1_dot_u1, v1_dot_u2, v2_dot_u1, v2_dot_u2,max_eigen;
   REAL4 recSNR, traceSNRsq;
@@ -1330,6 +1341,10 @@ void coh_PTF_statistic(
   gsl_matrix                *eigenvecsNull = gsl_matrix_alloc(vecLength,
                                                               vecLength);
   gsl_vector                *eigenvalsNull = gsl_vector_alloc(vecLength);
+  gsl_matrix                *eigenvecsSngl = gsl_matrix_alloc(vecLength,
+                                                              vecLength);
+  gsl_vector                *eigenvalsSngl = gsl_vector_alloc(vecLength);
+
 
   // a = Fplus , b = Fcross
   /* FIXME: Replace all instances with a and b with Fplus and Fcross */
@@ -1344,7 +1359,7 @@ void coh_PTF_statistic(
   // We later rotate and rescale the (Q_i|s) values such that in the new basis
   // this matrix will be the identity matrix.
   // For non-spin this describes the rotation into the dominant polarization
-  coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,a,b,PTFM,vecLength,vecLengthTwo,vecLength);
+  coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,a,b,PTFM,vecLength,vecLengthTwo,vecLength,LAL_NUM_IFO);
 
   // If required also calculate these eigenvalues/vectors for the null stream 
   if (params->doNullStream)
@@ -1378,6 +1393,8 @@ void coh_PTF_statistic(
 
   v1p = LALCalloc(vecLengthTwo , sizeof(REAL4));
   v2p = LALCalloc(vecLengthTwo , sizeof(REAL4));
+  snglv1p = LALCalloc(vecLength , sizeof(REAL4));
+  snglv2p = LALCalloc(vecLength , sizeof(REAL4));
 
   /* First, calculate the single detector SNR time series. Only do this for
      the first sky point. */
@@ -1390,6 +1407,8 @@ void coh_PTF_statistic(
   ifoNum2 = 0;
 
   /* FIXME: For >2 detectors this should choose the 2 most sensitive ifos */
+  /* NOTE: This is only used in two det case where the 2 most sensitive ifos
+     is obvious! */
   for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     if (params->haveTrig[ifoNumber])
@@ -1416,13 +1435,44 @@ void coh_PTF_statistic(
                                                       &lalDimensionlessUnit,
                                                       3*numPoints/4
                                                           -numPoints/4+10000);
-      for (i = (numPoints/4)-5000; i < (3*numPoints/4)+5000; ++i)
-      {  /* loop over time */
-        reSNRcomp = PTFqVec[ifoNumber]->data[i].re;
-        imSNRcomp = PTFqVec[ifoNumber]->data[i].im;
-        snrComps[ifoNumber]->data->data[i - ((numPoints/4)-5000)] =
-            sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
-                 PTFM[ifoNumber]->data[0]);
+      if (spinTemplate)
+      {
+        coh_PTF_calculate_bmatrix(params,eigenvecsSngl,eigenvalsSngl,a,b,PTFM,
+            vecLength,vecLength,vecLength,ifoNumber);
+        for (i = (numPoints/4)-5000; i < (3*numPoints/4)+5000; ++i)
+        {  /* loop over time */ 
+          // This function combines the various (Q_i | s) and rotates them into
+          // the basis as discussed above.
+          coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,a,b,
+            timeOffsetPoints,eigenvecsSngl,eigenvalsSngl,
+            numPoints,i,vecLength,vecLength,ifoNumber);
+
+          /* Compute the dot products */
+          v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
+          for (j = 0; j < vecLength; j++)
+          {
+            v1_dot_u1 += snglv1p[j] * snglv1p[j];
+            v1_dot_u2 += snglv1p[j] * snglv2p[j];
+            v2_dot_u2 += snglv2p[j] * snglv2p[j];
+          }
+          // And SNR is calculated
+          // For spin this follows Diego's notation
+          max_eigen =0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
+              * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
+          snrComps[ifoNumber]->data->data[i-((numPoints/4)-5000)] =
+              sqrt(max_eigen);
+        }
+      }
+      else
+      {
+        for (i = (numPoints/4)-5000; i < (3*numPoints/4)+5000; ++i)
+        {  /* loop over time */
+          reSNRcomp = PTFqVec[ifoNumber]->data[i].re;
+          imSNRcomp = PTFqVec[ifoNumber]->data[i].im;
+          snrComps[ifoNumber]->data->data[i - ((numPoints/4)-5000)] =
+              sqrt((reSNRcomp*reSNRcomp + imSNRcomp*imSNRcomp)/
+                   PTFM[ifoNumber]->data[0]);
+        }
       }
     }
   }
@@ -1459,7 +1509,7 @@ void coh_PTF_statistic(
       continue;
     }
 
-    if (params->numIFO == 2 && spinTemplate==0 && (! params->singlePolFlag) )
+    if (params->numIFO == 2 && (! params->singlePolFlag) )
     {
       cohSNR->data->data[i-sOffset] = sqrt(snrComps[ifoNum1]->data->
                                                data[i+tOffset1] *
@@ -1484,7 +1534,7 @@ void coh_PTF_statistic(
               i + tOffset0 + timeOffsetPoints[ifoNumber]];
         }
       }
-      if (coincSNR < params->threshold)
+      if (coincSNR < cohSNRThreshold)
       {
         cohSNR->data->data[i-sOffset] = 0;
         continue;
@@ -1494,7 +1544,7 @@ void coh_PTF_statistic(
       // the basis as discussed above.
       coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,
         timeOffsetPoints,eigenvecs,eigenvals,
-        numPoints,i,vecLength,vecLengthTwo);
+        numPoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
 
       /* Compute the dot products */
       v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = max_eigen = 0.0;
@@ -1547,7 +1597,7 @@ void coh_PTF_statistic(
 
   for (i = numPoints/4; i < 3*numPoints/4; ++i) /* loop over time */
   {
-    if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+    if (cohSNR->data->data[i-numPoints/4] > cohSNRThreshold)
     {
       check = 1;
       for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
@@ -1571,7 +1621,7 @@ void coh_PTF_statistic(
         if (0)
         {
           coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,timeOffsetPoints,
-          eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo);
+          eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
           v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
           for (j = 0; j < vecLengthTwo; j++)
           {
@@ -1798,13 +1848,13 @@ void coh_PTF_statistic(
                 {
                   coh_PTF_calculate_bmatrix(params,Bankeigenvecs[j],
                       Bankeigenvals[j],a,b,PTFM,csVecLength,csVecLengthTwo,
-                      vecLength);
+                      vecLength,LAL_NUM_IFO);
                 }
                 else
                 {
                   coh_PTF_calculate_bmatrix(params,Bankeigenvecs[j],
                       Bankeigenvals[j],a,b,bankNormOverlaps[j].PTFM,csVecLength,
-                      csVecLengthTwo,vecLength);
+                      csVecLengthTwo,vecLength,LAL_NUM_IFO);
                 }
               }
             }
@@ -1853,10 +1903,8 @@ void coh_PTF_statistic(
               Autoeigenvecs = gsl_matrix_alloc(csVecLengthTwo,csVecLengthTwo);
               Autoeigenvals = gsl_vector_alloc(csVecLengthTwo);
               // Again the eigenvectors/values are calculated
-              /* FIXME: I think these vectors are the same as the ones used
-                 for the SNR! */
               coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
-                  a,b,PTFM,csVecLength,csVecLengthTwo,vecLength);
+                  a,b,PTFM,csVecLength,csVecLengthTwo,vecLength,LAL_NUM_IFO);
             }
 
             if (! autoCohOverlaps)
@@ -1897,6 +1945,8 @@ void coh_PTF_statistic(
   chi square */
   LALFree(v1p);
   LALFree(v2p);
+  LALFree(snglv1p);
+  LALFree(snglv2p);
 
   verbose("Calculated most vetoes at %ld \n",timeval_subtract(&startTime));
 
@@ -1946,7 +1996,7 @@ void coh_PTF_statistic(
 
   for (i = numPoints/4; i < 3*numPoints/4; ++i) /* loop over time */
   {
-    if (cohSNR->data->data[i-numPoints/4] > params->threshold)
+    if (cohSNR->data->data[i-numPoints/4] > cohSNRThreshold)
     {
       check = 1;
       for (l = (INT4)(i-numPoints/4)-numPointCheck; l < (INT4)(i-numPoints/4)+numPointCheck; l++)
@@ -2023,7 +2073,7 @@ void coh_PTF_statistic(
               Autoeigenvals = gsl_vector_alloc(csVecLengthTwo);
               // Again the eigenvectors/values are calculated
               coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
-                  a,b,PTFM,csVecLength,csVecLengthTwo,vecLength);
+                  a,b,PTFM,csVecLength,csVecLengthTwo,vecLength,LAL_NUM_IFO);
             }
             if (! frequencyRangesPlus[LAL_NUM_IFO])
             {
@@ -2228,6 +2278,8 @@ void coh_PTF_statistic(
   gsl_eigen_symmv_free(matTempNull);
   gsl_matrix_free(eigenvecs);
   gsl_vector_free(eigenvals);
+  gsl_matrix_free(eigenvecsSngl);
+  gsl_vector_free(eigenvalsSngl);
   gsl_matrix_free(eigenvecsNull);
   gsl_vector_free(eigenvalsNull);
 
@@ -2268,11 +2320,15 @@ UINT8 coh_PTF_add_triggers(
   INT4 numPointCheck = floor(params->timeWindow/cohSNR->deltaT + 0.5);
   INT4   timeOffsetPoints[LAL_NUM_IFO];
   LIGOTimeGPS trigTime;
-  MultiInspiralTable *lastEvent = NULL;
-  MultiInspiralTable *currEvent = *thisEvent;
+  MultiInspiralTable *lastEvent = *thisEvent;
+  MultiInspiralTable *currEvent = NULL;
   UINT4 numDOF = 4;
   if ( params->singlePolFlag)
     numDOF = 2;
+
+  REAL4 cohSNRThreshold = params->threshold;
+  if (spinTrigger)
+    cohSNRThreshold = params->spinThreshold;
 
   for (i = 0; i < LAL_NUM_IFO; i++)
   {
@@ -2281,7 +2337,7 @@ UINT8 coh_PTF_add_triggers(
 
   for (i = 0 ; i < cohSNR->data->length ; i++)
   {
-    if (cohSNR->data->data[i] > params->threshold)
+    if (cohSNR->data->data[i] > cohSNRThreshold)
     {
       check = 1;
       for (j = ((INT4)i)-numPointCheck; j < ((INT4)i)+numPointCheck; j++)
@@ -2298,19 +2354,9 @@ UINT8 coh_PTF_add_triggers(
       }
       if (check) /* Add trigger to event list */
       {
-        if (!*eventList) 
-        {
-          *eventList = (MultiInspiralTable *)
-                           LALCalloc(1, sizeof(MultiInspiralTable));
-          currEvent = *eventList;
-        }
-        else
-        {
-          lastEvent = currEvent;
-          currEvent = (MultiInspiralTable *) 
+        currEvent = (MultiInspiralTable *) 
                           LALCalloc(1, sizeof(MultiInspiralTable));
-          lastEvent->next = currEvent;
-        }
+
         currEvent->event_id = (EventIDColumn *) 
                                   LALCalloc(1, sizeof(EventIDColumn));
         currEvent->event_id->id=eventId;
@@ -2521,6 +2567,7 @@ UINT8 coh_PTF_add_triggers(
             currEvent->snr_dof = 2;
           else
             currEvent->snr_dof = numDOF;
+        }
 
         /* store ifos */
         if (params->numIFO == 1)
@@ -2545,15 +2592,47 @@ UINT8 coh_PTF_add_triggers(
                    params->ifoName[3]);
         }
 
+        /* And add the trigger to the lists. IF it passes clustering! */
+        if (!*eventList)
+        {
+          *eventList = currEvent;
+          lastEvent = currEvent;
         }
+        else
+        {
+          if (! params->clusterFlag)
+          {
+            lastEvent->next = currEvent;
+            lastEvent = currEvent;
+          }
+          else if (coh_PTF_accept_trig_check(params,eventList,*currEvent) )
+          {
+            lastEvent->next = currEvent;
+            lastEvent = currEvent;
+          }
+          else
+          {
+            if (currEvent->event_id)
+            {
+              LALFree(currEvent->event_id);
+            }
+            if (currEvent->time_slide_id)
+            {
+              LALFree(currEvent->time_slide_id);
+            }
+            LALFree(currEvent);
+          }
+        }
+
       }
     }
   }
-  *thisEvent = currEvent;
+  *thisEvent = lastEvent;
   return eventId;
 }
 
 void coh_PTF_cluster_triggers(
+    struct coh_PTF_params   *params,
     MultiInspiralTable      **eventList,
     MultiInspiralTable      **thisEvent
 )
@@ -2565,8 +2644,6 @@ void coh_PTF_cluster_triggers(
   MultiInspiralTable *currEvent2 = NULL;
   MultiInspiralTable *newEvent = NULL;
   MultiInspiralTable *newEventHead = NULL;
-  LIGOTimeGPS time1,time2;
-  UINT4 rejectTrigger;
   UINT4 triggerNum = 0;
   UINT4 lenTriggers = 0;
   UINT4 numRemovedTriggers = 0;
@@ -2585,35 +2662,17 @@ void coh_PTF_cluster_triggers(
    * clustering time */
   while (currEvent)
   {
-    rejectTrigger = 0;
-    time1.gpsSeconds=currEvent->end_time.gpsSeconds;
-    time1.gpsNanoSeconds = currEvent->end_time.gpsNanoSeconds;
-    currEvent2 = *eventList;
-    while (currEvent2)
+    if (coh_PTF_accept_trig_check(params,eventList,*currEvent) )
     {
-      time2.gpsSeconds=currEvent2->end_time.gpsSeconds;
-      time2.gpsNanoSeconds=currEvent2->end_time.gpsNanoSeconds;
-      if (fabs(XLALGPSDiff(&time1,&time2)) < 0.1)
-      {
-        if (currEvent->snr < currEvent2->snr\
-            && (currEvent->event_id->id != currEvent2->event_id->id))
-        {
-          rejectTrigger = 1;
-          numRemovedTriggers +=1;
-          break;
-        }
-        else
-        {
-          currEvent2 = currEvent2->next;
-        }
-      }
-      else
-      {
-        currEvent2 = currEvent2->next;
-      }
+      rejectTriggers[triggerNum] = 0;
+      triggerNum += 1;
     }
-    rejectTriggers[triggerNum] = rejectTrigger;
-    triggerNum += 1;
+    else
+    {
+      rejectTriggers[triggerNum] = 1;
+      triggerNum += 1;
+      numRemovedTriggers += 1;
+    }
     currEvent = currEvent->next;
   }
 
@@ -2662,3 +2721,51 @@ void coh_PTF_cluster_triggers(
     *thisEvent = newEvent;
   }
 } 
+
+UINT4 coh_PTF_accept_trig_check(
+    struct coh_PTF_params   *params,
+    MultiInspiralTable      **eventList,
+    MultiInspiralTable      thisEvent
+)
+{
+  /* This clustering function is currently unused. Currently clustering is
+     done in post-processing, though this may need to be changed. */
+  MultiInspiralTable *currEvent = *eventList;
+  LIGOTimeGPS time1,time2;
+  UINT4 loudTrigBefore=0,loudTrigAfter=0;
+
+  currEvent = *eventList;
+
+  /* for each trigger, find out whether a louder trigger is within the
+   * clustering time */
+  time1.gpsSeconds=thisEvent.end_time.gpsSeconds;
+  time1.gpsNanoSeconds = thisEvent.end_time.gpsNanoSeconds;
+  while (currEvent)
+  {
+    time2.gpsSeconds=currEvent->end_time.gpsSeconds;
+    time2.gpsNanoSeconds=currEvent->end_time.gpsNanoSeconds;
+    if (fabs(XLALGPSDiff(&time1,&time2)) < params->clusterWindow)
+    {
+      if (thisEvent.snr_dof == currEvent->snr_dof)
+      {
+        if (thisEvent.snr < currEvent->snr\
+            && (thisEvent.event_id->id != currEvent->event_id->id))
+        {
+          if ( XLALGPSDiff(&time1,&time2) < 0 )
+            loudTrigBefore = 1;
+          else
+            loudTrigAfter = 1;
+
+          if (loudTrigBefore && loudTrigAfter)
+          {
+            return 0;
+          }
+        }
+      }
+    }
+    currEvent = currEvent->next;
+  }
+
+  return 1;
+}
+

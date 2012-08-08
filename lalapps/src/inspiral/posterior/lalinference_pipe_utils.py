@@ -1,4 +1,4 @@
-# DAG Class definitions for LALInference Pipeline
+#flow DAG Class definitions for LALInference Pipeline
 # (C) 2012 John Veitch, Kiersten Ruisard, Kan Wang
 
 import itertools
@@ -75,8 +75,11 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   coinc_events = [event for event in coinctable]
   sngltable = lsctables.getTablesByType(xmldoc, lsctables.SnglInspiralTable)[0]
   sngl_events = [event for event in sngltable]
-  search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
-  ifos = search_summary[0].ifos.split(",")
+  #Issues to identify IFO with good data that did not produce a trigger
+  #search_summary = lsctables.getTablesByType(xmldoc, lsctables.SearchSummaryTable)[0]
+  #ifos = search_summary[0].ifos.split(",")
+  coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
+  ifos = coinc_table[0].instruments.split(",")
   # Parse PSD
   xmlpsd = utils.load_filename("psd.xml.gz")
   psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
@@ -85,12 +88,14 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
     for i,p in enumerate(psd.data):
       combine.append([psd.f0+i*psd.deltaF,np.sqrt(p)])
     np.savetxt(instrument+'psd.txt',combine)
+  srate = combine[-1][0]
+  
   # Logic for template duration and sample rate disabled
   coinc_map = lsctables.getTablesByType(xmldoc, lsctables.CoincMapTable)[0]
   for coinc in coinc_events:
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
     dur = min([e.template_duration for e in these_sngls]) + 2 # Add 2s padding
-    srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
+    #srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
     ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = dur, srate = srate)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
@@ -505,6 +510,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
+    node.set_srate(event.srate)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
@@ -523,6 +529,8 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
       else: node.ifos=ifos
       node.timeslides=dict([ (ifo,0) for ifo in node.ifos])
       gotdata=1
+    if self.config.has_option('lalinference','flow'):
+      node.flows=ast.literal_eval(self.config.get('lalinference','flow'))
     if self.config.has_option('lalinference','ER2-cache'):
       node.cachefiles=ast.literal_eval(self.config.get('lalinference','ER2-cache'))
       node.channels=ast.literal_eval(self.config.get('data','channels'))
@@ -640,6 +648,7 @@ class EngineNode(pipeline.CondorDAGNode):
     self.scisegs={}
     self.channels={}
     self.psds={}
+    self.flows={}
     self.timeslides={}
     self.seglen=None
     self.psdlength=None
@@ -664,6 +673,9 @@ class EngineNode(pipeline.CondorDAGNode):
   def set_seed(self,seed):
     self.add_var_opt('randomseed',str(seed))
   
+  def set_srate(self,srate):
+    self.add_var_opt('srate',str(srate))
+
   def set_dataseed(self,seed):
     self.add_var_opt('dataseed',str(seed))
 
@@ -719,6 +731,7 @@ class EngineNode(pipeline.CondorDAGNode):
       ifostring='['
       cachestring='['
       psdstring='['
+      flowstring='['
       channelstring='['
       slidestring='['
       first=True
@@ -730,17 +743,20 @@ class EngineNode(pipeline.CondorDAGNode):
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
         psdstring=psdstring+delim+self.psds[ifo]
+        flowstring=flowstring+delim+self.flows[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
       cachestring=cachestring+']'
       psdstring=psdstring+']'
+      flowstring=flowstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
       self.add_var_opt('IFO',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
       self.add_var_opt('psd',psdstring)
+      self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslides',slidestring)
       # Start at earliest common time
