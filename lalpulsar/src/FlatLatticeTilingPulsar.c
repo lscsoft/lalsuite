@@ -68,21 +68,21 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   gsl_vector* norm_to_real = gsl_vector_alloc(n);
   XLAL_CHECK(norm_to_real != NULL, XLAL_ENOMEM);
   gsl_matrix_set_identity(norm_metric);
-  gsl_vector_set_all(norm_to_real, 1.0);
 
   /* Calculate metric and conversion factors */
   for (size_t i = 0; i < n - 2; ++i) {
-
-    for (size_t j = 0; j < n - 2; ++j) {
-      gsl_matrix_set(norm_metric, i + 2, j + 2, (1.0 * (i + 1) * (j + 1)) / ((i + 2) * (j + 2) * (i + j + 3)));
+    for (size_t j = i; j < n - 2; ++j) {
+      gsl_matrix_set(norm_metric, i + 2, j + 2, (
+                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
+                       ) / (
+                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
+                         ));
+      gsl_matrix_set(norm_metric, j + 2, i + 2, gsl_matrix_get(norm_metric, i + 2, j + 2));
     }
-
-    gsl_vector_set(norm_to_real, i + 2, 1.0 * LAL_FACT[i + 1] / (LAL_TWOPI * pow(Tspan, i + 1)));
-
   }
 
   /* Set the metric of the flat lattice tiling */
-  XLAL_CHECK(XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFAILED);
 
   /* Cleanup */
   FREE_GSL_MATRIX(norm_metric);

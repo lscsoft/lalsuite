@@ -277,8 +277,7 @@ int XLALAddFlatLatticeTilingBound(
 int XLALSetFlatLatticeTilingMetric(
   FlatLatticeTiling* tiling,
   gsl_matrix* metric,
-  double max_mismatch,
-  gsl_vector* metric_scale
+  double max_mismatch
   )
 {
 
@@ -287,35 +286,42 @@ int XLALSetFlatLatticeTilingMetric(
   // Check tiling status
   XLAL_CHECK(tiling->state == FLT_S_INITIAL, XLAL_EFAILED);
 
-  /* Check input */
-  XLAL_CHECK(tiling->metric == NULL, XLAL_EFAILED);
-  XLAL_CHECK(metric != NULL, XLAL_EFAILED);
-  XLAL_CHECK(metric->size1 == metric->size2, XLAL_EINVAL);
-  XLAL_CHECK(metric->size1 == n, XLAL_EINVAL);
-  for (size_t i = 0; i < n; ++i) {
-    for (size_t j = i+1; j < n; ++j) {
-      XLAL_CHECK(gsl_matrix_get(metric, i, j) == gsl_matrix_get(metric, j, i), XLAL_EINVAL);
-    }
-  }
-  XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
-  if (metric_scale) {
-    XLAL_CHECK(metric_scale->size == n, XLAL_EINVAL);
-    for (size_t i = 0; i < n; ++i) {
-      XLAL_CHECK(gsl_vector_get(metric_scale, i) > 0, XLAL_EINVAL);
-    }
-  }
+  // Check that metric has not already been set
+  XLAL_CHECK(tiling->metric == NULL, XLAL_EFAULT);
 
-  /* Allocate memory */
+  // Check input
+  XLAL_CHECK(metric != NULL, XLAL_EFAILED);
+  XLAL_CHECK(metric->size1 == n && metric->size2 == n, XLAL_EINVAL);
+  XLAL_CHECK(max_mismatch > 0, XLAL_EINVAL);
+
+  // Allocate memory
   tiling->metric = gsl_matrix_alloc(n, n);
   XLAL_CHECK(tiling->metric != NULL, XLAL_ENOMEM);
   tiling->metric_scale = gsl_vector_alloc(n);
   XLAL_CHECK(tiling->metric_scale != NULL, XLAL_ENOMEM);
 
-  /* Copy metric, normalised to real conversion, and mismatch */
-  gsl_matrix_memcpy(tiling->metric, metric);
-  if (metric_scale) {
-    gsl_vector_memcpy(tiling->metric_scale, metric_scale);
+  // Check diagonal elements and calculate metric diagonal normalisation
+  for (size_t i = 0; i < n; ++i) {
+    const double metric_i_i = gsl_matrix_get(metric, i, i);
+    XLAL_CHECK(metric_i_i > 0, XLAL_EINVAL);
+    gsl_vector_set(tiling->metric_scale, i, 1.0 / sqrt(metric_i_i));
   }
+
+  // Check metric is symmetric, and initialise metric with diagonal normalisation
+  for (size_t i = 0; i < n; ++i) {
+    const double scale_i = gsl_vector_get(tiling->metric_scale, i);
+    gsl_matrix_set(tiling->metric, i, i, 1.0);
+    for (size_t j = i+1; j < n; ++j) {
+      const double scale_j = gsl_vector_get(tiling->metric_scale, j);
+      double metric_i_j = gsl_matrix_get(metric, i, j);
+      XLAL_CHECK(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL);
+      metric_i_j *= scale_i * scale_j;
+      gsl_matrix_set(tiling->metric, i, j, metric_i_j);
+      gsl_matrix_set(tiling->metric, j, i, metric_i_j);
+    }
+  }
+
+  // Initialise mismatch
   tiling->max_mismatch = max_mismatch;
 
   return XLAL_SUCCESS;

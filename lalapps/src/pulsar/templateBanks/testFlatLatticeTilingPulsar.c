@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
       gsl_matrix *identity = NULL;
       ALLOC_GSL_MATRIX(identity, XLALGetFlatLatticeTilingDimensions(tiling), XLALGetFlatLatticeTilingDimensions(tiling), EXIT_FAILURE);
       gsl_matrix_set_identity(identity);
-      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch, NULL))
+      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch))
 	LALAPPS_ERROR("XLALSetFlatLatticeTilingMetric failed\n", 0);
       gsl_matrix_free(identity);
     }

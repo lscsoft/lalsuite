@@ -114,8 +114,7 @@ int XLALAddFlatLatticeTilingBound(
 int XLALSetFlatLatticeTilingMetric(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   gsl_matrix* metric,		///< [in] Parameter space metric
-  double max_mismatch,		///< [in] Maximum prescribed mismatch
-  gsl_vector* real_scale	///< [in] Multiply to get real metric, may be NULL
+  double max_mismatch		///< [in] Maximum prescribed mismatch
   );
 
 ///
