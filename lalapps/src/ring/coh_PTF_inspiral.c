@@ -1407,7 +1407,8 @@ void coh_PTF_statistic(
   if ( params->injectFile )
   {
     REAL8 injDiff;
-    UINT4 injSamplePointa,injWindow,startDiff,endDiff;
+    UINT4 injSamplePoint,injWindow;
+    INT4  startDiff,endDiff;
     SimInspiralTable *thisInject = NULL;
     LIGOTimeGPS injTime;
     LIGOTimeGPS segmentStart,segmentEnd;
@@ -1420,7 +1421,7 @@ void coh_PTF_statistic(
       injTime = thisInject->geocent_end_time;
       /* Is injection within segment? */
       startDiff = XLALGPSToINT8NS( &injTime )-XLALGPSToINT8NS( &segmentStart );
-      endDiff = XLALGPSToINT8NS( &injTime ) - XLALGPSToINT8NS( &segmentEnd )
+      endDiff = XLALGPSToINT8NS( &injTime ) - XLALGPSToINT8NS( &segmentEnd );
       if (startDiff > 0)
       {
         if (endDiff < 0)

@@ -412,6 +412,7 @@ void coh_PTF_calculate_rotated_vectors(
 );
 
 void coh_PTF_cleanup(
+    struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
