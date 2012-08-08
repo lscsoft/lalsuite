@@ -122,39 +122,28 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
   double freq_band,           /**< Frequency band */
   double age,                 /**< Spindown age */
   double min_braking,         /**< Minimum braking index */
-  double max_braking,         /**< Maximum braking index */
-  size_t offset               /**< Number of dimensions offset between first dimension and frequency */
+  double max_braking          /**< Maximum braking index */
   )
 {
 
-  /* Check tiling dimension */
-  XLAL_CHECK(XLALFlatLatticeTilingDimension(tiling) >= 3, XLAL_EINVAL);
-
-  /* Allocate memory */
+  // Allocate memory
   gsl_vector* f1dot_data = gsl_vector_alloc(2);
   XLAL_CHECK(f1dot_data != NULL, XLAL_ENOMEM);
   gsl_vector* f2dot_data = gsl_vector_alloc(2);
   XLAL_CHECK(f2dot_data != NULL, XLAL_ENOMEM);
 
-  /* Set bound dimensions */
-  int64_t bound = ((int64_t)1) << offset;
+  // Set frequency bounds
+  XLAL_CHECK(XLALAddFlatLatticeTilingConstantBound(tiling, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFAILED);
 
-  /* Set frequency bounds */
-  XLAL_CHECK(XLALAddFlatLatticeTilingConstantBound(tiling, offset, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  /* Set first spindown bounds */
-  bound = bound << 1;
+  // Set first spindown bounds
   gsl_vector_set(f1dot_data, 0, -1.0 / ((min_braking - 1.0) * age));
   gsl_vector_set(f1dot_data, 1, -1.0 / ((max_braking - 1.0) * age));
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, bound, AgeBraking1stSpindownBound,
-                                           f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, AgeBraking1stSpindownBound, f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
-  /* Set second spindown bounds */
-  bound = bound << 1;
+  // Set second spindown bounds
   gsl_vector_set(f2dot_data, 0, min_braking);
   gsl_vector_set(f2dot_data, 1, max_braking);
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, bound, AgeBraking2ndSpindownBound,
-                                           f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, AgeBraking2ndSpindownBound, f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

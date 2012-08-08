@@ -68,7 +68,7 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(size_t);
 size_t XLALFlatLatticeTilingDimension(FlatLatticeTiling*);
 gsl_matrix* XLALFlatLatticeTilingMetric(FlatLatticeTiling*);
 void XLALDestroyFlatLatticeTiling(FlatLatticeTiling*);
-int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, uint64_t, FlatLatticeTilingBoundFunc, gsl_vector*);
+int XLALAddFlatLatticeTilingBound(FlatLatticeTiling*, FlatLatticeTilingBoundFunc, gsl_vector*);
 int XLALSetFlatLatticeTilingMetric(FlatLatticeTiling*, gsl_matrix*, double, gsl_vector*);
 int XLALSetFlatTilingLattice(FlatLatticeTiling*, FlatTilingLatticeGenerator);
 int XLALNextFlatLatticePoint(FlatLatticeTiling*);
@@ -89,7 +89,7 @@ int XLALNormaliseLatticeGenerator(gsl_matrix*, double, double);
  */
 int XLALSetFlatTilingCubicLattice(FlatLatticeTiling*);
 int XLALSetFlatTilingAnstarLattice(FlatLatticeTiling*);
-int XLALAddFlatLatticeTilingConstantBound(FlatLatticeTiling*, size_t, double, double);
+int XLALAddFlatLatticeTilingConstantBound(FlatLatticeTiling*, double, double);
 
 #ifdef __cplusplus
 %> // }

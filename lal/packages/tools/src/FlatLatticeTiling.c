@@ -56,12 +56,6 @@
  */
 typedef struct tagFlatLatticeTilingBound {
 
-  /* Number of bound dimensions */
-  size_t dimensions;
-
-  /* Dimensions which are bound */
-  uint64_t is_bound;
-
   /* Parameter space bound function */
   FlatLatticeTilingBoundFunc func;
 
@@ -109,8 +103,7 @@ struct tagFlatLatticeTiling {
 
   /* Parameter space bounds */
   size_t num_bounds;
-  FlatLatticeTilingBound **bounds;
-  gsl_vector_int *bound_map;
+  FlatLatticeTilingBound *bounds;
   gsl_vector* bound_point;
 
   /* Metric of the parameter space in normalised coordinates */
@@ -160,44 +153,6 @@ struct tagFlatLatticeTiling {
 /********** Functions **********/
 
 /**
- * Create a new flat lattice tiling bound structure
- */
-static FlatLatticeTilingBound *CreateFlatLatticeTilingBound(void)
-{
-
-  /* Allocate memory */
-  FlatLatticeTilingBound *bound = XLALMalloc(sizeof(FlatLatticeTilingBound));
-  XLAL_CHECK_NULL(bound != NULL, XLAL_ENOMEM);
-
-  /* Initialise structure */
-  bound->dimensions = 0;
-  bound->is_bound = 0;
-  bound->func = NULL;
-  bound->data = NULL;
-
-  return bound;
-
-}
-
-/**
- * Free a flat lattice tiling bound structure
- */
-static void FreeFlatLatticeTilingBound(
-  FlatLatticeTilingBound *bound /**< Tiling bound structure */
-  )
-{
-
-  if (bound) {
-
-    gsl_vector_free(bound->data);
-
-    XLALFree(bound);
-
-  }
-
-}
-
-/**
  * Create a new flat lattice tiling subspace structure
  */
 static FlatLatticeTilingSubspace *CreateFlatLatticeTilingSubspace(void)
@@ -244,35 +199,21 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   )
 {
 
-  /* Check input */
+  // Check input
   XLAL_CHECK_NULL(dimensions > 0, XLAL_EINVAL);
 
-  /* Allocate memory */
-  FlatLatticeTiling* tiling = XLALMalloc(sizeof(FlatLatticeTiling));
+  // Allocate and initialise tiling structure
+  FlatLatticeTiling* tiling = XLALCalloc(1, sizeof(FlatLatticeTiling));
   XLAL_CHECK_NULL(tiling != NULL, XLAL_ENOMEM);
-
-  /* Initialise structure */
+  tiling->bound_point = gsl_vector_alloc(dimensions);
+  XLAL_CHECK_NULL(tiling->bound_point != NULL, XLAL_ENOMEM);
   tiling->dimensions = dimensions;
-  tiling->num_bounds = 0;
-  tiling->bounds = NULL;
-  tiling->bound_map = NULL;
-  tiling->bound_point = NULL;
-  tiling->metric = NULL;
-  tiling->real_scale = NULL;
-  tiling->real_offset = NULL;
-  tiling->max_mismatch = 0.0;
-  tiling->generator = NULL;
-  tiling->num_subspaces = 0;
-  tiling->subspaces = NULL;
   tiling->scale_padding = 1.0;
-  tiling->curr_is_tiled = 0;
-  tiling->curr_subspace = NULL;
-  tiling->curr_point = NULL;
-  tiling->curr_lower = NULL;
-  tiling->curr_upper = NULL;
-  tiling->current = NULL;
-  tiling->count = 0;
   tiling->state = FLT_S_NotInitialised;
+
+  // Allocate and initialise bounds array
+  tiling->bounds = XLALCalloc(tiling->dimensions, sizeof(FlatLatticeTilingBound));
+  XLAL_CHECK_NULL(tiling->bounds != NULL, XLAL_ENOMEM);
 
   return tiling;
 
@@ -303,18 +244,19 @@ void XLALDestroyFlatLatticeTiling(
   if (tiling) {
 
     for (size_t k = 0; k < tiling->num_bounds; ++k) {
-      FreeFlatLatticeTilingBound(tiling->bounds[k]);
+      gsl_vector_free(tiling->bounds[k].data);
     }
     XLALFree(tiling->bounds);
-    gsl_vector_int_free(tiling->bound_map);
-    gsl_vector_free(tiling->bound_point);
-    gsl_matrix_free(tiling->metric);
-    gsl_vector_free(tiling->real_scale);
-    gsl_vector_free(tiling->real_offset);
+
     for (size_t k = 0; k < tiling->num_subspaces; ++k) {
       FreeFlatLatticeTilingSubspace(tiling->subspaces[k]);
     }
     XLALFree(tiling->subspaces);
+
+    gsl_vector_free(tiling->bound_point);
+    gsl_matrix_free(tiling->metric);
+    gsl_vector_free(tiling->real_scale);
+    gsl_vector_free(tiling->real_offset);
     gsl_vector_free(tiling->curr_point);
     gsl_vector_free(tiling->curr_lower);
     gsl_vector_free(tiling->curr_upper);
@@ -331,63 +273,19 @@ void XLALDestroyFlatLatticeTiling(
  */
 int XLALAddFlatLatticeTilingBound(
   FlatLatticeTiling* tiling,             /**< Tiling structure */
-  uint64_t bound_dimensions,                /**< Bit field indicating the dimensions bound */
-  FlatLatticeTilingBoundFunc bound_func, /**< Parameter space bound function */
-  gsl_vector* bound_data                      /**< Arbitrary data describing parameter space */
+  FlatLatticeTilingBoundFunc func, /**< Parameter space bound function */
+  gsl_vector* data                      /**< Arbitrary data describing parameter space */
   )
 {
 
-  const size_t n = tiling->dimensions;
-
-  FlatLatticeTilingBound *bound = NULL;
-
-  /* Check tiling state */
+  // Check tiling state
   XLAL_CHECK(tiling->state == FLT_S_NotInitialised, XLAL_EFAILED);
+  XLAL_CHECK(tiling->num_bounds < tiling->dimensions, XLAL_EFAILED);
 
-  /* Check input */
-  XLAL_CHECK(bound_dimensions != 0, XLAL_EINVAL);
-  XLAL_CHECK(!(bound_dimensions & ~ALL_BITS(uint64_t, tiling->dimensions)), XLAL_EINVAL);
-  for (size_t k = 0; k < tiling->num_bounds; ++k) {
-    XLAL_CHECK(!(tiling->bounds[k]->is_bound & bound_dimensions), XLAL_EINVAL);
-  }
-
-  /* (Re)Allocate memory */
-  if (!tiling->bound_map) {
-    tiling->bound_map = gsl_vector_int_alloc(n);
-    XLAL_CHECK(tiling->bound_map != NULL, XLAL_ENOMEM);
-    gsl_vector_int_set_all(tiling->bound_map, -1);
-  }
-  if (!tiling->bound_point) {
-    tiling->bound_point = gsl_vector_alloc(n);
-    XLAL_CHECK(tiling->bound_point != NULL, XLAL_ENOMEM);
-  }
-  tiling->bounds = XLALRealloc(tiling->bounds, ++tiling->num_bounds * sizeof(FlatLatticeTilingBound*));
-  XLAL_CHECK(tiling->bounds != NULL, XLAL_ENOMEM);
-  bound = tiling->bounds[tiling->num_bounds - 1] = CreateFlatLatticeTilingBound();
-  XLAL_CHECK(bound != NULL, XLAL_ENOMEM);
-
-  /* Initialise structure */
-  bound->dimensions = 0;
-  bound->is_bound = bound_dimensions;
-  bound->func = bound_func;
-  bound->data = bound_data;
-
-  /* Check bound map and count the number of bound dimensions */
-  for (size_t i = 0; i < n; ++i) {
-    if (GET_BIT(uint64_t, bound_dimensions, i)) {
-
-      /* Check bound map */
-      XLAL_CHECK(gsl_vector_int_get(tiling->bound_map, i) < 0, XLAL_EINVAL);
-
-      /* Set bound map */
-      gsl_vector_int_set(tiling->bound_map, i, tiling->num_bounds - 1);
-
-      /* Increment number of bound dimensions */
-      ++bound->dimensions;
-
-    }
-  }
-  XLAL_CHECK(bound->dimensions == 1, XLAL_EINVAL);
+  // Set the next parameter space bound
+  tiling->bounds[tiling->num_bounds].func = func;
+  tiling->bounds[tiling->num_bounds].data = data;
+  ++tiling->num_bounds;
 
   return XLAL_SUCCESS;
 
@@ -406,10 +304,8 @@ static void GetBounds(
   )
 {
 
-  FlatLatticeTilingBound *bound = NULL;
-
   /* Get the appropriate bound dimension */
-  bound = tiling->bounds[gsl_vector_int_get(tiling->bound_map, dimension)];
+  FlatLatticeTilingBound* bound = &tiling->bounds[dimension];
 
   /* Convert template to real parameter space coordinates */
   gsl_vector_memcpy(tiling->bound_point, point);
@@ -458,10 +354,7 @@ int XLALSetFlatLatticeTilingMetric(
   XLAL_CHECK(tiling->state == FLT_S_NotInitialised, XLAL_EFAILED);
 
   /* Check that all parameter space dimensions are bounded */
-  XLAL_CHECK(tiling->bound_map != NULL, XLAL_EFAILED);
-  for (size_t i = 0; i < n; ++i) {
-    XLAL_CHECK(gsl_vector_int_get(tiling->bound_map, i) >=0, XLAL_EFAILED);
-  }
+  XLAL_CHECK(tiling->num_bounds == tiling->dimensions, XLAL_EFAILED);
 
   /* Check input */
   XLAL_CHECK(tiling->metric == NULL, XLAL_EFAILED);
@@ -1258,14 +1151,13 @@ int XLALSetFlatTilingAnstarLattice(
 static void ConstantBound(double* lower, double* upper, gsl_vector* point UNUSED, gsl_vector* data)
 {
 
-  /* Set lower and upper bound */
+  // Set constant lower and upper bounds
   *lower = gsl_vector_get(data, 0);
   *upper = gsl_vector_get(data, 1);
 
 }
 int XLALAddFlatLatticeTilingConstantBound(
   FlatLatticeTiling* tiling, /**< Tiling structure */
-  size_t dimension,            /**< Dimension to bound */
   double lower,               /**< Lower bound on dimension */
   double upper                /**< Upper bound on dimension */
   )
@@ -1273,21 +1165,17 @@ int XLALAddFlatLatticeTilingConstantBound(
 
   gsl_vector* data;
 
-  /* Check input */
-  XLAL_CHECK(dimension < tiling->dimensions, XLAL_EINVAL);
+  // Check input
   XLAL_CHECK(lower <= upper, XLAL_EINVAL);
 
-  /* Allocate memory */
+  // Allocate and set bounds data
   data = gsl_vector_alloc(2);
   XLAL_CHECK(data != NULL, XLAL_ENOMEM);
-
-  /* Set bounds data */
   gsl_vector_set(data, 0, lower);
   gsl_vector_set(data, 1, upper);
 
-  /* Set parameter space */
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, ((uint64_t)(1)) << dimension, ConstantBound, data)
-             == XLAL_SUCCESS, XLAL_EFAILED);
+  // Set parameter space
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, ConstantBound, data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
