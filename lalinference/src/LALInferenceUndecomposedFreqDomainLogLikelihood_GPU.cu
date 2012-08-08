@@ -28,7 +28,8 @@
  */
 
 #include <stdio.h>
-#include <math.h>
+#include <cufft.h>
+#include <cuda.h>
 
 #include "LALInferenceUndecomposedFreqDomainLogLikelihood_GPU.h"
 
@@ -52,12 +53,9 @@ __global__ void chisquared_LogLikelihood_Kernel(double *d_re, double *d_im, doub
 	{
 		idx += lower;
 		double f = ((double) idx) * deltaF;
-		float cosValue;
-		float sinValue;
-		sincosf((float)(twopit * f), &sinValue, &cosValue);
 
-		d_re[idx - lower] = (double)cosValue;
-		d_im[idx - lower] = (double)(- sinValue);
+		d_re[idx - lower] = cos(twopit * f);
+		d_im[idx - lower] = - sin(twopit * f);
 	}
 }
 
