@@ -116,9 +116,10 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "sky-positions-file",      required_argument, 0, '#' },
     { "fft-level",               required_argument, 0, '|' },
     { "cluster-window",          required_argument, 0, '4' },
+    { "inj-search-window",       required_argument, 0, '3' },
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:4:6:<:>:!:&:(:):#:|";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:6:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -431,6 +432,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case '4': /* Cluster window */
         localparams.clusterWindow = atof(optarg);
         break;
+      case '3': /* Injection search window */
+        localparams.injSearchWindow = atof( optarg );
+        break;
      case '?':
         error( "unknown error while parsing options\n" );
      default:
@@ -493,6 +497,9 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   params->timingAccuracy = 0.0005;
   params->skyPositionsFile = NULL;
   params->skyLooping = ALL_SKY;
+
+  /* Default injection search window to 1s */
+  params->injSearchWindow = 1.;
 
   /* dynamic range factor must be greater than zero */
   params->dynRangeFac = 1.0;
@@ -788,6 +795,7 @@ int coh_PTF_usage( const char *program )
 
   fprintf( stderr, "\ninjection options:\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
+  fprintf( stderr, "--inj-search-window=arg    output injection triggers only within arg of the injections\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );
@@ -806,6 +814,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--auto-veto-time-step Seperation between points for auto veto \n");
   fprintf( stderr, "--num-chi-square-bins Number of bins to use to calculate chi square \n");
   fprintf (stderr, "--chi-square-threshold Only calculate chi square if detection statistic is above this threshold \n");
+
   fprintf( stderr, "\ntrigger output options:\n" );
   fprintf( stderr, "--output-file=outfile      output triggers to file outfile\n" );
   fprintf( stderr, "--trig-start-time=sec      output only triggers after GPS time sec. CURRENTLY NONFUNCTIONAL\n" );

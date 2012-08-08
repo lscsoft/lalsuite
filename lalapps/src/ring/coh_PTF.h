@@ -179,6 +179,8 @@ struct coh_PTF_params {
   UINT4        fftLevel;
   UINT4        simDataType;
   REAL4        clusterWindow;
+  SimInspiralTable *injectList;
+  REAL4        injSearchWindow;
   /* flags */
   int          strainData;
   int          doubleData;

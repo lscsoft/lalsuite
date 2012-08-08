@@ -242,36 +242,54 @@ RingDataSegments *coh_PTF_get_segments(
 {
   RingDataSegments *segments = NULL;
   COMPLEX8FrequencySeries  *response = NULL;
-  UINT4  sgmnt,i, slidSegNum;
+  UINT4  sgmnt,i,j, slidSegNum;
   UINT4  segListToDo[params->numOverlapSegments];
 
   segments = LALCalloc( 1, sizeof( *segments ) );
 
   if ( params->analyzeInjSegsOnly )
   {
-    segListToDo[2] = 1;
     for ( i = 0 ; i < params->numOverlapSegments; i++)
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
-    SimInspiralTable        *thisInject = NULL;
-    LIGOTimeGPS UNUSED injTime;
-    REAL8 deltaTime;
+    REAL8 deltaTime,segBoundDiff;
     INT4 segNumber, UNUSED segLoc, UNUSED ninj;
     segLoc = 0;
     ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
+    params->injectList = injectList;
     while (injectList)
     {
-      injTime = injectList->geocent_end_time;
       deltaTime = injectList->geocent_end_time.gpsSeconds;
       deltaTime += injectList->geocent_end_time.gpsNanoSeconds * 1E-9;
       deltaTime -= params->startTime.gpsSeconds;
       deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
       segNumber = floor(2*(deltaTime/params->segmentDuration) - 0.5);
       segListToDo[segNumber] = 1;
-      thisInject = injectList;
+      /* Check if injection is near a segment boundary */
+      for ( j = 0 ; j < params->numOverlapSegments; j++)
+      {
+        segBoundDiff = deltaTime - (j+0.5) * params->segmentDuration;
+        if (segBoundDiff > 0 && segBoundDiff < params->injSearchWindow)
+        {
+          if (j != 0)
+          {
+            segListToDo[segNumber-1] = 1;
+          }
+        }
+        if (segBoundDiff < 0 && segBoundDiff > -params->injSearchWindow)
+        {
+          if ((j+1) != params->numOverlapSegments)
+          {
+            segListToDo[segNumber+1] = 1;
+          }
+        }
+      }
       injectList = injectList->next;
-      LALFree( thisInject );
     }
+  }
+  else
+  {
+    params->injectList = NULL;
   }
 
  /* FIXME: For all sky mode trig start/end time needs to be implemented */
@@ -518,6 +536,7 @@ void coh_PTF_calculate_rotated_vectors(
 }
 
 void coh_PTF_cleanup(
+    struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
@@ -540,6 +559,18 @@ void coh_PTF_cleanup(
     REAL8                   *Fcrosstrig
     )
 {
+  if ( params->injectList )
+  {
+    SimInspiralTable        *injectList = params->injectList;
+    SimInspiralTable        *thisInject = NULL;
+    while (injectList)
+    {
+      thisInject = injectList;
+      injectList = injectList->next;
+      LALFree(thisInject);
+    }
+  }
+
   /* Clean up memory usage */
   UINT4 ifoNumber;
   while ( events )

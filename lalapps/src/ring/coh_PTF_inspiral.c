@@ -1145,7 +1145,7 @@ int main(int argc, char **argv)
   // This function cleans up memory usage
   XLALDestroyTimeSlideTable(time_slide_head);
   LALFree(timeSlideVectors);
-  coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
+  coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,Fplustrig,Fcrosstrig);
   
@@ -1396,6 +1396,68 @@ void coh_PTF_statistic(
   snglv1p = LALCalloc(vecLength , sizeof(REAL4));
   snglv2p = LALCalloc(vecLength , sizeof(REAL4));
 
+  /* If we have injections we only want to analyse the time around the
+   * injection. Here we figure out what that time should be. No injections
+   * equates to analyse the whole segment.
+   */
+
+  UINT4 segStartPoint = 0;
+  UINT4 segEndPoint = 0;
+
+  if ( params->injectFile )
+  {
+    REAL8 injDiff;
+    UINT4 injSamplePointa,injWindow,startDiff,endDiff;
+    SimInspiralTable *thisInject = NULL;
+    LIGOTimeGPS injTime;
+    LIGOTimeGPS segmentStart,segmentEnd;
+    segmentStart = cohSNR->epoch;
+    segmentEnd = cohSNR->epoch;
+    XLALGPSAdd(&segmentEnd,params->segmentDuration/2.0);
+    thisInject = params->injectList;
+    while ( thisInject )
+    {
+      injTime = thisInject->geocent_end_time;
+      /* Is injection within segment? */
+      startDiff = XLALGPSToINT8NS( &injTime )-XLALGPSToINT8NS( &segmentStart );
+      endDiff = XLALGPSToINT8NS( &injTime ) - XLALGPSToINT8NS( &segmentEnd )
+      if (startDiff > 0)
+      {
+        if (endDiff < 0)
+        {
+          if (segStartPoint)
+          {
+            /* More than one injection is in the segment. This should not happen
+             * and this case is not dealt with well. For now analyse the whole
+             * segment if this happens */
+            segStartPoint = numPoints/4;
+            segEndPoint = 3*numPoints/4;
+          }
+          else
+          {
+            injDiff = (REAL8) ((XLALGPSToINT8NS( &injTime ) - \
+                       XLALGPSToINT8NS( &segmentStart ) ) / 1E9);
+            injSamplePoint = floor(injDiff * params->sampleRate + 0.5);
+            injSamplePoint += numPoints/4;
+            injWindow = floor(params->injSearchWindow * params->sampleRate+1);
+            segStartPoint = injSamplePoint - injWindow;
+            if ( segStartPoint < numPoints/4)
+              segStartPoint = numPoints/4;
+            segEndPoint = injSamplePoint + injWindow + 1;
+            if ( segEndPoint > 3*numPoints/4)
+              segEndPoint = 3*numPoints/4;
+          }
+        }
+      }
+    }
+  }
+  
+  if (! segStartPoint)
+  {
+    segStartPoint = numPoints/4;
+    segEndPoint = 3*numPoints/4;
+  }
+
   /* First, calculate the single detector SNR time series. Only do this for
      the first sky point. */
   /* NOT CORRECT FOR SPINNING FIXME! */
@@ -1439,7 +1501,7 @@ void coh_PTF_statistic(
       {
         coh_PTF_calculate_bmatrix(params,eigenvecsSngl,eigenvalsSngl,a,b,PTFM,
             vecLength,vecLength,vecLength,ifoNumber);
-        for (i = (numPoints/4)-5000; i < (3*numPoints/4)+5000; ++i)
+        for (i = segStartPoint-5000; i < segEndPoint+5000; ++i)
         {  /* loop over time */ 
           // This function combines the various (Q_i | s) and rotates them into
           // the basis as discussed above.
@@ -1465,7 +1527,7 @@ void coh_PTF_statistic(
       }
       else
       {
-        for (i = (numPoints/4)-5000; i < (3*numPoints/4)+5000; ++i)
+        for (i = segStartPoint-5000; i < segEndPoint+5000; ++i)
         {  /* loop over time */
           reSNRcomp = PTFqVec[ifoNumber]->data[i].re;
           imSNRcomp = PTFqVec[ifoNumber]->data[i].im;
@@ -1489,6 +1551,11 @@ void coh_PTF_statistic(
   REAL4 SNRthresh = params->snglSNRThreshold;
 
   for (i = numPoints/4; i < 3*numPoints/4; ++i) /* Main loop over time */
+  {
+    cohSNR->data->data[i-sOffset] = 0;
+  }
+
+  for (i = segStartPoint; i < segEndPoint; ++i) /* Main loop over time */
   {
     /* Don't bother calculating coherent SNR if all ifo's SNR is less than
        some value */
@@ -1595,7 +1662,7 @@ void coh_PTF_statistic(
   // Now we calculate all the extrinsic parameters and signal based vetoes
   // Only calculated if this will be a trigger
 
-  for (i = numPoints/4; i < 3*numPoints/4; ++i) /* loop over time */
+  for (i = segStartPoint; i < segEndPoint; ++i) /* loop over time */
   {
     if (cohSNR->data->data[i-numPoints/4] > cohSNRThreshold)
     {
@@ -1994,7 +2061,7 @@ void coh_PTF_statistic(
   if (params->singlePolFlag)
     numDOF = 2.;
 
-  for (i = numPoints/4; i < 3*numPoints/4; ++i) /* loop over time */
+  for (i = segStartPoint; i < segEndPoint; ++i) /* loop over time */
   {
     if (cohSNR->data->data[i-numPoints/4] > cohSNRThreshold)
     {
