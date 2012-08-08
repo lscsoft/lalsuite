@@ -1450,6 +1450,7 @@ void coh_PTF_statistic(
           }
         }
       }
+      thisInject = thisInject->next;
     }
   }
   
