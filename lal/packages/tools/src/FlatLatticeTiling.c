@@ -121,7 +121,7 @@ struct tagFlatLatticeTiling {
 
   /* Cache of generated tiling subspaces */
   size_t num_subspaces;
-  FlatLatticeTilingSubspace **subspaces;
+  FlatLatticeTilingSubspace *subspaces;
 
   /* Scaling of the padding of bounds (for testing) */
   double scale_padding;
@@ -151,45 +151,6 @@ struct tagFlatLatticeTiling {
 };
 
 /********** Functions **********/
-
-/**
- * Create a new flat lattice tiling subspace structure
- */
-static FlatLatticeTilingSubspace *CreateFlatLatticeTilingSubspace(void)
-{
-
-  /* Allocate memory */
-  FlatLatticeTilingSubspace *subspace = XLALMalloc(sizeof(FlatLatticeTilingSubspace));
-  XLAL_CHECK_NULL(subspace != NULL, XLAL_ENOMEM);
-
-  /* Initialise structure */
-  subspace->is_tiled = 0;
-  subspace->dimensions = 0;
-  subspace->padding = NULL;
-  subspace->increment = NULL;
-
-  return subspace;
-
-}
-
-/**
- * Free a flat lattice tiling subspace structure
- */
-static void FreeFlatLatticeTilingSubspace(
-  FlatLatticeTilingSubspace *subspace /**< Tiling subspace structure */
-  )
-{
-
-  if (subspace) {
-
-    gsl_vector_free(subspace->padding);
-    gsl_matrix_free(subspace->increment);
-
-    XLALFree(subspace);
-
-  }
-
-}
 
 /**
  * Create a new flat lattice tiling structure
@@ -249,7 +210,8 @@ void XLALDestroyFlatLatticeTiling(
     XLALFree(tiling->bounds);
 
     for (size_t k = 0; k < tiling->num_subspaces; ++k) {
-      FreeFlatLatticeTilingSubspace(tiling->subspaces[k]);
+      gsl_vector_free(tiling->subspaces[k].padding);
+      gsl_matrix_free(tiling->subspaces[k].increment);
     }
     XLALFree(tiling->subspaces);
 
@@ -444,35 +406,36 @@ static int UpdateFlatLatticeTilingSubspace(
 
   const size_t n = tiling->dimensions;
 
-  /* Search for a previously-generated subspace */
+  // Search for a previously-generated subspace
   for (size_t k = 0; k < tiling->num_subspaces; ++k) {
-    tiling->curr_subspace = tiling->subspaces[k];
+    tiling->curr_subspace = &tiling->subspaces[k];
     if (tiling->curr_subspace->is_tiled == tiling->curr_is_tiled) {
       return XLAL_SUCCESS;
     }
   }
 
-  /* (Re)Allocate memory */
-  tiling->subspaces = XLALRealloc(tiling->subspaces, ++tiling->num_subspaces * sizeof(FlatLatticeTilingSubspace*));
+  // (Re)Allocate memory for subspaces
+  tiling->subspaces = XLALRealloc(tiling->subspaces, ++tiling->num_subspaces * sizeof(FlatLatticeTilingSubspace));
   XLAL_CHECK(tiling->subspaces != NULL, XLAL_ENOMEM);
-  tiling->curr_subspace = tiling->subspaces[tiling->num_subspaces - 1] = CreateFlatLatticeTilingSubspace();
-  XLAL_CHECK(tiling->curr_subspace != NULL, XLAL_EFAILED);
+  tiling->curr_subspace = &tiling->subspaces[tiling->num_subspaces - 1];
 
-  /* Initialise structure */
-  tiling->curr_subspace->dimensions = 0;
+  // Initialise current subspace
+  memset(tiling->curr_subspace, 0, sizeof(FlatLatticeTilingSubspace));
   tiling->curr_subspace->is_tiled = tiling->curr_is_tiled;
-  tiling->curr_subspace->increment = NULL;
 
-  /* Count the number of tiled dimensions */
+  // Count the number of tiled dimensions
   for (size_t i = 0; i < n; ++i) {
     if (GET_BIT(uint64_t, tiling->curr_subspace->is_tiled, i)) {
       ++tiling->curr_subspace->dimensions;
     }
   }
-  size_t r = tiling->curr_subspace->dimensions;
-  if (r > 0) {
 
-    /* Allocate memory */
+  // If subspace contains tiled dimensions
+  if (tiling->curr_subspace->dimensions > 0) {
+
+    const size_t r = tiling->curr_subspace->dimensions;
+
+    // Allocate memory
     gsl_matrix* metric = gsl_matrix_alloc(r, r);
     XLAL_CHECK(metric != NULL, XLAL_ENOMEM);
     gsl_matrix* orth_directions = gsl_matrix_alloc(r, r);
@@ -484,7 +447,7 @@ static int UpdateFlatLatticeTilingSubspace(
     tiling->curr_subspace->increment = gsl_matrix_alloc(n, n);
     XLAL_CHECK(tiling->curr_subspace->increment != NULL, XLAL_ENOMEM);
 
-    /* Copy tiled dimensions of the metric and orthogonal directions */
+    // Copy tiled dimensions of the metric and orthogonal directions
     for (size_t i = 0, ii = 0; i < n; ++i) {
       if (GET_BIT(uint64_t, tiling->curr_subspace->is_tiled, i)) {
         for (size_t j = 0, jj = 0; j < n; ++j) {
@@ -497,31 +460,31 @@ static int UpdateFlatLatticeTilingSubspace(
       }
     }
 
-    /* Use lengths of metric ellipse bounding box as padding along bounds */
+    // Use lengths of metric ellipse bounding box as padding along bounds
     gsl_vector* padding = XLALMetricEllipseBoundingBox(metric, tiling->max_mismatch);
     XLAL_CHECK(padding != NULL, XLAL_EFAILED);
     gsl_vector_scale(padding, tiling->scale_padding);
 
-    /* Find orthonormalise directions with respect to subspace metric */
+    // Find orthonormalise directions with respect to subspace metric
     gsl_matrix_set_identity(orth_directions);
     XLAL_CHECK(XLALOrthonormaliseWRTMetric(orth_directions, metric) == XLAL_SUCCESS, XLAL_EFAILED);
 
-    /* Get lattice generator */
+    // Get lattice generator
     gsl_matrix* generator = NULL;
     double norm_thickness = 0.0;
     XLAL_CHECK((tiling->generator)(r, &generator, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
 
-    /* Transform lattice generator to square lower triangular */
+    // Transform lattice generator to square lower triangular
     gsl_matrix* sq_lwtri_generator = XLALSquareLowerTriangularLatticeGenerator(generator);
     XLAL_CHECK(sq_lwtri_generator != NULL, XLAL_EFAILED);
 
-    /* Normalise lattice generator so covering radius is sqrt(mismatch) */
+    // Normalise lattice generator so covering radius is sqrt(mismatch)
     XLAL_CHECK(XLALNormaliseLatticeGenerator(sq_lwtri_generator, norm_thickness, sqrt(tiling->max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
 
-    /* Compute the increment vectors of the lattice generator along the orthogonal directions */
+    // Compute the increment vectors of the lattice generator along the orthogonal directions
     gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, orth_directions, sq_lwtri_generator, 0.0, increment);
 
-    /* Copy the increment vectors so that non-tiled dimensions are zero */
+    // Copy the increment vectors so that non-tiled dimensions are zero
     gsl_vector_set_zero(tiling->curr_subspace->padding);
     gsl_matrix_set_zero(tiling->curr_subspace->increment);
     for (size_t i = 0, ii = 0; i < n; ++i) {
@@ -537,7 +500,7 @@ static int UpdateFlatLatticeTilingSubspace(
       }
     }
 
-    /* Cleanup */
+    // Cleanup
     gsl_matrix_free(metric);
     gsl_vector_free(padding);
     gsl_matrix_free(orth_directions);
