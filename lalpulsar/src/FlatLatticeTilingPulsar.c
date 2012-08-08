@@ -57,7 +57,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   )
 {
 
-  const size_t n = XLALFlatLatticeTilingDimension(tiling);
+  const size_t n = XLALGetFlatLatticeTilingDimensions(tiling);
 
   /* Check input */
   XLAL_CHECK(Tspan > 0.0, XLAL_EINVAL);

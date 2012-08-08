@@ -251,7 +251,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	}
 
 	/* Set Anstar lattice */
-	if (XLAL_SUCCESS != XLALSetFlatTilingAnstarLattice(thisScan->spindownTiling)) {
+	if (XLAL_SUCCESS != XLALSetFlatTilingLatticeGenerator(thisScan->spindownTiling, XLALAnstarLatticeGenerator)) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatTilingAnstarLattice failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
