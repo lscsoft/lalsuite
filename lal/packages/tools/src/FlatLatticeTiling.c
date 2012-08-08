@@ -161,7 +161,7 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
 {
 
   // Check input
-  XLAL_CHECK_NULL(dimensions > 0, XLAL_EINVAL);
+  XLAL_CHECK_NULL(1 <= dimensions && dimensions <= 64, XLAL_EINVAL);
 
   // Allocate and initialise tiling structure
   FlatLatticeTiling* tiling = XLALCalloc(1, sizeof(FlatLatticeTiling));
