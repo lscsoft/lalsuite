@@ -267,37 +267,49 @@ for function_name in functions:
     functions[function_name]['feature_ignore'] = '1'
 
 # determine whether return value of functions should be ignored
-func_arg_types_regexp = re.compile('^f\((.*)\).p.$')
+func_arg_types_regexp = re.compile('^f\((.*)\)\.(p\.)?$')
 for function_name in functions:
 
-    # get function declaration and return type
+    # get function argument and return types
     func_decl = functions[function_name]['decl']
+    func_arg_types_match = func_arg_types_regexp.match(func_decl)
+    if func_arg_types_match is None:
+        fail("could not match function declaration '%s'" % func_decl)
+    func_arg_types = func_arg_types_match.group(1).split(',')
     func_retn_type = functions[function_name]['type']
+    if not func_arg_types_match.group(2) is None:
+        func_retn_type = func_arg_types_match.group(2) + func_retn_type
 
     # return function values by default
-    func_ignore_retn = ''
+    func_ignore_retn = False
 
     # ignore function return values whose type is 'int',
     # since this is interpreted as a XLAL error code
-    if func_decl.endswith(').') and func_retn_type == 'int':
-        func_ignore_retn = func_retn_type
+    if func_retn_type == 'int':
+        func_ignore_retn = True
+
+    # ignore function return values whose type is a pointer and which
+    # matches the type of the first argument, since it is common for
+    # XLAL functions to return the value of the first argument
+    if func_retn_type.startswith('p.') and func_retn_type == func_arg_types[0]:
+        func_ignore_retn = True
+
+    if func_ignore_retn:
+
+        # construct return type from SWIG type syntax
+        if func_retn_type.startswith('p.'):
+            func_c_retn_type = func_retn_type[2:] + '*'
+        else:
+            func_c_retn_type = func_retn_type
+        func_c_retn_type = func_c_retn_type.replace('q(const).', 'const ')
 
     else:
 
-        # extract the pointer type of the function's first argument
-        func_arg_types_match = func_arg_types_regexp.match(func_decl)
-        if not func_arg_types_match is None:
-            func_arg_types = func_arg_types_match.group(1).split(',')
+        # empty return type indicates that return value is not ignored
+        func_c_retn_type = ''
 
-            # ignore function return values whose type is a pointer and which
-            # matches the type of the first argument, since it is common for
-            # XLAL functions to return the value of the first argument
-            if 'p.' + func_retn_type == func_arg_types[0]:
-                func_ignore_retn = func_retn_type + '*'
-                func_ignore_retn = func_ignore_retn.replace('q(const).', 'const ')
-
-    # add extra argument to swiglal_process_function() macro specifying whether return value is ignored
-    functions[function_name]['extra_process_args'].append(func_ignore_retn)
+    # add return type as extra argument to swiglal_process_function() macro
+    functions[function_name]['extra_process_args'].append(func_c_retn_type)
 
 # open SWIG interface file
 iface_file = open(iface_filename, 'w')
