@@ -108,18 +108,22 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,
   return GSL_SUCCESS;
 }
 
+/**
+ * This function generates spin-aligned SEOBNRv1 waveforms h+ and hx.  
+ * Currently, only the h22 harmonic is available.  
+ */
 int XLALSimIMRSpinAlignedEOBWaveform(
-        REAL8TimeSeries **hplus,
-        REAL8TimeSeries **hcross,
-        const REAL8     UNUSED phiC,
-        REAL8           deltaT,
-        const REAL8     m1SI,
-        const REAL8     m2SI,
-        const REAL8     fMin,
-        const REAL8     r,
-        const REAL8     inc,
-        const REAL8     spin1z,
-        const REAL8     spin2z
+        REAL8TimeSeries **hplus,     /**<< +-polarization waveform */
+        REAL8TimeSeries **hcross,    /**<< x-polarization waveform */
+        const REAL8     UNUSED phiC, /**<< coalescence orbital phase (rad) */ 
+        REAL8           deltaT,      /**<< sampling time step */
+        const REAL8     m1SI,        /**<< mass-1 in SI unit */ 
+        const REAL8     m2SI,        /**<< mass-2 in SI unit */
+        const REAL8     fMin,        /**<< starting frequency (Hz) */
+        const REAL8     r,           /**<< distance in SI unit */
+        const REAL8     inc,         /**<< inclination angle */
+        const REAL8     spin1z,      /**<< z-component of spin-1, dimensionless */
+        const REAL8     spin2z       /**<< z-component of spin-2, dimensionless */
      )
 {
 
