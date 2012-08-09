@@ -263,31 +263,6 @@ typedef int _int;
 #endif
 %enddef
 
-// The SWIGLAL(RETURN_VALUE(TYPE,...)) public macro can be used to ensure
-// that the return value of a function is not ignored, if the return value
-// has previously been ignored in the generated wrappings.
-%define %swiglal_public_RETURN_VALUE(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
-
-// The SWIGLAL(RETURN_XLAL_ERROR_CODE(...)) public macro is useful for
-// functions which manipulate XLAL error codes. These functions not
-// only need the return value not to be ignored, but also require
-// an XLAL exception handling to be disabled.
-%define %swiglal_public_RETURN_XLAL_ERROR_CODE(...)
-%swiglal_map_a(%swiglal_clear, int, __VA_ARGS__);
-%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(...)
-
-// The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn
-// off SWIG ownership for certain functions.
-%define %swiglal_public_NO_NEW_OBJECT(...)
-%swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_NO_NEW_OBJECT(...)
-
 // Process a typedef to an interface struct TAGNAME: rename it to RENAME.
 %define %swiglal_process_tdstruct(TAGNAME, RENAME)
 %rename(#RENAME) TAGNAME;
@@ -785,6 +760,31 @@ if (swiglal_release_parent(PTR)) {
 #endif
 
 ////////// General typemaps //////////
+
+// The SWIGLAL(RETURN_VALUE(TYPE,...)) public macro can be used to ensure
+// that the return value of a function is not ignored, if the return value
+// has previously been ignored in the generated wrappings.
+%define %swiglal_public_RETURN_VALUE(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
+
+// The SWIGLAL(RETURN_XLAL_ERROR_CODE(...)) public macro is useful for
+// functions which manipulate XLAL error codes. These functions not
+// only need the return value not to be ignored, but also require
+// an XLAL exception handling to be disabled.
+%define %swiglal_public_RETURN_XLAL_ERROR_CODE(...)
+%swiglal_map_a(%swiglal_clear, int, __VA_ARGS__);
+%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(...)
+
+// The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn off
+// SWIG object ownership for certain functions.
+%define %swiglal_public_NO_NEW_OBJECT(...)
+%swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_NO_NEW_OBJECT(...)
 
 // Typemaps for empty arguments. These typemaps are useful when no input from the
 // scripting language is required, and an empty struct needs to be supplied to
