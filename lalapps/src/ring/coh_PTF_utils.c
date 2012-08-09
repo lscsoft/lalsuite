@@ -268,7 +268,7 @@ RingDataSegments *coh_PTF_get_segments(
       /* Check if injection is near a segment boundary */
       for ( j = 0 ; j < params->numOverlapSegments; j++)
       {
-        segBoundDiff = deltaTime - (j+0.5) * params->segmentDuration;
+        segBoundDiff = deltaTime - (j+0.5) * params->segmentDuration/2;
         if (segBoundDiff > 0 && segBoundDiff < params->injSearchWindow)
         {
           if (j != 0)

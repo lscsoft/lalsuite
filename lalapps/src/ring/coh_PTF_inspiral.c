@@ -1408,7 +1408,7 @@ void coh_PTF_statistic(
   {
     REAL8 injDiff;
     UINT4 injSamplePoint,injWindow;
-    INT4  startDiff,endDiff;
+    INT8  startDiff,endDiff;
     SimInspiralTable *thisInject = NULL;
     LIGOTimeGPS injTime;
     LIGOTimeGPS segmentStart,segmentEnd;
