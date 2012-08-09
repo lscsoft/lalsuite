@@ -20,11 +20,6 @@
 #ifndef SKYMAP_H
 #define SKYMAP_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /* Special cases for Python bindings of functions defined in this header.
  * FIXME: add Octave section, or modify function declarations to work more
  * smoothly with stock swiglal typemaps. */
@@ -58,6 +53,7 @@
 %typemap(freearg, noblock=1) (int n, int *detectors) {
     free($2);
 }
+%typemap(argout, noblock=1) (int n, int *detectors) "";
 
 // special typemaps for XLALSkymapKernelConstruct
 // and XLALSkymapUncertainKernelConstruct
@@ -91,6 +87,7 @@
 %typemap(freearg, noblock=1) double *wSw {
     free($1);
 }
+%typemap(argout, noblock=1) double *wSw "";
 %apply double *wSw { double *error };
 
 // special typemaps for XLALSkymapApply
@@ -191,7 +188,6 @@ double XLALSkymapInterpolate(double t, double* x);
 
 typedef struct tagXLALSkymapPlanType
 {
-    SWIGLAL_STRUCT(XLALSkymapPlanType);
     int sampleFrequency;
     int n;
     LALDetector site[XLALSKYMAP_N];
@@ -209,7 +205,6 @@ void XLALSkymapPlanConstruct(
 
 typedef struct tagXLALSkymapDirectionPropertiesType
 {
-    SWIGLAL_STRUCT(XLALSkymapDirectionPropertiesType);
     double f[XLALSKYMAP_N][2];
     double delay[XLALSKYMAP_N];
 } XLALSkymapDirectionPropertiesType;
@@ -225,7 +220,6 @@ void XLALSkymapDirectionPropertiesConstruct(
 
 typedef struct tagXLALSkymapKernelType
 {
-    SWIGLAL_STRUCT(XLALSkymapKernelType);
     double k[XLALSKYMAP_N][XLALSKYMAP_N];
     double logNormalization;
 } XLALSkymapKernelType;

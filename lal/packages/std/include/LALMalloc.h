@@ -35,14 +35,17 @@ void *XLALCallocLong( size_t m, size_t n, const char *file, int line );
 void *XLALRealloc( void *p, size_t n );
 void *XLALReallocLong( void *p, size_t n, const char *file, int line );
 void  XLALFree( void *p );
+#ifndef SWIG /* exclude from SWIG interface */
 #define XLALMalloc( n )        XLALMallocLong( n, __FILE__, __LINE__ )
 #define XLALCalloc( m, n )     XLALCallocLong( m, n, __FILE__, __LINE__ )
 #define XLALRealloc( p, n )    XLALReallocLong( p, n, __FILE__, __LINE__ )
+#endif /* SWIG */
 /*@}*/
 
 
 #if defined NDEBUG || defined LAL_NDEBUG
 
+#ifndef SWIG /* exclude from SWIG interface */
 #define LALMalloc                          malloc
 #define LALMallocShort                     malloc
 #define LALMallocLong( n, file, line )     malloc( n )
@@ -54,12 +57,15 @@ void  XLALFree( void *p );
 #define LALReallocLong( p, n, file, line ) realloc( p, n )
 #define LALFree                            free
 #define LALCheckMemoryLeaks()
+#endif /* SWIG */
 
 #else
 
+#ifndef SWIG /* exclude from SWIG interface */
 #define LALMalloc( n )        LALMallocLong( n, __FILE__, __LINE__ )
 #define LALCalloc( m, n )     LALCallocLong( m, n, __FILE__, __LINE__ )
 #define LALRealloc( p, n )    LALReallocLong( p, n, __FILE__, __LINE__ )
+#endif /* SWIG */
 
 /* global variables to assist in memory debugging */
 /* watch the value of these variables to find a particular alloc/free */

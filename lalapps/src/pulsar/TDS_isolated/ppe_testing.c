@@ -200,4 +200,82 @@ REAL8 test_gaussian_log_likelihood( LALInferenceVariables *vars,
   return loglike;
 }
 
+
+/** \brief Output a number of prior samples based on the initial live points
+ * 
+ * This function will output prior samples for variable parameters (as create by
+ * the LALInferenceSetupLivePointsArray function) making sure to rescale the
+ * values.
+ * 
+ * \param runState [in]
+ */
+void outputPriorSamples( LALInferenceRunState *runState ){
+  ProcessParamsTable *ppt = LALInferenceGetProcParamVal( runState->commandLine,
+                                                         "--output-prior" );
+  INT4 Nlive = *(INT4 *)LALInferenceGetVariable( runState->algorithmParams,
+                                                 "Nlive" );
+ 
+  if( ppt ){
+    FILE *fp = NULL;
+    
+    /* loop over the live points */
+    INT4 i = 0;
+    
+    if( ( fp = fopen("prior_samples.txt", "w") ) == NULL ){
+      fprintf(stderr, "Error... could not open prior samples file\n");
+      exit(1);
+    }
+    
+    for ( i = 0; i < Nlive; i++ ){
+      /* output variable parameters, rescaled to their proper ranges */
+      LALInferenceVariableItem *item = runState->livePoints[i]->head;
+      
+      /* print out variables names */
+      if ( i == 0 ){
+        fprintf(fp, "%% ");
+        
+        while( item ){
+          if( item->vary == LALINFERENCE_PARAM_LINEAR || 
+              item->vary == LALINFERENCE_PARAM_CIRCULAR )
+            fprintf(fp, "%s\t", item->name);
+        
+          item = item->next;
+        }
+      
+        fprintf(fp, "\n");
+      }
+      
+      item = runState->livePoints[i]->head; /* reset */
+      
+      while( item ){
+        if( item->vary == LALINFERENCE_PARAM_LINEAR || 
+            item->vary == LALINFERENCE_PARAM_CIRCULAR ){ 
+          /* rescale sample */
+          CHAR scalePar[VARNAME_MAX] = "";
+          CHAR scaleMinPar[VARNAME_MAX] = "";
+          REAL8 scale = 0., scaleMin = 0., var = 0.;
+          
+          /* get scale factors */
+          sprintf(scalePar, "%s_scale", item->name);
+          scale = *(REAL8 *)LALInferenceGetVariable( runState->data->dataParams,
+                                                     scalePar );
+    
+          sprintf(scaleMinPar, "%s_scale_min", item->name);
+          scaleMin = *(REAL8 *)LALInferenceGetVariable(
+            runState->data->dataParams, scaleMinPar );
+          
+          var = scaleMin + *(REAL8 *)item->value*scale;
+
+          fprintf(fp, "%.8le\t", var);
+        }
+      
+        item = item->next;
+      }
+      fprintf(fp, "\n");
+    }
+  
+    fclose(fp);
+  }
+}
+
 /*----------------------- END OF TESTING FUNCTIONS ---------------------------*/

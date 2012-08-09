@@ -25,26 +25,26 @@
 #include <lal/LALStochasticVCSInfo.h>
 
 /* global variables for vcs information */
-const char *lalStochasticVCSVersion = LALSTOCHASTIC_VERSION;
-const char *lalStochasticVCSId = LALSTOCHASTIC_VCS_ID;
-const char *lalStochasticVCSDate = LALSTOCHASTIC_VCS_DATE;
-const char *lalStochasticVCSBranch = LALSTOCHASTIC_VCS_BRANCH;
-const char *lalStochasticVCSTag = LALSTOCHASTIC_VCS_TAG;
-const char *lalStochasticVCSAuthor = LALSTOCHASTIC_VCS_AUTHOR;
-const char *lalStochasticVCSCommitter = LALSTOCHASTIC_VCS_COMMITTER;
-const char *lalStochasticVCSStatus = LALSTOCHASTIC_VCS_STATUS;
+const char *const lalStochasticVCSVersion = LALSTOCHASTIC_VERSION;
+const char *const lalStochasticVCSId = LALSTOCHASTIC_VCS_ID;
+const char *const lalStochasticVCSDate = LALSTOCHASTIC_VCS_DATE;
+const char *const lalStochasticVCSBranch = LALSTOCHASTIC_VCS_BRANCH;
+const char *const lalStochasticVCSTag = LALSTOCHASTIC_VCS_TAG;
+const char *const lalStochasticVCSAuthor = LALSTOCHASTIC_VCS_AUTHOR;
+const char *const lalStochasticVCSCommitter = LALSTOCHASTIC_VCS_COMMITTER;
+const char *const lalStochasticVCSStatus = LALSTOCHASTIC_VCS_STATUS;
 
 /* global variables for vcs information - identable */
-const char *lalStochasticVCSIdentId = LALSTOCHASTIC_VCS_IDENT_ID;
-const char *lalStochasticVCSIdentDate = LALSTOCHASTIC_VCS_IDENT_DATE;
-const char *lalStochasticVCSIdentBranch = LALSTOCHASTIC_VCS_IDENT_BRANCH;
-const char *lalStochasticVCSIdentTag = LALSTOCHASTIC_VCS_IDENT_TAG;
-const char *lalStochasticVCSIdentAuthor = LALSTOCHASTIC_VCS_IDENT_AUTHOR;
-const char *lalStochasticVCSIdentCommitter = LALSTOCHASTIC_VCS_IDENT_COMMITTER;
-const char *lalStochasticVCSIdentStatus = LALSTOCHASTIC_VCS_IDENT_STATUS;
+const char *const lalStochasticVCSIdentId = LALSTOCHASTIC_VCS_IDENT_ID;
+const char *const lalStochasticVCSIdentDate = LALSTOCHASTIC_VCS_IDENT_DATE;
+const char *const lalStochasticVCSIdentBranch = LALSTOCHASTIC_VCS_IDENT_BRANCH;
+const char *const lalStochasticVCSIdentTag = LALSTOCHASTIC_VCS_IDENT_TAG;
+const char *const lalStochasticVCSIdentAuthor = LALSTOCHASTIC_VCS_IDENT_AUTHOR;
+const char *const lalStochasticVCSIdentCommitter = LALSTOCHASTIC_VCS_IDENT_COMMITTER;
+const char *const lalStochasticVCSIdentStatus = LALSTOCHASTIC_VCS_IDENT_STATUS;
 
 /* vcs information structure */
-struct tagLALVCSInfo lalStochasticVCSInfo = { \
+const struct tagLALVCSInfo lalStochasticVCSInfo = { \
   LALSTOCHASTIC_VCS_NAME, \
   LALSTOCHASTIC_VERSION, \
   LALSTOCHASTIC_VCS_ID, \

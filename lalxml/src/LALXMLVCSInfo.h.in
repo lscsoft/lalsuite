@@ -23,7 +23,7 @@
 #define _LALXMLVCSINFO_H
 
 #include <lal/LALVCSInfo.h>
-#include <lal/LALXMLConfig.h>
+#include <lal/LALXMLLibVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,7 +49,6 @@ extern "C" {
 #define LALXML_VCS_IDENT_STATUS "$" "LALXMLStatus: @STATUS@ " "$"
 
 /* vcs information structures */
-extern struct tagLALVCSInfo lalXMLVCSInfo;
 static const struct tagLALVCSInfo lalXMLHeaderVCSInfo = { \
   LALXML_VCS_NAME, \
   LALXML_VERSION, \

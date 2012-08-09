@@ -26,11 +26,11 @@ import ConfigParser
 import exceptions
 
 # append the lalapps python path
-sys.path.append('/home/matthew/lscsoft/lib/python')
+# sys.path.append('/home/matthew/lscsoft/lib/python')
 
 # import the lalapps pipeline modules
 from glue import pipeline
-import heterodyne_pulsar
+from lalapps import pulsar_pipeline_utils as ppu
 
 # program usage
 def usage():
@@ -39,9 +39,11 @@ Usage: lalapps_heterodyne_pulsar_pipe [options]
 
   -h, --help               display this message
   -v, --version            print version information and exit
-
+  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   -d, --datafind           run ligo_data_find to create frame cache files
                            (required for coarse heterodyne)
+  THIS OPTION IS NO LONGER USABLE - CREATE YOUR OWN FRAME CACHE (E.G. USING 
+  ligo_data_find) AND ADD TO THE CONFIGURATION FILE
   XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
   -s, --seglist            run LSCsegFind to create a segment list (otherwise
                            attempt to read the segment filename from the
@@ -89,7 +91,7 @@ except getopt.GetoptError:
   
 # default options
 config_file = None
-do_datafind = None
+# do_datafind = None
 do_fine = None
 do_coarse = None
 do_update = None
@@ -109,6 +111,7 @@ for o, a in opts:
     usage()
     sys.exit(0)
   elif o in ("-d", "--datafind"):
+    print "The -d (--datafind) flag is no longer valid (see --help)"
     do_datafind = 1
   elif o in ("-s", "--seglist"):
     print "The -s (--segment) flag is no longer valid (see --help)"
@@ -148,9 +151,9 @@ if not log_path:
   sys.exit(1)
 
 # try and make a directory to store the cache files and job logs
-if do_datafind:
-  try: os.mkdir('cache')
-  except: pass
+#if do_datafind:
+#  try: os.mkdir('cache')
+#  except: pass
 
 try: os.mkdir('logs')
 except: pass
@@ -172,14 +175,15 @@ dag = pipeline.CondorDAG(logfile)
 dag.set_dag_file(basename)
 
 # create Condor Jobds that will be used in the dag
-df_job = heterodyne_pulsar.LSCDataFindJob('cache','logs',cp) # data find job
-coarse_job = heterodyne_pulsar.heterodyneJob(cp)
-fine_job = heterodyne_pulsar.heterodyneJob(cp)
-update_job = heterodyne_pulsar.heterodyneJob(cp)
+# df_job = pipeline.LSCDataFindJob('cache','logs') # data find job
+univ = cp.get('condor', 'universe')
+coarse_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+fine_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
+update_job = ppu.heterodyneJob(cp.get('exec', 'heterodyne'),univ)
 
 # set Condor .sub submit file names
 subsuffix = '.sub'
-df_job.set_sub_file(basename + '.datafind' + subsuffix)
+# df_job.set_sub_file(basename + '.datafind' + subsuffix)
 coarse_job.set_sub_file(basename + subsuffix)
 fine_job.set_sub_file(basename +  subsuffix)
 update_job.set_sub_file(basename + subsuffix)
@@ -207,7 +211,7 @@ except:
 
 # check that if you're performing a coarse heterodyne, but you're not doing a
 # datafind that you have instead supplied a frame cache file
-if ((do_coarse) and (do_datafind == None)):
+if do_coarse: # and (do_datafind == None)):
   try:
     data_cache = cp.get('data','data_cache')
   
@@ -238,29 +242,29 @@ try: os.mkdir(output_dir) # create output directory using start and end time of 
 except: pass
 
 # make DAGs
-if do_datafind:
-  df = heterodyne_pulsar.LSCDataFindNode(df_job)
+#if do_datafind:
+#  df = pipeline.LSCDataFindNode(df_job)
   
   # set observatory for LSCdataFind
-  if (detector.find('H1') > -1) | (detector.find('H2') > -1):
-    obs = 'H'
-  elif (detector.find('L1') > -1):
-    obs = 'L'
-  elif (detector.find('G1') > -1) | (detector.find('GEO') > -1):
-    obs = 'G'
-  elif (detector.find('V1') > -1) | (detector.find('Virgo') > -1):
-    obs = 'V'
-  else:
-    print >> sys.stderr, """Detector not set in .ini file or not recognised, should be either H1,
-H2, L1, V1, G1 or GEO."""
-    sys.exit(1)
+#  if (detector.find('H1') > -1) | (detector.find('H2') > -1):
+#    obs = 'H'
+#  elif (detector.find('L1') > -1):
+#    obs = 'L'
+#  elif (detector.find('G1') > -1) | (detector.find('GEO') > -1):
+#    obs = 'G'
+#  elif (detector.find('V1') > -1) | (detector.find('Virgo') > -1):
+#    obs = 'V'
+#  else:
+#    print >> sys.stderr, """Detector not set in .ini file or not recognised, should be either H1,
+#H2, L1, V1, G1 or GEO."""
+#    sys.exit(1)
     
-  df.set_observatory(obs)
-  df.set_start(tstart)
-  df.set_end(tend)
+#  df.set_observatory(obs)
+#  df.set_start(tstart)
+#  df.set_end(tend)
  
   # add DAG
-  dag.add_node(df)
+#  dag.add_node(df)
 
 # set seglist file from value in the config file
 seg_list_file = cp.get('data','seg_list')
@@ -283,11 +287,12 @@ if do_coarse:
   j = 0
   while i < len(param_files):
     if ".par" in param_files[i]:
-      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+      pulsar = re.sub(r'\.par', r'', param_files[i])
       param_file = pulsar_param_dir + '/' + param_files[i]
       
       # add heterodyneNode for DAG
-      coarse.append(heterodyne_pulsar.heterodyneNode(coarse_job))
+      coarse.append(ppu.heterodyneNode(coarse_job))
       coarse[j].set_het_flag(het_flag)
       coarse[j].set_ifo(detector)
       coarse[j].set_pulsar(pulsar)
@@ -304,11 +309,11 @@ if do_coarse:
       coarse[j].set_sample_rate(sample_rate)
       coarse[j].set_resample_rate(resample_rate)
       
-      if do_datafind:
-        coarse[j].set_data_file(df.get_output()) # get frame cache from here!
-      else:
-        coarse[j].set_data_file(data_cache) # set frame cache to that given in
-                                            # config the file
+      #if do_datafind:
+      #  coarse[j].set_data_file(df.get_output()) # get frame cache from here!
+      #else:
+      coarse[j].set_data_file(data_cache) # set frame cache to that given in
+                                          # config the file
       
       coarse[j].set_seg_list(seg_list_file)
       coarse[j].set_channel(channel)
@@ -327,8 +332,8 @@ if do_coarse:
       if do_binoutput:
         coarse[j].set_binoutput()
      
-      if do_datafind:
-        coarse[j].add_parent(df)
+      #if do_datafind:
+      #  coarse[j].add_parent(df)
       
       dag.add_node(coarse[j])
       j = j+1
@@ -387,7 +392,7 @@ if do_fine or do_update:
         continue 
       
       # add heterodyneNode for DAG
-      fine.append(heterodyne_pulsar.heterodyneNode(fine_job))
+      fine.append(ppu.heterodyneNode(fine_job))
       
       """ 
       if updating parameters check that an updated .par file exists - else just 

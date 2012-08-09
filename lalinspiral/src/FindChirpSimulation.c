@@ -856,8 +856,8 @@ LALFindChirpSetAnalyseTemplate (
     /* yet in the scheme of things                                         */
     oldxlalErrno = xlalErrno;
     xlalErrno = 0;
-    if (XLALGetApproximantFromString(injections->waveform,
-        &approximant) == XLAL_FAILURE)
+    approximant = XLALGetApproximantFromString(injections->waveform);
+    if ( (int) approximant == XLAL_FAILURE)
       ABORTXLAL(status);
     xlalErrno = oldxlalErrno;
 
@@ -901,12 +901,13 @@ LALFindChirpSetAnalyseTemplate (
       mmFTemplate->ieta       = 1.L;
       oldxlalErrno = xlalErrno;
       xlalErrno = 0;
-      if (XLALGetApproximantFromString(injections->waveform,
-          &(mmFTemplate->approximant)) == XLAL_FAILURE)
+      mmFTemplate->approximant = XLALGetApproximantFromString(
+          injections->waveform);
+      if ( (int) mmFTemplate->approximant == XLAL_FAILURE)
         ABORTXLAL(status);
 
-      if (XLALGetOrderFromString(injections->waveform,
-          &(mmFTemplate->order)) == XLAL_FAILURE)
+      mmFTemplate->order = XLALGetOrderFromString(injections->waveform);
+      if ( (int) mmFTemplate->order == XLAL_FAILURE)
         ABORTXLAL(status);
       xlalErrno = oldxlalErrno;
 

@@ -47,7 +47,6 @@ build-stamp :  config.status
 	dh_testdir
 
 	$(MAKE) V=1
-	-yes "" | $(MAKE) dvi
 #	-yes "" | $(MAKE) check
 #	-yes "" | $(MAKE) distcheck
 

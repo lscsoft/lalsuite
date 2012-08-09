@@ -20,11 +20,6 @@
 #ifndef _LALRUNNINGMEDIAN_H
 #define _LALRUNNINGMEDIAN_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 
 #ifdef  __cplusplus
@@ -103,7 +98,6 @@ implementation requires the blocksize to be \< 2.
 */
 typedef struct tagLALRunningMedianPar
 {
-  SWIGLAL_STRUCT(LALRunningMedianPar);
   UINT4 blocksize;	/**< the number of elements a single median is calculated from */
 }
 LALRunningMedianPar;

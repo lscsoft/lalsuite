@@ -1,5 +1,5 @@
 package "lalapps_TwoSpect"
-version "1.1.21"
+version "1.1.24"
 purpose "TwoSpect analysis program"
 
 args "--string-parser --conf-parser"
@@ -22,9 +22,11 @@ option "sftType"  - "SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vlad
 section "Input/ouput parameters"
 option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
 option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
+option "configCopy"     - "Copy of the configuration file whose output is gengetopt format" string typestr="filename" default="input_values.conf" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
 option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
+option "sftFile"        - "Path and filename of SFTs" string typestr="path/filename" default="*.sft" optional
 option "ephemDir"       - "Path to ephemeris files" string typestr="directory" optional
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string optional
 
@@ -36,6 +38,7 @@ option "dfmax" - "Maximum modulation depth to search (Hz)" double optional
 option "skyRegion"      - "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky" string optional
 option "skyRegionFile"  - "File with the grid points" string typestr="filename" optional
 option "linPolAngle"    - "Polarization angle to search using linear polarization (when unspecified default is circular polarization" double optional
+option "harmonicNumToSearch"  - "Number of harmonics of the Pmin to Pmax range to search" int default="1" optional
 
 section "TwoSpect threshold settings"
 option "ihsfactor" - "Number of harmonics to sum in IHS algorithm" int default="5" optional
@@ -68,6 +71,7 @@ option "followUpOutsideULrange"  - "Follow up outliers outside the range of the 
 section "Hidden options"
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional hidden
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
+option "noNotchHarmonics"  - "Do not notch the daily/sidereal harmonics in the IHS step." flag off hidden
 option "calcRthreshold"    - "Calculate the threshold value for R given the template false alarm rate" flag off hidden
 option "BrentsMethod"  - "Use Brent's method in the root finding algorithm." flag off hidden
 option "antennaOff"  - "Antenna pattern weights are /NOT/ used if this flag is used" flag off hidden

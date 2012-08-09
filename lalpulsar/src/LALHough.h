@@ -25,11 +25,6 @@
 #ifndef _LALHOUGH_H
 #define _LALHOUGH_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 /*
  * 5. Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -163,7 +158,6 @@ extern "C" {
  * for a given (null or) residual spin-down parameters
  */
 typedef struct tagUINT8FrequencyIndexVector{
-  SWIGLAL_STRUCT(UINT8FrequencyIndexVector);
   UINT4      length;  /**< number of elements */
   REAL8      deltaF;  /**< frequency resolution */
   UINT8      *data;   /**< the frequency indexes */
@@ -174,7 +168,6 @@ typedef struct tagUINT8FrequencyIndexVector{
  * sets as many spin-down residuals one wants to search over with the hough stage.
  */
 typedef struct tagUINT8FrequencyIndexVectorSequence{
-  SWIGLAL_STRUCT(UINT8FrequencyIndexVectorSequence);
   UINT4                          length;        /**< number of elements */
   UINT4                          vectorLength;  /**< frequency resolution */
   UINT8FrequencyIndexVector      *freqIndV;     /**< the frequency indexes */
@@ -182,21 +175,18 @@ typedef struct tagUINT8FrequencyIndexVectorSequence{
 
 /** This structure contains a vector of peak-grams (for the different time stamps) */
 typedef struct tagHOUGHPeakGramVector{
-  SWIGLAL_STRUCT(HOUGHPeakGramVector);
   UINT4             length; /**< number of elements */
   HOUGHPeakGram     *pg;    /**< the Peakgrams */
 } HOUGHPeakGramVector;
 
 /** This structure contains a vector of partial look up tables (for the different  time stamps) */
 typedef struct tagHOUGHptfLUTVector{
-  SWIGLAL_STRUCT(HOUGHptfLUTVector);
   UINT4            length; /**< number of elements */
   HOUGHptfLUT     *lut;    /**< the partial Look Up Tables */
 } HOUGHptfLUTVector;
 
 /** This structure contains a vector of Hough maps */
 typedef struct tagHOUGHMapTotalVector{
-  SWIGLAL_STRUCT(HOUGHMapTotalVector);
   UINT4            length; /**< number of elements */
   HOUGHMapTotal    *ht;    /**< the Hough maps */
 } HOUGHMapTotalVector;
@@ -206,7 +196,6 @@ typedef struct tagHOUGHMapTotalVector{
  * a circular buffer for the frequency indexes
  */
 typedef struct tagPHMDVectorSequence{
-  SWIGLAL_STRUCT(PHMDVectorSequence);
   UINT4       nfSize;    /**< number of different frequencies */
   UINT4       length;    /**< number of elements for each frequency */
   UINT8       fBinMin;   /**< frequency index of smallest intrinsic frequency in circular buffer */
@@ -217,7 +206,6 @@ typedef struct tagPHMDVectorSequence{
 
 /** This structure stores the residual spin-down parameters at a given time */
 typedef struct tagHOUGHResidualSpinPar{
-  SWIGLAL_STRUCT(HOUGHResidualSpinPar);
   REAL8          deltaF;   	/**< Frequency resolution;  df=1/TCOH */
   REAL8          timeDiff; 	/**< \f$T_{\hat N}(t)-T_{\hat N}(\hat t_0)\f$: time difference */
   REAL8Vector    spinRes; 	/**< length: Maximum order of spdwn parameter *data: pointer to residual Spin parameter set fk */

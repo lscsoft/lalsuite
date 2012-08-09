@@ -45,7 +45,8 @@ proc PrintHelpAndExit {} {
    puts "For example: \"H1:/home/fscans/H1segs.txt L1:/home/fscans/L1segs.txt V1:/home/fscans/V1segs.txt\""
    puts "The segFile can also be set in the resourceFile. If the segFile is not set anywhere, and useLSCsegFind is"
    puts "set to 1 in the resource file, then commands set in the resource file are used to find segments (e.g., "
-   puts "using ligolw_segment_query and ligolw_print). The typeLSCsegFind is then a list of types to use for each IFO."
+   puts "using ligolw_segment_query and ligolw_print or find_locked_segments.py). The typeLSCsegFind is then a list of types to."
+   puts "use for each IFO with ligolw_segment_query, or the list of IFO:TYPE:PathToIniFile's to use with find_locked_segments.py."
    puts "Otherwise the default is to generate fscans for ALL times between the start and end times set in the resourceFile."
    puts "";
    puts "If the -R option is given, then fscanDriver.py will be run with the -R option to submit the DAGs to condor."
@@ -69,6 +70,7 @@ proc getColumn {Line ColNum} {
 }
 
 proc getLSCsegFindsegs {typeLSCsegFind startTime endTime segFile} {
+  if {[string match "*ligolw_segment_query*" $::segFindCmdAndPath]} {
    set segCommand "exec $::segFindCmdAndPath --database --query-segments --include-segments $typeLSCsegFind --gps-start-time  $startTime --gps-end-time $endTime | $::grepCommandAndPath -v \"0, 0\" | $::ligolwPrintCommandAndPath -t segment:table -c start_time -c end_time -d \" \" > $segFile"
    #set segCommand "exec $segFindCmdAndPath --server $segFindServer --type $typeLSCsegFind --interferometer $thisIfoList2 --gps-start-time $startTime --gps-end-time $endTime";
    puts "segCommand = $segCommand";
@@ -78,6 +80,43 @@ proc getLSCsegFindsegs {typeLSCsegFind startTime endTime segFile} {
    } else {
       puts "Successfully output segments to: $segFile"
    }
+  } elseif {[string match "*find_locked_segments.py*" $::segFindCmdAndPath]} {
+   # In the .rsc file need a line like 
+   # set typeLSCsegFind "H1:H1_M:psl_locked.ini" 
+   # to set the IFO, type and ini file to use with find_locked_segments.py.
+   set typeLSCsegFindItemList [split $typeLSCsegFind ":"];
+   set thisIFO [lindex $typeLSCsegFindItemList 0];
+   set thisType [lindex $typeLSCsegFindItemList 1];
+   set thisConfig [lindex $typeLSCsegFindItemList 2];
+   set segCommand "exec $::segFindCmdAndPath -s $startTime -e $endTime -i $thisIFO -t $thisType -c $thisConfig"
+   puts "segCommand = $segCommand";
+   if { [catch {eval $segCommand} tmpLSCsegFindsegs] } {
+      puts "Error finding segments: $tmpLSCsegFindsegs"
+      PrintHelpAndExit;
+   }
+   set duration [expr $endTime - $startTime];
+   set tmpOutputSegFile "$thisIFO-LOCKED_SEGMENTS_"
+   append tmpOutputSegFile $thisType;
+   append tmpOutputSegFile "-$startTime-$duration";
+   append tmpOutputSegFile ".txt";
+   # set segCommand "exec /bin/cat $tmpOutputSegFile | /bin/grep -v \"#\" | /usr/bin/awk { '\{print \$2 \" \" \$3\}' } > $segFile"
+   # puts "segCommand = $segCommand";
+   # Instead read in the segments from columns 2 and 3 of the tmpOutputSegFile file.
+   if { [catch {getSegFilesegs $tmpOutputSegFile 0 0 $startTime $endTime 2 3} tmpLSCsegFindsegs] } {
+      puts "Error finding segments: $tmpLSCsegFindsegs"
+      PrintHelpAndExit;
+   } else {
+      set segFID [open $segFile w];
+      foreach seg $::segsFromFile {
+        puts $segFID "$seg";
+      }
+      close $segFID;
+      puts "Successfully output segments to: $segFile"
+   }
+  } else {
+      puts "Error, did not recognize segFindCmdAndPath: $::segFindCmdAndPath"
+      PrintHelpAndExit;
+  }
 }
 
 proc getSegFilesegs {segFile incSegStartsBy decSegEndsBy startTime endTime segFileStartCol segFileEndCol} {
@@ -285,10 +324,14 @@ if {$parentOutputDirectory == "none"} {
 }
 
 set startTimeFromFile "";
-if { [catch {exec cat $startingPWD/$startTimeFile} startTimeFromFile] } {
-  # continue; the startTime could be set in the resource file.
+if {$startTimeFile == "none"} {
+  # continue
 } else {
-  set startTime $startTimeFromFile;
+  if { [catch {exec cat $startingPWD/$startTimeFile} startTimeFromFile] } {
+   # continue; the startTime could be set in the resource file.
+  } else {
+   set startTime $startTimeFromFile;
+  }
 }
 
 if {$startTime == "none"} {
@@ -308,8 +351,12 @@ if {$endTime == "none"} {
 }
 
 # Update the startTimeFile before any errors occur to prevent fscans from running again on this time.
-set cmd "exec echo $endTime > $startingPWD/$startTimeFile";
-eval $cmd;
+if {$startTimeFile == "none"} {
+  # continue
+} else {
+  set cmd "exec echo $endTime > $startingPWD/$startTimeFile";
+  eval $cmd;
+}
 
 set duration [expr $endTime - $startTime];
 
@@ -489,7 +536,7 @@ if {$argc >= 3} {
 cd $parentOutputDirectory;
 
 # Get list of existing directories (inludes path to html files to parse out GPS times for each fscan dir).
-set previousDirList [glob "*"];
+set previousDirList [glob -nocomplain "*"];
 set previousDirList [lsort $previousDirList];
 set previousDirListLength [llength $previousDirList];
 

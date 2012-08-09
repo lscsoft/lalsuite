@@ -43,11 +43,6 @@
 #ifndef _FRAMESTREAM_H
 #define _FRAMESTREAM_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #if defined(__cplusplus)
 extern "C" {
 #elif 0
@@ -111,7 +106,6 @@ FrMode;
 struct FrFile;
 typedef struct tagFrFileInfo
 {
-  SWIGLAL_STRUCT(FrFileInfo);
   INT4  ind;
   CHAR *url;
   INT4  t0;
@@ -120,7 +114,6 @@ typedef struct tagFrFileInfo
 FrFileInfo;
 typedef struct tagFrStream
 {
-  SWIGLAL_STRUCT(FrStream);
   FrState        state;
   INT4           mode;
   LIGOTimeGPS    epoch;
@@ -142,7 +135,6 @@ FrStream;
 typedef struct
 tagFrPos
 {
-  SWIGLAL_STRUCT(FrPos);
   LIGOTimeGPS epoch;
   UINT4       fnum;
   INT4        pos;
@@ -185,7 +177,6 @@ FrChanType;
 typedef struct
 tagFrChanIn
 {
-  SWIGLAL_STRUCT(FrChanIn);
   const CHAR *name;
   ChannelType type;
 }
@@ -209,7 +200,6 @@ FrChanIn;
 typedef struct
 tagFrOutPar
 {
-  SWIGLAL_STRUCT(FrOutPar);
   const CHAR *source;
   const CHAR *description;
   ChannelType type;
@@ -250,7 +240,7 @@ int XLALFrSeek( FrStream *stream, const LIGOTimeGPS *epoch );
 int XLALFrTell( LIGOTimeGPS *epoch, FrStream *stream );
 int XLALFrGetpos( FrPos *position, FrStream *stream );
 int XLALFrSetpos( FrStream *stream, FrPos *position );
-int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
+UINT4 XLALFrGetTimeSeriesType( const char *channel, FrStream *stream );
 int XLALFrGetINT2TimeSeries( INT2TimeSeries *series, FrStream *stream );
 int XLALFrGetINT4TimeSeries( INT4TimeSeries *series, FrStream *stream );
 int XLALFrGetINT8TimeSeries( INT8TimeSeries *series, FrStream *stream );
@@ -272,7 +262,7 @@ int XLALFrGetREAL4FrequencySeries( REAL4FrequencySeries *series, FrStream *strea
 int XLALFrGetREAL8FrequencySeries( REAL8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX8FrequencySeries( COMPLEX8FrequencySeries *series, FrStream *stream );
 int XLALFrGetCOMPLEX16FrequencySeries( COMPLEX16FrequencySeries *series, FrStream *stream );
-int XLALFrGetVectorLength ( CHAR *name, FrStream *stream );
+UINT4 XLALFrGetVectorLength ( CHAR *name, FrStream *stream );
 
 INT2TimeSeries *XLALFrReadINT2TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );
 INT4TimeSeries *XLALFrReadINT4TimeSeries( FrStream *stream, const char *chname, const LIGOTimeGPS *start, REAL8 duration, size_t lengthlimit );

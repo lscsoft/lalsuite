@@ -3,7 +3,7 @@ import os
 
 from distutils.core import setup
 
-version = "1.1"
+version = "1.4"
 
 setup(
   name = "ligo-gracedb",
@@ -18,7 +18,7 @@ setup(
   provides = ['ligo.gracedb'],
   packages = [ 'ligo.gracedb'],
 
-  requires = ['ligo', 'M2Crypto'],
+  requires = ['ligo', 'M2Crypto', 'cjson'],
 
   scripts = [
     os.path.join('bin','gracedb'),

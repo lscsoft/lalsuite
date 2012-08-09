@@ -413,7 +413,7 @@ if opts.coinc_triggers:
 # Read pipedown database
 if opts.pipedown_db:
 	print 'establishing connection to pipedown database'
-	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)
+	(db_connection,db_working_filename)=open_pipedown_database(opts.pipedown_db,None)[0]
 	timeslides=get_timeslides_pipedown(db_connection,dumpfile=timeslidefiledump,gpsstart=opts.gps_start_time,gpsend=opts.gps_end_time)
 	times=timeslides.keys()
 	starttime=min(times)
@@ -674,7 +674,7 @@ if opts.coherence_test:
             print 'Unable to setup coherence test for time %.3f, only %s data available.\n'%(time,ifos[0])
             continue
         coherence_test_node=OddsPipeline.CoherenceTestNode(coherence_test_job)
-        coherence_test_node.add_var_arg(nest_files[time])
+        coherence_test_node.add_var_arg(nest_files[time]+'_B.txt')
         coherence_test_files[time]={}
         coherence_test_posfiles[time]={}
         coherence_test_bfiles[time]={}

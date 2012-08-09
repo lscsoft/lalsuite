@@ -1910,7 +1910,7 @@ def add_figure(page,webDir,fnames="test", caption="add a caption", size=None, \
   # Determine the ifo
   ifo = None
   if html:
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if html.startswith(combo):
         ifo = combo
   if ifo and not all_ifos:
@@ -2380,7 +2380,7 @@ def html_and_plot(page, opts, cachefile_tag=None,\
   cachefileList.sort()
   for file in cachefileList: 
     ifo = None
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if os.path.basename(file).startswith(combo):
         ifo = combo
     if ifo:
@@ -2391,7 +2391,7 @@ def html_and_plot(page, opts, cachefile_tag=None,\
 
   for file in htmlfileList:
     ifo = None
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if os.path.basename(file).startswith(combo):
         ifo = combo
     if ifo:
@@ -2499,7 +2499,7 @@ def html_insert(page,opts, html_tag=None,\
     this_count = 0
    # Determine the ifo
     ifo = None
-    for combo in ['H1','L1','V1','H1L1','H1V1','L1V1','H1L1V1']:
+    for combo in ['H1','H2','L1','V1','H1L1','H1H2','H2L1','H2V1','H1V1','L1V1','H1L1V1','H1H2L1','H2L1V1','H1H2V1','H1H2L1V1']:
       if os.path.basename(htmlfile).startswith(combo):
         ifo = combo
     if ifo and not all_ifos:

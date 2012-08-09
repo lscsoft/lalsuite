@@ -168,7 +168,7 @@ def populate_inspiral_tables(MBTA_frame, set_keys = MBTA_set_keys, \
 
     log_data = event['comment'] + '\n'
     try:
-      far = 1/(float(event['IFAR_year'])*365.0)
+      far = 1/(float(event['IFAR_year'])*365.0*24*60*60)
     except KeyError:
         far = None
     for ifo in detectors:
@@ -234,11 +234,12 @@ def populate_inspiral_tables(MBTA_frame, set_keys = MBTA_set_keys, \
   #the snr here is really the snr NOT effective snr
   row.snr = pow(sum([x*x for x in snr.values()]),0.5)
   if far is not None:
-      #far is triggers/day
-      row.false_alarm_rate = float(far)
+      #far is triggers in Hz
+      row.combined_far = float(far)
   else:
-      row.false_alarm_rate = None
-  row.combined_far = 0
+      row.combined_far = None
+  row.false_alarm_rate = None
+
   cin_table.append(row)
 
 

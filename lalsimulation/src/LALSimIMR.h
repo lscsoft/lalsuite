@@ -48,7 +48,7 @@ typedef enum {
   View,
   TotalJ,
   OrbitalL,
-} InputAxis;
+} FrameAxis;
 
 /**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
@@ -68,7 +68,7 @@ int XLALSimIMRPhenomAGenerateFD(
     const REAL8 m1_SI,                       /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
     const REAL8 f_min,                       /**< start frequency */
-    const REAL8 f_max,                       /**< end frequency */
+    const REAL8 f_max,                       /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance                     /**< distance of source (m) */
 );
 
@@ -91,7 +91,7 @@ int XLALSimIMRPhenomAGenerateTD(
     const REAL8 m1_SI,              /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
     const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency */
+    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,           /**< distance of source (m) */
     const REAL8 inclination         /**< inclination of source */
 );
@@ -126,7 +126,7 @@ int XLALSimIMRPhenomBGenerateFD(
     const REAL8 m2_SI,                       /**< mass of companion 2 (kg) */
     const REAL8 chi,                         /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,                       /**< start frequency */
-    const REAL8 f_max,                       /**< end frequency */
+    const REAL8 f_max,                       /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance                     /**< distance of source (m) */
 );
 
@@ -149,7 +149,7 @@ int XLALSimIMRPhenomBGenerateTD(
     const REAL8 m2_SI,              /**< mass of companion 2 (kg) */
     const REAL8 chi,                /**< mass-weighted aligned-spin parameter */
     const REAL8 f_min,              /**< start frequency */
-    const REAL8 f_max,              /**< end frequency */
+    const REAL8 f_max,              /**< end frequency; 0 defaults to ringdown cutoff freq */
     const REAL8 distance,           /**< distance of source (m) */
     const REAL8 inclination         /**< inclination of source */
 );
@@ -243,7 +243,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    InputAxis axisChoice,      	/**< Choice of axis for input spin params */
+    FrameAxis axisChoice,      	/**< Choice of axis for input spin params */
     int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     );
 

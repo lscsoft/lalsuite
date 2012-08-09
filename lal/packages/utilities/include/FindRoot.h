@@ -20,11 +20,6 @@
 #ifndef _FINDROOT_H
 #define _FINDROOT_H
 
-/* remove SWIG interface directives */
-#if !defined(SWIG) && !defined(SWIGLAL_STRUCT)
-#define SWIGLAL_STRUCT(...)
-#endif
-
 #include <lal/LALDatatypes.h>
 
 #ifdef __cplusplus
@@ -117,7 +112,6 @@ routines \c zbrac and \c rtbis in Numerical Recipes [\ref ptvf1992].
 typedef struct
 tagSFindRootIn
 {
-  SWIGLAL_STRUCT(SFindRootIn);
   void (*function)(LALStatus *s, REAL4 *y, REAL4 x, void *p);	/**< The function to find the root of */
   REAL4 xmax;	/**< The maximum value of the domain interval to look for the root */
   REAL4 xmin;	/**< The minimum value of the domain interval to look for the root */
@@ -130,7 +124,6 @@ SFindRootIn;
 typedef struct
 tagDFindRootIn
 {
-  SWIGLAL_STRUCT(DFindRootIn);
   void (*function)(LALStatus *s, REAL8 *y, REAL8 x, void *p);	/**< The function to find the root of */
   REAL8 xmax;	/**< The maximum value of the domain interval to look for the root */
   REAL8 xmin;	/**< The minimum value of the domain interval to look for the root */

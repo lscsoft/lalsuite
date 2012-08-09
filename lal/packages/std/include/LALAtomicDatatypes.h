@@ -22,16 +22,6 @@
 #ifndef _LALATOMICDATATYPES_H
 #define _LALATOMICDATATYPES_H
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/** \addtogroup LALDatatypes */ /*@{*/
-
-typedef char CHAR;		/**< One-byte signed integer, see \ref LALDatatypes for more details */
-typedef unsigned char UCHAR;	/**< One-byte unsigned integer, see \ref LALDatatypes for more details */
-typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes for more details */
-
 #include <stdint.h>
 
 #ifndef LAL_USE_OLD_COMPLEX_STRUCTS
@@ -43,6 +33,18 @@ typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes 
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
 #include <lal/LALConfig.h>
+
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
+/** \addtogroup LALDatatypes */ /*@{*/
+
+typedef char CHAR;		/**< One-byte signed integer, see \ref LALDatatypes for more details */
+typedef unsigned char UCHAR;	/**< One-byte unsigned integer, see \ref LALDatatypes for more details */
+typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes for more details */
 
 /* If INT8 etc. are already defined, undefine them */
 #undef CHAR
@@ -57,7 +59,6 @@ typedef unsigned char BOOLEAN;	/**< Boolean logical type, see \ref LALDatatypes 
 #undef REAL8
 #undef COMPLEX8
 #undef COMPLEX16
-
 
 /* Integer types */
 typedef int16_t  INT2;		/**< Two-byte signed integer */
@@ -90,10 +91,9 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
  */
 #define LAL_UINT8_C UINT64_C
 
-
 /* Real types */
-typedef float REAL4;	/**< Single precision real floating-point number (4 bytes). */
-typedef double REAL8;	/**< Double precision real floating-point number (8 bytes). */
+typedef float REAL4;    /**< Single precision real floating-point number (4 bytes). */
+typedef double REAL8;   /**< Double precision real floating-point number (8 bytes). */
 
 #ifndef SWIG /* exclude from SWIG interface */
 
@@ -104,11 +104,10 @@ typedef double REAL8;	/**< Double precision real floating-point number (8 bytes)
 typedef std::complex<float> COMPLEX8;
 typedef std::complex<double> COMPLEX16;
 #else
-typedef float complex COMPLEX8;
-typedef double complex COMPLEX16;
+typedef float complex COMPLEX8;     /**< Single-precision floating-point complex number (8 bytes total) */
+typedef double complex COMPLEX16;   /**< Double-precision floating-point complex number (16 bytes total) */
 #endif
 
-  /** \cond DONT_DOXYGEN */
 /* Complex type constructors */
 #if defined(__cplusplus)
 #define CX8rect( re, im) COMPLEX8(  re, im )
@@ -116,10 +115,10 @@ typedef double complex COMPLEX16;
 #define CX8polar( r, th) ( (r) * std::exp( CX8rect(  0, th ) ) )
 #define CX16polar(r, th) ( (r) * std::exp( CX16rect( 0, th ) ) )
 #else
-#define CX8rect( re, im) ( (re) + _Complex_I * (im) )
-#define CX16rect(re, im) ( (re) + _Complex_I * (im) )
-#define CX8polar( r, th) ( (r) * cexpf( CX8rect(  0, th ) ) )
-#define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )
+#define CX8rect( re, im) ( (re) + _Complex_I * (im) )           /**< Construct a COMPLEX8 from real and imaginary parts */
+#define CX16rect(re, im) ( (re) + _Complex_I * (im) )           /**< Construct a COMPLEX16 from real and imaginary parts */
+#define CX8polar( r, th) ( (r) * cexpf( CX8rect(  0, th ) ) )   /**< Construct a COMPLEX8 from polar modulus and argument */
+#define CX16polar(r, th) ( (r) * cexp(  CX16rect( 0, th ) ) )   /**< Construct a COMPLEX16 from polar modulus and argument */
 #endif
 
 /* Real and imaginary part accessors */
@@ -129,10 +128,10 @@ typedef double complex COMPLEX16;
 #define CX8im( z) std::imag(z)
 #define CX16im(z) std::imag(z)
 #else
-#define CX8re( z) crealf(z)
-#define CX16re(z) creal( z)
-#define CX8im( z) cimagf(z)
-#define CX16im(z) cimag( z)
+#define CX8re( z) crealf(z)   /**< Get the real part of a COMPLEX8 */
+#define CX16re(z) creal( z)   /**< Get the real part of a COMPLEX16 */
+#define CX8im( z) cimagf(z)   /**< Get the imaginary part of a COMPLEX8 */
+#define CX16im(z) cimag( z)   /**< Get the imaginary part of a COMPLEX16 */
 #endif
 
 /* Real and imaginary part assignment */
@@ -142,33 +141,19 @@ typedef double complex COMPLEX16;
 #define setCX8im( z, im) ( __imag__(z) = (im) )
 #define setCX16im(z, im) ( __imag__(z) = (im) )
 #else
-#define setCX8re( z, re) ( (z) = CX8rect(  re, CX8im( z) ) )
-#define setCX16re(z, re) ( (z) = CX16rect( re, CX16im(z) ) )
-#define setCX8im( z, im) ( (z) = CX8rect(  CX8re( z), im ) )
-#define setCX16im(z, im) ( (z) = CX16rect( CX16re(z), im ) )
+#define setCX8re( z, re) ( (z) = CX8rect(  re, CX8im( z) ) )   /**< Set the real part of a COMPLEX8 */
+#define setCX16re(z, re) ( (z) = CX16rect( re, CX16im(z) ) )   /**< Set the real part of a COMPLEX16 */
+#define setCX8im( z, im) ( (z) = CX8rect(  CX8re( z), im ) )   /**< Set the imaginary part of a COMPLEX8 */
+#define setCX16im(z, im) ( (z) = CX16rect( CX16re(z), im ) )   /**< Set the imaginary part of a COMPLEX16 */
 #endif
-
-  /** \endcond */
 
 #else /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
-/** Single-precision floating-point complex number (8 bytes total) */
-typedef struct
-tagCOMPLEX8
-{
-  REAL4 re; /**< The real part. */
-  REAL4 im; /**< The imaginary part. */
-}
-COMPLEX8;
-
-/** Double-precision floating-point complex number (16 bytes total) */
-typedef struct
-tagCOMPLEX16
-{
-  REAL8 re; /**< The real part. */
-  REAL8 im; /**< The imaginary part. */
-}
-COMPLEX16;
+/** \cond DONT_DOXYGEN */
+/* Old LAL complex structs, being phased out ... */
+typedef struct tagCOMPLEX8 { REAL4 re; REAL4 im; } COMPLEX8;
+typedef struct tagCOMPLEX16 { REAL8 re; REAL8 im; } COMPLEX16;
+/** \endcond */
 
 #endif /* LAL_USE_OLD_COMPLEX_STRUCTS */
 
@@ -176,7 +161,9 @@ COMPLEX16;
 
 #endif /* SWIG */
 
-#ifdef  __cplusplus
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
 }
 #endif
 

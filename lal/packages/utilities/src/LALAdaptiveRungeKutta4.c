@@ -174,7 +174,7 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
                                     void *params,			/**< params struct used to compute dydt and stopping test */
                                     REAL8 *yinit,			/**< pass in initial values of all variables - overwritten to final values */
                                     REAL8 tinit,			/**< integration start time */
-                                    REAL8 tend,				/**< maximum integration time */
+                                    REAL8 tend_in,			/**< maximum integration time */
                                     REAL8 deltat,			/**< step size for evenly sampled output */
                                     REAL8Array **yout			/**< array holding the evenly sampled output */
                                     )
@@ -183,11 +183,13 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
   size_t dim, retries, i;
   int outputlen = 0, count = 0;
 
-  REAL8Array *output;
+  REAL8Array *output = NULL;
 
   REAL8 t, tintp, h;
 
   REAL8 *ytemp = NULL;
+
+  REAL8 tend = tend_in;
 
   /* If want to stop only on test, then tend = +/-infinity; otherwise
      tend_in */
@@ -198,13 +200,15 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
 
   dim = integrator->sys->dimension;
 
-  if (integrator->stopontestonly) {
-    /* Allocate enough space for two samples; will allocate more
-       later. */
-    outputlen = 2;
-  } else {
-    outputlen = ((int)(tend - tinit)/deltat) + 2;
+  outputlen = ((int)(tend_in - tinit)/deltat);
+  //if (outputlen < 0) outputlen = -outputlen;
+  if (outputlen < 0) {
+    XLALPrintError("XLAL Error - %s: (tend_in - tinit) and deltat must have the same sign\ntend_in: %f, tinit: %f, deltat: %f\n", __func__, tend_in, tinit, deltat);
+    status = XLAL_EINVAL;
+    goto bail_out;
   }
+  outputlen += 2;
+  
   output = XLALCreateREAL8ArrayL(2, (dim+1), outputlen);
 
   if (!output) {
@@ -263,8 +267,10 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
       retries = integrator->retries;
     }
 
-    /* Now interpolate until we would go past the current integrator time, t. */
-    while (tintp + deltat < t) {
+    /* Now interpolate until we would go past the current integrator time, t.
+     * Note we square to get an absolute value, because we may be 
+     * integrating t in the positive or negative direction */
+    while ( (tintp + deltat)*(tintp + deltat) < t*t) {
       tintp += deltat;
 
       /* tintp = told + (t-told)*theta, 0 <= theta <= 1.  We have to
@@ -327,10 +333,10 @@ int XLALAdaptiveRungeKutta4Hermite( ark4GSLIntegrator *integrator,	/**< struct h
      function are XLAL_ENOMEM, so we just test for that. */
   XLALFree(ytemp);
 
-  if (status == XLAL_ENOMEM) {
+  if (status == XLAL_ENOMEM || status == XLAL_EINVAL) {
     if (output) XLALDestroyREAL8Array(output);
     *yout = NULL;
-    XLAL_ERROR(XLAL_ENOMEM);
+    XLAL_ERROR(status);
   }
 
   *yout = output;

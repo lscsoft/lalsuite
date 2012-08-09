@@ -242,36 +242,54 @@ RingDataSegments *coh_PTF_get_segments(
 {
   RingDataSegments *segments = NULL;
   COMPLEX8FrequencySeries  *response = NULL;
-  UINT4  sgmnt,i, slidSegNum;
+  UINT4  sgmnt,i,j, slidSegNum;
   UINT4  segListToDo[params->numOverlapSegments];
 
   segments = LALCalloc( 1, sizeof( *segments ) );
 
   if ( params->analyzeInjSegsOnly )
   {
-    segListToDo[2] = 1;
     for ( i = 0 ; i < params->numOverlapSegments; i++)
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
-    SimInspiralTable        *thisInject = NULL;
-    LIGOTimeGPS UNUSED injTime;
-    REAL8 deltaTime;
+    REAL8 deltaTime,segBoundDiff;
     INT4 segNumber, UNUSED segLoc, UNUSED ninj;
     segLoc = 0;
     ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
+    params->injectList = injectList;
     while (injectList)
     {
-      injTime = injectList->geocent_end_time;
       deltaTime = injectList->geocent_end_time.gpsSeconds;
       deltaTime += injectList->geocent_end_time.gpsNanoSeconds * 1E-9;
       deltaTime -= params->startTime.gpsSeconds;
       deltaTime -= params->startTime.gpsNanoSeconds * 1E-9;
       segNumber = floor(2*(deltaTime/params->segmentDuration) - 0.5);
       segListToDo[segNumber] = 1;
-      thisInject = injectList;
+      /* Check if injection is near a segment boundary */
+      for ( j = 0 ; j < params->numOverlapSegments; j++)
+      {
+        segBoundDiff = deltaTime - (j+0.5) * params->segmentDuration/2;
+        if (segBoundDiff > 0 && segBoundDiff < params->injSearchWindow)
+        {
+          if (j != 0)
+          {
+            segListToDo[segNumber-1] = 1;
+          }
+        }
+        if (segBoundDiff < 0 && segBoundDiff > -params->injSearchWindow)
+        {
+          if ((j+1) != params->numOverlapSegments)
+          {
+            segListToDo[segNumber+1] = 1;
+          }
+        }
+      }
       injectList = injectList->next;
-      LALFree( thisInject );
     }
+  }
+  else
+  {
+    params->injectList = NULL;
   }
 
  /* FIXME: For all sky mode trig start/end time needs to be implemented */
@@ -366,7 +384,8 @@ void coh_PTF_calculate_bmatrix(
   REAL8Array              *PTFM[LAL_NUM_IFO+1],
   UINT4 vecLength,
   UINT4 vecLengthTwo,
-  UINT4 PTFMlen
+  UINT4 PTFMlen,
+  UINT4 detectorNum
   )
 {
   // This function calculates the eigenvectors and eigenvalues of the
@@ -390,14 +409,21 @@ void coh_PTF_calculate_bmatrix(
       zh[i*vecLength+j] = 0;
       sh[i*vecLength+j] = 0;
       yu[i*vecLength+j] = 0;
-      for( k = 0; k < LAL_NUM_IFO; k++)
+      if (detectorNum == LAL_NUM_IFO)
       {
-        if ( params->haveTrig[k] )
+        for( k = 0; k < LAL_NUM_IFO; k++)
         {
-          zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
-          sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
-          yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+          if ( params->haveTrig[k] )
+          {
+            zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
+            sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+            yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+          }
         }
+      }
+      else
+      {
+        zh[i*vecLength+j] += PTFM[detectorNum]->data[i*PTFMlen+j];
       }
     }
   }
@@ -450,7 +476,8 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 numPoints,
     UINT4 position,
     UINT4 vecLength,
-    UINT4 vecLengthTwo)
+    UINT4 vecLengthTwo,
+    UINT4 detectorNum)
 {
   // This function calculates the coherent time series and rotates them into
   // the basis where the B matrix is the identity.
@@ -463,21 +490,29 @@ void coh_PTF_calculate_rotated_vectors(
   {
     v1[j] = 0.;
     v2[j] = 0.;
-    for( k = 0; k < LAL_NUM_IFO; k++)
+    if (detectorNum == LAL_NUM_IFO)
     {
-      if ( params->haveTrig[k] )
+      for( k = 0; k < LAL_NUM_IFO; k++)
       {
-        if (j < vecLength)
+        if ( params->haveTrig[k] )
         {
-          v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
-          v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
-        }
-        else
-        {
-          v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
-          v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+          if (j < vecLength)
+          {
+            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+          }
+          else
+          {
+            v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].re;
+            v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+position+timeOffsetPoints[k]].im;
+          }
         }
       }
+    }
+    else
+    {
+      v1[j] += PTFqVec[detectorNum]->data[j*numPoints+position].re;
+      v2[j] += PTFqVec[detectorNum]->data[j*numPoints+position].im;
     }
   }
 
@@ -501,6 +536,7 @@ void coh_PTF_calculate_rotated_vectors(
 }
 
 void coh_PTF_cleanup(
+    struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,
@@ -523,6 +559,18 @@ void coh_PTF_cleanup(
     REAL8                   *Fcrosstrig
     )
 {
+  if ( params->injectList )
+  {
+    SimInspiralTable        *injectList = params->injectList;
+    SimInspiralTable        *thisInject = NULL;
+    while (injectList)
+    {
+      thisInject = injectList;
+      injectList = injectList->next;
+      LALFree(thisInject);
+    }
+  }
+
   /* Clean up memory usage */
   UINT4 ifoNumber;
   while ( events )
@@ -886,7 +934,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   }
 
   /* calculate angular resolution */
-  if (! params->singlePolFlag)
+  if (! params->singlePolFlag && (! params->numIFO == 1))
   {
     angularResolution = 2. * params->timingAccuracy / alpha;
   }
@@ -999,7 +1047,7 @@ CohPTFSkyPositions *coh_PTF_circular_grid(
       skyPoints->data[p].longitude  = phi;
       skyPoints->data[p].latitude = LAL_PI_2 - theta;
       skyPoints->data[p].system = COORDINATESYSTEM_EQUATORIAL;
-      XLALNormalizeSkyPosition(&skyPoints->data[p]);
+      XLALNormalizeSkyPosition(&skyPoints->data[p].longitude, &skyPoints->data[p].latitude);
 
       p++;
     }
@@ -1178,7 +1226,7 @@ void coh_PTF_rotate_SkyPosition(
   //verbose("theta2 = %e, phi2 = %e\n", theta, phi);
   skyPoint->longitude = phi;
   skyPoint->latitude  = LAL_PI_2 - theta;
-  XLALNormalizeSkyPosition(skyPoint);
+  XLALNormalizeSkyPosition(&skyPoint->longitude, &skyPoint->latitude);
 
   /* free memory */
   FREE_GSL_VECTOR(pos);
@@ -1403,7 +1451,7 @@ CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
     //verbose("%f\n", XLALArrivalTimeDiff(detectors[0]->location, detectors[1]->location, geoSkyPoints->data[i].longitude, geoSkyPoints->data[i].latitude, &params->trigTime));
     LALGeographicToEquatorial(&status, &skyPoints->data[i],
                               &geoSkyPoints->data[i], &params->trigTime);
-    XLALNormalizeSkyPosition(&skyPoints->data[i]);
+    XLALNormalizeSkyPosition(&skyPoints->data[i].longitude, &skyPoints->data[i].latitude);
     //verbose("%f\n", XLALArrivalTimeDiff(detectors[0]->location, detectors[1]->location, skyPoints->data[i].longitude, skyPoints->data[i].latitude, &params->trigTime));
   }
 
@@ -1573,7 +1621,7 @@ CohPTFSkyPositions *coh_PTF_three_det_sky_grid(
         skyPoints->data[p].longitude = nphi;
         skyPoints->data[p].latitude  = ntheta-LAL_PI_2;
         skyPoints->data[p].system    = COORDINATESYSTEM_EQUATORIAL;
-        XLALNormalizeSkyPosition(&skyPoints->data[p]);
+        XLALNormalizeSkyPosition(&skyPoints->data[p].longitude, &skyPoints->data[p].latitude);
         coh_PTF_rotate_SkyPosition(&skyPoints->data[i], matrix);
         skyPoints->data[p].longitude -= xphi;
 

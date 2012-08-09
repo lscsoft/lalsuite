@@ -20,5 +20,3 @@ noinst_HEADERS = \
 	ResizeVector_source.c
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-@DVIMKFILE@

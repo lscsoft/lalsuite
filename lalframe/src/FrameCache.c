@@ -77,7 +77,7 @@
  * (or <tt>.</tt> if \c NULL) for files that match a given glob pattern
  * (default is <tt>*.gwf</tt> if \c NULL), and uses these to generate a
  * frame cache (with the metadata extracted from the file names).  The routine
- * \c LALFrCacheSieve applies regular expression filters to various
+ * \c LALFrSieveCache applies regular expression filters to various
  * pieces of metadata to distill a frame cache into a sorted sub-cache of frame
  * files of interst.  The routine \c LALDestroyFrCache destroys a frame
  * cache.
@@ -635,7 +635,7 @@ LALDestroyFrCache(
 
 
 void
-LALFrCacheSieve(
+LALFrSieveCache(
     LALStatus     *status,
     FrCache      **output,
     FrCache       *input,

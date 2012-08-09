@@ -985,16 +985,6 @@ REAL4Vector * sampleREAL4VectorSequence(REAL4VectorSequence *input, INT4 numbero
 REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *input, INT4 numberofvectors, INT4 sampleSize, gsl_rng *rng)
 {
    
-   /* gsl_rng *rng = gsl_rng_alloc(gsl_rng_mt19937);
-   if (rng==NULL) {
-      fprintf(stderr,"%s: gsl_rng_alloc() failed.\n", __func__);
-      XLAL_ERROR_NULL(XLAL_ENOMEM);
-   }
-   srand(time(NULL));
-   UINT8 randseed = rand();
-   gsl_rng_set(rng, randseed); */
-   //gsl_rng_set(rng, 0);
-   
    REAL4Vector *output = XLALCreateREAL4Vector(sampleSize);
    if (output==NULL) {
       fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, sampleSize);
@@ -1004,12 +994,8 @@ REAL4Vector * sampleREAL4VectorSequence_nozerosaccepted(REAL4VectorSequence *inp
    INT4 ii;
    for (ii=0; ii<sampleSize; ii++) {
       output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
-      while (output->data[ii]==0.0) {
-         output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
-      }
+      while (output->data[ii]==0.0) output->data[ii] = input->data[(INT4)floor(gsl_rng_uniform(rng)*numberofvectors*input->vectorLength)];
    }
-   
-   //gsl_rng_free(rng);
    
    return output;
    
@@ -1044,6 +1030,23 @@ REAL4 calcMean(REAL4Vector *vector)
 } /* calcMean() */
 
 
+REAL4 calcMean_ignoreZeros(REAL4Vector *vector)
+{
+   
+   INT4 ii, values = 0;
+   REAL8 meanval = 0.0;
+   for (ii=0; ii<(INT4)vector->length; ii++) {
+      if (vector->data[ii]!=0.0) {
+         meanval += vector->data[ii];
+         values++;
+      }
+   }
+   
+   return (REAL4)(meanval/values);
+   
+} /* calcMean() */
+
+
 //////////////////////////////////////////////////////////////
 // Compute the standard deviation of a vector of values
 REAL4 calcStddev(REAL4Vector *vector)
@@ -1065,6 +1068,24 @@ REAL4 calcStddev(REAL4Vector *vector)
    
 } /* calcStddev() */
 
+
+REAL4 calcStddev_ignoreZeros(REAL4Vector *vector)
+{
+   
+   REAL4 meanval = calcMean_ignoreZeros(vector);
+   INT4 ii, values = 0;
+   REAL8 sumtotal = 0.0;
+   for (ii=0; ii<(INT4)vector->length; ii++) {
+      if (vector->data[ii]!=0.0) {
+         sumtotal += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
+         values++;
+      }
+   }
+   REAL4 stddev = sqrtf((REAL4)(sumtotal/(values-1)));
+   
+   return stddev;
+   
+} /* calcStddev() */
 
 
 //////////////////////////////////////////////////////////////
@@ -1252,6 +1273,39 @@ REAL4 calcMedian(REAL4Vector *vector)
    REAL4 ffdata_median = 0.0;
    if (tempvect->length % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
    else ffdata_median = tempvect->data[(INT4)(0.5*tempvect->length)];
+   
+   XLALDestroyREAL4Vector(tempvect);
+   
+   return ffdata_median;
+   
+}
+
+
+REAL4 calcMedian_ignoreZeros(REAL4Vector *vector)
+{
+   
+   REAL4Vector *tempvect = XLALCreateREAL4Vector(vector->length);
+   if (tempvect==NULL) {
+      fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, vector->length);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
+   
+   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+   
+   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+   
+   INT4 firstnonzeroelement = -1, ii = 0;
+   while (firstnonzeroelement<0) {
+      if (tempvect->data[ii]!=0.0) {
+         firstnonzeroelement = ii;
+      } else {
+         ii++;
+      }
+   }
+   
+   REAL4 ffdata_median = 0.0;
+   if ((tempvect->length-firstnonzeroelement) % 2 != 1) ffdata_median = 0.5*(tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))-1+firstnonzeroelement] + tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement]);
+   else ffdata_median = tempvect->data[(INT4)(0.5*(tempvect->length-firstnonzeroelement))+firstnonzeroelement];
    
    XLALDestroyREAL4Vector(tempvect);
    

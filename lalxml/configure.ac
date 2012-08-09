@@ -50,7 +50,8 @@ LALSUITE_ENABLE_NIGHTLY
 # debug
 LALSUITE_ENABLE_DEBUG
 
-LALSUITE_SWIG_REQUIRE_CXX
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
 
 # put version/configure info in config header
 lalxml_version_major=`echo "$VERSION" | cut -d. -f1`
@@ -129,8 +130,9 @@ AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_er
 LALSUITE_CHECK_LIB([LAL],[6.7.0],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.7.0],[LALOpenDataFile],[lal/FileIO.h])
 
-# check for SWIG wrapping
-LALSUITE_ENABLE_SWIG
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
@@ -152,8 +154,8 @@ echo "
 
         LALXML has now been successfully configured:
 
-            SWIG wrappings for Octave are $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrappings for Python are $SWIG_PYTHON_ENABLE_VAL
+            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 

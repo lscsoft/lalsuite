@@ -18,7 +18,7 @@ static struct coh_PTF_params *coh_PTF_get_params( int argc, char **argv )
   static char cvsDate[]     = CVS_DATE;
   coh_PTF_parse_options( &params, argc, argv );
   coh_PTF_params_sanity_check( &params ); /* this also sets various params */
-  coh_PTF_params_inspiral_sanity_check( &params );
+  coh_PTF_params_spin_checker_sanity_check( &params );
   params.programName = programName;
   params.cvsRevision = cvsRevision;
   params.cvsSource   = cvsSource;
@@ -130,6 +130,12 @@ int main( int argc, char **argv )
   if ( params->noSpinBank )
     strncpy(noSpinFileName,params->noSpinBank,sizeof(noSpinFileName)-1);
 
+  REAL4                    *timeSlideVectors;
+  timeSlideVectors=LALCalloc(1, (LAL_NUM_IFO+1)*
+                                params->numOverlapSegments*sizeof(REAL4));
+  memset(timeSlideVectors, 0,
+         (LAL_NUM_IFO+1) * params->numOverlapSegments * sizeof(REAL4));
+
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     /* Initialize some of the structures */
@@ -157,7 +163,7 @@ int main( int argc, char **argv )
 
       /* create the segments */
       segments[ifoNumber] = coh_PTF_get_segments( channel[ifoNumber],\
-           invspec[ifoNumber], fwdplan, ifoNumber, NULL, params );
+           invspec[ifoNumber], fwdplan, ifoNumber, timeSlideVectors, params );
       
       numSegments = segments[ifoNumber]->numSgmnt;
 
@@ -322,7 +328,8 @@ int main( int argc, char **argv )
   verbose("Generated output xml files, cleaning up and exiting at %ld \n",
       time(NULL)-startTime);
 
-  coh_PTF_cleanup(procpar,fwdplan,revplan,invPlan,channel,
+  LALFree(timeSlideVectors);
+  coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
       fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets,NULL,NULL);
   while ( PTFSpinTmpltHead )

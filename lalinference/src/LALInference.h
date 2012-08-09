@@ -93,7 +93,7 @@ struct tagLALInferenceIFOData;
  * types are supported as well as others.
 */
 typedef enum {
-  LALINFERENCE_INT4_t, 		
+  LALINFERENCE_INT4_t,
   LALINFERENCE_INT8_t,
   LALINFERENCE_UINT4_t,
   LALINFERENCE_REAL4_t, 
@@ -603,5 +603,14 @@ REAL8 LALInferenceAngularDistance(REAL8 a1, REAL8 a2);
 
 /** Calculate the variance of a distribution on an angle (modulo 2PI) */
 REAL8 LALInferenceAngularVariance(LALInferenceVariables **list,const char *pname, int N);
+
+/** Sanity check the structures in the given state. Will scan data for infinities and nans, and look for null pointers. */
+INT4 LALInferenceSanityCheck(LALInferenceRunState *state);
+
+/** Dump all waveforms from the ifodata structure. (currently: timeData, freqData)
+ basefilename is optional text to append to file names
+ */
+void LALInferenceDumpWaveforms(LALInferenceRunState *state, const char *basefilename);
+
 
 #endif
