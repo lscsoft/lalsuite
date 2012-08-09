@@ -198,8 +198,8 @@ def scan_timefile(timefile):
 	continue
       print 'Read time %s'%(time)
       times.append(float(time))
-      timefilehandle.close()
-      return times
+    timefilehandle.close()
+    return times
   
 class LALInferencePipelineDAG(pipeline.CondorDAG):
   def __init__(self,cp,dax=False):
