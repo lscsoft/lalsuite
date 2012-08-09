@@ -323,7 +323,7 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
                        SpinEOBParams *funcParams
                        )
 {
-  static const REAL8 STEP_SIZE = 1.0e-4;
+  static const REAL8 STEP_SIZE = 1.0e-3;
 
   HcapDerivParams params;
 
