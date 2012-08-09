@@ -247,10 +247,9 @@ typedef int _int;
 // and headers from the preprocessing interface, and generates calls to the
 // following macros:
 
-// Process an interface function NAME: rename it to RENAME,
-// and set it to always return SWIG-owned wrapping objects
-// (unless the function is being ignored). If TYPE is given,
-// ignore the return value of the function.
+// Process an interface function NAME: rename it to RENAME, and set it to
+// always return SWIG-owned wrapping objects (unless the function is being
+// ignored). If TYPE is given, ignore the return value of the function.
 %typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
   %set_output(VOID_Object);
 }
@@ -258,9 +257,9 @@ typedef int _int;
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
 %feature("new", "1") NAME;
-#endif
 #if #TYPE != ""
 %apply SWIGTYPE SWIGLAL_RETURN_VOID { TYPE NAME };
+#endif
 #endif
 %enddef
 
