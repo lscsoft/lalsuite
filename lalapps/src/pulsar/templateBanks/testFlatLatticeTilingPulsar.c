@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
   if (inject_ratio > 0.0) {
 
     /* Calculate number of injections */
-    if (0 == (inject_count = XLALTotalFlatLatticePointCount(tiling)))
+    if (0 == (inject_count = XLALCountTotalFlatLatticePoints(tiling)))
       LALAPPS_ERROR("'tiling' did not generate any templates!\n", 0);
     inject_count = (UINT4)ceil(inject_ratio * inject_count);
 
@@ -317,7 +317,7 @@ int main(int argc, char *argv[]) {
   /* XLAL_VBXMLO_EndTag(&xml, "subspaces"); */
 
   /* Output template count */
-  XLAL_VBXMLO_Tag(&xml, "template_count", "%li", XLALTotalFlatLatticePointCount(tiling));
+  XLAL_VBXMLO_Tag(&xml, "template_count", "%li", XLALGetFlatLatticePointCount(tiling));
 
   /* Output injection results */
   if (inject_count > 0) {

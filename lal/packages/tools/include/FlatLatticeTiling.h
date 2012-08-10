@@ -92,6 +92,13 @@ gsl_matrix* XLALGetFlatLatticeTilingMetric(
   );
 
 ///
+/// Return the current number of flat lattice tiling parameter space points
+///
+uint64_t XLALGetFlatLatticePointCount(
+  FlatLatticeTiling* tiling	///< [in] Tiling state
+  );
+
+///
 /// Add a parameter space bound to the flat lattice tiling
 ///
 int XLALAddFlatLatticeTilingBound(
@@ -135,9 +142,9 @@ gsl_vector* XLALCurrentFlatLatticePoint(
   );
 
 ///
-/// Return the total number of flat lattice tiling parameter space points
+/// Calculate the total number of flat lattice tiling parameter space points
 ///
-uint64_t XLALTotalFlatLatticePointCount(
+uint64_t XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 
