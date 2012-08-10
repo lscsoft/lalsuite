@@ -102,7 +102,7 @@ useSSE
 outfilename logfile_$ii.txt
 ULfilename uls_$ii.dat
 configCopy input_copy_$ii.conf
-ihsOnly
+IHSonly
 EOF
    close(TWOSPECTCONFIG);
    
