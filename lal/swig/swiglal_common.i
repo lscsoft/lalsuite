@@ -1060,3 +1060,17 @@ require:
 }
 %enddef
 #define %swiglal_public_clear_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
+
+// This macro can be used to support structs which are not
+// declared in LALSuite. It treats the struct as opaque,
+// and attaches a destructor function to it.
+%define %swiglal_public_EXTERNAL_STRUCT(NAME, DTORFUNC)
+typedef struct {} NAME;
+%ignore DTORFUNC;
+%extend NAME {
+  ~NAME() {
+    DTORFUNC($self);
+  }
+}
+%enddef
+#define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)
