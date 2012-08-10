@@ -1,10 +1,34 @@
 INCLUDES = -I$(top_builddir)/include
 LDADD = liblalframe.la
 
+# if FRAMEL
+LALFRAMEU_DEFS = -DUSE_FRAMEL
+# else
+# LALFRAMEU_DEFS = -DUSE_FRAMEC
+# endif
+
 bin_PROGRAMS = \
-	lalfr-lld
+	lalfr-lld \
+	lalfr-cksum \
+	lalfr-stat \
+	lalfr-dump \
+	lalfr-print \
+	lalfr-fmt \
+	lalfr-cat \
+	lalfr-split \
+	lalfr-cut \
+	lalfr-paste
 
 lalfr_lld_SOURCES = lld.c
+lalfr_cksum_SOURCES = cksum.c
+lalfr_stat_SOURCES = stat.c
+lalfr_dump_SOURCES = dump.c
+lalfr_print_SOURCES = print.c
+lalfr_fmt_SOURCES = fmt.c
+lalfr_cat_SOURCES = cat.c utils.c utils.h
+lalfr_split_SOURCES = split.c utils.c utils.h
+lalfr_cut_SOURCES = cut.c utils.c utils.h
+lalfr_paste_SOURCES = paste.c utils.c utils.h
 
 lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
@@ -14,9 +38,10 @@ lalframeinclude_HEADERS = \
 	FrameData.h \
 	FrameStream.h \
 	LALFrameConfig.h \
-	LALFrameIO.h \
 	LALFrameL.h \
+	LALFrameIO.h \
 	LALFrameLibVCSInfo.h \
+	LALFrameU.h \
 	LALFrameVCSInfo.h \
 	LowLatencyData.h
 
@@ -29,8 +54,11 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	LALFrameIO.c \
+	LALFrameU.c \
 	LALFrameVCSInfo.c \
 	LowLatencyData.c
+
+DEFS = $(LALFRAMEU_DEFS)
 
 noinst_HEADERS = \
 	FrameSeriesRead_source.c \
@@ -69,7 +97,9 @@ lalframe-user-env.csh lalframe-user-env.sh: lalframe-user-env.shell $(srcdir)/ge
 EXTRA_DIST = \
 	generate_user_env.awk \
 	generate_vcs_info.py \
+	LALFrameC.c \
 	LALFrameConfig.h.in \
+	LALFrameL.c \
 	LALFrameVCSInfo.h.in
 
 LALFrameVCSInfo.h: ._vcsinfo
