@@ -571,6 +571,45 @@ uint64_t XLALCountTotalFlatLatticePoints(
 
 }
 
+int XLALGenerateRandomFlatLatticePoints(
+  FlatLatticeTiling* tiling,
+  RandomParams* randpar,
+  gsl_matrix* randpoints
+  )
+{
+
+  const size_t n = tiling->dimensions;
+
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status != FLT_S_STARTED, XLAL_EFAILED);
+
+  // Check input
+  XLAL_CHECK(randpar != NULL, XLAL_EFAULT);
+  XLAL_CHECK(randpoints != NULL, XLAL_EFAULT);
+  XLAL_CHECK(randpoints->size1 == n, XLAL_ESIZE);
+
+  // Create random points in tiling parameter space
+  for (size_t j = 0; j < randpoints->size2; ++j) {
+    gsl_vector_view p = gsl_matrix_column(randpoints, j);
+    for (size_t i = 0; i < n; ++i) {
+
+      // Get bounds
+      double phys_lower, phys_upper;
+      GetPhysBounds(tiling, i, &p.vector, &phys_lower, &phys_upper);
+
+      // Generate random point within bounds
+      const double u = XLALUniformDeviate(randpar);
+      gsl_vector_set(&p.vector, i, phys_lower + u*(phys_upper - phys_lower));
+
+    }
+
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALRandomPointInFlatLatticeParamSpace(
   FlatLatticeTiling* tiling,  ///< Tiling state
   RandomParams *randomParams, ///< Random parameters for generating random point

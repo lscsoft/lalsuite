@@ -138,6 +138,15 @@ uint64_t XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 
+///
+/// Generate random points within the flat lattice tiling parameter space
+///
+int XLALGenerateRandomFlatLatticePoints(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  RandomParams* randpar,		///< [in] Random number generator state
+  gsl_matrix* randpoints		///< [in] Random points (column-wise)
+  );
+
 int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gsl_vector*, gsl_vector*, double*);
 
 ///
