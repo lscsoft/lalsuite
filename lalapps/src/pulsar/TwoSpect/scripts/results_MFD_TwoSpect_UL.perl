@@ -17,11 +17,12 @@ for(my $ii=0; $ii<100; $ii++) {
    @injections2 = reverse @injections2;
    
    $jj = 0;
-   foreach my $injection (@injections) {
+   foreach my $injection (@injections2) {
       chomp($injection);
       
-      open(ULFILE, "/home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.txt") or die "Cannot open /home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.txt $!";
-      my $ul = chomp(<ULFILE>);
+      open(ULFILE, "/home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.dat") or die "Cannot open /home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.dat $!";
+      my $ul = <ULFILE>;
+      chomp($ul);
       
       print RESULTS "$injection $ul\n";
       
