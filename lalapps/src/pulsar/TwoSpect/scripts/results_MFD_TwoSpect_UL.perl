@@ -20,7 +20,7 @@ for(my $ii=0; $ii<100; $ii++) {
    foreach my $injection (@injections2) {
       chomp($injection);
       
-      open(ULFILE, "/home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.dat") or die "Cannot open /home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.dat $!";
+      open(ULFILE, "/home/egoetz/TwoSpect/UL/$ii/uls_$jj.dat") or die "Cannot open /home/egoetz/TwoSpect/UL/$ii/uls_$jj.dat $!";
       my $ul = <ULFILE>;
       chomp($ul);
       
