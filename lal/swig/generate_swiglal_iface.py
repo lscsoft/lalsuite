@@ -283,11 +283,6 @@ for function_name in functions:
     # return function values by default
     func_ignore_retn = False
 
-    # ignore function return values whose type is 'int',
-    # since this is interpreted as a XLAL error code
-    if func_retn_type == 'int':
-        func_ignore_retn = True
-
     # ignore function return values whose type is a pointer and which
     # matches the type of the first argument, since it is common for
     # XLAL functions to return the value of the first argument

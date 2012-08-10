@@ -80,7 +80,7 @@
   }
 
   // Return integer representations of the LIGOTimeGPS seconds.
-  _int __int__() {
+  int __int__() {
     return $self->gpsSeconds;
   }
   long __long__() {

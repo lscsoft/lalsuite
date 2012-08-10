@@ -206,14 +206,6 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 #undef swiglal_check_LALStatus
 %}
 
-// Functions whose return type is 'int' will have their return values ignored,
-// since 'int' is interpreted as an XLAL error code. The '_int' typedef is for
-// use by functions defined in the SWIG interface, to make sure their return
-// values are not ignored.
-%inline %{
-typedef int _int;
-%}
-
 ////////// General fragments //////////
 
 // Empty fragment, for fragment-generating macros.
@@ -759,7 +751,7 @@ if (swiglal_release_parent(PTR)) {
 %include <lal/swiglal_python.i>
 #endif
 
-////////// General typemaps //////////
+////////// General typemaps and macros //////////
 
 // The SWIGLAL(RETURN_VALUE(TYPE,...)) public macro can be used to ensure
 // that the return value of a function is not ignored, if the return value
@@ -774,7 +766,6 @@ if (swiglal_release_parent(PTR)) {
 // only need the return value not to be ignored, but also require
 // an XLAL exception handling to be disabled.
 %define %swiglal_public_RETURN_XLAL_ERROR_CODE(...)
-%swiglal_map_a(%swiglal_clear, int, __VA_ARGS__);
 %swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
 %enddef
 #define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(...)
@@ -785,6 +776,26 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
 %enddef
 #define %swiglal_public_clear_NO_NEW_OBJECT(...)
+
+// Typemap for functions which return 'int'. If these functions also return
+// other output arguments (via 'argout' typemaps), the 'int' return value is
+// ignored. This is because 'int' is very commonly used to return an XLAL
+// error code, which will be converted into a native scripting-language
+// exception, and so the error code itself is not needed directly. To avoid
+// having to unpack the error code when collecting the other output arguments,
+// therefore, it is ignored in the wrappings. Functions which fit this criteria
+// but do return a useful 'int' can use SWIGLAL(RETURN_VALUE(int, ...)) to
+// disable this behaviour.
+// The 'newfree' typemap is used since its code will appear after all the
+// 'argout' typemaps, and will only apply to functions (since only functions
+// have %feature("new") set, and thus generate a 'newfree' typemap). The macro
+// %swiglal_maybe_drop_first_retval() is defined in the scripting-language-
+// specific interface headers; it will drop the first return value (which is
+// the 'int') from the output argument list if the argument list contains
+// at least 2 items (the 'int' and some other output argument).
+%typemap(newfree, noblock=1, fragment="swiglal_maybe_drop_first_retval") int {
+  %swiglal_maybe_drop_first_retval();
+}
 
 // Typemaps for empty arguments. These typemaps are useful when no input from the
 // scripting language is required, and an empty struct needs to be supplied to
