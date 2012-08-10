@@ -77,6 +77,19 @@ REAL8 XLALGPSGetREAL8( const LIGOTimeGPS *epoch )
   return epoch->gpsSeconds + (epoch->gpsNanoSeconds / XLAL_BILLION_REAL8);
 }
 
+/** Breaks the GPS time into REAL8 integral and fractional parts,
+ * each of which has the same sign as the epoch.  Returns the
+ * fractional part, and stores the integral part (as a REAL8)
+ * in the object pointed to by iptr.  Like the standard C math
+ * library function modf(). */
+REAL8 XLALGPSModf( REAL8 *iptr, const LIGOTimeGPS *epoch )
+{
+  INT8 ns = XLALGPSToINT8NS(epoch);
+  INT8 rem; /* remainder */
+  *iptr = ns < 0 ? -floor(-ns / XLAL_BILLION_REAL8) : floor(ns / XLAL_BILLION_REAL8);
+  rem = ns - ((INT8)(*iptr) * XLAL_BILLION_INT8);
+  return (REAL8)(rem) / XLAL_BILLION_REAL8;
+}
 
 /*
  * general purpose functions
