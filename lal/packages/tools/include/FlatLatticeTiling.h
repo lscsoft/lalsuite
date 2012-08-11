@@ -42,7 +42,7 @@ extern "C" <% // {
 ///
 /// Flat lattice tiling bound function
 ///
-typedef void (*FlatLatticeTilingBound)(
+typedef void (*FlatLatticeBound)(
   double* lower,	///< [out] Lower bound on point in dimension
   double* upper,	///< [out] Upper bound on point in dimension
   gsl_vector* point,	///< [in] Point on which to find bounds
@@ -52,7 +52,7 @@ typedef void (*FlatLatticeTilingBound)(
 ///
 /// Flat tiling lattice generator function
 ///
-typedef int (*FlatTilingLatticeGenerator)(
+typedef int (*FlatLatticeGenerator)(
   size_t dimensions,		///< [in] Number of dimensions
   gsl_matrix** generator,	///< [out] Generator matrix
   double* norm_thickness	///< [out] Normalised thickness
@@ -86,14 +86,7 @@ void XLALDestroyFlatLatticeTiling(
 ///
 /// Return the number of dimensions being tiled
 ///
-size_t XLALGetFlatLatticeTilingDimensions(
-  FlatLatticeTiling* tiling	///< [in] Tiling state
-  );
-
-///
-/// Return the flat lattice tiling metric
-///
-gsl_matrix* XLALGetFlatLatticeTilingMetric(
+size_t XLALGetFlatLatticeDimensions(
   FlatLatticeTiling* tiling	///< [in] Tiling state
   );
 
@@ -107,9 +100,9 @@ uint64_t XLALGetFlatLatticePointCount(
 ///
 /// Add a parameter space bound to the flat lattice tiling
 ///
-int XLALAddFlatLatticeTilingBound(
+int XLALAddFlatLatticeBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
-  FlatLatticeTilingBound func,	///< [in] Parameter space bound function
+  FlatLatticeBound func,	///< [in] Parameter space bound function
   gsl_vector* data		///< [in] Arbitrary data describing parameter space
   );
 
@@ -117,7 +110,7 @@ int XLALAddFlatLatticeTilingBound(
 ///
 /// Set the flat lattice tiling metric and maximum mismatch
 ///
-int XLALSetFlatLatticeTilingMetric(
+int XLALSetFlatLatticeMetric(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   gsl_matrix* metric,		///< [in] Parameter space metric
   double max_mismatch		///< [in] Maximum prescribed mismatch
@@ -126,9 +119,9 @@ int XLALSetFlatLatticeTilingMetric(
 ///
 /// Set the flat tiling lattice generator
 ///
-int XLALSetFlatTilingLatticeGenerator(
+int XLALSetFlatLatticeGenerator(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
-  FlatTilingLatticeGenerator generator	///< [in] Lattice generator function
+  FlatLatticeGenerator generator	///< [in] Lattice generator function
   );
 
 ///
@@ -168,7 +161,7 @@ int XLALAnstarLatticeGenerator(
 ///
 /// Add a constant parameter space bound to the flat lattice tiling
 ///
-int XLALAddFlatLatticeTilingConstantBound(
+int XLALAddFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   double lower,			///< [in] Lower bound on dimension
   double upper			///< [in] Upper bound on dimension

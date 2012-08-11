@@ -108,7 +108,7 @@ static int UpdateSubspace(
 /// Flat lattice tiling bound info
 ///
 typedef struct tagFLT_Bound {
-  FlatLatticeTilingBound func;		///< Parameter space bound function
+  FlatLatticeBound func;		///< Parameter space bound function
   gsl_vector* data;			///< Arbitrary data describing parameter space
 } FLT_Bound;
 
@@ -147,7 +147,7 @@ struct tagFlatLatticeTiling {
   gsl_matrix* metric;			///< Parameter space metric in normalised coordinates
 
   double max_mismatch;			///< Maximum prescribed metric mismatch between templates
-  FlatTilingLatticeGenerator generator;	///< Flat tiling lattice generator function
+  FlatLatticeGenerator generator;	///< Flat tiling lattice generator function
 
   size_t num_subspaces;			///< Number of cached tiling subspaces
   FLT_Subspace *subspaces;		///< Array of cached tiling subspaces
@@ -240,20 +240,12 @@ void XLALDestroyFlatLatticeTiling(
 
 }
 
-size_t XLALGetFlatLatticeTilingDimensions(
+size_t XLALGetFlatLatticeDimensions(
   FlatLatticeTiling* tiling
   )
 {
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
   return tiling->dimensions;
-}
-
-gsl_matrix* XLALGetFlatLatticeTilingMetric(
-  FlatLatticeTiling* tiling
-  )
-{
-  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  return tiling->metric;
 }
 
 uint64_t XLALGetFlatLatticePointCount(
@@ -264,9 +256,9 @@ uint64_t XLALGetFlatLatticePointCount(
   return tiling->count;
 }
 
-int XLALAddFlatLatticeTilingBound(
+int XLALAddFlatLatticeBound(
   FlatLatticeTiling* tiling,
-  FlatLatticeTilingBound func,
+  FlatLatticeBound func,
   gsl_vector* data
   )
 {
@@ -287,7 +279,7 @@ int XLALAddFlatLatticeTilingBound(
 
 }
 
-int XLALSetFlatLatticeTilingMetric(
+int XLALSetFlatLatticeMetric(
   FlatLatticeTiling* tiling,
   gsl_matrix* metric,
   double max_mismatch
@@ -358,9 +350,9 @@ int XLALSetFlatLatticeTilingMetric(
 
 }
 
-int XLALSetFlatTilingLatticeGenerator(
+int XLALSetFlatLatticeGenerator(
   FlatLatticeTiling* tiling,
-  FlatTilingLatticeGenerator generator
+  FlatLatticeGenerator generator
   )
 {
 
@@ -721,7 +713,7 @@ static void ConstantBound(double* lower, double* upper, gsl_vector* point UNUSED
   *upper = gsl_vector_get(data, 1);
 
 }
-int XLALAddFlatLatticeTilingConstantBound(
+int XLALAddFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,
   double lower,
   double upper
@@ -743,7 +735,7 @@ int XLALAddFlatLatticeTilingConstantBound(
   gsl_vector_set(data, 1, upper);
 
   // Set parameter space
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, ConstantBound, data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALAddFlatLatticeBound(tiling, ConstantBound, data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
