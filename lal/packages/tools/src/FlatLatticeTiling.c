@@ -209,6 +209,8 @@ void XLALDestroyFlatLatticeTiling(
 
   if (tiling) {
 
+    gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
+
     // Destroy bounds array
     for (size_t k = 0; k < tiling->num_bounds; ++k) {
       gsl_vector_free(tiling->bounds[k].data);
@@ -231,6 +233,8 @@ void XLALDestroyFlatLatticeTiling(
     gsl_vector_free(tiling->phys_offset);
     gsl_vector_free(tiling->curr_phys_point);
     XLALFree(tiling);
+
+    gsl_set_error_handler(old_handler);
 
   }
 
