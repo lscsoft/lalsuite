@@ -20,8 +20,6 @@
 #ifndef _BITFIELD_H
 #define _BITFIELD_H
 
-#include <lal/LALAtomicDatatypes.h>
-
 /**
  * \addtogroup BitField_h
  * \author Karl Wette
@@ -42,22 +40,22 @@
 /**
  * Get the value of the (zero-based) ith bit of x
  */
-#define GET_BIT(T, x, i) ((x & ONE_BIT(T, i)) == ONE_BIT(T, i) ? 1 : 0)
+#define GET_BIT(T, x, i) (((x) & ONE_BIT(T, i)) == ONE_BIT(T, i) ? 1 : 0)
 
 /**
  * Sets the (zero-based) ith bit of x to the truth of v
  */
-#define SET_BIT(T, x, i, v) x = ((v) ? x | ONE_BIT(T, i) : x & ~ONE_BIT(T, i))
+#define SET_BIT(T, x, i, v) ((v) ? ((x) |= ONE_BIT(T, i)) : ((x) &= ~ONE_BIT(T, i)))
 
 /**
  * Get if all bits from 0 to n-1 of x are set
  */
-#define GET_ALL(T, x, n) ((x & ALL_BITS(T, n)) == ALL_BITS(T, n) ? 1 : 0)
+#define GET_ALL(T, x, n) (((x) & ALL_BITS(T, n)) == ALL_BITS(T, n) ? 1 : 0)
 
 /**
  * Sets all bits from 0 to n of x to the truth of v
  */
-#define SET_ALL(T, x, n, v) x = ((v) ? x | ALL_BITS(T, n) : x & ~ALL_BITS(T, n))
+#define SET_ALL(T, x, n, v) ((v) ? ((x) |= ALL_BITS(T, n)) : ((x) &= ~ALL_BITS(T, n)))
 
 /*@}*/
 

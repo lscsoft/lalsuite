@@ -34,83 +34,55 @@
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_nan.h>
 
+#include <lal/FlatLatticeTilingPulsar.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALMalloc.h>
 #include <lal/LALConstants.h>
 #include <lal/XLALError.h>
-#include <lal/GSLSupport.h>
-#include <lal/FlatLatticeTilingPulsar.h>
-
-#define TRUE  (1==1)
-#define FALSE (1==0)
-
-/**
- * Calculate the factorial of an integer
- */
-static INT4 factorial(
-		      INT4 i
-		      )
-{
-
-  INT4 f = 1;
-
-  while (i > 1)
-    f *= i--;
-
-  return f;
-
-}
+#include <lal/Factorial.h>
 
 /**
  * Set a flat lattice tiling to the spindown Fstat metric
  * (so no sky position tiling). Components are in the order
- * \f$\omega_0,\alpha,\delta,\omega_1,\omega_2,...\f$
+ * \f$\alpha,\delta,\omega_0,\omega_1,\omega_2,...\f$
  * and will be converted on output to
- * \f$f_0,\alpha,\delta,f_1,f_2,...\f$
+ * \f$\alpha,\delta,f_0,f_1,f_2,...\f$
  * using the conversions
  * \f$f_k = \omega_k \frac{(k+1)!}{{2\pi T^{k+1}}}\f$
  */
 int XLALSetFlatLatticeTilingSpindownFstatMetric(
-						FlatLatticeTiling *tiling, /**< Tiling structure */
-						REAL8 max_mismatch,        /**< Maximum mismatch */
-						REAL8 Tspan                /**< Time span of the search */
-						)
+  FlatLatticeTiling *tiling, /**< Tiling structure */
+  double max_mismatch,        /**< Maximum mismatch */
+  double Tspan                /**< Time span of the search */
+  )
 {
 
-  const int n = tiling->dimensions;
-
-  int i, j;
-  gsl_matrix *norm_metric = NULL;
-  gsl_vector *norm_to_real;
+  const size_t n = XLALGetFlatLatticeTilingDimensions(tiling);
 
   /* Check input */
-  if (Tspan <= 0.0)
-    XLAL_ERROR(XLAL_EINVAL, "Tspan must be strictly positive");
+  XLAL_CHECK(Tspan > 0.0, XLAL_EINVAL);
 
   /* Allocate memory */
-  ALLOC_GSL_MATRIX(norm_metric, n, n, XLAL_FAILURE);
-  ALLOC_GSL_VECTOR(norm_to_real,   n, XLAL_FAILURE);
+  gsl_matrix* norm_metric = gsl_matrix_alloc(n, n);
+  XLAL_CHECK(norm_metric != NULL, XLAL_ENOMEM);
+  gsl_vector* norm_to_real = gsl_vector_alloc(n);
+  XLAL_CHECK(norm_to_real != NULL, XLAL_ENOMEM);
   gsl_matrix_set_identity(norm_metric);
-  gsl_vector_set_all(norm_to_real, 1.0);
 
   /* Calculate metric and conversion factors */
-  for (i = 0; i < n - 2; ++i) {
-
-    for (j = 0; j < n - 2; ++j)
-      gsl_matrix_set(norm_metric, i + 2, j + 2, (1.0 * (i + 1) * (j + 1)) / ((i + 2) * (j + 2) * (i + j + 3)));
-
-    gsl_vector_set(norm_to_real, i + 2, 1.0 * factorial(i + 1) / (LAL_TWOPI * pow(Tspan, i + 1)));
-
+  for (size_t i = 0; i < n - 2; ++i) {
+    for (size_t j = i; j < n - 2; ++j) {
+      gsl_matrix_set(norm_metric, i + 2, j + 2, (
+                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
+                       ) / (
+                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
+                         ));
+      gsl_matrix_set(norm_metric, j + 2, i + 2, gsl_matrix_get(norm_metric, i + 2, j + 2));
+    }
   }
 
-  /* Swap rows/columns 0 and 2 to get right order */
-  gsl_matrix_swap_rows(norm_metric, 0, 2);
-  gsl_matrix_swap_columns(norm_metric, 0, 2);
-  gsl_vector_swap_elements(norm_to_real, 0, 2);
-
   /* Set the metric of the flat lattice tiling */
-  if (XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch, norm_to_real) != XLAL_SUCCESS)
-    XLAL_ERROR(XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFAILED);
 
   /* Cleanup */
   FREE_GSL_MATRIX(norm_metric);
@@ -124,83 +96,54 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  * Set a flat lattice tiling to a parameter space defined by
  * the age and possible braking index range of an object
  */
-static BOOLEAN AgeBrakingIndexBound(void *data, INT4 dimension, gsl_vector *point, REAL8 *lower, REAL8 *upper)
+static void AgeBraking1stSpindownBound(double* lower, double* upper, gsl_vector* point, gsl_vector* data)
 {
-  double x;
-
-  /* Set constant based on dimension */
-  switch (dimension) {
-  case 0:
-    x = 1.0;
-    break;
-  case 1:
-    x = gsl_vector_get(point, 0);
-    break;
-  case 2:
-    x = gsl_vector_get(point, 1);
-    x *= x;
-    x /= gsl_vector_get(point, 0);
-    break;
-  default:
-    XLAL_ERROR(XLAL_EINVAL, "invalid dimension %d input, allowed are 0-2", dimension);
-  }
 
   /* Set lower and upper bound */
-  *lower = x * gsl_matrix_get((gsl_matrix*)data, dimension, 0);
-  *upper = x * gsl_matrix_get((gsl_matrix*)data, dimension, 1);
-
-  return TRUE;
+  double x = gsl_vector_get(point, point->size - 1);
+  *lower = x * gsl_vector_get(data, 0);
+  *upper = x * gsl_vector_get(data, 1);
 
 }
-static void AgeBrakingIndexFree(void *data)
+static void AgeBraking2ndSpindownBound(double* lower, double* upper, gsl_vector* point, gsl_vector* data)
 {
 
-  /* Cleanup */
-  FREE_GSL_MATRIX((gsl_matrix*)data);
+  /* Set lower and upper bound */
+  double x = gsl_vector_get(point, point->size - 1);
+  x *= x;
+  x /= gsl_vector_get(point, point->size - 2);
+  *lower = x * gsl_vector_get(data, 0);
+  *upper = x * gsl_vector_get(data, 1);
 
 }
 int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
-						  FlatLatticeTiling *tiling, /**< Tiling structure */
-						  REAL8 freq,                /**< Starting frequency */
-						  REAL8 freq_band,           /**< Frequency band */
-						  REAL8 age,                 /**< Spindown age */
-						  REAL8 min_braking,         /**< Minimum braking index */
-						  REAL8 max_braking,         /**< Maximum braking index */
-						  INT4 offset,               /**< Number of dimensions offset between first dimension and frequency */
-						  INT4 gap                   /**< Number of dimensions gap netween frequency and first spindown */
-						  )
+  FlatLatticeTiling *tiling, /**< Tiling structure */
+  double freq,                /**< Starting frequency */
+  double freq_band,           /**< Frequency band */
+  double age,                 /**< Spindown age */
+  double min_braking,         /**< Minimum braking index */
+  double max_braking          /**< Maximum braking index */
+  )
 {
 
-  gsl_matrix *data = NULL;
-  UINT8 bound;
+  // Allocate memory
+  gsl_vector* f1dot_data = gsl_vector_alloc(2);
+  XLAL_CHECK(f1dot_data != NULL, XLAL_ENOMEM);
+  gsl_vector* f2dot_data = gsl_vector_alloc(2);
+  XLAL_CHECK(f2dot_data != NULL, XLAL_ENOMEM);
 
-  /* Check tiling dimension */
-  if (tiling->dimensions < (3 + gap))
-    XLAL_ERROR(XLAL_EINVAL, "'tiling->dimensions' is too small");
+  // Set frequency bounds
+  XLAL_CHECK(XLALAddFlatLatticeTilingConstantBound(tiling, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFAILED);
 
-  /* Allocate memory */
-  ALLOC_GSL_MATRIX(data, tiling->dimensions, 2, XLAL_FAILURE);
-  gsl_matrix_set_zero(data);
+  // Set first spindown bounds
+  gsl_vector_set(f1dot_data, 0, -1.0 / ((min_braking - 1.0) * age));
+  gsl_vector_set(f1dot_data, 1, -1.0 / ((max_braking - 1.0) * age));
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, AgeBraking1stSpindownBound, f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
-  /* Set frequency bounds */
-  gsl_matrix_set(data, 0, 0, freq);
-  gsl_matrix_set(data, 0, 1, freq + freq_band);
-
-  /* Set first spindown bounds */
-  gsl_matrix_set(data, 1, 0, -1.0 / ((min_braking - 1.0) * age));
-  gsl_matrix_set(data, 1, 1, -1.0 / ((max_braking - 1.0) * age));
-
-  /* Set second spindown bounds */
-  gsl_matrix_set(data, 2, 0, min_braking);
-  gsl_matrix_set(data, 2, 1, max_braking);
-
-  /* Set bound dimensions */
-  bound = ((UINT8)1) | (((UINT8)6) << gap) << offset;
-
-  /* Set parameter space */
-  if (XLAL_SUCCESS != XLALAddFlatLatticeTilingBound(tiling, bound, AgeBrakingIndexBound,
-						    (void*)data, AgeBrakingIndexFree))
-    XLAL_ERROR(XLAL_EFAILED);
+  // Set second spindown bounds
+  gsl_vector_set(f2dot_data, 0, min_braking);
+  gsl_vector_set(f2dot_data, 1, max_braking);
+  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, AgeBraking2ndSpindownBound, f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
