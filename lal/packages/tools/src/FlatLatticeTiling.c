@@ -446,30 +446,88 @@ gsl_vector* XLALNextFlatLatticePoint(
 
     return tiling->curr_phys_point;
 
-  } else if (tiling->status == FLT_S_STARTED) {
+  }
 
-    // Loop until a point is found
-    ssize_t i = n;
-    while (1) {
+  // Otherwise started status: loop until the next point is found
+  ssize_t i = n;
+  while (1) {
 
-      // Decrease current dimension index
-      --i;
+    // Decrease current dimension index
+    --i;
 
-      // If dimension index is less than zero, we're done!
-      if (i < 0) {
-        tiling->status = FLT_S_FINISHED;
-        return NULL;
+    // If dimension index is less than zero, we're done!
+    if (i < 0) {
+      tiling->status = FLT_S_FINISHED;
+      return NULL;
+    }
+
+    // If dimension is not tiled, move to lower dimension
+    if (!GET_BIT(uint64_t, tiling->curr_is_tiled, i)) {
+      continue;
+    }
+
+    // Increment current point along index
+    {
+      gsl_vector_view increment = gsl_matrix_column(tiling->curr_subspace->increment, i);
+      gsl_vector_add(tiling->curr_point, &increment.vector);
+    }
+
+    // Update current physical point
+    gsl_vector_memcpy(tiling->curr_phys_point, tiling->curr_point);
+    gsl_vector_mul(tiling->curr_phys_point, tiling->phys_scale);
+    gsl_vector_add(tiling->curr_phys_point, tiling->phys_offset);
+
+    // Get current point and bounds
+    double lower = gsl_vector_get(tiling->curr_lower, i);
+    double point = gsl_vector_get(tiling->curr_point, i);
+    double upper = gsl_vector_get(tiling->curr_upper, i);
+    double padding = gsl_vector_get(tiling->curr_subspace->padding, i);
+
+    // If point is out of bounds, move to lower dimension
+    if (point > upper + padding) {
+      continue;
+    }
+
+    // Return point to lower bound in higher dimensions
+    for (size_t j = i + 1; j < n; ++j) {
+
+      // Get physical bounds
+      double phys_lower, phys_upper;
+      GetPhysBounds(tiling, j, tiling->curr_phys_point, &phys_lower, &phys_upper);
+
+      // Set lower and upper bounds
+      lower = ( phys_lower - gsl_vector_get(tiling->phys_offset, j) ) / gsl_vector_get(tiling->phys_scale, j);
+      upper = ( phys_upper - gsl_vector_get(tiling->phys_offset, j) ) / gsl_vector_get(tiling->phys_scale, j);
+      gsl_vector_set(tiling->curr_lower, j, lower);
+      gsl_vector_set(tiling->curr_upper, j, upper);
+
+      // Set whether current dimension is tiled
+      const bool tiled = GetIsTiled(tiling, j, lower, upper);
+      SET_BIT(int64_t, tiling->curr_is_tiled, j, tiled);
+
+      // Update subspace
+      if (tiling->curr_is_tiled != tiling->curr_subspace->is_tiled) {
+        XLAL_CHECK_NULL(UpdateSubspace(tiling) == XLAL_SUCCESS, XLAL_EFAILED);
       }
 
-      // If dimension is not tiled, move to lower dimension
-      if (!GET_BIT(uint64_t, tiling->curr_is_tiled, i)) {
-        continue;
-      }
+      if (tiled) {
 
-      // Increment current point along index
-      {
-        gsl_vector_view increment = gsl_matrix_column(tiling->curr_subspace->increment, i);
-        gsl_vector_add(tiling->curr_point, &increment.vector);
+        // Get increment vector
+        gsl_vector_view increment = gsl_matrix_column(tiling->curr_subspace->increment, j);
+
+        // Calculate the distance from current point to the lower bound, in integer number of increments
+        point = gsl_vector_get(tiling->curr_point, j);
+        padding = gsl_vector_get(tiling->curr_subspace->padding, j);
+        const double dist = floor((lower - padding - point) / gsl_vector_get(&increment.vector, j));
+
+        // Move point back to lower bound
+        gsl_blas_daxpy(dist, &increment.vector, tiling->curr_point);
+
+      } else {
+
+        // Otherwise just centre point
+        gsl_vector_set(tiling->curr_point, j, 0.5*(lower + upper));
+
       }
 
       // Update current physical point
@@ -477,70 +535,10 @@ gsl_vector* XLALNextFlatLatticePoint(
       gsl_vector_mul(tiling->curr_phys_point, tiling->phys_scale);
       gsl_vector_add(tiling->curr_phys_point, tiling->phys_offset);
 
-      // Get current point and bounds
-      double lower = gsl_vector_get(tiling->curr_lower, i);
-      double point = gsl_vector_get(tiling->curr_point, i);
-      double upper = gsl_vector_get(tiling->curr_upper, i);
-      double padding = gsl_vector_get(tiling->curr_subspace->padding, i);
-
-      // If point is out of bounds, move to lower dimension
-      if (point > upper + padding) {
-        continue;
-      }
-
-      // Return point to lower bound in higher dimensions
-      for (size_t j = i + 1; j < n; ++j) {
-
-        // Get physical bounds
-        double phys_lower, phys_upper;
-        GetPhysBounds(tiling, j, tiling->curr_phys_point, &phys_lower, &phys_upper);
-
-        // Set lower and upper bounds
-        lower = ( phys_lower - gsl_vector_get(tiling->phys_offset, j) ) / gsl_vector_get(tiling->phys_scale, j);
-        upper = ( phys_upper - gsl_vector_get(tiling->phys_offset, j) ) / gsl_vector_get(tiling->phys_scale, j);
-        gsl_vector_set(tiling->curr_lower, j, lower);
-        gsl_vector_set(tiling->curr_upper, j, upper);
-
-        // Set whether current dimension is tiled
-        const bool tiled = GetIsTiled(tiling, j, lower, upper);
-        SET_BIT(int64_t, tiling->curr_is_tiled, j, tiled);
-
-        // Update subspace
-        if (tiling->curr_is_tiled != tiling->curr_subspace->is_tiled) {
-          XLAL_CHECK_NULL(UpdateSubspace(tiling) == XLAL_SUCCESS, XLAL_EFAILED);
-        }
-
-        if (tiled) {
-
-          // Get increment vector
-          gsl_vector_view increment = gsl_matrix_column(tiling->curr_subspace->increment, j);
-
-          // Calculate the distance from current point to the lower bound, in integer number of increments
-          point = gsl_vector_get(tiling->curr_point, j);
-          padding = gsl_vector_get(tiling->curr_subspace->padding, j);
-          const double dist = floor((lower - padding - point) / gsl_vector_get(&increment.vector, j));
-
-          // Move point back to lower bound
-          gsl_blas_daxpy(dist, &increment.vector, tiling->curr_point);
-
-        } else {
-
-          // Otherwise just centre point
-          gsl_vector_set(tiling->curr_point, j, 0.5*(lower + upper));
-
-        }
-
-        // Update current physical point
-        gsl_vector_memcpy(tiling->curr_phys_point, tiling->curr_point);
-        gsl_vector_mul(tiling->curr_phys_point, tiling->phys_scale);
-        gsl_vector_add(tiling->curr_phys_point, tiling->phys_offset);
-
-      }
-
-      // Found a template point
-      break;
-
     }
+
+    // Found a template point
+    break;
 
   }
 
