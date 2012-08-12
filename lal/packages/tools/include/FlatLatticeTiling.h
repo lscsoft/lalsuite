@@ -63,6 +63,12 @@ typedef int (*FlatTilingLatticeGenerator)(
 ///
 typedef struct tagFlatLatticeTiling FlatLatticeTiling;
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
+SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
+SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
+#endif
+
 ///
 /// Create a new flat lattice tiling state structure
 ///
@@ -124,7 +130,6 @@ int XLALSetFlatTilingLatticeGenerator(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
   FlatTilingLatticeGenerator generator	///< [in] Lattice generator function
   );
-
 
 ///
 /// Return the next point in the flat lattice tiling parameter space
