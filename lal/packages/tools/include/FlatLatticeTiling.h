@@ -28,6 +28,8 @@
 #ifndef _FLATLATTICETILING_H
 #define _FLATLATTICETILING_H
 
+#include <stdbool.h>
+
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
@@ -129,6 +131,15 @@ int XLALSetFlatLatticeGenerator(
 ///
 gsl_vector* XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling		///< [in] Tiling state
+  );
+
+///
+/// Return a set of points in the flat lattice tiling parameter space
+///
+size_t XLALNextFlatLatticePoints(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  gsl_matrix* points,			///< [in] Flat lattice tiling points
+  bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
   );
 
 ///
