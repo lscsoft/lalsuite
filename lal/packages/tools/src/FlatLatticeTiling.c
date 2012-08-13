@@ -624,7 +624,7 @@ uint64_t XLALCountTotalFlatLatticePoints(
 
   // Check tiling
   XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status == FLT_S_INITIALISED, XLAL_EFAILED);
+  XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // Iterate over all templates
   int errnum;
@@ -653,7 +653,7 @@ int XLALGenerateRandomFlatLatticePoints(
 
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status != FLT_S_STARTED, XLAL_EFAILED);
+  XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // Check input
   XLAL_CHECK(randpar != NULL, XLAL_EFAULT);
