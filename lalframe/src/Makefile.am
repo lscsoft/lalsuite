@@ -2,9 +2,9 @@ INCLUDES = -I$(top_builddir)/include
 LDADD = liblalframe.la
 
 bin_PROGRAMS = \
-	lalframe_lld
+	lalfr-lld
 
-lalframe_lld_SOURCES = lld.c
+lalfr_lld_SOURCES = lld.c
 
 lalframeincludedir = $(includedir)/lal
 lalframeinclude_HEADERS = \
