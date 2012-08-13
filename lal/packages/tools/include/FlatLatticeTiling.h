@@ -143,6 +143,13 @@ size_t XLALNextFlatLatticePoints(
   );
 
 ///
+/// Return to the beginning of a flat lattice tiling
+///
+int XLALRestartFlatLatticeTiling(
+  FlatLatticeTiling* tiling		///< [in] Tiling state
+  );
+
+///
 /// Calculate the total number of flat lattice tiling parameter space points
 ///
 uint64_t XLALCountTotalFlatLatticePoints(
