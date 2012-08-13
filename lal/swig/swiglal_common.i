@@ -769,7 +769,7 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 #define %swiglal_public_clear_DISABLE_EXCEPTIONS(...)
 
-// The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn off
+// The SWIGLAL(NO_NEW_OBJECT(...)) macro can be used to turn off
 // SWIG object ownership for certain functions.
 %define %swiglal_public_NO_NEW_OBJECT(...)
 %swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
@@ -798,9 +798,9 @@ if (swiglal_release_parent(PTR)) {
 
 // Typemaps for empty arguments. These typemaps are useful when no input from the
 // scripting language is required, and an empty struct needs to be supplied to
-// the C function. The SWIGLAL(EMPTY_ARGUMENT()) macro applies the typemap which
-// supplies a static struct, while the SWIGLAL(NEW_EMPTY_ARGUMENT()) macro applies
-// the typemap which supplies a dynamically-allocated struct.
+// the C function. The SWIGLAL(EMPTY_ARGUMENT(TYPE, ...)) macro applies the typemap which
+// supplies a static struct, while the SWIGLAL(NEW_EMPTY_ARGUMENT(TYPE, ...)) macro
+// applies the typemap which supplies a dynamically-allocated struct.
 %define %swiglal_public_EMPTY_ARGUMENT(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
 %enddef
@@ -966,7 +966,7 @@ if (swiglal_release_parent(PTR)) {
 
 // Typemaps for pointers to primitive scalars. These are treated as output-only
 // arguments by default, by globally applying the SWIG OUTPUT typemaps. The INOUT
-// typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS()) macro.
+// typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS(TYPE, ...)) macro.
 %apply int* OUTPUT { enum SWIGTYPE* };
 %apply signed char* OUTPUT { INT2* };
 %apply unsigned char* OUTPUT { UINT2* };
@@ -996,7 +996,7 @@ if (swiglal_release_parent(PTR)) {
 // argument, and return their results in the output argument list. Also supply
 // an INOUT typemap for input-output arguments, which allows a scripting-language
 // input argument to be supplied. The INOUT typemaps can be applied as needed
-// using the SWIGLAL(INOUT_STRUCTS()) macro.
+// using the SWIGLAL(INOUT_STRUCTS(TYPE, ...)) macro.
 %typemap(in, noblock=1, numinputs=0) SWIGTYPE ** (void *argp = NULL, int owner = 0) {
   $1 = %reinterpret_cast(&argp, $ltype);
   owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
