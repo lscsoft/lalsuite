@@ -761,14 +761,13 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 #define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
 
-// The SWIGLAL(RETURN_XLAL_ERROR_CODE(...)) public macro is useful for
-// functions which manipulate XLAL error codes. These functions not
-// only need the return value not to be ignored, but also require
-// an XLAL exception handling to be disabled.
-%define %swiglal_public_RETURN_XLAL_ERROR_CODE(...)
+// The SWIGLAL(DISABLE_EXCEPTIONS(...)) public macro is useful for
+// functions which manipulate XLAL error codes, which thus require
+// XLAL exception handling to be disabled.
+%define %swiglal_public_DISABLE_EXCEPTIONS(...)
 %swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
 %enddef
-#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(...)
+#define %swiglal_public_clear_DISABLE_EXCEPTIONS(...)
 
 // The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn off
 // SWIG object ownership for certain functions.
