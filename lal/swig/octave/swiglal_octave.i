@@ -83,22 +83,6 @@
 %swiglal_oct_bin_op(sub);
 %swiglal_oct_bin_op(xor);
 
-// In-place binary operators. Octave does not support these
-// operators, and so they are removed from the interface.
-%define %swiglal_oct_inp_op(NAME)
-%ignore *::__##NAME##__;
-%enddef
-%swiglal_oct_inp_op(iadd);
-%swiglal_oct_inp_op(iand);
-%swiglal_oct_inp_op(idiv);
-%swiglal_oct_inp_op(ilshift);
-%swiglal_oct_inp_op(imod);
-%swiglal_oct_inp_op(imul);
-%swiglal_oct_inp_op(ior);
-%swiglal_oct_inp_op(irshift);
-%swiglal_oct_inp_op(isub);
-%swiglal_oct_inp_op(ixor);
-
 ////////// General fragments, typemaps, and macros //////////
 
 // Helper fragment and macro for typemap for functions which return 'int'.

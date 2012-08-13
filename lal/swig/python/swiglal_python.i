@@ -92,27 +92,6 @@
 %swiglal_py_bin_op(sub, binaryfunc, nb_subtract);
 %swiglal_py_bin_op(xor, binaryfunc, nb_xor);
 
-// In-place binary operators. These are set up to destroy
-// the input (right-hand-side) object, and return a new
-// object (on the left-hand side) which is the result of
-// the operation.
-%define %swiglal_py_inp_op(NAME, FUNCTYPE, SLOT)
-%delobject *::__##NAME##__;
-%newobject *::__##NAME##__;
-%pythonmaybecall *::__##NAME##__;
-%feature("python:slot", #SLOT, functype=#FUNCTYPE) *::__##NAME##__;
-%enddef
-%swiglal_py_inp_op(iadd, binaryfunc, nb_inplace_add);
-%swiglal_py_inp_op(iand, binaryfunc, nb_inplace_and);
-%swiglal_py_inp_op(idiv, binaryfunc, nb_inplace_divide);
-%swiglal_py_inp_op(ilshift, binaryfunc, nb_inplace_lshift);
-%swiglal_py_inp_op(imod, binaryfunc, nb_inplace_remainder);
-%swiglal_py_inp_op(imul, binaryfunc, nb_inplace_multiply);
-%swiglal_py_inp_op(ior, binaryfunc, nb_inplace_or);
-%swiglal_py_inp_op(irshift, binaryfunc, nb_inplace_rshift);
-%swiglal_py_inp_op(isub, binaryfunc, nb_inplace_subtract);
-%swiglal_py_inp_op(ixor, binaryfunc, nb_inplace_xor);
-
 // Comparison operators.
 %define %swiglal_py_cmp_op(NAME, COMPTYPE)
 %pythonmaybecall *::__##NAME##__;
