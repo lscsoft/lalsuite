@@ -567,9 +567,8 @@ size_t XLALNextFlatLatticePoints(
   while (i < points->size2) {
 
     // Get next tiling point, checking for errors
-    int errnum;
-    XLAL_TRY(point = XLALNextFlatLatticePoint(tiling), errnum);
-    XLAL_CHECK_VAL(0, errnum == 0, XLAL_EFAILED);
+    point = XLALNextFlatLatticePoint(tiling);
+    XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
 
     // If no point return, no more points available
     if (point == NULL) {
@@ -627,9 +626,8 @@ uint64_t XLALCountTotalFlatLatticePoints(
   XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // Iterate over all templates
-  int errnum;
-  XLAL_TRY(while (XLALNextFlatLatticePoint(tiling) != NULL), errnum);
-  XLAL_CHECK_VAL(0, errnum == 0, XLAL_EFAILED);
+  while (XLALNextFlatLatticePoint(tiling) != NULL);
+  XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
 
   // Save the template count
   uint64_t count = tiling->count;
