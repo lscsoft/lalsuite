@@ -194,6 +194,51 @@ int XLALAddFlatLatticeConstantBound(
   double upper			///< [in] Upper bound on dimension
   );
 
+///
+/// Workspace for computing the nearest template to a set of injections
+///
+typedef struct tagNearestTemplateWorkspace NearestTemplateWorkspace;
+
+///
+/// Create a new workspace for computing the nearest template to a set of injections
+///
+NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
+  const gsl_matrix* metric,		///< [in] Parameter space metric
+  const size_t num_templates,		///< [in] Number of templates to compare at once
+  const size_t num_injections		///< [in] Nunber of injections to compare at once
+  );
+
+///
+/// Destroy a nearest template workspace
+///
+void XLALDestroyNearestTemplateWorkspace(
+  NearestTemplateWorkspace* wksp	///< [in] Nearest template workspace
+  );
+
+///
+/// Update the templates used to compute distances from, and reset nearest template index
+///
+int XLALUpdateWorkspaceTemplates(
+  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
+  const gsl_matrix* templates,		///< [in] Template bank
+  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
+  );
+
+///
+/// Update the injections used to compute distances to, and reset minimum distances
+///
+int XLALUpdateWorkspaceInjections(
+  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
+  const gsl_matrix* injections,		///< [in] Injection set
+  gsl_vector* min_distance		///< [in] Distance from injection to nearest template
+  );
+
+int XLALUpdateNearestTemplateToInjections(
+  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
+  gsl_vector* min_distance,		///< [in] Distance from injection to nearest template
+  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
+  );
+
 #ifdef __cplusplus
 %> // }
 #endif
