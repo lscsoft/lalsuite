@@ -776,6 +776,14 @@ if (swiglal_release_parent(PTR)) {
 %enddef
 #define %swiglal_public_clear_NO_NEW_OBJECT(...)
 
+// The SWIGLAL(FUNCTION_POINTER(...)) macro can be used to create
+// a function pointer constant, for functions which need to be used
+// as callback functions.
+%define %swiglal_public_FUNCTION_POINTER(...)
+%swiglal_map_ab(%swiglal_feature, "callback", "%sPtr", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_FUNCTION_POINTER(...)
+
 // Typemap for functions which return 'int'. If these functions also return
 // other output arguments (via 'argout' typemaps), the 'int' return value is
 // ignored. This is because 'int' is very commonly used to return an XLAL
