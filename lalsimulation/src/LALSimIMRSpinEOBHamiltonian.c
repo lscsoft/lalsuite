@@ -21,7 +21,7 @@
  * \author Craig Robinson
  *
  * Functions for calculating the effective one-body Hamiltonian for 
- * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
+ * spinning binaries, as described in Taracchini et al. arXiv:1202.0790.
  * This code borrows hugely from a C implementation originally written
  * by Enrico Barausse.
  */
@@ -44,6 +44,9 @@
  *------------------------------------------------------------------------------------------
  */
 
+/**
+ * This function calculates the DeltaR potential function in the spin EOB Hamiltonian
+ */
 static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
         SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
         const REAL8    r,       /**<< Current orbital radius (in units of total mass) */
@@ -110,13 +113,13 @@ static double GSLSpinAlignedHamiltonianWrapper( double x, void *params );
  * otherwise, it will return the XLAL REAL8 failure NaN.
  */
 static REAL8 XLALSimIMRSpinEOBHamiltonian( 
-               const REAL8    eta,
-               REAL8Vector    * restrict x,         /*<< Position vector */
-               REAL8Vector    * restrict p,	    /*<< Momentum vector */
-               REAL8Vector    * restrict sigmaKerr, /*<< Spin vector sigma_kerr */
-               REAL8Vector    * restrict sigmaStar, /*<< Spin vector sigma_star */
-               INT4                      tortoise,  /*<< flag to state whether the momentum is the tortoise co-ord */
-	       SpinEOBHCoeffs *coeffs               /*<< Structure containing various coefficients */
+               const REAL8    eta,                  /**<< Symmetric mass ratio */
+               REAL8Vector    * restrict x,         /**<< Position vector */
+               REAL8Vector    * restrict p,	    /**<< Momentum vector */
+               REAL8Vector    * restrict sigmaKerr, /**<< Spin vector sigma_kerr */
+               REAL8Vector    * restrict sigmaStar, /**<< Spin vector sigma_star */
+               INT4                      tortoise,  /**<< flag to state whether the momentum is the tortoise co-ord */
+	       SpinEOBHCoeffs *coeffs               /**<< Structure containing various coefficients */
                )
 {
   REAL8 r, r2, nx, ny, nz;
@@ -412,9 +415,9 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
  * If all goes well, the function will return XLAL_SUCCESS. Otherwise, XLAL_FAILURE is returned.
  */
 static int XLALSimIMRCalculateSpinEOBHCoeffs(
-        SpinEOBHCoeffs *coeffs,
-        const REAL8    eta,
-        const REAL8    a
+        SpinEOBHCoeffs *coeffs, /**<< EOB parameters including pre-computed coefficients (returned) */
+        const REAL8    eta,     /**<< symmetric mass ratio */
+        const REAL8    a        /**<< Normalized deformed Kerr spin */
         )
 {
 
@@ -526,12 +529,13 @@ static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
 }
 
 /**
- * Function to calculate the value of omega for the spin-aligned EOB waveform
+ * Function to calculate the value of omega for the spin-aligned EOB waveform.
+ * Can NOT be used in precessing cases. This omega is defined as $\dot{y}/r$ by setting $y=0$.
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBCalcOmega(
-                      const REAL8           values[],
-                      SpinEOBParams         *funcParams
+                      const REAL8           values[],   /**<< Dynamical variables */
+                      SpinEOBParams         *funcParams /**<< EOB parameters */
                       )
 {
   static const REAL8 STEP_SIZE = 1.0e-4;
@@ -581,10 +585,13 @@ XLALSimIMRSpinAlignedEOBCalcOmega(
   return omega;
 }
 
+/**
+ * Function to calculate the non-Keplerian coefficient for the spin-aligned EOB model.
+ */
 static REAL8
 XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
-                      const REAL8           values[],
-                      SpinEOBParams         *funcParams
+                      const REAL8           values[],   /**<< Dynamical variables */
+                      SpinEOBParams         *funcParams /**<< EOB parameters */
                       )
 {
 
