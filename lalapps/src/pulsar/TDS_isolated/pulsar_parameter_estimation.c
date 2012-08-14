@@ -82,6 +82,8 @@ static char USAGE1[] = \
 " --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
 " --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
 " --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
+" --h0priorfile       (string) a file containing a h0 prior probability\n\
+                     distribution (first column h0, second column p(h0))\n"\
 " --phi0prior         type of prior on phi0 - uniform or gaussian\n"\
 " --phi0mean          (REAL8) mean of a gaussian prior on phi0\n"\
 " --phi0sig           (REAL8) std. dev. of a gaussian prior on phi0\n"\
@@ -548,6 +550,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "psi-bins",       required_argument, 0, 'l' },
     { "time-bins",      required_argument, 0, 'L' },
     { "h0prior",        required_argument, 0, 'q' },
+    { "h0priorfile",    required_argument, 0, ']' },
     { "phi0prior",      required_argument, 0, 'Q' },
     { "psiprior",       required_argument, 0, 'U' },
     { "iotaprior",      required_argument, 0, 'u' },
@@ -586,8 +589,8 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
   };
 
   CHAR args[] =
-"hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
+"hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:]:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:\
+W:y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -628,7 +631,10 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   inputParams->priors.phiPrior = uniform_string;
   inputParams->priors.psiPrior = uniform_string;
   inputParams->priors.iotaPrior = uniform_string;
-
+  inputParams->priors.h0PriorFile = NULL;
+  inputParams->priors.h0vals = NULL;
+  inputParams->priors.h0pdf = NULL;
+  
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
   inputParams->mcmc.sigmas.phi0 = LAL_PI_2/2.;   /* eighth of phi range */
@@ -738,6 +744,10 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
       case 'q': /* prior on h0 */
         inputParams->priors.h0Prior = optarg;
         break;
+      case ']': /* prior file for h0 */
+        inputParams->priors.h0PriorFile = XLALStringDuplicate( optarg );
+        inputParams->priors.h0Prior = optarg;
+        break;
       case 'Q': /* prior on phi0 */
         inputParams->priors.phiPrior = optarg;
         break;
@@ -841,7 +851,7 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
     }
   }
 
-  /* check parameters for wierd values */
+  /* check parameters for weird values */
   if( inputParams->mesh.minVals.h0 < 0. || inputParams->mesh.maxVals.h0 < 0. ||
       inputParams->mesh.maxVals.h0 < inputParams->mesh.minVals.h0 ){
     fprintf(stderr, "Error... h0 grid range is wrong!\n");
@@ -914,6 +924,36 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
     fprintf(stderr, "Error... data chunk lengths are wrong!\n");
     exit(0);
   }
+  
+  /* read in h0 prior file if required */
+  if( !inputParams->usepriors && inputParams->priors.h0PriorFile ){
+    fprintf(stderr, "Error... if h0 prior file is given then priors should\
+ be used!\n");
+    exit(0);
+  }
+  else if( inputParams->priors.h0PriorFile ){ /* read in h0 prior file */
+    FILE *fp = NULL;
+    UINT4 i = 0;
+    REAL8 h0val = 0., h0pdf = 0.;
+    
+    if( (fp = fopen(inputParams->priors.h0PriorFile, "r")) == NULL ){
+      fprintf(stderr, "Error... could not open prior file %s\n",
+              inputParams->priors.h0PriorFile);
+      exit(0);
+    }
+    
+    while( fscanf(fp, "%le%le", &h0val, &h0pdf) != EOF ){
+      i++;
+      inputParams->priors.h0vals = XLALResizeREAL8Vector(
+        inputParams->priors.h0vals, i );
+      inputParams->priors.h0vals->data[i-1] = h0val;
+      inputParams->priors.h0pdf = XLALResizeREAL8Vector(
+        inputParams->priors.h0pdf, i );
+      inputParams->priors.h0pdf->data[i-1] = h0pdf;
+    }
+    
+    fclose(fp);
+  } 
 }
 
 
@@ -1061,6 +1101,11 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
   
+  /*** SET LIKELIHOOD TO CONSTANT TO CHECK PRIOR IS RETURNED PROPERLY ****/
+  //likeArray[k] = 0.;
+  //return noiseEvidence;
+  /***********************************************************************/
+  
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
@@ -1185,8 +1230,7 @@ void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
 REAL8 log_prior(PriorVals prior, MeshGrid mesh){
   REAL8 pri=0.;
 
-  /* FIXME: Add ability to read in a old pdf file to use as a prior */
-
+  /* FIXME: Add ability to read in a old pdf file to use as a prior */  
   if(strcmp(prior.h0Prior, "uniform") == 0){
     pri = 0.; /* set h0 prior to be one for all values if uniform */
     /* pri *= 1./(mesh.maxVals.h0 - mesh.minVals.h0); */
@@ -1197,6 +1241,43 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
     pri += -log(prior.stdh0*sqrt(LAL_TWOPI)) + (-(prior.vars.h0 -
 prior.meanh0)*(prior.vars.h0 - prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
   }
+  else if( prior.h0PriorFile != NULL && prior.h0vals != NULL && 
+    prior.h0pdf != NULL ){
+    /* use h0 prior read in from a file */
+    REAL8 h0low = 0., h0high = 0., pdflow = 0., pdfhigh = 0.;
+       
+    /* find nearest point to interpolate */
+    for ( UINT4 i = 0; i < prior.h0vals->length+1; i++ ){      
+      if ( i == prior.h0vals->length ){
+        /* point is greater than end of prior values, so return the nearest
+           neighbour, which is the highest value */
+        pri += log(prior.h0vals->data[i-1]);
+        break;
+      }
+      else if ( prior.vars.h0 < prior.h0vals->data[i] ){
+        if ( i == 0 ){
+          /* value is below all those in the prior, so return the nearest
+             neighbour, which is the lowest value */
+          pri += log(prior.h0vals->data[i]);
+          break;
+        }
+        else if ( i > 0 ){
+          REAL8 grad = 0.;
+          
+          h0low = prior.h0vals->data[i-1];
+          h0high = prior.h0vals->data[i];
+          
+          pdflow = prior.h0pdf->data[i-1];
+          pdfhigh = prior.h0pdf->data[i];
+          
+          /* linearly interpolate between the bins */
+          grad = (pdfhigh-pdflow)/(h0high-h0low);
+          pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
+          break;
+        }
+      }
+    }
+  } 
 
   if(strcmp(prior.phiPrior, "uniform") == 0){
     pri += -log(mesh.maxVals.phi0 - mesh.minVals.phi0);
@@ -2217,7 +2298,7 @@ paramData ) ) == NULL ){
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
       set_mcmc_pulsar_params( &pulsarParamsNew, randVals );
 
-      /* I've discovered that TEMPO can produce negative eccentricites (when
+      /* I've discovered that TEMPO can produce negative eccentricities (when
          they're close to zero), so will allow this to happen here, but still
          won't allow it to go over 1 */
       if( /* pulsarParamsNew.e < 0.  || */ pulsarParamsNew.e >= 1. ||
