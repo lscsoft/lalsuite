@@ -48,7 +48,7 @@ typedef void (*FlatLatticeBound)(
   double* lower,	///< [out] Lower bound on point in dimension
   double* upper,	///< [out] Upper bound on point in dimension
   gsl_vector* point,	///< [in] Point on which to find bounds
-  gsl_vector* data	///< [in] Arbitrary data describing parameter space
+  void* data		///< [in] Arbitrary data describing parameter space
   );
 
 ///
@@ -105,7 +105,7 @@ uint64_t XLALGetFlatLatticePointCount(
 int XLALAddFlatLatticeBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   FlatLatticeBound func,	///< [in] Parameter space bound function
-  gsl_vector* data		///< [in] Arbitrary data describing parameter space
+  void* data			///< [in] Arbitrary data describing parameter space
   );
 
 

@@ -108,7 +108,7 @@ static int UpdateSubspace(
 ///
 typedef struct tagFLT_Bound {
   FlatLatticeBound func;		///< Parameter space bound function
-  gsl_vector* data;			///< Arbitrary data describing parameter space
+  void* data;				///< Arbitrary data describing parameter space
 } FLT_Bound;
 
 ///
@@ -212,7 +212,7 @@ void XLALDestroyFlatLatticeTiling(
 
     // Destroy bounds array
     for (size_t k = 0; k < tiling->num_bounds; ++k) {
-      gsl_vector_free(tiling->bounds[k].data);
+      XLALFree(tiling->bounds[k].data);
     }
     XLALFree(tiling->bounds);
 
@@ -258,7 +258,7 @@ uint64_t XLALGetFlatLatticePointCount(
 int XLALAddFlatLatticeBound(
   FlatLatticeTiling* tiling,
   FlatLatticeBound func,
-  gsl_vector* data
+  void* data
   )
 {
 
@@ -813,12 +813,12 @@ int XLALAnstarLatticeGenerator(
 
 }
 
-static void ConstantBound(double* lower, double* upper, gsl_vector* point UNUSED, gsl_vector* data)
+static void ConstantBound(double* lower, double* upper, gsl_vector* point UNUSED, void* data)
 {
 
   // Set constant lower and upper bounds
-  *lower = gsl_vector_get(data, 0);
-  *upper = gsl_vector_get(data, 1);
+  *lower = ((double*)data)[0];
+  *upper = ((double*)data)[1];
 
 }
 int XLALAddFlatLatticeConstantBound(
@@ -828,8 +828,6 @@ int XLALAddFlatLatticeConstantBound(
   )
 {
 
-  gsl_vector* data;
-
   // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
 
@@ -837,13 +835,13 @@ int XLALAddFlatLatticeConstantBound(
   XLAL_CHECK(lower <= upper, XLAL_EINVAL);
 
   // Allocate and set bounds data
-  data = gsl_vector_alloc(2);
+  double* data = XLALCalloc(2, sizeof(double));
   XLAL_CHECK(data != NULL, XLAL_ENOMEM);
-  gsl_vector_set(data, 0, lower);
-  gsl_vector_set(data, 1, upper);
+  data[0] = lower;
+  data[1] = upper;
 
   // Set parameter space
-  XLAL_CHECK(XLALAddFlatLatticeBound(tiling, ConstantBound, data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALAddFlatLatticeBound(tiling, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
