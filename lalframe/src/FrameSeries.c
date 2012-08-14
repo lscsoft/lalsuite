@@ -363,7 +363,7 @@ static FrVect * FrVectReadInfo( FrFile *iFile, FRULONG *pos )
   return v;
 }
 
-UINT4 XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
+int XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 {
   FrChanType chantype;
   FrTOCts    *ts   = NULL;
@@ -484,7 +484,7 @@ UINT4 XLALFrGetTimeSeriesType( const char *channel, FrStream *stream )
 
 
 /* little helper function for getting number of points in a channel */
-UINT4 XLALFrGetVectorLength ( CHAR *name, FrStream *stream )
+int XLALFrGetVectorLength ( CHAR *name, FrStream *stream )
 {
   struct FrVect	*vect;
   int ret = -1;

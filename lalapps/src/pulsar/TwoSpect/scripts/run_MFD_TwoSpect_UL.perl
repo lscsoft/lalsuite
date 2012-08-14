@@ -35,7 +35,7 @@ for(my $ii=0; $ii<10; $ii++) {
    
    open(MFDCONFIG,">/local/user/egoetz/$$/mfdconfig") or die "Cannot write to /local/user/egoetz/$$/mfdconfig $!";
    print MFDCONFIG<<EOF;
-outSFTbname testsfts.sft
+outSFTbname /local/user/egoetz/$$/testsfts.sft
 outSingleSFT TRUE
 IFO H1
 ephemDir /home/egoetz/TwoSpect/S6
@@ -102,14 +102,14 @@ useSSE
 outfilename logfile_$ii.txt
 ULfilename uls_$ii.dat
 configCopy input_copy_$ii.conf
-ihsOnly
+IHSonly
 EOF
    close(TWOSPECTCONFIG);
    
-   system("/home/egoetz/opt/lscsoft/bin/lalapps_Makefakedata_v4 @/local/user/egoetz/mfdconfig");
+   system("/home/egoetz/opt/lscsoft/bin/lalapps_Makefakedata_v4 @/local/user/egoetz/$$/mfdconfig");
    die "system lalapps_Makefakedata_v4 failed: $?" if $?;
    
-   system("/home/egoetz/opt/lscsoft/bin/lalapps_TwoSpect --config=/local/user/egoetz/twospectconfig");
+   system("/home/egoetz/opt/lscsoft/bin/lalapps_TwoSpect --config=/local/user/egoetz/$$/twospectconfig");
    die "system lalapps_TwoSpect failed: $?" if $?;
    
    system("rm /local/user/egoetz/$$/*.sft");

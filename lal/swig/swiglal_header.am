@@ -7,8 +7,8 @@ if SWIG_BUILD
 swig_iface_headers = $(top_builddir)/swig/@PACKAGE_NAME@swig_headers.list
 
 # generate SWIG interface header list
-all install .PHONY : swig_iface_headers
-swig_iface_headers :
+all install .PHONY : swig-iface-headers
+swig-iface-headers :
 	@if test -f $(swig_iface_headers); then \
 		patt=`echo '^$(subdir):' | $(SED) 's|\.|\\.|g'`; \
 		match=`$(SED) -n "\\|$$patt|p" $(swig_iface_headers)`; \

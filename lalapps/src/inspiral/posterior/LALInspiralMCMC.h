@@ -331,7 +331,7 @@ tagLALMCMCInput
   UINT4 mylength;
 
   /* Flags for PhenSpin approximant */  
-  FrameAxis axisChoice;
+  LALSimInspiralFrameAxis axisChoice;
   UINT4 fixedStep;
   UINT4 inspiralOnly;
 

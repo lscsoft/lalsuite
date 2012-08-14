@@ -106,8 +106,8 @@ None
 #define  INSPIRALTEMPLATE_SOURCEPHI             0.
 #define  INSPIRALTEMPLATE_POLARISATIONANGLE     0.
 
-#define INSPIRALTEMPLATE_INTERACTION			LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN
-#define INSPIRALTEMPLATE_AXISCHOICE             View
+#define INSPIRALTEMPLATE_INTERACTION	   LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN
+#define INSPIRALTEMPLATE_AXISCHOICE             LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW
 #define INSPIRALTEMPLATE_FIXEDSTEP              0
 #define INSPIRALTEMPLATE_INSPIRALONLY           0
 
@@ -327,11 +327,11 @@ void LALInspiralITStructureParseParameters(LALStatus *status,
       else if (strcmp(argv[i],"--axisChoice")==0)
       {
         if (strcmp(argv[++i],"TotalJ")==0){
-          params->axisChoice = TotalJ; }
+          params->axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J; }
         else if (strcmp(argv[i],"View")==0){
-          params->axisChoice = View; }
+          params->axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW; }
         else if (strcmp(argv[i],"OrbitalL")==0){
-          params->axisChoice = OrbitalL; }
+          params->axisChoice = LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L; }
         else
           fprintf(stderr,"Invalid choice of --axisChoice\n");
       }

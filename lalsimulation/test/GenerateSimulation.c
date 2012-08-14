@@ -60,7 +60,8 @@ typedef struct tagGSParams {
     REAL8 s2z;                /**< dimensionless spin, Kerr bound: |s2| <= 1 */
     REAL8 lambda1;	      /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
     REAL8 lambda2;	      /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
-    LALSimInspiralInteraction interaction; /**< flag to control spin and tidal effects */
+    LALSimInspiralWaveformFlags *waveFlags; /**< Set of flags to control special behavior of some waveform families */
+    LALSimInspiralTestGRParam *nonGRparams; /**< Linked list of non-GR parameters. Pass in NULL for standard GR waveforms */
     int axisChoice;           /**< flag to choose reference frame for spin coordinates */
     int inspiralOnly;         /**< flag to choose if generating only the the inspiral 1 or also merger and ring-down*/
     char outname[256];        /**< file to which output should be written */
@@ -111,7 +112,7 @@ const char * usage =
 "--spin2x S2X               Vector components for spin of mass2 (default all 0)\n"
 "--spin2y S2Y               z-axis=line of sight, L in x-z plane at reference\n"
 "--spin2z S2Z               Kerr limit: s2x^2 + s2y^2 + s2z^2 <= 1\n"
-"--interaction-flag FLAG    Common choices: 'ALL' (default), 'NO', 'ALL_SPIN', 'TIDAL'\n"
+"--interaction FLAG    Common choices: 'ALL' (default), 'NO', 'ALL_SPIN', 'TIDAL'\n"
 "--tidal-lambda1 L1         (tidal deformability of mass 1) / (total mass)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
 "--tidal-lambda2 L2         (tidal deformability of mass 2) / (total mass)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
 "--f-min FMIN               Frequency at which to start waveform in Hz (default 40)\n"
@@ -119,7 +120,6 @@ const char * usage =
 "                           (default: generate as much as possible)\n"
 "--distance D               Distance in Mpc (default 100)\n"
 "--axis AXIS                for PhenSpin: 'View' (default), 'TotalJ', 'OrbitalL'\n"
-"--inspiralOnly             for PhenSpin: if included, generate only inspiral\n"
 "--outname FNAME            Output to file FNAME (default 'simulation.dat')\n"
 "--verbose                  If included, add verbose output\n"
 ;
@@ -133,6 +133,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     memset(params, 0, sizeof(GSParams));
 
     /* Set default values to the arguments */
+    params->waveFlags = XLALSimInspiralCreateWaveformFlags();
+    params->nonGRparams = NULL;
     params->approximant = TaylorT1;
     params->domain = GSDomain_TD;
     params->phaseO = 7;
@@ -155,9 +157,6 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->s2z = 0.;
     params->lambda1 = 0.;
     params->lambda2 = 0.;
-    params->interaction = LAL_SIM_INSPIRAL_INTERACTION_ALL;
-    params->axisChoice = 0.; /* PhenSpin z-axis is line of sight */
-    params->inspiralOnly = 0.; /* PhenSpin generates full IMR */
     strncpy(params->outname, "simulation.dat", 256); /* output to this file */
     params->verbose = 0; /* No verbosity */
 
@@ -211,10 +210,12 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->s2y = atof(argv[++i]);
         } else if (strcmp(argv[i], "--spin2z") == 0) {
             params->s2z = atof(argv[++i]);
-	} else if (strcmp(argv[i], "--interaction-flag") == 0) {
-            params->interaction = XLALGetInteractionFromString(argv[++i]);
-            if ( (int) params->interaction == XLAL_FAILURE) {
-                XLALPrintError("Error: invalid value %s for --interaction-flag\n", argv[i]);
+	} else if (strcmp(argv[i], "--interaction") == 0) {
+            XLALSimInspiralSetInteraction( params->waveFlags,
+                    XLALGetInteractionFromString(argv[++i]) );
+            if ( (int) XLALSimInspiralGetInteraction(params->waveFlags)
+                    == (int) XLAL_FAILURE) {
+                XLALPrintError("Error: invalid value %s for --interaction\n", argv[i]);
                 goto fail;
             }
 	} else if (strcmp(argv[i], "--tidal-lambda1") == 0) {
@@ -230,11 +231,13 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--inclination") == 0) {
             params->inclination = atof(argv[++i]);
         } else if (strcmp(argv[i], "--axis") == 0) {
-            XLALPrintWarning("This option is ignored for now! Still deciding how to pass extra flags.\n");
-            params->axisChoice = atof(argv[++i]);
-        } else if (strcmp(argv[i], "--inspiralOnly") == 0) {
-            XLALPrintWarning("This option is ignored for now! Still deciding how to pass extra flags.\n");
-	    params->inspiralOnly = 1;
+            XLALSimInspiralSetFrameAxis( params->waveFlags,
+                    XLALGetFrameAxisFromString(argv[++i]) );
+            if ( (int) XLALSimInspiralGetInteraction(params->waveFlags)
+                    == (int) XLAL_FAILURE) {
+                XLALPrintError("Error: invalid value %s for --axis\n", argv[i]);
+                goto fail;
+            }
         } else if (strcmp(argv[i], "--outname") == 0) {
             strncpy(params->outname, argv[++i], 256);
         } else if (strcmp(argv[i], "--verbose") == 0) {
@@ -310,8 +313,8 @@ int main (int argc , char **argv) {
                     params->s1y, params->s1z, params->s2x, params->s2y, 
                     params->s2z, params->f_min, params->f_max, 
                     params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->interaction, params->ampO, 
-                    params->phaseO, params->approximant);
+                    params->lambda2, params->waveFlags, params->nonGRparams,
+                    params->ampO, params->phaseO, params->approximant);
             break;
         case GSDomain_TD:
             XLALSimInspiralChooseTDWaveform(&hplus, &hcross, params->phiRef, 
@@ -319,8 +322,8 @@ int main (int argc , char **argv) {
                     params->s1y, params->s1z, params->s2x, params->s2y, 
                     params->s2z, params->f_min, params->fRef, 
                     params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->interaction, params->ampO, 
-                    params->phaseO, params->approximant);
+                    params->lambda2, params->waveFlags, params->nonGRparams,
+                    params->ampO, params->phaseO, params->approximant);
             break;
         default:
             XLALPrintError("Error: domain must be either TD or FD\n");
@@ -344,11 +347,15 @@ int main (int argc , char **argv) {
     if (status) goto fail;
 
     /* clean up */
+    XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
+    XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
     XLALDestroyCOMPLEX16FrequencySeries(htilde);
     return 0;
 
     fail:
+    XLALSimInspiralDestroyWaveformFlags(params->waveFlags);
+    XLALSimInspiralDestroyTestGRParam(params->nonGRparams);
     XLALFree(params);
     XLALDestroyCOMPLEX16FrequencySeries(htilde);
     return 1;

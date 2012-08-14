@@ -1070,7 +1070,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
       } else for (jj=0; jj<numfbins; jj++) bindiffs->data[jj] = freqbins->data[jj] - n0;
       for (jj=0; jj<numfbins; jj++) {
          //Create PSD values organized by f0 => psd1->data[0...numffts-1], sft1 => psd1->data[numffts...2*numffts-1]
-         if ( fabs(bindiffs->data[jj]) <= 3.0 ) psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(bindiffs->data[jj])*PSDprefact;
+         //Restricting to +/- 1.75 bins means >99.9% of the total power is included in the template calculation
+         if ( fabs(bindiffs->data[jj]) <= 1.75 ) psd1->data[ii + jj*numffts] = sqsincxoverxsqminusone(bindiffs->data[jj])*PSDprefact;
       } /* for jj < numfbins */
    } /* for ii < numffts */
    

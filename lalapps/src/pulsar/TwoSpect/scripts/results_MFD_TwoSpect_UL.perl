@@ -7,7 +7,7 @@ open(RESULTS, ">/home/egoetz/TwoSpect/UL/results.dat") or die "Cannot write to /
 
 for(my $ii=0; $ii<100; $ii++) {
    open(INJECTEDVALS, "/home/egoetz/TwoSpect/UL/$ii/injections.dat") or die "Cannot open /home/egoetz/TwoSpect/UL/$ii/injections.dat $!";
-   my @injections = <INJECTEDVALS>;
+   my @injections = reverse <INJECTEDVALS>;
    my @injections2;
    my $jj;
    for($jj=0; $jj<10; $jj++) {
@@ -17,11 +17,12 @@ for(my $ii=0; $ii<100; $ii++) {
    @injections2 = reverse @injections2;
    
    $jj = 0;
-   foreach my $injection (@injections) {
-      $injection = chomp($injection);
+   foreach my $injection (@injections2) {
+      chomp($injection);
       
-      open(ULFILE, "/home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.txt") or die "Cannot open /home/egoetz/TwoSpect/efficiency/$ii/uls_$jj.txt $!";
-      my $ul = chomp(<ULFILE>);
+      open(ULFILE, "/home/egoetz/TwoSpect/UL/$ii/uls_$jj.dat") or die "Cannot open /home/egoetz/TwoSpect/UL/$ii/uls_$jj.dat $!";
+      my $ul = <ULFILE>;
+      chomp($ul);
       
       print RESULTS "$injection $ul\n";
       
