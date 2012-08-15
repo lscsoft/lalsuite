@@ -24,7 +24,8 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
-#include <lal/FFTWMutex.h>
+
+#include "FFTWMutex.h"
 
 /**
  * \addtogroup ComplexFFT_h

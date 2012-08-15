@@ -60,11 +60,15 @@ static int XLALSimIMRSpinEOBCalculateSigmaStar(
  *------------------------------------------------------------------------------------------
  */
 
-static int XLALSimIMRSpinEOBCalculateSigmaKerr( REAL8Vector *sigmaKerr,
-                                   REAL8        mass1,
-                                   REAL8        mass2,
-                                   REAL8Vector *s1,
-                                   REAL8Vector *s2 )
+/**
+ * Function to calculate normalized spin of the deformed-Kerr background in SEOBNRv1
+ */
+static int XLALSimIMRSpinEOBCalculateSigmaKerr( 
+                                   REAL8Vector *sigmaKerr, /**<< normalized spin of deformed-Kerr (returned) */
+                                   REAL8        mass1,     /**<< mass 1 */
+                                   REAL8        mass2,     /**<< mass 2 */
+                                   REAL8Vector *s1,        /**<< spin vector 1 */
+                                   REAL8Vector *s2         /**<< spin vector 2 */)
 {
 
   UINT4 i;
@@ -78,12 +82,15 @@ static int XLALSimIMRSpinEOBCalculateSigmaKerr( REAL8Vector *sigmaKerr,
   return XLAL_SUCCESS;
 }
 
-
-static int XLALSimIMRSpinEOBCalculateSigmaStar( REAL8Vector *sigmaStar,
-                                   REAL8        mass1,
-                                   REAL8        mass2,
-                                   REAL8Vector *s1,
-                                   REAL8Vector *s2 )
+/**
+ * Function to calculate normalized spin of the test particle in SEOBNRv1
+ */
+static int XLALSimIMRSpinEOBCalculateSigmaStar( 
+                                   REAL8Vector *sigmaStar, /**<< normalized spin of test particle (returned) */
+                                   REAL8        mass1,     /**<< mass 1 */
+                                   REAL8        mass2,     /**<< mass 2 */
+                                   REAL8Vector *s1,        /**<< spin vector 1 */
+                                   REAL8Vector *s2         /**<< spin vector 2 */)
 {
 
   UINT4 i;

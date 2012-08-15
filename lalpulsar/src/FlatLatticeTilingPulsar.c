@@ -57,7 +57,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   )
 {
 
-  const size_t n = XLALGetFlatLatticeTilingDimensions(tiling);
+  const size_t n = XLALGetFlatLatticeDimensions(tiling);
 
   /* Check input */
   XLAL_CHECK(Tspan > 0.0, XLAL_EINVAL);
@@ -82,7 +82,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
   }
 
   /* Set the metric of the flat lattice tiling */
-  XLAL_CHECK(XLALSetFlatLatticeTilingMetric(tiling, norm_metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeMetric(tiling, norm_metric, max_mismatch) == XLAL_SUCCESS, XLAL_EFAILED);
 
   /* Cleanup */
   FREE_GSL_MATRIX(norm_metric);
@@ -96,27 +96,27 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  * Set a flat lattice tiling to a parameter space defined by
  * the age and possible braking index range of an object
  */
-static void AgeBraking1stSpindownBound(double* lower, double* upper, gsl_vector* point, gsl_vector* data)
+static void AgeBraking1stSpindownBound(double* lower, double* upper, const gsl_vector* point, const void* data)
 {
 
   /* Set lower and upper bound */
   double x = gsl_vector_get(point, point->size - 1);
-  *lower = x * gsl_vector_get(data, 0);
-  *upper = x * gsl_vector_get(data, 1);
+  *lower = x * ((const double*)data)[0];
+  *upper = x * ((const double*)data)[1];
 
 }
-static void AgeBraking2ndSpindownBound(double* lower, double* upper, gsl_vector* point, gsl_vector* data)
+static void AgeBraking2ndSpindownBound(double* lower, double* upper, const gsl_vector* point, const void* data)
 {
 
   /* Set lower and upper bound */
   double x = gsl_vector_get(point, point->size - 1);
   x *= x;
   x /= gsl_vector_get(point, point->size - 2);
-  *lower = x * gsl_vector_get(data, 0);
-  *upper = x * gsl_vector_get(data, 1);
+  *lower = x * ((const double*)data)[0];
+  *upper = x * ((const double*)data)[1];
 
 }
-int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
+int XLALSetFlatLatticeTilingAgeBrakingIndexBounds(
   FlatLatticeTiling *tiling, /**< Tiling structure */
   double freq,                /**< Starting frequency */
   double freq_band,           /**< Frequency band */
@@ -127,23 +127,23 @@ int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(
 {
 
   // Allocate memory
-  gsl_vector* f1dot_data = gsl_vector_alloc(2);
+  double* f1dot_data = XLALCalloc(2, sizeof(double));
   XLAL_CHECK(f1dot_data != NULL, XLAL_ENOMEM);
-  gsl_vector* f2dot_data = gsl_vector_alloc(2);
+  double* f2dot_data = XLALCalloc(2, sizeof(double));
   XLAL_CHECK(f2dot_data != NULL, XLAL_ENOMEM);
 
   // Set frequency bounds
-  XLAL_CHECK(XLALAddFlatLatticeTilingConstantBound(tiling, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, 2, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Set first spindown bounds
-  gsl_vector_set(f1dot_data, 0, -1.0 / ((min_braking - 1.0) * age));
-  gsl_vector_set(f1dot_data, 1, -1.0 / ((max_braking - 1.0) * age));
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, AgeBraking1stSpindownBound, f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
+  f1dot_data[0] = -1.0 / ((min_braking - 1.0) * age);
+  f1dot_data[1] = -1.0 / ((max_braking - 1.0) * age);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, 3, AgeBraking1stSpindownBound, (void*)f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Set second spindown bounds
-  gsl_vector_set(f2dot_data, 0, min_braking);
-  gsl_vector_set(f2dot_data, 1, max_braking);
-  XLAL_CHECK(XLALAddFlatLatticeTilingBound(tiling, AgeBraking2ndSpindownBound, f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
+  f2dot_data[0] = min_braking;
+  f2dot_data[1] = max_braking;
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, 4, AgeBraking2ndSpindownBound, (void*)f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

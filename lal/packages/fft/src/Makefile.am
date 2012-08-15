@@ -12,12 +12,12 @@ FFTCXXGENSRC =
 FFTLIBCXX =
 else
 if CUDA
-FFTSRC = CudaComplexFFT.c CudaRealFFT.c FFTWMutex.c CudaFunctions.c
+FFTSRC = CudaComplexFFT.c CudaRealFFT.c FFTWMutex.c FFTWMutex.h CudaFunctions.c
 FFTCXXSRC =
 FFTCXXGENSRC = CudaFFT.cpp
 FFTLIBCXX = libfftcxx.la
 else
-FFTSRC = ComplexFFT.c RealFFT.c FFTWMutex.c
+FFTSRC = ComplexFFT.c RealFFT.c FFTWMutex.c FFTWMutex.h
 FFTCXXSRC =
 FFTCXXGENSRC =
 FFTLIBCXX =
@@ -32,7 +32,7 @@ nodist_libfftcxx_la_SOURCES = $(FFTCXXGENSRC)
 
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 EXTRA_DIST = qthread.c IntelComplexFFT.c IntelRealFFT.c \
-             ComplexFFT.c RealFFT.c FFTWMutex.c TimeFreqFFT.c \
+             ComplexFFT.c RealFFT.c FFTWMutex.c FFTWMutex.h TimeFreqFFT.c \
              CudaComplexFFT.c CudaRealFFT.c CudaFFT.cu CudaFunctions.h \
              CudaFFT.h
 

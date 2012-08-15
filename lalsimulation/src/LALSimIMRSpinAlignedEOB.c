@@ -61,10 +61,10 @@
  * -- stop when reaching max orbital frequency in strong field.
  */
 static int
-XLALEOBSpinAlignedStopCondition(double UNUSED t,
-                           const double values[],
-                           double dvalues[],
-                           void *funcParams
+XLALEOBSpinAlignedStopCondition(double UNUSED t,  /**< UNUSED */
+                           const double values[], /**< dynamical variable values */
+                           double dvalues[],      /**< dynamical variable time derivative values */
+                           void *funcParams       /**< physical parameters */
                           )
 {
 
@@ -90,10 +90,10 @@ XLALEOBSpinAlignedStopCondition(double UNUSED t,
  *    or when getting nan in any of the four ODE equations
  */
 static int
-XLALSpinAlignedHiSRStopCondition(double UNUSED t,
-                           const double UNUSED values[],
-                           double dvalues[],
-                           void *funcParams
+XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
+                           const double values[], /**< dynamical variable values */
+                           double dvalues[],      /**< dynamical variable time derivative values */
+                           void *funcParams       /**< physical parameters */
                           )
 {
   SpinEOBParams *params = (SpinEOBParams *)funcParams;
