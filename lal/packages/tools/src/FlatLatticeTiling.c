@@ -139,8 +139,7 @@ struct tagFlatLatticeTiling {
   size_t dimensions;			///< Dimension of the parameter space
   FLT_Status status;			///< Status of the tiling
 
-  size_t num_bounds;			///< Number of set parameter space bounds
-  FLT_Bound *bounds;			///< Array of parameter space bound info
+  FLT_Bound *bounds;			///< Array of parameter space bound info for each dimension
   double scale_padding;			///< Scaling of the padding of bounds (for testing)
 
   gsl_matrix* metric;			///< Parameter space metric in normalised coordinates
@@ -211,7 +210,7 @@ void XLALDestroyFlatLatticeTiling(
     gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
 
     // Destroy bounds array
-    for (size_t k = 0; k < tiling->num_bounds; ++k) {
+    for (size_t k = 0; k < tiling->dimensions; ++k) {
       XLALFree(tiling->bounds[k].data);
     }
     XLALFree(tiling->bounds);
@@ -257,6 +256,7 @@ uint64_t XLALGetFlatLatticePointCount(
 
 int XLALAddFlatLatticeBound(
   FlatLatticeTiling* tiling,
+  size_t dimension,
   FlatLatticeBound func,
   void* data
   )
@@ -266,13 +266,12 @@ int XLALAddFlatLatticeBound(
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
 
-  // Check that there are dimensions still to be bounded
-  XLAL_CHECK(tiling->num_bounds < tiling->dimensions, XLAL_EFAILED);
+  // Check dimension
+  XLAL_CHECK(dimension < tiling->dimensions, XLAL_ESIZE);
 
   // Set the next parameter space bound
-  tiling->bounds[tiling->num_bounds].func = func;
-  tiling->bounds[tiling->num_bounds].data = data;
-  ++tiling->num_bounds;
+  tiling->bounds[dimension].func = func;
+  tiling->bounds[dimension].data = data;
 
   return XLAL_SUCCESS;
 
@@ -292,7 +291,9 @@ int XLALSetFlatLatticeMetric(
   XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // Check that all parameter space dimensions are bounded
-  XLAL_CHECK(tiling->num_bounds == tiling->dimensions, XLAL_EFAILED);
+  for (size_t k = 0; k < tiling->dimensions; ++k) {
+    XLAL_CHECK(tiling->bounds[k].func != NULL, XLAL_EFAILED, "Dimension #%i is unbounded", k);
+  }
 
   // Check that metric has not already been set
   XLAL_CHECK(tiling->metric == NULL, XLAL_EFAILED);
@@ -823,6 +824,7 @@ static void ConstantBound(double* lower, double* upper, gsl_vector* point UNUSED
 }
 int XLALAddFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,
+  size_t dimension,
   double lower,
   double upper
   )
@@ -841,7 +843,7 @@ int XLALAddFlatLatticeConstantBound(
   data[1] = upper;
 
   // Set parameter space
-  XLAL_CHECK(XLALAddFlatLatticeBound(tiling, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALAddFlatLatticeBound(tiling, dimension, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
