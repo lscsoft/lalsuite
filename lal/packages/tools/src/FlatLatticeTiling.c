@@ -814,12 +814,17 @@ int XLALAnstarLatticeGenerator(
 
 }
 
-static void ConstantBound(double* lower, double* upper, gsl_vector* point UNUSED, void* data)
+static void ConstantBound(
+  double* lower,
+  double* upper,
+  const gsl_vector* point UNUSED,
+  const void* data
+  )
 {
 
   // Set constant lower and upper bounds
-  *lower = ((double*)data)[0];
-  *upper = ((double*)data)[1];
+  *lower = ((const double*)data)[0];
+  *upper = ((const double*)data)[1];
 
 }
 int XLALAddFlatLatticeConstantBound(

@@ -45,10 +45,10 @@ extern "C" <% // {
 /// Flat lattice tiling bound function
 ///
 typedef void (*FlatLatticeBound)(
-  double* lower,	///< [out] Lower bound on point in dimension
-  double* upper,	///< [out] Upper bound on point in dimension
-  gsl_vector* point,	///< [in] Point on which to find bounds
-  void* data		///< [in] Arbitrary data describing parameter space
+  double* lower,		///< [out] Lower bound on point in dimension
+  double* upper,		///< [out] Upper bound on point in dimension
+  const gsl_vector* point,	///< [in] Point on which to find bounds
+  const void* data		///< [in] Arbitrary data describing parameter space
   );
 
 ///
