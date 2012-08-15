@@ -131,9 +131,9 @@ int main(int argc, char *argv[]) {
     
     /* Create square parameter space */
     for (i = 0; i < (int)(bounds->size/2); ++i) {
-      if (XLAL_SUCCESS != XLALAddFlatLatticeConstantBound(tiling, i, gsl_vector_get(bounds, 2*i),
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, i, gsl_vector_get(bounds, 2*i),
                                                           gsl_vector_get(bounds, 2*i) + gsl_vector_get(bounds, 2*i + 1)))
-	LALAPPS_ERROR("XLALAddFlatLatticeConstantBound failed\n", 0);
+	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
     }
       
     /* Output parameter space */
@@ -168,14 +168,14 @@ int main(int argc, char *argv[]) {
 	LALAPPS_ERROR("XLALCreateFlatLatticeTiling failed\n", 0);
 
       /* Add sky position bounds */
-      if (XLAL_SUCCESS != XLALAddFlatLatticeConstantBound(tiling, 0, alpha, alpha))
-	LALAPPS_ERROR("XLALAddFlatLatticeConstantBound failed\n", 0);
-      if (XLAL_SUCCESS != XLALAddFlatLatticeConstantBound(tiling, 1, delta, delta))
-	LALAPPS_ERROR("XLALAddFlatLatticeConstantBound failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, 0, alpha, alpha))
+	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, 1, delta, delta))
+	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
 
       /* Add frequency and spindown bounds */
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking))
-	LALAPPS_ERROR("XLALAddFlatLatticeTilingAgeBrakingIndexBounds failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking))
+	LALAPPS_ERROR("XLALSetFlatLatticeTilingAgeBrakingIndexBounds failed\n", 0);
     
     }
 

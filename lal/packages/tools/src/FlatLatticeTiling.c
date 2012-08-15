@@ -254,7 +254,7 @@ uint64_t XLALGetFlatLatticePointCount(
   return tiling->count;
 }
 
-int XLALAddFlatLatticeBound(
+int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,
   size_t dimension,
   FlatLatticeBound func,
@@ -827,7 +827,7 @@ static void ConstantBound(
   *upper = ((const double*)data)[1];
 
 }
-int XLALAddFlatLatticeConstantBound(
+int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,
   size_t dimension,
   double lower,
@@ -848,7 +848,7 @@ int XLALAddFlatLatticeConstantBound(
   data[1] = upper;
 
   // Set parameter space
-  XLAL_CHECK(XLALAddFlatLatticeBound(tiling, dimension, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

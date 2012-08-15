@@ -102,7 +102,7 @@ uint64_t XLALGetFlatLatticePointCount(
 ///
 /// Add a parameter space bound to the flat lattice tiling
 ///
-int XLALAddFlatLatticeBound(
+int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   size_t dimension,		///< [in] Dimension on which bound applies
   FlatLatticeBound func,	///< [in] Parameter space bound function
@@ -189,7 +189,7 @@ int XLALAnstarLatticeGenerator(
 ///
 /// Add a constant parameter space bound to the flat lattice tiling
 ///
-int XLALAddFlatLatticeConstantBound(
+int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   size_t dimension,		///< [in] Dimension on which bound applies
   double lower,			///< [in] Lower bound on dimension
