@@ -1,24 +1,30 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
-$fstart = 50.0;
-$totalband = "50-60Hz-0.05HzBands";
-$ifo = "H1";
-$fstep = 0.25;
-@fmins = ();
-for($ii=0; $ii<40; $ii++) {
-   push(@fmins, sprintf("%.3f", $fstart+$ii*$fstep));
+use strict;
+use warnings;
+
+my $band = $ARGV[0];
+my $fstart = $ARGV[1];
+my $fstep = $ARGV[2];
+my $numberBands = $ARGV[3];
+my $ifo = $ARGV[4];
+my $outputPathBase = $ARGV[5];
+my $ephemdir = $ARGV[6];
+my $ephemyear = "08-11-DE405";
+my $Tcoh = 1800;
+my $sftoverlap = 900;
+my $sky = "allSky";
+
+system("mkdir $outputPathBase/$band\_$ifo");
+die "mkdir failed: $?" if $?;
+
+for(my $ii=0; $ii<$numberBands; $ii++) {
+   my $fmin = sprintf("%.3f", $fstart+$ii*$fstep);
+   my $outfile = "$outputPathBase/$band\_$ifo/skygrid-${fmin}\-${fstep}HzBand.dat";
+   
+   system("../helperprograms/skygridsetup --fmin=$fmin --fspan=$fstep --Tcoh=$Tcoh --IFO=$ifo --ephemDir=$ephemdir --ephemYear=$ephemyear --skyRegion=$sky --SFToverlap=$sftoverlap --outfilename=$outfile");
+   die "skygridsetup failed: $?" if $?;
 }
 
-$fspan = "0.25";
-$tcoh = 1800;
-$ephemdir = "/Users/evgoet";
-$ephemyear = "08-11-DE405";
-$sky = "allSky";
-$sftoverlap = 900;
-
-for($ii=0; $ii<40; $ii++) {
-   $outfile = "/Users/evgoet/S6/band".$totalband."/skygrid-".$fmins[$ii]."-".$fspan."HzBand.dat";
-   system("./skygridsetup --fmin=".$fmins[$ii]." --fspan=".$fspan." --Tcoh=".$tcoh." --IFO=".$ifo." --ephemDir=".$ephemdir." --ephemYear=".$ephemyear." --skyRegion=".$sky." --SFToverlap=".$sftoverlap." --outfilename=".$outfile);
-}
 
 
