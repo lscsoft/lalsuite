@@ -145,7 +145,8 @@ typedef struct tagInputParams{
   CHAR pulsar[20];
   CHAR parFile[256];   /* pulsar parameter file */
   CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
-
+  UINT4 usecov;        /* set whether or not to use a covariance matrix prior */
+  
   CHAR inputDir[256];
   CHAR outputDir[256];
 

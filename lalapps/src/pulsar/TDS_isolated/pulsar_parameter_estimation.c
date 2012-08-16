@@ -118,6 +118,11 @@ static char USAGE2[] = \
                      before and after a glitch\n"\
 " --earth-ephem       Earth ephemeris file\n"\
 " --sun-ephem         Sun ephemeris file\n"\
+" --use-cov           if this flag is set and/or a covariance file is\n\
+                     specified (with --covariance) then that will be used, if\n\
+                     just this flag is set then a covariance matrix\n\
+                     constructed from standard deviations in the par file\n\
+                     (with zero off diagonal elements) will be used\n"\
 " --covariance        pulsar parameter covariance matrix file (.mat)\n"\
 " --only-joint        set this to only produce the joint MCMC when given \n\
                      muliple detectors (MCMC only)\n"\
@@ -236,7 +241,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
     /* if there's a covariance matrix file then set up the earth and sun
        ephemeris */
-    if( inputs.matrixFile != NULL ){
+    if( inputs.matrixFile != NULL || inputs.usecov ){
       /* check files exist and if not output an error message */
       if( access(inputs.earthfile, F_OK) != 0 || 
           access(inputs.earthfile, F_OK) != 0 ){
@@ -580,6 +585,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "nglitch",        required_argument, 0, 'O' },
     { "earth-ephem",    required_argument, 0, 'J' },
     { "sun-ephem",      required_argument, 0, 'M' },
+    { "use-cov",        no_argument,       0, '(' },
     { "covariance",     required_argument, 0, 'r' },
     { "use-priors",     no_argument,    NULL, '>' },
     { "only-joint",     no_argument,    NULL, '<' },
@@ -590,7 +596,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
 
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:]:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:\
-W:y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
+W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -651,8 +657,9 @@ W:y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   inputParams->mcmc.outputBI = 0;             /* output the burn in chain - default to no */
 
   inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
-
-  inputParams->matrixFile = NULL;             /* no covriance file */
+  
+  inputParams->usecov = 0;
+  inputParams->matrixFile = NULL;             /* no covariance file */
 
   inputParams->onlyjoint = 0;       /* by default output all posteriors */
 
@@ -828,6 +835,9 @@ W:y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
         break;
       case 'M':
         sprintf(inputParams->sunfile, "%s", optarg);
+        break;
+      case '(':
+        inputParams->usecov = 1;
         break;
       case 'r':
         inputParams->matrixFile = optarg;
@@ -2023,7 +2033,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   }
 
   /* if there's an input covarince matrix file then set up parameters */
-  if( input.matrixFile != NULL )
+  if( input.matrixFile != NULL || input.usecov )
     matTrue = 1;
 
   if( matTrue ){
@@ -2228,7 +2238,7 @@ paramData ) ) == NULL ){
     /* set phase of initial heterodyne */
     if( (phi1[0] = get_phi( data[0], pulsarParamsFixed, baryinput, edat )) ==
       NULL ){
-      fprintf(stderr, "Error... Phase generation produces NULL!");
+      fprintf(stderr, "Error... Phase generation produces NULL!\n");
       exit(0);
     }
   }
@@ -3207,114 +3217,143 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
     paramData[20].sigma = params.eps2dotErr;
   }
 
-  /* read in data from correlation matrix file */
-  if((fp = fopen(matrixFile, "r")) == NULL){
-    fprintf(stderr, "Error...No correlation matrix file!\n" );
-    return NULL;
-  }
+  /* if we have a correlation matrix file then read it in */
+  if( matrixFile != NULL ){
+    /* read in data from correlation matrix file */
+    if((fp = fopen(matrixFile, "r")) == NULL){
+      fprintf(stderr, "Error...No correlation matrix file!\n" );
+      return NULL;
+    }
 
-  /* read in the first line of the matrix file */
-  while(fscanf(fp, "%s", paramTmp)){
-    if(strchr(paramTmp, '-') != NULL)
-      break;
+    /* read in the first line of the matrix file */
+    while(fscanf(fp, "%s", paramTmp)){
+      if(strchr(paramTmp, '-') != NULL)
+        break;
 
-    if(feof(fp)){
-      fprintf(stderr, "Error... I've reached the end of the file without \
+      if(feof(fp)){
+        fprintf(stderr, "Error... I've reached the end of the file without \
 reading any correlation data!");
-      fclose(fp);
+        fclose(fp);
+        exit(0);
+      }
+
+      sprintf(matrixParams[numParams], "%s", paramTmp);
+      numParams++;
+
+      /*check if parameter is actually for a dispersion measure (ignore if so)*/
+      if(!strcmp(paramTmp, "DM")){
+        numParams--;
+        DMpos = i;
+        numDM++;
+      }
+      if(!strcmp(paramTmp, "DM1")){
+        numParams--;
+        DM1pos = i;
+        numDM++;
+      }
+
+      i++;
+    };
+
+    if(numParams > arraySize){
+      fprintf(stderr, "More parameters in matrix file than there should be!\n");
       exit(0);
     }
 
-    sprintf(matrixParams[numParams], "%s", paramTmp);
-    numParams++;
+    matdims = XLALCreateUINT4Vector( 2 );
+    matdims->data[0] = numParams;
+    matdims->data[1] = numParams;
 
-    /* check if parameter is actually for a dispersion measure (ignore if so) */
-    if(!strcmp(paramTmp, "DM")){
-      numParams--;
-      DMpos = i;
-      numDM++;
-    }
-    if(!strcmp(paramTmp, "DM1")){
-      numParams--;
-      DM1pos = i;
-      numDM++;
-    }
+    corMat = XLALCreateREAL8Array( matdims );
 
-    i++;
-  };
+    /* find positions of each parameter */
+    /* the strings that represent parameters in a matrix are given in the param
+       variable in the tempo code mxprt.f */
+    /* read in matrix */
+    k=0;
+    for(i=0;i<numParams+numDM;i++){
+      n=0;
+      rc = fscanf(fp, "%s%s", tmpStr, tmpStr2);
 
-  if(numParams > arraySize){
-    fprintf(stderr, "More parameters in matrix file than there should be!\n");
-    exit(0);
-  }
-
-  matdims = XLALCreateUINT4Vector( 2 );
-  matdims->data[0] = numParams;
-  matdims->data[1] = numParams;
-
-  corMat = XLALCreateREAL8Array( matdims );
-
-  /* find positions of each parameter */
-  /* the strings that represent parameters in a matrix are given in the param
-     variable in the tempo code mxprt.f */
-  /* read in matrix */
-  k=0;
-  for(i=0;i<numParams+numDM;i++){
-    n=0;
-    rc = fscanf(fp, "%s%s", tmpStr, tmpStr2);
-
-    /* if its a dispersion measure then just skip the line */
-    if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
-      rc = fscanf(fp, "%*[^\n]");
-      k--;
-      continue;
-    }
-
-    for(j=0;j<i+1;j++){
-      if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
-        rc = fscanf(fp, "%lf", &junk);
-        n--;
+      /* if its a dispersion measure then just skip the line */
+      if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
+        rc = fscanf(fp, "%*[^\n]");
+        k--;
         continue;
       }
 
-      rc = fscanf(fp, "%lf", &corTemp);
+      for(j=0;j<i+1;j++){
+        if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
+          rc = fscanf(fp, "%lf", &junk);
+          n--;
+          continue;
+        }
 
-      /* if covariance equals 1 set as 0.9999999, because values of 1
+        rc = fscanf(fp, "%lf", &corTemp);
+
+        /* if covariance equals 1 set as 0.9999999, because values of 1
            can cause problems of giving singular matrices */
-      if( (n != k) && (corTemp == 1.) )
-        corTemp = 0.9999999;
-      else if( (n != k) && (corTemp == -1.) )
-        corTemp = -0.9999999;
+        if( (n != k) && (corTemp == 1.) )
+          corTemp = 0.9999999;
+        else if( (n != k) && (corTemp == -1.) )
+          corTemp = -0.9999999;
 
-      corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
+        corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
 
-      if(n != k)
-        corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
+        if(n != k)
+          corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
 
-      n++;
+        n++;
+      }
+
+      /* send an error if we hit the end of the file */
+      if( feof(fp) || rc == EOF ){
+        fprintf(stderr, "Error reading in matrix - hit end of file!\n");
+        exit(0);
+      }
+
+      k++;
     }
 
-    /* send an error if we hit the end of the file */
-    if( feof(fp) || rc == EOF ){
-      fprintf(stderr, "Error reading in matrix - hit end of file!\n");
-      exit(0);
-    }
+    fclose(fp);
 
-    k++;
-  }
-
-  fclose(fp);
-
-  /* give the correlation matrix positions of the parameters */
-  for(i=1;i<numParams+1;i++){
-    for(j=0;j<arraySize;j++){
-      if(!strcmp(matrixParams[i-1], paramData[j].name)){
-        paramData[j].matPos = i;
-        break;
+    /* give the correlation matrix positions of the parameters */
+    for(i=1;i<numParams+1;i++){
+      for(j=0;j<arraySize;j++){
+        if(!strcmp(matrixParams[i-1], paramData[j].name)){
+          paramData[j].matPos = i;
+          break;
+        }
       }
     }
   }
+  else{ /* create files with just variances from par file and no correlations */
+    j = 0;
+    for( i = 0; i < MAXPARAMS; i++ ){
+      if( paramData[i].sigma != 0.0 ){
+        j++;
+        paramData[i].matPos = j;
+      }
+    }
+    
+    /* create array */
+    matdims = XLALCreateUINT4Vector( 2 );
+    matdims->data[0] = j;
+    matdims->data[1] = j;
 
+    corMat = XLALCreateREAL8Array( matdims );
+    
+    /* set diagonal elements to one - they'll be converted to variances later */
+    for( i = 0; i < j; i++ ){
+      for ( k = 0; k < j; k++){
+        if ( i == k )
+          corMat->data[i*corMat->dimLength->data[0]+k] = 1.;
+        else
+          corMat->data[i*corMat->dimLength->data[0]+k] = 0.;
+      }
+    }
+  }
+  
   /* pass the parameter data to be output */
   memcpy(data, paramData, sizeof(paramData));
 
