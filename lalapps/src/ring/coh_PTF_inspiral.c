@@ -1248,7 +1248,7 @@ void coh_PTF_statistic(
     vecLength = 5;
   else
     vecLength = 1;
-  if (params->numIFO == 1 || params->singlePolFlag)
+  if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
     vecLengthTwo = vecLength;
   else
     vecLengthTwo = 2* vecLength;
@@ -1578,7 +1578,7 @@ void coh_PTF_statistic(
       continue;
     }
 
-    if (params->numIFO == 2 && (! params->singlePolFlag) )
+    if (params->numIFO == 2 && (! params->singlePolFlag) && (!params->faceOnStatistic) )
     {
       cohSNR->data->data[i-sOffset] = sqrt(snrComps[ifoNum1]->data->
                                                data[i+tOffset1] *
@@ -1620,7 +1620,6 @@ void coh_PTF_statistic(
       for (j = 0; j < vecLengthTwo; j++)
       {
         v1_dot_u1 += v1p[j] * v1p[j];
-        v1_dot_u2 += v1p[j] * v2p[j];
         v2_dot_u2 += v2p[j] * v2p[j];
       }
       // And SNR is calculated
@@ -1636,6 +1635,10 @@ void coh_PTF_statistic(
       }
       else
       {
+        for (j = 0; j < vecLengthTwo; j++)
+        {
+          v1_dot_u2 += v1p[j] * v2p[j];
+        }
         max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
             * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
       }
@@ -2354,6 +2357,8 @@ void coh_PTF_statistic(
 
   *chisqOverlapsP = chisqOverlaps;
   *chisqSnglOverlapsP = chisqSnglOverlaps;
+
+  write_REAL4TimeSeries( cohSNR );
 
 }
 
