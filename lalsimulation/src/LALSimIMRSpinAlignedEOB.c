@@ -126,6 +126,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
         const REAL8     spin2z       /**<< z-component of spin-2, dimensionless */
      )
 {
+  /* If either spin > 0.6, exit */
+  if ( spin1z > 0.6 || spin2z > 0.6 )
+  {
+    XLALPrintError( "XLAL Error - %s: Component spin larger than 0.6!\nSEOBNRv1 is only available for spins in the range -1 < a/M < 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
+  }
 
   INT4 i;
 
@@ -143,7 +149,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8       spin1[3] = {0, 0, spin1z};
   REAL8       spin2[3] = {0, 0, spin2z};
   REAL8       s1Data[3], s2Data[3];
-
 
   /* Parameters of the system */
   REAL8 m1, m2, mTotal, eta, mTScaled;
