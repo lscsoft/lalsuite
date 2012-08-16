@@ -97,7 +97,7 @@ for(my $ii=0; $ii<$numberBands; $ii++) {
             close(SKYFILE);
             
             my $lowestFneeded = ($fstart+$ii*$fstep) - 0.1 - 0.1 - 4e-3;
-            my $lowestFinteger = int(floor($lowestFneeded - ($lowestFneeded % 2) + 0.5)) + 1;
+            my $lowestFinteger = int(floor($lowestFneeded - fmod($lowestFneeded, 2.0) + 0.5)) + 1;
             if ($lowestFinteger>$lowestFneeded) {
                $lowestFinteger -= 2;
             }
@@ -163,7 +163,7 @@ EOF
       my $outdirectory = $outdirectory0.$directorynumber;
       
       my $lowestFneeded = ($fstart+$ii*$fstep) - 0.1 - 0.1 - 4e-3;
-      my $lowestFinteger = int(floor($lowestFneeded - ($lowestFneeded % 2) + 0.5)) + 1;
+      my $lowestFinteger = int(floor($lowestFneeded - fmod($lowestFneeded, 2.0) + 0.5)) + 1;
       if ($lowestFinteger>$lowestFneeded) {
          $lowestFinteger -= 2;
       }
