@@ -15,6 +15,12 @@ my $Tcoh = 1800;
 my $sftoverlap = 900;
 my $sky = "allSky";
 
+if ($ifo == "LHO") {
+   $ifo = "H1";
+} elsif ($ifo == "LLO") {
+   $ifo = "L1";
+}
+
 system("mkdir $outputPathBase/$band\_$ifo");
 die "mkdir failed: $?" if $?;
 
