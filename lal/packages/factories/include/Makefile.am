@@ -3,12 +3,7 @@ pkginclude_HEADERS = \
 	SeqFactories.h \
 	StringVector.h
 
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
-
 all-local: include-link
-
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
