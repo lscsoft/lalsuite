@@ -31,6 +31,7 @@ import exceptions
 # import the lalapps pipeline modules
 from glue import pipeline
 from lalapps import pulsar_pipeline_utils as ppu
+from lalapps import pulsarpputils as pppu
 
 # program usage
 def usage():
@@ -287,8 +288,17 @@ if do_coarse:
   j = 0
   while i < len(param_files):
     if ".par" in param_files[i]:
-      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
-      pulsar = re.sub(r'\.par', r'', param_files[i])
+      # set the pulsar name from the PSRJ name in the par file
+      try:
+        par = pppu.psr_par(param_files[i])
+        pulsar = par['PSRJ']
+      except:
+        print >> sys.stderr, "Could not read PSRJ from %s" % param_files[i]
+        sys.exit(0)
+      
+      # set pulsar name from .par file
+      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
+      #pulsar = re.sub(r'\.par', r'', param_files[i])
       param_file = pulsar_param_dir + '/' + param_files[i]
       
       # add heterodyneNode for DAG
@@ -366,7 +376,15 @@ if do_fine or do_update:
   j = 0
   while i < len(param_files):
     if ".par" in param_files[i]:
-      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
+      try:
+        par = pppu.psr_par(param_files[i])
+        pulsar = par['PSRJ']
+      except:
+        print >> sys.stderr, "Could not read PSRJ from %s" % param_files[i]
+        sys.exit(0)
+      
+      #set pulsar name from .par file
+      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
       param_file = pulsar_param_dir + '/' + param_files[i]
       
       # set heterodyne flag

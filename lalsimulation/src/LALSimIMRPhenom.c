@@ -122,9 +122,17 @@ int XLALSimIMRPhenomAGenerateFD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomAParams(m1, m2);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   return IMRPhenomAGenerateFD(htilde, phi0, deltaF, m1, m2, f_min, f_max_prime, distance, params);
 }
@@ -174,9 +182,17 @@ int XLALSimIMRPhenomAGenerateTD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomAParams(m1, m2);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* generate hplus */
   IMRPhenomAGenerateTD(hplus, 0, deltaT, m1, m2, f_min, f_max_prime, distance, params);
@@ -272,9 +288,17 @@ int XLALSimIMRPhenomBGenerateTD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* generate plus */
   IMRPhenomBGenerateTD(hplus, 0., deltaT, m1, m2, chi, f_min, f_max_prime, distance, params);
@@ -353,9 +377,17 @@ int XLALSimIMRPhenomBGenerateFD(
   /* phenomenological parameters*/
   params = ComputeIMRPhenomBParams(m1, m2, chi);
   if (!params) XLAL_ERROR(XLAL_EFUNC);
+  if (params->fCut <= f_min) {
+      XLALPrintError("fCut <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   /* default f_max to params->fCut */
   f_max_prime = f_max ? f_max : params->fCut;
+  if (f_max_prime <= f_min) {
+      XLALPrintError("f_max <= f_min");
+      XLAL_ERROR(XLAL_EDOM);
+  }
 
   status = IMRPhenomBGenerateFD(htilde, phi0, deltaF, m1, m2, chi, f_min, f_max_prime, distance, params);
   LALFree(params);

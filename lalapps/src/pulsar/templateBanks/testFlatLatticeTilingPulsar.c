@@ -131,9 +131,9 @@ int main(int argc, char *argv[]) {
     
     /* Create square parameter space */
     for (i = 0; i < (int)(bounds->size/2); ++i) {
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, gsl_vector_get(bounds, 2*i),
-								gsl_vector_get(bounds, 2*i) + gsl_vector_get(bounds, 2*i + 1)))
-	LALAPPS_ERROR("XLALAddFlatLatticeTilingConstantBound failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, i, gsl_vector_get(bounds, 2*i),
+                                                          gsl_vector_get(bounds, 2*i) + gsl_vector_get(bounds, 2*i + 1)))
+	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
     }
       
     /* Output parameter space */
@@ -168,14 +168,14 @@ int main(int argc, char *argv[]) {
 	LALAPPS_ERROR("XLALCreateFlatLatticeTiling failed\n", 0);
 
       /* Add sky position bounds */
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, alpha, alpha))
-	LALAPPS_ERROR("XLALAddFlatLatticeTilingConstantBound failed\n", 0);
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingConstantBound(tiling, delta, delta))
-	LALAPPS_ERROR("XLALAddFlatLatticeTilingConstantBound failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, 0, alpha, alpha))
+	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, 1, delta, delta))
+	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
 
       /* Add frequency and spindown bounds */
-      if (XLAL_SUCCESS != XLALAddFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking))
-	LALAPPS_ERROR("XLALAddFlatLatticeTilingAgeBrakingIndexBounds failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking))
+	LALAPPS_ERROR("XLALSetFlatLatticeTilingAgeBrakingIndexBounds failed\n", 0);
     
     }
 
@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
   /* Check only one parameter space was specified */
   if (spaces != 1)
     LALAPPS_ERROR("Exactly one of --square or --age-braking must be specified\n", 0);
-  XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", XLALGetFlatLatticeTilingDimensions(tiling));
+  XLAL_VBXMLO_Tag(&xml, "dimensions", "%i", XLALGetFlatLatticeDimensions(tiling));
 
   /* Scale padding (testing only) */
   /* if (LALUserVarWasSet(&scale_padding)) { */
@@ -206,17 +206,16 @@ int main(int argc, char *argv[]) {
   case 1:
     {
       gsl_matrix *identity = NULL;
-      ALLOC_GSL_MATRIX(identity, XLALGetFlatLatticeTilingDimensions(tiling), XLALGetFlatLatticeTilingDimensions(tiling), EXIT_FAILURE);
+      ALLOC_GSL_MATRIX(identity, XLALGetFlatLatticeDimensions(tiling), XLALGetFlatLatticeDimensions(tiling), EXIT_FAILURE);
       gsl_matrix_set_identity(identity);
-      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingMetric(tiling, identity, max_mismatch))
-	LALAPPS_ERROR("XLALSetFlatLatticeTilingMetric failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeMetric(tiling, identity, max_mismatch))
+	LALAPPS_ERROR("XLALSetFlatLatticeMetric failed\n", 0);
       gsl_matrix_free(identity);
     }
     break;
   default:
     LALAPPS_ERROR("Invalid --metric\n", 0);
   }
-  XLAL_VBXMLO_gsl_matrix(&xml, "metric", "%0.12g", XLALGetFlatLatticeTilingMetric(tiling));
   XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.12g", max_mismatch);
   /* XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.12g", tiling->real_scale); */
   /* XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.12g", tiling->real_offset); */
@@ -224,11 +223,11 @@ int main(int argc, char *argv[]) {
   /* Set lattice */
   switch (lattice_type) {
   case 0:
-    if (XLAL_SUCCESS != XLALSetFlatTilingLatticeGenerator(tiling, XLALAnstarLatticeGenerator))
+    if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(tiling, XLALAnstarLatticeGenerator))
       LALAPPS_ERROR("XLALSetFlatTilingLatticeGenerator failed\n", 0);
     break;
   case 1:
-    if (XLAL_SUCCESS != XLALSetFlatTilingLatticeGenerator(tiling, XLALCubicLatticeGenerator))
+    if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(tiling, XLALCubicLatticeGenerator))
       LALAPPS_ERROR("XLALSetFlatTilingLatticeGenerator failed\n", 0);
     break;
   default:
@@ -252,7 +251,7 @@ int main(int argc, char *argv[]) {
       LALAPPS_ERROR("XLALCreateRandomParams failed", 0);
     
     /* Allocate memory */
-    ALLOC_GSL_VECTOR(inject_point, XLALGetFlatLatticeTilingDimensions(tiling), EXIT_FAILURE);
+    ALLOC_GSL_VECTOR(inject_point, XLALGetFlatLatticeDimensions(tiling), EXIT_FAILURE);
     ALLOC_GSL_VECTOR(inject_min_mismatch, inject_count, EXIT_FAILURE);
 
     /* Initialise minimum mismatch */
@@ -263,7 +262,7 @@ int main(int argc, char *argv[]) {
   /* Generate and output templates and injections */
   fflush(xml.file);
   if (!only_count) {
-    ALLOC_GSL_VECTOR(temp, XLALGetFlatLatticeTilingDimensions(tiling), EXIT_FAILURE);
+    ALLOC_GSL_VECTOR(temp, XLALGetFlatLatticeDimensions(tiling), EXIT_FAILURE);
     XLAL_VBXMLO_BeginTag(&xml, "tiling");
   }
   while ((current = XLALNextFlatLatticePoint(tiling)) != NULL) {

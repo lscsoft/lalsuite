@@ -98,8 +98,8 @@ void XLALSimInspiralDestroyWaveformFlags(
         );
 
 /**
- * Returns true if all fields of LALSimInspiralWaveformFlags have default value
- * returns false otherwise.
+ * Returns true if waveFlags is non-NULL and all of its fields have default
+ * value; returns false otherwise.
  */
 bool XLALSimInspiralWaveformFlagsIsDefault(
         LALSimInspiralWaveformFlags *waveFlags
@@ -114,7 +114,8 @@ void XLALSimInspiralSetInteraction(
         );
 
 /**
- * Get the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct
+ * Get the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_INTERACTION_DEFAULT if waveFlags is NULL
  */
 LALSimInspiralInteraction XLALSimInspiralGetInteraction(
         LALSimInspiralWaveformFlags *waveFlags
@@ -137,7 +138,8 @@ void XLALSimInspiralSetFrameAxis(
         );
 
 /**
- * Get the LALSimInspiralFrameAxis within a LALSimInspiralWaveformFlags struct
+ * Get the LALSimInspiralFrameAxis within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT if waveFlags is NULL
  */
 LALSimInspiralFrameAxis XLALSimInspiralGetFrameAxis(
         LALSimInspiralWaveformFlags *waveFlags
@@ -160,7 +162,8 @@ void XLALSimInspiralSetModesChoice(
         );
 
 /**
- * Get the LALSimInspiralModesChoice within a LALSimInspiralWaveformFlags struct
+ * Get the LALSimInspiralModesChoice within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_MODES_CHOICE_DEFAULT if waveFlags is NULL
  */
 LALSimInspiralModesChoice XLALSimInspiralGetModesChoice(
         LALSimInspiralWaveformFlags *waveFlags

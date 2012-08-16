@@ -28,6 +28,8 @@
 #ifndef _FLATLATTICETILING_H
 #define _FLATLATTICETILING_H
 
+#include <stdbool.h>
+
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
@@ -42,17 +44,17 @@ extern "C" <% // {
 ///
 /// Flat lattice tiling bound function
 ///
-typedef void (*FlatLatticeTilingBound)(
-  double* lower,	///< [out] Lower bound on point in dimension
-  double* upper,	///< [out] Upper bound on point in dimension
-  gsl_vector* point,	///< [in] Point on which to find bounds
-  gsl_vector* data	///< [in] Arbitrary data describing parameter space
+typedef void (*FlatLatticeBound)(
+  double* lower,		///< [out] Lower bound on point in dimension
+  double* upper,		///< [out] Upper bound on point in dimension
+  const gsl_vector* point,	///< [in] Point on which to find bounds
+  const void* data		///< [in] Arbitrary data describing parameter space
   );
 
 ///
 /// Flat tiling lattice generator function
 ///
-typedef int (*FlatTilingLatticeGenerator)(
+typedef int (*FlatLatticeGenerator)(
   size_t dimensions,		///< [in] Number of dimensions
   gsl_matrix** generator,	///< [out] Generator matrix
   double* norm_thickness	///< [out] Normalised thickness
@@ -62,6 +64,12 @@ typedef int (*FlatTilingLatticeGenerator)(
 /// Flat lattice tiling state structure
 ///
 typedef struct tagFlatLatticeTiling FlatLatticeTiling;
+
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
+SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
+SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
+#endif
 
 ///
 /// Create a new flat lattice tiling state structure
@@ -80,14 +88,7 @@ void XLALDestroyFlatLatticeTiling(
 ///
 /// Return the number of dimensions being tiled
 ///
-size_t XLALGetFlatLatticeTilingDimensions(
-  FlatLatticeTiling* tiling	///< [in] Tiling state
-  );
-
-///
-/// Return the flat lattice tiling metric
-///
-gsl_matrix* XLALGetFlatLatticeTilingMetric(
+size_t XLALGetFlatLatticeDimensions(
   FlatLatticeTiling* tiling	///< [in] Tiling state
   );
 
@@ -101,17 +102,18 @@ uint64_t XLALGetFlatLatticePointCount(
 ///
 /// Add a parameter space bound to the flat lattice tiling
 ///
-int XLALAddFlatLatticeTilingBound(
+int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
-  FlatLatticeTilingBound func,	///< [in] Parameter space bound function
-  gsl_vector* data		///< [in] Arbitrary data describing parameter space
+  size_t dimension,		///< [in] Dimension on which bound applies
+  FlatLatticeBound func,	///< [in] Parameter space bound function
+  void* data			///< [in] Arbitrary data describing parameter space
   );
 
 
 ///
 /// Set the flat lattice tiling metric and maximum mismatch
 ///
-int XLALSetFlatLatticeTilingMetric(
+int XLALSetFlatLatticeMetric(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   gsl_matrix* metric,		///< [in] Parameter space metric
   double max_mismatch		///< [in] Maximum prescribed mismatch
@@ -120,11 +122,10 @@ int XLALSetFlatLatticeTilingMetric(
 ///
 /// Set the flat tiling lattice generator
 ///
-int XLALSetFlatTilingLatticeGenerator(
+int XLALSetFlatLatticeGenerator(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
-  FlatTilingLatticeGenerator generator	///< [in] Lattice generator function
+  FlatLatticeGenerator generator	///< [in] Lattice generator function
   );
-
 
 ///
 /// Return the next point in the flat lattice tiling parameter space
@@ -134,10 +135,35 @@ gsl_vector* XLALNextFlatLatticePoint(
   );
 
 ///
+/// Return a set of points in the flat lattice tiling parameter space
+///
+size_t XLALNextFlatLatticePoints(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  gsl_matrix* points,			///< [in] Flat lattice tiling points
+  bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
+  );
+
+///
+/// Return to the beginning of a flat lattice tiling
+///
+int XLALRestartFlatLatticeTiling(
+  FlatLatticeTiling* tiling		///< [in] Tiling state
+  );
+
+///
 /// Calculate the total number of flat lattice tiling parameter space points
 ///
 uint64_t XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling		///< [in] Tiling state
+  );
+
+///
+/// Generate random points within the flat lattice tiling parameter space
+///
+int XLALGenerateRandomFlatLatticePoints(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  RandomParams* randpar,		///< [in] Random number generator state
+  gsl_matrix* randpoints		///< [in] Random points (column-wise)
   );
 
 int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gsl_vector*, gsl_vector*, double*);
@@ -163,10 +189,56 @@ int XLALAnstarLatticeGenerator(
 ///
 /// Add a constant parameter space bound to the flat lattice tiling
 ///
-int XLALAddFlatLatticeTilingConstantBound(
+int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
+  size_t dimension,		///< [in] Dimension on which bound applies
   double lower,			///< [in] Lower bound on dimension
   double upper			///< [in] Upper bound on dimension
+  );
+
+///
+/// Workspace for computing the nearest template to a set of injections
+///
+typedef struct tagNearestTemplateWorkspace NearestTemplateWorkspace;
+
+///
+/// Create a new workspace for computing the nearest template to a set of injections
+///
+NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
+  const gsl_matrix* metric,		///< [in] Parameter space metric
+  const size_t num_templates,		///< [in] Number of templates to compare at once
+  const size_t num_injections		///< [in] Nunber of injections to compare at once
+  );
+
+///
+/// Destroy a nearest template workspace
+///
+void XLALDestroyNearestTemplateWorkspace(
+  NearestTemplateWorkspace* wksp	///< [in] Nearest template workspace
+  );
+
+///
+/// Update the templates used to compute distances from, and reset nearest template index
+///
+int XLALUpdateWorkspaceTemplates(
+  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
+  const gsl_matrix* templates,		///< [in] Template bank
+  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
+  );
+
+///
+/// Update the injections used to compute distances to, and reset minimum distances
+///
+int XLALUpdateWorkspaceInjections(
+  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
+  const gsl_matrix* injections,		///< [in] Injection set
+  gsl_vector* min_distance		///< [in] Distance from injection to nearest template
+  );
+
+int XLALUpdateNearestTemplateToInjections(
+  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
+  gsl_vector* min_distance,		///< [in] Distance from injection to nearest template
+  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
   );
 
 #ifdef __cplusplus
