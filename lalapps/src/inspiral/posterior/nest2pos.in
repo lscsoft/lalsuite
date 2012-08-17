@@ -1,6 +1,6 @@
 #!/usr/bin/env @PYTHONPROG@
 
-from numpy import loadtxt
+from numpy import loadtxt,logaddexp,log
 from optparse import OptionParser
 import sys
 import os
@@ -19,7 +19,6 @@ usage='''%prog -N Nlive [-p posterior.dat] [-H header.txt] [--npos Npos] datafil
 
 def getBfile(Bfile):
     Bfile=Bfile
-    print 'Looking for '+Bfile
     if os.access(Bfile,os.R_OK):
         outstat = loadtxt(Bfile)
         return outstat
@@ -86,7 +85,7 @@ if __name__=='__main__':
   # Write out an evidence file
   if opts.pos is not None:
     Bfile=opts.pos+'_B.txt'
-    Bs=map(getBfile,datafiles)
+    Bs=map(getBfile,[d+'_B.txt' for d in datafiles])
     if not any([b is None for b in Bs]):
       meanB=reduce(logaddexp,[b[0] for b in Bs])-log(len(Bs))
       meanZ=reduce(logaddexp,[b[1] for b in Bs])-log(len(Bs))
