@@ -36,7 +36,6 @@ bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
 lal_version_LDADD = liblal.la
 
-CLEANFILES =
 MOSTLYCLEANFILES = LALBuildDate.c
 
 TESTS = lal-version
