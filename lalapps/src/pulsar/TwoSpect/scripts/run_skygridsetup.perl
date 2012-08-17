@@ -15,9 +15,9 @@ my $Tcoh = 1800;
 my $sftoverlap = 900;
 my $sky = "allSky";
 
-if ($ifo == "LHO") {
+if ($ifo eq "LHO") {
    $ifo = "H1";
-} elsif ($ifo == "LLO") {
+} elsif ($ifo eq "LLO") {
    $ifo = "L1";
 }
 
