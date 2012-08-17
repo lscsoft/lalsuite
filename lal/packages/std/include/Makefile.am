@@ -20,14 +20,7 @@ pkginclude_HEADERS = \
 	lalswig_gsl.i \
 	lalswig_ligotimegps.i
 
-EXTRA_DIST =
-
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
-
 all-local: include-link
-
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)
