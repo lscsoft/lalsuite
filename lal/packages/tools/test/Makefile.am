@@ -1,4 +1,7 @@
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
 
 check_PROGRAMS = \
 	CoherentEstimationTest \
@@ -17,70 +20,6 @@ check_PROGRAMS = \
 	QuadraticFitTriggerInterpolantTest \
 	TimeSeriesTest \
 	UnitsTest
-
-CoherentEstimationTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-ComputeTransferTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-DetectorSiteTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-FrequencySeriesTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LALBarycenterTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LALIndependentTestDetResponse_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LALTestDetResponse0_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-SegmentsTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-SequenceTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-SkymapTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-TimeSeriesTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-UnitsTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-CubicSplineTriggerInterpolantTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LanczosTriggerInterpolantTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-NearestNeighborTriggerInterpolantTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-QuadraticFitTriggerInterpolantTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
 
 EXTRA_DIST = \
 	ComputeCalibrationFactorsTest.c \

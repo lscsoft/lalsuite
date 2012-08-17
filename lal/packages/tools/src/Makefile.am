@@ -1,6 +1,7 @@
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 noinst_LTLIBRARIES = libtools.la
+
 libtools_la_SOURCES = \
 	CoherentEstimation.c \
 	ComputeCalibrationFactors.c \
