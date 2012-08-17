@@ -13,11 +13,9 @@ pkginclude_HEADERS = \
 	SegmentsIO.h \
 	StreamInput.h \
 	StreamOutput.h \
-	UserInput.h ConfigFile.h
+	UserInput.h \
+	ConfigFile.h
 
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
 all-local: include-link
 @INCLUDEMKFILE@
 
