@@ -84,8 +84,8 @@ if __name__=='__main__':
     posfile.close()
 
   # Write out an evidence file
-  if opts.posfile is not None:
-    Bfile=opts.posfile+'_B.txt'
+  if opts.pos is not None:
+    Bfile=opts.pos+'_B.txt'
     Bs=map(getBfile,datafile)
     if not any([b is None for b in Bs]):
       meanB=reduce(logaddexp,[b[0] for b in Bs])-log(len(Bs))
