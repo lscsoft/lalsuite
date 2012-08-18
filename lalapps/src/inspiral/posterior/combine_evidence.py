@@ -78,6 +78,7 @@ def weightsamp(d,Nlive):
     return total_weight
 
 def nest2pos(samps,weights,logLcolumn=-1):
+    print 'WARNING! lalapps.combine_evidence.nest2pos is deprecated. Please use lalapps.nest2pos module'
     randoms=rand(size(samps,0))
     wt=weights+samps[:,logLcolumn]
     maxwt=max(wt)

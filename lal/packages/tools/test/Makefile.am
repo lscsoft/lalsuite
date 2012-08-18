@@ -11,66 +11,74 @@ check_PROGRAMS = \
 	SegmentsTest \
 	SequenceTest \
 	SkymapTest \
+	CubicSplineTriggerInterpolantTest \
+	LanczosTriggerInterpolantTest \
+	NearestNeighborTriggerInterpolantTest \
+	QuadraticFitTriggerInterpolantTest \
 	TimeSeriesTest \
 	UnitsTest
 
-CoherentEstimationTest_SOURCES = CoherentEstimationTest.c
 CoherentEstimationTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-ComputeTransferTest_SOURCES = ComputeTransferTest.c
 ComputeTransferTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-DetectorSiteTest_SOURCES = DetectorSiteTest.c
 DetectorSiteTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-FrequencySeriesTest_SOURCES = FrequencySeriesTest.c
 FrequencySeriesTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-LALBarycenterTest_SOURCES = LALBarycenterTest.c
 LALBarycenterTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-LALIndependentTestDetResponse_SOURCES = LALIndependentTestDetResponse.c
 LALIndependentTestDetResponse_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-LALTestDetResponse0_SOURCES = LALTestDetResponse0.c
 LALTestDetResponse0_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-SegmentsTest_SOURCES = SegmentsTest.c
 SegmentsTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-SequenceTest_SOURCES = SequenceTest.c
 SequenceTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-SkymapTest_SOURCES = SkymapTest.c
 SkymapTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-TimeSeriesTest_SOURCES = TimeSeriesTest.c
 TimeSeriesTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
-UnitsTest_SOURCES = UnitsTest.c
 UnitsTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+CubicSplineTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+LanczosTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+NearestNeighborTriggerInterpolantTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
+
+QuadraticFitTriggerInterpolantTest_LDADD = \
 	$(top_builddir)/lib/liblal.la \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
@@ -94,6 +102,10 @@ TESTS = \
 	SequenceTest \
 	SkymapTest \
 	TimeSeriesTest \
+	CubicSplineTriggerInterpolantTest \
+	LanczosTriggerInterpolantTest \
+	NearestNeighborTriggerInterpolantTest \
+	QuadraticFitTriggerInterpolantTest \
 	UnitsTest
 
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)

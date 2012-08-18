@@ -392,9 +392,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     pagedir=os.path.join(self.webdir,evstring,myifos)
     mkdirs(pagedir)
     mergenode=MergeNSNode(self.merge_job,parents=enginenodes)
-    mergedir=os.path.join(self.basepath,'nested_samples')
-    mkdirs(mergedir)
-    mergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(myifos,evstring)))
     mergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(myifos,evstring)))
     self.add_node(mergenode)
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
@@ -414,7 +411,6 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
               co.set_psdstart(enginenodes[0].GPSstart)
               co.set_psdlength(enginenodes[0].psdlength)
             pmergenode=MergeNSNode(self.merge_job,parents=cotest_nodes)
-            pmergenode.set_output_file(os.path.join(mergedir,'outfile_%s_%s.dat'%(ifo,evstring)))
             pmergenode.set_pos_output_file(os.path.join(self.posteriorpath,'posterior_%s_%s.dat'%(ifo,evstring)))
             self.add_node(pmergenode)
             par_mergenodes.append(pmergenode)
@@ -930,50 +926,6 @@ class CoherenceTestNode(pipeline.CondorDAGNode):
       for inco in self.incoherent_parents:
         self.add_file_arg(inco.get_B_file())
 
-class CombineZJob(pipeline.CondorDAGJob):
-    """
-    Class defining a combineZ script job to be run as part of a pipeline
-    This job combine runs with adjacent prior areas and produces the posterior samples
-    Input Arguments:
-    cp        - A ConfigParser object containing the combinez section
-    submitFile    - Path to store the submit file
-    logdir        - A directory to hold the stderr, stdout files of combineZ
-    """
-    def __init__(self,cp,submitFile,logdir):
-      exe=cp.get('condor','combinez')
-      pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      self.add_opt('Nlive',str(int(cp.get('lalinferencenest','nlive'))*int(cp.get('analysis','nparallel'))))
-      self.set_stdout_file(os.path.join(logdir,'combineZ-$(cluster)-$(process).out'))
-      self.set_stderr_file(os.path.join(logdir,'combineZ-$(cluster)-$(process).err'))
-      self.add_condor_cmd('getenv','True')
-      self.set_sub_file(submitFile)
-
-
-class CombineZNode(pipeline.CondorDAGNode):
-    """
-    Class defining a Condor DAG Node for combineZ jobs
-    Input Arguments:
-    combine_job - A CombineZJob object
-    """
-    def __init__(self,combine_job):
-      pipeline.CondorDAGNode.__init__(self,combine_job)
-    
-    def add_engine_parent(self,node):
-      self.add_parent(node)
-      self.add_file_arg(node.get_ns_file())
-    
-    def set_output_file(self,file):
-      self.add_file_opt('outsamp',file,file_is_output_file=True)
-      self.nsfile=file
-    
-    def set_pos_output_file(self,file):
-      self.add_file_opt('outpos',file,file_is_output_file=True)
-      self.posfile=file
-    
-    def get_pos_file(self): return self.posfile
-    def get_ns_file(self): return self.nsfile
-
-    
 class MergeNSJob(pipeline.CondorDAGJob):
     """
     Class defining a job which merges several parallel nested sampling jobs into a single file
@@ -990,6 +942,9 @@ class MergeNSJob(pipeline.CondorDAGJob):
       self.set_stderr_file(os.path.join(logdir,'merge-$(cluster)-$(process).err'))
       self.add_opt('Nlive',cp.get('lalinferencenest','nlive'))
       self.add_condor_cmd('getenv','True')
+      if cp.has_option('merge','npos'):
+      	self.add_opt('npos',cp.get('merge','npos'))
+
 
 class MergeNSNode(pipeline.CondorDAGNode):
     """
@@ -1009,17 +964,12 @@ class MergeNSNode(pipeline.CondorDAGNode):
         self.add_file_arg(parent.get_ns_file())
         self.add_file_opt('headers',parent.get_header_file())
 
-    def set_output_file(self,file):
-        self.add_file_opt('out',file,file_is_output_file=True)
-        self.nsfile=file
-    
     def set_pos_output_file(self,file):
         self.add_file_opt('pos',file,file_is_output_file=True)
         self.posfile=file
     
     def get_pos_file(self): return self.posfile
-    def get_ns_file(self): return self.nsfile
-    def get_B_file(self): return self.nsfile+'_B.txt'
+    def get_B_file(self): return self.posfile+'_B.txt'
 
 class GraceDBJob(pipeline.CondorDAGJob):
     """
