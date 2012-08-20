@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2011 Craig Robinson, Enrico Barausse
+*  Copyright (C) 2011 Craig Robinson, Enrico Barausse, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,12 +18,12 @@
 */
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
  * \file 
  *
- * \brief Functions for producing EOB waveforms for 
- * spinning binaries, as described in Barausse and Buonanno ( arXiv 0912.3517 ).
+ * \brief Functions for producing SEOBNRv1 waveforms for 
+ * spinning binaries, as described in Taracchini ( arXiv 1202.0790 ).
  */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
@@ -56,11 +56,15 @@
 #define UNUSED
 #endif
 
+/**
+ * Stopping condition for the regular resolution EOB orbital evolution
+ * -- stop when reaching max orbital frequency in strong field.
+ */
 static int
-XLALEOBSpinAlignedStopCondition(double UNUSED t,
-                           const double values[],
-                           double dvalues[],
-                           void *funcParams
+XLALEOBSpinAlignedStopCondition(double UNUSED t,  /**< UNUSED */
+                           const double values[], /**< dynamical variable values */
+                           double dvalues[],      /**< dynamical variable time derivative values */
+                           void *funcParams       /**< physical parameters */
                           )
 {
 
@@ -80,11 +84,16 @@ XLALEOBSpinAlignedStopCondition(double UNUSED t,
   return GSL_SUCCESS;
 }
 
+/**
+ * Stopping condition for the high resolution EOB orbital evolution
+ * -- stop when reaching a minimum radius 0.3M out of the EOB horizon
+ *    or when getting nan in any of the four ODE equations
+ */
 static int
-XLALSpinAlignedHiSRStopCondition(double UNUSED t,
-                           const double UNUSED values[],
-                           double dvalues[],
-                           void *funcParams
+XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
+                           const double values[], /**< dynamical variable values */
+                           double dvalues[],      /**< dynamical variable time derivative values */
+                           void *funcParams       /**< physical parameters */
                           )
 {
   SpinEOBParams *params = (SpinEOBParams *)funcParams;
@@ -99,20 +108,30 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,
   return GSL_SUCCESS;
 }
 
+/**
+ * This function generates spin-aligned SEOBNRv1 waveforms h+ and hx.  
+ * Currently, only the h22 harmonic is available.  
+ */
 int XLALSimIMRSpinAlignedEOBWaveform(
-        REAL8TimeSeries **hplus,
-        REAL8TimeSeries **hcross,
-        const REAL8     UNUSED phiC,
-        REAL8           deltaT,
-        const REAL8     m1SI,
-        const REAL8     m2SI,
-        const REAL8     fMin,
-        const REAL8     r,
-        const REAL8     inc,
-        const REAL8     spin1z,
-        const REAL8     spin2z
+        REAL8TimeSeries **hplus,     /**<< +-polarization waveform */
+        REAL8TimeSeries **hcross,    /**<< x-polarization waveform */
+        const REAL8     UNUSED phiC, /**<< coalescence orbital phase (rad) */ 
+        REAL8           deltaT,      /**<< sampling time step */
+        const REAL8     m1SI,        /**<< mass-1 in SI unit */ 
+        const REAL8     m2SI,        /**<< mass-2 in SI unit */
+        const REAL8     fMin,        /**<< starting frequency (Hz) */
+        const REAL8     r,           /**<< distance in SI unit */
+        const REAL8     inc,         /**<< inclination angle */
+        const REAL8     spin1z,      /**<< z-component of spin-1, dimensionless */
+        const REAL8     spin2z       /**<< z-component of spin-2, dimensionless */
      )
 {
+  /* If either spin > 0.6, exit */
+  if ( spin1z > 0.6 || spin2z > 0.6 )
+  {
+    XLALPrintError( "XLAL Error - %s: Component spin larger than 0.6!\nSEOBNRv1 is only available for spins in the range -1 < a/M < 0.6.\n", __func__);
+    XLAL_ERROR( XLAL_EINVAL );
+  }
 
   INT4 i;
 
@@ -130,7 +149,6 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8       spin1[3] = {0, 0, spin1z};
   REAL8       spin2[3] = {0, 0, spin2z};
   REAL8       s1Data[3], s2Data[3];
-
 
   /* Parameters of the system */
   REAL8 m1, m2, mTotal, eta, mTScaled;

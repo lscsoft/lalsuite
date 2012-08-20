@@ -215,7 +215,9 @@ XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
 }
 
 
-
+/**
+ * Function to calculate associated Legendre function used by the spherical harmonics function
+ */
 static REAL8
 XLALAssociatedLegendreXIsZero( const int l,
                                const int m )
@@ -412,13 +414,16 @@ XLALAssociatedLegendreXIsZero( const int l,
   return legendre;
 }
 
+/**
+ * Function to calculate the numerical prefix in the Newtonian amplitude
+ */
 static int
 CalculateThisMultipolePrefix(
-               COMPLEX16 *prefix,
-               const REAL8 m1,
-               const REAL8 m2,
-               const INT4 l,
-               const INT4 m )
+               COMPLEX16 *prefix, /**<< Prefix value (returned) */
+               const REAL8 m1,    /**<< mass 1 */
+               const REAL8 m2,    /**<< mass 2 */
+               const INT4 l,      /**<< l mode index */
+               const INT4 m )     /**<< m mode index */
 
 {
 

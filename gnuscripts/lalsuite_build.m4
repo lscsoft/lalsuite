@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 40
+# serial 41
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -326,6 +326,9 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
   ], [ lalinspiral=${all_lal:-true} ] )
+if test "$lalframe" = "false"; then
+  lalinspiral=false
+fi
 if test "$lalmetaio" = "false"; then
   lalinspiral=false
 fi

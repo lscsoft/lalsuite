@@ -784,6 +784,9 @@ UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, 
        * log(1.0 - a/(1.0-2.0*eta)));
 }
 
+/**
+ * Function to interpolate known NQC coeffcients
+ */
 UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict coeffs, 
                                     INT4 UNUSED l, 
                                     INT4 UNUSED m, 
@@ -887,19 +890,23 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
 
 }
 
+/**
+ * This function computes the coefficients a1, a2, etc. used in the
+ * non-quasicircular correction. The details of the calculation of these
+ * coefficients are found in the DCC document T1100433. */
 UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
-                 REAL8Vector    * restrict amplitude,
-                 REAL8Vector    * restrict phase,
-                 REAL8Vector    * restrict rVec,
-                 REAL8Vector    * restrict prVec,
-                 REAL8Vector    * restrict orbOmegaVec,
-                 INT4                      l,
-                 INT4                      m,
-                 REAL8                     timePeak,
-                 REAL8                     deltaT,
-                 REAL8                     eta,
-                 REAL8                     a,
-                 EOBNonQCCoeffs * restrict coeffs )
+                 REAL8Vector    * restrict amplitude,   /**<< Amplitude of waveform as function of time */
+                 REAL8Vector    * restrict phase,       /**<< Phase of waveform (in radians) as function of time */
+                 REAL8Vector    * restrict rVec,        /**<< Position-vector as function of time */
+                 REAL8Vector    * restrict prVec,       /**<< Momentum vector as function of time */
+                 REAL8Vector    * restrict orbOmegaVec, /**<< Orbital frequency vector as function of time */
+                 INT4                      l,           /**<< Mode index l */
+                 INT4                      m,           /**<< Mode index m */
+                 REAL8                     timePeak,    /**<< Time for which we reach the peak frequency */
+                 REAL8                     deltaT,      /**<< Sampling interval */
+                 REAL8                     eta,         /**<< Symmetric mass ratio */
+                 REAL8                     a,           /**<< Normalized spin of the deformed Kerr spacetime */
+                 EOBNonQCCoeffs * restrict coeffs       /**<< NQC coefficients (populated by function) */)
 {
 
   /* For gsl permutation stuff */

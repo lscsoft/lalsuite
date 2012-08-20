@@ -81,11 +81,16 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
  *------------------------------------------------------------------------------------------
  */
 
+/**
+ * Function to calculate numerical derivatives of the spin EOB Hamiltonian,
+ * which correspond to time derivatives of the dynamical variables in conservative dynamcis.
+ * All derivatives, including those on two terms of the orbital phase, are returned together.
+ */
 static int XLALSpinHcapNumericalDerivative(
-                          double     UNUSED     t,
-                          const REAL8           values[],
-                          REAL8                 dvalues[],
-                          void                  *funcParams
+                          double     UNUSED     t,          /**<< UNUSED */
+                          const REAL8           values[],   /**<< Dynamical variables */
+                          REAL8                 dvalues[],  /**<< Time derivatives of variables (returned) */
+                          void                  *funcParams /**<< EOB parameters */
                                )
 {
 
@@ -316,14 +321,15 @@ static int XLALSpinHcapNumericalDerivative(
 
 /**
  * Calculate the derivative of the Hamiltonian w.r.t. a specific parameter
+ * Used by generic spin EOB model, including initial conditions solver
  */
 static REAL8 XLALSpinHcapNumDerivWRTParam(
-                       const INT4 paramIdx,
-                       const REAL8 values[],
-                       SpinEOBParams *funcParams
+                       const INT4 paramIdx,      /**<< Index of the parameters */
+                       const REAL8 values[],     /**<< Dynamical variables */
+                       SpinEOBParams *funcParams /**<< EOB Parameters */
                        )
 {
-  static const REAL8 STEP_SIZE = 1.0e-4;
+  static const REAL8 STEP_SIZE = 1.0e-3;
 
   HcapDerivParams params;
 
@@ -376,7 +382,9 @@ static REAL8 XLALSpinHcapNumDerivWRTParam(
 }
 
 
-/* Wrapper for GSL to call the Hamiltonian function */
+/** 
+ * Wrapper for GSL to call the Hamiltonian function 
+ */
 static double GSLSpinHamiltonianWrapper( double x, void *params )
 {
   HcapDerivParams *dParams = (HcapDerivParams *)params;

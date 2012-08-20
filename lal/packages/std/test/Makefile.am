@@ -1,10 +1,16 @@
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
 
 check_PROGRAMS = \
+	LALConstantsTest \
 	LALGSLTest \
 	LALMallocTest \
 	LALVersionTest \
 	StringConvertTest
+
+LALConstantsTest_SOURCES = LALConstantsTest.c
+LALConstantsTest_LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
 
 LALGSLTest_SOURCES = LALGSLTest.c
 LALGSLTest_LDADD = \
@@ -27,6 +33,7 @@ StringConvertTest_LDADD = \
 	$(top_builddir)/packages/support/src/liblalsupport.la
 
 TESTS = \
+	LALConstantsTest \
 	LALGSLTest \
 	LALMallocTest \
 	LALVersionTest \

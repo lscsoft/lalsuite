@@ -1656,6 +1656,8 @@ static INT4 XLALFinalMassSpin(
  * The ringdown is attached using the hybrid comb matching detailed in 
  * Buonanno et al, arXiv:1106.1021v1 [gr-qc]. Further details of the
  * implementation of the found in the DCC document T1100433.
+ * In SEOBNRv1, the last physical overtone is replace by a pseudoQNM. See 
+ * arXiv:1202.0790 for details.
  */
 static INT4 XLALSimIMREOBHybridAttachRingdown(
       REAL8Vector 	*signal1,     /**<<Real part of inspiral waveform to which we attach the ringdown */

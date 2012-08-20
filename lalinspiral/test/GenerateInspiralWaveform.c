@@ -671,9 +671,9 @@ void buildhoft(LALStatus *status, REAL4Vector *wave,
           sizeof(otherIn->waveformString) );
 
   if (strstr(simTable.waveform,"PhenSpinTaylorRD")) {
-    if (params->axisChoice==OrbitalL) {
+    if (params->axisChoice==LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L) {
       strcat(simTable.waveform,"OrbitalL");}
-    else if (params->axisChoice==TotalJ) {
+    else if (params->axisChoice==LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J) {
       strcat(simTable.waveform,"TotalJ");
     }
     if (params->inspiralOnly==1) {

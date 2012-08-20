@@ -51,6 +51,11 @@ mfd_FreqBand=2.0;
 
 Alpha=2.0
 Delta=-0.5
+AlphaBand=0.1
+DeltaBand=0.1
+dAlpha=0.05
+dDelta=0.05
+
 h0=1
 cosi=-0.3
 psi=0.6
@@ -68,7 +73,7 @@ cfs_dFreq=$(echo $duration | awk '{printf "%.16g", 1.0 / ( 2.0 * $1 ) }');		## 1
 cfs_FreqBand=$(echo $Nfreq $cfs_dFreq | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of frequency bins
 cfs_Freq=$(echo $Freq $cfs_FreqBand | awk '{printf "%.16g", $1 - $2 / 2.0}');		## center search band on signal frequency
 
-Nf1dot=100
+Nf1dot=10
 cfs_df1dot=$(echo $duration | awk '{printf "%g", 0.005 / ($1 * $1) }');			## 1/(T^2) resolution in f1dot
 cfs_f1dotBand=$(echo $Nf1dot $cfs_df1dot | awk '{printf "%.16g", $1 * $2 - 0.5*$2 }');	## band corresponding to fixed number of f1dot bins
 cfs_f1dot=$(echo $f1dot $cfs_f1dotBand | awk '{printf "%.16g", $1 - $2 / 2.0}');	## center f1dot band on signal f1dot
@@ -123,7 +128,7 @@ echo "----------------------------------------------------------------------"
 echo "STEP 2: run directed CFS_v2 with LALDemod method"
 echo "----------------------------------------------------------------------"
 echo
-cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
+cfs_CL=" --refTime=${refTime} --Alpha=$Alpha --Delta=$Delta  --AlphaBand=$AlphaBand --DeltaBand=$DeltaBand --dAlpha=$dAlpha --dDelta=$dDelta --Freq=$cfs_Freq --FreqBand=$cfs_FreqBand --dFreq=$cfs_dFreq --f1dot=$cfs_f1dot --f1dotBand=$cfs_f1dotBand --df1dot=${cfs_df1dot} --DataFiles='$SFTdir/*.sft' --NumCandidatesToKeep=${cfs_nCands} -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
