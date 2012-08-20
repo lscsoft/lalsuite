@@ -82,6 +82,8 @@ static char USAGE1[] = \
 " --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
 " --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
 " --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
+" --h0priorfile       (string) a file containing a h0 prior probability\n\
+                     distribution (first column h0, second column p(h0))\n"\
 " --phi0prior         type of prior on phi0 - uniform or gaussian\n"\
 " --phi0mean          (REAL8) mean of a gaussian prior on phi0\n"\
 " --phi0sig           (REAL8) std. dev. of a gaussian prior on phi0\n"\
@@ -116,6 +118,11 @@ static char USAGE2[] = \
                      before and after a glitch\n"\
 " --earth-ephem       Earth ephemeris file\n"\
 " --sun-ephem         Sun ephemeris file\n"\
+" --use-cov           if this flag is set and/or a covariance file is\n\
+                     specified (with --covariance) then that will be used, if\n\
+                     just this flag is set then a covariance matrix\n\
+                     constructed from standard deviations in the par file\n\
+                     (with zero off diagonal elements) will be used\n"\
 " --covariance        pulsar parameter covariance matrix file (.mat)\n"\
 " --only-joint        set this to only produce the joint MCMC when given \n\
                      muliple detectors (MCMC only)\n"\
@@ -234,7 +241,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
     /* if there's a covariance matrix file then set up the earth and sun
        ephemeris */
-    if( inputs.matrixFile != NULL ){
+    if( inputs.matrixFile != NULL || inputs.usecov ){
       /* check files exist and if not output an error message */
       if( access(inputs.earthfile, F_OK) != 0 || 
           access(inputs.earthfile, F_OK) != 0 ){
@@ -548,6 +555,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "psi-bins",       required_argument, 0, 'l' },
     { "time-bins",      required_argument, 0, 'L' },
     { "h0prior",        required_argument, 0, 'q' },
+    { "h0priorfile",    required_argument, 0, ']' },
     { "phi0prior",      required_argument, 0, 'Q' },
     { "psiprior",       required_argument, 0, 'U' },
     { "iotaprior",      required_argument, 0, 'u' },
@@ -577,6 +585,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "nglitch",        required_argument, 0, 'O' },
     { "earth-ephem",    required_argument, 0, 'J' },
     { "sun-ephem",      required_argument, 0, 'M' },
+    { "use-cov",        no_argument,       0, '(' },
     { "covariance",     required_argument, 0, 'r' },
     { "use-priors",     no_argument,    NULL, '>' },
     { "only-joint",     no_argument,    NULL, '<' },
@@ -586,8 +595,8 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
   };
 
   CHAR args[] =
-"hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:W:\
-y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
+"hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:]:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:\
+W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -628,7 +637,10 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   inputParams->priors.phiPrior = uniform_string;
   inputParams->priors.psiPrior = uniform_string;
   inputParams->priors.iotaPrior = uniform_string;
-
+  inputParams->priors.h0PriorFile = NULL;
+  inputParams->priors.h0vals = NULL;
+  inputParams->priors.h0pdf = NULL;
+  
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
   inputParams->mcmc.sigmas.phi0 = LAL_PI_2/2.;   /* eighth of phi range */
@@ -645,8 +657,9 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
   inputParams->mcmc.outputBI = 0;             /* output the burn in chain - default to no */
 
   inputParams->mcmc.nGlitches = 0;            /* no glitches is default */
-
-  inputParams->matrixFile = NULL;             /* no covriance file */
+  
+  inputParams->usecov = 0;
+  inputParams->matrixFile = NULL;             /* no covariance file */
 
   inputParams->onlyjoint = 0;       /* by default output all posteriors */
 
@@ -738,6 +751,10 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
       case 'q': /* prior on h0 */
         inputParams->priors.h0Prior = optarg;
         break;
+      case ']': /* prior file for h0 */
+        inputParams->priors.h0PriorFile = XLALStringDuplicate( optarg );
+        inputParams->priors.h0Prior = optarg;
+        break;
       case 'Q': /* prior on phi0 */
         inputParams->priors.phiPrior = optarg;
         break;
@@ -819,6 +836,9 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
       case 'M':
         sprintf(inputParams->sunfile, "%s", optarg);
         break;
+      case '(':
+        inputParams->usecov = 1;
+        break;
       case 'r':
         inputParams->matrixFile = optarg;
         break;
@@ -841,7 +861,7 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
     }
   }
 
-  /* check parameters for wierd values */
+  /* check parameters for weird values */
   if( inputParams->mesh.minVals.h0 < 0. || inputParams->mesh.maxVals.h0 < 0. ||
       inputParams->mesh.maxVals.h0 < inputParams->mesh.minVals.h0 ){
     fprintf(stderr, "Error... h0 grid range is wrong!\n");
@@ -914,6 +934,36 @@ y:g:G:K:N:X:O:J:M:r:fFR><)[:" ;
     fprintf(stderr, "Error... data chunk lengths are wrong!\n");
     exit(0);
   }
+  
+  /* read in h0 prior file if required */
+  if( !inputParams->usepriors && inputParams->priors.h0PriorFile ){
+    fprintf(stderr, "Error... if h0 prior file is given then priors should\
+ be used!\n");
+    exit(0);
+  }
+  else if( inputParams->priors.h0PriorFile ){ /* read in h0 prior file */
+    FILE *fp = NULL;
+    UINT4 i = 0;
+    REAL8 h0val = 0., h0pdf = 0.;
+    
+    if( (fp = fopen(inputParams->priors.h0PriorFile, "r")) == NULL ){
+      fprintf(stderr, "Error... could not open prior file %s\n",
+              inputParams->priors.h0PriorFile);
+      exit(0);
+    }
+    
+    while( fscanf(fp, "%le%le", &h0val, &h0pdf) != EOF ){
+      i++;
+      inputParams->priors.h0vals = XLALResizeREAL8Vector(
+        inputParams->priors.h0vals, i );
+      inputParams->priors.h0vals->data[i-1] = h0val;
+      inputParams->priors.h0pdf = XLALResizeREAL8Vector(
+        inputParams->priors.h0pdf, i );
+      inputParams->priors.h0pdf->data[i-1] = h0pdf;
+    }
+    
+    fclose(fp);
+  } 
 }
 
 
@@ -1061,6 +1111,11 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
   
+  /*** SET LIKELIHOOD TO CONSTANT TO CHECK PRIOR IS RETURNED PROPERLY ****/
+  //likeArray[k] = 0.;
+  //return noiseEvidence;
+  /***********************************************************************/
+  
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
@@ -1185,8 +1240,7 @@ void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
 REAL8 log_prior(PriorVals prior, MeshGrid mesh){
   REAL8 pri=0.;
 
-  /* FIXME: Add ability to read in a old pdf file to use as a prior */
-
+  /* FIXME: Add ability to read in a old pdf file to use as a prior */  
   if(strcmp(prior.h0Prior, "uniform") == 0){
     pri = 0.; /* set h0 prior to be one for all values if uniform */
     /* pri *= 1./(mesh.maxVals.h0 - mesh.minVals.h0); */
@@ -1197,6 +1251,43 @@ REAL8 log_prior(PriorVals prior, MeshGrid mesh){
     pri += -log(prior.stdh0*sqrt(LAL_TWOPI)) + (-(prior.vars.h0 -
 prior.meanh0)*(prior.vars.h0 - prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
   }
+  else if( prior.h0PriorFile != NULL && prior.h0vals != NULL && 
+    prior.h0pdf != NULL ){
+    /* use h0 prior read in from a file */
+    REAL8 h0low = 0., h0high = 0., pdflow = 0., pdfhigh = 0.;
+       
+    /* find nearest point to interpolate */
+    for ( UINT4 i = 0; i < prior.h0vals->length+1; i++ ){      
+      if ( i == prior.h0vals->length ){
+        /* point is greater than end of prior values, so return the nearest
+           neighbour, which is the highest value */
+        pri += log(prior.h0vals->data[i-1]);
+        break;
+      }
+      else if ( prior.vars.h0 < prior.h0vals->data[i] ){
+        if ( i == 0 ){
+          /* value is below all those in the prior, so return the nearest
+             neighbour, which is the lowest value */
+          pri += log(prior.h0vals->data[i]);
+          break;
+        }
+        else if ( i > 0 ){
+          REAL8 grad = 0.;
+          
+          h0low = prior.h0vals->data[i-1];
+          h0high = prior.h0vals->data[i];
+          
+          pdflow = prior.h0pdf->data[i-1];
+          pdfhigh = prior.h0pdf->data[i];
+          
+          /* linearly interpolate between the bins */
+          grad = (pdfhigh-pdflow)/(h0high-h0low);
+          pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
+          break;
+        }
+      }
+    }
+  } 
 
   if(strcmp(prior.phiPrior, "uniform") == 0){
     pri += -log(mesh.maxVals.phi0 - mesh.minVals.phi0);
@@ -1942,7 +2033,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
   }
 
   /* if there's an input covarince matrix file then set up parameters */
-  if( input.matrixFile != NULL )
+  if( input.matrixFile != NULL || input.usecov )
     matTrue = 1;
 
   if( matTrue ){
@@ -2147,7 +2238,7 @@ paramData ) ) == NULL ){
     /* set phase of initial heterodyne */
     if( (phi1[0] = get_phi( data[0], pulsarParamsFixed, baryinput, edat )) ==
       NULL ){
-      fprintf(stderr, "Error... Phase generation produces NULL!");
+      fprintf(stderr, "Error... Phase generation produces NULL!\n");
       exit(0);
     }
   }
@@ -2217,7 +2308,7 @@ paramData ) ) == NULL ){
       memcpy(&pulsarParamsNew, &pulsarParams, sizeof(BinaryPulsarParams));
       set_mcmc_pulsar_params( &pulsarParamsNew, randVals );
 
-      /* I've discovered that TEMPO can produce negative eccentricites (when
+      /* I've discovered that TEMPO can produce negative eccentricities (when
          they're close to zero), so will allow this to happen here, but still
          won't allow it to go over 1 */
       if( /* pulsarParamsNew.e < 0.  || */ pulsarParamsNew.e >= 1. ||
@@ -3126,114 +3217,143 @@ REAL8Array *read_correlation_matrix( CHAR *matrixFile,
     paramData[20].sigma = params.eps2dotErr;
   }
 
-  /* read in data from correlation matrix file */
-  if((fp = fopen(matrixFile, "r")) == NULL){
-    fprintf(stderr, "Error...No correlation matrix file!\n" );
-    return NULL;
-  }
+  /* if we have a correlation matrix file then read it in */
+  if( matrixFile != NULL ){
+    /* read in data from correlation matrix file */
+    if((fp = fopen(matrixFile, "r")) == NULL){
+      fprintf(stderr, "Error...No correlation matrix file!\n" );
+      return NULL;
+    }
 
-  /* read in the first line of the matrix file */
-  while(fscanf(fp, "%s", paramTmp)){
-    if(strchr(paramTmp, '-') != NULL)
-      break;
+    /* read in the first line of the matrix file */
+    while(fscanf(fp, "%s", paramTmp)){
+      if(strchr(paramTmp, '-') != NULL)
+        break;
 
-    if(feof(fp)){
-      fprintf(stderr, "Error... I've reached the end of the file without \
+      if(feof(fp)){
+        fprintf(stderr, "Error... I've reached the end of the file without \
 reading any correlation data!");
-      fclose(fp);
+        fclose(fp);
+        exit(0);
+      }
+
+      sprintf(matrixParams[numParams], "%s", paramTmp);
+      numParams++;
+
+      /*check if parameter is actually for a dispersion measure (ignore if so)*/
+      if(!strcmp(paramTmp, "DM")){
+        numParams--;
+        DMpos = i;
+        numDM++;
+      }
+      if(!strcmp(paramTmp, "DM1")){
+        numParams--;
+        DM1pos = i;
+        numDM++;
+      }
+
+      i++;
+    };
+
+    if(numParams > arraySize){
+      fprintf(stderr, "More parameters in matrix file than there should be!\n");
       exit(0);
     }
 
-    sprintf(matrixParams[numParams], "%s", paramTmp);
-    numParams++;
+    matdims = XLALCreateUINT4Vector( 2 );
+    matdims->data[0] = numParams;
+    matdims->data[1] = numParams;
 
-    /* check if parameter is actually for a dispersion measure (ignore if so) */
-    if(!strcmp(paramTmp, "DM")){
-      numParams--;
-      DMpos = i;
-      numDM++;
-    }
-    if(!strcmp(paramTmp, "DM1")){
-      numParams--;
-      DM1pos = i;
-      numDM++;
-    }
+    corMat = XLALCreateREAL8Array( matdims );
 
-    i++;
-  };
+    /* find positions of each parameter */
+    /* the strings that represent parameters in a matrix are given in the param
+       variable in the tempo code mxprt.f */
+    /* read in matrix */
+    k=0;
+    for(i=0;i<numParams+numDM;i++){
+      n=0;
+      rc = fscanf(fp, "%s%s", tmpStr, tmpStr2);
 
-  if(numParams > arraySize){
-    fprintf(stderr, "More parameters in matrix file than there should be!\n");
-    exit(0);
-  }
-
-  matdims = XLALCreateUINT4Vector( 2 );
-  matdims->data[0] = numParams;
-  matdims->data[1] = numParams;
-
-  corMat = XLALCreateREAL8Array( matdims );
-
-  /* find positions of each parameter */
-  /* the strings that represent parameters in a matrix are given in the param
-     variable in the tempo code mxprt.f */
-  /* read in matrix */
-  k=0;
-  for(i=0;i<numParams+numDM;i++){
-    n=0;
-    rc = fscanf(fp, "%s%s", tmpStr, tmpStr2);
-
-    /* if its a dispersion measure then just skip the line */
-    if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
-      rc = fscanf(fp, "%*[^\n]");
-      k--;
-      continue;
-    }
-
-    for(j=0;j<i+1;j++){
-      if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
-        rc = fscanf(fp, "%lf", &junk);
-        n--;
+      /* if its a dispersion measure then just skip the line */
+      if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
+        rc = fscanf(fp, "%*[^\n]");
+        k--;
         continue;
       }
 
-      rc = fscanf(fp, "%lf", &corTemp);
+      for(j=0;j<i+1;j++){
+        if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
+          rc = fscanf(fp, "%lf", &junk);
+          n--;
+          continue;
+        }
 
-      /* if covariance equals 1 set as 0.9999999, because values of 1
+        rc = fscanf(fp, "%lf", &corTemp);
+
+        /* if covariance equals 1 set as 0.9999999, because values of 1
            can cause problems of giving singular matrices */
-      if( (n != k) && (corTemp == 1.) )
-        corTemp = 0.9999999;
-      else if( (n != k) && (corTemp == -1.) )
-        corTemp = -0.9999999;
+        if( (n != k) && (corTemp == 1.) )
+          corTemp = 0.9999999;
+        else if( (n != k) && (corTemp == -1.) )
+          corTemp = -0.9999999;
 
-      corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
+        corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
 
-      if(n != k)
-        corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
+        if(n != k)
+          corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
 
-      n++;
+        n++;
+      }
+
+      /* send an error if we hit the end of the file */
+      if( feof(fp) || rc == EOF ){
+        fprintf(stderr, "Error reading in matrix - hit end of file!\n");
+        exit(0);
+      }
+
+      k++;
     }
 
-    /* send an error if we hit the end of the file */
-    if( feof(fp) || rc == EOF ){
-      fprintf(stderr, "Error reading in matrix - hit end of file!\n");
-      exit(0);
-    }
+    fclose(fp);
 
-    k++;
-  }
-
-  fclose(fp);
-
-  /* give the correlation matrix positions of the parameters */
-  for(i=1;i<numParams+1;i++){
-    for(j=0;j<arraySize;j++){
-      if(!strcmp(matrixParams[i-1], paramData[j].name)){
-        paramData[j].matPos = i;
-        break;
+    /* give the correlation matrix positions of the parameters */
+    for(i=1;i<numParams+1;i++){
+      for(j=0;j<arraySize;j++){
+        if(!strcmp(matrixParams[i-1], paramData[j].name)){
+          paramData[j].matPos = i;
+          break;
+        }
       }
     }
   }
+  else{ /* create files with just variances from par file and no correlations */
+    j = 0;
+    for( i = 0; i < MAXPARAMS; i++ ){
+      if( paramData[i].sigma != 0.0 ){
+        j++;
+        paramData[i].matPos = j;
+      }
+    }
+    
+    /* create array */
+    matdims = XLALCreateUINT4Vector( 2 );
+    matdims->data[0] = j;
+    matdims->data[1] = j;
 
+    corMat = XLALCreateREAL8Array( matdims );
+    
+    /* set diagonal elements to one - they'll be converted to variances later */
+    for( i = 0; i < j; i++ ){
+      for ( k = 0; k < j; k++){
+        if ( i == k )
+          corMat->data[i*corMat->dimLength->data[0]+k] = 1.;
+        else
+          corMat->data[i*corMat->dimLength->data[0]+k] = 0.;
+      }
+    }
+  }
+  
   /* pass the parameter data to be output */
   memcpy(data, paramData, sizeof(paramData));
 
