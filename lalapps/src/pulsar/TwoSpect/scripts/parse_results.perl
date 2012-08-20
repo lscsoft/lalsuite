@@ -12,8 +12,8 @@ open(MISSING, ">$directory/$analysisdate/missingbands.dat") or die "Cannot write
 open(CANDIDATES, ">$directory/$analysisdate/candidates.dat") or die "Cannot write to $directory/$analysisdate/candidates.dat $!";
 
 for(my $ii=0; $ii<$numberofjobs; $ii++) {
-   if (-e "$directory/$analysisdate/output/$ii/uls.dat") {
-      my $ulfilename = "$directory/$analysisdate/output/$ii/uls.dat";
+   my $ulfilename = "$directory/$analysisdate/output/$ii/uls.dat";
+   if (-e $ulfilename) {
       system("cat $ulfilename >> $directory/$analysisdate/ULresults.dat");
       die "cat failed: $?" if $?;
       
@@ -28,12 +28,12 @@ for(my $ii=0; $ii<$numberofjobs; $ii++) {
       
    } else {
       open(CONFIG, "$directory/$analysisdate/output/$ii/input_values.conf") or die "Cannot open $directory/$analysisdate/output/$ii/input_values.conf $!";
+      my $ulfmin = 0.0;
+      my $ulfspan = 0.0;
       while (my $line=<CONFIG>) {
-         my $ulfmin = 0.0;
-         my $ulfspan = 0.0;
-         if ($line =~ /^ULfmin="(\d+.?\d*)"/) {
+         if ($line =~ /^fmin="(.*?)"/) {
             $ulfmin = $1; 
-         } elsif ($line =~ /^ULfspan="(\d+.?\d*)"/) {
+         } elsif ($line =~ /^fspan="(.*?)"/) {
             $ulfspan = $1;
          }
          if ($ulfmin != 0.0 && $ulfspan != 0.0) {
