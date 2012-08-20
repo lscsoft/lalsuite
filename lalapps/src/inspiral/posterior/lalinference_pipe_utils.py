@@ -397,7 +397,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
     # Call finalize to build final list of available data
     enginenodes[0].finalize()
-    respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
+    respagenode.set_bayes_coherent_noise(mergenode.get_pos_file()+'_B.txt')
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
@@ -738,8 +738,8 @@ class EngineNode(pipeline.CondorDAGNode):
         else: delim=','
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
-        psdstring=psdstring+delim+self.psds[ifo]
-        flowstring=flowstring+delim+self.flows[ifo]
+        if self.psds: psdstring=psdstring+delim+self.psds[ifo]
+        if self.flows: flowstring=flowstring+delim+self.flows[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
@@ -751,8 +751,8 @@ class EngineNode(pipeline.CondorDAGNode):
       self.add_var_opt('IFO',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
-      self.add_var_opt('psd',psdstring)
-      self.add_var_opt('flow',flowstring)
+      if self.psds: self.add_var_opt('psd',psdstring)
+      if self.flows: self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslides',slidestring)
       # Start at earliest common time
