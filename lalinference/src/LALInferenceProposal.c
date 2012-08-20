@@ -363,11 +363,8 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
 
   /* Now add various special proposals that are conditional on
      command-line arguments or variables in the params. */
-  
-  
-  
 
-  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")) {
+  if (LALInferenceCheckVariable(proposedParams, "theta_spin1")&&!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-rotate-spins")) {
   	if(LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_CIRCULAR 
   		|| LALInferenceGetVariableVaryType(proposedParams,"theta_spin1")==LALINFERENCE_PARAM_LINEAR )
 	    LALInferenceAddProposalToCycle(runState, rotateSpinsName, &LALInferenceRotateSpins, SMALLWEIGHT);
