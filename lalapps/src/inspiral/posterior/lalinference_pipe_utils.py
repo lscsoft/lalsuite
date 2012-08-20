@@ -836,6 +836,7 @@ class ResultsPageJob(pipeline.CondorDAGJob):
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('RequestMemory','1500')
     self.add_ini_opts(cp,'resultspage')
     # self.add_opt('Nlive',cp.get('analysis','nlive'))
     
