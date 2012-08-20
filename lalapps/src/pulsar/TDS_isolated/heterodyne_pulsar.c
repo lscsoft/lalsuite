@@ -961,8 +961,6 @@ heterodyne!\n");
 /* heterodyne data function */
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   HeterodyneParams hetParams, REAL8 freqfactor, FilterResponse *filtresp){
-  static LALStatus status;
-
   REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
   REAL8 t=0., t2=0., tdt=0., tdt2=0., T0=0., T0Update=0.;
   REAL8 dtpos=0.; /* time between position epoch and data timestamp */
@@ -1005,11 +1003,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
   /* set up ephemeris files */
   if( hetParams.heterodyneflag > 0){
-    edat = XLALMalloc(sizeof(*edat));
-
-    (*edat).ephiles.earthEphemeris = hetParams.earthfile;
-    (*edat).ephiles.sunEphemeris = hetParams.sunfile;
-    LAL_CALL( LALInitBarycenter(&status, edat), &status );
+    XLAL_CHECK_VOID( (edat = XLALInitBarycenter( hetParams.earthfile,
+                hetParams.sunfile )) != NULL, XLAL_EFUNC );
 
     /* set up location of detector */
     baryinput.site.location[0] = hetParams.detector.location[0]/LAL_C_SI;
@@ -1069,9 +1064,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
       XLALGPSSetREAL8(&baryinput.tgps, t);	
 
-      LAL_CALL( LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat),
-        &status );
-      LAL_CALL( LALBarycenter(&status, &emit, &baryinput, &earth), &status );
+      XLAL_CHECK_VOID( XLALBarycenterEarth( &earth, &baryinput.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_VOID( XLALBarycenter( &emit, &baryinput, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* if binary pulsar add extra time delay */
       if(hetParams.het.model!=NULL){
@@ -1130,13 +1126,15 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       
       XLALGPSSetREAL8(&baryinput2.tgps, t2);
       
-      LAL_CALL( LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat),
-        &status );
-      LAL_CALL( LALBarycenter(&status, &emit, &baryinput, &earth), &status );
+      XLAL_CHECK_VOID( XLALBarycenterEarth( &earth, &baryinput.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_VOID( XLALBarycenter( &emit, &baryinput, &earth ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
-      LAL_CALL( LALBarycenterEarth(&status, &earth2, &baryinput2.tgps, edat),
-        &status );
-      LAL_CALL( LALBarycenter(&status, &emit2, &baryinput2, &earth2), &status );
+      XLAL_CHECK_VOID( XLALBarycenterEarth( &earth2, &baryinput2.tgps, edat ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_VOID( XLALBarycenter( &emit2, &baryinput2, &earth2 ) ==
+                       XLAL_SUCCESS, XLAL_EFUNC );
 
       /* if binary pulsar add extra time delay */
       if(hetParams.hetUpdate.model!=NULL){
@@ -1224,19 +1222,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       dataTemp.im*cos(-deltaphase);
   }
 
-  if(hetParams.heterodyneflag > 0){
-    XLALFree(edat->ephemE);
-    XLALFree(edat->ephemS);
-    XLALFree(edat);
-  }
+  if(hetParams.heterodyneflag > 0) XLALDestroyEphemerisData( edat );
 
-  /* check LALstatus error code in case any of the barycntring code has had a
-     problem */
-  if(status.statusCode){
-    fprintf(stderr, "Error... got error code %d and message:\n\t%s\n", 
-    status.statusCode, status.statusDescription);
-    exit(1);
-  }
 }
 
 /* function to extract the frame time and duration from the file name */

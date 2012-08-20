@@ -373,7 +373,7 @@ tagInspiralTemplate
   REAL4  qmParameter[2];
   LALSimInspiralInteraction	interaction;
 
-  FrameAxis axisChoice;
+  LALSimInspiralFrameAxis axisChoice;
   UINT4 fixedStep;
   UINT4 inspiralOnly;
 
@@ -1913,6 +1913,14 @@ int XLALInspiralCalculateIIRSetInnerProduct(
 	REAL8Vector        *psd,
 	double             *ip
 	);
+
+int
+XLALNRInjectionFromSimInspiral(
+    REAL8TimeSeries **hplus,
+    REAL8TimeSeries **hcross,
+    SimInspiralTable *thisRow,
+    REAL8 deltaT
+);
 
 void XLALSimInjectNinjaSignals(
         REAL4TimeSeries* chan,

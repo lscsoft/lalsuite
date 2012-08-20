@@ -30,6 +30,7 @@
 #include <getopt.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <complex.h>
 #include <sys/time.h>
 
 /* LAL headers */

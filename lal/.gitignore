@@ -118,6 +118,7 @@ packages/noisemodels/test/RandomInspiralSignalTest
 packages/slopefilters/test/SlopeDetectorFilterTest
 packages/stats/test/LALCorrelationTest
 packages/stats/test/LALMomentTest
+packages/std/test/LALConstantsTest
 packages/std/test/LALGSLTest
 packages/std/test/LALMallocTest
 packages/std/test/LALVersionTest
@@ -156,6 +157,10 @@ packages/tools/test/SegmentsTest
 packages/tools/test/SequenceTest
 packages/tools/test/SkymapTest
 packages/tools/test/TimeSeriesTest
+packages/tools/test/CubicSplineTriggerInterpolantTest
+packages/tools/test/LanczosTriggerInterpolantTest
+packages/tools/test/NearestNeighborTriggerInterpolantTest
+packages/tools/test/QuadraticFitTriggerInterpolantTest
 packages/tools/test/UnitsTest
 packages/utilities/test/CCoarseGrainFrequencySeriesTest
 packages/utilities/test/DCoarseGrainFrequencySeriesTest

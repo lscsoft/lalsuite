@@ -9,11 +9,9 @@ LIBS = $(SWIG_LIBS)
 
 TEST_EXTENSIONS = .m
 
-if SWIG_BUILD
-if SWIG_BUILD_OCTAVE
-
-include $(top_srcdir)/swig/swiglal_common.am
 include $(top_srcdir)/swig/octave/swiglal_octave.am
+
+if SWIG_BUILD_OCTAVE
 
 octexec_LTLIBRARIES = lal.la
 lal_la_SOURCES = $(swig_lt_sources)
@@ -26,4 +24,3 @@ lal_la_LIBADD = $(swig_lt_libadd)
 lal_la_LIBTOOLFLAGS = $(swig_lt_libtoolflags)
 
 endif # SWIG_BUILD_OCTAVE
-endif # SWIG_BUILD

@@ -584,6 +584,17 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
     REAL8 df)               /**< frequency resolution of the psd vector (Hz) */
 {
     size_t i;
+    const size_t ilow = (size_t) (fLow / df);  /* PSD starts at 0 Hz; others start at fLow */
+
+    /* some minimum error checking */
+    if ( !momI_0 || !momI_2 || !momI_3 || !momI_4 || !momI_5 || !momI_6 || !momI_7 || !momI_8 || !momI_9 || !momI_10 || !momI_11 || !momI_12 || !momI_13 || !momI_14 || !momI_15 || !momI_16 || !momJ_5 || !momJ_6 || !momJ_7 || !momJ_8 || !momJ_9 || !momJ_10 || !momJ_11 || !momJ_12 || !momJ_13 || !momJ_14 || !momK_10 || !momK_11 || !momK_12) {
+        XLALPrintError("Moments not initialized");
+        XLAL_ERROR(XLAL_EDOM);
+    }
+    if (momI_0->length > (Sh->length - ilow)) {
+        XLALPrintError("Sh not long enough to fill moment vectors");
+        XLAL_ERROR(XLAL_EDOM);
+    }
 
     momI_0->data[0] = 0.;
     momI_2->data[0] = 0.;
@@ -619,8 +630,7 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
 
     const REAL8 fLowmSevenBythree = pow(fLow, -7./3.);
     const REAL8 fLowFac = fLowmSevenBythree * df;
-    const size_t ilow = (size_t) (fLow / df);  /* PSD starts at 0 Hz; others start at fLow */
-    for (i=1; i<Sh->length; i++) {
+    for (i=1; i < momI_0->length; i++) {
          const REAL8 psdfac = Sh->data[i + ilow];
          if (psdfac) {
              const REAL8 fbyfLow = (i*df+fLow)/fLow;

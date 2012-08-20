@@ -29,7 +29,6 @@
 
 // Include SWIG headers.
 %include <exception.i>
-%include <stdint.i>
 %include <typemaps.i>
 
 // Suppress some SWIG warnings.
@@ -207,14 +206,6 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 #undef swiglal_check_LALStatus
 %}
 
-// Functions whose return type is 'int' will have their return values ignored,
-// since 'int' is interpreted as an XLAL error code. The '_int' typedef is for
-// use by functions defined in the SWIG interface, to make sure their return
-// values are not ignored.
-%inline %{
-typedef int _int;
-%}
-
 ////////// General fragments //////////
 
 // Empty fragment, for fragment-generating macros.
@@ -248,10 +239,9 @@ typedef int _int;
 // and headers from the preprocessing interface, and generates calls to the
 // following macros:
 
-// Process an interface function NAME: rename it to RENAME,
-// and set it to always return SWIG-owned wrapping objects
-// (unless the function is being ignored). If TYPE is given,
-// ignore the return value of the function.
+// Process an interface function NAME: rename it to RENAME, and set it to
+// always return SWIG-owned wrapping objects (unless the function is being
+// ignored). If TYPE is given, ignore the return value of the function.
 %typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
   %set_output(VOID_Object);
 }
@@ -259,36 +249,11 @@ typedef int _int;
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
 %feature("new", "1") NAME;
-#endif
 #if #TYPE != ""
 %apply SWIGTYPE SWIGLAL_RETURN_VOID { TYPE NAME };
 #endif
+#endif
 %enddef
-
-// The SWIGLAL(RETURN_VALUE(TYPE,...)) public macro can be used to ensure
-// that the return value of a function is not ignored, if the return value
-// has previously been ignored in the generated wrappings.
-%define %swiglal_public_RETURN_VALUE(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
-
-// The SWIGLAL(RETURN_XLAL_ERROR_CODE(...)) public macro is useful for
-// functions which manipulate XLAL error codes. These functions not
-// only need the return value not to be ignored, but also require
-// an XLAL exception handling to be disabled.
-%define %swiglal_public_RETURN_XLAL_ERROR_CODE(...)
-%swiglal_map_a(%swiglal_clear, int, __VA_ARGS__);
-%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_RETURN_XLAL_ERROR_CODE(...)
-
-// The SWIGLAL(NO_NEW_OBJECT()) macro can be used to turn
-// off SWIG ownership for certain functions.
-%define %swiglal_public_NO_NEW_OBJECT(...)
-%swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
-%enddef
-#define %swiglal_public_clear_NO_NEW_OBJECT(...)
 
 // Process a typedef to an interface struct TAGNAME: rename it to RENAME.
 %define %swiglal_process_tdstruct(TAGNAME, RENAME)
@@ -402,10 +367,10 @@ if (swiglal_release_parent(PTR)) {
 #define %swiglal_array_copyout_frag(ACFTYPE) "swiglal_array_copyout_" %str(ACFTYPE)
 #define %swiglal_array_viewout_frag(ACFTYPE) "swiglal_array_viewout_" %str(ACFTYPE)
 
-// The %swiglal_array_type() macro maps TYPEs of C arrays to ACFTYPEs of the
+// The %swiglal_array_type() macro maps TYPEs of C arrays to an ACFTYPE of the
 // appropriate array conversion functions, using a special typemap. The typemap also
 // ensures that fragments containing the required conversion functions are included.
-%define %swiglal_array_type(TYPE, ACFTYPE)
+%define %_swiglal_array_type(ACFTYPE, TYPE)
 %fragment("swiglal_array_frags_" %str(ACFTYPE), "header",
           fragment=%swiglal_array_copyin_frag(ACFTYPE),
           fragment=%swiglal_array_copyout_frag(ACFTYPE),
@@ -417,33 +382,46 @@ if (swiglal_release_parent(PTR)) {
 %typemap(swiglal_array_typeid, fragment="swiglal_array_frags_" %str(ACFTYPE)) const TYPE[ANY] %str(ACFTYPE);
 %typemap(swiglal_array_typeid, fragment="swiglal_array_frags_" %str(ACFTYPE)) const TYPE[ANY][ANY] %str(ACFTYPE);
 %enddef
+%define %swiglal_array_type(ACFTYPE, ...)
+%swiglal_map_a(%_swiglal_array_type, ACFTYPE, __VA_ARGS__);
+%enddef
 
 // Map C array TYPEs to array conversion function ACFTYPEs.
 %swiglal_array_type(SWIGTYPE, SWIGTYPE);
-%swiglal_array_type(CHAR*, LALCHAR);
-%swiglal_array_type(enum SWIGTYPE, int32_t);
-%swiglal_array_type(char, int8_t);
-%swiglal_array_type(signed char, int8_t);
-%swiglal_array_type(unsigned char, uint8_t);
-%swiglal_array_type(short, int16_t);
-%swiglal_array_type(unsigned short, uint16_t);
-%swiglal_array_type(int, int32_t);
-%swiglal_array_type(unsigned int, uint32_t);
-#if defined(SWIGWORDSIZE64)
-%swiglal_array_type(long, int64_t);
-%swiglal_array_type(unsigned long, uint64_t);
-#else
-%swiglal_array_type(long, int32_t);
-%swiglal_array_type(unsigned long, uint32_t);
-#endif
-%swiglal_array_type(long long, int64_t);
-%swiglal_array_type(unsigned long long, uint64_t);
+%swiglal_array_type(LALCHAR, CHAR*);
+%swiglal_array_type(int8_t, char, signed char, int8_t);
+%swiglal_array_type(uint8_t, unsigned char, uint8_t);
+%swiglal_array_type(int16_t, short, int64_t);
+%swiglal_array_type(uint16_t, unsigned short, uint16_t);
+%swiglal_array_type(int32_t, int, int32_t, enum SWIGTYPE);
+%swiglal_array_type(uint32_t, unsigned int, uint32_t);
+%swiglal_array_type(int64_t, long long, int64_t);
+%swiglal_array_type(uint64_t, unsigned long long, uint64_t);
 %swiglal_array_type(float, float);
 %swiglal_array_type(double, double);
 %swiglal_array_type(gsl_complex_float, gsl_complex_float);
 %swiglal_array_type(gsl_complex, gsl_complex);
 %swiglal_array_type(COMPLEX8, COMPLEX8);
 %swiglal_array_type(COMPLEX16, COMPLEX16);
+
+// On modern systems, 'long' could be either 32- or 64-bit...
+%swiglal_array_type(int32or64_t, long);
+%swiglal_array_type(uint32or64_t, unsigned long);
+%define %swiglal_array_int32or64_frags(FRAG, FUNC, INT)
+%fragment(FRAG(INT##32or64_t), "header") {
+%#if LONG_MAX > INT_MAX
+%#define FUNC(INT##32or64_t) FUNC(INT##64_t)
+%#else
+%#define FUNC(INT##32or64_t) FUNC(INT##32_t)
+%#endif
+}
+%enddef
+%swiglal_array_int32or64_frags(%swiglal_array_copyin_frag, %swiglal_array_copyin_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_copyout_frag, %swiglal_array_copyout_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, int);
+%swiglal_array_int32or64_frags(%swiglal_array_copyin_frag, %swiglal_array_copyin_func, uint);
+%swiglal_array_int32or64_frags(%swiglal_array_copyout_frag, %swiglal_array_copyout_func, uint);
+%swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, uint);
 
 // Call the appropriate conversion function for C TYPE arrays.
 #define %swiglal_array_copyin(TYPE) %swiglal_array_copyin_func($typemap(swiglal_array_typeid, TYPE))
@@ -773,11 +751,64 @@ if (swiglal_release_parent(PTR)) {
 %include <lal/swiglal_python.i>
 #endif
 
-////////// General typemaps //////////
+////////// General typemaps and macros //////////
 
-// Typemap for empty arguments. This typemap are useful when no input from the
+// The SWIGLAL(RETURN_VALUE(TYPE,...)) public macro can be used to ensure
+// that the return value of a function is not ignored, if the return value
+// has previously been ignored in the generated wrappings.
+%define %swiglal_public_RETURN_VALUE(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_RETURN_VALUE(TYPE, ...)
+
+// The SWIGLAL(DISABLE_EXCEPTIONS(...)) public macro is useful for
+// functions which manipulate XLAL error codes, which thus require
+// XLAL exception handling to be disabled.
+%define %swiglal_public_DISABLE_EXCEPTIONS(...)
+%swiglal_map_ab(%swiglal_feature, "except", "$action", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_DISABLE_EXCEPTIONS(...)
+
+// The SWIGLAL(NO_NEW_OBJECT(...)) macro can be used to turn off
+// SWIG object ownership for certain functions.
+%define %swiglal_public_NO_NEW_OBJECT(...)
+%swiglal_map_ab(%swiglal_feature, "new", "0", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_NO_NEW_OBJECT(...)
+
+// The SWIGLAL(FUNCTION_POINTER(...)) macro can be used to create
+// a function pointer constant, for functions which need to be used
+// as callback functions.
+%define %swiglal_public_FUNCTION_POINTER(...)
+%swiglal_map_ab(%swiglal_feature, "callback", "%sPtr", __VA_ARGS__);
+%enddef
+#define %swiglal_public_clear_FUNCTION_POINTER(...)
+
+// Typemap for functions which return 'int'. If these functions also return
+// other output arguments (via 'argout' typemaps), the 'int' return value is
+// ignored. This is because 'int' is very commonly used to return an XLAL
+// error code, which will be converted into a native scripting-language
+// exception, and so the error code itself is not needed directly. To avoid
+// having to unpack the error code when collecting the other output arguments,
+// therefore, it is ignored in the wrappings. Functions which fit this criteria
+// but do return a useful 'int' can use SWIGLAL(RETURN_VALUE(int, ...)) to
+// disable this behaviour.
+// The 'newfree' typemap is used since its code will appear after all the
+// 'argout' typemaps, and will only apply to functions (since only functions
+// have %feature("new") set, and thus generate a 'newfree' typemap). The macro
+// %swiglal_maybe_drop_first_retval() is defined in the scripting-language-
+// specific interface headers; it will drop the first return value (which is
+// the 'int') from the output argument list if the argument list contains
+// at least 2 items (the 'int' and some other output argument).
+%typemap(newfree, noblock=1, fragment="swiglal_maybe_drop_first_retval") int {
+  %swiglal_maybe_drop_first_retval();
+}
+
+// Typemaps for empty arguments. These typemaps are useful when no input from the
 // scripting language is required, and an empty struct needs to be supplied to
-// the C function. The SWIGLAL(EMPTY_ARGUMENT()) macro applies the typemap.
+// the C function. The SWIGLAL(EMPTY_ARGUMENT(TYPE, ...)) macro applies the typemap which
+// supplies a static struct, while the SWIGLAL(NEW_EMPTY_ARGUMENT(TYPE, ...)) macro
+// applies the typemap which supplies a dynamically-allocated struct.
 %define %swiglal_public_EMPTY_ARGUMENT(TYPE, ...)
 %swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
 %enddef
@@ -789,27 +820,33 @@ if (swiglal_release_parent(PTR)) {
   $1 = &emptyarg;
 }
 %typemap(freearg) SWIGTYPE* SWIGLAL_EMPTY_ARGUMENT "";
+%define %swiglal_public_NEW_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT, TYPE, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_NEW_EMPTY_ARGUMENT(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
+%enddef
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT {
+  $1 = %swiglal_new_instance($*type);
+}
+%typemap(freearg) SWIGTYPE* SWIGLAL_NEW_EMPTY_ARGUMENT "";
 
 // SWIG conversion functions for C99 integer types.
 // These are mapped to the corresponding basic C types,
 // conversion functions for which are supplied by SWIG.
-%define %swiglal_numeric_typedef(BASE, TYPE)
-%numeric_type_from(TYPE, BASE);
-%numeric_type_asval(TYPE, BASE, "swiglal_empty_frag", false);
+%define %swiglal_numeric_typedef(CHECKCODE, BASETYPE, TYPE)
+%numeric_type_from(TYPE, BASETYPE);
+%numeric_type_asval(TYPE, BASETYPE, "swiglal_empty_frag", false);
+%typemaps_primitive(%checkcode(CHECKCODE), TYPE);
 %enddef
-%swiglal_numeric_typedef(signed char, int8_t);
-%swiglal_numeric_typedef(unsigned char, uint8_t);
-%swiglal_numeric_typedef(short, int16_t);
-%swiglal_numeric_typedef(unsigned short, uint16_t);
-%swiglal_numeric_typedef(int, int32_t);
-%swiglal_numeric_typedef(unsigned int, uint32_t);
-#if defined(SWIGWORDSIZE64)
-%swiglal_numeric_typedef(long, int64_t);
-%swiglal_numeric_typedef(unsigned long, uint64_t);
-#else
-%swiglal_numeric_typedef(long long, int64_t);
-%swiglal_numeric_typedef(unsigned long long, uint64_t);
-#endif
+%swiglal_numeric_typedef(INT8, signed char, int8_t);
+%swiglal_numeric_typedef(UINT8, unsigned char, uint8_t);
+%swiglal_numeric_typedef(INT16, short, int16_t);
+%swiglal_numeric_typedef(UINT16, unsigned short, uint16_t);
+%swiglal_numeric_typedef(INT32, int, int32_t);
+%swiglal_numeric_typedef(UINT32, unsigned int, uint32_t);
+%swiglal_numeric_typedef(INT64, long long, int64_t);
+%swiglal_numeric_typedef(UINT64, unsigned long long, uint64_t);
 
 // Fragments and typemaps for the LAL BOOLEAN type. The fragments re-use
 // existing scriping-language conversion functions for the C/C++ boolean type.
@@ -937,7 +974,7 @@ if (swiglal_release_parent(PTR)) {
 
 // Typemaps for pointers to primitive scalars. These are treated as output-only
 // arguments by default, by globally applying the SWIG OUTPUT typemaps. The INOUT
-// typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS()) macro.
+// typemaps can be supplied as needed using the SWIGLAL(INOUT_SCALARS(TYPE, ...)) macro.
 %apply int* OUTPUT { enum SWIGTYPE* };
 %apply signed char* OUTPUT { INT2* };
 %apply unsigned char* OUTPUT { UINT2* };
@@ -967,7 +1004,7 @@ if (swiglal_release_parent(PTR)) {
 // argument, and return their results in the output argument list. Also supply
 // an INOUT typemap for input-output arguments, which allows a scripting-language
 // input argument to be supplied. The INOUT typemaps can be applied as needed
-// using the SWIGLAL(INOUT_STRUCTS()) macro.
+// using the SWIGLAL(INOUT_STRUCTS(TYPE, ...)) macro.
 %typemap(in, noblock=1, numinputs=0) SWIGTYPE ** (void *argp = NULL, int owner = 0) {
   $1 = %reinterpret_cast(&argp, $ltype);
   owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
@@ -1030,3 +1067,17 @@ require:
 }
 %enddef
 #define %swiglal_public_clear_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
+
+// This macro can be used to support structs which are not
+// declared in LALSuite. It treats the struct as opaque,
+// and attaches a destructor function to it.
+%define %swiglal_public_EXTERNAL_STRUCT(NAME, DTORFUNC)
+typedef struct {} NAME;
+%ignore DTORFUNC;
+%extend NAME {
+  ~NAME() {
+    DTORFUNC($self);
+  }
+}
+%enddef
+#define %swiglal_public_clear_EXTERNAL_STRUCT(NAME, DTORFUNC)

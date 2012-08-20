@@ -33,14 +33,17 @@ EXTRA_DIST =
 
 # clean files
 CLEANFILES = \
+	$(swig_iface_deps) \
 	$(swig_modl_src)
+
+if SWIG_BUILD
 
 # delete failed targets
 rm_targets = { rm -f $@; exit 1; }
 
 # create links to SWIG interfaces
-.PHONY : swig_iface_links
-swig_iface_links :
+.PHONY : swig-iface-links
+swig-iface-links :
 	@for file in $(nodist_swiginclude_HEADERS) $(swiginclude_HEADERS); do \
 		srcdir=$(abs_srcdir); \
 		builddir=$(abs_builddir); \
@@ -55,9 +58,13 @@ swig_iface_links :
 		fi; \
 	done
 
+# rebuild SWIG interface dependencies file
+$(swig_iface_deps) : ../$(swig_iface)
+	@echo '#dummy' > $@
+	@touch $(srcdir)/Makefile.in
+
 # generate SWIG interface file
 ../$(swig_iface) : Makefile
-	@echo '#dummy' > $(swig_iface_deps)
 	@cd .. && $(MAKE) $(swig_iface)
 
 # include SWIG interface dependencies file
@@ -65,6 +72,8 @@ swig_iface_links :
 
 # generate SWIG wrapping module source
 $(swig_modl_src) : ../$(swig_iface)
-	@$(MAKE) swig_iface_links
+	@$(MAKE) swig-iface-links
 	@$(MKDIR_P) $(SWIG_OUTDIR)
 	$(AM_V_GEN)$(SWIG) $(SWIG_SWIGFLAGS) $(CPPFLAGS) $(swig_langflags) -MD -MF $(swig_iface_deps) -o $@ $< || $(rm_targets)
+
+endif # SWIG_BUILD

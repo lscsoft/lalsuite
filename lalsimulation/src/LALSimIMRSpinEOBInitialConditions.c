@@ -16,12 +16,15 @@
 #ifndef _LALSIMIMRSPINEOBINITIALCONDITIONS_C
 #define _LALSIMIMRSPINEOBINITIALCONDITIONS_C
 
+/**
+ * Structure consisting SEOBNR parameters that can be used by gsl root finders
+ */
 typedef
 struct tagSEOBRootParams
 {
-  REAL8         values[12];
-  SpinEOBParams *params;
-  REAL8         omega;
+  REAL8         values[12]; /**<< Dynamical variables */
+  SpinEOBParams *params;    /**<< Spin EOB parameters */
+  REAL8         omega;      /**<< Orbital frequency */
 }
 SEOBRootParams;
 
@@ -181,10 +184,10 @@ ApplyRotationMatrix(
  * TODO: Make sure I do not need anything more general
  */
 static int SphericalToCartesian(
-                      REAL8 qCart[],
-                      REAL8 pCart[],
-                      const REAL8 qSph[],
-                      const REAL8 pSph[]
+                      REAL8 qCart[],      /**<< position vector in Cartesean coordinates */
+                      REAL8 pCart[],      /**<< momentum vector in Cartesean coordinates */
+                      const REAL8 qSph[], /**<< position vector in spherical coordinates */
+                      const REAL8 pSph[]  /**<< momentum vector in spherical coordinates */
                       )
 {
 
@@ -225,10 +228,10 @@ static int SphericalToCartesian(
  * TODO: Check this is general enough.
  */
 static int CartesianToSpherical(
-                      REAL8 qSph[],
-                      REAL8 pSph[],
-                      const REAL8 qCart[],
-                      const REAL8 pCart[]
+                      REAL8 qSph[],        /**<< position vector in spherical coordinates */
+                      REAL8 pSph[],        /**<< momentum vector in Cartesean coordinates */
+                      const REAL8 qCart[], /**<< position vector in spherical coordinates */
+                      const REAL8 pCart[]  /**<< momentum vector in Cartesean coordinates */
                       )
 {
 
@@ -261,11 +264,15 @@ static int CartesianToSpherical(
   return XLAL_SUCCESS;
 }
 
-
+/**
+ * Root function for gsl root finders.
+ * The gsl root finder with look for gsl_vector *x position in parameter space
+ * where the returned values in gsl_vector *f are zero
+ */
 static int
-XLALFindSphericalOrbit( const gsl_vector *x,
-                        void *params,
-                        gsl_vector *f
+XLALFindSphericalOrbit( const gsl_vector *x, /**<< Parameters requested by gsl root finder */
+                        void *params,        /**<< Spin EOB parameters */
+                        gsl_vector *f        /**<< Function values for the given parameters */
                       )
 {
 
@@ -330,7 +337,8 @@ XLALFindSphericalOrbit( const gsl_vector *x,
 
 /* Wrapper for calculating the second derivative of the Hamiltonian in spherical co-ordinates */
 /* It only works for the specific co-ord system we use here */
-static double GSLSpinHamiltonianDerivWrapper( double x, void *params )
+static double GSLSpinHamiltonianDerivWrapper( double x,    /**<< Derivative at x */
+                                              void *params /**<< Function parameters */)
 {
 
   HcapSphDeriv2Params *dParams = (HcapSphDeriv2Params *) params;
@@ -386,10 +394,10 @@ static double GSLSpinHamiltonianDerivWrapper( double x, void *params )
 /* Function to calculate the second derivative of the Hamiltonian. */
 /* The derivatives are taken with respect to indices idx1, idx2    */
 static REAL8 XLALCalculateSphHamiltonianDeriv2(
-                                       const int idx1,
-                                       const int idx2,
-                                       const REAL8 values[],
-                                       SpinEOBParams *params
+                                       const int idx1,       /**<< Derivative w.r.t. index 1 */
+                                       const int idx2,       /**<< Derivative w.r.t. index 2 */
+                                       const REAL8 values[], /**<< Dynamical variables in spherical coordinates */
+                                       SpinEOBParams *params /**<< Spin EOB Parameters */
                                        )
 {
 
@@ -445,18 +453,19 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
 
 
 /**
- * Main function for calculating the spinning EOB initial conditions
+ * Main function for calculating the spinning EOB initial conditions,
+ * following the quasi-spherical initial conditions solution of Buonanno, Chen & Damour 2006
  */
 
 static int XLALSimIMRSpinEOBInitialConditions(
-                      REAL8Vector   *initConds,
-                      const REAL8    mass1,
-                      const REAL8    mass2,
-                      const REAL8    fMin,
-                      const REAL8    inc,
-                      const REAL8    spin1[],
-                      const REAL8    spin2[],
-                      SpinEOBParams *params
+                      REAL8Vector   *initConds, /**<< Initial dynamical variables (returned) */
+                      const REAL8    mass1,     /**<< mass 1 */
+                      const REAL8    mass2,     /**<< mass 2 */
+                      const REAL8    fMin,      /**<< Initial frequency given */
+                      const REAL8    inc,       /**<< Inclination */
+                      const REAL8    spin1[],   /**<< Initial spin vector 1 */
+                      const REAL8    spin2[],   /**<< Initial spin vector 2 */
+                      SpinEOBParams *params     /**<< Spin EOB parameters */
                       )
 {
 

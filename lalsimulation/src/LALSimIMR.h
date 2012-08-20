@@ -21,6 +21,7 @@
 #define _LALSIMIMR_H
 
 #include <lal/LALDatatypes.h>
+#include  <lal/LALSimInspiralWaveformFlags.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -39,16 +40,6 @@ extern "C" {
  * (94/3 -41/32*pi*pi)
  */
 #define ninty4by3etc 18.687902694437592603
-
-/**
- * Enumerator for choosing the reference frame associated with
- * PSpinInspiralRD waveforms.
- */
-typedef enum {
-  View,
-  TotalJ,
-  OrbitalL,
-} FrameAxis;
 
 /**
  * Driver routine to compute the non-spinning, inspiral-merger-ringdown
@@ -243,7 +234,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    FrameAxis axisChoice,      	/**< Choice of axis for input spin params */
+    LALSimInspiralFrameAxis axisChoice, /**< Choice of axis for input spin params */
     int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     );
 

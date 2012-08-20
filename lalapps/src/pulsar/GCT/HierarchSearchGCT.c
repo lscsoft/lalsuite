@@ -782,11 +782,16 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* set Fstat spindown resolution (coarse grid) */
-  if ( LALUserVarWasSet(&uvar_df2dot) ) {
-    usefulParams.df2dot = uvar_df2dot;
+  if ( LALUserVarWasSet(&uvar_f2dot) || LALUserVarWasSet(&uvar_f2dotBand) ) {
+    if ( LALUserVarWasSet(&uvar_df2dot) ) {
+      usefulParams.df2dot = uvar_df2dot;
+    }
+    else {
+      usefulParams.df2dot = -1;
+    }
   }
   else {
-    usefulParams.df2dot = -1;
+    usefulParams.df2dot = 0;
   }
 
   /* for 1st stage: read sfts, calculate detector states */
@@ -875,7 +880,11 @@ int MAIN( int argc, char *argv[]) {
   }
 
   /* number of coarse grid 2nd spindown values */
-  nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+  if ( df2dot == 0 ) {
+    nf2dot = 1;
+  } else {
+    nf2dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[2] / df2dot) + 1;
+  }
 
   /* set number of fine-grid 2nd spindowns */
   if ( LALUserVarWasSet(&uvar_gamma2Refine) ) {

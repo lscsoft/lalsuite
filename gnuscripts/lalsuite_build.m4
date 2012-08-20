@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 39
+# serial 41
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -95,7 +95,10 @@ AC_DEFUN([LALSUITE_DISTCHECK_CONFIGURE_FLAGS],[
         DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
       (\'--*\')
         # skip all other ./configure arguments
-       : ;;
+        : ;;
+      (\'DISTCHECK_CONFIGURE_FLAGS=*\')
+        # append value of DISTCHECK_CONFIGURE_FLAGS
+        DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} "`expr "X${arg}" : "X'DISTCHECK_CONFIGURE_FLAGS=\(.*\)'"`;;
       (\'*=*\')
         # save any environment variables given to ./configure
         DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} ${arg}";;
@@ -323,6 +326,9 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinspiral) ;;
     esac
   ], [ lalinspiral=${all_lal:-true} ] )
+if test "$lalframe" = "false"; then
+  lalinspiral=false
+fi
 if test "$lalmetaio" = "false"; then
   lalinspiral=false
 fi
