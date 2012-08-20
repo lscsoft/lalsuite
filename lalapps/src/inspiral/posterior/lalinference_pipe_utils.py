@@ -506,7 +506,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
-    node.set_srate(event.srate)
+    if event.srate: node.set_srate(event.srate)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
