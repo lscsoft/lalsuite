@@ -81,6 +81,7 @@ def draw_N_posterior(data,log_wts, N):
     Draw N samples from the input data, weighted by log_wt.
     For large N there may be repeated samples
     """
+    if(N==0): return []
     log_cumsums=zeros(log_wts.shape[0]+1)
     log_cumsums[0]=-float('inf')
     for i,log_wt in enumerate(log_wts):
