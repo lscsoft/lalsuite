@@ -146,6 +146,10 @@ int XLALSimNoise(
 	REAL8Vector *overlap;
 	size_t j;
 
+	/* Use a default RNG if a NULL pointer was passed in */
+	if (!rng)
+		rng = gsl_rng_alloc(gsl_rng_default);
+
 	/* make sure that the resolution of the frequency series is
 	 * commensurate with the requested time series */
 	if (s->data->length/2 + 1 != psd->data->length
