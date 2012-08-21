@@ -82,8 +82,16 @@ static char USAGE1[] = \
 " --h0prior           type of prior on h0 - uniform, jeffreys or gaussian\n"\
 " --h0mean            (REAL8) mean of a gaussian prior on h0\n"\
 " --h0sig             (REAL8) standard deviation of a gaussian prior on h0\n"\
-" --h0priorfile       (string) a file containing a h0 prior probability\n\
-                     distribution (first column h0, second column p(h0))\n"\
+" --priorfile         (string) a binary file containing a h0 x cos(iota)\n\
+                     prior probability distribution. The file should contain\n\
+                     a header of six doubles with:\n\
+                       - the minimum value for h0\n\
+                       - dh0 - the step size in h0\n\
+                       - N - number of h0 values\n\
+                       - the minimum value for cos(iota)\n\
+                       - dci - the step size in cos(iota)\n\
+                       - M - number of cos(iota) values\n\
+                     followed by an NxM double array of posterior values.\n"\
 " --phi0prior         type of prior on phi0 - uniform or gaussian\n"\
 " --phi0mean          (REAL8) mean of a gaussian prior on phi0\n"\
 " --phi0sig           (REAL8) std. dev. of a gaussian prior on phi0\n"\
@@ -555,7 +563,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "psi-bins",       required_argument, 0, 'l' },
     { "time-bins",      required_argument, 0, 'L' },
     { "h0prior",        required_argument, 0, 'q' },
-    { "h0priorfile",    required_argument, 0, ']' },
+    { "priorfile",      required_argument, 0, ']' },
     { "phi0prior",      required_argument, 0, 'Q' },
     { "psiprior",       required_argument, 0, 'U' },
     { "iotaprior",      required_argument, 0, 'u' },
@@ -637,9 +645,10 @@ W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
   inputParams->priors.phiPrior = uniform_string;
   inputParams->priors.psiPrior = uniform_string;
   inputParams->priors.iotaPrior = uniform_string;
-  inputParams->priors.h0PriorFile = NULL;
+  inputParams->priors.priorFile = NULL;
   inputParams->priors.h0vals = NULL;
-  inputParams->priors.h0pdf = NULL;
+  inputParams->priors.civals = NULL;
+  inputParams->priors.h0cipdf = NULL;
   
   /* default MCMC parameters */
   inputParams->mcmc.sigmas.h0 = 0.;           /* estimate from data */
@@ -752,7 +761,7 @@ W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
         inputParams->priors.h0Prior = optarg;
         break;
       case ']': /* prior file for h0 */
-        inputParams->priors.h0PriorFile = XLALStringDuplicate( optarg );
+        inputParams->priors.priorFile = XLALStringDuplicate( optarg );
         inputParams->priors.h0Prior = optarg;
         break;
       case 'Q': /* prior on phi0 */
@@ -936,30 +945,63 @@ W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
   }
   
   /* read in h0 prior file if required */
-  if( !inputParams->usepriors && inputParams->priors.h0PriorFile ){
+  if( !inputParams->usepriors && inputParams->priors.priorFile ){
     fprintf(stderr, "Error... if h0 prior file is given then priors should\
  be used!\n");
     exit(0);
   }
-  else if( inputParams->priors.h0PriorFile ){ /* read in h0 prior file */
+  else if( inputParams->priors.priorFile ){ /* read in h0 prior file */
     FILE *fp = NULL;
     UINT4 i = 0;
-    REAL8 h0val = 0., h0pdf = 0.;
     
-    if( (fp = fopen(inputParams->priors.h0PriorFile, "r")) == NULL ){
+    /* set iotaPrior to priorfile */
+    inputParams->priors.iotaPrior = inputParams->priors.priorFile;
+    
+    if( (fp = fopen(inputParams->priors.priorFile, "rb")) == NULL ){
       fprintf(stderr, "Error... could not open prior file %s\n",
-              inputParams->priors.h0PriorFile);
+              inputParams->priors.priorFile);
       exit(0);
     }
     
-    while( fscanf(fp, "%le%le", &h0val, &h0pdf) != EOF ){
-      i++;
-      inputParams->priors.h0vals = XLALResizeREAL8Vector(
-        inputParams->priors.h0vals, i );
-      inputParams->priors.h0vals->data[i-1] = h0val;
-      inputParams->priors.h0pdf = XLALResizeREAL8Vector(
-        inputParams->priors.h0pdf, i );
-      inputParams->priors.h0pdf->data[i-1] = h0pdf;
+    /* file should contain a header of six doubles with:
+     *  - h0 minimum
+     *  - dh0 - the step size in h0
+     *  - N - number of h0 values
+     *  - cos(iota) minimum
+     *  - dci - the step size in cos(iota)
+     *  - M - number of cos(iota) values
+     * followed by an NxM double array of posterior values. */
+   
+    double header[6];
+    
+    /* read in header data */
+    if ( !fread(header, sizeof(double), 6, fp) ){
+      fprintf(stderr, "Error... could not read prior file header %s\n",
+              inputParams->priors.priorFile);
+      exit(0);
+    }
+    
+    /* allocate h0 and cos(iota) vectors */
+    inputParams->priors.h0vals = XLALCreateREAL8Vector( (UINT4)header[2] );
+    for( i = 0; i < (UINT4)header[2]; i++ )
+      inputParams->priors.h0vals->data[i] = header[0] + (REAL8)i*header[1];
+    
+    inputParams->priors.civals = XLALCreateREAL8Vector( (UINT4)header[5] );
+    for( i = 0; i < (UINT4)header[5]; i++ )
+      inputParams->priors.civals->data[i] = header[3] + (REAL8)i*header[4];
+    
+    /* read in prior NxM array */
+    inputParams->priors.h0cipdf = XLALMalloc((UINT4)header[2]*sizeof(double*));
+    for( i = 0; i < (UINT4)header[2]; i++ ){
+      inputParams->priors.h0cipdf[i] = XLALMalloc( (UINT4)header[5] *
+                                                   sizeof(double) );
+   
+      if ( !fread(inputParams->priors.h0cipdf[i], sizeof(double),
+                 (UINT4)(header[5]), fp ) ){
+        fprintf(stderr, "Error... could not read prior file array %s\n",
+                inputParams->priors.priorFile);
+        exit(0);
+      }
     }
     
     fclose(fp);
@@ -1111,11 +1153,6 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
   REAL8 psteps = (REAL8)data.lookupTable->psiSteps;
   REAL8 tsteps = (REAL8)data.lookupTable->timeSteps;
   
-  /*** SET LIKELIHOOD TO CONSTANT TO CHECK PRIOR IS RETURNED PROPERLY ****/
-  //likeArray[k] = 0.;
-  //return noiseEvidence;
-  /***********************************************************************/
-  
   /* to save time get all log factorials up to chunkMax */
   for( i = 0 ; i < data.chunkMax+1 ; i++ )
     exclamation[i] = log_factorial(i);
@@ -1201,6 +1238,10 @@ REAL8 log_likelihood( REAL8 *likeArray, DataStructure data,
 
       likeArray[k] += exclamation[(INT4)chunkLength];
       likeArray[k] -= chunkLength*log(chiSquare);
+      
+      /*** SET LIKELIHOOD TO CONSTANT TO CHECK PRIOR IS RETURNED PROPERLY ****/
+      //likeArray[k] = 0.;
+      /***********************************************************************/
     }
     
     /* get the log evidence for the data not containing a signal */
@@ -1240,54 +1281,134 @@ void combine_likelihoods(REAL8 ****logLike1, REAL8 ****logLike2,
 REAL8 log_prior(PriorVals prior, MeshGrid mesh){
   REAL8 pri=0.;
 
-  /* FIXME: Add ability to read in a old pdf file to use as a prior */  
-  if(strcmp(prior.h0Prior, "uniform") == 0){
-    pri = 0.; /* set h0 prior to be one for all values if uniform */
-    /* pri *= 1./(mesh.maxVals.h0 - mesh.minVals.h0); */
+  if ( prior.priorFile == NULL ){
+    if(strcmp(prior.h0Prior, "uniform") == 0){
+      pri = 0.; /* set h0 prior to be one for all values if uniform */
+      /* pri *= 1./(mesh.maxVals.h0 - mesh.minVals.h0); */
+    }
+    else if(strcmp(prior.h0Prior, "jeffreys") == 0) pri += -log(prior.vars.h0);
+    else if(strcmp(prior.h0Prior, "gaussian") == 0){
+      pri += -log(prior.stdh0*sqrt(LAL_TWOPI)) + (-(prior.vars.h0 -
+        prior.meanh0)*(prior.vars.h0 -
+        prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
+    }
+  
+    if(strcmp(prior.iotaPrior, "uniform") == 0){
+      pri += -log(fabs(acos(mesh.maxVals.ci) - acos(mesh.minVals.ci)));
+    }
+    /* wrap around at zero and pi */
+    else if(strcmp(prior.iotaPrior, "gaussian") == 0){
+      REAL8 iota = acos(prior.vars.ci);
+      if( iota < prior.meaniota - LAL_PI_2 ) iota += LAL_PI;
+      else if( prior.meaniota + LAL_PI_2 < iota ) prior.vars.ci -= LAL_PI;
+
+      pri += -log(prior.stdiota*sqrt(LAL_TWOPI) ) + ( -( iota -
+              prior.meaniota ) * ( iota - prior.meaniota ) / 
+             ( 2.*prior.stdiota*prior.stdiota ) );
+    }
   }
-  else if(strcmp(prior.h0Prior, "jeffreys") == 0)
-    pri += -log(prior.vars.h0);
-  else if(strcmp(prior.h0Prior, "gaussian") == 0){
-    pri += -log(prior.stdh0*sqrt(LAL_TWOPI)) + (-(prior.vars.h0 -
-prior.meanh0)*(prior.vars.h0 - prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
-  }
-  else if( prior.h0PriorFile != NULL && prior.h0vals != NULL && 
-    prior.h0pdf != NULL ){
+  else{
+    UINT4 i = 0, j = 0;
+    
     /* use h0 prior read in from a file */
     REAL8 h0low = 0., h0high = 0., pdflow = 0., pdfhigh = 0.;
-       
-    /* find nearest point to interpolate */
-    for ( UINT4 i = 0; i < prior.h0vals->length+1; i++ ){      
-      if ( i == prior.h0vals->length ){
-        /* point is greater than end of prior values, so return the nearest
-           neighbour, which is the highest value */
-        pri += log(prior.h0vals->data[i-1]);
-        break;
-      }
-      else if ( prior.vars.h0 < prior.h0vals->data[i] ){
-        if ( i == 0 ){
-          /* value is below all those in the prior, so return the nearest
-             neighbour, which is the lowest value */
-          pri += log(prior.h0vals->data[i]);
-          break;
-        }
-        else if ( i > 0 ){
-          REAL8 grad = 0.;
-          
-          h0low = prior.h0vals->data[i-1];
-          h0high = prior.h0vals->data[i];
-          
-          pdflow = prior.h0pdf->data[i-1];
-          pdfhigh = prior.h0pdf->data[i];
-          
-          /* linearly interpolate between the bins */
-          grad = (pdfhigh-pdflow)/(h0high-h0low);
-          pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
-          break;
-        }
+    REAL8 cilow = 0., cihigh = 0.;
+    REAL8 pdf00 = 0., pdf01 = 0., pdf10 = 0., pdf11 = 0.;
+    REAL8 grad = 0.;
+    
+    /* find the nearest h0 point */
+    if ( prior.vars.h0 <= prior.h0vals->data[0] ) i = 0;
+    else if ( prior.vars.h0 >= prior.h0vals->data[prior.h0vals->length-1] )
+      i = prior.h0vals->length;
+    else{
+      for( i = 1; i < prior.h0vals->length; i++ ){
+        if( prior.h0vals->data[i-1] < prior.vars.h0 && 
+            prior.vars.h0 <= prior.h0vals->data[i] ) break;
       }
     }
-  } 
+    
+    /* find the nearest cos(iota) point */
+    if ( prior.vars.ci <= prior.civals->data[0] ) j = 0;
+    else if ( prior.vars.ci >= prior.civals->data[prior.civals->length-1] )
+      j = prior.civals->length;
+    else{
+      for( j = 1; j < prior.civals->length; j++ ){
+         if( prior.civals->data[j-1] < prior.vars.ci && 
+            prior.vars.ci <= prior.civals->data[j] ) break;
+      }
+    }
+    
+    if( i == 0 || i == prior.h0vals->length ){
+      /* if the point is less than or greater than the edge of h0 range then
+       * just linearly interpolate in cos(iota) */
+      if( i == 0 && j == 0 ) pri += log( prior.h0cipdf[i][j] );
+      else if( i == 0 && j == prior.civals->length )
+        pri += log( prior.h0cipdf[i][j-1] );
+      else if( i == prior.h0vals->length && j == 0 )
+        pri += log( prior.h0cipdf[i-1][j] );
+      else if( i == prior.h0vals->length && j == prior.civals->length )
+        pri += log( prior.h0cipdf[i-1][j-1] );
+      else{
+        cilow = prior.civals->data[j-1];
+        cihigh = prior.civals->data[j];
+        
+        if ( i == 0 ){
+          pdflow = prior.h0cipdf[i][j-1];
+          pdfhigh = prior.h0cipdf[i][j];
+        }
+        else{
+          pdflow = prior.h0cipdf[i-1][j-1];
+          pdfhigh = prior.h0cipdf[i-1][j];
+        }
+        
+        grad = (pdfhigh-pdflow)/(cihigh-cilow);
+        pri += log( pdflow + grad*(prior.vars.ci - cilow) );
+      }
+    }
+    else if ( j == 0 || j == prior.civals->length ){
+      /* if the point is less than or greater than the edge of ci range then
+       * just linearly interpolate in h0 */
+      if( j == 0 && i == 0 ) pri += log( prior.h0cipdf[i][j] );
+      else if( j == 0 && i == prior.h0vals->length ) 
+        pri += log( prior.h0cipdf[i-1][j] );
+      else if( j == prior.civals->length && i == 0 )
+        pri += log( prior.h0cipdf[i][j-1] );
+      else if( j == prior.civals->length && i == prior.h0vals->length )
+        pri += log( prior.h0cipdf[i-1][j-1] );
+      else{
+        h0low = prior.h0vals->data[i-1];
+        h0high = prior.h0vals->data[i];
+        
+        if ( j == 0 ){
+          pdflow = prior.h0cipdf[i-1][j];
+          pdfhigh = prior.h0cipdf[i][j];
+        }
+        else{
+          pdflow = prior.h0cipdf[i-1][j-1];
+          pdfhigh = prior.h0cipdf[i][j-1];
+        }
+        
+        grad = (pdfhigh-pdflow)/(h0high-h0low);
+        pri += log( pdflow + grad*(prior.vars.h0 - h0low) );
+      }
+    }
+    else{ /* bilinearly interpolate */
+      h0low = prior.h0vals->data[i-1], h0high = prior.h0vals->data[i];
+      cilow = prior.civals->data[j-1], cihigh = prior.civals->data[j];
+      
+      REAL8 h0scaled = (prior.vars.h0 - h0low)/(h0high - h0low);
+      REAL8 ciscaled = (prior.vars.ci - cilow)/(cihigh - cilow);
+      
+      pdf00 = prior.h0cipdf[i-1][j-1];
+      pdf01 = prior.h0cipdf[i-1][j];
+      pdf10 = prior.h0cipdf[i][j-1];
+      pdf11 = prior.h0cipdf[i][j];
+            
+      pri += log( pdf00*(1. - h0scaled)*(1. - ciscaled) + 
+              pdf10*h0scaled*(1. - ciscaled) + pdf01*(1. - h0scaled)*ciscaled + 
+              pdf11*h0scaled*ciscaled );
+    }
+  }
 
   if(strcmp(prior.phiPrior, "uniform") == 0){
     pri += -log(mesh.maxVals.phi0 - mesh.minVals.phi0);
@@ -1316,22 +1437,6 @@ prior.meanh0)*(prior.vars.h0 - prior.meanh0)/(2.*prior.stdh0*prior.stdh0));
     pri += -log(prior.stdpsi*sqrt(LAL_TWOPI) ) + ( -( prior.vars.psi -
             prior.meanpsi ) * ( prior.vars.psi - prior.meanpsi ) / 
            ( 2.*prior.stdpsi*prior.stdpsi ) );
-  }
-
-  if(strcmp(prior.iotaPrior, "uniform") == 0){
-    pri += -log(fabs(acos(mesh.maxVals.ci) - acos(mesh.minVals.ci)));
-  }
-  /* wrap around at zero and pi */
-  else if(strcmp(prior.iotaPrior, "gaussian") == 0){
-    REAL8 iota = acos(prior.vars.ci);
-    if( iota < prior.meaniota - LAL_PI_2 )
-      iota += LAL_PI;
-    else if( prior.meaniota + LAL_PI_2 < iota )
-      prior.vars.ci -= LAL_PI;
-
-    pri += -log(prior.stdiota*sqrt(LAL_TWOPI) ) + ( -( iota -
-            prior.meaniota ) * ( iota - prior.meaniota ) / 
-           ( 2.*prior.stdiota*prior.stdiota ) );
   }
 
   return pri;

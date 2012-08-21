@@ -127,9 +127,10 @@ typedef struct tagMCMCParams{
 typedef struct tagPriorVals{
   CHAR *h0Prior, *phiPrior, *psiPrior, *iotaPrior; /* prior type e.g.
 "uniform", "jeffreys" or "gaussian" */
-  CHAR *h0PriorFile; /* a file containing the h0 prior distribution */
-  REAL8Vector *h0vals, *h0pdf; /* the h0 prior distribution at h0 values */
-
+  CHAR *priorFile; /* a file containing the h0xci prior distribution */
+  REAL8Vector *h0vals, *civals;
+  REAL8 **h0cipdf;
+  
   IntrinsicPulsarVariables vars;
 
   /* for gaussian prior pass in the mean and standard deviation */
