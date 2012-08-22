@@ -1245,11 +1245,6 @@ void LALBBHPhenWaveTimeDom (
     REAL4Vector      *signalvec,
     InspiralTemplate *insp_template);
 
-void LALBBHPhenWaveFreqDomTemplates(
-    LALStatus        *status,
-    REAL4Vector      *signalvec1,
-    REAL4Vector      *signalvec2,
-    InspiralTemplate *params);
 void LALBBHPhenWaveTimeDomTemplates(
     LALStatus        *status,
     REAL4Vector      *signalvec1,
