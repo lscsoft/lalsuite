@@ -48,8 +48,8 @@
 ///
 static void GetPhysBounds(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
-  size_t dimension,		///< [in] Dimension on which bound applies
-  gsl_vector* phys_point,	///< [in] Physical point at which to find bounds
+  const size_t dimension,	///< [in] Dimension on which bound applies
+  const gsl_vector* phys_point,	///< [in] Physical point at which to find bounds
   double* phys_lower,		///< [out] Physical lower bound on point
   double* phys_upper		///< [out] Physical upper bound on point
   );
@@ -59,9 +59,9 @@ static void GetPhysBounds(
 ///
 static bool GetIsTiled(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
-  size_t dimension,		///< [in] Dimension on which bound applies
-  double lower,			///< [in] Normalised lower bound
-  double upper			///< [in] Normalised upper bound
+  const size_t dimension,	///< [in] Dimension on which bound applies
+  const double lower,		///< [in] Normalised lower bound
+  const double upper		///< [in] Normalised upper bound
   );
 
 ///
@@ -69,7 +69,7 @@ static bool GetIsTiled(
 //
 static gsl_vector* MetricEllipseBoundingBox(
   gsl_matrix* metric,		///< [in] Metric to bound
-  double max_mismatch		///< [in] Maximum mismatch with respect to metric
+  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
   );
 
 ///
@@ -77,7 +77,7 @@ static gsl_vector* MetricEllipseBoundingBox(
 ///
 static int OrthonormaliseWRTMetric(
   gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
-  gsl_matrix* metric		///< [in] Metric to orthonormalise with respect to
+  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
   );
 
 ///
@@ -92,8 +92,8 @@ static gsl_matrix* SquareLowerTriangularLatticeGenerator(
 ///
 static int NormaliseLatticeGenerator(
   gsl_matrix* generator,	///< [in] Generator matrix of lattice
-  double norm_thickness,	///< [in] Normalised thickness of lattice
-  double covering_radius	///< [in] Desired covering radius
+  const double norm_thickness,	///< [in] Normalised thickness of lattice
+  const double covering_radius	///< [in] Desired covering radius
   );
 
 ///
@@ -164,7 +164,7 @@ struct tagFlatLatticeTiling {
 };
 
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(
-  size_t dimensions
+  const size_t dimensions
   )
 {
 
@@ -256,8 +256,8 @@ uint64_t XLALGetFlatLatticePointCount(
 
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,
-  size_t dimension,
-  FlatLatticeBound func,
+  const size_t dimension,
+  const FlatLatticeBound func,
   void* data
   )
 {
@@ -279,8 +279,8 @@ int XLALSetFlatLatticeBound(
 
 int XLALSetFlatLatticeMetric(
   FlatLatticeTiling* tiling,
-  gsl_matrix* metric,
-  double max_mismatch
+  const gsl_matrix* metric,
+  const double max_mismatch
   )
 {
 
@@ -352,7 +352,7 @@ int XLALSetFlatLatticeMetric(
 
 int XLALSetFlatLatticeGenerator(
   FlatLatticeTiling* tiling,
-  FlatLatticeGenerator generator
+  const FlatLatticeGenerator generator
   )
 {
 
@@ -416,8 +416,7 @@ gsl_vector* XLALNextFlatLatticePoint(
       // Initialise current point
       if (tiled) {
         gsl_vector_set(tiling->curr_point, i, lower);
-      }
-      else {
+      } else {
         gsl_vector_set(tiling->curr_point, i, 0.5*(lower + upper));
       }
 
@@ -548,7 +547,7 @@ gsl_vector* XLALNextFlatLatticePoint(
 size_t XLALNextFlatLatticePoints(
   FlatLatticeTiling* tiling,
   gsl_matrix* points,
-  bool fill_last
+  const bool fill_last
   )
 {
 
@@ -752,7 +751,7 @@ int XLALRandomPointInFlatLatticeParamSpace(
 }
 
 int XLALCubicLatticeGenerator(
-  size_t dimensions,
+  const size_t dimensions,
   gsl_matrix** generator,
   double* norm_thickness
   )
@@ -779,7 +778,7 @@ int XLALCubicLatticeGenerator(
 }
 
 int XLALAnstarLatticeGenerator(
-  size_t dimensions,
+  const size_t dimensions,
   gsl_matrix** generator,
   double* norm_thickness
   )
@@ -827,6 +826,7 @@ static void ConstantBound(
   *upper = ((const double*)data)[1];
 
 }
+
 int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,
   size_t dimension,
@@ -835,10 +835,8 @@ int XLALSetFlatLatticeConstantBound(
   )
 {
 
-  // Check tiling
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-
   // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(lower <= upper, XLAL_EINVAL);
 
   // Allocate and set bounds data
@@ -847,7 +845,7 @@ int XLALSetFlatLatticeConstantBound(
   data[0] = lower;
   data[1] = upper;
 
-  // Set parameter space
+  // Set parameter space bound
   XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
@@ -856,8 +854,8 @@ int XLALSetFlatLatticeConstantBound(
 
 static void GetPhysBounds(
   FlatLatticeTiling* tiling,
-  size_t dimension,
-  gsl_vector* phys_point,
+  const size_t dimension,
+  const gsl_vector* phys_point,
   double* phys_lower,
   double* phys_upper
   )
@@ -869,8 +867,7 @@ static void GetPhysBounds(
   // Call parameter space bounds function
   if (dimension == 0) {
     (bound->func)(phys_lower, phys_upper, NULL, bound->data);
-  }
-  else {
+  } else {
     gsl_vector_view phys_point_d = gsl_vector_subvector(phys_point, 0, dimension);
     (bound->func)(phys_lower, phys_upper, &phys_point_d.vector, bound->data);
   }
@@ -879,9 +876,9 @@ static void GetPhysBounds(
 
 static bool GetIsTiled(
   FlatLatticeTiling* tiling UNUSED,
-  size_t dimension UNUSED,
-  double lower,
-  double upper
+  const size_t dimension UNUSED,
+  const double lower,
+  const double upper
   )
 {
   return (upper - lower) > GSL_DBL_EPSILON;
@@ -890,7 +887,7 @@ static bool GetIsTiled(
 
 static gsl_vector* MetricEllipseBoundingBox(
   gsl_matrix* metric,
-  double max_mismatch
+  const double max_mismatch
   )
 {
 
@@ -931,7 +928,7 @@ static gsl_vector* MetricEllipseBoundingBox(
 
 static int OrthonormaliseWRTMetric(
   gsl_matrix* matrix,
-  gsl_matrix* metric
+  const gsl_matrix* metric
   )
 {
 
@@ -1068,8 +1065,8 @@ static gsl_matrix* SquareLowerTriangularLatticeGenerator(
 
 static int NormaliseLatticeGenerator(
   gsl_matrix* generator,
-  double norm_thickness,
-  double covering_radius
+  const double norm_thickness,
+  const double covering_radius
   )
 {
 

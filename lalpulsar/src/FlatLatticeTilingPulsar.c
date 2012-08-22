@@ -96,7 +96,12 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  * Set a flat lattice tiling to a parameter space defined by
  * the age and possible braking index range of an object
  */
-static void AgeBraking1stSpindownBound(double* lower, double* upper, const gsl_vector* point, const void* data)
+static void AgeBraking1stSpindownBound(
+  double* lower,
+  double* upper,
+  const gsl_vector* point,
+  const void* data
+  )
 {
 
   /* Set lower and upper bound */
@@ -105,7 +110,12 @@ static void AgeBraking1stSpindownBound(double* lower, double* upper, const gsl_v
   *upper = x * ((const double*)data)[1];
 
 }
-static void AgeBraking2ndSpindownBound(double* lower, double* upper, const gsl_vector* point, const void* data)
+static void AgeBraking2ndSpindownBound(
+  double* lower,
+  double* upper,
+  const gsl_vector* point,
+  const void* data
+  )
 {
 
   /* Set lower and upper bound */
