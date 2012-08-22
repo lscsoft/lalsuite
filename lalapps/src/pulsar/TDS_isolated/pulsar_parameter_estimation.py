@@ -89,17 +89,17 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__phiwidth = None
     self.__psiwidth = None
     self.__ciwidth = None
-    self.__h0priorfile = None
+    self.__priorfile = None
 
   def set_output_dir(self,output_dir):
     # set output directory
     self.add_var_opt('output-dir',output_dir)
     self.__output_dir = output_dir
   
-  def set_h0priorfile(self,priorfile):
-    # set a file containing a h0 distribution to be used as a prior
-    self.add_var_opt('h0priorfile', priorfile)
-    self.__h0priorfile = priorfile
+  def set_priorfile(self,priorfile):
+    # set a file containing a h0 vs cos(iota) distribution to be used as a prior
+    self.add_var_opt('priorfile', priorfile)
+    self.__priorfile = priorfile
   
   def set_detectors(self, detectors):
     # set detectors
