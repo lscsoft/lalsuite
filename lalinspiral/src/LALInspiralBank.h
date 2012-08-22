@@ -568,6 +568,7 @@ the above integral divided by the norm.</li>
 </ul>
 */
 typedef struct
+tagInspiralMomentsIn
 {
   REAL8                xmin;
   REAL8                xmax;
@@ -688,7 +689,9 @@ tagHexagonOut
 }
 HexagonOut;
 
-typedef struct{
+typedef struct
+tagPRIN
+{
 REAL4 ct;
 REAL4 b;
 }
