@@ -155,7 +155,7 @@ typedef enum
   False,
   True
 }
-InsidePolygon;
+InsidePolygonEnum;
 
 /** This enum is either <tt>fertile,sterile</tt>, and is a boolean expression used \e only
  * by the Hexagonal placement.
@@ -540,7 +540,7 @@ tagInspiralCoarseBankIn
   FreqCut                       maxFreqCut;
   FreqCut                       minFreqCut;
 
-  InsidePolygon                 insidePolygon;
+  InsidePolygonEnum             insidePolygon;
   ComputeMoments                computeMoments;
   /* ComputeMoments tells whether to re-compute the moments
    * using an upper limit defined by flso; This is done after
