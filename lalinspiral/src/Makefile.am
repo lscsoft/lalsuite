@@ -35,6 +35,7 @@ lalinspiralinclude_HEADERS = \
 	LALPSpinInspiralRD.h \
 	LALSBBH-Metric.h \
 	LALTrigScanCluster.h \
+	LALSTPNWaveformErrors.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
 	LALSQTPNIntegrator.h \

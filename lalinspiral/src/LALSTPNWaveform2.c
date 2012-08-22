@@ -1,4 +1,5 @@
 #include <lal/LALSTPNWaveform2.h>
+#include <lal/LALSTPNWaveformErrors.h>
 
 typedef struct LALSTPNstructparams {
 	REAL8 eta, m1m2, m2m1;
