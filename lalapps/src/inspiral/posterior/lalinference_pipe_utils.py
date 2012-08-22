@@ -397,7 +397,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
     # Call finalize to build final list of available data
     enginenodes[0].finalize()
-    respagenode.set_bayes_coherent_noise(mergenode.get_pos_file()+'_B.txt')
+    respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
@@ -417,7 +417,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             presultsdir=os.path.join(pagedir,ifo)
             mkdirs(presultsdir)
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode)
-            subresnode.set_bayes_coherent_noise(pmergenode.get_ns_file()+'_B.txt')
+            subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
             if self.config.has_option('input','injection-file') and event.event_id is not None:
                 subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
         coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
@@ -952,7 +952,7 @@ class MergeNSNode(pipeline.CondorDAGNode):
     Class defining the DAG node for a merge job
     Input arguments:
     merge_job = A MergeJob object
-    parents = iterable of parent nodes (must have get_ns_file() method)
+    parents = iterable of parent LALInferenceNest nodes (must have get_ns_file() method)
     """
     def __init__(self,merge_job,parents=None):
         pipeline.CondorDAGNode.__init__(self,merge_job)
