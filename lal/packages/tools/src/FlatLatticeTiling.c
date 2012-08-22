@@ -266,8 +266,9 @@ int XLALSetFlatLatticeBound(
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
   XLAL_CHECK(tiling->status == FLT_S_INCOMPLETE, XLAL_EFAILED);
 
-  // Check dimension
+  // Check input
   XLAL_CHECK(dimension < tiling->dimensions, XLAL_ESIZE);
+  XLAL_CHECK(func != NULL, XLAL_EFAULT);
 
   // Set the next parameter space bound
   tiling->bounds[dimension].func = func;
