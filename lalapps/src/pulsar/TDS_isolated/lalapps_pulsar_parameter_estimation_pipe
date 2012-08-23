@@ -527,6 +527,9 @@ while i < len(param_files):
           pulsarsCov2[count3].set_input_dir(input_dir)
           pulsarsCov2[count3].set_output_dir(output_dir)
 
+          pulsarsCov2[count3].set_earth(earth)
+          pulsarsCov2[count3].set_sun(sun)
+
           # set priors
           if do_priors:
             pulsarsCov2[count3].set_usepriors()

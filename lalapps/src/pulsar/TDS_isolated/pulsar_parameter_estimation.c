@@ -251,8 +251,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
        ephemeris */
     if( inputs.matrixFile != NULL || inputs.usecov ){
       /* check files exist and if not output an error message */
-      if( access(inputs.earthfile, F_OK) != 0 || 
-          access(inputs.earthfile, F_OK) != 0 ){
+      if( fopen(inputs.earthfile, "r") == NULL || 
+          fopen(inputs.sunfile, "r") == NULL ){
         fprintf(stderr, "Error... ephemeris files not, or incorrectly, \
 defined!\n");
         return 0;
