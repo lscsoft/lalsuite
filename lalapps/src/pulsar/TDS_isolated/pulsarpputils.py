@@ -164,23 +164,43 @@ def ra_to_rad(ra_string):
   ra_to_rad(ar_string):
      Given a string containing RA information as
      'hh:mm:ss.ssss', return the equivalent decimal
-     radians.
+     radians. Also deal with cases where input 
+     string is just hh:mm, or hh.
   """
-  h, m, s = ra_string.split(":")
-  return hms_to_rad(int(h), int(m), float(s))
+  hms = ra_string.split(":")
+  if len(hms) == 3:
+    return hms_to_rad(int(hms[0]), int(hms[1]), float(hms[2]))
+  elif len(hms) == 2:
+    return hms_to_rad(int(hms[0]), int(hms[1]), 0.0)
+  elif len(hms) == 1:
+    return hms_to_rad(float(hms[0]), 0.0, 0.0)
+  else:
+    print >> sys.stderr, "Problem parsing RA string %s" % ra_string
+    sys.exit(1)
 
 def dec_to_rad(dec_string):
   """
   dec_to_rad(dec_string):
      Given a string containing DEC information as
      'dd:mm:ss.ssss', return the equivalent decimal
-     radians.
+     radians. Also deal with cases where input string 
+     is just dd:mm or dd
   """
-  d, m, s = dec_string.split(":")
-  if "-" in d and int(d)==0:
-    m, s = '-'+m, '-'+s
+  dms = dec_string.split(":")
+  if "-" in dms[0] and float(dms[0]) == 0.0:
+    m = '-'
+  else:
+    m = ''
   
-  return dms_to_rad(int(d), int(m), float(s))
+  if len(dms) == 3:
+    return dms_to_rad(int(dms[0]), int(m+dms[1]), float(m+dms[2]))
+  elif len(dms) == 2:
+    return dms_to_rad(int(dms[0]), int(m+dms[1]), 0.0)
+  elif len(dms) == 1:
+    return dms_to_rad(float(dms[0]), 0.0, 0.0)
+  else:
+    print >> sys.stderr, "Problem parsing DEC string %s" % dec_string
+    sys.exit(1)
 
 def p_to_f(p, pd, pdd=None):
   """
@@ -253,8 +273,8 @@ class psr_par:
       elif key in float_keys:
         try:
           setattr(self, key, float(splitline[1]))
-        except ValueError:
-          pass
+        except:
+          continue
       
       if len(splitline)==3: # Some parfiles don't have flags, but do have errors
         if splitline[2] not in ['0', '1']:
@@ -294,9 +314,10 @@ class psr_par:
         setattr(self, 'F1', fd) 
         setattr(self, 'F1_ERR', fderr) 
       else:
-        f, fd, = p_to_f(self.P0, self.P1)
-        setattr(self, 'F0_ERR', self.P0_ERR/(self.P0*self.P0))
-        setattr(self, 'F1', fd) 
+        if hasattr(self, 'P1'):
+          f, fd, = p_to_f(self.P0, self.P1)
+          setattr(self, 'F0_ERR', self.P0_ERR/(self.P0*self.P0))
+          setattr(self, 'F1', fd) 
     if hasattr(self, 'F0_ERR'):
       if hasattr(self, 'F1_ERR'):
         p, perr, pd, pderr = pferrs(self.F0, self.F0_ERR,
@@ -305,9 +326,10 @@ class psr_par:
         setattr(self, 'P1', pd) 
         setattr(self, 'P1_ERR', pderr) 
       else:
-        p, pd, = p_to_f(self.F0, self.F1)
-        setattr(self, 'P0_ERR', self.F0_ERR/(self.F0*self.F0))
-        setattr(self, 'P1', pd) 
+        if hasattr(self, 'F1'):
+          p, pd, = p_to_f(self.F0, self.F1)
+          setattr(self, 'P0_ERR', self.F0_ERR/(self.F0*self.F0))
+          setattr(self, 'P1', pd) 
     
     # binary parameters
     if hasattr(self, 'EPS1') and hasattr(self, 'EPS2'):
@@ -319,7 +341,7 @@ class psr_par:
     if hasattr(self, 'PB') and hasattr(self, 'A1') and not \
        (hasattr(self, 'E') or hasattr(self, 'ECC')):
       setattr(self, 'E', 0.0)  
-    if hasattr(self, 'T0') and not hasattr(self, 'TASC'):
+    if hasattr(self, 'T0') and not hasattr(self, 'TASC') and hasattr(self, 'OM') and hasattr(self, 'PB'):
       setattr(self, 'TASC', self.T0 - self.PB * self.OM/360.0)
         
     pf.close()

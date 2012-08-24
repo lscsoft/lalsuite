@@ -62,11 +62,15 @@ static int XLALSpinAlignedHcapDerivative(
  *------------------------------------------------------------------------------------------
  */
 
+/**
+ * Function to calculate R.H.S. of the ODEs, given dyanmical variables,
+ * their derivatives and EOB parameters
+ */
 static int XLALSpinAlignedHcapDerivative(
-                          double     UNUSED     t,
-                          const REAL8           values[],
-                          REAL8                 dvalues[],
-                          void                  *funcParams
+                          double     UNUSED     t,          //** UNUSED */
+                          const REAL8           values[],   //** dynamical varables */
+                          REAL8                 dvalues[],  //** time derivativ os */
+                          void                  *funcParams //** EOB parameters */
                                )
 {
 

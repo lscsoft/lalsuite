@@ -166,7 +166,7 @@ REAL8 priorFunction( LALInferenceRunState *runState,
   
   const CHAR *fn = __func__;
   
-  /* check that parameters are with their prior ranges */
+  /* check that parameters are within their prior ranges */
   if( !in_range( runState->priorArgs, params ) ) return -INFINITY;
   
   /* if a k-d tree prior exists ONLY use that */
@@ -339,7 +339,8 @@ REAL8 priorFunction( LALInferenceRunState *runState,
  * by drawing points from the nested samples weighted by their prior weighting.
  * This assumes that the nested samples are in the array in ascending
  * likelihood order (which should be the case for the output of the
- * \c LALInferenceNestedSampler() function.
+ * \c LALInferenceNestedSampler() function. The posterior sample generation is
+ * based on the method used in lalapps/src/inspiral/posterior/nest2pos.py
  * 
  * Within the input runstate->algorthimParams there needs to be: an array of
  * LALInferenceVariables called "nestedsamples" containing nested samples to be
@@ -356,7 +357,9 @@ REAL8 priorFunction( LALInferenceRunState *runState,
 void ns_to_posterior( LALInferenceRunState *runState ){
   UINT4 i = 0, count = 0, k = 0;
   UINT4Vector *Nsamp = NULL, *Nlive = NULL;
-  REAL8 maxlogw = -INFINITY; /* maximum log weight */ 
+ 
+  UINT4 Npost = 0; /* no. of posterior samples required from each NS run */
+  ProcessParamsTable *ppt = NULL;
   
   LALInferenceVariables **psamples = NULL;
   LALInferenceVariables ***nsamples = 
@@ -368,48 +371,90 @@ void ns_to_posterior( LALInferenceRunState *runState ){
                                                     "Nsamps" );
   Nlive = *(UINT4Vector **)LALInferenceGetVariable( runState->algorithmParams,
                                                     "numberlive" );
-
+  /* get (approximate) number of posterior samples to generate from each nested
+     sample file */
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--Npost" );
+  if ( ppt != NULL ) Npost = atoi(ppt->value);
+  else Npost = 1000; /* default to 1000 */
+  
   if ( Nsamp->length != Nlive->length ){
     XLALPrintError("%s: Number of nested sample arrays not equal to number of \
 live point for each array!", __func__);
     XLAL_ERROR_VOID( XLAL_EBADLEN );
   }
   
+  REAL8Vector *log_evs = XLALCreateREAL8Vector( Nsamp->length );
+  REAL8Vector **log_ws = XLALCalloc(Nsamp->length, (sizeof(REAL8Vector*)));
+  REAL8 log_tot_ev = -INFINITY;
+  
   for( k = 0; k < Nsamp->length; k++ ){
     /* vector of prior weights */
-    REAL8Vector *logw = XLALCreateREAL8Vector( Nsamp->data[k] );
-  
-    maxlogw = -INFINITY;
+    log_ws[k] = XLALCreateREAL8Vector( Nsamp->data[k] );
+    
+    REAL8 log_vol_factor = log(1. - (1./(REAL8)Nlive->data[k]));
+    REAL8 log_dvol = -1./(REAL8)Nlive->data[k];
+    REAL8 log_vol = 0., log_ev = -INFINITY;
+    REAL8 avg_log_like_end = -INFINITY;
     
     /* fill in sample weights */
     for ( i = 0; i < Nsamp->data[k]; i++ ){
       REAL8 logL = *(REAL8 *)LALInferenceGetVariable( nsamples[k][i], "logL" );
     
-      if( i < Nsamp->data[k]-Nlive->data[k] ) logw->data[i] = (REAL8)(i+1);
-      else logw->data[i] = (REAL8)(Nsamp->data[k] - Nlive->data[k]);
-    
-      logw->data[i] = -(logw->data[i]/(REAL8)Nlive->data[k]) + logL;
-    
-      if ( logw->data[i] > maxlogw ) maxlogw = logw->data[i];
-    }
-
-    /* get posterior samples */
-    for ( i = 0; i < Nsamp->data[k]; i++ ){
-      logw->data[i] -= maxlogw; /* normalise weights */
-    
-      /* if log weight is greater than a uniform random number then accept as
-         a posterior sample */
-      if ( logw->data[i] > log( gsl_rng_uniform( runState->GSLrandom ) ) ){
-        psamples = XLALRealloc( psamples, 
-                                (count+1)*sizeof(LALInferenceVariables*) );
-        psamples[count] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-        LALInferenceCopyVariables( nsamples[k][i], psamples[count] );
-        count++;
+      if( i < Nsamp->data[k]-Nlive->data[k] ){
+        log_ws[k]->data[i] = logL + log_vol + log_dvol;
+        log_ev = LOGPLUS(log_ev, log_ws[k]->data[i]);
+        log_vol += log_vol_factor;
+      }
+      else{
+        avg_log_like_end = LOGPLUS(avg_log_like_end, logL);
+        log_ws[k]->data[i] = log_vol + logL - log((REAL8)Nlive->data[k]);
       }
     }
     
-    XLALDestroyREAL8Vector( logw );
+    avg_log_like_end -= log((REAL8)Nlive->data[k]);
+    log_ev = LOGPLUS(log_ev, avg_log_like_end + log_vol);
+    
+    log_evs->data[k] = log_ev;
+    log_tot_ev = LOGPLUS( log_tot_ev, log_ev );
   }
+  
+  for( k = 0; k < Nsamp->length; k++ ){
+    /* round Npost based on the evidence for each data set */
+    UINT4 Ns = (UINT4)ROUND((REAL8)Npost*exp(log_evs->data[k]-log_tot_ev));
+    
+    /* generate cumulative sum of weigths */
+    REAL8Vector *log_cumsums = XLALCreateREAL8Vector( Nsamp->data[k] + 1 );
+    log_cumsums->data[0] = -INFINITY;
+    
+    /* get posterior samples */
+    for ( i = 0; i < Nsamp->data[k]; i++ ){
+      log_ws[k]->data[i] -= log_evs->data[k]; /* normalise weights */
+      
+      log_cumsums->data[i+1] = LOGPLUS( log_cumsums->data[i], 
+                                        log_ws[k]->data[i] );
+    }
+    
+    for( UINT4 j = 0; j < Ns; j++ ){
+      REAL8 us = log( gsl_rng_uniform( runState->GSLrandom ) ); 
+      
+      /* draw the samples */
+      for( i = 1; i < Nsamp->data[k]+1; i++ )
+        if ( log_cumsums->data[i-1] < us && us <= log_cumsums->data[i] )
+          break;
+      
+      /* add the posterior sample */
+      psamples = XLALRealloc( psamples, 
+                              (count+1)*sizeof(LALInferenceVariables*) );
+      psamples[count] = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+      LALInferenceCopyVariables( nsamples[k][i-1], psamples[count] );
+      count++;
+    }
+  }
+  
+  /* free weights and evidence */
+  for ( k = 0; k < Nsamp->length; k++ ) XLALDestroyREAL8Vector( log_ws[k] );
+  XLALFree( log_ws );
+  XLALDestroyREAL8Vector( log_evs );
   
   LALInferenceAddVariable( runState->algorithmParams, "posteriorsamples",
                            &psamples, LALINFERENCE_void_ptr_t,

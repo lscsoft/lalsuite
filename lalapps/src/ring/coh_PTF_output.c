@@ -248,6 +248,7 @@ ProcessTable *coh_PTF_create_process_table( struct coh_PTF_params *params )
               params->ifoName[2], params->ifoName[3]);
   } 
 
+  processTable->start_time = params->jobStartTime;
   XLALGPSTimeNow(&processTable->end_time);
 
   return processTable;

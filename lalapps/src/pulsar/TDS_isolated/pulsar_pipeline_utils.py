@@ -17,10 +17,6 @@ import exceptions
 import os
 from glue import pipeline
 
-class binarypulsarError(exceptions.Exception):
-  def __init__(self, args=None):
-    self.args = args
-    
 # And begin ...
 
 class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):

@@ -29,9 +29,6 @@ class parameterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
     self.__universe = cp.get('condor', 'universe')
     pipeline.CondorDAGJob.__init__(self, self.__universe, self.__executable)
     pipeline.AnalysisJob.__init__(self, cp)
-   
-    self.add_condor_cmd('WantRemoteIO','false')
-    self.add_condor_cmd('local_files','*')
     
     # set log files for job
     self.set_stdout_file('logs/pulsar_parameter_estimation-$(cluster).out')
@@ -92,12 +89,18 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__phiwidth = None
     self.__psiwidth = None
     self.__ciwidth = None
+    self.__priorfile = None
 
   def set_output_dir(self,output_dir):
     # set output directory
     self.add_var_opt('output-dir',output_dir)
     self.__output_dir = output_dir
-    
+  
+  def set_priorfile(self,priorfile):
+    # set a file containing a h0 vs cos(iota) distribution to be used as a prior
+    self.add_var_opt('priorfile', priorfile)
+    self.__priorfile = priorfile
+  
   def set_detectors(self, detectors):
     # set detectors
     self.add_var_opt('detectors', detectors)
@@ -216,6 +219,10 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.add_var_opt('covariance',covfile)
     self.__covfile = covfile
 
+  def set_usecov(self):
+    # set to use a covariance matrix for prior/proposal
+    self.add_var_opt('use-cov', '')
+    
   def set_verbose(self):
     # set verbose flag
     self.add_var_opt('verbose', '') # no variable required

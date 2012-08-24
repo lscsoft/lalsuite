@@ -162,7 +162,7 @@ Initialisation arguments:\n\
 			ifoPtr = ifoPtr->next;
 		}
 		irs->currentLikelihood=LALInferenceNullLogLikelihood(irs->data);
-		printf("Injection Null Log Likelihood: %g\n", irs->currentLikelihood);
+		printf("Null Log Likelihood: %g\n", irs->currentLikelihood);
 	}
 	else
 	{

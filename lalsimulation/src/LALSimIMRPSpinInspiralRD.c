@@ -2102,7 +2102,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     REAL8 s2y,                  /**< y-component of dimensionless spin for object 2 */
     REAL8 s2z,                  /**< z-component of dimensionless spin for object 2 */
     int phaseO,                 /**< twice post-Newtonian phase order */
-    FrameAxis axisChoice,       /**< Choice of axis for input spin params */
+    LALSimInspiralFrameAxis axisChoice, /**< Choice of axis for input spin params */
     int inspiralOnly            /**< 0 generate RD, 1 generate inspiralOnly*/
     )
 {
@@ -2263,16 +2263,17 @@ int XLALSimIMRPSpinInspiralRDGenerator(
      variable refers to different physical parameters according to the value of 
      axisChoice:
 
-     * OrbitalL: inclination denotes the angle between the view direction
-                 N and the initial L (initial L//z, N in the x-z plane) and the spin 
+     * LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L: inclination denotes the angle 
+                 between the view direction N and the initial L 
+                 (initial L//z, N in the x-z plane) and the spin 
 		 coordinates are given with respect to initial L.
-     * TotalJ:   inclination denotes the angle between the view directoin 
-                 and J (J is constant during the evolution, J//z, both N and initial 
-		 L are in the x-z plane) and the spin coordinates are given wrt 
-		 initial ** L **.
-     * View:     inclination denotes the angle between the initial L and N 
-                 (N//z, initial L in the x-z plane) and the spin coordinates 
-		 are given with respect to N.
+     * LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:   inclination denotes the angle 
+                 between the view direction and J (J is constant during the 
+                 evolution, J//z, both N and initial L are in the x-z plane) 
+                 and the spin coordinates are given wrt initial ** L **.
+     * LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:     inclination denotes the angle 
+                 between the initial L and N (N//z, initial L in the x-z plane)
+                 and the spin coordinates are given with respect to N.
 
      In order to reproduce the results of the SpinTaylor code View must be chosen.
      The spin magnitude are normalized to the individual mass^2, i.e.
@@ -2298,7 +2299,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
 
   switch (axisChoice) {
 
-  case OrbitalL:
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L:
     //printf("*** OrbitalL ***\n");
     initLNh[0] = 0.;
     initLNh[1] = 0.;
@@ -2306,7 +2307,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     inc = iota;
     break;
 
-  case TotalJ:
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_TOTAL_J:
     //printf("*** TotalJ ***\n");
     for (j=0;j<3;j++) {
       iS1[j] = initS1[j];
@@ -2352,7 +2353,7 @@ int XLALSimIMRPSpinInspiralRDGenerator(
     inc = iota;
     break;
 
-  case View:
+  case LAL_SIM_INSPIRAL_FRAME_AXIS_VIEW:
   default:
     //printf("*** View ***\n");
     initLNh[0] = sin(iota);

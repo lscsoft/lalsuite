@@ -15,6 +15,7 @@ pkginclude_HEADERS = \
 	Sequence.h \
 	Skymap.h \
 	TimeSeries.h \
+	TriggerInterpolation.h \
 	Units.h
 
 CLEANFILES =

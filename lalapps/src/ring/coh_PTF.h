@@ -142,6 +142,7 @@ struct coh_PTF_params {
   LALPNOrder   order;
   REAL4        invSpecLen;
   REAL4        threshold;
+  REAL4        spinThreshold;
   REAL4        snglSNRThreshold;
   REAL4        timeWindow;
   REAL4        spinSNR2threshold;
@@ -177,6 +178,9 @@ struct coh_PTF_params {
   UINT4        slideSegments[LAL_NUM_IFO+1];
   UINT4        fftLevel;
   UINT4        simDataType;
+  REAL4        clusterWindow;
+  SimInspiralTable *injectList;
+  REAL4        injSearchWindow;
   /* flags */
   int          strainData;
   int          doubleData;
@@ -195,12 +199,14 @@ struct coh_PTF_params {
   int          doChiSquare;
   int          doSnglChiSquared;
   int          singlePolFlag;
+  int          clusterFlag;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
   int          writeInvSpectrum;
   int          writeSegment;
   int          writeFilterOutput;
+  LIGOTimeGPS  jobStartTime;
 };
 
 /* Other structures */
@@ -315,8 +321,15 @@ UINT8 coh_PTF_add_triggers(
     REAL8                   *timeOffsets
 );
 void coh_PTF_cluster_triggers(
+  struct coh_PTF_params   *params,
   MultiInspiralTable      **eventList,
   MultiInspiralTable      **thisEvent
+);
+
+UINT4 coh_PTF_accept_trig_check(
+    struct coh_PTF_params   *params,
+    MultiInspiralTable      **eventList,
+    MultiInspiralTable      thisEvent
 );
 
 /* Function declarations for coh_PTF_spin_checker */
@@ -378,7 +391,8 @@ void coh_PTF_calculate_bmatrix(
   REAL8Array              *PTFM[LAL_NUM_IFO+1],
   UINT4 vecLength,
   UINT4 vecLengthTwo,
-  UINT4 PTFMlen
+  UINT4 PTFMlen,
+  UINT4 detectorNum
 );
 
 void coh_PTF_calculate_rotated_vectors(
@@ -394,10 +408,12 @@ void coh_PTF_calculate_rotated_vectors(
     UINT4 numPoints,
     UINT4 position,
     UINT4 vecLength,
-    UINT4 vecLengthTwo
+    UINT4 vecLengthTwo,
+    UINT4 detectorNum
 );
 
 void coh_PTF_cleanup(
+    struct coh_PTF_params   *params,
     ProcessParamsTable      *procpar,
     REAL4FFTPlan            *fwdplan,
     REAL4FFTPlan            *revplan,

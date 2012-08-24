@@ -31,6 +31,7 @@ import exceptions
 # import the lalapps pipeline modules
 from glue import pipeline
 from lalapps import pulsar_pipeline_utils as ppu
+from lalapps import pulsarpputils as pppu
 
 # program usage
 def usage():
@@ -287,9 +288,19 @@ if do_coarse:
   j = 0
   while i < len(param_files):
     if ".par" in param_files[i]:
-      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
-      pulsar = re.sub(r'\.par', r'', param_files[i])
       param_file = pulsar_param_dir + '/' + param_files[i]
+
+      # set the pulsar name from the PSRJ name in the par file
+      try:
+        par = pppu.psr_par(param_file)
+        pulsar = par['PSRJ']
+      except:
+        print >> sys.stderr, "Could not read PSRJ from %s" % param_file
+        sys.exit(0)
+      
+      # set pulsar name from .par file
+      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
+      #pulsar = re.sub(r'\.par', r'', param_files[i])
       
       # add heterodyneNode for DAG
       coarse.append(ppu.heterodyneNode(coarse_job))
@@ -348,7 +359,10 @@ if do_fine or do_update:
   # get updated parameter file
   if do_update:
     pulsar_update_dir = cp.get('data', 'pulsar_update_dir')
-  
+    
+    update_files = os.listdir(pulsar_update_dir)
+    update_files.sort()
+
   input_dir = cp.get('fine','fine_input')
   input_files = os.listdir(input_dir)
   input_files.sort()
@@ -366,8 +380,21 @@ if do_fine or do_update:
   j = 0
   while i < len(param_files):
     if ".par" in param_files[i]:
-      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from .par file
       param_file = pulsar_param_dir + '/' + param_files[i]
+      
+      try:
+        par = pppu.psr_par(param_file)
+        pulsar = par['PSRJ']
+        ephem1 = par['EPHEM']
+        
+        if not ephem1:
+          ephem1 = 'DE405' # default to DE405
+      except:
+        print >> sys.stderr, "Could not read PSRJ from %s" % param_file
+        sys.exit(0)
+      
+      #set pulsar name from .par file
+      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
       
       # set heterodyne flag
       if do_fine:
@@ -399,8 +426,27 @@ if do_fine or do_update:
       do normal fine heterodyne
       """
       if do_update:
-        pulsar_update_file = pulsar_update_dir + '/' + param_files[i]
-        if os.path.isfile(pulsar_update_file):
+        z = 0
+        while z < len(update_files):
+          pulsar_update_file = pulsar_update_dir + '/' + update_files[z]
+          
+          if '.par' in pulsar_update_file:
+            try:
+              upar = pppu.psr_par(pulsar_update_file)
+              ephem2 = upar['EPHEM']
+
+              if not ephem2:
+                ephem2 = 'DE405' # default to DE405
+            except:
+              print >> sys.stderr, "Error reading par file %s" % upar
+              sys.exit(1)
+            
+            if par['PSRJ'] == upar['PSRJ']:
+              break
+          
+          z = z+1
+
+        if par['PSRJ'] == upar['PSRJ'] and os.path.isfile(pulsar_update_file):
           fine[j].set_param_file_update(pulsar_update_file)
         else:
           print >> sys.stderr, """No updated parameter file exists for PSR%s, just perform fine
@@ -416,8 +462,34 @@ heterodyne using old parameters.""" % (pulsar)
       fine[j].set_pulsar(pulsar)
       fine[j].set_param_file(param_file)
       fine[j].set_freq_factor(freq_factor)
-      fine[j].set_ephem_earth_file(earth_ephem)
-      fine[j].set_ephem_sun_file(sun_ephem)
+      
+      # there are two ephemeris files for the 09-11 period (e.g. S6) - the
+      # files with the DE405 suffix use DE405 and those without are DE200.
+      # Therefore if using data between within 2009-2011 check the ephemeris
+      # from the par file and set accordingly (assume that the config file
+      # leaves off the .dat suffix) - default to use DE405 if none is specified
+      if float(tstart) > 914803215 and float(tend) < 1009324815:
+        if het_flag == 2: # check if updated parameters are used
+          if 'DE200' in ephem2:
+            eephem = earth_ephem + '.dat'
+            sephem = sun_ephem + '.dat'
+          else:
+            eephem = earth_ephem + '-DE405.dat'
+            sephem = sun_ephem + '-DE405.dat'
+        elif het_flag == 1:
+          if 'DE200' in ephem1:
+            eephem = earth_ephem + '.dat'
+            sephem = sun_ephem + '.dat'
+          else:
+            eephem = earth_ephem + '-DE405.dat'
+            sephem = sun_ephem + '-DE405.dat'
+      else:
+        eephem = earth_ephem
+        sephem = sun_ephem
+      
+      fine[j].set_ephem_earth_file(eephem)
+      fine[j].set_ephem_sun_file(sephem)
+      
       fine[j].set_filter_knee(filter_knee)
       fine[j].set_sample_rate(sample_rate)
       fine[j].set_resample_rate(resample_rate)

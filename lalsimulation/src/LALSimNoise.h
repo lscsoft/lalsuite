@@ -30,6 +30,16 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALSimNoisePSDiLIGOSRD, XLALSimNoisePSDiLIGOModel,
+	XLALSimNoisePSDeLIGOModel, XLALSimNoisePSDVirgo, XLALSimNoisePSDGEO,
+	XLALSimNoisePSDTAMA, XLALSimNoisePSDaLIGONoSRMLowPower,
+	XLALSimNoisePSDaLIGONoSRMHighPower,
+	XLALSimNoisePSDaLIGOZeroDetLowPower,
+	XLALSimNoisePSDaLIGOZeroDetHighPower, XLALSimNoisePSDaLIGONSNSOpt,
+	XLALSimNoisePSDaLIGOBHBH20Deg, XLALSimNoisePSDaLIGOHighFrequency,
+	XLALSimNoisePSDKAGRA, XLALSimNoisePSDAdvVirgo));
+#endif
 
 /*
  *

@@ -20,6 +20,7 @@ libtools_la_SOURCES = \
 	Sequence.c \
 	Skymap.c \
 	TimeSeries.c \
+	TriggerInterpolation.c \
 	UnitCompare.c \
 	UnitDefs.c \
 	UnitMultiply.c \

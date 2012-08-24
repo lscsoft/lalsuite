@@ -32,22 +32,18 @@
 #include <lal/LALDatatypes.h>
 #include <lal/FlatLatticeTiling.h>
 
-#if defined(__cplusplus)
-extern "C" {
-#elif 0
-} /* so that editors will match preceding brace */
+#ifdef __cplusplus
+extern "C" <% // {
 #endif
 
 /**
  * Functions
  */
-int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, REAL8, REAL8);
-int XLALAddFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, REAL8, REAL8, REAL8, REAL8, REAL8, INT4, INT4);
+int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, double, double);
+int XLALSetFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, double, double, double, double, double);
 
-#if 0
-{ /* so that editors will match succeeding brace */
-#elif defined(__cplusplus)
-}
+#ifdef __cplusplus
+%> // }
 #endif
 
 #endif

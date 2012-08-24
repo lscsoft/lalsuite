@@ -29,6 +29,10 @@
 extern "C" {
 #endif
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(EXTERNAL_STRUCT(FrameH, XLALFrameFree));
+#endif
+
 struct FrFile * XLALFrOpenURL( const char *url );
 int XLALFrFileCheckSum( FrFile *iFile );
 FrHistory * XLALFrHistoryAdd( FrameH *frame, const char *name, const char *comment );

@@ -127,7 +127,10 @@ typedef struct tagMCMCParams{
 typedef struct tagPriorVals{
   CHAR *h0Prior, *phiPrior, *psiPrior, *iotaPrior; /* prior type e.g.
 "uniform", "jeffreys" or "gaussian" */
-
+  CHAR *priorFile; /* a file containing the h0xci prior distribution */
+  REAL8Vector *h0vals, *civals;
+  REAL8 **h0cipdf;
+  
   IntrinsicPulsarVariables vars;
 
   /* for gaussian prior pass in the mean and standard deviation */
@@ -143,7 +146,8 @@ typedef struct tagInputParams{
   CHAR pulsar[20];
   CHAR parFile[256];   /* pulsar parameter file */
   CHAR *matrixFile;    /* pulsar parameter covariance matrix file */
-
+  UINT4 usecov;        /* set whether or not to use a covariance matrix prior */
+  
   CHAR inputDir[256];
   CHAR outputDir[256];
 

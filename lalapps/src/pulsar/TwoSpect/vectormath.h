@@ -37,6 +37,7 @@ REAL4Vector * sseSSVectorMultiply(REAL4Vector *output, REAL4Vector *input1, REAL
 REAL4Vector * sseAddScalarToREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scalar);
 REAL4Vector * sseScaleREAL4Vector(REAL4Vector *output, REAL4Vector *input, REAL4 scale);
 
+REAL8Vector * sseAddScalarToREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scalar);
 REAL8Vector * sseScaleREAL8Vector(REAL8Vector *output, REAL8Vector *input, REAL8 scale);
 
 INT4 sse_sin_cos_2PI_LUT_REAL8Vector(REAL8Vector *sin2pix_vector, REAL8Vector *cos2pix_vector, REAL8Vector *x);

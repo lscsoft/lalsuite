@@ -5,7 +5,8 @@ if LALSUPPORT
 check_PROGRAMS = \
 	GenerateSimulation \
 	TestSpinTaylorT4Dynamics \
-	TestEOBNRv2
+	TestEOBNRv2 \
+	GRFlagsTest
 TESTS = $(check_PROGRAMS)
 endif
 
