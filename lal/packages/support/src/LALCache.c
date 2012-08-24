@@ -250,6 +250,20 @@ LALCache *XLALCacheFileRead(LALFILE * fp)
     return cache;
 }
 
+LALCache *XLALCacheImport(const char *fname)
+{
+    LALCache *cache;
+    LALFILE *fp;
+    fp = XLALFileOpenRead(fname);
+    if (!fp)
+        XLAL_ERROR_NULL(XLAL_EIO);
+    cache = XLALCacheFileRead(fp);
+    XLALFileClose(fp);
+    if (!fp)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    return cache;
+}
+
 #ifdef HAVE_GLOB_H      /* only use this if globbing is supported */
 static int XLALCacheFilenameParseEntry(LALCacheEntry * entry,
                                        const char *path)
@@ -605,6 +619,55 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
             XLAL_PRINT_WARNING("No matching entries - zero-length cache");
     }
     return 0;
+}
+
+
+/* 
+ * Binary search compare function: to locate the first entry containing the
+ * wanted time, or the first file after the requested time if the time is
+ * before the beginning or in a gap.
+ */
+struct LALCacheEntryBsearchKey {
+    const void *first;
+    double t;
+};
+static int XLALCacheEntryBsearchCompare(const void *key, const void *ptr)
+{
+    const struct LALCacheEntryBsearchKey *k = key;
+    const LALCacheEntry *entry = ptr;
+    double t = k->t;
+    /* check if requested time is after this entry */
+    if (t > entry->t0 + entry->dt)
+        return 1;
+    /* check if requested time is before this entry */
+    if (t < entry->t0) {
+        /* now we need to check:
+         * 1. is this the first file?
+         * 2. is t after the previous file, i.e., in a gap?
+         * if either of these, return 0 */
+        if (k->first == ptr || t > entry[-1].t0 + entry[-1].dt)
+            return 0;
+        return -1;
+    }
+    /* the requested time is within the bounds of this entry;
+     * but is it in the previous file too? */
+    if (k->first != ptr && t < entry[-1].t0 + entry[-1].dt)
+        return -1;      /* yes it is, so this entry is _after_ the wanted entry */
+    return 0;
+}
+
+/* 
+ * Finds the first entry that contains the requested time, or the first entry
+ * after the time if the time is in a gap or before the first entry.  Returns
+ * NULL if the time is after the last entry.
+ */
+LALCacheEntry *XLALCacheEntrySeek(const LALCache * cache, double t)
+{
+    struct LALCacheEntryBsearchKey key;
+    key.first = cache->list;
+    key.t = t;
+    return bsearch(&key, cache->list, cache->length, sizeof(*cache->list),
+                   XLALCacheEntryBsearchCompare);
 }
 
 LALFILE *XLALCacheEntryOpen(const LALCacheEntry * entry)

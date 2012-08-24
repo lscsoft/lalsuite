@@ -71,6 +71,9 @@ LALCache *XLALCacheMerge(const LALCache * cache1, const LALCache * cache2);
 /** Reads a LAL cache file and produces a LALCache structure. */
 LALCache *XLALCacheFileRead(LALFILE * fp);
 
+/** Reads a LAL cache file and produces a LALCache structure. */
+LALCache *XLALCacheImport(const char *fname);
+
 /** Globs a directory and construct LALCache from matching entries.
  * \params [in] dirstr Colon-delimited list of directories.
  * \params [in] fnptrn Glob pattern for matching files.
@@ -100,6 +103,13 @@ int XLALCacheUniq(LALCache * cache);
 int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
                    const char *srcregex, const char *dscregex,
                    const char *urlregex);
+
+/** Finds the first entry that contains the requested time, or the first entry
+ * after the time if the time is in a gap or before the first entry.  Returns
+ * NULL if the time is after the last entry.
+ */
+LALCacheEntry *XLALCacheEntrySeek(const LALCache * cache, double t);
+
 
 /** Open a file identified by an entry in a LALCache structure. */
 LALFILE *XLALCacheEntryOpen(const LALCacheEntry * entry);
