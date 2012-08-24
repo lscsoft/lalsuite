@@ -261,12 +261,6 @@ XLALSimRingdownInSearchedData(
     );
 
 INT8
-XLALReturnSimRingdownEndTime (
-    SimRingdownTable *event,
-    CHAR             *ifo
-    );
-
-INT8
 XLALReturnSimRingdownStartTime (
     SimRingdownTable *event,
     CHAR             *ifo

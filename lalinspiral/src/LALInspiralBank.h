@@ -1164,12 +1164,6 @@ LALListAppend(
     INT4 id
     );
 
-UINT4
-GetIdFromIndex(
-    CellList *head,
-    INT4 lal_index
-    );
-
 void
 LALListDelete(
     CellList ** headRef,
