@@ -61,15 +61,11 @@ static int XLALCacheFileReadRow(char *s, size_t len, LALFILE * fp,
         ++(*line);
         if (!strchr(s, '\n')) {
             if (XLALFileEOF(fp)) {      /* missing final newline */
-                XLALPrintWarning
-                    ("XLAL Warning - %s: Missing newline on line %d\n",
-                     __func__, *line);
+                XLAL_PRINT_WARNING("Missing newline on line %d", *line);
                 return 0;
             }
             /* line is too long */
-            XLALPrintError("XLAL Error - %s: Line %d too long\n", __func__,
-                           *line);
-            XLAL_ERROR(XLAL_EIO);
+            XLAL_ERROR(XLAL_EIO, "Line %d too long", *line);
         }
         if (*s != '#')
             break;
@@ -125,29 +121,22 @@ static int XLALCacheFileParseEntry(struct tagLALCacheEntry *entry, char *s)
         entry->dsc = strcmp(f2, "-") ? XLALStringDuplicate(f2) : NULL;
         entry->url = strcmp(f5, "-") ? XLALStringDuplicate(f5) : NULL;
         if (strcmp(f3, "-")) {
-            if (strspn(f3, "0123456789") != strlen(f3)) {
-                XLALPrintError
-                    ("XLAL Error - %s: Invalid content in field 3 \"%s\"\n",
-                     __func__, f3);
-                XLAL_ERROR(XLAL_EIO);
-            }
+            if (strspn(f3, "0123456789") != strlen(f3))
+                XLAL_ERROR(XLAL_EIO, "Invalid content in field 3 \"%s\"",
+                           f3);
             entry->t0 = atoi(f3);
         } else
             entry->t0 = 0;
         if (strcmp(f4, "-")) {
-            if (strspn(f4, "0123456789") != strlen(f4)) {
-                XLALPrintError
-                    ("XLAL Error - %s: Invalid content in field 4 \"%s\"\n",
-                     __func__, f4);
-                XLAL_ERROR(XLAL_EIO);
-            }
+            if (strspn(f4, "0123456789") != strlen(f4))
+                XLAL_ERROR(XLAL_EIO, "Invalid content in field 4 \"%s\"",
+                           f4);
             entry->dt = atoi(f4);
         } else
             entry->dt = 0;
         return 0;
     }
-    XLALPrintError("XLAL Error - %s: Wrong number of fields\n", __func__);
-    XLAL_ERROR(XLAL_EIO);       /* wrong field count */
+    XLAL_ERROR(XLAL_EIO, "Wrong number of fields");     /* wrong field count */
 }
 
 static int XLALCacheEntryCopy(LALCacheEntry * dst,
@@ -176,9 +165,7 @@ LALCache *XLALCreateCache(UINT4 length)
             XLAL_ERROR_NULL(XLAL_ENOMEM);
         }
     } else
-        XLALPrintWarning
-            ("XLAL Warning - %s: Creating a zero-length cache\n",
-             __func__);
+        XLAL_PRINT_WARNING("Creating a zero-length cache");
     cache->length = length;
     return cache;
 }
@@ -255,11 +242,9 @@ LALCache *XLALCacheFileRead(LALFILE * fp)
     for (i = 0; i < n; ++i)
         if (XLALCacheFileReadRow(s, sizeof(s), fp, &line) != 1
             || XLALCacheFileParseEntry(&cache->list[i], s) < 0) {
-            XLALPrintError
-                ("XLAL Error - %s: Error reading row %s on line %s\n",
-                 i + 1, line);
             XLALDestroyCache(cache);
-            XLAL_ERROR_NULL(XLAL_EFUNC);
+            XLAL_ERROR_NULL(XLAL_EFUNC, "Error reading row %s on line %s",
+                            i + 1, line);
         }
     XLALCacheSort(cache);
     return cache;
@@ -314,14 +299,14 @@ static int XLALCacheFilenameParseEntry(LALCacheEntry * entry,
             XLAL_ERROR(XLAL_EFUNC);
         }
     }
-
     return 0;
 }
+
 #endif /* HAVE_GLOB_H */
 
 LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
 {
-#	ifdef HAVE_GLOB_H
+#ifdef HAVE_GLOB_H
     LALCache *cache;
     int globflags = 0;
     glob_t g;
@@ -331,10 +316,10 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
     dirstr = dirstr ? dirstr : ".";
 
     if (fnptrn[0]
-        && (fnptrn[0] == '/'
-            || (fnptrn[0] == '.' && fnptrn[1]
-                && (fnptrn[1] == '/'
-                    || (fnptrn[1] == '.' && fnptrn[2] == '/')))))
+        && (fnptrn[0] == '/' || (fnptrn[0] == '.' && fnptrn[1]
+                                 && (fnptrn[1] == '/'
+                                     || (fnptrn[1] == '.'
+                                         && fnptrn[2] == '/')))))
         glob(fnptrn, globflags, NULL, &g);
     else {      /* prepend path from dirname */
         char path[FILENAME_MAX];
@@ -353,18 +338,14 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
         } while (nextdir);
     }
 
-    if (!g.gl_pathc) {
-        XLALPrintError("XLAL Error - %s: No matching files found in %s\n",
-                       __func__, fnptrn);
-        XLAL_ERROR_NULL(XLAL_EIO);
-    }
-
+    if (!g.gl_pathc)
+        XLAL_ERROR_NULL(XLAL_EIO, "No matching files found in %s\n",
+                        fnptrn);
     cache = XLALCreateCache(g.gl_pathc);
     if (!cache) {
         globfree(&g);
         XLAL_ERROR_NULL(XLAL_EFUNC);
     }
-
     /* copy file names */
     for (i = 0; i < g.gl_pathc; ++i) {
         LALCacheEntry *entry = cache->list + i;
@@ -378,14 +359,12 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
     globfree(&g);
     XLALCacheSort(cache);
     return cache;
-#	else /* no globbing: unsupported */
+#else /* no globbing: unsupported */
     fnptrn = NULL;
     dirstr = NULL;
-    XLALPrintError
-        ("XLAL Error - %s: Glob is unsupported on non-posix system.\n",
-         __func__);
-    XLAL_ERROR_NULL(XLAL_EFAILED);
-#	endif
+    XLAL_ERROR_NULL(XLAL_EFAILED,
+                    "Glob is unsupported on non-posix system");
+#endif
 }
 
 int XLALCacheFileWrite(LALFILE * fp, LALCache * cache)
@@ -520,13 +499,12 @@ int XLALCacheUniq(LALCache * cache)
         if (!cache->list)
             XLAL_ERROR(XLAL_EFUNC);
     }
-
     return 0;
 }
 
 #ifdef HAVE_REGEX_H
-static int XLALCacheEntryMatch(LALCacheEntry * entry, INT4 t0, INT4 t1,
-                               regex_t * srcreg, regex_t * dscreg,
+static int XLALCacheEntryMatch(LALCacheEntry * entry, INT4 t0,
+                               INT4 t1, regex_t * srcreg, regex_t * dscreg,
                                regex_t * urlreg)
 {
     if (t1 > 0 && !(entry->t0 < t1))
@@ -544,9 +522,11 @@ static int XLALCacheEntryMatch(LALCacheEntry * entry, INT4 t0, INT4 t1,
             return 0;
     return 1;   /* matches */
 }
+
 #else /* HAVE_REGEX_H undefined */
 /* can only attempt to match time range */
-static int XLALCacheEntryMatchTime(LALCacheEntry * entry, INT4 t0, INT4 t1)
+static int XLALCacheEntryMatchTime(LALCacheEntry * entry, INT4 t0,
+                                   INT4 t1)
 {
     if (t1 > 0 && !(entry->t0 < t1))
         return 0;
@@ -554,6 +534,7 @@ static int XLALCacheEntryMatchTime(LALCacheEntry * entry, INT4 t0, INT4 t1)
         return 0;
     return 1;   /* matches */
 }
+
 #endif
 
 int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
@@ -562,43 +543,41 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
 {
     UINT4 n = 0;
     UINT4 i;
-#	ifdef HAVE_REGEX_H
+#ifdef HAVE_REGEX_H
     regex_t srcreg;
     regex_t dscreg;
     regex_t urlreg;
-#	else /* HAVE_REGEX_H undefined */
+#else /* HAVE_REGEX_H undefined */
     /* can only attempt to match time range */
     if (srcregex || dscregex || urlregex) {
-        XLALPrintError
-            ("XLAL Error - %s: Regular expression matching is not supported",
-             __func__);
-        XLAL_ERROR(XLAL_EFAILED);
+        XLAL_ERROR(XLAL_EFAILED,
+                   "Regular expression matching is not supported");
     }
-#	endif
+#endif
 
     if (!cache)
         XLAL_ERROR(XLAL_EFAULT);
 
-#	ifdef HAVE_REGEX_H
+#ifdef HAVE_REGEX_H
     if (srcregex)
         regcomp(&srcreg, srcregex, REG_NOSUB);
     if (dscregex)
         regcomp(&dscreg, dscregex, REG_NOSUB);
     if (urlregex)
         regcomp(&urlreg, urlregex, REG_NOSUB);
-#	endif
+#endif
 
     for (i = 0; i < cache->length; ++i) {
         int match;
-#		ifdef HAVE_REGEX_H
+#ifdef HAVE_REGEX_H
         match =
             XLALCacheEntryMatch(cache->list + i, t0, t1,
                                 srcregex ? &srcreg : NULL,
                                 dscregex ? &dscreg : NULL,
                                 urlregex ? &urlreg : NULL);
-#		else
+#else
         match = XLALCacheEntryMatchTime(cache->list + i, t0, t1);
-#		endif
+#endif
         if (match) {
             cache->list[n++] = cache->list[i];
         } else {
@@ -608,14 +587,14 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
         }
     }
 
-#	ifdef HAVE_REGEX_H
+#ifdef HAVE_REGEX_H
     if (srcregex)
         regfree(&srcreg);
     if (dscregex)
         regfree(&dscreg);
     if (urlregex)
         regfree(&urlreg);
-#	endif
+#endif
 
     if (cache->length != n) {
         cache->list = XLALRealloc(cache->list, n * sizeof(*cache->list));
@@ -623,9 +602,7 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
             XLAL_ERROR(XLAL_EFUNC);
         cache->length = n;
         if (!n)
-            XLALPrintWarning
-                ("XLAL Warning - %s: No matching entries - zero-length cache\n",
-                 __func__);
+            XLAL_PRINT_WARNING("No matching entries - zero-length cache");
     }
     return 0;
 }
@@ -643,29 +620,22 @@ LALFILE *XLALCacheEntryOpen(LALCacheEntry * entry)
     nextcolon = strchr(filename, ':');
     if (nextslash && nextcolon && nextcolon < nextslash
         && 0 == strncmp(nextcolon, "://", 3)) {
-        if (strncmp(filename, "file", nextcolon - filename)) {
-            XLALPrintError
-                ("XLAL Error - %s: Unsupported protocol in URL %s (only file supported)\n",
-                 __func__, entry->url);
-            XLAL_ERROR_NULL(XLAL_EIO);
-        }
+        if (strncmp(filename, "file", nextcolon - filename))
+            XLAL_ERROR_NULL(XLAL_EIO,
+                            "Unsupported protocol in URL %s (only file supported)",
+                            entry->url);
         filename = nextcolon + 3;
         nextslash = strchr(filename, '/');
         if (nextslash != filename
-            && strncmp(filename, "localhost", nextslash - filename)) {
-            XLALPrintError
-                ("XLAL Error - %s: Unsupported protocol in URL %s (only localhost supported)\n",
-                 __func__, entry->url);
-            XLAL_ERROR_NULL(XLAL_EIO);
-        }
+            && strncmp(filename, "localhost", nextslash - filename))
+            XLAL_ERROR_NULL(XLAL_EIO,
+                            "Cannot read files from remote host in URL %s (only localhost supported)",
+                            entry->url);
         filename = nextslash;
     }
     fp = XLALFileOpen(filename, "r");
-    if (!fp) {
-        XLALPrintError
-            ("XLAL Error - %s: Could not open file %s for output\n",
-             __func__, filename);
-        XLAL_ERROR_NULL(XLAL_EIO);
-    }
+    if (!fp)
+        XLAL_ERROR_NULL(XLAL_EIO, "Could not open file %s for input",
+                        filename);
     return fp;
 }
