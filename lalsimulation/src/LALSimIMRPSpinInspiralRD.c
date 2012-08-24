@@ -309,6 +309,7 @@ static int XLALPSpinInspiralRDparamsSetup(
 
   switch (order) {
 
+    case -1: // Use the highest PN order available. Move if higher terms added.
     case 7:
       mparams->wdotorb[7] = ST[8];
 
