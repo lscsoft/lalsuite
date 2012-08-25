@@ -397,7 +397,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     respagenode=self.add_results_page_node(outdir=pagedir,parent=mergenode)
     # Call finalize to build final list of available data
     enginenodes[0].finalize()
-    respagenode.set_bayes_coherent_noise(mergenode.get_ns_file()+'_B.txt')
+    respagenode.set_bayes_coherent_noise(mergenode.get_B_file())
     if self.config.has_option('input','injection-file') and event.event_id is not None:
         respagenode.set_injection(self.config.get('input','injection-file'),event.event_id)
     if event.GID is not None:
@@ -417,7 +417,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             presultsdir=os.path.join(pagedir,ifo)
             mkdirs(presultsdir)
             subresnode=self.add_results_page_node(outdir=presultsdir,parent=pmergenode)
-            subresnode.set_bayes_coherent_noise(pmergenode.get_ns_file()+'_B.txt')
+            subresnode.set_bayes_coherent_noise(pmergenode.get_B_file())
             if self.config.has_option('input','injection-file') and event.event_id is not None:
                 subresnode.set_injection(self.config.get('input','injection-file'),event.event_id)
         coherence_node=CoherenceTestNode(self.coherence_test_job,outfile=os.path.join(self.basepath,'coherence_test','coherence_test_%s_%s.dat'%(myifos,evstring)))
@@ -506,7 +506,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     end_time=event.trig_time
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
-    node.set_srate(event.srate)
+    if event.srate: node.set_srate(event.srate)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
@@ -561,7 +561,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','psd-length'):
       node.set_psdlength(self.config.getint('input','psd-length'))
     if self.config.has_option('input','psd-start-time'):
-      node.set_psdstart(self.config.getint('input','psd-start-time'))
+      node.set_psdstart(self.config.getfloat('input','psd-start-time'))
     node.set_max_psdlength(self.config.getint('input','max-psd-length'))
     out_dir=os.path.join(self.basepath,'engine')
     mkdirs(out_dir)
@@ -738,8 +738,8 @@ class EngineNode(pipeline.CondorDAGNode):
         else: delim=','
         ifostring=ifostring+delim+ifo
         cachestring=cachestring+delim+self.cachefiles[ifo]
-        psdstring=psdstring+delim+self.psds[ifo]
-        flowstring=flowstring+delim+self.flows[ifo]
+        if self.psds: psdstring=psdstring+delim+self.psds[ifo]
+        if self.flows: flowstring=flowstring+delim+self.flows[ifo]
         channelstring=channelstring+delim+self.channels[ifo]
         slidestring=slidestring+delim+str(self.timeslides[ifo])
       ifostring=ifostring+']'
@@ -751,8 +751,8 @@ class EngineNode(pipeline.CondorDAGNode):
       self.add_var_opt('IFO',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
-      self.add_var_opt('psd',psdstring)
-      self.add_var_opt('flow',flowstring)
+      if self.psds: self.add_var_opt('psd',psdstring)
+      if self.flows: self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
 	self.add_var_opt('timeslides',slidestring)
       # Start at earliest common time
@@ -836,6 +836,7 @@ class ResultsPageJob(pipeline.CondorDAGJob):
     self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
     self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
     self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('RequestMemory','1500')
     self.add_ini_opts(cp,'resultspage')
     # self.add_opt('Nlive',cp.get('analysis','nlive'))
     
@@ -951,7 +952,7 @@ class MergeNSNode(pipeline.CondorDAGNode):
     Class defining the DAG node for a merge job
     Input arguments:
     merge_job = A MergeJob object
-    parents = iterable of parent nodes (must have get_ns_file() method)
+    parents = iterable of parent LALInferenceNest nodes (must have get_ns_file() method)
     """
     def __init__(self,merge_job,parents=None):
         pipeline.CondorDAGNode.__init__(self,merge_job)

@@ -213,7 +213,7 @@ if do_ul:
 # get prior values if given
 if do_priors:
   try:
-    h0priordir = cp.get('priors', 'h0priordir')
+    h0priordir = cp.get('priors', 'priordir')
   except:
     h0priordir = None
 
@@ -375,14 +375,14 @@ count2 = 0
 count3 = 0
 while i < len(param_files):
   if ".par" in param_files[i]:
+    param_file = pulsar_param_dir + '/' + param_files[i]
+
     # set pulsar name from PSRJ name in the par file
     try:
-      par = pppu.psr_par(parfile)
+      par = pppu.psr_par(param_file)
       pulsar = par['PSRJ']
     except:
-      # otherwise try and get it from the file name
-      pulsar = 'J' + re.sub(r'\.par',r'',param_files[i]) # set pulsar name from
-    param_file = pulsar_param_dir + '/' + param_files[i]
+      print >> sys.stderr, "Could not read PSRJ from %s" % param_file
 
     # find whether an input file exists for that pulsar
     k=0
@@ -401,28 +401,31 @@ while i < len(param_files):
       continue 
 
     # find if there is a h0 prior file for this pulsar
-    if h0priordir and do_priors:
-      h0priorfile = None
+    if do_priors:
+      if h0priordir:
+        h0priorfile = None
       
-      for f in h0priorfiles:
-        if pulsar in f:
-          h0priorfile = h0priordir+'/'+f
-          break
+        for f in h0priorfiles:
+          if pulsar in f:
+            h0priorfile = h0priordir+'/'+f
+            break
       
     if do_mcmc:
       # if there is a covariance matrix set this
       m=0
       if do_cov:
-        while m < len(cov_files):
-          if ".mat" in cov_files[m]:
-            p = 'J' + re.sub(r'\.mat',r'',cov_files[m])
+        cov_file = None
+
+        for f in cov_files:
+          if ".mat" in f:
+            p = 'J' + re.sub(r'\.mat',r'',f)
 
             if pulsar == p:
               # add parameterNode for covariance job
               pulsarsCov.append(ppe.parameterNode(param_job_cov))
-              cov_file = covdir + '/' + cov_files[m]
+              cov_file = covdir + '/' + f
               pulsarsCov[count2].set_covfile(cov_file)
-
+ 
               pulsarsCov[count2].set_earth(earth)
               pulsarsCov[count2].set_sun(sun)
 
@@ -449,7 +452,7 @@ while i < len(param_files):
                 pulsarsCov[count2].set_usepriors()
                 
                 if h0priordir and h0priorfile:
-                  pulsarsCov[count2].set_h0priorfile(h0priorfile)
+                  pulsarsCov[count2].set_priorfile(h0priorfile)
                 elif "uniform" in h0pri or "jeffreys" in h0pri:
                   pulsarsCov[count2].set_h0prior(h0pri)
 
@@ -501,86 +504,87 @@ while i < len(param_files):
               count2 = count2 + 1
               break;
 
-            # if no covariance file has been found do 4 param MCMC
-            if m == len(cov_files) - 1:
-              pulsarsCov2.append(ppe.parameterNode(parameter_job))
+        # if no covariance file just use uncorrelated uncertainties from the par file
+        if cov_file == None:
+          pulsarsCov2.append(ppe.parameterNode(parameter_job))
 
-              if do_only:
-                pulsarsCov2[count3].set_onlyjoint()
+          if do_only:
+            pulsarsCov2[count3].set_onlyjoint()
 
-              pulsarsCov2[count3].set_mcmc()
-              if iterations:
-                pulsarsCov2[count3].set_iterations(iterations)
-              if burnin:
-                pulsarsCov2[count3].set_burnin(burnin)
-              if temperature:
-                pulsarsCov2[count3].set_temperature(temperature)
-              if outputrate:
-                pulsarsCov2[count3].set_outputrate(outputrate)
+          pulsarsCov2[count3].set_mcmc()
+          if iterations:
+            pulsarsCov2[count3].set_iterations(iterations)
+          if burnin:
+            pulsarsCov2[count3].set_burnin(burnin)
+          if temperature:
+            pulsarsCov2[count3].set_temperature(temperature)
+          if outputrate:
+            pulsarsCov2[count3].set_outputrate(outputrate)
 
-              pulsarsCov2[count3].set_detectors(detectors)
-              pulsarsCov2[count3].set_param_file(param_file)
-              pulsarsCov2[count3].set_pulsar(pulsar)
-              pulsarsCov2[count3].set_input_dir(input_dir)
-              pulsarsCov2[count3].set_output_dir(output_dir)
+          pulsarsCov2[count3].set_detectors(detectors)
+          pulsarsCov2[count3].set_param_file(param_file)
+          pulsarsCov2[count3].set_pulsar(pulsar)
+          pulsarsCov2[count3].set_input_dir(input_dir)
+          pulsarsCov2[count3].set_output_dir(output_dir)
 
-              # set priors
-              if do_priors:
-                pulsarsCov2[count3].set_usepriors()
+          pulsarsCov2[count3].set_earth(earth)
+          pulsarsCov2[count3].set_sun(sun)
 
-                if h0priordir and h0priorfile:
-                  pulsarsCov2[count3].set_h0priorfile(h0priorfile)
-                elif "uniform" in h0pri or "jeffreys" in h0pri:
-                  pulsarsCov2[count3].set_h0prior(h0pri)
+          # set priors
+          if do_priors:
+            pulsarsCov2[count3].set_usepriors()
 
-                if "gaussian" in h0pri:
-                  pulsarsCov2[count3].set_h0prior(h0pri)
-                  pulsarsCov2[count3].set_h0mean(h0mean)
-                  pulsarsCov2[count3].set_h0sig(h0sig)
+            if h0priordir and h0priorfile:
+              pulsarsCov2[count3].set_priorfile(h0priorfile)
+            elif "uniform" in h0pri or "jeffreys" in h0pri:
+              pulsarsCov2[count3].set_h0prior(h0pri)
 
-                if "uniform" in phipri:
-                  pulsarsCov2[count3].set_phiprior(phipri)
+            if "gaussian" in h0pri:
+              pulsarsCov2[count3].set_h0prior(h0pri)
+              pulsarsCov2[count3].set_h0mean(h0mean)
+              pulsarsCov2[count3].set_h0sig(h0sig)
 
-                if "gaussian" in phipri:
-                  pulsarsCov2[count3].set_phiprior(phipri)
-                  pulsarsCov2[count3].set_phimean(phimean)
-                  pulsarsCov2[count3].set_phisig(phisig)
+            if "uniform" in phipri:
+              pulsarsCov2[count3].set_phiprior(phipri)
 
-                if "uniform" in psipri:
-                  pulsarsCov2[count3].set_psiprior(psipri)
+            if "gaussian" in phipri:
+              pulsarsCov2[count3].set_phiprior(phipri)
+              pulsarsCov2[count3].set_phimean(phimean)
+              pulsarsCov2[count3].set_phisig(phisig)
 
-                if "gaussian" in psipri:
-                  pulsarsCov2[count3].set_psiprior(psipri)
-                  pulsarsCov2[count3].set_psimean(psimean)
-                  pulsarsCov2[count3].set_psisig(psisig)
+            if "uniform" in psipri:
+              pulsarsCov2[count3].set_psiprior(psipri)
 
-                if "uniform" in iotapri:
-                  pulsarsCov2[count3].set_iotaprior(iotapri)
+            if "gaussian" in psipri:
+              pulsarsCov2[count3].set_psiprior(psipri)
+              pulsarsCov2[count3].set_psimean(psimean)
+              pulsarsCov2[count3].set_psisig(psisig)
 
-                if "gaussian" in iotapri:
-                  pulsarsCov2[count3].set_iotaprior(iotapri)
-                  pulsarsCov2[count3].set_iotamean(iotamean)
-                  pulsarsCov2[count3].set_iotasig(iotasig)
+            if "uniform" in iotapri:
+              pulsarsCov2[count3].set_iotaprior(iotapri)
 
-              if h0width:
-                pulsarsCov2[count3].set_h0width(h0width)
+            if "gaussian" in iotapri:
+              pulsarsCov2[count3].set_iotaprior(iotapri)
+              pulsarsCov2[count3].set_iotamean(iotamean)
+              pulsarsCov2[count3].set_iotasig(iotasig)
+ 
+          if h0width:
+            pulsarsCov2[count3].set_h0width(h0width)
 
-              if phiwidth:
-                pulsarsCov2[count3].set_phiwidth(phiwidth)
+          if phiwidth:
+            pulsarsCov2[count3].set_phiwidth(phiwidth)
 
-              if psiwidth:
-                pulsarsCov2[count3].set_psiwidth(psiwidth)
+          if psiwidth:
+            pulsarsCov2[count3].set_psiwidth(psiwidth)
 
-              if ciwidth:
-                pulsarsCov2[count3].set_ciwidth(ciwidth)
+          if ciwidth:
+            pulsarsCov2[count3].set_ciwidth(ciwidth)
 
-              # use cov
-              pulsarsCov2[count3].set_usecov()
+          # use cov
+          pulsarsCov2[count3].set_usecov()
                 
-              dag.add_node(pulsarsCov2[count3])
-              count3 = count3 + 1
-              break
-          m = m + 1
+          dag.add_node(pulsarsCov2[count3])
+          count3 = count3 + 1
 
       else:
         pulsars.append(ppe.parameterNode(parameter_job))
@@ -609,7 +613,7 @@ while i < len(param_files):
           pulsars[count1].set_usepriors()
           
           if h0priordir and h0priorfile:
-            pulsars[count1].set_h0priorfile(h0priorfile)
+            pulsars[count1].set_priorfile(h0priorfile)
           elif "uniform" in h0pri or "jeffreys" in h0pri:
             pulsars[count1].set_h0prior(h0pri)
 

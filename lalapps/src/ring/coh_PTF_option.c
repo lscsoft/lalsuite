@@ -487,6 +487,9 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   /* overall, default values are zero */
   memset( params, 0, sizeof( *params ) );
 
+  /* set start time */
+  XLALGPSTimeNow(&params->jobStartTime);
+
   /* FFT plan defaults to 1 */
   params->fftLevel = 1;
 

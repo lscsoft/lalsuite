@@ -381,10 +381,14 @@ if do_fine or do_update:
   while i < len(param_files):
     if ".par" in param_files[i]:
       param_file = pulsar_param_dir + '/' + param_files[i]
-
+      
       try:
         par = pppu.psr_par(param_file)
         pulsar = par['PSRJ']
+        ephem1 = par['EPHEM']
+        
+        if not ephem1:
+          ephem1 = 'DE405' # default to DE405
       except:
         print >> sys.stderr, "Could not read PSRJ from %s" % param_file
         sys.exit(0)
@@ -429,6 +433,10 @@ if do_fine or do_update:
           if '.par' in pulsar_update_file:
             try:
               upar = pppu.psr_par(pulsar_update_file)
+              ephem2 = upar['EPHEM']
+
+              if not ephem2:
+                ephem2 = 'DE405' # default to DE405
             except:
               print >> sys.stderr, "Error reading par file %s" % upar
               sys.exit(1)
@@ -454,8 +462,34 @@ heterodyne using old parameters.""" % (pulsar)
       fine[j].set_pulsar(pulsar)
       fine[j].set_param_file(param_file)
       fine[j].set_freq_factor(freq_factor)
-      fine[j].set_ephem_earth_file(earth_ephem)
-      fine[j].set_ephem_sun_file(sun_ephem)
+      
+      # there are two ephemeris files for the 09-11 period (e.g. S6) - the
+      # files with the DE405 suffix use DE405 and those without are DE200.
+      # Therefore if using data between within 2009-2011 check the ephemeris
+      # from the par file and set accordingly (assume that the config file
+      # leaves off the .dat suffix) - default to use DE405 if none is specified
+      if float(tstart) > 914803215 and float(tend) < 1009324815:
+        if het_flag == 2: # check if updated parameters are used
+          if 'DE200' in ephem2:
+            eephem = earth_ephem + '.dat'
+            sephem = sun_ephem + '.dat'
+          else:
+            eephem = earth_ephem + '-DE405.dat'
+            sephem = sun_ephem + '-DE405.dat'
+        elif het_flag == 1:
+          if 'DE200' in ephem1:
+            eephem = earth_ephem + '.dat'
+            sephem = sun_ephem + '.dat'
+          else:
+            eephem = earth_ephem + '-DE405.dat'
+            sephem = sun_ephem + '-DE405.dat'
+      else:
+        eephem = earth_ephem
+        sephem = sun_ephem
+      
+      fine[j].set_ephem_earth_file(eephem)
+      fine[j].set_ephem_sun_file(sephem)
+      
       fine[j].set_filter_knee(filter_knee)
       fine[j].set_sample_rate(sample_rate)
       fine[j].set_resample_rate(resample_rate)

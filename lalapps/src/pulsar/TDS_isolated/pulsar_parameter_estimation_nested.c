@@ -286,6 +286,8 @@ LALStringVector *corlist = NULL;
                     that where used when creating each nested sample file.\n"\
 " --prior-cell       The number of samples to use in a k-d tree cell for the\n\
                     prior (the default will be 8).\n"\
+" --Npost            The (approxiamate) number of posterior samples to be\n\
+                    generated from each nested sample file (default = 1000)\n"\
 "\n"\
 " Phase parameter search speed-up factors:\n"\
 " --mismatch          Maximum allowed phase mismatch between consecutive\n\
