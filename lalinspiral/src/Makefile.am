@@ -9,7 +9,6 @@ lalinspiralinclude_HEADERS = \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
-	FindChirpACTD.h \
 	FindChirpBCV.h \
 	FindChirpBCVSpin.h \
 	FindChirpChisq.h \
@@ -25,15 +24,12 @@ lalinspiralinclude_HEADERS = \
 	InspiralInjectionParams.h \
 	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
-	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
 	LALInspiralConfig.h \
-	LALInspiralRandomBank.h \
 	LALInspiralLibVCSInfo.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
-	LALSBBH-Metric.h \
 	LALTrigScanCluster.h \
 	LALSTPNWaveformErrors.h \
 	LALSTPNWaveform2.h \
@@ -47,7 +43,6 @@ lalinspiralinclude_HEADERS = \
 	LIGOMetadataRingdownUtils.h \
 	NRWaveIO.h \
 	NRWaveInject.h \
-	NullStatistic.h \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \

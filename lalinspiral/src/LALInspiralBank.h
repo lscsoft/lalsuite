@@ -846,14 +846,6 @@ LALInspiralSpinBank(
     InspiralCoarseBankIn *coarseIn
     );
 
-void
-LALInspiralBCVSpinBank(
-    LALStatus         	 *status,
-    SnglInspiralTable    **tiles,
-    INT4      		 *ntiles,
-    InspiralCoarseBankIn *coarseIn
-    );
-
 #if 0
 void
 LALInspiralSpinBankBoundary(
