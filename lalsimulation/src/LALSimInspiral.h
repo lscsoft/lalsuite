@@ -444,6 +444,12 @@ int XLALSimInspiralImplementedFDApproximants(
 int XLALGetApproximantFromString(const CHAR *inString);
 
 /** 
+ * XLAL function to determine string from approximant enum.  
+ * This function needs to be updated when new approximants are added. 
+ */
+char* XLALGetStringFromApproximant(Approximant approximant);
+
+/** 
  * XLAL function to determine PN order from a string.  The string need not 
  * match exactly, only contain a member of the LALPNOrder enum.
  */
