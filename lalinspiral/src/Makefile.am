@@ -27,6 +27,7 @@ lalinspiralinclude_HEADERS = \
 	LALInspiralBank.h \
 	LALInspiralConfig.h \
 	LALInspiralLibVCSInfo.h \
+	LALInspiralSBankOverlap.h
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
@@ -150,6 +151,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
 	LALInspiralRingdownWave.c \
+	LALInspiralSBankOverlap.c \
 	LALInspiralSetParams.c \
 	LALInspiralSetSearchLimits.c \
 	LALInspiralSetup.c \
