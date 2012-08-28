@@ -86,6 +86,8 @@ LALFree()
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALError.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALSimulation.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -379,7 +381,7 @@ LALFindChirpInjectSignals (
       LALSimulateCoherentGW( status->statusPtr,
           &signalvec, &waveform, &detector );
       CHECKSTATUSPTR( status );
-
+      
       /* Taper the signal */
       {
 
@@ -447,10 +449,27 @@ LALFindChirpInjectSignals (
               LALFree( bandpassVec );
           }
       }
-
+      /* Cast to REAL8 for injection */
+      REAL8TimeSeries *chan8=XLALCreateREAL8TimeSeries("temporary",&(chan->epoch), chan->f0, chan->deltaT, &(chan->sampleUnits), chan->data->length);
+      if(!chan8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate injection buffer\n");
+      REAL8TimeSeries *signalvec8=XLALCreateREAL8TimeSeries("signal, temp", &signalvec.epoch, signalvec.f0, signalvec.deltaT, &(signalvec.sampleUnits), signalvec.data->length);
+      if(!signalvec8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate signal buffer\n");
+      /* Copy the data over */
+      for(UINT4 i=0;i<signalvec8->data->length;i++) signalvec8->data->data[i]=(REAL8)signalvec.data->data[i];
+  
       /* inject the signal into the data channel */
-      LALSSInjectTimeSeries( status->statusPtr, chan, &signalvec );
-      CHECKSTATUSPTR( status );
+      int retcode=XLALSimAddInjectionREAL8TimeSeries(chan8, signalvec8, NULL);
+
+      if(retcode!=XLAL_SUCCESS){
+	XLALDestroyREAL8TimeSeries(chan8);
+	XLALDestroyREAL8TimeSeries(signalvec8);
+	ABORTXLAL(status);
+      }
+
+      for(UINT4 i=0;i<chan8->data->length;i++) chan->data->data[i]=(REAL4)chan8->data->data[i];
+  
+      XLALDestroyREAL8TimeSeries(chan8);
+      XLALDestroyREAL8TimeSeries(signalvec8);
     }
     else
     {
@@ -481,7 +500,7 @@ LALFindChirpInjectSignals (
       if (waveform.h->data->vectorLength != 2)
           LALAbort("expected alternating h+ and hx");
       tmpdata = XLALCalloc(2 * wfmLength, sizeof(*tmpdata));
-      for (;i--;) {
+      for (i=0;i<wfmLength;i++) {
             tmpdata[i] = dataPtr[2*i] * thisEvent->distance;
             tmpdata[wfmLength+i] = dataPtr[2*i+1] * thisEvent->distance;
       }
