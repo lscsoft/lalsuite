@@ -255,8 +255,15 @@ RingDataSegments *coh_PTF_get_segments(
     REAL8 deltaTime,segBoundDiff;
     INT4 segNumber, UNUSED segLoc, UNUSED ninj;
     segLoc = 0;
-    ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
-    params->injectList = injectList;
+    if (! params->injectList)
+    {
+      ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
+      params->injectList = injectList;
+    }
+    else
+    {
+      injectList = params->injectList;
+    }
     while (injectList)
     {
       deltaTime = injectList->geocent_end_time.gpsSeconds;
