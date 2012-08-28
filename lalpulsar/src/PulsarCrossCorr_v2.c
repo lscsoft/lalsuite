@@ -68,6 +68,12 @@ int XLALGetDopplerShiftedFrequencyInfo
     XLAL_ERROR(XLAL_EBADLEN );
   }
 
+  if ( dopp->orbit ) {
+    XLALPrintError("Doppler shifting for binary orbit not yet implemented!");
+    XLAL_ERROR(XLAL_EINVAL);
+   
+  }
+
   /* unit vector along wave propagation direction */
   khat[0] = - cos(dopp->Delta) * cos(dopp->Alpha);
   khat[1] = - cos(dopp->Delta) * sin(dopp->Alpha);
