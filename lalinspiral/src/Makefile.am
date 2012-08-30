@@ -27,7 +27,7 @@ lalinspiralinclude_HEADERS = \
 	LALInspiralBank.h \
 	LALInspiralConfig.h \
 	LALInspiralLibVCSInfo.h \
-	LALInspiralSBankOverlap.h
+	LALInspiralSBankOverlap.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
