@@ -515,8 +515,20 @@ void coh_PTF_calculate_rotated_vectors(
             /* Currently non-spin only! */
             v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
             v1[j] += b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
-            v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
-            v2[j] -= b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+            if (params->faceOnStatistic == 1)
+            {
+              v2[j] += b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+              v2[j] -= a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            }
+            else if (params->faceOnStatistic == 2)
+            {
+              v2[j] -= b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+              v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            }
+            else
+            {
+              fprintf(stderr,"Face-on stat is not working!");
+            }
           }
           else if (j < vecLength)
           {
