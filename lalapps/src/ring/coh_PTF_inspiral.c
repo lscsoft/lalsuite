@@ -2358,11 +2358,6 @@ void coh_PTF_statistic(
   *chisqOverlapsP = chisqOverlaps;
   *chisqSnglOverlapsP = chisqSnglOverlaps;
 
-  write_REAL4TimeSeries( cohSNR );
-  write_REAL4TimeSeries( bankVeto[LAL_NUM_IFO] );
-  write_REAL4TimeSeries( autoVeto[LAL_NUM_IFO] );
-  write_REAL4TimeSeries( chiSquare[LAL_NUM_IFO] );
-
 }
 
 UINT8 coh_PTF_add_triggers(
