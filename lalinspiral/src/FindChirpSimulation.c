@@ -456,7 +456,8 @@ LALFindChirpInjectSignals (
       if(!signalvec8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate signal buffer\n");
       /* Copy the data over */
       for(UINT4 i=0;i<signalvec8->data->length;i++) signalvec8->data->data[i]=(REAL8)signalvec.data->data[i];
-  
+      for(UINT4 i=0;i<chan->data->length;i++) chan8->data->data[i]=chan->data->data[i];
+
       /* inject the signal into the data channel */
       int retcode=XLALSimAddInjectionREAL8TimeSeries(chan8, signalvec8, NULL);
 
