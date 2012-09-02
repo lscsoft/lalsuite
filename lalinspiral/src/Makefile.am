@@ -9,6 +9,7 @@ lalinspiralinclude_HEADERS = \
 	CoherentInspiral.h \
 	CoincInspiralEllipsoid.h \
 	FindChirp.h \
+	FindChirpACTD.h \
 	FindChirpBCV.h \
 	FindChirpBCVSpin.h \
 	FindChirpChisq.h \
