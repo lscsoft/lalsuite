@@ -30,6 +30,7 @@
 #define _FINDCHIRPCHISQH_H
 
 #include <lal/LALDatatypes.h>
+#include <lal/ComplexFFT.h>
 #include <lal/FindChirpDatatypes.h>
 
 #if defined(__cplusplus)

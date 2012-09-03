@@ -162,6 +162,7 @@ UINT4       vecLengthTwo
       bankOverIm = bankOverIm/overlapNorm;
       for (uj = 0; uj < 2 * vecLengthTwo; uj++)
       {
+        // Some stupidity here. vecLengthTwo must = 1 to be in this block
         normFac = 0;
         if (uj == 0)
           BankVetoTemp[uj] = TjwithS1[0];
@@ -505,20 +506,43 @@ void coh_PTF_calculate_coherent_bank_overlaps(
     {
       for (uj = 0; uj < vecLengthTwo; uj++)
       {
-        if (uj < vecLength)
-          fone = a[ul];
-        else
-          fone = b[ul];
-        for (uk = 0 ; uk < vecLengthTwo; uk++)
+        if (params->faceOnStatistic)
         {
-          if (uk < vecLength)
-            ftwo = a[ul];
+          for (uk = 0 ; uk < vecLengthTwo; uk++)
+          {
+            /* For face-on vecLengthTwo = 1 and this is a bit of a silly loop*/
+            reOverlapsA[uj*vecLengthTwo + uk] += (a[ul]*a[ul] + b[ul] * b[ul])*bankOverlaps.PTFM[ul]->data[0].re;
+            if (params->faceOnStatistic == 1)
+            {
+              imOverlapsA[uj*vecLengthTwo + uk] += -(a[ul]*a[ul] + b[ul] * b[ul])*bankOverlaps.PTFM[ul]->data[0].im;
+            }
+            else if (params->faceOnStatistic == 2)
+            {
+              imOverlapsA[uj*vecLengthTwo + uk] += (a[ul]*a[ul] + b[ul] * b[ul])*bankOverlaps.PTFM[ul]->data[0].im;
+            }
+            else
+            {
+              fprintf(stderr,"Shit, I shouldn't be here! Face-on stat is broken");
+            }
+          }
+        }
+        else
+        {
+          if (uj < vecLength)
+            fone = a[ul];
           else
-            ftwo = b[ul];
-          reOverlapsA[uj*vecLengthTwo + uk] +=
-              fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].re;
-          imOverlapsA[uj*vecLengthTwo + uk] +=
-              fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].im;
+            fone = b[ul];
+          for (uk = 0 ; uk < vecLengthTwo; uk++)
+          {
+            if (uk < vecLength)
+              ftwo = a[ul];
+            else
+              ftwo = b[ul];
+            reOverlapsA[uj*vecLengthTwo + uk] +=
+                fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].re;
+            imOverlapsA[uj*vecLengthTwo + uk] +=
+                fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].im;
+          }
         }
       }
     }
@@ -571,7 +595,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,v3,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 v1,v2,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
   REAL4 a2[LAL_NUM_IFO];
@@ -601,7 +625,6 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
 
   v1 = 0;
   v2 = 0;
-  v3 = 0;
   if (detectorNum == LAL_NUM_IFO)
   {
     /* If only one polarization the value of a2 and b2 is irrelevant! */
@@ -613,6 +636,17 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
         {
           a2[k] = 1;
           b2[k] = 1;
+        }
+      }
+    }
+    else if (params->faceOnStatistic)
+    {
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if ( params->haveTrig[k] )
+        {
+          a2[k] = pow(a[k]*a[k] + b[k] * b[k],0.5);
+          b2[k] = a2[k];
         }
       }
     }
@@ -633,7 +667,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       {
         v1 += a2[k]*a2[k]*PTFM[k]->data[0];
         v2 += b2[k]*b2[k]*PTFM[k]->data[0];
-        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
+//        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
       }
     }
   }
@@ -727,7 +761,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,v3,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 v1,v2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL4 SNRplusLast,SNRcrossLast;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
@@ -759,7 +793,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   // NOTE: v3 is calculated for verification. It should = 0.
   v1 = 0;
   v2 = 0;
-  v3 = 0;
   if (detectorNum == LAL_NUM_IFO)
   {
     /* If only one polarization the value of a2 and b2 is irrelevant! */
@@ -771,6 +804,17 @@ void coh_PTF_calculate_standard_chisq_power_bins(
         { 
           a2[k] = 1;
           b2[k] = 1;
+        }
+      }
+    }
+    else if (params->faceOnStatistic)
+    {
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if ( params->haveTrig[k] )
+        {
+          a2[k] = pow(a[k]*a[k] + b[k] * b[k],0.5);
+          b2[k] = a2[k];
         }
       }
     }
@@ -790,7 +834,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
       {
         v1 += a2[k]*a2[k]*PTFM[k]->data[0];
         v2 += b2[k]*b2[k]*PTFM[k]->data[0];
-        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
+//        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
       }
     }
   }

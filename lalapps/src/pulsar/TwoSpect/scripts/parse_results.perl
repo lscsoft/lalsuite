@@ -21,7 +21,7 @@ for(my $ii=0; $ii<$numberofjobs; $ii++) {
       my @lines = reverse <LOGFILE>;
       my $jj = 1;
       while ($lines[$jj] =~ /^fsig/) {
-         print CANDIDATES $lines[$jj];
+         print CANDIDATES "$1 $2 $3 $4 $5 $6 $7 $8 $9 $ii\n";
          $jj++
       }
       close(LOGFILE);

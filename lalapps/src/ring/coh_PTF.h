@@ -207,6 +207,7 @@ struct coh_PTF_params {
   int          writeSegment;
   int          writeFilterOutput;
   LIGOTimeGPS  jobStartTime;
+  int          faceOnStatistic;
 };
 
 /* Other structures */

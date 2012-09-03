@@ -1214,7 +1214,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    REAL8 maxfbin = round((input->fmin + input->fspan)*input->Tcoh + input->dfmax*input->Tcoh + 0.5*(input->blksize-1) + (REAL8)(input->maxbinshift) + 6.0)/input->Tcoh;
    
    //Now extract the data
-   SFTVector *sfts = XLALLoadSFTs(catalog, minfbin, maxfbin);
+   SFTVector *sfts = XLALLoadSFTs(catalog, minfbin+0.1/1800.0, maxfbin-0.1/1800.0);
    if (sfts == NULL) {
       fprintf(stderr,"%s: XLALLoadSFTs() failed to load SFTs with given input parameters.\n", __func__);
       XLAL_ERROR_NULL(XLAL_EFUNC);
@@ -1225,7 +1225,14 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
    INT4 sftlength;
    if (sfts->length == 0) sftlength = (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
-   else sftlength = sfts->data->data->length;
+   else {
+      sftlength = sfts->data->data->length;
+      //Check the length is what we expect
+      if (sftlength!=(INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1)) {
+         fprintf(stderr, "%s: sftlength (%d) is not matching expected length (%d).\n", __func__, sftlength, (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1));
+         XLAL_ERROR_NULL(XLAL_EFPINEXCT);
+      }
+   }
    INT4 nonexistantsft = 0;
    REAL4Vector *tfdata = XLALCreateREAL4Vector(numffts*sftlength);
    if (tfdata==NULL) {
@@ -2350,6 +2357,10 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *s
          if (sftexist->data[jj] != 0) {
             //To create the correlations
             noiseval = expRandNum(aveNoiseInTime->data[jj], input->rng);
+            if (XLAL_IS_REAL8_FAIL_NAN(noiseval)) {
+               fprintf(stderr, "%s: expRandNum() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             if (jj>0 && sftexist->data[jj-1]!=0) {
                noiseval *= (1.0-corrfactorsquared);
                noiseval += corrfactorsquared*prevnoiseval;

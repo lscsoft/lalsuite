@@ -33,7 +33,7 @@
 #include <lal/FlatLatticeTiling.h>
 
 #ifdef __cplusplus
-extern "C" <% // {
+extern "C" {
 #endif
 
 /**
@@ -43,7 +43,7 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, double, doub
 int XLALSetFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, double, double, double, double, double);
 
 #ifdef __cplusplus
-%> // }
+}
 #endif
 
 #endif

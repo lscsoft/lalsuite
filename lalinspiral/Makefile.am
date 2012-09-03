@@ -12,6 +12,7 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
+	swig \
 	test
 
 pkgconfigdir = $(libdir)/pkgconfig
@@ -30,6 +31,9 @@ vcs-clean: maintainer-clean
 	-rm -f include/Makefile.in
 	-rm -f include/lal/Makefile.in
 	-rm -r src/Makefile.in
+	-rm -r swig/Makefile.in
+	-rm -r swig/octave/Makefile.in
+	-rm -r swig/python/Makefile.in
 	-rm -f test/Makefile.in
 
 all-local:

@@ -343,14 +343,6 @@ XLALCalculateNewtonianMultipole(
                             EOBParams    *params
                             );
 
-int
-XLALScalarSphericalHarmonic(
-                         COMPLEX16 *y,
-                         UINT4 l,
-                         INT4  m,
-                         REAL8 theta,
-                         REAL8 phi);
-
 REAL8
 XLALInspiralFactorizedFlux(
                       REAL8Vector           *values,

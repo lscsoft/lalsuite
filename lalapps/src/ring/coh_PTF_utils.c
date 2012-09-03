@@ -255,8 +255,15 @@ RingDataSegments *coh_PTF_get_segments(
     REAL8 deltaTime,segBoundDiff;
     INT4 segNumber, UNUSED segLoc, UNUSED ninj;
     segLoc = 0;
-    ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
-    params->injectList = injectList;
+    if (! params->injectList)
+    {
+      ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
+      params->injectList = injectList;
+    }
+    else
+    {
+      injectList = params->injectList;
+    }
     while (injectList)
     {
       deltaTime = injectList->geocent_end_time.gpsSeconds;
@@ -415,9 +422,16 @@ void coh_PTF_calculate_bmatrix(
         {
           if ( params->haveTrig[k] )
           {
-            zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
-            sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
-            yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+            if ( params->faceOnStatistic )
+            {
+              zh[i*vecLength+j] += (a[k]*a[k] + b[k] * b[k])* PTFM[k]->data[i*PTFMlen+j];
+            }
+            else
+            {
+              zh[i*vecLength+j] += a[k]*a[k] * PTFM[k]->data[i*PTFMlen+j];
+              sh[i*vecLength+j] += b[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+              yu[i*vecLength+j] += a[k]*b[k] * PTFM[k]->data[i*PTFMlen+j];
+            }
           }
         }
       }
@@ -496,7 +510,27 @@ void coh_PTF_calculate_rotated_vectors(
       {
         if ( params->haveTrig[k] )
         {
-          if (j < vecLength)
+          if ( params->faceOnStatistic)
+          {
+            /* Currently non-spin only! */
+            v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+            v1[j] += b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            if (params->faceOnStatistic == 1)
+            {
+              v2[j] += b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+              v2[j] -= a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            }
+            else if (params->faceOnStatistic == 2)
+            {
+              v2[j] -= b[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
+              v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;
+            }
+            else
+            {
+              fprintf(stderr,"Face-on stat is not working!");
+            }
+          }
+          else if (j < vecLength)
           {
             v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].re;
             v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+position+timeOffsetPoints[k]].im;

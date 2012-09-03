@@ -1156,9 +1156,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       if ( approximant == NumRelNinja2) {
         XLALSimInjectNinjaSignals(injectionBuffer, thisData->name, 1./responseScale, injEvent);
       } else {
-        LALInferenceLALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp,det.site);
+        /* Use this custom version for extra sites - not currently maintained */
+        // LALInferenceLALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp,det.site);
 	/* Normal find chirp simulation cannot handle the extra sites */
-	//LALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp);
+	LALFindChirpInjectSignals (&status,injectionBuffer,injEvent,resp);
       }
 
       XLALResampleREAL4TimeSeries(injectionBuffer,thisData->timeData->deltaT); //downsample to analysis sampling rate.

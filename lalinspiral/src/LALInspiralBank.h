@@ -155,7 +155,7 @@ typedef enum
   False,
   True
 }
-InsidePolygon;
+InsidePolygonEnum;
 
 /** This enum is either <tt>fertile,sterile</tt>, and is a boolean expression used \e only
  * by the Hexagonal placement.
@@ -540,7 +540,7 @@ tagInspiralCoarseBankIn
   FreqCut                       maxFreqCut;
   FreqCut                       minFreqCut;
 
-  InsidePolygon                 insidePolygon;
+  InsidePolygonEnum             insidePolygon;
   ComputeMoments                computeMoments;
   /* ComputeMoments tells whether to re-compute the moments
    * using an upper limit defined by flso; This is done after
@@ -568,6 +568,7 @@ the above integral divided by the norm.</li>
 </ul>
 */
 typedef struct
+tagInspiralMomentsIn
 {
   REAL8                xmin;
   REAL8                xmax;
@@ -688,7 +689,9 @@ tagHexagonOut
 }
 HexagonOut;
 
-typedef struct{
+typedef struct
+tagPRIN
+{
 REAL4 ct;
 REAL4 b;
 }
@@ -837,14 +840,6 @@ XLALInspiralMFromTau0AndNonEqualMass(
 
 void
 LALInspiralSpinBank(
-    LALStatus         	 *status,
-    SnglInspiralTable    **tiles,
-    INT4      		 *ntiles,
-    InspiralCoarseBankIn *coarseIn
-    );
-
-void
-LALInspiralBCVSpinBank(
     LALStatus         	 *status,
     SnglInspiralTable    **tiles,
     INT4      		 *ntiles,
@@ -1159,12 +1154,6 @@ void
 LALListAppend(
     CellList ** headRef,
     INT4 id
-    );
-
-UINT4
-GetIdFromIndex(
-    CellList *head,
-    INT4 lal_index
     );
 
 void

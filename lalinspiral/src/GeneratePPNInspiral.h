@@ -296,6 +296,13 @@ description (above).</dd>
 </dl>
 
 */
+
+/*
+ * FIXME: SWIG with -Werror won't let const CHAR *termDescription pass,
+ *        as it leaves a lot of potential for memory leaks. I choose to
+ *        make this an opaque struct.
+ */
+#ifndef SWIG
 typedef struct tagPPNParamStruc {
   /** \name Passed parameters. */
   /*@{*/
@@ -330,6 +337,9 @@ typedef struct tagPPNParamStruc {
   const CHAR *termDescription; /**<description of termination code */
   /*@}*/
 } PPNParamStruc;
+#else  /* SWIG */
+typedef struct tagPPNParamStruc PPNParamStruc;
+#endif  /* SWIG */
 
 /** This structure stores the position and mass parameters of a galactic
 inspiral event.  The fields are:

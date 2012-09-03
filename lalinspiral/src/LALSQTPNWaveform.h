@@ -29,7 +29,11 @@
 extern "C" {
 #endif
 
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 /**		The macro function returns the square of the argument.
  * Do not use with incrementing or decrementing operators!
@@ -180,7 +184,7 @@ int XLALSQTPNFillCoefficients(LALSQTPNWaveformParams * const params);
  * @param[out]	dvalues	: the derived values and the last element is the MECO
  * @param[in]	params	: the LALSQTPN_Generator's parameters
  */
-int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
+int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 		void * params);
 
 // LAL wrapper of above XLAL function

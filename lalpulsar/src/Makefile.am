@@ -42,6 +42,7 @@ lalpulsarinclude_HEADERS = \
 	PtoleMetric.h \
 	PulsarCat.h \
 	PulsarCrossCorr.h \
+	PulsarCrossCorr_v2.h \
 	PulsarDataTypes.h \
 	PulsarTimes.h \
 	Resample.h \
@@ -108,6 +109,7 @@ liblalpulsar_la_SOURCES = \
 	PulsarCat.c \
 	PulsarCatInput.c \
 	PulsarCrossCorr.c \
+	PulsarCrossCorr_v2.c \
 	PulsarDataTypes.c \
 	RulesToTimingDifference.c \
 	SFTClean.c \

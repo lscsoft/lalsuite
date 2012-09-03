@@ -38,7 +38,7 @@
 #include <lal/GSLSupport.h>
 
 #ifdef __cplusplus
-extern "C" <% // {
+extern "C" {
 #endif
 
 ///
@@ -242,7 +242,7 @@ int XLALUpdateNearestTemplateToInjections(
   );
 
 #ifdef __cplusplus
-%> // }
+}
 #endif
 
 #endif

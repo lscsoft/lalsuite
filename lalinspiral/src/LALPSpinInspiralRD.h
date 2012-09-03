@@ -14,8 +14,6 @@ extern "C" {
 #pragma }
 #endif
 
-extern int newswitch;
-
 /* use error codes above 1024 to avoid conflicts with GSL */
 #define LALPSIRDPN_TEST_ENERGY		1025
 #define LALPSIRDPN_TEST_OMEGADOT	1026

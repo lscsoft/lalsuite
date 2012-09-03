@@ -718,6 +718,14 @@ int XLALInspiralSetup (
      expnCoeffs *ak,
      InspiralTemplate *params);
 
+
+/*
+ * FIXME: The current SWIG wrappings remove LAL and XLAL prefixes from
+ *        functions such that the InspiralInit struct collides with
+ *        XLALInspiralInit. Since many places refer to the struct, let's
+ *        make {XLAL,LAL}InspiralInit invisible to SWIG.
+ */
+#ifndef SWIG
 void
 LALInspiralInit(
 	LALStatus        *status,
@@ -728,6 +736,7 @@ int
 XLALInspiralInit(
 	InspiralTemplate *params,
 	InspiralInit     *paramsInit);
+#endif /* SWIG */
 
 /**
  * Generate the plus and cross polarizations for a waveform
@@ -1245,11 +1254,6 @@ void LALBBHPhenWaveTimeDom (
     REAL4Vector      *signalvec,
     InspiralTemplate *insp_template);
 
-void LALBBHPhenWaveFreqDomTemplates(
-    LALStatus        *status,
-    REAL4Vector      *signalvec1,
-    REAL4Vector      *signalvec2,
-    InspiralTemplate *params);
 void LALBBHPhenWaveTimeDomTemplates(
     LALStatus        *status,
     REAL4Vector      *signalvec1,
