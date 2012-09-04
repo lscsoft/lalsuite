@@ -46,6 +46,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/DetectorSite.h>
 #include <lal/Date.h>
+#include <lal/LogPrintf.h>
 
 /** \name Error codes */
 /*@{*/
@@ -68,53 +69,45 @@
 
 /* ----- internal prototype ---------- */
 int compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 );
+REAL8 relerr(REAL8 x, REAL8 xapprox);
 
-/*
-  int lalDebugLevel=0;
-*/
-  INT4 lalDebugLevel=1;
+inline REAL8 relerr ( REAL8 x, REAL8 xapprox )
+{
+  REAL8 abserr = fabs ( x - xapprox );
+  REAL8 absmean = 0.5 * fabs( x + xapprox );
+  if ( absmean > 10 * LAL_REAL8_EPS )
+    return abserr / absmean;
+  else
+    return abserr;
+}
 
-BarycenterInput baryinput;
-LIGOTimeGPS tGPS;
 
-INT4 t2000 = 630720013; /* gps time at Jan 1, 2000 00:00:00 UTC */
-INT4 t1998 = 630720013-730*86400-1;/* gps at Jan 1,1998 00:00:00 UTC*/
+REAL8 ReldiffEmissionTime ( const EmissionTime *emit1, const EmissionTime *emit2 );
+
+INT4 lalDebugLevel=1;
+
+static const BarycenterInput empty_BarycenterInput;	// local empty initializer
+
+const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
+const INT4 t1998 = 630720013-730*86400-1;	/* gps at Jan 1,1998 00:00:00 UTC*/
 
 int
 main( void )
 {
-  static LALStatus stat;
-
-  INT4 i,k; /*dummy indices*/
-  EphemerisData *edat = NULL;
+  static LALStatus status;
 
   char eEphFileBad[] = "earth47.dat";
   char eEphFile[] = "earth98.dat";
   char sEphFile[] = "sun98.dat";
 
-
-  REAL8 alpha,delta;  /* RA and DEC (radians) in
-			 ICRS realization of J2000 coords.*/
-
-#if 0 /* Parallax is not treated yet. */
-  REAL8 dInv; /* 1/(Dist. to Source), in units 1/sec */
-#endif
-
-  edat = (EphemerisData *)LALMalloc(sizeof(EphemerisData));
-
-#define DEBUG 1 /*rem non-zero is TRUE */
-#if (DEBUG)
-
-/* Checking response if data files not present */
-
-  (*edat).ephiles.earthEphemeris = eEphFileBad;
-  (*edat).ephiles.sunEphemeris = sEphFile;
-  LALInitBarycenter(&stat, edat);
-
-  if ( stat.statusCode != LALINITBARYCENTERH_EOPEN)
+  /* Checking response if data files not present */
+  EphemerisData edat;
+  edat.ephiles.earthEphemeris = eEphFileBad;
+  edat.ephiles.sunEphemeris   = sEphFile;
+  LALInitBarycenter(&status, &edat);
+  if ( status.statusCode != LALINITBARYCENTERH_EOPEN)
     {
-      printf( "Got error code %d and message '%s', but expected error code %d\n",
-          stat.statusCode, stat.statusDescription, LALINITBARYCENTERH_EOPEN);
+      XLALPrintError( "Got error code %d and message '%s', but expected error code %d\n", status.statusCode, status.statusDescription, LALINITBARYCENTERH_EOPEN);
       return LALBARYCENTERTESTC_EOPEN;
     }
   else
@@ -123,38 +116,18 @@ main( void )
       xlalErrno = 0;
     }
 
-/* Checking response if data files somehow corrupted --to be fixed!
-
-  (*edat).ephiles.earthEphemeris = "earth98.dat";
-  (*edat).ephiles.sunEphemeris = "sun98_corrupt.dat";
-  LALInitBarycenter(&stat, edat);
-
-      if ( stat.statusCode != LALINITBARYCENTERH_EEPHFILE
-        || strcmp(stat.statusDescription, LALINITBARYCENTERH_MSGEEPHFILE) )
-    {
-      printf( "Got error code %d and message %s\n",
-          stat.statusCode, stat.statusDescription );
-      printf( "Expected error code %d and message %s\n",
-           LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-      return LALBARYCENTERTESTC_EEPHFILE;
-    }
-*/
-#endif
-
-/*Now inputting kosher ephemeris. files and leap sec, to illustrate
-  proper usage. The real, serious TEST of the code is a script written
-  by Rejean Dupuis comparing LALBarycenter to TEMPO for thousands
-  of source positions and times. */
-
-  (*edat).ephiles.earthEphemeris = eEphFile;
-  (*edat).ephiles.sunEphemeris = sEphFile;
-
-  LALInitBarycenter(&stat, edat);
-  if ( stat.statusCode ) {
-    XLALPrintError ("LALInitBarycenter() failed with code %d\n", stat.statusCode);
+  /* Now inputting kosher ephemeris. files and leap sec, to illustrate
+   * proper usage. The real, serious TEST of the code is a script written
+   * by Rejean Dupuis comparing LALBarycenter to TEMPO for thousands
+   * of source positions and times.
+   */
+  edat.ephiles.earthEphemeris = eEphFile;
+  edat.ephiles.sunEphemeris = sEphFile;
+  LALInitBarycenter(&status, &edat);
+  if ( status.statusCode ) {
+    XLALPrintError ("LALInitBarycenter() failed with code %d\n", status.statusCode);
     return XLAL_EFAILED;
   }
-
 
   /* ===== now test equivalence of new XLALInitBarycenter() function ========== */
   EphemerisData *edat_xlal;
@@ -162,7 +135,7 @@ main( void )
     XLALPrintError ("Something failed in XLALInitBarycenter(), errno =%d\n", xlalErrno );
     return XLAL_EFAILED;
   }
-  if ( compare_ephemeris ( edat, edat_xlal ) != XLAL_SUCCESS ) {
+  if ( compare_ephemeris ( &edat, edat_xlal ) != XLAL_SUCCESS ) {
     XLALPrintError ("Equivalence test failed between XLALInitEphemeris() and LALInitEphemeris()\n" );
     return XLAL_EFAILED;
   }
@@ -184,143 +157,116 @@ main( void )
     The driver code that calls LALBarycenter must LALFree(edat).
  */
 
-
-  { /*Now getting coords. for detector. Cached options are:
-      LALDetectorIndexLHODIFF, LALDetectorIndexLLODIFF,
-      LALDetectorIndexVIRGODIFF, LALDetectorIndexGEO600DIFF,
-      LALDetectorIndexTAMA300DIFF,LALDetectorIndexCIT40DIFF */
-
+  /* Now getting coords for detector */
   LALDetector cachedDetector;
   cachedDetector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+
+  BarycenterInput baryinput = empty_BarycenterInput;
   baryinput.site.location[0]=cachedDetector.location[0]/LAL_C_SI;
   baryinput.site.location[1]=cachedDetector.location[1]/LAL_C_SI;
   baryinput.site.location[2]=cachedDetector.location[2]/LAL_C_SI;
-  }
 
   EarthState earth;
   EarthState earth_xlal;
   EmissionTime  emit;
   EmissionTime  emit_xlal;
 
-#if (DEBUG)
-/* Checking error messages when the timestamp is not within the
-   1-yr ephemeris files
-*/
-    tGPS.gpsSeconds = t1998+5.e7;
-    tGPS.gpsNanoSeconds = 0;
-    LALBarycenterEarth(&stat, &earth, &tGPS, edat);
-    if ( stat.statusCode == 0 ) {
-      printf( "LALBarycenterEarth() succeeded but expected to get error\n");
-      return LALBARYCENTERTESTC_EOUTOFRANGEE;
-    }
-    else
-      {
-        XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
-        xlalErrno = 0;
-      }
+  /* ----- Checking error messages when the timestamp is not within the 1-yr ephemeris files */
+  LIGOTimeGPS tGPS = {t1998+5e7, 0 };
+  LALBarycenterEarth ( &status, &earth, &tGPS, &edat );
+  if ( status.statusCode == 0 ) {
+    XLALPrintError ( "LALBarycenterEarth() succeeded but expected to get error\n");
+    return LALBARYCENTERTESTC_EOUTOFRANGEE;
+  } else {
+    XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
+    xlalErrno = 0;
+  }
 
-/* next try calling for bad choice of RA,DEC (e.g., something
-sensible in degrees, but radians)*/
+  /* next try calling for bad choice of RA,DEC (e.g., something sensible in degrees, but radians)*/
+  tGPS.gpsSeconds = t1998+3600;
+  LALBarycenterEarth ( &status, &earth, &tGPS, &edat );
 
-      tGPS.gpsSeconds = t1998+3600;
-      tGPS.gpsNanoSeconds = 0;
+  baryinput.alpha= 120;
+  baryinput.delta = 60;
+  baryinput.dInv = 0;
 
-    LALBarycenterEarth(&stat, &earth, &tGPS, edat);
+  LALBarycenter ( &status, &emit, &baryinput, &earth );
+  if ( status.statusCode == 0 ) {
+    XLALPrintError( "LALBarycenter() succeeded but expected to get error\n" );
+    return LALBARYCENTERTESTC_EBADSOURCEPOS;
+  } else {
+    XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
+    xlalErrno = 0;
+  }
 
+  /* ---------- Now running program w/o errors, to illustrate proper use. ---------- */
+  REAL8 summedReldiff = 0;
+  REAL8 tic, toc;
+  UINT4 NRepeat = 1000;
+  UINT4 counter = 0;
+  REAL8 tau_lal = 0, tau_xlal = 0;
 
-    baryinput.alpha= 120.e0;
-    baryinput.delta=60.e0;
-    baryinput.dInv=0.e0;
-
-    LALBarycenter(&stat, &emit, &baryinput, &earth);
-    if ( stat.statusCode == 0 )
+  /* Outer loop over different sky positions */
+  for ( UINT4 k=0; k < 3; k++)
     {
-      printf( "LALBarycenter() succeeded but expected to get error\n");
-      return LALBARYCENTERTESTC_EBADSOURCEPOS;
-    }
-    else
-      {
-        XLALPrintError ("==================== this error is as expected and OK!! ==================== \n");
-        xlalErrno = 0;
-      }
-
-#endif
-/* Now running program w/o errors, to illustrate proper use. */
-
-/*First: outer loop over pulse arrival times; LALBarycenterEarth
-    called ONCE per arrival time */
-
-  for (i=0;i < 10; i++){
-
-    /*GPS time(sec) =  tGPS.gpsSeconds + 1.e-9*tGPS.gpsNanoSeconds  */
-
-    tGPS.gpsSeconds = t1998;
-    tGPS.gpsSeconds +=i*3600*50;
-    tGPS.gpsNanoSeconds = 0;
-
-    LALBarycenterEarth(&stat, &earth, &tGPS, edat);
-    if ( stat.statusCode ) {
-      XLALPrintError ("LALBarycenterEarth() failed with code %d\n", stat.statusCode);
-      return XLAL_EFAILED;
-    }
-
-    XLALBarycenterEarth ( &earth_xlal, &tGPS, edat);
-    if ( xlalErrno ) {
-      XLALPrintError ("%s: XLALBarycenterEarth() failed with xlalErrno = %d\n", __func__, xlalErrno );
-      return XLAL_EFAILED;
-    }
-
-/*Next: inner loop over different sky positions, for each arrival time;
-     LALBarycenter called ONCE per sky position (or ONCE per detector) */
-
-    for (k=0;k<3;k++){
-
-      alpha=(LAL_PI/12.0)*(14.e0 + 51.e0/60.e0 +
-			   +38.56024702e0/3.6e3) + LAL_PI*k/10.e0;
-      delta=(LAL_PI/180.e0)*(12.e0+ 19.e0/60.e0
-			     +59.1434800e0/3.6e3);
-
-      baryinput.alpha = alpha;
-      baryinput.delta = delta;
+      baryinput.alpha = (LAL_PI/12.0)*(14.e0 + 51.e0/60.e0 + 38.56024702e0/3.6e3) + LAL_PI*k/10.e0;
+      baryinput.delta = (LAL_PI/180.e0)*(12.e0+ 19.e0/60.e0 + 59.1434800e0/3.6e3);
       baryinput.dInv = 0.e0;
 
-      baryinput.tgps.gpsSeconds = tGPS.gpsSeconds;
-      baryinput.tgps.gpsNanoSeconds = tGPS.gpsNanoSeconds;
+      /* inner loop over pulse arrival times */
+      for ( UINT4 i=0; i < 10; i++ )
+        {
+          tGPS.gpsSeconds = t1998 + i * 3600 * 50;
+          tGPS.gpsNanoSeconds = 0;
+          baryinput.tgps = tGPS;
 
-      LALBarycenter(&stat, &emit, &baryinput, &earth);
-      if ( stat.statusCode ) {
-        XLALPrintError ("LALBarycenter() failed with code %d\n", stat.statusCode);
-        return XLAL_EFAILED;
-      }
+          /* ----- old LAL interface ---------- */
+          LALBarycenterEarth ( &status, &earth, &tGPS, &edat);
+          if ( status.statusCode ) {
+            XLALPrintError ("LALBarycenterEarth() failed with code %d\n", status.statusCode);
+            return XLAL_EFAILED;
+          }
 
-      if ( XLALBarycenter ( &emit_xlal, &baryinput, &earth_xlal ) != XLAL_SUCCESS ) {
-        XLALPrintError ("%s: XLALBarycenter() failed with xlalErrno = %d\n", __func__, xlalErrno );
-        return XLAL_EFAILED;
-      }
+          tic = XLALGetTimeOfDay();
+          for ( UINT4 l = 0; l < NRepeat; l++ )
+            LALBarycenter ( &status, &emit, &baryinput, &earth );
+          toc = XLALGetTimeOfDay();
+          tau_lal += ( toc - tic ) / NRepeat;
+          if ( status.statusCode ) {
+            XLALPrintError ("LALBarycenter() failed with code %d\n", status.statusCode);
+            return XLAL_EFAILED;
+          }
 
-#if 0
-      printf("%d %d %d %25.17e %25.17e\n", k,
-	     tGPS.gpsSeconds,  tGPS.gpsNanoSeconds,
-	     (emit.deltaT + tGPS.gpsSeconds + tGPS.gpsNanoSeconds*1.e-9),
-             emit.tDot);
+          /* ----- new XLAL interface ---------- */
+          XLAL_CHECK ( XLALBarycenterEarth ( &earth_xlal, &tGPS, &edat ) == XLAL_SUCCESS, XLAL_EFAILED );
+          tic = XLALGetTimeOfDay();
+          for ( UINT4 l = 0; l < NRepeat; l ++ )
+            XLAL_CHECK ( XLALBarycenter ( &emit_xlal, &baryinput, &earth_xlal ) == XLAL_SUCCESS, XLAL_EFAILED );
+          toc = XLALGetTimeOfDay();
+          tau_xlal += ( toc - tic ) / NRepeat;
 
-      printf("%d %d %25.17e\n",
-	     emit.te.gpsSeconds, emit.te.gpsNanoSeconds, emit.deltaT);
+          /* sum up cumulative relative differences over all iterations */
+          summedReldiff += ReldiffEmissionTime ( &emit, &emit_xlal );
 
-      printf("%25.17e %25.17e %25.17e\n",
-	     emit.rDetector[0],emit.rDetector[1],emit.rDetector[2]);
+          counter ++;
+        } /* for i */
 
-      printf("%25.17e %25.17e %25.17e\n",
-	     emit.vDetector[0],emit.vDetector[1],emit.vDetector[2]);
-#endif
+    } /* for k */
 
-    } /* for k = 0..2 */
+  /* ----- check differences in results ---------- */
+  REAL8 tolerance = 10 * LAL_REAL8_EPS;
+  XLALPrintInfo ( "Summed Relative error between LALBarycenter() and XLALBarycenter()  = %g (tolerance = %g)\n", summedReldiff, tolerance );
+  XLAL_CHECK ( summedReldiff < tolerance, XLAL_EFAILED,
+               "Summed Relative error between LALBarycenter() and XLALBarycenter()  = %g, exceeding tolerance of %g\n",
+               summedReldiff, tolerance );
 
-  } /* for i = 0..9 */
+  /* ----- output runtimes ---------- */
+  XLALPrintError ("Runtimes per function-call, averaged over %g calls\n", 1.0 * NRepeat * counter );
+  XLALPrintError ("LALBarycenter() 	%g s\n", tau_lal / counter );
+  XLALPrintError ("XLALBarycenter()	%g s\n", tau_xlal / counter );
 
-  LALFree(edat->ephemE);
-  LALFree(edat->ephemS);
-  LALFree(edat);
+  LALFree(edat.ephemE);
+  LALFree(edat.ephemS);
 
   LALCheckMemoryLeaks();
 
@@ -444,5 +390,25 @@ compare_ephemeris ( const EphemerisData *edat1, const EphemerisData *edat2 )
   return XLAL_SUCCESS;
 
 } /* compare_ephemeris() */
+
+/* return summed relative differences in all fields from EmissionTime struct */
+REAL8
+ReldiffEmissionTime ( const EmissionTime *emit1, const EmissionTime *emit2 )
+{
+  REAL8 reldiff = 0;
+
+  reldiff += relerr ( emit1->deltaT, emit2->deltaT );
+  reldiff += relerr ( emit1->te.gpsSeconds,emit2->te.gpsSeconds );
+  reldiff += relerr ( emit1->te.gpsNanoSeconds, emit2->te.gpsNanoSeconds );
+  reldiff += relerr ( emit1->tDot, emit2->tDot );
+  for ( UINT4 i = 0; i < 3; i ++ )
+    {
+      reldiff += relerr ( emit1->rDetector[i], emit2->rDetector[i] );
+      reldiff += relerr ( emit1->vDetector[i], emit2->vDetector[i] );
+    }
+
+  return reldiff;
+
+} /* ReldiffEmissionTime() */
 
 /** \endcond */
