@@ -177,6 +177,8 @@ typedef struct tagBarycenterInput
 }
 BarycenterInput;
 
+typedef struct tagBarycenterBuffer BarycenterBuffer;	// opaque type
+
 /**  Basic output structure produced by LALBarycenter.c.
  */
 typedef struct tagEmissionTime
@@ -206,11 +208,11 @@ to give, on average, the same arrival time as the GPS clock on Earth'' */
 
 
 /* Function prototypes. */
-
 int XLALBarycenterEarth ( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
+int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer **buffer);
 
-
+  // deprecated LAL interface
 void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 
