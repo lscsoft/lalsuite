@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 Miroslav Shaltev, R Prix
 *  Copyright (C) 2007 Curt Cutler, Jolien Creighton, Reinhard Prix, Teviet Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +20,14 @@
 
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
+
+// opaque buffer type for optimized Barycentering function
+struct tagBarycenterBuffer
+{
+  REAL8 alpha;
+};
+
+
 
 /** \author Curt Cutler
  * \brief Computes the position and orientation of the Earth, at some arrival time
@@ -716,6 +725,25 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 
 } /* XLALBarycenter() */
 
+
+/** \author Curt Cutler, Miroslav Shaltev, R Prix
+ * \brief Speed optimized version of XLALBarycenterOpt(),
+ * should be fully equivalent except for the additional buffer argument.
+ * The buffer is allowed to be NULL (= no buffering), otherwise it will be
+ * use to keep sky-specific and detector-specific values if they can be re-used.
+ */
+int
+XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information */
+                    const BarycenterInput *baryinput, 	/**< [in] info about detector and source-location */
+                    const EarthState *earth, 		/**< [in] earth-state (from LALBarycenterEarth()) */
+                    BarycenterBuffer **buffer		/**< [in/out] internal buffer for speed optimization */
+                    )
+{
+  if ( *buffer )
+    XLALPrintInfo ( "Buffer was given!\n");	// avoid warning
+
+  return ( XLALBarycenter ( emit, baryinput, earth ) );
+}
 
 /* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */
 

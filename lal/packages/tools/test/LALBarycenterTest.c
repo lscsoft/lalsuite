@@ -168,8 +168,7 @@ main( void )
 
   EarthState earth;
   EarthState earth_xlal;
-  EmissionTime  emit;
-  EmissionTime  emit_xlal;
+  EmissionTime  emit, emit_xlal, emit_opt;
 
   /* ----- Checking error messages when the timestamp is not within the 1-yr ephemeris files */
   LIGOTimeGPS tGPS = {t1998+5e7, 0 };
@@ -200,11 +199,12 @@ main( void )
   }
 
   /* ---------- Now running program w/o errors, to illustrate proper use. ---------- */
-  REAL8 summedReldiff = 0;
+  REAL8 summedReldiff = 0, summedReldiffOpt=0;
   REAL8 tic, toc;
   UINT4 NRepeat = 1000;
   UINT4 counter = 0;
-  REAL8 tau_lal = 0, tau_xlal = 0;
+  REAL8 tau_lal = 0, tau_xlal = 0, tau_opt = 0;
+  BarycenterBuffer *buffer = NULL;	// for optimized XLALBarycenterOpt() function
 
   /* Outer loop over different sky positions */
   for ( UINT4 k=0; k < 3; k++)
@@ -248,6 +248,16 @@ main( void )
           /* sum up cumulative relative differences over all iterations */
           summedReldiff += ReldiffEmissionTime ( &emit, &emit_xlal );
 
+          /* ----- optimized XLAL version with buffering ---------- */
+          tic = XLALGetTimeOfDay();
+          for ( UINT4 l = 0; l < NRepeat; l ++ )
+            XLAL_CHECK ( XLALBarycenterOpt ( &emit_opt, &baryinput, &earth_xlal, &buffer ) == XLAL_SUCCESS, XLAL_EFAILED );
+          toc = XLALGetTimeOfDay();
+          tau_opt += ( toc - tic ) / NRepeat;
+
+          /* sum up cumulative relative differences over all iterations */
+          summedReldiffOpt += ReldiffEmissionTime ( &emit, &emit_opt );
+
           counter ++;
         } /* for i */
 
@@ -255,15 +265,21 @@ main( void )
 
   /* ----- check differences in results ---------- */
   REAL8 tolerance = 10 * LAL_REAL8_EPS;
-  XLALPrintInfo ( "Summed Relative error between LALBarycenter() and XLALBarycenter()  = %g (tolerance = %g)\n", summedReldiff, tolerance );
+  XLALPrintInfo ( "Summed Relative error between LALBarycenter() and XLALBarycenter()     = %g (tolerance = %g)\n", summedReldiff, tolerance );
   XLAL_CHECK ( summedReldiff < tolerance, XLAL_EFAILED,
                "Summed Relative error between LALBarycenter() and XLALBarycenter()  = %g, exceeding tolerance of %g\n",
                summedReldiff, tolerance );
+
+  XLALPrintInfo ( "Summed Relative error between LALBarycenter() and XLALBarycenterOpt()  = %g (tolerance = %g)\n", summedReldiffOpt, tolerance );
+  XLAL_CHECK ( summedReldiffOpt < tolerance, XLAL_EFAILED,
+               "Summed Relative error between LALBarycenter() and XLALBarycenterOpt()  = %g, exceeding tolerance of %g\n",
+               summedReldiffOpt, tolerance );
 
   /* ----- output runtimes ---------- */
   XLALPrintError ("Runtimes per function-call, averaged over %g calls\n", 1.0 * NRepeat * counter );
   XLALPrintError ("LALBarycenter() 	%g s\n", tau_lal / counter );
   XLALPrintError ("XLALBarycenter()	%g s\n", tau_xlal / counter );
+  XLALPrintError ("XLALBarycenterOpt()	%g s\n", tau_opt / counter );
 
   LALFree(edat.ephemE);
   LALFree(edat.ephemS);
