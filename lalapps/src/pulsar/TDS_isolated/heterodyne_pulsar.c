@@ -979,15 +979,20 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   REAL8 df=0., fcoarse=0., ffine=0., resp=0., srate=0.;
   REAL8 filtphase=0.;
   UINT4 position=0, middle=0;
-
+  
   REAL8 lyr_pc = LAL_PC_SI/LAL_LYR_SI; /* light years per parsec */
 
-  /* set the position and frequency epochs if not already set */
+  REAL8 om = hetParams.het.wave_om, omu = hetParams.hetUpdate.wave_om;
+  
+  /* set the position, frequency and whitening epochs if not already set */
   if(hetParams.het.pepoch == 0. && hetParams.het.posepoch != 0.)
     hetParams.het.pepoch = hetParams.het.posepoch;
   else if(hetParams.het.posepoch == 0. && hetParams.het.pepoch != 0.)
     hetParams.het.posepoch = hetParams.het.pepoch;
 
+  if(hetParams.het.waveepoch == 0. && hetParams.het.nwaves != 0)
+    hetParams.het.waveepoch = hetParams.het.pepoch;
+  
   if(hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
     hetParams.heterodyneflag == 4 ){
     if(hetParams.hetUpdate.pepoch == 0. && hetParams.hetUpdate.posepoch != 0.)
@@ -996,9 +1001,12 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       hetParams.hetUpdate.pepoch != 0.)
       hetParams.hetUpdate.posepoch = hetParams.hetUpdate.pepoch;
 
+    if(hetParams.hetUpdate.waveepoch == 0. && hetParams.hetUpdate.nwaves != 0)
+      hetParams.hetUpdate.waveepoch = hetParams.hetUpdate.pepoch;
+    
     T0Update = hetParams.hetUpdate.pepoch;
   }
-
+  
   T0 = hetParams.het.pepoch;
 
   /* set up ephemeris files */
@@ -1039,7 +1047,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   for(i=0;i<hetParams.length;i++){
 
 /******************************************************************************/
-
+    REAL8 phaseWave = 0.; /* phase of any timing noise whitening parameters */
+    
     /* produce initial heterodyne phase for coarse heterodyne with no time 
        delays */
     if(hetParams.heterodyneflag == 0)
@@ -1083,6 +1092,18 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       else{
         tdt = t - T0 + emit.deltaT;
       }
+      
+      /* check if any timing noise whitening is used */
+      if( hetParams.het.nwaves != 0 ){
+        REAL8 dtWave = tdt + (T0 - hetParams.het.waveepoch);
+        REAL8 tWave = 0.;
+        
+        for( INT4 k = 0; k < hetParams.het.nwaves; k++ ){
+          tWave += hetParams.het.waveSin[k]*sin(om*(REAL8)(k+1.)*dtWave) +
+            hetParams.het.waveCos[k]*cos(om*(REAL8)(k+1.)*dtWave);
+        }
+        phaseWave = hetParams.het.f0*freqfactor*tWave;
+      }
     }
 
     tdt2 = tdt*tdt; /* tdt^2 for /slightly/ faster computation */
@@ -1092,7 +1113,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       (1./24.)*hetParams.het.f3*tdt2*tdt2 + 
       (1./120.)*hetParams.het.f4*tdt2*tdt2*tdt + 
       (1./720.)*hetParams.het.f5*tdt2*tdt2*tdt2);
-
+    phaseCoarse += phaseWave;
+    
     fcoarse = freqfactor*(hetParams.het.f0 + hetParams.het.f1*tdt +
       0.5*hetParams.het.f2*tdt2 + (1./6.)*hetParams.het.f3*tdt2*tdt +
       (1./24.)*hetParams.het.f4*tdt2*tdt2 + 
@@ -1107,6 +1129,9 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     /* produce second phase for fine heterodyne */
     if( hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2 ||
       hetParams.heterodyneflag == 4 ){
+      REAL8 tWave1 = 0., tWave2 = 0.;
+      phaseWave = 0.;
+      
       /* set up LALBarycenter */
       dtpos = hetParams.timestamp - hetParams.hetUpdate.posepoch;
 
@@ -1151,14 +1176,27 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
       else{
         tdt = (t - T0Update) + emit.deltaT;
-          binOutput.deltaT = 0.;
-          binOutput2.deltaT = 0.;
+        binOutput.deltaT = 0.;
+        binOutput2.deltaT = 0.;
+      }
+      
+      if( hetParams.hetUpdate.nwaves != 0 ){
+        REAL8 dtWave = tdt + (T0 - hetParams.hetUpdate.waveepoch);
+        
+        for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
+          tWave1 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*dtWave) +
+            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*dtWave);
+            
+          tWave2 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*(dtWave+1.)) +
+            hetParams.hetUpdate.waveCos[k]*cos(omu*(REAL8)(k+1.)*(dtWave+1.));
+        }
+        phaseWave = hetParams.hetUpdate.f0*freqfactor*tWave1;
       }
       
       if( filtresp != NULL ){
         /* calculate df  = f*(dt(t2) - dt(t))/(t2 - t) here (t2 - t) is 1 sec */
         df = fcoarse*(emit2.deltaT - emit.deltaT + binOutput2.deltaT -
-          binOutput.deltaT);
+          binOutput.deltaT + tWave2 - tWave1);
         df += (ffine - fcoarse);
 
         /*sample rate*/
@@ -1177,6 +1215,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         (1./24.)*hetParams.hetUpdate.f3*tdt2*tdt2 + 
         (1./120.)*hetParams.hetUpdate.f4*tdt2*tdt2*tdt + 
         (1./720.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt2);
+      phaseUpdate += phaseWave;
     }
 
 /******************************************************************************/
