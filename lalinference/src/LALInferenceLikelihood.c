@@ -97,6 +97,24 @@
 //  }
 //}
 
+/* Scaling used for the analytic likelihood parameters */
+  static const REAL8 scaling[15] = {
+    1.0,
+    1.0,
+    20.0/M_PI,
+    10.0/M_PI,
+    20.0/M_PI,
+    10.0/M_PI,
+    10.0/M_PI,
+    0.1,
+    10.0,
+    10.0,
+    10.0,
+    20.0/M_PI,
+    20.0/M_PI,
+    10.0/M_PI,
+    10.0/M_PI};
+
 /* Covariance matrix for use in analytic likelihoods */
   static const REAL8 CM[15][15] = {{0.045991865933182365, -0.005489748382557155, -0.01025067223674548, 0.0020087713726603213, -0.0032648855847982987, -0.0034218261781145264, -0.0037173401838545774, -0.007694897715679858, 0.005260905282822458, 0.0013607957548231718, 0.001970785895702776, 0.006708452591621081, -0.005107684668720825, 0.004402554308030673, -0.00334987648531921},
                               {-0.005489748382557152, 0.05478640427684032, -0.004786202916836846, -0.007930397407501268, -0.0005945107515129139, 0.004858466255616657, -0.011667819871670204, 0.003169780190169035, 0.006761345004654851, -0.0037599761532668475, 0.005571796842520162, -0.0071098291510566895, -0.004477773540640284, -0.011250694688474672, 0.007465228985669282},
@@ -1457,36 +1475,21 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     mean[14]=1.0*M_PI/2.0;
   } else if (mode==2) {
     /* set means of second mode to be 8 sigma from first mode */
-    mean[0] = 16.0 + 8.*sqrt(CM[0][0]);
-    mean[1] = 7.0 + 8.*sqrt(CM[1][1]);
-    mean[2] = 1.0*M_PI/4.0 + 8.*sqrt(CM[2][2]);
-    mean[3] = 1.0*M_PI/2.0 + 8.*sqrt(CM[3][3]);
-    mean[4] = 1.0*M_PI/4.0 + 8.*sqrt(CM[4][4]);
-    mean[5] = 1.0*M_PI/2.0 + 8.*sqrt(CM[5][5]);
-    mean[6] = -M_PI/4.0 + 8.*sqrt(CM[6][6]);
-    mean[7] = 25.0 + 8.*sqrt(CM[7][7]);
-    mean[8] = -0.03 + 8.*sqrt(CM[8][8]);
-    mean[9] =0.2 + 8.*sqrt(CM[9][9]);
-    mean[10]=0.2 + 8.*sqrt(CM[10][10]);
-    mean[11]=1.0*M_PI/4.0 + 8.*sqrt(CM[11][11]);
-    mean[12]=1.0*M_PI/4.0 + 8.*sqrt(CM[12][12]);
-    mean[13]=1.0*M_PI/2.0 + 8.*sqrt(CM[13][13]);
-    mean[14]=1.0*M_PI/2.0 + 8.*sqrt(CM[14][14]);
-    /* mean[0] = 16.0;
-    mean[1] = 7.0;
-    mean[2] = 3.0*M_PI/4.0;
-    mean[3] = 3.0*M_PI/2.0;
-    mean[4] = 3.0*M_PI/4.0;
-    mean[5] = 3.0*M_PI/2.0;
-    mean[6] = M_PI/4.0;
-    mean[7] = 75.0;
-    mean[8] = 0.03;
-    mean[9] =0.8;
-    mean[10]=0.8;
-    mean[11]=3.0*M_PI/4.0;
-    mean[12]=3.0*M_PI/4.0;
-    mean[13]=3.0*M_PI/2.0;
-    mean[14]=3.0*M_PI/2.0; */
+    mean[0] = 16.0 + 8./scaling[0]*sqrt(CM[0][0]);
+    mean[1] = 7.0 + 8./scaling[1]*sqrt(CM[1][1]);
+    mean[2] = 1.0*M_PI/4.0 + 8./scaling[2]*sqrt(CM[2][2]);
+    mean[3] = 1.0*M_PI/2.0 + 8./scaling[3]*sqrt(CM[3][3]);
+    mean[4] = 1.0*M_PI/4.0 + 8./scaling[4]*sqrt(CM[4][4]);
+    mean[5] = 1.0*M_PI/2.0 + 8./scaling[5]*sqrt(CM[5][5]);
+    mean[6] = -M_PI/4.0 + 8./scaling[6]*sqrt(CM[6][6]);
+    mean[7] = 25.0 + 8./scaling[7]*sqrt(CM[7][7]);
+    mean[8] = -0.03 + 8./scaling[8]*sqrt(CM[8][8]);
+    mean[9] =0.2 + 8./scaling[9]*sqrt(CM[9][9]);
+    mean[10]=0.2 + 8./scaling[10]*sqrt(CM[10][10]);
+    mean[11]=1.0*M_PI/4.0 + 8./scaling[11]*sqrt(CM[11][11]);
+    mean[12]=1.0*M_PI/4.0 + 8./scaling[12]*sqrt(CM[12][12]);
+    mean[13]=1.0*M_PI/2.0 + 8./scaling[13]*sqrt(CM[13][13]);
+    mean[14]=1.0*M_PI/2.0 + 8./scaling[14]*sqrt(CM[14][14]);
   } else {
     printf("Error!  Unrecognized mode in analytic likelihood!\n");
     exit(1);
@@ -1576,21 +1579,21 @@ static void extractDimensionlessVariableVector(LALInferenceVariables *currentPar
     theta2 = 0.0;
   }
 
-  x[0] = (m1    - mean[0]);
-  x[1] = (m2    - mean[1]);
-  x[2] = (iota  - mean[2])/(M_PI/20.0);
-  x[3] = (phi   - mean[3])/(M_PI/10.0);
-  x[4] = (psi   - mean[4])/(M_PI/20.0);
-  x[5] = (ra    - mean[5])/(M_PI/10.0);
-  x[6] = (dec   - mean[6])/(M_PI/10.0);
-  x[7] = (d     - mean[7])/10.0;
-  x[8] = (t     - mean[8])/0.1;
-  x[9] =(a1     - mean[9])/0.1;
-  x[10]=(a2     - mean[10])/0.1;
-  x[11]=(theta1 - mean[11])/(M_PI/20.0);
-  x[12]=(theta2 - mean[12])/(M_PI/20.0);
-  x[13]=(phi1   - mean[13])/(M_PI/10.0);
-  x[14]=(phi2   - mean[14])/(M_PI/10.0);
+  x[0] = scaling[0] * (m1    - mean[0]);
+  x[1] = scaling[1] * (m2    - mean[1]);
+  x[2] = scaling[2] * (iota  - mean[2]);
+  x[3] = scaling[3] * (phi   - mean[3]);
+  x[4] = scaling[4] * (psi   - mean[4]);
+  x[5] = scaling[5] * (ra    - mean[5]);
+  x[6] = scaling[6] * (dec   - mean[6]);
+  x[7] = scaling[7] * (d     - mean[7]);
+  x[8] = scaling[8] * (t     - mean[8]);
+  x[9] = scaling[9] * (a1     - mean[9]);
+  x[10]= scaling[10] * (a2     - mean[10]);
+  x[11]= scaling[11] * (theta1 - mean[11]);
+  x[12]= scaling[12] * (theta2 - mean[12]);
+  x[13]= scaling[13] * (phi1   - mean[13]);
+  x[14]= scaling[14] * (phi2   - mean[14]);
 }
 
 REAL8 LALInferenceCorrelatedAnalyticLogLikelihood(LALInferenceVariables *currentParams, 
