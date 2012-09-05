@@ -84,7 +84,7 @@ inline REAL8 relerr ( REAL8 x, REAL8 xapprox )
 
 REAL8 ReldiffEmissionTime ( const EmissionTime *emit1, const EmissionTime *emit2 );
 
-INT4 lalDebugLevel=1;
+INT4 lalDebugLevel = 5;
 
 static const BarycenterInput empty_BarycenterInput;	// local empty initializer
 
@@ -278,8 +278,8 @@ main( void )
   /* ----- output runtimes ---------- */
   XLALPrintError ("Runtimes per function-call, averaged over %g calls\n", 1.0 * NRepeat * counter );
   XLALPrintError ("LALBarycenter() 	%g s\n", tau_lal / counter );
-  XLALPrintError ("XLALBarycenter()	%g s\n", tau_xlal / counter );
-  XLALPrintError ("XLALBarycenterOpt()	%g s\n", tau_opt / counter );
+  XLALPrintError ("XLALBarycenter()	%g s (= %.1f %%)\n", tau_xlal / counter, - 100 * (tau_lal - tau_xlal ) / tau_lal );
+  XLALPrintError ("XLALBarycenterOpt()	%g s (= %.1f %%)\n", tau_opt / counter,  - 100 * (tau_lal - tau_opt ) / tau_lal );
 
   LALFree(edat.ephemE);
   LALFree(edat.ephemS);
