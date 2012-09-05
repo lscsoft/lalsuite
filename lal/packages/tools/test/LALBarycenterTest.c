@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 Miroslav Shaltev, R Prix
 *  Copyright (C) 2007 Curt Cutler, David Chin, Jolien Creighton, Reinhard Prix, Teviet Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -86,7 +87,9 @@ REAL8 ReldiffEmissionTime ( const EmissionTime *emit1, const EmissionTime *emit2
 
 INT4 lalDebugLevel = 5;
 
-static const BarycenterInput empty_BarycenterInput;	// local empty initializer
+// empty local initializers
+static const BarycenterInput empty_BarycenterInput;
+static const BarycenterBuffer empty_BarycenterBuffer;
 
 const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
 const INT4 t1998 = 630720013-730*86400-1;	/* gps at Jan 1,1998 00:00:00 UTC*/
@@ -204,7 +207,7 @@ main( void )
   UINT4 NRepeat = 1000;
   UINT4 counter = 0;
   REAL8 tau_lal = 0, tau_xlal = 0, tau_opt = 0;
-  BarycenterBuffer *buffer = NULL;	// for optimized XLALBarycenterOpt() function
+  BarycenterBuffer buffer = empty_BarycenterBuffer;	// for optimized XLALBarycenterOpt() function
 
   /* Outer loop over different sky positions */
   for ( UINT4 k=0; k < 3; k++)

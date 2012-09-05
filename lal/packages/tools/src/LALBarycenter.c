@@ -21,14 +21,6 @@
 #include <lal/Date.h>
 #include <lal/LALBarycenter.h>
 
-// opaque buffer type for optimized Barycentering function
-struct tagBarycenterBuffer
-{
-  REAL8 alpha;
-};
-
-
-
 /** \author Curt Cutler
  * \brief Computes the position and orientation of the Earth, at some arrival time
  * \f$t_a\f$, specified <tt>LIGOTimeGPS</tt> input structure.
@@ -725,7 +717,6 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 
 } /* XLALBarycenter() */
 
-
 /** \author Curt Cutler, Miroslav Shaltev, R Prix
  * \brief Speed optimized version of XLALBarycenterOpt(),
  * should be fully equivalent except for the additional buffer argument.
@@ -736,56 +727,116 @@ int
 XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information */
                     const BarycenterInput *baryinput, 	/**< [in] info about detector and source-location */
                     const EarthState *earth, 		/**< [in] earth-state (from LALBarycenterEarth()) */
-                    BarycenterBuffer **buffer		/**< [in/out] internal buffer for speed optimization */
+                    BarycenterBuffer *buffer		/**< [in/out] internal buffer for speed optimization */
                     )
 {
   /* ---------- check input sanity ---------- */
   XLAL_CHECK ( emit != NULL, XLAL_EINVAL, "Invalid input: emit == NULL");
   XLAL_CHECK ( baryinput != NULL, XLAL_EINVAL, "Invalid input: baryinput == NULL");
   XLAL_CHECK ( earth != NULL, XLAL_EINVAL, "Invalid input: earth == NULL");
+  XLAL_CHECK ( buffer != NULL, XLAL_EINVAL, "Invalid input: buffer == NULL");
 
-  if ( *buffer )
-    XLALPrintInfo ( "Buffer was given!\n");	// avoid warning
-
-  REAL8 OMEGA = 7.29211510e-5;  /*ang. vel. of Earth (rad/sec)*/
+  // physical constants used by Curt (slightly different from LAL's Constants, but kept for binary-equivalence with XLALBarycenter()
+  const REAL8 OMEGA = 7.29211510e-5;  /* ang. vel. of Earth (rad/sec)*/
+  // REAL8 eps0 = 0.40909280422232891;	/* obliquity of ecliptic at JD 245145.0, in radians. Value from Explan. Supp. to Astronom. Almanac */
+  const REAL8 sinEps0 = 0.397777155931914; 	// sin ( eps0 );
+  const REAL8 cosEps0 = 0.917482062069182;	// cos ( eps0 );
 
   REAL8 tgps[2];
   tgps[0] = baryinput->tgps.gpsSeconds;
   tgps[1] = baryinput->tgps.gpsNanoSeconds;
 
+  // ---------- sky-position dependent quantities: compute or re-use from buffer is applicable
   REAL8 alpha,delta;  /* RA and DEC (radians) in ICRS realization of J2000 coords.*/
   alpha = baryinput->alpha;
   delta = baryinput->delta;
 
-  /* check that alpha and delta are in reasonable range */
-  XLAL_CHECK ( fabs(alpha) <= LAL_TWOPI, XLAL_EDOM, "alpha = %f outside of allowed range [-2pi,2pi]\n", alpha );
-  XLAL_CHECK ( fabs(delta) <= LAL_PI_2,  XLAL_EDOM, "delta = %f outside of allowed range [-pi/2,pi/2]\n", delta );
-
   REAL8 sinAlpha, cosAlpha, sinDelta, cosDelta;
-  sinDelta = cos ( LAL_PI/2.0 - delta );	// this weird way of computing it is required to stay binary identical to Curt's function
-  cosDelta = sin ( LAL_PI/2.0 - delta );
-  sinAlpha = sin ( alpha );
-  cosAlpha = cos ( alpha );
-
   REAL8 n[3]; /*unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z */
-  n[0] = cosDelta * cosAlpha;
-  n[1] = cosDelta * sinAlpha;
-  n[2] = sinDelta;
+  // use buffered sky-quantities if same sky-position as stored in buffer
+  if ( (alpha == buffer->alpha) && (delta == buffer->delta ) )
+    {
+      sinDelta = buffer->fixed_sky.sinDelta;
+      cosDelta = buffer->fixed_sky.cosDelta;
+      sinAlpha = buffer->fixed_sky.sinAlpha;
+      cosAlpha = buffer->fixed_sky.cosAlpha;
+      n[0] = buffer->fixed_sky.n[0];
+      n[1] = buffer->fixed_sky.n[1];
+      n[2] = buffer->fixed_sky.n[2];
+    }
+  else // not buffered, recompute sky-dependent quantities
+    {
+      /* check that alpha and delta are in reasonable range */
+      XLAL_CHECK ( fabs(alpha) <= LAL_TWOPI, XLAL_EDOM, "alpha = %f outside of allowed range [-2pi,2pi]\n", alpha );
+      XLAL_CHECK ( fabs(delta) <= LAL_PI_2,  XLAL_EDOM, "delta = %f outside of allowed range [-pi/2,pi/2]\n", delta );
 
-  REAL8 rd;   /* distance 'rd' from center of Earth, in light seconds */
-  rd = sqrt( + baryinput->site.location[0]*baryinput->site.location[0]
-             + baryinput->site.location[1]*baryinput->site.location[1]
-             + baryinput->site.location[2]*baryinput->site.location[2] );
+      sinDelta = cos ( LAL_PI/2.0 - delta );	// this weird way of computing it is required to stay binary identical to Curt's function
+      cosDelta = sin ( LAL_PI/2.0 - delta );
+      sinAlpha = sin ( alpha );
+      cosAlpha = cos ( alpha );
 
+      n[0] = cosDelta * cosAlpha;
+      n[1] = cosDelta * sinAlpha;
+      n[2] = sinDelta;
+
+      // ... and store them in the buffer
+      buffer->alpha 		 = alpha;
+      buffer->delta 		 = delta;
+      buffer->fixed_sky.sinDelta = sinDelta;
+      buffer->fixed_sky.cosDelta = cosDelta;
+      buffer->fixed_sky.sinAlpha = sinAlpha;
+      buffer->fixed_sky.cosAlpha = cosAlpha;
+      buffer->fixed_sky.n[0] 	 = n[0];
+      buffer->fixed_sky.n[1] 	 = n[1];
+      buffer->fixed_sky.n[2] 	 = n[2];
+
+    } // if not re-using sky-buffered quantities
+
+  // ---------- detector site-position dependent quantities: compute or re-use from buffer is applicable
+  REAL8 rd;   /* distance 'rd' of detector from center of Earth, in light seconds */
   REAL8 longitude, latitude; 	/* geocentric (not geodetic!!) longitude and latitude of detector vertex */
-  longitude = atan2 ( baryinput->site.location[1], baryinput->site.location[0] );
-  if ( rd == 0.0 )
-    latitude = LAL_PI_2;	// avoid division by 0, for detector at center of earth
-  else
-    latitude = LAL_PI_2 - acos ( baryinput->site.location[2] / rd );
+  REAL8 sinLat, cosLat;
+  REAL8 rd_sinLat, rd_cosLat;	// shortcuts for 'rd * sin(latitude)' and 'rd * cos(latitude)' respectively
 
-  REAL8 sinLat = sin ( latitude );
-  REAL8 cosLat = cos ( latitude );
+  // use buffered site-quantities if same site as stored in buffer
+  if ( memcmp ( &baryinput->site, &buffer->site, sizeof(buffer->site) ) == 0 )
+    {
+      rd	= buffer->fixed_site.rd;
+      longitude	= buffer->fixed_site.longitude;
+      latitude	= buffer->fixed_site.latitude;
+      sinLat	= buffer->fixed_site.sinLat;
+      cosLat	= buffer->fixed_site.cosLat;
+      rd_sinLat	= buffer->fixed_site.rd_sinLat;
+      rd_cosLat	= buffer->fixed_site.rd_cosLat;
+    }
+  else
+    {
+      rd = sqrt( + baryinput->site.location[0]*baryinput->site.location[0]
+                 + baryinput->site.location[1]*baryinput->site.location[1]
+                 + baryinput->site.location[2]*baryinput->site.location[2] );
+
+      longitude = atan2 ( baryinput->site.location[1], baryinput->site.location[0] );
+      if ( rd == 0.0 )
+        latitude = LAL_PI_2;	// avoid division by 0, for detector at center of earth
+      else
+        latitude = LAL_PI_2 - acos ( baryinput->site.location[2] / rd );
+
+      sinLat = sin ( latitude );
+      cosLat = cos ( latitude );
+      rd_sinLat = rd * sinLat;
+      rd_cosLat = rd * cosLat;
+
+      // ... and store them in the buffer
+      memcpy ( &buffer->site, &baryinput->site , sizeof(buffer->site) );
+      buffer->fixed_site.rd 		= rd;
+      buffer->fixed_site.longitude 	= longitude;
+      buffer->fixed_site.latitude 	= latitude;
+      buffer->fixed_site.sinLat 	= sinLat;
+      buffer->fixed_site.cosLat 	= cosLat;
+      buffer->fixed_site.rd_sinLat 	= rd_sinLat;
+      buffer->fixed_site.rd_cosLat 	= rd_cosLat;
+
+    } // if not re-using site-buffered quantities
 
   /*---------------------------------------------------------------------
    * Calucate Roemer delay for detector at center of Earth.
@@ -803,11 +854,6 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
    * Now including Earth's rotation
    *---------------------------------------------------------------------
    */
-  REAL8 eps0 = 0.40909280422232891e0;	/* obliquity of ecliptic at JD 245145.0, in radians.
-                                         * Value from Explan. Supp. to Astronom. Almanac */
-  REAL8 sinEps0 = sin ( eps0 );
-  REAL8 cosEps0 = cos ( eps0 );
-
   /* calculating effect of luni-solar precession */
   REAL8 sinAlphaMinusZA = sin ( alpha + earth->tzeA );
   REAL8 cosAlphaMinusZA = cos ( alpha + earth->tzeA );
@@ -829,11 +875,11 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   REAL8 cosGastZA = cos ( earth->gastRad + longitude-earth->zA );
   REAL8 sinGastZA = sin ( earth->gastRad + longitude-earth->zA );
 
-  REAL8 NdotD = sinLat * sinDeltaCurt + cosLat * ( cosGastZA * cosDeltaCosAlphaMinusZA + sinGastZA * cosDeltaSinAlphaMinusZA );
+  REAL8 rd_NdotD = rd_sinLat * sinDeltaCurt + rd_cosLat * ( cosGastZA * cosDeltaCosAlphaMinusZA + sinGastZA * cosDeltaSinAlphaMinusZA );
 
   /* delay from center-of-Earth to detector (sec), and its time deriv */
-  REAL8 erot = rd * NdotD;
-  REAL8 derot = OMEGA * rd * cosLat * ( - sinGastZA * cosDeltaCosAlphaMinusZA + cosGastZA * cosDeltaSinAlphaMinusZA );
+  REAL8 erot = rd_NdotD;
+  REAL8 derot = OMEGA * rd_cosLat * ( - sinGastZA * cosDeltaCosAlphaMinusZA + cosGastZA * cosDeltaSinAlphaMinusZA );
 
   /*--------------------------------------------------------------------------
    * Now adding approx nutation (= short-period,forced motion, by definition).
@@ -861,10 +907,10 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   REAL8 cosGastLong = cos ( earth->gastRad + longitude );
   REAL8 sinGastLong = sin ( earth->gastRad + longitude );
 
-  REAL8 NdotDNut = sinLat * delZNut + cosLat * cosGastLong * delXNut + cosLat * sinGastLong * delYNut;
+  REAL8 rd_NdotDNut = rd_sinLat * delZNut + rd_cosLat * cosGastLong * delXNut + rd_cosLat * sinGastLong * delYNut;
 
-  erot += rd * NdotDNut;
-  derot += OMEGA * rd * ( - cosLat * sinGastLong * delXNut + cosLat * cosGastLong * delYNut );
+  erot += rd_NdotDNut;
+  derot += OMEGA * ( - rd_cosLat * sinGastLong * delXNut + rd_cosLat * cosGastLong * delYNut );
 
   /* Note erot has a periodic piece (P=one day) AND a constant piece,
      since z-component (parallel to North pole) of vector from
@@ -963,11 +1009,11 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
      For next 10 years, will give rDetector to 10 microsec and
      v/c to 10^-9
   */
-  emit->rDetector[0] += rd * cosLat * cosGastLong;
-  emit->vDetector[0] += - OMEGA * rd * cosLat * sinGastLong;
-  emit->rDetector[1] += rd * cosLat * sinGastLong;
-  emit->vDetector[1] += OMEGA * rd * cosLat * cosGastLong;
-  emit->rDetector[2] += rd * sinLat;
+  emit->rDetector[0] += rd_cosLat * cosGastLong;
+  emit->vDetector[0] += - OMEGA * rd_cosLat * sinGastLong;
+  emit->rDetector[1] += rd_cosLat * sinGastLong;
+  emit->vDetector[1] += OMEGA * rd_cosLat * cosGastLong;
+  emit->rDetector[2] += rd_sinLat;
   /*no change to emit->vDetector[2] = component along spin axis, if ignore prec. and nutation */
 
   return XLAL_SUCCESS;
