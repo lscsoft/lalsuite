@@ -549,6 +549,7 @@ void initVariables(LALInferenceRunState *state)
   Approximant approx=TaylorF2;
   REAL8 fRef = 0.0;
   LALInferenceApplyTaper bookends = LALINFERENCE_TAPER_NONE;
+  UINT4 analytic=0;
   UINT4 event=0;
   UINT4 i=0;
   REAL8 m1=0;
@@ -609,6 +610,7 @@ void initVariables(LALInferenceRunState *state)
 
   /* Over-ride prior bounds if analytic test */
   if (LALInferenceGetProcParamVal(commandLine, "--correlatedGaussianLikelihood")) {
+    analytic  = 1;
     m1min     = 14.927715;
     m1max     = 17.072285;
     m2min     = 5.829675;
@@ -640,6 +642,7 @@ void initVariables(LALInferenceRunState *state)
     phi2min   = 2.777215653589793;
     phi2max   = 3.5059696535897933;
   } else if (LALInferenceGetProcParamVal(commandLine, "--bimodalGaussianLikelihood")) {
+    analytic  = 1;
     m1min     = 14.927715;
     m1max     = 18.787941;
     m2min     = 5.829675;
@@ -671,6 +674,7 @@ void initVariables(LALInferenceRunState *state)
     phi2min   = 1.2064193268;
     phi2max   = 2.5181765268;
   } else if (LALInferenceGetProcParamVal(commandLine, "--rosenbrockLikelihood")) {
+    analytic  = 1;
     m1min     = 14.0;
     m1max     = 18.0;
     m2min     = 5.0;
@@ -1001,8 +1005,11 @@ void initVariables(LALInferenceRunState *state)
 
   /* Over-ride end time if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
-  if(ppt){
+  if(ppt && !analytic){
     endtime=atof(ppt->value);
+    timeMin=endtime-dt; timeMax=endtime+dt;
+    printf("Read end time %f\n",endtime);
+
   }
 
   /* Over-ride chirp mass if specified */
@@ -1229,9 +1236,6 @@ void initVariables(LALInferenceRunState *state)
     iotaMax = atof(ppt->value);
   }
 
-
-  timeMin=endtime-dt; timeMax=endtime+dt;
-  printf("Read end time %f\n",endtime);
 
   LALInferenceAddVariable(currentParams, "LAL_APPROXIMANT", &approx,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
   LALInferenceAddVariable(currentParams, "LAL_PNORDER",     &PhaseOrder,        LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED);
