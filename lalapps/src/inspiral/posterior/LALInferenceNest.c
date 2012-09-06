@@ -257,7 +257,8 @@ Nested sampling arguments:\n\
 (--differential-evolution)\tPTMCMC:Use differential evolution jumps\n\
 (--prior_distr )\t Set the prior to use (for the moment the only possible choice is SkyLoc which will use the sky localization project prior. All other values or skipping this option select LALInferenceInspiralPriorNormalised)\n\
 (--correlatedgaussianlikelihood)\tUse analytic, correlated Gaussian for Likelihood.\n\
-(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n";
+(--bimodalgaussianlikelihood)\tUse analytic, bimodal correlated Gaussian for Likelihood.\n\
+(--rosenbrocklikelihood \tUse analytic, Rosenbrock banana for Likelihood.\n";
 //(--tdlike)\tUse time domain likelihood.\n";
 
 	ProcessParamsTable *ppt=NULL;
@@ -308,6 +309,11 @@ Nested sampling arguments:\n\
         	runState->likelihood=&LALInferenceBimodalCorrelatedAnalyticLogLikelihood;
 		runState->prior=LALInferenceAnalyticNullPrior;
 	}
+        if(LALInferenceGetProcParamVal(commandLine,"--rosenbrocklikelihood")){
+                runState->likelihood=&LALInferenceRosenbrockLogLikelihood;
+                runState->prior=LALInferenceAnalyticNullPrior;
+        }
+
 //	if(LALInferenceGetProcParamVal(commandLine,"--tdlike")){
 //		fprintf(stderr, "Computing likelihood in the time domain.\n");
 //		runState->likelihood=&LALInferenceTimeDomainLogLikelihood;
@@ -930,8 +936,12 @@ Arguments for each section follow:\n\n";
 
 	/* Set up currentParams with variables to be used */
 	/* Review task needs special priors */
-	if(LALInferenceGetProcParamVal(procParams,"--correlatedgaussianlikelihood") || LALInferenceGetProcParamVal(procParams,"--bimodalgaussianlikelihood"))
+	if(LALInferenceGetProcParamVal(procParams,"--correlatedgaussianlikelihood"))
 		initVariablesReviewEvidence(state);
+        else if(LALInferenceGetProcParamVal(procParams,"--bimodalgaussianlikelihood"))
+                initVariablesReviewEvidence_bimod(state);
+        else if(LALInferenceGetProcParamVal(procParams,"--rosenbrocklikelihood"))
+                initVariablesReviewEvidence_banana(state);
 	else
 		initVariables(state);
 	
@@ -957,3 +967,110 @@ Arguments for each section follow:\n\n";
 	/* end */
 	return(0);
 }
+
+void initVariablesReviewEvidence_bimod(LALInferenceRunState *state);
+void initVariablesReviewEvidence_bimod(LALInferenceRunState *state)
+{
+    ProcessParamsTable *commandLine=state->commandLine;
+    ProcessParamsTable *ppt=NULL;
+    char **strings=NULL;
+    char *pinned_params=NULL;
+    UINT4 N=0,i,j;
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
+            pinned_params=ppt->value;
+            LALInferenceVariables tempParams;
+            memset(&tempParams,0,sizeof(tempParams));
+            LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
+    }
+        LALInferenceVariables *priorArgs=state->priorArgs;
+        state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+        LALInferenceVariables *currentParams=state->currentParams;
+        i=0;
+
+        struct varSettings {const char *name; REAL8 val, min, max;};
+
+        struct varSettings setup[]=
+        {
+                {.name="time", .val=0.05589, .min=-0.1373625, .max=0.2491425},
+                {.name="m1", .val=16.857828, .min=14.927715, .max=18.787941},
+                {.name="m2", .val=7.93626, .min=5.829675, .max=10.042845},
+                {.name="distance", .val=34.6112, .min=12.986, .max=56.2364},
+                {.name="inclination", .val=0.9176809634, .min=0.6200446634, .max=1.2153172634},
+                {.name="phase", .val=1.7879487268, .min=1.2993558268, .max=2.2765416268},
+                {.name="polarisation", .val=0.9311901634, .min=0.6031581634, .max=1.2592221634},
+                {.name="rightascension", .val=1.8336303268, .min=1.2422538268, .max=2.4250068268},
+                {.name="declination", .val=-0.5448389634, .min=-1.0860971634, .max=-0.0035807634},
+                {.name="a_spin1", .val=0.2972348, .min=0.0784565, .max=0.5160131},
+                {.name="a_spin2", .val=0.2625048, .min=0.121869, .max=0.4031406},
+                {.name="theta_spin1", .val=0.9225153634, .min=0.6140016634, .max=1.2310290634},
+                {.name="theta_spin2", .val=0.9151425634, .min=0.6232176634, .max=1.2070674634},
+                {.name="phi_spin1", .val=1.8585883268, .min=1.2110563268, .max=2.5061203268},
+                {.name="phi_spin2", .val=1.8622979268, .min=1.2064193268, .max=2.5181765268},
+                {.name="END", .val=0., .min=0., .max=0.}
+        };
+
+        while(strcmp("END",setup[i].name))
+        {
+        LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
+        /* Check if it is to be fixed */
+        for(j=0;j<N;j++) if(!strcmp(setup[i].name,strings[j])) {type=LALINFERENCE_PARAM_FIXED; printf("Fixing parameter %s\n",setup[i].name); break;}
+                LALInferenceAddVariable(currentParams,setup[i].name, &(setup[i].val) ,LALINFERENCE_REAL8_t, type);
+            LALInferenceAddMinMaxPrior(priorArgs, setup[i].name,    &(setup[i].min),    &(setup[i].max),    LALINFERENCE_REAL8_t);
+                i++;
+        }
+        return;
+}
+
+void initVariablesReviewEvidence_banana(LALInferenceRunState *state);
+void initVariablesReviewEvidence_banana(LALInferenceRunState *state)
+{
+    ProcessParamsTable *commandLine=state->commandLine;
+    ProcessParamsTable *ppt=NULL;
+    char **strings=NULL;
+    char *pinned_params=NULL;
+    UINT4 N=0,i,j;
+    if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
+            pinned_params=ppt->value;
+            LALInferenceVariables tempParams;
+            memset(&tempParams,0,sizeof(tempParams));
+            LALInferenceParseCharacterOptionString(pinned_params,&strings,&N);
+    }
+        LALInferenceVariables *priorArgs=state->priorArgs;
+        state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
+        LALInferenceVariables *currentParams=state->currentParams;
+        i=0;
+
+        struct varSettings {const char *name; REAL8 val, min, max;};
+
+        struct varSettings setup[]=
+        {
+                {.name="time", .val=0.0, .min=-2., .max=2.},
+                {.name="m1", .val=16., .min=14., .max=18.},
+                {.name="m2", .val=7., .min=5., .max=9.},
+                {.name="distance", .val=50., .min=48., .max=52.},
+                {.name="inclination", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
+                {.name="phase", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
+                {.name="polarisation", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
+                {.name="rightascension", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
+                {.name="declination", .val=0., .min=-2., .max=2.},
+                {.name="a_spin1", .val=0.5, .min=-1.5, .max=2.5},
+                {.name="a_spin2", .val=0.5, .min=-1.5, .max=2.5},
+                {.name="theta_spin1", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
+                {.name="theta_spin2", .val=LAL_PI/2., .min=-0.429203673, .max=3.570796327},
+                {.name="phi_spin1", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
+                {.name="phi_spin2", .val=LAL_PI, .min=1.141592654, .max=5.141592654},
+                {.name="END", .val=0., .min=0., .max=0.}
+        };
+
+        while(strcmp("END",setup[i].name))
+        {
+        LALInferenceParamVaryType type=LALINFERENCE_PARAM_CIRCULAR;
+        /* Check if it is to be fixed */
+        for(j=0;j<N;j++) if(!strcmp(setup[i].name,strings[j])) {type=LALINFERENCE_PARAM_FIXED; printf("Fixing parameter %s\n",setup[i].name); break;}
+                LALInferenceAddVariable(currentParams,setup[i].name, &(setup[i].val) ,LALINFERENCE_REAL8_t, type);
+            LALInferenceAddMinMaxPrior(priorArgs, setup[i].name,    &(setup[i].min),    &(setup[i].max),    LALINFERENCE_REAL8_t);
+                i++;
+        }
+        return;
+}
+
