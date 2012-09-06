@@ -95,6 +95,7 @@ const MultiSSBtimes empty_MultiSSBtimes;
 const Fcomponents empty_Fcomponents;
 const ComputeFParams empty_ComputeFParams;
 const ComputeFBuffer empty_ComputeFBuffer;
+const BarycenterBuffer empty_BarycenterBuffer;
 
 static const LALStatus blank_status;
 
@@ -1463,6 +1464,9 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
   delta = pos.latitude;
   refTimeREAL8 = GPS2REAL8(refTime);
 
+  BarycenterInput baryinput = empty_BarycenterInput;
+  BarycenterBuffer bBuffer = empty_BarycenterBuffer;
+
   /*----- now calculate the SSB transformation in the precision required */
   switch (precision)
     {
@@ -1489,22 +1493,22 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
       break;
 
     case SSBPREC_RELATIVISTIC:	/* use LALBarycenter() to get SSB-times and derivative */
+
+      baryinput.site = DetectorStates->detector;
+      baryinput.site.location[0] /= LAL_C_SI;
+      baryinput.site.location[1] /= LAL_C_SI;
+      baryinput.site.location[2] /= LAL_C_SI;
+
+      baryinput.alpha = alpha;
+      baryinput.delta = delta;
+      baryinput.dInv = 0;
+
       for (i=0; i < numSteps; i++ )
 	{
-	  BarycenterInput baryinput = empty_BarycenterInput;
 	  EmissionTime emit;
 	  DetectorState *state = &(DetectorStates->data[i]);
 
 	  baryinput.tgps = state->tGPS;
-	  baryinput.site = DetectorStates->detector;
-	  /* ARGHHH!!! */
-	  baryinput.site.location[0] /= LAL_C_SI;
-	  baryinput.site.location[1] /= LAL_C_SI;
-	  baryinput.site.location[2] /= LAL_C_SI;
-
-	  baryinput.alpha = alpha;
-	  baryinput.delta = delta;
-	  baryinput.dInv = 0;
 
 	  TRY ( LALBarycenter(status->statusPtr, &emit, &baryinput, &(state->earthState)), status);
 
@@ -1513,7 +1517,34 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 
 	} /* for i < numSteps */
 
+    case SSBPREC_RELATIVISTICOPT:	/* use optimized version XLALBarycenterOpt() */
+
+      baryinput.site = DetectorStates->detector;
+      baryinput.site.location[0] /= LAL_C_SI;
+      baryinput.site.location[1] /= LAL_C_SI;
+      baryinput.site.location[2] /= LAL_C_SI;
+
+      baryinput.alpha = alpha;
+      baryinput.delta = delta;
+      baryinput.dInv = 0;
+
+      for ( i=0; i < numSteps; i++ )
+        {
+          EmissionTime emit;
+          DetectorState *state = &(DetectorStates->data[i]);
+          baryinput.tgps = state->tGPS;
+
+          if ( XLALBarycenterOpt ( &emit, &baryinput, &(state->earthState), &bBuffer ) != XLAL_SUCCESS ) {
+            XLALPrintError ("XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
+            ABORT (status, COMPUTEFSTATC_EXLAL, COMPUTEFSTATC_MSGEXLAL);
+          }
+
+          tSSB->DeltaT->data[i] = GPS2REAL8 ( emit.te ) - refTimeREAL8;
+          tSSB->Tdot->data[i] = emit.tDot;
+
+        } /* for i < numSteps */
       break;
+
     default:
       XLALPrintError ("\n?? Something went wrong.. this should never be called!\n\n");
       ABORT (status, COMPUTEFSTATC_EINPUT, COMPUTEFSTATC_MSGEINPUT);
