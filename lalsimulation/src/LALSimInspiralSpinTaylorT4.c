@@ -170,7 +170,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     /* intermediate variables */
     UINT4 i, cutlen, len;
     int sgn, offset;
-    REAL8 m1m2, m2m1, M, eta, Mchirp, norm, dtStart, dtEnd, lengths, wEnd;
+    REAL8 m1m2, m2m1, M, eta, Mchirp, dm, norm, dtStart, dtEnd, lengths, wEnd;
     LIGOTimeGPS tStart = LIGOTIMEGPSZERO;
     REAL8 m1M, m2M; /* m1/M, m2/M */
 
@@ -217,6 +217,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     m1 *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m1 from kg to seconds */
     m2 *= LAL_G_SI / pow(LAL_C_SI, 3.0); /* convert m2 from kg to seconds */
     M = m1 + m2;
+    dm = (m1 - m2)/M;
     m1M = m1 / M;
     m2M = m2 / M;
     eta = m1 * m2 / M / M;
@@ -357,12 +358,14 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         params.EQM2S2 		= 1./2./m2M/m2M;
         params.EQM2S2L 		= -3./2./m2M/m2M;
     }
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN ) /* ADD ME!! */
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN )
     {
-        params.wdotSO25s1 	= 0.;
-        params.wdotSO25s2 	= 0.;	
-        params.ESO25s1 		= 0.;
-        params.ESO25s2 		= 0.;	
+        params.wdotSO25s1 	= -5861./144. + 1001.*eta/12. 
+                + (dm/m1M) * (809./84. - 281.*eta/8.);
+        params.wdotSO25s2 	= -5861./144. + 1001.*eta/12.
+                + (dm/m2M) * (-809./84. + 281.*eta/8.);
+        params.ESO25s1 		= 11. - 61.*eta/9. + (dm/m1M) * (-3. + 10.*eta/3.);
+        params.ESO25s2 		= 11. - 61.*eta/9. + (dm/m2M) * (3. - 10.*eta/3.);
     }
 	
     /**
@@ -634,7 +637,10 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
 
         if( params->ESO25s1 != 0. || params->wdotSO25s2 != 0. )
         {   /* Compute 2.5PN SO correction to energy */
-            Espin25 += 0.; /* ADD ME!! */
+            // See Eq. 7.9 of gr-qc/0605140v4
+            // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+            // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+            Espin25 += params->ESO25s1 * LNdotS1 + params->ESO25s2 * LNdotS2;
         }
     }
 
@@ -760,7 +766,10 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     }
     if( params->wdotSO25s1 != 0. || params->wdotSO25s2 != 0. )
     {	/* Compute 2.5PN SO correction to omega derivative */
-        wspin25 = 0.; /* ADDME!! */
+        // See Eq. 8.3 of gr-qc/0605140v4
+        // Note that S_l/M^2 = (m1/M)^2 chi1 + (m2/M)^2 chi2
+        // and Sigma_l/M^2 = (m2/M) chi2 - (m1/M) chi1
+        wspin25 = params->wdotSO25s1 * LNdotS1 + params->wdotSO25s2 * LNdotS2;
     }
 
     domega  = params->wdotnewt * v11 * ( params->wdotcoeff[0] 
