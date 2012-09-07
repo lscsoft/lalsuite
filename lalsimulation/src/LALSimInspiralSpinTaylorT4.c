@@ -236,9 +236,9 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
      */
     params.quadparam1 = 1.;
     params.quadparam2 = 1.;
-	
-    /** 
-     * Set coefficients up to PN order phaseO. 
+
+
+    /* Set coefficients up to PN order phaseO.
      * epnorb is the binary energy and
      * wdotorb is the derivative of the orbital frequency \f$\dot{\omega}\f$.
      * These are just the non-spinning contributions.
@@ -306,8 +306,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
             break;
     }
 
-    /**
-     * Compute the non-dynamical coefficients of spin corrections 
+    /* Compute the non-dynamical coefficients of spin corrections
      * to the evolution equations for omega, L, S1 and S2 and binary energy E.
      * Flags control which spin corrections are included
      */
@@ -368,8 +367,7 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         params.ESO25s2 		= 11. - 61.*eta/9. + (dm/m2M) * (3. - 10.*eta/3.);
     }
 	
-    /**
-     * Compute the coefficients of tidal corrections 
+    /* Compute the coefficients of tidal corrections
      * to the evolution equations for omega and binary energy E.
      * Flags control which tidal corrections are included.
      * Coefficients found from Eqs. 2.11 and 3.10 of 
@@ -644,8 +642,7 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
         }
     }
 
-    /**
-     * We are testing if the orbital energy increases with \f$\omega\f$. 
+    /* We are testing if the orbital energy increases with \f$\omega\f$.
      * We should be losing energy to GW flux, so if E increases 
      * we stop integration because the dynamics are becoming unphysical. 
      * 'test' is the PN expansion of \f$dE/d\omega\f$ without the prefactor, 
@@ -731,7 +728,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     LNdotS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
     S1dotS2 = (S1x*S2x  + S1y*S2y  + S1z*S2z );
 
-    /** 
+    /*
      * domega
      * 
      * Note we are actually computing \f$d \hat{\omega} / d \hat{t}\f$
@@ -783,7 +780,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
             + v3 * ( params->wdottidal5pn
             + v2 * ( params->wdottidal6pn ) ) ) ) ) ) ) ) ) );
 
-    /**
+    /*
      * dLN
      * 
      * \f$d \hat{L_N}/d \hat{t} = M * d\hat{L_N} / dt = \Omega_L x \hat{L_N}\f$
@@ -803,7 +800,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     dLNhy = (-OmegaLx*LNhz + OmegaLz*LNhx);
     dLNhz = (-OmegaLy*LNhx + OmegaLx*LNhy);
 
-    /**
+    /*
      * dE1
      * 
      * d E_1 / d \hat{t} = M * d E_1 / dt
@@ -820,7 +817,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     dE1y = (-OmegaEx*E1z + OmegaEz*E1x);
     dE1z = (-OmegaEy*E1x + OmegaEx*E1y);
 
-    /**
+    /*
      * dS1
      * 
      * d S_1 / d \hat{t} = M * d S_1 / dt = \Omega_{S1} x S_1
@@ -843,7 +840,7 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     dS1y = (-OmegaSx*S1z + OmegaSz*S1x);
     dS1z = (-OmegaSy*S1x + OmegaSx*S1y);
 
-    /**
+    /*
      * dS2
      * 
      * d S_2 / d \hat{t} = M * d S_2 / dt = \Omega_{S2} x S_2
