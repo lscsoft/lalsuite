@@ -28,6 +28,12 @@ extern int lalDebugLevel;
 
 #define MAX_FRACTIONAL_ERROR 1e-15
 
+#if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
+int main( void )
+{
+	return 77; /* don't do any testing */
+}
+#else
 
 static int compare_within_fraction(double a, double b, double max_fractional_difference)
 {
@@ -43,12 +49,8 @@ static int compare_within_fraction(double a, double b, double max_fractional_dif
 		return 1; \
 	}
 
-
 int main( void )
 {
-#if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
-	return 77; /* don't do any testing */
-#else
 	lalDebugLevel = LALMEMDBG;
 
 	if(lalNoDebug) /* library was not compiled with debugging */
@@ -76,5 +78,5 @@ int main( void )
 	REQUIRE_EQUAL(LAL_MSUN_SI / LAL_MPL_SI * LAL_TPL_SI, LAL_MTSUN_SI);
 
 	return 0;
-#endif
 }
+#endif
