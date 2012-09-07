@@ -461,6 +461,8 @@ void initVariables(LALInferenceRunState *state)
 	LALInferenceVariables *priorArgs=state->priorArgs;
 	state->currentParams=XLALCalloc(1,sizeof(LALInferenceVariables));
 	LALInferenceVariables *currentParams=state->currentParams;
+  LALInferenceIFOData *dataPtr;
+  LALInferenceDomain modelDomain;
 	ProcessParamsTable *commandLine=state->commandLine;
 	REAL8 endtime;
 	ProcessParamsTable *ppt=NULL;
@@ -609,7 +611,7 @@ Parameter arguments:\n\
 		case SpinTaylorFrameless:
 		case PhenSpinTaylorRD:
 		case NumRel:
-			state->data->modelDomain=LALINFERENCE_DOMAIN_TIME;
+			modelDomain=LALINFERENCE_DOMAIN_TIME;
 			break;
 		case TaylorF1:
 		case TaylorF2:
@@ -617,13 +619,20 @@ Parameter arguments:\n\
 		case TaylorF2RedSpinTidal:
 		case IMRPhenomA:
 		case IMRPhenomB:
-			state->data->modelDomain=LALINFERENCE_DOMAIN_FREQUENCY;
+			modelDomain=LALINFERENCE_DOMAIN_FREQUENCY;
 			break;
 		default:
 			fprintf(stderr,"ERROR. Unknown approximant number %i. Unable to choose time or frequency domain model.",approx);
 			exit(1);
 			break;
 	}
+
+  /* Set model domain for all IFOs */
+  dataPtr = state->data;
+  while (dataPtr != NULL) {
+    dataPtr->modelDomain = modelDomain;
+    dataPtr = dataPtr->next;
+  }
 
 	/* Over-ride end time if specified */
 	ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
