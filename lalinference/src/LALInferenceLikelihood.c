@@ -1,7 +1,7 @@
 /* 
  *  LALInferenceLikelihood.c:  Bayesian Followup likelihood functions
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch, Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -173,7 +173,7 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
-  double deltaT, TwoDeltaToverN, deltaF, twopit, f, re, im;
+  double deltaT, TwoDeltaToverN, deltaF, twopit, re, im, dre, dim, newRe, newIm;
   double timeTmp;
 	double mc;
   int different;
@@ -306,6 +306,22 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     lower = (UINT4)ceil(dataPtr->fLow / deltaF);
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     TwoDeltaToverN = 2.0 * deltaT / ((double) dataPtr->timeData->data->length);
+
+    /* Employ a trick here for avoiding cos(...) and sin(...) in time
+       shifting.  We need to multiply each template frequency bin by
+       exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
+       exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
+       recurrance relation has the advantage that the error growth is
+       O(sqrt(N)) for N repetitions. */
+    
+    /* Values for the first iteration: */
+    re = cos(twopit*deltaF*lower);
+    im = -sin(twopit*deltaF*lower);
+
+    /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
+    dim = -sin(twopit*deltaF);
+    dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
+
     for (i=lower; i<=upper; ++i){
       /* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
       plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
@@ -315,10 +331,6 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
 
       /* do time-shifting...             */
       /* (also un-do 1/deltaT scaling): */
-      f = ((double) i) * deltaF;
-      /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
-      re = cos(twopit * f);
-      im = - sin(twopit * f);
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
       dataReal     = dataPtr->freqData->data->data[i].re / deltaT;
@@ -334,6 +346,13 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
  //        f, dataPtr->oneSidedNoisePowerSpectrum->data->data[i], 
  //        dataPtr->freqData->data->data[i].re, dataPtr->freqData->data->data[i].im,
  //        templateReal, templateImag);
+
+      /* Now update re and im for the next iteration. */
+      newRe = re + re*dre - im*dim;
+      newIm = im + re*dim + im*dre;
+
+      re = newRe;
+      im = newIm;
     }
     dataPtr = dataPtr->next;
  //fclose(testout);
@@ -393,7 +412,7 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
   double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift;  /* time shift (not necessarily same as above)                   */
-  double deltaT, FourDeltaToverN, deltaF, twopit, f, re, im, singleFreqBinTerm;
+  double deltaT, FourDeltaToverN, deltaF, twopit, re, im, singleFreqBinTerm, dre, dim, newRe, newIm;
   double degreesOfFreedom, nu;
   double timeTmp;
   int different;
@@ -531,6 +550,22 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     lower = (UINT4)ceil(dataPtr->fLow / deltaF);
     upper = (UINT4)floor(dataPtr->fHigh / deltaF);
     FourDeltaToverN = 4.0 * deltaT / ((double) dataPtr->timeData->data->length);
+
+    /* Employ a trick here for avoiding cos(...) and sin(...) in time
+       shifting.  We need to multiply each template frequency bin by
+       exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
+       exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
+       recurrance relation has the advantage that the error growth is
+       O(sqrt(N)) for N repetitions. */
+    
+    /* Values for the first iteration: */
+    re = cos(twopit*deltaF*lower);
+    im = -sin(twopit*deltaF*lower);
+
+    /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
+    dim = -sin(twopit*deltaF);
+    dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
+
     for (i=lower; i<=upper; ++i){
       /* degrees-of-freedom parameter (nu_j) for this particular frequency bin: */
       nu = degreesOfFreedom;
@@ -543,10 +578,6 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
 
       /* do time-shifting...            */
       /* (also un-do 1/deltaT scaling): */
-      f = ((double) i) * deltaF;
-      /* real & imag parts of  exp(-2*pi*i*f*deltaT): */
-      re = cos(twopit * f);
-      im = - sin(twopit * f);
       templateReal = (plainTemplateReal*re - plainTemplateImag*im) / deltaT;
       templateImag = (plainTemplateReal*im + plainTemplateImag*re) / deltaT;
       dataReal     = dataPtr->freqData->data->data[i].re / deltaT;
@@ -558,6 +589,13 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       singleFreqBinTerm = ((nu+2.0)/2.0) * log(1.0 + (FourDeltaToverN * diffSquared) / (nu * dataPtr->oneSidedNoisePowerSpectrum->data->data[i]));
       chisquared  += singleFreqBinTerm;   /* (This is a sum-of-squares, or chi^2, term in the Gaussian case, not so much in the Student-t case...)  */
       dataPtr->loglikelihood -= singleFreqBinTerm;
+
+      /* Now update re and im for the next iteration. */
+      newRe = re + re*dre - im*dim;
+      newIm = im + re*dim + im*dre;
+
+      re = newRe;
+      im = newIm;
     }
     dataPtr = dataPtr->next;
   }
@@ -824,7 +862,7 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 	LIGOTimeGPS GPSlal;
 	double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
 	double timeshift;  /* time shift (not necessarily same as above)                   */
-	double deltaT, deltaF, twopit, f, re, im;
+	double deltaT, deltaF, twopit, re, im, dre, dim, newRe, newIm;
 
 	int different;
 	LALInferenceVariables intrinsicParams;
@@ -953,6 +991,21 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 #ifdef DEBUG
 FILE* file=fopen("TempSignal.dat", "w");	
 #endif
+/* Employ a trick here for avoiding cos(...) and sin(...) in time
+   shifting.  We need to multiply each template frequency bin by
+   exp(-J*twopit*deltaF*i) = exp(-J*twopit*deltaF*(i-1)) +
+   exp(-J*twopit*deltaF*(i-1))*(exp(-J*twopit*deltaF) - 1) .  This
+   recurrance relation has the advantage that the error growth is
+   O(sqrt(N)) for N repetitions. */
+    
+/* Values for the first iteration: */
+ re = 1.0;
+ im = 0.0;
+
+ /* Incremental values, using cos(theta) - 1 = -2*sin(theta/2)^2 */
+ dim = -sin(twopit*deltaF);
+ dre = -2.0*sin(0.5*twopit*deltaF)*sin(0.5*twopit*deltaF);
+
 	for(i=0; i<freqWaveform->length; i++){
 		/* derive template (involving location/orientation parameters) from given plus/cross waveforms: */
 		plainTemplateReal = FplusScaled * dataPtr->freqModelhPlus->data->data[i].re  
@@ -961,17 +1014,17 @@ FILE* file=fopen("TempSignal.dat", "w");
                           +  FcrossScaled * dataPtr->freqModelhCross->data->data[i].im;
 
 		/* do time-shifting...             */
-		/* (also un-do 1/deltaT scaling): */
-		f = ((double) i) * deltaF;
-		/* real & imag parts of  exp(-2*pi*i*f*deltaT): */
-		re = cos(twopit * f);
-		im = - sin(twopit * f);
-
 		freqWaveform->data[i].re= (plainTemplateReal*re - plainTemplateImag*im);
 		freqWaveform->data[i].im= (plainTemplateReal*im + plainTemplateImag*re);		
 #ifdef DEBUG
 		fprintf(file, "%lg %lg \t %lg\n", f, freqWaveform->data[i].re, freqWaveform->data[i].im);
 #endif
+		/* Now update re and im for the next iteration. */
+		newRe = re + re*dre - im*dim;
+		newIm = im + re*dim + im*dre;
+
+		re = newRe;
+		im = newIm;
 	}
 #ifdef DEBUG
 fclose(file);
