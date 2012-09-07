@@ -61,30 +61,36 @@
  */
 typedef struct tagXLALSimInspiralSpinTaylorT4Coeffs
 {
-	REAL8 M; 			// total mass in seconds
-	REAL8 eta; 			// symmetric mass ratio
-	REAL8 wdotnewt; //leading order coefficient of wdot = \f$\dot{\omega}\f$
-	REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; // coeffs. of PN corrections to wdot
-	REAL8 wdotlogcoeff; 		// coefficient of log term in wdot
-	REAL8 Ecoeff[LAL_MAX_PN_ORDER]; // coeffs. of PN corrections to energy
-	REAL8 wdotSO15s1, wdotSO15s2; 	// non-dynamical 1.5PN SO corrections
-	REAL8 wdotSS2; 			// non-dynamical 2PN SS correction
-	REAL8 wdotSelfSS2; 	// non-dynamical 2PN self-spin correction
-	REAL8 wdotQM2; 	// non-dynamical 2PN quadrupole-monopole correction
-	REAL8 wdotSO25s1, wdotSO25s2; 	// non-dynamical 2.5PN SO corrections
-	REAL8 ESO15s1, ESO15s2; 	// non-dynamical 1.5PN SO corrections
-	REAL8 ESS2; 			// non-dynamical 2PN SS correction
-	REAL8 ESelfSS2; 	// non-dynamical 2PN self-spin correction
-	REAL8 EQM2; 	// non-dynamical 2PN quadrupole-monopole correction
-	REAL8 ESO25s1, ESO25s2; 	// non-dynamical 2.5PN SO corrections 
-	REAL8 LNhatSO15s1, LNhatSO15s2; // non-dynamical 1.5PN SO corrections
-	REAL8 LNhatSS2; 		// non-dynamical 2PN SS correction 
-	REAL8 wdottidal5pn;		// leading order tidal correction 
-	REAL8 wdottidal6pn;	// next to leading order tidal correction
-	REAL8 Etidal5pn;	// leading order tidal correction to energy
-	REAL8 Etidal6pn; // next to leading order tidal correction to energy
-	REAL8 fStart; 			// starting GW frequency of integration
-	REAL8 fEnd; 			// ending GW frequency of integration
+	REAL8 M; ///< total mass in seconds
+	REAL8 eta; ///< symmetric mass ratio
+	REAL8 wdotnewt; ///< leading order coefficient of wdot = \f$\dot{\omega}\f$
+	REAL8 wdotcoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to wdot
+	REAL8 wdotlogcoeff; ///< coefficient of log term in wdot
+	REAL8 Ecoeff[LAL_MAX_PN_ORDER]; ///< coeffs. of PN corrections to energy
+	REAL8 wdotSO15s1, wdotSO15s2; ///< non-dynamical 1.5PN SO corrections
+	REAL8 wdotSS2; ///< non-dynamical 2PN SS correction
+	REAL8 wdotQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
+	REAL8 wdotQM2S1L; ///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
+	REAL8 wdotQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
+	REAL8 wdotQM2S2L; ///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
+	REAL8 wdotSO25s1, wdotSO25s2; ///< non-dynamical 2.5PN SO corrections
+	REAL8 ESO15s1, ESO15s2; ///< non-dynamical 1.5PN SO corrections
+	REAL8 ESS2; ///< non-dynamical 2PN SS correction
+	REAL8 EQM2S1; ///< non-dynamical S1^2 2PN quadrupole-monopole correction
+	REAL8 EQM2S1L;///< non-dynamical (S1.L)^2 2PN quadrupole-monopole correction
+	REAL8 EQM2S2; ///< non-dynamical S2^2 2PN quadrupole-monopole correction
+	REAL8 EQM2S2L;///< non-dynamical (S2.L)^2 2PN quadrupole-monopole correction
+	REAL8 ESO25s1, ESO25s2; ///< non-dynamical 2.5PN SO corrections 
+	REAL8 LNhatSO15s1, LNhatSO15s2; ///< non-dynamical 1.5PN SO corrections
+	REAL8 LNhatSS2; ///< non-dynamical 2PN SS correction 
+	REAL8 wdottidal5pn;	///< leading order tidal correction 
+	REAL8 wdottidal6pn;	///< next to leading order tidal correction
+	REAL8 Etidal5pn; ///< leading order tidal correction to energy
+	REAL8 Etidal6pn; ///< next to leading order tidal correction to energy
+	REAL8 fStart; ///< starting GW frequency of integration
+	REAL8 fEnd; ///< ending GW frequency of integration
+	REAL8 quadparam1; ///< quadrupole parameter for m1 (=1 for BH, ~ 4-8 for NS)
+	REAL8 quadparam2; ///< quadrupole parameter for m2 (see gr-qc/9709032)
 } XLALSimInspiralSpinTaylorT4Coeffs;
 
 /* Declarations of static functions - defined below */
@@ -220,6 +226,15 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     params.eta = eta;
     params.fStart = fStart;
     params.fEnd = fEnd;
+    /* N.B. the quadrupole of a spinning compact body labeled by A is 
+     * Q_A = - quadparam_A chi_A^2 m_A^3 (see gr-qc/9709032)
+     * where quadparam = 1 for BH ~= 4-8 for NS.
+     * This affects the quadrupole-monopole interaction.
+     * For now, hardcode quadparam1,2 = 1.
+     * Will later add ability to set via LALSimInspiralTestGRParam
+     */
+    params.quadparam1 = 1.;
+    params.quadparam2 = 1.;
 	
     /** 
      * Set coefficients up to PN order phaseO. 
@@ -299,19 +314,23 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     params.LNhatSO15s2 	= 0.;
     params.wdotSO15s1 	= 0.;
     params.wdotSO15s2 	= 0.;
-    params.ESO15s1 	= 0.;
-    params.ESO15s2 	= 0.;
+    params.ESO15s1 	    = 0.;
+    params.ESO15s2 	    = 0.;
     params.LNhatSS2 	= 0.;
-    params.wdotSS2 	= 0.;
-    params.ESS2 	= 0.;
-    params.wdotSelfSS2 	= 0.;
-    params.ESelfSS2 	= 0.;
-    params.wdotQM2 	= 0.;
-    params.EQM2 	= 0.;
+    params.wdotSS2 	    = 0.;
+    params.ESS2 	    = 0.;
+    params.wdotQM2S1 	= 0.;
+    params.wdotQM2S1L 	= 0.;
+    params.wdotQM2S2 	= 0.;
+    params.wdotQM2S2L 	= 0.;
+    params.EQM2S1 	    = 0.;
+    params.EQM2S1L 	    = 0.;
+    params.EQM2S2 	    = 0.;
+    params.EQM2S2L 	    = 0.;
     params.wdotSO25s1 	= 0.;
     params.wdotSO25s2 	= 0.;
-    params.ESO25s1 	= 0.;
-    params.ESO25s2 	= 0.;
+    params.ESO25s1 	    = 0.;
+    params.ESO25s2 	    = 0.;
     if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN )
     {
         params.LNhatSO15s1 	= 2. + 3./2. * m2m1;
@@ -327,15 +346,16 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
         params.wdotSS2 		= - 1. / 48. / eta;
         params.ESS2 		= 1. / eta;
     }
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN ) /* ADD ME!! */
+    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) == LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN )
     {
-        params.wdotSelfSS2 	= 0.;
-        params.ESelfSS2 	= 0.;
-    }
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) == LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN ) /* ADD ME!! */
-    {
-        params.wdotQM2 		= 0.;
-        params.EQM2 		= 0.;
+        params.wdotQM2S1 	= -233./96./m1M/m1M;
+        params.wdotQM2S1L 	= 719./96./m1M/m1M;
+        params.wdotQM2S2 	= -233./96./m2M/m2M;
+        params.wdotQM2S2L 	= 719./96./m2M/m2M;
+        params.EQM2S1 		= 1./2./m1M/m1M;
+        params.EQM2S1L 		= -3./2./m1M/m1M;
+        params.EQM2S2 		= 1./2./m2M/m2M;
+        params.EQM2S2L 		= -3./2./m2M/m2M;
     }
     if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN ) /* ADD ME!! */
     {
@@ -596,14 +616,20 @@ static int XLALSimInspiralSpinTaylorT4StoppingTest(
 
         if( params->ESS2 != 0. )
         {   /* Compute 2PN SS correction to energy */
-            REAL8 S1dotS2;
-            S1dotS2 = (S1x*S2x + S1y*S2y + S1z*S2z);
+            REAL8 S1dotS2 = (S1x*S2x + S1y*S2y + S1z*S2z);
             Espin2 += params->ESS2  * (S1dotS2 - 3. * LNdotS1 * LNdotS2);
         }
 
-        if( params->ESelfSS2 != 0. )
-        {   /* Compute 2PN self-spin correction to energy */
-            Espin2 += 0.; /* ADD ME!! */
+        if( params->EQM2S1 != 0. )
+        {   /* Compute 2PN quadrupole-monopole correction to energy */
+            // See last line of Eq. 6 of astro-ph/0504538
+            // or 2nd and 3rd lines of Eq. (C4) in arXiv:0810.5336v3
+            REAL8 S1sq = (S1x*S1x + S1y*S1y + S1z*S1z);
+            REAL8 S2sq = (S2x*S2x + S2y*S2y + S2z*S2z);
+            Espin2 += params->EQM2S1 * params->quadparam1 * S1sq
+                    + params->EQM2S2 * params->quadparam2 * S2sq
+                    + params->EQM2S1L * params->quadparam1 * LNdotS1 * LNdotS1
+                    + params->EQM2S2L * params->quadparam2 * LNdotS2 * LNdotS2;
         }
 
         if( params->ESO25s1 != 0. || params->wdotSO25s2 != 0. )
@@ -721,9 +747,16 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(
     {	/* Compute 2PN SS correction to omega derivative */
         wspin2 = params->wdotSS2 * (247. * S1dotS2 - 721. * LNdotS1 * LNdotS2);
     }
-    if( params->wdotSelfSS2 != 0. )
-    {	/* Compute 2PN self-spin correction to omega derivative */
-        wspin2 += 0.; /* ADDME!! */	
+    if( params->wdotQM2S1 != 0. )
+    {	/* Compute 2PN quadrupole-monopole correction to omega derivative */
+        // See last line of Eq. 5.17 of arXiv:0812.4413
+        // Also note this is equivalent to Eqs. 9c + 9d of astro-ph/0504538
+        REAL8 S1sq = (S1x*S1x + S1y*S1y + S1z*S1z);
+        REAL8 S2sq = (S2x*S2x + S2y*S2y + S2z*S2z);
+        wspin2 += params->wdotQM2S1 * params->quadparam1 * S1sq
+                + params->wdotQM2S2 * params->quadparam2 * S2sq
+                + params->wdotQM2S1L * params->quadparam1 * LNdotS1 * LNdotS1
+                + params->wdotQM2S2L * params->quadparam2 * LNdotS2 * LNdotS2;
     }
     if( params->wdotSO25s1 != 0. || params->wdotSO25s2 != 0. )
     {	/* Compute 2.5PN SO correction to omega derivative */
