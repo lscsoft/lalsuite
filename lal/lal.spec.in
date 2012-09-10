@@ -11,8 +11,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: python
-Requires: gsl fftw3
+BuildRequires: swig python-devel octave-devel
+Requires: python gsl fftw3 octave numpy
 Prefix: %{_prefix}
 
 %description
@@ -24,7 +24,7 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel fftw3-devel fftw3-static libmetaio-devel
+Requires: gsl-devel fftw3-devel fftw3-static
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
@@ -34,7 +34,7 @@ as well as the documentation for the library.
 %setup -q
 
 %build
-%configure --disable-gcc-flags --disable-debug
+%configure --disable-gcc-flags --disable-debug --enable-swig
 %{__make} V=1
 
 %install
