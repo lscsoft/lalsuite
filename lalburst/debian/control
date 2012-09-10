@@ -2,11 +2,12 @@ Source: lalburst
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), pkg-config, python (>= 2.6),
+Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   zlib1g-dev, libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2),
   lal-dev (>= 6.7.0), lalmetaio-dev (>= 1.0.4),
   lalsimulation-dev (>= 0.3.0)
-Standards-Version: 3.7.2
+X-Python-Version: >= 2.6
+Standards-Version: 3.8.6
 
 Package: lalburst
 Architecture: any
