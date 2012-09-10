@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalsimulation-dev.install \
 	lalsimulation.dirs \
 	lalsimulation.install \
-	rules
+	rules \
+	source/format
