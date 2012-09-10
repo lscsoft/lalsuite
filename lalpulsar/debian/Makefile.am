@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalpulsar-dev.install \
 	lalpulsar.dirs \
 	lalpulsar.install \
-	rules
+	rules \
+	source/format
