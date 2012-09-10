@@ -1,3 +1,9 @@
+lal (6.7.2-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 10:45:00 +0200
+
 lal (6.7.2-1) unstable; urgency=low
 
   * LAL 6.7.2
