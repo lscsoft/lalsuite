@@ -2,9 +2,10 @@ Source: lalframe
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), python (>= 2.6), pkg-config,
+Build-Depends: debhelper (>= 7.0.0), python-all-dev, pkg-config,
   zlib1g-dev, libframe-dev (>= 8.0), lal-dev (>= 6.7.0)
-Standards-Version: 3.7.2
+X-Python-Version: >= 2.6
+Standards-Version: 3.8.6
 
 Package: lalframe
 Architecture: any

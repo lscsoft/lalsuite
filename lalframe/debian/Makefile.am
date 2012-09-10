@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalframe-dev.install \
 	lalframe.dirs \
 	lalframe.install \
-	rules
+	rules \
+	source/format
