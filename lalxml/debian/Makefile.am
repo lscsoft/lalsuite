@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalxml-dev.install \
 	lalxml.dirs \
 	lalxml.install \
-	rules
+	rules \
+	source/format
