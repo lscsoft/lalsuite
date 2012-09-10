@@ -2,11 +2,12 @@ Source: lalinspiral
 Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
-Build-Depends: debhelper (>= 5), python (>= 2.6), pkg-config,
+Build-Depends: debhelper (>= 7), python-all-dev, pkg-config,
   zlib1g-dev, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0),
   libmetaio-dev (>= 8.2), lal-dev (>= 6.7.0), lalframe-dev (>= 1.0.5),
   lalmetaio-dev (>= 1.0.4), lalsimulation-dev (>= 0.4.0)
-Standards-Version: 3.7.2
+X-Python-Version: >= 2.6
+Standards-Version: 3.8.6
 
 Package: lalinspiral
 Architecture: any

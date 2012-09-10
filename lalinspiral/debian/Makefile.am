@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalinspiral-dev.install \
 	lalinspiral.dirs \
 	lalinspiral.install \
-	rules
+	rules \
+	source/format
