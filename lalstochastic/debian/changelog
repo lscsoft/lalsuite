@@ -1,3 +1,9 @@
+lalstochastic (1.1.5-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 10:00:00 +0200
+
 lalstochastic (1.1.5-1) unstable; urgency=low
 
   * LALStochastic 1.1.5
