@@ -13,7 +13,7 @@ include $(top_srcdir)/swig/python/swiglal_python.am
 
 if SWIG_BUILD_PYTHON
 
-pyexec_LTLIBRARIES = _lalsimulation.la
+pkgpyexec_LTLIBRARIES = _lalsimulation.la
 _lalsimulation_la_SOURCES = $(swig_lt_sources)
 nodist__lalsimulation_la_SOURCES = $(swig_lt_nodist_sources)
 _lalsimulation_la_CPPFLAGS = $(swig_lt_cppflags)

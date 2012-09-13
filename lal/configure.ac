@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   lib/Makefile \
   misc/Makefile \
+  python/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
@@ -159,6 +160,11 @@ LALSUITE_ENABLE_NIGHTLY
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # get version
 lal_version_major=`echo "$VERSION" | cut -d. -f1`

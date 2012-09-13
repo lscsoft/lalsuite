@@ -13,6 +13,7 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
@@ -125,6 +126,11 @@ LALSUITE_CHECK_LIB([LAL],[6.7.0],[LALVersion],[lal/LALStdio.h])
 LALSUITE_CHECK_LIB([LALSupport],[6.7.0],[LALOpenDataFile],[lal/FileIO.h])
 LALSUITE_CHECK_LIB([LALMetaIO],[1.0.4],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRead.h])
 LALSUITE_CHECK_LIB([LALSimulation],[0.3.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # add gcc specific flags
 if test "$GCC" = yes; then
