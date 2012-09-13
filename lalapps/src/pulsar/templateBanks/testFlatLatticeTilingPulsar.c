@@ -275,14 +275,15 @@ int main(int argc, char *argv[]) {
 
     /* Do injections */
     if (inject_count > 0) {
+      LALAPPS_ERROR("'inject_count' currently unsupported\n", 0);
 
       /* Reset random number generator */
       XLALResetRandomParams(inject_random, inject_seed);
 
       /* Generate injections */
       for (k = 0; k < inject_count; ++k) {
-	if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, current, &inject_dist))
-	  LALAPPS_ERROR("XLALRandomPointInFlatLatticeParamSpace failed\n", 0);
+	/* if (XLAL_SUCCESS != XLALRandomPointInFlatLatticeParamSpace(tiling, inject_random, inject_point, current, &inject_dist)) */
+	/*   LALAPPS_ERROR("XLALRandomPointInFlatLatticeParamSpace failed\n", 0); */
 	if (!only_count /*&& tiling->count == 1*/)
 	  XLAL_VBXMLO_gsl_vector(&xml, "injection", "%0.12g", inject_point);	  
 
@@ -371,3 +372,74 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
   
 }
+
+/* int XLALRandomPointInFlatLatticeParamSpace( */
+/*   FlatLatticeTiling* tiling,  ///< Tiling state */
+/*   RandomParams *randomParams, ///< Random parameters for generating random point */
+/*   gsl_vector* random_point,   ///< Random point */
+/*   gsl_vector* point,          ///< Another point */
+/*   double* metric_dist          ///< Distance from random point to other point w.r.t. metric */
+/*   ) */
+/* { */
+
+/*   const size_t n = tiling->dimensions; */
+
+/*   double random_number; */
+/*   double lower, upper; */
+/*   gsl_vector* diff; */
+
+/*   // Create random point */
+/*   gsl_vector_set_zero(random_point); */
+/*   for (size_t i = 0; i < n; ++i) { */
+
+/*     // Get bounds */
+/*     GetPhysBounds(tiling, i, NULL/\*FIX*\/, random_point, &lower, &upper); */
+
+/*     // Generate random number */
+/*     random_number = XLALUniformDeviate(randomParams); */
+
+/*     // Generate random point */
+/*     gsl_vector_set(random_point, i, lower + random_number*(upper - lower)); */
+
+/*   } */
+
+/*   // Calculate distance from other point w.r.t metric */
+/*   if (point && metric_dist) { */
+/*     *metric_dist = 0.0; */
+
+/*     // Allocate memory */
+/*     diff = gsl_vector_alloc(n); */
+/*     XLAL_CHECK(diff != NULL, XLAL_ENOMEM); */
+
+/*     // Calculate difference between random and other point */
+/*     gsl_vector_memcpy(diff, point); */
+/*     gsl_vector_sub(diff, random_point); */
+/*     gsl_vector_div(diff, tiling->phys_scale); */
+
+/*     // Calculate off-diagonal parts (metric is symmetric) TODO USE GSL BLAS */
+/*     for (size_t i = 0; i < n; ++i) { */
+/*       if (gsl_vector_get(diff, i) != 0.0) { */
+/*         for (size_t j = i + 1; j < n; ++j) { */
+/*           if (gsl_vector_get(diff, j) != 0.0) { */
+/*             *metric_dist += gsl_matrix_get(tiling->metric, i, j) * gsl_vector_get(diff, i) * gsl_vector_get(diff, j); */
+/*           } */
+/*         } */
+/*       } */
+/*     } */
+/*     *metric_dist *= 2.0; */
+
+/*     // Calculate diagonal components TODO USE GSL BLAS */
+/*     for (size_t i = 0; i < n; ++i) { */
+/*       if (gsl_vector_get(diff, i) != 0.0) { */
+/*         *metric_dist += gsl_matrix_get(tiling->metric, i, i) * gsl_vector_get(diff, i) * gsl_vector_get(diff, i); */
+/*       } */
+/*     } */
+
+/*     // Cleanup */
+/*     gsl_vector_free(diff); */
+
+/*   } */
+
+/*   return XLAL_SUCCESS; */
+
+/* } */

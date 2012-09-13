@@ -165,8 +165,6 @@ int XLALGenerateRandomFlatLatticePoints(
   gsl_matrix* randpoints		///< [in] Random points (column-wise)
   );
 
-int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gsl_vector*, gsl_vector*, double*);
-
 ///
 /// Calculate the generator matrix for a cubic (\f$Z_n\f$) lattice
 ///
