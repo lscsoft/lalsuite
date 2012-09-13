@@ -63,6 +63,5 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
 %{_datadir}/*
-%{_mandir}/man3/lal.3*
 
 
