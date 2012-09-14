@@ -11,8 +11,8 @@ Source: %{name}-%{version}.tar.gz
 URL: http://www.lsc-group.phys.uwm.edu/lal
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: python
-Requires: gsl libxml2 lal
+BuildRequires: swig python-devel octave-devel
+Requires: python gsl libxml2 octave numpy lal
 Prefix: %{_prefix}
 
 %description
@@ -34,7 +34,7 @@ library.
 %setup -q
 
 %build
-%configure --disable-gcc-flags
+%configure --disable-gcc-flags --enable-swig
 %{__make} V=1
 
 %install
