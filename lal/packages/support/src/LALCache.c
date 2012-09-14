@@ -185,7 +185,7 @@ void XLALDestroyCache(LALCache * cache)
     return;
 }
 
-LALCache *XLALCacheDuplicate(LALCache * cache)
+LALCache *XLALCacheDuplicate(const LALCache * cache)
 {
     LALCache *duplicate = NULL;
     if (cache) {
@@ -199,7 +199,7 @@ LALCache *XLALCacheDuplicate(LALCache * cache)
     return duplicate;
 }
 
-LALCache *XLALCacheMerge(LALCache * cache1, LALCache * cache2)
+LALCache *XLALCacheMerge(const LALCache * cache1, const LALCache * cache2)
 {
     LALCache *cache = NULL;
     LALCacheEntry *entry;
@@ -367,7 +367,7 @@ LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn)
 #endif
 }
 
-int XLALCacheFileWrite(LALFILE * fp, LALCache * cache)
+int XLALCacheFileWrite(LALFILE * fp, const LALCache * cache)
 {
     UINT4 i;
     if (!fp || !cache)
@@ -503,7 +503,7 @@ int XLALCacheUniq(LALCache * cache)
 }
 
 #ifdef HAVE_REGEX_H
-static int XLALCacheEntryMatch(LALCacheEntry * entry, INT4 t0,
+static int XLALCacheEntryMatch(const LALCacheEntry * entry, INT4 t0,
                                INT4 t1, regex_t * srcreg, regex_t * dscreg,
                                regex_t * urlreg)
 {
@@ -525,7 +525,7 @@ static int XLALCacheEntryMatch(LALCacheEntry * entry, INT4 t0,
 
 #else /* HAVE_REGEX_H undefined */
 /* can only attempt to match time range */
-static int XLALCacheEntryMatchTime(LALCacheEntry * entry, INT4 t0,
+static int XLALCacheEntryMatchTime(const LALCacheEntry * entry, INT4 t0,
                                    INT4 t1)
 {
     if (t1 > 0 && !(entry->t0 < t1))
@@ -607,7 +607,7 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
     return 0;
 }
 
-LALFILE *XLALCacheEntryOpen(LALCacheEntry * entry)
+LALFILE *XLALCacheEntryOpen(const LALCacheEntry * entry)
 {
     char *nextslash;
     char *nextcolon;

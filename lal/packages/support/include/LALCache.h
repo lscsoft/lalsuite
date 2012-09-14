@@ -63,10 +63,10 @@ LALCache *XLALCreateCache(UINT4 length);
 void XLALDestroyCache(LALCache * cache);
 
 /** Duplicates a LALCache structure. */
-LALCache *XLALCacheDuplicate(LALCache * cache);
+LALCache *XLALCacheDuplicate(const LALCache * cache);
 
 /** Returns a new LALCache structure that is the merge of two. */
-LALCache *XLALCacheMerge(LALCache * cache1, LALCache * cache2);
+LALCache *XLALCacheMerge(const LALCache * cache1, const LALCache * cache2);
 
 /** Reads a LAL cache file and produces a LALCache structure. */
 LALCache *XLALCacheFileRead(LALFILE * fp);
@@ -79,7 +79,7 @@ LALCache *XLALCacheFileRead(LALFILE * fp);
 LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn);
 
 /** Writes a LALCache structure to an output LAL cache file. */
-int XLALCacheFileWrite(LALFILE * fp, LALCache * cache);
+int XLALCacheFileWrite(LALFILE * fp, const LALCache * cache);
 
 /** Sorts entries in a LALCache structure. */
 int XLALCacheSort(LALCache * cache);
@@ -102,7 +102,7 @@ int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
                    const char *urlregex);
 
 /** Open a file identified by an entry in a LALCache structure. */
-LALFILE *XLALCacheEntryOpen(LALCacheEntry * entry);
+LALFILE *XLALCacheEntryOpen(const LALCacheEntry * entry);
 
 #if 0
 {       /* to match succeding brace */
