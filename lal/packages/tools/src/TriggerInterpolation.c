@@ -204,7 +204,7 @@ static double cubic_interp_1(double complex *val, const double complex *y, gsl_p
         if (new_argmax <= 0 || new_argmax >= 1)
             continue;
 
-        new_maxval = gsl_poly_eval(are, n, new_argmax) + gsl_poly_eval(aim, n, new_argmax) * 1j;
+        new_maxval = gsl_poly_eval(are, n, new_argmax) + gsl_poly_eval(aim, n, new_argmax) * I;
         new_max_abs2 = cabs2(new_maxval);
 
         if (new_max_abs2 > max_abs2) {
