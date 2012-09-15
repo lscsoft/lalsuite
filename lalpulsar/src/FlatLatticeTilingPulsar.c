@@ -41,6 +41,12 @@
 #include <lal/XLALError.h>
 #include <lal/Factorial.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /**
  * Set a flat lattice tiling to the spindown Fstat metric
  * (so no sky position tiling). Components are in the order
@@ -97,24 +103,26 @@ int XLALSetFlatLatticeTilingSpindownFstatMetric(
  * the age and possible braking index range of an object
  */
 static void AgeBraking1stSpindownBound(
-  double* lower,
-  double* upper,
+  const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point,
-  const void* data
+  const void* data,
+  gsl_vector* lower,
+  gsl_vector* upper
   )
 {
 
   /* Set lower and upper bound */
   double x = gsl_vector_get(point, point->size - 1);
-  *lower = x * ((const double*)data)[0];
-  *upper = x * ((const double*)data)[1];
+  gsl_vector_set(lower, 0, x * ((const double*)data)[0]);
+  gsl_vector_set(upper, 0, x * ((const double*)data)[1]);
 
 }
 static void AgeBraking2ndSpindownBound(
-  double* lower,
-  double* upper,
+  const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point,
-  const void* data
+  const void* data,
+  gsl_vector* lower,
+  gsl_vector* upper
   )
 {
 
@@ -122,8 +130,8 @@ static void AgeBraking2ndSpindownBound(
   double x = gsl_vector_get(point, point->size - 1);
   x *= x;
   x /= gsl_vector_get(point, point->size - 2);
-  *lower = x * ((const double*)data)[0];
-  *upper = x * ((const double*)data)[1];
+  gsl_vector_set(lower, 0, x * ((const double*)data)[0]);
+  gsl_vector_set(upper, 0, x * ((const double*)data)[1]);
 
 }
 int XLALSetFlatLatticeTilingAgeBrakingIndexBounds(
