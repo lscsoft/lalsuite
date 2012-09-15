@@ -6,6 +6,7 @@ SUBDIRS = \
 	include \
 	packages \
 	lib \
+	python \
 	swig
 
 MAINTAINERCLEANFILES = lal.spec
