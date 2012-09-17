@@ -1,5 +1,2 @@
-pkgpython_DATA = \
-	__init__.py
-
-EXTRA_DIST = \
+pkgpython_PYTHON = \
 	__init__.py
