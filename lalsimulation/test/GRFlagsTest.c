@@ -12,13 +12,14 @@ int main(int argc , char *argv[])
 
     /* Create a new struct */
     printf("Creating a new struct with one parameter...\n");
-    LALSimInspiralTestGRParam *test=XLALSimInspiralCreateTestGRParam(
-            "first_param",10.0);
+    LALSimInspiralTestGRParam *test=NULL;
+    if( XLALSimInspiralAddTestGRParam(&test,"first_param",10.0) != XLAL_SUCCESS)
+        XLAL_ERROR(XLAL_EFUNC);
     printf("value:%lf\n",XLALSimInspiralGetTestGRParam(test, "first_param"));
 
     /* Add a second parameter to the struct */
     printf("Adding a second parameter to the struct...\n");
-    if( XLALSimInspiralAddTestGRParam(test,"second_param",20.0) != XLAL_SUCCESS)
+    if( XLALSimInspiralAddTestGRParam(&test,"second_param",20.0) != XLAL_SUCCESS)
         XLAL_ERROR(XLAL_EFUNC);
     printf("Printing the struct after adding second parameter...\n");
     if( XLALSimInspiralPrintTestGRParam(stderr,test) != XLAL_SUCCESS)
@@ -41,7 +42,7 @@ int main(int argc , char *argv[])
             XLALSimInspiralTestGRParamExists(test, "second_param"),
             XLALSimInspiralTestGRParamExists(test, "third_param"));
     printf("Now add a third parameter...\n");
-    if( XLALSimInspiralAddTestGRParam(test,"third_param",12.0) != XLAL_SUCCESS )
+    if( XLALSimInspiralAddTestGRParam(&test,"third_param",12.0) != XLAL_SUCCESS )
         XLAL_ERROR(XLAL_EFUNC);
     printf("first_param:%d second_param:%d third_param:%d\n",
             XLALSimInspiralTestGRParamExists(test, "first_param"),
@@ -55,7 +56,7 @@ int main(int argc , char *argv[])
 
     /* Try to add a parameter that already exists */
     printf("Trying to add a parameter that already exists...\n");
-    XLAL_TRY( XLALSimInspiralAddTestGRParam(test,"third_param",12.0), errnum );
+    XLAL_TRY( XLALSimInspiralAddTestGRParam(&test,"third_param",12.0), errnum );
     printf("This throws the above message and error code %d\n", errnum);
 
     /* Destroy the params struct */
