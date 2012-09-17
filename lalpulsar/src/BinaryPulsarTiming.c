@@ -591,6 +591,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
   FILE *fp=NULL;
+  long curpos; /* current position in par file */
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
   INT4 i=0, j=1, k;
@@ -664,7 +665,6 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->f7=0.0;
   output->f8=0.0;
   output->f9=0.0;
-  
   
   output->waveSin = NULL;
   output->waveCos = NULL;  
@@ -791,7 +791,19 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     /* make sure val[i] is clear first */
     sprintf(val[i], "%s", "");
 
+    curpos = ftell(fp);
     c = fscanf(fp, "%s", val[i]);
+    
+    /* if line starts with a '#' then skip to end of line */
+    if( val[i][0] == '#' ){
+       /* go back to start of line before skipping (in case the line only has
+        * one value in it */
+      fseek(fp, curpos, SEEK_SET);
+      if ( fscanf(fp, "%*[^\n]") == EOF ) break;
+      else i++;
+      continue;
+    }
+    
     i++;
   }
 
