@@ -449,19 +449,33 @@ static REAL8 XLALCalculateSphHamiltonianDeriv2(
   return result;
 }
 
-
-
-
 /**
- * Main function for calculating the spinning EOB initial conditions,
- * following the quasi-spherical initial conditions solution of Buonanno, Chen & Damour 2006
+ * Main function for calculating the spinning EOB initial conditions, following the 
+ * quasi-spherical initial conditions described in Sec. IV A of Buonanno, Chen & Damour PRD 74, 104005 (2006).
+ * All equation numbers in the comments of this function refer to this paper.
+ * Inputs are binary parameters (masses, spin vectors and inclination), EOB model parameters and initial frequency.
+ * Outputs are initial dynamical variables in a vector (x, y, z, px, py, pz, S1x, S1y, S1z, S2x, S2y, S2z).
+ * In the paper, the initial conditions are solved for a given initial radius, while in this function, 
+ * they are solved for a given inital orbital frequency. This difference is reflected in solving Eq. (4.8).
+ * The calculation is done in 5 steps:
+ * STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where LNhat0 and N0 are initial normal to 
+ *         orbital plane and initial orbital separation;
+ * STEP 2) After rotation in STEP 1, in spherical coordinates, phi0 and theta0 are given directly in Eq. (4.7),
+ *         r0, pr0, ptheta0 and pphi0 are obtained by solving Eqs. (4.8) and (4.9) (using gsl_multiroot_fsolver).
+ *         At this step, we find initial conditions for a spherical orbit without radiation reaction.
+ * STEP 3) Rotate to L0 along z-axis and N0 along x-axis frame, where L0 is the initial orbital angular momentum
+ *         and L0 is calculated using initial position and linear momentum obtained in STEP 2.
+ * STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), then initial dr/dt using Eq. (4.10),
+ *         and finally pr0 using Eq. (4.15).
+ * STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and then  
+ *         inverting the rotation of STEP 1.
  */
 
 static int XLALSimIMRSpinEOBInitialConditions(
                       REAL8Vector   *initConds, /**<< Initial dynamical variables (returned) */
                       const REAL8    mass1,     /**<< mass 1 */
                       const REAL8    mass2,     /**<< mass 2 */
-                      const REAL8    fMin,      /**<< Initial frequency given */
+                      const REAL8    fMin,      /**<< Initial frequency (given) */
                       const REAL8    inc,       /**<< Inclination */
                       const REAL8    spin1[],   /**<< Initial spin vector 1 */
                       const REAL8    spin2[],   /**<< Initial spin vector 2 */
@@ -535,7 +549,6 @@ static int XLALSimIMRSpinEOBInitialConditions(
   int gslStatus;
   const int maxIter = 100;
 
-
   memset( &rootParams, 0, sizeof( rootParams ) );
 
   memcpy( tmpS1, spin1, sizeof(tmpS1) );
@@ -548,6 +561,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   tmpTortoise      = params->tortoise;
   params->tortoise = 0;
 
+  /* STEP 1) Rotate to LNhat0 along z-axis and N0 along x-axis frame, where LNhat0 and N0 are initial normal to 
+   *         orbital plane and initial orbital separation;
+   */
+ 
   /* Set the initial orbital ang mom direction. Taken from STPN code */
   LnHat[0] = sin(inc);
   LnHat[1] = 0.;
@@ -561,7 +578,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
   }
   else
   {
-    REAL8 theta0 = atan( - LnHat[2] / LnHat[0] );
+    REAL8 theta0 = atan( - LnHat[2] / LnHat[0] ); /* theta0 is between 0 and Pi */
     rHat[0] = sin( theta0 );
     rHat[1] = 0;
     rHat[2] = cos( theta0 );
@@ -622,6 +639,11 @@ static int XLALSimIMRSpinEOBInitialConditions(
   {
     printf ( " s1[%d] = %.16e, s2[%d] = %.16e\n", i, tmpS1[i], i, tmpS2[i] );
   }*/
+
+  /* STEP 2) After rotation in STEP 1, in spherical coordinates, phi0 and theta0 are given directly in Eq. (4.7),
+   *         r0, pr0, ptheta0 and pphi0 are obtained by solving Eqs. (4.8) and (4.9) (using gsl_multiroot_fsolver).
+   *         At this step, we find initial conditions for a spherical orbit without radiation reaction.
+   */
 
   /* Calculate the initial velocity from the given initial frequency */
   omega = LAL_PI * mTotal * LAL_MTSUN_SI * fMin;
@@ -714,6 +736,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   gsl_multiroot_fsolver_free( rootSolver );
   gsl_vector_free( initValues );
 
+  /* STEP 3) Rotate to L0 along z-axis and N0 along x-axis frame, where L0 is the initial orbital angular momentum
+   *         and L0 is calculated using initial position and linear momentum obtained in STEP 2.
+   */
+
   /* Now we can calculate the relativistic L and rotate to a new basis */
   memcpy( qHat, qCart, sizeof(qCart) );
   memcpy( pHat, pCart, sizeof(pCart) );
@@ -744,6 +770,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
   ApplyRotationMatrix( rotMatrix2, tmpS2 );
   ApplyRotationMatrix( rotMatrix2, qCart );
   ApplyRotationMatrix( rotMatrix2, pCart );
+
+  /* STEP 4) In the L0-N0 frame, we calculate (dE/dr)|sph using Eq. (4.14), then initial dr/dt using Eq. (4.10),
+   *         and finally pr0 using Eq. (4.15).
+   */
 
   /* Now we can calculate the flux. Change to spherical co-ords */
   CartesianToSpherical( qSph, pSph, qCart, pCart );
@@ -841,6 +871,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
   /* Now we are done - convert back to cartesian coordinates ) */
   SphericalToCartesian( qCart, pCart, qSph, pSph );
+
+  /* STEP 5) Rotate back to the original inertial frame by inverting the rotation of STEP 3 and then  
+   *         inverting the rotation of STEP 1.
+   */
 
   /* Undo rotations to get back to the original basis */
   /* Second rotation */
