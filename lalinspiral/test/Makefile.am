@@ -8,7 +8,6 @@ check_PROGRAMS = \
 	CoarseTest \
 	CoarseTest2 \
 	CompareLalsimultaionLalinspiralWaveforms \
-	FindChirpBCVSpinTest \
 	FindChirpBankVetoTest \
 	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \

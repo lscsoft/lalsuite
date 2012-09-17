@@ -25,16 +25,15 @@ lalinspiralinclude_HEADERS = \
 	InspiralInjectionParams.h \
 	LALEOBNRv2Waveform.h \
 	LALInspiral.h \
-	LALInspiralBCVSpinBank.h \
 	LALInspiralBank.h \
 	LALInspiralConfig.h \
-	LALInspiralRandomBank.h \
 	LALInspiralLibVCSInfo.h \
+	LALInspiralSBankOverlap.h \
 	LALInspiralVCSInfo.h \
 	LALNoiseModelsInspiral.h \
 	LALPSpinInspiralRD.h \
-	LALSBBH-Metric.h \
 	LALTrigScanCluster.h \
+	LALSTPNWaveformErrors.h \
 	LALSTPNWaveform2.h \
 	LALSTPNWaveformFrameless.h \
 	LALSQTPNIntegrator.h \
@@ -46,7 +45,6 @@ lalinspiralinclude_HEADERS = \
 	LIGOMetadataRingdownUtils.h \
 	NRWaveIO.h \
 	NRWaveInject.h \
-	NullStatistic.h \
 	RingUtils.h \
 	SimulateInspiral.h \
 	TemplateBankGeneration.h \
@@ -154,6 +152,7 @@ liblalinspiral_la_SOURCES = \
 	LALInspiralPhiofVIntegrand.c \
 	LALInspiralPolarizations.c \
 	LALInspiralRingdownWave.c \
+	LALInspiralSBankOverlap.c \
 	LALInspiralSetParams.c \
 	LALInspiralSetSearchLimits.c \
 	LALInspiralSetup.c \
@@ -254,6 +253,7 @@ lalinspiral-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
+	@printf "$(SWIG_USER_ENV)" >>$@
 
 lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
@@ -274,3 +274,6 @@ LALInspiralVCSInfo.h: ._vcsinfo
 
 # cuda build rules
 include $(top_srcdir)/gnuscripts/cuda.common
+
+swig_headers = $(lalinspiralinclude_HEADERS)
+include $(top_srcdir)/swig/swiglal_header.am

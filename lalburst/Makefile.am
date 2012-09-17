@@ -12,6 +12,7 @@ SUBDIRS = \
 	debian \
 	include \
 	src \
+	python \
 	test
 
 pkgconfigdir = $(libdir)/pkgconfig

@@ -155,12 +155,11 @@ int LALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[],
 	return LALSQTPNDerivator(t, values, dvalues, param);
 }
 
-int XLALSQTPNDerivator(REAL8 t, const REAL8 values[], REAL8 dvalues[], 
+int XLALSQTPNDerivator(UNUSED REAL8 t, const REAL8 values[], REAL8 dvalues[],
 		void * param) {
 
 	// variable declaration and initialization
 	LALSQTPNWaveformParams *params = param;
-	UNUSED(t);
 	const REAL8 *chi_p[2] = { values + LALSQTPN_CHIH1_1, 
 			values + LALSQTPN_CHIH2_1 };
 	UINT2 i, j, k; // indexes

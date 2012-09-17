@@ -1,8 +1,7 @@
-## Process this file with automake to produce Makefile.in
-pkginclude_HEADERS = Date.h TimeDelay.h
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
+pkginclude_HEADERS = \
+	Date.h \
+	TimeDelay.h
+
 all-local: include-link
 @INCLUDEMKFILE@
 

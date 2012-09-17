@@ -28,9 +28,12 @@ LALSimInspiralTestGRParam *XLALSimInspiralCreateTestGRParam(
         )
 {
         LALSimInspiralTestGRParam *parameter = (LALSimInspiralTestGRParam *)XLALMalloc(sizeof(LALSimInspiralTestGRParam));
-        parameter->data =  (LALSimInspiralTestGRParamData *)XLALMalloc(sizeof(LALSimInspiralTestGRParamData));
-        memcpy(parameter->data->name, name, 32);
-        parameter->data->value = value;
+        if (parameter) 
+        {
+            parameter->data =  (LALSimInspiralTestGRParamData *)XLALMalloc(sizeof(LALSimInspiralTestGRParamData));
+            memcpy(parameter->data->name, name, 32);
+            parameter->data->value = value;
+        }
         parameter->next=NULL;
         return parameter;
 }
@@ -40,27 +43,36 @@ LALSimInspiralTestGRParam *XLALSimInspiralCreateTestGRParam(
  * parameter already exists, it throws an error.
  */
 int XLALSimInspiralAddTestGRParam(
-        LALSimInspiralTestGRParam *parameter, /**< Linked list of parameters */
+        LALSimInspiralTestGRParam **parameter, /**< Pointer to the head node of the linked list of parameters */
         const char *name, 		/**< Parameter name */
         double value 			/**< Parameter value */
         )
 {
-    if (!XLALSimInspiralTestGRParamExists(parameter, name))
+    LALSimInspiralTestGRParam *temp;
+    temp = *parameter;
+    if (*parameter==NULL) 
     {
-        LALSimInspiralTestGRParam *newParam = (LALSimInspiralTestGRParam *)XLALMalloc(sizeof(LALSimInspiralTestGRParam));
-        newParam->data =  (LALSimInspiralTestGRParamData *)XLALMalloc(sizeof(LALSimInspiralTestGRParamData));
-        memcpy(newParam->data->name, name, 32);
-        newParam->data->value = value;
-        newParam->next = parameter->next;
-        parameter->next = newParam;
+        temp = XLALSimInspiralCreateTestGRParam(name,value); 
+        //temp->next=NULL;
+        *parameter=temp;
     }
     else 
     {
-        XLALPrintError("XLAL Error - %s: parameter '%s' exists already! Not added to the structure\n",
-                __func__, name);
-        XLAL_ERROR(XLAL_EINVAL);
-    }
 
+        if (!XLALSimInspiralTestGRParamExists(*parameter, name))
+        {
+            temp = *parameter;
+             while(temp->next!=NULL) {temp=temp->next;}
+            LALSimInspiralTestGRParam *newParam = XLALSimInspiralCreateTestGRParam(name,value);        
+            temp->next = newParam;
+        }
+        else 
+        {
+            XLALPrintError("XLAL Error - %s: parameter '%s' exists already! Not added to the structure\n",
+                    __func__, name);
+            XLAL_ERROR(XLAL_EINVAL);
+        }
+    }
     return XLAL_SUCCESS;
 }
 

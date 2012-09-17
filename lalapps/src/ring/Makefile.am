@@ -10,7 +10,6 @@ RINGPROG = \
 	lalapps_coincringread \
 	lalapps_collatesim \
 	lalapps_coh_PTF_inspiral \
-	lalapps_coh_PTF_testing \
 	lalapps_coh_PTF_spin_checker
 endif
 endif
@@ -63,10 +62,6 @@ lalapps_ring_SOURCES = \
 	$(GENERAL_SOURCES)
 lalapps_coh_PTF_inspiral_SOURCES = \
 	coh_PTF_inspiral.c \
-	$(COH_PTF_SOURCES) \
-	$(GENERAL_SOURCES)
-lalapps_coh_PTF_testing_SOURCES = \
-	coh_PTF_testing.c \
 	$(COH_PTF_SOURCES) \
 	$(GENERAL_SOURCES)
 lalapps_coh_PTF_spin_checker_SOURCES = \

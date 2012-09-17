@@ -89,11 +89,13 @@ int main(int argc, char **argv)
   LIGOTimeGPS              segStartTime;
   struct timeval           startTime;
   LALDetector              *detectors[LAL_NUM_IFO+1];
-  REAL8                    *timeOffsets;
-  REAL8                    *Fplus;
-  REAL8                    *Fcross;
-  REAL8                    *Fplustrig;
-  REAL8                    *Fcrosstrig;
+  REAL4                    *timeOffsets;
+  REAL4                    *Fplus;
+  REAL4                    *Fcross;
+  REAL4                    *Fplustrig;
+  REAL4                    *Fcrosstrig;
+  REAL8                    FplusTmp;
+  REAL8                    FcrossTmp;
   REAL8                    detLoc[3];
   REAL4                    *timeSlideVectors;
 
@@ -328,11 +330,11 @@ int main(int argc, char **argv)
   }
 
   /* allocate memory */ 
-  timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL8));
-  Fplus       = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL8));
-  Fcross      = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL8));
-  Fplustrig   = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL8));
-  Fcrosstrig  = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL8));
+  timeOffsets = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
+  Fplus       = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
+  Fcross      = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
+  Fplustrig   = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
+  Fcrosstrig  = LALCalloc(1, LAL_NUM_IFO*sizeof(REAL4));
 
   /* loop over ifos if doing triggered search */
   if ((params->skyLooping != ALL_SKY) &&
@@ -350,16 +352,18 @@ int main(int argc, char **argv)
       /* set 'segStartTime' to trigger time */
       segStartTime = params->trigTime;
       /* calculate time offsets */
-      timeOffsets[ifoNumber] =
+      timeOffsets[ifoNumber] = (REAL4)
           XLALTimeDelayFromEarthCenter(detLoc, skyPoints->data[0].longitude,
                                        skyPoints->data[0].latitude,
                                        &segStartTime);
       /* calculate response functions for trigger */
-      XLALComputeDetAMResponse(&Fplustrig[ifoNumber], &Fcrosstrig[ifoNumber],
+      XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
                                detectors[ifoNumber]->response,
                                skyPoints->data[0].longitude,
                                skyPoints->data[0].latitude, 0.,
                                XLALGreenwichMeanSiderealTime(&segStartTime));
+      Fplustrig[ifoNumber] = (REAL4) FplusTmp;
+      Fcrosstrig[ifoNumber] = (REAL4) FcrossTmp;
     }
   }
 
@@ -956,19 +960,20 @@ int main(int argc, char **argv)
                  detLoc[ui] = (double) detectors[ifoNumber]->location[ui];
               }
               /* calculate time offsets */
-              timeOffsets[ifoNumber] =
+              timeOffsets[ifoNumber] = (REAL4)
                   XLALTimeDelayFromEarthCenter(detLoc,
                                                skyPoints->data[sp].longitude,
                                                skyPoints->data[sp].latitude,
                                                &segStartTime);
               /* calculate response functions */
-              XLALComputeDetAMResponse(&Fplus[ifoNumber],
-                                       &Fcross[ifoNumber],
+              XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
                                        detectors[ifoNumber]->response,
                                        skyPoints->data[sp].longitude,
                                        skyPoints->data[sp].latitude,0.,
                                        XLALGreenwichMeanSiderealTime(
                                            &segStartTime));
+              Fplus[ifoNumber] = (REAL4) FplusTmp;
+              Fcross[ifoNumber] = (REAL4) FcrossTmp;
             }
 
             // This function calculates the cohSNR time series and all of the
@@ -1197,9 +1202,9 @@ void coh_PTF_statistic(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     struct coh_PTF_params   *params,
     UINT4                   spinTemplate,
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
+    REAL4                   *timeOffsets,
+    REAL4                   *Fplus,
+    REAL4                   *Fcross,
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
@@ -1248,7 +1253,7 @@ void coh_PTF_statistic(
     vecLength = 5;
   else
     vecLength = 1;
-  if (params->numIFO == 1 || params->singlePolFlag)
+  if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
     vecLengthTwo = vecLength;
   else
     vecLengthTwo = 2* vecLength;
@@ -1259,7 +1264,7 @@ void coh_PTF_statistic(
 
   UINT4 csVecLength = 1;
   UINT4 csVecLengthTwo = 2;
-  if (params->numIFO == 1 || params->singlePolFlag)
+  if (params->numIFO == 1 || params->singlePolFlag || params->faceOnStatistic)
     csVecLengthTwo = 1;
 
   /* These arrays are used to store the maximized quantities
@@ -1316,9 +1321,7 @@ void coh_PTF_statistic(
   REAL4 dAlpha, dBeta, dCee;
   REAL4 pValsTemp[vecLengthTwo];
   REAL4 betaGammaTemp[2];
-  REAL4 a[LAL_NUM_IFO], b[LAL_NUM_IFO];
 
-  gsl_matrix *BNull  = gsl_matrix_alloc(vecLength, vecLength);
   gsl_matrix *B2Null = gsl_matrix_alloc(vecLength, vecLength);
   /* FIXME: the 50s below seem to hardcode a limit on the number of templates
      this should not be hardcoded. Note that this value is hardcoded in some
@@ -1332,8 +1335,7 @@ void coh_PTF_statistic(
     Bankeigenvecs[i] = NULL;
     Bankeigenvals[i] = NULL;  
   }
-  gsl_permutation           *p           = gsl_permutation_alloc(vecLengthTwo);
-  gsl_permutation           *pNull       = gsl_permutation_alloc(vecLength);
+
   gsl_eigen_symmv_workspace *matTempNull = gsl_eigen_symmv_alloc(vecLength);
   gsl_matrix                *eigenvecs   = gsl_matrix_alloc(vecLengthTwo,
                                                              vecLengthTwo);
@@ -1345,21 +1347,12 @@ void coh_PTF_statistic(
                                                               vecLength);
   gsl_vector                *eigenvalsSngl = gsl_vector_alloc(vecLength);
 
-
-  // a = Fplus , b = Fcross
-  /* FIXME: Replace all instances with a and b with Fplus and Fcross */
-  for (i = 0; i < LAL_NUM_IFO; i++)
-  {
-    a[i] = Fplus[i];
-    b[i] = Fcross[i];
-  }
-
   // This function takes the (Q_i|Q_j) matrices, combines it across the ifos
   // and returns the eigenvalues and eigenvectors of this new matrix.
   // We later rotate and rescale the (Q_i|s) values such that in the new basis
   // this matrix will be the identity matrix.
   // For non-spin this describes the rotation into the dominant polarization
-  coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,a,b,PTFM,vecLength,vecLengthTwo,vecLength,LAL_NUM_IFO);
+  coh_PTF_calculate_bmatrix(params,eigenvecs,eigenvals,Fplus,Fcross,PTFM,vecLength,vecLengthTwo,vecLength);
 
   // If required also calculate these eigenvalues/vectors for the null stream 
   if (params->doNullStream)
@@ -1368,7 +1361,6 @@ void coh_PTF_statistic(
     {
       for (j = 0; j < vecLength; j++)
       {
-        gsl_matrix_set(BNull, i, j, PTFM[LAL_NUM_IFO]->data[i*5+j]);
         gsl_matrix_set(B2Null, i, j, PTFM[LAL_NUM_IFO]->data[i*5+j]);
       }
     }
@@ -1406,54 +1398,9 @@ void coh_PTF_statistic(
 
   if ( params->injectFile )
   {
-    REAL8 injDiff;
-    UINT4 injSamplePoint,injWindow;
-    INT8  startDiff,endDiff;
-    SimInspiralTable *thisInject = NULL;
-    LIGOTimeGPS injTime;
-    LIGOTimeGPS segmentStart,segmentEnd;
-    segmentStart = cohSNR->epoch;
-    segmentEnd = cohSNR->epoch;
-    XLALGPSAdd(&segmentEnd,params->segmentDuration/2.0);
-    thisInject = params->injectList;
-    while ( thisInject )
-    {
-      injTime = thisInject->geocent_end_time;
-      /* Is injection within segment? */
-      startDiff = XLALGPSToINT8NS( &injTime )-XLALGPSToINT8NS( &segmentStart );
-      endDiff = XLALGPSToINT8NS( &injTime ) - XLALGPSToINT8NS( &segmentEnd );
-      if (startDiff > 0)
-      {
-        if (endDiff < 0)
-        {
-          if (segStartPoint)
-          {
-            /* More than one injection is in the segment. This should not happen
-             * and this case is not dealt with well. For now analyse the whole
-             * segment if this happens */
-            segStartPoint = numPoints/4;
-            segEndPoint = 3*numPoints/4;
-          }
-          else
-          {
-            injDiff = (REAL8) ((XLALGPSToINT8NS( &injTime ) - \
-                       XLALGPSToINT8NS( &segmentStart ) ) / 1E9);
-            injSamplePoint = floor(injDiff * params->sampleRate + 0.5);
-            injSamplePoint += numPoints/4;
-            injWindow = floor(params->injSearchWindow * params->sampleRate+1);
-            segStartPoint = injSamplePoint - injWindow;
-            if ( segStartPoint < numPoints/4)
-              segStartPoint = numPoints/4;
-            segEndPoint = injSamplePoint + injWindow + 1;
-            if ( segEndPoint > 3*numPoints/4)
-              segEndPoint = 3*numPoints/4;
-          }
-        }
-      }
-      thisInject = thisInject->next;
-    }
+    findInjectionSegment(&segStartPoint, &segEndPoint, &cohSNR->epoch, params);
   }
-  
+
   if (! segStartPoint)
   {
     segStartPoint = numPoints/4;
@@ -1499,15 +1446,24 @@ void coh_PTF_statistic(
                                                       &lalDimensionlessUnit,
                                                       3*numPoints/4
                                                           -numPoints/4+10000);
+
       if (spinTemplate)
       {
-        coh_PTF_calculate_bmatrix(params,eigenvecsSngl,eigenvalsSngl,a,b,PTFM,
-            vecLength,vecLength,vecLength,ifoNumber);
+        /* convert PTFM to gsl_matrix */
+        gsl_matrix_view PTFmatrix;
+        PTFmatrix = gsl_matrix_view_array(PTFM[ifoNumber]->data,\
+                                          PTFM[ifoNumber]->dimLength->data[0],
+                                          PTFM[ifoNumber]->dimLength->data[1]);
+        /* calculate eigenvectors and eigenvalues of (h|h)*/
+        gsl_eigen_symmv_workspace *matTemp = gsl_eigen_symmv_alloc(5);
+        gsl_eigen_symmv(&(PTFmatrix.matrix), eigenvalsSngl, eigenvecsSngl,
+                        matTemp);
+        gsl_eigen_symmv_free(matTemp);
         for (i = segStartPoint-5000; i < segEndPoint+5000; ++i)
         {  /* loop over time */ 
           // This function combines the various (Q_i | s) and rotates them into
           // the basis as discussed above.
-          coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,a,b,
+          coh_PTF_calculate_rotated_vectors(params,PTFqVec,snglv1p,snglv2p,Fplus,Fcross,
             timeOffsetPoints,eigenvecsSngl,eigenvalsSngl,
             numPoints,i,vecLength,vecLength,ifoNumber);
 
@@ -1578,7 +1534,7 @@ void coh_PTF_statistic(
       continue;
     }
 
-    if (params->numIFO == 2 && (! params->singlePolFlag) )
+    if (params->numIFO == 2 && (! params->singlePolFlag) && (!params->faceOnStatistic) )
     {
       cohSNR->data->data[i-sOffset] = sqrt(snrComps[ifoNum1]->data->
                                                data[i+tOffset1] *
@@ -1611,7 +1567,7 @@ void coh_PTF_statistic(
 
       // This function combines the various (Q_i | s) and rotates them into
       // the basis as discussed above.
-      coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,
+      coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,
         timeOffsetPoints,eigenvecs,eigenvals,
         numPoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
 
@@ -1620,7 +1576,6 @@ void coh_PTF_statistic(
       for (j = 0; j < vecLengthTwo; j++)
       {
         v1_dot_u1 += v1p[j] * v1p[j];
-        v1_dot_u2 += v1p[j] * v2p[j];
         v2_dot_u2 += v2p[j] * v2p[j];
       }
       // And SNR is calculated
@@ -1636,6 +1591,10 @@ void coh_PTF_statistic(
       }
       else
       {
+        for (j = 0; j < vecLengthTwo; j++)
+        {
+          v1_dot_u2 += v1p[j] * v2p[j];
+        }
         max_eigen = 0.5 * (v1_dot_u1 + v2_dot_u2 + sqrt((v1_dot_u1 - v2_dot_u2)
             * (v1_dot_u1 - v2_dot_u2) + 4 * v1_dot_u2 * v1_dot_u2));
       }
@@ -1689,7 +1648,7 @@ void coh_PTF_statistic(
         /* FIXME: First block should be optional! */
         if (0)
         {
-          coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,a,b,timeOffsetPoints,
+          coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1p,v2p,Fplus,Fcross,timeOffsetPoints,
           eigenvecs,eigenvals,numPoints,i,vecLength,vecLengthTwo,LAL_NUM_IFO);
           v1_dot_u1 = v1_dot_u2 = v2_dot_u1 = v2_dot_u2 = 0;
           for (j = 0; j < vecLengthTwo; j++)
@@ -1772,13 +1731,13 @@ void coh_PTF_statistic(
                 {
                   if (j < vecLength)
                   {
-                    v1[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
-                    v2[j] += a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+                    v1[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+                    v2[j] += Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
                   }
                   else
                   {
-                    v1[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
-                    v2[j] += b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+                    v1[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+                    v2[j] += Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
                   }
                 }
               }
@@ -1851,13 +1810,13 @@ void coh_PTF_statistic(
               {
                 if (j < vecLength)
                 {
-                  v1[j] = a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
-                  v2[j] = a[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
+                  v1[j] = Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].re;
+                  v2[j] = Fplus[k] * PTFqVec[k]->data[j*numPoints+i+timeOffsetPoints[k]].im;
                 }
                 else
                 {
-                  v1[j] = b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
-                  v2[j] = b[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
+                  v1[j] = Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].re;
+                  v2[j] = Fcross[k] * PTFqVec[k]->data[(j-vecLength)*numPoints+i+timeOffsetPoints[k]].im;
                 }
               }
               for (j = 0 ; j < vecLengthTwo ; j++)
@@ -1916,14 +1875,14 @@ void coh_PTF_statistic(
                 if (j == subBankSize)
                 {
                   coh_PTF_calculate_bmatrix(params,Bankeigenvecs[j],
-                      Bankeigenvals[j],a,b,PTFM,csVecLength,csVecLengthTwo,
-                      vecLength,LAL_NUM_IFO);
+                      Bankeigenvals[j],Fplus,Fcross,PTFM,csVecLength,csVecLengthTwo,
+                      vecLength);
                 }
                 else
                 {
                   coh_PTF_calculate_bmatrix(params,Bankeigenvecs[j],
-                      Bankeigenvals[j],a,b,bankNormOverlaps[j].PTFM,csVecLength,
-                      csVecLengthTwo,vecLength,LAL_NUM_IFO);
+                      Bankeigenvals[j],Fplus,Fcross,bankNormOverlaps[j].PTFM,csVecLength,
+                      csVecLengthTwo,vecLength);
                 }
               }
             }
@@ -1939,14 +1898,14 @@ void coh_PTF_statistic(
                     csVecLengthTwo,csVecLengthTwo);
                 // We calculate the coherent overlaps in this function
                 coh_PTF_calculate_coherent_bank_overlaps(params,bankOverlaps[j],
-                    bankCohOverlaps[j],a,b,Bankeigenvecs[subBankSize],
+                    bankCohOverlaps[j],Fplus,Fcross,Bankeigenvecs[subBankSize],
                     Bankeigenvals[subBankSize],Bankeigenvecs[j],
                     Bankeigenvals[j],csVecLength,csVecLengthTwo);
               }
             }
             // In this function all the filters are combined to produce the
             // value of the bank veto.
-            bankVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,a,b,params,bankCohOverlaps,NULL,dataOverlaps,NULL,PTFqVec,NULL,timeOffsetPoints,Bankeigenvecs,Bankeigenvals,LAL_NUM_IFO,csVecLength,csVecLengthTwo);
+            bankVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,Fplus,Fcross,params,bankCohOverlaps,NULL,dataOverlaps,NULL,PTFqVec,NULL,timeOffsetPoints,Bankeigenvecs,Bankeigenvals,LAL_NUM_IFO,csVecLength,csVecLengthTwo);
           }
           // Now, as well as the coherent bank veto calculated above, we can calculate
           // the single detector bank veto
@@ -1956,7 +1915,7 @@ void coh_PTF_statistic(
             {
               if (params->haveTrig[k])
               {
-                bankVeto[k]->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,a,b,params,NULL,bankOverlaps,dataOverlaps,bankNormOverlaps,PTFqVec,PTFM,timeOffsetPoints,NULL,NULL,k,1,1);
+                bankVeto[k]->data->data[i-numPoints/4] = coh_PTF_calculate_bank_veto(numPoints,i,subBankSize,Fplus,Fcross,params,NULL,bankOverlaps,dataOverlaps,bankNormOverlaps,PTFqVec,PTFM,timeOffsetPoints,NULL,NULL,k,1,1);
               }
             }            
           }
@@ -1973,7 +1932,7 @@ void coh_PTF_statistic(
               Autoeigenvals = gsl_vector_alloc(csVecLengthTwo);
               // Again the eigenvectors/values are calculated
               coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
-                  a,b,PTFM,csVecLength,csVecLengthTwo,vecLength,LAL_NUM_IFO);
+                  Fplus,Fcross,PTFM,csVecLength,csVecLengthTwo,vecLength);
             }
 
             if (! autoCohOverlaps)
@@ -1988,12 +1947,12 @@ void coh_PTF_statistic(
                 // The coherent rotated overlaps are calculated
                 coh_PTF_calculate_coherent_bank_overlaps(
                     params,autoTempOverlaps[j],
-                    autoCohOverlaps[j],a,b,Autoeigenvecs,Autoeigenvals,
+                    autoCohOverlaps[j],Fplus,Fcross,Autoeigenvecs,Autoeigenvals,
                     Autoeigenvecs,Autoeigenvals,csVecLength,csVecLengthTwo);
               }
             }
             // Auto veto is calculated
-            autoVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,a,b,params,autoCohOverlaps,NULL,PTFqVec,NULL,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,LAL_NUM_IFO,csVecLength,csVecLengthTwo);
+            autoVeto[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,Fplus,Fcross,params,autoCohOverlaps,NULL,PTFqVec,NULL,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,LAL_NUM_IFO,csVecLength,csVecLengthTwo);
           }
           if (params->doSnglChiSquared)
           {
@@ -2001,7 +1960,7 @@ void coh_PTF_statistic(
             {
               if (params->haveTrig[k])
               {
-                autoVeto[k]->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,a,b,params,NULL,autoTempOverlaps,PTFqVec,PTFM,timeOffsetPoints,NULL,NULL,k,1,1);
+                autoVeto[k]->data->data[i-numPoints/4] = coh_PTF_calculate_auto_veto(numPoints,i,Fplus,Fcross,params,NULL,autoTempOverlaps,PTFqVec,PTFM,timeOffsetPoints,NULL,NULL,k,1,1);
               }
             }
           }
@@ -2142,7 +2101,7 @@ void coh_PTF_statistic(
               Autoeigenvals = gsl_vector_alloc(csVecLengthTwo);
               // Again the eigenvectors/values are calculated
               coh_PTF_calculate_bmatrix(params,Autoeigenvecs,Autoeigenvals,
-                  a,b,PTFM,csVecLength,csVecLengthTwo,vecLength,LAL_NUM_IFO);
+                  Fplus,Fcross,PTFM,csVecLength,csVecLengthTwo,vecLength);
             }
             if (! frequencyRangesPlus[LAL_NUM_IFO])
             {
@@ -2150,7 +2109,7 @@ void coh_PTF_statistic(
                 LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
               frequencyRangesCross[LAL_NUM_IFO] = (REAL4 *)
                 LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
-              coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[LAL_NUM_IFO],frequencyRangesCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO,params->singlePolFlag);
+              coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,Fplus,Fcross,frequencyRangesPlus[LAL_NUM_IFO],frequencyRangesCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO,params->singlePolFlag);
             }
             if (! powerBinsPlus[LAL_NUM_IFO])
             {
@@ -2158,7 +2117,7 @@ void coh_PTF_statistic(
                 LALCalloc(params->numChiSquareBins, sizeof(REAL4));
               powerBinsCross[LAL_NUM_IFO] = (REAL4 *)
                 LALCalloc(params->numChiSquareBins, sizeof(REAL4));
-              coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[LAL_NUM_IFO],frequencyRangesCross[LAL_NUM_IFO],powerBinsPlus[LAL_NUM_IFO],powerBinsCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO,params->singlePolFlag);
+              coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,Fplus,Fcross,frequencyRangesPlus[LAL_NUM_IFO],frequencyRangesCross[LAL_NUM_IFO],powerBinsPlus[LAL_NUM_IFO],powerBinsCross[LAL_NUM_IFO],Autoeigenvecs,LAL_NUM_IFO,params->singlePolFlag);
             }
             if (! tempqVec)
               tempqVec = XLALCreateCOMPLEX8VectorSequence (1, numPoints);
@@ -2223,7 +2182,7 @@ void coh_PTF_statistic(
               }
             }
             /* Calculate chi square here */
-            chiSquare[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,NULL,a,b,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,powerBinsPlus[LAL_NUM_IFO],powerBinsCross[LAL_NUM_IFO],LAL_NUM_IFO,csVecLength,csVecLengthTwo);
+            chiSquare[LAL_NUM_IFO]->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqOverlaps,PTFqVec,NULL,Fplus,Fcross,timeOffsetPoints,Autoeigenvecs,Autoeigenvals,powerBinsPlus[LAL_NUM_IFO],powerBinsCross[LAL_NUM_IFO],LAL_NUM_IFO,csVecLength,csVecLengthTwo);
           }
           else if (params->doChiSquare)
             chiSquare[LAL_NUM_IFO]->data->data[i-numPoints/4] = 0;
@@ -2252,7 +2211,7 @@ void coh_PTF_statistic(
                     LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
                 frequencyRangesCross[k] = (REAL4 *)
                     LALCalloc(params->numChiSquareBins-1, sizeof(REAL4));
-                coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[k],frequencyRangesCross[k],NULL,k,0);
+                coh_PTF_calculate_standard_chisq_freq_ranges(params,fcTmplt,invspec,PTFM,Fplus,Fcross,frequencyRangesPlus[k],frequencyRangesCross[k],NULL,k,0);
               }
               if (! powerBinsPlus[k])
               {
@@ -2260,7 +2219,7 @@ void coh_PTF_statistic(
                   LALCalloc(params->numChiSquareBins, sizeof(REAL4));
                 powerBinsCross[k] = (REAL4 *)
                   LALCalloc(params->numChiSquareBins, sizeof(REAL4));
-                coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,a,b,frequencyRangesPlus[k],frequencyRangesCross[k],powerBinsPlus[k],powerBinsCross[k],NULL,k,0);
+                coh_PTF_calculate_standard_chisq_power_bins(params,fcTmplt,invspec,PTFM,Fplus,Fcross,frequencyRangesPlus[k],frequencyRangesCross[k],powerBinsPlus[k],powerBinsCross[k],NULL,k,0);
               }
               if (! tempqVec)
                 tempqVec = XLALCreateCOMPLEX8VectorSequence (1, numPoints);
@@ -2309,7 +2268,7 @@ void coh_PTF_statistic(
                 }
               }
               // Calculate chi squared
-              chiSquare[k]->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqSnglOverlaps,PTFqVec,PTFM,a,b,timeOffsetPoints,NULL,NULL,powerBinsPlus[k],powerBinsCross[k],k,1,1);
+              chiSquare[k]->data->data[i-numPoints/4] = coh_PTF_calculate_chi_square(params,numPoints,i,chisqSnglOverlaps,PTFqVec,PTFM,Fplus,Fcross,timeOffsetPoints,NULL,NULL,powerBinsPlus[k],powerBinsCross[k],k,1,1);
  
             }
           }
@@ -2340,10 +2299,7 @@ void coh_PTF_statistic(
       XLALDestroyCOMPLEX8VectorSequence(tempqVec);
   }
 
-  gsl_matrix_free(BNull);
   gsl_matrix_free(B2Null);
-  gsl_permutation_free(p);
-  gsl_permutation_free(pNull);
   gsl_eigen_symmv_free(matTempNull);
   gsl_matrix_free(eigenvecs);
   gsl_vector_free(eigenvals);
@@ -2377,7 +2333,7 @@ UINT8 coh_PTF_add_triggers(
     REAL4                   rightAscension,
     REAL4                   declination,
     INT8                    slideId,
-    REAL8                   *timeOffsets
+    REAL4                   *timeOffsets
 )
 {
   // This function adds a trigger to the event list

@@ -1,4 +1,7 @@
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
 
 check_PROGRAMS = \
 	LALConstantsTest \
@@ -7,41 +10,7 @@ check_PROGRAMS = \
 	LALVersionTest \
 	StringConvertTest
 
-LALConstantsTest_SOURCES = LALConstantsTest.c
-LALConstantsTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LALGSLTest_SOURCES = LALGSLTest.c
-LALGSLTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LALMallocTest_SOURCES = LALMallocTest.c
-LALMallocTest_LDADD =  \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-LALVersionTest_SOURCES = LALVersionTest.c
-LALVersionTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
-StringConvertTest_SOURCES = StringConvertTest.c
-StringConvertTest_LDADD = \
-	$(top_builddir)/lib/liblal.la \
-	$(top_builddir)/packages/support/src/liblalsupport.la
-
 TESTS = \
-	LALConstantsTest \
-	LALGSLTest \
-	LALMallocTest \
-	LALVersionTest \
-	StringConvertTest
+	$(check_PROGRAMS)
 
 TESTS_ENVIRONMENT = 1>/dev/null
-
-EXTRA_DIST =
-
-MOSTLYCLEANFILES =
-DISTCLEANFILES =

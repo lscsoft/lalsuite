@@ -81,6 +81,7 @@ extern "C" {
     more elements will be added to this struct as required.
 */
 typedef struct
+tagNRWaveMetaData
 {
   REAL8 massRatio; /**< Mass ratio m1/m2 where we assume m1 >= m2*/
   REAL8 spin1[3];  /**< Spin of m1 */
@@ -94,6 +95,7 @@ NRWaveMetaData;
 
 /** List of numrel waveform metadata */
 typedef struct
+tagNRWaveCatalog
 {
   UINT4           length; /**< Number of waveforms */
   NRWaveMetaData  *data;  /**< List of waveforms */
@@ -101,6 +103,7 @@ typedef struct
 NRWaveCatalog;
 
 typedef struct
+tagNumRelInjectParams
 {
   NRWaveCatalog *nrCatalog;
   INT4 modeLlo;

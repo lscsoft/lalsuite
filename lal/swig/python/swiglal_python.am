@@ -24,7 +24,7 @@ EXTRA_DIST += $(swig_modl_check).py
 if SWIG_BUILD_PYTHON
 
 # SWIG Python generated source files
-nodist_pyexec_PYTHON = $(SWIG_OUTDIR)/$(PACKAGE_NAME).py
+nodist_pkgpyexec_PYTHON = $(SWIG_OUTDIR)/$(PACKAGE_NAME).py
 
 # run SWIG wrapping module test script
 TESTS = $(swig_modl_check).py

@@ -493,6 +493,9 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
   /* FFT plan defaults to 1 */
   params->fftLevel = 1;
 
+  /* No injections unless supplied */
+  params->injectList = NULL;
+
   /* set default sky location params */
   params->rightAscension = -1000.;
   params->declination = -1000.;

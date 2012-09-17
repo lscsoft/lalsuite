@@ -58,9 +58,11 @@ int main( int argc, char **argv )
   COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1];
   time_t                  startTime;
   LALDetector             *detectors[LAL_NUM_IFO+1];
-  REAL8                   *timeOffsets;
-  REAL8                   *Fplus;
-  REAL8                   *Fcross;
+  REAL4                   *timeOffsets;
+  REAL4                   *Fplus;
+  REAL8                   FplusTmp;
+  REAL4                   *Fcross;
+  REAL8                   FcrossTmp;
   REAL8                   detLoc[3];
   REAL4TimeSeries         UNUSED *pValues[10];
   REAL4TimeSeries         UNUSED *gammaBeta[2];
@@ -173,9 +175,9 @@ int main( int argc, char **argv )
 
   /* Determine time delays and response functions */ 
 
-  timeOffsets = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
-  Fplus = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
-  Fcross = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL8 ));
+  timeOffsets = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL4 ));
+  Fplus = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL4 ));
+  Fcross = LALCalloc(1, numSegments*LAL_NUM_IFO*sizeof( REAL4 ));
   for( ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
   {
     detectors[ifoNumber] = LALCalloc( 1, sizeof( *detectors[ifoNumber] ));
@@ -194,13 +196,14 @@ int main( int argc, char **argv )
       XLALGPSAdd(&segStartTime,8.5*params->segmentDuration/2.0);
       /*XLALGPSMultiply(&segStartTime,0.);
       XLALGPSAdd(&segStartTime,874610713.072549154);*/
-      timeOffsets[j*LAL_NUM_IFO+ifoNumber] = 
+      timeOffsets[j*LAL_NUM_IFO+ifoNumber] = (REAL4)
           XLALTimeDelayFromEarthCenter(detLoc,params->rightAscension,
           params->declination,&segStartTime);
-      XLALComputeDetAMResponse(&Fplus[j*LAL_NUM_IFO+ifoNumber],
-         &Fcross[j*LAL_NUM_IFO+ifoNumber],
+      XLALComputeDetAMResponse(&FplusTmp, &FcrossTmp,
          detectors[ifoNumber]->response,params->rightAscension,
          params->declination,0.,XLALGreenwichMeanSiderealTime(&segStartTime));
+      Fplus[j*LAL_NUM_IFO + ifoNumber] = (REAL4) FplusTmp;
+      Fcross[j*LAL_NUM_IFO + ifoNumber] = (REAL4) FcrossTmp;
     }
     LALFree(detectors[ifoNumber]);
   }
@@ -331,7 +334,7 @@ int main( int argc, char **argv )
   LALFree(timeSlideVectors);
   coh_PTF_cleanup(params,procpar,fwdplan,revplan,invPlan,channel,
       invspec,segments,eventList,PTFbankhead,fcTmplt,fcTmpltParams,
-      fcInitParams,PTFM,PTFN,PTFqVec,Fplus,Fcross,timeOffsets,NULL,NULL);
+      fcInitParams,PTFM,PTFN,PTFqVec,timeOffsets,Fplus,Fcross,NULL,NULL);
   while ( PTFSpinTmpltHead )
   {
     PTFSpinTmplt = PTFSpinTmpltHead;
@@ -362,8 +365,8 @@ int coh_PTF_spin_checker(
     REAL8Array              *PTFN[LAL_NUM_IFO+1],
     struct coh_PTF_params   *params,
     UINT4                   singleDetector,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
+    REAL4                   *Fplus,
+    REAL4                   *Fcross,
     INT4                    segmentNumber
 )
 

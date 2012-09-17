@@ -227,6 +227,7 @@ XLALSimInspiralTaylorLength(
             in1.dEnergy = XLALSimInspiraldEt6;
             in1.flux = XLALSimInspiralFt6;
             break;
+        case -1: // Use the highest PN order available, move if higher terms added
         case 7:
             vn = akEF.vlso = vlso = akEF.vlsoT2;
             in1.dEnergy = XLALSimInspiraldEt6;

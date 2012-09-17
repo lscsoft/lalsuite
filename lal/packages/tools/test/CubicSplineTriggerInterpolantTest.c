@@ -68,7 +68,7 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 
     {
         /* Test some random sample data. */
-        const double complex y[] = {0, 1.23412285-1.56122275j, -2.06157986+0.78298714j, -0.52811449+0.47859189j, 0.42450302+2.06877714j};
+        const double complex y[] = {0, 1.23412285-1.56122275*I, -2.06157986+0.78298714*I, -0.52811449+0.47859189*I, 0.42450302+2.06877714*I};
 
         result = XLALApplyCubicSplineTriggerInterpolant(interp, &tmax, &ymax, &y[2]);
         if (result)

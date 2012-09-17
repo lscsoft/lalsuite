@@ -38,7 +38,6 @@ fi
 # ---------- fixed parameter of our test-signal
 Tsft=1800;
 startTime=711595934
-refTime=701595833  ## $startTime
 duration=144000		## 40 hours
 
 Alpha=2.0
@@ -98,7 +97,7 @@ fi
 # this part of the command-line is compatible with SemiAnalyticF:
 saf_CL=" --Alpha=$Alpha --Delta=$Delta --IFO=$IFO --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$h0 --cosi=$cosi --psi=$psi --phi0=$phi0"
 # concatenate this with the mfd-specific switches:
-mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --refTime=$refTime --outSFTv1"
+mfd_CL="${saf_CL} --fmin=$mfd_fmin --Band=$mfd_FreqBand --Freq=$Freq --outSFTbname=$SFTdir/testSFT --f1dot=$f1dot --outSFTv1"
 if [ "$haveNoise" = true ]; then
     mfd_CL="$mfd_CL --noiseSqrtSh=$sqrtSh";
 fi
@@ -137,7 +136,7 @@ outputv1_2="./Fstatv1_grid2.dat";
 ## common cmdline-options for v1 and v2
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
-cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*' --refTime=$refTime -v${debug}"
+cfs_CL="--IFO=$IFO --DataFiles='$SFTdir/testSFT*' -v${debug}"
 if [ "$haveNoise" = false ]; then
     cfs_CL="$cfs_CL --SignalOnly"
 fi
@@ -271,7 +270,7 @@ fi
 ## ----- grid=6
 echo "Comparing gridType=6:"
 echo $cmd0
-cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.0 -v${debug}";
+cmd0="$cmp_code -1 ./$outputv2_2 -2 ./$outputv2_6 --clusterFiles=0 --Ftolerance=0.01 -v${debug}";
 if ! eval $cmd0; then
     echo "OUCH... files differ. Something might be wrong..."
     exit 2

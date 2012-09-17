@@ -77,7 +77,7 @@ typedef enum {
      } TemplateBankType;
 
 
-typedef struct {
+typedef struct tagNDTemplateBankInput {
   REAL4                	minCoordinates[12]; 	/* Psi0, Psi3, etc.      */
   REAL4                	maxCoordinates[12]; 	/* Psi0, Psi3, etc.      */
   REAL4                	minParameters[12];  	/* mass, eta, etc.       */
@@ -91,10 +91,10 @@ typedef struct {
 
 
 
-typedef struct NDTemplateBankOutput{
+typedef struct tagNDTemplateBankOutput{
   REAL4				coordinateVals[12];
   REAL4 			parameterVals[12];
-  struct NDTemplateBankOutput	*next;
+  struct tagNDTemplateBankOutput	*next;
   } NDTemplateBankOutput;
 
 
@@ -102,7 +102,7 @@ typedef struct NDTemplateBankOutput{
 typedef void (*NDTemplateBankMetricPtr)( LALStatus *, NDTemplateBankInput *, REAL4Array *);
 typedef void (*NDTemplateBankTestPtr)(LALStatus *, NDTemplateBankInput *, NDTemplateBankOutput *, INT2 *);
 
-typedef struct {
+typedef struct tagNDTemplateBankFunctionPtrs {
   NDTemplateBankMetricPtr 	metric; 	/*Ptr to metric function */
   NDTemplateBankTestPtr		test;		/*Ptr boundary test fct  */
   } NDTemplateBankFunctionPtrs;

@@ -64,8 +64,8 @@ REAL4 coh_PTF_calculate_bank_veto(
 UINT4           numPoints,
 UINT4           position,
 UINT4           subBankSize,
-REAL4           a[LAL_NUM_IFO],
-REAL4           b[LAL_NUM_IFO],
+REAL4           Fplus[LAL_NUM_IFO],
+REAL4           Fcross[LAL_NUM_IFO],
 struct coh_PTF_params      *params,
 struct bankCohTemplateOverlaps *cohBankOverlaps,
 struct bankComplexTemplateOverlaps *bankOverlaps,
@@ -133,7 +133,7 @@ UINT4       vecLengthTwo
   }
   else
   {
-    coh_PTF_calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,a,b,
+    coh_PTF_calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,Fplus,Fcross,
         timeOffsetPoints,Bankeigenvecs[subBankSize],Bankeigenvals[subBankSize],
         numPoints,position,vecLength,vecLengthTwo,LAL_NUM_IFO);
   }
@@ -162,6 +162,7 @@ UINT4       vecLengthTwo
       bankOverIm = bankOverIm/overlapNorm;
       for (uj = 0; uj < 2 * vecLengthTwo; uj++)
       {
+        // Some stupidity here. vecLengthTwo must = 1 to be in this block
         normFac = 0;
         if (uj == 0)
           BankVetoTemp[uj] = TjwithS1[0];
@@ -202,7 +203,7 @@ UINT4       vecLengthTwo
       /* Calculate the components of subBank template with data */
 
       coh_PTF_calculate_rotated_vectors(params,dataOverlaps[ui].PTFqVec,
-          TjwithS1,TjwithS2,a,b,calTimeOffsetPoints,Bankeigenvecs[ui],
+          TjwithS1,TjwithS2,Fplus,Fcross,calTimeOffsetPoints,Bankeigenvecs[ui],
           Bankeigenvals[ui],halfNumPoints,position-numPoints/4+5000,
           vecLength,vecLengthTwo,LAL_NUM_IFO);
       for (uj = 0; uj < 2*vecLengthTwo; uj++)
@@ -257,8 +258,8 @@ UINT4       vecLengthTwo
 REAL4 coh_PTF_calculate_auto_veto(
 UINT4           numPoints,
 UINT4           position,
-REAL4           a[LAL_NUM_IFO],
-REAL4           b[LAL_NUM_IFO],
+REAL4           Fplus[LAL_NUM_IFO],
+REAL4           Fcross[LAL_NUM_IFO],
 struct coh_PTF_params      *params,
 struct bankCohTemplateOverlaps *cohAutoOverlaps,
 struct bankComplexTemplateOverlaps *autoTempOverlaps,
@@ -306,7 +307,7 @@ UINT4       vecLengthTwo
   }
   else
   {
-    coh_PTF_calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,a,b,
+    coh_PTF_calculate_rotated_vectors(params,PTFqVec,SNRu1,SNRu2,Fplus,Fcross,
         timeOffsetPoints,Autoeigenvecs,Autoeigenvals,
         numPoints,position,vecLength,vecLengthTwo,LAL_NUM_IFO);
   }
@@ -367,7 +368,7 @@ UINT4       vecLengthTwo
       /* Calculate the components of subBank template with data */
 
       coh_PTF_calculate_rotated_vectors(params,PTFqVec,TjwithS1,
-          TjwithS2,a,b,timeOffsetPoints,Autoeigenvecs,
+          TjwithS2,Fplus,Fcross,timeOffsetPoints,Autoeigenvecs,
           Autoeigenvals,numPoints,position-((ui+1) * timeStepPoints),vecLength,
           vecLengthTwo,LAL_NUM_IFO);
       for (uj = 0; uj < 2*vecLengthTwo; uj++)
@@ -466,8 +467,8 @@ void coh_PTF_calculate_coherent_bank_overlaps(
   struct coh_PTF_params   *params,
   struct bankComplexTemplateOverlaps bankOverlaps,
   struct bankCohTemplateOverlaps cohBankOverlaps,
-  REAL4           a[LAL_NUM_IFO],
-  REAL4           b[LAL_NUM_IFO],
+  REAL4           Fplus[LAL_NUM_IFO],
+  REAL4           Fcross[LAL_NUM_IFO],
   gsl_matrix *eigenvecs,
   gsl_vector *eigenvals,
   gsl_matrix *Bankeigenvecs,
@@ -505,20 +506,43 @@ void coh_PTF_calculate_coherent_bank_overlaps(
     {
       for (uj = 0; uj < vecLengthTwo; uj++)
       {
-        if (uj < vecLength)
-          fone = a[ul];
-        else
-          fone = b[ul];
-        for (uk = 0 ; uk < vecLengthTwo; uk++)
+        if (params->faceOnStatistic)
         {
-          if (uk < vecLength)
-            ftwo = a[ul];
+          for (uk = 0 ; uk < vecLengthTwo; uk++)
+          {
+            /* For face-on vecLengthTwo = 1 and this is a bit of a silly loop*/
+            reOverlapsA[uj*vecLengthTwo + uk] += (Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*bankOverlaps.PTFM[ul]->data[0].re;
+            if (params->faceOnStatistic == 1)
+            {
+              imOverlapsA[uj*vecLengthTwo + uk] += -(Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*bankOverlaps.PTFM[ul]->data[0].im;
+            }
+            else if (params->faceOnStatistic == 2)
+            {
+              imOverlapsA[uj*vecLengthTwo + uk] += (Fplus[ul]*Fplus[ul] + Fcross[ul] * Fcross[ul])*bankOverlaps.PTFM[ul]->data[0].im;
+            }
+            else
+            {
+              fprintf(stderr,"Shit, I shouldn't be here! Face-on stat is broken");
+            }
+          }
+        }
+        else
+        {
+          if (uj < vecLength)
+            fone = Fplus[ul];
           else
-            ftwo = b[ul];
-          reOverlapsA[uj*vecLengthTwo + uk] +=
-              fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].re;
-          imOverlapsA[uj*vecLengthTwo + uk] +=
-              fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].im;
+            fone = Fcross[ul];
+          for (uk = 0 ; uk < vecLengthTwo; uk++)
+          {
+            if (uk < vecLength)
+              ftwo = Fplus[ul];
+            else
+              ftwo = Fcross[ul];
+            reOverlapsA[uj*vecLengthTwo + uk] +=
+                fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].re;
+            imOverlapsA[uj*vecLengthTwo + uk] +=
+                fone * ftwo *  bankOverlaps.PTFM[ul]->data[0].im;
+          }
         }
       }
     }
@@ -560,8 +584,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL4 a[LAL_NUM_IFO],
-    REAL4 b[LAL_NUM_IFO],
+    REAL4 Fplus[LAL_NUM_IFO],
+    REAL4 Fcross[LAL_NUM_IFO],
     REAL4 *frequencyRangesPlus,
     REAL4 *frequencyRangesCross,
     gsl_matrix *eigenvecs,
@@ -571,7 +595,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,v3,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 v1,v2,u1,u2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
   REAL4 a2[LAL_NUM_IFO];
@@ -601,7 +625,6 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
 
   v1 = 0;
   v2 = 0;
-  v3 = 0;
   if (detectorNum == LAL_NUM_IFO)
   {
     /* If only one polarization the value of a2 and b2 is irrelevant! */
@@ -616,14 +639,25 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
         }
       }
     }
+    else if (params->faceOnStatistic)
+    {
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if ( params->haveTrig[k] )
+        {
+          a2[k] = pow(Fplus[k]*Fplus[k] + Fcross[k] * Fcross[k],0.5);
+          b2[k] = a2[k];
+        }
+      }
+    }
     else
     {
       for( k = 0; k < LAL_NUM_IFO; k++)
       {
         if ( params->haveTrig[k] )
         {
-          a2[k] = a[k]*gsl_matrix_get(eigenvecs,0,0) + b[k]*gsl_matrix_get(eigenvecs,1,0);
-          b2[k] = a[k]*gsl_matrix_get(eigenvecs,0,1) + b[k]*gsl_matrix_get(eigenvecs,1,1);
+          a2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,0) + Fcross[k]*gsl_matrix_get(eigenvecs,1,0);
+          b2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,1) + Fcross[k]*gsl_matrix_get(eigenvecs,1,1);
         }
       }
     }
@@ -633,7 +667,7 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
       {
         v1 += a2[k]*a2[k]*PTFM[k]->data[0];
         v2 += b2[k]*b2[k]*PTFM[k]->data[0];
-        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
+//        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
       }
     }
   }
@@ -714,8 +748,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL4 a[LAL_NUM_IFO],
-    REAL4 b[LAL_NUM_IFO],
+    REAL4 Fplus[LAL_NUM_IFO],
+    REAL4 Fcross[LAL_NUM_IFO],
     REAL4 *frequencyRangesPlus,
     REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
@@ -727,7 +761,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
 {
   /* THIS FUNCTION IS NON-SPIN ONLY! DO NOT TRY TO RUN WITH PTF IN SPIN MODE */
   UINT4 i,k,kmin,kmax,len,freqBinPlus,freqBinCross,numFreqBins;
-  REAL4 v1,v2,v3,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
+  REAL4 v1,v2,overlapCont,SNRtempPlus,SNRtempCross,SNRmaxPlus,SNRmaxCross;
   REAL4 SNRplusLast,SNRcrossLast;
   REAL8         f_min, deltaF, fFinal;
   COMPLEX8     *PTFQtilde   = NULL;
@@ -759,7 +793,6 @@ void coh_PTF_calculate_standard_chisq_power_bins(
   // NOTE: v3 is calculated for verification. It should = 0.
   v1 = 0;
   v2 = 0;
-  v3 = 0;
   if (detectorNum == LAL_NUM_IFO)
   {
     /* If only one polarization the value of a2 and b2 is irrelevant! */
@@ -774,13 +807,24 @@ void coh_PTF_calculate_standard_chisq_power_bins(
         }
       }
     }
+    else if (params->faceOnStatistic)
+    {
+      for( k = 0; k < LAL_NUM_IFO; k++)
+      {
+        if ( params->haveTrig[k] )
+        {
+          a2[k] = pow(Fplus[k]*Fplus[k] + Fcross[k] * Fcross[k],0.5);
+          b2[k] = a2[k];
+        }
+      }
+    }
     else
     {
       for( k = 0; k < LAL_NUM_IFO; k++)
       {         if ( params->haveTrig[k] )
         {       
-          a2[k] = a[k]*gsl_matrix_get(eigenvecs,0,0) + b[k]*gsl_matrix_get(eigenvecs,1,0);
-          b2[k] = a[k]*gsl_matrix_get(eigenvecs,0,1) + b[k]*gsl_matrix_get(eigenvecs,1,1);
+          a2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,0) + Fcross[k]*gsl_matrix_get(eigenvecs,1,0);
+          b2[k] = Fplus[k]*gsl_matrix_get(eigenvecs,0,1) + Fcross[k]*gsl_matrix_get(eigenvecs,1,1);
         }
       } 
     }
@@ -790,7 +834,7 @@ void coh_PTF_calculate_standard_chisq_power_bins(
       {
         v1 += a2[k]*a2[k]*PTFM[k]->data[0];
         v2 += b2[k]*b2[k]*PTFM[k]->data[0];
-        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
+//        v3 += a2[k]*b2[k]*PTFM[k]->data[0];
       }
     }
   }
@@ -888,8 +932,8 @@ UINT4           position,
 struct bankDataOverlaps *chisqOverlaps,    
 COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
 REAL8Array      *PTFM[LAL_NUM_IFO+1],
-REAL4           a[LAL_NUM_IFO],
-REAL4           b[LAL_NUM_IFO],
+REAL4           Fplus[LAL_NUM_IFO],
+REAL4           Fcross[LAL_NUM_IFO],
 INT4            timeOffsetPoints[LAL_NUM_IFO],
 gsl_matrix *eigenvecs,
 gsl_vector *eigenvals,   
@@ -922,7 +966,7 @@ UINT4 vecLengthTwo
 
   if (detectorNum == LAL_NUM_IFO)
   {
-    coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1full,v2full,a,b,
+    coh_PTF_calculate_rotated_vectors(params,PTFqVec,v1full,v2full,Fplus,Fcross,
           timeOffsetPoints,eigenvecs,eigenvals,numPoints,
           position,vecLength,vecLengthTwo,LAL_NUM_IFO);
   }
@@ -947,12 +991,12 @@ UINT4 vecLengthTwo
     {
       /* calculate SNR in this frequency bin */
       coh_PTF_calculate_rotated_vectors(params,chisqOverlaps[i].PTFqVec,v1Plus,
-          v2Plus,a,b,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
+          v2Plus,Fplus,Fcross,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
           position-numPoints/4+5000,vecLength,vecLengthTwo,LAL_NUM_IFO);
 
       coh_PTF_calculate_rotated_vectors(params,
           chisqOverlaps[i+numChiSquareBins].PTFqVec,v1Cross,
-          v2Cross,a,b,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
+          v2Cross,Fplus,Fcross,timeOffsetPoints,eigenvecs,eigenvals,halfNumPoints,
           position-numPoints/4+5000,vecLength,vecLengthTwo,LAL_NUM_IFO);
 
       SNRtemp= pow((v1Plus[0] - v1full[0]*powerBinsPlus[i]),2)/powerBinsPlus[i];

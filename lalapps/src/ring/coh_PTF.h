@@ -207,6 +207,7 @@ struct coh_PTF_params {
   int          writeSegment;
   int          writeFilterOutput;
   LIGOTimeGPS  jobStartTime;
+  int          faceOnStatistic;
 };
 
 /* Other structures */
@@ -270,9 +271,9 @@ void coh_PTF_statistic(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     struct coh_PTF_params   *params,
     UINT4                   spinTemplate,
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
+    REAL4                   *timeOffsets,
+    REAL4                   *Fplus,
+    REAL4                   *Fcross,
     INT4                    segmentNumber,
     REAL4TimeSeries         *pValues[10],
     REAL4TimeSeries         *gammaBeta[2],
@@ -318,7 +319,7 @@ UINT8 coh_PTF_add_triggers(
     REAL4                   rightAscension,
     REAL4                   declination,
     INT8                    slideId,
-    REAL8                   *timeOffsets
+    REAL4                   *timeOffsets
 );
 void coh_PTF_cluster_triggers(
   struct coh_PTF_params   *params,
@@ -339,8 +340,8 @@ int coh_PTF_spin_checker(
     REAL8Array              *PTFN[LAL_NUM_IFO+1],
     struct coh_PTF_params   *params,
     UINT4                   singleDetector,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
+    REAL4                   *Fplus,
+    REAL4                   *Fcross,
     INT4                    segmentNumber
 );
 
@@ -356,9 +357,9 @@ REAL4TimeSeries *coh_PTF_get_data(
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
     REAL4TimeSeries *channel[LAL_NUM_IFO + 1],
-    REAL8 *Fplus,
-    REAL8 *Fcross,
-    REAL8 *timeOffsets
+    REAL4 *Fplus,
+    REAL4 *Fcross,
+    REAL4 *timeOffsets
 );
 
 REAL4FrequencySeries *coh_PTF_get_invspec(
@@ -386,13 +387,12 @@ void coh_PTF_calculate_bmatrix(
   struct coh_PTF_params   *params,
   gsl_matrix *eigenvecs,
   gsl_vector *eigenvals,
-  REAL4 a[LAL_NUM_IFO],
-  REAL4 b[LAL_NUM_IFO],
+  REAL4 Fplus[LAL_NUM_IFO],
+  REAL4 Fpcross[LAL_NUM_IFO],
   REAL8Array              *PTFM[LAL_NUM_IFO+1],
   UINT4 vecLength,
   UINT4 vecLengthTwo,
-  UINT4 PTFMlen,
-  UINT4 detectorNum
+  UINT4 PTFMlen
 );
 
 void coh_PTF_calculate_rotated_vectors(
@@ -400,8 +400,8 @@ void coh_PTF_calculate_rotated_vectors(
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     REAL4 *u1,
     REAL4 *u2,
-    REAL4 a[LAL_NUM_IFO],
-    REAL4 b[LAL_NUM_IFO],
+    REAL4 Fplus[LAL_NUM_IFO],
+    REAL4 Fcross[LAL_NUM_IFO],
     INT4  timeOffsetPoints[LAL_NUM_IFO],
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
@@ -429,11 +429,11 @@ void coh_PTF_cleanup(
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
     REAL8Array              *PTFN[LAL_NUM_IFO+1],
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
-    REAL8                   *timeOffsets,
-    REAL8                   *Fplus,
-    REAL8                   *Fcross,
-    REAL8                   *Fplustrig,
-    REAL8                   *Fcrosstrig
+    REAL4                   *timeOffsets,
+    REAL4                   *Fplus,
+    REAL4                   *Fcross,
+    REAL4                   *Fplustrig,
+    REAL4                   *Fcrosstrig
 );
 
 REAL4FFTPlan *coh_PTF_get_fft_fwdplan( struct coh_PTF_params *params );
@@ -538,8 +538,8 @@ REAL4 coh_PTF_calculate_bank_veto(
     UINT4           numPoints,
     UINT4           position,
     UINT4           subBankSize,
-    REAL4           a[LAL_NUM_IFO],
-    REAL4           b[LAL_NUM_IFO],
+    REAL4           Fplus[LAL_NUM_IFO],
+    REAL4           Fcross[LAL_NUM_IFO],
     struct coh_PTF_params      *params,
     struct bankCohTemplateOverlaps *cohBankOverlaps,
     struct bankComplexTemplateOverlaps *bankOverlaps,
@@ -558,8 +558,8 @@ REAL4 coh_PTF_calculate_bank_veto(
 REAL4 coh_PTF_calculate_auto_veto(
     UINT4           numPoints,
     UINT4           position,
-    REAL4           a[LAL_NUM_IFO],
-    REAL4           b[LAL_NUM_IFO],
+    REAL4           Fplus[LAL_NUM_IFO],
+    REAL4           Fcross[LAL_NUM_IFO],
     struct coh_PTF_params      *params,
     struct bankCohTemplateOverlaps *cohAutoOverlaps,
     struct bankComplexTemplateOverlaps *autoTempOverlaps,
@@ -586,8 +586,8 @@ void coh_PTF_calculate_coherent_bank_overlaps(
     struct coh_PTF_params   *params,
     struct bankComplexTemplateOverlaps bankOverlaps,
     struct bankCohTemplateOverlaps cohBankOverlaps,
-    REAL4           a[LAL_NUM_IFO],
-    REAL4           b[LAL_NUM_IFO],
+    REAL4           Fplus[LAL_NUM_IFO],
+    REAL4           Fcross[LAL_NUM_IFO],
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
     gsl_matrix *Bankeigenvecs,
@@ -601,8 +601,8 @@ void coh_PTF_calculate_standard_chisq_freq_ranges(
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL4 a[LAL_NUM_IFO],
-    REAL4 b[LAL_NUM_IFO],
+    REAL4 Fplus[LAL_NUM_IFO],
+    REAL4 Fcross[LAL_NUM_IFO],
     REAL4 *frequencyRangesPlus,
     REAL4 *frequencyRangesCross,
     gsl_matrix *eigenvecs,
@@ -615,8 +615,8 @@ void coh_PTF_calculate_standard_chisq_power_bins(
     FindChirpTemplate       *fcTmplt,
     REAL4FrequencySeries    *invspec[LAL_NUM_IFO+1],
     REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL4 a[LAL_NUM_IFO],
-    REAL4 b[LAL_NUM_IFO],
+    REAL4 Fplus[LAL_NUM_IFO],
+    REAL4 Fcross[LAL_NUM_IFO],
     REAL4 *frequencyRangesPlus,
     REAL4 *frequencyRangesCross,
     REAL4 *powerBinsPlus,
@@ -633,8 +633,8 @@ REAL4 coh_PTF_calculate_chi_square(
     struct bankDataOverlaps *chisqOverlaps,
     COMPLEX8VectorSequence  *PTFqVec[LAL_NUM_IFO+1],
     REAL8Array      *PTFM[LAL_NUM_IFO+1],
-    REAL4           a[LAL_NUM_IFO],
-    REAL4           b[LAL_NUM_IFO],
+    REAL4           Fplus[LAL_NUM_IFO],
+    REAL4           Fcross[LAL_NUM_IFO],
     INT4            timeOffsetPoints[LAL_NUM_IFO],
     gsl_matrix *eigenvecs,
     gsl_vector *eigenvals,
@@ -775,4 +775,11 @@ void REALToGSLVector(
     const REAL8 *input,
     gsl_vector  *output,
     size_t      size
+);
+
+void findInjectionSegment(
+    UINT4 *start,
+    UINT4 *end,
+    LIGOTimeGPS *epoch,
+    struct coh_PTF_params *params
 );

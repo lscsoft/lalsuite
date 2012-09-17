@@ -1,5 +1,7 @@
-LDADD = $(top_builddir)/packages/support/src/liblalsupport.la $(top_builddir)/lib/liblal.la
 INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+LDADD = \
+	$(top_builddir)/lib/liblal.la \
+	$(top_builddir)/packages/support/src/liblalsupport.la
 
 noinst_HEADERS = \
 	ArrayFactoriesTest_source.c \
@@ -15,8 +17,4 @@ check_PROGRAMS = \
 	VectorSequenceFactoriesTest
 
 TESTS = \
-	ArrayFactoriesTest \
-	ArraySequenceFactoriesTest \
-	VectorFactoriesTest \
-	StringVectorTest \
-	VectorSequenceFactoriesTest
+	$(check_PROGRAMS)

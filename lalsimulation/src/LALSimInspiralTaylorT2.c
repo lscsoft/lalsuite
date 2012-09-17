@@ -624,6 +624,7 @@ static int XLALSimInspiralTaylorT2Setup(
            f->timing2 = &XLALSimInspiralTiming2_6PN;
            break;
      case 7:
+     case -1: // Use the highest PN order available, move if higher terms added
            ak->vlso = ak->vlsoT2;
            f->phasing2 = &XLALSimInspiralPhasing2_7PN;
            f->timing2 = &XLALSimInspiralTiming2_7PN;

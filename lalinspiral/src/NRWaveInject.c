@@ -750,6 +750,7 @@ void LALInjectStrainGW( LALStatus                 *status,
   if(!htData8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate signal buffer\n");
 
   for(UINT4 i=0;i<htData->data->length;i++) htData8->data->data[i]=(REAL8)htData->data->data[i];
+  for(UINT4 i=0;i<injData->data->length;i++) injData8->data->data[i]=(REAL8)injData->data->data[i];
 
   /* inject the htData into injection time stream */
   int retcode = XLALSimAddInjectionREAL8TimeSeries(injData8, htData8, NULL);

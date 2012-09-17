@@ -15,8 +15,3 @@ libstd_la_SOURCES = \
 	XLALError.c
 
 noinst_HEADERS = Grid_source.c
-
-EXTRA_DIST =
-
-MOSTLYCLEANFILES =
-DISTCLEANFILES =

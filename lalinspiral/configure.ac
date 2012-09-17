@@ -13,6 +13,10 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  python/Makefile \
+  swig/Makefile \
+  swig/octave/Makefile \
+  swig/python/Makefile \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
@@ -52,6 +56,14 @@ LALSUITE_WITH_CUDA
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
+
+# enable SWIG wrapping modules
+LALSUITE_ENABLE_SWIG
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
@@ -142,6 +154,10 @@ LALSUITE_CHECK_LIB([LALMetaIO],[1.0.4],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRe
 LALSUITE_CHECK_LIB([LALSimulation],[0.4.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALFrame],[1.0.5],[LALFrOpen],[lal/LALFrameL.h])
 
+# configure SWIG wrapping modules
+LALSUITE_USE_SWIG([XLAL LAL])
+LALSUITE_SWIG_DEPENDS([lal],[true])
+
 # add gcc specific flags
 if test "$GCC" = yes; then
   # don't use gcc flags when cuda is enabled
@@ -173,6 +189,8 @@ echo "
         LALInspiral has now been successfully configured:
 
             CUDA support is $CUDA_ENABLE_VAL
+            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
         and will be installed under the directory:
 

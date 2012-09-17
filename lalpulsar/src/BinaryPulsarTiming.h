@@ -98,7 +98,11 @@ tagBinaryPulsarParams
   REAL8 f3;     /**< frequency third derivative (Hz/s^3) */
   REAL8 f4;     /**< frequency fourth derivative (Hz/s^4) */
   REAL8 f5;     /**< frequency fifth derivative (Hz/s^5) */
-
+  REAL8 f6;     /**< frequency sixth derivative (Hz/s^6) */
+  REAL8 f7;     /**< frequency seventh derivative (Hz/s^7) */
+  REAL8 f8;     /**< frequency eighth derivative (Hz/s^8) */
+  REAL8 f9;     /**< frequency ninth derivative (Hz/s^9) */
+  
   REAL8 ra;     /**< right ascension (rads) */
   REAL8 dec;    /**< declination (rads) */
   REAL8 pmra;   /**< proper motion in RA (rads/s) */
@@ -161,7 +165,7 @@ tagBinaryPulsarParams
 
   /* orbital frequency coefficients for BTX model (only for one orbit at the
      moment i.e. a two body system) */
-  REAL8 fb[12]; /**< orbital frequency coefficients for BTX model */
+  REAL8 *fb; /**< orbital frequency coefficients for BTX model */
   INT4 nfb;     /**< the number of fb coefficients */
 
   REAL8 px;     /**< pulsar parallax (in milliarcsecs) */
@@ -170,6 +174,13 @@ tagBinaryPulsarParams
   REAL8 DM;     /**< dispersion measure */
   REAL8 DM1;    /**< first derivative of dispersion measure */
 
+  /* sinusoidal parameters for fitting quasi-periodic timing noise */
+  REAL8 *waveCos;
+  REAL8 *waveSin;
+  REAL8 wave_om;  /**< fundamental frequency timing noise terms */
+  REAL8 waveepoch;
+  INT4 nwaves;
+  
   /* gravitational wave parameters */
   REAL8 h0;     /**< gravitational wave amplitude */
   REAL8 cosiota;/**< cosine of the pulsars orientation angle */
@@ -177,6 +188,7 @@ tagBinaryPulsarParams
   REAL8 phi0;   /**< initial phase */
   REAL8 Aplus;  /**< 0.5*h0*(1+cos^2iota) */
   REAL8 Across; /**< h0*cosiota */
+  
   /*pinned superfluid gw parameters*/
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
@@ -192,7 +204,11 @@ tagBinaryPulsarParams
   REAL8 f3Err;
   REAL8 f4Err;
   REAL8 f5Err;
-
+  REAL8 f6Err;
+  REAL8 f7Err;
+  REAL8 f8Err;
+  REAL8 f9Err;
+  
   REAL8 pepochErr;
   REAL8 posepochErr;
 
@@ -231,7 +247,7 @@ tagBinaryPulsarParams
   REAL8 MErr;
   REAL8 m2Err;
 
-  REAL8 fbErr[12];
+  REAL8 *fbErr;
 
   REAL8 pxErr;
   REAL8 distErr;
@@ -251,6 +267,9 @@ tagBinaryPulsarParams
   REAL8 rErr;
   REAL8 lambdaErr;
   REAL8 costhetaErr;
+  
+  /* timing noise fitting parameters */
+  REAL8 wave_omErr;
 }BinaryPulsarParams;
 
 /** structure containing the input parameters for the binary delay function */

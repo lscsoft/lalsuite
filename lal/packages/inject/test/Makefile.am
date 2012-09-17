@@ -8,8 +8,7 @@ check_PROGRAMS = \
 	SkyCoordinatesTest
 
 TESTS = \
-	GeocentricGeodeticTest \
-	SkyCoordinatesTest
+	$(check_PROGRAMS)
 
 TESTS_ENVIRONMENT = 1>/dev/null
 
@@ -17,6 +16,3 @@ EXTRA_DIST = \
 	CheckStatus.c \
 	CheckStatus.h \
 	InjectTest.c
-
-MOSTLYCLEANFILES =
-DISTCLEANFILES =

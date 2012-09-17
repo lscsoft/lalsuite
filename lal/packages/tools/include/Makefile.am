@@ -18,12 +18,7 @@ pkginclude_HEADERS = \
 	TriggerInterpolation.h \
 	Units.h
 
-CLEANFILES =
-
-MAINTAINERCLEANFILES =
-
 all-local: include-link
-
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)

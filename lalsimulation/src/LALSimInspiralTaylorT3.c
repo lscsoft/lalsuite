@@ -525,6 +525,7 @@ static REAL8 XLALSimInspiralChirpLength(
 		case 6:
 			t7 = 0.;
 		case 7:
+        case -1: // Use the max PN order, move if higher orders implemented
 			break;
 		case 8:
 			XLALPrintError("XLAL Error - %s: Not supported for requested PN order\n", __func__);
@@ -626,6 +627,7 @@ static int XLALSimInspiralTaylorT3Setup(
            f->frequency3 = &XLALSimInspiralFrequency3_6PN;
            break;
      case 7:
+     case -1: // Use the highest PN order available, move if higher terms added
            f->phasing3 = &XLALSimInspiralPhasing3_7PN;
            f->frequency3 = &XLALSimInspiralFrequency3_7PN;
            break;
@@ -659,6 +661,7 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 		int O                  /**< twice post-Newtonian order */
 		)
 {
+
 	const UINT4 blocklen = 1024;
 	const REAL8 visco = sqrt(1.0/6.0);
 	REAL8 m = m1 + m2;

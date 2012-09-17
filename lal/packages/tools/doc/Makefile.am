@@ -1,4 +1,4 @@
-DOCSOURCEFILES = \
+EXTRA_DIST = \
 	tools.dox \
 	resamp_1000x4.eps \
 	resamp_1000x4.pdf \
@@ -12,11 +12,9 @@ DOCSOURCEFILES = \
 	resamp_100x4.pdf \
 	resamp_10x4.eps \
 	resamp_10x4.pdf \
-	resamp_figs1.pdf resamp_figs1.png \
-	resamp_figs2.pdf resamp_figs2.png \
-	resamp_figs3.pdf resamp_figs3.png
-
-MOSTLYCLEANFILES =
-CLEANFILES =
-
-EXTRA_DIST = $(DOCSOURCEFILES)
+	resamp_figs1.pdf \
+	resamp_figs1.png \
+	resamp_figs2.pdf \
+	resamp_figs2.png \
+	resamp_figs3.pdf \
+	resamp_figs3.png

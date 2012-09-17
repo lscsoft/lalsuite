@@ -26,6 +26,10 @@
  *
  *-----------------------------------------------------------------------
  */
+
+/* We only want to generate SWIG wrappers if LALINSPIRAL_CUDA_ENABLED. */
+#if !defined(SWIG) || defined(LALINSPIRAL_CUDA_ENABLED)
+
 #ifndef _CHISQ_GPU_H
 #define _CHISQ_GPU_H
 
@@ -33,3 +37,4 @@ void Chisq_GPU(REAL4* chisq, COMPLEX8* q, COMPLEX8* qtilde,  UINT4* chisqBin,
 	       UINT4 numPoints, UINT4 numChisqBins, REAL4 chisqNorm);
 
 #endif /* _CHISQ_GPU_H */
+#endif /* !defined(SWIG) || defined(LALINSPIRAL_CUDA_ENABLED) */

@@ -1,4 +1,7 @@
+INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+
 lib_LTLIBRARIES = liblalsupport.la
+
 liblalsupport_la_SOURCES = \
 	Audio.c \
 	ConfigFile.c \
@@ -27,6 +30,7 @@ liblalsupport_la_SOURCES = \
 	getopt.c \
 	getopt.h \
 	getopt1.c
+
 liblalsupport_la_LIBADD = @LALSUPPORT_LIBADD@
 liblalsupport_la_LDFLAGS = -version-info $(LIBVERSION_SUPPORT)
 
@@ -44,8 +48,3 @@ noinst_HEADERS = \
 	StreamSeriesOutput_source.c \
 	StreamVectorInput_source.c \
 	StreamVectorSequenceInput_source.c
-
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
-
-MOSTLYCLEANFILES =
-DISTCLEANFILES =

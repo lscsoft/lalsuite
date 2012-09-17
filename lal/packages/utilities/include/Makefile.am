@@ -16,12 +16,7 @@ pkginclude_HEADERS = \
 	Sort.h \
 	SphericalHarmonics.h
 
-CLEANFILES =
-MOSTLYCLEANFILES =
-DISTCLEANFILES =
-
 all-local: include-link
-
 @INCLUDEMKFILE@
 
 swig_headers = $(pkginclude_HEADERS)

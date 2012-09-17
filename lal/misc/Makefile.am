@@ -34,6 +34,7 @@ BUILT_SOURCES = \
 	lal-user-env.csh
 
 all-local: include-link
+@INCLUDEMKFILE@
 
 lal-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "# generic user environment script" >$@
@@ -47,5 +48,3 @@ lal-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 
 lal-user-env.csh lal-user-env.sh: lal-user-env.shell $(srcdir)/generate_user_env.awk
 	$(AM_V_GEN)$(AWK) -f $(srcdir)/generate_user_env.awk -v SED=$(SED) -v package=$(PACKAGE_NAME) -v output=$@ $< || { rm -f $@; exit 1; }
-
-@INCLUDEMKFILE@

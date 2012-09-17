@@ -363,11 +363,6 @@ XLALVetoSingleInspiral (
     const CHAR                 *ifo
     );
 
-SnglInspiralTable *
-XLALalphaFTemp (
-    SnglInspiralTable          *eventHead
-    );
-
 void
 LALBCVCVetoSingleInspiral(
     LALStatus                  *status,
