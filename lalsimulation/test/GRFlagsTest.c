@@ -13,6 +13,8 @@ int main(int argc , char *argv[])
     /* Create a new struct */
     printf("Creating a new struct with one parameter...\n");
     LALSimInspiralTestGRParam *test=NULL;
+    if( XLALSimInspiralAddTestGRParam(&test,"first_param",10.0) != XLAL_SUCCESS)
+        XLAL_ERROR(XLAL_EFUNC);
     printf("value:%lf\n",XLALSimInspiralGetTestGRParam(test, "first_param"));
 
     /* Add a second parameter to the struct */
