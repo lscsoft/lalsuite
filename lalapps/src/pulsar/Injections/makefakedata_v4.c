@@ -957,7 +957,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
       } /* if haveTimestampsFile */
 
     /* ----- if real noise-SFTs given: load them now using EITHER (start,start+duration) OR timestamps
-     * as constraints if given, otherwise load all of them
+     * as constraints if given, otherwise load all of them. Also require window option to be given
      */
     if ( uvar_noiseSFTs )
       {
@@ -965,6 +965,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	SFTCatalog *catalog = NULL;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
+   BOOLEAN have_window = LALUserVarWasSet ( &uvar_window );
+
+   /* user must specify the window function used for the noiseSFTs */
+   if ( !have_window )
+     {
+       XLALPrintError ("%s: require window option to be given when specifying noiseSFTs.\n", fn);
+       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);;
+     }
 
 	if ( lalDebugLevel )
 	  printf ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
@@ -1117,7 +1125,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
 
-      if ( !strcmp ( uvar_window, "hann") || !strcmp ( uvar_window, "hanning") )
+      if ( !strcmp ( uvar_window, "hann" ) || !strcmp ( uvar_window, "hanning" ) )
         {
           REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
           cfg->window = win;
@@ -1136,9 +1144,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	    REAL4Window *win = XLALCreateTukeyREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band), (REAL4) uvar_tukeyBeta );
           cfg->window = win;
 	}
+      if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
+        {
+          REAL4Window *win = XLALCreateRectangularREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+          cfg->window = win;
+        }
       else
         {
-          XLALPrintError ("%s: Window function '%s' was entered, currently only Hann or Tukey windowing is supported.\n\n", fn, uvar_window );
+          XLALPrintError ("%s: Window function '%s' was entered, currently only None, Hann, or Tukey windowing is supported.\n\n", fn, uvar_window );
           ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
         }
     }
@@ -1500,7 +1513,7 @@ InitUserVars (LALStatus *status)
   /* SFT properties */
   LALregREALUserVar(status,   Tsft, 	 	 0, UVAR_OPTIONAL, "Time baseline of one SFT in seconds");
   LALregREALUserVar(status,   SFToverlap,	 0, UVAR_OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs ('Hann' or 'Tukey'; omit for rectangular)");
+  LALregSTRINGUserVar(status, window,		 0, UVAR_OPTIONAL, "Window function to be applied to the SFTs; required when using --noiseSFTs ('None', 'Hann', or 'Tukey'; when --noiseSFTs is not given, default is 'None')");
   LALregREALUserVar(status,   tukeyBeta,	 0, UVAR_OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
 
   /* pulsar params */
