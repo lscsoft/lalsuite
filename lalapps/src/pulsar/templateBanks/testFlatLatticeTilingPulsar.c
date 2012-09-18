@@ -214,8 +214,21 @@ int main(int argc, char *argv[]) {
   /* Set metric */
   switch (metric_type) {
   case 0:
-    if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(tiling, max_mismatch, Tspan))
-      LALAPPS_ERROR("XLALSetFlatLatticeTilingSpindownFstatMetric failed\n", 0);
+    {
+      gsl_matrix* metric = gsl_matrix_alloc(XLALGetFlatLatticeDimensions(tiling), XLALGetFlatLatticeDimensions(tiling));
+      if (metric == NULL) {
+        LALAPPS_ERROR("metric == NULL\n", 0);
+      }
+      gsl_matrix_set_identity(metric);
+      gsl_matrix_view spin_metric = gsl_matrix_submatrix(metric, 2, 2, XLALGetFlatLatticeDimensions(tiling) - 2, XLALGetFlatLatticeDimensions(tiling) - 2);
+      if (XLALSpindownMetric(&spin_metric.matrix, Tspan) != XLAL_SUCCESS) {
+        LALAPPS_ERROR("XLALSpindownMetric failed\n", 0);
+      }
+      if (XLALSetFlatLatticeMetric(tiling, metric, max_mismatch) != XLAL_SUCCESS) {
+        LALAPPS_ERROR("XLALSetFlatLatticeMetric failed\n", 0);
+      }
+      gsl_matrix_free(metric);
+    }
     break;
   case 1:
     {
