@@ -93,6 +93,19 @@
 
 #define DAYSTOSECS 86400.0 /* number of seconds in a day */
 
+/** XLAL function to compute the eccentric anomaly iteratively from Kelper's
+ * equation. */
+void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u){
+  REAL8 du;
+
+  *u = phase + ecc*sin(phase) / sqrt(1.0 - 2.*ecc*cos(phase) + ecc*ecc);
+  do {
+    du = (phase - (*u - ecc*sin(*u))) / (1.0 - ecc*cos(*u));
+    (*u) += du;
+  } while ( fabs(du) > 1.e-14 );
+}
+
+
 /** Calculate the binary system time delay using the pulsar parameters in
  *  \c params
  */
@@ -129,6 +142,7 @@ LALBinaryPulsarDeltaT( LALStatus            *status,
   DETATCHSTATUSPTR(status);
   RETURN(status);
 }
+
 
 /** XLAL function to compute the binary time delay
   */
@@ -237,9 +251,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     INT4 norbits=0.;
     REAL8 phase; /* same as mean anomaly */
     REAL8 u = 0.0; /* eccentric anomaly */
-    REAL8 du = 1.0;
 
-    INT4 nplanets=1; /* number of orbitting bodies in system */
+    INT4 nplanets=1; /* number of orbiting bodies in system */
     INT4 i=1, j=1;
     REAL8 fac=1.; /* factor in front of fb coefficients */
 
@@ -307,15 +320,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       if(orbits < 0.) norbits--;
 
       phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
-      du = 1.0;
-
-      /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-      u = phase + e*sin(phase)*(1.0 + e*cos(phase));
-
-      while(fabs(du) > 1.0e-12){
-        du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
-        u += du;
-      }
+      
+      /* compute eccentric anomaly */
+      XLALComputeEccentricAnomaly( phase, e, &u );
+     
       su = sin(u);
       cu = cos(u);
 
@@ -452,10 +460,10 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   /* also used for MSS model (Wex 1998) - main sequence star orbit - this only has two lines
 different than DD model - TEMPO bnrymss.f */
   if(strstr(params->model, "DD") != NULL || strstr(params->model, "MSS") != NULL){
-    REAL8 u, du=1.0;/* new eccentric anomaly */
+    REAL8 u;        /* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
     REAL8 DRE;      /* Roemer delay + Einstein delay */
-    REAL8	DREp, DREpp; /* see DD eqs 48 - 50 */
+    REAL8 DREp, DREpp; /* see DD eqs 48 - 50 */
     REAL8 DS;       /* Shapiro delay */
     REAL8 DA;       /* aberation caused by pulsar rotation delay */
     REAL8 tt0;
@@ -493,13 +501,9 @@ different than DD model - TEMPO bnrymss.f */
 
     phase = LAL_TWOPI*(orbits - (REAL8)norbits);
 
-    /* use numerical iteration to solve Kepler's eq for eccentric anomaly u */
-    u = phase + e*sin(phase)*(1.0 + e*cos(phase));
+    /* compute eccentric anomaly */
+    XLALComputeEccentricAnomaly( phase, e, &u );
 
-    while(fabs(du) > 1.0e-12){
-      du = (phase-(u-e*sin(u)))/(1.0-e*cos(u));
-      u += du;
-    }
     su = sin(u);
     cu = cos(u);
 
