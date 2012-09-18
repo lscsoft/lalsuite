@@ -55,7 +55,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %defattr(-,root,root)
 %{_libdir}/*.so*
 %{_sysconfdir}/*
-%{_bindir}/lalframe_lld
+%{_bindir}/lalfr-*
 
 %files devel
 %defattr(-,root,root)
