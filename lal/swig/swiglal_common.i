@@ -391,7 +391,7 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_array_type(LALCHAR, CHAR*);
 %swiglal_array_type(int8_t, char, signed char, int8_t);
 %swiglal_array_type(uint8_t, unsigned char, uint8_t);
-%swiglal_array_type(int16_t, short, int64_t);
+%swiglal_array_type(int16_t, short, int16_t);
 %swiglal_array_type(uint16_t, unsigned short, uint16_t);
 %swiglal_array_type(int32_t, int, int32_t, enum SWIGTYPE);
 %swiglal_array_type(uint32_t, unsigned int, uint32_t);
