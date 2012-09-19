@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
 
 lib_LTLIBRARIES = liblalsupport.la
 
