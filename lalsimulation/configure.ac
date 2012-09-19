@@ -57,11 +57,6 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# force all python modules into the exec dir to prevent mixed C and
-# pure-python library code from being split across lib and lib64 on
-# RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
 # put version/configure info in config header
 lalsimulation_version_major=`echo "$VERSION" | cut -d. -f1`
 lalsimulation_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -147,6 +142,11 @@ if test "$GCC" = yes; then
     CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
   fi
 fi
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk
