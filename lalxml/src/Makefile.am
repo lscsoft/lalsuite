@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include
 
 lalxmlincludedir = $(includedir)/lal
 lalxmlinclude_HEADERS = \
