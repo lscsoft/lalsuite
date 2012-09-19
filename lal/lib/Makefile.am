@@ -1,2 +1,3 @@
 SUBDIRS = \
-	lal
+	lal \
+	lalsupport

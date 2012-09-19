@@ -14,6 +14,11 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   lib/Makefile \
   lib/lal/Makefile \
+  lib/lalsupport/Makefile \
+  lib/lalsupport/doc/Makefile \
+  lib/lalsupport/include/Makefile \
+  lib/lalsupport/src/Makefile \
+  lib/lalsupport/test/Makefile \
   misc/Makefile \
   python/Makefile \
   swig/Makefile \
@@ -79,12 +84,7 @@ AC_CONFIG_FILES([ \
   packages/noisemodels/doc/Makefile \
   packages/noisemodels/include/Makefile \
   packages/noisemodels/src/Makefile \
-  packages/noisemodels/test/Makefile \
-  packages/support/Makefile \
-  packages/support/doc/Makefile \
-  packages/support/include/Makefile \
-  packages/support/src/Makefile \
-  packages/support/test/Makefile
+  packages/noisemodels/test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])
 AH_TOP([

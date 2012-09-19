@@ -183,7 +183,7 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     # libraries SWIG wrapping module should be linked against
     AC_SUBST(SWIG_LIBS,["${swig_save_LIBS}"])
     AS_IF([test ${lalswig} = true],[
-      SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/packages/support/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
+      SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/lib/lalsupport/src/liblalsupport.la \$(abs_top_builddir)/lib/lal/liblal.la"
     ],[
       SWIG_LIBS="${SWIG_LIBS} \$(abs_top_builddir)/src/lib${PACKAGE_NAME}.la"
     ])

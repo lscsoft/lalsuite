@@ -10,8 +10,7 @@ SUBDIRS = \
 	tdfilter \
 	window \
 	fft \
-	noisemodels \
-	support
+	noisemodels
 
 include-links:
 	@set fnord $(MAKEFLAGS); amf=$$2; \
