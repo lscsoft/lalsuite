@@ -1024,7 +1024,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     if( hetParams.heterodyneflag != 2 && hetParams.heterodyneflag != 4 ){ /* not
       using updated params */
       if( hetParams.het.px != 0. ){
-        baryinput.dInv = hetParams.het.px*1e-3/(LAL_C_SI*lyr_pc);
+        baryinput.dInv = ( 3600. / LAL_PI_180 )*hetParams.het.px /
+          (LAL_C_SI*lyr_pc);
       }
       else if( hetParams.het.dist != 0. ){
         baryinput.dInv = 1./(hetParams.het.dist*1e3*LAL_C_SI*lyr_pc);
@@ -1034,7 +1035,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     }
     else{                                /* using updated params */
       if( hetParams.hetUpdate.px == 2 ){
-        baryinput.dInv = hetParams.hetUpdate.px*1e-3/(LAL_C_SI*lyr_pc);
+        baryinput.dInv = ( 3600. / LAL_PI_180 ) * hetParams.hetUpdate.px /
+          (LAL_C_SI*lyr_pc);
       }
       else if( hetParams.hetUpdate.dist != 0. ){
         baryinput.dInv = 1./(hetParams.hetUpdate.dist*1e3*LAL_C_SI*lyr_pc);
@@ -1082,7 +1084,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       if(hetParams.het.model!=NULL){
         /* input SSB time into binary timing function */
         binInput.tb = t + emit.deltaT;
-
+        binInput.earth = earth;
+        
         /* calculate binary time delay */
         XLALBinaryPulsarDeltaT( &binOutput, &binInput, &hetParams.het );
 
@@ -1166,7 +1169,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         /* input SSB time into binary timing function */
         binInput.tb = t + emit.deltaT;
         binInput2.tb = t2 + emit2.deltaT;
-
+        binInput.earth = binInput2.earth = earth;
+        
         /* calculate binary time delay */
         XLALBinaryPulsarDeltaT( &binOutput, &binInput, &hetParams.hetUpdate );
         XLALBinaryPulsarDeltaT( &binOutput2, &binInput2, &hetParams.hetUpdate );

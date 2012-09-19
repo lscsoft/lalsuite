@@ -2892,7 +2892,8 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
     /* check if need to perform binary barycentring */
     if( params.model != NULL ){
       binput.tb = data.times->data[i] + emitdt;
-
+      binput.earth = earth;
+      
       XLALBinaryPulsarDeltaT( &boutput, &binput, &params );
 
       deltat = DT + emitdt + boutput.deltaT;
