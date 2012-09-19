@@ -368,7 +368,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if(selected_events is not None):
         used_events=[]
         for i in selected_events:
-            used_events.append(events[i])
+            e=events[i]
+            e.event_id=i
+            used_events.append(e)
         events=used_events
     return events
 
