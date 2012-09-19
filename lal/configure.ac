@@ -13,6 +13,7 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   lib/Makefile \
+  lib/lal/Makefile \
   misc/Makefile \
   python/Makefile \
   swig/Makefile \

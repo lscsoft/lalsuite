@@ -33,10 +33,10 @@ lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
 LALSUITE_BUILD="true"
 LALSUITE_TOP_SRCDIR="${lalsuite_top_srcdir}"
-LAL_LIBS="${lalsuite_top_builddir}/lal/lib/liblal.la"
+LAL_LIBS="${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUITE_BUILD LALSUITE_TOP_SRCDIR LAL_LIBS LAL_CFLAGS
-LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la ${lalsuite_top_builddir}/lal/lib/liblal.la"
+LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/packages/support/src/liblalsupport.la ${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 
