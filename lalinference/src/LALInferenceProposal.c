@@ -1013,10 +1013,10 @@ void LALInferenceDifferentialEvolutionNames(LALInferenceRunState *runState,
 
   size_t i,j;
 
-  do {i = gsl_rng_uniform_int(runState->GSLrandom, nPts);} while(!LALInferenceCompareVariables(dePts[i],proposedParams));
+  i = gsl_rng_uniform_int(runState->GSLrandom, nPts);
   do {
     j = gsl_rng_uniform_int(runState->GSLrandom, nPts);
-  } while (j == i || !LALInferenceCompareVariables(dePts[j],proposedParams));
+  } while (j == i);
 
   LALInferenceVariables *ptI = dePts[i];
   LALInferenceVariables *ptJ = dePts[j];
