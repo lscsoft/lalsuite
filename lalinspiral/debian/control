@@ -3,8 +3,9 @@ Section: lscsoft
 Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), python-all-dev, pkg-config,
-  zlib1g-dev, libgsl0-dev (>= 1.9), libframe-dev (>= 8.0),
-  libmetaio-dev (>= 8.2), lal-dev (>= 6.7.0), lalframe-dev (>= 1.0.5),
+  zlib1g-dev, libgsl0-dev (>= 1.9), swig (>= 2.0.7), octave3.2-headers,
+  python-numpy, libframe-dev (>= 8.0), libmetaio-dev (>= 8.2),
+  lal-dev (>= 6.7.0), lalframe-dev (>= 1.0.5),
   lalmetaio-dev (>= 1.0.4), lalsimulation-dev (>= 0.4.0)
 X-Python-Version: >= 2.6
 Standards-Version: 3.8.6
@@ -13,8 +14,8 @@ Package: lalinspiral
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libframe1 (>= 8.0),
-  libmetaio1 (>= 8.2), lal (>= 6.7.0), lalframe (>= 1.0.5),
-  lalmetaio (>= 1.0.4), lalsimulation (>= 0.4.0)
+  libmetaio1 (>= 8.2), octave, python-numpy, lal (>= 6.7.0),
+  lalframe (>= 1.0.5), lalmetaio (>= 1.0.4), lalsimulation (>= 0.4.0)
 Description: LSC Algorithm Library Inspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
