@@ -23,7 +23,10 @@
  * \file 
  *
  * \brief Functions for producing SEOBNRv1 waveforms for 
- * spinning binaries, as described in Taracchini ( arXiv 1202.0790 ).
+ * spinning binaries, as described in 
+ * Taracchini et al. ( PRD 86, 024011 (2012), arXiv 1202.0790 ).
+ * All equation numbers in this file refer to equations of this paper,
+ * unless otherwise specified.
  */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
@@ -59,6 +62,9 @@
 /**
  * Stopping condition for the regular resolution EOB orbital evolution
  * -- stop when reaching max orbital frequency in strong field.
+ * At each test, 
+ * if omega starts to decrease, return 1 to stop evolution;
+ * if not, update omega with current value and return GSL_SUCCESS to continue evolution.
  */
 static int
 XLALEOBSpinAlignedStopCondition(double UNUSED t,  /**< UNUSED */
@@ -86,8 +92,11 @@ XLALEOBSpinAlignedStopCondition(double UNUSED t,  /**< UNUSED */
 
 /**
  * Stopping condition for the high resolution EOB orbital evolution
- * -- stop when reaching a minimum radius 0.3M out of the EOB horizon
+ * -- stop when reaching a minimum radius 0.3M out of the EOB horizon (Eqs. 9b, 37)
  *    or when getting nan in any of the four ODE equations
+ * At each test, 
+ * if conditions met, return 1 to stop evolution;
+ * if not, return GSL_SUCCESS to continue evolution.
  */
 static int
 XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
@@ -101,7 +110,7 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
   eta = params->eobParams->eta;
   K = 1.4467 -  1.7152360250654402 * eta - 3.246255899738242 * eta * eta;
 
-  if ( values[0] <= (1.+sqrt(1-params->a))*(1.-K*eta) + 0.3 || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
+  if ( values[0] <= (1.+sqrt(1-params->a * params->a))*(1.-K*eta) + 0.3 || isnan( dvalues[3] ) || isnan (dvalues[2]) || isnan (dvalues[1]) || isnan (dvalues[0]) )
   {
     return 1;
   }
@@ -125,8 +134,8 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
  * STEP 9) Generate full IMR hp and hx waveforms
  */
 int XLALSimIMRSpinAlignedEOBWaveform(
-        REAL8TimeSeries **hplus,     /**<< +-polarization waveform (returned) */
-        REAL8TimeSeries **hcross,    /**<< x-polarization waveform (returned) */
+        REAL8TimeSeries **hplus,     /**<< OUTPUT, +-polarization waveform */
+        REAL8TimeSeries **hcross,    /**<< OUTPUT, x-polarization waveform */
         const REAL8     UNUSED phiC, /**<< coalescence orbital phase (rad) */ 
         REAL8           deltaT,      /**<< sampling time step */
         const REAL8     m1SI,        /**<< mass-1 in SI unit */ 
@@ -729,7 +738,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   fclose( out );*/
   
   /* Attach the ringdown at the time of amplitude peak */
-  REAL8 combSize = 7.5;
+  REAL8 combSize = 7.5; /* Eq. 34 */
   REAL8 timeshiftPeak;
   timeshiftPeak = timePeak - timewavePeak;
 
@@ -826,6 +835,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   REAL8TimeSeries *hCrossTS = XLALCreateREAL8TimeSeries( "H_CROSS", &tc, 0.0, deltaT, &lalStrainUnit, sigImVec->length );
 
   /* TODO change to using XLALSimAddMode function to combine modes */
+  /* For now, calculate -2Y22 * h22 + -2Y2-2 * h2-2 directly (all terms complex) */
   /* Compute spin-weighted spherical harmonics and generate waveform */
   REAL8 coa_phase = 0.0;
 
