@@ -752,27 +752,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     data_array[i]=calloc(max_iterations,sizeof(REAL8));
     acf_array[i]=calloc(max_iterations/2,sizeof(REAL8));
   }
-
+  /* Measure autocorrelation along eigenvectors for multivariate */
+  /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
   for (i=0;i<max_iterations;i++){
-    j=0;
     LALInferenceProjectSampleOntoEigenvectors( &variables_array[i], eVectors, &projection );
-    data_array[j][i]=projection->data[j];
-    //for(this=variables_array[i].head;this;this=this->next)
-    //{
-    //  switch(this->vary){
-	//case LALINFERENCE_PARAM_CIRCULAR:
-	//case LALINFERENCE_PARAM_LINEAR:
-	//{
-	 // if(this->type!=LALINFERENCE_REAL8_t) continue;
-	 // else {
-	 //   data_array[j][i]=*(REAL8 *)this->value;
-	    j++;
-	 // }
-	//}
-	//default:
-	 // continue;
-    //  }
-    //}
+    for(j=0;j<projection->length;j++) data_array[j][i]=projection->data[j];
     LALInferenceDestroyVariables(&variables_array[i]);
   }
   	gsl_matrix_free(eVectors);
