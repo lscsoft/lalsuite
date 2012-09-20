@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2011 Craig Robinson, Enrico Barausse
+*  Copyright (C) 2011 Craig Robinson, Enrico Barausse, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -18,12 +18,16 @@
 */
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
  * Functions for calculating the effective one-body Hamiltonian for 
- * spinning binaries, as described in Taracchini et al. arXiv:1202.0790.
+ * spinning binaries, as described in 
+ * Taracchini et al. ( PRD 86, 024011 (2012), arXiv 1202.0790 ).
+ * All equation numbers in this file refer to equations of this paper,
+ * unless otherwise specified.
  * This code borrows hugely from a C implementation originally written
- * by Enrico Barausse.
+ * by Enrico Barausse, following Barausse and Buonanno 
+ * PRD 81, 084024 (2010) and PRD 84, 104027 (2011), henceforth BB1 and BB2
  */
 
 #ifndef _LALSIMIMRSPINEOBHAMILTONIAN_C
@@ -152,7 +156,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   /* Spin gauge parameters */
   static const double aa=0., bb=0.;
 
-  /* Calibrated coefficient in the 4.5PN spin mapping */
+  /* Calibrated coefficient in the 4.5PN spin mapping, Eq. 39 */
   static const REAL8 d1 = -69.5;
   static const REAL8 dheffSS = 2.75;
 
@@ -212,35 +216,36 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
 
   //printf( "KK = %.16e\n", coeffs->KK );
   m1PlusetaKK = -1. + eta * coeffs->KK;
-
+  /* Eq. 5.75 of BB1 */
   bulk = 1./(m1PlusetaKK*m1PlusetaKK) + (2.*u)/m1PlusetaKK + a2*u2;
-
+  /* Eq. 5.73 of BB1 */
   logTerms = 1. + eta*coeffs->k0 + eta*log(1. + coeffs->k1*u + coeffs->k2*u2 + coeffs->k3*u3 + coeffs->k4*u4);
   //printf( "bulk = %.16e, logTerms = %.16e\n", bulk, logTerms );
+  /* Eq. 5.73 of BB1 */
   deltaU = bulk*logTerms;
-
+  /* Eq. 5.71 of BB1 */
   deltaT = r2*deltaU;
-
+  /* ddeltaU/du */
   deltaU_u = 2.*(1./m1PlusetaKK + a2*u)*logTerms + 
 	  bulk * (eta*(coeffs->k1 + u*(2.*coeffs->k2 + u*(3.*coeffs->k3 + 4.*coeffs->k4*u))))
           / (1. + coeffs->k1*u + coeffs->k2*u2 + coeffs->k3*u3 + coeffs->k4*u4);
-
+  /* ddeltaT/dr */
   deltaT_r = 2.*r*deltaU - deltaU_u;
-     
+  /* Eq. 5.39 of BB1 */
   Lambda = w2*w2 - a2*deltaT*xi2;
-
+  /* Eq. 5.83 of BB1, inverse */
   D = 1. + log(1. + 6.*eta*u2 + 2.*(26. - 3.*eta)*eta*u3);
-
+  /* Eq. 5.38 of BB1 */
   deltaR = deltaT*D;
-
+  /* See Hns below, Eq. 4.34 of Damour et al. PRD 62, 084011 (2000) */
   qq = 2.*eta*(4. - 3.*eta);
-
+  /* See Hns below */
   ww=2.*a*r + coeffs->b3*eta*a2*a*u + coeffs->bb3*eta*a*u;
 
   /* We need to transform the momentum to get the tortoise co-ord */
   if ( tortoise )
   {
-    csi = sqrt( deltaT * deltaR )/ w2;
+    csi = sqrt( deltaT * deltaR )/ w2; /* Eq. 28 of Pan et al. PRD 81, 084041 (2010) */
   }
   else
   {
@@ -267,7 +272,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   //printf( " a = %.16e, r = %.16e\n", a, r );
   //printf( "D = %.16e, ww = %.16e, rho = %.16e, Lambda = %.16e, xi = %.16e\npr = %.16e, pf = %.16e, deltaR = %.16e, deltaT = %.16e\n", 
       //D, ww, sqrt(rho2), Lambda, sqrt(xi2), pr, pf, deltaR, deltaT );
-
+  /* Eqs. 5.36 - 5.46 of BB1 */
   Hns = sqrt(1. + prT*prT*prT*prT*qq*u2 + ptheta2/rho2 + pf*pf*rho2/(Lambda*xi2) + pr*pr*deltaR/rho2)
       / sqrt(Lambda/(rho2*deltaT)) + pf*ww/Lambda;
   
@@ -277,25 +282,25 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   //printf( "term 4 in Hns = %.16e\n", pr*pr*deltaR/rho2 );
   //printf( "term 5 in Hns = %.16e\n", Lambda/(rho2*deltaT) );
   //printf( "term 6 in Hns = %.16e\n", pf*ww/Lambda );
-   
+  /* Eqs. 5.30 - 5.33 of BB1 */
   B = sqrt(deltaT);
   w = ww/Lambda;
   nu = 0.5 * log(deltaT*rho2/Lambda);
   MU = 0.5 * log(rho2);  
-  
+  /* dLambda/dr */
   Lambda_r = 4.*r*w2 - a2*deltaT_r*xi2;
      
   ww_r=2.*a - (a2*a*coeffs->b3*eta)*u2 - coeffs->bb3*eta*a*u2;
-
+  /* Eqs. 5.47a - 5.47d of BB1 */
   BR = (-2.*deltaT + sqrt(deltaR)*deltaT_r)/(2.*sqrt(deltaR*deltaT));
   wr = (-Lambda_r*ww + Lambda*ww_r)/(Lambda*Lambda);
   nur = (r/rho2 + (w2 * (-4.*r*deltaT + w2*deltaT_r) ) / (2.*deltaT*Lambda) );
   mur = (r/rho2 - 1./sqrt(deltaR));
-  
+  /* Eqs. 5.47f - 5.47h of BB1 */
   wcos  = -2.*a2*costheta*deltaT*ww/(Lambda*Lambda);  
   nucos = a2*costheta*w2*(w2-deltaT)/(rho2*Lambda);  
   mucos = a2*costheta/rho2;
-  
+  /* Eq. 5.52 of BB1 */
   Q = 1. + pvr*pvr/(exp(2.*MU)*xi2) + exp(2.*nu)*pxir*pxir/(B*B*xi2) + pn*pn*deltaR/exp(2.*MU);
      
   pn2 = pr * pr * deltaR / rho2;
@@ -303,7 +308,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
 
   //printf( "pn2 = %.16e, pp = %.16e\n", pn2, pp );
   //printf( "sigmaKerr = %.16e, sigmaStar = %.16e\n", sKerr_z, sStar_z );
-
+  /* Eq. 5.68 of BB1 */
   deltaSigmaStar_x=(- 8.*aa*(1. + 3.*pn2*r - pp*r)*sKerr_x - 8.*bb*(1. + 3.*pn2*r - pp*r)*sStar_x + 
         eta*(-8.*sKerr_x - 36.*pn2*r*sKerr_x + 3.*pp*r*sKerr_x + 14.*sStar_x - 30.*pn2*r*sStar_x + 4.*pp*r*sStar_x))/(12.*r);
 
@@ -332,7 +337,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   b13P5 = 0.;
   b23P5 = 0.;
   b33P5 = 0.;
-       
+  /* Eq. 52 of BB2 */     
   sMultiplier1 =-(2.*(24.*b23P5 + eta*(-353. + 27.*eta) + bbb*(56. + 60.*eta)) +
       2.*(24.*b13P5 - 24.*b23P5 + bbb*(14. - 66.*eta) + 103.*eta - 60.*eta*eta)*pp*
       r + 120.*(2.*b33P5 - 3.*eta*(bbb + eta))*pn2*pn2*r*r +
@@ -341,7 +346,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
       54.*eta*eta + 24.*bbb*(1. + eta) +
      (24.*b13P5 - 24.*b33P5 - 16.*eta + 21.*eta*eta + bbb*(-2. + 30.*eta))*pp*
      r))/(72.*r*r);                        
-         
+  /* Eq. 52 of BB2 */       
   sMultiplier2 = (-16.*(6.*a23P5 + 7.*eta*(8. + 3.*eta) + aaa*(14. + 15.*eta)) +
       4.*(-24.*a13P5 + 24.*a23P5 - 109.*eta + 51.*eta*eta + 2.*aaa*(-7. + 33.*eta))*
       pp*r + 30.*(-16.*a33P5 + 3.*eta*(8.*aaa + 9.*eta))*pn2*pn2*r*r +
@@ -349,7 +354,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
       6.*pn2*r*(32.*a13P5 + 64.*a23P5 + 48.*a33P5 + 16.*eta + 147.*eta*eta +
       48.*aaa*(1. + eta) + (48.*a13P5 - 48.*a33P5 - 6.*eta + 39.*eta*eta +
       aaa*(-4. + 60.*eta))*pp*r))/(144.*r*r);
-                       
+  /* Eq. 52 of BB2 */                     
   deltaSigmaStar_x += sMultiplier1*sigmaStar->data[0] + sMultiplier2*sigmaKerr->data[0];
   deltaSigmaStar_y += sMultiplier1*sigmaStar->data[1] + sMultiplier2*sigmaKerr->data[1];
   deltaSigmaStar_z += sMultiplier1*sigmaStar->data[2] + sMultiplier2*sigmaKerr->data[2];
@@ -372,23 +377,23 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   sn  = sx*nx + sy*ny + sz*nz; 
      
   s3 = sx*e3_x + sy*e3_y + sz*e3_z;  
-          
+  /* Eq. 3.45 of BB1, second term */        
   Hwr = (exp(-3.*MU - nu)*sqrt(deltaR)*(exp(2.*(MU + nu))*pxir*pxir*sv - B*exp(MU + nu)*pvr*pxir*sxi + 
         B*B*xi2*(exp(2.*MU)*(sqrt(Q) + Q)*sv + pn*pvr*sn*sqrt(deltaR) - pn*pn*sv*deltaR)))/(2.*B*(1. + sqrt(Q))*sqrt(Q)*xi2);
-       
+  /* Eq. 3.45 of BB1, third term */     
   Hwcos = (exp(-3.*MU - nu)*(sn*(-(exp(2.*(MU + nu))*pxir*pxir) + B*B*(pvr*pvr - exp(2.*MU)*(sqrt(Q) + Q)*xi2)) - 
         B*pn*(B*pvr*sv - exp(MU + nu)*pxir*sxi)*sqrt(deltaR)))/(2.*B*(1. + sqrt(Q))*sqrt(Q));
-       
+  /* Eq. 3.44 of BB1, leading term */     
   HSOL = (exp(-MU + 2.*nu)*(-B + exp(MU + nu))*pxir*s3)/(B*B*sqrt(Q)*xi2);
-
+  /* Eq. 3.44 of BB1, next-to-leading term */
   HSONL = (exp(-2.*MU + nu)*(-(B*exp(MU + nu)*nucos*pxir*(1. + 2.*sqrt(Q))*sn*xi2) + 
         (-(BR*exp(MU + nu)*pxir*(1. + sqrt(Q))*sv) + B*(exp(MU + nu)*nur*pxir*(1. + 2.*sqrt(Q))*sv + B*mur*pvr*sxi + 
         B*sxi*(-(mucos*pn*xi2) + sqrt(Q)*(mur*pvr - nur*pvr + (-mucos + nucos)*pn*xi2))))*sqrt(deltaR)))/(B*B*(sqrt(Q) + Q)*xi2);   
-   
+  /* Eq. 3.43 and 3.45 of BB1 */
   Hs = w*s3 + Hwr*wr + Hwcos*wcos + HSOL + HSONL;
-     
+  /* Eq. 5.70 of BB1, last term */   
   Hss = -0.5*u3 * (sx*sx + sy*sy + sz*sz - 3.*sn*sn);
-     
+  /* Eq. 5.70 of BB1 */
   H = Hns + Hs + Hss;
 
   /* Add the additional calibrated term */
@@ -415,7 +420,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
  * If all goes well, the function will return XLAL_SUCCESS. Otherwise, XLAL_FAILURE is returned.
  */
 static int XLALSimIMRCalculateSpinEOBHCoeffs(
-        SpinEOBHCoeffs *coeffs, /**<< EOB parameters including pre-computed coefficients (returned) */
+        SpinEOBHCoeffs *coeffs, /**<< OUTPUT, EOB parameters including pre-computed coefficients */
         const REAL8    eta,     /**<< symmetric mass ratio */
         const REAL8    a        /**<< Normalized deformed Kerr spin */
         )
@@ -424,7 +429,7 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs(
   REAL8 KK, k0, k1, k2, k3, k4;
   REAL8 m1PlusEtaKK;
    
-  /* Constants are fits taken from Andrea Tarrachini's C++ code */
+  /* Constants are fits taken from Eq. 37 */
   static const REAL8 c0  = 1.4467; /* needed to get the correct self-force results */
   static const REAL8 c1  = -1.7152360250654402;
   static const REAL8 c2  = -3.246255899738242;
@@ -440,7 +445,7 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs(
   coeffs->KK = KK  = c0 + c1*eta + c2*eta*eta;
 
   m1PlusEtaKK = -1. + eta*KK;
-
+  /* Eqs. 5.77 - 5.81 of BB1 */
   coeffs->k0 = k0 = KK*(m1PlusEtaKK - 1.);
   coeffs->k1 = k1 = - 2.*(k0 + KK)*m1PlusEtaKK;
   coeffs->k2 = k2 = (k1 * (4. + k1 - 4.*eta*KK)) / 2. - a*a*k0*m1PlusEtaKK*m1PlusEtaKK;
@@ -458,7 +463,7 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs(
 
 /**
  * This function calculates the function \f$\Delta_t(r)\f$ which appears in the spinning EOB
- * potential function.
+ * potential function. Eqs. 7a and 8.
  */
 static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaT( 
         SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
@@ -501,7 +506,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaT(
 
 /**
  * This function calculates the function \f$\Delta_r(r)\f$ which appears in the spinning EOB
- * potential function.
+ * potential function. Eqs. 10a and 10b
  */
 static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
         SpinEOBHCoeffs *coeffs, /**<< Pre-computed coefficients which appear in the function */
@@ -587,6 +592,7 @@ XLALSimIMRSpinAlignedEOBCalcOmega(
 
 /**
  * Function to calculate the non-Keplerian coefficient for the spin-aligned EOB model.
+ * radius r times the cuberoot of the returned number is r_\Omega defined in Eq. A2.
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
