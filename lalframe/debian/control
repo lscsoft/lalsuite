@@ -10,7 +10,7 @@ Standards-Version: 3.8.6
 
 Package: lalframe
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, $(python:Depends),
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, ${python:Depends},
   libframe1 (>= 8.0), octave, python-numpy, lal (>= 6.7.0)
 Description: LSC Algorithm Library Frame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
