@@ -24,11 +24,10 @@
  * \brief More recent versions of the EOB models, such as EOBNRv2 and SEOBNRv1, utilise
  * a non-quasicircular correction (NQC) to bring the peak of the EOB frequency
  * into agreement with that of NR simulations. This file contains the functions
- * used to calculate these NQC corrections. The fits to NR peak amplitude,
- * frequency, and their derivatives, are taken 
+ * used to calculate these NQC corrections, described in DCC document T1100433.
+ * The fits to NR peak amplitude, frequency, and their derivatives, are taken 
  * from Pan et al. PRD 84 124052 (2011), for EOBNRv2, and
- * from Taracchini et al. PRD 86, 024011 (2012), for SEOBNRv1
- * 
+ * from Taracchini et al. PRD 86, 024011 (2012), for SEOBNRv1.
  */
 
 #include <math.h>
