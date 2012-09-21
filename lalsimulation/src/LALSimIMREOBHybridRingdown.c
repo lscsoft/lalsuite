@@ -25,7 +25,13 @@
 \brief Module to compute the ring-down waveform as linear combination
 of quasi-normal-modes decaying waveforms, which can be attached to
 the inspiral part of the compat binary coalescing waveform.
-
+The method is describe in Sec. II C of Pan et al. PRD 84, 124052 (2011), 
+specifically Eqs. 30 - 32.
+Eqs. 30 and 31 are written in explicity linear equation systems in 
+DCC document T1100433.
+This method is currently used for EOBNRv2 and SEOBNRv1 models. The only difference
+between the two models in ring-down waveform is the pseudo-QNM introduced 
+in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
 */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
@@ -51,40 +57,44 @@ the inspiral part of the compat binary coalescing waveform.
 #endif
 
 /**
- * Computes the final mass and spin of the black hole resulting from
- * merger. They are given by a fitting found in Pan et al, arXiv:1106.1021v1 [gr-qc]
+ * Computes the final mass and spin of the black hole resulting from merger. 
+ * They are given by fittings of NR simulations results. Specifically,
+ * for EOBNR, Table I of Buonanno et al. PRD76, 104049;
+ * for EOBNRv2 and EOBNRv2HM, Eqs. 29a and 29b of Pan et al. PRD84, 124052;
+ * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and 
+ *               Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
  */
 static INT4 XLALFinalMassSpin(
-	REAL8		    *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
-	REAL8		    *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
-	const REAL8     mass1,      /**<< The mass of the first component of the system */
-    const REAL8     mass2,       /**<< The mass of the second component of the system */
-    const REAL8     spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
-    const REAL8     spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
-    Approximant     approximant  /**<<The waveform approximant being used */
-	);
+	REAL8    *finalMass,  /**<< OUTPUT, the final mass (scaled by original total mass) */
+	REAL8    *finalSpin,  /**<< OUTPUT, the final spin (scaled by final mass) */
+  const REAL8     mass1,      /**<< The mass of the 1st component of the system */
+  const REAL8     mass2,      /**<< The mass of the 2nd component of the system */
+  const REAL8     spin1[3],   /**<< The spin of the 1st object; only needed for spin waveforms */
+  const REAL8     spin2[3],   /**<< The spin of the 2nd object; only needed for spin waveforms */
+  Approximant     approximant /**<< The waveform approximant being used */
+);
 
 /**
  * Generates the ringdown wave associated with the given real
  * and imaginary parts of the inspiral waveform. The parameters of 
  * the ringdown, such as amplitude and phase offsets, are determined
  * by solving the linear equations defined in the DCC document T1100433.
- * In the linear equations Ax=b, 
+ * In the linear equations Ax=y, 
  * A is a 16-by-16 matrix depending on QNM (complex) frequencies,
  * x is a 16-d vector of the 8 unknown complex QNM amplitudes,
- * b is a 16-d vector depending on inspiral-plunge waveforms and their derivatives near merger.
+ * y is a 16-d vector depending on inspiral-plunge waveforms and their derivatives near merger.
  */ 
 static INT4 XLALSimIMREOBHybridRingdownWave(
-    REAL8Vector		*rdwave1,   /**<< Real part of ringdown      (returned) */
-    REAL8Vector		*rdwave2,   /**<< Imaginary part of ringdown (returned) */
-    const REAL8         dt,         /**<< Sampling interval */
-    const REAL8         mass1,      /**<< First component mass (in Solar masses) */
-    const REAL8         mass2,      /**<< Second component mass (in Solar masses) */
-    REAL8VectorSequence	*inspwave1, /**<< Values and derivatives of real part of inspiral waveform */
-    REAL8VectorSequence	*inspwave2, /**<< Values and derivatives of Imaginary part of inspiral waveform */
-    COMPLEX16Vector	*modefreqs, /**<< Complex frequencies of ringdown (scaled by total mass) */
-    REAL8Vector		*matchrange /**<< Times which determine the comb size for ringdown attachment */
-    )
+  REAL8Vector          *rdwave1,   /**<< OUTPUT, Real part of ringdown waveform */
+  REAL8Vector          *rdwave2,   /**<< OUTPUT, Imag part of ringdown waveform */
+  const REAL8           dt,        /**<< Sampling interval */
+  const REAL8           mass1,     /**<< First component mass (in Solar masses) */
+  const REAL8           mass2,     /**<< Second component mass (in Solar masses) */
+  REAL8VectorSequence  *inspwave1, /**<< Values and derivs of real part inspiral waveform */
+  REAL8VectorSequence  *inspwave2, /**<< Values and derivs of imag part inspiral waveform */
+  COMPLEX16Vector      *modefreqs, /**<< Complex freqs of ringdown (scaled by total mass) */
+  REAL8Vector          *matchrange /**<< Times which determine the comb of ringdown attachment */
+  )
 {
 
   /* XLAL error handling */
@@ -280,9 +290,9 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
  * in the hybrid comb attachment of the ringdown.
  */
 static INT4 XLALGenerateHybridWaveDerivatives (
-	REAL8Vector	*rwave,      /**<< The values of the waveform at the comb points (populated within function)*/
-	REAL8Vector	*dwave,      /**<< The first derivative of the waveform at the comb points (populated within function)*/
-	REAL8Vector	*ddwave,     /**<< The second derivative of the waveform at the comb points (populated within function)*/
+	REAL8Vector	*rwave,      /**<< OUTPUT, values of the waveform at comb points */
+	REAL8Vector	*dwave,      /**<< OUTPUT, 1st deriv of the waveform at comb points */
+	REAL8Vector	*ddwave,     /**<< OUTPUT, 2nd deriv of the waveform at comb points */
         REAL8Vector	*timeVec,    /**<< Vector containing the time */
 	REAL8Vector	*wave,       /**<< Last part of inspiral waveform */
 	REAL8Vector	*matchrange, /**<< Times which determine the size of the comb */
@@ -398,16 +408,16 @@ static INT4 XLALGenerateHybridWaveDerivatives (
  * Vitor Cardoso, http://centra.ist.utl.pt/~vitor/?page=ringdown
  */
 static INT4 XLALSimIMREOBGenerateQNMFreqV2(
-        COMPLEX16Vector          *modefreqs, /**<<The complex frequencies of the overtones (scaled by total mass, returned) */
-        const REAL8              mass1,      /**<<The mass of the first component of the system (in Solar masses) */
-        const REAL8              mass2,      /**<<The mass of the second component of the system (in Solar masses) */
-        const REAL8              spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
-        const REAL8              spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
-        UINT4                    l,          /**<<The l value of the mode in question */
-        UINT4                    m,          /**<<The m value of the mode in question */
-        UINT4                   nmodes,      /**<<The number of overtones that should be included (max 8) */
-        Approximant             approximant  /**<<The waveform approximant being used */
-        )
+  COMPLEX16Vector *modefreqs, /**<< OUTPUT, complex freqs of overtones (scaled by total mass) */
+  const REAL8      mass1,     /**<< The mass of the 1st component (in Solar masses) */
+  const REAL8      mass2,     /**<< The mass of the 2nd component (in Solar masses) */
+  const REAL8      spin1[3],  /**<< The spin of the 1st object; only needed for spin waveforms */
+  const REAL8      spin2[3],  /**<< The spin of the 2nd object; only needed for spin waveforms */
+  UINT4            l,         /**<< The l value of the mode in question */
+  UINT4            m,         /**<< The m value of the mode in question */
+  UINT4            nmodes,    /**<< The number of overtones that should be included (max 8) */
+  Approximant      approximant/**<< The waveform approximant being used */
+  )
 {
 
   /* Data for interpolating the quasinormal mode frequencies is taken from */
@@ -1576,18 +1586,22 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
 
 
 /**
- * Computes the final mass and spin of the black hole resulting from
- * merger. They are given by a fitting found in Pan et al, arXiv:1106.1021v1 [gr-qc]
+ * Computes the final mass and spin of the black hole resulting from merger. 
+ * They are given by fittings of NR simulations results. Specifically,
+ * for EOBNR, Table I of Buonanno et al. PRD76, 104049;
+ * for EOBNRv2 and EOBNRv2HM, Eqs. 29a and 29b of Pan et al. PRD84, 124052;
+ * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and 
+ *               Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
  */
 static INT4 XLALFinalMassSpin(
-    REAL8          *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
-    REAL8          *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
-    const REAL8     mass1,      /**<< The mass of the first component of the system */
-    const REAL8     mass2,       /**<< The mass of the second component of the system */
-    const REAL8     spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
-    const REAL8     spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
-    Approximant     approximant  /**<<The waveform approximant being used */
-	)
+	REAL8    *finalMass,  /**<< OUTPUT, the final mass (scaled by original total mass) */
+	REAL8    *finalSpin,  /**<< OUTPUT, the final spin (scaled by final mass) */
+  const REAL8     mass1,      /**<< The mass of the 1st component of the system */
+  const REAL8     mass2,      /**<< The mass of the 2nd component of the system */
+  const REAL8     spin1[3],   /**<< The spin of the 1st object; only needed for spin waveforms */
+  const REAL8     spin2[3],   /**<< The spin of the 2nd object; only needed for spin waveforms */
+  Approximant     approximant /**<< The waveform approximant being used */
+)
 {
   static const REAL8 root9ovr8minus1 = -0.057190958417936644;
   static const REAL8 root12          = 3.4641016151377544;
@@ -1618,18 +1632,18 @@ static INT4 XLALFinalMassSpin(
     case EOBNRv2:
     case EOBNRv2HM:
       eta3 = eta2 * eta;
-      /* Final mass and spin given by a fitting in Pan et al, arXiv:1106.1021v1 [gr-qc] */
+      /* Final mass and spin given by Eqs. 29a and 29b of Pan et al. PRD84, 124052 */
       *finalMass = 1. + root9ovr8minus1 * eta - 0.4333 * eta2 - 0.4392 * eta3;
       *finalSpin = root12 * eta - 3.871 * eta2 + 4.028 * eta3;
       break;
     case EOBNR:
-      /* Final mass and spin given by a fitting in PRD76, 104049 */
+      /* Final mass and spin given by Table I of Buonanno et al. PRD76, 104049 */
       *finalMass = 1 - 0.057191 * eta - 0.498 * eta2;
       *finalSpin = 3.464102 * eta - 2.9 * eta2;
       break;
     case SEOBNRv1:
-      /* Final mass/spin comes from a fit in Andrea Tarrachini's C++ code */
-
+      /* Final mass/spin comes from Eq. 8 of Tichy and Marronetti PRD78, 081501 
+         and from Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40 */
       a1 = spin1[2];
       a2 = spin2[2];
 
@@ -1647,40 +1661,45 @@ static INT4 XLALFinalMassSpin(
   }
 
   /*printf( "Final mass = %e, Final spin = %e\n", *finalMass, *finalSpin );*/
-
   return XLAL_SUCCESS;
 }
 
 
 /**
  * The main workhorse function for performing the ringdown attachment for EOB
- * models EOBNRv2 and later. This is the function which gets called by the 
+ * models EOBNRv2 and SEOBNRv1. This is the function which gets called by the 
  * code generating the full IMR waveform once generation of the inspiral part
  * has been completed.
  * The ringdown is attached using the hybrid comb matching detailed in 
- * Buonanno et al, arXiv:1106.1021v1 [gr-qc]. Further details of the
+ * The method is describe in Sec. II C of Pan et al. PRD 84, 124052 (2011), 
+ * specifically Eqs. 30 - 32.. Further details of the
  * implementation of the found in the DCC document T1100433.
  * In SEOBNRv1, the last physical overtone is replace by a pseudoQNM. See 
- * arXiv:1202.0790 for details.
+ * Taracchini et al. PRD 86, 024011 (2012) for details.
+ * STEP 1) Get mass and spin of the final black hole and the complex ringdown frequencies
+ * STEP 2) Based on least-damped-mode decay time, allocate memory for rigndown waveform
+ * STEP 3) Get values and derivatives of inspiral waveforms at matching comb points
+ * STEP 4) Solve QNM coefficients and generate ringdown waveforms
+ * STEP 5) Stitch inspiral and ringdown waveoforms
  */
 static INT4 XLALSimIMREOBHybridAttachRingdown(
-      REAL8Vector 	*signal1,     /**<<Real part of inspiral waveform to which we attach the ringdown      (returned) */
-      REAL8Vector 	*signal2,     /**<<Imaginary part of inspiral waveform to which we attach the ringdown (returned) */
-      const INT4        l,            /**<< Current mode l */
-      const INT4        m,            /**<< Current mode m */
-      const REAL8       dt,           /**<< Sample time step (in seconds) */
-      const REAL8       mass1,        /**<< First component mass (in Solar masses) */
-      const REAL8       mass2,        /**<< Second component mass (in Solar masses) */
-      const REAL8       spin1x,       /**<<The spin of the first object; only needed for spin waveforms */
-      const REAL8       spin1y,       /**<<The spin of the first object; only needed for spin waveforms */
-      const REAL8       spin1z,       /**<<The spin of the first object; only needed for spin waveforms */
-      const REAL8       spin2x,       /**<<The spin of the second object; only needed for spin waveforms */
-      const REAL8       spin2y,       /**<<The spin of the second object; only needed for spin waveforms */
-      const REAL8       spin2z,       /**<<The spin of the second object; only needed for spin waveforms */
-      REAL8Vector       *timeVec,     /**<< Vector containing the time values */
-      REAL8Vector       *matchrange,  /**<< Time values chosen as points for performing comb matching */
-      Approximant       approximant   /**<<The waveform approximant being used */
-      )
+  REAL8Vector *signal1,    /**<< OUTPUT, Real of inspiral waveform to which we attach ringdown */
+  REAL8Vector *signal2,    /**<< OUTPUT, Imag of inspiral waveform to which we attach ringdown */
+  const INT4   l,          /**<< Current mode l */
+  const INT4   m,          /**<< Current mode m */
+  const REAL8  dt,         /**<< Sample time step (in seconds) */
+  const REAL8  mass1,      /**<< First component mass (in Solar masses) */
+  const REAL8  mass2,      /**<< Second component mass (in Solar masses) */
+  const REAL8  spin1x,     /**<<The spin of the first object; only needed for spin waveforms */
+  const REAL8  spin1y,     /**<<The spin of the first object; only needed for spin waveforms */
+  const REAL8  spin1z,     /**<<The spin of the first object; only needed for spin waveforms */
+  const REAL8  spin2x,     /**<<The spin of the second object; only needed for spin waveforms */
+  const REAL8  spin2y,     /**<<The spin of the second object; only needed for spin waveforms */
+  const REAL8  spin2z,     /**<<The spin of the second object; only needed for spin waveforms */
+  REAL8Vector *timeVec,    /**<< Vector containing the time values */
+  REAL8Vector *matchrange, /**<< Time values chosen as points for performing comb matching */
+  Approximant  approximant /**<<The waveform approximant being used */
+  )
 {
 
       COMPLEX16Vector *modefreqs;
@@ -1703,6 +1722,10 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
 
       mTot  = (mass1 + mass2) * LAL_MTSUN_SI;
       eta       = mass1 * mass2 / ( (mass1 + mass2) * (mass1 + mass2) );
+
+      /**
+       * STEP 1) Get mass and spin of the final black hole and the complex ringdown frequencies
+       */
 
       /* Create memory for the QNM frequencies */
       nmodes = 8;
@@ -1753,6 +1776,10 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_EFAILED );
       }
 
+      /**
+       * STEP 2) Based on least-damped-mode decay time, allocate memory for rigndown waveform
+       */
+
       /* Create memory for the ring-down and full waveforms, and derivatives of inspirals */
 
       rdwave1 = XLALCreateREAL8Vector( Nrdwave );
@@ -1780,6 +1807,10 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
 
       memset( rdwave1->data, 0, rdwave1->length * sizeof( REAL8 ) );
       memset( rdwave2->data, 0, rdwave2->length * sizeof( REAL8 ) );
+
+      /**
+       * STEP 3) Get values and derivatives of inspiral waveforms at matching comb points
+       */
 
       /* Generate derivatives of the last part of inspiral waves */
       /* Get derivatives of signal1 */
@@ -1825,6 +1856,10 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       }
 
 
+      /**
+       * STEP 4) Solve QNM coefficients and generate ringdown waveforms
+       */
+
       /* Generate ring-down waveforms */
       if ( XLALSimIMREOBHybridRingdownWave( rdwave1, rdwave2, dt, mass1, mass2, inspwaves1, inspwaves2,
 			  modefreqs, matchrange ) == XLAL_FAILURE )
@@ -1839,6 +1874,10 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLALDestroyREAL8VectorSequence( inspwaves2 );
         XLAL_ERROR( XLAL_EFUNC );
       }
+
+      /**
+       * STEP 5) Stitch inspiral and ringdown waveoforms
+       */
 
       /* Generate full waveforms, by stitching inspiral and ring-down waveforms */
       UINT4 attachIdx = matchrange->data[1] * mTot / dt;
