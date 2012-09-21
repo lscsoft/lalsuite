@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2010 Craig Robinson 
+*  Copyright (C) 2010 Craig Robinson, Yi Pan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -19,13 +19,15 @@
 
 
 /**
- * \author Craig Robinson
+ * \author Craig Robinson, Yi Pan
  *
- * \brief More recent versions of the EOB model, such as EOBNR_v2, utilise
- * a non-quasicircular correction to bring the peak of the EOB frequency
+ * \brief More recent versions of the EOB models, such as EOBNRv2 and SEOBNRv1, utilise
+ * a non-quasicircular correction (NQC) to bring the peak of the EOB frequency
  * into agreement with that of NR simulations. This file contains the functions
  * used to calculate these NQC corrections. The fits to NR peak amplitude,
- * frequency, and their derivatives, are taken from Pan et al, arXiv:1106.1021v1 [gr-qc].
+ * frequency, and their derivatives, are taken 
+ * from Pan et al. PRD 84 124052 (2011), for EOBNRv2, and
+ * from Taracchini et al. PRD 86, 024011 (2012), for SEOBNRv1
  * 
  */
 
@@ -49,6 +51,10 @@
 #else
 #define UNUSED
 #endif
+
+/* ------------------------------------------------
+ *          Non-spin (EOBNRv2)
+ * ------------------------------------------------*/
 
 /**
  * Compute the time offset which should be used in computing the
@@ -380,7 +386,7 @@ REAL8 GetNRPeakOmegaDot(
  * accurate NQC values later on.
  */
 UNUSED static int XLALSimIMREOBGetCalibratedNQCCoeffs( 
-                                EOBNonQCCoeffs *coeffs, /**<< Structure for NQC coefficients (populated in function) */
+                                EOBNonQCCoeffs *coeffs, /**<< OUTPUT, Structure for NQC coeffs */
                                 INT4            l,      /**<< Mode l */
                                 INT4            m,      /**<< Mode m */
                                 REAL8           eta     /**<< Symmetric mass ratio */
@@ -419,7 +425,7 @@ UNUSED static int XLALSimIMREOBGetCalibratedNQCCoeffs(
  * have been pre-computed.
  */
 UNUSED static int  XLALSimIMREOBNonQCCorrection(
-                      COMPLEX16      * restrict nqc,    /**<< The NQC correction (populated in function) */
+                      COMPLEX16      * restrict nqc,    /**<< OUTPUT, The NQC correction */
                       REAL8Vector    * restrict values, /**<< Dynamics r, phi, pr, pphi */
                       const REAL8               omega,  /**<< Angular frequency */
                       EOBNonQCCoeffs * restrict coeffs  /**<< NQC coefficients */
@@ -461,19 +467,20 @@ UNUSED static int  XLALSimIMREOBNonQCCorrection(
 /**
  * This function computes the coefficients a1, a2, etc. used in the
  * non-quasicircular correction. The details of the calculation of these
- * coefficients are found in the DCC document T1100433. */
+ * coefficients are found in the DCC document T1100433. 
+ */
 UNUSED static int XLALSimIMREOBCalculateNQCCoefficients(
-                 EOBNonQCCoeffs * restrict coeffs,    /**<< NQC coefficients (populated by function) */
-                 REAL8Vector    * restrict amplitude, /**<< Amplitude of waveform as function of time */
-                 REAL8Vector    * restrict phase,     /**<< Phase of waveform (in radians) as function of time */
-                 REAL8Vector    * restrict q1,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict q2,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict q3,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict p1,        /**<< Function of dynamics (see DCC document for details) */
-                 REAL8Vector    * restrict p2,        /**<< Function of dynamics (see DCC document for details) */
+                 EOBNonQCCoeffs * restrict coeffs,    /**<< OUTPUT, NQC coefficients */
+                 REAL8Vector    * restrict amplitude, /**<< Waveform amplitude, func of time */
+                 REAL8Vector    * restrict phase,     /**<< Waveform phase(rad), func of time */
+                 REAL8Vector    * restrict q1,        /**<< Function of dynamics (see DCC doc) */
+                 REAL8Vector    * restrict q2,        /**<< Function of dynamics (see DCC doc) */
+                 REAL8Vector    * restrict q3,        /**<< Function of dynamics (see DCC doc) */
+                 REAL8Vector    * restrict p1,        /**<< Function of dynamics (see DCC doc) */
+                 REAL8Vector    * restrict p2,        /**<< Function of dynamics (see DCC doc) */
                  INT4                      l,         /**<< Mode l */
                  INT4                      m,         /**<< Mode m */
-                 REAL8                     timePeak,  /**<< Time for which we reach the peak frequency */
+                 REAL8                     timePeak,  /**<< Time of peak orbital frequency */
                  REAL8                     deltaT,    /**<< Sampling interval */
                  REAL8                     eta        /**<< Symmetric mass ratio */
                  )
@@ -710,18 +717,20 @@ UNUSED static int XLALSimIMREOBCalculateNQCCoefficients(
 }
 
 /* ------------------------------------------------
- *          Spin
+ *          Spin (SEOBNRv1)
  * ------------------------------------------------*/
 
 /**
  * The time difference between the orbital peak and the peak amplitude
- * of the mode in question (currently only 2,2 implemented )
+ * of the mode in question (currently only 2,2 implemented ).
+ * Eq. 33 of Taracchini et al. PRD 86, 024011 (2012).
  */
-UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaT( INT4 l,    /**<< Mode l */
-                               INT4 m,    /**<< Mode m */
-                               REAL8 UNUSED eta, /**<< Symmetric mass ratio */
-                               REAL8 a    /**<< Dimensionless spin */
-                         )
+UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaT( 
+                 INT4 l,           /**<< Mode l */
+                 INT4 m,           /**<< Mode m */
+                 REAL8 UNUSED eta, /**<< Symmetric mass ratio */
+                 REAL8 a           /**<< Dimensionless spin */
+                 )
 {
 
   switch ( l )
@@ -754,18 +763,30 @@ UNUSED static inline REAL8 XLALSimIMREOBGetNRSpinPeakDeltaT( INT4 l,    /**<< Mo
 
 /* FIXME: Add XLALSimIMREOB to these function names */
 
+/**
+ * Peak amplitude predicted by fitting NR results (currently only 2,2 available).
+ * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
+ */
 UNUSED static inline REAL8 GetNRSpinPeakAmplitude( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )
 {
   /* Fit for HOMs missing */
   return 1.3547468629743946*eta + 0.9187885481024214*eta*eta;
 }
 
+/**
+ * Peak amplitude curvature predicted by fitting NR results (currently only 2,2 available).
+ * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
+ */
 UNUSED static inline REAL8 GetNRSpinPeakADDot( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )
 {
   /* Fit for HOMs missing */
   return eta*(-0.0024971911410897156 + (-0.006128515435641139 + 0.01732656*a/(2.0-4.0*eta))*eta);
 }
 
+/**
+ * Peak frequency predicted by fitting NR results (currently only 2,2 available).
+ * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
+ */
 UNUSED static inline REAL8 GetNRSpinPeakOmega( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 a )
 {
   /* Fit for HOMs missing */
@@ -775,6 +796,10 @@ UNUSED static inline REAL8 GetNRSpinPeakOmega( INT4 UNUSED l, INT4 UNUSED m, REA
        + a/(2.0-4.0*eta)) + 1.423734113371796*log(1.0 - a/(1.0-2.0*eta)));
 }
 
+/**
+ * Peak frequency slope predicted by fitting NR results (currently only 2,2 available).
+ * Tables IV and V and Eq. 42 of Taracchini et al. PRD 86, 024011 (2012).
+ */
 UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, REAL8 UNUSED eta, REAL8 UNUSED a )
 {
   /* Fit for HOMs missing */
@@ -785,7 +810,19 @@ UNUSED static inline REAL8 GetNRSpinPeakOmegaDot( INT4 UNUSED l, INT4 UNUSED m, 
 }
 
 /**
- * Function to interpolate known NQC coeffcients
+ * Function to interpolate known amplitude NQC coeffcients of spin terms, 
+ * namely a3s, a4 and a5. 
+ * The a3s, a4 and a5 values were calculated for 
+ * 11 mass ratios q=1,1.5,2,3,4,5,6,10,20,50 and 100, and
+ * 19 spin (\f$\chi\f$ defined in Taracchini et al. PRD 86, 024011 (2012)) values
+ * chi = -1, -0.9, -0.8, ......, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65.
+ * The calculation was done by Andrea Taracchini using a C++ code of the UMaryland group.
+ * In principle, these numbers can be automatically calculated iteratively by the LAL code.
+ * However, since such calcualtion increase the cost of each waveform generation by
+ * about an order of magnitude, we prepare these numbers in advance reduce cost.
+ * These number can be verified by confirming that
+ * the peak amplitude and frequency agree well with the NR-fits predicted values,
+ * and to get exact NR-fits predicted values, corrections on these numbers are ~1%.
  */
 UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict coeffs, 
                                     INT4 UNUSED l, 
@@ -891,22 +928,25 @@ UNUSED static int XLALSimIMRGetEOBCalibratedSpinNQC( EOBNonQCCoeffs * restrict c
 }
 
 /**
- * This function computes the coefficients a1, a2, etc. used in the
+ * This function computes the coefficients a3s, a4, etc. used in the
  * non-quasicircular correction. The details of the calculation of these
- * coefficients are found in the DCC document T1100433. */
+ * coefficients are found in the DCC document T1100433. 
+ * In brief, this function populates and solves the linear equations 
+ * Eq. 18 (for amplitude) and Eq. 19 (for phase) of the DCC document T1100433v2.
+ */
 UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
-                 REAL8Vector    * restrict amplitude,   /**<< Amplitude of waveform as function of time */
-                 REAL8Vector    * restrict phase,       /**<< Phase of waveform (in radians) as function of time */
-                 REAL8Vector    * restrict rVec,        /**<< Position-vector as function of time */
-                 REAL8Vector    * restrict prVec,       /**<< Momentum vector as function of time */
-                 REAL8Vector    * restrict orbOmegaVec, /**<< Orbital frequency vector as function of time */
+                 REAL8Vector    * restrict amplitude,   /**<< Waveform amplitude, func of time */
+                 REAL8Vector    * restrict phase,       /**<< Waveform phase(rad), func of time */
+                 REAL8Vector    * restrict rVec,        /**<< Position-vector, function of time */
+                 REAL8Vector    * restrict prVec,       /**<< Momentum vector, function of time */
+                 REAL8Vector    * restrict orbOmegaVec, /**<< Orbital frequency, func of time */
                  INT4                      l,           /**<< Mode index l */
                  INT4                      m,           /**<< Mode index m */
-                 REAL8                     timePeak,    /**<< Time for which we reach the peak frequency */
+                 REAL8                     timePeak,    /**<< Time of peak orbital frequency */
                  REAL8                     deltaT,      /**<< Sampling interval */
                  REAL8                     eta,         /**<< Symmetric mass ratio */
-                 REAL8                     a,           /**<< Normalized spin of the deformed Kerr spacetime */
-                 EOBNonQCCoeffs * restrict coeffs       /**<< NQC coefficients (populated by function) */)
+                 REAL8                     a,           /**<< Normalized spin of deformed-Kerr */
+                 EOBNonQCCoeffs * restrict coeffs       /**<< OUTPUT, NQC coefficients */)
 {
 
   /* For gsl permutation stuff */
@@ -1003,7 +1043,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  /* Populate vectors as necessary */
+  /* Populate vectors as necessary. Eqs. 14 - 17 of the LIGO DCC document T1100433v2 */
   for ( unsigned int i = 0; i < timeVec->length; i++ )
   {
     
@@ -1093,6 +1133,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   spline = gsl_spline_alloc( gsl_interp_cspline, amplitude->length );
   acc    = gsl_interp_accel_alloc();
 
+  /* Populate the Q matrix in Eq. 18 of the LIGO DCC document T1100433v2 */
   /* Q3 */
   gsl_spline_init( spline, timeVec->data, q3LM->data, q3LM->length );
   gsl_matrix_set( qMatrix, 0, 0, gsl_spline_eval( spline, nrTimePeak, acc ) );
@@ -1113,6 +1154,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   gsl_matrix_set( qMatrix, 1, 2, gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
   gsl_matrix_set( qMatrix, 2, 2, gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
+  /* Populate the r.h.s vector of Eq. 18 of the LIGO DCC document T1100433v2 */
   /* Amplitude */
   gsl_spline_init( spline, timeVec->data, amplitude->data, amplitude->length );
   gsl_interp_accel_reset( acc );
@@ -1158,6 +1200,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
 
   /* Now we (should) have calculated the a values. Now we can do the b values */
 
+  /* Populate the P matrix in Eq. 18 of the LIGO DCC document T1100433v2 */
   /* P3 */
   gsl_spline_init( spline, timeVec->data, p3->data, p3->length );
   gsl_interp_accel_reset( acc );
@@ -1170,6 +1213,7 @@ UNUSED static int XLALSimIMRSpinEOBCalculateNQCCoefficients(
   gsl_matrix_set( pMatrix, 0, 1, - gsl_spline_eval_deriv( spline, nrTimePeak, acc ) );
   gsl_matrix_set( pMatrix, 1, 1, - gsl_spline_eval_deriv2( spline, nrTimePeak, acc ) );
 
+  /* Populate the r.h.s vector of Eq. 18 of the LIGO DCC document T1100433v2 */
   /* Phase */
   gsl_spline_init( spline, timeVec->data, phase->data, phase->length );
   gsl_interp_accel_reset( acc );
