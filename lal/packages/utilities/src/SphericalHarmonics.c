@@ -536,7 +536,7 @@ double XLALWignerdMatrix(
 {
 
 	int k = MIN( l+m, MIN( l-m, MIN( l+mp, l-mp )));
-	double a, lam;
+	double a=0, lam=0;
 	if(k == l+m){
 		a = mp-m;
 		lam = mp-m;
