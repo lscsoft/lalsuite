@@ -68,19 +68,23 @@ static INT4 XLALFinalMassSpin(
  * Generates the ringdown wave associated with the given real
  * and imaginary parts of the inspiral waveform. The parameters of 
  * the ringdown, such as amplitude and phase offsets, are determined
- * by solving the linear equations found in the DCC document T1100433.
+ * by solving the linear equations defined in the DCC document T1100433.
+ * In the linear equations Ax=b, 
+ * A is a 16-by-16 matrix depending on QNM (complex) frequencies,
+ * x is a 16-d vector of the 8 unknown complex QNM amplitudes,
+ * b is a 16-d vector depending on inspiral-plunge waveforms and their derivatives near merger.
  */ 
 static INT4 XLALSimIMREOBHybridRingdownWave(
-    REAL8Vector			*rdwave1,   /**<< Real part of ringdown */
-    REAL8Vector			*rdwave2,   /**<< Imaginary part of ringdown */
+    REAL8Vector		*rdwave1,   /**<< Real part of ringdown      (returned) */
+    REAL8Vector		*rdwave2,   /**<< Imaginary part of ringdown (returned) */
     const REAL8         dt,         /**<< Sampling interval */
-	const REAL8         mass1,      /**<< First component mass (in Solar masses) */
+    const REAL8         mass1,      /**<< First component mass (in Solar masses) */
     const REAL8         mass2,      /**<< Second component mass (in Solar masses) */
-    REAL8VectorSequence		*inspwave1, /**<< Values and derivatives of real part of inspiral waveform */
-    REAL8VectorSequence		*inspwave2, /**<< Values and derivatives of Imaginary part of inspiral waveform */
-    COMPLEX16Vector			*modefreqs, /**<< Complex frequencies of ringdown (scaled by total mass) */
-    REAL8Vector			*matchrange /**<< Times which determine the comb size for ringdown attachment */
-	)
+    REAL8VectorSequence	*inspwave1, /**<< Values and derivatives of real part of inspiral waveform */
+    REAL8VectorSequence	*inspwave2, /**<< Values and derivatives of Imaginary part of inspiral waveform */
+    COMPLEX16Vector	*modefreqs, /**<< Complex frequencies of ringdown (scaled by total mass) */
+    REAL8Vector		*matchrange /**<< Times which determine the comb size for ringdown attachment */
+    )
 {
 
   /* XLAL error handling */
@@ -276,15 +280,15 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
  * in the hybrid comb attachment of the ringdown.
  */
 static INT4 XLALGenerateHybridWaveDerivatives (
-	REAL8Vector				*rwave,      /**<< The values of the waveform at the comb points (populated within function)*/
-	REAL8Vector				*dwave,      /**<< The first derivative of the waveform at the comb points (populated within function)*/
-	REAL8Vector				*ddwave,     /**<< The second derivative of the waveform at the comb points (populated within function)*/
-        REAL8Vector				*timeVec,    /**<< Vector containing the time */
-	REAL8Vector				*wave,       /**<< Last part of inspiral waveform */
-	REAL8Vector				*matchrange, /**<< Times which determine the size of the comb */
-        REAL8                                   dt,          /**<< Sample time step */
-        REAL8                                   mass1,       /**<< First component mass (in Solar masses) */
-        REAL8                                   mass2        /**<< Second component mass (in Solar masses) */
+	REAL8Vector	*rwave,      /**<< The values of the waveform at the comb points (populated within function)*/
+	REAL8Vector	*dwave,      /**<< The first derivative of the waveform at the comb points (populated within function)*/
+	REAL8Vector	*ddwave,     /**<< The second derivative of the waveform at the comb points (populated within function)*/
+        REAL8Vector	*timeVec,    /**<< Vector containing the time */
+	REAL8Vector	*wave,       /**<< Last part of inspiral waveform */
+	REAL8Vector	*matchrange, /**<< Times which determine the size of the comb */
+        REAL8           dt,          /**<< Sample time step */
+        REAL8           mass1,       /**<< First component mass (in Solar masses) */
+        REAL8           mass2        /**<< Second component mass (in Solar masses) */
 	)
 {
 
@@ -394,7 +398,7 @@ static INT4 XLALGenerateHybridWaveDerivatives (
  * Vitor Cardoso, http://centra.ist.utl.pt/~vitor/?page=ringdown
  */
 static INT4 XLALSimIMREOBGenerateQNMFreqV2(
-        COMPLEX16Vector          *modefreqs, /**<<The complex frequencies of the overtones (scaled by total mass) */
+        COMPLEX16Vector          *modefreqs, /**<<The complex frequencies of the overtones (scaled by total mass, returned) */
         const REAL8              mass1,      /**<<The mass of the first component of the system (in Solar masses) */
         const REAL8              mass2,      /**<<The mass of the second component of the system (in Solar masses) */
         const REAL8              spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
@@ -1576,9 +1580,9 @@ static INT4 XLALSimIMREOBGenerateQNMFreqV2(
  * merger. They are given by a fitting found in Pan et al, arXiv:1106.1021v1 [gr-qc]
  */
 static INT4 XLALFinalMassSpin(
-	REAL8		    *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
-	REAL8		    *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
-	const REAL8     mass1,      /**<< The mass of the first component of the system */
+    REAL8          *finalMass, /**<< The final mass returned by the function (scaled by original total mass) */
+    REAL8          *finalSpin, /**<< The final spin returned by the function (scaled by final mass) */
+    const REAL8     mass1,      /**<< The mass of the first component of the system */
     const REAL8     mass2,       /**<< The mass of the second component of the system */
     const REAL8     spin1[3],   /**<<The spin of the first object; only needed for spin waveforms */
     const REAL8     spin2[3],   /**<<The spin of the second object; only needed for spin waveforms */
@@ -1660,8 +1664,8 @@ static INT4 XLALFinalMassSpin(
  * arXiv:1202.0790 for details.
  */
 static INT4 XLALSimIMREOBHybridAttachRingdown(
-      REAL8Vector 	*signal1,     /**<<Real part of inspiral waveform to which we attach the ringdown */
-      REAL8Vector 	*signal2,     /**<<Imaginary part of inspiral waveform to which we attach the ringdown */
+      REAL8Vector 	*signal1,     /**<<Real part of inspiral waveform to which we attach the ringdown      (returned) */
+      REAL8Vector 	*signal2,     /**<<Imaginary part of inspiral waveform to which we attach the ringdown (returned) */
       const INT4        l,            /**<< Current mode l */
       const INT4        m,            /**<< Current mode m */
       const REAL8       dt,           /**<< Sample time step (in seconds) */
