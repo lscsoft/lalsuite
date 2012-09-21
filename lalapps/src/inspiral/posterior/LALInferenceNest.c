@@ -41,6 +41,9 @@
 LALInferenceRunState *initialize(ProcessParamsTable *commandLine);
 void initializeNS(LALInferenceRunState *runState);
 void initVariables(LALInferenceRunState *state);
+void initVariablesReviewEvidence(LALInferenceRunState *state);
+void initVariablesReviewEvidence_bimod(LALInferenceRunState *state);
+void initVariablesReviewEvidence_banana(LALInferenceRunState *state);
 void initStudentt(LALInferenceRunState *state);
 void initializeTemplate(LALInferenceRunState *runState);
 // static void mc2masses(double mc, double eta, double *m1, double *m2);
@@ -398,7 +401,6 @@ Nested sampling arguments:\n\
 /* Setup the variable for the evidence calculation test for review */
 /* 5-sigma ranges for analytic likeliood function */
 /* https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/LALInferenceReviewAnalyticGaussianLikelihood */
-void initVariablesReviewEvidence(LALInferenceRunState *state);
 void initVariablesReviewEvidence(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;
@@ -977,7 +979,6 @@ Arguments for each section follow:\n\n";
 	return(0);
 }
 
-void initVariablesReviewEvidence_bimod(LALInferenceRunState *state);
 void initVariablesReviewEvidence_bimod(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;
@@ -1030,7 +1031,6 @@ void initVariablesReviewEvidence_bimod(LALInferenceRunState *state)
         return;
 }
 
-void initVariablesReviewEvidence_banana(LALInferenceRunState *state);
 void initVariablesReviewEvidence_banana(LALInferenceRunState *state)
 {
     ProcessParamsTable *commandLine=state->commandLine;

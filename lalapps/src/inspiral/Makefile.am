@@ -362,7 +362,7 @@ EXTRA_DIST = \
 	glitch_probe.in \
 	coh_PTF_post_processing.in $(DATA)
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 CLEANFILES = \

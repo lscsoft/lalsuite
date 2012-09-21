@@ -22,7 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/syslimits.h>
 #include <lal/LALFrameU.h>
 
 #ifndef PATH_MAX

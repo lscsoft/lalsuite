@@ -47,7 +47,8 @@ REAL8 XLALChisqCdf(
 {
 	double prob;
 
-	/* Arguments chi2 and dof must be non-negative */
+	/* Arguments chi2 and dof must be non-negative and positive
+	 * respectively */
 	if((chi2 < 0.0) || (dof <= 0.0))
 		XLAL_ERROR_REAL8(XLAL_EDOM);
 

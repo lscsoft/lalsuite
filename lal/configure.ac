@@ -161,11 +161,6 @@ LALSUITE_ENABLE_NIGHTLY
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# force all python modules into the exec dir to prevent mixed C and
-# pure-python library code from being split across lib and lib64 on
-# RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
 # get version
 lal_version_major=`echo "$VERSION" | cut -d. -f1`
 lal_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -385,6 +380,11 @@ if test "$GCC" = yes; then
     CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
   fi
 fi
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 INCLUDEMKFILE=$srcdir/misc/include.mk
 AC_SUBST_FILE([INCLUDEMKFILE])

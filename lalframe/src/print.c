@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
 int printchannel(LALFrameUFrChan * channel, double t0)
 {
-    const char *name;
+    /* const char *name; */
     double dt;
     void *data;
     int dtype;
@@ -146,7 +146,7 @@ int printchannel(LALFrameUFrChan * channel, double t0)
     if (!channel)
         return -1;
 
-    name = XLALFrameUFrChanQueryName(channel);
+    /* name = XLALFrameUFrChanQueryName(channel); */
     t0 += XLALFrameUFrChanQueryTimeOffset(channel);
 
     ndata = XLALFrameUFrChanVectorQueryNData(channel);

@@ -93,7 +93,7 @@ bin_SCRIPTS = \
 endif
 
 pkgdata_DATA = ring_test.ini ringpost_remove_cluster.sql
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 CLEANFILES = python_config.sed lalapps_ring_pipe lalapps_ringcorse
 EXTRA_DIST = ring.c ring_pipe.in ringcorse.in ring.py $(DATA)

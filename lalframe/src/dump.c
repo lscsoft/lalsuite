@@ -90,6 +90,7 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
     LALFrameUFrDetector *detector;
     const char *name;
     const char *prefix;
+    /*
     double longitude;
     double latitude;
     double elevation;
@@ -99,6 +100,7 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
     double altitudey;
     double midpointx;
     double midpointy;
+    */
     int loctime;
 
     if (!frfile)
@@ -115,6 +117,7 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
     name = XLALFrameUFrDetectorQueryName(detector);
     prefix = XLALFrameUFrDetectorQueryPrefix(detector);
     loctime = XLALFrameUFrDetectorQueryLocalTime(detector);
+    /*
     longitude = XLALFrameUFrDetectorQueryLongitude(detector);
     latitude = XLALFrameUFrDetectorQueryLatitude(detector);
     elevation = XLALFrameUFrDetectorQueryElevation(detector);
@@ -124,6 +127,7 @@ int dumpdetector(LALFrameUFrFile * frfile, size_t det)
     azimuthy = XLALFrameUFrDetectorQueryArmYAzimuth(detector);
     altitudey = XLALFrameUFrDetectorQueryArmYAltitude(detector);
     midpointy = XLALFrameUFrDetectorQueryArmYMidpoint(detector);
+    */
 
     indent;
     printf("FrDetector %zu %s (%s): localtime = %d\n", det, name, prefix, loctime);

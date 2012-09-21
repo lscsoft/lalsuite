@@ -191,8 +191,8 @@ LALNormalizeSkyPosition (LALStatus *stat,		/**< pointer to LALStatus structure *
  * Based on Alicia's function with some additional "unwinding" added.
  */
 void
-XLALNormalizeSkyPosition ( double *RESTRICT longitude,   /**< [in,out] sky-position longitude to normalize*/
-                           double *RESTRICT latitude     /**< [in,out] sky-position latitude to normalize*/
+XLALNormalizeSkyPosition ( double *restrict longitude,   /**< [in,out] sky-position longitude to normalize*/
+                           double *restrict latitude     /**< [in,out] sky-position latitude to normalize*/
                            )
 {
 

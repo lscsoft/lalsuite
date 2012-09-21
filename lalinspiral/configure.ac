@@ -60,11 +60,6 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
-# force all python modules into the exec dir to prevent mixed C and
-# pure-python library code from being split across lib and lib64 on
-# RedHat-derived systems.
-AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
-
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
 
@@ -177,6 +172,11 @@ fi
 if test "${cuda}" = "true"; then
   AC_DEFINE([LALINSPIRAL_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
+
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

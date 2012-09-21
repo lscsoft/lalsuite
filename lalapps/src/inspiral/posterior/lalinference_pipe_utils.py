@@ -45,7 +45,7 @@ class Event():
         self.event_id=Event.new_id()
     if self.injection is not None:
         self.trig_time=self.injection.get_end()
-        self.event_id=int(str(self.injection.simulation_id).split(':')[2])
+        if event_id is None: self.event_id=int(str(self.injection.simulation_id).split(':')[2])
     if self.sngltrigger is not None:
         self.trig_time=self.sngltrigger.get_end()
         self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
@@ -320,6 +320,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         sys.exit(1)
     if self.config.has_option('input','events'):
       selected_events=ast.literal_eval(self.config.get('input','events'))
+      print 'Selected events %s'%(str(selected_events))
       if selected_events=='all':
           selected_events=None
     else:
@@ -367,7 +368,9 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if(selected_events is not None):
         used_events=[]
         for i in selected_events:
-            used_events.append(events[i])
+            e=events[i]
+            e.event_id=i
+            used_events.append(e)
         events=used_events
     return events
 

@@ -283,10 +283,20 @@ tagBinaryPulsarInput
 typedef struct
 tagBinaryPulsarOutput
 {
-  REAL8 deltaT;	/**< deltaT to add to TDB in order to account for binary */
+  REAL8 deltaT; /**< deltaT to add to TDB in order to account for binary */
 }BinaryPulsarOutput;
 
 /**** DEFINE FUNCTIONS ****/
+/** \brief The function will iteratively calculate the eccentric anomaly from
+  * Kelper's equation
+  * 
+  * The equation is solved using a Newton-Raphson technique and the S9
+  * starting value in Odell & Gooding  1986 CeMec 38 307. This is taken from the
+  * TEMPO2 code T2model.C 
+  */
+void
+XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u);
+
 /** function to calculate the binary system delay
  */
 void
