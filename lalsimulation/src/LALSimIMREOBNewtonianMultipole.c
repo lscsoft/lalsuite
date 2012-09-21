@@ -23,6 +23,8 @@
  *
  * Functions to construct the Newtonian multipolar waveform as given
  * by Damour et al, Phys.Rev.D79:064004,2009.
+ * All equation numbers in this file refer to equations of this paper,
+ * unless otherwise specified.
  *
  * In addition to the function used to do this, 
  * XLALCalculateNewtonianMultipole(), this file also contains a function
@@ -66,9 +68,10 @@ CalculateThisMultipolePrefix(
  * masses measured in Solar masses (which is fine since it is a static function),
  * the units of mass won't matter so long as they are consistent. This is because
  * all uses of the mass within the function are normalized by the total mass.
+ * The prefixes of all (l,m) modes are pre-computed and stored in a structure
  */
 static int XLALSimIMREOBComputeNewtonMultipolePrefixes(
-                NewtonMultipolePrefixes *prefix, /**<< Structure containing the coefficients (populated in function) */
+                NewtonMultipolePrefixes *prefix, /**<< OUTPUT Structure containing the coeffs */
                 const REAL8             m1,      /**<< Mass of first component */
                 const REAL8             m2       /**<< Nass of second component */
                 )
@@ -90,18 +93,18 @@ static int XLALSimIMREOBComputeNewtonMultipolePrefixes(
 
 /**
  * This function calculates the Newtonian multipole part of the
- * factorized waveform. This is defined in Pan et al, arXiv:1106.1021v1 [gr-qc].
+ * factorized waveform for the EOBNRv2 model. This is defined in Eq. 4.
  */
 UNUSED static int
 XLALSimIMREOBCalculateNewtonianMultipole(
-                            COMPLEX16 *multipole, /**<< Newtonian multipole (returned) */
-                            REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
-                            UNUSED REAL8 r,              /**<< Orbital separation (units of total mass M */
-                            REAL8 phi,            /**<< Orbital phase (in radians) */
-                            UINT4  l,             /**<< Mode l */
-                            INT4  m,              /**<< Mode m */
-                            EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
-                            )
+                 COMPLEX16 *multipole, /**<< OUTPUT, Newtonian multipole */
+                 REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
+                 UNUSED REAL8 r,       /**<< Orbital separation (units of total mass M) */
+                 REAL8 phi,            /**<< Orbital phase (in radians) */
+                 UINT4  l,             /**<< Mode l */
+                 INT4  m,              /**<< Mode m */
+                 EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
+                 )
 {
 
    INT4 xlalStatus;
@@ -119,7 +122,7 @@ XLALSimIMREOBCalculateNewtonianMultipole(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-
+  /* Special treatment for (2,1) and (4,4) modes, defined in Eq. 17ab of PRD84:124052 2011 */
   if ( (l == 4 && m == 4) || ( l == 2 && m == 1 ) )
   {
     *multipole = XLALCOMPLEX16MulReal( params->prefixes->values[l][m], pow( x, (REAL8)(l+epsilon)/2.0 - 1.0)/r );
@@ -136,18 +139,18 @@ XLALSimIMREOBCalculateNewtonianMultipole(
 
 /**
  * This function calculates the Newtonian multipole part of the
- * factorized waveform for spin aligned waveforms.
+ * factorized waveform for the SEOBNRv1 model. This is defined in Eq. 4.
  */
 UNUSED static int
 XLALSimIMRSpinEOBCalculateNewtonianMultipole(
-                            COMPLEX16 *multipole, /**<< Newtonian multipole (returned) */
-                            REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
-                            UNUSED REAL8 r,              /**<< Orbital separation (units of total mass M */
-                            REAL8 phi,            /**<< Orbital phase (in radians) */
-                            UINT4  l,             /**<< Mode l */
-                            INT4  m,              /**<< Mode m */
-                            EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
-                            )
+                 COMPLEX16 *multipole, /**<< OUTPUT, Newtonian multipole */
+                 REAL8 x,              /**<< Dimensionless parameter \f$\equiv v^2\f$ */
+                 UNUSED REAL8 r,       /**<< Orbital separation (units of total mass M */
+                 REAL8 phi,            /**<< Orbital phase (in radians) */
+                 UINT4  l,             /**<< Mode l */
+                 INT4  m,              /**<< Mode m */
+                 EOBParams *params     /**<< Pre-computed coefficients, parameters, etc. */
+                 )
 {
    INT4 xlalStatus;
 
@@ -178,10 +181,12 @@ XLALSimIMRSpinEOBCalculateNewtonianMultipole(
  */
 
 static int
-XLALScalarSphHarmThetaPiBy2(COMPLEX16 *y,
-                         INT4 l,
-                         INT4  m,
-                         REAL8 phi)
+XLALScalarSphHarmThetaPiBy2(
+                 COMPLEX16 *y, /**<< OUTPUT, Ylm(0,phi) */
+                 INT4 l,       /**<< Mode l */
+                 INT4  m,      /**<< Mode m */
+                 REAL8 phi     /**<< Orbital phase (in radians) */
+                 )
 {
 
   REAL8 legendre;
@@ -415,19 +420,17 @@ XLALAssociatedLegendreXIsZero( const int l,
 }
 
 /**
- * Function to calculate the numerical prefix in the Newtonian amplitude
+ * Function to calculate the numerical prefix in the Newtonian amplitude. Eqs. 5 - 7.
  */
 static int
 CalculateThisMultipolePrefix(
-               COMPLEX16 *prefix, /**<< Prefix value (returned) */
-               const REAL8 m1,    /**<< mass 1 */
-               const REAL8 m2,    /**<< mass 2 */
-               const INT4 l,      /**<< l mode index */
-               const INT4 m )     /**<< m mode index */
-
+                 COMPLEX16 *prefix, /**<< OUTPUT, Prefix value */
+                 const REAL8 m1,    /**<< mass 1 */
+                 const REAL8 m2,    /**<< mass 2 */
+                 const INT4 l,      /**<< Mode l */
+                 const INT4 m       /**<< Mode m */
+                 )
 {
-
-
    COMPLEX16 n;
    REAL8 c;
 
@@ -461,7 +464,7 @@ CalculateThisMultipolePrefix(
    {
      sign = -1;
    }
-
+   /* Eq. 7. When m1 = m2, taking limit m1-m2 -> 0 to get the correct numerical values */
    if  ( m1 != m2 || sign == 1 )
    {
      c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );
@@ -485,7 +488,7 @@ CalculateThisMultipolePrefix(
      }
    }
 
-   /* Dependent on the value of epsilon, we get different n */
+   /* Eqs 5 and 6. Dependent on the value of epsilon (parity), we get different n */
    if ( epsilon == 0 )
    {
   
