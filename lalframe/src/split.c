@@ -30,7 +30,7 @@ char *mkfname(const char *name, size_t pos);
 int main(int argc, char *argv[])
 {
     char stdio[] = "-";
-    char *fname;
+    char *fname = NULL;
     char *basename = NULL;
     LALFrameUFrFile *input;
     LALFrameUFrTOC *toc;
