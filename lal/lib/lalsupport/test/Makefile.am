@@ -28,7 +28,17 @@ EXTRA_DIST = $(DATA)
 TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 TESTS = \
-	$(check_PROGRAMS)
+	ConfigFileTest \
+	ConfigFileTest2 \
+	LALMath3DPlotTest \
+	LALMathNDPlotTest \
+	PrintFTSeriesTest \
+	PrintVectorTest \
+	ReadFTSeriesTest \
+	SegmentsIOTest \
+	StreamInputTest \
+	StreamSeriesInputTest
+#	UserInputTest
 
 MOSTLYCLEANFILES = \
 	*.dat \
