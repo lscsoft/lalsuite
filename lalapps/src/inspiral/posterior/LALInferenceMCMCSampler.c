@@ -363,6 +363,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   /* Temperature ladder settings */
   REAL8 tempMin = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMin");   // Min temperature in ladder
   REAL8 tempMax = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "tempMax");   // Max temperature in ladder
+  REAL8 tempMaxMin = 10.0;                                                                   // Don't let tempMax go too low
   REAL8 targetHotLike       = 15;               // Targeted max 'experienced' log(likelihood) of hottest chain
   INT4  hotThreshold        = nChain/2-1;       // If MPIrank > hotThreshold, use proposals with higher acceptance rates for hot chains
   REAL8 aclThreshold        = 0.8*0.25;         // Make sure ACL is shorter than this fraction of the length of data used to compute it
@@ -377,10 +378,14 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
     trigSNR = *(REAL8*) LALInferenceGetVariable(runState->algorithmParams, "trigSNR");
     networkSNRsqrd = trigSNR * trigSNR;
     tempMax = networkSNRsqrd/(2*targetHotLike);
+    if (tempMax < tempMaxMin)
+      tempMax = tempMaxMin;
     if(MPIrank==0)
       fprintf(stdout,"Trigger SNR of %f specified, setting tempMax to %f.\n", trigSNR, tempMax);
   } else if (networkSNRsqrd > 0.0) {                                                  //injection, choose tempMax to get targetHotLike
     tempMax = networkSNRsqrd/(2*targetHotLike);
+    if (tempMax < tempMaxMin)
+      tempMax = tempMaxMin;
     if(MPIrank==0)
       fprintf(stdout,"Injecting SNR of %f, setting tempMax to %f.\n", sqrt(networkSNRsqrd), tempMax);
   } else {                                                                            //If all else fails, use the default

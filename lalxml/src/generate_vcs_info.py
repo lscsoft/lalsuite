@@ -1,1 +1,1 @@
-../../lal/lib/generate_vcs_info.py
+../../lal/lib/lal/generate_vcs_info.py
