@@ -13,7 +13,7 @@ die "mkdir failed: $?" if $?;
 my $Tsft = 1800.0;
 my $dur = 40551300.0;
 for(my $ii=0; $ii<10; $ii++) {
-   my $h0 = sprintf("%.6e",10**(rand()-23.5));
+   my $h0 = sprintf("%.6e",10**(rand()-24.5));
    my $psi = sprintf("%.6f",0.5*pi*rand()-0.25*pi);
    my $phi0 = sprintf("%.6f",2.0*pi*rand());
    my $alpha = sprintf("%.6f",2.0*pi*rand());
