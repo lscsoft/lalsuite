@@ -586,10 +586,9 @@ size_t XLALNextFlatLatticePoints(
 
     // Copy last template point to remaining columns of 'points'
     gsl_vector_view q = gsl_matrix_column(points, i-1);
-    while (i < points->size2) {
+    for (size_t j = i; j < points->size2; ++j) {
       gsl_vector_view p = gsl_matrix_column(points, i);
       gsl_vector_memcpy(&p.vector, &q.vector);
-      ++i;
     }
 
   }
