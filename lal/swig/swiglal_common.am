@@ -33,8 +33,9 @@ EXTRA_DIST =
 
 # clean files
 CLEANFILES = \
-	$(swig_iface_deps) \
 	$(swig_modl_src)
+DISTCLEANFILES = \
+	$(swig_iface_deps)
 
 if SWIG_BUILD
 
@@ -59,7 +60,7 @@ swig-iface-links :
 	done
 
 # rebuild SWIG interface dependencies file
-$(swig_iface_deps) : ../$(swig_iface)
+$(swig_iface_deps) :
 	@echo '#dummy' > $@
 	@touch $(srcdir)/Makefile.in
 
