@@ -245,6 +245,7 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 %typemap(out, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID {
   %set_output(VOID_Object);
 }
+%typemap(newfree, noblock=1) SWIGTYPE SWIGLAL_RETURN_VOID "";
 %define %swiglal_process_function(NAME, RENAME, TYPE)
 %rename(#RENAME) NAME;
 #if #RENAME != "$ignore"
