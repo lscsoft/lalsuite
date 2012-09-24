@@ -49,7 +49,7 @@ int XLALScalarSphericalHarmonic( COMPLEX16 *y, UINT4 l, INT4  m, REAL8 theta, RE
 INT4 XLALSphHarm ( COMPLEX16 *out, UINT4   L, INT4 M, REAL4 theta, REAL4   phi );
 double XLALJacobiPolynomial( int n, int alpha, int beta, double x );
 double XLALWignerdMatrix( int l, int mp, int m, double beta );
-COMPLEX16 XLALWignerDMatrix( int l, int mp, int m, double alpha, double beta, double gamma );
+COMPLEX16 XLALWignerDMatrix( int l, int mp, int m, double alpha, double beta, double gam );
 /*@}*/
 
 
