@@ -40,7 +40,7 @@ outSingleSFT TRUE
 IFO H1
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-timestampsFile /home/egoetz/TwoSpect/UL/timestamps.dat
+timestampsFile /home/egoetz/TwoSpect/UL_smallDeltaF/timestamps.dat
 generationMode 0
 fmin 401.0
 Band 2.9992
@@ -66,7 +66,7 @@ randSeed $mfdrandseed
 EOF
    close(MFDCONFIG);
    
-   open(INJECTION, ">>/home/egoetz/TwoSpect/UL/$jobnum/injections.dat") or die "Cannot write to /home/egoetz/TwoSpect/UL/$jobnum/injections.dat $!";
+   open(INJECTION, ">>/home/egoetz/TwoSpect/UL_smallDeltaF/$jobnum/injections.dat") or die "Cannot write to /home/egoetz/TwoSpect/UL_smallDeltaF/$jobnum/injections.dat $!";
    print INJECTION "$alpha $delta $h0 $psi $phi0 $f0 $P $df\n";
    close(INJECTION);
    
@@ -93,7 +93,7 @@ maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/UL/$jobnum
+outdirectory /home/egoetz/TwoSpect/UL_smallDeltaF/$jobnum
 sftType MFD
 IFO H1
 FFTplanFlag 1
