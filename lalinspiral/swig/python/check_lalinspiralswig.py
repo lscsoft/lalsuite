@@ -1,10 +1,10 @@
-# Check SWIG Python module wrapping lalframe
+# Check SWIG Python module wrapping lalinspiral
 # Author: Karl Wette, 2011, 2012
 
 # check module load
 import lal
-import lalframe
-from lalframe import cvar as lalframecvar
+import lalinspiral
+from lalinspiral import cvar as lalinspiralcvar
 from lal import cvar as lalcvar
 lalcvar.lalDebugLevel = 1
 print("passed module load")
@@ -13,11 +13,11 @@ print("passed module load")
 if not lalcvar.swig_debug:
     print("skipping object parent tracking")
 else:
-    a = lalframe.lalframeswig_test_parent_map_struct()
+    a = lalinspiral.lalinspiralswig_test_parent_map_struct()
     for i in range(0, 7):
         b = a.s
-        c = lalframecvar.lalframeswig_test_parent_map.s
-        lalframecvar.lalframeswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
+        c = lalinspiralcvar.lalinspiralswig_test_parent_map.s
+        lalinspiralcvar.lalinspiralswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
     del a, b, c
     lal.CheckMemoryLeaks()
     print("passed object parent tracking")
