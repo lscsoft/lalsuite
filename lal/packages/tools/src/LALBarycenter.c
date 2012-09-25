@@ -718,7 +718,7 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 } /* XLALBarycenter() */
 
 /** \author Curt Cutler, Miroslav Shaltev, R Prix
- * \brief Speed optimized version of XLALBarycenterOpt(),
+ * \brief Speed optimized version of XLALBarycenter(),
  * should be fully equivalent except for the additional buffer argument.
  * The buffer is allowed to be NULL (= no buffering), otherwise it will be
  * used to keep sky-specific and detector-specific values if they can be re-used.
