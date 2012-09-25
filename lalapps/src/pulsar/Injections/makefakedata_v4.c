@@ -1125,9 +1125,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	  ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	}
 
+      /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
+      UINT4 lengthOfTimeSeries = (UINT4)round(uvar_Tsft * 2 * cfg->fBand_eff);
+
       if ( !strcmp ( uvar_window, "hann" ) || !strcmp ( uvar_window, "hanning" ) )
         {
-          REAL4Window *win = XLALCreateHannREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+          REAL4Window *win = XLALCreateHannREAL4Window( lengthOfTimeSeries );
           cfg->window = win;
         }
       else if ( !strcmp ( uvar_window, "tukey" ) )
@@ -1141,12 +1144,12 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	      XLALPrintError ("%s: Tukey beta value '%f' was specified; must be between 0 and 1.\n\n", fn, uvar_tukeyBeta );
 	      ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);
 	    }
-	    REAL4Window *win = XLALCreateTukeyREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band), (REAL4) uvar_tukeyBeta );
+	    REAL4Window *win = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, (REAL4) uvar_tukeyBeta );
           cfg->window = win;
 	}
       if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
         {
-          REAL4Window *win = XLALCreateRectangularREAL4Window( (UINT4)(uvar_Tsft * 2 * uvar_Band) );
+          REAL4Window *win = XLALCreateRectangularREAL4Window( lengthOfTimeSeries );
           cfg->window = win;
         }
       else
