@@ -247,8 +247,20 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
                XLAL_ERROR_VOID(XLAL_EFUNC);
             }
             root = gsl_root_fsolver_root(s);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: gsl_root_fsolver_root() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             lo = gsl_root_fsolver_x_lower(s);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: gsl_root_fsolver_x_lower() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             hi = gsl_root_fsolver_x_upper(s);
+            if (xlalErrno!=0) {
+               fprintf(stderr,"%s: gsl_root_fsolver_x_upper() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
             status = gsl_root_test_interval(lo, hi, 0.0, 0.001);
             if (status!=GSL_CONTINUE && status!=GSL_SUCCESS) {
                fprintf(stderr,"%s: gsl_root_test_interval() failed with code %d.\n", __func__, status);
