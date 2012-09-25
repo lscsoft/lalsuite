@@ -69,6 +69,7 @@ option "useSSE"         - "Use SSE functions (caution: user needs to have compil
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off
 
 section "Hidden options"
+option "ULsolver" - "Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver" int values="0","1","2","3","4","5" default="0" optional hidden
 option "dopplerMultiplier" - "Multiplier for the Doppler velocity" double default="1.0" optional hidden
 option "IHSonly"  - "IHS stage only is run. Output statistic is the IHS statistic." flag off hidden
 option "noNotchHarmonics"  - "Do not notch the daily/sidereal harmonics in the IHS step." flag off hidden

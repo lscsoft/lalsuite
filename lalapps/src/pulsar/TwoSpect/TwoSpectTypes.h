@@ -83,6 +83,7 @@ typedef struct
    INT4 followUpOutsideULrange;
    INT4 validateSSE;
    INT4 randSeed;
+   INT4 ULsolver;
    gsl_rng *rng;
 } inputParamsStruct;
 

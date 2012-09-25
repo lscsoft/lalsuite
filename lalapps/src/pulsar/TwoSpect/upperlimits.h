@@ -41,6 +41,8 @@ REAL8 gsl_ncx2cdf_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_float_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_withouttinyprob_solver(REAL8 x, void *p);
 REAL8 gsl_ncx2cdf_float_withouttinyprob_solver(REAL8 x, void *p);
+REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p);
+REAL8 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver(REAL8 x, void *p);
 
 void outputUpperLimitToFile(FILE *outputfile, UpperLimit ul, INT4 printAllULvalues);
 
