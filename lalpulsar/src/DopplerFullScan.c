@@ -244,15 +244,15 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 
 	}
 
-	/* Set spindown metric */
-	if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(thisScan->spindownTiling, init->metricMismatch, init->Tspan)) {
-	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
-	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
-	}
-
 	/* Set Anstar lattice */
 	if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(thisScan->spindownTiling, XLALAnstarLatticeGenerator)) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatTilingAnstarLattice failed\n");
+	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
+	}
+
+	/* Set spindown metric */
+	if (XLAL_SUCCESS != XLALSetFlatLatticeTilingSpindownFstatMetric(thisScan->spindownTiling, init->metricMismatch, init->Tspan)) {
+	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALSetFlatLatticeTilingSpindownFstatMetric failed\n");
 	  ABORT(status, DOPPLERSCANH_EXLAL, DOPPLERSCANH_MSGEXLAL);
 	}
 

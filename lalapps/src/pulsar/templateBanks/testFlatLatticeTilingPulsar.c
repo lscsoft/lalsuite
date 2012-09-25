@@ -197,6 +197,20 @@ int main(int argc, char *argv[]) {
   /*   tiling->scale_padding = scale_padding; */
   /* } */
 
+  /* Set lattice */
+  switch (lattice_type) {
+  case 0:
+    if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(tiling, XLALAnstarLatticeGenerator))
+      LALAPPS_ERROR("XLALSetFlatTilingLatticeGenerator failed\n", 0);
+    break;
+  case 1:
+    if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(tiling, XLALCubicLatticeGenerator))
+      LALAPPS_ERROR("XLALSetFlatTilingLatticeGenerator failed\n", 0);
+    break;
+  default:
+    LALAPPS_ERROR("Invalid --lattice\n", 0);
+  }
+
   /* Set metric */
   switch (metric_type) {
   case 0:
@@ -219,20 +233,6 @@ int main(int argc, char *argv[]) {
   XLAL_VBXMLO_Tag(&xml, "max_mismatch", "%0.12g", max_mismatch);
   /* XLAL_VBXMLO_gsl_vector(&xml, "real_scale", "%0.12g", tiling->real_scale); */
   /* XLAL_VBXMLO_gsl_vector(&xml, "real_offset", "%0.12g", tiling->real_offset); */
-
-  /* Set lattice */
-  switch (lattice_type) {
-  case 0:
-    if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(tiling, XLALAnstarLatticeGenerator))
-      LALAPPS_ERROR("XLALSetFlatTilingLatticeGenerator failed\n", 0);
-    break;
-  case 1:
-    if (XLAL_SUCCESS != XLALSetFlatLatticeGenerator(tiling, XLALCubicLatticeGenerator))
-      LALAPPS_ERROR("XLALSetFlatTilingLatticeGenerator failed\n", 0);
-    break;
-  default:
-    LALAPPS_ERROR("Invalid --lattice\n", 0);
-  }
 
   /* Setup injections */
   if (inject_ratio > 0.0) {

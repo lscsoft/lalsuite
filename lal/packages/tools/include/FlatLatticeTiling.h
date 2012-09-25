@@ -106,8 +106,17 @@ uint64_t XLALGetFlatLatticePointCount(
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
   const size_t dimension,		///< [in] Dimension on which bound applies
+  const bool singular,			///< [in] Is bound composed of single points?
   const FlatLatticeBound func,		///< [in] Parameter space bound function
   void* data				///< [in] Arbitrary data describing parameter space
+  );
+
+///
+/// Set the flat tiling lattice generator
+///
+int XLALSetFlatLatticeGenerator(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const FlatLatticeGenerator generator	///< [in] Lattice generator function
   );
 
 ///
@@ -117,14 +126,6 @@ int XLALSetFlatLatticeMetric(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
   const gsl_matrix* metric,		///< [in] Parameter space metric
   const double max_mismatch		///< [in] Maximum prescribed mismatch
-  );
-
-///
-/// Set the flat tiling lattice generator
-///
-int XLALSetFlatLatticeGenerator(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  const FlatLatticeGenerator generator	///< [in] Lattice generator function
   );
 
 ///

@@ -156,12 +156,12 @@ int XLALSetFlatLatticeTilingAgeBrakingIndexBounds(
   // Set first spindown bounds
   f1dot_data[0] = -1.0 / ((min_braking - 1.0) * age);
   f1dot_data[1] = -1.0 / ((max_braking - 1.0) * age);
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, 3, AgeBraking1stSpindownBound, (void*)f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, 3, false, AgeBraking1stSpindownBound, (void*)f1dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Set second spindown bounds
   f2dot_data[0] = min_braking;
   f2dot_data[1] = max_braking;
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, 4, AgeBraking2ndSpindownBound, (void*)f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, 4, false, AgeBraking2ndSpindownBound, (void*)f2dot_data) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
