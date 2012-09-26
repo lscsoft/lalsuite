@@ -188,7 +188,7 @@ to give, on average, the same arrival time as the GPS clock on Earth'' */
 
 
 /// ---------- internal buffer type for optimized Barycentering function ----------
-typedef struct
+typedef struct tagfixed_sky
 {
   REAL8 sinAlpha;	/// sin(alpha)
   REAL8 cosAlpha;	/// cos(alpha)
@@ -197,7 +197,7 @@ typedef struct
   REAL8 n[3];		/// unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z
 } fixed_sky_t;
 
-typedef struct
+typedef struct tagfixed_site
 {
   REAL8 rd;		/// distance 'rd' from center of Earth, in light seconds
   REAL8 longitude;	/// geocentric (not geodetic!!) longitude of detector vertex
@@ -209,7 +209,7 @@ typedef struct
 } fixed_site_t;
 
 /// internal buffer type for optimized Barycentering function
-typedef struct
+typedef struct tagBarycenterBuffer
 {
   REAL8 alpha;			/// buffered sky-location: right-ascension in rad
   REAL8 delta;			/// buffered sky-location: declination in rad
