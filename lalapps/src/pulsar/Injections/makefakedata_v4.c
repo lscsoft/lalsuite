@@ -965,14 +965,14 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	SFTCatalog *catalog = NULL;
 	SFTConstraints constraints = empty_SFTConstraints;
 	LIGOTimeGPS minStartTime, maxEndTime;
-   BOOLEAN have_window = LALUserVarWasSet ( &uvar_window );
+        BOOLEAN have_window = LALUserVarWasSet ( &uvar_window );
 
-   /* user must specify the window function used for the noiseSFTs */
-   if ( !have_window )
-     {
-       XLALPrintError ("%s: require window option to be given when specifying noiseSFTs.\n", fn);
-       ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);;
-     }
+        /* user must specify the window function used for the noiseSFTs */
+        if ( !have_window )
+          {
+            XLALPrintError ("%s: require window option to be given when specifying noiseSFTs.\n", fn);
+            ABORT (status,  MAKEFAKEDATAC_EBAD,  MAKEFAKEDATAC_MSGEBAD);;
+          }
 
 	if ( lalDebugLevel )
 	  printf ( "\nWARNING: only SFTs corresponding to the noiseSFT-timestamps will be produced!\n" );
