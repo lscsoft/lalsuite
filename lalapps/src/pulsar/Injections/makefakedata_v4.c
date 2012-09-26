@@ -1148,10 +1148,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
           cfg->window = win;
 	}
       if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
-        {
-          REAL4Window *win = XLALCreateRectangularREAL4Window( lengthOfTimeSeries );
-          cfg->window = win;
-        }
+        cfg->window = NULL;
       else
         {
           XLALPrintError ("%s: Window function '%s' was entered, currently only None, Hann, or Tukey windowing is supported.\n\n", fn, uvar_window );
