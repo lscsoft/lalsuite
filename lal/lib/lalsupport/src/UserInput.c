@@ -693,7 +693,7 @@ XLALUserVarHelpString ( const CHAR *progname )
   if ( lalDebugLevel == 0)	/* only give instructions as to how to see developer-options */
     {
       CHAR buf[256];
-      if ( UVAR_vars.optchar )
+      if ( UVAR_vars.optchar && helpptr && helpptr->name )
 	sprintf (buf, "(e.g. --%s -%c1)", helpptr->name, UVAR_vars.optchar);
       else
 	sprintf (buf, " ");
