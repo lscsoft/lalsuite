@@ -79,7 +79,7 @@ main(int argc, char *argv[])
   UserInput_t my_uvars = empty_UserInput_t;
 
   if ( argc > 1 ) {
-    XLALPrintError ("%s: no input arguments allowed.\n");
+    XLALPrintError ("No input arguments allowed.\n");
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
@@ -197,5 +197,3 @@ main(int argc, char *argv[])
 
   return (USERINPUTTESTC_ENORM);
 }
-
-
