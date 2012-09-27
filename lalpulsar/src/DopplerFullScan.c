@@ -166,7 +166,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
     case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
       {
 
-	int i, j;
+	int i;
 	SkyRegion sky = empty_SkyRegion;
 
 	/* Check that the reference time is the same as the start time */
@@ -207,7 +207,7 @@ InitDopplerFullScan(LALStatus *status,			/**< pointer to LALStatus structure */
 	if (thisScan->gridType == GRID_SPINDOWN_SQUARE) { /* square parameter space */
 
 	  /* Set square bounds on the frequency and spindowns */
-	  for (i = 0; i < PULSAR_MAX_SPINS; ++i, ++j) {
+	  for (i = 0; i < PULSAR_MAX_SPINS; ++i) {
 	    if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(thisScan->spindownTiling, 2 + i, init->searchRegion.fkdot[i],
                                                                 init->searchRegion.fkdot[i] + init->searchRegion.fkdotBand[i])) {
 	      XLALPrintError("\nGRID_SPINDOWN_SQUARE: XLALSetFlatLatticeTilingConstantBound failed\n");
