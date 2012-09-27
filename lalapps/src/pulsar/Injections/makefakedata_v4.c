@@ -1147,7 +1147,7 @@ InitMakefakedata (LALStatus *status, ConfigVars_t *cfg, int argc, char *argv[])
 	    REAL4Window *win = XLALCreateTukeyREAL4Window( lengthOfTimeSeries, (REAL4) uvar_tukeyBeta );
           cfg->window = win;
 	}
-      if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
+      else if ( !strcmp ( uvar_window, "none" ) || !strcmp ( uvar_window, "rectangular" ) || !strcmp ( uvar_window, "boxcar" ) || !strcmp ( uvar_window, "tophat" ) )
         cfg->window = NULL;
       else
         {
