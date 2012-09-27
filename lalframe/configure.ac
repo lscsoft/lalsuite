@@ -95,9 +95,6 @@ LALSUITE_PROG_CC_CXX
 AX_PTHREAD([lalframe_pthread=true],[lalframe_pthread=false])
 AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
-# ignore unused flags with clang/clang++
-AS_IF([test -n "$CLANG_CC"],[CFLAGS="-Qunused-arguments ${CFLAGS}"])
-
 # checks for programs
 AC_PROG_INSTALL
 AC_PROG_LN_S
@@ -151,14 +148,7 @@ LALSUITE_USE_SWIG([XLAL LAL])
 LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
-
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+LALSUITE_ADD_GCC_FLAGS
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on

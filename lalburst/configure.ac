@@ -128,14 +128,7 @@ LALSUITE_CHECK_LIB([LALMetaIO],[1.0.4],[XLALCreateMetaTableDir],[lal/LIGOLwXMLRe
 LALSUITE_CHECK_LIB([LALSimulation],[0.3.0],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 
 # add gcc specific flags
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
-
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+LALSUITE_ADD_GCC_FLAGS
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on

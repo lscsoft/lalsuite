@@ -162,14 +162,7 @@ LALSUITE_SWIG_DEPENDS([lal],[true])
 LALSUITE_SWIG_DEPENDS([lalxml],[$lalxml])
 
 # add gcc specific flags
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
-
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+LALSUITE_ADD_GCC_FLAGS
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on

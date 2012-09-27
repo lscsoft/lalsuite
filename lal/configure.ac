@@ -368,19 +368,7 @@ AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
 
 # add gcc specific flags --- must be done at end or tests will break!
-if test "$GCC" = yes; then
-  # don't use gcc flags when cuda is enabled
-  if test "${cuda}" != "true"; then
-    CFLAGS="$CFLAGS $lal_gcc_flags"
-  else
-    AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])
-  fi
-
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+LALSUITE_ADD_GCC_FLAGS
 
 # force all python modules into the exec dir to prevent mixed C and
 # pure-python library code from being split across lib and lib64 on
