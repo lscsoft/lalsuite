@@ -10,7 +10,7 @@ lalcvar.lalDebugLevel = 1
 print("passed module load")
 
 # check object parent tracking
-if not lalcvar.swig_debug:
+if not lalcvar.swig_debug and not lalxmlcvar.swig_debug:
     print("skipping object parent tracking")
 else:
     a = lalxml.lalxmlswig_test_parent_map_struct()
