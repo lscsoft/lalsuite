@@ -313,7 +313,7 @@ XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed,		/**< [out] resulting 'smoo
   rngmed->f0 = periodo->f0;
   rngmed->deltaF = periodo->deltaF;
 
-  UINT4 blocks2 = blockSize/2 - 1; /* integer division, round down */
+  UINT4 blocks2 = blockSize/2; /* integer division, round down */
 
   LALRunningMedianPar rngMedPar;
   rngMedPar.blocksize = blockSize;
