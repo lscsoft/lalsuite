@@ -1211,17 +1211,13 @@ static int NormaliseLatticeGenerator(
 /// Workspace for computing the nearest template to a set of injections
 ///
 struct tagNearestTemplateWorkspace {
-  size_t dimensions;			///< Dimensions of parameter space
-  size_t num_templates;			///< Number of templates to compare at once
-  size_t num_injections;		///< Nunber of injections to compare at once
-  gsl_matrix* metric_chol;		///< Cholesky decomposition of metric
-  gsl_matrix* templates;		///< Templates points (multiplied by metric Cholesky decomp.)
+  gsl_matrix* metric;			///< Parameter space metric
+  gsl_matrix* metric_templates;		///< Templates points, multiplied by metric
   gsl_vector* dot_templates;		///< Dot product of templates
-  gsl_vector* tmp_templates;		///< Temporary vector of same length as number of templates
-  gsl_matrix* injections;		///< Injection points (multiplied by metric Cholesky decomp.)
+  gsl_matrix* injections;		///< Injection points
   gsl_vector* dot_injections;		///< Dot product of injections
-  gsl_vector* tmp_injections;		///< Temporary vector of same length as number of injections
   gsl_matrix* cross_terms;		///< Cross terms in distance between templates and injections
+  gsl_vector* distances;		///< Distances between templates and injections
 };
 
 NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
@@ -1235,33 +1231,41 @@ NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
   XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
   XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
 
-  // Check metric is symmetric
+  // Check metric is symmetric, that metric diagonal elements are positive or zero,
+  // and that rows and columns passing through zero diagonals are also zero
   for (size_t i = 0; i < metric->size1; ++i) {
-    for (size_t j = i+1; j < metric->size2; ++j) {
-      double metric_i_j = gsl_matrix_get(metric, i, j);
-      XLAL_CHECK_NULL(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL);
+    XLAL_CHECK_NULL(gsl_matrix_get(metric, i, i) >= 0.0, XLAL_EINVAL);
+    for (size_t j = 0; j < metric->size2; ++j) {
+      if (gsl_matrix_get(metric, i, i) == 0.0 || gsl_matrix_get(metric, i, i) == 0.0) {
+        XLAL_CHECK_NULL(gsl_matrix_get(metric, i, j) == 0.0, XLAL_EINVAL);
+      } else {
+        XLAL_CHECK_NULL(gsl_matrix_get(metric, i, j) == gsl_matrix_get(metric, j, i), XLAL_EINVAL);
+      }
     }
   }
 
   // Allocate and initialise workspace
   NearestTemplateWorkspace* wksp = XLALCalloc(1, sizeof(NearestTemplateWorkspace));
   XLAL_CHECK_NULL(wksp != NULL, XLAL_ENOMEM);
-  wksp->dimensions = metric->size1;
-  wksp->num_templates = num_templates;
-  wksp->num_injections = num_injections;
 
   // Allocate workspace memory
-  wksp->metric_chol = gsl_matrix_alloc(wksp->dimensions, wksp->dimensions);
-  XLAL_CHECK_NULL(wksp->metric_chol != NULL, XLAL_ENOMEM);
-  wksp->cross_terms = gsl_matrix_alloc(wksp->num_injections, wksp->num_templates);
+  wksp->metric = gsl_matrix_alloc(metric->size1, metric->size2);
+  XLAL_CHECK_NULL(wksp->metric != NULL, XLAL_ENOMEM);
+  wksp->metric_templates = gsl_matrix_alloc(wksp->metric->size1, num_templates);
+  XLAL_CHECK_NULL(wksp->metric_templates != NULL, XLAL_ENOMEM);
+  wksp->dot_templates = gsl_vector_alloc(num_templates);
+  XLAL_CHECK_NULL(wksp->dot_templates != NULL, XLAL_ENOMEM);
+  wksp->injections = gsl_matrix_alloc(wksp->metric->size1, num_injections);
+  XLAL_CHECK_NULL(wksp->injections != NULL, XLAL_ENOMEM);
+  wksp->dot_injections = gsl_vector_alloc(num_injections);
+  XLAL_CHECK_NULL(wksp->dot_injections != NULL, XLAL_ENOMEM);
+  wksp->cross_terms = gsl_matrix_alloc(num_injections, num_templates);
   XLAL_CHECK_NULL(wksp->cross_terms != NULL, XLAL_ENOMEM);
+  wksp->distances = gsl_vector_alloc(num_templates);
+  XLAL_CHECK_NULL(wksp->distances != NULL, XLAL_ENOMEM);
 
-  // Compute Cholesky decomposition of metric
-  gsl_matrix_memcpy(wksp->metric_chol, metric);
-  gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
-  int errc = gsl_linalg_cholesky_decomp(wksp->metric_chol);
-  gsl_set_error_handler(old_handler);
-  XLAL_CHECK_NULL(errc == 0, XLAL_EFAILED, "Cholesky decomposition failed");
+  // Copy metric
+  gsl_matrix_memcpy(wksp->metric, metric);
 
   return wksp;
 
@@ -1276,15 +1280,14 @@ void XLALDestroyNearestTemplateWorkspace(
 
     gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
 
-    gsl_matrix_free(wksp->metric_chol);
-    gsl_matrix_free(wksp->templates);
+    // Cleanup
+    gsl_matrix_free(wksp->metric);
+    gsl_matrix_free(wksp->metric_templates);
     gsl_vector_free(wksp->dot_templates);
-    gsl_vector_free(wksp->tmp_templates);
     gsl_matrix_free(wksp->injections);
     gsl_vector_free(wksp->dot_injections);
-    gsl_vector_free(wksp->tmp_injections);
     gsl_matrix_free(wksp->cross_terms);
-
+    gsl_vector_free(wksp->distances);
     XLALFree(wksp);
 
     gsl_set_error_handler(old_handler);
@@ -1303,34 +1306,22 @@ int XLALUpdateWorkspaceTemplates(
   // Check input
   XLAL_CHECK(wksp != NULL, XLAL_EFAULT);
   XLAL_CHECK(templates != NULL, XLAL_EFAULT);
-  XLAL_CHECK(templates->size1 == wksp->dimensions, XLAL_ESIZE);
-  XLAL_CHECK(templates->size2 == wksp->num_templates, XLAL_ESIZE);
+  XLAL_CHECK(templates->size1 == wksp->metric->size1, XLAL_ESIZE);
+  XLAL_CHECK(templates->size2 == wksp->dot_templates->size, XLAL_ESIZE);
   XLAL_CHECK(nearest_template != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_template->size == wksp->num_injections, XLAL_EFAULT);
-
-  // Allocate workspace memory
-  if (wksp->templates == NULL) {
-    wksp->templates = gsl_matrix_alloc(wksp->dimensions, wksp->num_templates);
-    XLAL_CHECK(wksp->templates != NULL, XLAL_ENOMEM);
-    wksp->dot_templates = gsl_vector_alloc(wksp->num_templates);
-    XLAL_CHECK(wksp->dot_templates != NULL, XLAL_ENOMEM);
-    wksp->tmp_templates = gsl_vector_alloc(wksp->num_templates);
-    XLAL_CHECK(wksp->tmp_templates != NULL, XLAL_ENOMEM);
-  }
-
-  // Copy templates and multiply by Cholesky decomposition of metric
-  gsl_matrix_memcpy(wksp->templates, templates);
-  gsl_blas_dtrmm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
-                 1.0, wksp->metric_chol, wksp->templates);
+  XLAL_CHECK(nearest_template->size == wksp->dot_templates->size, XLAL_EFAULT);
 
   // Compute dot product of templates
+  gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, wksp->metric, templates, 0.0, wksp->metric_templates);
+  gsl_matrix_mul_elements(wksp->metric_templates, templates);
   gsl_vector_set_zero(wksp->dot_templates);
-  for (size_t i = 0; i < wksp->dimensions; ++i) {
-    gsl_vector_view v = gsl_matrix_row(wksp->templates, i);
-    gsl_vector_memcpy(wksp->tmp_templates, &v.vector);
-    gsl_vector_mul(wksp->tmp_templates, &v.vector);
-    gsl_vector_add(wksp->dot_templates, wksp->tmp_templates);
+  for (size_t i = 0; i < wksp->metric->size1; ++i) {
+    gsl_vector_view v = gsl_matrix_row(wksp->metric_templates, i);
+    gsl_vector_add(wksp->dot_templates, &v.vector);
   }
+
+  // Copy templates and multiply by metric
+  gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, wksp->metric, templates, 0.0, wksp->metric_templates);
 
   // Initialise nearest template index
   gsl_vector_uint_set_all(nearest_template, -1);
@@ -1349,34 +1340,22 @@ int XLALUpdateWorkspaceInjections(
   // Check input
   XLAL_CHECK(wksp != NULL, XLAL_EFAULT);
   XLAL_CHECK(injections != NULL, XLAL_EFAULT);
-  XLAL_CHECK(injections->size1 == wksp->dimensions, XLAL_ESIZE);
-  XLAL_CHECK(injections->size2 == wksp->num_injections, XLAL_ESIZE);
+  XLAL_CHECK(injections->size1 == wksp->metric->size1, XLAL_ESIZE);
+  XLAL_CHECK(injections->size2 == wksp->dot_injections->size, XLAL_ESIZE);
   XLAL_CHECK(min_distance != NULL, XLAL_EFAULT);
-  XLAL_CHECK(min_distance->size == wksp->num_injections, XLAL_EFAULT);
-
-  // Allocate workspace memory
-  if (wksp->injections == NULL) {
-    wksp->injections = gsl_matrix_alloc(wksp->dimensions, wksp->num_injections);
-    XLAL_CHECK(wksp->injections != NULL, XLAL_ENOMEM);
-    wksp->dot_injections = gsl_vector_alloc(wksp->num_injections);
-    XLAL_CHECK(wksp->dot_injections != NULL, XLAL_ENOMEM);
-    wksp->tmp_injections = gsl_vector_alloc(wksp->num_injections);
-    XLAL_CHECK(wksp->tmp_injections != NULL, XLAL_ENOMEM);
-  }
-
-  // Copy injections and multiply by Cholesky decomposition of metric
-  gsl_matrix_memcpy(wksp->injections, injections);
-  gsl_blas_dtrmm(CblasLeft, CblasUpper, CblasNoTrans, CblasNonUnit,
-                 1.0, wksp->metric_chol, wksp->injections);
+  XLAL_CHECK(min_distance->size == wksp->dot_injections->size, XLAL_EFAULT);
 
   // Compute dot product of injections
+  gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, wksp->metric, injections, 0.0, wksp->injections);
+  gsl_matrix_mul_elements(wksp->injections, injections);
   gsl_vector_set_zero(wksp->dot_injections);
-  for (size_t i = 0; i < wksp->dimensions; ++i) {
+  for (size_t i = 0; i < wksp->metric->size1; ++i) {
     gsl_vector_view v = gsl_matrix_row(wksp->injections, i);
-    gsl_vector_memcpy(wksp->tmp_injections, &v.vector);
-    gsl_vector_mul(wksp->tmp_injections, &v.vector);
-    gsl_vector_add(wksp->dot_injections, wksp->tmp_injections);
+    gsl_vector_add(wksp->dot_injections, &v.vector);
   }
+
+  // Copy injections
+  gsl_matrix_memcpy(wksp->injections, injections);
 
   // Initialise minimum distances
   gsl_vector_set_all(min_distance, GSL_POSINF);
@@ -1395,26 +1374,26 @@ int XLALUpdateNearestTemplateToInjections(
   // Check input
   XLAL_CHECK(wksp != NULL, XLAL_EFAULT);
   XLAL_CHECK(min_distance != NULL, XLAL_EFAULT);
-  XLAL_CHECK(min_distance->size == wksp->num_injections, XLAL_EFAULT);
+  XLAL_CHECK(min_distance->size == wksp->dot_injections->size, XLAL_EFAULT);
   XLAL_CHECK(nearest_template != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_template->size == wksp->num_injections, XLAL_EFAULT);
+  XLAL_CHECK(nearest_template->size == wksp->dot_templates->size, XLAL_EFAULT);
 
   // Compute cross terms in distance between templates and injections
-  gsl_blas_dgemm(CblasTrans, CblasNoTrans, -2.0, wksp->injections, wksp->templates, 0.0, wksp->cross_terms);
+  gsl_blas_dgemm(CblasTrans, CblasNoTrans, -2.0, wksp->injections, wksp->metric_templates, 0.0, wksp->cross_terms);
 
   // Find closest template to each injection
-  for (size_t i = 0; i < wksp->num_injections; ++i) {
+  for (size_t i = 0; i < wksp->dot_injections->size; ++i) {
 
     // Start with template dot products
-    gsl_vector_memcpy(wksp->tmp_templates, wksp->dot_templates);
+    gsl_vector_memcpy(wksp->distances, wksp->dot_templates);
 
     // Add cross terms for this injection
     gsl_vector_view v = gsl_matrix_row(wksp->cross_terms, i);
-    gsl_vector_add(wksp->tmp_templates, &v.vector);
+    gsl_vector_add(wksp->distances, &v.vector);
 
     // Find smallest vector element
-    size_t i_min = gsl_vector_min_index(wksp->tmp_templates);
-    double mu_min = gsl_vector_get(wksp->tmp_templates, i_min);
+    size_t i_min = gsl_vector_min_index(wksp->distances);
+    double mu_min = gsl_vector_get(wksp->distances, i_min);
 
     // Compute minimum distance by add injection dot product
     mu_min += gsl_vector_get(wksp->dot_injections, i);
