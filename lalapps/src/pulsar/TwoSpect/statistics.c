@@ -664,18 +664,34 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
    REAL8 xk = exp(norminv(pk, mu, sigma));
    REAL8 h = 0.0;
    REAL8 F = ncx2cdf(xk, dof, delta);
+   if (XLAL_IS_REAL8_FAIL_NAN(F)) {
+      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
+   }
    while (count < count_limit) {
       count++;
       REAL8 f = ncx2pdf(xk, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(f)) {
+         fprintf(stderr, "%s: ncx2pdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
+      }
       h = (F-pk)/f;
       REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
       REAL8 newF = ncx2cdf(xnew, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+         fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
+      }
       INT4 worse = 0;
       while (worse==0) {
          if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
          else {
             xnew = 0.5*(xnew + xk);
             newF = ncx2cdf(xnew, dof, delta);
+            if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+               fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+               XLAL_ERROR_REAL8(XLAL_EFUNC);
+            }
          }
       }
       h = xk-xnew;
@@ -712,18 +728,34 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
    REAL8 xk = exp(norminv(pk, mu, sigma));
    REAL8 h = 0.0;
    REAL8 F = ncx2cdf_float_withouttinyprob(xk, dof, delta);
+   if (XLAL_IS_REAL8_FAIL_NAN(F)) {
+      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
    while (count < count_limit) {
       count++;
       REAL8 f = ncx2pdf(xk, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(f)) {
+         fprintf(stderr, "%s: ncx2pdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+         XLAL_ERROR_REAL4(XLAL_EFUNC);
+      }
       h = (F-pk)/f;
       REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
       REAL8 newF = ncx2cdf_float_withouttinyprob(xnew, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+         fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+         XLAL_ERROR_REAL4(XLAL_EFUNC);
+      }
       INT4 worse = 0;
       while (worse==0) {
          if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
          else {
             xnew = 0.5*(xnew + xk);
             newF = ncx2cdf_float_withouttinyprob(xnew, dof, delta);
+            if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+               fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+               XLAL_ERROR_REAL4(XLAL_EFUNC);
+            }
          }
       }
       h = xk-xnew;
