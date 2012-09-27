@@ -299,6 +299,10 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    if (fromzero==1) {
       counter = 0;
       REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*twospect_cdf_chisq_P(x, dof);
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: twospect_cdf_chisq_P(%f, %f) failed.\n", __func__, x, dof);
+         XLAL_ERROR_REAL4(XLAL_EFUNC);
+      }
       REAL8 dp = 0.0;
       INT4 ok = 0;
       if ((REAL8)counter<halfdelta) ok = 1;
@@ -306,6 +310,10 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
          counter++;
          P = gsl_ran_poisson_pdf(counter, halfdelta);
          C = twospect_cdf_chisq_P(x, dof+2.0*counter);
+         if (XLAL_IS_REAL8_FAIL_NAN(C)) {
+            fprintf(stderr, "%s: twospect_cdf_chisq_P(%f, %f) failed.\n", __func__, x, dof+2.0*counter);
+            XLAL_ERROR_REAL4(XLAL_EFUNC);
+         }
          dp = P*C;
          pk += dp;
          if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
@@ -665,7 +673,7 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
    REAL8 h = 0.0;
    REAL8 F = ncx2cdf(xk, dof, delta);
    if (XLAL_IS_REAL8_FAIL_NAN(F)) {
-      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+      fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    while (count < count_limit) {
