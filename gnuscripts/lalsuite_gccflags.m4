@@ -1,16 +1,15 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 10
+# serial 11
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
   AC_HELP_STRING([--enable-gcc-flags],[turn on strict gcc warning flags (default=yes)]),
-  [case "${enableval}" in
-     yes) DO_ENABLE_LALSUITE_GCC_FLAGS;;
-     no) ;;
-     *) DO_ENABLE_LALSUITE_GCC_FLAGS;;
-   esac ],
-   [ DO_ENABLE_LALSUITE_GCC_FLAGS ] )
+  [AS_CASE(["${enableval}"],
+    [yes], [DO_ENABLE_LALSUITE_GCC_FLAGS],
+    [no],,
+    [DO_ENABLE_LALSUITE_GCC_FLAGS])],
+  [DO_ENABLE_LALSUITE_GCC_FLAGS])
 ])
 
 AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
@@ -29,19 +28,17 @@ AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
   CFLAGS="$my_save_cflags"
 
   # don't use -Werror in LALApps
-  case ${PACKAGE} in
-    lalapps) ;;
-    *) lal_gcc_flags="${lal_gcc_flags} -Werror" ;;
-  esac
+  AS_CASE([${PACKAGE}],
+    [lalapps],,
+    [lal_gcc_flags="${lal_gcc_flags} -Werror"])
 
 # comment out usage of -pedantic flag due to gcc bug 7263
 # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=7263
 #
-#  case $host_cpu-$host_os in
-#    *i386-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
-#    *x86_64-darwin*) lal_gcc_flags="${lal_gcc_flags} -pedantic" ;;
-#    *) lal_gcc_flags="${lal_gcc_flags} -pedantic-errors" ;;
-#  esac
+#  AS_CASE(["${host_cpu}-${host_os}"],
+#      [*i386-darwin*], [lal_gcc_flags="${lal_gcc_flags} -pedantic"],
+#      [*x86_64-darwin*], [lal_gcc_flags="${lal_gcc_flags} -pedantic"],
+#      [lal_gcc_flags="${lal_gcc_flags} -pedantic-errors"])
 ])
 
 AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],
