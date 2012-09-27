@@ -65,38 +65,6 @@ static double GetPadding(
   );
 
 ///
-/// Find the bounding box of the mismatch ellipses of a metric
-//
-static gsl_vector* MetricEllipseBoundingBox(
-  gsl_matrix* metric,		///< [in] Metric to bound
-  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
-  );
-
-///
-/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
-///
-static int OrthonormaliseWRTMetric(
-  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
-  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
-  );
-
-///
-/// Transform a lattice generator to a square lower triangular form
-///
-static gsl_matrix* SquareLowerTriangularLatticeGenerator(
-  gsl_matrix* generator		///< [in] Generator matrix of lattice
-  );
-
-///
-/// Normalise a lattice generator matrix to have a specified covering radius
-///
-static int NormaliseLatticeGenerator(
-  gsl_matrix* generator,	///< [in] Generator matrix of lattice
-  const double norm_thickness,	///< [in] Normalised thickness of lattice
-  const double covering_radius	///< [in] Desired covering radius
-  );
-
-///
 /// Flat lattice tiling bound info
 ///
 typedef struct tagFLT_Bound {
@@ -357,12 +325,12 @@ int XLALSetFlatLatticeMetric(
   }
 
   // Calculate metric ellipse bounding box
-  gsl_vector* tbounding_box = MetricEllipseBoundingBox(tmetric, max_mismatch);
+  gsl_vector* tbounding_box = XLALMetricEllipseBoundingBox(tmetric, max_mismatch);
   XLAL_CHECK(tbounding_box != NULL, XLAL_EFAILED);
 
   // Find orthonormalise directions with respect to subspace metric
   gsl_matrix_set_identity(tdirections);
-  XLAL_CHECK(OrthonormaliseWRTMetric(tdirections, tmetric) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALOrthonormaliseWRTMetric(tdirections, tmetric) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Get lattice generator
   gsl_matrix* tgenerator = NULL;
@@ -370,11 +338,11 @@ int XLALSetFlatLatticeMetric(
   XLAL_CHECK((tiling->generator)(tn, &tgenerator, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Transform lattice generator to square lower triangular
-  gsl_matrix* sq_lwtri_generator = SquareLowerTriangularLatticeGenerator(tgenerator);
+  gsl_matrix* sq_lwtri_generator = XLALSquareLowerTriangularLatticeGenerator(tgenerator);
   XLAL_CHECK(sq_lwtri_generator != NULL, XLAL_EFAILED);
 
   // Normalise lattice generator so covering radius is sqrt(mismatch)
-  XLAL_CHECK(NormaliseLatticeGenerator(sq_lwtri_generator, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALNormaliseLatticeGenerator(sq_lwtri_generator, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
 
   // Compute the increment vectors of the lattice generator along the orthogonal directions
   gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tdirections, sq_lwtri_generator, 0.0, tincrement);
@@ -984,7 +952,7 @@ static double GetPadding(
   return gsl_vector_get(tiling->bounding_box, dimension);
 }
 
-static gsl_vector* MetricEllipseBoundingBox(
+gsl_vector* XLALMetricEllipseBoundingBox(
   gsl_matrix* metric,
   const double max_mismatch
   )
@@ -1025,7 +993,7 @@ static gsl_vector* MetricEllipseBoundingBox(
 
 }
 
-static int OrthonormaliseWRTMetric(
+int XLALOrthonormaliseWRTMetric(
   gsl_matrix* matrix,
   const gsl_matrix* metric
   )
@@ -1077,7 +1045,7 @@ static int OrthonormaliseWRTMetric(
 
 }
 
-static gsl_matrix* SquareLowerTriangularLatticeGenerator(
+gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
   gsl_matrix* generator
   )
 {
@@ -1162,7 +1130,7 @@ static gsl_matrix* SquareLowerTriangularLatticeGenerator(
 
 }
 
-static int NormaliseLatticeGenerator(
+int XLALNormaliseLatticeGenerator(
   gsl_matrix* generator,
   const double norm_thickness,
   const double covering_radius

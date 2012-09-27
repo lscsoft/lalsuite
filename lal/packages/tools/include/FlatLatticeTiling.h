@@ -196,6 +196,38 @@ int XLALSetFlatLatticeConstantBound(
   );
 
 ///
+/// Find the bounding box of the mismatch ellipses of a metric
+///
+gsl_vector* XLALMetricEllipseBoundingBox(
+  gsl_matrix* metric,		///< [in] Metric to bound
+  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
+  );
+
+///
+/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
+///
+int XLALOrthonormaliseWRTMetric(
+  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
+  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
+  );
+
+///
+/// Transform a lattice generator to a square lower triangular form
+///
+gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
+  gsl_matrix* generator		///< [in] Generator matrix of lattice
+  );
+
+///
+/// Normalise a lattice generator matrix to have a specified covering radius
+///
+int XLALNormaliseLatticeGenerator(
+  gsl_matrix* generator,	///< [in] Generator matrix of lattice
+  const double norm_thickness,	///< [in] Normalised thickness of lattice
+  const double covering_radius	///< [in] Desired covering radius
+  );
+
+///
 /// Workspace for computing the nearest template to a set of injections
 ///
 typedef struct tagNearestTemplateWorkspace NearestTemplateWorkspace;
