@@ -1,6 +1,6 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 9
+# serial 10
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -46,21 +46,18 @@ AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
 
 AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],
 [
-  if test "x${GCC}" = "xyes"; then
+  AS_IF([test "x${GCC}" = "xyes"],
+  [
     # don't use gcc flags when cuda is enabled
-    if test "x${cuda}" = "xtrue"; then
-      AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])
-    else
-      CFLAGS="${CFLAGS} ${lal_gcc_flags}"
-    fi
+    AS_IF([test "x${cuda}" = "xtrue"],
+      [AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])],
+      [CFLAGS="${CFLAGS} ${lal_gcc_flags}"])
 
     # add mac os x specific flags
-    if test "x${MACOSX_VERSION}" != "x"; then
-      CFLAGS="${CFLAGS} -mmacosx-version-min=10.4"
-    fi
+    AS_IF([test "x${MACOSX_VERSION}" != "x"], [CFLAGS="${CFLAGS} -mmacosx-version-min=10.4"])
 
     # ignore unused flags with clang/clang++
     AS_IF([test -n "${CLANG_CC}"], [CFLAGS="${CFLAGS} -Xcompiler -Qunused-arguments"])
     AS_IF([test -n "${CLANG_CXX}"], [CXXFLAGS="${CXXFLAGS} -Xcompiler -Qunused-arguments"])
-  fi
+   ])
 ])
