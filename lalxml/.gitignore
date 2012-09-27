@@ -29,3 +29,4 @@ src/lalxml-user-env.csh
 src/lalxml-user-env.sh
 src/stamp-h2
 test/LALXMLTest
+python/__init__.py

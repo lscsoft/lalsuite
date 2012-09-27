@@ -82,3 +82,4 @@ test/sp_rhosq.out
 test/td_rhosq.out
 test/wave1.dat
 test/wave2.dat
+python/__init__.py

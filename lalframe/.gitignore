@@ -39,3 +39,4 @@ test/ReadGEOData
 test/ReadLHOData
 test/TestLowLatencyData*
 test/catalog*
+python/__init__.py

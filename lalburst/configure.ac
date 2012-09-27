@@ -14,6 +14,7 @@ AC_CONFIG_FILES([ \
   include/lal/Makefile \
   src/Makefile \
   python/Makefile \
+  python/__init__.py \
   test/Makefile
 ])
 AM_INIT_AUTOMAKE([1.11 foreign color-tests parallel-tests])

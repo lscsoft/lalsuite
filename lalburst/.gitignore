@@ -36,3 +36,4 @@ test/TfrSpTest
 test/TfrWvTest
 test/ThresholdsTest
 test/TrackSearchTest
+python/__init__.py
