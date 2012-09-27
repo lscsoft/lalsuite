@@ -42,13 +42,13 @@
 INT4 lalDebugLevel=3;
 LALStatus empty_status;
 
-REAL8 tol = 1e-16;
+REAL8 tol = LAL_REAL4_EPS;
 
 int main ( void )
 {
   const char *fn = __func__;
 
-  LALStatus status = empty_status;
+  //LALStatus status = empty_status;
 
   SFTtype *mySFT;
   LIGOTimeGPS epoch = { 731210229, 0 };
@@ -63,23 +63,6 @@ int main ( void )
     {  3.544089e-20,  -9.365807e-21 },
     {  1.292773e-21,  -1.402466e-21 }
   };
-  /* reference result for 3-bin block running-median computed in octave:
-octave> sft = [ \
-        -1.249241e-21 +  1.194085e-21i, \
-         2.207420e-21 +  2.472366e-22i, \
-         1.497939e-21 +  6.593609e-22i, \
-         3.544089e-20 -  9.365807e-21i, \
-         1.292773e-21 -  1.402466e-21i  \
-         ];
-octave> periodo = abs(sft).^2;
-octave> m1 = median ( periodo(1:3) ); m2 = median ( periodo(2:4) ); m3 = median ( periodo (3:5 ) );
-octave> rngmed = [ m1, m1, m2, m3, m3 ];
-octave> printf ("rngmedREF3 = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
-printf ("rngmedREF3[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
-        rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
-  */
-  REAL8 rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
-
   UINT4 numBins = sizeof ( vals ) / sizeof(vals[0] );
 
   if ( (mySFT = XLALCreateSFT ( numBins )) == NULL ) {
@@ -97,30 +80,41 @@ printf ("rngmedREF3[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
   for ( iBin = 0; iBin < numBins; iBin ++ )
     mySFT->data->data[iBin] = vals[iBin];
 
-  /* test running-median PSD estimation is simple blocksize cases */
-  UINT4 blockSize = 3;
+  /* get memory for running-median vector */
+  REAL8FrequencySeries rngmed;
+  INIT_MEM ( rngmed );
+  XLAL_CHECK ( (rngmed.data = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_EFUNC, "Failed  XLALCreateREAL8Vector ( %d )", numBins );
+
+  // ---------- Test running-median PSD estimation in simple blocksize cases
+  // ------------------------------------------------------------
+  // TEST 1: odd blocksize = 3
+  // ------------------------------------------------------------
+  UINT4 blockSize3 = 3;
+
+  /* reference result for 3-bin block running-median computed in octave:
+octave> sft = [ \
+        -1.249241e-21 +  1.194085e-21i, \
+         2.207420e-21 +  2.472366e-22i, \
+         1.497939e-21 +  6.593609e-22i, \
+         3.544089e-20 -  9.365807e-21i, \
+         1.292773e-21 -  1.402466e-21i  \
+         ];
+octave> periodo = abs(sft).^2;
+octave> m1 = median ( periodo(1:3) ); m2 = median ( periodo(2:4) ); m3 = median ( periodo (3:5 ) );
+octave> rngmed = [ m1, m1, m2, m3, m3 ];
+octave> printf ("rngmedREF3 = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
+        rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
+  */
+  REAL8 rngmedREF3[] = { 2.986442063306e-42, 2.986442063306e-42, 4.933828992779561e-42, 3.638172910684999e-42, 3.638172910684999e-42 };
+
+  /* compute running median */
+  XLAL_CHECK ( XLALSFTtoRngmed ( &rngmed, mySFT, blockSize3 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed.");
 
   /* get median->mean bias correction, needed for octave-reference results, to make
    * them comparable to the bias-corrected results from LALSFTtoRngmed()
    */
-  REAL8 medianBias;
-  LALRngMedBias ( &status, &medianBias, blockSize );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ("Something failed in LALRngMedBias(), statusCode = %d\n", status.statusCode );
-    XLAL_ERROR ( XLAL_EFAILED );
-  }
-
-  /* get memory for running-median vector */
-  REAL8FrequencySeries rngmed;
-  INIT_MEM ( rngmed );
-  if ( (rngmed.data = XLALCreateREAL8Vector ( numBins )) == NULL )
-    XLAL_ERROR ( XLAL_EFAILED );
-  /* compute running median */
-  LALSFTtoRngmed ( &status, &rngmed, mySFT, blockSize );
-  if ( status.statusCode != 0 ) {
-    XLALPrintError ("Something failed in LALSFTtoRngmed(), statusCode = %d\n", status.statusCode );
-    XLAL_ERROR ( XLAL_EFAILED );
-  }
+  REAL8 medianBias3 = XLALRngMedBias ( blockSize3 );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALRngMedBias() failed.");
 
   BOOLEAN pass = 1;
   const CHAR *passStr;
@@ -128,7 +122,46 @@ printf ("rngmedREF3[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
   for (iBin=0; iBin < numBins; iBin ++ )
     {
       REAL8 rngmedVAL = rngmed.data->data[iBin];
-      REAL8 rngmedREF = rngmedREF3[iBin] / medianBias;	// apply median-bias correction
+      REAL8 rngmedREF = rngmedREF3[iBin] / medianBias3;	// apply median-bias correction
+      REAL8 relErr = REL_ERR ( rngmedREF, rngmedVAL );
+      if ( relErr > tol ) {
+        pass = 0;
+        passStr = "fail";
+      } else {
+        passStr = "OK.";
+      }
+
+      printf ("%4d %22.16g %22.16g %8.1g    %s\n", iBin, rngmedVAL, rngmedREF, relErr, passStr );
+
+    } /* for iBin < numBins */
+
+  // ------------------------------------------------------------
+  // TEST 2: even blocksize = 4
+  // ------------------------------------------------------------
+  UINT4 blockSize4 = 4;
+
+  /* reference result for 3-bin block running-median computed in octave:
+octave> m1 = median ( periodo(1:4) ); m2 = median ( periodo(2:5) );
+octave> rngmed = [ m1, m1, m1, m2, m2 ];
+octave> printf ("rngmedREF4[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
+rngmedREF4[] = { 3.96013552804278e-42, 3.96013552804278e-42, 3.96013552804278e-42, 4.28600095173228e-42, 4.28600095173228e-42 };
+  */
+  REAL8 rngmedREF4[] = { 3.96013552804278e-42, 3.96013552804278e-42, 3.96013552804278e-42, 4.28600095173228e-42, 4.28600095173228e-42 };
+
+  /* compute running median */
+  XLAL_CHECK ( XLALSFTtoRngmed ( &rngmed, mySFT, blockSize4 ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALSFTtoRngmed() failed.");
+
+  /* get median->mean bias correction, needed for octave-reference results, to make
+   * them comparable to the bias-corrected results from LALSFTtoRngmed()
+   */
+  REAL8 medianBias4 = XLALRngMedBias ( blockSize4 );
+  XLAL_CHECK ( xlalErrno == 0, XLAL_EFUNC, "XLALRngMedBias() failed.");
+
+  printf ("%4s %22s %22s %8s    <%g\n", "Bin", "rngmed(LAL)", "rngmed(Octave)", "relError", tol);
+  for (iBin=0; iBin < numBins; iBin ++ )
+    {
+      REAL8 rngmedVAL = rngmed.data->data[iBin];
+      REAL8 rngmedREF = rngmedREF4[iBin] / medianBias4;	// apply median-bias correction
       REAL8 relErr = REL_ERR ( rngmedREF, rngmedVAL );
       if ( relErr > tol ) {
         pass = 0;
