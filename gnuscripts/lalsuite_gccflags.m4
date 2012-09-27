@@ -1,6 +1,6 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 13
+# serial 14
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -19,7 +19,7 @@ AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
   # check if compiler support -Wno-unused-result
   my_save_cflags="$CFLAGS"
   CFLAGS=-Wno-unused-result
-  AC_MSG_CHECKING([whether CC supports -Wno-unused-result])
+  AC_MSG_CHECKING([whether compiler supports -Wno-unused-result])
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
     [AC_MSG_RESULT([yes])]
     [lal_gcc_flags="${lal_gcc_flags} -Wno-unused-result"],
