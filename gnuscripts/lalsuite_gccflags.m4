@@ -1,6 +1,6 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 14
+# serial 15
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -50,6 +50,10 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],
 
     # add mac os x specific flags
     AS_IF([test "x${MACOSX_VERSION}" != "x"], [CFLAGS="${CFLAGS} -mmacosx-version-min=10.4"])
+
+    # don't warn about unknown warning options for clang/clang++
+    AS_IF([test -n "${CLANG_CC}"], [CFLAGS="-Wno-unknown-warning-option ${CFLAGS}"])
+    AS_IF([test -n "${CLANG_CXX}"], [CXXFLAGS="-Wno-unknown-warning-option ${CXXFLAGS}"])
 
     # ignore unused flags with clang/clang++
     AS_IF([test -n "${CLANG_CC}"], [CFLAGS="${CFLAGS} -Xcompiler -Qunused-arguments"])
