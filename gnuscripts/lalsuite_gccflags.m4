@@ -1,6 +1,6 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 15
+# serial 16
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -16,7 +16,7 @@ AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
 [
   lal_gcc_flags="-g3 -Wall -W -Wmissing-prototypes -Wstrict-prototypes -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -fno-common -Wnested-externs -Wno-format-zero-length -fno-strict-aliasing"
 
-  # check if compiler support -Wno-unused-result
+  # check if compiler supports -Wno-unused-result
   my_save_cflags="$CFLAGS"
   CFLAGS=-Wno-unused-result
   AC_MSG_CHECKING([whether compiler supports -Wno-unused-result])
@@ -58,5 +58,5 @@ AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],
     # ignore unused flags with clang/clang++
     AS_IF([test -n "${CLANG_CC}"], [CFLAGS="${CFLAGS} -Xcompiler -Qunused-arguments"])
     AS_IF([test -n "${CLANG_CXX}"], [CXXFLAGS="${CXXFLAGS} -Xcompiler -Qunused-arguments"])
-   ])
+  ])
 ])
