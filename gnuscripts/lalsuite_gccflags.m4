@@ -1,6 +1,6 @@
 # lalsuite_gccflags.m4 - macros to set strict gcc flags
 #
-# serial 11
+# serial 12
 
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],
 [AC_ARG_ENABLE([gcc_flags],
@@ -23,8 +23,7 @@ AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([])],
     [AC_MSG_RESULT([yes])]
     [lal_gcc_flags="${lal_gcc_flags} -Wno-unused-result"],
-    [AC_MSG_RESULT([no])]
-  )
+    [AC_MSG_RESULT([no]))
   CFLAGS="$my_save_cflags"
 
   # don't use -Werror in LALApps
@@ -42,8 +41,7 @@ AC_DEFUN([DO_ENABLE_LALSUITE_GCC_FLAGS],
 ])
 
 AC_DEFUN([LALSUITE_ADD_GCC_FLAGS],
-[
-  AS_IF([test "x${GCC}" = "xyes"],
+[AS_IF([test "x${GCC}" = "xyes"],
   [
     # don't use gcc flags when cuda is enabled
     AS_IF([test "x${cuda}" = "xtrue"],
