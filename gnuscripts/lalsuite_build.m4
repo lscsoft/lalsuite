@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 41
+# serial 42
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -35,7 +35,7 @@ AC_DEFUN([LALSUITE_PROG_CC_CXX],[
     # check for clang++
     AS_IF([test "x$GXX" = xyes],
       [AS_IF([test "`$CXX -v 2>&1 | grep -c 'clang version'`" != "0"],[CLANG_CXX=1])],
-      [CLANG_CC=])
+      [CLANG_CXX=])
     AC_SUBST(CLANG_CXX)
   ],[
     CXX=
