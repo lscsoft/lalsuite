@@ -158,11 +158,22 @@ void XLALDestroyFlatLatticeTiling(
 
     gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
 
-    // Cleanup
+    // Cleanup bounds parameter space data, allowing
+    // bounds to share the same memory
     for (size_t i = 0; i < tiling->dimensions; ++i) {
-      XLALFree(tiling->bounds[i].data);
+      void* data = tiling->bounds[i].data;
+      if (data != NULL) {
+        for (size_t j = i; j < tiling->dimensions; ++j) {
+          if (tiling->bounds[j].data == data) {
+            tiling->bounds[j].data = NULL;
+          }
+        }
+        XLALFree(data);
+      }
     }
     XLALFree(tiling->bounds);
+
+    // Cleanup vectors and matrices
     gsl_vector_free(tiling->phys_scale);
     gsl_vector_free(tiling->phys_offset);
     gsl_vector_free(tiling->bounding_box);
@@ -172,6 +183,8 @@ void XLALDestroyFlatLatticeTiling(
     gsl_matrix_free(tiling->curr_lower);
     gsl_matrix_free(tiling->curr_upper);
     gsl_vector_free(tiling->curr_phys_point);
+
+    // Cleanup tiling
     XLALFree(tiling);
 
     gsl_set_error_handler(old_handler);
