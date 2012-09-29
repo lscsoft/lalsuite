@@ -666,4 +666,11 @@ LALCheckMemoryLeaks( void )
   return;
 }
 
+#else
+
+void
+(LALCheckMemoryLeaks)( void )
+{
+}
+
 #endif /* ! defined NDEBUG && ! defined LAL_NDEBUG */
