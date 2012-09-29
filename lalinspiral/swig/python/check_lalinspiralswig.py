@@ -10,17 +10,14 @@ lalcvar.lalDebugLevel = 1
 print("passed module load")
 
 # check object parent tracking
-if not lalcvar.swig_debug and not lalinspiralcvar.swig_debug:
-    print("skipping object parent tracking")
-else:
-    a = lalinspiral.lalinspiralswig_test_parent_map_struct()
-    for i in range(0, 7):
-        b = a.s
-        c = lalinspiralcvar.lalinspiralswig_test_parent_map.s
-        lalinspiralcvar.lalinspiralswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
-    del a, b, c
-    lal.CheckMemoryLeaks()
-    print("passed object parent tracking")
+a = lalinspiral.lalinspiralswig_test_parent_map_struct()
+for i in range(0, 7):
+    b = a.s
+    c = lalinspiralcvar.lalinspiralswig_test_parent_map.s
+    lalinspiralcvar.lalinspiralswig_test_parent_map.s = lalcvar.lalswig_test_struct_const
+del a, b, c
+lal.CheckMemoryLeaks()
+print("passed object parent tracking")
 
 # passed all tests!
 print("PASSED all tests")
