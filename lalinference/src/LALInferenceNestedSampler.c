@@ -666,7 +666,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceVariables myCurrentParams,*oldCurrentParams=runState->currentParams;
   memset(&myAlgParams,0,sizeof(LALInferenceVariables));
   memset(&myCurrentParams,0,sizeof(LALInferenceVariables));
-  LALInferenceCopyVariables(runState->currentParams,&myCurrentParams);
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
   LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
