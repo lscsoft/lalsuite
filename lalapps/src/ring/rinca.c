@@ -107,6 +107,12 @@ static void print_usage(char *program)
   fprintf(stderr,     "  [--check-times]                    Check that all times were analyzed\n"              );
   fprintf(stderr,     "  [--multi-ifo-coinc]                Look for triple/quadruple ifo coincidence\n"       );
   fprintf(stderr,     "  [--maximization-interval]  max_dt  set length of maximization interval in ms\n"       );
+  fprintf(stderr,     "                                     If not specified or set to zero, no\n"             );
+  fprintf(stderr,     "                                     clustering over the template bank\n"               );
+  fprintf(stderr,     "                                     will be performed. Must be greater\n"              );
+  fprintf(stderr,     "                                     than or equal to 0 sec and less than\n"            );
+  fprintf(stderr,     "                                     1 sec (1000 ms). Also, (1000ms)/max_dt\n"          );
+  fprintf(stderr,     "                                     must be an integer number of ms.\n"                );
   fprintf(stderr,     "\n"                                                                                     );
   fprintf(stderr,     "  [--h1-slide]      h1_slide    Slide H1 data by multiples of h1_slide\n"               );
   fprintf(stderr,     "  [--h2-slide]      h2_slide    Slide H2 data by multiples of h2_slide\n"               );
@@ -739,6 +745,23 @@ int main( int argc, char *argv[] )
               long_options[option_index].name, maximizationInterval );
           exit( 1 );
         }
+        if ( maximizationInterval >= 1000 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "maximization interval must be less than 1 second:\n "
+              "(%" LAL_REAL4_FORMAT " ms specified)\n",
+              long_options[option_index].name, maximizationInterval );
+          exit( 1 );
+        }
+        if ( maximizationInterval > 0 &&
+                ( (INT8) (1000/maximizationInterval) - 1000/maximizationInterval ) != 0 )
+        {
+          fprintf( stderr, "invalid argument to --%s:\n"
+              "1000ms/(maximization interval) must be an integer:\n "
+              "(%" LAL_REAL4_FORMAT " ms specified)\n",
+              long_options[option_index].name, maximizationInterval );
+          exit( 1 );
+        }
         ADD_PROCESS_PARAM( "int", "%" LAL_REAL4_FORMAT,  maximizationInterval );
         break;
 
@@ -1079,6 +1102,8 @@ if ( vrbflg)
           fprintf( stdout, "Clustering triggers for over %" LAL_REAL4_FORMAT " ms window\n",
               maximizationInterval);
         }
+        /* XLALMaxSnglRingdownOverIntervals requires maximizationInterval in nanoseconds. */
+        /* Thus, we convert from milliseconds to nanoseconds in the argument. */
         XLALMaxSnglRingdownOverIntervals( &ringdownFileList,
             (INT8) round(1.0e6 * maximizationInterval) );
         numFileTriggers = XLALCountSnglRingdown( ringdownFileList );
