@@ -10,7 +10,7 @@ __version__ = '$Revision$'
 
 import string
 import exceptions
-import sys,os, re
+import sys, os, re, subprocess
 from glue import pipeline
 from glue import lal
 
@@ -26,7 +26,7 @@ class InspiralError(exceptions.Exception):
 class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   """
   An inspiral analysis job captures some of the common features of the specific
-  inspiral jobs that appear below.  Spcecifically, the universe and exec_name
+  inspiral jobs that appear below.  Specifically, the universe and exec_name
   are set, the stdout and stderr from the job are directed to the logs 
   directory. The path to the executable is determined from the ini file.
   """
@@ -43,6 +43,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp,dax)
     self.add_condor_cmd('copy_to_spool','False')
+    self.__use_gpus = cp.has_option('condor', 'use-gpus')
 
     for sec in sections:
       if cp.has_section(sec):
@@ -79,6 +80,12 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     Get the extension for the file name
     """
     return self.__extension
+
+  def get_use_gpus(self):
+    """
+    Get whether this job was requested to run on a GPU node
+    """
+    return self.__use_gpus
 
 
 #############################################################################
@@ -211,7 +218,9 @@ class InspiralJob(InspiralAnalysisJob):
   are read from the sections [data] and [inspiral] in the ini file. The
   stdout and stderr from the job are directed to the logs directory. The job
   runs in the universe specfied in the ini file. The path to the executable
-  is determined from the ini file.
+  is determined from the ini file. If the user requested GPU utilization,
+  checks are done to ensure a successful run and the necessary Condor
+  commands are added.
   """
   def __init__(self,cp,dax=False):
     """
@@ -222,6 +231,29 @@ class InspiralJob(InspiralAnalysisJob):
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
+    if self.get_use_gpus():
+      # make sure the vanilla universe is being used
+      universe = cp.get('condor', 'universe')
+      if universe != 'vanilla':
+        raise RuntimeError, 'Cannot run GPU inspiral jobs on Condor ' + \
+            universe + ' universe. Please use vanilla.'
+      # make sure the executable has CUDA dependencies
+      executable = cp.get('condor', exec_name)
+      objdump_re = re.compile(r'^\s*NEEDED\s*(libcufft\.|libcudart\.).*')
+      proc = subprocess.Popen(['objdump', '-p', executable], \
+          stdin=None, stdout=subprocess.PIPE)
+      cuda_deps = False
+      for line in proc.stdout:
+        m = objdump_re.match(line)
+        if m:
+          cuda_deps = True
+          break
+      if not cuda_deps:
+        raise RuntimeError, 'Inspiral executable has no CUDA ' + \
+            'dependencies. Please use a CUDA-enabled build.'
+      self.add_opt('gpu-device-id', '0')
+      self.add_condor_cmd('+WantGPU', 'true')
+      self.add_condor_cmd('Requirements', '( GPU_PRESENT =?= true)')
 
 
 class InspiralCkptJob(InspiralAnalysisJob):
@@ -936,6 +968,11 @@ class InspiralNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
+    if job.get_use_gpus():
+      # assume all the checks have been already
+      # done by the InspiralJob instance
+      self.add_pegasus_profile('condor', '+WantGPU', 'true')
+      self.add_pegasus_profile('condor', 'Requirements', '( GPU_PRESENT =?= true)')
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
