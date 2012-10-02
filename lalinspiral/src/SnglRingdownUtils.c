@@ -974,6 +974,11 @@ XLALMaxSnglRingdownOverIntervals(
   SnglRingdownTable    *prevEvent = NULL;
   INT4 count = 1;
 
+  /* deltaT is the maximizationInterval that must be specified in nanoseconds.
+   * In rinca.c, we specify maximizationInterval in milliseconds but
+   * a conversion to nanoseconds is performed before XLALMaxSnglRingdownOverIntervals
+   * is called. */
+
   /* if there are no events, then no-op */
   if ( ! *eventHead )
     return (0);
