@@ -353,6 +353,8 @@ LALFindChirpInjectSignals (
       }
       /* Give a little more breathing space to aid band-passing */
       XLALGPSSetREAL8( &(signalvec.epoch), (waveformStartTime * 1.0e-9) - 0.25 + timeDelay );
+      UINT4 signalvecLength=waveform.phi->data->length + (UINT4)ceil((0.5+timeDelay)/waveform.phi->deltaT);
+      
 
       /* set the parameters for the signal time series */
       signalvec.deltaT = chan->deltaT;
@@ -375,7 +377,7 @@ LALFindChirpInjectSignals (
       /* and to think he'd just come from the hospital */
 
       /* simulate the detectors response to the inspiral */
-      LALSCreateVector( status->statusPtr, &(signalvec.data), chan->data->length );
+      LALSCreateVector( status->statusPtr, &(signalvec.data), signalvecLength );
       CHECKSTATUSPTR( status );
 
       LALSimulateCoherentGW( status->statusPtr,
@@ -449,28 +451,14 @@ LALFindChirpInjectSignals (
               LALFree( bandpassVec );
           }
       }
-      /* Cast to REAL8 for injection */
-      REAL8TimeSeries *chan8=XLALCreateREAL8TimeSeries("temporary",&(chan->epoch), chan->f0, chan->deltaT, &(chan->sampleUnits), chan->data->length);
-      if(!chan8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate injection buffer\n");
-      REAL8TimeSeries *signalvec8=XLALCreateREAL8TimeSeries("signal, temp", &signalvec.epoch, signalvec.f0, signalvec.deltaT, &(signalvec.sampleUnits), signalvec.data->length);
-      if(!signalvec8) XLAL_ERROR_VOID(XLAL_ENOMEM,"Unable to allocate signal buffer\n");
-      /* Copy the data over */
-      for(UINT4 i=0;i<signalvec8->data->length;i++) signalvec8->data->data[i]=(REAL8)signalvec.data->data[i];
-      for(UINT4 i=0;i<chan->data->length;i++) chan8->data->data[i]=chan->data->data[i];
 
       /* inject the signal into the data channel */
-      int retcode=XLALSimAddInjectionREAL8TimeSeries(chan8, signalvec8, NULL);
+      int retcode=XLALSimAddInjectionREAL4TimeSeries(chan, &signalvec, NULL);
 
       if(retcode!=XLAL_SUCCESS){
-	XLALDestroyREAL8TimeSeries(chan8);
-	XLALDestroyREAL8TimeSeries(signalvec8);
 	ABORTXLAL(status);
       }
 
-      for(UINT4 i=0;i<chan8->data->length;i++) chan->data->data[i]=(REAL4)chan8->data->data[i];
-  
-      XLALDestroyREAL8TimeSeries(chan8);
-      XLALDestroyREAL8TimeSeries(signalvec8);
     }
     else
     {
