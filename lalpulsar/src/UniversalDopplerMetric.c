@@ -217,10 +217,6 @@ BOOLEAN outputIntegrand = 0;
 #define Omega_s	(LAL_TWOPI / LAL_DAYSID_SI)
 #define Omega_o	(LAL_TWOPI / LAL_YRSID_SI)
 
-// sin,cos(LAL_IEARTH);
-#define cosiEcl 0.917482062157619
-#define siniEcl 0.397777155727931
-
 /*---------- internal prototypes ----------*/
 DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
 gsl_matrix* XLALComputeFisherFromAtoms ( const FmetricAtoms_t *atoms, PulsarAmplitudeParams Amp );
@@ -707,7 +703,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   COPY_VECT(Det_wrt_Earth.vel, emit.vDetector);
   SUB_VECT(Det_wrt_Earth.vel, earth.velNow);
 
-  eZ[0] = 0; eZ[1] = -siniEcl; eZ[2] = cosiEcl; 	/* ecliptic z-axis in equatorial coordinates */
+  eZ[0] = 0; eZ[1] = -LAL_SINIEARTH; eZ[2] = LAL_COSIEARTH; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
   REAL8 pz = DOT_VECT ( Det_wrt_Earth.pos, eZ );
   REAL8 vz = DOT_VECT ( Det_wrt_Earth.vel, eZ );
@@ -860,13 +856,13 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
   /* Get instantaneous position. */
   posvel->pos[0] = rOrb_c * cosOrb;
-  posvel->pos[1] = rOrb_c * sinOrb * cosiEcl;
-  posvel->pos[2]=  rOrb_c * sinOrb * siniEcl;
+  posvel->pos[1] = rOrb_c * sinOrb * LAL_COSIEARTH;
+  posvel->pos[2]=  rOrb_c * sinOrb * LAL_SINIEARTH;
 
   /* Get instantaneous velocity. */
   posvel->vel[0] = -vOrb_c * sinOrb;
-  posvel->vel[1] =  vOrb_c * cosOrb * cosiEcl;
-  posvel->vel[2] =  vOrb_c * cosOrb * siniEcl;
+  posvel->vel[1] =  vOrb_c * cosOrb * LAL_COSIEARTH;
+  posvel->vel[2] =  vOrb_c * cosOrb * LAL_SINIEARTH;
 
   return XLAL_SUCCESS;
 
@@ -2193,8 +2189,8 @@ void
 equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
-                                { 0.0,  cosiEcl, siniEcl },
-                                { 0.0, -siniEcl, cosiEcl } };
+                                { 0.0,  LAL_COSIEARTH, LAL_SINIEARTH },
+                                { 0.0, -LAL_SINIEARTH, LAL_COSIEARTH } };
 
   matrix33_in_vect3 ( out, rotEqu2Ecl, in );
 
@@ -2205,8 +2201,8 @@ void
 eclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
-                                 { 0.0,  cosiEcl, -siniEcl },
-                                 { 0.0,  siniEcl,  cosiEcl } };
+                                 { 0.0,  LAL_COSIEARTH, -LAL_SINIEARTH },
+                                 { 0.0,  LAL_SINIEARTH,  LAL_COSIEARTH } };
 
   matrix33_in_vect3 ( out, rotEcl2Equ, in );
 
