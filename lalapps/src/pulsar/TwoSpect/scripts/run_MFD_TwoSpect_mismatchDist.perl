@@ -96,7 +96,7 @@ maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/IFOmismatch/$jobnum
+outdirectory /home/egoetz/TwoSpect/mismatchDist/$jobnum
 sftType MFD
 IFO H1
 markBadSFTs
@@ -205,7 +205,7 @@ maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/IFOmismatch/$jobnum
+outdirectory /home/egoetz/TwoSpect/mismatchDist/$jobnum
 sftType MFD
 IFO H1
 markBadSFTs
