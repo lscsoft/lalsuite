@@ -15,6 +15,7 @@ AC_CONFIG_FILES([ \
   src/Makefile \
   python/Makefile \
   python/__init__.py \
+  python/sbank/Makefile \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
