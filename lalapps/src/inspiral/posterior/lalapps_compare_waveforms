@@ -1,0 +1,280 @@
+#!/usr/bin/python
+
+import os, glob, time
+from operator import itemgetter
+
+def get_results(file):
+
+    elements = ["dist","cosiota","logl","mchirp","m1","ra","phi0","iota","psi","m2","eta","time","dec"]
+    #elements = ["dist","logl","mchirp","m1","m2","time"]
+    dic = {}
+
+    with open(file,'r') as f:
+
+       for line in f:
+
+           line_without_return = line.split("\n")
+           line_split = line_without_return[0].split("\t")
+
+           if not line_split[0] == "":
+               #if line_split[0] in elements:
+               dic[line_split[0]] = {}
+               for i in xrange(1,len(line_split)):
+                   try:
+                       dic[line_split[0]][params[i]] = float(line_split[i])
+                   except:
+                       dic[line_split[0]][params[i]] = line_split[i]
+           else:
+               params = line_split
+
+    fileSplit = file.split("/")
+    gpsString = fileSplit[-3]
+    gpsStringSplit = gpsString.split("-")
+    dic["gps"] = float(gpsStringSplit[0])
+
+    return dic
+
+def latex_results(dics,baseFolder):
+
+    table = []
+
+    table.append("\\begin{table}\n")
+    table.append("   \\begin{center}\n")
+    table.append("   \\begin{tabular}{ |")
+
+    for key,value in dics[0].items():
+        table.append("  l |")
+    table.append("}\n")
+
+    index = 0
+    table.append("      \hline\n")
+    table.append("      ")
+    for key,value in dics[0].items():
+        if key == "gps":
+            continue
+        if index == 0: 
+            table.append("%s"%key)
+            index = 1
+        else:
+            table.append(" & %s"%key)
+    table.append(r'\\')
+    table.append('\n')
+
+    table.append("      \hline\n")
+    for dic in dics:
+        index = 0
+        table.append("      ")
+        for key,value in dic.items():
+            if key == "gps":
+                continue
+            if index == 0:
+                table.append("%.4f"%value["maxL"])
+                index = 1
+            else:
+                table.append(" & %.4f"%value["maxL"])
+        table.append(r'\\')
+        table.append('\n')
+    table.append("      \hline\n")
+
+    table.append("   \end{tabular}\n")
+    table.append("   \end{center}\n")
+
+    baseFolderSplit = baseFolder.split("/")
+    dataType = baseFolderSplit[-3]
+    waveformType = baseFolderSplit[-1]    
+
+    table.append("   \label{tab:%s_%s}\n"%(dataType,waveformType))
+    table.append("   \caption{%s %s}\n"%(dataType,waveformType))
+    table.append("\end{table}\n")  
+
+    latex_table = "".join(table)
+    return latex_table
+
+def create_waveform(baseFolder):
+
+    waveform = {}
+
+    folders = glob.glob(os.path.join(baseFolder,"*"))
+
+    files = []
+    for folder in folders:
+        ifoFolder = glob.glob(os.path.join(folder,"*"))
+
+        if ifoFolder == []:
+            continue
+
+        ifoFolder = ifoFolder[0]
+
+        if os.path.isfile(os.path.join(ifoFolder,"summary_statistics.dat")):
+            files.append(os.path.join(ifoFolder,"summary_statistics.dat"))
+
+    dics = []
+    for file in files:
+        dic = get_results(file)
+        dics.append(dic)
+
+    if not dics == []:
+        dics = sorted(dics, key=itemgetter("time"))
+        latex_table = latex_results(dics,baseFolder)
+        baseFolderSplit = baseFolder.split("/")
+        dataType = baseFolderSplit[-3]
+        waveformType = baseFolderSplit[-1]
+
+        waveform["dataType"] = dataType
+        waveform["waveformType"] = waveformType
+        waveform["dics"] = dics
+
+    return waveform
+
+def compare_waveforms(waveform1,waveform2):
+
+    comparedics = []
+
+    for dic1 in waveform1["dics"]:
+
+        comparedic = {}
+
+        thisdic = []
+        for dic2 in waveform2["dics"]:
+            if dic2["gps"] == dic1["gps"]:
+                thisdic = dic2
+        if thisdic == []:
+            continue
+
+        comparedic["dic1"] = dic1
+        comparedic["dic2"] = dic2
+        comparedic["distance"] = {}
+        comparedic["distance_std"] = {}
+
+        for key,value in dic1.items():
+            if key == "gps":
+                continue
+            distance = dic1[key]["maxL"] - thisdic[key]["maxL"]
+            distance_std = distance / thisdic[key]["stdev"]
+
+            comparedic["distance"][key] = distance
+            comparedic["distance_std"][key] = distance_std
+
+        comparedics.append(comparedic)
+
+    return comparedics
+
+def compare_page(params,comparedic):
+
+    meta = '<meta content="text/html; ./summary.html" http-equiv="content-type">'
+
+    title = "Comparison Page for %s"%str(comparedic["dic1"]["gps"])
+
+    contents=["""
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html>
+    <head>
+    <script type="text/JavaScript">
+    <!--
+    function timedRefresh(timeoutPeriod) {
+        setTimeout("location.reload(true);",timeoutPeriod);
+    }
+    //   -->
+    </script>
+    <title>%s</title>
+    <link rel="stylesheet" type="text/css" href="../../style/main.css">
+    <script src="../../style/sorttable.js"></script>
+    </head>
+    <body>
+    <table style="text-align: left; width: 1260px; height: 67px; margin-left:auto; margin-right: auto;" border="1" cellpadding="1" cellspacing="1">
+    <tbody>
+    <tr>
+    <td style="text-align: center; vertical-align: top; background-color:SpringGreen;"><big><big><big><big><span style="font-weight: bold;">%s</span></big></big></big></big>
+    </td>
+    </tr>
+    </tbody>
+    </table>
+    <br>
+    <br>
+
+    """%(title,title)]
+
+    table = ["""
+    <table class="sortable" id="sort" style="text-align: center; width: 1260px; height: 67px; margin-left:auto; margin-right: auto; background-color: white;" border="1" cellpadding="2" cellspacing="2">
+    """]
+    table.append("<thead><tr><th>Parameter</th><th>%s</th><th>%s</th><th>Difference</th><th>Distance</th></tr></thead>")
+
+    for key,value in comparedic["dic1"].items():
+
+        if key == "gps":
+            continue
+
+        table.append("<tr>")
+        table.append('<td>%s</td>'%(key))
+        table.append("<td>%.3f</td>"%comparedic["dic1"][key]["maxL"])
+        table.append("<td>%.3f</td>"%comparedic["dic2"][key]["maxL"])
+        table.append("<td>%.3f</td>"%comparedic["distance"][key])
+        table.append("<td>%.3f</td>"%comparedic["distance_std"][key])
+    table.append("</table><br><br>")
+
+    # add tables and list
+    contents.append("".join(table))
+
+    ################################# closing ##################################
+    user=os.environ['USER']
+    curTime=time.strftime('%m-%d-%Y %H:%M:%S',time.localtime())
+    contents.append("""
+    <small>
+    This page was created by user %s on %s
+    </small>
+    </body>
+    </html>
+    """%(user,curTime))
+
+    page = ''.join(contents)
+
+    return page
+
+def run_compare(params):
+
+    waveforms = {}
+
+    folders = glob.glob(os.path.join(params["baseFolder"],"*"))
+    for folder in folders:
+        waveform = create_waveform(folder)
+        if not waveform == {}:
+            waveforms[waveform["waveformType"]] = waveform
+
+    params["outputLocation"] = "%s/summary"%params["baseFolder"]
+    if not os.path.isdir(params["outputLocation"]):
+        os.mkdir(params["outputLocation"])
+
+    for waveform1 in waveforms:
+        for waveform2 in waveforms:
+            if not waveform1 == waveform2:
+                comparedics = compare_waveforms(waveforms[waveform1],waveforms[waveform2])
+
+                params["outputFolder"] = "%s/%s_%s"%(params["outputLocation"],waveform1,waveform2)
+                if not os.path.isdir(params["outputFolder"]):
+                    os.mkdir(params["outputFolder"])
+
+                for comparedic in comparedics:
+                   
+                    htmlPage = compare_page(params,comparedic)
+
+                    f = open(os.path.join(params["outputFolder"],"%s.html"%(str(comparedic["dic1"]["gps"]))),"w")
+                    f.write(htmlPage)
+                    f.close()    
+
+if __name__=="__main__":
+
+    params = {}
+
+    params["baseFolder"] = "/home/mcoughlin/public_html/PE/ER2/multinest"
+    run_compare(params)
+
+    params["baseFolder"] = "/home/mcoughlin/public_html/PE/NINJA2/multinest"
+    run_compare(params)
+
+    params["baseFolder"] = "/home/mcoughlin/public_html/PE/NINJA2_Gaussian/multinest"
+    run_compare(params)
+
+    params["baseFolder"] = "/home/mcoughlin/public_html/PE/ET/multinest"
+    run_compare(params)
+
