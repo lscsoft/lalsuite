@@ -148,6 +148,8 @@ const CHAR *const DopplerCoordinateNames[DOPPLERCOORD_LAST][2] = {
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
 
+#define RELERR(dx,x) ( (x) == 0 ? (dx) : ( (dx) / (x) ) )
+
 /** shortcuts for integer powers */
 #define POW2(a)  ( (a) * (a) )
 #define POW3(a)  ( (a) * (a) * (a) )
@@ -305,7 +307,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 
     } /* for i < Nseg */
 
-  REAL8 relerr = sqrt(abserr2) / fabs(res);
+  REAL8 relerr = RELERR( sqrt(abserr2), fabs(res) );
   if ( relerr_max )
     (*relerr_max) = relerr;
 
@@ -1019,9 +1021,9 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
   av_i_err *= inv_total_weight;
   av_j_err *= inv_total_weight;
 
-  av_ij_err = sqrt(av_ij_err) / fabs(av_ij);
-  av_i_err = sqrt(av_i_err) / fabs (av_i);
-  av_j_err = sqrt(av_j_err) / fabs (av_j);
+  av_ij_err = RELERR( sqrt(av_ij_err), fabs(av_ij) );
+  av_i_err = RELERR( sqrt(av_i_err), fabs (av_i) );
+  av_j_err = RELERR( sqrt(av_j_err), fabs (av_j) );
 
   maxrelerr = MYMAX ( av_ij_err, av_i_err );
   maxrelerr = MYMAX ( maxrelerr, av_j_err );
