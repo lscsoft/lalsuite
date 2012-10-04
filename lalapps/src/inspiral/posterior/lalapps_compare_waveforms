@@ -155,15 +155,16 @@ def compare_waveforms(waveform1,waveform2):
             comparedic["distance"][key] = distance
             comparedic["distance_std"][key] = distance_std
 
+            comparedic["waveformType1"] = waveform1["waveformType"]
+            comparedic["waveformType2"] = waveform2["waveformType"]
+
         comparedics.append(comparedic)
 
     return comparedics
 
 def compare_page(params,comparedic):
 
-    meta = '<meta content="text/html; ./summary.html" http-equiv="content-type">'
-
-    title = "Comparison Page for %s"%str(comparedic["dic1"]["gps"])
+    title = "%s / %s Comparison Page for %s"%(comparedic["waveformType1"],comparedic["waveformType2"],str(comparedic["dic1"]["gps"]))
 
     contents=["""
     <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -200,17 +201,16 @@ def compare_page(params,comparedic):
     """]
     table.append("<thead><tr><th>Parameter</th><th>%s</th><th>%s</th><th>Difference</th><th>Distance</th></tr></thead>")
 
-    for key,value in comparedic["dic1"].items():
-
+    for key, value in comparedic["dic1"].items():
         if key == "gps":
             continue
-
         table.append("<tr>")
-        table.append('<td>%s</td>'%(key))
-        table.append("<td>%.3f</td>"%comparedic["dic1"][key]["maxL"])
-        table.append("<td>%.3f</td>"%comparedic["dic2"][key]["maxL"])
-        table.append("<td>%.3f</td>"%comparedic["distance"][key])
-        table.append("<td>%.3f</td>"%comparedic["distance_std"][key])
+        table.append('<td>%s</td>'%key)
+        table.append('<td>%.4f</td>'%(comparedic["dic1"][key]["maxL"]))
+        table.append('<td>%.4f</td>'%(comparedic["dic2"][key]["maxL"]))
+        table.append('<td>%.4f</td>'%(comparedic["distance"][key]))
+        table.append('<td>%.4f</td>'%(comparedic["distance_std"][key]))
+        table.append("</tr>")
     table.append("</table><br><br>")
 
     # add tables and list
@@ -230,6 +230,70 @@ def compare_page(params,comparedic):
     page = ''.join(contents)
 
     return page
+
+def summary_page(params,comparedics):
+
+    title = "%s / %s Summary Page"%(comparedics[0]["waveformType1"],comparedics[0]["waveformType2"])
+
+    contents=["""
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+    <html>
+    <head>
+    <script type="text/JavaScript">
+    <!--
+    function timedRefresh(timeoutPeriod) {
+        setTimeout("location.reload(true);",timeoutPeriod);
+    }
+    //   -->
+    </script>
+    <title>%s</title>
+    <link rel="stylesheet" type="text/css" href="../../style/main.css">
+    <script src="../../style/sorttable.js"></script>
+    </head>
+    <body>
+    <table style="text-align: left; width: 1260px; height: 67px; margin-left:auto; margin-right: auto;" border="1" cellpadding="1" cellspacing="1">
+    <tbody>
+    <tr>
+    <td style="text-align: center; vertical-align: top; background-color:SpringGreen;"><big><big><big><big><span style="font-weight: bold;">%s</span></big></big></big></big>
+    </td>
+    </tr>
+    </tbody>
+    </table>
+    <br>
+    <br>
+
+    """%(title,title)]
+
+    table = ["""
+    <table class="sortable" id="sort" style="text-align: center; width: 1260px; height: 67px; margin-left:auto; margin-right: auto; background-color: white;" border="1" cellpadding="2" cellspacing="2">
+    """]
+    table.append("<thead><tr><th>Trigger Time</th></tr></thead>")
+
+    for comparedic in comparedics:
+        table.append("<tr>")
+        table.append('<td><a href= "./%s.html">%s</td>'%(str(comparedic["dic1"]["gps"]),str(comparedic["dic1"]["gps"])))
+        table.append("</tr>")
+    table.append("</table><br><br>")
+
+    # add tables and list
+    contents.append("".join(table))
+
+    ################################# closing ##################################
+    user=os.environ['USER']
+    curTime=time.strftime('%m-%d-%Y %H:%M:%S',time.localtime())
+    contents.append("""
+    <small>
+    This page was created by user %s on %s
+    </small>
+    </body>
+    </html>
+    """%(user,curTime))
+
+    page = ''.join(contents)
+
+    return page
+
 
 def run_compare(params):
 
@@ -261,6 +325,13 @@ def run_compare(params):
                     f = open(os.path.join(params["outputFolder"],"%s.html"%(str(comparedic["dic1"]["gps"]))),"w")
                     f.write(htmlPage)
                     f.close()    
+
+                if not comparedics == []:
+                    htmlPage = summary_page(params,comparedics)
+                    f = open(os.path.join(params["outputFolder"],"summary.html"),"w")
+                    f.write(htmlPage)
+                    f.close()
+                
 
 if __name__=="__main__":
 
