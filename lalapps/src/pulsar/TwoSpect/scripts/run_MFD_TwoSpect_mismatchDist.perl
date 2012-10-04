@@ -115,7 +115,7 @@ EOF
    system("/home/egoetz/opt/lscsoft/bin/lalapps_Makefakedata_v4 \@/local/user/egoetz/$$/mfdconfig");
    die "system lalapps_Makefakedata_v4 failed: $?" if $?;
    
-   system("/home/egoetz/TwoSpect/mismatchDist/TwoSpect_templateTest --config=testconfig");
+   system("/home/egoetz/TwoSpect/mismatchDist/TwoSpect_templateTest --config=/local/user/egoetz/$$/twospectconfig");
    die "TwoSpect_templateTest failed: $?" if $?;
 
 
@@ -182,7 +182,7 @@ $pt4[0] $pt4[1]
 EOF
    close(SKYFILE2);
 
-   open(TWOSPECTCONFIG,">testconfig") or die "Cannot write to testconfig $!";
+   open(TWOSPECTCONFIG,">/local/user/egoetz/$$/twospectconfig") or die "Cannot write to /local/user/egoetz/$$/twospectconfig $!";
    print TWOSPECTCONFIG<<EOF;
 fmin 401.25
 fspan 0.25
