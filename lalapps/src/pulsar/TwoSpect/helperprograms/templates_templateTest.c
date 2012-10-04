@@ -805,6 +805,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, fpr->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
+
+   //FILE *TEMPLATEOUT = fopen("./gausstemplatedata.dat","w");
    
    //Create template. We are going to do exp(log(Eq. 18))
    REAL8 sum = 0.0;
@@ -961,6 +963,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          //Sum up the weights in total
          //sum += (REAL8)dataval;
          sum += (REAL8)(datavector->data[jj]);
+
+         //fprintf(TEMPLATEOUT, "%d %d %g\n", ii, jj, datavector->data[jj]);     //remove this
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot (insertion sort)
          if (datavector->data[jj] > output->templatedata->data[output->templatedata->length-1]) {
@@ -968,6 +972,8 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          }
       } /* for jj < omegapr->length */
    } /* for ii < sigmas->length */
+
+   //fclose(TEMPLATEOUT);
    
    //Normalize
    REAL4 invsum = (REAL4)(1.0/sum);
@@ -1087,6 +1093,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    REAL8 secPSDfactor = winFactor/x->length*0.5*params->Tcoh;
    REAL8 sum = 0.0;
    INT4 doSecondFFT;
+   //FILE *TEMPLATEOUT = fopen("./templatedata.dat","w");
+
    //First loop over frequencies
    for (ii=0; ii<numfbins; ii++) {
       //Set doSecondFFT check flag to 0. Value becomes 1 if at least one element in frequency row is non-zero
@@ -1142,6 +1150,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          
          for (jj=4; jj<(INT4)psd->length; jj++) {
             sum += (REAL8)psd->data[jj];     //sum up the total weight
+
+            //fprintf(TEMPLATEOUT, "%d %d %g\n", ii, jj, psd->data[jj]);     //remove this
             
             //Sort the weights, insertion sort technique
             //if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
@@ -1149,6 +1159,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          } /* for jj < psd->length */
       } /* if doSecondFFT */
    } /* if ii < numfbins */
+
+   //fclose(TEMPLATEOUT);
    
    //Normalize
    REAL4 invsum = (REAL4)(1.0/sum);

@@ -595,7 +595,7 @@ int main(int argc, char *argv[])
       
       //Antenna normalization for different sky locations
       REAL8 skypointffnormalization = 1.0;
-      ffPlaneNoise(aveNoise, inputParams, background_slided, antweightsforihs2h0, secondFFTplan, &(skypointffnormalization));
+      ffPlaneNoise(aveNoise, inputParams, sftexist, background_slided, antweightsforihs2h0, secondFFTplan, &(skypointffnormalization));
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: ffPlaneNoise() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -603,7 +603,7 @@ int main(int argc, char *argv[])
       
       //Average noise floor of FF plane for each 1st FFT frequency bin
       ffdata->ffnormalization = 1.0;
-      ffPlaneNoise(aveNoise, inputParams, background_slided, antweights, secondFFTplan, &(ffdata->ffnormalization));
+      ffPlaneNoise(aveNoise, inputParams, sftexist, background_slided, antweights, secondFFTplan, &(ffdata->ffnormalization));
       if (xlalErrno!=0) {
          fprintf(stderr, "%s: ffPlaneNoise() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
@@ -703,6 +703,11 @@ int main(int argc, char *argv[])
          fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
+      /* makeTemplateGaussians(template, exactCandidates1->data[0], inputParams, ffdata->numfbins, ffdata->numfprbins);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      } */
       REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
       if (XLAL_IS_REAL8_FAIL_NAN(R)) {
          fprintf(stderr,"%s: calculateR() failed.\n", __func__);
@@ -1587,20 +1592,20 @@ REAL4 rmsTFdataBand(REAL4Vector *backgrnd, INT4 numfbins, INT4 numffts, INT4 bin
 
 //////////////////////////////////////////////////////////////
 // Measure of the average noise power in each 2st FFT frequency bin
-void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization)
+void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, INT4Vector *sftexist, REAL4Vector *backgrnd, REAL4Vector *antweights, REAL4FFTPlan *plan, REAL8 *normalization)
 {
-   
+
    INT4 ii, jj, numfbins, numffts, numfprbins;
    REAL8 invsumofweights = 0.0;
    REAL8 sumofweights = 0.0;
-   
+
    numfbins = (INT4)(round(input->fspan*input->Tcoh+2.0*input->dfmax*input->Tcoh)+12+1);    //Number of frequency bins
    numffts = (INT4)antweights->length;                      //Number of FFTs
    numfprbins = (INT4)floor(numffts*0.5)+1;                 //number of 2nd fft frequency bins
-   
+
    //Set up for making the PSD
    memset(aveNoise->data, 0, sizeof(REAL4)*aveNoise->length);
-   
+
    REAL4Window *win = XLALCreateHannREAL4Window(numffts);  //Window function
    REAL4Vector *psd = XLALCreateREAL4Vector(numfprbins);   //Current PSD calculation
    if (win==NULL) {
@@ -1624,62 +1629,42 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    }
    memset(aveNoiseInTime->data, 0, sizeof(REAL4)*numffts);
    for (ii=0; ii<(INT4)aveNoiseInTime->length; ii++) {
-      if (backgrnd->data[ii*numfbins]!=0.0) {
+      if (sftexist->data[ii]!=0) {
          memcpy(rngMeansOverBand->data, &(backgrnd->data[ii*numfbins]), sizeof(*rngMeansOverBand->data)*rngMeansOverBand->length);
-         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);  //comment out
+         //aveNoiseInTime->data[ii] = calcMean(rngMeansOverBand);  //comment out?
          aveNoiseInTime->data[ii] = calcMedian(rngMeansOverBand);
          //aveNoiseInTime->data[ii] = (REAL4)(calcRms(rngMeansOverBand));  //For exp dist and large blksize this approaches the mean
          if (XLAL_IS_REAL4_FAIL_NAN(aveNoiseInTime->data[ii])) {
             fprintf(stderr,"%s: calcMean() failed.\n", __func__);
             XLAL_ERROR_VOID(XLAL_EFUNC);
          }
-         
+
          if (input->noiseWeightOff==0) sumofweights += (antweights->data[ii]*antweights->data[ii])/(aveNoiseInTime->data[ii]*aveNoiseInTime->data[ii]);
          else sumofweights += (antweights->data[ii]*antweights->data[ii]);
       }
    } /* for ii < aveNoiseInTime->length */
    invsumofweights = 1.0/sumofweights;
-   
+
    //Load time series of powers, normalize, mean subtract and Hann window
    REAL4Vector *x = XLALCreateREAL4Vector(aveNoiseInTime->length);
-   REAL8Vector *multiplicativeFactor = XLALCreateREAL8Vector(aveNoiseInTime->length);
+   REAL4Vector *multiplicativeFactor = XLALCreateREAL4Vector(aveNoiseInTime->length);
    if (x==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (multiplicativeFactor==NULL) {
-      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
+      fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, aveNoiseInTime->length);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   memset(multiplicativeFactor->data, 0, sizeof(REAL8)*multiplicativeFactor->length);
+   memset(multiplicativeFactor->data, 0, sizeof(REAL4)*multiplicativeFactor->length);
    REAL4 psdfactor = winFactor;
-   
+
    for (ii=0; ii<(INT4)x->length; ii++) {
       if (aveNoiseInTime->data[ii] != 0.0) {
          if (input->noiseWeightOff==0) multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]/aveNoiseInTime->data[ii]*invsumofweights;
          else multiplicativeFactor->data[ii] = win->data->data[ii]*antweights->data[ii]*invsumofweights;
       }
    }
-   
-   //Previous version with no correlation between SFTs when there is overlap
-   /* for (ii=0; ii<100000; ii++) {
-      for (jj=0; jj<(INT4)x->length; jj++) {
-         if (aveNoiseInTime->data[jj] != 0.0) x->data[jj] = multiplicativeFactor->data[jj]*(expRandNum(aveNoiseInTime->data[jj], rng)/aveNoiseInTime->data[jj]-1.0);
-         else x->data[jj] = 0.0;
-      }
-      
-      //Do the FFT
-      INT4 check = XLALREAL8PowerSpectrum(psd,x,plan);
-      if (check != 0) {
-         printf("Something wrong with second PSD in background estimate...\n");
-         fprintf(LOG,"Something wrong with second PSD in background estimate...\n");
-      }
-      
-      //Rescale and sum into the bins
-      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-         aveNoise->data[jj] += psd->data[jj];
-      }
-   } */
-   
+
    //New version. Computes expected background with correlation estimate from Hann windowed and overlapped (must be 50% or 0%) SFTs
    REAL8 correlationfactor = 0.0;
    for (ii=0; ii<(INT4)floor(win->data->length*(input->SFToverlap/input->Tcoh)-1); ii++) correlationfactor += win->data->data[ii]*win->data->data[ii + (INT4)((1.0-(input->SFToverlap/input->Tcoh))*win->data->length)];
@@ -1690,33 +1675,60 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    for (ii=0; ii<4000; ii++) {
       memset(x->data, 0, sizeof(REAL4)*x->length);
       for (jj=0; jj<(INT4)x->length; jj++) {
-         if (aveNoiseInTime->data[jj] != 0.0) {
-            
+         if (sftexist->data[jj] != 0) {
+            //To create the correlations
             noiseval = expRandNum(aveNoiseInTime->data[jj], input->rng);
-            if (jj>0 && aveNoiseInTime->data[jj-1]!=0.0) {
+            if (XLAL_IS_REAL8_FAIL_NAN(noiseval)) {
+               fprintf(stderr, "%s: expRandNum() failed.\n", __func__);
+               XLAL_ERROR_VOID(XLAL_EFUNC);
+            }
+            if (jj>0 && sftexist->data[jj-1]!=0) {
                noiseval *= (1.0-corrfactorsquared);
                noiseval += corrfactorsquared*prevnoiseval;
             }
-            x->data[jj] = (REAL4)(multiplicativeFactor->data[jj]*(noiseval/aveNoiseInTime->data[jj]-1.0));
+            x->data[jj] = (REAL4)(noiseval/aveNoiseInTime->data[jj]-1.0);
             prevnoiseval = noiseval;
          }
       } /* for jj < x->length */
-      
+
+      //Window and rescale because of antenna and noise weights
+      if (input->useSSE) {
+         sseSSVectorMultiply(x, x, multiplicativeFactor);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: sseSSVectorMultiply() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
+      }
+      else for (jj=0; jj<(INT4)x->length; jj++) x->data[jj] *= multiplicativeFactor->data[jj];
+
       //Do the FFT
       if ( (XLALREAL4PowerSpectrum(psd, x, plan)) != 0) {
          fprintf(stderr,"%s: XLALREAL4PowerSpectrum() failed.\n", __func__);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-      
+
       //Sum into the bins
-      for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-         aveNoise->data[jj] += psd->data[jj];
+      if (input->useSSE) {
+         sseSSVectorSum(aveNoise, aveNoise, psd);
+         if (xlalErrno!=0) {
+            fprintf(stderr,"%s: sseSSVectorSum() failed.\n", __func__);
+            XLAL_ERROR_VOID(XLAL_EFUNC);
+         }
       }
+      else for (jj=0; jj<(INT4)aveNoise->length; jj++) aveNoise->data[jj] += psd->data[jj];
    } /* for ii < 4000 */
-   
+
    //Average and rescale
-   for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= (REAL4)(2.5e-4*psdfactor*(1.0+2.0*corrfactorsquared));
-   
+   REAL4 averageRescaleFactor = 2.5e-4*psdfactor*(1.0+2.0*corrfactorsquared);
+   if (input->useSSE) {
+      sseScaleREAL4Vector(aveNoise, aveNoise, averageRescaleFactor);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: sseScaleREAL4Vector() failed.\n", __func__);
+         XLAL_ERROR_VOID(XLAL_EFUNC);
+      }
+   }
+   else for (ii=0; ii<(INT4)aveNoise->length; ii++) aveNoise->data[ii] *= averageRescaleFactor;
+
    //Fix 0th and end bins (0 only for odd x->length, 0 and end for even x->length)
    if (GSL_IS_EVEN(x->length)==1) {
       aveNoise->data[0] *= 2.0;
@@ -1724,31 +1736,31 @@ void ffPlaneNoise(REAL4Vector *aveNoise, inputParamsStruct *input, REAL4Vector *
    } else {
       aveNoise->data[0] *= 2.0;
    }
-   
+
    //comment this out
    //FILE *BACKGRND = fopen("./output/background.dat","w");
-   
+
    //Compute normalization
    *(normalization) = 1.0/(calcMean(aveNoise));
    for (ii=0; ii<(INT4)aveNoise->length; ii++) {
       aveNoise->data[ii] *= *(normalization);
       //fprintf(BACKGRND,"%.6f\n",aveNoise->data[ii]);
    }
-   
+
    //Extra factor for normalization to 1.0 (empirically determined)
    // *(normalization) /= 1.0245545525190294;
    //*normalization /= 1.040916688722758;
    *normalization /= 1.08;
-   
+
    //fclose(BACKGRND);
-   
+
    //Destroy stuff
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Vector(psd);
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(aveNoiseInTime);
    XLALDestroyREAL4Vector(rngMeansOverBand);
-   XLALDestroyREAL8Vector(multiplicativeFactor);
+   XLALDestroyREAL4Vector(multiplicativeFactor);
 
 } /* ffPlaneNoise() */
 
