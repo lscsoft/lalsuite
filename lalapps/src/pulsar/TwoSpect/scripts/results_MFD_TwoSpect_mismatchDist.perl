@@ -29,9 +29,9 @@ for(my $ii=0; $ii<100; $ii++) {
       }
       close(LOGFILE);
 
-      open(LOGFILE2, "/home/egoetz/TwoSpect/mismatchDist/$ii/logfile_$jj_2.txt") or die "Cannot open /home/egoetz/TwoSpect/mismatchDist/$ii/logfile_$jj_2.txt $!";
+      open(LOGFILE2, "/home/egoetz/TwoSpect/mismatchDist/$ii/logfile_${jj}_2.txt") or die "Cannot open /home/egoetz/TwoSpect/mismatchDist/$ii/logfile_${jj}_2.txt $!";
       @twospectout = reverse <LOGFILE2>;
-      my $kk = 1;
+      $kk = 1;
       while($twospectout[$kk] =~ /^fsig = (\d+.\d+), period = (\d+.\d+), df = (\d+.\d+), RA = (\d+.\d+), DEC = (-?\d+.\d+), R = (\d+.\d+), h0 = (\d+.\d+e-\d+), Prob = (-\d+.\d+), TF norm = (\d+.\d+e\+\d+)/) {
          print RESULTS "$jj $ii $1 $2 $3 $6 $7 $8\n";
          $kk++;
