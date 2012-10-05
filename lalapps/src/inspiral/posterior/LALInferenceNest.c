@@ -575,7 +575,7 @@ Parameter arguments:\n\
 				char *name=strings[N];
 				node=LALInferenceGetItem(&tempParams,name);
 				if(node) LALInferenceAddVariable(currentParams,node->name,node->value,node->type,node->vary);
-				else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
+				else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",name);}
 			}
 		}
 	}
