@@ -32,6 +32,7 @@ noinst_HEADERS = \
 	LALSimIMREOBNewtonianMultipole.c \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
+	LALSimInspiralPrecess.h \
 	LALSimIMRSpinEOBHamiltonian.c \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
@@ -53,6 +54,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \
+	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylorT4.c \

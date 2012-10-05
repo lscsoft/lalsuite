@@ -6,7 +6,8 @@ check_PROGRAMS = \
 	GenerateSimulation \
 	TestSpinTaylorT4Dynamics \
 	TestEOBNRv2 \
-	GRFlagsTest
+	GRFlagsTest \
+	TestPrecessWaveform
 TESTS = $(check_PROGRAMS)
 endif
 
