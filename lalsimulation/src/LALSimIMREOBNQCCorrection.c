@@ -406,7 +406,7 @@ UNUSED static int XLALSimIMREOBGetCalibratedNQCCoeffs(
   }
 
   /* All NQC coefficients are set to zero here */
-  /* including coeffs->a4 that is not used in EOBNRv2 */
+  /* including coeffs->a3S, coeffs->a4 and coeffs->a5 that are not used in EOBNRv2 */
   memset( coeffs, 0, sizeof( *coeffs ) );
 
   coeffs->a1 = -4.55919 + 18.761 * eta - 24.226 * eta*eta;
@@ -446,7 +446,7 @@ UNUSED static int  XLALSimIMREOBNonQCCorrection(
   rOmega = r * omega;
   rOmegaSq = rOmega*rOmega;
 
-  /* In EOBNRv2, coeffs->a4 is set to zero */
+  /* In EOBNRv2, coeffs->a3S, coeffs->a4 and coeffs->a5 are set to zero */
   /* through XLALSimIMREOBGetCalibratedNQCCoeffs() */
   /* and XLALSimIMREOBCalculateNQCCoefficients() */
   mag = 1. + (p*p / rOmegaSq) * ( coeffs->a1
