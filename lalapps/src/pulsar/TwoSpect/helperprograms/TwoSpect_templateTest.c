@@ -242,34 +242,34 @@ int main(int argc, char *argv[])
    
    //Allocate lists of candidates with initially 100 available slots (will check and rescale later, if necessary)
    //Also allocate for an upperLimitVector of length 1
-   candidateVector *gaussCandidates1 = new_candidateVector(100);
-   candidateVector *gaussCandidates2 = new_candidateVector(100);
-   candidateVector *gaussCandidates3 = new_candidateVector(100);
-   candidateVector *gaussCandidates4 = new_candidateVector(100);
-   candidateVector *exactCandidates1 = new_candidateVector(100);   
-   candidateVector *exactCandidates2 = new_candidateVector(100);
-   candidateVector *ihsCandidates = new_candidateVector(100);
+   candidateVector *gaussCandidates1 = new_candidateVector(1);
+   candidateVector *gaussCandidates2 = new_candidateVector(1);
+   candidateVector *gaussCandidates3 = new_candidateVector(1);
+   candidateVector *gaussCandidates4 = new_candidateVector(1);
+   candidateVector *exactCandidates1 = new_candidateVector(1);
+   candidateVector *exactCandidates2 = new_candidateVector(1);
+   candidateVector *ihsCandidates = new_candidateVector(1);
    UpperLimitVector *upperlimits = new_UpperLimitVector(1);
    if (gaussCandidates1==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (gaussCandidates2==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (gaussCandidates3==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (gaussCandidates4==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (exactCandidates1==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (exactCandidates2==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (ihsCandidates==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 100);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (upperlimits==NULL) {
       fprintf(stderr, "%s: new_UpperLimitVector(%d) failed.\n", __func__, 1);
@@ -620,11 +620,6 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      /* tfWeight(background_slided, background_slided, background_slided, antweights, indexValuesOfExistingSFTs, inputParams);
-      if (xlalErrno!=0) {
-         fprintf(stderr, "%s: tfWeight() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      } */
       XLALDestroyREAL4Vector(TFdata_slided);
       //XLALDestroyREAL4Vector(background_slided);
       XLALDestroyREAL4Vector(antweights);
@@ -645,7 +640,6 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       for (ii=0; ii<ffdata->numfbins; ii++) {
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
          REAL4 totalweightval = 0.0;
          for (jj=0; jj<ffdata->numffts; jj++) {
             if (background_slided->data[jj*ffdata->numfbins + ii]!=0.0) {
@@ -656,10 +650,8 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] = 0.0;
          for (jj=0; jj<ffdata->numffts; jj++) aveTFnoisePerFbinRatio->data[ii] += TSofPowers->data[jj];
          aveTFnoisePerFbinRatio->data[ii] = aveTFnoisePerFbinRatio->data[ii]/totalweightval;
-         //aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      //REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //check--better in case of strong lines (approaches mean value)
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
