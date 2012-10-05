@@ -641,17 +641,7 @@ int main(int argc, char *argv[])
          fprintf(stderr, "%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numffts);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      //TODO: remove this
-      /* FILE *SFTMEANVALS = fopen("./outputtemp/sftmeanvals.dat","w");
-      for (ii=0; ii<ffdata->numffts; ii++) {
-         memcpy(aveTFnoisePerFbinRatio->data, &(TFdata_weighted->data[ii*ffdata->numfbins]), sizeof(REAL4)*ffdata->numfbins);
-         fprintf(SFTMEANVALS, "%g\n", calcMean(aveTFnoisePerFbinRatio));
-      }
-      fclose(SFTMEANVALS); */
-      //up to here
       for (ii=0; ii<ffdata->numfbins; ii++) {
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = TFdata_weighted->data[jj*ffdata->numfbins + ii];
-         //for (jj=0; jj<ffdata->numffts; jj++) TSofPowers->data[jj] = background_slided->data[jj*ffdata->numfbins + ii];
          REAL4 totalweightval = 0.0;
          for (jj=0; jj<ffdata->numffts; jj++) {
             if (background_slided->data[jj*ffdata->numfbins + ii]!=0.0) {
@@ -662,10 +652,8 @@ int main(int argc, char *argv[])
          aveTFnoisePerFbinRatio->data[ii] = 0.0;
          for (jj=0; jj<ffdata->numffts; jj++) aveTFnoisePerFbinRatio->data[ii] += TSofPowers->data[jj];
          aveTFnoisePerFbinRatio->data[ii] = (aveTFnoisePerFbinRatio->data[ii]/totalweightval);
-         //aveTFnoisePerFbinRatio->data[ii] = calcRms(TSofPowers); //This approaches calcMean(TSofPowers) for stationary noise TODO: uncomment
       }
       REAL4 aveTFaveinv = 1.0/calcMean(aveTFnoisePerFbinRatio);
-      //REAL4 aveTFaveinv = 1.0/calcMedian(aveTFnoisePerFbinRatio);  //check--better in case of strong lines (approaches mean value)
       for (ii=0; ii<ffdata->numfbins; ii++) {
          aveTFnoisePerFbinRatio->data[ii] *= aveTFaveinv;
          //fprintf(stderr, "%f\n", aveTFnoisePerFbinRatio->data[ii]);
@@ -843,7 +831,16 @@ int main(int argc, char *argv[])
             }
             //bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+2.5/inputParams->Tcoh, 11, 5, gaussCandidates2->data[ii].moddepth-2.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+2.5/inputParams->Tcoh, 11, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             //bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-1.5/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+1.5/inputParams->Tcoh, 7, 5, gaussCandidates2->data[ii].moddepth-1.5/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+1.5/inputParams->Tcoh, 7, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
-            bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), gaussCandidates2->data[ii], gaussCandidates2->data[ii].fsig-1.0/inputParams->Tcoh, gaussCandidates2->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, gaussCandidates2->data[ii].moddepth-1.0/inputParams->Tcoh, gaussCandidates2->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+            bruteForceTemplateSearch(&(gaussCandidates3->data[gaussCandidates3->numofcandidates]), //Output candidate
+                                     gaussCandidates2->data[ii],                             //Candidate
+                                     gaussCandidates2->data[ii].fsig-1.0/inputParams->Tcoh,  //Minimum frequency
+                                     gaussCandidates2->data[ii].fsig+1.0/inputParams->Tcoh,  //Maximum frequency
+                                     5,                                                      //Number of frequencies to search in range
+                                     5,                                                      //Number of periods to search
+                                     gaussCandidates2->data[ii].moddepth-1.0/inputParams->Tcoh, //Minimum modulation depth
+                                     gaussCandidates2->data[ii].moddepth+1.0/inputParams->Tcoh, //Maximum modulation depth
+                                     5,                                                      //Number of modulation depths to search in range
+                                     inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
             if (xlalErrno!=0) {
                fprintf(stderr, "%s: bruteForceTemplateSearch() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
@@ -915,10 +912,13 @@ int main(int argc, char *argv[])
                fprintf(stderr,"%s: calculateR() failed.\n", __func__);
                XLAL_ERROR(XLAL_EFUNC);
             }
-            REAL8 prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
-            if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
-               fprintf(stderr,"%s: probR() failed.\n", __func__);
-               XLAL_ERROR(XLAL_EFUNC);
+            REAL8 prob = 0.0;
+            if ( R > 0.0 ) {
+               prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+               if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+                  fprintf(stderr,"%s: probR() failed.\n", __func__);
+                  XLAL_ERROR(XLAL_EFUNC);
+               }
             }
             REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
             if ((!inputParams->calcRthreshold && prob<log10(templatefarthresh)) || (inputParams->calcRthreshold && R>farval->far)) {
@@ -960,7 +960,16 @@ int main(int argc, char *argv[])
             if (!args_info.gaussTemplatesOnly_given) {
                //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
                //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 3, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
-               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh, exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh, 3, 3, exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh, 3, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]),
+                                        exactCandidates1->data[ii],
+                                        exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh,
+                                        exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh,
+                                        3,
+                                        3,
+                                        exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh,
+                                        exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh,
+                                        3,
+                                        inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: bruteForceTemplateSearch() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -968,7 +977,16 @@ int main(int argc, char *argv[])
             } else {
                //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 5, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
                //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[ii].fsig+1.0/inputParams->Tcoh, 5, 3, exactCandidates1->data[ii].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+1.0/inputParams->Tcoh, 5, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
-               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[ii], exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh, exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh, 3, 3, exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh, exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh, 3, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
+               bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]),
+                                        exactCandidates1->data[ii],
+                                        exactCandidates1->data[ii].fsig-0.5/inputParams->Tcoh,
+                                        exactCandidates1->data[ii].fsig+0.5/inputParams->Tcoh,
+                                        3,
+                                        3,
+                                        exactCandidates1->data[ii].moddepth-0.5/inputParams->Tcoh,
+                                        exactCandidates1->data[ii].moddepth+0.5/inputParams->Tcoh,
+                                        3,
+                                        inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 0);
                if (xlalErrno!=0) {
                   fprintf(stderr, "%s: bruteForceTemplateSearch() failed.\n", __func__);
                   XLAL_ERROR(XLAL_EFUNC);
@@ -1224,12 +1242,12 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
    INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
    INT4 sftlength;
-   if (sfts->length == 0) sftlength = (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
+   if (sfts->length == 0) sftlength = (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
    else {
       sftlength = sfts->data->data->length;
       //Check the length is what we expect
-      if (sftlength!=(INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1)) {
-         fprintf(stderr, "%s: sftlength (%d) is not matching expected length (%d).\n", __func__, sftlength, (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1));
+      if (sftlength!=(INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1)) {
+         fprintf(stderr, "%s: sftlength (%d) is not matching expected length (%d).\n", __func__, sftlength, (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1));
          XLAL_ERROR_NULL(XLAL_EFPINEXCT);
       }
    }
@@ -1439,8 +1457,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   
-   //TODO: remove this
+
    //FILE *SFTMEANVALS = fopen("./outputtemp/sftmeanvals.dat","w");
    
    //Now do the running median
@@ -1449,8 +1466,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
       if (tfdata->data[ii*totalfbins]!=0.0) {
          //Determine running median value, convert to mean value
          memcpy(inpsd->data, &(tfdata->data[ii*inpsd->length]), sizeof(REAL4)*inpsd->length);
-         
-         //TODO: remove this
+
          //fprintf(SFTMEANVALS, "%g\n", calcMean(inpsd));
          
          //calculate running median
@@ -1465,7 +1481,6 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
       } else {
          //Otherwise, set means to zero
          for (jj=0; jj<(INT4)mediansout->length; jj++) output->data[ii*numfbins + jj] = 0.0;
-         //TODO: remove this
          //fprintf(SFTMEANVALS, "%g\n", 0.0);
       }
    } /* for ii < numffts */
@@ -2514,6 +2529,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    params->validateSSE = args_info.validateSSE_given;                            //Validate SSE functions (default = 0)
    params->noNotchHarmonics = args_info.noNotchHarmonics_given;                  //Do not notch the daily/sidereal harmonics (default = 0)
    params->harmonicNumToSearch = args_info.harmonicNumToSearch_arg;              //Search the number of harmonics specified by the Pmin-->Pmax range (default = 1 meaning search only the range of Pmin-->Pmax)
+   params->ULsolver = args_info.ULsolver_arg;                                    //Solver function for UL calculation (default = 0)
    
    //Non-default arguments
    if (args_info.Tcoh_given) params->Tcoh = args_info.Tcoh_arg;                  //SFT coherence time (s)

@@ -27,6 +27,7 @@
 #include <lal/PtoleMetric.h>
 #include <lal/PulsarTimes.h>
 #include <lal/StackMetric.h>
+#include <lal/Factorial.h>
 
 /*---------- empty initializers ---------- */
 /* some empty structs for initializations */
@@ -38,7 +39,7 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 #define MIN_MAXFREQ  1.                        /* Arbitrary */
 
 /* A private factorial function */
-static int factrl( int );
+/* static int factrl( int ); */
 
 /** \ingroup PtoleMetric_h
  * \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
@@ -614,18 +615,17 @@ void LALPtoleMetric( LALStatus *status,
 
 
 /* This is a dead simple, no error-checking, private factorial function. */
+/* static int factrl( int arg ) */
+/* { */
+/*   int ans = 1; */
 
-static int factrl( int arg )
-{
-  int ans = 1;
-
-  if (arg==0) return 1;
-  do {
-    ans *= arg;
-  }
-  while(--arg>0);
-  return ans;
-} /* factrl() */
+/*   if (arg==0) return 1; */
+/*   do { */
+/*     ans *= arg; */
+/*   } */
+/*   while(--arg>0); */
+/*   return ans; */
+/* } */ /* factrl() */
 
 
 /** \ingroup PtoleMetric_h
@@ -816,35 +816,31 @@ XLALFindMetricDim ( const REAL8Vector *metric )
 
 }/* XLALFindMetricDim() */
 
-/**
- * Frequency and frequency derivative components of the metric, suitable for a directed
- * search with only one fixed sky position. The units are those expected by ComputeFstat.
- * This routine allocates a gsl_matrix which should be freed with gsl_matrix_free.
- */
-gsl_matrix *XLALSpindownMetric(
-			       UINT4 dimension, /**< [in] Dimension of the metric */
- 			       REAL8 Tspan      /**< [in] Time span of the data set */
-			       )
+int XLALSpindownMetric(
+  gsl_matrix* metric,
+  double Tspan
+  )
 {
 
-  UINT4 i, j;
-  gsl_matrix *metric = NULL;
+  // Check input
+  XLAL_CHECK(metric != NULL, XLAL_EFAULT);
+  XLAL_CHECK(metric->size1 == metric->size2, XLAL_ESIZE);
+  XLAL_CHECK(Tspan > 0, XLAL_EINVAL);
 
-  /* Allocate metric */
-  metric = gsl_matrix_alloc(dimension, dimension);
-
-  /* Calculate metric */
-  for (i = 0; i < metric->size1; ++i) {
-    for (j = 0; j < metric->size2; ++j) {
-
-      gsl_matrix_set(metric, i, j, 4 * pow(LAL_PI, 2) * pow(Tspan, 2 + i + j) /
-		     (factrl(i) * factrl(j) * (2 + i) * (2 + j) * (3 + i + j)));
-
+  // Calculate metric
+  for (size_t i = 0; i < metric->size1; ++i) {
+    for (size_t j = i; j < metric->size2; ++j) {
+      gsl_matrix_set(metric, i, j, (
+                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
+                       ) / (
+                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
+                         ));
+      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
     }
   }
 
-  return metric;
+  return XLAL_SUCCESS;
 
-} /* XLALSpindownMetric */
+} // XLALSpindownMetric
 
 /*@}*/

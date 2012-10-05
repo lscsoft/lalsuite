@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 Miroslav Shaltev, R Prix
 *  Copyright (C) 2007 Curt Cutler, Jolien Creighton, Reinhard Prix, Teviet Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -715,6 +716,310 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
     return XLAL_SUCCESS;
 
 } /* XLALBarycenter() */
+
+/** \author Curt Cutler, Miroslav Shaltev, R Prix
+ * \brief Speed optimized version of XLALBarycenter(),
+ * should be fully equivalent except for the additional buffer argument.
+ * The buffer is allowed to be NULL (= no buffering), otherwise it will be
+ * used to keep sky-specific and detector-specific values if they can be re-used.
+ */
+int
+XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information */
+                    const BarycenterInput *baryinput, 	/**< [in] info about detector and source-location */
+                    const EarthState *earth, 		/**< [in] earth-state (from LALBarycenterEarth()) */
+                    BarycenterBuffer *buffer		/**< [in/out] internal buffer for speed optimization */
+                    )
+{
+  /* ---------- check input sanity ---------- */
+  XLAL_CHECK ( emit != NULL, XLAL_EINVAL, "Invalid input: emit == NULL");
+  XLAL_CHECK ( baryinput != NULL, XLAL_EINVAL, "Invalid input: baryinput == NULL");
+  XLAL_CHECK ( earth != NULL, XLAL_EINVAL, "Invalid input: earth == NULL");
+  XLAL_CHECK ( buffer != NULL, XLAL_EINVAL, "Invalid input: buffer == NULL");
+
+  // physical constants used by Curt (slightly different from LAL's Constants, but kept for binary-equivalence with XLALBarycenter()
+  const REAL8 OMEGA = 7.29211510e-5;  /* ang. vel. of Earth (rad/sec)*/
+  // REAL8 eps0 = 0.40909280422232891;	/* obliquity of ecliptic at JD 245145.0, in radians. Value from Explan. Supp. to Astronom. Almanac */
+  const REAL8 sinEps0 = 0.397777155931914; 	// sin ( eps0 );
+  const REAL8 cosEps0 = 0.917482062069182;	// cos ( eps0 );
+
+  REAL8 tgps[2];
+  tgps[0] = baryinput->tgps.gpsSeconds;
+  tgps[1] = baryinput->tgps.gpsNanoSeconds;
+
+  // ---------- sky-position dependent quantities: compute or re-use from buffer is applicable
+  REAL8 alpha,delta;  /* RA and DEC (radians) in ICRS realization of J2000 coords.*/
+  alpha = baryinput->alpha;
+  delta = baryinput->delta;
+
+  REAL8 sinAlpha, cosAlpha, sinDelta, cosDelta;
+  REAL8 n[3]; /*unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z */
+  // use buffered sky-quantities if same sky-position as stored in buffer
+  if ( (alpha == buffer->alpha) && (delta == buffer->delta ) )
+    {
+      sinDelta = buffer->fixed_sky.sinDelta;
+      cosDelta = buffer->fixed_sky.cosDelta;
+      sinAlpha = buffer->fixed_sky.sinAlpha;
+      cosAlpha = buffer->fixed_sky.cosAlpha;
+      n[0] = buffer->fixed_sky.n[0];
+      n[1] = buffer->fixed_sky.n[1];
+      n[2] = buffer->fixed_sky.n[2];
+    }
+  else // not buffered, recompute sky-dependent quantities
+    {
+      /* check that alpha and delta are in reasonable range */
+      XLAL_CHECK ( fabs(alpha) <= LAL_TWOPI, XLAL_EDOM, "alpha = %f outside of allowed range [-2pi,2pi]\n", alpha );
+      XLAL_CHECK ( fabs(delta) <= LAL_PI_2,  XLAL_EDOM, "delta = %f outside of allowed range [-pi/2,pi/2]\n", delta );
+
+      sinDelta = cos ( LAL_PI/2.0 - delta );	// this weird way of computing it is required to stay binary identical to Curt's function
+      cosDelta = sin ( LAL_PI/2.0 - delta );
+      sinAlpha = sin ( alpha );
+      cosAlpha = cos ( alpha );
+
+      n[0] = cosDelta * cosAlpha;
+      n[1] = cosDelta * sinAlpha;
+      n[2] = sinDelta;
+
+      // ... and store them in the buffer
+      buffer->alpha 		 = alpha;
+      buffer->delta 		 = delta;
+      buffer->fixed_sky.sinDelta = sinDelta;
+      buffer->fixed_sky.cosDelta = cosDelta;
+      buffer->fixed_sky.sinAlpha = sinAlpha;
+      buffer->fixed_sky.cosAlpha = cosAlpha;
+      buffer->fixed_sky.n[0] 	 = n[0];
+      buffer->fixed_sky.n[1] 	 = n[1];
+      buffer->fixed_sky.n[2] 	 = n[2];
+
+    } // if not re-using sky-buffered quantities
+
+  // ---------- detector site-position dependent quantities: compute or re-use from buffer is applicable
+  REAL8 rd;   /* distance 'rd' of detector from center of Earth, in light seconds */
+  REAL8 longitude, latitude; 	/* geocentric (not geodetic!!) longitude and latitude of detector vertex */
+  REAL8 sinLat, cosLat;
+  REAL8 rd_sinLat, rd_cosLat;	// shortcuts for 'rd * sin(latitude)' and 'rd * cos(latitude)' respectively
+
+  // use buffered site-quantities if same site as stored in buffer
+  if ( memcmp ( &baryinput->site, &buffer->site, sizeof(buffer->site) ) == 0 )
+    {
+      rd	= buffer->fixed_site.rd;
+      longitude	= buffer->fixed_site.longitude;
+      latitude	= buffer->fixed_site.latitude;
+      sinLat	= buffer->fixed_site.sinLat;
+      cosLat	= buffer->fixed_site.cosLat;
+      rd_sinLat	= buffer->fixed_site.rd_sinLat;
+      rd_cosLat	= buffer->fixed_site.rd_cosLat;
+    }
+  else
+    {
+      rd = sqrt( + baryinput->site.location[0]*baryinput->site.location[0]
+                 + baryinput->site.location[1]*baryinput->site.location[1]
+                 + baryinput->site.location[2]*baryinput->site.location[2] );
+
+      longitude = atan2 ( baryinput->site.location[1], baryinput->site.location[0] );
+      if ( rd == 0.0 )
+        latitude = LAL_PI_2;	// avoid division by 0, for detector at center of earth
+      else
+        latitude = LAL_PI_2 - acos ( baryinput->site.location[2] / rd );
+
+      sinLat = sin ( latitude );
+      cosLat = cos ( latitude );
+      rd_sinLat = rd * sinLat;
+      rd_cosLat = rd * cosLat;
+
+      // ... and store them in the buffer
+      memcpy ( &buffer->site, &baryinput->site , sizeof(buffer->site) );
+      buffer->fixed_site.rd 		= rd;
+      buffer->fixed_site.longitude 	= longitude;
+      buffer->fixed_site.latitude 	= latitude;
+      buffer->fixed_site.sinLat 	= sinLat;
+      buffer->fixed_site.cosLat 	= cosLat;
+      buffer->fixed_site.rd_sinLat 	= rd_sinLat;
+      buffer->fixed_site.rd_cosLat 	= rd_cosLat;
+
+    } // if not re-using site-buffered quantities
+
+  /*---------------------------------------------------------------------
+   * Calucate Roemer delay for detector at center of Earth.
+   * We extrapolate from a table produced using JPL DE405 ephemeris.
+   *---------------------------------------------------------------------
+   */
+  REAL8 roemer = 0, droemer = 0;  /*Roemer delay and its time derivative*/
+  for ( UINT4 j = 0; j < 3; j++ )
+    {
+      roemer  += n[j] * earth->posNow[j];
+      droemer += n[j] * earth->velNow[j];
+    }
+
+  /*---------------------------------------------------------------------
+   * Now including Earth's rotation
+   *---------------------------------------------------------------------
+   */
+  /* calculating effect of luni-solar precession */
+  REAL8 sinAlphaMinusZA = sin ( alpha + earth->tzeA );
+  REAL8 cosAlphaMinusZA = cos ( alpha + earth->tzeA );
+  REAL8 cosThetaA = cos ( earth->thetaA );
+  REAL8 sinThetaA = sin ( earth->thetaA );
+
+  REAL8 cosDeltaSinAlphaMinusZA = sinAlphaMinusZA * cosDelta;
+
+  REAL8 cosDeltaCosAlphaMinusZA = cosAlphaMinusZA * cosThetaA * cosDelta - sinThetaA * sinDelta;
+
+  REAL8 sinDeltaCurt = cosAlphaMinusZA * sinThetaA * cosDelta + cosThetaA * sinDelta;
+
+  /* now taking NdotD, including lunisolar precession, using
+     Eqs. 3.212-2 of Explan. Supp.
+     Basic idea for incorporating luni-solar precession
+     is to change the (alpha,delta) of source to compensate for
+     Earth's time-changing spin axis.
+  */
+  REAL8 cosGastZA = cos ( earth->gastRad + longitude-earth->zA );
+  REAL8 sinGastZA = sin ( earth->gastRad + longitude-earth->zA );
+
+  REAL8 rd_NdotD = rd_sinLat * sinDeltaCurt + rd_cosLat * ( cosGastZA * cosDeltaCosAlphaMinusZA + sinGastZA * cosDeltaSinAlphaMinusZA );
+
+  /* delay from center-of-Earth to detector (sec), and its time deriv */
+  REAL8 erot = rd_NdotD;
+  REAL8 derot = OMEGA * rd_cosLat * ( - sinGastZA * cosDeltaCosAlphaMinusZA + cosGastZA * cosDeltaSinAlphaMinusZA );
+
+  /*--------------------------------------------------------------------------
+   * Now adding approx nutation (= short-period,forced motion, by definition).
+   * These two dominant terms, with periods 18.6 yrs (big term) and
+   * 0.500 yrs (small term),resp., give nutation to around 1 arc sec; see
+   * p. 120 of Explan. Supp. The forced nutation amplitude
+   *  is around 17 arcsec.
+   *
+   * Note the unforced motion or Chandler wobble (called ``polar motion''
+   * in Explanatory Supp) is not included here. However its amplitude is
+   * order of (and a somewhat less than) 1 arcsec; see plot on p. 270 of
+   * Explanatory Supplement to Ast. Alm.
+   *
+   * Below correction for nutation from Eq.3.225-2 of Explan. Supp.
+   * Basic idea is to change the (alpha,delta) of source to
+   * compensate for Earth's time-changing spin axis.
+   *--------------------------------------------------------------------------
+   */
+  REAL8 delXNut = - earth->delpsi * ( cosDelta * sinAlpha * cosEps0 + sinDelta * sinEps0 );
+
+  REAL8 delYNut = cosDelta * cosAlpha * cosEps0 * earth->delpsi - sinDelta * earth->deleps;
+
+  REAL8 delZNut = cosDelta * cosAlpha * sinEps0 * earth->delpsi + cosDelta * sinAlpha * earth->deleps;
+
+  REAL8 cosGastLong = cos ( earth->gastRad + longitude );
+  REAL8 sinGastLong = sin ( earth->gastRad + longitude );
+
+  REAL8 rd_NdotDNut = rd_sinLat * delZNut + rd_cosLat * cosGastLong * delXNut + rd_cosLat * sinGastLong * delYNut;
+
+  erot += rd_NdotDNut;
+  derot += OMEGA * ( - rd_cosLat * sinGastLong * delXNut + rd_cosLat * cosGastLong * delYNut );
+
+  /* Note erot has a periodic piece (P=one day) AND a constant piece,
+     since z-component (parallel to North pole) of vector from
+     Earth-center to detector is constant
+  */
+
+  /*--------------------------------------------------------------------
+   * Now adding Shapiro delay. Note according to J. Taylor review article
+   * on pulsar timing, max value of Shapiro delay (when rays just graze sun)
+   * is 120 microsec.
+   *
+   * Here we calculate Shapiro delay
+   * for a detector at the center of the Earth.
+   * Causes errors of order 10^{-4}sec * 4 * 10^{-5} = 4*10^{-9} sec
+   *--------------------------------------------------------------------
+   */
+  REAL8 shapiro, dshapiro; /* Shapiro delay due to Sun, and its time deriv. */
+  REAL8 rsun = 2.322; /*radius of sun in sec */
+  REAL8 seDotN  = earth->se[2] * sinDelta + ( earth->se[0]  * cosAlpha + earth->se[1] * sinAlpha ) * cosDelta;
+  REAL8 dseDotN = earth->dse[2]* sinDelta + ( earth->dse[0] * cosAlpha + earth->dse[1] * sinAlpha ) * cosDelta;
+
+  REAL8 b = sqrt ( earth->rse * earth->rse - seDotN * seDotN );
+  REAL8 db = ( earth->rse * earth->drse - seDotN * dseDotN ) / b;
+
+  /* if gw travels thru interior of Sun*/
+  if ( ( b < rsun ) && ( seDotN < 0 ) )
+    {
+      shapiro  = 9.852e-6 * log ( (LAL_AU_SI/LAL_C_SI) / ( seDotN + sqrt ( rsun*rsun + seDotN*seDotN ) ) ) + 19.704e-6 * ( 1.0 - b / rsun );
+      dshapiro = - 19.704e-6 * db / rsun;
+    }
+  else /* else the usual expression*/
+    {
+      shapiro  =  9.852e-6 * log( (LAL_AU_SI/LAL_C_SI) / ( earth->rse + seDotN ) );
+      dshapiro = -9.852e-6 * ( earth->drse + dseDotN ) / ( earth->rse + seDotN );
+    }
+
+  /*--------------------------------------------------------------------
+   * Now correcting Roemer delay for finite distance to source.
+   * Timing corrections are order 10 microsec
+   * for sources closer than about 100 pc = 10^10 sec.
+   *--------------------------------------------------------------------
+   */
+  REAL8 r2 = 0; 	/* squared dist from SSB to center of earth, in sec^2 */
+  REAL8 dr2 = 0; 	/* time deriv of r2 */
+  REAL8 finiteDistCorr, dfiniteDistCorr; /*correction to Roemer delay due to finite dist D to source; important for D < 100pc */
+
+  if (baryinput->dInv > 1.0e-11)	/* implement if corr.  > 1 microsec */
+    {
+      for ( UINT4 j=0; j<3; j++ )
+        {
+          r2  += earth->posNow[j] * earth->posNow[j];
+          dr2 += 2.0 * earth->posNow[j] * earth->velNow[j];
+        }
+      finiteDistCorr  = - 0.5 * ( r2 - roemer * roemer ) * baryinput->dInv;
+      dfiniteDistCorr = - ( 0.5 * dr2 - roemer * droemer ) * baryinput->dInv;
+    }
+  else
+    {
+      finiteDistCorr = 0;
+      dfiniteDistCorr = 0;
+    }
+
+  /* -----------------------------------------------------------------------
+   * Now adding it all up.
+   * emit.te is pulse emission time in TDB coords
+   * (up to a constant roughly equal to ligh travel time from source to SSB).
+   * emit->deltaT = emit.te - tgps.
+   * -----------------------------------------------------------------------
+   */
+  emit->deltaT = roemer + erot + earth->einstein - shapiro + finiteDistCorr;
+
+  emit->tDot = 1.0 + droemer + derot + earth->deinstein - dshapiro + dfiniteDistCorr;
+
+  INT4 deltaTint = floor ( emit->deltaT );
+
+  if ( ( 1e-9 * tgps[1] + emit->deltaT - deltaTint ) >= 1.e0 )
+    {
+      emit->te.gpsSeconds     = baryinput->tgps.gpsSeconds + deltaTint + 1;
+      emit->te.gpsNanoSeconds = floor ( 1e9 * ( tgps[1] * 1e-9 + emit->deltaT - deltaTint - 1.0 ) );
+    }
+  else
+    {
+      emit->te.gpsSeconds     = baryinput->tgps.gpsSeconds + deltaTint;
+      emit->te.gpsNanoSeconds = floor ( 1e9 * ( tgps[1] * 1e-9 + emit->deltaT - deltaTint ) );
+    }
+
+  for ( UINT4 j=0; j<3; j++)
+    {
+      emit->rDetector[j] = earth->posNow[j];
+      emit->vDetector[j] = earth->velNow[j];
+    }
+
+  /* Now adding Earth's rotation to rDetector and
+     vDetector, but NOT yet including effects of
+     lunisolar prec. or nutation (though DO use gast instead of gmst)
+     For next 10 years, will give rDetector to 10 microsec and
+     v/c to 10^-9
+  */
+  emit->rDetector[0] += rd_cosLat * cosGastLong;
+  emit->vDetector[0] += - OMEGA * rd_cosLat * sinGastLong;
+  emit->rDetector[1] += rd_cosLat * sinGastLong;
+  emit->vDetector[1] += OMEGA * rd_cosLat * cosGastLong;
+  emit->rDetector[2] += rd_sinLat;
+  /*no change to emit->vDetector[2] = component along spin axis, if ignore prec. and nutation */
+
+  return XLAL_SUCCESS;
+
+} /* XLALBarycenterOpt() */
+
 
 
 /* ==================== deprecated LAL interface (only wrappers to XLAL-fcts now) ==================== */

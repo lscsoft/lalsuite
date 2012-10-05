@@ -431,7 +431,7 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
    vars.c = Rpr;
    vars.useSSE = params->useSSE;
    REAL8 sigma = 0.0;
-   REAL8 accuracy = 1.0e-10;   //(1e-5) old value
+   REAL8 accuracy = 1.0e-11;   //(1e-5) old value
    
    //sort the weights here so we don't have to do it later (qsort)
    sort_double_ascend(newweights);
@@ -451,13 +451,13 @@ REAL8 probR(templateStruct *templatestruct, REAL4Vector *ffplanenoise, REAL4Vect
       REAL8 probslope=0.0, tempprob, c1;
       REAL8 lowerend = 0.0;
       REAL8 upperend = Rpr;
-      REAL8Vector *probvals = XLALCreateREAL8Vector(10);
-      REAL8Vector *cvals = XLALCreateREAL8Vector(10);
+      REAL8Vector *probvals = XLALCreateREAL8Vector(20);
+      REAL8Vector *cvals = XLALCreateREAL8Vector(20);
       if (probvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 10);
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 20);
          XLAL_ERROR_REAL8(XLAL_EFUNC);
       } else if (cvals==NULL) {
-         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 10);
+         fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, 20);
          XLAL_ERROR_REAL8(XLAL_EFUNC);
       }
       

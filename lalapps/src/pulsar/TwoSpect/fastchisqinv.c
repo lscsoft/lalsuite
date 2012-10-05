@@ -1142,7 +1142,7 @@ REAL8 gamma_inc_F_CF(REAL8 a, REAL8 x)
 }
 REAL8 gamma_inc_Q_large_x(REAL8 a, REAL8 x)
 {
-   const INT4 nmax = 50000;
+   const INT4 nmax = 100000;
    
    REAL8 D = gamma_inc_D(a, x);
    

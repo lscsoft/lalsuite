@@ -39,3 +39,4 @@ test/TestEOBNRv2
 test/TestSpinTaylorT4Dynamics
 test/eobHPlusCross.dat
 test/simulation.dat
+python/__init__.py

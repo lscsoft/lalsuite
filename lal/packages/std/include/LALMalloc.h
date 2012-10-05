@@ -90,10 +90,11 @@ void LALFree( void *p );
 void *LALCallocLong( size_t m, size_t n, const char *file, int line );
 void *LALReallocShort( void *p, size_t n );
 void *LALReallocLong( void *p, size_t n, const char *file, int line );
-void LALCheckMemoryLeaks( void );
 /*@}*/
 
 #endif /* NDEBUG || LAL_NDEBUG */
+
+void (LALCheckMemoryLeaks)( void );
 
 #ifdef  __cplusplus
 }

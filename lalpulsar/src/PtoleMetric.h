@@ -131,7 +131,14 @@ LALPulsarMetric( LALStatus      *status,
 
 int XLALFindMetricDim ( const REAL8Vector *metric );
 
-gsl_matrix *XLALSpindownMetric(UINT4, REAL8);
+/**
+ * Frequency and frequency derivative components of the metric, suitable for a directed
+ * search with only one fixed sky position. The units are those expected by ComputeFstat.
+ */
+int XLALSpindownMetric(
+  gsl_matrix* metric,	/**< [in] Matrix containing the metric */
+  double Tspan		/**< [in] Time span of the data set */
+  );
 
 /** \endcond */
 

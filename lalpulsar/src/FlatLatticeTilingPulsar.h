@@ -39,7 +39,6 @@ extern "C" {
 /**
  * Functions
  */
-int XLALSetFlatLatticeTilingSpindownFstatMetric(FlatLatticeTiling*, double, double);
 int XLALSetFlatLatticeTilingAgeBrakingIndexBounds(FlatLatticeTiling*, double, double, double, double, double);
 
 #ifdef __cplusplus

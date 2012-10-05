@@ -63,7 +63,7 @@ REAL8 twospect_cdf_chisq_P(REAL8 x, REAL8 nu)
    REAL8 val = cdf_gamma_P(x, 0.5*nu, 2.0);
    if (XLAL_IS_REAL8_FAIL_NAN(val)) {
       fprintf(stderr,"%s: cdf_gamma_P(%f, %f, 2.0) failed.\n", __func__, x, 0.5*nu);
-      XLAL_ERROR_REAL8(XLAL_EFAULT);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    return val;
 }
@@ -79,7 +79,7 @@ REAL8 matlab_cdf_chisq_P(REAL8 x, REAL8 nu)
    REAL8 val = cdf_gamma_P_usingmatlab(x, 0.5*nu, 2.0);
    if (XLAL_IS_REAL8_FAIL_NAN(val)) {
       fprintf(stderr,"%s: cdf_gamma_P_usingmatlab(%f, %f, 2.0) failed.\n", __func__, x, 0.5*nu);
-      XLAL_ERROR_REAL8(XLAL_EFAULT);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    return val;
    
@@ -111,17 +111,17 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    counter--;
    if (counter<0) return fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
@@ -138,6 +138,10 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
          counter++;
          P = gsl_ran_poisson_pdf(counter, halfdelta);
          C = gsl_cdf_chisq_P(x, dof+2.0*counter);
+         if (XLAL_IS_REAL8_FAIL_NAN(C)) {
+            fprintf(stderr, "%s: gsl_cdf_chisq_P(%f, %f) failed.\n", __func__, x, dof+2.0*counter);
+            XLAL_ERROR_REAL4(XLAL_EFUNC);
+         }
          dp = P*C;
          pk += dp;
          if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
@@ -153,6 +157,11 @@ REAL8 ncx2cdf(REAL8 x, REAL8 dof, REAL8 delta)
 void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
 {
    
+   if (halfdelta==0.0) {
+      fprintf(stderr, "%s: halfdelta=0.0\n", __func__);
+      XLAL_ERROR_VOID(XLAL_EINVAL);
+   }
+
    REAL8 Pint = P, Cint = C, Eint = E;
    INT8 counterint = counter;
    INT8 j = 0;
@@ -198,6 +207,11 @@ void sumseries(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REA
 //Evan's sumseries function based on matlab's version above
 void sumseries_eg(REAL8 *computedprob, REAL8 P, REAL8 C, REAL8 E, INT8 counter, REAL8 x, REAL8 dof, REAL8 halfdelta, REAL8 err, INT4 countdown)
 {
+
+   if (halfdelta==0.0) {
+      fprintf(stderr, "%s: halfdelta=0.0\n", __func__);
+      XLAL_ERROR_VOID(XLAL_EINVAL);
+   }
    
    REAL8 Pint = P, Cint = C, Eint = E;
    INT8 counterint = counter;
@@ -269,17 +283,17 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
    }
    counter--;
    if (counter<0) return (REAL4)fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
    }
    
@@ -289,6 +303,10 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
    if (fromzero==1) {
       counter = 0;
       REAL8 pk = gsl_ran_poisson_pdf(0, halfdelta)*twospect_cdf_chisq_P(x, dof);
+      if (xlalErrno!=0) {
+         fprintf(stderr, "%s: twospect_cdf_chisq_P(%f, %f) failed.\n", __func__, x, dof);
+         XLAL_ERROR_REAL4(XLAL_EFUNC);
+      }
       REAL8 dp = 0.0;
       INT4 ok = 0;
       if ((REAL8)counter<halfdelta) ok = 1;
@@ -296,6 +314,10 @@ REAL4 ncx2cdf_float(REAL4 x, REAL4 dof, REAL4 delta)
          counter++;
          P = gsl_ran_poisson_pdf(counter, halfdelta);
          C = twospect_cdf_chisq_P(x, dof+2.0*counter);
+         if (XLAL_IS_REAL8_FAIL_NAN(C)) {
+            fprintf(stderr, "%s: twospect_cdf_chisq_P(%f, %f) failed.\n", __func__, x, dof+2.0*counter);
+            XLAL_ERROR_REAL4(XLAL_EFUNC);
+         }
          dp = P*C;
          pk += dp;
          if (!(ok==1 && (REAL8)counter<halfdelta && dp>=err*pk)) ok = 0;
@@ -333,17 +355,17 @@ REAL8 ncx2cdf_withouttinyprob(REAL8 x, REAL8 dof, REAL8 delta)
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    counter--;
    if (counter<0) return fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
@@ -375,22 +397,20 @@ REAL4 ncx2cdf_float_withouttinyprob(REAL4 x, REAL4 dof, REAL4 delta)
       XLAL_ERROR_REAL4(XLAL_EFUNC);
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
-   
-   //sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
-   /* if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
-      XLAL_ERROR_REAL4(XLAL_EFUNC);
-   } */
+
    sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
    counter--;
    if (counter<0) return (REAL4)fmin(prob, 1.0);
-   
-   //sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
-   /* if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
-      XLAL_ERROR_REAL4(XLAL_EFUNC);
-   } */
+
    sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   if (xlalErrno!=0) {
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
    
    return (REAL4)fmin(prob, 1.0);
    
@@ -422,17 +442,17 @@ REAL8 ncx2cdf_withouttinyprob_withmatlabchi2cdf(REAL8 x, REAL8 dof, REAL8 delta)
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    counter--;
    if (counter<0) return fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    
@@ -465,17 +485,17 @@ REAL4 ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(REAL4 x, REAL4 dof, REAL4 
    }
    REAL8 E = exp((dof*0.5+counter-1.0)*log(x*0.5) - x*0.5 - lgamma(dof*0.5+counter));
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 0);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 0) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
    }
    counter--;
    if (counter<0) return (REAL4)fmin(prob, 1.0);
    
-   sumseries(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
+   sumseries_eg(&prob, P, C, E, counter, x, dof, halfdelta, err, 1);
    if (xlalErrno!=0) {
-      fprintf(stderr,"%s: sumseries(%f,%f,%f,%f,%f,%f,%f,%f,%f,1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
+      fprintf(stderr,"%s: sumseries_eg(%f, %f, %f, %f, %f, %f, %f, %f, %f, 1) failed.\n", __func__, prob, P, C, E, floor(halfdelta), x, dof, halfdelta, err);
       XLAL_ERROR_REAL4(XLAL_EFUNC);
    }
    
@@ -646,18 +666,34 @@ REAL8 ncx2inv(REAL8 p, REAL8 dof, REAL8 delta)
    REAL8 xk = exp(norminv(pk, mu, sigma));
    REAL8 h = 0.0;
    REAL8 F = ncx2cdf(xk, dof, delta);
+   if (XLAL_IS_REAL8_FAIL_NAN(F)) {
+      fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+      XLAL_ERROR_REAL8(XLAL_EFUNC);
+   }
    while (count < count_limit) {
       count++;
       REAL8 f = ncx2pdf(xk, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(f)) {
+         fprintf(stderr, "%s: ncx2pdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
+      }
       h = (F-pk)/f;
       REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
       REAL8 newF = ncx2cdf(xnew, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+         fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+         XLAL_ERROR_REAL8(XLAL_EFUNC);
+      }
       INT4 worse = 0;
       while (worse==0) {
          if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
          else {
             xnew = 0.5*(xnew + xk);
             newF = ncx2cdf(xnew, dof, delta);
+            if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+               fprintf(stderr, "%s: ncx2cdf(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+               XLAL_ERROR_REAL8(XLAL_EFUNC);
+            }
          }
       }
       h = xk-xnew;
@@ -693,19 +729,35 @@ REAL4 ncx2inv_float(REAL8 p, REAL8 dof, REAL8 delta)
    REAL8 sigma = -2.0*log(mn) + temp;
    REAL8 xk = exp(norminv(pk, mu, sigma));
    REAL8 h = 0.0;
-   REAL8 F = ncx2cdf_float_withouttinyprob(xk, dof, delta);
+   REAL8 F = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(xk, dof, delta);
+   if (XLAL_IS_REAL8_FAIL_NAN(F)) {
+      fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+      XLAL_ERROR_REAL4(XLAL_EFUNC);
+   }
    while (count < count_limit) {
       count++;
       REAL8 f = ncx2pdf(xk, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(f)) {
+         fprintf(stderr, "%s: ncx2pdf(%f, %f, %f) failed.\n", __func__, xk, dof, delta);
+         XLAL_ERROR_REAL4(XLAL_EFUNC);
+      }
       h = (F-pk)/f;
       REAL8 xnew = fmax(0.2*xk, fmin(5.0*xk, xk-h));
-      REAL8 newF = ncx2cdf_float_withouttinyprob(xnew, dof, delta);
+      REAL8 newF = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(xnew, dof, delta);
+      if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+         fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+         XLAL_ERROR_REAL4(XLAL_EFUNC);
+      }
       INT4 worse = 0;
       while (worse==0) {
          if (!(fabs(newF-pk)>fabs(F-pk)*(1.0+crit) && fabs(xk-xnew)>crit*xk)) worse = 1;
          else {
             xnew = 0.5*(xnew + xk);
-            newF = ncx2cdf_float_withouttinyprob(xnew, dof, delta);
+            newF = ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(xnew, dof, delta);
+            if (XLAL_IS_REAL8_FAIL_NAN(newF)) {
+               fprintf(stderr, "%s: ncx2cdf_float_withouttinyprob_withmatlabchi2cdf(%f, %f, %f) failed.\n", __func__, xnew, dof, delta);
+               XLAL_ERROR_REAL4(XLAL_EFUNC);
+            }
          }
       }
       h = xk-xnew;

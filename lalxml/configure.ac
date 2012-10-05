@@ -13,6 +13,8 @@ AC_CONFIG_FILES([ \
   include/Makefile \
   include/lal/Makefile \
   src/Makefile \
+  python/Makefile \
+  python/__init__.py \
   swig/Makefile \
   swig/octave/Makefile \
   swig/python/Makefile \
@@ -135,14 +137,12 @@ LALSUITE_USE_SWIG([XLAL LAL])
 LALSUITE_SWIG_DEPENDS([lal],[true])
 
 # add gcc specific flags
-if test "$GCC" = yes; then
-  CFLAGS="$CFLAGS $lal_gcc_flags"
+LALSUITE_ADD_GCC_FLAGS
 
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+# force all python modules into the exec dir to prevent mixed C and
+# pure-python library code from being split across lib and lib64 on
+# RedHat-derived systems.
+AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
 # output
 LAL_HEADER_LINK=${ac_aux_dir}/header-link.mk

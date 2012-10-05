@@ -666,7 +666,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceVariables myCurrentParams,*oldCurrentParams=runState->currentParams;
   memset(&myAlgParams,0,sizeof(LALInferenceVariables));
   memset(&myCurrentParams,0,sizeof(LALInferenceVariables));
-  LALInferenceCopyVariables(runState->currentParams,&myCurrentParams);
   LALInferenceCopyVariables(oldAlgParams,&myAlgParams);
   LALInferenceRemoveVariable(&myAlgParams,"outputarray");
   LALInferenceRemoveVariable(&myAlgParams,"N_outputarray");
@@ -698,7 +697,9 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   REAL8 accept=0.0;
   do{ /* Pick a random sample that isn't trapped in some corner*/
 	UINT4 idx=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
-	runState->currentParams=livePoints[idx];
+	/* Copy the variable to avoid over-writing one of the live points */
+	LALInferenceCopyVariables(livePoints[idx],&myCurrentParams);
+	runState->currentParams=&myCurrentParams;
     i=0;
   	do {
         evolve(runState);

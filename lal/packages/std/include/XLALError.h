@@ -569,7 +569,9 @@ void XLALError(
 /* Helper macro for internal use only */
 #define XLAL_ERROR_VAL_(val, errnum, fmt, ...) \
 	do { \
-		if (fmt) XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
+		if (fmt) { \
+			XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
+		} \
 		XLALError(__func__, __FILE__, __LINE__, errnum); \
 		return val; \
 	} while (0)
@@ -649,11 +651,19 @@ void XLALError(
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK_VAL(val, assertion, ...) \
+#define XLAL_CHECK_VAL(val, assertion, ...) XLAL_CHECK_VAL_(val, assertion, __VA_ARGS__, NULL, NULL)
+
+/* Helper macro for internal use only */
+#define XLAL_CHECK_VAL_(val, assertion, errnum, fmt, ...) \
 	do { \
 		if (!(assertion)) { \
-			XLAL_PRINT_ERROR("Check ("#assertion") failed"); \
-			XLAL_ERROR_VAL(val, __VA_ARGS__); \
+			if (fmt) { \
+				XLAL_PRINT_ERROR(fmt, __VA_ARGS__); \
+			} else { \
+				XLAL_PRINT_ERROR("Check failed: " #assertion); \
+			} \
+			XLALError(__func__, __FILE__, __LINE__, errnum); \
+			return val; \
 		} \
 	} while (0)
 

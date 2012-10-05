@@ -74,3 +74,4 @@ test/outputsft_v1.sft
 test/outputsft_v2.sft
 test/outputsftv2_v1.sft
 test/outputsftv2_v2.sft
+python/__init__.py

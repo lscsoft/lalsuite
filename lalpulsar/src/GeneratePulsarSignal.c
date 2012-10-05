@@ -347,6 +347,12 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
     ABORT ( status, GENERATEPULSARSIGNALH_ENUMSFTS,  GENERATEPULSARSIGNALH_MSGENUMSFTS );
   }
 
+  /* check that if the user gave a window then the length should be correct */
+  if (  params->window && ( numTimesteps != params->window->data->length )  ) {
+    XLALPrintError ("LALSignalToSFTs(): failed because numTimesteps=%d differs from window->data->length=%d.\n", numTimesteps, params->window->data->length);
+    ABORT ( status, GENERATEPULSARSIGNALH_EINPUT,  GENERATEPULSARSIGNALH_MSGEINPUT );
+  }
+
   /* prepare SFT-vector for return */
   numSFTs = timestamps->length;			/* number of SFTs to produce */
   numBins = (UINT4)(numTimesteps/2) + 1;		/* number of frequency-bins per SFT */
@@ -359,7 +365,7 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 
   tPrev = tStart;	/* initialize */
   totalIndex = 0;	/* start from first timestep by default */
-  
+
   /* Assign memory to timeStretchCopy */
   if ( (timeStretchCopy = XLALCreateREAL4Vector(numTimesteps)) == NULL ) {
      XLALPrintError ("LALSignalToSFTs(): failed to XLALCreateREAL4Vector(%d).\n", numTimesteps);

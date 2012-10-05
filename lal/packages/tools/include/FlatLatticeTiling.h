@@ -45,17 +45,18 @@ extern "C" {
 /// Flat lattice tiling bound function
 ///
 typedef void (*FlatLatticeBound)(
-  double* lower,		///< [out] Lower bound on point in dimension
-  double* upper,		///< [out] Upper bound on point in dimension
+  const gsl_vector_uint* bound,	///< [in] Indices of current bounds
   const gsl_vector* point,	///< [in] Point on which to find bounds
-  const void* data		///< [in] Arbitrary data describing parameter space
+  const void* data,		///< [in] Arbitrary data describing parameter space
+  gsl_vector* lower,		///< [out] Lower bounds on point in dimension
+  gsl_vector* upper		///< [out] Upper bounds on point in dimension
   );
 
 ///
 /// Flat tiling lattice generator function
 ///
 typedef int (*FlatLatticeGenerator)(
-  size_t dimensions,		///< [in] Number of dimensions
+  const size_t dimensions,	///< [in] Number of dimensions
   gsl_matrix** generator,	///< [out] Generator matrix
   double* norm_thickness	///< [out] Normalised thickness
   );
@@ -75,7 +76,7 @@ SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
 /// Create a new flat lattice tiling state structure
 ///
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(
-  size_t dimensions		///< [in] Number of parameter space dimensions
+  const size_t dimensions	///< [in] Number of parameter space dimensions
   );
 
 ///
@@ -103,20 +104,11 @@ uint64_t XLALGetFlatLatticePointCount(
 /// Add a parameter space bound to the flat lattice tiling
 ///
 int XLALSetFlatLatticeBound(
-  FlatLatticeTiling* tiling,	///< [in] Tiling state
-  size_t dimension,		///< [in] Dimension on which bound applies
-  FlatLatticeBound func,	///< [in] Parameter space bound function
-  void* data			///< [in] Arbitrary data describing parameter space
-  );
-
-
-///
-/// Set the flat lattice tiling metric and maximum mismatch
-///
-int XLALSetFlatLatticeMetric(
-  FlatLatticeTiling* tiling,	///< [in] Tiling state
-  gsl_matrix* metric,		///< [in] Parameter space metric
-  double max_mismatch		///< [in] Maximum prescribed mismatch
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const size_t dimension,		///< [in] Dimension on which bound applies
+  const bool singular,			///< [in] Is bound composed of single points?
+  const FlatLatticeBound func,		///< [in] Parameter space bound function
+  void* data				///< [in] Arbitrary data describing parameter space
   );
 
 ///
@@ -124,7 +116,16 @@ int XLALSetFlatLatticeMetric(
 ///
 int XLALSetFlatLatticeGenerator(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
-  FlatLatticeGenerator generator	///< [in] Lattice generator function
+  const FlatLatticeGenerator generator	///< [in] Lattice generator function
+  );
+
+///
+/// Set the flat lattice tiling metric and maximum mismatch
+///
+int XLALSetFlatLatticeMetric(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const gsl_matrix* metric,		///< [in] Parameter space metric
+  const double max_mismatch		///< [in] Maximum prescribed mismatch
   );
 
 ///
@@ -140,7 +141,7 @@ gsl_vector* XLALNextFlatLatticePoint(
 size_t XLALNextFlatLatticePoints(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
   gsl_matrix* points,			///< [in] Flat lattice tiling points
-  bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
+  const bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
   );
 
 ///
@@ -166,13 +167,11 @@ int XLALGenerateRandomFlatLatticePoints(
   gsl_matrix* randpoints		///< [in] Random points (column-wise)
   );
 
-int XLALRandomPointInFlatLatticeParamSpace(FlatLatticeTiling*, RandomParams*, gsl_vector*, gsl_vector*, double*);
-
 ///
 /// Calculate the generator matrix for a cubic (\f$Z_n\f$) lattice
 ///
 int XLALCubicLatticeGenerator(
-  size_t dimensions,		///< [in] Number of dimensions
+  const size_t dimensions,	///< [in] Number of dimensions
   gsl_matrix** generator,	///< [out] Generator matrix
   double* norm_thickness	///< [out] Normalised thickness
   );
@@ -181,7 +180,7 @@ int XLALCubicLatticeGenerator(
 /// Calculate the generator matrix for a \f$A_n^*\f$ lattice
 ///
 int XLALAnstarLatticeGenerator(
-  size_t dimensions,		///< [in] Number of dimensions
+  const size_t dimensions,	///< [in] Number of dimensions
   gsl_matrix** generator,	///< [out] Generator matrix
   double* norm_thickness	///< [out] Normalised thickness
   );
@@ -191,9 +190,41 @@ int XLALAnstarLatticeGenerator(
 ///
 int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
-  size_t dimension,		///< [in] Dimension on which bound applies
-  double lower,			///< [in] Lower bound on dimension
-  double upper			///< [in] Upper bound on dimension
+  const size_t dimension,	///< [in] Dimension on which bound applies
+  const double lower,		///< [in] Lower bound on dimension
+  const double upper		///< [in] Upper bound on dimension
+  );
+
+///
+/// Find the bounding box of the mismatch ellipses of a metric
+///
+gsl_vector* XLALMetricEllipseBoundingBox(
+  gsl_matrix* metric,		///< [in] Metric to bound
+  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
+  );
+
+///
+/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
+///
+int XLALOrthonormaliseWRTMetric(
+  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
+  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
+  );
+
+///
+/// Transform a lattice generator to a square lower triangular form
+///
+gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
+  gsl_matrix* generator		///< [in] Generator matrix of lattice
+  );
+
+///
+/// Normalise a lattice generator matrix to have a specified covering radius
+///
+int XLALNormaliseLatticeGenerator(
+  gsl_matrix* generator,	///< [in] Generator matrix of lattice
+  const double norm_thickness,	///< [in] Normalised thickness of lattice
+  const double covering_radius	///< [in] Desired covering radius
   );
 
 ///

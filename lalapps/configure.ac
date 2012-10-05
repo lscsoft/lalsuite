@@ -421,19 +421,7 @@ AC_CHECK_FUNCS([setenv])
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
 
 # add gcc specific flags
-if test "$GCC" = yes; then
-  # don't use gcc flags when cuda is enabled
-  if test "${cuda}" != "true"; then
-    CFLAGS="$CFLAGS $lal_gcc_flags"
-  else
-    AC_MSG_NOTICE([CUDA support is enabled, disabling GCC flags])
-  fi
-
-  # add mac os x specific flags
-  if test "x$MACOSX_VERSION" != "x"; then
-    CFLAGS="$CFLAGS -mmacosx-version-min=10.4"
-  fi
-fi
+LALSUITE_ADD_GCC_FLAGS
 
 # define if CUDA is enabled
 if test "${cuda}" = "true"; then

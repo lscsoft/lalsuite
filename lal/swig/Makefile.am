@@ -42,11 +42,12 @@ EXTRA_DIST = $(swig_generate_iface)
 
 # clean files
 CLEANFILES = \
-	$(swig_iface_preproc_deps) \
 	$(swig_iface_headers) \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
 	$(swig_iface)
+DISTCLEANFILES = \
+	$(swig_iface_preproc_deps)
 
 if SWIG_BUILD
 
@@ -74,7 +75,7 @@ swig-iface-links :
 	done
 
 # rebuild SWIG preprocessing interface dependencies file
-$(swig_iface_preproc_deps) : $(swig_iface_headers)
+$(swig_iface_preproc_deps) :
 	@echo '#dummy' > $@
 	@touch $(srcdir)/Makefile.in
 

@@ -185,3 +185,4 @@ packages/utilities/test/ZCoarseGrainFrequencySeriesTest
 packages/vectorops/test/VectorIndexRangeTest
 packages/vectorops/test/VectorOpsTest
 packages/window/test/WindowTest
+python/__init__.py

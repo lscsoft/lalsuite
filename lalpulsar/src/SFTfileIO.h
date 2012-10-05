@@ -275,13 +275,13 @@ void LALSFTdataFind (LALStatus *, SFTCatalog **catalog, const CHAR *file_pattern
 void LALLoadSFTs ( LALStatus *, SFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 void LALLoadMultiSFTs ( LALStatus *status, MultiSFTVector **sfts, const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
-int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *comment );
-int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *comment );
-int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
-int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *comment);
+int  XLALWriteSFT2fp (const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
+int  XLALWriteSFT2file (const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+int  XLALWriteSFTVector2Dir (const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
+int  XLALWriteSFTVector2File(const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment);
 
-void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *comment );
-void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *comment, const CHAR *description);
+void LALWriteSFT2file (LALStatus *, const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+void LALWriteSFTVector2Dir (LALStatus *, const SFTVector *sftVect, const CHAR *basename, const CHAR *SFTcomment, const CHAR *description);
 
 void LALWrite_v2SFT_to_v1file (LALStatus *, const SFTtype *sft, const CHAR *fname);
 void LALCheckSFTs ( LALStatus *, INT4 *check_result, const CHAR *file_pattern, SFTConstraints *constraints );
