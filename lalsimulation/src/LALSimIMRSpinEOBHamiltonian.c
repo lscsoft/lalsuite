@@ -107,7 +107,7 @@ static double GSLSpinAlignedHamiltonianWrapper( double x, void *params );
  * as follows:
  * 
  * x - the separation vector r expressed in Cartesian co-ordinates
- * p - the momentum vector
+ * p - the momentum vector (with the radial component tortoise pr*)
  * sigmaKerr - spin of the effective Kerr background (a combination of the individual spin vectors)
  * sigmaStar - spin of the effective particle (a different combination of the individual spins).
  * coeffs - coefficients which crop up in the Hamiltonian. These can be calculated using the
@@ -119,7 +119,7 @@ static double GSLSpinAlignedHamiltonianWrapper( double x, void *params );
 static REAL8 XLALSimIMRSpinEOBHamiltonian( 
                const REAL8    eta,                  /**<< Symmetric mass ratio */
                REAL8Vector    * restrict x,         /**<< Position vector */
-               REAL8Vector    * restrict p,	    /**<< Momentum vector */
+               REAL8Vector    * restrict p,	    /**<< Momentum vector (tortoise radial component pr*) */
                REAL8Vector    * restrict sigmaKerr, /**<< Spin vector sigma_kerr */
                REAL8Vector    * restrict sigmaStar, /**<< Spin vector sigma_star */
                INT4                      tortoise,  /**<< flag to state whether the momentum is the tortoise co-ord */
@@ -254,7 +254,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   //printf( "csi(miami) = %.16e\n", csi );
 
   prT = p->data[0]*nx + p->data[1]*ny + p->data[2]*nz;
-
+  /* p->data is BL momentum vector; tmpP is tortoise momentum vector */ 
   tmpP[0] = p->data[0] - nx * prT * (csi - 1.)/csi;
   tmpP[1] = p->data[1] - ny * prT * (csi - 1.)/csi;
   tmpP[2] = p->data[2] - nz * prT * (csi - 1.)/csi;
@@ -273,6 +273,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   //printf( "D = %.16e, ww = %.16e, rho = %.16e, Lambda = %.16e, xi = %.16e\npr = %.16e, pf = %.16e, deltaR = %.16e, deltaT = %.16e\n", 
       //D, ww, sqrt(rho2), Lambda, sqrt(xi2), pr, pf, deltaR, deltaT );
   /* Eqs. 5.36 - 5.46 of BB1 */
+  /* Note that the tortoise prT appears only in the quartic term, explained in Eqs. 14 and 15 of Tarrachini et al. */
   Hns = sqrt(1. + prT*prT*prT*prT*qq*u2 + ptheta2/rho2 + pf*pf*rho2/(Lambda*xi2) + pr*pr*deltaR/rho2)
       / sqrt(Lambda/(rho2*deltaT)) + pf*ww/Lambda;
   
@@ -448,8 +449,8 @@ static int XLALSimIMRCalculateSpinEOBHCoeffs(
   /* Eqs. 5.77 - 5.81 of BB1 */
   coeffs->k0 = k0 = KK*(m1PlusEtaKK - 1.);
   coeffs->k1 = k1 = - 2.*(k0 + KK)*m1PlusEtaKK;
-  coeffs->k2 = k2 = (k1 * (4. + k1 - 4.*eta*KK)) / 2. - a*a*k0*m1PlusEtaKK*m1PlusEtaKK;
-  coeffs->k3 = k3 = -k1*k1*k1/3. + k1*k2 + k1*k1*m1PlusEtaKK - 2.*(1. + k2 - eta*KK)*m1PlusEtaKK - a*a*k1*m1PlusEtaKK*m1PlusEtaKK;
+  coeffs->k2 = k2 = (k1 * (k1 - 4.*m1PlusEtaKK)) / 2. - a*a*k0*m1PlusEtaKK*m1PlusEtaKK;
+  coeffs->k3 = k3 = -k1*k1*k1/3. + k1*k2 + k1*k1*m1PlusEtaKK - 2.*(k2 - m1PlusEtaKK)*m1PlusEtaKK - a*a*k1*m1PlusEtaKK*m1PlusEtaKK;
   coeffs->k4 = k4 = (24.*k1*k1*k1*k1 - 96.*k1*k1*k2 + 48.*k2*k2 - 64.*k1*k1*k1*m1PlusEtaKK
       + 48.*a*a*(k1*k1 - 2.*k2)*m1PlusEtaKK*m1PlusEtaKK +
       96.*k1*(k3 + 2.*k2*m1PlusEtaKK) - m1PlusEtaKK*(192.*k3 + m1PlusEtaKK*(-3008. + 123.*LAL_PI*LAL_PI)))/96.;
@@ -536,6 +537,9 @@ static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
 /**
  * Function to calculate the value of omega for the spin-aligned EOB waveform.
  * Can NOT be used in precessing cases. This omega is defined as $\dot{y}/r$ by setting $y=0$.
+ * The function calculates omega = v/r, by first converting (r,phi,pr,pphi) to Cartesian coordinates 
+ * in which rVec={r,0,0} and pVec={0,pphi/r,0}, i.e. the effective-test-particle is positioned at x=r, 
+ * and its velocity along y-axis. Then it computes omega, which is now given by dydt/r = (dH/dp_y)/r. 
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBCalcOmega(
@@ -593,6 +597,7 @@ XLALSimIMRSpinAlignedEOBCalcOmega(
 /**
  * Function to calculate the non-Keplerian coefficient for the spin-aligned EOB model.
  * radius r times the cuberoot of the returned number is r_\Omega defined in Eq. A2.
+ * i.e. the function returns (r_{\Omega} / r)^3.
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
