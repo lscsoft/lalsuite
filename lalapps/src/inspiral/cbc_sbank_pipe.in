@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@PYTHONPROG@
 """
 This program makes a dag to generate a stochastic template bank.
 """

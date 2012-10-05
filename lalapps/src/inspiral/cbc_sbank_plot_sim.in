@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@PYTHONPROG@
 from __future__ import division
 from math import ceil, log10
 import sys

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!@PYTHONPROG@
 
 from optparse import OptionParser
 import sys
