@@ -61,6 +61,7 @@ by many LAL routines:
 
 /* Redefine the restict keyword when compiling with C++ */
 #ifdef  __cplusplus
+#undef restrict
 #ifdef __GNUC__
 #define restrict __restrict__
 #else
