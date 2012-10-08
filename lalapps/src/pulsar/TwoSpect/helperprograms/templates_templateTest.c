@@ -1154,6 +1154,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          for (jj=4; jj<(INT4)psd->length; jj++) {
             sum += (REAL8)psd->data[jj];     //sum up the total weight
 
+            //fprintf(TEMPLATEOUT, "%d %d %g\n", ii, jj, psd->data[jj]);     //remove this
+
             //Sort the weights, insertion sort technique
             //if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
             if (psd->data[jj] > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, psd->data[jj], ii*psd->length+jj, ii, jj);

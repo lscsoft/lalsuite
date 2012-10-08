@@ -713,7 +713,7 @@ int main(int argc, char *argv[])
             XLAL_ERROR(XLAL_EFUNC);
          }
       }
-      REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25);
+      REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
       loadCandidateData(&(exactCandidates2->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
       
@@ -924,12 +924,12 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
    //If an SFT doesn't exit, fill the TF pixels of the SFT with zeros
    INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);
    INT4 sftlength;
-   if (sfts->length == 0) sftlength = (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
+   if (sfts->length == 0) sftlength = (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1);
    else {
       sftlength = sfts->data->data->length;
       //Check the length is what we expect
-      if (sftlength!=(INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1)) {
-         fprintf(stderr, "%s: sftlength (%d) is not matching expected length (%d).\n", __func__, sftlength, (INT4)(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1));
+      if (sftlength!=(INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1)) {
+         fprintf(stderr, "%s: sftlength (%d) is not matching expected length (%d).\n", __func__, sftlength, (INT4)round(maxfbin*input->Tcoh - minfbin*input->Tcoh + 1));
          XLAL_ERROR_NULL(XLAL_EFPINEXCT);
       }
    }
