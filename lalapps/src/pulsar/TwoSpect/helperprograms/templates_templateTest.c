@@ -1039,13 +1039,13 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    numffts = (INT4)sftexist->length;   //Number of FFTs
    
    REAL4Vector *psd1 = XLALCreateREAL4Vector(numfbins*numffts);
-   INT4Vector *freqbins = XLALCreateINT4Vector(numfbins);
+   REAL8Vector *freqbins = XLALCreateREAL8Vector(numfbins);
    REAL8Vector *bindiffs = XLALCreateREAL8Vector(numfbins);
    if (psd1==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, numfbins*numffts);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (freqbins==NULL) {
-      fprintf(stderr,"%s: XLALCreateINT4Vector(%d) failed.\n", __func__, numfbins);
+      fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfbins);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    } else if (bindiffs==NULL) {
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfbins);
@@ -1154,6 +1154,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
          for (jj=4; jj<(INT4)psd->length; jj++) {
             sum += (REAL8)psd->data[jj];     //sum up the total weight
 
+            //fprintf(TEMPLATEOUT, "%d %d %g\n", ii, jj, psd->data[jj]);     //remove this
+
             //Sort the weights, insertion sort technique
             //if (correctedValue > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, correctedValue, ii*psd->length+jj, ii, jj);
             if (psd->data[jj] > output->templatedata->data[output->templatedata->length-1]) insertionSort_template(output, psd->data[jj], ii*psd->length+jj, ii, jj);
@@ -1187,7 +1189,8 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    
    //Destroy stuff
    XLALDestroyREAL4Vector(psd1);
-   XLALDestroyINT4Vector(freqbins);
+   XLALDestroyREAL8Vector(freqbins);
+   XLALDestroyREAL8Vector(bindiffs);
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(psd);
