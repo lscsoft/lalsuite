@@ -55,6 +55,7 @@
 /* 01/14/07 gam; Add -i --ifo option to specify the ifo independent of the channel name which can begin with H0, L0, or G0. */
 /* 06/26/07 gam; Write all command line arguments to commentField of version 2 SFTs, based on /lalapps/src/calibration/ComputeStrainDriver.c */
 /* 06/26/07 gam; Use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values, based on sftlib/SFTvalidate.c */
+/* 10/05/12 gam; Add to version 2 normalization one over the root mean square of the window function (defined here as winFncRMS) as per RedMine LALSuite CW Bug #560*/
 
 #include <config.h>
 #if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
@@ -159,6 +160,8 @@ struct headertag {
 /* GLOBAL VARIABLES */
 REAL8 FMIN = 48.0; /* default start frequency */
 REAL8 DF = 2000.0; /* default band */
+
+REAL8 winFncRMS = 1.0; /* 10/05/12 gam; global variable with the RMS of the window function; default value is 1.0 */
 
 static LALStatus status;
 INT4 lalDebugLevel=0;        /* 11/02/05 gam; changed from 3 to 0. */
@@ -1460,8 +1463,13 @@ int WindowData(struct CommandLineArgsTag CLA)
 {
   REAL8 r = 0.001;
   INT4 k, N, kl, kh;
+  /* 10/05/12 gam */
+  REAL8 win;
   /* This implementation of a Tukey window is describes 
      in the Matlab tukey window documentation */
+
+  /* initialize the RMS of the window function */
+  winFncRMS = 0.0;
 
   /* 11/19/05 gam */
   if(CLA.useSingle) {
@@ -1470,11 +1478,17 @@ int WindowData(struct CommandLineArgsTag CLA)
     kh=N-r/2*(N-1)+1;
     for(k = 1; k < kl; k++) 
     {
-      dataSingle.data->data[k-1]=dataSingle.data->data[k-1]*0.5*( (REAL4)( 1.0 + cos(LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ) );
+      /* dataSingle.data->data[k-1]=dataSingle.data->data[k-1]*0.5*( (REAL4)( 1.0 + cos(LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ) ); */
+      win = 0.5*( 1.0 + cos(LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
+      dataSingle.data->data[k-1] *= ((REAL4) win);
+      winFncRMS += win*win;
     }
     for(k = kh; k <= N; k++) 
     {
-      dataSingle.data->data[k-1]=dataSingle.data->data[k-1]*0.5*( (REAL4)( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ) );
+      /*dataSingle.data->data[k-1]=dataSingle.data->data[k-1]*0.5*( (REAL4)( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ) );*/
+      win = 0.5*( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
+      dataSingle.data->data[k-1] *= ((REAL4) win);
+      winFncRMS += win*win;
     }
 
     #if PRINTEXAMPLEDATA
@@ -1486,16 +1500,26 @@ int WindowData(struct CommandLineArgsTag CLA)
     kh=N-r/2*(N-1)+1;
     for(k = 1; k < kl; k++) 
     {
-      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1.0 + cos(LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
+      /* dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1.0 + cos(LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ); */
+      win = 0.5*( 1.0 + cos(LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
+      dataDouble.data->data[k-1] *= win;
+      winFncRMS += win*win;
     }
     for(k = kh; k <= N; k++) 
     {
-      dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
+      /* dataDouble.data->data[k-1]=dataDouble.data->data[k-1]*0.5*( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) ); */
+      win = 0.5*( 1.0 + cos(LAL_TWOPI/r - LAL_TWOPI/r*(k-1)/(N-1) - LAL_PI) );
+      dataDouble.data->data[k-1] *= win;
+      winFncRMS += win*win;
     }
     #if PRINTEXAMPLEDATA
         printf("\nExample dataDouble values after windowing data in WindowData:\n"); printExampleDataDouble();
     #endif    
   }
+
+  /* Add to sum of squares of the window function the parts of window which are equal to 1, and then find RMS value*/
+  winFncRMS += (REAL8) (kh - kl);
+  winFncRMS = sqrt( ( winFncRMS/((REAL8) N) ) );
 
   return 0;
 }
@@ -1509,10 +1533,16 @@ int WindowDataTukey2(struct CommandLineArgsTag CLA)
   INT4 WINSTART = 4096;
   INT4 WINEND = 8192;
   INT4 WINLEN = (WINEND-WINSTART);
-  INT4 i;
+  /* INT4 i; */
+  INT4 i, N;
   REAL8 win;
     
+
+  /* initialize the RMS of the window function */
+  winFncRMS = 0.0;
+
   if(CLA.useSingle) {
+        N=dataSingle.data->length;
         /* window data.  Off portion */
         for (i=0; i<WINSTART; i++) {
           dataSingle.data->data[i] = 0.0;
@@ -1523,11 +1553,13 @@ int WindowDataTukey2(struct CommandLineArgsTag CLA)
           win=((sin((i - WINSTART)*LAL_PI/(WINLEN)-LAL_PI_2)+1.0)/2.0);
           dataSingle.data->data[i] *= win;
           dataSingle.data->data[dataSingle.data->length - 1 - i]  *= win;
+          winFncRMS += 2.0*win*win;
         }
         #if PRINTEXAMPLEDATA
            printf("\nExample dataSingle values after windowing data in WindowDataTukey2:\n"); printExampleDataSingle();
         #endif
   } else {
+        N=dataDouble.data->length;
         /* window data.  Off portion */
         for (i=0; i<WINSTART; i++) {
           dataDouble.data->data[i] = 0.0;
@@ -1538,11 +1570,16 @@ int WindowDataTukey2(struct CommandLineArgsTag CLA)
           win=((sin((i - WINSTART)*LAL_PI/(WINLEN)-LAL_PI_2)+1.0)/2.0);
           dataDouble.data->data[i] *= win;
           dataDouble.data->data[dataDouble.data->length - 1 - i]  *= win;
+          winFncRMS += 2.0*win*win;
         }
         #if PRINTEXAMPLEDATA
             printf("\nExample dataDouble values after windowing data in WindowDataTukey2:\n"); printExampleDataDouble();
         #endif  
   }
+
+  /* Add to sum of squares of the window function the parts of window which are equal to 1, and then find RMS value*/
+  winFncRMS += (REAL8) (N - 2*WINEND);
+  winFncRMS = sqrt( ( winFncRMS/((REAL8) N) ) );
 
   return 0;
 }
@@ -1556,12 +1593,16 @@ int WindowDataHann(struct CommandLineArgsTag CLA)
   REAL8 win,N,Nm1;
   REAL8 real8TwoPi = 2.0*((REAL8)(LAL_PI));
 
+  /* initialize the RMS of the window function */
+  winFncRMS = 0.0;
+
   if(CLA.useSingle) {
         N = ((REAL8)dataSingle.data->length);
         Nm1 = N - 1;
         for (k=0; k<N; k++) {
           win=0.5*( 1.0 - cos(real8TwoPi*((REAL8)(k))/Nm1) );
           dataSingle.data->data[k] *= win;
+          winFncRMS += win*win;
         }
         #if PRINTEXAMPLEDATA
            printf("\nExample dataSingle values after windowing data in WindowDataHann:\n"); printExampleDataSingle();
@@ -1572,11 +1613,15 @@ int WindowDataHann(struct CommandLineArgsTag CLA)
         for (k=0; k<N; k++) {
           win=0.5*( 1.0 - cos(real8TwoPi*((REAL8)(k))/Nm1) );
           dataDouble.data->data[k] *= win;
+          winFncRMS += win*win;
         }  
         #if PRINTEXAMPLEDATA
             printf("\nExample dataDouble values after windowing data in WindowDataHann:\n"); printExampleDataDouble();
         #endif  
   }
+
+  /* Find RMS value; note that N is REAL8 in this function */
+  winFncRMS = sqrt( (winFncRMS/N) );
 
   return 0;
 }
@@ -2014,7 +2059,8 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   oneSFT->data->length=nBins;
   
   if(CLA.useSingle) {
-    singleDeltaT = ((REAL4)dataSingle.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
+    /* singleDeltaT = ((REAL4)dataSingle.deltaT); */ /* 01/05/06 gam; and normalize SFTs using this below */
+    singleDeltaT = (REAL4)(dataSingle.deltaT/winFncRMS); /* include 1 over window function RMS */
     for (k=0; k<nBins; k++)
     {
       oneSFT->data->data[k].re = singleDeltaT*fftDataSingle->data[k+firstbin].re;
@@ -2036,7 +2082,8 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
       printf("Memory use after destroying fftDataSingle in WriteVersion2SFT:\n"); printmemuse();
     #endif
   } else {
-    doubleDeltaT = ((REAL8)dataDouble.deltaT); /* 01/05/06 gam; and normalize SFTs using this below */
+    /*doubleDeltaT = ((REAL8)dataDouble.deltaT); */ /* 01/05/06 gam; and normalize SFTs using this below */
+    doubleDeltaT = (REAL8)(dataDouble.deltaT/winFncRMS); /* include 1 over window function RMS */
     for (k=0; k<nBins; k++)
     {
       oneSFT->data->data[k].re = doubleDeltaT*fftDataDouble->data[k+firstbin].re;
