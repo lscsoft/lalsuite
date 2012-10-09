@@ -708,7 +708,7 @@ Parameter arguments:\n\
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmax");
     if(ppt) mtot_max=atof(ppt->value);
-    else mtot_max=2.*(mMax-mMin);
+    else mtot_max=2.*mMax;
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
     /* Set the minimum and maximum chirp mass, using user values if specified */
