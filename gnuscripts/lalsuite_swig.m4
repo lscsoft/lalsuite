@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 22
+# serial 23
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -364,13 +364,12 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     CPPFLAGS=
     AC_LANG_POP([C++])
 
-    # determine where to install Octave module:
-    # take site .oct file directory given by octave-config,
-    # and strip off prefix; thus, if LALSuite is installed in
-    # the same directory as Octave, .oct module files will be
+    # determine where to install Octave module: take versioned site .oct file
+    # directory given by octave-config, and strip off prefix; thus, if LALSuite
+    # is installed in the same directory as Octave, .oct module files will be
     # found by Octave without having to add to OCTAVE_PATH
     AC_MSG_CHECKING([for ${OCTAVE} module installation directory])
-    octexecdir=[`${OCTAVE} -qfH --eval "disp(octave_config_info('localoctfiledir'))" | ${SED} 's|/*$||'`]
+    octexecdir=[`${OCTAVE} -qfH --eval "disp(octave_config_info('localveroctfiledir'))" | ${SED} 's|/*$||'`]
     octexecdir=[`echo ${octexecdir} | ${SED} "s|^${octave_prefix}/||"`]
     AS_IF([test "x`echo ${octexecdir} | ${SED} -n '\|^/|p'`" != x],[
       AC_MSG_ERROR([could not build relative path from "${octexecdir}"])
