@@ -503,15 +503,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   //get the expected IHS vector value (the mean value)
-   /* for (ii=0; ii<(INT4)ihsvectorsequence->vectorLength; ii++) {
-      for (jj=0; jj<(INT4)ihsvectorsequence->length; jj++) {
-         outputfar->expectedIHSVector->data[ii] += ihsvectorsequence->data[jj*tworows->vectorLength + ii];
-      }
-      outputfar->expectedIHSVector->data[ii] /= (REAL4)jj;
-      //fprintf(stderr, "%g\n", outputfar->expectedIHSVector->data[ii]);
-   } */ //TODO: commented out because we do this earlier as a test
-   
    //Finding the maximum for each IHS vector and the location
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
       if (params->useSSE) {
@@ -1337,7 +1328,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   //REAL8 noise = ihsfarstruct->expectedIHSVector->data[loc-5]*ii;
                   REAL8 totalnoise = meanNoise*noise;
                   //REAL8 sigma = calcRms(avgsinrange)*ihsfarstruct->ihsdistSigma->data[ii-2];
-                  //if (ii==2) fprintf(stderr, "%g %g\n", meanNoise, calcRms(avgsinrange));     //TODO: remove this
+                  //if (ii==2) fprintf(stderr, "%g %g\n", meanNoise, calcRms(avgsinrange));     //remove this
                   
                   //REAL8 significance = (ihsmaxima->maxima->data[locationinmaximastruct] - totalnoise)/sigma; //Not robust for low d.o.f.
                   REAL8 significance = gsl_cdf_chisq_Q(2.0*ihsmaxima->maxima->data[locationinmaximastruct], 2.0*totalnoise);
