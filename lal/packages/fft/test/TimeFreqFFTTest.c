@@ -45,6 +45,7 @@
  *
  */
 /** \cond DONT_DOXYGEN */
+#include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>

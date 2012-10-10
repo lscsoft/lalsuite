@@ -32,6 +32,16 @@
  * Monte-Carlo validation by simply running this script repeatedly.
  *
  *********************************************************************************/
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <math.h>
 #include <sys/times.h>
 
