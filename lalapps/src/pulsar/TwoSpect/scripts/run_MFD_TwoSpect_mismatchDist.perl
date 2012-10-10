@@ -210,8 +210,6 @@ sftType MFD
 IFO H1
 markBadSFTs
 FFTplanFlag 1
-ULfmin $f0
-ULfspan 0.1
 fastchisqinv
 useSSE
 outfilename logfile_${ii}_2.txt
