@@ -22,6 +22,7 @@ LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALXML
 LALSUITE_ENABLE_LALSIMULATION
+LALSUITE_ENABLE_LALDETCHAR
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALSTOCHASTIC
@@ -62,6 +63,12 @@ if test "$lalsimulation" = "true"; then
   LALSIMULATION_LIBS="${lalsuite_top_builddir}/lalsimulation/src/liblalsimulation.la"
   LALSIMULATION_CFLAGS="-I${lalsuite_top_builddir}/lalsimulation/include"
   export LALSIMULATION_LIBS LALSIMULATION_CFLAGS
+fi
+
+if test "$laldetchar" = "true"; then
+  LALDETCHAR_LIBS="${lalsuite_top_builddir}/laldetchar/src/liblaldetchar.la"
+  LALDETCHAR_CFLAGS="-I${lalsuite_top_builddir}/laldetchar/include"
+  export LALDETCHAR_LIBS LALDETCHAR_CFLAGS
 fi
 
 if test "$lalburst" = "true"; then
@@ -110,6 +117,10 @@ fi
 
 if test "$lalsimulation" = "true"; then
   AC_CONFIG_SUBDIRS([lalsimulation])
+fi
+
+if test "$laldetchar" = "true"; then
+  AC_CONFIG_SUBDIRS([laldetchar])
 fi
 
 if test "$lalburst" = "true"; then
