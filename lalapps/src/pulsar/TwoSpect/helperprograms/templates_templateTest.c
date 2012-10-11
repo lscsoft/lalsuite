@@ -1215,9 +1215,13 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numdfsteps);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   dfstepsize = (dfmax-dfmin)/(REAL8)(numdfsteps-1);
-   for (ii=0; ii<numdfsteps; ii++) trialb->data[ii] = dfmin + dfstepsize*ii;
-   
+   if (numdfsteps==1) {
+      trialb->data[0] = dfmin;
+   } else {
+      dfstepsize = (dfmax-dfmin)/(REAL8)(numdfsteps-1);
+      for (ii=0; ii<numdfsteps; ii++) trialb->data[ii] = dfmin + dfstepsize*ii;
+   }
+
    //Set up parameters of signal frequency search
    if (fminimum<params->fmin) fminimum = params->fmin;
    if (fmaximum>params->fmin+params->fspan) fmaximum = params->fmin+params->fspan;
@@ -1226,9 +1230,13 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
       fprintf(stderr,"%s: XLALCreateREAL8Vector(%d) failed.\n", __func__, numfsteps);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   fstepsize = (fmaximum-fminimum)/(REAL8)(numfsteps-1);
-   for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
-   
+   if (numfsteps==1) {
+      trialf->data[0] = fminimum;
+   } else {
+      fstepsize = (fmaximum-fminimum)/(REAL8)(numfsteps-1);
+      for (ii=0; ii<numfsteps; ii++) trialf->data[ii] = fminimum + fstepsize*ii;
+   }
+
    //Search over numperiods different periods
    trialp = XLALCreateREAL8Vector(numperiods);
    if (trialp==NULL) {
@@ -1255,7 +1263,7 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
       }
    }
    
-   FILE *TEMPLATESPACINGOUT = fopen("./templatespacingout.dat", "a");
+   FILE *TEMPLATESPACINGOUT = fopen("./templatespacingout.dat", "w");
    
    INT4 midposition = (INT4)roundf((numperiods-1)*0.5), proberrcode = 0;
    //Search over frequency
@@ -1269,10 +1277,10 @@ void bruteForceTemplateSearch(candidate *output, candidate input, REAL8 fminimum
          trialp->data[midposition] = input.period;
          for (kk=0; kk<midposition; kk++) {
             //REAL8 nnp = 0.2*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
-            REAL8 nnp = 0.2*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs;
+            REAL8 nnp = 0.1*trialp->data[midposition+kk]*trialp->data[midposition+kk]*(1+trialp->data[midposition+kk]/4.442/params->Tobs)/4.442/params->Tobs;
             trialp->data[midposition+(kk+1)] = trialp->data[midposition+kk] + nnp;
             //nnp = 0.2*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs*sqrt(3.6e-3/trialb->data[jj]);
-            nnp = 0.2*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/tcohfactor/params->Tobs)/tcohfactor/params->Tobs;
+            nnp = 0.1*trialp->data[midposition-kk]*trialp->data[midposition-kk]*(1+trialp->data[midposition-kk]/4.442/params->Tobs)/4.442/params->Tobs;
             trialp->data[midposition-(kk+1)] = trialp->data[midposition-kk] - nnp;
          }
          
