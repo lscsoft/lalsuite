@@ -10,6 +10,8 @@ srand(42+$jobnum);
 system("mkdir /local/user/egoetz/$$");
 die "mkdir failed: $?" if $?;
 
+chdir("/local/user/egoetz/$$") or die "Cannot change to directory /local/user/egoetz/$$ $!";
+
 my $h0ul = 4.5709e-24;
 my $Tsft = 1800.0;
 my $dur = 40551300.0;
