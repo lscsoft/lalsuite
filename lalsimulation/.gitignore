@@ -33,6 +33,7 @@ src/lalsimulation-user-env.csh
 src/lalsimulation-user-env.sh
 src/lalsimulation-user-env.shell
 src/stamp-h2
+test/GRFlagsTest
 test/GenerateSimulation
 test/ST4-dynamics.dat
 test/TestEOBNRv2
