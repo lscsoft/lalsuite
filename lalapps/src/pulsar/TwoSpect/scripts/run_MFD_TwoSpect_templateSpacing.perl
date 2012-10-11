@@ -120,7 +120,7 @@ EOF
    system("/home/egoetz/TwoSpect/templateSpacing/TwoSpect_templateTest --config=/local/user/egoetz/$$/twospectconfig");
    die "TwoSpect_templateTest failed: $?" if $?;
 
-   system("mv /local/user/egoetz/$$/templatespacingout.dat /home/egoetz/TwoSpect/templateSpacing/$jobnum/templatespacingout_$jobnum.dat");
+   system("mv /local/user/egoetz/$$/templatespacingout.dat /home/egoetz/TwoSpect/templateSpacing/$jobnum/templatespacingout_$ii.dat");
    die "mv failed: $?" if $?;
 
    system("rm /local/user/egoetz/$$/*.sft");
