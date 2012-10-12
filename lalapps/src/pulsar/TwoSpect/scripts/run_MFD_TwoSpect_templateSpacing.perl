@@ -37,6 +37,7 @@ for(my $ii=0; $ii<10; $ii++) {
    $P = sprintf("%.6f", $P);
    my $asini = sprintf("%.6f",$df*$P/2.0/pi/$f0);
    my $randseedval = int(rand(1000000));
+   $f0 = 401.3;
    
    open(MFDCONFIG,">/local/user/egoetz/$$/mfdconfig") or die "Cannot write to /local/user/egoetz/$$/mfdconfig $!";
    print MFDCONFIG<<EOF;

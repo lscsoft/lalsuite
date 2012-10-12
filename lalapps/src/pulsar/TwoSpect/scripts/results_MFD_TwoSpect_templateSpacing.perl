@@ -10,4 +10,3 @@ for(my $ii=0; $ii<100; $ii++) {
   }
 }
 
-close(RESULTS);
