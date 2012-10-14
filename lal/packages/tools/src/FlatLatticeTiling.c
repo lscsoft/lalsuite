@@ -98,6 +98,7 @@ struct tagFlatLatticeTiling {
   FlatLatticeGenerator generator;	///< Flat tiling lattice generator function
   gsl_vector* phys_scale;		///< Normalised to physical coordinate scaling
   gsl_vector* phys_offset;		///< Normalised to physical coordinate offset
+  gsl_matrix* metric;			///< Normalised parameter space metric
   gsl_vector* bounding_box;		///< Extent of bounding box of metric ellipse
   gsl_matrix* increment;		///< Increment vectors of the lattice tiling generator
   gsl_vector* curr_point;		///< Current lattice point
@@ -135,6 +136,8 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   XLAL_CHECK_NULL(tiling->phys_scale != NULL, XLAL_ENOMEM);
   tiling->phys_offset = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->phys_offset != NULL, XLAL_ENOMEM);
+  tiling->metric = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(tiling->metric != NULL, XLAL_ENOMEM);
   tiling->bounding_box = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->bounding_box != NULL, XLAL_ENOMEM);
   tiling->increment = gsl_matrix_alloc(n, n);
@@ -182,6 +185,7 @@ void XLALDestroyFlatLatticeTiling(
     // Free vectors and matrices
     gsl_vector_free(tiling->phys_scale);
     gsl_vector_free(tiling->phys_offset);
+    gsl_matrix_free(tiling->metric);
     gsl_vector_free(tiling->bounding_box);
     gsl_matrix_free(tiling->increment);
     gsl_vector_free(tiling->curr_point);
@@ -306,8 +310,8 @@ int XLALSetFlatLatticeMetric(
 
   }
 
-  // Check diagonal elements are positive, and calculate
-  // physical parameter space scaling from metric diagonal
+  // Check diagonal elements of tiled dimensions are positive, and calculate
+  // physical parameter space scaling from metric diagonal elements
   gsl_vector_set_all(tiling->phys_scale, 1.0);
   for (size_t i = 0; i < n; ++i) {
     if (tiling->bounds[i].tiled) {
@@ -325,17 +329,24 @@ int XLALSetFlatLatticeMetric(
   gsl_matrix* tincrement = gsl_matrix_alloc(tn, tn);
   XLAL_CHECK(tincrement != NULL, XLAL_ENOMEM);
 
-  // Check metric is symmetric, and copy and rescale tiled dimensions of metric
+  // Check metric is symmetric, and copy rescaled metric
+  for (size_t i = 0; i < n; ++i) {
+    const double scale_i = gsl_vector_get(tiling->phys_scale, i);
+    for (size_t j = 0; j < n; ++j) {
+      const double scale_j = gsl_vector_get(tiling->phys_scale, j);
+      double metric_i_j = gsl_matrix_get(metric, i, j);
+      XLAL_CHECK(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
+      metric_i_j *= scale_i * scale_j;
+      gsl_matrix_set(tiling->metric, i, j, metric_i_j);
+    }
+  }
+
+  // Copy tiled dimensions of metric
   for (size_t i = 0, ti = 0; i < n; ++i) {
     if (tiling->bounds[i].tiled) {
-      const double scale_i = gsl_vector_get(tiling->phys_scale, i);
       for (size_t j = 0, tj = 0; j < n; ++j) {
         if (tiling->bounds[j].tiled) {
-          const double scale_j = gsl_vector_get(tiling->phys_scale, j);
-          double metric_i_j = gsl_matrix_get(metric, i, j);
-          XLAL_CHECK(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
-          metric_i_j *= scale_i * scale_j;
-          gsl_matrix_set(tmetric, ti, tj, metric_i_j);
+          gsl_matrix_set(tmetric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
           ++tj;
         }
       }
