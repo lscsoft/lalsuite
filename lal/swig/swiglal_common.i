@@ -1011,7 +1011,7 @@ if (swiglal_release_parent(PTR)) {
   owner = (argp == NULL) ? SWIG_POINTER_OWN : 0;
 }
 %typemap(in, noblock=1) SWIGTYPE ** INOUT (void  *argp = NULL, int owner = 0, int ecode = 0) {
-  ecode = SWIG_ConvertPtr($input, &argp, $*descriptor, $disown | %convertptr_flags);
+  ecode = SWIG_ConvertPtr($input, &argp, $*descriptor, ($disown | %convertptr_flags) | SWIG_POINTER_DISOWN);
   if (!SWIG_IsOK(ecode)) {
     %argument_fail(ecode, "$type", $symname, $argnum);
   }
@@ -1023,7 +1023,7 @@ if (swiglal_release_parent(PTR)) {
 }
 %typemap(freearg) SWIGTYPE ** "";
 %define %swiglal_public_INOUT_STRUCTS(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE INOUT, TYPE, __VA_ARGS__);
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE ** INOUT, TYPE, __VA_ARGS__);
 %enddef
 %define %swiglal_public_clear_INOUT_STRUCTS(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
