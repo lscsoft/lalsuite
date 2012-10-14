@@ -136,15 +136,6 @@ gsl_vector* XLALNextFlatLatticePoint(
   );
 
 ///
-/// Return a set of points in the flat lattice tiling parameter space
-///
-size_t XLALNextFlatLatticePoints(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  gsl_matrix* points,			///< [in] Flat lattice tiling points
-  const bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
-  );
-
-///
 /// Return to the beginning of a flat lattice tiling
 ///
 int XLALRestartFlatLatticeTiling(

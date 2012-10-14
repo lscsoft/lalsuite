@@ -631,60 +631,6 @@ gsl_vector* XLALNextFlatLatticePoint(
 
 }
 
-size_t XLALNextFlatLatticePoints(
-  FlatLatticeTiling* tiling,
-  gsl_matrix* points,
-  const bool fill_last
-  )
-{
-
-  const size_t n = tiling->dimensions;
-
-  // Check tiling
-  XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
-
-  // Check input
-  XLAL_CHECK_VAL(0, points != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, points->size1 == n, XLAL_EFAULT);
-
-  // Fill 'points' matrix columns with flat lattice tiling points
-  size_t i = 0;
-  gsl_vector* point = NULL;
-  while (i < points->size2) {
-
-    // Get next tiling point, checking for errors
-    point = XLALNextFlatLatticePoint(tiling);
-    XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
-
-    // If no point return, no more points available
-    if (point == NULL) {
-      break;
-    }
-
-    // Copy the point to the next available column of 'points'
-    gsl_vector_view p = gsl_matrix_column(points, i);
-    gsl_vector_memcpy(&p.vector, point);
-    ++i;
-
-  }
-
-  if (fill_last && i > 0) {
-
-    // Copy last template point to remaining columns of 'points'
-    gsl_vector_view q = gsl_matrix_column(points, i-1);
-    for (size_t j = i; j < points->size2; ++j) {
-      gsl_vector_view p = gsl_matrix_column(points, i);
-      gsl_vector_memcpy(&p.vector, &q.vector);
-    }
-
-  }
-
-  // Return the number of points filled in 'points'
-  return i;
-
-}
-
 int XLALRestartFlatLatticeTiling(
   FlatLatticeTiling* tiling
   )
