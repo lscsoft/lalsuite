@@ -683,101 +683,6 @@ unsigned long XLALCountTotalFlatLatticePoints(
 
 }
 
-int XLALGenerateRandomFlatLatticePoints(
-  FlatLatticeTiling* tiling,
-  RandomParams* randpar,
-  gsl_matrix* randpoints
-  )
-{
-
-  const size_t n = tiling->dimensions;
-
-  // Check tiling
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
-
-  // Check input
-  XLAL_CHECK(randpar != NULL, XLAL_EFAULT);
-  XLAL_CHECK(randpoints != NULL, XLAL_EFAULT);
-  XLAL_CHECK(randpoints->size1 == n, XLAL_ESIZE);
-
-  // Allocate temporary bound index and physical bound vectors
-  gsl_vector_uint* curr_bound = gsl_vector_uint_alloc(n);
-  XLAL_CHECK(curr_bound != NULL, XLAL_ENOMEM);
-  gsl_vector* phys_lower = gsl_vector_alloc(MAX_BOUNDS);
-  XLAL_CHECK(phys_lower != NULL, XLAL_ENOMEM);
-  gsl_vector* phys_width = gsl_vector_alloc(MAX_BOUNDS);
-  XLAL_CHECK(phys_width != NULL, XLAL_ENOMEM);
-
-  // Create random points in tiling parameter space
-  for (size_t j = 0; j < randpoints->size2; ++j) {
-    gsl_vector_view point = gsl_matrix_column(randpoints, j);
-    for (size_t i = 0; i < n; ++i) {
-
-      // Get physical bounds
-      GetPhysBounds(tiling, i, curr_bound, &point.vector, phys_lower, phys_width);
-      gsl_vector_sub(phys_width, phys_lower);
-
-      // Get total bounds width
-      double phys_total_width = 0;
-      size_t max_bounds = 0;
-      while (max_bounds < MAX_BOUNDS) {
-        const double width = gsl_vector_get(phys_width, max_bounds);
-        if (gsl_isnan(width)) {
-          break;
-        }
-        phys_total_width += width;
-        ++max_bounds;
-      }
-
-      // Generate random number
-      const double u = XLALUniformDeviate(randpar);
-
-      double p;
-      size_t bound = 0;
-      if (tiling->bounds[i].tiled) {
-
-        // Generate random point within total bounds widths
-        p = u * phys_total_width;
-
-        // Convert point to be within parameter space bounds
-        while (bound + 1 < max_bounds) {
-          const double width = gsl_vector_get(phys_width, bound);
-          if (p <= width) {
-            break;
-          }
-          p -= width;
-          ++bound;
-        }
-        p += gsl_vector_get(phys_lower, bound);
-
-      } else {
-
-        // Generate random bound index
-        bound = (size_t)floor(u * max_bounds);
-
-        // Get point from random bound
-        p = gsl_vector_get(phys_lower, bound);
-
-      }
-
-      // Set parameter space point and bound index
-      gsl_vector_set(&point.vector, i, p);
-      gsl_vector_uint_set(curr_bound, i, bound);
-
-    }
-
-  }
-
-  // Cleanup
-  gsl_vector_uint_free(curr_bound);
-  gsl_vector_free(phys_lower);
-  gsl_vector_free(phys_width);
-
-  return XLAL_SUCCESS;
-
-}
-
 int XLALCubicLatticeGenerator(
   const size_t dimensions,
   gsl_matrix** generator,
@@ -1152,201 +1057,220 @@ int XLALNormaliseLatticeGenerator(
 
 }
 
-///
-/// Workspace for computing the nearest template to a set of injections
-///
-struct tagNearestTemplateWorkspace {
-  gsl_matrix* metric;			///< Parameter space metric
-  gsl_matrix* metric_templates;		///< Templates points, multiplied by metric
-  gsl_vector* dot_templates;		///< Dot product of templates
-  gsl_matrix* injections;		///< Injection points
-  gsl_vector* dot_injections;		///< Dot product of injections
-  gsl_matrix* cross_terms;		///< Cross terms in distance between templates and injections
-  gsl_vector* distances;		///< Distances between templates and injections
-};
-
-NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
-  const gsl_matrix* metric,
-  const size_t num_templates,
-  const size_t num_injections
+int XLALNearestFlatLatticePointToRandomPoints(
+  FlatLatticeTiling* tiling,
+  RandomParams* rng,
+  const size_t num_random_points,
+  gsl_matrix** random_points,
+  gsl_matrix** nearest_points,
+  gsl_vector_ulong** nearest_indices,
+  gsl_vector** nearest_distances,
+  gsl_matrix** workspace
   )
 {
 
-  // Check input
-  XLAL_CHECK_NULL(metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(metric->size1 == metric->size2, XLAL_ESIZE);
+  const size_t n = tiling->dimensions;
 
-  // Check metric is symmetric, that metric diagonal elements are positive or zero,
-  // and that rows and columns passing through zero diagonals are also zero
-  for (size_t i = 0; i < metric->size1; ++i) {
-    XLAL_CHECK_NULL(gsl_matrix_get(metric, i, i) >= 0.0, XLAL_EINVAL);
-    for (size_t j = 0; j < metric->size2; ++j) {
-      if (gsl_matrix_get(metric, i, i) == 0.0 || gsl_matrix_get(metric, i, i) == 0.0) {
-        XLAL_CHECK_NULL(gsl_matrix_get(metric, i, j) == 0.0, XLAL_EINVAL);
-      } else {
-        XLAL_CHECK_NULL(gsl_matrix_get(metric, i, j) == gsl_matrix_get(metric, j, i), XLAL_EINVAL);
+  // Check tiling
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
+
+  // Check input
+  XLAL_CHECK(rng != NULL, XLAL_EFAULT);
+  XLAL_CHECK(num_random_points > 0, XLAL_ESIZE);
+  XLAL_CHECK(random_points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_indices != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_distances != NULL, XLAL_EFAULT);
+  XLAL_CHECK(workspace != NULL, XLAL_EFAULT);
+
+  // (Re)Allocate matrix of random points
+  if (*random_points != NULL && (*random_points)->size2 != num_random_points) {
+    gsl_matrix_free(*random_points);
+    *random_points = NULL;
+  }
+  if (*random_points == NULL) {
+    *random_points = gsl_matrix_alloc(n, num_random_points);
+    XLAL_CHECK(*random_points != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate matrix of nearest lattice points to each random point
+  if (*nearest_points != NULL && (*nearest_points)->size2 != num_random_points) {
+    gsl_matrix_free(*nearest_points);
+    *nearest_points = NULL;
+  }
+  if (*nearest_points == NULL) {
+    *nearest_points = gsl_matrix_alloc(n, num_random_points);
+    XLAL_CHECK(*nearest_points != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate vector of indices of nearest lattice point
+  if (*nearest_indices != NULL && (*nearest_indices)->size != num_random_points) {
+    gsl_vector_ulong_free(*nearest_indices);
+    *nearest_indices = NULL;
+  }
+  if (*nearest_indices == NULL) {
+    *nearest_indices = gsl_vector_ulong_alloc(num_random_points);
+    XLAL_CHECK(*nearest_indices != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate vector of distances to nearest lattice point
+  if (*nearest_distances != NULL && (*nearest_distances)->size != num_random_points) {
+    gsl_vector_free(*nearest_distances);
+    *nearest_distances = NULL;
+  }
+  if (*nearest_distances == NULL) {
+    *nearest_distances = gsl_vector_alloc(num_random_points);
+    XLAL_CHECK(*nearest_distances != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate workspace matrix for computing distances
+  if (*workspace != NULL && (*workspace)->size2 != num_random_points) {
+    gsl_matrix_free(*workspace);
+    *workspace = NULL;
+  }
+  if (*workspace == NULL) {
+    *workspace = gsl_matrix_alloc(n + 2, num_random_points);
+    XLAL_CHECK(*workspace != NULL, XLAL_ENOMEM);
+  }
+
+  // Create temporary bound index and physical bound vectors
+  unsigned int curr_bound_array[n];
+  gsl_vector_uint_view curr_bound_view = gsl_vector_uint_view_array(curr_bound_array, n);
+  gsl_vector_uint *const curr_bound = &curr_bound_view.vector;
+  double phys_lower_array[MAX_BOUNDS];
+  gsl_vector_view phys_lower_view = gsl_vector_view_array(phys_lower_array, MAX_BOUNDS);
+  gsl_vector *const phys_lower = &phys_lower_view.vector;
+  double phys_width_array[MAX_BOUNDS];
+  gsl_vector_view phys_width_view = gsl_vector_view_array(phys_width_array, MAX_BOUNDS);
+  gsl_vector *const phys_width = &phys_width_view.vector;
+
+  // Create random points in flat lattice tiling parameter space
+  for (size_t k = 0; k < num_random_points; ++k) {
+    gsl_vector_view point = gsl_matrix_column(*random_points, k);
+    for (size_t i = 0; i < n; ++i) {
+
+      // Get physical bounds
+      GetPhysBounds(tiling, i, curr_bound, &point.vector, phys_lower, phys_width);
+      gsl_vector_sub(phys_width, phys_lower);
+
+      // Get total bounds width
+      double phys_total_width = 0;
+      size_t max_bounds = 0;
+      while (max_bounds < MAX_BOUNDS) {
+        const double lower = gsl_vector_get(phys_lower, max_bounds);
+        const double width = gsl_vector_get(phys_width, max_bounds);
+        if (gsl_isnan(lower) && gsl_isnan(width)) {
+          break;
+        }
+        phys_total_width += width;
+        ++max_bounds;
       }
+
+      // Generate random number
+      const double u = XLALUniformDeviate(rng);
+
+      double p;
+      size_t bound = 0;
+      if (tiling->bounds[i].tiled) {
+
+        // Generate random point within total bounds widths
+        p = u * phys_total_width;
+
+        // Convert point to be within parameter space bounds
+        while (bound + 1 < max_bounds) {
+          const double width = gsl_vector_get(phys_width, bound);
+          if (p <= width) {
+            break;
+          }
+          p -= width;
+          ++bound;
+        }
+        p += gsl_vector_get(phys_lower, bound);
+
+      } else {
+
+        // Generate random bound index
+        bound = (size_t)floor(u * max_bounds);
+
+        // Get point from random bound
+        p = gsl_vector_get(phys_lower, bound);
+
+      }
+
+      // Set parameter space point and bound index
+      gsl_vector_set(&point.vector, i, p);
+      gsl_vector_uint_set(curr_bound, i, bound);
+
     }
-  }
-
-  // Allocate and initialise workspace
-  NearestTemplateWorkspace* wksp = XLALCalloc(1, sizeof(NearestTemplateWorkspace));
-  XLAL_CHECK_NULL(wksp != NULL, XLAL_ENOMEM);
-
-  // Allocate workspace memory
-  wksp->metric = gsl_matrix_alloc(metric->size1, metric->size2);
-  XLAL_CHECK_NULL(wksp->metric != NULL, XLAL_ENOMEM);
-  wksp->metric_templates = gsl_matrix_alloc(wksp->metric->size1, num_templates);
-  XLAL_CHECK_NULL(wksp->metric_templates != NULL, XLAL_ENOMEM);
-  wksp->dot_templates = gsl_vector_alloc(num_templates);
-  XLAL_CHECK_NULL(wksp->dot_templates != NULL, XLAL_ENOMEM);
-  wksp->injections = gsl_matrix_alloc(wksp->metric->size1, num_injections);
-  XLAL_CHECK_NULL(wksp->injections != NULL, XLAL_ENOMEM);
-  wksp->dot_injections = gsl_vector_alloc(num_injections);
-  XLAL_CHECK_NULL(wksp->dot_injections != NULL, XLAL_ENOMEM);
-  wksp->cross_terms = gsl_matrix_alloc(num_injections, num_templates);
-  XLAL_CHECK_NULL(wksp->cross_terms != NULL, XLAL_ENOMEM);
-  wksp->distances = gsl_vector_alloc(num_templates);
-  XLAL_CHECK_NULL(wksp->distances != NULL, XLAL_ENOMEM);
-
-  // Copy metric
-  gsl_matrix_memcpy(wksp->metric, metric);
-
-  return wksp;
-
-}
-
-void XLALDestroyNearestTemplateWorkspace(
-  NearestTemplateWorkspace* wksp
-  )
-{
-
-  if (wksp) {
-
-    gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
-
-    // Cleanup
-    gsl_matrix_free(wksp->metric);
-    gsl_matrix_free(wksp->metric_templates);
-    gsl_vector_free(wksp->dot_templates);
-    gsl_matrix_free(wksp->injections);
-    gsl_vector_free(wksp->dot_injections);
-    gsl_matrix_free(wksp->cross_terms);
-    gsl_vector_free(wksp->distances);
-    XLALFree(wksp);
-
-    gsl_set_error_handler(old_handler);
 
   }
 
-}
+  // Create temporary vectors and matrices in workspace
+  gsl_vector_view distance_view = gsl_matrix_row(*workspace, 0);
+  gsl_vector *const distance = &distance_view.vector;
+  gsl_vector_view distance_tmp_view = gsl_matrix_row(*workspace, 1);
+  gsl_vector *const distance_tmp = &distance_tmp_view.vector;
+  gsl_matrix_view diff_points_view = gsl_matrix_submatrix(*workspace, 2, 0, n, num_random_points);
+  gsl_matrix *const diff_points = &diff_points_view.matrix;
 
-int XLALUpdateWorkspaceTemplates(
-  NearestTemplateWorkspace* wksp,
-  const gsl_matrix* templates,
-  gsl_vector_uint* nearest_template
-  )
-{
+  // Initialise minimum distance vector
+  gsl_vector_set_all(*nearest_distances, GSL_POSINF);
 
-  // Check input
-  XLAL_CHECK(wksp != NULL, XLAL_EFAULT);
-  XLAL_CHECK(templates != NULL, XLAL_EFAULT);
-  XLAL_CHECK(templates->size1 == wksp->metric->size1, XLAL_ESIZE);
-  XLAL_CHECK(templates->size2 == wksp->dot_templates->size, XLAL_ESIZE);
-  XLAL_CHECK(nearest_template != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_template->size == wksp->dot_templates->size, XLAL_EFAULT);
+  // Iterate over all flat lattice points
+  gsl_vector* lattice_point = NULL;
+  XLALRestartFlatLatticeTiling(tiling);
+  while ( (lattice_point = XLALNextFlatLatticePoint(tiling)) != NULL ) {
 
-  // Compute dot product of templates
-  gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, wksp->metric, templates, 0.0, wksp->metric_templates);
-  gsl_matrix_mul_elements(wksp->metric_templates, templates);
-  gsl_vector_set_zero(wksp->dot_templates);
-  for (size_t i = 0; i < wksp->metric->size1; ++i) {
-    gsl_vector_view v = gsl_matrix_row(wksp->metric_templates, i);
-    gsl_vector_add(wksp->dot_templates, &v.vector);
-  }
+    // Copy random points to workspace, subtract flat lattice point
+    // from each, and normalise by physical scaling
+    for (size_t i = 0; i < n; ++i) {
+      const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
+      gsl_vector_view random_points_i = gsl_matrix_row(*random_points, i);
+      gsl_vector_memcpy(&diff_points_i.vector, &random_points_i.vector);
+      gsl_vector_add_constant(&diff_points_i.vector, -gsl_vector_get(lattice_point, i));
+      gsl_vector_scale(&diff_points_i.vector, 1.0/phys_scale);
+    }
 
-  // Copy templates and multiply by metric
-  gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, wksp->metric, templates, 0.0, wksp->metric_templates);
+    // Calculate distance from random points to the flat lattice point, using metric
+    gsl_vector_set_zero(distance);
+    for (size_t i = 0; i < n; ++i) {
+      gsl_vector_set_zero(distance_tmp);
 
-  // Initialise nearest template index
-  gsl_vector_uint_set_all(nearest_template, -1);
+      // Compute the diagonal terms of the metric distance,
+      // which are multiplied by the ith coordinate difference
+      const double metric_i_i = gsl_matrix_get(tiling->metric, i, i);
+      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
+      gsl_blas_daxpy(metric_i_i, &diff_points_i.vector, distance_tmp);
 
-  return XLAL_SUCCESS;
+      // Compute the off-diagomal terms of the metric distance,
+      // which are multiplied by the ith coordinate difference
+      for (size_t j = i + 1; j < n; ++j) {
+        const double metric_i_j = gsl_matrix_get(tiling->metric, i, j);
+        gsl_vector_view diff_points_j = gsl_matrix_row(diff_points, j);
+        gsl_blas_daxpy(2.0 * metric_i_j, &diff_points_j.vector, distance_tmp);
+      }
 
-}
+      // Multiply by the ith coordinate difference
+      gsl_vector_mul(distance_tmp, &diff_points_i.vector);
 
-int XLALUpdateWorkspaceInjections(
-  NearestTemplateWorkspace* wksp,
-  const gsl_matrix* injections,
-  gsl_vector* min_distance
-  )
-{
+      // Add to distance
+      gsl_vector_add(distance, distance_tmp);
 
-  // Check input
-  XLAL_CHECK(wksp != NULL, XLAL_EFAULT);
-  XLAL_CHECK(injections != NULL, XLAL_EFAULT);
-  XLAL_CHECK(injections->size1 == wksp->metric->size1, XLAL_ESIZE);
-  XLAL_CHECK(injections->size2 == wksp->dot_injections->size, XLAL_ESIZE);
-  XLAL_CHECK(min_distance != NULL, XLAL_EFAULT);
-  XLAL_CHECK(min_distance->size == wksp->dot_injections->size, XLAL_EFAULT);
+    }
 
-  // Compute dot product of injections
-  gsl_blas_dsymm(CblasLeft, CblasUpper, 1.0, wksp->metric, injections, 0.0, wksp->injections);
-  gsl_matrix_mul_elements(wksp->injections, injections);
-  gsl_vector_set_zero(wksp->dot_injections);
-  for (size_t i = 0; i < wksp->metric->size1; ++i) {
-    gsl_vector_view v = gsl_matrix_row(wksp->injections, i);
-    gsl_vector_add(wksp->dot_injections, &v.vector);
-  }
-
-  // Copy injections
-  gsl_matrix_memcpy(wksp->injections, injections);
-
-  // Initialise minimum distances
-  gsl_vector_set_all(min_distance, GSL_POSINF);
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALUpdateNearestTemplateToInjections(
-  NearestTemplateWorkspace* wksp,
-  gsl_vector* min_distance,
-  gsl_vector_uint* nearest_template
-  )
-{
-
-  // Check input
-  XLAL_CHECK(wksp != NULL, XLAL_EFAULT);
-  XLAL_CHECK(min_distance != NULL, XLAL_EFAULT);
-  XLAL_CHECK(min_distance->size == wksp->dot_injections->size, XLAL_EFAULT);
-  XLAL_CHECK(nearest_template != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_template->size == wksp->dot_templates->size, XLAL_EFAULT);
-
-  // Compute cross terms in distance between templates and injections
-  gsl_blas_dgemm(CblasTrans, CblasNoTrans, -2.0, wksp->injections, wksp->metric_templates, 0.0, wksp->cross_terms);
-
-  // Find closest template to each injection
-  for (size_t i = 0; i < wksp->dot_injections->size; ++i) {
-
-    // Start with template dot products
-    gsl_vector_memcpy(wksp->distances, wksp->dot_templates);
-
-    // Add cross terms for this injection
-    gsl_vector_view v = gsl_matrix_row(wksp->cross_terms, i);
-    gsl_vector_add(wksp->distances, &v.vector);
-
-    // Find smallest vector element
-    size_t i_min = gsl_vector_min_index(wksp->distances);
-    double mu_min = gsl_vector_get(wksp->distances, i_min);
-
-    // Compute minimum distance by add injection dot product
-    mu_min += gsl_vector_get(wksp->dot_injections, i);
-
-    // Update minimum distance vector
-    if (mu_min < gsl_vector_get(min_distance, i)) {
-      gsl_vector_set(min_distance, i, mu_min);
-      gsl_vector_uint_set(nearest_template, i, i_min);
+    // For each random point, if the distance to the flat lattice point is
+    // the smallest so far, record the flat lattice point, distance, and index
+    const unsigned long nearest_index = tiling->count - 1;
+    for (size_t k = 0; k < num_random_points; ++k) {
+      const double distance_k = gsl_vector_get(distance, k);
+      if (distance_k < gsl_vector_get(*nearest_distances, k)) {
+        gsl_vector_view nearest_point_k = gsl_matrix_column(*nearest_points, k);
+        gsl_vector_memcpy(&nearest_point_k.vector, lattice_point);
+        gsl_vector_ulong_set(*nearest_indices, k, nearest_index);
+        gsl_vector_set(*nearest_distances, k, distance_k);
+      }
     }
 
   }

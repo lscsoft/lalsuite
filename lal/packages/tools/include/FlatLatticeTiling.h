@@ -151,15 +151,6 @@ unsigned long XLALCountTotalFlatLatticePoints(
 SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
 #endif
 ///
-/// Generate random points within the flat lattice tiling parameter space
-///
-int XLALGenerateRandomFlatLatticePoints(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  RandomParams* randpar,		///< [in] Random number generator state
-  gsl_matrix* randpoints		///< [in] Random points (column-wise)
-  );
-
-///
 /// Calculate the generator matrix for a cubic (\f$Z_n\f$) lattice
 ///
 int XLALCubicLatticeGenerator(
@@ -222,49 +213,24 @@ int XLALNormaliseLatticeGenerator(
   const double covering_radius	///< [in] Desired covering radius
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix**, random_points, nearest_points, workspace));
+SWIGLAL(INOUT_STRUCTS(gsl_vector**, nearest_distances));
+SWIGLAL(INOUT_STRUCTS(gsl_vector_ulong**, nearest_indices));
+#endif
 ///
-/// Workspace for computing the nearest template to a set of injections
+/// Generate random points within the flat lattice tiling parameter space,
+/// then calculate the nearest flat lattice point to each random point
 ///
-typedef struct tagNearestTemplateWorkspace NearestTemplateWorkspace;
-
-///
-/// Create a new workspace for computing the nearest template to a set of injections
-///
-NearestTemplateWorkspace* XLALCreateNearestTemplateWorkspace(
-  const gsl_matrix* metric,		///< [in] Parameter space metric
-  const size_t num_templates,		///< [in] Number of templates to compare at once
-  const size_t num_injections		///< [in] Nunber of injections to compare at once
-  );
-
-///
-/// Destroy a nearest template workspace
-///
-void XLALDestroyNearestTemplateWorkspace(
-  NearestTemplateWorkspace* wksp	///< [in] Nearest template workspace
-  );
-
-///
-/// Update the templates used to compute distances from, and reset nearest template index
-///
-int XLALUpdateWorkspaceTemplates(
-  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
-  const gsl_matrix* templates,		///< [in] Template bank
-  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
-  );
-
-///
-/// Update the injections used to compute distances to, and reset minimum distances
-///
-int XLALUpdateWorkspaceInjections(
-  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
-  const gsl_matrix* injections,		///< [in] Injection set
-  gsl_vector* min_distance		///< [in] Distance from injection to nearest template
-  );
-
-int XLALUpdateNearestTemplateToInjections(
-  NearestTemplateWorkspace* wksp,	///< [in] Nearest template workspace
-  gsl_vector* min_distance,		///< [in] Distance from injection to nearest template
-  gsl_vector_uint* nearest_template	///< [in] Index of nearest template
+int XLALNearestFlatLatticePointToRandomPoints(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  RandomParams* rng,			///< [in] Random number generator
+  const size_t num_random_points,	///< [in] Number of random points to generate
+  gsl_matrix** random_points,		///< [in/out] Pointer to matrix of random points
+  gsl_matrix** nearest_points,		///< [in/out] Pointer to matrix of nearest lattice points to each random point
+  gsl_vector_ulong** nearest_indices,	///< [in/out] Pointer to vector of indices of nearest lattice point
+  gsl_vector** nearest_distances,	///< [in/out] Pointer to vector of distances to nearest lattice point
+  gsl_matrix** workspace		///< [in/out] Pointer to workspace matrix for computing distances
   );
 
 #ifdef __cplusplus
