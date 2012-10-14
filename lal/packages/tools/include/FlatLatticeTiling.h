@@ -66,12 +66,6 @@ typedef int (*FlatLatticeGenerator)(
 ///
 typedef struct tagFlatLatticeTiling FlatLatticeTiling;
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
-SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
-SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
-#endif
-
 ///
 /// Create a new flat lattice tiling state structure
 ///
@@ -128,6 +122,9 @@ int XLALSetFlatLatticeMetric(
   const double max_mismatch		///< [in] Maximum prescribed mismatch
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
+#endif
 ///
 /// Return the next point in the flat lattice tiling parameter space
 ///
@@ -149,6 +146,9 @@ unsigned long XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
+#endif
 ///
 /// Generate random points within the flat lattice tiling parameter space
 ///
@@ -167,6 +167,9 @@ int XLALCubicLatticeGenerator(
   double* norm_thickness	///< [out] Normalised thickness
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
+#endif
 ///
 /// Calculate the generator matrix for a \f$A_n^*\f$ lattice
 ///
