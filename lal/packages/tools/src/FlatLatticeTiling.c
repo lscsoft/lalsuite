@@ -113,13 +113,24 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   )
 {
 
+  // Check input
+  XLAL_CHECK_NULL(dimensions > 0, XLAL_EINVAL);
+
   const size_t n = dimensions;
 
-  // Allocate memory
+  // Allocate and initialise tiling structure
   FlatLatticeTiling* tiling = XLALCalloc(1, sizeof(FlatLatticeTiling));
   XLAL_CHECK_NULL(tiling != NULL, XLAL_ENOMEM);
+  tiling->dimensions = n;
+  tiling->status = FLT_S_INCOMPLETE;
+  tiling->generator = NULL;
+  tiling->count = 0;
+
+  // Allocate parameter space bounds info
   tiling->bounds = XLALCalloc(n, sizeof(FLT_Bound));
   XLAL_CHECK_NULL(tiling->bounds != NULL, XLAL_ENOMEM);
+
+  // Allocate vectors and matrices
   tiling->phys_scale = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->phys_scale != NULL, XLAL_ENOMEM);
   tiling->phys_offset = gsl_vector_alloc(n);
@@ -139,12 +150,6 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   tiling->curr_phys_point = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->curr_phys_point != NULL, XLAL_ENOMEM);
 
-  // Initialise tiling structure
-  tiling->dimensions = n;
-  tiling->status = FLT_S_INCOMPLETE;
-  tiling->generator = NULL;
-  tiling->count = 0;
-
   return tiling;
 
 }
@@ -156,14 +161,15 @@ void XLALDestroyFlatLatticeTiling(
 
   if (tiling) {
 
+    const size_t n = tiling->dimensions;
+
     gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
 
-    // Cleanup bounds parameter space data, allowing
-    // bounds to share the same memory
-    for (size_t i = 0; i < tiling->dimensions; ++i) {
+    // Free bounds data, allowing bounds to share the same memory
+    for (size_t i = 0; i < n; ++i) {
       void* data = tiling->bounds[i].data;
       if (data != NULL) {
-        for (size_t j = i; j < tiling->dimensions; ++j) {
+        for (size_t j = i; j < n; ++j) {
           if (tiling->bounds[j].data == data) {
             tiling->bounds[j].data = NULL;
           }
@@ -173,7 +179,7 @@ void XLALDestroyFlatLatticeTiling(
     }
     XLALFree(tiling->bounds);
 
-    // Cleanup vectors and matrices
+    // Free vectors and matrices
     gsl_vector_free(tiling->phys_scale);
     gsl_vector_free(tiling->phys_offset);
     gsl_vector_free(tiling->bounding_box);
@@ -184,7 +190,7 @@ void XLALDestroyFlatLatticeTiling(
     gsl_matrix_free(tiling->curr_upper);
     gsl_vector_free(tiling->curr_phys_point);
 
-    // Cleanup tiling
+    // Free tiling structure
     XLALFree(tiling);
 
     gsl_set_error_handler(old_handler);
