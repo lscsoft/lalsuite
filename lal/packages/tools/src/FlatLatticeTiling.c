@@ -105,7 +105,7 @@ struct tagFlatLatticeTiling {
   gsl_matrix* curr_lower;		///< Current lower bound on parameter space
   gsl_matrix* curr_upper;		///< Current upper bound on parameter space
   gsl_vector* curr_phys_point;		///< Current physical parameter-space point
-  uint64_t count;			///< Total number of points generated so far
+  unsigned long count;			///< Total number of points generated so far
 };
 
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(
@@ -207,7 +207,7 @@ size_t XLALGetFlatLatticeDimensions(
   return tiling->dimensions;
 }
 
-uint64_t XLALGetFlatLatticePointCount(
+unsigned long XLALGetFlatLatticePointCount(
   FlatLatticeTiling* tiling
   )
 {
@@ -702,7 +702,7 @@ int XLALRestartFlatLatticeTiling(
 
 }
 
-uint64_t XLALCountTotalFlatLatticePoints(
+unsigned long XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling
   )
 {
@@ -716,7 +716,7 @@ uint64_t XLALCountTotalFlatLatticePoints(
   XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
 
   // Save the template count
-  uint64_t count = tiling->count;
+  unsigned long count = tiling->count;
 
   // Restart tiling
   XLALRestartFlatLatticeTiling(tiling);
