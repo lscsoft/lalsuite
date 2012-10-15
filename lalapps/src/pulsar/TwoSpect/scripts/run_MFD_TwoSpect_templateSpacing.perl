@@ -25,6 +25,7 @@ for(my $ii=0; $ii<10; $ii++) {
    my $delta = sprintf("%.6f",acos(2.0*rand()-1.0)-0.5*pi);
    my $f0 = 401.25 + 0.24*rand();
    my $df = rand()*0.1;
+   $df = 0.01;
    while ($df-0.5/$Tsft<1.0e-6) {
       $df = rand()*0.1;
    }
