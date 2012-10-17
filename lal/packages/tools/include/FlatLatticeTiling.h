@@ -66,12 +66,6 @@ typedef int (*FlatLatticeGenerator)(
 ///
 typedef struct tagFlatLatticeTiling FlatLatticeTiling;
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
-SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
-SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
-#endif
-
 ///
 /// Create a new flat lattice tiling state structure
 ///
@@ -96,7 +90,7 @@ size_t XLALGetFlatLatticeDimensions(
 ///
 /// Return the current number of flat lattice tiling parameter space points
 ///
-uint64_t XLALGetFlatLatticePointCount(
+unsigned long XLALGetFlatLatticePointCount(
   FlatLatticeTiling* tiling	///< [in] Tiling state
   );
 
@@ -128,20 +122,14 @@ int XLALSetFlatLatticeMetric(
   const double max_mismatch		///< [in] Maximum prescribed mismatch
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
+#endif
 ///
 /// Return the next point in the flat lattice tiling parameter space
 ///
 gsl_vector* XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling		///< [in] Tiling state
-  );
-
-///
-/// Return a set of points in the flat lattice tiling parameter space
-///
-size_t XLALNextFlatLatticePoints(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  gsl_matrix* points,			///< [in] Flat lattice tiling points
-  const bool fill_last			///< [in] If not enought points to fill 'points', whether to fill in using the last tiling point
   );
 
 ///
@@ -154,10 +142,13 @@ int XLALRestartFlatLatticeTiling(
 ///
 /// Calculate the total number of flat lattice tiling parameter space points
 ///
-uint64_t XLALCountTotalFlatLatticePoints(
+unsigned long XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
+#endif
 ///
 /// Generate random points within the flat lattice tiling parameter space
 ///
@@ -176,6 +167,9 @@ int XLALCubicLatticeGenerator(
   double* norm_thickness	///< [out] Normalised thickness
   );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL(FUNCTION_POINTER(XLALAnstarLatticeGenerator));
+#endif
 ///
 /// Calculate the generator matrix for a \f$A_n^*\f$ lattice
 ///
