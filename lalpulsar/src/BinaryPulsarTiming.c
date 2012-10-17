@@ -537,6 +537,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     }
 
     tt0 = tb - Tasc;
+    
     orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
     norbits = (INT4)orbits;
     if(orbits < 0.0) norbits--;
@@ -2182,6 +2183,9 @@ start of GPS time */
   return GPS;
 }
 
+/* Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
+ * Einstein delay) when correcting a GPS time on the Earth to the solar system
+ * barycenter, so in general this function should not be needed. */
 REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
   REAL8 Tdiff, TDBtoTT;
@@ -2197,12 +2201,12 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
      Julian centuries rather than Julian days) */
   Tdiff = MJD + (2400000.5-2451545.0);
 
-  /* time diff in seconds */
-  TDBtoTT = 0.0016568*sin((357.5 + 0.98560028*Tdiff) * LAL_PI_180) +
-            0.0000224*sin((246.0 + 0.90251882*Tdiff) * LAL_PI_180) +
-            0.0000138*sin((355.0 + 1.97121697*Tdiff) * LAL_PI_180) +
-            0.0000048*sin((25.0 + 0.08309103*Tdiff) * LAL_PI_180) +
-            0.0000047*sin((230.0 + 0.95215058*Tdiff) *LAL_PI_180);
+  /* time diff in seconds (the Einstein delay) */
+  TDBtoTT = 0.0016568*sin((357.5*Tdiff + 0.98560028) * LAL_PI_180) +
+            0.0000224*sin((246.0*Tdiff + 0.90251882) * LAL_PI_180) +
+            0.0000138*sin((355.0*Tdiff + 1.97121697) * LAL_PI_180) +
+            0.0000048*sin((25.0*Tdiff + 0.08309103) * LAL_PI_180) +
+            0.0000047*sin((230.0*Tdiff + 0.95215058) *LAL_PI_180);
 
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
   /* there is the magical number factor of 32.184 + 19 leap seconds to the

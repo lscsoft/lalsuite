@@ -542,7 +542,7 @@ int main(int argc,char *argv[])
 	{
 	  /* convert MJD peripase to GPS using Matt Pitkins code found at lal/packages/pulsar/src/BinaryPulsarTimeing.c */
 	  REAL8 GPSfloat;
-	  GPSfloat = LALTDBMJDtoGPS(uvar.orbitTpSSBMJD);
+	  GPSfloat = LALTTMJDtoGPS(uvar.orbitTpSSBMJD);
 	  XLALGPSSetREAL8(&(orbitalParams->tp),GPSfloat);
 	}
       else
