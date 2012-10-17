@@ -49,8 +49,11 @@ typedef void (*FlatLatticeBound)(
   const gsl_vector_uint* bound,	///< [in] Indices of current bounds
   const gsl_vector* point,	///< [in] Point on which to find bounds
   const void* data,		///< [in] Arbitrary data describing parameter space
+  const gsl_vector* incr,	///< [in] Increments of the lattice tiling generator
+  const gsl_vector* bbox,	///< [in] Metric ellipse bounding box extents
   gsl_vector* lower,		///< [out] Lower bounds on point in dimension
-  gsl_vector* upper		///< [out] Upper bounds on point in dimension
+  gsl_vector* upper,		///< [out] Upper bounds on point in dimension
+  double* padding		///< [out] Padding of parameter space bounds
   );
 
 ///
