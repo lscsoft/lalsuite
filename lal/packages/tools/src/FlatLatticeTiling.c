@@ -450,31 +450,23 @@ gsl_vector* XLALNextFlatLatticePoint(
       gsl_vector_add_constant(&phys_upper.vector, -phys_offset);
       gsl_vector_scale(&phys_upper.vector, 1.0/phys_scale);
 
-      // Get bounds
+      // Get bounds and padding
       const size_t bound = gsl_vector_uint_get(tiling->curr_bound, i);
       const double lower = gsl_matrix_get(tiling->curr_lower, i, bound);
+      const double upper = gsl_matrix_get(tiling->curr_upper, i, bound);
+      const double padding = GetPadding(tiling, i, lower, upper);
 
       // Determine whether any bounds are tiled
       any_tiled |= tiling->bounds[i].tiled;
 
       // Initialise current point
-      const double point = lower;
+      const double point = lower - padding;
       gsl_vector_set(tiling->curr_point, i, point);
 
       // Update current physical point
       const double phys_point = (point * phys_scale) + phys_offset;
       gsl_vector_set(tiling->curr_phys_point, i, phys_point);
 
-    }
-
-    // Subtract padding
-    for (size_t i = 0; i < n; ++i) {
-      const size_t bound = gsl_vector_uint_get(tiling->curr_bound, i);
-      const double lower = gsl_matrix_get(tiling->curr_lower, i, bound);
-      const double upper = gsl_matrix_get(tiling->curr_upper, i, bound);
-      const double padding = GetPadding(tiling, i, lower, upper);
-      const double point = gsl_vector_get(tiling->curr_point, i);
-      gsl_vector_set(tiling->curr_point, i, point - padding);
     }
 
     // Update current physical point
