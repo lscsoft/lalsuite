@@ -608,7 +608,7 @@ gsl_vector* XLALNextFlatLatticePoint(
 
       // Calculate the distance from current point to the lower bound, in integer number of increments
       const double point = gsl_vector_get(tiling->curr_point, ir);
-      const double dist = floor((lower - padding - point) / gsl_vector_get(&increment.vector, ir));
+      const double dist = ceil((lower - padding - point) / gsl_vector_get(&increment.vector, ir));
 
       // Move point back to lower bound
       gsl_blas_daxpy(dist, &increment.vector, tiling->curr_point);
