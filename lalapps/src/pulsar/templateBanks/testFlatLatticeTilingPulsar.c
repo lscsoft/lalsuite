@@ -174,8 +174,15 @@ int main(int argc, char *argv[]) {
 	LALAPPS_ERROR("XLALSetFlatLatticeConstantBound failed\n", 0);
 
       /* Add frequency and spindown bounds */
-      if (XLAL_SUCCESS != XLALSetFlatLatticeTilingAgeBrakingIndexBounds(tiling, freq, freq_band, age, min_braking, max_braking))
-	LALAPPS_ERROR("XLALSetFlatLatticeTilingAgeBrakingIndexBounds failed\n", 0);
+      if (XLAL_SUCCESS != XLALSetFlatLatticeConstantBound(tiling, 2, freq, freq + freq_band)) {
+        LALAPPS_ERROR("XLALSetFlatLatticeTilingConstantBound failed\n", 0);
+      }
+      if (XLAL_SUCCESS != XLALSetFlatLatticeF1DotAgeBrakingBound(tiling, 2, 3, age, min_braking, max_braking)) {
+        LALAPPS_ERROR("XLALSetFlatLatticeF1DotAgeBrakingBound failed\n", 0);
+      }
+      if (XLAL_SUCCESS != XLALSetFlatLatticeF2DotBrakingBound(tiling, 2, 3, 4, min_braking, max_braking)) {
+        LALAPPS_ERROR("XLALSetFlatLatticeF2DotBrakingBound failed\n", 0);
+      }
     
     }
 
