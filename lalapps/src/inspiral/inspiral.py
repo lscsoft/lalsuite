@@ -3551,7 +3551,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
     self.add_var_opt("output-cache", file)
 
   def set_output_tag(self, tag):
-    self.add_var_opt("user-tag",tag)
+    self.add_var_opt("user-tag", tag)
 
   def set_veto_segments_name(self, name):
     self.add_var_opt("veto-segments-name", name)
