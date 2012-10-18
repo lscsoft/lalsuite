@@ -1,12 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include
 LDADD = liblalframe.la
 
-# if FRAMEL
-LALFRAMEU_DEFS = -DUSE_FRAMEL
-# else
-# LALFRAMEU_DEFS = -DUSE_FRAMEC
-# endif
-
 bin_PROGRAMS = \
 	lalfr-lld \
 	lalfr-cksum \
@@ -47,6 +41,7 @@ lalframeinclude_HEADERS = \
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
+	LALFrameU.c \
 	Aggregation.c \
 	FrameCache.c \
 	FrameCalibration.c \
@@ -54,11 +49,8 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	LALFrameIO.c \
-	LALFrameU.c \
 	LALFrameVCSInfo.c \
 	LowLatencyData.c
-
-DEFS = $(LALFRAMEU_DEFS)
 
 noinst_HEADERS = \
 	FrameSeriesRead_source.c \

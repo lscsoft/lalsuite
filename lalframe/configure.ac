@@ -64,6 +64,9 @@ LALSUITE_ENABLE_GCC_FLAGS
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
+# allow use of either FrameC or FrameL
+LALFRAME_WITH_FRAME_LIBRARY
+
 # put version/configure info in config header
 lalframe_version_major=`echo "$VERSION" | cut -d. -f1`
 lalframe_version_minor=`echo "$VERSION" | cut -d. -f2`
@@ -126,14 +129,24 @@ AC_DEFINE([HAVE_GETHOSTNAME_PROTOTYPE],[1],
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
-# check for frame library
-PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
-CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
-LIBS="$LIBS $LIBFRAME_LIBS"
-AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
-
-# check for frame library headers
-AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
+# check for framec or libframe libraries and headers
+PKG_PROG_PKG_CONFIG
+AS_IF([test "${framec}" = "true"],[
+       PKG_CHECK_MODULES([FRAMEC],[framec >= 1.19.25],[true],[false])
+       CPPFLAGS="$CPPFLAGS $FRAMEC_CFLAGS"
+       LIBS="$LIBS $FRAMEC_LIBS"
+       AC_CHECK_LIB([FrameC],[FrameCFileOpen],,[AC_MSG_ERROR([could not find the framec library])])
+       AC_CHECK_HEADERS([framec/FrameC.h],,[AC_MSG_ERROR([could not find the FrameC.h header])])
+       AC_DEFINE([USE_FRAMEC],[],[Define to use FrameC])
+       FRAME_LIBRARY="FrameC"])
+AS_IF([test "${framel}" = "true"],[
+       PKG_CHECK_MODULES([LIBFRAME],[libframe],[true],[false])
+       CPPFLAGS="$CPPFLAGS $LIBFRAME_CFLAGS"
+       LIBS="$LIBS $LIBFRAME_LIBS"
+       AC_CHECK_LIB([Frame],[FrLibIni],,[AC_MSG_ERROR([could not find the frame library])])
+       AC_CHECK_HEADERS([FrameL.h],,[AC_MSG_ERROR([could not find the FrameL.h header])])
+       AC_DEFINE([USE_FRAMEL],[],[Define to use FrameL])
+       FRAME_LIBRARY="FrameL"])
 
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
@@ -168,6 +181,7 @@ echo "
 ==================================================
 LALFrame has now been successfully configured:
 
+* using the $FRAME_LIBRARY frame library
 * inotify support is $INOTIFY_ENABLE_VAL
 * SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
 * SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
