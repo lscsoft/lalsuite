@@ -599,6 +599,11 @@ if (swiglal_release_parent(PTR)) {
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
+// Get the correct descriptor for a dynamic array element:
+// always return a pointer-description, even for non-pointer types
+%typemap(swiglal_dynarr_pdesc) SWIGTYPE  "$&descriptor";
+%typemap(swiglal_dynarr_pdesc) SWIGTYPE* "$descriptor";
+
 // The %swiglal_array_dynamic_<n>D() macros create typemaps which convert
 // <n>-D dynamically-allocated arrays in structs. The macros must be
 // added inside the definition of the struct, before the struct members
@@ -626,7 +631,7 @@ if (swiglal_release_parent(PTR)) {
       // swiglal_array_typeid input type: $1_type
       int ecode = %swiglal_array_copyin($1_type)(swiglal_self(), $input, %as_voidptr($1),
                                                  sizeof(TYPE), 1, dims, strides,
-                                                 $*descriptor,
+                                                 $typemap(swiglal_dynarr_pdesc, TYPE),
                                                  $disown | %convertptr_flags);
       if (!SWIG_IsOK(ecode)) {
         %argument_fail(ecode, "$type", $symname, $argnum);
@@ -641,7 +646,7 @@ if (swiglal_release_parent(PTR)) {
       // swiglal_array_typeid input type: $1_type
       %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
                                                   sizeof(TYPE), 1, dims, strides,
-                                                  $*descriptor,
+                                                  $typemap(swiglal_dynarr_pdesc, TYPE),
                                                   $owner | %newpointer_flags));
     }
   }
@@ -686,7 +691,7 @@ if (swiglal_release_parent(PTR)) {
       // swiglal_array_typeid input type: $1_type
       int ecode = %swiglal_array_copyin($1_type)(swiglal_self(), $input, %as_voidptr($1),
                                                  sizeof(TYPE), 2, dims, strides,
-                                                 $*descriptor,
+                                                 $typemap(swiglal_dynarr_pdesc, TYPE),
                                                  $disown | %convertptr_flags);
       if (!SWIG_IsOK(ecode)) {
         %argument_fail(ecode, "$type", $symname, $argnum);
@@ -701,7 +706,7 @@ if (swiglal_release_parent(PTR)) {
       // swiglal_array_typeid input type: $1_type
       %set_output(%swiglal_array_viewout($1_type)(swiglal_self(), %as_voidptr($1),
                                                   sizeof(TYPE), 2, dims, strides,
-                                                  $*descriptor,
+                                                  $typemap(swiglal_dynarr_pdesc, TYPE),
                                                   $owner | %newpointer_flags));
     }
   }
