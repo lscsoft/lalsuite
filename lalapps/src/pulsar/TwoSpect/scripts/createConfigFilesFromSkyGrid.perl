@@ -11,6 +11,7 @@ my $numberBands = $ARGV[3];
 my $ifo = $ARGV[4];
 my $outputPathBase = $ARGV[5];
 my $analysisdate = $ARGV[6];
+my $sftVersion = $ARGV[7];
 my $Tcoh = 1800;
 my $Tobs = 40551300;
 my $Pmin = 7200.0;
@@ -37,7 +38,16 @@ my $minTemplateLength = 1;
 my $maxTemplateLength = 500;
 my $avesqrtSh = 1.0e-22;
 my $sftOverlap = 900;
-my $sfttype = "vladimir";
+my $sfttype = "";
+if ($sftVersion==1) {
+   $sfttype = "vladimir";
+   $sftVersion = "";
+} elsif ($sftVersion==2) {
+   $sfttype = "MFD";
+   $sftVersion = "_v2";
+} else {
+   die "sftVersion must equal 1 or 2, but input was $sftVersion";
+}
 my $FFTplanFlag = 3;
 my $ephemDir = "/home/egoetz/TwoSpect/S6";
 my $ephemYear = "08-11-DE405";
@@ -127,7 +137,7 @@ blksize $blksize
 avesqrtSh $avesqrtSh
 minTemplateLength $minTemplateLength
 maxTemplateLength $maxTemplateLength
-sftDir $sftDir
+sftFile $sftDir/*$sftVersion.sft
 ephemDir $ephemDir
 ephemYear $ephemYear
 outdirectory $outdirectory
