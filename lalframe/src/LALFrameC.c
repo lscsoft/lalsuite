@@ -3,6 +3,7 @@
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
+#include <lal/Date.h>
 
 #ifdef CHAR
 #undef CHAR
@@ -107,6 +108,7 @@ int XLALFrameUFileCksumValid(LALFrameUFrFile * stream)
 {
     /* TODO Enable this when routine becomes available! */
     // TRY_FRAMEC_FUNCTION( FrameCFileCksumValid, stream );
+    stream = NULL;
     return 0;
 }
 
@@ -460,6 +462,7 @@ double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel)
        fr_chan_time_offset_t offset;
        TRY_FRAMEC_FUNCTION_VAL( offset, 0, FrameCFrChanQuery, channel, FR_CHAN_FIELD_TIME_OFFSET, &offset, FR_CHAN_FIELD_LAST );
      */
+    channel = NULL;
     return 0;
 }
 
@@ -663,6 +666,14 @@ int XLALFrameUFrChanVectorSetData(LALFrameUFrChan *channel, void *data, size_t n
 	LALFree(dx_);
 	return err ? -1 : 0;
 }
+*/
+
+
+/* TODO:
+XLALFrameUFrChanVectorSetDx
+XLALFrameUFrChanVectorSetStartX
+XLALFrameUFrChanVectorSetUnitX
+XLALFrameUFrChanVectorSetUnitY
 */
 
 /*
