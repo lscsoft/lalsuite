@@ -32,6 +32,8 @@ extern "C" {
 EphemerisData * XLALInitBarycenter ( const CHAR *earthEphemerisFile, const CHAR *sunEphemerisFile );
 void XLALDestroyEphemerisData ( EphemerisData *edat );
 
+TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile );
+void XLALDestroyTimeCorrectionData( TimeCorrectionData *times );
 
 /* ==================== deprecated LAL interface  ==================================================*/
 
