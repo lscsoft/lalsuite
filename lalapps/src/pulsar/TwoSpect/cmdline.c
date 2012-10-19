@@ -54,9 +54,9 @@ const char *gengetopt_args_info_full_help[] = {
   "      --configCopy=filename     Copy of the configuration file whose output is \n                                  gengetopt format  \n                                  (default=`input_values.conf')",
   "      --ULfilename=filename     Upper limit file name  (default=`uls.dat')",
   "      --normRMSoutput=filename  File for the output of the normalized RMS from \n                                  the non-slided data",
-  "      --sftDir=directory        Directory containing SFTs  (default=`./')",
-  "      --sftFile=path/filename   Path and filename of SFTs  (default=`*.sft')",
-  "      --ephemDir=directory      Path to ephemeris files",
+  "      --sftDir=directory        Directory containing SFTs, e.g., /path/to/file \n                                  (one of --sftDir or --sftFile must be \n                                  specified)",
+  "      --sftFile=path/filename   Path and filename of SFTs, e.g., \n                                  /path/to/file/sftdata.sft (one of --sftDir or \n                                  --sftFile must be specified)",
+  "      --ephemDir=directory      Path to ephemeris files, e.g. \n                                  /path/to/ephemeris/files",
   "      --ephemYear=STRING        Year or year range (e.g. 08-11) of ephemeris \n                                  files",
   "\nTwoSpect search parameters:",
   "      --Pmin=DOUBLE             Minimum period to be searched (in seconds)",
@@ -332,9 +332,9 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ULfilename_orig = NULL;
   args_info->normRMSoutput_arg = NULL;
   args_info->normRMSoutput_orig = NULL;
-  args_info->sftDir_arg = gengetopt_strdup ("./");
+  args_info->sftDir_arg = NULL;
   args_info->sftDir_orig = NULL;
-  args_info->sftFile_arg = gengetopt_strdup ("*.sft");
+  args_info->sftFile_arg = NULL;
   args_info->sftFile_orig = NULL;
   args_info->ephemDir_arg = NULL;
   args_info->ephemDir_orig = NULL;
@@ -1774,35 +1774,35 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* Directory containing SFTs.  */
+          /* Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
           else if (strcmp (long_options[option_index].name, "sftDir") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftDir_arg), 
                  &(args_info->sftDir_orig), &(args_info->sftDir_given),
-                &(local_args_info.sftDir_given), optarg, 0, "./", ARG_STRING,
+                &(local_args_info.sftDir_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftDir", '-',
                 additional_error))
               goto failure;
           
           }
-          /* Path and filename of SFTs.  */
+          /* Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
           else if (strcmp (long_options[option_index].name, "sftFile") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftFile_arg), 
                  &(args_info->sftFile_orig), &(args_info->sftFile_given),
-                &(local_args_info.sftFile_given), optarg, 0, "*.sft", ARG_STRING,
+                &(local_args_info.sftFile_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftFile", '-',
                 additional_error))
               goto failure;
           
           }
-          /* Path to ephemeris files.  */
+          /* Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
           else if (strcmp (long_options[option_index].name, "ephemDir") == 0)
           {
           

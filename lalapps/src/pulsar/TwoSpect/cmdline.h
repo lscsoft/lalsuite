@@ -93,15 +93,15 @@ struct gengetopt_args_info
   char * normRMSoutput_arg;	/**< @brief File for the output of the normalized RMS from the non-slided data.  */
   char * normRMSoutput_orig;	/**< @brief File for the output of the normalized RMS from the non-slided data original value given at command line.  */
   const char *normRMSoutput_help; /**< @brief File for the output of the normalized RMS from the non-slided data help description.  */
-  char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
-  char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
-  const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
-  char * sftFile_arg;	/**< @brief Path and filename of SFTs (default='*.sft').  */
-  char * sftFile_orig;	/**< @brief Path and filename of SFTs original value given at command line.  */
-  const char *sftFile_help; /**< @brief Path and filename of SFTs help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files.  */
-  char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
-  const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
+  char * sftDir_arg;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
+  char * sftDir_orig;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) original value given at command line.  */
+  const char *sftDir_help; /**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) help description.  */
+  char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
+  char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) original value given at command line.  */
+  const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) help description.  */
+  char * ephemDir_arg;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
+  char * ephemDir_orig;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files original value given at command line.  */
+  const char *ephemDir_help; /**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files help description.  */
   char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files.  */
   char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
   const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */

@@ -25,9 +25,9 @@ option "outfilename"    - "Output file name" string typestr="filename" default="
 option "configCopy"     - "Copy of the configuration file whose output is gengetopt format" string typestr="filename" default="input_values.conf" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
-option "sftDir"         - "Directory containing SFTs" string typestr="directory" default="./" optional
-option "sftFile"        - "Path and filename of SFTs" string typestr="path/filename" default="*.sft" optional
-option "ephemDir"       - "Path to ephemeris files" string typestr="directory" optional
+option "sftDir"         - "Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified)" string typestr="directory" optional
+option "sftFile"        - "Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified)" string typestr="path/filename" optional
+option "ephemDir"       - "Path to ephemeris files, e.g. /path/to/ephemeris/files" string typestr="directory" optional
 option "ephemYear"      - "Year or year range (e.g. 08-11) of ephemeris files" string optional
 
 section "TwoSpect search parameters"
