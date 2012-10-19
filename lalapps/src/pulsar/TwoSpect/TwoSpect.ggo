@@ -16,12 +16,12 @@ option "fmin"  - "Minimum frequency of band (Hz)" double required
 option "fspan" - "Frequency span of band (Hz)" double required
 option "IFO"   - "Interferometer of whose data is being analyzed" string typestr="IFO code" values="H1","L1","V1" required multiple(1)
 option "avesqrtSh"     - "Expected average of square root of Sh" double required
-option "blksize"       - "Blocksize for running median to determine expected noise of input SFTs" int default="101" required
-option "sftType"  - "SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt)" string values="standard","vladimir" default="standard" required
+option "blksize"       - "Blocksize for running median to determine expected noise of input SFTs" int default="101" optional
+option "sftType"  - "SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt)" string values="standard","vladimir" default="standard" optional
 
 section "Input/ouput parameters"
-option "outdirectory"   - "Output directory" string typestr="directory" default="output" required
-option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" required
+option "outdirectory"   - "Output directory" string typestr="directory" default="output" optional
+option "outfilename"    - "Output file name" string typestr="filename" default="logfile.txt" optional
 option "configCopy"     - "Copy of the configuration file whose output is gengetopt format" string typestr="filename" default="input_values.conf" optional
 option "ULfilename"     - "Upper limit file name" string typestr="filename" default="uls.dat" optional
 option "normRMSoutput"  - "File for the output of the normalized RMS from the non-slided data" string typestr="filename" optional
@@ -63,7 +63,7 @@ option "simpleBandRejection"  - "Produce upper limits for each band, but if seco
 option "lineDetection"        - "Detect stationary lines above threshold, and, if any present, set upper limit only, no template follow-up" double optional
 
 section "TwoSpect performance options"
-option "FFTplanFlag"    - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int values="0","1","2","3" default="1" required
+option "FFTplanFlag"    - "0=Estimate, 1=Measure, 2=Patient, 3=Exhaustive" int values="0","1","2","3" default="1" optional
 option "fastchisqinv"   - "Use a faster central chi-sq inversion function (roughly float precision instead of double)" flag off
 option "useSSE"         - "Use SSE functions (caution: user needs to have compiled for SSE or program fails)" flag off
 option "followUpOutsideULrange"  - "Follow up outliers outside the range of the UL values" flag off

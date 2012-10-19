@@ -1178,30 +1178,6 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
       error = 1;
     }
   
-  if (! args_info->blksize_given)
-    {
-      fprintf (stderr, "%s: '--blksize' option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->sftType_given)
-    {
-      fprintf (stderr, "%s: '--sftType' option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->outdirectory_given)
-    {
-      fprintf (stderr, "%s: '--outdirectory' option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->outfilename_given)
-    {
-      fprintf (stderr, "%s: '--outfilename' option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
   if (! args_info->ephemDir_given)
     {
       fprintf (stderr, "%s: '--ephemDir' option required%s\n", prog_name, (additional_error ? additional_error : ""));
@@ -1235,12 +1211,6 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   if (! args_info->dfmax_given)
     {
       fprintf (stderr, "%s: '--dfmax' option required%s\n", prog_name, (additional_error ? additional_error : ""));
-      error = 1;
-    }
-  
-  if (! args_info->FFTplanFlag_given)
-    {
-      fprintf (stderr, "%s: '--FFTplanFlag' option required%s\n", prog_name, (additional_error ? additional_error : ""));
       error = 1;
     }
   

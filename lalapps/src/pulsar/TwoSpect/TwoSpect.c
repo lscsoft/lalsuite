@@ -1447,9 +1447,9 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    
    //Running median bias calculation
    if (blksize<1000) {
-      LALRngMedBias(&status, &bias, blksize);
-      if (status.statusCode != 0) {
-         fprintf(stderr,"%s: LALRngMedBias() failed.\n", __func__);
+      bias = XLALRngMedBias(blksize);
+      if (xlalErrno!=0) {
+	 fprintf(stderr,"%s: XLALRngMedBias(%d) failed.\n", __func__, blksize);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
    } else {
