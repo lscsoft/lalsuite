@@ -43,7 +43,7 @@ if ($sftVersion==1) {
    $sfttype = "vladimir";
    $sftVersion = "";
 } elsif ($sftVersion==2) {
-   $sfttype = "MFD";
+   $sfttype = "standard";
    $sftVersion = "_v2";
 } else {
    die "sftVersion must equal 1 or 2, but input was $sftVersion";
