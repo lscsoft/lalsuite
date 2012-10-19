@@ -75,9 +75,9 @@ struct gengetopt_args_info
   int blksize_arg;	/**< @brief Blocksize for running median to determine expected noise of input SFTs (default='101').  */
   char * blksize_orig;	/**< @brief Blocksize for running median to determine expected noise of input SFTs original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median to determine expected noise of input SFTs help description.  */
-  char * sftType_arg;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization (default='vladimir').  */
-  char * sftType_orig;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization original value given at command line.  */
-  const char *sftType_help; /**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
+  char * sftType_arg;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) (default='standard').  */
+  char * sftType_orig;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) original value given at command line.  */
+  const char *sftType_help; /**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) help description.  */
   char * outdirectory_arg;	/**< @brief Output directory (default='output').  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
@@ -147,10 +147,10 @@ struct gengetopt_args_info
   double tmplfar_arg;	/**< @brief Template FAR threshold.  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
-  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='1').  */
   char * minTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *minTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
-  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='1000').  */
   char * maxTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *maxTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
   double ULfmin_arg;	/**< @brief Minimum signal frequency considered for the upper limit value (Hz).  */

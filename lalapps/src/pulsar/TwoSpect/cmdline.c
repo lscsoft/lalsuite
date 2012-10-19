@@ -47,7 +47,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --IFO=IFO code            Interferometer of whose data is being analyzed  \n                                  (possible values=\"H1\", \"L1\", \"V1\")",
   "      --avesqrtSh=DOUBLE        Expected average of square root of Sh",
   "      --blksize=INT             Blocksize for running median to determine \n                                  expected noise of input SFTs  (default=`101')",
-  "      --sftType=STRING          SFT from either 'MFD' (Makefakedata_v4) or \n                                  'vladimir' (Vladimir's SFT windowed version) \n                                  which uses a factor of 2 rather than \n                                  sqrt(8/3) for the window normalization  \n                                  (possible values=\"MFD\", \"vladimir\" \n                                  default=`vladimir')",
+  "      --sftType=STRING          SFT type of either 'standard' (v2 SFTs; FFT \n                                  coefficients * dt/RMS(window weights)) or \n                                  'vladimir' (Vladimir's Hann windowed SFT \n                                  version; FFT coefficients * 2*dt)  (possible \n                                  values=\"standard\", \"vladimir\" \n                                  default=`standard')",
   "\nInput/ouput parameters:",
   "      --outdirectory=directory  Output directory  (default=`output')",
   "      --outfilename=filename    Output file name  (default=`logfile.txt')",
@@ -74,8 +74,8 @@ const char *gengetopt_args_info_full_help[] = {
   "      --ihsfomfar=DOUBLE        IHS FOM FAR threshold",
   "      --keepOnlyTopNumIHS=INT   Keep the top <number> of IHS candidates based \n                                  on significance",
   "      --tmplfar=DOUBLE          Template FAR threshold",
-  "      --minTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
-  "      --maxTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`50')",
+  "      --minTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`1')",
+  "      --maxTemplateLength=INT   Maximum number of pixels to use in the template \n                                   (default=`1000')",
   "\nTwoSpect upper limit ranges:",
   "      --ULfmin=DOUBLE           Minimum signal frequency considered for the \n                                  upper limit value (Hz)",
   "      --ULfspan=DOUBLE          Span of signal frequencies considered for the \n                                  upper limit value (Hz)",
@@ -222,7 +222,7 @@ free_cmd_list(void)
 
 
 const char *cmdline_parser_IFO_values[] = {"H1", "L1", "V1", 0}; /*< Possible values for IFO. */
-const char *cmdline_parser_sftType_values[] = {"MFD", "vladimir", 0}; /*< Possible values for sftType. */
+const char *cmdline_parser_sftType_values[] = {"standard", "vladimir", 0}; /*< Possible values for sftType. */
 const char *cmdline_parser_FFTplanFlag_values[] = {"0", "1", "2", "3", 0}; /*< Possible values for FFTplanFlag. */
 const char *cmdline_parser_ULsolver_values[] = {"0", "1", "2", "3", "4", "5", 0}; /*< Possible values for ULsolver. */
 
@@ -320,7 +320,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->avesqrtSh_orig = NULL;
   args_info->blksize_arg = 101;
   args_info->blksize_orig = NULL;
-  args_info->sftType_arg = gengetopt_strdup ("vladimir");
+  args_info->sftType_arg = gengetopt_strdup ("standard");
   args_info->sftType_orig = NULL;
   args_info->outdirectory_arg = gengetopt_strdup ("output");
   args_info->outdirectory_orig = NULL;
@@ -358,9 +358,9 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->ihsfomfar_orig = NULL;
   args_info->keepOnlyTopNumIHS_orig = NULL;
   args_info->tmplfar_orig = NULL;
-  args_info->minTemplateLength_arg = 50;
+  args_info->minTemplateLength_arg = 1;
   args_info->minTemplateLength_orig = NULL;
-  args_info->maxTemplateLength_arg = 50;
+  args_info->maxTemplateLength_arg = 1000;
   args_info->maxTemplateLength_orig = NULL;
   args_info->ULfmin_orig = NULL;
   args_info->ULfspan_orig = NULL;
@@ -1127,8 +1127,122 @@ cmdline_parser_required2 (struct gengetopt_args_info *args_info, const char *pro
   FIX_UNUSED (additional_error);
 
   /* checks for required options */
+  if (! args_info->Tobs_given)
+    {
+      fprintf (stderr, "%s: '--Tobs' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->Tcoh_given)
+    {
+      fprintf (stderr, "%s: '--Tcoh' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->SFToverlap_given)
+    {
+      fprintf (stderr, "%s: '--SFToverlap' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->t0_given)
+    {
+      fprintf (stderr, "%s: '--t0' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->fmin_given)
+    {
+      fprintf (stderr, "%s: '--fmin' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->fspan_given)
+    {
+      fprintf (stderr, "%s: '--fspan' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->IFO_given)
+    {
+      fprintf (stderr, "%s: '--IFO' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
   if (check_multiple_option_occurrences(prog_name, args_info->IFO_given, args_info->IFO_min, args_info->IFO_max, "'--IFO'"))
      error = 1;
+  
+  if (! args_info->avesqrtSh_given)
+    {
+      fprintf (stderr, "%s: '--avesqrtSh' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->blksize_given)
+    {
+      fprintf (stderr, "%s: '--blksize' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->sftType_given)
+    {
+      fprintf (stderr, "%s: '--sftType' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->outdirectory_given)
+    {
+      fprintf (stderr, "%s: '--outdirectory' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->outfilename_given)
+    {
+      fprintf (stderr, "%s: '--outfilename' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->ephemDir_given)
+    {
+      fprintf (stderr, "%s: '--ephemDir' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->ephemYear_given)
+    {
+      fprintf (stderr, "%s: '--ephemYear' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->Pmin_given)
+    {
+      fprintf (stderr, "%s: '--Pmin' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->Pmax_given)
+    {
+      fprintf (stderr, "%s: '--Pmax' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->dfmin_given)
+    {
+      fprintf (stderr, "%s: '--dfmin' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->dfmax_given)
+    {
+      fprintf (stderr, "%s: '--dfmax' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
+  
+  if (! args_info->FFTplanFlag_given)
+    {
+      fprintf (stderr, "%s: '--FFTplanFlag' option required%s\n", prog_name, (additional_error ? additional_error : ""));
+      error = 1;
+    }
   
   
   /* checks for dependences among options */
@@ -1690,14 +1804,14 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization.  */
+          /* SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt).  */
           else if (strcmp (long_options[option_index].name, "sftType") == 0)
           {
           
           
             if (update_arg( (void *)&(args_info->sftType_arg), 
                  &(args_info->sftType_orig), &(args_info->sftType_given),
-                &(local_args_info.sftType_given), optarg, cmdline_parser_sftType_values, "vladimir", ARG_STRING,
+                &(local_args_info.sftType_given), optarg, cmdline_parser_sftType_values, "standard", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "sftType", '-',
                 additional_error))
@@ -2033,7 +2147,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->minTemplateLength_arg), 
                  &(args_info->minTemplateLength_orig), &(args_info->minTemplateLength_given),
-                &(local_args_info.minTemplateLength_given), optarg, 0, "50", ARG_INT,
+                &(local_args_info.minTemplateLength_given), optarg, 0, "1", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "minTemplateLength", '-',
                 additional_error))
@@ -2047,7 +2161,7 @@ cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->maxTemplateLength_arg), 
                  &(args_info->maxTemplateLength_orig), &(args_info->maxTemplateLength_given),
-                &(local_args_info.maxTemplateLength_given), optarg, 0, "50", ARG_INT,
+                &(local_args_info.maxTemplateLength_given), optarg, 0, "1000", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "maxTemplateLength", '-',
                 additional_error))
