@@ -79,7 +79,7 @@ tagFacWaveformCoeffs
 {
   REAL8 delta22vh3;
   REAL8 delta22vh6;
-  REAL8 delta22vh8;
+  REAL8 delta22v8;
   REAL8 delta22vh9;
   REAL8 delta22v5;
 
