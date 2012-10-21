@@ -115,7 +115,10 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	{
 	  XLAL_ERROR( XLAL_EINVAL );
 	}
-	
+        if ( m == 0 )
+	{
+	  XLAL_ERROR( XLAL_EINVAL );
+	}	
 
         eta = params->eobParams->eta;
 
@@ -213,8 +216,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	    {
 	      case 2:
 	        deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6 
-                    + vh*vh*(0.*hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh)))
-                    + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22vh8 *v2*v2*v2*v2;
+                    + vh*vh*(hCoeffs->delta22vh9*vh)))
+                    + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22v8 *v2*v2*v2*v2;
             rholm	= 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
                 + v*(hCoeffs->rho22v4
                 + v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6 
@@ -472,6 +475,11 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
         {
           rholmPwrl *= rholm;
         }
+        /* In the equal-mass odd m case, there is no contribution from nonspin terms,  
+         * and the only contribution comes from the auxflm term that is proportional to chiA (asymmetric spins). 
+         * In this case, we must ignore the nonspin terms directly, since the leading term defined by 
+         * CalculateThisMultipolePrefix in LALSimIMREOBNewtonianMultipole.c is not zero (see comments there).
+         */ 
         if (eta == 0.25 && m % 2)
         {
           rholmPwrl = auxflm;
@@ -555,7 +563,7 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
 
   coeffs->delta22vh3 = 7./3.;
   coeffs->delta22vh6 = (-4.*a)/3. + (428.*LAL_PI)/105.;
-  coeffs->delta22vh8 = (20.*a)/63.;
+  coeffs->delta22v8 = (20.*a)/63.;
   coeffs->delta22vh9 = -2203./81. + (1712.*LAL_PI*LAL_PI)/315.;
   coeffs->delta22v5  = - 24.*eta;
 
