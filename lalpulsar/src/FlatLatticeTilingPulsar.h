@@ -36,6 +36,26 @@ extern "C" {
 #endif
 
 ///
+/// Types of tiling for XLALSetFlatLatticeSuperSkyNZBound()
+///
+typedef enum {
+  FLSSNZ_LOWER = 0,	///< Tile over the lower hemisphere
+  FLSSNZ_PLANE,		///< Tile over the azimuthal plane
+  FLSSNZ_UPPER,		///< Tile over the upper hemisphere
+  FLSSNZ_SPHERE,	///< Tile over the whole sphere
+  FLSSNZ_LAST
+} FLSSNZ;
+
+///
+/// Set a singular bound(s) on the Z dimension of the sky position in super-sky coordinates
+///
+int XLALSetFlatLatticeSuperSkyNZBound(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const size_t nz_dimension,		///< [in] Sky position Z dimension
+  const FLSSNZ type			///< [in] Tiling type
+  );
+
+///
 /// Set a first spindown bound derived from spindown age and braking indices
 ///
 int XLALSetFlatLatticeF1DotAgeBrakingBound(

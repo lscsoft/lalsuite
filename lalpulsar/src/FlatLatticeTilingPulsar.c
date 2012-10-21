@@ -27,6 +27,77 @@
 #define UNUSED
 #endif
 
+static void SuperSkyNZBound(
+  const size_t dimension,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper UNUSED,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
+
+  // Get bounds data
+  const FLSSNZ type = *((const FLSSNZ*)data);
+
+  // Calculate nz from nx and ny
+  const double nx = gsl_vector_get(point, dimension - 2);
+  const double ny = gsl_vector_get(point, dimension - 1);
+  const double nxysqr = nx * nx + ny * ny;
+  const double nz = (nxysqr < 1.0) ? sqrt(1.0 - nxysqr) : 0.0;
+
+  // Set singular bounds on nz
+  if (nz > 0.0) {
+    switch (type) {
+    case FLSSNZ_LOWER:
+      gsl_vector_set(lower, 0, -nz);
+      break;
+    case FLSSNZ_PLANE:
+      gsl_vector_set(lower, 0, 0.0);
+      break;
+    case FLSSNZ_UPPER:
+      gsl_vector_set(lower, 0, nz);
+      break;
+    case FLSSNZ_SPHERE:
+      gsl_vector_set(lower, 0, -nz);
+      gsl_vector_set(lower, 1, nz);
+      break;
+    default:
+      return;
+    }
+  } else {
+    gsl_vector_set(lower, 0, 0.0);
+  }
+
+};
+
+int XLALSetFlatLatticeSuperSkyNZBound(
+  FlatLatticeTiling* tiling,
+  const size_t nz_dimension,
+  const FLSSNZ type
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(type < FLSSNZ_LAST, XLAL_EINVAL);
+
+  // Allocate and set bounds data
+  FLSSNZ* info = XLALCalloc(1, sizeof(FLSSNZ));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+  *info = type;
+
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, nz_dimension, true, SuperSkyNZBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  return XLAL_SUCCESS;
+
+}
+
 typedef struct {
   size_t freq_dim;
   double lower;
