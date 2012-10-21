@@ -34,6 +34,7 @@ typedef struct {
 } F1DotAgeBrakingBoundInfo;
 
 static void F1DotAgeBrakingBound(
+  const size_t dimension UNUSED,
   const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point,
   const void* data,
@@ -99,6 +100,7 @@ typedef struct {
 } F2DotBrakingBoundInfo;
 
 static void F2DotBrakingBound(
+  const size_t dimension UNUSED,
   const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point,
   const void* data,

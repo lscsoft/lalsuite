@@ -842,6 +842,7 @@ int XLALAnstarLatticeGenerator(
 }
 
 static void ConstantBound(
+  const size_t dimension UNUSED,
   const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point UNUSED,
   const void* data,
@@ -906,11 +907,11 @@ static void GetPhysBounds(
   // Call parameter space bounds function, with
   // view of physical point only in lower dimensions
   if (dimension == 0) {
-    (bound->func)(NULL, NULL, bound->data, phys_lower, phys_upper_tiled);
+    (bound->func)(dimension, NULL, NULL, bound->data, phys_lower, phys_upper_tiled);
   } else {
     gsl_vector_uint_const_view curr_bound_view = gsl_vector_uint_const_subvector(curr_bound, 0, dimension);
     gsl_vector_const_view phys_point_view = gsl_vector_const_subvector(phys_point, 0, dimension);
-    (bound->func)(&curr_bound_view.vector, &phys_point_view.vector, bound->data, phys_lower, phys_upper_tiled);
+    (bound->func)(dimension, &curr_bound_view.vector, &phys_point_view.vector, bound->data, phys_lower, phys_upper_tiled);
   }
 
 }

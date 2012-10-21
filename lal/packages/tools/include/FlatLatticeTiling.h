@@ -45,6 +45,7 @@ extern "C" {
 /// Flat lattice tiling bound function
 ///
 typedef void (*FlatLatticeBound)(
+  const size_t dimension,	///< [in] Dimension on which bound applies
   const gsl_vector_uint* bound,	///< [in] Indices of current bounds
   const gsl_vector* point,	///< [in] Point on which to find bounds
   const void* data,		///< [in] Arbitrary data describing parameter space
