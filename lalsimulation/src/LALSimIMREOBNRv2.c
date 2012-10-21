@@ -41,6 +41,7 @@ Pan et al, PRD84, 124052(2011).
 #include <lal/TimeSeries.h>
 #include <gsl/gsl_sf_gamma.h>
 #include "LALSimIMREOBNRv2.h"
+#include "LALSimBlackHoleRingdown.h"
 
 /* Include all the static function files we need */
 #include "LALSimIMREOBFactorizedWaveform.c"
