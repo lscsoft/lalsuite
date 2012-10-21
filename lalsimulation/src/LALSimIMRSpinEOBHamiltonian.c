@@ -239,7 +239,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   deltaR = deltaT*D;
   /* See Hns below, Eq. 4.34 of Damour et al. PRD 62, 084011 (2000) */
   qq = 2.*eta*(4. - 3.*eta);
-  /* See Hns below */
+  /* See Hns below. In Sec. II D of BB2 b3 and bb3 coeffs are chosen to be zero. */
   ww=2.*a*r + coeffs->b3*eta*a2*a*u + coeffs->bb3*eta*a*u;
 
   /* We need to transform the momentum to get the tortoise co-ord */
