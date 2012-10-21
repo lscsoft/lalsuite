@@ -1178,6 +1178,7 @@ void makeTemplate(templateStruct *output, candidate input, inputParamsStruct *pa
    //Destroy stuff
    XLALDestroyREAL4Vector(psd1);
    XLALDestroyREAL8Vector(freqbins);
+   XLALDestroyREAL8Vector(bindiffs);
    XLALDestroyREAL4Vector(x);
    XLALDestroyREAL4Window(win);
    XLALDestroyREAL4Vector(psd);

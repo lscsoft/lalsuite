@@ -36,8 +36,8 @@
  * The functions that make up the guts of this module
  */
 
-/** Routine for finding bias in median for exponential distribution
- to be used with any code which uses the running median to estimate PSD.
+/** Function for finding bias in median for exponential distribution
+    to be used with any code which uses the running median to estimate PSD.
 
 For the exponential distribution with unit mean and variance, the value of the
 median is \f$\log(2.0)\f$ in the limit of infinite sample size. Thus, if we are
@@ -49,41 +49,49 @@ for block sizes from 1 to 1000.  For larger values it returns \f$\log(2.0)\f$ an
 returns and error for smaller values.
 
 */
-void LALRngMedBias (LALStatus   *status,
-		 REAL8       *biasFactor,
-		 INT4        blkSize
-                 )
+REAL8
+XLALRngMedBias ( INT4 blkSize )
 {
-
-  REAL8 temp;
-  INT4 plusminus, count;
-
-
-  /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
   /* check arguments are not null and block size is positive*/
-  ASSERT (biasFactor, status, RNGMEDBIASH_ENULL, RNGMEDBIASH_MSGENULL);
-  ASSERT (blkSize > 0, status,  RNGMEDBIASH_EVAL, RNGMEDBIASH_MSGEVAL);
+  XLAL_CHECK_REAL8 ( blkSize > 0, XLAL_EINVAL, "Invalid blkSize = %d, must be >0", blkSize );
 
   /* if blkSize is even, reduce it by one */
   if ( (blkSize % 2) == 0)
     blkSize -= 1;
 
   /* now sum alternating harmonic series upto blkSize */
-  temp = 0.0;
-  plusminus = 1;
-  for (count = 0; count < blkSize; count++)
+  REAL8 biasFactor = 0.0;
+  INT4 plusminus = 1;
+  for (INT4 count = 0; count < blkSize; count++)
     {
-      temp += plusminus / (count + 1.0);
+      biasFactor += plusminus / (count + 1.0);
       plusminus *= -1;
     }
 
-  *biasFactor =  temp;
+  return biasFactor;
 
+} // XLALRngMedBias()
 
-  DETATCHSTATUSPTR (status);
+/** \deprecated use XLALRngMedBias() instead.
+ * Just a wrapper for XLALRngMedBias()
+ */
+void
+LALRngMedBias (LALStatus   *status,
+                    REAL8       *biasFactor,
+                    INT4        blkSize
+                    )
+{
+  // check input consistency
+  if ( biasFactor == NULL )
+    ABORT ( status, RNGMEDBIASH_ENULL, RNGMEDBIASH_MSGENULL);
+
+  REAL8 temp = XLALRngMedBias ( blkSize );
+  if ( xlalErrno != 0 )
+    ABORT ( status, RNGMEDBIASH_EVAL, RNGMEDBIASH_MSGEVAL );
+
+  (*biasFactor) = temp;
+
   /* normal exit */
   RETURN (status);
-}
+
+} /* LALRngMedBias() */

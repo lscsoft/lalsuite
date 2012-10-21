@@ -376,9 +376,6 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
    
-   //Uncertainty for a single noise value is 1/sqrt(number of averages)
-   //REAL8 singleIHSsigma = 0.0158;
-   
    //Determine the locations of the harmonics of the earth's rotation in the IHS vector
    //Amplitude modulations caused by the varying antenna pattern can sometimes cause excess power, so we ignore these harmonics
    REAL8 dailyharmonic = Tobs/(24.0*3600.0);
@@ -397,47 +394,27 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
       }
    }
    
-   //TODO: try this here
+   //Do the expected IHS values from the expected background here
    memcpy(noise->data, aveNoise->data, sizeof(REAL4)*aveNoise->length);
    for (ii=0; ii<(INT4)aveNoise->length; ii++) if (markedharmonics->data[ii]==1) noise->data[ii] = 0.0;
    incHarmSumVector(output->expectedIHSVector, noise, params->ihsfactor);
    //for (ii=0; ii<(INT4)output->expectedIHSVector->length; ii++) fprintf(stderr, "%g\n", output->expectedIHSVector->data[ii]);
-   //Up to here
    
    //Now do a number of trials
    for (ii=0; ii<trials; ii++) {
       
       //Make a random number of 1 +/- sigma to create the variations in the nosie that we typically observe
       //This number needs to be positive
-      //REAL8 randval = 1.0 + 1.0*gsl_ran_gaussian(params->rng, singleIHSsigma);
-      //while (randval<0.0) randval = 1.0 + 1.0*gsl_ran_gaussian(params->rng, singleIHSsigma);
       REAL8 randval = 1.0;
       randval = 1.0 + gsl_ran_gaussian(params->rng, 0.2);
-      while (randval<=0.0 || randval>=2.0) randval = 1.0 + gsl_ran_gaussian(params->rng, 0.2);
+      while (randval<=0.0 || randval>=2.0) randval = 1.0 + gsl_ran_gaussian(params->rng, 0.2);     //limit range of variation to 5*sigma
             
       //Make exponential noise removing harmonics of 24 hours to match with the same method as real analysis
       for (jj=0; jj<(INT4)aveNoise->length; jj++) {
-         /* if (markedharmonics->data[jj]==0) {
-            noise->data[jj] = (REAL4)(gsl_ran_exponential(params->rng, aveNoise->data[jj]*randval));
-         }
-         else noise->data[jj] = 0.0; */
          if (markedharmonics->data[jj]==0) {
-            //REAL8 individualrandval = 1.0;
-            //individualrandval = 1.0 + 5.0*gsl_ran_gaussian(params->rng, singleIHSsigma);
-            //while (individualrandval<=0.0 || individualrandval>=2.0) individualrandval = 1.0 + 5.0*gsl_ran_gaussian(params->rng, singleIHSsigma);
-            //noise->data[jj] = (REAL4)(gsl_ran_exponential(params->rng, aveNoise->data[jj]*individualrandval));
             noise->data[jj] = (REAL4)(gsl_ran_exponential(params->rng, aveNoise->data[jj]));
          } else noise->data[jj] = 0.0;
       } /* for jj < aveNoise->length */
-      
-      /* REAL4Vector *tempvect = XLALCreateREAL4Vector(noise->length);
-      memcpy(tempvect->data, noise->data, sizeof(REAL4)*noise->length);
-      for (jj=1; jj<(INT4)noise->length-1; jj++) {
-         if (markedharmonics->data[jj-1]==0 && markedharmonics->data[jj]==0 && markedharmonics->data[jj+1]==0) {
-            noise->data[jj] = 0.1665*tempvect->data[jj-1] + 0.1665*tempvect->data[jj+1] + 0.667*tempvect->data[jj];
-         }
-      }
-      XLALDestroyREAL4Vector(tempvect); */
       
       sseScaleREAL4Vector(noise, noise, randval);
       if (xlalErrno!=0) {
@@ -460,19 +437,6 @@ void genIhsFar(ihsfarStruct *output, inputParamsStruct *params, INT4 rows, REAL4
    XLALDestroyREAL4Vector(noise);
    XLALDestroyREAL4Vector(ihsvector);
    XLALDestroyINT4Vector(markedharmonics);
-   
-   
-   //Force some correlation between neighboring values
-   /* REAL4Vector *tempvect = XLALCreateREAL4Vector(ihsvectorsequence->length);
-   for (ii=0; ii<(INT4)ihsvectorsequence->vectorLength; ii++) {
-      for (jj=0; jj<(INT4)ihsvectorsequence->length; jj++) {
-         tempvect->data[jj] = ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + ii];
-      }
-      for (jj=1; jj<(INT4)ihsvectorsequence->length-1; jj++) {
-         ihsvectorsequence->data[jj*ihsvectorsequence->vectorLength + ii] = 0.1665*tempvect->data[jj-1] + 0.667*tempvect->data[jj] + 0.1665*tempvect->data[jj+1];
-      }
-   }
-   XLALDestroyREAL4Vector(tempvect); */
    
    //Create a fake vector with the same average value in each bin = 1.0
    REAL4Vector *FbinMean = XLALCreateREAL4Vector(trials);
@@ -538,15 +502,6 @@ void sumIHSSequenceFAR(ihsfarStruct *outputfar, REAL4VectorSequence *ihsvectorse
       fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ihsvectorsequence->vectorLength);
       XLAL_ERROR_VOID(XLAL_EFUNC);
    }
-   
-   //get the expected IHS vector value (the mean value)
-   /* for (ii=0; ii<(INT4)ihsvectorsequence->vectorLength; ii++) {
-      for (jj=0; jj<(INT4)ihsvectorsequence->length; jj++) {
-         outputfar->expectedIHSVector->data[ii] += ihsvectorsequence->data[jj*tworows->vectorLength + ii];
-      }
-      outputfar->expectedIHSVector->data[ii] /= (REAL4)jj;
-      //fprintf(stderr, "%g\n", outputfar->expectedIHSVector->data[ii]);
-   } */ //TODO: commented out because we do this earlier as a test
    
    //Finding the maximum for each IHS vector and the location
    for (ii=0; ii<(INT4)ihsvalues->length; ii++) {
@@ -1373,7 +1328,7 @@ void findIHScandidates(candidateVector *candlist, ihsfarStruct *ihsfarstruct, in
                   //REAL8 noise = ihsfarstruct->expectedIHSVector->data[loc-5]*ii;
                   REAL8 totalnoise = meanNoise*noise;
                   //REAL8 sigma = calcRms(avgsinrange)*ihsfarstruct->ihsdistSigma->data[ii-2];
-                  //if (ii==2) fprintf(stderr, "%g %g\n", meanNoise, calcRms(avgsinrange));     //TODO: remove this
+                  //if (ii==2) fprintf(stderr, "%g %g\n", meanNoise, calcRms(avgsinrange));     //remove this
                   
                   //REAL8 significance = (ihsmaxima->maxima->data[locationinmaximastruct] - totalnoise)/sigma; //Not robust for low d.o.f.
                   REAL8 significance = gsl_cdf_chisq_Q(2.0*ihsmaxima->maxima->data[locationinmaximastruct], 2.0*totalnoise);

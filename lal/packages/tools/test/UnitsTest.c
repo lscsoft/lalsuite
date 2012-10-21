@@ -67,6 +67,8 @@ LALUnitCompare()
 /** @} */
 
 /** \cond  DONT_DOXYGEN */
+#include <config.h>
+
 #include <stdlib.h>
 
 #include <lal/LALStdlib.h>

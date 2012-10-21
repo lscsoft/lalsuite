@@ -15,7 +15,7 @@ my $Tsft = 1800.0;
 my $dur = 40551300.0;
 my $skygrid = "/home/egoetz/TwoSpect/mismatchDist/skygrid.dat";
 
-for($ii=0; $ii<10; $ii++) {
+for(my $ii=0; $ii<10; $ii++) {
    my $h0 = $h0ul;
    my $psi = sprintf("%.6f",0.5*pi*rand()-0.25*pi);
    my $phi0 = sprintf("%.6f",2.0*pi*rand());
@@ -65,7 +65,7 @@ orbitArgp 0.0
 f1dot 0.0
 refTime 900000000
 noiseSqrtSh 3.0e-23
-randSeed $mfdrandseed
+randSeed $randseedval
 EOF
    close(MFDCONFIG);
 
@@ -96,7 +96,7 @@ maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/IFOmismatch/$jobnum
+outdirectory /home/egoetz/TwoSpect/mismatchDist/$jobnum
 sftType MFD
 IFO H1
 markBadSFTs
@@ -115,25 +115,25 @@ EOF
    system("/home/egoetz/opt/lscsoft/bin/lalapps_Makefakedata_v4 \@/local/user/egoetz/$$/mfdconfig");
    die "system lalapps_Makefakedata_v4 failed: $?" if $?;
    
-   system("/home/egoetz/TwoSpect/mismatchDist/TwoSpect_templateTest --config=testconfig");
+   system("/home/egoetz/TwoSpect/mismatchDist/TwoSpect_templateTest --config=/local/user/egoetz/$$/twospectconfig");
    die "TwoSpect_templateTest failed: $?" if $?;
 
 
-   $dist1 = -1.0;
-   $dist2 = -1.0;
-   $dist3 = -1.0;
-   $dist4 = -1.0;
-   @pt1 = (0, 0);
-   @pt2 = (0, 0);
-   @pt3 = (0, 0);
-   @pt4 = (0, 0);
+   my $dist1 = -1.0;
+   my $dist2 = -1.0;
+   my $dist3 = -1.0;
+   my $dist4 = -1.0;
+   my @pt1 = (0, 0);
+   my @pt2 = (0, 0);
+   my @pt3 = (0, 0);
+   my @pt4 = (0, 0);
    open(SKYFILE, $skygrid) or die "Cannot open $skygrid $!";
-   while($line=<SKYFILE>) {
+   while(my $line=<SKYFILE>) {
       if($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
 
-         $disttest1 = sqrt(($1-$alpha)*($1-$alpha) + ($2-$delta)*($2-$delta));
-         $disttest2 = sqrt((2.0*pi-$1+$alpha)*(2.0*pi-$1+$alpha) + ($2-$delta)*($2-$delta));
-         $dist = $disttest1;
+         my $disttest1 = sqrt(($1-$alpha)*($1-$alpha) + ($2-$delta)*($2-$delta));
+         my $disttest2 = sqrt((2.0*pi-$1+$alpha)*(2.0*pi-$1+$alpha) + ($2-$delta)*($2-$delta));
+         my $dist = $disttest1;
          if($disttest1<=$disttest2) {
             $dist = $disttest1;
          } else {
@@ -182,7 +182,7 @@ $pt4[0] $pt4[1]
 EOF
    close(SKYFILE2);
 
-   open(TWOSPECTCONFIG,">testconfig") or die "Cannot write to testconfig $!";
+   open(TWOSPECTCONFIG,">/local/user/egoetz/$$/twospectconfig") or die "Cannot write to /local/user/egoetz/$$/twospectconfig $!";
    print TWOSPECTCONFIG<<EOF;
 fmin 401.25
 fspan 0.25
@@ -205,18 +205,16 @@ maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/IFOmismatch/$jobnum
+outdirectory /home/egoetz/TwoSpect/mismatchDist/$jobnum
 sftType MFD
 IFO H1
 markBadSFTs
 FFTplanFlag 1
-ULfmin $f0
-ULfspan 0.1
 fastchisqinv
 useSSE
-outfilename logfile_$ii_2.txt
-ULfilename uls_$ii_2.dat
-configCopy input_copy_$ii_2.conf
+outfilename logfile_${ii}_2.txt
+ULfilename uls_${ii}_2.dat
+configCopy input_copy_${ii}_2.conf
 keepOnlyTopNumIHS 5
 EOF
    close(TWOSPECTCONFIG);

@@ -114,7 +114,15 @@ extern "C" {
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
+int XLALSFTtoRngmed ( REAL8FrequencySeries *rngmed, const SFTtype *sft, UINT4 blockSize );
+int XLALSFTtoPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries  *SFT );
+int XLALPeriodoToRngmed ( REAL8FrequencySeries  *rngmed, const REAL8FrequencySeries  *periodo, UINT4 blockSize );
+int XLALNormalizeSFT ( REAL8FrequencySeries *rngmed, SFTtype *sft, UINT4 blockSize );
+int XLALNormalizeSFTVect ( SFTVector  *sftVect,	UINT4 blockSize );
+MultiPSDVector * XLALNormalizeMultiSFTVect ( MultiSFTVector *multsft, UINT4 blockSize );
+int XLALSFTstoCrossPeriodogram ( REAL8FrequencySeries *periodo, const COMPLEX8FrequencySeries *sft1, const COMPLEX8FrequencySeries *sft2 );
 
+// ****************************** OBSOLETE + DEPRECATED LAL-INTERFACE FUNCTIONS ******************************
 
 void LALSFTtoPeriodogram (LALStatus *status,
 			  REAL8FrequencySeries *periodo,

@@ -98,6 +98,7 @@ struct tagFlatLatticeTiling {
   FlatLatticeGenerator generator;	///< Flat tiling lattice generator function
   gsl_vector* phys_scale;		///< Normalised to physical coordinate scaling
   gsl_vector* phys_offset;		///< Normalised to physical coordinate offset
+  gsl_matrix* metric;			///< Normalised parameter space metric
   gsl_vector* bounding_box;		///< Extent of bounding box of metric ellipse
   gsl_matrix* increment;		///< Increment vectors of the lattice tiling generator
   gsl_vector* curr_point;		///< Current lattice point
@@ -105,7 +106,7 @@ struct tagFlatLatticeTiling {
   gsl_matrix* curr_lower;		///< Current lower bound on parameter space
   gsl_matrix* curr_upper;		///< Current upper bound on parameter space
   gsl_vector* curr_phys_point;		///< Current physical parameter-space point
-  uint64_t count;			///< Total number of points generated so far
+  unsigned long count;			///< Total number of points generated so far
 };
 
 FlatLatticeTiling* XLALCreateFlatLatticeTiling(
@@ -113,17 +114,30 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   )
 {
 
+  // Check input
+  XLAL_CHECK_NULL(dimensions > 0, XLAL_EINVAL);
+
   const size_t n = dimensions;
 
-  // Allocate memory
+  // Allocate and initialise tiling structure
   FlatLatticeTiling* tiling = XLALCalloc(1, sizeof(FlatLatticeTiling));
   XLAL_CHECK_NULL(tiling != NULL, XLAL_ENOMEM);
+  tiling->dimensions = n;
+  tiling->status = FLT_S_INCOMPLETE;
+  tiling->generator = NULL;
+  tiling->count = 0;
+
+  // Allocate parameter space bounds info
   tiling->bounds = XLALCalloc(n, sizeof(FLT_Bound));
   XLAL_CHECK_NULL(tiling->bounds != NULL, XLAL_ENOMEM);
+
+  // Allocate vectors and matrices
   tiling->phys_scale = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->phys_scale != NULL, XLAL_ENOMEM);
   tiling->phys_offset = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->phys_offset != NULL, XLAL_ENOMEM);
+  tiling->metric = gsl_matrix_alloc(n, n);
+  XLAL_CHECK_NULL(tiling->metric != NULL, XLAL_ENOMEM);
   tiling->bounding_box = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->bounding_box != NULL, XLAL_ENOMEM);
   tiling->increment = gsl_matrix_alloc(n, n);
@@ -139,12 +153,6 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   tiling->curr_phys_point = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->curr_phys_point != NULL, XLAL_ENOMEM);
 
-  // Initialise tiling structure
-  tiling->dimensions = n;
-  tiling->status = FLT_S_INCOMPLETE;
-  tiling->generator = NULL;
-  tiling->count = 0;
-
   return tiling;
 
 }
@@ -156,14 +164,15 @@ void XLALDestroyFlatLatticeTiling(
 
   if (tiling) {
 
+    const size_t n = tiling->dimensions;
+
     gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
 
-    // Cleanup bounds parameter space data, allowing
-    // bounds to share the same memory
-    for (size_t i = 0; i < tiling->dimensions; ++i) {
+    // Free bounds data, allowing bounds to share the same memory
+    for (size_t i = 0; i < n; ++i) {
       void* data = tiling->bounds[i].data;
       if (data != NULL) {
-        for (size_t j = i; j < tiling->dimensions; ++j) {
+        for (size_t j = i; j < n; ++j) {
           if (tiling->bounds[j].data == data) {
             tiling->bounds[j].data = NULL;
           }
@@ -173,9 +182,10 @@ void XLALDestroyFlatLatticeTiling(
     }
     XLALFree(tiling->bounds);
 
-    // Cleanup vectors and matrices
+    // Free vectors and matrices
     gsl_vector_free(tiling->phys_scale);
     gsl_vector_free(tiling->phys_offset);
+    gsl_matrix_free(tiling->metric);
     gsl_vector_free(tiling->bounding_box);
     gsl_matrix_free(tiling->increment);
     gsl_vector_free(tiling->curr_point);
@@ -184,7 +194,7 @@ void XLALDestroyFlatLatticeTiling(
     gsl_matrix_free(tiling->curr_upper);
     gsl_vector_free(tiling->curr_phys_point);
 
-    // Cleanup tiling
+    // Free tiling structure
     XLALFree(tiling);
 
     gsl_set_error_handler(old_handler);
@@ -201,7 +211,7 @@ size_t XLALGetFlatLatticeDimensions(
   return tiling->dimensions;
 }
 
-uint64_t XLALGetFlatLatticePointCount(
+unsigned long XLALGetFlatLatticePointCount(
   FlatLatticeTiling* tiling
   )
 {
@@ -300,8 +310,8 @@ int XLALSetFlatLatticeMetric(
 
   }
 
-  // Check diagonal elements are positive, and calculate
-  // physical parameter space scaling from metric diagonal
+  // Check diagonal elements of tiled dimensions are positive, and calculate
+  // physical parameter space scaling from metric diagonal elements
   gsl_vector_set_all(tiling->phys_scale, 1.0);
   for (size_t i = 0; i < n; ++i) {
     if (tiling->bounds[i].tiled) {
@@ -319,17 +329,24 @@ int XLALSetFlatLatticeMetric(
   gsl_matrix* tincrement = gsl_matrix_alloc(tn, tn);
   XLAL_CHECK(tincrement != NULL, XLAL_ENOMEM);
 
-  // Check metric is symmetric, and copy and rescale tiled dimensions of metric
+  // Check metric is symmetric, and copy rescaled metric
+  for (size_t i = 0; i < n; ++i) {
+    const double scale_i = gsl_vector_get(tiling->phys_scale, i);
+    for (size_t j = 0; j < n; ++j) {
+      const double scale_j = gsl_vector_get(tiling->phys_scale, j);
+      double metric_i_j = gsl_matrix_get(metric, i, j);
+      XLAL_CHECK(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
+      metric_i_j *= scale_i * scale_j;
+      gsl_matrix_set(tiling->metric, i, j, metric_i_j);
+    }
+  }
+
+  // Copy tiled dimensions of metric
   for (size_t i = 0, ti = 0; i < n; ++i) {
     if (tiling->bounds[i].tiled) {
-      const double scale_i = gsl_vector_get(tiling->phys_scale, i);
       for (size_t j = 0, tj = 0; j < n; ++j) {
         if (tiling->bounds[j].tiled) {
-          const double scale_j = gsl_vector_get(tiling->phys_scale, j);
-          double metric_i_j = gsl_matrix_get(metric, i, j);
-          XLAL_CHECK(metric_i_j == gsl_matrix_get(metric, j, i), XLAL_EINVAL, "metric(%zu,%zu) != metric(%zu,%zu)", i, j, j, i);
-          metric_i_j *= scale_i * scale_j;
-          gsl_matrix_set(tmetric, ti, tj, metric_i_j);
+          gsl_matrix_set(tmetric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
           ++tj;
         }
       }
@@ -625,60 +642,6 @@ gsl_vector* XLALNextFlatLatticePoint(
 
 }
 
-size_t XLALNextFlatLatticePoints(
-  FlatLatticeTiling* tiling,
-  gsl_matrix* points,
-  const bool fill_last
-  )
-{
-
-  const size_t n = tiling->dimensions;
-
-  // Check tiling
-  XLAL_CHECK_VAL(0, tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
-
-  // Check input
-  XLAL_CHECK_VAL(0, points != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VAL(0, points->size1 == n, XLAL_EFAULT);
-
-  // Fill 'points' matrix columns with flat lattice tiling points
-  size_t i = 0;
-  gsl_vector* point = NULL;
-  while (i < points->size2) {
-
-    // Get next tiling point, checking for errors
-    point = XLALNextFlatLatticePoint(tiling);
-    XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
-
-    // If no point return, no more points available
-    if (point == NULL) {
-      break;
-    }
-
-    // Copy the point to the next available column of 'points'
-    gsl_vector_view p = gsl_matrix_column(points, i);
-    gsl_vector_memcpy(&p.vector, point);
-    ++i;
-
-  }
-
-  if (fill_last && i > 0) {
-
-    // Copy last template point to remaining columns of 'points'
-    gsl_vector_view q = gsl_matrix_column(points, i-1);
-    for (size_t j = i; j < points->size2; ++j) {
-      gsl_vector_view p = gsl_matrix_column(points, i);
-      gsl_vector_memcpy(&p.vector, &q.vector);
-    }
-
-  }
-
-  // Return the number of points filled in 'points'
-  return i;
-
-}
-
 int XLALRestartFlatLatticeTiling(
   FlatLatticeTiling* tiling
   )
@@ -696,7 +659,7 @@ int XLALRestartFlatLatticeTiling(
 
 }
 
-uint64_t XLALCountTotalFlatLatticePoints(
+unsigned long XLALCountTotalFlatLatticePoints(
   FlatLatticeTiling* tiling
   )
 {
@@ -710,7 +673,7 @@ uint64_t XLALCountTotalFlatLatticePoints(
   XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
 
   // Save the template count
-  uint64_t count = tiling->count;
+  unsigned long count = tiling->count;
 
   // Restart tiling
   XLALRestartFlatLatticeTiling(tiling);

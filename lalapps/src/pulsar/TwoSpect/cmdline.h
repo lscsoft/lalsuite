@@ -75,9 +75,9 @@ struct gengetopt_args_info
   int blksize_arg;	/**< @brief Blocksize for running median to determine expected noise of input SFTs (default='101').  */
   char * blksize_orig;	/**< @brief Blocksize for running median to determine expected noise of input SFTs original value given at command line.  */
   const char *blksize_help; /**< @brief Blocksize for running median to determine expected noise of input SFTs help description.  */
-  char * sftType_arg;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization (default='vladimir').  */
-  char * sftType_orig;	/**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization original value given at command line.  */
-  const char *sftType_help; /**< @brief SFT from either 'MFD' (Makefakedata_v4) or 'vladimir' (Vladimir's SFT windowed version) which uses a factor of 2 rather than sqrt(8/3) for the window normalization help description.  */
+  char * sftType_arg;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) (default='standard').  */
+  char * sftType_orig;	/**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) original value given at command line.  */
+  const char *sftType_help; /**< @brief SFT type of either 'standard' (v2 SFTs; FFT coefficients * dt/RMS(window weights)) or 'vladimir' (Vladimir's Hann windowed SFT version; FFT coefficients * 2*dt) help description.  */
   char * outdirectory_arg;	/**< @brief Output directory (default='output').  */
   char * outdirectory_orig;	/**< @brief Output directory original value given at command line.  */
   const char *outdirectory_help; /**< @brief Output directory help description.  */
@@ -93,15 +93,15 @@ struct gengetopt_args_info
   char * normRMSoutput_arg;	/**< @brief File for the output of the normalized RMS from the non-slided data.  */
   char * normRMSoutput_orig;	/**< @brief File for the output of the normalized RMS from the non-slided data original value given at command line.  */
   const char *normRMSoutput_help; /**< @brief File for the output of the normalized RMS from the non-slided data help description.  */
-  char * sftDir_arg;	/**< @brief Directory containing SFTs (default='./').  */
-  char * sftDir_orig;	/**< @brief Directory containing SFTs original value given at command line.  */
-  const char *sftDir_help; /**< @brief Directory containing SFTs help description.  */
-  char * sftFile_arg;	/**< @brief Path and filename of SFTs (default='*.sft').  */
-  char * sftFile_orig;	/**< @brief Path and filename of SFTs original value given at command line.  */
-  const char *sftFile_help; /**< @brief Path and filename of SFTs help description.  */
-  char * ephemDir_arg;	/**< @brief Path to ephemeris files.  */
-  char * ephemDir_orig;	/**< @brief Path to ephemeris files original value given at command line.  */
-  const char *ephemDir_help; /**< @brief Path to ephemeris files help description.  */
+  char * sftDir_arg;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified).  */
+  char * sftDir_orig;	/**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) original value given at command line.  */
+  const char *sftDir_help; /**< @brief Directory containing SFTs, e.g., /path/to/file (one of --sftDir or --sftFile must be specified) help description.  */
+  char * sftFile_arg;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified).  */
+  char * sftFile_orig;	/**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) original value given at command line.  */
+  const char *sftFile_help; /**< @brief Path and filename of SFTs, e.g., /path/to/file/sftdata.sft (one of --sftDir or --sftFile must be specified) help description.  */
+  char * ephemDir_arg;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files.  */
+  char * ephemDir_orig;	/**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files original value given at command line.  */
+  const char *ephemDir_help; /**< @brief Path to ephemeris files, e.g. /path/to/ephemeris/files help description.  */
   char * ephemYear_arg;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files.  */
   char * ephemYear_orig;	/**< @brief Year or year range (e.g. 08-11) of ephemeris files original value given at command line.  */
   const char *ephemYear_help; /**< @brief Year or year range (e.g. 08-11) of ephemeris files help description.  */
@@ -147,10 +147,10 @@ struct gengetopt_args_info
   double tmplfar_arg;	/**< @brief Template FAR threshold.  */
   char * tmplfar_orig;	/**< @brief Template FAR threshold original value given at command line.  */
   const char *tmplfar_help; /**< @brief Template FAR threshold help description.  */
-  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  int minTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='1').  */
   char * minTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *minTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
-  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='50').  */
+  int maxTemplateLength_arg;	/**< @brief Maximum number of pixels to use in the template (default='1000').  */
   char * maxTemplateLength_orig;	/**< @brief Maximum number of pixels to use in the template original value given at command line.  */
   const char *maxTemplateLength_help; /**< @brief Maximum number of pixels to use in the template help description.  */
   double ULfmin_arg;	/**< @brief Minimum signal frequency considered for the upper limit value (Hz).  */

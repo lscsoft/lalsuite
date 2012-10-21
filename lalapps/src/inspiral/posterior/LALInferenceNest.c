@@ -575,7 +575,7 @@ Parameter arguments:\n\
 				char *name=strings[N];
 				node=LALInferenceGetItem(&tempParams,name);
 				if(node) LALInferenceAddVariable(currentParams,node->name,node->value,node->type,node->vary);
-				else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",node->name);}
+				else {fprintf(stderr,"Error: Cannot pin parameter %s. No such parameter found in injection!\n",name);}
 			}
 		}
 	}
@@ -708,7 +708,7 @@ Parameter arguments:\n\
 
     ppt=LALInferenceGetProcParamVal(commandLine,"--mtotalmax");
     if(ppt) mtot_max=atof(ppt->value);
-    else mtot_max=2.*(mMax-mMin);
+    else mtot_max=2.*mMax;
     LALInferenceAddVariable(priorArgs,"MTotMax",&mtot_max,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_FIXED);
 
     /* Set the minimum and maximum chirp mass, using user values if specified */

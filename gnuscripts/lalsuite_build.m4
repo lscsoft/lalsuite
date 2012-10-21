@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 42
+# serial 43
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -204,7 +204,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   [nightly],
   AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
   [ case "${enableval}" in
-      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
+      yes) NIGHTLY_VERSION=`date -u +"%Y%m%d"`
            VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
       no) NIGHTLY_VERSION="";;
       *) NIGHTLY_VERSION="${enableval}"
