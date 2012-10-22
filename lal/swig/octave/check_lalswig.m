@@ -151,9 +151,9 @@ clear iv rv cm;
 CheckMemoryLeaks();
 disp("passed dynamic vector/matrix conversions (LAL)");
 ## check GSL vectors and matrices
-iv = new_gsl_vector_int(5);
-rv = new_gsl_vector(5);
-cm = new_gsl_matrix_complex_float(4, 6);
+iv = new_GSL_vector_int(5);
+rv = new_GSL_vector(5);
+cm = new_GSL_matrix_complex_float(4, 6);
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2);
 clear iv rv cm;
@@ -215,7 +215,7 @@ CheckMemoryLeaks();
 disp("passed LIGOTimeGPS operations");
 
 # check object parent tracking
-a = lal.new_gsl_vector(3);
+a = lal.new_GSL_vector(3);
 a.data = [1.1; 2.2; 3.3];
 b = a.data;
 assert(strcmp(typeinfo(b), "swiglal_oct_array_view_double"));

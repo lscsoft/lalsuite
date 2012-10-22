@@ -165,9 +165,9 @@ del iv, rv, cm
 lal.CheckMemoryLeaks()
 print("passed dynamic vector/matrix conversions (LAL)")
 # check GSL vectors and matrices
-iv = lal.gsl_vector_int(5)
-rv = lal.gsl_vector(5)
-cm = lal.gsl_matrix_complex_float(4, 6)
+iv = lal.GSL_vector_int(5)
+rv = lal.GSL_vector(5)
+cm = lal.GSL_matrix_complex_float(4, 6)
 check_dynamic_vector_matrix(iv, iv.size, rv, rv.size,
                             cm, cm.size1, cm.size2)
 del iv, rv, cm
@@ -233,7 +233,7 @@ lal.CheckMemoryLeaks()
 print("passed LIGOTimeGPS operations")
 
 # check object parent tracking
-a = lal.gsl_vector(3)
+a = lal.GSL_vector(3)
 a.data = [1.1, 2.2, 3.3]
 b = a.data
 assert(not b.flags['OWNDATA'])
