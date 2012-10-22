@@ -330,30 +330,30 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   wdot = params->wdot*LAL_PI_180/(365.25*DAYSTOSECS); /* convert wdot to rads/s from degs/yr */
 
   Pb = params->Pb*DAYSTOSECS; /* covert period from days to secs */
-  pbdot = params->Pbdot*1.0e-12;
+  pbdot = params->Pbdot;
 
   T0 = params->T0; /* these should be in TDB in seconds */
   Tasc = params->Tasc;
 
   e = params->e;
-  edot = params->edot*1.0e-12;
+  edot = params->edot;
   eps1 = params->eps1;
   eps2 = params->eps2;
   eps1dot = params->eps1dot;
   eps2dot = params->eps2dot;
 
   x = params->x;
-  xdot = params->xdot*1.0e-12;
-  xpbdot = params->xpbdot*1.0e-12;
+  xdot = params->xdot;
+  xpbdot = params->xpbdot;
 
   lal_gamma = params->gamma;
   s = params->s; /* sin i */
   dr = params->dr;
-  dth = params->dth*1.0e-6;
+  dth = params->dth;
   shapmax = params->shapmax;
   
-  a0 = params->a0*1.0e-6; /* from microsecs to secs */
-  b0 = params->b0*1.0e-6;
+  a0 = params->a0;
+  b0 = params->b0;
 
   m2 = params->m2*LAL_MSUN_SI;
 
@@ -387,7 +387,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     REAL8 fac=1.; /* factor in front of fb coefficients */
 
     REAL8 su = 0., cu = 0.;
-    REAL4 sw = 0., cw = 0.; /* phases from LUT */
+    REAL8 sw = 0., cw = 0.;
 
     /* work out number of orbits i.e. have we got a BT1P or BT2P model */
     if( !strcmp(model, "BT1P") ) nplanets = 2;
@@ -456,7 +456,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       cu = cos(u);
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
-      sin_cos_LUT(&sw, &cw, w);
+      sw = sin(w);
+      cw = cos(w);
 
       /* see eq 5 of Taylor and Weisberg (1989) */
       /**********************************************************/
@@ -515,7 +516,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     KopeikinTerms kt;
     REAL8 Ck, Sk;
     
-    REAL4 sp = 0., cp = 0., s2p = 0., c2p = 0.;
+    REAL8 sp = 0., cp = 0., s2p = 0., c2p = 0.;
 
     /* fprintf(stderr, "You are using the ELL1 low eccentricity orbit model.\n");*/
 
@@ -536,6 +537,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       Tasc = T0 - Dt;
     }
 
+    //tt0 = XLALGPSDiff( &input->tbGPS, &params->TascGPS ); 
+    
     tt0 = tb - Tasc;
     
     orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
@@ -552,23 +555,22 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       e2 = eps2 + eps2dot*tt0;
     }
     else{
-      REAL4 swint = 0., cwint = 0.;
-
       ecc = sqrt(eps1*eps1 + eps2*eps2);
       ecc += edot*tt0;
       w_int = atan2(eps1, eps2);
       w_int = w_int + wdot*tt0;
-
-      sin_cos_LUT(&swint, &cwint, w_int);
-      /* e1 = ecc*sin(w_int);
-      e2 = ecc*cos(w_int); */
-      e1 = ecc*swint;
-      e2 = ecc*cwint;
+      
+      e1 = ecc*sin(w_int);
+      e2 = ecc*cos(w_int);
     }
 
-    sin_cos_LUT(&sp, &cp, phase);
-    sin_cos_LUT(&s2p, &c2p, 2.*phase);
-
+    //sin_cos_LUT(&sp, &cp, phase);
+    //sin_cos_LUT(&s2p, &c2p, 2.*phase);
+    sp = sin(phase);
+    cp = cos(phase);
+    s2p = sin(2.*phase);
+    c2p = cos(2.*phase);
+    
     /* this timing delay (Roemer + Einstein) should be most important in most cases */
     /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
     DREp = x*cos(phase);
@@ -578,10 +580,8 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     DREpp = -x*sp;
 
     /* these params will normally be negligable */
-    /* dlogbr = log(1.0-s*sin(phase)); */
     dlogbr = log(1.0-s*sp);
     DS = -2.0*r*dlogbr;
-    /* DA = a0*sin(phase) + b0*cos(phase); */
     DA = a0*sp + b0*cp;
 
     /* compute Kopeikin terms */
@@ -636,7 +636,7 @@ T2model.C */
     REAL8 sdds = 0.; /* parameter for DDS model */
     
     REAL8 su = 0., cu = 0.;
-    REAL4 sw = 0., cw = 0., swAe = 0., cwAe = 0.;
+    REAL8 sw = 0., cw = 0.;
     
     KopeikinTerms kt;
     REAL8 Ck, Sk;
@@ -692,9 +692,8 @@ this isn't defined for either of the two pulsars currently using this model */
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
-    sin_cos_LUT(&sw, &cw, w);
-    /* sw = sin(w);
-    cw = cos(w); */
+    sw = sin(w);
+    cw = cos(w);
     alpha = x*sw;
     beta = x*sqrt(1.0-eth*eth)*cw;
     bg = beta + lal_gamma;
@@ -715,9 +714,7 @@ this isn't defined for either of the two pulsars currently using this model */
     DS = -2.0*r*dlogbr;
 
     /* this abberation delay is prob fairly small */
-    sin_cos_LUT(&swAe, &cwAe, (w+Ae));
-    /* DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw); */
-    DA = a0*(swAe+e*sw) + b0*(cwAe+e*cw);
+    DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw);
 
     /* compute Kopeikin terms */
     if( params->kinset && params->komset && ( params->pmra != 0. ||
@@ -777,7 +774,6 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
                       CHAR      *pulsarAndPath )
 {
   FILE *fp=NULL;
-  long curpos; /* current position in par file */
   CHAR val[500][40]; /* string array to hold all the read in values
                         500 strings of max 40 characters is enough */
   INT4 i=0, j=1, k;
@@ -978,6 +974,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   
   output->wave_omErr = 0.0;
   
+  output->units = NULL;
+  
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
     XLAL_ERROR_VOID( XLAL_EIO );
@@ -988,16 +986,13 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     /* make sure val[i] is clear first */
     sprintf(val[i], "%s", "");
 
-    curpos = ftell(fp);
     c = fscanf(fp, "%s", val[i]);
     
     /* if line starts with a '#' then skip to end of line */
     if( val[i][0] == '#' ){
-       /* go back to start of line before skipping (in case the line only has
-        * one value in it */
-      fseek(fp, curpos, SEEK_SET);
-      if ( fscanf(fp, "%*[^\n]") == EOF ) break;
-      else i++;
+       /* skip to the end of the line */
+      c = fscanf(fp, "%*[^\n]");
+      if ( feof(fp) ) break;
       continue;
     }
     
@@ -1343,8 +1338,11 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
       j++;
     }
     else if( !strcmp(val[i],"binary") || !strcmp(val[i],"BINARY")) {
-      /*sprintf(output->model, "%s", val[j+1]);*/
       output->model = XLALStringDuplicate(val[i+1]);
+      j++;
+    }
+    else if( !strcmp(val[i],"units") || !strcmp(val[i],"UNITS")){
+      output->units = XLALStringDuplicate(val[i+1]);
       j++;
     }
     else if( !strcmp(val[i],"a1") || !strcmp(val[i],"A1")) {
@@ -1422,6 +1420,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i], "eps1dot") || !strcmp(val[i], "EPS1DOT")){
       output->eps1dot = atof(val[i+1]);
+      /* TEMPO2 checks if this is > 1e-7 then it's in units of 1e-12, so needs converting */
+      if( fabs( output->eps1dot ) > 1e-7  ) output->eps1dot *= 1.e-12;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1431,6 +1431,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i], "eps2dot") || !strcmp(val[i], "EPS2DOT")){
       output->eps2dot = atof(val[i+1]);
+      /* TEMPO2 checks if this is > 1e-7 then it's in units of 1e-12, so needs converting */
+      if( fabs( output->eps2dot ) > 1e-7 ) output->eps2dot *= 1.e-12;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1440,6 +1442,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i], "xpbdot") || !strcmp(val[i], "XPBDOT")){
       output->xpbdot = atof(val[i+1]);
+      /* TEMPO2 checks if this is > 1e-7 then it's in units of 1e-12, so needs converting */
+      if( fabs( output->xpbdot ) > 1e-7 ) output->xpbdot *= 1.e-12;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1458,6 +1462,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i], "pbdot") || !strcmp(val[i], "PBDOT")){
       output->Pbdot = atof(val[i+1]);
+      /* TEMPO2 checks if this is > 1e-7 then it's in units of 1e-12, so needs converting */
+      if( fabs( output->Pbdot ) > 1e-7 ) output->Pbdot *= 1.e-12;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1467,6 +1473,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i], "xdot") || !strcmp(val[i], "XDOT")){
       output->xdot = atof(val[i+1]);
+      /* TEMPO2 checks if this is > 1e-7 then it's in units of 1e-12, so needs converting */
+      if( fabs( output->xdot ) > 1e-7 ) output->xdot *= 1.e-12;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1476,6 +1484,8 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i], "edot") || !strcmp(val[i], "EDOT")){
       output->edot = atof(val[i+1]);
+      /* TEMPO2 checks if this is > 1e-7 then it's in units of 1e-12, so needs converting */
+      if( fabs( output->edot ) > 1e-7 ) output->edot *= 1.e-12;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
@@ -1594,7 +1604,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     
     /* parameters for distance */
     else if( !strcmp(val[i],"px") || !strcmp(val[i],"PX") ) { /* parallax */
-      /* convert from mas to rads (factor from T2model.C in TEMPO2 */
+      /* convert from mas to rads (factor from T2model.C in TEMPO2) */
       output->px = atof(val[i+1]) * LAL_PI_180 / 3600.0e3;
       j++;
 
@@ -1892,6 +1902,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
         XLAL_ERROR_VOID( XLAL_EIO );
       }
     }
+    else output->s = atof(output->sstr);
   }   
 }
 
@@ -2182,6 +2193,7 @@ start of GPS time */
 
   return GPS;
 }
+
 
 /* Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
  * Einstein delay) when correcting a GPS time on the Earth to the solar system

@@ -1062,7 +1062,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
     else if(hetParams.heterodyneflag == 3 || hetParams.heterodyneflag == 4 ){
       /* set up LALBarycenter */
       dtpos = hetParams.timestamp - hetParams.het.posepoch;
-
+      
       /* set up RA, DEC, and distance variables for LALBarycenter*/
       baryinput.delta = hetParams.het.dec + dtpos*hetParams.het.pmdec;
       baryinput.alpha = hetParams.het.ra +
@@ -1098,7 +1098,10 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       
       /* check if any timing noise whitening is used */
       if( hetParams.het.nwaves != 0 ){
-        REAL8 dtWave = tdt + (T0 - hetParams.het.waveepoch);
+        /* dtWave only doesn't include binary corrections as they would
+         * also be sinusoidal terms */
+        REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - 
+          hetParams.het.waveepoch)/86400.; /* in days */
         REAL8 tWave = 0.;
         
         for( INT4 k = 0; k < hetParams.het.nwaves; k++ ){
@@ -1185,7 +1188,8 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       }
       
       if( hetParams.hetUpdate.nwaves != 0 ){
-        REAL8 dtWave = tdt + (T0 - hetParams.hetUpdate.waveepoch);
+        REAL8 dtWave = (XLALGPSGetREAL8(&emit.te) - 
+          hetParams.hetUpdate.waveepoch)/86400.;
         
         for( INT4 k = 0; k < hetParams.hetUpdate.nwaves; k++ ){
           tWave1 += hetParams.hetUpdate.waveSin[k]*sin(omu*(REAL8)(k+1.)*dtWave) +

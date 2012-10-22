@@ -111,7 +111,7 @@ tagBinaryPulsarParams
 
   REAL8 posepoch; /**< position epoch */
   REAL8 pepoch;   /**< period/frequency epoch */
-
+  
   /* all parameters will be in the same units as used in TEMPO */
 
   /* Keplerian parameters */
@@ -120,7 +120,7 @@ tagBinaryPulsarParams
   REAL8 w0;     /**< logitude of periastron (deg) */
   REAL8 x;      /**< projected semi-major axis/speed of light (light secs) */
   REAL8 T0;     /**< time of orbital perisastron as measured in TDB (MJD) */
-
+  
   /* add extra parameters for the BT1P and BT2P models which contain two and
      three orbits respectively (only the first one can be relativistic, so the
      others only have the Keplerian parameters) */
@@ -130,7 +130,7 @@ tagBinaryPulsarParams
   REAL8 x2, x3;
   REAL8 T02, T03;
 
-  REAL8 xpbdot;	/**< (10^-12) */
+  REAL8 xpbdot;
 
   /* for low eccentricity orbits (ELL1 model) use Laplace parameters */
   /* (eps1 = e*sin(w), eps2 = e*cos(w)) instead of e, w.             */
@@ -146,9 +146,9 @@ tagBinaryPulsarParams
   /* for Blandford-Teukolsky (BT) model */
   REAL8 wdot;   /**< precesion of longitude of periastron w = w0 + wdot(tb-T0) (degs/year) */
   REAL8 gamma;  /**< gravitational redshift and time dilation parameter (s)*/
-  REAL8 Pbdot;  /**< rate of change of Pb (dimensionless 10^-12) */
-  REAL8 xdot;   /**< rate of change of x(=asini/c) - optional (10^-12)*/
-  REAL8 edot;   /**< rate of change of e (10^-12)*/
+  REAL8 Pbdot;  /**< rate of change of Pb (dimensionless) */
+  REAL8 xdot;   /**< rate of change of x(=asini/c) - optional */
+  REAL8 edot;   /**< rate of change of e */
 
   /* for Epstein-Haugan (EH) model */
   REAL8 s; /**< Shapiro 'shape' parameter sin i */
@@ -284,6 +284,8 @@ tagBinaryPulsarParams
   
   /* timing noise fitting parameters */
   REAL8 wave_omErr;
+  
+  CHAR *units; /**< The time system used e.g. TDB */
 }BinaryPulsarParams;
 
 /** structure containing the Kopeikin terms */
@@ -316,6 +318,7 @@ typedef struct
 tagBinaryPulsarInput
 {
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
+  LIGOTimeGPS tbGPS;
   
   EarthState earth; /**< The current Earth state (for e.g. calculating 
                          Kopeikin terms) */
