@@ -2713,7 +2713,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr,"Using Brent's method for root finding.\n");
    }
    
-   //SFT type MFD or vladimir (Vladimir's SFT generation program has a different normalization factor than Makefakedata)
+   //SFT type standard or vladimir (Vladimir's SFT generation program has a different normalization factor than standard v2)
    params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
    if (params->sftType==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*(params->sftType)));
