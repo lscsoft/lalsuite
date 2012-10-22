@@ -172,7 +172,7 @@ int XLALSimBlackHoleRingdown(
  * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and 
  *               Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
  */
-INT4 XLALFinalMassSpin(
+INT4 XLALSimIMREOBFinalMassSpin(
 	REAL8    *finalMass,  /**<< OUTPUT, the final mass (scaled by original total mass) */
 	REAL8    *finalSpin,  /**<< OUTPUT, the final spin (scaled by final mass) */
   const REAL8     mass1,      /**<< The mass of the 1st component of the system */
