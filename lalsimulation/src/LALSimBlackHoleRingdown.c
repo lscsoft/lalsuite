@@ -841,7 +841,7 @@ int main(void)
  * for SEOBNRv1, Eq. 8 of Tichy and Marronetti PRD78, 081501 and 
  *               Eqs. 1 and 3 of Barausse and Rezzolla ApJ704, L40.
  */
-INT4 XLALFinalMassSpin(
+INT4 XLALSimIMREOBFinalMassSpin(
 	REAL8    *finalMass,  /**<< OUTPUT, the final mass (scaled by original total mass) */
 	REAL8    *finalSpin,  /**<< OUTPUT, the final spin (scaled by final mass) */
   const REAL8     mass1,      /**<< The mass of the 1st component of the system */
@@ -2073,8 +2073,8 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2(
 
   totalMass = mass1 + mass2;
 
-  /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
-  if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
+  /* Call XLALSimIMREOBFinalMassSpin() to get mass and spin of the final black hole */
+  if ( XLALSimIMREOBFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
   {
     XLAL_ERROR( XLAL_EFUNC );
   }
