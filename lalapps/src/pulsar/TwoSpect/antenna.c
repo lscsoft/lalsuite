@@ -21,6 +21,7 @@
 #include "antenna.h"
 
 
+static const LALStatus empty_status;
 
 void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
@@ -73,8 +74,7 @@ void CompAntennaVelocity(REAL4Vector *output, REAL4 ra, REAL4 dec, REAL8 t0, REA
    
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    
    REAL8 detvel[3];
    for (ii=0; ii<numffts; ii++) {
@@ -102,8 +102,7 @@ REAL4 CompDetectorDeltaVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, 
    
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    
    REAL8 detvel[3];
    REAL8 detvel0[3];
@@ -145,8 +144,7 @@ REAL4 CompDetectorVmax(REAL8 t0, REAL8 Tcoh, REAL8 SFToverlap, REAL8 Tobs, LALDe
    
    INT4 ii;
    INT4 numffts = (INT4)floor(Tobs/(Tcoh-SFToverlap)-1);    //Number of FFTs
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    
    REAL8 detvel[3];
    REAL8 detvel0[3];
