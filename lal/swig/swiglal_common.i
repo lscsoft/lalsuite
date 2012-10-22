@@ -939,6 +939,9 @@ if (swiglal_release_parent(PTR)) {
                        strlen, %swiglal_new_copy_array, XLALFree,
                        "<limits.h>", CHAR_MIN, CHAR_MAX);
 
+// Do not try to free const CHAR* return arguments.
+%typemap(newfree,noblock=1) const CHAR* "";
+
 // Typemap for output SWIGTYPEs. This typemaps will match either the SWIG-wrapped
 // return argument from functions (which will have the SWIG_POINTER_OWN bit set
 // in $owner) or return a member of a struct through a 'get' functions (in which
