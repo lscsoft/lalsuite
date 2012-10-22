@@ -52,46 +52,40 @@
 %define %lalswig_gsl_vector_matrix(TYPE, NAME)
 
   // GSL vector of type NAME.
-  %header {
-    typedef gsl_vector##NAME GSL_vector##NAME;
-  }
   typedef struct {
     %extend {
-      GSL_vector##NAME(const size_t n) {
+      gsl_vector##NAME(const size_t n) {
         return gsl_vector##NAME##_calloc(n);
       }
-      GSL_vector##NAME(GSL_vector##NAME *v0) {
+      gsl_vector##NAME(gsl_vector##NAME *v0) {
         gsl_vector##NAME *v = gsl_vector##NAME##_alloc(v0->size);
         gsl_vector##NAME##_memcpy(v, v0);
         return v;
       }
-      ~GSL_vector##NAME() {
+      ~gsl_vector##NAME() {
         %swiglal_call_dtor(gsl_vector##NAME##_free, $self);
       }
     }
     %swiglal_array_dynamic_1D(TYPE, size_t, data, size, arg1->stride);
-  } GSL_vector##NAME;
+  } gsl_vector##NAME;
 
   // GSL matrix of type NAME.
-  %header {
-    typedef gsl_matrix##NAME GSL_matrix##NAME;
-  }
   typedef struct {
     %extend {
-      GSL_matrix##NAME(const size_t n1, const size_t n2) {
+      gsl_matrix##NAME(const size_t n1, const size_t n2) {
         return gsl_matrix##NAME##_calloc(n1, n2);
       }
-      GSL_matrix##NAME(GSL_matrix##NAME *m0) {
+      gsl_matrix##NAME(gsl_matrix##NAME *m0) {
         gsl_matrix##NAME *m = gsl_matrix##NAME##_alloc(m0->size1, m0->size2);
         gsl_matrix##NAME##_memcpy(m, m0);
         return m;
       }
-      ~GSL_matrix##NAME() {
+      ~gsl_matrix##NAME() {
         %swiglal_call_dtor(gsl_matrix##NAME##_free, $self);
       }
     }
     %swiglal_array_dynamic_2D(TYPE, size_t, data, size1, size2, arg1->tda, 1);
-  } GSL_matrix##NAME;
+  } gsl_matrix##NAME;
 
 %enddef // %lalswig_gsl_vector_matrix
 
