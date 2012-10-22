@@ -32,6 +32,8 @@
 #include <gsl/gsl_matrix.h>
 %}
 
+////////// Error handling //////////
+
 // Set custom GSL error handler which raises an XLAL error (instead of aborting).
 %header %{
   void swiglal_gsl_error_handler(const char *reason, const char *file, int line, int errnum) {
@@ -42,6 +44,8 @@
 %init %{
   gsl_set_error_handler(swiglal_gsl_error_handler);
 %}
+
+////////// GSL vectors and matrices //////////
 
 // This macro create wrapping structs for GSL vectors and matrices.
 %define %lalswig_gsl_vector_matrix(TYPE, NAME)
