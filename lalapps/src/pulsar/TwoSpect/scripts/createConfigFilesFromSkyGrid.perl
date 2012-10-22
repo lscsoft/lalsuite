@@ -202,7 +202,7 @@ blksize $blksize
 avesqrtSh $avesqrtSh
 minTemplateLength $minTemplateLength
 maxTemplateLength $maxTemplateLength
-sftDir $sftDir
+sftFile $sftDir/*$sftVersion.sft
 ephemDir $ephemDir
 ephemYear $ephemYear
 outdirectory $outdirectory

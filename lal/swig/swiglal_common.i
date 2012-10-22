@@ -147,6 +147,11 @@ MACRO(A, B, X);
 #include <lal/Date.h>
 %}
 
+// Print LAL debugging errors by default.
+%init %{
+  lalDebugLevel |= LALERROR;
+%}
+
 // Version of SWIG used to generate wrapping code.
 %inline %{const int swig_version = SWIGVERSION;%}
 
@@ -933,6 +938,9 @@ if (swiglal_release_parent(PTR)) {
                        SWIG_AsLALCHARPtrAndSize, SWIG_FromLALCHARPtrAndSize,
                        strlen, %swiglal_new_copy_array, XLALFree,
                        "<limits.h>", CHAR_MIN, CHAR_MAX);
+
+// Do not try to free const CHAR* return arguments.
+%typemap(newfree,noblock=1) const CHAR* "";
 
 // Typemap for output SWIGTYPEs. This typemaps will match either the SWIG-wrapped
 // return argument from functions (which will have the SWIG_POINTER_OWN bit set

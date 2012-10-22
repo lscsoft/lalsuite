@@ -1,0 +1,26 @@
+Source: laldetchar
+Section: lscsoft
+Priority: optional
+Maintainer: Adam Mercer <adam.mercer@ligo.org>
+Build-Depends: debhelper (>= 5), pkg-config, python (>= 2.6),
+  zlib1g-dev, libgsl0-dev (>= 1.9), lal-dev (>= 6.7.0)
+Standards-Version: 3.7.2
+
+Package: laldetchar
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
+  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), lal (>= 6.7.0)
+Description: LSC Algorithm Library Simulation
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package contains the shared-object libraries needed to run applications
+ that use the LAL Simulation library.
+
+Package: laldetchar-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
+  libgsl0-dev (>= 1.9), lal-dev (>= 6.7.0),
+  laldetchar (= ${binary:Version})
+Description: LSC Algorithm Library Simulation Developers
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package contains files needed build applications that use the LAL
+ Simulation library.

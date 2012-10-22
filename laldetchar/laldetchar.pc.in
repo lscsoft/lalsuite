@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: LALDetChar
+Description: LAL DetChar Library Support
+Version: @VERSION@
+Requires: gsl lal libmetaio lalmetaio lalsimulation
+Libs: -L${libdir} -llaldetchar
+Cflags: -I${includedir}

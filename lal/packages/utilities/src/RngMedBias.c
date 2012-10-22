@@ -81,6 +81,8 @@ LALRngMedBias (LALStatus   *status,
                     INT4        blkSize
                     )
 {
+  INITSTATUS(status);
+
   // check input consistency
   if ( biasFactor == NULL )
     ABORT ( status, RNGMEDBIASH_ENULL, RNGMEDBIASH_MSGENULL);
