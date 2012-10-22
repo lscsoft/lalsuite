@@ -106,14 +106,11 @@
 ////////// GSL random number generators //////////
 
 // GSL random number generator
-%header %{
-typedef gsl_rng GSL_rng;
-%}
 typedef struct {
   %extend {
 
     // Constructor
-    GSL_rng(const char* name, unsigned long int seed) {
+    gsl_rng(const char* name, unsigned long int seed) {
 
       // Check input
       XLAL_CHECK_NULL(name != NULL, XLAL_EFAULT, "Generator name must be non-NULL");
@@ -145,7 +142,7 @@ typedef struct {
     }
 
     // Copy constructor
-    GSL_rng(const GSL_rng* src) {
+    gsl_rng(const gsl_rng* src) {
 
       // Check input
       XLAL_CHECK_NULL(src != NULL, XLAL_EFAULT, "Generator must be non-NULL");
@@ -156,7 +153,7 @@ typedef struct {
     }
 
     // Destructor
-    ~GSL_rng() {
+    ~gsl_rng() {
       %swiglal_call_dtor(gsl_rng_free, $self);
     }
 
@@ -167,18 +164,10 @@ typedef struct {
     unsigned long int get_value() {
       return gsl_rng_get($self);
     }
-    double uniform() {
-      return gsl_rng_uniform($self);
-    }
-    double uniform_pos() {
-      return gsl_rng_uniform_pos($self);
-    }
-    unsigned long int uniform_int(unsigned long int n) {
-      return gsl_rng_uniform_int($self, n);
-    }
-    const char* name() {
-      return gsl_rng_name($self);
-    }
+    double uniform();
+    double uniform_pos();
+    unsigned long int uniform_int(unsigned long int n);
+    const char* name();
     unsigned long int max_value() {
       return gsl_rng_max($self);
     }
@@ -187,7 +176,7 @@ typedef struct {
     }
 
   }
-} GSL_rng;
+} gsl_rng;
 
 #endif // !SWIGXML
 
