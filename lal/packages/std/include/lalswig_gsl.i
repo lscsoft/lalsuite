@@ -30,6 +30,7 @@
 %header %{
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_rng.h>
 %}
 
 ////////// Error handling //////////
@@ -101,6 +102,92 @@
 %lalswig_gsl_vector_matrix(double, ); // GSL double vec./mat. has no typename suffix.
 %lalswig_gsl_vector_matrix(gsl_complex_float, _complex_float);
 %lalswig_gsl_vector_matrix(gsl_complex, _complex);
+
+////////// GSL random number generators //////////
+
+// GSL random number generator
+%header %{
+typedef gsl_rng GSL_rng;
+%}
+typedef struct {
+  %extend {
+
+    // Constructor
+    GSL_rng(const char* name, unsigned long int seed) {
+
+      // Check input
+      XLAL_CHECK_NULL(name != NULL, XLAL_EFAULT, "Generator name must be non-NULL");
+
+      // Read environment variables for default generators
+      gsl_rng_env_setup();
+
+      // Find generator
+      const gsl_rng_type* T = NULL;
+      if (strcmp(name, "default") == 0) {
+        T = gsl_rng_default;
+      } else {
+        const gsl_rng_type **types = gsl_rng_types_setup();
+        for (const gsl_rng_type **t = types; *t != NULL; ++t) {
+          if (strcmp(name, (*t)->name) == 0) {
+            T = *t;
+            break;
+          }
+        }
+      }
+      XLAL_CHECK_NULL(T != NULL, XLAL_EINVAL, "Could not find generator named '%s'", name);
+
+      // Create generator and set seed
+      gsl_rng* rng = gsl_rng_alloc(T);
+      gsl_rng_set(rng, seed);
+
+      return rng;
+
+    }
+
+    // Copy constructor
+    GSL_rng(const GSL_rng* src) {
+
+      // Check input
+      XLAL_CHECK_NULL(src != NULL, XLAL_EFAULT, "Generator must be non-NULL");
+
+      // Clone generator
+      return gsl_rng_clone(src);
+
+    }
+
+    // Destructor
+    ~GSL_rng() {
+      %swiglal_call_dtor(gsl_rng_free, $self);
+    }
+
+    // Properties and methods
+    void set_seed(unsigned long int seed) {
+      gsl_rng_set($self, seed);
+    }
+    unsigned long int get_value() {
+      return gsl_rng_get($self);
+    }
+    double uniform() {
+      return gsl_rng_uniform($self);
+    }
+    double uniform_pos() {
+      return gsl_rng_uniform_pos($self);
+    }
+    unsigned long int uniform_int(unsigned long int n) {
+      return gsl_rng_uniform_int($self, n);
+    }
+    const char* name() {
+      return gsl_rng_name($self);
+    }
+    unsigned long int max_value() {
+      return gsl_rng_max($self);
+    }
+    unsigned long int min_value() {
+      return gsl_rng_min($self);
+    }
+
+  }
+} GSL_rng;
 
 #endif // !SWIGXML
 
