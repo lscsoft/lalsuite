@@ -460,8 +460,8 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
         XLAL_ERROR( XLAL_EFUNC );
       }
 
-      /* Call XLALFinalMassSpin() to get mass and spin of the final black hole */
-      if ( XLALFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
+      /* Call XLALSimIMREOBFinalMassSpin() to get mass and spin of the final black hole */
+      if ( XLALSimIMREOBFinalMassSpin(&finalMass, &finalSpin, mass1, mass2, spin1, spin2, approximant) == XLAL_FAILURE )
       {
         XLAL_ERROR( XLAL_EFUNC );
       }
