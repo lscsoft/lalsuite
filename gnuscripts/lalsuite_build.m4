@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 44
+# serial 45
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -300,13 +300,13 @@ AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [laldetchar],
-  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=yes]]),
+  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
   [ case "${enableval}" in
       yes) laldetchar=true;;
       no) laldetchar=false;;
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
     esac
-  ], [ laldetchar=${all_lal:-true} ] )
+  ], [ laldetchar=${all_lal:-false} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],
