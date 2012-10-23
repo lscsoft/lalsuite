@@ -25,7 +25,7 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
-#define MAX_MCMC 20000 /* Maximum chain length, set to be higher than expected from a reasonable run */
+#define MAX_MCMC 2000 /* Maximum chain length, set to be higher than expected from a reasonable run */
 
 static INT4 __chainfile_iter=0;
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
@@ -83,14 +83,14 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") && !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
 		  if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
 			  max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
-		  else max=MAX_MCMC; /* otherwise use the MAX_MCMC */
-                  if(max>MAX_MCMC) max=MAX_MCMC;
-                  LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
-                  max=10;
-                  for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
-                  LALInferenceDestroyVariables(acls);
-                  free(acls);
-                  LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
+		  else max=4*MAX_MCMC; /* otherwise use the MAX_MCMC */
+          if(max>4*MAX_MCMC) max=4*MAX_MCMC;
+          LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
+          max=10;
+          for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
+          LALInferenceDestroyVariables(acls);
+          free(acls);
+          LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
 	}
         return(max);
 }
