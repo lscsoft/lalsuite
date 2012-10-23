@@ -101,6 +101,14 @@ LALFree
 #define UNUSED
 #endif
 
+
+static INT4 XLALFinalMassSpin(
+	REAL8		 *finalMass,
+	REAL8		 *finalSpin,
+	InspiralTemplate *params
+	);
+
+
 INT4 XLALInspiralHybridRingdownWave (
 	REAL4Vector			*rdwave1,
 	REAL4Vector			*rdwave2,
@@ -919,7 +927,7 @@ INT4 XLALGenerateQNMFreqV2(
   return XLAL_SUCCESS;
 }
 
-INT4 XLALFinalMassSpin(
+static INT4 XLALFinalMassSpin(
 	REAL8		 *finalMass,
 	REAL8		 *finalSpin,
 	InspiralTemplate *params
