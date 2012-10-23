@@ -29,7 +29,6 @@
 
 static INT4 __chainfile_iter=0;
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
-static void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 /* Prototypes for private "helper" functions. */
 //static void SamplePriorDiscardAcceptance(LALInferenceRunState *runState);
 static double logadd(double a,double b);
@@ -649,14 +648,17 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   FILE *chainfile=NULL;
   FILE *acffile=NULL;
   UINT4 i,j;
-  INT4 nPar=0; // = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  UINT4 nPar=0; // = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   REAL8 **data_array=NULL;
   REAL8 **acf_array=NULL;
   LALInferenceVariableItem *this;
   REAL8 tolerance=0.01;
   INT4 thinning=10;
   max_iterations/=thinning;
+  /* Find the number and names of variables */
   for(this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) nPar++;
+  char **param_names=calloc(nPar,sizeof(char *));
+  for(i=0,this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) param_names[i++]=this->name;
 
   REAL8 ACF,ACL,max=0;
   LALInferenceVariables *acls=calloc(1,sizeof(LALInferenceVariables));
@@ -673,9 +675,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
-  REAL8Vector *projection=NULL;
-
-  gsl_matrix *covarianceMatrix=NULL;
   runState->algorithmParams=&myAlgParams;
   runState->currentParams=&myCurrentParams;
   /* We can record write the MCMC chain to a file too */
@@ -720,31 +719,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   
   /* Get the location of the sample array */
   LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-  LALInferenceVariables **pointer_array=calloc(max_iterations,sizeof(LALInferenceVariables *));
-  for(i=0;i<max_iterations;i++) pointer_array[i]=&(variables_array[i]);
-  
-   	/* Calculate the eigenvectors of the correlation matrix*/
-	LALInferenceNScalcCVM(&covarianceMatrix, pointer_array,max_iterations);
-
-   free(pointer_array);
-	/* Set up eigenvectors and eigenvalues. */
-	UINT4 N=covarianceMatrix->size1;
-	gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
-	gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
-	gsl_vector *eValues = gsl_vector_alloc(N);
-
-	gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
-	int gsl_status;
-	gsl_matrix_memcpy(covCopy, covarianceMatrix);
-	
-	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
-	  XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-	  return ((LALInferenceVariables *)NULL);
-	}
-	
-	gsl_matrix_free(covarianceMatrix);
-	gsl_matrix_free(covCopy);
-	gsl_vector_free(eValues);
 
   /* Convert to a 2D array for ACF calculation */
   data_array=calloc(nPar,sizeof(REAL8 *));
@@ -753,15 +727,12 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     data_array[i]=calloc(max_iterations,sizeof(REAL8));
     acf_array[i]=calloc(max_iterations/2,sizeof(REAL8));
   }
-  /* Measure autocorrelation along eigenvectors for multivariate */
+  /* Measure autocorrelation in each dimension */
   /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
   for (i=0;i<max_iterations;i++){
-    LALInferenceProjectSampleOntoEigenvectors( &variables_array[i], eVectors, &projection );
-    for(j=0;j<projection->length;j++) data_array[j][i]=projection->data[j];
+    for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(&variables_array[i],param_names[j]);
     LALInferenceDestroyVariables(&variables_array[i]);
   }
-  	gsl_matrix_free(eVectors);
-	XLALDestroyREAL8Vector(projection);
   free(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
@@ -815,6 +786,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   runState->algorithmParams=oldAlgParams;
   if(chainfile) fclose(chainfile);
   if(acffile) fclose(acffile);
+  free(param_names);
   return(acls);
 }
 
