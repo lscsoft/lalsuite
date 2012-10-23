@@ -153,7 +153,7 @@ MACRO(A, B, X);
 %}
 
 // Version of SWIG used to generate wrapping code.
-%inline %{const int swig_version = SWIGVERSION;%}
+%inline %{const int swig_version = SWIG_VERSION;%}
 
 // Whether wrapping code was generated in debug mode.
 #ifdef NDEBUG
