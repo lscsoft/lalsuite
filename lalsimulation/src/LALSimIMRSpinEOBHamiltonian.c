@@ -145,7 +145,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   REAL8 m1PlusetaKK;
 
   /* Terms which come into the 3.5PN mapping of the spins */
-  REAL8 aaa, bbb, a13P5, a23P5, a33P5, b13P5, b23P5, b33P5;
+  //REAL8 aaa, bbb, a13P5, a23P5, a33P5, b13P5, b23P5, b33P5;
   REAL8 sMultiplier1, sMultiplier2;
 
   /*Temporary p vector which we will make non-tortoise */
@@ -344,7 +344,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   b2 = -(1./8.)*eta*(-17. + 5.*eta);
   b3 = -3./8.*eta*eta;
   */
-  aaa = 0.;
+  /*aaa = 0.;
   bbb = 0.;
   a13P5 = 0.;
   a23P5 = 0.;
@@ -352,6 +352,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonian(
   b13P5 = 0.;
   b23P5 = 0.;
   b33P5 = 0.;
+  */
   /* Eq. 52 of BB2, (YP) simplified for zero gauge parameters */    
   /* 
   sMultiplier1 =-(2.*(24.*b23P5 + eta*(-353. + 27.*eta) + bbb*(56. + 60.*eta)) +
