@@ -1,10 +1,10 @@
-## Check SWIG Octave module wrapping lalframe
+## Check SWIG Octave module wrapping laldetchar
 ## Author: Karl Wette, 2011, 2012
 
 ## check module load
-lalframe;
-assert(exist("lalframe", "var"));
-assert(exist("lalframecvar", "var"));
+laldetchar;
+assert(exist("laldetchar", "var"));
+assert(exist("laldetcharcvar", "var"));
 lal;
 assert(exist("lal", "var"));
 assert(exist("lalcvar", "var"));
@@ -15,11 +15,11 @@ disp("passed module load");
 if !lalcvar.swig_debug
   disp("skipping object parent tracking");
 else
-  a = lalframe.new_lalframeswig_test_parent_map_struct();
+  a = laldetchar.new_laldetcharswig_test_parent_map_struct();
   for i = 1:7
     b = a.s;
-    c = lalframecvar.lalframeswig_test_parent_map.s;
-    lalframecvar.lalframeswig_test_parent_map.s = lalcvar.lalswig_test_struct_const;
+    c = laldetcharcvar.laldetcharswig_test_parent_map.s;
+    laldetcharcvar.laldetcharswig_test_parent_map.s = lalcvar.lalswig_test_struct_const;
   endfor
   clear a b c;
   CheckMemoryLeaks();
