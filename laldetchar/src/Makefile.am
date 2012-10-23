@@ -2,11 +2,16 @@ AM_CPPFLAGS = -I$(top_builddir)/include
 
 laldetcharincludedir = $(includedir)/lal
 laldetcharinclude_HEADERS = \
-	LALDetCharRange.h
+	LALDetChar.h \
+	LALDetCharConfig.h \
+	LALDetCharLibVCSInfo.h \
+	LALDetCharRange.h \
+	LALDetCharVCSInfo.h
 
 lib_LTLIBRARIES = liblaldetchar.la
 liblaldetchar_la_SOURCES = \
-	LALDetCharInspiralRange.c
+	LALDetCharInspiralRange.c \
+	LALDetCharVCSInfo.c
 
 liblaldetchar_la_LDFLAGS = -version-info $(LIBVERSION)
 
