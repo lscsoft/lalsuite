@@ -156,8 +156,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
 	REAL8 e1x,                    /**< initial value of E1x */
 	REAL8 e1y,                    /**< initial value of E1y */
 	REAL8 e1z,                    /**< initial value of E1z */
-	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
 	LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 	INT4 phaseO                   /**< twice post-Newtonian order */
 	)
@@ -379,19 +379,22 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     params.Etidal6pn = 0.;
     if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN)
     {
-        params.wdottidal5pn = lambda1 * 6. * (1. + 11. * m2M) / m1M
-                + lambda2 * 6. * (1. + 11. * m1M) / m2M;
-        params.Etidal5pn = - 9. * m2m1 * lambda1 - 9. * m1m2 * lambda2;
+        params.wdottidal5pn = lambda1 * 6. * (1. + 11. * m2M) * m1M*m1M*m1M*m1M
+                + lambda2 * 6. * (1. + 11. * m1M) * m2M*m2M*m2M*m2M;
+        params.Etidal5pn = - 9. * m2m1 * lambda1 * m1M*m1M*m1M*m1M*m1M
+                - 9. * m1m2 * lambda2 * m2M*m2M*m2M*m2M*m2M;
     }
     if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
     {
-        params.wdottidal6pn = lambda1 * (4421./28. - 12263./28. * m1M 
+        params.wdottidal6pn = lambda1 * m1M*m1M*m1M*m1M*m1M
+                * (4421./28. - 12263./28. * m1M 
                 + 1893./2. * m1M * m1M - 661 * m1M * m1M * m1M) / (2 * m1M)
-                + lambda2 * (4421./28. - 12263./28. * m2M + 1893./2. * m2M * m2M
-                - 661 * m2M * m2M * m2M) / (2 * m2M);
+                + lambda2 * m2M*m2M*m2M*m2M*m2M * (4421./28. - 12263./28. * m2M
+                + 1893./2. * m2M * m2M - 661 * m2M * m2M * m2M) / (2 * m2M);
         params.Etidal6pn = - 11./2. * m2m1 
-                * (3. + 2. * m1M + 3. * m1M * m1M) * lambda1 
-                - 11./2. * m1m2 * (3. + 2. * m2M + 3. * m2M * m2M) * lambda2;
+                * (3. + 2. * m1M + 3. * m1M * m1M) * lambda1 * m1M*m1M*m1M*m1M*m1M
+                - 11./2. * m1m2 * (3. + 2. * m2M + 3. * m2M * m2M)
+                * lambda2 * m2M*m2M*m2M*m2M*m2M;
     }
 	   
     /* Estimate length of waveform using Newtonian t(f) formula */
@@ -945,8 +948,8 @@ int XLALSimInspiralSpinTaylorT4(
 	REAL8 e1x,                      /**< initial value of E1x */
 	REAL8 e1y,                      /**< initial value of E1y */
 	REAL8 e1z,                      /**< initial value of E1z */
-	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
 	LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO                  /**< twice PN amplitude order */
@@ -1128,8 +1131,8 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
         REAL8 chi1,                     /**< spin magnitude (|S1|) */
         REAL8 kappa1,                    /**< L . S1 (1 if they are aligned) */
         REAL8 fStart,                   /**< start GW frequency (Hz) */
-        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (total mass)^5 (dimensionless) */
-        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (total mass)^5 (dimensionless) */
+        REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of mody 1)^5 (dimensionless) */
+        REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
         LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
         int phaseO                      /**< twice PN phase order */
         )
