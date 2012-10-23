@@ -25,7 +25,7 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
-#define MAX_MCMC 2000 /* Maximum chain length, set to be higher than expected from a reasonable run */
+#define MAX_MCMC 5000 /* Maximum chain length, set to be higher than expected from a reasonable run */
 
 static INT4 __chainfile_iter=0;
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
