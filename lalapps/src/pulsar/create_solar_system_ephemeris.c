@@ -47,7 +47,7 @@
 
 #define MERCURY 0
 #define VENUS 1
-#define EARTH 2                                     /* Earth-Moon Barycenter */
+#define EARTH 2                                    /* Earth-Moon barycenter */
 #define MARS 3
 #define JUPITER 4
 #define SATURN 5
@@ -56,6 +56,8 @@
 #define PLUTO 8
 #define MOON 9                                      /* Relative to geocenter */
 #define SUN 10
+#define NUTATION 13
+#define LIBRATION 14
 
 #define USAGE \
 "Usage: %s [options]\n\n"\
@@ -112,7 +114,7 @@ typedef struct taginputParams_t{
   CHAR outputfile[256]; /* path and name of output ephemeris file */
 
   INT4 year;  /* year of ephemeris file to extract */
-  INT4 nhre;  /* number of hours between successive data point for output */
+  REAL8 nhre;  /* number of hours between successive data point for output */
   INT4 noverlap; /* number of days overlap with previos years */
   INT4 nyears; /* number of years over which to create ephemeris */
 
@@ -164,7 +166,8 @@ int main(int argc, char **argv){
   REAL8 fgps=0.; /* float version of gps */
   REAL8 time[2], R[6], A[3], gps_JD[2];
   REAL8 Vlast[3], Vnow[3], Vnext[3], Rnow[3];
-  INT4 nyr=0, nhr=0, ndays=0;
+  INT4 nyr=0, ndays=0;
+  REAL8 nhr=0.;
 
   REAL8 finterval=0, halfinterval_jd=0;
 
@@ -238,7 +241,7 @@ inputs.ephemfile);
     fprintf(stderr, "  Targeting solar system body:- %s\n", inputs.targName);
     fprintf(stderr, "  Ephemeris year:- %d\n", inputs.year);
     fprintf(stderr, "  Number of years:- %d\n", inputs.nyears);
-    fprintf(stderr, "  Output interval (hours):- %d\n", inputs.nhre);
+    fprintf(stderr, "  Output interval (hours):- %.2lf\n", inputs.nhre);
     fprintf(stderr, "  Outout overlap with adjacent years (days):- %d\n",
 inputs.noverlap);
   }
@@ -695,6 +698,7 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
 
   /* if we're getting the Earth data then correct for the Moon */
   if( target == EARTH ){
+    /* get the Earth-Moon barycenter */
     interpolate_state(coeffArray, time, target, stateTemp, fp);
 
     for (i=0; i<6; i++)
@@ -703,18 +707,21 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
     /* get moon position */
     interpolate_state(coeffArray, time, MOON, stateTemp, fp);
 
+    /* remove the effect of the Moon */
     for (i=0; i<6; i++)
       state[i] -= stateTemp[i]/(1. + head1.data.emrat);
   }
   else if( target == MOON ){
+    /* get the Moon position */
     interpolate_state(coeffArray, time, target, stateTemp, fp);
 
     for (i=0; i<6; i++)
       state[i] = stateTemp[i];
 
-    /* get Earth position */
+    /* get Earth-Moon barycenter position */
     interpolate_state(coeffArray, time, EARTH, stateTemp, fp);
 
+    /* remove the effect of the Earth */
     for (i=0; i<6; i++)
       state[i] = stateTemp[i] + state[i]*(1.-1./(1.+head1.data.emrat));
   }
@@ -899,7 +906,7 @@ void get_input_args(inputParams_t *inputParams, INT4 argc, CHAR *argv[]){
         inputParams->year = atoi(optarg);
         break;
       case 'i':
-        inputParams->nhre = atoi(optarg);
+        inputParams->nhre = atof(optarg);
         break;
       case 'n':
         inputParams->noverlap = atoi(optarg);
