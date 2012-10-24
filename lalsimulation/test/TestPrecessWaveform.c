@@ -31,7 +31,6 @@
 #include <lal/LALSimInspiralPrecess.h>
 
 int main(void){
-		extern int lalDebugLevel;
 		lalDebugLevel=7;
 
 		FILE* h_ref = fopen("h_ref.txt", "w");
