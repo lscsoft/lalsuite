@@ -172,13 +172,14 @@ int XLALAnstarLatticeGenerator(
   );
 
 ///
-/// Add a constant parameter space bound to the flat lattice tiling
+/// Add a constant parameter space bound, given by the minimum and
+/// maximum of the two supplied bounds, to the flat lattice tiling
 ///
 int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   const size_t dimension,	///< [in] Dimension on which bound applies
-  const double lower,		///< [in] Lower bound on dimension
-  const double upper		///< [in] Upper bound on dimension
+  const double bound1,		///< [in] First bound on dimension
+  const double bound2		///< [in] Second bound on dimension
   );
 
 ///

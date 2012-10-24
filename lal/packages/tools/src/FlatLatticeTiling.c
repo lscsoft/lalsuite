@@ -756,10 +756,13 @@ static void ConstantBound(
   )
 {
 
+  // Get bounds data
+  const double* bounds = (const double*)data;
+
   // Set constant lower and upper bounds
-  gsl_vector_set(lower, 0, ((const double*)data)[0]);
+  gsl_vector_set(lower, 0, bounds[0]);
   if (upper) {
-    gsl_vector_set(upper, 0, ((const double*)data)[1]);
+    gsl_vector_set(upper, 0, bounds[1]);
   }
 
 }
@@ -767,23 +770,24 @@ static void ConstantBound(
 int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,
   size_t dimension,
-  double lower,
-  double upper
+  double bound1,
+  double bound2
   )
 {
 
   // Check input
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(lower <= upper, XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
 
   // Allocate and set bounds data
-  double* data = XLALCalloc(2, sizeof(double));
-  XLAL_CHECK(data != NULL, XLAL_ENOMEM);
-  data[0] = lower;
-  data[1] = upper;
+  double* bounds = XLALCalloc(2, sizeof(double));
+  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
+  bounds[0] = GSL_MIN(bound1, bound2);
+  bounds[1] = GSL_MAX(bound1, bound2);
 
   // Set parameter space bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, lower == upper, ConstantBound, (void*)data) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, bound1 == bound2, ConstantBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
