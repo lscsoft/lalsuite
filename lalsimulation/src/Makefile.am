@@ -13,6 +13,7 @@ lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
+	LALSimInspiralPrecess.h \
 	LALSimInspiralWaveformFlags.h \
 	LALSimInspiralTestGRParams.h \
 	LALSimIMR.h \
@@ -32,7 +33,6 @@ noinst_HEADERS = \
 	LALSimIMREOBNewtonianMultipole.c \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiraldEnergyFlux.c \
-	LALSimInspiralPrecess.h \
 	LALSimIMRSpinEOBHamiltonian.c \
 	LALSimIMRSpinEOBHcapNumericalDerivative.c \
 	LALSimIMRSpinAlignedEOBHcapDerivative.c \
