@@ -37,7 +37,8 @@ int main(void){
 		FILE* h_ref = fopen("h_ref.txt", "w");
 		FILE* h_rot = fopen("h_rot.txt", "w");
 
-		int i, ret;
+		int ret;
+		unsigned int i;
 		
 		// Get waveform
 		double m1 = 5.0*LAL_MSUN_SI, m2 = 5.0*LAL_MSUN_SI;
