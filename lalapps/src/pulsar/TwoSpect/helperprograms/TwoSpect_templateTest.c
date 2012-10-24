@@ -72,18 +72,22 @@ int main(int argc, char *argv[])
    //Initiate command line interpreter and config file loader
    struct gengetopt_args_info args_info;
    struct cmdline_parser_params *configparams;
-   configparams = cmdline_parser_params_create();
-   configparams->initialize = 0;
-   configparams->override = 1;
-   if ( cmdline_parser(argc, argv, &args_info) ) {
-      fprintf(stderr, "%s: cmdline_parser() failed.\n", __func__);
+   configparams = cmdline_parser_params_create();  //initialize parameters structure
+   configparams->check_required = 0;  //don't check for required values at the step
+   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
+       fprintf(stderr, "%s: cmdline_parser() failed.\n", __func__);
+       XLAL_ERROR(XLAL_FAILURE);
+   }
+   configparams->initialize = 0;  //don't reinitialize the parameters structure
+   if ( args_info.config_given && cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) {
+      fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   if ( args_info.config_given ) {
-      if ( cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) {
-         fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
-         XLAL_ERROR(XLAL_FAILURE);
-      }
+   configparams->override = 1;  //override values in the configuration file
+   configparams->check_required = 1;  //check for required values now
+   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
+      fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
    }
    
    
@@ -293,8 +297,8 @@ int main(int argc, char *argv[])
    fprintf(LOG, "Loading in SFTs... ");
    fprintf(stderr, "Loading in SFTs... ");
    ffdata->tfnormalization = 2.0/inputParams->Tcoh/(args_info.avesqrtSh_arg*args_info.avesqrtSh_arg);
-   //REAL4Vector *tfdata = readInSFTs(inputParams, &(ffdata->tfnormalization));
-   REAL4Vector *tfdata = simpleTFdata(inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, inputParams->Tcoh, inputParams->Tobs, inputParams->SFToverlap, round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh, round((inputParams->fmin + inputParams->fspan)*inputParams->Tcoh + inputParams->dfmax*inputParams->Tcoh + 0.5*(inputParams->blksize-1) + (REAL8)(inputParams->maxbinshift) + 6.0)/inputParams->Tcoh, 1.0);
+   REAL4Vector *tfdata = readInSFTs(inputParams, &(ffdata->tfnormalization));
+   //REAL4Vector *tfdata = simpleTFdata(inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, inputParams->Tcoh, inputParams->Tobs, inputParams->SFToverlap, round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh, round((inputParams->fmin + inputParams->fspan)*inputParams->Tcoh + inputParams->dfmax*inputParams->Tcoh + 0.5*(inputParams->blksize-1) + (REAL8)(inputParams->maxbinshift) + 6.0)/inputParams->Tcoh, 1.0);
    if (tfdata==NULL) {
       fprintf(stderr, "\n%s: readInSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
@@ -673,6 +677,10 @@ int main(int argc, char *argv[])
       TFdata_weighted = NULL;
       
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
+      //comment this out
+      FILE *FFDATA = fopen("./ffdata.dat","w");
+      for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
+      fclose(FFDATA);
       
       //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
@@ -684,7 +692,7 @@ int main(int argc, char *argv[])
       loadCandidateData(&(exactCandidates1->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
       
       //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[0], exactCandidates1->data[0].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[0].fsig+1.0/inputParams->Tcoh, 25, 31, exactCandidates1->data[0].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[0].moddepth+1.0/inputParams->Tcoh, 25, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
-      bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[0], exactCandidates1->data[0].fsig, exactCandidates1->data[0].fsig, 1, 31, exactCandidates1->data[0].moddepth, exactCandidates1->data[0].moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+      //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[0], exactCandidates1->data[0].fsig, exactCandidates1->data[0].fsig, 1, 31, exactCandidates1->data[0].moddepth, exactCandidates1->data[0].moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
       templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
       if (template==NULL) {
          fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, inputParams->maxtemplatelength);
