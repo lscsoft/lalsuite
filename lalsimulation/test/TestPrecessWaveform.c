@@ -30,7 +30,7 @@
 
 #include <lal/LALSimInspiralPrecess.h>
 
-int main(){
+int main(void){
 		extern int lalDebugLevel;
 		lalDebugLevel=7;
 
