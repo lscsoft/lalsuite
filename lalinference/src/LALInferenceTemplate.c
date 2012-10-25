@@ -1829,11 +1829,11 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 /********************************************************************************************/
 {
 	
-  Approximant			approximant= (Approximant) 0;
-  int			order=-1;
+  Approximant approximant = (Approximant) 0;
+  int order=-1;
   int amporder=-1;
 
-  unsigned long				i;
+  unsigned long	i;
   static int sizeWarning = 0;
   int ret=0;
   REAL8 instant;
@@ -1855,9 +1855,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8 *m1_p,*m2_p;
   REAL8 deltaF, f_max;
   
-  REAL8 padding=0.4; // hard coded value found in LALInferenceReadData(). Padding (in seconds) for the tuckey window.
-  UINT8 windowshift=(UINT8) ceil(padding/IFOdata->timeData->deltaT);
-	
   if (LALInferenceCheckVariable(IFOdata->modelParams, "LAL_APPROXIMANT"))
     approximant = *(Approximant*) LALInferenceGetVariable(IFOdata->modelParams, "LAL_APPROXIMANT");
   else {
@@ -2032,7 +2029,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
     LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
     
-  }else{
+  } else {
 
     if(start_time < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
       fprintf(stderr, "ERROR: Desired start time %f is before start of segment %f (in %s, line %d)\n",start_time,(IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds), __FILE__, __LINE__);
@@ -2045,7 +2042,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
                                                  amporder, order, approximant), errnum);
     XLALSimInspiralDestroyWaveformFlags(waveFlags);
     XLALSimInspiralDestroyTestGRParam(nonGRparams);
-    if (ret == XLAL_FAILURE)
+    if (ret == XLAL_FAILURE || hplus == NULL || hcross == NULL)
       {
 	XLALPrintError(" ERROR in XLALSimInspiralChooseWaveform(): error generating waveform. errnum=%d\n",errnum );
 	for (i=0; i<IFOdata->timeData->data->length; i++){
@@ -2055,58 +2052,35 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	return;
       }
 
-    // FIXME: these waveform shifts need to be checked -> not needed, neither hplus->epoch nor hcross->epoch are used from then onward. 
-    //XLALGPSAdd(&(hplus->epoch), start_time);
-    //XLALGPSAdd(&(hcross->epoch), start_time);
+    size_t waveLength = hplus->data->length;
+    size_t tempLength = IFOdata->timeData->data->length;
 
-    instant= (IFOdata->timeData->epoch.gpsSeconds-hplus->epoch.gpsSeconds + 1e-9*(IFOdata->timeData->epoch.gpsNanoSeconds-hplus->epoch.gpsNanoSeconds));
-	
-    /* write template (time axis) location in "->modelParams" so that     */
-    /* template corresponds to stored parameter values                    */
-    /* and other functions may time-shift template to where they want it: */
+    memset(IFOdata->timeModelhPlus->data->data, 0, sizeof(REAL8)*IFOdata->timeModelhPlus->data->length);
+    memset(IFOdata->timeModelhCross->data->data, 0, sizeof(REAL8)*IFOdata->timeModelhCross->data->length);
     
-    instant=instant+(INT8)windowshift*IFOdata->timeData->deltaT; //leave enough room for the tuckey windowing of the data.
-    LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
-    
-    
-    if(hplus->data && hcross->data){
-      if(hplus->data->length+2*windowshift<=IFOdata->timeData->data->length){ //check whether the IFOdata->timeData->data vector is long enough to store the waveform produced
-        for (i=0; i<IFOdata->timeData->data->length; i++){
-          if(i>=((unsigned long int)(hplus->data->length) + windowshift)  || i<windowshift || isnan(hplus->data->data[i-(INT8)windowshift]) || isnan(hcross->data->data[i-(INT8)windowshift])){
-            IFOdata->timeModelhPlus->data->data[i] = 0;
-            IFOdata->timeModelhCross->data->data[i] = 0;		
-          }else{
-            IFOdata->timeModelhPlus->data->data[i] = hplus->data->data[i-(INT8)windowshift];
-            IFOdata->timeModelhCross->data->data[i] = hcross->data->data[i-(INT8)windowshift];
-          }
-        }
-      }else{
-        if (!sizeWarning) {
-          sizeWarning = 1;
-          fprintf(stderr, "WARNING: hplus->data->length = %d is longer than IFOdata->timeData->data->length = %d minus windowshift = %d.\n", hplus->data->length, IFOdata->timeData->data->length, (int) windowshift);
-          if(hplus->data->length + (int) windowshift > IFOdata->timeData->data->length)
-            fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + (int) windowshift , __FILE__, __LINE__);
-          else
-            fprintf(stderr, "The waveform template used will have its first %d points tapered. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length + 2*(int)windowshift , __FILE__, __LINE__);
-        }
-        for (i=0; i<IFOdata->timeData->data->length; i++){
-          if((INT8)i>=(INT8)IFOdata->timeData->data->length-(INT8)windowshift || (INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift < 0 || isnan(hplus->data->data[(INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift]) || isnan(hcross->data->data[(INT8)i+(INT8)hcross->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift]) ){
-            IFOdata->timeModelhPlus->data->data[i] = 0.0;
-            IFOdata->timeModelhCross->data->data[i] = 0.0;
-          }else{                
-            IFOdata->timeModelhPlus->data->data[i] = hplus->data->data[(INT8)i+(INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift];
-            IFOdata->timeModelhCross->data->data[i] = hcross->data->data[(INT8)i+(INT8)hcross->data->length-(INT8)IFOdata->timeData->data->length+(INT8)windowshift];
-          }
-        }
-        instant-= ((INT8)hplus->data->length-(INT8)IFOdata->timeData->data->length+2*(INT8)windowshift)*IFOdata->timeData->deltaT;
-        LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
+    if (tempLength >= waveLength) {
+      /* Template fits in data. */
+      REAL8 modelTime = XLALGPSGetREAL8(&IFOdata->timeModelhCross->epoch) - XLALGPSGetREAL8(&hcross->epoch);
+
+      memcpy(IFOdata->timeModelhPlus->data->data, hplus->data->data, sizeof(REAL8)*hplus->data->length);
+      memcpy(IFOdata->timeModelhCross->data->data, hcross->data->data, sizeof(REAL8)*hcross->data->length);
+
+      LALInferenceSetVariable(IFOdata->modelParams, "time", &modelTime);
+    } else {
+      /* Template too big---cut off the beginning. */
+
+      if (!sizeWarning) {
+	sizeWarning = 1;
+	fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length, __FILE__, __LINE__);
       }
-    }else{
-      for (i=0; i<IFOdata->timeData->data->length; i++){
-        IFOdata->timeModelhPlus->data->data[i] = 0;
-        IFOdata->timeModelhCross->data->data[i] = 0;
-      }
-      fprintf( stderr, " ERROR in LALInferenceTemplateXLALSimInspiralChooseWaveform(): no generated waveform.\n");
+
+      size_t skippedSamples = waveLength - tempLength;
+      REAL8 modelTime = XLALGPSGetREAL8(&IFOdata->timeModelhCross->epoch) - XLALGPSGetREAL8(&hcross->epoch) - skippedSamples*hcross->deltaT;
+
+      memcpy(IFOdata->timeModelhPlus->data->data, hplus->data->data + skippedSamples, sizeof(REAL8)*IFOdata->timeModelhPlus->data->length);
+      memcpy(IFOdata->timeModelhCross->data->data, hcross->data->data + skippedSamples, sizeof(REAL8)*IFOdata->timeModelhCross->data->length);
+
+      LALInferenceSetVariable(IFOdata->modelParams, "time", &modelTime);
     }
   }
   if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
