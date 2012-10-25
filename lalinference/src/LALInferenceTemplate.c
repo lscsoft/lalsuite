@@ -1,7 +1,9 @@
 /* 
- *  LALInferenceTemplate.c:  Bayesian Followup, template calls to LAL template functions. Temporary GeneratePPN
+ *  LALInferenceTemplate.c: Bayesian Followup, template calls to LAL
+ *  template functions. Temporary GeneratePPN
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever,
+ *  Marc van der Sluys, John Veitch, and Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
