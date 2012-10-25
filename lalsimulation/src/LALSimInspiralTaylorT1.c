@@ -145,8 +145,8 @@ static int
 XLALSimInspiralTaylorT1Setup(
     expnCoeffsTaylorT1 *ak,		/**< coefficients for TaylorT1 evolution [modified] */
     expnFuncTaylorT1 *f,		/**< functions for TaylorT1 evolution [modified] */
-    REAL8 m1,				/**< mass of companion 1 */
-    REAL8 m2,				/**< mass of companion 2 */
+    REAL8 m1,				/**< mass of companion 1 (kg) */
+    REAL8 m2,				/**< mass of companion 2 (kg) */
     int O				/**< twice post-Newtonian order */
 )
 {
@@ -248,16 +248,17 @@ XLALSimInspiralTaylorT1Setup(
 int XLALSimInspiralTaylorT1PNEvolveOrbit(
 		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 		REAL8TimeSeries **phi, /**< orbital phase [returned] */
-		REAL8 phic,            /**< coalescence phase */
-		REAL8 deltaT,          /**< sampling interval */
-		REAL8 m1,              /**< mass of companion 1 */
-		REAL8 m2,              /**< mass of companion 2 */
-		REAL8 f_min,           /**< start frequency */
+		REAL8 phiRef,          /**< reference orbital phase (rad) */
+		REAL8 deltaT,          /**< sampling interval (s) */
+		REAL8 m1,              /**< mass of companion 1 (kg) */
+		REAL8 m2,              /**< mass of companion 2 (kg) */
+		REAL8 f_min,           /**< starting GW frequency (Hz) */
+		REAL8 fRef,            /**< reference GW frequency (Hz) */
 		int O                  /**< twice post-Newtonian order */
 		)
 {
-	double lengths;
-	int len, intreturn, idx;
+	double lengths, VRef = 0.;
+	int len, intreturn, idx, idxRef = 0;
 	XLALSimInspiralTaylorT1PNEvolveOrbitParams params;
 	ark4GSLIntegrator *integrator = NULL;
 	expnFuncTaylorT1 expnfunc;
@@ -320,13 +321,24 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	/* Compute phase shift to get desired value phic in last sample */
-	/* phi here is the orbital phase = 1/2 * GW phase.
-	 * End GW phase specified on command line.
-	 * Adjust phase so phi = phic/2 at the end */
-
-	phic /= 2.;
-	phic -= yout->data[3*len-1];
+	/* Do a constant phase shift to get desired value of phiRef */
+	/* For fRef==0, phiRef is phase of last sample */
+	if( fRef == 0. )
+		phiRef -= yout->data[3*len-1];
+	/* For fRef==fmin, phiRef is phase of first sample */
+	else if( fRef == f_min )
+		phiRef -= yout->data[2*len];
+	/* phiRef is phase when f==fRef */
+	else
+	{
+		VRef = pow(LAL_PI * LAL_G_SI*(m1+m2) * fRef, 1./3.) / LAL_C_SI;
+		idx = 0;
+		do {
+			idxRef = idx;
+			idx++;
+		} while (yout->data[len+idx] <= VRef);
+		phiRef -= yout->data[2*len+idxRef];
+	}
 
 	/* Copy time series of dynamical variables */
 	/* from yout array returned by integrator to output time series */
@@ -334,7 +346,7 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
 	for( idx = 0; idx < len; idx++ )
 	{	
 		(*V)->data->data[idx]	= yout->data[len+idx];
-		(*phi)->data->data[idx]	= yout->data[2*len+idx] + phic;
+		(*phi)->data->data[idx]	= yout->data[2*len+idx] + phiRef;
 	}
 
 	XLALDestroyREAL8Array(yout);
@@ -351,27 +363,53 @@ int XLALSimInspiralTaylorT1PNEvolveOrbit(
  */
 int XLALSimInspiralTaylorT1PNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
-	       	REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
-	       	REAL8 deltaT,             /**< sampling interval */
-	       	REAL8 m1,                 /**< mass of companion 1 */
-	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 f_min,              /**< start frequency */
-	       	REAL8 r,                  /**< distance of source */
-	       	REAL8 i,                  /**< inclination of source (rad) */
-	       	int amplitudeO,           /**< twice post-Newtonian amplitude order */
-	       	int phaseO                /**< twice post-Newtonian phase order */
+		REAL8TimeSeries **hcross, /**< x-polarization waveform */
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		REAL8 i,                  /**< inclination of source (rad) */
+		int amplitudeO,           /**< twice post-Newtonian amplitude order */
+		int phaseO                /**< twice post-Newtonian phase order */
 		)
 {
+	/* The Schwarzschild ISCO frequency - for sanity checking fRef */
+	REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
+
+	/* Sanity check fRef value */
+	if( fRef < 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+				__func__, fRef);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if( fRef != 0. && fRef < f_min )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+				__func__, fRef, f_min);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if( fRef >= fISCO )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be < Schwar. ISCO=%f\n",
+				__func__, fRef, fISCO);
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+
 	REAL8TimeSeries *V;
 	REAL8TimeSeries *phi;
 	int status;
 	int n;
-	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, phic, deltaT, m1, m2, f_min, phaseO);
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, phiRef, deltaT,
+			m1, m2, f_min, fRef, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
-	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi, v0, m1, m2, r, i, amplitudeO);
+	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi,
+			v0, m1, m2, r, i, amplitudeO);
 	XLALDestroyREAL8TimeSeries(phi);
 	XLALDestroyREAL8TimeSeries(V);
 	if ( status < 0 )
@@ -391,19 +429,21 @@ int XLALSimInspiralTaylorT1PNGenerator(
  */
 int XLALSimInspiralTaylorT1PN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
-	       	REAL8 deltaT,             /**< sampling interval */
-	       	REAL8 m1,                 /**< mass of companion 1 */
-	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 f_min,              /**< start frequency */
-	       	REAL8 r,                  /**< distance of source */
-	       	REAL8 i,                  /**< inclination of source (rad) */
-	       	int O                     /**< twice post-Newtonian order */
+		REAL8TimeSeries **hcross, /**< x-polarization waveform */
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		REAL8 i,                  /**< inclination of source (rad) */
+		int O                     /**< twice post-Newtonian order */
 		)
 {
 	/* set v0 to default value 1 */
-	return XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, phic, 1.0, deltaT, m1, m2, f_min, r, i, O, O);
+	return XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, phiRef, 1.0,
+			deltaT, m1, m2, f_min, fRef, r, i, O, O);
 }
 
 
@@ -417,20 +457,22 @@ int XLALSimInspiralTaylorT1PN(
  */
 int XLALSimInspiralTaylorT1PNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
-	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
-	       	REAL8 deltaT,             /**< sampling interval */
-	       	REAL8 m1,                 /**< mass of companion 1 */
-	       	REAL8 m2,                 /**< mass of companion 2 */
-	       	REAL8 f_min,              /**< start frequency */
-	       	REAL8 r,                  /**< distance of source */
-	       	REAL8 i,                  /**< inclination of source (rad) */
-	       	int O                     /**< twice post-Newtonian phase order */
+		REAL8TimeSeries **hcross, /**< x-polarization waveform */
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m)*/
+		REAL8 i,                  /**< inclination of source (rad) */
+		int O                     /**< twice post-Newtonian phase order */
 		)
 {
 	/* use Newtonian order for amplitude */
 	/* set v0 to default value 1 */
-	return XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, phic, 1.0, deltaT, m1, m2, f_min, r, i, 0, O);
+	return XLALSimInspiralTaylorT1PNGenerator(hplus, hcross, phiRef, 1.0,
+			deltaT, m1, m2, f_min, fRef, r, i, 0, O);
 }
 
 
@@ -448,11 +490,12 @@ int main(void)
 	REAL8 r = 1e6*LAL_PC_SI;
 	REAL8 i = 0.5*LAL_PI;
 	REAL8 f_min = 100.0;
+	REAL8 fRef = 0.;
 	int O = -1;
 	REAL8TimeSeries *hplus;
 	REAL8TimeSeries *hcross;
 	lalDebugLevel = 7;
-	XLALSimInspiralTaylorT1PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, r, i, O);
+	XLALSimInspiralTaylorT1PN(&hplus, &hcross, &tc, phic, deltaT, m1, m2, f_min, fRef, r, i, O);
 	LALDPrintTimeSeries(hplus, "hp.dat");
 	LALDPrintTimeSeries(hcross, "hc.dat");
 	XLALDestroyREAL8TimeSeries(hplus);
