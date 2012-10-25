@@ -1118,16 +1118,14 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
                                                 injEvent->spin2z, injEvent->f_lower, 0., injEvent->distance*LAL_PC_SI * 1.0e6,
                                                 injEvent->inclination, lambda1, lambda2, waveFlags,
                                                 nonGRparams, amporder, order, approximant);
+      if(!hplus || !hcross) {
+        fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
+        exit(-1);
+      }
       XLALSimInspiralDestroyWaveformFlags(waveFlags);
       XLALSimInspiralDestroyTestGRParam(nonGRparams);
       XLALResampleREAL8TimeSeries(hplus,thisData->timeData->deltaT);
       XLALResampleREAL8TimeSeries(hcross,thisData->timeData->deltaT);
-      if(!hplus || !hcross) {
-        fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
-        exit(-1);
-        //XLALPrintError("XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
-        //XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
       /* XLALSimInspiralChooseTDWaveform always ends the waveform at t=0 */
       /* So we can adjust the epoch so that the end time is as desired */
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
