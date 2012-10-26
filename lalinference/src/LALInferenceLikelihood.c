@@ -1,7 +1,8 @@
 /* 
  *  LALInferenceLikelihood.c:  Bayesian Followup likelihood functions
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch, Will M. Farr
+ *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever,
+ *  Marc van der Sluys and John Veitch, Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -251,23 +252,14 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
       template(dataPtr);
       if(XLALGetBaseErrno()==XLAL_FAILURE) /* Template generation failed in a known way, set -Inf likelihood */
           return(-DBL_MAX);
-
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
-//	if (!timeDomainWarning) {
-//	  timeDomainWarning = 1;
-//	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
-//	}
-        LALInferenceExecuteFT(dataPtr);
-        /* note that the dataPtr->modelParams "time" element may have changed here!! */
-        /* (during "template()" computation)  */
-      }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
-    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
-    /*-- (Either freshly computed or inherited.)                            --*/
+    /*-- Template is now in dataPtr->timeModelhPlus and
+         dataPtr->timeModelhCross (if time-domain) or freqModel (if
+         freq-domain). --*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross,
@@ -279,6 +271,13 @@ REAL8 LALInferenceUndecomposedFreqDomainLogLikelihood(LALInferenceVariables *cur
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.) */
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
+
+    /* If time-domain, do time-shift when computing freqModel. */
+    if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      LALInferenceExecuteFT(dataPtr, timeshift);
+      timeshift=0;
+    }
+
     twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
@@ -485,22 +484,13 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
-//	if (!timeDomainWarning) {
-//	  timeDomainWarning = 1;
-//	  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
-//	}
-        LALInferenceExecuteFT(dataPtr);
-        /* note that the dataPtr->modelParams "time" element may have changed here!! */
-        /* (during "template()" computation)  */
-      }
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
-    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
-    /*-- (Either freshly computed or inherited.)                                  --*/
+    /*-- Template is now in dataPtr->timeModelhPlus and
+         dataPtr->timeModelhCross (if TD) or freqModel (if FD).*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross,
@@ -512,6 +502,13 @@ REAL8 LALInferenceFreqDomainStudentTLogLikelihood(LALInferenceVariables *current
     /* (negative timedelay means signal arrives earlier at Ifo than at geocenter, etc.)    */
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
+
+    /* If TD waveform, timeshift when Fourier transforming. */
+    if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      LALInferenceExecuteFT(dataPtr, timeshift);
+      timeshift=0;
+    }
+
     twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */
@@ -936,22 +933,14 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
       LALInferenceCopyVariables(&intrinsicParams, dataPtr->modelParams);
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
       template(dataPtr);
-      if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
-//		  if (!timeDomainWarning) {
-//			  timeDomainWarning = 1;
-//			  fprintf(stderr, "WARNING: using time domain template with frequency domain likelihood (in %s, line %d)\n", __FILE__, __LINE__);
-//		  }
-		  LALInferenceExecuteFT(dataPtr);
-		  /* note that the dataPtr->modelParams "time" element may have changed here!! */
-		  /* (during "template()" computation)                                      */
-		}
     }
     else { /* no re-computation necessary. Return back "time" value, do nothing else: */
       LALInferenceAddVariable(dataPtr->modelParams, "time", &timeTmp, LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_LINEAR);
     }
 
-    /*-- Template is now in dataPtr->freqModelhPlus and dataPtr->freqModelhCross. --*/
-    /*-- (Either freshly computed or inherited.)                            --*/
+    /*-- Template is now in dataPtr->timeModelhPlus and
+         dataPtr->timeModelhCross (if time-domain) or freqModel (if
+         freq-domain). --*/
 
     /* determine beam pattern response (F_plus and F_cross) for given Ifo: */
     XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response,
@@ -964,6 +953,13 @@ void LALInferenceComputeFreqDomainResponse(LALInferenceVariables *currentParams,
 
     /* amount by which to time-shift template (not necessarily same as above "timedelay"): */
     timeshift =  (GPSdouble - (*(REAL8*) LALInferenceGetVariable(dataPtr->modelParams, "time"))) + timedelay;
+
+    /* If time-domain, do time-shift when computing freqModel. */
+    if (dataPtr->modelDomain == LALINFERENCE_DOMAIN_TIME) {
+      LALInferenceExecuteFT(dataPtr, timeshift);
+      timeshift=0;
+    }
+
     twopit    = LAL_TWOPI * timeshift;
 
     /* include distance (overall amplitude) effect in Fplus/Fcross: */

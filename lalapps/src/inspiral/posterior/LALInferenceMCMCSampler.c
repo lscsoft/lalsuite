@@ -1,7 +1,8 @@
 /*
  *  LALInferenceMCMC.c:  Bayesian Followup, MCMC algorithm.
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2009, 2012 Ilya Mandel, Vivien Raymond, Christian
+ *  Roever, Marc van der Sluys, John Veitch and Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify

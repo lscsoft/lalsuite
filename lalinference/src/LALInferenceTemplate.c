@@ -2140,7 +2140,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
   while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
     template(data);
     if (data->modelDomain == LALINFERENCE_DOMAIN_TIME)
-      LALInferenceExecuteFT(data);
+      LALInferenceExecuteFT(data, 0.0);
 
     outfile = fopen(filename, "w");
     /*fprintf(outfile, "f PSD dataRe dataIm signalPlusRe signalPlusIm signalCrossRe signalCrossIm\n");*/
