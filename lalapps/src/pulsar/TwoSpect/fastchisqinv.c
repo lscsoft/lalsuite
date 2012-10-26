@@ -129,7 +129,6 @@ REAL8 cdf_chisq_Qinv(REAL8 Q, REAL8 nu)
       XLAL_ERROR_REAL8(XLAL_EFUNC);
    }
    return val;
-   
 }
 REAL8 cdf_gamma_Pinv(REAL8 P, REAL8 a, REAL8 b)
 {

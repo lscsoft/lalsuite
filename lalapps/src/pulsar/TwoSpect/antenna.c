@@ -23,6 +23,10 @@
 
 static const LALStatus empty_status;
 
+//Compute the number of integer bin shifts per SFT
+// bin shift = f0*v*Tcoh
+// where f0 is frequency, v is velocity in units of c, and Tcoh is the SFT coherence length
+// an optional dopplerMultiplier value could be multiplied if desired (default value is 1.0)
 void CompBinShifts(INT4Vector *output, REAL8 freq, REAL4Vector *velocities, REAL8 Tcoh, REAL4 dopplerMultiplier)
 {
    
