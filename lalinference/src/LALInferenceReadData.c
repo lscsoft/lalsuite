@@ -601,10 +601,6 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 		if(!IFOdata[i].timeToFreqFFTPlan) XLAL_ERROR_NULL(XLAL_EFUNC);
 		IFOdata[i].freqToTimeFFTPlan = XLALCreateReverseREAL8FFTPlan((UINT4) seglen,0);
 		if(!IFOdata[i].freqToTimeFFTPlan) XLAL_ERROR_NULL(XLAL_EFUNC);		
-		IFOdata[i].paddedTimeToFreqFFTPlan = XLALCreateForwardREAL8FFTPlan((UINT4) 2*seglen, 0);
-		if (!IFOdata[i].paddedTimeToFreqFFTPlan) XLAL_ERROR_NULL(XLAL_EFUNC);
-		IFOdata[i].paddedFreqToTimeFFTPlan = XLALCreateReverseREAL8FFTPlan((UINT4) 2*seglen, 0);
-		if (!IFOdata[i].paddedFreqToTimeFFTPlan) XLAL_ERROR_NULL(XLAL_EFUNC);
 		/* Setup windows */
 		IFOdata[i].window=XLALCreateTukeyREAL8Window(seglen,(REAL8)2.0*padding*SampleRate/(REAL8)seglen);
 		if(!IFOdata[i].window) XLAL_ERROR_NULL(XLAL_EFUNC);

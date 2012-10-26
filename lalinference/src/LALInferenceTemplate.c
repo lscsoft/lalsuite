@@ -1927,9 +1927,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   f_min = IFOdata->fLow /** 0.9 */;
   f_max = IFOdata->fHigh;
   
-  REAL8 start_time	= *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams, "time");   			/* START time as per lalsimulation conventions */
-  
-	
   INT4 errnum=0;
   
   REAL8 lambda1 = 0.;
@@ -2031,11 +2028,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     
   } else {
 
-    if(start_time < (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds)){
-      fprintf(stderr, "ERROR: Desired start time %f is before start of segment %f (in %s, line %d)\n",start_time,(IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds), __FILE__, __LINE__);
-      exit(1);
-    }
-    
     XLAL_TRY(ret=XLALSimInspiralChooseTDWaveform(&hplus, &hcross, phi0, deltaT, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, 
                                                  spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, fRef, distance, 
                                                  inclination, lambda1, lambda2, waveFlags, nonGRparams,
@@ -2052,36 +2044,123 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
 	return;
       }
 
-    size_t waveLength = hplus->data->length;
-    size_t tempLength = IFOdata->timeData->data->length;
+    /* The following complicated mess is a result of the following considerations:
+       
+       1) The discrete time samples of the template and the timeModel
+       buffers will not, in general line up.
 
+       2) The likelihood function will timeshift the template in the
+       frequency domain to align it properly with the desired tc in
+       each detector (these are different because the detectors
+       receive the signal at different times).  Because this
+       timeshifting is done in the frequency domain, the effective
+       time-domain template is periodic.  We want to avoid the
+       possibility of non-zero template samples wrapping around from
+       the start/end of the buffer, since real templates are not
+       periodic!
+
+       3) If the template apporaches the ends of the timeModel buffer,
+       then it should be tapered in the same way as the timeData
+       (currently 0.4 seconds, hard-coded! Tukey window; see
+       LALInferenceReadData.c, near line 233) so that template and
+       signal in the data match.  However, as an optimization, we
+       perform only one tapering and FFT-ing in the likelihood
+       function; subsequent timeshifts for the different detectors
+       will cause the tapered regions of the template and data to
+       become mis-aligned.
+
+       The algorthim we use is the following:
+
+       1) Inject the template to align with the nearest sample in the
+       timeModel buffer to the desired geocent_end time.
+
+       2) Check whether either the start or the end of the template
+       overlaps the tapered region, plus a safety buffer corresponding
+       to a conservative estimate of the largest geocenter <-->
+       detector timeshift.
+       
+         a) If there is no overlap at the start or end of the buffer,
+         we're done.
+
+	 b) If there is an overlap, issue one warning per process
+	 (which can be disabled by setting the LAL debug level) about
+	 a too-short segment length, and return.
+*/
+
+    size_t waveLength = hplus->data->length;
+    size_t bufLength = IFOdata->timeData->data->length;
+
+    /* 2*Rearth/(c*deltaT)---2 is safety factor---is the maximum time
+       shift for any earth-based detector. */
+    size_t maxShift = (size_t)lround(4.255e-4/hplus->deltaT); 
+
+    /* Taper 0.4 seconds at start and end (hard-coded! in
+       LALInferenceReadData.c, around line 233). */
+    size_t taperLength = (size_t)lround(0.4/hplus->deltaT); 
+
+    /* Within unsafeLength of ends of buffer, possible danger of
+       wrapping and/or tapering interactions. */
+    size_t unsafeLength = taperLength + maxShift;
+
+    REAL8 desiredTc = *(REAL8 *)LALInferenceGetVariable(IFOdata->modelParams, "time");
+    REAL8 tStart = XLALGPSGetREAL8(&(IFOdata->timeModelhPlus->epoch));
+    REAL8 tEnd = tStart + IFOdata->timeModelhPlus->deltaT * IFOdata->timeModelhPlus->data->length;
+
+    if (desiredTc < tStart || desiredTc > tEnd) {
+      XLALDestroyREAL8TimeSeries(hplus);
+      XLALDestroyREAL8TimeSeries(hcross);
+
+      XLAL_PRINT_ERROR("desired tc (%.4f) outside data buffer\n", desiredTc);
+      XLAL_ERROR_VOID(XLAL_EDOM);
+    }
+
+    /* The nearest sample in model buffer to the desired tc. */
+    size_t tcSample = (size_t)lround((desiredTc - XLALGPSGetREAL8(&(IFOdata->timeModelhPlus->epoch)))/IFOdata->timeModelhPlus->deltaT);
+
+    /* The acutal coalescence time that corresponds to the buffer
+       sample on which the waveform's tC lands. */
+    REAL8 injTc = XLALGPSGetREAL8(&(IFOdata->timeModelhPlus->epoch)) + tcSample*IFOdata->timeModelhPlus->deltaT;
+
+    /* The sample at which the waveform reaches tc. */
+    size_t waveTcSample = (size_t)lround(-XLALGPSGetREAL8(&(hplus->epoch))/hplus->deltaT);
+
+    /* 1 + (number of samples post-tc in waveform) */
+    size_t wavePostTc = waveLength - waveTcSample;
+
+    size_t bufStartIndex = (tcSample >= waveTcSample ? tcSample - waveTcSample : 0);
+    size_t bufEndIndex = (wavePostTc + tcSample <= bufLength ? wavePostTc + tcSample : bufLength);
+    size_t bufWaveLength = bufEndIndex - bufStartIndex;
+    size_t waveStartIndex = (tcSample >= waveTcSample ? 0 : waveTcSample - tcSample);    
+
+    if (bufStartIndex < unsafeLength || (bufLength - bufEndIndex) <= unsafeLength) {
+      /* The waveform could be timeshifted into a region where it will
+	 be tapered improperly, or even wrap around from the periodic
+	 timeshift.  Issue warning. */
+      if (!sizeWarning) {
+	fprintf(stderr, "WARNING: Generated template is too long to guarantee that it will not\n");
+	fprintf(stderr, "WARNING:  (a) lie in a tapered region of the time-domain buffer\n");
+	fprintf(stderr, "WARNING:  (b) wrap periodically when timeshifted in likelihood computation\n");
+	fprintf(stderr, "WARNING: Either of these may cause differences between the template and the\n");
+	fprintf(stderr, "WARNING: correct GW waveform in each detector.\n");
+	fprintf(stderr, "WARNING: Parameter estimation will continue, but you should consider\n");
+	fprintf(stderr, "WARNING: increasing the data segment length (using the --seglen) option.\n");
+	sizeWarning = 1;
+      }
+    }
+
+    /* Clear IFOdata buffers */
     memset(IFOdata->timeModelhPlus->data->data, 0, sizeof(REAL8)*IFOdata->timeModelhPlus->data->length);
     memset(IFOdata->timeModelhCross->data->data, 0, sizeof(REAL8)*IFOdata->timeModelhCross->data->length);
     
-    if (tempLength >= waveLength) {
-      /* Template fits in data. */
-      REAL8 modelTime = XLALGPSGetREAL8(&IFOdata->timeModelhCross->epoch) - XLALGPSGetREAL8(&hcross->epoch);
+    /* Inject */
+    memcpy(IFOdata->timeModelhPlus->data->data + bufStartIndex,
+	   hplus->data->data + waveStartIndex,
+	   bufWaveLength*sizeof(REAL8));
+    memcpy(IFOdata->timeModelhCross->data->data + bufStartIndex,
+	   hcross->data->data + waveStartIndex,
+	   bufWaveLength*sizeof(REAL8));
 
-      memcpy(IFOdata->timeModelhPlus->data->data, hplus->data->data, sizeof(REAL8)*hplus->data->length);
-      memcpy(IFOdata->timeModelhCross->data->data, hcross->data->data, sizeof(REAL8)*hcross->data->length);
-
-      LALInferenceSetVariable(IFOdata->modelParams, "time", &modelTime);
-    } else {
-      /* Template too big---cut off the beginning. */
-
-      if (!sizeWarning) {
-	sizeWarning = 1;
-	fprintf(stderr, "The waveform template used will be missing its first %d points. Consider increasing the segment length (--seglen). (in %s, line %d)\n",hplus->data->length - IFOdata->timeData->data->length, __FILE__, __LINE__);
-      }
-
-      size_t skippedSamples = waveLength - tempLength;
-      REAL8 modelTime = XLALGPSGetREAL8(&IFOdata->timeModelhCross->epoch) - XLALGPSGetREAL8(&hcross->epoch) - skippedSamples*hcross->deltaT;
-
-      memcpy(IFOdata->timeModelhPlus->data->data, hplus->data->data + skippedSamples, sizeof(REAL8)*IFOdata->timeModelhPlus->data->length);
-      memcpy(IFOdata->timeModelhCross->data->data, hcross->data->data + skippedSamples, sizeof(REAL8)*IFOdata->timeModelhCross->data->length);
-
-      LALInferenceSetVariable(IFOdata->modelParams, "time", &modelTime);
-    }
+    LALInferenceSetVariable(IFOdata->modelParams, "time", &injTc);
   }
   if ( hplus ) XLALDestroyREAL8TimeSeries(hplus);
   if ( hcross ) XLALDestroyREAL8TimeSeries(hcross);
@@ -2140,7 +2219,7 @@ void LALInferenceDumptemplateFreqDomain(LALInferenceVariables *currentParams, LA
   while (dataPtr != NULL) { /* this loop actually does nothing (yet) here. */
     template(data);
     if (data->modelDomain == LALINFERENCE_DOMAIN_TIME)
-      LALInferenceExecuteFT(data, 0.0);
+      LALInferenceExecuteFT(data);
 
     outfile = fopen(filename, "w");
     /*fprintf(outfile, "f PSD dataRe dataIm signalPlusRe signalPlusIm signalCrossRe signalCrossIm\n");*/

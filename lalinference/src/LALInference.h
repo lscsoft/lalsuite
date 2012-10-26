@@ -384,7 +384,6 @@ tagLALInferenceIFOData
 //  REAL8TimeSeries           *timeDomainNoiseWeights; /** Roughly, InvFFT(1/Noise PSD). */
   REAL8Window               *window;                 /** A window */
   REAL8FFTPlan              *timeToFreqFFTPlan, *freqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFTs */
-  REAL8FFTPlan              *paddedTimeToFreqFFTPlan, *paddedFreqToTimeFFTPlan; /** Pre-calculated FFT plans for forward and reverse FFT's of padded time data.  Used for proper time-shifting. */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
   BarycenterInput           *bary;              /** Barycenter information */
@@ -417,8 +416,8 @@ ProcessParamsTable *LALInferenceParseCommandLine(int argc, char *argv[]);
 /** Output the command line based on the ProcessParamsTable \param procparams */
 char* LALInferencePrintCommandLine(ProcessParamsTable *procparams);
 
-/** Execute FFT for data in \param IFOdata, timeshifting by \param dt */
-void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata, REAL8 dt);
+/** Execute FFT for data in \param IFOdata */
+void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata);
 /** Execute Inverse FFT for data in \param IFOdata */
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata);
 
