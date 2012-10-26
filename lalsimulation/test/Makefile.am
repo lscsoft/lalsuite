@@ -15,4 +15,6 @@ EXTRA_DIST =
 
 MOSTLYCLEANFILES =
 CLEANFILES = \
-	*.dat
+	*.dat \
+	h_ref.txt \
+	h_rot.txt
