@@ -425,7 +425,7 @@ int main( int argc, char *argv[] )
         int    unphysicalDelay  = 0;
         UINT2  firstIfo         = 1; /*Set to 0 after firstIfo identified below*/
         UINT2  caseID[6]        = {0,0,0,0,0,0}; /* H1 L V G T H2 */
-        CHAR   caseIDChars[6][LIGOMETA_IFOS_MAX]; /*CHECK: = {"0","0","0","0","0","0"};*/
+        CHAR   caseIDChars[6][LIGOMETA_IFO_MAX];
         INT8   slideNS[4] = {0,0,0,0};
         INT8   slideNSWrapped[4] = {0,0,0,0};
         REAL4  chisq[4]         = {1.0,1.0,1.0,1.0};
@@ -462,7 +462,7 @@ int main( int argc, char *argv[] )
 
                 kmax = k; /* final trigger's k value */
                 caseID[k] = 1;
-                memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, sizeof(caseIDChars[k] - 1) );
+                memcpy( caseIDChars[k], &thisCoinc->snglInspiral[k]->ifo, LIGOMETA_IFO_MAX*sizeof(CHAR) );
                 eventID = thisCoinc->snglInspiral[k]->event_id->id;
                 if( vrbflg ) fprintf(stdout,"eventID = %" LAL_UINT8_FORMAT "\n",eventID );
                 chisq[l] = thisCoinc->snglInspiral[k]->chisq;
@@ -1443,7 +1443,7 @@ int main( int argc, char *argv[] )
 
   }/* closes "if ( numTriggers < 0 )" */
 
-  if ( vrbflg ) fprintf( stdout, "number of coherent trigger files is: %d\n", numCohFiles );
+  if ( vrbflg ) fprintf( stdout, "number of coherent trigger files is: %d\n", numCohFiles - 1);
   if ( (numCohFiles == 1) && eventsOut) {
     /* cohFileID = 1; */
     if ( userTag )          {
