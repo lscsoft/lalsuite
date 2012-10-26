@@ -78,9 +78,9 @@ fspan 0.25
 Tobs 40551300
 Tcoh 1800
 SFToverlap 900
-ihsfar 1.0e-10
-ihsfomfar 0.5
-tmplfar 1.0e-12
+ihsfar 1.0e-14
+ihsfomfar 1.0
+tmplfar 1.0e-18
 Pmin 7200
 Pmax 8110260
 dfmin 0.0002
@@ -95,7 +95,7 @@ sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
 outdirectory /home/egoetz/TwoSpect/IFOmismatch/$jobnum
-sftType MFD
+sftType standard
 IFO H1
 FFTplanFlag 1
 fastchisqinv
@@ -159,9 +159,9 @@ fspan 0.25
 Tobs 40551300
 Tcoh 1800
 SFToverlap 900
-ihsfar 1.0e-10
-ihsfomfar 0.5
-tmplfar 1.0e-12
+ihsfar 1.0e-14
+ihsfomfar 1.0
+tmplfar 1.0e-18
 Pmin 7200
 Pmax 8110260
 dfmin 0.0002
@@ -176,7 +176,7 @@ sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
 outdirectory /home/egoetz/TwoSpect/IFOmismatch/$jobnum
-sftType MFD
+sftType standard
 IFO L1
 FFTplanFlag 1
 fastchisqinv
