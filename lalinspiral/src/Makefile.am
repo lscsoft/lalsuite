@@ -228,7 +228,9 @@ liblalinspiral_la_LIBADD = $(INSPLIBCXX)
 liblalinspiral_la_LDFLAGS = -version-info $(LIBVERSION)
 
 CLEANFILES = \
-	Chisq_GPU.cpp \
+	Chisq_GPU.cpp
+
+MOSTLYCLEANFILES = \
 	lalinspiral-user-env.shell \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
@@ -238,8 +240,6 @@ sysconf_DATA = \
 	lalinspiral-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALInspiralVCSInfo.h \
 	lalinspiral-user-env.sh \
 	lalinspiral-user-env.csh
 
@@ -259,14 +259,15 @@ lalinspiral-user-env.csh lalinspiral-user-env.sh: lalinspiral-user-env.shell $(s
 EXTRA_DIST = \
 	Chisq_GPU.cu \
 	LALInspiralConfig.h.in \
-	LALInspiralVCSInfo.h.in \
-	generate_user_env.awk \
-	generate_vcs_info.py
+	generate_user_env.awk
 
-LALInspiralVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALInspiralConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALInspiral $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALInspiralVCSInfo.h
+MOSTLYCLEANFILES += LALInspiralVCSInfo.h
+LALInspiralVCSInfo.h .PHONY : gen-LALInspiralVCSInfo.h
+gen-LALInspiralVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALInspiralVCSInfo.h $(srcdir)/LALInspiralVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 

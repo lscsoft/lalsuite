@@ -66,7 +66,7 @@ noinst_HEADERS = \
 
 liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalframe-user-env.shell \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
@@ -76,8 +76,6 @@ sysconf_DATA = \
 	lalframe-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALFrameVCSInfo.h \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
 
@@ -96,16 +94,17 @@ lalframe-user-env.csh lalframe-user-env.sh: lalframe-user-env.shell $(srcdir)/ge
 
 EXTRA_DIST = \
 	generate_user_env.awk \
-	generate_vcs_info.py \
 	LALFrameC.c \
 	LALFrameConfig.h.in \
-	LALFrameL.c \
-	LALFrameVCSInfo.h.in
+	LALFrameL.c
 
-LALFrameVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALFrameConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALFrame $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALFrameVCSInfo.h
+MOSTLYCLEANFILES += LALFrameVCSInfo.h
+LALFrameVCSInfo.h .PHONY : gen-LALFrameVCSInfo.h
+gen-LALFrameVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALFrameVCSInfo.h $(srcdir)/LALFrameVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 

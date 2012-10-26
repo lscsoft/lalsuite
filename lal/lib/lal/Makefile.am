@@ -1,7 +1,3 @@
-EXTRA_DIST = \
-	LALVCSInfo.h.in \
-	generate_vcs_info.py
-
 lib_LTLIBRARIES = liblal.la
 
 pkginclude_HEADERS = \
@@ -28,9 +24,7 @@ liblal_la_DEPENDENCIES = \
 liblal_la_LIBADD = $(liblal_la_DEPENDENCIES) @LAL_LIBADD@
 liblal_la_LDFLAGS = -version-info $(LIBVERSION)
 
-BUILT_SOURCES = \
-	._vcsinfo \
-	LALVCSInfo.h
+BUILT_SOURCES =
 
 bin_PROGRAMS = lal-version
 lal_version_SOURCES = lal-version.c
@@ -43,10 +37,13 @@ TESTS = lal-version
 LALBuildDate.c: $(liblal_la_DEPENDENCIES)
 	$(AM_V_GEN)echo 'const char *lalBuildDate = "'`date +"%Y-%m-%dT%H:%M:%S%z"`'";' >$@
 
-LALVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LAL $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALVCSInfo.h
+MOSTLYCLEANFILES += LALVCSInfo.h
+LALVCSInfo.h .PHONY : gen-LALVCSInfo.h
+gen-LALVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALVCSInfo.h $(srcdir)/LALVCSInfo.h.git
+endif
 
 all-local: include-link
 include-link: $(pkginclude_HEADERS)
