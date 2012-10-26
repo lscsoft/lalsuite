@@ -11,7 +11,7 @@ Standards-Version: 3.8.6
 Package: lal
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g, ${python:Depends}
-  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3, octave, python-numpy
+  libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), fftw3
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the shared-object libraries needed to run applications
@@ -25,3 +25,15 @@ Description: Files and documentation needed for compiling programs that use LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains files needed to build applications that use the LAL
  library as well as the documentation for the library.
+
+Package: lal-python
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
+  ${python:Depends}, python-numpy
+Description: Python bindings for LAL
+
+Package: lal-octave
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, lal (= ${binary:Version}),
+  octave
+Description: Octave bindings for LAL
