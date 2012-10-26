@@ -1428,7 +1428,7 @@ int XLALSimInspiralChooseTDWaveform(
                 ABORT_NONZERO_TIDES(waveFlags);
             /* Call the waveform driver routine */
             ret = XLALSimInspiralTaylorT2PNGenerator(hplus, hcross, phiRef, v0,
-                    deltaT, m1, m2, f_min, r, i, amplitudeO, phaseO);
+                    deltaT, m1, m2, f_min, f_ref, r, i, amplitudeO, phaseO);
             break;
 
         case TaylorT3:
