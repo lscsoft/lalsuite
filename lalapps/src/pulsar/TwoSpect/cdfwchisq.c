@@ -587,7 +587,7 @@ REAL8 coeff(qfvars *vars, REAL8 x)
    INT4 ii, jj, t;
    
    //counter(vars);
-   (vars->counter)++;
+   (vars->count)++;
    
    //If the sort hasn't been done, then do it now!
    if (vars->ndtsrt) {
@@ -643,7 +643,7 @@ REAL8 coeff_twospect(qfvars *vars, REAL8 x)
    REAL8 axl, axl1, axl2, sxl, sum1, lj;
    INT4 ii, jj, t;
 
-   (vars->counter)++;
+   (vars->count)++;
    
    axl = fabs(x);
    
