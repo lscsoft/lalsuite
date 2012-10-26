@@ -85,10 +85,20 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 		  else max=4*MAX_MCMC; /* otherwise use the MAX_MCMC */
           if(max>4*MAX_MCMC) max=4*MAX_MCMC;
           LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
-          max=10;
-          for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
+          max=0;
+          for(LALInferenceVariableItem *this=acls->head;this;this=this->next) {
+              if(LALInferenceCheckVariable(runState->algorithmParams,"verbose"))
+                  fprintf(stdout,"Autocorrelation length of %s: %i\n",this->name,(INT4) *(REAL8 *)this->value);
+              if(*(REAL8 *)this->value>max) {
+                  max=(INT4) *(REAL8 *)this->value;
+              }
+          }
           LALInferenceDestroyVariables(acls);
           free(acls);
+          if(max>MAX_MCMC){
+              fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,MAX_MCMC);
+              max=MAX_MCMC;
+          }
           LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
 	}
         return(max);
@@ -400,12 +410,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	
 	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
-      
-        /* set up k-D tree if required and not already set */
-        if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
-             LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
-         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
-          LALInferenceSetupkDTreeNSLivePoints( runState );
+    
+    /* set up k-D tree if required and not already set */
+    if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+                LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
+            !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+        LALInferenceSetupkDTreeNSLivePoints( runState );
         
 	if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
 	  INT4 tmp=200;
@@ -415,9 +425,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
+      LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  runState->evolve(runState);
 	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
-          LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
@@ -751,10 +761,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 	    startflag=0;
         ACL*=(REAL8)thinning;
 	    if(ACL>max) max=ACL;
-	    LALInferenceAddVariable(acls,this->name,&ACL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	    LALInferenceAddVariable(acls,param_names[i],&ACL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
         break;
       }
-   }   
+   }
+   printf("%s: mean= %lf, ACL=%lf\n",param_names[i],this_mean,ACL);
    do{this=this->next;}while(this && (this->vary==LALINFERENCE_PARAM_FIXED || this->vary==LALINFERENCE_PARAM_OUTPUT || this->type!=LALINFERENCE_REAL8_t));
   }
   if(acffile){
