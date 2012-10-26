@@ -34,7 +34,6 @@ Tag: @TAG@
 Id: @ID@
 
 Builder: @BUILDER@
-Build date: @BUILD_DATE@
 Repository status: @STATUS@"""
 
 import warnings
