@@ -1022,7 +1022,7 @@ int XLALSimInspiralTaylorEtPNRestricted(
  */
 int XLALSimInspiralTaylorF2(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-		const REAL8 phic,                /**< coalescence GW phase (rad) */
+		const REAL8 phic,                /**< orbital coalescence phase (rad) */
 		const REAL8 deltaF,              /**< frequency resolution */
 		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
 		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
@@ -1275,15 +1275,15 @@ int XLALSimInspiralTransformPrecessingInitialConditions(
  */
 int XLALSimInspiralTaylorF2ReducedSpin(
 		COMPLEX16FrequencySeries **htilde, /**< FD waveform */
-		const REAL8 phiStart,            /**< initial GW phase (rad) */
-		const REAL8 deltaF,              /**< frequency resolution */
-		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
-		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
-		const REAL8 chi,                 /**< dimensionless aligned-spin param */
-		const REAL8 fStart,              /**< start GW frequency (Hz) */
-		const REAL8 r,                   /**< distance of source (m) */
-		const INT4 phaseO,              /**< twice PN phase order */
-		const INT4 ampO                 /**< twice PN amplitude order */
+		const REAL8 phic,        /**< orbital coalescence phase (rad) */
+		const REAL8 deltaF,      /**< frequency resolution (Hz) */
+		const REAL8 m1_SI,       /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,       /**< mass of companion 2 (kg) */
+		const REAL8 chi,         /**< dimensionless aligned-spin param */
+		const REAL8 fStart,      /**< start GW frequency (Hz) */
+		const REAL8 r,           /**< distance of source (m) */
+		const INT4 phaseO,       /**< twice PN phase order */
+		const INT4 ampO          /**< twice PN amplitude order */
 		);
 
 /**
@@ -1293,17 +1293,17 @@ int XLALSimInspiralTaylorF2ReducedSpin(
 */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
 		COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-		const REAL8 phiStart,            /**< initial GW phase (rad) */
-		const REAL8 deltaF,              /**< frequency resolution */
-		const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
-		const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
-		const REAL8 chi,                 /**< dimensionless aligned-spin param */
-		const REAL8 lam1,                /**< dimensionless deformability of 1 */
-		const REAL8 lam2,                /**< dimensionless deformability of 2 */
-		const REAL8 fStart,              /**< start GW frequency (Hz) */
-		const REAL8 r,                   /**< distance of source (m) */
-		const INT4 phaseO,              /**< twice PN phase order */
-		const INT4 ampO                 /**< twice PN amplitude order */
+		const REAL8 phic,        /**< orbital coalescence phase (rad) */
+		const REAL8 deltaF,      /**< frequency resolution (Hz) */
+		const REAL8 m1_SI,       /**< mass of companion 1 (kg) */
+		const REAL8 m2_SI,       /**< mass of companion 2 (kg) */
+		const REAL8 chi,         /**< dimensionless aligned-spin param */
+		const REAL8 lam1,        /**< dimensionless deformability of 1 */
+		const REAL8 lam2,        /**< dimensionless deformability of 2 */
+		const REAL8 fStart,      /**< start GW frequency (Hz) */
+		const REAL8 r,           /**< distance of source (m) */
+		const INT4 phaseO,       /**< twice PN phase order */
+		const INT4 ampO          /**< twice PN amplitude order */
 		);
 /**
  * Compute the chirp time of the \"reduced-spin\" templates, described in

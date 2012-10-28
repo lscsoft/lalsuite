@@ -59,7 +59,7 @@ static size_t CeilPow2(double n) {
  */
 int XLALSimInspiralTaylorF2(
         COMPLEX16FrequencySeries **htilde_out, /**< FD waveform */
-        const REAL8 phic,                /**< coalescence GW phase (rad) */
+        const REAL8 phic,                /**< orbital coalescence phase (rad) */
         const REAL8 deltaF,              /**< frequency resolution */
         const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
         const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
@@ -83,7 +83,7 @@ int XLALSimInspiralTaylorF2(
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     const REAL8 v0 = cbrt(piM * fStart);
-    REAL8 shft, phi0, amp0, f_max;
+    REAL8 shft, amp0, f_max;
     size_t i, n, iStart, iISCO;
     COMPLEX16 *data = NULL;
     LIGOTimeGPS tC = {0, 0};
@@ -140,7 +140,6 @@ int XLALSimInspiralTaylorF2(
     XLALUnitDivide(&htilde->sampleUnits, &htilde->sampleUnits, &lalSecondUnit);
 
     /* extrinsic parameters */
-    phi0 = phic;
     amp0 = 4. * m1 * m2 / r * LAL_MRSUN_SI * LAL_MTSUN_SI * sqrt(LAL_PI/12.L); /* Why was there a factor of deltaF in the lalinspiral version? */
     shft = -LAL_TWOPI * (tC.gpsSeconds + 1e-9 * tC.gpsNanoSeconds);
 
@@ -216,8 +215,8 @@ int XLALSimInspiralTaylorF2(
         phasing *= pfaN / v5;
         flux *= FTaN * v10;
         dEnergy *= dETaN * v;
-
-        phasing += shft * f + phi0;
+        // Note the factor of 2 b/c phic is orbital phase
+        phasing += shft * f - 2.*phic;
         amp = amp0 * sqrt(-dEnergy/flux) * v;
         data[i] = amp * cos(phasing + LAL_PI_4) - amp * sin(phasing + LAL_PI_4) * 1.0j;
     }
