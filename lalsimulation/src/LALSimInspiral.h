@@ -942,7 +942,7 @@ int XLALSimInspiralTaylorT1PNRestricted(
 int XLALSimInspiralTaylorEtPNEvolveOrbit(
 		REAL8TimeSeries **V,   /**< post-Newtonian parameter [returned] */
 	       	REAL8TimeSeries **phi, /**< orbital phase [returned] */
-	       	REAL8 phic,            /**< coalescence phase */
+	       	REAL8 phic,            /**< orbital phase at end */
 	       	REAL8 deltaT,          /**< sampling interval */
 		REAL8 m1,              /**< mass of companion 1 */
 		REAL8 m2,              /**< mass of companion 2 */
@@ -959,8 +959,8 @@ int XLALSimInspiralTaylorEtPNEvolveOrbit(
 int XLALSimInspiralTaylorEtPNGenerator(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
-	       	REAL8 x0,                 /**< tail-term gauge choice thing (if you don't know, just set it to zero) */
+	       	REAL8 phic,               /**< orbital phase at end */
+	       	REAL8 x0,                 /**< tail-term gauge choice (if you don't know, just set it to zero) */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
@@ -983,7 +983,7 @@ int XLALSimInspiralTaylorEtPNGenerator(
 int XLALSimInspiralTaylorEtPN(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 phic,               /**< orbital phase at end */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
@@ -1004,7 +1004,7 @@ int XLALSimInspiralTaylorEtPN(
 int XLALSimInspiralTaylorEtPNRestricted(
 		REAL8TimeSeries **hplus,  /**< +-polarization waveform */
 	       	REAL8TimeSeries **hcross, /**< x-polarization waveform */
-	       	REAL8 phic,               /**< coalescence phase */
+	       	REAL8 phic,               /**< orbital phase at end */
 	       	REAL8 deltaT,             /**< sampling interval */
 	       	REAL8 m1,                 /**< mass of companion 1 */
 	       	REAL8 m2,                 /**< mass of companion 2 */
