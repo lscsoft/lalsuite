@@ -84,7 +84,7 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 			  max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
 		  else max=4*MAX_MCMC; /* otherwise use the MAX_MCMC */
           if(max>4*MAX_MCMC) max=4*MAX_MCMC;
-          LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
+          LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max, runState->evolve) ;
           max=0;
           for(LALInferenceVariableItem *this=acls->head;this;this=this->next) {
               if(LALInferenceCheckVariable(runState->algorithmParams,"verbose"))
