@@ -3550,7 +3550,7 @@ class SearchVolumeNode(pipeline.SqliteNode):
   def set_output_cache(self, file):
     self.add_var_opt("output-cache", file)
 
-  def set_output_tag(self, tag):
+  def set_user_tag(self, tag):
     self.add_var_opt("user-tag", tag)
 
   def set_veto_segments_name(self, name):
@@ -3587,6 +3587,9 @@ class SearchUpperLimitNode(pipeline.SqliteNode):
 
   def add_input_cache(self, input_cache):
     self.add_var_arg(input_cache)
+
+  def set_user_tag(self, tag):
+    self.add_var_opt("user-tag", tag)
 
   def set_open_box(self):
     '''

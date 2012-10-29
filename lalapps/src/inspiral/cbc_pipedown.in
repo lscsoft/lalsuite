@@ -859,37 +859,40 @@ for result_db in result_dbs_cache:
 
   # Compute the upper limits as a function of mass for these types of mass binnings
   if 'FULL_DATA' in tag:
-      #for full data, use FAR of loudest event
-      output_cache_name = ''.join(sorted(instruments)) + "-SEARCH_VOLUME_" + tag + ".cache"
-      search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
-      search_volume_node.set_open_box()
-      search_volume_node.add_database( result_db.path() )
-      search_volume_node.set_user_tag( tag )
-      search_volume_node.set_output_cache( output_cache_name )
-      search_volume_node.set_veto_segments_name( "VETO_CAT"+str(get_veto_cat_from_tag(tag))+"_CUMULATIVE" )
-      search_volume_node.add_parent( ccfar_node )
+    #for full data, use FAR of loudest event
+    output_cache_name = ''.join(sorted(instruments)) + "-SEARCH_VOLUME_" + tag + ".cache"
+    search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
+    search_volume_node.set_open_box()
+    search_volume_node.add_database( result_db.path() )
+    search_volume_node.set_user_tag( tag )
+    search_volume_node.set_output_cache( output_cache_name )
+    search_volume_node.set_veto_segments_name( "VETO_CAT"+str(get_veto_cat_from_tag(tag))+"_CUMULATIVE" )
+    search_volume_node.add_parent( ccfar_node )
 
-      search_upper_limit_node = inspiral.SearchUpperLimitNode( search_upper_limit_job )
-      search_upper_limit_node.set_open_box()
-      search_upper_limit_node.add_input_cache( output_cache_name  )
-      search_upper_limit_node.add_parent( search_volume_node )
-      dag.add_node( search_volume_node )
-      dag.add_node( search_upper_limit_node )
+    search_upper_limit_node = inspiral.SearchUpperLimitNode( search_upper_limit_job )
+    search_upper_limit_node.set_open_box()
+    search_upper_limit_node.add_input_cache( output_cache_name )
+    search_upper_limit_node.set_user_tag( tag )
+    search_upper_limit_node.add_parent( search_volume_node )
+    dag.add_node( search_volume_node )
+    dag.add_node( search_upper_limit_node )
 
-      # make corresponding jobs for playground (using FAR of expected loudest event)
-      search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
-      output_cache_name = output_cache_name.replace("FULL_DATA","PLAYGROUND")
-      search_volume_node.add_database( result_db.path() )
-      search_volume_node.set_user_tag( tag.replace("FULL_DATA","PLAYGROUND" ) )
-      search_volume_node.set_output_cache( output_cache_name )
-      search_volume_node.set_veto_segments_name( "VETO_CAT"+str(get_veto_cat_from_tag(tag))+"_CUMULATIVE" )
-      search_volume_node.add_parent( ccfar_node )
+    # make corresponding jobs for playground (using FAR of expected loudest event)
+    playtag = tag.replace("FULL_DATA","PLAYGROUND")
+    search_volume_node = inspiral.SearchVolumeNode( search_volume_job )
+    output_cache_name = output_cache_name.replace("FULL_DATA","PLAYGROUND")
+    search_volume_node.add_database( result_db.path() )
+    search_volume_node.set_user_tag( playtag )
+    search_volume_node.set_output_cache( output_cache_name )
+    search_volume_node.set_veto_segments_name( "VETO_CAT"+str(get_veto_cat_from_tag(tag))+"_CUMULATIVE" )
+    search_volume_node.add_parent( ccfar_node )
 
-      search_upper_limit_node = inspiral.SearchUpperLimitNode( search_upper_limit_job )
-      search_upper_limit_node.add_input_cache( output_cache_name  )
-      search_upper_limit_node.add_parent( search_volume_node )
-      dag.add_node( search_volume_node )
-      dag.add_node( search_upper_limit_node )
+    search_upper_limit_node = inspiral.SearchUpperLimitNode( search_upper_limit_job )
+    search_upper_limit_node.add_input_cache( output_cache_name )
+    search_upper_limit_node.set_user_tag( playtag )
+    search_upper_limit_node.add_parent( search_volume_node )
+    dag.add_node( search_volume_node )
+    dag.add_node( search_upper_limit_node )
 
 
   ############################################################################
