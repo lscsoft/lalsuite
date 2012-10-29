@@ -1,6 +1,7 @@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -12,7 +13,7 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: python libframe octave numpy lal
+Requires: libframe lal
 Prefix: %{_prefix}
 
 %description
@@ -29,6 +30,24 @@ Requires: libframe-devel lal-devel
 The LSC Algorithm Frame Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Frame
 library.
+
+%package python
+Summary: Python Bindings for LALFrame
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python numpy lal-python
+%description python
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python bindings for LALFrame.
+
+%package octave
+Summary: Octave Bindings for LALFrame
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave lal-octave
+%description octave
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Octave bindings for LALFrame.
 
 %prep
 %setup -q
@@ -62,3 +81,16 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
+
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*/site-packages/lalframe/*.py
+%{_libdir}/python*/site-packages/lalframe/*.pyc
+%{_libdir}/python*/site-packages/lalframe/_lalframe.so*
+%exclude %{_libdir}/python*/site-packages/lalframe/*.pyo
+%exclude %{_libdir}/python*/site-packages/lalframe/*.la
+
+%files octave
+%defattr(-,root,root)
+%{_libexecdir}/octave/*/site/oct/*/lalframe.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/lalframe.la
