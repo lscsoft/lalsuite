@@ -1368,3 +1368,35 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 
     return XLAL_SUCCESS;
 }
+
+
+/* compute theta0, theta3, theta3s from mc, eta, chi */
+void XLALSimInspiralTaylorF2RedSpinChirpTimesFromMchirpEtaChi(
+    double *theta0, /**< dimensionless parameter related to the chirp time by theta0 = 2 pi fLow tau0 */
+    double *theta3, /**< dimensionless parameter related to the chirp time by theta3 = -2 pi fLow tau3 */
+    double *theta3s,/**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
+    double mc,      /**< chirp mass (M_sun) */
+    double eta,     /**< symmetric mass ratio  */
+    double chi,     /**< reduced-spin parameter */
+    double fLow)    /**< low-frequency cutoff (Hz) */
+{
+    *theta0 = 5./(128.*pow(LAL_PI*mc*LAL_MTSUN_SI*fLow,1.6666666666666667));
+    *theta3 = cbrt(LAL_PI)/(4.*pow(mc*LAL_MTSUN_SI*fLow,0.6666666666666666)*pow(eta,0.6));
+    *theta3s = (113.*chi)/(192.*pow(LAL_PI*mc*LAL_MTSUN_SI*fLow,0.6666666666666666)*pow(eta,0.6));
+}
+
+
+/* compute mc, eta, chi from theta0, theta3, theta3s */
+void XLALSimInspiralTaylorF2RedSpinMchirpEtaChiFromChirpTimes(
+    double *mc,     /**< chirp mass (M_sun) */
+    double *eta,    /**< symmetric mass ratio  */
+    double *chi,    /**< reduced-spin parameter */
+    double theta0,  /**< dimensionless parameter related to the chirp time by theta0 = 2 pi fLow tau0 */
+    double theta3,  /**< dimensionless parameter related to the chirp time by theta3 = -2 pi fLow tau3 */
+    double theta3s, /**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
+    double fLow)    /**< low-frequency cutoff (Hz) */
+{
+    *mc = pow(2.*theta0*theta0*theta0/125., -1./5.)/(16.*LAL_PI*fLow)/LAL_MTSUN_SI;
+    *eta = cbrt(16.*pow(LAL_PI,5.)*theta0*theta0/ (25.*pow(theta3,5.)));
+    *chi = 48.*LAL_PI*theta3s/(113.*theta3);
+}
