@@ -232,7 +232,7 @@ class InspiralJob(InspiralAnalysisJob):
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.add_condor_cmd('Requirements', 'Memory >= 1000')
-    self.add_condor_cmd('RequestMemory', '1024')
+    self.add_condor_cmd('request_memory', '1024')
 
     if self.get_use_gpus():
       # make sure the vanilla universe is being used
@@ -296,7 +296,7 @@ class PTFInspiralJob(InspiralAnalysisJob):
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('Requirements', 'Memory >= 1390')
-    self.add_condor_cmd('RequestMemory', '1400')
+    self.add_condor_cmd('request_memory', '1400')
 
 
 class PTFSpinCheckerJob(InspiralAnalysisJob):
@@ -312,7 +312,7 @@ class PTFSpinCheckerJob(InspiralAnalysisJob):
     extension = 'xml'
     InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
     self.add_condor_cmd('Requirements', 'Memory >= 1390')
-    self.add_condor_cmd('RequestMemory', '1400')
+    self.add_condor_cmd('request_memory', '1400')
 
 
 class TrigbankJob(InspiralAnalysisJob):
@@ -976,7 +976,7 @@ class InspiralNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
     self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1000')
-    self.add_pegasus_profile('condor', 'RequestMemory', '1024')
+    self.add_pegasus_profile('condor', 'request_memory', '1024')
 
     if job.get_use_gpus():
       # assume all the checks have been already
@@ -1066,7 +1066,7 @@ class PTFInspiralNode(InspiralAnalysisNode):
     self.__injections = None
     self.set_zip_output(True)
     self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1390')
-    self.add_pegasus_profile('condor', 'RequestMemory', '1400')
+    self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_spin_bank(self,bank):
     self.add_var_opt('spin-bank', bank)
@@ -1108,7 +1108,7 @@ class PTFSpinCheckerNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
     self.add_pegasus_profile('condor', 'Requirements', 'Memory >= 1390')
-    self.add_pegasus_profile('condor', 'RequestMemory', '1400')
+    self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
@@ -2292,7 +2292,7 @@ class PlotThincaJob(InspiralPlottingJob):
     sections = ['plotthinca']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('RequestMemory', '2000')
+    self.add_condor_cmd('request_memory', '2000')
  
 class PlotThincaNode(InspiralPlottingNode):
   """
@@ -2407,7 +2407,7 @@ class PlotEthincaJob(InspiralPlottingJob):
     sections = ['plotethinca']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('RequestMemory', '2000')
+    self.add_condor_cmd('request_memory', '2000')
 
 class PlotEthincaNode(InspiralPlottingNode):
   """
@@ -2548,7 +2548,7 @@ class PlotInspinjJob(InspiralPlottingJob):
     sections = ['plotinspinj']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('RequestMemory', '2000')
+    self.add_condor_cmd('request_memory', '2000')
 
 class PlotInspinjNode(InspiralPlottingNode):
   """
@@ -2577,7 +2577,7 @@ class PlotSnrchiJob(InspiralPlottingJob):
     sections = ['plotsnrchi']
     extension = 'html'
     InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('RequestMemory', '2000')
+    self.add_condor_cmd('request_memory', '2000')
 
 class PlotSnrchiNode(InspiralPlottingNode):
   """
@@ -2633,7 +2633,7 @@ class MiniFollowupsJob(InspiralPlottingJob):
     sections = ['minifollowups','omega-scans']
     extension = None
     InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
-    self.add_condor_cmd('RequestMemory', '2000')
+    self.add_condor_cmd('request_memory', '2000')
 
   def set_time_slides(self):
     """
