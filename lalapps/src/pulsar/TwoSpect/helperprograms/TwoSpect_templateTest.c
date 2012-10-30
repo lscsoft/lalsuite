@@ -678,9 +678,9 @@ int main(int argc, char *argv[])
       
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
       //comment this out
-      FILE *FFDATA = fopen("./ffdata.dat","w");
+      /* FILE *FFDATA = fopen("./ffdata.dat","w");
       for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
-      fclose(FFDATA);
+      fclose(FFDATA); */
       
       //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
