@@ -581,10 +581,83 @@ class SpinTaylorT4Template(Template):
     def from_sim(cls, sim, bank):
         return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, sim.inclination, bank)
 
+class SpinTaylorT5Template(Template):
+    param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination")
+    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
+
+    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","bank","_f_final","_dur","_mchirp")
+
+    def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,bank):
+        Template.__init__(self)
+        self.m1 = float(m1)
+        self.m2 = float(m2)
+        self.s1x = float(s1x)
+        self.s1y = float(s1y)
+        self.s1z = float(s1z)
+        self.s2x = float(s2x)
+        self.s2y = float(s2y)
+        self.s2z = float(s2z)
+        self.inclination=float(inclination)
+        self.bank = bank
+
+        # derived quantities
+        self._f_final = 6**-1.5 / (LAL_PI * (m1 + m2) * LAL_MTSUN_SI)  # ISCO
+        self._dur = lalsim.SimInspiralTaylorF2ReducedSpinChirpTime(bank.flow, m1 * LAL_MSUN_SI, m2 * LAL_MSUN_SI, lalsim.SimInspiralTaylorF2ReducedSpinComputeChi(self.m1*LAL_MSUN_SI,self.m2*LAL_MSUN_SI,self.s1z,self.s2z), 7)
+        self._mchirp = compute_mchirp(m1, m2)
+
+    @property
+    def params(self):
+        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination
+
+    def _compute_waveform(self, df, f_final):
+        #Time domain, so compute then FFT
+        # need to compute dt from df, duration
+        sample_rate = 2**np.ceil(np.log2(2*f_final))
+        dt = 1. / sample_rate
+    # Generate waveform in time domain
+        hplus, hcross = lalsim.SimInspiralSpinTaylorT5(
+            0,				# GW phase at reference freq (rad)
+            dt,				# sampling interval (s)
+            self.m1 * lal.LAL_MSUN_SI,	# mass of companion 1 (kg)
+            self.m2 * lal.LAL_MSUN_SI,	# mass of companion 2 (kg)
+            self.bank.flow,			# start GW frequency (Hz)
+            1e6*LAL_PC_SI,			# distance of source (m)
+            self.s1x,			# initial value of S1x
+            self.s1y,			# initial value of S1y
+            self.s1z,			# initial value of S1z
+            self.s2x,			# initial value of S2x
+            self.s2y,			# initial value of S2y
+            self.s2z,			# initial value of S2z
+            self.inclination,		# inclination angle - careful with definition (line of sight to total vs orbital angular momentum)
+            7,				# twice PN phase order
+            0
+        )
+
+        # zero-pad up to 1/df
+        N = int(sample_rate / df)
+        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+
+        # taper
+        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
+
+        # create vector to hold output and plan
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
+
+        # do the fft
+        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
+
+        return htilde
+
+    @classmethod
+    def from_sim(cls, sim, bank):
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, sim.inclination, bank)
+
 waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
     "IMRPhenomB": IMRPhenomBTemplate,
     "SEOBNRv1": SEOBNRv1Template,
     "EOBNRv2": EOBNRv2Template,
-    "SpinTaylorT4": SpinTaylorT4Template
+    "SpinTaylorT4": SpinTaylorT4Template,
+    "SpinTaylorT5": SpinTaylorT5Template,
 }
