@@ -8,7 +8,7 @@ Summary: LSC Algorithm Inference Library
 License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.gz
-URL: http://www.lsc-group.phys.uwm.edu/lal
+URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: python
