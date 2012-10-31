@@ -1,6 +1,7 @@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -12,7 +13,7 @@ URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
 BuildRequires: swig python-devel octave-devel
-Requires: python gsl libframe libmetaio octave numpy lal lalframe lalmetaio lalsimulation
+Requires: gsl libframe libmetaio lal lalframe lalmetaio lalsimulation
 Prefix: %{_prefix}
 
 %description
@@ -29,6 +30,22 @@ Requires: gsl-devel libframe-devel libmetaio-devel lal-devel lalframe-devel lalm
 The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inspiral
 library.
+
+%package python
+Summary: Python bindings for LALInspiral
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python numpy lal-python lalframe-python lalsimulation-python
+%description python
+This package provides the Python bindings for LALInspiral.
+
+%package octave
+Summary: Octave bindings for LALInspiral
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave lal-octave lalframe-octave lalsimulation-octave
+%description octave
+This package provides the Octave bindings for LALInspiral.
 
 %prep
 %setup -q
@@ -61,3 +78,17 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
+
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*/site-packages/lalinspiral/*.py
+%{_libdir}/python*/site-packages/lalinspiral/*.pyc
+%{_libdir}/python*/site-packages/lalinspiral/_lalinspiral.so*
+%{_libdir}/python*/site-packages/lalinspiral/sbank
+%exclude %{_libdir}/python*/site-packages/lalinspiral/*.pyo
+%exclude %{_libdir}/python*/site-packages/lalinspiral/*.la
+
+%files octave
+%defattr(-,root,root)
+%{_libexecdir}/octave/*/site/oct/*/lalinspiral.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/lalinspiral.la
