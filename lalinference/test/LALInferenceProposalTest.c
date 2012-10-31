@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	//state->prior=LALInferenceInspiralPriorNormalised;
-	state->prior=LALInferenceInspiralPriorNormalised;
+	state->prior=LALInferenceInspiralPrior;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	state->proposal=&NSWrapMCMCLALProposal;
 	state->proposalStats = calloc(1,sizeof(LALInferenceVariables));
