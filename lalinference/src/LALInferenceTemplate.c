@@ -3,7 +3,7 @@
  *  template functions. Temporary GeneratePPN
  *
  *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever,
- *  Marc van der Sluys, John Veitch, and Will M. Farr
+ *  Marc van der Sluys, John Veitch, Will M. Farr and Salvatore Vitale
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -1962,10 +1962,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
       XLAL_TRY(ret=XLALSimInspiralChooseFDWaveform(&htilde, phi0, deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI,
 						   spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, f_min, f_max, distance,
 						   inclination, lambda1, lambda2, waveFlags, nonGRparams,
-						   amporder, order, approximant), errnum);
-      XLALSimInspiralDestroyWaveformFlags(waveFlags);
-      XLALSimInspiralDestroyTestGRParam(nonGRparams);
-      
+						   amporder, order, approximant), errnum);  
       previous_m1 = m1;
       previous_m2 = m2;
       previous_spin1z = spin1z;
@@ -2022,6 +2019,10 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
     }
     
     previous_inclination = inclination;
+    
+    /* Destroy the WF flags and the nonGr params */
+    XLALSimInspiralDestroyWaveformFlags(waveFlags);
+    XLALSimInspiralDestroyTestGRParam(nonGRparams);
     
     instant= (IFOdata->timeData->epoch.gpsSeconds + 1e-9*IFOdata->timeData->epoch.gpsNanoSeconds);
     LALInferenceSetVariable(IFOdata->modelParams, "time", &instant);
