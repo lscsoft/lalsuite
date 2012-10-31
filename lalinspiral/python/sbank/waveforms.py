@@ -38,6 +38,18 @@ def compute_mchirp(m1, m2):
 # Represent template waveforms
 #
 
+def project_hplus_hcross(hplus, hcross, theta, phi, psi):
+    # compute antenna factors Fplus and Fcross
+    Fp = (1 + np.cos(theta)**2)*np.cos(2*phi)*np.cos(2*psi) - np.cos(theta)*np.sin(2*phi)*np.sin(2*psi)
+    Fc = (1 + np.cos(theta)**2)*np.cos(2*phi)*np.sin(2*psi) + np.cos(theta)*np.sin(2*phi)*np.cos(2*psi)
+
+    # form strain signal in detector
+    hoft = lal.CreateREAL8TimeSeries("h(t)", hplus.epoch, hplus.f0, hplus.deltaT, lal.lalSecondUnit, hplus.data.length)
+    hoft.data.data = Fp*hplus.data.data + Fc*hcross.data.data
+
+    return hoft
+
+
 def compute_sigmasq(htilde, deltaF):
     """
     Find norm of whitened h(f) array.
@@ -500,12 +512,12 @@ class EOBNRv2Template(Template):
         return row
 
 class SpinTaylorT4Template(Template):
-    param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination")
-    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
+    param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi")
+    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
 
-    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","bank","_f_final","_dur","_mchirp")
+    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi","bank","_f_final","_dur","_mchirp")
 
-    def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,bank):
+    def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,theta,phi,psi,bank):
         Template.__init__(self)
         self.m1 = float(m1)
         self.m2 = float(m2)
@@ -516,6 +528,9 @@ class SpinTaylorT4Template(Template):
         self.s2y = float(s2y)
         self.s2z = float(s2z)
         self.inclination=float(inclination)
+        self.theta = float(theta)
+        self.phi = float(phi)
+        self.psi = float(psi)
         self.bank = bank
 
         # derived quantities
@@ -525,14 +540,15 @@ class SpinTaylorT4Template(Template):
 
     @property
     def params(self):
-        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination
+        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination, self.theta, self.phi, self.psi
 
     def _compute_waveform(self, df, f_final):
-        #Time domain, so compute then FFT
+        # Time domain, so compute then FFT
         # need to compute dt from df, duration
         sample_rate = 2**np.ceil(np.log2(2*f_final))
         dt = 1. / sample_rate
-    # Generate waveform in time domain
+
+        # Generate waveform in time domain
         hplus, hcross = lalsim.SimInspiralSpinTaylorT4(
             0,				# GW phase at reference freq (rad)
             1,				# tail gauge term (default = 1)
@@ -558,36 +574,42 @@ class SpinTaylorT4Template(Template):
             0,				# tidal deformability of mass 2
             lalsim.LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN, # flags to control spin effects
             7,				# twice PN phase order
-            3
+            0
         )
+
+        # project onto detector
+        hoft = project_hplus_hcross(hplus, hcross, self.theta, self.phi, self.psi)
 
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_START)
+        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
-        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
+        lal.REAL8TimeFreqFFT(htilde, hoft, fftplan)
 
         return htilde
 
     @classmethod
     def from_sim(cls, sim, bank):
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, sim.inclination, bank)
+        # theta = polar angle wrt overhead
+        #       = pi/2 - latitude (which is 0 on the horizon)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, sim.inclination, np.pi/2 - sim.latitude, sim.longitude, sim.polarization, bank)
+
 
 class SpinTaylorT5Template(Template):
-    param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination")
-    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
+    param_names = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi")
+    param_formats = ("%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f","%.2f")
 
-    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","bank","_f_final","_dur","_mchirp")
+    __slots__ = ("m1","m2","s1x","s1y","s1z","s2x","s2y","s2z","inclination","theta","phi","psi","bank","_f_final","_dur","_mchirp")
 
-    def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,bank):
+    def __init__(self,m1,m2,s1x,s1y,s1z,s2x,s2y,s2z,inclination,theta,phi,psi,bank):
         Template.__init__(self)
         self.m1 = float(m1)
         self.m2 = float(m2)
@@ -598,6 +620,9 @@ class SpinTaylorT5Template(Template):
         self.s2y = float(s2y)
         self.s2z = float(s2z)
         self.inclination=float(inclination)
+        self.theta = float(theta)
+        self.phi = float(phi)
+        self.psi = float(psi)
         self.bank = bank
 
         # derived quantities
@@ -607,14 +632,14 @@ class SpinTaylorT5Template(Template):
 
     @property
     def params(self):
-        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination
+        return self.m1, self.m2, self.s1x, self.s1y, self.s1z, self.s2x, self.s2y, self.s2z, self.inclination, self.theta, self.phi, self.psi
 
     def _compute_waveform(self, df, f_final):
-        #Time domain, so compute then FFT
+        # Time domain, so compute then FFT
         # need to compute dt from df, duration
         sample_rate = 2**np.ceil(np.log2(2*f_final))
         dt = 1. / sample_rate
-    # Generate waveform in time domain
+        # Generate waveform in time domain
         hplus, hcross = lalsim.SimInspiralSpinTaylorT5(
             0,				# GW phase at reference freq (rad)
             dt,				# sampling interval (s)
@@ -633,25 +658,31 @@ class SpinTaylorT5Template(Template):
             0
         )
 
+        # project onto detector
+        hoft = project_hplus_hcross(hplus, hcross, self.theta, self.phi, self.psi)
+
         # zero-pad up to 1/df
         N = int(sample_rate / df)
-        lal.ResizeREAL8TimeSeries(hplus, 0, N)
+        lal.ResizeREAL8TimeSeries(hoft, 0, N)
 
         # taper
-        lalsim.SimInspiralREAL8WaveTaper(hplus.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
+        lalsim.SimInspiralREAL8WaveTaper(hoft.data, lalsim.LAL_SIM_INSPIRAL_TAPER_STARTEND)
 
         # create vector to hold output and plan
-        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hplus.epoch, hplus.f0, df, lal.lalHertzUnit, int(N/2 + 1))
+        htilde = lal.CreateCOMPLEX16FrequencySeries("h(f)", hoft.epoch, hoft.f0, df, lal.lalHertzUnit, int(N/2 + 1))
         fftplan = lal.CreateForwardREAL8FFTPlan(N, 0)
 
         # do the fft
-        lal.REAL8TimeFreqFFT(htilde, hplus, fftplan)
+        lal.REAL8TimeFreqFFT(htilde, hoft, fftplan)
 
         return htilde
 
     @classmethod
     def from_sim(cls, sim, bank):
-        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, sim.inclination, bank)
+        # theta = polar angle wrt overhead
+        #       = pi/2 - latitude (which is 0 on the horizon)
+        return cls(sim.mass1, sim.mass2, sim.spin1x, sim.spin1y, sim.spin1z, sim.spin2x, sim.spin2y, sim.spin2z, sim.inclination, np.pi/2 - sim.latitude, sim.longitude, sim.polarization, bank)
+
 
 waveforms = {
     "TaylorF2RedSpin": TaylorF2RedSpinTemplate,
