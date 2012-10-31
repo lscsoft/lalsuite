@@ -1,6 +1,7 @@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
