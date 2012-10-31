@@ -248,8 +248,6 @@ TT2TDB_2008-2014.dat");
   
   tdat = XLALInitTimeCorrections( tcFile );
 
-  fprintf(stderr, "tdat.timeCorrs[0] = %.12lf, tdat.timeCorrs[%d] = %.12lf\n", tdat->timeCorrs[0], tdat->nentriesT-1, tdat->timeCorrs[tdat->nentriesT-1]);
-  
   for(j=0;j<i;j++){
     double t; /* DM for current pulsar - make more general */
     double deltaD_f2;
@@ -289,7 +287,7 @@ TT2TDB_2008-2014.dat");
 
     /* calculate solar system barycentre time delay */
     //XLALBarycenterEarth( &earth, &baryinput.tgps, edat );
-    XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
+    XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, baryinput.site, tdat, ttype );
     XLALBarycenter( &emit, &baryinput, &earth );
         
     //fprintf(stderr, "%.16lf\n", emit.roemer + emit.erot);
