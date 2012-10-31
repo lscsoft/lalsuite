@@ -465,7 +465,7 @@ int main(int argc, char *argv[]) {
 	state->proposalArgs=calloc(1,sizeof(LALInferenceVariables));
 	state->algorithmParams=calloc(1,sizeof(LALInferenceVariables));
 	//state->prior=LALInferenceInspiralPriorNormalised;
-	state->prior=LALInferenceInspiralPrior;
+	state->prior=LALInferenceInspiralPriorNormalised;
 	state->likelihood=&LALInferenceZeroLogLikelihood;
 	state->proposal=&NSWrapMCMCLALProposal;
 	state->proposalStats = calloc(1,sizeof(LALInferenceVariables));
@@ -534,6 +534,7 @@ int main(int argc, char *argv[]) {
 	  LALInferenceMCMCSamplePrior(state);
 	  /* output sample */
 	  if(!(i%thinfac)){
+        LALInferenceSortVariablesByName(state->currentParams);
 	    if(state->logsample) state->logsample(state,state->currentParams);
 	    if(outfile) LALInferencePrintSample(outfile,state->currentParams);
 	    if(outfile) fprintf(outfile,"\n");
