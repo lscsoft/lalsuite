@@ -150,6 +150,11 @@ if verbose:
 xmldoc2 = utils.load_filename(inj_file)
 ligolw_copy_process(xmldoc2, fake_xmldoc)
 sims = table.get_table(xmldoc2, lsctables.SimInspiralTable.tableName)
+
+# FIXME inspinj is a terrible person
+for s in sims:
+    s.polarization = np.random.uniform(0, 2*np.pi)
+
 h5file.create_dataset("/sim_inspiral", data=ligolw_table_to_array(sims), compression='gzip', compression_opts=1)
 h5file.flush()
 inj_wfs = Bank.from_sims(sims, inj_approx, noise_model, flow)
