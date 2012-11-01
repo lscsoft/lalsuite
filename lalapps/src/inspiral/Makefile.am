@@ -151,6 +151,7 @@ bin_SCRIPTS = \
 	lalapps_coh_PTF_post_processing \
 	lalapps_cbc_sbank \
 	lalapps_cbc_sbank_choose_mchirp_boundaries \
+	lalapps_cbc_sbank_splitter \
 	lalapps_cbc_sbank_merge_sims \
 	lalapps_cbc_sbank_pipe \
 	lalapps_cbc_sbank_plot_sim \
@@ -276,6 +277,10 @@ lalapps_cbc_sbank: $(srcdir)/cbc_sbank.in python_config.sed
 lalapps_cbc_sbank_choose_mchirp_boundaries: $(srcdir)/cbc_sbank_choose_mchirp_boundaries.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_choose_mchirp_boundaries.in > lalapps_cbc_sbank_choose_mchirp_boundaries
 	@chmod +x lalapps_cbc_sbank_choose_mchirp_boundaries
+
+lalapps_cbc_sbank_splitter: $(srcdir)/cbc_sbank_splitter.in python_config.sed
+	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_splitter.in > lalapps_cbc_sbank_splitter
+	@chmod +x lalapps_cbc_sbank_splitter
 
 lalapps_cbc_sbank_merge_sims: $(srcdir)/cbc_sbank_merge_sims.in python_config.sed
 	$(AM_V_GEN)sed -f python_config.sed $(srcdir)/cbc_sbank_merge_sims.in > lalapps_cbc_sbank_merge_sims
