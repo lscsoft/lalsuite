@@ -1968,8 +1968,8 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
   }
   
   if(c12<1){
-    newIota=iota;
-    newDist=dist;
+    *newIota=iota;
+    *newDist=dist;
     return;
   }
   
