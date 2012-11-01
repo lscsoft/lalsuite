@@ -1897,7 +1897,7 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
     psi_temp = 0.0;
     XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
     j=i-1;
-    while (j>=0){
+    while (j>0){
       if(Fplus==x[j]){
         dataPtr = dataPtr->next;
         XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
