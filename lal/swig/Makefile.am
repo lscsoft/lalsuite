@@ -46,6 +46,8 @@ CLEANFILES = \
 	$(swig_iface_preproc) \
 	$(swig_iface_preproc_xml) \
 	$(swig_iface)
+clean-local :
+	@echo '#dummy' > $(swig_iface_preproc_deps)
 DISTCLEANFILES = \
 	$(swig_iface_preproc_deps)
 

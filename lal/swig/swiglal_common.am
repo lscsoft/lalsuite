@@ -34,6 +34,8 @@ EXTRA_DIST =
 # clean files
 CLEANFILES = \
 	$(swig_modl_src)
+clean-local :
+	@echo '#dummy' > $(swig_iface_deps)
 DISTCLEANFILES = \
 	$(swig_iface_deps)
 
