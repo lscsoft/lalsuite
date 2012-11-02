@@ -51,15 +51,14 @@
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
-
+static const LALStatus empty_status;
 
 //Main program
 int main(int argc, char *argv[])
 {
    
    INT4 ii, jj;               //counter variables
-   LALStatus status;          //LALStatus structure
-   status.statusPtr = NULL;   //Set statuspointer to NULL
+   LALStatus status = empty_status;          //LALStatus structure
    char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
    time_t programstarttime, programendtime;
    struct tm *ptm;
@@ -73,18 +72,22 @@ int main(int argc, char *argv[])
    //Initiate command line interpreter and config file loader
    struct gengetopt_args_info args_info;
    struct cmdline_parser_params *configparams;
-   configparams = cmdline_parser_params_create();
-   configparams->initialize = 0;
-   configparams->override = 1;
-   if ( cmdline_parser(argc, argv, &args_info) ) {
-      fprintf(stderr, "%s: cmdline_parser() failed.\n", __func__);
+   configparams = cmdline_parser_params_create();  //initialize parameters structure
+   configparams->check_required = 0;  //don't check for required values at the step
+   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
+       fprintf(stderr, "%s: cmdline_parser() failed.\n", __func__);
+       XLAL_ERROR(XLAL_FAILURE);
+   }
+   configparams->initialize = 0;  //don't reinitialize the parameters structure
+   if ( args_info.config_given && cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) {
+      fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }
-   if ( args_info.config_given ) {
-      if ( cmdline_parser_config_file(args_info.config_arg, &args_info, configparams) ) {
-         fprintf(stderr, "%s: cmdline_parser_config_file() failed.\n", __func__);
-         XLAL_ERROR(XLAL_FAILURE);
-      }
+   configparams->override = 1;  //override values in the configuration file
+   configparams->check_required = 1;  //check for required values now
+   if ( cmdline_parser_ext(argc, argv, &args_info, configparams) ) {
+      fprintf(stderr, "%s: cmdline_parser_ext() failed.\n", __func__);
+      XLAL_ERROR(XLAL_FAILURE);
    }
    
    
@@ -247,7 +250,7 @@ int main(int argc, char *argv[])
    candidateVector *gaussCandidates3 = new_candidateVector(1);
    candidateVector *gaussCandidates4 = new_candidateVector(1);
    candidateVector *exactCandidates1 = new_candidateVector(1);
-   candidateVector *exactCandidates2 = new_candidateVector(1);
+   candidateVector *exactCandidates2 = new_candidateVector(3);
    candidateVector *ihsCandidates = new_candidateVector(1);
    UpperLimitVector *upperlimits = new_UpperLimitVector(1);
    if (gaussCandidates1==NULL) {
@@ -266,7 +269,7 @@ int main(int argc, char *argv[])
       fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (exactCandidates2==NULL) {
-      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
+      fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 3);
       XLAL_ERROR(XLAL_EFUNC);
    } else if (ihsCandidates==NULL) {
       fprintf(stderr, "%s: new_CandidateVector(%d) failed.\n", __func__, 1);
@@ -294,8 +297,8 @@ int main(int argc, char *argv[])
    fprintf(LOG, "Loading in SFTs... ");
    fprintf(stderr, "Loading in SFTs... ");
    ffdata->tfnormalization = 2.0/inputParams->Tcoh/(args_info.avesqrtSh_arg*args_info.avesqrtSh_arg);
-   //REAL4Vector *tfdata = readInSFTs(inputParams, &(ffdata->tfnormalization));
-   REAL4Vector *tfdata = simpleTFdata(inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, inputParams->Tcoh, inputParams->Tobs, inputParams->SFToverlap, round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh, round((inputParams->fmin + inputParams->fspan)*inputParams->Tcoh + inputParams->dfmax*inputParams->Tcoh + 0.5*(inputParams->blksize-1) + (REAL8)(inputParams->maxbinshift) + 6.0)/inputParams->Tcoh, 1.0);
+   REAL4Vector *tfdata = readInSFTs(inputParams, &(ffdata->tfnormalization));
+   //REAL4Vector *tfdata = simpleTFdata(inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, inputParams->Tcoh, inputParams->Tobs, inputParams->SFToverlap, round(inputParams->fmin*inputParams->Tcoh - inputParams->dfmax*inputParams->Tcoh - 0.5*(inputParams->blksize-1) - (REAL8)(inputParams->maxbinshift) - 6.0)/inputParams->Tcoh, round((inputParams->fmin + inputParams->fspan)*inputParams->Tcoh + inputParams->dfmax*inputParams->Tcoh + 0.5*(inputParams->blksize-1) + (REAL8)(inputParams->maxbinshift) + 6.0)/inputParams->Tcoh, 1.0);
    if (tfdata==NULL) {
       fprintf(stderr, "\n%s: readInSFTs() failed.\n", __func__);
       XLAL_ERROR(XLAL_EFUNC);
@@ -674,6 +677,10 @@ int main(int argc, char *argv[])
       TFdata_weighted = NULL;
       
       fprintf(stderr, "2nd FFT ave = %g, 2nd FFT stddev = %g, expected ave = %g\n", secFFTmean, secFFTsigma, 1.0);
+      //comment this out
+      /* FILE *FFDATA = fopen("./ffdata.dat","w");
+      for (jj=0; jj<(INT4)ffdata->ffdata->length; jj++) fprintf(FFDATA,"%g\n",ffdata->ffdata->data[jj]);
+      fclose(FFDATA); */
       
       //Exit with failure if there are no SFTs (probably this doesn't get hit)
       if (secFFTmean==0.0) {
@@ -685,7 +692,7 @@ int main(int argc, char *argv[])
       loadCandidateData(&(exactCandidates1->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, 0.0, 0.0, 0.0, 0, 0.0);
       
       //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[0], exactCandidates1->data[0].fsig-1.0/inputParams->Tcoh, exactCandidates1->data[0].fsig+1.0/inputParams->Tcoh, 25, 31, exactCandidates1->data[0].moddepth-1.0/inputParams->Tcoh, exactCandidates1->data[0].moddepth+1.0/inputParams->Tcoh, 25, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
-      bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[0], exactCandidates1->data[0].fsig, exactCandidates1->data[0].fsig, 1, 31, exactCandidates1->data[0].moddepth, exactCandidates1->data[0].moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
+      //bruteForceTemplateSearch(&(exactCandidates2->data[exactCandidates2->numofcandidates]), exactCandidates1->data[0], exactCandidates1->data[0].fsig, exactCandidates1->data[0].fsig, 1, 31, exactCandidates1->data[0].moddepth, exactCandidates1->data[0].moddepth, 1, inputParams, ffdata->ffdata, sftexist, aveNoise, aveTFnoisePerFbinRatio, secondFFTplan, 1);
       templateStruct *template = new_templateStruct(inputParams->maxtemplatelength);
       if (template==NULL) {
          fprintf(stderr,"%s: new_templateStruct(%d) failed.\n", __func__, inputParams->maxtemplatelength);
@@ -697,11 +704,6 @@ int main(int argc, char *argv[])
          fprintf(stderr,"%s: makeTemplate() failed.\n", __func__);
          XLAL_ERROR(XLAL_EFUNC);
       }
-      /* makeTemplateGaussians(template, exactCandidates1->data[0], inputParams, ffdata->numfbins, ffdata->numfprbins);
-      if (xlalErrno!=0) {
-         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
-         XLAL_ERROR(XLAL_EFUNC);
-      } */
       REAL8 R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
       if (XLAL_IS_REAL8_FAIL_NAN(R)) {
          fprintf(stderr,"%s: calculateR() failed.\n", __func__);
@@ -717,6 +719,293 @@ int main(int argc, char *argv[])
       }
       REAL8 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
       loadCandidateData(&(exactCandidates2->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+      exactCandidates2->numofcandidates++;
+
+      resetTemplateStruct(template);
+      makeTemplateGaussians(template, exactCandidates1->data[0], inputParams, ffdata->numfbins, ffdata->numfprbins);
+      if (xlalErrno!=0) {
+         fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+      if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+         fprintf(stderr,"%s: calculateR() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      prob = 0.0;
+      if ( R > 0.0 ) {
+         prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+         if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+            fprintf(stderr,"%s: probR() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      }
+      h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
+      loadCandidateData(&(exactCandidates2->data[1]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+      exactCandidates2->numofcandidates++;
+
+      resetTemplateStruct(template);
+      template->f0 = 401.269467;
+      template->period = 4051874.730676;
+      template->moddepth = 0.085643999739654;
+      REAL4 correcttemplatedata[] = {4.673422845853298e-04, 4.644142920352713e-04, 4.535498986258436e-04,
+				      4.535089645194694e-04, 4.460613650479801e-04, 4.425578871200729e-04,
+				      4.361191929762764e-04, 4.252355364579667e-04, 4.215177564437476e-04,
+				      4.096372340407963e-04, 4.020933190248971e-04, 3.873763038390766e-04,
+				      3.856811502574638e-04, 3.775569340864954e-04, 3.747252570808467e-04,
+				      3.710965689452067e-04, 3.670874344091480e-04, 3.607209769236589e-04,
+				      3.502201746943782e-04, 3.481806930415002e-04, 3.465409208979231e-04,
+				      3.309426184807526e-04, 3.276004690897319e-04, 3.219467466328755e-04,
+				      3.130905323243925e-04, 3.043017388969964e-04, 2.970949282865316e-04,
+				      2.943475273822414e-04, 2.776006620979839e-04, 2.727897006547135e-04,
+				      2.645282348329611e-04, 2.592669982195747e-04, 2.462571760584182e-04,
+				      2.309586557732234e-04, 2.304515544319056e-04, 2.279817830843768e-04,
+				      2.191749304924039e-04, 2.122108350538519e-04, 2.034439534128090e-04,
+				      1.991232380905844e-04, 1.952084927880473e-04, 1.936243428713668e-04,
+				      1.906819029896468e-04, 1.892417448118589e-04, 1.885918556759537e-04,
+				      1.807257651640037e-04, 1.777520227303505e-04, 1.759916153674000e-04,
+				      1.733265642535803e-04, 1.653966646934587e-04, 1.631291559891905e-04,
+				      1.611214584659678e-04, 1.579281165910602e-04, 1.535274593669755e-04,
+				      1.527540455453647e-04, 1.484131039588141e-04, 1.473095686087386e-04,
+				      1.464297261105549e-04, 1.455017258401662e-04, 1.440194296116991e-04,
+				      1.414803110721952e-04, 1.378068362084047e-04, 1.368740201607956e-04,
+				      1.366951140370543e-04, 1.354663684792461e-04, 1.346305903426298e-04,
+				      1.345836365147301e-04, 1.342397900211870e-04, 1.312689370538661e-04,
+				      1.309850469867181e-04, 1.290108191151779e-04, 1.287300593032232e-04,
+				      1.278475681275682e-04, 1.270941397814224e-04, 1.269605019635538e-04,
+				      1.266190633586210e-04, 1.261030528294454e-04, 1.257418695379085e-04,
+				      1.255586292146688e-04, 1.229318635297521e-04, 1.221004195926343e-04,
+				      1.209800290222870e-04, 1.206547232710429e-04, 1.197794557612186e-04,
+				      1.195793602177072e-04, 1.193809501962230e-04, 1.189150237501405e-04,
+				      1.186754388334211e-04, 1.186292073721043e-04, 1.184428367936713e-04,
+				      1.181611138262726e-04, 1.177264899321233e-04, 1.177105978672957e-04,
+				      1.172911436713909e-04, 1.167616489659979e-04, 1.165562560675440e-04,
+				      1.150905742704876e-04, 1.150676993286902e-04, 1.150286915332042e-04,
+				      1.148257065233606e-04, 1.147469685658055e-04, 1.142632237440072e-04,
+				      1.139959481082699e-04, 1.138442511258245e-04, 1.132090501104417e-04,
+				      1.131837672800341e-04, 1.131394621296056e-04, 1.130438689517789e-04,
+				      1.123077774036268e-04, 1.121707685417038e-04, 1.120142557820379e-04,
+				      1.120007716058205e-04, 1.107168853988376e-04, 1.104785044264233e-04,
+				      1.096451341784173e-04, 1.092988797962640e-04, 1.090790395661486e-04,
+				      1.087515667151552e-04, 1.087359154391886e-04, 1.076191367017568e-04,
+				      1.075726644515790e-04, 1.075119856586008e-04, 1.057939571351907e-04,
+				      1.057258138875207e-04, 1.056422601527452e-04, 1.053121386242805e-04,
+				      1.051281759344578e-04, 1.042497781694402e-04, 1.038816120009337e-04,
+				      1.030530575301482e-04, 1.029403683431887e-04, 1.024522893218920e-04,
+				      1.023894434291645e-04, 1.020188693720478e-04, 1.018011962416816e-04,
+				      1.013251566634360e-04, 1.006384268317940e-04, 1.005079192691187e-04,
+				      1.003718735626398e-04, 1.000025034498282e-04, 9.963602280334882e-05,
+				      9.920790020844716e-05, 9.881782225358739e-05, 9.867262657038959e-05,
+				      9.864999241745328e-05, 9.859990833436017e-05, 9.833504058723316e-05,
+				      9.764638444470294e-05, 9.711544500614381e-05, 9.702587154984269e-05,
+				      9.650287814369737e-05, 9.649517290014458e-05, 9.616914478231733e-05,
+				      9.609305550223358e-05, 9.609136998020641e-05, 9.596640056133467e-05,
+				      9.575956292971456e-05, 9.538537703968242e-05, 9.529291411704900e-05,
+				      9.526281550942094e-05, 9.526040762081069e-05, 9.510654353861599e-05,
+				      9.505405156691263e-05, 9.501070957192822e-05, 9.488501778647341e-05,
+				      9.479038776409075e-05, 9.478749829775847e-05, 9.461774215073616e-05,
+				      9.444557811510361e-05, 9.428063774530178e-05, 9.400517528828969e-05,
+				      9.397074248116318e-05, 9.392812285276184e-05, 9.360907761190431e-05,
+				      9.351372522293860e-05, 9.337551241671050e-05, 9.335697167441162e-05,
+				      9.307091450751444e-05, 9.299338049426454e-05, 9.275042453349076e-05,
+				      9.274849822260257e-05, 9.260137622851657e-05, 9.224476792533921e-05,
+				      9.210125776416858e-05, 9.179377038864022e-05, 9.172779424071950e-05,
+				      9.172755345185846e-05, 9.172370083008208e-05, 9.154383155089674e-05,
+				      9.149784087844104e-05, 9.142440027582855e-05, 9.134397679624637e-05,
+				      9.131845317697775e-05, 9.101433684550375e-05, 9.077956770600482e-05,
+				      9.057176691894062e-05, 9.049134343935843e-05, 9.042970149093614e-05,
+				      8.972250460610704e-05, 8.967530998934623e-05, 8.967410604504111e-05,
+				      8.965123110324377e-05, 8.953372613906379e-05, 8.925898604863478e-05,
+				      8.895944470552024e-05, 8.887685412618881e-05, 8.877211097164313e-05,
+				      8.863991788694067e-05, 8.824213468852810e-05, 8.823226234522610e-05,
+				      8.820577557051340e-05, 8.782556995895562e-05, 8.782460680351152e-05,
+				      8.746775771147315e-05, 8.743982620359430e-05, 8.739070527594529e-05,
+				      8.723780434919470e-05, 8.714365590453410e-05, 8.629222649195130e-05,
+				      8.580824088129195e-05, 8.567219517481308e-05, 8.523516339205351e-05,
+				      8.522914367052790e-05, 8.515233202386107e-05, 8.515185044613901e-05,
+				      8.502013893915860e-05, 8.498257587683876e-05, 8.491635894005701e-05,
+				      8.486675643468596e-05, 8.462982019543779e-05, 8.462861625113267e-05,
+				      8.458936766678566e-05, 8.458599662273131e-05, 8.450172052137272e-05,
+				      8.424648432868670e-05, 8.403892433048354e-05, 8.368592786022155e-05,
+				      8.351448619117207e-05, 8.349425992684602e-05, 8.330451830435866e-05,
+				      8.314391213405530e-05, 8.281499454989575e-05, 8.258552276533935e-05,
+				      8.233726944962305e-05, 8.212513446306041e-05, 8.210298188784616e-05,
+				      8.209912926606977e-05, 8.176900773760511e-05, 8.144827697472040e-05,
+				      8.144322040863889e-05, 8.142275335545180e-05, 8.129633920341391e-05,
+				      8.109600287104150e-05, 8.096790319697642e-05, 8.087303238573275e-05,
+				      8.086508635331895e-05, 8.073144853545031e-05, 8.067149210905521e-05,
+				      8.049258598531396e-05, 8.038230468696472e-05, 8.009143174284706e-05,
+				      7.995707155839537e-05, 7.954098840654494e-05, 7.931320214401572e-05,
+				      7.922049843252127e-05, 7.904375940852925e-05, 7.888411639366997e-05,
+				      7.866788799646992e-05, 7.846105036484983e-05, 7.841770836986542e-05,
+				      7.829683236163109e-05, 7.784607561379313e-05, 7.784125983657263e-05,
+				      7.779912178589333e-05, 7.744805162651954e-05, 7.742565826244427e-05,
+				      7.741337803053201e-05, 7.736497946946608e-05, 7.723928768401125e-05,
+				      7.698790411310163e-05, 7.686245311650784e-05, 7.647598699456343e-05,
+				      7.639628588156430e-05, 7.636955831799058e-05, 7.589255558430095e-05,
+				      7.583380310221096e-05, 7.550560788463449e-05, 7.547213823295209e-05,
+				      7.533777804850038e-05, 7.531008732948256e-05, 7.520389944177073e-05,
+				      7.516320612425758e-05, 7.512805095054800e-05, 7.485933058164460e-05,
+				      7.480539387677509e-05, 7.479600311119515e-05, 7.467801656929312e-05,
+				      7.461733777631493e-05, 7.461589304314878e-05, 7.427012023871752e-05,
+				      7.424363346400483e-05, 7.419860594699323e-05, 7.418728887052507e-05,
+				      7.409771541422395e-05, 7.405557736354465e-05, 7.349068669558106e-05,
+				      7.328433064168302e-05, 7.317645723194402e-05, 7.284874359208960e-05,
+				      7.281503315154616e-05, 7.279480688722011e-05, 7.238257635714606e-05,
+				      7.232478703050017e-05, 7.224388197319593e-05, 7.180131204663281e-05,
+				      7.179673705827334e-05, 7.158123102765636e-05, 7.128385678429105e-05,
+				      7.125110949919171e-05, 7.111241511524156e-05, 7.106907312025714e-05,
+				      7.103825214604601e-05, 7.091400509375734e-05, 7.081985664909674e-05,
+				      7.046421150136348e-05, 7.045843256869889e-05, 7.034839205921067e-05,
+				      7.013457155062087e-05, 7.009628612171797e-05, 7.008737693386006e-05,
+				      7.004909150495716e-05, 6.995518384915758e-05, 6.994338519496737e-05,
+				      6.993784705116381e-05, 6.967466482606398e-05, 6.966069907212455e-05,
+				      6.955523355099580e-05, 6.948251531496638e-05, 6.940209183538418e-05,
+				      6.932600255530043e-05, 6.926002640737970e-05, 6.925208037496589e-05,
+				      6.915793193030529e-05, 6.911868334595828e-05, 6.899058367189324e-05,
+				      6.891064177003307e-05, 6.883045907931191e-05, 6.873631063465130e-05,
+				      6.866166608773369e-05, 6.866094372115062e-05, 6.840065096238309e-05,
+				      6.839655755174566e-05, 6.825978947868372e-05, 6.824991713538171e-05,
+				      6.817816205479639e-05, 6.812085430587255e-05, 6.806137945719949e-05,
+				      6.791112720792016e-05, 6.787741676737673e-05, 6.757859779084526e-05,
+				      6.748300461301851e-05, 6.742738238612185e-05, 6.737970619163899e-05,
+				      6.736285097136728e-05, 6.730433927813829e-05, 6.717479487090710e-05,
+				      6.704886229659125e-05, 6.684708123105268e-05, 6.680590633581748e-05,
+				      6.676593538488740e-05, 6.652105311322543e-05, 6.639656527207574e-05,
+				      6.621910388150065e-05, 6.615168300041378e-05, 6.606499901044494e-05,
+				      6.602767673698613e-05, 6.583384170386137e-05, 6.566288161253393e-05,
+				      6.562868959426845e-05, 6.558847785447735e-05, 6.557475288939896e-05,
+				      6.553887534910629e-05, 6.518515651226123e-05, 6.512881191878148e-05,
+				      6.496748338189503e-05, 6.496603864872889e-05, 6.490945326638811e-05,
+				      6.488344806939747e-05, 6.478713252498765e-05, 6.477990885915692e-05,
+				      6.444280445372254e-05, 6.426365754112027e-05, 6.366264854400299e-05,
+				      6.360028422899764e-05, 6.356464747756600e-05, 6.341078339537131e-05,
+				      6.335203091328133e-05, 6.330242840791026e-05, 6.326510613445146e-05,
+				      6.317625504473340e-05, 6.312304070644697e-05, 6.303611592761711e-05,
+				      6.298362395591377e-05, 6.284709667171285e-05, 6.282662961852576e-05,
+				      6.281940595269501e-05, 6.272164567511905e-05, 6.268215630191102e-05,
+				      6.264025904009274e-05, 6.250613964450209e-05, 6.245701871685307e-05,
+				      6.243992270772033e-05, 6.225692317334167e-05, 6.205128948602671e-05,
+				      6.201155932395765e-05, 6.198073834974651e-05, 6.179244146042531e-05,
+				      6.163568791189833e-05, 6.161690638073841e-05, 6.157380517461503e-05,
+				      6.151842373657937e-05, 6.142090424786443e-05, 6.140597533848090e-05,
+				      6.134240707917042e-05, 6.132482949231563e-05, 6.126174281072720e-05,
+				      6.117529960961939e-05, 6.112473394880423e-05, 6.104792230213740e-05,
+				      6.095473701292089e-05, 6.092439761643181e-05, 6.088563060980686e-05,
+				      6.079148216514625e-05, 6.078979664311908e-05, 6.077197826740327e-05,
+				      6.075102963649413e-05, 6.053167098410077e-05, 6.051818680788338e-05,
+				      6.043270676221967e-05, 6.029906894435105e-05, 6.020299418880226e-05,
+				      6.008982342412072e-05, 6.003636829697327e-05, 6.003323804177994e-05,
+				      5.987528054894783e-05, 5.987239108261554e-05, 5.980232152405740e-05,
+				      5.979461628050461e-05, 5.974886639690995e-05, 5.971154412345114e-05,
+				      5.963039827728587e-05, 5.961041280182083e-05, 5.955045637542572e-05,
+				      5.954780769795445e-05, 5.953384194401502e-05, 5.942885800060833e-05,
+				      5.927282681866441e-05, 5.901084853786970e-05, 5.900699591609331e-05,
+				      5.898002756365856e-05, 5.895474473325098e-05, 5.891381062687680e-05,
+				      5.882857137007411e-05, 5.882231085968748e-05, 5.877704255381487e-05,
+				      5.874020185807811e-05, 5.860632325134845e-05, 5.860030352982284e-05,
+				      5.856298125636404e-05, 5.849026302033462e-05, 5.835662520246599e-05,
+				      5.828535169960273e-05, 5.822684000637377e-05, 5.810740873130558e-05,
+				      5.810451926497330e-05, 5.803252339552695e-05, 5.803228260666593e-05,
+				      5.798869982282048e-05, 5.789286585613271e-05, 5.781147922110641e-05,
+				      5.778860427930908e-05, 5.778427007981064e-05, 5.773370441899549e-05,
+				      5.770649527769970e-05, 5.767278483715627e-05, 5.766074539410504e-05,
+				      5.762414548722932e-05, 5.754107333017584e-05, 5.750712210077138e-05,
+				      5.750038001266270e-05, 5.743223676499275e-05, 5.734699750819006e-05,
+				      5.731449101195174e-05, 5.705877324154367e-05, 5.704312196557707e-05,
+				      5.677078976375830e-05, 5.670240572722733e-05, 5.668579129581664e-05,
+				      5.666026767654804e-05, 5.652446275893019e-05};
+      memcpy(template->templatedata->data, correcttemplatedata, sizeof(REAL4)*template->templatedata->length);
+      INT4 correctfirstfftfrequenciesofpixels[] = {67, 67, 375, 67, 375, 67, 375, 375, 67, 375, 67, 374,
+						     375, 68, 67, 374, 68, 375, 67, 68, 374, 375, 68, 67,
+						     374, 375, 68, 67, 375, 374, 68, 67, 375, 67, 68, 374,
+						     375, 70, 67, 70, 70, 68, 375, 70, 70, 374, 70, 69, 67,
+						     69, 70, 375, 68, 70, 373, 70, 70, 70, 69, 67, 373, 375,
+						     70, 374, 70, 374, 374, 374, 71, 69, 71, 69, 70, 68, 374,
+						     374, 69, 373, 71, 373, 69, 71, 373, 67, 67, 69, 69, 67,
+						     67, 67, 373, 67, 67, 67, 67, 71, 67, 70, 374, 67, 375,
+						     373, 375, 67, 374, 375, 375, 67, 70, 67, 375, 71, 70,
+						     375, 67, 67, 67, 375, 70, 67, 373, 67, 373, 69, 375, 71,
+						     375, 67, 67, 69, 67, 373, 369, 71, 68, 68, 375, 67, 67,
+						     375, 71, 374, 67, 67, 68, 374, 375, 369, 369, 68, 69,
+						     375, 68, 375, 375, 374, 375, 371, 68, 374, 375, 371, 369,
+						     67, 374, 67, 68, 375, 371, 71, 71, 375, 374, 70, 68, 68,
+						     67, 373, 70, 369, 67, 375, 374, 375, 375, 70, 374, 375,
+						     68, 374, 67, 375, 370, 70, 68, 71, 70, 71, 371, 67, 68,
+						     374, 70, 369, 70, 375, 70, 70, 69, 68, 375, 67, 374, 374,
+						     69, 373, 68, 70, 370, 375, 369, 68, 370, 71, 67, 67, 70,
+						     70, 70, 375, 70, 374, 371, 375, 68, 374, 70, 374, 370,
+						     68, 373, 371, 375, 374, 374, 71, 67, 374, 70, 371, 68,
+						     369, 374, 70, 369, 374, 369, 375, 371, 70, 70, 70, 374,
+						     70, 67, 369, 370, 68, 70, 375, 68, 67, 76, 375, 374, 374,
+						     67, 71, 67, 374, 67, 67, 67, 369, 369, 68, 70, 67, 375,
+						     375, 375, 371, 374, 67, 70, 68, 370, 67, 373, 67, 70, 67,
+						     371, 70, 374, 76, 369, 67, 371, 374, 76, 67, 68, 370, 375,
+						     70, 67, 70, 69, 76, 76, 374, 369, 68, 76, 70, 70, 68, 370,
+						     67, 67, 68, 68, 373, 71, 370, 70, 375, 70, 374, 69, 67,
+						     374, 70, 374, 374, 70, 71, 67, 375, 67, 69, 68, 68, 67,
+						     70, 71, 68, 67, 370, 67, 67, 375, 67, 369, 71, 67, 76,
+						     371, 374, 70, 67, 67, 374, 67, 375, 70, 364, 71, 374, 374,
+						     68, 71, 76, 67, 75, 68, 374, 67, 68, 371, 76, 374, 75,
+						     374, 364, 374, 370, 369, 364, 375, 374, 375, 374, 70, 68,
+						     369, 374, 371, 374, 374, 67, 71, 70, 67, 374, 67, 374, 369,
+						     67, 374, 71, 369, 369, 67, 70, 67, 364, 75, 70, 370, 374,
+						     68, 371, 371, 67, 375, 70, 68, 375, 68, 70, 75, 364, 370,
+						     70, 373, 373, 67, 68, 374, 69, 371, 369, 374, 375, 67, 70,
+						     76, 373, 69, 374, 364, 369, 67, 70, 369, 71, 76, 71, 364,
+						     371, 374, 364, 70, 77, 370, 75, 67, 74, 374, 69, 77, 71, 71,
+						     70, 374, 71, 370, 76, 70, 76, 70, 374, 70, 67, 69, 371, 375, 373};
+      memcpy(template->firstfftfrequenciesofpixels->data, correctfirstfftfrequenciesofpixels, sizeof(INT4)*template->firstfftfrequenciesofpixels->length);
+      INT4 correctsecondfftfrequencies[] = {11, 21, 11, 31, 21, 41, 31, 41, 51, 51, 61, 11, 61, 11, 71, 21, 21, 71,
+					      81, 31, 31, 81, 41, 91, 41, 91, 51, 101, 101, 51, 61, 111, 111, 121,
+					      71, 61, 121, 11, 131, 161, 151, 81, 131, 171, 21, 71, 141, 11, 141, 21,
+					      181, 141, 91, 31, 11, 321, 311, 131, 31, 151, 21, 151, 301, 241, 331,
+					      81, 251, 231, 11, 191, 141, 181, 191, 101, 221, 261, 201, 31, 131, 191,
+					      41, 151, 201, 42, 161, 171, 211, 942, 922, 912, 181, 902, 32, 932, 22,
+					      21, 62, 291, 271, 12, 161, 211, 22, 52, 211, 32, 12, 952, 341, 892, 42,
+					      121, 41, 52, 962, 72, 882, 10, 121, 10, 171, 972, 41, 161, 62, 161, 20,
+					      20, 82, 221, 872, 221, 111, 281, 22, 12, 72, 92, 982, 30, 271, 281, 30,
+					      862, 32, 12, 942, 121, 11, 10, 51, 952, 942, 40, 932, 201, 962, 131, 42,
+					      22, 82, 11, 101, 171, 10, 992, 111, 922, 141, 291, 31, 972, 91, 471, 932,
+					      922, 102, 161, 322, 221, 40, 171, 942, 912, 50, 312, 32, 902, 20, 932,
+					      852, 982, 121, 481, 952, 261, 472, 111, 121, 1002, 912, 20, 461, 231,
+					      201, 92, 281, 482, 231, 52, 992, 50, 922, 952, 151, 231, 962, 351, 11,
+					      892, 211, 30, 111, 171, 842, 112, 632, 332, 462, 1002, 302, 912, 21, 60,
+					      902, 42, 162, 962, 131, 62, 51, 151, 102, 472, 291, 301, 1012, 482, 622,
+					      261, 972, 21, 30, 152, 131, 462, 91, 882, 271, 642, 172, 491, 902, 492, 60,
+					      331, 241, 892, 451, 1012, 40, 472, 91, 70, 191, 452, 122, 251, 482, 492,
+					      462, 832, 452, 341, 241, 982, 792, 492, 112, 181, 872, 111, 972, 442, 782,
+					      72, 231, 1022, 151, 181, 612, 502, 281, 452, 52, 181, 321, 432, 251, 40,
+					      101, 512, 882, 251, 1022, 142, 70, 342, 61, 11, 191, 502, 201, 50, 81,
+					      182, 772, 281, 21, 431, 132, 271, 291, 241, 41, 101, 652, 80, 292, 442,
+					      241, 422, 892, 802, 242, 252, 111, 411, 1032, 862, 451, 141, 121, 301,
+					      441, 51, 421, 992, 411, 141, 822, 522, 122, 421, 351, 101, 412, 271, 161,
+					      232, 501, 80, 461, 982, 532, 1032, 502, 81, 311, 262, 301, 311, 401, 281,
+					      401, 101, 82, 461, 471, 261, 31, 171, 702, 91, 471, 91, 692, 361, 441, 161,
+					      852, 50, 90, 62, 942, 872, 451, 512, 401, 712, 222, 391, 431, 952, 402,
+					      451, 481, 481, 31, 812, 432, 181, 311, 141, 542, 12, 142, 171, 191, 441,
+					      221, 272, 251, 291, 391, 1042, 1042, 602, 321, 132, 60, 932, 11, 11, 351,
+					      10, 381, 391, 381, 1002, 682, 371, 241, 81, 101, 191, 491, 361, 361, 61,
+					      381, 882, 71, 431, 392, 762, 251, 282, 371, 241, 251, 411, 441, 241, 132,
+					      81, 261, 201, 90, 101, 722, 361, 91, 422, 412, 442, 491, 391, 371, 261, 271,
+					      111, 812, 181, 352, 552, 391, 101, 100, 371};
+      memcpy(template->secondfftfrequencies->data, correctsecondfftfrequencies, sizeof(INT4)*template->secondfftfrequencies->length);
+      for (ii=0; ii<(INT4)template->pixellocations->length; ii++) template->pixellocations->data[ii] = template->firstfftfrequenciesofpixels->data[ii]*ffdata->numfprbins + template->secondfftfrequencies->data[ii];
+      R = calculateR(ffdata->ffdata, template, aveNoise, aveTFnoisePerFbinRatio);
+      if (XLAL_IS_REAL8_FAIL_NAN(R)) {
+         fprintf(stderr,"%s: calculateR() failed.\n", __func__);
+         XLAL_ERROR(XLAL_EFUNC);
+      }
+      prob = 0.0;
+      if ( R > 0.0 ) {
+         prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
+         if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
+            fprintf(stderr,"%s: probR() failed.\n", __func__);
+            XLAL_ERROR(XLAL_EFUNC);
+         }
+      }
+      h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
+      loadCandidateData(&(exactCandidates2->data[2]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
       
       //Destroy stuff
@@ -878,8 +1167,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 {
    
    INT4 ii, jj;
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    SFTCatalog *catalog = NULL;
    
    //Set the start and end times in the LIGO GPS format
@@ -1015,8 +1303,7 @@ void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfd
 void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
    
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    REAL8 bias;
    INT4 ii, jj;
    INT4 totalfbins = numfbins + blksize - 1;
@@ -1026,14 +1313,12 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
    
    //Running median bias calculation
    if (blksize<1000) {
-      LALRngMedBias(&status, &bias, blksize);
-      if (status.statusCode != 0) {
-         fprintf(stderr,"%s: LALRngMedBias() failed.\n", __func__);
+      bias = XLALRngMedBias(blksize);
+      if (xlalErrno != 0) {
+	 fprintf(stderr,"%s: XLALRngMedBias(%d) failed.\n", __func__, blksize);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-   } else {
-      bias = LAL_LN2;
-   }
+   } else bias = LAL_LN2;
    REAL8 invbias = 1.0/(bias*1.0099993480677538);  //StackSlide normalization for 101 bins
    
    //Allocate for a single SFT data and the medians out of each SFT
@@ -1194,8 +1479,7 @@ void removeBadSFTs(REAL4Vector *tfdata, INT4Vector *badsfts)
 INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params)
 {
    
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    
    INT4 blksize = 11, ii, jj;
    
@@ -2003,21 +2287,21 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr,"Using Brent's method for root finding.\n");
    }
    
-   //SFT type MFD or vladimir (Vladimir's SFT generation program has a different normalization factor than Makefakedata)
+   //SFT type standard or vladimir (Vladimir's SFT generation program has a different normalization factor than standard v2)
    params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
    if (params->sftType==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*(params->sftType)));
       XLAL_ERROR(XLAL_ENOMEM);
    }
    sprintf(params->sftType, "%s", args_info.sftType_arg);
-   if (strcmp(params->sftType, "MFD")==0) {
+   if (strcmp(params->sftType, "standard")==0) {
       fprintf(LOG,"sftType = %s\n", params->sftType);
       fprintf(stderr,"sftType = %s\n", params->sftType);
    } else if (strcmp(params->sftType, "vladimir")==0) {
       fprintf(LOG,"sftType = %s\n", params->sftType);
       fprintf(stderr,"sftType = %s\n", params->sftType);
    } else {
-      fprintf(stderr, "%s: Not using valid type of SFT! Expected 'MFD' or 'vladimir' not %s.\n", __func__, params->sftType);
+      fprintf(stderr, "%s: Not using valid type of SFT! Expected 'standard' or 'vladimir' not %s.\n", __func__, params->sftType);
       XLAL_ERROR(XLAL_EINVAL);
    }
    
@@ -2060,7 +2344,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    }
    
    
-   //Allocate memory for files and directory
+   //Read in file names for ephemeris files
    if (!args_info.ephemDir_given) {
       fprintf(stderr, "%s: An ephemeris directory path must be specified.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
@@ -2071,22 +2355,32 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
    }
    earth_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*earth_ephemeris));
    sun_ephemeris = XLALCalloc(strlen(args_info.ephemDir_arg)+25, sizeof(*sun_ephemeris));
-   sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
    if (earth_ephemeris==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*earth_ephemeris));
       XLAL_ERROR(XLAL_ENOMEM);
    } else if (sun_ephemeris==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sun_ephemeris));
       XLAL_ERROR(XLAL_ENOMEM);
-   } else if (sft_dir==NULL) {
-      fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
-      XLAL_ERROR(XLAL_ENOMEM);
    }
    sprintf(earth_ephemeris, "%s/earth%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
    sprintf(sun_ephemeris, "%s/sun%s.dat", args_info.ephemDir_arg, args_info.ephemYear_arg);
-   if (args_info.sftDir_given && !args_info.sftFile_given) sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
-   else if (!args_info.sftDir_given && args_info.sftFile_given) sprintf(sft_dir, "%s", args_info.sftFile_arg);
-   else if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
+
+   //SFT input
+   if (args_info.sftDir_given && !args_info.sftFile_given) {
+      sft_dir = XLALCalloc(strlen(args_info.sftDir_arg)+20, sizeof(*sft_dir));
+      if (sft_dir==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
+	 XLAL_ERROR(XLAL_ENOMEM);
+      }
+      sprintf(sft_dir, "%s/*.sft", args_info.sftDir_arg);
+   } else if (!args_info.sftDir_given && args_info.sftFile_given) {
+      sft_dir = XLALCalloc(strlen(args_info.sftFile_arg)+2, sizeof(*sft_dir));
+      if (sft_dir==NULL) {
+	 fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*sft_dir));
+	 XLAL_ERROR(XLAL_ENOMEM);
+      }
+      sprintf(sft_dir, "%s", args_info.sftFile_arg);
+   } else if ((args_info.sftDir_given && args_info.sftFile_given) || !(args_info.sftDir_given && args_info.sftFile_given)) {
       fprintf(stderr, "%s: One of either sftDir or sftFile must be given but not both or neither.\n", __func__);
       XLAL_ERROR(XLAL_FAILURE);
    }

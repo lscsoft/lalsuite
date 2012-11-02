@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2011      Karl Wette.
+ *  Copyright (C) 2011 Karl Wette.
  *  Copyright (C) 2009-2010 Holger Pletsch.
  *
  *  Based on HierarchicalSearch.c by
@@ -23,7 +23,7 @@
  */
 
 /*********************************************************************************/
-/** \author Holger Pletsch, Karl Wette
+/** \author Holger Pletsch
  * \file
  * \ingroup pulsarApps
  * \brief Hierarchical semicoherent CW search code based on F-Statistic,
@@ -129,7 +129,7 @@ int global_argc;
  * Pre-factors for frequency and spindown spacings:
  * $\delta f^{(s)} = \text{COARSE_DFsDOT} \frac{\sqrt{\mu}}{T^{s+1}}$
  * Derived from diagonal elements of basic frequency/spindown metric:
- * $\delta f^{(s)} = 2 \frac{\sqrt{\mu}}{\gamma_{ii}}$
+ * $\delta f^{(s)} = 2 \sqrt{\frac{\mu}}{\gamma_{ii}}$
  * where
  * $\gamma_{ii} = \frac{4 (1+i)^2 \pi^2 T^{2+2i}}{(3+2i) ((2+i)!)^2}$
  */

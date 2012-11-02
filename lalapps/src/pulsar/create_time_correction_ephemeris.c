@@ -540,7 +540,7 @@ void IFTE_get_Vals(double JDeph0, double JDeph1, int kind,
     }
     nread = fread(ifte.buf, 8, ncoeff, ifte.f);
     if ((int)nread < ncoeff){
-      fprintf(stderr, "Error reading time ephemeris: Only read %d coefficients,\
+      fprintf(stderr, "Error reading time ephemeris: Only read %zd coefficients,\
  wanted %d!\n", nread, ncoeff);
       exit(1);
     }

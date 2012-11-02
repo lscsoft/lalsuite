@@ -13,6 +13,7 @@ lalsimulationincludedir = $(includedir)/lal
 lalsimulationinclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
+	LALSimInspiralPrecess.h \
 	LALSimInspiralWaveformFlags.h \
 	LALSimInspiralTestGRParams.h \
 	LALSimIMR.h \
@@ -53,6 +54,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \
+	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylorT4.c \

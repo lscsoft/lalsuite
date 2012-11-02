@@ -681,16 +681,10 @@ int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
 
 
 /**
- * Compute the template-space metric of "reduced-spin" PN templates in
- * theta0, theta3, theta3s parameter space.
+ * Compute the Fisher information matrix of "reduced-spin" PN templates in
+ * theta0, theta3, theta3s, t0, phi0 parameter space, for an SNR=1/sqrt(2) signal.
  */
-int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
-    REAL8 *gamma00,         /**< template metric coeff. 00 in theta0-theta3-theta3s*/
-    REAL8 *gamma01,         /**< template metric coeff. 01/10 in theta0-theta3-theta3s */
-    REAL8 *gamma02,         /**< template metric coeff. 02/20 in theta0-theta3-theta3s */
-    REAL8 *gamma11,         /**< template metric coeff. 11 in theta0-theta3-theta3s */
-    REAL8 *gamma12,         /**< template metric coeff. 12/21 in theta0-theta3-theta3s */
-    REAL8 *gamma22,         /**< template metric coeff. 22 in theta0-theta3-theta3s */
+gsl_matrix *XLALSimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(
     const REAL8 theta0,     /**< dimensionless parameter related to the chirp time by theta0 = 2 pi fLow tau0 */
     const REAL8 theta3,     /**< dimensionless parameter related to the chirp time by theta3 = -2 pi fLow tau3 */
     const REAL8 theta3s,    /**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
@@ -727,10 +721,10 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
     REAL8Vector *momK_12     /**< noise moments: momK_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} log(f'/f0) log(f'/f0) df' */
 ) {
 
-    if (theta0 <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (theta3 <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (fLow <= 0) XLAL_ERROR(XLAL_EDOM);
-    if (df <= 0) XLAL_ERROR(XLAL_EDOM);
+    if (theta0 <= 0) XLAL_ERROR_NULL(XLAL_EDOM);
+    if (theta3 <= 0) XLAL_ERROR_NULL(XLAL_EDOM);
+    if (fLow <= 0) XLAL_ERROR_NULL(XLAL_EDOM);
+    if (df <= 0) XLAL_ERROR_NULL(XLAL_EDOM);
 
     REAL8 theta0_p2 = theta0 * theta0;
     REAL8 theta3_p2 = theta3 * theta3;
@@ -762,7 +756,7 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
     REAL8 fISCO = (8*sqrt(0.6666666666666666)*fLow*LAL_PI*theta0)/(15.*theta3);
     if (fISCO <= fLow) {
         XLALPrintError("fISCO <= fLow");
-        XLAL_ERROR(XLAL_EDOM);
+        XLAL_ERROR_NULL(XLAL_EDOM);
     }
     size_t iCut = (fISCO - fLow) / df;
     if (iCut > momI_10->length - 1) {
@@ -772,8 +766,6 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
 
     /* template norm */
     REAL8 hSqr = 2.*momI_10->data[iCut];
-
-    int s = 0;
 
     /*******************************************************************/
     /* derivatives of the phasing coefficients w.r.t. parameters       */
@@ -1233,7 +1225,6 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
     /* allocate memory, and initialize the Fisher matrix */
     gsl_matrix * g = gsl_matrix_calloc (5, 5);
 
-
     /* compute the components of the Fisher matrix in coordinates theta0, theta3, theta3s, t0, phi0 */
     gsl_matrix_set (g, 0,0, g_theta0theta0/hSqr);
     gsl_matrix_set (g, 0,1, g_theta0theta3/hSqr);
@@ -1264,6 +1255,68 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
     gsl_matrix_set (g, 4,2, gsl_matrix_get(g, 2,4));
     gsl_matrix_set (g, 4,3, gsl_matrix_get(g, 3,4));
     gsl_matrix_set (g, 4,4, g_phi0phi0/hSqr);
+
+    return g;
+}
+
+
+/**
+ * Compute the template-space metric of "reduced-spin" PN templates in
+ * theta0, theta3, theta3s parameter space.
+ */
+int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
+    REAL8 *gamma00,         /**< template metric coeff. 00 in theta0-theta3-theta3s*/
+    REAL8 *gamma01,         /**< template metric coeff. 01/10 in theta0-theta3-theta3s */
+    REAL8 *gamma02,         /**< template metric coeff. 02/20 in theta0-theta3-theta3s */
+    REAL8 *gamma11,         /**< template metric coeff. 11 in theta0-theta3-theta3s */
+    REAL8 *gamma12,         /**< template metric coeff. 12/21 in theta0-theta3-theta3s */
+    REAL8 *gamma22,         /**< template metric coeff. 22 in theta0-theta3-theta3s */
+    const REAL8 theta0,     /**< dimensionless parameter related to the chirp time by theta0 = 2 pi fLow tau0 */
+    const REAL8 theta3,     /**< dimensionless parameter related to the chirp time by theta3 = -2 pi fLow tau3 */
+    const REAL8 theta3s,    /**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
+    const REAL8 fLow,       /**< low-frequency cutoff (Hz) */
+    const REAL8 df,         /**< frequency resolution of the noise moment vectors (Hz) */
+    REAL8Vector *momI_0,     /**< noise moments: momI_0(f) = \int_f0^f (f'/f0)^{(0-17)/3} df' */
+    REAL8Vector *momI_2,     /**< noise moments: momI_2(f) = \int_f0^f (f'/f0)^{(2-17)/3} df' */
+    REAL8Vector *momI_3,     /**< noise moments: momI_3(f) = \int_f0^f (f'/f0)^{(3-17)/3} df' */
+    REAL8Vector *momI_4,     /**< noise moments: momI_4(f) = \int_f0^f (f'/f0)^{(4-17)/3} df' */
+    REAL8Vector *momI_5,     /**< noise moments: momI_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} df' */
+    REAL8Vector *momI_6,     /**< noise moments: momI_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} df' */
+    REAL8Vector *momI_7,     /**< noise moments: momI_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} df' */
+    REAL8Vector *momI_8,     /**< noise moments: momI_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} df' */
+    REAL8Vector *momI_9,     /**< noise moments: momI_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} df' */
+    REAL8Vector *momI_10,    /**< noise moments: momI_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} df' */
+    REAL8Vector *momI_11,    /**< noise moments: momI_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} df' */
+    REAL8Vector *momI_12,    /**< noise moments: momI_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} df' */
+    REAL8Vector *momI_13,    /**< noise moments: momI_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} df' */
+    REAL8Vector *momI_14,    /**< noise moments: momI_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} df' */
+    REAL8Vector *momI_15,    /**< noise moments: momI_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} df' */
+    REAL8Vector *momI_16,    /**< noise moments: momI_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} df' */
+    REAL8Vector *momJ_5,     /**< noise moments: momJ_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_6,     /**< noise moments: momJ_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_7,     /**< noise moments: momJ_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_8,     /**< noise moments: momJ_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_9,     /**< noise moments: momJ_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_10,    /**< noise moments: momJ_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_11,    /**< noise moments: momJ_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_12,    /**< noise moments: momJ_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_13,    /**< noise moments: momJ_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} log(f'/f0) df' */
+    REAL8Vector *momJ_14,    /**< noise moments: momJ_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) df' */
+    REAL8Vector *momK_10,    /**< noise moments: momK_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) log(f'/f0) df' */
+    REAL8Vector *momK_11,    /**< noise moments: momK_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} log(f'/f0) log(f'/f0) df' */
+    REAL8Vector *momK_12     /**< noise moments: momK_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} log(f'/f0) log(f'/f0) df' */
+) {
+    gsl_matrix * g = XLALSimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(
+        theta0, theta3, theta3s, fLow, df, momI_0, momI_2, momI_3, momI_4,
+        momI_5, momI_6, momI_7, momI_8, momI_9, momI_10, momI_11, momI_12,
+        momI_13, momI_14, momI_15, momI_16, momJ_5, momJ_6, momJ_7, momJ_8,
+        momJ_9, momJ_10, momJ_11, momJ_12, momJ_13, momJ_14, momK_10, momK_11,
+        momK_12);
+
+    int s = 0;
+
+    if (!g)
+        XLAL_ERROR(XLAL_FAILURE);
 
     /* Form submatrices g1, g2, g3, g4, defined as:
      *              g = [ g1 g2

@@ -1,7 +1,8 @@
 /*
  *  LALInference.c:  Bayesian Followup functions
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys and John Veitch
+ *  Copyright (C) 2009, 2012 Ilya Mandel, Vivien Raymond, Christian
+ *  Roever, Marc van der Sluys, John Veitch, and Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -23,9 +24,11 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <lal/LALInference.h>
 #include <lal/Units.h>
 #include <lal/FrequencySeries.h>
+#include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/VectorOps.h>
 #include <lal/Date.h>
@@ -852,114 +855,113 @@ char* LALInferencePrintCommandLine(ProcessParamsTable *procparams)
   return str;
 }
 
-
-
 void LALInferenceExecuteFT(LALInferenceIFOData *IFOdata)
-/* Execute (forward, time-to-freq) Fourier transform.         */
-/* Contents of IFOdata->timeModelh... are windowed and FT'ed, */
-/* results go into IFOdata->freqModelh...                     */
-/*  CHECK: keep or drop normalisation step here ?!?  */
+/* Execute (forward, time-to-freq) Fourier transform.  Contents of
+IFOdata->timeModelh... are windowed and FT'ed, results go into
+IFOdata->freqModelh...  
+
+NOTE: the windowing is performed *in-place*, so do not call more than
+once on a given timeModel!
+*/
 {
   UINT4 i;
   double norm;
   int errnum; 
   
   if (IFOdata==NULL) {
-   		fprintf(stderr," ERROR: IFOdata is a null pointer at LALInferenceExecuteFT, exiting!.\n");
-   		XLAL_ERROR_VOID(XLAL_EFAULT);
+    fprintf(stderr," ERROR: IFOdata is a null pointer at LALInferenceExecuteFT, exiting!.\n");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
 
   else if(!IFOdata->timeData && IFOdata->timeData){				
-		XLALPrintError("timeData is NULL at LALInferenceExecuteFT, exiting!");
-	 	XLAL_ERROR_VOID(XLAL_EFAULT);	
+    XLALPrintError("timeData is NULL at LALInferenceExecuteFT, exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);	
   }
 
   else if(!IFOdata->freqData && IFOdata->timeData){
-		XLALPrintError("freqData is NULL at LALInferenceExecuteFT, exiting!");
-		XLAL_ERROR_VOID(XLAL_EFAULT);	
+    XLALPrintError("freqData is NULL at LALInferenceExecuteFT, exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);	
   }
 
   else if(!IFOdata->freqData && !IFOdata->timeData){
-		XLALPrintError("timeData and freqData are NULL at LALInferenceExecuteFT, exiting!");
-		XLAL_ERROR_VOID(XLAL_EFAULT);
+    XLALPrintError("timeData and freqData are NULL at LALInferenceExecuteFT, exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
   }
  
   else if(!IFOdata->freqData->data->length){
-		XLALPrintError("Frequency series length is not set, exiting!");
-		XLAL_ERROR_VOID(XLAL_EFAULT);
-  }	
-	
- 
+    XLALPrintError("Frequency series length is not set, exiting!");
+    XLAL_ERROR_VOID(XLAL_EFAULT);
+  }
+
   for(;IFOdata;IFOdata=IFOdata->next){
     /* h+ */
-  if(!IFOdata->freqModelhPlus){     
+    if(!IFOdata->freqModelhPlus){     
 	
-        XLAL_TRY(IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
+      XLAL_TRY(IFOdata->freqModelhPlus=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
 
-		if (errnum){
-		XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
-		XLAL_ERROR_VOID(errnum);
-		}
-  }
-	if (!IFOdata->window || !IFOdata->window->data){
-		XLALPrintError("IFOdata->window is NULL at LALInferenceExecuteFT: Exiting!");
-		XLAL_ERROR_VOID(XLAL_EFAULT);
-		}
+      if (errnum){
+	XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
+	XLAL_ERROR_VOID(errnum);
+      }
+    }
+    if (!IFOdata->window || !IFOdata->window->data){
+      XLALPrintError("IFOdata->window is NULL at LALInferenceExecuteFT: Exiting!");
+      XLAL_ERROR_VOID(XLAL_EFAULT);
+    }
 
-	XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhPlus->data,IFOdata->timeModelhPlus->data,IFOdata->window->data),errnum);
+    XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhPlus->data,IFOdata->timeModelhPlus->data,IFOdata->window->data),errnum);
 
-		if (errnum){
-			XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
-			XLAL_ERROR_VOID(errnum);
-			}
+    if (errnum){
+      XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
+      XLAL_ERROR_VOID(errnum);
+    }
    		
-	if (!IFOdata->timeToFreqFFTPlan){
-		XLALPrintError("IFOdata->timeToFreqFFTPlan is NULL at LALInferenceExecuteFT: Exiting!");
-		XLAL_ERROR_VOID(XLAL_EFAULT);
-		}
+    if (!IFOdata->timeToFreqFFTPlan){
+      XLALPrintError("IFOdata->timeToFreqFFTPlan is NULL at LALInferenceExecuteFT: Exiting!");
+      XLAL_ERROR_VOID(XLAL_EFAULT);
+    }
 
-	XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus,IFOdata->timeModelhPlus,IFOdata->timeToFreqFFTPlan),errnum);
+    XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhPlus,IFOdata->timeModelhPlus,IFOdata->timeToFreqFFTPlan),errnum);
 	
-		if (errnum){
-			XLALPrintError("Could not h_plus FFT time-series");
-			XLAL_ERROR_VOID(errnum);
-			}
+    if (errnum){
+      XLALPrintError("Could not h_plus FFT time-series");
+      XLAL_ERROR_VOID(errnum);
+    }
     			    
- 
     /* hx */
-  if(!IFOdata->freqModelhCross){ 
+    if(!IFOdata->freqModelhCross){ 
 
-	XLAL_TRY(IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
+      XLAL_TRY(IFOdata->freqModelhCross=(COMPLEX16FrequencySeries *)XLALCreateCOMPLEX16FrequencySeries("freqData",&(IFOdata->timeData->epoch),0.0,IFOdata->freqData->deltaF,&lalDimensionlessUnit,IFOdata->freqData->data->length),errnum);
 	
-		if (errnum){	
-			XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
-		 	XLAL_ERROR_VOID(errnum);		
-			}
-  }
-	XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data),errnum);
+      if (errnum){	
+	XLALPrintError("Could not create COMPLEX16FrequencySeries in LALInferenceExecuteFT");
+	XLAL_ERROR_VOID(errnum);		
+      }
+    }
 
-		if (errnum){
-			XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
-			XLAL_ERROR_VOID(errnum);
-			}
+    XLAL_TRY(XLALDDVectorMultiply(IFOdata->timeModelhCross->data,IFOdata->timeModelhCross->data,IFOdata->window->data),errnum);
+
+    if (errnum){
+      XLALPrintError("Could not window time-series in LALInferenceExecuteFT");
+      XLAL_ERROR_VOID(errnum);
+    }
 		 
-	XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan),errnum);
+    XLAL_TRY(XLALREAL8TimeFreqFFT(IFOdata->freqModelhCross,IFOdata->timeModelhCross,IFOdata->timeToFreqFFTPlan),errnum);
 	
-		if (errnum){
-			XLALPrintError("Could not FFT h_cross time-series");
-			XLAL_ERROR_VOID(errnum);
-			}   
-
+    if (errnum){
+      XLALPrintError("Could not FFT h_cross time-series");
+      XLAL_ERROR_VOID(errnum);
+    }   
 
     norm=sqrt(IFOdata->window->data->length/IFOdata->window->sumofsquares);
     
-     for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
+    for(i=0;i<IFOdata->freqModelhPlus->data->length;i++){
       IFOdata->freqModelhPlus->data->data[i].re*=norm;
       IFOdata->freqModelhPlus->data->data[i].im*=norm;
       IFOdata->freqModelhCross->data->data[i].re*=norm;
       IFOdata->freqModelhCross->data->data[i].im*=norm;
+    }
   }
- }
 }
 
 void LALInferenceExecuteInvFT(LALInferenceIFOData *IFOdata)

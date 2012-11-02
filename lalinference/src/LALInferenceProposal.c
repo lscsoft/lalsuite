@@ -338,10 +338,12 @@ SetupDefaultNSProposal(LALInferenceRunState *runState, LALInferenceVariables *pr
     LALInferenceAddProposalToCycle(runState, polarizationPhaseJumpName, &LALInferencePolarizationPhaseJump, TINYWEIGHT);
 
   if (fullProp) {
-    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
-      LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, SMALLWEIGHT);
-
     UINT4 nDet = numDetectorsUniquePositions(runState);
+    if(!LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skywander"))
+    {   /* If there are not 3 detectors, the other sky jumps are not used, so increase the % of wandering jumps */
+        if(nDet<3) LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, BIGWEIGHT);
+        else LALInferenceAddProposalToCycle(runState, skyLocWanderJumpName, &LALInferenceSkyLocWanderJump, 3.0*SMALLWEIGHT);
+    }
     if (nDet >= 3 && !LALInferenceGetProcParamVal(runState->commandLine,"--proposal-no-skyreflect")) {
       LALInferenceAddProposalToCycle(runState, skyReflectDetPlaneName, &LALInferenceSkyReflectDetPlane, TINYWEIGHT);
     }
@@ -602,7 +604,7 @@ void LALInferenceDefaultProposal(LALInferenceRunState *runState, LALInferenceVar
     LALInferenceDeleteProposalCycle(runState);
     SetupDefaultProposal(runState, proposedParams);
   }
-
+  /* Set adapting flag to 0, it will be set to 1 if an adapting step is used*/
   LALInferenceCyclicProposal(runState, proposedParams);
 }
 
@@ -1895,7 +1897,7 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
     psi_temp = 0.0;
     XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
     j=i-1;
-    while (j>=0){
+    while (j>0){
       if(Fplus==x[j]){
         dataPtr = dataPtr->next;
         XLALComputeDetAMResponse(&Fplus, &Fcross, dataPtr->detector->response, *newRA, *newDec, psi_temp, newGmst);
@@ -1966,6 +1968,8 @@ reflected_extrinsic_parameters(LALInferenceRunState *runState, const REAL8 ra, c
   }
   
   if(c12<1){
+    *newIota=iota;
+    *newDist=dist;
     return;
   }
   

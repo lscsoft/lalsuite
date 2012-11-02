@@ -257,6 +257,7 @@ src/pulsar/lalapps_FreqAverager_v2
 src/pulsar/lalapps_GetSFTVelocities
 src/pulsar/lalapps_PrintDetectorState
 src/pulsar/lalapps_create_solar_system_ephemeris
+src/pulsar/lalapps_create_time_correction_ephemeris
 src/pulsar/lalapps_make_job_input_data
 src/pulsar/lalapps_make_sfts
 src/pulsar/lalapps_psd

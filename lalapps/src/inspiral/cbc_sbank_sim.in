@@ -142,35 +142,50 @@ h5file.create_dataset("/sngl_inspiral", data=ligolw_table_to_array(sngls), compr
 h5file.flush()
 bank = Bank.from_sngls(sngls, tmplt_approx, noise_model, flow)
 del xmldoc, sngls[:]
-if verbose: print "Loaded %d templates" % len(bank)
+if verbose:
+    print "Loaded %d templates" % len(bank)
+    tmplt_format = "".join("%s: %s   " % name_format for name_format in zip(tmplt_approx.param_names, tmplt_approx.param_formats))
 
 # pick injection parameters
 xmldoc2 = utils.load_filename(inj_file)
 ligolw_copy_process(xmldoc2, fake_xmldoc)
 sims = table.get_table(xmldoc2, lsctables.SimInspiralTable.tableName)
+
+# FIXME inspinj is a terrible person
+for s in sims:
+    s.polarization = np.random.uniform(0, 2*np.pi)
+
 h5file.create_dataset("/sim_inspiral", data=ligolw_table_to_array(sims), compression='gzip', compression_opts=1)
 h5file.flush()
 inj_wfs = Bank.from_sims(sims, inj_approx, noise_model, flow)
 del xmldoc2, sims[:]
-if verbose: print "Loaded %d injections" % len(inj_wfs)
-
 if verbose:
-    from pylal import progress
-    progressbar = progress.ProgressBar()
-    progressbar.max = len(inj_wfs)
-    progressbar.update(0)
+    print "Loaded %d injections" % len(inj_wfs)
+    inj_format = "".join("%s: %s   " % name_format for name_format in zip(inj_approx.param_names, inj_approx.param_formats))
 
 # main worker loop
 match_map = np.empty(len(inj_wfs), dtype=[("inj_index", np.uint32), ("inj_sigmasq", np.float32), ("match", np.float32), ("best_match_tmplt_index", np.uint32)])
 for inj_ind, inj_wf in enumerate(inj_wfs):
+
+    if verbose:
+        print "injection %d/%d" % (inj_ind+1, len(inj_wfs))
+        print inj_format % inj_wf.params
+
     # NB: sigmasq set during argmax_match
     match_tup = bank.argmax_match(inj_wf)
+
+    if verbose:
+        print "\tbest matching template:  ",
+        print tmplt_format % bank._templates[match_tup[1]].params
+        print "\tbest match:  %f\n" % match_tup[0]
+
     match_map[inj_ind] = (inj_ind, inj_wf.sigmasq) + match_tup
-    if verbose: progressbar.update(progressbar.value + 1)
     inj_wf.clear()  # prune inj waveform
     if not cache: bank.clear()
 
-print "total number of match calculations:", bank._nmatch
+
+if verbose:
+    print "total number of match calculations:", bank._nmatch
 
 # merge process and process_params tables, then complete ourselves
 table.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))

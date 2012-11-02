@@ -10,7 +10,7 @@ srand(42+$jobnum);
 system("mkdir /local/user/egoetz/$$");
 die "mkdir failed: $?" if $?;
 
-my $h0ul = 4.5709e-24;
+my $h0ul = 1.2e-23;
 my $Tsft = 1800.0;
 my $dur = 40551300.0;
 my $skygrid = "/home/egoetz/TwoSpect/mismatchDist/skygrid.dat";
@@ -97,7 +97,7 @@ sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
 outdirectory /home/egoetz/TwoSpect/mismatchDist/$jobnum
-sftType MFD
+sftType standard
 IFO H1
 markBadSFTs
 FFTplanFlag 1
@@ -206,7 +206,7 @@ sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
 outdirectory /home/egoetz/TwoSpect/mismatchDist/$jobnum
-sftType MFD
+sftType standard
 IFO H1
 markBadSFTs
 FFTplanFlag 1

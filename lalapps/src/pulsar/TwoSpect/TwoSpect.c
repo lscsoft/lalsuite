@@ -51,15 +51,14 @@
 //Global variables
 FILE *LOG = NULL, *ULFILE = NULL, *NORMRMSOUT = NULL;
 CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
-
+static const LALStatus empty_status;
 
 //Main program
 int main(int argc, char *argv[])
 {
    
    INT4 ii, jj;               //counter variables
-   LALStatus status;          //LALStatus structure
-   status.statusPtr = NULL;   //Set statuspointer to NULL
+   LALStatus status = empty_status;  //LALStatus structure
    char s[1000], t[1000], u[1000];   //Path and file name to LOG, ULFILE, and NORMRMSOUT
    time_t programstarttime, programendtime;
    struct tm *ptm;
@@ -1204,8 +1203,7 @@ REAL4Vector * readInSFTs(inputParamsStruct *input, REAL8 *normalization)
 {
    
    INT4 ii, jj;
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    SFTCatalog *catalog = NULL;
    
    //Set the start and end times in the LIGO GPS format
@@ -1310,8 +1308,7 @@ REAL4VectorSequence * readInMultiSFTs(inputParamsStruct *input, REAL8 *normaliza
 {
    
    INT4 ii, jj, kk;
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    SFTCatalog *catalog = NULL;
    
    LIGOTimeGPS start = LIGOTIMEGPSZERO, end = LIGOTIMEGPSZERO;
@@ -1436,8 +1433,7 @@ void slideTFdata(REAL4Vector *output, inputParamsStruct *input, REAL4Vector *tfd
 void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
    
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    REAL8 bias;
    INT4 ii, jj;
    INT4 totalfbins = numfbins + blksize - 1;
@@ -1452,9 +1448,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
 	 fprintf(stderr,"%s: XLALRngMedBias(%d) failed.\n", __func__, blksize);
          XLAL_ERROR_VOID(XLAL_EFUNC);
       }
-   } else {
-      bias = LAL_LN2;
-   }
+   } else  bias = LAL_LN2;
    REAL8 invbias = 1.0/(bias*1.0099993480677538);  //StackSlide normalization for 101 bins
    
    //Allocate for a single SFT data and the medians out of each SFT
@@ -1507,8 +1501,7 @@ void tfRngMeans(REAL4Vector *output, REAL4Vector *tfdata, INT4 numffts, INT4 num
 void multiTFRngMeans(REAL4VectorSequence *output, REAL4VectorSequence *multiTFdata, INT4 numffts, INT4 numfbins, INT4 blksize)
 {
    
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    REAL8 bias;
    INT4 ii, jj, kk;
    INT4 totalfbins = numfbins + blksize - 1;
@@ -1769,8 +1762,7 @@ void removeBadMultiSFTs(REAL4VectorSequence *multiTFdata, INT4VectorSequence *ba
 INT4Vector * detectLines_simple(REAL4Vector *TFdata, ffdataStruct *ffdata, inputParamsStruct *params)
 {
    
-   LALStatus status;
-   status.statusPtr = NULL;
+   LALStatus status = empty_status;
    
    INT4 blksize = 11, ii, jj;
    
@@ -2721,7 +2713,7 @@ INT4 readTwoSpectInputParams(inputParamsStruct *params, struct gengetopt_args_in
       fprintf(stderr,"Using Brent's method for root finding.\n");
    }
    
-   //SFT type MFD or vladimir (Vladimir's SFT generation program has a different normalization factor than Makefakedata)
+   //SFT type standard or vladimir (Vladimir's SFT generation program has a different normalization factor than standard v2)
    params->sftType = XLALCalloc(strlen(args_info.sftType_arg)+1, sizeof(*(params->sftType)));
    if (params->sftType==NULL) {
       fprintf(stderr, "%s: XLALCalloc(%zu) failed.\n", __func__, sizeof(*(params->sftType)));

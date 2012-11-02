@@ -98,6 +98,34 @@ class SBankNode(pipeline.CondorDAGNode):
         dag.add_node(self)
 
 
+class SBankSplitJob(inspiral.InspiralAnalysisJob):
+    def __init__(self,cp,dax=False, tag_base="ligolw_cbc_sbank_splitter"):
+        exec_name = 'lalapps_cbc_sbank_splitter'
+        extension = 'xml'
+        sections = ['split']
+        inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+        self.set_universe("local")
+        self.set_sub_file(tag_base+'.sub')
+        self.tag_base = tag_base
+        self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
+        self.set_stderr_file('logs/'+tag_base+'-$(macroid)-$(process).err')
+        self.add_condor_cmd('getenv','True')
+
+
+class SBankSplitNode(pipeline.CondorDAGNode):
+    def __init__(self, job, dag, bank, tag = None, p_node=[]):
+        pipeline.CondorDAGNode.__init__(self,job)
+        self.add_file_arg(bank)
+        if tag:
+            self.add_var_opt("user-tag", tag)
+        for p in p_node:
+            self.add_parent(p)
+        nbanks = int(self.job().get_opts()["nbanks"])
+        for i in xrange(nbanks):
+            self.add_output_file("H1-SBANK_SPLIT_%04d-%s.xml" % (i+1, tag))
+        dag.add_node(self)
+
+
 class SBankChooseMchirpBoundariesJob(inspiral.InspiralAnalysisJob):
     def __init__(self,cp,dax=False, tag_base="lalapps_cbc_sbank_choose_mchirp_boundaries"):
         exec_name = 'lalapps_cbc_sbank_choose_mchirp_boundaries'
@@ -298,7 +326,7 @@ cp.remove_option("sbank", "match-min")  # don't want it entering via add_ini_opt
 # set up bank generation
 # Two modes:
 #   1. generate coarse, partition mchirp space, generate sub-banks, ligolw_add
-#   2. take given bank and split it
+#   2. take given bank, split it, and sim it
 nbanks = int(cp.get("split","nbanks"))
 bank_names = []
 bank_nodes = []

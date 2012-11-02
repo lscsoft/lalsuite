@@ -107,14 +107,12 @@ void free_UpperLimitVector(UpperLimitVector *vector)
 // Reset the upperLimitStruct
 void reset_UpperLimitStruct(UpperLimit *ul)
 {
-   
    ul->fsig = NULL;
    ul->period = NULL;
    ul->moddepth = NULL;
    ul->ULval = NULL;
    ul->effSNRval = NULL;
-   
-}
+} /* reset_UpperLimitStruct() */
 
 //Free an upperLimitStruct
 void free_UpperLimitStruct(UpperLimit *ul)
@@ -141,7 +139,7 @@ void free_UpperLimitStruct(UpperLimit *ul)
       ul->effSNRval = NULL;
    }
    
-}
+} /* free_UpperLimitStruct() */
 
 
 //Determine the 95% confidence level upper limit at a particular sky location from the loudest IHS value
@@ -152,6 +150,7 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
    
    INT4 minrows = (INT4)round(2.0*params->dfmin*params->Tcoh)+1;
    
+   //Allocate vectors
    ul->fsig = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
    ul->period = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
    ul->moddepth = XLALCreateREAL8Vector((ihsmaxima->rows-minrows)+1);
@@ -210,7 +209,6 @@ void skypoint95UL(UpperLimit *ul, inputParamsStruct *params, ffdataStruct *ffdat
       //loop over frequency bins
       for (jj=0; jj<ffdata->numfbins-(ii-1); jj++) {
          INT4 locationinmaximavector = startpositioninmaximavector + jj;      //Current location in IHS maxima vector
-         //REAL8 noise = ihsfar->ihsdistMean->data[ii-2];                       //Expected noise
          REAL8 noise = ihsfar->expectedIHSVector->data[ihsmaxima->locations->data[locationinmaximavector] - 5];  //Expected noise
          
          //Sum across multiple frequency bins scaling noise each time with average noise floor

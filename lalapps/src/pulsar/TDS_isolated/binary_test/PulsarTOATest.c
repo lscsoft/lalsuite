@@ -25,6 +25,10 @@
 " --tim-file (-t)          TEMPO2 TOA (.tim) file\n"\
 " --ephem (-e)             Ephemeris type (DE200 or [default] DE405)\n"\
 " --clock (-c)             Clock correction file (default is none)\n"\
+" --simulated (-s)         Set if the TOA file is from simulated data\n\
+                          e.g. created with the TEMPO2 'fake' plugin:\n\
+                          tempo2 -gr fake -f pulsar.par -ndobs 1 -nobsd 5\n\
+                            -start 54832 -end 55562 -ha 8 -randha n -rms 0\n"\
 "\n"
 
 int verbose = 0;
@@ -34,6 +38,8 @@ typedef struct tagParams{
   char *timfile;
   char *ephem;
   char *clock;
+  
+  int simulated;
 }Params;
 
 void get_input_args(Params *pars, int argc, char *argv[]);
@@ -78,6 +84,8 @@ int main(int argc, char *argv[]){
   
   long offset;
   
+  TimeCorrectionType ttype;
+  
   get_input_args(&par, argc, argv);
  
   if( verbose ){
@@ -112,13 +120,20 @@ int main(int argc, char *argv[]){
       continue;
     }
     else{
-      char randstr1[256], randstr2[256], randstr3[256];
-      int randnum;
-      
       fseek(fpin, offset, SEEK_SET);
-    
-      fscanf(fpin, "%s%lf%lf%lf%d%s%s%s%d", filestr, &radioFreq, &TOA[i],
+      
+      /* is data is simulated with TEMPO2 fake plugin then it only has 5 columns */
+      if (par.simulated){
+        fscanf(fpin, "%s%lf%lf%lf%d", filestr, &radioFreq, &TOA[i],
+&num1, &telescope);
+      }
+      else{
+        char randstr1[256], randstr2[256], randstr3[256];
+        int randnum;
+        
+        fscanf(fpin, "%s%lf%lf%lf%d%s%s%s%d", filestr, &radioFreq, &TOA[i],
 &num1, &telescope, randstr1, randstr2, randstr3, &randnum);
+      }
       rf[i] = radioFreq;
       
       i++;
@@ -204,13 +219,6 @@ sun98-12-DE405.dat");
   
   edat = XLALInitBarycenter( earthFile, sunFile );
   
-  /* read in the time correction file */
-  sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
-TT2Teph_2008-2013.dat");
-  tdat = XLALInitTimeCorrections( tcFile );
-  
-  fprintf(stderr, "tdat.timeCorrs[0] = %.12lf, tdat.timeCorrs[%d] = %.12lf\n", tdat->timeCorrs[0], tdat->nentriesT-1, tdat->timeCorrs[tdat->nentriesT-1]);
-  
   if ( verbose ) fprintf(stderr, "I've set up the ephemeris files\n");
 
   fpout = fopen("pulsarPhase.txt", "w");
@@ -222,7 +230,24 @@ TT2Teph_2008-2013.dat");
      (LAL_C_SI*LAL_PC_SI/LAL_LYR_SI);
   }
   else baryinput.dInv = 0.0;  /* no parallax */
-    
+  
+  if( params.units == NULL ) ttype = TYPE_TEMPO2;
+  else if( !strcmp(params.units, "TDB") ) ttype = TYPE_TDB;
+  else if( !strcmp(params.units, "TCB") ) ttype = TYPE_TCB; /* same as TYPE_TEMPO2 */
+  else ttype = TYPE_TEMPO2; /*default */
+  
+  /* read in the time correction file */
+  if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
+    sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
+TT2Teph_2008-2014.dat");
+  }
+  else if ( ttype == TYPE_TDB ){
+    sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
+TT2TDB_2008-2014.dat"); 
+  }
+  
+  tdat = XLALInitTimeCorrections( tcFile );
+
   for(j=0;j<i;j++){
     double t; /* DM for current pulsar - make more general */
     double deltaD_f2;
@@ -262,13 +287,10 @@ TT2Teph_2008-2013.dat");
 
     /* calculate solar system barycentre time delay */
     //XLALBarycenterEarth( &earth, &baryinput.tgps, edat );
-    XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, TYPE_TEMPO2 );
+    XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, baryinput.site, tdat, ttype );
     XLALBarycenter( &emit, &baryinput, &earth );
-    
-    /* add in TCB to TDB linear drift delay */
-    //t += 1.55051979176e-8*(sat2tt - 43144.0003725)*86400.;
-    
-    fprintf(stderr, "%.16lf\n", emit.roemer);// + emit.erot);
+        
+    //fprintf(stderr, "%.16lf\n", emit.roemer + emit.erot);
     //fprintf(stderr, "shapiro = %.16le\n", emit.shapiro);
     
     /* correct to infinite observation frequency for dispersion measure */
@@ -280,8 +302,6 @@ TT2Teph_2008-2013.dat");
     /* calculate binary barycentre time delay */
     input.tb = t + (double)emit.deltaT;
     
-    //input.tb = (55013.771970116061109-44244.)*86400. - 51.184;
-    
     if(params.model!=NULL){
       XLALBinaryPulsarDeltaT(&output, &input, &params);
 
@@ -292,9 +312,9 @@ TT2Teph_2008-2013.dat");
     
     //fprintf(stderr, "%.16lf\n", output.deltaT);
     
-    //if( verbose ){
-    //  fprintf(stderr, "%.12lf\n", 44244 + (PPTime[j] + 51.184)/86400.);
-    //}
+    if( verbose ){
+      fprintf(stderr, "%.12lf\n", 44244 + (PPTime[j] + 51.184)/86400.);
+    }
     
     if(j==0){
       T = PPTime[0] - params.pepoch;
@@ -307,8 +327,8 @@ TT2Teph_2008-2013.dat");
     tt0 = PPTime[j] - PPTime[0];
     
     phase = f0*tt0 + 0.5*f1*tt0*tt0 + f2*tt0*tt0*tt0/6.0 + f3*tt0*tt0*tt0*tt0/24.;
-    //fprintf(stderr, "phase = %lf\n", phase);
-    phase = fmod(phase+0.5, 1.0);
+    
+    phase = fmod(phase+0.5, 1.0) - 0.5;
 
     fprintf(fpout, "%.9lf\t%lf\n", tt0, phase);
   }
@@ -326,17 +346,20 @@ void get_input_args(Params *pars, int argc, char *argv[]){
     { "tim-file",                 required_argument,  0, 't' },
     { "ephemeris",                required_argument,  0, 'e' },
     { "clock",                    required_argument,  0, 'c' },
+    { "simulated",                no_argument,        0, 's' },
     { "verbose",                  no_argument,     NULL, 'v' },
     { 0, 0, 0, 0 }
   };
 
-  char args[] = "hp:t:e:c:v";
+  char args[] = "hp:t:e:c:sv";
   char *program = argv[0];
   
   pars->parfile = NULL;
   pars->timfile = NULL;
   pars->ephem = NULL;
   pars->clock = NULL;
+  
+  pars->simulated = 0;
   
   /* get input arguments */
   while(1){
@@ -371,6 +394,9 @@ void get_input_args(Params *pars, int argc, char *argv[]){
         break;
       case 'c': /* clock file */
         pars->clock = XLALStringDuplicate( optarg );
+        break;
+      case 's': /* simulated data */
+        pars->simulated = 1;
         break;
       case '?':
         fprintf(stderr, "unknown error while parsing options\n" );

@@ -25,11 +25,10 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
-#define MAX_MCMC 20000 /* Maximum chain length, set to be higher than expected from a reasonable run */
+#define MAX_MCMC 5000 /* Maximum chain length, set to be higher than expected from a reasonable run */
 
 static INT4 __chainfile_iter=0;
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
-static void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 /* Prototypes for private "helper" functions. */
 //static void SamplePriorDiscardAcceptance(LALInferenceRunState *runState);
 static double logadd(double a,double b);
@@ -83,14 +82,24 @@ static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") && !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
 		  if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
 			  max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
-		  else max=MAX_MCMC; /* otherwise use the MAX_MCMC */
-                  if(max>MAX_MCMC) max=MAX_MCMC;
-                  LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max*4, runState->evolve) ;
-                  max=10;
-                  for(LALInferenceVariableItem *this=acls->head;this;this=this->next) { if(*(REAL8 *)this->value>max) max=(INT4) *(REAL8 *)this->value;}
-                  LALInferenceDestroyVariables(acls);
-                  free(acls);
-                  LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
+		  else max=4*MAX_MCMC; /* otherwise use the MAX_MCMC */
+          if(max>4*MAX_MCMC) max=4*MAX_MCMC;
+          LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max, runState->evolve) ;
+          max=0;
+          for(LALInferenceVariableItem *this=acls->head;this;this=this->next) {
+              if(LALInferenceCheckVariable(runState->algorithmParams,"verbose"))
+                  fprintf(stdout,"Autocorrelation length of %s: %i\n",this->name,(INT4) *(REAL8 *)this->value);
+              if(*(REAL8 *)this->value>max) {
+                  max=(INT4) *(REAL8 *)this->value;
+              }
+          }
+          LALInferenceDestroyVariables(acls);
+          free(acls);
+          if(max>MAX_MCMC){
+              fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,MAX_MCMC);
+              max=MAX_MCMC;
+          }
+          LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
 	}
         return(max);
 }
@@ -401,12 +410,12 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceAddVariable(runState->proposalArgs, "covarianceEigenvalues", &eigenValues, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
 	
 	LALInferenceAddVariable(runState->proposalArgs,"covarianceMatrix",cvm,LALINFERENCE_gslMatrix_t,LALINFERENCE_PARAM_OUTPUT);
-      
-        /* set up k-D tree if required and not already set */
-        if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
-             LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
-         !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
-          LALInferenceSetupkDTreeNSLivePoints( runState );
+    
+    /* set up k-D tree if required and not already set */
+    if ( ( LALInferenceGetProcParamVal(runState->commandLine,"--kDTree") ||
+                LALInferenceGetProcParamVal(runState->commandLine,"--kdtree")) &&
+            !LALInferenceCheckVariable( runState->proposalArgs, "kDTree" ) )
+        LALInferenceSetupkDTreeNSLivePoints( runState );
         
 	if(!LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")){
 	  INT4 tmp=200;
@@ -416,9 +425,9 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	LALInferenceSetVariable(runState->algorithmParams,"logLmin",&dblmax);
 	for(i=0;i<Nlive;i++) {
 	  runState->currentParams=runState->livePoints[i];
+      LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  runState->evolve(runState);
 	  logLikelihoods[i]=runState->likelihood(runState->livePoints[i],runState->data,runState->template);
-          LALInferenceAddVariable(runState->livePoints[i],"logw",&logw,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
 	  if(XLALPrintProgressBar((double)i/(double)Nlive)) fprintf(stderr,"\n");
 	}
 	
@@ -649,14 +658,17 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   FILE *chainfile=NULL;
   FILE *acffile=NULL;
   UINT4 i,j;
-  INT4 nPar=0; // = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
+  UINT4 nPar=0; // = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
   REAL8 **data_array=NULL;
   REAL8 **acf_array=NULL;
   LALInferenceVariableItem *this;
   REAL8 tolerance=0.01;
   INT4 thinning=10;
   max_iterations/=thinning;
+  /* Find the number and names of variables */
   for(this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) nPar++;
+  char **param_names=calloc(nPar,sizeof(char *));
+  for(i=0,this=runState->currentParams->head;this;this=this->next) if(this->vary!=LALINFERENCE_PARAM_FIXED && this->vary!=LALINFERENCE_PARAM_OUTPUT && this->type==LALINFERENCE_REAL8_t) param_names[i++]=this->name;
 
   REAL8 ACF,ACL,max=0;
   LALInferenceVariables *acls=calloc(1,sizeof(LALInferenceVariables));
@@ -673,9 +685,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
-  REAL8Vector *projection=NULL;
-
-  gsl_matrix *covarianceMatrix=NULL;
   runState->algorithmParams=&myAlgParams;
   runState->currentParams=&myCurrentParams;
   /* We can record write the MCMC chain to a file too */
@@ -720,31 +729,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   
   /* Get the location of the sample array */
   LALInferenceVariables *variables_array=*(LALInferenceVariables **)LALInferenceGetVariable(runState->algorithmParams,"outputarray");
-  LALInferenceVariables **pointer_array=calloc(max_iterations,sizeof(LALInferenceVariables *));
-  for(i=0;i<max_iterations;i++) pointer_array[i]=&(variables_array[i]);
-  
-   	/* Calculate the eigenvectors of the correlation matrix*/
-	LALInferenceNScalcCVM(&covarianceMatrix, pointer_array,max_iterations);
-
-   free(pointer_array);
-	/* Set up eigenvectors and eigenvalues. */
-	UINT4 N=covarianceMatrix->size1;
-	gsl_matrix *covCopy = gsl_matrix_alloc(N,N);
-	gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
-	gsl_vector *eValues = gsl_vector_alloc(N);
-
-	gsl_eigen_symmv_workspace *ws = gsl_eigen_symmv_alloc(N);
-	int gsl_status;
-	gsl_matrix_memcpy(covCopy, covarianceMatrix);
-	
-	if ((gsl_status = gsl_eigen_symmv(covCopy, eValues, eVectors, ws)) != GSL_SUCCESS) {
-	  XLALPrintError("Error in gsl_eigen_symmv (in %s, line %d): %d: %s\n", __FILE__, __LINE__, gsl_status, gsl_strerror(gsl_status));
-	  return ((LALInferenceVariables *)NULL);
-	}
-	
-	gsl_matrix_free(covarianceMatrix);
-	gsl_matrix_free(covCopy);
-	gsl_vector_free(eValues);
 
   /* Convert to a 2D array for ACF calculation */
   data_array=calloc(nPar,sizeof(REAL8 *));
@@ -753,15 +737,12 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     data_array[i]=calloc(max_iterations,sizeof(REAL8));
     acf_array[i]=calloc(max_iterations/2,sizeof(REAL8));
   }
-  /* Measure autocorrelation along eigenvectors for multivariate */
+  /* Measure autocorrelation in each dimension */
   /* Not ideal, should be measuring something like the det(autocorrelation-crosscorrelation matrix) */
   for (i=0;i<max_iterations;i++){
-    LALInferenceProjectSampleOntoEigenvectors( &variables_array[i], eVectors, &projection );
-    for(j=0;j<projection->length;j++) data_array[j][i]=projection->data[j];
+    for(j=0;j<nPar;j++) data_array[j][i]=*(REAL8 *)LALInferenceGetVariable(&variables_array[i],param_names[j]);
     LALInferenceDestroyVariables(&variables_array[i]);
   }
-  	gsl_matrix_free(eVectors);
-	XLALDestroyREAL8Vector(projection);
   free(variables_array);
   this=myCurrentParams.head;
   for(i=0;i<(UINT4)nPar;i++){
@@ -780,10 +761,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
 	    startflag=0;
         ACL*=(REAL8)thinning;
 	    if(ACL>max) max=ACL;
-	    LALInferenceAddVariable(acls,this->name,&ACL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+	    LALInferenceAddVariable(acls,param_names[i],&ACL,LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
         break;
       }
-   }   
+   }
+   if(LALInferenceCheckVariable(runState->algorithmParams,"verbose")) fprintf(stdout,"%s: mean= %lf, ACL=%lf\n",param_names[i],this_mean,ACL);
    do{this=this->next;}while(this && (this->vary==LALINFERENCE_PARAM_FIXED || this->vary==LALINFERENCE_PARAM_OUTPUT || this->type!=LALINFERENCE_REAL8_t));
   }
   if(acffile){
@@ -815,6 +797,7 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   runState->algorithmParams=oldAlgParams;
   if(chainfile) fclose(chainfile);
   if(acffile) fclose(acffile);
+  free(param_names);
   return(acls);
 }
 
