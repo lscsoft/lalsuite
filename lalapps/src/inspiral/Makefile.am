@@ -401,6 +401,7 @@ EXTRA_DIST = \
 	cbc_sbank_pipe.in \
 	cbc_sbank_plot_sim.in \
 	cbc_sbank_sim.in \
+	cbc_sbank_splitter.in \
 	$(DATA)
 
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
