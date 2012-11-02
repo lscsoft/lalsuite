@@ -151,7 +151,7 @@ CalculateRotationMatrix(
     }
     printf( "\n" );
   }*/
-  gsl_matrix_free( ab );
+  /*gsl_matrix_free( ab );*/
 
   return XLAL_SUCCESS;
 }
