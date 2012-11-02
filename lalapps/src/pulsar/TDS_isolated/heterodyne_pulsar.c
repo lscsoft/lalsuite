@@ -90,7 +90,7 @@ int main(int argc, char *argv[]){
   CHAR *pos=NULL;
 
   /* set error handler */
-  lalDebugLevel = 7;
+  //lalDebugLevel = 7;
   XLALSetErrorHandler(XLALAbortErrorHandler);
   
   #if TRACKMEMUSE
