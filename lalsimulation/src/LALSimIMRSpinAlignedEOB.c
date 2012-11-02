@@ -279,7 +279,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     }
   }
 
-  /* Allocate the values vector to contain the ICs */
+  /* Allocate the values vector to contain the initial conditions */
   /* Since we have aligned spins, we can use the 4-d vector as in the non-spin case */
   if ( !(values = XLALCreateREAL8Vector( 4 )) )
   {
@@ -348,8 +348,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   memcpy( s2Data, spin2, sizeof( s2Data ) );
 
   /* Calculate chiS and chiA */
-  /* XXX I am assuming that, since spins are aligned, it is okay to just use the z component XXX */
-  /* TODO: Check this is actually the way it works in LAL */
+
+
   chiS = 0.5 * (spin1[2] + spin2[2]);
   chiA = 0.5 * (spin1[2] - spin2[2]);
 
@@ -392,7 +392,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
   a = sqrt( a );*/
   seobParams.a = a = sigmaKerr->data[2];
-
+  /* a set to zero in SEOBNRv1, didn't know yet a good mapping from two physical spins to the test-particle limit Kerr spin */
   if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( &hCoeffs, eta, /*a*/0.0, chiS, chiA ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( sigmaKerr );
@@ -449,6 +449,12 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   tmpValues->data[4] = 4.3204065947459735/tmpValues->data[0];
 */
   /* Now convert to Spherical */
+  /* The initial conditions code returns Cartesian components of four vectors x, p, S1 and S2,
+   * in the special case that the binary starts on the x-axis and the two spins are aligned
+   * with the orbital angular momentum along the z-axis.
+   * Therefore, in spherical coordinates the initial conditions are
+   * r = x; phi = 0.; pr = px; pphi = r * py.
+   */
   values->data[0] = tmpValues->data[0];
   values->data[1] = 0.;
   values->data[2] = tmpValues->data[3];
@@ -456,7 +462,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
 
-  /* Now compute the spinning H coefficients, just in case they don't have the right values */
+  /* Now compute the spinning H coefficients and store them in seobCoeffs */
   if ( XLALSimIMRCalculateSpinEOBHCoeffs( &seobCoeffs, eta, a ) == XLAL_FAILURE )
   {    
     XLALDestroyREAL8Vector( tmpValues );
@@ -520,7 +526,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   values->data[1] = phiVec.data[hiSRndx];
   values->data[2] = prVec.data[hiSRndx];
   values->data[3] = pPhiVec.data[hiSRndx];
-
+  /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity, 
+   * or when any derivative of Hamiltonian becomes nan */
   integrator->stop = XLALSpinAlignedHiSRStopCondition;
 
   retLen = XLALAdaptiveRungeKutta4( integrator, &seobParams, values->data, 0., 20./mTScaled, deltaTHigh/mTScaled, &dynamicsHi );
