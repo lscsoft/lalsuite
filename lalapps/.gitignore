@@ -271,7 +271,6 @@ src/pulsar/templateBanks/lalapps_getMesh
 src/pulsar/templateBanks/lalapps_getMetric
 src/pulsar/templateBanks/lalapps_matchGrids
 src/pulsar/templateBanks/lalapps_skynet
-src/pulsar/templateBanks/lalapps_testFlatLatticeTilingPulsar
 src/pulsar/templateBanks/lalapps_testFlatPulsarMetric
 src/pulsar/templateBanks/lalapps_testLatticeCovering
 src/ring/lalapps_coh_PTF_inspiral
