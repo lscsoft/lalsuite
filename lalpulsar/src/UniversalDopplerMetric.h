@@ -147,18 +147,6 @@ typedef enum {
   DOPPLERCOORD_NU2,			/**< 'global correlation' f2dot coordinate nu_2 */
   DOPPLERCOORD_NU3,			/**< 'global correlation' f3dot coordinate nu_3 */
 
-  /** \name Karl's super-duper-sky coordinates */
-  /*@{*/
-  DOPPLERCOORD_KAPPA_S,			/**< Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate */
-  DOPPLERCOORD_SIGMA_S,			/**< Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate */
-  DOPPLERCOORD_KAPPA_O,			/**< Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
-  DOPPLERCOORD_SIGMA_O,			/**< Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate */
-
-  DOPPLERCOORD_OMEGA_0,			/**< Karl's coordinates 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
-  DOPPLERCOORD_OMEGA_1,			/**< Karl's coordinates 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
-  DOPPLERCOORD_OMEGA_2,			/**< Karl's coordinates 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
-  DOPPLERCOORD_OMEGA_3,			/**< Karl's coordinates 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
-  /*@}*/
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
