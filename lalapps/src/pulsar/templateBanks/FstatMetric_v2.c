@@ -344,7 +344,7 @@ initUserVars (UserVariables_t *uvar)
   uvar->detMotionType = DETMOTION_SPIN_ORBIT;
   uvar->metricType = 0;	/* by default: compute only phase metric */
 
-  if ( (uvar->coords = XLALCreateStringVector ( "Freq_Nat", "Alpha", "Delta", "f1dot_Nat", NULL )) == NULL ) {
+  if ( (uvar->coords = XLALCreateStringVector ( "freq", "alpha", "delta", "f1dot", NULL )) == NULL ) {
     LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
     XLAL_ERROR ( XLAL_ENOMEM );
   }

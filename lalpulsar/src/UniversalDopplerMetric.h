@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 Karl Wette
  * Copyright (C) 2008, 2009 Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -20,7 +21,7 @@
 /**
  * \file
  *
- * \author{Reinhard Prix}
+ * \author Reinhard Prix, Karl Wette
  *
  * Function to compute the full F-statistic metric, including
  * antenna-pattern functions from multi-detector, derived in \ref Prix07.
@@ -111,42 +112,34 @@ typedef enum {
  * supported by the metric codes in FstatMetric
  */
 typedef enum {
-  DOPPLERCOORD_NONE = -1,		/**< used to denote 'empty', i.e. no Doppler component */
-  DOPPLERCOORD_FREQ_SI = 0,		/**< frequency in Hz */
-  DOPPLERCOORD_F1DOT_SI,		/**< f1dot = dFreq/dt in Hz/s */
-  DOPPLERCOORD_F2DOT_SI,		/**< f2dot = d2Freq/dt2 in Hz/s^2 */
-  DOPPLERCOORD_F3DOT_SI,		/**< f3dot = d3Freq/dt3 in Hz/s^3 */
+  DOPPLERCOORD_NONE = -1,	/**< No Doppler component */
 
-  DOPPLERCOORD_ALPHA_RAD,		/**< right-ascension (longitude) in radians, using coord-system of ephemeris-file */
-  DOPPLERCOORD_DELTA_RAD,		/**< declination (latitude) in radians,  using coord-system of ephemeris-file */
+  DOPPLERCOORD_FREQ,		/**< Frequency [Units: Hz]. */
+  DOPPLERCOORD_F1DOT,		/**< First spindown [Units: Hz/s]. */
+  DOPPLERCOORD_F2DOT,		/**< Second spindown [Units: Hz/s^2]. */
+  DOPPLERCOORD_F3DOT,		/**< Third spindown [Units: Hz/s^3]. */
 
-  DOPPLERCOORD_FREQ_NAT,		/**< frequency in "natural units": om0 = 2pi f * (Tspan/2) */
-  DOPPLERCOORD_F1DOT_NAT,		/**< f1dot in "natural units":     om1 = 2pi f1dot/2! * (Tspan/2)^2 */
-  DOPPLERCOORD_F2DOT_NAT,		/**< f2dot in "natural units":     om2 = 2pi f2dot/3! * (Tspan/2)^3 */
-  DOPPLERCOORD_F3DOT_NAT,		/**< f3dot in "natural units":     om3 = 2pi f3dot/4! * (Tspan/2)^4 */
+  DOPPLERCOORD_GC_NU0,		/**< Global correlation frequency [Units: Hz]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU1,		/**< Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU2,		/**< Global correlation second spindown [Units: Hz/s^2]. Activates 'reduced' detector position. */
+  DOPPLERCOORD_GC_NU3,		/**< Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position. */
 
-  DOPPLERCOORD_ALPHA_NAT,		/**< right-ascension (longitude) in 'natural units' dAlpha * (f * T / (Vorb/c) ) */
-  DOPPLERCOORD_DELTA_NAT,		/**< declination (latitude) in 'natural units' dDelta * (f * T / (Vorb/c) ) */
+  DOPPLERCOORD_ALPHA,		/**< Right ascension [Units: radians]. Uses 'reduced' detector position. */
+  DOPPLERCOORD_DELTA,		/**< Declination [Units: radians]. Uses 'reduced' detector position. */
 
-  DOPPLERCOORD_NECL_X_NAT,		/**< x-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
-  DOPPLERCOORD_NECL_Y_NAT,		/**< y-component of sky-position n in ECLIPTIC Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_N2X_EQU,		/**< X component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
+  DOPPLERCOORD_N2Y_EQU,		/**< Y component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
 
-  DOPPLERCOORD_NEQU_X_NAT,		/**< x-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
-  DOPPLERCOORD_NEQU_Y_NAT,		/**< y-component of sky-position n in EQUATORIAL Cartesian coordinates (in natural units: 2pi*Rorb/c*f) */
+  DOPPLERCOORD_N2X_ECL,		/**< X component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
+  DOPPLERCOORD_N2Y_ECL,		/**< Y component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
 
-  DOPPLERCOORD_N3X_EQU,			/**< unconstrained sky-vector n3: equatorial-x coordinate */
-  DOPPLERCOORD_N3Y_EQU,			/**< unconstrained sky-vector n3: equatorial-y coordinate */
-  DOPPLERCOORD_N3Z_EQU,			/**< unconstrained sky-vector n3: equatorial-z coordinate */
+  DOPPLERCOORD_N3X_EQU,		/**< X component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3Y_EQU,		/**< Y component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+  DOPPLERCOORD_N3Z_EQU,		/**< Z component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
 
-  DOPPLERCOORD_N3X_ECL,			/**< unconstrained sky-vector n3: ecliptic-x coordinate */
-  DOPPLERCOORD_N3Y_ECL,			/**< unconstrained sky-vector n3: ecliptic-y coordinate */
-  DOPPLERCOORD_N3Z_ECL,			/**< unconstrained sky-vector n3: ecliptic-z coordinate */
-
-  DOPPLERCOORD_NU0,			/**< 'global correlation' frequency coordinate nu_0 */
-  DOPPLERCOORD_NU1,			/**< 'global correlation' f1dot coordinate nu_1 */
-  DOPPLERCOORD_NU2,			/**< 'global correlation' f2dot coordinate nu_2 */
-  DOPPLERCOORD_NU3,			/**< 'global correlation' f3dot coordinate nu_3 */
-
+  DOPPLERCOORD_N3X_ECL,		/**< X component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3Y_ECL,		/**< Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
+  DOPPLERCOORD_N3Z_ECL,		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
 
   DOPPLERCOORD_LAST
 } DopplerCoordinateID;
