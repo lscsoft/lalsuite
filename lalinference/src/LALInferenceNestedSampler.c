@@ -692,6 +692,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   if(ppt){
     sprintf(chainfilename,"%s.%i",ppt->value,__chainfile_iter);
     chainfile=fopen(chainfilename,"w");
+    for(i=0;i<nPar;i++) fprintf(chainfile,"%s ",param_names[i]);
+    fprintf(chainfile,"\n");
     LALInferenceAddVariable(&myAlgParams,"outfile",&chainfile,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
   }
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--acf-file");
@@ -770,6 +772,8 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   }
   if(acffile){
   /* Write out the ACF */
+  for(j=0;j<(UINT4)nPar;j++) fprintf(acffile,"%s ",param_names[j]);
+  fprintf(acffile,"\n");
   for(i=0;i<max_iterations/2;i++){
     for(j=0;j<(UINT4)nPar;j++) fprintf(acffile,"%f ",acf_array[j][i]);
     fprintf(acffile,"\n");
