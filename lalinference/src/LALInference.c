@@ -1190,6 +1190,7 @@ void LALInferenceLogSampleToArray(LALInferenceRunState *state, LALInferenceVaria
 {
   LALInferenceVariables *output_array=NULL;
   UINT4 N_output_array=0;
+  LALInferenceSortVariablesByName(vars);
   LALInferenceLogSampleToFile(state,vars);
 
   /* Set up the array if it is not already allocated */

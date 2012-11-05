@@ -1664,8 +1664,6 @@ void initVariables(LALInferenceRunState *state)
       sigmaVec->data[i] = sqrt(gsl_matrix_get(covM, i, i)); /* Single-parameter sigma. */
     }
 
-    LALInferenceAddVariable(state->proposalArgs, LALInferenceSigmaJumpName, &sigmaVec, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED);
-
     /* Set up eigenvectors and eigenvalues. */
     gsl_matrix *eVectors = gsl_matrix_alloc(N,N);
     gsl_vector *eValues = gsl_vector_alloc(N);

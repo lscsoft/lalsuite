@@ -26,6 +26,7 @@
 #define CVS_NAME_STRING "$Name$"
 
 #define MAX_MCMC 5000 /* Maximum chain length, set to be higher than expected from a reasonable run */
+#define ACF_TOLERANCE 0.01 /* Desired maximum correlation of MCMC samples */
 
 static INT4 __chainfile_iter=0;
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState);
@@ -662,7 +663,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   REAL8 **data_array=NULL;
   REAL8 **acf_array=NULL;
   LALInferenceVariableItem *this;
-  REAL8 tolerance=0.01;
   INT4 thinning=10;
   max_iterations/=thinning;
   /* Find the number and names of variables */
@@ -685,14 +685,21 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
   LALInferenceRemoveVariable(&myAlgParams,"Nmcmc");
   LALInferenceAddVariable(&myAlgParams,"Nmcmc",&thinning,LALINFERENCE_INT4_t,LALINFERENCE_PARAM_OUTPUT);
 
+  LALInferenceSortVariablesByName(&myCurrentParams);
   runState->algorithmParams=&myAlgParams;
   runState->currentParams=&myCurrentParams;
+  LALInferenceVariables **livePoints=runState->livePoints;
+  UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
+  UINT4 BAILOUT=100; /* this should be the same as the bailout in the sampler */
+  REAL8 accept=0.0;
   /* We can record write the MCMC chain to a file too */
   ppt=LALInferenceGetProcParamVal(runState->commandLine,"--acf-chainfile");
   if(ppt){
     sprintf(chainfilename,"%s.%i",ppt->value,__chainfile_iter);
     chainfile=fopen(chainfilename,"w");
-    for(i=0;i<nPar;i++) fprintf(chainfile,"%s ",param_names[i]);
+    LALInferenceCopyVariables(livePoints[0],&myCurrentParams);
+    LALInferenceSortVariablesByName(&myCurrentParams);
+    for(this=myCurrentParams.head;this;this=this->next) fprintf(chainfile,"%s ",this->name);
     fprintf(chainfile,"\n");
     LALInferenceAddVariable(&myAlgParams,"outfile",&chainfile,LALINFERENCE_void_ptr_t,LALINFERENCE_PARAM_FIXED);
   }
@@ -702,10 +709,6 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
     acffile=fopen(acf_file_name,"w");
   }
   __chainfile_iter++;
-  LALInferenceVariables **livePoints=runState->livePoints;
-  UINT4 Nlive = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nlive");
-  UINT4 BAILOUT=100; /* this should be the same as the bailout in the sampler */
-  REAL8 accept=0.0;
   do{ /* Pick a random sample that isn't trapped in some corner*/
 	UINT4 idx=gsl_rng_uniform_int(runState->GSLrandom,Nlive);
 	/* Copy the variable to avoid over-writing one of the live points */
@@ -755,11 +758,11 @@ LALInferenceVariables *LALInferenceComputeAutoCorrelation(LALInferenceRunState *
    int startflag=1;
    ACF=1.;
    /* Use GSL to compute the ACF */
-   for(UINT4 lag=0;ACF>=tolerance&&lag<max_iterations/2;lag++){
+   for(UINT4 lag=0;ACF>=ACF_TOLERANCE&&lag<max_iterations/2;lag++){
       ACF=(REAL8) gsl_stats_correlation(&data_array[i][0], 1, &data_array[i][lag], 1, max_iterations-lag);
       acf_array[i][lag]=ACF;
       ACL+=2.0*ACF;
-      if((ACF<tolerance && startflag) || lag==max_iterations/2-1){
+      if((ACF<ACF_TOLERANCE && startflag) || lag==max_iterations/2-1){
 	    startflag=0;
         ACL*=(REAL8)thinning;
 	    if(ACL>max) max=ACL;
