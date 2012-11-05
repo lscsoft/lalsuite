@@ -117,6 +117,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "fft-level",               required_argument, 0, '|' },
     { "cluster-window",          required_argument, 0, '4' },
     { "inj-search-window",       required_argument, 0, '3' },
+    { "ligo-calibrated-data",    required_argument, 0, '7' }, 
+    { "virgo-calibrated-data",   required_argument, 0, '8' }, 
     { 0, 0, 0, 0 }
   };
   char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:6:<:>:!:&:(:):#:|";
@@ -435,6 +437,40 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case '3': /* Injection search window */
         localparams.injSearchWindow = atof( optarg );
         break;
+      case '7':
+        if (!strcmp("real_4", optarg))
+        {
+          localparams.ligoDoubleData = 0;
+        }
+        else if (!strcmp("real_8", optarg))
+        {
+          localparams.ligoDoubleData = 1;
+        }
+        else
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+                  "unknown data type specified;\n"
+                  "%s (must be one of: real_4, real_8)\n",
+                  long_options[option_index].name, optarg);
+        }
+        break;
+      case '8':
+        if (!strcmp("real_4", optarg))
+        {
+          localparams.virgoDoubleData = 0;
+        }
+        else if (!strcmp("real_8", optarg))
+        {
+          localparams.virgoDoubleData = 1;
+        }
+        else
+        {
+          fprintf(stderr, "invalid argument to --%s:\n"
+                  "unknown data type specified;\n"
+                  "%s (must be one of: real_4, real_8)\n",
+                  long_options[option_index].name, optarg);
+        }
+        break;
      case '?':
         error( "unknown error while parsing options\n" );
      default:
@@ -537,6 +573,10 @@ int coh_PTF_default_params( struct coh_PTF_params *params )
 
   params->approximant = NumApproximants;
   params->order = LAL_PNORDER_NUM_ORDER;
+
+  /* numeric type for data, set to S6 data options */
+  params->ligoDoubleData = 1;
+  params->virgoDoubleData = 0;
 
   return 0;
 }
@@ -764,6 +804,9 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--sample-rate=srate        decimate data to be at sample rate srate (Hz)\n" );
 
   fprintf( stderr, "\ncalibration options:\n" );
+  fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
+  fprintf( stderr, "--ligo-calibrated-data=TYPE   LIGO calibrated data of TYPE real_4 or real_8\n");
+  fprintf( stderr, "--virgo-calibrated-data=TYPE   Virgo calibrated data of TYPE real_4 or real_8\n");
   fprintf( stderr, "--strain-data              data is strain (already calibrated)\n" );
   fprintf( stderr, "--dynamic-range-factor=dynfac  scale calibration by factor dynfac\n" );
   fprintf( stderr, "--fft-level=PLAN Set the fft plan to use level=PLAN\n" );
