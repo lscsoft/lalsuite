@@ -72,6 +72,9 @@ UINT4 LALInferenceMCMCSamplePriorNTimes(LALInferenceRunState *runState, UINT4 N)
  */
 void LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState);
 
+/* Cache wrapper around the sloppy sampler */
+void LALInferenceNestedSamplingCachedSampler(LALInferenceRunState *runState);
+
 /* REAL8 mean(REAL8 *array,int N); */
 REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG);
 
