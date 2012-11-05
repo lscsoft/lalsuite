@@ -113,6 +113,12 @@ const struct {
   [DOPPLERCOORD_N3Y_ECL] = {"n3y_ecl", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
   [DOPPLERCOORD_N3Z_ECL] = {"n3z_ecl", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
+  [DOPPLERCOORD_N3SX_EQU] = {"n3sx_equ", SCALE_R/LAL_C_SI, "X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3SY_EQU] = {"n3sy_equ", SCALE_R/LAL_C_SI, "Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+
+  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl", SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl", SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+
 };
 
 /*---------- DEFINES ----------*/
@@ -581,6 +587,20 @@ CWPhaseDeriv_i ( double tt, void *params )
       break;
     case DOPPLERCOORD_N3Z_ECL:		/**< Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]. */
       ret = LAL_TWOPI * Freq * ecl_pos[2];
+      break;
+
+    case DOPPLERCOORD_N3SX_EQU:	/**< X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * spin_posvel.pos[0];
+      break;
+    case DOPPLERCOORD_N3SY_EQU:	/**< Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * spin_posvel.pos[1];
+      break;
+
+    case DOPPLERCOORD_N3OX_ECL:	/**< X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[0];
+      break;
+    case DOPPLERCOORD_N3OY_ECL:	/**< Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]. */
+      ret = LAL_TWOPI * Freq * ecl_orbit_pos[1];
       break;
 
     default:
