@@ -2170,14 +2170,12 @@ and the other 19 seconds come from the leap seonds added between the TAI and
 UTC up to the point of definition of GPS time at UTC 01/01/1980 (see
 http://www.stjarnhimlen.se/comp/time.html for details) */
 
-/* Matt - you have tested these function using the radio pulsar data that Michael
-Kramer sent you and they are correct and are especially needed for the binary system
-epochs */
-
 /* a very good paper describing the tranforms between different time systems
 and why they are necessary can be found in Seidelmann and Fukushima, A&A 265
 (1992) http://ukads.nottingham.ac.uk/abs/1992A%26A...265..833S */
 
+/* This function converts a MJD format time corrected to Terrestrial Time (TT)
+ * into an equivalent GPS time */
 REAL8 LALTTMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
 
@@ -2188,19 +2186,25 @@ REAL8 LALTTMJDtoGPS(REAL8 MJD){
   }
 
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
-start of GPS time */
+   * start of GPS time */
   GPS = (MJD-44244.)*86400. - 51.184;
 
   return GPS;
 }
 
 
-/* Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
- * Einstein delay) when correcting a GPS time on the Earth to the solar system
- * barycenter, so in general this function should not be needed. */
+/* If you have an MJD arrival time on the Earth then this will convert it to 
+ * the equivalent GPS time in TDB (see Table 1 of Seidelmann and Fukushima, 
+ * Astronomy & Astrophysics, 265, 833-838 (1992).
+ * 
+ * Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
+ * Einstein delay) when correcting a GPS time on the Earth to TDB. Also, for
+ * TEMPO produced pulsar epochs given in MJD these are already in the TDB
+ * system and an equivalent GPS time in the TDB can be calculated just using 
+ * LALTTMJDtoGPS.*/
 REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
-  REAL8 Tdiff, TDBtoTT;
+  REAL8 T, TDBtoTT;
 
   /* Check not before the start of GPS time (MJD 44244) */
   if(MJD < 44244.){
@@ -2208,27 +2212,42 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
     exit(0);
   }
 
-  /* use factors from Seidelmann and Fukushima (their factors in the sin terms
-     are ~36525 times larger than what I use here as the time T they use is in
-     Julian centuries rather than Julian days) */
-  Tdiff = MJD + (2400000.5-2451545.0);
+  /* use factors from Table 1 of Seidelmann and Fukushima, Astronomy & 
+   * Astrophysics, 265, 833-838 (1992) where TDB = TDT + P
+   * and:
+   * P = 0.0016568 sin(35999.37 degs x T + 357.5 degs) +
+         0.0000224 sin(32964.5 degs x T + 246.0 degs) +
+         0.0000138 sin(71998.7 degs x T + 355.0 degs) +
+         0.0000048 sin(3034.9 degs x T + 25.0 degs) +
+         0.0000047 sin(34777.3 degs x T + 230.0 degs)
+   * and T is the elapsed time from J2000 (which has a Julian day date of
+   * JD 2451545.0) in Julian centuries.*/
+  T = MJD + (2400000.5-2451545.0); /* 2400000.5 is the Julian day defining 
+                                    * MJD start epoch the. */ 
+  T /= 36525.; /* covert days to Julian centuries */
 
   /* time diff in seconds (the Einstein delay) */
-  TDBtoTT = 0.0016568*sin((357.5*Tdiff + 0.98560028) * LAL_PI_180) +
-            0.0000224*sin((246.0*Tdiff + 0.90251882) * LAL_PI_180) +
-            0.0000138*sin((355.0*Tdiff + 1.97121697) * LAL_PI_180) +
-            0.0000048*sin((25.0*Tdiff + 0.08309103) * LAL_PI_180) +
-            0.0000047*sin((230.0*Tdiff + 0.95215058) *LAL_PI_180);
+  TDBtoTT = 0.0016568*sin((35999.37*T + 357.5) * LAL_PI_180) +
+            0.0000224*sin((32964.5*T +  246.0) * LAL_PI_180) +
+            0.0000138*sin((71998.7*T +  355.0) * LAL_PI_180) +
+            0.0000048*sin((3034.9*T + 25.0) * LAL_PI_180) +
+            0.0000047*sin((34777.3*T + 230.0) *LAL_PI_180);
 
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
-start of GPS time */
+   * start of GPS time */
   GPS = (MJD-44244.)*86400. - 51.184 - TDBtoTT;
 
   return GPS;
 }
 
-/*TEMPO2 uses TCB rather than TDB so have another function for that conversion*/
+/* If you have an MJD arrival time on the Earth then this will convert it to 
+ * the equivalent GPS time in TCB (see Table 1 of Seidelmann and Fukushima, 
+ * Astronomy & Astrophysics, 265, 833-838, 1992).
+ * 
+ * Note that for default TEMPO2 produced pulsar epochs given in MJD these are
+ * already in the TCB system and an equivalent GPS time in the TCB can be
+ * calculated just using LALTTMJDtoGPS. */
 REAL8 LALTCBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
   REAL8 Tdiff;
@@ -2240,7 +2259,9 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
     exit(0);
   }
 
-  /* from Seidelmann and Fukushima */
+  /* from Seidelmann and Fukushima we have a linear drift term:
+   * TCB - TDB = 1.550506e-8 x (JD - 2443144.5) x 86400
+   */
   Tdiff = (MJD + 2400000.5 - 2443144.5)*86400.;
   TCBtoTDB = 1.550506e-8 * Tdiff;
 
