@@ -40,8 +40,8 @@ def compute_mchirp(m1, m2):
 
 def project_hplus_hcross(hplus, hcross, theta, phi, psi):
     # compute antenna factors Fplus and Fcross
-    Fp = (1 + np.cos(theta)**2)*np.cos(2*phi)*np.cos(2*psi) - np.cos(theta)*np.sin(2*phi)*np.sin(2*psi)
-    Fc = (1 + np.cos(theta)**2)*np.cos(2*phi)*np.sin(2*psi) + np.cos(theta)*np.sin(2*phi)*np.cos(2*psi)
+    Fp = 0.5*(1 + np.cos(theta)**2)*np.cos(2*phi)*np.cos(2*psi) - np.cos(theta)*np.sin(2*phi)*np.sin(2*psi)
+    Fc = 0.5*(1 + np.cos(theta)**2)*np.cos(2*phi)*np.sin(2*psi) + np.cos(theta)*np.sin(2*phi)*np.cos(2*psi)
 
     # form strain signal in detector
     hoft = lal.CreateREAL8TimeSeries("h(t)", hplus.epoch, hplus.f0, hplus.deltaT, lal.lalSecondUnit, hplus.data.length)
@@ -55,7 +55,7 @@ def compute_sigmasq(htilde, deltaF):
     Find norm of whitened h(f) array.
     """
     # vdot is dot with complex conjugation
-    return float(np.vdot(htilde, htilde).real * (4 * deltaF / (2 * len(htilde) - 2)))
+    return float(np.vdot(htilde, htilde).real * 4 * deltaF)
 
 
 def FrequencySeries_to_COMPLEX8FrequencySeries(fs):
