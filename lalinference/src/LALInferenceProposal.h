@@ -81,6 +81,11 @@
 
 #include <lal/LALInference.h>
 
+#define MAX_STRLEN 512
+#define ADAPTSUFFIX "adapt_sigma"
+#define ACCEPTSUFFIX "accepted"
+#define PROPOSEDSUFFIX "proposed"
+
 extern const char *cycleArrayName;
 extern const char *cycleArrayLengthName;
 extern const char *cycleArrayCounterName;
@@ -105,10 +110,6 @@ extern const char *distanceQuasiGibbsProposalName;
 extern const char *orbitalPhaseQuasiGibbsProposalName;
 extern const char *extrinsicParamProposalName;
 extern const char *KDNeighborhoodProposalName;
-
-/** The name of the variable that holds the vector of single-parameter
-    jump widths. */
-extern const char *LALInferenceSigmaJumpName;
 
 /** The name of the variable that will store the name of the current
     proposal function. */

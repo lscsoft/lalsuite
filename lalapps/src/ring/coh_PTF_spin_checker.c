@@ -150,11 +150,6 @@ int main( int argc, char **argv )
     if ( params->haveTrig[ifoNumber] )
     {
       /* Read in data from the various ifos */
-      params->doubleData = 1;
-      if ( params->simData )
-          params->doubleData = 0;
-      else if ( ifoNumber == LAL_IFO_V1 )
-          params->doubleData = 0;
       channel[ifoNumber] = coh_PTF_get_data(params,params->channel[ifoNumber],\
                                params->dataCache[ifoNumber],ifoNumber );
       coh_PTF_rescale_data (channel[ifoNumber],1E20);

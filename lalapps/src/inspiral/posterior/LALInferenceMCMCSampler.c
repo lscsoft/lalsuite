@@ -366,9 +366,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   /* Adaptation settings */
   LALInferenceSetupAdaptiveProposals(runState);
-  REAL8Vector *PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-  REAL8Vector *PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-  REAL8Vector *sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceSigmaJumpName));
   INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
   INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));     // Sets decay of adaption function
   INT4  adaptLength       = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptLength"));// Number of iterations to adapt before turning off
@@ -809,28 +806,32 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       fprintf(chainoutput,"\n");
       fflush(chainoutput);
 
-      if (adaptationOn == 1) {
-        if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
-          fseek(statfile, 0L, SEEK_END);
-          fprintf(statfile,"%d\t",i);
-
-          if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
-            if (LALInferenceCheckVariable(runState->proposalArgs, "s_gamma")) {
-              s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
-            } else {
-              s_gamma = 0.0;
-            }
-            fprintf(statfile,"%f\t",s_gamma);
-            for (p=0; p<nPar; ++p) {
-              fprintf(statfile,"%g\t",sigmas->data[p]);
-            }
-            for (p=0; p<nPar; ++p) {
-              fprintf(statfile,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
-            }
-          }
-          fprintf(statfile,"\n");
-          fflush(statfile);
+      if (adaptationOn == 1 && LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
+        fseek(statfile, 0L, SEEK_END);
+        fprintf(statfile,"%d\t",i);
+        if (LALInferenceCheckVariable(runState->proposalArgs, "s_gamma")) {
+          s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
+        } else {
+          s_gamma = 0.0;
         }
+        fprintf(statfile,"%f\t",s_gamma);
+        
+        for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
+            char tmpname[MAX_STRLEN]="";
+            sprintf(tmpname,"%s_%s",item->name,ADAPTSUFFIX);
+            REAL8 *sigma=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+              fprintf(statfile,"%g\t",*sigma);
+        }
+        for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
+            char tmpname[MAX_STRLEN]=""; 
+            sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
+            REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+            sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+            REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+              fprintf(statfile,"%f\t",*accepted/( *proposed==0 ? 1.0 : *proposed ));
+        }
+        fprintf(statfile,"\n");
+        fflush(statfile);
       }
 
       if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")){
