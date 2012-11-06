@@ -21,6 +21,7 @@ lalsimulation-*.tar.gz
 lalsimulation.pc
 lalsimulation.spec
 libtool
+python/__init__.py
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.h
 src/lalsim-bh-qnmode
@@ -40,4 +41,3 @@ test/TestEOBNRv2
 test/TestSpinTaylorT4Dynamics
 test/eobHPlusCross.dat
 test/simulation.dat
-python/__init__.py
