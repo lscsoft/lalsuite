@@ -140,15 +140,15 @@ int XLALSimInspiralREAL8WaveTaper(
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-COMPLEX16 XLALSimInspiralPNMode22(
-		REAL8 v,      /**< post-Newtonian parameter */
-	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 v0,     /**< tail gauge parameter */
-	       	REAL8 m1,     /**< mass of companion 1 */
-	       	REAL8 m2,     /**< mass of companion 2 */
-		REAL8 r,      /**< distance of source */
-		int O         /**< twice post-Newtonian order */
-		);
+COMPLEX16TimeSeries *XLALSimInspiralPNMode22(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
 
 /**
  * Computes h(2,1) mode of spherical harmonic decomposition of
@@ -159,15 +159,34 @@ COMPLEX16 XLALSimInspiralPNMode22(
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-COMPLEX16 XLALSimInspiralPNMode21(
-		REAL8 v,      /**< post-Newtonian parameter */
-	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 v0,     /**< tail gauge parameter */
-	       	REAL8 m1,     /**< mass of companion 1 */
-	       	REAL8 m2,     /**< mass of companion 2 */
-		REAL8 r,      /**< distance of source */
-		int O         /**< twice post-Newtonian order */
-		);
+COMPLEX16TimeSeries *XLALSimInspiralPNMode21(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(2,0) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (81) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode20(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
 
 /**
  * Computes h(3,3) mode of spherical harmonic decomposition of
@@ -178,15 +197,15 @@ COMPLEX16 XLALSimInspiralPNMode21(
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-COMPLEX16 XLALSimInspiralPNMode33(
-		REAL8 v,      /**< post-Newtonian parameter */
-	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 v0,     /**< tail gauge parameter */
-	       	REAL8 m1,     /**< mass of companion 1 */
-	       	REAL8 m2,     /**< mass of companion 2 */
-		REAL8 r,      /**< distance of source */
-		int O         /**< twice post-Newtonian order */
-		);
+COMPLEX16TimeSeries *XLALSimInspiralPNMode33(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
 
 /**
  * Computes h(3,2) mode of spherical harmonic decomposition of
@@ -197,15 +216,15 @@ COMPLEX16 XLALSimInspiralPNMode33(
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-COMPLEX16 XLALSimInspiralPNMode32(
-		REAL8 v,      /**< post-Newtonian parameter */
-	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 v0,     /**< tail gauge parameter */
-	       	REAL8 m1,     /**< mass of companion 1 */
-	       	REAL8 m2,     /**< mass of companion 2 */
-		REAL8 r,      /**< distance of source */
-		int O         /**< twice post-Newtonian order */
-		);
+COMPLEX16TimeSeries *XLALSimInspiralPNMode32(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
 
 /**
  * Computes h(3,1) mode of spherical harmonic decomposition of
@@ -216,16 +235,376 @@ COMPLEX16 XLALSimInspiralPNMode32(
  * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
  * Orbit\", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
  */
-COMPLEX16 XLALSimInspiralPNMode31(
-		REAL8 v,      /**< post-Newtonian parameter */
-	       	REAL8 phi,    /**< orbital phase */
-	       	REAL8 v0,     /**< tail gauge parameter */
-	       	REAL8 m1,     /**< mass of companion 1 */
-	       	REAL8 m2,     /**< mass of companion 2 */
-		REAL8 r,      /**< distance of source */
-		int O         /**< twice post-Newtonian order */
-		);
+COMPLEX16TimeSeries *XLALSimInspiralPNMode31(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
 
+/**
+ * Computes h(3,0) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (85) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode30(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(4,4) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (86) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode44(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(4,3) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (87) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode43(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(4,2) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (88) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode42(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(4,1) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (89) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode41(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(4,0) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (90) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode40(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(5,5) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (91) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode55(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(5,4) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (92) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode54(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(5,3) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (93) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode53(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(5,2) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (94) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode52(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(5,1) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (95) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode51(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(5,0) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * THIS MODE IS ZERO TO THE ORDER CONSIDERED IN:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode50(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,6) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (96) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode66(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,5) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (97) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode65(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,4) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (98) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode64(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,3) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (99) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode63(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,2) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (100) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode62(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,1) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * Implements Equation (101) of:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode61(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
+
+/**
+ * Computes h(6,0) mode of spherical harmonic decomposition of
+ * the post-Newtonian inspiral waveform.
+ *
+ * THIS MODE IS ZERO TO THE ORDER CONSIDERED IN:
+ * Lawrence E. Kidder, "Using Full Information When Computing Modes of
+ * Post-Newtonian Waveforms From Inspiralling Compact Binaries in Circular
+ * Orbit", Physical Review D 77, 044016 (2008), arXiv:0710.0614v1 [gr-qc].
+ */
+COMPLEX16TimeSeries *XLALSimInspiralPNMode60(
+        REAL8TimeSeries *V,   /**< post-Newtonian parameter */
+        REAL8TimeSeries *Phi, /**< orbital phase */
+        REAL8 v0,             /**< tail gauge parameter (default=1) */
+        REAL8 m1,             /**< mass of companion 1 (kg) */
+        REAL8 m2,             /**< mass of companion 2 (kg) */
+        REAL8 r,              /**< distance of source (m) */
+        int O                 /**< twice post-Newtonian order */
+        );
 
 /**
  * Multiplies a mode h(l,m) by a spin-2 weighted spherical harmonic
@@ -262,10 +641,10 @@ int XLALSimAddMode(
 COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 		REAL8TimeSeries *v,   /**< post-Newtonian parameter */
 	       	REAL8TimeSeries *phi, /**< orbital phase */
-	       	REAL8 v0,             /**< tail-term gauge choice (default = 1) */
-	       	REAL8 m1,             /**< mass of companion 1 */
-	       	REAL8 m2,             /**< mass of companion 2 */
-	       	REAL8 r,              /**< distance of source */
+	       	REAL8 v0,             /**< tail gauge parameter (default = 1) */
+	       	REAL8 m1,             /**< mass of companion 1 (kg) */
+	       	REAL8 m2,             /**< mass of companion 2 (kg) */
+	       	REAL8 r,              /**< distance of source (m) */
 	       	int O,                /**< twice post-Newtonain order */
 	       	int l,                /**< mode number l */
 	       	int m                 /**< mode number m */
@@ -588,6 +967,29 @@ int XLALSimInspiralChooseFDWaveform(
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
 
+/**
+ * Interface to compute -2 spin-weighted spherical harmonic modes for a binary
+ * inspiral of any available amplitude and phase PN order.
+ * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
+ * 
+ * FIXME: Interface will be changed to return a collection of modes.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    int l,                                      /**< l index of mode - replace with a struct of several integer pairs */
+    int m,                                      /**< m index of mode - ditto */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    );
 
 /* TaylorT4 functions */
 
@@ -633,6 +1035,25 @@ int XLALSimInspiralTaylorT4PNGenerator(
 		REAL8 i,                  /**< inclination of source (rad) */
 		int amplitudeO,           /**< twice post-Newtonian amplitude order */
 		int phaseO                /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT4 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT4PNModes(
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		int amplitudeO,           /**< twice post-Newtonian amplitude order */
+		int phaseO,               /**< twice post-Newtonian phase order */
+		int l,                    /**< l index of mode */
+		int m                    /**< m index of mode */
 		);
 
 /**
@@ -721,6 +1142,25 @@ int XLALSimInspiralTaylorT3PNGenerator(
 		);
 
 /**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT3 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNModes(
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		int amplitudeO,           /**< twice post-Newtonian amplitude order */
+		int phaseO,               /**< twice post-Newtonian phase order */
+		int l,                    /**< l index of mode */
+		int m                    /**< m index of mode */
+		);
+
+/**
  * Driver routine to compute the post-Newtonian inspiral waveform.
  *
  * This routine uses the same pN order for phasing and amplitude
@@ -806,6 +1246,25 @@ int XLALSimInspiralTaylorT2PNGenerator(
 		);
 
 /**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT2 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT2PNModes(
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		int amplitudeO,           /**< twice post-Newtonian amplitude order */
+		int phaseO,               /**< twice post-Newtonian phase order */
+		int l,                    /**< l index of mode */
+		int m                    /**< m index of mode */
+		);
+
+/**
  * Driver routine to compute the post-Newtonian inspiral waveform.
  *
  * This routine uses the same pN order for phasing and amplitude
@@ -887,6 +1346,25 @@ int XLALSimInspiralTaylorT1PNGenerator(
 		REAL8 i,                  /**< inclination of source (rad) */
 		int amplitudeO,           /**< twice post-Newtonian amplitude order */
 		int phaseO                /**< twice post-Newtonian phase order */
+		);
+
+/**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT1 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNModes(
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		int amplitudeO,           /**< twice post-Newtonian amplitude order */
+		int phaseO,               /**< twice post-Newtonian phase order */
+		int l,                    /**< l index of mode */
+		int m                    /**< m index of mode */
 		);
 
 /**

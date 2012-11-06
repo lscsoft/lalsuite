@@ -417,6 +417,65 @@ int XLALSimInspiralTaylorT1PNGenerator(
 	return n;
 }
 
+/**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT1 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNModes(
+		REAL8 phiRef,             /**< reference orbital phase (rad) */
+		REAL8 v0,                 /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,             /**< sampling interval (s) */
+		REAL8 m1,                 /**< mass of companion 1 (kg) */
+		REAL8 m2,                 /**< mass of companion 2 (kg) */
+		REAL8 f_min,              /**< starting GW frequency (Hz) */
+		REAL8 fRef,               /**< reference GW frequency (Hz) */
+		REAL8 r,                  /**< distance of source (m) */
+		int amplitudeO,           /**< twice post-Newtonian amplitude order */
+		int phaseO,               /**< twice post-Newtonian phase order */
+		int l,                    /**< l index of mode */
+		int m                     /**< m index of mode */
+		)
+{
+	COMPLEX16TimeSeries *hlm;
+	/* The Schwarzschild ISCO frequency - for sanity checking fRef */
+	REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
+
+	/* Sanity check fRef value */
+	if( fRef < 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+				__func__, fRef);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	if( fRef != 0. && fRef < f_min )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+				__func__, fRef, f_min);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	if( fRef >= fISCO )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be < Schwar. ISCO=%f\n",
+				__func__, fRef, fISCO);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+
+	REAL8TimeSeries *V;
+	REAL8TimeSeries *phi;
+	int n;
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, phiRef, deltaT,
+			m1, m2, f_min, fRef, phaseO);
+	if ( n < 0 )
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	hlm = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(V, phi,
+			v0, m1, m2, r, amplitudeO, l, m);
+	if ( !hlm )
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	XLALDestroyREAL8TimeSeries(phi);
+	XLALDestroyREAL8TimeSeries(V);
+	return hlm;
+}
+
 
 /**
  * Driver routine to compute the post-Newtonian inspiral waveform.
