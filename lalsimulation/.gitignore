@@ -38,6 +38,9 @@ test/GRFlagsTest
 test/GenerateSimulation
 test/ST4-dynamics.dat
 test/TestEOBNRv2
+test/TestPrecessWaveform
 test/TestSpinTaylorT4Dynamics
 test/eobHPlusCross.dat
+test/h_ref.txt
+test/h_rot.txt
 test/simulation.dat
