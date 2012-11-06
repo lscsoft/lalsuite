@@ -41,6 +41,7 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
+boinc_repo="git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 
@@ -356,26 +357,20 @@ if test -n "$noupdate" -o -z "$rebuild_boinc" -a -d "$SOURCE/boinc"; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
-    if test -d "$SOURCE/boinc" ; then
-        if test -d "$SOURCE/boinc/.git" ; then
-            log_and_do cd "$SOURCE/boinc"
-            # if "$boinc_rev" is a tag that already exists locally,
-            # delete it locally first in order to get updated from remote. Praise git !!
-            if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
-              log_and_dont_fail git tag -d "$boinc_rev"
-            fi
-            log_and_do git fetch --tags
-        else
-            log_and_do cd "$SOURCE"
-            log_and_do rm -rf boinc
-            log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
-            log_and_do cd boinc
-        fi
+    if test -d "$SOURCE/boinc" -a -d "$SOURCE/boinc/.git" ; then
+        log_and_do cd "$SOURCE/boinc"
     else
         log_and_do cd "$SOURCE"
-        log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+        log_and_do rm -rf boinc
+        log_and_do git clone "$boinc_repo"
         log_and_do cd boinc
     fi
+    # if "$boinc_rev" is a tag that already exists locally,
+    # delete it locally first in order to get updated from remote. Praise git !!
+    if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
+        log_and_dont_fail git tag -d "$boinc_rev"
+    fi
+    log_and_do git fetch --tags
     log_and_do git checkout "$boinc_rev"
     log_and_do cd "$SOURCE"
 fi
