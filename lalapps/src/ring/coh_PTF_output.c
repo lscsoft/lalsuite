@@ -80,12 +80,14 @@ ProcessParamsTable * create_process_params( int argc, char **argv,
 int coh_PTF_output_events_xml( 
     char               *outputFile,
     MultiInspiralTable  *events,
+    SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
     struct coh_PTF_params *params
     )
 {
   LALStatus status = blank_status;
+  MetadataTable   siminspiral;
   MetadataTable   process;
   MetadataTable   processParams;
   MetadataTable   searchSummary;
@@ -101,6 +103,7 @@ int coh_PTF_output_events_xml(
   memset( &results, 0, sizeof( results ) );
 
   /* create process table and search summary tables */
+  siminspiral.simInspiralTable = injections;
   process.processTable = coh_PTF_create_process_table( params );
   processParams.processParamsTable = processParamsTable;
   searchSummary.searchSummaryTable = coh_PTF_create_search_summary( params );
@@ -123,6 +126,16 @@ int coh_PTF_output_events_xml(
   LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, search_summary_table ), &status );
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchSummary, search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
+
+  /* write the signals injected in a template bank simulation */
+  if ( injections )
+  {
+    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sim_inspiral_table ),
+        &status );
+    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, siminspiral,
+          sim_inspiral_table ), &status );
+    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  }
 
   /* output time slide table */
   XLALWriteLIGOLwXMLTimeSlideTable( &results, time_slide_head);

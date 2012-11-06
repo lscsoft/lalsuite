@@ -679,6 +679,7 @@ ProcessParamsTable * create_process_params(
 int coh_PTF_output_events_xml(
     char               *outputFile,
     MultiInspiralTable *events,
+    SimInspiralTable *injections,
     ProcessParamsTable *processParamsTable,
     TimeSlide          *time_slide_head,
     struct coh_PTF_params *params
