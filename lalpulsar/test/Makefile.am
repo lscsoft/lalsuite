@@ -136,6 +136,8 @@ pkgdata_DATA = \
 	sun98.dat \
 	sun99.dat \
 	testTimestamps.dat \
-	VOTable-1.1.xsd
+	VOTable-1.1.xsd \
+	tdb_2000-2019.dat.gz \
+	te405_2000-2019.dat.gz
 
 EXTRA_DIST = $(DATA)
