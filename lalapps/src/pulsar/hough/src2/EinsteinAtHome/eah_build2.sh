@@ -203,6 +203,7 @@ if [ ."$build_win32" = ."true" ] ; then
     export CXX=i586-mingw32msvc-g++
     export AR=i586-mingw32msvc-ar
     export RANLIB=i586-mingw32msvc-ranlib
+    export LIBTOOL=i586-mingw32msvc-libtool
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32
@@ -499,11 +500,16 @@ else
     log_and_show "compiling boinc"
     if [ ."$build_win32" = ."true" ] ; then
 	log_and_do cd "$BUILD/boinc"
+        makefile="$SOURCE/boinc/lib/Makefile.mingw"
 	export BOINC_SRC="$SOURCE/boinc" BOINC_PREFIX="$INSTALL"
-	log_and_dont_fail make -f "$SOURCE/boinc/lib/Makefile.mingw" uninstall
-	log_and_do make -f "$SOURCE/boinc/lib/Makefile.mingw" clean
-	log_and_do make -f "$SOURCE/boinc/lib/Makefile.mingw"
-	log_and_do make -f "$SOURCE/boinc/lib/Makefile.mingw" install
+	log_and_dont_fail make -f "$makefile" uninstall
+	log_and_do make -f "$makefile" clean
+	if log_and_dont_fail make -f "$makefile" all-la; then
+	    log_and_do make -f "$makefile" install-la
+	else
+            log_and_do make -f "$makefile"
+	    log_and_do make -f "$makefile" install
+        fi
     else
 	log_and_do cd "$SOURCE/boinc"
 	log_and_do ./_autosetup
