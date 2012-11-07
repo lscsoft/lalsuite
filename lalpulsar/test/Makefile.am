@@ -85,6 +85,9 @@ MOSTLYCLEANFILES = \
 
 pkgdata_DATA = \
 	circularEphem.dat \
+	earth00-19-DE200.dat.gz \
+	earth00-19-DE405.dat.gz \
+	earth00-19-DE414.dat.gz \
 	earth00-04.dat \
 	earth00.dat \
 	earth01.dat \
@@ -107,6 +110,9 @@ pkgdata_DATA = \
 	earth10-13.dat \
 	earth98.dat \
 	earth99.dat \
+	sun00-19-DE200.dat.gz \
+        sun00-19-DE405.dat.gz \
+        sun00-19-DE414.dat.gz \
 	sun00-04.dat \
 	sun00.dat \
 	sun01.dat \
