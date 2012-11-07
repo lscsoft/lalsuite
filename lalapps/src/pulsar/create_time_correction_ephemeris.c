@@ -49,15 +49,19 @@ int main(int argc, char **argv){
   beg = *XLALGPSToUTC( &beg, (int)inputParams.startT );
   fin = *XLALGPSToUTC( &fin, (int)inputParams.endT );
   
-  if( inputParams.et == TT2TEPH ){
-    if( !sprintf(outputfile, "%s/TT2Teph_%d-%d.dat", 
+  /* make sure the year in the filename only covers full years */
+  if ( beg.tm_yday != 0 && beg.tm_hour != 0 && beg.tm_min != 0 && beg.tm_sec != 0 ) beg.tm_year++;
+  if ( fin.tm_yday != 0 && fin.tm_hour != 0 && fin.tm_min != 0 && fin.tm_sec != 0 ) fin.tm_year--;
+  
+  if( inputParams.et == TT2TCB ){
+    if( !sprintf(outputfile, "%s/te405_%d-%d.dat", 
       inputParams.outputpath, beg.tm_year+1900, fin.tm_year+1900) ){
       fprintf(stderr, "Error... problem creating output file name!\n");
       exit(1);
     }
   }
   else if( inputParams.et == TT2TDB ){
-    if( !sprintf(outputfile, "%s/TT2TDB_%d-%d.dat", 
+    if( !sprintf(outputfile, "%s/tdb_%d-%d.dat", 
       inputParams.outputpath, beg.tm_year+1900, fin.tm_year+1900) ){
       fprintf(stderr, "Error... problem creating output file name!\n");
       exit(1);
@@ -89,7 +93,7 @@ int main(int argc, char **argv){
     /* these basically calculate the einstein delay */
       
     /* using TEMPO2/TT to TCB/Teph file */
-    if( inputParams.et == TT2TEPH ) deltaT = IF_deltaT(mjdtt);
+    if( inputParams.et == TT2TCB ) deltaT = IF_deltaT(mjdtt);
     /* using TEMPO/TT to TDB file */
     else if( inputParams.et == TT2TDB ){
       deltaT = FB_deltaT(mjdtt, inputParams.ephemfile);
@@ -200,13 +204,12 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
   }
   /* using TEMPO2/TCB/Teph file */
   else if( !strcmp(inputParams->ephemtype, "TEMPO2") ||
-           !strcmp(inputParams->ephemtype, "TCB") ||
-           !strcmp(inputParams->ephemtype, "Teph") ){
-    inputParams->et = TT2TEPH;
+           !strcmp(inputParams->ephemtype, "TCB") ){
+    inputParams->et = TT2TCB;
     sprintf(inputParams->ephemfile, "%s%s", tempo2path, IFTEPH_FILE);
   
     if( verbose ){
-      fprintf(stdout, "Using TEMPO2-style TT to Teph conversion file: %s\n",
+      fprintf(stdout, "Using TEMPO2-style TT to te405 conversion file: %s\n",
         inputParams->ephemfile); 
     }
     

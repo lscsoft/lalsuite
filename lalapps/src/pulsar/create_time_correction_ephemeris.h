@@ -65,7 +65,7 @@
 
 typedef enum {
   TT2TDB,
-  TT2TEPH
+  TT2TCB
 } etype;
 
 typedef struct taginputParams_t{
