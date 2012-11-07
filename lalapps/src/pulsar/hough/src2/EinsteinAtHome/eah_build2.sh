@@ -109,12 +109,14 @@ for i; do
 	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
-	    CPPFLAGS="-maltivec -faltivec $CPPFLAGS"
-	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
-	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
+	    CPPFLAGS="-arch ppc -maltivec -faltivec $CPPFLAGS"
+	    CFLAGS="-arch ppc -fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
+	    CXXFLAGS="-arch ppc -mcpu=G4 $CXXFLAGS"
+	    LDFLAGS="-arch ppc $LDFLAGS"
 	    fftw_copts_single=--enable-altivec
 	    planclass=__ALTIVEC
-	    acc="_altivec";;
+	    acc="_altivec"
+	    cross_copt=--host=powerpc-apple-darwin ;;
 	--cuda)
 	    cuda=true
 	    acc="_cuda" ;;
