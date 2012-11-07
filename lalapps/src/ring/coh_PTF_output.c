@@ -141,12 +141,9 @@ int coh_PTF_output_events_xml(
   XLALWriteLIGOLwXMLTimeSlideTable( &results, time_slide_head);
 
   /* output the events */
-  if ( ringEvents.multiInspiralTable )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringEvents,multi_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
-  }
+  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, multi_inspiral_table ), &status );
+  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, ringEvents,multi_inspiral_table ), &status );
+  LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
 
   /* close the xml file */
   LAL_CALL( LALCloseLIGOLwXMLFile( &status, &results ), &status );
