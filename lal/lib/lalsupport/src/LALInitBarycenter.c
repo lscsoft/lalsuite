@@ -21,6 +21,8 @@
 #include <lal/FileIO.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
+#include <lal/ConfigFile.h>
+#include <lal/LALString.h>
 
 /** \cond DONT_DOXYGEN */
 
@@ -77,6 +79,9 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
  */
 TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**< File containing Earth's position.  */ ){
   REAL8 *tvec = NULL; /* create time vector */
+  LALParsedDataFile *flines = NULL;
+  UINT4 numLines = 0, j = 0;
+  REAL8 endtime = 0.;
   
   /* check user input consistency */
   if ( !timeCorrectionFile ) {
@@ -84,61 +89,63 @@ TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**
     XLAL_ERROR_NULL(XLAL_EINVAL);
   }
   
+  /* read in file with XLALParseDataFile to ignore comment header lines */
+  if ( XLALParseDataFile ( &flines, timeCorrectionFile ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+
   /* prepare output ephemeris struct for returning */
   TimeCorrectionData *tdat;
   if ( ( tdat = XLALCalloc ( 1, sizeof(*tdat) ) ) == NULL ) {
     XLALPrintError ("%s: XLALCalloc ( 1, %d ) failed.\n", __func__, sizeof(*tdat) );
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
+
+  numLines = flines->lines->nTokens;
   
-  /* open ephemeris file */
-  FILE *fp;
-  if ( (fp = LALOpenDataFile ( timeCorrectionFile )) == NULL ) {
-    XLALPrintError ("%s: LALOpenDataFile() failed to open '%s' for reading.\n", __func__, timeCorrectionFile );
-    XLAL_ERROR_NULL ( XLAL_ESYS );
+  /* read in info from first line (an uncommented header) */
+  if ( 4 != sscanf(flines->lines->tokens[0], "%lf %lf %lf %u",
+       &tdat->timeCorrStart, &endtime, &tdat->dtTtable, &tdat->nentriesT) ){
+    XLALDestroyParsedDataFile ( flines );
+    XLALDestroyTimeCorrectionData( tdat );
+    XLALPrintError("%s: couldn't parse first line of %s: %d\n", __func__,
+                   timeCorrectionFile );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
   }
   
-  REAL8 endtime = 0.;
-  
-  /* read in first header line */
-  if ( 4 != fscanf(fp,"%lf %lf %lf %u\n", &tdat->timeCorrStart, &endtime, &tdat->dtTtable, &tdat->nentriesT)) {
-    fclose(fp);
-    XLALPrintError("%s: couldn't parse first line of %s: %d\n", __func__, timeCorrectionFile );
-    XLAL_ERROR_NULL ( XLAL_EDOM );
+  if( numLines != tdat->nentriesT+1 ){
+    XLALDestroyParsedDataFile ( flines );
+    XLALDestroyTimeCorrectionData( tdat );
+    XLALPrintError ("%s: header line inconsistent with number of lines in \
+file.\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   
   /* allocate memory for table entries */
   if ( (tvec = XLALCalloc( tdat->nentriesT, sizeof(REAL8) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc(%u, sizeof(REAL8))\n", __func__, tdat->nentriesT );
+    XLALDestroyParsedDataFile ( flines );
+    XLALDestroyTimeCorrectionData( tdat );
+    XLALPrintError ("%s: XLALCalloc(%u, sizeof(REAL8))\n", __func__,
+                    tdat->nentriesT );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   
   /* read in table data */
-  UINT4 j;
   int ret;
-  for (j=0; j < tdat->nentriesT; j++){
-    ret = fscanf( fp, "%lf\n", &tvec[j] );
+  for (j=1; j < numLines; j++){
+    ret = sscanf( flines->lines->tokens[j], "%lf", &tvec[j-1] );
 
     /* check number of scanned items */
     if (ret != 1) {
-      fclose(fp);
       XLALFree( tvec );
+      XLALDestroyParsedDataFile ( flines );
+      XLALDestroyTimeCorrectionData( tdat );
       XLALPrintError("%s: Couldn't parse line %d of %s: %d\n", __func__, j+2, timeCorrectionFile, ret);
       XLAL_ERROR_NULL ( XLAL_EDOM );
     }
-    
-    /* check we've not hit the end of file before reading in all points */
-    if ( feof(fp) && j < (tdat->nentriesT)-1 ){
-      fclose(fp);
-      XLALFree( tvec );
-      XLALPrintError("%s: %s does not contain %u lines!\n", __func__, timeCorrectionFile, tdat->nentriesT);
-      XLAL_ERROR_NULL ( XLAL_EDOM );
-    }
   }
-  
-  /* close file */
-  fclose(fp);
-  
+
+  XLALDestroyParsedDataFile ( flines );
+
   /* set output time delay vector */
   tdat->timeCorrs = tvec;
   
@@ -326,18 +333,20 @@ XLALDestroyEphemerisVector ( EphemerisVector *ephemV )
 EphemerisVector *
 XLALReadEphemerisFile ( const CHAR *fname )
 {
+  UINT4 j = 0, numLines = 0;
+  LALParsedDataFile *flines = NULL;
+
   /* check input consistency */
   if ( !fname ) {
     XLALPrintError ("%s: invalid NULL input\n", __func__ );
     XLAL_ERROR_NULL ( XLAL_EINVAL );
   }
 
-  /* open ephemeris file */
-  FILE *fp;
-  if ( (fp = LALOpenDataFile ( fname )) == NULL ) {
-    XLALPrintError ("%s: LALOpenDataFile() failed to open '%s' for reading.\n", __func__, fname );
-    XLAL_ERROR_NULL ( XLAL_ESYS );
-  }
+  /* read in file with XLALParseDataFile to ignore comment header lines */
+  if ( XLALParseDataFile ( &flines, fname ) != XLAL_SUCCESS )
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+
+  numLines = flines->lines->nTokens;
 
   INT4 gpsYr; /* gpsYr + leap is the time on the GPS clock
                * at first instant of new year, UTC; equivalently
@@ -348,10 +357,19 @@ XLALReadEphemerisFile ( const CHAR *fname )
   UINT4 nEntries;	/* number of ephemeris-file entries */
 
   /* read first line */
-  if ( 3 != fscanf(fp,"%d %le %u\n", &gpsYr, &dt, &nEntries)) {
-    fclose(fp);
+  if ( 3 != sscanf(flines->lines->tokens[0],"%d %le %u\n", &gpsYr, &dt,
+     &nEntries)) {
+    XLALDestroyParsedDataFile( flines );
     XLALPrintError("%s: couldn't parse first line of %s: %d\n", __func__, fname );
     XLAL_ERROR_NULL ( XLAL_EDOM );
+  }
+
+  /* check that number of lines is correct */
+  if( nEntries != (numLines - 1)/4 ){
+    XLALDestroyParsedDataFile( flines );
+    XLALPrintError("%s: inconsistent number of lines in file compared to \
+header information\n", __func__ );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
   /* prepare output ephemeris vector */
@@ -367,23 +385,43 @@ XLALReadEphemerisFile ( const CHAR *fname )
    * +  on 1980 Jan. 6 00:00:00 UTC
    */
 
+  /* the ephemeris files are created with each entry spanning 4 lines with the
+   * format:
+   *  gps\tposX\tposY\n
+   *  posZ\tvelX\tvelY\n
+   *  velZ\taccX\taccY\n
+   *  accZ\n
+   ***************************************************************************/
+
   /* read the remaining lines */
-  UINT4 j;
   int ret;
   for (j=0; j < nEntries; j++)
     {
-      ret = fscanf( fp, "%le %le %le %le %le %le %le %le %le %le\n",
-                    &ephemV->data[j].gps,
-                    &ephemV->data[j].pos[0], &ephemV->data[j].pos[1], &ephemV->data[j].pos[2],
-                    &ephemV->data[j].vel[0], &ephemV->data[j].vel[1], &ephemV->data[j].vel[2],
-                    &ephemV->data[j].acc[0], &ephemV->data[j].acc[1], &ephemV->data[j].acc[2]);
+      CHAR *oneline = NULL;
 
-      /* check number of scanned items */
+      int i;
+      /* concatenate the tokens representing one entry */
+      for ( i = 0; i < 4; i++ ){
+        oneline = XLALStringAppend( oneline, flines->lines->tokens[4*j+1+i] );
+        /* add space between tokens*/
+        oneline = XLALStringAppend( oneline, " " );
+      }
+
+      ret = sscanf( oneline, "%le %le %le %le %le %le %le %le %le %le",
+                    &ephemV->data[j].gps, &ephemV->data[j].pos[0],
+                    &ephemV->data[j].pos[1], &ephemV->data[j].pos[2],
+                    &ephemV->data[j].vel[0], &ephemV->data[j].vel[1],
+                    &ephemV->data[j].vel[2], &ephemV->data[j].acc[0],
+                    &ephemV->data[j].acc[1], &ephemV->data[j].acc[2] );
+
+      XLALFree( oneline );
+
       if (ret != 10) {
-	fclose(fp);
-	XLALDestroyEphemerisVector ( ephemV );
-	XLALPrintError("%s: Couldn't parse line %d of %s: %d\n", j+2, fname, ret);
-	XLAL_ERROR_NULL ( XLAL_EDOM );
+        XLALDestroyEphemerisVector ( ephemV );
+        XLALDestroyParsedDataFile( flines );
+        XLALPrintError("%s: Couldn't parse line %d of %s: %d\n", j+2, fname,
+                       ret);
+        XLAL_ERROR_NULL ( XLAL_EDOM );
       }
 
       /* check timestamps */
@@ -391,7 +429,6 @@ XLALReadEphemerisFile ( const CHAR *fname )
         {
           if (gpsYr - ephemV->data[j].gps > 3600 * 24 * 365 ) {
             XLALPrintError("%s: Wrong timestamp in line %d of %s: %d/%le\n", __func__, j+2, fname, gpsYr, ephemV->data[j].gps );
-            fclose(fp);
             XLALDestroyEphemerisVector ( ephemV );
             XLAL_ERROR_NULL ( XLAL_EDOM );
           }
@@ -400,7 +437,6 @@ XLALReadEphemerisFile ( const CHAR *fname )
         {
           if (ephemV->data[j].gps != ephemV->data[j-1].gps + ephemV->dt ) {
             XLALPrintError("%s: Wrong timestamp in line %d of %s: %le/%le\n", __func__, j+2, fname, ephemV->data[j].gps, ephemV->data[j-1].gps + ephemV->dt );
-            fclose(fp);
             XLALDestroyEphemerisVector ( ephemV );
             XLAL_ERROR_NULL ( XLAL_EDOM );
           }
@@ -408,17 +444,7 @@ XLALReadEphemerisFile ( const CHAR *fname )
 
     } /* for j < nEntries */
 
-  /* check file-sanity: nothing beyond end of table */
-  CHAR dummy;
-  if ( fscanf (fp,"%c",&dummy) != EOF) {
-    XLALPrintError("%s: Garbage at end of ephemeris file %s\n", __func__, fname );
-    fclose(fp);
-    XLALDestroyEphemerisVector ( ephemV );
-    XLAL_ERROR_NULL ( XLAL_EDOM );
-  }
-
-  /* done reading, close ephemeris-file file */
-  fclose(fp);
+  XLALDestroyParsedDataFile( flines );
 
   /* return result */
   return ephemV;
