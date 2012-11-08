@@ -320,14 +320,6 @@ int XLALSetFlatLatticeMetric(
     }
   }
 
-  // Allocate memory
-  gsl_matrix* tmetric = gsl_matrix_alloc(tn, tn);
-  XLAL_CHECK(tmetric != NULL, XLAL_ENOMEM);
-  gsl_matrix* tdirections = gsl_matrix_alloc(tn, tn);
-  XLAL_CHECK(tdirections != NULL, XLAL_ENOMEM);
-  gsl_matrix* tincrement = gsl_matrix_alloc(tn, tn);
-  XLAL_CHECK(tincrement != NULL, XLAL_ENOMEM);
-
   // Check metric is symmetric, and copy rescaled metric
   for (size_t i = 0; i < n; ++i) {
     const double scale_i = gsl_vector_get(tiling->phys_scale, i);
@@ -340,71 +332,85 @@ int XLALSetFlatLatticeMetric(
     }
   }
 
-  // Copy tiled dimensions of metric
-  for (size_t i = 0, ti = 0; i < n; ++i) {
-    if (tiling->bounds[i].tiled) {
-      for (size_t j = 0, tj = 0; j < n; ++j) {
-        if (tiling->bounds[j].tiled) {
-          gsl_matrix_set(tmetric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
-          ++tj;
-        }
-      }
-      ++ti;
-    }
-  }
-
-  // Calculate metric ellipse bounding box
-  gsl_vector* tbounding_box = XLALMetricEllipseBoundingBox(tmetric, max_mismatch);
-  XLAL_CHECK(tbounding_box != NULL, XLAL_EFAILED);
-
-  // Find orthonormalise directions with respect to subspace metric
-  gsl_matrix_set_identity(tdirections);
-  XLAL_CHECK(XLALOrthonormaliseWRTMetric(tdirections, tmetric) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  // Get lattice generator
-  gsl_matrix* tgenerator = NULL;
-  double norm_thickness = 0.0;
-  XLAL_CHECK((tiling->generator)(tn, &tgenerator, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  // Transform lattice generator to square lower triangular
-  gsl_matrix* sq_lwtri_generator = XLALSquareLowerTriangularLatticeGenerator(tgenerator);
-  XLAL_CHECK(sq_lwtri_generator != NULL, XLAL_EFAILED);
-
-  // Normalise lattice generator so covering radius is sqrt(mismatch)
-  XLAL_CHECK(XLALNormaliseLatticeGenerator(sq_lwtri_generator, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  // Compute the increment vectors of the lattice generator along the orthogonal directions
-  gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tdirections, sq_lwtri_generator, 0.0, tincrement);
-
-  // Copy increment vectors and bounding box so that non-tiled dimensions are zero
+  // Initialise for zero-dimensional parameter space
   gsl_vector_set_zero(tiling->phys_incr);
   gsl_vector_set_zero(tiling->phys_bbox);
   gsl_matrix_set_zero(tiling->increment);
-  for (size_t i = 0, ti = 0; i < n; ++i) {
-    if (tiling->bounds[i].tiled) {
-      gsl_vector_set(tiling->phys_incr, i, gsl_matrix_get(tincrement, ti, ti));
-      gsl_vector_set(tiling->phys_bbox, i, gsl_vector_get(tbounding_box, ti));
-      for (size_t j = 0, tj = 0; j < n; ++j) {
-        if (tiling->bounds[j].tiled) {
-          gsl_matrix_set(tiling->increment, i, j, gsl_matrix_get(tincrement, ti, tj));
-          ++tj;
+
+  if (tn > 0) {
+
+    // Allocate memory
+    gsl_matrix* tmetric = gsl_matrix_alloc(tn, tn);
+    XLAL_CHECK(tmetric != NULL, XLAL_ENOMEM);
+    gsl_matrix* tdirections = gsl_matrix_alloc(tn, tn);
+    XLAL_CHECK(tdirections != NULL, XLAL_ENOMEM);
+    gsl_matrix* tincrement = gsl_matrix_alloc(tn, tn);
+    XLAL_CHECK(tincrement != NULL, XLAL_ENOMEM);
+
+    // Copy tiled dimensions of metric
+    for (size_t i = 0, ti = 0; i < n; ++i) {
+      if (tiling->bounds[i].tiled) {
+        for (size_t j = 0, tj = 0; j < n; ++j) {
+          if (tiling->bounds[j].tiled) {
+            gsl_matrix_set(tmetric, ti, tj, gsl_matrix_get(tiling->metric, i, j));
+            ++tj;
+          }
         }
+        ++ti;
       }
-      ++ti;
     }
+
+    // Calculate metric ellipse bounding box
+    gsl_vector* tbounding_box = XLALMetricEllipseBoundingBox(tmetric, max_mismatch);
+    XLAL_CHECK(tbounding_box != NULL, XLAL_EFAILED);
+
+    // Find orthonormalise directions with respect to subspace metric
+    gsl_matrix_set_identity(tdirections);
+    XLAL_CHECK(XLALOrthonormaliseWRTMetric(tdirections, tmetric) == XLAL_SUCCESS, XLAL_EFAILED);
+
+    // Get lattice generator
+    gsl_matrix* tgenerator = NULL;
+    double norm_thickness = 0.0;
+    XLAL_CHECK((tiling->generator)(tn, &tgenerator, &norm_thickness) == XLAL_SUCCESS, XLAL_EFAILED);
+
+    // Transform lattice generator to square lower triangular
+    gsl_matrix* sq_lwtri_generator = XLALSquareLowerTriangularLatticeGenerator(tgenerator);
+    XLAL_CHECK(sq_lwtri_generator != NULL, XLAL_EFAILED);
+
+    // Normalise lattice generator so covering radius is sqrt(mismatch)
+    XLAL_CHECK(XLALNormaliseLatticeGenerator(sq_lwtri_generator, norm_thickness, sqrt(max_mismatch)) == XLAL_SUCCESS, XLAL_EFAILED);
+
+    // Compute the increment vectors of the lattice generator along the orthogonal directions
+    gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, tdirections, sq_lwtri_generator, 0.0, tincrement);
+
+    // Copy increment vectors and bounding box so that non-tiled dimensions are zero
+    for (size_t i = 0, ti = 0; i < n; ++i) {
+      if (tiling->bounds[i].tiled) {
+        gsl_vector_set(tiling->phys_incr, i, gsl_matrix_get(tincrement, ti, ti));
+        gsl_vector_set(tiling->phys_bbox, i, gsl_vector_get(tbounding_box, ti));
+        for (size_t j = 0, tj = 0; j < n; ++j) {
+          if (tiling->bounds[j].tiled) {
+            gsl_matrix_set(tiling->increment, i, j, gsl_matrix_get(tincrement, ti, tj));
+            ++tj;
+          }
+        }
+        ++ti;
+      }
+    }
+
+    // Convert increments and bounding box to physical coordinates
+    gsl_vector_mul(tiling->phys_incr, tiling->phys_scale);
+    gsl_vector_mul(tiling->phys_bbox, tiling->phys_scale);
+
+    // Cleanup
+    gsl_matrix_free(tmetric);
+    gsl_matrix_free(tdirections);
+    gsl_matrix_free(tincrement);
+    gsl_vector_free(tbounding_box);
+    gsl_matrix_free(tgenerator);
+    gsl_matrix_free(sq_lwtri_generator);
+
   }
-
-  // Convert increments and bounding box to physical coordinates
-  gsl_vector_mul(tiling->phys_incr, tiling->phys_scale);
-  gsl_vector_mul(tiling->phys_bbox, tiling->phys_scale);
-
-  // Cleanup
-  gsl_matrix_free(tmetric);
-  gsl_matrix_free(tdirections);
-  gsl_matrix_free(tincrement);
-  gsl_vector_free(tbounding_box);
-  gsl_matrix_free(tgenerator);
-  gsl_matrix_free(sq_lwtri_generator);
 
   // Tiling has been fully initialised
   tiling->status = FLT_S_INITIALISED;
