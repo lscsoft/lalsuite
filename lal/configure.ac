@@ -381,20 +381,19 @@ INCLUDEMKFILE=$srcdir/misc/include.mk
 AC_SUBST_FILE([INCLUDEMKFILE])
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LAL has now been successfully configured:
 
-        LAL has now been successfully configured:
+* CUDA support is $CUDA_ENABLE_VAL
+* BOINC support is $BOINC_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            CUDA support is $CUDA_ENABLE_VAL
-            BOINC support is $BOINC_ENABLE_VAL
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LAL
-        and run 'make install' to install LAL
-
-================================================================="
+Now run 'make' to build LAL,
+and run 'make install' to install LAL.
+==================================================
+"

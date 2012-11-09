@@ -176,19 +176,18 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALPulsar has now been successfully configured:
 
-        LALPulsar has now been successfully configured:
+* LALXML library support is $LALXML_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            LALXML library support is $LALXML_ENABLE_VAL
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALPulsar
-        and run 'make install' to install LALPulsar
-
-================================================================="
+Now run 'make' to build LALPulsar,
+and run 'make install' to install LALPulsar.
+==================================================
+"

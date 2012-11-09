@@ -148,18 +148,17 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALSimulation has now been successfully configured:
 
-        LALSimulation has now been successfully configured:
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALSimulation
-        and run 'make install' to install LALSimulation
-
-================================================================="
+Now run 'make' to build LALSimulation,
+and run 'make install' to install LALSimulation.
+==================================================
+"

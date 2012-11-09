@@ -174,19 +174,18 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALInspiral has now been successfully configured:
 
-        LALInspiral has now been successfully configured:
+* CUDA support is $CUDA_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            CUDA support is $CUDA_ENABLE_VAL
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALInspiral
-        and run 'make install' to install LALInspiral
-
-================================================================="
+Now run 'make' to build LALInspiral,
+and run 'make install' to install LALInspiral.
+==================================================
+"

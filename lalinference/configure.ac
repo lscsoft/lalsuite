@@ -156,17 +156,16 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALInference has now been successfully configured:
 
-        LALInference has now been successfully configured:
+* LALXML library support is $LALXML_ENABLE_VAL
 
-            LALXML library support is $LALXML_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALInference
-        and run 'make install' to install LALInference
-
-================================================================="
+Now run 'make' to build LALInference,
+and run 'make install' to install LALInference.
+==================================================
+"

@@ -142,14 +142,13 @@ AC_SUBST_FILE(LAL_HEADER_LINK)
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALBurst has now been successfully configured
+and will be installed under the directory:
 
-        LALBurst has now been successfully configured
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALBurst
-        and run 'make install' to install LALBurst
-
-================================================================="
+Now run 'make' to build LALBurst,
+and run 'make install' to install LALBurst.
+==================================================
+"

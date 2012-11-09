@@ -123,14 +123,13 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALStochastic has now been successfully configured
+and will be installed under the directory:
 
-        LALStochastic has now been successfully configured
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALStochastic
-        and run 'make install' to install LALStochastic
-
-================================================================="
+Now run 'make' to build LALStochastic,
+and run 'make install' to install LALStochastic.
+==================================================
+"

@@ -162,19 +162,18 @@ AC_SUBST_FILE([LAL_HEADER_LINK])
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALFrame has now been successfully configured:
 
-        LALFrame has now been successfully configured:
+* inotify support is $INOTIFY_ENABLE_VAL
+* SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
+* SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
 
-            inotify support is $INOTIFY_ENABLE_VAL
-            SWIG wrapping module for Octave is $SWIG_OCTAVE_ENABLE_VAL
-            SWIG wrapping module for Python is $SWIG_PYTHON_ENABLE_VAL
+and will be installed under the directory:
 
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALFrame
-        and run 'make install' to install LALFrame
-
-================================================================="
+Now run 'make' to build LALFrame,
+and run 'make install' to install LALFrame.
+==================================================
+"
