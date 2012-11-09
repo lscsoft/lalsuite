@@ -29,7 +29,7 @@ output=/home/egoetz/TwoSpect/compareEfficiency/out/out.\$(JOBNUM)
 error=/home/egoetz/TwoSpect/compareEfficiency/err/err.\$(JOBNUM)
 arguments=\$(JOBNUM)
 log=/local/user/egoetz/compareEfficiency.log
-request_memory=2500
+request_memory=3000
 notification=Never
 queue
 EOF
