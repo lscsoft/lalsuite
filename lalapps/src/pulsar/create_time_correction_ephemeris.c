@@ -81,6 +81,14 @@ int main(int argc, char **argv){
  time steps\n", inputParams.startT,  inputParams.endT, inputParams.interval);
   }
   
+  /* output header information on lines starting with a # comment */
+  fprintf(fp, "# Author: "LALAPPS_VCS_AUTHOR"\n");
+  fprintf(fp, "# LALApps Commit ID: "LALAPPS_VCS_ID"\n");
+  fprintf(fp, "# LALApps Commit Date: "LALAPPS_VCS_DATE"\n");
+  fprintf(fp, "#\n# File creation command:-\n#\t");
+  for( INT4 k=0; k<argc; k++ ) fprintf(fp, "%s ", argv[k]);
+  fprintf(fp, "\n");
+  
   /* output header info: start time, end time, time step, no. of entries */
   fprintf(fp, "%lf\t%lf\t%lf\t%d\n", inputParams.startT, inputParams.endT,
     inputParams.interval, ne);

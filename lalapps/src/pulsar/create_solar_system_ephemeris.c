@@ -44,6 +44,8 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LALVCSInfo.h>
+#include "LALAppsVCSInfo.h"
 
 #define MERCURY 0
 #define VENUS 1
@@ -56,6 +58,9 @@
 #define PLUTO 8
 #define MOON 9                                      /* Relative to geocenter */
 #define SUN 10
+
+#define CURT_AU 1.4959787066e8  /* 1 AU defined from Curt's code (the same as
+                                 * the AU definition in the JPL DE200 file) */ 
 
 #define USAGE \
 "Usage: %s [options]\n\n"\
@@ -323,6 +328,38 @@ in the existing file!\n");
 writing!\n");
       exit(1);
     }
+
+    /* output header information on lines starting with a # comment */
+    fprintf(fpe, "# Build information for %s\n", argv[0]);
+    fprintf(fpe, "# Author: "LALAPPS_VCS_AUTHOR"\n");
+    fprintf(fpe, "# LALApps Commit ID: "LALAPPS_VCS_ID"\n");
+    fprintf(fpe, "# LALApps Commit Date: "LALAPPS_VCS_DATE"\n");
+    fprintf(fpe, "#\n# Ephemeris creation command:-\n#\t");
+    for( INT4 k=0; k<argc; k++ ) fprintf(fpe, "%s ", argv[k]);
+    fprintf(fpe, "\n");
+    
+    CHAR *efile = strrchr(inputs.ephemfile, '/');
+    
+    fprintf(fpe, "#\n# JPL ephemeris file %s from TEMPO2 \
+(http://www.atnf.csiro.au/research/pulsar/tempo2/)\n", efile+1);
+
+    /* some information about the data */
+    fprintf(fpe, "#\n# This file consists of a header line containing:\n");
+    fprintf(fpe, "#\tGPS time of the start year, interval between entries \
+(secs), no. of entries\n");
+    fprintf(fpe, "# Each entry consists of:\n");
+    fprintf(fpe, "#\tGPS time\t\tPos. x (lt sec)\t\tPos. y (lt sec)\n\
+#\tPos. z (lt sec)\t\tVel. x (lt sec/sec)\tVel. y (lt sec/sec)\n\
+#\tVel. z (lt sec/sec)\tAcc. x (lt sec/sec^2)\tAcc. y (lt sec/sec^2)\n\
+#\tAcc. z (lt sec/sec^2)\n");
+    fprintf(fpe, "# with entries calculated at an approximation to \
+\"ephemeris time\" via the conversion:\n\
+#    dT = (GPS(JD) + 51.148/86400) - 2451545\n\
+#    Teph = GPS(JD) + (51.148 + 0.001658*sin(6.24008 + 0.017202*dT)\n\
+#           + 1.4e-5*sin(2*(6.24008 + 0.017202*dT)))/86400.\n\
+# where GPS(JD) is the GPS time converted into Julian Days, and with 1 A.U. \
+defined as %.3f km\n", CURT_AU);
+    
 
     fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries);
   }
@@ -689,7 +726,7 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
 
   INT4 i=0;
 
-  REAL8 au=1.4959787066e8;
+  REAL8 au=CURT_AU;
   /* Curt's AU value from his code - this is slightly different from the one
      in the JPL binary ephemeris files (of order a few hundred metres), so I
      need to multiply things be a factor of au_Curt/au_JPLephem */
