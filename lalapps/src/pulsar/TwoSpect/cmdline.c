@@ -92,6 +92,7 @@ const char *gengetopt_args_info_full_help[] = {
   "      --useSSE                  Use SSE functions (caution: user needs to have \n                                  compiled for SSE or program fails)  \n                                  (default=off)",
   "      --followUpOutsideULrange  Follow up outliers outside the range of the UL \n                                  values  (default=off)",
   "\nHidden options:",
+  "      --signalOnly              SFTs contain only signal, no noise  \n                                  (default=off)",
   "      --ULsolver=INT            Solver function for the upper limit \n                                  calculation: \n                                  0=gsl_ncx2cdf_float_withouttinyprob_solver, \n                                  1=gsl_ncx2cdf_withouttinyprob_solver, \n                                  2=gsl_ncx2cdf_float_solver, \n                                  3=gsl_ncx2cdf_solver, \n                                  4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, \n                                  5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver \n                                   (possible values=\"0\", \"1\", \"2\", \"3\", \n                                  \"4\", \"5\" default=`0')",
   "      --dopplerMultiplier=DOUBLE\n                                Multiplier for the Doppler velocity  \n                                  (default=`1.0')",
   "      --IHSonly                 IHS stage only is run. Output statistic is the \n                                  IHS statistic.  (default=off)",
@@ -284,6 +285,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_given = 0 ;
   args_info->useSSE_given = 0 ;
   args_info->followUpOutsideULrange_given = 0 ;
+  args_info->signalOnly_given = 0 ;
   args_info->ULsolver_given = 0 ;
   args_info->dopplerMultiplier_given = 0 ;
   args_info->IHSonly_given = 0 ;
@@ -375,6 +377,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_flag = 0;
   args_info->useSSE_flag = 0;
   args_info->followUpOutsideULrange_flag = 0;
+  args_info->signalOnly_flag = 0;
   args_info->ULsolver_arg = 0;
   args_info->ULsolver_orig = NULL;
   args_info->dopplerMultiplier_arg = 1.0;
@@ -454,21 +457,22 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->fastchisqinv_help = gengetopt_args_info_full_help[56] ;
   args_info->useSSE_help = gengetopt_args_info_full_help[57] ;
   args_info->followUpOutsideULrange_help = gengetopt_args_info_full_help[58] ;
-  args_info->ULsolver_help = gengetopt_args_info_full_help[60] ;
-  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[61] ;
-  args_info->IHSonly_help = gengetopt_args_info_full_help[62] ;
-  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[63] ;
-  args_info->calcRthreshold_help = gengetopt_args_info_full_help[64] ;
-  args_info->BrentsMethod_help = gengetopt_args_info_full_help[65] ;
-  args_info->antennaOff_help = gengetopt_args_info_full_help[66] ;
-  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[67] ;
-  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[68] ;
-  args_info->validateSSE_help = gengetopt_args_info_full_help[69] ;
-  args_info->ULoff_help = gengetopt_args_info_full_help[70] ;
-  args_info->printSFTtimes_help = gengetopt_args_info_full_help[71] ;
-  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[72] ;
-  args_info->randSeed_help = gengetopt_args_info_full_help[73] ;
-  args_info->chooseSeed_help = gengetopt_args_info_full_help[74] ;
+  args_info->signalOnly_help = gengetopt_args_info_full_help[60] ;
+  args_info->ULsolver_help = gengetopt_args_info_full_help[61] ;
+  args_info->dopplerMultiplier_help = gengetopt_args_info_full_help[62] ;
+  args_info->IHSonly_help = gengetopt_args_info_full_help[63] ;
+  args_info->noNotchHarmonics_help = gengetopt_args_info_full_help[64] ;
+  args_info->calcRthreshold_help = gengetopt_args_info_full_help[65] ;
+  args_info->BrentsMethod_help = gengetopt_args_info_full_help[66] ;
+  args_info->antennaOff_help = gengetopt_args_info_full_help[67] ;
+  args_info->noiseWeightOff_help = gengetopt_args_info_full_help[68] ;
+  args_info->gaussTemplatesOnly_help = gengetopt_args_info_full_help[69] ;
+  args_info->validateSSE_help = gengetopt_args_info_full_help[70] ;
+  args_info->ULoff_help = gengetopt_args_info_full_help[71] ;
+  args_info->printSFTtimes_help = gengetopt_args_info_full_help[72] ;
+  args_info->printUsedSFTtimes_help = gengetopt_args_info_full_help[73] ;
+  args_info->randSeed_help = gengetopt_args_info_full_help[74] ;
+  args_info->chooseSeed_help = gengetopt_args_info_full_help[75] ;
   
 }
 
@@ -846,6 +850,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "useSSE", 0, 0 );
   if (args_info->followUpOutsideULrange_given)
     write_into_file(outfile, "followUpOutsideULrange", 0, 0 );
+  if (args_info->signalOnly_given)
+    write_into_file(outfile, "signalOnly", 0, 0 );
   if (args_info->ULsolver_given)
     write_into_file(outfile, "ULsolver", args_info->ULsolver_orig, cmdline_parser_ULsolver_values);
   if (args_info->dopplerMultiplier_given)
@@ -1583,6 +1589,7 @@ cmdline_parser_internal (
         { "fastchisqinv",	0, NULL, 0 },
         { "useSSE",	0, NULL, 0 },
         { "followUpOutsideULrange",	0, NULL, 0 },
+        { "signalOnly",	0, NULL, 0 },
         { "ULsolver",	1, NULL, 0 },
         { "dopplerMultiplier",	1, NULL, 0 },
         { "IHSonly",	0, NULL, 0 },
@@ -2292,6 +2299,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->followUpOutsideULrange_flag), 0, &(args_info->followUpOutsideULrange_given),
                 &(local_args_info.followUpOutsideULrange_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "followUpOutsideULrange", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* SFTs contain only signal, no noise.  */
+          else if (strcmp (long_options[option_index].name, "signalOnly") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->signalOnly_flag), 0, &(args_info->signalOnly_given),
+                &(local_args_info.signalOnly_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "signalOnly", '-',
                 additional_error))
               goto failure;
           

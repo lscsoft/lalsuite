@@ -84,6 +84,7 @@ typedef struct
    INT4 validateSSE;
    INT4 randSeed;
    INT4 ULsolver;
+   INT4 signalOnly;
    gsl_rng *rng;
 } inputParamsStruct;
 
