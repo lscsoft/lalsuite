@@ -230,7 +230,8 @@ LALSUPPORT_LIBADD=""
 
 # system library checks
 AC_CHECK_LIB([m],[sin])
-AC_CHECK_LIB([z],[compress],[LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz"])
+AC_CHECK_LIB([z],[compress],[LALSUPPORT_LIBADD="$LALSUPPORT_LIBADD -lz"],
+             [AC_MSG_ERROR([could not find the zlib library])])
 
 # check for platform specific libs
 case "${host_os}" in
@@ -239,7 +240,8 @@ esac
 
 # check for system headers files
 AC_HEADER_STDC
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h zlib.h regex.h glob.h])
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h malloc.h regex.h glob.h])
+AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
 AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])

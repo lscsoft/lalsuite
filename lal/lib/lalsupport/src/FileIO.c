@@ -68,33 +68,8 @@ It is strongly recommended that <tt>LALOpenDataFile()</tt> be used when writing 
 #include <string.h>
 #include <errno.h>
 
-#ifdef HAVE_ZLIB_H
-/* can't actually include zlib.h since older versions have broken prototypes */
-/* #include <zlib.h> */
-#define Z_FULL_FLUSH    3
-typedef void * gzFile;
-extern gzFile gzopen (const char *path, const char *mode);
-extern gzFile gzdopen (int fd, const char *mode);
-extern int gzsetparams (gzFile file, int level, int strategy);
-extern int gzread (gzFile file, void * buf, unsigned len);
-extern int gzwrite (gzFile file, const void * buf, unsigned len);
-extern int gzprintf (gzFile file, const char *format, ...);
-extern int gzputs (gzFile file, const char *s);
-extern char * gzgets (gzFile file, char *buf, int len);
-extern int gzputc (gzFile file, int c);
-extern int gzgetc (gzFile file);
-extern int gzungetc (int c, gzFile file);
-extern int gzflush (gzFile file, int flush);
-extern long gzseek (gzFile file, long offset, int whence);
-extern int gzrewind (gzFile file);
-extern long gztell (gzFile file);
-extern int gzeof (gzFile file);
-extern int gzdirect (gzFile file);
-extern int gzclose (gzFile file);
-extern const char * gzerror (gzFile file, int *errnum);
-extern void gzclearerr (gzFile file);
+#include <zlib.h>
 #define ZLIB_ENABLED
-#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
