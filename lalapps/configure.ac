@@ -186,10 +186,11 @@ LALSUITE_USE_LIBTOOL
 
 # check for system libraries
 AC_CHECK_LIB([m],[sin])
-AC_CHECK_LIB([z],[compress])
+AC_CHECK_LIB([z],[compress],,[AC_MSG_ERROR([could not find the zlib library])])
 
 # check for system headers
 AC_HEADER_STDC
+AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 AC_CHECK_HEADERS([glob.h])
 AC_CHECK_HEADERS([punistd.h])
 AC_CHECK_HEADERS([getopt.h])
