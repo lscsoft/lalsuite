@@ -1066,18 +1066,19 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
 {
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  REAL8Vector *PacceptCount = NULL;
-  REAL8Vector *PproposeCount = NULL;
   INT4 adapting=1;
-  INT4 p=0;
   INT4 goodACL=0;
 
-  for (p=0; p<nPar; ++p) {
-    PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-    PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-    PacceptCount->data[p] =0;
-    PproposeCount->data[p]=0;
+  for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
+    char tmpname[MAX_STRLEN]=""; 
+
+    sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
+    REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+    *accepted = 0; 
+
+    sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+    REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+    *proposed = 0;
   }
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);
