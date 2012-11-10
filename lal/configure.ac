@@ -359,8 +359,8 @@ AC_HEADER_TIME
 
 # checks for library functions
 AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
-AC_CHECK_FUNCS([getopt])
-AC_CHECK_FUNCS([getopt_long])
+AC_CHECK_FUNCS([getopt],,[AC_MSG_ERROR([could not find the getopt() function])])
+AC_CHECK_FUNCS([getopt_long],,[AC_MSG_ERROR([could not find the getopt_long() function])])
 AC_CHECK_FUNCS([putenv])
 
 # set package documentation install path
