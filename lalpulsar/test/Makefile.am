@@ -1,4 +1,4 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DDATADIR='"$(abs_srcdir)/"'
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
 if LALXML
@@ -49,8 +49,6 @@ endif
 
 SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
-
-TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
 
 noinst_DATA = \
 	SFT-bad1 \
@@ -131,6 +129,7 @@ pkgdata_DATA = \
 	sun10-13.dat \
 	sun98.dat \
 	sun99.dat \
-	testTimestamps.dat
+	testTimestamps.dat \
+	VOTable-1.1.xsd
 
 EXTRA_DIST = $(DATA)
