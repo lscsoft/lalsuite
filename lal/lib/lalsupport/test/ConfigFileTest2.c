@@ -214,6 +214,16 @@ int main(int argc, char *argv[]){
     return (CONFIGFILETESTC_EBOOL);
   }
 
+  /* check reading of compressed files */
+  XLALParseDataFile (&cfgdata, DATADIR "ConfigFileSample3.cfg.gz");
+  XLAL_CHECK_VAL( EXIT_FAILURE, cfgdata->lines->nTokens == 4, XLAL_EFAILED );
+  XLAL_CHECK_VAL( EXIT_FAILURE, strcmp(cfgdata->lines->tokens[0], "a") == 0, XLAL_EFAILED );
+  XLAL_CHECK_VAL( EXIT_FAILURE, strcmp(cfgdata->lines->tokens[1], "b") == 0, XLAL_EFAILED );
+  XLAL_CHECK_VAL( EXIT_FAILURE, strcmp(cfgdata->lines->tokens[2], "c") == 0, XLAL_EFAILED );
+  XLAL_CHECK_VAL( EXIT_FAILURE, strcmp(cfgdata->lines->tokens[3], "d") == 0, XLAL_EFAILED );
+  XLALDestroyParsedDataFile (cfgdata);
+  cfgdata = NULL;
+
   XLALFree (string1);
   XLALDestroyCHARVector (string2);
   XLALFree (string2b);

@@ -53,9 +53,6 @@ extern INT4 lalDebugLevel;
 #define TRUE   (1==1)
 #define FALSE  (1==0)
 
-/* FIXME: prototype for function in StreamSequenceInput.m4 */
-int XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
-
 /* local prototypes */
 static void cleanConfig (CHARSequence *text);
 CHAR my_tolower (CHAR in);

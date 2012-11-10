@@ -19,6 +19,7 @@ check_PROGRAMS = \
 noinst_DATA = \
 	ConfigFileSample.cfg \
 	ConfigFileSample2.cfg \
+	ConfigFileSample3.cfg.gz \
 	SegmentsInput1.data \
 	StreamInput.data \
 	StreamSeriesInput.data
