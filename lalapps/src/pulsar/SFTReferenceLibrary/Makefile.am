@@ -37,4 +37,3 @@ EXTRA_DIST      =      $(docsources) \
 CLEANFILES      =      SFT-test[1-7] SFT-bad[1-9] SFT-bad1[0-4] SFT-good
 
 TESTS		=      run_validate.sh
-TESTS_ENVIRONMENT = >&/dev/null
