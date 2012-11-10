@@ -358,6 +358,7 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 
 # checks for library functions
+AC_CHECK_FUNCS([stat],,[AC_MSG_ERROR([could not find the stat() function])])
 AC_CHECK_FUNCS([getopt])
 AC_CHECK_FUNCS([getopt_long])
 AC_CHECK_FUNCS([putenv])

@@ -21,12 +21,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-
 #include <errno.h>
 
-#if HAVE_SYS_STAT_H
+#include <config.h>
+#ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
@@ -74,9 +78,7 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
   CHARSequence *rawdata = NULL;
   FILE *fp;
   int err = 0;  /* error code */
-#if HAVE_STAT
   struct stat stat_out;
-#endif
 
   if (*cfgdata != NULL) {
     XLALPrintError ("%s:" CONFIGFILEH_MSGENONULL, __func__ );
@@ -87,7 +89,6 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
-#if HAVE_STAT
   if (  stat ( fname, &stat_out ) )
     {
       XLALPrintError ( "%s: Could not stat data-file: `%s` : \n\n", __func__, fname, strerror(errno) );
@@ -101,7 +102,6 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
       XLALPrintError ( CONFIGFILEH_MSGEFILE );
       XLAL_ERROR ( XLAL_EDOM );
     }
-#endif
 
   if ( (fp = LALOpenDataFile (fname)) == NULL) {
     XLALPrintError ( "%s: Could not open data-file: `%s`\n\n", __func__, fname);
