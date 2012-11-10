@@ -54,7 +54,7 @@ CHAR *earth_ephemeris = NULL, *sun_ephemeris = NULL, *sft_dir = NULL;
 static const LALStatus empty_status;
 
 //prototypes
-void readInFFdata(REAL4Vector *output, CHAR *filename, inputParamsStruct *input);
+void readInFFdata(REAL4Vector *output, const CHAR *filename, inputParamsStruct *input);
 
 //Main program
 int main(int argc, char *argv[])
@@ -720,14 +720,14 @@ int main(int argc, char *argv[])
       }
       REAL8 prob = 0.0;
       REAL8 h0 = 0.0;
-      if ( R > 0.0 ) {
+      /* if ( R > 0.0 ) {
          prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
          if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
             fprintf(stderr,"%s: probR() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
 	 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
-      }
+         } */
       loadCandidateData(&(exactCandidates2->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
 
@@ -744,14 +744,14 @@ int main(int argc, char *argv[])
       }
       prob = 0.0;
       h0 = 0.0;
-      if ( R > 0.0 ) {
+      /* if ( R > 0.0 ) {
          prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
          if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
             fprintf(stderr,"%s: probR() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
 	 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
-      }
+         } */
       loadCandidateData(&(exactCandidates2->data[1]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
 
@@ -1026,14 +1026,14 @@ int main(int argc, char *argv[])
       }
       prob = 0.0;
       h0 = 0.0;
-      if ( R > 0.0 ) {
+      /* if ( R > 0.0 ) {
          prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
          if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
             fprintf(stderr,"%s: probR() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
 	 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
-      }
+         } */
       loadCandidateData(&(exactCandidates2->data[2]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
       
@@ -1191,7 +1191,8 @@ void free_ffdata(ffdataStruct *data)
 } /* free_ffdata() */
 
 
-void readInFFdata(REAL4Vector *output, CHAR *filename, inputParamsStruct *input)
+//Read in FFdata. Careful using this function: the data file must be a binary!
+void readInFFdata(REAL4Vector *output, const CHAR *filename, inputParamsStruct *input)
 {
    INT4 numfbins = (INT4)(round(input->fspan*input->Tcoh+2.0*input->dfmax*input->Tcoh)+12+1);    //Number of frequency bins
    INT4 numffts = (INT4)floor(input->Tobs/(input->Tcoh-input->SFToverlap)-1);    //Number of FFTs
