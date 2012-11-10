@@ -92,9 +92,9 @@ main( void )
 {
   static LALStatus status;
 
-  char eEphFileBad[] = "earth47.dat";
-  char eEphFile[] = "earth98.dat";
-  char sEphFile[] = "sun98.dat";
+  char eEphFileBad[] = DATADIR "earth47.dat";
+  char eEphFile[] = DATADIR "earth98.dat";
+  char sEphFile[] = DATADIR "sun98.dat";
 
   /* Checking response if data files not present */
   EphemerisData edat;

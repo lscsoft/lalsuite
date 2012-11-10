@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
 
 
   /* First, make sure the XLAL methods can still read config files without sections */
-  XLALParseDataFile (&cfgdata, "ConfigFileSample.cfg");
+  XLALParseDataFile (&cfgdata, DATADIR "ConfigFileSample.cfg");
 
   XLALReadConfigREAL8Variable  (&somefloat, cfgdata, 0, "float1", &wasRead);
   XLALReadConfigSTRINGVariable (&string1,   cfgdata, 0, "string1", &wasRead);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
   string2b = NULL;
   string3 = NULL;
 
-  XLALParseDataFile (&cfgdata, "ConfigFileSample2.cfg");
+  XLALParseDataFile (&cfgdata, DATADIR "ConfigFileSample2.cfg");
 
   /* Check for a section we have and one we don't */
   if (XLALConfigSectionExists(cfgdata, "section1") == 0) {
