@@ -25,23 +25,6 @@ if [ "`echo $1 | sed 's%.*/%%'`" = "wine" ]; then
     dirsep='\'
 fi
 
-edat="earth05-09.dat"
-sdat="sun05-09.dat"
-
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH="${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
-fi
-
 ##---------- names of codes and input/output files
 mfd_code="${injectdir}lalapps_Makefakedata_v4"
 cfs_code="${fdsdir}lalapps_ComputeFStatistic_v2"
@@ -49,6 +32,21 @@ if test $# -eq 0 ; then
     gct_code="${builddir}lalapps_HierarchSearchGCT"
 else
     gct_code="$@"
+fi
+
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    EEPHEM="${LALPULSAR_DATADIR}/earth05-09.dat"
+    SEPHEM="${LALPULSAR_DATADIR}/sun05-09.dat"
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR} -y 05-09"
+    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR} -y 05-09"
+    gct_code="${gct_code} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 testDirBase="testHS_dir"
@@ -173,7 +171,7 @@ FreqStep=`echo $mfd_FreqBand $numFreqBands |  awk '{print $1 / $2}'`
 mfd_fBand=`echo $FreqStep $Tsft |  awk '{print ($1 - 1.5 / $2)}'`	## reduce by 1/2 a bin to avoid including last freq-bins
 
 # construct common MFD cmd
-mfd_CL_common="--Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --ephemYear=05-09 --generationMode=1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
+mfd_CL_common="--Band=${mfd_fBand} --Freq=$Freq --f1dot=$f1dot --Alpha=$Alpha --Delta=$Delta --psi=$psi --phi0=$phi0 --h0=$h0 --cosi=$cosi --generationMode=1 --refTime=$refTime --Tsft=$Tsft --randSeed=1000 --outSingleSFT"
 
 if [ "$sqrtSh" != "0" ]; then
     mfd_CL_common="$mfd_CL_common --noiseSqrtSh=$sqrtSh";
@@ -233,7 +231,7 @@ outfile_cfs="${testDir}/CFS.dat";
 
 if [ ! -r "$outfile_cfs" ]; then
     tmpfile_cfs="${testDir}/__tmp_CFS.dat";
-    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --outputLoudest=$tmpfile_cfs --ephemYear=05-09 --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --computeLV "
+    cfs_CL_common=" --Alpha=$Alpha --Delta=$Delta --Freq=$Freq --f1dot=$f1dot --outputLoudest=$tmpfile_cfs --refTime=$refTime --Dterms=$Dterms --RngMedWindow=$RngMedWindow --computeLV "
     if [ "$sqrtSh" = "0" ]; then
         cfs_CL_common="$cfs_CL_common --SignalOnly";
     fi
@@ -295,7 +293,7 @@ echo "==>   Average <2F_multi>=$TwoFAvg, <2F_H1>=$TwoFAvg_H1, <2F_L1>=$TwoFAvg_L
 
 ## ---------- run GCT code on this data ----------------------------------------
 
-gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --ephemE=$edat --ephemS=$sdat --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
+gct_CL_common="--gridType1=3 --nCand1=$gct_nCands --skyRegion='allsky' --Freq=$Freq --DataFiles='$SFTfiles' --skyGridFile='$skygridfile' --printCand1 --semiCohToplist --df1dot=$gct_dF1dot --f1dot=$f1dot --f1dotBand=$gct_F1dotBand --dFreq=$gct_dFreq --FreqBand=$gct_FreqBand --refTime=$refTime --segmentList=$segFile --Dterms=$Dterms --blocksRngMed=$RngMedWindow"
 if [ "$sqrtSh" = "0" ]; then
     gct_CL_common="$gct_CL_common --SignalOnly";
 fi

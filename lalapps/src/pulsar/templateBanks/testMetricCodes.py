@@ -38,15 +38,13 @@ else:
 ## discouraged because of portability problems. We therefore try to do matrix
 ## comparisons based on python lists only, which is a bit pedestrian in places..
 
-## ----- test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if not "LAL_DATA_PATH" in os.environ.keys():
-    if "LALPULSAR_PREFIX" in os.environ.keys():
-        os.environ["LAL_DATA_PATH"] = ( ".:%s/share/lalpulsar" % os.environ["LALPULSAR_PREFIX"] )
-    else:
-        print "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-        print "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-        print "This might indicate an incomplete LAL+LALPULSAR installation"
-        sys.exit(1)
+if "LALPULSAR_DATADIR" in os.environ.keys():
+    ephemdir = os.environ["LALPULSAR_DATADIR"]
+else:
+    print "Need environment-variable LALPULSAR_DATADIR to be set to"
+    print "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    print "This might indicate an incomplete LAL+LALPULSAR installation"
+    sys.exit(1)
 
 ## ----- allow 'make test' to work from builddir != srcdir
 if not "builddir" in os.environ.keys():
@@ -224,6 +222,7 @@ common_args = { "Alpha" : options.Alpha,
                 "Freq"  : options.Freq,
                 "startTime" : options.startTime,
                 "duration"  : options.duration,
+                "ephemDir" : ephemdir,
                 "ephemYear" : options.ephemYear
                 }
 

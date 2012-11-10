@@ -37,9 +37,7 @@ lalapps_sw_inj_frames_SOURCES = sw_inj_frames.c
 EXTRA_DIST = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh testT8_1800
 TESTS = testMakefakedata.sh testMFDv4.sh testMFDv4-HW.sh
 
-TESTS_ENVIRONMENT = \
-LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LAL_DATA_PATH=$(LAL_DATA_PATH):.$${LALPULSAR_PREFIX:+":$${LALPULSAR_PREFIX}/share/lalpulsar"}$${LALSUITE_TOP_SRCDIR:+":$${LALSUITE_TOP_SRCDIR}/lalpulsar/test"}
+TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 
 ## make sure lalapps.la is rebuilt when appropriate

@@ -77,18 +77,17 @@ if [ $? != "0" ]; then
 fi
 
 # set ephemeris file
-# check that LALPULSAR_PREFIX is set
-if [ -n "$LALPULSAR_PREFIX" ]; then
-	EEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/earth00-19-DE405.dat.gz
-        SEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/sun00-19-DE405.dat.gz
-        TEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/tdb_2000-2019.dat.gz
-elif [ -n "$LALSUITE_TOP_SRCDIR" ]; then
-        EEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/earth00-19-DE405.dat.gz
-        SEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/sun00-19-DE405.dat.gz
-        TEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/tdb_2000-2019.dat.gz
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+	EEPHEM="${LALPULSAR_DATADIR}/earth00-19-DE405.dat.gz"
+	SEPHEM="${LALPULSAR_DATADIR}/sun00-19-DE405.dat.gz"
+	TEPHEM="${LALPULSAR_DATADIR}/tdb_2000-2019.dat.gz"
 else
-	echo Need an environment variable that points to the LALPulsar location 
-        exit 2
+	echo
+	echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+	echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+	echo "This might indicate an incomplete LAL+LALPULSAR installation"
+	echo
+	exit 2
 fi
 
 if [ ! -f $EEPHEM ]; then

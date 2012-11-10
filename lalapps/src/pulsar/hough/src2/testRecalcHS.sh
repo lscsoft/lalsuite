@@ -17,24 +17,25 @@ else
     debug=0	## default=quiet
 fi
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
-fi
-
 ##---------- names of codes and input/output files
 code_MFD="${injectdir}lalapps_Makefakedata_v4"
 code_HS="${builddir}/lalapps_HierarchicalSearch"
 code_RC="${builddir}/lalapps_RecalcHSCandidates"
+
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    EEPHEM="${LALPULSAR_DATADIR}/earth05-09.dat"
+    SEPHEM="${LALPULSAR_DATADIR}/sun05-09.dat"
+    code_MFD="${code_MFD} -E ${LALPULSAR_DATADIR} -y 05-09"
+    code_HS="${code_HS} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
+    code_RC="${code_RC} --ephemE=${EEPHEM} --ephemS=${SEPHEM}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
+fi
 
 ## ----- parameters
 SFTsH1="./allSFTs_H1.sft"
@@ -55,7 +56,7 @@ f1dotBand=0
 df1dot=1
 
 echo "----- STEP 1: produce some fake data:"
-cmdline="$code_MFD -I H1 --outSingleSFT --outSFTbname=$SFTsH1 -y 05-09 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=1 -v${debug}"
+cmdline="$code_MFD -I H1 --outSingleSFT --outSFTbname=$SFTsH1 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=1 -v${debug}"
 
 echo $cmdline;
 if ! eval $cmdline; then
@@ -63,7 +64,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 
-cmdline="$code_MFD -I L1 --outSingleSFT --outSFTbname=$SFTsL1 -y 05-09 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=2 -v${debug}"
+cmdline="$code_MFD -I L1 --outSingleSFT --outSFTbname=$SFTsL1 -G 820108814 --duration=$Tspan --noiseSqrtSh=3e-23 --fmin=100 --Band=1 --randSeed=2 -v${debug}"
 
 echo $cmdline;
 if ! eval $cmdline; then
