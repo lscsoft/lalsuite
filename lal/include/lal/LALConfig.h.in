@@ -25,9 +25,6 @@
 /* LAL Configure Date */
 #undef LAL_CONFIGURE_DATE
 
-/* LAL Install Prefix */
-#undef LAL_PREFIX
-
 /* Suppress debugging code */
 #undef LAL_NDEBUG
 
