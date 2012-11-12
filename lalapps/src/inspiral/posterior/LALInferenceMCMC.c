@@ -1010,6 +1010,12 @@ void initVariables(LALInferenceRunState *state)
     if(strstr(ppt->value,"SMOOTH")) bookends=LALINFERENCE_SMOOTH;
   }
 
+  /* Over-ride time prior if specified */
+  ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
+  if(ppt){
+    dt=atof(ppt->value);
+  }
+
   /* Over-ride end time if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--trigtime");
   if(ppt && !analytic){
@@ -1113,12 +1119,6 @@ void initVariables(LALInferenceRunState *state)
     start_lambda2 = atof(ppt->value);
   }
   
-  /* Over-ride time prior if specified */
-  ppt=LALInferenceGetProcParamVal(commandLine,"--dt");
-  if(ppt){
-    dt=atof(ppt->value);
-  }
-
   /* Over-ride Distance min if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--Dmin");
   if(ppt){
