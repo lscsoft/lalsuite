@@ -179,7 +179,7 @@ void XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
  *
  * Files tabulate positions for one calendar year
  * (actually, a little more than one year, to deal
- * with overlaps).  The first line of each table summarizes
+ * with overlaps).  The fi rst line of each table summarizes
  * what is in it. Subsequent lines give the time (GPS) and the
  * Earth's position \f$(x,y,z)\f$,
  * velocity \f$(v_x, v_y, v_z)\f$, and acceleration \f$(a_x, a_y, a_z)\f$
@@ -193,10 +193,49 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
                      const CHAR *sunEphemerisFile            /**< File containing Sun's position. */
                      )
 {
+  EphemerisType etype;
+
   /* check user input consistency */
   if ( !earthEphemerisFile || !sunEphemerisFile ) {
     XLALPrintError ("%s: invalid NULL input earthEphemerisFile=%p, sunEphemerisFile=%p\n", __func__, earthEphemerisFile, sunEphemerisFile );
     XLAL_ERROR_NULL (XLAL_EINVAL );
+  }
+
+  /* check the ephemeris type from file name for consistency */
+  if ( strstr( earthEphemerisFile, "DE200" ) ){
+    if ( !strstr( sunEphemerisFile, "DE200" ) ){
+      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+                     __func__, earthEphemerisFile, sunEphemerisFile );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
+    }
+    else etype = EPHEM_DE200;
+  }
+  else if ( strstr( earthEphemerisFile, "DE405" ) ){
+    if ( !strstr( sunEphemerisFile, "DE405" ) ){
+      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+                     __func__, earthEphemerisFile, sunEphemerisFile );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
+    }
+    else etype = EPHEM_DE405;
+  }
+  else if ( strstr( earthEphemerisFile, "DE414" ) ){
+    if ( !strstr( sunEphemerisFile, "DE414" ) ){
+      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+                     __func__, earthEphemerisFile, sunEphemerisFile );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
+    }
+    else etype = EPHEM_DE414;
+  }
+  else{
+    if ( strstr( sunEphemerisFile, "DE200" ) ||
+         strstr( sunEphemerisFile, "DE405" ) ||
+         strstr( sunEphemerisFile, "DE414" ) ){
+      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+                     __func__, earthEphemerisFile, sunEphemerisFile );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
+    }
+    else /* if no ephemeris type extension is found default to DE405 */
+      etype = EPHEM_DE405;
   }
 
   EphemerisVector *ephemV;
@@ -228,6 +267,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   edat->nentriesE = ephemV->length;
   edat->dtEtable  = ephemV->dt;
   edat->ephemE    = ephemV->data;
+  edat->etype     = etype;
   XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
   ephemV = NULL;
 

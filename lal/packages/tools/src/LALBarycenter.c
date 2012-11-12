@@ -514,12 +514,21 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
     if( ttype == TYPE_TEMPO || ttype == TYPE_TDB ){
       /* just a small factor between the JPL DE405 AU definition and the DE200 definition
        * used by Curt when producing the solar system ephemeris files (see create_solar_system ephemeris) */
-      aucorr = JPL_AU_DE405 / CURT_AU;
+      if ( edat->etype == EPHEM_DE405 || edat->etype == EPHEM_DE414 )
+        aucorr = JPL_AU_DE405 / CURT_AU;
+      else if ( edat->etype == EPHEM_DE200 )
+        aucorr = JPL_AU_DE200 / CURT_AU;
+      else aucorr = 1.;
     }
     else if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
       /* include correction between ephemeris metres and SI metres */
-      aucorr = IFTE_K * JPL_AU_DE405 / CURT_AU;
+      if ( edat->etype == EPHEM_DE405 || edat->etype == EPHEM_DE414 )
+        aucorr = IFTE_K * JPL_AU_DE405 / CURT_AU;
+      else if ( edat->etype == EPHEM_DE200 )
+        aucorr = IFTE_K * JPL_AU_DE200 / CURT_AU;
+      else aucorr = 1.;
     }
+    else aucorr = 1.;
     
     /********************************************************************
      *Calucate position and vel. of center of Earth.

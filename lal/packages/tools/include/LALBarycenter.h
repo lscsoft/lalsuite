@@ -76,6 +76,15 @@ typedef enum{
   TYPE_ORIGINAL
 } TimeCorrectionType;
 
+
+typedef enum{
+  EPHEM_DE200,
+  EPHEM_DE405,
+  EPHEM_DE414,
+  EPHEM_DE421
+} EphemerisType;
+
+
 /* Constants from Irwin and Fukashima used in TEMPO2 */
 #define IFTE_JD0  2443144.5003725    /* Epoch of TCB, TCG and TT */
 #define IFTE_MJD0 43144.0003725
@@ -147,7 +156,9 @@ typedef struct tagEphemerisData
   
   PosVelAcc *ephemE;    /**< Array containing pos,vel,acc of earth, as extracted from earth
                          * ephem file. Units are sec, 1, 1/sec respectively */
-  PosVelAcc *ephemS;    /**< Array with pos, vel and acc for the sun (see ephemE) */
+  PosVelAcc *ephemS;    /**< Array with pos, vel and acc for the sun (see
+                         * ephemE) */
+  EphemerisType etype;  /**< The ephemeris type e.g. DE405 */
 }
 EphemerisData;
 
