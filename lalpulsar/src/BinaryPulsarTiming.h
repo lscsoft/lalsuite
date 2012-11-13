@@ -318,7 +318,6 @@ typedef struct
 tagBinaryPulsarInput
 {
   REAL8 tb;    /**< Time of arrival (TOA) at the SSB */
-  LIGOTimeGPS tbGPS;
   
   EarthState earth; /**< The current Earth state (for e.g. calculating 
                          Kopeikin terms) */

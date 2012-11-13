@@ -535,9 +535,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
       /* rearrange from what's in tasc2t0.f */
       Tasc = T0 - Dt;
-    }
-
-    //tt0 = XLALGPSDiff( &input->tbGPS, &params->TascGPS ); 
+    }     
     
     tt0 = tb - Tasc;
     
