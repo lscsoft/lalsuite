@@ -332,6 +332,7 @@ else
     echo "Not run with resampling."
 fi
 
+LV_flags="--computeLV --LVrho=5.0 --LVlX='0.5,0.5' --recalcToplistStats"
 
 echo
 echo "----------------------------------------------------------------------------------------------------"
@@ -343,7 +344,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM="${testDir}/GCT_DM.dat"
 timingsfile_DM="${testDir}/timing_DM.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' --recalcToplistStats"
+cmdline="$gct_code $gct_CL_common --useResamp=false --fnameout='$outfile_GCT_DM' --outputTiming='$timingsfile_DM' ${LV_flags}"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline -d1"
 else
@@ -373,7 +374,7 @@ rm -f checkpoint.cpt # delete checkpoint to start correctly
 outfile_GCT_DM_LV="${testDir}/GCT_DM_LV.dat"
 timingsfile_DM_LV="${testDir}/timing_DM_LV.dat"
 
-cmdline="$gct_code $gct_CL_common --useResamp=false --computeLV --SortToplist=2 --LVrho=5.0 --LVlX='0.5,0.5' --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
+cmdline="$gct_code $gct_CL_common --useResamp=false ${LV_flags} --SortToplist=2 --fnameout='$outfile_GCT_DM_LV' --outputTiming='$timingsfile_DM_LV'"
 if [ -n "$DEBUG" ]; then
     cmdline="$cmdline -d1"
 else
@@ -392,6 +393,35 @@ resGCT_DM_H1_LV=$(echo $topline  | awk '{print $9}')
 resGCT_DM_L1_LV=$(echo $topline  | awk '{print $10}')
 freqGCT_DM_LV=$(echo $topline | awk '{print $1}')
 
+echo
+echo "----------------------------------------------------------------------------------------------------"
+echo " STEP 6: run HierarchSearchGCT using LALDemod (perfect match) with 'dual' toplist: 1st=F, 2nd=LV "
+echo "----------------------------------------------------------------------------------------------------"
+echo
+
+rm -f checkpoint.cpt # delete checkpoint to start correctly
+outfile_GCT_DM_DUAL="${testDir}/GCT_DM_DUAL.dat"
+timingsfile_DM_DUAL="${testDir}/timing_DM_DUAL.dat"
+
+cmdline="$gct_code $gct_CL_common --useResamp=false --SortToplist=3 ${LV_flags} --fnameout='$outfile_GCT_DM_DUAL' --outputTiming='$timingsfile_DM_DUAL'"
+if [ -n "$DEBUG" ]; then
+    cmdline="$cmdline -d1"
+else
+    cmdline="$cmdline -d0 &> /dev/null"
+fi
+
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$gct_code' ..."
+    exit 1
+fi
+
+diff_F=`diff -I "[%][%].*" ${outfile_GCT_DM} ${outfile_GCT_DM_DUAL}`
+diff_LV=`diff -I "[%][%].*" ${outfile_GCT_DM_LV} ${outfile_GCT_DM_DUAL}-LV`
+if [ -n "${diff_F}" -o -n "${diff_LV}" ]; then
+    echo "Error: 'dual' toplist handling seems to differ from indidual 'F' or 'LV'-sorted toplists"
+    exit 1
+fi
 
 ## ---------- compute relative differences and check against tolerance --------------------
 awk_reldev='{printf "%.2e", sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'

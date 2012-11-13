@@ -186,7 +186,7 @@ void PrintFstatVec( LALStatus *status, REAL4FrequencySeries *in, FILE *fp, Pulsa
                     LIGOTimeGPS refTime, INT4 stackIndex);
 void PrintCatalogInfo( LALStatus *status, const SFTCatalog *catalog, FILE *fp );
 void PrintStackInfo( LALStatus *status, const SFTCatalogSequence *catalogSeq, FILE *fp );
-void UpdateSemiCohToplist( LALStatus *status, toplist_t *list, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, UsefulStageVariables *usefulparams, REAL4 NSegmentsInv, REAL4 *NSegmentsInvX );
+void UpdateSemiCohToplists ( LALStatus *status, toplist_t *list1, toplist_t *list2, FineGrid *in, REAL8 f1dot_fg, REAL8 f2dot_fg, UsefulStageVariables *usefulparams, REAL4 NSegmentsInv, REAL4 *NSegmentsInvX );
 void GetSegsPosVelAccEarthOrb( LALStatus *status, REAL8VectorSequence **posSeg,
                                REAL8VectorSequence **velSeg, REAL8VectorSequence **accSeg,
                                UsefulStageVariables *usefulparams );
@@ -321,6 +321,7 @@ int MAIN( int argc, char *argv[]) {
 
   /* fstat candidate structure for candidate toplist*/
   toplist_t *semiCohToplist=NULL;
+  toplist_t *semiCohToplist2=NULL;	// only used for SORTBY_DUAL_F_LV: 1st toplist sorted by 'F', 2nd one by 'LV'
 
   /* template and grid variables */
   static DopplerSkyScanInit scanInit;   /* init-structure for DopperScanner */
@@ -512,7 +513,7 @@ int MAIN( int argc, char *argv[]) {
   LAL_CALL( LALRegisterINTUserVar(    &status, "skyPointIndex",0, UVAR_DEVELOPER, "Only analyze this skypoint in grid", &uvar_skyPointIndex ), &status);
   LAL_CALL( LALRegisterREALUserVar(   &status, "dopplerMax",   0, UVAR_DEVELOPER, "Max Doppler shift",  &uvar_dopplerMax), &status);
   LAL_CALL( LALRegisterINTUserVar(    &status, "sftUpsampling",0, UVAR_DEVELOPER, "Upsampling factor for fast LALDemod",  &uvar_sftUpsampling), &status);
-  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=average2F, 1=numbercount, 2=LV-stat",  &uvar_SortToplist), &status);
+  LAL_CALL( LALRegisterINTUserVar(    &status, "SortToplist",  0, UVAR_DEVELOPER, "Sort toplist by: 0=avg2F, 1=numbercount, 2=LV-stat, 3=dual-toplists 'avg2F+LV'",  &uvar_SortToplist), &status);
   LAL_CALL( LALRegisterBOOLUserVar(   &status, "LVuseAllTerms",0, UVAR_DEVELOPER, "LineVeto: which terms to include - FALSE: only leading term, TRUE: all terms", &uvar_LVuseAllTerms), &status);
   LAL_CALL( LALRegisterSTRINGUserVar( &status, "outputSingleSegStats", 0,  UVAR_DEVELOPER, "Base filename for single-segment Fstat output (1 file per final toplist candidate!)", &uvar_outputSingleSegStats),  &status);
 
@@ -585,11 +586,11 @@ int MAIN( int argc, char *argv[]) {
   REAL4 TwoFthreshold = 2.0 * uvar_ThrF;
 #endif
 
-  if ( (uvar_SortToplist != 0) && (uvar_SortToplist != 1) && (uvar_SortToplist != 2) ) {
-    fprintf(stderr, "Invalid value specified for toplist sorting\n");
+  if ( (uvar_SortToplist < 0) || (uvar_SortToplist >= SORTBY_LAST) ) {
+    XLALPrintError ( "Invalid value %d specified for toplist sorting, must be within [0, %d]\n", uvar_SortToplist, SORTBY_LAST - 1 );
     return( HIERARCHICALSEARCH_EBAD );
   }
-  if ( (uvar_SortToplist == 2) && !uvar_computeLV ) {
+  if ( (uvar_SortToplist == SORTBY_LV || uvar_SortToplist == SORTBY_DUAL_F_LV) && !uvar_computeLV ) {
     fprintf(stderr, "Toplist sorting by LV-stat only possible if --computeLV given.\n");
     return( HIERARCHICALSEARCH_EBAD );
   }
@@ -608,7 +609,18 @@ int MAIN( int argc, char *argv[]) {
 
   /* create toplist -- semiCohToplist has the same structure
      as a fstat candidate, so treat it as a fstat candidate */
-  create_gctFStat_toplist(&semiCohToplist, uvar_nCand1, uvar_SortToplist);
+  if ( uvar_SortToplist == SORTBY_DUAL_F_LV )	// special treatement of 'dual' toplists: 1st one sorted by 'F', 2nd one by 'LV'
+    {
+      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, SORTBY_F ),
+                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_F );
+      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist2, uvar_nCand1, SORTBY_LV ),
+                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, SORTBY_LV );
+    }
+  else	// 'normal' single-sorting toplist cases (sortby 'F', 'nc' or 'LV')
+    {
+      XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
+                   XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
+    }
 
   /* write the log file */
   if ( uvar_log )
@@ -1720,10 +1732,10 @@ int MAIN( int argc, char *argv[]) {
               /* ############################################################### */
 
               if( uvar_semiCohToplist ) {
-                /* this is necessary here, because UpdateSemiCohToplist() might set
+                /* this is necessary here, because UpdateSemiCohToplists() might set
                    a checkpoint that needs some information from here */
                 LogPrintf(LOG_DETAIL, "Updating toplist with semicoherent candidates\n");
-                LAL_CALL( UpdateSemiCohToplist(&status, semiCohToplist, &finegrid, f1dot_fg, f2dot_fg, &usefulParams, NSegmentsInv, NSegmentsInvX ), &status);
+                LAL_CALL( UpdateSemiCohToplists (&status, semiCohToplist, semiCohToplist2, &finegrid, f1dot_fg, f2dot_fg, &usefulParams, NSegmentsInv, NSegmentsInvX ), &status);
               }
 
             } /* for( if1dot_fg = 0; if1dot_fg < nf1dots_fg; if1dot_fg++ ) */
@@ -1769,6 +1781,8 @@ int MAIN( int argc, char *argv[]) {
   /* now that we have the final toplist, translate all pulsar parameters to correct reftime */
   xlalErrno = 0;
   XLALExtrapolateToplistPulsarSpins ( semiCohToplist, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
+  if ( semiCohToplist2 )	// handle (optional) second toplist
+    XLALExtrapolateToplistPulsarSpins ( semiCohToplist2, usefulParams.spinRange_refTime.refTime, finegrid.refTime );
   if ( xlalErrno != 0 ) {
     XLALPrintError ("%s line %d : XLALExtrapolateToplistPulsarSpins() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
     return(HIERARCHICALSEARCH_EXLAL);
@@ -1793,14 +1807,20 @@ int MAIN( int argc, char *argv[]) {
 
     /* need pre-sorted toplist to have right segment-Fstat file numbers (do not rely on this feature, could be messed up by precision issues in sorting!) */
     if ( uvar_outputSingleSegStats )
-      sort_gctFStat_toplist(semiCohToplist);
+      {
+        sort_gctFStat_toplist(semiCohToplist);
+        if ( semiCohToplist2 )
+          sort_gctFStat_toplist(semiCohToplist2);
+      }
 
-    xlalErrno = 0;
-    XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, uvar_SignalOnly, uvar_outputSingleSegStats );
-    if ( xlalErrno != 0 ) {
-      XLALPrintError ("%s line %d : XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", __func__, __LINE__, xlalErrno );
-      return(HIERARCHICALSEARCH_EXLAL);
-    }
+    XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist, "GCTtop", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, uvar_SignalOnly, uvar_outputSingleSegStats ),
+                 HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed with xlalErrno = %d.\n\n", xlalErrno
+                 );
+    // also recalc optional 2nd toplist if present
+    if ( semiCohToplist2 )
+      XLAL_CHECK ( XLAL_SUCCESS == XLALComputeExtraStatsForToplist ( semiCohToplist2, "GCTtop", &stackMultiSFT, &stackMultiNoiseWeights, &stackMultiDetStates, &CFparams, refTimeGPS, uvar_SignalOnly, uvar_outputSingleSegStats ),
+                   HIERARCHICALSEARCH_EXLAL, "XLALComputeExtraStatsForToplist() failed for 2nd toplist with xlalErrno = %d.\n\n", xlalErrno
+                   );
 
     /* timing */
     if ( uvar_outputTiming ) {
@@ -1840,7 +1860,19 @@ int MAIN( int argc, char *argv[]) {
     }
 
   LogPrintf ( LOG_DEBUG, "Writing output ... ");
-  write_hfs_oputput(uvar_fnameout, semiCohToplist);
+  XLAL_CHECK ( write_hfs_oputput(uvar_fnameout, semiCohToplist) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist) failed.!\n", uvar_fnameout );
+  // output optional second toplist, if it exists, into "<uvar_fnameout>-LV"
+  if ( semiCohToplist2 )
+    {
+      LogPrintf ( LOG_DEBUG, "toplist2 ... ");
+      UINT4 newlen = strlen(uvar_fnameout) + 10;
+      CHAR *fname2;
+      XLAL_CHECK ( (fname2 = XLALCalloc ( 1, newlen )) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1, %d)\n\n", newlen );
+      sprintf ( fname2, "%s-LV", uvar_fnameout );
+      XLAL_CHECK ( write_hfs_oputput ( fname2, semiCohToplist2) != -1, XLAL_EFAILED, "write_hfs_oputput('%s', toplist2) failed for 2nd toplist!\n", fname2 );
+      XLALFree ( fname2 );
+    }
+
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
   /*------------ free all remaining memory -----------*/
@@ -1928,7 +1960,8 @@ int MAIN( int argc, char *argv[]) {
     LALFree(coarsegrid.Uindex);
   }
 
-  free_gctFStat_toplist(&semiCohToplist);
+  free_gctFStat_toplist ( &semiCohToplist );
+  if ( semiCohToplist2 ) free_gctFStat_toplist ( &semiCohToplist2 );
 
   XLALDestroyREAL4Vector ( usefulParams.LVloglX );
 
@@ -2483,15 +2516,19 @@ void GetChkPointIndex( LALStatus *status,
 
 
 
-/** Get SemiCoh candidates toplist */
-void UpdateSemiCohToplist(LALStatus *status,
-                          toplist_t *list,
-                          FineGrid *in,
-                          REAL8 f1dot_fg,
-                          REAL8 f2dot_fg,
-                          UsefulStageVariables *usefulparams,
-                          REAL4 NSegmentsInv,
-                          REAL4 *NSegmentsInvX)
+/** Get SemiCoh candidates into toplist(s)
+ * This function allows for inserting candidates into up to 2 toplists at once, which might be sorted differently!
+ */
+void UpdateSemiCohToplists ( LALStatus *status,
+                             toplist_t *list1,
+                             toplist_t *list2,	//< optional (can be NULL): insert candidate into this 2nd toplist as well
+                             FineGrid *in,
+                             REAL8 f1dot_fg,
+                             REAL8 f2dot_fg,
+                             UsefulStageVariables *usefulparams,
+                             REAL4 NSegmentsInv,
+                             REAL4 *NSegmentsInvX
+                             )
 {
 
   REAL8 freq_fg;
@@ -2501,7 +2538,7 @@ void UpdateSemiCohToplist(LALStatus *status,
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
-  ASSERT ( list != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+  ASSERT ( list1 != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( in != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
   ASSERT ( usefulparams != NULL, status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
 
@@ -2554,14 +2591,16 @@ void UpdateSemiCohToplist(LALStatus *status,
       }
     }
 
-    insert_into_gctFStat_toplist( list, line);
+    insert_into_gctFStat_toplist( list1, line);
+    if ( list2 )	// also insert candidate into (optional) second toplist
+      insert_into_gctFStat_toplist( list2, line);
 
   }
 
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* UpdateSemiCohToplist() */
+} /* UpdateSemiCohToplists() */
 
 
 

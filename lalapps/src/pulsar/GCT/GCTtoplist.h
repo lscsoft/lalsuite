@@ -51,11 +51,21 @@ typedef struct {
   REAL4 sumTwoFXrecalc[GCTTOP_MAX_IFOS];  /**< fixed-size array of single-detector 2F-values as recomputed by recalcToplistStats */
 } GCTtopOutputEntry;
 
+/// enumerate all toplist-sorting options: by F (0), number-count (1), LV-stat (2), "dual" toplists F + LV (3)
+typedef enum
+  {
+    SORTBY_F 		= 0,	//< sort by multi-IFO F-stat (averaged over segments)
+    SORTBY_NC 		= 1,	//< sort by number-count 'nc'
+    SORTBY_LV 		= 2,	//< sort by line-veto statistic 'LV'
+    SORTBY_DUAL_F_LV 	= 3,	//< dual toplists: one sorted by F, one by LV
+    SORTBY_LAST			//< end-marker
+  } SortBy_t;
+
 /* This has by now been reduced to an interface to the HeapToplist functions */
 
 /** creates a toplist with length elements,
    returns -1 on error (usually out of memory), else 0 */
-extern int create_gctFStat_toplist(toplist_t**list, UINT8 length, UINT4 whatToSortBy);
+extern int create_gctFStat_toplist(toplist_t**list, UINT8 length, SortBy_t whatToSortBy);
 
 /** frees the space occupied by the toplist */
 extern void free_gctFStat_toplist(toplist_t**list);
