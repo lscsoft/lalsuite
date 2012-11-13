@@ -9,6 +9,7 @@ fail() {
     echo
 
     if test -n "$LOGFILE" -a -r "$LOGFILE" ; then
+	date '+[%Y-%m-%d %H:%M:%S]' >> "$LOGFILE"
 	echo "Transcript of failure is in ${LOGFILE}"
 	echo "Final fifteen lines are:"
 	tail -15 "$LOGFILE"
@@ -18,22 +19,22 @@ fail() {
 } ## fail()
 
 log_and_show() {
-    echo "$@" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` "$@" >> "$LOGFILE"
     echo "$@" >&2
 }
 
 log_and_do() {
-    echo "$@" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` "$@" >> "$LOGFILE"
     "$@" >> "$LOGFILE" 2>&1 || fail
 }
 
 log_and_dont_fail() {
-    echo "$@" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` "$@" >> "$LOGFILE"
     "$@" >> "$LOGFILE" 2>&1
 }
 
 download() {
-    echo curl "$1/$2 > $2" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE"
     curl "$1/$2" > "$2" 2>> "$LOGFILE"
 }
 
