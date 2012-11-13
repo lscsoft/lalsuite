@@ -45,6 +45,9 @@
 #define LAL_ST5_ABSOLUTE_TOLERANCE 1.e-12
 #define LAL_ST5_RELATIVE_TOLERANCE 1.e-12
 
+/* terminate the ODE integration at or below this value of the PN parameter */
+#define PN_V_MAX 0.6 
+
 /**
  * Structure containing the non-dynamical coefficients needed
  * to evolve a spinning, precessing binary and produce a waveform.
@@ -196,37 +199,11 @@ int XLALSimInspiralSpinTaylorT5 (
         return XLAL_FAILURE; 
 	}
 		
-    /* Estimate length of waveform using Newtonian chirp time formula. */
-	UINT4 dataLength = pow(2, ceil(log2(5*mParams->totalMass/(256.*pow(mParams->v0,8.)*mParams->eta)/deltaT)));
+    /* Estimate length of waveform using Newtonian chirp time formula. give 10% extra time */
+	UINT4 dataLength = pow(2, ceil(log2(1.1*5*mParams->totalMass/(256.*pow(mParams->v0,8.)*mParams->eta)/deltaT)));
 
 	/* Adjust tStart so last sample is at time=0 */
     XLALGPSAdd(&tStart, -1.0*(dataLength-1)*deltaT);
-
-	/* allocate memory for vectors storing the PN parameter, orbital phase
-	and the unit vector along the Newtonian orbital angular momentum  */
-    V = XLALCreateREAL8TimeSeries( "PN Parameter", &tStart, 0.0, deltaT, &lalStrainUnit, dataLength);
-    orbPhase = XLALCreateREAL8TimeSeries( "Orbital Phase", &tStart, 0.0, deltaT, &lalStrainUnit, dataLength);
-    LNhxVec = XLALCreateREAL8TimeSeries( "Unit vec along Newt. ang. mom (X comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    LNhyVec = XLALCreateREAL8TimeSeries( "Unit vec along Newt. ang. mom (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    LNhzVec = XLALCreateREAL8TimeSeries( "Unit vec along Newt. ang. mom (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S1xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S1yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S1zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S2xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S2yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-    S2zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, dataLength);
-
-	memset(V->data->data, 0, dataLength*sizeof(REAL8));
-	memset(orbPhase->data->data, 0, dataLength*sizeof(REAL8));
-	memset(LNhxVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(LNhyVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(LNhzVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S1xVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S1yVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S1zVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S2xVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S2yVec->data->data, 0, dataLength*sizeof(REAL8));
-	memset(S2zVec->data->data, 0, dataLength*sizeof(REAL8));
 
     /* binary parameters in a coordinate system whose z axis is along the initial 
     orbital angular momentum  */
@@ -314,6 +291,32 @@ int XLALSimInspiralSpinTaylorT5 (
 				__func__, intStatus, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI, S1[0], S1[1], S1[2], S2[0], 
 				S2[1], S2[2], LNh[0], LNh[1], LNh[2]);
     }
+
+	/* allocate memory for vectors storing the PN parameter, orbital phase
+	and the unit vector along the Newtonian orbital angular momentum  */
+    V = XLALCreateREAL8TimeSeries( "PN Parameter", &tStart, 0.0, deltaT, &lalStrainUnit, lenReturn);
+    orbPhase = XLALCreateREAL8TimeSeries( "Orbital Phase", &tStart, 0.0, deltaT, &lalStrainUnit, lenReturn);
+    LNhxVec = XLALCreateREAL8TimeSeries( "Uvec along Newt ang mom (X comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    LNhyVec = XLALCreateREAL8TimeSeries( "Uvec along Newt ang mom (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    LNhzVec = XLALCreateREAL8TimeSeries( "Uvec along Newt ang mom (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S1xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S1yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S1zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 1 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S2xVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (X comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S2yVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Y comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+    S2zVec = XLALCreateREAL8TimeSeries( "Spin ang mom of body 2 (Z comp)", &tStart, 0., deltaT, &lalStrainUnit, lenReturn);
+
+	memset(V->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(orbPhase->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(LNhxVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(LNhyVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(LNhzVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S1xVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S1yVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S1zVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S2xVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S2yVec->data->data, 0, lenReturn*sizeof(REAL8));
+	memset(S2zVec->data->data, 0, lenReturn*sizeof(REAL8));
 
 	/* Copy dynamical variables from yout array to output time series.
 	note that yout[0:dataLength=1] is time */
@@ -790,7 +793,7 @@ static int spinTaylorT5Init(
     mParams->etaSqr = mParams->eta*mParams->eta; 								/* eta^2 */
     mParams->deltaEta = mParams->delta*mParams->eta; 							/* delta * eta */
 	mParams->v0 = cbrt(LAL_PI*mParams->totalMass*fStart);						/* starting value for the PN parameter */
-    mParams->vMax = cbrt(0.45*LAL_PI*mParams->totalMass/deltaT);				/* set an emperical maximum on the PN parameter (0.9 f_Nyquist) */
+    mParams->vMax = cbrt(0.4*LAL_PI*mParams->totalMass/deltaT);				/* set an emperical maximum on the PN parameter (0.9 f_Nyquist) */
 	mParams->phiRef = phiRef; 
 
 	/* coefficients of the reexpanded dEnergy/flux function */
@@ -869,7 +872,7 @@ static int XLALSimInspiralSpinTaylorT5StoppingTest(
         return LALSIMINSPIRAL_ST5_TEST_VDOT;		
     else if (isnan(v) || isinf(v))		 			/* v is nan! */
         return LALSIMINSPIRAL_ST5_TEST_VNAN;
-    else if ((v < params->v0) || (v > params->vMax) || (v < 0.) || (v >= 1.))
+    else if ((v < params->v0) || (v > params->vMax) || (v < 0.) || (v >= PN_V_MAX))
         return LALSIMINSPIRAL_ST5_TEST_FREQBOUND;
     else 											/* Step successful, continue integrating */
         return GSL_SUCCESS;
