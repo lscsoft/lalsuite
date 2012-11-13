@@ -554,12 +554,16 @@ Parameter arguments:\n\
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
         fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
 		AmpOrder=injTable->amp_order;
-		PhaseOrder = XLALGetOrderFromString(injTable->waveform);
-		if( (int) PhaseOrder == XLAL_FAILURE)
-		  ABORTXLAL(&status);
-		approx = XLALGetApproximantFromString(injTable->waveform);
-		if( (int) approx == XLAL_FAILURE)
-		  ABORTXLAL(&status);
+		/* Only check this if the user has not specified an approximant */
+		if(!LALInferenceGetProcParamVal(commandLine,"--approx") && !LALInferenceGetProcParamVal(commandLine,"--approximant"))
+		{
+			PhaseOrder = XLALGetOrderFromString(injTable->waveform);
+			if( (int) PhaseOrder == XLAL_FAILURE)
+		  		ABORTXLAL(&status);
+			approx = XLALGetApproximantFromString(injTable->waveform);
+			if( (int) approx == XLAL_FAILURE)
+		  		ABORTXLAL(&status);
+		}
 		/* See if there are any parameters pinned to injection values */
 		if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
 			pinned_params=ppt->value;
