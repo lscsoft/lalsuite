@@ -774,8 +774,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   LIGOTimeGPS epoch = catalog->data[0].header.epoch;
   catalog->data[0].locator->isft = nSFTs - 1;
   deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
-  minbin = MYROUND( catalog->data[0].header.f0 / deltaF );
-  maxbin = 0;
+  minbin = firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+  maxbin = lastbin = firstbin + catalog->data[0].numBins - 1;
   for(catPos = 1; catPos < catalog->length; catPos++) {
     firstbin = MYROUND( catalog->data[catPos].header.f0 / deltaF );
     lastbin = firstbin + catalog->data[catPos].numBins - 1;
