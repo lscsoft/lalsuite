@@ -479,7 +479,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
            Start at end and find where we cross wEnd */
         while( yout->data[2*len+cutlen-1] < wEnd )
             cutlen--;
-        cutlen++; /* while loop exits on wrong side of fEnd, so increment */
+        if( cutlen < len )
+            cutlen++; /* while loop exits on wrong side of fEnd, so increment */
     }
     else if( fEnd > fStart )
     {
@@ -489,7 +490,8 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
            Start at end and find where we cross wEnd */
         while( yout->data[2*len+cutlen-1] > wEnd )
             cutlen--;
-        cutlen++; /* while loop exits on wrong side of fEnd, so increment */
+        if( cutlen < len )
+            cutlen++; /* while loop exits on wrong side of fEnd, so increment */
     }
 
     /* Adjust tStart so last sample is at time=0 */
