@@ -436,7 +436,7 @@ int MAIN( int argc, char *argv[]) {
 #ifdef EAH_LOGLEVEL
   uvar_loglevel = EAH_LOGLEVEL;
 #else
-  uvar_loglevel = lalDebugLevel;
+  uvar_loglevel = lalDebugLevel & LALALLDBG;
 #endif
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
