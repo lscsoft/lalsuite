@@ -2178,39 +2178,35 @@ REAL8 LALTTMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
 
   /* Check not before the start of GPS time (MJD 44244) */
-  if(MJD < 44244.){
-    fprintf(stderr, "Input time is not in range.\n");
-    exit(0);
-  }
-
+  XLAL_CHECK_REAL8 ( MJD >= GPS0MJD, XLAL_EDOM, "Input MJD time %.1f is not in\
+ range, must be > %.1f.\n", MJD, GPS0MJD);
+  
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
    * start of GPS time */
-  GPS = (MJD-44244.)*86400. - 51.184;
+  GPS = (MJD - GPS0MJD)*86400. - GPS_TDT;
 
   return GPS;
 }
 
 
-/* If you have an MJD arrival time on the Earth then this will convert it to 
- * the equivalent GPS time in TDB (see Table 1 of Seidelmann and Fukushima, 
+/* If you have an MJD arrival time on the Earth then this will convert it to
+ * the equivalent GPS time in TDB (see Table 1 of Seidelmann and Fukushima,
  * Astronomy & Astrophysics, 265, 833-838 (1992).
- * 
+ *
  * Note that LALBarycenter performs these TDBtoTT corrections (i.e. the
  * Einstein delay) when correcting a GPS time on the Earth to TDB. Also, for
  * TEMPO produced pulsar epochs given in MJD these are already in the TDB
- * system and an equivalent GPS time in the TDB can be calculated just using 
- * LALTTMJDtoGPS.*/
+ * system and an equivalent GPS time in the TDB can be calculated just using
+ * LALTTMJDtoGPS.
+ */
 REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   REAL8 GPS;
   REAL8 T, TDBtoTT;
 
-  /* Check not before the start of GPS time (MJD 44244) */
-  if(MJD < 44244.){
-    fprintf(stderr, "Input time is not in range.\n");
-    exit(0);
-  }
+  /* Check not before the start of GPS time */
+  XLAL_CHECK_REAL8 ( MJD >= GPS0MJD, XLAL_EDOM, "Input MJD time %.1f is not in range, must be > %.1f.\n", MJD, GPS0MJD);
 
-  /* use factors from Table 1 of Seidelmann and Fukushima, Astronomy & 
+  /* use factors from Table 1 of Seidelmann and Fukushima, Astronomy &
    * Astrophysics, 265, 833-838 (1992) where TDB = TDT + P
    * and:
    * P = 0.0016568 sin(35999.37 degs x T + 357.5 degs) +
@@ -2220,8 +2216,7 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
          0.0000047 sin(34777.3 degs x T + 230.0 degs)
    * and T is the elapsed time from J2000 (which has a Julian day date of
    * JD 2451545.0) in Julian centuries.*/
-  T = MJD + (2400000.5-2451545.0); /* 2400000.5 is the Julian day defining 
-                                    * MJD start epoch the. */ 
+  T = MJD + (XLAL_MJD_REF - XLAL_EPOCH_J2000_0_JD);
   T /= 36525.; /* covert days to Julian centuries */
 
   /* time diff in seconds (the Einstein delay) */
@@ -2234,7 +2229,7 @@ REAL8 LALTDBMJDtoGPS(REAL8 MJD){
   /* convert TDB to TT (TDB-TDBtoTT) and then convert TT to GPS */
   /* there is the magical number factor of 32.184 + 19 leap seconds to the
    * start of GPS time */
-  GPS = (MJD-44244.)*86400. - 51.184 - TDBtoTT;
+  GPS = (MJD - GPS0MJD)*86400. - GPS_TDT - TDBtoTT;
 
   return GPS;
 }
@@ -2252,15 +2247,13 @@ REAL8 LALTCBMJDtoGPS(REAL8 MJD){
   REAL8 TCBtoTDB;
 
   /* Check not before the start of GPS time (MJD 44244) */
-  if(MJD < 44244.){
-    fprintf(stderr, "Input time is not in range.\n");
-    exit(0);
-  }
+  XLAL_CHECK_REAL8 ( MJD >= GPS0MJD, XLAL_EDOM, "Input MJD time %.1f is not in\
+ range, must be > %.1f.\n", MJD, GPS0MJD);
 
   /* from Seidelmann and Fukushima we have a linear drift term:
    * TCB - TDB = 1.550506e-8 x (JD - 2443144.5) x 86400
    */
-  Tdiff = (MJD + 2400000.5 - 2443144.5)*86400.;
+  Tdiff = (MJD + XLAL_MJD_REF - 2443144.5)*86400.;
   TCBtoTDB = 1.550506e-8 * Tdiff;
 
   /* convert from TDB to GPS */

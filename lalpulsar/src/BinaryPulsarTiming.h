@@ -51,6 +51,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/StringVector.h>
 #include <lal/LALBarycenter.h>
+#include <lal/Date.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +79,13 @@ not be in the binary timing routine"
 #define BINARYPULSARTIMINGH_MSGENAN "Output is NaN!"
 #define BINARYPULSARTIMINGH_MSGEPARFAIL "Failed to read in .par file"
 
+#define GPS0MJD 44244.0 /* start of GPS time (MJD 44244) */
+/* the difference between TDT (or TT) and TAI (see e.g. Eqn 15 of T.-Y. Huang et
+ * al, A&A, 220, p. 329, 1989) */
+#define TDT_TAI 32.184
+/* the difference between TDT/TT and the GPS epoch */
+#define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
+                        
 /*@}*/
 
 /** A structure to contain all pulsar parameters and associated errors.
