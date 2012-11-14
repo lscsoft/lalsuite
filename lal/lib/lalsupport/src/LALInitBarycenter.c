@@ -204,7 +204,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   /* check the ephemeris type from file name for consistency */
   if ( strstr( earthEphemerisFile, "DE200" ) ){
     if ( !strstr( sunEphemerisFile, "DE200" ) ){
-      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+      XLALPrintError("%s: %s and %s have inconsistent ephemeris type\n",
                      __func__, earthEphemerisFile, sunEphemerisFile );
       XLAL_ERROR_NULL( XLAL_EINVAL );
     }
@@ -212,7 +212,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   }
   else if ( strstr( earthEphemerisFile, "DE405" ) ){
     if ( !strstr( sunEphemerisFile, "DE405" ) ){
-      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+      XLALPrintError("%s: %s and %s have inconsistent ephemeris type\n",
                      __func__, earthEphemerisFile, sunEphemerisFile );
       XLAL_ERROR_NULL( XLAL_EINVAL );
     }
@@ -220,7 +220,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   }
   else if ( strstr( earthEphemerisFile, "DE414" ) ){
     if ( !strstr( sunEphemerisFile, "DE414" ) ){
-      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+      XLALPrintError("%s: %s and %s have inconsistent ephemeris type\n",
                      __func__, earthEphemerisFile, sunEphemerisFile );
       XLAL_ERROR_NULL( XLAL_EINVAL );
     }
@@ -230,7 +230,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
     if ( strstr( sunEphemerisFile, "DE200" ) ||
          strstr( sunEphemerisFile, "DE405" ) ||
          strstr( sunEphemerisFile, "DE414" ) ){
-      XLALPrintError("%s: %p and %p have inconsistent ephemeris type\n",
+      XLALPrintError("%s: %s and %s have inconsistent ephemeris type\n",
                      __func__, earthEphemerisFile, sunEphemerisFile );
       XLAL_ERROR_NULL( XLAL_EINVAL );
     }
@@ -268,6 +268,7 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   edat->dtEtable  = ephemV->dt;
   edat->ephemE    = ephemV->data;
   edat->etype     = etype;
+  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthEphemerisFile );
   XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
   ephemV = NULL;
 
@@ -293,9 +294,9 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   edat->nentriesS = ephemV->length;
   edat->dtStable  = ephemV->dt;
   edat->ephemS    = ephemV->data;
+  edat->ephiles.sunEphemeris = XLALStringDuplicate( sunEphemerisFile );
   XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
   ephemV = NULL;
-
 
   /* return resulting ephemeris-data */
   return edat;
@@ -585,265 +586,39 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
                     EphemerisData *edat	/**< [in/out] initialized ephemeris-data */
                     )
 {
-
-    FILE *fp1, *fp2; /* fp1 is table of Earth location; fp2 is for Sun*/
-    CHAR dummy;
-    INT4 j; /*dummy index*/
-    INT4 gpsYr; /*gpsYr + leap is the time on the GPS clock
-                          at first instant of new year, UTC; equivalently
-                          leap is # of leap secs added between Jan.6, 1980 and
-                          Jan. 2 of given year */
-    INT4 ret; /* return value for checking */
+    CHAR *earthfile = NULL, *sunfile = NULL;
+    EphemerisData *edattmp = NULL;
 
     INITSTATUS(stat);
     ATTATCHSTATUSPTR(stat);
 
-    /* open earth file */
-    fp1 = LALOpenDataFile(edat->ephiles.earthEphemeris);
+    if( edat == NULL )
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, "Ephemeris structure is NULL" );
 
-    /* check that we could open the file */
-    if ( fp1 == NULL ) {
-      snprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.earthEphemeris);
-      errmsg[ERRMSGLEN-1] = '\0';
-      ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
+    if( edat->ephiles.earthEphemeris == NULL )
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
+
+    if( edat->ephiles.sunEphemeris == NULL )
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
+
+    /* copy file names */
+    earthfile = XLALStringDuplicate( edat->ephiles.earthEphemeris );
+    sunfile = XLALStringDuplicate( edat->ephiles.sunEphemeris );
+
+    /* free edat */
+    XLALDestroyEphemerisData( edat );
+
+    /* use XLALInitBarycenter */
+    edattmp = XLALInitBarycenter( earthfile, sunfile );
+    if( edattmp == NULL ){
+      ABORT( stat, LALINITBARYCENTERH_EEPHFILE,
+             LALINITBARYCENTERH_MSGEEPHFILE );
     }
 
-    /* read first line */
-    ret = fscanf(fp1,"%d %le %d\n", &gpsYr, &edat->dtEtable, &edat->nentriesE);
-    if (ret != 3) {
-      fclose(fp1);
-      XLALPrintError("couldn't parse first line of %s: %d\n", edat->ephiles.earthEphemeris, ret);
-      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-    }
+    XLALFree( earthfile );
+    XLALFree( sunfile );
 
-    /* allocate memory for ephemeris info */
-    edat->ephemE  = (PosVelAcc *)LALMalloc(edat->nentriesE*sizeof(PosVelAcc));
-    if (edat->ephemE == NULL) {
-      fclose(fp1);
-      ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
-    }
-
-    /* first column in earth.dat or sun.dat is gps time--one long integer
-       giving the number of secs that have ticked since start of GPS epoch
-       +  on 1980 Jan. 6 00:00:00 UTC
-    */
-
-    /* read the remaining lines */
-    for (j=0; j < edat->nentriesE; ++j) {
-      ret = fscanf(fp1,"%le %le %le %le %le %le %le %le %le %le\n",
-		   &edat->ephemE[j].gps,
-		   &edat->ephemE[j].pos[0], &edat->ephemE[j].pos[1], &edat->ephemE[j].pos[2],
-		   &edat->ephemE[j].vel[0], &edat->ephemE[j].vel[1], &edat->ephemE[j].vel[2],
-		   &edat->ephemE[j].acc[0], &edat->ephemE[j].acc[1], &edat->ephemE[j].acc[2]);
-
-      /* check number of scanned items */
-      if (ret != 10) {
-	fclose(fp1);
-	LALFree(edat->ephemE);
-	XLALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.earthEphemeris, ret);
-	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-      }
-
-      /* check timestamps */
-      if(j == 0) {
-	if (gpsYr - edat->ephemE[j].gps > 3600 * 24 * 365) {
-	  XLALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
-			j+2, edat->ephiles.earthEphemeris, gpsYr, edat->ephemE[j].gps);
-	  fclose(fp1);
-	  LALFree(edat->ephemE);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-      } else {
-	if (edat->ephemE[j].gps != edat->ephemE[j-1].gps + edat->dtEtable) {
-	  XLALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
-			j+2, edat->ephiles.earthEphemeris, edat->ephemE[j].gps, edat->ephemE[j-1].gps + edat->dtEtable);
-	  fclose(fp1);
-	  LALFree(edat->ephemE);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-      }
-
-      /* check position, velocity and acceleration */
-#ifndef SQR
-#define SQR(x) ((x)*(x))
-#endif
-      {
-	REAL8 length;
-	length = sqrt(SQR(edat->ephemE[j].pos[0]) + SQR(edat->ephemE[j].pos[1]) + SQR(edat->ephemE[j].pos[2]));
-	if ( fabs(499.0 - length) > 25) /* 5% */ {
-	  XLALPrintError("earth position out of range in line %d of %s: %le %le %le: %le\n",
-			j+2, edat->ephiles.earthEphemeris,
-			edat->ephemE[j].pos[0], edat->ephemE[j].pos[1], edat->ephemE[j].pos[2], length);
-	  fclose(fp1);
-	  LALFree(edat->ephemE);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-	length = sqrt(SQR(edat->ephemE[j].vel[0]) + SQR(edat->ephemE[j].vel[1]) + SQR(edat->ephemE[j].vel[2]));
-	if (fabs (1e-4 - length) > 1e-5) /* 10% */ {
-	  XLALPrintError("earth velocity out of range in line %d of %s: %le %le %le: %le\n",
-			j+2, edat->ephiles.earthEphemeris,
-			edat->ephemE[j].vel[0], edat->ephemE[j].vel[1], edat->ephemE[j].vel[2], length);
-	  fclose(fp1);
-	  LALFree(edat->ephemE);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-	length = sqrt(SQR(edat->ephemE[j].acc[0]) + SQR(edat->ephemE[j].acc[1]) + SQR(edat->ephemE[j].acc[2]));
-	if (fabs (2e-11 - length) > 3e-12) /* 15% */ {
-	  XLALPrintError("earth acceleration out of range in line %d of %s: %le %le %le: %le\n",
-			j+2, edat->ephiles.earthEphemeris,
-			edat->ephemE[j].acc[0], edat->ephemE[j].acc[1], edat->ephemE[j].acc[2], length);
-	  fclose(fp1);
-	  LALFree(edat->ephemE);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-      }
-
-      /* debug
-      {
-	REAL8 length;
-	fprintf(stderr,"earth line: %d:  ");
-	length = SQR(edat->ephemE[j].pos[0]) + SQR(edat->ephemE[j].pos[1]) + SQR(edat->ephemE[j].pos[2]);
-	fprintf(stderr,"pos: %le (%le), ", sqrt(length), length);
-	length = SQR(edat->ephemE[j].vel[0]) + SQR(edat->ephemE[j].vel[1]) + SQR(edat->ephemE[j].vel[2]);
-	fprintf(stderr,"vel: %le (%le), ", sqrt(length), length);
-	length = SQR(edat->ephemE[j].acc[0]) + SQR(edat->ephemE[j].acc[1]) + SQR(edat->ephemE[j].acc[2]);
-	fprintf(stderr,"acc: %le (%le)\n", sqrt(length), length);
-      }
-      */
-    }
-
-    if (fscanf(fp1,"%c",&dummy) != EOF) {
-      XLALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.earthEphemeris);
-      fclose(fp1);
-      LALFree(edat->ephemE);
-      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-    }
-
-    /* close earth file */
-    fclose(fp1);
-
-
-    /* open sun file */
-    fp2 = LALOpenDataFile(edat->ephiles.sunEphemeris);
-
-    /* check that we could open the file */
-    if ( fp2 == NULL ) {
-      LALFree(edat->ephemE);
-      snprintf (errmsg, ERRMSGLEN, "%s '%s'\n", LALINITBARYCENTERH_MSGEOPEN, edat->ephiles.sunEphemeris);
-      errmsg[ERRMSGLEN-1] = 0;
-      ABORT (stat, LALINITBARYCENTERH_EOPEN, errmsg);
-    }
-
-    /* read first line */
-    ret = fscanf(fp2,"%d %le %d\n", &gpsYr, &edat->dtStable, &edat->nentriesS);
-    if (ret != 3) {
-      LALFree(edat->ephemE);
-      fclose(fp2);
-      XLALPrintError("Couldn't parse first line of %s: %d\n", edat->ephiles.sunEphemeris, ret);
-      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-    }
-
-    /* allocate memory for ephemeris info */
-    edat->ephemS  = (PosVelAcc *)LALMalloc(edat->nentriesS*sizeof(PosVelAcc));
-    if (edat->ephemS == NULL) {
-      fclose(fp2);
-      LALFree(edat->ephemE);
-      ABORT(stat, LALINITBARYCENTERH_EMEM, LALINITBARYCENTERH_MSGEMEM);
-    }
-
-    /* read the remaining lines */
-    for (j=0; j < edat->nentriesS; ++j) {
-      ret = fscanf(fp2,"%le %le %le %le %le %le %le %le %le %le\n",
-		   &edat->ephemS[j].gps,
-		   &edat->ephemS[j].pos[0], &edat->ephemS[j].pos[1], &edat->ephemS[j].pos[2],
-		   &edat->ephemS[j].vel[0], &edat->ephemS[j].vel[1], &edat->ephemS[j].vel[2],
-		   &edat->ephemS[j].acc[0], &edat->ephemS[j].acc[1], &edat->ephemS[j].acc[2]);
-
-      /* check number of scanned items */
-      if (ret != 10) {
-	fclose(fp2);
-	LALFree(edat->ephemE);
-	LALFree(edat->ephemS);
-	XLALPrintError("Couldn't parse line %d of %s: %d\n", j+2, edat->ephiles.sunEphemeris, ret);
-	ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-      }
-
-      /* check timestamps */
-      if(j == 0) {
-	if (gpsYr - edat->ephemS[j].gps > 3600 * 24 * 365) {
-	  XLALPrintError("Wrong timestamp in line %d of %s: %d/%le\n",
-			j+2, edat->ephiles.sunEphemeris, gpsYr, edat->ephemS[j].gps);
-	  fclose(fp2);
-	  LALFree(edat->ephemE);
-	  LALFree(edat->ephemS);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-      } else {
-	if (edat->ephemS[j].gps != edat->ephemS[j-1].gps + edat->dtStable) {
-	  XLALPrintError("Wrong timestamp in line %d of %s: %le/%le\n",
-			j+2, edat->ephiles.sunEphemeris, edat->ephemS[j].gps, edat->ephemS[j-1].gps + edat->dtStable);
-	  fclose(fp2);
-	  LALFree(edat->ephemE);
-	  LALFree(edat->ephemS);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-      }
-
-      /* check position, velocity and acceleration */
-      {
-	REAL8 length;
-	length = sqrt(SQR(edat->ephemS[j].pos[0]) + SQR(edat->ephemS[j].pos[1]) + SQR(edat->ephemS[j].pos[2]));
-	if ((1 > length) || (length > 10)) {
-	  XLALPrintError("sun position out of range in line %d of %s: %f %f %f: %f\n",
-			j+2, edat->ephiles.earthEphemeris,
-			edat->ephemS[j].pos[0], edat->ephemS[j].pos[1], edat->ephemS[j].pos[2], length);
-	  fclose(fp2);
-	  LALFree(edat->ephemS);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-	length = sqrt(SQR(edat->ephemS[j].vel[0]) + SQR(edat->ephemS[j].vel[1]) + SQR(edat->ephemS[j].vel[2]));
-	if ((1e-8 > length) || (length > 1e-7)) {
-	  XLALPrintError("sun velocity out of range in line %d of %s: %f %f %f: %f\n",
-			j+2, edat->ephiles.earthEphemeris,
-			edat->ephemS[j].vel[0], edat->ephemS[j].vel[1], edat->ephemS[j].vel[2], length);
-	  fclose(fp2);
-	  LALFree(edat->ephemS);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-	length = sqrt(SQR(edat->ephemS[j].acc[0]) + SQR(edat->ephemS[j].acc[1]) + SQR(edat->ephemS[j].acc[2]));
-	if ((1e-16 > length) || (length > 1e-14)) {
-	  XLALPrintError("sun acceleration out of range in line %d of %s: %f %f %f: %f\n",
-			j+2, edat->ephiles.earthEphemeris,
-			edat->ephemS[j].acc[0], edat->ephemS[j].acc[1], edat->ephemS[j].acc[2], length);
-	  fclose(fp2);
-	  LALFree(edat->ephemS);
-	  ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-	}
-      }
-      /* debug
-      {
-	REAL8 length;
-	fprintf(stderr,"sun line: %d:  ");
-	length = SQR(edat->ephemS[j].pos[0]) + SQR(edat->ephemS[j].pos[1]) + SQR(edat->ephemS[j].pos[2]);
-	fprintf(stderr,"pos: %le (%le), ", sqrt(length), length);
-	length = SQR(edat->ephemS[j].vel[0]) + SQR(edat->ephemS[j].vel[1]) + SQR(edat->ephemS[j].vel[2]);
-	fprintf(stderr,"vel: %le (%le), ", sqrt(length), length);
-	length = SQR(edat->ephemS[j].acc[0]) + SQR(edat->ephemS[j].acc[1]) + SQR(edat->ephemS[j].acc[2]);
-	fprintf(stderr,"acc: %le (%le)\n", sqrt(length), length);
-      }
-      */
-    }
-
-    if (fscanf(fp2,"%c",&dummy) != EOF) {
-      XLALPrintError("Garbage at end of ephemeris file %s\n", edat->ephiles.sunEphemeris);
-      fclose(fp2);
-      LALFree(edat->ephemE);
-      LALFree(edat->ephemS);
-      ABORT(stat, LALINITBARYCENTERH_EEPHFILE, LALINITBARYCENTERH_MSGEEPHFILE);
-    }
-
-    /* close the file */
-    fclose(fp2);
+    memcpy(edat, edattmp, sizeof(EphemerisData));
 
     /* successful return */
     DETATCHSTATUSPTR(stat);
