@@ -324,6 +324,7 @@ echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
 gsl=gsl-1.9
 fftw=fftw-3.2.2
+zlib=zlib-1.2.7
 binutils=binutils-2.19
 
 if ! [ .$check_only = .true ]; then
@@ -361,6 +362,16 @@ elif test -z "$noupdate"; then
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
+if test ."$build_win32" = ."true"; then
+    if test -z "$rebuild" -a -d "$zlib"; then
+        log_and_show "using existing zlib source"
+    elif test -z "$noupdate"; then
+        log_and_show "retrieving $zlib"
+        download http://zlib.net $zlib.tar.gz
+        log_and_do tar xzf "$zlib.tar.gz"
+    fi
+fi
+
 if test -n "$build_binutils" -a -n "$rebuild_binutils" -a -z "$noupdate"; then
     log_and_show "retrieving $binutils"
     download http://www.aei.mpg.de/~bema $binutils.tar.gz
@@ -395,6 +406,21 @@ fi
 if test \! -d lalsuite/.git ; then
     log_and_do rm -rf lalsuite
     log_and_do ln -s "$eah_build2_loc/../../../../../.." lalsuite
+fi
+
+if test ."$build_win32" = ."true"; then
+    if test -z "$rebuild" && pkg-config --exists zlib; then
+        log_and_show "using existing zlib"
+    else
+        log_and_show "compilng $zlib"
+        log_and_do cd "$SOURCE/$zlib"
+        log_and_do "./configure" --static --prefix="$INSTALL"
+        # log_and_dont_fail make clean
+        # 'make uninstall' deletes files in the source tree if the required directories in PREFIX don't exist (yet)
+        # log_and_dont_fail make uninstall
+        log_and_do make
+        log_and_do make install
+    fi
 fi
 
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
