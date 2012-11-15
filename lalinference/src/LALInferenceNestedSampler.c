@@ -43,6 +43,39 @@ static double logadd(double a,double b){
 	else return(b+log(1.0+exp(a-b)));
 }
 
+static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState);
+static void printAdaptiveJumpSizes(FILE *file, LALInferenceRunState *runState)
+{
+    LALInferenceVariableItem *this=runState->currentParams->head;
+    REAL8 *val=NULL;
+    char tmpname[1000]="";
+    fprintf(file,"Adaptive proposal step size:\n");
+    while(this)
+    {
+        sprintf(tmpname,"%s_%s",this->name,ADAPTSUFFIX);
+        if(LALInferenceCheckVariable(runState->proposalArgs,tmpname))
+        {
+            val=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+            fprintf(file,"%s: %lf\n",this->name,*val);
+        }
+        this=this->next;
+    }
+
+}
+
+static void resetProposalStats(LALInferenceRunState *runState);
+static void resetProposalStats(LALInferenceRunState *runState)
+{
+    LALInferenceProposalStatistics *propStat;
+    LALInferenceVariableItem *this;
+    this = runState->proposalStats->head;
+    while(this){
+        propStat = (LALInferenceProposalStatistics *)this->value;
+        propStat->accepted = 0;
+        propStat->proposed = 0;
+        this = this->next;
+    } 
+}
 
 static REAL8 mean(REAL8 *array,int N){
 	REAL8 sum=0.0;
@@ -445,10 +478,17 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
           }else
             kdupdate = 4.;
         }
-          
+    
 	/* Set the number of MCMC points */
 	UpdateNMCMC(runState);
-	
+    /* Output some information */
+    if(verbose){
+        LALInferencePrintProposalStatsHeader(stdout,runState->proposalStats);
+        LALInferencePrintProposalStats(stdout,runState->proposalStats);
+        resetProposalStats(runState);
+        printAdaptiveJumpSizes(stdout, runState);
+    }
+
 	runState->currentParams=currentVars;
 	fprintf(stdout,"Starting nested sampling loop!\n");
 	/* Iterate until termination condition is met */
@@ -547,6 +587,13 @@ void LALInferenceNestedSamplingAlgorithm(LALInferenceRunState *runState)
 	    /* Update NMCMC from ACF */
 	    UpdateNMCMC(runState);
 	
+    /* Output some information */
+    if(verbose){
+        LALInferencePrintProposalStatsHeader(stdout,runState->proposalStats);
+        LALInferencePrintProposalStats(stdout,runState->proposalStats);
+        resetProposalStats(runState);
+        printAdaptiveJumpSizes(stdout, runState);
+    }
 	      }
 	    
 	    if ( LALInferenceCheckVariable( runState->proposalArgs,"kDTree" )){
