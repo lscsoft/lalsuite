@@ -148,15 +148,15 @@ TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**
 /** Destructor for TimeCorrectionData struct, NULL robust.
  * \ingroup LALBarycenter_h
  */
-void XLALDestroyTimeCorrectionData ( TimeCorrectionData *times )
+void XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
 {
-  if ( !times )
+  if ( !tcd )
     return;
 
-  if ( times->timeCorrs )
-    XLALFree ( times->timeCorrs );
+  if ( tcd->timeCorrs )
+    XLALFree ( tcd->timeCorrs );
 
-  XLALFree ( times );
+  XLALFree ( tcd );
 
   return;
 

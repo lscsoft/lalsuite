@@ -33,7 +33,7 @@ EphemerisData * XLALInitBarycenter ( const CHAR *earthEphemerisFile, const CHAR 
 void XLALDestroyEphemerisData ( EphemerisData *edat );
 
 TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile );
-void XLALDestroyTimeCorrectionData( TimeCorrectionData *times );
+void XLALDestroyTimeCorrectionData( TimeCorrectionData *tcd );
 
 /* ==================== deprecated LAL interface  ==================================================*/
 
