@@ -304,7 +304,31 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     for time in self.times:
       self.add_full_analysis_lalinferencenest(Event(trig_time=time))
- 
+      
+  def select_events(self):
+    """
+    Read events from the config parser. Understands both ranges and comma separated events, or combinations
+    eg. events=[0,1,5:10,21] adds to the analysis the events: 0,1,5,6,7,8,9,10 and 21
+    """
+    events=[]
+    times=[]
+    raw_events=self.config.get('input','events').replace('[','').replace(']','').split(',')
+    for raw_event in raw_events:
+        if ':' in raw_event:
+            limits=raw_event.split(':')
+            if len(limits) != 2:
+                print "Error: in event config option; ':' must separate two numbers."
+                exit(0)
+            low=int(limits[0])
+            high=int(limits[1])
+            if low>high:
+                events.extend(range(int(high),int(low)+1))
+            elif high>low:
+                events.extend(range(int(low),int(high)+1))
+        else:
+            events.append(int(raw_event))
+    return events
+
   def setup_from_inputs(self):
     """
     Scan the list of inputs, i.e.
@@ -319,10 +343,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         print 'Plese specify only one input file'
         sys.exit(1)
     if self.config.has_option('input','events'):
-      selected_events=ast.literal_eval(self.config.get('input','events'))
+      selected_events=self.config.get('input','events')
       print 'Selected events %s'%(str(selected_events))
+      
       if selected_events=='all':
           selected_events=None
+      else:
+          selected_events=self.select_events()
     else:
         selected_events=None
     if self.config.has_option('input','gps-start-time'):
