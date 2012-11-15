@@ -82,14 +82,28 @@ int main(int argc, char **argv){
   }
   
   /* output header information on lines starting with a # comment */
+  fprintf(fp, "# Build information for %s\n", argv[0]);
   fprintf(fp, "# Author: "LALAPPS_VCS_AUTHOR"\n");
   fprintf(fp, "# LALApps Commit ID: "LALAPPS_VCS_ID"\n");
   fprintf(fp, "# LALApps Commit Date: "LALAPPS_VCS_DATE"\n");
-  fprintf(fp, "#\n# File creation command:-\n#\t");
+  fprintf(fp, "#\n# Ephemeris creation command:-\n#\t");
   for( INT4 k=0; k<argc; k++ ) fprintf(fp, "%s ", argv[k]);
   fprintf(fp, "\n");
   
-  /* output header info: start time, end time, time step, no. of entries */
+  CHAR *efile = strrchr(inputParams.ephemfile, '/');
+  
+  fprintf(fp, "#\n# Time correction ephemeris file %s from TEMPO2 \
+(http://www.atnf.csiro.au/research/pulsar/tempo2/)\n", efile+1);
+  /* some information about the data */
+  fprintf(fp, "#\n# This file consists of a header line containing:\n");
+  fprintf(fp, "#\tGPS start time, GPS end time, interval between entries \
+(secs), no. of entries\n");
+  fprintf(fp, "# Each entry consists of:\n");
+  fprintf(fp, "#\t dT (secs)\n");
+  fprintf(fp, "# with entries calculated at the Terrestrial Time in MJD via \
+the conversion:\n\
+#    TT(MJD) = 44244 + (GPS + 51.184)/86400\n");
+  
   fprintf(fp, "%lf\t%lf\t%lf\t%d\n", inputParams.startT, inputParams.endT,
     inputParams.interval, ne);
   
