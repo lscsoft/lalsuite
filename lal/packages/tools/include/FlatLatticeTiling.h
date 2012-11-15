@@ -99,7 +99,7 @@ unsigned long XLALGetFlatLatticePointCount(
   );
 
 ///
-/// Add a parameter space bound to the flat lattice tiling
+/// Set a parameter space bound on the flat lattice tiling
 ///
 int XLALSetFlatLatticeBound(
   FlatLatticeTiling* tiling,		///< [in] Tiling state
@@ -175,8 +175,8 @@ int XLALAnstarLatticeGenerator(
   );
 
 ///
-/// Add a constant parameter space bound, given by the minimum and
-/// maximum of the two supplied bounds, to the flat lattice tiling
+/// Set a constant parameter space bound, given by the minimum and
+/// maximum of the two supplied bounds, on the flat lattice tiling
 ///
 int XLALSetFlatLatticeConstantBound(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
