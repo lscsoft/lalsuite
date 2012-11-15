@@ -793,6 +793,73 @@ int XLALSetFlatLatticeConstantBound(
 
 }
 
+static void EllipticalYBound(
+  const size_t dimension,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* padding
+  )
+{
+
+  // Get bounds data
+  const double* semis = (const double*)data;
+
+  // Get normalised x coordinate
+  const double nx = gsl_vector_get(point, dimension - 1) / semis[0];
+
+  // Set bounds on normalised y coordinate
+  const double nxsqr = nx * nx;
+  const double ny = (nxsqr < 1.0) ? sqrt(1.0 - nxsqr) : 0.0;
+  gsl_vector_set(lower, 0, -ny * semis[1]);
+  gsl_vector_set(upper, 0, ny * semis[1]);
+
+  // Add sufficient extra padding on y, such that the bounding box of the
+  // boundary templates will not intersect the elliptic x-y parameter space.
+  const double nhbbx = 0.5 * gsl_vector_get(bbox, dimension - 1) / semis[0];
+  const double absnx = fabs(nx);
+  double npy = 0.0;
+  if (absnx <= nhbbx) {
+    npy = 1.0 - ny;
+  } else if (absnx <= 1.0 + nhbbx) {
+    const double dnx = (nx < 0.0) ? nx + nhbbx : nx - nhbbx;
+    npy = sqrt(1.0 - dnx * dnx) - ny;
+  }
+  *padding += npy * semis[1];
+
+}
+
+int XLALSetFlatLatticeEllipticalBounds(
+  FlatLatticeTiling* tiling,
+  const size_t x_dimension,
+  const double x_semi,
+  const double y_semi
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(x_semi > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(y_semi > 0.0, XLAL_EINVAL);
+
+  // Allocate and set bounds data
+  double* semis = XLALCalloc(2, sizeof(double));
+  XLAL_CHECK(semis != NULL, XLAL_ENOMEM);
+  semis[0] = x_semi;
+  semis[1] = y_semi;
+
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, -x_semi, x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)semis) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  return XLAL_SUCCESS;
+
+}
+
 static void GetPhysBounds(
   FlatLatticeTiling* tiling,
   const size_t dimension,

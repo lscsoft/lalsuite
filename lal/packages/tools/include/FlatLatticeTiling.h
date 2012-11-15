@@ -186,6 +186,16 @@ int XLALSetFlatLatticeConstantBound(
   );
 
 ///
+/// Set elliptical bounds in two dimensions on the flat lattice tiling
+///
+int XLALSetFlatLatticeEllipticalBounds(
+  FlatLatticeTiling* tiling,	///< [in] Tiling state
+  const size_t dimension,	///< [in] Dimension of X bound (Y bound is one higher)
+  const double x_semi,		///< [in] Length of X semi-diameter
+  const double y_semi		///< [in] Length of Y semi-diameter
+  );
+
+///
 /// Find the bounding box of the mismatch ellipses of a metric
 ///
 gsl_vector* XLALMetricEllipseBoundingBox(
