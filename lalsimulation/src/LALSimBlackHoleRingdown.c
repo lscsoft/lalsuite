@@ -924,7 +924,7 @@ INT4 XLALSimIMREOBFinalMassSpin(
  * the (l,-m) mode frequency of the positive final spin -chi case.
  */
 INT4 XLALSimIMREOBGenerateQNMFreqV2(
-  COMPLEX16Vector *modefreqs, /**<< OUTPUT, complex freqs of overtones (scaled by total mass) */
+  COMPLEX16Vector *modefreqs, /**<< OUTPUT, complex freqs of overtones in unit of Hz */
   const REAL8      mass1,     /**<< The mass of the 1st component (in Solar masses) */
   const REAL8      mass2,     /**<< The mass of the 2nd component (in Solar masses) */
   const REAL8      spin1[3],  /**<< The spin of the 1st object; only needed for spin waveforms */
