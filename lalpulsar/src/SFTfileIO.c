@@ -799,9 +799,14 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     firstbin = floor (fMin / deltaF);
   if (fMax < 0)
     lastbin = maxbin;
-  else
+  else {
     lastbin = ceil (fMax / deltaF);
-  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): firstbin: %u, lastbin: %u\n", firstbin, lastbin);
+    if((lastbin == 0) && (fMax != 0)) {
+      XLALPrintError("ERROR: last bin to read is 0 (fMax: %f, deltaF: %f)\n", fMax, deltaF);
+      XLALLOADSFTSERROR(XLAL_EINVAL);
+    }
+  }
+  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Reading from first bin: %u, last bin: %u\n", firstbin, lastbin);
 
   /* allocate the SFT vector that will be returned */
   if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin))) {
