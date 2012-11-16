@@ -75,7 +75,6 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
   CHARSequence *rawdata = NULL;
   FILE *fp;
   int err = 0;  /* error code */
-  struct stat stat_out;
 
   if (*cfgdata != NULL) {
     XLALPrintError ("%s:" CONFIGFILEH_MSGENONULL, __func__ );
@@ -85,20 +84,6 @@ XLALParseDataFile (LALParsedDataFile **cfgdata, /**< [out] pre-parsed data-file 
     XLALPrintError ("%s:" CONFIGFILEH_MSGENULL, __func__);
     XLAL_ERROR ( XLAL_EINVAL );
   }
-
-  if (  stat ( fname, &stat_out ) )
-    {
-      XLALPrintError ( "%s: Could not stat data-file: `%s` : \n\n", __func__, fname, strerror(errno) );
-      XLALPrintError( CONFIGFILEH_MSGEFILE);
-      XLAL_ERROR ( XLAL_EINVAL );
-    }
-
-  if ( ! S_ISREG(stat_out.st_mode)  )
-    {
-      XLALPrintError ( "%s: '%s' does not seem to be a regular file!\n", __func__, fname );
-      XLALPrintError ( CONFIGFILEH_MSGEFILE );
-      XLAL_ERROR ( XLAL_EDOM );
-    }
 
   if ( (fp = LALOpenDataFile (fname)) == NULL) {
     XLALPrintError ( "%s: Could not open data-file: `%s`\n\n", __func__, fname);
