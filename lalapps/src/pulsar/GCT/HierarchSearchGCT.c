@@ -342,10 +342,8 @@ int MAIN( int argc, char *argv[]) {
   CHAR *fnameFstatVec1=NULL;
   FILE *fpFstat1=NULL;
 
-  /* checkpoint filename and index of loop over skypoints */
+  /* checkpoint filename */
   const CHAR *fnameChkPoint="checkpoint.cpt";
-  /* FILE *fpChkPoint=NULL; */
-  /* UINT4 loopindex, loopcounter; */
 
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
@@ -2450,65 +2448,6 @@ void PrintStackInfo( LALStatus  *status,
   RETURN(status);
 
 }
-
-
-
-
-
-
-/** Read checkpointing file
-    This does not (yet) check any consistency of
-    the existing results file */
-void GetChkPointIndex( LALStatus *status,
-                       INT4 *loopindex,
-                       const CHAR *fnameChkPoint)
-{
-
-  FILE  *fp=NULL;
-  UINT4 tmpIndex;
-  CHAR lastnewline='\0';
-
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-
-  /* if something goes wrong later then lopindex will be 0 */
-  *loopindex = 0;
-
-  /* try to open checkpoint file */
-  if (!(fp = fopen(fnameChkPoint, "rb")))
-    {
-      if ( lalDebugLevel )
-        fprintf (stdout, "Checkpoint-file '%s' not found.\n", fnameChkPoint);
-
-      DETATCHSTATUSPTR (status);
-      RETURN(status);
-    }
-
-  /* if we are here then checkpoint file has been found */
-  if ( lalDebugLevel )
-    fprintf ( stdout, "Found checkpoint-file '%s' \n", fnameChkPoint);
-
-  /* check the checkpointfile -- it should just have one integer
-     and a DONE on the next line */
-  if ( ( 2 != fscanf (fp, "%" LAL_UINT4_FORMAT "\nDONE%c", &tmpIndex, &lastnewline) ) || ( lastnewline!='\n' ) )
-    {
-      fprintf ( stdout, "Failed to read checkpoint index from '%s'!\n", fnameChkPoint);
-      fclose(fp);
-
-      DETATCHSTATUSPTR (status);
-      RETURN(status);
-    }
-
-  /* everything seems ok -- set loop index */
-  *loopindex = tmpIndex;
-
-  fclose( fp );
-
-  DETATCHSTATUSPTR (status);
-  RETURN(status);
-
-}
-
 
 
 
