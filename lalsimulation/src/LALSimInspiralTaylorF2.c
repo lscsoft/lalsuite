@@ -116,18 +116,18 @@ int XLALSimInspiralTaylorF2(
     /* Tidal coefficients for phasing, fluz, and energy */
     REAL8 pft10 = 0.;
     REAL8 pft12 = 0.;
-    REAL8 FTa10 = 0.;
-    REAL8 FTa12 = 0.;
-    REAL8 dETa5 = 0.;
-    REAL8 dETa6 = 0.;
+//    REAL8 FTa10 = 0.;
+//    REAL8 FTa12 = 0.;
+//    REAL8 dETa5 = 0.;
+//    REAL8 dETa6 = 0.;
     if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN )
     {
         pft10 = - 24.L * lam2 * chi2*chi2*chi2*chi2 * (1.L + 11.L*chi1)
                 - 24.L * lam1 * chi1*chi1*chi1*chi1 * (1.L + 11.L*chi2);
-        FTa10 = XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(chi1,lambda1)
-              + XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(chi2,lambda2);
-        dETa5 = 6. * ( XLALSimInspiralPNEnergy_10PNTidalCoeff(chi2,chi1,lambda1)
-                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(chi1,chi2,lambda2));
+//        FTa10 = XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(chi1,lambda1)
+//              + XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(chi2,lambda2);
+//        dETa5 = 6. * ( XLALSimInspiralPNEnergy_10PNTidalCoeff(chi2,chi1,lambda1)
+//                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(chi1,chi2,lambda2));
     }
     if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
     {
@@ -135,10 +135,10 @@ int XLALSimInspiralTaylorF2(
                 - 2286.L*chi2*chi2 + 260.L*chi2*chi2*chi2)/28.L
                 - 5.L * lam1 * chi1*chi1*chi1*chi1 * (3179.L - 919.L*chi1
                 - 2286.L*chi1*chi1 + 260.L*chi1*chi1*chi1)/28.L;
-        FTa12 = XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(chi1,lambda1)
-              + XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(chi2,lambda2);
-        dETa6 = 7. * ( XLALSimInspiralPNEnergy_12PNTidalCoeff(chi2,chi1,lambda1)
-                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(chi1,chi2,lambda2));
+//        FTa12 = XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(chi1,lambda1)
+//              + XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(chi2,lambda2);
+//        dETa6 = 7. * ( XLALSimInspiralPNEnergy_12PNTidalCoeff(chi2,chi1,lambda1)
+//                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(chi1,chi2,lambda2));
     }
 
     /* flux coefficients */
