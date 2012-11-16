@@ -168,6 +168,7 @@ class Template(object):
             # whiten
             arr_view[:] /= ASD[:wf.data.length]
             arr_view[:int(self.bank.flow / df)] = 0.
+            arr_view[int(self._f_final/df) : wf.data.length] = 0.
 
             # normalize
             self.sigmasq = compute_sigmasq(arr_view, df)
