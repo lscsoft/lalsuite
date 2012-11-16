@@ -2368,6 +2368,103 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 } /*  findHighestSpinOrder() */
 
 
+/**
+ * Return a metric in "naturalized" coordinates.
+ * Frequency coordinates of spindown order \f$s\f$ are scaled by
+ * \f[ \frac{2\pi}{(s+1)!} \left(\frac{T}{2}\right)^{s+1} \f]
+ * where \f$T\f$ is the observation time-span.
+ * Sky coordinates are scaled by
+ * \f[ \frac{2\pi \bar{f} R_{ES}}{c} \f]
+ * where \f$\bar{f}\f$ is a fiducial frequency and
+ * \f$R_{ES}\f$ the mean Earth--Sun distance.
+ *
+ * Returns NULL on error, otherwise a new matrix is allocated.
+ */
+gsl_matrix* XLALNaturalizeMetric(
+  const gsl_matrix* g_ij,			/**< [in] Input metric */
+  const DopplerMetricParams *metricParams	/**< [in] Input parameters used to calculate g_ij */
+  )
+{
+
+  /* Check input */
+  XLAL_CHECK_NULL( g_ij, XLAL_EINVAL );
+  XLAL_CHECK_NULL( g_ij->size1 == g_ij->size2, XLAL_EINVAL, "Input matrix g_ij must be square! (got %d x %d)\n", g_ij->size1, g_ij->size2 );
+
+  /* Compute naturalization scale */
+  double nat_scale[g_ij->size1];
+  for (size_t i = 0; i < g_ij->size1; ++i) {
+    const DopplerCoordinateID coordID = metricParams->coordSys.coordIDs[i];
+    const double Freq = metricParams->signalParams.Doppler.fkdot[0];
+    const double T = metricParams->Tspan;
+    double scale;
+    switch (coordID) {
+    case DOPPLERCOORD_NONE:
+      scale = 1;
+      break;
+
+    case DOPPLERCOORD_FREQ:
+    case DOPPLERCOORD_GC_NU0:
+      scale = LAL_TWOPI * LAL_FACT_INV[1] * (0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F1DOT:
+    case DOPPLERCOORD_GC_NU1:
+      scale = LAL_TWOPI * LAL_FACT_INV[2] * POW2(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F2DOT:
+    case DOPPLERCOORD_GC_NU2:
+      scale = LAL_TWOPI * LAL_FACT_INV[3] * POW3(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_F3DOT:
+    case DOPPLERCOORD_GC_NU3:
+      scale = LAL_TWOPI * LAL_FACT_INV[4] * POW4(0.5 * T);
+      break;
+
+    case DOPPLERCOORD_ALPHA:
+    case DOPPLERCOORD_DELTA:
+    case DOPPLERCOORD_N2X_EQU:
+    case DOPPLERCOORD_N2Y_EQU:
+    case DOPPLERCOORD_N2X_ECL:
+    case DOPPLERCOORD_N2Y_ECL:
+    case DOPPLERCOORD_N3X_EQU:
+    case DOPPLERCOORD_N3Y_EQU:
+    case DOPPLERCOORD_N3Z_EQU:
+    case DOPPLERCOORD_N3X_ECL:
+    case DOPPLERCOORD_N3Y_ECL:
+    case DOPPLERCOORD_N3Z_ECL:
+    case DOPPLERCOORD_N3SX_EQU:
+    case DOPPLERCOORD_N3SY_EQU:
+    case DOPPLERCOORD_N3OX_ECL:
+    case DOPPLERCOORD_N3OY_ECL:
+      scale = LAL_TWOPI * Freq * rOrb_c;
+      break;
+
+    default:
+      XLAL_ERROR_NULL(XLAL_EINVAL, "Unknown phase-derivative type '%d'\n", coordID );
+    }
+    nat_scale[i] = scale;
+  }
+
+  /* Allocate return matrix */
+  gsl_matrix* ret_ij = gsl_matrix_alloc ( g_ij->size1, g_ij->size2 );
+  XLAL_CHECK_NULL( ret_ij, XLAL_ENOMEM );
+
+  /* Rescale metric to naturalized coordinates */
+  for (size_t i = 0; i < g_ij->size1; ++i) {
+    for (size_t j = 0; j < g_ij->size2; ++j) {
+      double tmp = gsl_matrix_get(g_ij, i, j);
+      tmp /= nat_scale[i] * nat_scale[j];
+      gsl_matrix_set(ret_ij, i, j, tmp);
+    }
+  }
+
+  return ret_ij;
+
+} /* XLALNaturalizeMetric() */
+
+
 /** "DiagNormalize" a metric matrix.
  * DiagNormalization means normalize metric by its diagonal, namely apply the transformation
  * G_ij = g_ij /sqrt(g_ii * g_jj), to all elements, resulting in lower

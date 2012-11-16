@@ -290,6 +290,8 @@ const CHAR *XLALDopplerCoordinateHelp ( DopplerCoordinateID coordID );
 CHAR *XLALDopplerCoordinateHelpAll ( void );
 int XLALParseMultiDetectorInfo ( MultiDetectorInfo *detInfo, const LALStringVector *detNames, const LALStringVector *detWeights );
 
+gsl_matrix* XLALNaturalizeMetric( const gsl_matrix* g_ij, const DopplerMetricParams *metricParams );
+
 gsl_matrix *XLALDiagNormalizeMetric ( const gsl_matrix * g_ij );
 
 // destructor for vect3Dlist_t type
