@@ -65,7 +65,7 @@ static int XLALSimIMRSpinEOBCalculateSigmaStar(
  * Eq. 5.2 of Barausse and Buonanno PRD 81, 084024 (2010).
  */
 static int XLALSimIMRSpinEOBCalculateSigmaKerr( 
-                  REAL8Vector *sigmaKerr, /**<< OUTPUT, normalized spin of deformed-Kerr */
+                  REAL8Vector *sigmaKerr, /**<< OUTPUT, normalized (to total mass) spin of deformed-Kerr */
                   REAL8        mass1,     /**<< mass 1 */
                   REAL8        mass2,     /**<< mass 2 */
                   REAL8Vector *s1,        /**<< spin vector 1 */
@@ -88,7 +88,7 @@ static int XLALSimIMRSpinEOBCalculateSigmaKerr(
  * Eq. 5.3 of Barausse and Buonanno PRD 81, 084024 (2010).
  */
 static int XLALSimIMRSpinEOBCalculateSigmaStar( 
-                  REAL8Vector *sigmaStar, /**<< OUTPUT, normalized spin of test particle */
+                  REAL8Vector *sigmaStar, /**<< OUTPUT, normalized (to total mass) spin of test particle */
                   REAL8        mass1,     /**<< mass 1 */
                   REAL8        mass2,     /**<< mass 2 */
                   REAL8Vector *s1,        /**<< spin vector 1 */
