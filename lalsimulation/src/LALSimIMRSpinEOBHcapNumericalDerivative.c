@@ -297,7 +297,8 @@ static int XLALSpinHcapNumericalDerivative(
 
   dLhatx = (dLx*magL - Lx*dMagL)/(magL*magL);
   dLhaty = (dLy*magL - Ly*dMagL)/(magL*magL);
-
+  
+  /* Finn Chernoff convention is used here. TODO: implement the geometric precessing convention */
   if ( Lhatx == 0.0 && Lhaty == 0.0 )
   {
     alphadotcosi = 0.0;
