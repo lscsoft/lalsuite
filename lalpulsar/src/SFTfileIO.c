@@ -789,6 +789,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     }
     catalog->data[catPos].locator->isft = nSFTs - 1;
   }
+  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): fMin: %f, fMax: %f, deltaF: %f, minbin: %u, maxbin: %u\n",
+	    fMin, fMax, deltaF, minbin, maxbin);
 
   /* calculate first and last frequency bin to read */
   if (fMin < 0)
@@ -799,6 +801,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
     lastbin = maxbin;
   else
     lastbin = ceil (fMax / deltaF);
+  LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): firstbin: %u, lastbin: %u\n", firstbin, lastbin);
 
   /* allocate the SFT vector that will be returned */
   if (!(sftVector = XLALCreateSFTVector (nSFTs, lastbin + 1 - firstbin))) {
@@ -899,7 +902,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 	}
 	fname = locator->fname;
 	fp = fopen(fname,"rb");
-	LogPrintf(LOG_DETAIL, "Opening file '%s'\n", fname);
+	LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Opening file '%s'\n", fname);
 	if(!fp) {
 	  XLALPrintError("ERROR: Couldn't open file '%s'\n", fname);
 	  XLALLOADSFTSERROR(XLAL_EIO);
@@ -916,8 +919,8 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       /* read SFT data */
       lastBinRead = read_sft_bins_from_fp ( thisSFT, &firstBinRead, firstbin, lastbin, fp );
-      LogPrintf(LOG_DETAIL, "Read data from %s:%lu: %u - %u\n",
-		locator->fname, locator->offset, firstBinRead,lastBinRead);
+      LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): Read data from %s:%lu: %u - %u\n",
+		locator->fname, locator->offset, firstBinRead, lastBinRead);
     }
     /* SFT data has been read from file or taken from catalog */
 
@@ -971,7 +974,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 
       } else if(!firstBinRead) {
 	/* no needed data had been in this segment */
-	LogPrintf(LOG_DETAIL, "No data read from %s:%lu\n", locator->fname, locator->offset);
+	LogPrintf(LOG_DETAIL, "XLALLoadSFTs(): No data read from %s:%lu\n", locator->fname, locator->offset);
 
 	/* set epoch if not yet set, if already set, check it */
 	if(GPSZERO(segments[isft].epoch))
