@@ -24,6 +24,7 @@
 #include <lal/LALSimIMR.h>
 #include  <lal/LALSimInspiralWaveformFlags.h>
 #include  <lal/LALSimInspiralTestGRParams.h>
+#include  <lal/TimeSeries.h>
 #include <gsl/gsl_matrix.h>
 
 #if defined(__cplusplus)
@@ -130,6 +131,46 @@ int XLALSimInspiralREAL8WaveTaper(
 		LALSimInspiralApplyTaper  bookends	/**< taper type enumerator */
 		);
 
+/* 
+ * Structyure to carry a collectio of spherical harmonic modes in COMPLEX16 
+ * time series. Contains convenience getter and setter functions, as well as
+ * a convienence "maximum l mode" function. Implemented as a singly forward
+ * linked list.
+ */
+typedef struct tagSphHarmTimeSeries SphHarmTimeSeries;
+
+/* 
+ * Create a SphHarmTimeSeries. If appended is not NULL, this will prepend a new
+ * structure to the list by duplicating the mode inmode, mode numbers l, and m, 
+ * and then set the next pointer to the appended structure.
+ */
+SphHarmTimeSeries* XLALSphHarmTimeSeriesAddMode( 
+		SphHarmTimeSeries *appended,  /**< List structure to prepend to */
+		const COMPLEX16TimeSeries* inmode,  /**< mode series to contain */
+		UINT4 l, /**< major mode number */
+		INT4 m  /**< minor mode number */
+);
+
+/* 
+ * Destroy a SphHarmTimeSeries. Note that this will destroy any 
+ * COMPLEX16TimeSeries which it has references to.
+ */
+void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts );
+
+/* 
+ * Destroy a SphHarmTimeSeries. Note that this will destroy any 
+ * COMPLEX16TimeSeries which it has references to.
+ */
+UINT4 XLALSphHarmTimeSeriesGetMaxL( SphHarmTimeSeries* ts );
+
+/* 
+ * Get the mode-decomposed time series corresponding to l,m.
+ */
+COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( 
+				SphHarmTimeSeries *ts, 
+				UINT4 l, 
+				INT4 m 
+);
 
 /**
  * Computes h(2,2) mode of spherical harmonic decomposition of

@@ -7,6 +7,7 @@ check_PROGRAMS = \
 	TestSpinTaylorT4Dynamics \
 	TestEOBNRv2 \
 	GRFlagsTest \
+	TestSphHarmTS \
 	TestPrecessWaveform
 TESTS = $(check_PROGRAMS)
 endif
