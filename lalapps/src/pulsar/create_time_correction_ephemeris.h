@@ -29,7 +29,7 @@
 #include <time.h>
 #include <lal/Date.h>
 #include <lal/LALVCSInfo.h>
-#include "LALAppsVCSInfo.h"
+#include <lalapps/LALAppsVCSInfo.h>
 
 /* TEMPO style time delay file */
 #define TT2TDB_FILE "/ephemeris/TDB.1950.2050"
