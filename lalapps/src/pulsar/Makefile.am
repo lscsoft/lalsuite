@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps
+AM_CPPFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src/lalapps -I$(top_builddir)/src/lalapps
 LDADD = $(top_builddir)/src/lalapps/liblalapps.la
 
 SUBDIRS =  MakeSFTs Injections FDS_isolated hough GCT FDS_binary SideBand templateBanks crosscorr TimingTests TDS_isolated fscan TwoSpect CombSearch SFTReferenceLibrary
