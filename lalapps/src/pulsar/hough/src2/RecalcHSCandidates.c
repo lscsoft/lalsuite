@@ -604,7 +604,7 @@ int MAIN( int argc, char *argv[]) {
   EphemerisData * edat;
   if ( (edat = XLALInitBarycenter ( uvar_ephemE, uvar_ephemS )) == NULL ) {
     XLALPrintError ("%s: XLALInitBarycenter() failed to load ephemeris files '%s' or '%s'\n", __func__, uvar_ephemE, uvar_ephemS );
-    return XLAL_EFUNC;
+    return HIERARCHICALSEARCH_ESUB;
   }
 
   XLALGPSSetREAL8(&minStartTimeGPS, uvar_minStartTime1);
