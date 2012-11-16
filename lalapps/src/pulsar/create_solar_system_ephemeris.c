@@ -45,7 +45,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALVCSInfo.h>
-#include <lalapps/LALAppsVCSInfo.h>
+#include <LALAppsVCSInfo.h>
 
 #define MERCURY 0
 #define VENUS 1
