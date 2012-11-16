@@ -42,7 +42,8 @@ static void F1DotAgeBrakingBound(
   const gsl_vector* bbox UNUSED,
   gsl_vector* lower,
   gsl_vector* upper,
-  double* padding UNUSED
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
   )
 {
 
@@ -111,7 +112,8 @@ static void F2DotBrakingBound(
   const gsl_vector* bbox UNUSED,
   gsl_vector* lower,
   gsl_vector* upper,
-  double* padding UNUSED
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
   )
 {
 

@@ -53,7 +53,8 @@ typedef void (*FlatLatticeBound)(
   const gsl_vector* bbox,	///< [in] Metric ellipse bounding box extents
   gsl_vector* lower,		///< [out] Lower bounds on point in dimension
   gsl_vector* upper,		///< [out] Upper bounds on point in dimension
-  double* padding		///< [out] Padding of parameter space bounds
+  double* lower_pad,		///< [out] Padding of lower parameter space bounds
+  double* upper_pad		///< [out] Padding of upper parameter space bounds
   );
 
 ///

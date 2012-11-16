@@ -52,7 +52,8 @@ static void GetPhysBounds(
   const gsl_vector* phys_point,		///< [in] Physical point at which to find bounds
   gsl_vector* phys_lower,		///< [out] Physical lower bounds on point
   gsl_vector* phys_upper,		///< [out] Physical upper bounds on point
-  double* phys_padding			///< [out] Physical padding of parameter space bounds (optional)
+  double* phys_lower_pad,		///< [out] Physical padding of lower parameter space bounds (optional)
+  double* phys_upper_pad		///< [out] Physical padding of upper parameter space bounds (optional)
   );
 
 ///
@@ -97,7 +98,8 @@ struct tagFlatLatticeTiling {
   gsl_vector_uint* curr_bound;		///< Indices of current bound on parameter space
   gsl_matrix* curr_lower;		///< Current lower bound on parameter space
   gsl_matrix* curr_upper;		///< Current upper bound on parameter space
-  gsl_vector* curr_padding;		///< Current padding of parameter space
+  gsl_vector* curr_lower_pad;		///< Current lower padding of parameter space
+  gsl_vector* curr_upper_pad;		///< Current upper padding of parameter space
   gsl_vector* curr_phys_point;		///< Current physical parameter-space point
   unsigned long count;			///< Total number of points generated so far
 };
@@ -145,8 +147,10 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   XLAL_CHECK_NULL(tiling->curr_lower != NULL, XLAL_ENOMEM);
   tiling->curr_upper = gsl_matrix_alloc(n, MAX_BOUNDS);
   XLAL_CHECK_NULL(tiling->curr_upper != NULL, XLAL_ENOMEM);
-  tiling->curr_padding = gsl_vector_alloc(n);
-  XLAL_CHECK_NULL(tiling->curr_padding != NULL, XLAL_ENOMEM);
+  tiling->curr_lower_pad = gsl_vector_alloc(n);
+  XLAL_CHECK_NULL(tiling->curr_lower_pad != NULL, XLAL_ENOMEM);
+  tiling->curr_upper_pad = gsl_vector_alloc(n);
+  XLAL_CHECK_NULL(tiling->curr_upper_pad != NULL, XLAL_ENOMEM);
   tiling->curr_phys_point = gsl_vector_alloc(n);
   XLAL_CHECK_NULL(tiling->curr_phys_point != NULL, XLAL_ENOMEM);
 
@@ -190,7 +194,8 @@ void XLALDestroyFlatLatticeTiling(
     gsl_vector_uint_free(tiling->curr_bound);
     gsl_matrix_free(tiling->curr_lower);
     gsl_matrix_free(tiling->curr_upper);
-    gsl_vector_free(tiling->curr_padding);
+    gsl_vector_free(tiling->curr_lower_pad);
+    gsl_vector_free(tiling->curr_upper_pad);
     gsl_vector_free(tiling->curr_phys_point);
 
     // Free tiling structure
@@ -302,7 +307,8 @@ int XLALSetFlatLatticeMetric(
     // Get physical bounds and padding
     gsl_vector_view phys_lower = gsl_matrix_row(tiling->curr_lower, i);
     gsl_vector_view phys_upper = gsl_matrix_row(tiling->curr_upper, i);
-    GetPhysBounds(tiling, i, tiling->curr_bound, tiling->phys_offset, &phys_lower.vector, &phys_upper.vector, NULL);
+    GetPhysBounds(tiling, i, tiling->curr_bound, tiling->phys_offset,
+                  &phys_lower.vector, &phys_upper.vector, NULL, NULL);
 
     // Set physical parameter space offset
     gsl_vector_set(tiling->phys_offset, i, gsl_vector_get(&phys_lower.vector, 0));
@@ -460,15 +466,17 @@ gsl_vector* XLALNextFlatLatticePoint(
       // Get physical bounds and padding
       gsl_vector_view phys_lower = gsl_matrix_row(tiling->curr_lower, i);
       gsl_vector_view phys_upper = gsl_matrix_row(tiling->curr_upper, i);
-      double phys_padding = 0;
-      GetPhysBounds(tiling, i, tiling->curr_bound, tiling->curr_phys_point, &phys_lower.vector, &phys_upper.vector, &phys_padding);
+      double phys_lower_pad = 0, phys_upper_pad = 0;
+      GetPhysBounds(tiling, i, tiling->curr_bound, tiling->curr_phys_point,
+                    &phys_lower.vector, &phys_upper.vector, &phys_lower_pad, &phys_upper_pad);
 
       // Normalise physical bounds and padding
       gsl_vector_add_constant(&phys_lower.vector, -phys_offset);
       gsl_vector_scale(&phys_lower.vector, 1.0/phys_scale);
       gsl_vector_add_constant(&phys_upper.vector, -phys_offset);
       gsl_vector_scale(&phys_upper.vector, 1.0/phys_scale);
-      gsl_vector_set(tiling->curr_padding, i, phys_padding / phys_scale);
+      gsl_vector_set(tiling->curr_lower_pad, i, phys_lower_pad / phys_scale);
+      gsl_vector_set(tiling->curr_upper_pad, i, phys_upper_pad / phys_scale);
 
       // Determine whether any bounds are tiled
       any_tiled |= tiling->bounds[i].tiled;
@@ -476,7 +484,7 @@ gsl_vector* XLALNextFlatLatticePoint(
       // Initialise current point
       const size_t bound = gsl_vector_uint_get(tiling->curr_bound, i);
       double point = gsl_matrix_get(tiling->curr_lower, i, bound);
-      point -= gsl_vector_get(tiling->curr_padding, i);
+      point -= gsl_vector_get(tiling->curr_lower_pad, i);
       gsl_vector_set(tiling->curr_point, i, point);
 
       // Update current physical point
@@ -537,8 +545,8 @@ gsl_vector* XLALNextFlatLatticePoint(
       // If point is not out of bounds, we have found a template point
       const double point = gsl_vector_get(tiling->curr_point, i);
       const double upper = gsl_matrix_get(tiling->curr_upper, i, bound);
-      const double padding = gsl_vector_get(tiling->curr_padding, i);
-      if (point <= upper + padding) {
+      const double upper_pad = gsl_vector_get(tiling->curr_upper_pad, i);
+      if (point <= upper + upper_pad) {
         break;
       }
 
@@ -596,15 +604,17 @@ gsl_vector* XLALNextFlatLatticePoint(
       // Get physical bounds and padding
       gsl_vector_view phys_lower = gsl_matrix_row(tiling->curr_lower, ir);
       gsl_vector_view phys_upper = gsl_matrix_row(tiling->curr_upper, ir);
-      double phys_padding = 0;
-      GetPhysBounds(tiling, ir, tiling->curr_bound, tiling->curr_phys_point, &phys_lower.vector, &phys_upper.vector, &phys_padding);
+      double phys_lower_pad = 0, phys_upper_pad = 0;
+      GetPhysBounds(tiling, ir, tiling->curr_bound, tiling->curr_phys_point,
+                    &phys_lower.vector, &phys_upper.vector, &phys_lower_pad, &phys_upper_pad);
 
       // Normalise physical bounds and padding
       gsl_vector_add_constant(&phys_lower.vector, -phys_offset);
       gsl_vector_scale(&phys_lower.vector, 1.0/phys_scale);
       gsl_vector_add_constant(&phys_upper.vector, -phys_offset);
       gsl_vector_scale(&phys_upper.vector, 1.0/phys_scale);
-      gsl_vector_set(tiling->curr_padding, ir, phys_padding / phys_scale);
+      gsl_vector_set(tiling->curr_lower_pad, ir, phys_lower_pad / phys_scale);
+      gsl_vector_set(tiling->curr_upper_pad, ir, phys_upper_pad / phys_scale);
 
     }
 
@@ -618,9 +628,9 @@ gsl_vector* XLALNextFlatLatticePoint(
       gsl_vector_view increment = gsl_matrix_column(tiling->increment, ir);
 
       // Calculate the distance from current point to the lower bound, in integer number of increments
-      const double padding = gsl_vector_get(tiling->curr_padding, ir);
+      const double lower_pad = gsl_vector_get(tiling->curr_lower_pad, ir);
       const double point = gsl_vector_get(tiling->curr_point, ir);
-      const double dist = ceil((lower - padding - point) / gsl_vector_get(&increment.vector, ir));
+      const double dist = ceil((lower - lower_pad - point) / gsl_vector_get(&increment.vector, ir));
 
       // Move point back to lower bound
       gsl_blas_daxpy(dist, &increment.vector, tiling->curr_point);
@@ -759,7 +769,8 @@ static void ConstantBound(
   const gsl_vector* bbox UNUSED,
   gsl_vector* lower,
   gsl_vector* upper,
-  double* padding UNUSED
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
   )
 {
 
@@ -809,7 +820,8 @@ static void EllipticalYBound(
   const gsl_vector* bbox,
   gsl_vector* lower,
   gsl_vector* upper,
-  double* padding
+  double* lower_pad,
+  double* upper_pad
   )
 {
 
@@ -836,7 +848,9 @@ static void EllipticalYBound(
     const double dnx = (nx < 0.0) ? nx + nhbbx : nx - nhbbx;
     npy = sqrt(1.0 - dnx * dnx) - ny;
   }
-  *padding += npy * semis[1];
+  const double pad = npy * semis[1];
+  *lower_pad += pad;
+  *upper_pad += pad;
 
 }
 
@@ -874,7 +888,8 @@ static void GetPhysBounds(
   const gsl_vector* phys_point,
   gsl_vector* phys_lower,
   gsl_vector* phys_upper,
-  double* phys_padding
+  double* phys_lower_pad,
+  double* phys_upper_pad
   )
 {
 
@@ -896,27 +911,32 @@ static void GetPhysBounds(
 
   // Use physical bounding box in this dimension as default padding;
   // for non-tiled dimensions, this will be zero for no padding
-  double phys_padding_val = gsl_vector_get(&phys_bbox_view.vector, dimension);
+  const double phys_bbox_dim = gsl_vector_get(&phys_bbox_view.vector, dimension);
+  double phys_lower_pad_val = phys_bbox_dim, phys_upper_pad_val = phys_bbox_dim;
 
   // Only allow padding to be modified for tiled dimensions
-  double* ptr_phys_padding_val = bound->tiled ? &phys_padding_val : NULL;
+  double* ptr_phys_lower_pad_val = bound->tiled ? &phys_lower_pad_val : NULL;
+  double* ptr_phys_upper_pad_val = bound->tiled ? &phys_upper_pad_val : NULL;
 
   // Call parameter space bounds function, passing view of physical point only in lower dimensions
   if (dimension == 0) {
     (bound->func)(dimension, NULL, NULL, bound->data,
                   &phys_incr_view.vector, &phys_bbox_view.vector,
-                  phys_lower, phys_upper_tiled, ptr_phys_padding_val);
+                  phys_lower, phys_upper_tiled, ptr_phys_lower_pad_val, ptr_phys_upper_pad_val);
   } else {
     gsl_vector_uint_const_view curr_bound_view = gsl_vector_uint_const_subvector(curr_bound, 0, dimension);
     gsl_vector_const_view phys_point_view = gsl_vector_const_subvector(phys_point, 0, dimension);
     (bound->func)(dimension, &curr_bound_view.vector, &phys_point_view.vector, bound->data,
                   &phys_incr_view.vector, &phys_bbox_view.vector,
-                  phys_lower, phys_upper_tiled, ptr_phys_padding_val);
+                  phys_lower, phys_upper_tiled, ptr_phys_lower_pad_val, ptr_phys_upper_pad_val);
   }
 
   // Return physical padding if required
-  if (phys_padding) {
-    *phys_padding = phys_padding_val;
+  if (phys_lower_pad) {
+    *phys_lower_pad = phys_lower_pad_val;
+  }
+  if (phys_upper_pad) {
+    *phys_upper_pad = phys_upper_pad_val;
   }
 
 }
@@ -1238,7 +1258,8 @@ int XLALNearestFlatLatticePointToRandomPoints(
     for (size_t i = 0; i < n; ++i) {
 
       // Get physical bounds and padding
-      GetPhysBounds(tiling, i, curr_bound, &point.vector, phys_lower, phys_width, NULL);
+      GetPhysBounds(tiling, i, curr_bound, &point.vector,
+                    phys_lower, phys_width, NULL, NULL);
       gsl_vector_sub(phys_width, phys_lower);
 
       // Get total bounds width
