@@ -28,10 +28,10 @@
  * */
 
 
-#include "lal/LALSimInspiral.h"
-#include "lal/TimeSeries.h"
-#include "lal/Date.h"
-#include "lal/Units.h"
+#include <lal/LALSimInspiral.h>
+#include <lal/TimeSeries.h>
+#include <lal/Date.h>
+#include <lal/Units.h>
 
 int main(void){
 		lalDebugLevel=7;
