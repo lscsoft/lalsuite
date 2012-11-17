@@ -629,6 +629,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			 && strcmp(caches[i],"LALAdLIGO"))))
 		{
 			//FakeFlag=1; - set but not used
+      if (!LALInferenceGetProcParamVal(commandLine,"--dataseed")){
+        fprintf(stderr,"Error: You need to specify a dataseed when generating data with --dataseed <number>.\n\
+(--dataseed 0 uses a non-reproducible number from the system clock, and no parallel run is then possible.)\n" );
+        exit(-1);
+      }
 			datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
 			if(!datarandparam) XLAL_ERROR_NULL(XLAL_EFUNC);
 			/* Selection of the noise curve */
