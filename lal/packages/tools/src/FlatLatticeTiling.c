@@ -85,6 +85,7 @@ typedef enum tagFLT_Status {
 ///
 struct tagFlatLatticeTiling {
   size_t dimensions;			///< Dimension of the parameter space
+  size_t tiled_dimensions;		///< Tiled dimension of the parameter space
   FLT_Status status;			///< Status of the tiling
   FLT_Bound *bounds;			///< Array of parameter space bound info for each dimension
   FlatLatticeGenerator generator;	///< Flat tiling lattice generator function
@@ -118,6 +119,7 @@ FlatLatticeTiling* XLALCreateFlatLatticeTiling(
   FlatLatticeTiling* tiling = XLALCalloc(1, sizeof(FlatLatticeTiling));
   XLAL_CHECK_NULL(tiling != NULL, XLAL_ENOMEM);
   tiling->dimensions = n;
+  tiling->tiled_dimensions = 0;
   tiling->status = FLT_S_INCOMPLETE;
   tiling->generator = NULL;
   tiling->count = 0;
@@ -215,6 +217,14 @@ size_t XLALGetFlatLatticeDimensions(
   return tiling->dimensions;
 }
 
+const gsl_vector* XLALGetFlatLatticePoint(
+  FlatLatticeTiling* tiling
+  )
+{
+  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
+  return tiling->status == FLT_S_STARTED ? tiling->curr_phys_point : NULL;
+}
+
 unsigned long XLALGetFlatLatticePointCount(
   FlatLatticeTiling* tiling
   )
@@ -289,10 +299,10 @@ int XLALSetFlatLatticeMetric(
 
   // Check that all parameter space dimensions are bounded,
   // and count number of tiles dimensions
-  size_t tn = 0;
+  tiling->tiled_dimensions = 0;
   for (size_t i = 0; i < tiling->dimensions; ++i) {
     XLAL_CHECK(tiling->bounds[i].func != NULL, XLAL_EFAILED, "Dimension #%i is unbounded", i);
-    tn += tiling->bounds[i].tiled ? 1 : 0;
+    tiling->tiled_dimensions += tiling->bounds[i].tiled ? 1 : 0;
   }
 
   // Check that the flat lattice tiling generator has been set
@@ -343,7 +353,9 @@ int XLALSetFlatLatticeMetric(
   gsl_vector_set_zero(tiling->phys_bbox);
   gsl_matrix_set_zero(tiling->increment);
 
-  if (tn > 0) {
+  if (tiling->tiled_dimensions > 0) {
+
+    const size_t tn = tiling->tiled_dimensions;
 
     // Allocate memory
     gsl_matrix* tmetric = gsl_matrix_alloc(tn, tn);
@@ -433,7 +445,7 @@ int XLALSetFlatLatticeMetric(
 
 }
 
-gsl_vector* XLALNextFlatLatticePoint(
+int XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling
   )
 {
@@ -441,12 +453,18 @@ gsl_vector* XLALNextFlatLatticePoint(
   const size_t n = tiling->dimensions;
 
   // Check tiling
-  XLAL_CHECK_NULL(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK_NULL(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // If finished status, nothing more to be done!
   if (tiling->status == FLT_S_FINISHED) {
-    return NULL;
+    return -1;
+  }
+
+  // If started status, but no tiled dimensions, we're finished!
+  if (tiling->status == FLT_S_STARTED && tiling->tiled_dimensions == 0) {
+    tiling->status = FLT_S_FINISHED;
+    return -1;
   }
 
   // If initialised status, set and return starting point
@@ -456,7 +474,6 @@ gsl_vector* XLALNextFlatLatticePoint(
     gsl_vector_uint_set_zero(tiling->curr_bound);
 
     // Set parameter space bounds and starting point
-    bool any_tiled = false;
     for (size_t i = 0; i < n; ++i) {
 
       // Get physical scales and offsets
@@ -478,9 +495,6 @@ gsl_vector* XLALNextFlatLatticePoint(
       gsl_vector_set(tiling->curr_lower_pad, i, phys_lower_pad / phys_scale);
       gsl_vector_set(tiling->curr_upper_pad, i, phys_upper_pad / phys_scale);
 
-      // Determine whether any bounds are tiled
-      any_tiled |= tiling->bounds[i].tiled;
-
       // Initialise current point
       const size_t bound = gsl_vector_uint_get(tiling->curr_bound, i);
       double point = gsl_matrix_get(tiling->curr_lower, i, bound);
@@ -501,11 +515,11 @@ gsl_vector* XLALNextFlatLatticePoint(
     // Initialise count
     tiling->count = 1;
 
-    // If no bounds are tiled, there is only one template point!
-    // Otherwise, tiling has been started.
-    tiling->status = any_tiled ? FLT_S_STARTED : FLT_S_FINISHED;
+    // Tiling has been started.
+    tiling->status = FLT_S_STARTED;
 
-    return tiling->curr_phys_point;
+    // All dimensions of point have changed.
+    return 0;
 
   }
 
@@ -516,7 +530,7 @@ gsl_vector* XLALNextFlatLatticePoint(
     // If dimension index is now zero, we're done!
     if (i == 0) {
       tiling->status = FLT_S_FINISHED;
-      return NULL;
+      return -1;
     }
 
     // Decrement current dimension index
@@ -652,7 +666,8 @@ gsl_vector* XLALNextFlatLatticePoint(
   // Template was found, so increase count
   ++tiling->count;
 
-  return tiling->curr_phys_point;
+  // Return lowest dimension where point has changed
+  return i;
 
 }
 
@@ -683,7 +698,7 @@ unsigned long XLALCountTotalFlatLatticePoints(
   XLAL_CHECK_VAL(0, tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // Iterate over all templates
-  while (XLALNextFlatLatticePoint(tiling) != NULL);
+  while (XLALNextFlatLatticePoint(tiling) >= 0);
   XLAL_CHECK_VAL(0, xlalErrno == 0, XLAL_EFAILED);
 
   // Save the template count
@@ -1334,9 +1349,9 @@ int XLALNearestFlatLatticePointToRandomPoints(
   gsl_vector_set_all(*nearest_distances, GSL_POSINF);
 
   // Iterate over all flat lattice points
-  gsl_vector* lattice_point = NULL;
   XLALRestartFlatLatticeTiling(tiling);
-  while ( (lattice_point = XLALNextFlatLatticePoint(tiling)) != NULL ) {
+  while ( XLALNextFlatLatticePoint(tiling) >= 0 ) {
+    const gsl_vector* lattice_point = XLALGetFlatLatticePoint(tiling);
 
     // Copy random points to workspace, subtract flat lattice point
     // from each, and normalise by physical scaling
@@ -1390,6 +1405,7 @@ int XLALNearestFlatLatticePointToRandomPoints(
     }
 
   }
+  XLAL_CHECK(xlalErrno == 0, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 

@@ -93,6 +93,13 @@ size_t XLALGetFlatLatticeDimensions(
   );
 
 ///
+/// Return the current lattice tiling parameter space point
+///
+const gsl_vector* XLALGetFlatLatticePoint(
+  FlatLatticeTiling* tiling	///< [in] Tiling state
+  );
+
+///
 /// Return the current number of flat lattice tiling parameter space points
 ///
 unsigned long XLALGetFlatLatticePointCount(
@@ -131,9 +138,11 @@ int XLALSetFlatLatticeMetric(
 SWIGLAL(NO_NEW_OBJECT(XLALNextFlatLatticePoint));
 #endif
 ///
-/// Return the next point in the flat lattice tiling parameter space
+/// Move to the next point in the flat lattice tiling parameter space.
+/// Returns the index of the lowest dimension where the point has changed,
+/// or a negative number when the template bank is exhausted.
 ///
-gsl_vector* XLALNextFlatLatticePoint(
+int XLALNextFlatLatticePoint(
   FlatLatticeTiling* tiling		///< [in] Tiling state
   );
 
