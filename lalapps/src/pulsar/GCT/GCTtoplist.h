@@ -95,9 +95,7 @@ extern void sort_gctFStat_toplist_strongest(toplist_t*list);
 
 
 
-/** File IO */
-
-/** new, simpler checkpointing for HierarchicalSearch */
+/** Checkpointing */
 
 /** writes a checkpoint:
     - constructs temporary filename (by appending .TMP)
@@ -111,7 +109,7 @@ extern void sort_gctFStat_toplist_strongest(toplist_t*list);
     -2 if out of memory,
      0 otherwise (successful)
 */
-extern int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEAN do_sync);
+extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync);
 
 /** tries to read a checkpoint
     - tries to open the file, returns 1 if no file found
@@ -124,7 +122,7 @@ extern int write_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter
     -1 in case of an I/O error
     -2 if the checksum was wrong or elems was unreasonable
 */
-extern int read_hfs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
+extern int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*counter);
 
 /** write the final output file:
     - re-sort the toplist into freq/alpha/delta/fdot order

@@ -61,11 +61,10 @@
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
 #else
-#define GET_CHECKPOINT(toplist,total,countp,outputname,cptname) if(read_hfs_checkpoint("checkpoint.cpt", semiCohToplist, &count)) count=0
-#define SET_CHECKPOINT write_hfs_checkpoint("checkpoint.cpt",semiCohToplist,skyGridCounter*nf1dot+ifdot,1)
+#define GET_GCT_CHECKPOINT read_gct_checkpoint // (cptname, semiCohToplist, NULL, &count)
+#define SET_GCT_CHECKPOINT write_gct_checkpoint
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
-#define FOPEN fopen
 #ifdef HS_OPTIMIZATION
 extern void
 LocalComputeFStatFreqBand ( LALStatus *status,
@@ -344,7 +343,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
 
   /* checkpoint filename and index of loop over skypoints */
-  /* const CHAR *fnameChkPoint="checkpoint.cpt"; */
+  const CHAR *fnameChkPoint="checkpoint.cpt";
   /* FILE *fpChkPoint=NULL; */
   /* UINT4 loopindex, loopcounter; */
 
@@ -1164,7 +1163,7 @@ int MAIN( int argc, char *argv[]) {
     UINT4 count = 0; /* The first checkpoint should have value 1 */
     UINT4 skycount = 0;
 
-    GET_CHECKPOINT(semiCohToplist, &count, thisScan.numSkyGridPoints * nf1dot, fnameSemiCohCand, NULL);
+    GET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, &count);
 
     if (count) {
       f1dotGridCounter = (UINT4) (count % nf1dot);  /* Checkpointing counter = i_sky * nf1dot + i_f1dot */
@@ -1745,13 +1744,13 @@ int MAIN( int argc, char *argv[]) {
           if2dot++;  /* Increment if2dot counter */
 
         } /* ########## End of loop over coarse-grid f2dot values (if2dot) ########## */
-        ifdot++;  /* Increment ifdot counter BEFORE SET_CHECKPOINT */
+        ifdot++;  /* Increment ifdot counter BEFORE SET_GCT_CHECKPOINT */
 
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter * nf1dot + ifdot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
 #ifdef EAH_BOINC
-        SET_CHECKPOINT;
+        SET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
 #endif
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
