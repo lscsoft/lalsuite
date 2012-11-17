@@ -571,12 +571,14 @@ void show_progress(REAL8 rac,   /**< right ascension */
   boinc_fraction_done(fraction);
 
   /* tell APIv6 graphics about status */
-  boincv6_progress.skypos_rac = rac;
-  boincv6_progress.skypos_dec = dec;
+  boincv6_progress.skypos_rac      = rac;
+  boincv6_progress.skypos_dec      = dec;
+  boincv6_progress.frequency       = freq;
+  boincv6_progress.bandwidth       = fband;
+#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
   if(toplist->elems > 0) {
     /* take the last (rightmost) leaf of the heap tree - might not be the
        "best" candidate, but for the graphics it should be good enough */
-#ifndef HIERARCHSEARCHGCT /* used for Hough HierarchicalSearch, not GCT */
     HoughFStatOutputEntry *line = (HoughFStatOutputEntry*)(toplist->heap[toplist->elems - 1]);
 
     boincv6_progress.cand_frequency  = line->Freq;
@@ -584,24 +586,8 @@ void show_progress(REAL8 rac,   /**< right ascension */
     boincv6_progress.cand_rac        = line->Alpha;
     boincv6_progress.cand_dec        = line->Delta;
     boincv6_progress.cand_hough_sign = line->HoughFStat;
-#else
-    boincv6_progress.cand_frequency  = 0.0;
-    boincv6_progress.cand_spindown   = 0.0;
-    boincv6_progress.cand_rac        = 0.0;
-    boincv6_progress.cand_dec        = 0.0;
-    boincv6_progress.cand_hough_sign = 0.0;
-#endif /* used for Hough HierarchicalSearch, not GCT */
-    boincv6_progress.frequency       = freq;
-    boincv6_progress.bandwidth       = fband;
-  } else {
-    boincv6_progress.cand_frequency  = 0.0;
-    boincv6_progress.cand_spindown   = 0.0;
-    boincv6_progress.cand_rac        = 0.0;
-    boincv6_progress.cand_dec        = 0.0;
-    boincv6_progress.cand_hough_sign = 0.0;
-    boincv6_progress.frequency       = 0.0;
-    boincv6_progress.bandwidth       = 0.0;
   }
+#endif /* used for Hough HierarchicalSearch, not GCT */
 }
 
 
@@ -1539,6 +1525,28 @@ int main(int argc, char**argv) {
 	      mess,filename,__LINE__,ferror(fp),errno,strerror(errno))
 #endif
 
+#ifdef HIERARCHSEARCHGCT
+
+/** sets a checkpoint.
+*/
+int write_boinc_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4 counter, BOOLEAN do_sync) {
+  int ret;
+  /* make sure the exception mask isn't messed up by a badly written device driver etc.,
+     so restore it periodically */
+  enable_floating_point_exceptions();
+  /* checkpoint every time (i.e. sky position) if FORCE_CHECKPOINTING */
+#ifndef FORCE_CHECKPOINTING
+  if (!(boinc_is_standalone() || boinc_time_to_checkpoint()))
+    return 1; /* >0, no checkpoint written, no error */
+#endif
+  ret = write_gct_checkpoint(filename, tl, t2, counter, do_sync);
+  fprintf(stderr,"c\n");
+  boinc_checkpoint_completed();
+  return(ret);
+}
+
+#else /* #ifdef HIERARCHSEARCHGCT */
+
 /** init checkpointing and read a checkpoint if already there */
 int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint */
 			     UINT4*count,       /**< returns the skypoint counter if a checkpoint was found */
@@ -1623,9 +1631,6 @@ int init_and_read_checkpoint(toplist_t*tl     , /**< the toplist to checkpoint *
   return(read_hfs_checkpoint(cptfilename,toplist,count));
 }
 
-
-/** sets a checkpoint.
-*/
 void set_checkpoint (void) {
   /* make sure the exception mask isn't messed up by a badly written device driver etc.,
      so restore it periodically */
@@ -1635,12 +1640,11 @@ void set_checkpoint (void) {
   if (boinc_time_to_checkpoint())
 #endif
     {
-      write_hfs_checkpoint(cptfilename,toplist,last_count, do_sync);
+      write_hfs_checkpoint(cptfilename, toplist, last_count, do_sync);
       fprintf(stderr,"c\n");
       boinc_checkpoint_completed();
     }
 }
-
 
 /** finally writes a minimal (compacted) version of the toplist and cleans up
     all structures related to the toplist. After that, the toplist is invalid.
@@ -1648,6 +1652,9 @@ void set_checkpoint (void) {
 void write_and_close_checkpointed_file (void) {
   write_hfs_oputput(outfilename,toplist);
 }
+
+#endif /* #ifdef HIERARCHSEARCHGCT */
+
 
 /* Experimental and / or debugging stuff */
 
