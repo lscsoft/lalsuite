@@ -360,11 +360,18 @@ int XLALSetFlatLatticeMetric(
       }
     }
 
+    // Check tiling metric is positive definite, by trying to compute its Cholesky decomposition
+    gsl_matrix_memcpy(tdirections, tmetric);   // Make copy to preserve original
+    gsl_error_handler_t* old_handler = gsl_set_error_handler_off();
+    int retn = gsl_linalg_cholesky_decomp(tdirections);
+    gsl_set_error_handler(old_handler);
+    XLAL_CHECK(retn == 0, XLAL_EFAILED, "metric is not positive definite");
+
     // Calculate metric ellipse bounding box
     gsl_vector* tbounding_box = XLALMetricEllipseBoundingBox(tmetric, max_mismatch);
     XLAL_CHECK(tbounding_box != NULL, XLAL_EFAILED);
 
-    // Find orthonormalise directions with respect to subspace metric
+    // Find orthonormalise directions with respect to tiling metric
     gsl_matrix_set_identity(tdirections);
     XLAL_CHECK(XLALOrthonormaliseWRTMetric(tdirections, tmetric) == XLAL_SUCCESS, XLAL_EFAILED);
 
