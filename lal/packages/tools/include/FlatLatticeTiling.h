@@ -192,6 +192,8 @@ int XLALSetFlatLatticeConstantBound(
 int XLALSetFlatLatticeEllipticalBounds(
   FlatLatticeTiling* tiling,	///< [in] Tiling state
   const size_t dimension,	///< [in] Dimension of X bound (Y bound is one higher)
+  const double x_centre,	///< [in] X centre of ellipse
+  const double y_centre,	///< [in] Y centre of ellipse
   const double x_semi,		///< [in] Length of X semi-diameter
   const double y_semi		///< [in] Length of Y semi-diameter
   );

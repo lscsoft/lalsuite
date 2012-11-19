@@ -826,20 +826,24 @@ static void EllipticalYBound(
 {
 
   // Get bounds data
-  const double* semis = (const double*)data;
+  const double* bounds = (const double*)data;
+  const double x_centre = bounds[0];
+  const double y_centre = bounds[1];
+  const double x_semi = bounds[2];
+  const double y_semi = bounds[3];
 
-  // Get normalised x coordinate
-  const double nx = gsl_vector_get(point, dimension - 1) / semis[0];
+  // Get normalised, centred x coordinate
+  const double nx = (gsl_vector_get(point, dimension - 1) - x_centre) / x_semi;
 
-  // Set bounds on normalised y coordinate
+  // Set bounds on y coordinate
   const double nxsqr = nx * nx;
   const double ny = (nxsqr < 1.0) ? sqrt(1.0 - nxsqr) : 0.0;
-  gsl_vector_set(lower, 0, -ny * semis[1]);
-  gsl_vector_set(upper, 0, ny * semis[1]);
+  gsl_vector_set(lower, 0, y_centre - ny * y_semi);
+  gsl_vector_set(upper, 0, y_centre + ny * y_semi);
 
   // Add sufficient extra padding on y, such that the bounding box of the
   // boundary templates will not intersect the elliptic x-y parameter space.
-  const double nhbbx = 0.5 * gsl_vector_get(bbox, dimension - 1) / semis[0];
+  const double nhbbx = 0.5 * gsl_vector_get(bbox, dimension - 1) / x_semi;
   const double absnx = fabs(nx);
   double npy = 0.0;
   if (absnx <= nhbbx) {
@@ -848,7 +852,7 @@ static void EllipticalYBound(
     const double dnx = (nx < 0.0) ? nx + nhbbx : nx - nhbbx;
     npy = sqrt(1.0 - dnx * dnx) - ny;
   }
-  const double pad = npy * semis[1];
+  const double pad = npy * y_semi;
   *lower_pad += pad;
   *upper_pad += pad;
 
@@ -857,6 +861,8 @@ static void EllipticalYBound(
 int XLALSetFlatLatticeEllipticalBounds(
   FlatLatticeTiling* tiling,
   const size_t x_dimension,
+  const double x_centre,
+  const double y_centre,
   const double x_semi,
   const double y_semi
   )
@@ -868,14 +874,16 @@ int XLALSetFlatLatticeEllipticalBounds(
   XLAL_CHECK(y_semi > 0.0, XLAL_EINVAL);
 
   // Allocate and set bounds data
-  double* semis = XLALCalloc(2, sizeof(double));
-  XLAL_CHECK(semis != NULL, XLAL_ENOMEM);
-  semis[0] = x_semi;
-  semis[1] = y_semi;
+  double* bounds = XLALCalloc(4, sizeof(double));
+  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
+  bounds[0] = x_centre;
+  bounds[1] = y_centre;
+  bounds[2] = x_semi;
+  bounds[3] = y_semi;
 
   // Set parameter space bound
-  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, -x_semi, x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)semis) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
