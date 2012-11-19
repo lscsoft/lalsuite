@@ -1,6 +1,38 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 46
+# serial 47
+
+AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
+  # check for git
+  AC_PATH_PROGS(GIT,[git],[false])
+  # check whether building from a git repository
+  have_git_repo=no
+  AS_IF([test "x${GIT}" != xfalse],[
+    AC_MSG_CHECKING([whether building from a git repository])
+    # git log will print:
+    # * the last log message, if the cwd is in a git repository
+    # * nothing, if the cwd is not part of the git repo (e.g. ignored)
+    # * an error msg to stderr if the cwd is not in a git repository
+    git_log=`( cd "${srcdir}" && ${GIT} log --oneline -n 1 -- . ) 2>/dev/null`
+    AS_IF([test "x${git_log}" != x],[
+      have_git_repo=yes
+    ])
+    AC_MSG_RESULT([${have_git_repo}])
+  ])
+  # conditional for git and building from a git repository
+  AM_CONDITIONAL(HAVE_GIT_REPO,[test "x${have_git_repo}" = xyes])
+  # command line for version information generation script
+  AM_COND_IF(HAVE_GIT_REPO,[
+    m4_pattern_allow([AM_V_GEN])
+    m4_pattern_allow([AM_V_at])
+    AC_SUBST([genvcsinfo_],["\$(genvcsinfo_\$(AM_DEFAULT_VERBOSITY))"])
+    AC_SUBST([genvcsinfo_0],["--am-v-gen='\$(AM_V_GEN)'"])
+    GENERATE_VCS_INFO="\$(AM_V_at)\$(PYTHON) \$(top_srcdir)/../gnuscripts/generate_vcs_info.py --git-path='\$(GIT)' \$(genvcsinfo_\$(V))"
+  ],[
+    GENERATE_VCS_INFO=false
+  ])
+  AC_SUBST(GENERATE_VCS_INFO)
+])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
