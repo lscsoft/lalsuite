@@ -102,6 +102,16 @@ LALXMGRPlotMesh()
 #define PTOLEMESHTESTC_MSGEOPT "unknown command-line option"
 /*@}*/
 
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <math.h>
 #include <stdio.h>
 #include <lal/AVFactories.h>

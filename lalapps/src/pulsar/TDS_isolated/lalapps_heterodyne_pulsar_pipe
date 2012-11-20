@@ -294,13 +294,17 @@ if do_coarse:
       try:
         par = pppu.psr_par(param_file)
         pulsar = par['PSRJ']
+
+        # if the pulsar name is not specfied in the par file the use the file name
+        if pulsar is None:
+          # set pulsar name from .par file
+          pulsar = re.sub(r'\.par', r'', param_files[i])
+          # add a J if necessary
+          if pulsar.find('J') == -1:
+            pulsar = 'J' + pulsar
       except:
         print >> sys.stderr, "Could not read PSRJ from %s" % param_file
         sys.exit(0)
-      
-      # set pulsar name from .par file
-      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
-      #pulsar = re.sub(r'\.par', r'', param_files[i])
       
       # add heterodyneNode for DAG
       coarse.append(ppu.heterodyneNode(coarse_job))
@@ -387,14 +391,19 @@ if do_fine or do_update:
         pulsar = par['PSRJ']
         ephem1 = par['EPHEM']
         
+        # if the pulsar name is not specfied in the par file the use the file name
+        if pulsar is None:
+          # set pulsar name from .par file
+          pulsar = re.sub(r'\.par', r'', param_files[i])
+          # add a J if necessary
+          if pulsar.find('J') == -1:
+            pulsar = 'J' + pulsar
+
         if not ephem1:
           ephem1 = 'DE405' # default to DE405
       except:
         print >> sys.stderr, "Could not read PSRJ from %s" % param_file
         sys.exit(0)
-      
-      #set pulsar name from .par file
-      #pulsar = 'J' + re.sub(r'\.par',r'',param_files[i])
       
       # set heterodyne flag
       if do_fine:

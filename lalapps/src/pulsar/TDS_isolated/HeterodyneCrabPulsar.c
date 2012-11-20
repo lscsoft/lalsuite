@@ -276,7 +276,6 @@ LALGetCrabEphemeris	( LALStatus			*status,
 
   /* convert time in MJD to secs in TDB */
   for(i=0;i<j;i++){
-    /* GPStemp = LALTDBMJDtoGPS(MJDVec[i]); */
     GPStemp = LALTTMJDtoGPS(MJDVec[i]);
 
     MJDVec[i] = GPStemp + tArrVec[i];

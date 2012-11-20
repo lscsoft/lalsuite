@@ -42,8 +42,6 @@ StochasticInverseNoiseTest_SOURCES = \
   StochasticInverseNoiseTest.c CheckStatus.c
 SimulateSBTest_SOURCES = SimulateSBTest.c CheckStatus.c
 
-TESTS_ENVIRONMENT = 1>/dev/null
-
 EXTRA_DIST = \
 	pipeline \
 	spectrum1.in \

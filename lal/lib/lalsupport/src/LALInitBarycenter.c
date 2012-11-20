@@ -56,6 +56,111 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
 
 /* ========== exported API ========== */
 
+/** An XLAL interface for reading a time correction file containing a table
+ * of values for converting between Terrestrial Time TT (or TDT) to either
+ * TDB (i.e. the file contains time corrections related to the Einstein delay)
+ * or Teph (a time system from Irwin and Fukushima, 1999, closely related to 
+ * Coordinate Barycentric Time, TCB) depending on the file.
+ *
+ * The file contains a header with the GPS start time, GPS end time, time 
+ * interval between subsequent entries (seconds), and the number of entries.
+ * 
+ * The rest of the file contains a list of the time delays (in seconds).
+ *
+ * The tables for the conversion to TDB and Teph are derived from the ephemeris
+ * file TDB.1950.2050 and TIMEEPH_short.te405 within TEMPO2 
+ * http://www.atnf.csiro.au/research/pulsar/tempo2/. They are created from the
+ * Chebychev polynomials in these files using the conversion in the lalapps code
+ * lalapps_create_time_correction_ephemeris
+ *
+ * \ingroup LALBarycenter_h
+ */
+TimeCorrectionData *XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**< File containing Earth's position.  */ ){
+  REAL8 *tvec = NULL; /* create time vector */
+  
+  /* check user input consistency */
+  if ( !timeCorrectionFile ) {
+    XLALPrintError("%s: invalid NULL input timeCorrectionFile=%p\n", __func__, timeCorrectionFile );
+    XLAL_ERROR_NULL(XLAL_EINVAL);
+  }
+  
+  /* prepare output ephemeris struct for returning */
+  TimeCorrectionData *tdat;
+  if ( ( tdat = XLALCalloc ( 1, sizeof(*tdat) ) ) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc ( 1, %d ) failed.\n", __func__, sizeof(*tdat) );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  }
+  
+  /* open ephemeris file */
+  FILE *fp;
+  if ( (fp = LALOpenDataFile ( timeCorrectionFile )) == NULL ) {
+    XLALPrintError ("%s: LALOpenDataFile() failed to open '%s' for reading.\n", __func__, timeCorrectionFile );
+    XLAL_ERROR_NULL ( XLAL_ESYS );
+  }
+  
+  REAL8 endtime = 0.;
+  
+  /* read in first header line */
+  if ( 4 != fscanf(fp,"%lf %lf %lf %u\n", &tdat->timeCorrStart, &endtime, &tdat->dtTtable, &tdat->nentriesT)) {
+    fclose(fp);
+    XLALPrintError("%s: couldn't parse first line of %s: %d\n", __func__, timeCorrectionFile );
+    XLAL_ERROR_NULL ( XLAL_EDOM );
+  }
+  
+  /* allocate memory for table entries */
+  if ( (tvec = XLALCalloc( tdat->nentriesT, sizeof(REAL8) )) == NULL ) {
+    XLALPrintError ("%s: XLALCalloc(%u, sizeof(REAL8))\n", __func__, tdat->nentriesT );
+    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  }
+  
+  /* read in table data */
+  UINT4 j;
+  int ret;
+  for (j=0; j < tdat->nentriesT; j++){
+    ret = fscanf( fp, "%lf\n", &tvec[j] );
+
+    /* check number of scanned items */
+    if (ret != 1) {
+      fclose(fp);
+      XLALFree( tvec );
+      XLALPrintError("%s: Couldn't parse line %d of %s: %d\n", __func__, j+2, timeCorrectionFile, ret);
+      XLAL_ERROR_NULL ( XLAL_EDOM );
+    }
+    
+    /* check we've not hit the end of file before reading in all points */
+    if ( feof(fp) && j < (tdat->nentriesT)-1 ){
+      fclose(fp);
+      XLALFree( tvec );
+      XLALPrintError("%s: %s does not contain %u lines!\n", __func__, timeCorrectionFile, tdat->nentriesT);
+      XLAL_ERROR_NULL ( XLAL_EDOM );
+    }
+  }
+  
+  /* close file */
+  fclose(fp);
+  
+  /* set output time delay vector */
+  tdat->timeCorrs = tvec;
+  
+  return tdat;
+}
+
+/** Destructor for TimeCorrectionData struct, NULL robust.
+ * \ingroup LALBarycenter_h
+ */
+void XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
+{
+  if ( !tcd )
+    return;
+
+  if ( tcd->timeCorrs )
+    XLALFree ( tcd->timeCorrs );
+
+  XLALFree ( tcd );
+
+  return;
+
+} /* XLALDestroyTimeCorrectionData() */
 
 /** XLAL interface to reading ephemeris files 'earth' and 'sun', and return
  * ephemeris-data in old backwards-compatible type \a EphemerisData

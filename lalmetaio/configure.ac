@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalmetaio],[1.0.4.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalmetaio],[1.0.5.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([src/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -36,7 +36,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[2])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBREVISION],[2])
 AC_SUBST([LIBAGE],[2])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
@@ -95,6 +95,7 @@ LALSUITE_USE_LIBTOOL
 
 # check for header files
 AC_HEADER_STDC
+AC_CHECK_HEADERS([zlib.h],,[AC_MSG_ERROR([could not find zlib.h])])
 
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
@@ -110,8 +111,8 @@ AC_CHECK_LIB([metaio],[MetaioOpen],,[AC_MSG_ERROR([could not find the metaio lib
 AC_CHECK_HEADERS([metaio.h],,[AC_MSG_ERROR([could not find the metaio.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.7.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.7.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.8.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.8.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -122,14 +123,13 @@ AC_SUBST_FILE(LAL_HEADER_LINK)
 AC_PROG_MAKE_SET
 AC_OUTPUT
 echo "
-=================================================================
+==================================================
+LALMetaIO has now been successfully configured
+and will be installed under the directory:
 
-        LALMetaIO has now been successfully configured
-        and will be installed under the directory:
+${prefix}
 
-            ${prefix}
-
-        Now run 'make' to build LALMetaIO
-        and run 'make install' to install LALMetaIO
-
-================================================================="
+Now run 'make' to build LALMetaIO,
+and run 'make install' to install LALMetaIO.
+==================================================
+"

@@ -17,7 +17,7 @@ SUBDIRS = src
 .PHONY: html pdf
 
 DOXYINPUT = \
-	lal/packages \
+	lal \
 	lalburst \
 	lalframe \
 	lalinference \
@@ -27,7 +27,7 @@ DOXYINPUT = \
 	lalsimulation \
 	lalstochastic \
 	lalxml \
-	lalapps/src
+	lalapps
 
 override doxy_inputdirs = $(abs_srcdir)/src \
 	$(addprefix $(abs_top_srcdir)/,$(DOXYINPUT))

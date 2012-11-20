@@ -50,6 +50,11 @@ int XLALSimAddInjectionREAL8TimeSeries(
 	const COMPLEX16FrequencySeries *response
 );
 
+int XLALSimAddInjectionREAL4TimeSeries(
+	REAL4TimeSeries *target,
+	REAL4TimeSeries *h,
+	const COMPLEX8FrequencySeries *response
+);
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

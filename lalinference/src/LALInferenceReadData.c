@@ -1,7 +1,9 @@
 /* 
  *  LALInferenceReadData.c:  Bayesian Followup functions
  *
- *  Copyright (C) 2009 Ilya Mandel, Vivien Raymond, Christian Roever, Marc van der Sluys, John Veitch and Salvatore Vitale
+ *  Copyright (C) 2009,2012 Ilya Mandel, Vivien Raymond, Christian
+ *  Roever, Marc van der Sluys, John Veitch, Salvatore Vitale, and
+ *  Will M. Farr
  *
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -627,6 +629,11 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
 			 && strcmp(caches[i],"LALAdLIGO"))))
 		{
 			//FakeFlag=1; - set but not used
+      if (!LALInferenceGetProcParamVal(commandLine,"--dataseed")){
+        fprintf(stderr,"Error: You need to specify a dataseed when generating data with --dataseed <number>.\n\
+(--dataseed 0 uses a non-reproducible number from the system clock, and no parallel run is then possible.)\n" );
+        exit(-1);
+      }
 			datarandparam=XLALCreateRandomParams(dataseed?dataseed+(int)i:dataseed);
 			if(!datarandparam) XLAL_ERROR_NULL(XLAL_EFUNC);
 			/* Selection of the noise curve */
@@ -1118,16 +1125,14 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
                                                 injEvent->spin2z, injEvent->f_lower, 0., injEvent->distance*LAL_PC_SI * 1.0e6,
                                                 injEvent->inclination, lambda1, lambda2, waveFlags,
                                                 nonGRparams, amporder, order, approximant);
+      if(!hplus || !hcross) {
+        fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
+        exit(-1);
+      }
       XLALSimInspiralDestroyWaveformFlags(waveFlags);
       XLALSimInspiralDestroyTestGRParam(nonGRparams);
       XLALResampleREAL8TimeSeries(hplus,thisData->timeData->deltaT);
       XLALResampleREAL8TimeSeries(hcross,thisData->timeData->deltaT);
-      if(!hplus || !hcross) {
-        fprintf(stderr,"Error: XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
-        exit(-1);
-        //XLALPrintError("XLALSimInspiralChooseWaveform() failed to produce waveform.\n");
-        //XLAL_ERROR_VOID(XLAL_EFUNC);
-      }
       /* XLALSimInspiralChooseTDWaveform always ends the waveform at t=0 */
       /* So we can adjust the epoch so that the end time is as desired */
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
@@ -1981,7 +1986,9 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
     
     if (!(SNRpath==NULL)){ /* If the user provided a path with --snrpath store a file with injected SNRs */
 	PrintSNRsToFile(IFOdata , inj_table);
-    }
+	}
+	XLALDestroyCOMPLEX16FrequencySeries(freqModelhCross);
+    XLALDestroyCOMPLEX16FrequencySeries(freqModelhPlus);
 }
 
 
@@ -2075,11 +2082,11 @@ void LALInferenceInjectionToVariables(SimInspiralTable *theEventTable, LALInfere
     Approximant injapprox = XLALGetApproximantFromString(theEventTable->waveform);
     LALPNOrder order = XLALGetOrderFromString(theEventTable->waveform);
     
-    //REAL8 m1=theEventTable->mass1;
-    //REAL8 m2=theEventTable->mass2;
-    //LALInferenceAddVariable(vars, "mass1", &m1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    //LALInferenceAddVariable(vars, "mass2", &m2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
-    REAL8 chirpmass=theEventTable->mchirp;
+    REAL8 m1=theEventTable->mass1;
+    REAL8 m2=theEventTable->mass2;
+    REAL8 chirpmass = theEventTable->mchirp;
+    LALInferenceAddVariable(vars, "mass1", &m1, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
+    LALInferenceAddVariable(vars, "mass2", &m2, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "chirpmass", &chirpmass, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "asym_massratio", &q, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
     LALInferenceAddVariable(vars, "time", &injGPSTime, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);

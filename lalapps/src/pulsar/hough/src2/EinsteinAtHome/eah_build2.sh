@@ -9,6 +9,7 @@ fail() {
     echo
 
     if test -n "$LOGFILE" -a -r "$LOGFILE" ; then
+	date '+[%Y-%m-%d %H:%M:%S]' >> "$LOGFILE"
 	echo "Transcript of failure is in ${LOGFILE}"
 	echo "Final fifteen lines are:"
 	tail -15 "$LOGFILE"
@@ -18,22 +19,22 @@ fail() {
 } ## fail()
 
 log_and_show() {
-    echo "$@" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` "$@" >> "$LOGFILE"
     echo "$@" >&2
 }
 
 log_and_do() {
-    echo "$@" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` "$@" >> "$LOGFILE"
     "$@" >> "$LOGFILE" 2>&1 || fail
 }
 
 log_and_dont_fail() {
-    echo "$@" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` "$@" >> "$LOGFILE"
     "$@" >> "$LOGFILE" 2>&1
 }
 
 download() {
-    echo curl "$1/$2 > $2" >> "$LOGFILE"
+    echo `date '+[%Y-%m-%d %H:%M:%S]'` curl "$1/$2 > $2" >> "$LOGFILE"
     curl "$1/$2" > "$2" 2>> "$LOGFILE"
 }
 
@@ -41,6 +42,7 @@ eah_build2_loc="`echo $PWD/$0 | sed 's%/[^/]*$%%'`"
 
 test ".$appname" = "." && appname=einstein_S6Bucket
 test ".$appversion" = "." && appversion=0.00
+boinc_repo="git://gitmaster.atlas.aei.uni-hannover.de/einsteinathome/boinc.git"
 boinc_rev=current_gw_apps
 #previous:-r22844 -r22825 -r22804 -r22794 -r22784 -r22561 -r22503 -r22363 -r21777 -r'{2008-12-01}'
 
@@ -58,9 +60,12 @@ for i; do
 	    rebuild_lal=true ;;
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
+	--rebuild-zlib)
+	    rebuild_zlib=true ;;
 	--rebuild-binutils)
 	    rebuild_binutils=true ;;
 	--release)
+	    rebuild_zlib=true
 	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
@@ -74,6 +79,7 @@ for i; do
 	--appversion=*)
 	    appversion=`echo "$i" | sed 's/--appversion=//'` ;;
 	--norebuild) # dangerous, for testing only!
+	    rebuild_zlib=""
 	    rebuild_binutils=""
 	    rebuild_boinc=""
 	    rebuild_lal=""
@@ -108,12 +114,14 @@ for i; do
 	    planclass=__SSE2
 	    acc="_sse2";;
 	--altivec)
-	    CPPFLAGS="-maltivec -faltivec $CPPFLAGS"
-	    CFLAGS="-fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
-	    CXXFLAGS="-mcpu=G4 $CXXFLAGS"
+	    CPPFLAGS="-arch ppc -maltivec -faltivec $CPPFLAGS"
+	    CFLAGS="-arch ppc -fast -mcpu=G4 -maltivec -faltivec $CFLAGS"
+	    CXXFLAGS="-arch ppc -mcpu=G4 $CXXFLAGS"
+	    LDFLAGS="-arch ppc $LDFLAGS"
 	    fftw_copts_single=--enable-altivec
 	    planclass=__ALTIVEC
-	    acc="_altivec";;
+	    acc="_altivec"
+	    cross_copt=--host=powerpc-apple-darwin ;;
 	--cuda)
 	    cuda=true
 	    acc="_cuda" ;;
@@ -202,12 +210,14 @@ if [ ."$build_win32" = ."true" ] ; then
     export CXX=i586-mingw32msvc-g++
     export AR=i586-mingw32msvc-ar
     export RANLIB=i586-mingw32msvc-ranlib
+    export LIBTOOL=i586-mingw32msvc-libtool
     CPPFLAGS="-DMINGW_WIN32 -DWIN32 -D_WIN32 -D_WIN32_WINDOWS=0x0410 $CPPFLAGS"
     # -include $INSTALL/include/win32_hacks.h
     cross_copt=--host=i586-pc-mingw32
     shared_copt="--disable-shared"
     fftw_copts_single="$fftw_copts_single --with-our-malloc16"
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
+    build_zlib=true
     ext=".exe"
     platform=windows_intelx86
     wine=`which wine`
@@ -253,8 +263,9 @@ else
 	    fi
 	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DDLOPEN_LIBGCC -DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
-		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
+		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a"
 		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty -ldl"
+		build_zlib=true
 		build_binutils=true
 		enable_linux_compatibility_workarounds=true
 	    fi ;;
@@ -276,13 +287,22 @@ if echo "$LDFLAGS" | grep -e -m64 >/dev/null; then
     LDFLAGS="-L$INSTALL/lib64 $LDFLAGS"
 fi
 
+# Jenkins build info
+if [ ".$BUILD_INFO" = "." ]; then
+  test ".$BUILD_TAG" = "." || BUILD_INFO="Build $BUILD_TAG"
+  test ".$NODE_NAME" = "." || BUILD_INFO="$BUILD_INFO on $NODE_NAME"
+fi
+if [ -n "$BUILD_INFO" ]; then
+  CPPFLAGS="$CPPFLAGS -DHAVE_BUILD_INFO_H"
+fi
+
+# export environment variables
 export CPPFLAGS="-DGCTTOP_MAX_IFOS=2 -DUSEXLALLOADSFTS -DBOINC_APIV6 -D__NO_CTYPE -DUSE_BOINC -DEAH_BOINC -I$INSTALL/include $CPPFLAGS"
 export LDFLAGS
 export LD_LIBRARY_PATH="$INSTALL/lib:$LD_LIBRARY_PATH"
 export DYLD_LIBRARY_PATH="$INSTALL/lib:$DYLD_LIBRARY_PATH"
 export PKG_CONFIG_PATH="$INSTALL/lib/pkgconfig:$PKG_CONFIG_PATH"
 export BOINC_PREFIX="$INSTALL"
-
 
 # make sure the E@H directory exists (for logging)
 mkdir -p "$EAH" || fail
@@ -291,6 +311,7 @@ echo " " >> "$LOGFILE"
 log_and_show "==========================================="
 log_and_show "Build start `date`"
 
+# log environment variables
 echo "$0" "$@" >> "$LOGFILE"
 echo CC="\"$CC\"" >> "$LOGFILE"
 echo CXX="\"$CXX\"" >> "$LOGFILE"
@@ -305,9 +326,11 @@ echo PKG_CONFIG_PATH="\"$PKG_CONFIG_PATH\"" >> "$LOGFILE"
 echo BOINC_PREFIX="\"$BOINC_PREFIX\"" >> "$LOGFILE"
 echo RELEASE_DEPS="\"$RELEASE_DEPS\"" >> "$LOGFILE"
 echo RELEASE_LDADD="\"$RELEASE_LDADD\"" >> "$LOGFILE"
+echo BUILD_INFO="\"$BUILD_INFO\"" >> "$LOGFILE"
 
 gsl=gsl-1.9
 fftw=fftw-3.2.2
+zlib=zlib-1.2.7
 binutils=binutils-2.19
 
 if ! [ .$check_only = .true ]; then
@@ -323,7 +346,9 @@ if [ ."$build_win32" = ."true" ] ; then
     echo '#define index(s,c) strchr(s,c)'  >> "$INSTALL/include/win32_hacks.h"
 fi
 
-
+if [ -n "$BUILD_INFO" ]; then
+  echo '#define BUILD_INFO "'"$BUILD_INFO"'"' > "$INSTALL/include/build_info.h"
+fi
 
 log_and_do cd "$SOURCE"
 
@@ -343,6 +368,16 @@ elif test -z "$noupdate"; then
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
+if test ."$build_zlib" = ."true"; then
+    if test -z "$rebuild" -a -d "$zlib"; then
+        log_and_show "using existing zlib source"
+    elif test -z "$noupdate"; then
+        log_and_show "retrieving $zlib"
+        download http://zlib.net $zlib.tar.gz
+        log_and_do tar xzf "$zlib.tar.gz"
+    fi
+fi
+
 if test -n "$build_binutils" -a -n "$rebuild_binutils" -a -z "$noupdate"; then
     log_and_show "retrieving $binutils"
     download http://www.aei.mpg.de/~bema $binutils.tar.gz
@@ -356,26 +391,20 @@ if test -n "$noupdate" -o -z "$rebuild_boinc" -a -d "$SOURCE/boinc"; then
     log_and_show "using existing boinc source"
 else
     log_and_show "retrieving boinc"
-    if test -d "$SOURCE/boinc" ; then
-        if test -d "$SOURCE/boinc/.git" ; then
-            log_and_do cd "$SOURCE/boinc"
-            # if "$boinc_rev" is a tag that already exists locally,
-            # delete it locally first in order to get updated from remote. Praise git !!
-            if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
-              log_and_dont_fail git tag -d "$boinc_rev"
-            fi
-            log_and_do git fetch --tags
-        else
-            log_and_do cd "$SOURCE"
-            log_and_do rm -rf boinc
-            log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
-            log_and_do cd boinc
-        fi
+    if test -d "$SOURCE/boinc" -a -d "$SOURCE/boinc/.git" ; then
+        log_and_do cd "$SOURCE/boinc"
     else
         log_and_do cd "$SOURCE"
-        log_and_do git clone git://git.aei.uni-hannover.de/shared/einsteinathome/boinc.git
+        log_and_do rm -rf boinc
+        log_and_do git clone "$boinc_repo"
         log_and_do cd boinc
     fi
+    # if "$boinc_rev" is a tag that already exists locally,
+    # delete it locally first in order to get updated from remote. Praise git !!
+    if git tag | fgrep -x "$boinc_rev" >/dev/null ; then
+        log_and_dont_fail git tag -d "$boinc_rev"
+    fi
+    log_and_do git fetch --tags
     log_and_do git checkout "$boinc_rev"
     log_and_do cd "$SOURCE"
 fi
@@ -383,6 +412,21 @@ fi
 if test \! -d lalsuite/.git ; then
     log_and_do rm -rf lalsuite
     log_and_do ln -s "$eah_build2_loc/../../../../../.." lalsuite
+fi
+
+if test ."$build_zlib" = ."true"; then
+    if test -z "$rebuild_zlib" && pkg-config --exists zlib; then
+        log_and_show "using existing zlib"
+    else
+        log_and_show "compiling zlib"
+        log_and_do cd "$SOURCE/$zlib"
+        log_and_do "./configure" --static --prefix="$INSTALL"
+        # log_and_dont_fail make clean
+        # 'make uninstall' deletes files in the source tree if the required directories in PREFIX don't exist (yet)
+        # log_and_dont_fail make uninstall
+        log_and_do make
+        log_and_do make install
+    fi
 fi
 
 if test -z "$rebuild" && pkg-config --exists fftw3 fftw3f; then
@@ -491,11 +535,16 @@ else
     log_and_show "compiling boinc"
     if [ ."$build_win32" = ."true" ] ; then
 	log_and_do cd "$BUILD/boinc"
+        makefile="$SOURCE/boinc/lib/Makefile.mingw"
 	export BOINC_SRC="$SOURCE/boinc" BOINC_PREFIX="$INSTALL"
-	log_and_dont_fail make -f "$SOURCE/boinc/lib/Makefile.mingw" uninstall
-	log_and_do make -f "$SOURCE/boinc/lib/Makefile.mingw" clean
-	log_and_do make -f "$SOURCE/boinc/lib/Makefile.mingw"
-	log_and_do make -f "$SOURCE/boinc/lib/Makefile.mingw" install
+	log_and_dont_fail make -f "$makefile" uninstall
+	log_and_do make -f "$makefile" clean
+	if log_and_dont_fail make -f "$makefile" all-la; then
+	    log_and_do make -f "$makefile" install-la
+	else
+            log_and_do make -f "$makefile"
+	    log_and_do make -f "$makefile" install
+        fi
     else
 	log_and_do cd "$SOURCE/boinc"
 	log_and_do ./_autosetup

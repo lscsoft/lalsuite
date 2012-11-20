@@ -68,33 +68,8 @@ It is strongly recommended that <tt>LALOpenDataFile()</tt> be used when writing 
 #include <string.h>
 #include <errno.h>
 
-#ifdef HAVE_ZLIB_H
-/* can't actually include zlib.h since older versions have broken prototypes */
-/* #include <zlib.h> */
-#define Z_FULL_FLUSH    3
-typedef void * gzFile;
-extern gzFile gzopen (const char *path, const char *mode);
-extern gzFile gzdopen (int fd, const char *mode);
-extern int gzsetparams (gzFile file, int level, int strategy);
-extern int gzread (gzFile file, void * buf, unsigned len);
-extern int gzwrite (gzFile file, const void * buf, unsigned len);
-extern int gzprintf (gzFile file, const char *format, ...);
-extern int gzputs (gzFile file, const char *s);
-extern char * gzgets (gzFile file, char *buf, int len);
-extern int gzputc (gzFile file, int c);
-extern int gzgetc (gzFile file);
-extern int gzungetc (int c, gzFile file);
-extern int gzflush (gzFile file, int flush);
-extern long gzseek (gzFile file, long offset, int whence);
-extern int gzrewind (gzFile file);
-extern long gztell (gzFile file);
-extern int gzeof (gzFile file);
-extern int gzdirect (gzFile file);
-extern int gzclose (gzFile file);
-extern const char * gzerror (gzFile file, int *errnum);
-extern void gzclearerr (gzFile file);
+#include <zlib.h>
 #define ZLIB_ENABLED
-#endif
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -254,9 +229,9 @@ LALFILE * XLALFileOpenRead( const char *path )
 		XLAL_ERROR_NULL( XLAL_ENOMEM );
 	file->compression = compression;
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "rb" ) : LALFopen( path, "rb" );
+	file->fp = compression ? (void*)gzopen( path, "rb" ) : (void*)LALFopen( path, "rb" );
 #	else
-	file->fp = LALFopen( path, "rb" );
+	file->fp = (void*)LALFopen( path, "rb" );
 #	endif
 	if ( ! file->fp ) {
 		XLALFree( file );
@@ -271,13 +246,13 @@ LALFILE * XLALFileOpenAppend( const char *path, int compression )
 	if ( ! ( file = XLALMalloc( sizeof(*file ) ) ) )
 		XLAL_ERROR_NULL( XLAL_ENOMEM );
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "a+" ) : LALFopen( path, "a+" );
+	file->fp = compression ? (void*)gzopen( path, "a+" ) : (void*)LALFopen( path, "a+" );
 #	else
 	if ( compression ) {
 		XLALPrintWarning( "XLAL Warning - %s: Compression not supported\n", __func__ );
 		compression = 0;
 	}
-	file->fp = LALFopen( path, "a+" );
+	file->fp = (void*)LALFopen( path, "a+" );
 #	endif
 	file->compression = compression;
 	if ( ! file->fp ) {
@@ -293,13 +268,13 @@ LALFILE * XLALFileOpenWrite( const char *path, int compression )
 	if ( ! ( file = XLALMalloc( sizeof(*file ) ) ) )
 		XLAL_ERROR_NULL( XLAL_ENOMEM );
 #	ifdef ZLIB_ENABLED
-	file->fp = compression ? gzopen( path, "wb" ) : LALFopen( path, "wb" );
+	file->fp = compression ? (void*)gzopen( path, "wb" ) : (void*)LALFopen( path, "wb" );
 #	else
 	if ( compression ) {
 		XLALPrintWarning( "XLAL Warning - %s: Compression not supported\n", __func__ );
 		compression = 0;
 	}
-	file->fp = LALFopen( path, "wb" );
+	file->fp = (void*)LALFopen( path, "wb" );
 #	endif
 	file->compression = compression;
 	if ( ! file->fp ) {
@@ -337,9 +312,9 @@ int XLALFileClose( LALFILE * file )
 		if ( ! file->fp )
 			XLAL_ERROR( XLAL_EINVAL );
 #		ifdef ZLIB_ENABLED
-		c = file->compression ? gzclose(file->fp) : fclose(file->fp);
+		c = file->compression ? gzclose(((gzFile)file->fp)) : fclose(((FILE*)file->fp));
 #		else
-		c = fclose(file->fp);
+		c = fclose(((FILE*)file->fp));
 #		endif
 		if ( c == EOF )
 			XLAL_ERROR( XLAL_EIO );
@@ -354,9 +329,9 @@ size_t XLALFileRead( void *ptr, size_t size, size_t nobj, LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? (size_t)gzread( file->fp, ptr, size * nobj ) : fread( ptr, size, nobj, file->fp );
+	c = file->compression ? (size_t)gzread( ((gzFile)file->fp), ptr, size * nobj ) : fread( ptr, size, nobj, ((FILE*)file->fp) );
 #	else
-	c = fread( ptr, size, nobj, file->fp );
+	c = fread( ptr, size, nobj, ((FILE*)file->fp) );
 #	endif
 	if ( c == (size_t)(-1) || (file->compression == 0 && ferror((FILE*)(file->fp))) )
 		XLAL_ERROR( XLAL_EIO );
@@ -369,7 +344,7 @@ size_t XLALFileWrite( const void *ptr, size_t size, size_t nobj, LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? (size_t)gzwrite( file->fp, ptr, size * nobj ) : fwrite( ptr, size, nobj, file->fp );
+	c = file->compression ? (size_t)gzwrite( ((gzFile)file->fp), ptr, size * nobj ) : fwrite( ptr, size, nobj, ((FILE*)file->fp) );
 #	else
 	c = fwrite( ptr, size, nobj, (FILE*)(file->fp) );
 #	endif
@@ -384,9 +359,9 @@ int XLALFileGetc( LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? gzgetc(file->fp) : fgetc(file->fp);
+	c = file->compression ? gzgetc(((gzFile)file->fp)) : fgetc(((FILE*)file->fp));
 #	else
-	c = fgetc(file->fp);
+	c = fgetc(((FILE*)file->fp));
 #	endif
 	return c;
 }
@@ -397,7 +372,7 @@ int XLALFilePutc( int c, LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	result = file->compression ? gzputc(file->fp, c) : fputc(c, file->fp);
+	result = file->compression ? gzputc(((gzFile)file->fp), c) : fputc(c, ((FILE*)file->fp));
 #	else
 	result = fputc(c, (FILE*)(file->fp));
 #	endif
@@ -412,9 +387,9 @@ char * XLALFileGets( char * s, int size, LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR_NULL( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? gzgets( file->fp, s, size ) : fgets( s, size, file->fp );
+	c = file->compression ? gzgets( ((gzFile)file->fp), s, size ) : fgets( s, size, ((FILE*)file->fp) );
 #	else
-	c = fgets( s, size, file->fp );
+	c = fgets( s, size, ((FILE*)file->fp) );
 #	endif
 	return c;
 }
@@ -473,9 +448,9 @@ int XLALFileFlush( LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? gzflush(file->fp, Z_FULL_FLUSH) : fflush(file->fp);
+	c = file->compression ? gzflush(((gzFile)file->fp), Z_FULL_FLUSH) : fflush(((FILE*)file->fp));
 #	else
-	c = fflush(file->fp);
+	c = fflush(((FILE*)file->fp));
 #	endif
 	if ( c == -1 )
 		XLAL_ERROR( XLAL_EIO );
@@ -492,9 +467,9 @@ int XLALFileSeek( LALFILE *file, long offset, int whence )
 		XLALPrintError( "XLAL Error - %s: SEEK_END not supported with compressed files\n", __func__ );
 		XLAL_ERROR( XLAL_EINVAL );
 	}
-	c = file->compression ? gzseek(file->fp, offset, whence) : fseek(file->fp, offset, whence);
+	c = file->compression ? gzseek(((gzFile)file->fp), offset, whence) : fseek(((FILE*)file->fp), offset, whence);
 #	else
-	c = fseek(file->fp, offset, whence);
+	c = fseek(((FILE*)file->fp), offset, whence);
 #	endif
 	if ( c == -1 )
 		XLAL_ERROR( XLAL_EIO );
@@ -507,9 +482,9 @@ long XLALFileTell( LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? (long)gztell(file->fp) : ftell(file->fp);
+	c = file->compression ? (long)gztell(((gzFile)file->fp)) : ftell(((FILE*)file->fp));
 #	else
-	c = ftell(file->fp);
+	c = ftell(((FILE*)file->fp));
 #	endif
 	if ( c == -1 )
 		XLAL_ERROR( XLAL_EIO );
@@ -521,9 +496,9 @@ void XLALFileRewind( LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR_VOID( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	file->compression ? (void)gzrewind(file->fp) : rewind(file->fp);
+	file->compression ? (void)gzrewind(((gzFile)file->fp)) : rewind(((FILE*)file->fp));
 #	else
-	rewind(file->fp);
+	rewind(((FILE*)file->fp));
 #	endif
 	return;
 }
@@ -534,7 +509,7 @@ int XLALFileEOF( LALFILE *file )
 	if ( ! file )
 		XLAL_ERROR( XLAL_EFAULT );
 #	ifdef ZLIB_ENABLED
-	c = file->compression ? gzeof(file->fp) : feof((FILE*)(file->fp));
+	c = file->compression ? gzeof(((gzFile)file->fp)) : feof((FILE*)(file->fp));
 #	else
 	c = feof((FILE*)(file->fp));
 #	endif

@@ -32,6 +32,16 @@
  * Monte-Carlo validation by simply running this script repeatedly.
  *
  *********************************************************************************/
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+
 #include <math.h>
 #include <sys/times.h>
 
@@ -67,8 +77,8 @@ int main(int argc, char *argv[])
 
   REAL8 tolerance = 2e-6;	/* same algorithm, should be basically identical results */
 
-  char earthEphem[] = "earth00-04.dat";
-  char sunEphem[] = "sun00-04.dat";
+  char earthEphem[] = DATADIR "earth00-04.dat";
+  char sunEphem[] = DATADIR "sun00-04.dat";
   UINT4 numChecks = 1; /* Number of times to check */
 
   /* read user input */

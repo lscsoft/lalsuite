@@ -1803,11 +1803,12 @@ INT4 XLALGenerateQNMFreqV2(
         UINT4                   nmodes
         );
 
-INT4 XLALFinalMassSpin(
+/* made static in LALInspiralRingdownWave.c */
+/* INT4 XLALFinalMassSpin(
 	REAL8			*finalMass,
 	REAL8			*finalSpin,
 	InspiralTemplate	*params
-	);
+	); */
 
 INT4 XLALInspiralHybridAttachRingdownWave (
         REAL4Vector 	 *signalvec1,

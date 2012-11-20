@@ -291,6 +291,7 @@ numerical data efficiently.
 
 */
 /*@{*/
+int XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
 void LALCHARReadSequence( LALStatus *status, CHARSequence **sequence, FILE *stream );
 void LALI2ReadSequence( LALStatus *status, INT2Sequence **sequence, FILE *stream );
 void LALI4ReadSequence( LALStatus *status, INT4Sequence **sequence, FILE *stream );

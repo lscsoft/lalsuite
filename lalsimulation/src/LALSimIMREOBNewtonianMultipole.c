@@ -464,7 +464,16 @@ CalculateThisMultipolePrefix(
    {
      sign = -1;
    }
-   /* Eq. 7. When m1 = m2, taking limit m1-m2 -> 0 to get the correct numerical values */
+   /** 
+    * Eq. 7 of Damour, Iyer and Nagar 2008. 
+    * For odd m, c is proportional to dM = m1-m2. In the equal-mass case, c = dM = 0. 
+    * In the equal-mass unequal-spin case, however, when spins are different, the odd m term is generally not zero.
+    * In this case, c can be written as c0 * dM, while spins terms in PN expansion may take the form chiA/dM.
+    * Although the dM's cancel analytically, we can not implement c and chiA/dM with the possibility of dM -> 0.
+    * Therefore, for this case, we give numerical values of c0 for relevant modes, and c0 is calculated as
+    * c / dM in the limit of dM -> 0. Consistently, for this case, we implement chiA instead of chiA/dM
+    * in LALSimIMRSpinEOBFactorizedWaveform.c. 
+    */
    if  ( m1 != m2 || sign == 1 )
    {
      c = pow( x2, l + epsilon - 1 ) + sign * pow(x1, l + epsilon - 1 );

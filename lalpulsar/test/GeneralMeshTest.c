@@ -135,6 +135,15 @@ points very close to the equator.
 #define GENERALMESHTESTC_MSGEMET "determinant of projected metric negative"
 /*@}*/
 
+#include <config.h>
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+#ifdef HAVE_GETOPT_H
+#include <getopt.h>
+#endif
 
 #include <math.h>
 #include <stdio.h>

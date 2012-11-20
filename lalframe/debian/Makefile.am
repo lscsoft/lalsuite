@@ -6,6 +6,9 @@ EXTRA_DIST = \
 	docs \
 	lalframe-dev.dirs \
 	lalframe-dev.install \
+	lalframe-octave.install \
+	lalframe-python.install \
 	lalframe.dirs \
 	lalframe.install \
-	rules
+	rules \
+	source/format

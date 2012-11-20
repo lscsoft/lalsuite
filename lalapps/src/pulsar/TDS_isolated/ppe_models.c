@@ -378,7 +378,7 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
   if( (bdts = *(REAL8Vector **)LALInferenceGetVariable( data->dataParams,
       "bsb_delays" )) == NULL || varybinary == 1 ){
     /* get binary system time delays */
-    bdts = get_bsb_delay( params, datatimes, dts );
+    bdts = get_bsb_delay( params, datatimes, dts, data->ephem );
   }
   
   for( i=0; i<length; i++){
@@ -556,7 +556,8 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
  */
 REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
                             LIGOTimeGPSVector *datatimes,
-                            REAL8Vector *dts ){
+                            REAL8Vector *dts,
+                            EphemerisData *edat ){
   BinaryPulsarInput binput;
   BinaryPulsarOutput boutput;
   REAL8Vector *bdts = NULL;
@@ -568,7 +569,13 @@ REAL8Vector *get_bsb_delay( BinaryPulsarParams pars,
   for ( i = 0; i < length; i++ ){
     /* check whether there's a binary model */
     if ( pars.model ){
+      EarthState earth;
+      
       binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
+      
+      get_earth_pos_vel( &earth, edat, &datatimes->data[i] );
+      
+      binput.earth = earth; /* current Earth state */
       XLALBinaryPulsarDeltaT( &boutput, &binput, &pars );    
       bdts->data[i] = boutput.deltaT;
     }
@@ -1034,4 +1041,58 @@ REAL8 get_phase_mismatch( REAL8Vector *phi1, REAL8Vector *phi2, LIGOTimeGPSVecto
   return (1. - fabs(mismatch)/(2.*T));
 }
 
+
+/** \brief Get the position and velocity of the Earth at a given time
+ * 
+ * This function will get the position and velocity of the Earth from the
+ * ephemeris data at the time t. It will be returned in an EarthState
+ * structure. This is based on the start of the XLALBaryCenterEarth function. */
+void get_earth_pos_vel( EarthState *earth, EphemerisData *edat, 
+                        LIGOTimeGPS *tGPS){
+  REAL8 tgps[2]; 
+
+  REAL8 t0e;        /*time since first entry in Earth ephem. table */
+  INT4 ientryE;      /*entry in look-up table closest to current time, tGPS */
+
+  REAL8 tinitE;           /*time (GPS) of first entry in Earth ephem table*/
+  REAL8 tdiffE;           /*current time tGPS minus time of nearest entry
+                             in Earth ephem look-up table */
+  REAL8 tdiff2E;          /*tdiff2=tdiffE*tdiffE */
+
+  INT4 j; /*dummy index */
+
+  /* check input */
+  if ( !earth || !tGPS || !edat || !edat->ephemE || !edat->ephemS ) {
+    XLALPrintError ("%s: invalid NULL input 'earth', 'tGPS', 'edat',\
+'edat->ephemE' or 'edat->ephemS'\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
+  }
+
+  tgps[0] = (REAL8)tGPS->gpsSeconds; /*convert from INT4 to REAL8 */
+  tgps[1] = (REAL8)tGPS->gpsNanoSeconds;
+
+  tinitE = edat->ephemE[0].gps;
+
+  t0e = tgps[0] - tinitE;
+  ientryE = ROUND(t0e/edat->dtEtable);  /*finding Earth table entry */
+
+  if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
+    XLALPrintError ("%s: input GPS time %f outside of Earth ephem range [%f,\
+%f]\n", __func__, tgps[0], tinitE, tinitE + edat->nentriesE * edat->dtEtable );
+    XLAL_ERROR_VOID( XLAL_EDOM );
+  }
+    
+  tdiffE = t0e -edat->dtEtable*ientryE + tgps[1]*1.e-9; /*tdiff is arrival
+              time minus closest Earth table entry; tdiff can be pos. or neg. */
+  tdiff2E = tdiffE*tdiffE;
+
+  REAL8* pos = edat->ephemE[ientryE].pos;
+  REAL8* vel = edat->ephemE[ientryE].vel;
+  REAL8* acc = edat->ephemE[ientryE].acc;
+
+  for (j=0;j<3;j++){
+    earth->posNow[j]=pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E;
+    earth->velNow[j]=vel[j] + acc[j]*tdiffE;
+  }                    
+}
 /*------------------------ END OF MODEL FUNCTIONS ----------------------------*/

@@ -47,12 +47,12 @@
 */
 
 /** \cond DONT_DOXYGEN */
+#include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <lal/LALConfig.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>

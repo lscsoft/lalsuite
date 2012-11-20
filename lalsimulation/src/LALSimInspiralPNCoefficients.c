@@ -63,6 +63,28 @@ XLALSimInspiralPNEnergy_6PNCoeff(
 	return -(67.5/6.4 - (344.45/5.76 - 20.5/9.6 * LAL_PI*LAL_PI) * eta + 15.5/9.6 * eta*eta + 3.5/518.4 * eta*eta*eta);
 }
 
+/*
+ * Tidal correction coefficients to Energy
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_10PNTidalCoeff(
+    REAL8 chi1,
+    REAL8 chi2,
+    REAL8 lambda2)
+{
+    return -9.0 * chi1 * chi2*chi2*chi2*chi2 * lambda2;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_12PNTidalCoeff(
+    REAL8 chi1,
+    REAL8 chi2,
+    REAL8 lambda2)
+{
+    return -11.0/2.0 * chi1 * chi2*chi2*chi2*chi2 * lambda2 * (3. + 2.*chi2 + 3.*chi2*chi2);
+}
+
 
 /**
  * Computes the PN Coefficients for using in the TaylorT1 flux equation.
@@ -129,6 +151,26 @@ XLALSimInspiralTaylorT1Flux_7PNCoeff(
 	REAL8 eta)
 {
 	return -(162.85/5.04 - 214.745/1.728 * eta - 193.385/3.024 * eta*eta) * LAL_PI;
+}
+
+/*
+ * Tidal correction coefficients to Flux
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_10PNTidalCoeff(
+    REAL8 chi2,
+    REAL8 lambda2)
+{
+	return (18. - 12.*chi2) * chi2*chi2*chi2*chi2 * lambda2;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT1Flux_12PNTidalCoeff(
+    REAL8 chi2,
+    REAL8 lambda2)
+{
+	return (-70.4 - 180.3*chi2 + 450.1*chi2*chi2 - 217.0*chi2*chi2*chi2)/2.8 * chi2*chi2*chi2*chi2 * lambda2;
 }
 
 
@@ -199,6 +241,27 @@ XLALSimInspiralTaylorT2Phasing_7PNCoeff(
 	return (77.096675/2.032128 + 37.8515/1.2096 * eta - 74.045/6.048 * eta*eta) * LAL_PI;
 }
 
+/*
+ * Tidal correction coefficients to Phasing
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2Phasing_10PNTidalCoeff(
+	REAL8 chi,
+    REAL8 lambda)
+{
+    return lambda * (-66.*chi + 72.) * chi*chi*chi*chi;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2Phasing_12PNTidalCoeff(
+	REAL8 eta,
+    REAL8 chi,
+    REAL8 lambda)
+{
+    return lambda * chi*chi*chi*chi * ( -1497.5*chi/5.6 - 225.5*eta*chi/1.4 + 1589.5/5.6
+           + 259.5*eta/1.4 + 398.5*chi*chi/2.8 - 965.*chi*chi*chi/7.);
+}
 
 /**
  * Computes the PN Coefficients for using in the TaylorT2 timing equation.
@@ -269,6 +332,29 @@ XLALSimInspiralTaylorT2Timing_7PNCoeff(
 	return (-154.19335/1.27008 - 757.03/7.56 * eta + 148.09/3.78 * eta*eta) * LAL_PI;
 }
 
+/*
+ * Tidal correction coefficients to Timing
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(
+	REAL8 chi,
+    REAL8 lambda)
+{
+	return lambda * (-264.*chi + 288.) * chi*chi*chi*chi;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(
+	REAL8 eta,
+    REAL8 chi,
+    REAL8 lambda)
+{
+	return lambda * chi*chi*chi*chi * (-2995.*chi/4. - 451.*eta*chi + 3179./4. + 519.*eta
+           + (797.*chi*chi)/2. - 386.*chi*chi*chi);
+}
+
+
 
 /**
  * Computes the PN Coefficients for using in the TaylorT3 phasing equation.
@@ -337,6 +423,30 @@ XLALSimInspiralTaylorT3Phasing_7PNCoeff(
 {
 	return (1.88516689/1.73408256 + 4.88825/5.16096 * eta - 1.41769/5.16096 * eta*eta) * LAL_PI;
 }
+
+/*
+ * Tidal correction coefficients to Phasing
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * (-3.3*chi/51.2 + 9./128.) * chi*chi*chi*chi;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT3Phasing_12PNTidalCoeff(
+	REAL8 eta,
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * chi*chi*chi*chi * (-1.30715*chi/13.76256
+		- 8.745*eta*chi/114.688 + 2.3325/22.9376 + 4.905*eta/57.344
+		+ 3.985*chi*chi/114.688 - 9.65*chi*chi*chi/286.72);
+}
+
 
 
 /**
@@ -407,6 +517,28 @@ XLALSimInspiralTaylorT3Frequency_7PNCoeff(
 	return (-1.88516689/4.33520640 - 9.7765/25.8048 * eta + 1.41769/12.90240 * eta*eta) * LAL_PI;
 }
 
+/*
+ * Tidal correction coefficients to Frequency
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * (-9.9*chi/102.4 + 2.7/25.6) * chi*chi*chi*chi;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(
+	REAL8 eta,
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * chi*chi*chi*chi * (-8.579*chi/65.536 - 1.947*eta*chi/16.384
+		+ 1.8453/13.1072 + 4.329*eta/32.768 + 2.391*chi*chi/65.536
+		- 5.79*chi*chi*chi/163.84);
+}
 
 /**
  * Computes the PN Coefficients for using in the TaylorT4 angular acceleration
@@ -477,6 +609,29 @@ XLALSimInspiralTaylorT4AngularAccel_7PNCoeff(
 {
 	return -(4.415/4.032 - 358.675/6.048 * eta - 91.495/1.512 * eta*eta) * LAL_PI;
 }
+
+/*
+ * Tidal correction coefficients to Angular Acceleration
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * (-66.*chi + 72.) * chi*chi*chi*chi;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(
+	REAL8 eta,
+	REAL8 chi,
+	REAL8 lambda)
+{
+	return lambda * chi*chi*chi*chi * (-461.9*chi/5.6 + 275.*eta*chi/2.
+		+ 442.1/5.6 - 273.*eta/2. + 797.*chi*chi/4. - 193.*chi*chi*chi);
+}
+
 
 
 /**

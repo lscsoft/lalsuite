@@ -1,6 +1,7 @@
 %define _prefix /usr
 %define _mandir %{_prefix}/share/man
 %define _sysconfdir %{_prefix}/etc
+
 Name: @PACKAGE@
 Version: @VERSION@
 Release: 1
@@ -8,10 +9,10 @@ Summary: LSC Algorithm Library
 License: GPL
 Group: LAL
 Source: %{name}-%{version}.tar.gz
-URL: http://www.lsc-group.phys.uwm.edu/lal
+URL: https://www.lsc-group.phys.uwm.edu/daswg/projects/lalsuite.html
 Packager: Jolien Creighton <jolien@uwm.edu>
 BuildRoot: %{_tmppath}/%{name}-%{version}-root
-BuildRequires: python
+BuildRequires: swig python-devel octave-devel
 Requires: gsl fftw3
 Prefix: %{_prefix}
 
@@ -24,17 +25,35 @@ that use the LAL library.
 Summary: Files and documentation needed for compiling programs that use LAL
 Group: LAL
 Requires: %{name} = %{version}
-Requires: gsl-devel fftw3-devel fftw3-static libmetaio-devel
+Requires: gsl-devel fftw3-devel fftw3-static
 %description devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
 as well as the documentation for the library.
 
+%package python
+Summary: Python bindings for LAL
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python numpy
+%description python
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Python bindings.
+
+%package octave
+Summary: Octave bindings for LAL
+Group: LAL
+Requires: %{name} = %{version}
+Requires: octave
+%description octave
+The LSC Algorithm Library for gravitational wave data analysis.
+This package provides the Octave bindings.
+
 %prep
 %setup -q
 
 %build
-%configure --disable-gcc-flags --disable-debug
+%configure --disable-gcc-flags --disable-debug --enable-swig
 %{__make} V=1
 
 %install
@@ -62,7 +81,16 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
-%{_datadir}/*
-%{_mandir}/man3/lal.3*
 
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*/site-packages/lal/*.py
+%{_libdir}/python*/site-packages/lal/*.pyc
+%{_libdir}/python*/site-packages/lal/_lal.so*
+%exclude %{_libdir}/python*/site-packages/lal/*.pyo
+%exclude %{_libdir}/python*/site-packages/lal/*.la
 
+%files octave
+%defattr(-,root,root)
+%{_libexecdir}/octave/*/site/oct/*/lal.oct*
+%exclude %{_libexecdir}/octave/*/site/oct/*/lal.la

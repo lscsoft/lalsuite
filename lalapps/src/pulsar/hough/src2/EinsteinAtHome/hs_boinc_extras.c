@@ -72,6 +72,10 @@ extern int boinc_resolve_filename(const char*, char*, int len);
 #include <gnu/libc-version.h>
 #endif
 
+#ifdef HAVE_BUILD_INFO_H
+#include "build_info.h"
+#endif
+
 /* try to dlopen("libgcc_s.so.1") */
 #ifdef DLOPEN_LIBGCC
 #include <dlfcn.h>
@@ -499,7 +503,7 @@ static void sighandler(int sig)
       free(backtracesymbols);
     }
 #endif /* EXT_STACKTRACE */
-    fputs("\nEnd of stcaktrace\n",stderr);
+    fputs("\nEnd of stacktrace\n",stderr);
   }
 #endif /* __GLIBC__ */
 
@@ -1215,6 +1219,9 @@ static void worker (void) {
 
   /* if the program was called to output the version, output the BOINC revision, too */
   if(output_version)
+#ifdef BUILD_INFO
+    printf("%%%% " BUILD_INFO "\n");
+#endif
     printf("%%%% BOINC: " SVN_VERSION "\n");
 
   if (output_help || output_version || !resultfile_present) {

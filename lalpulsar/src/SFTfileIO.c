@@ -714,8 +714,7 @@ typedef struct {
  * SFT-'catalogue' ( returned by LALSFTdataFind() ).
  *
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
- * Frequency-bins from the lowest (or up to the highest) found in the first SFT-file
- * found in the catalogue.
+ * Frequency-bins from the lowest (or up to the highest) found in all SFT-files of the catalog.
  *
  * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>,
  * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found
@@ -732,6 +731,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
 {
   UINT4 catPos;                    /**< current file in catalog */
   UINT4 firstbin, lastbin;         /**< the first and last bin we want to read */
+  UINT4 minbin, maxbin;            /**< min and max bin of all SFTs in the catalog */
   UINT4 nSFTs = 1;                 /**< number of SFTs, i.e. different GPS timestamps */
   REAL8 deltaF;                    /**< frequency spacing of SFT */
   SFTCatalog locatalog;            /**< local copy of the catalog to be sorted by 'locator' */
@@ -754,7 +754,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
       XLALDestroySFT(thisSFT);			\
     if(sftVector)				\
       XLALDestroySFTVector(sftVector);		\
-    XLAL_ERROR_NULL(eno);	\
+    XLAL_ERROR_NULL(eno);	                \
   }
 
   /* initialize locatalog.data so it doesn't get free()d on early error */
@@ -767,27 +767,36 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   /* determine number of SFTs, i.e. number of different GPS timestamps.
      The catalog should be sorted by GPS time, so just count changes.
      Record the 'index' of GPS time in the 'isft' field of the locator,
-     so that we know later in which SFT to put this segment */
-  {
-    LIGOTimeGPS epoch = catalog->data[0].header.epoch;
-    catalog->data[0].locator->isft = nSFTs - 1;
-    for(catPos = 1; catPos < catalog->length; catPos++) {
-      if(!GPSEQUAL(epoch, catalog->data[catPos].header.epoch)) {
-	epoch = catalog->data[catPos].header.epoch;
-	nSFTs++;
-      }
-      catalog->data[catPos].locator->isft = nSFTs - 1;
+     so that we know later in which SFT to put this segment
+
+     while at it, record max and min bin of all SFTs in the catalog */
+
+  LIGOTimeGPS epoch = catalog->data[0].header.epoch;
+  catalog->data[0].locator->isft = nSFTs - 1;
+  deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
+  minbin = firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+  maxbin = lastbin = firstbin + catalog->data[0].numBins - 1;
+  for(catPos = 1; catPos < catalog->length; catPos++) {
+    firstbin = MYROUND( catalog->data[catPos].header.f0 / deltaF );
+    lastbin = firstbin + catalog->data[catPos].numBins - 1;
+    if (firstbin < minbin)
+      minbin = firstbin;
+    if (lastbin > maxbin)
+      maxbin = lastbin;
+    if(!GPSEQUAL(epoch, catalog->data[catPos].header.epoch)) {
+      epoch = catalog->data[catPos].header.epoch;
+      nSFTs++;
     }
+    catalog->data[catPos].locator->isft = nSFTs - 1;
   }
 
   /* calculate first and last frequency bin to read */
-  deltaF = catalog->data[0].header.deltaF; /* Hz/bin */
   if (fMin < 0)
-    firstbin = MYROUND( catalog->data[0].header.f0 / deltaF );
+    firstbin = minbin;
   else
-    firstbin = floor(fMin / deltaF);
+    firstbin = floor (fMin / deltaF);
   if (fMax < 0)
-    lastbin = firstbin + catalog->data[0].numBins - 1;
+    lastbin = maxbin;
   else
     lastbin = ceil (fMax / deltaF);
 

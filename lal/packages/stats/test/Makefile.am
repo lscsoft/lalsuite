@@ -14,8 +14,6 @@ LALMomentTest_SOURCES = \
 TESTS = \
 	$(check_PROGRAMS)
 
-TESTS_ENVIRONMENT = 1>/dev/null
-
 EXTRA_DIST = \
 	CheckStatus.c \
 	CheckStatus.h

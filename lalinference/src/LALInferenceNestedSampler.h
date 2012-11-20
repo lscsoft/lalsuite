@@ -80,5 +80,7 @@ void LALInferenceSetupLivePointsArray(LALInferenceRunState *runState);
     as a proposal distribution. */
 void LALInferenceSetupkDTreeNSLivePoints( LALInferenceRunState *runState );
 
+/** Project the sample in params onto the eigenvectors given in eigenvectors. */
+void LALInferenceProjectSampleOntoEigenvectors(LALInferenceVariables *params, gsl_matrix *eigenvectors, REAL8Vector **projection);
 #endif
 

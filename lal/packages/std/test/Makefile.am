@@ -12,5 +12,3 @@ check_PROGRAMS = \
 
 TESTS = \
 	$(check_PROGRAMS)
-
-TESTS_ENVIRONMENT = 1>/dev/null

@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DDATADIR='"$(abs_srcdir)/"'
 LDADD = \
 	$(top_builddir)/lib/lal/liblal.la \
 	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
@@ -46,8 +46,6 @@ TESTS = \
 	NearestNeighborTriggerInterpolantTest \
 	QuadraticFitTriggerInterpolantTest \
 	UnitsTest
-
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 MOSTLYCLEANFILES = \
 	PrintVector.* \

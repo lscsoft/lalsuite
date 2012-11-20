@@ -39,17 +39,17 @@ The chi parameter should be determined from XLALSimInspiralTaylorF2ReducedSpinCo
 */
 int XLALSimInspiralTaylorF2ReducedSpinTidal(
     COMPLEX16FrequencySeries **htilde,   /**< FD waveform */
-    const REAL8 phiStart,            /**< initial GW phase (rad) */
-    const REAL8 deltaF,              /**< frequency resolution */
+    const REAL8 phic,                /**< orbital coalescence phase (rad) */
+    const REAL8 deltaF,              /**< frequency resolution (Hz) */
     const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
     const REAL8 chi,                 /**< dimensionless aligned-spin param */
-    const REAL8 lam1,                /**< dimensionless deformability of 1 */
-    const REAL8 lam2,                /**< dimensionless deformability of 2 */
+    const REAL8 lam1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+    const REAL8 lam2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
-    const INT4 phaseO,              /**< twice PN phase order */
-    const INT4 ampO                 /**< twice PN amplitude order */
+    const INT4 phaseO,               /**< twice PN phase order */
+    const INT4 ampO                  /**< twice PN amplitude order */
     ) {
     /* external: SI; internal: solar masses */
     const REAL8 m1 = m1_SI / LAL_MSUN_SI;
@@ -64,7 +64,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 vISCO = 1. / sqrt(6.);
     const REAL8 fISCO = vISCO * vISCO * vISCO / piM;
     REAL8 v0 = cbrt(piM * fStart);
-    REAL8 shft, phi0, amp0, f_max;
+    REAL8 shft, amp0, f_max;
     REAL8 psiNewt, psi2, psi3, psi4, psi5, psi6, psi6L, psi7, psi3S, psi4S, psi5S, psi10T1, psi10T2, psi10, psi12T1, psi12T2, psi12;
     REAL8 alpha2, alpha3, alpha4, alpha5, alpha6, alpha6L, alpha7, alpha3S, alpha4S, alpha5S;
     size_t i, n, iStart, iISCO;
@@ -73,7 +73,6 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
 
     /* check inputs for sanity */
     if (*htilde) XLAL_ERROR(XLAL_EFAULT);
-    if (phiStart < 0) XLAL_ERROR(XLAL_EDOM);
     if (m1_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (m2_SI <= 0) XLAL_ERROR(XLAL_EDOM);
     if (fabs(chi) > 1) XLAL_ERROR(XLAL_EDOM);
@@ -92,7 +91,6 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     XLALUnitDivide(&((*htilde)->sampleUnits), &((*htilde)->sampleUnits), &lalSecondUnit);
 
     /* extrinsic parameters */
-    phi0 = phiStart;
     amp0 = pow(m_sec, 5./6.) * sqrt(5. * eta / 24.) / (cbrt(LAL_PI * LAL_PI) * r / LAL_C_SI);
     shft = -LAL_TWOPI * (tStart.gpsSeconds + 1e-9 * tStart.gpsNanoSeconds);
 
@@ -107,9 +105,9 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     alpha5S = (-113.*chi*(502429. - 591368.*eta + 1680*eta*eta))/(16128.*(-113 + 76*eta));
 
     /* tidal terms in the phase */
-    psi10T2 = -24./xi2 * (1. + 11. * xi1) * lam2 *xi2*xi2*xi2*xi2*xi2;
-    psi10T1 = -24./xi1 * (1. + 11. * xi1) * lam1 * xi1*xi1*xi1*xi1*xi1;
-    psi12T2 = -5./28./xi2 * (3179. - 919.* xi2 - 2286.* xi2*xi2 + 260.* xi2*xi2*xi2)* lam2 *xi2*xi2*xi2*xi2*xi2;
+    psi10T2 = -24./xi2 * (1. + 11. * xi1) * lam2 * xi2*xi2*xi2*xi2*xi2;
+    psi10T1 = -24./xi1 * (1. + 11. * xi2) * lam1 * xi1*xi1*xi1*xi1*xi1;
+    psi12T2 = -5./28./xi2 * (3179. - 919.* xi2 - 2286.* xi2*xi2 + 260.* xi2*xi2*xi2)* lam2 * xi2*xi2*xi2*xi2*xi2;
     psi12T1 = -5./28./xi1 * (3179. - 919.* xi1 - 2286.* xi1*xi1 + 260.* xi1*xi1*xi1)* lam1 * xi1*xi1*xi1*xi1*xi1;
 
     /* coefficients of the phase at PN orders from 0 to 3.5PN */
@@ -205,8 +203,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
             + (alpha6 + alpha6L * (LAL_GAMMA + log(4. * v))) * v6
             + alpha7 * v7);
 
-        data[i] = (COMPLEX16) {amp * cos(Psi + shft * f + phi0 + LAL_PI_4),
-                               -(amp * sin(Psi + shft * f + phi0 + LAL_PI_4))};
+        data[i] = (COMPLEX16) {amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4),
+                             -(amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4))};
     }
 
     return XLAL_SUCCESS;

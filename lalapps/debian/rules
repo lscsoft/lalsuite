@@ -1,17 +1,18 @@
 #!/usr/bin/make -f
 %:
-	dh $@
-
-PREFIX=/usr
+	dh $@ --with=python2
 
 override_dh_auto_configure:
 	PKG_CONFIG_PATH="" \
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) \
+	./configure \
 	    --disable-silent-rules \
-	    --prefix=$(PREFIX) \
+	    --prefix=/usr \
 	    --sysconfdir=/etc \
 	    --mandir=\$${prefix}/share/man --infodir=\$${prefix}/share/info \
 	    --disable-debug \
 	    --disable-gcc-flags
+
+override_dh_auto_build:
+	$(MAKE) V=1
 
 override_dh_auto_test:

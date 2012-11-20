@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 42
+# serial 46
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # require a C++ compiler
@@ -73,11 +73,12 @@ AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
 [## $0: libtool incorrectly determine library path on SL6
 case "${host}" in
   x86_64-*-linux-gnu*)
-    redhat_release=`cat /etc/redhat-release 2> /dev/null`
-    if test "${redhat_release}" = "Scientific Linux release 6.1 (Carbon)"; then
-      AC_MSG_NOTICE([hacking round broken libtool multilib support on SL6])
-      lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
-    fi
+    case `cat /etc/redhat-release 2> /dev/null` in
+      "Scientific Linux"*|"CentOS"*)
+        AC_MSG_NOTICE([hacking round broken libtool multilib support on RedHat systems])
+        lt_cv_sys_lib_dlsearch_path_spec="/lib64 /usr/lib64"
+        ;;
+    esac
     ;;
 esac
 ]) # LALSUITE_MULTILIB_LIBTOOL_HACK
@@ -204,7 +205,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   [nightly],
   AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
   [ case "${enableval}" in
-      yes) NIGHTLY_VERSION=`date +"%Y%m%d"`
+      yes) NIGHTLY_VERSION=`date -u +"%Y%m%d"`
            VERSION="${VERSION}.${NIGHTLY_VERSION}" ;;
       no) NIGHTLY_VERSION="";;
       *) NIGHTLY_VERSION="${enableval}"
@@ -294,6 +295,19 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalsimulation) ;;
     esac
   ], [ lalsimulation=${all_lal:-true} ] )
+])
+
+AC_DEFUN([LALSUITE_ENABLE_LALDETCHAR],
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
+  [laldetchar],
+  AC_HELP_STRING([--enable-laldetchar],[compile code that requires laldetchar library [default=no]]),
+  [ case "${enableval}" in
+      yes) laldetchar=true;;
+      no) laldetchar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-laldetchar) ;;
+    esac
+  ], [ laldetchar=${all_lal:-false} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALBURST],

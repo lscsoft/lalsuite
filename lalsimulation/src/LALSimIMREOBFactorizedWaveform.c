@@ -291,7 +291,7 @@ UNUSED static int XLALSimIMREOBCalcFacWaveformCoefficients(
 
   coeffs->delta22vh3 = 7./3.;
   coeffs->delta22vh6 = (-4.*a)/3. + (428.*LAL_PI)/105.;
-  coeffs->delta22vh8 = (20.*a)/63.;
+  coeffs->delta22v8 = (20.*a)/63.;
   coeffs->delta22vh9 = -2203./81. + (1712.*LAL_PI*LAL_PI)/315.;
   coeffs->delta22v5  = - 24.*eta;
 
@@ -832,8 +832,8 @@ UNUSED static int  XLALSimIMREOBGetFactorizedWaveform(
       {
         case 2:
           deltalm = vh3*(hCoeffs->delta22vh3 + vh3*(hCoeffs->delta22vh6
-            + vh*vh*(hCoeffs->delta22vh8 + hCoeffs->delta22vh9*vh)))
-            + hCoeffs->delta22v5 *v*v2*v2;
+            + vh*vh*(hCoeffs->delta22vh9*vh)))
+            + hCoeffs->delta22v5 *v*v2*v2 + hCoeffs->delta22v8 *v2*v2*v2*v2;
           rholm  = 1. + v2*(hCoeffs->rho22v2 + v*(hCoeffs->rho22v3
             + v*(hCoeffs->rho22v4
             + v*(hCoeffs->rho22v5 + v*(hCoeffs->rho22v6
