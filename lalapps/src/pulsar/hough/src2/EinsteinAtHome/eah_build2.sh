@@ -60,9 +60,12 @@ for i; do
 	    rebuild_lal=true ;;
 	--rebuild-boinc)
 	    rebuild_boinc=true ;;
+	--rebuild-zlib)
+	    rebuild_zlib=true ;;
 	--rebuild-binutils)
 	    rebuild_binutils=true ;;
 	--release)
+	    rebuild_zlib=true
 	    rebuild_binutils=true
 	    rebuild_boinc=true
 	    rebuild_lal=true
@@ -76,6 +79,7 @@ for i; do
 	--appversion=*)
 	    appversion=`echo "$i" | sed 's/--appversion=//'` ;;
 	--norebuild) # dangerous, for testing only!
+	    rebuild_zlib=""
 	    rebuild_binutils=""
 	    rebuild_boinc=""
 	    rebuild_lal=""
@@ -213,6 +217,7 @@ if [ ."$build_win32" = ."true" ] ; then
     shared_copt="--disable-shared"
     fftw_copts_single="$fftw_copts_single --with-our-malloc16"
     fftw_copts_double="$fftw_copts_double --with-our-malloc16"
+    build_zlib=true
     ext=".exe"
     platform=windows_intelx86
     wine=`which wine`
@@ -258,8 +263,9 @@ else
 	    fi
 	    if [ ".$release" = ".true" ]; then
 		CPPFLAGS="-DDLOPEN_LIBGCC -DEXT_STACKTRACE -I$INSTALL/include/bfd $CPPFLAGS"
-		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a libz.a"
+		export RELEASE_DEPS="erp_execinfo_plus.o libstdc++.a"
 		export RELEASE_LDADD="erp_execinfo_plus.o -lbfd -liberty -ldl"
+		build_zlib=true
 		build_binutils=true
 		enable_linux_compatibility_workarounds=true
 	    fi ;;
@@ -362,7 +368,7 @@ elif test -z "$noupdate"; then
     log_and_do tar xzf "$fftw.tar.gz"
 fi
 
-if test ."$build_win32" = ."true"; then
+if test ."$build_zlib" = ."true"; then
     if test -z "$rebuild" -a -d "$zlib"; then
         log_and_show "using existing zlib source"
     elif test -z "$noupdate"; then
@@ -408,11 +414,11 @@ if test \! -d lalsuite/.git ; then
     log_and_do ln -s "$eah_build2_loc/../../../../../.." lalsuite
 fi
 
-if test ."$build_win32" = ."true"; then
-    if test -z "$rebuild" && pkg-config --exists zlib; then
+if test ."$build_zlib" = ."true"; then
+    if test -z "$rebuild_zlib" && pkg-config --exists zlib; then
         log_and_show "using existing zlib"
     else
-        log_and_show "compilng $zlib"
+        log_and_show "compiling zlib"
         log_and_do cd "$SOURCE/$zlib"
         log_and_do "./configure" --static --prefix="$INSTALL"
         # log_and_dont_fail make clean

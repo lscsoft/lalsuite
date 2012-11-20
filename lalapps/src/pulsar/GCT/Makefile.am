@@ -55,8 +55,6 @@ eah_HierarchSearchGCT_LDADD = $(LDADD) $(RELEASE_LDADD)
 
 libstdc++.a:
 	cp -f `$(CC) -print-file-name=$@` $@
-libz.a:
-	cp -f `$(CC) -print-file-name=$@` $@
 
 exchndl.o: $(EAHsrc)/exchndl.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
