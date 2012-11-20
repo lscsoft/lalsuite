@@ -192,8 +192,8 @@ update_job.set_sub_file(basename + subsuffix)
 # set values from config file
 pulsar_param_dir = cp.get('data','pulsar_param_dir')
 
-earth_ephem = cp.get('ephem','earth_ephem')
-sun_ephem = cp.get('ephem','sun_ephem')
+# the path to the ephemeris file directory
+ephem_path = cp.get('ephem','path')
 
 # actual info on the analysis
 tstart = cp.get('input','starttime')
@@ -313,11 +313,7 @@ if do_coarse:
       coarse[j].set_pulsar(pulsar)
       coarse[j].set_param_file(param_file)
       coarse[j].set_freq_factor(freq_factor)
-      """
-      don't need ephem files in coarse heterodyne YET!!
-      coarse[j].set_earth_ephem(earth_ephem)
-      coarse[j].set_sun_ephem(sun_ephem)
-      """
+
       if manual_epoch != None:
         coarse[j].set_manual_epoch(manual_epoch)
       coarse[j].set_filter_knee(filter_knee)
@@ -471,30 +467,33 @@ heterodyne using old parameters.""" % (pulsar)
       fine[j].set_pulsar(pulsar)
       fine[j].set_param_file(param_file)
       fine[j].set_freq_factor(freq_factor)
-      
-      # there are two ephemeris files for the 09-11 period (e.g. S6) - the
-      # files with the DE405 suffix use DE405 and those without are DE200.
-      # Therefore if using data between within 2009-2011 check the ephemeris
-      # from the par file and set accordingly (assume that the config file
-      # leaves off the .dat suffix) - default to use DE405 if none is specified
-      if float(tstart) > 914803215 and float(tend) < 1009324815:
-        if het_flag == 2: # check if updated parameters are used
-          if 'DE200' in ephem2:
-            eephem = earth_ephem + '.dat'
-            sephem = sun_ephem + '.dat'
-          else:
-            eephem = earth_ephem + '-DE405.dat'
-            sephem = sun_ephem + '-DE405.dat'
-        elif het_flag == 1:
-          if 'DE200' in ephem1:
-            eephem = earth_ephem + '.dat'
-            sephem = sun_ephem + '.dat'
-          else:
-            eephem = earth_ephem + '-DE405.dat'
-            sephem = sun_ephem + '-DE405.dat'
-      else:
-        eephem = earth_ephem
-        sephem = sun_ephem
+
+      if het_flag == 2: # check if updated parameters are used
+        if 'DE200' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE200.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE200.dat.gz'
+        elif 'DE405' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
+        elif 'DE414' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE414.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE414.dat.gz'
+        else: # default to DE405
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
+      elif het_flag == 1 or het_flag == 3:
+        if 'DE200' in ephem1:
+          eephem = ephem_path + '/earth00-19-DE200.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE200.dat.gz'
+        elif 'DE405' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
+        elif 'DE414' in ephem2:
+          eephem = ephem_path + '/earth00-19-DE414.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE414.dat.gz'
+        else: # default to DE405
+          eephem = ephem_path + '/earth00-19-DE405.dat.gz'
+          sephem = ephem_path + '/sun00-19-DE405.dat.gz'
       
       fine[j].set_ephem_earth_file(eephem)
       fine[j].set_ephem_sun_file(sephem)
