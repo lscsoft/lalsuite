@@ -443,35 +443,26 @@ header information\n", __func__ );
    ***************************************************************************/
 
   /* read the remaining lines */
-  int ret;
   for (j=0; j < nEntries; j++)
     {
-      CHAR *oneline = NULL;
+      UINT4 i_line;
+      int ret;
 
-      int i;
-      /* concatenate the tokens representing one entry */
-      for ( i = 0; i < 4; i++ ){
-        oneline = XLALStringAppend( oneline, flines->lines->tokens[4*j+1+i] );
-        /* add space between tokens*/
-        oneline = XLALStringAppend( oneline, " " );
-      }
+      i_line = 1 + 4*j;
+      ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].gps, &ephemV->data[j].pos[0], &ephemV->data[j].pos[1] );
+      XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
 
-      ret = sscanf( oneline, "%le %le %le %le %le %le %le %le %le %le",
-                    &ephemV->data[j].gps, &ephemV->data[j].pos[0],
-                    &ephemV->data[j].pos[1], &ephemV->data[j].pos[2],
-                    &ephemV->data[j].vel[0], &ephemV->data[j].vel[1],
-                    &ephemV->data[j].vel[2], &ephemV->data[j].acc[0],
-                    &ephemV->data[j].acc[1], &ephemV->data[j].acc[2] );
+      i_line ++;
+      ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].pos[2], &ephemV->data[j].vel[0], &ephemV->data[j].vel[1] );
+      XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
 
-      XLALFree( oneline );
+      i_line ++;
+      ret = sscanf( flines->lines->tokens[ i_line ], "%le %le %le\n", &ephemV->data[j].vel[2], &ephemV->data[j].acc[0], &ephemV->data[j].acc[1] );
+      XLAL_CHECK_NULL ( ret == 3, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 3\n", i_line, fname, ret );
 
-      if (ret != 10) {
-        XLALDestroyEphemerisVector ( ephemV );
-        XLALDestroyParsedDataFile( flines );
-        XLALPrintError("%s: Couldn't parse line %d of %s: %d\n", j+2, fname,
-                       ret);
-        XLAL_ERROR_NULL ( XLAL_EDOM );
-      }
+      i_line ++;
+      ret = sscanf( flines->lines->tokens[ i_line ], "%le\n", &ephemV->data[j].acc[2] );
+      XLAL_CHECK_NULL ( ret == 1, XLAL_EDOM, "Couldn't parse line %d of %s: read %d items instead of 1\n", i_line, fname, ret );
 
       /* check timestamps */
       if(j == 0)
