@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){
   double TOA[10000];
   double num1;
   int telescope;
-  int i=0, j=0, k=0, length;
+  int i=0, j=0, k=0;
   
   double PPTime[10000]; /* Pulsar proper time - corrected for solar system and
  binary orbit delay times */
@@ -76,12 +76,10 @@ int main(int argc, char *argv[]){
   EmissionTime emit;
   EphemerisData *edat=NULL;
   TimeCorrectionData *tdat=NULL;
-  char earthFile[256], sunFile[256], tcFile[256];
-  char ephem[256];
+  char *earthFile=NULL, *sunFile=NULL, *tcFile=NULL, *lalpath=NULL;
 
   double MJD_tcorr[10000];
   double tcorr[10000];
-  char date[15];
 
   double f0=0., f1=0., f2=0., f3=0., T=0.;
   double DM;
@@ -89,6 +87,9 @@ int main(int argc, char *argv[]){
   long offset;
   
   TimeCorrectionType ttype;
+  
+  lalDebugLevel = 7;
+  XLALSetErrorHandler( XLALExitErrorHandler );
   
   get_input_args(&par, argc, argv);
  
@@ -171,8 +172,6 @@ int main(int argc, char *argv[]){
       }
     }while(!feof(fpin));
 
-    length = j;
-
     fclose(fpin);
   }
 
@@ -192,33 +191,41 @@ x,y,z components are got from tempo */
   baryinput.site.location[0] = -4554231.5/LAL_C_SI;
   baryinput.site.location[1] = 2816759.1/LAL_C_SI;
   baryinput.site.location[2] = -3454036.3/LAL_C_SI;
-
-  /* initialise the solar system ephemerides */
-  if( par.ephem == NULL ){ /* default to DE405 */
-    sprintf(earthFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/\
-binary_test/earth98-12-DE405.dat");
-    sprintf(sunFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/binary_test/\
-sun98-12-DE405.dat");
-  }
-  else if( strcmp(par.ephem, "DE200") == 0 ){
-    sprintf(earthFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/\
-binary_test/earth98-12.dat");
-    sprintf(sunFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/binary_test/\
-sun98-12.dat");
-  }
-  else if( strcmp(par.ephem, "DE405") ){
-    sprintf(earthFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/\
-binary_test/earth98-12-DE405.dat");
-    sprintf(sunFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/binary_test/\
-sun98-12-DE405.dat");
+  
+  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
+    fprintf(stderr, "LALPULSAR_PREFIX environment variable not set!\n");
+    exit(1);
   }
   
+  earthFile = XLALStringDuplicate(lalpath);
+  sunFile = XLALStringDuplicate(lalpath);
+  
+  /* initialise the solar system ephemerides */
+  if( par.ephem == NULL ){ /* default to DE405 */
+    earthFile = XLALStringAppend( earthFile, 
+                                  "/share/lalpulsar/earth00-19-DE405.dat.gz" );
+    sunFile = XLALStringAppend( sunFile,
+                                "/share/lalpulsar/sun00-19-DE405.dat.gz" );
+  }
+  else if( strcmp(par.ephem, "DE200") == 0 ){
+    earthFile = XLALStringAppend( earthFile,
+                                  "/share/lalpulsar/earth00-19-DE200.dat.gz" );
+    sunFile = XLALStringAppend( sunFile,
+                                "/share/lalpulsar/sun00-19-DE200.dat.gz" );
+  }
+  else if( strcmp(par.ephem, "DE405") ){
+    earthFile = XLALStringAppend( earthFile,
+                                  "/share/lalpulsar/earth00-19-DE405.dat.gz" );
+    sunFile = XLALStringAppend( sunFile,
+                                "/share/lalpulsar/sun00-19-DE405.dat.gz" );
+  }
+  
+  /* static LALStatus status;
+  edat = (EphemerisData *)LALCalloc(1, sizeof(EphemerisData));
+  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthFile );
+  edat->ephiles.sunEphemeris = XLALStringDuplicate( sunFile );
+  LALInitBarycenter( &status, edat ); */
+
   edat = XLALInitBarycenter( earthFile, sunFile );
   
   if ( verbose ) fprintf(stderr, "I've set up the ephemeris files\n");
@@ -238,14 +245,16 @@ sun98-12-DE405.dat");
   else if( !strcmp(params.units, "TCB") ) ttype = TYPE_TCB; /* same as TYPE_TEMPO2 */
   else ttype = TYPE_TEMPO2; /*default */
   
+  tcFile = XLALStringDuplicate(lalpath);
+
   /* read in the time correction file */
   if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
-    sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
-te405_2008-2014.dat");
+    tcFile = XLALStringAppend( tcFile,
+                               "/share/lalpulsar/te405_2000-2019.dat.gz" );
   }
   else if ( ttype == TYPE_TDB ){
-    sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
-tdb_2008-2014.dat"); 
+    tcFile = XLALStringAppend( tcFile,
+                               "/share/lalpulsar/tdb_2000-2019.dat.gz" ); 
   }
   
   tdat = XLALInitTimeCorrections( tcFile );
@@ -255,7 +264,6 @@ tdb_2008-2014.dat");
     double deltaD_f2;
     double phase;
     double tt0;
-    double df=0.;
     double phaseWave = 0., tWave = 0.;
     
     if (par.clock != NULL){
@@ -284,7 +292,7 @@ tdb_2008-2014.dat");
     
     /* recalculate the time delay at the dedispersed time */
     XLALGPSSetREAL8( &baryinput.tgps, t );
-
+    
     /* calculate solar system barycentre time delay */
     XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
     XLALBarycenter( &emit, &baryinput, &earth );

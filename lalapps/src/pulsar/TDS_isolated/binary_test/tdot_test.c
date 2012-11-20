@@ -20,6 +20,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/Date.h>
 #include <lal/LALConstants.h>
+#include <lal/LALString.h>
 
 int main (int argv, char **argc){
   FILE *fpout = NULL;
@@ -29,7 +30,7 @@ int main (int argv, char **argc){
   EmissionTime emit;
   EphemerisData *edat=NULL;
   TimeCorrectionData *tdat=NULL;
-  char earthFile[256], sunFile[256], tcFile[256];
+  char *earthFile=NULL, *sunFile=NULL, *tcFile=NULL, *lalpath=NULL;
 
   TimeCorrectionType ttype = TYPE_TDB;
  
@@ -40,26 +41,34 @@ int main (int argv, char **argc){
   baryinput.site.location[0] = -4554231.5/LAL_C_SI;
   baryinput.site.location[1] = 2816759.1/LAL_C_SI;
   baryinput.site.location[2] = -3454036.3/LAL_C_SI;
-
-  sprintf(earthFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/\
-binary_test/earth98-12-DE405.dat");
-  sprintf(sunFile,
-"/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/TDS_isolated/binary_test/\
-sun98-12-DE405.dat");
+  
+  if((lalpath = getenv("LALPULSAR_PREFIX")) == NULL){
+    fprintf(stderr, "LALPULSAR_PREFIX environment variable not set!\n");
+    exit(1);
+  }
+  
+  earthFile = XLALStringDuplicate(lalpath);
+  sunFile = XLALStringDuplicate(lalpath);
+  
+  earthFile = XLALStringAppend( earthFile, 
+                                "/share/lalpulsar/earth00-19-DE405.dat.gz");
+  sunFile = XLALStringAppend( sunFile,
+                              "/share/lalpulsar/sun00-19-DE405.dat.gz");
 
   edat = XLALInitBarycenter( earthFile, sunFile );
 
   fpout = fopen("tdot.txt", "w");
 
+  tcFile = XLALStringDuplicate(lalpath);
+  
   /* read in the time correction file */
   if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
-    sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
-te405_2008-2014.dat");
+    tcFile = XLALStringAppend( tcFile,
+                               "/share/lalpulsar/te405_2000-2019.dat.gz" );
   }
   else if ( ttype == TYPE_TDB ){
-    sprintf(tcFile, "/home/matthew/lscsoft/lalsuite/lalapps/src/pulsar/\
-tdb_2008-2014.dat"); 
+    tcFile = XLALStringAppend( tcFile,
+                               "/share/lalpulsar/tdb_2000-2019.dat.gz" ); 
   }
   
   tdat = XLALInitTimeCorrections( tcFile );
