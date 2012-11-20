@@ -1747,9 +1747,8 @@ int MAIN( int argc, char *argv[]) {
         SHOW_PROGRESS(dopplerpos.Alpha, dopplerpos.Delta,
                       skyGridCounter * nf1dot + ifdot,
                       thisScan.numSkyGridPoints * nf1dot, uvar_Freq, uvar_FreqBand);
-#ifdef EAH_BOINC
+
         SET_GCT_CHECKPOINT (fnameChkPoint, semiCohToplist, semiCohToplist2, skyGridCounter*nf1dot+ifdot, TRUE);
-#endif
 
       } /* ########## End of loop over coarse-grid f1dot values (ifdot) ########## */
 
