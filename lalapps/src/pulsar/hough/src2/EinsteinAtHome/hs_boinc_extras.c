@@ -503,7 +503,7 @@ static void sighandler(int sig)
       free(backtracesymbols);
     }
 #endif /* EXT_STACKTRACE */
-    fputs("\nEnd of stcaktrace\n",stderr);
+    fputs("\nEnd of stacktrace\n",stderr);
   }
 #endif /* __GLIBC__ */
 
