@@ -179,7 +179,7 @@ void XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
  *
  * Files tabulate positions for one calendar year
  * (actually, a little more than one year, to deal
- * with overlaps).  The fi rst line of each table summarizes
+ * with overlaps).  The first line of each table summarizes
  * what is in it. Subsequent lines give the time (GPS) and the
  * Earth's position \f$(x,y,z)\f$,
  * velocity \f$(v_x, v_y, v_z)\f$, and acceleration \f$(a_x, a_y, a_z)\f$
@@ -268,7 +268,6 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   edat->dtEtable  = ephemV->dt;
   edat->ephemE    = ephemV->data;
   edat->etype     = etype;
-  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthEphemerisFile );
   XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
   ephemV = NULL;
 
@@ -294,9 +293,12 @@ XLALInitBarycenter ( const CHAR *earthEphemerisFile,         /**< File containin
   edat->nentriesS = ephemV->length;
   edat->dtStable  = ephemV->dt;
   edat->ephemS    = ephemV->data;
-  edat->ephiles.sunEphemeris = XLALStringDuplicate( sunEphemerisFile );
   XLALFree ( ephemV );	/* don't use 'destroy', as we linked the data into edat! */
   ephemV = NULL;
+
+  // store *copy* of ephemeris-file names in output structure
+  edat->ephiles.earthEphemeris = XLALStringDuplicate( earthEphemerisFile );
+  edat->ephiles.sunEphemeris   = XLALStringDuplicate( sunEphemerisFile );
 
   /* return resulting ephemeris-data */
   return edat;
@@ -312,6 +314,12 @@ XLALDestroyEphemerisData ( EphemerisData *edat )
 {
   if ( !edat )
     return;
+
+  if ( edat->ephiles.earthEphemeris )
+    XLALFree ( edat->ephiles.earthEphemeris );
+
+  if ( edat->ephiles.sunEphemeris )
+    XLALFree ( edat->ephiles.sunEphemeris );
 
   if ( edat->ephemE )
     XLALFree ( edat->ephemE );
@@ -559,26 +567,7 @@ CHAR errmsg[ERRMSGLEN];	/* string-buffer for more explicit error-messages */
 /** \endcond */
 
 /** \ingroup LALBarycenter_h
- * \brief [DEPRECATED] Reads Earth and Sun ephemeris files.
- *
- * This function fills the contents of \a edat from data
- * read from data files, see \a EphemerisData for the definition of this data-type.
- *
- * The function reads in two data files (specified in the
- * edat->ephiles structure) that contain the position, velocity,
- * and acceleration of the Earth and Sun, respectively, at regular
- * intervals througout the specified year. E.g., for 1998, the two files
- * are <tt>earth98.dat</tt> and <tt>sun98.dat</tt>.  These files are derived
- * from the JPL DE405 ephemeris and are provided by Cutler.  The first
- * line of these files specifies the start time, sampling interval, and
- * number of datapoints stored in each file, which are used to allocate
- * data arrays edat->ephemE and edat->ephemS of appropriate
- * length.  LALInitBarycenter() should be called once near the
- * beginning of the larger analysis package, and the fields
- * edat->ephemE and edat->ephemS should be freed with
- * LALFree() near the end.  See the LALBarycenterTest program for an illustration
- * of how this routine is used.
- *
+ * \brief [DEPRECATED] Reads Earth and Sun ephemeris files. Simple wrapper around XLALInitBarycenter()
  * \deprecated Use XLALInitBarycenter() instead.
  */
 void
@@ -586,11 +575,7 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
                     EphemerisData *edat	/**< [in/out] initialized ephemeris-data */
                     )
 {
-    CHAR *earthfile = NULL, *sunfile = NULL;
-    EphemerisData *edattmp = NULL;
-
     INITSTATUS(stat);
-    ATTATCHSTATUSPTR(stat);
 
     if( edat == NULL )
       ABORT( stat, LALINITBARYCENTERH_EOPEN, "Ephemeris structure is NULL" );
@@ -601,27 +586,29 @@ LALInitBarycenter ( LALStatus *stat,	/**< LAL-status pointer */
     if( edat->ephiles.sunEphemeris == NULL )
       ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
 
-    /* copy file names */
-    earthfile = XLALStringDuplicate( edat->ephiles.earthEphemeris );
-    sunfile = XLALStringDuplicate( edat->ephiles.sunEphemeris );
-
-    /* free edat */
-    XLALDestroyEphemerisData( edat );
-
     /* use XLALInitBarycenter */
-    edattmp = XLALInitBarycenter( earthfile, sunfile );
+    EphemerisData *edattmp = XLALInitBarycenter( edat->ephiles.earthEphemeris, edat->ephiles.sunEphemeris );
     if( edattmp == NULL ){
-      ABORT( stat, LALINITBARYCENTERH_EEPHFILE,
-             LALINITBARYCENTERH_MSGEEPHFILE );
+      ABORT( stat, LALINITBARYCENTERH_EOPEN, LALINITBARYCENTERH_MSGEOPEN );
     }
 
-    XLALFree( earthfile );
-    XLALFree( sunfile );
-
-    memcpy(edat, edattmp, sizeof(EphemerisData));
+    // We need to be careful about returning this, due to the unfortunate input/output method
+    // of this deprecated LAL function: 'edat' is both used as input and output, where only
+    // the 'ephiles' entry is supposed to be initialized in the input data, and so we need to
+    // preserve that entry:
+    EphemerisFilenames tmp;
+    memcpy ( &tmp, &edat->ephiles, sizeof(edat->ephiles) );
+    // now copy new ephemeris-struct over the input one:
+    memcpy ( edat, edattmp, sizeof(*edat) );
+    // restore the original 'ephiles' pointer entries
+    memcpy ( &edat->ephiles, &tmp, sizeof(edat->ephiles) );
+    // free the new 'ephiles' strings (allocated in XLALInitBarycenter())
+    XLALFree ( edattmp->ephiles.earthEphemeris );
+    XLALFree ( edattmp->ephiles.sunEphemeris );
+    // and free the interal 'edattmp' container (but *not* the ephemE/ephemS arrays, which we return in 'edat' !)
+    XLALFree ( edattmp );
 
     /* successful return */
-    DETATCHSTATUSPTR(stat);
     RETURN(stat);
 
 } /* LALInitBarycenter() */
