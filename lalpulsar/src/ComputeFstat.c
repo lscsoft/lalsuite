@@ -1517,6 +1517,8 @@ LALGetSSBtimes (LALStatus *status,		/**< pointer to LALStatus structure */
 
 	} /* for i < numSteps */
 
+      break;
+
     case SSBPREC_RELATIVISTICOPT:	/* use optimized version XLALBarycenterOpt() */
 
       baryinput.site = DetectorStates->detector;
