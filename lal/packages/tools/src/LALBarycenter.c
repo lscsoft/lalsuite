@@ -471,7 +471,7 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
     REAL8 tdiffS;
     REAL8 tdiff2S;
 
-    static REAL8 aucorr; /* AU/SI metre correction factor */
+    static REAL8 scorr; /* SI second/metre correction factor */
     
     INT4 j; /*dummy index */
   
@@ -509,41 +509,27 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
     tdiffS=t0s -edat->dtStable*ientryS + tgps[1]*1.e-9; /*same for Sun*/
     tdiff2S=tdiffS*tdiffS;
 
-    /* set the SI metres correction factor via the AU correction factor:
-     * (the SI metre correction is only used in TCB and not TDB) */
-    if( ttype == TYPE_TEMPO || ttype == TYPE_TDB ){
-      /* just a small factor between the JPL DE405 AU definition and the DE200 definition
-       * used by Curt when producing the solar system ephemeris files (see create_solar_system ephemeris) */
-      if ( edat->etype == EPHEM_DE405 || edat->etype == EPHEM_DE414 )
-        aucorr = JPL_AU_DE405 / CURT_AU;
-      else if ( edat->etype == EPHEM_DE200 )
-        aucorr = JPL_AU_DE200 / CURT_AU;
-      else aucorr = 1.;
-    }
-    else if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
-      /* include correction between ephemeris metres and SI metres */
-      if ( edat->etype == EPHEM_DE405 || edat->etype == EPHEM_DE414 )
-        aucorr = IFTE_K * JPL_AU_DE405 / CURT_AU;
-      else if ( edat->etype == EPHEM_DE200 )
-        aucorr = IFTE_K * JPL_AU_DE200 / CURT_AU;
-      else aucorr = 1.;
-    }
-    else aucorr = 1.;
-    
+    /* in the TCB system the gravitational potential well of the solar system is
+     * removed, so clocks run slightly faster than the SI second by a small
+     * correction factor */
+    if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ) scorr = IFTE_K;
+    else scorr = 1.;
+
     /********************************************************************
-     *Calucate position and vel. of center of Earth.
-     *We extrapolate from a table produced using JPL DE405 ephemeris.
+     *Calculate position and vel. of center of Earth.
+     *We extrapolate from a table produced using a JPL ephemeris.
      *---------------------------------------------------------------------
      */
     {
       REAL8* pos=edat->ephemE[ientryE].pos; /*Cartesian coords of center of Earth
-                                              from DE405 ephem, in sec. 0=x,1=y,2=z */
+                                              from ephem, in sec. 0=x,1=y,2=z */
       REAL8* vel=edat->ephemE[ientryE].vel;
       REAL8* acc=edat->ephemE[ientryE].acc;
       
       for (j=0;j<3;j++){
-        earth->posNow[j] = aucorr * (pos[j] + vel[j]*tdiffE + 0.5*acc[j]*tdiff2E);
-        earth->velNow[j] = aucorr * (vel[j] + acc[j]*tdiffE);
+        earth->posNow[j] = scorr * (pos[j] + vel[j]*tdiffE +
+          0.5*acc[j]*tdiff2E);
+        earth->velNow[j] = scorr * (vel[j] + acc[j]*tdiffE);
       }
     }
 

@@ -44,6 +44,7 @@
 
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LALBarycenter.h>
 #include <lal/LALVCSInfo.h>
 #include <LALAppsVCSInfo.h>
 
@@ -58,9 +59,6 @@
 #define PLUTO 8
 #define MOON 9                                      /* Relative to geocenter */
 #define SUN 10
-
-#define CURT_AU 1.4959787066e8  /* 1 AU defined from Curt's code (the same as
-                                 * the AU definition in the JPL DE200 file) */ 
 
 #define USAGE \
 "Usage: %s [options]\n\n"\
@@ -337,9 +335,9 @@ writing!\n");
     fprintf(fpe, "#\n# Ephemeris creation command:-\n#\t");
     for( INT4 k=0; k<argc; k++ ) fprintf(fpe, "%s ", argv[k]);
     fprintf(fpe, "\n");
-    
+
     CHAR *efile = strrchr(inputs.ephemfile, '/');
-    
+
     fprintf(fpe, "#\n# JPL ephemeris file %s from TEMPO2 \
 (http://www.atnf.csiro.au/research/pulsar/tempo2/)\n", efile+1);
 
@@ -358,8 +356,7 @@ writing!\n");
 #    Teph = GPS(JD) + (51.148 + 0.001658*sin(6.24008 + 0.017202*dT)\n\
 #           + 1.4e-5*sin(2*(6.24008 + 0.017202*dT)))/86400.\n\
 # where GPS(JD) is the GPS time converted into Julian Days, and with 1 A.U. \
-defined as %.3f km\n", CURT_AU);
-    
+defined as %.3f km\n", JPL_AU_DE405);
 
     fprintf(fpe, "\t%d\t%lf\t%d\n", gps_yr, inputs.nhre*hour, nentries);
   }
@@ -726,10 +723,9 @@ void pleph(REAL8 *coeffArray, REAL8 *time, INT4 target, REAL8 *state, FILE *fp){
 
   INT4 i=0;
 
-  REAL8 au=CURT_AU;
-  /* Curt's AU value from his code - this is slightly different from the one
-     in the JPL binary ephemeris files (of order a few hundred metres), so I
-     need to multiply things be a factor of au_Curt/au_JPLephem */
+  /* fix all ephemerides to use the metre / second definition the JPL DE405
+   * ephemeris */
+  REAL8 au = JPL_AU_DE405;
 
   /* if we're getting the Earth data then correct for the Moon */
   if( target == EARTH ){
@@ -777,7 +773,6 @@ of librations */
 void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   REAL8 *state, FILE *fp){
   REAL8 A[50], Cp[50], Psum[3], Vsum[3], Up[50];
-  // unused: REAL8 B[50];
   REAL8 Tbreak = 0., Tseg = 0., Tsub=0., Tc=0.;
 
   INT4 i=0, j=0;
@@ -786,7 +781,6 @@ void interpolate_state(REAL8 *coeffArray, REAL8 *time, INT4 target,
   /* initialise local arrays */
   for(i=0; i<50 ;i++){
     A[i] = 0.;
-    // unused: B[i] = 0.;
   }
 
   /* determin if we need a new record to be read, or if the current one is OK */
