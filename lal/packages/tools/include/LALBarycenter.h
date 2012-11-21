@@ -273,6 +273,8 @@ typedef struct tagBarycenterBuffer
 
   LALDetector site;		/// buffered detector site
   fixed_site_t fixed_site;	/// fixed-site buffered quantities
+
+  BOOLEAN active;		/// switch set on TRUE of buffer has been filled
 } BarycenterBuffer;
 
 

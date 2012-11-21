@@ -1111,7 +1111,7 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   REAL8 sinAlpha, cosAlpha, sinDelta, cosDelta;
   REAL8 n[3]; /*unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z */
   // use buffered sky-quantities if same sky-position as stored in buffer
-  if ( (alpha == buffer->alpha) && (delta == buffer->delta ) )
+  if ( buffer->active && (alpha == buffer->alpha) && (delta == buffer->delta ) )
     {
       sinDelta = buffer->fixed_sky.sinDelta;
       cosDelta = buffer->fixed_sky.cosDelta;
@@ -1146,7 +1146,7 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
       buffer->fixed_sky.n[0] 	 = n[0];
       buffer->fixed_sky.n[1] 	 = n[1];
       buffer->fixed_sky.n[2] 	 = n[2];
-
+      buffer->active = 1;
     } // if not re-using sky-buffered quantities
 
   // ---------- detector site-position dependent quantities: compute or re-use from buffer is applicable
@@ -1156,7 +1156,7 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   REAL8 rd_sinLat, rd_cosLat;	// shortcuts for 'rd * sin(latitude)' and 'rd * cos(latitude)' respectively
 
   // use buffered site-quantities if same site as stored in buffer
-  if ( memcmp ( &baryinput->site, &buffer->site, sizeof(buffer->site) ) == 0 )
+  if ( buffer->active && (memcmp ( &baryinput->site, &buffer->site, sizeof(buffer->site) ) == 0) )
     {
       rd	= buffer->fixed_site.rd;
       longitude	= buffer->fixed_site.longitude;
@@ -1192,7 +1192,7 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
       buffer->fixed_site.cosLat 	= cosLat;
       buffer->fixed_site.rd_sinLat 	= rd_sinLat;
       buffer->fixed_site.rd_cosLat 	= rd_cosLat;
-
+      buffer->active = 1;
     } // if not re-using site-buffered quantities
 
   /*---------------------------------------------------------------------
