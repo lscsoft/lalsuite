@@ -90,9 +90,9 @@ int main(int argc, char *argv[]){
   CHAR *pos=NULL;
 
   /* set error handler */
-  //lalDebugLevel = 7;
+  // lalDebugLevel = 7;
   XLALSetErrorHandler(XLALAbortErrorHandler);
-  
+
   #if TRACKMEMUSE
     fprintf(stderr, "Memory use at start of the code:\n"); printmemuse();
   #endif
@@ -142,10 +142,9 @@ int main(int argc, char *argv[]){
 pulsars spin frequency.\n", inputParams.freqfactor);
   }
 
-  if(inputParams.heterodyneflag == 1){ /*if performing fine heterdoyne using
-                                         same params as coarse */
+  /*if performing fine heterdoyne using same params as coarse */
+  if(inputParams.heterodyneflag == 1 || inputParams.heterodyneflag == 3)
     hetParams.hetUpdate = hetParams.het;
-  }
 
   hetParams.samplerate = inputParams.samplerate;
   
@@ -184,7 +183,7 @@ pulsars spin frequency.\n", inputParams.freqfactor);
 
     if( inputParams.timeCorrFile != NULL ){
       hetParams.timeCorrFile = XLALStringDuplicate( inputParams.timeCorrFile );
-      
+
       if( hetParams.hetUpdate.units != NULL ){
         if ( !strcmp(hetParams.hetUpdate.units, "TDB") )
           hetParams.ttype = TYPE_TDB; /* use TDB units i.e. TEMPO standard */
@@ -199,7 +198,7 @@ pulsars spin frequency.\n", inputParams.freqfactor);
       hetParams.ttype = TYPE_ORIGINAL;
     }
   }
-  
+
   /* get science segment lists - allocate initial memory for starts and stops */
   if( (starts = XLALCreateINT4Vector(1)) == NULL || 
       (stops = XLALCreateINT4Vector(1)) == NULL )
@@ -1035,7 +1034,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   }
   
   T0 = hetParams.het.pepoch;
-  
+
   /* set up ephemeris files */
   if( hetParams.heterodyneflag > 0){
     XLAL_CHECK_VOID( (edat = XLALInitBarycenter( hetParams.earthfile,
@@ -1302,7 +1301,12 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       dataTemp.im*cos(-deltaphase);
   }
 
-  if(hetParams.heterodyneflag > 0) XLALDestroyEphemerisData( edat );
+  if(hetParams.heterodyneflag > 0){
+    XLALDestroyEphemerisData( edat );
+
+    if ( hetParams.ttype != TYPE_ORIGINAL )
+      XLALDestroyTimeCorrectionData( tdat );
+  }
 
 }
 
