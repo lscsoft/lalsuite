@@ -27,7 +27,6 @@
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
@@ -181,7 +180,7 @@ REAL8 XLALMeasureIntHDotSquaredDT(const COMPLEX16FrequencySeries *fseries)
 		double tmp = sum;
 		/* what we want to add = f^{2} |\tilde{s}(f)|^{2} + "error
 		 * from last iteration" */
-		double x = pow(fseries->f0 + i * fseries->deltaF, 2) * XLALCOMPLEX16Abs2(fseries->data->data[i]) + e;
+		double x = pow(fseries->f0 + i * fseries->deltaF, 2) * pow(cabs(fseries->data->data[i]), 2) + e;
 		/* add */
 		sum += x;
 		/* negative of what was actually added */
@@ -491,10 +490,8 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	}
 	XLALResizeREAL8Sequence(window->data, tilde_hplus->data->length - (unsigned) floor(frequency / tilde_hplus->deltaF + 0.5), tilde_hplus->data->length);
 	for(i = 0; i < window->data->length; i++) {
-		tilde_hplus->data->data[i].re *= window->data->data[i];
-		tilde_hplus->data->data[i].im *= window->data->data[i];
-		tilde_hcross->data->data[i].re *= window->data->data[i];
-		tilde_hcross->data->data[i].im *= window->data->data[i];
+		tilde_hplus->data->data[i] *= window->data->data[i];
+		tilde_hcross->data->data[i] *= window->data->data[i];
 	}
 	XLALDestroyREAL8Window(window);
 
@@ -503,10 +500,8 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 
 	norm_factor = sqrt(int_hdot_squared / (XLALMeasureIntHDotSquaredDT(tilde_hplus) + XLALMeasureIntHDotSquaredDT(tilde_hcross)));
 	for(i = 0; i < tilde_hplus->data->length; i++) {
-		tilde_hplus->data->data[i].re *= norm_factor;
-		tilde_hplus->data->data[i].im *= norm_factor;
-		tilde_hcross->data->data[i].re *= norm_factor;
-		tilde_hcross->data->data[i].im *= norm_factor;
+		tilde_hplus->data->data[i] *= norm_factor;
+		tilde_hcross->data->data[i] *= norm_factor;
 	}
 
 	/* transform to the time domain */
@@ -585,7 +580,7 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
  *
  * polarization:  the angle from the + axis to the major axis of the
  * waveform ellipsoid.  with the eccentricity set to 1 (output is linearly
- * polarized), 0 --> output contains + polarization only, pi/2 --> output
+ * polarized):  0 --> output contains + polarization only;  pi/2 --> output
  * contains x polarization only.  with the eccentricity set to 0 (output is
  * circularly polarized), the polarization parameter is irrelevant.
  *
@@ -766,23 +761,18 @@ int XLALGenerateStringCusp(
 	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
 		double f = tilde_h->f0 + i * tilde_h->deltaF;
 
-		/* frequency-domain wave form */
+		/* frequency-domain wave form.  includes taper factor above
+		 * h_high, and phase shift to put waveform's peak on the
+		 * middle sample of the time series */
 
-		tilde_h->data->data[i].re = amplitude * pow((sqrt(1 + f_low * f_low / (f * f))), -8) * pow(f, -4.0 / 3.0);
-		if(f > f_high)
-			tilde_h->data->data[i].re *= exp(1 - f / f_high);
-		tilde_h->data->data[i].im = tilde_h->data->data[i].re;
+		double amp = amplitude * pow((sqrt(1 + f_low * f_low / (f * f))), -8) * pow(f, -4.0 / 3.0) * (f > f_high ? exp(1 - f / f_high) : 1);
 
-		/* phase shift to put waveform's peak on the middle sample
-		 * of the time series */
-
-		tilde_h->data->data[i].im *= sin(-LAL_PI * i * (length - 1) / length);
-		tilde_h->data->data[i].re *= cos(-LAL_PI * i * (length - 1) / length);
+		tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
 	}
 
 	/* set DC and Nyquist to zero */
 
-	tilde_h->data->data[0] = tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
+	tilde_h->data->data[0] = tilde_h->data->data[tilde_h->data->length - 1] = 0;
 
 	/* transform to time domain */
 
