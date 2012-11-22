@@ -1150,18 +1150,30 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       0.5*hetParams.het.f1*tdt2 + (1./6.)*hetParams.het.f2*tdt2*tdt +
       (1./24.)*hetParams.het.f3*tdt2*tdt2 + 
       (1./120.)*hetParams.het.f4*tdt2*tdt2*tdt + 
-      (1./720.)*hetParams.het.f5*tdt2*tdt2*tdt2);
+      (1./720.)*hetParams.het.f5*tdt2*tdt2*tdt2 + 
+      (1./5040.)*hetParams.het.f6*tdt2*tdt2*tdt2*tdt + 
+      (1./40320.)*hetParams.het.f7*tdt2*tdt2*tdt2*tdt2 + 
+      (1./362880.)*hetParams.het.f8*tdt2*tdt2*tdt2*tdt2*tdt + 
+      (1./3628800.)*hetParams.het.f9*tdt2*tdt2*tdt2*tdt2*tdt2);
     phaseCoarse += phaseWave;
     
     fcoarse = freqfactor*(hetParams.het.f0 + hetParams.het.f1*tdt +
       0.5*hetParams.het.f2*tdt2 + (1./6.)*hetParams.het.f3*tdt2*tdt +
       (1./24.)*hetParams.het.f4*tdt2*tdt2 + 
-      (1./120.)*hetParams.het.f5*tdt2*tdt2*tdt);
+      (1./120.)*hetParams.het.f5*tdt2*tdt2*tdt +
+      (1./720.)*hetParams.het.f6*tdt2*tdt2*tdt2 + 
+      (1./5040.)*hetParams.het.f7*tdt2*tdt2*tdt2*tdt + 
+      (1./40320.)*hetParams.het.f8*tdt2*tdt2*tdt2*tdt2 + 
+      (1./362880.)*hetParams.het.f9*tdt2*tdt2*tdt2*tdt2*tdt);
       
     ffine = freqfactor*(hetParams.hetUpdate.f0 + hetParams.hetUpdate.f1*tdt +
       0.5*hetParams.hetUpdate.f2*tdt2 + (1./6.)*hetParams.hetUpdate.f3*tdt2*tdt
       + (1./24.)*hetParams.hetUpdate.f4*tdt2*tdt2 + 
-      (1./120.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt);
+      (1./120.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt +
+      (1./720.)*hetParams.hetUpdate.f6*tdt2*tdt2*tdt2 + 
+      (1./5040.)*hetParams.hetUpdate.f7*tdt2*tdt2*tdt2*tdt + 
+      (1./40320.)*hetParams.hetUpdate.f8*tdt2*tdt2*tdt2*tdt2 + 
+      (1./362880.)*hetParams.hetUpdate.f9*tdt2*tdt2*tdt2*tdt2*tdt);
 
 /******************************************************************************/
     /* produce second phase for fine heterodyne */
@@ -1254,7 +1266,11 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
         (1./6.)*hetParams.hetUpdate.f2*tdt2*tdt +
         (1./24.)*hetParams.hetUpdate.f3*tdt2*tdt2 + 
         (1./120.)*hetParams.hetUpdate.f4*tdt2*tdt2*tdt + 
-        (1./720.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt2);
+        (1./720.)*hetParams.hetUpdate.f5*tdt2*tdt2*tdt2 + 
+        (1./5040.)*hetParams.hetUpdate.f6*tdt2*tdt2*tdt2*tdt + 
+        (1./40320.)*hetParams.hetUpdate.f7*tdt2*tdt2*tdt2*tdt2 + 
+        (1./362880.)*hetParams.hetUpdate.f8*tdt2*tdt2*tdt2*tdt2*tdt + 
+        (1./3628800.)*hetParams.hetUpdate.f9*tdt2*tdt2*tdt2*tdt2*tdt2);
       phaseUpdate += phaseWave;
     }
 
