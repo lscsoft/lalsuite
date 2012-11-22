@@ -112,30 +112,33 @@ REAL8 LALInferenceNSSample_logt(int Nlive,gsl_rng *RNG){
 
 static UINT4 UpdateNMCMC(LALInferenceRunState *runState){
 	INT4 max = 0;
+	INT4 maxMCMC = MAX_MCMC;
 	/* Measure Autocorrelations if the Nmcmc is not over-ridden */
 	if(!LALInferenceGetProcParamVal(runState->commandLine,"--Nmcmc") && !LALInferenceGetProcParamVal(runState->commandLine,"--nmcmc")){
-		  if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
-			  max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
-		  else max=4*MAX_MCMC; /* otherwise use the MAX_MCMC */
-          if(max>4*MAX_MCMC) max=4*MAX_MCMC;
-          LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max, runState->evolve) ;
-          max=0;
-          for(LALInferenceVariableItem *this=acls->head;this;this=this->next) {
-              if(LALInferenceCheckVariable(runState->algorithmParams,"verbose"))
-                  fprintf(stdout,"Autocorrelation length of %s: %i\n",this->name,(INT4) *(REAL8 *)this->value);
-              if(*(REAL8 *)this->value>max) {
-                  max=(INT4) *(REAL8 *)this->value;
-              }
-          }
-          LALInferenceDestroyVariables(acls);
-          free(acls);
-          if(max>MAX_MCMC){
-              fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,MAX_MCMC);
-              max=MAX_MCMC;
-          }
-          LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
-	}
-        return(max);
+        if(LALInferenceCheckVariable(runState->algorithmParams,"maxmcmc"))
+            maxMCMC = *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"maxmcmc");
+        if(LALInferenceCheckVariable(runState->algorithmParams,"Nmcmc")) /* if already estimated the length */
+            max=4 * *(INT4 *)LALInferenceGetVariable(runState->algorithmParams,"Nmcmc"); /* We will use this to go out 4x last ACL */
+        else max=4*maxMCMC; /* otherwise use the MAX_MCMC */
+        if(max>4*maxMCMC) max=4*maxMCMC;
+        LALInferenceVariables *acls=LALInferenceComputeAutoCorrelation(runState, max, runState->evolve) ;
+        max=0;
+        for(LALInferenceVariableItem *this=acls->head;this;this=this->next) {
+            if(LALInferenceCheckVariable(runState->algorithmParams,"verbose"))
+                fprintf(stdout,"Autocorrelation length of %s: %i\n",this->name,(INT4) *(REAL8 *)this->value);
+            if(*(REAL8 *)this->value>max) {
+                max=(INT4) *(REAL8 *)this->value;
+            }
+        }
+        LALInferenceDestroyVariables(acls);
+        free(acls);
+        if(max>maxMCMC){
+            fprintf(stderr,"Warning: Estimated chain length %i exceeds maximum %i!\n",max,maxMCMC);
+            max=maxMCMC;
+        }
+        LALInferenceSetVariable(runState->algorithmParams,"Nmcmc",&max);
+    }
+    return(max);
 }
 
 /* estimateCovarianceMatrix reads the list of live points,
