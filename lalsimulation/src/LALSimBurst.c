@@ -498,10 +498,18 @@ int XLALGenerateBandAndTimeLimitedWhiteNoiseBurst(
 	/* normalize the waveform to achieve the desired \int
 	 * \f$(\stackrel{.}{h}_{+}^{2} + \stackrel{.}{h}_{\times}^{2}) dt\f$ */
 
-	norm_factor = sqrt(int_hdot_squared / (XLALMeasureIntHDotSquaredDT(tilde_hplus) + XLALMeasureIntHDotSquaredDT(tilde_hcross)));
+	norm_factor = sqrt((XLALMeasureIntHDotSquaredDT(tilde_hplus) + XLALMeasureIntHDotSquaredDT(tilde_hcross)) / int_hdot_squared);
+	if(int_hdot_squared == 0 || norm_factor == 0) {
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hplus);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_hcross);
+		XLALDestroyREAL8TimeSeries(*hplus);
+		XLALDestroyREAL8TimeSeries(*hcross);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EFPDIV0);
+	}
 	for(i = 0; i < tilde_hplus->data->length; i++) {
-		tilde_hplus->data->data[i] *= norm_factor;
-		tilde_hcross->data->data[i] *= norm_factor;
+		tilde_hplus->data->data[i] /= norm_factor;
+		tilde_hcross->data->data[i] /= norm_factor;
 	}
 
 	/* transform to the time domain */
