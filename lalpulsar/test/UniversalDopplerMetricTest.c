@@ -404,7 +404,7 @@ test_XLALComputeOrbitalDerivatives ( void )
   // ----- load an example ephemeris, describing a pure cicular 2D
   // orbit w period of one year
   CHAR earthEphem[] = DATADIR "circularEphem.dat";
-  CHAR sunEphem[]   = DATADIR "sun00-04.dat";
+  CHAR sunEphem[]   = DATADIR "sun00-19-DE405.dat";
 
   EphemerisData *edat = XLALInitBarycenter ( earthEphem, sunEphem );
   XLAL_CHECK ( edat != NULL, XLAL_EFUNC, "XLALInitBarycenter('%s','%s') failed with xlalErrno = %d\n", earthEphem, sunEphem, xlalErrno );
