@@ -343,7 +343,6 @@ int main( int argc, char *argv[] )
 
   /* frame input data */
   LALCache     *frInCache = NULL;
-  LALCache     *frGlobCache = NULL;
   LALCache     *calCache = NULL;
   LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
@@ -683,40 +682,29 @@ int main( int argc, char *argv[] )
 
   if ( globFrameData )
   {
-    CHAR ifoRegExPattern[6];
+    CHAR globPattern[8];
 
-    if ( vrbflg ) fprintf( stdout, "globbing for *.gwf frame files from %c "
-        "of type %s in current directory\n", fqChanName[0], frInType );
+    if ( vrbflg ) fprintf( stdout, "globbing for %c-*.gwf frame files from %c "
+        "of type %s in current directory\n", fqChanName[0], fqChanName[0], frInType );
+   
+    /* FIXME: This filters for the right detector by looking at the first
+     * character of the filename. Cannot distinguish between H1 and H2 this way!
+     */
+    snprintf(globPattern,sizeof(globPattern),"%c-*.gwf",fqChanName[0]);
 
-    frGlobCache = NULL;
+    frInCache = NULL;
 
     /* create a frame cache by globbing all *.gwf files in the pwd */
-    frGlobCache = XLALCacheGlob(NULL, NULL);
+    frInCache = XLALCacheGlob(NULL, globPattern);
 
     /* check we globbed at least one frame file */
-    if ( ! frGlobCache->length )
+    if ( ! frInCache->length )
     {
       fprintf( stderr, "error: no frame file files of type %s found\n",
           frInType );
       exit( 1 );
     }
 
-    /* sieve out the requested data type */
-    snprintf( ifoRegExPattern,
-              sizeof(ifoRegExPattern) / sizeof(*ifoRegExPattern), ".*%c.*",
-              fqChanName[0] );
-    frInCache = XLALCacheDuplicate(frGlobCache);
-    XLALCacheSieve(frInCache, 0, 0, ifoRegExPattern, frInType, NULL);
-
-    /* check we got at least one frame file back after the sieve */
-    if ( ! frInCache->length )
-    {
-      fprintf( stderr, "error: no frame files of type %s globbed as input\n",
-          frInType );
-      exit( 1 );
-    }
-
-    XLALDestroyCache( frGlobCache );
   }
   else
   {
