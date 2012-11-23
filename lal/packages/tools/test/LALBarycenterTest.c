@@ -79,7 +79,6 @@ INT4 lalDebugLevel = 5;
 
 // empty local initializers
 static const BarycenterInput empty_BarycenterInput;
-static const BarycenterBuffer empty_BarycenterBuffer;
 static const EmissionTime empty_EmissionTime;
 
 const INT4 t2000 = 630720013; 		/* gps time at Jan 1, 2000 00:00:00 UTC */
@@ -201,7 +200,7 @@ main( void )
   UINT4 NRepeat = 1;
   UINT4 counter = 0;
   REAL8 tau_lal = 0, tau_xlal = 0, tau_opt = 0;
-  BarycenterBuffer buffer = empty_BarycenterBuffer;	// for optimized XLALBarycenterOpt() function
+  BarycenterBuffer *buffer = NULL;
 
   unsigned int seed = XLALGetTimeOfDay();
   srand ( seed );
@@ -265,6 +264,9 @@ main( void )
         } /* for i */
 
     } /* for k */
+
+  XLALFree ( buffer );
+  buffer = NULL;
 
   /* ----- check differences in results ---------- */
   REAL8 tolerance = 1e-9;	// in seconds: can't go beyond nanosecond precision due to GPS limitation

@@ -23,6 +23,40 @@
 
 #define OBLQ 0.40909280422232891e0; /* obliquity of ecliptic at JD 245145.0* in radians */;
 
+/// ---------- internal buffer type for optimized Barycentering function ----------
+typedef struct tagfixed_sky
+{
+  REAL8 sinAlpha;	/// sin(alpha)
+  REAL8 cosAlpha;	/// cos(alpha)
+  REAL8 sinDelta;	/// sin(delta)
+  REAL8 cosDelta;	/// cos(delta)
+  REAL8 n[3];		/// unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z
+} fixed_sky_t;
+
+typedef struct tagfixed_site
+{
+  REAL8 rd;		/// distance 'rd' from center of Earth, in light seconds
+  REAL8 longitude;	/// geocentric (not geodetic!!) longitude of detector vertex
+  REAL8 latitude;	/// geocentric latitude of detector vertex
+  REAL8 sinLat;		/// sin(latitude)
+  REAL8 cosLat;		/// cos(latitude);
+  REAL8 rd_sinLat;	/// rd * sin(latitude)
+  REAL8 rd_cosLat;	/// rd * cos(latitude)
+} fixed_site_t;
+
+struct tagBarycenterBuffer
+{
+  REAL8 alpha;			/// buffered sky-location: right-ascension in rad
+  REAL8 delta;			/// buffered sky-location: declination in rad
+  fixed_sky_t fixed_sky;	/// fixed-sky buffered quantities
+
+  LALDetector site;		/// buffered detector site
+  fixed_site_t fixed_site;	/// fixed-site buffered quantities
+
+  BOOLEAN active;		/// switch set on TRUE of buffer has been filled
+}; // struct tagBarycenterBuffer
+
+
 /** \author Curt Cutler
  * \brief Computes the position and orientation of the Earth, at some arrival time
  * \f$t_a\f$, specified <tt>LIGOTimeGPS</tt> input structure.
@@ -1077,21 +1111,24 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
 /** \author Curt Cutler, Miroslav Shaltev, R Prix
  * \brief Speed optimized version of XLALBarycenter(),
  * should be fully equivalent except for the additional buffer argument.
- * The buffer is allowed to be NULL (= no buffering), otherwise it will be
- * used to keep sky-specific and detector-specific values if they can be re-used.
+ * The 'buffer' is used to keep sky-specific and detector-specific values that can can potentially be re-used
+ * across subsequent calls to this function.
+ *
+ * NOTE: The 'buffer' argument is a pointer to a buffer-pointer, which is allowed to be buffer==NULL (=> no buffering),
+ * otherwise a given non-NULL (*buffer) is re-used, or if (*buffer==NULL) we create a new one and return in (*buffer).
+ *
  */
 int
 XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information */
                     const BarycenterInput *baryinput, 	/**< [in] info about detector and source-location */
                     const EarthState *earth, 		/**< [in] earth-state (from LALBarycenterEarth()) */
-                    BarycenterBuffer *buffer		/**< [in/out] internal buffer for speed optimization */
+                    BarycenterBuffer **buffer		/**< [in/out] internal buffer for speed optimization */
                     )
 {
   /* ---------- check input sanity ---------- */
   XLAL_CHECK ( emit != NULL, XLAL_EINVAL, "Invalid input: emit == NULL");
   XLAL_CHECK ( baryinput != NULL, XLAL_EINVAL, "Invalid input: baryinput == NULL");
   XLAL_CHECK ( earth != NULL, XLAL_EINVAL, "Invalid input: earth == NULL");
-  XLAL_CHECK ( buffer != NULL, XLAL_EINVAL, "Invalid input: buffer == NULL");
 
   // physical constants used by Curt (slightly different from LAL's Constants, but kept for binary-equivalence with XLALBarycenter()
   const REAL8 OMEGA = 7.29211510e-5;  /* ang. vel. of Earth (rad/sec)*/
@@ -1110,16 +1147,30 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
 
   REAL8 sinAlpha, cosAlpha, sinDelta, cosDelta;
   REAL8 n[3]; /*unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z */
+
+  // ---------- handle buffering of recurring computed quantities
+  // 3 possible scenarios:
+  //   i)   caller gave as an initialized buffer: we use that one
+  //   ii)  caller gave as a pointer to a NULL-initialized buffer-pointer: allocate buffer, initialize and pass back to caller
+  //   iii) caller gave as a NULL pointer: use buffer internally, but destroy at the end of this function
+  BarycenterBuffer *myBuffer = NULL;
+  if ( (buffer) && (*buffer) ) // caller gave as an allocated buffer
+    myBuffer = (*buffer);
+  else	// we need to create a buffer
+    XLAL_CHECK ( (myBuffer = XLALCalloc(1,sizeof(*myBuffer))) != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,sizeof(*myBuffer))\n" );
+
+  // now we're (basically) guaranteed to have a valid buffer in 'myBuffer'
+
   // use buffered sky-quantities if same sky-position as stored in buffer
-  if ( buffer->active && (alpha == buffer->alpha) && (delta == buffer->delta ) )
+  if ( myBuffer->active && (alpha == myBuffer->alpha) && (delta == myBuffer->delta ) )
     {
-      sinDelta = buffer->fixed_sky.sinDelta;
-      cosDelta = buffer->fixed_sky.cosDelta;
-      sinAlpha = buffer->fixed_sky.sinAlpha;
-      cosAlpha = buffer->fixed_sky.cosAlpha;
-      n[0] = buffer->fixed_sky.n[0];
-      n[1] = buffer->fixed_sky.n[1];
-      n[2] = buffer->fixed_sky.n[2];
+      sinDelta = myBuffer->fixed_sky.sinDelta;
+      cosDelta = myBuffer->fixed_sky.cosDelta;
+      sinAlpha = myBuffer->fixed_sky.sinAlpha;
+      cosAlpha = myBuffer->fixed_sky.cosAlpha;
+      n[0] = myBuffer->fixed_sky.n[0];
+      n[1] = myBuffer->fixed_sky.n[1];
+      n[2] = myBuffer->fixed_sky.n[2];
     }
   else // not buffered, recompute sky-dependent quantities
     {
@@ -1136,17 +1187,17 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
       n[1] = cosDelta * sinAlpha;
       n[2] = sinDelta;
 
-      // ... and store them in the buffer
-      buffer->alpha 		 = alpha;
-      buffer->delta 		 = delta;
-      buffer->fixed_sky.sinDelta = sinDelta;
-      buffer->fixed_sky.cosDelta = cosDelta;
-      buffer->fixed_sky.sinAlpha = sinAlpha;
-      buffer->fixed_sky.cosAlpha = cosAlpha;
-      buffer->fixed_sky.n[0] 	 = n[0];
-      buffer->fixed_sky.n[1] 	 = n[1];
-      buffer->fixed_sky.n[2] 	 = n[2];
-      buffer->active = 1;
+      // ... and store them in the myBuffer
+      myBuffer->alpha 		 = alpha;
+      myBuffer->delta 		 = delta;
+      myBuffer->fixed_sky.sinDelta = sinDelta;
+      myBuffer->fixed_sky.cosDelta = cosDelta;
+      myBuffer->fixed_sky.sinAlpha = sinAlpha;
+      myBuffer->fixed_sky.cosAlpha = cosAlpha;
+      myBuffer->fixed_sky.n[0] 	 = n[0];
+      myBuffer->fixed_sky.n[1] 	 = n[1];
+      myBuffer->fixed_sky.n[2] 	 = n[2];
+      myBuffer->active = 1;
     } // if not re-using sky-buffered quantities
 
   // ---------- detector site-position dependent quantities: compute or re-use from buffer is applicable
@@ -1155,16 +1206,16 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   REAL8 sinLat, cosLat;
   REAL8 rd_sinLat, rd_cosLat;	// shortcuts for 'rd * sin(latitude)' and 'rd * cos(latitude)' respectively
 
-  // use buffered site-quantities if same site as stored in buffer
-  if ( buffer->active && (memcmp ( &baryinput->site, &buffer->site, sizeof(buffer->site) ) == 0) )
+  // use buffered site-quantities if same site as stored in myBuffer
+  if ( myBuffer->active && (memcmp ( &baryinput->site, &myBuffer->site, sizeof(myBuffer->site) ) == 0) )
     {
-      rd	= buffer->fixed_site.rd;
-      longitude	= buffer->fixed_site.longitude;
-      latitude	= buffer->fixed_site.latitude;
-      sinLat	= buffer->fixed_site.sinLat;
-      cosLat	= buffer->fixed_site.cosLat;
-      rd_sinLat	= buffer->fixed_site.rd_sinLat;
-      rd_cosLat	= buffer->fixed_site.rd_cosLat;
+      rd	= myBuffer->fixed_site.rd;
+      longitude	= myBuffer->fixed_site.longitude;
+      latitude	= myBuffer->fixed_site.latitude;
+      sinLat	= myBuffer->fixed_site.sinLat;
+      cosLat	= myBuffer->fixed_site.cosLat;
+      rd_sinLat	= myBuffer->fixed_site.rd_sinLat;
+      rd_cosLat	= myBuffer->fixed_site.rd_cosLat;
     }
   else
     {
@@ -1183,16 +1234,16 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
       rd_sinLat = rd * sinLat;
       rd_cosLat = rd * cosLat;
 
-      // ... and store them in the buffer
-      memcpy ( &buffer->site, &baryinput->site , sizeof(buffer->site) );
-      buffer->fixed_site.rd 		= rd;
-      buffer->fixed_site.longitude 	= longitude;
-      buffer->fixed_site.latitude 	= latitude;
-      buffer->fixed_site.sinLat 	= sinLat;
-      buffer->fixed_site.cosLat 	= cosLat;
-      buffer->fixed_site.rd_sinLat 	= rd_sinLat;
-      buffer->fixed_site.rd_cosLat 	= rd_cosLat;
-      buffer->active = 1;
+      // ... and store them in the myBuffer
+      memcpy ( &myBuffer->site, &baryinput->site , sizeof(myBuffer->site) );
+      myBuffer->fixed_site.rd 		= rd;
+      myBuffer->fixed_site.longitude 	= longitude;
+      myBuffer->fixed_site.latitude 	= latitude;
+      myBuffer->fixed_site.sinLat 	= sinLat;
+      myBuffer->fixed_site.cosLat 	= cosLat;
+      myBuffer->fixed_site.rd_sinLat 	= rd_sinLat;
+      myBuffer->fixed_site.rd_cosLat 	= rd_cosLat;
+      myBuffer->active = 1;
     } // if not re-using site-buffered quantities
 
   /*---------------------------------------------------------------------
@@ -1372,6 +1423,14 @@ XLALBarycenterOpt ( EmissionTime *emit, 		/**< [out] emission-time information *
   emit->vDetector[1] += OMEGA * rd_cosLat * cosGastLong;
   emit->rDetector[2] += rd_sinLat;
   /*no change to emit->vDetector[2] = component along spin axis, if ignore prec. and nutation */
+
+  // finish buffer handling
+  // *) if user passed a pointer to NULL, return our internal buffer
+  if ( buffer && (*buffer == NULL ) )
+    (*buffer) = myBuffer;
+  // *) if passed NULL as 'buffer', then we destroy the internal buffer now
+  if ( buffer == NULL )
+    XLALFree ( myBuffer );
 
   return XLAL_SUCCESS;
 

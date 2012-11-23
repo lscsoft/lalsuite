@@ -242,42 +242,6 @@ But most users would immediately add back the one anyway.
 way out in empty space, if you renormalized  and zero-ed the latter
 to give, on average, the same arrival time as the GPS clock on Earth'' */
 
-
-/// ---------- internal buffer type for optimized Barycentering function ----------
-typedef struct tagfixed_sky
-{
-  REAL8 sinAlpha;	/// sin(alpha)
-  REAL8 cosAlpha;	/// cos(alpha)
-  REAL8 sinDelta;	/// sin(delta)
-  REAL8 cosDelta;	/// cos(delta)
-  REAL8 n[3];		/// unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z
-} fixed_sky_t;
-
-typedef struct tagfixed_site
-{
-  REAL8 rd;		/// distance 'rd' from center of Earth, in light seconds
-  REAL8 longitude;	/// geocentric (not geodetic!!) longitude of detector vertex
-  REAL8 latitude;	/// geocentric latitude of detector vertex
-  REAL8 sinLat;		/// sin(latitude)
-  REAL8 cosLat;		/// cos(latitude);
-  REAL8 rd_sinLat;	/// rd * sin(latitude)
-  REAL8 rd_cosLat;	/// rd * cos(latitude)
-} fixed_site_t;
-
-/// internal buffer type for optimized Barycentering function
-typedef struct tagBarycenterBuffer
-{
-  REAL8 alpha;			/// buffered sky-location: right-ascension in rad
-  REAL8 delta;			/// buffered sky-location: declination in rad
-  fixed_sky_t fixed_sky;	/// fixed-sky buffered quantities
-
-  LALDetector site;		/// buffered detector site
-  fixed_site_t fixed_site;	/// fixed-site buffered quantities
-
-  BOOLEAN active;		/// switch set on TRUE of buffer has been filled
-} BarycenterBuffer;
-
-
 /**  Basic output structure produced by LALBarycenter.c.
  */
 typedef struct tagEmissionTime
@@ -307,10 +271,14 @@ typedef struct tagEmissionTime
 EmissionTime;
 
 
+/// internal (opaque) buffer type for optimized Barycentering function
+typedef struct tagBarycenterBuffer BarycenterBuffer;
+
+
 /* Function prototypes. */
 int XLALBarycenterEarth ( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
-int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer *buffer);
+int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer **buffer);
 
 /* Function that uses time delay look-up tables to calculate time delays */
 int XLALBarycenterEarthNew ( EarthState *earth,
