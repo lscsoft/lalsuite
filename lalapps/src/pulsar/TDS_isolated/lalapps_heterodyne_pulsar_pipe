@@ -514,7 +514,10 @@ heterodyne using old parameters.""" % (pulsar)
         else: # default to DE405
           eephem = ephem_path + '/earth00-19-DE405.dat.gz'
           sephem = ephem_path + '/sun00-19-DE405.dat.gz'
-          
+      
+      if units is None:
+        units = []
+    
       # check time correction file to use
       if 'TDB' in units or do_tdb:
         tephem = ephem_path + '/tdb_2000-2019.dat.gz'
