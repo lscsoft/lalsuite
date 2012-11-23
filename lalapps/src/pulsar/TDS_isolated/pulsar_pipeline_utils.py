@@ -111,6 +111,10 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the file containing the sun's ephemeris
     self.add_var_opt('ephem-sun-file', ephem_sun_file)
 
+  def set_ephem_time_file(self, ephem_time_file):
+    # set the file containing the Einstein delay correction ephemeris
+    self.add_var_opt('ephem-time-file', ephem_time_file)
+    
   def set_pulsar(self,pulsar):
     # set pulsar name
     self.add_var_opt('pulsar',pulsar)
