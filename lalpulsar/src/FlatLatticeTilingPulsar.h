@@ -56,6 +56,19 @@ int XLALSetFlatLatticeSuperSkyNZBound(
   );
 
 ///
+/// Set a constant frequency/spindown parameter space bound, given by the
+/// minimum and maximum of the two supplied bounds, on the flat lattice tiling
+///
+int XLALSetFlatLatticeFnDotConstantBound(
+  FlatLatticeTiling* tiling,	///< [in] Tiling state
+  const size_t nx_dimension,	///< [in] Sky position X dimension
+  const double offset[3],	///< [in] Sky position offset vector
+  const size_t dimension,	///< [in] Dimension on which bound applies
+  const double bound1,		///< [in] First bound on dimension
+  const double bound2		///< [in] Second bound on dimension
+  );
+
+///
 /// Set a first spindown bound derived from spindown age and braking indices
 ///
 int XLALSetFlatLatticeF1DotAgeBrakingBound(
