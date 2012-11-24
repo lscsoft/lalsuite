@@ -189,27 +189,12 @@ gsl_vector* XLALMetricEllipseBoundingBox(
   );
 
 ///
-/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
+/// Find the lattice increment vectors for a given metric and mismatch
 ///
-int XLALOrthonormaliseWRTMetric(
-  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
-  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
-  );
-
-///
-/// Transform a lattice generator to a square lower triangular form
-///
-gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
-  gsl_matrix* generator		///< [in] Generator matrix of lattice
-  );
-
-///
-/// Normalise a lattice generator matrix to have a specified covering radius
-///
-int XLALNormaliseLatticeGenerator(
-  gsl_matrix* generator,	///< [in] Generator matrix of lattice
-  const double norm_thickness,	///< [in] Normalised thickness of lattice
-  const double covering_radius	///< [in] Desired covering radius
+gsl_matrix* XLALMetricLatticeIncrements(
+  const FlatLatticeGenerator generator,	///< [in] Lattice generator function
+  const gsl_matrix* metric,		///< [in] Parameter space metric
+  const double max_mismatch		///< [in] Maximum prescribed mismatch
   );
 
 #ifdef SWIG // SWIG interface directives
