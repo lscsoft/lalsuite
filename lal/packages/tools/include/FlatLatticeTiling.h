@@ -161,6 +161,58 @@ unsigned long XLALCountTotalFlatLatticePoints(
   );
 
 #ifdef SWIG // SWIG interface directives
+SWIGLAL(INOUT_STRUCTS(gsl_matrix**, random_points, nearest_points, workspace));
+SWIGLAL(INOUT_STRUCTS(gsl_vector**, nearest_distances));
+SWIGLAL(INOUT_STRUCTS(gsl_vector_ulong**, nearest_indices));
+#endif
+///
+/// Generate random points within the flat lattice tiling parameter space,
+/// then calculate the nearest flat lattice point to each random point
+///
+int XLALNearestFlatLatticePointToRandomPoints(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  RandomParams* rng,			///< [in] Random number generator
+  const size_t num_random_points,	///< [in] Number of random points to generate
+  gsl_matrix** random_points,		///< [in/out] Pointer to matrix of random points
+  gsl_matrix** nearest_points,		///< [in/out] Pointer to matrix of nearest lattice points to each random point
+  gsl_vector_ulong** nearest_indices,	///< [in/out] Pointer to vector of indices of nearest lattice point
+  gsl_vector** nearest_distances,	///< [in/out] Pointer to vector of distances to nearest lattice point
+  gsl_matrix** workspace		///< [in/out] Pointer to workspace matrix for computing distances
+  );
+
+///
+/// Find the bounding box of the mismatch ellipses of a metric
+///
+gsl_vector* XLALMetricEllipseBoundingBox(
+  const gsl_matrix* metric,	///< [in] Metric to bound
+  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
+  );
+
+///
+/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
+///
+int XLALOrthonormaliseWRTMetric(
+  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
+  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
+  );
+
+///
+/// Transform a lattice generator to a square lower triangular form
+///
+gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
+  gsl_matrix* generator		///< [in] Generator matrix of lattice
+  );
+
+///
+/// Normalise a lattice generator matrix to have a specified covering radius
+///
+int XLALNormaliseLatticeGenerator(
+  gsl_matrix* generator,	///< [in] Generator matrix of lattice
+  const double norm_thickness,	///< [in] Normalised thickness of lattice
+  const double covering_radius	///< [in] Desired covering radius
+  );
+
+#ifdef SWIG // SWIG interface directives
 SWIGLAL(FUNCTION_POINTER(XLALCubicLatticeGenerator));
 #endif
 ///
@@ -205,58 +257,6 @@ int XLALSetFlatLatticeEllipticalBounds(
   const double y_centre,	///< [in] Y centre of ellipse
   const double x_semi,		///< [in] Length of X semi-diameter
   const double y_semi		///< [in] Length of Y semi-diameter
-  );
-
-///
-/// Find the bounding box of the mismatch ellipses of a metric
-///
-gsl_vector* XLALMetricEllipseBoundingBox(
-  gsl_matrix* metric,		///< [in] Metric to bound
-  const double max_mismatch	///< [in] Maximum mismatch with respect to metric
-  );
-
-///
-/// Orthonormalise the columns of a matrix with respect to a metric (matrix is lower triangular)
-///
-int XLALOrthonormaliseWRTMetric(
-  gsl_matrix* matrix,		///< [in] Matrix of columns to orthonormalise
-  const gsl_matrix* metric	///< [in] Metric to orthonormalise with respect to
-  );
-
-///
-/// Transform a lattice generator to a square lower triangular form
-///
-gsl_matrix* XLALSquareLowerTriangularLatticeGenerator(
-  gsl_matrix* generator		///< [in] Generator matrix of lattice
-  );
-
-///
-/// Normalise a lattice generator matrix to have a specified covering radius
-///
-int XLALNormaliseLatticeGenerator(
-  gsl_matrix* generator,	///< [in] Generator matrix of lattice
-  const double norm_thickness,	///< [in] Normalised thickness of lattice
-  const double covering_radius	///< [in] Desired covering radius
-  );
-
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(gsl_matrix**, random_points, nearest_points, workspace));
-SWIGLAL(INOUT_STRUCTS(gsl_vector**, nearest_distances));
-SWIGLAL(INOUT_STRUCTS(gsl_vector_ulong**, nearest_indices));
-#endif
-///
-/// Generate random points within the flat lattice tiling parameter space,
-/// then calculate the nearest flat lattice point to each random point
-///
-int XLALNearestFlatLatticePointToRandomPoints(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  RandomParams* rng,			///< [in] Random number generator
-  const size_t num_random_points,	///< [in] Number of random points to generate
-  gsl_matrix** random_points,		///< [in/out] Pointer to matrix of random points
-  gsl_matrix** nearest_points,		///< [in/out] Pointer to matrix of nearest lattice points to each random point
-  gsl_vector_ulong** nearest_indices,	///< [in/out] Pointer to vector of indices of nearest lattice point
-  gsl_vector** nearest_distances,	///< [in/out] Pointer to vector of distances to nearest lattice point
-  gsl_matrix** workspace		///< [in/out] Pointer to workspace matrix for computing distances
   );
 
 #ifdef __cplusplus

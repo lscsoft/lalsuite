@@ -43,20 +43,6 @@
 #endif
 
 ///
-/// Get physical bounds and padding for the specified dimension
-///
-static void GetPhysBounds(
-  FlatLatticeTiling* tiling,		///< [in] Tiling state
-  const size_t dimension,		///< [in] Dimension on which bound applies
-  const gsl_vector_uint* curr_bound,	///< [in] Indices of current bounds
-  const gsl_vector* phys_point,		///< [in] Physical point at which to find bounds
-  gsl_vector* phys_lower,		///< [out] Physical lower bounds on point
-  gsl_vector* phys_upper,		///< [out] Physical upper bounds on point
-  double* phys_lower_pad,		///< [out] Physical padding of lower parameter space bounds (optional)
-  double* phys_upper_pad		///< [out] Physical padding of upper parameter space bounds (optional)
-  );
-
-///
 /// Flat lattice tiling bound info
 ///
 typedef struct tagFLT_Bound {
@@ -256,6 +242,69 @@ int XLALSetFlatLatticeBound(
   tiling->bounds[dimension].data = data;
 
   return XLAL_SUCCESS;
+
+}
+
+///
+/// Get physical bounds and padding for the specified dimension
+///
+static void GetPhysBounds(
+  FlatLatticeTiling* tiling,		///< [in] Tiling state
+  const size_t dimension,		///< [in] Dimension on which bound applies
+  const gsl_vector_uint* curr_bound,	///< [in] Indices of current bounds
+  const gsl_vector* phys_point,		///< [in] Physical point at which to find bounds
+  gsl_vector* phys_lower,		///< [out] Physical lower bounds on point
+  gsl_vector* phys_upper,		///< [out] Physical upper bounds on point
+  double* phys_lower_pad,		///< [out] Physical padding of lower parameter space bounds (optional)
+  double* phys_upper_pad		///< [out] Physical padding of upper parameter space bounds (optional)
+  )
+{
+
+  // Get the appropriate bound dimension
+  FLT_Bound* bound = &tiling->bounds[dimension];
+
+  // Initialise bound vectors
+  gsl_vector_set_all(phys_lower, GSL_NAN);
+  gsl_vector_set_all(phys_upper, GSL_NAN);
+
+  // Pass upper bound vector only for tiled bounds
+  gsl_vector* phys_upper_tiled = bound->tiled ? phys_upper : NULL;
+
+  // Pass physical increments only for this and lower dimensions
+  gsl_vector_const_view phys_incr_view = gsl_vector_const_subvector(tiling->phys_incr, 0, dimension + 1);
+
+  // Pass physical bounding box only for this and lower dimensions
+  gsl_vector_const_view phys_bbox_view = gsl_vector_const_subvector(tiling->phys_bbox, 0, dimension + 1);
+
+  // Use physical bounding box in this dimension as default padding;
+  // for non-tiled dimensions, this will be zero for no padding
+  const double phys_bbox_dim = gsl_vector_get(&phys_bbox_view.vector, dimension);
+  double phys_lower_pad_val = phys_bbox_dim, phys_upper_pad_val = phys_bbox_dim;
+
+  // Only allow padding to be modified for tiled dimensions
+  double* ptr_phys_lower_pad_val = bound->tiled ? &phys_lower_pad_val : NULL;
+  double* ptr_phys_upper_pad_val = bound->tiled ? &phys_upper_pad_val : NULL;
+
+  // Call parameter space bounds function, passing view of physical point only in lower dimensions
+  if (dimension == 0) {
+    (bound->func)(dimension, NULL, NULL, bound->data,
+                  &phys_incr_view.vector, &phys_bbox_view.vector,
+                  phys_lower, phys_upper_tiled, ptr_phys_lower_pad_val, ptr_phys_upper_pad_val);
+  } else {
+    gsl_vector_uint_const_view curr_bound_view = gsl_vector_uint_const_subvector(curr_bound, 0, dimension);
+    gsl_vector_const_view phys_point_view = gsl_vector_const_subvector(phys_point, 0, dimension);
+    (bound->func)(dimension, &curr_bound_view.vector, &phys_point_view.vector, bound->data,
+                  &phys_incr_view.vector, &phys_bbox_view.vector,
+                  phys_lower, phys_upper_tiled, ptr_phys_lower_pad_val, ptr_phys_upper_pad_val);
+  }
+
+  // Return physical padding if required
+  if (phys_lower_pad) {
+    *phys_lower_pad = phys_lower_pad_val;
+  }
+  if (phys_upper_pad) {
+    *phys_upper_pad = phys_upper_pad_val;
+  }
 
 }
 
@@ -712,260 +761,232 @@ unsigned long XLALCountTotalFlatLatticePoints(
 
 }
 
-int XLALCubicLatticeGenerator(
-  const size_t dimensions,
-  gsl_matrix** generator,
-  double* norm_thickness
-  )
-{
-
-  const size_t r = dimensions;
-
-  // Check input
-  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
-  XLAL_CHECK(norm_thickness != NULL, XLAL_EFAULT);
-
-  // Allocate memory
-  *generator = gsl_matrix_alloc(r, r);
-  XLAL_CHECK(*generator != NULL, XLAL_ENOMEM);
-
-  // Create generator
-  gsl_matrix_set_identity(*generator);
-
-  // Calculate normalised thickness
-  *norm_thickness = pow(sqrt(r)/2, r);
-
-  return XLAL_SUCCESS;
-
-}
-
-int XLALAnstarLatticeGenerator(
-  const size_t dimensions,
-  gsl_matrix** generator,
-  double* norm_thickness
-  )
-{
-
-  const size_t r = dimensions;
-
-  // Check input
-  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
-  XLAL_CHECK(norm_thickness != NULL, XLAL_EFAULT);
-
-  // Allocate memory
-  *generator = gsl_matrix_alloc(r + 1, r);
-  XLAL_CHECK(*generator != NULL, XLAL_ENOMEM);
-
-  // Create generator in (r + 1) space
-  gsl_matrix_set_all(*generator, 0.0);
-  {
-    gsl_vector_view first_row = gsl_matrix_row(*generator, 0);
-    gsl_vector_view sub_diag = gsl_matrix_subdiagonal(*generator, 1);
-    gsl_vector_view last_col = gsl_matrix_column(*generator, r - 1);
-    gsl_vector_set_all(&first_row.vector, 1.0);
-    gsl_vector_set_all(&sub_diag.vector, -1.0);
-    gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
-    gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
-  }
-
-  // Calculate normalised thickness
-  *norm_thickness = sqrt(r + 1.0)*pow((1.0*r*(r + 2))/(12.0*(r + 1)), 0.5*r);
-
-  return XLAL_SUCCESS;
-
-}
-
-static void ConstantBound(
-  const size_t dimension UNUSED,
-  const gsl_vector_uint* bound UNUSED,
-  const gsl_vector* point UNUSED,
-  const void* data,
-  const gsl_vector* incr UNUSED,
-  const gsl_vector* bbox UNUSED,
-  gsl_vector* lower,
-  gsl_vector* upper,
-  double* lower_pad UNUSED,
-  double* upper_pad UNUSED
-  )
-{
-
-  // Get bounds data
-  const double* bounds = (const double*)data;
-
-  // Set constant lower and upper bounds
-  gsl_vector_set(lower, 0, bounds[0]);
-  if (upper) {
-    gsl_vector_set(upper, 0, bounds[1]);
-  }
-
-}
-
-int XLALSetFlatLatticeConstantBound(
+int XLALNearestFlatLatticePointToRandomPoints(
   FlatLatticeTiling* tiling,
-  size_t dimension,
-  double bound1,
-  double bound2
+  RandomParams* rng,
+  const size_t num_random_points,
+  gsl_matrix** random_points,
+  gsl_matrix** nearest_points,
+  gsl_vector_ulong** nearest_indices,
+  gsl_vector** nearest_distances,
+  gsl_matrix** workspace
   )
 {
 
-  // Check input
+  const size_t n = tiling->dimensions;
+
+  // Check tiling
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
-  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
-
-  // Allocate and set bounds data
-  double* bounds = XLALCalloc(2, sizeof(double));
-  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
-  bounds[0] = GSL_MIN(bound1, bound2);
-  bounds[1] = GSL_MAX(bound1, bound2);
-
-  // Set parameter space bound
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, bound1 == bound2, ConstantBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
-
-  return XLAL_SUCCESS;
-
-}
-
-static void EllipticalYBound(
-  const size_t dimension,
-  const gsl_vector_uint* bound UNUSED,
-  const gsl_vector* point,
-  const void* data,
-  const gsl_vector* incr UNUSED,
-  const gsl_vector* bbox,
-  gsl_vector* lower,
-  gsl_vector* upper,
-  double* lower_pad,
-  double* upper_pad
-  )
-{
-
-  // Get bounds data
-  const double* bounds = (const double*)data;
-  const double x_centre = bounds[0];
-  const double y_centre = bounds[1];
-  const double x_semi = bounds[2];
-  const double y_semi = bounds[3];
-
-  // Get normalised, centred x coordinate
-  const double nx = (gsl_vector_get(point, dimension - 1) - x_centre) / x_semi;
-
-  // Set bounds on y coordinate
-  const double nxsqr = nx * nx;
-  const double ny = (nxsqr < 1.0) ? sqrt(1.0 - nxsqr) : 0.0;
-  gsl_vector_set(lower, 0, y_centre - ny * y_semi);
-  gsl_vector_set(upper, 0, y_centre + ny * y_semi);
-
-  // Add sufficient extra padding on y, such that the bounding box of the
-  // boundary templates will not intersect the elliptic x-y parameter space.
-  const double nhbbx = 0.5 * gsl_vector_get(bbox, dimension - 1) / x_semi;
-  const double absnx = fabs(nx);
-  double npy = 0.0;
-  if (absnx <= nhbbx) {
-    npy = 1.0 - ny;
-  } else if (absnx <= 1.0 + nhbbx) {
-    const double dnx = (nx < 0.0) ? nx + nhbbx : nx - nhbbx;
-    npy = sqrt(1.0 - dnx * dnx) - ny;
-  }
-  const double pad = npy * y_semi;
-  *lower_pad += pad;
-  *upper_pad += pad;
-
-}
-
-int XLALSetFlatLatticeEllipticalBounds(
-  FlatLatticeTiling* tiling,
-  const size_t x_dimension,
-  const double x_centre,
-  const double y_centre,
-  const double x_semi,
-  const double y_semi
-  )
-{
+  XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
 
   // Check input
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(x_semi > 0.0, XLAL_EINVAL);
-  XLAL_CHECK(y_semi > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(rng != NULL, XLAL_EFAULT);
+  XLAL_CHECK(num_random_points > 0, XLAL_ESIZE);
+  XLAL_CHECK(random_points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_points != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_indices != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nearest_distances != NULL, XLAL_EFAULT);
+  XLAL_CHECK(workspace != NULL, XLAL_EFAULT);
 
-  // Allocate and set bounds data
-  double* bounds = XLALCalloc(4, sizeof(double));
-  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
-  bounds[0] = x_centre;
-  bounds[1] = y_centre;
-  bounds[2] = x_semi;
-  bounds[3] = y_semi;
+  // (Re)Allocate matrix of random points
+  if (*random_points != NULL && (*random_points)->size2 != num_random_points) {
+    gsl_matrix_free(*random_points);
+    *random_points = NULL;
+  }
+  if (*random_points == NULL) {
+    *random_points = gsl_matrix_alloc(n, num_random_points);
+    XLAL_CHECK(*random_points != NULL, XLAL_ENOMEM);
+  }
 
-  // Set parameter space bound
-  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
+  // (Re)Allocate matrix of nearest lattice points to each random point
+  if (*nearest_points != NULL && (*nearest_points)->size2 != num_random_points) {
+    gsl_matrix_free(*nearest_points);
+    *nearest_points = NULL;
+  }
+  if (*nearest_points == NULL) {
+    *nearest_points = gsl_matrix_alloc(n, num_random_points);
+    XLAL_CHECK(*nearest_points != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate vector of indices of nearest lattice point
+  if (*nearest_indices != NULL && (*nearest_indices)->size != num_random_points) {
+    gsl_vector_ulong_free(*nearest_indices);
+    *nearest_indices = NULL;
+  }
+  if (*nearest_indices == NULL) {
+    *nearest_indices = gsl_vector_ulong_alloc(num_random_points);
+    XLAL_CHECK(*nearest_indices != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate vector of distances to nearest lattice point
+  if (*nearest_distances != NULL && (*nearest_distances)->size != num_random_points) {
+    gsl_vector_free(*nearest_distances);
+    *nearest_distances = NULL;
+  }
+  if (*nearest_distances == NULL) {
+    *nearest_distances = gsl_vector_alloc(num_random_points);
+    XLAL_CHECK(*nearest_distances != NULL, XLAL_ENOMEM);
+  }
+
+  // (Re)Allocate workspace matrix for computing distances
+  if (*workspace != NULL && (*workspace)->size2 != num_random_points) {
+    gsl_matrix_free(*workspace);
+    *workspace = NULL;
+  }
+  if (*workspace == NULL) {
+    *workspace = gsl_matrix_alloc(n + 2, num_random_points);
+    XLAL_CHECK(*workspace != NULL, XLAL_ENOMEM);
+  }
+
+  // Create temporary bound index and physical bound vectors
+  unsigned int curr_bound_array[n];
+  gsl_vector_uint_view curr_bound_view = gsl_vector_uint_view_array(curr_bound_array, n);
+  gsl_vector_uint *const curr_bound = &curr_bound_view.vector;
+  double phys_lower_array[MAX_BOUNDS];
+  gsl_vector_view phys_lower_view = gsl_vector_view_array(phys_lower_array, MAX_BOUNDS);
+  gsl_vector *const phys_lower = &phys_lower_view.vector;
+  double phys_width_array[MAX_BOUNDS];
+  gsl_vector_view phys_width_view = gsl_vector_view_array(phys_width_array, MAX_BOUNDS);
+  gsl_vector *const phys_width = &phys_width_view.vector;
+
+  // Create random points in flat lattice tiling parameter space
+  for (size_t k = 0; k < num_random_points; ++k) {
+    gsl_vector_view point = gsl_matrix_column(*random_points, k);
+    for (size_t i = 0; i < n; ++i) {
+
+      // Get physical bounds and padding
+      GetPhysBounds(tiling, i, curr_bound, &point.vector,
+                    phys_lower, phys_width, NULL, NULL);
+      gsl_vector_sub(phys_width, phys_lower);
+
+      // Get total bounds width
+      double phys_total_width = 0;
+      size_t max_bounds = 0;
+      while (max_bounds < MAX_BOUNDS) {
+        const double lower = gsl_vector_get(phys_lower, max_bounds);
+        const double width = gsl_vector_get(phys_width, max_bounds);
+        if (gsl_isnan(lower) && gsl_isnan(width)) {
+          break;
+        }
+        phys_total_width += width;
+        ++max_bounds;
+      }
+
+      // Generate random number
+      const double u = XLALUniformDeviate(rng);
+
+      double p;
+      size_t bound = 0;
+      if (tiling->bounds[i].tiled) {
+
+        // Generate random point within total bounds widths
+        p = u * phys_total_width;
+
+        // Convert point to be within parameter space bounds
+        while (bound + 1 < max_bounds) {
+          const double width = gsl_vector_get(phys_width, bound);
+          if (p <= width) {
+            break;
+          }
+          p -= width;
+          ++bound;
+        }
+        p += gsl_vector_get(phys_lower, bound);
+
+      } else {
+
+        // Generate random bound index
+        bound = (size_t)floor(u * max_bounds);
+
+        // Get point from random bound
+        p = gsl_vector_get(phys_lower, bound);
+
+      }
+
+      // Set parameter space point and bound index
+      gsl_vector_set(&point.vector, i, p);
+      gsl_vector_uint_set(curr_bound, i, bound);
+
+    }
+
+  }
+
+  // Create temporary vectors and matrices in workspace
+  gsl_vector_view distance_view = gsl_matrix_row(*workspace, 0);
+  gsl_vector *const distance = &distance_view.vector;
+  gsl_vector_view distance_tmp_view = gsl_matrix_row(*workspace, 1);
+  gsl_vector *const distance_tmp = &distance_tmp_view.vector;
+  gsl_matrix_view diff_points_view = gsl_matrix_submatrix(*workspace, 2, 0, n, num_random_points);
+  gsl_matrix *const diff_points = &diff_points_view.matrix;
+
+  // Initialise minimum distance vector
+  gsl_vector_set_all(*nearest_distances, GSL_POSINF);
+
+  // Iterate over all flat lattice points
+  XLALRestartFlatLatticeTiling(tiling);
+  while ( XLALNextFlatLatticePoint(tiling) >= 0 ) {
+    const gsl_vector* lattice_point = XLALGetFlatLatticePoint(tiling);
+
+    // Copy random points to workspace, subtract flat lattice point
+    // from each, and normalise by physical scaling
+    for (size_t i = 0; i < n; ++i) {
+      const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
+      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
+      gsl_vector_view random_points_i = gsl_matrix_row(*random_points, i);
+      gsl_vector_memcpy(&diff_points_i.vector, &random_points_i.vector);
+      gsl_vector_add_constant(&diff_points_i.vector, -gsl_vector_get(lattice_point, i));
+      gsl_vector_scale(&diff_points_i.vector, 1.0/phys_scale);
+    }
+
+    // Calculate distance from random points to the flat lattice point, using metric
+    gsl_vector_set_zero(distance);
+    for (size_t i = 0; i < n; ++i) {
+      gsl_vector_set_zero(distance_tmp);
+
+      // Compute the diagonal terms of the metric distance,
+      // which are multiplied by the ith coordinate difference
+      const double metric_i_i = gsl_matrix_get(tiling->metric, i, i);
+      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
+      gsl_blas_daxpy(metric_i_i, &diff_points_i.vector, distance_tmp);
+
+      // Compute the off-diagomal terms of the metric distance,
+      // which are multiplied by the ith coordinate difference
+      for (size_t j = i + 1; j < n; ++j) {
+        const double metric_i_j = gsl_matrix_get(tiling->metric, i, j);
+        gsl_vector_view diff_points_j = gsl_matrix_row(diff_points, j);
+        gsl_blas_daxpy(2.0 * metric_i_j, &diff_points_j.vector, distance_tmp);
+      }
+
+      // Multiply by the ith coordinate difference
+      gsl_vector_mul(distance_tmp, &diff_points_i.vector);
+
+      // Add to distance
+      gsl_vector_add(distance, distance_tmp);
+
+    }
+
+    // For each random point, if the distance to the flat lattice point is
+    // the smallest so far, record the flat lattice point, distance, and index
+    const unsigned long nearest_index = tiling->count - 1;
+    for (size_t k = 0; k < num_random_points; ++k) {
+      const double distance_k = gsl_vector_get(distance, k);
+      if (distance_k < gsl_vector_get(*nearest_distances, k)) {
+        gsl_vector_view nearest_point_k = gsl_matrix_column(*nearest_points, k);
+        gsl_vector_memcpy(&nearest_point_k.vector, lattice_point);
+        gsl_vector_ulong_set(*nearest_indices, k, nearest_index);
+        gsl_vector_set(*nearest_distances, k, distance_k);
+      }
+    }
+
+  }
+  XLAL_CHECK(xlalErrno == 0, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
-
-}
-
-static void GetPhysBounds(
-  FlatLatticeTiling* tiling,
-  const size_t dimension,
-  const gsl_vector_uint* curr_bound,
-  const gsl_vector* phys_point,
-  gsl_vector* phys_lower,
-  gsl_vector* phys_upper,
-  double* phys_lower_pad,
-  double* phys_upper_pad
-  )
-{
-
-  // Get the appropriate bound dimension
-  FLT_Bound* bound = &tiling->bounds[dimension];
-
-  // Initialise bound vectors
-  gsl_vector_set_all(phys_lower, GSL_NAN);
-  gsl_vector_set_all(phys_upper, GSL_NAN);
-
-  // Pass upper bound vector only for tiled bounds
-  gsl_vector* phys_upper_tiled = bound->tiled ? phys_upper : NULL;
-
-  // Pass physical increments only for this and lower dimensions
-  gsl_vector_const_view phys_incr_view = gsl_vector_const_subvector(tiling->phys_incr, 0, dimension + 1);
-
-  // Pass physical bounding box only for this and lower dimensions
-  gsl_vector_const_view phys_bbox_view = gsl_vector_const_subvector(tiling->phys_bbox, 0, dimension + 1);
-
-  // Use physical bounding box in this dimension as default padding;
-  // for non-tiled dimensions, this will be zero for no padding
-  const double phys_bbox_dim = gsl_vector_get(&phys_bbox_view.vector, dimension);
-  double phys_lower_pad_val = phys_bbox_dim, phys_upper_pad_val = phys_bbox_dim;
-
-  // Only allow padding to be modified for tiled dimensions
-  double* ptr_phys_lower_pad_val = bound->tiled ? &phys_lower_pad_val : NULL;
-  double* ptr_phys_upper_pad_val = bound->tiled ? &phys_upper_pad_val : NULL;
-
-  // Call parameter space bounds function, passing view of physical point only in lower dimensions
-  if (dimension == 0) {
-    (bound->func)(dimension, NULL, NULL, bound->data,
-                  &phys_incr_view.vector, &phys_bbox_view.vector,
-                  phys_lower, phys_upper_tiled, ptr_phys_lower_pad_val, ptr_phys_upper_pad_val);
-  } else {
-    gsl_vector_uint_const_view curr_bound_view = gsl_vector_uint_const_subvector(curr_bound, 0, dimension);
-    gsl_vector_const_view phys_point_view = gsl_vector_const_subvector(phys_point, 0, dimension);
-    (bound->func)(dimension, &curr_bound_view.vector, &phys_point_view.vector, bound->data,
-                  &phys_incr_view.vector, &phys_bbox_view.vector,
-                  phys_lower, phys_upper_tiled, ptr_phys_lower_pad_val, ptr_phys_upper_pad_val);
-  }
-
-  // Return physical padding if required
-  if (phys_lower_pad) {
-    *phys_lower_pad = phys_lower_pad_val;
-  }
-  if (phys_upper_pad) {
-    *phys_upper_pad = phys_upper_pad_val;
-  }
 
 }
 
 gsl_vector* XLALMetricEllipseBoundingBox(
-  gsl_matrix* metric,
+  const gsl_matrix* metric,
   const double max_mismatch
   )
 {
@@ -1187,225 +1208,193 @@ int XLALNormaliseLatticeGenerator(
 
 }
 
-int XLALNearestFlatLatticePointToRandomPoints(
-  FlatLatticeTiling* tiling,
-  RandomParams* rng,
-  const size_t num_random_points,
-  gsl_matrix** random_points,
-  gsl_matrix** nearest_points,
-  gsl_vector_ulong** nearest_indices,
-  gsl_vector** nearest_distances,
-  gsl_matrix** workspace
+int XLALCubicLatticeGenerator(
+  const size_t dimensions,
+  gsl_matrix** generator,
+  double* norm_thickness
   )
 {
 
-  const size_t n = tiling->dimensions;
-
-  // Check tiling
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tiling->status != FLT_S_INCOMPLETE, XLAL_EFAILED);
+  const size_t r = dimensions;
 
   // Check input
-  XLAL_CHECK(rng != NULL, XLAL_EFAULT);
-  XLAL_CHECK(num_random_points > 0, XLAL_ESIZE);
-  XLAL_CHECK(random_points != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_points != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_indices != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_distances != NULL, XLAL_EFAULT);
-  XLAL_CHECK(workspace != NULL, XLAL_EFAULT);
+  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
+  XLAL_CHECK(norm_thickness != NULL, XLAL_EFAULT);
 
-  // (Re)Allocate matrix of random points
-  if (*random_points != NULL && (*random_points)->size2 != num_random_points) {
-    gsl_matrix_free(*random_points);
-    *random_points = NULL;
-  }
-  if (*random_points == NULL) {
-    *random_points = gsl_matrix_alloc(n, num_random_points);
-    XLAL_CHECK(*random_points != NULL, XLAL_ENOMEM);
-  }
+  // Allocate memory
+  *generator = gsl_matrix_alloc(r, r);
+  XLAL_CHECK(*generator != NULL, XLAL_ENOMEM);
 
-  // (Re)Allocate matrix of nearest lattice points to each random point
-  if (*nearest_points != NULL && (*nearest_points)->size2 != num_random_points) {
-    gsl_matrix_free(*nearest_points);
-    *nearest_points = NULL;
-  }
-  if (*nearest_points == NULL) {
-    *nearest_points = gsl_matrix_alloc(n, num_random_points);
-    XLAL_CHECK(*nearest_points != NULL, XLAL_ENOMEM);
-  }
+  // Create generator
+  gsl_matrix_set_identity(*generator);
 
-  // (Re)Allocate vector of indices of nearest lattice point
-  if (*nearest_indices != NULL && (*nearest_indices)->size != num_random_points) {
-    gsl_vector_ulong_free(*nearest_indices);
-    *nearest_indices = NULL;
-  }
-  if (*nearest_indices == NULL) {
-    *nearest_indices = gsl_vector_ulong_alloc(num_random_points);
-    XLAL_CHECK(*nearest_indices != NULL, XLAL_ENOMEM);
-  }
+  // Calculate normalised thickness
+  *norm_thickness = pow(sqrt(r)/2, r);
 
-  // (Re)Allocate vector of distances to nearest lattice point
-  if (*nearest_distances != NULL && (*nearest_distances)->size != num_random_points) {
-    gsl_vector_free(*nearest_distances);
-    *nearest_distances = NULL;
-  }
-  if (*nearest_distances == NULL) {
-    *nearest_distances = gsl_vector_alloc(num_random_points);
-    XLAL_CHECK(*nearest_distances != NULL, XLAL_ENOMEM);
+  return XLAL_SUCCESS;
+
+}
+
+int XLALAnstarLatticeGenerator(
+  const size_t dimensions,
+  gsl_matrix** generator,
+  double* norm_thickness
+  )
+{
+
+  const size_t r = dimensions;
+
+  // Check input
+  XLAL_CHECK(generator != NULL, XLAL_EFAULT);
+  XLAL_CHECK(norm_thickness != NULL, XLAL_EFAULT);
+
+  // Allocate memory
+  *generator = gsl_matrix_alloc(r + 1, r);
+  XLAL_CHECK(*generator != NULL, XLAL_ENOMEM);
+
+  // Create generator in (r + 1) space
+  gsl_matrix_set_all(*generator, 0.0);
+  {
+    gsl_vector_view first_row = gsl_matrix_row(*generator, 0);
+    gsl_vector_view sub_diag = gsl_matrix_subdiagonal(*generator, 1);
+    gsl_vector_view last_col = gsl_matrix_column(*generator, r - 1);
+    gsl_vector_set_all(&first_row.vector, 1.0);
+    gsl_vector_set_all(&sub_diag.vector, -1.0);
+    gsl_vector_set_all(&last_col.vector, 1.0 / (r + 1.0));
+    gsl_vector_set(&last_col.vector, 0, -1.0 * r / (r + 1.0));
   }
 
-  // (Re)Allocate workspace matrix for computing distances
-  if (*workspace != NULL && (*workspace)->size2 != num_random_points) {
-    gsl_matrix_free(*workspace);
-    *workspace = NULL;
-  }
-  if (*workspace == NULL) {
-    *workspace = gsl_matrix_alloc(n + 2, num_random_points);
-    XLAL_CHECK(*workspace != NULL, XLAL_ENOMEM);
-  }
+  // Calculate normalised thickness
+  *norm_thickness = sqrt(r + 1.0)*pow((1.0*r*(r + 2))/(12.0*(r + 1)), 0.5*r);
 
-  // Create temporary bound index and physical bound vectors
-  unsigned int curr_bound_array[n];
-  gsl_vector_uint_view curr_bound_view = gsl_vector_uint_view_array(curr_bound_array, n);
-  gsl_vector_uint *const curr_bound = &curr_bound_view.vector;
-  double phys_lower_array[MAX_BOUNDS];
-  gsl_vector_view phys_lower_view = gsl_vector_view_array(phys_lower_array, MAX_BOUNDS);
-  gsl_vector *const phys_lower = &phys_lower_view.vector;
-  double phys_width_array[MAX_BOUNDS];
-  gsl_vector_view phys_width_view = gsl_vector_view_array(phys_width_array, MAX_BOUNDS);
-  gsl_vector *const phys_width = &phys_width_view.vector;
+  return XLAL_SUCCESS;
 
-  // Create random points in flat lattice tiling parameter space
-  for (size_t k = 0; k < num_random_points; ++k) {
-    gsl_vector_view point = gsl_matrix_column(*random_points, k);
-    for (size_t i = 0; i < n; ++i) {
+}
 
-      // Get physical bounds and padding
-      GetPhysBounds(tiling, i, curr_bound, &point.vector,
-                    phys_lower, phys_width, NULL, NULL);
-      gsl_vector_sub(phys_width, phys_lower);
+static void ConstantBound(
+  const size_t dimension UNUSED,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point UNUSED,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
 
-      // Get total bounds width
-      double phys_total_width = 0;
-      size_t max_bounds = 0;
-      while (max_bounds < MAX_BOUNDS) {
-        const double lower = gsl_vector_get(phys_lower, max_bounds);
-        const double width = gsl_vector_get(phys_width, max_bounds);
-        if (gsl_isnan(lower) && gsl_isnan(width)) {
-          break;
-        }
-        phys_total_width += width;
-        ++max_bounds;
-      }
+  // Get bounds data
+  const double* bounds = (const double*)data;
 
-      // Generate random number
-      const double u = XLALUniformDeviate(rng);
-
-      double p;
-      size_t bound = 0;
-      if (tiling->bounds[i].tiled) {
-
-        // Generate random point within total bounds widths
-        p = u * phys_total_width;
-
-        // Convert point to be within parameter space bounds
-        while (bound + 1 < max_bounds) {
-          const double width = gsl_vector_get(phys_width, bound);
-          if (p <= width) {
-            break;
-          }
-          p -= width;
-          ++bound;
-        }
-        p += gsl_vector_get(phys_lower, bound);
-
-      } else {
-
-        // Generate random bound index
-        bound = (size_t)floor(u * max_bounds);
-
-        // Get point from random bound
-        p = gsl_vector_get(phys_lower, bound);
-
-      }
-
-      // Set parameter space point and bound index
-      gsl_vector_set(&point.vector, i, p);
-      gsl_vector_uint_set(curr_bound, i, bound);
-
-    }
-
+  // Set constant lower and upper bounds
+  gsl_vector_set(lower, 0, bounds[0]);
+  if (upper) {
+    gsl_vector_set(upper, 0, bounds[1]);
   }
 
-  // Create temporary vectors and matrices in workspace
-  gsl_vector_view distance_view = gsl_matrix_row(*workspace, 0);
-  gsl_vector *const distance = &distance_view.vector;
-  gsl_vector_view distance_tmp_view = gsl_matrix_row(*workspace, 1);
-  gsl_vector *const distance_tmp = &distance_tmp_view.vector;
-  gsl_matrix_view diff_points_view = gsl_matrix_submatrix(*workspace, 2, 0, n, num_random_points);
-  gsl_matrix *const diff_points = &diff_points_view.matrix;
+}
 
-  // Initialise minimum distance vector
-  gsl_vector_set_all(*nearest_distances, GSL_POSINF);
+int XLALSetFlatLatticeConstantBound(
+  FlatLatticeTiling* tiling,
+  size_t dimension,
+  double bound1,
+  double bound2
+  )
+{
 
-  // Iterate over all flat lattice points
-  XLALRestartFlatLatticeTiling(tiling);
-  while ( XLALNextFlatLatticePoint(tiling) >= 0 ) {
-    const gsl_vector* lattice_point = XLALGetFlatLatticePoint(tiling);
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
 
-    // Copy random points to workspace, subtract flat lattice point
-    // from each, and normalise by physical scaling
-    for (size_t i = 0; i < n; ++i) {
-      const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
-      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
-      gsl_vector_view random_points_i = gsl_matrix_row(*random_points, i);
-      gsl_vector_memcpy(&diff_points_i.vector, &random_points_i.vector);
-      gsl_vector_add_constant(&diff_points_i.vector, -gsl_vector_get(lattice_point, i));
-      gsl_vector_scale(&diff_points_i.vector, 1.0/phys_scale);
-    }
+  // Allocate and set bounds data
+  double* bounds = XLALCalloc(2, sizeof(double));
+  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
+  bounds[0] = GSL_MIN(bound1, bound2);
+  bounds[1] = GSL_MAX(bound1, bound2);
 
-    // Calculate distance from random points to the flat lattice point, using metric
-    gsl_vector_set_zero(distance);
-    for (size_t i = 0; i < n; ++i) {
-      gsl_vector_set_zero(distance_tmp);
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, bound1 == bound2, ConstantBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
 
-      // Compute the diagonal terms of the metric distance,
-      // which are multiplied by the ith coordinate difference
-      const double metric_i_i = gsl_matrix_get(tiling->metric, i, i);
-      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
-      gsl_blas_daxpy(metric_i_i, &diff_points_i.vector, distance_tmp);
+  return XLAL_SUCCESS;
 
-      // Compute the off-diagomal terms of the metric distance,
-      // which are multiplied by the ith coordinate difference
-      for (size_t j = i + 1; j < n; ++j) {
-        const double metric_i_j = gsl_matrix_get(tiling->metric, i, j);
-        gsl_vector_view diff_points_j = gsl_matrix_row(diff_points, j);
-        gsl_blas_daxpy(2.0 * metric_i_j, &diff_points_j.vector, distance_tmp);
-      }
+}
 
-      // Multiply by the ith coordinate difference
-      gsl_vector_mul(distance_tmp, &diff_points_i.vector);
+static void EllipticalYBound(
+  const size_t dimension,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* lower_pad,
+  double* upper_pad
+  )
+{
 
-      // Add to distance
-      gsl_vector_add(distance, distance_tmp);
+  // Get bounds data
+  const double* bounds = (const double*)data;
+  const double x_centre = bounds[0];
+  const double y_centre = bounds[1];
+  const double x_semi = bounds[2];
+  const double y_semi = bounds[3];
 
-    }
+  // Get normalised, centred x coordinate
+  const double nx = (gsl_vector_get(point, dimension - 1) - x_centre) / x_semi;
 
-    // For each random point, if the distance to the flat lattice point is
-    // the smallest so far, record the flat lattice point, distance, and index
-    const unsigned long nearest_index = tiling->count - 1;
-    for (size_t k = 0; k < num_random_points; ++k) {
-      const double distance_k = gsl_vector_get(distance, k);
-      if (distance_k < gsl_vector_get(*nearest_distances, k)) {
-        gsl_vector_view nearest_point_k = gsl_matrix_column(*nearest_points, k);
-        gsl_vector_memcpy(&nearest_point_k.vector, lattice_point);
-        gsl_vector_ulong_set(*nearest_indices, k, nearest_index);
-        gsl_vector_set(*nearest_distances, k, distance_k);
-      }
-    }
+  // Set bounds on y coordinate
+  const double nxsqr = nx * nx;
+  const double ny = (nxsqr < 1.0) ? sqrt(1.0 - nxsqr) : 0.0;
+  gsl_vector_set(lower, 0, y_centre - ny * y_semi);
+  gsl_vector_set(upper, 0, y_centre + ny * y_semi);
 
+  // Add sufficient extra padding on y, such that the bounding box of the
+  // boundary templates will not intersect the elliptic x-y parameter space.
+  const double nhbbx = 0.5 * gsl_vector_get(bbox, dimension - 1) / x_semi;
+  const double absnx = fabs(nx);
+  double npy = 0.0;
+  if (absnx <= nhbbx) {
+    npy = 1.0 - ny;
+  } else if (absnx <= 1.0 + nhbbx) {
+    const double dnx = (nx < 0.0) ? nx + nhbbx : nx - nhbbx;
+    npy = sqrt(1.0 - dnx * dnx) - ny;
   }
-  XLAL_CHECK(xlalErrno == 0, XLAL_EFAILED);
+  const double pad = npy * y_semi;
+  *lower_pad += pad;
+  *upper_pad += pad;
+
+}
+
+int XLALSetFlatLatticeEllipticalBounds(
+  FlatLatticeTiling* tiling,
+  const size_t x_dimension,
+  const double x_centre,
+  const double y_centre,
+  const double x_semi,
+  const double y_semi
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(x_semi > 0.0, XLAL_EINVAL);
+  XLAL_CHECK(y_semi > 0.0, XLAL_EINVAL);
+
+  // Allocate and set bounds data
+  double* bounds = XLALCalloc(4, sizeof(double));
+  XLAL_CHECK(bounds != NULL, XLAL_ENOMEM);
+  bounds[0] = x_centre;
+  bounds[1] = y_centre;
+  bounds[2] = x_semi;
+  bounds[3] = y_semi;
+
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeConstantBound(tiling, x_dimension, x_centre - x_semi, x_centre + x_semi) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, x_dimension + 1, false, EllipticalYBound, (void*)bounds) == XLAL_SUCCESS, XLAL_EFAILED);
 
   return XLAL_SUCCESS;
 
