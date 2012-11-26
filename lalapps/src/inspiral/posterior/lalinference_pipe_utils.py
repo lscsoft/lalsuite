@@ -784,7 +784,7 @@ class EngineNode(pipeline.CondorDAGNode):
       if self.psds: self.add_var_opt('psd',psdstring)
       if self.flows: self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
-	self.add_var_opt('timeslides',slidestring)
+	self.add_var_opt('timeslide',slidestring)
       # Start at earliest common time
       # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
       # Used when we are running the coherence test.
