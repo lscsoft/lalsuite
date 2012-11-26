@@ -737,7 +737,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   RandomParams* rng,
   const size_t num_random_points,
   gsl_matrix** random_points,
-  gsl_matrix** nearest_points,
   gsl_vector_ulong** nearest_indices,
   gsl_vector** nearest_distances,
   gsl_matrix** workspace
@@ -754,7 +753,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   XLAL_CHECK(rng != NULL, XLAL_EFAULT);
   XLAL_CHECK(num_random_points > 0, XLAL_ESIZE);
   XLAL_CHECK(random_points != NULL, XLAL_EFAULT);
-  XLAL_CHECK(nearest_points != NULL, XLAL_EFAULT);
   XLAL_CHECK(nearest_indices != NULL, XLAL_EFAULT);
   XLAL_CHECK(nearest_distances != NULL, XLAL_EFAULT);
   XLAL_CHECK(workspace != NULL, XLAL_EFAULT);
@@ -767,16 +765,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   if (*random_points == NULL) {
     *random_points = gsl_matrix_alloc(n, num_random_points);
     XLAL_CHECK(*random_points != NULL, XLAL_ENOMEM);
-  }
-
-  // (Re)Allocate matrix of nearest lattice points to each random point
-  if (*nearest_points != NULL && (*nearest_points)->size2 != num_random_points) {
-    gsl_matrix_free(*nearest_points);
-    *nearest_points = NULL;
-  }
-  if (*nearest_points == NULL) {
-    *nearest_points = gsl_matrix_alloc(n, num_random_points);
-    XLAL_CHECK(*nearest_points != NULL, XLAL_ENOMEM);
   }
 
   // (Re)Allocate vector of indices of nearest lattice point
@@ -942,8 +930,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
     for (size_t k = 0; k < num_random_points; ++k) {
       const double distance_k = gsl_vector_get(distance, k);
       if (distance_k < gsl_vector_get(*nearest_distances, k)) {
-        gsl_vector_view nearest_point_k = gsl_matrix_column(*nearest_points, k);
-        gsl_vector_memcpy(&nearest_point_k.vector, lattice_point);
         gsl_vector_ulong_set(*nearest_indices, k, nearest_index);
         gsl_vector_set(*nearest_distances, k, distance_k);
       }

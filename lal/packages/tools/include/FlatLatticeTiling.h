@@ -161,7 +161,7 @@ unsigned long XLALCountTotalFlatLatticePoints(
   );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(gsl_matrix**, random_points, nearest_points, workspace));
+SWIGLAL(INOUT_STRUCTS(gsl_matrix**, random_points, workspace));
 SWIGLAL(INOUT_STRUCTS(gsl_vector**, nearest_distances));
 SWIGLAL(INOUT_STRUCTS(gsl_vector_ulong**, nearest_indices));
 #endif
@@ -174,7 +174,6 @@ int XLALNearestFlatLatticePointToRandomPoints(
   RandomParams* rng,			///< [in] Random number generator
   const size_t num_random_points,	///< [in] Number of random points to generate
   gsl_matrix** random_points,		///< [in/out] Pointer to matrix of random points
-  gsl_matrix** nearest_points,		///< [in/out] Pointer to matrix of nearest lattice points to each random point
   gsl_vector_ulong** nearest_indices,	///< [in/out] Pointer to vector of indices of nearest lattice point
   gsl_vector** nearest_distances,	///< [in/out] Pointer to vector of distances to nearest lattice point
   gsl_matrix** workspace		///< [in/out] Pointer to workspace matrix for computing distances
