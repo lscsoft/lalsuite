@@ -603,7 +603,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if parent is not None:
       node.add_parent(parent)
       infile=parent.get_pos_file()
-      node.add_var_arg(infile)
+      node.add_file_arg(infile)
     node.set_output_path(outdir)
     self.add_node(node)
     return node
@@ -727,7 +727,7 @@ class EngineNode(pipeline.CondorDAGNode):
     """
     Set a software injection to be performed.
     """
-    self.add_var_opt('inj',injfile)
+    self.add_file_opt('inj',injfile)
     self.set_event_number(event)
 
   def get_trig_time(self): return self.__trigtime
