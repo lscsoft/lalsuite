@@ -744,10 +744,10 @@ def hipe_setup(hipeDir, config, ifos, logPath, injSeed=None, dataFind = False, \
 
   if dataFind or tmpltBank:
     if dataFind:
-      for hipe_arg in ["datafind","ringdown"]:
+      for hipe_arg in ["datafind","ringdown","write-script"]:
         hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
     if tmpltBank:
-      for hipe_arg in ["template-bank","ringdown"]:
+      for hipe_arg in ["template-bank","ringdown","write-script"]:
         hipeCommand = test_and_add_hipe_arg(hipeCommand,hipe_arg)
   elif vetoCat:
     if config.has_option("hipe-arguments","ringdown"):
