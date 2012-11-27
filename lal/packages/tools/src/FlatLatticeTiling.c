@@ -793,20 +793,17 @@ int XLALNearestFlatLatticePointToRandomPoints(
     *workspace = NULL;
   }
   if (*workspace == NULL) {
-    *workspace = gsl_matrix_alloc(n + 2, num_random_points);
+    *workspace = gsl_matrix_alloc(3*n - 1, num_random_points);
     XLAL_CHECK(*workspace != NULL, XLAL_ENOMEM);
   }
 
   // Create temporary bound index and physical bound vectors
-  unsigned int curr_bound_array[n];
-  gsl_vector_uint_view curr_bound_view = gsl_vector_uint_view_array(curr_bound_array, n);
-  gsl_vector_uint *const curr_bound = &curr_bound_view.vector;
-  double phys_lower_array[MAX_BOUNDS];
-  gsl_vector_view phys_lower_view = gsl_vector_view_array(phys_lower_array, MAX_BOUNDS);
-  gsl_vector *const phys_lower = &phys_lower_view.vector;
-  double phys_width_array[MAX_BOUNDS];
-  gsl_vector_view phys_width_view = gsl_vector_view_array(phys_width_array, MAX_BOUNDS);
-  gsl_vector *const phys_width = &phys_width_view.vector;
+  gsl_vector_uint* curr_bound = gsl_vector_uint_alloc(n);
+  XLAL_CHECK(curr_bound != NULL, XLAL_ENOMEM);
+  gsl_vector* phys_lower = gsl_vector_alloc(MAX_BOUNDS);
+  XLAL_CHECK(phys_lower != NULL, XLAL_ENOMEM);
+  gsl_vector* phys_width = gsl_vector_alloc(MAX_BOUNDS);
+  XLAL_CHECK(phys_width != NULL, XLAL_ENOMEM);
 
   // Create random points in flat lattice tiling parameter space
   for (size_t k = 0; k < num_random_points; ++k) {
@@ -870,65 +867,89 @@ int XLALNearestFlatLatticePointToRandomPoints(
 
   }
 
-  // Create temporary vectors and matrices in workspace
-  gsl_vector_view distance_view = gsl_matrix_row(*workspace, 0);
-  gsl_vector *const distance = &distance_view.vector;
-  gsl_vector_view distance_tmp_view = gsl_matrix_row(*workspace, 1);
-  gsl_vector *const distance_tmp = &distance_tmp_view.vector;
-  gsl_matrix_view diff_points_view = gsl_matrix_submatrix(*workspace, 2, 0, n, num_random_points);
-  gsl_matrix *const diff_points = &diff_points_view.matrix;
+  // Create temporary matrices in workspace
+  gsl_matrix_view point_diffs = gsl_matrix_submatrix(*workspace, 0, 0, n, num_random_points);
+  gsl_matrix_view off_diag_terms = gsl_matrix_submatrix(*workspace, n, 0, n - 1, num_random_points);
+  gsl_matrix_view distances = gsl_matrix_submatrix(*workspace, 2*n - 1, 0, n, num_random_points);
 
   // Initialise minimum distance vector
   gsl_vector_set_all(*nearest_distances, GSL_POSINF);
 
   // Iterate over all flat lattice points
   XLALRestartFlatLatticeTiling(tiling);
-  while ( XLALNextFlatLatticePoint(tiling) >= 0 ) {
-    const gsl_vector* lattice_point = XLALGetFlatLatticePoint(tiling);
+  while (true) {
 
-    // Copy random points to workspace, subtract flat lattice point
-    // from each, and normalise by physical scaling
-    for (size_t i = 0; i < n; ++i) {
+    // Advance to the next lattice point
+    const int ich = XLALNextFlatLatticePoint(tiling);
+    if (ich < 0) {
+      break;
+    }
+    const gsl_vector* lattice_point = XLALGetFlatLatticePoint(tiling);
+    const unsigned long nearest_index = tiling->count - 1;
+
+    // For dimensions where flat lattice point has changed (given by ich),
+    // copy random points to workspace, subtract flat lattice point from each,
+    // and normalise by physical scaling
+    for (size_t i = (size_t)ich; i < n; ++i) {
       const double phys_scale = gsl_vector_get(tiling->phys_scale, i);
-      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
+      gsl_vector_view point_diffs_i = gsl_matrix_row(&point_diffs.matrix, i);
       gsl_vector_view random_points_i = gsl_matrix_row(*random_points, i);
-      gsl_vector_memcpy(&diff_points_i.vector, &random_points_i.vector);
-      gsl_vector_add_constant(&diff_points_i.vector, -gsl_vector_get(lattice_point, i));
-      gsl_vector_scale(&diff_points_i.vector, 1.0/phys_scale);
+      gsl_vector_memcpy(&point_diffs_i.vector, &random_points_i.vector);
+      gsl_vector_add_constant(&point_diffs_i.vector, -gsl_vector_get(lattice_point, i));
+      gsl_vector_scale(&point_diffs_i.vector, 1.0/phys_scale);
     }
 
-    // Calculate distance from random points to the flat lattice point, using metric
-    gsl_vector_set_zero(distance);
-    for (size_t i = 0; i < n; ++i) {
-      gsl_vector_set_zero(distance_tmp);
+    // For dimensions where flat lattice point has changed (given by ich),
+    // re-compute the off-diagonal terms of the metric distance, which
+    // are multiplied by the ith coordinate difference
+    for (size_t i = (size_t)ich; i < n - 1; ++i) {
+      gsl_vector_view off_diag_terms_i = gsl_matrix_row(&off_diag_terms.matrix, i);
+      gsl_vector_set_zero(&off_diag_terms_i.vector);
+      for (size_t j = 0; j <= i; ++j) {
+        const double metric_off_diag = gsl_matrix_get(tiling->metric, i + 1, j);
+        gsl_vector_view point_diffs_j = gsl_matrix_row(&point_diffs.matrix, j);
+        gsl_blas_daxpy(2.0 * metric_off_diag, &point_diffs_j.vector, &off_diag_terms_i.vector);
+      }
+    }
 
-      // Compute the diagonal terms of the metric distance,
-      // which are multiplied by the ith coordinate difference
-      const double metric_i_i = gsl_matrix_get(tiling->metric, i, i);
-      gsl_vector_view diff_points_i = gsl_matrix_row(diff_points, i);
-      gsl_blas_daxpy(metric_i_i, &diff_points_i.vector, distance_tmp);
+    // For dimensions where flat lattice point has changed (given by ich),
+    // re-compute terms in the distances from random points to the flat lattice
+    // point which involve the ith coordinate difference, and cumulatively sum
+    // together to get the distance in the last row
+    for (size_t i = (size_t)ich; i < n; ++i) {
 
-      // Compute the off-diagomal terms of the metric distance,
+      gsl_vector_view point_diffs_i = gsl_matrix_row(&point_diffs.matrix, i);
+      gsl_vector_view distances_i = gsl_matrix_row(&distances.matrix, i);
+
+      // Compute the diagonal term of the metric distance,
       // which are multiplied by the ith coordinate difference
-      for (size_t j = i + 1; j < n; ++j) {
-        const double metric_i_j = gsl_matrix_get(tiling->metric, i, j);
-        gsl_vector_view diff_points_j = gsl_matrix_row(diff_points, j);
-        gsl_blas_daxpy(2.0 * metric_i_j, &diff_points_j.vector, distance_tmp);
+      const double metric_diag = gsl_matrix_get(tiling->metric, i, i);
+      gsl_vector_memcpy(&distances_i.vector, &point_diffs_i.vector);
+      gsl_vector_scale(&distances_i.vector, metric_diag);
+
+      // Add the pre-computed off-diagomal terms of the metric distance,
+      // which are multiplied by the ith coordinate difference
+      if (i > 0) {
+        gsl_vector_view off_diag_terms_iprev = gsl_matrix_row(&off_diag_terms.matrix, i - 1);
+        gsl_vector_add(&distances_i.vector, &off_diag_terms_iprev.vector);
       }
 
       // Multiply by the ith coordinate difference
-      gsl_vector_mul(distance_tmp, &diff_points_i.vector);
+      gsl_vector_mul(&distances_i.vector, &point_diffs_i.vector);
 
-      // Add to distance
-      gsl_vector_add(distance, distance_tmp);
+      // Add the distance computed for the lower dimensions thus far
+      if (i > 0) {
+        gsl_vector_view distances_iprev = gsl_matrix_row(&distances.matrix, i - 1);
+        gsl_vector_add(&distances_i.vector, &distances_iprev.vector);
+      }
 
     }
 
     // For each random point, if the distance to the flat lattice point is
     // the smallest so far, record the flat lattice point, distance, and index
-    const unsigned long nearest_index = tiling->count - 1;
+    gsl_vector_view distance = gsl_matrix_row(&distances.matrix, n - 1);
     for (size_t k = 0; k < num_random_points; ++k) {
-      const double distance_k = gsl_vector_get(distance, k);
+      const double distance_k = gsl_vector_get(&distance.vector, k);
       if (distance_k < gsl_vector_get(*nearest_distances, k)) {
         gsl_vector_ulong_set(*nearest_indices, k, nearest_index);
         gsl_vector_set(*nearest_distances, k, distance_k);
@@ -936,7 +957,12 @@ int XLALNearestFlatLatticePointToRandomPoints(
     }
 
   }
-  XLAL_CHECK(xlalErrno == 0, XLAL_EFAILED);
+  XLAL_CHECK(xlalErrno == 0, XLAL_EFAILED, "XLALNextFlatLatticePoint() failed");
+
+  // Cleanup
+  gsl_vector_uint_free(curr_bound);
+  gsl_vector_free(phys_lower);
+  gsl_vector_free(phys_width);
 
   return XLAL_SUCCESS;
 
