@@ -68,12 +68,12 @@ int main( int argc, char *argv[] )
   fprintf( stdout, "using %s conventions\n", leaver ? "Leaver's" : "standard" );
   fprintf( stdout, "mode l = %d, m = %d, s = %d\n", l, m, s );
   fprintf( stdout, "spin a = %g (dimensionless)\n", leaver ? a : 2.0 * a );
-  fprintf( stdout, "M * omega = (%+.6f,%+.6f)\n", creal(omega), cimag(omega) );
+  fprintf( stdout, "M * omega = (%+.6f,%+.6f)\n", LAL_REAL(omega), LAL_IMAG(omega) );
   if ( M != 0.0 )
   {
     REAL8 f, Q;
-    f = fabs( creal( omega ) / ( LAL_TWOPI * M * LAL_MTSUN_SI ) );
-    Q = fabs( creal( omega ) ) / ( -2.0 * cimag( omega ) );
+    f = fabs( LAL_REAL( omega ) / ( LAL_TWOPI * M * LAL_MTSUN_SI ) );
+    Q = fabs( LAL_REAL( omega ) ) / ( -2.0 * LAL_IMAG( omega ) );
 
     fprintf( stdout, "mass M = %g solar masses\n", M );
     fprintf( stdout, "frequency f = %g Hz\n", f );

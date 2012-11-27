@@ -334,8 +334,8 @@ int XLALSimAddMode(
 	for ( j = 0; j < hmode->data->length; ++j ) {
 		COMPLEX16 hpc;
 		hpc = cmul(Y, hmode->data->data[j]);
-		hplus->data->data[j] += creal(hpc);
-		hcross->data->data[j] += -cimag(hpc);
+		hplus->data->data[j] += LAL_REAL(hpc);
+		hcross->data->data[j] += -LAL_IMAG(hpc);
 	}
 	if ( sym ) { /* equatorial symmetry: add in -m mode */
 		Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, -m);
@@ -343,9 +343,9 @@ int XLALSimAddMode(
 			Y = cneg(Y);
 		for ( j = 0; j < hmode->data->length; ++j ) {
 			COMPLEX16 hpc;
-			hpc = cmul(Y, conj(hmode->data->data[j]));
-			hplus->data->data[j] += creal(hpc);
-			hcross->data->data[j] += -cimag(hpc);
+			hpc = cmul(Y, LAL_CONJ(hmode->data->data[j]));
+			hplus->data->data[j] += LAL_REAL(hpc);
+			hcross->data->data[j] += -LAL_IMAG(hpc);
 		}
 	}
 	return 0;
@@ -437,7 +437,7 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 	if ( m < 0 ) {
 		REAL8 sign = l % 2 ? -1.0 : 1.0;
 		for ( j = 0; j < hlm->data->length; ++j )
-			hlm->data->data[j] = cmulr(conj(hlm->data->data[j]), sign);
+			hlm->data->data[j] = cmulr(LAL_CONJ(hlm->data->data[j]), sign);
 	}
 	return hlm;
 }

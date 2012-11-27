@@ -80,9 +80,9 @@ int main( int argc, char *argv[] )
       A = caddr(A,s*(s+1));
     }
     if ( plotfmt )
-      fprintf( stdout, "%+e\t%+e\t%e\n", creal(omega), cimag(omega), a );
+      fprintf( stdout, "%+e\t%+e\t%e\n", LAL_REAL(omega), LAL_IMAG(omega), a );
     else
-      fprintf( stdout, "%.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega) );
+      fprintf( stdout, "%.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, LAL_REAL(A), LAL_IMAG(A), LAL_REAL(omega), LAL_IMAG(omega) );
   }
 
   if ( ! plotfmt )
@@ -101,9 +101,9 @@ int main( int argc, char *argv[] )
       A = caddr(A,s*(s+1));
     }
     if ( plotfmt )
-      fprintf( stdout, "%+e\t%+e\t%e\n", -creal(omega), cimag(omega), a );
+      fprintf( stdout, "%+e\t%+e\t%e\n", -LAL_REAL(omega), LAL_IMAG(omega), a );
     else
-      fprintf( stdout, "%.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, creal(A), cimag(A), creal(omega), cimag(omega) );
+      fprintf( stdout, "%.4f \t(%.5f,%+.5f)\t(%+.6f,%.6f)\n", a, LAL_REAL(A), LAL_IMAG(A), LAL_REAL(omega), LAL_IMAG(omega) );
   }
 
   XLALDestroyBlackHoleModeTable( modetab );

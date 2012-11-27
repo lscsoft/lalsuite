@@ -599,7 +599,7 @@ REAL4FrequencySeries * powerspec( REAL4TimeSeries *series, REAL8 segdur, LIGOTim
 		dynrange_ = 1e20;
 		response = getresp( calibfile, series->name, &series->epoch, spectrum->deltaF, seglen, dynrange_ );
 		for ( k = 1; k < spectrum->data->length; ++k )
-			spectrum->data->data[k] *= cabs2f( response->data->data[k] );
+			spectrum->data->data[k] *= LAL_CABS2F( response->data->data[k] );
 		XLALDestroyCOMPLEX8FrequencySeries( response );
 	}
 
@@ -797,7 +797,7 @@ int dbg_fsdump( COMPLEX8FrequencySeries *series, const char *fname )
 		fp = fopen( fname, "w" );
 		for ( k = 1; k < series->data->length; ++k )
 			fprintf( fp, "%e\t%e\t%e\n", k * series->deltaF,
-					cabsf(series->data->data[k]), cargf(series->data->data[k]) );
+					LAL_CABSF(series->data->data[k]), LAL_CARGF(series->data->data[k]) );
 		fclose( fp );
 	}
 	return 0;
