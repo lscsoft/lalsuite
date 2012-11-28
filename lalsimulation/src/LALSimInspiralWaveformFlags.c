@@ -30,6 +30,8 @@
  */
 struct tagLALSimInspiralWaveformFlags
 {
+    LALSimInspiralSpinOrder spinO; /**< PN order of spin effects */
+    LALSimInspiralTidalOrder tideO; /**< PN order of spin effects */
     LALSimInspiralInteraction interactionChoice; /**< Flag to control spin/tidal effects */
     LALSimInspiralFrameAxis axisChoice; /**< Flag to set frame z-axis convention */
     LALSimInspiralModesChoice modesChoice; /**< Flag to control which modes are included in IMR models */
@@ -53,6 +55,10 @@ LALSimInspiralWaveformFlags *XLALSimInspiralCreateWaveformFlags(void)
     }
 
     /* Set all flags to their default values */
+    XLALSimInspiralSetSpinOrder(waveFlags,
+            LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT);
+    XLALSimInspiralSetTidalOrder(waveFlags,
+            LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT);
     XLALSimInspiralSetInteraction(waveFlags,
             LAL_SIM_INSPIRAL_INTERACTION_DEFAULT);
     XLALSimInspiralSetFrameAxis(waveFlags,
@@ -86,9 +92,93 @@ bool XLALSimInspiralWaveformFlagsIsDefault(
     /* Check every field of WaveformFlags, each returns 1/0 for true/false.
      * Return true iff waveFlags is non-NULL and all checks are true. */
     return !waveFlags || (
+        XLALSimInspiralSpinOrderIsDefault(waveFlags->spinO) &&
+        XLALSimInspiralTidalOrderIsDefault(waveFlags->tideO) &&
         XLALSimInspiralInteractionIsDefault(waveFlags->interactionChoice) &&
         XLALSimInspiralFrameAxisIsDefault(waveFlags->axisChoice) &&
         XLALSimInspiralModesChoiceIsDefault(waveFlags->modesChoice));
+}
+
+/**
+ * Set the LALSimInspiralSpinOrder within a LALSimInspiralWaveformFlags struct
+ */
+void XLALSimInspiralSetSpinOrder(
+        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
+
+        LALSimInspiralSpinOrder spinO /**< value to set flag to */
+        )
+{
+    waveFlags->spinO = spinO;
+    return;
+}
+
+/**
+ * Get the LALSimInspiralSpinOrder within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT if waveFlags is NULL
+ */
+LALSimInspiralSpinOrder XLALSimInspiralGetSpinOrder(
+        LALSimInspiralWaveformFlags *waveFlags
+        )
+{
+    if ( waveFlags )
+        return waveFlags->spinO;
+    else
+        return LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT;
+}
+
+/**
+ * Returns true if LALSimInspiralSpinOrder has default value
+ * returns false otherwise
+ */
+bool XLALSimInspiralSpinOrderIsDefault(
+        LALSimInspiralSpinOrder spinO
+        )
+{
+    if( spinO == LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT )
+        return true;
+    else
+        return false;
+}
+
+/**
+ * Set the LALSimInspiralTidalOrder within a LALSimInspiralWaveformFlags struct
+ */
+void XLALSimInspiralSetTidalOrder(
+        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
+
+        LALSimInspiralSpinOrder tideO /**< value to set flag to */
+        )
+{
+    waveFlags->tideO = tideO;
+    return;
+}
+
+/**
+ * Get the LALSimInspiralTidalOrder within a LALSimInspiralWaveformFlags struct,
+ * or LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT if waveFlags is NULL
+ */
+LALSimInspiralTidalOrder XLALSimInspiralGetTidalOrder(
+        LALSimInspiralWaveformFlags *waveFlags
+        )
+{
+    if ( waveFlags )
+        return waveFlags->tideO;
+    else
+        return LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT;
+}
+
+/**
+ * Returns true if LALSimInspiralTidalOrder has default value
+ * returns false otherwise
+ */
+bool XLALSimInspiralTidalOrderIsDefault(
+        LALSimInspiralTidalOrder tideO
+        )
+{
+    if( tideO == LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT )
+        return true;
+    else
+        return false;
 }
 
 
