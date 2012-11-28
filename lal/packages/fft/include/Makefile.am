@@ -5,6 +5,7 @@ endif
 pkginclude_HEADERS = \
 	ComplexFFT.h \
 	RealFFT.h \
+	FFTWMutex.h \
 	TimeFreqFFT.h \
 	$(CUDAHDRS)
 

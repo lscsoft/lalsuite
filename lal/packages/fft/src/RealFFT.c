@@ -25,8 +25,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
-
-#include "FFTWMutex.h"
+#include <lal/FFTWMutex.h>
 
 /**
  * \addtogroup RealFFT_h
