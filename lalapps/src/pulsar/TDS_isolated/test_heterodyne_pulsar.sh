@@ -85,7 +85,7 @@ if [ -n "$LALPULSAR_PREFIX" ]; then
 elif [ -n "$LALSUITE_TOP_SRCDIR" ]; then
         EEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/earth00-19-DE405.dat.gz
         SEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/sun00-19-DE405.dat.gz
-        TEPHEM=$LALPULSAR_PREFIX/share/lalpulsar/tdb_2000-2019.dat.gz
+        TEPHEM=$LALSUITE_TOP_SRCDIR/lalpulsar/test/tdb_2000-2019.dat.gz
 else
 	echo Need an environment variable that points to the LALPulsar location 
         exit 2
