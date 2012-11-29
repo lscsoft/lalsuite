@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/VectorOps.h>
@@ -90,33 +90,7 @@ COMPLEX8Vector * XLALCCVectorDivide(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    REAL4 br = b->re;
-    REAL4 bi = b->im;
-
-    if (fabs(br) > fabs(bi))
-    {
-      REAL4 ratio = bi/br;
-      REAL4 denom = br + ratio*bi;
-
-      c->re = (ar + ratio*ai)/denom;
-      c->im = (ai - ratio*ar)/denom;
-    }
-    else
-    {
-      REAL4 ratio = br/bi;
-      REAL4 denom = bi + ratio*br;
-
-      c->re = (ar*ratio + ai)/denom;
-      c->im = (ai*ratio - ar)/denom;
-    }
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ / *b++;
 
   return out;
 }
@@ -146,33 +120,7 @@ COMPLEX16Vector * XLALZZVectorDivide(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    REAL8 br = b->re;
-    REAL8 bi = b->im;
-
-    if (fabs(br) > fabs(bi))
-    {
-      REAL8 ratio = bi/br;
-      REAL8 denom = br + ratio*bi;
-
-      c->re = (ar + ratio*ai)/denom;
-      c->im = (ai - ratio*ar)/denom;
-    }
-    else
-    {
-      REAL8 ratio = br/bi;
-      REAL8 denom = bi + ratio*br;
-
-      c->re = (ar*ratio + ai)/denom;
-      c->im = (ai*ratio - ar)/denom;
-    }
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ / *b++;
 
   return out;
 }
@@ -202,19 +150,7 @@ COMPLEX8Vector * XLALCCVectorMultiply(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    REAL4 br = b->re;
-    REAL4 bi = b->im;
-
-    c->re = ar*br - ai*bi;
-    c->im = ar*bi + ai*br;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ * *b++;
 
   return out;
 }
@@ -244,19 +180,7 @@ COMPLEX16Vector * XLALZZVectorMultiply(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    REAL8 br = b->re;
-    REAL8 bi = b->im;
-
-    c->re = ar*br - ai*bi;
-    c->im = ar*bi + ai*br;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ * *b++;
 
   return out;
 }
@@ -286,19 +210,7 @@ COMPLEX8Vector * XLALCCVectorMultiplyConjugate(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    REAL4 br = b->re;
-    REAL4 bi = b->im;
-
-    c->re = ar*br + ai*bi;
-    c->im = ai*br - ar*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ * conjf(*b++);
 
   return out;
 }
@@ -328,19 +240,7 @@ COMPLEX16Vector * XLALZZVectorMultiplyConjugate(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    REAL8 br = b->re;
-    REAL8 bi = b->im;
-
-    c->re = ar*br + ai*bi;
-    c->im = ai*br - ar*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ * conj(*b++);
 
   return out;
 }
@@ -370,18 +270,7 @@ COMPLEX8Vector * XLALSCVectorMultiply(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL4 fac = *a;
-    REAL4 br  = b->re;
-    REAL4 bi  = b->im;
-
-    c->re = fac*br;
-    c->im = fac*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ * *b++;
 
   return out;
 }
@@ -410,18 +299,7 @@ COMPLEX16Vector * XLALDZVectorMultiply(
   n = out->length;
 
   while (n-- > 0)
-  {
-    REAL8 fac = *a;
-    REAL8 br  = b->re;
-    REAL8 bi  = b->im;
-
-    c->re = fac*br;
-    c->im = fac*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+    *c++ = *a++ * *b++;
 
   return out;
 }
@@ -504,11 +382,6 @@ LALCCVectorDivide (
     const COMPLEX8Vector *in2
     )
 {
-  COMPLEX8 *a;
-  COMPLEX8 *b;
-  COMPLEX8 *c;
-  INT4      n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -526,39 +399,7 @@ LALCCVectorDivide (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    REAL4 br = b->re;
-    REAL4 bi = b->im;
-
-    if (fabs(br) > fabs(bi))
-    {
-      REAL4 ratio = bi/br;
-      REAL4 denom = br + ratio*bi;
-
-      c->re = (ar + ratio*ai)/denom;
-      c->im = (ai - ratio*ar)/denom;
-    }
-    else
-    {
-      REAL4 ratio = br/bi;
-      REAL4 denom = bi + ratio*br;
-
-      c->re = (ar*ratio + ai)/denom;
-      c->im = (ai*ratio - ar)/denom;
-    }
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALCCVectorDivide(out, in1, in2);
 
   RETURN (status);
 }
@@ -573,11 +414,6 @@ LALZZVectorDivide (
     const COMPLEX16Vector *in2
     )
 {
-  COMPLEX16 *a;
-  COMPLEX16 *b;
-  COMPLEX16 *c;
-  INT4       n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -595,39 +431,7 @@ LALZZVectorDivide (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    REAL8 br = b->re;
-    REAL8 bi = b->im;
-
-    if (fabs(br) > fabs(bi))
-    {
-      REAL8 ratio = bi/br;
-      REAL8 denom = br + ratio*bi;
-
-      c->re = (ar + ratio*ai)/denom;
-      c->im = (ai - ratio*ar)/denom;
-    }
-    else
-    {
-      REAL8 ratio = br/bi;
-      REAL8 denom = bi + ratio*br;
-
-      c->re = (ar*ratio + ai)/denom;
-      c->im = (ai*ratio - ar)/denom;
-    }
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALZZVectorDivide(out, in1, in2);
 
   RETURN (status);
 }
@@ -643,11 +447,6 @@ LALCCVectorMultiply (
     const COMPLEX8Vector *in2
     )
 {
-  COMPLEX8 *a;
-  COMPLEX8 *b;
-  COMPLEX8 *c;
-  INT4      n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -665,25 +464,7 @@ LALCCVectorMultiply (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    REAL4 br = b->re;
-    REAL4 bi = b->im;
-
-    c->re = ar*br - ai*bi;
-    c->im = ar*bi + ai*br;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALCCVectorMultiply(out, in1, in2);
 
   RETURN (status);
 }
@@ -698,11 +479,6 @@ LALZZVectorMultiply (
     const COMPLEX16Vector *in2
     )
 {
-  COMPLEX16 *a;
-  COMPLEX16 *b;
-  COMPLEX16 *c;
-  INT4       n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -720,25 +496,7 @@ LALZZVectorMultiply (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    REAL8 br = b->re;
-    REAL8 bi = b->im;
-
-    c->re = ar*br - ai*bi;
-    c->im = ar*bi + ai*br;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALZZVectorMultiply(out, in1, in2);
 
   RETURN (status);
 }
@@ -753,11 +511,6 @@ LALCCVectorMultiplyConjugate (
     const COMPLEX8Vector *in2
     )
 {
-  COMPLEX8 *a;
-  COMPLEX8 *b;
-  COMPLEX8 *c;
-  INT4      n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -775,25 +528,7 @@ LALCCVectorMultiplyConjugate (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL4 ar = a->re;
-    REAL4 ai = a->im;
-    REAL4 br = b->re;
-    REAL4 bi = b->im;
-
-    c->re = ar*br + ai*bi;
-    c->im = ai*br - ar*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALCCVectorMultiplyConjugate(out, in1, in2);
 
   RETURN (status);
 }
@@ -808,11 +543,6 @@ LALZZVectorMultiplyConjugate (
     const COMPLEX16Vector *in2
     )
 {
-  COMPLEX16 *a;
-  COMPLEX16 *b;
-  COMPLEX16 *c;
-  INT4       n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -830,25 +560,7 @@ LALZZVectorMultiplyConjugate (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL8 ar = a->re;
-    REAL8 ai = a->im;
-    REAL8 br = b->re;
-    REAL8 bi = b->im;
-
-    c->re = ar*br + ai*bi;
-    c->im = ai*br - ar*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALZZVectorMultiplyConjugate(out, in1, in2);
 
   RETURN (status);
 }
@@ -863,11 +575,6 @@ LALSCVectorMultiply (
     const COMPLEX8Vector *in2
     )
 {
-  REAL4    *a;
-  COMPLEX8 *b;
-  COMPLEX8 *c;
-  INT4      n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -885,24 +592,7 @@ LALSCVectorMultiply (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL4 fac = *a;
-    REAL4 br  = b->re;
-    REAL4 bi  = b->im;
-
-    c->re = fac*br;
-    c->im = fac*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALSCVectorMultiply(out, in1, in2);
 
   RETURN (status);
 }
@@ -917,11 +607,6 @@ LALDZVectorMultiply (
     const COMPLEX16Vector *in2
     )
 {
-  REAL8     *a;
-  COMPLEX16 *b;
-  COMPLEX16 *c;
-  INT4       n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -939,24 +624,7 @@ LALDZVectorMultiply (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    REAL8 fac = *a;
-    REAL8 br  = b->re;
-    REAL8 bi  = b->im;
-
-    c->re = fac*br;
-    c->im = fac*bi;
-
-    ++a;
-    ++b;
-    ++c;
-  }
+  XLALDZVectorMultiply(out, in1, in2);
 
   RETURN (status);
 }
@@ -971,11 +639,6 @@ LALSSVectorMultiply (
     const REAL4Vector    *in2
     )
 {
-  REAL4 *a;
-  REAL4 *b;
-  REAL4 *c;
-  INT4   n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -993,15 +656,7 @@ LALSSVectorMultiply (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    *c++ = (*a++)*(*b++);
-  }
+  XLALSSVectorMultiply(out, in1, in2);
 
   RETURN (status);
 }
@@ -1016,11 +671,6 @@ LALDDVectorMultiply (
     const REAL8Vector    *in2
     )
 {
-  REAL8 *a;
-  REAL8 *b;
-  REAL8 *c;
-  INT4   n;
-
   INITSTATUS(status);
 
   ASSERT (out, status, VECTOROPSH_ENULL, VECTOROPSH_MSGENULL);
@@ -1038,15 +688,7 @@ LALDDVectorMultiply (
   ASSERT (in2->length == out->length, status,
           VECTOROPSH_ESZMM, VECTOROPSH_MSGESZMM);
 
-  a = in1->data;
-  b = in2->data;
-  c = out->data;
-  n = out->length;
-
-  while (n-- > 0)
-  {
-    *c++ = (*a++)*(*b++);
-  }
+  XLALDDVectorMultiply(out, in1, in2);
 
   RETURN (status);
 }
