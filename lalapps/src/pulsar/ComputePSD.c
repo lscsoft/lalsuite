@@ -340,8 +340,8 @@ main(int argc, char *argv[])
 
       /* compute math. operation over IFOs for this frequency */
       finalNormSFT->data[k] = math_op(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
-      if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
-	return EXIT_FAILURE;
+      if ( isnan( finalNormSFT->data[k] ) )
+        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in NormSFT bin data[%d] = NAN ... exiting\n", k );
 
     } /* over freq bins */
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
