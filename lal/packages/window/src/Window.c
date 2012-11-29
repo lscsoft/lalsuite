@@ -31,8 +31,6 @@
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_sf_bessel.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/Sequence.h>
@@ -292,7 +290,7 @@ COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequenc
 		XLAL_ERROR_NULL(XLAL_EBADLEN);
 
 	for(i = 0; i < window->data->length; i++)
-		sequence->data[i] = XLALCOMPLEX16MulReal(sequence->data[i], window->data->data[i] * norm);
+		sequence->data[i] *= window->data->data[i] * norm;
 
 	return sequence;
 }
@@ -332,7 +330,7 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
 		XLAL_ERROR_NULL(XLAL_EBADLEN);
 
 	for(i = 0; i < window->data->length; i++)
-		sequence->data[i] = XLALCOMPLEX8MulReal(sequence->data[i], window->data->data[i] * norm);
+		sequence->data[i] *= window->data->data[i] * norm;
 
 	return sequence;
 }
