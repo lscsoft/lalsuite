@@ -213,7 +213,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     if(!this) {fprintf(stderr,"No command line arguments given!\n"); exit(1);}
     while(this)
     {
-        if(!strcmp(this->param,"--ifo"))
+        if(!strcmp(this->param,"--ifo") || !strcmp(this->param,"--IFO"))
         for(i=0;this->value[i]!='\0';i++)
             if(this->value[i]=='[' || this->value[i]==']')
             {
