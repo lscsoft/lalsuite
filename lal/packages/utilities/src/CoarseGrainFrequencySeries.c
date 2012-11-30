@@ -19,7 +19,7 @@
 
 /* ---------- see CoarseGrainFrequencySeries.h for doxygen documentation ---------- */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
 #include <lal/CoarseGrainFrequencySeries.h>
@@ -689,20 +689,19 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     if ( lamMax != (REAL8) lMax )
     {
-      value.re = ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].re;
+      value = ( lamMax - (REAL8) lMax ) * creal(input->data->data[lMax+1]);
     }
     else {
-      value.re = 0.0;
+      value = 0.0;
     }
 
     for ( l = 1 ; l <= lMax ; ++l)
     {
-      value.re += input->data->data[l].re;
+      value += creal(input->data->data[l]);
     }
 
-    output->data->data[0].re = ( input->data->data[0].re + 2.0 * value.re )
+    output->data->data[0] = creal( input->data->data[0] + 2.0 * value )
       / resRatio;
-    output->data->data[0].im = 0.0;
 
     /* :TODO: ?  check that imaginary parts of DC vanish? */
 
@@ -721,12 +720,11 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
     /* printf("%f %d\n",lamMin,lMin); */
 
     if ( lamMin != (REAL8) lMin ) {
-      value.re = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].re;
-      value.im = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].im;
+      value = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1];
     }
     else
     {
-      value.re = value.im = 0.0;
+      value = 0.0;
     }
 
     lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
@@ -736,17 +734,14 @@ LALCCoarseGrainFrequencySeries(LALStatus                      *status,
 
     for ( l = lMin ; l <= lMax ; ++l)
     {
-      value.re += input->data->data[l].re;
-      value.im += input->data->data[l].im;
+      value += input->data->data[l];
     }
 
     if ( lamMax != (REAL8) lMax ) {
-      value.re += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].re;
-      value.im += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].im;
+      value += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1];
     }
 
-    output->data->data[k].re = value.re / resRatio;
-    output->data->data[k].im = value.im / resRatio;
+    output->data->data[k] = value / resRatio;
 
   }
 
@@ -950,20 +945,19 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
     if ( lamMax != (REAL8) lMax )
     {
-      value.re = ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].re;
+      value = creal(( lamMax - (REAL8) lMax ) * input->data->data[lMax+1]);
     }
     else {
-      value.re = 0.0;
+      value = 0.0;
     }
 
     for ( l = 1 ; l <= lMax ; ++l)
     {
-      value.re += input->data->data[l].re;
+      value += creal(input->data->data[l]);
     }
 
-    output->data->data[0].re = ( input->data->data[0].re + 2.0 * value.re )
+    output->data->data[0] = creal( input->data->data[0] + 2.0 * value )
       / resRatio;
-    output->data->data[0].im = 0.0;
 
     /* :TODO: ?  check that imaginary parts of DC vanish? */
 
@@ -982,12 +976,11 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
     /* printf("%f %d\n",lamMin,lMin); */
 
     if ( lamMin != (REAL8) lMin ) {
-      value.re = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].re;
-      value.im = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1].im;
+      value = ( (REAL8) lMin - lamMin ) * input->data->data[lMin-1];
     }
     else
     {
-      value.re = value.im = 0.0;
+      value = 0.0;
     }
 
     lamMax = offset + ( (REAL8) k + 0.5 ) * resRatio - 0.5 ;
@@ -997,17 +990,14 @@ LALZCoarseGrainFrequencySeries(LALStatus                      *status,
 
     for ( l = lMin ; l <= lMax ; ++l)
     {
-      value.re += input->data->data[l].re;
-      value.im += input->data->data[l].im;
+      value += input->data->data[l];
     }
 
     if ( lamMax != (REAL8) lMax ) {
-      value.re += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].re;
-      value.im += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1].im;
+      value += ( lamMax - (REAL8) lMax ) * input->data->data[lMax+1];
     }
 
-    output->data->data[k].re = value.re / resRatio;
-    output->data->data[k].im = value.im / resRatio;
+    output->data->data[k] = value / resRatio;
 
   }
 
