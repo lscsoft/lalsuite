@@ -77,10 +77,34 @@ EOF
    my $dist2 = -1.0;
    my $dist3 = -1.0;
    my $dist4 = -1.0;
+   my $dist5 = -1.0;
+   my $dist6 = -1.0;
+   my $dist7 = -1.0;
+   my $dist8 = -1.0;
+   my $dist9 = -1.0;
+   my $dist10 = -1.0;
+   my $dist11 = -1.0;
+   my $dist12 = -1.0;
+   my $dist13 = -1.0;
+   my $dist14 = -1.0;
+   my $dist15 = -1.0;
+   my $dist16 = -1.0;
    my @pt1 = (0, 0);
    my @pt2 = (0, 0);
    my @pt3 = (0, 0);
    my @pt4 = (0, 0);
+   my @pt5 = (0, 0);
+   my @pt6 = (0, 0);
+   my @pt7 = (0, 0);
+   my @pt8 = (0, 0);
+   my @pt9 = (0, 0);
+   my @pt10 = (0, 0);
+   my @pt11 = (0, 0);
+   my @pt12 = (0, 0);
+   my @pt13 = (0, 0);
+   my @pt14 = (0, 0);
+   my @pt15 = (0, 0);
+   my @pt16 = (0, 0);
    open(SKYFILE, $skygrid) or die "Cannot open $skygrid $!";
    while(my $line=<SKYFILE>) {
       if($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
@@ -95,9 +119,33 @@ EOF
          }
 
          if($dist<$dist1 || $dist1<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
             @pt4 = @pt3;
             @pt3 = @pt2;
             @pt2 = @pt1;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $dist4 = $dist3;
             $dist3 = $dist2;
             $dist2 = $dist1;
@@ -105,23 +153,275 @@ EOF
             $pt1[1] = $2;
             $dist1 = $dist;
          } elsif ($dist<$dist2 || $dist2<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
             @pt4 = @pt3;
             @pt3 = @pt2;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $dist4 = $dist3;
             $dist3 = $dist2;
             $pt2[0] = $1;
             $pt2[1] = $2;
             $dist2 = $dist;
          } elsif ($dist<$dist3 || $dist3<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
             @pt4 = @pt3;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $dist4 = $dist3;
             $pt3[0] = $1;
             $pt3[1] = $2;
             $dist3 = $dist;
          } elsif ($dist<$dist4 || $dist4<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $pt4[0] = $1;
             $pt4[1] = $2;
             $dist4 = $dist;
+         } elsif ($dist<$dist5 || $dist5<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $pt5[0] = $1;
+            $pt5[1] = $2;
+            $dist5 = $dist;
+         } elsif ($dist<$dist6 || $dist6<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $pt6[0] = $1;
+            $pt6[1] = $2;
+            $dist6 = $dist;
+         } elsif ($dist<$dist7 || $dist7<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $pt7[0] = $1;
+            $pt7[1] = $2;
+            $dist7 = $dist;
+         } elsif ($dist<$dist8 || $dist8<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $pt8[0] = $1;
+            $pt8[1] = $2;
+            $dist8 = $dist;
+         } elsif ($dist<$dist9 || $dist9<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $pt9[0] = $1;
+            $pt9[1] = $2;
+            $dist9 = $dist;
+         } elsif ($dist<$dist10 || $dist10<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $pt10[0] = $1;
+            $pt10[1] = $2;
+            $dist10 = $dist;
+         } elsif ($dist<$dist11 || $dist11<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $pt11[0] = $1;
+            $pt11[1] = $2;
+            $dist11 = $dist;
+         } elsif ($dist<$dist12 || $dist12<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $pt12[0] = $1;
+            $pt12[1] = $2;
+            $dist12 = $dist;
+         } elsif ($dist<$dist13 || $dist13<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $pt13[0] = $1;
+            $pt13[1] = $2;
+            $dist13 = $dist;
+         } elsif ($dist<$dist14 || $dist14<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $pt14[0] = $1;
+            $pt14[1] = $2;
+            $dist14 = $dist;
+         } elsif ($dist<$dist15 || $dist15<0.0) {
+            @pt16 = @pt15;
+            $dist16 = $dist15;
+            $pt15[0] = $1;
+            $pt15[1] = $2;
+            $dist15 = $dist;
+         } elsif ($dist<$dist16 || $dist16<0.0) {
+            $pt16[0] = $1;
+            $pt16[1] = $2;
+            $dist16 = $dist;
          }
       }
    }
@@ -133,6 +433,18 @@ $pt1[0] $pt1[1]
 $pt2[0] $pt2[1]
 $pt3[0] $pt3[1]
 $pt4[0] $pt4[1]
+$pt5[0] $pt5[1]
+$pt6[0] $pt6[1]
+$pt7[0] $pt7[1]
+$pt8[0] $pt8[1]
+$pt9[0] $pt9[1]
+$pt10[0] $pt10[1]
+$pt11[0] $pt11[1]
+$pt12[0] $pt12[1]
+$pt13[0] $pt13[1]
+$pt14[0] $pt14[1]
+$pt15[0] $pt15[1]
+$pt16[0] $pt16[1]
 EOF
    close(SKYFILE2);
    
@@ -216,15 +528,39 @@ randSeed $mfdrandseed
 EOF
    close(MFDCONFIG);
 
-   $dist1 = -1.0;
-   $dist2 = -1.0;
-   $dist3 = -1.0;
-   $dist4 = -1.0;
-   @pt1 = (0, 0);
-   @pt2 = (0, 0);
-   @pt3 = (0, 0);
-   @pt4 = (0, 0);
-   open(SKYFILE, $skygrid2) or die "Cannot open $skygrid2 $!";
+   my $dist1 = -1.0;
+   my $dist2 = -1.0;
+   my $dist3 = -1.0;
+   my $dist4 = -1.0;
+   my $dist5 = -1.0;
+   my $dist6 = -1.0;
+   my $dist7 = -1.0;
+   my $dist8 = -1.0;
+   my $dist9 = -1.0;
+   my $dist10 = -1.0;
+   my $dist11 = -1.0;
+   my $dist12 = -1.0;
+   my $dist13 = -1.0;
+   my $dist14 = -1.0;
+   my $dist15 = -1.0;
+   my $dist16 = -1.0;
+   my @pt1 = (0, 0);
+   my @pt2 = (0, 0);
+   my @pt3 = (0, 0);
+   my @pt4 = (0, 0);
+   my @pt5 = (0, 0);
+   my @pt6 = (0, 0);
+   my @pt7 = (0, 0);
+   my @pt8 = (0, 0);
+   my @pt9 = (0, 0);
+   my @pt10 = (0, 0);
+   my @pt11 = (0, 0);
+   my @pt12 = (0, 0);
+   my @pt13 = (0, 0);
+   my @pt14 = (0, 0);
+   my @pt15 = (0, 0);
+   my @pt16 = (0, 0);
+  open(SKYFILE, $skygrid2) or die "Cannot open $skygrid $!";
    while(my $line=<SKYFILE>) {
       if($line =~ /^(\d+.\d+) (-?\d+.\d+)/) {
 
@@ -238,9 +574,33 @@ EOF
          }
 
          if($dist<$dist1 || $dist1<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
             @pt4 = @pt3;
             @pt3 = @pt2;
             @pt2 = @pt1;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $dist4 = $dist3;
             $dist3 = $dist2;
             $dist2 = $dist1;
@@ -248,23 +608,275 @@ EOF
             $pt1[1] = $2;
             $dist1 = $dist;
          } elsif ($dist<$dist2 || $dist2<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
             @pt4 = @pt3;
             @pt3 = @pt2;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $dist4 = $dist3;
             $dist3 = $dist2;
             $pt2[0] = $1;
             $pt2[1] = $2;
             $dist2 = $dist;
          } elsif ($dist<$dist3 || $dist3<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
             @pt4 = @pt3;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $dist4 = $dist3;
             $pt3[0] = $1;
             $pt3[1] = $2;
             $dist3 = $dist;
          } elsif ($dist<$dist4 || $dist4<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            @pt5 = @pt4;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $dist5 = $dist4;
             $pt4[0] = $1;
             $pt4[1] = $2;
             $dist4 = $dist;
+         } elsif ($dist<$dist5 || $dist5<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            @pt6 = @pt5;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $dist6 = $dist5;
+            $pt5[0] = $1;
+            $pt5[1] = $2;
+            $dist5 = $dist;
+         } elsif ($dist<$dist6 || $dist6<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            @pt7 = @pt6;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $dist7 = $dist6;
+            $pt6[0] = $1;
+            $pt6[1] = $2;
+            $dist6 = $dist;
+         } elsif ($dist<$dist7 || $dist7<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            @pt8 = @pt7;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $dist8 = $dist7;
+            $pt7[0] = $1;
+            $pt7[1] = $2;
+            $dist7 = $dist;
+         } elsif ($dist<$dist8 || $dist8<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            @pt9 = @pt8;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $dist9 = $dist8;
+            $pt8[0] = $1;
+            $pt8[1] = $2;
+            $dist8 = $dist;
+         } elsif ($dist<$dist9 || $dist9<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            @pt10 = @pt9;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $dist10 = $dist9;
+            $pt9[0] = $1;
+            $pt9[1] = $2;
+            $dist9 = $dist;
+         } elsif ($dist<$dist10 || $dist10<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            @pt11 = @pt10;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $dist11 = $dist10;
+            $pt10[0] = $1;
+            $pt10[1] = $2;
+            $dist10 = $dist;
+         } elsif ($dist<$dist11 || $dist11<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            @pt12 = @pt11;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $dist12 = $dist11;
+            $pt11[0] = $1;
+            $pt11[1] = $2;
+            $dist11 = $dist;
+         } elsif ($dist<$dist12 || $dist12<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            @pt13 = @pt12;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $dist13 = $dist12;
+            $pt12[0] = $1;
+            $pt12[1] = $2;
+            $dist12 = $dist;
+         } elsif ($dist<$dist13 || $dist13<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            @pt14 = @pt13;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $dist14 = $dist13;
+            $pt13[0] = $1;
+            $pt13[1] = $2;
+            $dist13 = $dist;
+         } elsif ($dist<$dist14 || $dist14<0.0) {
+            @pt16 = @pt15;
+            @pt15 = @pt14;
+            $dist16 = $dist15;
+            $dist15 = $dist14;
+            $pt14[0] = $1;
+            $pt14[1] = $2;
+            $dist14 = $dist;
+         } elsif ($dist<$dist15 || $dist15<0.0) {
+            @pt16 = @pt15;
+            $dist16 = $dist15;
+            $pt15[0] = $1;
+            $pt15[1] = $2;
+            $dist15 = $dist;
+         } elsif ($dist<$dist16 || $dist16<0.0) {
+            $pt16[0] = $1;
+            $pt16[1] = $2;
+            $dist16 = $dist;
          }
       }
    }
@@ -276,6 +888,18 @@ $pt1[0] $pt1[1]
 $pt2[0] $pt2[1]
 $pt3[0] $pt3[1]
 $pt4[0] $pt4[1]
+$pt5[0] $pt5[1]
+$pt6[0] $pt6[1]
+$pt7[0] $pt7[1]
+$pt8[0] $pt8[1]
+$pt9[0] $pt9[1]
+$pt10[0] $pt10[1]
+$pt11[0] $pt11[1]
+$pt12[0] $pt12[1]
+$pt13[0] $pt13[1]
+$pt14[0] $pt14[1]
+$pt15[0] $pt15[1]
+$pt16[0] $pt16[1]
 EOF
    close(SKYFILE2);
    
