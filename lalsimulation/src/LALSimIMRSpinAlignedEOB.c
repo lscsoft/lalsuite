@@ -264,12 +264,11 @@ int XLALSimIMRSpinAlignedEOBWaveform(
 
   /* Calculate the resample factor for attaching the ringdown */
   /* We want it to be a power of 2 */
-  /* Of course, we only want to do this if the required SR > current SR... */
-  /* The form chosen for the resampleEstimate will essentially set */
-  /* deltaT = M / 20. ( or less taking into account the power of 2 stuff */
+  /* If deltaT > Mtot/50, reduce deltaT by the smallest power of two for which deltaT < Mtot/50 */
   resampEstimate = 50. * deltaT / mTScaled;
   resampFac = 1;
-
+  //resampFac = 1 << (UINT4)ceil(log2(resampEstimate));
+  
   if ( resampEstimate > 1. )
   {
     resampPwr = (UINT4)ceil( log2( resampEstimate ) );
@@ -278,6 +277,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
       resampFac *= 2u;
     }
   }
+  
 
   /* Allocate the values vector to contain the initial conditions */
   /* Since we have aligned spins, we can use the 4-d vector as in the non-spin case */
@@ -415,7 +415,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
    */
 
   /* Set the initial conditions. For now we use the generic case */
-  /* TODO: Simplify this if need be */
+  /* Can be simplified if spin-aligned initial conditions solver available. The cost of generic code is negligible though. */
   REAL8Vector *tmpValues = XLALCreateREAL8Vector( 14 );
   if ( !tmpValues )
   {
@@ -428,6 +428,8 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   memset( tmpValues->data, 0, tmpValues->length * sizeof( REAL8 ) );
 
   /* We set inc zero here to make it easier to go from Cartesian to spherical coords */
+  /* No problem setting inc to zero in solving spin-aligned initial conditions. */
+  /* inc is not zero in generating the final h+ and hx */
   if ( XLALSimIMRSpinEOBInitialConditions( tmpValues, m1, m2, fMin, 0, s1Data, s2Data, &seobParams ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( tmpValues );
@@ -690,6 +692,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+  /* Calculate the time of amplitude peak. Despite the name, this is in fact the shift in peak time from peak orb freq time */
+  timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaT(2, 2, eta,  a);
+ 
   /* Apply to the high sampled part */
   //out = fopen( "saWavesHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
@@ -713,7 +718,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     sigReHi->data[i] = (REAL4) hLM.re;
     sigImHi->data[i] = (REAL4) hLM.im;
     sigAmpSqHi = hLM.re*hLM.re+hLM.im*hLM.im;
-    if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0) 
+    if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0 && (i-1)*deltaTHigh/mTScaled < timePeak - timewavePeak) 
     {
       timewavePeak = (i-1)*deltaTHigh/mTScaled;
       peakCount += 1;
@@ -721,21 +726,17 @@ int XLALSimIMRSpinAlignedEOBWaveform(
     oldsigAmpSqHi = sigAmpSqHi;
   }
   //fclose(out);
-  /*if (timewavePeak < 1.0e-16)
+  if (timewavePeak < 1.0e-16 || peakCount == 0)
   {
-    printf("YP::warning: could not locate mode peak.\n");
-  }*/
-  /* Failed to locate mode peak, use calibrated timeshiftPeak instead */
-
+    printf("YP::warning: could not locate mode peak, use calibrated time shift of amplitude peak instead.\n");
+    /* NOTE: instead of looking for the actual peak, use the calibrated value,    */
+    /*       ignoring the error in using interpolated NQC instead of iterated NQC */
+    timewavePeak = timePeak - timewavePeak;
+  }
+  
   /**
    * STEP 6) Calculate QNM excitation coefficients using hi-sampling data
    */
-
-  /* Calculate the time of amplitude peak */
-  /* NOTE: instead of looking for the actual peak, use the calibrated value,    */
-  /*       ignoring the error in using interpolated NQC instead of iterated NQC */
-  timewavePeak = XLALSimIMREOBGetNRSpinPeakDeltaT(2, 2, eta,  a);
-  timewavePeak = timePeak - timewavePeak;
 
   /*out = fopen( "saInspWaveHi.dat", "w" );
   for ( i = 0; i < retLen; i++ )
