@@ -105,15 +105,6 @@ const CHAR *const DopplerCoordinateNames[DOPPLERCOORD_LAST][2] = {
   [DOPPLERCOORD_NU2] = {"nu2", "'global correlation' f2dot coordinate nu_2"},
   [DOPPLERCOORD_NU3] = {"nu3", "'global correlation' f3dot coordinate nu_3"},
 
-  /* Karl's coordinates */
-  [DOPPLERCOORD_KAPPA_S] = {"kappa_s", "Karl's coordinates 'kappa_s': cosine-part of Earth-spin sky-coordinate"},
-  [DOPPLERCOORD_SIGMA_S] = {"sigma_s", "Karl's coordinates 'sigma_s': sine-part of Earth-spin sky-coordinate"},
-  [DOPPLERCOORD_KAPPA_O] = {"kappa_o", "Karl's coordinates 'kappa_o': cosine-part of Earth-orbit sky-coordinate"},
-  [DOPPLERCOORD_SIGMA_O] = {"sigma_o", "Karl's coordinates 'sigma_o': sine-part of Earth-orbit sky-coordinate"},
-  [DOPPLERCOORD_OMEGA_0] = {"omega_0", "Karl's coordinates 'omega_0': rescaled natural frequency"},
-  [DOPPLERCOORD_OMEGA_1] = {"omega_1", "Karl's coordinates 'omega_1': rescaled natural 1st spindown"},
-  [DOPPLERCOORD_OMEGA_2] = {"omega_2", "Karl's coordinates 'omega_2': rescaled natural 2nd spindown"},
-  [DOPPLERCOORD_OMEGA_3] = {"omega_3", "Karl's coordinates 'omega_3': rescaled natural 3rd spindown"},
 };
 
 /*---------- DEFINES ----------*/
@@ -147,6 +138,8 @@ const CHAR *const DopplerCoordinateNames[DOPPLERCOORD_LAST][2] = {
 
 #define MYMAX(a,b) ( (a) > (b) ? (a) : (b) )
 #define MYMIN(a,b) ( (a) < (b) ? (a) : (b) )
+
+#define RELERR(dx,x) ( (x) == 0 ? (dx) : ( (dx) / (x) ) )
 
 /** shortcuts for integer powers */
 #define POW2(a)  ( (a) * (a) )
@@ -190,8 +183,6 @@ typedef struct
   const EphemerisData *edat;		/**< ephemeris data */
   vect3Dlist_t *rOrb_n;			/**< list of orbital-radius derivatives at refTime of order n = 0, 1, ... */
   BOOLEAN approxPhase;			/**< use an approximate phase-model, neglecting Roemer delay in spindown coordinates (or orders \>= 1) */
-  PosVel3D_t spin_posvel_ref;           /**< spin position of (average) detector at refTime */
-  PosVel3D_t orbit_posvel_ref;          /**< orbital position of (average) detector at refTime */
 } intparams_t;
 
 
@@ -216,10 +207,6 @@ BOOLEAN outputIntegrand = 0;
 #define vOrb_c  (LAL_TWOPI * LAL_AU_SI / LAL_C_SI / LAL_YRSID_SI)
 #define Omega_s	(LAL_TWOPI / LAL_DAYSID_SI)
 #define Omega_o	(LAL_TWOPI / LAL_YRSID_SI)
-
-// sin,cos(LAL_IEARTH);
-#define cosiEcl 0.917482062157619
-#define siniEcl 0.397777155727931
 
 /*---------- internal prototypes ----------*/
 DopplerMetric* XLALComputeFmetricFromAtoms ( const FmetricAtoms_t *atoms, REAL8 cosi, REAL8 psi );
@@ -309,7 +296,7 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
 
     } /* for i < Nseg */
 
-  REAL8 relerr = sqrt(abserr2) / fabs(res);
+  REAL8 relerr = RELERR( sqrt(abserr2), fabs(res) );
   if ( relerr_max )
     (*relerr_max) = relerr;
 
@@ -429,13 +416,8 @@ CWPhaseDeriv_i ( double tt, void *params )
   PosVel3D_t orbit_posvel = empty_PosVel3D_t;
   PosVel3D_t posvel = empty_PosVel3D_t;
 
-  /* spin position in equatorial plane */
-  vect3D_t equ_spin_pos = empty_vect3D_t;
-  vect3D_t equ_spin_pos_ref = empty_vect3D_t;
-
   /* orbit position in ecliptic plane */
   vect3D_t ecl_orbit_pos = empty_vect3D_t;
-  vect3D_t ecl_orbit_pos_ref = empty_vect3D_t;
 
   REAL8 Freq = par->dopplerPoint->fkdot[0];
 
@@ -472,17 +454,8 @@ CWPhaseDeriv_i ( double tt, void *params )
   COPY_VECT(posvel.vel, spin_posvel.vel);
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
-  /* compute spin detector positions projected onto equatorial plane */
-  COPY_VECT(equ_spin_pos, spin_posvel.pos);
-  equ_spin_pos[2] = 0;
-  COPY_VECT(equ_spin_pos_ref, par->spin_posvel_ref.pos);
-  equ_spin_pos_ref[2] = 0;
-
   /* compute orbital detector positions projected onto ecliptic plane */
   equatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
-  ecl_orbit_pos[2] = 0;
-  equatorialVect2ecliptic(ecl_orbit_pos_ref, par->orbit_posvel_ref.pos);
-  ecl_orbit_pos_ref[2] = 0;
 
   /* account for referenceTime != startTime */
   REAL8 tau0 = ( par->startTime - par->refTime ) / Tspan;
@@ -616,35 +589,6 @@ CWPhaseDeriv_i ( double tt, void *params )
         ret *= LAL_TWOPI * POW4 ( 0.5 * Tspan ) * LAL_FACT_INV[4];/* dPhi/df3dot = 2pi * (tSSB_i)^4/4! */
       break;
 
-    /* ---------- Karl's super-duper-sky coordinates ---------- */
-    case DOPPLERCOORD_KAPPA_S:			/* 'kappa_s': cosine-part of Earth-spin sky-coordinate */
-      ret = DOT_VECT(equ_spin_pos_ref, equ_spin_pos);
-      ret /= NORMSQ_VECT(equ_spin_pos_ref);
-      break;
-    case DOPPLERCOORD_SIGMA_S:			/* 'sigma_s': sine-part of Earth-spin sky-coordinate */
-      ret = CROSS_VECT_2(equ_spin_pos_ref, equ_spin_pos);
-      ret /= NORMSQ_VECT(equ_spin_pos_ref);
-      break;
-    case DOPPLERCOORD_KAPPA_O:			/* 'kappa_o': cosine-part of Earth-orbit sky-coordinate */
-      ret = DOT_VECT(ecl_orbit_pos_ref, ecl_orbit_pos);
-      ret /= NORMSQ_VECT(ecl_orbit_pos_ref);
-      break;
-    case DOPPLERCOORD_SIGMA_O:			/* 'sigma_o': sine-part of Earth-orbit sky-coordinate */
-      ret = CROSS_VECT_2(ecl_orbit_pos_ref, ecl_orbit_pos);
-      ret /= NORMSQ_VECT(ecl_orbit_pos_ref);
-      break;
-    case DOPPLERCOORD_OMEGA_0:			/* 'omega_0': rescaled natural frequency    omega_0 = 4pi * (Tspan/2)   * f / (2! * sqrt(3)) */
-      ret = tau * LAL_FACT_INV[1];
-      break;
-    case DOPPLERCOORD_OMEGA_1:			/* 'omega_1': rescaled natural 1st spindown omega_1 = 4pi * (Tspan/2)^2 * f1dot / (3! * sqrt(5)) */
-      ret = POW2 ( tau ) * LAL_FACT_INV[2];
-      break;
-    case DOPPLERCOORD_OMEGA_2:			/* 'omega_2': rescaled natural 2nd spindown omega_2 = 4pi * (Tspan/2)^3 * 2 * f2dot / (4! * sqrt(7)) */
-      ret = POW3 ( tau ) * LAL_FACT_INV[3];
-      break;
-    case DOPPLERCOORD_OMEGA_3:			/* 'omega_3': rescaled natural 3rd spindown omega_3 = 4pi * (Tspan/2)^4 * 2 * f3dot / (5! * sqrt(9)) */
-      ret = POW4 ( tau ) * LAL_FACT_INV[4];
-      break;
 
     default:
       XLALPrintError("%s: Unknown phase-derivative type '%d'\n", __func__, par->deriv );
@@ -680,7 +624,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   PosVel3D_t Spin_z, Spin_xy;
   REAL8 eZ[3];
 
-  if ( !spin_posvel || !orbit_posvel || !tGPS || !site || !edat ) {
+  if ( !tGPS || !site || !edat ) {
     XLALPrintError ( "%s: Illegal NULL pointer passed!\n", __func__);
     XLAL_ERROR( XLAL_EINVAL );
   }
@@ -707,7 +651,7 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
   COPY_VECT(Det_wrt_Earth.vel, emit.vDetector);
   SUB_VECT(Det_wrt_Earth.vel, earth.velNow);
 
-  eZ[0] = 0; eZ[1] = -siniEcl; eZ[2] = cosiEcl; 	/* ecliptic z-axis in equatorial coordinates */
+  eZ[0] = 0; eZ[1] = -LAL_SINIEARTH; eZ[2] = LAL_COSIEARTH; 	/* ecliptic z-axis in equatorial coordinates */
   /* compute ecliptic-z projected spin motion */
   REAL8 pz = DOT_VECT ( Det_wrt_Earth.pos, eZ );
   REAL8 vz = DOT_VECT ( Det_wrt_Earth.vel, eZ );
@@ -739,47 +683,67 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
     {
       /* full detector-motion: ephemeris-orbital + Earth-spin */
     case DETMOTION_SPIN_ORBIT:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
       break;
 
       /* full ephemeris orbital detector-motion, neglecting Earth-spin */
     case DETMOTION_ORBIT:
-      ZERO_VECT(spin_posvel->pos);
-      ZERO_VECT(spin_posvel->vel);
+      if ( spin_posvel ) {
+        ZERO_VECT(spin_posvel->pos);
+        ZERO_VECT(spin_posvel->vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
       break;
 
       /* detector-motion including only Earth-spin, no orbital motion */
     case DETMOTION_SPIN:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      ZERO_VECT(orbit_posvel->pos);
-      ZERO_VECT(orbit_posvel->vel);
+      if ( orbit_posvel ) {
+        ZERO_VECT(orbit_posvel->pos);
+        ZERO_VECT(orbit_posvel->vel);
+      }
       break;
 
       /* pure orbital detector motion, using "Ptolemaic" (ie. circular) approximation */
     case DETMOTION_PTOLEORBIT:
-      ZERO_VECT(spin_posvel->pos);
-      ZERO_VECT(spin_posvel->vel);
+      if ( spin_posvel ) {
+        ZERO_VECT(spin_posvel->pos);
+        ZERO_VECT(spin_posvel->vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      }
       break;
 
       /* Ptolemaic-orbital motion, plus Earth spin */
     case DETMOTION_SPIN_PTOLEORBIT:
-      COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
-      COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      if ( spin_posvel ) {
+        COPY_VECT(spin_posvel->pos, Det_wrt_Earth.pos);
+        COPY_VECT(spin_posvel->vel, Det_wrt_Earth.vel);
+      }
 
-      COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
-      COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, PtoleOrbit.pos);
+        COPY_VECT(orbit_posvel->vel, PtoleOrbit.vel);
+      }
       /*
       printf ("\nPtole = [ %f, %f, %f ], Ephem = [%f, %f, %f]\n",
 	      posvel->pos[0], posvel->pos[1], posvel->pos[2],
@@ -789,21 +753,29 @@ XLALDetectorPosVel ( PosVel3D_t *spin_posvel,	/**< [out] instantaneous sidereal 
 
       /**< orbital motion plus *only* z-component of Earth spin-motion wrt to ecliptic plane */
     case DETMOTION_ORBIT_SPINZ:
-      COPY_VECT ( spin_posvel->pos, Spin_z.pos );
-      COPY_VECT ( spin_posvel->vel, Spin_z.vel );
+      if ( spin_posvel ) {
+        COPY_VECT ( spin_posvel->pos, Spin_z.pos );
+        COPY_VECT ( spin_posvel->vel, Spin_z.vel );
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
 
       break;
 
       /**< orbital motion plus *only* x+y component of Earth spin-motion in the ecliptic */
     case DETMOTION_ORBIT_SPINXY:
-      COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
-      COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
+      if ( spin_posvel ) {
+        COPY_VECT ( spin_posvel->pos, Spin_xy.pos );
+        COPY_VECT ( spin_posvel->vel, Spin_xy.vel );
+      }
 
-      COPY_VECT(orbit_posvel->pos, earth.posNow);
-      COPY_VECT(orbit_posvel->vel, earth.velNow);
+      if ( orbit_posvel ) {
+        COPY_VECT(orbit_posvel->pos, earth.posNow);
+        COPY_VECT(orbit_posvel->vel, earth.velNow);
+      }
 
       break;
 
@@ -860,13 +832,13 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
   /* Get instantaneous position. */
   posvel->pos[0] = rOrb_c * cosOrb;
-  posvel->pos[1] = rOrb_c * sinOrb * cosiEcl;
-  posvel->pos[2]=  rOrb_c * sinOrb * siniEcl;
+  posvel->pos[1] = rOrb_c * sinOrb * LAL_COSIEARTH;
+  posvel->pos[2]=  rOrb_c * sinOrb * LAL_SINIEARTH;
 
   /* Get instantaneous velocity. */
   posvel->vel[0] = -vOrb_c * sinOrb;
-  posvel->vel[1] =  vOrb_c * cosOrb * cosiEcl;
-  posvel->vel[2] =  vOrb_c * cosOrb * siniEcl;
+  posvel->vel[1] =  vOrb_c * cosOrb * LAL_COSIEARTH;
+  posvel->vel[2] =  vOrb_c * cosOrb * LAL_SINIEARTH;
 
   return XLAL_SUCCESS;
 
@@ -995,9 +967,9 @@ CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params
   av_i_err *= inv_total_weight;
   av_j_err *= inv_total_weight;
 
-  av_ij_err = sqrt(av_ij_err) / fabs(av_ij);
-  av_i_err = sqrt(av_i_err) / fabs (av_i);
-  av_j_err = sqrt(av_j_err) / fabs (av_j);
+  av_ij_err = RELERR( sqrt(av_ij_err), fabs(av_ij) );
+  av_i_err = RELERR( sqrt(av_i_err), fabs (av_i) );
+  av_j_err = RELERR( sqrt(av_j_err), fabs (av_j) );
 
   maxrelerr = MYMAX ( av_ij_err, av_i_err );
   maxrelerr = MYMAX ( maxrelerr, av_j_err );
@@ -1085,11 +1057,6 @@ XLALDopplerPhaseMetric ( const DopplerMetricParams *metricParams,  	/**< input p
     printf ("[%g, %g, %g]%s", intparams.rOrb_n->data[n][0], intparams.rOrb_n->data[n][1], intparams.rOrb_n->data[n][2],
             (n < intparams.rOrb_n->length -1 ) ? ", " : " ]\n" );
 #endif
-
-  // compute spin and orbital position of detector at reference time
-  XLAL_CHECK_NULL( XLALAverageDetectorPosVel(&intparams.spin_posvel_ref, &intparams.orbit_posvel_ref,
-                                             &intparams.dopplerPoint->refTime,
-                                             &metricParams->detInfo, edat, metricParams->detMotionType) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ---------- compute components of the phase-metric ---------- */
   double maxrelerr = 0, err;
@@ -1320,11 +1287,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
     XLALPrintError ("%s: XLALComputeOrbitalDerivatives() failed.\n", __func__);
     XLAL_ERROR_NULL( XLAL_EFUNC );
   }
-
-  // compute spin and orbital position of detector at reference time
-  XLAL_CHECK_NULL( XLALAverageDetectorPosVel(&intparams.spin_posvel_ref, &intparams.orbit_posvel_ref,
-                                             &intparams.dopplerPoint->refTime,
-                                             &metricParams->detInfo, edat, metricParams->detMotionType) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- integrate antenna-pattern coefficients A, B, C */
   A = B = C = 0;
@@ -2193,8 +2155,8 @@ void
 equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
-                                { 0.0,  cosiEcl, siniEcl },
-                                { 0.0, -siniEcl, cosiEcl } };
+                                { 0.0,  LAL_COSIEARTH, LAL_SINIEARTH },
+                                { 0.0, -LAL_SINIEARTH, LAL_COSIEARTH } };
 
   matrix33_in_vect3 ( out, rotEqu2Ecl, in );
 
@@ -2205,8 +2167,8 @@ void
 eclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
-                                 { 0.0,  cosiEcl, -siniEcl },
-                                 { 0.0,  siniEcl,  cosiEcl } };
+                                 { 0.0,  LAL_COSIEARTH, -LAL_SINIEARTH },
+                                 { 0.0,  LAL_SINIEARTH,  LAL_COSIEARTH } };
 
   matrix33_in_vect3 ( out, rotEcl2Equ, in );
 
@@ -2445,69 +2407,3 @@ XLALDiagNormalizeMetric ( const gsl_matrix * g_ij )
   return ret_ij;
 
 } /* XLALDiagNormalizeMetric() */
-
-
-
-int
-XLALAverageDetectorPosVel ( PosVel3D_t *avg_spin_posvel,	/**< [out] instantaneous sidereal position and velocity vector */
-                            PosVel3D_t *avg_orbit_posvel,	/**< [out] instantaneous orbital position and velocity vector */
-                            const LIGOTimeGPS *tGPS,		/**< [in] GPS time */
-                            const MultiDetectorInfo *detInfo,	/**< [in] detector info */
-                            const EphemerisData *edat,		/**< [in] ephemeris data */
-                            DetectorMotionType special		/**< [in] detector motion type */
-                            )
-{
-
-  REAL8 total_weight = 0;
-
-  XLAL_CHECK(avg_spin_posvel != NULL, XLAL_EFAULT);
-  XLAL_CHECK(avg_orbit_posvel != NULL, XLAL_EFAULT);
-  XLAL_CHECK(tGPS != NULL, XLAL_EFAULT);
-  XLAL_CHECK(detInfo != NULL, XLAL_EFAULT);
-  XLAL_CHECK(edat != NULL, XLAL_EFAULT);
-
-  // zero vectors
-  ZERO_VECT(avg_spin_posvel->pos);
-  ZERO_VECT(avg_spin_posvel->vel);
-  ZERO_VECT(avg_orbit_posvel->pos);
-  ZERO_VECT(avg_orbit_posvel->vel);
-
-  // loop over detectors
-  for (UINT4 det = 0; det < detInfo->length; ++det) {
-
-    PosVel3D_t spin_posvel = empty_PosVel3D_t;
-    PosVel3D_t orbit_posvel = empty_PosVel3D_t;
-
-    // get position of this detector
-    XLAL_CHECK( XLALDetectorPosVel(&spin_posvel, &orbit_posvel, tGPS, &detInfo->sites[det], edat, special) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    // add weighted position and velocity to total
-    MULT_VECT(spin_posvel.pos, detInfo->detWeights[det]);
-    ADD_VECT(avg_spin_posvel->pos, spin_posvel.pos);
-    MULT_VECT(spin_posvel.vel, detInfo->detWeights[det]);
-    ADD_VECT(avg_spin_posvel->vel, spin_posvel.vel);
-    MULT_VECT(orbit_posvel.pos, detInfo->detWeights[det]);
-    ADD_VECT(avg_orbit_posvel->pos, orbit_posvel.pos);
-    MULT_VECT(orbit_posvel.vel, detInfo->detWeights[det]);
-    ADD_VECT(avg_orbit_posvel->vel, orbit_posvel.vel);
-
-    // accumulate total weight
-    total_weight += detInfo->detWeights[det];
-
-  }
-
-  // raise error if no detector weights were given
-  if (total_weight == 0) {
-    XLAL_ERROR( XLAL_EDOM, "Detectors weights are all zero!" );
-  }
-
-  // normalise by total weight
-  const REAL8 inv_total_weight = 1.0 / total_weight;
-  MULT_VECT(avg_spin_posvel->pos, inv_total_weight);
-  MULT_VECT(avg_spin_posvel->vel, inv_total_weight);
-  MULT_VECT(avg_orbit_posvel->pos, inv_total_weight);
-  MULT_VECT(avg_orbit_posvel->vel, inv_total_weight);
-
-  return XLAL_SUCCESS;
-
-} // XLALAverageDetectorPosVel

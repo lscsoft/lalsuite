@@ -48,8 +48,6 @@ EXTRA_DIST = \
 TESTS = \
 	$(check_PROGRAMS)
 
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null
-
 MOSTLYCLEANFILES = \
 	PrintVector.* \
 	*.out

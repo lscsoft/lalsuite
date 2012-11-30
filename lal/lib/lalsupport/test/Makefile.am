@@ -1,4 +1,4 @@
-AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
+AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include -DDATADIR='"$(abs_srcdir)/"'
 LDADD = \
 	$(top_builddir)/lib/lal/liblal.la \
 	$(top_builddir)/lib/lalsupport/src/liblalsupport.la
@@ -19,13 +19,12 @@ check_PROGRAMS = \
 noinst_DATA = \
 	ConfigFileSample.cfg \
 	ConfigFileSample2.cfg \
+	ConfigFileSample3.cfg.gz \
 	SegmentsInput1.data \
 	StreamInput.data \
 	StreamSeriesInput.data
 
 EXTRA_DIST = $(DATA)
-
-TESTS_ENVIRONMENT = 1>/dev/null 2>/dev/null LAL_DATA_PATH=$(srcdir)
 
 TESTS = \
 	$(check_PROGRAMS)

@@ -10,7 +10,6 @@ swig_langflags = -python -O -builtin -globals cvar
 # add Python compilation flags
 swig_lt_cppflags += $(PYTHON_CPPFLAGS)
 swig_lt_cxxflags += $(PYTHON_CFLAGS)
-swig_lt_ldflags  += $(PYTHON_LDFLAGS)
 
 # SWIG Python wrapping module source file
 swig_modl_src = @PACKAGE_NAME@swig_python.c

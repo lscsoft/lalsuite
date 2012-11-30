@@ -10,7 +10,6 @@ swig_langflags = -octave -globals $(PACKAGE_NAME)cvar
 # add Octave compilation flags
 swig_lt_cppflags += $(OCTAVE_CPPFLAGS)
 swig_lt_cxxflags += $(OCTAVE_CXXFLAGS)
-swig_lt_ldflags  += $(OCTAVE_LDFLAGS)
 
 # SWIG Octave wrapping module source file
 swig_modl_src = @PACKAGE_NAME@swig_octave.cpp

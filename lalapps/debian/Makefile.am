@@ -3,6 +3,8 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
+	dirs.x \
 	docs \
-	pyversions \
-	rules
+	install.x \
+	rules \
+	source/format

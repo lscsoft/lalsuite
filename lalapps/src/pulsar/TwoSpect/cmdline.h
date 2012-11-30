@@ -31,7 +31,7 @@ extern "C" {
 
 #ifndef CMDLINE_PARSER_VERSION
 /** @brief the program version */
-#define CMDLINE_PARSER_VERSION "1.1.24"
+#define CMDLINE_PARSER_VERSION "1.1.24_1"
 #endif
 
 /** @brief Where the command line options are stored */
@@ -184,6 +184,8 @@ struct gengetopt_args_info
   const char *useSSE_help; /**< @brief Use SSE functions (caution: user needs to have compiled for SSE or program fails) help description.  */
   int followUpOutsideULrange_flag;	/**< @brief Follow up outliers outside the range of the UL values (default=off).  */
   const char *followUpOutsideULrange_help; /**< @brief Follow up outliers outside the range of the UL values help description.  */
+  int signalOnly_flag;	/**< @brief SFTs contain only signal, no noise (default=off).  */
+  const char *signalOnly_help; /**< @brief SFTs contain only signal, no noise help description.  */
   int ULsolver_arg;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver (default='0').  */
   char * ULsolver_orig;	/**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver original value given at command line.  */
   const char *ULsolver_help; /**< @brief Solver function for the upper limit calculation: 0=gsl_ncx2cdf_float_withouttinyprob_solver, 1=gsl_ncx2cdf_withouttinyprob_solver, 2=gsl_ncx2cdf_float_solver, 3=gsl_ncx2cdf_solver, 4=ncx2cdf_float_withouttinyprob_withmatlabchi2cdf_solver, 5=ncx2cdf_withouttinyprob_withmatlabchi2cdf_solver help description.  */
@@ -270,6 +272,7 @@ struct gengetopt_args_info
   unsigned int fastchisqinv_given ;	/**< @brief Whether fastchisqinv was given.  */
   unsigned int useSSE_given ;	/**< @brief Whether useSSE was given.  */
   unsigned int followUpOutsideULrange_given ;	/**< @brief Whether followUpOutsideULrange was given.  */
+  unsigned int signalOnly_given ;	/**< @brief Whether signalOnly was given.  */
   unsigned int ULsolver_given ;	/**< @brief Whether ULsolver was given.  */
   unsigned int dopplerMultiplier_given ;	/**< @brief Whether dopplerMultiplier was given.  */
   unsigned int IHSonly_given ;	/**< @brief Whether IHSonly was given.  */

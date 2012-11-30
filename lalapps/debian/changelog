@@ -1,3 +1,15 @@
+lalapps (6.10.0-1) unstable; urgency=low
+
+  * LALApps 6.10.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:20:02 -0500
+
+lalapps (6.9.1-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 17:20:00 +0200
+
 lalapps (6.9.1-1) unstable; urgency=low
 
   * LALApps 6.9.1

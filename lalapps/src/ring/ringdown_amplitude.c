@@ -63,8 +63,8 @@ int main( int argc, char *argv[] )
   XLALSetBlackHoleModeParams( &mode, a, l, m, s );
 
   XLALBlackHoleRingdownAmplitude( &amplitudePlus, &amplitudeCross, M, e, r, i, q, &mode );
-  fprintf( stdout, "A_+ = %e\tphi_+ = %f degrees\n", cabs( amplitudePlus ), carg( amplitudePlus ) / LAL_PI_180 );
-  fprintf( stdout, "A_x = %e\tphi_x = %f degrees\n", cabs( amplitudeCross ), carg( amplitudeCross ) / LAL_PI_180 );
+  fprintf( stdout, "A_+ = %e\tphi_+ = %f degrees\n", LAL_CABS( amplitudePlus ), LAL_CARG( amplitudePlus ) / LAL_PI_180 );
+  fprintf( stdout, "A_x = %e\tphi_x = %f degrees\n", LAL_CABS( amplitudeCross ), LAL_CARG( amplitudeCross ) / LAL_PI_180 );
 
   LALCheckMemoryLeaks();
 

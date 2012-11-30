@@ -68,7 +68,42 @@ extern "C" {
 /** \endcond */
 
 
-/** \brief [DEPRECATED] Used as input for LALInitBarycenter(), this structure contains
+typedef enum{
+  TYPE_TDB,
+  TYPE_TCB,
+  TYPE_TEMPO,
+  TYPE_TEMPO2,
+  TYPE_ORIGINAL
+} TimeCorrectionType;
+
+
+typedef enum {
+  EPHEM_NONE = 0,
+  EPHEM_DE200,
+  EPHEM_DE405,
+  EPHEM_DE414,
+  EPHEM_DE421,
+  EPHEM_LAST
+} EphemerisType;
+
+
+/* Constants from Irwin and Fukashima used in TEMPO2 */
+#define IFTE_JD0  2443144.5003725    /* Epoch of TCB, TCG and TT */
+#define IFTE_MJD0 43144.0003725
+#define IFTE_TEPH0 -65.564518e-6
+#define IFTE_LC 1.48082686742e-8
+
+#define JPL_AU_DE405 149597870.6910000 /* 1 AU from the JPL DE405 ephemeris in km */
+#define JPL_AU_DE200 149597870.6600000 /* 1 AU from the JPL DE200 ephemeris in km */
+#define CURT_AU 149597870.6600 /* 1 AU from create_solar_system_barycenter.c as used in Curt's original routines */
+
+//This is the value used by if99 : #define IFTE_KM1  1.55051979154e-8 */
+// However we should use the IAU value of L_B that follows from
+// their definition of L_G: L_B = 1.55051976772e-8, K=1/(1-L_B)
+#define IFTE_KM1 1.55051979176e-8
+#define IFTE_K (((long double)1.0) + ((long double)IFTE_KM1))
+
+/** \brief This structure contains
  * two pointers to the ephemeris data files containing arrays
  * of center-of-mass positions for the Earth and Sun, respectively.
  *
@@ -83,7 +118,6 @@ extern "C" {
  * at that instant.  All in units of seconds; e.g. positions have
  * units of seconds, and accelerations have units 1/sec.
  *
- * \deprecated Use XLALInitBarycenter() instead.
  */
 typedef struct tagEphemerisFilenames
 {
@@ -92,8 +126,7 @@ typedef struct tagEphemerisFilenames
 }
 EphemerisFilenames;
 
-/** Structure holding a REAL8 time, and a position, velocity and
- * acceleration vector. */
+/** Structure holding a REAL8 time, and a position, velocity and acceleration vector. */
 typedef struct tagPosVelAcc
 {
   REAL8 gps;            /**< REAL8 timestamp */
@@ -117,21 +150,38 @@ typedef struct tagEphemerisData
 #endif /* SWIG */
   INT4  nentriesE;      /**< The number of entries in Earth ephemeris table. */
   INT4  nentriesS;      /**< The number of entries in Sun ephemeris table. */
-  REAL8 dtEtable;       /**< The spacing in sec between consecutive intants in Earth ephemeris table.*/
-  REAL8 dtStable;       /**< The spacing in sec between consecutive intants in Sun ephemeris table.*/
+
+  REAL8 dtEtable;       /**< The spacing in sec between consecutive instants in Earth ephemeris table.*/
+  REAL8 dtStable;       /**< The spacing in sec between consecutive instants in Sun ephemeris table.*/
+
   PosVelAcc *ephemE;    /**< Array containing pos,vel,acc of earth, as extracted from earth
                          * ephem file. Units are sec, 1, 1/sec respectively */
   PosVelAcc *ephemS;    /**< Array with pos, vel and acc for the sun (see ephemE) */
+
+  EphemerisType etype;  /**< The ephemeris type e.g. DE405 */
 }
 EphemerisData;
+
+
+/** This structure will contain a vector of time corrections
+ * used during conversion from TT to TDB/TCB/Teph */
+typedef struct tagTimeCorrectionData{
+  CHAR *timeEphemeris;   /**< File containing the time ephemeris */
+
+  UINT4  nentriesT;      /**< The number of entries in Time ephemeris table. */
+  REAL8 dtTtable;        /**< The spacing in sec between consecutive instants in Time ephemeris table.*/
+  REAL8 *timeCorrs;      /**< Array of time delays for converting TT to TDB/TCB from the Time table (seconds).*/
+  REAL8 timeCorrStart;   /**< The initial GPS time of the time delay table. */
+} TimeCorrectionData;
+
 
 /** Basic output structure of LALBarycenterEarth.c.
  */
 typedef struct tagEarthState
 {
-  REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT */
+  REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT or TCB - TDT */
   REAL8 deinstein;      /**< d(einstein)/d(tgps) */
-
+  
   REAL8 posNow[3];      /**< Cartesian coords of Earth's center at tgps,
                          * extrapolated from JPL DE405 ephemeris; units= sec */
   REAL8 velNow[3];      /**< dimensionless velocity of Earth's center at tgps,
@@ -154,6 +204,8 @@ typedef struct tagEarthState
   REAL8 dse[3];         /**< d(se[3])/d(tgps); Dimensionless */
   REAL8 rse;            /**< length of vector se[3]; units = sec */
   REAL8 drse;           /**< d(rse)/d(tgps); dimensionless */
+  
+  TimeCorrectionType ttype; /**< Time correction type */
 }
 EarthState;
 
@@ -190,40 +242,6 @@ But most users would immediately add back the one anyway.
 way out in empty space, if you renormalized  and zero-ed the latter
 to give, on average, the same arrival time as the GPS clock on Earth'' */
 
-
-/// ---------- internal buffer type for optimized Barycentering function ----------
-typedef struct tagfixed_sky
-{
-  REAL8 sinAlpha;	/// sin(alpha)
-  REAL8 cosAlpha;	/// cos(alpha)
-  REAL8 sinDelta;	/// sin(delta)
-  REAL8 cosDelta;	/// cos(delta)
-  REAL8 n[3];		/// unit vector pointing from SSB to the source, in J2000 Cartesian coords, 0=x,1=y,2=z
-} fixed_sky_t;
-
-typedef struct tagfixed_site
-{
-  REAL8 rd;		/// distance 'rd' from center of Earth, in light seconds
-  REAL8 longitude;	/// geocentric (not geodetic!!) longitude of detector vertex
-  REAL8 latitude;	/// geocentric latitude of detector vertex
-  REAL8 sinLat;		/// sin(latitude)
-  REAL8 cosLat;		/// cos(latitude);
-  REAL8 rd_sinLat;	/// rd * sin(latitude)
-  REAL8 rd_cosLat;	/// rd * cos(latitude)
-} fixed_site_t;
-
-/// internal buffer type for optimized Barycentering function
-typedef struct tagBarycenterBuffer
-{
-  REAL8 alpha;			/// buffered sky-location: right-ascension in rad
-  REAL8 delta;			/// buffered sky-location: declination in rad
-  fixed_sky_t fixed_sky;	/// fixed-sky buffered quantities
-
-  LALDetector site;		/// buffered detector site
-  fixed_site_t fixed_site;	/// fixed-site buffered quantities
-} BarycenterBuffer;
-
-
 /**  Basic output structure produced by LALBarycenter.c.
  */
 typedef struct tagEmissionTime
@@ -240,16 +258,48 @@ typedef struct tagEmissionTime
 
   REAL8 vDetector[3];   /* Cartesian coords (0=x,1=y,2=z) of detector velocity
                          * at \f$t_a\f$ (GPS), in ICRS J2000 coords. Dimensionless. */
+                         
+  REAL8 roemer;         /**<  the Roemer delay */
+  REAL8 droemer;        /**<  d(Roemer)/d(tgps) */
+  
+  REAL8 shapiro;        /**<  the Shapiro delay */
+  REAL8 dshapiro;       /**<  d(Shapiro)/d(tgps) */
+  
+  REAL8 erot;           /**< Earth rotation delay */
+  REAL8 derot;          /**< d(erot)/d(tgps) */
 }
 EmissionTime;
+
+
+/// internal (opaque) buffer type for optimized Barycentering function
+typedef struct tagBarycenterBuffer BarycenterBuffer;
 
 
 /* Function prototypes. */
 int XLALBarycenterEarth ( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
-int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer *buffer);
+int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer **buffer);
 
-  // deprecated LAL interface
+/* Function that uses time delay look-up tables to calculate time delays */
+int XLALBarycenterEarthNew ( EarthState *earth,
+                             const LIGOTimeGPS *tGPS,
+                             const EphemerisData *edat,
+                             const TimeCorrectionData *tdat,
+                             TimeCorrectionType ttype );
+
+/* Function to calculate positions */
+void precessionMatrix( REAL8 prn[3][3],
+                       REAL8 mjd,
+                       REAL8 dpsi,
+                       REAL8 deps );
+void observatoryEarth( REAL8 obsearth[3],
+                       const LALDetector det,
+                       const LIGOTimeGPS *tgps,
+                       REAL8 gmst,
+                       REAL8 dpsi,
+                       REAL8 deps );
+
+// deprecated LAL interface
 void LALBarycenterEarth ( LALStatus *status, EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
 void LALBarycenter ( LALStatus *status, EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
 

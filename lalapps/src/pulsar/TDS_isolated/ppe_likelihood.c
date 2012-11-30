@@ -407,7 +407,7 @@ live point for each array!", __func__);
       }
       else{
         avg_log_like_end = LOGPLUS(avg_log_like_end, logL);
-        log_ws[k]->data[i] = log_vol + logL - log((REAL8)Nlive->data[k]);
+        log_ws[k]->data[i] = log_vol + logL;
       }
     }
     

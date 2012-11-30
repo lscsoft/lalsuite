@@ -91,9 +91,9 @@ int main( int argc, char *argv[] )
     XLALSpheroidalWaveFunction1( &swf, mu, &mode );
     swf = cmul( swf, norm );
     if ( spherical )
-      fprintf( stdout, fmt, mu, creal(swf)/sqrt(2.0*LAL_PI) );
+      fprintf( stdout, fmt, mu, LAL_REAL(swf)/sqrt(2.0*LAL_PI) );
     else
-      fprintf( stdout, fmt, mu, creal(swf), cimag(swf) );
+      fprintf( stdout, fmt, mu, LAL_REAL(swf), LAL_IMAG(swf) );
   }
 
   return 0;

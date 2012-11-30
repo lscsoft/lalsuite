@@ -72,6 +72,7 @@ src/inspiral/lalapps_cbc_sbank_merge_sims
 src/inspiral/lalapps_cbc_sbank_pipe
 src/inspiral/lalapps_cbc_sbank_plot_sim
 src/inspiral/lalapps_cbc_sbank_sim
+src/inspiral/lalapps_cbc_sbank_splitter
 src/inspiral/lalapps_cbc_stochasticbank
 src/inspiral/lalapps_check_flag
 src/inspiral/lalapps_check_hipe_times
@@ -270,7 +271,6 @@ src/pulsar/templateBanks/lalapps_getMesh
 src/pulsar/templateBanks/lalapps_getMetric
 src/pulsar/templateBanks/lalapps_matchGrids
 src/pulsar/templateBanks/lalapps_skynet
-src/pulsar/templateBanks/lalapps_testFlatLatticeTilingPulsar
 src/pulsar/templateBanks/lalapps_testFlatPulsarMetric
 src/pulsar/templateBanks/lalapps_testLatticeCovering
 src/ring/lalapps_coh_PTF_inspiral

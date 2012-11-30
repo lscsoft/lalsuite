@@ -36,7 +36,8 @@ REAL4TimeSeries *coh_PTF_get_data(
       channel = get_zero_data( ifoChannel, &params->startTime,
           params->duration, LALRINGDOWN_DATATYPE_ZERO, params->sampleRate );
     }
-    else if ( params->doubleData )
+    else if ( (ifoNumber == LAL_IFO_V1 && params->virgoDoubleData)
+              || (ifoNumber != LAL_IFO_V1 && params->ligoDoubleData) )
     {
       channel = get_frame_data_dbl_convert( dataCache, ifoChannel,
           &params->frameDataStartTime, params->frameDataDuration,

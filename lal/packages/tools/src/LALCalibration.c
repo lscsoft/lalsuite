@@ -179,8 +179,8 @@ COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
     phi = XLALCreateREAL8FrequencySeries( "response phase", epoch, rawresponse->f0, rawresponse->deltaF, &lalDimensionlessUnit, rawresponse->data->length ); \
     if ( ! rad || ! phi ) break; \
     for ( k = 0; k < rawresponse->data->length; ++k ) { \
-      rad->data->data[k] = cabsf( rawresponse->data->data[k] ); \
-      phi->data->data[k] = cargf( rawresponse->data->data[k] ); \
+      rad->data->data[k] = LAL_CABSF( rawresponse->data->data[k] ); \
+      phi->data->data[k] = LAL_CARGF( rawresponse->data->data[k] ); \
     } \
     XLALDestroyCOMPLEX8FrequencySeries( rawresponse ); \
   } while (0)

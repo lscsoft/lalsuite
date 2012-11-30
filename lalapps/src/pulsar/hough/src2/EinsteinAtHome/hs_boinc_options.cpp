@@ -110,6 +110,9 @@ static void update_shmem(void) {
 int setup_shmem(void) {
   boinc_get_init_data(eah_app_init_data);
 
+  if (boinc_is_standalone())
+    return(0);
+
   shmem = (char*)boinc_graphics_make_shmem(EAH_SHMEM_APP_NAME, EAH_SHMEM_SIZE);
   if (!shmem) {
     fprintf(stderr, "failed to create shared mem segment\n");

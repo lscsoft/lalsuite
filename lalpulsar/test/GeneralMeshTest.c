@@ -213,9 +213,9 @@ int main( int argc, char **argv )
                                   /* 3 = Virgo,  4 = GEO,  5 = TAMA */
   float a, b, c, d, e, f;         /* To specify center of search region */
   BOOLEAN rectangular;            /* is the search region rectangular? */
-  char earth[] = "earth00-04.dat";
-  char sun[] = "sun00-04.dat";
 
+  char earth[] = DATADIR "earth00-04.dat";
+  char sun[]   = DATADIR "sun00-04.dat";
 
   /* Set default values. */
   metric_code = 1;

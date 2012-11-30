@@ -6,6 +6,9 @@ EXTRA_DIST = \
 	docs \
 	lalpulsar-dev.dirs \
 	lalpulsar-dev.install \
+	lalpulsar-octave.install \
+	lalpulsar-python.install \
 	lalpulsar.dirs \
 	lalpulsar.install \
-	rules
+	rules \
+	source/format

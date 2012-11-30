@@ -1,6 +1,7 @@
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <stdio.h>
 #include <string.h>
+#include <zlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/StringInput.h>
@@ -113,8 +114,6 @@ LALCHARReadSequence( LALStatus *stat, CHARSequence **sequence, FILE *stream )
 
 
 int
-XLALCHARReadSequence( CHARSequence **sequence, FILE *stream );
-int
 XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
 { 
   BufferList head;  /* head of linked list of buffers */
@@ -132,28 +131,36 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
     return STREAMINPUTH_EOUT;
   }
 
+  /* Re-open file with zlib */
+  gzFile gzstream = gzdopen(dup(fileno(stream)), "rb");
+  if ( !gzstream ) {
+    fprintf(stderr, STREAMINPUTH_MSGENUL );
+    return STREAMINPUTH_ENUL;
+  }
+
   /* Read file into linked list of buffers. */
   here = &head;
   here->next = NULL;
-  while ( !feof( stream ) ) {
+  while ( !gzeof( gzstream ) ) {
     size_t n = BUFFSIZE;
     data = here->buf.CH;
-    while ( !feof( stream ) && n )
+    while ( !gzeof( gzstream ) && n )
 	{
-	   *(data++) = (CHAR)getc( stream );
+	   *(data++) = (CHAR)gzgetc( gzstream );
 	    n--;
 	}
     /* The very last value returned by getc() is EOF, which is not a
        character and should not be stored. */
-    if ( feof( stream ) ) {
+    if ( gzeof( gzstream ) ) {
       data--;
       n++;
     }
     here->size = BUFFSIZE - n;
     nTot += here->size;
-    if ( !feof( stream ) ) {
+    if ( !gzeof( gzstream ) ) {
       here->next = (BufferList *)LALMalloc( sizeof(BufferList) );
       if ( !(here->next) ) {
+        gzclose( gzstream );
 	FREEBUFFERLIST( head.next );
 	fprintf(stderr, STREAMINPUTH_MSGEMEM );
 	return STREAMINPUTH_EMEM;
@@ -162,6 +169,9 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
       here->next = NULL;
     }
   }
+
+  /* Close zlib stream */
+  gzclose( gzstream );
 
   /* Allocate **sequence, include space for a terminating '\0'. */
   *sequence = XLALCreateCHARVector( nTot+1 );

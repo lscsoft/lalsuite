@@ -112,9 +112,9 @@ const char * usage =
 "--spin2x S2X               Vector components for spin of mass2 (default all 0)\n"
 "--spin2y S2Y               z-axis=line of sight, L in x-z plane at reference\n"
 "--spin2z S2Z               Kerr limit: s2x^2 + s2y^2 + s2z^2 <= 1\n"
-"--interaction FLAG    Common choices: 'ALL' (default), 'NO', 'ALL_SPIN', 'TIDAL'\n"
-"--tidal-lambda1 L1         (tidal deformability of mass 1) / (total mass)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
-"--tidal-lambda2 L2         (tidal deformability of mass 2) / (total mass)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
+"--interaction FLAG         Common choices: 'ALL' (default), 'NO', 'ALL_SPIN', 'TIDAL' (6PN), 'TIDAL5PN'\n"
+"--tidal-lambda1 L1         (tidal deformability of mass 1) / (mass of body 1)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
+"--tidal-lambda2 L2         (tidal deformability of mass 2) / (mass of body 2)^5 (~4-80 for NS, 0 for BH) (default 0)\n"
 "--f-min FMIN               Frequency at which to start waveform in Hz (default 40)\n"
 "--f-max FMAX               Frequency at which to stop waveform in Hz\n"
 "                           (default: generate as much as possible)\n"
@@ -263,7 +263,7 @@ static int dump_FD(FILE *f, COMPLEX16FrequencySeries *htilde) {
     fprintf(f, "# f htilde.re htilde.im\n");
     dataPtr = htilde->data->data;
     for (i=0; i < htilde->data->length; i++)
-        fprintf(f, "%e %e %e\n", htilde->f0 + i * htilde->deltaF, 
+        fprintf(f, "%.16e %.16e %.16e\n", htilde->f0 + i * htilde->deltaF, 
                 dataPtr[i].re, dataPtr[i].im);
     return 0;
 }
@@ -281,7 +281,7 @@ static int dump_TD(FILE *f, REAL8TimeSeries *hplus, REAL8TimeSeries *hcross) {
 
     fprintf(f, "# t hplus hcross\n");
     for (i=0; i < hplus->data->length; i++)
-        fprintf(f, "%e %e %e\n", t0 + i * hplus->deltaT, 
+        fprintf(f, "%.16e %.16e %.16e\n", t0 + i * hplus->deltaT, 
                 hplus->data->data[i], hcross->data->data[i]);
     return 0;
 }
@@ -322,8 +322,9 @@ int main (int argc , char **argv) {
                     params->s1y, params->s1z, params->s2x, params->s2y, 
                     params->s2z, params->f_min, params->fRef, 
                     params->distance, params->inclination, params->lambda1, 
-                    params->lambda2, params->waveFlags, params->nonGRparams,
-                    params->ampO, params->phaseO, params->approximant);
+                    params->lambda2, params->waveFlags,
+                    params->nonGRparams, params->ampO, params->phaseO,
+                    params->approximant);
             break;
         default:
             XLALPrintError("Error: domain must be either TD or FD\n");

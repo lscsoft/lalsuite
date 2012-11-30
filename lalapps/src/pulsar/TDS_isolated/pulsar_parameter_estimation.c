@@ -2019,7 +2019,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
     /* glitch times are seperated by commas so count them up */
     for( i = 0 ; i < nGlitches ; i++ ){
       if( nGlitches == 1 )
-        glitchTimes[i] = LALTDBMJDtoGPS(atof(input.mcmc.glitchTimes));
+        glitchTimes[i] = LALTTMJDtoGPS(atof(input.mcmc.glitchTimes));
       else{
         if( i == 0 )
           pos1 = input.mcmc.glitchTimes;/*string starts "*/
@@ -2043,7 +2043,7 @@ void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets,
           exit(0);
         }
 
-        glitchTimes[i] = LALTDBMJDtoGPS(atof(gtimestr)); /* convert to GPS */
+        glitchTimes[i] = LALTTMJDtoGPS(atof(gtimestr)); /* convert to GPS */
 
         XLALFree(gtimestr);
       }
@@ -2892,7 +2892,8 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
     /* check if need to perform binary barycentring */
     if( params.model != NULL ){
       binput.tb = data.times->data[i] + emitdt;
-
+      binput.earth = earth;
+      
       XLALBinaryPulsarDeltaT( &boutput, &binput, &params );
 
       deltat = DT + emitdt + boutput.deltaT;

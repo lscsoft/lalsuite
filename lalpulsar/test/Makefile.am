@@ -1,4 +1,4 @@
-AM_CFLAGS = $(LALSUPPORT_CFLAGS)
+AM_CFLAGS = $(LALSUPPORT_CFLAGS) -DDATADIR='"$(abs_srcdir)/"'
 LDADD = $(LALSUPPORT_LIBS) $(top_builddir)/src/liblalpulsar.la
 
 if LALXML
@@ -50,8 +50,6 @@ endif
 SFTfileIOTest_CPPFLAGS = -DSRCDIR=\"$(srcdir)\"
 TwoDMeshTest_SOURCES = TwoDMeshTest.c TwoDMeshPlot.h TwoDMeshPlot.c
 
-TESTS_ENVIRONMENT = 1>/dev/null LAL_DATA_PATH=$(srcdir)
-
 noinst_DATA = \
 	SFT-bad1 \
 	SFT-bad10 \
@@ -87,6 +85,9 @@ MOSTLYCLEANFILES = \
 
 pkgdata_DATA = \
 	circularEphem.dat \
+	earth00-19-DE200.dat.gz \
+	earth00-19-DE405.dat.gz \
+	earth00-19-DE414.dat.gz \
 	earth00-04.dat \
 	earth00.dat \
 	earth01.dat \
@@ -109,6 +110,9 @@ pkgdata_DATA = \
 	earth10-13.dat \
 	earth98.dat \
 	earth99.dat \
+	sun00-19-DE200.dat.gz \
+        sun00-19-DE405.dat.gz \
+        sun00-19-DE414.dat.gz \
 	sun00-04.dat \
 	sun00.dat \
 	sun01.dat \
@@ -131,6 +135,9 @@ pkgdata_DATA = \
 	sun10-13.dat \
 	sun98.dat \
 	sun99.dat \
-	testTimestamps.dat
+	testTimestamps.dat \
+	VOTable-1.1.xsd \
+	tdb_2000-2019.dat.gz \
+	te405_2000-2019.dat.gz
 
 EXTRA_DIST = $(DATA)

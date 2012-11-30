@@ -88,12 +88,13 @@ for fname in filenames:
     for bank in range(options.nbanks):
 
         if remain > 0:
-            sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:(first_row + ntemplates + 1)]
-            first_row += len(sngl_inspiral_table_split)-1
+            last_row = first_row + ntemplates + 1
             remain -= 1
         else:
-            sngl_inspiral_table_split[:] = sngl_inspiral_table[(first_row):(first_row + ntemplates)]
-            first_row += len(sngl_inspiral_table_split)-1
+            last_row = first_row + ntemplates
+
+        sngl_inspiral_table_split[:] = sngl_inspiral_table[first_row:last_row]
+        first_row = last_row
 
 	ligolw_process.set_process_end_time(process)
 	utils.write_filename(xmldoc, "%s-SBANK_SPLIT_%04d-%s.xml"%(options.instrument,bank+1,options.user_tag), gz = False, verbose = options.verbose)

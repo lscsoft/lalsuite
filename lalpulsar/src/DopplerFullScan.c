@@ -440,7 +440,6 @@ int
 XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
 {
   int ret;
-  gsl_vector* current;
 
   /* This traps coding errors in the calling routine. */
   if ( pos == NULL || scan == NULL ) {
@@ -516,22 +515,21 @@ XLALNextDopplerPos(PulsarDopplerParams *pos, DopplerFullScanState *scan)
     case GRID_SPINDOWN_AGEBRK: /* age-braking index parameter space */
       {
 
-	int i;
-
 	/* Advance to next tile */
-        current = XLALNextFlatLatticePoint(scan->spindownTiling);
+        int retn = XLALNextFlatLatticePoint(scan->spindownTiling);
         if (xlalErrno != 0) {
 	  XLALPrintError("\nGRID_SPINDOWN_{SQUARE,AGEBRK}: XLALNextFlatLatticeTile failed\n");
 	  return -1;
         }
 
-        if (current != NULL) {
+        if (retn >= 0) {
 
 	  /* Found a point */
+          const gsl_vector* current = XLALGetFlatLatticePoint(scan->spindownTiling);
           pos->Alpha      = gsl_vector_get(current, 0);
           pos->Delta      = gsl_vector_get(current, 1);
           pos->fkdot[0]   = gsl_vector_get(current, 2);
-          for (i = 1; i < PULSAR_MAX_SPINS; ++i)
+          for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i)
             pos->fkdot[i] = gsl_vector_get(current, i + 2);
 
           return 0;

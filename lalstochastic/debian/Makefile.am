@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalstochastic-dev.install \
 	lalstochastic.dirs \
 	lalstochastic.install \
-	rules
+	rules \
+	source/format

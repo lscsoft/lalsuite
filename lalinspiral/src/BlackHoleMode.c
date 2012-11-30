@@ -87,7 +87,7 @@ static int XLALBlackHoleModeEigenSolveContinuedFraction(
   a = czero;
   coef( &alp, &b, &gam, n, params );
   a = cneg(cmul(a,gam));
-  if ( cabs(b) < TINY )
+  if ( LAL_CABS(b) < TINY )
     *result = ctiny;
   else
     *result = b;
@@ -102,14 +102,14 @@ static int XLALBlackHoleModeEigenSolveContinuedFraction(
     a = cneg(cmul(a,gam));
     C = cadd(b,cdiv(a,C));
     D = cadd(b,cmul(a,D));
-    if (cabs(D) < TINY)
+    if (LAL_CABS(D) < TINY)
       D = ctiny;
-    if (cabs(C) < TINY)
+    if (LAL_CABS(C) < TINY)
       C = ctiny;
     D = cinv(D);
     Delta = cmul(C,D);
     *result = cmul(*result,Delta);
-    if (cabs(csub(*result,prev))<SMALL)
+    if (LAL_CABS(csub(*result,prev))<SMALL)
       return 0;
   }
   XLAL_ERROR( XLAL_EMAXITER );
@@ -128,7 +128,7 @@ static int XLALBlackHoleModeSchwarzschildCoefficients( COMPLEX16 *alp, COMPLEX16
   l = p->l;
   omega = p->omega;
   A = crect(l*(l+1)-s*(s+1),0.0);
-  rho = cneg(cmul(I,omega));
+  rho = cneg(cmul(LAL_COMPLEX16_I,omega));
   *alp = cadd(RCmul(n,cadd(csetr(n),RCmul(2,cadd(cunit,rho)))),
 	      cadd(RCmul(2,rho),cunit));
   *bet = cneg(cadd(RCmul(2*n,cadd(csetr(n),cadd(RCmul(4,rho),cunit))),
@@ -148,23 +148,23 @@ static int XLALBlackHoleModeKerrRadialCoefficients( COMPLEX16 *alp, COMPLEX16 *b
   COMPLEX16 omega=p->omega, A=p->A;
   COMPLEX16 c0,c1,c2,c3,c4,cfact,rho,omega2;
 
-  rho = cneg(cmul(I,omega));
+  rho = cneg(cmul(LAL_COMPLEX16_I,omega));
   omega2 = cmul(omega,omega);
 
   cfact = RCmul(1/b,csub(omega,csetr(2*a*m)));
-  c0 = cadd(csetr(1-s),cadd(rho,cneg(cmul(I,cfact))));
+  c0 = cadd(csetr(1-s),cadd(rho,cneg(cmul(LAL_COMPLEX16_I,cfact))));
   c1 = cadd(csetr(-4),cadd(RCmul(-2*(2+b),rho),cmul(cseti(2),cfact)));
-  c2 = cadd(csetr(s+3),cadd(RCmul(3,rho),cneg(cmul(I,cfact))));
+  c2 = cadd(csetr(s+3),cadd(RCmul(3,rho),cneg(cmul(LAL_COMPLEX16_I,cfact))));
   c3 = cadd(RCmul(4+2*b-a*a,omega2),
             cadd(RCmul(-2*m*a,omega),
                  cadd(csetr(-s-1),
                       cadd(RCmul(-2-b,rho),
                            cadd(cneg(A),
-                                cmul(cadd(RCmul(2,omega),I),cfact))))));
+                                cmul(cadd(RCmul(2,omega),LAL_COMPLEX16_I),cfact))))));
   c4 = cadd(csetr(s+1),
             cadd(RCmul(-2,omega2),
                  cadd(RCmul(2*s+3,rho),
-                      cneg(cmul(cadd(RCmul(2,omega),I),cfact)))));
+                      cneg(cmul(cadd(RCmul(2,omega),LAL_COMPLEX16_I),cfact)))));
   *alp = cadd(RCmul(n,cadd(csetr(n),cadd(c0,cunit))),c0);
   *bet = cadd(RCmul(n,cadd(csetr(-2*n),cadd(c1,csetr(2)))),c3);
   *gam = cadd(RCmul(n,cadd(csetr(n),cadd(c2,csetr(-3)))),
@@ -194,13 +194,13 @@ static int XLALBlackHoleModeEigenSolveSchwarzschildResid( const gsl_vector *x, v
 {
   COMPLEX16 cf;
   struct tagBlackHoleMode *p = params;
-  creal(p->omega) = gsl_vector_get(x,0);
-  cimag(p->omega) = gsl_vector_get(x,1);
+  LAL_REAL(p->omega) = gsl_vector_get(x,0);
+  LAL_IMAG(p->omega) = gsl_vector_get(x,1);
 
   XLALBlackHoleModeEigenSolveContinuedFraction( &cf, XLALBlackHoleModeSchwarzschildCoefficients, p );
 
-  gsl_vector_set(f, 0, creal(cf));
-  gsl_vector_set(f, 1, cimag(cf));
+  gsl_vector_set(f, 0, LAL_REAL(cf));
+  gsl_vector_set(f, 1, LAL_IMAG(cf));
   return 0;
 }
 
@@ -208,18 +208,18 @@ static int XLALBlackHoleModeEigenSolveKerrResid( const gsl_vector *x, void *para
 {
   COMPLEX16 cf1, cf2;
   struct tagBlackHoleMode *p = params;
-  creal(p->A) = gsl_vector_get(x,0);
-  cimag(p->A) = gsl_vector_get(x,1);
-  creal(p->omega) = gsl_vector_get(x,2);
-  cimag(p->omega) = gsl_vector_get(x,3);
+  LAL_REAL(p->A) = gsl_vector_get(x,0);
+  LAL_IMAG(p->A) = gsl_vector_get(x,1);
+  LAL_REAL(p->omega) = gsl_vector_get(x,2);
+  LAL_IMAG(p->omega) = gsl_vector_get(x,3);
 
   XLALBlackHoleModeEigenSolveContinuedFraction( &cf1, XLALBlackHoleModeKerrRadialCoefficients, p );
   XLALBlackHoleModeEigenSolveContinuedFraction( &cf2, XLALBlackHoleModeKerrAngularCoefficients, p );
 
-  gsl_vector_set(f, 0, creal(cf1));
-  gsl_vector_set(f, 1, cimag(cf1));
-  gsl_vector_set(f, 2, creal(cf2));
-  gsl_vector_set(f, 3, cimag(cf2));
+  gsl_vector_set(f, 0, LAL_REAL(cf1));
+  gsl_vector_set(f, 1, LAL_IMAG(cf1));
+  gsl_vector_set(f, 2, LAL_REAL(cf2));
+  gsl_vector_set(f, 3, LAL_IMAG(cf2));
   return 0;
 }
 
@@ -543,7 +543,7 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
     COMPLEX16 aa, delta;
     delta = cmulr(a,prod);
     sum = cadd(sum,delta);
-    if ( cabs2(delta) < SMALL )
+    if ( LAL_CABS2(delta) < SMALL )
       break;
     XLALBlackHoleModeKerrAngularCoefficients(&alp, &bet, &gam, n, mode);
     aa = a;
@@ -556,7 +556,7 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
     abort();
 
   *result = cmulr(sum,pow(1+mu,k1)*pow(1-mu,k2));
-  *result = cmul(*result,cexp(cmulr(mode->omega,mu*mode->a)));
+  *result = cmul(*result,LAL_CEXP(cmulr(mode->omega,mu*mode->a)));
   return 0;
 
 #else
@@ -587,10 +587,10 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
     term  = cmulr(a,prod);
     sum   = cadd(sum,term);
     /*
-    if ( cabs2(term) < SMALL )
+    if ( LAL_CABS2(term) < SMALL )
       break;
       */
-    if ( cabs2(term) < 1e-4 )
+    if ( LAL_CABS2(term) < 1e-4 )
       break;
     if ( XLALBlackHoleModeKerrAngularCoefficients(&alp, &bet, &gam, n, &params) < 0 )
       XLAL_ERROR( XLAL_EFUNC );
@@ -601,7 +601,7 @@ int XLALSpheroidalWaveFunction1( COMPLEX16 *result, REAL8 mu, struct tagBlackHol
     XLAL_ERROR( XLAL_EMAXITER );
 
   *result = cmulr(sum,pow(1+mu,k1)*pow(1-mu,k2));
-  *result = cmul(*result,cexp(cmulr(mode->omega,mu*mode->a)));
+  *result = cmul(*result,LAL_CEXP(cmulr(mode->omega,mu*mode->a)));
   return 0;
 #endif
 }
@@ -613,7 +613,7 @@ static REAL8 XLALSpheroidalWaveFunction1Abs2( REAL8 mu, void *params )
   REAL8 result;
   if ( XLALSpheroidalWaveFunction1( &swf, mu, params ) )
     XLAL_ERROR_REAL8( XLAL_EFUNC );
-  result = cabs2(swf);
+  result = LAL_CABS2(swf);
   return result;
 }
 
@@ -636,7 +636,7 @@ int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *pa
   /* get complex part so that spheroidal wave function is real at mu=0 */
   if ( XLALSpheroidalWaveFunction1( &swf, 0.0, params ) < 0 )
     XLAL_ERROR( XLAL_EFUNC );
-  *norm = conj(cdivr(swf,cabs(swf)));
+  *norm = LAL_CONJ(cdivr(swf,LAL_CABS(swf)));
 
   /* sign convention: to agree with sw spherical harmonics */
   /* TODO: CHECKME */
@@ -645,7 +645,7 @@ int XLALSpheroidalWaveFunctionNorm( COMPLEX16 *norm, struct tagBlackHoleMode *pa
     XLAL_ERROR( XLAL_EFUNC );
   swf = cmul(swf,*norm);
   signneg = ( params->l - ( params->m > params->s ? params->m : params->s ) ) % 2 ? 0 : 1;
-  if ( (signneg && (creal(swf) > 0)) || ((! signneg) && (creal(swf) < 0)) )
+  if ( (signneg && (LAL_REAL(swf) > 0)) || ((! signneg) && (LAL_REAL(swf) < 0)) )
     *norm = cneg(*norm);
 
   *norm = cdivr(*norm,sqrt(integral));
@@ -709,12 +709,12 @@ int XLALBlackHoleRingdownAmplitude(
   /* change from Leaver's conventions to usual conventions */
   omega = cmulr( mode->omega, 0.5 );
 
-  amp = cexp(cmulr(I, mode->m*azimuthRad));
-  amp = cmulr( amp, -4.0*massSolar*sqrt(-1.0*cimag(omega)*0.5*fracMassLoss/cabs2(omega)));
+  amp = LAL_CEXP(cmulr(LAL_COMPLEX16_I, mode->m*azimuthRad));
+  amp = cmulr( amp, -4.0*massSolar*sqrt(-1.0*LAL_IMAG(omega)*0.5*fracMassLoss/LAL_CABS2(omega)));
   amp = cmulr( amp, LAL_MRSUN_SI/(distanceMpc*1e6*LAL_PC_SI));
 
   *amplitudePlus = cmul(cadd(swf_1,swf_2),amp);
-  *amplitudeCross = cmul(cmul(I,csub(swf_1,swf_2)),amp);
+  *amplitudeCross = cmul(cmul(LAL_COMPLEX16_I,csub(swf_1,swf_2)),amp);
 
   return 0;
 }
@@ -761,7 +761,7 @@ int XLALBlackHoleRingdownWaveform(
   omega = cmulr( params.omega, 0.5 );
 
   /* how many points in the waveform to compute */
-  ndat = ceil( log( LAL_REAL4_EPS ) * massSolar * LAL_MTSUN_SI / ( cimag(omega) * dt ) );
+  ndat = ceil( log( LAL_REAL4_EPS ) * massSolar * LAL_MTSUN_SI / ( LAL_IMAG(omega) * dt ) );
   if ( ndat < 1 )
     XLAL_ERROR( XLAL_EBADLEN );
   if ( ndat > (INT4)plus->data->length )
@@ -771,15 +771,15 @@ int XLALBlackHoleRingdownWaveform(
   }
 
   /* compute complex amplitude and phase factors */
-  amplitude_1 = cmul(swf_1, cexp(cmulr(I, m*azimuthRad)));
-  amplitude_1 = cmulr(amplitude_1, -4.0*massSolar*sqrt(-1.0*cimag(omega)*0.5*fracMassLoss/cabs2(omega)));
+  amplitude_1 = cmul(swf_1, LAL_CEXP(cmulr(LAL_COMPLEX16_I, m*azimuthRad)));
+  amplitude_1 = cmulr(amplitude_1, -4.0*massSolar*sqrt(-1.0*LAL_IMAG(omega)*0.5*fracMassLoss/LAL_CABS2(omega)));
   amplitude_1 = cmulr(amplitude_1, LAL_MRSUN_SI/(distanceMpc*1e6*LAL_PC_SI));
-  I_omega_dt_1 = cmulr(cmul(I,omega),-1.0*dt/(massSolar*LAL_MTSUN_SI));
+  I_omega_dt_1 = cmulr(cmul(LAL_COMPLEX16_I,omega),-1.0*dt/(massSolar*LAL_MTSUN_SI));
 
-  amplitude_2 = conj(cmul(swf_2, cexp(cmulr(I, m*azimuthRad))));
-  amplitude_2 = cmulr(amplitude_2, -4.0*massSolar*sqrt(-1.0*cimag(omega)*0.5*fracMassLoss/cabs2(omega)));
+  amplitude_2 = LAL_CONJ(cmul(swf_2, LAL_CEXP(cmulr(LAL_COMPLEX16_I, m*azimuthRad))));
+  amplitude_2 = cmulr(amplitude_2, -4.0*massSolar*sqrt(-1.0*LAL_IMAG(omega)*0.5*fracMassLoss/LAL_CABS2(omega)));
   amplitude_2 = cmulr(amplitude_2, LAL_MRSUN_SI/(distanceMpc*1e6*LAL_PC_SI));
-  I_omega_dt_2 = cmulr(cmul(I,conj(omega)),dt/(massSolar*LAL_MTSUN_SI));
+  I_omega_dt_2 = cmulr(cmul(LAL_COMPLEX16_I,LAL_CONJ(omega)),dt/(massSolar*LAL_MTSUN_SI));
 
   /* zero the data */
   memset( plus->data->data, 0, plus->data->length * sizeof( *plus->data->data ) );
@@ -788,11 +788,11 @@ int XLALBlackHoleRingdownWaveform(
   for ( i = 0; i < ndat; ++i )
   {
     COMPLEX16 strain_1, strain_2, strain;
-    strain_1 = cmul( amplitude_1, cexp( cmulr( I_omega_dt_1, i ) ) );
-    strain_2 = cmul( amplitude_2, cexp( cmulr( I_omega_dt_2, i ) ) );
+    strain_1 = cmul( amplitude_1, LAL_CEXP( cmulr( I_omega_dt_1, i ) ) );
+    strain_2 = cmul( amplitude_2, LAL_CEXP( cmulr( I_omega_dt_2, i ) ) );
     strain = cadd( strain_1, strain_2 );
-    plus->data->data[i] = creal( strain );
-    cross->data->data[i] = -1.0 * cimag( strain );
+    plus->data->data[i] = LAL_REAL( strain );
+    cross->data->data[i] = -1.0 * LAL_IMAG( strain );
   }
 
   return ndat;
