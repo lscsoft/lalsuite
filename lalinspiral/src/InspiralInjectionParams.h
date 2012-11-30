@@ -97,6 +97,16 @@ typedef enum
 }
 InclDistribution;
 
+/** enum containing the different ways in which the spin magnitudes of
+    injections can be distributed */
+typedef enum
+{
+  unknownSpinDist,
+  uniformSpinDist,
+  gaussianSpinDist
+}
+SpinDistribution;
+
 /** enum for two distinct ways a spin-aligned injection is realized
     depending on the waveform family */
 typedef enum
@@ -199,7 +209,12 @@ SimInspiralTable* XLALRandomInspiralSpins( SimInspiralTable *inj,
     REAL4  kappa1Max,
     REAL4  abskappa1Min,
     REAL4  abskappa1Max,
-    AlignmentType alignInj);
+    AlignmentType alignInj,
+    SpinDistribution distribution,
+    REAL4  spin1Mean,
+    REAL4  spin1Std,
+    REAL4  spin2Mean,
+    REAL4  spin2Std);
 
 SimInspiralTable* XLALRandomNRInjectTotalMass(
     SimInspiralTable *inj,

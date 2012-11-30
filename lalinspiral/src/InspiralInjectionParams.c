@@ -448,7 +448,12 @@ SimInspiralTable* XLALRandomInspiralSpins(
     REAL4  kappa1Max,		/**< maximum value of spin1 . L_N */
     REAL4  abskappa1Min,	/**< minimum absolute value of spin1 . L_N */
     REAL4  abskappa1Max,	/**< maximum absolute value of spin1 . L_N */
-    AlignmentType alignInj	/**< choice of convention for aligned spins */
+    AlignmentType alignInj,	/**< choice of convention for aligned spins */
+    SpinDistribution distribution,	/**< the spin magnitude distribution to use */
+    REAL4  spin1Mean,		/**< mean value for |spin1| gaussian */
+    REAL4  spin1Std,		/**< standard deviation for |spin1| */
+    REAL4  spin2Mean,		/**< mean value for |spin2| gaussian */
+    REAL4  spin2Std 		/**< standard deviation for |spin2| */
     )
 {
   REAL4 spin1Mag;
@@ -472,8 +477,20 @@ SimInspiralTable* XLALRandomInspiralSpins(
   kappa    = -2.0;
 
   /* spin1Mag */
-  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *
-    (spin1Max - spin1Min);
+  switch (distribution)
+  {
+	case uniformSpinDist:  spin1Mag =  spin1Min + XLALUniformDeviate( randParams ) *(spin1Max - spin1Min);
+	break;
+	case gaussianSpinDist:  
+	  do spin1Mag = spin1Mean + spin1Std*XLALNormalDeviate(randParams);
+      while ( spin1Mag > spin1Max || spin1Mag < spin1Min );
+    break;
+    default: {
+      fprintf( stderr,"Spin magnitude distribution not known.\n" );
+      XLAL_ERROR_NULL(XLAL_EDOM);
+    }
+
+  }
 
   /* Check if initial spin orientation is specified by user */
   if ( (kappa1Min > -1.0) || (kappa1Max < 1.0) )
@@ -547,8 +564,20 @@ SimInspiralTable* XLALRandomInspiralSpins(
   }
 
   /* spin2Mag */
-  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *
-	  (spin2Max - spin2Min);
+  switch (distribution)
+  {
+	case uniformSpinDist:  spin2Mag =  spin2Min + XLALUniformDeviate( randParams ) *(spin2Max - spin2Min);
+	break;
+	case gaussianSpinDist:  
+	  do spin2Mag = spin2Mean + spin2Std*XLALNormalDeviate(randParams);
+      while ( spin2Mag > spin2Max || spin2Mag < spin2Min );
+    break;
+    default: {
+      fprintf( stderr,"Spin magnitude distribution not known.\n" );
+      XLAL_ERROR_NULL(XLAL_EDOM);
+    }
+
+  }
 
   /* aligned case */
   if (alignInj==inxzPlane)
@@ -584,6 +613,7 @@ SimInspiralTable* XLALRandomInspiralSpins(
 
   return ( inj );
 }
+
 
 /** Generates random masses for an inspiral injection. */
 SimInspiralTable* XLALRandomNRInjectTotalMass(

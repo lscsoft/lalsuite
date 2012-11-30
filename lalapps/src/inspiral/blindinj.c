@@ -716,7 +716,7 @@ int main( int argc, char *argv[] )
       inj = XLALRandomInspiralMasses( inj, randParams, mDist,
           minNSMass, maxNSMass, minNSMass, maxNSMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
-          maxNSSpin, minNSSpin, maxNSSpin, -1.0, 1.0, 0.0, 0.1, 0);
+          maxNSSpin, minNSSpin, maxNSSpin, -1.0, 1.0, 0.0, 0.1, 0, uniformSpinDist, 0.0, 0.0, 0.0, 0.0);
       desiredSnr = bnsSnrMean + bnsSnrStd * normalDev->data[0]; 
     }
     else if ( massPar < (BNSfrac + BBHfrac) )
@@ -725,7 +725,7 @@ int main( int argc, char *argv[] )
       inj = XLALRandomInspiralMasses( inj, randParams, mDist,
           minBHMass, maxBHMass, minBHMass, maxBHMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minBHSpin,
-          maxBHSpin, minBHSpin, maxBHSpin , -1.0, 1.0, 0.0, 0.1, 0);
+          maxBHSpin, minBHSpin, maxBHSpin , -1.0, 1.0, 0.0, 0.1, 0, uniformSpinDist, 0.0, 0.0, 0.0, 0.0);
       desiredSnr = snrMean + snrStd * normalDev->data[0]; 
     }
     else
@@ -734,7 +734,7 @@ int main( int argc, char *argv[] )
       inj = XLALRandomInspiralMasses( inj, randParams, mDist,
           minNSMass, maxNSMass, minBHMass, maxBHMass, minTotalMass, maxTotalMass );
       inj = XLALRandomInspiralSpins( inj, randParams, minNSSpin,
-          maxNSSpin, minBHSpin, maxBHSpin , -1.0, 1.0, 0.0, 0.1, 0);
+          maxNSSpin, minBHSpin, maxBHSpin , -1.0, 1.0, 0.0, 0.1, 0, uniformSpinDist, 0.0, 0.0, 0.0, 0.0);
       desiredSnr = snrMean + snrStd * normalDev->data[0]; 
     }
     XLALDestroyVector( normalDev );

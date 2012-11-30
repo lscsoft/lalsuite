@@ -123,6 +123,7 @@ LoudnessDistribution          dDistr;
 SkyLocationDistribution       lDistr;
 MassDistribution              mDistr;
 InclDistribution              iDistr;
+SpinDistribution              spinDistr = uniformSpinDist;
 
 SimInspiralTable *simTable;
 SimRingdownTable *simRingTable;
@@ -174,8 +175,12 @@ int spinInjections=-1;
 int spinAligned=-1;
 REAL4 minSpin1=-1.0;
 REAL4 maxSpin1=-1.0;
+REAL4 meanSpin1=0.0;
+REAL4 Spin1Std=0.0;
 REAL4 minSpin2=-1.0;
 REAL4 maxSpin2=-1.0;
+REAL4 meanSpin2=0.0;
+REAL4 Spin2Std=0.0;
 REAL4 minKappa1=-1.0;
 REAL4 maxKappa1=1.0;
 REAL4 minabsKappa1=0.0;
@@ -718,12 +723,17 @@ static void print_usage(char *program)
       "  --disable-spin           disables spinning injections\n"\
       "  --enable-spin            enables spinning injections\n"\
       "                           One of these is required.\n"\
+      "  [--spin-gaussian]        enable gaussian spin distribution\n"\
       "  --aligned                enforces the spins to be along the direction\n"\
       "                           of orbital angular momentum.\n"\
       "  [--min-spin1] spin1min   Set the minimum spin1 to spin1min (0.0)\n"\
       "  [--max-spin1] spin1max   Set the maximum spin1 to spin1max (0.0)\n"\
+      "  [--mean-spin1] spin1mean Set the mean for |spin1| distribution\n"\
+      "  [--stdev-spin1] spin1std Set the standard deviation for |spin1|\n"\
       "  [--min-spin2] spin2min   Set the minimum spin2 to spin2min (0.0)\n"\
       "  [--max-spin2] spin2max   Set the maximum spin2 to spin2max (0.0)\n"\
+      "  [--mean-spin2] spin2mean Set the mean for |spin2| distribution\n"\
+      "  [--stdev-spin2] spin2std Set the standard deviation for |spin2|\n"\
       "  [--min-kappa1] kappa1min Set the minimum cos(S1.L_N) to kappa1min (-1.0)\n"\
       "  [--max-kappa1] kappa1max Set the maximum cos(S1.L_N) to kappa1max (1.0)\n"\
       "  [--min-abskappa1] abskappa1min \n"\
@@ -1580,6 +1590,11 @@ int main( int argc, char *argv[] )
     {"band-pass-injection",     no_argument,       0,                '}'},
     {"write-sim-ring",          no_argument,       0,                '{'},
     {"ipn-file",                required_argument, 0,                '^'},
+    {"spin-gaussian",           no_argument,       0,                 1002},
+    {"stdev-spin1",             required_argument, 0,                 1003},
+    {"stdev-spin2",             required_argument, 0,                 1004},
+    {"mean-spin1",              required_argument, 0,                 1005},
+    {"mean-spin2",              required_argument, 0,                 1006},
     {0, 0, 0, 0}
   };
   int c;
@@ -2623,6 +2638,38 @@ int main( int argc, char *argv[] )
               "%s", optarg );
         break;
 
+      case 1002:
+        this_proc_param = this_proc_param->next = 
+        next_process_param( long_options[option_index].name, "string", "" );
+        spinDistr = gaussianSpinDist;
+        break;
+
+      case 1003:
+        Spin1Std = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+        next_process_param( long_options[option_index].name,
+          "float", "%le", Spin1Std );
+        break;
+
+      case 1004:
+        Spin2Std = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+        next_process_param( long_options[option_index].name,
+          "float", "%le", Spin2Std );
+        break;
+      case 1005:
+        meanSpin1 = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+        next_process_param( long_options[option_index].name,
+          "float", "%le", meanSpin1 );
+        break;
+      case 1006:
+        meanSpin2 = atof( optarg );
+        this_proc_param = this_proc_param->next = 
+        next_process_param( long_options[option_index].name,
+          "float", "%le", meanSpin2 );
+        break;
+
 
       default:
         fprintf( stderr, "unknown error while parsing options\n" );
@@ -3078,6 +3125,21 @@ int main( int argc, char *argv[] )
 
   if ( spinInjections==1 )
   {
+    if ( spinDistr == unknownSpinDist ) /* Not currently used */
+    {
+      fprintf(stderr,"Must specify a spin magnitude distribution (--spin-distr).\n");
+      exit( 1 );
+    }
+
+    /* check that spin stddev is positive */
+    if ( spinDistr==gaussianSpinDist && (Spin1Std <= 0.0 || Spin2Std <= 0.0))
+    {
+        fprintf( stderr,
+            "Must specify positive |spin| standard deviations when using"
+            " --spin-gaussian\n" );
+        exit( 1 );
+    }
+
     /* check that spins are in range 0 - 1 */
     if (minSpin1 < 0. || minSpin2 < 0. || maxSpin1 > 1. || maxSpin2 >1.)
     {
@@ -3093,6 +3155,18 @@ int main( int argc, char *argv[] )
           "Minimal spins must be less than maximal spins.\n" );
       exit( 1 );
     }
+
+    /* check that spin means are within a reasonable range */
+    if (spinDistr==gaussianSpinDist && ( minSpin1 - meanSpin1 > 2.0*Spin1Std || meanSpin1 - maxSpin1 > 2.0*Spin2Std ))
+    {
+      fprintf(stderr,"Mean of |spin1| distribution is way out of range.\n");
+      exit( 1 );		
+	}
+    if (spinDistr==gaussianSpinDist && ( minSpin2 - meanSpin2 > 2.0*Spin2Std || meanSpin2 - maxSpin2 > 2.0*Spin2Std ))
+    {
+      fprintf(stderr,"Mean of |spin2| distribution is way out of range.\n");
+      exit( 1 );		
+	}
 
     /* check that selection criteria for kappa are unique */
     if ( (minKappa1 > -1.0 || maxKappa1 < 1.0) &&
@@ -3422,7 +3496,9 @@ int main( int argc, char *argv[] )
           minSpin2, maxSpin2,
           minKappa1, maxKappa1,
           minabsKappa1, maxabsKappa1,
-          alignInj );
+          alignInj, spinDistr, 
+          meanSpin1, Spin1Std, 
+          meanSpin2, Spin2Std );
     }
 
     /* adjust SNR to desired distribution using NINJA calculation */ 
