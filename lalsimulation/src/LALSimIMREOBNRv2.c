@@ -1227,6 +1227,8 @@ XLALSimIMREOBNRv2Generator(
   }
 
   i = 0;
+  /* TODO: discrete search for lfCut generates discontinuity w.r.t change in physical parameter. 
+           Implement a continuous search. */
   while ( i < hiSRndx )
   {
     omega = XLALCalculateOmega( eta, rVec.data[i], prVec.data[i], pPhiVec.data[i], &aCoeffs );
