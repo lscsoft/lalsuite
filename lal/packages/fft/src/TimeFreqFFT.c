@@ -18,7 +18,7 @@
 */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/Units.h>
@@ -66,10 +66,7 @@ int XLALREAL4TimeFreqFFT(
 
   /* provide the correct scaling of the result */
   for ( k = 0; k < freq->data->length; ++k )
-  {
-    freq->data->data[k].re *= time->deltaT;
-    freq->data->data[k].im *= time->deltaT;
-  }
+    freq->data->data[k] *= time->deltaT;
 
   return 0;
 }
@@ -148,10 +145,7 @@ int XLALREAL8TimeFreqFFT(
 
   /* provide the correct scaling of the result */
   for ( k = 0; k < freq->data->length; ++k )
-  {
-    freq->data->data[k].re *= time->deltaT;
-    freq->data->data[k].im *= time->deltaT;
-  }
+    freq->data->data[k] *= time->deltaT;
 
   return 0;
 }
@@ -243,17 +237,9 @@ int XLALCOMPLEX8TimeFreqFFT(
 
   /* unpack the frequency series and multiply by deltaT */
   for ( k = 0; k < time->data->length / 2; ++k )
-  {
-    UINT4 kk = k + ( time->data->length + 1 ) / 2;
-    freq->data->data[k].re = time->deltaT * tmp->data[kk].re;
-    freq->data->data[k].im = time->deltaT * tmp->data[kk].im;
-  }
+    freq->data->data[k] = time->deltaT * tmp->data[k+(time->data->length+1)/2];
   for ( k = time->data->length / 2; k < time->data->length; ++k )
-  {
-    UINT4 kk = k - time->data->length / 2;
-    freq->data->data[k].re = time->deltaT * tmp->data[kk].re;
-    freq->data->data[k].im = time->deltaT * tmp->data[kk].im;
-  }
+    freq->data->data[k] = time->deltaT * tmp->data[k-time->data->length/2];
 
   /* destroy temporary workspace */
   XLALDestroyCOMPLEX8Vector( tmp );
@@ -296,17 +282,9 @@ int XLALCOMPLEX8FreqTimeFFT(
 
   /* pack the frequency series and multiply by deltaF */
   for ( k = 0; k < freq->data->length / 2; ++k )
-  {
-    UINT4 kk = k + ( freq->data->length + 1 ) / 2;
-    tmp->data[kk].re = freq->deltaF * freq->data->data[k].re;
-    tmp->data[kk].im = freq->deltaF * freq->data->data[k].im;
-  }
+    tmp->data[k+(freq->data->length+1)/2] = freq->deltaF * freq->data->data[k];
   for ( k = freq->data->length / 2; k < freq->data->length; ++k )
-  {
-    UINT4 kk = k - freq->data->length / 2;
-    tmp->data[kk].re = freq->deltaF * freq->data->data[k].re;
-    tmp->data[kk].im = freq->deltaF * freq->data->data[k].im;
-  }
+    tmp->data[k-freq->data->length/2] = freq->deltaF * freq->data->data[k];
 
   /* perform transform */
   if ( XLALCOMPLEX8VectorFFT( time->data, tmp, plan ) == XLAL_FAILURE )
@@ -386,17 +364,9 @@ int XLALCOMPLEX16TimeFreqFFT(
 
   /* unpack the frequency series and multiply by deltaT */
   for ( k = 0; k < time->data->length / 2; ++k )
-  {
-    UINT4 kk = k + ( time->data->length + 1 ) / 2;
-    freq->data->data[k].re = time->deltaT * tmp->data[kk].re;
-    freq->data->data[k].im = time->deltaT * tmp->data[kk].im;
-  }
+    freq->data->data[k] = time->deltaT * tmp->data[k+(time->data->length+1)/2];
   for ( k = time->data->length / 2; k < time->data->length; ++k )
-  {
-    UINT4 kk = k - time->data->length / 2;
-    freq->data->data[k].re = time->deltaT * tmp->data[kk].re;
-    freq->data->data[k].im = time->deltaT * tmp->data[kk].im;
-  }
+    freq->data->data[k] = time->deltaT * tmp->data[k-time->data->length/2];
 
   /* destroy temporary workspace */
   XLALDestroyCOMPLEX16Vector( tmp );
@@ -439,17 +409,9 @@ int XLALCOMPLEX16FreqTimeFFT(
 
   /* pack the frequency series and multiply by deltaF */
   for ( k = 0; k < freq->data->length / 2; ++k )
-  {
-    UINT4 kk = k + ( freq->data->length + 1 ) / 2;
-    tmp->data[kk].re = freq->deltaF * freq->data->data[k].re;
-    tmp->data[kk].im = freq->deltaF * freq->data->data[k].im;
-  }
+    tmp->data[k+(freq->data->length+1)/2] = freq->deltaF * freq->data->data[k];
   for ( k = freq->data->length / 2; k < freq->data->length; ++k )
-  {
-    UINT4 kk = k - freq->data->length / 2;
-    tmp->data[kk].re = freq->deltaF * freq->data->data[k].re;
-    tmp->data[kk].im = freq->deltaF * freq->data->data[k].im;
-  }
+    tmp->data[k-freq->data->length/2] = freq->deltaF * freq->data->data[k];
 
   /* perform transform */
   if ( XLALCOMPLEX16VectorFFT( time->data, tmp, plan ) == XLAL_FAILURE )
@@ -766,8 +728,8 @@ LALREAL4AverageSpectrum (
       /* we can get away with less storage */
       for ( k = 0; k < fLength; ++k )
       {
-        fftRe = fSegment->data[k].re;
-        fftIm = fSegment->data[k].im;
+        fftRe = crealf(fSegment->data[k]);
+        fftIm = cimagf(fSegment->data[k]);
         fSeries->data->data[k] += fftRe * fftRe + fftIm * fftIm;
       }
 
@@ -780,8 +742,8 @@ LALREAL4AverageSpectrum (
       /* we must store all the spectra */
       for ( k = 0; k < fLength; ++k )
       {
-        fftRe = fSegment->data[k].re;
-        fftIm = fSegment->data[k].im;
+        fftRe = crealf(fSegment->data[k]);
+        fftIm = cimagf(fSegment->data[k]);
         psdSeg[i * fLength + k] = fftRe * fftRe + fftIm * fftIm;
       }
 
@@ -985,20 +947,18 @@ LALCOMPLEX8AverageSpectrum (
       /* we can get away with less storage */
       for ( k = 0; k < fLength; ++k )
       {
-        fftRe0 = fSegment[0]->data[k].re;
-        fftIm0 = fSegment[0]->data[k].im;
-        fftRe1 = fSegment[1]->data[k].re;
-        fftIm1 = fSegment[1]->data[k].im;
-        fSeries->data->data[k].re += fftRe0 * fftRe1 + fftIm0 * fftIm1;
-        fSeries->data->data[k].im += - fftIm0 * fftRe1 + fftRe0 * fftIm1;
+        fftRe0 = crealf(fSegment[0]->data[k]);
+        fftIm0 = cimagf(fSegment[0]->data[k]);
+        fftRe1 = crealf(fSegment[1]->data[k]);
+        fftIm1 = cimagf(fSegment[1]->data[k]);
+        fSeries->data->data[k] += fftRe0 * fftRe1 + fftIm0 * fftIm1;
+        fSeries->data->data[k] += I * (- fftIm0 * fftRe1 + fftRe0 * fftIm1);
 
       }
 
       /* halve the DC and Nyquist components to be consistent with T010095 */
-      fSeries->data->data[0].re /= 2;
-      fSeries->data->data[fLength - 1].re /= 2;
-      fSeries->data->data[0].im /= 2;
-      fSeries->data->data[fLength - 1].im /= 2;
+      fSeries->data->data[0] /= 2;
+      fSeries->data->data[fLength - 1] /= 2;
 
       }
 
@@ -1017,10 +977,7 @@ LALCOMPLEX8AverageSpectrum (
 
     /* normalize the psd to it matches the conventions document */
     for ( k = 0; k < fLength; ++k )
-    {
-      fSeries->data->data[k].re *= psdNorm;
-      fSeries->data->data[k].im *= psdNorm;
-    }
+      fSeries->data->data[k] *= psdNorm;
 
 
   DETATCHSTATUSPTR( status );

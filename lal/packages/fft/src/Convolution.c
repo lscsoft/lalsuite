@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <string.h>
 #include <lal/AVFactories.h>
@@ -118,9 +118,8 @@ REAL4TimeSeries *XLALRespFilt(
    * term).  This may in generaly not quite be true due to numerical
    * rounding and accuracies so I will manually set these to the
    * appropriate values */
-  tmpFFTWave->data[0].im = 0.0;
-  tmpFFTWave->data[0].re = 0.0;
-  tmpFFTWave->data[inTimeLength].im = 0.0;
+  tmpFFTWave->data[0] = 0.0;
+  tmpFFTWave->data[inTimeLength] = crealf(tmpFFTWave->data[inTimeLength]);
 
   memset( tmpWave->data, 0, 2*inTimeLength*sizeof(REAL4) );
   XLALREAL4ReverseFFT( tmpWave, tmpFFTWave, invPlan );

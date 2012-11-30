@@ -17,11 +17,10 @@
 *  MA  02111-1307  USA
 */
 
+#include <complex.h>
 #include <math.h>
 #include <string.h>
 #include <gsl/gsl_sf_gamma.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 #include <lal/FrequencySeries.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -31,6 +30,13 @@
 #include <lal/Units.h>
 #include <lal/Window.h>
 #include <lal/Date.h>
+
+static complex double cabs2(complex double z)
+{
+	double x = creal(z);
+	double y = cimag(z);
+	return x * x + y * y;
+}
 
 /**
  *
@@ -1115,13 +1121,13 @@ int XLALREAL4SpectrumInvertTruncate(
     for ( k = cut; k < vtilde->length - 1; ++k )
     {
       if ( spectrum->data->data[k] )
-        vtilde->data[k] = XLALCOMPLEX8Rect( 1.0 / sqrt( spectrum->data->data[k] ), 0.0 ); /* purely real */
+        vtilde->data[k] = 1.0 / sqrt( spectrum->data->data[k] ); /* purely real */
       else
-        vtilde->data[k] = LAL_COMPLEX8_ZERO;
+        vtilde->data[k] = 0.0;
     }
 
     /* no Nyquist */
-    vtilde->data[vtilde->length - 1] = LAL_COMPLEX8_ZERO;
+    vtilde->data[vtilde->length - 1] = 0.0;
 
     /* construct time-domain version of root-inv-spectrum */
     XLALREAL4ReverseFFT( vector, vtilde, revplan );
@@ -1219,13 +1225,13 @@ int XLALREAL8SpectrumInvertTruncate(
     for ( k = cut; k < vtilde->length - 1; ++k )
     {
       if ( spectrum->data->data[k] )
-        vtilde->data[k] = XLALCOMPLEX16Rect( 1.0 / sqrt( spectrum->data->data[k] ), 0.0 ); /* purely real */
+        vtilde->data[k] = 1.0 / sqrt( spectrum->data->data[k] ); /* purely real */
       else
-        vtilde->data[k] = LAL_COMPLEX16_ZERO;
+        vtilde->data[k] = 0.0;
     }
 
     /* no Nyquist */
-    vtilde->data[vtilde->length - 1] = LAL_COMPLEX16_ZERO;
+    vtilde->data[vtilde->length - 1] = 0.0;
 
     /* construct time-domain version of root-inv-spectrum */
     XLALREAL8ReverseFFT( vector, vtilde, revplan );
@@ -1329,18 +1335,18 @@ COMPLEX8FrequencySeries *XLALWhitenCOMPLEX8FrequencySeries(COMPLEX8FrequencySeri
   for(i = 0; i < fseries->data->length; i++, j++)
   {
     if(pdata[j])
-      fdata[i] = XLALCOMPLEX8MulReal(fdata[i], sqrt(norm / pdata[j]));
+      fdata[i] *= sqrt(norm / pdata[j]);
     else
       /* PSD has a 0 in it, treat as a zero in the filter */
-      fdata[i] = LAL_COMPLEX8_ZERO;
+      fdata[i] = 0.0;
   }
 
   /* zero the DC and Nyquist components for safety */
   if(fseries->data->length)
   {
     if(fseries->f0 == 0)
-      fdata[0] = LAL_COMPLEX8_ZERO;
-    fdata[fseries->data->length - 1] = LAL_COMPLEX8_ZERO;
+      fdata[0] = 0.0;
+    fdata[fseries->data->length - 1] = 0.0;
   }
 
   /* update the units of fseries.  norm has units of Hz */
@@ -1380,18 +1386,18 @@ COMPLEX16FrequencySeries *XLALWhitenCOMPLEX16FrequencySeries(COMPLEX16FrequencyS
   for(i = 0; i < fseries->data->length; i++, j++)
   {
     if(pdata[j])
-      fdata[i] = XLALCOMPLEX16MulReal(fdata[i], sqrt(norm / pdata[j]));
+      fdata[i] *= sqrt(norm / pdata[j]);
     else
       /* PSD has a 0 in it, treat as a zero in the filter */
-      fdata[i] = LAL_COMPLEX16_ZERO;
+      fdata[i] = 0.0;
   }
 
   /* zero the DC and Nyquist components for safety */
   if(fseries->data->length)
   {
     if(fseries->f0 == 0)
-      fdata[0] = LAL_COMPLEX16_ZERO;
-    fdata[fseries->data->length - 1] = LAL_COMPLEX16_ZERO;
+      fdata[0] = 0.0;
+    fdata[fseries->data->length - 1] = 0.0;
   }
 
   /* update the units of fseries.  norm has units of Hz */
@@ -1667,7 +1673,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
 
     XLALUnitSquare(&r->mean_square->sampleUnits, &r->mean_square->sampleUnits);
     for(i = 0; i < sample->data->length; i++)
-      r->mean_square->data->data[i] = log(r->history[0]->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]));
+      r->mean_square->data->data[i] = log(r->history[0]->data[i] = cabs2(sample->data->data[i]));
 
     /* set n_samples to 1 */
 
@@ -1700,7 +1706,7 @@ int XLALPSDRegressorAdd(LALPSDRegressor *r, const COMPLEX16FrequencySeries *samp
   /* copy data from current sample into history buffer */
 
   for(i = 0; i < sample->data->length; i++)
-    r->history[0]->data[i] = XLALCOMPLEX16Abs2(sample->data->data[i]);
+    r->history[0]->data[i] = cabs2(sample->data->data[i]);
 
   /* bump the number of samples that have been recorded */
 
