@@ -193,30 +193,6 @@ bool XLALSimInspiralTidalOrderIsDefault(
         );
 
 /**
- * Set the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct
- */
-void XLALSimInspiralSetInteraction(
-        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
-        LALSimInspiralInteraction interactionChoice /**< value to set flag to */
-        );
-
-/**
- * Get the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct,
- * or LAL_SIM_INSPIRAL_INTERACTION_DEFAULT if waveFlags is NULL
- */
-LALSimInspiralInteraction XLALSimInspiralGetInteraction(
-        LALSimInspiralWaveformFlags *waveFlags
-        );
-
-/**
- * Returns true if LALSimInspiralInteraction has default value
- * reutrns false otherwise
- */
-bool XLALSimInspiralInteractionIsDefault(
-        LALSimInspiralInteraction interactionChoice
-        );
-
-/**
  * Set the LALSimInspiralFrameAxis within a LALSimInspiralWaveformFlags struct
  */
 void XLALSimInspiralSetFrameAxis(

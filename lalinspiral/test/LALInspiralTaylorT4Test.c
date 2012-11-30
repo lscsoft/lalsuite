@@ -75,7 +75,6 @@ int main(void) {
 	lambda2 = 0.;
 	LALSimInspiralWaveformFlags *waveFlags;
 	waveFlags = XLALSimInspiralCreateWaveformFlags();
-	XLALSimInspiralSetInteraction( waveFlags, XLALGetInteractionFromString( "ALL" ) );
 
 	params.approximant = TaylorT4;
 	params.order = LAL_PNORDER_THREE_POINT_FIVE;
@@ -93,7 +92,7 @@ int main(void) {
 	dt = 1. / params.tSampling;
 
 	start = clock();
-	length = XLALSimInspiralTaylorT4PNRestricted(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, 0., params.distance, lambda1, lambda2, XLALSimInspiralGetInteraction(waveFlags), 0, 7);
+	length = XLALSimInspiralTaylorT4PNRestricted(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, 0., params.distance, lambda1, lambda2, XLALSimInspiralGetTidalOrder(waveFlags), 0, 7);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

@@ -32,7 +32,6 @@ struct tagLALSimInspiralWaveformFlags
 {
     LALSimInspiralSpinOrder spinO; /**< PN order of spin effects */
     LALSimInspiralTidalOrder tideO; /**< PN order of spin effects */
-    LALSimInspiralInteraction interactionChoice; /**< Flag to control spin/tidal effects */
     LALSimInspiralFrameAxis axisChoice; /**< Flag to set frame z-axis convention */
     LALSimInspiralModesChoice modesChoice; /**< Flag to control which modes are included in IMR models */
 };
@@ -59,8 +58,6 @@ LALSimInspiralWaveformFlags *XLALSimInspiralCreateWaveformFlags(void)
             LAL_SIM_INSPIRAL_SPIN_ORDER_DEFAULT);
     XLALSimInspiralSetTidalOrder(waveFlags,
             LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT);
-    XLALSimInspiralSetInteraction(waveFlags,
-            LAL_SIM_INSPIRAL_INTERACTION_DEFAULT);
     XLALSimInspiralSetFrameAxis(waveFlags,
             LAL_SIM_INSPIRAL_FRAME_AXIS_DEFAULT);
     XLALSimInspiralSetModesChoice(waveFlags,
@@ -94,7 +91,6 @@ bool XLALSimInspiralWaveformFlagsIsDefault(
     return !waveFlags || (
         XLALSimInspiralSpinOrderIsDefault(waveFlags->spinO) &&
         XLALSimInspiralTidalOrderIsDefault(waveFlags->tideO) &&
-        XLALSimInspiralInteractionIsDefault(waveFlags->interactionChoice) &&
         XLALSimInspiralFrameAxisIsDefault(waveFlags->axisChoice) &&
         XLALSimInspiralModesChoiceIsDefault(waveFlags->modesChoice));
 }
@@ -178,48 +174,6 @@ bool XLALSimInspiralTidalOrderIsDefault(
     if( tideO == LAL_SIM_INSPIRAL_TIDAL_ORDER_DEFAULT )
         return true;
     else
-        return false;
-}
-
-
-/**
- * Set the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct
- */
-void XLALSimInspiralSetInteraction(
-        LALSimInspiralWaveformFlags *waveFlags, /**< Struct whose flag will be set */
-
-        LALSimInspiralInteraction interactionChoice /**< value to set flag to */
-        )
-{
-    waveFlags->interactionChoice = interactionChoice;
-    return;
-}
-
-/**
- * Get the LALSimInspiralInteraction within a LALSimInspiralWaveformFlags struct,
- * or LAL_SIM_INSPIRAL_INTERACTION_DEFAULT if waveFlags is NULL
- */
-LALSimInspiralInteraction XLALSimInspiralGetInteraction(
-        LALSimInspiralWaveformFlags *waveFlags
-        )
-{
-    if ( waveFlags )
-        return waveFlags->interactionChoice;
-    else
-        return LAL_SIM_INSPIRAL_INTERACTION_DEFAULT;
-}
-
-/**
- * Returns true if LALSimInspiralInteraction has default value
- * returns false otherwise
- */
-bool XLALSimInspiralInteractionIsDefault(
-        LALSimInspiralInteraction interactionChoice
-        )
-{
-    if( interactionChoice == LAL_SIM_INSPIRAL_INTERACTION_DEFAULT )
-        return true;
-    else 
         return false;
 }
 

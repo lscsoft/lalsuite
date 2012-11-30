@@ -125,41 +125,42 @@ static int XLALSimInspiralSpinTaylorT4Derivatives(double t,
  * vector components will also be returned in this frame
  */
 int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
-	REAL8TimeSeries **V,          /**< post-Newtonian parameter [returned]*/
-	REAL8TimeSeries **Phi,        /**< orbital phase            [returned]*/
-	REAL8TimeSeries **S1x,	      /**< Spin1 vector x component [returned]*/
-	REAL8TimeSeries **S1y,	      /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S1z,	      /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **S2x,	      /**< Spin2 vector x component [returned]*/
-	REAL8TimeSeries **S2y,	      /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **S2z,	      /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **LNhatx,     /**< unit orbital ang. mom. x [returned]*/
-	REAL8TimeSeries **LNhaty,     /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **LNhatz,     /**< "    "    "  z component [returned]*/
-	REAL8TimeSeries **E1x,	      /**< orb. plane basis vector x[returned]*/
-	REAL8TimeSeries **E1y,	      /**< "    "    "  y component [returned]*/
-	REAL8TimeSeries **E1z,	      /**< "    "    "  z component [returned]*/
-	REAL8 deltaT,          	      /**< sampling interval (s) */
-	REAL8 m1,              	      /**< mass of companion 1 (kg) */
-	REAL8 m2,              	      /**< mass of companion 2 (kg) */
-	REAL8 fStart,                 /**< starting GW frequency */
-	REAL8 fEnd,                   /**< ending GW frequency, fEnd=0 means integrate as far forward as possible */
-	REAL8 s1x,                    /**< initial value of S1x */
-	REAL8 s1y,                    /**< initial value of S1y */
-	REAL8 s1z,                    /**< initial value of S1z */
-	REAL8 s2x,                    /**< initial value of S2x */
-	REAL8 s2y,                    /**< initial value of S2y */
-	REAL8 s2z,                    /**< initial value of S2z */
-	REAL8 lnhatx,                 /**< initial value of LNhatx */
-	REAL8 lnhaty,                 /**< initial value of LNhaty */
-	REAL8 lnhatz,                 /**< initial value of LNhatz */
-	REAL8 e1x,                    /**< initial value of E1x */
-	REAL8 e1y,                    /**< initial value of E1y */
-	REAL8 e1z,                    /**< initial value of E1z */
-	REAL8 lambda1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
-	REAL8 lambda2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
-	LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-	INT4 phaseO                   /**< twice post-Newtonian order */
+	REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned]*/
+	REAL8TimeSeries **Phi,          /**< orbital phase            [returned]*/
+	REAL8TimeSeries **S1x,	        /**< Spin1 vector x component [returned]*/
+	REAL8TimeSeries **S1y,	        /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S1z,	        /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **S2x,	        /**< Spin2 vector x component [returned]*/
+	REAL8TimeSeries **S2y,	        /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **S2z,	        /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **LNhatx,       /**< unit orbital ang. mom. x [returned]*/
+	REAL8TimeSeries **LNhaty,       /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **LNhatz,       /**< "    "    "  z component [returned]*/
+	REAL8TimeSeries **E1x,	        /**< orb. plane basis vector x[returned]*/
+	REAL8TimeSeries **E1y,	        /**< "    "    "  y component [returned]*/
+	REAL8TimeSeries **E1z,	        /**< "    "    "  z component [returned]*/
+	REAL8 deltaT,          	        /**< sampling interval (s) */
+	REAL8 m1,              	        /**< mass of companion 1 (kg) */
+	REAL8 m2,              	        /**< mass of companion 2 (kg) */
+	REAL8 fStart,                   /**< starting GW frequency */
+	REAL8 fEnd,                     /**< ending GW frequency, fEnd=0 means integrate as far forward as possible */
+	REAL8 s1x,                      /**< initial value of S1x */
+	REAL8 s1y,                      /**< initial value of S1y */
+	REAL8 s1z,                      /**< initial value of S1z */
+	REAL8 s2x,                      /**< initial value of S2x */
+	REAL8 s2y,                      /**< initial value of S2y */
+	REAL8 s2z,                      /**< initial value of S2z */
+	REAL8 lnhatx,                   /**< initial value of LNhatx */
+	REAL8 lnhaty,                   /**< initial value of LNhaty */
+	REAL8 lnhatz,                   /**< initial value of LNhatz */
+	REAL8 e1x,                      /**< initial value of E1x */
+	REAL8 e1y,                      /**< initial value of E1y */
+	REAL8 e1z,                      /**< initial value of E1z */
+	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
+	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
+	INT4 phaseO                     /**< twice post-Newtonian order */
 	)
 {
     INT4 intreturn;
@@ -331,40 +332,47 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     params.wdotSO25s2 	= 0.;
     params.ESO25s1 	    = 0.;
     params.ESO25s2 	    = 0.;
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN )
+    switch( spinO )
     {
-        params.LNhatSO15s1 	= 2. + 3./2. * m2m1;
-        params.LNhatSO15s2	= 2. + 3./2. * m1m2;
-        params.wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
-        params.wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
-        params.ESO15s1 		= 8./3. + 2. * m2m1;
-        params.ESO15s2 		= 8./3. + 2. * m1m2;
-    }
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN )
-    {
-        params.LNhatSS2 	= -1.5 / eta;
-        params.wdotSS2 		= - 1. / 48. / eta;
-        params.ESS2 		= 1. / eta;
-    }
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN) == LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN )
-    {
-        params.wdotQM2S1 	= -233./96./m1M/m1M;
-        params.wdotQM2S1L 	= 719./96./m1M/m1M;
-        params.wdotQM2S2 	= -233./96./m2M/m2M;
-        params.wdotQM2S2L 	= 719./96./m2M/m2M;
-        params.EQM2S1 		= 1./2./m1M/m1M;
-        params.EQM2S1L 		= -3./2./m1M/m1M;
-        params.EQM2S2 		= 1./2./m2M/m2M;
-        params.EQM2S2L 		= -3./2./m2M/m2M;
-    }
-    if( (interactionFlags & LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN) == LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN )
-    {
-        params.wdotSO25s1 	= -5861./144. + 1001.*eta/12. 
-                + (dm/m1M) * (809./84. - 281.*eta/8.);
-        params.wdotSO25s2 	= -5861./144. + 1001.*eta/12.
-                + (dm/m2M) * (-809./84. + 281.*eta/8.);
-        params.ESO25s1 		= 11. - 61.*eta/9. + (dm/m1M) * (-3. + 10.*eta/3.);
-        params.ESO25s2 		= 11. - 61.*eta/9. + (dm/m2M) * (3. - 10.*eta/3.);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_25PN:
+            params.wdotSO25s1 = -5861./144. + 1001.*eta/12. 
+                    + (dm/m1M) * (809./84. - 281.*eta/8.);
+            params.wdotSO25s2 = -5861./144. + 1001.*eta/12.
+                    + (dm/m2M) * (-809./84. + 281.*eta/8.);
+            params.ESO25s1 = 11. - 61.*eta/9. + (dm/m1M) * (-3. + 10.*eta/3.);
+            params.ESO25s2 = 11. - 61.*eta/9. + (dm/m2M) * (3. - 10.*eta/3.);
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_2PN:
+            // 2PN spin-spin terms
+            params.LNhatSS2 	= -1.5 / eta;
+            params.wdotSS2 		= - 1. / 48. / eta;
+            params.ESS2 		= 1. / eta;
+            // 2PN quadrupole-monopole terms
+            params.wdotQM2S1 	= -233./96./m1M/m1M;
+            params.wdotQM2S1L 	= 719./96./m1M/m1M;
+            params.wdotQM2S2 	= -233./96./m2M/m2M;
+            params.wdotQM2S2L 	= 719./96./m2M/m2M;
+            params.EQM2S1 		= 1./2./m1M/m1M;
+            params.EQM2S1L 		= -3./2./m1M/m1M;
+            params.EQM2S2 		= 1./2./m2M/m2M;
+            params.EQM2S2L 		= -3./2./m2M/m2M;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_15PN:
+            params.LNhatSO15s1 	= 2. + 3./2. * m2m1;
+            params.LNhatSO15s2	= 2. + 3./2. * m1m2;
+            params.wdotSO15s1 	= - ( 113. + 75. * m2m1 ) / 12.;
+            params.wdotSO15s2 	= - ( 113. + 75. * m1m2 ) / 12.;
+            params.ESO15s1 		= 8./3. + 2. * m2m1;
+            params.ESO15s2 		= 8./3. + 2. * m1m2;
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_1PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_05PN:
+        case LAL_SIM_INSPIRAL_SPIN_ORDER_0PN:
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Invalid spin PN order %s\n",
+                    __func__, spinO );
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
     }
 	
     /* Compute the coefficients of tidal corrections
@@ -377,24 +385,32 @@ int XLALSimInspiralPNEvolveOrbitSpinTaylorT4(
     params.wdottidal6pn = 0.;
     params.Etidal5pn = 0.;
     params.Etidal6pn = 0.;
-    if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN)
+    switch( tideO )
     {
-        params.wdottidal5pn = lambda1 * 6. * (1. + 11. * m2M) * m1M*m1M*m1M*m1M
-                + lambda2 * 6. * (1. + 11. * m1M) * m2M*m2M*m2M*m2M;
-        params.Etidal5pn = - 9. * m2m1 * lambda1 * m1M*m1M*m1M*m1M*m1M
-                - 9. * m1m2 * lambda2 * m2M*m2M*m2M*m2M*m2M;
-    }
-    if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
-    {
-        params.wdottidal6pn = lambda1 * m1M*m1M*m1M*m1M*m1M
-                * (4421./28. - 12263./28. * m1M 
-                + 1893./2. * m1M * m1M - 661 * m1M * m1M * m1M) / (2 * m1M)
-                + lambda2 * m2M*m2M*m2M*m2M*m2M * (4421./28. - 12263./28. * m2M
-                + 1893./2. * m2M * m2M - 661 * m2M * m2M * m2M) / (2 * m2M);
-        params.Etidal6pn = - 11./2. * m2m1 
-                * (3. + 2. * m1M + 3. * m1M * m1M) * lambda1 * m1M*m1M*m1M*m1M*m1M
-                - 11./2. * m1m2 * (3. + 2. * m2M + 3. * m2M * m2M)
-                * lambda2 * m2M*m2M*m2M*m2M*m2M;
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+            params.wdottidal6pn = lambda1 * m1M*m1M*m1M*m1M*m1M
+                    * (4421./28. - 12263./28. * m1M + 1893./2. * m1M * m1M
+                    - 661 * m1M * m1M * m1M) / (2 * m1M) + lambda2
+                    * m2M*m2M*m2M*m2M*m2M * (4421./28. - 12263./28. * m2M
+                    + 1893./2. * m2M * m2M - 661 * m2M * m2M * m2M) / (2 * m2M);
+            params.Etidal6pn = - 11./2. * m2m1 * (3. + 2. * m1M
+                    + 3. * m1M * m1M) * lambda1 * m1M*m1M*m1M*m1M*m1M
+                    - 11./2. * m1m2 * (3. + 2. * m2M + 3. * m2M * m2M)
+                    * lambda2 * m2M*m2M*m2M*m2M*m2M;
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+            params.wdottidal5pn = lambda1 * 6. * (1. + 11. * m2M)
+                    * m1M*m1M*m1M*m1M + lambda2
+                    * 6. * (1. + 11. * m1M) * m2M*m2M*m2M*m2M;
+            params.Etidal5pn = - 9. * m2m1 * lambda1 * m1M*m1M*m1M*m1M*m1M
+                    - 9. * m1m2 * lambda2 * m2M*m2M*m2M*m2M*m2M;
+        case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+            break;
+        default:
+            XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\n",
+                    __func__, tideO );
+            XLAL_ERROR(XLAL_EINVAL);
+            break;
     }
 	   
     /* Estimate length of waveform using Newtonian t(f) formula */
@@ -950,7 +966,8 @@ int XLALSimInspiralSpinTaylorT4(
 	REAL8 e1z,                      /**< initial value of E1z */
 	REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
 	REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
-	LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+	LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+	LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
 	int phaseO,                     /**< twice PN phase order */
 	int amplitudeO                  /**< twice PN amplitude order */
 	)
@@ -994,7 +1011,7 @@ int XLALSimInspiralSpinTaylorT4(
                 &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z, 
                 deltaT, m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y, s2z, 
                 lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-                lambda1, lambda2, interactionFlags, phaseO);
+                lambda1, lambda2, spinO, tideO, phaseO);
         if( n < 0 )
             XLAL_ERROR(XLAL_EFUNC);
 
@@ -1016,7 +1033,7 @@ int XLALSimInspiralSpinTaylorT4(
                 &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z, 
                 deltaT, m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y, s2z, 
                 lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-                lambda1, lambda2, interactionFlags, phaseO);
+                lambda1, lambda2, spinO, tideO, phaseO);
         if( n < 0 )
             XLAL_ERROR(XLAL_EFUNC);
 
@@ -1042,7 +1059,7 @@ int XLALSimInspiralSpinTaylorT4(
                 &LNhatx1, &LNhaty1, &LNhatz1, &E1x1, &E1y1, &E1z1,
                 deltaT, m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y,
                 s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-                lambda1, lambda2, interactionFlags, phaseO);
+                lambda1, lambda2, spinO, tideO, phaseO);
         
         /* Apply phase shift so orbital phase has desired value at fRef */
         phiShift = phiRef - Phi1->data->data[Phi1->data->length-1];
@@ -1059,7 +1076,7 @@ int XLALSimInspiralSpinTaylorT4(
                 &LNhatx2, &LNhaty2, &LNhatz2, &E1x2, &E1y2, &E1z2,
                 deltaT, m1, m2, fS, fE, s1x, s1y, s1z, s2x, s2y,
                 s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-                lambda1, lambda2, interactionFlags, phaseO);
+                lambda1, lambda2, spinO, tideO, phaseO);
         
         /* Apply phase shift so orbital phase has desired value at fRef */
         phiShift = phiRef - Phi2->data->data[0];
@@ -1133,7 +1150,8 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
         REAL8 fStart,                   /**< start GW frequency (Hz) */
         REAL8 lambda1,                  /**< (tidal deformability of mass 1) / (mass of mody 1)^5 (dimensionless) */
         REAL8 lambda2,                  /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
-        LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+        LALSimInspiralSpinOrder spinO,  /**< twice PN order of spin effects */
+        LALSimInspiralTidalOrder tideO, /**< twice PN order of tidal effects */
         int phaseO                      /**< twice PN phase order */
         )
 {
@@ -1159,7 +1177,7 @@ int XLALSimInspiralSpinTaylorT4PTFQVecs(
             &S2x, &S2y, &S2z, &LNhatx, &LNhaty, &LNhatz, &E1x, &E1y, &E1z,
             deltaT, m1, m2, fStart, fRef, s1x, s1y, s1z, s2x, s2y,
             s2z, lnhatx, lnhaty, lnhatz, e1x, e1y, e1z, 
-            lambda1, lambda2, interactionFlags, phaseO);
+            lambda1, lambda2, spinO, tideO, phaseO);
     if( n < 0 )
         XLAL_ERROR(XLAL_EFUNC);
 

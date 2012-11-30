@@ -285,7 +285,8 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
 (--lalsimulationinjection)      Enables injections via the LALSimulation package\n\
 (--inj-lambda1)                 value of lambda1 to be injected, LALSimulation only (0)\n\
 (--inj-lambda2)                 value of lambda1 to be injected, LALSimulation only (0)\n\
-(--inj-interactionFlags)        value of the interaction flag to be injected, LALSimulation only (LAL_SIM_INSPIRAL_INTERACTION_ALL)\n\
+(--inj-spinOrder PNorder)           Specify twice the PN order (e.g. 5 <==> 2.5PN) of spin effects to use, only for LALSimulation (default: -1 <==> Use all spin effects).\n\
+(--inj-tidalOrder PNorder)          Specify twice the PN order (e.g. 10 <==> 5PN) of tidal effects to use, only for LALSimulation (default: -1 <==> Use all tidal effects).\n\
 (--snrpath) 			Set a folder where to write a file with the SNRs being injected\n\
 (--0noise)                      Sets the noise realisation to be identically zero (for the fake caches above only)\n"
 
@@ -1191,20 +1192,18 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
       }      
       LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
-      ppt=LALInferenceGetProcParamVal(commandLine,"--inj-interactionFlags");
-      if(ppt){
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_NONE")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_NONE);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_15PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_2PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_SPIN_SPIN_SELF_2PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_QUAD_MONO_2PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_25PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_SPIN_ORBIT_3PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_ALL_SPIN);
-        if(strstr(ppt->value,"LAL_SIM_INSPIRAL_INTERACTION_ALL")) XLALSimInspiralSetInteraction(waveFlags, LAL_SIM_INSPIRAL_INTERACTION_ALL);
-      }
+      LALSimInspiralSpinOrder spinO = -1;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")) {
+        spinO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-spinOrder")->value);
+        XLALSimInspiralSetSpinOrder(waveFlags, spinO);
+        fprintf(stdout,"Injection (twice) PN spin order set to %i\n",spinO);
+      }      
+      LALSimInspiralTidalOrder tideO = -1;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")) {
+        tideO = atoi(LALInferenceGetProcParamVal(commandLine,"--inj-tidalOrder")->value);
+        XLALSimInspiralSetTidalOrder(waveFlags, tideO);
+        fprintf(stdout,"Injection (twice) PN tidal order set to %i\n",tideO);
+      }      
       LALSimInspiralTestGRParam *nonGRparams = NULL;
 
       XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->coa_phase, 1.0/InjSampleRate,

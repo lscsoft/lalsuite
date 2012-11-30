@@ -1938,7 +1938,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceIFOData *IFOd
   REAL8 lambda2 = 0.;
   if(LALInferenceCheckVariable(IFOdata->modelParams, "lambda2")) lambda2 = *(REAL8*) LALInferenceGetVariable(IFOdata->modelParams, "lambda2");
   LALSimInspiralWaveformFlags *waveFlags = XLALSimInspiralCreateWaveformFlags();
-  if(LALInferenceCheckVariable(IFOdata->modelParams, "interactionFlags")) XLALSimInspiralSetInteraction(waveFlags, *(LALSimInspiralInteraction*) LALInferenceGetVariable(IFOdata->modelParams, "interactionFlags"));
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "spinO")) XLALSimInspiralSetSpinOrder(waveFlags, *(LALSimInspiralSpinOrder*) LALInferenceGetVariable(IFOdata->modelParams, "spinO"));
+  if(LALInferenceCheckVariable(IFOdata->modelParams, "tideO")) XLALSimInspiralSetTidalOrder(waveFlags, *(LALSimInspiralTidalOrder*) LALInferenceGetVariable(IFOdata->modelParams, "tideO"));
   LALSimInspiralTestGRParam *nonGRparams = NULL;
   
   REAL8 fRef = 0.0;

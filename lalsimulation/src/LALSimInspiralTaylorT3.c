@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Drew Keppel, J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, Stas Babak, David Churches, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer
+ * Copyright (C) 2011 Drew Keppel, J. Creighton, S. Fairhurst, B. Krishnan, L. Santamaria, Stas Babak, David Churches, B.S. Sathyaprakash, Craig Robinson , Thomas Cokelaer, Evan Ochsner, Les Wade
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -521,13 +521,13 @@ XLALSimInspiralPhasing3_7PN (
  * units.
  */
 static REAL8 XLALSimInspiralChirpLength(
-		REAL8 m1,					/**< mass of companion 1 */
-		REAL8 m2,					/**< mass of companion 2 */
-		REAL8 lambda1,					/**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,					/**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, 	/**< flag to control spin and tidal effects */
-		REAL8 f_min,					/**< start frequency */
-		int O						/**< twice post-Newtonian order */
+		REAL8 m1,                       /**< mass of companion 1 */
+		REAL8 m2,                       /**< mass of companion 2 */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		REAL8 f_min,                    /**< start frequency */
+		int O                           /**< twice post-Newtonian order */
 		)
 {
 	REAL8 tN, t2, t3 ,t4, t5, t6, t6l, t7, tC, t10, t12;
@@ -563,15 +563,22 @@ static REAL8 XLALSimInspiralChirpLength(
 	/* Tidal co-efficients for t(v). */
 	t10 = 0.;
 	t12 = 0.;
-	if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN)	
+	switch( tideO )
 	{
-		t10 = XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi1,lambda1)
-		    + XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi2,lambda2);
-	}
-	if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
-	{
-		t12 = XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi1,lambda1)
-		    + XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi2,lambda2);
+		case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+		case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+			t12 = XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi1,lambda1)
+		    	+ XLALSimInspiralTaylorT2Timing_12PNTidalCoeff(eta,chi2,lambda2);
+		case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+			t10 = XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi1,lambda1)
+		    	+ XLALSimInspiralTaylorT2Timing_10PNTidalCoeff(chi2,lambda2);
+		case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+			break;
+		default:
+			XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\nSee LALSimInspiralTidalOrder enum in LALSimInspiralWaveformFlags.h for valid tidal orders.\n",
+					__func__, tideO );
+			XLAL_ERROR(XLAL_EINVAL);
+			break;
 	}
 
 	switch (O) {
@@ -622,16 +629,16 @@ static REAL8 XLALSimInspiralChirpLength(
  * Inputs given in SI units.
  */
 static int XLALSimInspiralTaylorT3Setup(
-		expnCoeffsTaylorT3 *ak,				/**< coefficients for TaylorT3 evolution [modified] */
-		expnFuncTaylorT3 *f,				/**< functions for TaylorT3 evolution [modified] */
-	       	REAL8 deltaT,					/**< sampling interval */
-		REAL8 m1,					/**< mass of companion 1 */
-		REAL8 m2,					/**< mass of companion 2 */
-		REAL8 lambda1,					/**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,					/**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, 	/**< flag to control spin and tidal effects */
-		REAL8 f_min,					/**< start frequency */
-		int O						/**< twice post-Newtonian order */
+		expnCoeffsTaylorT3 *ak,         /**< coefficients for TaylorT3 evolution [modified] */
+		expnFuncTaylorT3 *f,            /**< functions for TaylorT3 evolution [modified] */
+		REAL8 deltaT,                   /**< sampling interval */
+		REAL8 m1,                       /**< mass of companion 1 */
+		REAL8 m2,                       /**< mass of companion 2 */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		REAL8 f_min,                    /**< start frequency */
+		int O                           /**< twice post-Newtonian order */
 		)
 {
   REAL8 eta, tn, chi1, chi2;
@@ -673,19 +680,28 @@ static int XLALSimInspiralTaylorT3Setup(
   ak->pta12 = 0.;
   ak->fta10 = 0.;
   ak->fta12 = 0.;
-  if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN)
+  switch( tideO )
   {
-    ak->pta10 = XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi1,lambda1)
-              + XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi2,lambda2);
-    ak->fta10 = XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi1,lambda1)
-              + XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi2,lambda2);
-  }
-  if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN )
-  {
-    ak->pta12 = XLALSimInspiralTaylorT3Phasing_12PNTidalCoeff(eta,chi1,lambda1)
-              + XLALSimInspiralTaylorT3Phasing_12PNTidalCoeff(eta,chi2,lambda2);
-    ak->fta12 = XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(eta,chi1,lambda1)
-              + XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(eta,chi2,lambda2);
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:
+      ak->pta12 = XLALSimInspiralTaylorT3Phasing_12PNTidalCoeff(
+          eta, chi1, lambda1)
+          + XLALSimInspiralTaylorT3Phasing_12PNTidalCoeff(eta,chi2,lambda2);
+      ak->fta12 = XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(
+          eta, chi1, lambda1)
+          + XLALSimInspiralTaylorT3Frequency_12PNTidalCoeff(eta,chi2,lambda2);
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_5PN:
+      ak->pta10 = XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi1,lambda1)
+                + XLALSimInspiralTaylorT3Phasing_10PNTidalCoeff(chi2,lambda2);
+      ak->fta10 = XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi1,lambda1)
+                + XLALSimInspiralTaylorT3Frequency_10PNTidalCoeff(chi2,lambda2);
+    case LAL_SIM_INSPIRAL_TIDAL_ORDER_0PN:
+      break;
+    default:
+      XLALPrintError("XLAL Error - %s: Invalid tidal PN order %s\nSee LALSimInspiralTidalOrder enum in LALSimInspiralWaveformFlags.h for valid tidal orders.\n",
+          __func__, tideO );
+      XLAL_ERROR(XLAL_EINVAL);
+      break;
   }
 
   switch (O)
@@ -743,18 +759,18 @@ static int XLALSimInspiralTaylorT3Setup(
  * Computes a post-Newtonian orbit using the Taylor T3 method.
  */
 int XLALSimInspiralTaylorT3PNEvolveOrbit(
-		REAL8TimeSeries **V,                        /**< post-Newtonian parameter [returned] */
-		REAL8TimeSeries **phi,                      /**< orbital phase [returned] */
-		REAL8 phiRef,                               /**< reference orbital phase (rad) */
-		REAL8 deltaT,                               /**< sampling interval (s) */
-		REAL8 m1,                                   /**< mass of companion 1 (kg) */
-		REAL8 m2,                                   /**< mass of companion 2 (kg) */
-		REAL8 f_min,                                /**< starting GW frequency (Hz) */
-		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
-		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int O                                       /**< twice post-Newtonian order */
+		REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned] */
+		REAL8TimeSeries **phi,          /**< orbital phase [returned] */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		int O                           /**< twice post-Newtonian order */
 		)
 {
 
@@ -785,10 +801,10 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
 
 	/* initialize expnCoeffsTaylorT3 and expnFuncTaylorT3 structures */
 	if (XLALSimInspiralTaylorT3Setup(&ak, &expnfunc, deltaT, m1, m2, lambda1,
-		lambda2, interactionFlags, f_min, O))
+		lambda2, tideO, f_min, O))
 		XLAL_ERROR(XLAL_EFUNC);
 
-	tC = XLALSimInspiralChirpLength(m1, m2, lambda1, lambda2, interactionFlags, f_min, O);
+	tC = XLALSimInspiralChirpLength(m1, m2, lambda1, lambda2, tideO, f_min, O);
 	c1 = nu/(5.*m);
 
 	/*
@@ -943,22 +959,22 @@ int XLALSimInspiralTaylorT3PNEvolveOrbit(
  * for phasing calcuation vs. amplitude calculations.
  */
 int XLALSimInspiralTaylorT3PNGenerator(
-		REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
-		REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
-		REAL8 phiRef,                               /**< reference orbital phase (rad) */
-		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
-		REAL8 deltaT,                               /**< sampling interval (s) */
-		REAL8 m1,                                   /**< mass of companion 1 (kg) */
-		REAL8 m2,                                   /**< mass of companion 2 (kg) */
-		REAL8 f_min,                                /**< starting GW frequency (Hz) */
-		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
-		REAL8 r,                                    /**< distance of source (m) */
-		REAL8 i,                                    /**< inclination of source (rad) */
-		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
-		int phaseO                                  /**< twice post-Newtonian phase order */
+		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 v0,                       /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 i,                        /**< inclination of source (rad) */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		int amplitudeO,                 /**< twice post-Newtonian amplitude order */
+		int phaseO                      /**< twice post-Newtonian phase order */
 		)
 {
 	REAL8TimeSeries *V;
@@ -966,8 +982,7 @@ int XLALSimInspiralTaylorT3PNGenerator(
 	int status;
 	int n;
 	n = XLALSimInspiralTaylorT3PNEvolveOrbit(&V, &phi, phiRef, deltaT,
-			m1, m2, f_min, fRef, lambda1, lambda2,
-			interactionFlags, phaseO);
+			m1, m2, f_min, fRef, lambda1, lambda2, tideO, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR(XLAL_EFUNC);
 	status = XLALSimInspiralPNPolarizationWaveforms(hplus, hcross, V, phi,
@@ -984,20 +999,20 @@ int XLALSimInspiralTaylorT3PNGenerator(
  * using TaylorT3 phasing.
  */
 SphHarmTimeSeries *XLALSimInspiralTaylorT3PNModes(
-		REAL8 phiRef,                               /**< reference orbital phase (rad) */
-		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
-		REAL8 deltaT,                               /**< sampling interval (s) */
-		REAL8 m1,                                   /**< mass of companion 1 (kg) */
-		REAL8 m2,                                   /**< mass of companion 2 (kg) */
-		REAL8 f_min,                                /**< starting GW frequency (Hz) */
-		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
-		REAL8 r,                                    /**< distance of source (m) */
-		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
-		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int lmax                                    /**< generate all modes with l <= lmax */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 v0,                       /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		int amplitudeO,                 /**< twice post-Newtonian amplitude order */
+		int phaseO,                     /**< twice post-Newtonian phase order */
+		int lmax                        /**< generate all modes with l <= lmax */
 		)
 {
 	SphHarmTimeSeries *hlm = NULL;
@@ -1028,8 +1043,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT3PNModes(
 	REAL8TimeSeries *phi;
 	int n;
 	n = XLALSimInspiralTaylorT3PNEvolveOrbit(&V, &phi, phiRef, deltaT,
-			m1, m2, f_min, fRef, lambda1, lambda2,
-			interactionFlags, phaseO);
+			m1, m2, f_min, fRef, lambda1, lambda2, tideO, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
     int m, l;
@@ -1055,21 +1069,21 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT3PNModes(
  * using TaylorT3 phasing.
  */
 COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNMode(
-		REAL8 phiRef,                               /**< reference orbital phase (rad) */
-		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
-		REAL8 deltaT,                               /**< sampling interval (s) */
-		REAL8 m1,                                   /**< mass of companion 1 (kg) */
-		REAL8 m2,                                   /**< mass of companion 2 (kg) */
-		REAL8 f_min,                                /**< starting GW frequency (Hz) */
-		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
-		REAL8 r,                                    /**< distance of source (m) */
-		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
-		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int l,                                      /**< l index of mode */
-		int m                                       /**< m index of mode */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 v0,                       /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		int amplitudeO,                 /**< twice post-Newtonian amplitude order */
+		int phaseO,                     /**< twice post-Newtonian phase order */
+		int l,                          /**< l index of mode */
+		int m                           /**< m index of mode */
 		)
 {
 	COMPLEX16TimeSeries *hlm;
@@ -1100,8 +1114,7 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNMode(
 	REAL8TimeSeries *phi;
 	int n;
 	n = XLALSimInspiralTaylorT3PNEvolveOrbit(&V, &phi, phiRef, deltaT,
-			m1, m2, f_min, fRef, lambda1, lambda2,
-			interactionFlags, phaseO);
+			m1, m2, f_min, fRef, lambda1, lambda2, tideO, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	hlm = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(V, phi,
@@ -1121,26 +1134,26 @@ COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNMode(
  * Constant log term in amplitude set to 1.  This is a gauge choice.
  */
 int XLALSimInspiralTaylorT3PN(
-		REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
-		REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
-		REAL8 phiRef,                               /**< reference orbital phase (rad) */
-		REAL8 deltaT,                               /**< sampling interval (s) */
-		REAL8 m1,                                   /**< mass of companion 1 (kg) */
-		REAL8 m2,                                   /**< mass of companion 2 (kg) */
-		REAL8 f_min,                                /**< starting GW frequency (Hz) */
-		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
-		REAL8 r,                                    /**< distance of source (m) */
-		REAL8 i,                                    /**< inclination of source (rad) */
-		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int O                                       /**< twice post-Newtonian order */
+		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m) */
+		REAL8 i,                        /**< inclination of source (rad) */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		int O                           /**< twice post-Newtonian order */
 		)
 {
 	/* set v0 to default value 1 */
 	return XLALSimInspiralTaylorT3PNGenerator(hplus, hcross, phiRef, 1.0,
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2,
-			interactionFlags, O, O);
+			tideO, O, O);
 }
 
 
@@ -1153,25 +1166,25 @@ int XLALSimInspiralTaylorT3PN(
  * Constant log term in amplitude set to 1.  This is a gauge choice.
  */
 int XLALSimInspiralTaylorT3PNRestricted(
-		REAL8TimeSeries **hplus,                    /**< +-polarization waveform */
-		REAL8TimeSeries **hcross,                   /**< x-polarization waveform */
-		REAL8 phiRef,                               /**< reference orbital phase (rad) */
-		REAL8 deltaT,                               /**< sampling interval (s) */
-		REAL8 m1,                                   /**< mass of companion 1 (kg) */
-		REAL8 m2,                                   /**< mass of companion 2 (kg) */
-		REAL8 f_min,                                /**< starting GW frequency (Hz) */
-		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
-		REAL8 r,                                    /**< distance of source (m)*/
-		REAL8 i,                                    /**< inclination of source (rad) */
-		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
-		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
-		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
-		int O                                       /**< twice post-Newtonian phase order */
+		REAL8TimeSeries **hplus,        /**< +-polarization waveform */
+		REAL8TimeSeries **hcross,       /**< x-polarization waveform */
+		REAL8 phiRef,                   /**< reference orbital phase (rad) */
+		REAL8 deltaT,                   /**< sampling interval (s) */
+		REAL8 m1,                       /**< mass of companion 1 (kg) */
+		REAL8 m2,                       /**< mass of companion 2 (kg) */
+		REAL8 f_min,                    /**< starting GW frequency (Hz) */
+		REAL8 fRef,                     /**< reference GW frequency (Hz) */
+		REAL8 r,                        /**< distance of source (m)*/
+		REAL8 i,                        /**< inclination of source (rad) */
+		REAL8 lambda1,                  /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                  /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralTidalOrder tideO, /**< flag to control spin and tidal effects */
+		int O                           /**< twice post-Newtonian phase order */
 		)
 {
 	/* use Newtonian order for amplitude */
 	/* set v0 to default value 1 */
 	return XLALSimInspiralTaylorT3PNGenerator(hplus, hcross, phiRef, 1.0,
 			deltaT, m1, m2, f_min, fRef, r, i, lambda1, lambda2,
-			interactionFlags, 0, O);
+			tideO, 0, O);
 }

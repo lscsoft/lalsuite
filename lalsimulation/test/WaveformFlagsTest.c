@@ -18,8 +18,6 @@ int main(int argc , char *argv[])
     printf("spinO default? %i\n",XLALSimInspiralSpinOrderIsDefault(XLALSimInspiralGetSpinOrder(test)));
     printf("Get tideO: %i\n",XLALSimInspiralGetTidalOrder(test));
     printf("tideO default? %i\n",XLALSimInspiralTidalOrderIsDefault(XLALSimInspiralGetTidalOrder(test)));
-    printf("Get interaction: %i\n",XLALSimInspiralGetInteraction(test));
-    printf("interaction default? %i\n",XLALSimInspiralInteractionIsDefault(XLALSimInspiralGetInteraction(test)));
     printf("Get FrameAxis: %i\n",XLALSimInspiralGetFrameAxis(test));
     printf("FrameAxis default? %i\n",XLALSimInspiralFrameAxisIsDefault(XLALSimInspiralGetFrameAxis(test)));
     printf("Get ModesChoice: %i\n",XLALSimInspiralGetModesChoice(test));
@@ -42,7 +40,6 @@ int main(int argc , char *argv[])
     /* Recheck for default values */
     printf("spinO default? %i\n",XLALSimInspiralSpinOrderIsDefault(XLALSimInspiralGetSpinOrder(test)));
     printf("tideO default? %i\n",XLALSimInspiralTidalOrderIsDefault(XLALSimInspiralGetTidalOrder(test)));
-    printf("interaction default? %i\n",XLALSimInspiralInteractionIsDefault(XLALSimInspiralGetInteraction(test)));
     printf("FrameAxis default? %i\n",XLALSimInspiralFrameAxisIsDefault(XLALSimInspiralGetFrameAxis(test)));
     printf("ModesChoice default? %i\n",XLALSimInspiralModesChoiceIsDefault(XLALSimInspiralGetModesChoice(test)));
 
