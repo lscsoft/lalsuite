@@ -1199,6 +1199,7 @@ dag.add_maxjobs_category('minifollowups', 15)
 
 dag.write_sub_files()
 dag.write_dag()
+dag.write_script()
 
 # write process end time to log file and write log file
 process.set_process_end_time(proc_id)
