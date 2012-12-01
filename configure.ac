@@ -41,7 +41,7 @@ LAL_LIBS="${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LAL_LIBS LAL_CFLAGS
 
-LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/lib/lalsupport/src/liblalsupport.la ${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
+LALSUPPORT_LIBS="${lalsuite_top_builddir}/lal/lib/lalsupport/src/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 
