@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 47
+# serial 48
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -151,7 +151,12 @@ m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
 if test "$lowercase" = "true"; then
   CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-  LIBS="$LIBS $[]uppercase[]_LIBS"
+  for arg in $[]uppercase[]_LIBS; do
+    case $arg in
+      -L*) LDFLAGS="$LDFLAGS $arg";;
+      *)   LIBS="$LIBS $arg";;
+    esac
+  done
   if test "$LALSUITE_BUILD" = "true"; then
     AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
     lowercase="true"
@@ -177,14 +182,17 @@ m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 if test "$lowercase" = "true"; then
   PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
   if test "$lowercase" = "true"; then
+    CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
+    for arg in $[]uppercase[]_LIBS; do
+      case $arg in
+        -L*) LDFLAGS="$LDFLAGS $arg";;
+        *)   LIBS="$LIBS $arg";;
+      esac
+    done
     if test "$LALSUITE_BUILD" = "true"; then
       AC_DEFINE([HAVE_LIB]uppercase,[1],[Define to 1 if you have the $1 library])
       lowercase="true"
-      CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-      LIBS="$LIBS $[]uppercase[]_LIBS"
     else
-      CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
-      LIBS="$LIBS $[]uppercase[]_LIBS"
       AC_CHECK_LIB(lowercase,[$3],[lowercase="true"],[lowercase=false
         AC_MSG_WARN([could not find the $1 library])])
       if test "$lowercase" = true; then
