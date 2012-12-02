@@ -51,7 +51,6 @@ lalinference-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALINFERENCE_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
