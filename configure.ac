@@ -34,12 +34,12 @@ lalsuite_top_builddir='$(top_builddir)/..'
 lalsuite_top_srcdir='$(top_srcdir)/..'
 
 LALSUITE_BUILD="true"
-LALSUITE_TOP_SRCDIR="${lalsuite_top_srcdir}"
-export LALSUITE_BUILD LALSUITE_TOP_SRCDIR
+export LALSUITE_BUILD
 
 LAL_LIBS="-L${libdir} ${lalsuite_top_builddir}/lal/lib/lal/liblal.la"
 LAL_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
-export LAL_LIBS LAL_CFLAGS
+LAL_DATADIR="${lalsuite_top_srcdir}/lal/test"
+export LAL_LIBS LAL_CFLAGS LAL_DATADIR
 
 LALSUPPORT_LIBS="-L${libdir} ${lalsuite_top_builddir}/lal/lib/lalsupport/src/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_top_builddir}/lal/include"
@@ -48,61 +48,71 @@ export LALSUPPORT_LIBS LALSUPPORT_CFLAGS
 if test "$lalframe" = "true"; then
   LALFRAME_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalframe/src/liblalframe.la"
   LALFRAME_CFLAGS="-I${lalsuite_top_builddir}/lalframe/include"
-  export LALFRAME_LIBS LALFRAME_CFLAGS
+  LALFRAME_DATADIR="${lalsuite_top_srcdir}/lalframe/test"
+  export LALFRAME_LIBS LALFRAME_CFLAGS LALFRAME_DATADIR
 fi
 
 if test "$lalmetaio" = "true"; then
   LALMETAIO_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalmetaio/src/liblalmetaio.la"
   LALMETAIO_CFLAGS="-I${lalsuite_top_builddir}/lalmetaio/include"
-  export LALMETAIO_LIBS LALMETAIO_CFLAGS
+  LALMETAIO_DATADIR="${lalsuite_top_srcdir}/lalmetaio/test"
+  export LALMETAIO_LIBS LALMETAIO_CFLAGS LALMETAIO_DATADIR
 fi
 
 if test "$lalxml" = "true"; then
   LALXML_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalxml/src/liblalxml.la"
   LALXML_CFLAGS="-I${lalsuite_top_builddir}/lalxml/include"
-  export LALXML_LIBS LALXML_CFLAGS
+  LALXML_DATADIR="${lalsuite_top_srcdir}/lalxml/test"
+  export LALXML_LIBS LALXML_CFLAGS LALXML_DATADIR
 fi
 
 if test "$lalsimulation" = "true"; then
   LALSIMULATION_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalsimulation/src/liblalsimulation.la"
   LALSIMULATION_CFLAGS="-I${lalsuite_top_builddir}/lalsimulation/include"
-  export LALSIMULATION_LIBS LALSIMULATION_CFLAGS
+  LALSIMULATION_DATADIR="${lalsuite_top_srcdir}/lalsimulation/test"
+  export LALSIMULATION_LIBS LALSIMULATION_CFLAGS LALSIMULATION_DATADIR
 fi
 
 if test "$laldetchar" = "true"; then
   LALDETCHAR_LIBS="-L${libdir} ${lalsuite_top_builddir}/laldetchar/src/liblaldetchar.la"
   LALDETCHAR_CFLAGS="-I${lalsuite_top_builddir}/laldetchar/include"
-  export LALDETCHAR_LIBS LALDETCHAR_CFLAGS
+  LALDETCHAR_DATADIR="${lalsuite_top_srcdir}/laldetchar/test"
+  export LALDETCHAR_LIBS LALDETCHAR_CFLAGS LALDETCHAR_DATADIR
 fi
 
 if test "$lalburst" = "true"; then
   LALBURST_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalburst/src/liblalburst.la"
   LALBURST_CFLAGS="-I${lalsuite_top_builddir}/lalburst/include"
-  export LALBURST_LIBS LALBURST_CFLAGS
+  LALBURST_DATADIR="${lalsuite_top_srcdir}/lalburst/test"
+  export LALBURST_LIBS LALBURST_CFLAGS LALBURST_DATADIR
 fi
 
 if test "$lalinspiral" = "true"; then
   LALINSPIRAL_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalinspiral/src/liblalinspiral.la"
   LALINSPIRAL_CFLAGS="-I${lalsuite_top_builddir}/lalinspiral/include"
-  export LALINSPIRAL_LIBS LALINSPIRAL_CFLAGS
+  LALINSPIRAL_DATADIR="${lalsuite_top_srcdir}/lalinspiral/test"
+  export LALINSPIRAL_LIBS LALINSPIRAL_CFLAGS LALINSPIRAL_DATADIR
 fi
 
 if test "$lalstochastic" = "true"; then
   LALSTOCHASTIC_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalstochastic/src/liblalstochastic.la"
   LALSTOCHASTIC_CFLAGS="-I${lalsuite_top_builddir}/lalstochastic/include"
-  export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS
+  LALSTOCHASTIC_DATADIR="${lalsuite_top_srcdir}/lalstochastic/test"
+  export LALSTOCHASTIC_LIBS LALSTOCHASTIC_CFLAGS LALSTOCHASTIC_DATADIR
 fi
 
 if test "$lalpulsar" = "true"; then
   LALPULSAR_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalpulsar/src/liblalpulsar.la"
   LALPULSAR_CFLAGS="-I${lalsuite_top_builddir}/lalpulsar/include"
-  export LALPULSAR_LIBS LALPULSAR_CFLAGS
+  LALPULSAR_DATADIR="${lalsuite_top_srcdir}/lalpulsar/test"
+  export LALPULSAR_LIBS LALPULSAR_CFLAGS LALPULSAR_DATADIR
 fi
 
 if test "$lalinference" = "true"; then
   LALINFERENCE_LIBS="-L${libdir} ${lalsuite_top_builddir}/lalinference/src/liblalinference.la"
   LALINFERENCE_CFLAGS="-I${lalsuite_top_builddir}/lalinference/include"
-  export LALINFERENCE_LIBS LALINFERENCE_CFLAGS
+  LALINFERENCE_DATADIR="${lalsuite_top_srcdir}/lalinference/test"
+  export LALINFERENCE_LIBS LALINFERENCE_CFLAGS LALINFERENCE_DATADIR
 fi
 
 AC_CONFIG_SUBDIRS([lal])

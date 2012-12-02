@@ -1,6 +1,6 @@
 # lalsuite_build.m4 - top level build macros
 #
-# serial 48
+# serial 49
 
 AC_DEFUN([LALSUITE_CHECK_GIT_REPO],[
   # check for git
@@ -98,7 +98,6 @@ AC_LANG(_AC_LANG)[]dnl
 
 AC_DEFUN([LALSUITE_ARG_VAR],[
   AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
-  AC_ARG_VAR(LALSUITE_TOP_SRCDIR,[Set to top source directory of lalsuite])
 ])
 
 AC_DEFUN([LALSUITE_MULTILIB_LIBTOOL_HACK],
@@ -148,7 +147,11 @@ eval $1_ENABLE_VAL="`eval test "$$2" = "true" && echo "ENABLED" || echo "DISABLE
 AC_DEFUN([LALSUITE_CHECK_LIB],[
 m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
 m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
-PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
+PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
+  if test "x${uppercase[]_DATADIR}" = x; then
+    uppercase[]_DATADIR=`${PKG_CONFIG} --variable=pkgdatadir "lowercase >= $2" 2>/dev/null`
+  fi
+],[lowercase="false"])
 if test "$lowercase" = "true"; then
   CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
   for arg in $[]uppercase[]_LIBS; do
@@ -172,6 +175,9 @@ else
   AC_MSG_ERROR([could not find the $1 library])
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_if(lowercase,[lalsupport],[],[
+  AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
+])
 m4_popdef([lowercase])
 m4_popdef([uppercase])
 ])
@@ -180,7 +186,11 @@ AC_DEFUN([LALSUITE_CHECK_OPT_LIB],[
 m4_pushdef([lowercase],translit([[$1]], [A-Z], [a-z]))
 m4_pushdef([uppercase],translit([[$1]], [a-z], [A-Z]))
 if test "$lowercase" = "true"; then
-  PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"],[lowercase="false"])
+  PKG_CHECK_MODULES(uppercase,[lowercase >= $2],[lowercase="true"
+    if test "x${uppercase[]_DATADIR}" = x; then
+      uppercase[]_DATADIR=`${PKG_CONFIG} --variable=pkgdatadir "lowercase >= $2" 2>/dev/null`
+    fi
+  ],[lowercase="false"])
   if test "$lowercase" = "true"; then
     CPPFLAGS="$CPPFLAGS $[]uppercase[]_CFLAGS"
     for arg in $[]uppercase[]_LIBS; do
@@ -210,6 +220,9 @@ if test "$lowercase" = "true"; then
   fi
 fi
 LALSUITE_ENABLE_MODULE(uppercase,lowercase)
+m4_if(lowercase,[lalsupport],[],[
+  AC_ARG_VAR(uppercase[]_DATADIR, [data directory for ]uppercase[, overriding pkg-config])
+])
 m4_popdef([lowercase])
 m4_popdef([uppercase])
 ])
