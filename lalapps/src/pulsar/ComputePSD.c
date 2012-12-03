@@ -294,15 +294,15 @@ main(int argc, char *argv[])
 
       /* compute math. operation over SFTs for this IFO */
       overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.PSDmthopSFTs);
-      if (XLALIsREAL8FailNaN( overIFOs->data[X] ))
-	return EXIT_FAILURE;
+      if ( isnan( overIFOs->data[X] ) )
+        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in overIFOs->data[X=%d] = NAN ... exiting\n", X );
 
     } /* for IFOs X */
 
     /* compute math. operation over IFOs for this frequency */
     finalPSD->data[k] = math_op(overIFOs->data, numIFOs, uvar.PSDmthopIFOs);
-    if (XLALIsREAL8FailNaN( finalPSD->data[k] ))
-      return EXIT_FAILURE;
+    if ( isnan ( finalPSD->data[k] ) )
+      XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in finalPSD->data[k=%d] = NAN ... exiting\n", k );
 
   } /* for freq bins k */
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -333,15 +333,15 @@ main(int argc, char *argv[])
 
 	/* compute math. operation over SFTs for this IFO */
 	overIFOs->data[X] = math_op(overSFTs->data, numSFTs, uvar.nSFTmthopSFTs);
-	if (XLALIsREAL8FailNaN( overIFOs->data[X] ))
-	  return EXIT_FAILURE;
+	if ( isnan ( overIFOs->data[X] ))
+          XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in overIFOs->data[X=%d] = NAN ... exiting\n", X );
 
       } /* over IFOs */
 
       /* compute math. operation over IFOs for this frequency */
       finalNormSFT->data[k] = math_op(overIFOs->data, numIFOs, uvar.nSFTmthopIFOs);
       if ( isnan( finalNormSFT->data[k] ) )
-        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in NormSFT bin data[%d] = NAN ... exiting\n", k );
+        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in bin finalNormSFT->data[k=%d] = NAN ... exiting\n", k );
 
     } /* over freq bins */
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
@@ -421,19 +421,21 @@ main(int argc, char *argv[])
 	fprintf(fpOut, "   %f", f1);
 
       REAL8 psd = math_op(&(finalPSD->data[b]), finalBinSize, uvar.PSDmthopBins);
-      if (XLALIsREAL8FailNaN( psd ))
-	return EXIT_FAILURE;
+      if ( isnan ( psd ))
+        XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in psd[k=%d] = NAN ... exiting\n", k );
+
       fprintf(fpOut, "   %e", psd);
 
       if (uvar.outputNormSFT) {
 	REAL8 nsft = math_op(&(finalNormSFT->data[b]), finalBinSize, uvar.nSFTmthopBins);
-	if (XLALIsREAL8FailNaN( nsft ))
-	  return EXIT_FAILURE;
+	if ( isnan ( nsft ))
+          XLAL_ERROR ( EXIT_FAILURE, "Found Not-A-Number in nsft[k=%d] = NAN ... exiting\n", k );
+
 	fprintf(fpOut, "   %f", nsft);
       }
 
       fprintf(fpOut, "\n");
-    }
+    } // k < finalNumBins
     LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
 
     fclose(fpOut);
