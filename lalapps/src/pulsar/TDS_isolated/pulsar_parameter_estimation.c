@@ -174,7 +174,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
 
   EphemerisData *edat=NULL;
   TimeCorrectionData *tdat=NULL;
-  TimeCorrectionType ttype = TYPE_ORIGINAL;
+  TimeCorrectionType ttype = TIMECORRECTION_ORIGINAL;
 
   /*===================== GET AND SET THE INPUT PARAMETER ====================*/
   get_input_args(&inputs, argc, argv);
@@ -266,7 +266,7 @@ defined!\n");
       
       if( fopen(inputs.timefile, "r") == NULL){
         tdat = NULL;
-        ttype = TYPE_ORIGINAL;
+        ttype = TIMECORRECTION_ORIGINAL;
       }
       else{
         XLAL_CHECK( ( tdat = XLALInitTimeCorrections( inputs.timefile ) ) 
@@ -274,9 +274,9 @@ defined!\n");
 
         if( pulsar.units != NULL ){
           if ( !strcmp(pulsar.units, "TDB") )
-            ttype = TYPE_TDB; /* use TDB units i.e. TEMPO standard */
+            ttype = TIMECORRECTION_TDB; /* use TDB units i.e. TEMPO standard */
           else
-            ttype = TYPE_TCB; /* default to TCB i.e. TEMPO2 standard */
+            ttype = TIMECORRECTION_TCB; /* default to TCB i.e. TEMPO2 standard */
         }
       }
     }

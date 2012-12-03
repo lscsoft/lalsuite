@@ -186,16 +186,16 @@ pulsars spin frequency.\n", inputParams.freqfactor);
 
       if( hetParams.hetUpdate.units != NULL ){
         if ( !strcmp(hetParams.hetUpdate.units, "TDB") )
-          hetParams.ttype = TYPE_TDB; /* use TDB units i.e. TEMPO standard */
+          hetParams.ttype = TIMECORRECTION_TDB; /* use TDB units i.e. TEMPO standard */
         else
-          hetParams.ttype = TYPE_TCB; /* default to TCB i.e. TEMPO2 standard */
+          hetParams.ttype = TIMECORRECTION_TCB; /* default to TCB i.e. TEMPO2 standard */
       }
       else /* don't recognise units type, so default to the original code */
-        hetParams.ttype = TYPE_ORIGINAL;
+        hetParams.ttype = TIMECORRECTION_ORIGINAL;
     }
     else{
       hetParams.timeCorrFile = NULL;
-      hetParams.ttype = TYPE_ORIGINAL;
+      hetParams.ttype = TIMECORRECTION_ORIGINAL;
     }
   }
 
@@ -1041,7 +1041,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
                 hetParams.sunfile )) != NULL, XLAL_EFUNC );
 
     /* get files containing Einstein delay correction look-up table */
-    if ( hetParams.ttype != TYPE_ORIGINAL ){
+    if ( hetParams.ttype != TIMECORRECTION_ORIGINAL ){
       XLAL_CHECK_VOID( (tdat = XLALInitTimeCorrections( 
         hetParams.timeCorrFile ) ) != NULL, XLAL_EFUNC );
     }
@@ -1320,7 +1320,7 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   if(hetParams.heterodyneflag > 0){
     XLALDestroyEphemerisData( edat );
 
-    if ( hetParams.ttype != TYPE_ORIGINAL )
+    if ( hetParams.ttype != TIMECORRECTION_ORIGINAL )
       XLALDestroyTimeCorrectionData( tdat );
   }
 
