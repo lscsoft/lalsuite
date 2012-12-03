@@ -18,7 +18,7 @@ TwoSpect_templateTest_SOURCES = cmdline.c statistics.c fastchisqinv.c IHS.c cand
                            antenna.h vectormath.h cdfwchisq.h upperlimits.h TwoSpect.h
 
 skygridsetup_SOURCES = helperprograms/skygridsetup.c helperprograms/cmdline_skygridsetup.c antenna.c \
-                           helperprograms/skygridsetup.h helperprograms/cmdline_skygridsetup.h antenna.h 
+                       helperprograms/cmdline_skygridsetup.h antenna.h 
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =
