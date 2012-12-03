@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <stdio.h>
 #include <lal/LALStdlib.h>
@@ -198,7 +198,7 @@ REAL8IIRFilter *CinvWings=NULL, *DWings=NULL, *AAWings=NULL, *AXWings=NULL, *AYW
  /* copy factors into time series */
  for (p=0; p<(int)ALPHAS.data->length; p++)
    {
-     ALPHAS.data->data[p]=output->alphabeta.data->data[p].re;
+     ALPHAS.data->data[p]=creal(output->alphabeta.data->data[p]);
    }
 
  /* upsample using a linear interpolation */

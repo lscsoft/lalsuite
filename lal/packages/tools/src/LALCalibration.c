@@ -17,14 +17,12 @@
 *  MA  02111-1307  USA
 */
 
+#include <complex.h>
 #include <math.h>
 #include <string.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#define LAL_USE_COMPLEX_SHORT_MACROS 1
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
-#include <lal/LALComplex.h>
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/AVFactories.h>
@@ -156,9 +154,9 @@ COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
   {
     COMPLEX8 C = caldata->cavityGainReference->data->data[k];
     COMPLEX8 G = caldata->openLoopGainReference->data->data[k];
-    G = cmulrf( G, cal_gamma );
-    C = cmulrf( C, type == DARM_ERR ? cal_gamma : cal_alpha );
-    response->data->data[k] = cisequal( C, czerof ) ? czerof : cdivf( caddrf( G, 1.0 ), C );
+    G *= cal_gamma;
+    C *= ((type == DARM_ERR) ? cal_gamma : cal_alpha);
+    response->data->data[k] = ((C == 0.0) ? 0.0 : (G + 1.0) / C);
   }
 
   return response;
@@ -179,8 +177,8 @@ COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
     phi = XLALCreateREAL8FrequencySeries( "response phase", epoch, rawresponse->f0, rawresponse->deltaF, &lalDimensionlessUnit, rawresponse->data->length ); \
     if ( ! rad || ! phi ) break; \
     for ( k = 0; k < rawresponse->data->length; ++k ) { \
-      rad->data->data[k] = LAL_CABSF( rawresponse->data->data[k] ); \
-      phi->data->data[k] = LAL_CARGF( rawresponse->data->data[k] ); \
+      rad->data->data[k] = cabsf( rawresponse->data->data[k] ); \
+      phi->data->data[k] = cargf( rawresponse->data->data[k] ); \
     } \
     XLALDestroyCOMPLEX8FrequencySeries( rawresponse ); \
   } while (0)
@@ -197,7 +195,7 @@ COMPLEX8FrequencySeries * XLALUpdateReferenceResponse(
       x -= j; \
       r = (1.0 - x)*rad->data->data[j] + x*rad->data->data[j+1]; \
       p = (1.0 - x)*phi->data->data[j] + x*phi->data->data[j+1]; \
-      LAL_SET_COMPLEX( &response->data->data[k], r*cos(p), r*sin(p) ); \
+      response->data->data[k] = r*cos(p) + I*r*sin(p); \
     } \
   } while (0)
 
