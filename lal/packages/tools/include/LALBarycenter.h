@@ -67,8 +67,23 @@ extern "C" {
 #define LALBARYCENTERH_MSGEXLAL 	"XLAL function failed."
 /** \endcond */
 
-
-typedef enum {
+/** \brief Enumerated type denoting the time system type to be produced in
+ * the solar system barycentring routines.
+ *
+ * The type denotes the time system in which solar system barycentred times
+ * should be given. \c TIMECORRECTION_TDB and \c TIMECORRECTION_TEMPO will mean
+ * times are in the Barycentric Dynamical Time (TDB) system, where the
+ * conversion has been performed using a time correction ephemeris look-up
+ * table as used by TEMPO2 (\c TIMECORRECTION_TEMPO is so-called because the
+ * pulsar timing software TEMPO uses the TDB time system by default); \c
+ * TIMECORRECTION_ORIGINAL will mean times are in the TDB system, but with the
+ * conversion performed using the original \c XLALBarycenterEarth function; and,
+ * \c TIMECORRECTION_TCB and \c TIMECORRECTION_TEMPO2 will mean times are in the
+ * Coordinate Barycentric Time (TCB) system, where the conversion has been
+ * performed using a time correction ephemeris look-up table as used by TEMPO2
+ * (\c TIMECORRECTION_TEMPO2 is so-called because the pulsar timing software
+ * TEMPO2 uses the TCB time system by default). */
+typedef enum{
   TIMECORRECTION_NONE = 0,
   TIMECORRECTION_TDB,
   TIMECORRECTION_TCB,
@@ -78,7 +93,9 @@ typedef enum {
   TIMECORRECTION_LAST
 } TimeCorrectionType;
 
-
+/** \brief Enumerated type denoting the JPL solar system ephemeris to be used
+ * in calculating barycentre time corrections.
+ */
 typedef enum {
   EPHEM_NONE = 0,
   EPHEM_DE200,
@@ -88,22 +105,18 @@ typedef enum {
   EPHEM_LAST
 } EphemerisType;
 
+/** \name Constants from Irwin and Fukushima, A&A, 348, 1999 (taken from TEMPO2)
+ * used for ephemeris conversions. */
+#define IFTE_JD0  2443144.5003725 /**< Epoch of TCB, TCG and TT in Julian Days */
+#define IFTE_MJD0 43144.0003725 /**< Epoch of TCB, TCG and TT in Modified Julian Days */
+#define IFTE_TEPH0 -65.564518e-6 /**< Equation 17 of Irwin and Fukushima. */
+#define IFTE_LC 1.48082686742e-8 /**< Equation 20 of Irwin and Fukushima. */
+#define IFTE_KM1 1.55051979176e-8 /**< Value of K-1, defined using the IAU definition of L_B = 1.55051976772e-8 and K=1/(1-L_B) (see TEMPO2). */
+#define IFTE_K (((long double)1.0) + ((long double)IFTE_KM1)) /**< Factor relating ephemeris units for time and distance to corresponding SI units, from Equation 2 of Irwin and Fukushima. */
 
-/* Constants from Irwin and Fukashima used in TEMPO2 */
-#define IFTE_JD0  2443144.5003725    /* Epoch of TCB, TCG and TT */
-#define IFTE_MJD0 43144.0003725
-#define IFTE_TEPH0 -65.564518e-6
-#define IFTE_LC 1.48082686742e-8
-
-#define JPL_AU_DE405 149597870.6910000 /* 1 AU from the JPL DE405 ephemeris in km */
-#define JPL_AU_DE200 149597870.6600000 /* 1 AU from the JPL DE200 ephemeris in km */
+#define JPL_AU_DE405 149597870.6910000 /**< Definition of 1 AU from the JPL DE405 ephemeris in km */
+#define JPL_AU_DE200 149597870.6600000 /**< Definition of 1 AU from the JPL DE200 ephemeris in km */
 #define CURT_AU 149597870.6600 /* 1 AU from create_solar_system_barycenter.c as used in Curt's original routines */
-
-//This is the value used by if99 : #define IFTE_KM1  1.55051979154e-8 */
-// However we should use the IAU value of L_B that follows from
-// their definition of L_G: L_B = 1.55051976772e-8, K=1/(1-L_B)
-#define IFTE_KM1 1.55051979176e-8
-#define IFTE_K (((long double)1.0) + ((long double)IFTE_KM1))
 
 /** \brief This structure contains
  * two pointers to the ephemeris data files containing arrays

@@ -464,6 +464,20 @@ XLALBarycenterEarth ( EarthState *earth, 		/**< [out] the earth's state at time 
 } /* XLALBarycenterEarth() */
 
 
+/** \brief Computes the position and orientation of the Earth, at some arrival
+ * time, but unlike \c XLALBarycenterEarth uses look-up tables for the Einstein
+ * delay calculation.
+ *
+ * The function replicates the functionality of \c XLALBarycenterEarth, but (as
+ * in the pulsar timing software TEMPO2) will use a look-up table to compute
+ * the Einstein delay term. This function will also allow the final solar
+ * system barycentre correction to be in either Barycentric Dynamical Time
+ * (TDB), as used previously in \c XLALBarycenterEarth, or in Coordinate
+ * Barycentric Time (TCB), as is the default for TEMPO2.
+ *
+ * The function can revert to using the original \c XLALBarycenterEarth code by
+ * supplying \c TIMECORRECTION_ORIGINAL as the \c ttype input.
+ */
 int
 XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth's state at time tGPS */
                          const LIGOTimeGPS *tGPS,          /**< [in] GPS time tgps */
@@ -880,8 +894,8 @@ XLALBarycenter ( EmissionTime *emit, 			/**< [out] emission-time information */
        emit->droemer = droemer;
   }
 
-  /* get the observatory term (if in TDB) */
-  REAL8 obsTerm = 0;    /* observatory term correction from TEMPO2 tt2tb.C */
+  /* get the observatory term (if not using the original XLALBarycenterEarth function) */
+  REAL8 obsTerm = 0;    /* observatory term correction from TEMPO2 tt2tdb.C */
   if ( earth->ttype != TIMECORRECTION_ORIGINAL )
     {
       REAL8 obsEarth[3];
