@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/VectorOps.h>
@@ -111,10 +111,10 @@ part of \f$10^{-12}\f$ instead of 0.
  */
 static int CompareCOMPLEX8Abs( void UNUSED *p, const void *a, const void *b )
 {
-  REAL8 ar = ((const COMPLEX8 *)a)->re;
-  REAL8 ai = ((const COMPLEX8 *)a)->im;
-  REAL8 br = ((const COMPLEX8 *)b)->re;
-  REAL8 bi = ((const COMPLEX8 *)b)->im;
+  REAL8 ar = crealf(*(const COMPLEX8 *)a);
+  REAL8 ai = cimagf(*(const COMPLEX8 *)a);
+  REAL8 br = crealf(*(const COMPLEX8 *)b);
+  REAL8 bi = cimagf(*(const COMPLEX8 *)b);
   if ( (ar*ar+ai*ai) < (br*br+bi*bi) )
     return -1;
   return 1;
@@ -127,10 +127,10 @@ static int CompareCOMPLEX8Abs( void UNUSED *p, const void *a, const void *b )
  */
 static int CompareCOMPLEX16Abs( void UNUSED *p, const void *a, const void *b )
 {
-  REAL8 ar = ((const COMPLEX16 *)a)->re;
-  REAL8 ai = ((const COMPLEX16 *)a)->im;
-  REAL8 br = ((const COMPLEX16 *)b)->re;
-  REAL8 bi = ((const COMPLEX16 *)b)->im;
+  REAL8 ar = creal(*(const COMPLEX16 *)a);
+  REAL8 ai = cimag(*(const COMPLEX16 *)a);
+  REAL8 br = creal(*(const COMPLEX16 *)b);
+  REAL8 bi = cimag(*(const COMPLEX16 *)b);
   if ( (ar*ar+ai*ai) < (br*br+bi*bi) )
     return -1;
   return 1;
@@ -198,10 +198,10 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
   /* Compute the revised number of zeros and poles in the z-plane,
      excluding those at z=infinity (w=-i). */
   for(i=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;i++,a++)
-    if((a->re==0.0)&&(a->im==-1.0))
+    if((crealf(*a)==0.0)&&(cimagf(*a)==-1.0))
       numZeros--;
   for(i=0,a=filter->poles->data;i<(INT4)filter->poles->length;i++,a++)
-    if((a->re==0.0)&&(a->im==-1.0))
+    if((crealf(*a)==0.0)&&(cimagf(*a)==-1.0))
       numPoles--;
 
   /* Create the vector of gain correction factors. */
@@ -222,19 +222,16 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
      gain correction factors. */
   for(i=0,j=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;
       i++,a++,g++){
-    REAL4 ar=a->re;
-    REAL4 ai=a->im;
+    REAL4 ar=crealf(*a);
+    REAL4 ai=cimagf(*a);
     if(ar==0.0){
       if(ai==-1.0){
 	/* w=-i is mapped to z=infinity. */
-	g->re=0.0;
-	g->im=2.0;
+	*g=2.0*I;
       }else{
 	/* w=i*y is mapped to z=(1-y)/(1+y). */
-	b->re=(1.0-ai)/(1.0+ai);
-	b->im=0.0;
-	g->re=0.0;
-	g->im=-(1.0+ai);
+	*b=(1.0-ai)/(1.0+ai);
+	*g=-(1.0+ai)*I;
 	b++;
 	j++;
       }
@@ -242,28 +239,27 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
       REAL8 ratio = -ar/(1.0+ai);
       REAL8 denom = 1.0+ai - ratio*ar;
 
-      b->re = (1.0-ai + ratio*ar)/denom;
-      b->im = (ar - ratio*(1.0-ai))/denom;
-      g->re = -ar;
-      g->im = -(1.0+ai);
+      *b = (1.0-ai + ratio*ar)/denom;
+      *b += I*(ar - ratio*(1.0-ai))/denom;
+      *g = -ar;
+      *g += -(1.0+ai)*I;
       b++;
       j++;
     }else{
       REAL8 ratio = -(1.0+ai)/ar;
       REAL8 denom = -ar + ratio*(1.0+ai);
 
-      b->re = ((1.0-ai)*ratio + ar)/denom;
-      b->im = (ar*ratio - 1.0+ai)/denom;
-      g->re = -ar;
-      g->im = -(1.0+ai);
+      *b = ((1.0-ai)*ratio + ar)/denom;
+      *b += I*(ar*ratio - 1.0+ai)/denom;
+      *g = -ar;
+      *g = -(1.0+ai)*I;
       b++;
       j++;
     }
   }
   /* Transform any remaining zeros at w=infinity to z=-1. */
   for(;j<numZeros;b++,j++){
-    b->re = -1.0;
-    b->im = 0.0;
+    *b = -1.0;
   }
   /* Replace the old filter zeros with the new ones. */
   if(filter->zeros->length>0)
@@ -284,19 +280,16 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
      gain correction factors. */
   for(i=0,j=0,a=filter->poles->data;i<(INT4)filter->poles->length;
       i++,a++,g++){
-    REAL4 ar=a->re;
-    REAL4 ai=a->im;
+    REAL4 ar=crealf(*a);
+    REAL4 ai=cimagf(*a);
     if(ar==0.0){
       if(ai==-1.0){
 	/* w=-i is mapped to z=infinity. */
-	g->re=0.0;
-	g->im=-0.5;
+	*g=-0.5*I;
       }else{
 	/* w=i*y is mapped to z=(1-y)/(1+y). */
-	b->re=(1.0-ai)/(1.0+ai);
-	b->im=0.0;
-	g->re=0.0;
-	g->im=1.0/(1.0+ai);
+	*b=(1.0-ai)/(1.0+ai);
+	*g=I*1.0/(1.0+ai);
 	b++;
 	j++;
       }
@@ -304,28 +297,27 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
       REAL8 ratio = -ar/(1.0+ai);
       REAL8 denom = 1.0+ai - ratio*ar;
 
-      b->re = (1.0-ai + ratio*ar)/denom;
-      b->im = (ar - ratio*(1.0-ai))/denom;
-      g->re = ratio/denom;
-      g->im = 1.0/denom;
+      *b = (1.0-ai + ratio*ar)/denom;
+      *b += I*(ar - ratio*(1.0-ai))/denom;
+      *g = ratio/denom;
+      *g += I*1.0/denom;
       b++;
       j++;
     }else{
       REAL8 ratio = -(1.0+ai)/ar;
       REAL8 denom = -ar + ratio*(1.0+ai);
 
-      b->re = ((1.0-ai)*ratio + ar)/denom;
-      b->im = (ar*ratio - 1.0+ai)/denom;
-      g->re = ratio/denom;
-      g->im = 1.0/denom;
+      *b = ((1.0-ai)*ratio + ar)/denom;
+      *b += I*(ar*ratio - 1.0+ai)/denom;
+      *g = ratio/denom;
+      *g += I*1.0/denom;
       b++;
       j++;
     }
   }
   /* Transform any remaining poles at w=infinity to z=-1. */
   for(;j<numPoles;b++,j++){
-    b->re = -1.0;
-    b->im = 0.0;
+    *b = -1.0;
   }
   /* Replace the old filter poles with the new ones. */
   if(filter->poles->length>0)
@@ -349,28 +341,12 @@ int XLALWToZCOMPLEX8ZPGFilter( COMPLEX8ZPGFilter *filter )
      factors. */
   for(i=0,j=gain->length-1;i<j;i++,j--){
     /* Multiply the small and largest factors together. */
-    REAL4 ar=gain->data[idx->data[i]].re;
-    REAL4 ai=gain->data[idx->data[i]].im;
-    REAL4 br=gain->data[idx->data[j]].re;
-    REAL4 bi=gain->data[idx->data[j]].im;
-    REAL4 cr=ar*br-ai*bi;
-    REAL4 ci=ar*bi+ai*br;
-
     /* Multiply the gain by the combined factor. */
-    br=filter->gain.re;
-    bi=filter->gain.im;
-    filter->gain.re=br*cr-bi*ci;
-    filter->gain.im=br*ci+bi*cr;
+    filter->gain *= gain->data[idx->data[i]] * gain->data[idx->data[j]];
   }
   if(i==j){
     /* Multiply by the remaining odd factor. */
-    REAL4 cr=gain->data[idx->data[i]].re;
-    REAL4 ci=gain->data[idx->data[i]].im;
-    REAL4 br=filter->gain.re;
-    REAL4 bi=filter->gain.im;
-
-    filter->gain.re=br*cr-bi*ci;
-    filter->gain.im=br*ci+bi*cr;
+    filter->gain *= gain->data[idx->data[i]];
   }
 
   /* Free remaining temporary vectors, and exit. */
@@ -441,10 +417,10 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
   /* Compute the revised number of zeros and poles in the z-plane,
      excluding those at z=infinity (w=-i). */
   for(i=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;i++,a++)
-    if((a->re==0.0)&&(a->im==-1.0))
+    if((creal(*a)==0.0)&&(cimag(*a)==-1.0))
       numZeros--;
   for(i=0,a=filter->poles->data;i<(INT4)filter->poles->length;i++,a++)
-    if((a->re==0.0)&&(a->im==-1.0))
+    if((creal(*a)==0.0)&&(cimag(*a)==-1.0))
       numPoles--;
 
   /* Create the vector of gain correction factors. */
@@ -465,19 +441,16 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
      gain correction factors. */
   for(i=0,j=0,a=filter->zeros->data;i<(INT4)filter->zeros->length;
       i++,a++,g++){
-    REAL8 ar=a->re;
-    REAL8 ai=a->im;
+    REAL8 ar=creal(*a);
+    REAL8 ai=cimag(*a);
     if(ar==0.0){
       if(ai==-1.0){
 	/* w=-i is mapped to z=infinity. */
-	g->re=0.0;
-	g->im=2.0;
+	*g=2.0*I;
       }else{
 	/* w=i*y is mapped to z=(1-y)/(1+y). */
-	b->re=(1.0-ai)/(1.0+ai);
-	b->im=0.0;
-	g->re=0.0;
-	g->im=-(1.0+ai);
+	*b=(1.0-ai)/(1.0+ai);
+	*g=-(1.0+ai)*I;
 	b++;
 	j++;
       }
@@ -485,28 +458,27 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
       REAL8 ratio = -ar/(1.0+ai);
       REAL8 denom = 1.0+ai - ratio*ar;
 
-      b->re = (1.0-ai + ratio*ar)/denom;
-      b->im = (ar - ratio*(1.0-ai))/denom;
-      g->re = -ar;
-      g->im = -(1.0+ai);
+      *b = (1.0-ai + ratio*ar)/denom;
+      *b += I*(ar - ratio*(1.0-ai))/denom;
+      *g = -ar;
+      *g += -(1.0+ai)*I;
       b++;
       j++;
     }else{
       REAL8 ratio = -(1.0+ai)/ar;
       REAL8 denom = -ar + ratio*(1.0+ai);
 
-      b->re = ((1.0-ai)*ratio + ar)/denom;
-      b->im = (ar*ratio - 1.0+ai)/denom;
-      g->re = -ar;
-      g->im = -(1.0+ai);
+      *b = ((1.0-ai)*ratio + ar)/denom;
+      *b += I*(ar*ratio - 1.0+ai)/denom;
+      *g = -ar;
+      *g += -(1.0+ai)*I;
       b++;
       j++;
     }
   }
   /* Transform any remaining zeros at w=infinity to z=-1. */
   for(;j<numZeros;b++,j++){
-    b->re = -1.0;
-    b->im = 0.0;
+    *b = -1.0;
   }
   /* Replace the old filter zeros with the new ones. */
   if(filter->zeros->length>0)
@@ -527,19 +499,16 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
      gain correction factors. */
   for(i=0,j=0,a=filter->poles->data;i<(INT4)filter->poles->length;
       i++,a++,g++){
-    REAL8 ar=a->re;
-    REAL8 ai=a->im;
+    REAL8 ar=creal(*a);
+    REAL8 ai=cimag(*a);
     if(ar==0.0){
       if(ai==-1.0){
 	/* w=-i is mapped to z=infinity. */
-	g->re=0.0;
-	g->im=-0.5;
+	*g=-0.5*I;
       }else{
 	/* w=i*y is mapped to z=(1-y)/(1+y). */
-	b->re=(1.0-ai)/(1.0+ai);
-	b->im=0.0;
-	g->re=0.0;
-	g->im=1.0/(1.0+ai);
+	*b=(1.0-ai)/(1.0+ai);
+	*g=I*1.0/(1.0+ai);
 	b++;
 	j++;
       }
@@ -547,28 +516,27 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
       REAL8 ratio = -ar/(1.0+ai);
       REAL8 denom = 1.0+ai - ratio*ar;
 
-      b->re = (1.0-ai + ratio*ar)/denom;
-      b->im = (ar - ratio*(1.0-ai))/denom;
-      g->re = ratio/denom;
-      g->im = 1.0/denom;
+      *b = (1.0-ai + ratio*ar)/denom;
+      *b += I*(ar - ratio*(1.0-ai))/denom;
+      *g = ratio/denom;
+      *g += I*1.0/denom;
       b++;
       j++;
     }else{
       REAL8 ratio = -(1.0+ai)/ar;
       REAL8 denom = -ar + ratio*(1.0+ai);
 
-      b->re = ((1.0-ai)*ratio + ar)/denom;
-      b->im = (ar*ratio - 1.0+ai)/denom;
-      g->re = ratio/denom;
-      g->im = 1.0/denom;
+      *b = ((1.0-ai)*ratio + ar)/denom;
+      *b += I*(ar*ratio - 1.0+ai)/denom;
+      *g = ratio/denom;
+      *g += I*1.0/denom;
       b++;
       j++;
     }
   }
   /* Transform any remaining poles at w=infinity to z=-1. */
   for(;j<numPoles;b++,j++){
-    b->re = -1.0;
-    b->im = 0.0;
+    *b = -1.0;
   }
   /* Replace the old filter poles with the new ones. */
   if(filter->poles->length>0)
@@ -592,28 +560,12 @@ int XLALWToZCOMPLEX16ZPGFilter( COMPLEX16ZPGFilter *filter )
      factors. */
   for(i=0,j=gain->length-1;i<j;i++,j--){
     /* Multiply the small and largest factors together. */
-    REAL8 ar=gain->data[idx->data[i]].re;
-    REAL8 ai=gain->data[idx->data[i]].im;
-    REAL8 br=gain->data[idx->data[j]].re;
-    REAL8 bi=gain->data[idx->data[j]].im;
-    REAL8 cr=ar*br-ai*bi;
-    REAL8 ci=ar*bi+ai*br;
-
     /* Multiply the gain by the combined factor. */
-    br=filter->gain.re;
-    bi=filter->gain.im;
-    filter->gain.re=br*cr-bi*ci;
-    filter->gain.im=br*ci+bi*cr;
+    filter->gain *= gain->data[idx->data[i]] * gain->data[idx->data[j]];
   }
   if(i==j){
     /* Multiply by the remaining odd factor. */
-    REAL8 cr=gain->data[idx->data[i]].re;
-    REAL8 ci=gain->data[idx->data[i]].im;
-    REAL8 br=filter->gain.re;
-    REAL8 bi=filter->gain.im;
-
-    filter->gain.re=br*cr-bi*ci;
-    filter->gain.im=br*ci+bi*cr;
+    filter->gain *= gain->data[idx->data[i]];
   }
 
   /* Free remaining temporary vectors, and exit. */
