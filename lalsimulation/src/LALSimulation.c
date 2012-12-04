@@ -94,6 +94,9 @@ const LALDetector *XLALDetectorPrefixToLALDetector(
 	XLAL_ERROR_NULL(XLAL_EDATA);
 }
 
+/* FIXME:  compatibility wrapper.  remove when not needed */
+const LALDetector *XLALInstrumentNameToLALDetector(const char *string) { return XLALDetectorPrefixToLALDetector(string); }
+
 
 /*
  * ============================================================================
