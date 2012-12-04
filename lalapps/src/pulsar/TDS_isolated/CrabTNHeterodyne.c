@@ -31,8 +31,11 @@
    the Crab pulsar on completely heterodyned data.
    No calibration or noise estimation is needed or performed */
  
-/* Matt Pitkin (26/03/04) CrabTNHeterodyne.c v0.1 */
+/* Matt Pitkin CrabTNHeterodyne.c v0.1 */
 
+/* Compile with e.g.
+ * gcc CrabTNHeterodyne.c HeterodyneCrabPulsar.c -o CrabTNHeterodyne -L${LAL_PREFIX}/lib -I${LAL_PREFIX}/include -lm -llalsupport -llal -llalpulsar -llalframe -llalxml -llalmetaio -llalsimulation -llalburst -llalinspiral -llalinference -llalstochastic -std=c99
+ */
 
 /* headers */
 #include <stdio.h>
@@ -49,10 +52,9 @@ INT4 lalDebugLevel = 1;
 2004) */
 #define NUM 1000
 
-#define EARTHFILE \
-"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/earth05-09.dat"
-#define SUNFILE \
-"/data/phlebas/matthew/lscsoft/lal/packages/pulsar/test/sun05-09.dat"
+#define EARTHFILE "earth00-19-DE200.dat.gz"
+#define SUNFILE "sun00-19.dat.gz"
+#define TIMEFILE "tdb_2000-2019.dat.gz"
 
 int main(int argc, char *argv[]){
   static LALStatus status;
@@ -79,10 +81,13 @@ int main(int argc, char *argv[]){
   /* vars for solar system ephemeris */
   EarthState earth;
   EphemerisData *edat=NULL;
+  TimeCorrectionData *tdat=NULL;
   BarycenterInput baryinput;
   CHAR detName[5];
   LALDetector det;
-
+  CHAR *lalpath = NULL, *lalpulsarpath = NULL;
+  CHAR *efile=NULL, *sfile=NULL, *tfile=NULL;
+    
   /* pulsar params */
   BinaryPulsarParams pulsarParams;
   
@@ -102,35 +107,35 @@ int main(int argc, char *argv[]){
   input.filename = argv[5]; /* ephemeris file */
    
   /* read in Crab pulsar parameters used in heterodyning */
-  LALReadTEMPOParFile(&status, &pulsarParams, psrInput);
+  XLALReadTEMPOParFile(&pulsarParams, psrInput);
 
   /* allocate memory for crab ephemeris */
   crabEphemerisData.f1 = NULL;
-  LALDCreateVector( &status, &crabEphemerisData.f1, NUM);
+  crabEphemerisData.f1 = XLALCreateREAL8Vector(NUM);
   
   crabEphemerisData.f0 = NULL;
-  LALDCreateVector( &status, &crabEphemerisData.f0, NUM);
+  crabEphemerisData.f0 = XLALCreateREAL8Vector(NUM);
   
   crabEphemerisData.tArr = NULL;
-  LALDCreateVector( &status, &crabEphemerisData.tArr, NUM);
+  crabEphemerisData.tArr = XLALCreateREAL8Vector(NUM);
   
   crabOutput.tArr = NULL;
-  LALDCreateVector( &status, &crabOutput.tArr, NUM);
+  crabOutput.tArr = XLALCreateREAL8Vector(NUM);
       
   crabOutput.f0 = NULL;
-  LALDCreateVector( &status, &crabOutput.f0, NUM);
+  crabOutput.f0 = XLALCreateREAL8Vector(NUM);
   
   crabOutput.f1 = NULL;
-  LALDCreateVector( &status, &crabOutput.f1, NUM);
+  crabOutput.f1 = XLALCreateREAL8Vector(NUM);
   
   crabOutput.f2 = NULL;
-  LALDCreateVector( &status, &crabOutput.f2, NUM);
+  crabOutput.f2 = XLALCreateREAL8Vector(NUM);
   
   crabOutput.f3 = NULL;
-  LALDCreateVector( &status, &crabOutput.f3, NUM);
+  crabOutput.f3 = XLALCreateREAL8Vector(NUM);
   
   crabOutput.f4 = NULL;
-  LALDCreateVector( &status, &crabOutput.f4, NUM);
+  crabOutput.f4 = XLALCreateREAL8Vector(NUM);
 
   /* read Crab ephemeris data */
   LALGetCrabEphemeris( &status, &crabEphemerisData, &input );
@@ -139,8 +144,8 @@ int main(int argc, char *argv[]){
   LALComputeFreqDerivatives ( &status, &crabOutput, &crabEphemerisData );
   
   /* allocate mem for input data */
-  LALDCreateVector(&status, &time, MAXLENGTH);
-  LALZCreateVector(&status, &B, MAXLENGTH);
+  time = XLALCreateREAL8Vector(MAXLENGTH);
+  B = XLALCreateCOMPLEX16Vector(MAXLENGTH);
   
   /* read in input data */
   fpin = fopen(inputFile, "r");
@@ -152,7 +157,10 @@ int main(int argc, char *argv[]){
       return 1;
     }
     
-    fscanf(fpin, "%lf%lf%lf", &time->data[i], &B->data[i].re, &B->data[i].im);
+    REAL8 tmpr, tmpi;
+    
+    fscanf(fpin, "%lf%lf%lf", &time->data[i], &tmpr, &tmpi);
+    B->data[i] = tmpr + I*tmpi;
     i++;
   }
   
@@ -171,11 +179,20 @@ TNInput.f1, TNInput.f2, TNInput.t0);
   phifp = fopen("DPhase.txt", "w");
   
   /* set SSB ephemeris files */
-  edat = XLALMalloc(sizeof(*edat));
-  (*edat).ephiles.earthEphemeris = EARTHFILE;
-  (*edat).ephiles.sunEphemeris = SUNFILE;
-  LALInitBarycenter(&status, edat);
-
+  lalpath = getenv("LALPULSAR_PREFIX");
+  lalpulsarpath = XLALStringDuplicate( lalpath );
+  lalpulsarpath = XLALStringAppend(lalpulsarpath, "/share/lalpulsar/");
+  efile = XLALStringDuplicate(lalpulsarpath);
+  sfile = XLALStringDuplicate(lalpulsarpath);
+  tfile = XLALStringDuplicate(lalpulsarpath);
+  
+  efile = XLALStringAppend(efile, EARTHFILE);
+  sfile = XLALStringAppend(sfile, SUNFILE);
+  tfile = XLALStringAppend(tfile, TIMEFILE);
+  
+  edat = XLALInitBarycenter(efile, sfile);
+  tdat = XLALInitTimeCorrections(tfile);
+  
   det = *XLALGetSiteInfo( detName );
 
   baryinput.dInv = 0.;
@@ -193,8 +210,7 @@ TNInput.f1, TNInput.f2, TNInput.t0);
     TNInput.epoch.gpsSeconds = dataEpoch.gpsSeconds;
     TNInput.epoch.gpsNanoSeconds = 0;
     
-    TNInput.Vh.re = B->data[j].re;
-    TNInput.Vh.im = B->data[j].im;
+    TNInput.Vh = B->data[j];
     
     /* set values for timing noise removal */
     LALSetSpindownParams( &status, &hetParams, &crabOutput, dataEpoch );
@@ -217,14 +233,14 @@ TNInput.f1, TNInput.f2, TNInput.t0);
       (1.0/120.0)*hetParams.f4*dt*dt*dt*dt*dt);
     }
 
-    LALBarycenterEarth(&status, &earth, &baryinput.tgps, edat);
+    XLALBarycenterEarthNew(&earth, &baryinput.tgps, edat, tdat, TIMECORRECTION_TDB);
 
     /* perform TN heterodyne */
     LALTimingNoiseHeterodyne( &status, &TNOutput, &TNInput, &hetParams, edat,
       baryinput, earth );
     
-    fprintf(fpout, "%lf\t%e\t%e\n", time->data[j], TNOutput.Vh.re,
-    TNOutput.Vh.im);
+    fprintf(fpout, "%lf\t%e\t%e\n", time->data[j], creal(TNOutput.Vh),
+            cimag(TNOutput.Vh));
 
     fprintf(phifp, "%f\t%f\t%f\n", TNOutput.phi0, TNOutput.phi1, TNOutput.Dphase);
   }
@@ -233,21 +249,20 @@ TNInput.f1, TNInput.f2, TNInput.t0);
   fclose(phifp);
 
   /* destroy vectors */
-  LALZDestroyVector(&status, &B);
-  LALDDestroyVector(&status, &time);
-  LALDDestroyVector(&status, &crabEphemerisData.f1);
-  LALDDestroyVector(&status, &crabEphemerisData.f0);
-  LALDDestroyVector(&status, &crabEphemerisData.tArr);
-  LALDDestroyVector(&status, &crabOutput.tArr);
-  LALDDestroyVector(&status, &crabOutput.f0);
-  LALDDestroyVector(&status, &crabOutput.f1);
-  LALDDestroyVector(&status, &crabOutput.f2);
-  LALDDestroyVector(&status, &crabOutput.f3);
-  LALDDestroyVector(&status, &crabOutput.f4);
+  XLALDestroyCOMPLEX16Vector( B );
+  XLALDestroyREAL8Vector( time );
+  XLALDestroyREAL8Vector(crabEphemerisData.f1);
+  XLALDestroyREAL8Vector(crabEphemerisData.f0);
+  XLALDestroyREAL8Vector(crabEphemerisData.tArr);
+  XLALDestroyREAL8Vector(crabOutput.tArr);
+  XLALDestroyREAL8Vector(crabOutput.f0);
+  XLALDestroyREAL8Vector(crabOutput.f1);
+  XLALDestroyREAL8Vector(crabOutput.f2);
+  XLALDestroyREAL8Vector(crabOutput.f3);
+  XLALDestroyREAL8Vector(crabOutput.f4);
 
-  XLALFree(edat->ephemE);
-  XLALFree(edat->ephemS);
-  XLALFree(edat);
+  XLALDestroyEphemerisData(edat);
+  XLALDestroyTimeCorrectionData(tdat);
 
   return 0;
 }
