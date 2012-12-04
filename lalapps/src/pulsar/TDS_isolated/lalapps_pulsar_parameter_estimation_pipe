@@ -220,7 +220,7 @@ if do_priors:
   try:
     h0pri = cp.get('priors','h0prior')
   except:
-    h0pri = None
+    h0pri = []
   
   try:
     h0mean = cp.get('priors','h0mean')
@@ -235,7 +235,7 @@ if do_priors:
   try:
     phipri = cp.get('priors','phiprior')
   except:
-    phipri = None
+    phipri = []
     
   try:
     phimean = cp.get('priors','phimean')
@@ -250,7 +250,7 @@ if do_priors:
   try:
     psipri = cp.get('priors','psiprior')
   except:
-    psipri = None
+    psipri = []
     
   try:
     psimean = cp.get('priors','psimean')
@@ -265,7 +265,7 @@ if do_priors:
   try:
     iotapri = cp.get('priors','iotaprior')
   except:
-    iotapri = None
+    iotapri = []
   
   try:
     iotamean = cp.get('priors','iotamean')
@@ -326,14 +326,24 @@ if do_mcmc:
     ciwidth = None
 
   if do_cov:
-    covdir = cp.get('mcmc','cov_dir') # directory containing cov matrices  
-    ephempath = cp.get('mcmc','ephem_path') # path to Earth and Sun ephemeris
+    try:
+      covdir = cp.get('mcmc','cov_dir') # directory containing cov matrices  
+    except:
+      covdir = None
+      cov_files = []
 
-    cov_files = os.listdir(covdir)
-    cov_files.sort()
+    try:
+      ephempath = cp.get('mcmc','ephem_path') # path to Earth and Sun ephemeris
+    except:
+      print >> sys.stderr, "Cannot find an ephemeris path value"
+      sys.exit(0)
 
-    if len(cov_files) > 0:
-      pulsarsCov = [] # initialise a list
+    if covdir:
+      cov_files = os.listdir(covdir)
+      cov_files.sort()
+    
+      if len(cov_files) > 0:
+        pulsarsCov = [] # initialise a list
     
     # list for pulsars with no cov file, but using variances from par file
     pulsarsCov2 = []
@@ -420,23 +430,23 @@ while i < len(param_files):
         ephem = 'DE405' # default to DE405
               
       if 'DE200' in ephem:
-        eephem = ephem_path + '/earth00-19-DE200.dat.gz'
-        sephem = ephem_path + '/sun00-19-DE200.dat.gz'
-      elif 'DE405' in ephem2:
-        eephem = ephem_path + '/earth00-19-DE405.dat.gz'
-        sephem = ephem_path + '/sun00-19-DE405.dat.gz'
-      elif 'DE414' in ephem2:
-        eephem = ephem_path + '/earth00-19-DE414.dat.gz'
-        sephem = ephem_path + '/sun00-19-DE414.dat.gz'
+        eephem = ephempath + '/earth00-19-DE200.dat.gz'
+        sephem = ephempath + '/sun00-19-DE200.dat.gz'
+      elif 'DE405' in ephem:
+        eephem = ephempath + '/earth00-19-DE405.dat.gz'
+        sephem = ephempath + '/sun00-19-DE405.dat.gz'
+      elif 'DE414' in ephem:
+        eephem = ephempath + '/earth00-19-DE414.dat.gz'
+        sephem = ephempath + '/sun00-19-DE414.dat.gz'
                 
       if units is None:
         units = []
     
       # check time correction file to use
-      if 'TDB' in units or do_tdb:
-        tephem = ephem_path + '/tdb_2000-2019.dat.gz'
+      if 'TDB' in units:
+        tephem = ephempath + '/tdb_2000-2019.dat.gz'
       else:
-        tephem = ephem_path + '/te405_2000-2019.dat.gz'
+        tephem = ephempath + '/te405_2000-2019.dat.gz'
       
       # if there is a covariance matrix set this
       m=0
