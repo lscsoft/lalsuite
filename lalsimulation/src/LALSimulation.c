@@ -71,16 +71,16 @@ static unsigned long round_up_to_power_of_two(unsigned long x)
 
 
 /**
- * Turn an instrument name into a LALDetector structure.  The first two
- * characters of the input string are used as the instrument name, which
- * allows channel names in the form "H1:LSC-STRAIN" to be used.  The return
- * value is a pointer into the lalCachedDetectors array, so modifications
- * to the contents are global.  Make a copy of the structure if you want to
- * modify it safely.
+ * Turn a detector prefix string into a LALDetector structure.  The first
+ * two characters of the input string are used as the instrument name,
+ * which allows channel names in the form "H1:LSC-STRAIN" to be used.  The
+ * return value is a pointer into the lalCachedDetectors array, so
+ * modifications to the contents are global.  Make a copy of the structure
+ * if you want to modify it safely.
  */
 
 
-const LALDetector *XLALInstrumentNameToLALDetector(
+const LALDetector *XLALDetectorPrefixToLALDetector(
 	const char *string
 )
 {

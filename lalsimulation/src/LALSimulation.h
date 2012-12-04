@@ -29,7 +29,7 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-const LALDetector *XLALInstrumentNameToLALDetector(
+const LALDetector *XLALDetectorPrefixToLALDetector(
 	const char *string
 );
 
