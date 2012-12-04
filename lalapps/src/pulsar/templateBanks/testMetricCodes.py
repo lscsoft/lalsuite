@@ -174,9 +174,6 @@ def compare_metrics ( g1_ij, g2_ij ):
     if ( len1 != len2 ):
         print ("Error: length of matrix g1_ij (%d) differs from g2_ij's (%d)." % ( g1_ij, g2_ij ) )
         raise TypeError
-    if ( len1 != len2 ):
-        print ("Error: length of matrix g1_ij (%d) differs from g2_ij's (%d)." % ( g1_ij, g2_ij ) )
-        raise TypeError
     n = math.sqrt(len1)
     if ( int(n) != n ):
         print ("Error: matrices g1_ij and g2_ij are not square! (n = %g)" % n )
