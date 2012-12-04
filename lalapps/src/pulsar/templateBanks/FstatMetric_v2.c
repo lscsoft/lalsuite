@@ -364,7 +364,7 @@ initUserVars (UserVariables_t *uvar)
   XLALregREALUserStruct(f3dot, 		 0 , UVAR_OPTIONAL, 	"third spindown-value d3f/dt3");
   XLALregREALUserStruct(startTime,      't', UVAR_OPTIONAL, 	"GPS start time of observation");
   XLALregREALUserStruct(refTime,         0,  UVAR_OPTIONAL, 	"GPS reference time of Doppler parameters. Special values: 0=startTime, -1=mid-time");
-  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Alternative: Duration of observation in seconds");
+  XLALregREALUserStruct(duration,	'T', UVAR_OPTIONAL,	"Duration of observation in seconds");
   XLALregSTRINGUserStruct(ephemDir, 	'E', UVAR_OPTIONAL,     "Directory where Ephemeris files are located");
   XLALregSTRINGUserStruct(ephemYear, 	'y', UVAR_OPTIONAL,     "Year (or range of years) of ephemeris files to be used");
 
