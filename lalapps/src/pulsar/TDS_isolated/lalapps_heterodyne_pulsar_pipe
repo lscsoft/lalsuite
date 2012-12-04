@@ -440,6 +440,7 @@ if do_fine or do_update or do_updateonly:
       """
       if do_update or do_updateonly:
         z = 0
+        upsrj = None
         while z < len(update_files):
           pulsar_update_file = pulsar_update_dir + '/' + update_files[z]
           
@@ -456,11 +457,12 @@ if do_fine or do_update or do_updateonly:
               sys.exit(1)
             
             if par['PSRJ'] == upar['PSRJ']:
-              break
-          
+              upsrj = upar['PSRJ']
+              break      
+
           z = z+1
 
-        if par['PSRJ'] == upar['PSRJ'] and os.path.isfile(pulsar_update_file):
+        if par['PSRJ'] == upsrj and os.path.isfile(pulsar_update_file):
           # add heterodyneNode for DAG
           fine.append(ppu.heterodyneNode(fine_job))
           
@@ -478,10 +480,11 @@ heterodyne using old parameters.""" % (pulsar)
           fine.append(ppu.heterodyneNode(fine_job))
           
           # set default null value for the update file as it wil appear in the sub file
-          pulsar_update_file = 'none'
-          fine[j].set_param_file_update(pulsar_update_file)
           het_flag = 1
-      
+      else: # normal fine heterodyne
+        # add heterodyneNode for DAG
+        fine.append(ppu.heterodyneNode(fine_job))      
+
       fine[j].set_het_flag(het_flag)
       fine[j].set_ifo(detector)
       fine[j].set_pulsar(pulsar)
