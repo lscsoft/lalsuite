@@ -196,7 +196,7 @@ typedef struct tagEarthState
 {
   REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT or TCB - TDT */
   REAL8 deinstein;      /**< d(einstein)/d(tgps) */
-  
+
   REAL8 posNow[3];      /**< Cartesian coords of Earth's center at tgps,
                          * extrapolated from JPL DE405 ephemeris; units= sec */
   REAL8 velNow[3];      /**< dimensionless velocity of Earth's center at tgps,
@@ -219,7 +219,7 @@ typedef struct tagEarthState
   REAL8 dse[3];         /**< d(se[3])/d(tgps); Dimensionless */
   REAL8 rse;            /**< length of vector se[3]; units = sec */
   REAL8 drse;           /**< d(rse)/d(tgps); dimensionless */
-  
+
   TimeCorrectionType ttype; /**< Time correction type */
 }
 EarthState;
@@ -273,13 +273,13 @@ typedef struct tagEmissionTime
 
   REAL8 vDetector[3];   /* Cartesian coords (0=x,1=y,2=z) of detector velocity
                          * at \f$t_a\f$ (GPS), in ICRS J2000 coords. Dimensionless. */
-                         
+
   REAL8 roemer;         /**<  the Roemer delay */
   REAL8 droemer;        /**<  d(Roemer)/d(tgps) */
-  
+
   REAL8 shapiro;        /**<  the Shapiro delay */
   REAL8 dshapiro;       /**<  d(Shapiro)/d(tgps) */
-  
+
   REAL8 erot;           /**< Earth rotation delay */
   REAL8 derot;          /**< d(erot)/d(tgps) */
 }
