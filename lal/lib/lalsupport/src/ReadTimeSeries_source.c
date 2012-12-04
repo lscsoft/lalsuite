@@ -8,6 +8,11 @@
 #define VTYPE CONCAT2(TYPE,Sequence)
 #define FUNC CONCAT3(LAL,TYPECODE,ReadTimeSeries)
 
+#ifndef BASETYPE
+#define BASETYPE TYPE
+#endif
+
+
 /* Maybe for consistent allocation of memory we should include a
 companion function called element counter that will notify the calling
 routine of how large we should allocate the Series to be before
@@ -23,7 +28,7 @@ FUNC ( LALStatus* status,
   REAL8Vector	*t=NULL;
   REAL8         *tPtr;
   REAL8         *tStopPtr;
-  TYPE           data;
+  union { TYPE value; BASETYPE array[sizeof(TYPE)/sizeof(BASETYPE)]; } data;
   TYPE	        *outputPtr;
   FILE		*fp;
   CHAR		 line[MaxLineLength];  /*holds data from each line*/
@@ -156,7 +161,7 @@ FUNC ( LALStatus* status,
       TRY( LALDDestroyVector( status->statusPtr, &t ), status );
       ABORT(status, READFTSERIESH_EPARSE, READFTSERIESH_MSGEPARSE);
     }
-    *(outputPtr) = data;
+    *(outputPtr) = data.value;
     tPtr++;
     outputPtr++;	
 
@@ -179,3 +184,5 @@ FUNC ( LALStatus* status,
   DETATCHSTATUSPTR(status);
   RETURN(status);  
 }
+
+#undef BASETYPE

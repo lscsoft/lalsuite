@@ -256,7 +256,7 @@ size is allocated and the data copied into it.
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

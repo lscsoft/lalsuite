@@ -22,6 +22,7 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
   TYPE *gData = NULL;      /* pointer to data in output grid */
 #if COMPLEX
   int numRead = 0;         /* number of data values read from file */
+  union { TYPE *z; struct { DATA re; DATA im; } *x; } zData;
 #endif
 
   /* Temporary storage for metadata fields: */
@@ -511,7 +512,8 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
 #if COMPLEX
   numRead = 0;
   do {
-    STRINGTODATA ( stat->statusPtr, &(gData->re), start = end,
+    zData.z = gData;
+    STRINGTODATA ( stat->statusPtr, &(zData.x->re), start = end,
 		   &end );
     BEGINFAIL( stat ) {
       TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -519,7 +521,7 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
     } ENDFAIL( stat );
     if ( start != end ) {
       numRead = 1;
-      STRINGTODATA ( stat->statusPtr, &(gData->im), start = end,
+      STRINGTODATA ( stat->statusPtr, &(zData.x->im), start = end,
 		     &end );
       BEGINFAIL( stat ) {
 	TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
@@ -546,7 +548,8 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
   TRY( LALCHARDestroyVector( stat->statusPtr, &line ), stat );
 #if COMPLEX
   if ( numRead == 1 ) {
-    if ( fscanf( stream, "%" FMT, &(gData->im) ) != 1 ) {
+    zData.z = gData;
+    if ( fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
       TRY( DESTROY ( stat->statusPtr, grid ), stat );
       ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
     }
@@ -554,8 +557,9 @@ FUNC ( LALStatus *stat, GTYPE **grid, FILE *stream )
     nTot--;
   }
   while ( nTot-- ) {
-    if ( fscanf( stream, "%" FMT, &(gData->re) ) != 1 ||
-	 fscanf( stream, "%" FMT, &(gData->im) ) != 1 ) {
+    zData.z = gData;
+    if ( fscanf( stream, "%" FMT, &(zData.x->re) ) != 1 ||
+	 fscanf( stream, "%" FMT, &(zData.x->im) ) != 1 ) {
       TRY( DESTROY ( stat->statusPtr, grid ), stat );
       ABORT( stat, STREAMINPUTH_ESLEN, STREAMINPUTH_MSGESLEN );
     }
