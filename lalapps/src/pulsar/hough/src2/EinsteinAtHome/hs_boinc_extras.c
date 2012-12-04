@@ -1274,6 +1274,23 @@ static void worker (void) {
   }
 #endif
 
+  /* if there is a file <wuname>_<instance>_0-LV, rename it to <wuname>_<instance>_1 */
+  {
+    unsigned int len = strlen(resultfile);
+    char*lv_file = (char*)malloc(len+4);
+    if (lv_file) {
+      strcpy(lv_file, resultfile);
+      strcat(lv_file, "-LV");
+      if (boinc_file_exists(lv_file) && resultfile[len-1]=='0') {
+	resultfile[len-1] = '1';
+	boinc_rename(lv_file,resultfile);
+      }
+    } else {
+      LogPrintf(LOG_CRITICAL,"ERROR: out of memory, can't allocate lv_file\n");
+      res = HIERARCHICALSEARCH_EMEM;
+    }
+  }
+
   LogPrintf (LOG_NORMAL, "done. calling boinc_finish(%d).\n",res);
   boinc_finish(boinc_finish_status=res);
 } /* worker() */
