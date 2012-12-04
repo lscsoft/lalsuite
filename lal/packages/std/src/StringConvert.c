@@ -137,7 +137,7 @@ and <tt>strtol()</tt> are not used as they are not guaranteed to have
 */
 
 /** \cond DONT_DOXYGEN */
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <ctype.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -535,8 +535,8 @@ LALStringToC( LALStatus *stat, COMPLEX8 *value, const CHAR *string, CHAR **endpt
   }
 
   /* Set values and return. */
-  value->re = re;
-  value->im = im;
+  *value = re;
+  *value += im*I;
   if ( endptr )
     *endptr = end;
   DETATCHSTATUSPTR( stat );
@@ -569,8 +569,8 @@ LALStringToZ( LALStatus *stat, COMPLEX16 *value, const CHAR *string, CHAR **endp
   }
 
   /* Set values and return. */
-  value->re = re;
-  value->im = im;
+  *value = re;
+  *value += im*I;
   if ( endptr )
     *endptr = end;
   DETATCHSTATUSPTR( stat );
