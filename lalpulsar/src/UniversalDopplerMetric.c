@@ -86,38 +86,38 @@ const struct {
   const char *const help;	/**< help string explaining the coordinate's meaning and units */
 } DopplerCoordinates[DOPPLERCOORD_LAST] = {
 
-  [DOPPLERCOORD_FREQ] = {"freq", SCALE_T, "Frequency [Units: Hz]."},
-  [DOPPLERCOORD_F1DOT] = {"f1dot", POW2(SCALE_T), "First spindown [Units: Hz/s]."},
-  [DOPPLERCOORD_F2DOT] = {"f2dot", POW3(SCALE_T), "Second spindown [Units: Hz/s^2]."},
-  [DOPPLERCOORD_F3DOT] = {"f3dot", POW4(SCALE_T), "Third spindown [Units: Hz/s^3]."},
+  [DOPPLERCOORD_FREQ]     = {"freq",    SCALE_T,          "Frequency [Units: Hz]."},
+  [DOPPLERCOORD_F1DOT]    = {"f1dot",   POW2(SCALE_T),    "First spindown [Units: Hz/s]."},
+  [DOPPLERCOORD_F2DOT]    = {"f2dot",   POW3(SCALE_T),    "Second spindown [Units: Hz/s^2]."},
+  [DOPPLERCOORD_F3DOT]    = {"f3dot",   POW4(SCALE_T),    "Third spindown [Units: Hz/s^3]."},
 
-  [DOPPLERCOORD_GC_NU0] = {"gc_nu0", SCALE_T, "Global correlation frequency [Units: Hz]. Activates 'reduced' detector position."},
-  [DOPPLERCOORD_GC_NU1] = {"gc_nu1", POW2(SCALE_T), "Global correlation first spindown [Units: Hz/s]. Activates 'reduced' detector position."},
-  [DOPPLERCOORD_GC_NU2] = {"gc_nu2", POW3(SCALE_T), "Global correlation second spindown [Units: Hz/s^2]. Activates 'reduced' detector position."},
-  [DOPPLERCOORD_GC_NU3] = {"gc_nu3", POW4(SCALE_T), "Global correlation third spindown [Units: Hz/s^3]. Activates 'reduced' detector position."},
+  [DOPPLERCOORD_GC_NU0]   = {"gc_nu0",  SCALE_T,          "Global correlation frequency [Units: Hz]."},
+  [DOPPLERCOORD_GC_NU1]   = {"gc_nu1",  POW2(SCALE_T),    "Global correlation first spindown [Units: Hz/s]."},
+  [DOPPLERCOORD_GC_NU2]   = {"gc_nu2",  POW3(SCALE_T),    "Global correlation second spindown [Units: Hz/s^2]."},
+  [DOPPLERCOORD_GC_NU3]   = {"gc_nu3",  POW4(SCALE_T),    "Global correlation third spindown [Units: Hz/s^3]."},
 
-  [DOPPLERCOORD_ALPHA] = {"alpha", SCALE_R/LAL_C_SI, "Right ascension [Units: radians]. Uses 'reduced' detector position."},
-  [DOPPLERCOORD_DELTA] = {"delta", SCALE_R/LAL_C_SI, "Declination [Units: radians]. Uses 'reduced' detector position."},
+  [DOPPLERCOORD_ALPHA]    = {"alpha",   SCALE_R/LAL_C_SI, "Right ascension [Units: radians]."},
+  [DOPPLERCOORD_DELTA]    = {"delta",   SCALE_R/LAL_C_SI, "Declination [Units: radians]."},
 
-  [DOPPLERCOORD_N2X_EQU] = {"n2x_equ", SCALE_R/LAL_C_SI, "X component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position."},
-  [DOPPLERCOORD_N2Y_EQU] = {"n2y_equ", SCALE_R/LAL_C_SI, "Y component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position."},
+  [DOPPLERCOORD_N2X_EQU]  = {"n2x_equ", SCALE_R/LAL_C_SI, "X component of constrained sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N2Y_EQU]  = {"n2y_equ", SCALE_R/LAL_C_SI, "Y component of constrained sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N2X_ECL] = {"n2x_ecl", SCALE_R/LAL_C_SI, "X component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position."},
-  [DOPPLERCOORD_N2Y_ECL] = {"n2y_ecl", SCALE_R/LAL_C_SI, "Y component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position."},
+  [DOPPLERCOORD_N2X_ECL]  = {"n2x_ecl", SCALE_R/LAL_C_SI, "X component of constrained sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N2Y_ECL]  = {"n2y_ecl", SCALE_R/LAL_C_SI, "Y component of constrained sky position in ecliptic coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3X_EQU] = {"n3x_equ", SCALE_R/LAL_C_SI, "X component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
-  [DOPPLERCOORD_N3Y_EQU] = {"n3y_equ", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
-  [DOPPLERCOORD_N3Z_EQU] = {"n3z_equ", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3X_EQU]  = {"n3x_equ", SCALE_R/LAL_C_SI, "X component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Y_EQU]  = {"n3y_equ", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Z_EQU]  = {"n3z_equ", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3X_ECL] = {"n3x_ecl", SCALE_R/LAL_C_SI, "X component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
-  [DOPPLERCOORD_N3Y_ECL] = {"n3y_ecl", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
-  [DOPPLERCOORD_N3Z_ECL] = {"n3z_ecl", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3X_ECL]  = {"n3x_ecl", SCALE_R/LAL_C_SI, "X component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Y_ECL]  = {"n3y_ecl", SCALE_R/LAL_C_SI, "Y component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
+  [DOPPLERCOORD_N3Z_ECL]  = {"n3z_ecl", SCALE_R/LAL_C_SI, "Z component of unconstrained super-sky position in ecliptic coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3SX_EQU] = {"n3sx_equ", SCALE_R/LAL_C_SI, "X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
-  [DOPPLERCOORD_N3SY_EQU] = {"n3sy_equ", SCALE_R/LAL_C_SI, "Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3SX_EQU] = {"n3sx_equ",SCALE_R/LAL_C_SI, "X spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3SY_EQU] = {"n3sy_equ",SCALE_R/LAL_C_SI, "Y spin-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
-  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl", SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
-  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl", SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OX_ECL] = {"n3ox_ecl",SCALE_R/LAL_C_SI, "X orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
+  [DOPPLERCOORD_N3OY_ECL] = {"n3oy_ecl",SCALE_R/LAL_C_SI, "Y orbit-component of unconstrained super-sky position in equatorial coordinates [Units: none]."},
 
 };
 
@@ -555,17 +555,17 @@ CWPhaseDeriv_i ( double tt, void *params )
       ret = LAL_TWOPI * Freq * DOT_VECT(rr_ord_Equ, nDeriv_i);
       break;
 
-    case DOPPLERCOORD_N2X_EQU:		/**< X component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
+    case DOPPLERCOORD_N2X_EQU:		/**< X component of constrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
       ret = LAL_TWOPI * Freq * ( rr_ord_Equ[0] - (nn_equ[0]/nn_equ[2]) * rr_ord_Equ[2] );
       break;
-    case DOPPLERCOORD_N2Y_EQU:		/**< Y component of contrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
+    case DOPPLERCOORD_N2Y_EQU:		/**< Y component of constrained sky position in equatorial coordinates [Units: none]. Uses 'reduced' detector position. */
       ret = LAL_TWOPI * Freq * ( rr_ord_Equ[1] - (nn_equ[1]/nn_equ[2]) * rr_ord_Equ[2] );
       break;
 
-    case DOPPLERCOORD_N2X_ECL:		/**< X component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
+    case DOPPLERCOORD_N2X_ECL:		/**< X component of constrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
       ret = LAL_TWOPI * Freq * ( rr_ord_Ecl[0] - (nn_ecl[0]/nn_ecl[2]) * rr_ord_Ecl[2] );
       break;
-    case DOPPLERCOORD_N2Y_ECL:		/**< Y component of contrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
+    case DOPPLERCOORD_N2Y_ECL:		/**< Y component of constrained sky position in ecliptic coordinates [Units: none]. Uses 'reduced' detector position. */
       ret = LAL_TWOPI * Freq * ( rr_ord_Ecl[1] - (nn_ecl[1]/nn_ecl[2]) * rr_ord_Ecl[2] );
       break;
 
