@@ -3,7 +3,6 @@ AM_CPPFLAGS = -I$(top_builddir)/include
 lalinspiralincludedir = $(includedir)/lal
 lalinspiralinclude_HEADERS = \
 	BBHPhenomCoeffs.h \
-	BlackHoleMode.h \
 	Chisq_CPU.h \
 	Chisq_GPU.h \
 	CoherentInspiral.h \
@@ -53,7 +52,6 @@ lalinspiralinclude_HEADERS = \
 lib_LTLIBRARIES = liblalinspiral.la
 liblalinspiral_la_SOURCES = \
 	BandPassInspiralTemplate.c \
-	BlackHoleMode.c \
 	Chisq_CPU.c \
 	CoherentInspiralFilter.c \
 	CoherentInspiralInput.c \
