@@ -31,7 +31,7 @@
 #ifndef _LALSIMIMRSPINEOBFACTORIZEDFLUX_C
 #define _LALSIMIMRSPINEOBFACTORIZEDFLUX_C
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -121,11 +121,11 @@ static REAL8 XLALInspiralSpinFactorizedFlux(
         XLALSimIMRGetEOBCalibratedSpinNQC( &nqcCoeffs, l, m, ak->eobParams->eta, ak->a );    
         XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
         /* Eq. 16 */
-        hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+        hLM *= hNQC;
       }
       // printf( "l = %d, m = %d, mag(hLM) = %.17e\n", l, m,  XLALCOMPLEX16Abs2( hLM ) );
       /* Eq. 13 */
-      flux += (REAL8)(m * m) * omegaSq * XLALCOMPLEX16Abs2( hLM );
+      flux += (REAL8)(m * m) * omegaSq * ( creal(hLM)*creal(hLM) + cimag(hLM)*cimag(hLM) );
     }
   }
   return flux * LAL_1_PI / 8.0;

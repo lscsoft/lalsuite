@@ -29,7 +29,7 @@
 #ifndef _LALSIMIMREOBSPINAUXFUNCS_C
 #define _LALSIMIMREOBSPINAUXFUNCS_C
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include "LALSimIMREOBNRv2.h"
 
 /*------------------------------------------------------------------------------------------

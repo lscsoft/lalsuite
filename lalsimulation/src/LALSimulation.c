@@ -27,11 +27,9 @@
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <math.h>
 #include <lal/LALSimulation.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALComplex.h>
 #include <lal/DetResponse.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -349,7 +347,7 @@ int XLALSimAddInjectionREAL8TimeSeries(
 
 		/* phase for sub-sample time correction */
 
-		fac = LAL_CEXP(LAL_CMUL_REAL(LAL_COMPLEX16_I, -LAL_TWOPI * f * start_sample_frac * target->deltaT));
+		fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
 
 		/* divide the source by the response function.  if a
 		 * frequency is required that lies outside the domain of
@@ -372,15 +370,15 @@ int XLALSimAddInjectionREAL8TimeSeries(
 				j = 0;
 			else if((unsigned) j > response->data->length - 1)
 				j = response->data->length - 1;
-			if(LAL_COMPLEX_EQ(response->data->data[j], LAL_COMPLEX16_ZERO))
-				fac = LAL_COMPLEX16_ZERO;
+			if(response->data->data[j] == 0.0)
+				fac = 0.0;
 			else
-				fac = LAL_CDIV(fac, response->data->data[j]);
+				fac /= response->data->data[j];
 		}
 
 		/* apply factor */
 
-		tilde_h->data->data[i] = LAL_CMUL(tilde_h->data->data[i], fac);
+		tilde_h->data->data[i] *= fac;
 	}
 
 	/* adjust DC and Nyquist components.  the DC component must always
@@ -392,15 +390,15 @@ int XLALSimAddInjectionREAL8TimeSeries(
 		/* a response function has been provided.  zero the DC and
 		 * Nyquist components */
 		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = LAL_COMPLEX16_ZERO;
-		tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX16_ZERO;
+			tilde_h->data->data[0] = 0.0;
+		tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
 	} else {
 		/* no response has been provided.  set the phase of the DC
 		 * component to 0, set the imaginary component of the
 		 * Nyquist to 0 */
 		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = XLALCOMPLEX16Rect(LAL_CABS(tilde_h->data->data[0]), 0.0);
-		tilde_h->data->data[tilde_h->data->length - 1] = XLALCOMPLEX16Rect(LAL_REAL(tilde_h->data->data[tilde_h->data->length - 1]), 0.0);
+			tilde_h->data->data[0] = cabs(tilde_h->data->data[0]);
+		tilde_h->data->data[tilde_h->data->length - 1] = creal(tilde_h->data->data[tilde_h->data->length - 1]);
 	}
 
 	/* return to time domain */
@@ -572,7 +570,7 @@ int XLALSimAddInjectionREAL4TimeSeries(
 
 		/* phase for sub-sample time correction */
 
-		fac = XLALCOMPLEX8Exp(XLALCOMPLEX8MulReal(LAL_COMPLEX8_I, -LAL_TWOPI * f * start_sample_frac * target->deltaT));
+		fac = cexp(-I * LAL_TWOPI * f * start_sample_frac * target->deltaT);
 
 		/* divide the source by the response function.  if a
 		 * frequency is required that lies outside the domain of
@@ -595,15 +593,15 @@ int XLALSimAddInjectionREAL4TimeSeries(
 				j = 0;
 			else if((unsigned) j > response->data->length - 1)
 				j = response->data->length - 1;
-			if(LAL_COMPLEX_EQ(response->data->data[j], LAL_COMPLEX8_ZERO))
-				fac = LAL_COMPLEX8_ZERO;
+			if(response->data->data[j] == 0.0)
+				fac = 0.0;
 			else
-				fac = XLALCOMPLEX8Div(fac, response->data->data[j]);
+				fac /= response->data->data[j];
 		}
 
 		/* apply factor */
 
-		tilde_h->data->data[i] = XLALCOMPLEX8Mul(tilde_h->data->data[i], fac);
+		tilde_h->data->data[i] *= fac;
 	}
 
 	/* adjust DC and Nyquist components.  the DC component must always
@@ -615,15 +613,15 @@ int XLALSimAddInjectionREAL4TimeSeries(
 		/* a response function has been provided.  zero the DC and
 		 * Nyquist components */
 		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = LAL_COMPLEX8_ZERO;
-		tilde_h->data->data[tilde_h->data->length - 1] = LAL_COMPLEX8_ZERO;
+			tilde_h->data->data[0] = 0.0;
+		tilde_h->data->data[tilde_h->data->length - 1] = 0.0;
 	} else {
 		/* no response has been provided.  set the phase of the DC
 		 * component to 0, set the imaginary component of the
 		 * Nyquist to 0 */
 		if(tilde_h->f0 == 0.0)
-			tilde_h->data->data[0] = XLALCOMPLEX8Rect(XLALCOMPLEX8Abs(tilde_h->data->data[0]), 0.0);
-		tilde_h->data->data[tilde_h->data->length - 1] = XLALCOMPLEX8Rect(LAL_REAL(tilde_h->data->data[tilde_h->data->length - 1]), 0.0);
+			tilde_h->data->data[0] = cabsf(tilde_h->data->data[0]);
+		tilde_h->data->data[tilde_h->data->length - 1] = crealf(tilde_h->data->data[tilde_h->data->length - 1]);
 	}
 
 	/* return to time domain */

@@ -30,10 +30,8 @@
  * from Taracchini et al. PRD 86, 024011 (2012), for SEOBNRv1.
  */
 
+#include <complex.h>
 #include <math.h>
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALComplex.h>
 
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
@@ -456,8 +454,8 @@ UNUSED static int  XLALSimIMREOBNonQCCorrection(
   phase = coeffs->b1 * p / rOmega + p*p*p/rOmega * ( coeffs->b2
      + coeffs->b3 / sqrtR + coeffs->b4 / r );
 
-  nqc->re = mag * cos(phase);
-  nqc->im = mag * sin(phase);
+  *nqc = mag * cos(phase);
+  *nqc += I * mag * sin(phase);
 
   return XLAL_SUCCESS;
 

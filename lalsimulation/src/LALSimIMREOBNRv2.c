@@ -29,12 +29,11 @@ Pan et al, PRD84, 124052(2011).
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/Units.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
 #include <lal/FindRoot.h>
 #include <lal/SeqFactories.h>
-#include <lal/LALComplex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/Date.h>
@@ -939,7 +938,7 @@ XLALSimIMREOBNRv2Generator(
      }
      /* If Nyquist freq. <  (l,m,0) QNM freq., exit */
      /* Note that we cancelled a factor of 2 occuring on both sides */
-     if ( LAL_PI / modefreqs->data[0].re < dt )
+     if ( LAL_PI / creal(modefreqs->data[0]) < dt )
      {
        XLALDestroyCOMPLEX16Vector( modefreqs );
        XLALDestroyREAL8Vector( values );
@@ -1004,7 +1003,7 @@ XLALSimIMREOBNRv2Generator(
 
    /* The length of the vectors at the higher sample rate will be */
    /* the step back time plus the ringdown */
-   lengthHiSR = ( nStepBack + (UINT4)(2. * EOB_RD_EFOLDS / modefreqs->data[0].im / dt) ) * resampFac;
+   lengthHiSR = ( nStepBack + (UINT4)(2. * EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt) ) * resampFac;
 
    /* Double it for good measure */
    lengthHiSR *= 2;
@@ -1410,10 +1409,10 @@ XLALSimIMREOBNRv2Generator(
 
       xlalStatus = XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
 
-      ampNQC->data[i] = XLALCOMPLEX16Abs( hLM );
-      sigReHi->data[i] = (REAL8) ampl0 * hLM.re;
-      sigImHi->data[i] = (REAL8) ampl0 * hLM.im;
-      phseHi->data[i] = XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
+      ampNQC->data[i] = cabs( hLM );
+      sigReHi->data[i] = (REAL8) ampl0 * creal(hLM);
+      sigImHi->data[i] = (REAL8) ampl0 * cimag(hLM);
+      phseHi->data[i] = carg( hLM ) + phaseCounter * LAL_TWOPI;
       if ( i && phseHi->data[i] > phseHi->data[i-1] )
       {
         phaseCounter--;
@@ -1445,9 +1444,9 @@ XLALSimIMREOBNRv2Generator(
        xlalStatus = XLALSimIMREOBGetFactorizedWaveform( &hLM, values, v, modeL, modeM, &eobParams );
 
        xlalStatus = XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
-       hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+       hLM *= hNQC;
 
-       sigMode->data->data[count] = XLALCOMPLEX16MulReal( hLM, ampl0 );
+       sigMode->data->data[count] = hLM * ampl0;
 
        count++;
        i++;
@@ -1466,12 +1465,12 @@ XLALSimIMREOBNRv2Generator(
 
       xlalStatus = XLALSimIMREOBNonQCCorrection( &hNQC, values, omega, &nqcCoeffs );
 
-      hLM.re = sigReHi->data[i];
-      hLM.im = sigImHi->data[i];
+      hLM = sigReHi->data[i];
+      hLM += I * sigImHi->data[i];
 
-      hLM = XLALCOMPLEX16Mul( hNQC, hLM );
-      sigReHi->data[i] = hLM.re;
-      sigImHi->data[i] = hLM.im;
+      hLM *= hNQC;
+      sigReHi->data[i] = creal(hLM);
+      sigImHi->data[i] = cimag(hLM);
     }
 
      /*--------------------------------------------------------------
@@ -1559,8 +1558,8 @@ XLALSimIMREOBNRv2Generator(
 
      for(j=0; j<sigReHi->length; j+=resampFac)
      {
-       sigMode->data->data[count].re = sigReHi->data[j];
-       sigMode->data->data[count].im = sigImHi->data[j];
+       sigMode->data->data[count] = sigReHi->data[j];
+       sigMode->data->data[count] += I * sigImHi->data[j];
        count++;
      }
 

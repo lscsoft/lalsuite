@@ -34,7 +34,7 @@
 #ifndef _LALSIMIMRSPINEOBFACTORIZEDWAVEFORM_C
 #define _LALSIMIMRSPINEOBFACTORIZEDWAVEFORM_C
 
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 
@@ -199,9 +199,9 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	  XLALPrintError("XLAL Error - %s: Error in GSL function\n", __func__ );
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
-	Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk, 
+	Tlm = cexp( ( lnr1.val + LAL_PI * hathatk ) + I * ( 
 				arg1.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
-	Tlm = XLALCOMPLEX16DivReal( Tlm, z2.val );
+	Tlm /= z2.val;
 
 
         /* Calculate the residue phase and amplitude terms */
@@ -494,9 +494,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 	  printf("YP::dynamics variables in waveform: %i, %i, %e, %e\n",l,m,r,pp); 
 	  printf( "rholm^l = %.16e, Tlm = %.16e + i %.16e, \nSlm = %.16e, hNewton = %.16e + i %.16e, delta = %.16e\n", rholmPwrl, Tlm.re, Tlm.im, Slm, hNewton.re, hNewton.im, deltalm );}*/
         /* Put all factors in Eq. 17 together */
-	*hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ), 
-				     Slm*rholmPwrl );
-        *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
+	*hlm = Tlm * cexp(I * deltalm) * Slm * rholmPwrl;
+        *hlm *= hNewton;
 	/*if (r > 8.5)
 	{
 	  printf("YP::FullWave: %.16e,%.16e, %.16e\n",hlm->re,hlm->im,sqrt(hlm->re*hlm->re+hlm->im*hlm->im));

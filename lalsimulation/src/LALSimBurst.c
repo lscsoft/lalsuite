@@ -31,7 +31,6 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <lal/LALSimBurst.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
