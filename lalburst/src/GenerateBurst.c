@@ -35,7 +35,6 @@
 #include <lal/Date.h>
 #include <lal/GenerateBurst.h>
 #include <lal/Units.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALDetectors.h>
