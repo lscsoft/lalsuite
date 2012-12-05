@@ -778,7 +778,7 @@ class EngineNode(pipeline.CondorDAGNode):
       flowstring=flowstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
-      self.add_var_opt('IFO',ifostring)
+      self.add_var_opt('ifo',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
       if self.psds: self.add_var_opt('psd',psdstring)

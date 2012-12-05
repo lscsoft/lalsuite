@@ -225,7 +225,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     /* Construct a list of IFOs */
     for(this=commandLine;this;this=this->next)
     {
-        if(!strcmp(this->param,"--ifo"))
+        if(!strcmp(this->param,"--ifo")||!strcmp(this->param,"--IFO"))
         {
             (*N)++;
             *ifos=realloc(*ifos,*N*sizeof(char *));
