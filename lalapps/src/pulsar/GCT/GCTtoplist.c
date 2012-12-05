@@ -442,6 +442,29 @@ static int _atomic_write_gctFStat_toplist_to_file(toplist_t *l, const char *file
       }
     }
 
+    /* write internal toplist sorting as header line
+       NOTE this does not necessarily correspond to the actual output-file row sorting, which by default is done by frequency */
+    if (length >= 0) {
+      const CHAR *sortstat = NULL;
+      if ( l->smaller == gctFStat_smaller )
+        sortstat = "<2F>";
+      else if ( l->smaller == gctNC_smaller )
+        sortstat = "nc";
+      else if ( l->smaller == gctLV_smaller )
+        sortstat = "LV";
+      else {
+        LogPrintf (LOG_CRITICAL, "Failed to write toplist sorting line, toplist is sorted by unknowns statistic.\n");
+        length = -1;
+      }
+      if (length >= 0) {
+        ret = fprintf(fpnew,"%%%% candidates selected by %s as toplist statistic\n", sortstat);
+        if (ret < 0)
+          length = ret;
+        else
+          length += ret;
+      }
+    }
+
     /* write column headings line */
     if (length >= 0) {
       ret = fprintf(fpnew,"%%%% columns:\n%%%% %s\n", global_column_headings_stringp);
