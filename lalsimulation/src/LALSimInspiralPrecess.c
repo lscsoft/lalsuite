@@ -226,7 +226,7 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 		}
 
 		unsigned int i;
-		complex double x_t = 0I;
+		complex double x_t = 0.I;
 		// FIXME: Should these be fixed?
 		double view_th = 0.0, view_ph = 0.0;
 		// Reconstitute the waveform from the h_lm

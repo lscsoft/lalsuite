@@ -34,8 +34,10 @@ FUNC ( LALStatus *stat, VTYPE **sequence, FILE *stream )
     size_t n = BUFFSIZE/SIZE + 1;
     data = here->buf.TYPECODE;
     while ( !done && --n ) {
-      done = ( ( fscanf( stream, "%" FORMAT, &(data->re) ) != 1 ) ||
-          ( fscanf( stream, "%" FORMAT, &(data->im) ) != 1 ) );
+      DATA re = 0.0, im = 0.0;
+      done = ( ( fscanf( stream, "%" FORMAT, &re ) != 1 ) ||
+          ( fscanf( stream, "%" FORMAT, &im ) != 1 ) );
+      *data = re + I * im;
       data++;
           }
     here->size = BUFFSIZE/SIZE - n;

@@ -5,12 +5,9 @@ LDADD = \
 
 check_PROGRAMS = \
 	BandPassTest \
-	IIRFilterTest \
-	LPCTest
+	IIRFilterTest
 
 TESTS = \
 	$(check_PROGRAMS)
-
-TESTS_ENVIRONMENT = 1>/dev/null
 
 MOSTLYCLEANFILES = out.dat

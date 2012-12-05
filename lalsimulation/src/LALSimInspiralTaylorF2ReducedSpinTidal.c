@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdlib.h>
 #include <math.h>
 #include <lal/Date.h>
@@ -44,8 +44,8 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     const REAL8 m1_SI,               /**< mass of companion 1 (kg) */
     const REAL8 m2_SI,               /**< mass of companion 2 (kg) */
     const REAL8 chi,                 /**< dimensionless aligned-spin param */
-    const REAL8 lam1,                /**< dimensionless deformability of 1 */
-    const REAL8 lam2,                /**< dimensionless deformability of 2 */
+    const REAL8 lam1,                /**< (tidal deformability of mass 1) / (mass of body 1)^5 (dimensionless) */
+    const REAL8 lam2,                /**< (tidal deformability of mass 2) / (mass of body 2)^5 (dimensionless) */
     const REAL8 fStart,              /**< start GW frequency (Hz) */
     const REAL8 r,                   /**< distance of source (m) */
     const INT4 phaseO,               /**< twice PN phase order */
@@ -105,9 +105,9 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
     alpha5S = (-113.*chi*(502429. - 591368.*eta + 1680*eta*eta))/(16128.*(-113 + 76*eta));
 
     /* tidal terms in the phase */
-    psi10T2 = -24./xi2 * (1. + 11. * xi1) * lam2 *xi2*xi2*xi2*xi2*xi2;
-    psi10T1 = -24./xi1 * (1. + 11. * xi1) * lam1 * xi1*xi1*xi1*xi1*xi1;
-    psi12T2 = -5./28./xi2 * (3179. - 919.* xi2 - 2286.* xi2*xi2 + 260.* xi2*xi2*xi2)* lam2 *xi2*xi2*xi2*xi2*xi2;
+    psi10T2 = -24./xi2 * (1. + 11. * xi1) * lam2 * xi2*xi2*xi2*xi2*xi2;
+    psi10T1 = -24./xi1 * (1. + 11. * xi2) * lam1 * xi1*xi1*xi1*xi1*xi1;
+    psi12T2 = -5./28./xi2 * (3179. - 919.* xi2 - 2286.* xi2*xi2 + 260.* xi2*xi2*xi2)* lam2 * xi2*xi2*xi2*xi2*xi2;
     psi12T1 = -5./28./xi1 * (3179. - 919.* xi1 - 2286.* xi1*xi1 + 260.* xi1*xi1*xi1)* lam1 * xi1*xi1*xi1*xi1*xi1;
 
     /* coefficients of the phase at PN orders from 0 to 3.5PN */
@@ -203,8 +203,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
             + (alpha6 + alpha6L * (LAL_GAMMA + log(4. * v))) * v6
             + alpha7 * v7);
 
-        data[i] = (COMPLEX16) {amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4),
-                             -(amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4))};
+        data[i] = amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4));
     }
 
     return XLAL_SUCCESS;

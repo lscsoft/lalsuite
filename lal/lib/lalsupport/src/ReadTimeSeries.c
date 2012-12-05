@@ -1,4 +1,4 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/FileIO.h>
@@ -35,8 +35,9 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
 
 #define TYPECODE Z
 #define TYPE COMPLEX16
+#define BASETYPE REAL8
 #define FMT "%lf\t%lf\t%lf\n"
-#define ARG &(data.re),&(data.im)
+#define ARG &(data.array[0]),&(data.array[1])
 #define NARGS 2
 #include "ReadTimeSeries_source.c"
 #undef TYPECODE
@@ -47,8 +48,9 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
 
 #define TYPECODE C
 #define TYPE COMPLEX8
+#define BASETYPE REAL4
 #define FMT "%lf\t%f\t%f\n"
-#define ARG &(data.re),&(data.im)
+#define ARG &(data.array[0]),&(data.array[1])
 #define NARGS 2
 #include "ReadTimeSeries_source.c"
 #undef TYPECODE
@@ -60,7 +62,7 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
 #define TYPECODE D
 #define TYPE REAL8
 #define FMT "%lf\t%lf\n"
-#define ARG &data
+#define ARG data.array
 #define NARGS 1
 #include "ReadTimeSeries_source.c"
 #undef TYPECODE
@@ -72,7 +74,7 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
 #define TYPECODE S
 #define TYPE REAL4
 #define FMT "%lf\t%f\n"
-#define ARG &data
+#define ARG data.array
 #define NARGS 1
 #include "ReadTimeSeries_source.c"
 #undef TYPECODE
@@ -84,7 +86,7 @@ static INT2 changeCharToNull (CHAR *string, CHAR target, CHAR *offEndOfString)
 #define TYPECODE
 #define TYPE REAL4
 #define FMT "%lf\t%f\n"
-#define ARG &data
+#define ARG data.array
 #define NARGS 1
 #include "ReadTimeSeries_source.c"
 #undef TYPECODE

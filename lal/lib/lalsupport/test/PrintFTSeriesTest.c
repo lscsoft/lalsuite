@@ -56,7 +56,7 @@ for integers are not tested.
 #define PRINTFTSERIESTESTC_MSGEFUN "Error from LAL function"
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/Units.h>
 #include <lal/PrintFTSeries.h>
 #include <math.h>
@@ -116,8 +116,8 @@ int main( void )
     return PRINTFTSERIESTESTC_EFUN;
   }
   for ( n=zSequence->length, z=zSequence->data; n > 0 ; --n, ++z ) {
-    z->re = sinh(90.0*(4-n));
-    z->im = - 1 / (1e-300 + z->re);
+    *z = sinh(90.0*(4-n));
+    *z += - I / (1e-300 + creal(*z));
   }
   strncpy(zTimeSeries.name,"Complex time series",LALNameLength);
   zTimeSeries.sampleUnits = lalDimensionlessUnit;
@@ -171,8 +171,8 @@ int main( void )
     return PRINTFTSERIESTESTC_EFUN;
   }
   for ( n=cSequence->length, c=cSequence->data; n > 0 ; --n, ++c ) {
-    c->re = sinh(9.0*(4-n));
-    c->im = - 1 / (1e-30 + c->re);
+    *c = sinh(9.0*(4-n));
+    *c += - I / (1e-30 + creal(*c));
   }
   strncpy(cTimeSeries.name,"Complex time series",LALNameLength);
   cTimeSeries.sampleUnits = lalDimensionlessUnit;
@@ -330,8 +330,8 @@ int main( void )
   cFrequencySeries.data = cSequence;
 
   for (i=0; i<cSequence->length; ++i) {
-    cSequence->data[i].re = 1.0*i;
-    cSequence->data[i].im = cFrequencySeries.f0 + cFrequencySeries.deltaF * i;
+    cSequence->data[i] = 1.0*i;
+    cSequence->data[i] += I * (cFrequencySeries.f0 + cFrequencySeries.deltaF * i);
   }
 
   LALCPrintFrequencySeries(&cFrequencySeries, "hFSe.dat");
@@ -367,8 +367,8 @@ int main( void )
   cFrequencySeries.data = cSequence;
 
   for (i=0; i<cSequence->length; ++i) {
-    cSequence->data[i].re = 1.0*i;
-    cSequence->data[i].im = cFrequencySeries.f0 + cFrequencySeries.deltaF*i;
+    cSequence->data[i] = 1.0*i;
+    cSequence->data[i] += I * (cFrequencySeries.f0 + cFrequencySeries.deltaF*i);
   }
 
   LALCPrintFrequencySeries(&cFrequencySeries, "hFSo.dat");

@@ -116,7 +116,7 @@ SFUNC ( LALStatus *stat, FILE *stream, STYPE *series )
   data = series->data->data;
   while ( length-- ) {
 #if COMPLEX
-    if ( fprintf( stream, FMT " " FMT "\n", data->re, data->im ) < 0 ) {
+    if ( fprintf( stream, FMT " " FMT "\n", creal(*data), cimag(*data) ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
     data++;
@@ -238,7 +238,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
   while ( length-- ) {
     UINT4 n = vectorLength - 1;
 #if COMPLEX
-    if ( fprintf( stream, FMT " " FMT, data->re, data->im ) < 0 ) {
+    if ( fprintf( stream, FMT " " FMT, creal(*data), cimag(*data) ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
     data++;
@@ -249,7 +249,7 @@ VFUNC ( LALStatus *stat, FILE *stream, VTYPE *series )
 #endif
     while ( n-- ) {
 #if COMPLEX
-      if ( fprintf( stream, " " FMT " " FMT, data->re, data->im ) < 0 ) {
+      if ( fprintf( stream, " " FMT " " FMT, creal(*data), cimag(*data) ) < 0 ) {
 	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
       }
       data++;
@@ -388,7 +388,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
   while ( length-- ) {
     UINT4 n = arrayDim - 1;
 #if COMPLEX
-    if ( fprintf( stream, FMT " " FMT, data->re, data->im ) < 0 ) {
+    if ( fprintf( stream, FMT " " FMT, creal(*data), cimag(*data) ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
     data++;
@@ -399,7 +399,7 @@ AFUNC ( LALStatus *stat, FILE *stream, ATYPE *series )
 #endif
     while ( n-- ) {
 #if COMPLEX
-      if ( fprintf( stream, " " FMT " " FMT, data->re, data->im ) < 0 ) {
+      if ( fprintf( stream, " " FMT " " FMT, creal(*data), cimag(*data) ) < 0 ) {
 	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
       }
       data++;
@@ -520,7 +520,7 @@ FFUNC ( LALStatus *stat, FILE *stream, FTYPE *series )
   data = series->data->data;
   while ( length-- ) {
 #if COMPLEX
-    if ( fprintf( stream, FMT " " FMT "\n", data->re, data->im ) < 0 ) {
+    if ( fprintf( stream, FMT " " FMT "\n", creal(*data), cimag(*data) ) < 0 ) {
       ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
     }
     data++;

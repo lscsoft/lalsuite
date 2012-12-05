@@ -78,7 +78,7 @@ parser.add_option("--h0",  help="GW amplitude h0", type="float", default=0.03 )
 parser.add_option("--cosi",  help="Pulsar orientation-angle cos(iota) [-1,1]", type="float", default=-0.3 )
 parser.add_option("--psi",  help="Wave polarization-angle psi [-pi/4, pi/4]", type="float", default=0.0 )
 parser.add_option("--phi0",  help="GW initial phase phi_0 [0, 2pi]", type="float", default=0.0 )
-parser.add_option("--coords",  help="Doppler-coordinates to compute metric in", default="Freq_Nat,Alpha,Delta" )
+parser.add_option("--coords",  help="Doppler-coordinates to compute metric in", default="freq,alpha,delta" )
 parser.add_option("--projection",  help="Project onto subspace orthogonal to this axis: 0=none, 1=1st-coord, 2=2nd-coord etc", type="int", default=0 )
 
 (options, args) = parser.parse_args()
@@ -174,22 +174,34 @@ def compare_metrics ( g1_ij, g2_ij ):
     if ( len1 != len2 ):
         print ("Error: length of matrix g1_ij (%d) differs from g2_ij's (%d)." % ( g1_ij, g2_ij ) )
         raise TypeError
+    n = math.sqrt(len1)
+    if ( int(n) != n ):
+        print ("Error: matrices g1_ij and g2_ij are not square! (n = %g)" % n )
+        raise TypeError
+    n = int(n)
 
     maxrelerr = 0
-    for i in xrange ( 0, len1 ):
-        ##Note: for the relative component-error, we need to be careful if
-        ## any component is exactly zero: in that case we use the absolute error
-        ## instead:
-        if g2_ij[i] == 0:
-            base = 1.0
-        else:
-            base = g2_ij[i]
+    for i in xrange ( 0, n ):
+        for j in xrange ( 0, n ):
 
-        relerr = abs ( ( g1_ij[i] - g2_ij[i] ) / base )
+            ## calculate diagonal normalised entries
+            norm = math.sqrt( g2_ij[i*n+i] * g2_ij[j*n+j] )
+            e1 = g1_ij[i*n+j] / norm
+            e2 = g2_ij[i*n+j] / norm
 
-        maxrelerr = max ( relerr, maxrelerr )
+            ##Note: for the relative component-error, we need to be careful if
+            ## any component is exactly zero: in that case we use the absolute error
+            ## instead:
+            if e2 == 0:
+                base = 1.0
+            else:
+                base = e2
 
-        ##print ("relerr = %g, maxrelerr = %g" % ( relerr, maxrelerr ) )
+            relerr = abs ( ( e1 - e2 ) / base )
+
+            maxrelerr = max ( relerr, maxrelerr )
+
+            ##print ("relerr = %g, maxrelerr = %g" % ( relerr, maxrelerr ) )
 
     return maxrelerr
 
@@ -205,7 +217,7 @@ outfile2 = "Fmetric_v2.dat"
 firstIFO = options.IFOs.split(",")[0]
 
 ## ========== 1) compare phase- and ptole- metrics
-coords = "Freq,Alpha,Delta,f1dot"
+coords = "freq,alpha,delta,f1dot"
 
 common_args = { "Alpha" : options.Alpha,
                 "Delta" : options.Delta,
@@ -307,7 +319,7 @@ for mettype in ["PHASE", "PTOLE"]:
 ## end of loop over metric types
 
 ## ========== 2) compare F-metrics
-coords = "Freq,Alpha,Delta,f1dot"
+coords = "freq,alpha,delta,f1dot"
 print """
 ## --------------------------------------------------------------------------------
 ## Comparing FSTAT-METRICS between [1]FstatMetric and [2]FstatMetric_v2
@@ -338,7 +350,7 @@ args2["IFOs"] = options.IFOs
 args2["IFOweights"] = options.IFOweights
 args2["metricType"] = 1	## full-motion numerical F-stat metric
 args2["outputMetric"] = outfile2
-args2["coords"] = "Freq,Alpha,Delta,f1dot"
+args2["coords"] = "freq,alpha,delta,f1dot"
 args2["refTime"] = 0;	## use refTime=startTime
 
 (stdout, stderr) = run_code ( code2, args2 )
@@ -360,7 +372,7 @@ if ( relerr12 > tolF ):
 
 
 ## ========== 3) compare FstatMetric_v2 vs analytic solutions
-coords = "Freq_Nat,f1dot_Nat,f2dot_Nat,f3dot_Nat"
+coords = "freq,f1dot,f2dot,f3dot"
 print """
 ## --------------------------------------------------------------------------------
 ## Comparing fkdot PHASE-METRICS between [2]FstatMetric_v2 and [3]analytic solution
@@ -374,6 +386,7 @@ args2["IFO"] = firstIFO
 args2["metricType"] = 0	## only compute phase-metric
 args2["outputMetric"] = outfile2
 args2["coords"] = coords
+args2["approxPhase"] = "true"
 
 args2["refTime"] = 0	## ==> refTime == startTime
 (stdout, stderr) = run_code ( code2, args2 )
@@ -388,18 +401,21 @@ octstr = load_file ( outfile2 )
 gMid2_ij =  parse_octave_metrics ( octstr, "g_ij" )
 if debug: print "refTime=midTime: FstatMetric_v2 output: g_ij = \n%s" % str(gMid2_ij)
 
-## analytic spin-metric for comparison, in 'new' natural units om_k = 2pi f^(k)/(k+1)! (T/2)^(k+1)
-gStart3_ij = [ 2**2 * 1.0/12, 2**3 * 1.0/12, 2**4 * 3.0/40, 2**5 * 1.0/15 , \
-               2**3 * 1.0/12, 2**4 * 4.0/45, 2**5 * 1.0/12, 2**6 * 8.0/105, \
-               2**4 * 3.0/40, 2**5 * 1.0/12, 2**6 * 9.0/112,2**7 * 3.0/40, \
-               2**5 * 1.0/15, 2**6 * 8.0/105,2**7 * 3.0/40, 2**8 * 16.0/225 ]
+## analytic spin-metric for comparison
+T = options.duration
+gStart3_ij = [ T**2 * 1.0/3,  T**3 * 1.0/6,   T**4 * 1.0/20,  T**5 * 1.0/90 , \
+               T**3 * 1.0/6,  T**4 * 4.0/45,  T**5 * 1.0/36,  T**6 * 2.0/315, \
+               T**4 * 1.0/20, T**5 * 1.0/36,  T**6 * 1.0/112, T**7 * 1.0/480, \
+               T**5 * 1.0/90, T**6 * 2.0/315, T**7 * 1.0/480, T**8 * 1.0/2025 ]
+gStart3_ij = map(lambda x: math.pi**2 * x, gStart3_ij)
 
 if debug: print "refTime=startTime: analytic spin-metric: g_ij = \n%s" % str(gStart3_ij)
 
-gMid3_ij = [ 1.0/3,       0,   1.0/5,       0,  	\
-                  0, 4.0/45,        0,  8.0/105,	\
-             1.0/5,       0,  1.0/7,       0,	\
-                  0, 8.0/105,        0, 16.0/225    ];
+gMid3_ij = [ T**2 * 1.0/3,   0,                T**4 * 1.0/120,  0,                \
+             0,              T**4 * 1.0/180,   0,               T**6 * 1.0/10080, \
+             T**4 * 1.0/120, 0,                T**6 * 1.0/4032, 0,                \
+             0,              T**6 * 1.0/10080, 0,               T**8 * 1.0/518400 ];
+gMid3_ij = map(lambda x: math.pi**2 * x, gMid3_ij)
 
 if debug: print "refTime=midTime: analytic spin-metric: g_ij = \n%s" % str(gMid3_ij)
 

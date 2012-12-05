@@ -188,8 +188,8 @@ void RunGeneratePulsarSignalTest(LALStatus *status)
   LALDetector cachedDetector;
   CHAR IFO[6] = "LHO";
   EphemerisData *edat = NULL;
-  CHAR sunFile[] = "sun00-04.dat";     /* 02/02/05 gam */
-  CHAR earthFile[] = "earth00-04.dat"; /* 02/02/05 gam */
+  CHAR sunFile[] = DATADIR "sun00-04.dat";     /* 02/02/05 gam */
+  CHAR earthFile[] = DATADIR "earth00-04.dat"; /* 02/02/05 gam */
 
   /* containers for sky position and spindown data */
   REAL8 **skyPosData;

@@ -436,7 +436,7 @@ int MAIN( int argc, char *argv[]) {
 #ifdef EAH_LOGLEVEL
   uvar_loglevel = EAH_LOGLEVEL;
 #else
-  uvar_loglevel = lalDebugLevel;
+  uvar_loglevel = lalDebugLevel & LALALLDBG;
 #endif
 
   uvar_ephemE = LALCalloc( strlen( EARTHEPHEMERIS ) + 1, sizeof(CHAR) );
@@ -859,6 +859,7 @@ int MAIN( int argc, char *argv[]) {
   dFreqStack = usefulParams.dFreqStack;
   df1dot = usefulParams.df1dot;
   df2dot = usefulParams.df2dot;
+  LogPrintf(LOG_NORMAL, "dFreqStack = %e, df1dot = %e, df2dot = %e\n", dFreqStack, df1dot, df2dot);
 
   /* number of coarse grid spindown values */
   nf1dot = (UINT4) ceil( usefulParams.spinRange_midTime.fkdotBand[1] / df1dot) + 1;
@@ -2101,6 +2102,12 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
     refTimeGPS = tMidGPS;
   }
 
+  /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
+  in->spinRange_refTime.refTime = refTimeGPS;
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status);
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status);
+  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, tMidGPS, &in->spinRange_refTime), status);
+
   /* set Fstat calculation frequency resolution (coarse grid) */
   if ( in->dFreqStack < 0 ) {
     in->dFreqStack = COARSE_DF0DOT * sqrt(mismatch1) / in->tStack;
@@ -2110,21 +2117,16 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   if ( in->df1dot < 0 ) {
     in->df1dot = COARSE_DF1DOT * sqrt(mismatch1) / ( in->tStack * in->tStack );
   }
+  in->df1dot = HSMIN(in->df1dot, in->spinRange_midTime.fkdotBand[1]);
 
   /* set Fstat 2nd spindown resolution (coarse grid) */
   if ( in->df2dot < 0 ) {
     in->df2dot = COARSE_DF2DOT * sqrt(mismatch1) / ( in->tStack * in->tStack * in->tStack );
   }
+  in->df2dot = HSMIN(in->df2dot, in->spinRange_midTime.fkdotBand[2]);
 
   /* calculate number of bins for Fstat overhead due to residual spin-down */
   in->extraBinsFstat = (UINT4)( 0.25*(in->tObs*in->df1dot + in->tObs*in->tObs*in->df2dot)/in->dFreqStack + 1e-6) + 1;
-
-  /* get frequency and fdot bands at start time of sfts by extrapolating from reftime */
-  in->spinRange_refTime.refTime = refTimeGPS;
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_startTime, tStartGPS, &in->spinRange_refTime), status);
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_endTime, tEndGPS, &in->spinRange_refTime), status);
-  TRY( LALExtrapolatePulsarSpinRange( status->statusPtr, &in->spinRange_midTime, tMidGPS, &in->spinRange_refTime), status);
-
 
   /* set wings of sfts to be read */
   /* the wings must be enough for the Doppler shift and extra bins
@@ -2182,8 +2184,10 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
   for (k = 0; k < in->nStacks; k++) {
 
     /* ----- load the multi-IFO SFT-vectors ----- */
-    TRY( LALLoadMultiSFTs ( status->statusPtr, stackMultiSFT->data + k,  catalogSeq.data + k,
-                            freqmin, freqmax ), status);
+    stackMultiSFT->data[k] = XLALLoadMultiSFTs( catalogSeq.data + k, freqmin, freqmax );
+    if ( stackMultiSFT->data[k] == NULL ) {
+      ABORT ( status, HIERARCHICALSEARCH_ENULL, HIERARCHICALSEARCH_MSGENULL );
+    }
 
     /* ----- obtain the (multi-IFO) 'detector-state series' for all SFTs ----- */
     TRY ( LALGetMultiDetectorStates ( status->statusPtr, stackMultiDetStates->data + k,

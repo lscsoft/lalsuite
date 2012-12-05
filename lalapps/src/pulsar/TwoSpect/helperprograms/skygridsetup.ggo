@@ -1,8 +1,8 @@
 package "skygridsetup"
-version "1.0"
+version "1.0.1"
 purpose "Helper program to output the skygrid"
 
-args "--string-parser --conf-parser"
+args "--file-name=cmdline_skygridsetup --string-parser --conf-parser"
 
 option "config"   - "Configuration file in gengetopt format for passing parameters" string optional
 option "Tcoh"  - "SFT coherence time" double default="1800" optional

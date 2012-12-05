@@ -250,6 +250,7 @@ void initializeNS(LALInferenceRunState *runState)
 Nested sampling arguments:\n\
  --Nlive N\tNumber of live points to use\n\
 (--Nmcmc M)\tOver-ride auto chain length determination and use this number of MCMC samples.\n\
+(--maxmcmc M)\tUse at most this number of MCMC points when autodetermining the chain (5000).\n\
 (--sloppyratio S)\tNumber of sub-samples of the prior for every sample from the limited prior\n\
 (--Nruns R)\tNumber of parallel samples from logt to use(1)\n\
 (--tolerance dZ)\tTolerance of nested sampling algorithm (0.1)\n\
@@ -363,6 +364,15 @@ Nested sampling arguments:\n\
     	else tmp=0.0;
     	LALInferenceAddVariable(runState->algorithmParams,"sloppyfraction",&tmp,
                     LALINFERENCE_REAL8_t,LALINFERENCE_PARAM_OUTPUT);
+
+        /* Maximum number of points in MCMC chain */
+        ppt=LALInferenceGetProcParamVal(commandLine,"--maxmcmc");
+        if(ppt){
+          tmpi=atoi(ppt->value);
+          LALInferenceAddVariable(runState->algorithmParams,"maxmcmc",&tmpi,
+                                LALINFERENCE_INT4_t,LALINFERENCE_PARAM_FIXED);
+        }
+
 
 	printf("set number of parallel runs.\n");
 	/* Optionally specify number of parallel runs */
@@ -554,12 +564,16 @@ Parameter arguments:\n\
 		endtime=XLALGPSGetREAL8(&(injTable->geocent_end_time));
         fprintf(stderr,"Read trig time %lf from injection XML file\n",endtime);
 		AmpOrder=injTable->amp_order;
-		PhaseOrder = XLALGetOrderFromString(injTable->waveform);
-		if( (int) PhaseOrder == XLAL_FAILURE)
-		  ABORTXLAL(&status);
-		approx = XLALGetApproximantFromString(injTable->waveform);
-		if( (int) approx == XLAL_FAILURE)
-		  ABORTXLAL(&status);
+		/* Only check this if the user has not specified an approximant */
+		if(!LALInferenceGetProcParamVal(commandLine,"--approx") && !LALInferenceGetProcParamVal(commandLine,"--approximant"))
+		{
+			PhaseOrder = XLALGetOrderFromString(injTable->waveform);
+			if( (int) PhaseOrder == XLAL_FAILURE)
+		  		ABORTXLAL(&status);
+			approx = XLALGetApproximantFromString(injTable->waveform);
+			if( (int) approx == XLAL_FAILURE)
+		  		ABORTXLAL(&status);
+		}
 		/* See if there are any parameters pinned to injection values */
 		if((ppt=LALInferenceGetProcParamVal(commandLine,"--pinparams"))){
 			pinned_params=ppt->value;

@@ -11,10 +11,10 @@ system("mkdir /local/user/egoetz/$$");
 die "mkdir failed: $?" if $?;
 
 my $h0ul = 4.5709e-24;
-my @h0fact = (0.1, 0.2, 0.3, 0.5, 0.6, 0.7, 0.9, 1.1, 1.5, 2.0);
+my @h0fact = (0.0, 0.0, 0.0, 0.0, 0.0);
 my $Tsft = 1800.0;
 my $dur = 40551300.0;
-for(my $ii=0; $ii<10; $ii++) {
+for(my $ii=0; $ii<5; $ii++) {
    my $h0 = $h0ul*$h0fact[$ii];
    my $psi = 0.384099;
    my $phi0 = 2.153257;
@@ -82,12 +82,12 @@ skyRegion ($alpha,$delta)
 t0 931081500
 blksize 101
 avesqrtSh 1.0e-23
-minTemplateLength 1
+minTemplateLength 500
 maxTemplateLength 500
 sftDir /local/user/egoetz/$$
 ephemDir /home/egoetz/TwoSpect/S6
 ephemYear 08-11-DE405
-outdirectory /home/egoetz/TwoSpect/efficiency/$jobnum
+outdirectory /home/egoetz/TwoSpect/compareEfficiency/$jobnum
 sftType standard
 IFO H1
 FFTplanFlag 1

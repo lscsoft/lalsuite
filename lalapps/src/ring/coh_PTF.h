@@ -183,7 +183,8 @@ struct coh_PTF_params {
   REAL4        injSearchWindow;
   /* flags */
   int          strainData;
-  int          doubleData;
+  int          ligoDoubleData;
+  int          virgoDoubleData;
   int          simData;
   int          zeroData;
   int          whiteSpectrum;

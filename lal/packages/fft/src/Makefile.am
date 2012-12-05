@@ -20,7 +20,6 @@ FFTSRC = \
 	CudaComplexFFT.c \
 	CudaRealFFT.c \
 	FFTWMutex.c \
-	FFTWMutex.h \
 	CudaFunctions.c
 FFTCXXSRC =
 FFTCXXGENSRC = CudaFFT.cpp
@@ -29,8 +28,7 @@ else
 FFTSRC = \
 	ComplexFFT.c \
 	RealFFT.c \
-	FFTWMutex.c \
-	FFTWMutex.h
+	FFTWMutex.c
 FFTCXXSRC =
 FFTCXXGENSRC =
 FFTLIBCXX =
@@ -58,7 +56,6 @@ EXTRA_DIST = \
 	ComplexFFT.c \
 	RealFFT.c \
 	FFTWMutex.c \
-	FFTWMutex.h \
 	TimeFreqFFT.c \
 	CudaComplexFFT.c \
 	CudaRealFFT.c \

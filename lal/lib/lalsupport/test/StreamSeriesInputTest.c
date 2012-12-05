@@ -88,7 +88,7 @@ data file formats.
 
 /* Default parameter settings. */
 extern int lalDebugLevel;
-#define INFILE "StreamSeriesInput.data"
+#define INFILE DATADIR "StreamSeriesInput.data"
 
 /* Usage format string. */
 #define USAGE "Usage: %s [-o outfile] [-d debuglevel]\n"        \

@@ -25,9 +25,9 @@
 #include <lal/LALStatusMacros.h>
 #include <lal/RealFFT.h>
 #include <lal/XLALError.h>
+#include <lal/FFTWMutex.h>
 #include <fftw3.h>
 
-#include "FFTWMutex.h"
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
 

@@ -96,8 +96,6 @@ int main( int argc, char *argv[] )
   LALSeg seg;
   LIGOTimeGPS segstart1 = {710000000, 123456789};
   LIGOTimeGPS segend1 =   {710000234, 555555555};
-  char *lal_data_path;
-  char segment_path[4096];
 
   /*-- Default debug level includes info messages (4), but not
      memory checking (16), error messages (1), or warning messages (2) --*/
@@ -142,16 +140,7 @@ int main( int argc, char *argv[] )
   XLALPrintInfo("\n========== LALSegListRead tests \n");
   /*-------------------------------------------------------------------------*/
 
-  /*------------------------------*/
-  lal_data_path = getenv("LAL_DATA_PATH");
-  if ( lal_data_path )
-    snprintf( segment_path, sizeof(segment_path), 
-        "%s/SegmentsInput1.data", lal_data_path );
-  else
-    snprintf( segment_path, sizeof(segment_path), 
-        "SegmentsInput1.data" );
-
-  LALSegListRead( &status, &seglist1, segment_path, "" );
+  LALSegListRead( &status, &seglist1, DATADIR "SegmentsInput1.data", "" );
   if ( status.statusCode ) {
     RETFAIL( "LALSegListRead with standard segment list file",
 	     status.statusCode );

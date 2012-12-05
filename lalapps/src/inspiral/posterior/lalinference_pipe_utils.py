@@ -304,7 +304,31 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     """
     for time in self.times:
       self.add_full_analysis_lalinferencenest(Event(trig_time=time))
- 
+      
+  def select_events(self):
+    """
+    Read events from the config parser. Understands both ranges and comma separated events, or combinations
+    eg. events=[0,1,5:10,21] adds to the analysis the events: 0,1,5,6,7,8,9,10 and 21
+    """
+    events=[]
+    times=[]
+    raw_events=self.config.get('input','events').replace('[','').replace(']','').split(',')
+    for raw_event in raw_events:
+        if ':' in raw_event:
+            limits=raw_event.split(':')
+            if len(limits) != 2:
+                print "Error: in event config option; ':' must separate two numbers."
+                exit(0)
+            low=int(limits[0])
+            high=int(limits[1])
+            if low>high:
+                events.extend(range(int(high),int(low)+1))
+            elif high>low:
+                events.extend(range(int(low),int(high)+1))
+        else:
+            events.append(int(raw_event))
+    return events
+
   def setup_from_inputs(self):
     """
     Scan the list of inputs, i.e.
@@ -319,10 +343,13 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
         print 'Plese specify only one input file'
         sys.exit(1)
     if self.config.has_option('input','events'):
-      selected_events=ast.literal_eval(self.config.get('input','events'))
+      selected_events=self.config.get('input','events')
       print 'Selected events %s'%(str(selected_events))
+      
       if selected_events=='all':
           selected_events=None
+      else:
+          selected_events=self.select_events()
     else:
         selected_events=None
     if self.config.has_option('input','gps-start-time'):
@@ -576,7 +603,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if parent is not None:
       node.add_parent(parent)
       infile=parent.get_pos_file()
-      node.add_var_arg(infile)
+      node.add_file_arg(infile)
     node.set_output_path(outdir)
     self.add_node(node)
     return node
@@ -700,7 +727,7 @@ class EngineNode(pipeline.CondorDAGNode):
     """
     Set a software injection to be performed.
     """
-    self.add_var_opt('inj',injfile)
+    self.add_file_opt('inj',injfile)
     self.set_event_number(event)
 
   def get_trig_time(self): return self.__trigtime
@@ -751,13 +778,13 @@ class EngineNode(pipeline.CondorDAGNode):
       flowstring=flowstring+']'
       channelstring=channelstring+']'
       slidestring=slidestring+']'
-      self.add_var_opt('IFO',ifostring)
+      self.add_var_opt('ifo',ifostring)
       self.add_var_opt('channel',channelstring)
       self.add_var_opt('cache',cachestring)
       if self.psds: self.add_var_opt('psd',psdstring)
       if self.flows: self.add_var_opt('flow',flowstring)
       if any(self.timeslides):
-	self.add_var_opt('timeslides',slidestring)
+	self.add_var_opt('timeslide',slidestring)
       # Start at earliest common time
       # NOTE: We perform this arithmetic for all ifos to ensure that a common data set is
       # Used when we are running the coherence test.

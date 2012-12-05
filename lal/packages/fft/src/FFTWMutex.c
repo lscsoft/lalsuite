@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#include "FFTWMutex.h"
+#include <lal/FFTWMutex.h>
 
 #ifdef LAL_PTHREAD_LOCK
 pthread_mutex_t lalFFTWMutex = PTHREAD_MUTEX_INITIALIZER;

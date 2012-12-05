@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -238,23 +238,19 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(2,2);
       if ( ! zpgFilter )
         XLAL_ERROR( XLAL_EFUNC );
-      zpgFilter->zeros->data[0].re=0.0;
-      zpgFilter->zeros->data[0].im=0.0;
-      zpgFilter->zeros->data[1].re=0.0;
-      zpgFilter->zeros->data[1].im=0.0;
-      zpgFilter->gain.re=1.0;
-      zpgFilter->gain.im=0.0;
+      zpgFilter->zeros->data[0]=0.0;
+      zpgFilter->zeros->data[1]=0.0;
+      zpgFilter->gain=1.0;
     }else{
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(0,2);
       if ( ! zpgFilter )
         XLAL_ERROR( XLAL_EFUNC );
-      zpgFilter->gain.re=-wc*wc;
-      zpgFilter->gain.im=0.0;
+      zpgFilter->gain=-wc*wc;
     }
-    zpgFilter->poles->data[0].re=ar;
-    zpgFilter->poles->data[0].im=ai;
-    zpgFilter->poles->data[1].re=-ar;
-    zpgFilter->poles->data[1].im=ai;
+    zpgFilter->poles->data[0]=ar;
+    zpgFilter->poles->data[0]+=ai*I;
+    zpgFilter->poles->data[1]=-ar;
+    zpgFilter->poles->data[1]+=ai*I;
 
     /* Transform to the z-plane and create the IIR filter. */
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
@@ -294,19 +290,15 @@ int XLALButterworthREAL4TimeSeries( REAL4TimeSeries *series, PassBandParamStruc 
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(1,1);
       if(!zpgFilter)
         XLAL_ERROR(XLAL_EFUNC);
-      zpgFilter->zeros->data->re=0.0;
-      zpgFilter->zeros->data->im=0.0;
-      zpgFilter->gain.re=1.0;
-      zpgFilter->gain.im=0.0;
+      *zpgFilter->zeros->data=0.0;
+      zpgFilter->gain=1.0;
     }else{
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(0,1);
       if(!zpgFilter)
         XLAL_ERROR(XLAL_EFUNC);
-      zpgFilter->gain.re=0.0;
-      zpgFilter->gain.im=-wc;
+      zpgFilter->gain=-wc*I;
     }
-    zpgFilter->poles->data->re=0.0;
-    zpgFilter->poles->data->im=wc;
+    *zpgFilter->poles->data=wc*I;
 
     /* Transform to the z-plane and create the IIR filter. */
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
@@ -376,23 +368,19 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(2,2);
       if ( ! zpgFilter )
         XLAL_ERROR( XLAL_EFUNC );
-      zpgFilter->zeros->data[0].re=0.0;
-      zpgFilter->zeros->data[0].im=0.0;
-      zpgFilter->zeros->data[1].re=0.0;
-      zpgFilter->zeros->data[1].im=0.0;
-      zpgFilter->gain.re=1.0;
-      zpgFilter->gain.im=0.0;
+      zpgFilter->zeros->data[0]=0.0;
+      zpgFilter->zeros->data[1]=0.0;
+      zpgFilter->gain=1.0;
     }else{
       zpgFilter = XLALCreateCOMPLEX16ZPGFilter(0,2);
       if ( ! zpgFilter )
         XLAL_ERROR( XLAL_EFUNC );
-      zpgFilter->gain.re=-wc*wc;
-      zpgFilter->gain.im=0.0;
+      zpgFilter->gain=-wc*wc;
     }
-    zpgFilter->poles->data[0].re=ar;
-    zpgFilter->poles->data[0].im=ai;
-    zpgFilter->poles->data[1].re=-ar;
-    zpgFilter->poles->data[1].im=ai;
+    zpgFilter->poles->data[0]=ar;
+    zpgFilter->poles->data[0]+=ai*I;
+    zpgFilter->poles->data[1]=-ar;
+    zpgFilter->poles->data[1]+=ai*I;
 
     /* Transform to the z-plane and create the IIR filter. */
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
@@ -432,19 +420,15 @@ int XLALButterworthREAL8TimeSeries( REAL8TimeSeries *series, PassBandParamStruc 
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(1,1);
       if(!zpgFilter)
         XLAL_ERROR(XLAL_EFUNC);
-      zpgFilter->zeros->data->re=0.0;
-      zpgFilter->zeros->data->im=0.0;
-      zpgFilter->gain.re=1.0;
-      zpgFilter->gain.im=0.0;
+      *zpgFilter->zeros->data=0.0;
+      zpgFilter->gain=1.0;
     }else{
       zpgFilter=XLALCreateCOMPLEX16ZPGFilter(0,1);
       if(!zpgFilter)
         XLAL_ERROR(XLAL_EFUNC);
-      zpgFilter->gain.re=0.0;
-      zpgFilter->gain.im=-wc;
+      zpgFilter->gain=-wc*I;
     }
-    zpgFilter->poles->data->re=0.0;
-    zpgFilter->poles->data->im=wc;
+    *zpgFilter->poles->data=wc*I;
 
     /* Transform to the z-plane and create the IIR filter. */
     if (XLALWToZCOMPLEX16ZPGFilter(zpgFilter)<0)
@@ -590,22 +574,18 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
     if(type==2){
       TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,2,2),
 	  stat);
-      zpgFilter->zeros->data[0].re=0.0;
-      zpgFilter->zeros->data[0].im=0.0;
-      zpgFilter->zeros->data[1].re=0.0;
-      zpgFilter->zeros->data[1].im=0.0;
-      zpgFilter->gain.re=1.0;
-      zpgFilter->gain.im=0.0;
+      zpgFilter->zeros->data[0]=0.0;
+      zpgFilter->zeros->data[1]=0.0;
+      zpgFilter->gain=1.0;
     }else{
       TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,0,2),
 	  stat);
-      zpgFilter->gain.re=-wc*wc;
-      zpgFilter->gain.im=0.0;
+      zpgFilter->gain=-wc*wc;
     }
-    zpgFilter->poles->data[0].re=ar;
-    zpgFilter->poles->data[0].im=ai;
-    zpgFilter->poles->data[1].re=-ar;
-    zpgFilter->poles->data[1].im=ai;
+    zpgFilter->poles->data[0]=ar;
+    zpgFilter->poles->data[0]+=ai*I;
+    zpgFilter->poles->data[1]=-ar;
+    zpgFilter->poles->data[1]+=ai*I;
 
     /* Transform to the z-plane and create the IIR filter. */
     LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter);
@@ -648,18 +628,14 @@ LALButterworthREAL4TimeSeries( LALStatus          *stat,
     if(type==2){
       TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,1,1),
 	  stat);
-      zpgFilter->zeros->data->re=0.0;
-      zpgFilter->zeros->data->im=0.0;
-      zpgFilter->gain.re=1.0;
-      zpgFilter->gain.im=0.0;
+      *zpgFilter->zeros->data=0.0;
+      zpgFilter->gain=1.0;
     }else{
       TRY(LALCreateCOMPLEX8ZPGFilter(stat->statusPtr,&zpgFilter,0,1),
 	  stat);
-      zpgFilter->gain.re=0.0;
-      zpgFilter->gain.im=-wc;
+      zpgFilter->gain=-wc*I;
     }
-    zpgFilter->poles->data->re=0.0;
-    zpgFilter->poles->data->im=wc;
+    *zpgFilter->poles->data=wc*I;
 
     /* Transform to the z-plane and create the IIR filter. */
     LALWToZCOMPLEX8ZPGFilter(stat->statusPtr,zpgFilter);

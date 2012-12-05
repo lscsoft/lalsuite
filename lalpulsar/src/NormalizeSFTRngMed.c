@@ -226,13 +226,20 @@ XLALSFTtoRngmed ( REAL8FrequencySeries *rngmed,	/**< [out] running-median smooth
   if ( blockSize > 0 )
     {
       XLAL_CHECK ( XLALPeriodoToRngmed ( rngmed, &periodo, blockSize ) == XLAL_SUCCESS, XLAL_EFUNC, "Call to XLALPeriodoToRngmed() failed." );
-
-      /* free memory */
-      XLALFree ( periodo.data->data );
-      XLALFree ( periodo.data );
     }
-  else
-    (*rngmed) = periodo;	/* struct-copy : don't do any running-median */
+  else	// blockSize==0 means don't use any running-median, just *copy* the periodogram contents into the output
+    {
+      strcpy ( rngmed->name, periodo.name );
+      rngmed->epoch 	= periodo.epoch;
+      rngmed->f0 	= periodo.f0;
+      rngmed->deltaF 	= periodo.deltaF;
+      rngmed->sampleUnits=periodo.sampleUnits;
+      memcpy ( rngmed->data->data, periodo.data->data, periodo.data->length * sizeof(periodo.data->data[0]) );
+    }
+
+  /* free memory */
+  XLALFree ( periodo.data->data );
+  XLALFree ( periodo.data );
 
   return XLAL_SUCCESS;
 

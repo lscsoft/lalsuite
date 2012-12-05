@@ -1,3 +1,15 @@
+lalframe (1.0.7-1) unstable; urgency=low
+
+  * LALFrame 1.0.7
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:19:09 -0500
+
+lalframe (1.0.6-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 09:45:00 +0200
+
 lalframe (1.0.6-1) unstable; urgency=low
 
   * LALFrame 1.0.6

@@ -75,7 +75,7 @@ static int XLALSpinAlignedHcapDerivative(
  * implemented in polar coordinates, we need to perform a transform. 
  * This is done in a particular transform in which
  * x = r, y = z = 0, px = pr, py = pphi/r, pz = 0, and
- * omega = v/r = (dy/dt)/r = (dH/dpy)/r, dr/dt = dx/dt = (dH/dpx)/dt, etc.
+ * omega = v/r = (dy/dt)/r = (dH/dpy)/r, dr/dt = dx/dt = dH/dpx, etc.
  */
 static int XLALSpinAlignedHcapDerivative(
                   double UNUSED t,          /**< UNUSED */
@@ -222,6 +222,7 @@ static int XLALSpinAlignedHcapDerivative(
   /* Right hand side of Eqs. 10a - 10d of Pan et al. PRD 84, 124052 (2011) */
   dvalues[0] = csi * tmpDValues[3];
   dvalues[1] = omega;
+  /* Note: in this special coordinate setting, namely y = z = 0, dpr/dt = dpx/dt + dy/dt * py/r, where py = pphi/r */ 
   dvalues[2] = - tmpDValues[0] + tmpDValues[4] * values[3] / (r*r);
   dvalues[2] = dvalues[2] * csi - ( values[2] / values[3] ) * flux / omega;
   dvalues[3] = - flux / omega;

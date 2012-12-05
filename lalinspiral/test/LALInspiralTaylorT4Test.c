@@ -60,7 +60,7 @@ int main(void) {
 
 	FILE *outputfile;
 	INT4 i,length;
-	REAL8 dt, m, m1, m2, nu;
+	REAL8 dt, m, m1, m2, nu, lambda1, lambda2;
 	LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
 	memset( &mystatus, 0, sizeof(LALStatus) );
@@ -70,6 +70,12 @@ int main(void) {
 	m2 = 5.;
 	m = m1 + m2;
 	nu = m1 * m2 / m / m;
+
+	lambda1 = 0.;
+	lambda2 = 0.;
+	LALSimInspiralWaveformFlags *waveFlags;
+	waveFlags = XLALSimInspiralCreateWaveformFlags();
+	XLALSimInspiralSetInteraction( waveFlags, XLALGetInteractionFromString( "ALL" ) );
 
 	params.approximant = TaylorT4;
 	params.order = LAL_PNORDER_THREE_POINT_FIVE;
@@ -87,7 +93,7 @@ int main(void) {
 	dt = 1. / params.tSampling;
 
 	start = clock();
-	length = XLALSimInspiralTaylorT4PNRestricted(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, 0., params.distance, 0, 7);
+	length = XLALSimInspiralTaylorT4PNRestricted(&hplus, &hcross, 0., dt, params.mass1*LAL_MSUN_SI, params.mass2*LAL_MSUN_SI, params.fLower, 0., params.distance, lambda1, lambda2, XLALSimInspiralGetInteraction(waveFlags), 0, 7);
 	diff = clock() - start;
 	msec = diff * 1000 / CLOCKS_PER_SEC;
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);

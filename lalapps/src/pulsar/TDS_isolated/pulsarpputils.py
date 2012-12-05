@@ -257,6 +257,10 @@ class psr_par:
     self.FILE = parfilenm
     pf = open(parfilenm)
     for line in pf.readlines():
+      # ignore empty lines (i.e. containing only whitespace)
+      if not line.strip():
+        continue
+      
       # Convert any 'D-' or 'D+' to 'E-' or 'E+'
       line = line.replace("D-", "E-")
       line = line.replace("D+", "E+")

@@ -1,3 +1,15 @@
+lalxml (1.1.5-1) unstable; urgency=low
+
+  * LALXML 1.1.5
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:19:20 -0500
+
+lalxml (1.1.4-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 09:45:00 +0200
+
 lalxml (1.1.4-1) unstable; urgency=low
 
   * LALXML 1.1.4

@@ -52,7 +52,7 @@
 #define CVS_DATE "$Date$"
 #define CVS_NAME_STRING "$Name$"
 
-void LALInferencePTswap(LALInferenceRunState *runState, double *TcurrentLikelihood, REAL8 *parametersVec,
+void LALInferencePTswap(LALInferenceRunState *runState, double *TcurrentLikelihood, double *TcurrentPrior, REAL8 *parametersVec,
                         REAL8 *tempLadder, int lowerRank, int upperRank, int i, FILE *tempfile);
 void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle);
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle);
@@ -297,7 +297,8 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
   REAL8 *tempLadder = NULL;			//the temperature ladder
   REAL8 *annealDecay = NULL;
   INT4 *acceptanceCountLadder = NULL;	//array of acceptance counts to compute the acceptance ratios.
-  double *TcurrentLikelihood = NULL; //the current likelihood for each chain
+  double *TcurrentLikelihood  = NULL; //the current likelihood for each chain
+  double *TcurrentPrior       = NULL; //the current prior for each chain
   INT4 parameter=0;
   INT4 *intVec = NULL;
   INT4 annealStartIter = 0;
@@ -366,9 +367,6 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   /* Adaptation settings */
   LALInferenceSetupAdaptiveProposals(runState);
-  REAL8Vector *PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-  REAL8Vector *PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-  REAL8Vector *sigmas = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, LALInferenceSigmaJumpName));
   INT4  adaptationOn = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptationOn")); // Run adapts
   INT4  adaptTau     = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptTau"));     // Sets decay of adaption function
   INT4  adaptLength       = *((INT4 *)LALInferenceGetVariable(runState->proposalArgs, "adaptLength"));// Number of iterations to adapt before turning off
@@ -448,6 +446,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   if (MPIrank == 0) {
     TcurrentLikelihood = (double*) malloc(sizeof(double)*nChain);
+    TcurrentPrior      = (double*) malloc(sizeof(double)*nChain);
   }
 
 
@@ -809,28 +808,32 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
       fprintf(chainoutput,"\n");
       fflush(chainoutput);
 
-      if (adaptationOn == 1) {
-        if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
-          fseek(statfile, 0L, SEEK_END);
-          fprintf(statfile,"%d\t",i);
-
-          if (LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")){
-            if (LALInferenceCheckVariable(runState->proposalArgs, "s_gamma")) {
-              s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
-            } else {
-              s_gamma = 0.0;
-            }
-            fprintf(statfile,"%f\t",s_gamma);
-            for (p=0; p<nPar; ++p) {
-              fprintf(statfile,"%g\t",sigmas->data[p]);
-            }
-            for (p=0; p<nPar; ++p) {
-              fprintf(statfile,"%f\t",PacceptCount->data[p]/( PproposeCount->data[p]==0 ? 1.0 : PproposeCount->data[p] ));
-            }
-          }
-          fprintf(statfile,"\n");
-          fflush(statfile);
+      if (adaptationOn == 1 && LALInferenceGetProcParamVal(runState->commandLine, "--adaptVerbose")) {
+        fseek(statfile, 0L, SEEK_END);
+        fprintf(statfile,"%d\t",i);
+        if (LALInferenceCheckVariable(runState->proposalArgs, "s_gamma")) {
+          s_gamma = *(REAL8*) LALInferenceGetVariable(runState->proposalArgs, "s_gamma");
+        } else {
+          s_gamma = 0.0;
         }
+        fprintf(statfile,"%f\t",s_gamma);
+        
+        for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
+            char tmpname[MAX_STRLEN]="";
+            sprintf(tmpname,"%s_%s",item->name,ADAPTSUFFIX);
+            REAL8 *sigma=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname);
+              fprintf(statfile,"%g\t",*sigma);
+        }
+        for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
+            char tmpname[MAX_STRLEN]=""; 
+            sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
+            REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+            sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+            REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+              fprintf(statfile,"%f\t",*accepted/( *proposed==0 ? 1.0 : *proposed ));
+        }
+        fprintf(statfile,"\n");
+        fflush(statfile);
       }
 
       if (LALInferenceGetProcParamVal(runState->commandLine, "--propVerbose")){
@@ -854,6 +857,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
         }
 
         MPI_Gather(&(runState->currentLikelihood), 1, MPI_DOUBLE, TcurrentLikelihood, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+        MPI_Gather(&(runState->currentPrior), 1, MPI_DOUBLE, TcurrentPrior, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         MPI_Gather(&acceptanceCount, 1, MPI_INT, acceptanceCountLadder, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Gather(parameters->data,nPar,MPI_DOUBLE,parametersVec,nPar,MPI_DOUBLE,0,MPI_COMM_WORLD);
         MPI_Barrier(MPI_COMM_WORLD);
@@ -862,19 +866,20 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
           if(LALInferenceGetProcParamVal(runState->commandLine, "--oldPT")) {
             for(lowerRank=0;lowerRank<nChain-1;lowerRank++) { //swap parameters and likelihood between chains
               for(upperRank=lowerRank+1;upperRank<nChain;upperRank++) {
-                LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
+                LALInferencePTswap(runState, TcurrentLikelihood, TcurrentPrior, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
               } //for(upperRank=lowerRank+1;upperRank<nChain;upperRank++)
             } //for(lowerRank=0;lowerRank<nChain-1;lowerRank++)
           } else {
             for(swapAttempt=0; swapAttempt<tempSwaps; ++swapAttempt) {
               lowerRank = gsl_rng_uniform_int(runState->GSLrandom, nChain-1);
               upperRank = lowerRank+1;
-              LALInferencePTswap(runState, TcurrentLikelihood, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
+              LALInferencePTswap(runState, TcurrentLikelihood, TcurrentPrior, parametersVec, tempLadder, lowerRank, upperRank, i, tempfile);
             } //for(swapAttempt=0; swapAttempt<50; ++swapAttempt)
           } //else
         } //if (MPIrank == 0)
 
         MPI_Scatter(parametersVec,nPar,MPI_DOUBLE,parameters->data,nPar,MPI_DOUBLE,0, MPI_COMM_WORLD);
+        MPI_Scatter(TcurrentPrior, 1, MPI_DOUBLE, &(runState->currentPrior), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         MPI_Scatter(TcurrentLikelihood, 1, MPI_DOUBLE, &(runState->currentLikelihood), 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         MPI_Scatter(acceptanceCountLadder, 1, MPI_INT, &acceptanceCount, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -916,6 +921,7 @@ void PTMCMCAlgorithm(struct tagLALInferenceRunState *runState)
 
   if (MPIrank == 0) {
     free(TcurrentLikelihood);
+    free(TcurrentPrior);
   }
 }
 
@@ -992,6 +998,7 @@ void PTMCMCOneStep(LALInferenceRunState *runState)
 //-----------------------------------------
 void LALInferencePTswap(LALInferenceRunState *runState,
                         double *TcurrentLikelihood,
+                        double *TcurrentPrior,
                         REAL8 *parametersVec,
                         REAL8 *tempLadder,
                         int lowerRank,
@@ -1017,9 +1024,17 @@ void LALInferencePTswap(LALInferenceRunState *runState,
       parametersVec[p+nPar*upperRank]=parametersVec[p+nPar*lowerRank];
       parametersVec[p+nPar*lowerRank]=dummyR8;
     }
-  dummyR8 = TcurrentLikelihood[upperRank];
-  TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
-  TcurrentLikelihood[lowerRank] = dummyR8;
+
+    /* swap likelihoods betweeen parallel chains */
+    dummyR8 = TcurrentLikelihood[upperRank];
+    TcurrentLikelihood[upperRank] = TcurrentLikelihood[lowerRank];
+    TcurrentLikelihood[lowerRank] = dummyR8;
+
+    /* swap priors betweeen parallel chains */
+    dummyR8 = TcurrentPrior[upperRank];
+    TcurrentPrior[upperRank] = TcurrentPrior[lowerRank];
+    TcurrentPrior[lowerRank] = dummyR8;
+    
   }
 }
 
@@ -1065,18 +1080,19 @@ void LALInferenceAdaptation(LALInferenceRunState *runState, INT4 cycle)
 void LALInferenceAdaptationRestart(LALInferenceRunState *runState, INT4 cycle)
 {
   INT4 Niter = *(INT4*) LALInferenceGetVariable(runState->algorithmParams, "Niter");
-  INT4 nPar = LALInferenceGetVariableDimensionNonFixed(runState->currentParams);
-  REAL8Vector *PacceptCount = NULL;
-  REAL8Vector *PproposeCount = NULL;
   INT4 adapting=1;
-  INT4 p=0;
   INT4 goodACL=0;
 
-  for (p=0; p<nPar; ++p) {
-    PacceptCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PacceptCount"));
-    PproposeCount = *((REAL8Vector **)LALInferenceGetVariable(runState->proposalArgs, "PproposeCount"));
-    PacceptCount->data[p] =0;
-    PproposeCount->data[p]=0;
+  for(LALInferenceVariableItem *item=runState->currentParams->head;item;item=item->next){
+    char tmpname[MAX_STRLEN]=""; 
+
+    sprintf(tmpname,"%s_%s",item->name,ACCEPTSUFFIX);
+    REAL8 *accepted=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+    *accepted = 0; 
+
+    sprintf(tmpname,"%s_%s",item->name,PROPOSEDSUFFIX);
+    REAL8 *proposed=(REAL8 *)LALInferenceGetVariable(runState->proposalArgs,tmpname); 
+    *proposed = 0;
   }
 
   LALInferenceSetVariable(runState->proposalArgs, "adapting", &adapting);

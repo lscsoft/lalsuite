@@ -1320,8 +1320,8 @@ void setupFromParFile( LALInferenceRunState *runState )
       LALInferenceAddVariable( data->dataParams, "ssb_delays", &dts,
                               LALINFERENCE_REAL8Vector_t, 
                               LALINFERENCE_PARAM_FIXED );
-     
-      bdts = get_bsb_delay( pulsar, data->dataTimes, dts );
+      
+      bdts = get_bsb_delay( pulsar, data->dataTimes, dts, data->ephem );
       
       LALInferenceAddVariable( data->dataParams, "bsb_delays", &bdts,
                               LALINFERENCE_REAL8Vector_t, 

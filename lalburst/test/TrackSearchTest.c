@@ -47,7 +47,7 @@ int main( void )
   params.low= 3; /* 1 */
   params.low = params.high/3; /* ? */
   /* open an input pgm file */
-  fp = LALOpenDataFile("a.pgm");
+  fp = fopen(DATADIR "a.pgm", "rb");
   str = fgets(stringd,255,fp);
   if (str == NULL)
   {

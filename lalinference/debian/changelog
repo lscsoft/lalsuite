@@ -1,3 +1,15 @@
+lalinference (1.0.0-1) unstable; urgency=low
+
+  * LALInference 1.0.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 02 Nov 2012 13:19:54 -0500
+
+lalinference (0.4.0-5) unstable; urgency=low
+
+  * convert to source format 3.0 (quilt)
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Wed, 05 Sep 2012 11:55:00 +0200
+
 lalinference (0.4.0-1) unstable; urgency=low
 
   * LALInference 0.4.0

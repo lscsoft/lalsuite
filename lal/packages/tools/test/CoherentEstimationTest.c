@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/CoherentEstimation.h>
 #include <lal/DetectorSite.h>
 #include <lal/LALNoiseModels.h>
@@ -70,18 +70,15 @@ main(void)
   LALZCreateVector(&stat, &P, filLength);
   filterInput.zeros = Z;
   filterInput.poles = P;
-  filterInput.gain.re = 31.55634918610406103312016;
-  filterInput.gain.im = 0.0;
+  filterInput.gain = 31.55634918610406103312016;
 
-  P->data[0].re = P->data[1].re = P->data[2].re = -0.8;
-  P->data[0].im = P->data[1].im = P->data[2].im = 0;
+  P->data[0] = P->data[1] = P->data[2] = -0.8;
 
-  Z->data[0].re = 0.522407749927482845109239;
-  Z->data[0].im = 0.4524183825710683670706658;
-  Z->data[1].re = 0.522407749927482845109239;
-  Z->data[1].im = -0.4524183825710683670706658;
-  Z->data[2].re = 0.4142135623730950899634706;
-  Z->data[2].im = 0.0;
+  Z->data[0] = 0.522407749927482845109239;
+  Z->data[0] += 0.4524183825710683670706658 * I;
+  Z->data[1] = 0.522407749927482845109239;
+  Z->data[1] += -0.4524183825710683670706658 * I;
+  Z->data[2] = 0.4142135623730950899634706;
 
   params.filters = (REAL8IIRFilter **)LALMalloc(Ndetectors * sizeof(REAL8IIRFilter *));
   for(i=0; i<Ndetectors; i++) {
@@ -99,8 +96,7 @@ main(void)
   params.polAngle = 0.2; /* radians */
 
   /* create direct filter */
-  filterInput.gain.re = 0.031689343849711;
-  filterInput.gain.im = 0.0;
+  filterInput.gain = 0.031689343849711;
   memcpy(buffer, P, filLength * sizeof(COMPLEX16));
   memcpy(P, Z, filLength * sizeof(COMPLEX16));
   memcpy(Z, buffer, filLength * sizeof(COMPLEX16));

@@ -54,6 +54,7 @@
 /** \cond DONT_DOXYGEN */
 #include <config.h>
 
+#include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -66,7 +67,6 @@
 #include <getopt.h>
 #endif
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/SeqFactories.h>
@@ -239,10 +239,10 @@ int main( int argc, char *argv[] )
         fp ? fprintf( fp, "dtfre\t\tdftim\n" ) : 0;
         for ( k = 0; k <= n / 2; ++k )
         {
-          REAL8 fftre = fft->data[k].re;
-          REAL8 fftim = fft->data[k].im;
-          REAL8 dftre = dft->data[k].re;
-          REAL8 dftim = dft->data[k].im;
+          REAL8 fftre = creal(fft->data[k]);
+          REAL8 fftim = cimag(fft->data[k]);
+          REAL8 dftre = creal(dft->data[k]);
+          REAL8 dftim = cimag(dft->data[k]);
           REAL8 errre = fabs( dftre - fftre );
           REAL8 errim = fabs( dftim - fftim );
           REAL8 avere = fabs( dftre + fftre ) / 2 + eps;
@@ -486,13 +486,13 @@ LALDFT(
       REAL8 phi = sign * LAL_TWOPI * (REAL8)(j) * (REAL8)(k) / (REAL8)(n);
       REAL8 c   = cos( phi );
       REAL8 s   = sin( phi );
-      REAL8 re  = input->data[j].re;
-      REAL8 im  = input->data[j].im;
+      REAL8 re  = creal(input->data[j]);
+      REAL8 im  = cimag(input->data[j]);
       sre += c * re - s * im;
       sim += c * im + s * re;
     }
-    output->data[k].re = sre;
-    output->data[k].im = sim;
+    output->data[k] = sre;
+    output->data[k] += I * sim;
   }
 
   RETURN( status );
@@ -519,18 +519,12 @@ void LALForwardRealDFT(
   TRY( LALCCreateVector( status->statusPtr, &b, n ), status );
 
   for ( j = 0; j < n; ++j )
-  {
-    a->data[j].re = input->data[j];
-    a->data[j].im = 0;
-  }
+    a->data[j] = input->data[j];
 
   TRY( LALDFT( status->statusPtr, b, a, -1 ), status );
 
   for ( k = 0; k <= n / 2; ++k )
-  {
-    output->data[k].re = b->data[k].re;
-    output->data[k].im = b->data[k].im;
-  }
+    output->data[k] = b->data[k];
 
   TRY( LALCDestroyVector( status->statusPtr, &a ), status );
   TRY( LALCDestroyVector( status->statusPtr, &b ), status );

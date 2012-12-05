@@ -23,7 +23,7 @@
 
 #include <lal/DopplerScan.h>
 
-#include "cmdline.h"
+#include "cmdline_skygridsetup.h"
 #include "../antenna.h"
 
 //Main program

@@ -8,4 +8,5 @@ EXTRA_DIST = \
 	lalmetaio-dev.install \
 	lalmetaio.dirs \
 	lalmetaio.install \
-	rules
+	rules \
+	source/format

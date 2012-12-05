@@ -40,10 +40,7 @@
 #include <regex.h>
 #include <time.h>
 #include <math.h>
-
-#if HAVE_FFTW3_H
 #include <fftw3.h>
-#endif
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lalapps.h>
@@ -88,6 +85,7 @@
 #include <lal/NRWaveIO.h>
 #include <lal/NRWaveInject.h>
 #include <lal/LALFrameL.h>
+#include <lal/FFTWMutex.h>
 #include <lal/LALSimulation.h>
 
 #include <LALAppsVCSInfo.h>
@@ -525,7 +523,9 @@ int main( int argc, char *argv[] )
   /* Import system wide FFTW wisdom file, if it exists.  Only single precision used. */
 
 #ifdef LAL_FFTW3_ENABLED
+  LAL_FFTW_PTHREAD_MUTEX_LOCK;
   fftwf_import_system_wisdom();
+  LAL_FFTW_PTHREAD_MUTEX_UNLOCK;
 #endif
 
   /* can use LALMalloc() and LALCalloc() from here onwards */

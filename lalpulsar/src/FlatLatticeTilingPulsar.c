@@ -18,6 +18,7 @@
 //
 
 #include <math.h>
+#include <gsl/gsl_math.h>
 
 #include <lal/FlatLatticeTilingPulsar.h>
 
@@ -27,6 +28,152 @@
 #define UNUSED
 #endif
 
+static void SuperSkyNZBound(
+  const size_t dimension,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper UNUSED,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
+
+  // Get bounds data
+  const FLSSNZ type = *((const FLSSNZ*)data);
+
+  // Calculate nz from nx and ny
+  const double nx = gsl_vector_get(point, dimension - 2);
+  const double ny = gsl_vector_get(point, dimension - 1);
+  const double nxysqr = nx * nx + ny * ny;
+  const double nz = (nxysqr < 1.0) ? sqrt(1.0 - nxysqr) : 0.0;
+
+  // Set singular bounds on nz
+  if (nz > 0.0) {
+    switch (type) {
+    case FLSSNZ_LOWER:
+      gsl_vector_set(lower, 0, -nz);
+      break;
+    case FLSSNZ_PLANE:
+      gsl_vector_set(lower, 0, 0.0);
+      break;
+    case FLSSNZ_UPPER:
+      gsl_vector_set(lower, 0, nz);
+      break;
+    case FLSSNZ_SPHERE:
+      gsl_vector_set(lower, 0, -nz);
+      gsl_vector_set(lower, 1, nz);
+      break;
+    default:
+      return;
+    }
+  } else {
+    gsl_vector_set(lower, 0, 0.0);
+  }
+
+};
+
+int XLALSetFlatLatticeSuperSkyNZBound(
+  FlatLatticeTiling* tiling,
+  const size_t nz_dimension,
+  const FLSSNZ type
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(type < FLSSNZ_LAST, XLAL_EINVAL);
+
+  // Allocate and set bounds data
+  FLSSNZ* info = XLALCalloc(1, sizeof(FLSSNZ));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+  *info = type;
+
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, nz_dimension, true, SuperSkyNZBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  return XLAL_SUCCESS;
+
+}
+
+typedef struct {
+  size_t nx_dim;
+  double offset[3];
+  double bounds[2];
+} FnDotConstantBoundInfo;
+
+static void FnDotConstantBound(
+  const size_t dimension UNUSED,
+  const gsl_vector_uint* bound UNUSED,
+  const gsl_vector* point UNUSED,
+  const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
+  gsl_vector* lower,
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
+  )
+{
+
+  // Get bounds data
+  const FnDotConstantBoundInfo* info = (const FnDotConstantBoundInfo*)data;
+
+  // Calculate sky offset
+  double offset = 0.0;
+  for (size_t i = 0; i < 3; ++i) {
+    offset += info->offset[i] * gsl_vector_get(point, info->nx_dim + i);
+  }
+
+  // Set constant lower and upper bounds on offset frequency/spindowns
+  gsl_vector_set(lower, 0, info->bounds[0] + offset);
+  if (upper) {
+    gsl_vector_set(upper, 0, info->bounds[1] + offset);
+  }
+
+}
+
+int XLALSetFlatLatticeFnDotConstantBound(
+  FlatLatticeTiling* tiling,
+  const size_t nx_dimension,
+  const double offset[3],
+  size_t dimension,
+  double bound1,
+  double bound2
+  )
+{
+
+  // Check input
+  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
+  XLAL_CHECK(nx_dimension + 3 <= dimension, XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound1), XLAL_EINVAL);
+  XLAL_CHECK(isfinite(bound2), XLAL_EINVAL);
+
+  // Allocate and set bounds data
+  FnDotConstantBoundInfo* info = XLALCalloc(1, sizeof(FnDotConstantBoundInfo));
+  XLAL_CHECK(info != NULL, XLAL_ENOMEM);
+  info->nx_dim = nx_dimension;
+  for (size_t i = 0; i < 3; ++i) {
+    if (offset) {
+      XLAL_CHECK(isfinite(info->offset[i]), XLAL_EINVAL);
+      info->offset[i] = offset[i];
+    } else {
+      info->offset[i] = 0;
+    }
+  }
+  info->bounds[0] = GSL_MIN(bound1, bound2);
+  info->bounds[1] = GSL_MAX(bound1, bound2);
+
+  // Set parameter space bound
+  XLAL_CHECK(XLALSetFlatLatticeBound(tiling, dimension, false, FnDotConstantBound, (void*)info) == XLAL_SUCCESS, XLAL_EFAILED);
+
+  return XLAL_SUCCESS;
+
+}
+
 typedef struct {
   size_t freq_dim;
   double lower;
@@ -34,11 +181,16 @@ typedef struct {
 } F1DotAgeBrakingBoundInfo;
 
 static void F1DotAgeBrakingBound(
+  const size_t dimension UNUSED,
   const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point,
   const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
   gsl_vector* lower,
-  gsl_vector* upper
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
   )
 {
 
@@ -99,11 +251,16 @@ typedef struct {
 } F2DotBrakingBoundInfo;
 
 static void F2DotBrakingBound(
+  const size_t dimension UNUSED,
   const gsl_vector_uint* bound UNUSED,
   const gsl_vector* point,
   const void* data,
+  const gsl_vector* incr UNUSED,
+  const gsl_vector* bbox UNUSED,
   gsl_vector* lower,
-  gsl_vector* upper
+  gsl_vector* upper,
+  double* lower_pad UNUSED,
+  double* upper_pad UNUSED
   )
 {
 

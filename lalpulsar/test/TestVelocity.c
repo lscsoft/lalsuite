@@ -101,8 +101,8 @@ INT4 lalDebugLevel=7;
 
 /* Locations of the earth and sun ephemeris data */
 
-#define EARTHDATAFILE "earth00-04.dat"
-#define SUNDATAFILE "sun00-04.dat"
+#define EARTHDATAFILE DATADIR "earth00-04.dat"
+#define SUNDATAFILE DATADIR "sun00-04.dat"
 char EARTHDATA[] = EARTHDATAFILE;
 char SUNDATA[] = SUNDATAFILE;
 

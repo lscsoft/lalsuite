@@ -71,6 +71,7 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__outputrate = None
     self.__earthephem = None
     self.__sunephem = None
+    self.__timeephem = None
     self.__covfile = None
     self.__ul = None
     self.__h0prior = None
@@ -320,3 +321,8 @@ class parameterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set the sun ephemeris file
     self.add_var_opt('sun-ephem', sunephem)
     self.__sunephem = sunephem
+    
+  def set_ephem_time(self, timeephem):
+    # set the time correction ephemeris file
+    self.add_var_opt('time-ephem',timeephem)
+    self.__timeephem = timeephem

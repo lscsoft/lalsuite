@@ -934,6 +934,12 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 	 * because it can be easily changed this is not good */
 
 	XLALGenerateSimBurst(&hplus, &hcross, sim_burst, 1.0 / 8192);
+	if(!hplus || !hcross) {
+		XLALDestroyREAL8TimeSeries(hplus);
+		XLALDestroyREAL8TimeSeries(hcross);
+		XLALDestroySimBurst(sim_burst);
+		return NULL;
+	}
 	sim_burst->hrss = XLALMeasureHrss(hplus, hcross);
 	XLALDestroyREAL8TimeSeries(hplus);
 	XLALDestroyREAL8TimeSeries(hcross);
