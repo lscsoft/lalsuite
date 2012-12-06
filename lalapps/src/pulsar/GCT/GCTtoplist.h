@@ -124,6 +124,11 @@ extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2,
 */
 extern int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*counter);
 
+/** removes a checkpoint
+    returns 0 on success, errno on failure
+*/
+extern int clear_gct_checkpoint(const char*filename);
+
 /** write the final output file:
     - re-sort the toplist into freq/alpha/delta/fdot order
     - write out the toplist in ASCII format with end marker to a temporary file

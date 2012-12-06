@@ -60,9 +60,11 @@
 #ifdef EAH_BOINC
 #include "hs_boinc_extras.h"
 #define COMPUTEFSTATFREQBAND_RS ComputeFStatFreqBand_RS
+#define CLEAR_GCT_CHECKPOINT(fn)
 #else
 #define GET_GCT_CHECKPOINT read_gct_checkpoint // (cptname, semiCohToplist, NULL, &count)
 #define SET_GCT_CHECKPOINT write_gct_checkpoint
+#define CLEAR_GCT_CHECKPOINT clear_gct_checkpoint
 #define SHOW_PROGRESS(rac,dec,skyGridCounter,tpl_total,freq,fband)
 #define MAIN  main
 #ifdef HS_OPTIMIZATION
@@ -1870,6 +1872,8 @@ int MAIN( int argc, char *argv[]) {
     }
 
   LogPrintfVerbatim ( LOG_DEBUG, "done.\n");
+
+  CLEAR_GCT_CHECKPOINT (fnameChkPoint);
 
   /*------------ free all remaining memory -----------*/
 

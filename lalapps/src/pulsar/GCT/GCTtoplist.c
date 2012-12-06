@@ -899,6 +899,19 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, UINT4*c
 } /* read_gct_checkpoint() */
 
 
+/** removes a checkpoint
+    returns 0 on success, errno on failure
+*/
+int clear_gct_checkpoint(const char*filename) {
+  FILE*fp=NULL; /* referenced in LOGIOERROR */
+  if (unlink(filename)) {
+    LOGIOERROR("Couldn't delete checkpoint",filename);
+    return (errno);
+  }
+  return(0);
+} /* clear_gct_checkpoint() */
+
+
 #ifdef DEBUG_SORTING
 static void dump_heap_order(const toplist_t*tl, const char*name) {
   unsigned int i;
