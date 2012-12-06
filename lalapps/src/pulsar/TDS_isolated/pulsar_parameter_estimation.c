@@ -318,7 +318,6 @@ defined!\n");
     data[k].chunkMin = inputs.chunkMin;
     data[k].chunkMax = inputs.chunkMax;
 
-    stdh0 = 0.;
     /* read in data */
     while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
       /* check that size of data file is not to large */
@@ -333,9 +332,6 @@ defined!\n");
       /* if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){ */
         data[k].times->data[j] = times;
         data[k].data->data[j] = dataVals;
-
-        /* get the power from the time series */
-        stdh0 += dataVals.re*dataVals.re + dataVals.im*dataVals.im;
 
         j++;
       /*}*/
@@ -356,11 +352,53 @@ defined!\n");
         ( inputs.mcmc.doMCMC == 1 || i == 0 ) ){
       if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
 
-      /* get the power spectral density power/bandwidth (1/60 Hz) */
-      stdh0 = stdh0/((REAL8)j*(1./60.));
+      /* large outliers can completely swamp the standard deviation estimate,
+       * so instead I will calculate the standard deviation by histogramming
+       * the logarithm of the absolute value of the data, finding the maximum
+       * of the distribution and using that as the standard deviation */
+      UINT4 nbins = 100; /* 100 histogram bins */
+      REAL8 binwidth = 0;
+      UINT4 binmax = 0, maxbin = 0;
+      REAL8 maxlogabs = -INFINITY, minlogabs = INFINITY;
+      REAL8Vector *logabs = XLALCreateREAL8Vector( 2*data[k].data->length );
+      UINT4Vector *histg = XLALCreateUINT4Vector( nbins );  
+    
+      /* get the maximum and minimum range for the histogram */
+      for (j = 0; j<(INT4)data[k].data->length; j++){
+        logabs->data[2*j] = log(fabs(data[k].data->data[j].re));
+        logabs->data[2*j+1] = log(fabs(data[k].data->data[j].im));
+        
+        if ( logabs->data[2*j] > maxlogabs ) maxlogabs = logabs->data[2*j];
+        if ( logabs->data[2*j+1] > maxlogabs ) maxlogabs = logabs->data[2*j+1];
+        if ( logabs->data[2*j] < minlogabs ) minlogabs = logabs->data[2*j];
+        if ( logabs->data[2*j+1] < minlogabs ) minlogabs = logabs->data[2*j+1];
+      }
+      
+      binwidth = (maxlogabs - minlogabs)/(REAL8)(nbins-1);
+      
+      /* fill in histogram */
+      for (j=0; j<(INT4)histg->length; j++) histg->data[j] = 0;
+      for (j=0; j<(INT4)logabs->length; j++){
+        UINT4 thisbin;
+        
+        thisbin = (UINT4)floor((logabs->data[j] - minlogabs)/binwidth);
+        
+        histg->data[thisbin]++;
+      }
+      
+      /* get the maximum bin */
+      for (j=0; j<(INT4)histg->length; j++){
+        if (histg->data[j] > binmax){
+          binmax = histg->data[j];
+          maxbin = j;
+        }
+      }
+        
+      /* use bin maximum to estimate the std deviation (without outliers) */
+      stdh0 = exp(minlogabs + binwidth*(REAL8)maxbin);
 
       /* upper limit estimate comes from ~ h0 = 10.8*sqrt(Sn/T) */
-      stdh0 = 10.8*sqrt(stdh0/((REAL8)j*60.));
+      stdh0 = 10.8*sqrt((stdh0*stdh0)/((REAL8)j));
 
       /* set the MCMC h0 proposal step size at stdh0*scalefac */
       if( inputs.mcmc.doMCMC == 1 ){
@@ -376,6 +414,9 @@ defined!\n");
         inputs.mesh.delta.h0 = (inputs.mesh.maxVals.h0 -
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
       }
+      
+      XLALDestroyREAL8Vector( logabs );
+      XLALDestroyUINT4Vector( histg );
 
       if( verbose ) fprintf(stderr, "%le\n", stdh0);
     }
