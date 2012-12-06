@@ -48,7 +48,6 @@ endif
 # NRWaveIOTest
 # SpaceCovering
 # FindChirpTDTest
-# CompareLalsimultaionLalinspiralWaveforms
 
 # requires lalstochastic
 # CoherentInspiralFilterTest
