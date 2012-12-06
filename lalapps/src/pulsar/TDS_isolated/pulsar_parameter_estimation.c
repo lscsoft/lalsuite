@@ -159,7 +159,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
   REAL8 times=0.;
   COMPLEX16 dataVals;
   REAL8 stdh0=0.;       /* approximate h0 limit from data */
-
+  REAL8 stdh0min=INFINITY;
+  
   FILE *fp=NULL;
   CHAR dataFile[256];
   CHAR outputFile[256];
@@ -398,8 +399,11 @@ defined!\n");
       stdh0 = exp(minlogabs + binwidth*(REAL8)maxbin);
 
       /* upper limit estimate comes from ~ h0 = 10.8*sqrt(Sn/T) */
-      stdh0 = 10.8*sqrt((stdh0*stdh0)/((REAL8)j));
+      stdh0 = 10.8*sqrt((stdh0*stdh0)/((REAL8)data[k].data->length));
 
+      /* get minimum limit from all detectors */
+      if ( stdh0 < stdh0min ) stdh0min = stdh0;
+      
       /* set the MCMC h0 proposal step size at stdh0*scalefac */
       if( inputs.mcmc.doMCMC == 1 ){
         inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
@@ -559,6 +563,14 @@ defined!\n");
 
     /*======================= PERFORM JOINT MCMC =============================*/
     if( inputs.mcmc.doMCMC == 1 ){
+      /* use smallest of the limits for h0 proposal */
+      if ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ){
+        inputs.mcmc.sigmas.h0 = stdh0min*inputs.mcmc.h0scale;
+        
+        if( inputs.mesh.maxVals.h0 == 0 )
+          inputs.mesh.maxVals.h0 = stdh0min;
+      }
+      
       perform_mcmc(data, inputs, numDets, output.det, detPos, edat, tdat,
                    ttype);
 
