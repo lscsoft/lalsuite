@@ -7,7 +7,6 @@ check_PROGRAMS = \
 	BasicInjectTest \
 	CoarseTest \
 	CoarseTest2 \
-	CompareLalsimultaionLalinspiralWaveforms \
 	FindChirpBankVetoTest \
 	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \
@@ -49,6 +48,7 @@ endif
 # NRWaveIOTest
 # SpaceCovering
 # FindChirpTDTest
+# CompareLalsimultaionLalinspiralWaveforms
 
 # requires lalstochastic
 # CoherentInspiralFilterTest
