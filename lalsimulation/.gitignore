@@ -22,6 +22,7 @@ lalsimulation.pc
 lalsimulation.spec
 libtool
 python/__init__.py
+python/git_version.py
 src/LALSimulationConfig.h
 src/LALSimulationVCSInfo.h
 src/lalsim-bh-qnmode
