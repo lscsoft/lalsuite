@@ -21,6 +21,8 @@ lalframe-*.tar.gz
 lalframe.pc
 lalframe.spec
 libtool
+python/__init__.py
+python/git_version.py
 src/LALFrameConfig.h
 src/LALFrameVCSInfo.h
 src/lalfr-*
@@ -39,4 +41,3 @@ test/ReadGEOData
 test/ReadLHOData
 test/TestLowLatencyData*
 test/catalog*
-python/__init__.py
