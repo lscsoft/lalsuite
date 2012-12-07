@@ -58,7 +58,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 
 if HAVE_PYTHON
 pkgpython_PYTHON = \
-	__init__.py
+	__init__.py \
+	git_version.py
 dist_bin_SCRIPTS = \
 	lalapps_path2cache \
 	lalapps_searchsum2cache
@@ -74,7 +75,8 @@ EXTRA_DIST = \
 	lalappsfrutils.c \
 	lalappsfrutils.h \
 	processtable.c \
-	processtable.h
+	processtable.h \
+	git_version.py
 
 MOSTLYCLEANFILES =
 
