@@ -510,14 +510,16 @@ def plot_posterior_hist(poslist, param, ifos,
   except:
     paraxis = param
   
+  ymax = []
+  
   # loop over ifos
   for idx, ifo in enumerate(ifos):
     # check whether to plot all figures on top of each other
     if overplot and idx == 0:
-      myfig = plt.figure(figsize=(4,3.5),dpi=200)
+      myfig = plt.figure(figsize=(4,4),dpi=200)
       plt.hold(True)
     elif not overplot:
-      myfig = plt.figure(figsize=(4,3.5),dpi=200)
+      myfig = plt.figure(figsize=(4,4),dpi=200)
     
     pos = poslist[idx]
     
@@ -536,15 +538,17 @@ def plot_posterior_hist(poslist, param, ifos,
     
     if 'h0' not in param:
       plt.xlim(parambounds[0], parambounds[1])
-    
-    plt.ylim(0, n.max()+0.1*n.max()) 
+   
     plt.xlabel(r''+paraxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
    
     if not overplot:
+      plt.ylim(0, n.max()+0.1*n.max()) 
       plt.legend(ifo)
       myfigs.append(myfig)
+    else:
+      ymax.append(n.max()+0.1*n.max())
     
     # if upper limit is needed then integrate posterior using trapezium rule
     if upperlimit != 0:
@@ -558,6 +562,7 @@ def plot_posterior_hist(poslist, param, ifos,
       ulvals.append(intf(float(upperlimit)))
   
   if overplot:
+    plt.ylim(0, max(ymax))
     plt.legend(ifos)
     myfigs.append(myfig)
   
@@ -610,10 +615,10 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50]):
     par1pos_max = a.max()
     par2pos_max = b.max()
 
-    myfig = plt.figure(figsize=(4,3.5),dpi=200)
+    myfig = plt.figure(figsize=(4,4),dpi=200)
    
     plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
-    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100, rotation=270)
     
     H, xedges, yedges = np.histogram2d(a, b, nbins, normed=True)
 
@@ -625,7 +630,7 @@ interpolation='nearest', cmap='gray_r')
       plt.xlim(bounds[0][0], bounds[0][1])
       plt.ylim(bounds[1][0], bounds[1][1])
     
-    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    myfig.subplots_adjust(left=0.15, bottom=0.15) # adjust size
     
     myfigs.append(myfig)
     

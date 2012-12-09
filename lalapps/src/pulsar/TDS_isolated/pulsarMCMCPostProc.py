@@ -177,6 +177,10 @@ nest1_L1.txt,nest2_L1.txt,nest3_L1.txt --parfile J0534-2200.par --Nlive 1000 \
     print "Number of IFOs and data lists are not equal"
     exit(-1)
   
+  ifosNew = list(ifos)
+  if nifos > 1:
+    ifosNew.append('Joint')
+  
   # split MCMC directories
   mcmcdirs = (opts.mcmcdirs).split(',')
   
@@ -461,10 +465,6 @@ plotpsds=plotpsds, removeoutlier=8 )
         psdfigs[i].savefig(ASDplotpath)
     
     # loop over detectors
-    ifosNew = ifos
-    if nifos > 1:
-      ifosNew.append('Joint')
-    
     poslist = []
     
     for i, ifo in enumerate(ifosNew):
