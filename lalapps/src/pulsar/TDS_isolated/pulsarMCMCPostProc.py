@@ -53,7 +53,13 @@ from BeautifulSoup import BeautifulSoup as bs
 __author__="Matthew Pitkin <matthew.pitkin@ligo.org>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
-    
+
+# convert a floating point number into a string in X.X x 10^Z format
+def exp_str(f):
+  s = '%.e' % f
+  ssplit = s.split('e')
+  return '%.1f&times;10<sup>%d</sup>' % (float(ssplit[0]), int(ssplit[1]))
+
 # main function
 if __name__=='__main__':
   from optparse import OptionParser
@@ -190,8 +196,9 @@ nest1_L1.txt,nest2_L1.txt,nest3_L1.txt --parfile J0534-2200.par --Nlive 1000 \
       sys.exit(1)
   
   # create CSS
+  cssname = 'psr.css'
   try:
-    cssfile = os.path.join(outpath, 'psr.css')
+    cssfile = os.path.join(outpath, cssname)
     css = open(cssfile, 'w')
   except:
     print >> sys.stderr, "Cannot open CSS file %s" % cssfile
@@ -225,7 +232,60 @@ nest1_L1.txt,nest2_L1.txt,nest3_L1.txt --parfile J0534-2200.par --Nlive 1000 \
   
 """
   css.write(csspar)
+ 
+  # create footer style
+  cssfooter = \
+"""#footer {
+  border-top: 1px solid #999;
+  padding: 15px;
+  font-family: monospace;
+}
+
+"""
+  css.write(cssfooter)
   
+  # create link style
+  csslink = \
+""".par a:link{
+  color: #000000
+  text-decoration: none;
+}
+
+.par a:visited{
+  color: #000000
+  text-decoration: none;
+}
+
+"""
+  css.write(csslink)
+  
+  csspostplot = \
+""".posplot{
+  height: 275px;
+  padding: 8px;
+  border: 1px solid #999;
+  box-shadow: 2px 2px 2px #888;
+}
+
+"""
+  css.write(csspostplot)
+  
+  # create a class for a rotated image
+  cssrotate = \
+""".rotated{
+  padding: 8px;
+  border: 1px solid #999;
+  box-shadow: 2px 2px 2px #888;
+  width: 275px;
+  -moz-transform: rotate(90deg);
+  -webkit-transform: rotate(90deg);
+  -o-transform: rotate(90deg);
+  -ms-transform: rotate(90deg);
+}
+
+"""
+  css.write(cssrotate)
+
   css.close()
   
   # loop through par files to produce plots
@@ -355,7 +415,7 @@ linear&y_axis=&y_scale=linear&state=query'
   <link rel="stylesheet" type="text/css" href="../%s"/>
  
   </head>
-""" % (pname, pname, cssfile)
+""" % (pname, pname, cssname)
     htmlpout.write(htmlphead)
     
     htmlpout.write('<body>\n')
@@ -488,27 +548,50 @@ plotpsds=plotpsds, removeoutlier=8 )
     h0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'h0', ifosNew, \
                                               bounds, histbins, \
                                               ul, overplot=True )
-    figname = 'h0post.png'
-    h0plotpath = os.path.join(puldir, figname)
+    h0figname = 'h0post.png'
+    h0plotpath = os.path.join(puldir, h0figname)
     h0Fig[0].savefig(h0plotpath)
     
     # convert h0 uls into ellipticity and spin-down ratio
     ell = []
     sdrat = []
+    h0last = ulvals[-1]
     for h0ul in ulvals:
       ell.append(pppu.h0_to_ellipticity(h0ul, f0, dist))
       sdrat.append(h0ul/sdlim)
     
-    # print limits to html file
+    sdlimstr = exp_str(sdlim)
     
+    # print limits to html file
+    htmlpout.write('<div>\n')
+    htmlpout.write('<table border="1">\n')
+    htmlpout.write('<tr>\n  <th>Detector</th>\n')
+    htmlpout.write('  <th>h<sub>0</sub><sup>95%</sup></th>\n')
+    htmlpout.write('  <th>&#949;</th>\n')
+    htmlpout.write('  <th>spin-down ratio (%s)</th>\n</tr>\n' % sdlimstr)
+    for i, ifo in enumerate(ifosNew):
+      ulstr = exp_str(ulvals[i])
+      ellstr = exp_str(ell[i])
+      
+      tableout = \
+"""<tr>
+  <td>%s</td>
+  <td>%s</td>
+  <td>%s</td>
+  <td>%.2f</td>
+</tr>
+""" % (ifo, ulstr, ellstr, sdrat[i])
+    htmlpout.write(tableout)
+    htmlpout.write('</table>\n')
+    htmlpout.write('</div>\n\n')
     
     # phi0
     bounds = [0, 2*math.pi]
     phi0Fig, ulvals = pppu.plot_posterior_hist( poslist, 'phi0', ifosNew, \
                                         bounds, histbins, \
                                         0, overplot=True )
-    figname = 'phi0post.png'
-    phi0plotpath = os.path.join(puldir, figname)
+    phi0figname = 'phi0post.png'
+    phi0plotpath = os.path.join(puldir, phi0figname)
     phi0Fig[0].savefig(phi0plotpath)
     
     # cos(iota)
@@ -516,8 +599,8 @@ plotpsds=plotpsds, removeoutlier=8 )
     ciFig, ulvals = pppu.plot_posterior_hist( poslist, 'cosiota', ifosNew, \
                                       bounds, histbins, \
                                       0, overplot=True )
-    figname = 'cipost.png'
-    ciplotpath = os.path.join(puldir, figname)
+    cifigname = 'cipost.png'
+    ciplotpath = os.path.join(puldir, cifigname)
     ciFig[0].savefig(ciplotpath)
     
     # psi
@@ -525,13 +608,44 @@ plotpsds=plotpsds, removeoutlier=8 )
     psiFig, ulvals = pppu.plot_posterior_hist( poslist, 'psi', ifosNew, \
                                        bounds, histbins, \
                                        0, overplot=True )
-    figname = 'psipost.png'
-    psiplotpath = os.path.join(puldir, figname)
+    psifigname = 'psipost.png'
+    psiplotpath = os.path.join(puldir, psifigname)
     psiFig[0].savefig(psiplotpath)
+   
+    # get h0 vs cos(iota) 2D posterior histrogram (if single detector of for
+    # joint posterior)
+    #bounds = [[0, 3*h0last], [-1, 1]]
+    h0ciFig = pppu.plot_posterior_hist2D([poslist[-1]], ['h0', 'cosiota'], \
+[ifosNew[-1]], bounds=None, nbins=[30, 30]) 
+    h0cifigname = 'h0cipost.png'
+    h0ciplotpath = os.path.join(puldir, h0cifigname)
+    h0ciFig[0].savefig(h0ciplotpath)
+    
+    # produce output table of posterior plots
+    htmlpout.write('<p>\n')
+    htmlpout.write('<table border="0">\n')
+    htmlpout.write('<tr>\n')
+    htmlpout.write('<td><img class="posplot" src="%s"/></td>\n' % h0figname)
+    htmlpout.write('<td></td>\n</tr>\n') # no entry
+    htmlpout.write('<tr>\n')
+    htmlpout.write('<td><img class="posplot" src="%s"/></td>\n' % h0cifigname)
+    htmlpout.write('<td><img class="rotated" src="%s"/></td>\n' % cifigname)
+    htmlpout.write('</tr>\n<tr>\n')
+    htmlpout.write('<td><img class="posplot" src="%s"/></td>\n' % phi0figname)
+    htmlpout.write('<td><img class="posplot" src="%s"/></td>\n' % psifigname)
+    htmlpout.write('</table>\n')
+    htmlpout.write('</p>\n\n')
+    
+    # output footer giving how the file was made
+    htmlpout.write('<div id="footer">\n')
+    htmlpout.write(__author__ + "<br>\n")
+    htmlpout.write(__version__ + "<br>\n")
+    htmlpout.write(__date__ + "<br>\n")
+    #htmlpout.write(' '.join(args) + '\n')
+    htmlpout.write('</div>\n\n')
     
     htmlpout.write('</body>\n\n')
     
     htmlpout.write('</html>\n')
     htmlpout.close()
- 
-  
+

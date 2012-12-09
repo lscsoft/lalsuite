@@ -426,7 +426,7 @@ class psr_prior:
 #(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.fabs(fdot)*freq)/(dist*KPC)
+  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.fabs(fdot)/freq)/(dist*KPC)
   
   return hsd
   
@@ -496,12 +496,13 @@ def plot_posterior_hist(poslist, param, ifos,
   rc('font', size=12)
   
   # ifos line colour specs
-  coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm', 'Joint':'k'}
+  coldict = {'H1': 'b', 'H2': 'c', 'L1': 'r', 'V1': 'g', 'G1': 'm', 'Joint':'k'}
   
   # some parameter names for special LaTeX treatment in figures
   paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
-               '$\psi~(rads)$', 'PHI0': '$\phi_0~(rads)$', 'RA':
-               '$\alpha$', 'DEC': '$\delta$'}
+               '$\psi$ \\textrm{(rads)}', 'PHI0':
+               '$\phi_0$ \\textrm{(rads)}', 'RA':
+               '$\\alpha$', 'DEC': '$\delta$'}
  
   # param name for axis label
   try:
@@ -536,11 +537,13 @@ def plot_posterior_hist(poslist, param, ifos,
     if 'h0' not in param:
       plt.xlim(parambounds[0], parambounds[1])
     
+    plt.ylim(0, n.max()+0.1*n.max()) 
     plt.xlabel(r''+paraxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
    
     if not overplot:
+      plt.legend(ifo)
       myfigs.append(myfig)
     
     # if upper limit is needed then integrate posterior using trapezium rule
@@ -549,17 +552,84 @@ def plot_posterior_hist(poslist, param, ifos,
       
       # prepend a zero to ct
       ct = np.insert(ct, 0, 0)
-     
-      #plt.plot(bincentres[1:len(bincentres)], ct)
       
       # use spline interpolation to find the value at 'upper limit'
       intf = interp1d(ct, bins, kind='cubic')
       ulvals.append(intf(float(upperlimit)))
   
   if overplot:
+    plt.legend(ifos)
     myfigs.append(myfig)
   
   return myfigs, ulvals
+
+# function to create a histogram plot of the 2D posterior
+def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50]):  
+  if len(params) != 2:
+    print >> sys.stderr, "Require 2 parameters"
+    sys.exit(1)
+  
+  # some parameter names for special LaTeX treatment in figures
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
+               '$\psi$ \\textrm{(rads)}', 'PHI0':
+               '$\phi_0$ \\textrm{(rads)}', 'RA':
+               '$\\alpha$', 'DEC': '$\delta$'}
+  
+  myfigs = []
+  
+  # param name for axis label
+  try:
+    parxaxis = paramdict[params[0].upper()]
+  except:
+    parxaxis = params[0]
+    
+  try:
+    paryaxis = paramdict[params[1].upper()]
+  except:
+    paryaxis = params[1]
+  
+  for idx, ifo in enumerate(ifos):
+    posterior = poslist[idx]
+    
+    if 'cosiota' in params[0]:
+      a = np.squeeze(posterior['iota'].samples)
+      a = np.cos(a)
+      b = np.squeeze(posterior[params[1]].samples)
+    elif 'cosiota' in params[1]:
+      b = np.squeeze(posterior['iota'].samples)
+      b = np.cos(b)
+      a = np.squeeze(posterior[params[0]].samples)
+    else:
+      a = np.squeeze(posterior[params[0]].samples)
+      b = np.squeeze(posterior[params[1]].samples)
+    
+    # Create 2D bin array
+    par1pos_min = a.min()
+    par2pos_min = b.min()
+
+    par1pos_max = a.max()
+    par2pos_max = b.max()
+
+    myfig = plt.figure(figsize=(4,3.5),dpi=200)
+   
+    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+    
+    H, xedges, yedges = np.histogram2d(a, b, nbins, normed=True)
+
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    plt.imshow(np.transpose(H), aspect='auto', extent=extent, \
+interpolation='nearest', cmap='gray_r')
+    #plt.colorbar()
+    if bounds:
+      plt.xlim(bounds[0][0], bounds[0][1])
+      plt.ylim(bounds[1][0], bounds[1][1])
+    
+    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    
+    myfigs.append(myfig)
+    
+  return myfigs
   
 # a function that creates and normalises a histograms of samples, with nbins
 # between an upper and lower bound a upper and lower bound. The values at the
@@ -1150,3 +1220,34 @@ def get_optimal_snr( sr, si, sig ):
     ss = ss + sr[i]*sr[i] + si[i]*si[i]
    
   return np.sqrt( ss / (sig*sig) )
+
+# use the Gelman-Rubins convergence test for MCMC chains, where chains is a list
+# of MCMC numpy chain arrays
+def gelman_rubins(chains):
+  nchains = len(chains)
+  
+  omm = np.zeros((nchains,1))
+  ns = np.zeros((nchain,1))
+  for i, chain in enumerate(chains):
+    omm[i] = np.mean(chain)
+    ns[i] = chain.size
+    
+  omd = np.mean(omm);
+
+  B = (np.mean(ns)/(nchains-1))*np.sum(np.power(omm - omd, 2.));
+
+  sm = np.zeros(nchains,1);
+  # calculate the within-chain variance
+  for i, chain in enumerate(chains):
+    sm[i] = (1/(ns[i]-1))*np.sum(np.power(chain - omm[i], 2.));
+
+  W = np.mean(sm);
+
+  # calculate the posterior marginal variance
+  V = (W*(np.mean(ns)-1)/np.mean(ns)) + (B*(nchains+1)/(np.mean(ns)*nchains));
+
+  # calculate the potential scale reduction factor
+  psrf = np.sqrt(V/W);
+  
+  return psrf
+  
