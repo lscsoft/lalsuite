@@ -29,3 +29,9 @@ Description: LSC Algorithm Library Burst Developers
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Burst library.
+
+Package: lalburst-python
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, python,
+  lalburst (= ${binary:Version})
+Description: Python bindings for LALBurst

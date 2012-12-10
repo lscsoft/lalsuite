@@ -31,6 +31,14 @@ The LSC Algorithm Burst Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Burst
 library.
 
+%package python
+Summary: Python bindings for LALBurst
+Group: LAL
+Requires: %{name} = %{version}
+Requires: python
+%description python
+This package provides the Python bindings for LALBurst
+
 %prep
 %setup -q
 
@@ -63,3 +71,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}
 %{_libdir}/*.a
 %{_libdir}/pkgconfig/*
 %{_includedir}/lal
+
+%files python
+%defattr(-,root,root)
+%{_libdir}/python*/site-packages/lalburst/*.py
+%{_libdir}/python*/site-packages/lalburst/*.pyc
+%exclude %{_libdir}/python*/site-packages/lalburst/*.pyo
