@@ -1,5 +1,6 @@
 /*
-*  Copyright (C) 2007 Badri Krishnan
+*  Copyright (C) 2012 Reinhard Prix
+*  Copyright (C) 2005,2006 Badri Krishnan
 *
 *  This program is free software; you can redistribute it and/or modify
 *  it under the terms of the GNU General Public License as published by
@@ -16,18 +17,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-/*-----------------------------------------------------------------------
- *
- * File Name: SFTCleanTest.c
- * Authors:  Krishnan, B.
- *
- *
- * History:   Created by Krishnan August 2005
- *
- *
- *-----------------------------------------------------------------------
- */
 
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/FrequencySeries.h>
@@ -140,7 +129,7 @@ octave> printf ("rngmedREF3 = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed 
   // ------------------------------------------------------------
   UINT4 blockSize4 = 4;
 
-  /* reference result for 3-bin block running-median computed in octave:
+  /* reference result for 4-bin block running-median computed in octave:
 octave> m1 = median ( periodo(1:4) ); m2 = median ( periodo(2:5) );
 octave> rngmed = [ m1, m1, m1, m2, m2 ];
 octave> printf ("rngmedREF4[] = { %.16g, %.16g, %.16g, %.16g, %.16g };\n", rngmed );
