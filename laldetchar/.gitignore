@@ -21,6 +21,7 @@ libtool
 Makefile
 Makefile.in
 *.o
+python/git_version.py
 python/__init__.py
 src/LALDetCharConfig.h
 src/laldetchar-user-env.csh
