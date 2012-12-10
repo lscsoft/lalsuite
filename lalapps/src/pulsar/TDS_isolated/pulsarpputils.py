@@ -30,14 +30,14 @@ import sys
 import math
 import os
 import numpy as np
-#import matplotlib
 
 import matplotlib
-matplotlib.use("Agg")
+#matplotlib.use("Agg")
 
 from matplotlib import pyplot as plt
-from matplotlib import rc
-from matplotlib.mlab import specgram, find
+from matplotlib import colors
+from matplotlib.mlab import specgram, find, psd
+from matplotlib import gridspec
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
@@ -480,30 +480,39 @@ def phipsiconvert(phipchain, psipchain):
 # that will be output
 def plot_posterior_hist(poslist, param, ifos,
                         parambounds=[float("-inf"), float("inf")], 
-                        nbins=50, upperlimit=0, overplot=False):
+                        nbins=50, upperlimit=0, overplot=False,
+                        parfile=None, mplparams=False):
   # create list of figures
   myfigs = []
   
   # create a list of upper limits
   ulvals = []
   
-  # set some matplotlib defaults
-  rc('text', usetex=True) # use LaTeX for all text
-  rc('axes', linewidth=0.5) # set axes linewidths to 0.5
-  rc('axes', grid=True) # add a grid
-  rc('grid', linewidth=0.5)
-  rc('font', family='serif')
-  rc('font', size=12)
+  # set some matplotlib defaults for hist
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linwidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 }
+  
+  matplotlib.rcParams.update(mplparams)
   
   # ifos line colour specs
-  coldict = {'H1': 'b', 'H2': 'c', 'L1': 'r', 'V1': 'g', 'G1': 'm', 'Joint':'k'}
+  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
   
   # some parameter names for special LaTeX treatment in figures
-  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
-               '$\psi$ \\textrm{(rads)}', 'PHI0':
-               '$\phi_0$ \\textrm{(rads)}', 'RA':
-               '$\\alpha$', 'DEC': '$\delta$'}
- 
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
+               'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
+               'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
+               'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
+               '$\\\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
+               'PMRA': 'proper motion $\\alpha$ (rad/s)', \
+               'PMDEC': 'proper motion $\delta$ (rad/s)'}
+               
   # param name for axis label
   try:
     paraxis = paramdict[param.upper()]
@@ -511,6 +520,12 @@ def plot_posterior_hist(poslist, param, ifos,
     paraxis = param
   
   ymax = []
+  
+  # if a par file object is given expect that we have an injection file
+  # containing the injected value to overplot on the histgram
+  parval = None
+  if parfile:
+    parval = parfile[param.upper()]
   
   # loop over ifos
   for idx, ifo in enumerate(ifos):
@@ -534,7 +549,8 @@ def plot_posterior_hist(poslist, param, ifos,
                                 parambounds[1] )
     
     # plot histogram
-    plt.plot(bins, n, color=coldict[ifo])
+    #plt.plot(bins, n, color=coldict[ifo])
+    plt.step(bins, n, color=coldict[ifo])
     
     if 'h0' not in param:
       plt.xlim(parambounds[0], parambounds[1])
@@ -545,7 +561,10 @@ def plot_posterior_hist(poslist, param, ifos,
    
     if not overplot:
       plt.ylim(0, n.max()+0.1*n.max()) 
-      plt.legend(ifo)
+      #plt.legend(ifo)
+      # set background colour of axes
+      ax = plt.gca()
+      ax.set_axis_bgcolor("#F2F1F0")
       myfigs.append(myfig)
     else:
       ymax.append(n.max()+0.1*n.max())
@@ -558,27 +577,182 @@ def plot_posterior_hist(poslist, param, ifos,
       ct = np.insert(ct, 0, 0)
       
       # use spline interpolation to find the value at 'upper limit'
-      intf = interp1d(ct, bins, kind='cubic')
+      ctu, ui = np.unique(ct, return_index=True)
+      intf = interp1d(ctu, bins[ui], kind='cubic')
       ulvals.append(intf(float(upperlimit)))
+  
+  # plot parameter values
+  if parval:
+    if not overplot:
+      plt.hold(True)
+      plt.plot([parval, parval], [0, n.max()+0.1*n.max()], 'k--', linewidth=1.5)
+    else:
+      plt.plot([parval, parval], [0, max(ymax)], 'k--', linewidth=1.5)
   
   if overplot:
     plt.ylim(0, max(ymax))
-    plt.legend(ifos)
+    #plt.legend(ifos)
+    ax = plt.gca()
+    ax.set_axis_bgcolor("#F2F1F0")
     myfigs.append(myfig)
   
   return myfigs, ulvals
 
+# function to plot a posterior chain (be it MCMC chains or nested samples)
+# the input should be a list of posteriors for each IFO, and the parameter
+# required, the list of IFO. grr is a list of dictionaries giving
+# the Gelman-Rubins statistics for the given parameter for each IFO.
+# If withhist is set then it will also output a histgram, with withhist number
+# of bins
+def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
+                         mplparams=False):
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linwidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 }
+  
+  matplotlib.rcParams.update(mplparams)
+  
+  # some parameter names for special LaTeX treatment in figures
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
+               'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
+               'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
+               'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
+               '$\\\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
+               'PMRA': 'proper motion $\\alpha$ (rad/s)', \
+               'PMDC': 'proper motion $\delta$ (rad/s)'}
+ 
+  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', \
+             'Joint': 'k'}
+  
+  # param name for axis label    
+  try:
+    if param == 'iota':
+      p = 'cosiota'
+    else:
+      p = param
+    
+    paryaxis = paramdict[p.upper()]
+  except:
+    paryaxis = param
+  
+  if grr:
+    legendvals = []
+  
+  maxiter = 0
+  maxn = 0
+  minsamp = float('inf')
+  maxsamp = -float('inf')
+  
+  for idx, ifo in enumerate(ifos):
+    if idx == 0:
+      myfig = plt.figure(figsize=(11,4),dpi=200)
+      myfig.subplots_adjust(bottom=0.15)
+      
+      if withhist:
+        gs = gridspec.GridSpec(1,4, wspace=0)
+        ax1 = plt.subplot(gs[:-1])
+        ax2 = plt.subplot(gs[-1])
+        
+    pos = poslist[idx]
+    
+    # check for cosiota
+    if 'iota' == param:
+      pos_samps = np.cos(pos['iota'].samples)
+    else:
+      pos_samps = pos[param].samples
+    
+    if np.min(pos_samps) < minsamp:
+      minsamp = np.min(pos_samps)
+    if np.max(pos_samps) > maxsamp:
+      maxsamp = np.max(pos_samps)
+    
+    if withhist:
+      ax1.hold(True)
+      ax1.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
+
+      n, binedges = np.histogram( pos_samps, withhist )
+      n = np.append(n, 0)
+      ax2.hold(True)
+      ax2.step(n, binedges, color=coldict[ifo])
+      
+      if np.max(n) > maxn:
+        maxn = np.max(n)
+    else:
+      plt.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
+      plt.hold(True)
+
+    if grr:
+      if 'iota' == param:
+        p = 'cosiota'
+      else:
+        p = param
+      
+      try:
+        legendvals.append(r'$R = %.2f$' % grr[idx][p])
+      except:
+        legendval = []
+    
+    if len(pos_samps) > maxiter:
+      maxiter = len(pos_samps)
+  
+  if not withhist:
+    ax1 = plt.gca()
+  
+  bounds = [minsamp, maxsamp]
+  
+  ax1.set_ylabel(r''+paryaxis, fontsize=14, fontweight=100)
+  ax1.set_xlabel(r'Iterations', fontsize=14, fontweight=100)
+  
+  ax1.set_xlim(0, maxiter)
+  ax1.set_ylim(bounds[0], bounds[1])
+  
+  if withhist:
+    ax2.set_ylim(bounds[0], bounds[1])
+    ax2.set_xlim(0, maxn+0.1*maxn)
+    ax2.set_xlabel(r'Count', fontsize=14, fontweight=100)
+    ax2.set_yticklabels([])
+    ax2.set_axis_bgcolor("#F2F1F0")
+  
+  # add gelman-rubins stat data
+  if legendvals:
+    ax1.legend(legendvals, title='Gelman-Rubins test')
+  
+  return myfig
+  
 # function to create a histogram plot of the 2D posterior
-def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50]):  
+def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
+                          parfile=None, mplparams=False):
   if len(params) != 2:
     print >> sys.stderr, "Require 2 parameters"
     sys.exit(1)
   
+  # set some matplotlib defaults for amplitude spectral density
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linwidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 }
+  
+  matplotlib.rcParams.update(mplparams)
+  
   # some parameter names for special LaTeX treatment in figures
-  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
-               '$\psi$ \\textrm{(rads)}', 'PHI0':
-               '$\phi_0$ \\textrm{(rads)}', 'RA':
-               '$\\alpha$', 'DEC': '$\delta$'}
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', \
+               'PSI': '$\psi$ (rad)', 'PHI0': '$\phi_0$ (rad)', \
+               'RA': '$\\alpha$ (rad)', 'DEC': '$\delta$ (rad)', \
+               'F0': '$f_0$ (Hz)', 'F1': '$\dot{f}$ (Hz/s)', 'F2':
+               '$\\\\ddot{f}$ (Hz/s$^2$)', 'LOGL': '$\log{L}$', \
+               'PMRA': 'proper motion $\\alpha$ (rad/s)', \
+               'PMDC': 'proper motion $\delta$ (rad/s)'}
   
   myfigs = []
   
@@ -592,6 +766,12 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50]):
     paryaxis = paramdict[params[1].upper()]
   except:
     paryaxis = params[1]
+  
+  parval1 = None
+  parval2 = None
+  if parfile:
+    parval1 = parfile[params[0].upper]
+    parval2 = parfile[params[1].upper]
   
   for idx, ifo in enumerate(ifos):
     posterior = poslist[idx]
@@ -624,13 +804,18 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50]):
 
     extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
     plt.imshow(np.transpose(H), aspect='auto', extent=extent, \
-interpolation='nearest', cmap='gray_r')
+interpolation='bicubic', cmap='gray_r')
     #plt.colorbar()
     if bounds:
       plt.xlim(bounds[0][0], bounds[0][1])
       plt.ylim(bounds[1][0], bounds[1][1])
     
-    myfig.subplots_adjust(left=0.15, bottom=0.15) # adjust size
+    # plot injection values if given
+    if parval1 and parval2:
+      plt.hold(True)
+      plt.plot(parval1, parval2, 'rx', markersize=2)
+    
+    myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
     
     myfigs.append(myfig)
     
@@ -729,23 +914,36 @@ def tukey_window(N, alpha=0.5):
 # create a function for plotting the absolute value of Bk data (read in from
 # data files) and an averaged 1 day amplitude spectral density spectrogram for
 # each IFO
-def plot_Bks_ASDs( Bkdata, ifos, plotpsds=True, removeoutlier=None ):
+def plot_Bks_ASDs( Bkdata, ifos, delt=86400, plotpsds=True,
+                   plotfscan=False, removeoutlier=None, mplparams=False ):
   # create list of figures
   Bkfigs = []
   psdfigs = []
+  fscanfigs = []
+  asdlist = []
+  
+  # set some matplotlib defaults for amplitude spectral density
+  if not mplparams:
+    mplparams = { \
+      'backend': 'Agg',
+      'text.usetex': True, # use LaTeX for all text
+      'axes.linewidth': 0.5, # set axes linewidths to 0.5
+      'axes.grid': True, # add a grid
+      'grid.linwidth': 0.5,
+      'font.family': 'serif',
+      'font.size': 12 } 
+      #'text.latex.preamble': \usepackage{xfrac} }
+  
+  matplotlib.rcParams.update(mplparams)
+  # xfrac causes problems when compiling an eps (option clashes with graphicx)
+  # so use nicefrac package instead
+  #matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
+  matplotlib.rcParams['text.latex.preamble']=r'\usepackage{nicefrac}'
   
   # ifos line colour specs
-  coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
-  
-  # set some matplotlib defaults
-  rc('text', usetex=True) # use LaTeX for all text
-  rc('axes', linewidth=0.5) # set axes linewidths to 0.5
-  rc('axes', grid=True) # add a grid
-  rc('grid', linewidth=0.5)
-  #rc('font', family='sans-serif')
-  #rc('font', family='monospace')
-  rc('font', family='serif')
-  rc('font', size=12)
+  coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm'}
+  colmapdic = {'H1': 'Reds', 'H2': 'PuBu', 'L1': 'Greens', \
+    'V1': 'Blues', 'G1': 'PuRd'}
   
   # there should be data for each ifo
   for i, ifo in enumerate(ifos):
@@ -785,20 +983,20 @@ Bk[:,2])))), 50)
     Bkabs = np.sqrt(Bk[:,1]**2 + Bk[:,2]**2)
           
     # plot the time series of the data
-    Bkfig = plt.figure(figsize=(10,4), dpi=200)
-    Bkfig.subplots_adjust(bottom=0.12, left=0.06, right=0.94)
+    Bkfig = plt.figure(figsize=(11,3.5), dpi=200)
+    Bkfig.subplots_adjust(bottom=0.15, left=0.09, right=0.94)
     
     tms = map(lambda x: x-gpstime[0], gpstime)
     
-    plt.plot(tms, Bkabs, '.', color=coldict[ifo])
-    plt.xlabel(r'GPS + ' + str(gpstime[0]), fontsize=14, fontweight=100)
+    plt.plot(tms, Bkabs, '.', color=coldict[ifo], markersize=1)
+    plt.xlabel(r'GPS - %d' % int(gpstime[0]), fontsize=14, fontweight=100)
     plt.ylabel(r'$|B_k|$', fontsize=14, fontweight=100)
-    plt.title(r'$B_k$s for ' + ifo.upper(), fontsize=14)
+    #plt.title(r'$B_k$s for ' + ifo.upper(), fontsize=14)
     plt.xlim(tms[0], tms[-1])
     
     Bkfigs.append(Bkfig)
     
-    if plotpsds:
+    if plotpsds or plotfscan:
       # create PSD by splitting data into days, padding with zeros to give a
       # sample a second, getting the PSD for each day and combining them
       totlen = gpstime[-1] - gpstime[0] # total data length
@@ -807,66 +1005,100 @@ Bk[:,2])))), 50)
       if math.fmod(mindt, 1) != 0. or mindt < 1:
         print "Error time steps between data points must be integers"
         exit(-1)
-        
-      # loop over data, splitting it up
-      mr = int(math.ceil(totlen/86400))
-    
+          
       count = 0
       npsds = 0
-      totalpsd = np.zeros(86400) # add sum of PSDs
-      for i in range(0, mr):
-        datachunk = np.zeros(86400, dtype=complex)
-       
-        gpsstart = int(gpstime[count])
+      totalpsd = np.zeros(math.floor(delt/60)) # add sum of PSDs
       
-        prevcount = count
+      asdlist.append(totalpsd)
       
-        for gt in gpstime[count:-1]:
-          if gt >= gpsstart+86400:
-            break
+      # zero pad the data and bin each point in the nearest 60s bin
+      datazeropad = np.zeros(math.ceil(totlen/60.)+1, dtype=complex)
+      
+      idx = map(lambda x: math.floor((x/60.)+0.5), tms)
+      for i in range(0, len(idx)):
+        datazeropad[idx[i]] = complex(Bk[i,1], Bk[i,2])
+      
+      win = tukey_window(math.floor(delt/60), alpha=0.25)
+        
+      Fs = 1./60. # sample rate in Hz
+      
+      fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/60)), \
+Fs=Fs, window=win)
+      
+      if plotpsds:
+        fshape = fscan.shape
+      
+        for i in range(0, fshape[1]):
+          # add to total psd if the psd does not contain zero
+          if fscan[0,i] != 0.:
+            # add psd onto total value
+            totalpsd = map(lambda x, y: x+y, totalpsd, fscan[:,i])
+      
+            # count number of psds
+            npsds = npsds+1
+      
+        # average the PSD and convert to amplitude spectral density
+        totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
+    
+        # plot PSD
+        psdfig = plt.figure(figsize=(4,3.5), dpi=200)
+        psdfig.subplots_adjust(left=0.18, bottom=0.15)
+    
+        plt.plot(freqs, totalpsd, color=coldict[ifo])
+        plt.xlim(freqs[0], freqs[-1])
+        plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
+        plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
+        
+        # convert frequency labels to fractions
+        ax = plt.gca()
+        xt = [-Fs/2., -Fs/4., 0., Fs/2., Fs/4.]
+        ax.set_xticks(xt)
+        xl = []
+        for item in xt:
+          if item == 0:
+            xl.append('0')
           else:
-            datachunk[gt-gpsstart] = complex(Bk[count,1], Bk[count,2])
-            count += 1
+            if item < 0:
+              xl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+            else:
+              xl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+        ax.set_xticklabels(xl)
+        #plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
+        plt.tick_params(axis='x', which='major', labelsize=14)
+    
+        psdfigs.append(psdfig)
       
-        # only include the PSD if the chunk is more than 25% full of data
-        pf = float(count-prevcount)*mindt/86400.
-      
-        if pf > 0.25:
-          # get the PSD using a Tukey window with alpha = 0.25
-          win = tukey_window(86400, alpha=0.25)
+      if plotfscan:
+        fscanfig = plt.figure(figsize=(11,3.5), dpi=200)
+        fscanfig.subplots_adjust(bottom=0.15, left=0.09, right=0.94)
         
-          Fs = 1 # sample rate in Hz
+        extent = [tms[0], tms[-1], freqs[0], freqs[-1]]
+        plt.imshow(np.sqrt(fscan), aspect='auto', extent=extent,
+          interpolation=None, cmap=colmapdic[ifo], norm=colors.Normalize())
+        plt.ylabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
+        plt.xlabel(r'GPS - %d' % int(gpstime[0]), fontsize=14, fontweight=100)
+      
+        # convert frequency labels to fractions
+        ax = plt.gca()
+        yt = [-Fs/2., -Fs/4., 0., Fs/2., Fs/4.]
+        ax.set_yticks(yt)
+        yl = []
+        for item in yt:
+          if item == 0:
+            yl.append('0')
+          else:
+            if item < 0:
+              yl.append(r'$-\nicefrac{1}{%d}$' % (-1./item))
+            else:
+              yl.append(r'$\nicefrac{1}{%d}$' % (1./item))
+        ax.set_yticklabels(yl)
+        #plt.setp(ax.get_yticklabels(), fontsize=16) 
+        plt.tick_params(axis='y', which='major', labelsize=14)
         
-          psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=Fs, window=win)
+        fscanfigs.append(fscanfig)
       
-          # add psd onto total value
-          totalpsd = map(lambda x, y: x+y, totalpsd, psd)
-      
-          # count number of psds
-          npsds = npsds+1
-      
-      # average the PSD and convert to amplitude spectral density
-      totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
-    
-      # plot PSD
-      psdfig = plt.figure(figsize=(4,3.5), dpi=200)
-      psdfig.subplots_adjust(left=0.18, bottom=0.15)
-    
-      # get the indices to plot in the actual frequency range 
-      df = freqs[1]-freqs[0]
-      minfbin = int((math.fabs(freqs[0])-1./(2.*mindt))/df)
-      maxfbin = len(freqs) - minfbin
-    
-      plt.plot(freqs[minfbin:maxfbin], totalpsd[minfbin:maxfbin],
-               color=coldict[ifo])
-      plt.xlim(freqs[minfbin], freqs[maxfbin])
-      plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
-      plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
-      plt.title(r'ASD for ' + ifo.upper(), fontsize=14)
-    
-      psdfigs.append(psdfig)
-      
-  return Bkfigs, psdfigs
+  return Bkfigs, psdfigs, fscanfigs, asdlist
 
 # a function to create the signal model for a heterodyned triaxial pulsar given
 # a signal GPS start time, signal duration (in seconds), sample interval
@@ -1227,32 +1459,21 @@ def get_optimal_snr( sr, si, sig ):
   return np.sqrt( ss / (sig*sig) )
 
 # use the Gelman-Rubins convergence test for MCMC chains, where chains is a list
-# of MCMC numpy chain arrays
-def gelman_rubins(chains):
-  nchains = len(chains)
+# of MCMC numpy chain arrays - this copies the gelman_rubins function in
+# bayespputils
+def gelman_rubins(chains):  
+  chainMeans = [np.mean(data) for data in chains]
+  chainVars = [np.var(data) for data in chains]
   
-  omm = np.zeros((nchains,1))
-  ns = np.zeros((nchain,1))
-  for i, chain in enumerate(chains):
-    omm[i] = np.mean(chain)
-    ns[i] = chain.size
-    
-  omd = np.mean(omm);
-
-  B = (np.mean(ns)/(nchains-1))*np.sum(np.power(omm - omd, 2.));
-
-  sm = np.zeros(nchains,1);
-  # calculate the within-chain variance
-  for i, chain in enumerate(chains):
-    sm[i] = (1/(ns[i]-1))*np.sum(np.power(chain - omm[i], 2.));
-
-  W = np.mean(sm);
-
-  # calculate the posterior marginal variance
-  V = (W*(np.mean(ns)-1)/np.mean(ns)) + (B*(nchains+1)/(np.mean(ns)*nchains));
-
-  # calculate the potential scale reduction factor
-  psrf = np.sqrt(V/W);
+  BoverN = np.var(chainMeans)
+  W = np.mean(chainVars)
   
-  return psrf
+  sigmaHat2 = W + BoverN
   
+  m = len(chains)
+  
+  VHat=sigmaHat2 + BoverN/m
+  
+  R = VHat/W
+  
+  return R
