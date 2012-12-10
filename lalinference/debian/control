@@ -4,9 +4,9 @@ Priority: optional
 Maintainer: Adam Mercer <adam.mercer@ligo.org>
 Build-Depends: debhelper (>= 7), pkg-config, python-all-dev,
   zlib1g-dev, libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2),
-  lal-dev (>= 6.8.0), lalframe-dev (>= 1.0.7),
-  lalmetaio-dev (>= 1.0.5), lalsimulation-dev (>= 0.5.0),
-  lalinspiral-dev (>= 1.4.0), lalpulsar-dev (>= 1.5.0)
+  lal-dev (>= 6.9.0), lalframe-dev (>= 1.0.7),
+  lalmetaio-dev (>= 1.0.5), lalsimulation-dev (>= 0.6.0),
+  lalinspiral-dev (>= 1.4.1), lalpulsar-dev (>= 1.6.0)
 X-Python-Version: >= 2.6
 Standards-Version: 3.8.6
 
@@ -14,9 +14,9 @@ Package: lalinference
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
   libgsl0 (>= 1.9) | libgsl0ldbl (>= 1.10), libmetaio1 (>= 8.2),
-  lal (>= 6.8.0), lalframe (>= 1.0.7), lalmetaio (>= 1.0.5),
-  lalsimulation (>= 0.5.0), lalinspiral (>= 1.4.0),
-  lalpulsar (>= 1.5.0)
+  lal (>= 6.9.0), lalframe (>= 1.0.7), lalmetaio (>= 1.0.5),
+  lalsimulation (>= 0.6.0), lalinspiral (>= 1.4.1),
+  lalpulsar (>= 1.6.0)
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -25,10 +25,10 @@ Description: LSC Algorithm Library Inference
 Package: lalinference-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, zlib1g,
-  libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.8.0),
+  libgsl0-dev (>= 1.9), libmetaio-dev (>= 8.2), lal-dev (>= 6.9.0),
   lalframe-dev (>= 1.0.7), lalmetaio-dev (>= 1.0.5),
-  lalsimulation-dev (>= 0.5.0), lalinspiral-dev (>= 1.4.0),
-  lalpulsar-dev (>= 1.5.0), lalinference (= ${binary:Version})
+  lalsimulation-dev (>= 0.6.0), lalinspiral-dev (>= 1.4.1),
+  lalpulsar-dev (>= 1.6.0), lalinference (= ${binary:Version})
 Description: LSC Algorithm Library Inference Developers
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
