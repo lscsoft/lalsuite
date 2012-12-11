@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalframe],[1.0.7.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalframe],[1.0.8.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([src/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
