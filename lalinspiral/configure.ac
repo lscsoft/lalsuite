@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalinspiral],[1.4.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalinspiral],[1.4.1.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([src/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
