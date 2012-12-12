@@ -846,6 +846,8 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
+  fprintf( stderr, "--face-on-analysis  Run with templates demanding inclination=0\n" );
+  fprintf( stderr, "--face-away-analysis  Run with templates demanding inclination=pi/2\n" );
 
   fprintf( stderr, "\nsky location options:\n" );
   fprintf( stderr, "--right-ascension=ra       right ascension of external trigger in degrees\n" );
