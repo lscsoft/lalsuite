@@ -125,7 +125,7 @@ for line in input:
 	print >>output, str(cache_entry)
 	path_count += 1
 	if cache_entry.segment is not None:
-		seglists |= cache_entry.to_segmentlistdict().coalesce()
+		seglists |= cache_entry.segmentlistdict.coalesce()
 
 
 if options.verbose:
