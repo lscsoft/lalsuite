@@ -345,7 +345,7 @@ int MAIN( int argc, char *argv[]) {
   FILE *fpFstat1=NULL;
 
   /* checkpoint filename */
-  const CHAR *fnameChkPoint="checkpoint.cpt";
+  CHAR *fnameChkPoint=NULL;
 
   /* user variables */
   BOOLEAN uvar_help = FALSE;    /* true if -h option is given */
@@ -620,6 +620,11 @@ int MAIN( int argc, char *argv[]) {
       XLAL_CHECK ( 0 == create_gctFStat_toplist ( &semiCohToplist, uvar_nCand1, uvar_SortToplist),
                    XLAL_EFUNC, "create_gctFStat_toplist() failed for nCand=%d and sortBy=%d\n", uvar_nCand1, uvar_SortToplist );
     }
+
+  /* checkpoint filename */
+  fnameChkPoint = LALCalloc( strlen(uvar_fnameout) + 1 + 4, sizeof(CHAR) );
+  strcpy(fnameChkPoint, uvar_fnameout);
+  strcat(fnameChkPoint, ".cpt");
 
   /* write the log file */
   if ( uvar_log )
