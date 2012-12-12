@@ -40,6 +40,7 @@
  */
 
 #include "LALSimInspiralPrecess.h"
+#include "lal/LALAtomicDatatypes.h"
 
 /**
  * Takes in the l=2, abs(m)=2 decomposed modes as a strain time series and
@@ -85,7 +86,7 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 		double t=0;
 		int l = 2, mp;
 		// h_lm samples
-		complex double *x_lm = XLALCalloc( (2*l+1), sizeof(complex double) );
+		COMPLEX16 *x_lm = XLALCalloc( (2*l+1), sizeof(COMPLEX16) );
 
 		// time evolved Euler angles
 		REAL8TimeSeries* alpha = XLALCreateREAL8TimeSeries(
@@ -226,7 +227,7 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 		}
 
 		unsigned int i;
-		complex double x_t = 0.I;
+		COMPLEX16 x_t = 0.I;
 		// FIXME: Should these be fixed?
 		double view_th = 0.0, view_ph = 0.0;
 		// Reconstitute the waveform from the h_lm
