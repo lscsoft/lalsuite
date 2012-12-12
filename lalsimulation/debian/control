@@ -31,7 +31,7 @@ Description: LSC Algorithm Library Simulation Developers
 Package: lalsimulation-python
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, python-numpy,
-  lalsimulation (= ${binary:Version}), lal-python (> 6.9.0)
+  lalsimulation (= ${binary:Version}), lal-python (>= 6.9.0)
 Description: Python bindings for LALSimulation
 
 Package: lalsimulation-octave
