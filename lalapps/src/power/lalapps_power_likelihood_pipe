@@ -179,9 +179,9 @@ round_robin_cache_nodes = [set() for cache in options.round_robin_cache]
 for seg in options.distribution_segments:
 	if options.verbose:
 		print >>sys.stderr, "generating distribution measurement jobs for %s ..." % str(seg)
-	input_cache_nodes |= power.make_burca_tailor_fragment(dag, set([entry for entry in options.input_cache if entry.to_segmentlistdict().intersects_segment(seg)]), seg, "LIKELIHOOD_MAIN")
+	input_cache_nodes |= power.make_burca_tailor_fragment(dag, set([entry for entry in options.input_cache if entry.segmentlistdict.intersects_segment(seg)]), seg, "LIKELIHOOD_MAIN")
 	for i, (nodes, cache) in enumerate(zip(round_robin_cache_nodes, options.round_robin_cache)):
-		nodes |= power.make_burca_tailor_fragment(dag, set([entry for entry in cache if entry.to_segmentlistdict().intersects_segment(seg)]), seg, "LIKELIHOOD_RR%02d" % i)
+		nodes |= power.make_burca_tailor_fragment(dag, set([entry for entry in cache if entry.segmentlistdict.intersects_segment(seg)]), seg, "LIKELIHOOD_RR%02d" % i)
 
 
 #
