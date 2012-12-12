@@ -22,6 +22,7 @@
 #include <string.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <lal/FrequencySeries.h>
+#include <lal/LALAtomicDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -31,7 +32,7 @@
 #include <lal/Window.h>
 #include <lal/Date.h>
 
-static complex double cabs2(complex double z)
+static COMPLEX16 cabs2(COMPLEX16 z)
 {
 	double x = creal(z);
 	double y = cimag(z);

@@ -27,8 +27,8 @@ int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
     int result;
     double tmax;
-    double complex ymax;
-    const double complex y[] = {1+2*I};
+    COMPLEX16 ymax;
+    const COMPLEX16 y[] = {1+2*I};
 
     NearestNeighborTriggerInterpolant *interp = XLALCreateNearestNeighborTriggerInterpolant(0);
     if (!interp)
