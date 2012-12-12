@@ -52,6 +52,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"l1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_L1]),1},
 /*    {"t1-data",             no_argument, &(haveTrig[LAL_IFO_T1]), 1 },*/
     {"v1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_V1]),1},
+    {"face-on-analysis",    no_argument, &(localparams.faceOnAnalysis),1},
+    {"face-away-analysis",    no_argument, &(localparams.faceAwayAnalysis),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
     { "simulated-data",          required_argument, 0, '6' },
@@ -511,6 +513,16 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       }
     }
   }
+  /* Set the faceOn-faceAway flag */
+  if (localparams.faceOnAnalysis)
+  {
+    params->faceOnStatistic = 1;
+  }
+  else if (localparams.faceAwayAnalysis)
+  {
+    params->faceOnStatistic = 2;
+  }
+  // Otherwise it takes default value of 0
 
   *params = localparams;
 

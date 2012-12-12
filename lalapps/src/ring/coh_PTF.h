@@ -201,6 +201,8 @@ struct coh_PTF_params {
   int          doSnglChiSquared;
   int          singlePolFlag;
   int          clusterFlag;
+  int          faceOnAnalysis;
+  int          faceAwayAnalysis;
   /* write intermediate result flags */
   int          writeRawData;
   int          writeProcessedData;
