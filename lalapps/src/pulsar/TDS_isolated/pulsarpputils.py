@@ -250,7 +250,7 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6",
               # GW PARAMETERS
               "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
-            "CLK", "BINARY"]
+            "CLK", "BINARY", "UNITS"]
 
 class psr_par:
   def __init__(self, parfilenm):
