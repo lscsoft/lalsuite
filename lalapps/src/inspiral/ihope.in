@@ -188,7 +188,7 @@ if not opts.config_file:
   print >> sys.stderr, "Use --config-file FILE to specify location."
   sys.exit(1)
 
-if not opts.config_file[-4:]=".ini":
+if not opts.config_file[-4:]==".ini":
   print >> sys.stderr, "Configuration file name must end in '.ini'!" 
   sys.exit(1)
 
