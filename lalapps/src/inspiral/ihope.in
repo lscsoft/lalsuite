@@ -188,6 +188,10 @@ if not opts.config_file:
   print >> sys.stderr, "Use --config-file FILE to specify location."
   sys.exit(1)
 
+if not opts.config_file[-4:]=".ini":
+  print >> sys.stderr, "Configuration file name must end in '.ini'!" 
+  sys.exit(1)
+
 if not opts.log_path:
   print >> sys.stderr, "No log file path specified."
   print >> sys.stderr, "Use --log-path PATH to specify a location."
@@ -364,7 +368,9 @@ os.chdir(analysisDirectory)
 
 ##############################################################################
 # create a log file that the Condor jobs will write to
-basename = opts.config_file.rstrip(".ini")
+# 
+# we already checked that the last 4 characters of the config file are '.ini'
+basename = opts.config_file[:-4]
 logname = basename + '.dag.log.'
 try:
   os.mkdir(opts.log_path)
