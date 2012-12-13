@@ -119,11 +119,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "fft-level",               required_argument, 0, '|' },
     { "cluster-window",          required_argument, 0, '4' },
     { "inj-search-window",       required_argument, 0, '3' },
+    { "inj-mchirp-window",       required_argument, 0, '5' },
     { "ligo-calibrated-data",    required_argument, 0, '7' }, 
     { "virgo-calibrated-data",   required_argument, 0, '8' }, 
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:6:7:8:<:>:!:&:(:):#:|";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -438,6 +439,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         break;
       case '3': /* Injection search window */
         localparams.injSearchWindow = atof( optarg );
+        break;
+      case '5': /* Injection search window */
+        localparams.injMchirpWindow = atof( optarg );
         break;
       case '7':
         if (!strcmp("real_4", optarg))
@@ -859,6 +863,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "\ninjection options:\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
   fprintf( stderr, "--inj-search-window=arg    output injection triggers only within arg of the injections\n");
+  fprintf( stderr, "--inj-mchirp-window=arg    search for injections only with templates with fractional mchirp distance within arg\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );

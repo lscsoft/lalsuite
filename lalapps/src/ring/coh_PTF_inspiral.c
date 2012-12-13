@@ -720,6 +720,22 @@ int main(int argc, char **argv)
     /* Loop over templates in the bank */
     for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
     {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
+          break;
+        }
+      }
+
+      /* If running injections, check whether to analyse */
+      if ( params->injectFile && params->injMchirpWindow )
+      {
+        if (! checkInjectionMchirp(params,PTFtemplate,&segStartTime))
+          continue;
+      }
+
       /* Determine if this template is non-spinning */
       if (i >= numNoSpinTmplts)
         spinTemplate = 1;
@@ -750,15 +766,6 @@ int main(int argc, char **argv)
       else
         verbose("Generated no spin template %d at %ld \n", i,
                 timeval_subtract(&startTime));
-
-      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-      {
-        if (params->haveTrig[ifoNumber])
-        {
-          segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
-          break;
-        }
-      }
 
       /* We only analyse middle half so add duration/4 to epoch */
       XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);

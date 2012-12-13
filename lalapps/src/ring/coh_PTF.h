@@ -181,6 +181,7 @@ struct coh_PTF_params {
   REAL4        clusterWindow;
   SimInspiralTable *injectList;
   REAL4        injSearchWindow;
+  REAL4        injMchirpWindow;
   /* flags */
   int          strainData;
   int          ligoDoubleData;
@@ -785,4 +786,10 @@ void findInjectionSegment(
     UINT4 *end,
     LIGOTimeGPS *epoch,
     struct coh_PTF_params *params
+);
+
+UINT4 checkInjectionMchirp(
+    struct coh_PTF_params *params,
+    InspiralTemplate *tmplt,
+    LIGOTimeGPS *epoch
 );
