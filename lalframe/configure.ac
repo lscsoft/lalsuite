@@ -194,3 +194,9 @@ Now run 'make' to build LALFrame,
 and run 'make install' to install LALFrame.
 ==================================================
 "
+
+AS_IF([test "${FRAME_LIBRARY}" = "FrameC"],[
+       echo "
+WARNING: You have selected FrameC as the frame library, support for
+FrameC is _not_ complete and is under active development.
+"])
