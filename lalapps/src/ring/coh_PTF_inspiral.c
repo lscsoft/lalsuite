@@ -729,11 +729,17 @@ int main(int argc, char **argv)
         }
       }
 
+      /* We only analyse middle half so add duration/4 to epoch */
+      XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
+
       /* If running injections, check whether to analyse */
       if ( params->injectFile && params->injMchirpWindow )
       {
         if (! checkInjectionMchirp(params,PTFtemplate,&segStartTime))
+        {
+          verbose("Injection not within mchirp window for segment %d, template %d at %ld \n", j, i, timeval_subtract(&startTime));
           continue;
+        }
       }
 
       /* Determine if this template is non-spinning */
@@ -766,9 +772,6 @@ int main(int argc, char **argv)
       else
         verbose("Generated no spin template %d at %ld \n", i,
                 timeval_subtract(&startTime));
-
-      /* We only analyse middle half so add duration/4 to epoch */
-      XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
 
       /* Generate the various time series as needed*/
       /* Need to zero these out */
