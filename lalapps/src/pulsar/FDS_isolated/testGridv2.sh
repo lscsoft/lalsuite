@@ -218,7 +218,7 @@ awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 >> "gridv2_2
 grid_line=$(sed '/^%.*/d' ${outputv2_2} | awk "$awk_extract6")
 
 
-cmd0="$cmdlinev2 --gridType=6 --gridFile=${gridFile} --outputFstat=$outputv2_6";
+cmd0="$cmdlinev2 --gridType=6 --gridFile=./${gridFile} --outputFstat=$outputv2_6";
 echo $cmd0
 if ! eval $cmd0; then
     echo "Error.. something failed when running '$cmd2' ..."
