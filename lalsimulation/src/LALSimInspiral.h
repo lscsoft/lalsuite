@@ -1015,7 +1015,7 @@ int XLALSimInspiralChooseFDWaveform(
  * 
  * FIXME: Interface will be changed to return a collection of modes.
  */
-COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
+SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 deltaT,                               /**< sampling interval (s) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
@@ -1029,8 +1029,7 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
     LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
-    int l,                                      /**< l index of mode - replace with a struct of several integer pairs */
-    int m,                                      /**< m index of mode - ditto */
+    int l,                                      /**< generate all modes with l <= lmax */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
 
@@ -1090,7 +1089,28 @@ int XLALSimInspiralTaylorT4PNGenerator(
  * Driver routine to compute the -2 spin-weighted spherical harmonic mode
  * using TaylorT4 phasing.
  */
-COMPLEX16TimeSeries *XLALSimInspiralTaylorT4PNModes(
+SphHarmTimeSeries *XLALSimInspiralTaylorT4PNModes(
+		REAL8 phiRef,                               /**< reference orbital phase (rad) */
+		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                               /**< sampling interval (s) */
+		REAL8 m1,                                   /**< mass of companion 1 (kg) */
+		REAL8 m2,                                   /**< mass of companion 2 (kg) */
+		REAL8 f_min,                                /**< starting GW frequency (Hz) */
+		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
+		REAL8 r,                                    /**< distance of source (m) */
+		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+		int phaseO,                                 /**< twice post-Newtonian phase order */
+		int l                                       /**< generate all modes with l <= lmax */
+		);
+
+/**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT4 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT4PNMode(
 		REAL8 phiRef,                               /**< reference orbital phase (rad) */
 		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                               /**< sampling interval (s) */
@@ -1206,10 +1226,31 @@ int XLALSimInspiralTaylorT3PNGenerator(
 		);
 
 /**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic modes
+ * using TaylorT3 phasing.
+ */
+SphHarmTimeSeries *XLALSimInspiralTaylorT3PNModes(
+		REAL8 phiRef,                               /**< reference orbital phase (rad) */
+		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                               /**< sampling interval (s) */
+		REAL8 m1,                                   /**< mass of companion 1 (kg) */
+		REAL8 m2,                                   /**< mass of companion 2 (kg) */
+		REAL8 f_min,                                /**< starting GW frequency (Hz) */
+		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
+		REAL8 r,                                    /**< distance of source (m) */
+		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+		int phaseO,                                 /**< twice post-Newtonian phase order */
+		int l                                       /**< generate all modes with l <= lmax */
+		);
+
+/**
  * Driver routine to compute the -2 spin-weighted spherical harmonic mode
  * using TaylorT3 phasing.
  */
-COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNModes(
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT3PNMode(
 		REAL8 phiRef,                               /**< reference orbital phase (rad) */
 		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                               /**< sampling interval (s) */
@@ -1325,10 +1366,31 @@ int XLALSimInspiralTaylorT2PNGenerator(
 		);
 
 /**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic modes
+ * using TaylorT2 phasing.
+ */
+SphHarmTimeSeries *XLALSimInspiralTaylorT2PNModes(
+		REAL8 phiRef,                               /**< reference orbital phase (rad) */
+		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                               /**< sampling interval (s) */
+		REAL8 m1,                                   /**< mass of companion 1 (kg) */
+		REAL8 m2,                                   /**< mass of companion 2 (kg) */
+		REAL8 f_min,                                /**< starting GW frequency (Hz) */
+		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
+		REAL8 r,                                    /**< distance of source (m) */
+		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+		int phaseO,                                 /**< twice post-Newtonian phase order */
+		int l                                       /**< generate all modes with l <= lmax */
+		);
+
+/**
  * Driver routine to compute the -2 spin-weighted spherical harmonic mode
  * using TaylorT2 phasing.
  */
-COMPLEX16TimeSeries *XLALSimInspiralTaylorT2PNModes(
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT2PNMode(
 		REAL8 phiRef,                               /**< reference orbital phase (rad) */
 		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                               /**< sampling interval (s) */
@@ -1446,7 +1508,28 @@ int XLALSimInspiralTaylorT1PNGenerator(
  * Driver routine to compute the -2 spin-weighted spherical harmonic mode
  * using TaylorT1 phasing.
  */
-COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNModes(
+SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
+		REAL8 phiRef,                               /**< reference orbital phase (rad) */
+		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                               /**< sampling interval (s) */
+		REAL8 m1,                                   /**< mass of companion 1 (kg) */
+		REAL8 m2,                                   /**< mass of companion 2 (kg) */
+		REAL8 f_min,                                /**< starting GW frequency (Hz) */
+		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
+		REAL8 r,                                    /**< distance of source (m) */
+		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(mass of body 1)^5 */
+		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(mass of body 2)^5 */
+		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */		
+		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+		int phaseO,                                 /**< twice post-Newtonian phase order */
+		int l                                      /**<  generate all modes with l <= lmax */
+		);
+
+/**
+ * Driver routine to compute the -2 spin-weighted spherical harmonic mode
+ * using TaylorT1 phasing.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNMode(
 		REAL8 phiRef,                               /**< reference orbital phase (rad) */
 		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                               /**< sampling interval (s) */

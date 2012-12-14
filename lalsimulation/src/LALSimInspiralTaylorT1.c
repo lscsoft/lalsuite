@@ -447,11 +447,78 @@ int XLALSimInspiralTaylorT1PNGenerator(
 	return n;
 }
 
+SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
+		REAL8 phiRef,                               /**< reference orbital phase (rad) */
+		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
+		REAL8 deltaT,                               /**< sampling interval (s) */
+		REAL8 m1,                                   /**< mass of companion 1 (kg) */
+		REAL8 m2,                                   /**< mass of companion 2 (kg) */
+		REAL8 f_min,                                /**< starting GW frequency (Hz) */
+		REAL8 fRef,                                 /**< reference GW frequency (Hz) */
+		REAL8 r,                                    /**< distance of source (m) */
+		REAL8 lambda1,                              /**< (tidal deformability of body 1)/(individual mass of body 1)^5 */
+		REAL8 lambda2,                              /**< (tidal deformability of body 2)/(individual mass of body 2)^5 */
+		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
+		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+		int phaseO,                                 /**< twice post-Newtonian phase order */
+		int l                                       /**< generate all modes with l <= lmax */
+		)
+{
+	SphHarmTimeSeries *hlm = NULL;
+	/* The Schwarzschild ISCO frequency - for sanity checking fRef */
+	REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
+
+	/* Sanity check fRef value */
+	if( fRef < 0. )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be >= 0\n", 
+				__func__, fRef);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	if( fRef != 0. && fRef < f_min )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be > fStart = %f\n", 
+				__func__, fRef, f_min);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	if( fRef >= fISCO )
+	{
+		XLALPrintError("XLAL Error - %s: fRef = %f must be < Schwar. ISCO=%f\n",
+				__func__, fRef, fISCO);
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+
+	REAL8TimeSeries *V;
+	REAL8TimeSeries *phi;
+	int n;
+	n = XLALSimInspiralTaylorT1PNEvolveOrbit(&V, &phi, phiRef, deltaT,
+			m1, m2, f_min, fRef, lambda1, lambda2,
+			interactionFlags, phaseO);
+	if ( n < 0 )
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	int mi, li;
+	COMPLEX16TimeSeries *hxx;
+	for(li=0; li<=l; li++){
+		for(mi=-l; mi<=l; mi++){
+			hxx = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(V, phi,
+				v0, m1, m2, r, amplitudeO, li, mi);
+			if ( !hxx ){
+				XLAL_ERROR_NULL(XLAL_EFUNC);
+			}
+	 		XLALSphHarmTimeSeriesAddMode(hlm, hxx, li, mi);
+			XLALDestroyCOMPLEX16TimeSeries(hxx);
+		}
+	}
+	XLALDestroyREAL8TimeSeries(phi);
+	XLALDestroyREAL8TimeSeries(V);
+	return hlm;
+}
+
 /**
  * Driver routine to compute the -2 spin-weighted spherical harmonic mode
  * using TaylorT1 phasing.
  */
-COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNModes(
+COMPLEX16TimeSeries *XLALSimInspiralTaylorT1PNMode(
 		REAL8 phiRef,                               /**< reference orbital phase (rad) */
 		REAL8 v0,                                   /**< tail-term gauge choice (default = 1) */
 		REAL8 deltaT,                               /**< sampling interval (s) */

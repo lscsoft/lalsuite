@@ -271,10 +271,10 @@ void XLALDestroySphHarmTimeSeries( SphHarmTimeSeries* ts ){
 /* 
  * Get the mode-decomposed time series corresponding to l,m.
  */
-COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( SphHarmTimeSeries *ts, UINT4 l, INT4 m ){
-    SphHarmTimeSeries *itr = ts;
+COMPLEX16TimeSeries* XLALSphHarmTimeSeriesGetMode( SphHarmTimeSeries *ts , UINT4 l, INT4 m ){
+    if( !ts ) return NULL;
 
-    if( !itr ) return NULL;
+    SphHarmTimeSeries *itr = ts;
     while( itr->l != l || itr->m != m ){
         itr = itr->next;
         if( !itr ) return NULL;
@@ -1880,7 +1880,7 @@ int XLALSimInspiralChooseFDWaveform(
  * 
  * FIXME: Interface will be changed to return a collection of modes.
  */
-COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
+SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
     REAL8 deltaT,                               /**< sampling interval (s) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
@@ -1894,13 +1894,12 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
     LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
-    int l,                                      /**< l index of mode - replace with a struct of several integer pairs */
-    int m,                                      /**< m index of mode - ditto */
+    int l,                                      /**< generate all modes with l <= lmax */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     )
 {
     REAL8 v0 = 1.;
-    COMPLEX16TimeSeries *hlm;
+    SphHarmTimeSeries *hlm;
 
     /* General sanity checks that will abort */
     /*
@@ -1939,7 +1938,7 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
             hlm = XLALSimInspiralTaylorT1PNModes(phiRef, v0,
                     deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetInteraction(waveFlags), amplitudeO,
-                    phaseO, l, m);
+                    phaseO, l);
             break;
         case TaylorT2:
             /* Waveform-specific sanity checks */
@@ -1949,7 +1948,7 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
             hlm = XLALSimInspiralTaylorT2PNModes(phiRef, v0,
                     deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetInteraction(waveFlags), amplitudeO,
-                    phaseO, l, m);
+                    phaseO, l);
             break;
         case TaylorT3:
             /* Waveform-specific sanity checks */
@@ -1959,17 +1958,17 @@ COMPLEX16TimeSeries *XLALSimInspiralChooseTDModes(
             hlm = XLALSimInspiralTaylorT3PNModes(phiRef, v0,
                     deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetInteraction(waveFlags), amplitudeO,
-                    phaseO, l, m);
+                    phaseO, l);
             break;
         case TaylorT4:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformFlagsIsDefault(waveFlags) )
                 ABORT_NONDEFAULT_WAVEFORM_FLAGS_NULL(waveFlags);
             /* Call the waveform driver routine */
-            hlm = XLALSimInspiralTaylorT1PNModes(phiRef, v0,
+            hlm = XLALSimInspiralTaylorT4PNModes(phiRef, v0,
                     deltaT, m1, m2, f_min, f_ref, r, lambda1, lambda2,
                     XLALSimInspiralGetInteraction(waveFlags), amplitudeO,
-                    phaseO, l, m);
+                    phaseO, l);
             break;
 
         default:
