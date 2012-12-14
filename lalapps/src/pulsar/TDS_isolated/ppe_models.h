@@ -52,6 +52,8 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
 REAL8Vector *get_ssb_delay( BinaryPulsarParams pars, 
                             LIGOTimeGPSVector *datatimes,
                             EphemerisData *ephem,
+                            TimeCorrectionData *tdat,
+                            TimeCorrectionType ttype,
                             LALDetector *detector,
                             REAL8 interptime );
                             

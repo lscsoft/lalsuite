@@ -973,6 +973,7 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
   output->wave_omErr = 0.0;
   
   output->units = NULL;
+  output->ephem = NULL;
   
   if((fp = fopen(pulsarAndPath, "r")) == NULL){
     XLALPrintError("Error... Cannot open .par file %s\n", pulsarAndPath);
@@ -1341,6 +1342,10 @@ XLALReadTEMPOParFile( BinaryPulsarParams *output,
     }
     else if( !strcmp(val[i],"units") || !strcmp(val[i],"UNITS")){
       output->units = XLALStringDuplicate(val[i+1]);
+      j++;
+    }
+    else if( !strcmp(val[i],"ephem") || !strcmp(val[i],"EPHEM")){
+      output->ephem = XLALStringDuplicate(val[i+1]);
       j++;
     }
     else if( !strcmp(val[i],"a1") || !strcmp(val[i],"A1")) {
