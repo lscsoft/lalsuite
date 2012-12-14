@@ -470,7 +470,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       {
           /* Replace the last QNM with pQNM */
           /* We assume aligned/antialigned spins here */
-          a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * sqrt(1.0 - 4.0 * eta);
+          a  = (spin1[2] + spin2[2]) / 2. * (1.0 - 2.0 * eta) + (spin1[2] - spin2[2]) / 2. * (mass1 - mass2) / (mass1 + mass2);
           NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
           /*printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
                  mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);*/
