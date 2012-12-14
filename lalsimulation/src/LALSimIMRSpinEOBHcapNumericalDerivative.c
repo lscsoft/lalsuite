@@ -230,7 +230,7 @@ static int XLALSpinHcapNumericalDerivative(
 
   a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
 
-  XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, eta, a, chiS, chiA );
+  XLALSimIMREOBCalcSpinFacWaveformCoefficients( params.params->eobParams->hCoeffs, mass1, mass2, eta, a, chiS, chiA );
   XLALSimIMRCalculateSpinEOBHCoeffs( params.params->seobCoeffs, eta, a );
  
   rVec.length = pVec.length = 3;
@@ -319,7 +319,7 @@ static int XLALSpinHcapNumericalDerivative(
     printf( "\t%e", dvalues[i] );
   }
   printf( "\n" );
-*/
+  */
   return XLAL_SUCCESS;
 }
 
