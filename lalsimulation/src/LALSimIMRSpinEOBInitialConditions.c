@@ -851,7 +851,7 @@ static int XLALSimIMRSpinEOBInitialConditions(
 
     /* The a in the flux has been set to zero, but not in the Hamiltonian */
     a = sqrt(sKerr.data[0]*sKerr.data[0] + sKerr.data[1]*sKerr.data[1] + sKerr.data[2]*sKerr.data[2]);
-    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, eta, /*a*/0.0, chiS, chiA );
+    XLALSimIMREOBCalcSpinFacWaveformCoefficients( params->eobParams->hCoeffs, mass1, mass2, eta, /*a*/0.0, chiS, chiA );
     XLALSimIMRCalculateSpinEOBHCoeffs( params->seobCoeffs, eta, a );
 
     ham = XLALSimIMRSpinEOBHamiltonian( eta, &qCartVec, &pCartVec, &sKerr, &sStar, params->tortoise, params->seobCoeffs );
