@@ -733,7 +733,7 @@ int main(int argc, char *argv[])
       loadCandidateData(&(exactCandidates2->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
 
-      resetTemplateStruct(template);
+      /* resetTemplateStruct(template);
       makeTemplateGaussians(template, exactCandidates1->data[0], inputParams, ffdata->numfbins, ffdata->numfprbins);
       if (xlalErrno!=0) {
          fprintf(stderr,"%s: makeTemplateGaussians() failed.\n", __func__);
@@ -755,13 +755,22 @@ int main(int argc, char *argv[])
 	 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
       }
       loadCandidateData(&(exactCandidates2->data[1]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
-      exactCandidates2->numofcandidates++;
+      exactCandidates2->numofcandidates++; */
 
       //resetTemplateStruct(template);
       /* template->f0 = 401.269467;
       template->period = 4051874.730676;
       template->moddepth = 0.085643999739654; //From the first template/signal comparison test */
-      /* REAL4Vector *realSignal = XLALCreateREAL4Vector(ffdata->numfbins*ffdata->numfprbins);
+      /* template->f0 = 401.269467;
+      template->period = 4051874.730676;
+      template->moddepth = 0.04282199986983; //From the second template/signal comparison test */
+      /* template->f0 = 401.269467;
+      template->period = 4051874.730676;
+      template->moddepth = 0.021411; //From the third template/signal comparison test */
+      /* template->f0 = 401.269467;
+      template->period = 4051874.730676;
+      template->moddepth = 4.4444e-3; //From the fourth template/signal comparison test
+      REAL4Vector *realSignal = XLALCreateREAL4Vector(ffdata->numfbins*ffdata->numfprbins);
       if (realSignal==NULL) {
          fprintf(stderr,"%s: XLALCreateREAL4Vector(%d) failed.\n", __func__, ffdata->numfbins*ffdata->numfprbins);
          XLAL_ERROR(XLAL_EFUNC);
@@ -783,20 +792,20 @@ int main(int argc, char *argv[])
          XLAL_ERROR(XLAL_EFUNC);
       }
       prob = 0.0;
-      h0 = 0.0;
-      if ( R > 0.0 ) {
+      h0 = 0.0; */
+      /* if ( R > 0.0 ) {
          prob = probR(template, aveNoise, aveTFnoisePerFbinRatio, R, inputParams, &proberrcode);
          if (XLAL_IS_REAL8_FAIL_NAN(prob)) {
             fprintf(stderr,"%s: probR() failed.\n", __func__);
             XLAL_ERROR(XLAL_EFUNC);
          }
 	 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
-       }
-      loadCandidateData(&(exactCandidates2->data[2]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
-      exactCandidates2->numofcandidates++; */
+      } */
+      //loadCandidateData(&(exactCandidates2->data[2]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+      //exactCandidates2->numofcandidates++;
+      //XLALDestroyREAL4Vector(realSignal);
       
       //Destroy stuff
-      //XLALDestroyREAL4Vector(realSignal);
       free_templateStruct(template);
       XLALDestroyREAL4Vector(aveTFnoisePerFbinRatio);
       XLALDestroyREAL4VectorSequence(trackedlines);

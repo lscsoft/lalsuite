@@ -964,7 +964,7 @@ void makeTemplateGaussians(templateStruct *output, candidate input, inputParamsS
          //sum += (REAL8)dataval;
          sum += (REAL8)(datavector->data[jj]);
 
-         //fprintf(TEMPLATEOUT, "%d %d %g\n", ii, jj, datavector->data[jj]);     //remove this
+         //fprintf(TEMPLATEOUT, "%d %d %g\n", ii+fnumstart, jj, datavector->data[jj]);     //remove this
          
          //Compare with weakest top bins and if larger, launch a search to find insertion spot (insertion sort)
          if (datavector->data[jj] > output->templatedata->data[output->templatedata->length-1]) {
