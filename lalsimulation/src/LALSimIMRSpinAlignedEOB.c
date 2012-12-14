@@ -393,7 +393,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   a = sqrt( a );*/
   seobParams.a = a = sigmaKerr->data[2];
   /* a set to zero in SEOBNRv1, didn't know yet a good mapping from two physical spins to the test-particle limit Kerr spin */
-  if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( &hCoeffs, eta, /*a*/0.0, chiS, chiA ) == XLAL_FAILURE )
+  if ( XLALSimIMREOBCalcSpinFacWaveformCoefficients( &hCoeffs, m1, m2, eta, /*a*/0.0, chiS, chiA ) == XLAL_FAILURE )
   {
     XLALDestroyREAL8Vector( sigmaKerr );
     XLALDestroyREAL8Vector( sigmaStar );
