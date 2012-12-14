@@ -65,6 +65,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 
 UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs,
+          const REAL8               m1,
+          const REAL8               m2,
           const REAL8               eta,
           const REAL8               a,
           const REAL8               chiS,
@@ -517,6 +519,8 @@ static INT4 XLALSimIMRSpinEOBGetSpinFactorizedWaveform(
 
 UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
           FacWaveformCoeffs * const coeffs, /**< OUTPUT, pre-computed waveform coefficients */
+          const REAL8               m1,     /**< mass 1 */
+          const REAL8               m2,     /**< mass 2 */
           const REAL8               eta,    /**< symmetric mass ratio */
           const REAL8               a,      /**< Kerr spin parameter for test-particle terms */
           const REAL8               chiS,   /**< (chi1+chi2)/2 */
@@ -544,6 +548,10 @@ UNUSED static int XLALSimIMREOBCalcSpinFacWaveformCoefficients(
   }
 
   dM  = sqrt( dM2 );
+  if (m1 < m2)
+  {
+    dM = -dM;
+  }
   //dM3 = dM2 * dM;
 
   a2 = a*a;
