@@ -1,4 +1,4 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdio.h>
 #include <string.h>
 #include <zlib.h>
@@ -267,20 +267,24 @@ XLALCHARReadSequence( CHARSequence **sequence, FILE *stream )
 
 #define TYPECODE Z
 #define TYPE COMPLEX16
+#define DATA REAL8
 #define SIZE 16
 #define FORMAT LAL_REAL8_FORMAT
 #include "StreamSequenceInputComplex_source.c"
 #undef TYPECODE
 #undef TYPE
+#undef DATA
 #undef SIZE
 #undef FORMAT
 
 #define TYPECODE C
 #define TYPE COMPLEX8
+#define DATA REAL4
 #define SIZE 8
 #define FORMAT LAL_REAL4_FORMAT
 #include "StreamSequenceInputComplex_source.c"
 #undef TYPECODE
 #undef TYPE
+#undef DATA
 #undef SIZE
 #undef FORMAT

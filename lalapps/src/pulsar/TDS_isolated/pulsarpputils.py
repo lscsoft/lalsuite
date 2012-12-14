@@ -250,7 +250,7 @@ float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6",
               # GW PARAMETERS
               "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31"]
 str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
-            "CLK", "BINARY"]
+            "CLK", "BINARY", "UNITS"]
 
 class psr_par:
   def __init__(self, parfilenm):
@@ -426,7 +426,7 @@ class psr_prior:
 #(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.abs(fdot)*freq)/(dist*KPC)
+  hsd = math.sqrt((5./2.)*(G/C**3)*I38*math.fabs(fdot)/freq)/(dist*KPC)
   
   return hsd
   
@@ -480,7 +480,7 @@ def phipsiconvert(phipchain, psipchain):
 # that will be output
 def plot_posterior_hist(poslist, param, ifos,
                         parambounds=[float("-inf"), float("inf")], 
-                        nbins=50, upperlimit=0):
+                        nbins=50, upperlimit=0, overplot=False):
   # create list of figures
   myfigs = []
   
@@ -496,12 +496,13 @@ def plot_posterior_hist(poslist, param, ifos,
   rc('font', size=12)
   
   # ifos line colour specs
-  coldict = {'H1': 'b', 'H2': 'r', 'L1': 'g', 'V1': 'c', 'G1': 'm'}
+  coldict = {'H1': 'b', 'H2': 'c', 'L1': 'r', 'V1': 'g', 'G1': 'm', 'Joint':'k'}
   
   # some parameter names for special LaTeX treatment in figures
   paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
-               '$\psi~{\rm(rads)}$', 'PHI0': '$\phi_0~{\rm(rads)}$', 'RA':
-               '$\alpha$', 'DEC': '$\delta$'}
+               '$\psi$ \\textrm{(rads)}', 'PHI0':
+               '$\phi_0$ \\textrm{(rads)}', 'RA':
+               '$\\alpha$', 'DEC': '$\delta$'}
  
   # param name for axis label
   try:
@@ -509,13 +510,24 @@ def plot_posterior_hist(poslist, param, ifos,
   except:
     paraxis = param
   
+  ymax = []
+  
   # loop over ifos
   for idx, ifo in enumerate(ifos):
-    myfig = plt.figure(figsize=(4,3.5),dpi=200)
+    # check whether to plot all figures on top of each other
+    if overplot and idx == 0:
+      myfig = plt.figure(figsize=(4,4),dpi=200)
+      plt.hold(True)
+    elif not overplot:
+      myfig = plt.figure(figsize=(4,4),dpi=200)
     
     pos = poslist[idx]
     
-    pos_samps = pos[param].samples
+    # check for cosiota
+    if 'cosiota' in param:
+      pos_samps = np.cos(pos['iota'].samples)
+    else:
+      pos_samps = pos[param].samples
  
     # get a normalised histogram for each
     n, bins = hist_norm_bounds( pos_samps, int(nbins), parambounds[0], \
@@ -523,11 +535,20 @@ def plot_posterior_hist(poslist, param, ifos,
     
     # plot histogram
     plt.plot(bins, n, color=coldict[ifo])
+    
+    if 'h0' not in param:
+      plt.xlim(parambounds[0], parambounds[1])
+   
     plt.xlabel(r''+paraxis, fontsize=14, fontweight=100)
     plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
     myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
-    
-    myfigs.append(myfig)
+   
+    if not overplot:
+      plt.ylim(0, n.max()+0.1*n.max()) 
+      plt.legend(ifo)
+      myfigs.append(myfig)
+    else:
+      ymax.append(n.max()+0.1*n.max())
     
     # if upper limit is needed then integrate posterior using trapezium rule
     if upperlimit != 0:
@@ -535,14 +556,85 @@ def plot_posterior_hist(poslist, param, ifos,
       
       # prepend a zero to ct
       ct = np.insert(ct, 0, 0)
-     
-      #plt.plot(bincentres[1:len(bincentres)], ct)
       
       # use spline interpolation to find the value at 'upper limit'
       intf = interp1d(ct, bins, kind='cubic')
       ulvals.append(intf(float(upperlimit)))
   
+  if overplot:
+    plt.ylim(0, max(ymax))
+    plt.legend(ifos)
+    myfigs.append(myfig)
+  
   return myfigs, ulvals
+
+# function to create a histogram plot of the 2D posterior
+def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50]):  
+  if len(params) != 2:
+    print >> sys.stderr, "Require 2 parameters"
+    sys.exit(1)
+  
+  # some parameter names for special LaTeX treatment in figures
+  paramdict = {'H0': '$h_0$', 'COSIOTA': '$\cos{\iota}$', 'PSI':
+               '$\psi$ \\textrm{(rads)}', 'PHI0':
+               '$\phi_0$ \\textrm{(rads)}', 'RA':
+               '$\\alpha$', 'DEC': '$\delta$'}
+  
+  myfigs = []
+  
+  # param name for axis label
+  try:
+    parxaxis = paramdict[params[0].upper()]
+  except:
+    parxaxis = params[0]
+    
+  try:
+    paryaxis = paramdict[params[1].upper()]
+  except:
+    paryaxis = params[1]
+  
+  for idx, ifo in enumerate(ifos):
+    posterior = poslist[idx]
+    
+    if 'cosiota' in params[0]:
+      a = np.squeeze(posterior['iota'].samples)
+      a = np.cos(a)
+      b = np.squeeze(posterior[params[1]].samples)
+    elif 'cosiota' in params[1]:
+      b = np.squeeze(posterior['iota'].samples)
+      b = np.cos(b)
+      a = np.squeeze(posterior[params[0]].samples)
+    else:
+      a = np.squeeze(posterior[params[0]].samples)
+      b = np.squeeze(posterior[params[1]].samples)
+    
+    # Create 2D bin array
+    par1pos_min = a.min()
+    par2pos_min = b.min()
+
+    par1pos_max = a.max()
+    par2pos_max = b.max()
+
+    myfig = plt.figure(figsize=(4,4),dpi=200)
+   
+    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100, rotation=270)
+    
+    H, xedges, yedges = np.histogram2d(a, b, nbins, normed=True)
+
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    plt.imshow(np.transpose(H), aspect='auto', extent=extent, \
+interpolation='nearest', cmap='gray_r')
+    #plt.colorbar()
+    if bounds:
+      plt.xlim(bounds[0][0], bounds[0][1])
+      plt.ylim(bounds[1][0], bounds[1][1])
+    
+    myfig.subplots_adjust(left=0.15, bottom=0.15) # adjust size
+    
+    myfigs.append(myfig)
+    
+  return myfigs
   
 # a function that creates and normalises a histograms of samples, with nbins
 # between an upper and lower bound a upper and lower bound. The values at the
@@ -637,7 +729,7 @@ def tukey_window(N, alpha=0.5):
 # create a function for plotting the absolute value of Bk data (read in from
 # data files) and an averaged 1 day amplitude spectral density spectrogram for
 # each IFO
-def plot_Bks_ASDs( Bkdata, ifos ):
+def plot_Bks_ASDs( Bkdata, ifos, plotpsds=True, removeoutlier=None ):
   # create list of figures
   Bkfigs = []
   psdfigs = []
@@ -659,38 +751,39 @@ def plot_Bks_ASDs( Bkdata, ifos ):
   for i, ifo in enumerate(ifos):
     # get data for given ifo
     try:
-      dfile = open(Bkdata[i])
+      Bk = np.loadtxt(Bkdata[i])
     except:
       print "Could not open file ", Bkdata[i]
       exit(-1)
-      
+   
     # should be three lines in file
     gpstime = []
-    Bk = []
+    
+    # remove outliers at Xsigma by working out sigma from the peak of the
+    # distribution of the log absolute value
+    if removeoutlier:
+      n, binedges = np.histogram(np.log(np.fabs(np.concatenate((Bk[:,1], \
+Bk[:,2])))), 50)
+      j = n.argmax(0)
       
-    Bkabs = [] # absolute Bk value
-      
+      # standard devaition estimate
+      stdest = math.exp((binedges[j]+binedges[j+1])/2)
+
+      # get values within +/-8 sigma
+      # test real parts
+      vals = np.where(np.fabs(Bk[:,1]) < removeoutlier*stdest)
+      Bknew = Bk[vals,:][-1]
+      # test imag parts
+      vals = np.where(np.fabs(Bknew[:,2]) < removeoutlier*stdest)
+      Bk = Bknew[vals,:][-1]
+   
+    gpstime = Bk[:,0]
+    
     # minimum time step between points (should generally be 60 seconds)
-    mindt = float("inf")
-      
-    for line in dfile.readlines():
-      sl = line.split()
-        
-      gpstime.append(float(sl[0]))
-      Bk.append(complex(float(sl[1]), float(sl[2])))
-        
-      # get absolute value
-      Bkabs.append(math.sqrt(Bk[-1].real**2 + Bk[-1].imag**2))
-        
-      # check time step
-      if len(gpstime) > 1:
-        dt = gpstime[-1] - gpstime[-2]
+    mindt = min(np.diff(gpstime))
+    
+    Bkabs = np.sqrt(Bk[:,1]**2 + Bk[:,2]**2)
           
-        if dt < mindt:
-          mindt = dt
-      
-    dfile.close()
-      
     # plot the time series of the data
     Bkfig = plt.figure(figsize=(10,4), dpi=200)
     Bkfig.subplots_adjust(bottom=0.12, left=0.06, right=0.94)
@@ -704,73 +797,74 @@ def plot_Bks_ASDs( Bkdata, ifos ):
     plt.xlim(tms[0], tms[-1])
     
     Bkfigs.append(Bkfig)
-      
-    # create PSD by splitting data into days, padding with zeros to give a
-    # sample a second, getting the PSD for each day and combining them
-    totlen = gpstime[-1] - gpstime[0] # total data length
-      
-    # check mindt is an integer and greater than 1
-    if math.fmod(mindt, 1) != 0. or mindt < 1:
-      print "Error time steps between data points must be integers"
-      exit(-1)
-        
-    # loop over data, splitting it up
-    mr = int(math.ceil(totlen/86400))
     
-    count = 0
-    npsds = 0
-    totalpsd = np.zeros(86400) # add sum of PSDs
-    for i in range(0, mr):
-      datachunk = np.zeros(86400, dtype=complex)
+    if plotpsds:
+      # create PSD by splitting data into days, padding with zeros to give a
+      # sample a second, getting the PSD for each day and combining them
+      totlen = gpstime[-1] - gpstime[0] # total data length
+      
+      # check mindt is an integer and greater than 1
+      if math.fmod(mindt, 1) != 0. or mindt < 1:
+        print "Error time steps between data points must be integers"
+        exit(-1)
+        
+      # loop over data, splitting it up
+      mr = int(math.ceil(totlen/86400))
+    
+      count = 0
+      npsds = 0
+      totalpsd = np.zeros(86400) # add sum of PSDs
+      for i in range(0, mr):
+        datachunk = np.zeros(86400, dtype=complex)
        
-      gpsstart = int(gpstime[count])
+        gpsstart = int(gpstime[count])
       
-      prevcount = count
+        prevcount = count
       
-      for gt in gpstime[count:-1]:
-        if gt >= gpsstart+86400:
-          break
-        else:
-          datachunk[gt-gpsstart] = Bk[count]
-          count += 1
+        for gt in gpstime[count:-1]:
+          if gt >= gpsstart+86400:
+            break
+          else:
+            datachunk[gt-gpsstart] = complex(Bk[count,1], Bk[count,2])
+            count += 1
       
-      # only include the PSD if the chunk is more than 25% full of data
-      pf = float(count-prevcount)*mindt/86400.
+        # only include the PSD if the chunk is more than 25% full of data
+        pf = float(count-prevcount)*mindt/86400.
       
-      if pf > 0.25:
-        # get the PSD using a Tukey window with alpha = 0.25
-        win = tukey_window(86400, alpha=0.25)
+        if pf > 0.25:
+          # get the PSD using a Tukey window with alpha = 0.25
+          win = tukey_window(86400, alpha=0.25)
         
-        Fs = 1 # sample rate in Hz
+          Fs = 1 # sample rate in Hz
         
-        psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=Fs, window=win)
+          psd, freqs, t = specgram(datachunk, NFFT=86400, Fs=Fs, window=win)
       
-        # add psd onto total value
-        totalpsd = map(lambda x, y: x+y, totalpsd, psd)
+          # add psd onto total value
+          totalpsd = map(lambda x, y: x+y, totalpsd, psd)
       
-        # count number of psds
-        npsds = npsds+1
+          # count number of psds
+          npsds = npsds+1
       
-    # average the PSD and convert to amplitude spectral density
-    totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
+      # average the PSD and convert to amplitude spectral density
+      totalpsd = map(lambda x: math.sqrt(x/npsds), totalpsd)
     
-    # plot PSD
-    psdfig = plt.figure(figsize=(4,3.5), dpi=200)
-    psdfig.subplots_adjust(left=0.18, bottom=0.15)
+      # plot PSD
+      psdfig = plt.figure(figsize=(4,3.5), dpi=200)
+      psdfig.subplots_adjust(left=0.18, bottom=0.15)
     
-    # get the indices to plot in the actual frequency range 
-    df = freqs[1]-freqs[0]
-    minfbin = int((math.fabs(freqs[0])-1./(2.*mindt))/df)
-    maxfbin = len(freqs) - minfbin
+      # get the indices to plot in the actual frequency range 
+      df = freqs[1]-freqs[0]
+      minfbin = int((math.fabs(freqs[0])-1./(2.*mindt))/df)
+      maxfbin = len(freqs) - minfbin
     
-    plt.plot(freqs[minfbin:maxfbin], totalpsd[minfbin:maxfbin],
-             color=coldict[ifo])
-    plt.xlim(freqs[minfbin], freqs[maxfbin])
-    plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
-    plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
-    plt.title(r'ASD for ' + ifo.upper(), fontsize=14)
+      plt.plot(freqs[minfbin:maxfbin], totalpsd[minfbin:maxfbin],
+               color=coldict[ifo])
+      plt.xlim(freqs[minfbin], freqs[maxfbin])
+      plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
+      plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
+      plt.title(r'ASD for ' + ifo.upper(), fontsize=14)
     
-    psdfigs.append(psdfig)
+      psdfigs.append(psdfig)
       
   return Bkfigs, psdfigs
 
@@ -1131,3 +1225,34 @@ def get_optimal_snr( sr, si, sig ):
     ss = ss + sr[i]*sr[i] + si[i]*si[i]
    
   return np.sqrt( ss / (sig*sig) )
+
+# use the Gelman-Rubins convergence test for MCMC chains, where chains is a list
+# of MCMC numpy chain arrays
+def gelman_rubins(chains):
+  nchains = len(chains)
+  
+  omm = np.zeros((nchains,1))
+  ns = np.zeros((nchain,1))
+  for i, chain in enumerate(chains):
+    omm[i] = np.mean(chain)
+    ns[i] = chain.size
+    
+  omd = np.mean(omm);
+
+  B = (np.mean(ns)/(nchains-1))*np.sum(np.power(omm - omd, 2.));
+
+  sm = np.zeros(nchains,1);
+  # calculate the within-chain variance
+  for i, chain in enumerate(chains):
+    sm[i] = (1/(ns[i]-1))*np.sum(np.power(chain - omm[i], 2.));
+
+  W = np.mean(sm);
+
+  # calculate the posterior marginal variance
+  V = (W*(np.mean(ns)-1)/np.mean(ns)) + (B*(nchains+1)/(np.mean(ns)*nchains));
+
+  # calculate the potential scale reduction factor
+  psrf = np.sqrt(V/W);
+  
+  return psrf
+  

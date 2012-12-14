@@ -55,9 +55,7 @@ EXTRA_DIST = \
 	pulsarpputils.py \
 	pulsar_pipeline_utils.py
 
-TESTS_ENVIRONMENT = \
-LALSUITE_TOP_SRCDIR=$(LALSUITE_TOP_SRCDIR) \
-LALSUITE_DATA_PATH=$(LAL_DATA_PATH):.:$${LALPULSAR_PREFIX:+"$${LALPULSAR_PREFIX}/share/lalpulsar"}:$${LALSUITE_TOP_SRCDIR:+"$${LALSUITE_TOP_SRCDIR}/lalpulsar/test/"}
+TESTS_ENVIRONMENT = LALPULSAR_DATADIR="$(LALPULSAR_DATADIR)"
 
 ## make sure lalapps.la is rebuilt when appropriate
 BUILT_SOURCES =

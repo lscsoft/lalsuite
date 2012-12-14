@@ -24,17 +24,15 @@ else
     debug=0	## default=quiet
 fi
 
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfdCODE="${mfdCODE} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 #prepare test subdirectory

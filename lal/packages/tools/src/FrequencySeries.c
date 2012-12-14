@@ -17,11 +17,10 @@
  */
 
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <math.h>
 #include <string.h>
 #include <lal/Date.h>
-#include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdlib.h>
 #include <lal/FrequencySeries.h>
@@ -30,111 +29,43 @@
 #include <lal/XLALError.h>
 
 #define DATATYPE REAL4
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE REAL8
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE COMPLEX8
-#define ARG arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio; \
-            arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
-#define ARG1 arg1->data->data[i] = LAL_COMPLEX8_ZERO;
-#define ARG2 REAL4 re = arg2->data->data[j].re * unit_ratio; \
-             REAL4 im = arg2->data->data[j].im * unit_ratio; \
-             arg1->data->data[i].re = arg1->data->data[i].re * re - arg1->data->data[i].im * im; \
-             arg1->data->data[i].im = arg1->data->data[i].re * im + arg1->data->data[i].im * re;
 #include "FrequencySeries_source.c"
 #include "FrequencySeriesComplex_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE COMPLEX16
-#define ARG arg1->data->data[i].re += arg2->data->data[j].re * unit_ratio; \
-            arg1->data->data[i].im += arg2->data->data[j].im * unit_ratio;
-#define ARG1 arg1->data->data[i] = LAL_COMPLEX16_ZERO;
-#define ARG2 REAL8 re = arg2->data->data[j].re * unit_ratio; \
-             REAL8 im = arg2->data->data[j].im * unit_ratio; \
-             arg1->data->data[i].re = arg1->data->data[i].re * re - arg1->data->data[i].im * im; \
-             arg1->data->data[i].im = arg1->data->data[i].re * im + arg1->data->data[i].im * re;
 #include "FrequencySeries_source.c"
 #include "FrequencySeriesComplex_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE INT2
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE UINT2
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE INT4
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE UINT4
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE INT8
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2
 
 #define DATATYPE UINT8
-#define ARG arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
-#define ARG1 arg1->data->data[i] = 0.0;
-#define ARG2 ARG;
 #include "FrequencySeries_source.c"
 #undef DATATYPE
-#undef ARG
-#undef ARG1
-#undef ARG2

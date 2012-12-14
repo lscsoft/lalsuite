@@ -1,5 +1,4 @@
 pkginclude_HEADERS = \
-	LPC.h \
 	BandPassTimeSeries.h \
 	IIRFilter.h \
 	ZPGFilter.h

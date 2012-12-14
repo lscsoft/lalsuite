@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdlib.h>
 #include <math.h>
 #include <lal/Date.h>
@@ -203,8 +203,7 @@ int XLALSimInspiralTaylorF2ReducedSpinTidal(
             + (alpha6 + alpha6L * (LAL_GAMMA + log(4. * v))) * v6
             + alpha7 * v7);
 
-        data[i] = (COMPLEX16) {amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4),
-                             -(amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4))};
+        data[i] = amp * cos(Psi + shft * f - 2.*phic + LAL_PI_4) - I * (amp * sin(Psi + shft * f - 2.*phic + LAL_PI_4));
     }
 
     return XLAL_SUCCESS;

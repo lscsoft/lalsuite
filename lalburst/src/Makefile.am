@@ -47,7 +47,7 @@ liblalburst_la_SOURCES = \
 
 liblalburst_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalburst-user-env.shell \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
@@ -57,8 +57,6 @@ sysconf_DATA = \
 	lalburst-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALBurstVCSInfo.h \
 	lalburst-user-env.sh \
 	lalburst-user-env.csh
 
@@ -67,8 +65,8 @@ lalburst-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALBURST_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
 lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/generate_user_env.awk
@@ -76,13 +74,14 @@ lalburst-user-env.csh lalburst-user-env.sh: lalburst-user-env.shell $(srcdir)/ge
 
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
-	LALBurstVCSInfo.h.in \
-	generate_user_env.awk \
-	generate_vcs_info.py
+	generate_user_env.awk
 
-LALBurstVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALBurstConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALBurst $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALBurstVCSInfo.h
+MOSTLYCLEANFILES += LALBurstVCSInfo.h
+LALBurstVCSInfo.h .PHONY : gen-LALBurstVCSInfo.h
+gen-LALBurstVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALBurstVCSInfo.h $(srcdir)/LALBurstVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@

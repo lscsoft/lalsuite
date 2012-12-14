@@ -17,13 +17,13 @@
 *  MA  02111-1307  USA
 */
 
+#include <complex.h>
 #include <math.h>
 #include <stdio.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALConstants.h>
 #include <lal/LALDetectors.h>
 #include <lal/Date.h>
@@ -179,9 +179,8 @@ static int XLALSimSGWBSegment(REAL8TimeSeries **h, const LALDetector *detectors,
 			double re = gsl_ran_gaussian_ziggurat(rng, sigma);
 			double im = gsl_ran_gaussian_ziggurat(rng, sigma);
 			for (i = j; i < numDetectors; ++i) {
-				/* FIXME: do complex properly */
-				htilde[i]->data->data[k].re += gsl_matrix_get(R, i, j) * re;
-				htilde[i]->data->data[k].im += gsl_matrix_get(R, i, j) * im;
+				htilde[i]->data->data[k] += gsl_matrix_get(R, i, j) * re;
+				htilde[i]->data->data[k] += I * gsl_matrix_get(R, i, j) * im;
 			}
 		}
 	}
@@ -706,8 +705,9 @@ int test_sgwb(void)
 		XLALREAL8TimeFreqFFT(htilde1, seg[0], plan);
 		XLALREAL8TimeFreqFFT(htilde2, seg[1], plan);
 		for (k = klow; k < seglen/2; ++k) {
-			psd[0]->data->data[k] += fac * htilde1->data->data[k].re * htilde2->data->data[k].re;
-			psd[0]->data->data[k] += fac * htilde1->data->data[k].im * htilde2->data->data[k].im;
+			double re = creal(htilde1->data->data[k]);
+			double im = cimag(htilde1->data->data[k]);
+			psd[0]->data->data[k] += fac * (re * re + im * im);
 		}
 	}
 	fp = fopen("sgwb-orf.dat", "w");

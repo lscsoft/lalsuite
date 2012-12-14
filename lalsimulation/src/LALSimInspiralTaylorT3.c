@@ -19,11 +19,8 @@
 
 #include <math.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
-#define LAL_USE_COMPLEX_SHORT_MACROS
 #include <lal/FindRoot.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>

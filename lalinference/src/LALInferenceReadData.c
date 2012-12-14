@@ -225,7 +225,7 @@ static INT4 getDataOptionsByDetectors(ProcessParamsTable *commandLine, char ***i
     /* Construct a list of IFOs */
     for(this=commandLine;this;this=this->next)
     {
-        if(!strcmp(this->param,"--ifo"))
+        if(!strcmp(this->param,"--ifo")||!strcmp(this->param,"--IFO"))
         {
             (*N)++;
             *ifos=realloc(*ifos,*N*sizeof(char *));
@@ -2082,9 +2082,9 @@ void InjectTaylorF2(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, P
 
 static void PrintSNRsToFile(LALInferenceIFOData *IFOdata , SimInspiralTable *inj_table){
     char SnrName[200];
-    char ListOfIFOs[10];
+    char ListOfIFOs[10]="";
     REAL8 NetSNR=0.0;
-    sprintf(ListOfIFOs," ");   
+    // sprintf(ListOfIFOs,"");
     LALInferenceIFOData *thisData=IFOdata;
     int nIFO=0;
 

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lal],[6.8.0.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lal],[6.9.0.1],[lal-discuss@gravity.phys.uwm.edu])
 AC_CONFIG_HEADERS([include/config.h include/lal/LALConfig.h])
 AC_CONFIG_SRCDIR([packages/std/include/LALStdio.h])
 AC_CONFIG_AUX_DIR([misc])
@@ -115,7 +115,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[4])
+AC_SUBST([LIBCURRENT],[5])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -134,11 +134,13 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT_SUPPORT],[1])
-AC_SUBST([LIBREVISION_SUPPORT],[3])
-AC_SUBST([LIBAGE_SUPPORT],[1])
+AC_SUBST([LIBCURRENT_SUPPORT],[2])
+AC_SUBST([LIBREVISION_SUPPORT],[0])
+AC_SUBST([LIBAGE_SUPPORT],[2])
 AC_SUBST([LIBVERSION_SUPPORT],[${LIBCURRENT_SUPPORT}:${LIBREVISION_SUPPORT}:${LIBAGE_SUPPORT}])
 
+# check for git repo
+LALSUITE_CHECK_GIT_REPO
 
 LAL_WITH_CC
 LAL_WITH_CFLAGS

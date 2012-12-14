@@ -1,4 +1,4 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
@@ -7,7 +7,7 @@
 #define TYPECODE Z
 #define TYPE COMPLEX16
 #define FMT "%i %g %g\n"
-#define ARG vector->data[i].re,vector->data[i].im
+#define ARG creal(vector->data[i]),cimag(vector->data[i])
 #include "PrintVector_source.c"
 #undef TYPECODE
 #undef TYPE
@@ -17,7 +17,7 @@
 #define TYPECODE C
 #define TYPE COMPLEX8
 #define FMT "%i %g %g\n"
-#define ARG vector->data[i].re,vector->data[i].im
+#define ARG crealf(vector->data[i]),cimagf(vector->data[i])
 #include "PrintVector_source.c"
 #undef TYPECODE
 #undef TYPE

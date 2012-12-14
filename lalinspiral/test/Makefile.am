@@ -7,7 +7,6 @@ check_PROGRAMS = \
 	BasicInjectTest \
 	CoarseTest \
 	CoarseTest2 \
-	CompareLalsimultaionLalinspiralWaveforms \
 	FindChirpBankVetoTest \
 	GenerateInspiralWaveform \
 	GeneratePPNAmpCorInspiralTest \

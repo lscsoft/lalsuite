@@ -23,7 +23,6 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/Date.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
@@ -58,11 +57,11 @@ static int XLALSimNoiseSegment(REAL8TimeSeries *s, REAL8FrequencySeries *psd, gs
 
 	XLALUnitMultiply(&stilde->sampleUnits, &stilde->sampleUnits, &s->sampleUnits);
 
-	stilde->data->data[0].re = stilde->data->data[0].im = 0.0;
+	stilde->data->data[0] = 0.0;
 	for (k = 0; k < s->data->length/2 + 1; ++k) {
 		double sigma = 0.5 * sqrt(psd->data->data[k] / psd->deltaF);
-		stilde->data->data[k].re = gsl_ran_gaussian_ziggurat(rng, sigma);
-		stilde->data->data[k].im = gsl_ran_gaussian_ziggurat(rng, sigma);
+		stilde->data->data[k] = gsl_ran_gaussian_ziggurat(rng, sigma);
+		stilde->data->data[k] += I * gsl_ran_gaussian_ziggurat(rng, sigma);
 	}
 
 	XLALREAL8FreqTimeFFT(s, stilde, plan);

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([lalxml],[1.1.5.1],[lal-discuss@gravity.phys.uwm.edu])
+AC_INIT([lalxml],[1.1.6.1],[lal-discuss@gravity.phys.uwm.edu])
 AM_CONFIG_HEADER([include/config.h src/LALXMLConfig.h])
 AC_CONFIG_SRCDIR([src/LALXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -45,6 +45,9 @@ AC_SUBST([LIBCURRENT],[1])
 AC_SUBST([LIBREVISION],[4])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+
+# check for git repo
+LALSUITE_CHECK_GIT_REPO
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -129,8 +132,8 @@ LALSUITE_ENABLE_FAST_GSL
 AC_CHECK_HEADERS([gsl/gsl_errno.h],,[AC_MSG_ERROR([could not find the gsl/gsl_errno.h header])])
 
 # check for lal libraries and headers
-LALSUITE_CHECK_LIB([LAL],[6.8.0],[LALVersion],[lal/LALStdio.h])
-LALSUITE_CHECK_LIB([LALSupport],[6.8.0],[LALOpenDataFile],[lal/FileIO.h])
+LALSUITE_CHECK_LIB([LAL],[6.9.0],[LALVersion],[lal/LALStdio.h])
+LALSUITE_CHECK_LIB([LALSupport],[6.9.0],[LALOpenDataFile],[lal/FileIO.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG([XLAL LAL])

@@ -8,5 +8,6 @@ EXTRA_DIST = \
 	lalburst-dev.install \
 	lalburst.dirs \
 	lalburst.install \
+	lalburst-python.install \
 	rules \
 	source/format

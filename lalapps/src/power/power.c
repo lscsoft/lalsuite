@@ -41,7 +41,6 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/AVFactories.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/Date.h>
@@ -58,7 +57,6 @@
 #include <lal/GenerateBurst.h>
 #include <lal/Inject.h>
 #include <lal/IIRFilter.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALError.h>
@@ -1158,7 +1156,7 @@ static COMPLEX8FrequencySeries *generate_response(const char *cachefile, const c
 		XLALPrintInfo("generate_response(): generating unit response function\n");
 
 		for(i = 0; i < response->data->length; i++)
-			response->data->data[i] = LAL_COMPLEX8_ONE;
+			response->data->data[i] = 1.0;
 
 		return response;
 	} else {

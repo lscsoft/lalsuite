@@ -16,16 +16,7 @@ endif
 endif
 endif
 
-if LALINSPIRAL
-INSPPROG = \
-	lalapps_qnmode \
-	lalapps_qnmode_table \
-	lalapps_spheroidal_harmonic \
-	lalapps_ringdown_amplitude \
-	lalapps_ringdown_waveform
-endif
-
-bin_PROGRAMS = $(RINGPROG) $(INSPPROG)
+bin_PROGRAMS = $(RINGPROG)
 
 if FRAME
 if LALFRAME
@@ -76,13 +67,6 @@ lalapps_collatesim_SOURCES = collatesim.c
 endif
 endif
 endif
-endif
-if LALINSPIRAL
-lalapps_qnmode_SOURCES = qnmode.c
-lalapps_qnmode_table_SOURCES = qnmode_table.c
-lalapps_spheroidal_harmonic_SOURCES = spheroidal_harmonic.c
-lalapps_ringdown_amplitude_SOURCES = ringdown_amplitude.c
-lalapps_ringdown_waveform_SOURCES = ringdown_waveform.c
 endif
 
 if HAVE_PYTHON

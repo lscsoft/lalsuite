@@ -27,18 +27,16 @@ fi
 
 SFTdir="./testCFSv2_resamp_sfts"
 
-# test if LAL_DATA_PATH has been set ... needed to locate ephemeris-files
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	export LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    mfd_code="${mfd_code} -E ${LALPULSAR_DATADIR}"
+    cfs_code="${cfs_code} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
 
 # ---------- fixed parameter of our test-signal

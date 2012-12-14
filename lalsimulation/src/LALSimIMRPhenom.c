@@ -18,11 +18,10 @@
  */
 
 #include <math.h>
+#include <complex.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include <lal/FrequencySeries.h>
@@ -680,8 +679,8 @@ static int IMRPhenomAGenerateFD(
       + params->psi7 * f / cbrt_f;       /* f^2/3 */
 
     /* generate the waveform */
-    data[i].re = ampEff * cos(psiEff);
-    data[i].im = ampEff * sin(psiEff);
+    data[i] = ampEff * cos(psiEff);
+    data[i] += I * ampEff * sin(psiEff);
   }
 
   return XLAL_SUCCESS;
@@ -776,8 +775,8 @@ static int IMRPhenomBGenerateFD(
       + params->psi7*v7 + params->psi8*v8);
 
     /* generate the waveform */
-    ((*htilde)->data->data)[i].re = amp0 * ampEff * cos(psiEff);
-    ((*htilde)->data->data)[i].im = -amp0 * ampEff * sin(psiEff);
+    ((*htilde)->data->data)[i] = amp0 * ampEff * cos(psiEff);
+    ((*htilde)->data->data)[i] += -I * amp0 * ampEff * sin(psiEff);
   }
 
   return XLAL_SUCCESS;
@@ -864,8 +863,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *si
     const REAL8 f = k / (deltaT * nt);
     REAL8 softWin = (1. + tanh(f - winFLo))
                   * (1. - tanh(f - winFHi)) / 4.;
-    FDdata[k].re *= softWin;
-    FDdata[k].im *= softWin;
+    FDdata[k] *= softWin;
   }
 
   /* allocate output */

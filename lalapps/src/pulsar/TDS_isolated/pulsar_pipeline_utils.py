@@ -236,6 +236,7 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     self.__prior_file = None
     self.__ephem_earth = None
     self.__ephem_sun = None
+    self.__ephem_time = None
     self.__model_type = None
     
     self.__Nlive = None
@@ -345,7 +346,12 @@ class ppeNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
     # set sun ephemeris file
     self.add_var_opt('ephem-sun',es)
     self.__ephem_sun = es
-    
+  
+  def set_ephem_time(self,et):
+    # set time correction ephemeris file
+    self.add_var_opt('ephem-time',et)
+    self_ephem_time = et
+  
   def set_model_type(self,mt):
     # set the pulsar model type
     self.add_var_opt('model-type',mt)

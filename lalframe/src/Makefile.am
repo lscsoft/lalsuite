@@ -1,12 +1,6 @@
 AM_CPPFLAGS = -I$(top_builddir)/include
 LDADD = liblalframe.la
 
-# if FRAMEL
-LALFRAMEU_DEFS = -DUSE_FRAMEL
-# else
-# LALFRAMEU_DEFS = -DUSE_FRAMEC
-# endif
-
 bin_PROGRAMS = \
 	lalfr-lld \
 	lalfr-cksum \
@@ -47,6 +41,7 @@ lalframeinclude_HEADERS = \
 
 lib_LTLIBRARIES = liblalframe.la
 liblalframe_la_SOURCES = \
+	LALFrameU.c \
 	Aggregation.c \
 	FrameCache.c \
 	FrameCalibration.c \
@@ -54,11 +49,8 @@ liblalframe_la_SOURCES = \
 	FrameSeries.c \
 	FrameStream.c \
 	LALFrameIO.c \
-	LALFrameU.c \
 	LALFrameVCSInfo.c \
 	LowLatencyData.c
-
-DEFS = $(LALFRAMEU_DEFS)
 
 noinst_HEADERS = \
 	FrameSeriesRead_source.c \
@@ -66,7 +58,7 @@ noinst_HEADERS = \
 
 liblalframe_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalframe-user-env.shell \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
@@ -76,8 +68,6 @@ sysconf_DATA = \
 	lalframe-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALFrameVCSInfo.h \
 	lalframe-user-env.sh \
 	lalframe-user-env.csh
 
@@ -86,8 +76,8 @@ lalframe-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALFRAME_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
+	@echo "prepend PYTHONPATH $(pyexecdir)" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 	@printf "$(SWIG_USER_ENV)" >>$@
 
@@ -96,16 +86,17 @@ lalframe-user-env.csh lalframe-user-env.sh: lalframe-user-env.shell $(srcdir)/ge
 
 EXTRA_DIST = \
 	generate_user_env.awk \
-	generate_vcs_info.py \
 	LALFrameC.c \
 	LALFrameConfig.h.in \
-	LALFrameL.c \
-	LALFrameVCSInfo.h.in
+	LALFrameL.c
 
-LALFrameVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALFrameConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALFrame $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALFrameVCSInfo.h
+MOSTLYCLEANFILES += LALFrameVCSInfo.h
+LALFrameVCSInfo.h .PHONY : gen-LALFrameVCSInfo.h
+gen-LALFrameVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALFrameVCSInfo.h $(srcdir)/LALFrameVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@
 

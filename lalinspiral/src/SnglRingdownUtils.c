@@ -333,8 +333,8 @@ LALCompareRingdowns (
   ta = XLALGPSToINT8NS( &(aPtr->start_time) );
   tb = XLALGPSToINT8NS( &(bPtr->start_time) );
   params->match = 1;
-  aDet = XLALInstrumentNameToLALDetector(aPtr->ifo);
-  bDet = XLALInstrumentNameToLALDetector(bPtr->ifo);
+  aDet = XLALDetectorPrefixToLALDetector(aPtr->ifo);
+  bDet = XLALDetectorPrefixToLALDetector(bPtr->ifo);
 
 
   /* check that triggers come from different IFOs */
@@ -458,8 +458,8 @@ XLAL3DRinca(
   ta = XLALGPSToINT8NS( &(aPtr->start_time) );
   tb = XLALGPSToINT8NS( &(bPtr->start_time) );
 
-  aDet = XLALInstrumentNameToLALDetector(aPtr->ifo);
-  bDet = XLALInstrumentNameToLALDetector(bPtr->ifo);
+  aDet = XLALDetectorPrefixToLALDetector(aPtr->ifo);
+  bDet = XLALDetectorPrefixToLALDetector(bPtr->ifo);
   lightTravel = 1.e-9 * XLALLightTravelTime(aDet,bDet);
 
   dt = 1.e-9 * (ta - tb);

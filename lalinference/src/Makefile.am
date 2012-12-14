@@ -33,7 +33,7 @@ liblalinference_la_SOURCES = \
 
 liblalinference_la_LDFLAGS = -version-info $(LIBVERSION)
 
-CLEANFILES = \
+MOSTLYCLEANFILES = \
 	lalinference-user-env.shell \
 	lalinference-user-env.sh \
 	lalinference-user-env.csh
@@ -43,8 +43,6 @@ sysconf_DATA = \
 	lalinference-user-env.csh
 
 BUILT_SOURCES = \
-	._vcsinfo \
-	LALInferenceVCSInfo.h \
 	lalinference-user-env.sh \
 	lalinference-user-env.csh
 
@@ -53,7 +51,6 @@ lalinference-user-env.shell: Makefile $(srcdir)/generate_user_env.awk
 	@echo "set LALINFERENCE_PREFIX $(prefix)" >>$@
 	@echo "prepend PATH $(bindir)" >>$@
 	@echo "prepend MANPATH $(mandir)" >>$@
-	@echo "prepend LD_LIBRARY_PATH $(libdir)" >>$@
 	@echo "prepend PKG_CONFIG_PATH $(libdir)/pkgconfig" >>$@
 	@echo "prepend LAL_DATA_PATH $(pkgdatadir)" >>$@
 
@@ -62,15 +59,16 @@ lalinference-user-env.csh lalinference-user-env.sh: lalinference-user-env.shell 
 
 EXTRA_DIST = \
 	LALInferenceConfig.h.in \
-	LALInferenceVCSInfo.h.in \
 	LALInferenceXML.c \
 	LALInferenceXML.h \
-	generate_user_env.awk \
-	generate_vcs_info.py
+	generate_user_env.awk
 
-LALInferenceVCSInfo.h: ._vcsinfo
-
-._vcsinfo: $(srcdir)/generate_vcs_info.py LALInferenceConfig.h
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALInference $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALInferenceVCSInfo.h
+MOSTLYCLEANFILES += LALInferenceVCSInfo.h
+LALInferenceVCSInfo.h .PHONY : gen-LALInferenceVCSInfo.h
+gen-LALInferenceVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALInferenceVCSInfo.h $(srcdir)/LALInferenceVCSInfo.h.git
+endif
 
 @LAL_HEADER_LINK@

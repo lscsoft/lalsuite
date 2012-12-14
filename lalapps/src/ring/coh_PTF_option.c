@@ -52,6 +52,8 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     {"l1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_L1]),1},
 /*    {"t1-data",             no_argument, &(haveTrig[LAL_IFO_T1]), 1 },*/
     {"v1-data",             no_argument, &(localparams.haveTrig[LAL_IFO_V1]),1},
+    {"face-on-analysis",    no_argument, &(localparams.faceOnAnalysis),1},
+    {"face-away-analysis",    no_argument, &(localparams.faceAwayAnalysis),1},
     { "help",               no_argument, 0, 'h' },
     { "version",            no_argument, 0, 'V' },
     { "simulated-data",          required_argument, 0, '6' },
@@ -117,11 +119,12 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
     { "fft-level",               required_argument, 0, '|' },
     { "cluster-window",          required_argument, 0, '4' },
     { "inj-search-window",       required_argument, 0, '3' },
+    { "inj-mchirp-window",       required_argument, 0, '5' },
     { "ligo-calibrated-data",    required_argument, 0, '7' }, 
     { "virgo-calibrated-data",   required_argument, 0, '8' }, 
     { 0, 0, 0, 0 }
   };
-  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:6:7:8:<:>:!:&:(:):#:|";
+  char args[] = "a:A:b:B:c:C:d:D:e:E:f:F:g:G:h:H:i:I:j:J:k:K:l:L:m:M:n:N:o:O:p:P:q:Q:r:R:s:S:t:T:u:U:v:V:w:W:x:X:y:Y:z:Z:1:2:3:4:5:6:7:8:<:>:!:&:(:):#:|";
   char *program = argv[0];
 
   /* set default values for parameters before parsing arguments */
@@ -437,6 +440,9 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       case '3': /* Injection search window */
         localparams.injSearchWindow = atof( optarg );
         break;
+      case '5': /* Injection search window */
+        localparams.injMchirpWindow = atof( optarg );
+        break;
       case '7':
         if (!strcmp("real_4", optarg))
         {
@@ -511,6 +517,16 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
       }
     }
   }
+  /* Set the faceOn-faceAway flag */
+  if (localparams.faceOnAnalysis)
+  {
+    params->faceOnStatistic = 1;
+  }
+  else if (localparams.faceAwayAnalysis)
+  {
+    params->faceOnStatistic = 2;
+  }
+  // Otherwise it takes default value of 0
 
   *params = localparams;
 
@@ -834,6 +850,8 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "--only-segment-numbers=seglist  list of segment numbers to compute\n" );
   fprintf( stderr, "--analyze-inj-segs-only  Only analyze times when injections have been made\n" );
   fprintf( stderr, "--only-template-numbers=tmpltlist  list of filter templates to use\n" );
+  fprintf( stderr, "--face-on-analysis  Run with templates demanding inclination=0\n" );
+  fprintf( stderr, "--face-away-analysis  Run with templates demanding inclination=pi/2\n" );
 
   fprintf( stderr, "\nsky location options:\n" );
   fprintf( stderr, "--right-ascension=ra       right ascension of external trigger in degrees\n" );
@@ -845,6 +863,7 @@ int coh_PTF_usage( const char *program )
   fprintf( stderr, "\ninjection options:\n" );
   fprintf( stderr, "--injection-file=file list of software injections to make into the data. If this option is not given injections are not made\n");
   fprintf( stderr, "--inj-search-window=arg    output injection triggers only within arg of the injections\n");
+  fprintf( stderr, "--inj-mchirp-window=arg    search for injections only with templates with fractional mchirp distance within arg\n");
 
   fprintf( stderr, "\nTrigger extraction options:\n" );
   fprintf( stderr, "--snr-threshold=threshold Only keep triggers with a snr above threshold\n" );

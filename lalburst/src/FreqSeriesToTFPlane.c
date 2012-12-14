@@ -36,7 +36,6 @@
 
 
 #include <lal/Date.h>
-#include <lal/LALComplex.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataBurstUtils.h>

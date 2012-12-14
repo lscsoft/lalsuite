@@ -172,7 +172,7 @@ much computational overhead.
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

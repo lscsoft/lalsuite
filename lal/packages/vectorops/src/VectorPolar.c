@@ -17,10 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include <complex.h>
 #include <math.h>
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#define LAL_USE_COMPLEX_SHORT_MACROS 1
-#include <lal/LALComplex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/VectorOps.h>
@@ -101,7 +99,7 @@ int XLALCOMPLEX8VectorAbs( REAL4Vector *out, const COMPLEX8Vector *in )
 	if ( out->length != in->length )
 		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
-		out->data[i] = LAL_CABSF( in->data[i] );
+		out->data[i] = cabsf( in->data[i] );
 	return 0;
 }
 
@@ -116,7 +114,7 @@ int XLALCOMPLEX16VectorAbs( REAL8Vector *out, const COMPLEX16Vector *in )
 	if ( out->length != in->length )
 		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
-		out->data[i] = LAL_CABS( in->data[i] );
+		out->data[i] = cabs( in->data[i] );
 	return 0;
 }
 
@@ -132,7 +130,7 @@ int XLALCOMPLEX8VectorArg( REAL4Vector *out, const COMPLEX8Vector *in )
 	if ( out->length != in->length )
 		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
-		out->data[i] = LAL_CARGF( in->data[i] );
+		out->data[i] = cargf( in->data[i] );
 	return 0;
 }
 
@@ -147,7 +145,7 @@ int XLALCOMPLEX16VectorArg( REAL8Vector *out, const COMPLEX16Vector *in )
 	if ( out->length != in->length )
 		XLAL_ERROR( XLAL_EBADLEN );
 	for ( i = 0; i < in->length; ++i )
-		out->data[i] = LAL_CARG( in->data[i] );
+		out->data[i] = carg( in->data[i] );
 	return 0;
 }
 

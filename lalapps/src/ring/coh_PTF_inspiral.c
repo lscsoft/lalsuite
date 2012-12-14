@@ -720,6 +720,28 @@ int main(int argc, char **argv)
     /* Loop over templates in the bank */
     for (i = 0; (i < numTmplts); PTFtemplate = PTFtemplate->next, i++)
     {
+      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
+      {
+        if (params->haveTrig[ifoNumber])
+        {
+          segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
+          break;
+        }
+      }
+
+      /* We only analyse middle half so add duration/4 to epoch */
+      XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
+
+      /* If running injections, check whether to analyse */
+      if ( params->injectFile && params->injMchirpWindow )
+      {
+        if (! checkInjectionMchirp(params,PTFtemplate,&segStartTime))
+        {
+          verbose("Injection not within mchirp window for segment %d, template %d at %ld \n", j, i, timeval_subtract(&startTime));
+          continue;
+        }
+      }
+
       /* Determine if this template is non-spinning */
       if (i >= numNoSpinTmplts)
         spinTemplate = 1;
@@ -750,18 +772,6 @@ int main(int argc, char **argv)
       else
         verbose("Generated no spin template %d at %ld \n", i,
                 timeval_subtract(&startTime));
-
-      for (ifoNumber = 0; ifoNumber < LAL_NUM_IFO; ifoNumber++)
-      {
-        if (params->haveTrig[ifoNumber])
-        {
-          segStartTime = segments[ifoNumber]->sgmnt[j].epoch;
-          break;
-        }
-      }
-
-      /* We only analyse middle half so add duration/4 to epoch */
-      XLALGPSAdd(&segStartTime, params->segmentDuration/4.0);
 
       /* Generate the various time series as needed*/
       /* Need to zero these out */
@@ -970,6 +980,10 @@ int main(int argc, char **argv)
               Fplus[ifoNumber] = (REAL4) FplusTmp;
               Fcross[ifoNumber] = (REAL4) FcrossTmp;
             }
+            if (params->faceAwayAnalysis && params->faceOnAnalysis)
+            {
+              params->faceOnStatistic = 1;
+            }
 
             // This function calculates the cohSNR time series and all of the
             // signal based vetoes as appropriate
@@ -997,6 +1011,36 @@ int main(int argc, char **argv)
                                            skyPoints->data[sp].longitude,
                                            skyPoints->data[sp].latitude,
                                            slideIDList[j], timeOffsets);
+
+            if (params->faceAwayAnalysis && params->faceOnAnalysis)
+            {
+              params->faceOnStatistic = 2; 
+
+              coh_PTF_statistic(cohSNR, PTFM, PTFqVec, params, spinTemplate,
+                              timeOffsets, Fplus, Fcross,
+                              j, pValues, gammaBeta, snrComps, nullSNR,
+                              traceSNR, bankVeto, autoVeto,
+                              chiSquare, subBankSize, bankOverlaps,
+                              bankNormOverlaps, dataOverlaps, autoTempOverlaps,
+                              fcTmplt, invspec, segments, invPlan,
+                              &chisqOverlaps,&chisqSnglOverlaps, frequencyRangesPlus,
+                              frequencyRangesCross, startTime);
+
+              verbose("Made coherent statistic for segment %d, template %d, "
+                      "sky point %d at %ld \n", j, i, sp,
+                      timeval_subtract(&startTime));
+
+              eventId = coh_PTF_add_triggers(params, &eventList, &thisEvent,
+                                           cohSNR, *PTFtemplate, eventId,
+                                           spinTemplate,
+                                           pValues, gammaBeta, snrComps,
+                                           nullSNR, traceSNR, bankVeto,
+                                           autoVeto, chiSquare, PTFM,
+                                           skyPoints->data[sp].longitude,
+                                           skyPoints->data[sp].latitude,
+                                           slideIDList[j], timeOffsets);
+            }
+
             params->numEvents = XLALCountMultiInspiral(eventList);
             verbose("There are currently %d triggers.\n", params->numEvents);
             verbose("Generated triggers for segment %d, template %d, sky point %d at %ld \n", j, i, sp, timeval_subtract(&startTime));
@@ -2343,7 +2387,7 @@ UINT8 coh_PTF_add_triggers(
   MultiInspiralTable *lastEvent = *thisEvent;
   MultiInspiralTable *currEvent = NULL;
   UINT4 numDOF = 4;
-  if ( params->singlePolFlag)
+  if ( params->singlePolFlag || params->faceOnStatistic )
     numDOF = 2;
 
   REAL4 cohSNRThreshold = params->threshold;
@@ -2610,6 +2654,10 @@ UINT8 coh_PTF_add_triggers(
           snprintf(currEvent->ifos, LIGOMETA_IFOS_MAX, "%s%s%s%s",
                    params->ifoName[0], params->ifoName[1], params->ifoName[2],
                    params->ifoName[3]);
+        }
+        if (params->faceOnStatistic == 2)
+        {
+          currEvent->inclination = LAL_PI/2.;
         }
 
         /* And add the trigger to the lists. IF it passes clustering! */

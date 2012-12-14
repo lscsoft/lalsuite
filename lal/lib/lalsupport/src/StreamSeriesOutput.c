@@ -146,7 +146,7 @@ product of the components of \c dimLength, above.</dd>
 
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <lal/LALStdlib.h>

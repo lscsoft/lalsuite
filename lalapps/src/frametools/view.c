@@ -18,16 +18,13 @@
 */
 
 /* vim: set noet ts=4 sw=4: */
+#include <complex.h>
 #include <getopt.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#define LAL_USE_COMPLEX_SHORT_MACROS
-#include <lal/LALComplex.h>
 
 #include <lal/LALFrameIO.h>
 #include <lal/FrameCache.h>
@@ -387,9 +384,9 @@ COMPLEX8FrequencySeries * getresp( const char *calibfile, const char *channel, L
 	caldata   = XLALFrGetCalData( epoch, channel, calibfile );
 	response  = XLALCreateCOMPLEX8FrequencySeries( "response", epoch, 0, deltaF, &lalDimensionlessUnit, seglen/2 + 1 );
 	XLALUpdateResponse( response, 0.0, caldata );
-	response->data->data[0] = czerof;
+	response->data->data[0] = 0.0;
 	for ( k = 1; k < response->data->length; ++k )
-		response->data->data[k] = cmulrf( response->data->data[k], dynrange );
+		response->data->data[k] = response->data->data[k] * dynrange;
 	return response;
 }
 
@@ -552,9 +549,9 @@ int calibrate( REAL4TimeSeries *tseries, const char *calfile, REAL8 f_min )
 	}
 	kmin = f_min / fseries->deltaF;
 	for ( k = 0; k < kmin; ++k )
-		fseries->data->data[k] = czerof;
+		fseries->data->data[k] = 0.0;
 	for ( k = kmin; k < fseries->data->length; ++k )
-		fseries->data->data[k] = cmulf(fseries->data->data[k],response->data->data[k]);
+		fseries->data->data[k] = fseries->data->data[k] * response->data->data[k];
 	XLALREAL4FreqTimeFFT( tseries, fseries, prev );
 
 	XLALDestroyCOMPLEX8FrequencySeries( fseries );
@@ -598,8 +595,11 @@ REAL4FrequencySeries * powerspec( REAL4TimeSeries *series, REAL8 segdur, LIGOTim
 		UINT4 k;
 		dynrange_ = 1e20;
 		response = getresp( calibfile, series->name, &series->epoch, spectrum->deltaF, seglen, dynrange_ );
-		for ( k = 1; k < spectrum->data->length; ++k )
-			spectrum->data->data[k] *= LAL_CABS2F( response->data->data[k] );
+		for ( k = 1; k < spectrum->data->length; ++k ) {
+			REAL4 re = crealf(response->data->data[k]);
+			REAL4 im = cimagf(response->data->data[k]);
+			spectrum->data->data[k] *= re*re + im*im;
+		}
 		XLALDestroyCOMPLEX8FrequencySeries( response );
 	}
 
@@ -797,7 +797,7 @@ int dbg_fsdump( COMPLEX8FrequencySeries *series, const char *fname )
 		fp = fopen( fname, "w" );
 		for ( k = 1; k < series->data->length; ++k )
 			fprintf( fp, "%e\t%e\t%e\n", k * series->deltaF,
-					LAL_CABSF(series->data->data[k]), LAL_CARGF(series->data->data[k]) );
+					cabsf(series->data->data[k]), cargf(series->data->data[k]) );
 		fclose( fp );
 	}
 	return 0;

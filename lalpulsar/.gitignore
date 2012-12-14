@@ -21,12 +21,14 @@ lalpulsar-*.tar.gz
 lalpulsar.pc
 lalpulsar.spec
 libtool
+python/__init__.py
+python/git_version.py
 src/LALPulsarConfig.h
 src/LALPulsarVCSInfo.h
 src/git_version
-src/lalpulsar-user-env.shell
 src/lalpulsar-user-env.csh
 src/lalpulsar-user-env.sh
+src/lalpulsar-user-env.shell
 src/stamp-h2
 test/ExtrapolatePulsarSpinsTest
 test/FitToPulsarTest
@@ -74,4 +76,3 @@ test/outputsft_v1.sft
 test/outputsft_v2.sft
 test/outputsftv2_v1.sft
 test/outputsftv2_v2.sft
-python/__init__.py

@@ -29,7 +29,7 @@
  * unless otherwise specified.
  */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
 #include <lal/TimeSeries.h>
@@ -306,7 +306,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
 
   /* If Nyquist freq < 220 QNM freq, exit */
-  if ( deltaT > LAL_PI / modeFreq.re )
+  if ( deltaT > LAL_PI / creal(modeFreq) )
   {
     XLALPrintError( "XLAL Error - %s: Ringdown frequency > Nyquist frequency!\nAt present this situation is not supported.\n", __func__);
     XLALDestroyREAL8Vector( values );
@@ -556,9 +556,9 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   fclose( out );*/
 
   /* Allocate the high sample rate vectors */
-  sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
-  sigImHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
-  omegaHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( modeFreq.im * deltaTHigh )) );
+  sigReHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( cimag(modeFreq) * deltaTHigh )) );
+  sigImHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( cimag(modeFreq) * deltaTHigh )) );
+  omegaHi  = XLALCreateREAL8Vector( retLen + (UINT4)ceil( 20 / ( cimag(modeFreq) * deltaTHigh )) );
   ampNQC   = XLALCreateREAL8Vector( retLen );
   phaseNQC = XLALCreateREAL8Vector( retLen );
 
@@ -597,10 +597,10 @@ int XLALSimIMRSpinAlignedEOBWaveform(
       XLAL_ERROR( XLAL_EFUNC );
     }
 
-    ampNQC->data[i]  = XLALCOMPLEX16Abs( hLM );
-    sigReHi->data[i] = (REAL4)(amp0 * hLM.re);
-    sigImHi->data[i] = (REAL4)(amp0 * hLM.im);
-    phaseNQC->data[i]= XLALCOMPLEX16Arg( hLM ) + phaseCounter * LAL_TWOPI;
+    ampNQC->data[i]  = cabs( hLM );
+    sigReHi->data[i] = (REAL4)(amp0 * creal(hLM));
+    sigImHi->data[i] = (REAL4)(amp0 * cimag(hLM));
+    phaseNQC->data[i]= carg( hLM ) + phaseCounter * LAL_TWOPI;
 
     if ( i && phaseNQC->data[i] > phaseNQC->data[i-1] )
     {
@@ -710,14 +710,14 @@ int XLALSimIMRSpinAlignedEOBWaveform(
       XLAL_ERROR( XLAL_EFUNC );
     }
 
-    hLM.re = sigReHi->data[i];
-    hLM.im = sigImHi->data[i];
+    hLM = sigReHi->data[i];
+    hLM += I * sigImHi->data[i];
     //fprintf( out, "%.16e %.16e %.16e %.16e %.16e\n", timeHi.data[i], hLM.re, hLM.im, hNQC.re, hNQC.im );
 
-    hLM = XLALCOMPLEX16Mul( hNQC, hLM );
-    sigReHi->data[i] = (REAL4) hLM.re;
-    sigImHi->data[i] = (REAL4) hLM.im;
-    sigAmpSqHi = hLM.re*hLM.re+hLM.im*hLM.im;
+    hLM *= hNQC;
+    sigReHi->data[i] = (REAL4) creal(hLM);
+    sigImHi->data[i] = (REAL4) cimag(hLM);
+    sigAmpSqHi = creal(hLM)*creal(hLM)+cimag(hLM)*cimag(hLM);
     if (sigAmpSqHi < oldsigAmpSqHi && peakCount == 0 && (i-1)*deltaTHigh/mTScaled < timePeak - timewavePeak) 
     {
       timewavePeak = (i-1)*deltaTHigh/mTScaled;
@@ -817,10 +817,10 @@ int XLALSimIMRSpinAlignedEOBWaveform(
       XLAL_ERROR( XLAL_EFUNC );
     }
 
-    hLM = XLALCOMPLEX16Mul( hNQC, hLM );
+    hLM *= hNQC;
 
-    sigReVec->data[i] = amp0 * hLM.re;
-    sigImVec->data[i] = amp0 * hLM.im;
+    sigReVec->data[i] = amp0 * creal(hLM);
+    sigImVec->data[i] = amp0 * cimag(hLM);
   }
 
   /**
@@ -850,10 +850,10 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   MultSphHarmP = XLALSpinWeightedSphericalHarmonic( inc, coa_phase, -2, 2, 2 );
   MultSphHarmM = XLALSpinWeightedSphericalHarmonic( inc, coa_phase, -2, 2, -2 );
 
-  y_1 =   MultSphHarmP.re + MultSphHarmM.re;
-  y_2 =   MultSphHarmM.im - MultSphHarmP.im;
-  z1 = - MultSphHarmM.im - MultSphHarmP.im;
-  z2 =   MultSphHarmM.re - MultSphHarmP.re;
+  y_1 =   creal(MultSphHarmP) + creal(MultSphHarmM);
+  y_2 =   cimag(MultSphHarmM) - cimag(MultSphHarmP);
+  z1 = - cimag(MultSphHarmM) - cimag(MultSphHarmP);
+  z2 =   creal(MultSphHarmM) - creal(MultSphHarmP);
 
   for ( i = 0; i < (INT4)sigReVec->length; i++ )
   {

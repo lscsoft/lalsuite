@@ -606,11 +606,11 @@ double XLALExcessPowerFilterInnerProduct(
 {
 	const int k10 = round(filter1->f0 / filter1->deltaF);
 	const int k20 = round(filter2->f0 / filter2->deltaF);
-	const double complex *f1data = (const double complex *) filter1->data->data;
-	const double complex *f2data = (const double complex *) filter2->data->data;
+	const COMPLEX16 *f1data = (const COMPLEX16 *) filter1->data->data;
+	const COMPLEX16 *f2data = (const COMPLEX16 *) filter2->data->data;
 	const double *pdata = psd ? psd->data->data - (int) round(psd->f0 / psd->deltaF) : NULL;
 	int k1, k2;
-	double complex sum = 0;
+	COMPLEX16 sum = 0;
 
 	/*
 	 * check that filters have same frequency resolution, and if a PSD

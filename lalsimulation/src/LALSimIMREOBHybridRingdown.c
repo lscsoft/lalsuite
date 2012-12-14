@@ -34,12 +34,11 @@ between the two models in ring-down waveform is the pseudo-QNM introduced
 in the latter (see Taracchini et al. PRD 86, 024011 (2012) for more details).
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <stdlib.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
-#include <lal/LALConstants.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_spline.h>
@@ -140,25 +139,25 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
   for (i = 0; i < nmodes; ++i)
   {
 	gsl_matrix_set(coef, 0, i, 1);
-	gsl_matrix_set(coef, 1, i, - modefreqs->data[i].im);
-	gsl_matrix_set(coef, 2, i, exp(-modefreqs->data[i].im*t1) * cos(modefreqs->data[i].re*t1));
-	gsl_matrix_set(coef, 3, i, exp(-modefreqs->data[i].im*t2) * cos(modefreqs->data[i].re*t2));
-	gsl_matrix_set(coef, 4, i, exp(-modefreqs->data[i].im*t3) * cos(modefreqs->data[i].re*t3));
-	gsl_matrix_set(coef, 5, i, exp(-modefreqs->data[i].im*t4) * cos(modefreqs->data[i].re*t4));
-	gsl_matrix_set(coef, 6, i, exp(-modefreqs->data[i].im*t5) * cos(modefreqs->data[i].re*t5));
-	gsl_matrix_set(coef, 7, i, exp(-modefreqs->data[i].im*t5) * 
-				      (-modefreqs->data[i].im * cos(modefreqs->data[i].re*t5)
-				       -modefreqs->data[i].re * sin(modefreqs->data[i].re*t5)));
+	gsl_matrix_set(coef, 1, i, - cimag(modefreqs->data[i]));
+	gsl_matrix_set(coef, 2, i, exp(-cimag(modefreqs->data[i])*t1) * cos(creal(modefreqs->data[i])*t1));
+	gsl_matrix_set(coef, 3, i, exp(-cimag(modefreqs->data[i])*t2) * cos(creal(modefreqs->data[i])*t2));
+	gsl_matrix_set(coef, 4, i, exp(-cimag(modefreqs->data[i])*t3) * cos(creal(modefreqs->data[i])*t3));
+	gsl_matrix_set(coef, 5, i, exp(-cimag(modefreqs->data[i])*t4) * cos(creal(modefreqs->data[i])*t4));
+	gsl_matrix_set(coef, 6, i, exp(-cimag(modefreqs->data[i])*t5) * cos(creal(modefreqs->data[i])*t5));
+	gsl_matrix_set(coef, 7, i, exp(-cimag(modefreqs->data[i])*t5) * 
+				      (-cimag(modefreqs->data[i]) * cos(creal(modefreqs->data[i])*t5)
+				       -creal(modefreqs->data[i]) * sin(creal(modefreqs->data[i])*t5)));
 	gsl_matrix_set(coef, 8, i, 0);
-	gsl_matrix_set(coef, 9, i, - modefreqs->data[i].re);
-	gsl_matrix_set(coef, 10, i, -exp(-modefreqs->data[i].im*t1) * sin(modefreqs->data[i].re*t1));
-	gsl_matrix_set(coef, 11, i, -exp(-modefreqs->data[i].im*t2) * sin(modefreqs->data[i].re*t2));
-	gsl_matrix_set(coef, 12, i, -exp(-modefreqs->data[i].im*t3) * sin(modefreqs->data[i].re*t3));
-	gsl_matrix_set(coef, 13, i, -exp(-modefreqs->data[i].im*t4) * sin(modefreqs->data[i].re*t4));
-	gsl_matrix_set(coef, 14, i, -exp(-modefreqs->data[i].im*t5) * sin(modefreqs->data[i].re*t5));
-	gsl_matrix_set(coef, 15, i, exp(-modefreqs->data[i].im*t5) * 
-				      ( modefreqs->data[i].im * sin(modefreqs->data[i].re*t5)
-				       -modefreqs->data[i].re * cos(modefreqs->data[i].re*t5)));
+	gsl_matrix_set(coef, 9, i, - creal(modefreqs->data[i]));
+	gsl_matrix_set(coef, 10, i, -exp(-cimag(modefreqs->data[i])*t1) * sin(creal(modefreqs->data[i])*t1));
+	gsl_matrix_set(coef, 11, i, -exp(-cimag(modefreqs->data[i])*t2) * sin(creal(modefreqs->data[i])*t2));
+	gsl_matrix_set(coef, 12, i, -exp(-cimag(modefreqs->data[i])*t3) * sin(creal(modefreqs->data[i])*t3));
+	gsl_matrix_set(coef, 13, i, -exp(-cimag(modefreqs->data[i])*t4) * sin(creal(modefreqs->data[i])*t4));
+	gsl_matrix_set(coef, 14, i, -exp(-cimag(modefreqs->data[i])*t5) * sin(creal(modefreqs->data[i])*t5));
+	gsl_matrix_set(coef, 15, i, exp(-cimag(modefreqs->data[i])*t5) * 
+				      ( cimag(modefreqs->data[i]) * sin(creal(modefreqs->data[i])*t5)
+				       -creal(modefreqs->data[i]) * cos(creal(modefreqs->data[i])*t5)));
   }
   for (i = 0; i < 2; ++i)
   {
@@ -255,12 +254,12 @@ static INT4 XLALSimIMREOBHybridRingdownWave(
 	rdwave2->data[j] = 0;
 	for (i = 0; i < nmodes; ++i)
 	{
-	  rdwave1->data[j] += exp(- tj * modefreqs->data[i].im)
-			* ( modeamps->data[i] * cos(tj * modefreqs->data[i].re)
-			+   modeamps->data[i + nmodes] * sin(tj * modefreqs->data[i].re) );
-	  rdwave2->data[j] += exp(- tj * modefreqs->data[i].im)
-			* (- modeamps->data[i] * sin(tj * modefreqs->data[i].re)
-			+   modeamps->data[i + nmodes] * cos(tj * modefreqs->data[i].re) );
+	  rdwave1->data[j] += exp(- tj * cimag(modefreqs->data[i]))
+			* ( modeamps->data[i] * cos(tj * creal(modefreqs->data[i]))
+			+   modeamps->data[i + nmodes] * sin(tj * creal(modefreqs->data[i])) );
+	  rdwave2->data[j] += exp(- tj * cimag(modefreqs->data[i]))
+			* (- modeamps->data[i] * sin(tj * creal(modefreqs->data[i]))
+			+   modeamps->data[i + nmodes] * cos(tj * creal(modefreqs->data[i])) );
 	}
   }
 
@@ -474,8 +473,8 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
           NRPeakOmega22 = GetNRSpinPeakOmega( l, m, eta, a ) / mTot;
           /*printf("a and NRomega in QNM freq: %.16e %.16e %.16e %.16e %.16e\n",spin1[2],spin2[2],
                  mTot/LAL_MTSUN_SI,a,NRPeakOmega22*mTot);*/
-          modefreqs->data[7].re = (NRPeakOmega22/finalMass + modefreqs->data[0].re) / 2.;
-          modefreqs->data[7].im = 10./3. * modefreqs->data[0].im;
+          modefreqs->data[7] = (NRPeakOmega22/finalMass + creal(modefreqs->data[0])) / 2.;
+          modefreqs->data[7] += I * 10./3. * cimag(modefreqs->data[0]);
       }
 
       /*for (j = 0; j < nmodes; j++)
@@ -484,7 +483,7 @@ static INT4 XLALSimIMREOBHybridAttachRingdown(
       }*/
 
       /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-      Nrdwave = (INT4) (EOB_RD_EFOLDS / modefreqs->data[0].im / dt);
+      Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
 
       /* Check the value of attpos, to prevent memory access problems later */
       if ( matchrange->data[0] * mTot / dt < 5 || matchrange->data[1]*mTot/dt > matchrange->data[2] *mTot/dt - 2 )

@@ -206,12 +206,12 @@ FUNC ( LALStatus *stat, FILE *stream, GTYPE *grid )
     for ( i = 0; i < pLength; i++ ) {
 #if COMPLEX
       for ( j = 0; j < length; j++ ) {
-	if ( fprintf( stream, FMT " " FMT " ", data->re, data->im ) < 0 ) {
+	if ( fprintf( stream, FMT " " FMT " ", creal(*data), cimag(*data) ) < 0 ) {
 	  ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
 	}
 	data++;
       }
-      if ( fprintf( stream, FMT " " FMT "\n", data->re, data->im ) < 0 ) {
+      if ( fprintf( stream, FMT " " FMT "\n", creal(*data), cimag(*data) ) < 0 ) {
 	ABORT( stat, STREAMOUTPUTH_EPRN, STREAMOUTPUTH_MSGEPRN );
       }
       data++;

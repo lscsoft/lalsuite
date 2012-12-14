@@ -58,7 +58,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/src
 
 if HAVE_PYTHON
 pkgpython_PYTHON = \
-	__init__.py
+	__init__.py \
+	git_version.py
 dist_bin_SCRIPTS = \
 	lalapps_path2cache \
 	lalapps_searchsum2cache
@@ -75,20 +76,26 @@ EXTRA_DIST = \
 	lalappsfrutils.h \
 	processtable.c \
 	processtable.h \
-	LALAppsVCSInfo.h.in \
-	generate_vcs_info.py\
-	git_version.py.in
-
-BUILT_SOURCES = \
-	._vcsinfo \
-	LALAppsVCSInfo.h \
 	git_version.py
 
-LALAppsVCSInfo.h: ._vcsinfo
+MOSTLYCLEANFILES =
 
-git_version.py: ._vcsinfo
+BUILT_SOURCES =
 
-._vcsinfo: $(srcdir)/generate_vcs_info.py
-	@$(PYTHON) $(srcdir)/generate_vcs_info.py LALApps $(srcdir) $$PWD
+if HAVE_GIT_REPO
+BUILT_SOURCES += LALAppsVCSInfo.h
+MOSTLYCLEANFILES += LALAppsVCSInfo.h
+LALAppsVCSInfo.h .PHONY : gen-LALAppsVCSInfo.h
+gen-LALAppsVCSInfo.h :
+	$(GENERATE_VCS_INFO) LALAppsVCSInfo.h $(srcdir)/LALAppsVCSInfo.h.git
+endif
+
+if HAVE_GIT_REPO
+BUILT_SOURCES += git_version.py
+MOSTLYCLEANFILES += git_version.py
+git_version.py .PHONY : gen-git_version.py
+gen-git_version.py :
+	$(GENERATE_VCS_INFO) git_version.py $(srcdir)/git_version.py.git
+endif
 
 TESTS = lalapps_version

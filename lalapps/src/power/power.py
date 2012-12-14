@@ -146,7 +146,7 @@ def make_cache_entry(input_cache, description, path):
 	# summarize segment information
 	seglists = segments.segmentlistdict()
 	for c in input_cache:
-		seglists |= c.to_segmentlistdict()
+		seglists |= c.segmentlistdict
 
 	# obtain instrument list
 	instruments = seglists.keys()

@@ -1,4 +1,4 @@
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LALDatatypes.h>
@@ -18,7 +18,7 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 #define TYPE COMPLEX16
 #define FMT "%e\t%le\t%le\n"
 #define HEADER "# Freq (Hz)\tRe(Value)\tIm(Value)\n"
-#define ARG data->re,data->im
+#define ARG creal(*data),cimag(*data)
 #include "PrintFrequencySeries_source.c"
 #undef TYPECODE
 #undef TYPE
@@ -30,7 +30,7 @@ enum { LALUnitTextSize = sizeof("10^-32768 m^-32768/32767 kg^-32768/32767 "
 #define TYPE COMPLEX8
 #define FMT "%e\t%e\t%e\n"
 #define HEADER "# Freq (Hz)\tRe(Value)\tIm(Value)\n"
-#define ARG data->re,data->im
+#define ARG crealf(*data),cimagf(*data)
 #include "PrintFrequencySeries_source.c"
 #undef TYPECODE
 #undef TYPE

@@ -47,6 +47,7 @@
 /** \cond DONT_DOXYGEN */
 #include <config.h>
 
+#include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -55,7 +56,6 @@
 #include <unistd.h>
 #endif
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
@@ -276,8 +276,8 @@ int main( int argc, char *argv[] )
   for ( j = 0; j < n; ++j ) /* add a 50 Hz line and a 500 Hz ringdown */
   {
     REAL4 t = j * dt;
-    z.data->data[j].re += 0.2 * cos( LAL_TWOPI * 50.0 * t );
-    z.data->data[j].im += exp( -t ) * sin( LAL_TWOPI * 500.0 * t );
+    z.data->data[j] += 0.2 * cos( LAL_TWOPI * 50.0 * t );
+    z.data->data[j] += I * exp( -t ) * sin( LAL_TWOPI * 500.0 * t );
   }
   LALCPrintTimeSeries( &z, "z.out" );
   TestStatus( &status, CODES( 0 ), 1 );

@@ -436,7 +436,7 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
   EmissionTime emit;
 
   /* find the SSB barycenter time delay */
-  LALBarycenter(status, &emit, &baryinput, &earth);
+  XLALBarycenter(&emit, &baryinput, &earth);
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
@@ -477,8 +477,8 @@ LALTimingNoiseHeterodyne	( LALStatus  *status,
   output->phi1 = 2.*LAL_PI*fmod(phi,1.0);
 
   /* Heterodyne to remove timing noise */
-  output->Vh.re = (REAL8)input->Vh.re*cos(-DPhi) - (REAL8)input->Vh.im*sin(-DPhi);
-  output->Vh.im = (REAL8)input->Vh.re*sin(-DPhi) + (REAL8)input->Vh.im*cos(-DPhi);
+  output->Vh = (REAL8)creal(input->Vh)*cos(-DPhi) - (REAL8)cimag(input->Vh)*sin(-DPhi)
+    + I *((REAL8)creal(input->Vh)*sin(-DPhi) + (REAL8)cimag(input->Vh)*cos(-DPhi));
 
   DETATCHSTATUSPTR(status);
   RETURN(status);

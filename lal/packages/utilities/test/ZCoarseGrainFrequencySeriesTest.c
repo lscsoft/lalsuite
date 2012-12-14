@@ -17,7 +17,7 @@
 *  MA  02111-1307  USA
 */
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <complex.h>
 #include <lal/LALStdlib.h>
 
 #include <math.h>
@@ -209,26 +209,26 @@ main( int argc, char *argv[] )
    REAL8      f;
 
    const COMPLEX16  testInputDataData[ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH0]
-     = {{0.0,0.0}, {1.0,0.0}, {2.0,0.0}, {3.0,0.0},
-        {4.0,0.0}, {5.0,0.0}, {6.0,0.0}, {7.0,0.0}};
+     = {0.0, 1.0, 2.0, 3.0,
+        4.0, 5.0, 6.0, 7.0};
 
    const COMPLEX16
      expectedOutput1DataData[ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH1]
-     = {{0.5,0.0}, {2.0,0.0}, {4.0,0.0}, {6.0,0.0}};
+     = {0.5, 2.0, 4.0, 6.0};
 
    const COMPLEX16
      expectedOutput2DataData[ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH2]
-     = {{(2.0/3.0),0.0}, {3.0,0.0}, {6.0,0.0}};
+     = {(2.0/3.0), 3.0, 6.0};
 
    const COMPLEX16
      testInput3DataData[ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH3]
-     = {{40.0,1.0/40.0}, {41.0,1.0/41.0}, {42.0,1.0/42.0},
-        {43.0,1.0/43.0}, {44.0,1.0/44.0}};
+     = {40.0 + I * 1.0/40.0, 41.0 + I * 1.0/41.0, 42.0 + I * 1.0/42.0,
+        43.0 + I * 1.0/43.0, 44.0 + I * 1.0/44.0};
 
    const COMPLEX16
      expectedOutput4DataData[ZCOARSEGRAINFREQUENCYSERIESTESTC_LENGTH4]
-     = {{41.0, (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0},
-        {43.0, (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0}};
+     = {41.0 + I *  (1.0/40.0+2.0/41.0+1.0/42.0) / 4.0,
+        43.0 + I *  (1.0/42.0+2.0/43.0+1.0/44.0) / 4.0};
 
    COMPLEX16FrequencySeries             goodInput;
    COMPLEX16FrequencySeries     goodOutput;
@@ -687,14 +687,14 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%1.15e + %1.15e i\n  should be %1.15e + %1.15e i\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutput1DataData[0].re, expectedOutput1DataData[0].im);
+            creal(goodOutput.data->data[0]), cimag(goodOutput.data->data[0]),
+            creal(expectedOutput1DataData[0]), cimag(expectedOutput1DataData[0]));
    }
-   if ((fabs(goodOutput.data->data[0].re - expectedOutput1DataData[0].re)
-        /expectedOutput1DataData[0].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   if ((fabs(creal(goodOutput.data->data[0] - expectedOutput1DataData[0]))
+        /creal(expectedOutput1DataData[0]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
         ||
-       (fabs(goodOutput.data->data[0].im - expectedOutput1DataData[0].im)
-        /expectedOutput1DataData[0].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+       (fabs(cimag(goodOutput.data->data[0] - expectedOutput1DataData[0]))
+        /creal(expectedOutput1DataData[0]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
    {
      printf("  FAIL: Valid data test #1\n");
@@ -712,14 +712,14 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%1.15e + %1.15e i\n  should be %1.15e + %1.15e i\n", f,
-              goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutput1DataData[i].re, expectedOutput1DataData[i].im);
+              creal(goodOutput.data->data[i]), cimag(goodOutput.data->data[i]),
+              creal(expectedOutput1DataData[i]), cimag(expectedOutput1DataData[i]));
      }
-     if ((fabs(goodOutput.data->data[i].re - expectedOutput1DataData[i].re)
-          /expectedOutput1DataData[i].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+     if ((fabs(creal(goodOutput.data->data[i] - expectedOutput1DataData[i]))
+          /creal(expectedOutput1DataData[i]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          ||
-         (fabs(goodOutput.data->data[i].im - expectedOutput1DataData[i].im)
-          /expectedOutput1DataData[i].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+         (fabs(cimag(goodOutput.data->data[i] - expectedOutput1DataData[i]))
+          /creal(expectedOutput1DataData[i]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          )
      {
        printf("  FAIL: Valid data test #1\n");
@@ -884,14 +884,14 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%1.15e + %1.15e i\n  should be %1.15e + %1.15e i\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutput2DataData[0].re, expectedOutput2DataData[0].im);
+            creal(goodOutput.data->data[0]), cimag(goodOutput.data->data[0]),
+            creal(expectedOutput2DataData[0]), cimag(expectedOutput2DataData[0]));
    }
-   if ((fabs(goodOutput.data->data[0].re - expectedOutput2DataData[0].re)
-        /expectedOutput2DataData[0].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   if ((fabs(creal(goodOutput.data->data[0] - expectedOutput2DataData[0]))
+        /creal(expectedOutput2DataData[0]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
         ||
-       (fabs(goodOutput.data->data[0].im - expectedOutput2DataData[0].im)
-        /expectedOutput2DataData[0].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+       (fabs(cimag(goodOutput.data->data[0] - expectedOutput2DataData[0]))
+        /creal(expectedOutput2DataData[0]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
    {
      printf("  FAIL: Valid data test #2\n");
@@ -909,14 +909,14 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%1.15e + %1.15e i\n  should be %1.15e + %1.15e i\n", f,
-              goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutput2DataData[i].re, expectedOutput2DataData[i].im);
+              creal(goodOutput.data->data[i]), cimag(goodOutput.data->data[i]),
+              creal(expectedOutput2DataData[i]), cimag(expectedOutput2DataData[i]));
      }
-     if ((fabs(goodOutput.data->data[i].re - expectedOutput2DataData[i].re)
-          /expectedOutput2DataData[i].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+     if ((fabs(creal(goodOutput.data->data[i] - expectedOutput2DataData[i]))
+          /creal(expectedOutput2DataData[i]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          ||
-         (fabs(goodOutput.data->data[i].im - expectedOutput2DataData[i].im)
-          /expectedOutput2DataData[i].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+         (fabs(cimag(goodOutput.data->data[i] - expectedOutput2DataData[i]))
+          /cimag(expectedOutput2DataData[i]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
      {
        printf("  FAIL: Valid data test #2 \n");
@@ -1110,14 +1110,14 @@ main( int argc, char *argv[] )
    if (optVerbose)
    {
      printf("hBarTilde(0)=%1.15e + %1.15e i\n  should be %1.15e + %1.15e i\n",
-            goodOutput.data->data[0].re, goodOutput.data->data[0].im,
-            expectedOutput4DataData[0].re, expectedOutput4DataData[0].im);
+            creal(goodOutput.data->data[0]), cimag(goodOutput.data->data[0]),
+            creal(expectedOutput4DataData[0]), cimag(expectedOutput4DataData[0]));
    }
-   if ((fabs(goodOutput.data->data[0].re - expectedOutput4DataData[0].re)
-        /expectedOutput4DataData[0].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+   if ((fabs(creal(goodOutput.data->data[0] - expectedOutput4DataData[0]))
+        /creal(expectedOutput4DataData[0]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
         ||
-       (fabs(goodOutput.data->data[0].im - expectedOutput4DataData[0].im)
-        /expectedOutput4DataData[0].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+       (fabs(cimag(goodOutput.data->data[0] - expectedOutput4DataData[0]))
+        /creal(expectedOutput4DataData[0]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
    {
      printf("  FAIL: Valid data test #3\n");
@@ -1135,14 +1135,14 @@ main( int argc, char *argv[] )
      if (optVerbose)
      {
        printf("hBarTilde(%f Hz)=%1.15e + %1.15e i\n  should be %1.15e + %1.15e i\n", f,
-              goodOutput.data->data[i].re, goodOutput.data->data[i].im,
-              expectedOutput4DataData[i].re, expectedOutput4DataData[i].im);
+              creal(goodOutput.data->data[i]), cimag(goodOutput.data->data[i]),
+              creal(expectedOutput4DataData[i]), cimag(expectedOutput4DataData[i]));
      }
-     if ((fabs(goodOutput.data->data[i].re - expectedOutput4DataData[i].re)
-          /expectedOutput4DataData[i].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+     if ((fabs(creal(goodOutput.data->data[i] - expectedOutput4DataData[i]))
+          /creal(expectedOutput4DataData[i]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
          ||
-         (fabs(goodOutput.data->data[i].im - expectedOutput4DataData[i].im)
-          /expectedOutput4DataData[i].re > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
+         (fabs(cimag(goodOutput.data->data[i] - expectedOutput4DataData[i]))
+          /creal(expectedOutput4DataData[i]) > ZCOARSEGRAINFREQUENCYSERIESTESTC_TOL )
        )
      {
        printf("  FAIL: Valid data test #3 \n");

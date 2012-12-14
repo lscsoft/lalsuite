@@ -174,6 +174,7 @@ typedef struct tagInputParams{
 
   CHAR earthfile[256];
   CHAR sunfile[256];
+  CHAR timefile[256];
 
   INT4 onlyjoint;
 
@@ -286,11 +287,13 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh);
 
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
-  CHAR *det, LALDetector *detpos, EphemerisData *edat );
+  CHAR *det, LALDetector *detpos, EphemerisData *edat,
+  TimeCorrectionData *tdat, TimeCorrectionType ttype);
 
 /* function to get a vector of phases for all the points in data */
 REAL8Vector *get_phi(DataStructure data, BinaryPulsarParams params,
-  BarycenterInput bary, EphemerisData *edat );
+  BarycenterInput bary, EphemerisData *edat, TimeCorrectionData *tdat,
+  TimeCorrectionType ttype);
 
 /* function to get the lengths of consecutive chunks of data */
 void get_chunk_lengths(DataStructure data);

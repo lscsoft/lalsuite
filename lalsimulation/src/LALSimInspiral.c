@@ -17,6 +17,7 @@
  *  MA  02111-1307  USA
  */
 
+#include <complex.h>
 #include <math.h>
 
 #include <gsl/gsl_const.h>
@@ -24,10 +25,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
-#define LAL_USE_COMPLEX_SHORT_MACROS
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -333,19 +331,19 @@ int XLALSimAddMode(
 	Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, m);
 	for ( j = 0; j < hmode->data->length; ++j ) {
 		COMPLEX16 hpc;
-		hpc = cmul(Y, hmode->data->data[j]);
-		hplus->data->data[j] += LAL_REAL(hpc);
-		hcross->data->data[j] += -LAL_IMAG(hpc);
+		hpc = Y * hmode->data->data[j];
+		hplus->data->data[j] += creal(hpc);
+		hcross->data->data[j] += -cimag(hpc);
 	}
 	if ( sym ) { /* equatorial symmetry: add in -m mode */
 		Y = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, l, -m);
 		if ( l % 2 ) /* l is odd */
-			Y = cneg(Y);
+			Y = -Y;
 		for ( j = 0; j < hmode->data->length; ++j ) {
 			COMPLEX16 hpc;
-			hpc = cmul(Y, LAL_CONJ(hmode->data->data[j]));
-			hplus->data->data[j] += LAL_REAL(hpc);
-			hcross->data->data[j] += -LAL_IMAG(hpc);
+			hpc = Y * conj(hmode->data->data[j]);
+			hplus->data->data[j] += creal(hpc);
+			hcross->data->data[j] += -cimag(hpc);
 		}
 	}
 	return 0;
@@ -437,7 +435,7 @@ COMPLEX16TimeSeries *XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(
 	if ( m < 0 ) {
 		REAL8 sign = l % 2 ? -1.0 : 1.0;
 		for ( j = 0; j < hlm->data->length; ++j )
-			hlm->data->data[j] = cmulr(LAL_CONJ(hlm->data->data[j]), sign);
+			hlm->data->data[j] = sign * conj(hlm->data->data[j]);
 	}
 	return hlm;
 }

@@ -29,19 +29,17 @@ else
 fi
 
 
-if [ -z "$LAL_DATA_PATH" ]; then
-    if [ -n "$LALPULSAR_PREFIX" ]; then
-	LAL_DATA_PATH=".:${LALPULSAR_PREFIX}/share/lalpulsar";
-    else
-	echo
-	echo "Need environment-variable LALPULSAR_PREFIX, or LAL_DATA_PATH to be set"
-	echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-	echo "This might indicate an incomplete LAL+LALPULSAR installation"
-	echo
-	exit 1
-    fi
+if [ -n "${LALPULSAR_DATADIR}" ]; then
+    v2_code="${v2_code} -E ${LALPULSAR_DATADIR}"
+    v4_code="${v4_code} -E ${LALPULSAR_DATADIR}"
+else
+    echo
+    echo "Need environment-variable LALPULSAR_DATADIR to be set to"
+    echo "your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
+    echo "This might indicate an incomplete LAL+LALPULSAR installation"
+    echo
+    exit 1
 fi
-export LAL_DATA_PATH
 
 #prepare test subdirectory
 if [ ! -d "$testDIR" ]; then
@@ -49,22 +47,6 @@ if [ ! -d "$testDIR" ]; then
 else
 ## cleanup: remove previous timeseries output
     rm -f $testDIR/* || true
-fi
-
-# determine ephemdir from LAL_DATA_PATH
-SAVEIFS="$IFS"
-foundEphem=no
-IFS=:
-for ephemdir in $LAL_DATA_PATH; do test -r $ephemdir/earth00-04.dat && foundEphem=yes && break; done
-IFS="$SAVEIFS"
-
-if [ "$foundEphem" = "no" ]; then
-    echo "Failed to located ephemeris files."
-    echo "Need environment-variable LAL_DATA_PATH to be set"
-    echo "to your ephemeris-directory (e.g. /usr/local/share/lalpulsar)"
-    echo "This might indicate an incomplete LAL+LALPULSAR installation"
-    echo
-    exit 1
 fi
 
 # input parameters
@@ -96,8 +78,8 @@ v2_cfg=In.data-v2
 v4_cfg=In.data-v4
 v4_log=v4.log
 
-v2_CL="-i $v2_cfg -I $IFO -E $ephemdir -S $refTime -G $startTime -b"
-v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -E $ephemdir -y 00-04 -l $v4_log --generationMode=1 -b -v${debug}"
+v2_CL="-i $v2_cfg -I $IFO -S $refTime -G $startTime -b"
+v4_CL="-I $IFO @${v4_cfg} --Tsft=$Tsft --startTime=$startTime --duration=$duration -y 00-04 -l $v4_log --generationMode=1 -b -v${debug}"
 
 ## produce In.data-v2 file for makefakedata_v2
 echo "

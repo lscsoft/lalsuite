@@ -30,7 +30,7 @@
  */
 
 #include <math.h>
-#include <lal/LALComplex.h>
+#include <complex.h>
 #include "LALSimIMREOBNRv2.h"
 
 /* Include static functions */
@@ -820,9 +820,9 @@ UNUSED static int  XLALSimIMREOBGetFactorizedWaveform(
     XLALPrintError("Error in GSL function\n" );
     XLAL_ERROR( XLAL_EFUNC );
   }
-  Tlm = XLALCOMPLEX16Exp( XLALCOMPLEX16Rect( lnr1.val + LAL_PI * hathatk,
+  Tlm = cexp( ( lnr1.val + LAL_PI * hathatk ) + I * (
         arg1.val + 2.0 * hathatk * log(4.0*k/sqrt(LAL_E)) ) );
-  Tlm = XLALCOMPLEX16DivReal( Tlm, z2.val );
+  Tlm /= z2.val;
 
   /* Calculate the residue phase and amplitude terms */
   switch( l )
@@ -1084,9 +1084,8 @@ UNUSED static int  XLALSimIMREOBGetFactorizedWaveform(
     rholmPwrl *= rholm;
   }
 
-  *hlm = XLALCOMPLEX16MulReal( XLALCOMPLEX16Mul( Tlm, XLALCOMPLEX16Polar( 1.0, deltalm) ),
-             Slm*rholmPwrl );
-  *hlm = XLALCOMPLEX16Mul( *hlm, hNewton );
+  *hlm = Tlm * cexp(I * deltalm) * Slm * rholmPwrl;
+  *hlm *= hNewton;
 
   return XLAL_SUCCESS;
 } 

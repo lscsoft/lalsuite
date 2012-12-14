@@ -1,7 +1,7 @@
 # SWIG configuration
 # Author: Karl Wette, 2011, 2012
 #
-# serial 24
+# serial 25
 
 # enable SWIG wrapping modules
 AC_DEFUN([LALSUITE_ENABLE_SWIG],[
@@ -462,9 +462,5 @@ EOD`]
     ])
     CPPFLAGS=
     AC_LANG_POP([C])
-
-    # string to add to user environment setup scripts
-    SWIG_USER_ENV="${SWIG_USER_ENV}"'prepend PYTHONPATH $(pyexecdir)\n'
-
   ])
 ])

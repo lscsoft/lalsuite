@@ -5,8 +5,7 @@ LDADD = \
 
 check_PROGRAMS = \
 	BandPassTest \
-	IIRFilterTest \
-	LPCTest
+	IIRFilterTest
 
 TESTS = \
 	$(check_PROGRAMS)

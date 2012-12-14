@@ -56,12 +56,7 @@ ADDFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
   in1Data = in1->data;
   in2Data = in2->data;
   while ( ni-- ) {
-#if COMPLEX
-    outData->re = in1Data->re + in2Data->re;
-    (outData++)->im = (in1Data++)->im + (in2Data++)->im;
-#else
     *(outData++) = *(in1Data++) + *(in2Data++);
-#endif
   }
   RETURN( stat );
 }
@@ -114,20 +109,9 @@ MULFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1, ATYPE *in2 )
   in2Data = in2->data;
   for ( i = 0, in = 0, kn = 0; i < ni; i++, in += nj, kn += nk ) {
     for ( j = 0, ij = in; j < nj; j++, ij++ ) {
-#if COMPLEX
-      outData[ij].re = outData[ij].im = 0.0;
-#else
       outData[ij] = 0.0;
-#endif
       for ( k = 0, ik = kn, kj = j; k < nk; k++, ik++, kj += nj ) {
-#if COMPLEX
-	outData[ij].re += in1Data[ik].re*in2Data[kj].re
-	  - in1Data[ik].im*in2Data[kj].im;
-	outData[ij].im += in1Data[ik].im*in2Data[kj].re
-	  + in1Data[ik].re*in2Data[kj].im;
-#else
 	outData[ij] += in1Data[ik]*in2Data[kj];
-#endif
       }
     }
   }
@@ -171,12 +155,7 @@ TRNFUNC ( LALStatus *stat, ATYPE *out, ATYPE *in1 )
   in1Data = in1->data;
   for ( i = 0, in = 0; i < ni; i++, in += nj ) {
     for ( j = 0, ij = in, ji = i; j < nj; j++, ij++, ji += ni ) {
-#if COMPLEX
-      outData[ij].re = in1Data[ji].re;
-      outData[ij].im = in1Data[ji].im;
-#else
       outData[ij] = in1Data[ji];
-#endif
     }
   }
   RETURN( stat );

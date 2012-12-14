@@ -3,7 +3,6 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(srcdir)/../include
 noinst_LTLIBRARIES = libtdfilter.la
 
 libtdfilter_la_SOURCES = \
-	LPC.c \
 	BilinearTransform.c \
 	CreateZPGFilter.c \
 	IIRFilter.c \

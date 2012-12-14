@@ -126,6 +126,7 @@ static char USAGE2[] = \
                      before and after a glitch\n"\
 " --earth-ephem       Earth ephemeris file\n"\
 " --sun-ephem         Sun ephemeris file\n"\
+" --time-ephem        Time correction ephemeris file\n"\
 " --use-cov           if this flag is set and/or a covariance file is\n\
                      specified (with --covariance) then that will be used, if\n\
                      just this flag is set then a covariance matrix\n\
@@ -158,7 +159,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
   REAL8 times=0.;
   COMPLEX16 dataVals;
   REAL8 stdh0=0.;       /* approximate h0 limit from data */
-
+  REAL8 stdh0min=INFINITY;
+  
   FILE *fp=NULL;
   CHAR dataFile[256];
   CHAR outputFile[256];
@@ -172,6 +174,8 @@ INT4 main(INT4 argc, CHAR *argv[]){
   CHAR params[][10]={"h0", "phi", "psi", "ciota"};
 
   EphemerisData *edat=NULL;
+  TimeCorrectionData *tdat=NULL;
+  TimeCorrectionType ttype = TIMECORRECTION_ORIGINAL;
 
   /*===================== GET AND SET THE INPUT PARAMETER ====================*/
   get_input_args(&inputs, argc, argv);
@@ -184,7 +188,7 @@ INT4 main(INT4 argc, CHAR *argv[]){
   inputs.psr.equatorialCoords.longitude = pulsar.ra;
   inputs.psr.equatorialCoords.latitude = pulsar.dec;
   inputs.psr.equatorialCoords.system = COORDINATESYSTEM_EQUATORIAL;
-
+  
   /* find the number of detectors being used */
   if( strstr(inputs.detectors, "H1") != NULL ){
     sprintf(dets[numDets], "H1");
@@ -257,12 +261,30 @@ INT4 main(INT4 argc, CHAR *argv[]){
 defined!\n");
         return 0;
       }
-
+      
       XLAL_CHECK( ( edat = XLALInitBarycenter( inputs.earthfile, 
                     inputs.sunfile ) ) != NULL, XLAL_EFUNC );
+      
+      if( fopen(inputs.timefile, "r") == NULL){
+        tdat = NULL;
+        ttype = TIMECORRECTION_ORIGINAL;
+      }
+      else{
+        XLAL_CHECK( ( tdat = XLALInitTimeCorrections( inputs.timefile ) ) 
+                      != NULL, XLAL_EFUNC );
+
+        if( pulsar.units != NULL ){
+          if ( !strcmp(pulsar.units, "TDB") )
+            ttype = TIMECORRECTION_TDB; /* use TDB units i.e. TEMPO standard */
+          else
+            ttype = TIMECORRECTION_TCB; /* default to TCB i.e. TEMPO2 standard */
+        }
+      }
     }
-    else
+    else{
       edat = NULL;
+      tdat = NULL;
+    }
   }
 
   k = -1;
@@ -297,7 +319,6 @@ defined!\n");
     data[k].chunkMin = inputs.chunkMin;
     data[k].chunkMax = inputs.chunkMax;
 
-    stdh0 = 0.;
     /* read in data */
     while(fscanf(fp, "%lf%lf%lf", &times, &dataVals.re, &dataVals.im) != EOF){
       /* check that size of data file is not to large */
@@ -312,9 +333,6 @@ defined!\n");
       /* if( fabs(dataVals.re) > 1.e-28 && fabs(dataVals.im) > 1.e-28 ){ */
         data[k].times->data[j] = times;
         data[k].data->data[j] = dataVals;
-
-        /* get the power from the time series */
-        stdh0 += dataVals.re*dataVals.re + dataVals.im*dataVals.im;
 
         j++;
       /*}*/
@@ -335,12 +353,57 @@ defined!\n");
         ( inputs.mcmc.doMCMC == 1 || i == 0 ) ){
       if( verbose ) fprintf(stderr, "Calculating h0 UL estimate: ");
 
-      /* get the power spectral density power/bandwidth (1/60 Hz) */
-      stdh0 = stdh0/((REAL8)j*(1./60.));
+      /* large outliers can completely swamp the standard deviation estimate,
+       * so instead I will calculate the standard deviation by histogramming
+       * the logarithm of the absolute value of the data, finding the maximum
+       * of the distribution and using that as the standard deviation */
+      UINT4 nbins = 100; /* 100 histogram bins */
+      REAL8 binwidth = 0;
+      UINT4 binmax = 0, maxbin = 0;
+      REAL8 maxlogabs = -INFINITY, minlogabs = INFINITY;
+      REAL8Vector *logabs = XLALCreateREAL8Vector( 2*data[k].data->length );
+      UINT4Vector *histg = XLALCreateUINT4Vector( nbins );  
+    
+      /* get the maximum and minimum range for the histogram */
+      for (j = 0; j<(INT4)data[k].data->length; j++){
+        logabs->data[2*j] = log(fabs(data[k].data->data[j].re));
+        logabs->data[2*j+1] = log(fabs(data[k].data->data[j].im));
+        
+        if ( logabs->data[2*j] > maxlogabs ) maxlogabs = logabs->data[2*j];
+        if ( logabs->data[2*j+1] > maxlogabs ) maxlogabs = logabs->data[2*j+1];
+        if ( logabs->data[2*j] < minlogabs ) minlogabs = logabs->data[2*j];
+        if ( logabs->data[2*j+1] < minlogabs ) minlogabs = logabs->data[2*j+1];
+      }
+      
+      binwidth = (maxlogabs - minlogabs)/(REAL8)(nbins-1);
+      
+      /* fill in histogram */
+      for (j=0; j<(INT4)histg->length; j++) histg->data[j] = 0;
+      for (j=0; j<(INT4)logabs->length; j++){
+        UINT4 thisbin;
+        
+        thisbin = (UINT4)floor((logabs->data[j] - minlogabs)/binwidth);
+        
+        histg->data[thisbin]++;
+      }
+      
+      /* get the maximum bin */
+      for (j=0; j<(INT4)histg->length; j++){
+        if (histg->data[j] > binmax){
+          binmax = histg->data[j];
+          maxbin = j;
+        }
+      }
+        
+      /* use bin maximum to estimate the std deviation (without outliers) */
+      stdh0 = exp(minlogabs + binwidth*(REAL8)maxbin);
 
       /* upper limit estimate comes from ~ h0 = 10.8*sqrt(Sn/T) */
-      stdh0 = 10.8*sqrt(stdh0/((REAL8)j*60.));
+      stdh0 = 10.8*sqrt((stdh0*stdh0)/((REAL8)data[k].data->length));
 
+      /* get minimum limit from all detectors */
+      if ( stdh0 < stdh0min ) stdh0min = stdh0;
+      
       /* set the MCMC h0 proposal step size at stdh0*scalefac */
       if( inputs.mcmc.doMCMC == 1 ){
         inputs.mcmc.sigmas.h0 = stdh0*inputs.mcmc.h0scale;
@@ -355,6 +418,9 @@ defined!\n");
         inputs.mesh.delta.h0 = (inputs.mesh.maxVals.h0 -
           inputs.mesh.minVals.h0)/(REAL8)(inputs.mesh.h0Steps - 1.);
       }
+      
+      XLALDestroyREAL8Vector( logabs );
+      XLALDestroyUINT4Vector( histg );
 
       if( verbose ) fprintf(stderr, "%le\n", stdh0);
     }
@@ -443,7 +509,7 @@ defined!\n");
 
     /*================== PERFORM THE MCMC ====================================*/
     if( inputs.mcmc.doMCMC != 0 && inputs.onlyjoint == 0 )
-      perform_mcmc(&data[k], inputs, 1, dets[i], &detPos[i], edat);
+      perform_mcmc(&data[k], inputs, 1, dets[i], &detPos[i], edat, tdat, ttype);
 
     /*========================================================================*/
   }
@@ -497,7 +563,16 @@ defined!\n");
 
     /*======================= PERFORM JOINT MCMC =============================*/
     if( inputs.mcmc.doMCMC == 1 ){
-      perform_mcmc(data, inputs, numDets, output.det, detPos, edat);
+      /* use smallest of the limits for h0 proposal */
+      if ( inputs.mesh.maxVals.h0 == 0 || inputs.mcmc.sigmas.h0 == 0 ){
+        inputs.mcmc.sigmas.h0 = stdh0min*inputs.mcmc.h0scale;
+        
+        if( inputs.mesh.maxVals.h0 == 0 )
+          inputs.mesh.maxVals.h0 = stdh0min;
+      }
+      
+      perform_mcmc(data, inputs, numDets, output.det, detPos, edat, tdat,
+                   ttype);
 
       /* destroy data */
       for( i = 0 ; i < numDets ; i++ ){
@@ -531,6 +606,7 @@ defined!\n");
 
   /* free Ephemeris data */
   if ( edat != NULL ) XLALDestroyEphemerisData( edat );
+  if ( tdat != NULL ) XLALDestroyTimeCorrectionData( tdat );
   
   return 0;
 }
@@ -593,6 +669,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
     { "nglitch",        required_argument, 0, 'O' },
     { "earth-ephem",    required_argument, 0, 'J' },
     { "sun-ephem",      required_argument, 0, 'M' },
+    { "time-ephem",     required_argument, 0, '{' },
     { "use-cov",        no_argument,       0, '(' },
     { "covariance",     required_argument, 0, 'r' },
     { "use-priors",     no_argument,    NULL, '>' },
@@ -604,7 +681,7 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
 
   CHAR args[] =
 "hD:p:P:i:o:a:A:j:b:B:k:s:S:m:c:C:n:l:L:q:]:Q:U:u:Y:T:v:V:z:Z:e:E:d:I:x:t:H:w:\
-W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
+W:y:g:G:K:N:X:O:J:M:{:(r:fFR><)[:" ;
   CHAR *program = argv[0];
 
   /* set defaults */
@@ -844,6 +921,9 @@ W:y:g:G:K:N:X:O:J:M:(r:fFR><)[:" ;
         break;
       case 'M':
         sprintf(inputParams->sunfile, "%s", optarg);
+        break;
+      case '{':
+        sprintf(inputParams->timefile, "%s", optarg);
         break;
       case '(':
         inputParams->usecov = 1;
@@ -1922,7 +2002,8 @@ REAL8 get_upper_limit(REAL8 *cumsum, REAL8 limit, MeshGrid mesh){
 
 /* function to perform the MCMC parameter estimation */
 void perform_mcmc(DataStructure *data, InputParams input, INT4 numDets, 
-  CHAR *det, LALDetector *detPos, EphemerisData *edat ){
+  CHAR *det, LALDetector *detPos, EphemerisData *edat, 
+  TimeCorrectionData *tdat, TimeCorrectionType ttype ){
   static LALStatus status;
 
   IntrinsicPulsarVariables vars, varsNew;
@@ -2341,8 +2422,8 @@ paramData ) ) == NULL ){
     baryinput.site.location[2] /= LAL_C_SI;
 
     /* set phase of initial heterodyne */
-    if( (phi1[0] = get_phi( data[0], pulsarParamsFixed, baryinput, edat )) ==
-      NULL ){
+    if( (phi1[0] = get_phi( data[0], pulsarParamsFixed, baryinput, edat, tdat,
+                            ttype )) == NULL ){
       fprintf(stderr, "Error... Phase generation produces NULL!\n");
       exit(0);
     }
@@ -2529,7 +2610,8 @@ paramData ) ) == NULL ){
           baryinput.site.location[1] /= LAL_C_SI;
           baryinput.site.location[2] /= LAL_C_SI;
 
-          if( (phi1[k] = get_phi( data[k], pulsarParamsFixed, baryinput, edat )) == NULL ){
+          if( (phi1[k] = get_phi( data[k], pulsarParamsFixed, baryinput, edat,
+                                  tdat, ttype )) == NULL ){
             fprintf(stderr, "Error... Phase generation produces NULL!");
             exit(0);
           }
@@ -2538,7 +2620,8 @@ paramData ) ) == NULL ){
         /* get new phase */
         /* set up the deltaphi, and put it into the phi2 variable */
         if( matTrue ){
-          if( (phi2 = get_phi( data[k], pulsarParams, baryinput, edat )) == NULL ){
+          if( (phi2 = get_phi( data[k], pulsarParams, baryinput, edat, tdat,
+                               ttype )) == NULL ){
             fprintf(stderr, "Error... Phase generation produces NULL!");
             exit(0);
           }
@@ -2588,7 +2671,8 @@ paramData ) ) == NULL ){
       /* get new phase */
       /* set up the deltaphi, and put it into the phi2 variable */
       if( matTrue ){
-        if( (phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat )) == NULL ){
+        if( (phi2 = get_phi( data[k], pulsarParamsNew, baryinput, edat, tdat,
+                             ttype )) == NULL ){
           fprintf(stderr, "Error... Phase generation produces NULL!");
           exit(0); 
         }
@@ -2813,7 +2897,8 @@ paramData ) ) == NULL ){
 
 /* function to return a vector of the pulsar phase for each data point */
 REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
-  BarycenterInput bary, EphemerisData *edat ){
+  BarycenterInput bary, EphemerisData *edat, TimeCorrectionData *tdat,
+  TimeCorrectionType ttype ){
   INT4 i=0;
 
   REAL8 T0=0., DT=0., DTplus=0., deltat=0., deltat2=0.;
@@ -2867,8 +2952,8 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
          params.pmra/cos(bary.delta);
 
       /* call barycentring routines */
-      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth, &bary.tgps, edat ) ==
-                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary.tgps, edat, tdat, 
+                       ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_NULL( XLALBarycenter( &emit, &bary, &earth ) ==
                        XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -2879,8 +2964,8 @@ REAL8Vector *get_phi( DataStructure data, BinaryPulsarParams params,
 (UINT8)floor((fmod(data.times->data[i]+interptime,1.)*1e9));
 
       /* No point in updating the positions as difference will be tiny */
-      XLAL_CHECK_NULL( XLALBarycenterEarth( &earth2, &bary.tgps, edat ) ==
-                       XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth2, &bary.tgps, edat, tdat,
+                       ttype ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_NULL( XLALBarycenter( &emit2, &bary, &earth2 ) ==
                        XLAL_SUCCESS, XLAL_EFUNC );
     }

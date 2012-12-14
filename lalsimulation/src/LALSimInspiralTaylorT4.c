@@ -24,10 +24,7 @@
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_odeiv.h>
 
-#define LAL_USE_OLD_COMPLEX_STRUCTS
 #include <lal/LALSimInspiral.h>
-#define LAL_USE_COMPLEX_SHORT_MACROS
-#include <lal/LALComplex.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
 #include <lal/TimeSeries.h>
@@ -360,16 +357,16 @@ XLALSimInspiralTaylorT4Setup(
     ak->aat12   = 0.;
     if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_5PN)
     {
-        akdEF->ETa5 = XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2,ak->chi1,lambda1);
+        akdEF->ETa5 = XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi2,ak->chi1,lambda1)
                     + XLALSimInspiralPNEnergy_10PNTidalCoeff(ak->chi1,ak->chi2,lambda2);
-        ak->aat10   = XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(ak->chi1,lambda1);
+        ak->aat10   = XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(ak->chi1,lambda1)
                     + XLALSimInspiralTaylorT4AngularAccel_10PNTidalCoeff(ak->chi2,lambda2);
     }
     if( interactionFlags >= LAL_SIM_INSPIRAL_INTERACTION_TIDAL_6PN ) 
     {
-        akdEF->ETa6 = XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2,ak->chi1,lambda1);
+        akdEF->ETa6 = XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi2,ak->chi1,lambda1)
                     + XLALSimInspiralPNEnergy_12PNTidalCoeff(ak->chi1,ak->chi2,lambda2);
-        ak->aat12   = XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(ak->nu,ak->chi1,lambda1);
+        ak->aat12   = XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(ak->nu,ak->chi1,lambda1)
                     + XLALSimInspiralTaylorT4AngularAccel_12PNTidalCoeff(ak->nu,ak->chi2,lambda2);
     }
 

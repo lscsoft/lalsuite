@@ -156,7 +156,7 @@ SERIESTYPE *ASERIES (
 	/* add arg2 to arg1, adjusting the units */
 	for(; i < arg1->data->length && j < arg2->data->length; i++, j++)
 	{
-		ARG
+		arg1->data->data[i] += arg2->data->data[j] * unit_ratio;
 	}
 
 	return arg1;

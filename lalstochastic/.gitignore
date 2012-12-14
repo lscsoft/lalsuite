@@ -24,9 +24,9 @@ libtool
 src/LALStochasticConfig.h
 src/LALStochasticVCSInfo.h
 src/git_version
-src/lalstochastic-user-env.shell
 src/lalstochastic-user-env.csh
 src/lalstochastic-user-env.sh
+src/lalstochastic-user-env.shell
 src/stamp-h2
 test/??_714382918*.dat
 test/AstroOmegaTest

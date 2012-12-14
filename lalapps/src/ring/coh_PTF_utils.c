@@ -1731,3 +1731,60 @@ void findInjectionSegment(
         thisInject = thisInject->next;
     }
 }
+
+UINT4 checkInjectionMchirp(
+    struct coh_PTF_params *params,
+    InspiralTemplate *tmplt,
+    LIGOTimeGPS *epoch
+    )
+{
+  /* define variables */
+  LIGOTimeGPS injTime, segmentStart, segmentEnd;
+  REAL8 tmpltMchirp,injMchirp,mchirpDiff;
+  INT8 startDiff, endDiff;
+  SimInspiralTable *thisInject = NULL;
+  UINT4 passMchirpCheck;
+
+  /* set variables */
+  segmentStart = *epoch;
+  segmentEnd   = *epoch;
+  XLALGPSAdd(&segmentEnd, params->segmentDuration/2.0);
+  passMchirpCheck = 2;
+  thisInject = params->injectList;
+  
+  /* loop over injections */
+  while (thisInject)
+  {
+    injTime = thisInject->geocent_end_time;
+    startDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentStart);
+    endDiff = XLALGPSToINT8NS(&injTime) - XLALGPSToINT8NS(&segmentEnd);
+    fprintf(stderr,"%ld %ld\n",startDiff,endDiff);
+    if ((startDiff > 0) && (endDiff < 0))
+    {
+      verbose("Generating analysis segment for injection at %d.\n",
+              injTime.gpsSeconds);
+      if (passMchirpCheck != 2)
+      {
+        verbose("warning: multiple injections in this segment.\n");
+        passMchirpCheck = 1;
+        break;
+      }
+      injMchirp = thisInject->mchirp;
+      tmpltMchirp = tmplt->chirpMass;
+      fprintf(stderr,"%e %e \n",injMchirp,tmpltMchirp);
+      mchirpDiff = (injMchirp - tmpltMchirp)/tmpltMchirp;
+      if (fabs(mchirpDiff) > params->injMchirpWindow)
+        passMchirpCheck = 0;
+      else
+        passMchirpCheck = 1;
+    }
+    thisInject = thisInject->next;
+  }
+
+  if (passMchirpCheck == 2)
+  {
+    verbose("WARNING: No injections found in this segment!? Not analysing\n");
+    passMchirpCheck = 0;
+  }
+  return passMchirpCheck;
+}
