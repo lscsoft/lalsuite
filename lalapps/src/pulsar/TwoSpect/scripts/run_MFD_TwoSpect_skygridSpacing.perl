@@ -433,6 +433,7 @@ EOF
 
    open(SKYFILE2,">/local/user/egoetz/$$/skygrid2.dat") or die "Cannot write to /local/user/egoetz/$$/skygrid2.dat $!";
    print SKYFILE2<<EOF;
+$alpha $delta
 $pt1[0] $pt1[1]
 $pt2[0] $pt2[1]
 $pt3[0] $pt3[1]
