@@ -730,7 +730,7 @@ int main(int argc, char *argv[])
          }
 	 h0 = 2.7426*pow(R/(inputParams->Tcoh*inputParams->Tobs),0.25)/(sqrt(ffdata->tfnormalization)*pow(frac_tobs_complete*ffdata->ffnormalization/skypointffnormalization,0.25));
       }
-      loadCandidateData(&(exactCandidates2->data[0]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
+      loadCandidateData(&(exactCandidates2->data[exactCandidates2->numofcandidates]), inputParams->ULfmin, inputParams->Pmin, inputParams->dfmin, dopplerpos.Alpha, dopplerpos.Delta, R, h0, prob, proberrcode, 0.0);
       exactCandidates2->numofcandidates++;
 
       /* resetTemplateStruct(template);
