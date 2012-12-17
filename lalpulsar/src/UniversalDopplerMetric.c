@@ -226,13 +226,6 @@ double CWPhaseDeriv_i ( double tt, void *params );
 double XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max );
 double CWPhase_cov_Phi_ij ( const MultiDetectorInfo *detInfo, const intparams_t *params, double *relerr_max );
 
-int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
-gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
-
-void equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
-void eclipticVect2equatorial ( vect3D_t out, const vect3D_t in );
-void matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in );
-
 UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
@@ -445,7 +438,7 @@ CWPhaseDeriv_i ( double tt, void *params )
   nn_equ[2] = sind;
 
   /* and in an ecliptic coordinate-frame */
-  equatorialVect2ecliptic ( nn_ecl, nn_equ );
+  XLALequatorialVect2ecliptic ( nn_ecl, nn_equ );
 
   /* get current detector position r(t) and velocity v(t) */
   REAL8 ttSI = par->startTime + tt * par->Tspan;	/* current GPS time in seconds */
@@ -473,8 +466,8 @@ CWPhaseDeriv_i ( double tt, void *params )
   ADD_VECT(posvel.vel, orbit_posvel.vel);
 
   /* compute orbital detector positions projected onto ecliptic plane */
-  equatorialVect2ecliptic(ecl_pos, posvel.pos);
-  equatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
+  XLALequatorialVect2ecliptic(ecl_pos, posvel.pos);
+  XLALequatorialVect2ecliptic(ecl_orbit_pos, orbit_posvel.pos);
 
   /* get frequency of Doppler point */
   const REAL8 Freq = par->dopplerPoint->fkdot[0];
@@ -519,7 +512,7 @@ CWPhaseDeriv_i ( double tt, void *params )
           }
         }
     } /* if rOrb_n */
-  equatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
+  XLALequatorialVect2ecliptic ( rr_ord_Ecl, rr_ord_Equ );	  /* convert into ecliptic coordinates */
 
   /* now compute the requested phase derivative */
   switch ( par->deriv )
@@ -2175,31 +2168,31 @@ XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c )
 
 /** Convert 3-D vector from equatorial into ecliptic coordinates */
 void
-equatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
+XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEqu2Ecl = { { 1.0,        0,       0 },
                                 { 0.0,  LAL_COSIEARTH, LAL_SINIEARTH },
                                 { 0.0, -LAL_SINIEARTH, LAL_COSIEARTH } };
 
-  matrix33_in_vect3 ( out, rotEqu2Ecl, in );
+  XLALmatrix33_in_vect3 ( out, rotEqu2Ecl, in );
 
-} /* equatorialVect2ecliptic() */
+} /* XLALequatorialVect2ecliptic() */
 
 /** Convert 3-D vector from ecliptic into equatorial coordinates */
 void
-eclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
+XLALeclipticVect2equatorial ( vect3D_t out, const vect3D_t in )
 {
   static mat33_t rotEcl2Equ =  { { 1.0,        0,       0 },
                                  { 0.0,  LAL_COSIEARTH, -LAL_SINIEARTH },
                                  { 0.0,  LAL_SINIEARTH,  LAL_COSIEARTH } };
 
-  matrix33_in_vect3 ( out, rotEcl2Equ, in );
+  XLALmatrix33_in_vect3 ( out, rotEcl2Equ, in );
 
-} /* eclipticVect2equatorial() */
+} /* XLALeclipticVect2equatorial() */
 
 /** compute matrix product mat . vect */
 void
-matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
+XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
 {
 
   UINT4 i,j;
@@ -2212,7 +2205,7 @@ matrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
         }
     }
 
-} /* matrix33_in_vect3() */
+} /* XLALmatrix33_in_vect3() */
 
 /** Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
  * \f$r_{\mathrm{orb}}(t)\f$.
