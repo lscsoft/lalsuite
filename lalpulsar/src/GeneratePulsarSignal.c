@@ -279,18 +279,6 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
   ASSERT (signalvec != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
   ASSERT (params != NULL, status, GENERATEPULSARSIGNALH_ENULL, GENERATEPULSARSIGNALH_MSGENULL);
 
-  /* UPGRADING switch: complain loudly if user didn't set 'make_v2SFTs' to encourage upgrading */
-  if (  params-> make_v2SFTs != 1 )
-    {
-      fprintf (stderr, "\n********************************************************************************\n\n");
-      fprintf (stderr, "     WARNING: LALSignalToSFTs() now returns properly *v2-normalized* SFTs\n");
-      fprintf (stderr, "    (see  http://www.lsc-group.phys.uwm.edu/lal/slug/nightly/doxygen/html/group__SFTfileIO.html \n");
-      fprintf (stderr, "    for more details on what that means).\n\n");
-      fprintf (stderr, "    Please adapt your code correspondingly and set SFTParams.make_v2SFTs=1 to acknowledge this.\n");
-      fprintf (stderr, "    This parameter and warning will be removed once the transition is complete.\n\n");
-      fprintf (stderr, "********************************************************************************\n\n");
-    }
-
   f0 = signalvec->f0;				/* lowest frequency */
   dt = signalvec->deltaT;		/* timeseries timestep */
   Band = 1.0 / (2.0 * dt);		/* NOTE: frequency-band is determined by sampling-rate! */
