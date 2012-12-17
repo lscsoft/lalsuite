@@ -17,11 +17,17 @@
 *  MA  02111-1307  USA
 */
 
+#include <limits.h>
 #include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/FrequencySeries.h>
+#include <lal/FileIO.h>
 #include <lal/LALSimNoise.h>
 
 // Values for iLIGO
@@ -960,6 +966,224 @@ int XLALSimNoisePSD(
 	psd->data->data[psd->data->length - 1] = 0.0; /* set Nyquist to zero (presume this is Nyquist!) */
 
 	return 0;
+}
+
+/* opens a data file */
+static LALFILE *XLALSimNoisePSDFileOpen(const char *fname)
+{
+	const char *pkgdatadir = PKGDATADIR;
+	char path[PATH_MAX] = "";
+	LALFILE *fp;
+
+	if (strchr(fname, '/')) {
+		/* a specific path is given */
+		if (realpath(fname, path) == NULL)
+			XLAL_ERROR_NULL(XLAL_EIO, "Unresolvable path %s\n", path);
+	} else {
+		/* unspecific path given: use LALSIM_DATA_PATH environment */
+		char *env = getenv("LALSIM_DATA_PATH");
+		char *str;
+		char *dir;
+		env = str = XLALStringDuplicate(env ? env : ":");
+		while ((dir = strsep(&str, ":"))) {
+			if (strlen(dir))
+				snprintf(path, sizeof(path), "%s/%s", dir, fname);
+			else /* use default path */
+				snprintf(path, sizeof(path), "%s/%s", pkgdatadir, fname);
+			if (access(path, R_OK) == 0) /* found it! */
+				break;
+			*path = 0;
+		}
+		XLALFree(env);
+	}
+	if (! *path) /* could not find file */
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not find data file %s\n", fname);
+	fp = XLALFileOpenRead(path);
+	if (! fp) /* open failure */
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not open data file %s\n", path);
+	return fp;
+}
+
+/* loads a two-column data file */
+#ifndef PAGESIZE
+#ifdef _SC_PAGE_SIZE
+#define PAGESIZE _SC_PAGE_SIZE
+#else
+#define PAGESIZE 1024
+#endif
+#endif
+#ifndef LINE_MAX
+#ifdef _SC_LINE_MAX
+#define LINE_MAX _SC_LINE_MAX
+#else
+#define LINE_MAX 1024
+#endif
+#endif
+static size_t XLALSimNoiseRead2ColData(double **xdat, double **ydat, LALFILE *fp)
+{
+	char    line[LINE_MAX];
+	size_t  size = PAGESIZE;
+	size_t  npts;
+	*xdat = XLALMalloc(size * sizeof(**xdat));
+	*ydat = XLALMalloc(size * sizeof(**ydat));
+	npts = 0;
+	while (XLALFileGets(line, sizeof(line), fp)) {
+		if (strchr(line, '\n') == NULL) {
+			XLALFree(*xdat);
+			XLALFree(*ydat);
+			XLAL_ERROR(XLAL_EIO, "Line %zd too long\n", npts + 1);
+		}
+		if (sscanf(line, "%lf %lf", *xdat + npts, *ydat + npts) != 2) {
+			XLALFree(*xdat);
+			XLALFree(*ydat);
+			XLAL_ERROR(XLAL_EIO, "Line %zd malformed\n", npts + 1);
+		}
+		if (++npts == size) {
+			size += PAGESIZE;
+			*xdat = XLALRealloc(*xdat, size * sizeof(**xdat));
+			*ydat = XLALRealloc(*ydat, size * sizeof(**ydat));
+		}
+	}
+	*xdat = XLALRealloc(*xdat, npts * sizeof(**xdat));
+	*ydat = XLALRealloc(*ydat, npts * sizeof(**ydat));
+	return npts;
+}
+
+
+/**
+ * Reads file fname containing two-column amplitude spectral density data file
+ * and interpolates at the frequencies required to populate the frequency
+ * series psd, with a low frequency cutoff flow.
+ */
+int XLALSimNoisePSDFromFile(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow,			/**< low frequency cutoff (Hz) */
+	const char *fname		/**< file containing amplitude spectral density data */
+)
+{
+	double *f;
+	double *h;
+	size_t  n;
+	size_t  i;
+	size_t  kmin;
+	size_t  k;
+	LALFILE *fp;
+
+	/* first, read the data form the datafile */
+	fp = XLALSimNoisePSDFileOpen(fname);
+	if (!fp)
+		XLAL_ERROR(XLAL_EFUNC);
+	n = XLALSimNoiseRead2ColData(&f, &h, fp);
+	XLALFileClose(fp);
+	if (n == (size_t)(-1))
+		XLAL_ERROR(XLAL_EFUNC);
+	/* take the log of the amplitude spectral density data */
+	for (i = 0; i < n; ++i)
+		h[i] = log(h[i]);
+
+	/* set DC and Nyquist to zero */
+	/* note: assumes last element is Nyquist */
+	psd->data->data[0] = psd->data->data[psd->data->length - 1] = 0.0;
+
+	/* determine low frequency cutoff */
+	kmin = flow / psd->deltaF;
+
+	i = 1;
+	psd->data->data[0] = 0.0; /* set DC to zero */
+	for (k = 1; k < kmin; ++k) /* set low frequency components to zero */
+		psd->data->data[k] = 0.0;
+	for (; k < psd->data->length - 1; ++k) {
+		double fk = k * psd->deltaF; /* target frequency */
+		double hk;
+		double x;
+		/* interpolate data for this frequency value */
+		while (f[i] < fk && i < n - 1)
+			++i;
+		x = (f[i] - fk) / (f[i] - f[i-1]);
+		hk = x * h[i-1] + (1.0 - x) * h[i];
+		/* power spectrum is exp( 2 * log(amplitude spectrum) ) */
+		psd->data->data[k] = exp(2.0 * hk);
+	}
+	psd->data->data[psd->data->length - 1] = 0.0; /* set Nyquist to zero (presume this is Nyquist!) */
+
+	XLALFree(h);
+	XLALFree(f);
+	return 0;
+}
+
+/* prefix for noise psd files provided by LIGO-T0900288 */
+#define T0900288 "LIGO-T0900288-v3-"
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "NO_SRM.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGONoSRMLowPowerGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "NO_SRM.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "ZERO_DET_low_P.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOZeroDetLowPowerGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "ZERO_DET_low_P.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "ZERO_DET_high_P.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOZeroDetHighPowerGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "ZERO_DET_high_P.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "NSNS_Opt.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGONSNSOptGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "NSNS_Opt.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "BBH_20deg.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOBHBH20DegGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "BHBH_20deg.txt");
+}
+
+/**
+ * Returns a frequency series psd with low frequency cutoff flow corresponding
+ * to the "High_Freq.txt" data file in LIGO-T0900288.
+ */
+int XLALSimNoisePSDaLIGOHighFrequencyGWINC(
+	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
+	double flow 			/**< low frequency cutoff (Hz) */
+)
+{
+	return XLALSimNoisePSDFromFile(psd, flow, T0900288 "High_Freq.txt");
 }
 
 
