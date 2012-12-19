@@ -522,9 +522,10 @@ def plot_posterior_hist(poslist, param, ifos,
   
   # if a par file object is given expect that we have an injection file
   # containing the injected value to overplot on the histgram
-  parval = None
   if parfile:
     parval = parfile[param.upper()]
+  else:
+    parval = None
   
   # loop over ifos
   for idx, ifo in enumerate(ifos):
@@ -806,7 +807,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
     
     H, xedges, yedges = np.histogram2d(a, b, nbins, normed=True)
 
-    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    extent = [xedges[0], xedges[-1], yedges[-1], yedges[0]]
     plt.imshow(np.transpose(H), aspect='auto', extent=extent, \
 interpolation='bicubic', cmap='gray_r')
     #plt.colorbar()

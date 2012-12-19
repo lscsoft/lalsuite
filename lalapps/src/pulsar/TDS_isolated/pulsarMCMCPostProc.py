@@ -915,14 +915,14 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       cf.close()
       
       # get Gelman-Rubins stat for each parameter
-      for idx, par in enumerate(headers.split()):
+      for idx, parv in enumerate(headers.split()):
         lgr = []
-        if par != 'logL':          
+        if parv != 'logL':          
           for j in range(0, len(mcmc)):
             achain = mcmc[j]
             singlechain = achain[:,idx]
             lgr.append(singlechain)
-          grr[par.lower()] = pppu.gelman_rubins(lgr)
+          grr[parv.lower()] = pppu.gelman_rubins(lgr)
       
       mcmcgr.append(grr)
       
@@ -1064,7 +1064,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     
     # get phi0 vs psi 2D posterior histogram
     phi0psiFig = pppu.plot_posterior_hist2D([poslist[-1]], ['phi0', 'psi'], \
-[ifosNew[-1]], bounds=[[0, 2.*math.pi], [-math.pi/4., math.pi/4]], \
+[ifosNew[-1]], bounds=[[0, 2.*math.pi], [math.pi/4., -math.pi/4]], \
 nbins=[30, 30], parfile=parinj)
     phi0psifigname = output_fig(phi0psiFig[0], puldir, 'phi0psipost', ftypes)
     
