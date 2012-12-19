@@ -126,7 +126,10 @@ int readdata(size_t * ndim, size_t * dimlen, double **data, FILE * fp)
             endp = line;
             while (1) {
                 s = endp;
-                strtod(s, &endp);
+                /* work around bug in glibc < 2.16
+                 * http://sourceware.org/bugzilla/show_bug.cgi?id=13970 */
+                double v = strtod(s, &endp);
+                (void)v;
                 if (s == endp || *endp == '\0')
                     break;
                 ++cols;
