@@ -256,8 +256,8 @@ def ra_htmlstr(ra):
 
   ss = ('%.2f' % float(hms[2])).split('.')
   
-  return "%s<sup>h</sup>%s<sup>m</sup>%s<sup>s</sup>.%s" % (hms[0], hms[1], \
-ss[0], ss[1] )
+  return "%s<sup>h</sup>%s<sup>m</sup>%s<sup>s</sup>.%s" % (hms[0].zfill(2), \
+hms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2) )
 
 # convert a declination string in format 'dd:mm:ss.s' to a html string like
 # dd^o mm' ss''.ss
@@ -272,7 +272,8 @@ def dec_htmlstr(ra):
 
   ss = ('%.2f' % float(dms[2])).split('.')
     
-  return "%d&deg;%s'%s\".%s" % (int(dms[0]), dms[1], ss[0], ss[1])
+  return "%s&deg;%s'%s\".%s" % ((re.sub('\+', '', dms[0])).zfill(2), \
+dms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2))
 
 # list of parameters to display (in this order)
 paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
@@ -993,7 +994,7 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
   <td colspan="4" style="text-align: center;">h<sub>0</sub> spin-down = %s</td>
 </tr>
 <tr>
-  <th>Det.</th>
+  <th>&nbsp;</th>
   <th>h<sub>0</sub><sup>95%%</sup></th>
   <th>&#949;</th>
   <th>ratio</th>
@@ -1110,15 +1111,19 @@ psifigname['png'], psifigname['png'] ))
     <td style="text-align: center;"> 
       <table>
         <tr>
-          <td>Det.</td>
+          <td>&nbsp;</td>
           <td class="%s">%s</td>
         </tr>
         <tr>
-          <td>Start</td>
+          <td>Start (GPS)</td>
           <td>%d</td>
         </tr>
         <tr>
-          <td>End</td>
+          <td>End (GPS)</td>
+          <td>%d</td>
+        </tr>
+        <tr>
+          <td>Length (sec)</td>
           <td>%d</td>
         </tr>
         <tr>
@@ -1128,8 +1133,8 @@ psifigname['png'], psifigname['png'] ))
       </table>
     <td><a href="%s"><img class="dataplot" src="%s"/></a></td>
   </tr>
-""" % (ifo, ifo,int(float(st)), int(float(et)), dc, Bkfigname[i]['png'], \
-Bkfigname[i]['png']) )
+""" % (ifo, ifo,int(float(st)), int(float(et)), int(float(et)-float(st)), dc, \
+Bkfigname[i]['png'], Bkfigname[i]['png']) )
   
       if plotpsds and plotfscan:
         analysisstatstext.append( \
@@ -1151,7 +1156,7 @@ fscanfigname[i]['png']) )
     <th colspan=4>MCMC chain information</th>
   </tr>
   <tr>
-    <th>Det.</th>
+    <th>&nbsp;</th>
     <th>no. of chains</th>
     <th>chain length</th>
     <th>effective sample size</th>
@@ -1175,15 +1180,23 @@ fscanfigname[i]['png']) )
       if par != 'post' and par != 'logl':
         chainfig = pppu.plot_posterior_chain(poslist, par, ifosNew, mcmcgr, \
                                              withhist=30)
-        figname = output_fig(chainfig, puldir, par+'_mcmcchain', ftypes)
-        mcmctabletext.append( \
+        if chainfig:
+          figname = output_fig(chainfig, puldir, par+'_mcmcchain', ftypes)
+          mcmctabletext.append( \
 """
 <tr>
 <td><a href="%s"><img class="chainplot" src="%s"/></a></td>
 </tr>
 """ % (figname['png'], figname['png']) )
+        else:
+          break
     
     mcmctabletext.append('</table>')
+    
+    if chainfig==None:
+      # if no MCMC chain figures were made (e.g. because gridspec wasn't
+      # available) the remove the last table entries
+      del mcmctabletext[-2:]
     
     # output footer giving how the file was made
     pfootertext = []

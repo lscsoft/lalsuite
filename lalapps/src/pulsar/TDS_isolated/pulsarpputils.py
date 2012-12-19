@@ -37,7 +37,6 @@ import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import colors
 from matplotlib.mlab import specgram, find, psd
-from matplotlib import gridspec
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
 
@@ -606,6 +605,11 @@ def plot_posterior_hist(poslist, param, ifos,
 # of bins
 def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
                          mplparams=False):
+  try:
+    from matplotlib import gridspec
+  except:
+    return None
+  
   if not mplparams:
     mplparams = { \
       'backend': 'Agg',
@@ -614,7 +618,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
       'axes.grid': True, # add a grid
       'grid.linwidth': 0.5,
       'font.family': 'serif',
-      'font.size': 12 }
+      'font.size': 14 }
   
   matplotlib.rcParams.update(mplparams)
   
@@ -651,7 +655,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
   
   for idx, ifo in enumerate(ifos):
     if idx == 0:
-      myfig = plt.figure(figsize=(11,4),dpi=200)
+      myfig = plt.figure(figsize=(12,4),dpi=200)
       myfig.subplots_adjust(bottom=0.15)
       
       if withhist:
@@ -706,8 +710,8 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
   
   bounds = [minsamp, maxsamp]
   
-  ax1.set_ylabel(r''+paryaxis, fontsize=14, fontweight=100)
-  ax1.set_xlabel(r'Iterations', fontsize=14, fontweight=100)
+  ax1.set_ylabel(r''+paryaxis, fontsize=16, fontweight=100)
+  ax1.set_xlabel(r'Iterations', fontsize=16, fontweight=100)
   
   ax1.set_xlim(0, maxiter)
   ax1.set_ylim(bounds[0], bounds[1])
@@ -715,7 +719,7 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
   if withhist:
     ax2.set_ylim(bounds[0], bounds[1])
     ax2.set_xlim(0, maxn+0.1*maxn)
-    ax2.set_xlabel(r'Count', fontsize=14, fontweight=100)
+    ax2.set_xlabel(r'Count', fontsize=16, fontweight=100)
     ax2.set_yticklabels([])
     ax2.set_axis_bgcolor("#F2F1F0")
   
