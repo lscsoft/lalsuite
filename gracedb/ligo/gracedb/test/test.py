@@ -5,6 +5,36 @@ import os
 
 from ligo.gracedb.rest import GraceDb, HTTPError
 
+# Test the GraceDb REST API class.
+#
+#  To run:
+#
+#     python $PATH_TO_GRACEDB_LIB/test/test.py
+# 
+#  Environment Variables:
+#
+#     TEST_SERVICE
+#       defaults to https://moe.phys.uwm.edu/gracedb/api/
+#       live site would be https://gracedb.ligo.org/api/
+#
+#     TEST_DATA_DIR
+#       defaults to $PATH_TO_GRACEDB_LIB/test/data/
+#
+#       Files expected:
+#
+#          burst-cwb.txt
+#          cbc-lm2.xml
+#          cbc-lm.xml
+#          cbc-mbta.gwf
+#          upload2.data
+#          upload.data
+#
+#     X509_USER_PROXY
+#
+#     X509_USER_CERT
+#     X509_USER_KEY
+
+
 TEST_SERVICE = "https://moe.phys.uwm.edu/gracedb/api/"
 
 class TestGracedb(unittest.TestCase):
@@ -170,6 +200,9 @@ if __name__ == "__main__":
 #   which is what a normal test case setUp() would do.
 
     testdatadir = os.path.join(os.path.dirname(__file__), "data")
+
+    service = os.environ.get('TEST_SERVICE', TEST_SERVICE)
+    testdatadir = os.environ.get('TEST_DATA_DIR', testdatadir)
 
     gracedb = GraceDb(TEST_SERVICE)
 

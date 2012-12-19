@@ -23,7 +23,7 @@ import os
 import sys
 import json
 
-DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api"
+DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api/"
 
 #-----------------------------------------------------------------
 # Exception(s)

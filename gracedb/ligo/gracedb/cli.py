@@ -302,7 +302,7 @@ class Client:
         headers = {'connection' : 'keep-alive'}
         headers = {}
 #       If absolute URL, use, otherwise pre-append the REST service URL.
-        if self._is_absoute_url(resource):
+        if self._is_absolute_url(resource):
             url = resource
         else:
             url = "%s%s" % (self.rest_url, resource)
