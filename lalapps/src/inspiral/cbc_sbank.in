@@ -88,6 +88,9 @@ def parse_command_line():
     #
     # check for argument consistency
     #
+    if opts.qmin < 1:
+        parser.error("Mass ratio is assumed to be >= 1.")
+
     if opts.approximant in ["TaylorF2RedSpin", "IMRPhenomB","SEOBNRv1"] and not opts.aligned_spin:
         parser.error("--aligned-spin is required for the %s approximant" % opts.approximant)
 

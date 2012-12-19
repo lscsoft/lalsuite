@@ -125,9 +125,11 @@ def set_default_constraints(constraints):
     # mratio can be given or inferred from component mass limits
     qmin, qmax = constraints.setdefault('mratio', (None, None))
     if qmin is None:
-        qmin = max(mass1_min, mtotal_min - mass2_max) / mass2_max
+        qmin = 1 # q = m1/m2 > 1 by convention
+    if qmin < 1:
+        raise ValueError("We use the convention that q = m1/m2 > 1.")
     if qmax is None:
-        qmax = min(mass1_max, mtotal_max - mass2_min) / mass2_min
+        qmax = mass1_max / mass2_min # q = m1/m2 by convention
     constraints['mratio'] = (qmin, qmax)
 
     return constraints
@@ -321,11 +323,6 @@ def urand_tau0tau3_generator(flow, **constraints):
                 mass2_min <= mass2 <= mass2_max and \
                 qmin < mass1/mass2 < qmax:
             yield mass1, mass2
-        elif mtotal_min < mtot < mtotal_max and \
-                mass1_min <= mass2 <= mass1_max and \
-                mass2_min <= mass1 <= mass2_max and \
-                qmin < mass2/mass1 < qmax:
-            yield mass2, mass1 # we no longer require q>=1
 
 def IMRPhenomB_param_generator(flow, **kwargs):
     """
