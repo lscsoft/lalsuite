@@ -629,7 +629,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT4PNModes(
 		int l                                      	/**< generate all modes with l <= lmax */
 		)
 {
-	SphHarmTimeSeries *hlm;
+	SphHarmTimeSeries *hlm = NULL;
 	/* The Schwarzschild ISCO frequency - for sanity checking fRef */
 	REAL8 fISCO = pow(LAL_C_SI,3) / (pow(6.,3./2.)*LAL_PI*(m1+m2)*LAL_G_SI);
 
