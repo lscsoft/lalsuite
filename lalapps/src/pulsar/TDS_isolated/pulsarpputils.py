@@ -522,10 +522,9 @@ def plot_posterior_hist(poslist, param, ifos,
   
   # if a par file object is given expect that we have an injection file
   # containing the injected value to overplot on the histgram
+  parval = None
   if parfile:
     parval = parfile[param.upper()]
-  else:
-    parval = None
   
   # loop over ifos
   for idx, ifo in enumerate(ifos):
@@ -538,18 +537,13 @@ def plot_posterior_hist(poslist, param, ifos,
     
     pos = poslist[idx]
     
-    # check for cosiota
-    if 'cosiota' in param:
-      pos_samps = np.cos(pos['iota'].samples)
-    else:
-      pos_samps = pos[param].samples
+    pos_samps = pos[param].samples
  
     # get a normalised histogram for each
     n, bins = hist_norm_bounds( pos_samps, int(nbins), parambounds[0], \
                                 parambounds[1] )
     
     # plot histogram
-    #plt.plot(bins, n, color=coldict[ifo])
     plt.step(bins, n, color=coldict[ifo])
     
     if 'h0' not in param:
@@ -693,13 +687,8 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, \
       plt.hold(True)
 
     if grr:
-      if 'iota' == param:
-        p = 'cosiota'
-      else:
-        p = param
-      
       try:
-        legendvals.append(r'$R = %.2f$' % grr[idx][p])
+        legendvals.append(r'$R = %.2f$' % grr[idx][param])
       except:
         legendval = []
     
@@ -781,17 +770,8 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
   for idx, ifo in enumerate(ifos):
     posterior = poslist[idx]
     
-    if 'cosiota' in params[0]:
-      a = np.squeeze(posterior['iota'].samples)
-      a = np.cos(a)
-      b = np.squeeze(posterior[params[1]].samples)
-    elif 'cosiota' in params[1]:
-      b = np.squeeze(posterior['iota'].samples)
-      b = np.cos(b)
-      a = np.squeeze(posterior[params[0]].samples)
-    else:
-      a = np.squeeze(posterior[params[0]].samples)
-      b = np.squeeze(posterior[params[1]].samples)
+    a = np.squeeze(posterior[params[0]].samples)
+    b = np.squeeze(posterior[params[1]].samples)
     
     # Create 2D bin array
     par1pos_min = a.min()

@@ -275,12 +275,33 @@ def dec_htmlstr(ra):
   return "%s&deg;%s'%s\".%s" % ((re.sub('\+', '', dms[0])).zfill(2), \
 dms[1].zfill(2), ss[0].zfill(2), ss[1].zfill(2))
 
+
+# return the correlation coefficient of all parameters (but make sure to not
+# include the logl or post values. It takes in a posterior object.
+def corrcoef(pos):
+  header_string=''
+  posterior_table=[]
+ 
+  for param_name, one_pos in pos:
+    if param_name != 'logl' and param_name != 'post':
+      column = np.array(one_pos.samples)
+      header_string += param_name + ' '
+      posterior_table.append(column)
+  
+  posterior_table = tuple(posterior_table)
+  parray = np.column_stack(posterior_table)
+  
+  cc = np.corrcoef(parray, rowvar=0, bias=1)
+  
+  return cc, header_string
+
 # list of parameters to display (in this order)
 paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
 'EPS1', 'EPS2', 'OM', 'T0', 'TASC', 'PB']
 
 # html text to display for different parameter names
 paramtextdisp = {'RAJ': '&alpha;', 'DECJ': '&delta;', \
+                 'RA': '&alpha;', 'DEC': '&delta;', \
                  'F0': 'f<sub>0</sub> (Hz)', 'F1': 'f<sub>1</sub> (H/s)', \
                  'F2': 'f<sub>2</sub> (H/s<sup>2</sup>)', \
                  'PEPOCH': 'epoch (MJD)', 'A1': 'a sin<it>i</i> (lt s)', \
@@ -289,13 +310,20 @@ paramtextdisp = {'RAJ': '&alpha;', 'DECJ': '&delta;', \
                  'T0': 'T<sub>0</sub> (MJD)', \
                  'TASC': 'T<sub>asc</sub> (MJD)', \
                  'OM': '&omega;<sub>0</sub>$deg;',
-                 'PB': 'Period (days)'}
+                 'PB': 'Period (days)', 'H0': 'h<sub>0</sub>', \
+                 'COSIOTA': 'cos&iota;', 'PSI': '&psi; (rad)', \
+                 'PHI0': '&phi;<sub>0</sub> (rad)', \
+                 'PMRA': 'p.m. &alpha; (rad/s)', \
+                 'PMDC': 'p.m. &delta; (rad/s)', \
+                 'PMDEC': 'p.m. &delta; (rad/s)'}
 
 # a class containing function to output parameter vales in the appropriate
 # format
 class paramdisp:
   def RAJ(f): return ra_htmlstr(f)
+  def RA(f): return ra_htmlstr(f)
   def DECJ(f): return dec_htmlstr(f)
+  def DEC(f): return dec_htmlstr(f)
   def F0(f): return '%.5f' % float(f)
   def F1(f): return exp_str(float(f), 2)
   def F2(f): return exp_str(float(f), 2)
@@ -308,6 +336,37 @@ class paramdisp:
   def TASC(f): return '%.3f' % float(f)
   def OM(f): return '%.1f' % float(f)
   def PB(f): return '%.3f' % float(f)
+  def H0(f): return exp_str(float(f), 2)
+  def COSIOTA(f): return '%.2f' % float(f)
+  def PHI0(f): return '%.2f' % float(f)
+  def PSI(f): return '%.2f' % float(f)
+  
+# a class containing function to output parameter vales in the appropriate
+# format (for use when outputting posterior stats)
+class paramdisp2:
+  def RAJ(f): return exp_str(float(f), 2)
+  def DECJ(f): return exp_str(float(f), 2)
+  def RA(f): return exp_str(float(f), 2)
+  def DEC(f): return exp_str(float(f), 2)
+  def F0(f): return exp_str(float(f), 2)
+  def F1(f): return exp_str(float(f), 2)
+  def F2(f): return exp_str(float(f), 2)
+  def PEPOCH(f): return '%d' % int(float(f)) # return epoch as an integer
+  def A1(f): return '%.2f' % float(f)
+  def E(f): return '%.2f' % float(f)
+  def EPS1(f): return exp_str(float(f), 2)
+  def EPS2(f): return exp_str(float(f), 2)
+  def T0(f): return '%.2f' % float(f)
+  def TASC(f): return '%.2f' % float(f)
+  def OM(f): return '%.2f' % float(f)
+  def PB(f): return '%.2f' % float(f)
+  def H0(f): return exp_str(float(f), 2)
+  def COSIOTA(f): return '%.2f' % float(f)
+  def PHI0(f): return '%.2f' % float(f)
+  def PSI(f): return '%.2f' % float(f)
+  def PMRA(f): return exp_str(float(f), 2)
+  def PMDC(f): return exp_str(float(f), 2)
+  def DEFAULT(f): return '%.2f' % float(f)
   
 # concatenate a list of strings (default to a new line between each)
 def cattext(strlist, delim='\n'):
@@ -350,8 +409,8 @@ An example of usage for a case when three nested sampling runs have been
 performed for two interferometers (H1 and L1):
   %s --ifo H1 --Bkfiles /home/me/hetdata/H1 --ifo L1 --Bkfiles
 /home/me/hetdata/L1 --parfile /home/me/pardir --priorfile priors.txt --histbins
-50 --mcmcdirs /home/me/MCMCchains/pdfs1,/home/me/MCMCchains/pdfs2 --outpath
-/home/me/public_html/results
+50 --mcmcdirs /home/me/MCMCchains/pdfs1 --mcmcdirs /home/me/MCMCchains/pdfs2
+--outpath /home/me/public_html/results
 """ % os.path.basename(sys.argv[0])
   usage = "Usage: %prog [options]"
   
@@ -366,10 +425,12 @@ performed for two interferometers (H1 and L1):
      multiple MCMC directories from each IFO would be entered as follows:
      --ifo H1 --Bkfiles /home/user/finehetsH1
      --ifo L1 --Bkfiles /home/user/finehetsL1
-     --mcmcdirs /home/user/pdfs1,/home/user/pdfs2,/home/user/pdfs3
+     --mcmcdirs /home/user/pdfs1
+     --mcmcdirs /home/user/pdfs2
+     --mcmcdirs /home/user/pdfs3
   """
   parser.add_option("-m","--mcmcdirs", dest="mcmcdirs",\
-                    help="A list "\
+                    action="append", help="A list "\
                     "of MCMC directories containing chain for all IFOs")
   
   # get pulsar .par file
@@ -478,7 +539,7 @@ performed for two interferometers (H1 and L1):
     ifosNew.append('Joint')
   
   # split MCMC directories
-  mcmcdirs = (opts.mcmcdirs).split(',')
+  mcmcdirs = opts.mcmcdirs
   
   # check if parfile is a single file or a directory
   param_files = []
@@ -768,7 +829,8 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, ifo))
     
     # print out pulsar name to file
     pheadertext = []
-    pulsaratnflink = \
+    if not swinj and not hwinj:
+      pulsaratnflink = \
 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?startUserDefined=\
 true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&\
 pulsar_names=' + re.sub('\+', '%2B', pname) + \
@@ -784,8 +846,11 @@ query'
     elif hwinj:
       psrnameprefix = 'HWINJ'
 
-    pheadertext.append('<h1><a href="%s">%s %s</a></h1>\n' %
+    if not swinj and not hwinj:
+      pheadertext.append('<h1><a href="%s">%s %s</a></h1>\n' %
 (pulsaratnflink, psrnameprefix, pname))
+    else:
+      pheadertext.append('<h1>%s %s</h1>\n' % (psrnameprefix, pname))
     
     # copy par file to pulsar directory
     shutil.copy(parfile, os.path.join(puldir, pname + '.par'))
@@ -866,6 +931,15 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     mcmcgr = [] # list of Gelman-Rubins stats for detector
     nefflist = [] # effective sample size for each combined chain
     chainlens = [] # original average length of each chain
+    
+    # get the posterior statistics i.e. maxL, means, std. devs.
+    max_pos = []
+    maxLvals = []
+    meanvals = []
+    stddevvals = []
+    medvals = []
+    corrcoefs = []
+    corrcoefsheader = []
     
     for i, ifo in enumerate(ifosNew):
       # read in MCMC chains
@@ -962,8 +1036,33 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       pos = bppu.Posterior( commonResultsObj, SimInspiralTableEntry=None, \
                           votfile=None )
       
-      poslist.append(pos)
-    
+      # convert iota back to cos(iota)
+      # create 1D posterior class of cos(iota) values
+      cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
+      
+      # add it back to posterior
+      pos.append(cipos)
+      
+      # remove iota samples
+      pos.pop('iota')
+      
+      # get from info about the posteriors
+      mP, mL = pos.maxL # maximum likelihood/posterior point
+      sd = pos.stdevs #  standard deviations of posteriors 
+      mv = pos.means # means of posteriors
+      md = pos.medians # medians of posteriors
+      cc, hn = corrcoef(pos) # correlation coefficients of posteriors
+      
+      poslist.append(pos) # append posterior object to list
+      
+      max_pos.append(mP)
+      maxLvals.append(mL)
+      stddevvals.append(sd)
+      meanvals.append(mv)
+      medvals.append(md)
+      corrcoefs.append(cc)
+      corrcoefsheader.append(hn)
+      
     # set whether to attempt to output injection parameter on plot
     parinj = None
     if swinj or hwinj:
@@ -1090,7 +1189,7 @@ nbins=[30, 30], parfile=parinj)
 phi0figname['png'], h0cifigname['png'], h0cifigname['png'], cifigname['png'], \
 cifigname['png'], phi0psifigname['png'], phi0psifigname['png'], \
 psifigname['png'], psifigname['png'] ))
-    
+
     # get analysis statistics
     analysisstatstext = []
     analysisstatstext.append('<h2>Analysis statistics</h2>')
@@ -1198,6 +1297,53 @@ fscanfigname[i]['png']) )
       # available) the remove the last table entries
       del mcmctabletext[-2:]
     
+    # output info on the parameters (std dev, mean, max posterior etc)
+    poststatstext = []
+    poststatstext.append('<table>')
+    
+    poststatstext.append( \
+"""\
+  <tr>
+    <th>&nbsp;</th>
+    <th>&nbsp;</th>
+    <th>max. posterior</th>
+    <th>mean</th>
+    <th>median</th>
+    <th>&sigma;</th>
+  </tr>\
+""" )
+    
+    for j, param in enumerate(corrcoefsheader[0].split()):
+      try:
+        pdisp = paramtextdisp[param.upper()]
+      except:
+        pdisp = param
+      
+      poststatstext.append('<tr>\n<td rowspan="%d">%s</td>' % (len(ifosNew), \
+pdisp) )
+      
+      try:
+        dispfunc = paramdisp2.__dict__[param.upper()]
+      except:
+        dispfunc = paramdisp2.__dict__['DEFAULT'] 
+
+      for i, ifo in enumerate(ifosNew):
+        poststatstext.append('<td class="%s">%s</td>' % (ifo, ifo) )
+
+        poststatstext.append('<td>%s</td>' % dispfunc(str(maxLvals[i][param])))
+
+        poststatstext.append('<td>%s</td>' % dispfunc(str(meanvals[i][param])))
+       
+        poststatstext.append('<td>%s</td>' % \
+dispfunc(str(medvals[i][param])))
+    
+        poststatstext.append('<td>%s</td>' % \
+dispfunc(str(stddevvals[i][param])))
+        
+        poststatstext.append('</tr>')
+        
+    poststatstext.append('</table>')
+    
     # output footer giving how the file was made
     pfootertext = []
     
@@ -1237,6 +1383,11 @@ Command lines used:<br>
     # output the MCMC chains
     htmlptext.append('<div class="wrapper">')
     htmlptext.append(cattext(mcmctabletext))
+    htmlptext.append('</div>')
+    
+    # output the posterior stats
+    htmlptext.append('<div class="wrapper">')
+    htmlptext.append(cattext(poststatstext))
     htmlptext.append('</div>')
     
     # output footer
