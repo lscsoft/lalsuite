@@ -79,7 +79,6 @@ int XLALSimInspiralPrecessionRotateModes(
 			for(m=0; m<2*l+1; m++){
 				for(mp=0; mp<2*l+1; mp++){
 					if( !h_xx[m] ) continue;
-					printf( "\t\t%d\n", m-l );
 					h_xx[m]->data->data[i] += 
 						x_lm[mp] * XLALWignerDMatrix( l, mp-l, m-l, alpha->data->data[i], beta->data->data[i], gam->data->data[i] );
 				}
