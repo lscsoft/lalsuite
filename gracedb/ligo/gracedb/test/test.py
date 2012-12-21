@@ -194,6 +194,25 @@ class TestGracedb(unittest.TestCase):
         r = gracedb.writeFile(eventId, uploadFile)
         self.assertEqual(r.status, 201) # CREATED
 
+    def test_logger(self):
+        import logging
+        import ligo.gracedb.rest
+        import ligo.gracedb.logger
+     
+        logging.basicConfig()
+        log = logging.getLogger('testing')
+        log.propagate = False   # Don't write to console
+
+        #gracedb = ligo.gracedb.rest.GraceDb()
+        graceid = eventId
+     
+        log.addHandler(ligo.gracedb.logger.GraceDbLogHandler(gracedb, graceid))
+
+        message = "Message is {0}".format(random.random())
+        log.warn(message)
+
+        event_logs = gracedb.logs(graceid).read()
+        self.assertTrue(message in event_logs)
 
 if __name__ == "__main__":
 
