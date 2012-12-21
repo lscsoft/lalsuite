@@ -1183,6 +1183,13 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     
     # if error occured in reading in MCMC chains then move to next pulsar
     if erridx:
+      # remove directory for that pulsar
+      shutil.rmtree(puldir)
+      
+      # remove parts from main html and latex tables
+      del htmltext[-1]
+      del latextext[-1]
+      
       continue
     
     # set whether to attempt to output injection parameter on plot
