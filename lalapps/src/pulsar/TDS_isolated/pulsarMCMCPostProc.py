@@ -529,6 +529,11 @@ performed for two interferometers (H1 and L1):
   parser.add_option("-w", "--hw-inj", dest="hwinj", help="Set if the " \
                     "pulsars are hardware injections", action="store_true", \
                     default=False)
+                    
+  # say if you want to compile the latex table (default to False)
+  parser.add_option("-l", "--latex", dest="compilelatex", help="Set if you " \
+                    "want to compile the latex results table",
+                    action="store_true", default=False)
   
   p_args=''
   for arg in sys.argv:
@@ -823,7 +828,8 @@ linear&y_axis=&y_scale=linear&state=query'
         latexsdtxt = ''
         latexdisttxt = ''
 
-      htmltext.append('<tr>\n<th class="bottomborder" colspan="5"></th>')
+      htmltext.append('<tr>\n<th class="bottomborder" colspan="%d"></th>' % \
+numprepars)
       latextext.append( \
 """\
 \clearpage
@@ -1588,8 +1594,9 @@ corrected for proper motion effects}")
   latexout.close()
   
   # compile the LaTeX table
-  sp.call(['latex', latexpage])
-  sp.call(['latex', latexpage])
-  sp.call(['dvips', re.sub('tex', 'dvi', latexpage)])
-  sp.call(['ps2pdf', re.sub('tex', 'ps', latexpage)])
+  if opts.compilelatex:
+    sp.call(['latex', latexpage])
+    sp.call(['latex', latexpage])
+    sp.call(['dvips', re.sub('tex', 'dvi', latexpage)])
+    sp.call(['ps2pdf', re.sub('tex', 'ps', latexpage)])
   
