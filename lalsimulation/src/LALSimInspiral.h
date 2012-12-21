@@ -1009,11 +1009,9 @@ int XLALSimInspiralChooseFDWaveform(
     );
 
 /**
- * Interface to compute -2 spin-weighted spherical harmonic modes for a binary
- * inspiral of any available amplitude and phase PN order.
+ * Interface to compute a set of -2 spin-weighted spherical harmonic modes
+ * for a binary inspiral of any available amplitude and phase PN order.
  * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
- * 
- * FIXME: Interface will be changed to return a collection of modes.
  */
 SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     REAL8 phiRef,                               /**< reference orbital phase (rad) */
@@ -1029,7 +1027,31 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
     LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
     int amplitudeO,                             /**< twice post-Newtonian amplitude order */
     int phaseO,                                 /**< twice post-Newtonian order */
-    int l,                                      /**< generate all modes with l <= lmax */
+    int lmax,                                   /**< generate all modes with l <= lmax */
+    Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
+    );
+
+/**
+ * Interface to compute a single -2 spin-weighted spherical harmonic mode
+ * for a binary inspiral of any available amplitude and phase PN order.
+ * The phasing is computed with any of the TaylorT1, T2, T3, T4 methods.
+ */
+COMPLEX16TimeSeries *XLALSimInspiralChooseTDMode(
+    REAL8 phiRef,                               /**< reference orbital phase (rad) */
+    REAL8 deltaT,                               /**< sampling interval (s) */
+    REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 f_min,                                /**< starting GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+    REAL8 r,                                    /**< distance of source (m) */
+    REAL8 lambda1,                              /**< (tidal deformability of mass 1) / m1^5 (dimensionless) */
+    REAL8 lambda2,                              /**< (tidal deformability of mass 2) / m2^5 (dimensionless) */
+    LALSimInspiralWaveformFlags *waveFlags,     /**< Set of flags to control special behavior of some waveform families. Pass in NULL (or None in python) for default flags */
+    LALSimInspiralTestGRParam *nonGRparams, 	/**< Linked list of non-GR parameters. Pass in NULL (or None in python) for standard GR waveforms */
+    int amplitudeO,                             /**< twice post-Newtonian amplitude order */
+    int phaseO,                                 /**< twice post-Newtonian order */
+    int l,                                      /**< l index of mode */
+    int m,                                      /**< m index of mode */
     Approximant approximant                     /**< post-Newtonian approximant to use for waveform production */
     );
 
@@ -1103,7 +1125,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT4PNModes(
 		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
 		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int l                                       /**< generate all modes with l <= lmax */
+		int lmax                                    /**< generate all modes with l <= lmax */
 		);
 
 /**
@@ -1243,7 +1265,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT3PNModes(
 		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
 		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int l                                       /**< generate all modes with l <= lmax */
+		int lmax                                    /**< generate all modes with l <= lmax */
 		);
 
 /**
@@ -1383,7 +1405,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT2PNModes(
 		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
 		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int l                                       /**< generate all modes with l <= lmax */
+		int lmax                                    /**< generate all modes with l <= lmax */
 		);
 
 /**
@@ -1522,7 +1544,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT1PNModes(
 		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */		
 		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
 		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int l                                      /**<  generate all modes with l <= lmax */
+		int lmax                                    /**<  generate all modes with l <= lmax */
 		);
 
 /**

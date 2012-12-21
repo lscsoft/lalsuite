@@ -979,7 +979,7 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT2PNModes(
 		LALSimInspiralInteraction interactionFlags, /**< flag to control spin and tidal effects */
 		int amplitudeO,                             /**< twice post-Newtonian amplitude order */
 		int phaseO,                                 /**< twice post-Newtonian phase order */
-		int l                                      	/**< generate all modes with l <= lmax */
+		int lmax                                    /**< generate all modes with l <= lmax */
 		)
 {
 	SphHarmTimeSeries *hlm = NULL;
@@ -1014,16 +1014,16 @@ SphHarmTimeSeries *XLALSimInspiralTaylorT2PNModes(
 			interactionFlags, phaseO);
 	if ( n < 0 )
 		XLAL_ERROR_NULL(XLAL_EFUNC);
-    int mi, li;
+    int m, l;
     COMPLEX16TimeSeries *hxx;
-    for(li=0; li<=l; li++){
-        for(mi=-l; mi<=l; mi++){
+    for(l=2; l<=lmax; l++){
+        for(m=-l; m<=l; m++){
             hxx = XLALCreateSimInspiralPNModeCOMPLEX16TimeSeries(V, phi,
-                v0, m1, m2, r, amplitudeO, li, mi);
+                v0, m1, m2, r, amplitudeO, l, m);
             if ( !hxx ){
                 XLAL_ERROR_NULL(XLAL_EFUNC);
             }
-            XLALSphHarmTimeSeriesAddMode(hlm, hxx, li, mi);
+            XLALSphHarmTimeSeriesAddMode(hlm, hxx, l, m);
             XLALDestroyCOMPLEX16TimeSeries(hxx);
         }
     }
