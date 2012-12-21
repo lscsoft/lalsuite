@@ -295,6 +295,67 @@ def corrcoef(pos):
   
   return cc, header_string
 
+  
+# a function that attempt to load an MCMC chain file: first it tries using 
+# numpy.loadtxt; if it fails it tries reading line by line and checking
+# for consistent line numbers, skipping lines that are inconsistent; if this
+# fails it returns None
+def readmcmcfile(cf):
+  cfdata = None
+  
+  # first try reading in with loadtxt (skipping lines starting with %)
+  try:
+    cfdata = np.loadtxt(cf, comments='%')
+  except:
+    try:
+      fc = open(cf, 'r')
+      
+      # read in header lines and count how many values each line should have
+      headers = fc.readline()
+      headers = fc.readline() # column names are on the second line
+      # remove % from start
+      headers = re.sub('%', '', headers)
+      # remove rads
+      headers = re.sub('rads', '', headers)
+      # remove other brackets e.g. around (iota)
+      headers = re.sub('[()]', '', headers)
+      
+      lh = len(headers.split())
+      
+      cfdata = np.array([])
+      
+      lines = cf.readlines()
+      
+      for i, line in enumerate(lines):
+        if '%' in line: # skip lines containing %
+          continue
+        
+        lvals = line.split()
+        
+        # skip line if number of values isn't consistent with header
+        if len(lvals) != lh:
+          continue
+        
+        # convert values to floats
+        try:
+          lvalsf = map(float, lvals)
+        except:
+          continue
+        
+        # add values to array
+        if i==0:
+          cfdata = np.array(lvalsf)
+        else:
+          cfdata = np.vstack((cfdata, lvalsf))
+      
+      if cfdata.size == 0:
+        cfdata = None
+    except:
+      cfdata = None
+
+  return cfdata
+          
+      
 # list of parameters to display (in this order)
 paramdisplist = ['RAJ', 'DECJ', 'F0', 'F1', 'F2', 'PEPOCH', 'X' 'E' \
 'EPS1', 'EPS2', 'OM', 'T0', 'TASC', 'PB']
@@ -827,6 +888,21 @@ solid #000; border-bottom:1px solid #000">%s</th>""" % (ifo, ifo))
     
     htmlptext.append('<body>')
     
+    # add in javascript to allow text toggling
+    htmlptext.append( \
+"""
+<script language="javascript"> 
+function toggle(id) {
+  var ele = document.getElementById(id);
+  if(ele.style.display == "block"){
+    ele.style.display = "none";
+  }
+  else
+    ele.style.display = "block";
+}
+</script>
+""" )
+    
     # print out pulsar name to file
     pheadertext = []
     if not swinj and not hwinj:
@@ -941,6 +1017,8 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     corrcoefs = []
     corrcoefsheader = []
     
+    erridx = False
+    
     for i, ifo in enumerate(ifosNew):
       # read in MCMC chains
       mcmc = []
@@ -952,7 +1030,17 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
         
         if os.path.isfile(cfile):
           # load MCMC chain
-          mcmcChain = np.loadtxt(cfile, comments='%')
+          mcmcChain = readmcmcfile(cfile)
+          
+          # if no chain was returned write out an error message and skip this
+          # pulsar
+          if mcmcChain == None:
+            outerrfile = os.path.join(outpath, 'mcmc_chain_errors.txt')
+            errfile = open(outerrfile, 'a') # append to file
+            errfile.write('MCMC file %s could not be read in\n' % cfile)
+            errfile.close()
+            erridx = True
+            break
           
           # find number of effective samples for the chain
           neffstmp = []
@@ -971,6 +1059,9 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
         else:
           print >> sys.stderr, "File %s does not exist!" % cfile
           sys.exit(1)
+      
+      if erridx:
+        break
       
       nefflist.append(math.fsum(neffs))
       chainlens.append(np.mean(cl))
@@ -1062,7 +1153,11 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
       medvals.append(md)
       corrcoefs.append(cc)
       corrcoefsheader.append(hn)
-      
+    
+    # if error occured in reading in MCMC chains then move to next pulsar
+    if erridx:
+      continue
+    
     # set whether to attempt to output injection parameter on plot
     parinj = None
     if swinj or hwinj:
@@ -1299,6 +1394,13 @@ fscanfigname[i]['png']) )
     
     # output info on the parameters (std dev, mean, max posterior etc)
     poststatstext = []
+    poststatstext.append( \
+"""\
+<h2>
+<a href="javascript:toggle('toggleText');">Posterior statistics</a>
+</h2>\
+""" )
+    poststatstext.append('<div id="toggleText" style="display: none;">')
     poststatstext.append('<table>')
     
     poststatstext.append( \
@@ -1342,7 +1444,7 @@ dispfunc(str(stddevvals[i][param])))
         
         poststatstext.append('</tr>')
         
-    poststatstext.append('</table>')
+    poststatstext.append('</table>\n</div>')
     
     # output footer giving how the file was made
     pfootertext = []
