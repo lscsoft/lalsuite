@@ -1474,12 +1474,7 @@ void LALappsGetFrameData(TSSearchParams*     params,
   if (stream)
     {
       /*Close the frame stream if found open*/
-      errcode=XLALFrClose(stream);
-      if (errcode != 0)
-	{
-	  fprintf(stderr,"Problem trying to close the frame stream!\n");
-	  exit(errcode);
-	}
+      XLALFrClose(stream);
     }
   /*
    * If DC_Detrend option is requested detrend the time series

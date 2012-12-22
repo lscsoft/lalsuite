@@ -86,9 +86,9 @@ struct tagLALFrameUFrDetector {
 
 /* Stream functions */
 
-int XLALFrameUFrFileClose(LALFrameUFrFile * stream)
+void XLALFrameUFrFileClose(LALFrameUFrFile * stream)
 {
-    TRY_FRAMEC_FUNCTION(FrameCFileClose, stream);
+    TRY_FRAMEC_FUNCTION_VOID(FrameCFileClose, stream);
 }
 
 

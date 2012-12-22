@@ -23,7 +23,7 @@ class Event():
   Represents a unique event to run on
   """
   new_id=itertools.count().next
-  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None):
+  def __init__(self,trig_time=None,SimInspiral=None,SnglInspiral=None,CoincInspiral=None,event_id=None,timeslide_dict=None,GID=None,ifos=None, duration=None,srate=None,trigSNR=None):
     self.trig_time=trig_time
     self.injection=SimInspiral
     self.sngltrigger=SnglInspiral
@@ -39,6 +39,7 @@ class Event():
       self.ifos = ifos
     self.duration = duration
     self.srate = srate
+    self.trigSNR = trigSNR
     if event_id is not None:
         self.event_id=event_id
     else:
@@ -80,6 +81,7 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
   #ifos = search_summary[0].ifos.split(",")
   coinc_table = lsctables.getTablesByType(xmldoc, lsctables.CoincTable)[0]
   ifos = coinc_table[0].instruments.split(",")
+  trigSNR = coinctable[0].snr
   # Parse PSD
   xmlpsd = utils.load_filename("psd.xml.gz")
   psddict = dict((param.get_pyvalue(elem, u"instrument"), lalseries.parse_REAL8FrequencySeries(elem)) for elem in xmlpsd.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.getAttribute(u"Name") == u"REAL8FrequencySeries")
@@ -96,7 +98,7 @@ def readLValert(lvalertfile,SNRthreshold=0,gid=None):
     these_sngls = [e for e in sngl_events if e.event_id in [c.event_id for c in coinc_map if c.coinc_event_id == coinc.coinc_event_id] ]
     dur = min([e.template_duration for e in these_sngls]) + 2 # Add 2s padding
     #srate = pow(2.0, ceil( log(max([e.f_final]), 2) ) ) # Round up to power of 2
-    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = dur, srate = srate)
+    ev=Event(CoincInspiral=coinc, GID=gid, ifos = ifos, duration = dur, srate = srate, trigSNR = trigSNR)
     if(coinc.snr>SNRthreshold): output.append(ev)
   
   print "Found %d coinc events in table." % len(coinc_events)
@@ -537,6 +539,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     node.set_trig_time(end_time)
     node.set_seed(random.randint(1,2**31))
     if event.srate: node.set_srate(event.srate)
+    if event.trigSNR: node.set_trigSNR(event.trigSNR)
     if self.dataseed:
       node.set_dataseed(self.dataseed+event.event_id)
     gotdata=0
@@ -701,6 +704,9 @@ class EngineNode(pipeline.CondorDAGNode):
   
   def set_srate(self,srate):
     self.add_var_opt('srate',str(srate))
+
+  def set_trigSNR(self,trigSNR):
+    self.add_var_opt('trigSNR',str(trigSNR))
 
   def set_dataseed(self,seed):
     self.add_var_opt('dataseed',str(seed))

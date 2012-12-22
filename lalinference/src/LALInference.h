@@ -388,6 +388,8 @@ tagLALInferenceIFOData
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
   BarycenterInput           *bary;              /** Barycenter information */
   EphemerisData             *ephem;             /** Ephemeris data */
+  TimeCorrectionData        *tdat; /** Einstein delay time correction data */
+  TimeCorrectionType        ttype; /** The time correction type e.g. TDB, TCB */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */

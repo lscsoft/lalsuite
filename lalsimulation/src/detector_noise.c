@@ -33,9 +33,14 @@
 #include <lal/LALSimNoise.h>
 
 double (*psdfunc)(double);
+int (*opsdfunc)(REAL8FrequencySeries *, double);
+double srate = 16384; // sampling rate in Hertz
+double segdur = 4; // duration of a segment in seconds
 double tstart;
 double duration;
+double overrideflow;
 double flow;
+int official;
 int psdonly;
 const char *detector;
 
@@ -44,9 +49,8 @@ int parseargs(int argc, char **argv);
 
 int main(int argc, char *argv[])
 {
-	const double srate = 16384.0; // sampling rate in Hertz
-	const size_t length = 65536; // number of points in a segment
-	const size_t stride = length / 2; // number of points in a stride
+	size_t length;
+	size_t stride;
 	size_t n;
 	REAL8FrequencySeries *psd = NULL;
 	REAL8TimeSeries *seg = NULL;
@@ -57,12 +61,19 @@ int main(int argc, char *argv[])
 	XLALSetErrorHandler(XLALAbortErrorHandler);
 
 	parseargs(argc, argv);
+	if (overrideflow > 0.0)
+		flow = overrideflow;
+	length = segdur * srate;
+	stride = length / 2;
 
 	XLALGPSSetREAL8(&epoch, tstart);
 	gsl_rng_env_setup();
 	rng = gsl_rng_alloc(gsl_rng_default);
 	psd = XLALCreateREAL8FrequencySeries(detector, &epoch, 0.0, srate/length, &lalSecondUnit, length/2 + 1);
-	XLALSimNoisePSD(psd, flow, psdfunc);
+	if (official && opsdfunc)
+		opsdfunc(psd, flow);
+	else
+		XLALSimNoisePSD(psd, flow, psdfunc);
 	if (psdonly) { // output PSD and exit
 		size_t klow = flow / psd->deltaF;
 		size_t k;
@@ -109,12 +120,16 @@ int parseargs( int argc, char **argv )
 			{ "geo", no_argument, 0, 'g' },
 			{ "tama", no_argument, 0, 'T' },
 			{ "kagra", no_argument, 0, 'K' },
+			{ "official", no_argument, 0, 'O' },
 			{ "psd-only", no_argument, 0, 'P' },
 			{ "start-time", required_argument, 0, 's' },
 			{ "duration", required_argument, 0, 't' },
+			{ "sample-rate", required_argument, 0, 'r' },
+			{ "segment-duration", required_argument, 0, 'd' },
+			{ "low-frequency", required_argument, 0, 'f' },
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "hIABCDEFPvVgTKs:t:";
+	char args[] = "hIABCDEFOPvVgTKs:t:r:d:f:";
 	while (1) {
 		int option_index = 0;
 		int c;
@@ -136,31 +151,37 @@ int parseargs( int argc, char **argv )
 				exit(0);
 			case 'A': /* aligo-nosrm */
 				psdfunc = XLALSimNoisePSDaLIGONoSRMLowPower;
+				opsdfunc = XLALSimNoisePSDaLIGONoSRMLowPowerGWINC;
 				flow = 9.0;
 				detector = "aLIGO";
 				break;
 			case 'B': /* aligo-zerodet-lowpower */
 				psdfunc = XLALSimNoisePSDaLIGOZeroDetLowPower;
+				opsdfunc = XLALSimNoisePSDaLIGOZeroDetLowPowerGWINC;
 				flow = 9.0;
 				detector = "aLIGO";
 				break;
 			case 'C': /* aligo-zerodet-highpower */
 				psdfunc = XLALSimNoisePSDaLIGOZeroDetHighPower;
+				opsdfunc = XLALSimNoisePSDaLIGOZeroDetHighPowerGWINC;
 				flow = 9.0;
 				detector = "aLIGO";
 				break;
 			case 'D': /* aligo-nsnsopt */
 				psdfunc = XLALSimNoisePSDaLIGONSNSOpt;
+				opsdfunc = XLALSimNoisePSDaLIGONSNSOptGWINC;
 				flow = 9.0;
 				detector = "aLIGO";
 				break;
 			case 'E': /* aligo-bhbh20deg */
 				psdfunc = XLALSimNoisePSDaLIGOBHBH20Deg;
+				opsdfunc = XLALSimNoisePSDaLIGOBHBH20DegGWINC;
 				flow = 9.0;
 				detector = "aLIGO";
 				break;
 			case 'F': /* aligo-highfreq */
 				psdfunc = XLALSimNoisePSDaLIGOHighFrequency;
+				opsdfunc = XLALSimNoisePSDaLIGOHighFrequencyGWINC;
 				flow = 9.0;
 				detector = "aLIGO";
 				break;
@@ -194,6 +215,9 @@ int parseargs( int argc, char **argv )
 				flow = 5.0;
 				detector = "KAGRA";
 				break;
+			case 'O': /* official */
+				official = 1;
+				break;
 			case 'P': /* start-time */
 				psdonly = 1;
 				break;
@@ -202,6 +226,15 @@ int parseargs( int argc, char **argv )
 				break;
 			case 't': /* duration */
 				duration = atof(optarg);
+				break;
+			case 'r': /* duration */
+				srate = atof(optarg);
+				break;
+			case 'd': /* segment duration */
+				segdur = atof(optarg);
+				break;
+			case 'f': /* low frequency */
+				overrideflow = atof(optarg);
 				break;
 			case '?':
 			default:
@@ -243,8 +276,12 @@ int usage( const char *program )
 	fprintf(stderr, "\t-g, --geo                    \tGEO600 noise power\n");
 	fprintf(stderr, "\t-T, --tama                   \tTAMA300 noise power\n");
 	fprintf(stderr, "\t-K, --kagra                  \tKAGRA noise power\n");
+	fprintf(stderr, "\t-O, --official               \tuse official data files\n");
 	fprintf(stderr, "\t-P, --psd-only               \toutput PSD only\n");
 	fprintf(stderr, "\t-s, --start-time             \tGPS start time (s)\n");
 	fprintf(stderr, "\t-t, --duration               \t(required) duration of data to produce (s)\n");
+	fprintf(stderr, "\t-r, --sample-rate            \tsample rate (Hz) [16384]\n");
+	fprintf(stderr, "\t-d, --segment-duration       \tsegment duration (s) [4]\n");
+	fprintf(stderr, "\t-f, --low-frequency          \toverride default low frequency (Hz)\n");
 	return 0;
 }

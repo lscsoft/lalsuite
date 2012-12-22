@@ -218,7 +218,7 @@ XLALReturnIFO(
 
     default:
       /* Invalid Detector Site */
-      snprintf( ifo, LIGOMETA_IFO_MAX, "");
+      snprintf( ifo, LIGOMETA_IFO_MAX, " ");
   }
 }
 

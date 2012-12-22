@@ -959,7 +959,7 @@ CohPTFSkyPositions *coh_PTF_generate_sky_grid(
   }
 
   /* calculate angular resolution */
-  if (! params->singlePolFlag && (! params->numIFO == 1))
+  if ((! params->singlePolFlag) && (params->numIFO != 1))
   {
     angularResolution = 2. * params->timingAccuracy / alpha;
   }

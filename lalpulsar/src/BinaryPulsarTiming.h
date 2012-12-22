@@ -294,6 +294,7 @@ tagBinaryPulsarParams
   REAL8 wave_omErr;
   
   CHAR *units; /**< The time system used e.g. TDB */
+  CHAR *ephem; /**< The JPL solar system ephemeris used e.g. DE405 */
 }BinaryPulsarParams;
 
 /** structure containing the Kopeikin terms */

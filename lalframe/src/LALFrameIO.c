@@ -756,7 +756,7 @@ int XLALFrameAddREAL4TimeSeriesSimData( FrameH *frame, REAL4TimeSeries *series )
   if ( ! vect )
     XLAL_ERROR( XLAL_EFUNC );
 
-  sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, -32 );
+  sim = FrSimDataNew( frame, series->name, 1./series->deltaT, series->data->length, -32 );
   if ( ! sim ) {
     FrVectFree( vect );
     XLAL_ERROR( XLAL_EERR );
@@ -786,7 +786,7 @@ int XLALFrameAddREAL8TimeSeriesSimData( FrameH *frame, REAL8TimeSeries *series )
   if ( ! vect )
     XLAL_ERROR( XLAL_EFUNC );
 
-  sim = FrSimDataNew( frame, series->name, series->deltaT, series->data->length, -64 );
+  sim = FrSimDataNew( frame, series->name, 1./series->deltaT, series->data->length, -64 );
   if ( ! sim ) {
     FrVectFree( vect );
     XLAL_ERROR( XLAL_EERR );

@@ -230,7 +230,7 @@ FrOutPar;
 
 FrStream * XLALFrCacheOpen( FrCache *cache );
 FrStream * XLALFrOpen( const char *dirname, const char *pattern );
-int XLALFrClose( FrStream *stream );
+void XLALFrClose( FrStream *stream );
 int XLALFrSetMode( FrStream *stream, int mode );
 int XLALFrGetState( FrStream *stream );
 int XLALFrClearErr( FrStream *stream );

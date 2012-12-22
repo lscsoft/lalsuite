@@ -2,9 +2,9 @@ Source: ligo-gracedb
 Maintainer: Brian Moe <brian.moe@ligo.org>
 Section: python
 Priority: optional
-Build-Depends: debhelper (>= 7), python-support (>= 0.8.4)
+Build-Depends: debhelper (>= 7), python-all-dev
 Standards-Version: 3.8.4
-XS-Python-Version: all
+X-Python-Version: >=2.6
 
 Package: python-ligo-gracedb
 Architecture: all

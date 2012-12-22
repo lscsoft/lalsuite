@@ -1,5 +1,13 @@
-AM_CPPFLAGS = -I$(top_builddir)/include
+AM_CPPFLAGS = -I$(top_builddir)/include -DPKGDATADIR='"$(pkgdatadir)"'
 LDADD = liblalsimulation.la
+
+NOISEPSDFILES = \
+	LIGO-T0900288-v3-BHBH_20deg.txt \
+	LIGO-T0900288-v3-High_Freq.txt \
+	LIGO-T0900288-v3-NO_SRM.txt \
+	LIGO-T0900288-v3-NSNS_Opt.txt \
+	LIGO-T0900288-v3-ZERO_DET_high_P.txt \
+	LIGO-T0900288-v3-ZERO_DET_low_P.txt
 
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
@@ -93,6 +101,8 @@ MOSTLYCLEANFILES = \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
 
+pkgdata_DATA = $(NOISEPSDFILES)
+
 sysconf_DATA = \
 	lalsimulation-user-env.sh \
 	lalsimulation-user-env.csh
@@ -116,7 +126,8 @@ lalsimulation-user-env.csh lalsimulation-user-env.sh: lalsimulation-user-env.she
 
 EXTRA_DIST = \
 	generate_user_env.awk \
-	LALSimulationConfig.h.in
+	LALSimulationConfig.h.in \
+	$(NOISEPSDFILES)
 
 if HAVE_GIT_REPO
 BUILT_SOURCES += LALSimulationVCSInfo.h

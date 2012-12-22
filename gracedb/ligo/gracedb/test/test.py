@@ -3,7 +3,38 @@ import unittest
 import random
 import os
 
-from ligo.gracedb.rest import GraceDb, HTTPError
+from ligo.gracedb.rest import GraceDb
+
+# Test the GraceDb REST API class.
+#
+#  To run:
+#
+#     python $PATH_TO_GRACEDB_LIB/test/test.py
+# 
+#  Environment Variables:
+#
+#     TEST_SERVICE
+#       defaults to https://moe.phys.uwm.edu/gracedb/api/
+#       live site would be https://gracedb.ligo.org/api/
+#
+#     TEST_DATA_DIR
+#       defaults to $PATH_TO_GRACEDB_LIB/test/data/
+#
+#       Files expected:
+#
+#          burst-cwb.txt
+#          cbc-lm2.xml
+#          cbc-lm.xml
+#          cbc-mbta.gwf
+#          upload2.data
+#          upload.data
+#          upload.data.gz
+#
+#     X509_USER_PROXY
+#
+#     X509_USER_CERT
+#     X509_USER_KEY
+
 
 TEST_SERVICE = "https://moe.phys.uwm.edu/gracedb/api/"
 
@@ -53,13 +84,7 @@ class TestGracedb(unittest.TestCase):
         """Upload and re-upload a file"""
 
         uploadFile = os.path.join(testdatadir, "upload.data")
-        try:
-            r = gracedb.writeFile(eventId, uploadFile)
-        except HTTPError, e:
-            f = open('error.html', 'w')
-            f.write(e.message)
-            f.close()
-            raise
+        r = gracedb.writeFile(eventId, uploadFile)
         self.assertEqual(r.status, 201) # CREATED
         r_content = r.json()
         link = r_content['permalink']
@@ -159,6 +184,35 @@ class TestGracedb(unittest.TestCase):
         self.assertEqual(new_event['analysisType'], "LowMass")
         self.assertEqual(new_event['gpstime'], 971609249)
 
+    def test_upload_binary(self):
+        """
+        Test workaround for Python bug
+        http://bugs.python.org/issue11898
+        Raises exception if workaround fails.
+        """
+        uploadFile = os.path.join(testdatadir, "upload.data.gz")
+        r = gracedb.writeFile(eventId, uploadFile)
+        self.assertEqual(r.status, 201) # CREATED
+
+    def test_logger(self):
+        import logging
+        import ligo.gracedb.rest
+        import ligo.gracedb.logger
+     
+        logging.basicConfig()
+        log = logging.getLogger('testing')
+        log.propagate = False   # Don't write to console
+
+        #gracedb = ligo.gracedb.rest.GraceDb()
+        graceid = eventId
+     
+        log.addHandler(ligo.gracedb.logger.GraceDbLogHandler(gracedb, graceid))
+
+        message = "Message is {0}".format(random.random())
+        log.warn(message)
+
+        event_logs = gracedb.logs(graceid).read()
+        self.assertTrue(message in event_logs)
 
 if __name__ == "__main__":
 
@@ -170,6 +224,9 @@ if __name__ == "__main__":
 #   which is what a normal test case setUp() would do.
 
     testdatadir = os.path.join(os.path.dirname(__file__), "data")
+
+    service = os.environ.get('TEST_SERVICE', TEST_SERVICE)
+    testdatadir = os.environ.get('TEST_DATA_DIR', testdatadir)
 
     gracedb = GraceDb(TEST_SERVICE)
 

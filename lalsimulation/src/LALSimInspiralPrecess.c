@@ -43,6 +43,55 @@
 #include "lal/LALAtomicDatatypes.h"
 
 /**
+ * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
+ * by Euler angles alpha, beta, and gamma using the Wigner D matricies.
+ * 
+ * e.g.
+ *
+ * \tilde{h}_{l,m}(t) = D^l_{m,m'} h_{l,m'}(t)
+ */
+int XLALSimInspiralPrecessionRotateModes(
+                SphHarmTimeSeries* h_lm, /**< spherical harmonic decomposed modes, modified in place */
+                REAL8TimeSeries* alpha, /**< alpha Euler angle time series */
+                REAL8TimeSeries* beta, /**< beta Euler angle time series */
+                REAL8TimeSeries* gam /**< gamma Euler angle time series */
+){
+
+	unsigned int i;
+	int l, lmax, m, mp;
+	lmax = XLALSphHarmTimeSeriesGetMaxL( h_lm );
+	// Temporary holding variables
+	complex double *x_lm = XLALCalloc( 2*lmax+1, sizeof(complex double) );
+	COMPLEX16TimeSeries **h_xx = XLALCalloc( 2*lmax+1, sizeof(COMPLEX16TimeSeries) );
+
+	for(i=0; i<alpha->data->length; i++){
+		for(l=0; l<=lmax; l++){
+			for(m=0; m<2*l+1; m++){
+				h_xx[m] = XLALSphHarmTimeSeriesGetMode(h_lm, l, m-l);
+				if( !h_xx[m] ){
+					x_lm[m] = 0;
+				} else {
+					x_lm[m] = h_xx[m]->data->data[i];
+					h_xx[m]->data->data[i] = 0;
+				}
+			}
+
+			for(m=0; m<2*l+1; m++){
+				for(mp=0; mp<2*l+1; mp++){
+					if( !h_xx[m] ) continue;
+					h_xx[m]->data->data[i] += 
+						x_lm[mp] * XLALWignerDMatrix( l, mp-l, m-l, alpha->data->data[i], beta->data->data[i], gam->data->data[i] );
+				}
+			}
+		}
+	}
+
+	XLALFree( x_lm );
+	XLALFree( h_xx );
+	return XLAL_SUCCESS;
+}
+
+/**
  * Takes in the l=2, abs(m)=2 decomposed modes as a strain time series and
  * imposes the effect of a constant cone of precession. This is accomplished
  * by taking the axis of the binary rotational plane and rotating the Y_lm
@@ -59,8 +108,8 @@
  * given l and the appropriate action will be taken for *all* of the submodes.
  */
 int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				COMPLEX16TimeSeries* h_2_2, /**< (2,-2) mode, modified in place */
-				COMPLEX16TimeSeries* h_22, /**< (2,2) mode, modified in place */
+				COMPLEX16TimeSeries** h_2_2, /**< (2,-2) mode, modified in place */
+				COMPLEX16TimeSeries** h_22, /**< (2,2) mode, modified in place */
 				double precess_freq, /**< Precession frequency in Hz */
 				double a, /**< Opening angle of precession cone in rads  */
 				double phi_precess, /**< initial phase in cone of L around J */
@@ -72,11 +121,11 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 		// Since we need at least three points to do any of the numerical work
 		// we intend to, if the waveform is two points or smaller, we're in
 		// trouble. I don't expect this to be a problem.
-		if( h_2_2->data->length <= 2 ){
+		if( (*h_2_2)->data->length <= 2 ){
 			XLALPrintError( "XLAL Error - %s: Waveform length is too small to evolve accurately.", __func__);
 			XLAL_ERROR( XLAL_EBADLEN );
 		}
-        if( h_2_2->data->length != h_22->data->length ){
+        if( (*h_2_2)->data->length != (*h_22)->data->length ){
             XLALPrintError( "XLAL Error - %s: Input (2,2) and (2,-2) modes have different length.", __func__);
             XLAL_ERROR( XLAL_EBADLEN );
         }
@@ -84,34 +133,31 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 		unsigned int i;
 		double omg_p = 2*LAL_PI*precess_freq;
 		double t=0;
-		int l = 2, mp;
-		// h_lm samples
-		COMPLEX16 *x_lm = XLALCalloc( (2*l+1), sizeof(COMPLEX16) );
 
 		// time evolved Euler angles
 		REAL8TimeSeries* alpha = XLALCreateREAL8TimeSeries(
 			"euler angle alpha",
-			&(h_22->epoch),
-			h_22->f0,
-			h_22->deltaT,
-			&(h_22->sampleUnits),
-			h_22->data->length
+			&((*h_22)->epoch),
+			(*h_22)->f0,
+			(*h_22)->deltaT,
+			&((*h_22)->sampleUnits),
+			(*h_22)->data->length
 		);
 		REAL8TimeSeries* beta = XLALCreateREAL8TimeSeries(
 			"euler angle beta",
-			&(h_22->epoch),
-			h_22->f0,
-			h_22->deltaT,
-			&(h_22->sampleUnits),
-			h_22->data->length
+			&((*h_22)->epoch),
+			(*h_22)->f0,
+			(*h_22)->deltaT,
+			&((*h_22)->sampleUnits),
+			(*h_22)->data->length
 		);
 		REAL8TimeSeries* gam = XLALCreateREAL8TimeSeries(
 			"euler angle gamma",
-			&(h_22->epoch),
-			h_22->f0,
-			h_22->deltaT,
-			&(h_22->sampleUnits),
-			h_22->data->length
+			&((*h_22)->epoch),
+			(*h_22)->f0,
+			(*h_22)->deltaT,
+			&((*h_22)->sampleUnits),
+			(*h_22)->data->length
 		);
 
 		// Minimal rotation constraint
@@ -119,7 +165,7 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 		// Uses the second order finite difference to estimate dalpha/dt
 		// Then the trapezoid rule for the integration
 		for(i=0; i<alpha->data->length; i++){
-			t = h_22->deltaT*i;
+			t = (*h_22)->deltaT*i;
 			alpha->data->data[i] = a*sin(omg_p * t + phi_precess) + alpha_0;
 			beta->data->data[i] = a*cos(omg_p * t + phi_precess) + beta_0;
 		}
@@ -151,24 +197,25 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
                 cos(beta->data->data[i-1])*dalpha_0 +
                 cos(beta->data->data[i])*dalpha_1;
 
+		/*************************************************************/
 		// Rotate waveform
-		// TODO: Make a loop on m inside the mp loop and sum across all
-		// submodes. Note that this requires a change to the function signature
-		// to input all modes for a given l.
-		for(i=0; i<h_22->data->length; i++){
-			x_lm[4] = h_22->data->data[i];
-			x_lm[0] = h_2_2->data->data[i];
+		SphHarmTimeSeries *h_lm;
 
-			h_22->data->data[i] = 0;
-			h_2_2->data->data[i] = 0;
+		h_lm = XLALSphHarmTimeSeriesAddMode( NULL, *h_22, 2, 2 );
+		unsigned int data_length = (*h_22)->data->length;
+		XLALDestroyCOMPLEX16TimeSeries( *h_22 );
+		h_lm = XLALSphHarmTimeSeriesAddMode( h_lm, *h_2_2, 2, -2 );
+		XLALDestroyCOMPLEX16TimeSeries( *h_2_2 );
 
-			for(mp=-l; mp<=l; mp++){
-				h_2_2->data->data[i] += 
-				x_lm[mp+2] * XLALWignerDMatrix( 2, mp, -2, alpha->data->data[i], beta->data->data[i], gam->data->data[i] );
-				h_22->data->data[i] += 
-				x_lm[mp+2] * XLALWignerDMatrix( 2, mp, 2, alpha->data->data[i], beta->data->data[i], gam->data->data[i] );
-			}
-		}	
+		XLALSimInspiralPrecessionRotateModes( h_lm, alpha, beta, gam );
+
+		*h_22 = XLALSphHarmTimeSeriesGetMode( h_lm, 2, 2 );
+		*h_22 = XLALCutCOMPLEX16TimeSeries( *h_22, 0, data_length );
+		*h_2_2 = XLALSphHarmTimeSeriesGetMode( h_lm, 2, -2 );
+		*h_2_2 = XLALCutCOMPLEX16TimeSeries( *h_2_2, 0, data_length );
+
+		XLALDestroySphHarmTimeSeries( h_lm );
+		/*************************************************************/
 
 		XLALDestroyREAL8TimeSeries( alpha );
 		XLALDestroyREAL8TimeSeries( beta );
@@ -188,8 +235,8 @@ int XLALSimInspiralConstantPrecessionConeWaveformModes(
 int XLALSimInspiralConstantPrecessionConeWaveform(
 				REAL8TimeSeries* hp, /**< Output precessing plus polarization */
 				REAL8TimeSeries* hx, /**< Output precessing cross polarization*/
-				COMPLEX16TimeSeries* h_2_2, /**< Input non-precessing (2,-2) mode - modified in place */
-				COMPLEX16TimeSeries* h_22, /**< Input non-precessing (2,2) mode - modified in place */
+				COMPLEX16TimeSeries* h_2_2, /**< Input non-precessing (2,-2) mode */
+				COMPLEX16TimeSeries* h_22, /**< Input non-precessing (2,2) mode */
 				double precess_freq, /**< Precession frequency in Hz */
 				double a, /**< Opening angle of precession cone in rads  */
 				double phi_precess, /**< initial phase in cone of L around J */
@@ -197,7 +244,7 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 				double beta_0 /**< zenith btwn center of cone and line of sight */
 ) {
 		int ret = XLALSimInspiralConstantPrecessionConeWaveformModes( 
-						h_2_2, h_22, 
+						&h_2_2, &h_22, 
 						precess_freq, a, phi_precess,
 						alpha_0, beta_0 );
         if( ret != XLAL_SUCCESS )
@@ -239,8 +286,8 @@ int XLALSimInspiralConstantPrecessionConeWaveform(
 		}
 
 		// User should do this.
-		//XLALDestroyCOMPLEX16TimeSeries( h_22 );
-		//XLALDestroyCOMPLEX16TimeSeries( h_2_2 );
+		XLALDestroyCOMPLEX16TimeSeries( h_22 );
+		XLALDestroyCOMPLEX16TimeSeries( h_2_2 );
 
         return XLAL_SUCCESS;
 }

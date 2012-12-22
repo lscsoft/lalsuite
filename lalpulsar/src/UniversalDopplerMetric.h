@@ -271,6 +271,12 @@ XLALDetectorPosVel (PosVel3D_t *spin_posvel,
 		    DetectorMotionType special
 		    );
 
+int XLALPtolemaicPosVel ( PosVel3D_t *posvel, const LIGOTimeGPS *tGPS );
+gsl_matrix *XLALProjectMetric ( const gsl_matrix * g_ij, const UINT4 c );
+
+void XLALequatorialVect2ecliptic ( vect3D_t out, const vect3D_t in );
+void XLALeclipticVect2equatorial ( vect3D_t out, const vect3D_t in );
+void XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in );
 
 vect3Dlist_t *
 XLALComputeOrbitalDerivatives ( UINT4 maxorder, const LIGOTimeGPS *tGPS, const EphemerisData *edat );

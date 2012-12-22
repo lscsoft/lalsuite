@@ -20,10 +20,9 @@ import httplib
 import mimetypes
 import urllib
 import os
-import sys
 import json
 
-DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api"
+DEFAULT_SERVICE_URL = "https://gracedb.ligo.org/api/"
 
 #-----------------------------------------------------------------
 # Exception(s)
@@ -57,6 +56,17 @@ class GsiRest(object):
                 key_file=self.key, cert_file=self.cert)
 
     def request(self, method, url, body=None, headers=None, priming_url=None):
+        # Bug in Python (versions < 2.7.1 (?))
+        # http://bugs.python.org/issue11898
+        # if the URL is unicode and the body of a request is binary,
+        # the POST/PUT action fails because it tries to concatenate
+        # the two which fails due to encoding problems.
+        # Workaround is to cast all URLs to str.
+        # This is probably bad in general,
+        # but for our purposes, today, this will do.
+        url = url and str(url)
+        priming_url = priming_url and str(priming_url)
+
         conn = self.getConnection(url)
         if priming_url:
             conn.request("GET", priming_url, headers={'connection' : 'keep-alive'})

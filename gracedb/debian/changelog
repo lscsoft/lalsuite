@@ -1,3 +1,25 @@
+ligo-gracedb (1.7-1) unstable; urgency=low
+
+  * Workaround for Python bug http://bugs.python.org/issue11898
+  * Added Leo Singer's convenience classes for logging
+
+ -- Brian Moe <brian.moe@ligo.org>  Wed, 21 Dec 2012 16:39:17 -0500
+
+ligo-gracedb (1.6-1) unstable; urgency=low
+
+  * Fixed some typos
+  * Added more unit tests for GraceDb class
+  * Added test script for command line client
+  * Improved unit tests' usability
+
+ -- Brian Moe <brian.moe@ligo.org>  Wed, 19 Dec 2012 13:11:52 -0500
+
+ligo-gracedb (1.5-2) unstable; urgency=low
+
+  * Source 3.0 format
+
+ -- Steffen Grunewald <steffen.grunewald@aei.mpg.de>  Fri, 14 Dec 2012 18:05:00 +0100
+
 ligo-gracedb (1.5-1) unstable; urgency=low
 
   * Added support for REST API

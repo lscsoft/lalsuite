@@ -29,13 +29,8 @@
  *
  * */
 
-/* Considerations...
- * 1. Instead of h_lm, have the user give the mode decomposition for a specific
- * l, and provide that l to the function. Then everything proceeds as before
- * with the assumption that the double pointer provided has 2l+1 values to 
- * operate on.
- * 
- * 2. Don't have full time series for alpha, beta, and gamma unless we have a
+/* Considerations:
+ * Don't have full time series for alpha, beta, and gamma unless we have a
  * specific need for it. It's wasteful of memory.
  */
 
@@ -46,6 +41,21 @@
 #include <lal/LALSimIMR.h>
 #include <lal/LALDatatypes.h>
 #include <lal/SphericalHarmonics.h>
+
+/**
+ * Takes in the h_lm spherical harmonic decomposed modes and rotates the modes
+ * by Euler angles alpha, beta, and gamma using the Wigner D matricies.
+ * 
+ * e.g.
+ *
+ * \tilde{h}_{l,m}(t) = D^l_{m,m'} h_{l,m'}(t)
+ */
+int XLALSimInspiralPrecessionRotateModes(
+				SphHarmTimeSeries* h_lm, /**< spherical harmonic decomposed modes, modified in place */
+				REAL8TimeSeries* alpha, /**< alpha Euler angle time series */
+				REAL8TimeSeries* beta, /**< beta Euler angle time series */
+				REAL8TimeSeries* gam /**< gamma Euler angle time series */
+);
 
 /**
  * Takes in the l=2, abs(m)=2 decomposed modes as a strain time series and
@@ -64,8 +74,8 @@
  * given l and the appropriate action will be taken for *all* of the submodes.
  */
 int XLALSimInspiralConstantPrecessionConeWaveformModes(
-				COMPLEX16TimeSeries* h_2_2, /**< (2,-2) mode, modified in place */
-				COMPLEX16TimeSeries* h_22, /**< (2,2) mode, modified in place */
+				COMPLEX16TimeSeries** h_2_2, /**< (2,-2) mode, modified in place */
+				COMPLEX16TimeSeries** h_22, /**< (2,2) mode, modified in place */
 				double precess_freq, /**< Precession frequency in Hz */
 				double a, /**< Opening angle of precession cone in rads  */
 				double phi_precess, /**< initial phase in cone of L around J */

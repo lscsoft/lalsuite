@@ -325,6 +325,7 @@ if do_mcmc:
   except:
     ciwidth = None
 
+  ephempath = None
   if do_cov:
     try:
       covdir = cp.get('mcmc','cov_dir') # directory containing cov matrices  
@@ -426,27 +427,28 @@ while i < len(param_files):
       ephem = par['EPHEM']
       units = par['UNITS']
       
-      if ephem is None:
-        ephem = 'DE405' # default to DE405
+      if ephempath:
+        if ephem is None:
+          ephem = 'DE405' # default to DE405
               
-      if 'DE200' in ephem:
-        eephem = ephempath + '/earth00-19-DE200.dat.gz'
-        sephem = ephempath + '/sun00-19-DE200.dat.gz'
-      elif 'DE405' in ephem:
-        eephem = ephempath + '/earth00-19-DE405.dat.gz'
-        sephem = ephempath + '/sun00-19-DE405.dat.gz'
-      elif 'DE414' in ephem:
-        eephem = ephempath + '/earth00-19-DE414.dat.gz'
-        sephem = ephempath + '/sun00-19-DE414.dat.gz'
+        if 'DE200' in ephem:
+          eephem = ephempath + '/earth00-19-DE200.dat.gz'
+          sephem = ephempath + '/sun00-19-DE200.dat.gz'
+        elif 'DE405' in ephem:
+          eephem = ephempath + '/earth00-19-DE405.dat.gz'
+          sephem = ephempath + '/sun00-19-DE405.dat.gz'
+        elif 'DE414' in ephem:
+          eephem = ephempath + '/earth00-19-DE414.dat.gz'
+          sephem = ephempath + '/sun00-19-DE414.dat.gz'
                 
-      if units is None:
-        units = []
+        if units is None:
+          units = []
     
-      # check time correction file to use
-      if 'TDB' in units:
-        tephem = ephempath + '/tdb_2000-2019.dat.gz'
-      else:
-        tephem = ephempath + '/te405_2000-2019.dat.gz'
+        # check time correction file to use
+        if 'TDB' in units:
+          tephem = ephempath + '/tdb_2000-2019.dat.gz'
+        else:
+          tephem = ephempath + '/te405_2000-2019.dat.gz'
       
       # if there is a covariance matrix set this
       m=0
@@ -565,9 +567,10 @@ while i < len(param_files):
           pulsarsCov2[count3].set_input_dir(input_dir)
           pulsarsCov2[count3].set_output_dir(output_dir)
 
-          pulsarsCov2[count3].set_earth(eephem)
-          pulsarsCov2[count3].set_sun(sephem)
-          pulsarsCov2[count3].set_ephem_time(tephem)
+          if ephempath:
+            pulsarsCov2[count3].set_earth(eephem)
+            pulsarsCov2[count3].set_sun(sephem)
+            pulsarsCov2[count3].set_ephem_time(tephem)
 
           # set priors
           if do_priors:

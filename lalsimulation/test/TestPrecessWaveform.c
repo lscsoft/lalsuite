@@ -144,8 +144,8 @@ int main(void){
         if( ret != XLAL_SUCCESS )
             XLAL_ERROR( XLAL_EFUNC );
 
-		XLALDestroyCOMPLEX16TimeSeries( h_22 );
-		XLALDestroyCOMPLEX16TimeSeries( h_2_2 );
+		//XLALDestroyCOMPLEX16TimeSeries( h_22 );
+		//XLALDestroyCOMPLEX16TimeSeries( h_2_2 );
 
 		// Write out rotated waveform
 		for(i=0; i<hp->data->length; i++)

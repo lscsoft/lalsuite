@@ -420,7 +420,8 @@ void IFTE_init(const char fname[MAXFNAME]) {
   char buf[1024];
   int ncon;
   double double_in;
-
+  size_t rc;
+  
   if( (f = fopen(fname, "r")) == NULL ){
     fprintf(stderr, "Error... opening time ephemeris file '%s'\n",
             fname);
@@ -428,12 +429,12 @@ void IFTE_init(const char fname[MAXFNAME]) {
   }
 
   /* read in header info */
-  fread(buf, 1, 252, f); /* read CHARACTER*6 TTL(14,3) */
-  fread(buf, 1, 12, f); /* read CHARACTER*6 CNAM(2) */
-  fread(&ifte.startJD, 1, 8, f);
-  fread(&ifte.endJD, 1, 8, f);
-  fread(&ifte.stepJD, 1, 8, f);
-  fread(&ncon, 1, 4, f);
+  rc = fread(buf, 1, 252, f); /* read CHARACTER*6 TTL(14,3) */
+  rc = fread(buf, 1, 12, f); /* read CHARACTER*6 CNAM(2) */
+  rc = fread(&ifte.startJD, 1, 8, f);
+  rc = fread(&ifte.endJD, 1, 8, f);
+  rc = fread(&ifte.stepJD, 1, 8, f);
+  rc = fread(&ncon, 1, 4, f);
   
   ifte.swap_endian = (ncon!=2); /* check for endianness */
 
@@ -449,7 +450,7 @@ void IFTE_init(const char fname[MAXFNAME]) {
     IFTswapDouble(&ifte.stepJD); 
   }
 
-  fread(ifte.ipt, 8, 3, f);
+  rc = fread(ifte.ipt, 8, 3, f);
   if (ifte.swap_endian) IFTswapInts(&ifte.ipt[0][0], 6); 
 
   /* figure out the record length */
@@ -457,12 +458,18 @@ void IFTE_init(const char fname[MAXFNAME]) {
   
   /* get the constants from record "2" */
   fseek(f, ifte.reclen, SEEK_SET);
-  fread(&double_in, 8, 1, f);
+  rc = fread(&double_in, 8, 1, f);
   if (ifte.swap_endian) IFTswapDouble(&double_in); 
   ifte.ephver = (int)floor(double_in);
-  fread(&ifte.L_C, 8, 1, f);
+  rc = fread(&ifte.L_C, 8, 1, f);
   if (ifte.swap_endian) IFTswapDouble(&ifte.L_C); 
 
+  if( rc == 0 ){
+    fprintf(stderr, "Error... problem reading header from time ephemeris file \
+'%s'\n", fname);
+    exit(1);
+  }
+  
   ifte.f = f;
   ifte.iinfo.np = 2;
   ifte.iinfo.nv = 3;
