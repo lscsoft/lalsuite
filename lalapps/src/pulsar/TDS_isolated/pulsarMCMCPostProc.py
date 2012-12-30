@@ -40,6 +40,9 @@ import datetime
 import numpy as np
 import subprocess as sp
 
+import matplotlib
+matplotlib.use("Agg")
+
 #local application/library specific imports
 from pylal import bayespputils as bppu
 from pylal import git_version
