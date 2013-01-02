@@ -49,6 +49,8 @@ lalpulsarinclude_HEADERS = \
 	SFTClean.h \
 	SFTfileIO.h \
 	SFTutils.h \
+	SFTutils-LAL.h \
+	SFTutils-LAL.c	\
 	StackMetric.h \
 	Statistics.h \
 	SynthesizeCWDraws.h \
