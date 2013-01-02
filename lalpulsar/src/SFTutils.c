@@ -35,9 +35,6 @@
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
 
-#define TRUE (1==1)
-#define FALSE (1==0)
-
 /*----- SWITCHES -----*/
 
 /*---------- internal types ----------*/
@@ -142,18 +139,16 @@ XLALCreateSFT ( UINT4 numBins )
 {
   SFTtype *sft;
 
-  if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL ) {
-    XLALPrintError ("%s: XLALCalloc (1, %d) failed.\n", __func__, sizeof(*sft) );
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-  }
+  if ( (sft = XLALCalloc (1, sizeof(*sft) )) == NULL )
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "XLALCalloc (1, %d) failed.\n", sizeof(*sft) );
 
   if ( numBins )
     {
-      if ( (sft->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL ) {
-	XLALPrintError ("%s: XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", __func__, numBins, xlalErrno );
-	XLALFree ( sft );
-	XLAL_ERROR_NULL ( XLAL_ENOMEM );
-      }
+      if ( (sft->data = XLALCreateCOMPLEX8Vector ( numBins )) == NULL )
+        {
+          XLALFree ( sft );
+          XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALCreateCOMPLEX8Vector ( %s ) failed. xlalErrno = %d\n", numBins, xlalErrno );
+        }
     }
   else
     sft->data = NULL;	/* no data, just header */
@@ -162,7 +157,7 @@ XLALCreateSFT ( UINT4 numBins )
 
 } /* XLALCreateSFT() */
 
-
+/** Destructor for one SFT */
 void
 XLALDestroySFT ( SFTtype *sft )
 {
@@ -256,13 +251,13 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
   UINT4 iSFT;
   SFTVector *vect;
 
-  if ( (vect = LALCalloc ( 1, sizeof(*vect) )) == NULL ) {
+  if ( (vect = XLALCalloc ( 1, sizeof(*vect) )) == NULL ) {
     XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
   vect->length = numSFTs;
-  if ( (vect->data = LALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
-    LALFree (vect);
+  if ( (vect->data = XLALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
+    XLALFree (vect);
     XLAL_ERROR_NULL( XLAL_ENOMEM );
   }
 
@@ -278,8 +273,8 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 	      UINT4 j;
 	      for ( j = 0; j < iSFT; j++ )
 		XLALDestroyCOMPLEX8Vector ( vect->data[j].data );
-	      LALFree (vect->data);
-	      LALFree (vect);
+	      XLALFree (vect->data);
+	      XLALFree (vect);
 	      XLAL_ERROR_NULL( XLAL_ENOMEM );
 	    }
 	}
@@ -398,27 +393,24 @@ LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 /** XLAL interface to destroy an SFTVector
  */
 void
-XLALDestroySFTVector (SFTVector *vect)
+XLALDestroySFTVector ( SFTVector *vect )
 {
-  UINT4 i;
-  SFTtype *sft;
-
   if ( !vect )
     return;
 
-  for (i=0; i < vect->length; i++)
+  for ( UINT4 i=0; i < vect->length; i++ )
     {
-      sft = &( vect->data[i] );
+      SFTtype *sft = &( vect->data[i] );
       if ( sft->data )
 	{
 	  if ( sft->data->data )
-	    LALFree ( sft->data->data );
-	  LALFree ( sft->data );
+	    XLALFree ( sft->data->data );
+	  XLALFree ( sft->data );
 	}
-    }
+    } // for i < numSFTs
 
-  LALFree ( vect->data );
-  LALFree ( vect );
+  XLALFree ( vect->data );
+  XLALFree ( vect );
 
   return;
 
@@ -820,19 +812,18 @@ LALAppendSFT2Vector (LALStatus *status,		/**< pointer to LALStatus structure */
 
 /** Allocate a LIGOTimeGPSVector */
 LIGOTimeGPSVector *
-XLALCreateTimestampVector (UINT4 length)
+XLALCreateTimestampVector ( UINT4 length )
 {
-  LIGOTimeGPSVector *out = NULL;
-
-  out = LALCalloc (1, sizeof(LIGOTimeGPSVector));
+  int len;
+  LIGOTimeGPSVector *out = XLALCalloc (1, len = sizeof(LIGOTimeGPSVector));
   if (out == NULL)
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to allocate XLALCalloc(1,%d)\n", len );
 
   out->length = length;
-  out->data = LALCalloc (1, length * sizeof(LIGOTimeGPS));
+  out->data = XLALCalloc (1, len = length * sizeof(LIGOTimeGPS));
   if (out->data == NULL) {
-    LALFree (out);
-    XLAL_ERROR_NULL ( XLAL_ENOMEM );
+    XLALFree (out);
+    XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to allocate XLALCalloc(1,%d)\n", len );
   }
 
   return out;
@@ -873,8 +864,8 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
   if ( !vect )
     return;
 
-  LALFree ( vect->data );
-  LALFree ( vect );
+  XLALFree ( vect->data );
+  XLALFree ( vect );
 
   return;
 
@@ -1113,7 +1104,7 @@ XLALGetChannelPrefix ( const CHAR *name )
     XLAL_ERROR_NULL ( XLAL_ENOMEM, "Failed to calloc(3)!\n" );
   }
   if ( !name ) {
-    LALFree ( channel );
+    XLALFree ( channel );
     XLAL_ERROR_NULL ( XLAL_EINVAL, "Invalid NULL input 'name'" );
   }
 
@@ -1223,7 +1214,7 @@ XLALGetSiteInfo ( const CHAR *name )
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
 
-  if ( ( site = LALCalloc ( 1, sizeof( *site) )) == NULL ) {
+  if ( ( site = XLALCalloc ( 1, sizeof( *site) )) == NULL ) {
     XLAL_ERROR_NULL ( XLAL_ENOMEM );
   }
 
@@ -1258,34 +1249,35 @@ XLALGetSiteInfo ( const CHAR *name )
       if ( XLALcreateLISA ( site, channel[1] ) != 0 )
 	{
 	  XLALPrintError("\nFailed to created LISA detector '%d'\n\n", channel[1]);
-	  LALFree ( site );
-	  LALFree ( channel );
+	  XLALFree ( site );
+	  XLALFree ( channel );
 	  XLAL_ERROR_NULL ( XLAL_EFUNC );
 	}
       break;
 
     default:
       XLALPrintError ( "\nSorry, I don't have the site-info for '%c%c'\n\n", channel[0], channel[1]);
-      LALFree(site);
-      LALFree(channel);
+      XLALFree(site);
+      XLALFree(channel);
       XLAL_ERROR_NULL ( XLAL_EINVAL );
       break;
     } /* switch channel[0] */
 
-  LALFree ( channel );
+  XLALFree ( channel );
 
   return site;
 
 } /* XLALGetSiteInfo() */
 
-
 /** Computes weight factors arising from SFTs with different noise
-    floors -- it multiplies an existing weight vector */
-void LALComputeNoiseWeights  (LALStatus        *status,
-			      REAL8Vector      *weightV,
-			      const SFTVector  *sftVect,
-			      INT4             blkSize,
-			      UINT4            excludePercentile)
+ * floors -- it multiplies an existing weight vector
+ */
+void
+LALComputeNoiseWeights  (LALStatus        *status,
+                          REAL8Vector      *weightV,
+                          const SFTVector  *sftVect,
+                          INT4             blkSize,
+                          UINT4            excludePercentile)
 {
 
   UINT4 lengthVect, lengthSFT, lengthPSD, halfLengthPSD;
@@ -1309,8 +1301,7 @@ void LALComputeNoiseWeights  (LALStatus        *status,
   /* -------------------------------------------   */
 
   /* Make sure there is no size mismatch */
-  ASSERT (weightV->length == sftVect->length, status,
-	  SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
+  ASSERT (weightV->length == sftVect->length, status, SFTUTILS_EINPUT, SFTUTILS_MSGEINPUT);
   /* -------------------------------------------   */
 
   /* Make sure there are elements to be computed*/
