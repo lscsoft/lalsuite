@@ -175,7 +175,8 @@ XLALDestroySFT ( SFTtype *sft )
 
 
 
-/** Create one SFT-struct. Allows for numBins == 0.
+/** \deprecated Use XLALCreateSFT() instead
+ * Allows for numBins == 0.
  */
 void
 LALCreateSFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -185,35 +186,24 @@ LALCreateSFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
   SFTtype *sft = NULL;
 
   INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
 
   ASSERT (output != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*output == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
 
-  sft = LALCalloc (1, sizeof(*sft) );
-  if (sft == NULL) {
-    ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
-  }
-
-  if ( numBins )
+  if ( (sft = XLALCreateSFT ( numBins )) == NULL )
     {
-      LALCCreateVector (status->statusPtr, &(sft->data), numBins);
-      BEGINFAIL (status) {
-	LALFree (sft);
-      } ENDFAIL (status);
+      XLALPrintError ("XLALCreateSFT() failed with xlalErrno = %d\n", xlalErrno );
+      ABORT ( status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC );
     }
-  else
-    sft->data = NULL;	/* no data, just header */
 
-  *output = sft;
+  (*output) = sft;
 
-  DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALCreateSFTtype() */
 
 
-/** Create a whole vector of \c numSFT SFTs with \c SFTlen frequency-bins
+/** \deprecated Use XLALCreateSFTVector() instead
  */
 void
 LALCreateSFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -221,21 +211,20 @@ LALCreateSFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 		    UINT4 numSFTs, 	/**< number of SFTs */
 		    UINT4 numBins)	/**< number of frequency-bins per SFT */
 {
-  SFTVector *vect;
-
   INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
 
   ASSERT (output != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*output == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
 
-  if ( (vect = XLALCreateSFTVector ( numSFTs, numBins )) == NULL ) {
-    ABORT (status, SFTUTILS_EMEM, SFTUTILS_MSGEMEM);
-  }
+  SFTVector *vect;
+  if ( (vect = XLALCreateSFTVector ( numSFTs, numBins )) == NULL )
+    {
+      XLALPrintError ("XLALCreateSFTVector() failed with xlalErrno = %d\n", xlalErrno );
+      ABORT (status, SFTUTILS_EFUNC, SFTUTILS_MSGEFUNC);
+    }
 
-  *output = vect;
+  (*output) = vect;
 
-  DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALCreateSFTVector() */
@@ -289,6 +278,8 @@ XLALCreateSFTVector (UINT4 numSFTs, 	/**< number of SFTs */
 
 
 
+/** Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
+ */
 void LALCreateMultiSFTVector ( LALStatus *status,     /**< pointer to LALStatus structure */
 			       MultiSFTVector **out,  /**< [out] multi sft vector created */
 			       UINT4 length,          /**< number of sft data points */
@@ -335,10 +326,10 @@ void LALCreateMultiSFTVector ( LALStatus *status,     /**< pointer to LALStatus 
   DETATCHSTATUSPTR (status);
   RETURN(status);
 
-} /* LALLoadMultiSFTs() */
+} /* LALCreateMultiSFTVector() */
 
 
-/** Destroy an SFT-struct.
+/** \deprecated Use XLALDestroySFT() instead.
  */
 void
 LALDestroySFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -346,32 +337,19 @@ LALDestroySFTtype (LALStatus *status,	/**< pointer to LALStatus structure */
 {
 
   INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
 
   ASSERT (sft != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if (*sft == NULL)
-    goto finished;
+  XLALDestroySFT ( (*sft) );
 
-  if ( (*sft)->data )
-    {
-      if ( (*sft)->data->data )
-	LALFree ( (*sft)->data->data );
-      LALFree ( (*sft)->data );
-    }
+  (*sft) = NULL;
 
-  LALFree ( (*sft) );
-
-  *sft = NULL;
-
- finished:
-  DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALDestroySFTtype() */
 
 
-/** Destroy an SFT-vector
+/** \deprecated Use XLALDestroySFTVector() instead.
  */
 void
 LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
@@ -383,7 +361,7 @@ LALDestroySFTVector (LALStatus *status,	/**< pointer to LALStatus structure */
 
   XLALDestroySFTVector ( *vect );
 
-  *vect = NULL;
+  (*vect) = NULL;
 
   RETURN (status);
 
@@ -831,26 +809,24 @@ XLALCreateTimestampVector ( UINT4 length )
 } /* XLALCreateTimestampVector() */
 
 
-
-/** LAL-interface: Allocate a LIGOTimeGPSVector */
+/** \deprecated LAL-interface: use XLALCreateTimestampVector() instead */
 void
 LALCreateTimestampVector (LALStatus *status,		/**< pointer to LALStatus structure */
 			  LIGOTimeGPSVector **vect, 	/**< [out] allocated timestamp-vector  */
 			  UINT4 length)			/**< number of elements */
 {
-  LIGOTimeGPSVector *out = NULL;
-
   INITSTATUS(status);
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
   ASSERT (*vect == NULL, status, SFTUTILS_ENONULL,  SFTUTILS_MSGENONULL);
 
+  LIGOTimeGPSVector *out = NULL;
   if ( (out = XLALCreateTimestampVector( length )) == NULL ) {
-    XLALClearErrno();
+    XLALPrintError ("XLALCreateTimestampVector() failed with xlalErrno = %d\n", xlalErrno );
     ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
   }
 
-  *vect = out;
+  (*vect) = out;
 
   RETURN (status);
 
@@ -872,7 +848,7 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
 } /* XLALDestroyTimestampVector() */
 
 
-/** De-allocate a LIGOTimeGPSVector
+/** \deprecated Use XLALDestroyTimestampVector() instead.
  */
 void
 LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -882,7 +858,7 @@ LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structu
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if ( *vect == NULL )
+  if ( (*vect) == NULL )
     goto finished;
 
   XLALDestroyTimestampVector ( (*vect) );
@@ -1601,7 +1577,7 @@ upsampleSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
 
 } /* upsampleSFTVector() */
 
-#define LD_SMALL4       (1.0e-6)		/**< "small" number for REAL4*/
+
 #define OOTWOPI		(1.0 / LAL_TWOPI )
 /** Interpolate frequency-series to newLen frequency-bins.
  *  This is using DFT-interpolation (derived from zero-padding).
