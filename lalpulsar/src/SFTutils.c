@@ -395,42 +395,45 @@ XLALDestroySFTVector ( SFTVector *vect )
 } /* XLALDestroySFTVector() */
 
 
-
 /** Destroy a PSD-vector
+ */
+void
+XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
+{
+  if ( vect == NULL )	/* nothing to be done */
+    return;
+
+  for ( UINT4 i=0; i < vect->length; i++ )
+    {
+      REAL8FrequencySeries *psd = &( vect->data[i] );
+      if ( psd->data )
+	{
+	  if ( psd->data->data )
+	    XLALFree ( psd->data->data );
+	  XLALFree ( psd->data );
+	}
+    } // for i < numPSDs
+
+  XLALFree ( vect->data );
+  XLALFree ( vect );
+
+  return;
+
+} /* XLALDestroyPSDVector() */
+
+/** \deprecated Use XLALDestroyPSDVector() instead
  */
 void
 LALDestroyPSDVector (LALStatus *status,	/**< pointer to LALStatus structure */
 		     PSDVector **vect)	/**< the SFT-vector to free */
 {
-  UINT4 i;
-  REAL8FrequencySeries *psd;
-
   INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
 
   ASSERT (vect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if ( *vect == NULL )	/* nothing to be done */
-    goto finished;
+  XLALDestroyPSDVector ( (*vect) );
+  (*vect) = NULL;
 
-  for (i=0; i < (*vect)->length; i++)
-    {
-      psd = &( (*vect)->data[i] );
-      if ( psd->data )
-	{
-	  if ( psd->data->data )
-	    LALFree ( psd->data->data );
-	  LALFree ( psd->data );
-	}
-    }
-
-  LALFree ( (*vect)->data );
-  LALFree ( *vect );
-
-  *vect = NULL;
-
- finished:
-  DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALDestroyPSDVector() */
@@ -439,29 +442,35 @@ LALDestroyPSDVector (LALStatus *status,	/**< pointer to LALStatus structure */
 /** Destroy a multi SFT-vector
  */
 void
+XLALDestroyMultiSFTVector ( MultiSFTVector *multvect )	/**< the SFT-vector to free */
+{
+  if ( multvect == NULL )	/* nothing to be done */
+    return;
+
+  for ( UINT4 i = 0; i < multvect->length; i++ )
+    XLALDestroySFTVector ( multvect->data[i] );
+
+  XLALFree( multvect->data );
+  XLALFree( multvect );
+
+  return;
+
+} /* XLALDestroyMultiSFTVector() */
+
+
+/** \deprecated Use XLALDestroyMultiSFTVector() instead.
+ */
+void
 LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structure */
 		          MultiSFTVector **multvect)	/**< the SFT-vector to free */
 {
-  UINT4 i;
-
   INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
-
   ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if ( *multvect == NULL )	/* nothing to be done */
-    goto finished;
+  XLALDestroyMultiSFTVector ( (*multvect) );
 
-  for ( i = 0; i < (*multvect)->length; i++)
-      LALDestroySFTVector( status->statusPtr, (*multvect)->data + i);
+  (*multvect) = NULL;
 
-  LALFree( (*multvect)->data );
-  LALFree( *multvect );
-
-  *multvect = NULL;
-
- finished:
-  DETATCHSTATUSPTR( status );
   RETURN (status);
 
 } /* LALDestroyMultiSFTVector() */
@@ -471,34 +480,37 @@ LALDestroyMultiSFTVector (LALStatus *status,		/**< pointer to LALStatus structur
 /** Destroy a multi PSD-vector
  */
 void
+XLALDestroyMultiPSDVector ( MultiPSDVector *multvect )	/**< the SFT-vector to free */
+{
+  if ( multvect == NULL )
+    return;
+
+  for ( UINT4 i = 0; i < multvect->length; i++ )
+    XLALDestroyPSDVector ( multvect->data[i] );
+
+  XLALFree( multvect->data );
+  XLALFree( multvect );
+
+  return;
+
+} /* XLALDestroyMultiPSDVector() */
+
+
+/** \deprecate Use XLALDestroyMultiPSDVector() instead.
+ */
+void
 LALDestroyMultiPSDVector (LALStatus *status,		/**< pointer to LALStatus structure */
 		          MultiPSDVector **multvect)	/**< the SFT-vector to free */
 {
-  UINT4 i;
-
   INITSTATUS(status);
-  ATTATCHSTATUSPTR( status );
-
   ASSERT (multvect != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if ( *multvect == NULL )
-    goto finished;
+  XLALDestroyMultiPSDVector ( (*multvect) );
+  (*multvect) = NULL;
 
-  for ( i = 0; i < (*multvect)->length; i++) {
-    LALDestroyPSDVector( status->statusPtr, (*multvect)->data + i);
-  }
-
-  LALFree( (*multvect)->data );
-  LALFree( *multvect );
-
-  *multvect = NULL;
-
- finished:
-  DETATCHSTATUSPTR( status );
   RETURN (status);
 
-} /* LALDestroySFTVector() */
-
+} /* LALDestroyMultiPSDVector() */
 
 
 /** Copy an entire SFT-type into another.
@@ -874,39 +886,29 @@ LALDestroyTimestampVector (LALStatus *status,		/**< pointer to LALStatus structu
 
 /** Given a start-time, duration and 'stepsize' tStep, returns a list of timestamps
  * covering this time-stretch.
+ *
+ * NOTE: boundary-handling: the returned list of timestamps are guaranteed to *cover* the
+ * interval [tStart, tStart+duration], assuming a each timestamp covers a length of 'tStep'
+ * This implies that the actual timestamps-coverage can extend up to 'tStep' beyond 'tStart+duration'.
  */
-void
-LALMakeTimestamps(LALStatus *status,			/**< pointer to LALStatus structure */
-		  LIGOTimeGPSVector **timestamps, 	/**< [out] timestamps-vector */
-		  LIGOTimeGPS tStart, 			/**< GPS start-time */
-		  REAL8 duration, 			/**< duration in seconds */
-		  REAL8 tStep)				/**< length of one (SFT) timestretch in seconds */
+LIGOTimeGPSVector *
+XLALMakeTimestamps ( LIGOTimeGPS tStart,		/**< GPS start-time */
+                     REAL8 duration, 			/**< duration in seconds */
+                     REAL8 tStep			/**< length of one (SFT) timestretch in seconds */
+                     )
 {
-  UINT4 i;
-  UINT4 numSFTs;
-  LIGOTimeGPS tt;
-  LIGOTimeGPSVector *ts = NULL;
+  XLAL_CHECK_NULL ( tStep > 0, XLAL_EDOM, "Invalid non-positive input 'tStart = %g'\n", tStep );
+  XLAL_CHECK_NULL ( duration > 0, XLAL_EDOM, "Invalid non-positive input 'duration = %g'\n", duration );
 
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
+  UINT4 numSFTs = ceil( duration / tStep );			/* >= 1 !*/
 
-  ASSERT (timestamps != NULL, status, SFTUTILS_ENULL,
-	  SFTUTILS_MSGENULL);
-  ASSERT (*timestamps == NULL,status, SFTUTILS_ENONULL,
-	  SFTUTILS_MSGENONULL);
+  LIGOTimeGPSVector *ts;
+  XLAL_CHECK_NULL ( (ts = XLALCreateTimestampVector ( numSFTs )) != NULL, XLAL_EFUNC );
 
-  numSFTs = ceil( duration / tStep );			/* >= 1 !*/
-  if ( (ts = LALCalloc (1, sizeof( *ts )) ) == NULL ) {
-    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
-  }
+  ts->deltaT = tStep;
 
-  ts->length = numSFTs;
-  if ( (ts->data = LALCalloc (1, numSFTs * sizeof (*ts->data) )) == NULL) {
-    ABORT (status,  SFTUTILS_EMEM,  SFTUTILS_MSGEMEM);
-  }
-
-  tt = tStart;	/* initialize to start-time */
-  for (i = 0; i < numSFTs; i++)
+  LIGOTimeGPS tt = tStart;	/* initialize to start-time */
+  for (UINT4 i = 0; i < numSFTs; i++)
     {
       ts->data[i] = tt;
       /* get next time-stamp */
@@ -914,19 +916,46 @@ LALMakeTimestamps(LALStatus *status,			/**< pointer to LALStatus structure */
        * instead of using iSFT*Tsft, in order to avoid possible ns-rounding problems
        * with REAL8 intervals, which becomes critial from about 100days on...
        */
-      XLALGPSAdd(&tt, tStep);	/* can't fail */
+      XLAL_CHECK_NULL ( XLALGPSAdd ( &tt, tStep ) != NULL, XLAL_EFUNC );
 
     } /* for i < numSFTs */
 
-  *timestamps = ts;
+  return ts;
 
-  DETATCHSTATUSPTR( status );
+} /* XLALMakeTimestamps() */
+
+
+/** \deprecated Use XLALMakeTimestamps() instead.
+ */
+void
+LALMakeTimestamps ( LALStatus *status,			/**< pointer to LALStatus structure */
+                    LIGOTimeGPSVector **timestamps, 	/**< [out] timestamps-vector */
+                    LIGOTimeGPS tStart,			/**< GPS start-time */
+                    REAL8 duration, 			/**< duration in seconds */
+                    REAL8 tStep				/**< length of one (SFT) timestretch in seconds */
+                    )
+{
+  INITSTATUS(status);
+
+  ASSERT (timestamps != NULL, status, SFTUTILS_ENULL, SFTUTILS_MSGENULL);
+  ASSERT (*timestamps == NULL,status, SFTUTILS_ENONULL, SFTUTILS_MSGENONULL);
+
+  LIGOTimeGPSVector *ts;
+  ts = XLALMakeTimestamps ( tStart, duration, tStep );
+  if ( ts == NULL )
+    {
+      XLALPrintError ("XLALMakeTimestamps() failed with xlalErrno = %d\n", xlalErrno );
+      ABORT ( status,  SFTUTILS_EFUNC,  SFTUTILS_MSGEFUNC );
+    }
+
+  (*timestamps) = ts;
+
   RETURN( status );
 
 } /* LALMakeTimestamps() */
 
 
-/** Deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
+/** \deprecated LAL wrapper to XLALExtractTimestampsFromSFTs()
  */
 void
 LALGetSFTtimestamps (LALStatus *status,			/**< pointer to LALStatus structure */
@@ -1355,7 +1384,7 @@ LALComputeNoiseWeights  (LALStatus        *status,
 
 
 /** Computes weight factors arising from MultiSFTs with different noise
- * floors -- it multiplies an existing weight vector
+ * floors
  */
 void LALComputeMultiNoiseWeights  (LALStatus             *status,
 				   MultiNoiseWeights     **out,
@@ -1461,33 +1490,40 @@ void LALComputeMultiNoiseWeights  (LALStatus             *status,
   DETATCHSTATUSPTR (status);
    /* normal exit */
   RETURN (status);
-}
+
+} /* LALComputeMultiNoiseWeights() */
 
 
+/** Destroy a MultiNoiseWeights object */
+void
+XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights )
+{
+  if ( weights == NULL)
+    return;
+
+  for ( UINT4 k = 0; k < weights->length; k++ )
+    XLALDestroyREAL8Vector ( weights->data[k] );
+
+  XLALFree ( weights->data );
+  XLALFree ( weights );
+
+  return;
+
+} /* XLALDestroyMultiNoiseWeights() */
+
+/** \deprecated Use XLALDestroyMultiNoiseWeights() instead */
 void
 LALDestroyMultiNoiseWeights  (LALStatus         *status,
 			      MultiNoiseWeights **weights)
 {
-  UINT4 k;
-
   INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
 
   ASSERT ( weights != NULL, status, SFTUTILS_ENULL,  SFTUTILS_MSGENULL);
 
-  if (*weights == NULL)
-    goto finished;
+  XLALDestroyMultiNoiseWeights ( (*weights) );
 
-  for ( k = 0; k < (*weights)->length; k++)
-    LALDDestroyVector (status->statusPtr, (*weights)->data + k);
+  (*weights) = NULL;
 
-  LALFree( (*weights)->data );
-  LALFree(*weights);
-
-  *weights = NULL;
-
- finished:
-  DETATCHSTATUSPTR (status);
   RETURN (status);
 
 } /* LALDestroyMultiNoiseWeights() */

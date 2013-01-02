@@ -233,6 +233,13 @@ void LALDestroyMultiNoiseWeights  (LALStatus *status, MultiNoiseWeights **weight
 
 LALSegList *XLALReadSegmentsFromFile ( const char *fname );
 
+  // new XLAL functions
+void XLALDestroyPSDVector ( PSDVector *vect );
+void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
+void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
+void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
+LIGOTimeGPSVector *XLALMakeTimestamps ( LIGOTimeGPS tStart, REAL8 duration, REAL8 tStep );
+
 /* ============================================================
  * ===== deprecated LAL interface API ==========
  * ============================================================
