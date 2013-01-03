@@ -32,6 +32,7 @@
 #include <complex.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include <lal/Date.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 #include <lal/LALAdaptiveRungeKutta4.h>
@@ -136,7 +137,7 @@ XLALSpinAlignedHiSRStopCondition(double UNUSED t,  /**< UNUSED */
 int XLALSimIMRSpinAlignedEOBWaveform(
         REAL8TimeSeries **hplus,     /**<< OUTPUT, +-polarization waveform */
         REAL8TimeSeries **hcross,    /**<< OUTPUT, x-polarization waveform */
-        const REAL8     UNUSED phiC, /**<< coalescence orbital phase (rad) */ 
+        const REAL8     phiC,        /**<< coalescence orbital phase (rad) */ 
         REAL8           deltaT,      /**<< sampling time step */
         const REAL8     m1SI,        /**<< mass-1 in SI unit */ 
         const REAL8     m2SI,        /**<< mass-2 in SI unit */
@@ -174,6 +175,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   /* Parameters of the system */
   REAL8 m1, m2, mTotal, eta, mTScaled;
   REAL8 amp0;
+  REAL8 sSub = 0.0;
   LIGOTimeGPS tc = LIGOTIMEGPSZERO;
 
   /* Dynamics of the system */
@@ -670,10 +672,29 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   }
   while ( time2 - time1 > 1.0e-5 );
 
-  gsl_spline_free( spline );
+  /*gsl_spline_free( spline );
   gsl_interp_accel_free( acc );
+  */
 
   XLALPrintInfo( "Estimation of the peak is now at time %.16e\n", timePeak );
+
+  /* Having located the peak of orbital frequency, we set time and phase of coalescence */
+  XLALGPSAdd( &tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
+  gsl_spline_init( spline, dynamicsHi->data, phiHi.data, retLen );
+  sSub = gsl_spline_eval( spline, timePeak, acc ) - phiC;
+  gsl_spline_free( spline );
+  gsl_interp_accel_free( acc );
+  /* Apply phiC to hi-sampling waveforms */
+  REAL8 thisReHi, thisImHi;
+  REAL8 csSub2 = cos(2.0 * sSub);
+  REAL8 ssSub2 = sin(2.0 * sSub);
+  for ( i = 0; i < retLen; i++)
+  {
+    thisReHi = sigReHi->data[i];
+    thisImHi = sigImHi->data[i];
+    sigReHi->data[i] =   thisReHi * csSub2 - thisImHi * ssSub2;
+    sigImHi->data[i] =   thisReHi * ssSub2 + thisImHi * csSub2; 
+  }
 
   /**
    * STEP 5) Calculate NQC correction using hi-sampling data
@@ -700,7 +721,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   for ( i = 0; i < retLen; i++ )
   {
     values->data[0] = rHi.data[i];
-    values->data[1] = phiHi.data[i];
+    values->data[1] = phiHi.data[i] - sSub;
     values->data[2] = prHi.data[i];
     values->data[3] = pPhiHi.data[i];
 
@@ -791,7 +812,7 @@ int XLALSimIMRSpinAlignedEOBWaveform(
   for ( i = 0; i < (INT4)rVec.length; i++ )
   {
     values->data[0] = rVec.data[i];
-    values->data[1] = phiVec.data[i];
+    values->data[1] = phiVec.data[i] - sSub;
     values->data[2] = prVec.data[i];
     values->data[3] = pPhiVec.data[i];
 
