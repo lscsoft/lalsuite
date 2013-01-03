@@ -7,20 +7,16 @@
 /**
 \defgroup ch_spec	LAL Specification and Style Guide
 
-\defgroup ch_std	LAL Standard Package
+\defgroup ch_gen	General LAL Packages
    @{
    \defgroup pkg_std		Package 'std'
-   @}
-
-\defgroup ch_gen	General Packages
-   @{
    \defgroup pkg_date		Package 'date'
    \defgroup pkg_factories	Package 'factories'
    \defgroup pkg_tools		Package 'tools'
    \defgroup pkg_vectorops	Package 'vectorops'
    @}
 
-\defgroup ch_genMath	General Mathematical and Signal Analysis Packages
+\defgroup ch_genMath	General Signal Analysis Packages
    @{
    \defgroup pkg_clremoval	Package 'clremoval'
    \defgroup pkg_fft		Package 'fft'
@@ -28,10 +24,6 @@
    \defgroup pkg_tdfilter	Package 'tdfilter'
    \defgroup pkg_utilities	Package 'utilities'
    \defgroup pkg_window		Package 'window'
-   @}
-
-\defgroup ch_coreDA	Core Data Analysis Packages
-   @{
    \defgroup pkg_inject		Package 'inject'
    @}
 
@@ -51,14 +43,13 @@
    \defgroup pkg_noisemodels	Package 'noisemodels'
    @}
 
-\defgroup ch_pulsar	Pulsar Packages
+\defgroup ch_inference	LAL Inference Packages
    @{
-   \defgroup pkg_houghpulsar	Package 'houghpulsar': The Hough transform
-   \defgroup pkg_pulsarCommon	Package 'pulsar': common routines
-   \defgroup pkg_pulsarFold	Package 'pulsar': amplitude folding routines
-   \defgroup pkg_pulsarCoh	Package 'pulsar': Coherent search routines
-   \defgroup pkg_pulsarKnown	Package 'pulsar': known pulsar time-domain search routines
+   \defgroup pkg_LALInference	Package 'LALInference'
    @}
+
+
+\defgroup ch_pulsar	Pulsar Packages
 
 \defgroup ch_stoch	Stochastic Packages
    @{
@@ -68,6 +59,8 @@
 \defgroup ch_support	LAL Support Interface
    @{
    \defgroup pkg_support	Package 'support'
+   \defgroup pkg_XML 		VOTable XML package
+   \defgroup pkg_SFTIO		Package 'SFT file IO'
    @}
 
 \defgroup ch_lalframe	LAL Framedata Interface (optional)

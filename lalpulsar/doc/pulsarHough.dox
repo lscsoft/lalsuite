@@ -1,7 +1,9 @@
-/** \defgroup pulsarHough The Hough transform
-    \ingroup pulsar
-    \brief Routines implementing the Hough-transform as a search-method for unknown pulsars.
-    \author Alicia M. Sintes, M. Alessandra Papa., Krishnan, B.
+// -*- mode: c -*-
+
+/**
+   \addtogroup pkg_pulsarHough The Hough transform
+   \brief Routines implementing the Hough-transform as a search-method for unknown pulsars.
+   \author Alicia M. Sintes, M. Alessandra Papa., Krishnan, B.
 
 The  hierarchical Hough transform search strategy is
 an efficient and highly parallel computer algorithm
