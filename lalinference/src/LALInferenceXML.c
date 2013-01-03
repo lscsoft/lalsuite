@@ -1,6 +1,6 @@
 /*
  *  Copyright (C) 2011 John Veitch
- *  
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation; either version 2 of the License, or
@@ -15,12 +15,6 @@
  *  along with with program; see the file COPYING. If not, write to the
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
- */
-
-/**
- * \file
- * \ingroup XML
- * \brief Implementation of the VOTable serializers XML LALInference API
  */
 
 #include <string.h>
@@ -58,8 +52,6 @@
  * \author John Veitch
  *
  */
-
-
 xmlNodePtr XLALInferenceVariablesArray2VOTTable(const LALInferenceVariables *varsArray, UINT4 N, const char *tablename)
 {
   xmlNodePtr fieldNodeList=NULL;
@@ -381,5 +373,3 @@ VOTABLE_DATATYPE LALInferenceVariableType2VOT(const LALInferenceVariableType lit
     default: {XLALPrintError("%s: Unsupported LALInferenceVarableType %i\n",__func__,(int)litype); return VOT_DATATYPE_LAST;}
   }
 }
-
-
