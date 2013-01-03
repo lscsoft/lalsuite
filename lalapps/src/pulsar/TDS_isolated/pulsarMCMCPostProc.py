@@ -1205,7 +1205,10 @@ asdtime, plotpsds=plotpsds, plotfscan=plotfscan, removeoutlier=8 )
     # if error occured in reading in MCMC chains then move to next pulsar
     if erridx:
       # remove directory for that pulsar
-      shutil.rmtree(puldir)
+      try:
+        shutil.rmtree(puldir)
+      except:
+        os.system('rm -rf %s' % puldir)
       
       # remove parts from main html and latex tables
       del htmltext[-1]
