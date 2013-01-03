@@ -106,7 +106,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinAofF(
 }
 
 /**
- * Derivative of the amplitude with respect to \chi (reduced-spin parameter)
+ * Derivative of the amplitude with respect to \f$\chi\f$ (reduced-spin parameter)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
         const REAL8 mc_msun,   /**< chirp mass (solar masses) */
@@ -131,7 +131,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAChi(
 }
 
 /**
- * Derivative of the amplitude with respect to \eta (symm. mass ratio)
+ * Derivative of the amplitude with respect to \f$\eta\f$ (symm. mass ratio)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAEta(
     const REAL8 mc_msun,   /**< chirp mass (M_sun) */
@@ -239,7 +239,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivAMChirp(
 }
 
 /**
- * Derivative of the phasae with respect to \chi (reduced spin parameter)
+ * Derivative of the phasae with respect to \f$\chi\f$ (reduced spin parameter)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
     const REAL8 mc_msun,   /**< chirp mass (M_sun) */
@@ -265,7 +265,7 @@ static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiChi(
 }
 
 /**
- * Derivative of the phasae with respect to \eta (symmetric mass ratio)
+ * Derivative of the phasae with respect to \f$\eta\f$ (symmetric mass ratio)
  */
 static REAL8 XLALSimInspiralTaylorF2RedSpinDerivPsiEta(
     const REAL8 mc_msun,   /**< chirp mass (M_sun) */
@@ -550,35 +550,35 @@ int XLALSimInspiralTaylorF2RedSpinMetricMChirpEtaChi(
  * theta0, theta3, theta3s parameter space.
  */
 int XLALSimInspiralTaylorF2RedSpinComputeNoiseMoments(
-    REAL8Vector *momI_0,    /**< noise moments: momI_0(f) = \int_f0^f (f'/f0)^{(0-17)/3} df' */
-    REAL8Vector *momI_2,    /**< noise moments: momI_2(f) = \int_f0^f (f'/f0)^{(2-17)/3} df' */
-    REAL8Vector *momI_3,    /**< noise moments: momI_3(f) = \int_f0^f (f'/f0)^{(3-17)/3} df' */
-    REAL8Vector *momI_4,    /**< noise moments: momI_4(f) = \int_f0^f (f'/f0)^{(4-17)/3} df' */
-    REAL8Vector *momI_5,    /**< noise moments: momI_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} df' */
-    REAL8Vector *momI_6,    /**< noise moments: momI_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} df' */
-    REAL8Vector *momI_7,    /**< noise moments: momI_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} df' */
-    REAL8Vector *momI_8,    /**< noise moments: momI_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} df' */
-    REAL8Vector *momI_9,    /**< noise moments: momI_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} df' */
-    REAL8Vector *momI_10,   /**< noise moments: momI_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} df' */
-    REAL8Vector *momI_11,   /**< noise moments: momI_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} df' */
-    REAL8Vector *momI_12,   /**< noise moments: momI_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} df' */
-    REAL8Vector *momI_13,   /**< noise moments: momI_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} df' */
-    REAL8Vector *momI_14,   /**< noise moments: momI_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} df' */
-    REAL8Vector *momI_15,   /**< noise moments: momI_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} df' */
-    REAL8Vector *momI_16,   /**< noise moments: momI_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} df' */
-    REAL8Vector *momJ_5,    /**< noise moments: momJ_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_6,    /**< noise moments: momJ_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_7,    /**< noise moments: momJ_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_8,    /**< noise moments: momJ_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_9,    /**< noise moments: momJ_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_10,   /**< noise moments: momJ_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_11,   /**< noise moments: momJ_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_12,   /**< noise moments: momJ_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_13,   /**< noise moments: momJ_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_14,   /**< noise moments: momJ_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) df' */
-    REAL8Vector *momK_10,   /**< noise moments: momK_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} log(f'/f0) log(f'/f0) df' */
-    REAL8Vector *momK_11,   /**< noise moments: momK_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} log(f'/f0) log(f'/f0) df' */
-    REAL8Vector *momK_12,   /**< noise moments: momK_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} log(f'/f0) log(f'/f0) df' */
+    REAL8Vector *momI_0,    /**< noise moments: \f$momI_0(f) = \int_{f0}^f (f'/f0)^{(0-17)/3} df'\f$ */
+    REAL8Vector *momI_2,    /**< noise moments: \f$momI_2(f) = \int_{f0}^f (f'/f0)^{(2-17)/3} df'\f$ */
+    REAL8Vector *momI_3,    /**< noise moments: \f$momI_3(f) = \int_{f0}^f (f'/f0)^{(3-17)/3} df'\f$ */
+    REAL8Vector *momI_4,    /**< noise moments: \f$momI_4(f) = \int_{f0}^f (f'/f0)^{(4-17)/3} df'\f$ */
+    REAL8Vector *momI_5,    /**< noise moments: \f$momI_5(f) = \int_{f0}^f (f'/f0)^{(5-17)/3} df'\f$ */
+    REAL8Vector *momI_6,    /**< noise moments: \f$momI_6(f) = \int_{f0}^f (f'/f0)^{(6-17)/3} df'\f$ */
+    REAL8Vector *momI_7,    /**< noise moments: \f$momI_7(f) = \int_{f0}^f (f'/f0)^{(7-17)/3} df'\f$ */
+    REAL8Vector *momI_8,    /**< noise moments: \f$momI_8(f) = \int_{f0}^f (f'/f0)^{(8-17)/3} df'\f$ */
+    REAL8Vector *momI_9,    /**< noise moments: \f$momI_9(f) = \int_{f0}^f (f'/f0)^{(9-17)/3} df'\f$ */
+    REAL8Vector *momI_10,   /**< noise moments: \f$momI_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} df'\f$ */
+    REAL8Vector *momI_11,   /**< noise moments: \f$momI_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} df'\f$ */
+    REAL8Vector *momI_12,   /**< noise moments: \f$momI_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} df'\f$ */
+    REAL8Vector *momI_13,   /**< noise moments: \f$momI_13(f) = \int_{f0}^f (f'/f0)^{(13-17)/3} df'\f$ */
+    REAL8Vector *momI_14,   /**< noise moments: \f$momI_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} df'\f$ */
+    REAL8Vector *momI_15,   /**< noise moments: \f$momI_15(f) = \int_{f0}^f (f'/f0)^{(15-17)/3} df'\f$ */
+    REAL8Vector *momI_16,   /**< noise moments: \f$momI_16(f) = \int_{f0}^f (f'/f0)^{(16-17)/3} df'\f$ */
+    REAL8Vector *momJ_5,    /**< noise moments: \f$momJ_5(f) = \int_{f0}^f (f'/f0)^{(5-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_6,    /**< noise moments: \f$momJ_6(f) = \int_{f0}^f (f'/f0)^{(6-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_7,    /**< noise moments: \f$momJ_7(f) = \int_{f0}^f (f'/f0)^{(7-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_8,    /**< noise moments: \f$momJ_8(f) = \int_{f0}^f (f'/f0)^{(8-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_9,    /**< noise moments: \f$momJ_9(f) = \int_{f0}^f (f'/f0)^{(9-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_10,   /**< noise moments: \f$momJ_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_11,   /**< noise moments: \f$momJ_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_12,   /**< noise moments: \f$momJ_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_13,   /**< noise moments: \f$momJ_13(f) = \int_{f0}^f (f'/f0)^{(13-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_14,   /**< noise moments: \f$momJ_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momK_10,   /**< noise moments: \f$momK_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
+    REAL8Vector *momK_11,   /**< noise moments: \f$momK_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
+    REAL8Vector *momK_12,   /**< noise moments: \f$momK_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
     REAL8Vector *Sh,         /**< one sided PSD of the detector noise: Sh(f) for f = [fLow, fNyq] */
     REAL8 fLow,             /**< low frequency cutoff (Hz) */
     REAL8 df)               /**< frequency resolution of the psd vector (Hz) */
@@ -690,35 +690,35 @@ gsl_matrix *XLALSimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(
     const REAL8 theta3s,    /**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
     const REAL8 fLow,       /**< low-frequency cutoff (Hz) */
     const REAL8 df,         /**< frequency resolution of the noise moment vectors (Hz) */
-    REAL8Vector *momI_0,     /**< noise moments: momI_0(f) = \int_f0^f (f'/f0)^{(0-17)/3} df' */
-    REAL8Vector *momI_2,     /**< noise moments: momI_2(f) = \int_f0^f (f'/f0)^{(2-17)/3} df' */
-    REAL8Vector *momI_3,     /**< noise moments: momI_3(f) = \int_f0^f (f'/f0)^{(3-17)/3} df' */
-    REAL8Vector *momI_4,     /**< noise moments: momI_4(f) = \int_f0^f (f'/f0)^{(4-17)/3} df' */
-    REAL8Vector *momI_5,     /**< noise moments: momI_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} df' */
-    REAL8Vector *momI_6,     /**< noise moments: momI_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} df' */
-    REAL8Vector *momI_7,     /**< noise moments: momI_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} df' */
-    REAL8Vector *momI_8,     /**< noise moments: momI_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} df' */
-    REAL8Vector *momI_9,     /**< noise moments: momI_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} df' */
-    REAL8Vector *momI_10,    /**< noise moments: momI_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} df' */
-    REAL8Vector *momI_11,    /**< noise moments: momI_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} df' */
-    REAL8Vector *momI_12,    /**< noise moments: momI_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} df' */
-    REAL8Vector *momI_13,    /**< noise moments: momI_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} df' */
-    REAL8Vector *momI_14,    /**< noise moments: momI_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} df' */
-    REAL8Vector *momI_15,    /**< noise moments: momI_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} df' */
-    REAL8Vector *momI_16,    /**< noise moments: momI_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} df' */
-    REAL8Vector *momJ_5,     /**< noise moments: momJ_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_6,     /**< noise moments: momJ_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_7,     /**< noise moments: momJ_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_8,     /**< noise moments: momJ_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_9,     /**< noise moments: momJ_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_10,    /**< noise moments: momJ_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_11,    /**< noise moments: momJ_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_12,    /**< noise moments: momJ_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_13,    /**< noise moments: momJ_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_14,    /**< noise moments: momJ_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) df' */
-    REAL8Vector *momK_10,    /**< noise moments: momK_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) log(f'/f0) df' */
-    REAL8Vector *momK_11,    /**< noise moments: momK_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} log(f'/f0) log(f'/f0) df' */
-    REAL8Vector *momK_12     /**< noise moments: momK_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} log(f'/f0) log(f'/f0) df' */
+    REAL8Vector *momI_0,     /**< noise moments: \f$momI_0(f) = \int_{f0}^f (f'/f0)^{(0-17)/3} df'\f$ */
+    REAL8Vector *momI_2,     /**< noise moments: \f$momI_2(f) = \int_{f0}^f (f'/f0)^{(2-17)/3} df'\f$ */
+    REAL8Vector *momI_3,     /**< noise moments: \f$momI_3(f) = \int_{f0}^f (f'/f0)^{(3-17)/3} df'\f$ */
+    REAL8Vector *momI_4,     /**< noise moments: \f$momI_4(f) = \int_{f0}^f (f'/f0)^{(4-17)/3} df'\f$ */
+    REAL8Vector *momI_5,     /**< noise moments: \f$momI_5(f) = \int_{f0}^f (f'/f0)^{(5-17)/3} df'\f$ */
+    REAL8Vector *momI_6,     /**< noise moments: \f$momI_6(f) = \int_{f0}^f (f'/f0)^{(6-17)/3} df'\f$ */
+    REAL8Vector *momI_7,     /**< noise moments: \f$momI_7(f) = \int_{f0}^f (f'/f0)^{(7-17)/3} df'\f$ */
+    REAL8Vector *momI_8,     /**< noise moments: \f$momI_8(f) = \int_{f0}^f (f'/f0)^{(8-17)/3} df'\f$ */
+    REAL8Vector *momI_9,     /**< noise moments: \f$momI_9(f) = \int_{f0}^f (f'/f0)^{(9-17)/3} df'\f$ */
+    REAL8Vector *momI_10,    /**< noise moments: \f$momI_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} df'\f$ */
+    REAL8Vector *momI_11,    /**< noise moments: \f$momI_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} df'\f$ */
+    REAL8Vector *momI_12,    /**< noise moments: \f$momI_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} df'\f$ */
+    REAL8Vector *momI_13,    /**< noise moments: \f$momI_13(f) = \int_{f0}^f (f'/f0)^{(13-17)/3} df'\f$ */
+    REAL8Vector *momI_14,    /**< noise moments: \f$momI_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} df'\f$ */
+    REAL8Vector *momI_15,    /**< noise moments: \f$momI_15(f) = \int_{f0}^f (f'/f0)^{(15-17)/3} df'\f$ */
+    REAL8Vector *momI_16,    /**< noise moments: \f$momI_16(f) = \int_{f0}^f (f'/f0)^{(16-17)/3} df'\f$ */
+    REAL8Vector *momJ_5,     /**< noise moments: \f$momJ_5(f) = \int_{f0}^f (f'/f0)^{(5-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_6,     /**< noise moments: \f$momJ_6(f) = \int_{f0}^f (f'/f0)^{(6-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_7,     /**< noise moments: \f$momJ_7(f) = \int_{f0}^f (f'/f0)^{(7-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_8,     /**< noise moments: \f$momJ_8(f) = \int_{f0}^f (f'/f0)^{(8-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_9,     /**< noise moments: \f$momJ_9(f) = \int_{f0}^f (f'/f0)^{(9-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_10,    /**< noise moments: \f$momJ_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_11,    /**< noise moments: \f$momJ_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_12,    /**< noise moments: \f$momJ_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_13,    /**< noise moments: \f$momJ_13(f) = \int_{f0}^f (f'/f0)^{(13-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_14,    /**< noise moments: \f$momJ_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momK_10,    /**< noise moments: \f$momK_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
+    REAL8Vector *momK_11,    /**< noise moments: \f$momK_15(f) = \int_{f0}^f (f'/f0)^{(15-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
+    REAL8Vector *momK_12     /**< noise moments: \f$momK_16(f) = \int_{f0}^f (f'/f0)^{(16-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
 ) {
 
     if (theta0 <= 0) XLAL_ERROR_NULL(XLAL_EDOM);
@@ -1276,35 +1276,35 @@ int XLALSimInspiralTaylorF2RedSpinMetricChirpTimes(
     const REAL8 theta3s,    /**< dimensionless parameter related to the chirp time by theta3s = 2 pi fLow tau3s */
     const REAL8 fLow,       /**< low-frequency cutoff (Hz) */
     const REAL8 df,         /**< frequency resolution of the noise moment vectors (Hz) */
-    REAL8Vector *momI_0,     /**< noise moments: momI_0(f) = \int_f0^f (f'/f0)^{(0-17)/3} df' */
-    REAL8Vector *momI_2,     /**< noise moments: momI_2(f) = \int_f0^f (f'/f0)^{(2-17)/3} df' */
-    REAL8Vector *momI_3,     /**< noise moments: momI_3(f) = \int_f0^f (f'/f0)^{(3-17)/3} df' */
-    REAL8Vector *momI_4,     /**< noise moments: momI_4(f) = \int_f0^f (f'/f0)^{(4-17)/3} df' */
-    REAL8Vector *momI_5,     /**< noise moments: momI_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} df' */
-    REAL8Vector *momI_6,     /**< noise moments: momI_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} df' */
-    REAL8Vector *momI_7,     /**< noise moments: momI_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} df' */
-    REAL8Vector *momI_8,     /**< noise moments: momI_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} df' */
-    REAL8Vector *momI_9,     /**< noise moments: momI_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} df' */
-    REAL8Vector *momI_10,    /**< noise moments: momI_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} df' */
-    REAL8Vector *momI_11,    /**< noise moments: momI_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} df' */
-    REAL8Vector *momI_12,    /**< noise moments: momI_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} df' */
-    REAL8Vector *momI_13,    /**< noise moments: momI_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} df' */
-    REAL8Vector *momI_14,    /**< noise moments: momI_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} df' */
-    REAL8Vector *momI_15,    /**< noise moments: momI_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} df' */
-    REAL8Vector *momI_16,    /**< noise moments: momI_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} df' */
-    REAL8Vector *momJ_5,     /**< noise moments: momJ_5(f) = \int_f0^f (f'/f0)^{(5-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_6,     /**< noise moments: momJ_6(f) = \int_f0^f (f'/f0)^{(6-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_7,     /**< noise moments: momJ_7(f) = \int_f0^f (f'/f0)^{(7-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_8,     /**< noise moments: momJ_8(f) = \int_f0^f (f'/f0)^{(8-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_9,     /**< noise moments: momJ_9(f) = \int_f0^f (f'/f0)^{(9-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_10,    /**< noise moments: momJ_10(f) = \int_f0^f (f'/f0)^{(10-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_11,    /**< noise moments: momJ_11(f) = \int_f0^f (f'/f0)^{(11-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_12,    /**< noise moments: momJ_12(f) = \int_f0^f (f'/f0)^{(12-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_13,    /**< noise moments: momJ_13(f) = \int_f0^f (f'/f0)^{(13-17)/3} log(f'/f0) df' */
-    REAL8Vector *momJ_14,    /**< noise moments: momJ_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) df' */
-    REAL8Vector *momK_10,    /**< noise moments: momK_14(f) = \int_f0^f (f'/f0)^{(14-17)/3} log(f'/f0) log(f'/f0) df' */
-    REAL8Vector *momK_11,    /**< noise moments: momK_15(f) = \int_f0^f (f'/f0)^{(15-17)/3} log(f'/f0) log(f'/f0) df' */
-    REAL8Vector *momK_12     /**< noise moments: momK_16(f) = \int_f0^f (f'/f0)^{(16-17)/3} log(f'/f0) log(f'/f0) df' */
+    REAL8Vector *momI_0,     /**< noise moments: \f$momI_0(f) = \int_{f0}^f (f'/f0)^{(0-17)/3} df'\f$ */
+    REAL8Vector *momI_2,     /**< noise moments: \f$momI_2(f) = \int_{f0}^f (f'/f0)^{(2-17)/3} df'\f$ */
+    REAL8Vector *momI_3,     /**< noise moments: \f$momI_3(f) = \int_{f0}^f (f'/f0)^{(3-17)/3} df'\f$ */
+    REAL8Vector *momI_4,     /**< noise moments: \f$momI_4(f) = \int_{f0}^f (f'/f0)^{(4-17)/3} df'\f$ */
+    REAL8Vector *momI_5,     /**< noise moments: \f$momI_5(f) = \int_{f0}^f (f'/f0)^{(5-17)/3} df'\f$ */
+    REAL8Vector *momI_6,     /**< noise moments: \f$momI_6(f) = \int_{f0}^f (f'/f0)^{(6-17)/3} df'\f$ */
+    REAL8Vector *momI_7,     /**< noise moments: \f$momI_7(f) = \int_{f0}^f (f'/f0)^{(7-17)/3} df'\f$ */
+    REAL8Vector *momI_8,     /**< noise moments: \f$momI_8(f) = \int_{f0}^f (f'/f0)^{(8-17)/3} df'\f$ */
+    REAL8Vector *momI_9,     /**< noise moments: \f$momI_9(f) = \int_{f0}^f (f'/f0)^{(9-17)/3} df'\f$ */
+    REAL8Vector *momI_10,    /**< noise moments: \f$momI_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} df'\f$ */
+    REAL8Vector *momI_11,    /**< noise moments: \f$momI_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} df'\f$ */
+    REAL8Vector *momI_12,    /**< noise moments: \f$momI_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} df'\f$ */
+    REAL8Vector *momI_13,    /**< noise moments: \f$momI_13(f) = \int_{f0}^f (f'/f0)^{(13-17)/3} df'\f$ */
+    REAL8Vector *momI_14,    /**< noise moments: \f$momI_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} df'\f$ */
+    REAL8Vector *momI_15,    /**< noise moments: \f$momI_15(f) = \int_{f0}^f (f'/f0)^{(15-17)/3} df'\f$ */
+    REAL8Vector *momI_16,    /**< noise moments: \f$momI_16(f) = \int_{f0}^f (f'/f0)^{(16-17)/3} df'\f$ */
+    REAL8Vector *momJ_5,     /**< noise moments: \f$momJ_5(f) = \int_{f0}^f (f'/f0)^{(5-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_6,     /**< noise moments: \f$momJ_6(f) = \int_{f0}^f (f'/f0)^{(6-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_7,     /**< noise moments: \f$momJ_7(f) = \int_{f0}^f (f'/f0)^{(7-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_8,     /**< noise moments: \f$momJ_8(f) = \int_{f0}^f (f'/f0)^{(8-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_9,     /**< noise moments: \f$momJ_9(f) = \int_{f0}^f (f'/f0)^{(9-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_10,    /**< noise moments: \f$momJ_10(f) = \int_{f0}^f (f'/f0)^{(10-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_11,    /**< noise moments: \f$momJ_11(f) = \int_{f0}^f (f'/f0)^{(11-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_12,    /**< noise moments: \f$momJ_12(f) = \int_{f0}^f (f'/f0)^{(12-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_13,    /**< noise moments: \f$momJ_13(f) = \int_{f0}^f (f'/f0)^{(13-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momJ_14,    /**< noise moments: \f$momJ_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} log(f'/f0) df'\f$ */
+    REAL8Vector *momK_10,    /**< noise moments: \f$momK_14(f) = \int_{f0}^f (f'/f0)^{(14-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
+    REAL8Vector *momK_11,    /**< noise moments: \f$momK_15(f) = \int_{f0}^f (f'/f0)^{(15-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
+    REAL8Vector *momK_12     /**< noise moments: \f$momK_16(f) = \int_{f0}^f (f'/f0)^{(16-17)/3} log(f'/f0) log(f'/f0) df'\f$ */
 ) {
     gsl_matrix * g = XLALSimInspiralTaylorF2RedSpinFisherMatrixChirpTimes(
         theta0, theta3, theta3s, fLow, df, momI_0, momI_2, momI_3, momI_4,

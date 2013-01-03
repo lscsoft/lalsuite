@@ -1368,7 +1368,7 @@ being equal to the sampling interval of the data being filtered.</dd>
 the zeros \f$z_k\f$ of the filter.</dd>
 <dt> datatypeVector *poles</dt><dd> Pointer to a vector storing
 the poles \f$p_k\f$ of the filter.</dd>
-<dt> datatype \c gain</dt><dd> The gain \f$g\f$ of the filter.</dd>
+<dt> datatype gain</dt><dd> The gain \f$g\f$ of the filter.</dd>
 </dl>
 
 

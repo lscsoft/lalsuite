@@ -75,8 +75,8 @@ LALCache *XLALCacheFileRead(LALFILE * fp);
 LALCache *XLALCacheImport(const char *fname);
 
 /** Globs a directory and construct LALCache from matching entries.
- * \params [in] dirstr Colon-delimited list of directories.
- * \params [in] fnptrn Glob pattern for matching files.
+ * \param [in] dirstr Colon-delimited list of directories.
+ * \param [in] fnptrn Glob pattern for matching files.
  * \returns LALCache structure.
  */
 LALCache *XLALCacheGlob(const char *dirstr, const char *fnptrn);
@@ -94,11 +94,12 @@ int XLALCacheUniq(LALCache * cache);
 
 /** Selects only matching entries in a LALCache structure -- other entries
  * are deleted from the LALCache structure.
- * \params t0 Remove entries ending before t0 (0 to disable).
- * \params t1 Remove entries ending after t1 (0 to disable).
- * \params srcregex Regular expression to match src field (NULL to disable).
- * \params dscregex Regular expression to match dsc field (NULL to disable).
- * \params urlregex Regular expression to match url field (NULL to disable).
+ * \param cache *UNDOCUMENTED*
+ * \param t0 Remove entries ending before t0 (0 to disable).
+ * \param t1 Remove entries ending after t1 (0 to disable).
+ * \param srcregex Regular expression to match src field (NULL to disable).
+ * \param dscregex Regular expression to match dsc field (NULL to disable).
+ * \param urlregex Regular expression to match url field (NULL to disable).
  */
 int XLALCacheSieve(LALCache * cache, INT4 t0, INT4 t1,
                    const char *srcregex, const char *dscregex,

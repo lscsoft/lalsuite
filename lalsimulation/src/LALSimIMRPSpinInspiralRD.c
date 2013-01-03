@@ -193,8 +193,8 @@ Blanchet et. al, Phys. Rev. Lett. 93, 091101 (2004) */
 #define thetahat 1039.0/4620.0
 
 
-static int XLALSimInspiralSpinTaylorCoeffs(REAL8 ST[9], /** Output: spin coefficients array */
-		      REAL8 eta /** Symmetric mass ratio */ )
+static int XLALSimInspiralSpinTaylorCoeffs(REAL8 ST[9], /**< Output: spin coefficients array */
+		      REAL8 eta /**< Symmetric mass ratio */ )
 {
   if(!ST) XLAL_ERROR(XLAL_EFAULT);
   
@@ -274,14 +274,14 @@ REAL8 ETaN(REAL8 eta)
  */
 
 static int XLALPSpinInspiralRDparamsSetup(
-    LALPSpinInspiralRDparams *mparams,  /** Output: RDparams structure */
-    UINT4 inspiralOnly,                 /** Only generate inspiral */
-    REAL8 deltaT,                       /** sampling interval */
-    REAL8 fLow,                         /** Starting frequency */
-    REAL8 m1,                           /** Mass 1 */
-    REAL8 m2,                           /** Mass 2 */
-    LALSimInspiralInteraction interaction, /** Spin interaction */
-    UINT4 order                         /** twice PN Order in Phase */
+    LALPSpinInspiralRDparams *mparams,  /**< Output: RDparams structure */
+    UINT4 inspiralOnly,                 /**< Only generate inspiral */
+    REAL8 deltaT,                       /**< sampling interval */
+    REAL8 fLow,                         /**< Starting frequency */
+    REAL8 m1,                           /**< Mass 1 */
+    REAL8 m2,                           /**< Mass 2 */
+    LALSimInspiralInteraction interaction, /**< Spin interaction */
+    UINT4 order                         /**< twice PN Order in Phase */
     )
 {
   REAL8 totalMass = m1+m2;

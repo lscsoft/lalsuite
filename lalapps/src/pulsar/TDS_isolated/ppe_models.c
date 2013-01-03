@@ -326,6 +326,7 @@ void pulsar_model( BinaryPulsarParams params,
  * additional info
  * \param freqFactor [in] the multiplicative factor on the pulsar frequency for
  * a particular model
+ * \param downsampled *UNDOCUMENTED*
  * 
  * \return A vector of rotational phase values
  * 
@@ -433,9 +434,9 @@ REAL8Vector *get_phase_model( BinaryPulsarParams params,
  * \param datatimes [in] A vector of GPS times at Earth
  * \param ephem [in] Information on the solar system ephemeris
  * \param detector [in] Information on the detector position on the Earth
- * \param interptime [in] The time (in seconds) between explicit recalculations
- * of the time delay
- * 
+ * \param interptime [in] The time (in seconds) between explicit recalculations of the time delay
+ * \param tdat *UNDOCUMENTED*
+ * \param ttype *UNDOCUMENTED*
  * \return A vector of time delays in seconds
  *
  * \sa XLALBarycenter
@@ -551,7 +552,7 @@ REAL8Vector *get_ssb_delay( BinaryPulsarParams pars,
  * \param pars [in] A set of pulsar parameters
  * \param datatimes [in] A vector of GPS times
  * \param dts [in] A vector of solar system barycentre time delays
- * 
+ * \param edat *UNDOCUMENTED*
  * \return A vector of time delays in seconds
  * 
  * \sa XLALBinaryPulsarDeltaT

@@ -128,11 +128,11 @@ int global_argc;
 
 /**
  * Pre-factors for frequency and spindown spacings:
- * $\delta f^{(s)} = \text{COARSE_DFsDOT} \frac{\sqrt{\mu}}{T^{s+1}}$
+ * \f$\delta f^{(s)} = \text{COARSE_DFsDOT} \frac{\sqrt{\mu}}{T^{s+1}}\f$
  * Derived from diagonal elements of basic frequency/spindown metric:
- * $\delta f^{(s)} = 2 \sqrt{\frac{\mu}}{\gamma_{ii}}$
+ * \f$\delta f^{(s)} = 2 \sqrt{\frac{\mu}}{\gamma_{ii}}\f$
  * where
- * $\gamma_{ii} = \frac{4 (1+i)^2 \pi^2 T^{2+2i}}{(3+2i) ((2+i)!)^2}$
+ * \f$\gamma_{ii} = \frac{4 (1+i)^2 \pi^2 T^{2+2i}}{(3+2i) ((2+i)!)^2}\f$
  */
 #define COARSE_DF0DOT   1.10266
 #define COARSE_DF1DOT   2.13529
@@ -1995,8 +1995,9 @@ void SetUpSFTs( LALStatus *status,			/**< pointer to LALStatus structure */
                 MultiNoiseWeightsSequence *stackMultiNoiseWeights, /**< output multi noise weights for each stack */
                 MultiDetectorStateSeriesSequence *stackMultiDetStates, /**< output multi detector states for each stack */
                 UsefulStageVariables *in, /**< input params */
-                BOOLEAN useWholeSFTs,
-                REAL8 mismatch1)
+                BOOLEAN useWholeSFTs,	/**< special switch: load all given frequency bins from SFTs */
+                REAL8 mismatch1		/**< 'mismatch1' user-input needed here internally ... */
+                )
 {
   SFTCatalog *catalog = NULL;
   static SFTConstraints constraints;

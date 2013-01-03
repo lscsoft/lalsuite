@@ -564,7 +564,7 @@ static REAL8 XLALSimIMRSpinEOBHamiltonianDeltaR(
 
 /**
  * Function to calculate the value of omega for the spin-aligned EOB waveform.
- * Can NOT be used in precessing cases. This omega is defined as $\dot{y}/r$ by setting $y=0$.
+ * Can NOT be used in precessing cases. This omega is defined as \f$\dot{y}/r\f$ by setting \f$y=0\f$.
  * The function calculates omega = v/r, by first converting (r,phi,pr,pphi) to Cartesian coordinates 
  * in which rVec={r,0,0} and pVec={0,pphi/r,0}, i.e. the effective-test-particle is positioned at x=r, 
  * and its velocity along y-axis. Then it computes omega, which is now given by dydt/r = (dH/dp_y)/r. 
@@ -624,8 +624,8 @@ XLALSimIMRSpinAlignedEOBCalcOmega(
 
 /**
  * Function to calculate the non-Keplerian coefficient for the spin-aligned EOB model.
- * radius r times the cuberoot of the returned number is r_\Omega defined in Eq. A2.
- * i.e. the function returns (r_{\Omega} / r)^3.
+ * radius \f$r\f$ times the cuberoot of the returned number is \f$r_\Omega\f$ defined in Eq. A2.
+ * i.e. the function returns \f$(r_{\Omega} / r)^3\f$.
  */
 static REAL8
 XLALSimIMRSpinAlignedEOBNonKeplerCoeff(
