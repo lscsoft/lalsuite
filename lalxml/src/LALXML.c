@@ -20,9 +20,7 @@
  */
 
 /**
- * \file
- * \ingroup XML
- * \brief Implementation of the XML API
+ * \ingroup LALXML_h
  */
 
 #include <string.h>

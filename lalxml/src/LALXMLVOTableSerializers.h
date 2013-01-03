@@ -16,13 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
-/**
- * \file
- * \ingroup XML
- * \brief Header file declaring the public VOTable serializers XML API
- */
-
 /* Double-include protection */
 #ifndef _LALXMLVOTABLESERIALIZERS_H
 #define _LALXMLVOTABLESERIALIZERS_H
@@ -32,6 +25,12 @@
 extern "C" {
 #endif
 
+/**
+ * \defgroup LALXMLVOTableSerializers_h Header LALXMLVOTableSerializers.h
+ * \ingroup pkg_XML
+ * \brief Header file declaring the public VOTable serializers XML API
+ */
+/*@{*/
 
 #include <libxml/tree.h>
 #include <gsl/gsl_matrix.h>
@@ -56,6 +55,7 @@ gsl_matrix *XLALVOTDoc2gsl_matrixByName(const xmlDocPtr xmlDocument,
                                         const CHAR *unitName);
 
 
+/*@{*/
 
 /* C++ protection */
 #ifdef __cplusplus
