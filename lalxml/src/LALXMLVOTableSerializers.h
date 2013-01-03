@@ -55,7 +55,7 @@ gsl_matrix *XLALVOTDoc2gsl_matrixByName(const xmlDocPtr xmlDocument,
                                         const CHAR *unitName);
 
 
-/*@{*/
+/*@}*/
 
 /* C++ protection */
 #ifdef __cplusplus
