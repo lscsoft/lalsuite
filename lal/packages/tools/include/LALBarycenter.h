@@ -33,8 +33,8 @@ extern "C" {
 #endif
 
 /**
- * \defgroup LALBarycenter_h Barycentering
- * \ingroup pulsarCommon
+ * \defgroup LALBarycenter_h Header LALBarycenter.h
+ * \ingroup pkg_pulsarCommon
  * \author Curt Cutler
  * \date 2001
  *
