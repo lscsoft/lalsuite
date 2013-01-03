@@ -19,7 +19,7 @@
 
 /**
  * \author Jolien D. E. Creighton
- * \file
+ * \ingroup FrameStream_h
  *
  * \heading{Module \ref FrameStream.c}
  *
