@@ -18,17 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- *
- * \author Reinhard Prix, Karl Wette
- * \ingroup PulsarMetric
- * \brief Function to compute the full F-statistic metric, including
- *  antenna-pattern functions from multi-detector, as derived in \ref Prix07.
- *
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <math.h>
 
@@ -47,6 +36,16 @@
 #include <lal/Factorial.h>
 
 #include <lal/UniversalDopplerMetric.h>
+
+/**
+ *
+ * \author Reinhard Prix, Karl Wette
+ * \ingroup UniversalDopplerMetric_h
+ * \brief Function to compute the full F-statistic metric, including
+ *  antenna-pattern functions from multi-detector, as derived in \ref Prix07.
+ *
+ *
+ */
 
 /*---------- SCALING FACTORS ----------*/
 

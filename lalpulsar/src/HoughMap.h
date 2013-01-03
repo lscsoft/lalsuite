@@ -16,19 +16,33 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _HOUGHMAP_H
+#define _HOUGHMAP_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /*  * History:   Created by Sintes June 22, 2001
  *            Modified    August 6, 2001
  */
 
+/**
+ *
+ * \defgroup HoughMap_h Header HoughMap.h
+ * \ingroup pkg_pulsarHough
+ * \author Alicia M. Sintes and Badri Krishnan
+ *
+ * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
 
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
+\heading{Synopsis}
 
-#ifndef _HOUGHMAP_H
-#define _HOUGHMAP_H
+\code
+#include <lal/HoughMap.h>
+\endcode
+
+*/
+/*@{*/
 
 /*
  * 5. Includes. This header may include others; if so, they go immediately
@@ -38,7 +52,6 @@
  *    b. LDAS includes
  *    c. LAL includes
  */
-
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -52,21 +65,14 @@
 # include <lal/LUT.h>
 # include <lal/PHMD.h>
 
-/*
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
 
 /*
  * 7. Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
 
-/**\name Error Codes */ /*@{*/
-/** \ingroup HoughMap_h */
+/**\name Error Codes */
+/*@{*/
 #define HOUGHMAPH_ENULL 1
 #define HOUGHMAPH_ESIZE 2
 #define HOUGHMAPH_ESZMM 4
@@ -95,24 +101,6 @@ extern "C" {
  * 9. Constant Declarations. (discouraged)
  */
 
-
-
-/**
- *
- * \defgroup HoughMap_h Hough Map
- * \ingroup pulsarHough
- * \author Alicia M. Sintes and Badri Krishnan
- *
- * \brief Provides subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
-
-\heading{Synopsis}
-
-\code
-#include <lal/HoughMap.h>
-\endcode
-
-*/
-/*@{*/
 
 /* **************************************************************
  * 10. Structure, enum, union, etc., typdefs.
@@ -155,13 +143,9 @@ typedef struct tagHOUGHMapTotal{
   HoughTT            *map;       /**< the pixel counts; the number of elements to allocate is ySide*xSide */
 } HOUGHMapTotal;
 
-/*@}*/
-
 /*
  * 11. Extern Global variables. (discouraged)
  */
-
-/** \cond DONT_DOXYGEN */
 
 /*
  * 12. Functions Declarations (i.e., prototypes).
@@ -198,8 +182,7 @@ void LALStereo2SkyLocation (LALStatus  *status,
 			    HOUGHPatchGrid    *patch,
 			    HOUGHDemodPar     *parDem);
 
-/** \endcond */
-
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

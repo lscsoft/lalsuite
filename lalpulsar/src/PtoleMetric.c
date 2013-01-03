@@ -41,8 +41,7 @@ static const PulsarTimesParamStruc empty_PulsarTimesParamStruc;
 /* A private factorial function */
 /* static int factrl( int ); */
 
-/** \ingroup PtoleMetric_h
- * \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
+/** \author Jones D. I., Owen, B. J., and Whitbeck, D. M.
  * \date 2001-2005
  * \brief Computes metric components for a pulsar search in the ``Ptolemaic''
  * approximation; both the Earth's spin and orbit are included.
@@ -628,8 +627,7 @@ void LALPtoleMetric( LALStatus *status,
 /* } */ /* factrl() */
 
 
-/** \ingroup PtoleMetric_h
- * \brief Unified "wrapper" to provide a uniform interface to LALPtoleMetric() and LALCoherentMetric().
+/** \brief Unified "wrapper" to provide a uniform interface to LALPtoleMetric() and LALCoherentMetric().
  * \author Reinhard Prix
  *
  * The parameter structure of LALPtoleMetric() was used, because it's more compact.
@@ -780,8 +778,7 @@ void LALPulsarMetric ( LALStatus *stat,
 } /* LALPulsarMetric() */
 
 
-/** \ingroup PtoleMetric_h
- * \brief Figure out dimension of a REAL8Vector -encoded metric (see PMETRIC_INDEX() ).
+/** \brief Figure out dimension of a REAL8Vector -encoded metric (see PMETRIC_INDEX() ).
  * Return error if input-vector is NULL or not consistent with a quadratic matrix.
  */
 int
@@ -816,9 +813,13 @@ XLALFindMetricDim ( const REAL8Vector *metric )
 
 }/* XLALFindMetricDim() */
 
+/**
+ * Frequency and frequency derivative components of the metric, suitable for a directed
+ * search with only one fixed sky position. The units are those expected by ComputeFstat.
+ */
 int XLALSpindownMetric(
-  gsl_matrix* metric,
-  double Tspan
+  gsl_matrix* metric,	/**< [in] Matrix containing the metric */
+  double Tspan		/**< [in] Time span of the data set */
   )
 {
 

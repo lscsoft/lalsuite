@@ -16,92 +16,16 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
-/*
- * 4.  Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
 #ifndef _LALHOUGH_H
 #define _LALHOUGH_H
-
-/*
- * 5. Includes. This header may include others; if so, they go immediately
- *    after include-loop protection. Includes should appear in the following
- *    order:
- *    a. Standard library includes
- *    b. LDAS includes
- *    c. LAL includes
- */
-
-#include <stdlib.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/AVFactories.h>
-#include <lal/SeqFactories.h>
-#include <lal/LALComputeAM.h>
-#include <lal/ComputeSky.h>
-#include <lal/SFTfileIO.h>
-#include <lal/LUT.h>
-#include <lal/PHMD.h>
-#include <lal/HoughMap.h>
-#include <lal/PulsarDataTypes.h>
-#include <lal/NormalizeSFTRngMed.h>
-
-/*
- *   Protection against C++ name mangling
- */
-
 #ifdef  __cplusplus
 extern "C" {
 #endif
 
-/*
- * 7. Error codes and messages. This must be auto-extracted for
- *    inclusion in the documentation.
- */
-
-/**\name Error Codes */ /*@{*/
-/** \ingroup LALHough_h */
-#define LALHOUGHH_ENULL 1
-#define LALHOUGHH_ESIZE 2
-#define LALHOUGHH_ESZMM 4
-#define LALHOUGHH_EINT  6
-#define LALHOUGHH_ESAME 8
-#define LALHOUGHH_EFREQ 10
-#define LALHOUGHH_EVAL  12
-#define LALHOUGHH_EMEM  32
-
-#define LALHOUGHH_MSGENULL "Null pointer"
-#define LALHOUGHH_MSGESIZE "Invalid input size"
-#define LALHOUGHH_MSGESZMM "Size mismatch"
-#define LALHOUGHH_MSGEINT  "Invalid interval"
-#define LALHOUGHH_MSGESAME "Input/Output pointers are the same"
-#define LALHOUGHH_MSGEFREQ "Invalid frequency"
-#define LALHOUGHH_MSGEVAL  "Invalid value"
-#define LALHOUGHH_MSGEMEM  "malloc() failed / Out of memory"
-/*@}*/
-
-
-/* ******************************************************
- * 8. Macros. But, note that macros are deprecated.
- *    They could be moved to the modules where are needed
- */
-
-
-/* *******************************************************
- * 9. Constant Declarations. (discouraged)
- */
-
-
 /**
  *
- * \defgroup LALHough_h LALHough
-   \ingroup pulsarHough
+ * \defgroup LALHough_h Header LALHough.h
+   \ingroup pkg_pulsarHough
    \author Alicia Sintes, Badri Krishnan
 
    \brief Routines for building and updating the space of partial
@@ -148,6 +72,71 @@ extern "C" {
    many lines as the number of the different periodograms used.
  */
 /*@{*/
+
+
+/*
+ * 5. Includes. This header may include others; if so, they go immediately
+ *    after include-loop protection. Includes should appear in the following
+ *    order:
+ *    a. Standard library includes
+ *    b. LDAS includes
+ *    c. LAL includes
+ */
+
+#include <stdlib.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <lal/LALStdlib.h>
+#include <lal/LALConstants.h>
+#include <lal/AVFactories.h>
+#include <lal/SeqFactories.h>
+#include <lal/LALComputeAM.h>
+#include <lal/ComputeSky.h>
+#include <lal/SFTfileIO.h>
+#include <lal/LUT.h>
+#include <lal/PHMD.h>
+#include <lal/HoughMap.h>
+#include <lal/PulsarDataTypes.h>
+#include <lal/NormalizeSFTRngMed.h>
+
+/*
+ * 7. Error codes and messages. This must be auto-extracted for
+ *    inclusion in the documentation.
+ */
+
+/**\name Error Codes */
+/*@{*/
+#define LALHOUGHH_ENULL 1
+#define LALHOUGHH_ESIZE 2
+#define LALHOUGHH_ESZMM 4
+#define LALHOUGHH_EINT  6
+#define LALHOUGHH_ESAME 8
+#define LALHOUGHH_EFREQ 10
+#define LALHOUGHH_EVAL  12
+#define LALHOUGHH_EMEM  32
+
+#define LALHOUGHH_MSGENULL "Null pointer"
+#define LALHOUGHH_MSGESIZE "Invalid input size"
+#define LALHOUGHH_MSGESZMM "Size mismatch"
+#define LALHOUGHH_MSGEINT  "Invalid interval"
+#define LALHOUGHH_MSGESAME "Input/Output pointers are the same"
+#define LALHOUGHH_MSGEFREQ "Invalid frequency"
+#define LALHOUGHH_MSGEVAL  "Invalid value"
+#define LALHOUGHH_MSGEMEM  "malloc() failed / Out of memory"
+/*@}*/
+
+
+/* ******************************************************
+ * 8. Macros. But, note that macros are deprecated.
+ *    They could be moved to the modules where are needed
+ */
+
+
+/* *******************************************************
+ * 9. Constant Declarations. (discouraged)
+ */
 
 /* **************************************************************
  * 10. Structure, enum, union, etc., typdefs.
@@ -211,17 +200,9 @@ typedef struct tagHOUGHResidualSpinPar{
   REAL8Vector    spinRes; 	/**< length: Maximum order of spdwn parameter *data: pointer to residual Spin parameter set fk */
 } HOUGHResidualSpinPar;
 
-
-/*@}*/
-
-
-
-/** \cond DONT_DOXYGEN */
-
 /*
  * 11. Extern Global variables. (discouraged)
  */
-
 
 
 /*
@@ -294,7 +275,7 @@ void LALHOUGHComputeMultiIFOAMWeights  (LALStatus          *status,
 					);
 
 
-/** \endcond */
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

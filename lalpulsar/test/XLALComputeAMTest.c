@@ -18,20 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/*********************************************************************************/
-/** \author Reinhard Prix, John Whelan
- * \file
- * \brief Test for XLALComputeAMCoeffs() and XLALComputeMultiAMCoeffs() by
- * comparison with the equivalent LAL functions LALNewGetAMCoeffs() and LALGetMultiAMCoeffs().
- *
- * Note, we run a comparison only for the 2-IFO multiAM functions XLALComputeMultiAMCoeffs()
- * comparing it to LALGetMultiAMCoeffs() [combined with XLALWeightMultiAMCoeffs()],
- * as this excercises the 1-IFO functions as well.
- *
- * Sky-location is picked at random each time, which allows a minimal
- * Monte-Carlo validation by simply running this script repeatedly.
- *
- *********************************************************************************/
 #include <config.h>
 
 #ifdef HAVE_UNISTD_H
@@ -51,6 +37,23 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/AVFactories.h>
+
+/** \author Reinhard Prix, John Whelan
+ * \file
+ * \ingroup LALComputeAM_h
+ *
+ * \brief Test for XLALComputeAMCoeffs() and XLALComputeMultiAMCoeffs() by
+ * comparison with the equivalent LAL functions LALNewGetAMCoeffs() and LALGetMultiAMCoeffs().
+ *
+ * Note, we run a comparison only for the 2-IFO multiAM functions XLALComputeMultiAMCoeffs()
+ * comparing it to LALGetMultiAMCoeffs() [combined with XLALWeightMultiAMCoeffs()],
+ * as this excercises the 1-IFO functions as well.
+ *
+ * Sky-location is picked at random each time, which allows a minimal
+ * Monte-Carlo validation by simply running this script repeatedly.
+ *
+ */
+
 extern char *optarg;
 
 static const LALStatus empty_status;

@@ -16,23 +16,22 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
+#ifndef _PULSARCROSSCORRV2_H
+#define _PULSARCROSSCORRV2_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
 
 /**
+ * \defgroup PulsarCrossCorr_v2_h Header PulsarCrossCorr_v2.h
+ * \ingroup pkg_pulsarCrossCorr
  * \author John Whelan, Shane Larson, Badri Krishnan
  * \date 2012
- * \file
- * \ingroup pulsarTODO
  * \brief Header-file for XLAL routines for v2 CW cross-correlation searches
  *
  */
-
-/*
- *   Protection against double inclusion (include-loop protection)
- *     Note the naming convention!
- */
-
-#ifndef _PULSARCROSSCORRV2_H
-#define _PULSARCROSSCORRV2_H
+/*@{*/
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -67,15 +66,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 
-
-/******************************************************
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
 /* ******************************************************************
  *  Structure, enum, union, etc., typdefs.
  */
@@ -96,7 +86,7 @@ int XLALGetDopplerShiftedFrequencyInfo
   )
 ;
 
-/* ****************************************************** */
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

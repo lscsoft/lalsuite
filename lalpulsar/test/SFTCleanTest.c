@@ -16,6 +16,8 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
+#include <lal/SFTClean.h>
+#include <glob.h>
 
 /* REVISIONS: */
 /* 09/09/05 gam; make RandomParams *randPar a parameter for LALCleanCOMPLEX8SFT. Thus only need to */
@@ -24,14 +26,11 @@
 /**
 \author Krishnan, B.
 \file
-\ingroup pulsarTODO
+\ingroup SFTClean_h
 */
 
-
-#include <lal/SFTClean.h>
-#include <glob.h>
-
-/**\name Error Codes */ /*@{*/
+/**\name Error Codes */
+/*@{*/
 #define SFTCLEANTESTC_ENORM     0
 #define SFTCLEANTESTC_ESUB      1
 #define SFTCLEANTESTC_EARG      2
@@ -49,6 +48,7 @@
 #define SFTCLEANTESTC_MSGERANDSEED "Error initializing random seed"
 /*@}*/
 
+/** \cond DONT_DOXYGEN */
 
 /* Default parameters. */
 
@@ -367,17 +367,4 @@ int main(int argc, char *argv[]){
   return SFTCLEANTESTC_ENORM;
 }
 
-/* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
-
-
-
-
-
-
-
-
-
-
-
-
-
+/** \endcond */

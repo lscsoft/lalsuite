@@ -20,8 +20,8 @@
  *  MA  02111-1307  USA
  */
 
-/** \file
- * \ingroup SFTfileIO
+/**
+ * \addtogroup SFTfileIO_h
  * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
  *
  * \brief IO library for reading/writing "Short Fourier transform" (SFT) data files.

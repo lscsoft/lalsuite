@@ -18,16 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-
-/** \file
- * \ingroup SFTfileIO
- * \author R. Prix, B. Machenschalk, A.M. Sintes
- *
- * \brief Test-code for SFT-fileIO library
- *
- *
- */
-
 #define LAL_USE_OLD_COMPLEX_STRUCTS
 /*---------- INCLUDES ----------*/
 #include <config.h>
@@ -35,6 +25,14 @@
 #include <lal/Units.h>
 
 /*---------- DEFINES ----------*/
+/** \file
+ * \ingroup SFTfileIO_h
+ * \author R. Prix, B. Machenschalk, A.M. Sintes
+ *
+ * \brief Test-code for SFT-fileIO library
+ *
+ *
+ */
 
 /** \name Error codes */
 /*@{*/
@@ -54,6 +52,7 @@
 /*@}*/
 
 
+/** \cond DONT_DOXYGEN */
 /* Default parameters. */
 
 /*********************************************************************/
@@ -529,3 +528,4 @@ int main(int argc, char *argv[])
   INFO( SFTFILEIOTESTC_MSGENORM );
   return SFTFILEIOTESTC_ENORM;
 }
+/** \endcond */

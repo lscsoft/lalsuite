@@ -19,10 +19,7 @@
  *  MA  02111-1307  USA
  */
 
-/** \author R. Prix, J. T. Whelan
- * \ingroup pulsarCoherent
- * \file
- * \brief
+/*
  * Functions to calculate the so-called F-statistic for a given point in parameter-space,
  * following the equations in \ref JKS98.
  *

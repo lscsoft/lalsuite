@@ -16,15 +16,6 @@
 // Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 // MA  02111-1307  USA
 //
-
-///
-/// \addtogroup FlatLatticeTilingPulsar_h
-/// \author Karl Wette
-/// \brief Lattice-based template generation for continuous wave parameter spaces
-///
-
-/// @{
-
 #ifndef _FLATLATTICETILINGPULSAR_H
 #define _FLATLATTICETILINGPULSAR_H
 
@@ -34,6 +25,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+///
+/// \defgroup FlatLatticeTilingPulsar_h Header FlatLatticeTilingPulsar.h
+/// \ingroup pkg_pulsarCovering
+/// \author Karl Wette
+/// \brief Lattice-based template generation for continuous wave parameter spaces
+///
+
+/// @{
 
 ///
 /// Types of tiling for XLALSetFlatLatticeSuperSkyNZBound()
@@ -92,10 +92,11 @@ int XLALSetFlatLatticeF2DotBrakingBound(
   const double max_braking		///< [in] Maximum braking index
   );
 
+/// @}
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif
 
-/// @}

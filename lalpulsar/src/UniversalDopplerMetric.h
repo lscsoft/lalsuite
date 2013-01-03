@@ -18,16 +18,6 @@
  *  MA  02111-1307  USA
  */
 
-/**
- * \file
- *
- * \author Reinhard Prix, Karl Wette
- *
- * Function to compute the full F-statistic metric, including
- * antenna-pattern functions from multi-detector, derived in \ref Prix07.
- *
- */
-
 #ifndef _UNIVERSALDOPPLERMETRIC_H  /* Double-include protection. */
 #define _UNIVERSALDOPPLERMETRIC_H
 
@@ -35,6 +25,17 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+/**
+ * \defgroup UniversalDopplerMetric_h Header UniversalDopplerMetric.h
+ * \ingroup pkg_pulsarMetric
+ * \author Reinhard Prix, Karl Wette
+ *
+ * Function to compute the full F-statistic metric, including
+ * antenna-pattern functions from multi-detector, derived in \ref Prix07.
+ *
+ */
+/*@{*/
 
 /*---------- INCLUDES ----------*/
 #include <math.h>
@@ -171,7 +172,7 @@ typedef struct tagMultiDetectorInfo
   REAL8 detWeights[DOPPLERMETRIC_MAX_DETECTORS];	/**< array of N detector noise-weights: must satisfy \f$\sum_{i=1}^N w_i = 1\f$ */
 } MultiDetectorInfo;
 
-/**< meta-info specifying a Doppler-metric
+/** meta-info specifying a Doppler-metric
  */
 typedef struct tagDopplerMetricParams
 {
@@ -302,6 +303,8 @@ gsl_matrix *XLALDiagNormalizeMetric ( const gsl_matrix * g_ij );
 
 // destructor for vect3Dlist_t type
 void XLALDestroyVect3Dlist ( vect3Dlist_t *list );
+
+/*@}*/
 
 #ifdef  __cplusplus
 }

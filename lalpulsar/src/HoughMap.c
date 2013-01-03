@@ -17,32 +17,11 @@
  *  MA  02111-1307  USA
  */
 
-/**
- *
- * \file HoughMap.c
- * \brief Subroutines for initialization and construction of Hough-map derivatives and total Hough-maps.
- * \author Sintes, A.M.,
- * \ingroup pulsarHough
- *
- * History:   Created by Sintes June 22, 2001
- *            Modified August 6, 2001
- *
-
-\heading{Description}
-
-
-
-
- */
-
 #include <lal/HoughMap.h>
 
 /*
  * The functions that make up the guts of this module
  */
-
-/** \addtogroup HoughMap_h */
-/*@{*/
 
 /** This function initializes the Hough map derivative
  * space  HOUGHMapDeriv *hd to zero. Note that the length of the map
@@ -455,4 +434,3 @@ void LALStereo2SkyLocation (LALStatus  *status,
   RETURN (status);
 }
 
-/*@}*/

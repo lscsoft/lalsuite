@@ -17,13 +17,14 @@
 *  MA  02111-1307  USA
 */
 
+#define LAL_USE_OLD_COMPLEX_STRUCTS
+#include <lal/LALStatusMacros.h>
+#include <lal/LALDemod.h>
+
 /**
 \author Berukoff, S.J.,  Papa, M.A., Allen, B., Siemens, X
-\file
-\ingroup pulsarTODO
 
 \brief Computes a demodulated Fourier transform (DeFT) given a set of input short Fourier transforms (SFT).
-
 
 \heading{Description}
 
@@ -72,27 +73,7 @@ follows the analytical development of the formalism.
 Finally, note that in order to avoid repeated trigonometric function
 computations, a look-up-table (LUT) for sine and cosine is constructed
 at the beginning of the routine.
-
-\heading{Uses}
-\code
-None
-\endcode
-
-\heading{Notes}
-
-
-
 */
-
-/* loop protection */
-#ifndef LALDEMODFAST_C
-#define LALDEMODFAST_C
-#endif
-
-#define LAL_USE_OLD_COMPLEX_STRUCTS
-#include <lal/LALStatusMacros.h>
-#include <lal/LALDemod.h>
-
 void LALDemodFAST(LALStatus *status, LALFstat *Fstat, FFT **input, DemodPar *params)
 
 {

@@ -16,11 +16,33 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
-
-/* double inclusion protection */
 #ifndef _STATISTICS_H
 #define _STATISTICS_H
+
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+
+/**
+\author Krishnan, B., Sintes, A.M.
+\defgroup Statistics_h Statistics
+\ingroup pkg_pulsarHough
+\brief Computes statistics of the Hough maps.
+
+\heading{Synopsis}
+
+\code
+#include <lal/Statistics.h>
+\endcode
+
+Given a total Hough map, this calculates the maximum number count, minimum
+number count, average and standard deviation and produces a histogram of the
+number counts.
+
+*/
+/*@{*/
+
 
 /* *************
  *    Includes. This header may include others; if so, they go immediately
@@ -36,16 +58,9 @@
 #include<lal/LALStdlib.h>
 #include<lal/LALConstants.h>
 
-/*  ****************************************************
- *   Protection against C++ name mangling
- */
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-/** \name Error Codes */ /*@{*/
-/** \ingroup Statistics_h */
+/** \name Error Codes */
+/*@{*/
 #define STATISTICSH_ENULL 1
 #define STATISTICSH_EVAL 2
 #define STATISTICSH_MSGENULL "Null Pointer"
@@ -53,24 +68,6 @@ extern "C" {
 /*@}*/
 
 
-/**
-\author Krishnan, B., Sintes, A.M.
-\defgroup Statistics_h Statistics
-\ingroup pulsarHough
-\brief Computes statistics of the Hough maps.
-
-\heading{Synopsis}
-
-\code
-#include <lal/Statistics.h>
-\endcode
-
-Given a total Hough map, this calculates the maximum number count, minimum
-number count, average and standard deviation and produces a histogram of the
-number counts.
-
-*/
-/*@{*/
 /* *****************************************************
  *   Structure, enum, union, etc., typdefs.
  */
@@ -84,10 +81,6 @@ typedef struct tagHoughStats {
   REAL8      avgCount;    /**< average number count */
   REAL8      stdDev;      /**< standard deviation of number counts */
 } HoughStats;
-
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
 
 /*
  *  Extern Global variables. (discouraged)
@@ -111,7 +104,8 @@ void LALHoughmapMeanVariance( LALStatus     *status,
 			      REAL8         *variance,
 			      HOUGHMapTotal *in);
 
-/** \endcond */
+/*@}*/
+
 /* ****************************************************** */
 
 #ifdef  __cplusplus

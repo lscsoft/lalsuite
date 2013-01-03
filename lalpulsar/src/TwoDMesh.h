@@ -28,29 +28,10 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-/** \name Error Codes */ /*@{*/
-/** \ingroup TwoDMesh_h */
-#define TWODMESHH_ENUL    1
-#define TWODMESHH_EOUT    2
-#define TWODMESHH_EMEM    3
-#define TWODMESHH_EMETRIC 4
-#define TWODMESHH_EWIDTH  5
-#define TWODMESHH_EDIM    6
-#define TWODMESHH_EINT    7
-
-#define TWODMESHH_MSGENUL    "Unexpected null pointer in arguments"
-#define TWODMESHH_MSGEOUT    "Output handle points to a non-null pointer"
-#define TWODMESHH_MSGEMEM    "Memory allocation error"
-#define TWODMESHH_MSGEMETRIC "Non-positive metric"
-#define TWODMESHH_MSGEWIDTH  "Column width too small"
-#define TWODMESHH_MSGEDIM    "Incorrect dimensions"
-#define TWODMESHH_MSGEINT    "Non-positive interval"
-/*@}*/
-
 /**
 \author Creighton, T. D.
-\defgroup TwoDMesh_h TwoDMesh
-\ingroup PulsarMetric
+\defgroup TwoDMesh_h Header TwoDMesh.h
+\ingroup pkg_pulsarCovering
 \brief Provides routines to place search meshes for two-dimensional parameter spaces with varying metric.
 
 \heading{Synopsis}
@@ -114,7 +95,27 @@ This header and its associated modules are placed in the \c pulsar
 package because they were originally intended for use in searches over
 sky position, but they can be used generically for any two-dimensional
 parameter space search where the metric is not too poorly behaved.
-*//*@{*/
+*/
+/*@{*/
+
+/** \name Error Codes */
+/*@{*/
+#define TWODMESHH_ENUL    1
+#define TWODMESHH_EOUT    2
+#define TWODMESHH_EMEM    3
+#define TWODMESHH_EMETRIC 4
+#define TWODMESHH_EWIDTH  5
+#define TWODMESHH_EDIM    6
+#define TWODMESHH_EINT    7
+
+#define TWODMESHH_MSGENUL    "Unexpected null pointer in arguments"
+#define TWODMESHH_MSGEOUT    "Output handle points to a non-null pointer"
+#define TWODMESHH_MSGEMEM    "Memory allocation error"
+#define TWODMESHH_MSGEMETRIC "Non-positive metric"
+#define TWODMESHH_MSGEWIDTH  "Column width too small"
+#define TWODMESHH_MSGEDIM    "Incorrect dimensions"
+#define TWODMESHH_MSGEINT    "Non-positive interval"
+/*@}*/
 
 /** This structure represents a single node in a linked list of
  * mesh points, specified in the coordinate system used to place it
@@ -191,9 +192,6 @@ typedef struct tagTwoDColumnParamStruc
 } TwoDColumnParamStruc;
 
 
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
 /* Function prototypes. */
 void
 LALCreateTwoDMesh( LALStatus          *status,
@@ -245,7 +243,7 @@ LALInterpolateRangePolygon( LALStatus *status, REAL4 range[2], REAL4 x, void *pa
 void
 LALInterpolateRangeGrid( LALStatus *status, REAL4 range[2], REAL4 x, void *params );
 
-/** \endcond */
+/*@}*/
 
 #if 0
 { /* so that editors will match succeeding brace */

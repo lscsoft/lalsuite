@@ -21,6 +21,29 @@
 #ifndef _VELOCITY_H
 #define _VELOCITY_H
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
+
+/**
+\author Krishnan, B., Sintes, A.M.
+\defgroup Velocity_h Header Velocity.h
+\ingroup pkg_pulsarHough
+\brief Computation of instant and averaged velocities for a given detector and the like.
+
+\heading{Synopsis}
+
+\code
+#include <lal/Velocity.h>
+\endcode
+
+To find the velocity of a given detetector at a given time, or the averaged
+velocity  of a detector in a certain time interval.
+
+*/
+/*@{*/
+
+
 /* *************
  *    Includes. This header may include others; if so, they go immediately
  *    after include-loop protection. Includes should appear in the following
@@ -37,44 +60,18 @@
 #include<lal/LALStdlib.h>
 #include<lal/LALConstants.h>
 
-/*  ****************************************************
- *   Protection against C++ name mangling
- */
-
-#ifdef  __cplusplus
-extern "C" {
-#endif
 
 /* ***************************************
  *   Error codes and messages. This must be auto-extracted for
  *    inclusion in the documentation.
  */
-/**\name Error Codes */ /*@{*/
-/** \ingroup Velocity_h */
+/**\name Error Codes */
+/*@{*/
 #define VELOCITYH_ENULL 1
 #define VELOCITYH_EVAL 2
 #define VELOCITYH_MSGENULL "Null Pointer"
 #define VELOCITYH_MSGEVAL "Invalid Value"
 /*@}*/
-
-
-/**
-\author Krishnan, B., Sintes, A.M.
-\defgroup Velocity_h Velocity
-\ingroup pulsarHough
-\brief Computation of instant and averaged velocities for a given detector and the like.
-
-\heading{Synopsis}
-
-\code
-#include <lal/Velocity.h>
-\endcode
-
-To find the velocity of a given detetector at a given time, or the averaged
-velocity  of a detector in a certain time interval.
-
-*/
-/*@{*/
 
 /* *****************************************************
  *   Structure, enum, union, etc., typdefs.
@@ -90,10 +87,6 @@ typedef struct tagVelocityPar {
   REAL8          tBase; 	/**< duration of interval */
   REAL8          vTol;  	/**< fractional accuracy required for velocity (redundant for average velocity calculation) */
 } VelocityPar;
-
-/*@}*/
-
-/** \cond DONT_DOXYGEN */
 
 /* ***************************************************
  *  Functions Declarations (i.e., prototypes).
@@ -120,7 +113,7 @@ void LALDetectorPos(LALStatus   *status,
 
 /* ****************************************************** */
 
-/** \endcond */
+/*@}*/
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */
