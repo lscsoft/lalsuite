@@ -95,6 +95,7 @@
 */
 
 /** \defgroup psird Complete phenomenological spin-inspiral waveforms
+ * \ingroup ch_inspiral
  *
  * This code provides complete waveforms for generically spinning binary
  * systems.
