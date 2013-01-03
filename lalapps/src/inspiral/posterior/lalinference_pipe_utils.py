@@ -119,8 +119,49 @@ def open_pipedown_database(database_filename,tmp_space):
     dbtables.DBTable_set_connection(connection)
     return (connection,working_filename) 
 
-  
-def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None):
+
+def get_zerolag_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1):
+	"""
+	Returns a list of Event objects
+	from pipedown data base. Can dump some stats to dumpfile if given,
+	and filter by gpsstart and gpsend to reduce the nunmber or specify
+	max_cfar to select by combined FAR
+	"""
+	output={}
+	if gpsstart is not None: gpsstart=float(gpsstart)
+	if gpsend is not None: gpsend=float(gpsend)
+	# Get coincs
+	get_coincs = "SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
+		FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name=='sngl_inspiral' and coinc_event_map.event_id ==\
+		sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) \
+		join coinc_inspiral on (coinc_event.coinc_event_id==coinc_inspiral.coinc_event_id) \
+		WHERE coinc_event.time_slide_id==0\
+		"
+	if gpsstart is not None:
+		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 > %f'%(gpsstart)
+	if gpsend is not None:
+		get_coincs=get_coincs+' and sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1.0e-9 < %f'%(gpsend)
+	if max_cfar !=-1:
+		get_coincs=get_coincs+' and coinc_inspiral.combined_far < %f'%(max_cfar)
+	db_out=database_connection.cursor().execute(get_coincs)
+	for (sngl_time, ifo, coinc_id, snr, chisq, cfar) in db_out:
+          coinc_id=int(coinc_id.split(":")[-1])
+	  if not coinc_id in output.keys():
+	    output[coinc_id]=Event(trig_time=slid_time,timeslide_dict={})
+            extra[coinc_id]={}
+	  output[coinc_id].timeslides[ifo]=0
+	  output[coinc_id].ifos.append(ifo)
+          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
+        if dumpfile is not None:
+          fh=open(dumpfile,'w')
+          for co in output.keys():
+            for ifo in output[co].ifos:
+              fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
+          fh.close()
+	return output.values()
+	
+
+def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, gpsend=None, max_cfar=-1):
 	"""
 	Returns a list of Event objects
 	with times and timeslide offsets
@@ -128,10 +169,6 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	output={}
 	if gpsstart is not None: gpsstart=float(gpsstart)
 	if gpsend is not None: gpsend=float(gpsend)
-	if dumpfile is not None:
-		outfile=open(dumpfile,'w')
-	else:
-		outfile=None
 	db_segments=[]
 	sql_seg_query="SELECT search_summary.out_start_time, search_summary.out_end_time from search_summary join process on process.process_id==search_summary.process_id where process.program=='thinca'"
 	db_out = database_connection.cursor().execute(sql_seg_query)
@@ -141,9 +178,11 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 	seglist=segments.segmentlist([segments.segment(d[0],d[1]) for d in db_segments])
 	db_out_saved=[]
 	# Get coincidences
-	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq \
+	get_coincs="SELECT sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9,time_slide.offset,sngl_inspiral.ifo,coinc_event.coinc_event_id,sngl_inspiral.snr,sngl_inspiral.chisq,coinc_inspiral.combined_far \
 		    FROM sngl_inspiral join coinc_event_map on (coinc_event_map.table_name == 'sngl_inspiral' and coinc_event_map.event_id \
-		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)"
+		    == sngl_inspiral.event_id) join coinc_event on (coinc_event.coinc_event_id==coinc_event_map.coinc_event_id) join time_slide\
+		    on (time_slide.time_slide_id == coinc_event.time_slide_id and time_slide.instrument==sngl_inspiral.ifo)\
+		    join coinc_inspiral on (coinc_inspiral.coinc_event_id==coinc_event.coinc_event_id)"
 	if gpsstart is not None:
 		get_coincs=get_coincs+ ' where sngl_inspiral.end_time+sngl_inspiral.end_time_ns*1e-9 > %f'%(gpsstart)
 		joinstr=' and '
@@ -151,10 +190,13 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
 		joinstr=' where '
 	if gpsend is not None:
 		get_coincs=get_coincs+ joinstr+' sngl_inspiral.end_time+sngl_inspiral.end_time*1e-9 <%f'%(gpsend)
+		joinstr=' and '
+	if max_cfar!=-1:
+		get_coincs=get_coincs+joinstr+' coinc_inspiral.combined_far < %f'%(max_cfar)
 	db_out=database_connection.cursor().execute(get_coincs)
         from pylal import SnglInspiralUtils
         extra={}
-	for (sngl_time, slide, ifo, coinc_id, snr, chisq) in db_out:
+	for (sngl_time, slide, ifo, coinc_id, snr, chisq, cfar) in db_out:
           coinc_id=int(coinc_id.split(":")[-1])
 	  seg=filter(lambda seg:sngl_time in seg,seglist)[0]
 	  slid_time = SnglInspiralUtils.slideTimeOnRing(sngl_time,slide,seg)
@@ -163,12 +205,12 @@ def get_timeslides_pipedown(database_connection, dumpfile=None, gpsstart=None, g
             extra[coinc_id]={}
 	  output[coinc_id].timeslides[ifo]=slid_time-sngl_time
 	  output[coinc_id].ifos.append(ifo)
-          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq}
+          extra[coinc_id][ifo]={'snr':snr,'chisq':chisq,'cfar':cfar}
         if dumpfile is not None:
           fh=open(dumpfile,'w')
           for co in output.keys():
             for ifo in output[co].ifos:
-              fh.write('%s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq'])))
+              fh.write('%s %s %s %s %s %s %s\n'%(str(co),ifo,str(output[co].trig_time),str(output[co].timeslides[ifo]),str(extra[co][ifo]['snr']),str(extra[co][ifo]['chisq']),str(extra[co][ifo]['cfar'])))
           fh.close()
 	return output.values()
 
@@ -385,15 +427,18 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
     if self.config.has_option('input','pipedown-db'):
       db_connection = open_pipedown_database(self.config.get('input','pipedown-db'),None)[0]
       # Timeslides
-      if self.config.get('input','timeslides').lower()=='true':
-        if self.config.has_option('input','time-slide-dump'):
-          timeslidedump=self.config.get('input','time-slide-dump')
-        else:
-          timeslidedump=None
-	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump)
+      if self.config.has_option('input','time-slide-dump'):
+        timeslidedump=self.config.get('input','time-slide-dump')
       else:
-	print 'Reading non-slid triggers from pipedown not implemented yet'
-	sys.exit(1)
+        timeslidedump=None
+      if self.config.has_option('input','max-cfar'):
+	maxcfar=self.config.getfloat('input','max-cfar')
+      else:
+	maxcfar=-1
+      if self.config.get('input','timeslides').lower()=='true':
+	events=get_timeslides_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend,dumpfile=timeslidedump,max_cfar=maxcfar)
+      else:
+	events=get_zerolag_pipedown(db_connection, gpsstart=gpsstart, gpsend=gpsend, dumpfile=timeslidedump,max_cfar=maxcfar)
     if(selected_events is not None):
         used_events=[]
         for i in selected_events:
