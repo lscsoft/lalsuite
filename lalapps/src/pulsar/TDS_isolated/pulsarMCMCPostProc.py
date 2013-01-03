@@ -763,10 +763,10 @@ performed for two interferometers (H1 and L1):
     if not swinj and not hwinj:
       try:
         atnfurl = \
-'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?Dist=Dist&Assoc=
-Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&
+'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?Dist=Dist&Assoc=\
+Assoc&Age_i=Age_i&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&\
 sort_attr=&sort_order=asc&condition=&pulsar_names=' + \
-re.sub('\+', '%2B',pname) + \ '&ephemeris=selected&submit_ephemeris=\
+re.sub('\+', '%2B',pname) + '&ephemeris=selected&submit_ephemeris=\
 Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=\
 &coords_2=&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=\
 linear&y_axis=&y_scale=linear&state=query'
